@@ -83,8 +83,8 @@ has been loaded. See the section :ref:`usage.animation` to learn more about OVIT
 
 .. _usage.import.multiple_datasets:
 
-Visualizing multiple datasets
------------------------------
+Visualizing multiple datasets |ovito-pro|
+-----------------------------------------
 
 .. figure:: /images/usage/importexport/datasets_side_by_side.*
    :figwidth: 40%
@@ -92,10 +92,10 @@ Visualizing multiple datasets
 
    Side-by-side visualization example
 
-OVITO allows you to insert several objects or datasets into the same three-dimensional scene.
+OVITO Pro allows you to insert several objects or datasets into the same three-dimensional scene.
 You can import and visualize multiple datasets together in one picture as shown in the example on the right.
 You can also visualize the same dataset in several different ways, either side by side or superimposing different 
-visualization modes. The :ref:`branched data pipelines <clone_pipeline>` feature of OVITO 
+visualization modes. The :ref:`branched data pipelines <clone_pipeline>` feature of OVITO Pro
 lets you dynamically duplicate the imported dataset and process each clone in a different way.
 
 The simplest way to include multiple datasets in one picture is to invoke the
@@ -119,7 +119,7 @@ to each of them. The data pipeline of the currently selected dataset is the one 
 Positioning objects in the scene
 --------------------------------
 
-OVITO places all imported datasets in the same standard position in the scene's global coordinate system. 
+OVITO Pro places all imported datasets in the same standard position in the scene's global coordinate system. 
 Thus, multiple datasets will at first appear superimposed in the same spatial location, which may not be what you want.
 
 In order to change this, you can move individual objects around and arrange them in the scene as needed. 

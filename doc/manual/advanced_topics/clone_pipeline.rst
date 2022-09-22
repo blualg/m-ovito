@@ -1,13 +1,13 @@
 .. _clone_pipeline:
 
-Pipeline cloning
-----------------
+Pipeline cloning |ovito-pro|
+----------------------------
 
 .. image:: /images/clone_pipeline/clone_pipeline_menu_item.png
   :width: 35%
   :align: right
 
-The :guilabel:`Clone Pipeline` function of OVITO lets you duplicate the current :ref:`data pipeline <usage.modification_pipeline>`
+The :guilabel:`Clone Pipeline` function of OVITO Pro lets you duplicate the current :ref:`data pipeline <usage.modification_pipeline>`
 in order to visualize multiple datasets side by side or to visualize the same dataset in several different ways in one picture. 
 The function can be invoked from the :ref:`pipeline selector <usage.import.multiple_datasets>` widget depicted on the right, 
 which is located in OVITO's main toolbar.
@@ -45,7 +45,7 @@ same input dataset. If you subsequently pick a different input file for any one 
 This synchronized mode can be useful, for example, to visualize the same input data in several different ways, typically by employing different modifiers
 in the two pipelines that share the same data source.
 
-Another common use-case for OVITO'd pipeline cloning function is visualizing different input datasets side by side, always making sure that
+Another common use-case for OVITO's pipeline cloning function is visualizing different input datasets side by side, always making sure that
 all modifier operations get applied in exactly the same way to both input datasets. In this case, you would choose to duplicate the
 data source during the cloning operation and let the two pipelines share the modifiers instead. Then the pipelines will get fed with different input datasets,
 but it is ensured that each dataset will pass through the exact same sequence of modification steps.
@@ -171,9 +171,9 @@ modifier into the other pipeline. Subsequently, both pipelines will share the sa
 changing the modifier's parameters will affect the results of both pipelines. Turn off the option to perform 
 a regular duplication, which produces an independent copy of the original modifier.
 
-The :guilabel:`Copy to...` function may also be used to copy one or modifiers *within* the same pipeline. 
+The :guilabel:`Copy to...` function may also be used to copy one or more modifiers *within* the same pipeline. 
 This can be useful if you need to perform the same processing steps multiple times as part of a single pipeline (see also 
 :ref:`modifier_templates` as an alternative approach).
 
-In addition to modifiers, the :guilabel:`Copy to...` function also lets you copy the :ref:`file source <scene_objects.file_source>` of a pipeline
-to another pipeline in the scene, which replaces the original data source of the destination pipeline.
+In addition to modifiers, you can also copy the :ref:`file source <scene_objects.file_source>` of the current pipeline
+to another pipeline in the scene, replacing the original data source in the destination pipeline.

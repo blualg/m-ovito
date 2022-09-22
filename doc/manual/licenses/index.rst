@@ -1,8 +1,8 @@
 .. _credits:
 
-============================
-Software license information
-============================
+=====================
+Licensing information
+=====================
 
 *OVITO Basic* in binary form is published by the software vendor `OVITO GmbH, Germany <https://www.ovito.org>`__ under the terms of the `MIT License <https://gitlab.com/stuko/ovito/-/blob/master/LICENSE.MIT.txt>`__. 
 Program packages are built from source code available under the terms of the :ref:`GNU General Public License (v3) <appendix.GPL>` and the 
@@ -11,7 +11,7 @@ Program packages are built from source code available under the terms of the :re
 *OVITO Pro* is proprietary software of OVITO GmbH and licensed under the terms of the *OVITO Pro End-User Licence Agreement*.
 See :ref:`this page <credits.ovito_pro>` for more information on the differences between the two versions of OVITO.
 
-The ``ovito`` Python module, distributed as PyPI and Anaconda packages, is made available by OVITO GmbH under the `MIT License <https://gitlab.com/stuko/ovito/-/blob/master/LICENSE.MIT.txt>`__.
+The ``ovito`` Python module, distributed as :ref:`PyPI <use_ovito_with_system_interpreter>` and :ref:`Anaconda <installation.anaconda>` packages, is made available by OVITO GmbH under the `MIT License <https://gitlab.com/stuko/ovito/-/blob/master/LICENSE.MIT.txt>`__.
 
 Third-party software
 ====================

@@ -68,24 +68,22 @@ more about this program feature.
 
 .. _usage.scripting:
 
-Python scripting
-----------------
+Python scripting |ovito-pro|
+----------------------------
 
-OVITO provides a scripting interface that lets you automate analysis and visualization tasks.
+:ref:`OVITO Pro <credits.ovito_pro>` provides a scripting interface that lets you automate analysis and visualization tasks.
 This can be useful, for example, when a large number of input files needs to be batch-processed.
-The scripting interface provides programmatic access to most program features such as input and output
-of data files, modifiers, and rendering of images and movies.
+The scripting interface provides programmatic access to most program features such as simulation data input and output, 
+modifiers, and rendering of images and movies.
 
-Scripts for OVITO are written in the Python programming language. If you are not familiar with Python,
-you can find several tutorials and books online that cover this subject. Note that OVITO is based on the Python 3.x language standard.
+Scripts for OVITO Pro are written in the Python 3 programming language.  
+The OVITO Python API is described in the :ref:`scripting reference manual <scripting_manual>`,
+which is also accessible from the help menu of OVITO.
 
-OVITO's Python API is documented in a separate :ref:`scripting reference manual <scripting_manual>`. 
-You can access it directly from OVITO's help menu.
-
-In addition to automating tasks, the scripting interface allows you to extend OVITO.
+In addition to automating workflows, the scripting interface allows you to extend the OVITO Pro desktop application.
 For example, the :ref:`Python script modifier <particles.modifiers.python_script>`
-provides a mechanism for you to write your own data manipulation function and integrate it into
-OVITO's modification pipeline system. Furthermore, the :ref:`Python script overlay <viewport_layers.python_script>`
-lets you write your own Python function to add arbitrary 2D graphics
-to rendered images or movies and enrich the visualization with additional information
-like a :ref:`scale bar <howto.scale_bar>`.
+provides a mechanism for you to write your own data manipulation functions and integrate them into
+OVITO's modification pipeline system. Furthermore, the :ref:`Python script viewport layer <viewport_layers.python_script>`
+lets you write a Python function that adds arbitrary 2D graphics
+on top of rendered images and enrich the visualization with additional information
+such as a :ref:`scale bar <howto.scale_bar>`.

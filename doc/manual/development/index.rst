@@ -1,12 +1,12 @@
 .. _development:
 
-=====================
-Developer information
-=====================
+======================
+Developer instructions
+======================
 
-The latest source code of :program:`OVITO` is available in a public repository on `GitLab <https://gitlab.com/stuko/ovito/>`_.
-It serves as current basis of the *OVITO Basic* program packages distributed by OVITO GmbH, which
-are made available under the GNU GPLv3 and MIT open source licenses.
+The source code of :program:`OVITO` is available at https://gitlab.com/stuko/ovito/.
+It serves as basis of the *OVITO Basic* program package distributed by OVITO GmbH, which
+is made available under the GPLv3 and MIT open source licenses.
 
 .. toctree::
    :maxdepth: 1

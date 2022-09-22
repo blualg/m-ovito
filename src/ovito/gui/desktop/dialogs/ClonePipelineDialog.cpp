@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -97,6 +97,21 @@ ClonePipelineDialog::ClonePipelineDialog(PipelineSceneNode* node, QWidget* paren
 		ActionManager::openHelpTopic("manual:clone_pipeline");
 	});
 	mainLayout->addWidget(buttonBox);
+
+#ifndef OVITO_BUILD_PROFESSIONAL
+	buttonBox->button(QDialogButtonBox::Ok)->setEnabled(false);
+	QLabel* noticeWidget = new QLabel(tr("The <i>Clone pipeline</i> function is only available in OVITO Pro &mdash; the extended version of our software. Please visit <a href=\"https://www.ovito.org/about/ovito-pro/\">www.ovito.org</a> for more information."), this);
+	noticeWidget->setMargin(4);
+	noticeWidget->setTextFormat(Qt::RichText);
+	noticeWidget->setTextInteractionFlags(Qt::TextBrowserInteraction);
+	noticeWidget->setOpenExternalLinks(true);
+	noticeWidget->setWordWrap(true);
+	noticeWidget->setAutoFillBackground(true);
+	noticeWidget->setStyleSheet("QLabel { "
+							"  background-color: rgb(230,180,180); "
+							"}");
+	mainLayout->insertWidget(0, noticeWidget);
+#endif
 }
 
 /******************************************************************************

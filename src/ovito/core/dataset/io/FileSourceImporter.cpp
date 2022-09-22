@@ -169,6 +169,11 @@ OORef<PipelineSceneNode> FileSourceImporter::importFileSet(std::vector<std::pair
 	else if(importMode == AddToScene) {
 		if(dataset()->sceneRoot()->children().empty())
 			importMode = ResetScene;
+		else {
+#ifndef OVITO_BUILD_PROFESSIONAL
+			throwException(tr("Sorry, this operation cannot be performed with OVITO Basic. Importing multiple independent datasets into the same scene requires <a href=\"https://www.ovito.org/about/ovito-pro/\">OVITO Pro</a>."));
+#endif
+		}
 	}
 
 	UndoableTransaction transaction(dataset()->undoStack(), tr("Import"));

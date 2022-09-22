@@ -15,6 +15,7 @@ Here is a (nearly complete) list of the program features that are available in *
    :width: 15%
    :align: right
 
+- :ref:`Multiple pipelines and datasets <usage.import.multiple_datasets>` in one visualization scene,
 - Instant :ref:`python_code_generation`,
 - :ref:`data_source.python_script` pipeline source,
 - :ref:`User-defined modifier functions <particles.modifiers.python_script>` including GUI controls for user-defined parameters,

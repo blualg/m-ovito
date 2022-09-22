@@ -105,6 +105,11 @@ void WidgetActionManager::on_NewPipelineFileSource_triggered()
 	if(!dataset()) return;
 
 	UndoableTransaction::handleExceptions(dataset()->undoStack(), tr("Create pipeline"), [&]() {
+
+#ifndef OVITO_BUILD_PROFESSIONAL
+		dataset()->throwException(tr("OVITO Pro is required to insert more than one pipeline into the scene. Please visit <a href=\"https://www.ovito.org/about/ovito-pro/\">www.ovito.org</a> for more information on the extended version of our software."));
+#endif
+
 		// Do not create any animation keys.
 		AnimationSuspender animSuspender(dataset());
 		// Pause viewport updates while updating the scene.

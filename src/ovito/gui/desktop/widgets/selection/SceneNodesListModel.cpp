@@ -108,7 +108,11 @@ QVariant SceneNodesListModel::data(const QModelIndex& index, int role) const
 			if(_pipelineActions[actionIndex] == nullptr)
 				return {}; // Separator
 			else if(actionIndex == _pipelineActions.size() - 1)
+#ifdef OVITO_BUILD_PROFESSIONAL
 				return tr("Clone current pipeline...");
+#else
+				return tr("Clone current pipeline... (Pro)");
+#endif
 			else if(_pipelineActions[actionIndex] != nullptr)
 				return _pipelineActions[actionIndex]->text();
 		}
