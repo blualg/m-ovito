@@ -39,12 +39,10 @@ public:
 	/// Constructs the widget and associates it with the main window.
 	TaskDisplayWidget(MainWindow* mainWindow);
 
-public Q_SLOTS:
+private Q_SLOTS:
 
 	/// \brief Updates the displayed information in the indicator widget.
 	void updateIndicator();
-
-private Q_SLOTS:
 
 	/// \brief Is called when a task has started to run.
 	void taskStarted(TaskWatcher* taskWatcher);

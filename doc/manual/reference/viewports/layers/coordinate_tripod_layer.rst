@@ -27,7 +27,7 @@ HTML text formatting
 """"""""""""""""""""
 
 You can include HTML markup elements in the label text of the axes to format
-the text, e.g., to produce special notations such as superscript or subscript.
+the text, e.g., to produce special notations such as superscripts or subscripts.
 See :ref:`here <viewport_layers.text_label.text_formatting>` for further information.
 
 .. seealso::

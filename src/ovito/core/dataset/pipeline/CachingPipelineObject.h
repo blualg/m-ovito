@@ -71,6 +71,11 @@ protected:
 	/// Asks the object for the result of the data pipeline.
 	virtual Future<PipelineFlowState> evaluateInternal(const PipelineEvaluationRequest& request) = 0;
 
+	/// Gets called by the PipelineCache whenever it returns a pipeline state from the cache.
+	virtual Future<PipelineFlowState> postprocessCachedState(const PipelineEvaluationRequest& request, const PipelineFlowState& state) {
+		return Future<PipelineFlowState>::createImmediateEmplace(state);
+	}
+
 	/// Lets the pipeline stage compute a preliminary result in a synchronous fashion.
 	virtual PipelineFlowState evaluateInternalSynchronous(const PipelineEvaluationRequest& request) { 
 		return PipelineFlowState(getSourceDataCollection(), status()); 

@@ -61,6 +61,14 @@ void OffscreenOpenGLSceneRenderer::createOffscreenSurface()
 	OVITO_ASSERT(QThread::currentThread() == qApp->thread());
 	OVITO_ASSERT(!_offscreenContext && !_offscreenSurface);
 	
+	// OpenGL rendering and surface creation requires Qt to run in GUI mode.
+	if(Application::instance()->headlessMode()) {
+		throwRendererException(tr(
+				"OVITO's OpenGLRenderer cannot be used in headless mode, that is if the application is running without access to a graphics environment. "
+				"Please use a different rendering backend or see https://docs.ovito.org/python/modules/ovito_vis.html#ovito.vis.OpenGLRenderer for instructions "
+				"on how to enable OpenGL rendering in Python scripts."));
+	}
+
 	if(!_offscreenSurface)
 		_offscreenSurface = new QOffscreenSurface(nullptr, this);
 	if(QOpenGLContext::globalShareContext())

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -561,6 +561,60 @@ boost::dynamic_bitset<> BondsObject::OOMetaClass::viewportFenceSelection(const Q
 
 	// Give up.
 	return PropertyContainerClass::viewportFenceSelection(fence, objectPath, node, projectionTM);
+}
+
+/******************************************************************************
+* Returns the base coordinates for visualizing a vector property from this container using a VectorVis element.
+******************************************************************************/
+ConstDataBufferPtr BondsObject::getVectorVisBasePositions(const ConstDataObjectPath& path, const PipelineFlowState& state) const
+{
+	OVITO_ASSERT(path.lastAs<BondsObject>(1) == this);
+	verifyIntegrity();
+
+	if(const ParticlesObject* particles = path.lastAs<ParticlesObject>(2)) {
+		const PropertyObject* positionProperty = particles->getProperty(ParticlesObject::PositionProperty);
+		const PropertyObject* bondTopologyProperty = getProperty(BondsObject::TopologyProperty);
+		const PropertyObject* bondPeriodicImageProperty = getProperty(BondsObject::PeriodicImageProperty);
+		if(positionProperty && bondTopologyProperty) {
+			const SimulationCellObject* simulationCell = state.getObject<SimulationCellObject>();
+
+			// Look up the bond centers in the cache.
+			using CacheKey = RendererResourceKey<struct BondCentersCache, ConstDataObjectRef, ConstDataObjectRef>;
+			auto& basePositions = dataset()->visCache().get<ConstDataBufferPtr>(CacheKey(particles, simulationCell));
+			if(!basePositions) {
+				// Compute bond centers.
+				DataBufferAccessAndRef<Point3> centers = DataBufferPtr::create(dataset(), elementCount(), DataBuffer::Float, 3);
+				ConstPropertyAccess<ParticleIndexPair> bondTopology(bondTopologyProperty);
+				ConstPropertyAccess<Vector3I> bondPeriodicImages(bondPeriodicImageProperty);
+				ConstPropertyAccess<Point3> positions(positionProperty);
+
+				size_t particleCount = positions.size();
+				const AffineTransformation cell = simulationCell ? simulationCell->cellMatrix() : AffineTransformation::Zero();
+
+				for(size_t bondIndex = 0; bondIndex < bondTopology.size(); bondIndex++) {
+					size_t index1 = bondTopology[bondIndex][0];
+					size_t index2 = bondTopology[bondIndex][1];
+					if(index1 >= particleCount || index2 >= particleCount) {
+						centers[bondIndex] = Point3::Origin();
+						continue;
+					}
+
+					Vector3 vec = positions[index2] - positions[index1];
+					if(bondPeriodicImageProperty) {
+						for(size_t k = 0; k < 3; k++) {
+							if(int d = bondPeriodicImages[bondIndex][k]) {
+								vec += cell.column(k) * (FloatType)d;
+							}
+						}
+					}
+					centers[bondIndex] = positions[index1] + FloatType(0.5) * vec;
+				}				
+				basePositions = centers.take();
+			}
+			return basePositions;
+		}
+	}
+	return {};
 }
 
 }	// End of namespace

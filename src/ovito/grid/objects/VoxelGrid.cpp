@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -146,6 +146,61 @@ void VoxelGrid::verifyIntegrity() const
 
 	if(!domain())
 		throwException(tr("Voxel grid has no simulation cell assigned."));
+}
+
+/******************************************************************************
+* Generates the info string to be displayed in the OVITO status bar for an element from this container.
+******************************************************************************/
+QString VoxelGrid::elementInfoString(size_t elementIndex, const ConstDataObjectRefPath& path) const
+{
+	std::array<size_t, 3> coords = voxelCoords(elementIndex);
+    QString str = tr("Cell ");
+	if(domain() && domain()->is2D() && shape()[2] <= 1)
+		str += QStringLiteral("(%1, %2)").arg(coords[0]).arg(coords[1]);
+	else
+		str += QStringLiteral("(%1, %2, %3)").arg(coords[0]).arg(coords[1]).arg(coords[2]);
+	str += QStringLiteral("<sep>");
+	str += PropertyContainer::elementInfoString(elementIndex, path);
+    return str;
+}
+
+/******************************************************************************
+* Returns the base coordinates for visualizing a vector property from this container using a VectorVis element.
+******************************************************************************/
+ConstDataBufferPtr VoxelGrid::getVectorVisBasePositions(const ConstDataObjectPath& path, const PipelineFlowState& state) const
+{
+	OVITO_ASSERT(path.lastAs<VoxelGrid>(1) == this);
+
+	// Make sure the voxel grid has a domain.
+	verifyIntegrity();
+
+	// Look up the cell center coordinates in the cache.
+	using CacheKey = RendererResourceKey<struct VoxelGridCellCentersCache, ConstDataObjectRef>;
+	auto& basePositions = dataset()->visCache().get<ConstDataBufferPtr>(CacheKey(this));
+
+	if(!basePositions) {
+		// Compute grid cell centers.
+		DataBufferAccessAndRef<Point3> centers = DataBufferPtr::create(dataset(), elementCount(), DataBuffer::Float, 3);
+		if(centers.size() != 0) {
+			OVITO_ASSERT(shape()[0] != 0 && shape()[1] != 0 && shape()[2] != 0);
+			Point3 xyz;
+			FloatType dx = FloatType(1) / shape()[0];
+			FloatType dy = FloatType(1) / shape()[1];
+			FloatType dz = FloatType(1) / shape()[2];
+			auto c = centers.begin();
+			size_t x,y,z;
+			for(z = 0, xyz.z() = dz/2; z < shape()[2]; z++, xyz.z() += dz) {
+				if(domain()->is2D()) xyz.z() = 0;
+				for(y = 0, xyz.y() = dy/2; y < shape()[1]; y++, xyz.y() += dy) {
+					for(x = 0, xyz.x() = dx/2; x < shape()[0]; x++, xyz.x() += dx) {
+						*c++ = domain()->reducedToAbsolute(xyz);
+					}
+				}
+			}
+		}
+		basePositions = centers.take();
+	}
+	return basePositions;
 }
 
 }	// End of namespace

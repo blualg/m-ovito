@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -30,9 +30,7 @@ namespace Ovito {
 /******************************************************************************
 * Constructs the spinner.
 ******************************************************************************/
-SpinnerWidget::SpinnerWidget(QWidget* parent, QLineEdit* textBox) : QWidget(parent),
-	_textBox(nullptr), _value(0), _minValue(FLOATTYPE_MIN), _maxValue(FLOATTYPE_MAX),
-	_upperBtnPressed(false), _lowerBtnPressed(false), _unit(nullptr)
+SpinnerWidget::SpinnerWidget(QWidget* parent, QLineEdit* textBox) : QWidget(parent)
 {
 	setSizePolicy(QSizePolicy(QSizePolicy::Preferred, QSizePolicy::Maximum, QSizePolicy::SpinBox));
 	setFocusPolicy(Qt::ClickFocus);

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -248,7 +248,10 @@ void AnimationSettings::continuePlaybackAtTime(TimePoint time)
 {
 	setTime(time);
 
-	if(isPlaybackActive()) {
+	if(isPlaybackActive() && _sceneReadyFuture.isValid()) {
+		// Take time as we start to render the current frame.
+		_frameRenderingTimer.start();
+
 		// Once the scene is ready, schedule the next animation frame.
 		_sceneReadyFuture.finally(executor(), [this](UNUSED_CONTINUATION_FUNC_PARAM) {
 			if(_sceneReadyFuture.isCanceled())
@@ -269,7 +272,13 @@ void AnimationSettings::scheduleNextAnimationFrame()
 	int timerSpeed = 1000 / std::abs(_activePlaybackRate);
 	if(playbackSpeed() > 1) timerSpeed /= playbackSpeed();
 	else if(playbackSpeed() < -1) timerSpeed *= -playbackSpeed();
-	QTimer::singleShot(timerSpeed * ticksPerFrame() / TICKS_PER_SECOND, this, &AnimationSettings::onPlaybackTimer);
+	int msec = timerSpeed * ticksPerFrame() / TICKS_PER_SECOND;
+
+	// Take into account how long it took to render the previous frame.
+	if(_frameRenderingTimer.isValid()) {
+		msec -= _frameRenderingTimer.elapsed();
+	}
+	QTimer::singleShot(std::max(msec, 0), this, &AnimationSettings::onPlaybackTimer);
 }
 
 /******************************************************************************
@@ -279,6 +288,7 @@ void AnimationSettings::stopAnimationPlayback()
 {
 	if(isPlaybackActive()) {
 		_activePlaybackRate = 0;
+		_frameRenderingTimer.invalidate();
 		Q_EMIT playbackChanged(false);
 	}
 }

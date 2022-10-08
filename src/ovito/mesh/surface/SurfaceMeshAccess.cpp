@@ -246,7 +246,7 @@ std::optional<std::pair<SurfaceMeshAccess::region_index, FloatType>> SurfaceMesh
 			Vector3 e2 = wrapVector(p1b - p1);
 			Vector3 pseudoNormal = edgeDir.cross(e1).safelyNormalized() + e2.cross(edgeDir).safelyNormalized();
 
-			// In case the manifold is two-sided, skip edge if pseudo-normal is facing toward the the query point.
+			// In case the manifold is two-sided, skip edge if pseudo-normal is facing toward the query point.
 			if(pseudoNormal.dot(c) > -epsilon || !hasOppositeFace(adjacentFace(edge))) {
 				closestDistanceSq = distSq;
 				closestVertex = InvalidIndex;

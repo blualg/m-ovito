@@ -184,7 +184,7 @@ PipelineStatus CameraVis::render(TimePoint time, const ConstDataObjectPath& path
 	if(contextNode->isSelected()) {
 		if(RenderSettings* renderSettings = dataset()->renderSettings())
 			aspectRatio = renderSettings->outputImageAspectRatio();
-		if(const StandardCameraObject* camera = dynamic_object_cast<StandardCameraObject>(path.back())) {
+		if(const StandardCameraObject* camera = path.lastAs<StandardCameraObject>()) {
 			if(camera->isPerspective()) {
 				coneAngle = camera->fieldOfView(time, iv);
 				if(targetDistance == 0)

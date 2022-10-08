@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -82,7 +82,7 @@ VectorVis::VectorVis(ObjectCreationParams params) : DataVis(params),
 		// Create animation controller for the transparency parameter.
 		setTransparencyController(ControllerManager::createFloatController(dataset()));
 
-		// Create a color mapping object for pseudo-color visualization of a particle property.
+		// Create a color mapping object for pseudo-color visualization of an auxiliary property.
 		setColorMapping(OORef<PropertyColorMapping>::create(params));
 	}
 }
@@ -106,18 +106,19 @@ void VectorVis::loadFromStreamComplete(ObjectLoadStream& stream)
 ******************************************************************************/
 Box3 VectorVis::boundingBox(TimePoint time, const ConstDataObjectPath& path, const PipelineSceneNode* contextNode, const PipelineFlowState& flowState, TimeInterval& validityInterval)
 {
-	if(path.size() < 2) return {};
-	const ParticlesObject* particles = dynamic_object_cast<ParticlesObject>(path[path.size()-2]);
-	if(!particles) return {};
-	const PropertyObject* vectorProperty = dynamic_object_cast<PropertyObject>(path.back());
-	const PropertyObject* positionProperty = particles->getProperty(ParticlesObject::PositionProperty);
+	const PropertyContainer* container = path.lastAs<PropertyContainer>(1);
+	if(!container) return {};
+	const PropertyObject* vectorProperty = path.lastAs<PropertyObject>(0);
+	ConstDataBufferPtr basePositions = container->getVectorVisBasePositions(path, flowState);
+	OVITO_ASSERT(!basePositions || basePositions->size() == container->elementCount());
+	OVITO_ASSERT(!basePositions || (basePositions->componentCount() == 3 && basePositions->dataType() == DataBuffer::Float));
 	if(vectorProperty && (vectorProperty->dataType() != PropertyObject::Float || vectorProperty->componentCount() != 3))
 		vectorProperty = nullptr;
 
 	// The key type used for caching the computed bounding box:
 	using CacheKey = RendererResourceKey<struct VectorVisBoundingBoxCache,
 		ConstDataObjectRef,		// Vector property
-		ConstDataObjectRef,		// Particle position property
+		ConstDataObjectRef,		// Base positions
 		FloatType,				// Scaling factor
 		FloatType,				// Arrow width
 		Vector3					// Offset
@@ -126,15 +127,15 @@ Box3 VectorVis::boundingBox(TimePoint time, const ConstDataObjectPath& path, con
 	// Look up the bounding box in the vis cache.
 	auto& bbox = dataset()->visCache().get<Box3>(CacheKey(
 			vectorProperty,
-			positionProperty,
+			basePositions,
 			scalingFactor(),
 			arrowWidth(),
 			offset()));
 
 	// Check if the cached bounding box information is still up to date.
 	if(bbox.isEmpty()) {
-		// If not, recompute bounding box from particle data.
-		bbox = arrowBoundingBox(vectorProperty, positionProperty);
+		// If not, recompute bounding box.
+		bbox = arrowBoundingBox(vectorProperty, basePositions);
 	}
 	return bbox;
 }
@@ -142,19 +143,21 @@ Box3 VectorVis::boundingBox(TimePoint time, const ConstDataObjectPath& path, con
 /******************************************************************************
 * Computes the bounding box of the arrows.
 ******************************************************************************/
-Box3 VectorVis::arrowBoundingBox(const PropertyObject* vectorProperty, const PropertyObject* positionProperty) const
+Box3 VectorVis::arrowBoundingBox(const PropertyObject* vectorProperty, const DataBuffer* basePositions) const
 {
-	if(!positionProperty || !vectorProperty)
+	if(!basePositions || !vectorProperty)
 		return Box3();
 
-	OVITO_ASSERT(positionProperty->type() == ParticlesObject::PositionProperty);
+	OVITO_ASSERT(basePositions->dataType() == PropertyObject::Float);
+	OVITO_ASSERT(basePositions->componentCount() == 3);
 	OVITO_ASSERT(vectorProperty->dataType() == PropertyObject::Float);
 	OVITO_ASSERT(vectorProperty->componentCount() == 3);
+	OVITO_ASSERT(basePositions->size() == vectorProperty->size());
 
 	// Compute bounding box of particle positions (only those with non-zero vector).
 	Box3 bbox;
-	ConstPropertyAccess<Point3> positions(positionProperty);
-	ConstPropertyAccess<Vector3> vectorData(vectorProperty);
+	ConstDataBufferAccess<Point3> positions(basePositions);
+	ConstDataBufferAccess<Vector3> vectorData(vectorProperty);
 	const Point3* p = positions.cbegin();
 	for(const Vector3& v : vectorData) {
 		if(v != Vector3::Zero())
@@ -191,15 +194,19 @@ PipelineStatus VectorVis::render(TimePoint time, const ConstDataObjectPath& path
 	}
 
 	// Get input data.
-	if(path.size() < 2) return {};
-	const ParticlesObject* particles = dynamic_object_cast<ParticlesObject>(path[path.size()-2]);
-	if(!particles) return {};
-	particles->verifyIntegrity();
-	const PropertyObject* vectorProperty = dynamic_object_cast<PropertyObject>(path.back());
-	const PropertyObject* positionProperty = particles->getProperty(ParticlesObject::PositionProperty);
+	const PropertyContainer* container = path.lastAs<PropertyContainer>(1);
+	if(!container) return {};
+	container->verifyIntegrity();
+	const PropertyObject* vectorProperty = path.lastAs<PropertyObject>();
+	ConstDataBufferPtr basePositions = container->getVectorVisBasePositions(path, flowState);
+	OVITO_ASSERT(!basePositions || basePositions->size() == container->elementCount());
+	OVITO_ASSERT(!basePositions || (basePositions->componentCount() == 3 && basePositions->dataType() == DataBuffer::Float));
 	if(vectorProperty && (vectorProperty->dataType() != PropertyObject::Float || vectorProperty->componentCount() != 3))
 		vectorProperty = nullptr;
-	const PropertyObject* vectorColorProperty = particles->getProperty(ParticlesObject::VectorColorProperty);
+
+	const PropertyObject* vectorColorProperty = nullptr;
+	if(const ParticlesObject* particles = dynamic_object_cast<ParticlesObject>(container))
+		vectorColorProperty = particles->getProperty(ParticlesObject::VectorColorProperty);
 
 	// Make sure we don't exceed our internal limits.
 	if(vectorProperty && vectorProperty->size() > (size_t)std::numeric_limits<int>::max()) {
@@ -211,7 +218,7 @@ PipelineStatus VectorVis::render(TimePoint time, const ConstDataObjectPath& path
 	int pseudoColorPropertyComponent = 0;
 	PseudoColorMapping pseudoColorMapping;
 	if(coloringMode() == PseudoColoring && colorMapping() && colorMapping()->sourceProperty() && !vectorColorProperty) {
-		pseudoColorProperty = colorMapping()->sourceProperty().findInContainer(particles);
+		pseudoColorProperty = colorMapping()->sourceProperty().findInContainer(container);
 		if(!pseudoColorProperty) {
 			status = PipelineStatus(PipelineStatus::Error, tr("The particle property with the name '%1' does not exist.").arg(colorMapping()->sourceProperty().name()));
 		}
@@ -228,7 +235,7 @@ PipelineStatus VectorVis::render(TimePoint time, const ConstDataObjectPath& path
 	// The key type used for caching the rendering primitive:
 	using CacheKey = RendererResourceKey<struct VectorVisCache,
 		ConstDataObjectRef,		// Vector property
-		ConstDataObjectRef,		// Particle position property
+		ConstDataObjectRef,		// Base positions
 		ShadingMode,			// Arrow shading mode
 		FloatType,				// Scaling factor
 		FloatType,				// Arrow width
@@ -251,7 +258,7 @@ PipelineStatus VectorVis::render(TimePoint time, const ConstDataObjectPath& path
 	// Lookup the rendering primitive in the vis cache.
 	auto& arrows = dataset()->visCache().get<CylinderPrimitive>(CacheKey(
 			vectorProperty,
-			positionProperty,
+			basePositions,
 			shadingMode(),
 			scalingFactor(),
 			arrowWidth(),
@@ -270,7 +277,7 @@ PipelineStatus VectorVis::render(TimePoint time, const ConstDataObjectPath& path
 		// Determine number of non-zero vectors.
 		int vectorCount = 0;
 		ConstPropertyAccess<Vector3> vectorData(vectorProperty);
-		if(vectorProperty && positionProperty) {
+		if(vectorProperty && basePositions) {
 			for(const Vector3& v : vectorData) {
 				if(v != Vector3::Zero())
 					vectorCount++;
@@ -287,16 +294,16 @@ PipelineStatus VectorVis::render(TimePoint time, const ConstDataObjectPath& path
 			FloatType scalingFac = scalingFactor();
 			if(reverseArrowDirection())
 				scalingFac = -scalingFac;
-			ConstPropertyAccess<Point3> particlePositions(positionProperty);
+			ConstDataBufferAccess<Point3> basePositionData(basePositions);
 			ConstPropertyAccess<Color> vectorColorData(vectorColorProperty);
 			ConstPropertyAccess<void,true> vectorPseudoColorData(pseudoColorProperty);
 			size_t inIndex = 0;
 			size_t outIndex = 0;
-			for(size_t inIndex = 0; inIndex < particlePositions.size(); inIndex++) {
+			for(size_t inIndex = 0; inIndex < basePositionData.size(); inIndex++) {
 				const Vector3& vec = vectorData[inIndex];
 				if(vec != Vector3::Zero()) {
 					Vector3 v = vec * scalingFac;
-					Point3 base = particlePositions[inIndex];
+					Point3 base = basePositionData[inIndex];
 					if(arrowPosition() == Head)
 						base -= v;
 					else if(arrowPosition() == Center)
@@ -328,7 +335,7 @@ PipelineStatus VectorVis::render(TimePoint time, const ConstDataObjectPath& path
 	}
 
 	if(renderer->isPicking()) {
-		OORef<VectorPickInfo> pickInfo(new VectorPickInfo(this, particles, vectorProperty));
+		OORef<VectorPickInfo> pickInfo(new VectorPickInfo(this, path));
 		renderer->beginPickObject(contextNode, pickInfo);
 	}
 	AffineTransformation oldTM = renderer->worldTransform();
@@ -344,19 +351,19 @@ PipelineStatus VectorVis::render(TimePoint time, const ConstDataObjectPath& path
 
 /******************************************************************************
 * Given an sub-object ID returned by the Viewport::pick() method, looks up the
-* corresponding particle index.
+* corresponding data element index.
 ******************************************************************************/
-size_t VectorPickInfo::particleIndexFromSubObjectID(quint32 subobjID) const
+size_t VectorPickInfo::elementIndexFromSubObjectID(quint32 subobjID) const
 {
-	if(_vectorProperty) {
-		size_t particleIndex = 0;
-		ConstPropertyAccess<Vector3> vectorData(_vectorProperty);
+	if(const PropertyObject* vectorProperty = dataPath().lastAs<PropertyObject>()) {
+		size_t elementIndex = 0;
+		ConstPropertyAccess<Vector3> vectorData(vectorProperty);
 		for(const Vector3& v : vectorData) {
 			if(v != Vector3::Zero()) {
-				if(subobjID == 0) return particleIndex;
+				if(subobjID == 0) return elementIndex;
 				subobjID--;
 			}
-			particleIndex++;
+			elementIndex++;
 		}
 	}
 	return std::numeric_limits<size_t>::max();
@@ -368,10 +375,12 @@ size_t VectorPickInfo::particleIndexFromSubObjectID(quint32 subobjID) const
 ******************************************************************************/
 QString VectorPickInfo::infoString(PipelineSceneNode* objectNode, quint32 subobjectId)
 {
-	size_t particleIndex = particleIndexFromSubObjectID(subobjectId);
-	if(particleIndex == std::numeric_limits<size_t>::max()) 
-		return QString();
-	return ParticlePickInfo::particleInfoString(*particles(), particleIndex);
+	size_t elementIndex = elementIndexFromSubObjectID(subobjectId);
+	if(elementIndex != std::numeric_limits<size_t>::max()) {
+		if(const PropertyContainer* container = dataPath().lastAs<PropertyContainer>(1))
+			return container->elementInfoString(elementIndex, dataPath());
+	}
+	return {};
 }
 
 }	// End of namespace

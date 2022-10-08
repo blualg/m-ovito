@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -130,6 +130,46 @@ QString SurfaceMeshFaces::OOMetaClass::formatDataObjectPath(const ConstDataObjec
 		str += obj->objectTitle();
 	}
 	return str;
+}
+
+/******************************************************************************
+* Returns the base coordinates for visualizing a vector property from this container using a VectorVis element.
+******************************************************************************/
+ConstDataBufferPtr SurfaceMeshFaces::getVectorVisBasePositions(const ConstDataObjectPath& path, const PipelineFlowState& state) const
+{
+	OVITO_ASSERT(path.lastAs<SurfaceMeshFaces>(1) == this);
+	if(const SurfaceMesh* mesh = path.lastAs<SurfaceMesh>(2)) {
+		mesh->verifyMeshIntegrity();
+		// Look up the face centroids in the cache.
+		using CacheKey = RendererResourceKey<struct SurfaceMeshFacesCentroidsCache, ConstDataObjectRef>;
+		auto& basePositions = dataset()->visCache().get<ConstDataBufferPtr>(CacheKey(mesh));
+		if(!basePositions) {
+			// Compute face centroids.
+			DataBufferAccessAndRef<Point3> centroids = DataBufferPtr::create(dataset(), mesh->faces()->elementCount(), DataBuffer::Float, 3);
+			const SurfaceMeshAccess meshAccess(mesh);
+			for(SurfaceMeshAccess::face_index face = 0; face < meshAccess.faceCount(); face++) {
+				Vector3 c = Vector3::Zero();
+				Vector3 com = Vector3::Zero();
+				int n = 0;
+				SurfaceMeshAccess::edge_index firstFaceEdge = meshAccess.firstFaceEdge(face);
+				if(firstFaceEdge != SurfaceMeshAccess::InvalidIndex) {
+					SurfaceMeshAccess::edge_index edge = firstFaceEdge;
+					do {
+						c += meshAccess.edgeVector(edge);
+						com += c;
+						n++;
+						edge = meshAccess.nextFaceEdge(edge);
+					}
+					while(edge != firstFaceEdge);
+					centroids[face] = meshAccess.wrapPoint(meshAccess.vertexPosition(meshAccess.vertex1(firstFaceEdge)) + (com / n));
+				}
+				else centroids[face] = Point3::Origin();
+			}
+			basePositions = centroids.take();
+		}
+		return basePositions;
+	}
+	return {};
 }
 
 }	// End of namespace

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -31,81 +31,59 @@ namespace Ovito {
  * \brief Utility class that is used to reference a particular data object in a DataCollection
  *        as a path through the hierarchy of nested data objects.
  */
-class OVITO_CORE_EXPORT ConstDataObjectPath : public QVarLengthArray<const DataObject*, 3>
+template<typename DataObjectPtr>
+class OVITO_CORE_EXPORT DataObjectPathTemplate : public QVarLengthArray<DataObjectPtr, 3>
 {
 public:
 
 	/// Inherit constructors from base class.
-	using QVarLengthArray::QVarLengthArray;
+	using QVarLengthArray<DataObjectPtr, 3>::QVarLengthArray;
 
 #if QT_VERSION < QT_VERSION_CHECK(5, 14, 0)
 	/// Constructor taking an interator range to initialize the array.
 	template<typename InputIterator>
-	ConstDataObjectPath(InputIterator first, InputIterator last) : QVarLengthArray<const DataObject*, 3>((int)std::distance(first, last)) {
-		std::copy(first, last, begin());
+	DataObjectPathTemplate(InputIterator first, InputIterator last) : QVarLengthArray<DataObjectPtr, 3>((int)std::distance(first, last)) {
+		std::copy(first, last, this->begin());
 	}
 
 	/// Default constructor.
-	ConstDataObjectPath() : QVarLengthArray<const DataObject*, 3>(0) {}
+	DataObjectPathTemplate() : QVarLengthArray<DataObjectPtr, 3>(0) {}
 #endif
 
 	/// Converts the path to a string representation.
-	QString toString() const;
+	QString toString() const {
+		QString s;
+		for(const auto& o : *this) {
+			if(!s.isEmpty()) s += QChar('/');
+			s += o->identifier();
+		}
+		return s;
+	}
 
 	/// Returns a string representation of the object path that is suitable for display in the user interface.
-	QString toUIString() const;
-
-	/// Returns a data object path that includes all but the last data object from this path.
-	ConstDataObjectPath parentPath() const {
-		if(empty()) return ConstDataObjectPath{};
-		return ConstDataObjectPath(begin(), std::prev(end()));
+	template<typename T = DataObjectPtr>
+	std::enable_if_t<std::is_same_v<T, const DataObject*>, QString> toUIString() const {
+		if(this->empty()) return {};
+		return this->back()->getOOMetaClass().formatDataObjectPath(*this);		
 	}
 
-	/// Returns the last data object in the path - or null if the path is empty.
-	const DataObject* leaf() const { return empty() ? nullptr : back(); }
-};
-
-/**
- * \brief Utility class that is used to reference a particular data object in a DataCollection
- *        as a path through the hierarchy of nested data objects.
- */
-class OVITO_CORE_EXPORT DataObjectPath : public QVarLengthArray<DataObject*, 3>
-{
-public:
-
-	/// Inherit constructors from base class.
-	using QVarLengthArray::QVarLengthArray;
-
-#if QT_VERSION < QT_VERSION_CHECK(5, 14, 0)
-	/// Constructor taking an interator range to initialize the array.
-	template<typename InputIterator>
-	DataObjectPath(InputIterator first, InputIterator last) : QVarLengthArray<DataObject*, 3>((int)std::distance(first, last)) {
-		std::copy(first, last, begin());
-	}
-
-	/// Default constructor.
-	DataObjectPath() : QVarLengthArray<DataObject*, 3>(0) {}
-#endif
-
-	/// A path to a mutable object can be implicitly converted to a path to a constant object.
-	operator const ConstDataObjectPath&() const {
+	/// Implicit conversion from DataObjectPath to ConstDataObjectPath.
+	template<typename T = DataObjectPtr>
+	operator std::enable_if_t<std::is_same_v<T, DataObject*>, const ConstDataObjectPath&>() const {
 		return *reinterpret_cast<const ConstDataObjectPath*>(this);
 	}
 
-	/// Converts the path to a string representation.
-	QString toString() const { return static_cast<const ConstDataObjectPath&>(*this).toString(); }
-
-	/// Returns a string representation of the object path that is suitable for display in the user interface.
-	QString toUIString() const { return static_cast<const ConstDataObjectPath&>(*this).toUIString(); }
-
 	/// Returns a data object path that includes all but the last data object from this path.
-	DataObjectPath parentPath() const {
-		if(empty()) return DataObjectPath{};
-		return DataObjectPath(begin(), std::prev(end()));
+	DataObjectPathTemplate parentPath() const {
+		return this->empty() ? DataObjectPathTemplate{} : DataObjectPathTemplate{this->begin(), std::prev(this->end())};
 	}
 
-	/// Returns the last data object in the path - or null if the path is empty.
-	DataObject* leaf() const { return empty() ? nullptr : back(); }
+	/// Returns the n-th to last data object in the path - or null if the path is shorter than requested.
+	const DataObject* last(size_t n = 0) const { return this->size() <= n ? nullptr : (*this)[this->size() - n - 1]; }
+
+	/// Returns the n-th to last data object in the path if it's a specific kind of object - or null if the path is shorter than requested.
+	template<class DataObjectType>
+	const DataObjectType* lastAs(size_t n = 0) const { return this->size() <= n ? nullptr : dynamic_object_cast<const DataObjectType>(static_cast<const DataObject*>((*this)[this->size() - n - 1])); }
 };
 
 /**

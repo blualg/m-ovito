@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -190,8 +190,12 @@ void OpenGLSceneRenderer::beginFrame(TimePoint time, const ViewProjectionParamet
 
 	SceneRenderer::beginFrame(time, params, vp, openGLViewportRect, frameBuffer);
 
-	if(Application::instance()->headlessMode())
-		throwRendererException(tr("Cannot use OpenGL renderer in headless mode."));
+	if(Application::instance()->headlessMode()) {
+		throwRendererException(tr(
+				"OVITO's OpenGLRenderer cannot be used in headless mode, that is if the application is running without access to a graphics environment. "
+				"Please use a different rendering backend or see https://docs.ovito.org/python/modules/ovito_vis.html#ovito.vis.OpenGLRenderer for instructions "
+				"on how to enable OpenGL rendering in Python script environments."));
+	}
 
 	// Get the GL context being used for the current rendering pass.
 	_glcontext = QOpenGLContext::currentContext();

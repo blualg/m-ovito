@@ -69,7 +69,7 @@ protected Q_SLOTS:
 	void onReloadAnimation();
 
 	/// Updates the displayed status information.
-	void updateInformationLabel();
+	void updateDisplayedInformation();
 
 	/// Updates the list of trajectory frames displayed in the UI.
 	void updateFramesList();
@@ -92,6 +92,7 @@ private:
 	QStringListModel* _framesListModel = nullptr;
 	QLabel* _playbackRatioDisplay = nullptr;
 	QPushButton* _editPlaybackBtn = nullptr;
+	bool _deferredDisplayUpdatePending = false;
 };
 
 }	// End of namespace

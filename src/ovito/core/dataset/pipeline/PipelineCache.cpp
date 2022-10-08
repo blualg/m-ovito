@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -62,11 +62,16 @@ SharedFuture<PipelineFlowState> PipelineCache::evaluatePipeline(const PipelineEv
 	else
 		_requestedIntervals.add(TimeInterval::infinite());
 
+	CachingPipelineObject* pipelineObject = dynamic_object_cast<CachingPipelineObject>(ownerObject());
+
 	// Check if we can serve the request immediately using the cached state(s).
 	for(const PipelineFlowState& state : _cachedStates) {
 		if(state.stateValidity().contains(request.time())) {
 			startFramePrecomputation(request);
-			return Future<PipelineFlowState>::createImmediateEmplace(state);
+			if(pipelineObject)
+				return pipelineObject->postprocessCachedState(request, state);
+			else
+				return Future<PipelineFlowState>::createImmediateEmplace(state);
 		}
 	}
 
@@ -81,7 +86,6 @@ SharedFuture<PipelineFlowState> PipelineCache::evaluatePipeline(const PipelineEv
 		}
 	}
 	
-	CachingPipelineObject* pipelineObject = dynamic_object_cast<CachingPipelineObject>(ownerObject());
 	PipelineSceneNode* pipeline = !pipelineObject ? dynamic_object_cast<PipelineSceneNode>(ownerObject()) : nullptr;
 	OVITO_ASSERT(pipeline != nullptr || pipelineObject != nullptr);
 	OVITO_ASSERT(pipeline != nullptr || _includeVisElements == false);
@@ -517,7 +521,7 @@ void PipelineCache::precomputeNextAnimationFrame()
 	_precomputeFrameFuture.finally(ownerObject()->executor(true), [this](Task& task) {
 		try {
 			// If the pipeline evaluation has been canceled for some reason, we interrupt the precomputation process.
-			if(!_precomputeFramesOperation.isValid() || _precomputeFramesOperation.isFinished() || task.isCanceled()) {
+			if(!ownerObject()->dataset() || !_precomputeFramesOperation.isValid() || _precomputeFramesOperation.isFinished() || task.isCanceled()) {
 				_precomputeFramesOperation.reset();
 				OVITO_ASSERT(!_precomputeFrameFuture.isValid());
 				return;

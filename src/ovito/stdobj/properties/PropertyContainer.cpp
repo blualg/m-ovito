@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -435,6 +435,55 @@ void PropertyContainer::loadFromStreamComplete(ObjectLoadStream& stream)
 			}
 		}
 	}
+}
+
+/******************************************************************************
+* Generates the info string to be displayed in the OVITO status bar for an element from this container.
+******************************************************************************/
+QString PropertyContainer::elementInfoString(size_t elementIndex, const ConstDataObjectRefPath& path) const
+{
+	QString str;
+	for(const PropertyObject* property : properties()) {
+		if(property->size() <= elementIndex) continue;
+		if(property->type() == PropertyObject::GenericSelectionProperty) continue;
+		if(property->type() == PropertyObject::GenericColorProperty) continue;
+		if(!str.isEmpty()) str += QStringLiteral("<sep>");
+		str += QStringLiteral("<key>");
+		str += property->name().toHtmlEscaped();
+		str += QStringLiteral(":</key> <val>");
+		if(property->dataType() == PropertyObject::Int) {
+			ConstPropertyAccess<int, true> data(property);
+			for(size_t component = 0; component < data.componentCount(); component++) {
+				if(component != 0) str += QStringLiteral(", ");
+				str += QString::number(data.get(elementIndex, component));
+				if(property->elementTypes().empty() == false) {
+					if(const ElementType* ptype = property->elementType(data.get(elementIndex, component))) {
+						if(!ptype->name().isEmpty())
+							str += QString(" (%1)").arg(ptype->name().toHtmlEscaped());
+					}
+				}
+			}
+		}
+		else if(property->dataType() == PropertyObject::Int64) {
+			ConstPropertyAccess<qlonglong, true> data(property);
+			for(size_t component = 0; component < property->componentCount(); component++) {
+				if(component != 0) str += QStringLiteral(", ");
+				str += QString::number(data.get(elementIndex, component));
+			}
+		}
+		else if(property->dataType() == PropertyObject::Float) {
+			ConstPropertyAccess<FloatType, true> data(property);
+			for(size_t component = 0; component < property->componentCount(); component++) {
+				if(component != 0) str += QStringLiteral(", ");
+				str += QString::number(data.get(elementIndex, component));
+			}
+		}
+		else {
+			str += QStringLiteral("<%1>").arg(getQtTypeNameFromId(property->dataType()) ? getQtTypeNameFromId(property->dataType()) : "unknown");
+		}
+		str += QStringLiteral("</val>");
+	}
+	return str;
 }
 
 }	// End of namespace

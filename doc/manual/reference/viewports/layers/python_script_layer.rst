@@ -17,7 +17,7 @@ whenever an image or movie frame is being rendered. The :py:class:`args <ovito.v
 gives access to a `QPainter <https://doc.qt.io/qtforpython/PySide6/QtGui/QPainter.html>`__ object,
 which allows issuing arbitrary drawing commands to paint over the three-dimensional objects rendered by OVITO.
 
-Any Python exceptions that raised during script execution are displayed in the output area below.
+Any Python exceptions raised during script execution are displayed in the output area below.
 It also shows any output from calls to the ``print()`` Python function.
 
 .. image:: /images/viewport_layers/python_script_overlay_code_editor.*

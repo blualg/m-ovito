@@ -283,7 +283,23 @@ bool GuiApplication::eventFilter(QObject* watched, QEvent* event)
 	if(event->type() == QEvent::FileOpen) {
 		QFileOpenEvent* openEvent = static_cast<QFileOpenEvent*>(event);
 		try {
-			if(MainWindow* mainWindow = qobject_cast<MainWindow*>(QApplication::activeWindow())) {
+			MainWindow* mainWindow = qobject_cast<MainWindow*>(QApplication::activeWindow());
+
+			// If the main window is not the active window, look up it up among the list of all top-level windows
+			// Only use it for opening the imported file if there currently is only a single MainWindow instance.
+			if(!mainWindow) {
+				for(QWidget* widget : QApplication::topLevelWidgets()) {
+					if(MainWindow* mw = qobject_cast<MainWindow*>(widget)) {
+						if(!mainWindow) mainWindow = mw;
+						else {
+							mainWindow = nullptr;
+							break;
+						}
+					}
+				}
+			}
+
+			if(mainWindow) {
 				if(openEvent->file().endsWith(".ovito", Qt::CaseInsensitive)) {
 					mainWindow->datasetContainer().loadDataset(openEvent->file(), MainThreadOperation::create(*mainWindow, true));
 				}

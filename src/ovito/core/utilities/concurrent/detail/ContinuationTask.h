@@ -166,7 +166,7 @@ public:
 				OVITO_ASSERT(!thisTask->isFinished());
 				OVITO_ASSERT(!thisTask->isCanceled());
 
-				// If the the preceding task failed, inherit the error state.
+				// If the preceding task failed, inherit the error state.
 				if(finishedTask->exceptionStore()) {
 					thisTask->exceptionLocked(finishedTask->copyExceptionStore());
 				}

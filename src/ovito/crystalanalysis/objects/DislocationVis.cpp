@@ -178,7 +178,7 @@ Future<PipelineFlowState> DislocationVis::transformDataImpl(const PipelineEvalua
 ******************************************************************************/
 Box3 DislocationVis::boundingBox(TimePoint time, const ConstDataObjectPath& path, const PipelineSceneNode* contextNode, const PipelineFlowState& flowState, TimeInterval& validityInterval)
 {
-	const RenderableDislocationLines* renderableObj = dynamic_object_cast<RenderableDislocationLines>(path.back());
+	const RenderableDislocationLines* renderableObj = path.lastAs<RenderableDislocationLines>();
 	if(!renderableObj) return {};
 	const PeriodicDomainDataObject* domainObj = dynamic_object_cast<PeriodicDomainDataObject>(renderableObj->sourceDataObject().get());
 	if(!domainObj) return {};
@@ -233,8 +233,8 @@ PipelineStatus DislocationVis::render(TimePoint time, const ConstDataObjectPath&
 {
 	// Ignore render calls for the original DislocationNetworkObject or MicrostrucureObject.
 	// We are only interested in the RenderableDIslocationLines.
-	if(dynamic_object_cast<DislocationNetworkObject>(path.back())) return {};
-	if(dynamic_object_cast<Microstructure>(path.back())) return {};
+	if(path.lastAs<DislocationNetworkObject>()) return {};
+	if(path.lastAs<Microstructure>()) return {};
 
 	// Just compute the bounding box of the rendered objects if requested.
 	if(renderer->isBoundingBoxPass()) {
@@ -267,7 +267,7 @@ PipelineStatus DislocationVis::render(TimePoint time, const ConstDataObjectPath&
 	};
 
 	// Get the renderable dislocation lines.
-	const RenderableDislocationLines* renderableLines = dynamic_object_cast<RenderableDislocationLines>(path.back());
+	const RenderableDislocationLines* renderableLines = path.lastAs<RenderableDislocationLines>();
 	if(!renderableLines) return {};
 
 	// Make sure we don't exceed our internal limits.

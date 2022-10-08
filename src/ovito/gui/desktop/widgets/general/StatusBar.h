@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 Alexander Stukowski
+//  Copyright 2022 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -49,6 +49,8 @@ public:
 
 	virtual QSize sizeHint() const override;
 	virtual QSize minimumSizeHint() const override { return sizeHint(); }
+
+	QString currentMessage() const { return text(); }
 
 public Q_SLOTS:
 

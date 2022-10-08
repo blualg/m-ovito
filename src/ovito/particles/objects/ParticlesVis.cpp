@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -62,7 +62,7 @@ ParticlesVis::ParticlesVis(ObjectCreationParams params) : DataVis(params),
 ******************************************************************************/
 Box3 ParticlesVis::boundingBox(TimePoint time, const ConstDataObjectPath& path, const PipelineSceneNode* contextNode, const PipelineFlowState& flowState, TimeInterval& validityInterval)
 {
-	const ParticlesObject* particles = dynamic_object_cast<ParticlesObject>(path.back());
+	const ParticlesObject* particles = path.lastAs<ParticlesObject>();
 	if(!particles) return {};
 	particles->verifyIntegrity();
 	const PropertyObject* positionProperty = particles->getProperty(ParticlesObject::PositionProperty);
@@ -482,7 +482,7 @@ PipelineStatus ParticlesVis::render(TimePoint time, const ConstDataObjectPath& p
 	}
 
 	// Get input particle data.
-	const ParticlesObject* particles = dynamic_object_cast<ParticlesObject>(path.back());
+	const ParticlesObject* particles = path.lastAs<ParticlesObject>();
 	if(!particles) return {};
 	particles->verifyIntegrity();
 
@@ -1319,56 +1319,7 @@ size_t ParticlePickInfo::particleIndexFromSubObjectID(quint32 subobjID) const
 QString ParticlePickInfo::infoString(PipelineSceneNode* objectNode, quint32 subobjectId)
 {
 	size_t particleIndex = particleIndexFromSubObjectID(subobjectId);
-	return particleInfoString(*particles(), particleIndex);
-}
-
-/******************************************************************************
-* Builds the info string for a particle to be displayed in the status bar.
-******************************************************************************/
-QString ParticlePickInfo::particleInfoString(const ParticlesObject& particles, size_t particleIndex)
-{
-	QString str;
-	for(const PropertyObject* property : particles.properties()) {
-		if(property->size() <= particleIndex) continue;
-		if(property->type() == ParticlesObject::SelectionProperty) continue;
-		if(property->type() == ParticlesObject::ColorProperty) continue;
-		if(!str.isEmpty()) str += QStringLiteral("<sep>");
-		str += QStringLiteral("<key>");
-		str += property->name().toHtmlEscaped();
-		str += QStringLiteral(":</key> <val>");
-		if(property->dataType() == PropertyObject::Int) {
-			ConstPropertyAccess<int, true> data(property);
-			for(size_t component = 0; component < data.componentCount(); component++) {
-				if(component != 0) str += QStringLiteral(", ");
-				str += QString::number(data.get(particleIndex, component));
-				if(property->elementTypes().empty() == false) {
-					if(const ElementType* ptype = property->elementType(data.get(particleIndex, component))) {
-						if(!ptype->name().isEmpty())
-							str += QString(" (%1)").arg(ptype->name().toHtmlEscaped());
-					}
-				}
-			}
-		}
-		else if(property->dataType() == PropertyObject::Int64) {
-			ConstPropertyAccess<qlonglong, true> data(property);
-			for(size_t component = 0; component < property->componentCount(); component++) {
-				if(component != 0) str += QStringLiteral(", ");
-				str += QString::number(data.get(particleIndex, component));
-			}
-		}
-		else if(property->dataType() == PropertyObject::Float) {
-			ConstPropertyAccess<FloatType, true> data(property);
-			for(size_t component = 0; component < property->componentCount(); component++) {
-				if(component != 0) str += QStringLiteral(", ");
-				str += QString::number(data.get(particleIndex, component));
-			}
-		}
-		else {
-			str += QStringLiteral("<%1>").arg(getQtTypeNameFromId(property->dataType()) ? getQtTypeNameFromId(property->dataType()) : "unknown");
-		}
-		str += QStringLiteral("</val>");
-	}
-	return str;
+	return particles()->elementInfoString(particleIndex);
 }
 
 }	// End of namespace

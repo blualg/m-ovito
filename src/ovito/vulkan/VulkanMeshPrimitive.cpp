@@ -449,7 +449,7 @@ void VulkanSceneRenderer::renderMeshImplementation(const MeshPrimitive& primitiv
     VkDescriptorSet globalUniformsSet = getGlobalUniformsDescriptorSet();
     deviceFunctions()->vkCmdBindDescriptorSets(currentCommandBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &globalUniformsSet, 0, nullptr);
 
-    // The look-up key for the Vulkan buffer cache.
+    // The lookup key for the Vulkan buffer cache.
     RendererResourceKey<struct VulkanMeshPrimitiveCache, DataOORef<const TriMeshObject>, std::vector<ColorA>, ColorA, Color> meshCacheKey{
         primitive.mesh(),
         primitive.materialColors(),
@@ -643,7 +643,7 @@ VkBuffer VulkanSceneRenderer::getMeshInstanceTMBuffer(const MeshPrimitive& primi
         return {};
     }
 
-    // The look-up key for storing the per-instance TMs in the Vulkan buffer cache.
+    // The lookup key for storing the per-instance TMs in the Vulkan buffer cache.
     RendererResourceKey<struct VulkanMeshPrimitiveInstanceTMCache, ConstDataBufferPtr> instanceTMsKey{ primitive.perInstanceTMs() };
 
     // Upload the per-instance TMs to GPU memory.

@@ -84,10 +84,12 @@ namespace Ovito {
 	class SceneNode;
 	class DataObject;
 	class DataObjectReference;
-	class ConstDataObjectPath;
-	class DataObjectPath;
 	template<class T> class DataOORef;
 	using ConstDataObjectRef = DataOORef<const DataObject>;
+	template<typename DataObjectPtr> class DataObjectPathTemplate;
+	using DataObjectPath = DataObjectPathTemplate<DataObject*>;
+	using ConstDataObjectPath = DataObjectPathTemplate<const DataObject*>;
+	using ConstDataObjectRefPath = DataObjectPathTemplate<ConstDataObjectRef>;
 	class TransformedDataObject;
 	class AttributeDataObject;
 	class RootSceneNode;

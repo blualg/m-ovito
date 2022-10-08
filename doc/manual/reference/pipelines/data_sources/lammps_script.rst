@@ -48,8 +48,8 @@ Setting up LAMMPS
 
 To run the LAMMPS script, OVITO Pro requires a working installation of the LAMMPS simulation code on your computer. OVITO makes use of the
 `LAMMPS Library Interface <https://docs.lammps.org/Library.html>`__ to execute the script commands within the running OVITO process.
-For this coupling between the two programs to work, LAMMPS must have been `built as a shared library <https://docs.lammps.org/Build_basics.html#build-the-lammps-executable-and-library>`__
-and with `C++ exceptions enabled <https://docs.lammps.org/Build_settings.html#exception-handling-when-using-lammps-as-a-library>`__.
+LAMMPS must have been `built as a shared library <https://docs.lammps.org/Build_basics.html#build-the-lammps-executable-and-library>`__
+and with `C++ exceptions enabled <https://docs.lammps.org/Build_settings.html#exception-handling-when-using-lammps-as-a-library>`__ for this coupling between the two programs to work. 
 
 OVITO needs to locate the LAMMPS shared library on your computer in order to load it into the process at runtime. The library file is named :file:`liblammps.so`
 on Linux systems, :file:`liblammps.dll` on Windows, and :file:`liblammps.dylib` on macOS. If that library is in the standard system search path,

@@ -130,7 +130,7 @@ void main()
 	if(PushConstants.color_range.x != PushConstants.color_range.y) {
 		// Compute normalized pseudocolor value.
 		float pseudocolor_value = (color.r - PushConstants.color_range.x) / (PushConstants.color_range.y - PushConstants.color_range.x);
-        // Compute index into color look-up table.
+        // Compute index into color lookup table.
         int index = int(clamp(pseudocolor_value * 256.0, 0.0, 255.0));
 		// Replace RGB value.
 		color.xyz = ColorMap.table[index].xyz;

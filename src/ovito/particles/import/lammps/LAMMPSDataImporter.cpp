@@ -278,7 +278,7 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
 						throw Exception(tr("Atom type %1 is out of range in Atoms section of LAMMPS data file. Number of types is %2.").arg(t).arg(natomtypes));
 				}
 
-				// Build look-up map of atom identifiers.
+				// Build lookup map of atom identifiers.
 				atomIdMap.reserve(natoms);
 				size_t index = 0;
 				for(const qlonglong id : ConstPropertyAccess<qlonglong>(particles()->expectProperty(ParticlesObject::IdentifierProperty))) {
@@ -518,7 +518,7 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
 				// Try parsing numeric type id. 
 				bool ok = parseInt(tokenBegin, tokenEnd, *bondType);
 				if(!ok) {
-					// Try look-up by type name.
+					// Try lookup by type name.
 					if(const ElementType* etype = typeProperty.buffer()->elementType(QLatin1String(tokenBegin, tokenEnd)))
 						*bondType = etype->numericId();
 					else
@@ -594,7 +594,7 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
 				// Try parsing numeric type id. 
 				bool ok = parseInt(tokenBegin, tokenEnd, *angleType);
 				if(!ok) {
-					// Try look-up by type name.
+					// Try lookup by type name.
 					if(const ElementType* etype = typeProperty.buffer()->elementType(QLatin1String(tokenBegin, tokenEnd)))
 						*angleType = etype->numericId();
 					else
@@ -657,7 +657,7 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
 				// Try parsing numeric type id. 
 				bool ok = parseInt(tokenBegin, tokenEnd, *dihedralType);
 				if(!ok) {
-					// Try look-up by type name.
+					// Try lookup by type name.
 					if(const ElementType* etype = typeProperty.buffer()->elementType(QLatin1String(tokenBegin, tokenEnd)))
 						*dihedralType = etype->numericId();
 					else
@@ -720,7 +720,7 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
 				// Try parsing numeric type id. 
 				bool ok = parseInt(tokenBegin, tokenEnd, *improperType);
 				if(!ok) {
-					// Try look-up by type name.
+					// Try lookup by type name.
 					if(const ElementType* etype = typeProperty.buffer()->elementType(QLatin1String(tokenBegin, tokenEnd)))
 						*improperType = etype->numericId();
 					else

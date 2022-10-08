@@ -3,13 +3,13 @@
 Building OVITO on Linux
 =============================
 
-The following instructions have been written for Ubuntu Linux 16.04 or newer, or any compatible Debian-based distribution.
+The following instructions have been written for Ubuntu Linux 20.04 and compatible Debian-based distributions.
 Other Linux distributions may require slightly different build steps.
 
 Installing dependencies
 -----------------------
 
-First install the required :ref:`build tools and third-party libraries <development.requirements>`:
+First, install the required :ref:`build tools and third-party libraries <development.requirements>`:
 
 .. list-table::
    :width: 100%
@@ -54,7 +54,7 @@ First install the required :ref:`build tools and third-party libraries <developm
                                boost-devel netcdf-devel hdf5-devel libssh-devel
 
        These packages allow building only a basic version of OVITO without video encoding support and documentation.
-       In order to build a more complete version, other :ref:`dependencies <development.requirements>` must be installed manually.
+       In order to build a complete version, other :ref:`dependencies <development.requirements>` must be installed manually.
 
 Getting the source code
 -----------------------

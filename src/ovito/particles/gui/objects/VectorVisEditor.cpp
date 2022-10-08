@@ -130,26 +130,28 @@ void VectorVisEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 ******************************************************************************/
 void VectorVisEditor::updateColoringOptions()
 {
-	// Retrieve the ParticlesObject containing the vector property this vis element is associated with.
-	std::vector<ConstDataObjectRef> path = getVisDataObjectPath();
-	DataOORef<const ParticlesObject> particles = path.size() >= 2 ? dynamic_object_cast<const ParticlesObject>(std::move(path[path.size() - 2])) : nullptr;
+	// Retrieve the PropertyContainer containing the vector property this vis element is associated with.
+	ConstDataObjectRefPath path = getVisDataObjectPath();
+	DataOORef<const PropertyContainer> container = path.size() >= 2 ? dynamic_object_cast<const PropertyContainer>(std::move(path[path.size() - 2])) : nullptr;
 
 	// Do the vector arrows, which are associated with the particles, have explicit RGB colors assigned ("Vector Color" property exists)?
-	bool hasExplicitColors = (particles && particles->getProperty(ParticlesObject::VectorColorProperty));
+	bool hasExplicitColors = false;
+	if(const ParticlesObject* particles = dynamic_object_cast<ParticlesObject>(container.get()))
+		hasExplicitColors = particles->getProperty(ParticlesObject::VectorColorProperty) != nullptr;
 
 	VectorVis::ColoringMode coloringMode = editObject() ? static_object_cast<VectorVis>(editObject())->coloringMode() : VectorVis::UniformColoring;
-	if(particles && coloringMode == VectorVis::PseudoColoring && !hasExplicitColors) {
+	if(container && coloringMode == VectorVis::PseudoColoring && !hasExplicitColors) {
 		_colorMappingParamUI->setEnabled(true);
 		_arrowColorUI->setEnabled(false);
-		// Set particles object as property container containing the available properties the user can choose from.
-		static_object_cast<PropertyColorMappingEditor>(_colorMappingParamUI->subEditor())->setPropertyContainer(particles);
+		// Set property container containing the available properties the user can choose from.
+		static_object_cast<PropertyColorMappingEditor>(_colorMappingParamUI->subEditor())->setPropertyContainer(container);
 	}
 	else {
 		_colorMappingParamUI->setEnabled(false);
 		_arrowColorUI->setEnabled(!hasExplicitColors);
 	}
 
-	_coloringModeUI->buttonGroup()->button(VectorVis::PseudoColoring)->setEnabled(particles && !particles->properties().isEmpty() && !hasExplicitColors);
+	_coloringModeUI->buttonGroup()->button(VectorVis::PseudoColoring)->setEnabled(container && !container->properties().isEmpty() && !hasExplicitColors);
 	_coloringModeUI->buttonGroup()->button(VectorVis::UniformColoring)->setEnabled(editObject() && !hasExplicitColors);
 }
 

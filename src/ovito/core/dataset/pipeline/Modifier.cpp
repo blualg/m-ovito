@@ -128,7 +128,7 @@ ModifierApplication* Modifier::someModifierApplication() const
 }
 
 /******************************************************************************
-* Returns the the current status of the modifier's applications.
+* Returns the current status of the modifier's applications.
 ******************************************************************************/
 PipelineStatus Modifier::globalStatus() const
 {

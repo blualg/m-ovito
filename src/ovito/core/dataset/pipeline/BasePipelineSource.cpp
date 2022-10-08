@@ -52,6 +52,11 @@ Future<PipelineFlowState> BasePipelineSource::postprocessDataCollection(int anim
 {
 	return std::move(future).then(executor(), [this, animationFrame, frameInterval](Future<PipelineFlowState> future) -> PipelineFlowState {
 		OVITO_ASSERT(future.isFinished() && !future.isCanceled());
+
+		// Set out early during tear down of the dataset.
+		if(!dataset())
+			return {}; 
+
 		try {
 			PipelineFlowState state = future.result();
 			setStatus(state.status());
@@ -88,11 +93,40 @@ Future<PipelineFlowState> BasePipelineSource::postprocessDataCollection(int anim
 			return PipelineFlowState(dataCollection(), status(), frameInterval);
 		}
 		catch(...) {
-			OVITO_ASSERT_MSG(false, "BasePipelineSource::evaluateInternal()", "Caught an unexpected exception type during source function execution.");
+			OVITO_ASSERT_MSG(false, "BasePipelineSource::postprocessDataCollection()", "Caught an unexpected exception type during source function execution.");
 			setStatus(PipelineStatus(PipelineStatus::Error, tr("Unknown exception caught during execution of pipeline source function.")));
 			return PipelineFlowState(dataCollection(), status(), frameInterval);
 		}
 	});
+}
+
+/******************************************************************************
+* Gets called by the PipelineCache whenever it returns a pipeline state from the cache.
+******************************************************************************/
+Future<PipelineFlowState> BasePipelineSource::postprocessCachedState(const PipelineEvaluationRequest& request, const PipelineFlowState& cachedState)
+{
+	PipelineFlowState state = cachedState;
+	setStatus(state.status());
+
+	if(dataset() && state.data() && state.status().type() != PipelineStatus::Error) {
+		UndoSuspender noUndo(dataset());
+
+		// In GUI mode, create editable proxy objects for the data objects in the generated collection.
+		if(Application::instance()->guiMode()) {
+			_updatingEditableProxies = true;
+			ConstDataObjectPath dataPath = { state.data() };
+			state.data()->updateEditableProxies(state, dataPath);
+			_updatingEditableProxies = false;
+		}
+
+		// Adopt the generated data collection as our new master data collection (only if it is for the current animation time).
+		if(state.stateValidity().contains(dataset()->animationSettings()->time())) {
+			setDataCollectionFrame(animationTimeToSourceFrame(request.time()));
+			setDataCollection(state.data());
+		}
+	}
+
+	return CachingPipelineObject::postprocessCachedState(request, state);
 }
 
 /******************************************************************************

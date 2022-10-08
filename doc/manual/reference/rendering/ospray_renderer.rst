@@ -7,15 +7,14 @@ OSPRay renderer |ovito-pro|
   :width: 30%
   :align: right
 
-OSPRay is a software-based ray-tracing engine, which can generate high-fidelity renderings of the scene including
+OSPRay is a software-based ray-tracing engine, which can generate high-fidelity scene renderings including
 global illumination effects, shadows and depth of field (focal blur). The OSPRay renderer has a smaller memory footprint than
 the :ref:`Tachyon renderer <rendering.tachyon_renderer>`. It is thus suitable for rendering very large datasets
 with higher visual quality than the default :ref:`OpenGL renderer <rendering.opengl_renderer>`.
 
 For more information on the capabilities of the OSPRay engine and its technical background,
 please visit the website https://www.ospray.org.
-The OSPRay documentation contains more in-depth information on the various parameters this 
-rendering engine provides.
+The OSPRay documentation contains more in-depth information on this rendering engine's various parameters.
 
 Quality settings
 """"""""""""""""
@@ -34,11 +33,11 @@ Ray recursion depth
   Normally, 1 or 2 is enough, but when rendering many overlapping semi-transparent objects, a larger recursion depth may be needed.
 
 Denoising filter
-  Applies a denoising filter to the rendered image in order to reduce Monte Carlo noise inherent to stochastic  
+  Applies a denoising filter to the rendered image to reduce Monte Carlo noise inherent to stochastic  
   methods such as path tracing.
 
 Depth of field<
-  Only objects exactly at the distance from the camera specified by the *focal length* will appear sharp when depth-of-field rendering is active.
+  Only objects exactly at a distance from the camera specified by the *focal length* will appear sharp when depth-of-field rendering is active.
   Objects closer to or further from the camera will appear blurred. If you want a specific object to be in the focus, use the :guilabel:`Pick in viewport` button
   and click on that object in the viewport to be rendered. The *focal length* parameter will be automatically adjusted so that the picked location is in focus.
   The *aperture* radius controls how blurred objects will appear that are out of focus (default: 0.5).
@@ -47,7 +46,7 @@ Light sources
 """""""""""""
 
 Direct light
-  Enables a directional light source that is positioned behind the camera and is pointing roughly along the viewing direction.
+  Enables a directional light source positioned behind the camera and pointing roughly along the viewing direction. 
   The *angular diameter* specifies the apparent size (angle in degrees) of the light source.
   Setting the angular diameter to a value greater than zero yields soft shadows. For instance, the apparent size 
   of the sun is about 0.53°.

@@ -184,13 +184,12 @@ void ViewportsPanel::recreateViewportWindows()
 void ViewportsPanel::onAnimationSettingsReplaced(AnimationSettings* newAnimationSettings)
 {
 	disconnect(_autoKeyModeChangedConnection);
-	disconnect(_timeChangeCompleteConnection);
 	_animSettings = newAnimationSettings;
 
 	if(newAnimationSettings) {
 		_autoKeyModeChangedConnection = connect(newAnimationSettings, &AnimationSettings::autoKeyModeChanged, this, (void (ViewportsPanel::*)())&ViewportsPanel::update);
-		_timeChangeCompleteConnection = connect(newAnimationSettings, &AnimationSettings::timeChangeComplete, this, (void (ViewportsPanel::*)())&ViewportsPanel::update);
 	}
+	update();
 }
 
 /******************************************************************************

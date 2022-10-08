@@ -268,7 +268,7 @@ void VoronoiAnalysisModifier::VoronoiAnalysisEngine::perform()
 			for(int i = 0; i < v.p; i++, ptsp += 3) {
 				polyhedraMesh.createVertex(Point3(center.x() + 0.5*ptsp[0], center.y() + 0.5*ptsp[1], center.z() + 0.5*ptsp[2]));
 			}
-			// Store the base vertex index and the vertex count in the look-up map.
+			// Store the base vertex index and the vertex count in the lookup map.
 			polyhedraVertices[meshRegionIndex].first = meshVertexBaseIndex;
 			polyhedraVertices[meshRegionIndex].second = v.p;
 		}

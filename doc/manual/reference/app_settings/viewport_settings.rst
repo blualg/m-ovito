@@ -17,7 +17,7 @@ Coordinate system orientation
   OVITO can restrict the viewport camera rotation such that the selected Cartesian coordinate axis
   always points upward. Default: z-axis.
 
-Restrict camera rotation to keep major axis pointing upward
+Restrict camera rotation to keep the major axis pointing upward
   This option constrains the camera's orientation to prevent the camera from turning upside down.
 
 Color scheme

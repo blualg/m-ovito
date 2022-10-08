@@ -720,7 +720,7 @@ void MeshParaViewVTMFileFilter::preprocessDatasets(std::vector<ParaViewVTMBlockI
 		// When loading separate meshes, remove the combined mesh from the data collection, which might have been left over from a previous load operation.
 		ConstDataObjectPath path = request.state.getObject<SurfaceMesh>(QStringLiteral("combined"));
 		if(path.size() == 1)
-			request.state.mutableData()->removeObject(path.leaf());
+			request.state.mutableData()->removeObject(path.back());
 	}
 }
 

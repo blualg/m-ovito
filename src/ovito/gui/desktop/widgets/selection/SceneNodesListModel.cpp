@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -188,6 +188,7 @@ Qt::ItemFlags SceneNodesListModel::flags(const QModelIndex& index) const
 void SceneNodesListModel::onDataSetChanged(DataSet* newDataSet)
 {
 	beginResetModel();
+	_deferredUpdateList.clear();
 	_nodeListener.clear();
 	_rootNodeListener.setTarget(nullptr);
 	if(newDataSet) {
@@ -266,12 +267,27 @@ void SceneNodesListModel::onNodeNotificationEvent(RefTarget* source, const Refer
 
 	// If a node is being renamed, let the model emit an update signal.
 	if(event.type() == ReferenceEvent::TitleChanged) {
-		int index = sceneNodes().indexOf(static_object_cast<SceneNode>(source));
+		if(!_deferredUpdateList.contains(static_object_cast<SceneNode>(source))) {
+			_deferredUpdateList.push_back(static_object_cast<SceneNode>(source));
+			if(_deferredUpdateList.size() == 1)
+				QTimer::singleShot(400, this, &SceneNodesListModel::deferredNodeUpdate);
+		}
+	}
+}
+
+/******************************************************************************
+* Refreshes the list items that have been marked for a deferred update.
+******************************************************************************/
+void SceneNodesListModel::deferredNodeUpdate()
+{
+	for(const auto& node : _deferredUpdateList) {
+		int index = sceneNodes().indexOf(node);
 		if(index >= 0) {
-			QModelIndex modelIndex = createIndex(index + 1, 0, source);
+			QModelIndex modelIndex = createIndex(index + 1, 0, node);
 			Q_EMIT dataChanged(modelIndex, modelIndex);
 		}
 	}
+	_deferredUpdateList.clear();
 }
 
 /******************************************************************************

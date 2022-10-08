@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -112,7 +112,7 @@ void FileSourceEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 	gridlayout2->addWidget(autoGenerateFilePatternUI->checkBox(), 1, 0);
 	maxLabelWidth = std::max(autoGenerateFilePatternUI->checkBox()->sizeHint().width(), maxLabelWidth);
 
-	_fileSeriesLabel = new QLabel();
+	_fileSeriesLabel = new ElidedTextLabel(Qt::ElideRight);
 	QFont smallFont = _fileSeriesLabel->font();
 #ifdef Q_OS_MACOS
 	smallFont.setPointSize(std::max(6, smallFont.pointSize() - 3));
@@ -146,7 +146,7 @@ void FileSourceEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 		_framesListBox->setModel(_framesListModel);
 		connect(_framesListBox, qOverload<int>(&QComboBox::activated), this, &FileSourceEditor::onFrameSelected);
 		gridlayout3->addWidget(_framesListBox, 0, 1);
-		_timeSeriesLabel = new QLabel();
+		_timeSeriesLabel = new ElidedTextLabel(Qt::ElideRight);
 		_timeSeriesLabel->setFont(smallFont);
 		gridlayout3->addWidget(_timeSeriesLabel, 1, 1);
 
@@ -168,7 +168,7 @@ void FileSourceEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 			if(!editObject()) return;
 			ModalPropertiesEditorDialog(editObject(), new FileSourcePlaybackRateEditor(), container(), 
 				mainWindow(), tr("Configure Trajectory Playback"), tr("Change trajectory playback"), "manual:scene_objects.file_source.configure_playback").exec();
-			updateInformationLabel();
+			updateDisplayedInformation();
 		});
 		
 		gridlayout3->setColumnMinimumWidth(0, maxLabelWidth);
@@ -192,7 +192,7 @@ void FileSourceEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 
 		// Update displayed information.
 		updateFramesList();
-		updateInformationLabel();
+		updateDisplayedInformation();
 
 		// Update the frames list displayed in the UI whenever it changes.
 		con = editObject ? connect(static_object_cast<FileSource>(editObject), &FileSource::framesListChanged, this, &FileSourceEditor::updateFramesList) : QMetaObject::Connection();
@@ -424,14 +424,16 @@ void FileSourceEditor::onWildcardPatternEntered()
 
 		fileSource->setSource({newUrl}, fileSource->importer(), false);
 	});
-	updateInformationLabel();
+	updateDisplayedInformation();
 }
 
 /******************************************************************************
 * Updates the displayed status information.
 ******************************************************************************/
-void FileSourceEditor::updateInformationLabel()
+void FileSourceEditor::updateDisplayedInformation()
 {
+	_deferredDisplayUpdatePending = false;
+
 	FileSource* fileSource = static_object_cast<FileSource>(editObject());
 	if(!fileSource) {
 		// Disable all UI controls if no file source exists.
@@ -546,7 +548,10 @@ bool FileSourceEditor::referenceEvent(RefTarget* source, const ReferenceEvent& e
 {
 	if(source == editObject()) {
 		if(event.type() == ReferenceEvent::ObjectStatusChanged || event.type() == ReferenceEvent::TitleChanged || event.type() == ReferenceEvent::ReferenceChanged) {
-			updateInformationLabel();
+			if(!_deferredDisplayUpdatePending) {
+				_deferredDisplayUpdatePending = true;
+				QTimer::singleShot(200, this, &FileSourceEditor::updateDisplayedInformation);
+			}
 		}
 	}
 	return PropertiesEditor::referenceEvent(source, event);

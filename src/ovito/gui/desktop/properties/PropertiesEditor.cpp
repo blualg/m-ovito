@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -316,7 +316,7 @@ QVector<ModifierApplication*> PropertiesEditor::modifierApplications() const
 * For an editor of a DataVis element, returns the data collection path to 
 * the DataObject which the DataVis element is attached to.
 ******************************************************************************/
-std::vector<ConstDataObjectRef> PropertiesEditor::getVisDataObjectPath() const
+ConstDataObjectRefPath PropertiesEditor::getVisDataObjectPath() const
 {
 	if(DataVis* vis = dynamic_object_cast<DataVis>(editObject())) {
 		// We'll now try to find the DataObject this DataVis element is associated with.
@@ -326,7 +326,7 @@ std::vector<ConstDataObjectRef> PropertiesEditor::getVisDataObjectPath() const
 			std::vector<ConstDataObjectPath> dataObjectPaths = pipelineNode->getDataObjectsForVisElement(state, vis);
 			if(!dataObjectPaths.empty()) {
 				// Return just the first path from the list.
-				return std::vector<ConstDataObjectRef>(dataObjectPaths.front().begin(), dataObjectPaths.front().end());
+				return ConstDataObjectRefPath(dataObjectPaths.front().begin(), dataObjectPaths.front().end());
 			}
 		}
 		return {};
@@ -343,8 +343,9 @@ std::vector<ConstDataObjectRef> PropertiesEditor::getVisDataObjectPath() const
 ******************************************************************************/
 ConstDataObjectRef PropertiesEditor::getVisDataObject() const
 {
-	std::vector<ConstDataObjectRef> path = getVisDataObjectPath();
-	return path.empty() ? ConstDataObjectRef{} : ConstDataObjectRef(std::move(path.back()));
+	if(ConstDataObjectRefPath path = getVisDataObjectPath(); !path.empty())
+		return std::move(path.back());
+	return {};
 }
 
 }	// End of namespace

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -88,6 +88,9 @@ private Q_SLOTS:
 	/// Updates the color brushes of the model.
 	void updateColorPalette(const QPalette& palette);
 
+	/// Refreshes the list items that have been marked for a deferred update.
+	void deferredNodeUpdate();
+
 private:
 
 	/// Returns the list index of the first scene node item.
@@ -119,6 +122,9 @@ private:
 
 	/// Font for rendering selected scene nodes.
 	QFont _selectedNodeFont;
+
+	/// List items to be updated only occasional.
+	QVector<SceneNode*> _deferredUpdateList;
 };
 
 }	// End of namespace

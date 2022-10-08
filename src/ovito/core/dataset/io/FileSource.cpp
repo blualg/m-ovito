@@ -402,78 +402,6 @@ Future<PipelineFlowState> FileSource::evaluateInternal(const PipelineEvaluationR
 
 	OVITO_ASSERT(frameTimeInterval(frame).contains(request.time()));
 
-	// Call implementation routine.
-	return requestFrameInternal(frame);
-}
-
-/******************************************************************************
-* Scans the external data file and returns the list of discovered input frames.
-******************************************************************************/
-SharedFuture<QVector<FileSourceImporter::Frame>> FileSource::requestFrameList(bool forceRescan)
-{
-	// Without an importer object the list of frames is empty.
-	if(!importer())
-		return Future<QVector<FileSourceImporter::Frame>>::createImmediateEmplace();
-
-	// Return the active future when the frame loading process is currently in progress.
-	if(_framesListFuture.isValid()) {
-		if(!forceRescan || !_framesListFuture.isFinished())
-			return _framesListFuture;
-		_framesListFuture.reset();
-	}
-
-	// Return the cached frames list if available.
-	if(!_frames.empty() && !forceRescan) {
-		return _frames;
-	}
-
-	// Forward request to the importer object.
-	// Intercept future results when they become available and cache them.
-	_framesListFuture = importer()->discoverFrames(sourceUrls())
-		// Note that execution of the following continuation function is explicitly deferred,
-		// because setListOfFrames() generates a TargetChanged event, which is not allowed during
-		// a synchronous call to the pipeline evaulation function.
-		.then(executor(true), [this](QVector<FileSourceImporter::Frame>&& frameList) {
-			// Store the new list of frames in the FileSource. 
-			setListOfFrames(frameList);
-			// Pass the frame list on to the caller.
-			return std::move(frameList);
-		});
-
-	// Has loading the frames list already completed?
-	// If yes, reset the future before returning from this function.
-	if(_framesListFuture.isFinished())
-		return std::move(_framesListFuture);
-
-	// The status of this pipeline object changes while loading is in progress.
-	registerActiveFuture(_framesListFuture);
-
-	return _framesListFuture;
-}
-
-/******************************************************************************
-* Computes the time interval covered on the timeline by the given source animation frame.
-******************************************************************************/
-TimeInterval FileSource::frameTimeInterval(int frame) const
-{
-	OVITO_ASSERT(frame >= 0);
-	TimeInterval interval = TimeInterval::infinite();
-	if(restrictToFrame() < 0) {
-		if(frame > 0)
-			interval.setStart(sourceFrameToAnimationTime(frame));
-		if(frame < frames().size() - 1)
-			interval.setEnd(std::max(sourceFrameToAnimationTime(frame + 1) - 1, sourceFrameToAnimationTime(frame)));
-	}
-	OVITO_ASSERT(!interval.isEmpty());
-	OVITO_ASSERT(interval.contains(sourceFrameToAnimationTime(frame)));
-	return interval;
-}
-
-/******************************************************************************
-* Requests a source frame from the input sequence.
-******************************************************************************/
-Future<PipelineFlowState> FileSource::requestFrameInternal(int frame)
-{
 	// First request the list of source frames and wait until it becomes available.
 	Future<PipelineFlowState> stateFuture = requestFrameList(false)
 		.then(executor(), [this, frame](const QVector<FileSourceImporter::Frame>& sourceFrames) -> Future<PipelineFlowState> {
@@ -537,6 +465,69 @@ Future<PipelineFlowState> FileSource::requestFrameInternal(int frame)
 
 	// Post-process the results of the loading operation before returning them to the caller.
 	return postprocessDataCollection(frame, frameTimeInterval(frame), std::move(stateFuture));
+}
+
+/******************************************************************************
+* Scans the external data file and returns the list of discovered input frames.
+******************************************************************************/
+SharedFuture<QVector<FileSourceImporter::Frame>> FileSource::requestFrameList(bool forceRescan)
+{
+	// Without an importer object the list of frames is empty.
+	if(!importer())
+		return Future<QVector<FileSourceImporter::Frame>>::createImmediateEmplace();
+
+	// Return the active future when the frame loading process is currently in progress.
+	if(_framesListFuture.isValid()) {
+		if(!forceRescan || !_framesListFuture.isFinished())
+			return _framesListFuture;
+		_framesListFuture.reset();
+	}
+
+	// Return the cached frames list if available.
+	if(!_frames.empty() && !forceRescan) {
+		return _frames;
+	}
+
+	// Forward request to the importer object.
+	// Intercept future results when they become available and cache them.
+	_framesListFuture = importer()->discoverFrames(sourceUrls())
+		// Note that execution of the following continuation function is explicitly deferred,
+		// because setListOfFrames() generates a TargetChanged event, which is not allowed during
+		// a synchronous call to the pipeline evaulation function.
+		.then(executor(true), [this](QVector<FileSourceImporter::Frame>&& frameList) {
+			// Store the new list of frames in the FileSource. 
+			setListOfFrames(frameList);
+			// Pass the frame list on to the caller.
+			return std::move(frameList);
+		});
+
+	// Has loading the frames list already completed?
+	// If yes, reset the future before returning from this function.
+	if(_framesListFuture.isFinished())
+		return std::move(_framesListFuture);
+
+	// The status of this pipeline object changes while loading is in progress.
+	registerActiveFuture(_framesListFuture);
+
+	return _framesListFuture;
+}
+
+/******************************************************************************
+* Computes the time interval covered on the timeline by the given source animation frame.
+******************************************************************************/
+TimeInterval FileSource::frameTimeInterval(int frame) const
+{
+	OVITO_ASSERT(frame >= 0);
+	TimeInterval interval = TimeInterval::infinite();
+	if(restrictToFrame() < 0) {
+		if(frame > 0)
+			interval.setStart(sourceFrameToAnimationTime(frame));
+		if(frame < frames().size() - 1)
+			interval.setEnd(std::max(sourceFrameToAnimationTime(frame + 1) - 1, sourceFrameToAnimationTime(frame)));
+	}
+	OVITO_ASSERT(!interval.isEmpty());
+	OVITO_ASSERT(interval.contains(sourceFrameToAnimationTime(frame)));
+	return interval;
 }
 
 /******************************************************************************

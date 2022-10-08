@@ -6,7 +6,7 @@ OVITO Pro
 
 There exist two variants of our software: **OVITO Basic** and **OVITO Pro**. 
 The two versions differ in terms of available program features and licensing conditions. 
-This user manual covers both editions of OVITO and the program features exclusively available in the *Pro* edition are 
+This user manual covers both editions of OVITO, and the program features exclusively available in the *Pro* edition are 
 specifically marked with the following tag: |ovito-pro|
 
 Here is a (nearly complete) list of the program features that are available in **OVITO Pro** but not in OVITO Basic:
@@ -31,8 +31,8 @@ Here is a (nearly complete) list of the program features that are available in *
 - :ref:`viewport_layouts.rendering`,
 - Use of Miller indices in the :ref:`particles.modifiers.slice` modifier.
 
-Please visit `www.ovito.org <https://www.ovito.org/about/ovito-pro/>`__ for further details on OVITO Pro, the support services that we offer, and pricing information.
-By licensing OVITO Pro you support the development and maintenance of both editions of our software as well as the :ref:`OVITO Python module <scripting_manual>`.
+Please visit `www.ovito.org <https://www.ovito.org/about/ovito-pro/>`__ for further details on OVITO Pro, our support services, and pricing.
+By licensing OVITO Pro you support the development and maintenance of both editions our desktop software and the :ref:`OVITO Python module <scripting_manual>`.
 
 .. _credits.ovito_pro_activation:
 
@@ -53,31 +53,31 @@ The first time you start up OVITO Pro after installation,
 you will see the :guilabel:`License Activation Dialog`.
 Please note the following:
 
-* You must complete the activation procedure in order to unlock and use the software. 
-  If you cancel the activation process, OVITO Pro will quit and the dialog will reappear the next time 
+* You must complete the activation procedure to unlock and use the software. 
+  If you cancel the activation process, OVITO Pro will quit, and the dialog will reappear the next time 
   you start the software.
 
 * An active internet connection is required as OVITO Pro will contact the central license server 
   to check the validity of your license key and register the software installation.
 
-Please enter the OVITO Pro *license key* you have received from us or
-that was handed to you by the person who purchased a group license. As a license owner,
+Please enter the OVITO Pro *license key* you have received from us or from
+the person that purchased a group license for you. If you are the license owner,
 you can retrieve the license key at https://www.ovito.org/account/purchases/. 
 
 Next, enter your OVITO account name or email address under which you are registered on our website `www.ovito.org <https://www.ovito.org>`__.
-Note that, if you are a team member using an OVITO Pro group license, you should enter your *personal* OVITO account 
+Note that if you are a team member using an OVITO Pro group license, you should enter your *personal* OVITO account 
 here, not the account name of the license owner.
 
 Click :guilabel:`Continue` to perform the activation. OVITO Pro will contact the licensing server to 
-validate the entered license key and register your installation of the software. If either the entered license key or 
+validate the entered license key and register your software installation. If either the entered license key or 
 account name is invalid, OVITO Pro will display an error message and let you correct your input.
 If the activation was successful, you can start using the program.
 
 Online license validation
 -------------------------
 
-From time to time OVITO Pro needs to verify your license status by contacting the central license server. 
-The validation takes place sporadically (typically once a week) during program startup and 
+From time to time, OVITO Pro needs to verify your license status by contacting the central license server. 
+The validation occurs sporadically (typically once a week) during program startup and 
 requires a working internet connection -- but no user interaction.
 
 Without internet connectivity, you can continue using OVITO Pro offline -- but only for a limited period of time.
@@ -95,9 +95,9 @@ Deactivating an installation
 
 Your OVITO Pro license allows you to install the software only on a limited number of computers simultaneously. 
 This limit is enforced by the OVITO license server, which keeps track of all program installations.
-Once the maximum allowed number of installations is exhausted, attempts to activate OVITO Pro on an additional computer will be rejected by the license server. 
+Once the maximum allowed number of installations is exhausted, the license server will reject attempts to activate OVITO Pro on further machines.
 
-Thus, in order to install OVITO Pro on a different machine, for instance after a hardware replacement, employee turnover, or new installation 
+Thus, in order to install OVITO Pro on a different machine, for instance, after a hardware replacement, employee turnover, or new installation 
 of the operating system, you must first deactivate one of the existing OVITO Pro installations which are no longer needed.
 This is done online by visiting the URL https://www.ovito.org/account/myinstallations/ and logging in with 
 your personal OVITO account. The page lists all active OVITO Pro installations currently associated with your 
@@ -116,9 +116,9 @@ A group license key can be used by multiple team members. Each team member shoul
 by going to https://www.ovito.org/register/.
 
 The person who purchased the group license is the designated administrator and owner of the license key.
-The owner can retrieve the key on the OVITO website by going to the `history of purchases <https://www.ovito.org/account/purchases/>`__
-and signing in with his/her account name. The owner may share the license key with
-all team members, who use it to install OVITO Pro. However, it is the owner's legal responsibility to prevent unauthorized use and ensure that the secret license key 
+The owner can retrieve the key on the OVITO website by reviewing the `history of purchases <https://www.ovito.org/account/purchases/>`__
+and signing in with their account name. The owner may share the license key with
+all team members who use it to install OVITO Pro. However, it is the owner's legal responsibility to prevent unauthorized use and ensure that the secret license key 
 never leaves the group.
 
 The team members should independently activate their OVITO Pro installation(s) by entering the license key
@@ -129,9 +129,9 @@ at https://www.ovito.org/account/myinstallations/. No action by the license admi
 
 The OVITO license server keeps track of all installations performed using the group license key and makes sure that 
 the aggregate number of installations of all team members does not exceed the limit permitted by the license.
-The administrator of the group license can access the list of active installations (including the names of the corresponding team members)
+The group license administrator can access the list of active installations (including the names of the corresponding team members)
 by going to https://www.ovito.org/account/purchases/.
-The license administrator has the power to deactivate any of the installations, for example when a team member leaves the 
+The license administrator has the power to deactivate any of the installations, for example, when a team member leaves the 
 organization and is no longer eligible for using OVITO Pro under the group license.
 
 As a group license owner, if you notice that an unauthorized person continues to use the license key to activate

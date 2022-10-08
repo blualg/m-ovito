@@ -60,7 +60,7 @@ TriMeshVis::TriMeshVis(ObjectCreationParams params) : DataVis(params),
 Box3 TriMeshVis::boundingBox(TimePoint time, const ConstDataObjectPath& path, const PipelineSceneNode* contextNode, const PipelineFlowState& flowState, TimeInterval& validityInterval)
 {
 	// Compute bounding box.
-	if(const TriMeshObject* triMeshObj = dynamic_object_cast<TriMeshObject>(path.back())) {
+	if(const TriMeshObject* triMeshObj = path.lastAs<TriMeshObject>()) {
 		return triMeshObj->boundingBox();
 	}
 	return Box3();
@@ -82,7 +82,7 @@ PipelineStatus TriMeshVis::render(TimePoint time, const ConstDataObjectPath& pat
 		MeshPrimitive primitive;
 		primitive.setEmphasizeEdges(highlightEdges());
 		primitive.setUniformColor(ColorA(color(), FloatType(1) - transp));
-		primitive.setMesh(dynamic_object_cast<TriMeshObject>(path.back()));
+		primitive.setMesh(path.lastAs<TriMeshObject>());
 		primitive.setCullFaces(backfaceCulling());
 
 		// Submit primitive to the renderer.

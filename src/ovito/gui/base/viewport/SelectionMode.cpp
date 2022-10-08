@@ -81,11 +81,16 @@ void SelectionMode::deactivated(bool temporary)
 ******************************************************************************/
 void SelectionMode::mouseMoveEvent(ViewportWindowInterface* vpwin, QMouseEvent* event)
 {
+	// Suppress object picking while animation playback is active, because the offscreen rendering slows down the playback.
+	bool isPlaybackActive = vpwin->viewport()->dataset()->animationSettings()->isPlaybackActive();
+
+	// Perform object picking under the mouse cursor.
+	ViewportPickResult pickResult = !isPlaybackActive ? vpwin->pick(getMousePosition(event)) : ViewportPickResult{};
+
 	// Change mouse cursor while hovering over an object.
-	ViewportPickResult pickResult = vpwin->pick(getMousePosition(event));
 	setCursor(pickResult.isValid() ? selectionCursor() : QCursor());
 
-	// Display a description of the object under the mouse cursor in the status bar and in a tooltip window.
+	// Display a description of the object under the mouse cursor in the status bar and/or in a tooltip window.
 	if(pickResult.isValid() && pickResult.pickInfo()) {
 		QString infoText = pickResult.pickInfo()->infoString(pickResult.pipelineNode(), pickResult.subobjectId());
 		inputManager()->userInterface().showStatusBarMessage(infoText);

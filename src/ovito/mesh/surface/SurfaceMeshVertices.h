@@ -68,6 +68,9 @@ public:
 
 	/// \brief Constructor.
 	Q_INVOKABLE SurfaceMeshVertices(ObjectCreationParams params);
+
+	/// Returns the base coordinates for visualizing a vector property from this container using a VectorVis element.
+	virtual ConstDataBufferPtr getVectorVisBasePositions(const ConstDataObjectPath& path, const PipelineFlowState& state) const override { return getProperty(PositionProperty); }
 };
 
 }	// End of namespace

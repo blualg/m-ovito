@@ -113,7 +113,7 @@ struct OVITO_CRYSTALANALYSIS_EXPORT ClusterTransition
  * A cluster is a connected group of atoms in the input structure that all match
  * one pattern, i.e. they form a contiguous arrangement with long-range order.
  *
- * A cluster constitutes a node in the the so-called cluster graph, which is generated
+ * A cluster constitutes a node in the so-called cluster graph, which is generated
  * during the pattern matching procedure.
  *
  * Every cluster is associated with an internal frame of reference (which is implicitly defined by the

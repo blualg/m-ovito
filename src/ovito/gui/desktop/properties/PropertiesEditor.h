@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -156,7 +156,7 @@ public:
 	ConstDataObjectRef getVisDataObject() const;
 
 	/// For an editor of a DataVis element, returns the data collection path to the DataObject which the DataVis element is attached to.
-	std::vector<ConstDataObjectRef> getVisDataObjectPath() const;
+	ConstDataObjectRefPath getVisDataObjectPath() const;
 
 public Q_SLOTS:
 

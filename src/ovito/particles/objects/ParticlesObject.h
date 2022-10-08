@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -185,6 +185,9 @@ public:
 
 	/// Returns a vector with the input bond colors.
 	ConstPropertyPtr inputBondColors(bool ignoreExistingColorProperty = false) const;
+
+	/// Returns the base coordinates for visualizing a vector property from this container using a VectorVis element.
+	virtual ConstDataBufferPtr getVectorVisBasePositions(const ConstDataObjectPath& path, const PipelineFlowState& state) const override { return getProperty(PositionProperty); }
 
 private:
 

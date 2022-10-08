@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -462,6 +462,11 @@ public:
     /// Wraps a vector at periodic boundaries of the simulation cell.
     Vector3 wrapVector(const Vector3& v) const {
         return cell() ? cell()->wrapVector(v) : v;
+    }
+
+    /// Wraps a point at periodic boundaries of the simulation cell.
+    Point3 wrapPoint(const Point3& p) const {
+        return cell() ? cell()->wrapPoint(p) : p;
     }
 
     /// Returns the vector corresponding to an half-edge of the surface mesh.

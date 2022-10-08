@@ -55,8 +55,8 @@ PipelineListModel::PipelineListModel(DataSetContainer& datasetContainer, ActionM
 
 	// Connect signals and slots.
 	connect(&_selectedPipeline, &RefTargetListener<PipelineSceneNode>::notificationEvent, this, &PipelineListModel::onPipelineEvent);
-	connect(&_datasetContainer, &DataSetContainer::selectionChangeComplete, this, &PipelineListModel::refreshList);
-	connect(_selectionModel, &QItemSelectionModel::selectionChanged, this, &PipelineListModel::selectedItemChanged, Qt::QueuedConnection);
+	connect(&_datasetContainer, &DataSetContainer::selectionChangeComplete, this, &PipelineListModel::refreshListLater);
+	connect(_selectionModel, &QItemSelectionModel::selectionChanged, this, &PipelineListModel::onSelectionModelChanged);
 	connect(this, &PipelineListModel::selectedItemChanged, this, &PipelineListModel::updateActions);
 
 	// Set up list item fonts, icons and colors.
@@ -101,78 +101,24 @@ void PipelineListModel::updateColorPalette(const QPalette& palette)
 }
 
 /******************************************************************************
-* Populates the model with the given list items.
-******************************************************************************/
-void PipelineListModel::setItems(std::vector<OORef<PipelineListItem>> newItems)
-{
-	size_t oldCount = _items.size();
-	if(newItems.size() > oldCount) {
-		beginInsertRows(QModelIndex(), oldCount, newItems.size() - 1);
-		_items.insert(_items.end(), std::make_move_iterator(newItems.begin() + oldCount), std::make_move_iterator(newItems.end()));
-		endInsertRows();
-	}
-	else if(newItems.size() < oldCount) {
-		beginRemoveRows(QModelIndex(), newItems.size(), oldCount - 1);
-		_items.erase(_items.begin() + newItems.size(), _items.end());
-		endRemoveRows();
-	}
-	for(size_t i = 0; i < newItems.size() && i < oldCount; i++) {
-		swap(_items[i], newItems[i]);
-		Q_EMIT dataChanged(index(i), index(i));
-	}
-	for(PipelineListItem* item : _items) {
-		connect(item, &PipelineListItem::itemChanged, this, &PipelineListModel::refreshItem);
-		connect(item, &PipelineListItem::subitemsChanged, this, &PipelineListModel::refreshListLater);
-	}
-}
-
-/******************************************************************************
 * Returns the currently selected item in the modification list.
 ******************************************************************************/
 PipelineListItem* PipelineListModel::selectedItem() const
 {
-	int index = selectedIndex();
-	if(index < 0)
-		return nullptr;
-	else
-		return item(index);
+	return (_selectedItems.size() == 1) ? _selectedItems.front() : nullptr;
 }
 
 /******************************************************************************
-* Returns the currently selected items in the data pipeline.
+* Is called when the QItemSelectionModel changes.
 ******************************************************************************/
-QVector<PipelineListItem*> PipelineListModel::selectedItems() const
+void PipelineListModel::onSelectionModelChanged()
 {
-	QVector<int> indices = selectedIndices();
-	QVector<PipelineListItem*> items(indices.size());
-	boost::transform(indices, items.begin(), [&](int index) { return item(index); });
-	return items;
-}
-
-/******************************************************************************
-* Returns the index of the item that is currently selected in the pipeline editor.
-******************************************************************************/
-int PipelineListModel::selectedIndex() const
-{
-	QModelIndexList selection = _selectionModel->selectedRows();
-	if(selection.size() == 1)
-		return selection.front().row();
-	else if(selection.empty())
-		return -1;
-	else
-		return -2;
-}
-
-/******************************************************************************
-* Returns the list of model indicaes that are currently selected in the pipeline editor.
-******************************************************************************/
-QVector<int> PipelineListModel::selectedIndices() const
-{
-	QModelIndexList selection = _selectionModel->selectedRows();
-	QVector<int> indices(selection.size());
-	boost::transform(selection, indices.begin(), [](const QModelIndex& index) { return index.row(); });
-	boost::sort(indices);
-	return indices;
+	_selectedItems.clear();
+	for(int listIndex = 0; listIndex < items().size(); listIndex++) {
+		if(_selectionModel->isSelected(index(listIndex)))
+			_selectedItems.push_back(items()[listIndex]);
+	}
+	Q_EMIT selectedItemChanged();
 }
 
 /******************************************************************************
@@ -191,11 +137,42 @@ RefTarget* PipelineListModel::selectedObject() const
 QVector<RefTarget*> PipelineListModel::selectedObjects() const
 {
 	QVector<RefTarget*> objects;
-	for(int index : selectedIndices()) {
-		if(RefTarget* obj = item(index)->object())
+	for(PipelineListItem* item : selectedItems()) {
+		if(RefTarget* obj = item->object())
 			objects.push_back(obj);
 	}
 	return objects;
+}
+
+/******************************************************************************
+* Repaints a single item in the list as soon as control returns to the GUI event loop.
+******************************************************************************/
+void PipelineListModel::refreshItemLater(PipelineListItem* item)
+{
+	auto iter = boost::find(_items, item);
+	if(iter == _items.end())
+		return;
+	int index = std::distance(_items.begin(), iter);
+	if(boost::find(_itemsRefreshPending, index) != _itemsRefreshPending.end()) 
+		return;
+	_itemsRefreshPending.push_back(index);
+	// Invoke actual refresh function at a later time when control returns to the GUI event loop.
+	if(_itemsRefreshPending.size() == 1)
+		QTimer::singleShot(200, this, &PipelineListModel::refreshList);
+}
+
+/******************************************************************************
+* Will rebuild the model's list of items after a short delay.
+******************************************************************************/
+void PipelineListModel::refreshListLater() 
+{
+	bool wasEmpty = _itemsRefreshPending.empty();
+	if(!wasEmpty && _itemsRefreshPending.front() == -1) 
+		return;
+	_itemsRefreshPending.insert(_itemsRefreshPending.begin(), -1);
+	if(wasEmpty)
+		// Invoke actual refresh function at a later time when control returns to the GUI event loop.
+		QTimer::singleShot(200, this, &PipelineListModel::refreshList);
 }
 
 /******************************************************************************
@@ -203,36 +180,47 @@ QVector<RefTarget*> PipelineListModel::selectedObjects() const
 ******************************************************************************/
 void PipelineListModel::refreshList()
 {
-	_listRefreshPending = false;
+	if(_itemsRefreshPending.empty())
+		return;
 
-	// Determine the currently selected object and
-	// select it again after the list has been rebuilt (and it is still there).
-	// If _nextObjectToSelect is already non-null then the caller
-	// has specified an object to be selected.
-	QString nextObjectTitleToSelect;
-	if(_nextObjectToSelect == nullptr) {
-		if(PipelineListItem* item = selectedItem()) {
-			_nextObjectToSelect = item->object();
+	// Unless a full list refresh has been requested, just refresh individual list items 
+	// which have been marked for a pending update.
+	if(!_itemsRefreshPending.empty() && _itemsRefreshPending.front() != -1) {
+		for(int listIndex : _itemsRefreshPending) {
+			QModelIndex idx = index(listIndex);
+			Q_EMIT dataChanged(idx, idx);
+			if(_selectionModel->isSelected(idx))
+				Q_EMIT selectedItemChanged();
+		}
+		_itemsRefreshPending.clear();
+		return;
+	}
+
+	// Determine the currently selected objects and select them again after the list has been rebuilt.
+	// _nextObjectToSelect may have been set to replace the selection.
+	if(!_nextObjectToSelect) {
+		for(const QModelIndex& idx : _selectionModel->selectedRows()) {
+			OVITO_ASSERT(idx.isValid() && idx.row() < items().size());
+			_previouslySelectedItems.push_back(items()[idx.row()]);
 		}
 	}
-	RefTarget* defaultObjectToSelect = nullptr;
 
 	// Determine the selected pipeline.
-	_selectedPipeline.setTarget(nullptr);
     if(_datasetContainer.currentSet()) {
 		SelectionSet* selectionSet = _datasetContainer.currentSet()->selection();
 		_selectedPipeline.setTarget(dynamic_object_cast<PipelineSceneNode>(selectionSet->firstNode()));
     }
+	else _selectedPipeline.setTarget(nullptr);
 
-	std::vector<OORef<PipelineListItem>> newItems;
+	_nextInsertionItem = _items.begin();
 	if(selectedPipeline()) {
 
 		// Create list items for visualization elements.
 		for(DataVis* vis : selectedPipeline()->visElements()) {
-			newItems.push_back(new PipelineListItem(selectedPipeline()->getReplacementVisElement(vis), PipelineListItem::VisualElement));
+			if(_nextInsertionItem == _items.begin())
+				appendListItem(nullptr, PipelineListItem::VisualElementsHeader);
+			appendListItem(selectedPipeline()->getReplacementVisElement(vis), PipelineListItem::VisualElement);
 		}
-		if(!newItems.empty())
-			newItems.insert(newItems.begin(), new PipelineListItem(nullptr, PipelineListItem::VisualElementsHeader));
 
 		// Traverse the modifiers in the pipeline.
 		PipelineObject* pipelineObject = selectedPipeline()->dataProvider();
@@ -244,38 +232,35 @@ void PipelineListModel::refreshList()
 			if(ModifierApplication* modApp = dynamic_object_cast<ModifierApplication>(pipelineObject)) {
 
 				if(pipelineObject == firstPipelineObj)
-					newItems.push_back(new PipelineListItem(nullptr, PipelineListItem::ModificationsHeader));
+					appendListItem(nullptr, PipelineListItem::ModificationsHeader);
 
 				if(pipelineObject->isPipelineBranch(true))
-					newItems.push_back(new PipelineListItem(nullptr, PipelineListItem::PipelineBranch));
+					appendListItem(nullptr, PipelineListItem::PipelineBranch);
 
 				if(modApp->modifierGroup() != currentGroup) {
 					if(modApp->modifierGroup())
-						newItems.push_back(new PipelineListItem(modApp->modifierGroup(), PipelineListItem::ModifierGroup));
+						appendListItem(modApp->modifierGroup(), PipelineListItem::ModifierGroup);
 					currentGroup = modApp->modifierGroup();
 				}
 
 				if(!currentGroup || !currentGroup->isCollapsed())
-					newItems.push_back(new PipelineListItem(modApp, PipelineListItem::Modifier));
+					appendListItem(modApp, PipelineListItem::Modifier);
 
 				pipelineObject = modApp->input();
 			}
 			else if(pipelineObject) {
 
 				if(pipelineObject->isPipelineBranch(true))
-					newItems.push_back(new PipelineListItem(nullptr, PipelineListItem::PipelineBranch));
+					appendListItem(nullptr, PipelineListItem::PipelineBranch);
 
-				newItems.push_back(new PipelineListItem(nullptr, PipelineListItem::DataSourceHeader));
+				appendListItem(nullptr, PipelineListItem::DataSourceHeader);
 
 				// Create a list item for the data source.
-				PipelineListItem* item = new PipelineListItem(pipelineObject, PipelineListItem::DataSource);
-				newItems.push_back(item);
-				if(defaultObjectToSelect == nullptr)
-					defaultObjectToSelect = pipelineObject;
+				PipelineListItem* item = appendListItem(pipelineObject, PipelineListItem::DataSource);
 
 				// Create list items for the source's editable data objects.
 				if(const DataCollection* collection = pipelineObject->getSourceDataCollection()) {
-					createListItemsForSubobjects(collection, newItems, item);
+					createListItemsForSubobjects(collection, item);
 				}
 
 				// Done.
@@ -284,40 +269,26 @@ void PipelineListModel::refreshList()
 		}
 	}
 
-	int selIndex = -1;
-	int selDefaultIndex = -1;
-	int selTitleIndex = -1;
-	for(int i = 0; i < newItems.size(); i++) {
-		if(_nextObjectToSelect && _nextObjectToSelect == newItems[i]->object())
-			selIndex = i;
-		if(_nextSubObjectTitleToSelect.isEmpty() == false && _nextSubObjectTitleToSelect == newItems[i]->title())
-			selTitleIndex = i;
-		if(defaultObjectToSelect && defaultObjectToSelect == newItems[i]->object())
-			selDefaultIndex = i;
+	// Remove excess list items.
+	if(_nextInsertionItem != _items.end()) {
+		beginRemoveRows(QModelIndex(), std::distance(_items.begin(), _nextInsertionItem), _items.size() - 1);
+		_items.erase(_nextInsertionItem, _items.end());
+		endRemoveRows();
 	}
-	if(selIndex == -1)
-		selIndex = selTitleIndex;
-	if(selIndex == -1)
-		selIndex = selDefaultIndex;
 
-	setItems(std::move(newItems));
+	// Reset internal fields.
 	_nextObjectToSelect = nullptr;
-	_nextSubObjectTitleToSelect.clear();
+	_itemsRefreshPending.clear();
+	_previouslySelectedItems.clear();
 
-	// Select the right item in the list.
-	if(!items().empty()) {
-		if(selIndex == -1) {
-			for(int index = 0; index < items().size(); index++) {
-				if(item(index)->object()) {
-					selIndex = index;
-					break;
-				}
-			}
-		}
-		if(selIndex != -1 && item(selIndex)->isSubObject())
-			_nextSubObjectTitleToSelect = item(selIndex)->title();
-		_selectionModel->select(index(selIndex), QItemSelectionModel::SelectCurrent | QItemSelectionModel::Clear);
+	// Update the selection.
+	_selectedItems.clear();
+	for(int listIndex = 0; listIndex < items().size(); listIndex++) {
+		if(_itemsToSelect.contains(index(listIndex)))
+			_selectedItems.push_back(items()[listIndex]);
 	}
+	_selectionModel->select(std::move(_itemsToSelect), QItemSelectionModel::SelectCurrent | QItemSelectionModel::Clear);
+	_itemsToSelect.clear();
 	Q_EMIT selectedItemChanged();
 }
 
@@ -325,17 +296,86 @@ void PipelineListModel::refreshList()
 * Create the pipeline editor entries for the subjects of the given
 * object (and their subobjects).
 ******************************************************************************/
-void PipelineListModel::createListItemsForSubobjects(const DataObject* dataObj, std::vector<OORef<PipelineListItem>>& items, PipelineListItem* parentItem)
+void PipelineListModel::createListItemsForSubobjects(const DataObject* dataObj, PipelineListItem* parentItem)
 {
 	if(dataObj->showInPipelineEditor() && dataObj->editableProxy()) {
-		items.push_back(parentItem = new PipelineListItem(dataObj->editableProxy(), PipelineListItem::DataObject, parentItem));
+		parentItem = appendListItem(dataObj->editableProxy(), PipelineListItem::DataObject, parentItem);
 	}
 
 	// Recursively visit the sub-objects of the data object.
 	dataObj->visitSubObjects([&](const DataObject* subObject) {
-		createListItemsForSubobjects(subObject, items, parentItem);
+		createListItemsForSubobjects(subObject, parentItem);
 		return false;
 	});
+}
+
+/******************************************************************************
+* Is called during population of the list model.
+******************************************************************************/
+PipelineListItem* PipelineListModel::appendListItem(RefTarget* object, PipelineListItem::PipelineItemType itemType, PipelineListItem* parent)
+{
+	int listIndex = std::distance(_items.begin(), _nextInsertionItem);
+	QModelIndex modelIndex;
+
+	PipelineListItem* item;
+	if(_nextInsertionItem != _items.end()) {
+		modelIndex = index(listIndex);
+		if((*_nextInsertionItem)->object() != object || (*_nextInsertionItem)->itemType() != itemType || (*_nextInsertionItem)->parent() != parent) {
+			*_nextInsertionItem = OORef<PipelineListItem>::create(nullptr, object, itemType, parent);
+			connect(*_nextInsertionItem, &PipelineListItem::itemChanged, this, &PipelineListModel::refreshItemLater);
+			connect(*_nextInsertionItem, &PipelineListItem::subitemsChanged, this, &PipelineListModel::refreshListLater);
+			Q_EMIT dataChanged(modelIndex, modelIndex);
+		}
+		else {
+			if(boost::find(_itemsRefreshPending, listIndex) != _itemsRefreshPending.end()) {
+				Q_EMIT dataChanged(modelIndex, modelIndex);
+			}
+		}
+		item = *_nextInsertionItem++;
+	}
+	else {
+		beginInsertRows(QModelIndex(), _items.size(), _items.size());
+		_items.push_back(OORef<PipelineListItem>::create(nullptr, object, itemType, parent));
+		_nextInsertionItem = _items.end();
+		endInsertRows();
+		item = _items.back();
+		modelIndex = index(listIndex);
+		connect(item, &PipelineListItem::itemChanged, this, &PipelineListModel::refreshItemLater);
+		connect(item, &PipelineListItem::subitemsChanged, this, &PipelineListModel::refreshListLater);
+	}
+
+	// Determine whether this list item is going to be selected.
+	bool selectItem = false;
+	if(_nextObjectToSelect) {
+		// Select the pipeline object that has been explicitly requested.
+		if(_nextObjectToSelect == object)
+			selectItem = true;
+	}
+	else {
+		if(!_previouslySelectedItems.empty() && object != nullptr) {
+			// Check if the same list entry was selected before the list refresh.
+			for(const auto& oldItem : _previouslySelectedItems) {
+				if(oldItem->object() == object) {
+					selectItem = true;
+					break;
+				}
+				else if(itemType == PipelineListItem::DataObject && oldItem->itemType() == PipelineListItem::DataObject && oldItem->title() == item->title()) {
+					selectItem = true;
+					break;
+				}
+			}
+		}
+		else {
+			// The data source is the object to be selected initially. 
+			if(itemType == PipelineListItem::DataSource)
+				selectItem = true;
+		}
+	}
+
+	if(selectItem)
+		_itemsToSelect.select(modelIndex, modelIndex);
+
+	return item;
 }
 
 /******************************************************************************
@@ -355,20 +395,17 @@ void PipelineListModel::onPipelineEvent(RefTarget* source, const ReferenceEvent&
 }
 
 /******************************************************************************
-* Updates the appearance of a single list item.
+* Discards all list items.
 ******************************************************************************/
-void PipelineListModel::refreshItem(PipelineListItem* item)
+void PipelineListModel::clear() 
 {
-	OVITO_CHECK_OBJECT_POINTER(item);
-	auto iter = std::find(items().begin(), items().end(), item);
-	if(iter != items().end()) {
-		int i = std::distance(items().begin(), iter);
-		Q_EMIT dataChanged(index(i), index(i));
-
-		// Also update available actions if the changed item is currently selected.
-		if(selectedItem() == item)
-			Q_EMIT selectedItemChanged();
-	}
+	_itemsRefreshPending.clear();
+	if(_items.empty()) 
+		return;
+	beginRemoveRows(QModelIndex(), 0, (int)_items.size() - 1);
+	_items.clear();
+	_selectedPipeline.setTarget(nullptr);
+	endRemoveRows();
 }
 
 /******************************************************************************
@@ -443,6 +480,8 @@ void PipelineListModel::applyModifiers(const QVector<OORef<Modifier>>& modifiers
 	}
 	if(group)
 		setNextObjectToSelect(group);
+
+	refreshList();
 }
 
 /******************************************************************************
@@ -471,6 +510,8 @@ void PipelineListModel::deleteItems(const QVector<PipelineListItem*>& items)
 			deleteModifierApplication(modApp);
 		}
 	});
+
+	refreshList();
 }
 
 /******************************************************************************
@@ -524,17 +565,6 @@ QVariant PipelineListModel::data(const QModelIndex& index, int role) const
 	OVITO_ASSERT(index.row() >= 0 && index.row() < _items.size());
 
 	PipelineListItem* item = this->item(index.row());
-
-	// While the item or the model as a whole are being updated, do not access any model data, because it may be in an inconsistent state.
-	if(_listRefreshPending || item->isUpdatePending()) {
-		if(role == Qt::DisplayRole || role == TitleRole || role == Qt::EditRole)
-			return QString();
-		if(role == CheckedRole)
-			return false;
-		if(role == PipelineListModel::DecorationRole || role == PipelineListModel::ToolTipRole)
-			return QString();
-		return {};
-	}
 
 	if(role == Qt::DisplayRole || role == TitleRole) {
 		// Indent modifiers that are part of a group.
@@ -591,10 +621,6 @@ QVariant PipelineListModel::data(const QModelIndex& index, int role) const
 			if(!static_object_cast<ModifierGroup>(item->object())->isCollapsed())
 				return QStringLiteral("modify_modifier_group_expanded");
 		}
-//		if(item->isObjectActive()) {
-//			const_cast<QMovie&>(_statusPendingIcon).start();
-//			return QVariant::fromValue(_statusPendingIcon.currentPixmap());
-//		}
 		if(item->itemType() == PipelineListItem::ModifierGroup) {
 			if(item->status().type() == PipelineStatus::Success)
 				return QStringLiteral("modify_modifier_group_collapsed");
@@ -774,11 +800,11 @@ QHash<int, QByteArray> PipelineListModel::roleNames() const
 void PipelineListModel::updateActions()
 {
 	// Get all currently selected pipeline objects.
-	QVector<RefTarget*> objects = selectedObjects();
+	const QVector<RefTarget*>& objects = selectedObjects();
 
 	// Get the single currently selected object.
 	// While the items of the model are out of date, do not enable any actions and wait until the items list is rebuilt.
-	RefTarget* currentObject = (!_listRefreshPending && objects.size() == 1) ? objects.front() : nullptr;
+	RefTarget* currentObject = (_itemsRefreshPending.empty() && objects.size() == 1) ? objects.front() : nullptr;
 
 	// Check if all selected objects are deletable.
 	_deleteItemAction->setEnabled(!objects.empty() && boost::algorithm::all_of(objects, [](RefTarget* obj) {
@@ -1115,6 +1141,7 @@ bool PipelineListModel::moveModifierRange(OORef<ModifierApplication> head, OORef
 		tail->setInput(selectedPipeline()->dataProvider());
 		selectedPipeline()->setDataProvider(head);
 	}
+	refreshList();
 
 	return true;
 }
@@ -1257,6 +1284,7 @@ void PipelineListModel::moveItemUp(PipelineListItem* item)
 			tailModApp->setInput(insertBefore);
 		});
 	}
+	refreshList();
 }
 
 /******************************************************************************
@@ -1345,6 +1373,7 @@ void PipelineListModel::moveItemDown(PipelineListItem* item)
 			insertAfter->setInput(headModApp);
 		});
 	}
+	refreshList();
 }
 
 /******************************************************************************
@@ -1383,6 +1412,7 @@ void PipelineListModel::makeElementIndependent()
 			}
 		});
 	}
+	refreshList();
 }
 
 /******************************************************************************
@@ -1469,6 +1499,7 @@ void PipelineListModel::toggleModifierGroup()
 				}
 			});
 			setNextObjectToSelect(group);
+			refreshList();
 			return;
 		}
 	}
@@ -1487,6 +1518,7 @@ void PipelineListModel::toggleModifierGroup()
 			existingGroup->deleteReferenceObject();
 		});
 	}
+	refreshList();
 }
 
 }	// End of namespace

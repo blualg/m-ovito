@@ -8,7 +8,7 @@ Data tables
   :align: right
 
 This tab of the :ref:`data inspector <data_inspector>` panel shows the data tables and plots computed by the current pipeline. 
-A :ref:`data table <scene_objects.data_table>` is a collection of one or more data columns, which can be plotted as a graph, histogram or 
+A :ref:`data table <scene_objects.data_table>` is a collection of one or more data columns, which can be plotted as a graph, histogram, or 
 scatter plot.
   
 The current data pipeline may output several data tables, and the list box on the left

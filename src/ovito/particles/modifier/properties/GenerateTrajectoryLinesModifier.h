@@ -66,7 +66,7 @@ public:
 	/// Modifies the input data synchronously.
 	virtual void evaluateSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
 
-	/// Returns the the custom time interval.
+	/// Returns the custom time interval.
 	TimeInterval customInterval() const { return TimeInterval(_customIntervalStart, _customIntervalEnd); }
 
 	/// Updates the stored trajectories from the source particle object.

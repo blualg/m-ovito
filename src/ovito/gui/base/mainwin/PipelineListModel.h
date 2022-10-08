@@ -41,7 +41,7 @@ class OVITO_GUIBASE_EXPORT PipelineListModel : public QAbstractListModel
 
 #ifdef OVITO_QML_GUI
 	Q_PROPERTY(Ovito::RefTarget* selectedObject READ selectedObject NOTIFY selectedItemChanged)
-	Q_PROPERTY(int selectedIndex READ selectedIndex WRITE setSelectedIndex NOTIFY selectedItemChanged)
+	Q_PROPERTY(int selectedIndex READ selectedIndex NOTIFY selectedItemChanged)
 #endif
 
 public:
@@ -78,14 +78,7 @@ public:
 	QSize iconSize() const { return _statusInfoIcon.size(); }
 
 	/// Discards all list items.
-	void clear() {
-		if(_items.empty()) return;
-		beginRemoveRows(QModelIndex(), 0, (int)_items.size() - 1);
-		_items.clear();
-		_selectedPipeline.setTarget(nullptr);
-		endRemoveRows();
-		_listRefreshPending = false;
-	}
+	void clear();
 
 	/// Returns the associated selection model.
 	QItemSelectionModel* selectionModel() const { return _selectionModel; }
@@ -94,7 +87,7 @@ public:
 	PipelineListItem* selectedItem() const;
 
 	/// Returns the currently selected list items in the data pipeline editor.
-	QVector<PipelineListItem*> selectedItems() const;
+	const QVector<PipelineListItem*>& selectedItems() const { return _selectedItems; }
 
 	/// Returns the RefTarget object from the pipeline that is currently selected in the pipeline editor.
 	RefTarget* selectedObject() const;
@@ -102,30 +95,11 @@ public:
 	/// Returns the currently selected pipeline objects in the data pipeline editor.
 	QVector<RefTarget*> selectedObjects() const;
 
-	/// Returns the index of the model item that is currently selected in the pipeline editor.
-	int selectedIndex() const;
-
-	/// Returns the list of model indicaes that are currently selected in the pipeline editor.
-	QVector<int> selectedIndices() const;
-
-	/// Sets the index of the item that is currently selected in the pipeline editor.
-	void setSelectedIndex(int index) { 
-		if(selectedIndex() != index) {
-			if(index >= 0)
-				_selectionModel->select(this->index(index), QItemSelectionModel::SelectCurrent | QItemSelectionModel::Clear);
-			else
-				_selectionModel->clear();
-		}
-	}
-
 	/// Returns an item from the list model.
 	PipelineListItem* item(int index) const {
 		OVITO_ASSERT(index >= 0 && index < _items.size());
 		return _items[index];
 	}
-
-	/// Populates the model with the given list items.
-	void setItems(std::vector<OORef<PipelineListItem>> newItems);
 
 	/// Returns the list of items.
 	const std::vector<OORef<PipelineListItem>>& items() const { return _items; }
@@ -160,11 +134,8 @@ public:
 			if(modApp->modifierGroup() && modApp->modifierGroup()->isCollapsed())
 				obj = modApp->modifierGroup();
 		}
-		_nextObjectToSelect = obj; 
+		_nextObjectToSelect = obj;
 	}
-
-	/// Sets the item in the modification list that should be selected on the next list update.
-	void setNextSubObjectToSelectByTitle(const QString& title) { _nextSubObjectTitleToSelect = title; }
 
 	/// Moves a list item up one position in the stack.
 	void moveItemUp(PipelineListItem* item);
@@ -195,16 +166,11 @@ public Q_SLOTS:
 	/// Rebuilds the complete list immediately.
 	void refreshList();
 
-	/// Updates the appearance of a single list item.
-	void refreshItem(PipelineListItem* item);
+	/// Will rebuild the model's list of items after a short delay.
+	void refreshListLater();
 
-	/// Rebuilds the model's item list as soon as possible.
-	void refreshListLater() {
-		if(_listRefreshPending) return;	// List refresh is already pending.
-		_listRefreshPending = true;
-		// Invoke actual refresh function at a later time when control returns to the GUI event loop.
-		QMetaObject::invokeMethod(this, "refreshList", Qt::QueuedConnection);
-	}
+	/// Repaints a single item in the list as soon as control returns to the GUI event loop.
+	void refreshItemLater(PipelineListItem* item);
 
 	/// Deletes the pipeline objects that are currently selected in the list.
 	void deleteSelectedItems() { deleteItems(selectedItems()); }
@@ -237,6 +203,9 @@ public Q_SLOTS:
 
 private Q_SLOTS:
 
+	/// Is called when the QItemSelectionModel changes.
+	void onSelectionModelChanged();
+
 	/// Is called by the system when the animated status icon changed.
 	void iconAnimationFrameChanged();
 
@@ -251,8 +220,11 @@ private Q_SLOTS:
 
 private:
 
+	/// Is called during population of the list model.
+	PipelineListItem* appendListItem(RefTarget* object, PipelineListItem::PipelineItemType itemType, PipelineListItem* parent = nullptr);
+
 	/// Create the pipeline editor entries for the subjects of the given object (and their subobjects).
-	static void createListItemsForSubobjects(const DataObject* dataObj, std::vector<OORef<PipelineListItem>>& items, PipelineListItem* parentItem);
+	void createListItemsForSubobjects(const DataObject* dataObj, PipelineListItem* parentItem);
 
 	/// Replaces the a pipeline item with an independent copy.
 	PipelineObject* makeElementIndependentImpl(PipelineObject* pipelineObj, CloneHelper& cloneHelper);
@@ -266,20 +238,29 @@ private:
 	/// List of visible items in the model.
 	std::vector<OORef<PipelineListItem>> _items;
 
+	/// Points to the existing item which will overwritten by the next new item during list population.
+	std::vector<OORef<PipelineListItem>>::iterator _nextInsertionItem;
+
+	/// List of selected items that were selected prior to the list refresh.
+	std::vector<OORef<PipelineListItem>> _previouslySelectedItems;
+
 	/// Holds reference to the currently selected PipelineSceneNode.
 	RefTargetListener<PipelineSceneNode> _selectedPipeline;
 
 	/// The item in the list that should be selected on the next list update.
-	RefTarget* _nextObjectToSelect = nullptr;
+	OORef<RefTarget> _nextObjectToSelect;
 
-	/// The sub-object to select in the pipeline editor during the next refresh.
-	QString _nextSubObjectTitleToSelect;
+	/// The list items which will become the selected ones after a list refresh.
+	QItemSelection _itemsToSelect;
 
 	/// The selection model of the list view widget.
 	QItemSelectionModel* _selectionModel;
 
-	/// Indicates that the list of items needs to be updated.
-	bool _listRefreshPending = false;
+	/// The currently selected list items.
+	QVector<PipelineListItem*> _selectedItems;
+
+	/// List item indices that need to be repainted. A negative entry indicates a refresh of the entire list.
+	std::vector<int> _itemsRefreshPending;
 
 	// Status icons:
 	QPixmap _statusInfoIcon;

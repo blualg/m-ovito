@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -36,7 +36,7 @@
 namespace Ovito::Particles {
 
 /**
- * \brief A visualization element for rendering per-particle vector arrows.
+ * \brief Visualizes vector properties using arrow glyphs.
  */
 class OVITO_PARTICLES_EXPORT VectorVis : public DataVis
 {
@@ -91,7 +91,7 @@ public:
 protected:
 
 	/// Computes the bounding box of the arrows.
-	Box3 arrowBoundingBox(const PropertyObject* vectorProperty, const PropertyObject* positionProperty) const;
+	Box3 arrowBoundingBox(const PropertyObject* vectorProperty, const DataBuffer* basePositions) const;
 
 	/// This method is called once for this object after it has been completely loaded from a stream.
 	virtual void loadFromStreamComplete(ObjectLoadStream& stream) override;
@@ -102,7 +102,7 @@ protected:
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, reverseArrowDirection, setReverseArrowDirection);
 	DECLARE_SHADOW_PROPERTY_FIELD(reverseArrowDirection);
 
-	/// Controls how the arrows are positioned relative to the particles.
+	/// Controls how the arrows are positioned relative to the base points.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(ArrowPosition, arrowPosition, setArrowPosition, PROPERTY_FIELD_MEMORIZE);
 	DECLARE_SHADOW_PROPERTY_FIELD(arrowPosition);
 
@@ -131,7 +131,7 @@ protected:
 	/// Determines how the arrows are colored.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(VectorVis::ColoringMode, coloringMode, setColoringMode);
 
-	/// Transfer function for pseudo-color visualization of a particle property.
+	/// Transfer function for pseudo-color visualization of an auxiliary property.
 	DECLARE_MODIFIABLE_REFERENCE_FIELD(OORef<PropertyColorMapping>, colorMapping, setColorMapping);
 };
 
@@ -146,29 +146,26 @@ class OVITO_PARTICLES_EXPORT VectorPickInfo : public ObjectPickInfo
 public:
 
 	/// Constructor.
-	VectorPickInfo(VectorVis* visElement, DataOORef<const ParticlesObject> particles, ConstPropertyPtr vectorProperty) :
-		_visElement(visElement), _particles(std::move(particles)), _vectorProperty(std::move(vectorProperty)) {}
+	VectorPickInfo(VectorVis* visElement, const ConstDataObjectPath& dataPath) :
+		_visElement(visElement), _dataPath(dataPath.begin(), dataPath.end()) {}
 
-	/// Returns the particles object.
-	const DataOORef<const ParticlesObject>& particles() const { OVITO_ASSERT(_particles); return _particles; }
+	/// Returns the data collection path to the vector property.
+	const ConstDataObjectRefPath& dataPath() const { return _dataPath; }
 
 	/// Returns a human-readable string describing the picked object, which will be displayed in the status bar by OVITO.
 	virtual QString infoString(PipelineSceneNode* objectNode, quint32 subobjectId) override;
 
 	/// Given an sub-object ID returned by the Viewport::pick() method, looks up the
-	/// corresponding particle index.
-	size_t particleIndexFromSubObjectID(quint32 subobjID) const;
+	/// corresponding data element index.
+	size_t elementIndexFromSubObjectID(quint32 subobjID) const;
 
 private:
 
 	/// The vis element that rendered the arrows.
 	OORef<VectorVis> _visElement;
 
-	/// The particles object.
-	DataOORef<const ParticlesObject> _particles;
-
-	/// The vector property.
-	ConstPropertyPtr _vectorProperty;
+	/// The data collection path to the vector property.
+	ConstDataObjectRefPath _dataPath;
 };
 
 }	// End of namespace

@@ -17,7 +17,7 @@ output resolution and the background color of the rendered pictures.
 OVITO Pro provides several different rendering engines, which differ in terms of visual quality and rendering time.
 They are listed in the following table. The OpenGL rendering engine is the default choice. It is very fast and produces
 pictures that provide roughly the same basic visual quality as the interactive viewports of OVITO. The other available
-rendering engines can produce visually more appealing pictures but require also longer rendering times.
+rendering engines can produce visually more appealing pictures but also require longer rendering times.
 
 ================================================================ ===============================================================================================================
 Rendering engine                                                 Description

@@ -82,7 +82,7 @@ void TrajectoryVis::loadFromStreamComplete(ObjectLoadStream& stream)
 ******************************************************************************/
 Box3 TrajectoryVis::boundingBox(TimePoint time, const ConstDataObjectPath& path, const PipelineSceneNode* contextNode, const PipelineFlowState& flowState, TimeInterval& validityInterval)
 {
-	const TrajectoryObject* trajObj = dynamic_object_cast<TrajectoryObject>(path.back());
+	const TrajectoryObject* trajObj = path.lastAs<TrajectoryObject>();
 
 	// Get the simulation cell.
 	const SimulationCellObject* simulationCell = wrappedLines() ? flowState.getObject<SimulationCellObject>() : nullptr;
@@ -128,7 +128,7 @@ PipelineStatus TrajectoryVis::render(TimePoint time, const ConstDataObjectPath& 
 		return status;
 	}
 
-	const TrajectoryObject* trajObj = dynamic_object_cast<TrajectoryObject>(path.back());
+	const TrajectoryObject* trajObj = path.lastAs<TrajectoryObject>();
 
 	// Get the simulation cell.
 	const SimulationCellObject* simulationCell = wrappedLines() ? flowState.getObject<SimulationCellObject>() : nullptr;

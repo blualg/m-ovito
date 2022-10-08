@@ -193,7 +193,7 @@ protected:
 	/// \brief Marks this class as an abstract class that cannot be instantiated.
 	void setAbstract(bool abstract) { _isAbstract = abstract; }
 
-	/// \brief Changes the the human-readable display name of this plugin class.
+	/// \brief Changes the human-readable display name of this plugin class.
 	void setDisplayName(const QString& name) { _displayName = name; }
 
 	/// Sets a name alias for the class.

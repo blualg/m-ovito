@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -94,6 +94,12 @@ public:
 		OVITO_ASSERT(voxelIndex(index % shape()[0], (index / shape()[0]) % shape()[1], index / yz) == index);
 		return { index % shape()[0], (index / shape()[0]) % shape()[1], index / yz };
 	}
+
+	/// Returns the base coordinates for visualizing a vector property from this container using a VectorVis element.
+	virtual ConstDataBufferPtr getVectorVisBasePositions(const ConstDataObjectPath& path, const PipelineFlowState& state) const override;
+
+	/// Generates the info string to be displayed in the OVITO status bar for an element from this container.
+	virtual QString elementInfoString(size_t elementIndex, const ConstDataObjectRefPath& path = {}) const override;
 
 protected:
 

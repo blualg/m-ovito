@@ -50,7 +50,7 @@ NucleotidesVis::NucleotidesVis(ObjectCreationParams params) : ParticlesVis(param
 ******************************************************************************/
 Box3 NucleotidesVis::boundingBox(TimePoint time, const ConstDataObjectPath& path, const PipelineSceneNode* contextNode, const PipelineFlowState& flowState, TimeInterval& validityInterval)
 {
-	const ParticlesObject* particles = dynamic_object_cast<ParticlesObject>(path.back());
+	const ParticlesObject* particles = path.lastAs<ParticlesObject>();
 	if(!particles) return {};
 	particles->verifyIntegrity();
 	const PropertyObject* positionProperty = particles->getProperty(ParticlesObject::PositionProperty);
@@ -190,7 +190,7 @@ PipelineStatus NucleotidesVis::render(TimePoint time, const ConstDataObjectPath&
 	}
 
 	// Get input data.
-	const ParticlesObject* particles = dynamic_object_cast<ParticlesObject>(path.back());
+	const ParticlesObject* particles = path.lastAs<ParticlesObject>();
 	if(!particles) return {};
 	particles->verifyIntegrity();
 	const PropertyObject* positionProperty = particles->getProperty(ParticlesObject::PositionProperty);

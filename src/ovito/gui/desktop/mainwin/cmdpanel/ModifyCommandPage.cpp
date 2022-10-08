@@ -74,9 +74,6 @@ ModifyCommandPage::ModifyCommandPage(MainWindow& mainWindow, QWidget* parent) : 
 		static_cast<ModifierListModel*>(selector->model())->insertModifierByIndex(index);
 		selector->setCurrentIndex(0);
 	});
-	connect(_pipelineListModel, &PipelineListModel::selectedItemChanged, this, [&]() { 
-		_modifierSelector->setEnabled(_pipelineListModel->selectedItem() != nullptr); 
-	});
 
 	class PipelineListView : public QListView {
 	public:
@@ -251,7 +248,7 @@ void ModifyCommandPage::saveLayout()
 ******************************************************************************/
 void ModifyCommandPage::onSelectionChangeComplete(SelectionSet* newSelection)
 {
-	_pipelineListModel->refreshList();
+	_pipelineListModel->refreshListLater();
 }
 
 /******************************************************************************
@@ -260,17 +257,12 @@ void ModifyCommandPage::onSelectionChangeComplete(SelectionSet* newSelection)
 ******************************************************************************/
 void ModifyCommandPage::onSelectedItemChanged()
 {
-	PipelineListItem* currentItem = pipelineListModel()->selectedItem();
-	RefTarget* editObject = nullptr;
+	RefTarget* selectedObject = pipelineListModel()->selectedObject();
 
-	if(currentItem != nullptr) {
-		editObject = currentItem->object();
-		if(currentItem->isSubObject())
-			pipelineListModel()->setNextSubObjectToSelectByTitle(currentItem->title());
-	}
+	_modifierSelector->setEnabled(selectedObject != nullptr); 
 
-	if(editObject != _propertiesPanel->editObject()) {
-		_propertiesPanel->setEditObject(editObject);
+	if(selectedObject != _propertiesPanel->editObject()) {
+		_propertiesPanel->setEditObject(selectedObject);
 
 		// Request a viewport update whenever a new item in the pipeline editor is selected, 
 		// because the currently selected modifier may be rendering gizmos in the viewports. 
@@ -278,8 +270,8 @@ void ModifyCommandPage::onSelectedItemChanged()
 			_datasetContainer.currentSet()->viewportConfig()->updateViewports();
 	}
 
-	// Whenever no object is selected, show the About Panel containing information about the program.
-	if(currentItem == nullptr && pipelineListModel()->selectedIndex() == -1)
+	// Whenever no object is selected, show information about the program.
+	if(pipelineListModel()->selectedItems().empty())
 		_aboutRollout->show();
 	else
 		_aboutRollout->hide();

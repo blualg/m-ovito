@@ -141,6 +141,9 @@ private:
 	/// Indicates that a drag operation is in progress.
 	bool _isDragging;
 
+	/// Indicates that an update of the list of controllers has been scheduled.
+	bool _deferredUpdateScheduled = false;
+
 	QMetaObject::Connection _animIntervalChangedConnection;
 	QMetaObject::Connection _timeFormatChangedConnection;
 	QMetaObject::Connection _timeChangedConnection;

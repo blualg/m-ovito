@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -180,6 +180,12 @@ public:
 	/// Makes sure that all property arrays in this container have a consistent length.
 	/// If this is not the case, the method throws an exception.
 	void verifyIntegrity() const;
+
+	/// Returns the base coordinates for visualizing a vector property from this container using a VectorVis element.
+	virtual ConstDataBufferPtr getVectorVisBasePositions(const ConstDataObjectPath& path, const PipelineFlowState& state) const { return {}; }
+
+	/// Generates the info string to be displayed in the OVITO status bar for an element from this container.
+	virtual QString elementInfoString(size_t elementIndex, const ConstDataObjectRefPath& path = {}) const;
 
 protected:
 

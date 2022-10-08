@@ -130,9 +130,6 @@ protected:
 
 private:
 
-	/// Requests a source frame from the input sequence.
-	Future<PipelineFlowState> requestFrameInternal(int frame);
-
 	/// Updates the internal list of input frames.
 	/// Invalidates cached frames in case they did change.
 	void setListOfFrames(QVector<FileSourceImporter::Frame> frames);

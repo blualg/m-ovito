@@ -36,12 +36,12 @@ Troubleshooting connection problems
 
 Establishing a connection between OVITO and the SSH server may fail if the client and server cannot agree on a common authentication and encryption method. 
 OVITO's built-in SSH client is based on the :program:`libssh` library, which supports a specific set of SSH key exchange methods, 
-public key algorithms, ciphers and authentication methods (`see here <https://www.libssh.org/features/>`__). During the handshaking process,
+public key algorithms, ciphers, and authentication methods (`see here <https://www.libssh.org/features/>`__). During the handshaking process,
 both parties need to agree on at least one common choice from each of these categories to successfully establish an SSH connection. 
 
 .. note::
 
-  The :program:`libssh` library is not identical with the `OpenSSH <https://www.openssh.com>`__ command line programs (:program:`ssh` & :program:`scp`), 
+  The :program:`libssh` library is not identical to the `OpenSSH <https://www.openssh.com>`__ command line programs (:program:`ssh` & :program:`scp`), 
   which are installed on most Unix/Linux systems and which support a wider range of SSH connection methods. 
   These tools are, however, difficult to integrate into cross-platform software such as OVITO.
 

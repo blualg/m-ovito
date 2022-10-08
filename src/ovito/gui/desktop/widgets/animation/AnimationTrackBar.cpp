@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -75,7 +75,7 @@ void AnimationTrackBar::onAnimationSettingsReplaced(AnimationSettings* newAnimat
 	if(newAnimationSettings) {
 		_animIntervalChangedConnection = connect(newAnimationSettings, &AnimationSettings::intervalChanged, this, (void (AnimationTrackBar::*)())&AnimationTrackBar::update);
 		_timeFormatChangedConnection = connect(newAnimationSettings, &AnimationSettings::timeFormatChanged, this, (void (AnimationTrackBar::*)())&AnimationTrackBar::update);
-		_timeChangedConnection = connect(newAnimationSettings, &AnimationSettings::timeChanged, this, (void (AnimationTrackBar::*)())&AnimationTrackBar::repaint);
+		_timeChangedConnection = connect(newAnimationSettings, &AnimationSettings::timeChanged, this, (void (AnimationTrackBar::*)())&AnimationTrackBar::update);
 	}
 	update();
 }
@@ -212,6 +212,7 @@ void AnimationTrackBar::onRebuildControllerList()
 		}
 	}
 
+	_deferredUpdateScheduled = false;
 	update();
 }
 
@@ -276,10 +277,12 @@ void AnimationTrackBar::onObjectNotificationEvent(RefTarget* source, const Refer
 {
 	// Rebuild the complete controller list whenever the reference object changes.
 	if(event.type() == ReferenceEvent::ReferenceChanged || event.type() == ReferenceEvent::ReferenceAdded || event.type() == ReferenceEvent::ReferenceRemoved) {
-		if(!_objects.targets().empty()) {
+		if(!_objects.targets().empty() && !static_cast<const PropertyFieldEvent&>(event).field()->flags().testFlag(PROPERTY_FIELD_NO_SUB_ANIM)) {
 			_objects.clear();
-			_controllers.clear();
-			QMetaObject::invokeMethod(this, "onRebuildControllerList", Qt::QueuedConnection);
+			if(!_deferredUpdateScheduled) {
+				_deferredUpdateScheduled = true;
+				QTimer::singleShot(100, this, &AnimationTrackBar::onRebuildControllerList);
+			}
 		}
 	}
 }

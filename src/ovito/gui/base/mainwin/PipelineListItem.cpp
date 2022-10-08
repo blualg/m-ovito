@@ -58,14 +58,14 @@ bool PipelineListItem::referenceEvent(RefTarget* source, const ReferenceEvent& e
 	// from a PipelineObject, or if a data object has been added/removed from the data source.
 	if((event.type() == ReferenceEvent::ReferenceAdded || event.type() == ReferenceEvent::ReferenceRemoved || event.type() == ReferenceEvent::ReferenceChanged) && dynamic_object_cast<PipelineObject>(object())) {
 		if(event.type() == ReferenceEvent::ReferenceChanged && static_cast<const ReferenceFieldEvent&>(event).field() == PROPERTY_FIELD(ModifierApplication::modifierGroup)) {
-			emitItemChangedLater();
+			Q_EMIT itemChanged(this);
 		}
 		Q_EMIT subitemsChanged(this);
 	}
 	// Update item if it has been enabled/disabled, its status has changed, or its title has changed.
 	else if(event.type() == ReferenceEvent::TargetEnabledOrDisabled || event.type() == ReferenceEvent::ObjectStatusChanged || event.type() == ReferenceEvent::TitleChanged) {
 		updateTitle();
-		emitItemChangedLater();
+		Q_EMIT itemChanged(this);
 	}
 	// Update item (and the entire list) if a group is being collapsed or uncollapsed.
 	else if(event.type() == ReferenceEvent::TargetChanged && static_cast<const PropertyFieldEvent&>(event).field() == PROPERTY_FIELD(ModifierGroup::isCollapsed)) {

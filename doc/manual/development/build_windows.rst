@@ -3,7 +3,7 @@
 Building OVITO on Windows
 ===============================
 
-The required steps are quite involved, in particular those for building/installing the prerequisites, 
+The required steps are quite involved, particularly those for building/installing the prerequisites, 
 and the available instructions may be insufficient. Please get in touch with the developers if you want to 
 build OVITO on the Windows platform.
 

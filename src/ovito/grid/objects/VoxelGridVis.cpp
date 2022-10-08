@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -80,7 +80,7 @@ void VoxelGridVis::loadFromStreamComplete(ObjectLoadStream& stream)
 ******************************************************************************/
 Box3 VoxelGridVis::boundingBox(TimePoint time, const ConstDataObjectPath& path, const PipelineSceneNode* contextNode, const PipelineFlowState& flowState, TimeInterval& validityInterval)
 {
-	if(const VoxelGrid* gridObj = dynamic_object_cast<VoxelGrid>(path.back())) {
+	if(const VoxelGrid* gridObj = path.lastAs<VoxelGrid>()) {
 		if(gridObj->domain()) {
 			AffineTransformation matrix = gridObj->domain()->cellMatrix();
 			if(gridObj->domain()->is2D()) {
@@ -107,7 +107,7 @@ PipelineStatus VoxelGridVis::render(TimePoint time, const ConstDataObjectPath& p
 	}
 
 	// Get the grid object being rendered.
-	const VoxelGrid* gridObj = dynamic_object_cast<VoxelGrid>(path.back());
+	const VoxelGrid* gridObj = path.lastAs<VoxelGrid>();
 	if(!gridObj) return status;
 
 	// Throws an exception if the input data structure is corrupt.
@@ -637,50 +637,7 @@ QString VoxelGridPickInfo::infoString(PipelineSceneNode* objectNode, quint32 sub
 		// Retrieve the property values of the grid cell.
 		if(coords) {
 			if(!str.isEmpty()) str += QStringLiteral("<sep>");
-			str += tr("Cell ");
-			if(voxelGrid()->domain()->is2D() && voxelGrid()->shape()[2] <= 1)
-				str += QStringLiteral("(%1, %2)").arg((*coords)[0]).arg((*coords)[1]);
-			else
-				str += QStringLiteral("(%1, %2, %3)").arg((*coords)[0]).arg((*coords)[1]).arg((*coords)[2]);
-			size_t cellIndex = voxelGrid()->voxelIndex((*coords)[0], (*coords)[1], (*coords)[2]);
-			for(const PropertyObject* property : voxelGrid()->properties()) {
-				if(cellIndex >= property->size()) continue;
-				if(property->type() == VoxelGrid::ColorProperty) continue;
-				str += QStringLiteral("<sep>");
-				str += QStringLiteral("<key>");
-				str += property->name();
-				str += QStringLiteral(":</key> ");
-				if(property->dataType() == PropertyObject::Int) {
-					ConstPropertyAccess<int, true> data(property);
-					for(size_t component = 0; component < data.componentCount(); component++) {
-						if(component != 0) str += QStringLiteral(", ");
-						str += QString::number(data.get(cellIndex, component));
-						if(property->elementTypes().empty() == false) {
-							if(const ElementType* ptype = property->elementType(data.get(cellIndex, component))) {
-								if(!ptype->name().isEmpty())
-									str += QStringLiteral(" (%1)").arg(ptype->name());
-							}
-						}
-					}
-				}
-				else if(property->dataType() == PropertyObject::Int64) {
-					ConstPropertyAccess<qlonglong, true> data(property);
-					for(size_t component = 0; component < property->componentCount(); component++) {
-						if(component != 0) str += QStringLiteral(", ");
-						str += QString::number(data.get(cellIndex, component));
-					}
-				}
-				else if(property->dataType() == PropertyObject::Float) {
-					ConstPropertyAccess<FloatType, true> data(property);
-					for(size_t component = 0; component < property->componentCount(); component++) {
-						if(component != 0) str += QStringLiteral(", ");
-						str += QString::number(data.get(cellIndex, component));
-					}
-				}
-				else {
-					str += QStringLiteral("<%1>").arg(getQtTypeNameFromId(property->dataType()) ? getQtTypeNameFromId(property->dataType()) : QStringLiteral("unknown"));
-				}
-			}
+			str += voxelGrid()->elementInfoString(voxelGrid()->voxelIndex((*coords)[0], (*coords)[1], (*coords)[2]));
 		}
 	}
 

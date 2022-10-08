@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -338,6 +338,9 @@ private:
 
 	/// Task that prepares the scene after an animation time change.
 	SharedFuture<> _sceneReadyFuture;
+
+	/// Measures how long it took to load, compute, and render the current animation frame.
+	QElapsedTimer _frameRenderingTimer;
 };
 
 /**

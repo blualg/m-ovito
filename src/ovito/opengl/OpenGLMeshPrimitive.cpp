@@ -117,7 +117,7 @@ void OpenGLSceneRenderer::renderMeshImplementation(const MeshPrimitive& primitiv
 		shader.setPickingBaseId(registerSubObjectIDs(primitive.useInstancedRendering() ? primitive.perInstanceTMs()->size() : mesh.faceCount()));
 	}
 
-    // The look-up key for the buffer cache.
+    // The lookup key for the buffer cache.
     RendererResourceKey<struct MeshBufferCache, DataOORef<const TriMeshObject>, std::vector<ColorA>, ColorA, Color> meshCacheKey{
         primitive.mesh(),
         primitive.materialColors(),
@@ -313,7 +313,7 @@ QOpenGLBuffer OpenGLSceneRenderer::getMeshInstanceTMBuffer(const MeshPrimitive& 
     OVITO_ASSERT(primitive.useInstancedRendering());
     OVITO_ASSERT(primitive.perInstanceTMs());
 
-    // The look-up key for storing the per-instance TMs in the cache.
+    // The lookup key for storing the per-instance TMs in the cache.
     RendererResourceKey<struct InstanceTMCache, ConstDataBufferPtr> cacheKey(primitive.perInstanceTMs());
 
     // Upload the per-instance TMs to GPU memory.

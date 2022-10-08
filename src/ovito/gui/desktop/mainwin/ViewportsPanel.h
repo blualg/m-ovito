@@ -122,7 +122,6 @@ private:
 	QMetaObject::Connection _maximizedViewportChangedConnection;
 	QMetaObject::Connection _viewportLayoutChangedConnection;
 	QMetaObject::Connection _autoKeyModeChangedConnection;
-	QMetaObject::Connection _timeChangeCompleteConnection;
 	QMetaObject::Connection _activeModeCursorChangedConnection;
 
 	OORef<ViewportConfiguration> _viewportConfig;

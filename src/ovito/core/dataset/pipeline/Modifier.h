@@ -99,7 +99,7 @@ public:
 	/// \undoable
 	void setObjectTitle(const QString& title) { setTitle(title); }
 
-	/// \brief Returns the the current status of the modifier's applications.
+	/// \brief Returns the current status of the modifier's applications.
 	PipelineStatus globalStatus() const;
 
 	/// \brief Returns a short piece information (typically a string or color) to be displayed next to the modifier's title in the pipeline editor list.

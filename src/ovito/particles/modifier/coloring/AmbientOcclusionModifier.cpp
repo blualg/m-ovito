@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -69,9 +69,12 @@ bool AmbientOcclusionModifier::OOMetaClass::isApplicableTo(const DataCollection&
 ******************************************************************************/
 Future<AsynchronousModifier::EnginePtr> AmbientOcclusionModifier::createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input)
 {
-	if(Application::instance()->headlessMode())
-		throwException(tr("The ambient occlusion modifier requires OpenGL support and cannot be used when program is running in headless mode. "
-						  "Please run program in an environment where access to graphics hardware is available. On Linux this requires a local X server."));
+	if(Application::instance()->headlessMode()) {
+		throwException(tr(
+				"OVITO's ambient occlusion modifier requires OpenGL support and cannot be used in headless mode, that is if the application is running without access to a graphics environment. "
+				"Please see https://docs.ovito.org/python/modules/ovito_vis.html#ovito.vis.OpenGLRenderer for instructions "
+				"on how to enable OpenGL support in Python script environments."));
+	}
 
 	// Get modifier input.
 	const ParticlesObject* particles = input.expectObject<ParticlesObject>();

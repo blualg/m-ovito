@@ -59,8 +59,9 @@ SimulationCellVis::SimulationCellVis(ObjectCreationParams params) : DataVis(para
 ******************************************************************************/
 Box3 SimulationCellVis::boundingBox(TimePoint time, const ConstDataObjectPath& path, const PipelineSceneNode* contextNode, const PipelineFlowState& flowState, TimeInterval& validityInterval)
 {
-	const SimulationCellObject* cellObject = dynamic_object_cast<SimulationCellObject>(path.back());
-	OVITO_CHECK_OBJECT_POINTER(cellObject);
+	const SimulationCellObject* cellObject = path.lastAs<SimulationCellObject>();
+	if(!cellObject)
+		return {};
 
 	AffineTransformation matrix = cellObject->cellMatrix();
 	if(cellObject->is2D()) {
@@ -76,8 +77,7 @@ Box3 SimulationCellVis::boundingBox(TimePoint time, const ConstDataObjectPath& p
 ******************************************************************************/
 PipelineStatus SimulationCellVis::render(TimePoint time, const ConstDataObjectPath& path, const PipelineFlowState& flowState, SceneRenderer* renderer, const PipelineSceneNode* contextNode)
 {
-	const SimulationCellObject* cell = dynamic_object_cast<SimulationCellObject>(path.back());
-	OVITO_CHECK_OBJECT_POINTER(cell);
+	const SimulationCellObject* cell = path.lastAs<SimulationCellObject>();
 	if(!cell) return {};
 
 	if(renderer->isInteractive() && !renderer->viewport()->renderPreviewMode()) {

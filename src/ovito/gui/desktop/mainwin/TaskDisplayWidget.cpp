@@ -40,7 +40,7 @@ TaskDisplayWidget::TaskDisplayWidget(MainWindow* mainWindow) : _mainWindow(mainW
 	QHBoxLayout* progressWidgetLayout = new QHBoxLayout(this);
 	progressWidgetLayout->setContentsMargins(10,0,0,0);
 	progressWidgetLayout->setSpacing(0);
-	_progressTextDisplay = new ElidedTextLabel();
+	_progressTextDisplay = new ElidedTextLabel(Qt::ElideLeft);
 	_progressTextDisplay->setLineWidth(0);
 	_progressTextDisplay->setAlignment(Qt::Alignment(Qt::AlignRight | Qt::AlignVCenter));
 	_progressTextDisplay->setAutoFillBackground(true);
@@ -121,17 +121,19 @@ void TaskDisplayWidget::timerEvent(QTimerEvent* event)
 void TaskDisplayWidget::updateIndicator()
 {
 	if(TaskWatcher* watcher = pickVisibleTask()) {
-		qlonglong maximum = watcher->progressMaximum();
-		if(maximum < (qlonglong)std::numeric_limits<int>::max()) {
-			_progressBar->setRange(0, (int)maximum);
-			_progressBar->setValue((int)watcher->progressValue());
+		if(!_delayTimer.isActive()) {
+			qlonglong maximum = watcher->progressMaximum();
+			if(maximum < (qlonglong)std::numeric_limits<int>::max()) {
+				_progressBar->setRange(0, (int)maximum);
+				_progressBar->setValue((int)watcher->progressValue());
+			}
+			else {
+				_progressBar->setRange(0, 1000);
+				_progressBar->setValue((int)(watcher->progressValue() * 1000ll / maximum));
+			}
+			_progressTextDisplay->setText(watcher->progressText());
+			show();
 		}
-		else {
-			_progressBar->setRange(0, 1000);
-			_progressBar->setValue((int)(watcher->progressValue() * 1000ll / maximum));
-		}
-		_progressTextDisplay->setText(watcher->progressText());
-		show();
 	}
 	else {
 		_delayTimer.stop();

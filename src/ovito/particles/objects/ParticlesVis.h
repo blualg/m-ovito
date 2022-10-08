@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -159,9 +159,6 @@ public:
 	/// Given an sub-object ID returned by the Viewport::pick() method, looks up the
 	/// corresponding particle index.
 	size_t particleIndexFromSubObjectID(quint32 subobjID) const;
-
-	/// Builds the info string for a particle to be displayed in the status bar.
-	static QString particleInfoString(const ParticlesObject& particles, size_t particleIndex);
 
 private:
 
