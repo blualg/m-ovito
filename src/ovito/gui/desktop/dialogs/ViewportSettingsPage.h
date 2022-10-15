@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2019 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -44,6 +44,9 @@ public:
 	/// \brief Creates the widget.
 	virtual void insertSettingsDialogPage(ApplicationSettingsDialog* settingsDialog, QTabWidget* tabWidget) override;
 
+	/// \brief Lets the settings page validate the values entered by the user before saving them.
+	virtual bool validateValues(ApplicationSettingsDialog* settingsDialog, QTabWidget* tabWidget) override;
+
 	/// \brief Lets the settings page to save all values entered by the user.
 	/// \param settingsDialog The settings dialog box.
 	virtual void saveValues(ApplicationSettingsDialog* settingsDialog, QTabWidget* tabWidget) override;
@@ -54,11 +57,14 @@ public:
 private:
 
 	/// The settings object being modified.
-	ViewportSettings _settings;
+	ViewportSettings _viewportSettings;
 
 	QButtonGroup* _upDirectionGroup;
 	QCheckBox* _constrainCameraRotationBox;
 	QButtonGroup* _colorScheme;
+	QButtonGroup* _graphicsSystem;
+	QComboBox* _vulkanDevices;
+	QComboBox* _transparencyRenderingMethod;
 };
 
 }	// End of namespace

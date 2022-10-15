@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -23,7 +23,7 @@
 #include <ovito/gui/desktop/GUI.h>
 #include "HistoryFileDialog.h"
 
-#define MAX_DIRECTORY_HISTORY_SIZE	5
+#define MAX_DIRECTORY_HISTORY_SIZE	1
 
 namespace Ovito {
 
@@ -46,12 +46,14 @@ HistoryFileDialog::HistoryFileDialog(const QString& dialogClass, QWidget* parent
 	if(settings.value("file/use_qt_dialog", false).toBool())
 		setOption(QFileDialog::DontUseNativeDialog);
 
-	QStringList history = loadDirHistory();
-	if(history.isEmpty() == false) {
-		if(directory.isEmpty()) {
-			setDirectory(history.front());
+	if(keepWorkingDirectoryHistoryEnabled()) {
+		QStringList history = loadDirHistory();
+		if(history.isEmpty() == false) {
+			if(directory.isEmpty()) {
+				setDirectory(history.front());
+			}
+			setHistory(history);
 		}
-		setHistory(history);
 	}
 }
 
@@ -60,19 +62,22 @@ HistoryFileDialog::HistoryFileDialog(const QString& dialogClass, QWidget* parent
 ******************************************************************************/
 void HistoryFileDialog::onFileSelected(const QString& file)
 {
-	if(file.isEmpty()) return;
-	QString currentDir = QFileInfo(file).absolutePath();
+	if(file.isEmpty()) 
+		return;
 
-	QStringList history = loadDirHistory();
-	int index = history.indexOf(currentDir);
-	if(index >= 0)
-		history.move(index, 0);
-	else {
-		history.push_front(currentDir);
-		if(history.size() > MAX_DIRECTORY_HISTORY_SIZE)
-			history.erase(history.begin() + MAX_DIRECTORY_HISTORY_SIZE, history.end());
+	if(keepWorkingDirectoryHistoryEnabled()) {
+		QString currentDir = QFileInfo(file).absolutePath();
+		QStringList history = loadDirHistory();
+		int index = history.indexOf(currentDir);
+		if(index >= 0)
+			history.move(index, 0);
+		else {
+			history.push_front(currentDir);
+			if(history.size() > MAX_DIRECTORY_HISTORY_SIZE)
+				history.erase(history.begin() + MAX_DIRECTORY_HISTORY_SIZE, history.end());
+		}
+		saveDirHistory(history);
 	}
-	saveDirHistory(history);
 }
 
 /******************************************************************************

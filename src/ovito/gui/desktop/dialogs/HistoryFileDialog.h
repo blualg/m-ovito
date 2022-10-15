@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -38,6 +38,28 @@ public:
 
 	/// \brief Constructs the dialog window.
 	HistoryFileDialog(const QString& dialogClass, QWidget* parent = nullptr, const QString& caption = QString(), const QString& directory = QString(), const QString& filter = QString());
+
+	/// Returns whether the user has activated the program option to maintain separate
+	/// working directories for different file I/O operations.
+	static bool keepWorkingDirectoryHistoryEnabled() {
+#ifdef Q_OS_LINUX
+		return QSettings().value("file/keep_dir_history", false).toBool();
+#else
+		return QSettings().value("file/keep_dir_history", true).toBool();
+#endif
+	}
+
+	/// Sets whether to maintain separate working directories for different file I/O operations.
+	static void setKeepWorkingDirectoryHistoryEnabled(bool on) {
+		QSettings settings;
+#ifdef Q_OS_LINUX
+		if(on) settings.setValue("file/keep_dir_history", true);
+		else settings.remove("file/keep_dir_history");
+#else
+		if(!on) settings.setValue("file/keep_dir_history", false);
+		else settings.remove("file/keep_dir_history");
+#endif
+	}
 
 private Q_SLOTS:
 

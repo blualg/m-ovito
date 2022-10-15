@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -43,9 +43,6 @@ public:
 	/// \brief Creates the widget.
 	virtual void insertSettingsDialogPage(ApplicationSettingsDialog* settingsDialog, QTabWidget* tabWidget) override;
 
-	/// \brief Lets the settings page validate the values entered by the user before saving them.
-	virtual bool validateValues(ApplicationSettingsDialog* settingsDialog, QTabWidget* tabWidget) override;
-
 	/// \brief Lets the settings page to save all values entered by the user.
 	virtual void saveValues(ApplicationSettingsDialog* settingsDialog, QTabWidget* tabWidget) override;
 
@@ -54,11 +51,8 @@ public:
 
 private:
 
-	QCheckBox* _useQtFileDialog;
+	QCheckBox* _keepDirHistory;
 	QCheckBox* _sortModifiersByCategory;
-	QButtonGroup* _graphicsSystem;
-	QComboBox* _vulkanDevices;
-	QComboBox* _transparencyRenderingMethod;
 #if !defined(OVITO_BUILD_APPSTORE_VERSION)
 	QCheckBox* _enableUpdateChecks;
 #endif
