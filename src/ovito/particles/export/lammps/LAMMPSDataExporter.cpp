@@ -289,11 +289,14 @@ bool LAMMPSDataExporter::exportData(const PipelineFlowState& state, int frameNum
 	if(exportTypeNames()) {
 
 		// Helper function that mangles an OVITO type name to make it a valid LAMMPS type label.
+		// Type label strings may not contain a digit, or a '*', or a '#' character as the
+		// first character to distinguish them from comments and numeric types or type ranges.
+		// They also may not contain any whitespace.
 		auto makeLAMMPSTypeLabel = [](QString typeName) {
 			for(int i = 0; i < typeName.size(); i++)
-				if(QChar c = typeName.at(i); c == QChar('#') || c == QChar('*') || c.isSpace() || !c.isPrint()) 
+				if(QChar c = typeName.at(i); c.isSpace() || !c.isPrint()) 
 					typeName[i] = QChar('_');
-			if(!typeName.isEmpty() && typeName.at(0).isNumber())
+			if(!typeName.isEmpty() && (typeName.at(0) == QChar('#') || typeName.at(0) == QChar('*') || typeName.at(0).isNumber()))
 				typeName.prepend(QChar('_'));
 			return typeName;
 		};
