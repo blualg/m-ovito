@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -61,6 +61,7 @@ VoxelGridSliceModifierDelegate::VoxelGridSliceModifierDelegate(ObjectCreationPar
 PipelineStatus VoxelGridSliceModifierDelegate::apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const PipelineFlowState& inputState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs)
 {
 	OVITO_ASSERT(!dataset()->undoStack().isRecording());
+	OVITO_ASSERT(inputState);
 
 	SliceModifier* mod = static_object_cast<SliceModifier>(request.modifier());
 	QString statusMessage;
@@ -81,10 +82,8 @@ PipelineStatus VoxelGridSliceModifierDelegate::apply(const ModifierEvaluationReq
 		planes[numPlanes++] = Plane3(-plane.normal, -plane.dist + sliceWidth);
 	}
 
-	// Note: Using index-based instead of range-based for-loop here, because the 
-	// object list gets modified within the loop.
-	for(int idx = 0; idx < state.data()->objects().size(); idx++) {
-		if(const VoxelGrid* voxelGrid = dynamic_object_cast<VoxelGrid>(state.data()->objects()[idx].get())) {
+	for(const DataObject* obj : inputState.data()->objects()) {
+		if(const VoxelGrid* voxelGrid = dynamic_object_cast<VoxelGrid>(obj)) {
 			// Get domain of voxel grid.
 			VoxelGrid::GridDimensions gridShape = voxelGrid->shape();
 

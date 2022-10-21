@@ -299,6 +299,10 @@ void XSFImporter::FrameLoader::loadFile()
 				voxelGrid->setShape(gridSize);
 				voxelGrid->setContent(gridSize[0] * gridSize[1] * gridSize[2], {});
 			}
+			else {
+				// This is to make sure element count and shape of VoxelGrid are in sync.
+				voxelGrid->setElementCount(gridSize[0] * gridSize[1] * gridSize[2]);
+			}
 
 			AffineTransformation cell = AffineTransformation::Identity();
 			if(sscanf(stream.readLine(), FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING,

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -46,64 +46,66 @@ PipelineStatus SurfaceMeshSliceModifierDelegate::apply(const ModifierEvaluationR
 	sliceWidth /= 2;
 	bool invert = mod->inverse();
 
-	for(const DataObject* obj : state.data()->objects()) {
+	for(const DataObject* obj : inputState.data()->objects()) {
 		if(const SurfaceMesh* inputMesh = dynamic_object_cast<SurfaceMesh>(obj)) {
-			inputMesh->verifyMeshIntegrity();
-			SurfaceMesh* outputMesh = state.makeMutable(inputMesh);
-			if(!mod->createSelection()) {
-				QVector<Plane3> planes = outputMesh->cuttingPlanes();
-				if(sliceWidth <= 0) {
-					planes.push_back(plane);
+			if(state.data()->contains(obj)) {
+				inputMesh->verifyMeshIntegrity();
+				SurfaceMesh* outputMesh = state.makeMutable(inputMesh);
+				if(!mod->createSelection()) {
+					QVector<Plane3> planes = outputMesh->cuttingPlanes();
+					if(sliceWidth <= 0) {
+						planes.push_back(plane);
+					}
+					else {
+						planes.push_back(Plane3( plane.normal,  plane.dist + sliceWidth));
+						planes.push_back(Plane3(-plane.normal, -plane.dist + sliceWidth));
+					}
+					outputMesh->setCuttingPlanes(std::move(planes));
 				}
 				else {
-					planes.push_back(Plane3( plane.normal,  plane.dist + sliceWidth));
-					planes.push_back(Plane3(-plane.normal, -plane.dist + sliceWidth));
-				}
-				outputMesh->setCuttingPlanes(std::move(planes));
-			}
-			else {
-				// Create a mesh vertex selection.
-				if(SurfaceMeshVertices* outputVertices = outputMesh->makeVerticesMutable()) {
-					ConstPropertyAccess<Point3> vertexPositionProperty = outputVertices->expectProperty(SurfaceMeshVertices::PositionProperty);
-					PropertyAccess<int> vertexSelectionProperty = outputVertices->createProperty(SurfaceMeshVertices::SelectionProperty);
-					size_t numSelectedVertices = 0;
-					boost::transform(vertexPositionProperty, vertexSelectionProperty.begin(), [&](const Point3& pos) {
-						bool selectionState = 
-							(sliceWidth <= 0) ?
-								(plane.pointDistance(pos) > 0) :
-								(invert == (plane.classifyPoint(pos, sliceWidth) == 0));
-						if(selectionState)
-							numSelectedVertices++;
-						return selectionState ? 1 : 0;
-					});
-					if(!statusMessage.isEmpty()) statusMessage += QChar('\n');
-					statusMessage += tr("%1 of %2 mesh vertices selected").arg(numSelectedVertices).arg(outputVertices->elementCount());
-
-					// Create a mesh face selection.
-					if(SurfaceMeshFaces* outputFaces = outputMesh->makeFacesMutable()) {
-						PropertyAccess<int> faceSelectionProperty = outputFaces->createProperty(SurfaceMeshFaces::SelectionProperty);
-						size_t numSelectedFaces = 0;
-						const SurfaceMeshTopology* topology = outputMesh->topology();
-						auto firstFaceEdge = topology->firstFaceEdges().cbegin();
-						OVITO_ASSERT(topology->firstFaceEdges().size() == faceSelectionProperty.size());
-						for(int& selected : faceSelectionProperty) {
-							SurfaceMesh::edge_index ffe = *firstFaceEdge++;
-							SurfaceMesh::edge_index e = ffe;
-							selected = 1;
-							do {
-								SurfaceMesh::vertex_index ev = topology->vertex2(e);
-								if(ev < 0 || ev >= vertexSelectionProperty.size() || !vertexSelectionProperty[ev]) {
-									selected = 0;
-									break;
-								}
-								e = topology->nextFaceEdge(e);
-							}
-							while(e != ffe);
-							if(selected)
-								numSelectedFaces++;
-						}
+					// Create a mesh vertex selection.
+					if(SurfaceMeshVertices* outputVertices = outputMesh->makeVerticesMutable()) {
+						ConstPropertyAccess<Point3> vertexPositionProperty = outputVertices->expectProperty(SurfaceMeshVertices::PositionProperty);
+						PropertyAccess<int> vertexSelectionProperty = outputVertices->createProperty(SurfaceMeshVertices::SelectionProperty);
+						size_t numSelectedVertices = 0;
+						boost::transform(vertexPositionProperty, vertexSelectionProperty.begin(), [&](const Point3& pos) {
+							bool selectionState = 
+								(sliceWidth <= 0) ?
+									(plane.pointDistance(pos) > 0) :
+									(invert == (plane.classifyPoint(pos, sliceWidth) == 0));
+							if(selectionState)
+								numSelectedVertices++;
+							return selectionState ? 1 : 0;
+						});
 						if(!statusMessage.isEmpty()) statusMessage += QChar('\n');
-						statusMessage += tr("%1 of %2 mesh faces selected").arg(numSelectedFaces).arg(outputFaces->elementCount());
+						statusMessage += tr("%1 of %2 mesh vertices selected").arg(numSelectedVertices).arg(outputVertices->elementCount());
+
+						// Create a mesh face selection.
+						if(SurfaceMeshFaces* outputFaces = outputMesh->makeFacesMutable()) {
+							PropertyAccess<int> faceSelectionProperty = outputFaces->createProperty(SurfaceMeshFaces::SelectionProperty);
+							size_t numSelectedFaces = 0;
+							const SurfaceMeshTopology* topology = outputMesh->topology();
+							auto firstFaceEdge = topology->firstFaceEdges().cbegin();
+							OVITO_ASSERT(topology->firstFaceEdges().size() == faceSelectionProperty.size());
+							for(int& selected : faceSelectionProperty) {
+								SurfaceMesh::edge_index ffe = *firstFaceEdge++;
+								SurfaceMesh::edge_index e = ffe;
+								selected = 1;
+								do {
+									SurfaceMesh::vertex_index ev = topology->vertex2(e);
+									if(ev < 0 || ev >= vertexSelectionProperty.size() || !vertexSelectionProperty[ev]) {
+										selected = 0;
+										break;
+									}
+									e = topology->nextFaceEdge(e);
+								}
+								while(e != ffe);
+								if(selected)
+									numSelectedFaces++;
+							}
+							if(!statusMessage.isEmpty()) statusMessage += QChar('\n');
+							statusMessage += tr("%1 of %2 mesh faces selected").arg(numSelectedFaces).arg(outputFaces->elementCount());
+						}
 					}
 				}
 			}
