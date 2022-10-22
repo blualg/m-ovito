@@ -437,12 +437,8 @@ PipelineStatus DislocationVis::render(TimePoint time, const ConstDataObjectPath&
 					Point3 center = cellObject->wrapPoint(segment->getPointOnLine(FloatType(0.5)));
 					Vector3 dir = burgersVectorScaling() * segment->burgersVector.toSpatialVector();
 					// Check if arrow is clipped away by cutting planes.
-					for(const Plane3& plane : dislocationsObj->cuttingPlanes()) {
-						if(plane.classifyPoint(center) > 0) {
-							dir.setZero(); // Hide arrow by setting length to zero.
-							break;
-						}
-					}
+					if(dislocationsObj->isPointCulled(center))
+						dir.setZero(); // Hide arrow by setting length to zero.
 					baseArrowPoints[arrowIndex] = center;
 					headArrowPoints[arrowIndex++] = center + dir;
 				}

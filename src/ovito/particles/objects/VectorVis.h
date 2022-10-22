@@ -91,7 +91,7 @@ public:
 protected:
 
 	/// Computes the bounding box of the arrows.
-	Box3 arrowBoundingBox(const PropertyObject* vectorProperty, const DataBuffer* basePositions) const;
+	Box3 arrowBoundingBox(const DataBuffer* vectorProperty, const DataBuffer* basePositions) const;
 
 	/// This method is called once for this object after it has been completely loaded from a stream.
 	virtual void loadFromStreamComplete(ObjectLoadStream& stream) override;

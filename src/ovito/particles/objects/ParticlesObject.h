@@ -186,8 +186,10 @@ public:
 	/// Returns a vector with the input bond colors.
 	ConstPropertyPtr inputBondColors(bool ignoreExistingColorProperty = false) const;
 
-	/// Returns the base coordinates for visualizing a vector property from this container using a VectorVis element.
-	virtual ConstDataBufferPtr getVectorVisBasePositions(const ConstDataObjectPath& path, const PipelineFlowState& state) const override { return getProperty(PositionProperty); }
+	/// Returns the base point and vector information for visualizing a vector property from this container using a VectorVis element.
+	virtual std::tuple<ConstDataBufferPtr, ConstDataBufferPtr> getVectorVisData(const ConstDataObjectPath& path, const PipelineFlowState& state) const override {
+		return { getProperty(PositionProperty), path.lastAs<DataBuffer>() }; 
+	}
 
 private:
 

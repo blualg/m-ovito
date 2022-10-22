@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -46,6 +46,15 @@ public:
 
 	/// Returns the display title of this object.
 	virtual QString objectTitle() const override;
+
+	/// Tests whether the given spatial point is culled by the cutting planes set for this object.
+	bool isPointCulled(const Point3& p) const {
+		for(const Plane3& plane : cuttingPlanes()) {
+			if(plane.classifyPoint(p) > 0)
+				return true;
+		}
+		return false;
+	}
 
 protected:
 

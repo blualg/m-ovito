@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -129,6 +129,40 @@ SurfaceMeshVertices::SurfaceMeshVertices(ObjectCreationParams params) : Property
 		// Create the standard 'Position' property.
 		createProperty(SurfaceMeshVertices::PositionProperty);
 	}
+}
+
+/******************************************************************************
+* Returns the base point and vector information for visualizing a vector 
+* property from this container using a VectorVis element.
+******************************************************************************/
+std::tuple<ConstDataBufferPtr, ConstDataBufferPtr> SurfaceMeshVertices::getVectorVisData(const ConstDataObjectPath& path, const PipelineFlowState& state) const
+{
+	OVITO_ASSERT(path.lastAs<SurfaceMeshVertices>(1) == this);
+	if(const SurfaceMesh* mesh = path.lastAs<SurfaceMesh>(2)) {
+		mesh->verifyMeshIntegrity();
+
+		ConstDataBufferPtr vectorProperty = path.lastAs<DataBuffer>();
+		if(vectorProperty && vectorProperty->dataType() == PropertyObject::Float && vectorProperty->componentCount() == 3) {
+			// Does the mesh have cutting planes and do we need to perform point culling?
+			if(!mesh->cuttingPlanes().empty()) {
+				// Create a copy of the vector property in which the values of culled points
+				// will be nulled out to hide the arrow glyphs for these points.
+				DataBufferAccessAndRef<Vector3> filteredVectors = vectorProperty.makeCopy();
+				if(ConstDataBufferAccess<Point3> positions = getProperty(PositionProperty)) {
+					Vector3* v = filteredVectors.begin();
+					for(const Point3& p : positions) {
+						if(mesh->isPointCulled(p))
+							v->setZero();
+						++v;
+					}
+					vectorProperty = filteredVectors.take();
+				}
+			}
+		}
+
+		return { getProperty(PositionProperty), std::move(vectorProperty) };
+	}
+	return {};
 }
 
 }	// End of namespace

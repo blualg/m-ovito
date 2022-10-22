@@ -108,8 +108,7 @@ Box3 VectorVis::boundingBox(TimePoint time, const ConstDataObjectPath& path, con
 {
 	const PropertyContainer* container = path.lastAs<PropertyContainer>(1);
 	if(!container) return {};
-	const PropertyObject* vectorProperty = path.lastAs<PropertyObject>(0);
-	ConstDataBufferPtr basePositions = container->getVectorVisBasePositions(path, flowState);
+	auto [basePositions, vectorProperty] = container->getVectorVisData(path, flowState);
 	OVITO_ASSERT(!basePositions || basePositions->size() == container->elementCount());
 	OVITO_ASSERT(!basePositions || (basePositions->componentCount() == 3 && basePositions->dataType() == DataBuffer::Float));
 	if(vectorProperty && (vectorProperty->dataType() != PropertyObject::Float || vectorProperty->componentCount() != 3))
@@ -143,7 +142,7 @@ Box3 VectorVis::boundingBox(TimePoint time, const ConstDataObjectPath& path, con
 /******************************************************************************
 * Computes the bounding box of the arrows.
 ******************************************************************************/
-Box3 VectorVis::arrowBoundingBox(const PropertyObject* vectorProperty, const DataBuffer* basePositions) const
+Box3 VectorVis::arrowBoundingBox(const DataBuffer* vectorProperty, const DataBuffer* basePositions) const
 {
 	if(!basePositions || !vectorProperty)
 		return Box3();
@@ -154,7 +153,7 @@ Box3 VectorVis::arrowBoundingBox(const PropertyObject* vectorProperty, const Dat
 	OVITO_ASSERT(vectorProperty->componentCount() == 3);
 	OVITO_ASSERT(basePositions->size() == vectorProperty->size());
 
-	// Compute bounding box of particle positions (only those with non-zero vector).
+	// Compute bounding box of base positions (only those with non-zero vector).
 	Box3 bbox;
 	ConstDataBufferAccess<Point3> positions(basePositions);
 	ConstDataBufferAccess<Vector3> vectorData(vectorProperty);
@@ -197,12 +196,11 @@ PipelineStatus VectorVis::render(TimePoint time, const ConstDataObjectPath& path
 	const PropertyContainer* container = path.lastAs<PropertyContainer>(1);
 	if(!container) return {};
 	container->verifyIntegrity();
-	const PropertyObject* vectorProperty = path.lastAs<PropertyObject>();
-	ConstDataBufferPtr basePositions = container->getVectorVisBasePositions(path, flowState);
+	auto [basePositions, vectorProperty] = container->getVectorVisData(path, flowState);
 	OVITO_ASSERT(!basePositions || basePositions->size() == container->elementCount());
 	OVITO_ASSERT(!basePositions || (basePositions->componentCount() == 3 && basePositions->dataType() == DataBuffer::Float));
 	if(vectorProperty && (vectorProperty->dataType() != PropertyObject::Float || vectorProperty->componentCount() != 3))
-		vectorProperty = nullptr;
+		vectorProperty.reset();
 
 	const PropertyObject* vectorColorProperty = nullptr;
 	if(const ParticlesObject* particles = dynamic_object_cast<ParticlesObject>(container))
@@ -276,7 +274,7 @@ PipelineStatus VectorVis::render(TimePoint time, const ConstDataObjectPath& path
 
 		// Determine number of non-zero vectors.
 		int vectorCount = 0;
-		ConstPropertyAccess<Vector3> vectorData(vectorProperty);
+		ConstDataBufferAccess<Vector3> vectorData(vectorProperty);
 		if(vectorProperty && basePositions) {
 			for(const Vector3& v : vectorData) {
 				if(v != Vector3::Zero())

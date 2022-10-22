@@ -95,8 +95,8 @@ public:
 		return { index % shape()[0], (index / shape()[0]) % shape()[1], index / yz };
 	}
 
-	/// Returns the base coordinates for visualizing a vector property from this container using a VectorVis element.
-	virtual ConstDataBufferPtr getVectorVisBasePositions(const ConstDataObjectPath& path, const PipelineFlowState& state) const override;
+	/// Returns the base point and vector information for visualizing a vector property from this container using a VectorVis element.
+	virtual std::tuple<ConstDataBufferPtr, ConstDataBufferPtr> getVectorVisData(const ConstDataObjectPath& path, const PipelineFlowState& state) const override;
 
 	/// Generates the info string to be displayed in the OVITO status bar for an element from this container.
 	virtual QString elementInfoString(size_t elementIndex, const ConstDataObjectRefPath& path = {}) const override;

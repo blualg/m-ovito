@@ -564,9 +564,10 @@ boost::dynamic_bitset<> BondsObject::OOMetaClass::viewportFenceSelection(const Q
 }
 
 /******************************************************************************
-* Returns the base coordinates for visualizing a vector property from this container using a VectorVis element.
+* Returns the base point and vector information for visualizing a vector 
+* property from this container using a VectorVis element.
 ******************************************************************************/
-ConstDataBufferPtr BondsObject::getVectorVisBasePositions(const ConstDataObjectPath& path, const PipelineFlowState& state) const
+std::tuple<ConstDataBufferPtr, ConstDataBufferPtr> BondsObject::getVectorVisData(const ConstDataObjectPath& path, const PipelineFlowState& state) const
 {
 	OVITO_ASSERT(path.lastAs<BondsObject>(1) == this);
 	verifyIntegrity();
@@ -611,7 +612,7 @@ ConstDataBufferPtr BondsObject::getVectorVisBasePositions(const ConstDataObjectP
 				}				
 				basePositions = centers.take();
 			}
-			return basePositions;
+			return { basePositions, path.lastAs<DataBuffer>() };
 		}
 	}
 	return {};

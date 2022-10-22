@@ -133,17 +133,29 @@ QString SurfaceMeshFaces::OOMetaClass::formatDataObjectPath(const ConstDataObjec
 }
 
 /******************************************************************************
-* Returns the base coordinates for visualizing a vector property from this container using a VectorVis element.
+* Returns the base point and vector information for visualizing a vector 
+* property from this container using a VectorVis element.
 ******************************************************************************/
-ConstDataBufferPtr SurfaceMeshFaces::getVectorVisBasePositions(const ConstDataObjectPath& path, const PipelineFlowState& state) const
+std::tuple<ConstDataBufferPtr, ConstDataBufferPtr> SurfaceMeshFaces::getVectorVisData(const ConstDataObjectPath& path, const PipelineFlowState& state) const
 {
 	OVITO_ASSERT(path.lastAs<SurfaceMeshFaces>(1) == this);
 	if(const SurfaceMesh* mesh = path.lastAs<SurfaceMesh>(2)) {
 		mesh->verifyMeshIntegrity();
 		// Look up the face centroids in the cache.
-		using CacheKey = RendererResourceKey<struct SurfaceMeshFacesCentroidsCache, ConstDataObjectRef>;
-		auto& basePositions = dataset()->visCache().get<ConstDataBufferPtr>(CacheKey(mesh));
+		using CacheKey = RendererResourceKey<struct SurfaceMeshFacesCentroidsCache, ConstDataObjectRef, ConstDataObjectRef>;
+		auto& [basePositions, vectorProperty] = dataset()->visCache().get<std::tuple<ConstDataBufferPtr,ConstDataBufferPtr>>(CacheKey(mesh, path.lastAs<DataBuffer>()));
 		if(!basePositions) {
+			DataBufferAccessAndRef<Vector3> filteredVectors;
+			vectorProperty = path.lastAs<DataBuffer>();
+			if(vectorProperty && vectorProperty->dataType() == PropertyObject::Float && vectorProperty->componentCount() == 3) {
+				// Does the mesh have cutting planes and do we need to perform point culling?
+				if(!mesh->cuttingPlanes().empty()) {
+					// Create a copy of the vector property in which the values of culled points
+					// will be nulled out to hide the arrow glyphs for these points.
+					filteredVectors = vectorProperty.makeCopy();
+				}
+			}
+
 			// Compute face centroids.
 			DataBufferAccessAndRef<Point3> centroids = DataBufferPtr::create(dataset(), mesh->faces()->elementCount(), DataBuffer::Float, 3);
 			const SurfaceMeshAccess meshAccess(mesh);
@@ -162,12 +174,20 @@ ConstDataBufferPtr SurfaceMeshFaces::getVectorVisBasePositions(const ConstDataOb
 					}
 					while(edge != firstFaceEdge);
 					centroids[face] = meshAccess.wrapPoint(meshAccess.vertexPosition(meshAccess.vertex1(firstFaceEdge)) + (com / n));
+					if(filteredVectors && mesh->isPointCulled(centroids[face]))
+						filteredVectors[face].setZero();
 				}
-				else centroids[face] = Point3::Origin();
+				else {
+					centroids[face] = Point3::Origin();
+					if(filteredVectors) 
+						filteredVectors[face].setZero();
+				}
 			}
 			basePositions = centroids.take();
+			if(filteredVectors) 
+				vectorProperty = filteredVectors.take();
 		}
-		return basePositions;
+		return { basePositions, vectorProperty };
 	}
 	return {};
 }

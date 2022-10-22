@@ -165,9 +165,10 @@ QString VoxelGrid::elementInfoString(size_t elementIndex, const ConstDataObjectR
 }
 
 /******************************************************************************
-* Returns the base coordinates for visualizing a vector property from this container using a VectorVis element.
+* Returns the base point and vector information for visualizing a vector 
+* property from this container using a VectorVis element.
 ******************************************************************************/
-ConstDataBufferPtr VoxelGrid::getVectorVisBasePositions(const ConstDataObjectPath& path, const PipelineFlowState& state) const
+std::tuple<ConstDataBufferPtr, ConstDataBufferPtr> VoxelGrid::getVectorVisData(const ConstDataObjectPath& path, const PipelineFlowState& state) const
 {
 	OVITO_ASSERT(path.lastAs<VoxelGrid>(1) == this);
 
@@ -200,7 +201,7 @@ ConstDataBufferPtr VoxelGrid::getVectorVisBasePositions(const ConstDataObjectPat
 		}
 		basePositions = centers.take();
 	}
-	return basePositions;
+	return { basePositions, path.lastAs<DataBuffer>() };
 }
 
 }	// End of namespace
