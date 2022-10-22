@@ -56,6 +56,41 @@ SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(VoronoiAnalysisModifier, edgeThreshold, Wor
 SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(VoronoiAnalysisModifier, faceThreshold, FloatParameterUnit, 0);
 SET_PROPERTY_FIELD_UNITS_AND_RANGE(VoronoiAnalysisModifier, relativeFaceThreshold, PercentParameterUnit, 0, 1);
 
+#if 0
+/**
+ * A custom "wall" implementation that restricts voronoi cells to a regular polyhedron.
+ * See https://math.lbl.gov/voro++/examples/irregular/
+ */
+class FiniteSizeParticleWall : public voro::wall
+{
+public:
+	FiniteSizeParticleWall(FloatType radius) { 
+		radius *= 2;
+		v.init(-radius, radius, -radius, radius, -radius, radius);
+		// Create an approximate sphere by making plane cuts in directions computed using the "Fibonacci sphere algorithm".
+		int faceCount = 64;
+		FloatType phi = FLOATTYPE_PI * (FloatType(3) - sqrt(FloatType(5)));  // golden angle in radians
+		for(int i = 0; i < faceCount; i++) {
+			FloatType y = FloatType(1) - (i / FloatType(faceCount - 1)) * 2; // y goes from 1 to -1
+			FloatType r = sqrt(FloatType(1) - y * y); // radius at y
+			FloatType theta = phi * i; // golden angle increment
+			Vector3 normal = Vector3(cos(theta)*r, y, sin(theta)*r).resized(radius);
+			v.nplane(normal.x(), normal.y(), normal.z(), -1); 
+		}
+	}
+	virtual bool point_inside(double x, double y, double z) override { return true; }
+	virtual bool cut_cell(voro::voronoicell& c, double x, double y, double z) override { 
+		return true;
+	}
+	virtual bool cut_cell(voro::voronoicell_neighbor& c, double x, double y, double z) override {
+		c=v;
+		return true;
+	}
+private:
+	voro::voronoicell_neighbor v;
+};
+#endif
+
 /******************************************************************************
 * Constructs the modifier object.
 ******************************************************************************/
@@ -236,7 +271,7 @@ void VoronoiAnalysisModifier::VoronoiAnalysisEngine::perform()
 		double vol = v.volume();
 		atomicVolumesArray[index] = (FloatType)vol;
 
-		// Compute cell max radius
+		// Compute cell max radius.
 		double maxRad = std::sqrt(v.max_radius_squared());
 		cavityRadiiArray[index] = (FloatType)maxRad;
 
@@ -727,7 +762,7 @@ void VoronoiAnalysisModifier::VoronoiAnalysisEngine::perform()
 			SurfaceMeshAccess::region_index adjacentRegion = adjacentCellArray[face];
 			// Skip faces that belong to the outer surface.
 			if(adjacentRegion < 0) continue;
-			// Periodic polyhedra pose a problem.	
+			// Periodic polyhedra pose a problem.
 			if(adjacentRegion == polyhedraMesh.faceRegion(face)) {
 				throw Exception(tr("Cannot generate polyhedron mesh for this input, because at least one Voronoi cell is touching a periodic image of itself. To avoid this error you can try to use the Replicate modifier or turn off periodic boundary conditions for the simulation cell."));
 			}
@@ -740,8 +775,7 @@ void VoronoiAnalysisModifier::VoronoiAnalysisEngine::perform()
 			for(SurfaceMeshAccess::edge_index edge = polyhedraMesh.firstVertexEdge(vertex1); edge != SurfaceMeshAccess::InvalidIndex; edge = polyhedraMesh.nextVertexEdge(edge)) {
 				SurfaceMeshAccess::face_index adjacentFace = polyhedraMesh.adjacentFace(edge);
 				if(polyhedraMesh.faceRegion(adjacentFace) != adjacentRegion) continue;
-				SurfaceMeshAccess::edge_index oppositeEdge = polyhedraMesh.findEdge(adjacentFace, vertex2, vertex1);
-				if(oppositeEdge != SurfaceMeshAccess::InvalidIndex) {
+				if(polyhedraMesh.areOppositeFaces(face, adjacentFace)) {
 					OVITO_ASSERT(!polyhedraMesh.hasOppositeFace(adjacentFace));
 					polyhedraMesh.linkOppositeFaces(face, adjacentFace);
 					break;

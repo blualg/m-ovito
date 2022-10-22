@@ -261,46 +261,51 @@ std::optional<std::pair<SurfaceMeshAccess::region_index, FloatType>> SurfaceMesh
 	size_type faceCount = this->faceCount();
 	for(face_index face = 0; face < faceCount; face++) {
 		if(!faceSubset.empty() && !faceSubset[face]) continue;
-		edge_index edge1 = firstFaceEdge(face);
-		edge_index edge2 = nextFaceEdge(edge1);
-		const Point3& p1 = vertexPosition(vertex1(edge1));
-		const Point3& p2 = vertexPosition(vertex2(edge1));
-		const Point3& p3 = vertexPosition(vertex2(edge2));
-		Vector3 edgeVectors[3];
-		edgeVectors[0] = wrapVector(p2 - p1);
-		edgeVectors[1] = wrapVector(p3 - p2);
+		edge_index firstEdge = firstFaceEdge(face);
+		vertex_index firstVertex = vertex1(firstEdge);
+		const Point3& p1 = vertexPosition(firstVertex);
 		Vector3 r = wrapVector(p1 - location);
-		edgeVectors[2] = -edgeVectors[1] - edgeVectors[0];
+		edge_index edge2 = nextFaceEdge(firstEdge);
+		while(vertex2(edge2) != firstVertex) {
+			const Point3& p2 = vertexPosition(vertex1(edge2));
+			const Point3& p3 = vertexPosition(vertex2(edge2));
+			Vector3 edgeVectors[3];
+			edgeVectors[0] = wrapVector(p2 - p1);
+			edgeVectors[1] = wrapVector(p3 - p2);
+			edgeVectors[2] = -edgeVectors[1] - edgeVectors[0];
 
-		// Compute face normal.
-		Vector3 normal = edgeVectors[0].cross(edgeVectors[1]);
+			// Compute face normal.
+			Vector3 normal = edgeVectors[0].cross(edgeVectors[1]);
 
-		// Determine whether the projection of the query point is inside the face's boundaries.
-		bool isInsideTriangle = true;
-		Vector3 vertexVector = r;
-		for(size_t v = 0; v < 3; v++) {
-			if(vertexVector.dot(normal.cross(edgeVectors[v])) >= 0.0) {
-				isInsideTriangle = false;
-				break;
+			// Determine whether the projection of the query point is inside the face's boundaries.
+			bool isInsideTriangle = true;
+			Vector3 vertexVector = r;
+			for(size_t v = 0; v < 3; v++) {
+				if(vertexVector.dot(normal.cross(edgeVectors[v])) >= 0.0) {
+					isInsideTriangle = false;
+					break;
+				}
+				vertexVector += edgeVectors[v];
 			}
-			vertexVector += edgeVectors[v];
-		}
 
-		if(isInsideTriangle) {
-			FloatType normalLengthSq = normal.squaredLength();
-			if(std::abs(normalLengthSq) <= FLOATTYPE_EPSILON) continue;
-			normal /= sqrt(normalLengthSq);
-			FloatType planeDist = normal.dot(r);
-			// In case the manifold is two-sided, skip face if it is facing toward the query point.
-			if(planeDist > -epsilon || !hasOppositeFace(face)) {
-				if(planeDist * planeDist < closestDistanceSq) {
-					closestDistanceSq = planeDist * planeDist;
-					closestVector = normal * planeDist;
-					closestVertex = InvalidIndex;
-					closestNormal = normal;
-					closestRegion = hasFaceRegions() ? faceRegion(face) : 0;
+			if(isInsideTriangle) {
+				FloatType normalLengthSq = normal.squaredLength();
+				if(std::abs(normalLengthSq) > FLOATTYPE_EPSILON) {
+					normal /= sqrt(normalLengthSq);
+					FloatType planeDist = normal.dot(r);
+					// In case the manifold is two-sided, skip face if it is facing toward the query point.
+					if(planeDist > -epsilon || !hasOppositeFace(face)) {
+						if(planeDist * planeDist < closestDistanceSq) {
+							closestDistanceSq = planeDist * planeDist;
+							closestVector = normal * planeDist;
+							closestVertex = InvalidIndex;
+							closestNormal = normal;
+							closestRegion = hasFaceRegions() ? faceRegion(face) : 0;
+						}
+					}
 				}
 			}
+			edge2 = nextFaceEdge(edge2);
 		}
 	}
 

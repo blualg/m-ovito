@@ -287,10 +287,27 @@ public:
     /// Links two opposite faces together.
     void linkOppositeFaces(face_index face1, face_index face2) {
         OVITO_ASSERT((!hasOppositeFace(face1) && !hasOppositeFace(face2)) || (oppositeFace(face1) == face2 && oppositeFace(face2) == face1));
-        OVITO_ASSERT(findEdge(face2, vertex2(firstFaceEdge(face1)), vertex1(firstFaceEdge(face1))) != InvalidIndex);
-        OVITO_ASSERT(findEdge(face1, vertex2(firstFaceEdge(face2)), vertex1(firstFaceEdge(face2))) != InvalidIndex);
+        OVITO_ASSERT(areOppositeFaces(face1, face2));
         _oppositeFaces[face1] = face2;
         _oppositeFaces[face2] = face1;
+    }
+
+    /// Tests if two faces connect the same sequence of vertices in reverse order. 
+    bool areOppositeFaces(face_index face1, face_index face2) const {
+        edge_index ffe = firstFaceEdge(face1);
+        edge_index opposite_edge = findEdge(face2, vertex2(ffe), vertex1(ffe));
+        if(opposite_edge == InvalidIndex)
+            return false;
+        edge_index e = ffe;
+        do {
+            e = nextFaceEdge(e);
+            opposite_edge = prevFaceEdge(opposite_edge);
+            if(vertex2(e) != vertex1(opposite_edge))
+                return false;
+            OVITO_ASSERT(vertex1(e) == vertex2(opposite_edge));
+        }
+        while(e != ffe);
+        return true;
     }
 
     /// Unlinks two opposite faces.

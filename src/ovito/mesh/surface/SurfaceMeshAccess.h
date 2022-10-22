@@ -438,6 +438,11 @@ public:
         mutableTopology()->linkOppositeFaces(face1, face2);
     }
 
+    /// Tests if two faces connect the same sequence of vertices in reverse order. 
+    bool areOppositeFaces(face_index face1, face_index face2) const {
+        return topology()->areOppositeFaces(face1, face2);
+    }
+
     /// Transfers a segment of a face boundary, formed by the given edge and its successor edge,
     /// to a different vertex.
     void transferFaceBoundaryToVertex(edge_index edge, vertex_index newVertex) {
