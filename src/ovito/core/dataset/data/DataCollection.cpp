@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -95,36 +95,6 @@ bool DataCollection::replaceObject(const DataObject* oldObj, const DataObject* n
 }
 
 /******************************************************************************
-* Replaces objects with copies if there are multiple references.
-* After calling this method, none of the objects in the flow state is referenced by anybody else.
-* Thus, it becomes safe to modify the data objects.
-******************************************************************************/
-void DataCollection::makeAllMutableRecursive()
-{
-	// Note: This method is not thread-safe. Must only be called from the main thread.
-	OVITO_ASSERT(!QCoreApplication::instance() || QThread::currentThread() == QCoreApplication::instance()->thread());
-
-	CloneHelper cloneHelper;
-	makeAllMutableImpl(this, cloneHelper);
-}
-
-/******************************************************************************
-* Implementation detail of makeAllMutableRecursive().
-******************************************************************************/
-void DataCollection::makeAllMutableImpl(DataObject* parent, CloneHelper& cloneHelper)
-{
-	parent->visitSubObjects([&](const DataObject* subObject) {
-		if(!subObject->isSafeToModify()) {
-			OORef<DataObject> clone = cloneHelper.cloneObject(subObject, false);
-			parent->replaceReferencesTo(subObject, clone);
-			subObject = clone;
-		}
-		makeAllMutableImpl(const_cast<DataObject*>(subObject), cloneHelper);
-		return false;
-	});
-}
-
-/******************************************************************************
 * Finds an object of the given type in the list of data objects stored in this
 * flow state.
 ******************************************************************************/
@@ -213,7 +183,7 @@ DataObject* DataCollection::makeMutable(const DataObject* obj, bool deepCopy)
 /******************************************************************************
 * Ensures that a DataObject from this flow state is not shared with others and is safe to modify.
 ******************************************************************************/
-DataObjectPath DataCollection::makeMutable(const ConstDataObjectPath& path, bool deepCopy)
+DataObjectPath DataCollection::makeMutable(const ConstDataObjectPath& path)
 {
 	DataObjectPath result;
 	DataObject* parent = this;
@@ -224,6 +194,26 @@ DataObjectPath DataCollection::makeMutable(const ConstDataObjectPath& path, bool
 		}
 		else {
 			result.push_back(parent->makeMutable(obj));
+		}
+		parent = result.back();
+	}
+	return result;
+}
+
+/******************************************************************************
+* Ensures that a DataObject from this flow state is not shared with others and is safe to modify.
+******************************************************************************/
+DataObjectPath DataCollection::makeMutable(const ConstDataObjectPath& path, CloneHelper& cloneHelper)
+{
+	DataObjectPath result;
+	DataObject* parent = this;
+	for(const DataObject* obj : path) {
+		if(obj == this) {
+			OVITO_ASSERT(path.front() == this);
+			result.push_back(this);
+		}
+		else {
+			result.push_back(parent->makeMutable(obj, cloneHelper));
 		}
 		parent = result.back();
 	}

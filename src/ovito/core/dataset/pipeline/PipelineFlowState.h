@@ -358,8 +358,13 @@ public:
 	}
 
 	/// Ensures that a DataObject from this flow state is not shared with others and is safe to modify.
-	DataObjectPath makeMutable(const ConstDataObjectPath& path, bool deepCopy = false) {
-		return mutableData()->makeMutable(path, deepCopy);
+	DataObjectPath makeMutable(const ConstDataObjectPath& path) {
+		return mutableData()->makeMutable(path);
+	}
+
+	/// Ensures that a DataObject from this flow state is not shared with others and is safe to modify.
+	DataObjectPath makeMutable(const ConstDataObjectPath& path, CloneHelper& cloneHelper) {
+		return mutableData()->makeMutable(path, cloneHelper);
 	}
 
 	/// Makes the last object in the data path mutable and returns a pointer to the mutable copy.

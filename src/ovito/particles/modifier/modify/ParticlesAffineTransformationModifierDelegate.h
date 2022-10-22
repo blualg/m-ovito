@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -64,7 +64,7 @@ public:
 };
 
 /**
- * \brief Delegate for the AffineTransformationModifier that operates on vector particle properties.
+ * \brief Delegate for the AffineTransformationModifier that operates on any kind of vector property.
  */
 class VectorParticlePropertiesAffineTransformationModifierDelegate : public AffineTransformationModifierDelegate
 {
@@ -85,7 +85,7 @@ class VectorParticlePropertiesAffineTransformationModifierDelegate : public Affi
 
 	OVITO_CLASS_META(VectorParticlePropertiesAffineTransformationModifierDelegate, OOMetaClass)
 
-	Q_CLASSINFO("DisplayName", "Vector particle properties");
+	Q_CLASSINFO("DisplayName", "Vector properties");
 
 public:
 

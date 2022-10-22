@@ -160,6 +160,11 @@ public:
 	/// Duplicates the given sub-object from this container object if it is shared with others.
 	/// After this method returns, the returned sub-object will be exclusively owned by this container and
 	/// can be safely modified without unwanted side effects.
+	DataObject* makeMutable(const DataObject* subObject, CloneHelper& cloneHelper);
+
+	/// Duplicates the given sub-object from this container object if it is shared with others.
+	/// After this method returns, the returned sub-object will be exclusively owned by this container and
+	/// can be safely modified without unwanted side effects.
 	template<class DataObjectClass>
 	DataObjectClass* makeMutable(const DataObjectClass* subObject) {
 		return static_object_cast<DataObjectClass>(makeMutable(static_cast<const DataObject*>(subObject)));

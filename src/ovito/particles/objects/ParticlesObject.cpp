@@ -704,6 +704,15 @@ PropertyPtr ParticlesObject::OOMetaClass::createStandardPropertyInternal(DataSet
 		vis->freezeInitialParameterValues({SHADOW_PROPERTY_FIELD(ActiveObject::title), SHADOW_PROPERTY_FIELD(ActiveObject::isEnabled), SHADOW_PROPERTY_FIELD(VectorVis::reverseArrowDirection), SHADOW_PROPERTY_FIELD(VectorVis::arrowPosition)});
 		property->addVisElement(std::move(vis));
 	}
+	else if(type == ParticlesObject::VelocityProperty) {
+		OORef<VectorVis> vis = OORef<VectorVis>::create(dataset);
+		vis->setObjectTitle(tr("Velocities"));
+		vis->setEnabled(false);
+		vis->setReverseArrowDirection(false);
+		vis->setArrowPosition(VectorVis::Base);
+		vis->freezeInitialParameterValues({SHADOW_PROPERTY_FIELD(ActiveObject::title), SHADOW_PROPERTY_FIELD(ActiveObject::isEnabled), SHADOW_PROPERTY_FIELD(VectorVis::reverseArrowDirection), SHADOW_PROPERTY_FIELD(VectorVis::arrowPosition)});
+		property->addVisElement(std::move(vis));
+	}
 	else if(type == ParticlesObject::DipoleOrientationProperty) {
 		OORef<VectorVis> vis = OORef<VectorVis>::create(dataset);
 		vis->setObjectTitle(tr("Dipoles"));

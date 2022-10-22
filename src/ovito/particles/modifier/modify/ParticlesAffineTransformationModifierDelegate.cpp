@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -22,6 +22,7 @@
 
 #include <ovito/particles/Particles.h>
 #include <ovito/particles/objects/ParticlesObject.h>
+#include <ovito/particles/objects/VectorVis.h>
 #include <ovito/stdobj/simcell/SimulationCellObject.h>
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/dataset/pipeline/ModifierApplication.h>
@@ -95,13 +96,13 @@ PipelineStatus ParticlesAffineTransformationModifierDelegate::apply(const Modifi
 ******************************************************************************/
 QVector<DataObjectReference> VectorParticlePropertiesAffineTransformationModifierDelegate::OOMetaClass::getApplicableObjects(const DataCollection& input) const
 {
-	if(const ParticlesObject* particles = input.getObject<ParticlesObject>()) {
-		for(const PropertyObject* property : particles->properties()) {
-			if(isTransformableProperty(property))
-				return { DataObjectReference(&ParticlesObject::OOClass()) };
-		}
+	// Gather list of all properties in the input data collection.
+	QVector<DataObjectReference> objects;
+	for(const ConstDataObjectPath& path : input.getObjectsRecursive(PropertyObject::OOClass())) {
+		if(isTransformableProperty(path.lastAs<PropertyObject>()))
+			objects.push_back(path);
 	}
-	return {};
+	return objects;
 }
 
 /******************************************************************************
@@ -109,9 +110,10 @@ QVector<DataObjectReference> VectorParticlePropertiesAffineTransformationModifie
 ******************************************************************************/
 bool VectorParticlePropertiesAffineTransformationModifierDelegate::isTransformableProperty(const PropertyObject* property)
 {
-	return property->type() == ParticlesObject::VelocityProperty ||
-		property->type() == ParticlesObject::ForceProperty ||
-		property->type() == ParticlesObject::DisplacementProperty;
+	OVITO_ASSERT(property);
+	
+	// Transfer any property that has a VectorVis element attached and which has the right data type.
+	return property->visElement<VectorVis>() != nullptr && property->dataType() == DataBuffer::Float && property->componentCount() == 3;
 }
 
 /******************************************************************************
@@ -119,29 +121,29 @@ bool VectorParticlePropertiesAffineTransformationModifierDelegate::isTransformab
 ******************************************************************************/
 PipelineStatus VectorParticlePropertiesAffineTransformationModifierDelegate::apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const PipelineFlowState& inputState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs)
 {
-	// Determine transformation matrix.
-	AffineTransformationModifier* mod = static_object_cast<AffineTransformationModifier>(request.modifier());
+	CloneHelper cloneHelper;
+	for(const ConstDataObjectPath& objectPath : state.getObjectsRecursive(PropertyObject::OOClass())) {
+		const PropertyObject* inputProperty = objectPath.lastAs<PropertyObject>();
+		if(isTransformableProperty(inputProperty)) {
+			DataObjectPath mutableObjectPath = state.makeMutable(objectPath, cloneHelper);
 
-	if(const ParticlesObject* inputParticles = state.getObject<ParticlesObject>()) {
-		for(const PropertyObject* inputProperty : inputParticles->properties()) {
-			if(isTransformableProperty(inputProperty)) {
-				const AffineTransformation tm = mod->effectiveAffineTransformation(inputState);
+			// Determine transformation matrix.
+			AffineTransformationModifier* mod = static_object_cast<AffineTransformationModifier>(request.modifier());
+			const AffineTransformation tm = mod->effectiveAffineTransformation(inputState);
 
-				// Make sure we can safely modify the particles object and the vector property.
-				ParticlesObject* outputParticles = state.expectMutableObject<ParticlesObject>();
-				PropertyAccess<Vector3> property = outputParticles->makeMutable(inputProperty);
+			const PropertyContainer* container = mutableObjectPath.lastAs<PropertyContainer>(1);
+			PropertyAccess<Vector3> property = mutableObjectPath.lastAs<PropertyObject>();
 
-				if(!mod->selectionOnly()) {
-					for(Vector3& v : property)
-						v = tm * v;
-				}
-				else {
-					if(ConstPropertyAccess<int> selProperty = inputParticles->getProperty(ParticlesObject::SelectionProperty)) {
-						const int* s = selProperty.cbegin();
-						for(Vector3& v : property) {
-							if(*s++)
-								v = tm * v;
-						}
+			if(!mod->selectionOnly() || !container || !container->getOOMetaClass().isValidStandardPropertyId(PropertyObject::GenericSelectionProperty)) {
+				for(Vector3& v : property)
+					v = tm * v;
+			}
+			else {
+				if(ConstPropertyAccess<int> selProperty = container->getProperty(PropertyObject::GenericSelectionProperty)) {
+					const int* s = selProperty.cbegin();
+					for(Vector3& v : property) {
+						if(*s++)
+							v = tm * v;
 					}
 				}
 			}

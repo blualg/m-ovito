@@ -7,10 +7,10 @@ Vectors
   :width: 35%
   :align: right
 
-This :ref:`visual element <visual_elements>` shows arrow glyphs to visualize a vectorial property associated with the particles.
-For example, the visual element for the particle property ``Displacement``, which is computed by the :ref:`particles.modifiers.displacement_vectors` modifier, 
+This :ref:`visual element <visual_elements>` shows arrow glyphs to visualize a local vectorial property associated with each particle or other type of data element.
+For example, the vectors visual element for the particle property ``Displacement``, which is computed by the :ref:`particles.modifiers.displacement_vectors` modifier, 
 can be found under the "Visual elements" section of the :ref:`pipeline editor <usage.modification_pipeline.pipeline_listbox>` (see screenshot).
-The visual element provides controls for the appearance of the arrow glyphs. 
+It provides controls for the appearance of the arrow glyphs. 
 
 Parameters
 """"""""""

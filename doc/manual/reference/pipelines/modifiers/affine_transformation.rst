@@ -55,7 +55,7 @@ You can select the types of data elements that should get transformed by the mod
   Element type                                                    Description
   =============================================================== =================================================================================
   :ref:`Particles <scene_objects.particles>`                      Applies the affine transformation to the coordinates of particles (i.e. the ``Position`` particle property).
-  :ref:`Vector particle properties <usage.particle_properties>`   Applies the linear part :math:`\mathbf{M}` of the affine transformation to the ``Velocity``, ``Force`` and ``Displacement`` particle properties.
+  :ref:`Vector properties <usage.particle_properties>`            Applies the linear part :math:`\mathbf{M}` of the affine transformation to vectorial properties, e.g. the particle properties ``Velocity``, ``Force`` and ``Displacement``. Vectorial properties are those which have a :ref:`visual_elements.vectors` visual element attached and which consist of three floating-point components.
   :ref:`Simulation cell <scene_objects.simulation_cell>`          Applies the affine transformation to the origin of the :ref:`simulation cell <scene_objects.simulation_cell>` and the linear part to the three cell vectors.
   :ref:`Surfaces <scene_objects.surface_mesh>`                    Applies the affine transformation to the vertices of :ref:`surface meshes <scene_objects.surface_mesh>` and :ref:`triangle meshes <scene_objects.triangle_mesh>`.
   :ref:`Voxel grids <scene_objects.voxel_grid>`                   Applies the affine transformation to the domain shape of a :ref:`voxel grid <scene_objects.voxel_grid>`.

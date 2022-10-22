@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -38,13 +38,13 @@ namespace Ovito {
 ******************************************************************************/
 RefTarget* CloneHelper::cloneObjectImpl(const RefTarget* obj, bool deepCopy)
 {
-	if(obj == nullptr) return nullptr;
+	if(obj == nullptr) 
+		return nullptr;
+
 	OVITO_CHECK_OBJECT_POINTER(obj);
 
-	for(const auto& entry : _cloneTable) {
-		if(entry.first == obj)
-			return entry.second;
-	}
+	if(RefTarget* clone = lookupCloneOf(obj))
+		return clone;
 
 	// Never generate undo records for a cloning operation.
 	UndoSuspender noUndo(obj);
@@ -55,8 +55,12 @@ RefTarget* CloneHelper::cloneObjectImpl(const RefTarget* obj, bool deepCopy)
 
 	OVITO_ASSERT_MSG(copy->getOOClass().isDerivedFrom(obj->getOOClass()), "CloneHelper::cloneObject", qPrintable(QString("The clone method of class %1 did not return a compatible class instance.").arg(obj->getOOClass().name())));
 
-	_cloneTable.push_back(std::make_pair(obj, copy));
-	return copy;
+#if QT_VERSION >= QT_VERSION_CHECK(6, 3, 0)
+	_cloneTable.emplace_back(obj, std::move(copy));
+#else
+	_cloneTable.push_back(std::make_pair(obj, std::move(copy)));
+#endif
+	return _cloneTable.back().second;
 }
 
 }	// End of namespace

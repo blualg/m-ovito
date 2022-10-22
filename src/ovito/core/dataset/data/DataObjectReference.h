@@ -79,11 +79,21 @@ public:
 	}
 
 	/// Returns the n-th to last data object in the path - or null if the path is shorter than requested.
-	const DataObject* last(size_t n = 0) const { return this->size() <= n ? nullptr : (*this)[this->size() - n - 1]; }
+	auto last(size_t n = 0) const { 
+		return this->size() <= n ? nullptr : to_address((*this)[this->size() - n - 1]); 
+	}
 
 	/// Returns the n-th to last data object in the path if it's a specific kind of object - or null if the path is shorter than requested.
 	template<class DataObjectType>
-	const DataObjectType* lastAs(size_t n = 0) const { return this->size() <= n ? nullptr : dynamic_object_cast<const DataObjectType>(static_cast<const DataObject*>((*this)[this->size() - n - 1])); }
+	auto lastAs(size_t n = 0) const { 
+		return this->size() <= n ? nullptr : dynamic_object_cast<DataObjectType>(to_address((*this)[this->size() - n - 1])); 
+	}
+
+private:
+
+	/// Obtains the object address represented by a fancy pointer.
+	template<class U> static constexpr U* to_address(U* p) noexcept { return p; }
+ 	template<class U> static constexpr auto to_address(const U& p) noexcept { return p.get(); }
 };
 
 /**

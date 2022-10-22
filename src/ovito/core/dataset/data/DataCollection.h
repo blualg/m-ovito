@@ -292,12 +292,6 @@ public:
 		return expectMutableLeafObject<DataObjectClass>(*dataRef.dataClass(), dataRef.dataPath());
 	}
 
-	/// \brief Replaces the objects in this state with copies if they are shared between multiple pipeline flow states.
-	///
-	/// After calling this method, none of the objects in the flow state is referenced by anybody else.
-	/// Thus, it becomes safe to modify the data objects including their subobjects.
-	void makeAllMutableRecursive();
-
 	/// Ensures that a DataObject from this flow state is not shared with others and is safe to modify.
 	DataObject* makeMutable(const DataObject* obj, bool deepCopy = false);
 
@@ -308,7 +302,10 @@ public:
 	}
 
 	/// Ensures that a DataObject from this flow state is not shared with others and is safe to modify.
-	DataObjectPath makeMutable(const ConstDataObjectPath& path, bool deepCopy = false);
+	DataObjectPath makeMutable(const ConstDataObjectPath& path);
+
+	/// Ensures that a DataObject from this flow state is not shared with others and is safe to modify.
+	DataObjectPath makeMutable(const ConstDataObjectPath& path, CloneHelper& cloneHelper);
 
 	/// \brief Returns true if this state object has no valid contents.
 	bool isEmpty() const { return objects().empty(); }
@@ -416,9 +413,6 @@ private:
 
 	/// Implementation detail of getLeafObject().
 	static const DataObject* getLeafObjectImpl(const DataObject::OOMetaClass& objectClass, QStringView pathString, const DataObject* parent);
-
-	/// Implementation detail of makeAllMutableRecursive().
-	static void makeAllMutableImpl(DataObject* parent, CloneHelper& cloneHelper);
 
 private:
 

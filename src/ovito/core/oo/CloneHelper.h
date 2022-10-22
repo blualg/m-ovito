@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -103,13 +103,27 @@ public:
 		return cloneObject(obj, true);
 	}
 
+	/// \brief If the given object has already been cloned, returns the corresponding clone object.
+	RefTarget* lookupCloneOf(const RefTarget* original) const {
+		OVITO_ASSERT(original != nullptr);
+		for(const auto& entry : _cloneTable) {
+			if(entry.first == original)
+				return entry.second;
+		}
+		return nullptr;
+	}
+
+	/// \brief If the given object has already been cloned, returns the corresponding clone object.
+	template<class T>
+	T* lookupCloneOf(const T* original) const { return static_cast<T*>(lookupCloneOf(static_cast<const RefTarget*>(original))); }
+
 private:
 
 	/// Untyped version of the clone function.
 	RefTarget* cloneObjectImpl(const RefTarget* obj, bool deepCopy);
 
 	/// The table of clones created by this helper object.
-	QVarLengthArray<std::pair<const RefMaker*, OORef<RefTarget>>, 2> _cloneTable;
+	QVarLengthArray<std::pair<const RefTarget*, OORef<RefTarget>>, 2> _cloneTable;
 };
 
 }	// End of namespace
