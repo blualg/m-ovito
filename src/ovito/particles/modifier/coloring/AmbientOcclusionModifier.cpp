@@ -154,10 +154,13 @@ void AmbientOcclusionModifier::AmbientOcclusionEngine::perform()
 				if(!setProgressValue(sample))
 					break;
 
-				// Generate lighting direction on unit sphere.
-				FloatType y = (FloatType)sample * 2 / _samplingCount - FloatType(1) + FloatType(1) / _samplingCount;
+				// Generate lighting direction on unit sphere using "Fibonacci sphere algorithm".
+				// https://stackoverflow.com/a/26127012
+				FloatType y = FloatType(1) - (sample / FloatType(_samplingCount - 1)) * 2; // y goes from 1 to -1
+				FloatType r = std::sqrt(FloatType(1) - y * y); // radius at y
 				FloatType phi = (FloatType)sample * FLOATTYPE_PI * (FloatType(3) - sqrt(FloatType(5)));
-				Vector3 dir(cos(phi), y, sin(phi));
+				Vector3 dir(std::cos(phi)*r, y, std::sin(phi)*r);
+				OVITO_ASSERT(std::abs(dir.length() - 1.0) < FLOATTYPE_EPSILON);
 
 				// Set up view projection.
 				ViewProjectionParameters projParams;
