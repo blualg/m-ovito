@@ -42,8 +42,10 @@ PipelineFlowState ParticleExporter::getParticleData(TimePoint time, MainThreadOp
 		return {};
 
 	const ParticlesObject* particles = state.getObject<ParticlesObject>();
-	if(!particles || !particles->getProperty(ParticlesObject::PositionProperty))
+	if(!particles)
 		throwException(tr("The selected data collection does not contain any particles that can be exported."));
+	if(!particles->getProperty(ParticlesObject::PositionProperty))
+		throwException(tr("The particles to be exported do not have any coordinates ('Position' property is missing)."));
 
 	// Verify data, make sure array length is consistent for all particle properties.
 	particles->verifyIntegrity();
