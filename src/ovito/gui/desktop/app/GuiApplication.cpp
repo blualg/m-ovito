@@ -82,8 +82,8 @@ bool GuiApplication::processCommandLineParameters()
 		// Activate console mode.
 		_consoleMode = true;
 #if defined(Q_OS_LINUX)
-		// On Unix/Linux, console mode means headless mode if no X server is available.
-		if(!qEnvironmentVariableIsEmpty("DISPLAY")) {
+		// On Linux, run in headless mode by default - unless explicitly requested otherwise (in which case an X server is required).
+		if(qEnvironmentVariableIsSet("OVITO_GUI_MODE") && qgetenv("OVITO_GUI_MODE") != "0") {
 			_headlessMode = false;
 		}
 #elif defined(Q_OS_MACOS)
@@ -91,7 +91,7 @@ bool GuiApplication::processCommandLineParameters()
 		::setenv("QT_MAC_DISABLE_FOREGROUND_APPLICATION_TRANSFORM", "1", 1);
 		_headlessMode = false;
 #elif defined(Q_OS_WIN)
-		// On Windows, there is always an OpenGL implementation available for background rendering.
+		// On Windows, there is always an OpenGL implementation available for offscreen rendering.
 		_headlessMode = false;
 #endif
 	}
