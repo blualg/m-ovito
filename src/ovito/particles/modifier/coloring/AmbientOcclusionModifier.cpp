@@ -189,6 +189,7 @@ void AmbientOcclusionModifier::AmbientOcclusionEngine::perform()
 
 				_renderer->beginFrame(0, projParams, nullptr, frameBufferRect, &frameBuffer);
 				_renderer->setWorldTransform(AffineTransformation::Identity());
+				_renderer->resetPickingBuffer();
 				try {
 					// Create particle buffer.
 					if(!particleBuffer.positions()) {
@@ -221,7 +222,7 @@ void AmbientOcclusionModifier::AmbientOcclusionEngine::perform()
 						quint32 id = red + (green << 8) + (blue << 16) + (alpha << 24);
 						if(id == 0)
 							continue;
-						// Subtracting base 1 from ID, because that's how OpenGLSceneRenderer::registerSubObjectIDs() is implemented.
+						// Subtracting base 1 from ID, because that's how SceneRenderer::registerSubObjectIDs() is implemented.
 						quint32 particleIndex = id - 1;
 						OVITO_ASSERT(particleIndex < brightnessValues.size());
 						brightnessValues[particleIndex] += 1;

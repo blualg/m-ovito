@@ -117,10 +117,6 @@ public:
 	/// Loads and compiles an OpenGL shader program.
 	QOpenGLShaderProgram* loadShaderProgram(const QString& id, const QString& vertexShaderFile, const QString& fragmentShaderFile, const QString& geometryShaderFile = QString());
 
-	/// Registers a range of sub-IDs belonging to the current object being rendered.
-	/// This is an internal method used by the PickingOpenGLSceneRenderer class to implement the picking mechanism.
-	virtual quint32 registerSubObjectIDs(quint32 subObjectCount, const ConstDataBufferPtr& indices = {}) { return 1; }
-
 	/// Binds the default vertex array object again in case another VAO was bound in between.
 	/// This method should be called before calling an OpenGL rendering function.
 	void rebindVAO() {

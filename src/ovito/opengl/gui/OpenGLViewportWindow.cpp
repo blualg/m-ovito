@@ -138,7 +138,7 @@ ViewportPickResult OpenGLViewportWindow::pick(const QPointF& pos)
 
 			// Query which object is located at the given window position.
 			const QPoint pixelPos = (pos * devicePixelRatio()).toPoint();
-			const PickingOpenGLSceneRenderer::ObjectRecord* objInfo;
+			const PickingOpenGLSceneRenderer::ObjectPickingRecord* objInfo;
 			quint32 subobjectId;
 			std::tie(objInfo, subobjectId) = pickingRenderer()->objectAtLocation(pixelPos);
 			if(objInfo) {
@@ -207,7 +207,7 @@ void OpenGLViewportWindow::paintGL()
 	}
 
 	// Invalidate picking buffer every time the visible contents of the viewport change.
-	_pickingRenderer->reset();
+	_pickingRenderer->resetPickingBuffer();
 
 	if(!viewport()->dataset()->viewportConfig()->isSuspended()) {
 

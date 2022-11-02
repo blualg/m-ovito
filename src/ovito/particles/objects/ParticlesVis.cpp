@@ -651,11 +651,9 @@ void ParticlesVis::renderMeshBasedParticles(const ParticlesObject* particles, Sc
 		// Update the pick info record with the latest particle data.
 		t.pickInfo->setParticles(particles);
 
-		if(renderer->isPicking())
-			renderer->beginPickObject(contextNode, t.pickInfo);
+		renderer->beginPickObject(contextNode, t.pickInfo);
 		renderer->renderMesh(t.meshPrimitive);
-		if(renderer->isPicking())
-			renderer->endPickObject();
+		renderer->endPickObject();
 	}
 }
 
@@ -1066,16 +1064,16 @@ void ParticlesVis::renderCylindricParticles(const ParticlesObject* particles, Sc
 		visCache.pickInfo->setParticles(particles);
 
 		// Render the particle primitive.
-		if(renderer->isPicking()) renderer->beginPickObject(contextNode, visCache.pickInfo);
+		renderer->beginPickObject(contextNode, visCache.pickInfo);
 		renderer->renderCylinders(visCache.cylinderPrimitive);
-		if(renderer->isPicking()) renderer->endPickObject();
+		renderer->endPickObject();
 		if(visCache.spheresPrimitives[0].positions()) {
-			if(renderer->isPicking()) renderer->beginPickObject(contextNode, visCache.pickInfo);
+			renderer->beginPickObject(contextNode, visCache.pickInfo);
 			renderer->renderParticles(visCache.spheresPrimitives[0]);
-			if(renderer->isPicking()) renderer->endPickObject();
-			if(renderer->isPicking()) renderer->beginPickObject(contextNode, visCache.pickInfo);
+			renderer->endPickObject();
+			renderer->beginPickObject(contextNode, visCache.pickInfo);
 			renderer->renderParticles(visCache.spheresPrimitives[1]);
-			if(renderer->isPicking()) renderer->endPickObject();
+			renderer->endPickObject();
 		}
 	}
 }

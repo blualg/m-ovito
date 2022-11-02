@@ -339,8 +339,7 @@ PipelineStatus NucleotidesVis::render(TimePoint time, const ConstDataObjectPath&
 		visCache.pickInfo->setParticles(particles);
 	}
 
-	if(renderer->isPicking())
-		renderer->beginPickObject(contextNode, visCache.pickInfo);
+	renderer->beginPickObject(contextNode, visCache.pickInfo);
 
 	renderer->renderParticles(visCache.backbonePrimitive);
 	if(visCache.connectionPrimitive.basePositions())
@@ -348,8 +347,7 @@ PipelineStatus NucleotidesVis::render(TimePoint time, const ConstDataObjectPath&
 	if(visCache.basePrimitive.positions())
 		renderer->renderParticles(visCache.basePrimitive);
 
-	if(renderer->isPicking())
-		renderer->endPickObject();
+	renderer->endPickObject();
 
 	return {};
 }

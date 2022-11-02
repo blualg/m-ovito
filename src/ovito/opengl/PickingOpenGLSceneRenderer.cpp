@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -45,7 +45,7 @@ PickingOpenGLSceneRenderer::PickingOpenGLSceneRenderer(ObjectCreationParams para
 bool PickingOpenGLSceneRenderer::renderFrame(const QRect& viewportRect, MainThreadOperation& operation)
 {
 	// Clear previous object records.
-	reset();
+	resetPickingBuffer();
 
 	// Let the base class do the main rendering work.
 	if(!OffscreenInteractiveOpenGLSceneRenderer::renderFrame(viewportRect, operation))
@@ -123,77 +123,19 @@ bool PickingOpenGLSceneRenderer::renderFrame(const QRect& viewportRect, MainThre
 }
 
 /******************************************************************************
-* This method is called after renderFrame() has been called.
-******************************************************************************/
-void PickingOpenGLSceneRenderer::endFrame(bool renderingSuccessful, const QRect& viewportRect)
-{
-	endPickObject();
-
-	OffscreenInteractiveOpenGLSceneRenderer::endFrame(renderingSuccessful, viewportRect);
-}
-
-/******************************************************************************
 * Resets the internal state of the picking renderer and clears the stored object records.
 ******************************************************************************/
-void PickingOpenGLSceneRenderer::reset()
+void PickingOpenGLSceneRenderer::resetPickingBuffer()
 {
-	_objects.clear();
-	endPickObject();
-#if 1
-	_nextAvailablePickingID = 1;
-#else
-	// This can be enabled during debugging to avoid alpha!=1 pixels in the picking render buffer.
-	_nextAvailablePickingID = 0xEF000000;
-#endif
 	discardFramebufferImage();
-}
 
-/******************************************************************************
-* When picking mode is active, this registers an object being rendered.
-******************************************************************************/
-quint32 PickingOpenGLSceneRenderer::beginPickObject(const PipelineSceneNode* objNode, ObjectPickInfo* pickInfo)
-{
-	OVITO_ASSERT(objNode != nullptr);
-	OVITO_ASSERT(isPicking());
-
-	_currentObject.objectNode = const_cast<PipelineSceneNode*>(objNode);
-	_currentObject.pickInfo = pickInfo;
-	_currentObject.baseObjectID = _nextAvailablePickingID;
-	return _currentObject.baseObjectID;
-}
-
-/******************************************************************************
-* Registers a range of sub-IDs belonging to the current object being rendered.
-******************************************************************************/
-quint32 PickingOpenGLSceneRenderer::registerSubObjectIDs(quint32 subObjectCount, const ConstDataBufferPtr& indices)
-{
-	OVITO_ASSERT_MSG(_currentObject.objectNode, "PickingOpenGLSceneRenderer::registerSubObjectIDs()", "You forgot to register the current object via beginPickObject().");
-
-	quint32 baseObjectID = _nextAvailablePickingID;
-	if(indices)
-		_currentObject.indexedRanges.push_back(std::make_pair(indices, _nextAvailablePickingID - _currentObject.baseObjectID));
-	_nextAvailablePickingID += subObjectCount;
-	return baseObjectID;
-}
-
-/******************************************************************************
-* Call this when rendering of a pickable object is finished.
-******************************************************************************/
-void PickingOpenGLSceneRenderer::endPickObject()
-{
-	if(_currentObject.objectNode) {
-		_objects.push_back(std::move(_currentObject));
-	}
-	_currentObject.baseObjectID = 0;
-	_currentObject.objectNode = nullptr;
-	_currentObject.pickInfo = nullptr;
-	_currentObject.indexedRanges.clear();
+	OffscreenInteractiveOpenGLSceneRenderer::resetPickingBuffer();
 }
 
 /******************************************************************************
 * Returns the object record and the sub-object ID for the object at the given pixel coordinates.
 ******************************************************************************/
-std::tuple<const PickingOpenGLSceneRenderer::ObjectRecord*, quint32> PickingOpenGLSceneRenderer::objectAtLocation(const QPoint& pos) const
+std::tuple<const SceneRenderer::ObjectPickingRecord*, quint32> PickingOpenGLSceneRenderer::objectAtLocation(const QPoint& pos) const
 {
 	if(!framebufferImage().isNull()) {
 		if(pos.x() >= 0 && pos.x() < framebufferImage().width() && pos.y() >= 0 && pos.y() < framebufferImage().height()) {
@@ -204,7 +146,7 @@ std::tuple<const PickingOpenGLSceneRenderer::ObjectRecord*, quint32> PickingOpen
 			quint32 blue = qBlue(pixel);
 			quint32 alpha = qAlpha(pixel);
 			quint32 objectID = red + (green << 8) + (blue << 16) + (alpha << 24);
-			if(const ObjectRecord* objRecord = lookupObjectRecord(objectID)) {
+			if(const ObjectPickingRecord* objRecord = lookupObjectPickingRecord(objectID)) {
 				quint32 subObjectID = objectID - objRecord->baseObjectID;
 				for(const auto& range : objRecord->indexedRanges) {
 					if(subObjectID >= range.second && subObjectID < range.second + range.first->size()) {
@@ -216,27 +158,7 @@ std::tuple<const PickingOpenGLSceneRenderer::ObjectRecord*, quint32> PickingOpen
 			}
 		}
 	}
-	return std::tuple<const PickingOpenGLSceneRenderer::ObjectRecord*, quint32>(nullptr, 0);
-}
-
-/******************************************************************************
-* Given an object ID, looks up the corresponding record.
-******************************************************************************/
-const PickingOpenGLSceneRenderer::ObjectRecord* PickingOpenGLSceneRenderer::lookupObjectRecord(quint32 objectID) const
-{
-	if(objectID == 0 || _objects.empty())
-		return nullptr;
-
-	for(auto iter = _objects.begin(); iter != _objects.end(); iter++) {
-		if(iter->baseObjectID > objectID) {
-			OVITO_ASSERT(iter != _objects.begin());
-			OVITO_ASSERT(objectID >= (iter-1)->baseObjectID);
-			return &*std::prev(iter);
-		}
-	}
-
-	OVITO_ASSERT(objectID >= _objects.back().baseObjectID);
-	return &_objects.back();
+	return std::tuple<const SceneRenderer::ObjectPickingRecord*, quint32>(nullptr, 0);
 }
 
 /******************************************************************************

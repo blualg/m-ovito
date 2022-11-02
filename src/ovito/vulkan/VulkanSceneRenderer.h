@@ -83,10 +83,6 @@ public:
 	/// This method is called just before renderFrame() is called.
 	virtual void beginFrame(TimePoint time, const ViewProjectionParameters& params, Viewport* vp, const QRect& viewportRect, FrameBuffer* frameBuffer) override;
 
-	/// Registers a range of sub-IDs belonging to the current object being rendered.
-	/// This is an internal method used by the PickingVulkanSceneRenderer class to implement the picking mechanism.
-	virtual quint32 registerSubObjectIDs(quint32 subObjectCount, const ConstDataBufferPtr& indices = {}) { return 1; }
-
 	/// Temporarily enables/disables the depth test while rendering.
 	virtual void setDepthTestEnabled(bool enabled) override;
 

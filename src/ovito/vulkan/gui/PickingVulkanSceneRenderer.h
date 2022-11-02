@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -38,15 +38,6 @@ class PickingVulkanSceneRenderer : public OffscreenVulkanSceneRenderer
 
 public:
 
-	struct ObjectRecord {
-		quint32 baseObjectID;
-		OORef<PipelineSceneNode> objectNode;
-		OORef<ObjectPickInfo> pickInfo;
-		std::vector<std::pair<ConstDataBufferPtr, quint32>> indexedRanges;
-	};
-
-public:
-
 	/// Constructor.
 	explicit PickingVulkanSceneRenderer(ObjectCreationParams params, std::shared_ptr<VulkanContext> vulkanDevice, ViewportWindowInterface* window);
 
@@ -59,20 +50,8 @@ public:
 	/// This method is called after renderFrame() has been called.
 	virtual void endFrame(bool renderingSuccessful, const QRect& viewportRect) override;
 
-	/// When picking mode is active, this registers an object being rendered.
-	virtual quint32 beginPickObject(const PipelineSceneNode* objNode, ObjectPickInfo* pickInfo = nullptr) override;
-
-	/// Registers a range of sub-IDs belonging to the current object being rendered.
-	virtual quint32 registerSubObjectIDs(quint32 subObjectCount, const ConstDataBufferPtr& indices) override;
-
-	/// Call this when rendering of a pickable object is finished.
-	virtual void endPickObject() override;
-
 	/// Returns the object record and the sub-object ID for the object at the given pixel coordinates.
-	std::tuple<const ObjectRecord*, quint32> objectAtLocation(const QPoint& pos) const;
-
-	/// Given an object ID, looks up the corresponding record.
-	const ObjectRecord* lookupObjectRecord(quint32 objectID) const;
+	std::tuple<const ObjectPickingRecord*, quint32> objectAtLocation(const QPoint& pos) const;
 
 	/// Returns the world space position corresponding to the given screen position.
 	Point3 worldPositionFromLocation(const QPoint& pos) const;
@@ -81,21 +60,12 @@ public:
 	bool isRefreshRequired() const { return _frameBuffer.image().isNull(); }
 
 	/// Resets the picking buffer and clears the stored object records.
-	void resetPickingBuffer();
+	virtual void resetPickingBuffer() override;
 
 private:
 
 	/// The viewport window that owns this picking renderer.
 	ViewportWindowInterface* _window;
-
-	/// The next available object ID.
-	quint32 _nextAvailablePickingID;
-
-	/// The current object for which we are recording picking infos.
-	ObjectRecord _currentObject;
-
-	/// The list of registered objects.
-	std::vector<ObjectRecord> _objects;
 
 	/// The frame buffer containing the object information.
 	FrameBuffer _frameBuffer;

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -508,6 +508,85 @@ FloatType SceneRenderer::projectedPixelSize(const Point3& worldPosition) const
 	else {
 		return projParams().fieldOfView / (FloatType)height * baseSize;
 	}
+}
+
+/******************************************************************************
+* When picking mode is active, this registers an object being rendered.
+******************************************************************************/
+quint32 SceneRenderer::beginPickObject(const PipelineSceneNode* objNode, ObjectPickInfo* pickInfo)
+{
+	if(isPicking()) {
+		_currentObjectPickingRecord.objectNode = const_cast<PipelineSceneNode*>(objNode);
+		_currentObjectPickingRecord.pickInfo = pickInfo;
+		_currentObjectPickingRecord.baseObjectID = _nextAvailablePickingID;
+		return _currentObjectPickingRecord.baseObjectID;
+	}
+	return 0;
+}
+
+/******************************************************************************
+* Registers a range of sub-IDs belonging to the current object being rendered.
+******************************************************************************/
+quint32 SceneRenderer::registerSubObjectIDs(quint32 subObjectCount, const ConstDataBufferPtr& indices)
+{
+	OVITO_ASSERT(isPicking());
+
+	quint32 baseObjectID = _nextAvailablePickingID;
+	if(indices)
+		_currentObjectPickingRecord.indexedRanges.push_back(std::make_pair(indices, _nextAvailablePickingID - _currentObjectPickingRecord.baseObjectID));
+	_nextAvailablePickingID += subObjectCount;
+	return baseObjectID;
+}
+
+/******************************************************************************
+* Call this when rendering of a pickable object is finished.
+******************************************************************************/
+void SceneRenderer::endPickObject()
+{
+	if(isPicking()) {
+		if(_currentObjectPickingRecord.objectNode) {
+			_objectPickingRecords.push_back(std::move(_currentObjectPickingRecord));
+		}
+		_currentObjectPickingRecord.baseObjectID = 0;
+		_currentObjectPickingRecord.objectNode = nullptr;
+		_currentObjectPickingRecord.pickInfo = nullptr;
+		_currentObjectPickingRecord.indexedRanges.clear();
+	}
+}
+
+/******************************************************************************
+* Resets the internal state of the picking renderer and clears the stored object records.
+******************************************************************************/
+void SceneRenderer::resetPickingBuffer()
+{
+	endPickObject();
+	_objectPickingRecords.clear();
+#if 1
+	_nextAvailablePickingID = 1;
+#else
+	// This can be enabled during debugging to avoid alpha!=1 pixels in the picking render buffer.
+	_nextAvailablePickingID = 0xEF000000;
+#endif
+}
+
+/******************************************************************************
+* Given an object picking ID, looks up the corresponding record.
+******************************************************************************/
+const SceneRenderer::ObjectPickingRecord* SceneRenderer::lookupObjectPickingRecord(quint32 objectID) const
+{
+	if(objectID == 0 || _objectPickingRecords.empty())
+		return nullptr;
+
+	for(auto iter = _objectPickingRecords.begin(); iter != _objectPickingRecords.end(); iter++) {
+		if(iter->baseObjectID > objectID) {
+			OVITO_ASSERT(iter != _objectPickingRecords.begin());
+			OVITO_ASSERT(objectID >= (iter-1)->baseObjectID);
+			return &*std::prev(iter);
+		}
+	}
+
+	OVITO_ASSERT(objectID >= _objectPickingRecords.back().baseObjectID);
+	return &_objectPickingRecords.back();
 }
 
 /******************************************************************************

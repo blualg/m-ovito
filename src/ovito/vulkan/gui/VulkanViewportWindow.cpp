@@ -111,7 +111,7 @@ ViewportPickResult VulkanViewportWindow::pick(const QPointF& pos)
 
 			// Query which object is located at the given window position.
 			const QPoint pixelPos = (pos * devicePixelRatio()).toPoint();
-			const PickingVulkanSceneRenderer::ObjectRecord* objInfo;
+			const SceneRenderer::ObjectPickingRecord* objInfo;
 			quint32 subobjectId;
 			std::tie(objInfo, subobjectId) = pickingRenderer()->objectAtLocation(pixelPos);
 			if(objInfo) {

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -70,6 +70,14 @@ class OVITO_CORE_EXPORT SceneRenderer : public RefTarget
 	OVITO_CLASS(SceneRenderer)
 
 public:
+	
+	struct ObjectPickingRecord 
+	{
+		quint32 baseObjectID;
+		OORef<PipelineSceneNode> objectNode;
+		OORef<ObjectPickInfo> pickInfo;
+		std::vector<std::pair<ConstDataBufferPtr, quint32>> indexedRanges;
+	};
 
 	/// A special exception type thrown by a scene renderer from one of its renderXXX() methods
 	/// to indicate that something went wrong. The error will interrupt the rendering process and
@@ -140,7 +148,9 @@ public:
 	virtual bool renderOverlays(bool underlays, const QRect& logicalViewportRect, const QRect& physicalViewportRect, MainThreadOperation& operation);
 
 	/// This method is called after renderFrame() has been called.
-	virtual void endFrame(bool renderingSuccessful, const QRect& viewportRect) {}
+	virtual void endFrame(bool renderingSuccessful, const QRect& viewportRect) {
+		endPickObject();
+	}
 
 	/// Changes the current local-to-world transformation matrix.
 	void setWorldTransform(const AffineTransformation& tm) {
@@ -207,10 +217,19 @@ public:
 	}
 
 	/// When picking mode is active, this registers an object being rendered.
-	virtual quint32 beginPickObject(const PipelineSceneNode* objNode, ObjectPickInfo* pickInfo = nullptr) { return 0; }
+	quint32 beginPickObject(const PipelineSceneNode* objNode, ObjectPickInfo* pickInfo = nullptr);
+
+	/// Registers a range of sub-IDs belonging to the current object being rendered.
+	quint32 registerSubObjectIDs(quint32 subObjectCount, const ConstDataBufferPtr& indices = {});
 
 	/// Call this when rendering of a pickable object is finished.
-	virtual void endPickObject() {}
+	void endPickObject();
+
+	/// Resets the picking buffer and clears the stored object records.
+	virtual void resetPickingBuffer();
+
+	/// Given an object picking ID, looks up the corresponding record.
+	const ObjectPickingRecord* lookupObjectPickingRecord(quint32 objectID) const;
 
 	/// Returns the line rendering width to use in object picking mode.
 	virtual FloatType defaultLinePickingWidth();
@@ -316,6 +335,15 @@ private:
 
 	/// Working variable used for computing the bounding box of the entire scene.
 	Box3 _sceneBoundingBox;
+
+	/// The next available object record for picking.
+	ObjectPickingRecord _currentObjectPickingRecord;
+
+	/// The next available object ID for object picking.
+	quint32 _nextAvailablePickingID;
+
+	/// The list of registered objects for picking.
+	std::vector<ObjectPickingRecord> _objectPickingRecords;
 };
 
 /*
