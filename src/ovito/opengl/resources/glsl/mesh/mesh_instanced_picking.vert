@@ -31,6 +31,7 @@ in vec4 instance_tm_row3;
 
 // Outputs:
 flat out vec4 color_fs;
+
 void main()
 {
     // Apply instance transformation.

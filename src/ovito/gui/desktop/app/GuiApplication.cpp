@@ -24,7 +24,6 @@
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
 #include <ovito/gui/desktop/dataset/GuiDataSetContainer.h>
 #include <ovito/gui/base/actions/ActionManager.h>
-#include <ovito/core/app/ApplicationService.h>
 #include "GuiApplication.h"
 
 // Registers the embedded Qt resource files embedded in a statically linked executable at application startup. 
