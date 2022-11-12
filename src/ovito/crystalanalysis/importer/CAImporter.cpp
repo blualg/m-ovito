@@ -506,7 +506,7 @@ void CAImporter::FrameLoader::loadFile()
 	simulationCell()->setCellMatrix(cell);
 	simulationCell()->setPbcFlags(pbcFlags[0], pbcFlags[1], pbcFlags[2]);
 	if(defectSurface)
-		defectSurface.setCell(simulationCell());
+		defectSurface.setDomain(simulationCell());
 
 	std::vector<size_t> structureCounts;
 	if(clusterGraph) {

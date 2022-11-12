@@ -160,7 +160,7 @@ public:
 	/// Constructor.
 	InterfaceMesh(DataSet* dataset, ElasticMapping& elasticMapping) : SurfaceMeshAccess(DataOORef<SurfaceMesh>::create(dataset)),
 		_elasticMapping(elasticMapping) {
-			setCell(elasticMapping.structureAnalysis().cell());
+			setDomain(elasticMapping.structureAnalysis().cell());
 		}
 
 	/// Returns the mapping from the physical configuration of the system

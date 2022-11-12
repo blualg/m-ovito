@@ -166,7 +166,7 @@ DislocationNetwork::DislocationNetwork(const Microstructure* microstructureObj) 
 				OVITO_ASSERT(visitedEdges.find(edge) != visitedEdges.end());
 				int edgeInfo = visitedEdges[edge];
 				DislocationNode* otherNode = (edgeInfo > 0) ? &segments()[edgeInfo - 1]->backwardNode() : &segments()[-edgeInfo - 1]->forwardNode();
-				OVITO_ASSERT(!microstructure.cell() || microstructure.cell()->wrapPoint(otherNode->position()).equals(microstructure.cell()->wrapPoint(microstructure.vertexPosition(vertex))));
+				OVITO_ASSERT(!microstructure.domain() || microstructure.wrapPoint(otherNode->position()).equals(microstructure.wrapPoint(microstructure.vertexPosition(vertex))));
 				if(!headNode)
 					headNode = otherNode;
 				else

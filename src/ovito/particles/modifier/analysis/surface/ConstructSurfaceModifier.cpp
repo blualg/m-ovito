@@ -596,7 +596,8 @@ void ConstructSurfaceModifier::GaussianDensityEngine::perform()
         return _data[(i + j*_gridShape[0] + k*_gridShape[0]*_gridShape[1])];
     };
 
-	// Set the domain of the output mesh.
+	// Temporarily set the domain of the output mesh to the grid domain.
+	DataOORef<const SimulationCellObject> originalDomain = mesh()->domain();
 	if(mesh()->domain()->cellMatrix() != gridBoundaries) {
 		auto newCell = DataOORef<SimulationCellObject>::makeCopy(mesh()->domain());
 		newCell->setCellMatrix(gridBoundaries);
@@ -677,6 +678,9 @@ void ConstructSurfaceModifier::GaussianDensityEngine::perform()
 	// Flip surface orientation if cell is mirrored.
 	if(gridToCartesian.determinant() < 0)
 		mesh.flipFaces();
+
+	// Restore original mesh domain.
+	mesh.setDomain(std::move(originalDomain));
 
 	nextProgressSubStep();
 

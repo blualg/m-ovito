@@ -56,6 +56,7 @@ private:
 	ColorParameterUI* _surfaceColorUI;
 	SubObjectParameterUI* _colorMappingParamUI;
 	BooleanGroupBoxParameterUI* _capGroupUI;
+	BooleanParameterUI* _clipAtDomainBoundariesUI;
 };
 
 }	// End of namespace

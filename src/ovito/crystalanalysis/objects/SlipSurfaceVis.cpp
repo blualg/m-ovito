@@ -50,7 +50,7 @@ SlipSurfaceVis::SlipSurfaceVis(ObjectCreationParams params) : SurfaceMeshVis(par
 * Constructor.
 ******************************************************************************/
 SlipSurfaceVis::PrepareMeshEngine::PrepareMeshEngine(const SurfaceMesh* microstructure, bool smoothShading) :
-        SurfaceMeshVis::PrepareSurfaceEngine(microstructure, false, smoothShading, NoPseudoColoring, {}, Color(1,1,1), false),
+        SurfaceMeshVis::PrepareSurfaceEngine(microstructure, false, smoothShading, NoPseudoColoring, {}, Color(1,1,1), false, false),
         _microstructure(static_object_cast<Microstructure>(microstructure))
 {
     if(const PropertyObject* phaseProperty = microstructure->regions()->getProperty(SurfaceMeshRegions::PhaseProperty)) {

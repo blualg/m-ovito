@@ -94,10 +94,10 @@ bool InterfaceMesh::createMesh(FloatType maximumNeighborDistance, ConstPropertyA
 			_edges[edge].physicalVector = vertexPositions[(i+1)%3] - vertexPositions[i];
 
 			// Check if edge is spanning more than half of a periodic simulation cell.
-			if(this->cell()) {
+			if(this->domain()) {
 				for(size_t dim = 0; dim < 3; dim++) {
-					if(this->cell()->hasPbc(dim)) {
-						if(std::abs(this->cell()->inverseMatrix().prodrow(_edges[edge].physicalVector, dim)) >= FloatType(0.5) + FLOATTYPE_EPSILON)
+					if(this->domain()->hasPbc(dim)) {
+						if(std::abs(this->domain()->inverseMatrix().prodrow(_edges[edge].physicalVector, dim)) >= FloatType(0.5) + FLOATTYPE_EPSILON)
 							StructureAnalysis::generateCellTooSmallError(dim);
 					}
 				}
@@ -193,7 +193,7 @@ bool InterfaceMesh::generateDefectMesh(const DislocationTracer& tracer, SurfaceM
 	// Adopt all vertices from the interface mesh to the defect mesh.
 	defectMesh.createVertices(std::begin(vertexPositions()), std::end(vertexPositions()));
 	defectMesh.setSpaceFillingRegion(spaceFillingRegion());
-	defectMesh.setCell(cell());
+	defectMesh.setDomain(domain());
 
 	// Copy faces and half-edges.
 	std::vector<face_index> faceMap(faceCount(), SurfaceMeshAccess::InvalidIndex);

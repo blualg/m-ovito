@@ -27,6 +27,7 @@
 #include <ovito/mesh/surface/SurfaceMeshAccess.h>
 #include <ovito/mesh/surface/SurfaceMesh.h>
 #include <ovito/mesh/surface/RenderableSurfaceMesh.h>
+#include <ovito/mesh/util/CapPolygonTessellator.h>
 #include <ovito/stdobj/simcell/SimulationCellObject.h>
 #include <ovito/stdobj/properties/PropertyColorMapping.h>
 #include <ovito/core/dataset/data/TransformingDataVis.h>
@@ -101,14 +102,15 @@ public:
 	public:
 
 		/// Constructor.
-		PrepareSurfaceEngine(const SurfaceMesh* mesh, bool reverseOrientation, bool smoothShading, ColorMappingMode colorMappingMode, const PropertyReference& pseudoColorPropertyRef, Color surfaceColor, bool generateCapPolygons) :
+		PrepareSurfaceEngine(const SurfaceMesh* mesh, bool reverseOrientation, bool smoothShading, ColorMappingMode colorMappingMode, const PropertyReference& pseudoColorPropertyRef, Color surfaceColor, bool generateCapPolygons, bool clipAtDomainBoundaries) :
 			_inputMesh(mesh),
 			_reverseOrientation(reverseOrientation),
 			_smoothShading(smoothShading),
 			_colorMappingMode(colorMappingMode),
 			_pseudoColorPropertyRef(pseudoColorPropertyRef),
 			_surfaceColor(surfaceColor),
-			_generateCapPolygons(generateCapPolygons) {}
+			_generateCapPolygons(generateCapPolygons),
+			_clipAtDomainBoundaries(clipAtDomainBoundaries) {}
 
 		/// Builds the non-periodic representation of the surface mesh.
 		virtual void perform() override;
@@ -150,13 +152,16 @@ public:
 		bool splitFace(int faceIndex, int oldVertexCount, std::vector<Point3>& newVertices, std::vector<ColorA>& newVertexColors, std::vector<FloatType>& newVertexPseudoColors, std::map<std::pair<int,int>,std::tuple<int,int,FloatType>>& newVertexLookupMap, size_t dim);
 
 		/// Traces the closed contour of the surface-boundary intersection.
-		std::vector<Point2> traceContour(const SurfaceMeshAccess& inputMeshData, SurfaceMesh::edge_index firstEdge, const std::vector<Point3>& reducedPos, std::vector<bool>& visitedFaces, size_t dim) const;
+		std::vector<Point2> traceContour(const SurfaceMeshAccess& inputMeshData, SurfaceMesh::edge_index firstEdge, const std::vector<Point3>& reducedPos, std::vector<bool>& visitedFaces, size_t dim, CapPolygonTessellator::FaceMode faceMode) const;
 
-		/// Clips a 2d contour at a periodic boundary.
-		static void clipContour(std::vector<Point2>& input, std::array<bool,2> periodic, std::vector<std::vector<Point2>>& openContours, std::vector<std::vector<Point2>>& closedContours);
+		/// Slices a 2d contour at periodic boundaries.
+		static void sliceContourAtPeriodicBoundaries(std::vector<Point2>& input, std::array<bool,2> pbcFlags, std::vector<std::vector<Point2>>& openContours, std::vector<std::vector<Point2>>& closedContours);
+
+		/// Slices a 2d contour at periodic boundaries and clips it an non-periodic boundaries.
+		static void sliceAndClipContour(std::vector<Point2>& input, std::array<bool,2> pbcFlags, std::vector<std::vector<Point2>>& openContours, std::vector<std::vector<Point2>>& closedContours);
 
 		/// Computes the intersection point of a 2d contour segment crossing a periodic boundary.
-		static void computeContourIntersection(size_t dim, FloatType t, Point2& base, Vector2& delta, int crossDir, std::vector<std::vector<Point2>>& contours);
+		static void computeContourIntersectionPeriodic(size_t dim, FloatType t, Point2& base, Vector2& delta, int crossDir, std::vector<std::vector<Point2>>& contours);
 
 		/// Determines if the 2D box corner (0,0) is inside the closed region described by the 2d polygon.
 		static bool isCornerInside2DRegion(const std::vector<std::vector<Point2>>& contours);
@@ -167,6 +172,7 @@ public:
 		bool _reverseOrientation;					///< Flag for inside-out display of the mesh.
 		bool _smoothShading;						///< Flag for interpolated-normal shading
 		bool _generateCapPolygons;					///< Controls the generation of cap polygons where the mesh intersection periodic cell boundaries.
+		bool _clipAtDomainBoundaries;				///< Clip surface mesh at non-periodic cell boundaries.
 		Color _surfaceColor;						///< The uniform surface color set by the user.
 		ColorMappingMode _colorMappingMode; 		///< The pseudo-coloring mode.
 		PropertyReference _pseudoColorPropertyRef;
@@ -233,6 +239,10 @@ private:
 
 	/// Controls which part of a surface mesh is used for pseudo-color mapping.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(ColorMappingMode, colorMappingMode, setColorMappingMode);
+
+	/// Controls whether the mesh gets clipped at non-periodic cell boundaries.
+	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, clipAtDomainBoundaries, setClipAtDomainBoundaries, PROPERTY_FIELD_MEMORIZE);
+	DECLARE_SHADOW_PROPERTY_FIELD(clipAtDomainBoundaries);
 };
 
 

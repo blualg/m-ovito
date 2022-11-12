@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -30,14 +30,20 @@
 namespace Ovito::Mesh {
 
 /**
- * \brief Helper class that can tessellate a set of non-convex polygons into triangles.
+ * \brief Tessellates a set of non-convex polygons into triangles.
  */
 class OVITO_MESH_EXPORT CapPolygonTessellator
 {
 public:
 
+	enum FaceMode {
+		PeriodicFace, ///< Generate two identical cap polygons for a simulation cell boundary with periodic boundary conditions.
+		FrontFace, ///< Generate cap polygon for the front-side of the simulation cell.
+		BackFace ///< Generate cap polygon for the back-side of the simulation cell.
+	};
+
 	/// Constructor.
-	CapPolygonTessellator(TriMeshObject& output, size_t dim, bool createOppositePolygon = true, bool windingRuleNonzero = false) : mesh(output), dimz(dim), _createOppositePolygon(createOppositePolygon) {
+	CapPolygonTessellator(TriMeshObject& output, size_t dim, FaceMode faceMode, bool windingRuleNonzero = false) : mesh(output), dimz(dim), _faceMode(faceMode) {
 		dimx = (dimz + 1) % 3;
 		dimy = (dimz + 2) % 3;
 		tess = gluNewTess();
@@ -79,9 +85,9 @@ public:
 		Point3 p;
 		p[dimx] = pos.x();
 		p[dimy] = pos.y();
-		p[dimz] = 0;
+		p[dimz] = (_faceMode == BackFace) ? 1 : 0;
 		intptr_t vindex = mesh.addVertex(p);
-		if(_createOppositePolygon) {
+		if(_faceMode == PeriodicFace) {
 			p[dimz] = 1;
 			mesh.addVertex(p);
 		}
@@ -103,9 +109,14 @@ public:
 			facetVertices[1] = tessellator->vertices[1];
 			for(auto v = tessellator->vertices.cbegin() + 2; v != tessellator->vertices.cend(); ++v) {
 				facetVertices[2] = *v;
-				tessellator->mesh.addFace().setVertices(facetVertices[2], facetVertices[1], facetVertices[0]);
-				if(tessellator->_createOppositePolygon)
-					tessellator->mesh.addFace().setVertices(facetVertices[0]+1, facetVertices[1]+1, facetVertices[2]+1);
+				if(tessellator->_faceMode != BackFace) {
+					tessellator->mesh.addFace().setVertices(facetVertices[2], facetVertices[1], facetVertices[0]);
+					if(tessellator->_faceMode == PeriodicFace)
+						tessellator->mesh.addFace().setVertices(facetVertices[0]+1, facetVertices[1]+1, facetVertices[2]+1);
+				}
+				else {
+					tessellator->mesh.addFace().setVertices(facetVertices[0], facetVertices[1], facetVertices[2]);
+				}
 				facetVertices[1] = facetVertices[2];
 			}
 		}
@@ -117,9 +128,14 @@ public:
 			bool even = true;
 			for(auto v = tessellator->vertices.cbegin() + 2; v != tessellator->vertices.cend(); ++v) {
 				facetVertices[2] = *v;
-				tessellator->mesh.addFace().setVertices(facetVertices[2], facetVertices[1], facetVertices[0]);
-				if(tessellator->_createOppositePolygon)
-					tessellator->mesh.addFace().setVertices(facetVertices[0]+1, facetVertices[1]+1, facetVertices[2]+1);
+				if(tessellator->_faceMode != BackFace) {
+					tessellator->mesh.addFace().setVertices(facetVertices[2], facetVertices[1], facetVertices[0]);
+					if(tessellator->_faceMode == PeriodicFace)
+						tessellator->mesh.addFace().setVertices(facetVertices[0]+1, facetVertices[1]+1, facetVertices[2]+1);
+				}
+				else {
+					tessellator->mesh.addFace().setVertices(facetVertices[0], facetVertices[1], facetVertices[2]);
+				}
 				if(even)
 					facetVertices[0] = facetVertices[2];
 				else
@@ -129,9 +145,14 @@ public:
 		}
 		else if(tessellator->primitiveType == GL_TRIANGLES) {
 			for(auto v = tessellator->vertices.cbegin(); v != tessellator->vertices.cend(); v += 3) {
-				tessellator->mesh.addFace().setVertices(v[2], v[1], v[0]);
-				if(tessellator->_createOppositePolygon)
-					tessellator->mesh.addFace().setVertices(v[0]+1, v[1]+1, v[2]+1);
+				if(tessellator->_faceMode != BackFace) {
+					tessellator->mesh.addFace().setVertices(v[2], v[1], v[0]);
+					if(tessellator->_faceMode == PeriodicFace)
+						tessellator->mesh.addFace().setVertices(v[0]+1, v[1]+1, v[2]+1);
+				}
+				else {
+					tessellator->mesh.addFace().setVertices(v[0], v[1], v[2]);
+				}
 			}
 		}
 		else OVITO_ASSERT(false);
@@ -147,10 +168,10 @@ public:
 		Point3 p;
 		p[tessellator->dimx] = coords[0];
 		p[tessellator->dimy] = coords[1];
-		p[tessellator->dimz] = 0;
+		p[tessellator->dimz] = (tessellator->_faceMode == BackFace) ? 1 : 0;
 		intptr_t vindex = tessellator->mesh.addVertex(p);
 		*outDatab = reinterpret_cast<void*>(vindex);
-		if(tessellator->_createOppositePolygon) {
+		if(tessellator->_faceMode == PeriodicFace) {
 			p[tessellator->dimz] = 1;
 			tessellator->mesh.addVertex(p);
 		}
@@ -158,9 +179,9 @@ public:
 
 	static void errorData(int errnum, void* polygon_data) {
 		if(errnum == GLU_TESS_NEED_COMBINE_CALLBACK)
-			qDebug() << "ERROR: Could not tessellate cap polygon. It contains overlapping contours.";
+			qWarning() << "ERROR: Could not tessellate cap polygon. It contains overlapping contours.";
 		else
-			qDebug() << "ERROR: Could not tessellate cap polygon. Error code: " << errnum;
+			qWarning() << "ERROR: Could not tessellate cap polygon. Error code: " << errnum;
 	}
 
 private:
@@ -170,7 +191,7 @@ private:
 	TriMeshObject& mesh;
 	int primitiveType;
 	std::vector<int> vertices;
-	bool _createOppositePolygon;
+	FaceMode _faceMode;
 };
 
 }	// End of namespace

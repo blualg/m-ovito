@@ -91,6 +91,9 @@ void SurfaceMeshVisEditor::createUI(const RolloutInsertionParameters& rolloutPar
 	BooleanParameterUI* highlightEdgesUI = new BooleanParameterUI(this, PROPERTY_FIELD(SurfaceMeshVis::highlightEdges));
 	sublayout->addWidget(highlightEdgesUI->checkBox(), 2, 0, 1, 2);
 
+	_clipAtDomainBoundariesUI = new BooleanParameterUI(this, PROPERTY_FIELD(SurfaceMeshVis::clipAtDomainBoundaries));
+	sublayout->addWidget(_clipAtDomainBoundariesUI->checkBox(), 3, 0, 1, 2);
+
 	_capGroupUI = new BooleanGroupBoxParameterUI(this, PROPERTY_FIELD(SurfaceMeshVis::showCap));
 	_capGroupUI->groupBox()->setTitle(tr("Cap polygons"));
 	sublayout = new QGridLayout(_capGroupUI->childContainer());
@@ -165,15 +168,18 @@ void SurfaceMeshVisEditor::updateColoringOptions()
 	_coloringModeUI->buttonGroup()->button(SurfaceMeshVis::RegionPseudoColoring)->setEnabled(surfaceMesh && surfaceMesh->regions()  && !surfaceMesh->regions()->properties().isEmpty() && !hasExplicitColors);
 	_coloringModeUI->buttonGroup()->button(SurfaceMeshVis::NoPseudoColoring)->setEnabled(surfaceMesh && !hasExplicitColors);
 
-	// Detect whether the current mesh is closed or not.
-	// Depending on this we display the 'cap polygons' panel.
 	if(surfaceMesh && surfaceMesh->topology()) {
-		bool isClosed = editObject() && static_object_cast<SurfaceMeshVis>(editObject())->surfaceIsClosed() && surfaceMesh->topology()->isClosed();
-		_capGroupUI->setEnabled(isClosed);
-//		if(isClosed != _capGroupUI->groupBox()->isVisible()) {
-//			_capGroupUI->groupBox()->setVisible(isClosed);
-//			container()->updateRollouts();
-//		}
+		if(surfaceMesh->domain()) {
+			_clipAtDomainBoundariesUI->setEnabled(true);
+			// Detect whether the current mesh is closed or not.
+			// Depending on this we display the 'cap polygons' panel.
+			bool isClosed = editObject() && static_object_cast<SurfaceMeshVis>(editObject())->surfaceIsClosed() && surfaceMesh->topology()->isClosed();
+			_capGroupUI->setEnabled(isClosed);
+		}
+		else {
+			_capGroupUI->setEnabled(false);
+			_clipAtDomainBoundariesUI->setEnabled(false);
+		}
 	}
 }
 

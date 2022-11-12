@@ -455,29 +455,29 @@ public:
             p = tm * p;
     }
 
-    /// Returns the simulation box the surface mesh is embedded in.
-    const SimulationCellObject* cell() const { return _mesh->domain(); }
+    /// Returns the simulation domain the surface mesh is embedded in.
+    const SimulationCellObject* domain() const { return _mesh->domain(); }
 
     /// Replaces the simulation box.
-    void setCell(const SimulationCellObject* cell) { mutableMesh()->setDomain(cell); } 
+    void setDomain(const SimulationCellObject* domain) { mutableMesh()->setDomain(domain); } 
 
 	/// Returns whether the mesh's domain has periodic boundary conditions applied in the given direction.
-	bool hasPbc(size_t dim) const { return cell() ? cell()->hasPbc(dim) : false; }
+	bool hasPbc(size_t dim) const { return domain() ? domain()->hasPbc(dim) : false; }
 
     /// Wraps a vector at periodic boundaries of the simulation cell.
     Vector3 wrapVector(const Vector3& v) const {
-        return cell() ? cell()->wrapVector(v) : v;
+        return domain() ? domain()->wrapVector(v) : v;
     }
 
     /// Wraps a point at periodic boundaries of the simulation cell.
     Point3 wrapPoint(const Point3& p) const {
-        return cell() ? cell()->wrapPoint(p) : p;
+        return domain() ? domain()->wrapPoint(p) : p;
     }
 
     /// Returns the vector corresponding to an half-edge of the surface mesh.
     Vector3 edgeVector(edge_index edge) const {
         Vector3 delta = vertexPosition(vertex2(edge)) - vertexPosition(vertex1(edge));
-        return cell() ? cell()->wrapVector(delta) : delta;
+        return domain() ? domain()->wrapVector(delta) : delta;
     }
 
     /// Flips the orientation of all faces in the mesh.

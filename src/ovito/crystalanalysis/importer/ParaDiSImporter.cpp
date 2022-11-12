@@ -118,7 +118,7 @@ void ParaDiSImporter::FrameLoader::loadFile()
     ));
 	simulationCell()->setPbcFlags(true, true, true);
 	if(microstructure)
-		microstructure.setCell(simulationCell());
+		microstructure.setDomain(simulationCell());
 
     // Skip to third section of data file.
     for(;;) {

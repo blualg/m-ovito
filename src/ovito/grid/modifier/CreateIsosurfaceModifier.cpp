@@ -252,7 +252,7 @@ void CreateIsosurfaceModifier::ComputeIsosurfaceEngine::perform()
 		return;
 
 	// Transform mesh vertices from orthogonal grid space to world space.
-	const AffineTransformation tm = mesh.cell()->cellMatrix() * Matrix3(
+	const AffineTransformation tm = mesh.domain()->cellMatrix() * Matrix3(
 		FloatType(1) / _gridShape[0], 0, 0,
 		0, FloatType(1) / _gridShape[1], 0,
 		0, 0, FloatType(1) / _gridShape[2]) *

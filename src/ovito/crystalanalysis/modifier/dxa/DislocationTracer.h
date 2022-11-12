@@ -61,7 +61,7 @@ public:
 	const std::shared_ptr<DislocationNetwork>& network() { return _network; }
 
 	/// Returns the simulation cell.
-	const SimulationCellObject* cell() const { return mesh().cell(); }
+	const SimulationCellObject* cell() const { return mesh().domain(); }
 
 	/// Performs a dislocation search on the interface mesh by generating
 	/// trial Burgers circuits. Identified dislocation segments are converted to
