@@ -88,11 +88,11 @@ void SurfaceMeshVisEditor::createUI(const RolloutInsertionParameters& rolloutPar
 	BooleanParameterUI* reverseOrientationUI = new BooleanParameterUI(this, PROPERTY_FIELD(SurfaceMeshVis::reverseOrientation));
 	sublayout->addWidget(reverseOrientationUI->checkBox(), 1, 0, 1, 2);
 
-	BooleanParameterUI* highlightEdgesUI = new BooleanParameterUI(this, PROPERTY_FIELD(SurfaceMeshVis::highlightEdges));
-	sublayout->addWidget(highlightEdgesUI->checkBox(), 2, 0, 1, 2);
-
 	_clipAtDomainBoundariesUI = new BooleanParameterUI(this, PROPERTY_FIELD(SurfaceMeshVis::clipAtDomainBoundaries));
-	sublayout->addWidget(_clipAtDomainBoundariesUI->checkBox(), 3, 0, 1, 2);
+	sublayout->addWidget(_clipAtDomainBoundariesUI->checkBox(), 2, 0, 1, 2);
+
+	BooleanParameterUI* highlightEdgesUI = new BooleanParameterUI(this, PROPERTY_FIELD(SurfaceMeshVis::highlightEdges));
+	sublayout->addWidget(highlightEdgesUI->checkBox(), 3, 0, 1, 2);
 
 	_capGroupUI = new BooleanGroupBoxParameterUI(this, PROPERTY_FIELD(SurfaceMeshVis::showCap));
 	_capGroupUI->groupBox()->setTitle(tr("Cap polygons"));

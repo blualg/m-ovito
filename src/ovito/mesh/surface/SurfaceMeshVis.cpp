@@ -67,7 +67,7 @@ SET_PROPERTY_FIELD_LABEL(SurfaceMeshVis, highlightEdges, "Highlight edges");
 SET_PROPERTY_FIELD_LABEL(SurfaceMeshVis, surfaceIsClosed, "Closed surface");
 SET_PROPERTY_FIELD_LABEL(SurfaceMeshVis, surfaceColorMapping, "Color mapping");
 SET_PROPERTY_FIELD_LABEL(SurfaceMeshVis, colorMappingMode, "Color mapping mode");
-SET_PROPERTY_FIELD_LABEL(SurfaceMeshVis, clipAtDomainBoundaries, "Clip at non-periodic cell boundaries");
+SET_PROPERTY_FIELD_LABEL(SurfaceMeshVis, clipAtDomainBoundaries, "Clip at cell boundaries");
 SET_PROPERTY_FIELD_UNITS_AND_RANGE(SurfaceMeshVis, surfaceTransparencyController, PercentParameterUnit, 0, 1);
 SET_PROPERTY_FIELD_UNITS_AND_RANGE(SurfaceMeshVis, capTransparencyController, PercentParameterUnit, 0, 1);
 

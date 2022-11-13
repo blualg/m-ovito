@@ -41,11 +41,22 @@ Flip surface orientation
   Reverses the orientation sense of the surface and generates cap polygons on the outside, not inside of the
   enclosed volume.
 
+Clip at cell boundaries 
+  If the surface extends beyond the boundaries of a *non-periodic* simulation cell, this option
+  limits the display to those sections of the surface mesh that are located inside the simulation box.
+  Note that this option does *not* apply to :ref:`simulation cells <scene_objects.simulation_cell>` with periodic boundary conditions. 
+  Along periodic directions, the surface mesh always gets wrapped back into the cell during rendering.
+
 Highlight edges  
   Activates the rendering of wireframe lines along the edges of the mesh facets.  
 
-Cap polygons  
-  This option enables the display of caps at periodic cell boundaries where the surface is truncated.
+Highlight edges  
+  Activates the rendering of wireframe lines along the edges of the mesh facets.  
+
+Cap polygons
+  This option enables the display of caps where the surface manifold intersects with the simulation cell's boundaries.
+  It is only available for :ref:`surfaces meshes <scene_objects.surface_mesh>` that are closed, i.e., which 
+  represent a two-dimensional manifold that divides space into "interior" and "exterior" regions.
     
 .. seealso::
 
