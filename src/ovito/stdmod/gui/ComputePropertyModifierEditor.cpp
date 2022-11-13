@@ -201,7 +201,8 @@ void ComputePropertyModifierEditor::updateExpressionFields()
 
 	for(int i = 0; i < expr.size(); i++) {
 		expressionLineEdits[i]->setText(expr[i]);
-		expressionTextEdits[i]->setPlainText(expr[i]);
+		if(expressionTextEdits[i]->toPlainText() != expr[i])
+			expressionTextEdits[i]->setPlainText(expr[i]);
 		if(expr.size() == 1)
 			expressionLabels[i]->hide();
 		else {

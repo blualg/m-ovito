@@ -83,12 +83,16 @@ void AutocompleteTextEdit::keyPressEvent(QKeyEvent* event)
 		}
 	}
 	else if(event->key() == Qt::Key_Return || event->key() == Qt::Key_Enter) {
-        Q_EMIT editingFinished();
-        return;
+		if(commitOnReturn()) {
+			Q_EMIT editingFinished();
+			return;
+		}
     }
 
 	QPlainTextEdit::keyPressEvent(event);
 
+	if(_wordListModel->rowCount() == 0)
+		return;
 	QStringList tokens = getTokenList();
 	if(tokens.empty())
 		return;

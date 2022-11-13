@@ -121,14 +121,17 @@ void StringParameterUI::updateUI()
 			val = editObject()->getPropertyFieldValue(propertyField());
 			OVITO_ASSERT(val.isValid());
 		}
-		if(qobject_cast<QLineEdit*>(textBox()))
-			static_cast<QLineEdit*>(textBox())->setText(val.toString());
-		else if(qobject_cast<QTextEdit*>(textBox()))
-			static_cast<QTextEdit*>(textBox())->setPlainText(val.toString());
-		else if(qobject_cast<QPlainTextEdit*>(textBox())) {
+		if(QLineEdit* lineEdit = qobject_cast<QLineEdit*>(textBox()))
+			lineEdit->setText(val.toString());
+		else if(QTextEdit* textEdit = qobject_cast<QTextEdit*>(textBox())) {
 			QString newText = val.toString();
-			if(static_cast<QPlainTextEdit*>(textBox())->toPlainText() != newText)
-				static_cast<QPlainTextEdit*>(textBox())->setPlainText(newText);
+			if(textEdit->toPlainText() != newText)
+				textEdit->setPlainText(newText);
+		}
+		else if(QPlainTextEdit* textEdit = qobject_cast<QPlainTextEdit*>(textBox())) {
+			QString newText = val.toString();
+			if(textEdit->toPlainText() != newText)
+				textEdit->setPlainText(newText);
 		}
 	}
 }

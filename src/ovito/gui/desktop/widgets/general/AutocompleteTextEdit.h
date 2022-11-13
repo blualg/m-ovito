@@ -45,6 +45,12 @@ public:
 	/// Returns the preferred size of the widget.
 	virtual QSize sizeHint() const override;
 
+	/// Sets whether the editingFinished() signal is emitted when the return key is pressed.
+	void setCommitOnReturn(bool on) { _commitOnReturn = on; }
+
+	/// Returns whether the editingFinished() signal is emitted when the return key is pressed.
+	bool commitOnReturn() const { return _commitOnReturn; }
+
 Q_SIGNALS:
 
 	/// This signal is emitted when the Return or Enter key is pressed or the widget loses focus.
@@ -76,6 +82,9 @@ protected:
 
 	/// Regular expression used to split a text into words.
 	QRegularExpression _wordSplitter;
+
+	/// Controls whether the editingFinished() signal is emitted when the return key is pressed.
+	bool _commitOnReturn = true;
 };
 
 }	// End of namespace
