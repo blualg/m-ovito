@@ -41,6 +41,9 @@ Parameters
 
 Input property
   The source particle property the reduction operation should be applied to.
+  Select *<None>* to take uniform 1 as input value for all particles, which can be useful for 
+  counting the number of particles in each bin (reduction operation: *sum*) or calculating
+  the number of density of particles (reduction operation: *sum divided by bin volume*).
 
 Use only selected elements
   Restricts the calculation to the subset of particles that are currently selected.
@@ -52,9 +55,9 @@ Number of bins
   Number of bins in each of the active binning directions.
 
 Reduction operation
-  The type of reduction operation to be carried out. Available are sum, mean, min or max.
-  There is an additional option :guilabel:`Sum divided by bin volume`, which sums over all particles of a bin and then divides the result
-  by the volume of the bin. This option is intended to compute pressure (or stress) within
+  The type of reduction operation to be carried out. Available are *sum*, *mean*, *min*, and *max*.
+  There is an additional option *sum divided by bin volume*, which sums over all particles of a bin and then divides the result
+  by the volume of the bin. This operation is useful for computing pressure (or stress) within
   bins from the per-atom virial.
 
 Compute first derivative

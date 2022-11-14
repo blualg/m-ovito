@@ -230,6 +230,9 @@ void PropertyReferenceParameterUI::addItemsToComboBox(const PipelineFlowState& s
 ******************************************************************************/
 void PropertyReferenceParameterUI::addItemsToComboBox(const PropertyContainer* container)
 {
+	if(!_nullPropertyItem.isEmpty())
+		_comboBox->addItem(PropertyReference{}, _nullPropertyItem);
+
 	for(const PropertyObject* property : container->properties()) {
 
 		// The client can apply a filter to the displayed property list.

@@ -97,6 +97,9 @@ public:
 		_propertyFilter = std::move(filter);
 	}
 
+	/// Activates the display of a null entry in the property list, which can be selected by the user.
+	void setNullPropertyItem(const QString& itemText) { _nullPropertyItem = itemText; }
+
 public Q_SLOTS:
 
 	/// Takes the value entered by the user and stores it in the property field
@@ -141,6 +144,9 @@ protected:
 
 	/// An optional callback function that allows clients to filter the displayed property list.
 	std::function<bool(const PropertyObject*)> _propertyFilter;
+
+	/// The UI item text representing the null property in the list.
+	QString _nullPropertyItem;
 };
 
 }	// End of namespace
