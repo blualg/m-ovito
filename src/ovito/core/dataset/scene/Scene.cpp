@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2013 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -21,16 +21,16 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/core/Core.h>
-#include <ovito/core/dataset/scene/RootSceneNode.h>
+#include <ovito/core/dataset/scene/Scene.h>
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(RootSceneNode);
+IMPLEMENT_OVITO_CLASS(Scene);
 
 /******************************************************************************
-* Default constructor.
+* Constructor.
 ******************************************************************************/
-RootSceneNode::RootSceneNode(ObjectCreationParams params) : SceneNode(params)
+Scene::Scene(ObjectCreationParams params) : SceneNode(params)
 {
 	setNodeName("Scene");
 
@@ -41,7 +41,7 @@ RootSceneNode::RootSceneNode(ObjectCreationParams params) : SceneNode(params)
 /******************************************************************************
 * Searches the scene for a node with the given name.
 ******************************************************************************/
-SceneNode* RootSceneNode::getNodeByName(const QString& nodeName) const
+SceneNode* Scene::getNodeByName(const QString& nodeName) const
 {
 	SceneNode* result = nullptr;
 	visitChildren([nodeName, &result](SceneNode* node) -> bool {
@@ -57,7 +57,7 @@ SceneNode* RootSceneNode::getNodeByName(const QString& nodeName) const
 /******************************************************************************
 * Generates a name for a node that is unique throughout the scene.
 ******************************************************************************/
-QString RootSceneNode::makeNameUnique(QString baseName) const
+QString Scene::makeNameUnique(QString baseName) const
 {
 	// Remove any existing digits from end of base name.
 	if(baseName.size() > 2 &&

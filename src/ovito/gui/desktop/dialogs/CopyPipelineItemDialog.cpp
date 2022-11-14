@@ -49,7 +49,7 @@ CopyPipelineItemDialog::CopyPipelineItemDialog(QWidget* parent, PipelineSceneNod
 	gridLayout->addWidget(_destinationPipelineList, 0, 1);
 
 	// Populate list of scene pipelines.
-	_dataset->sceneRoot()->visitChildren([&](SceneNode* node) -> bool {
+	_dataset->scene()->visitChildren([&](SceneNode* node) -> bool {
 		if(PipelineSceneNode* pipeline = dynamic_object_cast<PipelineSceneNode>(node)) {
 			QString itemLabel = pipeline->objectTitle();
 			if(pipeline == sourcePipeline)

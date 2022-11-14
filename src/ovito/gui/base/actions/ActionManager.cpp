@@ -24,7 +24,7 @@
 #include <ovito/core/dataset/UndoStack.h>
 #include <ovito/core/dataset/DataSetContainer.h>
 #include <ovito/core/dataset/scene/SelectionSet.h>
-#include <ovito/core/dataset/scene/RootSceneNode.h>
+#include <ovito/core/dataset/scene/Scene.h>
 #include <ovito/core/dataset/animation/AnimationSettings.h>
 #include <ovito/gui/base/viewport/NavigationModes.h>
 #include <ovito/gui/base/viewport/ViewportInputMode.h>
@@ -380,8 +380,8 @@ void ActionManager::on_EditDelete_triggered()
 			node->deleteNode();
 
 		// Automatically select one of the remaining nodes.
-		if(dataset()->sceneRoot()->children().isEmpty() == false)
-			dataset()->selection()->setNode(dataset()->sceneRoot()->children().front());
+		if(dataset()->scene()->children().isEmpty() == false)
+			dataset()->selection()->setNode(dataset()->scene()->children().front());
 	});
 }
 

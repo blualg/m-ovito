@@ -36,7 +36,7 @@
 #include <ovito/gui/base/actions/ViewportModeAction.h>
 #include <ovito/core/viewport/overlays/TextLabelOverlay.h>
 #include <ovito/core/dataset/animation/AnimationSettings.h>
-#include <ovito/core/dataset/scene/RootSceneNode.h>
+#include <ovito/core/dataset/scene/Scene.h>
 #include <ovito/core/dataset/scene/PipelineSceneNode.h>
 #include "TextLabelOverlayEditor.h"
 
@@ -199,7 +199,7 @@ void TextLabelOverlayEditor::updateSourcesList()
 	_nodeComboBox->clear();
 	if(TextLabelOverlay* overlay = static_object_cast<TextLabelOverlay>(editObject())) {
 		// Enumerate all pipelines in the scene.
-		overlay->dataset()->sceneRoot()->visitObjectNodes([&](PipelineSceneNode* pipeline) {
+		overlay->dataset()->scene()->visitObjectNodes([&](PipelineSceneNode* pipeline) {
 			_nodeComboBox->addItem(pipeline->objectTitle(), QVariant::fromValue(pipeline));
 			return true;
 		});

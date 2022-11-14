@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -27,7 +27,7 @@
 #include <ovito/core/dataset/animation/AnimationSettings.h>
 #include <ovito/core/rendering/RenderSettings.h>
 #include <ovito/core/dataset/scene/SelectionSet.h>
-#include <ovito/core/dataset/scene/RootSceneNode.h>
+#include <ovito/core/dataset/scene/Scene.h>
 #include <ovito/core/dataset/data/camera/AbstractCameraObject.h>
 #include <ovito/core/dataset/DataSetContainer.h>
 
@@ -322,7 +322,7 @@ ViewProjectionParameters Viewport::computeProjectionParameters(TimePoint time, F
 ******************************************************************************/
 void Viewport::zoomToSceneExtents(FloatType viewportAspectRatio)
 {
-	Box3 sceneBoundingBox = dataset()->sceneRoot()->worldBoundingBox(dataset()->animationSettings()->time(), this);
+	Box3 sceneBoundingBox = dataset()->scene()->worldBoundingBox(dataset()->animationSettings()->time(), this);
 	zoomToBox(sceneBoundingBox, viewportAspectRatio);
 }
 

@@ -25,7 +25,7 @@
 #include <ovito/core/dataset/UndoStack.h>
 #include <ovito/core/dataset/animation/AnimationSettings.h>
 #include <ovito/core/dataset/io/FileImporter.h>
-#include <ovito/core/dataset/scene/RootSceneNode.h>
+#include <ovito/core/dataset/scene/Scene.h>
 #include <ovito/core/dataset/scene/SelectionSet.h>
 #include <ovito/core/app/Application.h>
 #include <ovito/core/app/UserInterface.h>

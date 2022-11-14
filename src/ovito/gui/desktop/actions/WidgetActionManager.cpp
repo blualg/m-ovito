@@ -24,7 +24,7 @@
 #include <ovito/core/dataset/UndoStack.h>
 #include <ovito/core/dataset/DataSetContainer.h>
 #include <ovito/core/dataset/scene/SelectionSet.h>
-#include <ovito/core/dataset/scene/RootSceneNode.h>
+#include <ovito/core/dataset/scene/Scene.h>
 #include <ovito/core/dataset/scene/PipelineSceneNode.h>
 #include <ovito/core/dataset/io/FileSource.h>
 #include <ovito/core/dataset/animation/AnimationSettings.h>
@@ -123,7 +123,7 @@ void WidgetActionManager::on_NewPipelineFileSource_triggered()
 		pipeline->setDataProvider(fileSource);
 
 		// Insert pipeline into scene.
-		dataset()->sceneRoot()->addChildNode(pipeline);
+		dataset()->scene()->addChildNode(pipeline);
 
 		// Select new object in the scene.
 		dataset()->selection()->setNode(pipeline);

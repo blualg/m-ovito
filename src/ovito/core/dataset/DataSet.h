@@ -29,7 +29,7 @@
 #include <ovito/core/dataset/animation/TimeInterval.h>
 #include <ovito/core/dataset/UndoStack.h>
 #include <ovito/core/dataset/animation/AnimationSettings.h>
-#include <ovito/core/dataset/scene/RootSceneNode.h>
+#include <ovito/core/dataset/scene/Scene.h>
 #include <ovito/core/dataset/scene/SelectionSet.h>
 #include <ovito/core/dataset/pipeline/PipelineEvaluation.h>
 #include <ovito/core/rendering/RenderSettings.h>
@@ -88,9 +88,11 @@ public:
 		return _undoStack;
 	}
 
+#ifdef OVITO_QML_GUI
 	/// \brief Returns a pointer to the undo stack that keeps track of changes made to this dataset.
-	/// \note This method exists only for use with the Q_PROPERTY macro, which requires a QObject pointer.
+	/// \note This method exists solely for use with the Q_PROPERTY macro, which requires a method returning a QObject pointer.
 	UndoStack* undoStackPtr() { return &_undoStack; }
+#endif
 
 	/// \brief Returns the manager of ParameterUnit objects.
 	UnitsManager& unitsManager() { return _unitsManager; }
@@ -100,10 +102,6 @@ public:
 
 	/// Returns the abstract user interface this dataset was opened in.
 	UserInterface& userInterface() const;
-
-	/// \brief Deletes all nodes from the scene.
-	/// \undoable
-	Q_INVOKABLE void clearScene();
 
 	/// \brief Rescales the animation keys of all controllers in the scene.
 	/// \param oldAnimationInterval The old animation interval, which will be mapped to the new animation interval.
@@ -156,6 +154,9 @@ public:
 
 	/// Provides access to the global data cache used by visualzation elements.
 	MixedKeyCache& visCache() { return _visCache; }
+
+	/// Alias for sceneRoot() getter.
+	Scene* scene() const { return sceneRoot(); }
 
 Q_SIGNALS:
 
@@ -223,8 +224,8 @@ private:
 	/// Current animation settings.
 	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<AnimationSettings>, animationSettings, setAnimationSettings, PROPERTY_FIELD_NO_CHANGE_MESSAGE|PROPERTY_FIELD_ALWAYS_DEEP_COPY|PROPERTY_FIELD_MEMORIZE);
 
-	/// Root node of the scene node tree.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<RootSceneNode>, sceneRoot, setSceneRoot, PROPERTY_FIELD_NO_CHANGE_MESSAGE|PROPERTY_FIELD_ALWAYS_DEEP_COPY);
+	/// Scene node tree.
+	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<Scene>, sceneRoot, setSceneRoot, PROPERTY_FIELD_NO_CHANGE_MESSAGE|PROPERTY_FIELD_ALWAYS_DEEP_COPY);
 
 	/// The current node selection set.
 	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<SelectionSet>, selection, setSelection, PROPERTY_FIELD_NO_CHANGE_MESSAGE|PROPERTY_FIELD_ALWAYS_DEEP_COPY);

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -201,7 +201,7 @@ public:
 	/// \brief Returns whether this is the root scene node.
 	/// \return \c true if this is the root node of the scene.
 	///
-	/// \sa DataSet::sceneRoot()
+	/// \sa DataSet::scene()
 	/// \sa parentNode()
 	virtual bool isRootNode() const { return false; }
 
@@ -295,8 +295,6 @@ private:
 
 	/// Validity time interval of the cached local bounding box.
 	mutable TimeInterval _boundingBoxValidity;
-
-	friend class RootSceneNode;
 };
 
 }	// End of namespace

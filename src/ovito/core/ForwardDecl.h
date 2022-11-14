@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -92,7 +92,7 @@ namespace Ovito {
 	using ConstDataObjectRefPath = DataObjectPathTemplate<ConstDataObjectRef>;
 	class TransformedDataObject;
 	class AttributeDataObject;
-	class RootSceneNode;
+	class Scene;
 	class DataBuffer;
 	using DataBufferPtr = DataOORef<DataBuffer>;
 	using ConstDataBufferPtr = DataOORef<const DataBuffer>;

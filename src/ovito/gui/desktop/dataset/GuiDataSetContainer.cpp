@@ -24,7 +24,7 @@
 #include <ovito/core/dataset/io/FileImporter.h>
 #include <ovito/core/dataset/UndoStack.h>
 #include <ovito/core/dataset/animation/AnimationSettings.h>
-#include <ovito/core/dataset/scene/RootSceneNode.h>
+#include <ovito/core/dataset/scene/Scene.h>
 #include <ovito/core/dataset/scene/SelectionSet.h>
 #include <ovito/core/viewport/ViewportConfiguration.h>
 #include <ovito/core/rendering/RenderSettings.h>
@@ -263,7 +263,7 @@ bool GuiDataSetContainer::importFiles(const std::vector<QUrl>& urls, MainThreadO
 			importMode = FileImporter::ReplaceSelected;
 		}
 	}
-	else if(currentSet()->sceneRoot()->children().empty() == false) {
+	else if(currentSet()->scene()->children().empty() == false) {
 		// Ask user if the current scene should be completely replaced by the imported data.
 		QMessageBox::StandardButton result = QMessageBox::question(&mainWindow(), tr("Import file"),
 			tr("Do you want to keep the existing objects in the current scene?"),

@@ -26,7 +26,6 @@
 #include <ovito/core/viewport/Viewport.h>
 #include <ovito/core/viewport/ViewportConfiguration.h>
 #include <ovito/core/dataset/animation/AnimationSettings.h>
-#include <ovito/core/dataset/scene/RootSceneNode.h>
 #include <ovito/core/dataset/scene/SelectionSet.h>
 #include <ovito/core/rendering/RenderSettings.h>
 #include <ovito/core/rendering/FrameBuffer.h>
@@ -61,7 +60,7 @@ DataSet::DataSet(ObjectCreationParams params) : RefTarget(ObjectCreationParams(t
 	if(params.createSubObjects()) {
 		setViewportConfig(createDefaultViewportConfiguration(ObjectCreationParams(this, params.flags())));
 		setAnimationSettings(OORef<AnimationSettings>::create(ObjectCreationParams(this, params.flags())));
-		setSceneRoot(OORef<RootSceneNode>::create(ObjectCreationParams(this, params.flags())));
+		setSceneRoot(OORef<Scene>::create(ObjectCreationParams(this, params.flags())));
 		setSelection(OORef<SelectionSet>::create(ObjectCreationParams(this, params.flags())));
 		setRenderSettings(OORef<RenderSettings>::create(ObjectCreationParams(this, params.flags())));
 	}
@@ -154,7 +153,7 @@ bool DataSet::referenceEvent(RefTarget* source, const ReferenceEvent& event)
 	OVITO_ASSERT_MSG(!QCoreApplication::instance() || QThread::currentThread() == QCoreApplication::instance()->thread(), "DataSet::referenceEvent", "Reference events may only be processed in the main thread.");
 
 	if(event.type() == ReferenceEvent::TargetChanged) {
-		if(source == sceneRoot()) {
+		if(source == scene()) {
 
 			// If any of the scene pipelines change, the scene-ready state needs to be reset (unless it's still unfulfilled).
 			if(_sceneReadyPromise.isValid() && _sceneReadyPromise.isFinished()) {
@@ -180,9 +179,9 @@ bool DataSet::referenceEvent(RefTarget* source, const ReferenceEvent& event)
 		}
 
 		// Propagate event only from certain sources to the DataSetContainer:
-		return (source == sceneRoot() || source == selection() || source == renderSettings());
+		return (source == scene() || source == selection() || source == renderSettings());
 	}
-	else if(event.type() == ReferenceEvent::AnimationFramesChanged && source == sceneRoot() && !isBeingLoaded()) {
+	else if(event.type() == ReferenceEvent::AnimationFramesChanged && source == scene() && !isBeingLoaded()) {
 		// Automatically adjust scene's animation interval to length of loaded source animations.
 		if(animationSettings()->autoAdjustInterval()) {
 			UndoSuspender noUndo(this);
@@ -248,15 +247,6 @@ UserInterface& DataSet::userInterface() const
 }
 
 /******************************************************************************
-* Deletes all nodes from the scene.
-******************************************************************************/
-void DataSet::clearScene()
-{
-	while(!sceneRoot()->children().empty())
-		sceneRoot()->children().back()->deleteNode();
-}
-
-/******************************************************************************
 * Rescales the animation keys of all controllers in the scene.
 ******************************************************************************/
 void DataSet::rescaleTime(const TimeInterval& oldAnimationInterval, const TimeInterval& newAnimationInterval)
@@ -273,7 +263,7 @@ void DataSet::rescaleTime(const TimeInterval& oldAnimationInterval, const TimeIn
 ******************************************************************************/
 SharedFuture<> DataSet::whenSceneReady()
 {
-	OVITO_CHECK_OBJECT_POINTER(sceneRoot());
+	OVITO_CHECK_OBJECT_POINTER(scene());
 	OVITO_CHECK_OBJECT_POINTER(animationSettings());
 	OVITO_CHECK_OBJECT_POINTER(viewportConfig());
 	OVITO_ASSERT(!viewportConfig()->isRendering());
@@ -333,7 +323,7 @@ void DataSet::makeSceneReady(bool forceReevaluation)
 	if(_pipelineEvaluation.isValid()) {
 		// Keep waiting for the current pipeline evaluation to finish unless we are at the different animation time now.
 		// Or unless the pipeline has been deleted from the scene in the meantime.
-		if(!forceReevaluation && _pipelineEvaluation.time() == animationSettings()->time() && _pipelineEvaluation.pipeline() && _pipelineEvaluation.pipeline()->isChildOf(sceneRoot())) {
+		if(!forceReevaluation && _pipelineEvaluation.time() == animationSettings()->time() && _pipelineEvaluation.pipeline() && _pipelineEvaluation.pipeline()->isChildOf(scene())) {
 			return;
 		}
 	}
@@ -351,7 +341,7 @@ void DataSet::makeSceneReady(bool forceReevaluation)
 	_sceneReadyTime = animationSettings()->time();
 	PipelineEvaluationRequest request(animationSettings()->time());
 
-	sceneRoot()->visitObjectNodes([&](PipelineSceneNode* pipeline) {
+	scene()->visitObjectNodes([&](PipelineSceneNode* pipeline) {
 		// Request visual elements too.
 		_pipelineEvaluation = pipeline->evaluateRenderingPipeline(request);
 		if(!_pipelineEvaluation.isFinished()) {

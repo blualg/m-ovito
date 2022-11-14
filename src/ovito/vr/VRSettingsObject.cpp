@@ -23,7 +23,7 @@
 #include <ovito/core/Core.h>
 #include <ovito/core/dataset/animation/AnimationSettings.h>
 #include <ovito/core/dataset/DataSet.h>
-#include <ovito/core/dataset/scene/RootSceneNode.h>
+#include <ovito/core/dataset/scene/Scene.h>
 #include <ovito/core/viewport/ViewportSettings.h>
 #include "VRSettingsObject.h"
 
@@ -60,7 +60,7 @@ SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(VRSettingsObject, movementSpeed, FloatParam
 void VRSettingsObject::recenter()
 {
     // Reset model position to center of scene bounding box.
-    const Box3& bbox = dataset()->sceneRoot()->worldBoundingBox(dataset()->animationSettings()->time());
+    const Box3& bbox = dataset()->scene()->worldBoundingBox(dataset()->animationSettings()->time());
     if(!bbox.isEmpty()) {
         setModelCenter(bbox.center() - Point3::Origin());
     }
@@ -85,7 +85,7 @@ void VRSettingsObject::recenter()
 ******************************************************************************/
 Vector3 VRSettingsObject::apparentModelSize()
 {
-    const Box3& bbox = dataset()->sceneRoot()->worldBoundingBox(dataset()->animationSettings()->time());
+    const Box3& bbox = dataset()->scene()->worldBoundingBox(dataset()->animationSettings()->time());
     if(!bbox.isEmpty())
         return bbox.size() * scaleFactor();
     else

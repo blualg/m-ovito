@@ -28,7 +28,7 @@
 #include <ovito/core/dataset/animation/AnimationSettings.h>
 #include <ovito/core/dataset/data/camera/AbstractCameraObject.h>
 #include <ovito/core/dataset/data/DataBufferAccess.h>
-#include <ovito/core/dataset/scene/RootSceneNode.h>
+#include <ovito/core/dataset/scene/Scene.h>
 #include <ovito/core/dataset/UndoStack.h>
 #include <ovito/core/dataset/DataSet.h>
 #include "ViewportInputManager.h"
@@ -240,7 +240,7 @@ void ZoomMode::modifyView(ViewportWindowInterface* vpwin, Viewport* vp, QPointF 
 FloatType ZoomMode::sceneSizeFactor(Viewport* vp)
 {
 	OVITO_CHECK_OBJECT_POINTER(vp);
-	Box3 sceneBoundingBox = vp->dataset()->sceneRoot()->worldBoundingBox(vp->dataset()->animationSettings()->time(), vp);
+	Box3 sceneBoundingBox = vp->dataset()->scene()->worldBoundingBox(vp->dataset()->animationSettings()->time(), vp);
 	if(!sceneBoundingBox.isEmpty())
 		return sceneBoundingBox.size().length() * FloatType(5e-4);
 	else

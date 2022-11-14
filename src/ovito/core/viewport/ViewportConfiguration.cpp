@@ -25,7 +25,7 @@
 #include <ovito/core/viewport/Viewport.h>
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/dataset/scene/SelectionSet.h>
-#include <ovito/core/dataset/scene/RootSceneNode.h>
+#include <ovito/core/dataset/scene/Scene.h>
 #include <ovito/core/dataset/animation/AnimationSettings.h>
 #include <ovito/core/app/Application.h>
 
@@ -172,7 +172,7 @@ Point3 ViewportConfiguration::orbitCenter(Viewport* vp)
 		if(!selectionBoundingBox.isEmpty())
 			return selectionBoundingBox.center();
 		else {
-			Box3 sceneBoundingBox = dataset()->sceneRoot()->worldBoundingBox(time, vp);
+			Box3 sceneBoundingBox = dataset()->scene()->worldBoundingBox(time, vp);
 			if(!sceneBoundingBox.isEmpty())
 				return sceneBoundingBox.center();
 		}

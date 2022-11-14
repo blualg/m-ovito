@@ -338,7 +338,7 @@ void AnimationSettings::adjustAnimationInterval()
 {
 	TimeInterval interval;
 	_namedFrames.clear();
-	dataset()->sceneRoot()->visitObjectNodes([&interval,this](PipelineSceneNode* node) {
+	dataset()->scene()->visitObjectNodes([&interval,this](PipelineSceneNode* node) {
 		if(node->dataProvider()) {
 			int nframes = node->dataProvider()->numberOfSourceFrames();
 			if(nframes > 0) {

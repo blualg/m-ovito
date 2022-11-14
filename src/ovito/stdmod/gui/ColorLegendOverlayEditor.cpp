@@ -34,7 +34,7 @@
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
 #include <ovito/gui/base/actions/ViewportModeAction.h>
 #include <ovito/gui/base/viewport/ViewportInputManager.h>
-#include <ovito/core/dataset/scene/RootSceneNode.h>
+#include <ovito/core/dataset/scene/Scene.h>
 #include <ovito/core/dataset/scene/PipelineSceneNode.h>
 #include <ovito/core/dataset/pipeline/ModifierApplication.h>
 #include <ovito/stdmod/viewport/ColorLegendOverlay.h>
@@ -195,7 +195,7 @@ void ColorLegendOverlayEditor::updateSourcesList()
 
 		// List all ColorCodingModifiers, typed PropertyObjects, and PropertyColorMappings in the scene. To find them, visit all
 		// pipelines and iterate over their modifier applications and output data collections.
-		overlay->dataset()->sceneRoot()->visitObjectNodes([&](PipelineSceneNode* pipeline) {
+		overlay->dataset()->scene()->visitObjectNodes([&](PipelineSceneNode* pipeline) {
 
 			// Go through the visual elements of the pipeline and look if any one has a PropertyColorMapping attached to it.
 			for(DataVis* vis : pipeline->visElements()) {

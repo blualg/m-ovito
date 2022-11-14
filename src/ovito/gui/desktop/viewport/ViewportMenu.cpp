@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -21,7 +21,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/gui/desktop/GUI.h>
-#include <ovito/core/dataset/scene/RootSceneNode.h>
+#include <ovito/core/dataset/scene/Scene.h>
 #include <ovito/core/dataset/scene/PipelineSceneNode.h>
 #include <ovito/core/dataset/data/camera/AbstractCameraObject.h>
 #include <ovito/core/dataset/DataSet.h>
@@ -119,7 +119,7 @@ ViewportMenu::ViewportMenu(Viewport* viewport, QWidget* viewportWidget) : QMenu(
 
 	// Pipeline visibility
 	QMenu* visibilityMenu = addMenu(tr("Pipeline Visibility"));
-	for(SceneNode* node : viewport->dataset()->sceneRoot()->children()) {
+	for(SceneNode* node : viewport->dataset()->scene()->children()) {
 		QAction* action = visibilityMenu->addAction(node->objectTitle());
 		action->setData(QVariant::fromValue(OORef<OvitoObject>(node)));
 		action->setCheckable(true);
@@ -151,7 +151,7 @@ void ViewportMenu::onShowViewTypeMenu()
 	connect(viewNodeGroup, &QActionGroup::triggered, this, &ViewportMenu::onViewNode);
 
 	// Find all camera nodes in the scene.
-	_viewport->dataset()->sceneRoot()->visitObjectNodes([this, viewNodeGroup](PipelineSceneNode* node) -> bool {
+	_viewport->dataset()->scene()->visitObjectNodes([this, viewNodeGroup](PipelineSceneNode* node) -> bool {
 		const PipelineFlowState& state = node->evaluatePipelineSynchronous(false);
 		if(state.data() && state.data()->containsObject<AbstractCameraObject>()) {
 			// Add a menu entry for this camera node.
@@ -244,7 +244,7 @@ void ViewportMenu::onViewNode(QAction* action)
 void ViewportMenu::onCreateCamera()
 {
 	UndoableTransaction::handleExceptions(_viewport->dataset()->undoStack(), tr("Create camera"), [this]() {
-		RootSceneNode* scene = _viewport->dataset()->sceneRoot();
+		Scene* scene = _viewport->dataset()->scene();
 		AnimationSuspender animSuspender(_viewport->dataset()->animationSettings());
 
 		// Create and initialize the camera object.

@@ -81,7 +81,7 @@ SET(SourceFiles
 	dataset/io/AttributeFileExporter.cpp
 	dataset/scene/SceneNode.cpp
 	dataset/scene/PipelineSceneNode.cpp
-	dataset/scene/RootSceneNode.cpp
+	dataset/scene/Scene.cpp
 	dataset/scene/SelectionSet.cpp
 	dataset/data/DataVis.cpp
 	dataset/data/DataObject.cpp

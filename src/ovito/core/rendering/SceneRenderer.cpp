@@ -24,7 +24,7 @@
 #include <ovito/core/rendering/SceneRenderer.h>
 #include <ovito/core/rendering/RenderSettings.h>
 #include <ovito/core/dataset/scene/SceneNode.h>
-#include <ovito/core/dataset/scene/RootSceneNode.h>
+#include <ovito/core/dataset/scene/Scene.h>
 #include <ovito/core/dataset/pipeline/PipelineObject.h>
 #include <ovito/core/dataset/pipeline/PipelineEvaluation.h>
 #include <ovito/core/dataset/pipeline/Modifier.h>
@@ -149,9 +149,9 @@ bool SceneRenderer::renderScene(MainThreadOperation& operation)
 {
 	OVITO_CHECK_OBJECT_POINTER(renderDataset());
 
-	if(RootSceneNode* rootNode = renderDataset()->sceneRoot()) {
+	if(Scene* scene = renderDataset()->scene()) {
 		// Recursively render all scene nodes.
-		return renderNode(rootNode, operation);
+		return renderNode(scene, operation);
 	}
 
 	return true;
@@ -407,7 +407,7 @@ void SceneRenderer::renderInteractiveContent(MainThreadOperation& operation)
 void SceneRenderer::renderModifiers(bool renderOverlay, MainThreadOperation& operation)
 {
 	// Visit all objects in the scene.
-	renderDataset()->sceneRoot()->visitObjectNodes([this, renderOverlay, &operation](PipelineSceneNode* pipeline) {
+	renderDataset()->scene()->visitObjectNodes([this, renderOverlay, &operation](PipelineSceneNode* pipeline) {
 		renderModifiers(pipeline, renderOverlay, operation);
 		return true;
 	});

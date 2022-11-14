@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2018 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -30,16 +30,17 @@
 namespace Ovito {
 
 /**
- * \brief This is the scene's root node.
+ * \brief This represents an entire scene node tree.
  */
-class OVITO_CORE_EXPORT RootSceneNode : public SceneNode
+class OVITO_CORE_EXPORT Scene : public SceneNode
 {
-	OVITO_CLASS(RootSceneNode)
+	OVITO_CLASS(Scene)
+	Q_CLASSINFO("ClassNameAlias", "RootSceneNode");	// For backward compatibility with OVITO 3.7.11.
 
 public:
 
-	/// \brief Creates a root node.
-	Q_INVOKABLE RootSceneNode(ObjectCreationParams params);
+	/// \brief Creates a scene object.
+	Q_INVOKABLE Scene(ObjectCreationParams params);
 
 	/// \brief Searches the scene for a node with the given name.
 	/// \param nodeName The name to look for.
@@ -58,8 +59,12 @@ public:
 
 	/// \brief Returns whether this is the root scene node.
 	virtual bool isRootNode() const override { return true; }
+
+	/// \brief Deletes all child nodes of the scene.
+	void clear() {
+		while(!children().empty())
+			children().back()->deleteNode();
+	}
 };
 
 }	// End of namespace
-
-

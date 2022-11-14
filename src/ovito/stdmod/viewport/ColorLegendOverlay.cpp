@@ -25,7 +25,7 @@
 #include <ovito/core/rendering/RenderSettings.h>
 #include <ovito/core/app/Application.h>
 #include <ovito/core/dataset/DataSet.h>
-#include <ovito/core/dataset/scene/RootSceneNode.h>
+#include <ovito/core/dataset/scene/Scene.h>
 #include <ovito/core/dataset/scene/PipelineSceneNode.h>
 #include <ovito/core/dataset/pipeline/ModifierApplication.h>
 #include "ColorLegendOverlay.h"
@@ -96,7 +96,7 @@ ColorLegendOverlay::ColorLegendOverlay(ObjectCreationParams params) : ViewportOv
 	_borderColor(0,0,0)
 {
 	// Find a ColorCodingModifier in the scene that we can connect to.
-	dataset()->sceneRoot()->visitObjectNodes([&](PipelineSceneNode* pipeline) {
+	dataset()->scene()->visitObjectNodes([&](PipelineSceneNode* pipeline) {
 		PipelineObject* obj = pipeline->dataProvider();
 		while(obj) {
 			if(ModifierApplication* modApp = dynamic_object_cast<ModifierApplication>(obj)) {
@@ -115,7 +115,7 @@ ColorLegendOverlay::ColorLegendOverlay(ObjectCreationParams params) : ViewportOv
 	// If there is no ColorCodingModifier in the scene, initialize the overlay to use 
 	// the first available typed property as color source.
 	if(params.loadUserDefaults() && modifier() == nullptr && !sourceProperty()) {
-		dataset()->sceneRoot()->visitObjectNodes([&](PipelineSceneNode* pipeline) {
+		dataset()->scene()->visitObjectNodes([&](PipelineSceneNode* pipeline) {
 			const PipelineFlowState& state = pipeline->evaluatePipelineSynchronous(false);
 			for(const ConstDataObjectPath& dataPath : state.getObjectsRecursive(PropertyObject::OOClass())) {
 				const PropertyObject* property = static_object_cast<PropertyObject>(dataPath.back());
@@ -210,7 +210,7 @@ void ColorLegendOverlay::render(SceneRenderer* renderer, const QRect& logicalVie
 	}
 	else if(sourceProperty()) {
 		// Look up the typed property in one of the scene's pipeline outputs.
-		dataset()->sceneRoot()->visitObjectNodes([&](PipelineSceneNode* pipeline) {
+		dataset()->scene()->visitObjectNodes([&](PipelineSceneNode* pipeline) {
 
 			// Evaulate pipeline and obtain output data collection.
 			if(!renderer->isInteractive()) {

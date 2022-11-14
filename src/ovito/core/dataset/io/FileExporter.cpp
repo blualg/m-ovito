@@ -111,11 +111,11 @@ void FileExporter::selectDefaultExportableData()
 
 	// If no scene node is currently selected, pick the first suitable node from the scene.
 	if(!nodeToExport()) {
-		if(isSuitableNode(dataset()->sceneRoot())) {
-			setNodeToExport(dataset()->sceneRoot());
+		if(isSuitableNode(dataset()->scene())) {
+			setNodeToExport(dataset()->scene());
 		}
 		else {
-			dataset()->sceneRoot()->visitChildren([this](SceneNode* node) {
+			dataset()->scene()->visitChildren([this](SceneNode* node) {
 				if(isSuitableNode(node)) {
 					setNodeToExport(node);
 					return false;

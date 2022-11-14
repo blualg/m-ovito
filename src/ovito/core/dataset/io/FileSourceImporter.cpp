@@ -22,7 +22,7 @@
 
 #include <ovito/core/Core.h>
 #include <ovito/core/dataset/scene/PipelineSceneNode.h>
-#include <ovito/core/dataset/scene/RootSceneNode.h>
+#include <ovito/core/dataset/scene/Scene.h>
 #include <ovito/core/dataset/data/DataObject.h>
 #include <ovito/core/dataset/data/AttributeDataObject.h>
 #include <ovito/core/dataset/scene/SelectionSet.h>
@@ -161,13 +161,13 @@ OORef<PipelineSceneNode> FileSourceImporter::importFileSet(std::vector<std::pair
 		}
 	}
 	else if(importMode == ResetScene) {
-		dataset()->clearScene();
+		dataset()->scene()->clear();
 		if(!dataset()->undoStack().isRecording())
 			dataset()->undoStack().clear();
 		dataset()->setFilePath(QString());
 	}
 	else if(importMode == AddToScene) {
-		if(dataset()->sceneRoot()->children().empty())
+		if(dataset()->scene()->children().empty())
 			importMode = ResetScene;
 		else {
 #ifndef OVITO_BUILD_PROFESSIONAL
@@ -212,7 +212,7 @@ OORef<PipelineSceneNode> FileSourceImporter::importFileSet(std::vector<std::pair
 
 		// Insert pipeline into scene.
 		if(importMode != DontAddToScene)
-			dataset()->sceneRoot()->addChildNode(pipeline);
+			dataset()->scene()->addChildNode(pipeline);
 	}
 	else pipeline = existingPipeline;
 

@@ -167,7 +167,7 @@ FileExporterSettingsDialog::FileExporterSettingsDialog(MainWindow& mainWindow, F
 	groupLayout->setColumnStretch(4, 1);
 	groupLayout->addWidget(_dataObjectBox, 0, 4);
 
-	exporter->dataset()->sceneRoot()->visitChildren([this, exporter](SceneNode* node) {
+	exporter->dataset()->scene()->visitChildren([this, exporter](SceneNode* node) {
 		if(exporter->isSuitableNode(node)) {
 			_sceneNodeBox->addItem(node->objectTitle(), QVariant::fromValue(OORef<OvitoObject>(node)));
 			if(node == exporter->nodeToExport())
