@@ -87,9 +87,6 @@ OPTION(OVITO_BUILD_PLUGIN_GALAMOST "Build the GALAMOST I/O plugin." "ON")
 OPTION(OVITO_BUILD_PLUGIN_OXDNA "Build the oxDNA I/O plugin." "ON")
 OPTION(OVITO_BUILD_PLUGIN_VULKAN "Build the Vulkan renderer plugin." "OFF")
 
-# Experimental features:
-OPTION(OVITO_BUILD_PLUGIN_VR "Build the virtual reality plugin (experimental - currently in a non-working state!)." "OFF")
-
 # This is a global list of plugin targets that will be built.
 # It will get populated by the OVITO_PLUGIN function.
 SET(OVITO_PLUGINS_LIST "")
