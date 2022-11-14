@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //  Copyright 2017 Lars Pastewka
 //
 //  This file is part of OVITO (Open Visualization Tool).
@@ -182,9 +182,7 @@ Future<AsynchronousModifier::EnginePtr> SpatialCorrelationFunctionModifier::crea
 
 	// Get simulation cell.
 	const SimulationCellObject* inputCell = input.expectObject<SimulationCellObject>();
-	if(inputCell->is2D())
-		throwException(tr("Correlation function modifier does not support two-dimensional systems."));
-	if(inputCell->volume3D() < FLOATTYPE_EPSILON)
+	if((inputCell->is2D() ? inputCell->volume2D() : inputCell->volume3D()) < FLOATTYPE_EPSILON)
 		throwException(tr("Simulation cell is degenerate. Cannot compute correlation function."));
 
 	// Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
@@ -215,12 +213,13 @@ std::vector<FloatType> SpatialCorrelationFunctionModifier::CorrelationAnalysisEn
 	size_t vecComponent = std::max(size_t(0), propertyVectorComponent);
 	size_t vecComponentCount = property ? property->componentCount() : 0;
 	int numberOfGridPoints = nX * nY * nZ;
+	bool is2D = cell()->is2D();
 
-	// Alloocate real space grid.
+	// Allocate real space grid.
 	std::vector<FloatType> gridData(numberOfGridPoints, 0);
 
 	// Get periodic boundary flag.
-	const std::array<bool, 3> pbc = cell()->pbcFlags();
+	const std::array<bool, 3> pbc = cell()->pbcFlagsCorrected();
 
 	if(!property || property->size() > 0) {
 		ConstPropertyAccess<Point3> positionsArray(positions());
@@ -232,12 +231,13 @@ std::vector<FloatType> SpatialCorrelationFunctionModifier::CorrelationAnalysisEn
 				int binIndexZ = int( fractionalPos.z() * nZ );
 				FloatType window = 1;
 				if(pbc[0]) binIndexX = SimulationCellObject::modulo(binIndexX, nX);
-				else window *= sqrt(2./3)*(1-cos(2*FLOATTYPE_PI*fractionalPos.x()));
+				else window *= std::sqrt(FloatType(2./3))*(FloatType(1)-std::cos(2*FLOATTYPE_PI*fractionalPos.x()));
 				if(pbc[1]) binIndexY = SimulationCellObject::modulo(binIndexY, nY);
-				else window *= sqrt(2./3)*(1-cos(2*FLOATTYPE_PI*fractionalPos.y()));
-				if(pbc[2]) binIndexZ = SimulationCellObject::modulo(binIndexZ, nZ);
-				else window *= sqrt(2./3)*(1-cos(2*FLOATTYPE_PI*fractionalPos.z()));
-				if (!applyWindow) window = 1;
+				else window *= std::sqrt(FloatType(2./3))*(FloatType(1)-std::cos(2*FLOATTYPE_PI*fractionalPos.y()));
+				if(is2D) binIndexZ = 0;
+				else if(pbc[2]) binIndexZ = SimulationCellObject::modulo(binIndexZ, nZ);
+				else window *= std::sqrt(FloatType(2./3))*(FloatType(1)-std::cos(2*FLOATTYPE_PI*fractionalPos.z()));
+				if(!applyWindow) window = 1;
 				if(binIndexX >= 0 && binIndexX < nX && binIndexY >= 0 && binIndexY < nY && binIndexZ >= 0 && binIndexZ < nZ) {
 					// Store in row-major format.
 					size_t binIndex = binIndexZ+nZ*(binIndexY+nY*binIndexX);
@@ -256,16 +256,17 @@ std::vector<FloatType> SpatialCorrelationFunctionModifier::CorrelationAnalysisEn
 					int binIndexZ = int( fractionalPos.z() * nZ );
 					FloatType window = 1;
 					if(pbc[0]) binIndexX = SimulationCellObject::modulo(binIndexX, nX);
-					else window *= sqrt(2./3)*(1-cos(2*FLOATTYPE_PI*fractionalPos.x()));
+					else window *= std::sqrt(FloatType(2./3))*(FloatType(1)-std::cos(2*FLOATTYPE_PI*fractionalPos.x()));
 					if(pbc[1]) binIndexY = SimulationCellObject::modulo(binIndexY, nY);
-					else window *= sqrt(2./3)*(1-cos(2*FLOATTYPE_PI*fractionalPos.y()));
-					if(pbc[2]) binIndexZ = SimulationCellObject::modulo(binIndexZ, nZ);
-					else window *= sqrt(2./3)*(1-cos(2*FLOATTYPE_PI*fractionalPos.z()));
+					else window *= std::sqrt(FloatType(2./3))*(FloatType(1)-std::cos(2*FLOATTYPE_PI*fractionalPos.y()));
+					if(is2D) binIndexZ = 0;
+					else if(pbc[2]) binIndexZ = SimulationCellObject::modulo(binIndexZ, nZ);
+					else window *= std::sqrt(FloatType(2./3))*(FloatType(1)-std::cos(2*FLOATTYPE_PI*fractionalPos.z()));
 					if(!applyWindow) window = 1;
 					if(binIndexX >= 0 && binIndexX < nX && binIndexY >= 0 && binIndexY < nY && binIndexZ >= 0 && binIndexZ < nZ) {
 						// Store in row-major format.
 						size_t binIndex = binIndexZ+nZ*(binIndexY+nY*binIndexX);
-						gridData[binIndex] += window*(v);
+						gridData[binIndex] += window * v;
 					}
 				}
 				++pos;
@@ -281,16 +282,17 @@ std::vector<FloatType> SpatialCorrelationFunctionModifier::CorrelationAnalysisEn
 				int binIndexZ = int( fractionalPos.z() * nZ );
 				FloatType window = 1;
 				if(pbc[0]) binIndexX = SimulationCellObject::modulo(binIndexX, nX);
-				else window *= sqrt(2./3)*(1-cos(2*FLOATTYPE_PI*fractionalPos.x()));
+				else window *= std::sqrt(FloatType(2./3))*(FloatType(1)-std::cos(2*FLOATTYPE_PI*fractionalPos.x()));
 				if(pbc[1]) binIndexY = SimulationCellObject::modulo(binIndexY, nY);
-				else window *= sqrt(2./3)*(1-cos(2*FLOATTYPE_PI*fractionalPos.y()));
-				if(pbc[2]) binIndexZ = SimulationCellObject::modulo(binIndexZ, nZ);
-				else window *= sqrt(2./3)*(1-cos(2*FLOATTYPE_PI*fractionalPos.z()));
+				else window *= std::sqrt(FloatType(2./3))*(FloatType(1)-std::cos(2*FLOATTYPE_PI*fractionalPos.y()));
+				if(is2D) binIndexZ = 0;
+				else if(pbc[2]) binIndexZ = SimulationCellObject::modulo(binIndexZ, nZ);
+				else window *= std::sqrt(FloatType(2./3))*(FloatType(1)-std::cos(2*FLOATTYPE_PI*fractionalPos.z()));
 				if(!applyWindow) window = 1;
 				if(binIndexX >= 0 && binIndexX < nX && binIndexY >= 0 && binIndexY < nY && binIndexZ >= 0 && binIndexZ < nZ) {
 					// Store in row-major format.
 					size_t binIndex = binIndexZ+nZ*(binIndexY+nY*binIndexX);
-					gridData[binIndex] += window*(v);
+					gridData[binIndex] += window * v;
 				}
 				++pos;
 			}
@@ -305,16 +307,17 @@ std::vector<FloatType> SpatialCorrelationFunctionModifier::CorrelationAnalysisEn
 				int binIndexZ = int( fractionalPos.z() * nZ );
 				FloatType window = 1;
 				if(pbc[0]) binIndexX = SimulationCellObject::modulo(binIndexX, nX);
-				else window *= sqrt(2./3)*(1-cos(2*FLOATTYPE_PI*fractionalPos.x()));
+				else window *= std::sqrt(FloatType(2./3))*(FloatType(1)-std::cos(2*FLOATTYPE_PI*fractionalPos.x()));
 				if(pbc[1]) binIndexY = SimulationCellObject::modulo(binIndexY, nY);
-				else window *= sqrt(2./3)*(1-cos(2*FLOATTYPE_PI*fractionalPos.y()));
-				if(pbc[2]) binIndexZ = SimulationCellObject::modulo(binIndexZ, nZ);
-				else window *= sqrt(2./3)*(1-cos(2*FLOATTYPE_PI*fractionalPos.z()));
+				else window *= std::sqrt(FloatType(2./3))*(FloatType(1)-std::cos(2*FLOATTYPE_PI*fractionalPos.y()));
+				if(is2D) binIndexZ = 0;
+				else if(pbc[2]) binIndexZ = SimulationCellObject::modulo(binIndexZ, nZ);
+				else window *= std::sqrt(FloatType(2./3))*(FloatType(1)-std::cos(2*FLOATTYPE_PI*fractionalPos.z()));
 				if(!applyWindow) window = 1;
 				if(binIndexX >= 0 && binIndexX < nX && binIndexY >= 0 && binIndexY < nY && binIndexZ >= 0 && binIndexZ < nZ) {
 					// Store in row-major format.
 					size_t binIndex = binIndexZ+nZ*(binIndexY+nY*binIndexX);
-					gridData[binIndex] += window*(v);
+					gridData[binIndex] += window * v;
 				}
 				++pos;
 			}
@@ -329,7 +332,7 @@ std::vector<std::complex<FloatType>> SpatialCorrelationFunctionModifier::Correla
 
 	// Convert real-valued input data to complex data type, because KISS FFT expects an array of complex numbers.
 	const int dims[3] = { nX, nY, nZ };
-	kiss_fftnd_cfg kiss = kiss_fftnd_alloc(dims, 3, false, 0, 0);
+	kiss_fftnd_cfg kiss = kiss_fftnd_alloc(dims, cell()->is2D() ? 2 : 3, false, 0, 0);
 	std::vector<kiss_fft_cpx> in(nX * nY * nZ);
 	auto rDataIter = rData.begin();
 	for(kiss_fft_cpx& c : in) {
@@ -355,7 +358,7 @@ std::vector<FloatType> SpatialCorrelationFunctionModifier::CorrelationAnalysisEn
 	OVITO_ASSERT(nX * nY * nZ == cData.size());
 
 	const int dims[3] = { nX, nY, nZ };
-	kiss_fftnd_cfg kiss = kiss_fftnd_alloc(dims, 3, true, 0, 0);
+	kiss_fftnd_cfg kiss = kiss_fftnd_alloc(dims,  cell()->is2D() ? 2 : 3, true, 0, 0);
 	std::vector<kiss_fft_cpx> out(nX * nY * nZ);
 	OVITO_STATIC_ASSERT(sizeof(kiss_fft_cpx) == sizeof(std::complex<FloatType>));
 
@@ -387,7 +390,7 @@ void SpatialCorrelationFunctionModifier::CorrelationAnalysisEngine::computeFftCo
 	// Note: Cell vectors are in columns. Those are 3-vectors.
 	int nX = std::max(1, (int)(cellMatrix.column(0).length() / fftGridSpacing()));
 	int nY = std::max(1, (int)(cellMatrix.column(1).length() / fftGridSpacing()));
-	int nZ = std::max(1, (int)(cellMatrix.column(2).length() / fftGridSpacing()));
+	int nZ = !cell()->is2D() ? std::max(1, (int)(cellMatrix.column(2).length() / fftGridSpacing())) : 1;
 	size_t ntotal = (size_t)nX * (size_t)nY * (size_t)nZ;
 	// The current version of the KISSFFT library does not support FFT grids with more than 2^31 bins. 
 	if(ntotal > (size_t)std::numeric_limits<int>::max())
@@ -448,11 +451,13 @@ void SpatialCorrelationFunctionModifier::CorrelationAnalysisEngine::computeFftCo
 	Vector4 recCell3 = reciprocalCellMatrix.row(2);
 
 	// Compute distance of cell faces.
-	FloatType cellFaceDistance1 = 1 / sqrt(recCell1.x()*recCell1.x() + recCell1.y()*recCell1.y() + recCell1.z()*recCell1.z());
-	FloatType cellFaceDistance2 = 1 / sqrt(recCell2.x()*recCell2.x() + recCell2.y()*recCell2.y() + recCell2.z()*recCell2.z());
-	FloatType cellFaceDistance3 = 1 / sqrt(recCell3.x()*recCell3.x() + recCell3.y()*recCell3.y() + recCell3.z()*recCell3.z());
+	FloatType cellFaceDistance1 = 1 / std::sqrt(recCell1.x()*recCell1.x() + recCell1.y()*recCell1.y() + recCell1.z()*recCell1.z());
+	FloatType cellFaceDistance2 = 1 / std::sqrt(recCell2.x()*recCell2.x() + recCell2.y()*recCell2.y() + recCell2.z()*recCell2.z());
+	FloatType cellFaceDistance3 = 1 / std::sqrt(recCell3.x()*recCell3.x() + recCell3.y()*recCell3.y() + recCell3.z()*recCell3.z());
 
-	FloatType minCellFaceDistance = std::min({cellFaceDistance1, cellFaceDistance2, cellFaceDistance3});
+	FloatType minCellFaceDistance = !cell()->is2D() 
+		? std::min({cellFaceDistance1, cellFaceDistance2, cellFaceDistance3})
+		: std::min({cellFaceDistance1, cellFaceDistance2});
 
 	// Minimum reciprocal space vector is given by the minimum distance of cell faces.
 	FloatType minReciprocalSpaceVector = 1 / minCellFaceDistance;
@@ -463,6 +468,7 @@ void SpatialCorrelationFunctionModifier::CorrelationAnalysisEngine::computeFftCo
 		numberOfWavevectorBins = 1 / (2 * minReciprocalSpaceVector * fftGridSpacing());
 	}
 	else {
+		OVITO_ASSERT(cell()->is2D() == false);
 		dir1 = (_averagingDirection+1) % 3;
 		dir2 = (_averagingDirection+2) % 3;
 		numberOfWavevectorBins = n[dir1] * n[dir2];
@@ -499,6 +505,7 @@ void SpatialCorrelationFunctionModifier::CorrelationAnalysisEngine::computeFftCo
 					int iX = SimulationCellObject::modulo(binIndexX+nX/2, nX)-nX/2;
 					int iY = SimulationCellObject::modulo(binIndexY+nY/2, nY)-nY/2;
 					int iZ = SimulationCellObject::modulo(binIndexZ+nZ/2, nZ)-nZ/2;
+					OVITO_ASSERT(!cell()->is2D() || iZ == 0);
 					// This is the reciprocal space vector (without a factor of 2*pi).
 					Vector4 wavevector = FloatType(iX)*reciprocalCellMatrix.row(0) +
 										 FloatType(iY)*reciprocalCellMatrix.row(1) +
@@ -523,7 +530,7 @@ void SpatialCorrelationFunctionModifier::CorrelationAnalysisEngine::computeFftCo
 	}
 
 	// Compute averages and normalize reciprocal-space correlation function.
-	FloatType normalizationFactor = cell()->volume3D() / (sourceProperty1()->size() * sourceProperty2()->size());
+	FloatType normalizationFactor = (cell()->is2D() ? cell()->volume2D() : cell()->volume3D()) / (sourceProperty1()->size() * sourceProperty2()->size());
 	for(int wavevectorBinIndex = 0; wavevectorBinIndex < numberOfWavevectorBins; wavevectorBinIndex++) {
 		if(numberOfValues[wavevectorBinIndex] != 0)
 			reciprocalSpaceCorrelationData[wavevectorBinIndex] *= normalizationFactor / numberOfValues[wavevectorBinIndex];
@@ -571,13 +578,14 @@ void SpatialCorrelationFunctionModifier::CorrelationAnalysisEngine::computeFftCo
 				FloatType fracX = FloatType(SimulationCellObject::modulo(binIndexX+nX/2, nX)-nX/2)/nX;
 				FloatType fracY = FloatType(SimulationCellObject::modulo(binIndexY+nY/2, nY)-nY/2)/nY;
 				FloatType fracZ = FloatType(SimulationCellObject::modulo(binIndexZ+nZ/2, nZ)-nZ/2)/nZ;
+				OVITO_ASSERT(!cell()->is2D() || fracZ == 0.0);
 				// This is the real space vector.
 				Vector3 distance = fracX*cellMatrix.column(0) +
 						 		   fracY*cellMatrix.column(1) +
 						 		   fracZ*cellMatrix.column(2);
 
 				// Length of real space vector.
-				int distanceBinIndex = int(std::floor(distance.length()/gridSpacing));
+				int distanceBinIndex = int(std::floor(distance.length() / gridSpacing));
 				if(distanceBinIndex >= 0 && distanceBinIndex < numberOfDistanceBins) {
 					realSpaceCorrelationData[distanceBinIndex] += gridProperty1[binIndex];
 					realSpaceRDFData[distanceBinIndex] += gridDensity[binIndex];
@@ -659,7 +667,7 @@ void SpatialCorrelationFunctionModifier::CorrelationAnalysisEngine::computeNeigh
 			else if(int64Data1) data1 = int64Data1.get(i, vecComponent1);
 			else data1 = 0;
 			for(CutoffNeighborFinder::Query neighQuery(neighborListBuilder, i); !neighQuery.atEnd(); neighQuery.next()) {
-				size_t distanceBinIndex = (size_t)(sqrt(neighQuery.distanceSquared()) / gridSpacing);
+				size_t distanceBinIndex = (size_t)(std::sqrt(neighQuery.distanceSquared()) / gridSpacing);
 				distanceBinIndex = std::min(distanceBinIndex, threadLocalCorrelation.size() - 1);
 				FloatType data2;
 				if(floatData2) data2 = floatData2.get(neighQuery.current(), vecComponent2);
@@ -692,14 +700,25 @@ void SpatialCorrelationFunctionModifier::CorrelationAnalysisEngine::computeNeigh
 
 	// Normalize short-ranged real-space correlation function.
 	FloatType gridSpacing = (neighCutoff() + FLOATTYPE_EPSILON) / neighCorrelation()->size();
-	FloatType normalizationFactor = 3 * cell()->volume3D() / (4 * FLOATTYPE_PI * sourceProperty1()->size() * sourceProperty2()->size());
 	PropertyAccess<FloatType> neighCorrelationArray(neighCorrelation());
 	PropertyAccess<FloatType> neighRDFArray(neighRDF());
-	for(size_t distanceBinIndex = 0; distanceBinIndex < neighCorrelation()->size(); distanceBinIndex++) {
-		FloatType distance = distanceBinIndex * gridSpacing;
-		FloatType distance2 = distance + gridSpacing;
-		neighCorrelationArray[distanceBinIndex] *= normalizationFactor / (distance2*distance2*distance2 - distance*distance*distance);
-		neighRDFArray[distanceBinIndex] *= normalizationFactor / (distance2*distance2*distance2 - distance*distance*distance);
+	if(!cell()->is2D()) {
+		FloatType normalizationFactor = 3 * cell()->volume3D() / (4 * FLOATTYPE_PI * sourceProperty1()->size() * sourceProperty2()->size());
+		for(size_t distanceBinIndex = 0; distanceBinIndex < neighCorrelation()->size(); distanceBinIndex++) {
+			FloatType distance = distanceBinIndex * gridSpacing;
+			FloatType distance2 = distance + gridSpacing;
+			neighCorrelationArray[distanceBinIndex] *= normalizationFactor / (distance2*distance2*distance2 - distance*distance*distance);
+			neighRDFArray[distanceBinIndex] *= normalizationFactor / (distance2*distance2*distance2 - distance*distance*distance);
+		}
+	}
+	else {
+		FloatType normalizationFactor = cell()->volume2D() / (FLOATTYPE_PI * sourceProperty1()->size() * sourceProperty2()->size());
+		for(size_t distanceBinIndex = 0; distanceBinIndex < neighCorrelation()->size(); distanceBinIndex++) {
+			FloatType distance = distanceBinIndex * gridSpacing;
+			FloatType distance2 = distance + gridSpacing;
+			neighCorrelationArray[distanceBinIndex] *= normalizationFactor / (distance2*distance2 - distance*distance);
+			neighRDFArray[distanceBinIndex] *= normalizationFactor / (distance2*distance2 - distance*distance);
+		}
 	}
 
 	nextProgressSubStep();
