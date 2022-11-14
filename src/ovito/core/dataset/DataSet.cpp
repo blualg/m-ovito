@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -45,13 +45,11 @@ DEFINE_REFERENCE_FIELD(DataSet, animationSettings);
 DEFINE_REFERENCE_FIELD(DataSet, sceneRoot);
 DEFINE_REFERENCE_FIELD(DataSet, selection);
 DEFINE_REFERENCE_FIELD(DataSet, renderSettings);
-DEFINE_VECTOR_REFERENCE_FIELD(DataSet, globalObjects);
 SET_PROPERTY_FIELD_LABEL(DataSet, viewportConfig, "Viewport Configuration");
 SET_PROPERTY_FIELD_LABEL(DataSet, animationSettings, "Animation Settings");
 SET_PROPERTY_FIELD_LABEL(DataSet, sceneRoot, "Scene");
 SET_PROPERTY_FIELD_LABEL(DataSet, selection, "Selection");
 SET_PROPERTY_FIELD_LABEL(DataSet, renderSettings, "Render Settings");
-SET_PROPERTY_FIELD_LABEL(DataSet, globalObjects, "Global objects");
 
 /******************************************************************************
 * Constructor.
