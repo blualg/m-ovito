@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -46,19 +46,16 @@ bool WrapPeriodicImagesModifier::OOMetaClass::isApplicableTo(const DataCollectio
 void WrapPeriodicImagesModifier::evaluateSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state)
 {
 	const SimulationCellObject* simCellObj = state.expectObject<SimulationCellObject>();
-	std::array<bool, 3> pbc = simCellObj->pbcFlags();
+	std::array<bool, 3> pbc = simCellObj->pbcFlagsCorrected();
 	if(!pbc[0] && !pbc[1] && !pbc[2]) {
 		state.setStatus(PipelineStatus(PipelineStatus::Warning, tr("No periodic boundary conditions are enabled for the simulation cell.")));
 		return;
 	}
 
-	if(simCellObj->is2D())
-		 throwException(tr("In the current program version, this modifier only supports three-dimensional simulation cells."));
-
 	const AffineTransformation& simCell = simCellObj->cellMatrix();
-	if(std::abs(simCell.determinant()) < FLOATTYPE_EPSILON)
+	if((simCellObj->is2D() ? simCellObj->volume2D() : simCellObj->volume3D()) < FLOATTYPE_EPSILON)
 		 throwException(tr("The simulation cell is degenerate."));
-	AffineTransformation inverseSimCell = simCell.inverse();
+	AffineTransformation inverseSimCell = simCellObj->reciprocalCellMatrix();
 
 	// Make a modifiable copy of the particles object.
 	ParticlesObject* outputParticles = state.expectMutableObject<ParticlesObject>();
