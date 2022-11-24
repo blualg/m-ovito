@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -30,34 +30,18 @@
 #include <ovito/core/Core.h>
 
 /******************************************************************************
-* QT Library
+* Qt framework classes.
 ******************************************************************************/
 #include <QResource>
 #include <QtDebug>
 #include <QtGui>
 #include <QAction>
 
-/*! \namespace Ovito::Gui
-    \brief This namespace contains the graphical user interface classes.
-*/
-/*! \namespace Ovito::Gui::Widgets
-    \brief This namespace contains the widget classes that can be used in the graphical user interface.
-*/
-/*! \namespace Ovito::Gui::Params
-    \brief This namespace contains GUI classes for parameter editing.
-*/
-/*! \namespace Ovito::Gui::ViewportInput
-    \brief This namespace contains classes for interaction with the viewports.
-*/
-/*! \namespace Ovito::Gui::Dialogs
-    \brief This namespace contains common dialog box classes.
-*/
-
 /******************************************************************************
 * Forward declaration of classes.
 ******************************************************************************/
-namespace Ovito {
-
+namespace Ovito 
+{
     class UserInterface;
     class BaseViewportWindow;
     class ActionManager;

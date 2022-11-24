@@ -348,7 +348,7 @@ public:
 			return static_cast<U>(*reinterpret_cast<const qlonglong*>(this->cdata(j) + i * this->stride()));
 		default:
 			OVITO_ASSERT(false);
-			this->buffer()->throwException(QStringLiteral("Data access failed. Data buffer has a non-standard data type."));
+			throw Exception(QStringLiteral("Data access failed. Data buffer has a non-standard data type."));
 		}
 	}
 
@@ -560,7 +560,7 @@ public:
 			break;
 		default:
 			OVITO_ASSERT(false);
-			this->buffer()->throwException(QStringLiteral("Data access failed. Data buffer has a non-standard data type."));
+			throw Exception(QStringLiteral("Data access failed. Data buffer has a non-standard data type."));
 		}
 	}
 

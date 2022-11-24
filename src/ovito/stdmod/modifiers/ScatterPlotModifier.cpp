@@ -131,20 +131,20 @@ void ScatterPlotModifier::propertyChanged(const PropertyFieldDescriptor* field)
 void ScatterPlotModifier::evaluateSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state)
 {
 	if(!subject())
-		throwException(tr("No data element type set."));
+		throw Exception(tr("No data element type set."));
 	if(xAxisProperty().isNull())
-		throwException(tr("No input property for x-axis selected."));
+		throw Exception(tr("No input property for x-axis selected."));
 	if(yAxisProperty().isNull())
-		throwException(tr("No input property for y-axis selected."));
+		throw Exception(tr("No input property for y-axis selected."));
 
 	// Check if the source property is the right kind of property.
 	if(xAxisProperty().containerClass() != subject().dataClass())
-		throwException(tr("Modifier was set to operate on '%1', but the selected input is a '%2' property.")
+		throw Exception(tr("Modifier was set to operate on '%1', but the selected input is a '%2' property.")
 			.arg(subject().dataClass()->pythonName()).arg(xAxisProperty().containerClass()->propertyClassDisplayName()));
 
 	// Check if the source property is the right kind of property.
 	if(yAxisProperty().containerClass() != subject().dataClass())
-		throwException(tr("Modifier was set to operate on '%1', but the selected input is a '%2' property.")
+		throw Exception(tr("Modifier was set to operate on '%1', but the selected input is a '%2' property.")
 			.arg(subject().dataClass()->pythonName()).arg(yAxisProperty().containerClass()->propertyClassDisplayName()));
 
 	// Look up the property container object.
@@ -154,19 +154,19 @@ void ScatterPlotModifier::evaluateSynchronous(const ModifierEvaluationRequest& r
 	// Get the input properties.
 	const PropertyObject* xProperty = xAxisProperty().findInContainer(container);
 	if(!xProperty)
-		throwException(tr("The selected input property '%1' is not present.").arg(xAxisProperty().name()));
+		throw Exception(tr("The selected input property '%1' is not present.").arg(xAxisProperty().name()));
 	const PropertyObject* yProperty = yAxisProperty().findInContainer(container);
 	if(!yProperty)
-		throwException(tr("The selected input property '%1' is not present.").arg(yAxisProperty().name()));
+		throw Exception(tr("The selected input property '%1' is not present.").arg(yAxisProperty().name()));
 
 	size_t xVecComponent = std::max(0, xAxisProperty().vectorComponent());
 	size_t xVecComponentCount = xProperty->componentCount();
 	size_t yVecComponent = std::max(0, yAxisProperty().vectorComponent());
 	size_t yVecComponentCount = yProperty->componentCount();
 	if(xVecComponent >= xProperty->componentCount())
-		throwException(tr("The selected vector component is out of range. The property '%1' has only %2 components per element.").arg(xProperty->name()).arg(xProperty->componentCount()));
+		throw Exception(tr("The selected vector component is out of range. The property '%1' has only %2 components per element.").arg(xProperty->name()).arg(xProperty->componentCount()));
 	if(yVecComponent >= yProperty->componentCount())
-		throwException(tr("The selected vector component is out of range. The property '%1' has only %2 components per element.").arg(yProperty->name()).arg(yProperty->componentCount()));
+		throw Exception(tr("The selected vector component is out of range. The property '%1' has only %2 components per element.").arg(yProperty->name()).arg(yProperty->componentCount()));
 
 	// Get selection ranges.
 	FloatType selectionXAxisRangeStart = this->selectionXAxisRangeStart();
@@ -196,11 +196,11 @@ void ScatterPlotModifier::evaluateSynchronous(const ModifierEvaluationRequest& r
 
 	// Collect X coordinates.
 	if(!xProperty->copyTo(out_x.begin(), xVecComponent))
-		throwException(tr("Failed to extract coordinate values from input property for x-axis."));
+		throw Exception(tr("Failed to extract coordinate values from input property for x-axis."));
 
 	// Collect Y coordinates.
 	if(!yProperty->copyTo(out_y.begin(), yVecComponent))
-		throwException(tr("Failed to extract coordinate values from input property for y-axis."));
+		throw Exception(tr("Failed to extract coordinate values from input property for y-axis."));
 
 	if(outputSelection && selectXAxisInRange()) {
 		int* s = outputSelection.begin();

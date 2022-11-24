@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -28,6 +28,7 @@
 #include <ovito/core/dataset/animation/TimeInterval.h>
 #include <ovito/core/viewport/overlays/ViewportOverlay.h>
 #include <ovito/core/dataset/scene/PipelineSceneNode.h>
+#include <ovito/core/dataset/scene/Scene.h>
 #include "ViewportSettings.h"
 #include "ViewportWindowInterface.h"
 #include "ViewportProjectionParameters.h"
@@ -78,16 +79,7 @@ public:
 	/// \param aspectRatio Specifies the desired aspect ratio (height/width) of the output image.
 	/// \param sceneBoundingBox The bounding box of the scene in world coordinates. This is used to calculate the near and far z-clipping planes.
 	/// \return The returned structure describes the projection used to render the contents of the viewport.
-	ViewProjectionParameters computeProjectionParameters(TimePoint time, FloatType aspectRatio, bool asynchronousEvaluation, const Box3& sceneBoundingBox = Box3());
-
-    /// \brief Puts an update request event for this viewport on the event loop.
-    ///
-	/// Calling this method is going to redraw the viewport contents unless the viewport is hidden.
-	/// This function does not cause an immediate repaint; instead it schedules an
-	/// update request event, which is processed when execution returns to the main event loop.
-	///
-	/// To update all viewports at once you should use ViewportConfiguration::updateViewports().
-	void updateViewport();
+	ViewProjectionParameters computeProjectionParameters(AnimationTime time, FloatType aspectRatio, bool asynchronousEvaluation, const Box3& sceneBoundingBox = Box3());
 
 	/// \brief If an update request is pending for this viewport, immediately processes it and redraw the viewport.
 	void processUpdateRequest();
@@ -179,7 +171,7 @@ public:
 	/// Returns the geometry of the render frame, i.e., the region of the viewport that
 	/// will be visible in a rendered image.
 	/// The returned box is given in viewport coordinates (interval [-1,+1]).
-	Box2 renderFrameRect() const;
+	Box2 renderFrameRect(DataSet* dataset) const;
 
 	/// \brief Returns a color value for drawing something in the viewport. The user can configure the color for each element.
 	/// \param which The enum constant that specifies what type of element to draw.
@@ -223,29 +215,38 @@ public:
 		return window() ? window()->viewportWindowDeviceSize() : QSize(0,0);
 	}
 
-	/// \brief Returns the GUI window associated with this viewport (may be NULL).
+	/// \brief Returns the GUI window associated with this viewport (may be none).
 	ViewportWindowInterface* window() const { return _window; }
 
 	/// \brief Associates this viewport with a GUI window. This is an internal method.
-	void setWindow(ViewportWindowInterface* window) { _window = window; }
+	void setWindow(ViewportWindowInterface* window);
 
 	/// Returns the nested layout cell this viewport's window is currently in (if any). 
 	ViewportLayoutCell* layoutCell() const;
 
 	/// Renders the contents of the interactive viewport in a window.
 	/// This is an internal method, which should not be called by user code.
-	void renderInteractive(SceneRenderer* renderer);
+	void renderInteractive(UserInterface& userInterface, DataSet* dataset, SceneRenderer* renderer);
 
 public Q_SLOTS:
 
+    /// \brief Puts an update request event for this viewport on the event loop.
+    ///
+	/// Calling this method is going to redraw the viewport contents unless the viewport is hidden.
+	/// This function does not cause an immediate repaint; instead it schedules an
+	/// update request event, which is processed when execution returns to the main event loop.
+	///
+	/// To update all viewports at once you should use ViewportConfiguration::updateViewports().
+	void updateViewport();
+
 	/// \brief Zooms to the extents of the scene.
-	void zoomToSceneExtents(FloatType viewportAspectRatio = 0.0);
+	void zoomToSceneExtents(FloatType viewportAspectRatio = 0);
 
 	/// \brief Zooms to the extents of the currently selected nodes.
-	void zoomToSelectionExtents(FloatType viewportAspectRatio = 0.0);
+	void zoomToSelectionExtents(FloatType viewportAspectRatio = 0);
 
 	/// \brief Zooms to the extents of the given bounding box.
-	void zoomToBox(const Box3& box, FloatType viewportAspectRatio = 0.0);
+	void zoomToBox(const Box3& box, FloatType viewportAspectRatio = 0);
 
 Q_SIGNALS:
 
@@ -279,13 +280,16 @@ protected:
 
 	/// Modifies the projection such that the render frame painted over the 3d scene exactly
 	/// matches the true visible area.
-	void adjustProjectionForRenderFrame(ViewProjectionParameters& params);
+	void adjustProjectionForRenderFrame(DataSet* dataset, ViewProjectionParameters& params);
 
 	/// Determines this viewport's area in the rendered output image. 
-	QRect renderViewportRect() const;
+	QRect renderViewportRect(DataSet* dataset) const;
 
 	/// Determines the aspect ratio of this viewport's area in the rendered output image. 
-	FloatType renderAspectRatio() const;
+	FloatType renderAspectRatio(DataSet* dataset) const;
+
+	/// Prepares the scene prior to rendering the viewport.
+	void prepareSceneThenRedraw();
 
 private Q_SLOTS:
 
@@ -328,6 +332,9 @@ private:
 	/// The list of layers which are painted under the 3d scene.
 	DECLARE_VECTOR_REFERENCE_FIELD(OORef<ViewportOverlay>, underlays);
 
+	/// The scene to be displayed by this viewport.
+	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<Scene>, scene, setScene, PROPERTY_FIELD_NO_SUB_ANIM | PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES);
+
 	/// This flag is true during the rendering phase.
 	bool _isRendering = false;
 
@@ -336,6 +343,12 @@ private:
 
 	/// The GUI window associated with this viewport.
 	ViewportWindowInterface* _window = nullptr;
+
+	/// Indicates whether the (visible) viewport is currently waiting for the scene to become ready.
+	bool _sceneReadyScheduled = false;
+
+	/// The task that makes the scene ready for interactive rendering in the (visible) viewport.
+	SharedFuture<> _sceneReadyFuture;
 };
 
 }	// End of namespace

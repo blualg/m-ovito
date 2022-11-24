@@ -31,7 +31,7 @@ IMPLEMENT_OVITO_CLASS(SurfaceMeshVertices);
 /******************************************************************************
 * Creates a storage object for standard vertex properties.
 ******************************************************************************/
-PropertyPtr SurfaceMeshVertices::OOMetaClass::createStandardPropertyInternal(DataSet* dataset, size_t elementCount, int type, DataBuffer::InitializationFlags flags, const ConstDataObjectPath& containerPath) const
+PropertyPtr SurfaceMeshVertices::OOMetaClass::createStandardPropertyInternal(size_t elementCount, int type, DataBuffer::InitializationFlags flags, const ConstDataObjectPath& containerPath) const
 {
 	int dataType;
 	size_t componentCount;
@@ -60,7 +60,7 @@ PropertyPtr SurfaceMeshVertices::OOMetaClass::createStandardPropertyInternal(Dat
 
 	OVITO_ASSERT(componentCount == standardPropertyComponentCount(type));
 
-	PropertyPtr property = PropertyPtr::create(dataset, elementCount, dataType, componentCount, propertyName, flags & ~DataBuffer::InitializeMemory, type, componentNames);
+	PropertyPtr property = PropertyPtr::create(elementCount, dataType, componentCount, propertyName, flags & ~DataBuffer::InitializeMemory, type, componentNames);
 
 	// Initialize memory if requested.
 	if(flags.testFlag(DataBuffer::InitializeMemory) && containerPath.size() >= 2) {
@@ -135,7 +135,7 @@ SurfaceMeshVertices::SurfaceMeshVertices(ObjectCreationParams params) : Property
 * Returns the base point and vector information for visualizing a vector 
 * property from this container using a VectorVis element.
 ******************************************************************************/
-std::tuple<ConstDataBufferPtr, ConstDataBufferPtr> SurfaceMeshVertices::getVectorVisData(const ConstDataObjectPath& path, const PipelineFlowState& state) const
+std::tuple<ConstDataBufferPtr, ConstDataBufferPtr> SurfaceMeshVertices::getVectorVisData(const ConstDataObjectPath& path, const PipelineFlowState& state, SceneRenderer* renderer) const
 {
 	OVITO_ASSERT(path.lastAs<SurfaceMeshVertices>(1) == this);
 	if(const SurfaceMesh* mesh = path.lastAs<SurfaceMesh>(2)) {

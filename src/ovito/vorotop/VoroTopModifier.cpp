@@ -95,7 +95,7 @@ Future<AsynchronousModifier::EnginePtr> VoroTopModifier::createEngine(const Modi
 
 	// The Voro++ library uses 32-bit integers. It cannot handle more than 2^31 input points.
 	if(particles->elementCount() > std::numeric_limits<int>::max())
-        throwException(tr("VoroTop analysis modifier is limited to a maximum of %1 particles in the current program version.").arg(std::numeric_limits<int>::max()));
+        throw Exception(tr("VoroTop analysis modifier is limited to a maximum of %1 particles in the current program version.").arg(std::numeric_limits<int>::max()));
 
     // Get simulation cell.
     const SimulationCellObject* inputCell = input.expectObject<SimulationCellObject>();

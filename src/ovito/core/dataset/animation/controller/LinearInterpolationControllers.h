@@ -35,7 +35,7 @@ namespace Ovito {
  */
 template<typename KeyType>
 struct LinearKeyInterpolator {
-	typename KeyType::value_type operator()(TimePoint time, KeyType* key0, KeyType* key1, KeyType* key2, KeyType* key3) const {
+	typename KeyType::value_type operator()(AnimationTime time, KeyType* key0, KeyType* key1, KeyType* key2, KeyType* key3) const {
 		OVITO_ASSERT(key2->time() > key1->time());
 		FloatType t = (FloatType)(time - key1->time()) / (key2->time() - key1->time());
 		LinearValueInterpolator<typename KeyType::value_type> valueInterpolator;
@@ -60,14 +60,14 @@ public:
 		: KeyframeControllerTemplate<FloatAnimationKey, LinearKeyInterpolator<FloatAnimationKey>, Controller::ControllerTypeFloat>(params) {}
 
 	/// \brief Gets the controller's value at a certain animation time.
-	virtual FloatType getFloatValue(TimePoint time, TimeInterval& validityInterval) override {
+	virtual FloatType getFloatValue(AnimationTime time, TimeInterval& validityInterval) override {
 		FloatType val;
 		getInterpolatedValue(time, val, validityInterval);
 		return val;
 	}
 
 	/// \brief Sets the controller's value at the given animation time.
-	virtual void setFloatValue(TimePoint time, FloatType newValue) override {
+	virtual void setFloatValue(AnimationTime time, FloatType newValue) override {
 		setAbsoluteValue(time, newValue);
 	}
 };
@@ -89,14 +89,14 @@ public:
 		: KeyframeControllerTemplate<IntegerAnimationKey, LinearKeyInterpolator<IntegerAnimationKey>, Controller::ControllerTypeInt>(params) {}
 
 	/// \brief Gets the controller's value at a certain animation time.
-	virtual int getIntValue(TimePoint time, TimeInterval& validityInterval) override {
+	virtual int getIntValue(AnimationTime time, TimeInterval& validityInterval) override {
 		int val;
 		getInterpolatedValue(time, val, validityInterval);
 		return val;
 	}
 
 	/// \brief Sets the controller's value at the given animation time.
-	virtual void setIntValue(TimePoint time, int newValue) override {
+	virtual void setIntValue(AnimationTime time, int newValue) override {
 		setAbsoluteValue(time, newValue);
 	}
 };
@@ -118,12 +118,12 @@ public:
 		: KeyframeControllerTemplate<Vector3AnimationKey, LinearKeyInterpolator<Vector3AnimationKey>, Controller::ControllerTypeVector3>(params) {}
 
 	/// \brief Gets the controller's value at a certain animation time.
-	virtual void getVector3Value(TimePoint time, Vector3& value, TimeInterval& validityInterval) override {
+	virtual void getVector3Value(AnimationTime time, Vector3& value, TimeInterval& validityInterval) override {
 		getInterpolatedValue(time, value, validityInterval);
 	}
 
 	/// \brief Sets the controller's value at the given animation time.
-	virtual void setVector3Value(TimePoint time, const Vector3& newValue) override {
+	virtual void setVector3Value(AnimationTime time, const Vector3& newValue) override {
 		setAbsoluteValue(time, newValue);
 	}
 };
@@ -145,12 +145,12 @@ public:
 		: KeyframeControllerTemplate<PositionAnimationKey, LinearKeyInterpolator<PositionAnimationKey>, Controller::ControllerTypePosition>(params) {}
 
 	/// \brief Gets the controller's value at a certain animation time.
-	virtual void getPositionValue(TimePoint time, Vector3& value, TimeInterval& validityInterval) override {
+	virtual void getPositionValue(AnimationTime time, Vector3& value, TimeInterval& validityInterval) override {
 		getInterpolatedValue(time, value, validityInterval);
 	}
 
 	/// \brief Sets the controller's value at the given animation time.
-	virtual void setPositionValue(TimePoint time, const Vector3& newValue, bool isAbsolute) override {
+	virtual void setPositionValue(AnimationTime time, const Vector3& newValue, bool isAbsolute) override {
 		if(isAbsolute)
 			setAbsoluteValue(time, newValue);
 		else
@@ -175,12 +175,12 @@ public:
 		: KeyframeControllerTemplate<RotationAnimationKey, LinearKeyInterpolator<RotationAnimationKey>, Controller::ControllerTypeRotation>(params) {}
 
 	/// \brief Gets the controller's value at a certain animation time.
-	virtual void getRotationValue(TimePoint time, Rotation& value, TimeInterval& validityInterval) override {
+	virtual void getRotationValue(AnimationTime time, Rotation& value, TimeInterval& validityInterval) override {
 		getInterpolatedValue(time, value, validityInterval);
 	}
 
 	/// \brief Sets the controller's value at the given animation time.
-	virtual void setRotationValue(TimePoint time, const Rotation& newValue, bool isAbsolute) override {
+	virtual void setRotationValue(AnimationTime time, const Rotation& newValue, bool isAbsolute) override {
 		if(isAbsolute)
 			setAbsoluteValue(time, newValue);
 		else
@@ -205,12 +205,12 @@ public:
 		: KeyframeControllerTemplate<ScalingAnimationKey, LinearKeyInterpolator<ScalingAnimationKey>, Controller::ControllerTypeScaling>(params) {}
 
 	/// \brief Gets the controller's value at a certain animation time.
-	virtual void getScalingValue(TimePoint time, Scaling& value, TimeInterval& validityInterval) override {
+	virtual void getScalingValue(AnimationTime time, Scaling& value, TimeInterval& validityInterval) override {
 		getInterpolatedValue(time, value, validityInterval);
 	}
 
 	/// \brief Sets the controller's value at the given animation time.
-	virtual void setScalingValue(TimePoint time, const Scaling& newValue, bool isAbsolute) override {
+	virtual void setScalingValue(AnimationTime time, const Scaling& newValue, bool isAbsolute) override {
 		if(isAbsolute)
 			setAbsoluteValue(time, newValue);
 		else

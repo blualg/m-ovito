@@ -149,7 +149,7 @@ void ActiveObject::timerEvent(QTimerEvent* event)
 * Returns a short piece information (typically a string or color) to be 
 * displayed next to the object's title in the pipeline editor.
 ******************************************************************************/
-QVariant ActiveObject::getPipelineEditorShortInfo() const 
+QVariant ActiveObject::getPipelineEditorShortInfo(Scene* scene) const 
 {
 	return status().shortInfo();
 }

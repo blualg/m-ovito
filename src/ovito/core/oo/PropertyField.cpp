@@ -77,11 +77,15 @@ void PropertyFieldBase::generatePropertyChangedEvent(RefMaker* owner, const Prop
 ******************************************************************************/
 bool PropertyFieldBase::isUndoRecordingActive(RefMaker* owner, const PropertyFieldDescriptor* descriptor)
 {
-	if(descriptor->automaticUndo() && owner->dataset()) {
+	if(descriptor->automaticUndo()) {
 		// Undo recording is only performed in the main thread.
 		if(QThread::currentThread() != owner->thread())
 			return false;
+#if 0
 		return owner->dataset()->undoStack().isRecording();
+#else
+		OVITO_ASSERT(false); // TODO: Implement undo recording
+#endif
 	}
 	return false;
 }
@@ -92,14 +96,18 @@ bool PropertyFieldBase::isUndoRecordingActive(RefMaker* owner, const PropertyFie
 void PropertyFieldBase::pushUndoRecord(RefMaker* owner, std::unique_ptr<UndoableOperation>&& operation)
 {
 	OVITO_ASSERT_MSG(!QCoreApplication::instance() || QThread::currentThread() == QCoreApplication::instance()->thread(), "PropertyFieldBase::pushUndoRecord()", "This function may only be called from the main thread.");
+#if 0
 	owner->dataset()->undoStack().push(std::move(operation));
+#else
+		OVITO_ASSERT(false); // TODO: Implement undo recording
+#endif
 }
 
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
 PropertyFieldBase::PropertyFieldOperation::PropertyFieldOperation(RefMaker* owner, const PropertyFieldDescriptor* descriptor) :
-	_owner(owner != owner->dataset() ? owner : nullptr), _descriptor(descriptor)
+	_owner(!DataSet::OOClass().isMember(owner) ? owner : nullptr), _descriptor(descriptor)
 {
 }
 
@@ -134,7 +142,7 @@ template<typename T> void SingleReferenceFieldBase<T>::set(RefMaker* owner, cons
     // Check object type
 	if(newTarget && !newTarget->getOOClass().isDerivedFrom(*descriptor->targetClass())) {
 		OVITO_ASSERT_MSG(false, "SingleReferenceFieldBase::set()", "Tried to create a reference to an incompatible object for this reference field.");
-		owner->throwException(QString("Cannot set a reference field of type %1 to an incompatible object of type %2.").arg(descriptor->targetClass()->name(), newTarget->getOOClass().name()));
+		throw Exception(QString("Cannot set a reference field of type %1 to an incompatible object of type %2.").arg(descriptor->targetClass()->name(), newTarget->getOOClass().name()));
 	}
 
 	// Make sure automatic undo is disabled for a reference field of a class that is not derived from RefTarget.
@@ -255,7 +263,7 @@ template<typename T> void VectorReferenceFieldBase<T>::set(RefMaker* owner, cons
     // Check object type
 	if(newTarget && !newTarget->getOOClass().isDerivedFrom(*descriptor->targetClass())) {
 		OVITO_ASSERT_MSG(false, "VectorReferenceFieldBase::set()", "Tried to create a reference to an incompatible object for this reference field.");
-		owner->throwException(QString("Cannot set a reference field of type %1 to an incompatible object of type %2.").arg(descriptor->targetClass()->name(), newTarget->getOOClass().name()));
+		throw Exception(QString("Cannot set a reference field of type %1 to an incompatible object of type %2.").arg(descriptor->targetClass()->name(), newTarget->getOOClass().name()));
 	}
 
 	// Make sure automatic undo is disabled for a reference field of a class that is not derived from RefTarget.
@@ -313,7 +321,7 @@ template<typename T> auto VectorReferenceFieldBase<T>::insert(RefMaker* owner, c
     // Check object type
 	if(newTarget && !newTarget->getOOClass().isDerivedFrom(*descriptor->targetClass())) {
 		OVITO_ASSERT_MSG(false, "VectorReferenceFieldBase::insert()", "Cannot add incompatible object to this vector reference field.");
-		owner->throwException(QString("Cannot add an object to a reference field of type %1 that has the incompatible type %2.").arg(descriptor->targetClass()->name(), newTarget->getOOClass().name()));
+		throw Exception(QString("Cannot add an object to a reference field of type %1 that has the incompatible type %2.").arg(descriptor->targetClass()->name(), newTarget->getOOClass().name()));
 	}
 
 	// Make sure automatic undo is disabled for a reference field of a class that is not derived from RefTarget.

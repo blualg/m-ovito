@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -55,10 +55,12 @@ void SelectionMode::mouseReleaseEvent(ViewportWindowInterface* vpwin, QMouseEven
 	if(_viewport != nullptr) {
 		// Select object under mouse cursor.
 		ViewportPickResult pickResult = vpwin->pick(_clickPoint);
-		if(pickResult.isValid()) {
-			_viewport->dataset()->undoStack().beginCompoundOperation(tr("Select"));
-			_viewport->dataset()->selection()->setNode(pickResult.pipelineNode());
-			_viewport->dataset()->undoStack().endCompoundOperation();
+		if(pickResult.isValid() && _viewport->scene()) {
+			if(vpwin->userInterface().undoStack())
+				vpwin->userInterface().undoStack()->beginCompoundOperation(tr("Select"));
+			_viewport->scene()->selection()->setNode(pickResult.pipelineNode());
+			if(vpwin->userInterface().undoStack())
+				vpwin->userInterface().undoStack()->endCompoundOperation();
 		}
 		_viewport = nullptr;
 	}
@@ -82,7 +84,7 @@ void SelectionMode::deactivated(bool temporary)
 void SelectionMode::mouseMoveEvent(ViewportWindowInterface* vpwin, QMouseEvent* event)
 {
 	// Suppress object picking while animation playback is active, because the offscreen rendering slows down the playback.
-	bool isPlaybackActive = vpwin->viewport()->dataset()->animationSettings()->isPlaybackActive();
+	bool isPlaybackActive = vpwin->viewport()->scene() ? vpwin->viewport()->scene()->animationSettings()->isPlaybackActive() : false;
 
 	// Perform object picking under the mouse cursor.
 	ViewportPickResult pickResult = !isPlaybackActive ? vpwin->pick(getMousePosition(event)) : ViewportPickResult{};

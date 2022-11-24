@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -66,7 +66,7 @@ class OVITO_CORE_EXPORT FileExporter : public RefTarget
 public:
 
 	/// \brief Selects the default scene node to be exported by this exporter.
-	virtual void selectDefaultExportableData();
+	virtual void selectDefaultExportableData(DataSet* dataset, Scene* scene);
 
 	/// \brief Determines whether the given scene node is suitable for exporting with this exporter service.
 	/// By default, all pipeline scene nodes are considered suitable that produce suitable data objects
@@ -102,7 +102,7 @@ public:
 	virtual bool supportsMultiFrameFiles() const { return false; }
 
 	/// \brief Evaluates the pipeline whose data is to be exported.
-	PipelineFlowState getPipelineDataToBeExported(TimePoint time, MainThreadOperation& operation, bool requestRenderState = false) const;
+	PipelineFlowState getPipelineDataToBeExported(int frame, MainThreadOperation& operation, bool requestRenderState = false) const;
 
 	/// \brief Returns a string with the list of available data objects of the given type.
 	QString getAvailableDataObjectList(const PipelineFlowState& state, const DataObject::OOMetaClass& objectType) const;
@@ -119,7 +119,7 @@ protected:
 	virtual void closeOutputFile(bool exportCompleted) = 0;
 
 	/// \brief Exports a single animation frame to the current output file.
-	virtual bool exportFrame(int frameNumber, TimePoint time, const QString& filePath, MainThreadOperation& operation);
+	virtual bool exportFrame(int frameNumber, const QString& filePath, MainThreadOperation& operation);
 
 private:
 
@@ -146,6 +146,12 @@ private:
 
 	/// Controls the desired precision with which floating-point numbers are written if the format is text-based.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(int, floatOutputPrecision, setFloatOutputPrecision);
+
+	/// The dataset to be exported.
+	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<DataSet>, datasetToExport, setDatasetToExport, PROPERTY_FIELD_NO_SUB_ANIM);
+
+	/// The scene to be exported.
+	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<Scene>, sceneToExport, setSceneToExport, PROPERTY_FIELD_NO_SUB_ANIM);
 
 	/// The scene node to be exported.
 	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<SceneNode>, nodeToExport, setNodeToExport, PROPERTY_FIELD_NO_SUB_ANIM);

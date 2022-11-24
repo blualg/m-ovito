@@ -306,7 +306,7 @@ bool FileSourceEditor::importNewFile(FileSource* fileSource, const QUrl& url, Ov
 
 		importer = importerFuture.result();
 		if(!importer)
-			fileSource->throwException(tr("Could not detect the format of the file to be imported. The format might not be supported."));
+			throw Exception(tr("Could not detect the format of the file to be imported. The format might not be supported."));
 	}
 	else {
 		// Caller has provided a specific importer type.
@@ -326,7 +326,7 @@ bool FileSourceEditor::importNewFile(FileSource* fileSource, const QUrl& url, Ov
 	// The importer must be a FileSourceImporter.
 	OORef<FileSourceImporter> newImporter = dynamic_object_cast<FileSourceImporter>(importer);
 	if(!newImporter)
-		fileSource->throwException(tr("The selected file type is not compatible."));
+		throw Exception(tr("The selected file type is not compatible."));
 
 	// Ask user whether existing data objects should be maintained.
 	bool keepExistingDataCollection = false;
@@ -420,7 +420,7 @@ void FileSourceEditor::onWildcardPatternEntered()
 		fileInfo.setFile(fileInfo.dir(), pattern);
 		newUrl.setPath(fileInfo.filePath());
 		if(!newUrl.isValid())
-			throwException(tr("URL is not valid."));
+			throw Exception(tr("URL is not valid."));
 
 		fileSource->setSource({newUrl}, fileSource->importer(), false);
 	});

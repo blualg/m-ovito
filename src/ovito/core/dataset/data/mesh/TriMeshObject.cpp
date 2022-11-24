@@ -349,7 +349,7 @@ void TriMeshObject::saveToOBJ(CompressedTextWriter& stream)
 ******************************************************************************/
 void TriMeshObject::clipAtPlane(const Plane3& plane)
 {
-	TriMeshObject clippedMesh(ObjectCreationParams(dataset(), ObjectCreationParams::WithoutVisElement));
+	TriMeshObject clippedMesh(ObjectCreationParams{ObjectCreationParams::WithoutVisElement});
 	clippedMesh.setHasVertexColors(hasVertexColors());
 	clippedMesh.setHasVertexPseudoColors(hasVertexPseudoColors());
 	clippedMesh.setHasFaceColors(hasFaceColors());

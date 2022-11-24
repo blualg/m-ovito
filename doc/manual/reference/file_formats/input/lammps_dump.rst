@@ -62,7 +62,7 @@ Column-to-property mapping
 """"""""""""""""""""""""""
 
 The data columns of a dump file get mapped to corresponding :ref:`particle properties <usage.particle_properties>` within OVITO during file import.
-This happens automatically according to the following rules, but you can may manually override the mapping if necessary.
+This happens automatically according to the following rules, but you can manually override the mapping if necessary.
 For certain dump file columns, the file parser may perform an automatic conversion as described in the third table column.
 
 ========================== ========================== =========================

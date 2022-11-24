@@ -54,7 +54,7 @@ void WrapPeriodicImagesModifier::evaluateSynchronous(const ModifierEvaluationReq
 
 	const AffineTransformation& simCell = simCellObj->cellMatrix();
 	if((simCellObj->is2D() ? simCellObj->volume2D() : simCellObj->volume3D()) < FLOATTYPE_EPSILON)
-		 throwException(tr("The simulation cell is degenerate."));
+		 throw Exception(tr("The simulation cell is degenerate."));
 	AffineTransformation inverseSimCell = simCellObj->reciprocalCellMatrix();
 
 	// Make a modifiable copy of the particles object.

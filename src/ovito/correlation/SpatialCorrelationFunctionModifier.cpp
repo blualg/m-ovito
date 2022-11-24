@@ -163,9 +163,9 @@ Future<AsynchronousModifier::EnginePtr> SpatialCorrelationFunctionModifier::crea
 {
 	// Get the source data.
 	if(sourceProperty1().isNull())
-		throwException(tr("Please select a first input particle property."));
+		throw Exception(tr("Please select a first input particle property."));
 	if(sourceProperty2().isNull())
-		throwException(tr("please select a second input particle property."));
+		throw Exception(tr("please select a second input particle property."));
 
 	// Get the current positions.
 	const ParticlesObject* particles = input.expectObject<ParticlesObject>();
@@ -176,14 +176,14 @@ Future<AsynchronousModifier::EnginePtr> SpatialCorrelationFunctionModifier::crea
 	const PropertyObject* property1 = sourceProperty1().findInContainer(particles);
 	const PropertyObject* property2 = sourceProperty2().findInContainer(particles);
 	if(!property1)
-		throwException(tr("The selected input particle property with the name '%1' does not exist.").arg(sourceProperty1().name()));
+		throw Exception(tr("The selected input particle property with the name '%1' does not exist.").arg(sourceProperty1().name()));
 	if(!property2)
-		throwException(tr("The selected input particle property with the name '%1' does not exist.").arg(sourceProperty2().name()));
+		throw Exception(tr("The selected input particle property with the name '%1' does not exist.").arg(sourceProperty2().name()));
 
 	// Get simulation cell.
 	const SimulationCellObject* inputCell = input.expectObject<SimulationCellObject>();
 	if((inputCell->is2D() ? inputCell->volume2D() : inputCell->volume3D()) < FLOATTYPE_EPSILON)
-		throwException(tr("Simulation cell is degenerate. Cannot compute correlation function."));
+		throw Exception(tr("Simulation cell is degenerate. Cannot compute correlation function."));
 
 	// Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
 	return std::make_shared<CorrelationAnalysisEngine>(request,

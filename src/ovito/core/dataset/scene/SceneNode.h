@@ -54,7 +54,7 @@ public:
 	///                                 The interval passed to the method is reduced to the time interval during which the transformation stays constant.
 	/// \return The matrix that transforms from this node's local space to absolute world space.
 	///         This matrix contains also the transformation of the parent node.
-	const AffineTransformation& getWorldTransform(TimePoint time, TimeInterval& validityInterval) const;
+	const AffineTransformation& getWorldTransform(AnimationTime time, TimeInterval& validityInterval) const;
 
 	/// \brief Returns this node's local transformation matrix.
 	/// \param[in] time The animation for which the transformation matrix should be computed.
@@ -65,7 +65,7 @@ public:
 	///
 	/// The local transformation does not contain the object transform of this node and
 	/// does not contain the transformation of the parent node.
-	AffineTransformation getLocalTransform(TimePoint time, TimeInterval& validityInterval) const;
+	AffineTransformation getLocalTransform(AnimationTime time, TimeInterval& validityInterval) const;
 
 	/// \brief Returns the parent node of this node in the scene tree graph.
 	/// \return This node's parent node or \c NULL if this is the root node.
@@ -180,7 +180,7 @@ public:
 	///         the whole node geometry.
 	/// \note The returned box does not contains the bounding boxes of the child nodes.
 	/// \sa worldBoundingBox()
-	virtual Box3 localBoundingBox(TimePoint time, TimeInterval& validity) const = 0;
+	virtual Box3 localBoundingBox(AnimationTime time, TimeInterval& validity) const = 0;
 
 	/// \brief Returns the bounding box of the scene node in world coordinates.
 	/// \param time The time at which the bounding box should be computed.
@@ -188,7 +188,7 @@ public:
 	/// \return An axis-aligned box in the world local coordinate system that contains
 	///         the whole node geometry including the bounding boxes of all child nodes.
 	/// \note The returned box does also contain the bounding boxes of the child nodes.
-	Box3 worldBoundingBox(TimePoint time, Viewport* vp = nullptr) const;
+	Box3 worldBoundingBox(AnimationTime time, Viewport* vp = nullptr) const;
 
 	/// \brief Returns whether this scene node is currently selected.
 	/// \return \c true if this node is part of the current SelectionSet;
@@ -207,15 +207,10 @@ public:
 
 	/// \brief Returns whether this node is part of a scene.
 	/// \return \c true if the node has a root node.
-	bool isInScene() const {
-		const SceneNode* n = this;
-		do {
-			if(n->isRootNode()) return true;
-			n = n->parentNode();
-		}
-		while(n != nullptr);
-		return false;
-	}
+	bool isInScene() const { return scene() != nullptr; }
+
+	/// \brief Returns the root node of the scene node tree; or \c nullptr if the node is not currently part of a scene.  
+	Scene* scene() const;
 
 	/// \brief Returns the title of this object.
 	virtual QString objectTitle() const override { return _nodeName; }
@@ -226,6 +221,10 @@ public:
 	/// Returns whether this scene node (or one of its parents in the node hierarchy) has been hidden 
 	/// specifically in the given viewport.
 	bool isHiddenInViewport(Viewport* vp, bool includeHierarchyParent) const;
+
+	/// Returns the animation time at which this scene node is being rendered in the GUI.
+	/// This method assumes that the scene node is only part of a single scene.
+	std::optional<AnimationTime> currentAnimationTime() const;
 
 protected:
 

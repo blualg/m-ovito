@@ -144,13 +144,13 @@ Future<AsynchronousModifier::EnginePtr> ComputePropertyModifier::createEngine(co
 
 	// Get the delegate object that will take of the specific details.
 	if(!delegate())
-		throwException(tr("No delegate set for the compute property modifier."));
+		throw Exception(tr("No delegate set for the compute property modifier."));
 
 	// Look up the property container which we will operate on.
    	ConstDataObjectPath objectPath = input.expectObject(delegate()->inputContainerRef());
 	const PropertyContainer* container = static_object_cast<PropertyContainer>(objectPath.back());
 	if(outputProperty().containerClass() != delegate()->inputContainerClass())
-		throwException(tr("Property %1 to be computed is not a %2 property.").arg(outputProperty().name()).arg(delegate()->inputContainerClass()->elementDescriptionName()));
+		throw Exception(tr("Property %1 to be computed is not a %2 property.").arg(outputProperty().name()).arg(delegate()->inputContainerClass()->elementDescriptionName()));
 	container->verifyIntegrity();
 
 	// Get the number of input elements.
@@ -164,7 +164,7 @@ Future<AsynchronousModifier::EnginePtr> ComputePropertyModifier::createEngine(co
 	if(onlySelectedElements() && container->getOOMetaClass().isValidStandardPropertyId(PropertyObject::GenericSelectionProperty)) {
 		selectionProperty = container->getProperty(PropertyObject::GenericSelectionProperty);
 		if(!selectionProperty)
-			throwException(tr("Compute property modifier has been restricted to selected elements, but no selection was previously defined."));
+			throw Exception(tr("Compute property modifier has been restricted to selected elements, but no selection was previously defined."));
 	}
 
 	// Prepare output property.
@@ -187,7 +187,7 @@ Future<AsynchronousModifier::EnginePtr> ComputePropertyModifier::createEngine(co
 			outp = container->getOOMetaClass().createUserProperty(dataset(), nelements, PropertyObject::Float, propertyComponentCount(), outputProperty().name(), onlySelectedElements() ? DataBuffer::InitializeMemory : DataBuffer::NoFlags);
 		}
 		else {
-			throwException(tr("Output property of compute property modifier has not been specified."));
+			throw Exception(tr("Output property of compute property modifier has not been specified."));
 		}
 
 		if(myModApp) {
@@ -206,7 +206,7 @@ Future<AsynchronousModifier::EnginePtr> ComputePropertyModifier::createEngine(co
 		}
 	}
 	if(propertyComponentCount() != outp->componentCount())
-		throwException(tr("Number of expressions does not match component count of output property."));
+		throw Exception(tr("Number of expressions does not match component count of output property."));
 
 	TimeInterval validityInterval = input.stateValidity();
 
@@ -368,7 +368,7 @@ void ComputePropertyModifierDelegate::PropertyComputeEngine::applyResults(const 
 	ComputePropertyModifier* modifier = static_object_cast<ComputePropertyModifier>(request.modifier());
 
 	if(!modifier->delegate())
-		modifier->throwException(tr("No delegate set for the Compute Property modifier."));
+		throw Exception(tr("No delegate set for the Compute Property modifier."));
 
 	// Look up the container we are operating on.
 	PropertyContainer* container = state.expectMutableLeafObject(modifier->delegate()->inputContainerRef());

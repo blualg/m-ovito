@@ -1,6 +1,6 @@
 #######################################################################################
 #
-#  Copyright 2021 OVITO GmbH, Germany
+#  Copyright 2022 OVITO GmbH, Germany
 #
 #  This file is part of OVITO (Open Visualization Tool).
 #
@@ -27,7 +27,7 @@ FIND_PACKAGE(${OVITO_QT_MAJOR_VERSION} ${OVITO_MINIMUM_REQUIRED_QT_VERSION} COMP
 OVITO_STANDARD_PLUGIN(OpenGLRendererGui
 	SOURCES
 		OpenGLViewportWindow.cpp
-		OpenGLOffscreenViewportWindow.cpp
+#		OpenGLOffscreenViewportWindow.cpp
 	PLUGIN_DEPENDENCIES
 		OpenGLRenderer
 		GuiBase

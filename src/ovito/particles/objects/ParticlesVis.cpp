@@ -489,7 +489,7 @@ PipelineStatus ParticlesVis::render(TimePoint time, const ConstDataObjectPath& p
 	// Make sure we don't exceed the internal limits. Rendering of more than 2 billion particles is not yet supported by OVITO.
 	size_t particleCount = particles->elementCount();
 	if(particleCount > (size_t)std::numeric_limits<int>::max()) {
-		throwException(tr("This version of OVITO doesn't support rendering of more than %1 particles.").arg(std::numeric_limits<int>::max()));
+		throw Exception(tr("This version of OVITO doesn't support rendering of more than %1 particles.").arg(std::numeric_limits<int>::max()));
 	}
 
 	// Render all mesh-based particle types.

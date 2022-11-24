@@ -42,7 +42,7 @@ class OVITO_MESH_EXPORT SurfaceMeshVertices : public PropertyContainer
 		using PropertyContainerClass::PropertyContainerClass;
 
 		/// Create a storage object for standard vertex properties.
-		virtual PropertyPtr createStandardPropertyInternal(DataSet* dataset, size_t elementCount, int type, DataBuffer::InitializationFlags flags, const ConstDataObjectPath& containerPath) const override;
+		virtual PropertyPtr createStandardPropertyInternal(size_t elementCount, int type, DataBuffer::InitializationFlags flags, const ConstDataObjectPath& containerPath) const override;
 
 		/// Generates a human-readable string representation of the data object reference.
 		virtual QString formatDataObjectPath(const ConstDataObjectPath& path) const override;
@@ -70,7 +70,7 @@ public:
 	Q_INVOKABLE SurfaceMeshVertices(ObjectCreationParams params);
 
 	/// Returns the base point and vector information for visualizing a vector property from this container using a VectorVis element.
-	virtual std::tuple<ConstDataBufferPtr, ConstDataBufferPtr> getVectorVisData(const ConstDataObjectPath& path, const PipelineFlowState& state) const override;
+	virtual std::tuple<ConstDataBufferPtr, ConstDataBufferPtr> getVectorVisData(const ConstDataObjectPath& path, const PipelineFlowState& state, SceneRenderer* renderer) const override;
 };
 
 }	// End of namespace

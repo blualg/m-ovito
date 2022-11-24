@@ -67,7 +67,7 @@ Future<AsynchronousModifier::EnginePtr> ChillPlusModifier::createEngine(const Mo
     const PropertyObject* posProperty = particles->expectProperty(ParticlesObject::PositionProperty);
     const SimulationCellObject* simCell = input.expectObject<SimulationCellObject>();
     if(simCell->is2D())
-        throwException(tr("Chill+ modifier does not support 2d simulation cells."));
+        throw Exception(tr("Chill+ modifier does not support 2d simulation cells."));
 
     // Get particle selection.
     const PropertyObject* selectionProperty = onlySelectedParticles() ? particles->expectProperty(ParticlesObject::SelectionProperty) : nullptr;

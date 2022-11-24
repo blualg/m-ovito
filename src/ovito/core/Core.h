@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -56,7 +56,7 @@
 #include <optional>
 
 /******************************************************************************
-* QT Library
+* Qt framework classes.
 ******************************************************************************/
 #include <QCoreApplication>
 #include <QStringList>
@@ -116,7 +116,7 @@
 #endif
 
 /******************************************************************************
-* Boost Library
+* Boost library
 ******************************************************************************/
 #include <boost/dynamic_bitset.hpp>
 #include <boost/container/flat_map.hpp>

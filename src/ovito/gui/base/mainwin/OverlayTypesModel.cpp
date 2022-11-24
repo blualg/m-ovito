@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -190,12 +190,11 @@ void OverlayTypesModel::insertViewportLayer()
 	OVITO_ASSERT(action);
 
 	// Get the current dataset and viewport.
-	DataSet* dataset = _userInterface.datasetContainer().currentSet();
 	Viewport* vp = _overlayListModel->selectedViewport();
 	if(!vp) return;
 
 	// Instantiate the new layer and add it to the active viewport.
-	UndoableTransaction::handleExceptions(dataset->undoStack(), tr("Insert viewport layer"), [&]() {
+	UndoableTransaction::handleExceptions(_userInterface, tr("Insert viewport layer"), [&]() {
 
 		if(action->layerClass()) {
 
@@ -206,7 +205,7 @@ void OverlayTypesModel::insertViewportLayer()
 				underlayIndex = vp->underlays().indexOf(item->overlay());
 			}
 			// Create an instance of the overlay class.
-			OORef<ViewportOverlay> layer = static_object_cast<ViewportOverlay>(action->layerClass()->createInstance(dataset));
+			OORef<ViewportOverlay> layer = static_object_cast<ViewportOverlay>(action->layerClass()->createInstance());
 			// Make sure the new overlay gets selected in the UI.
 			_overlayListModel->setNextToSelectObject(layer);
 			// Insert it into either the overlays or the underlays list.

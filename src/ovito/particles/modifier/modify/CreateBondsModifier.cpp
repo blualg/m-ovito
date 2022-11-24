@@ -246,13 +246,13 @@ Future<AsynchronousModifier::EnginePtr> CreateBondsModifier::createEngine(const 
 				}
 			}
 			if(maxCutoff <= 0)
-				throwException(tr("At least one positive bond cutoff must be set for a valid pair of particle types."));
+				throw Exception(tr("At least one positive bond cutoff must be set for a valid pair of particle types."));
 		}
 	}
 	else if(cutoffMode() == TypeRadiusCutoff) {
 		maxCutoff = 0;
 		if(vdwPrefactor() <= 0.0)
-			throwException(tr("Van der Waal radius scaling factor must be positive."));
+			throw Exception(tr("Van der Waal radius scaling factor must be positive."));
 		typeProperty = particles->expectProperty(ParticlesObject::TypeProperty);
 		if(typeProperty) {
 			for(const ElementType* type : typeProperty->elementTypes()) {
@@ -273,12 +273,12 @@ Future<AsynchronousModifier::EnginePtr> CreateBondsModifier::createEngine(const 
 			}
 			maxCutoff *= vdwPrefactor() * 2.0;
 			if(maxCutoff == 0.0)
-				throwException(tr("The van der Waals (VdW) radii of all particle types are undefined or zero. Creating bonds based on the VdW radius requires at least one particle type with a positive radius value."));
+				throw Exception(tr("The van der Waals (VdW) radii of all particle types are undefined or zero. Creating bonds based on the VdW radius requires at least one particle type with a positive radius value."));
 		}
 		OVITO_ASSERT(!typeVdWRadiusMap.empty());
 	}
 	if(maxCutoff <= 0.0)
-		throwException(tr("Maximum bond cutoff range is zero. A positive value is required."));
+		throw Exception(tr("Maximum bond cutoff range is zero. A positive value is required."));
 
 	// Get molecule IDs.
 	const PropertyObject* moleculeProperty = onlyIntraMoleculeBonds() ? particles->getProperty(ParticlesObject::MoleculeProperty) : nullptr;
@@ -410,7 +410,7 @@ void CreateBondsModifier::BondsEngine::applyResults(const ModifierEvaluationRequ
 
 	// Bonds have been created for a specific particle ordering. Make sure it's still the same.
 	if(_inputFingerprint.hasChanged(particles))
-		request.modApp()->throwException(tr("Cached modifier results are obsolete, because the number or the storage order of input particles has changed."));
+		throw Exception(tr("Cached modifier results are obsolete, because the number or the storage order of input particles has changed."));
 
 	// Add our bonds to the system.
 	particles->setBonds(bonds());

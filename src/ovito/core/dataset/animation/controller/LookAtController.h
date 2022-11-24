@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -53,24 +53,24 @@ public:
 	virtual ControllerType controllerType() const override { return ControllerTypeRotation; }
 
 	/// Queries the controller for its value at a certain time.
-	virtual void getRotationValue(TimePoint time, Rotation& result, TimeInterval& validityInterval) override;
+	virtual void getRotationValue(AnimationTime time, Rotation& result, TimeInterval& validityInterval) override;
 
 	/// Sets the controller's value at the specified time.
-	virtual void setRotationValue(TimePoint time, const Rotation& newValue, bool isAbsoluteValue) override;
+	virtual void setRotationValue(AnimationTime time, const Rotation& newValue, bool isAbsoluteValue) override;
 
 	/// Lets the rotation controller apply its value to an existing transformation matrix.
-	virtual void applyRotation(TimePoint time, AffineTransformation& result, TimeInterval& validityInterval) override;
+	virtual void applyRotation(AnimationTime time, AffineTransformation& result, TimeInterval& validityInterval) override;
 
 	/// Computes the largest time interval containing the given time during which the
 	/// controller's value is constant.
-	virtual TimeInterval validityInterval(TimePoint time) override;
+	virtual TimeInterval validityInterval(AnimationTime time) override;
 
 	/// This asks the controller to adjust its value after a scene node has got a new
 	/// parent node.
 	///		oldParentTM - The transformation of the old parent node
 	///		newParentTM - The transformation of the new parent node
 	///		contextNode - The node to which this controller is assigned to
-	virtual void changeParent(TimePoint time, const AffineTransformation& oldParentTM, const AffineTransformation& newParentTM, SceneNode* contextNode) override {}
+	virtual void changeParent(AnimationTime time, const AffineTransformation& oldParentTM, const AffineTransformation& newParentTM, SceneNode* contextNode) override {}
 
 	/// \brief Returns whether the value of this controller is changing over time.
 	virtual bool isAnimated() const override {

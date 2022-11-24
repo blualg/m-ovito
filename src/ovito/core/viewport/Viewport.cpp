@@ -24,12 +24,13 @@
 #include <ovito/core/viewport/Viewport.h>
 #include <ovito/core/viewport/ViewportConfiguration.h>
 #include <ovito/core/viewport/ViewportSettings.h>
-#include <ovito/core/dataset/animation/AnimationSettings.h>
 #include <ovito/core/rendering/RenderSettings.h>
+#include <ovito/core/dataset/animation/AnimationSettings.h>
 #include <ovito/core/dataset/scene/SelectionSet.h>
 #include <ovito/core/dataset/scene/Scene.h>
 #include <ovito/core/dataset/data/camera/AbstractCameraObject.h>
 #include <ovito/core/dataset/DataSetContainer.h>
+#include <ovito/core/app/UserInterface.h>
 
 /// The default field of view in world units used for orthogonal view types when the scene is empty.
 #define DEFAULT_ORTHOGONAL_FIELD_OF_VIEW		FloatType(200)
@@ -52,6 +53,7 @@ DEFINE_PROPERTY_FIELD(Viewport, renderPreviewMode);
 DEFINE_PROPERTY_FIELD(Viewport, isGridVisible);
 DEFINE_PROPERTY_FIELD(Viewport, viewportTitle);
 DEFINE_REFERENCE_FIELD(Viewport, viewNode);
+DEFINE_REFERENCE_FIELD(Viewport, scene);
 DEFINE_VECTOR_REFERENCE_FIELD(Viewport, overlays);
 DEFINE_VECTOR_REFERENCE_FIELD(Viewport, underlays);
 SET_PROPERTY_FIELD_CHANGE_EVENT(Viewport, viewportTitle, ReferenceEvent::TitleChanged);
@@ -141,9 +143,9 @@ void Viewport::setViewType(ViewType type, bool keepCameraTransformation, bool ke
 			setGridMatrix(AffineTransformation(coordSys));
 			break;
 		case VIEW_SCENENODE:
-			if(!keepCameraTransformation && viewNode()) {
+			if(!keepCameraTransformation && viewNode() && scene()) {
 				TimeInterval iv;
-				setCameraTransformation(viewNode()->getWorldTransform(dataset()->animationSettings()->time(), iv));
+				setCameraTransformation(viewNode()->getWorldTransform(scene()->animationSettings()->currentTime(), iv));
 			}
 			setGridMatrix(AffineTransformation(coordSys));
 			break;
@@ -162,11 +164,11 @@ void Viewport::setViewType(ViewType type, bool keepCameraTransformation, bool ke
 			if(isPerspectiveProjection() || viewType() == VIEW_NONE)
 				setFieldOfView(DEFAULT_ORTHOGONAL_FIELD_OF_VIEW);
 		}
-		else if(type == VIEW_SCENENODE && viewNode()) {
-			const PipelineFlowState& state = viewNode()->evaluatePipelineSynchronous(false);
+		else if(type == VIEW_SCENENODE && viewNode() && scene()) {
+			const PipelineFlowState& state = viewNode()->evaluatePipelineSynchronous(scene()->animationSettings()->currentTime(), false);
 			if(const AbstractCameraObject* camera = state.data() ? state.data()->getObject<AbstractCameraObject>() : nullptr) {
 				TimeInterval iv;
-				setFieldOfView(camera->fieldOfView(dataset()->animationSettings()->time(), iv));
+				setFieldOfView(camera->fieldOfView(scene()->animationSettings()->currentTime(), iv));
 			}
 		}
 	}
@@ -237,7 +239,7 @@ void Viewport::setCameraPosition(const Point3& p)
 /******************************************************************************
 * Computes the projection matrix and other parameters.
 ******************************************************************************/
-ViewProjectionParameters Viewport::computeProjectionParameters(TimePoint time, FloatType aspectRatio, bool asynchronousEvaluation, const Box3& sceneBoundingBox)
+ViewProjectionParameters Viewport::computeProjectionParameters(AnimationTime time, FloatType aspectRatio, bool asynchronousEvaluation, const Box3& sceneBoundingBox)
 {
 	OVITO_ASSERT(aspectRatio > FLOATTYPE_EPSILON);
 
@@ -258,11 +260,11 @@ ViewProjectionParameters Viewport::computeProjectionParameters(TimePoint time, F
 		// Evaluate data pipeline of the camera scene node.
 		PipelineEvaluationFuture pipelineEvaluation;
 		if(asynchronousEvaluation) {
-			pipelineEvaluation = viewNode()->evaluatePipeline(PipelineEvaluationRequest(time));
+			pipelineEvaluation = viewNode()->evaluatePipeline(PipelineEvaluationRequest(time, time.frame()));
 			if(!pipelineEvaluation.waitForFinished())
 				pipelineEvaluation = {};
 		}
-		const PipelineFlowState& state = pipelineEvaluation.isValid() ? pipelineEvaluation.result() : viewNode()->evaluatePipelineSynchronous(false);
+		const PipelineFlowState& state = pipelineEvaluation.isValid() ? pipelineEvaluation.result() : viewNode()->evaluatePipelineSynchronous(time, false);
 
 		// Get camera settings (FOV etc.)
 		if(const AbstractCameraObject* camera = state.data() ? state.data()->getObject<AbstractCameraObject>() : nullptr) {
@@ -322,8 +324,10 @@ ViewProjectionParameters Viewport::computeProjectionParameters(TimePoint time, F
 ******************************************************************************/
 void Viewport::zoomToSceneExtents(FloatType viewportAspectRatio)
 {
-	Box3 sceneBoundingBox = dataset()->scene()->worldBoundingBox(dataset()->animationSettings()->time(), this);
-	zoomToBox(sceneBoundingBox, viewportAspectRatio);
+	if(scene()) {
+		Box3 sceneBoundingBox = scene()->worldBoundingBox(scene()->animationSettings()->currentTime(), this);
+		zoomToBox(sceneBoundingBox, viewportAspectRatio);
+	}
 }
 
 /******************************************************************************
@@ -331,9 +335,11 @@ void Viewport::zoomToSceneExtents(FloatType viewportAspectRatio)
 ******************************************************************************/
 void Viewport::zoomToSelectionExtents(FloatType viewportAspectRatio)
 {
+	if(!scene())
+		return;
 	Box3 selectionBoundingBox;
-	for(SceneNode* node : dataset()->selection()->nodes()) {
-		selectionBoundingBox.addBox(node->worldBoundingBox(dataset()->animationSettings()->time(), this));
+	for(SceneNode* node : scene()->selection()->nodes()) {
+		selectionBoundingBox.addBox(node->worldBoundingBox(scene()->animationSettings()->currentTime(), this));
 	}
 	if(!selectionBoundingBox.isEmpty())
 		zoomToBox(selectionBoundingBox, viewportAspectRatio);
@@ -346,11 +352,27 @@ void Viewport::zoomToSelectionExtents(FloatType viewportAspectRatio)
 ******************************************************************************/
 void Viewport::zoomToBox(const Box3& box, FloatType viewportAspectRatio)
 {
-	if(box.isEmpty())
+	if(box.isEmpty() || !scene())
 		return;
 
 	if(viewType() == VIEW_SCENENODE)
 		return;	// Do not reposition the camera object.
+
+	// If the caller did not specify an rendering aspect ratio for the viewport,
+	// obtain the aspect ratio from the display window associated with the viewport or the current render settings.
+	if(viewportAspectRatio == 0) {
+		if(!window())
+			return;
+		if(renderPreviewMode()) {
+			viewportAspectRatio = renderAspectRatio(window()->dataset());
+		}
+		else {
+			QSize vpSize = windowSize();
+			viewportAspectRatio = (vpSize.width() > 0) ? ((FloatType)vpSize.height() / vpSize.width()) : FloatType(1);
+		}
+		if(viewportAspectRatio == 0)
+			return;
+	}
 
 	if(isPerspectiveProjection()) {
 		FloatType dist = box.size().length() * FloatType(0.5) / tan(fieldOfView() * FloatType(0.5));
@@ -358,17 +380,7 @@ void Viewport::zoomToBox(const Box3& box, FloatType viewportAspectRatio)
 	}
 	else {
 		// Set up projection.
-		FloatType aspectRatio = viewportAspectRatio;
-		if(aspectRatio == 0) {
-			QSize vpSize = windowSize();
-			aspectRatio = (vpSize.width() > 0) ? ((FloatType)vpSize.height() / vpSize.width()) : FloatType(1);
-			if(renderPreviewMode()) {
-				aspectRatio = renderAspectRatio();
-			}
-		}
-		if(aspectRatio == 0)
-			return;
-		ViewProjectionParameters projParams = computeProjectionParameters(dataset()->animationSettings()->time(), aspectRatio, false, box);
+		ViewProjectionParameters projParams = computeProjectionParameters(scene()->animationSettings()->currentTime(), viewportAspectRatio, false, box);
 
 		FloatType minX = FLOATTYPE_MAX, minY = FLOATTYPE_MAX;
 		FloatType maxX = FLOATTYPE_MIN, maxY = FLOATTYPE_MIN;
@@ -381,8 +393,8 @@ void Viewport::zoomToBox(const Box3& box, FloatType viewportAspectRatio)
 		}
 		FloatType w = std::max(maxX - minX, FloatType(1e-12));
 		FloatType h = std::max(maxY - minY, FloatType(1e-12));
-		if(aspectRatio > h/w)
-			setFieldOfView(w * aspectRatio * FloatType(0.55));
+		if(viewportAspectRatio > h/w)
+			setFieldOfView(w * viewportAspectRatio * FloatType(0.55));
 		else
 			setFieldOfView(h * FloatType(0.55));
 		setCameraPosition(box.center());
@@ -395,14 +407,19 @@ void Viewport::zoomToBox(const Box3& box, FloatType viewportAspectRatio)
 bool Viewport::referenceEvent(RefTarget* source, const ReferenceEvent& event)
 {
 	if(event.type() == ReferenceEvent::TargetChanged) {
-		if(source == viewNode()) {
+		if(source == scene()) {
+			// Redraw viewport window whenver the scene changes.
+			if(window())
+				prepareSceneThenRedraw();
+		}
+		else if(source == viewNode()) {
 			// Adopt camera information from view node.
-			if(viewType() == VIEW_SCENENODE && !isBeingLoaded() && !isAboutToBeDeleted() && !dataset()->isAboutToBeDeleted()) {
+			if(viewType() == VIEW_SCENENODE && !isBeingLoaded() && !isAboutToBeDeleted() && scene()) {
 				// Get camera transformation and settings (FOV etc.).
-				TimePoint time = dataset()->animationSettings()->time();
+				AnimationTime time = scene()->animationSettings()->currentTime();
 				TimeInterval iv;
 				setCameraTransformation(viewNode()->getWorldTransform(time, iv));
-				const PipelineFlowState& state = viewNode()->evaluatePipelineSynchronous(false);
+				const PipelineFlowState& state = viewNode()->evaluatePipelineSynchronous(time, false);
 				if(const AbstractCameraObject* camera = state.data() ? state.data()->getObject<AbstractCameraObject>() : nullptr) {
 					setFieldOfView(camera->fieldOfView(time, iv));
 				}
@@ -415,6 +432,12 @@ bool Viewport::referenceEvent(RefTarget* source, const ReferenceEvent& event)
 			// Update viewport when one of the layers has changed.
 			updateViewport();
 		}
+	}
+	else if(event.type() == ReferenceEvent::PreliminaryStateAvailable && source == scene()) {
+		// Update viewport window when a new preliminiary state from one of the data pipelines in the scene
+		// becomes available (unless we are playing an animation).
+		if(window() && !scene()->animationSettings()->arePreliminaryViewportUpdatesSuspended())
+			updateViewport();
 	}
 	else if(source == viewNode() && event.type() == ReferenceEvent::TitleChanged) {
 		// Update viewport title when camera node has been renamed.
@@ -444,6 +467,19 @@ void Viewport::referenceReplaced(const PropertyFieldDescriptor* field, RefTarget
 	else if(field == PROPERTY_FIELD(overlays) || field == PROPERTY_FIELD(underlays)) {
 		updateViewport();
 	}
+	else if(field == PROPERTY_FIELD(scene)) {
+		_sceneReadyFuture.reset();
+		_sceneReadyScheduled = false;
+		if(scene() && window()) {
+			prepareSceneThenRedraw();
+		}
+		// Repaint viewport when the camera orbit center changes.
+		if(oldTarget)
+			disconnect(static_object_cast<Scene>(oldTarget), &Scene::cameraOrbitCenterChanged, this, &Viewport::updateViewport);
+		if(newTarget)
+			connect(static_object_cast<Scene>(newTarget), &Scene::cameraOrbitCenterChanged, this, &Viewport::updateViewport);
+		Q_EMIT viewportChanged();
+	}
 	RefTarget::referenceReplaced(field, oldTarget, newTarget, listIndex);
 }
 
@@ -453,6 +489,10 @@ void Viewport::referenceReplaced(const PropertyFieldDescriptor* field, RefTarget
 void Viewport::referenceInserted(const PropertyFieldDescriptor* field, RefTarget* newTarget, int listIndex)
 {
 	if(field == PROPERTY_FIELD(overlays) || field == PROPERTY_FIELD(underlays)) {
+		if(ViewportOverlay* overlay = static_object_cast<ViewportOverlay>(newTarget)) {
+			if(!isUndoingOrRedoing() && !isBeingLoaded())
+				overlay->initializeOverlay(this);
+		}
 		updateViewport();
 	}
 	RefTarget::referenceInserted(field, newTarget, listIndex);
@@ -518,7 +558,7 @@ void Viewport::updateViewportTitle()
 		case VIEW_ORTHO: newTitle = tr("Ortho"); break;
 		case VIEW_PERSPECTIVE: newTitle = tr("Perspective"); break;
 		case VIEW_SCENENODE: newTitle = viewNode() ? viewNode()->nodeName() : tr("No view node"); break;
-		default: OVITO_ASSERT(false); // unknown viewport type
+		default: OVITO_ASSERT(false); // Unknown viewport type
 	}
 	_viewportTitle.set(this, PROPERTY_FIELD(viewportTitle), std::move(newTitle));
 	Q_EMIT viewportChanged();
@@ -546,11 +586,12 @@ void Viewport::processUpdateRequest()
 /******************************************************************************
 * Renders the contents of the interactive viewport in a window.
 ******************************************************************************/
-void Viewport::renderInteractive(SceneRenderer* renderer)
+void Viewport::renderInteractive(UserInterface& userInterface, DataSet* dataset, SceneRenderer* renderer)
 {
 	OVITO_ASSERT_MSG(!isRendering(), "Viewport::renderInteractive()", "Viewport is already rendering.");
-	OVITO_ASSERT_MSG(!dataset()->viewportConfig()->isRendering(), "Viewport::renderInteractive()", "Some other viewport is already rendering.");
-	OVITO_ASSERT(!dataset()->viewportConfig()->isSuspended());
+
+	if(!scene())
+		return;
 
 	QRect vpRect(QPoint(0,0), windowSize());
 	if(vpRect.isEmpty())
@@ -558,15 +599,14 @@ void Viewport::renderInteractive(SceneRenderer* renderer)
 
 	try {
 		_isRendering = true;
-		TimePoint time = dataset()->animationSettings()->time();
-		RenderSettings* renderSettings = dataset()->renderSettings();
-		OVITO_ASSERT(renderSettings != nullptr);
+		AnimationTime time = scene()->animationSettings()->currentTime();
+		OVITO_ASSERT(dataset->renderSettings() != nullptr);
 
 		// Set up the renderer.
-		renderer->startRender(dataset(), renderSettings, vpRect.size());
+		renderer->startRender(*dataset->renderSettings(), vpRect.size(), dataset->visCache());
 
 		// This is the async operation object used when calling rendering functions in the following.
-		MainThreadOperation renderOperation = MainThreadOperation::create(dataset()->userInterface());
+		MainThreadOperation renderOperation = MainThreadOperation::create(userInterface);
 
 		// Set up preliminary projection without a known bounding box.
 		FloatType aspectRatio = (FloatType)vpRect.height() / vpRect.width();
@@ -574,27 +614,27 @@ void Viewport::renderInteractive(SceneRenderer* renderer)
 
 		// Adjust projection if render frame is shown.
 		if(renderPreviewMode())
-			adjustProjectionForRenderFrame(_projParams);
+			adjustProjectionForRenderFrame(dataset, _projParams);
 
 		// Determine scene bounding box.
-		Box3 boundingBox = renderer->computeSceneBoundingBox(time, _projParams, this, renderOperation);
+		Box3 boundingBox = renderer->computeSceneBoundingBox(time, scene(), _projParams, this, renderOperation);
 
 		// Set up final projection with the now known bounding box.
 		_projParams = computeProjectionParameters(time, aspectRatio, renderer->waitForLongOperationsEnabled(), boundingBox);
 
 		// Adjust projection if render frame is shown.
 		if(renderPreviewMode())
-			adjustProjectionForRenderFrame(_projParams);
+			adjustProjectionForRenderFrame(dataset, _projParams);
 
 		// Set up the viewport renderer.
-		renderer->beginFrame(time, _projParams, this, vpRect, nullptr);
+		renderer->beginFrame(time, scene(), _projParams, this, vpRect, nullptr);
 
 		// Render viewport "underlays".
 		if(renderPreviewMode() && !renderer->isPicking()) {
 			if(boost::algorithm::any_of(underlays(), [](ViewportOverlay* layer) { return layer->isEnabled(); })) {
-				QRect renderViewportRect = this->renderViewportRect();
+				QRect renderViewportRect = this->renderViewportRect(dataset);
 				if(!renderViewportRect.isEmpty()) {
-					Box2 renderFrameBox = renderFrameRect();
+					Box2 renderFrameBox = renderFrameRect(dataset);
 					QRect renderFrameRect(
 							(renderFrameBox.minc.x() + 1) * vpRect.width() / 2,
 							(renderFrameBox.minc.y() + 1) * vpRect.height() / 2,
@@ -615,9 +655,9 @@ void Viewport::renderInteractive(SceneRenderer* renderer)
 		// Render viewport "overlays".
 		if(renderPreviewMode() && !renderer->isPicking()) {
 			if(boost::algorithm::any_of(overlays(), [](ViewportOverlay* layer) { return layer->isEnabled(); })) {
-				QRect renderViewportRect = this->renderViewportRect();
+				QRect renderViewportRect = this->renderViewportRect(dataset);
 				if(!renderViewportRect.isEmpty()) {
-					Box2 renderFrameBox = renderFrameRect();
+					Box2 renderFrameBox = renderFrameRect(dataset);
 					QRect renderFrameRect(
 							(renderFrameBox.minc.x() + 1) * vpRect.width() / 2,
 							(renderFrameBox.minc.y() + 1) * vpRect.height() / 2,
@@ -640,7 +680,7 @@ void Viewport::renderInteractive(SceneRenderer* renderer)
 
 		// Discard unused vis element resources.
 		if(!renderer->isPicking())
-			dataset()->visCache().discardUnusedObjects();
+			renderer->visCache().discardUnusedObjects();
 
 		_isRendering = false;
 	}
@@ -653,9 +693,9 @@ void Viewport::renderInteractive(SceneRenderer* renderer)
 /******************************************************************************
 * Determines this viewport's area in the rendered output image. 
 ******************************************************************************/
-QRect Viewport::renderViewportRect() const
+QRect Viewport::renderViewportRect(DataSet* dataset) const
 {
-	RenderSettings* renderSettings = dataset()->renderSettings();
+	RenderSettings* renderSettings = dataset->renderSettings();
 	if(!renderSettings)
 		return QRect();
 	QRect frameBufferRect(0, 0, renderSettings->outputImageWidth(), renderSettings->outputImageHeight());
@@ -664,8 +704,8 @@ QRect Viewport::renderViewportRect() const
 	if(renderSettings->renderAllViewports()) {
 
 		// Compute target rectangles of all viewports of the current layout.
-		// TODO: This should to be optimized. Computing the full layout everytime seems unnecessary.
-		std::vector<std::pair<Viewport*, QRectF>> viewportRects = dataset()->viewportConfig()->getViewportRectangles(frameBufferRect);
+		// TODO: This should be optimized. Computing the full layout everytime seems unnecessary.
+		std::vector<std::pair<Viewport*, QRectF>> viewportRects = dataset->viewportConfig()->getViewportRectangles(frameBufferRect);
 
 		// Find this viewport among the list of all viewports to look up its target rectangle in the output image.
 		for(const std::pair<Viewport*, QRectF>& rect : viewportRects) {
@@ -680,9 +720,9 @@ QRect Viewport::renderViewportRect() const
 /******************************************************************************
 * Determines the aspect ratio of this viewport's area in the rendered output image.
 ******************************************************************************/
-FloatType Viewport::renderAspectRatio() const
+FloatType Viewport::renderAspectRatio(DataSet* dataset) const
 {
-	QRect rect = renderViewportRect();
+	QRect rect = renderViewportRect(dataset);
 	if(rect.isEmpty())
 		return 1.0;
 
@@ -693,13 +733,13 @@ FloatType Viewport::renderAspectRatio() const
 * Modifies the projection such that the render frame painted over the 3d scene exactly
 * matches the true visible area.
 ******************************************************************************/
-void Viewport::adjustProjectionForRenderFrame(ViewProjectionParameters& params)
+void Viewport::adjustProjectionForRenderFrame(DataSet* dataset, ViewProjectionParameters& params)
 {
 	QSize vpSize = windowSize();
 	if(vpSize.isEmpty())
 		return;
 
-	FloatType renderAspectRatio = this->renderAspectRatio();
+	FloatType renderAspectRatio = this->renderAspectRatio(dataset);
 	FloatType windowAspectRatio = (FloatType)vpSize.height() / vpSize.width();
 
 	if(_projParams.isPerspective) {
@@ -726,14 +766,14 @@ void Viewport::adjustProjectionForRenderFrame(ViewProjectionParameters& params)
 * will be visible in a rendered image.
 * The returned box is given in viewport coordinates (interval [-1,+1]).
 ******************************************************************************/
-Box2 Viewport::renderFrameRect() const
+Box2 Viewport::renderFrameRect(DataSet* dataset) const
 {
 	QSize vpSize = windowSize();
 	if(vpSize.isEmpty())
 		return { Point2(-1), Point2(+1) };
 
 	// Aspect ratio of the viewport rectangle in the rendered output image.
-	FloatType renderAspectRatio = this->renderAspectRatio();
+	FloatType renderAspectRatio = this->renderAspectRatio(dataset);
 
 	// Compute a rectangle fitted into the viewport window that has the same aspect ratio as the rendered viewport image.
 	FloatType windowAspectRatio = (FloatType)vpSize.height() / vpSize.width();
@@ -862,11 +902,11 @@ Point3 Viewport::orbitCenter()
 	// Use the target of a camera as the orbit center.
 	if(viewNode() && viewType() == Viewport::VIEW_SCENENODE && viewNode()->lookatTargetNode()) {
 		TimeInterval iv;
-		TimePoint time = dataset()->animationSettings()->time();
+		AnimationTime time = scene()->animationSettings()->currentTime();
 		return Point3::Origin() + viewNode()->lookatTargetNode()->getWorldTransform(time, iv).translation();
 	}
-	else {
-		Point3 currentOrbitCenter = dataset()->viewportConfig()->orbitCenter(this);
+	else if(scene()) {
+		Point3 currentOrbitCenter = scene()->orbitCenter(this);
 
 		if(viewNode() && isPerspectiveProjection()) {
 			// If a free camera node is selected, the current orbit center is at the same location as the camera.
@@ -877,6 +917,7 @@ Point3 Viewport::orbitCenter()
 		}
 		return currentOrbitCenter;
 	}
+	return Point3::Origin();
 }
 
 /******************************************************************************
@@ -893,6 +934,33 @@ ViewportLayoutCell* Viewport::layoutCell() const
 		}
 	});
 	return result;
+}
+
+/******************************************************************************
+* Associates this viewport with a GUI window. This is an internal method.
+******************************************************************************/
+void Viewport::setWindow(ViewportWindowInterface* window) 
+{ 
+	_window = window; 
+}
+
+/******************************************************************************
+* Prepares the scene prior to rendering the viewport.
+******************************************************************************/
+void Viewport::prepareSceneThenRedraw()
+{
+	OVITO_ASSERT(scene() != nullptr);
+	OVITO_ASSERT(window() != nullptr);
+
+	if(!_sceneReadyScheduled) {
+		_sceneReadyScheduled = true;
+		_sceneReadyFuture = scene()->whenReady().then(executor(), [this]() {
+			_sceneReadyScheduled = false;
+			_sceneReadyFuture.reset();
+			if(window())
+				updateViewport();
+		});
+	}
 }
 
 }	// End of namespace

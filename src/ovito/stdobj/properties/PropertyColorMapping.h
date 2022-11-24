@@ -53,7 +53,7 @@ public:
 	QString colorGradientType() const;
 
 	/// Assigns a new color gradient based on its class name.
-	void setColorGradientType(const QString& typeName, ExecutionContext executionContext = ExecutionContext::Interactive);
+	void setColorGradientType(const QString& typeName, ExecutionContext executionContext = ExecutionContext::Type::Interactive);
 #endif
 
 	/// Creates a PseudoColorMapping that can be used for rendering of graphics primitives.

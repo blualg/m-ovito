@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -21,6 +21,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/gui/desktop/GUI.h>
+#include <ovito/gui/desktop/mainwin/MainWindow.h>
 #include <ovito/gui/base/actions/ActionManager.h>
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/dataset/UndoStack.h>
@@ -32,8 +33,8 @@ namespace Ovito {
 /******************************************************************************
 * The constructor of the animation settings dialog.
 ******************************************************************************/
-AnimationSettingsDialog::AnimationSettingsDialog(AnimationSettings* animSettings, QWidget* parent) :
-		QDialog(parent), _animSettings(animSettings), UndoableTransaction(animSettings->dataset()->undoStack(), tr("Change animation settings"))
+AnimationSettingsDialog::AnimationSettingsDialog(MainWindow& mainWindow, AnimationSettings* animSettings, QWidget* parent) :
+		QDialog(parent), _animSettings(animSettings), UndoableTransaction(mainWindow, tr("Change animation settings"))
 {
 	setWindowTitle(tr("Animation Settings"));
 
@@ -50,26 +51,26 @@ AnimationSettingsDialog::AnimationSettingsDialog(AnimationSettings* animSettings
 	contentLayout->addWidget(new QLabel(tr("Frames per second:"), this), 0, 0);
 	fpsBox = new QComboBox(this);
 	QLocale locale;
-	fpsBox->addItem(locale.toString(0.1), TICKS_PER_SECOND * 10);
-	fpsBox->addItem(locale.toString(0.2), TICKS_PER_SECOND * 5);
-	fpsBox->addItem(locale.toString(0.5), TICKS_PER_SECOND * 2);
-	fpsBox->addItem(locale.toString(1), TICKS_PER_SECOND * 1);
-	fpsBox->addItem(locale.toString(2), TICKS_PER_SECOND / 2);
-	fpsBox->addItem(locale.toString(4), TICKS_PER_SECOND / 4);
-	fpsBox->addItem(locale.toString(5), TICKS_PER_SECOND / 5);
-	fpsBox->addItem(locale.toString(8), TICKS_PER_SECOND / 8);
-	fpsBox->addItem(locale.toString(10), TICKS_PER_SECOND / 10);
-	fpsBox->addItem(locale.toString(12), TICKS_PER_SECOND / 12);
-	fpsBox->addItem(locale.toString(15), TICKS_PER_SECOND / 15);
-	fpsBox->addItem(locale.toString(16), TICKS_PER_SECOND / 16);
-	fpsBox->addItem(locale.toString(20), TICKS_PER_SECOND / 20);
-	fpsBox->addItem(locale.toString(24), TICKS_PER_SECOND / 24);
-	fpsBox->addItem(locale.toString(25), TICKS_PER_SECOND / 25);
-	fpsBox->addItem(locale.toString(30), TICKS_PER_SECOND / 30);
-	fpsBox->addItem(locale.toString(32), TICKS_PER_SECOND / 32);
-	fpsBox->addItem(locale.toString(40), TICKS_PER_SECOND / 40);
-	fpsBox->addItem(locale.toString(50), TICKS_PER_SECOND / 50);
-	fpsBox->addItem(locale.toString(60), TICKS_PER_SECOND / 60);
+	fpsBox->addItem(locale.toString(0.1), 0.1f);
+	fpsBox->addItem(locale.toString(0.2), 0.2f);
+	fpsBox->addItem(locale.toString(0.5), 0.5f);
+	fpsBox->addItem(locale.toString(1), 1.0f);
+	fpsBox->addItem(locale.toString(2), 2.0f);
+	fpsBox->addItem(locale.toString(4), 4.0f);
+	fpsBox->addItem(locale.toString(5), 5.0f);
+	fpsBox->addItem(locale.toString(8), 8.0f);
+	fpsBox->addItem(locale.toString(10), 10.0f);
+	fpsBox->addItem(locale.toString(12), 12.0f);
+	fpsBox->addItem(locale.toString(15), 15.0f);
+	fpsBox->addItem(locale.toString(16), 16.0f);
+	fpsBox->addItem(locale.toString(20), 20.0f);
+	fpsBox->addItem(locale.toString(24), 24.0f);
+	fpsBox->addItem(locale.toString(25), 25.0f);
+	fpsBox->addItem(locale.toString(30), 30.0f);
+	fpsBox->addItem(locale.toString(32), 32.0f);
+	fpsBox->addItem(locale.toString(40), 40.0f);
+	fpsBox->addItem(locale.toString(50), 50.0f);
+	fpsBox->addItem(locale.toString(60), 60.0f);
 	contentLayout->addWidget(fpsBox, 0, 1, 1, 2);
 	connect(fpsBox, qOverload<int>(&QComboBox::activated), this, &AnimationSettingsDialog::onFramesPerSecondChanged);
 
@@ -102,7 +103,6 @@ AnimationSettingsDialog::AnimationSettingsDialog(AnimationSettings* animSettings
 	contentLayout->addWidget(everyNthFrameBox, 1, 2);
 	everyNthFrameSpinner = new SpinnerWidget(this);
 	everyNthFrameSpinner->setTextBox(everyNthFrameBox);
-	everyNthFrameSpinner->setUnit(animSettings->dataset()->unitsManager().integerIdentityUnit());
 	everyNthFrameSpinner->setMinValue(1);
 	contentLayout->addWidget(everyNthFrameSpinner, 1, 3);
 	connect(everyNthFrameSpinner, &SpinnerWidget::spinnerValueChanged, this, [this]() {
@@ -130,7 +130,6 @@ AnimationSettingsDialog::AnimationSettingsDialog(AnimationSettings* animSettings
 	contentLayout->addWidget(animStartBox, 0, 1);
 	animStartSpinner = new SpinnerWidget(this);
 	animStartSpinner->setTextBox(animStartBox);
-	animStartSpinner->setUnit(animSettings->dataset()->unitsManager().timeUnit());
 	contentLayout->addWidget(animStartSpinner, 0, 2);
 	connect(animStartSpinner, &SpinnerWidget::spinnerValueChanged, this, &AnimationSettingsDialog::onAnimationIntervalChanged);
 
@@ -139,7 +138,6 @@ AnimationSettingsDialog::AnimationSettingsDialog(AnimationSettings* animSettings
 	contentLayout->addWidget(animEndBox, 1, 1);
 	animEndSpinner = new SpinnerWidget(this);
 	animEndSpinner->setTextBox(animEndBox);
-	animEndSpinner->setUnit(animSettings->dataset()->unitsManager().timeUnit());
 	contentLayout->addWidget(animEndSpinner, 1, 2);
 	connect(animEndSpinner, &SpinnerWidget::spinnerValueChanged, this, &AnimationSettingsDialog::onAnimationIntervalChanged);
 
@@ -166,8 +164,8 @@ AnimationSettingsDialog::AnimationSettingsDialog(AnimationSettings* animSettings
 ******************************************************************************/
 void AnimationSettingsDialog::onOk()
 {
-	if(ticksPerFrameModified)
-		PROPERTY_FIELD(AnimationSettings::ticksPerFrame)->memorizeDefaultValue(_animSettings);
+	if(framesPerSecondModified)
+		PROPERTY_FIELD(AnimationSettings::framesPerSecond)->memorizeDefaultValue(_animSettings);
 	if(playbackSpeedModified)
 		PROPERTY_FIELD(AnimationSettings::playbackSpeed)->memorizeDefaultValue(_animSettings);
 	if(loopPlaybackModified)
@@ -182,10 +180,10 @@ void AnimationSettingsDialog::onOk()
 ******************************************************************************/
 void AnimationSettingsDialog::updateUI()
 {
-	fpsBox->setCurrentIndex(fpsBox->findData(_animSettings->ticksPerFrame()));
+	fpsBox->setCurrentIndex(fpsBox->findData(_animSettings->framesPerSecond()));
 	playbackSpeedBox->setCurrentIndex(playbackSpeedBox->findData(_animSettings->playbackSpeed()));
-	animStartSpinner->setIntValue(_animSettings->animationInterval().start());
-	animEndSpinner->setIntValue(_animSettings->animationInterval().end());
+	animStartSpinner->setIntValue(_animSettings->firstFrame());
+	animEndSpinner->setIntValue(_animSettings->lastFrame());
 	loopPlaybackBox->setChecked(_animSettings->loopPlayback());
 	animIntervalBox->setChecked(!_animSettings->autoAdjustInterval());
 	animStartSpinner->setEnabled(!_animSettings->autoAdjustInterval());
@@ -198,27 +196,11 @@ void AnimationSettingsDialog::updateUI()
 ******************************************************************************/
 void AnimationSettingsDialog::onFramesPerSecondChanged(int index)
 {
-	qint64 newTicksPerFrame = fpsBox->itemData(index).toInt();
-	OVITO_ASSERT(newTicksPerFrame != 0);
+	float newFramesPerSecond = fpsBox->itemData(index).toFloat();
+	OVITO_ASSERT(newFramesPerSecond != 0.0f);
 
-	int currentFrame = _animSettings->currentFrame();
-
-	// Change the animation speed.
-	qint64 oldTicksPerFrame = _animSettings->ticksPerFrame();
-	_animSettings->setTicksPerFrame((int)newTicksPerFrame);
-	ticksPerFrameModified = true;
-
-	// Rescale animation interval and animation keys.
-	TimeInterval oldInterval = _animSettings->animationInterval();
-	TimeInterval newInterval;
-	newInterval.setStart((TimePoint)((qint64)oldInterval.start() * newTicksPerFrame / oldTicksPerFrame));
-	newInterval.setEnd((TimePoint)((qint64)oldInterval.end() * newTicksPerFrame / oldTicksPerFrame));
-	_animSettings->setAnimationInterval(newInterval);
-
-	_animSettings->dataset()->rescaleTime(oldInterval, newInterval);
-
-	// Update animation time to remain at the current frame.
-	_animSettings->setCurrentFrame(currentFrame);
+	_animSettings->setFramesPerSecond(newFramesPerSecond);
+	framesPerSecondModified = true;
 
 	// Update dialog controls to reflect new values.
 	updateUI();
@@ -245,15 +227,14 @@ void AnimationSettingsDialog::onPlaybackSpeedChanged(int index)
 ******************************************************************************/
 void AnimationSettingsDialog::onAnimationIntervalChanged()
 {
-	TimeInterval interval(animStartSpinner->intValue(), animEndSpinner->intValue());
-	if(interval.end() < interval.start())
-		interval.setEnd(interval.start());
+	int firstFrame = animStartSpinner->intValue();
+	int lastFrame = animEndSpinner->intValue();
+	if(lastFrame < firstFrame)
+		lastFrame = firstFrame;
 
-	_animSettings->setAnimationInterval(interval);
-	if(_animSettings->time() < interval.start())
-		_animSettings->setTime(interval.start());
-	else if(_animSettings->time() > interval.end())
-		_animSettings->setTime(interval.end());
+	_animSettings->setFirstFrame(firstFrame);
+	_animSettings->setLastFrame(lastFrame);
+	_animSettings->setCurrentFrame(qBound(firstFrame, _animSettings->currentFrame(), lastFrame));
 
 	// Update dialog controls to reflect new values.
 	updateUI();

@@ -61,7 +61,7 @@ void DataCollection::insertObject(int index, const DataObject* obj)
 	OVITO_CHECK_OBJECT_POINTER(obj);
 
 	// Undo recording should never be active during pipeline evaluation.
-	OVITO_ASSERT(!dataset()->undoStack().isRecording());
+	OVITO_ASSERT(!isUndoRecording());
 
 	OVITO_ASSERT_MSG(!contains(obj), "DataCollection::insertObject", "Cannot insert the same data object more than once.");
 	OVITO_ASSERT(index >= 0 && index <= objects().size());
@@ -130,10 +130,10 @@ const DataObject* DataCollection::expectObject(const DataObject::OOMetaClass& ob
 		return obj;
 	else {
 		if(ExecutionContext::isInteractive()) {
-			throwException(tr("The dataset does not contain an object of type: %1").arg(objectClass.displayName()));
+			throw Exception(tr("The dataset does not contain an object of type: %1").arg(objectClass.displayName()));
 		}
 		else {
-			throwException(tr("The input data collection contains no %1 data object.").arg(objectClass.displayName()));
+			throw Exception(tr("The input data collection contains no %1 data object.").arg(objectClass.displayName()));
 		}
 	}
 }
@@ -148,15 +148,15 @@ const DataObject* DataCollection::expectLeafObject(const DataObject::OOMetaClass
 	if(!obj) {
 		if(ExecutionContext::isInteractive()) {
 			if(pathString.isEmpty())
-				throwException(tr("The dataset does not contain an object of type: %1").arg(objectClass.displayName()));
+				throw Exception(tr("The dataset does not contain an object of type: %1").arg(objectClass.displayName()));
 			else
-				throwException(tr("The dataset does not contain an object named '%2' of type '%1'.").arg(objectClass.displayName()).arg(pathString));
+				throw Exception(tr("The dataset does not contain an object named '%2' of type '%1'.").arg(objectClass.displayName()).arg(pathString));
 		}
 		else {
 			if(pathString.isEmpty())
-				throwException(tr("No '%1' data object in data collection.").arg(objectClass.displayName()));
+				throw Exception(tr("No '%1' data object in data collection.").arg(objectClass.displayName()));
 			else
-				throwException(tr("No '%1' data object named '%2' in data collection.").arg(objectClass.displayName()).arg(pathString));
+				throw Exception(tr("No '%1' data object named '%2' in data collection.").arg(objectClass.displayName()).arg(pathString));
 		}
 	}
 	return obj;
@@ -305,15 +305,15 @@ ConstDataObjectPath DataCollection::expectObject(const DataObject::OOMetaClass& 
 	if(path.empty()) {
 		if(ExecutionContext::isInteractive()) {
 			if(pathString.isEmpty())
-				throwException(tr("The dataset does not contain an object of type: %1").arg(objectClass.displayName()));
+				throw Exception(tr("The dataset does not contain an object of type: %1").arg(objectClass.displayName()));
 			else
-				throwException(tr("The dataset does not contain an object named '%2' of type '%1'.").arg(objectClass.displayName()).arg(pathString));
+				throw Exception(tr("The dataset does not contain an object named '%2' of type '%1'.").arg(objectClass.displayName()).arg(pathString));
 		}
 		else {
 			if(pathString.isEmpty())
-				throwException(tr("No '%1' data object in data collection.").arg(objectClass.displayName()));
+				throw Exception(tr("No '%1' data object in data collection.").arg(objectClass.displayName()));
 			else
-				throwException(tr("No '%1' data object named '%2' in data collection.").arg(objectClass.displayName()).arg(pathString));
+				throw Exception(tr("No '%1' data object named '%2' in data collection.").arg(objectClass.displayName()).arg(pathString));
 		}
 	}
 	return path;
@@ -329,15 +329,15 @@ DataObjectPath DataCollection::expectMutableObject(const DataObject::OOMetaClass
 	if(path.empty()) {
 		if(ExecutionContext::isInteractive()) {
 			if(pathString.isEmpty())
-				throwException(tr("The dataset does not contain an object of type: %1").arg(objectClass.displayName()));
+				throw Exception(tr("The dataset does not contain an object of type: %1").arg(objectClass.displayName()));
 			else
-				throwException(tr("The dataset does not contain an object named '%2' of type '%1'.").arg(objectClass.displayName()).arg(pathString));
+				throw Exception(tr("The dataset does not contain an object named '%2' of type '%1'.").arg(objectClass.displayName()).arg(pathString));
 		}
 		else {
 			if(pathString.isEmpty())
-				throwException(tr("No '%1' data object in data collection.").arg(objectClass.displayName()));
+				throw Exception(tr("No '%1' data object in data collection.").arg(objectClass.displayName()));
 			else
-				throwException(tr("No '%1' data object named '%2' in data collection.").arg(objectClass.displayName()).arg(pathString));
+				throw Exception(tr("No '%1' data object named '%2' in data collection.").arg(objectClass.displayName()).arg(pathString));
 		}
 	}
 	return path;

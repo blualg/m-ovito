@@ -26,22 +26,22 @@
 namespace Ovito {
 
 /// The active execution context in the current thread.
-static thread_local ExecutionContext::Type _current = ExecutionContext::Interactive;
+static thread_local ExecutionContext _current;
 
 /*******************************************************x***********************
-* Returns the type of context the current thread performs its actions in.
+* Returns the context the current thread performs its actions in.
 ******************************************************************************/
-ExecutionContext::Type ExecutionContext::current() noexcept 
+const ExecutionContext& ExecutionContext::current() noexcept 
 {
     return _current; 
 }
 
 /*******************************************************x***********************
-* Sets the type of context the current thread performs its actions in.
+* Sets the context the current thread performs its actions in.
 ******************************************************************************/
-void ExecutionContext::setCurrent(ExecutionContext::Type type) noexcept 
+void ExecutionContext::setCurrent(const ExecutionContext& context) noexcept 
 { 
-    _current = type; 
+    _current = context; 
 }
 
 }	// End of namespace

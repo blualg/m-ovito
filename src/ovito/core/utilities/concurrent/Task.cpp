@@ -420,9 +420,8 @@ bool Task::waitFor(detail::TaskReference awaitedTask)
 #endif
 
 		{
-			// Temporarily switch back to an interactive context now, since
-			// the user may be performing other actions in the user interface while the local event loop is running.
-			ExecutionContext::Scope executionContextScope(ExecutionContext::Interactive);
+			// Temporarily switch back to a null context while in the event loop.
+			ExecutionContext::Scope executionContextScope(ExecutionContext{});
 
 			// Enter the local event loop.
 			eventLoop.exec();

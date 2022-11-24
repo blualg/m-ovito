@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -48,7 +48,7 @@ CompressedTextReader::CompressedTextReader(const FileHandle& input) :
 		// Open compressed file for reading.
 		_uncompressor.setStreamFormat(GzipIODevice::GzipFormat);
 		if(!_uncompressor.open(QIODevice::ReadOnly))
-			throw Exception(tr("Failed to open input file: %1").arg(_uncompressor.errorString()));
+			throw Exception(FileManager::tr("Failed to open input file: %1").arg(_uncompressor.errorString()));
 		_stream = &_uncompressor;
 #else
 		throw Exception(tr("Cannot open file '%1' for reading. This version of OVITO was built without I/O support for gzip compressed files."));
@@ -57,7 +57,7 @@ CompressedTextReader::CompressedTextReader(const FileHandle& input) :
 	else {
 		// Open uncompressed file for reading.
 		if(!_device->open(QIODevice::ReadOnly))
-			throw Exception(tr("Failed to open input file: %1").arg(_device->errorString()));
+			throw Exception(FileManager::tr("Failed to open input file: %1").arg(_device->errorString()));
 		_stream = _device.get();
 	}
 }
@@ -70,7 +70,7 @@ const char* CompressedTextReader::readLine(int maxSize)
 	_lineNumber++;
 
 	if(_stream->atEnd())
-		throw Exception(tr("File parsing error. Unexpected end of file after line %1.").arg(_lineNumber));
+		throw Exception(FileManager::tr("File parsing error. Unexpected end of file after line %1.").arg(_lineNumber));
 
 	qint64 readBytes = 0;
 	if(!maxSize) {

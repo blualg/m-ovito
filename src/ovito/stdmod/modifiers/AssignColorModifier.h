@@ -102,7 +102,7 @@ public:
 	void setColor(const Color& color) { if(colorController()) colorController()->setCurrentColorValue(color); }
 
 	/// Returns a short piece information (typically a string or color) to be displayed next to the modifier's title in the pipeline editor list.
-	virtual QVariant getPipelineEditorShortInfo(ModifierApplication* modApp) const override { return QVariant::fromValue(static_cast<QColor>(color())); }
+	virtual QVariant getPipelineEditorShortInfo(Scene* scene, ModifierApplication* modApp) const override { return QVariant::fromValue(static_cast<QColor>(color())); }
 
 protected:
 

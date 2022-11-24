@@ -40,7 +40,7 @@ bool VTKTriangleMeshExporter::openOutputFile(const QString& filePath, int number
 	OVITO_ASSERT(!_outputStream);
 
 	_outputFile.setFileName(filePath);
-	_outputStream.reset(new CompressedTextWriter(_outputFile, dataset()));
+	_outputStream.reset(new CompressedTextWriter(_outputFile));
 
 	return true;
 }
@@ -62,12 +62,12 @@ void VTKTriangleMeshExporter::closeOutputFile(bool exportCompleted)
 /******************************************************************************
  * Exports a single animation frame to the current output file.
  *****************************************************************************/
-bool VTKTriangleMeshExporter::exportFrame(int frameNumber, TimePoint time, const QString& filePath, MainThreadOperation& operation)
+bool VTKTriangleMeshExporter::exportFrame(int frameNumber, const QString& filePath, MainThreadOperation& operation)
 {
 	// Evaluate pipeline.
 	// Note: We are requesting the rendering state from the pipeline,
 	// because we are interested in renderable triangle meshes.
-	const PipelineFlowState& state = getPipelineDataToBeExported(time, operation, true);
+	const PipelineFlowState& state = getPipelineDataToBeExported(frameNumber, operation, true);
 	if(operation.isCanceled())
 		return false;
 
@@ -75,7 +75,7 @@ bool VTKTriangleMeshExporter::exportFrame(int frameNumber, TimePoint time, const
 	DataObjectReference objectRef(&RenderableSurfaceMesh::OOClass(), dataObjectToExport().dataPath());
 	const RenderableSurfaceMesh* meshObj = static_object_cast<RenderableSurfaceMesh>(state.getLeafObject(objectRef));
 	if(!meshObj) {
-		throwException(tr("The pipeline output does not contain the surface mesh to be exported (animation frame: %1; object key: %2). Available surface mesh keys: (%3)")
+		throw Exception(tr("The pipeline output does not contain the surface mesh to be exported (animation frame: %1; object key: %2). Available surface mesh keys: (%3)")
 			.arg(frameNumber).arg(objectRef.dataPath()).arg(getAvailableDataObjectList(state, RenderableSurfaceMesh::OOClass())));
 	}
 

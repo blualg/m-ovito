@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2013 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -47,16 +47,16 @@ PRSTransformationController::PRSTransformationController(ObjectCreationParams pa
 {
 	if(params.createSubObjects()) {
 		// Create sub-controllers.
-		setPositionController(ControllerManager::createPositionController(dataset()));
-		setRotationController(ControllerManager::createRotationController(dataset()));
-		setScalingController(ControllerManager::createScalingController(dataset()));
+		setPositionController(ControllerManager::createPositionController());
+		setRotationController(ControllerManager::createRotationController());
+		setScalingController(ControllerManager::createScalingController());
 	}
 }
 
 /******************************************************************************
 * Let the controller apply its value at a certain time to the input value.
 ******************************************************************************/
-void PRSTransformationController::applyTransformation(TimePoint time, AffineTransformation& result, TimeInterval& validityInterval)
+void PRSTransformationController::applyTransformation(AnimationTime time, AffineTransformation& result, TimeInterval& validityInterval)
 {
 	positionController()->applyTranslation(time, result, validityInterval);
 	rotationController()->applyRotation(time, result, validityInterval);
@@ -66,7 +66,7 @@ void PRSTransformationController::applyTransformation(TimePoint time, AffineTran
 /******************************************************************************
 * Sets the controller's value at the specified time.
 ******************************************************************************/
-void PRSTransformationController::setTransformationValue(TimePoint time, const AffineTransformation& newValue, bool isAbsolute)
+void PRSTransformationController::setTransformationValue(AnimationTime time, const AffineTransformation& newValue, bool isAbsolute)
 {
 	AffineDecomposition decomp(newValue);
 	positionController()->setPositionValue(time, decomp.translation, isAbsolute);
@@ -77,7 +77,7 @@ void PRSTransformationController::setTransformationValue(TimePoint time, const A
 /******************************************************************************
 * Adjusts the controller's value after a scene node has gotten a new parent node.
 ******************************************************************************/
-void PRSTransformationController::changeParent(TimePoint time, const AffineTransformation& oldParentTM, const AffineTransformation& newParentTM, SceneNode* contextNode)
+void PRSTransformationController::changeParent(AnimationTime time, const AffineTransformation& oldParentTM, const AffineTransformation& newParentTM, SceneNode* contextNode)
 {
 	positionController()->changeParent(time, oldParentTM, newParentTM, contextNode);
 	rotationController()->changeParent(time, oldParentTM, newParentTM, contextNode);
@@ -88,7 +88,7 @@ void PRSTransformationController::changeParent(TimePoint time, const AffineTrans
 * Computes the largest time interval containing the given time during which the
 * controller's value is constant.
 ******************************************************************************/
-TimeInterval PRSTransformationController::validityInterval(TimePoint time)
+TimeInterval PRSTransformationController::validityInterval(AnimationTime time)
 {
 	TimeInterval iv = TimeInterval::infinite();
 	iv.intersect(positionController()->validityInterval(time));

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -38,14 +38,14 @@ namespace Ovito {
 /******************************************************************************
 * The constructor of the viewports panel class.
 ******************************************************************************/
-ViewportsPanel::ViewportsPanel(MainWindow* mainWindow) : _mainWindow(mainWindow)
+ViewportsPanel::ViewportsPanel(MainWindow& mainWindow) : _mainWindow(mainWindow)
 {
 	// Activate the new viewport layout as soon as a new state file is loaded.
-	connect(&mainWindow->datasetContainer(), &DataSetContainer::viewportConfigReplaced, this, &ViewportsPanel::onViewportConfigurationReplaced);
-	connect(&mainWindow->datasetContainer(), &DataSetContainer::animationSettingsReplaced, this, &ViewportsPanel::onAnimationSettingsReplaced);
+	connect(&mainWindow.datasetContainer(), &DataSetContainer::viewportConfigReplaced, this, &ViewportsPanel::onViewportConfigurationReplaced);
+	connect(&mainWindow.datasetContainer(), &DataSetContainer::animationSettingsReplaced, this, &ViewportsPanel::onAnimationSettingsReplaced);
 
 	// Track viewport input mode changes.
-	connect(mainWindow->viewportInputManager(), &ViewportInputManager::inputModeChanged, this, &ViewportsPanel::onInputModeChanged);
+	connect(mainWindow.viewportInputManager(), &ViewportInputManager::inputModeChanged, this, &ViewportsPanel::onInputModeChanged);
 
 	// Prevent the viewports from collpasing and disappearing completely. 
 	setMinimumSize(40, 40);
@@ -65,7 +65,7 @@ ViewportsPanel::ViewportsPanel(MainWindow* mainWindow) : _mainWindow(mainWindow)
 * Factory method which creates a new viewport window widget. Depending on the 
 * user's settings this can be either a OpenGL or a Vulkan window.
 ******************************************************************************/
-BaseViewportWindow* ViewportsPanel::createViewportWindow(Viewport* vp, MainWindow* mainWindow, QWidget* parent)
+BaseViewportWindow* ViewportsPanel::createViewportWindow(Viewport& vp, MainWindow& mainWindow, QWidget* parent)
 {
 	// Select the viewport window implementation to use.
 	QSettings settings;
@@ -83,7 +83,7 @@ BaseViewportWindow* ViewportsPanel::createViewportWindow(Viewport* vp, MainWindo
 	qRegisterMetaType<UserInterface*>("UserInterfacePtr");
 
 	if(viewportImplementation)
-		return dynamic_cast<BaseViewportWindow*>(viewportImplementation->newInstance(Q_ARG(Viewport*, vp), Q_ARG(UserInterface*, mainWindow), Q_ARG(QWidget*, parent)));
+		return dynamic_cast<BaseViewportWindow*>(viewportImplementation->newInstance(Q_ARG(Viewport*, &vp), Q_ARG(UserInterface*, &mainWindow), Q_ARG(QWidget*, parent)));
 
 	return nullptr;
 }
@@ -100,7 +100,7 @@ QWidget* ViewportsPanel::viewportWidget(Viewport* vp)
 		try {
 			BaseViewportWindow* viewportWindow = createViewportWindow(vp, _mainWindow, this);
 			if(!viewportWindow || !viewportWindow->widget())
-				vp->throwException(tr("Failed to create viewport window or there is no realtime graphics implementation available. Please check your OVITO installation and the graphics capabilities of your system."));
+				throw Exception(tr("Failed to create viewport window or there is no realtime graphics implementation available. Please check your OVITO installation and the graphics capabilities of your system."));
 			if(_viewportConfig->activeViewport() == vp)
 				viewportWindow->widget()->setFocus();
 			// Show a context menu when the user clicks the viewport caption.

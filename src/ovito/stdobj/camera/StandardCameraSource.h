@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -38,10 +38,10 @@ class OVITO_STDOBJ_EXPORT StandardCameraSource : public PipelineObject
 	OVITO_CLASS(StandardCameraSource)
 	Q_CLASSINFO("DisplayName", "Camera");
 
-	Q_PROPERTY(bool isTargetCamera READ isTargetCamera WRITE setIsTargetCamera)
-	Q_PROPERTY(bool isPerspective READ isPerspective WRITE setIsPerspective)
-	Q_PROPERTY(FloatType zoom READ zoom WRITE setZoom)
-	Q_PROPERTY(FloatType fov READ fov WRITE setFov)
+	Q_PROPERTY(bool isTargetCamera READ isTargetCamera WRITE setIsTargetCamera);
+	Q_PROPERTY(bool isPerspective READ isPerspective WRITE setIsPerspective);
+	Q_PROPERTY(FloatType zoom READ zoom WRITE setZoom);
+	Q_PROPERTY(FloatType fov READ fov WRITE setFov);
 
 public:
 
@@ -66,7 +66,7 @@ public:
 	void setIsTargetCamera(bool enable);
 
 	/// For a target camera, queries the distance between the camera and its target.
-	FloatType targetDistance() const;
+	FloatType targetDistance(AnimationTime time) const;
 
 	/// Returns the current orthogonal field of view.
 	FloatType zoom() const;

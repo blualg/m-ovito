@@ -43,6 +43,8 @@ template class OVITO_CORE_EXPORT Future<AsynchronousModifier::EnginePtr>;
 ******************************************************************************/
 Future<PipelineFlowState> AsynchronousModifier::evaluate(const ModifierEvaluationRequest& request, const PipelineFlowState& input)
 {
+	OVITO_ASSERT(!isUndoRecording());
+
 	// Get the modifier application, which stores cached computation results.
 	const AsynchronousModifierApplication* asyncModApp = dynamic_object_cast<AsynchronousModifierApplication>(request.modApp());
 	if(!asyncModApp) 
@@ -52,7 +54,6 @@ Future<PipelineFlowState> AsynchronousModifier::evaluate(const ModifierEvaluatio
 	if(const EnginePtr& engine = asyncModApp->completedEngine()) {
 		if(engine->validityInterval().contains(request.time())) {
 			// Inject the cached computation result into the pipeline.
-			UndoSuspender noUndo(this);
 			PipelineFlowState output = input;
 			engine->applyResults(request, output);
 			output.intersectStateValidity(engine->validityInterval());
@@ -177,7 +178,7 @@ Future<PipelineFlowState> AsynchronousModifier::evaluate(const ModifierEvaluatio
 ******************************************************************************/
 void AsynchronousModifier::evaluateSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state)
 {
-	OVITO_ASSERT(!dataset()->undoStack().isRecording());
+	OVITO_ASSERT(!isUndoRecording());
 
 	// If results are still available from the last pipeline evaluation, apply them to the input data.
 	applyCachedResultsSynchronous(request, state);
@@ -193,10 +194,11 @@ void AsynchronousModifier::evaluateSynchronous(const ModifierEvaluationRequest& 
 ******************************************************************************/
 bool AsynchronousModifier::applyCachedResultsSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state)
 {
+	OVITO_ASSERT(!isUndoRecording());
+
 	// If results are still available from the last pipeline evaluation, apply them to the input data.
 	if(const AsynchronousModifierApplication* asyncModApp = dynamic_object_cast<AsynchronousModifierApplication>(request.modApp())) {
 		if(const AsynchronousModifier::EnginePtr& engine = asyncModApp->completedEngine()) {
-			UndoSuspender noUndo(this);
 			engine->applyResults(request, state);
 			state.intersectStateValidity(engine->validityInterval());
 			return true;

@@ -114,7 +114,7 @@ void StringParameterUI::updateUI()
 			val = editObject()->property(propertyName());
 			OVITO_ASSERT_MSG(val.isValid() && val.canConvert<QString>(), "StringParameterUI::updateUI()", qPrintable(QString("The object class %1 does not define a property with the name %2 that can be cast to string type.").arg(editObject()->metaObject()->className(), QString(propertyName()))));
 			if(!val.isValid() || !val.canConvert<QString>()) {
-				editObject()->throwException(tr("The object class %1 does not define a property with the name %2 that can be cast to string type.").arg(editObject()->metaObject()->className(), QString(propertyName())));
+				throw Exception(tr("The object class %1 does not define a property with the name %2 that can be cast to string type.").arg(editObject()->metaObject()->className(), QString(propertyName())));
 			}
 		}
 		else if(isPropertyFieldUI()) {

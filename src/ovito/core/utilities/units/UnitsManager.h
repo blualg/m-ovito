@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -41,7 +41,7 @@ class OVITO_CORE_EXPORT ParameterUnit : public QObject
 protected:
 
 	/// \brief Constructor.
-	ParameterUnit(QObject* parent, DataSet* dataset) : QObject(parent), _dataset(dataset) {}
+	ParameterUnit(QObject* parent) : QObject(parent) {}
 
 public:
 
@@ -91,20 +91,12 @@ public:
 	/// The default implementation does no rounding and simply returns the unmodified value.
 	Q_INVOKABLE virtual FloatType roundValue(FloatType value) { return value; }
 
-	/// \brief Returns the DataSet this parameter unit belongs to.
-	DataSet* dataset() const { return _dataset; }
-
 Q_SIGNALS:
 
 	/// \brief This signal is emitted by the parameter unit when the display
 	///        format or conversion factor has changed and the value to string
 	///        conversion has to be re-done.
 	void formatChanged();
-
-private:
-
-	/// The DataSet this parameter unit belongs to.
-	DataSet* _dataset;
 };
 
 /**
@@ -120,7 +112,7 @@ class OVITO_CORE_EXPORT FloatParameterUnit : public ParameterUnit
 public:
 
 	/// \brief Default constructor.
-	Q_INVOKABLE FloatParameterUnit(QObject* parent, DataSet* dataset) : ParameterUnit(parent, dataset) {}
+	Q_INVOKABLE FloatParameterUnit(QObject* parent) : ParameterUnit(parent) {}
 
 	/// \brief Converts a value from native units to the units presented to the user.
 	/// \param nativeValue The value in internal units to be converted.
@@ -175,7 +167,7 @@ class OVITO_CORE_EXPORT IntegerParameterUnit : public ParameterUnit
 public:
 
 	/// \brief Default constructor.
-	Q_INVOKABLE IntegerParameterUnit(QObject* parent, DataSet* dataset) : ParameterUnit(parent, dataset) {}
+	Q_INVOKABLE IntegerParameterUnit(QObject* parent) : ParameterUnit(parent) {}
 
 	/// \brief Converts a value from native units to the units presented to the user.
 	/// \param nativeValue The value in internal units to be converted.
@@ -225,7 +217,7 @@ class OVITO_CORE_EXPORT WorldParameterUnit : public FloatParameterUnit
 public:
 
 	/// \brief Default constructor.
-	Q_INVOKABLE WorldParameterUnit(QObject* parent, DataSet* dataset) : FloatParameterUnit(parent, dataset) {}
+	Q_INVOKABLE WorldParameterUnit(QObject* parent) : FloatParameterUnit(parent) {}
 };
 
 /**
@@ -238,7 +230,7 @@ class OVITO_CORE_EXPORT AngleParameterUnit : public FloatParameterUnit
 public:
 
 	/// \brief Default constructor.
-	Q_INVOKABLE AngleParameterUnit(QObject* parent, DataSet* dataset) : FloatParameterUnit(parent, dataset) {}
+	Q_INVOKABLE AngleParameterUnit(QObject* parent) : FloatParameterUnit(parent) {}
 
 	/// \brief Converts a value from native units to the units presented to the user.
 	/// \param nativeValue The value in internal units to be converted.
@@ -267,7 +259,7 @@ class OVITO_CORE_EXPORT PercentParameterUnit : public FloatParameterUnit
 public:
 
 	/// \brief Default constructor.
-	Q_INVOKABLE PercentParameterUnit(QObject* parent, DataSet* dataset) : FloatParameterUnit(parent, dataset) {}
+	Q_INVOKABLE PercentParameterUnit(QObject* parent) : FloatParameterUnit(parent) {}
 
 	/// \brief Converts a value from native units to the units presented to the user.
 	/// \param nativeValue The value in internal units to be converted.
@@ -302,7 +294,7 @@ class OVITO_CORE_EXPORT TimeParameterUnit : public IntegerParameterUnit
 public:
 
 	/// \brief Constructor.
-	Q_INVOKABLE TimeParameterUnit(QObject* parent, DataSet* dataset);
+	Q_INVOKABLE TimeParameterUnit(QObject* parent) : IntegerParameterUnit(parent) {}
 
 	/// \brief Converts the given string to a time value.
 	/// \param valueString This is a string representation of a value as it might have
@@ -326,19 +318,6 @@ public:
 
 	/// \brief Given an arbitrary value, which is potentially invalid, rounds it to the closest valid value.
 	virtual FloatType roundValue(FloatType value) override;
-
-private Q_SLOTS:
-
-	/// \brief This is called whenever the current animation settings of the dataset have been replaced by new ones.
-	void onAnimationSettingsReplaced(AnimationSettings* newAnimationSettings);
-
-private:
-
-	QMetaObject::Connection _speedChangedConnection;
-	QMetaObject::Connection _timeFormatChangedConnection;
-
-	// The current animation settings.
-	AnimationSettings* _animSettings;
 };
 
 ///////////////////////////////////////////////////////////////////////////////

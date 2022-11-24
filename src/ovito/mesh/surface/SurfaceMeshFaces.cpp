@@ -31,7 +31,7 @@ IMPLEMENT_OVITO_CLASS(SurfaceMeshFaces);
 /******************************************************************************
 * Creates a storage object for standard face properties.
 ******************************************************************************/
-PropertyPtr SurfaceMeshFaces::OOMetaClass::createStandardPropertyInternal(DataSet* dataset, size_t elementCount, int type, DataBuffer::InitializationFlags flags, const ConstDataObjectPath& containerPath) const
+PropertyPtr SurfaceMeshFaces::OOMetaClass::createStandardPropertyInternal(size_t elementCount, int type, DataBuffer::InitializationFlags flags, const ConstDataObjectPath& containerPath) const
 {
 	int dataType;
 	size_t componentCount;
@@ -63,7 +63,7 @@ PropertyPtr SurfaceMeshFaces::OOMetaClass::createStandardPropertyInternal(DataSe
 
 	OVITO_ASSERT(componentCount == standardPropertyComponentCount(type));
 
-	PropertyPtr property = PropertyPtr::create(dataset, elementCount, dataType, componentCount, propertyName, flags & ~DataBuffer::InitializeMemory, type, componentNames);
+	PropertyPtr property = PropertyPtr::create(elementCount, dataType, componentCount, propertyName, flags & ~DataBuffer::InitializeMemory, type, componentNames);
 
 	// Initialize memory if requested.
 	if(flags.testFlag(DataBuffer::InitializeMemory) && containerPath.size() >= 2) {
@@ -136,14 +136,14 @@ QString SurfaceMeshFaces::OOMetaClass::formatDataObjectPath(const ConstDataObjec
 * Returns the base point and vector information for visualizing a vector 
 * property from this container using a VectorVis element.
 ******************************************************************************/
-std::tuple<ConstDataBufferPtr, ConstDataBufferPtr> SurfaceMeshFaces::getVectorVisData(const ConstDataObjectPath& path, const PipelineFlowState& state) const
+std::tuple<ConstDataBufferPtr, ConstDataBufferPtr> SurfaceMeshFaces::getVectorVisData(const ConstDataObjectPath& path, const PipelineFlowState& state, SceneRenderer* renderer) const
 {
 	OVITO_ASSERT(path.lastAs<SurfaceMeshFaces>(1) == this);
 	if(const SurfaceMesh* mesh = path.lastAs<SurfaceMesh>(2)) {
 		mesh->verifyMeshIntegrity();
 		// Look up the face centroids in the cache.
 		using CacheKey = RendererResourceKey<struct SurfaceMeshFacesCentroidsCache, ConstDataObjectRef, ConstDataObjectRef>;
-		auto& [basePositions, vectorProperty] = dataset()->visCache().get<std::tuple<ConstDataBufferPtr,ConstDataBufferPtr>>(CacheKey(mesh, path.lastAs<DataBuffer>()));
+		auto& [basePositions, vectorProperty] = renderer->visCache().get<std::tuple<ConstDataBufferPtr,ConstDataBufferPtr>>(CacheKey(mesh, path.lastAs<DataBuffer>()));
 		if(!basePositions) {
 			DataBufferAccessAndRef<Vector3> filteredVectors;
 			vectorProperty = path.lastAs<DataBuffer>();
@@ -157,7 +157,7 @@ std::tuple<ConstDataBufferPtr, ConstDataBufferPtr> SurfaceMeshFaces::getVectorVi
 			}
 
 			// Compute face centroids.
-			DataBufferAccessAndRef<Point3> centroids = DataBufferPtr::create(dataset(), mesh->faces()->elementCount(), DataBuffer::Float, 3);
+			DataBufferAccessAndRef<Point3> centroids = DataBufferPtr::create(mesh->faces()->elementCount(), DataBuffer::Float, 3);
 			const SurfaceMeshAccess meshAccess(mesh);
 			for(SurfaceMeshAccess::face_index face = 0; face < meshAccess.faceCount(); face++) {
 				Vector3 c = Vector3::Zero();

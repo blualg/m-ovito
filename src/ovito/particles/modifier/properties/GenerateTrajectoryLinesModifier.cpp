@@ -119,7 +119,7 @@ bool GenerateTrajectoryLinesModifier::generateTrajectories(MainThreadOperation& 
 		const PipelineFlowState& state = stateFuture.result();
 		const ParticlesObject* particles = state.getObject<ParticlesObject>();
 		if(!particles)
-			throwException(tr("Cannot generate trajectory lines. The pipeline data contains no particles."));
+			throw Exception(tr("Cannot generate trajectory lines. The pipeline data contains no particles."));
 		particles->verifyIntegrity();
 
 		// Determine set of input particles in the current frame.
@@ -140,7 +140,7 @@ bool GenerateTrajectoryLinesModifier::generateTrajectories(MainThreadOperation& 
 				}
 			}
 			if(selectedIndices.empty() && selectedIdentifiers.empty())
-				throwException(tr("Cannot generate trajectory lines for selected particles. Particle selection has not been defined or selection set is empty."));
+				throw Exception(tr("Cannot generate trajectory lines for selected particles. Particle selection has not been defined or selection set is empty."));
 		}
 
 		// Determine time interval over which trajectories should be generated.
@@ -151,7 +151,7 @@ bool GenerateTrajectoryLinesModifier::generateTrajectories(MainThreadOperation& 
 			interval = TimeInterval(myModApp->sourceFrameToAnimationTime(0), myModApp->sourceFrameToAnimationTime(myModApp->numberOfSourceFrames() - 1));
 
 		if(interval.duration() <= 0)
-			throwException(tr("The current simulation sequence consists only of a single frame. Thus, no trajectory lines were created."));
+			throw Exception(tr("The current simulation sequence consists only of a single frame. Thus, no trajectory lines were created."));
 
 		// Generate list of animation times at which particle positions should be sampled.
 		QVector<TimePoint> sampleTimes;
@@ -179,7 +179,7 @@ bool GenerateTrajectoryLinesModifier::generateTrajectories(MainThreadOperation& 
 			const PipelineFlowState& state = stateFuture.result();
 			const ParticlesObject* particles = state.getObject<ParticlesObject>();
 			if(!particles)
-				throwException(tr("Input data contains no particles at frame %1.").arg(dataset()->animationSettings()->timeToFrame(time)));
+				throw Exception(tr("Input data contains no particles at frame %1.").arg(dataset()->animationSettings()->timeToFrame(time)));
 			particles->verifyIntegrity();
 			ConstPropertyAccess<Point3> posProperty = particles->expectProperty(ParticlesObject::PositionProperty);
 
@@ -187,10 +187,10 @@ bool GenerateTrajectoryLinesModifier::generateTrajectories(MainThreadOperation& 
 			ConstPropertyAccess<void,true> particleSamplingProperty;
 			if(transferParticleProperties()) {
 				if(particleProperty().isNull())
-					throwException(tr("Please select a particle property to be sampled."));
+					throw Exception(tr("Please select a particle property to be sampled."));
 				particleSamplingProperty = particleProperty().findInContainer(particles);
 				if(!particleSamplingProperty)
-					throwException(tr("The particle property '%1' to be sampled and transferred to the trajectory lines does not exist (at frame %2). "
+					throw Exception(tr("The particle property '%1' to be sampled and transferred to the trajectory lines does not exist (at frame %2). "
 						"Perhaps you need to restrict the sampling time interval to those times where the property is available.").arg(particleProperty().name()).arg(dataset()->animationSettings()->timeToFrame(time)));
 			}
 
@@ -198,7 +198,7 @@ bool GenerateTrajectoryLinesModifier::generateTrajectories(MainThreadOperation& 
 				if(!selectedIdentifiers.empty()) {
 					ConstPropertyAccess<qlonglong> identifierProperty = particles->getProperty(ParticlesObject::IdentifierProperty);
 					if(!identifierProperty || identifierProperty.size() != posProperty.size())
-						throwException(tr("Input particles do not possess identifiers at frame %1.").arg(dataset()->animationSettings()->timeToFrame(time)));
+						throw Exception(tr("Input particles do not possess identifiers at frame %1.").arg(dataset()->animationSettings()->timeToFrame(time)));
 
 					// Create a mapping from IDs to indices.
 					std::map<qlonglong,size_t> idmap;
@@ -313,7 +313,7 @@ bool GenerateTrajectoryLinesModifier::generateTrajectories(MainThreadOperation& 
 			if(const PropertyObject* inputProperty = particleProperty().findInContainer(particles)) {
 				OVITO_ASSERT(samplingPropertyData.size() == inputProperty->stride() * trajObj->elementCount());
 				if(samplingPropertyData.size() != inputProperty->stride() * trajObj->elementCount())
-					throwException(tr("Sampling buffer size mismatch. Sampled particle property '%1' seems to have a varying component count.").arg(inputProperty->name()));
+					throw Exception(tr("Sampling buffer size mismatch. Sampled particle property '%1' seems to have a varying component count.").arg(inputProperty->name()));
 
 				// Create a corresponding output property of the trajectory lines.
 				PropertyAccess<void,true> samplingProperty;

@@ -178,7 +178,7 @@ void ColorLegendOverlay::referenceReplaced(const PropertyFieldDescriptor* field,
 * Returns a short piece information (typically a string or color) to be 
 * displayed next to the modifier's title in the pipeline editor list.
 ******************************************************************************/
-QVariant ColorLegendOverlay::getPipelineEditorShortInfo() const
+QVariant ColorLegendOverlay::getPipelineEditorShortInfo(Scene* scene) const
 {
 	if(modifier()) {
 		return modifier()->sourceProperty().nameWithComponent();
@@ -214,7 +214,7 @@ void ColorLegendOverlay::render(SceneRenderer* renderer, const QRect& logicalVie
 
 			// Evaulate pipeline and obtain output data collection.
 			if(!renderer->isInteractive()) {
-				PipelineEvaluationFuture pipelineEvaluation = pipeline->evaluatePipeline(PipelineEvaluationRequest(renderer->time()));
+				PipelineEvaluationFuture pipelineEvaluation = pipeline->evaluatePipeline(PipelineEvaluationRequest(renderer->scene()->animationSettings(), renderer->time()));
 				if(!pipelineEvaluation.waitForFinished())
 					return false;
 				// Look up the typed property.
@@ -240,7 +240,7 @@ void ColorLegendOverlay::render(SceneRenderer* renderer, const QRect& logicalVie
 
 			// Escalate to an error state if in batch mode.
 			if(Application::instance()->consoleMode())
-				throwException(tr("The property '%1' set as source of the color legend is not present in the data pipeline output.").arg(sourceProperty().dataTitleOrString()));
+				throw Exception(tr("The property '%1' set as source of the color legend is not present in the data pipeline output.").arg(sourceProperty().dataTitleOrString()));
 			else
 				return;
 		}
@@ -250,7 +250,7 @@ void ColorLegendOverlay::render(SceneRenderer* renderer, const QRect& logicalVie
 
 			// Escalate to an error state if in batch mode.
 			if(Application::instance()->consoleMode())
-				throwException(tr("The property '%1' set as source of the color legend is not a typed property, i.e., it has no ElementType(s) attached.").arg(sourceProperty().dataTitleOrString()));
+				throw Exception(tr("The property '%1' set as source of the color legend is not a typed property, i.e., it has no ElementType(s) attached.").arg(sourceProperty().dataTitleOrString()));
 			else
 				return;
 		}
@@ -264,7 +264,7 @@ void ColorLegendOverlay::render(SceneRenderer* renderer, const QRect& logicalVie
 
 		// Escalate to an error state if in batch mode.
 		if(Application::instance()->consoleMode()) {
-			throwException(tr("You are trying to render a Viewport with a ColorLegendOverlay whose 'modifier' property has "
+			throw Exception(tr("You are trying to render a Viewport with a ColorLegendOverlay whose 'modifier' property has "
 							  "not been set to any ColorCodingModifier. Did you forget to assign a source for the color legend?"));
 		}
 		else {
@@ -309,7 +309,7 @@ void ColorLegendOverlay::render(SceneRenderer* renderer, const QRect& logicalVie
 			endValue = std::numeric_limits<FloatType>::quiet_NaN();
 			if(ModifierApplication* modApp = modifier()->someModifierApplication()) {
 				QVariant minValue, maxValue;
-				PipelineEvaluationRequest request(renderer->time());
+				PipelineEvaluationRequest request(renderer->scene()->animationSettings(), renderer->time());
 				if(!renderer->isInteractive()) {
 					SharedFuture<PipelineFlowState> stateFuture = modApp->evaluate(request);
 					if(!stateFuture.waitForFinished())

@@ -34,7 +34,7 @@ ImportFileDialog::ImportFileDialog(const QVector<const FileImporterClass*>& impo
 	HistoryFileDialog(dialogClass, parent, caption)
 {
 	if(importerTypes.empty())
-		dataset->throwException(tr("There are no importer plugins installed."));
+		throw Exception(tr("There are no importer plugins installed."));
 
 	// Build list of file filter strings.
 	QStringList fileFilterStrings;

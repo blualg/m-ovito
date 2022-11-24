@@ -205,7 +205,7 @@ PipelineStatus NucleotidesVis::render(TimePoint time, const ConstDataObjectPath&
 
 	// Make sure we don't exceed our internal limits.
 	if(particles->elementCount() > (size_t)std::numeric_limits<int>::max()) {
-		throwException(tr("Cannot render more than %1 nucleotides.").arg(std::numeric_limits<int>::max()));
+		throw Exception(tr("Cannot render more than %1 nucleotides.").arg(std::numeric_limits<int>::max()));
 	}
 
 	// The type of lookup key used for caching the rendering primitives:

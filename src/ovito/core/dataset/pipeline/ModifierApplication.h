@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -75,7 +75,7 @@ public:
 	SharedFuture<PipelineFlowState> evaluateInput(const PipelineEvaluationRequest& request) const;
 
 	/// \brief Asks the object for the result of the upstream data pipeline at several animation times.
-	Future<std::vector<PipelineFlowState>> evaluateInputMultiple(const PipelineEvaluationRequest& request, std::vector<TimePoint> times) const;
+	Future<std::vector<PipelineFlowState>> evaluateInputMultiple(const PipelineEvaluationRequest& request, std::vector<AnimationTime> times) const;
 
 	/// \brief Requests the preliminary computation results from the upstream data pipeline.
 	PipelineFlowState evaluateInputSynchronous(const PipelineEvaluationRequest& request) const { return input() ? input()->evaluateSynchronous(request) : PipelineFlowState(); }
@@ -90,16 +90,16 @@ public:
 	virtual int numberOfSourceFrames() const override;
 
 	/// \brief Given an animation time, computes the source frame to show.
-	virtual int animationTimeToSourceFrame(TimePoint time) const override;
+	virtual int animationTimeToSourceFrame(AnimationTime time) const override;
 
 	/// \brief Given a source frame index, returns the animation time at which it is shown.
-	virtual TimePoint sourceFrameToAnimationTime(int frame) const override;
+	virtual AnimationTime sourceFrameToAnimationTime(int frame) const override;
 
 	/// \brief Returns the human-readable labels associated with the animation frames (e.g. the simulation timestep numbers).
 	virtual QMap<int, QString> animationFrameLabels() const override;
 
 	/// \brief Returns a short piece information (typically a string or color) to be displayed next to the object's title in the pipeline editor.
-	virtual QVariant getPipelineEditorShortInfo() const override;
+	virtual QVariant getPipelineEditorShortInfo(Scene* scene) const override;
 
 	/// \brief Traverses the pipeline from this modifier application up to the source and
 	/// returns the source object that generates the input data for the pipeline.
@@ -189,17 +189,18 @@ public:
 		PipelineEvaluationRequest(pipelineRequest), _modApp(const_cast<ModifierApplication*>(modApp)) {}
 
 	/// Constructor.
-	ModifierEvaluationRequest(TimePoint time, const ModifierApplication* modApp) :
-		PipelineEvaluationRequest(time), _modApp(const_cast<ModifierApplication*>(modApp)) {}
+	ModifierEvaluationRequest(AnimationTime time, int frame, const ModifierApplication* modApp) :
+		PipelineEvaluationRequest(time, frame), _modApp(const_cast<ModifierApplication*>(modApp)) {}
+
+	/// Constructor.
+	ModifierEvaluationRequest(AnimationSettings* animationSettings, const ModifierApplication* modApp) :
+		PipelineEvaluationRequest(animationSettings), _modApp(const_cast<ModifierApplication*>(modApp)) {}
 
 	/// Returns the modifier application being evaluated.
 	ModifierApplication* modApp() const { return _modApp; }
 
 	/// Returns the modifier being evaluated.
 	Modifier* modifier() const { return modApp()->modifier(); }
-
-	/// Returns the dataset the modifier belongs to.
-	DataSet* dataset() const { return modApp()->dataset(); }
 
 private:
 

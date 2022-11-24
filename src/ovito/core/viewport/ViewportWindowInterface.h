@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -43,8 +43,11 @@ public:
 	/// Destructor.
 	~ViewportWindowInterface();
 
-	/// Associates this window with a viewport.
+	/// Associates this window with a different viewport.
 	void setViewport(Viewport* vp);
+
+	/// Returns the dataset this viewport window is associated with.
+	DataSet* dataset() const { return _dataset; }
 
 	/// Returns the viewport associated with this window.
 	Viewport* viewport() const { return _viewport; }
@@ -70,7 +73,7 @@ public:
 
 	/// Makes the viewport window delete itself.
 	/// This method is automatically called by the Viewport class destructor.
-	virtual void destroyViewportWindow() { OVITO_ASSERT(_viewport != nullptr); _viewport = nullptr; }
+	virtual void destroyViewportWindow();
 
 	/// Returns the interactive scene renderer used by the viewport window to render the graphics.
 	virtual SceneRenderer* sceneRenderer() const { return nullptr; }
@@ -126,6 +129,9 @@ private:
 
 	/// The abstract user interface hosting this viewport window.
 	UserInterface& _userInterface;
+
+	/// The dataset this viewport window is associated with.
+	DataSet* _dataset;
 
 	/// The viewport associated with this window.
 	Viewport* _viewport;

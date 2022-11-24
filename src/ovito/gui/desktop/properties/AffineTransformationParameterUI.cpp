@@ -94,7 +94,7 @@ void AffineTransformationParameterUI::updateUI()
 			val = editObject()->property(propertyName());
 			OVITO_ASSERT_MSG(val.isValid() && (val.canConvert<AffineTransformation>()), "AffineTransformationParameterUI::updateUI()", qPrintable(QString("The object class %1 does not define a property with the name %2 that can be cast to an AffineTransformation type.").arg(editObject()->metaObject()->className(), QString(propertyName()))));
 			if(!val.isValid() || !(val.canConvert<AffineTransformation>())) {
-				editObject()->throwException(tr("The object class %1 does not define a property with the name %2 that can be cast to an AffineTransformation type.").arg(editObject()->metaObject()->className(), QString(propertyName())));
+				throw Exception(tr("The object class %1 does not define a property with the name %2 that can be cast to an AffineTransformation type.").arg(editObject()->metaObject()->className(), QString(propertyName())));
 			}
 		}
 		else if(isPropertyFieldUI()) {

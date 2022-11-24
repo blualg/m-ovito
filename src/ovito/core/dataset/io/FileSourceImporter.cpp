@@ -122,14 +122,16 @@ FileSource* FileSourceImporter::fileSource() const
 * Determines if the option to replace the currently selected object
 * with the new file is available.
 ******************************************************************************/
-bool FileSourceImporter::isReplaceExistingPossible(const std::vector<QUrl>& sourceUrls)
+bool FileSourceImporter::isReplaceExistingPossible(Scene* scene, const std::vector<QUrl>& sourceUrls)
 {
-	// Look for an existing FileSource in the scene whose
-	// data source we can replace with the new file.
-	for(SceneNode* node : dataset()->selection()->nodes()) {
-		if(PipelineSceneNode* pipeline = dynamic_object_cast<PipelineSceneNode>(node)) {
-			if(dynamic_object_cast<FileSource>(pipeline->pipelineSource()))
-				return true;
+	if(scene) {
+		// Look for an existing FileSource in the scene whose
+		// data source we can replace with the new file.
+		for(SceneNode* node : scene->selection()->nodes()) {
+			if(PipelineSceneNode* pipeline = dynamic_object_cast<PipelineSceneNode>(node)) {
+				if(dynamic_object_cast<FileSource>(pipeline->pipelineSource()))
+					return true;
+			}
 		}
 	}
 	return false;
@@ -141,7 +143,7 @@ bool FileSourceImporter::isReplaceExistingPossible(const std::vector<QUrl>& sour
 * Return false if the import has been aborted by the user.
 * Throws an exception when the import has failed.
 ******************************************************************************/
-OORef<PipelineSceneNode> FileSourceImporter::importFileSet(std::vector<std::pair<QUrl, OORef<FileImporter>>> sourceUrlsAndImporters, ImportMode importMode, bool autodetectFileSequences)
+OORef<PipelineSceneNode> FileSourceImporter::importFileSet(Scene* scene, std::vector<std::pair<QUrl, OORef<FileImporter>>> sourceUrlsAndImporters, ImportMode importMode, bool autodetectFileSequences)
 {
 	OVITO_ASSERT(!sourceUrlsAndImporters.empty());
 	OORef<FileSource> existingFileSource;
@@ -150,45 +152,40 @@ OORef<PipelineSceneNode> FileSourceImporter::importFileSet(std::vector<std::pair
 	if(importMode == ReplaceSelected) {
 		// Look for an existing FileSource in the scene whose
 		// data source can be replaced with the newly imported file.
-		for(SceneNode* node : dataset()->selection()->nodes()) {
-			if(PipelineSceneNode* pipeline = dynamic_object_cast<PipelineSceneNode>(node)) {
-				existingFileSource = dynamic_object_cast<FileSource>(pipeline->pipelineSource());
-				if(existingFileSource) {
-					existingPipeline = pipeline;
-					break;
+		if(scene) {
+			for(SceneNode* node : scene->selection()->nodes()) {
+				if(PipelineSceneNode* pipeline = dynamic_object_cast<PipelineSceneNode>(node)) {
+					existingFileSource = dynamic_object_cast<FileSource>(pipeline->pipelineSource());
+					if(existingFileSource) {
+						existingPipeline = pipeline;
+						break;
+					}
 				}
 			}
 		}
 	}
 	else if(importMode == ResetScene) {
-		dataset()->scene()->clear();
-		if(!dataset()->undoStack().isRecording())
-			dataset()->undoStack().clear();
-		dataset()->setFilePath(QString());
+		if(scene)
+			scene->clear();
 	}
 	else if(importMode == AddToScene) {
-		if(dataset()->scene()->children().empty())
+		OVITO_ASSERT(scene != nullptr);
+		if(scene->children().empty())
 			importMode = ResetScene;
 		else {
 #ifndef OVITO_BUILD_PROFESSIONAL
-			throwException(tr("Sorry, this operation cannot be performed with OVITO Basic. Importing multiple independent datasets into the same scene requires <a href=\"https://www.ovito.org/about/ovito-pro/\">OVITO Pro</a>."));
+			throw Exception(tr("Sorry, this operation cannot be performed with OVITO Basic. Importing multiple independent datasets into the same scene requires <a href=\"https://www.ovito.org/about/ovito-pro/\">OVITO Pro</a>."));
 #endif
 		}
 	}
 
-	UndoableTransaction transaction(dataset()->undoStack(), tr("Import"));
-
-	// Do not create any animation keys during import.
-	AnimationSuspender animSuspender(this);
-
-	// Pause viewport updates while updating the scene.
-	ViewportSuspender noUpdates(dataset());
+	UndoableTransaction transaction(ExecutionContext::current().ui(), tr("Import"));
 
 	OORef<FileSource> fileSource = existingFileSource;
 
 	// Create the object that will insert the imported data into the scene.
 	if(!fileSource)
-		fileSource = OORef<FileSource>::create(dataset());
+		fileSource = OORef<FileSource>::create();
 
 	// Inherit multi-timestep flag from existing importer, but only if the old importer
 	// was for the same file format. That's because the new importer may not support multi-timestep
@@ -200,10 +197,10 @@ OORef<PipelineSceneNode> FileSourceImporter::importFileSet(std::vector<std::pair
 	OORef<PipelineSceneNode> pipeline;
 	if(existingPipeline == nullptr) {
 		{
-			UndoSuspender unsoSuspender(this);	// Do not create undo records for this part.
+			UndoSuspender unsoSuspender;	// Do not create undo records for this part.
 
 			// Add object to scene.
-			pipeline = OORef<PipelineSceneNode>::create(dataset());
+			pipeline = OORef<PipelineSceneNode>::create();
 			pipeline->setDataProvider(fileSource);
 
 			// Let the importer subclass customize the pipeline scene node.
@@ -211,14 +208,14 @@ OORef<PipelineSceneNode> FileSourceImporter::importFileSet(std::vector<std::pair
 		}
 
 		// Insert pipeline into scene.
-		if(importMode != DontAddToScene)
-			dataset()->scene()->addChildNode(pipeline);
+		if(importMode != DontAddToScene && scene != nullptr)
+			scene->addChildNode(pipeline);
 	}
 	else pipeline = existingPipeline;
 
 	// Select new object in the scene.
-	if(importMode != DontAddToScene)
-		dataset()->selection()->setNode(pipeline);
+	if(importMode != DontAddToScene && scene != nullptr)
+		scene->selection()->setNode(pipeline);
 
 	// Concatenate all files from the input list having the same file format into one sequence,
 	// which gets handled by this importer.
@@ -241,7 +238,11 @@ OORef<PipelineSceneNode> FileSourceImporter::importFileSet(std::vector<std::pair
 	if(importMode != ReplaceSelected && importMode != DontAddToScene) {
 		// Adjust viewports to completely show the newly imported object.
 		// This needs to happen after the data has been completely loaded.
+#if 0
 		dataset()->viewportConfig()->zoomToSelectionExtentsWhenReady();
+#else
+		OVITO_ASSERT(false); // TODO: To be implemented 
+#endif
 	}
 
 	// If this importer did not handle all supplied input files, 
@@ -260,12 +261,13 @@ OORef<PipelineSceneNode> FileSourceImporter::importFileSet(std::vector<std::pair
 ******************************************************************************/
 bool FileSourceImporter::importFurtherFiles(std::vector<std::pair<QUrl, OORef<FileImporter>>> sourceUrlsAndImporters, ImportMode importMode, bool autodetectFileSequences, PipelineSceneNode* pipeline)
 {
-	if(importMode == DontAddToScene)
+	Scene* scene = pipeline->scene();
+	if(importMode == DontAddToScene || !scene)
 		return true;	// It doesn't make sense to import additional datasets if they are not being added to the scene. They would get lost.
 
 	OVITO_ASSERT(!sourceUrlsAndImporters.empty());
 	OORef<FileImporter> importer = sourceUrlsAndImporters.front().second;
-	return importer->importFileSet(std::move(sourceUrlsAndImporters), AddToScene, autodetectFileSequences);
+	return importer->importFileSet(scene, std::move(sourceUrlsAndImporters), AddToScene, autodetectFileSequences);
 }
 
 /******************************************************************************
@@ -326,7 +328,7 @@ Future<QVector<FileSourceImporter::Frame>> FileSourceImporter::discoverFrames(co
 		// Check if filename is a wildcard pattern.
 		// If yes, find all matching files and scan each one of them.
 		if(isWildcardPattern(sourceUrl)) {
-			return findWildcardMatches(sourceUrl, dataset())
+			return findWildcardMatches(sourceUrl)
 				.then(executor(), [this](const std::vector<QUrl>& fileList) {
 					return discoverFrames(fileList);
 				});
@@ -341,7 +343,7 @@ Future<QVector<FileSourceImporter::Frame>> FileSourceImporter::discoverFrames(co
 	else {
 		if(isWildcardPattern(sourceUrl)) {
 			// Find all files matching the file pattern.
-			return findWildcardMatches(sourceUrl, dataset())
+			return findWildcardMatches(sourceUrl)
 				.then(executor(), [](const std::vector<QUrl>& fileList) {
 					// Turn the file list into a frame list.
 					QVector<Frame> frames;
@@ -384,7 +386,7 @@ Future<PipelineFlowState> FileSourceImporter::loadFrame(const LoadOperationReque
 	// Note: FileSourceImporter::loadFrame() may only be called from the main thread.
 	OVITO_ASSERT(QThread::currentThread() == this->thread());
 	// Note: FileSourceImporter::loadFrame() may not be called while undo recording is active.
-	OVITO_ASSERT(!dataset()->undoStack().isRecordingThread());
+	OVITO_ASSERT(!isUndoRecording());
 
 	// Create the frame loader for the requested frame.
 	FrameLoaderPtr frameLoader = createFrameLoader(request);
@@ -401,9 +403,8 @@ Future<PipelineFlowState> FileSourceImporter::loadFrame(const LoadOperationReque
 		future.finally(executor(), [this](Task& task) {
 			if(!task.isCanceled()) {
 				FrameLoader& frameLoader = static_cast<FrameLoader&>(task);
-				OVITO_ASSERT(frameLoader.dataset() == dataset());
 				if(frameLoader.additionalFramesDetected()) {
-					UndoSuspender noUndo(this);
+					UndoSuspender noUndo;
 					setMultiTimestepFile(true);
 				}
 			}
@@ -445,7 +446,7 @@ void FileSourceImporter::FrameFinder::discoverFramesInFile(QVector<FileSourceImp
 /******************************************************************************
 * Returns the list of files that match the given wildcard pattern.
 ******************************************************************************/
-Future<std::vector<QUrl>> FileSourceImporter::findWildcardMatches(const QUrl& sourceUrl, DataSet* dataset)
+Future<std::vector<QUrl>> FileSourceImporter::findWildcardMatches(const QUrl& sourceUrl)
 {
 	// Determine whether the filename contains a wildcard character.
 	if(!isWildcardPattern(sourceUrl)) {

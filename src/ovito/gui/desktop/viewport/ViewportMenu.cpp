@@ -256,7 +256,7 @@ void ViewportMenu::onCreateCamera()
 			// Create an instance of the StandardCameraSource class.
 			OvitoClassPtr cameraSourceType = PluginManager::instance().findClass(QStringLiteral("StdObj"), QStringLiteral("StandardCameraSource"));
 			if(!cameraSourceType)
-				_viewport->throwException(tr("OVITO has been built without support for camera objects."));
+				throw Exception(tr("OVITO has been built without support for camera objects."));
 
 			// Note: The StandardCameraSource constructor will adopt the current parameters of this Viewport automatically.
 			OORef<PipelineObject> cameraSource = static_object_cast<PipelineObject>(cameraSourceType->createInstance(_viewport->dataset()));

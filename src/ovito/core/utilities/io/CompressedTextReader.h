@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2018 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -24,6 +24,7 @@
 
 
 #include <ovito/core/Core.h>
+#include <ovito/core/utilities/io/FileManager.h>
 #ifdef OVITO_ZLIB_SUPPORT
 	#include <ovito/core/utilities/io/gzdevice/GzipIODevice.h>
 #endif
@@ -42,7 +43,7 @@ namespace Ovito {
  *
  * \sa CompressedTextWriter
  */
-class OVITO_CORE_EXPORT CompressedTextReader : public QObject
+class OVITO_CORE_EXPORT CompressedTextReader
 {
 public:
 
@@ -145,7 +146,7 @@ public:
 	/// \sa byteOffset()
 	void seek(qint64 pos, int lineNumber = 0) {
 		if(!_stream->seek(pos))
-			throw Exception(tr("Failed to seek to byte offset %1 in file %2: %3").arg(pos).arg(_filename).arg(_stream->errorString()));
+			throw Exception(FileManager::tr("Failed to seek to byte offset %1 in file %2: %3").arg(pos).arg(_filename).arg(_stream->errorString()));
 		_byteOffset = pos;
 		if(lineNumber) _lineNumber = lineNumber;
 		else if(pos == 0) _lineNumber = 0;
@@ -206,8 +207,6 @@ private:
 
 	/// The pointer to the memory-mapped data.
 	uchar* _mmapPointer = nullptr;
-
-	Q_OBJECT
 };
 
 }	// End of namespace

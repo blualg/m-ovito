@@ -82,11 +82,8 @@ private:
 	/// Returns the selected viewport layer.
 	ViewportOverlay* selectedLayer() const;
 
-	/// The container of the current dataset being edited.
-	DataSetContainer& _datasetContainer;
-
-	/// The action manager of the main window.
-	ActionManager* _actionManager;
+	/// The main window hosting this page.
+	MainWindow& _mainWindow;
 
 	/// Contains the list of available layer types.
 	QComboBox* _newLayerBox;

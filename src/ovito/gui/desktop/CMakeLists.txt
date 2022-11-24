@@ -1,6 +1,6 @@
 #######################################################################################
 #
-#  Copyright 2021 OVITO GmbH, Germany
+#  Copyright 2022 OVITO GmbH, Germany
 #
 #  This file is part of OVITO (Open Visualization Tool).
 #
@@ -77,7 +77,6 @@ OVITO_STANDARD_PLUGIN(Gui
 		widgets/general/StatusBar.cpp
 		widgets/general/PopupUpdateComboBox.cpp
 		widgets/animation/AnimationTimeSpinner.cpp
-		widgets/animation/AnimationFramesToolButton.cpp
 		widgets/animation/AnimationTimeSlider.cpp
 		widgets/animation/AnimationTrackBar.cpp
 		widgets/rendering/FrameBufferWidget.cpp

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -35,26 +35,20 @@ IMPLEMENT_OVITO_CLASS(ViewportConfiguration);
 DEFINE_VECTOR_REFERENCE_FIELD(ViewportConfiguration, viewports);
 DEFINE_REFERENCE_FIELD(ViewportConfiguration, activeViewport);
 DEFINE_REFERENCE_FIELD(ViewportConfiguration, maximizedViewport);
-DEFINE_PROPERTY_FIELD(ViewportConfiguration, orbitCenterMode);
-DEFINE_PROPERTY_FIELD(ViewportConfiguration, userOrbitCenter);
 DEFINE_REFERENCE_FIELD(ViewportConfiguration, layoutRootCell);
 
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-ViewportSuspender::ViewportSuspender(RefMaker* object) noexcept : ViewportSuspender(object->dataset()->viewportConfig())
+ViewportSuspender::ViewportSuspender(UserInterface& userInterface) noexcept
 {
 }
 
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-ViewportConfiguration::ViewportConfiguration(ObjectCreationParams params) : RefTarget(params),
-	_orbitCenterMode(ORBIT_SELECTION_CENTER),
-	_userOrbitCenter(Point3::Origin())
+ViewportConfiguration::ViewportConfiguration(ObjectCreationParams params) : RefTarget(params)
 {
-	// Repaint viewports when the camera orbit center changed.
-	connect(this, &ViewportConfiguration::cameraOrbitCenterChanged, this, &ViewportConfiguration::updateViewports);
 }
 
 /******************************************************************************
@@ -87,17 +81,6 @@ bool ViewportConfiguration::referenceEvent(RefTarget* source, const ReferenceEve
 		}
 	}
 	return RefTarget::referenceEvent(source, event);
-}
-
-/******************************************************************************
-* Is called when the value of a property of this object has changed.
-******************************************************************************/
-void ViewportConfiguration::propertyChanged(const PropertyFieldDescriptor* field)
-{
-	if(field == PROPERTY_FIELD(orbitCenterMode) || field == PROPERTY_FIELD(userOrbitCenter)) {
-		Q_EMIT cameraOrbitCenterChanged();
-	}
-	RefTarget::propertyChanged(field);
 }
 
 /******************************************************************************
@@ -162,24 +145,8 @@ void ViewportConfiguration::resumeViewportUpdates()
 ******************************************************************************/
 Point3 ViewportConfiguration::orbitCenter(Viewport* vp)
 {
-	// Update orbiting center.
-	if(orbitCenterMode() == ORBIT_SELECTION_CENTER) {
-		TimePoint time = dataset()->animationSettings()->time();
-		Box3 selectionBoundingBox;
-		for(SceneNode* node : dataset()->selection()->nodes()) {
-			selectionBoundingBox.addBox(node->worldBoundingBox(time, vp));
-		}
-		if(!selectionBoundingBox.isEmpty())
-			return selectionBoundingBox.center();
-		else {
-			Box3 sceneBoundingBox = dataset()->scene()->worldBoundingBox(time, vp);
-			if(!sceneBoundingBox.isEmpty())
-				return sceneBoundingBox.center();
-		}
-	}
-	else if(orbitCenterMode() == ORBIT_USER_DEFINED) {
-		return _userOrbitCenter;
-	}
+	if(vp && vp->scene())
+		return vp->scene()->orbitCenter(vp);
 	return Point3::Origin();
 }
 
@@ -207,10 +174,14 @@ void ViewportConfiguration::zoomToSceneExtents()
 ******************************************************************************/
 void ViewportConfiguration::zoomToSelectionExtentsWhenReady()
 {
-	dataset()->whenSceneReady().finally(executor(), [this](Task& task) {
-		if(!task.isCanceled())
-			zoomToSelectionExtents();
-	});
+	for(Viewport* vp : viewports()) {
+		if(vp->scene()) {
+			vp->scene()->whenReady().finally(vp->executor(), [this, vp](Task& task) {
+				if(!task.isCanceled())
+					vp->zoomToSceneExtents();
+			});
+		}
+	}
 }
 
 /******************************************************************************
@@ -249,20 +220,20 @@ void ViewportConfiguration::loadFromStreamComplete(ObjectLoadStream& stream)
 	if(!layoutRootCell()) {
 		OVITO_ASSERT(viewports().size() == 4);
 
-		OORef<ViewportLayoutCell> rootCell = OORef<ViewportLayoutCell>::create(dataset());
+		OORef<ViewportLayoutCell> rootCell = OORef<ViewportLayoutCell>::create();
 		rootCell->setSplitDirection(ViewportLayoutCell::Horizontal);
-		rootCell->addChild(OORef<ViewportLayoutCell>::create(dataset()));
-		rootCell->addChild(OORef<ViewportLayoutCell>::create(dataset()));
+		rootCell->addChild(OORef<ViewportLayoutCell>::create());
+		rootCell->addChild(OORef<ViewportLayoutCell>::create());
 
 		rootCell->children()[0]->setSplitDirection(ViewportLayoutCell::Vertical);
-		rootCell->children()[0]->addChild(OORef<ViewportLayoutCell>::create(dataset()));
-		rootCell->children()[0]->addChild(OORef<ViewportLayoutCell>::create(dataset()));
+		rootCell->children()[0]->addChild(OORef<ViewportLayoutCell>::create());
+		rootCell->children()[0]->addChild(OORef<ViewportLayoutCell>::create());
 		rootCell->children()[0]->children()[0]->setViewport(viewports().size() > 0 ? viewports()[0] : nullptr); // Upper left
 		rootCell->children()[0]->children()[1]->setViewport(viewports().size() > 2 ? viewports()[2] : nullptr); // Lower left
 
 		rootCell->children()[1]->setSplitDirection(ViewportLayoutCell::Vertical);
-		rootCell->children()[1]->addChild(OORef<ViewportLayoutCell>::create(dataset()));
-		rootCell->children()[1]->addChild(OORef<ViewportLayoutCell>::create(dataset()));
+		rootCell->children()[1]->addChild(OORef<ViewportLayoutCell>::create());
+		rootCell->children()[1]->addChild(OORef<ViewportLayoutCell>::create());
 		rootCell->children()[1]->children()[0]->setViewport(viewports().size() > 1 ? viewports()[1] : nullptr); // Upper right
 		rootCell->children()[1]->children()[1]->setViewport(viewports().size() > 3 ? viewports()[3] : nullptr); // Lower right
 		setLayoutRootCell(std::move(rootCell));

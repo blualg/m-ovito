@@ -44,7 +44,7 @@ ClearSelectionModifier::ClearSelectionModifier(ObjectCreationParams params) : Ge
 void ClearSelectionModifier::evaluateSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state)
 {
 	if(!subject())
-		throwException(tr("No input element type selected."));
+		throw Exception(tr("No input element type selected."));
 
    	PropertyContainer* container = state.expectMutableLeafObject(subject());
 	if(const PropertyObject* selProperty = container->getProperty(PropertyObject::GenericSelectionProperty))

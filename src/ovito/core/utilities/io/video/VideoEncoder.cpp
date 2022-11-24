@@ -116,24 +116,24 @@ QList<VideoEncoder::Format> VideoEncoder::supportedFormats()
 /******************************************************************************
 * Opens a video file for writing.
 ******************************************************************************/
-void VideoEncoder::openFile(const QString& filename, int width, int height, int ticksPerFrame, VideoEncoder::Format* format)
+void VideoEncoder::openFile(const QString& filename, int width, int height, float framesPerSecond, VideoEncoder::Format* format)
 {
 	int errCode;
 
 	// Make sure previous file is closed.
 	closeFile();
 
-	// For reasons not known to the author, MPEG4 and MOV videos with frame rates 2,4,8 and 16 turn out
+	// For unknown reasons, MPEG4 and MOV videos with frame rates 2,4,8 and 16 turn out
 	// invalid and don't play in QuickTime Player on macOS. Thus, we should avoid producing videos with these FPS values.
 	// As a workaround, we instead resort to one of the valid playback rates being is an integer multiple of the selected frame rate.
 	// We then have to output N identicial copies of each rendered frame to mimic the desired frame rate.
 	
-	if(ticksPerFrame == (TICKS_PER_SECOND / 2)) _frameDuplication = 5; // Change 2 fps to 10 fps.
-	else if(ticksPerFrame == (TICKS_PER_SECOND / 4)) _frameDuplication = 3; // Change 4 fps to 12 fps.
-	else if(ticksPerFrame == (TICKS_PER_SECOND / 8)) _frameDuplication = 3; // Change 8 fps to 24 fps.
-	else if(ticksPerFrame == (TICKS_PER_SECOND / 16)) _frameDuplication = 3; // Change 16 fps to 48 fps.
+	if(framesPerSecond == 2.0f) _frameDuplication = 5; // Change 2 fps to 10 fps.
+	else if(framesPerSecond == 4.0f) _frameDuplication = 3; // Change 4 fps to 12 fps.
+	else if(framesPerSecond == 8.0f) _frameDuplication = 3; // Change 8 fps to 24 fps.
+	else if(framesPerSecond == 16.0f) _frameDuplication = 3; // Change 16 fps to 48 fps.
 	else _frameDuplication = 1;
-	ticksPerFrame /= _frameDuplication; 
+	framesPerSecond *= _frameDuplication; 
 
 	const AVOutputFormat* outputFormat;
 	if(format == nullptr) {
@@ -196,8 +196,8 @@ void VideoEncoder::openFile(const QString& filename, int width, int height, int 
 	_codecContext->bit_rate = 0;
 	_codecContext->width = width;
 	_codecContext->height = height;
-	_codecContext->time_base.num = _videoStream->time_base.num = ticksPerFrame;
-	_codecContext->time_base.den = _videoStream->time_base.den = TICKS_PER_SECOND;
+	_codecContext->time_base.num = _videoStream->time_base.num = std::max(1, (int)framesPerSecond);
+	_codecContext->time_base.den = _videoStream->time_base.den = 1;
 	_codecContext->gop_size = 12;	// Emit one intra frame every twelve frames at most.
 	_codecContext->framerate = av_inv_q(_codecContext->time_base);
 	_videoStream->avg_frame_rate = av_inv_q(_codecContext->time_base);
@@ -275,7 +275,7 @@ void VideoEncoder::openFile(const QString& filename, int width, int height, int 
 		const AVFilter* buffersrc = ::avfilter_get_by_name("buffer");
 		const AVFilter* buffersink = ::avfilter_get_by_name("buffersink");
 
-		AVRational time_base = { ticksPerFrame, TICKS_PER_SECOND };
+		AVRational time_base = { std::max(1, (int)framesPerSecond), 1 };
 		AVRational aspect_pixel = { 1, 1 };
 
 		AVFilterInOut* inputs = ::avfilter_inout_alloc();

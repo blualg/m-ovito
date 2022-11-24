@@ -32,28 +32,66 @@ class OVITO_CORE_EXPORT ExecutionContext
 public:
 
     /// The different types of contexts in which the program's actions may be performed.
-    enum Type {
+    enum class Type {
+        None,	    	///< No actions should be performed in this context.
         Scripting,		///< Actions are currently performed by a script.
         Interactive		///< Actions are currently performed by the user.
     };
 
-    /// Returns the type of context the current thread performs its actions in.
-    static Type current() noexcept;
+    /// Returns the context the current thread performs its actions in.
+    static const ExecutionContext& current() noexcept;
+
+    /// Sets the context the current thread performs its actions in.
+    static void setCurrent(const ExecutionContext& context) noexcept;
 
     /// Returns true if the current operation is performed by the user.
-    static bool isInteractive() noexcept { return current() == Interactive; }
+    static bool isInteractive() noexcept { return current().type() == Type::Interactive; }
 
-    /// Sets the type of context the current thread performs its actions in.
-    static void setCurrent(Type type) noexcept;
+    /// Returns true if the current operation is performed by a script.
+    static bool isScripting() noexcept { return current().type() == Type::Scripting; }
 
-    class OVITO_CORE_EXPORT Scope
-    {
-    public:
-        explicit Scope(Type type) noexcept : _previous(ExecutionContext::current()) { ExecutionContext::setCurrent(type); }
-        ~Scope() { ExecutionContext::setCurrent(_previous); }
-    private:
-        Type _previous;
-    };
+    /// RAII helper class that can be used to temporarily set the current execution context.
+    class Scope;
+
+    /// Constructor creating a null execution context.
+    ExecutionContext() noexcept = default;
+
+    /// Constructor for a new execution context.
+    explicit ExecutionContext(Type type, UserInterface& ui) noexcept : _type(type), _ui(&ui) { OVITO_ASSERT(isValid()); }
+
+    /// Returns whether this context is not of type 'None'.
+    bool isValid() const noexcept { return type() != Type::None; }
+
+    /// Returns the type of this execution context.
+    Type type() const noexcept { return _type; }
+
+    /// Returns the user interface for this execution context.
+    UserInterface& ui() const noexcept { 
+        OVITO_ASSERT(isValid());
+        OVITO_ASSERT(_ui != nullptr); 
+        return *_ui; 
+    }
+
+private:
+
+    Type _type = Type::None;
+    UserInterface* _ui = nullptr;
+};
+
+/// RAII helper class that can be used to temporarily set the current execution context.
+class OVITO_CORE_EXPORT ExecutionContext::Scope
+{
+public:
+
+    /// Constructor.
+    explicit Scope(const ExecutionContext& context) noexcept : _previous(ExecutionContext::current()) { ExecutionContext::setCurrent(context); }
+
+    /// Destructor.
+    ~Scope() { ExecutionContext::setCurrent(_previous); }
+
+private:
+
+    ExecutionContext _previous;
 };
 
 }	// End of namespace

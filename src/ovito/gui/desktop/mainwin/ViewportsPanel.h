@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -39,11 +39,11 @@ class ViewportsPanel : public QWidget
 public:
 
 	/// Constructs the viewport panel.
-	ViewportsPanel(MainWindow* parent);
+	ViewportsPanel(MainWindow& parent);
 
 	/// Factory method which creates a new viewport window widget. Depending on the 
 	/// user's settings this can be either a OpenGL or a Vulkan window.
-	static BaseViewportWindow* createViewportWindow(Viewport* vp, MainWindow* mainWindow, QWidget* parent);
+	static BaseViewportWindow* createViewportWindow(Viewport& vp, MainWindow& mainWindow, QWidget* parent);
 
 	/// Returns the widget that is associated with the given viewport.
 	QWidget* viewportWidget(Viewport* vp);
@@ -126,7 +126,7 @@ private:
 
 	OORef<ViewportConfiguration> _viewportConfig;
 	OORef<AnimationSettings> _animSettings;
-	MainWindow* _mainWindow;
+	MainWindow& _mainWindow;
 	bool _graphicsInitializationErrorOccurred = false; 
 
 	static constexpr int _splitterSize = 2;

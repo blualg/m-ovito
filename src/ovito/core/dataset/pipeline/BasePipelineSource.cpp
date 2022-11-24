@@ -24,6 +24,7 @@
 #include <ovito/core/dataset/animation/AnimationSettings.h>
 #include <ovito/core/dataset/DataSetContainer.h>
 #include <ovito/core/app/Application.h>
+#include <ovito/core/app/UserInterface.h>
 #include "BasePipelineSource.h"
 
 namespace Ovito {
@@ -53,10 +54,6 @@ Future<PipelineFlowState> BasePipelineSource::postprocessDataCollection(int anim
 	return std::move(future).then(executor(), [this, animationFrame, frameInterval](Future<PipelineFlowState> future) -> PipelineFlowState {
 		OVITO_ASSERT(future.isFinished() && !future.isCanceled());
 
-		// Set out early during tear down of the dataset.
-		if(!dataset())
-			return {}; 
-
 		try {
 			PipelineFlowState state = future.result();
 			setStatus(state.status());
@@ -64,6 +61,7 @@ Future<PipelineFlowState> BasePipelineSource::postprocessDataCollection(int anim
 			// Check if the generated pipeline state is valid.
 			if(state.data() && state.status().type() != PipelineStatus::Error) {
 
+#if 0 // TODO: Make this work
 				// In GUI mode, create editable proxy objects for the data objects in the generated collection.
 				if(Application::instance()->guiMode()) {
 					_updatingEditableProxies = true;
@@ -78,12 +76,13 @@ Future<PipelineFlowState> BasePipelineSource::postprocessDataCollection(int anim
 					setDataCollection(state.data());
 					notifyDependents(ReferenceEvent::PreliminaryStateAvailable);
 				}
+#endif
 			}
 
 			return state;
 		}
 		catch(Exception& ex) {
-			ex.setContext(dataset());
+			ex.setContext(this);
 			setStatus(ex);
 			ex.prependGeneralMessage(tr("Pipeline source reported:"));
 			return PipelineFlowState(dataCollection(), PipelineStatus(ex, QChar(' ')), frameInterval);
@@ -108,9 +107,10 @@ Future<PipelineFlowState> BasePipelineSource::postprocessCachedState(const Pipel
 	PipelineFlowState state = cachedState;
 	setStatus(state.status());
 
-	if(dataset() && state.data() && state.status().type() != PipelineStatus::Error) {
-		UndoSuspender noUndo(dataset());
+	if(state.data() && state.status().type() != PipelineStatus::Error) {
+		UndoSuspender noUndo;
 
+#if 0 // TODO: Make this work
 		// In GUI mode, create editable proxy objects for the data objects in the generated collection.
 		if(Application::instance()->guiMode()) {
 			_updatingEditableProxies = true;
@@ -124,6 +124,7 @@ Future<PipelineFlowState> BasePipelineSource::postprocessCachedState(const Pipel
 			setDataCollectionFrame(animationTimeToSourceFrame(request.time()));
 			setDataCollection(state.data());
 		}
+#endif
 	}
 
 	return CachingPipelineObject::postprocessCachedState(request, state);
@@ -139,7 +140,7 @@ bool BasePipelineSource::referenceEvent(RefTarget* source, const ReferenceEvent&
 
 			// The user has modified one of the editable proxy objects attached to the data collection.
 			// Apply the changes made to the proxy objects to the actual data objects.
-			UndoSuspender noUndo(this);
+			UndoSuspender noUndo;
 			PipelineFlowState state(dataCollection(), PipelineStatus::Success);
 			_updatingEditableProxies = true;
 			_userHasChangedDataCollection.set(this, PROPERTY_FIELD(userHasChangedDataCollection), true);
@@ -202,7 +203,7 @@ void BasePipelineSource::discardDataCollection()
 		}
 	};
 
-	dataset()->undoStack().pushIfRecording<ResetDataCollectionOperation>(this);
+	pushIfUndoRecording<ResetDataCollectionOperation>(this);
 
 	// Throw away cached frame data and notify pipeline that an update is in order.
 	setDataCollection(nullptr);
@@ -214,7 +215,7 @@ void BasePipelineSource::discardDataCollection()
 
 	notifyTargetChanged();
 
-	dataset()->undoStack().pushIfRecording<ResetDataCollectionOperation>(this);
+	pushIfUndoRecording<ResetDataCollectionOperation>(this);
 }
 
 }	// End of namespace

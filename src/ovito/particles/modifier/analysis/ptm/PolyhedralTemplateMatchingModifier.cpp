@@ -116,7 +116,7 @@ Future<AsynchronousModifier::EnginePtr> PolyhedralTemplateMatchingModifier::crea
 	const PropertyObject* posProperty = particles->expectProperty(ParticlesObject::PositionProperty);
 	const SimulationCellObject* simCell = input.expectObject<SimulationCellObject>();
 	if(simCell->is2D())
-		throwException(tr("The PTM modifier does not support 2D simulation cells."));
+		throw Exception(tr("The PTM modifier does not support 2D simulation cells."));
 
 	// Get particle selection.
 	const PropertyObject* selectionProperty = onlySelectedParticles() ? particles->expectProperty(ParticlesObject::SelectionProperty) : nullptr;

@@ -223,7 +223,7 @@ void FrameBufferWindow::autoCrop()
 	if(frameBuffer()) {
 		if(!frameBuffer()->autoCrop()) {
 #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
-			QToolTip::showText(QCursor::pos(screen()), tr("No background pixels found which can been removed"), nullptr, {}, 3000);
+			QToolTip::showText(QCursor::pos(screen()), tr("No background pixels found that can been removed"), nullptr, {}, 3000);
 #endif
 		}
 	}

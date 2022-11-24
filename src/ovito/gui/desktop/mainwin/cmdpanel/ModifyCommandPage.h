@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -64,9 +64,6 @@ public:
 
 protected Q_SLOTS:
 
-	/// This is called after all changes to the selection set have been completed.
-	void onSelectionChangeComplete(SelectionSet* newSelection);
-
 	/// Is called when a new modification list item has been selected, or if the currently
 	/// selected item has changed.
 	void onSelectedItemChanged();
@@ -87,11 +84,8 @@ private:
 
 private:
 
-	/// The container of the current dataset being edited.
-	DataSetContainer& _datasetContainer;
-
-	/// The action manager of the main window.
-	ActionManager* _actionManager;
+	/// The main window hosting this page.
+	MainWindow& _mainWindow;
 
 	/// This list box shows the modifier stack of the selected scene node(s).
 	QListView* _pipelineWidget;

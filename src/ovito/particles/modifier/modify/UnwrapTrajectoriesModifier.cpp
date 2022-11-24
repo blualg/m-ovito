@@ -226,7 +226,7 @@ void UnwrapTrajectoriesModifierApplication::unwrapParticleCoordinates(const Modi
 		if(ExecutionContext::isInteractive())
 			state.setStatus(PipelineStatus(PipelineStatus::Warning, tr("Particle crossings of periodic cell boundaries have not been determined yet.")));
 		else
-			throwException(tr("Particle crossings of periodic cell boundaries have not been determined yet. Cannot unwrap trajectories. Did you forget to call UnwrapTrajectoriesModifier.update()?"));
+			throw Exception(tr("Particle crossings of periodic cell boundaries have not been determined yet. Cannot unwrap trajectories. Did you forget to call UnwrapTrajectoriesModifier.update()?"));
 		return;
 	}
 
@@ -318,14 +318,14 @@ void UnwrapTrajectoriesModifierApplication::WorkingData::operator()(int frame, c
 	// Get simulation cell geometry and boundary conditions.
 	const SimulationCellObject* cell = state.getObject<SimulationCellObject>();
 	if(!cell)
-		_modApp->throwException(tr("Input data contains no simulation cell information at frame %1.").arg(frame));
+		throw Exception(tr("Input data contains no simulation cell information at frame %1.").arg(frame));
 	if(!cell->hasPbcCorrected())
-		_modApp->throwException(tr("No periodic boundary conditions set for the simulation cell."));
+		throw Exception(tr("No periodic boundary conditions set for the simulation cell."));
 	AffineTransformation reciprocalCellMatrix = cell->inverseMatrix();
 
 	const ParticlesObject* particles = state.getObject<ParticlesObject>();
 	if(!particles)
-		_modApp->throwException(tr("Input data contains no particles at frame %1.").arg(frame));
+		throw Exception(tr("Input data contains no particles at frame %1.").arg(frame));
 	ConstPropertyAccess<Point3> posProperty = particles->expectProperty(ParticlesObject::PositionProperty);
 	ConstPropertyAccess<qlonglong> identifierProperty = particles->getProperty(ParticlesObject::IdentifierProperty);
 	if(identifierProperty && identifierProperty.size() != posProperty.size())

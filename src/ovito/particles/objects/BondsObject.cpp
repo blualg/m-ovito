@@ -510,7 +510,7 @@ boost::dynamic_bitset<> BondsObject::OOMetaClass::viewportFenceSelection(const Q
 			if(ConstPropertyAccess<Point3> posProperty = particles->getProperty(ParticlesObject::PositionProperty)) {
 
 				if(!bonds->visElement() || bonds->visElement()->isEnabled() == false)
-					node->throwException(tr("Cannot select bonds while the corresponding visual element is disabled. Please enable the display of bonds first."));
+					throw Exception(tr("Cannot select bonds while the corresponding visual element is disabled. Please enable the display of bonds first."));
 
 				boost::dynamic_bitset<> fullSelection(topologyProperty.size());
 				QMutex mutex;
@@ -567,7 +567,7 @@ boost::dynamic_bitset<> BondsObject::OOMetaClass::viewportFenceSelection(const Q
 * Returns the base point and vector information for visualizing a vector 
 * property from this container using a VectorVis element.
 ******************************************************************************/
-std::tuple<ConstDataBufferPtr, ConstDataBufferPtr> BondsObject::getVectorVisData(const ConstDataObjectPath& path, const PipelineFlowState& state) const
+std::tuple<ConstDataBufferPtr, ConstDataBufferPtr> BondsObject::getVectorVisData(const ConstDataObjectPath& path, const PipelineFlowState& state, SceneRenderer* renderer) const
 {
 	OVITO_ASSERT(path.lastAs<BondsObject>(1) == this);
 	verifyIntegrity();

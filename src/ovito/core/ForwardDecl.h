@@ -27,8 +27,8 @@
 
 #pragma once
 
-namespace Ovito {
-
+namespace Ovito 
+{
 	class Application;
 	class FileHandle;
 	class FileManager;
@@ -147,6 +147,7 @@ namespace Ovito {
 	class FileExporterClass;
 	class FileSource;
 	class FileSourceImporter;
+	class MixedKeyCache;
 
 	class ViewportInputManager;   // Note: This class is defined in another plugin module (GuiBase).
 	class ActionManager;          // Note: This class is defined in another plugin module (GuiBase).

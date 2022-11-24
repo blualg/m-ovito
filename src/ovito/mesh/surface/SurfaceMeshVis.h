@@ -60,22 +60,22 @@ public:
 	Q_INVOKABLE SurfaceMeshVis(ObjectCreationParams params);
 
 	/// Lets the visualization element render the data object.
-	virtual PipelineStatus render(TimePoint time, const ConstDataObjectPath& path, const PipelineFlowState& flowState, SceneRenderer* renderer, const PipelineSceneNode* contextNode) override;
+	virtual PipelineStatus render(AnimationTime time, const ConstDataObjectPath& path, const PipelineFlowState& flowState, SceneRenderer* renderer, const PipelineSceneNode* contextNode) override;
 
 	/// Computes the bounding box of the object.
-	virtual Box3 boundingBox(TimePoint time, const ConstDataObjectPath& path, const PipelineSceneNode* contextNode, const PipelineFlowState& flowState, TimeInterval& validityInterval) override;
+	virtual Box3 boundingBox(AnimationTime time, const ConstDataObjectPath& path, const PipelineSceneNode* contextNode, const PipelineFlowState& flowState, TimeInterval& validityInterval) override;
 
 	/// Returns the transparency of the surface mesh.
-	FloatType surfaceTransparency() const { return surfaceTransparencyController() ? surfaceTransparencyController()->currentFloatValue() : 0.0f; }
+	FloatType surfaceTransparency() const { return surfaceTransparencyController() ? surfaceTransparencyController()->getFloatValue(AnimationTime(0)) : 0.0f; }
 
 	/// Sets the transparency of the surface mesh.
-	void setSurfaceTransparency(FloatType transparency) { if(surfaceTransparencyController()) surfaceTransparencyController()->setCurrentFloatValue(transparency); }
+	void setSurfaceTransparency(FloatType transparency) { if(surfaceTransparencyController()) surfaceTransparencyController()->setFloatValue(AnimationTime(0), transparency); }
 
 	/// Returns the transparency of the surface cap mesh.
-	FloatType capTransparency() const { return capTransparencyController() ? capTransparencyController()->currentFloatValue() : 0.0f; }
+	FloatType capTransparency() const { return capTransparencyController() ? capTransparencyController()->getFloatValue(AnimationTime(0)) : 0.0f; }
 
 	/// Sets the transparency of the surface cap mesh.
-	void setCapTransparency(FloatType transparency) { if(capTransparencyController()) capTransparencyController()->setCurrentFloatValue(transparency); }
+	void setCapTransparency(FloatType transparency) { if(capTransparencyController()) capTransparencyController()->setFloatValue(AnimationTime(0), transparency); }
 
 protected:
 

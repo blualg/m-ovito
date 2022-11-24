@@ -84,7 +84,7 @@ Future<AsynchronousModifier::EnginePtr> CoordinationPolyhedraModifier::createEng
 	const SimulationCellObject* simCell = input.expectObject<SimulationCellObject>();
 
 	if(!selectionProperty)
-		throwException(tr("Please first select some particles, for which coordination polyhedra should be generated."));
+		throw Exception(tr("Please first select some particles, for which coordination polyhedra should be generated."));
 
 	// Collect the set of particle properties that should be transferred over to the surface mesh vertices and mesh regions.
 	std::vector<ConstPropertyPtr> particleProperties;

@@ -358,7 +358,7 @@ void ParaViewVTPParticleImporter::FrameLoader::loadParticleShape(ParticleType* p
 	// Note: Invoking a file importer is currently only allowed from the main thread. This may change in the future.
 	const QUrl& geometryFileUrl = _particleShapeFiles[particleType->numericId()].location;
 	Future<PipelineFlowState> stateFuture = Application::instance()->fileManager().fetchUrl(geometryFileUrl)
-			.then(particleType->executor(ExecutionContext::Scripting), [particleType,dataSource=dataSource()](const FileHandle& fileHandle) {
+			.then(particleType->executor(ExecutionContext::Type::Scripting), [particleType,dataSource=dataSource()](const FileHandle& fileHandle) {
 
 		// Detect geometry file format and create an importer for it.
 		// Note: For loading particle shape geometries we only accept FileSourceImporters.

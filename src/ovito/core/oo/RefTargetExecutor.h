@@ -39,10 +39,11 @@ public:
 
 	/// Constructor.
 	explicit RefTargetExecutor(const RefTarget* obj, bool deferredExecution) noexcept : 
+			_executionContext(ExecutionContext::current()), 
 			_obj(obj), 
-			_executionContextType(ExecutionContext::current()), 
 			_deferredExecution(deferredExecution) { 
 		OVITO_ASSERT(obj != nullptr); 
+		OVITO_ASSERT(_executionContext.isValid());
 	}
 
 	/// Creates some work that can be submitted for execution later.
@@ -69,10 +70,10 @@ public:
 
 				if(!QCoreApplication::closingDown()) {
 					// Temporarily activate the original execution context under which the work was submitted.
-					ExecutionContext::Scope execScope(_executionContextType);
+					ExecutionContext::Scope execScope(_executionContext);
 
 					// Temporarily suspend undo recording, because deferred operations never get recorded by convention.
-					UndoSuspender noUndo(object());
+					UndoSuspender noUndo;
 
 					// Execute the work function.
 #ifndef OVITO_MSVC_2017_COMPATIBILITY
@@ -104,10 +105,10 @@ public:
 					// When already in the main thread, execute work immediately.
 
 					// Temporarily activate the original execution context under which the work was submitted.
-					ExecutionContext::Scope execScope(executor._executionContextType);
+					ExecutionContext::Scope execScope(executor._executionContext);
 
 					// Temporarily suspend undo recording, because deferred operations never get recorded by convention.
-					UndoSuspender noUndo(executor.object());
+					UndoSuspender noUndo;
 
 					// Execute the work function.
 					std::move(f)(task);
@@ -127,10 +128,10 @@ public:
 					// When already in the main thread, execute work immediately.
 
 					// Temporarily activate the original execution context under which the work was submitted.
-					ExecutionContext::Scope execScope(executor._executionContextType);
+					ExecutionContext::Scope execScope(executor._executionContext);
 
 					// Temporarily suspend undo recording, because deferred operations never get recorded by convention.
-					UndoSuspender noUndo(executor.object());
+					UndoSuspender noUndo;
 
 					// Execute the work function.
 					std::move(f)();
@@ -155,7 +156,7 @@ private:
 	OORef<const RefTarget> _obj;
 
 	/// The execution context (interactive or scripting) in which the work has been submitted.
-	ExecutionContext::Type _executionContextType;
+	ExecutionContext _executionContext;
 
 	/// Controls whether execution of the work will be deferred even if immediate execution would be possible.
 	const bool _deferredExecution;

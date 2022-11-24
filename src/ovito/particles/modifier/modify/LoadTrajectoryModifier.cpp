@@ -78,7 +78,7 @@ Future<PipelineFlowState> LoadTrajectoryModifier::evaluate(const ModifierEvaluat
 
 	// Get the trajectory data source.
 	if(!trajectorySource())
-		throwException(tr("No trajectory data source has been set."));
+		throw Exception(tr("No trajectory data source has been set."));
 
 	// Obtain the trajectory frame from the secondary pipeline.
 	SharedFuture<PipelineFlowState> trajStateFuture = trajectorySource()->evaluate(request);
@@ -91,7 +91,7 @@ Future<PipelineFlowState> LoadTrajectoryModifier::evaluate(const ModifierEvaluat
 			if(trajState.status().type() == PipelineStatus::Error) {
 				if(FileSource* fileSource = dynamic_object_cast<FileSource>(trajModifier->trajectorySource())) {
 					if(fileSource->sourceUrls().empty())
-						request.modApp()->throwException(tr("Please pick a trajectory file."));
+						throw Exception(tr("Please pick a trajectory file."));
 				}
 				state.setStatus(trajState.status());
 			}
@@ -127,7 +127,7 @@ void LoadTrajectoryModifier::evaluateSynchronous(const ModifierEvaluationRequest
 void LoadTrajectoryModifier::applyTrajectoryState(PipelineFlowState& state, const PipelineFlowState& trajState)
 {
 	if(!trajState)
-		throwException(tr("Data source has not been specified yet or is empty. Please pick a trajectory file."));
+		throw Exception(tr("Data source has not been specified yet or is empty. Please pick a trajectory file."));
 
 	// Merge validity intervals of topology and trajectory datasets.
 	state.intersectStateValidity(trajState.stateValidity());
@@ -135,7 +135,7 @@ void LoadTrajectoryModifier::applyTrajectoryState(PipelineFlowState& state, cons
 	// Get the current particle positions.
 	const ParticlesObject* trajectoryParticles = trajState.getObject<ParticlesObject>();
 	if(!trajectoryParticles)
-		throwException(tr("Trajectory dataset does not contain any particle dataset."));
+		throw Exception(tr("Trajectory dataset does not contain any particle dataset."));
 	trajectoryParticles->verifyIntegrity();
 
 	// Get the topology particle dataset.
@@ -155,21 +155,21 @@ void LoadTrajectoryModifier::applyTrajectoryState(PipelineFlowState& state, cons
 			size_t index = 0;
 			for(qlonglong id : trajIdentifierProperty) {
 				if(refMap.insert(std::make_pair(id, index++)).second == false)
-					throwException(tr("Particles with duplicate identifiers detected in trajectory dataset."));
+					throw Exception(tr("Particles with duplicate identifiers detected in trajectory dataset."));
 			}
 
 			// Check for duplicate identifiers in topology dataset.
 			std::vector<size_t> idSet(identifierProperty.cbegin(), identifierProperty.cend());
 			boost::sort(idSet);
 			if(boost::adjacent_find(idSet) != idSet.cend())
-				throwException(tr("Particles with duplicate identifiers detected in topology dataset."));
+				throw Exception(tr("Particles with duplicate identifiers detected in topology dataset."));
 
 			// Build mapping of particle indices from the topology dataset to the corresponding indices in the trajectory dataset.
 			const qlonglong* id = identifierProperty.cbegin();
 			for(auto& mappedIndex : indexToIndexMap) {
 				auto iter = refMap.find(*id);
 				if(iter == refMap.end())
-					throwException(tr("Particle id %1 from topology dataset not found in trajectory dataset.").arg(*id));
+					throw Exception(tr("Particle id %1 from topology dataset not found in trajectory dataset.").arg(*id));
 				mappedIndex = iter->second;
 				refMap.erase(iter);
 				++id;
@@ -195,7 +195,7 @@ void LoadTrajectoryModifier::applyTrajectoryState(PipelineFlowState& state, cons
 		else {
 			// Topology dataset and trajectory data must contain the same number of particles.
 			if(trajectoryParticles->elementCount() != particles->elementCount()) {
-				throwException(tr("Cannot apply trajectories to current particle dataset. Numbers of particles in the trajectory file and in the topology file do not match."));
+				throw Exception(tr("Cannot apply trajectories to current particle dataset. Numbers of particles in the trajectory file and in the topology file do not match."));
 			}
 
 			// When particle identifiers are not available, use trivial 1-to-1 mapping.
@@ -306,7 +306,7 @@ void LoadTrajectoryModifier::applyTrajectoryState(PipelineFlowState& state, cons
 					size_t index = 0;
 					for(qlonglong id : particleIdentifierProperty) {
 						if(idToIndexMap.insert(std::make_pair(id, index++)).second == false)
-							throwException(tr("Duplicate particle identifier %1 detected. Please make sure particle identifiers are unique.").arg(id));
+							throw Exception(tr("Duplicate particle identifier %1 detected. Please make sure particle identifiers are unique.").arg(id));
 					}
 				}
 				else {
@@ -322,9 +322,9 @@ void LoadTrajectoryModifier::applyTrajectoryState(PipelineFlowState& state, cons
 					auto iter1 = idToIndexMap.find(bond[0]);
 					auto iter2 = idToIndexMap.find(bond[1]);
 					if(iter1 == idToIndexMap.end())
-						throwException(tr("Particle id %1 referenced by bond #%2 does not exist.").arg(bond[0]).arg(std::distance(bondTopologyArray.begin(), t)));
+						throw Exception(tr("Particle id %1 referenced by bond #%2 does not exist.").arg(bond[0]).arg(std::distance(bondTopologyArray.begin(), t)));
 					if(iter2 == idToIndexMap.end())
-						throwException(tr("Particle id %1 referenced by bond #%2 does not exist.").arg(bond[1]).arg(std::distance(bondTopologyArray.begin(), t)));
+						throw Exception(tr("Particle id %1 referenced by bond #%2 does not exist.").arg(bond[1]).arg(std::distance(bondTopologyArray.begin(), t)));
 					(*t)[0] = iter1->second;
 					(*t)[1] = iter2->second;
 					++t;
@@ -346,7 +346,7 @@ void LoadTrajectoryModifier::applyTrajectoryState(PipelineFlowState& state, cons
 			// then add the bond properties to the existing bonds from the topology dataset.
 			// This requires that the number of bonds remains constant.
 			if(trajectoryBonds->elementCount() != particles->bonds()->elementCount()) {
-				throwException(tr("Cannot merge bond properties of trajectory dataset with topology dataset, because numbers of bonds in the two datasets do not match."));
+				throw Exception(tr("Cannot merge bond properties of trajectory dataset with topology dataset, because numbers of bonds in the two datasets do not match."));
 			}
 
 			if(!trajectoryBonds->properties().empty()) {
@@ -365,7 +365,7 @@ void LoadTrajectoryModifier::applyTrajectoryState(PipelineFlowState& state, cons
 			}
 		}
 		else {
-			throwException(tr("Neither the trajectory nor the topology dataset contain bond connectivity information."));
+			throw Exception(tr("Neither the trajectory nor the topology dataset contain bond connectivity information."));
 		}
 	}
 

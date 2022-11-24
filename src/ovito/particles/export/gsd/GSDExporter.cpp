@@ -126,7 +126,7 @@ bool GSDExporter::exportData(const PipelineFlowState& state, int frameNumber, Ti
 
     // Output number of particles.
     if(particles->elementCount() > (size_t)std::numeric_limits<uint32_t>::max())
-        throwException(tr("Number of particles exceeds maximum number supported by the GSD/HOOMD format."));
+        throw Exception(tr("Number of particles exceeds maximum number supported by the GSD/HOOMD format."));
     uint32_t particleCount = particles->elementCount();
     _gsdFile->writeChunk<uint32_t>("particles/N", 1, 1, &particleCount);
     if(operation.isCanceled()) return false;
@@ -280,7 +280,7 @@ bool GSDExporter::exportData(const PipelineFlowState& state, int frameNumber, Ti
 
         // Output number of bonds.
         if(bonds->elementCount() > (size_t)std::numeric_limits<uint32_t>::max())
-            throwException(tr("Number of bonds exceeds maximum number supported by the GSD/HOOMD format."));
+            throw Exception(tr("Number of bonds exceeds maximum number supported by the GSD/HOOMD format."));
         uint32_t bondsCount = bonds->elementCount();
         _gsdFile->writeChunk<uint32_t>("bonds/N", 1, 1, &bondsCount);
         if(operation.isCanceled()) return false;
@@ -298,7 +298,7 @@ bool GSDExporter::exportData(const PipelineFlowState& state, int frameNumber, Ti
             size_t a = bondTopologyProperty[i][0];
             size_t b = bondTopologyProperty[i][1];
             if(a >= reverseOrdering.size() || b >= reverseOrdering.size())
-                throwException(tr("GSD/HOOMD file export error: Particle indices in bond topology array are out of range."));
+                throw Exception(tr("GSD/HOOMD file export error: Particle indices in bond topology array are out of range."));
             bondsBuffer[i][0] = reverseOrdering[a];
             bondsBuffer[i][1] = reverseOrdering[b];
         }
@@ -344,7 +344,7 @@ bool GSDExporter::exportData(const PipelineFlowState& state, int frameNumber, Ti
 
         // Output number of angles.
         if(angles->elementCount() > (size_t)std::numeric_limits<uint32_t>::max())
-            throwException(tr("Number of angles exceeds maximum number supported by the GSD/HOOMD format."));
+            throw Exception(tr("Number of angles exceeds maximum number supported by the GSD/HOOMD format."));
         uint32_t anglesCount = angles->elementCount();
         _gsdFile->writeChunk<uint32_t>("angles/N", 1, 1, &anglesCount);
         if(operation.isCanceled()) return false;
@@ -363,7 +363,7 @@ bool GSDExporter::exportData(const PipelineFlowState& state, int frameNumber, Ti
             size_t b = topologyProperty[i][1];
             size_t c = topologyProperty[i][2];
             if(a >= reverseOrdering.size() || b >= reverseOrdering.size() || c >= reverseOrdering.size())
-                throwException(tr("GSD/HOOMD file export error: Particle indices in angle topology array are out of range."));
+                throw Exception(tr("GSD/HOOMD file export error: Particle indices in angle topology array are out of range."));
             anglesBuffer[i][0] = reverseOrdering[a];
             anglesBuffer[i][1] = reverseOrdering[b];
             anglesBuffer[i][2] = reverseOrdering[c];
@@ -410,7 +410,7 @@ bool GSDExporter::exportData(const PipelineFlowState& state, int frameNumber, Ti
 
         // Output number of dihedrals.
         if(dihedrals->elementCount() > (size_t)std::numeric_limits<uint32_t>::max())
-            throwException(tr("Number of dihedrals exceeds maximum number supported by the GSD/HOOMD format."));
+            throw Exception(tr("Number of dihedrals exceeds maximum number supported by the GSD/HOOMD format."));
         uint32_t dihedralsCount = dihedrals->elementCount();
         _gsdFile->writeChunk<uint32_t>("dihedrals/N", 1, 1, &dihedralsCount);
         if(operation.isCanceled()) return false;
@@ -430,7 +430,7 @@ bool GSDExporter::exportData(const PipelineFlowState& state, int frameNumber, Ti
             size_t c = topologyProperty[i][2];
             size_t d = topologyProperty[i][3];
             if(a >= reverseOrdering.size() || b >= reverseOrdering.size() || c >= reverseOrdering.size() || d >= reverseOrdering.size())
-                throwException(tr("GSD/HOOMD file export error: Particle indices in dihedral topology array are out of range."));
+                throw Exception(tr("GSD/HOOMD file export error: Particle indices in dihedral topology array are out of range."));
             dihedralsBuffer[i][0] = reverseOrdering[a];
             dihedralsBuffer[i][1] = reverseOrdering[b];
             dihedralsBuffer[i][2] = reverseOrdering[c];
@@ -478,7 +478,7 @@ bool GSDExporter::exportData(const PipelineFlowState& state, int frameNumber, Ti
 
         // Output number of impropers.
         if(impropers->elementCount() > (size_t)std::numeric_limits<uint32_t>::max())
-            throwException(tr("Number of impropers exceeds maximum number supported by the GSD/HOOMD format."));
+            throw Exception(tr("Number of impropers exceeds maximum number supported by the GSD/HOOMD format."));
         uint32_t impropersCount = impropers->elementCount();
         _gsdFile->writeChunk<uint32_t>("impropers/N", 1, 1, &impropersCount);
         if(operation.isCanceled()) return false;
@@ -498,7 +498,7 @@ bool GSDExporter::exportData(const PipelineFlowState& state, int frameNumber, Ti
             size_t c = topologyProperty[i][2];
             size_t d = topologyProperty[i][3];
             if(a >= reverseOrdering.size() || b >= reverseOrdering.size() || c >= reverseOrdering.size() || d >= reverseOrdering.size())
-                throwException(tr("GSD/HOOMD file export error: Particle indices in improper topology array are out of range."));
+                throw Exception(tr("GSD/HOOMD file export error: Particle indices in improper topology array are out of range."));
             impropersBuffer[i][0] = reverseOrdering[a];
             impropersBuffer[i][1] = reverseOrdering[b];
             impropersBuffer[i][2] = reverseOrdering[c];

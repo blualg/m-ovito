@@ -87,7 +87,7 @@ void CustomParameterUI::updateUI()
 		if(isQtPropertyUI()) {
 			val = editObject()->property(propertyName());
 			if(!val.isValid())
-				editObject()->throwException(tr("The object class %1 does not define a property with the name %2.").arg(editObject()->metaObject()->className(), QString(propertyName())));
+				throw Exception(tr("The object class %1 does not define a property with the name %2.").arg(editObject()->metaObject()->className(), QString(propertyName())));
 		}
 		else if(isPropertyFieldUI()) {
 			val = editObject()->getPropertyFieldValue(propertyField());

@@ -310,7 +310,7 @@ protected:
     /// Registers a task object as the current task in the current thread.
     static void setCurrentTask(Task* task) noexcept;
 
-    /// RAII class that registers a task as the current task.
+    /// RAII helper class that can be used to register some task as the currently active task.
     class OVITO_CORE_EXPORT Scope
     {
     public:

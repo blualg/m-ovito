@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -47,13 +47,13 @@ public:
 	virtual bool isAnimated() const override { return false; }
 
 	/// \brief Calculates the largest time interval containing the given time during which the controller's value does not change.
-	virtual TimeInterval validityInterval(TimePoint time) override { return TimeInterval::infinite(); }
+	virtual TimeInterval validityInterval(AnimationTime time) override { return TimeInterval::infinite(); }
 
 	/// \brief Gets the controller's value at a certain animation time.
-	virtual FloatType getFloatValue(TimePoint time, TimeInterval& validityInterval) override { return value(); }
+	virtual FloatType getFloatValue(AnimationTime time, TimeInterval& validityInterval) override { return value(); }
 
 	/// \brief Sets the controller's value at the given animation time.
-	virtual void setFloatValue(TimePoint time, FloatType newValue) override { setValue(newValue); }
+	virtual void setFloatValue(AnimationTime time, FloatType newValue) override { setValue(newValue); }
 
 private:
 
@@ -80,13 +80,13 @@ public:
 	virtual bool isAnimated() const override { return false; }
 
 	/// \brief Calculates the largest time interval containing the given time during which the controller's value does not change.
-	virtual TimeInterval validityInterval(TimePoint time) override { return TimeInterval::infinite(); }
+	virtual TimeInterval validityInterval(AnimationTime time) override { return TimeInterval::infinite(); }
 
 	/// \brief Gets the controller's value at a certain animation time.
-	virtual int getIntValue(TimePoint time, TimeInterval& validityInterval) override { return value(); }
+	virtual int getIntValue(AnimationTime time, TimeInterval& validityInterval) override { return value(); }
 
 	/// \brief Sets the controller's value at the given animation time.
-	virtual void setIntValue(TimePoint time, int newValue) override { setValue(newValue); }
+	virtual void setIntValue(AnimationTime time, int newValue) override { setValue(newValue); }
 
 private:
 
@@ -113,13 +113,13 @@ public:
 	virtual bool isAnimated() const override { return false; }
 
 	/// \brief Calculates the largest time interval containing the given time during which the controller's value does not change.
-	virtual TimeInterval validityInterval(TimePoint time) override { return TimeInterval::infinite(); }
+	virtual TimeInterval validityInterval(AnimationTime time) override { return TimeInterval::infinite(); }
 
 	/// \brief Gets the controller's value at a certain animation time.
-	virtual void getVector3Value(TimePoint time, Vector3& result, TimeInterval& validityInterval) override { result = value(); }
+	virtual void getVector3Value(AnimationTime time, Vector3& result, TimeInterval& validityInterval) override { result = value(); }
 
 	/// \brief Sets the controller's value at the given animation time.
-	virtual void setVector3Value(TimePoint time, const Vector3& newValue) override { setValue(newValue); }
+	virtual void setVector3Value(AnimationTime time, const Vector3& newValue) override { setValue(newValue); }
 
 private:
 
@@ -146,13 +146,13 @@ public:
 	virtual bool isAnimated() const override { return false; }
 
 	/// \brief Calculates the largest time interval containing the given time during which the controller's value does not change.
-	virtual TimeInterval validityInterval(TimePoint time) override { return TimeInterval::infinite(); }
+	virtual TimeInterval validityInterval(AnimationTime time) override { return TimeInterval::infinite(); }
 
 	/// \brief Gets the controller's value at a certain animation time.
-	virtual void getPositionValue(TimePoint time, Vector3& result, TimeInterval& validityInterval) override { result = value(); }
+	virtual void getPositionValue(AnimationTime time, Vector3& result, TimeInterval& validityInterval) override { result = value(); }
 
 	/// \brief Sets a position controller's value at the given animation time.
-	virtual void setPositionValue(TimePoint time, const Vector3& newValue, bool isAbsolute) override {
+	virtual void setPositionValue(AnimationTime time, const Vector3& newValue, bool isAbsolute) override {
 		setValue(isAbsolute ? newValue : (newValue + value()));
 	}
 
@@ -181,13 +181,13 @@ public:
 	virtual bool isAnimated() const override { return false; }
 
 	/// \brief Calculates the largest time interval containing the given time during which the controller's value does not change.
-	virtual TimeInterval validityInterval(TimePoint time) override { return TimeInterval::infinite(); }
+	virtual TimeInterval validityInterval(AnimationTime time) override { return TimeInterval::infinite(); }
 
 	/// \brief Gets the controller's value at a certain animation time.
-	virtual void getRotationValue(TimePoint time, Rotation& result, TimeInterval& validityInterval) override { result = value(); }
+	virtual void getRotationValue(AnimationTime time, Rotation& result, TimeInterval& validityInterval) override { result = value(); }
 
 	/// \brief Sets a rotation controller's value at the given animation time.
-	virtual void setRotationValue(TimePoint time, const Rotation& newValue, bool isAbsolute) override {
+	virtual void setRotationValue(AnimationTime time, const Rotation& newValue, bool isAbsolute) override {
 		setValue(isAbsolute ? newValue : (newValue * value()));
 	}
 
@@ -216,13 +216,13 @@ public:
 	virtual bool isAnimated() const override { return false; }
 
 	/// \brief Calculates the largest time interval containing the given time during which the controller's value does not change.
-	virtual TimeInterval validityInterval(TimePoint time) override { return TimeInterval::infinite(); }
+	virtual TimeInterval validityInterval(AnimationTime time) override { return TimeInterval::infinite(); }
 
 	/// \brief Gets the controller's value at a certain animation time.
-	virtual void getScalingValue(TimePoint time, Scaling& result, TimeInterval& validityInterval) override { result = value(); }
+	virtual void getScalingValue(AnimationTime time, Scaling& result, TimeInterval& validityInterval) override { result = value(); }
 
 	/// \brief Sets a scaling controller's value at the given animation time.
-	virtual void setScalingValue(TimePoint time, const Scaling& newValue, bool isAbsolute) override {
+	virtual void setScalingValue(AnimationTime time, const Scaling& newValue, bool isAbsolute) override {
 		setValue(isAbsolute ? newValue : (newValue * value()));
 	}
 

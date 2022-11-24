@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -27,6 +27,7 @@
 #include <ovito/core/rendering/RenderSettings.h>
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/dataset/data/DataBufferAccess.h>
+#include <ovito/core/app/UserInterface.h>
 
 namespace Ovito {
 
@@ -44,8 +45,12 @@ ViewportWindowInterface::Registry& ViewportWindowInterface::registry()
 ******************************************************************************/
 ViewportWindowInterface::ViewportWindowInterface(UserInterface& userInterface, Viewport* vp) : 
 	_userInterface(userInterface),
+	_dataset(userInterface.datasetContainer().currentSet()),
 	_viewport(vp)
 {
+	OVITO_ASSERT(_dataset);
+	OVITO_ASSERT(vp);
+
 	// Associate the viewport with this window.
 	if(vp)
 		vp->setWindow(this);
@@ -62,17 +67,13 @@ ViewportWindowInterface::~ViewportWindowInterface()
 }
 
 /******************************************************************************
-* Associates this window with a viewport.
+* Makes the viewport window delete itself.
 ******************************************************************************/
-void ViewportWindowInterface::setViewport(Viewport* vp)
-{
-	// Detach from old Viewport instance.
-	if(viewport())
-		viewport()->setWindow(nullptr);
-	// Associate with new Viewport instance.
-	_viewport = vp;
-	if(vp)
-		vp->setWindow(this);
+void ViewportWindowInterface::destroyViewportWindow() 
+{ 
+	OVITO_ASSERT(_viewport != nullptr); 
+	_viewport->setWindow(nullptr); 
+	_viewport = nullptr;
 }
 
 /******************************************************************************
@@ -109,7 +110,7 @@ void ViewportWindowInterface::renderOrientationIndicator(SceneRenderer* renderer
 
 	// Create line primitive for the coordinate axis arrows.
 	if(!_orientationTripodGeometry.colors()) {
-		DataBufferAccessAndRef<ColorA> vertexColors = DataBufferPtr::create(renderer->dataset(), 18, DataBuffer::Float, 4);
+		DataBufferAccessAndRef<ColorA> vertexColors = DataBufferPtr::create(18, DataBuffer::Float, 4);
 		std::fill(vertexColors.begin() + 0,  vertexColors.begin() + 6,  axisColors[0]);
 		std::fill(vertexColors.begin() + 6,  vertexColors.begin() + 12, axisColors[1]);
 		std::fill(vertexColors.begin() + 12, vertexColors.end(),        axisColors[2]);
@@ -117,7 +118,7 @@ void ViewportWindowInterface::renderOrientationIndicator(SceneRenderer* renderer
 	}
 
 	// Update geometry of coordinate axis arrows.
-	DataBufferAccessAndRef<Point3> vertices = DataBufferPtr::create(renderer->dataset(), 18, DataBuffer::Float, 3);
+	DataBufferAccessAndRef<Point3> vertices = DataBufferPtr::create(18, DataBuffer::Float, 3);
 	for(size_t axis = 0, index = 0; axis < 3; axis++) {
 		Vector3 dir = viewport()->projectionParams().viewMatrix.column(axis).normalized();
 		vertices[index++] = Point3::Origin();
@@ -162,7 +163,7 @@ void ViewportWindowInterface::renderOrientationIndicator(SceneRenderer* renderer
 void ViewportWindowInterface::renderRenderFrame(SceneRenderer* renderer)
 {
 	// The render frame in viewport coordinates.
-	Box2 frameRect = viewport()->renderFrameRect();
+	Box2 frameRect = viewport()->renderFrameRect(dataset());
 
 	// Create a 1x1 pixel semi-transparent image, which is used to fill reactangular areas with a uniform color.
 	static QImage image;
@@ -211,7 +212,7 @@ QRectF ViewportWindowInterface::renderViewportTitle(SceneRenderer* renderer, boo
 #endif
 	primitive.setText(str);
 	Color textColor = Viewport::viewportColor(ViewportSettings::COLOR_VIEWPORT_CAPTION);
-	if(viewport()->renderPreviewMode() && textColor == renderer->renderSettings()->backgroundColor())
+	if(viewport()->renderPreviewMode() && textColor == renderer->renderSettings().backgroundColor())
 		textColor = Vector3(1,1,1) - (Vector3)textColor;
 	primitive.setColor(textColor);
 

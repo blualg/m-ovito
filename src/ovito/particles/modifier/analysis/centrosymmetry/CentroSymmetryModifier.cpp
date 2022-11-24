@@ -74,13 +74,13 @@ Future<AsynchronousModifier::EnginePtr> CentroSymmetryModifier::createEngine(con
 	const SimulationCellObject* simCell = input.expectObject<SimulationCellObject>();
 
 	if(numNeighbors() < 2)
-		throwException(tr("The number of neighbors to take into account in the centrosymmetry calculation is invalid. It must be at least 2."));
+		throw Exception(tr("The number of neighbors to take into account in the centrosymmetry calculation is invalid. It must be at least 2."));
 
 	if(numNeighbors() > MAX_CSP_NEIGHBORS)
-		throwException(tr("The number of neighbors to take into account in the centrosymmetry calculation is too large. Maximum number of neighbors is %1.").arg(MAX_CSP_NEIGHBORS));
+		throw Exception(tr("The number of neighbors to take into account in the centrosymmetry calculation is too large. Maximum number of neighbors is %1.").arg(MAX_CSP_NEIGHBORS));
 
 	if(numNeighbors() % 2)
-		throwException(tr("The number of neighbors to take into account in the centrosymmetry calculation must be a positive and even integer."));
+		throw Exception(tr("The number of neighbors to take into account in the centrosymmetry calculation must be a positive and even integer."));
 
 	// Get particle selection.
 	const PropertyObject* selectionProperty = onlySelectedParticles() ? particles->expectProperty(ParticlesObject::SelectionProperty) : nullptr;
@@ -202,7 +202,7 @@ void CentroSymmetryModifier::CentroSymmetryEngine::applyResults(const ModifierEv
 {
 	ParticlesObject* particles = state.expectMutableObject<ParticlesObject>();
 	if(_inputFingerprint.hasChanged(particles))
-		request.modApp()->throwException(tr("Cached modifier results are obsolete, because the number or the storage order of input particles has changed."));
+		throw Exception(tr("Cached modifier results are obsolete, because the number or the storage order of input particles has changed."));
 
 	// Output per-particle CSP values.
 	particles->createProperty(csp());

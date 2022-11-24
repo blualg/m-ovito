@@ -144,7 +144,7 @@ void BondsComputePropertyModifierDelegate::Engine::perform()
 void BondsComputePropertyModifierDelegate::Engine::applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state)
 {
 	if(_inputFingerprint.hasChanged(state.expectObject<ParticlesObject>()))
-		request.modApp()->throwException(tr("Cached modifier results are obsolete, because the number or the storage order of input particles has changed."));
+		throw Exception(tr("Cached modifier results are obsolete, because the number or the storage order of input particles has changed."));
 
 	PropertyComputeEngine::applyResults(request, state);
 }

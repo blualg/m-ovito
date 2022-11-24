@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -119,21 +119,15 @@ public:
 	/// \brief Determines if an object is an instance of the class or one of its subclasses.
 	bool isMember(const OvitoObject* obj) const;
 
-	/// \brief Creates an instance of a class that is not derived from RefTarget.
+	/// \brief Creates an instance of a class that is NOT derived from RefTarget.
 	/// \return The new instance of the class. The pointer can be safely cast to the corresponding C++ class type.
 	/// \throw Exception if a required plugin failed to load, or if the instantiation failed for some other reason.
 	OORef<OvitoObject> createInstance() const;
 
-	/// \brief Creates an instance of a RefTarget-derived class.
-	/// \param dataset The dataset the newly created object will belong to.
-	/// \return The new instance of the class. The pointer can be safely cast to the corresponding C++ class type.
-	/// \throw Exception if a required plugin failed to load, or if the instantiation failed for some other reason.
-	OORef<RefTarget> createInstance(DataSet* dataset) const;
-
-	/// Creates an instance of this object class.
+	/// Creates an instance of this object class, which must be derived from RefTarget.
 	/// \param dataset The dataset the newly created object will belong to.
 	/// \param initFlags Controls how the parameters of the new object get initialized. 
-	OORef<RefTarget> createInstance(DataSet* dataset, ObjectCreationParams::InitializationFlags initFlags) const;
+	OORef<RefTarget> createInstance(ObjectCreationParams::InitializationFlags initFlags) const;
 
 	/// \brief Creates an instance of a RefTarget-derived class.
 	/// \return The new instance of the class. The pointer can be safely cast to the corresponding C++ class type.

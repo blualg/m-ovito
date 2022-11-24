@@ -22,12 +22,13 @@
 
 #include <ovito/core/Core.h>
 #include <ovito/core/app/Application.h>
-#include <ovito/core/oo/RefTarget.h>
-#include <ovito/core/dataset/UndoStack.h>
-#include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/app/PluginManager.h>
+#include <ovito/core/app/UserInterface.h>
+#include <ovito/core/oo/RefTarget.h>
 #include <ovito/core/utilities/io/ObjectSaveStream.h>
 #include <ovito/core/utilities/io/ObjectLoadStream.h>
+#include <ovito/core/dataset/UndoStack.h>
+#include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/dataset/animation/controller/Controller.h>
 #include <ovito/core/dataset/animation/AnimationSettings.h>
 #include "RefMaker.h"
@@ -35,13 +36,6 @@
 namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(RefMaker);
-
-/******************************************************************************
-* Constructor.
-******************************************************************************/
-RefMaker::RefMaker(DataSet* dataset) : _dataset(dataset)
-{
-}
 
 /******************************************************************************
 * This method is called when the reference counter of this OvitoObject
@@ -52,20 +46,12 @@ void RefMaker::aboutToBeDeleted()
 	OVITO_CHECK_OBJECT_POINTER(this);
 
 	// Make sure undo recording is not active while deleting a RefTarget.
-	OVITO_ASSERT_MSG(!isRefTarget() || !dataset() || dataset()->undoStack().isRecording() == false, "RefMaker::aboutToBeDeleted()", "Cannot delete object from memory while undo recording is active.");
+	OVITO_ASSERT_MSG(!isRefTarget() || isUndoRecording() == false, "RefMaker::aboutToBeDeleted()", "Cannot delete object from memory while undo recording is active.");
 
 	// Clear all references this object has to other objects.
 	clearAllReferences();
 
 	OvitoObject::aboutToBeDeleted();
-}
-
-/******************************************************************************
-* This helper method throws an Exception with the given message text.
-******************************************************************************/
-void RefMaker::throwException(const QString& msg) const
-{
-	throw Exception(msg, dataset());
 }
 
 /******************************************************************************
@@ -489,7 +475,7 @@ void RefMaker::saveToStream(ObjectSaveStream& stream, bool excludeRecomputableDa
 void RefMaker::loadFromStream(ObjectLoadStream& stream)
 {
 	OvitoObject::loadFromStream(stream);
-	OVITO_ASSERT(!dataset()->undoStack().isRecording());
+	OVITO_ASSERT(!isUndoRecording());
 
 #if 0
 	qDebug() << "Loading object" << this;
@@ -520,7 +506,7 @@ void RefMaker::loadFromStream(ObjectLoadStream& stream)
 					if(!fieldEntry.field->isVector()) {
 						OORef<RefTarget> target = stream.loadObject<RefTarget>();
 						if(target && !target->getOOClass().isDerivedFrom(*fieldEntry.targetClass)) {
-							throwException(tr("Incompatible object stored in reference field %1 of class %2. Expected class %3 but found class %4 in file.")
+							throw Exception(tr("Incompatible object stored in reference field %1 of class %2. Expected class %3 but found class %4 in file.")
 								.arg(QString(fieldEntry.identifier)).arg(fieldEntry.definingClass->name()).arg(fieldEntry.targetClass->name()).arg(target->getOOClass().name()));
 						}
 #if 0
@@ -542,7 +528,7 @@ void RefMaker::loadFromStream(ObjectLoadStream& stream)
 						for(qint32 i = 0; i < numEntries; i++) {
 							OORef<RefTarget> target = stream.loadObject<RefTarget>();
 							if(target && !target->getOOClass().isDerivedFrom(*fieldEntry.targetClass)) {
-								throwException(tr("Incompatible object stored in reference field %1 of class %2. Expected class %3 but found class %4 in file.")
+								throw Exception(tr("Incompatible object stored in reference field %1 of class %2. Expected class %3 but found class %4 in file.")
 									.arg(QString(fieldEntry.identifier)).arg(fieldEntry.definingClass->name(), fieldEntry.targetClass->name(), target->getOOClass().name()));
 							}
 #if 0
@@ -570,7 +556,7 @@ void RefMaker::loadFromStream(ObjectLoadStream& stream)
 				}
 			}
 			else {
-				throwException(tr("Expected reference field '%1' in object %2").arg(QString(fieldEntry.identifier)).arg(fieldEntry.definingClass->name()));
+				throw Exception(tr("Expected reference field '%1' in object %2").arg(QString(fieldEntry.identifier)).arg(fieldEntry.definingClass->name()));
 			}
 			stream.closeChunk();
 		}
@@ -590,7 +576,7 @@ void RefMaker::loadFromStream(ObjectLoadStream& stream)
 				}
 			}
 			else if(chunkId != 0x05) {
-				throwException(tr("Expected non-serializable property field '%1' in object %2").arg(QString(fieldEntry.identifier)).arg(fieldEntry.definingClass->name()));
+				throw Exception(tr("Expected non-serializable property field '%1' in object %2").arg(QString(fieldEntry.identifier)).arg(fieldEntry.definingClass->name()));
 			}
 			stream.closeChunk();
 		}
@@ -667,13 +653,13 @@ void RefMaker::initializeParametersToUserDefaults()
 					QVariant v = settings.value(field->identifier());
 					if(!v.isNull()) {
 						if(ctrl->controllerType() == Controller::ControllerTypeFloat) {
-							ctrl->setFloatValue(0, v.value<FloatType>());
+							ctrl->setFloatValue(AnimationTime(0), v.value<FloatType>());
 						}
 						else if(ctrl->controllerType() == Controller::ControllerTypeInt) {
-							ctrl->setIntValue(0, v.value<int>());
+							ctrl->setIntValue(AnimationTime(0), v.value<int>());
 						}
 						else if(ctrl->controllerType() == Controller::ControllerTypeVector3) {
-							ctrl->setVector3Value(0, v.value<Vector3>());
+							ctrl->setVector3Value(AnimationTime(0), v.value<Vector3>());
 						}
 					}
 				}
@@ -712,6 +698,46 @@ void RefMaker::copyInitialParametersToObject(RefMaker* obj) const
 		if(field->_propertyStorageRestoreSnapshotFunc)
 			field->_propertyStorageRestoreSnapshotFunc(this, obj);
 	}
+}
+
+/******************************************************************************
+* Indicates whether a previously recorded action on the undo stack is currently 
+* being undone or redone.
+******************************************************************************/
+bool RefMaker::isUndoingOrRedoing() const
+{
+	const ExecutionContext& context = ExecutionContext::current();
+	if(context.isValid()) {
+		if(UndoStack* undoStack = context.ui().undoStack()) {
+			return undoStack->isUndoingOrRedoing();
+		}
+	}
+	return false;
+}
+
+/******************************************************************************
+* Indicates whether the current action being performed should be recorded 
+* on the undo stack.
+******************************************************************************/
+bool RefMaker::isUndoRecording() const
+{
+	const ExecutionContext& context = ExecutionContext::current();
+	if(context.isValid()) {
+		if(UndoStack* undoStack = context.ui().undoStack()) {
+			return undoStack->isRecording();
+		}
+	}
+	return false;
+}
+
+/******************************************************************************
+* Records an operation on the undo stack.
+******************************************************************************/
+void RefMaker::pushUndoRecord(std::unique_ptr<UndoableOperation> operation)
+{
+	const ExecutionContext& context = ExecutionContext::current();
+	OVITO_ASSERT(context.isValid());
+	context.ui().undoStack()->push(std::move(operation));
 }
 
 }	// End of namespace

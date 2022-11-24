@@ -98,7 +98,7 @@ void BooleanParameterUI::updateUI()
 				val = editObject()->property(propertyName());
 				OVITO_ASSERT_MSG(val.isValid(), "BooleanParameterUI::updateUI()", qPrintable(QString("The object class %1 does not define a property with the name %2 that can be cast to bool type.").arg(editObject()->metaObject()->className(), QString(propertyName()))));
 				if(!val.isValid()) {
-					editObject()->throwException(tr("The object class %1 does not define a property with the name %2 that can be cast to bool type.").arg(editObject()->metaObject()->className(), QString(propertyName())));
+					throw Exception(tr("The object class %1 does not define a property with the name %2 that can be cast to bool type.").arg(editObject()->metaObject()->className(), QString(propertyName())));
 				}
 			}
 			else if(propertyField()) {

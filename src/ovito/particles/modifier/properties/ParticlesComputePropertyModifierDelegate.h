@@ -71,7 +71,7 @@ public:
 	/// \undoable
 	void setNeighborExpression(const QString& expression, int index = 0) {
 		if(index < 0 || index >= neighborExpressions().size())
-			throwException("Property component index is out of range.");
+			throw Exception("Property component index is out of range.");
 		QStringList copy = _neighborExpressions;
 		copy[index] = expression;
 		setNeighborExpressions(std::move(copy));
@@ -83,7 +83,7 @@ public:
 	/// \undoable
 	const QString& neighborExpression(int index = 0) const {
 		if(index < 0 || index >= neighborExpressions().size())
-			throwException("Property component index is out of range.");
+			throw Exception("Property component index is out of range.");
 		return neighborExpressions()[index];
 	}
 

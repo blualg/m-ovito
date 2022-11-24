@@ -47,6 +47,9 @@ public:
 	/// Constructor.
 	Q_INVOKABLE TextLabelOverlay(ObjectCreationParams params);
 
+	/// Is called when the overlay is being newly attached to a viewport. 
+	virtual void initializeOverlay(Viewport* viewport) override;
+
 	/// Lets the overlay paint its contents into the framebuffer.
 	virtual void render(SceneRenderer* renderer, const QRect& logicalViewportRect, const QRect& physicalViewportRect, MainThreadOperation& operation) override;
 
@@ -59,7 +62,7 @@ public:
 	}
 
 	/// Returns a short piece information (typically a string or color) to be displayed next to the object's title in the pipeline editor.
-	virtual QVariant getPipelineEditorShortInfo() const override;
+	virtual QVariant getPipelineEditorShortInfo(Scene* scene) const override;
 
 protected:
 

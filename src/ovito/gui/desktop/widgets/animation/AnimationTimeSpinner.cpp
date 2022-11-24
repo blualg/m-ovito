@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2013 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -33,26 +33,12 @@ using namespace std;
 /******************************************************************************
 * Constructs the spinner control.
 ******************************************************************************/
-AnimationTimeSpinner::AnimationTimeSpinner(MainWindow* mainWindow, QWidget* parent) : SpinnerWidget(parent),
-		_animSettings(nullptr)
+AnimationTimeSpinner::AnimationTimeSpinner(MainWindow* mainWindow, QWidget* parent) : SpinnerWidget(parent)
 {
 	connect(this, &SpinnerWidget::spinnerValueChanged, this, &AnimationTimeSpinner::onSpinnerValueChanged);
-	connect(&mainWindow->datasetContainer(), &DataSetContainer::dataSetChanged, this, &AnimationTimeSpinner::onDataSetReplaced);
 	connect(&mainWindow->datasetContainer(), &DataSetContainer::animationSettingsReplaced, this, &AnimationTimeSpinner::onAnimationSettingsReplaced);
 
-	onDataSetReplaced(mainWindow->datasetContainer().currentSet());
 	onAnimationSettingsReplaced(mainWindow->datasetContainer().currentSet() ? mainWindow->datasetContainer().currentSet()->animationSettings() : nullptr);
-}
-
-/******************************************************************************
-* Is called when a another dataset has become the active dataset.
-******************************************************************************/
-void AnimationTimeSpinner::onDataSetReplaced(DataSet* newDataSet)
-{
-	if(newDataSet)
-		setUnit(newDataSet->unitsManager().timeUnit());
-	else
-		setUnit(nullptr);
 }
 
 /******************************************************************************
@@ -61,38 +47,37 @@ void AnimationTimeSpinner::onDataSetReplaced(DataSet* newDataSet)
 void AnimationTimeSpinner::onAnimationSettingsReplaced(AnimationSettings* newAnimationSettings)
 {
 	disconnect(_animIntervalChangedConnection);
-	disconnect(_timeChangedConnection);
+	disconnect(_currentFrameChangedConnection);
 	_animSettings = newAnimationSettings;
 	if(newAnimationSettings) {
 		_animIntervalChangedConnection = connect(newAnimationSettings, &AnimationSettings::intervalChanged, this, &AnimationTimeSpinner::onIntervalChanged);
-		_timeChangedConnection = connect(newAnimationSettings, &AnimationSettings::timeChanged, this, &AnimationTimeSpinner::onTimeChanged);
-		onIntervalChanged(newAnimationSettings->animationInterval());
-		onTimeChanged(newAnimationSettings->time());
+		_currentFrameChangedConnection = connect(newAnimationSettings, &AnimationSettings::currentFrameChanged, this, &AnimationTimeSpinner::onCurrentFrameChanged);
+		onIntervalChanged(newAnimationSettings->firstFrame(), newAnimationSettings->lastFrame());
+		onCurrentFrameChanged(newAnimationSettings->currentFrame());
 	}
 	else {
-		onIntervalChanged(TimeInterval(0));
-		onTimeChanged(0);
+		onIntervalChanged(0, 0);
+		onCurrentFrameChanged(0);
 	}
 }
 
 /******************************************************************************
 * This is called whenever the current animation time has changed.
 ******************************************************************************/
-void AnimationTimeSpinner::onTimeChanged(TimePoint newTime)
+void AnimationTimeSpinner::onCurrentFrameChanged(int newFrame)
 {
-	// Set the value of the spinner to the new animation time.
-	setIntValue(newTime);
+	setIntValue(newFrame);
 }
 
 /******************************************************************************
 * This is called whenever the active animation interval has changed.
 ******************************************************************************/
-void AnimationTimeSpinner::onIntervalChanged(TimeInterval newAnimationInterval)
+void AnimationTimeSpinner::onIntervalChanged(int firstFrame, int lastFrame)
 {
 	// Set the limits of the spinner to the new animation time interval.
-	setMinValue(newAnimationInterval.start());
-	setMaxValue(newAnimationInterval.end());
-	setEnabled(newAnimationInterval.duration() != 0);
+	setMinValue(firstFrame);
+	setMaxValue(lastFrame);
+	setEnabled(lastFrame > firstFrame);
 }
 
 /******************************************************************************
@@ -102,7 +87,7 @@ void AnimationTimeSpinner::onSpinnerValueChanged()
 {
 	// Set a new animation time.
 	if(_animSettings)
-		_animSettings->setTime(intValue());
+		_animSettings->setCurrentFrame(intValue());
 }
 
 }	// End of namespace

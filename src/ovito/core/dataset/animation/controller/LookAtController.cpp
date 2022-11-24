@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -42,14 +42,14 @@ LookAtController::LookAtController(ObjectCreationParams params) : Controller(par
 {
 	if(params.createSubObjects()) {
 		// Create sub-controller.
-		setRollController(ControllerManager::createFloatController(dataset()));
+		setRollController(ControllerManager::createFloatController());
 	}
 }
 
 /******************************************************************************
 * Queries the controller for its absolute value at a certain time.
 ******************************************************************************/
-void LookAtController::getRotationValue(TimePoint time, Rotation& result, TimeInterval& validityInterval)
+void LookAtController::getRotationValue(AnimationTime time, Rotation& result, TimeInterval& validityInterval)
 {
 	// Get position of target node.
 	Vector3 targetPos = Vector3::Zero();
@@ -87,7 +87,7 @@ void LookAtController::getRotationValue(TimePoint time, Rotation& result, TimeIn
 /******************************************************************************
 * Sets the controller's value at the specified time.
 ******************************************************************************/
-void LookAtController::setRotationValue(TimePoint time, const Rotation& newValue, bool isAbsoluteValue)
+void LookAtController::setRotationValue(AnimationTime time, const Rotation& newValue, bool isAbsoluteValue)
 {
 	// Cannot set value for this controller type.
 }
@@ -95,7 +95,7 @@ void LookAtController::setRotationValue(TimePoint time, const Rotation& newValue
 /******************************************************************************
 * Lets a rotation controller apply its value to an existing transformation matrix.
 ******************************************************************************/
-void LookAtController::applyRotation(TimePoint time, AffineTransformation& result, TimeInterval& validityInterval)
+void LookAtController::applyRotation(AnimationTime time, AffineTransformation& result, TimeInterval& validityInterval)
 {
 	// Save source position for later use.
 	_sourcePos = result.translation();
@@ -108,9 +108,9 @@ void LookAtController::applyRotation(TimePoint time, AffineTransformation& resul
 * Computes the largest time interval containing the given time during which the
 * controller's value is constant.
 ******************************************************************************/
-TimeInterval LookAtController::validityInterval(TimePoint time)
+TimeInterval LookAtController::validityInterval(AnimationTime time)
 {
-	TimeInterval iv(TimeInterval::infinite());
+	TimeInterval iv = TimeInterval::infinite();
 	if(rollController())
 		iv.intersect(rollController()->validityInterval(time));
 	if(targetNode())

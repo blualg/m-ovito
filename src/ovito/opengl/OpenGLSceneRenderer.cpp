@@ -183,12 +183,12 @@ void OpenGLSceneRenderer::determineOpenGLInfo()
 /******************************************************************************
 * This method is called just before renderFrame() is called.
 ******************************************************************************/
-void OpenGLSceneRenderer::beginFrame(TimePoint time, const ViewProjectionParameters& params, Viewport* vp, const QRect& viewportRect, FrameBuffer* frameBuffer)
+void OpenGLSceneRenderer::beginFrame(AnimationTime time, Scene* scene, const ViewProjectionParameters& params, Viewport* vp, const QRect& viewportRect, FrameBuffer* frameBuffer)
 {
 	// Convert viewport rect from logical device coordinates to OpenGL framebuffer coordinates.
 	QRect openGLViewportRect(viewportRect.x() * antialiasingLevel(), viewportRect.y() * antialiasingLevel(), viewportRect.width() * antialiasingLevel(), viewportRect.height() * antialiasingLevel());
 
-	SceneRenderer::beginFrame(time, params, vp, openGLViewportRect, frameBuffer);
+	SceneRenderer::beginFrame(time, scene, params, vp, openGLViewportRect, frameBuffer);
 
 	if(Application::instance()->headlessMode()) {
 		throwRendererException(tr(
@@ -207,7 +207,7 @@ void OpenGLSceneRenderer::beginFrame(TimePoint time, const ViewProjectionParamet
 
 	// Check OpenGL version.
 	if(_glcontext->format().majorVersion() < OVITO_OPENGL_MINIMUM_VERSION_MAJOR || (_glcontext->format().majorVersion() == OVITO_OPENGL_MINIMUM_VERSION_MAJOR && _glcontext->format().minorVersion() < OVITO_OPENGL_MINIMUM_VERSION_MINOR)) {
-		throw RendererException(tr(
+		throwRendererException(tr(
 				"The OpenGL implementation available on this system does not support OpenGL version %4.%5 or newer.\n\n"
 				"Ovito requires modern graphics hardware to accelerate 3d rendering. You current system configuration is not compatible with Ovito.\n\n"
 				"To avoid this error message, please install the newest graphics driver, or upgrade your graphics card.\n\n"
@@ -220,8 +220,7 @@ void OpenGLSceneRenderer::beginFrame(TimePoint time, const ViewProjectionParamet
 				.arg(QString(OpenGLSceneRenderer::openGLRenderer()))
 				.arg(QString(OpenGLSceneRenderer::openGLVersion()))
 				.arg(OVITO_OPENGL_MINIMUM_VERSION_MAJOR)
-				.arg(OVITO_OPENGL_MINIMUM_VERSION_MINOR)
-				), dataset();
+				.arg(OVITO_OPENGL_MINIMUM_VERSION_MINOR));
 	}
 
 	// Prepare a functions table allowing us to call OpenGL functions in a platform-independent way.
@@ -306,12 +305,12 @@ void OpenGLSceneRenderer::initializeGLState()
     if(viewport() && viewport()->window() && isInteractive() && !isPicking()) {
 		if(!viewport()->renderPreviewMode())
 			setClearColor(Viewport::viewportColor(ViewportSettings::COLOR_VIEWPORT_BKG));
-		else if(renderSettings())
-			setClearColor(renderSettings()->backgroundColor());
+		else
+			setClearColor(renderSettings().backgroundColor());
     }
 	else {
-		if(renderSettings() && !isPicking())
-			setClearColor(ColorA(renderSettings()->backgroundColor(), 0));
+		if(!isPicking())
+			setClearColor(ColorA(renderSettings().backgroundColor(), 0));
 	}
     OVITO_REPORT_OPENGL_ERRORS(this);
 }
@@ -577,7 +576,7 @@ void OpenGLSceneRenderer::renderParticles(const ParticlePrimitive& primitive)
 					}
 				}
 				if(!fullyOpaqueIndices.empty()) {
-					DataBufferAccessAndRef<int> indexArray = DataBufferPtr::create(dataset(), fullyOpaqueIndices.size(), DataBuffer::Int);
+					DataBufferAccessAndRef<int> indexArray = DataBufferPtr::create(fullyOpaqueIndices.size(), DataBuffer::Int);
 					std::copy(fullyOpaqueIndices.begin(), fullyOpaqueIndices.end(), indexArray.begin());
 					cache.opaqueIndices = indexArray.take();
 				}
@@ -689,7 +688,7 @@ QOpenGLShaderProgram* OpenGLSceneRenderer::loadShaderProgram(const QString& id, 
 
 	// Compile the shader program.
 	if(!program->link()) {
-		RendererException ex(QString("The OpenGL shader program %1 failed to link.").arg(mangledId), dataset());
+		RendererException ex(QString("The OpenGL shader program %1 failed to link.").arg(mangledId));
 		ex.appendDetailMessage(program->log());
 		throw ex;
 	}
@@ -1019,7 +1018,7 @@ void OpenGLSceneRenderer::loadShader(QOpenGLShaderProgram* program, QOpenGLShade
 
 	// Load and compile vertex shader source.
 	if(!program->addShaderFromSourceCode(shaderType, shaderSource)) {
-		RendererException ex(QString("The shader source file %1 failed to compile.").arg(filename), dataset());
+		RendererException ex(QString("The shader source file %1 failed to compile.").arg(filename));
 		ex.appendDetailMessage(program->log());
 		ex.appendDetailMessage(QStringLiteral("Problematic shader source:"));
 		ex.appendDetailMessage(shaderSource);

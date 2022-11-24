@@ -45,7 +45,7 @@ public:
 	virtual ~UserInterface() {}
 
 	/// Returns the container managing the current dataset.
-	DataSetContainer& datasetContainer() { return _datasetContainer; }
+	DataSetContainer& datasetContainer() const { return _datasetContainer; }
 
 	/// Sets the viewport input manager of the user interface.
 	void setViewportInputManager(ViewportInputManager* manager) { _viewportInputManager = manager; }
@@ -54,7 +54,7 @@ public:
 	ViewportInputManager* viewportInputManager() const { return _viewportInputManager; }
 
 	/// Returns the manager of asynchronous tasks belonging to this user interface.
-	TaskManager& taskManager() { return _taskManager; }
+	TaskManager& taskManager() const { return _taskManager; }
 
 	/// Gives the active viewport the input focus.
 	virtual void setViewportInputFocus() {}
@@ -78,13 +78,31 @@ public:
 	/// Queries the system's information and graphics capabilities.
 	QString generateSystemReport();
 
-	/// Creates a frame buffer of the requested size to renderin into displays a framebuffer window in the user interface.
+	/// Creates a frame buffer of the requested size for rendering into and displays it in the user interface.
 	virtual std::shared_ptr<FrameBuffer> createAndShowFrameBuffer(int width, int height, MainThreadOperation& renderingOperation);
+
+	/// Returns the undo stack, which keeps track of changes made by the user to the current dataset. 
+	/// It may be none if not running as a desktop application.
+	UndoStack* undoStack() const { return _undoStack; }
+
+	/// Indicates whether the program session is being closed and all task in progress should be canceled.
+	virtual bool isShuttingDown() const;
+
+	/// Returns the scene that is currently active, i.e., which is shown in the viewport window
+	/// that is currently selected.
+	Scene* activeScene() const;
+
+	/// Indicates whether the user has activated auto-key mode and controllers should automatically
+	/// generate new animation keys whenever their current value is changed by the user.
+	virtual bool isAutoGenerateAnimationKeysEnabled() const { return false; }
 
 protected:
 
 	/// Assigns an ActionManager.
 	void setActionManager(ActionManager* manager) { _actionManager = manager; }
+
+	/// Assigns an UndoStack.
+	void setUndoStack(UndoStack* undoStack) { _undoStack = undoStack; }
 
 private:
 
@@ -99,6 +117,9 @@ private:
 
 	/// Manages the running asynchronous tasks that belong to this user interface.
 	TaskManager& _taskManager;
+
+	/// The undo stack keeping track of changes made by the user to the current dataset.
+	UndoStack* _undoStack = nullptr;
 };
 
 }	// End of namespace

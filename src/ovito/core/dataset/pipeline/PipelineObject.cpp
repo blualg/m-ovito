@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -32,15 +32,6 @@
 namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(PipelineObject);
-
-/******************************************************************************
-* Asks the pipeline stage to compute the preliminary results in a synchronous 
-* fashion at the current animation time.
-******************************************************************************/
-PipelineFlowState PipelineObject::evaluateSynchronousAtCurrentTime() 
-{ 
-	return evaluateSynchronous(PipelineEvaluationRequest(dataset()->animationSettings()->time()));
-}
 
 /******************************************************************************
 * Asks the pipeline stage to compute the preliminary results in a synchronous fashion.
@@ -96,34 +87,47 @@ bool PipelineObject::isPipelineBranch(bool onlyScenePipelines) const
 /******************************************************************************
 * Given an animation time, computes the source frame to show.
 ******************************************************************************/
-int PipelineObject::animationTimeToSourceFrame(TimePoint time) const
+int PipelineObject::animationTimeToSourceFrame(AnimationTime time) const
 {
-	OVITO_ASSERT(time != TimeNegativeInfinity());
-	OVITO_ASSERT(time != TimePositiveInfinity());
-	return dataset()->animationSettings()->timeToFrame(time);
+	OVITO_ASSERT(time != AnimationTime::negativeInfinity());
+	OVITO_ASSERT(time != AnimationTime::positiveInfinity());
+	return time.frame();
 }
 
 /******************************************************************************
 * Given a source frame index, returns the animation time at which it is shown.
 ******************************************************************************/
-TimePoint PipelineObject::sourceFrameToAnimationTime(int frame) const
+AnimationTime PipelineObject::sourceFrameToAnimationTime(int frame) const
 {
-	return dataset()->animationSettings()->frameToTime(frame);
+	return AnimationTime::fromFrame(frame);
 }
 
 /******************************************************************************
 * Asks the pipeline stage to compute the results for several animation times.
 ******************************************************************************/
-Future<std::vector<PipelineFlowState>> PipelineObject::evaluateMultiple(const PipelineEvaluationRequest& request, std::vector<TimePoint> times)
+Future<std::vector<PipelineFlowState>> PipelineObject::evaluateMultiple(const PipelineEvaluationRequest& request, std::vector<AnimationTime> times)
 {
 	// Perform the evaluation for all requested animation frames:
 	return map_sequential(
 		std::move(times), 
 		executor(true), // require deferred execution
-	[request = PipelineEvaluationRequest(request), this](TimePoint time) mutable {
-		request.setTime(time);
+	[request = PipelineEvaluationRequest(request), this](AnimationTime time) mutable {
+		request.setTimeAndFrame(time, this->animationTimeToSourceFrame(time));
 		return this->evaluate(request);
 	});
+}
+
+/******************************************************************************
+* Returns the animation time at which the pipeline thiis object is part of is being rendered in the GUI.
+* This method assumes that the pipeline(s) this object is part of are all in the same scene.
+******************************************************************************/
+std::optional<AnimationTime> PipelineObject::currentAnimationTime() const
+{
+	QSet<PipelineSceneNode*> p = pipelines(true);
+	if(!p.empty()) {
+		return (*p.cbegin())->currentAnimationTime();
+	}
+	return {};
 }
 
 }	// End of namespace

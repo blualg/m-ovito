@@ -72,10 +72,16 @@ TextLabelOverlay::TextLabelOverlay(ObjectCreationParams params) : ViewportOverla
 		_outlineEnabled(false),
 		_valueFormatString("%.6g")
 {
-	if(params.createSubObjects()) {
-		// Automatically connect to the currently selected pipeline.
-		setSourceNode(dynamic_object_cast<PipelineSceneNode>(dataset()->selection()->firstNode()));
-	}
+}
+
+/******************************************************************************
+* Is called when the overlay is being newly attached to a viewport. 
+******************************************************************************/
+void TextLabelOverlay::initializeOverlay(Viewport* viewport)
+{
+	// Automatically connect to the currently selected pipeline.
+	if(!sourceNode() && viewport->scene())
+		setSourceNode(dynamic_object_cast<PipelineSceneNode>(viewport->scene()->selection()->firstNode()));
 }
 
 /******************************************************************************
@@ -83,7 +89,7 @@ TextLabelOverlay::TextLabelOverlay(ObjectCreationParams params) : ViewportOverla
 ******************************************************************************/
 void TextLabelOverlay::propertyChanged(const PropertyFieldDescriptor* field)
 {
-	if(field == PROPERTY_FIELD(alignment) && !isBeingLoaded() && !isAboutToBeDeleted() && !dataset()->undoStack().isUndoingOrRedoing() && ExecutionContext::isInteractive()) {
+	if(field == PROPERTY_FIELD(alignment) && !isBeingLoaded() && !isAboutToBeDeleted() && !isUndoingOrRedoing() && ExecutionContext::isInteractive()) {
 		// Automatically reset offset to zero when user changes the alignment of the overlay in the viewport.
 		setOffsetX(0);
 		setOffsetY(0);
@@ -100,7 +106,7 @@ void TextLabelOverlay::propertyChanged(const PropertyFieldDescriptor* field)
 * Returns a short piece information (typically a string or color) to be 
 * displayed next to the modifier's title in the pipeline editor list.
 ******************************************************************************/
-QVariant TextLabelOverlay::getPipelineEditorShortInfo() const
+QVariant TextLabelOverlay::getPipelineEditorShortInfo(Scene* scene) const
 {
 	return labelText();
 }
@@ -111,7 +117,7 @@ QVariant TextLabelOverlay::getPipelineEditorShortInfo() const
 void TextLabelOverlay::render(SceneRenderer* renderer, const QRect& logicalViewportRect, const QRect& physicalViewportRect, MainThreadOperation& operation)
 {	
 	if(renderer->isInteractive()) {
-		const PipelineFlowState& flowState = sourceNode() ? sourceNode()->evaluatePipelineSynchronous(true) : PipelineFlowState();
+		const PipelineFlowState& flowState = sourceNode() ? sourceNode()->evaluatePipelineSynchronous(renderer->time(), true) : PipelineFlowState();
 		renderImplementation(renderer, physicalViewportRect, flowState);
 	}
 	else {
@@ -119,7 +125,7 @@ void TextLabelOverlay::render(SceneRenderer* renderer, const QRect& logicalViewp
 		checkAlignmentParameterValue(alignment());
 
 		if(sourceNode()) {
-			PipelineEvaluationFuture pipelineEvaluation = sourceNode()->evaluatePipeline(PipelineEvaluationRequest(renderer->time()));
+			PipelineEvaluationFuture pipelineEvaluation = sourceNode()->evaluatePipeline(PipelineEvaluationRequest(renderer->time(), renderer->frame()));
 			if(!pipelineEvaluation.waitForFinished())
 				return;
 			renderImplementation(renderer, physicalViewportRect, pipelineEvaluation.result());

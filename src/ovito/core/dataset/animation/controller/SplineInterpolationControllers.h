@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -43,7 +43,7 @@ public:
 	using typename BaseKeyClass::tangent_type;
 
 	/// Constructor.
-	SplineAnimationKey(ObjectCreationParams params, TimePoint time, const value_type& value)
+	SplineAnimationKey(ObjectCreationParams params, AnimationTime time, const value_type& value)
 		: BaseKeyClass(params, time, value), _inTangent(nullvalue_type()), _outTangent(nullvalue_type()) {}
 
 	/// \brief Returns the point that defines the incoming tangent.
@@ -71,7 +71,7 @@ class OVITO_CORE_EXPORT FloatSplineAnimationKey : public SplineAnimationKey<Floa
 public:
 
 	/// Constructor.
-	Q_INVOKABLE FloatSplineAnimationKey(ObjectCreationParams params, TimePoint time = 0, FloatType value = 0) :
+	Q_INVOKABLE FloatSplineAnimationKey(ObjectCreationParams params, AnimationTime time = AnimationTime(0), FloatType value = 0) :
 		SplineAnimationKey<FloatAnimationKey>(params, time, value) {}
 };
 
@@ -85,7 +85,7 @@ class OVITO_CORE_EXPORT PositionSplineAnimationKey : public SplineAnimationKey<P
 public:
 
 	/// Constructor.
-	Q_INVOKABLE PositionSplineAnimationKey(ObjectCreationParams params, TimePoint time = 0, const Vector3& value = Vector3::Zero()) :
+	Q_INVOKABLE PositionSplineAnimationKey(ObjectCreationParams params, AnimationTime time = AnimationTime(0), const Vector3& value = Vector3::Zero()) :
 		SplineAnimationKey<PositionAnimationKey>(params, time, value) {}
 };
 
@@ -96,7 +96,7 @@ public:
  */
 template<typename KeyType>
 struct SplineKeyInterpolator {
-	typename KeyType::value_type operator()(TimePoint time, KeyType* key0, KeyType* key1, KeyType* key2, KeyType* key3) const {
+	typename KeyType::value_type operator()(AnimationTime time, KeyType* key0, KeyType* key1, KeyType* key2, KeyType* key3) const {
 		OVITO_ASSERT(key2->time() > key1->time());
 		FloatType t = (FloatType)(time - key1->time()) / (key2->time() - key1->time());
 		SplineValueInterpolator<typename KeyType::value_type> valueInterpolator;
@@ -164,12 +164,12 @@ public:
 		SplineControllerBase<PositionSplineAnimationKey, Controller::ControllerTypePosition>(params) {}
 
 	/// \brief Gets the controller's value at a certain animation time.
-	virtual void getPositionValue(TimePoint time, Vector3& value, TimeInterval& validityInterval) override {
+	virtual void getPositionValue(AnimationTime time, Vector3& value, TimeInterval& validityInterval) override {
 		getInterpolatedValue(time, value, validityInterval);
 	}
 
 	/// \brief Sets the controller's value at the given animation time.
-	virtual void setPositionValue(TimePoint time, const Vector3& newValue, bool isAbsolute) override {
+	virtual void setPositionValue(AnimationTime time, const Vector3& newValue, bool isAbsolute) override {
 		if(isAbsolute)
 			setAbsoluteValue(time, newValue);
 		else

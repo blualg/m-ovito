@@ -45,11 +45,11 @@ OpenGLViewportWindow::OpenGLViewportWindow(Viewport* vp, UserInterface* userInte
 	setFocusPolicy(Qt::StrongFocus);
 
 	// Create the viewport renderer.
-	_viewportRenderer = OORef<OpenGLSceneRenderer>::create(viewport()->dataset());
+	_viewportRenderer = OORef<OpenGLSceneRenderer>::create();
 	_viewportRenderer->setInteractive(true);
 
 	// Create the object picking renderer.
-	_pickingRenderer = OORef<PickingOpenGLSceneRenderer>::create(viewport()->dataset());
+	_pickingRenderer = OORef<PickingOpenGLSceneRenderer>::create();
 	_pickingRenderer->setInteractive(true);
 
 	// Make sure the viewport window releases its resources before the application shuts down, e.g.
@@ -110,7 +110,7 @@ void OpenGLViewportWindow::processViewportUpdate()
 {
 	if(_updateRequested) {
 		OVITO_ASSERT_MSG(!viewport()->isRendering(), "OpenGLViewportWindow::processUpdateRequest()", "Recursive viewport repaint detected.");
-		OVITO_ASSERT_MSG(!viewport()->dataset()->viewportConfig()->isRendering(), "OpenGLViewportWindow::processUpdateRequest()", "Recursive viewport repaint detected.");
+		OVITO_ASSERT_MSG(!dataset()->viewportConfig()->isRendering(), "OpenGLViewportWindow::processUpdateRequest()", "Recursive viewport repaint detected.");
 		repaint();
 	}
 }
@@ -123,7 +123,7 @@ ViewportPickResult OpenGLViewportWindow::pick(const QPointF& pos)
 	ViewportPickResult result;
 
 	// Cannot perform picking while viewport is not visible or currently rendering or when updates are disabled.
-	if(isVisible() && !viewport()->isRendering() && !viewport()->dataset()->viewportConfig()->isSuspended() && pickingRenderer()) {
+	if(isVisible() && !viewport()->isRendering() && !dataset()->viewportConfig()->isSuspended() && pickingRenderer()) {
 		OpenGLResourceManager::ResourceFrameHandle previousResourceFrame = 0;
 		try {
 			if(pickingRenderer()->isRefreshRequired()) {
@@ -133,7 +133,7 @@ ViewportPickResult OpenGLViewportWindow::pick(const QPointF& pos)
 				pickingRenderer()->setPrimaryFramebuffer(defaultFramebufferObject());
 
 				// Let the viewport do the actual rendering work.
-				viewport()->renderInteractive(pickingRenderer());
+				viewport()->renderInteractive(userInterface(), dataset(), pickingRenderer());
 			}
 
 			// Query which object is located at the given window position.
@@ -188,11 +188,11 @@ void OpenGLViewportWindow::paintGL()
 	_updateRequested = false;
 
 	// Do nothing if windows has been detached from its viewport.
-	if(!viewport() || !viewport()->dataset())
+	if(!viewport())
 		return;
 
 	OVITO_ASSERT_MSG(!viewport()->isRendering(), "OpenGLViewportWindow::paintGL()", "Recursive viewport repaint detected.");
-	OVITO_ASSERT_MSG(!viewport()->dataset()->viewportConfig()->isRendering(), "OpenGLViewportWindow::paintGL()", "Recursive viewport repaint detected.");
+	OVITO_ASSERT_MSG(!dataset()->viewportConfig()->isRendering(), "OpenGLViewportWindow::paintGL()", "Recursive viewport repaint detected.");
 
 	// Do not re-enter rendering function of the same viewport.
 	if(viewport()->isRendering())
@@ -209,7 +209,7 @@ void OpenGLViewportWindow::paintGL()
 	// Invalidate picking buffer every time the visible contents of the viewport change.
 	_pickingRenderer->resetPickingBuffer();
 
-	if(!viewport()->dataset()->viewportConfig()->isSuspended()) {
+	if(!dataset()->viewportConfig()->isSuspended()) {
 
 		if(format.majorVersion() < OVITO_OPENGL_MINIMUM_VERSION_MAJOR || (format.majorVersion() == OVITO_OPENGL_MINIMUM_VERSION_MAJOR && format.minorVersion() < OVITO_OPENGL_MINIMUM_VERSION_MINOR)) {
 			// Avoid infinite recursion.
@@ -269,10 +269,9 @@ void OpenGLViewportWindow::paintGL()
 
 		try {
 			// Let the Viewport class do the actual rendering work.
-			viewport()->renderInteractive(_viewportRenderer);
+			viewport()->renderInteractive(userInterface(), dataset(), _viewportRenderer);
 		}
 		catch(Exception& ex) {
-			if(ex.context() == nullptr) ex.setContext(viewport()->dataset());
 			ex.prependGeneralMessage(tr("An unexpected error occurred while rendering the viewport contents. The program will quit."));
 
 			QString openGLReport;
@@ -296,7 +295,7 @@ void OpenGLViewportWindow::paintGL()
 	}
 	else {
 		// Make sure viewport gets refreshed as soon as updates are enabled again.
-		viewport()->dataset()->viewportConfig()->updateViewports();
+		dataset()->viewportConfig()->updateViewports();
 	}
 }
 

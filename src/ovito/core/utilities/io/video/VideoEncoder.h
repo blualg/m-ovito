@@ -69,7 +69,7 @@ public:
 	virtual ~VideoEncoder() { closeFile(); }
 
 	/// Opens a video file for writing.
-	void openFile(const QString& filename, int width, int height, int ticksPerFrame, VideoEncoder::Format* format = nullptr);
+	void openFile(const QString& filename, int width, int height, float framesPerSecond, VideoEncoder::Format* format = nullptr);
 
 	/// Writes a single frame into the video file.
 	void writeFrame(const QImage& image);

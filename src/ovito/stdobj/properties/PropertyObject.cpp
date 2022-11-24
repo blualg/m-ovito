@@ -195,7 +195,7 @@ void PropertyObject::makeWritableFromPython()
 	OVITO_ASSERT(!QCoreApplication::instance() || QThread::currentThread() == QCoreApplication::instance()->thread());
 
 	if(!isSafeToModify())
-		throwException(tr("Modifying the data values stored in this property is not allowed, because the Property object currently is shared by more than one PropertyContainer or DataCollection. "
+		throw Exception(tr("Modifying the data values stored in this property is not allowed, because the Property object currently is shared by more than one PropertyContainer or DataCollection. "
 						"Please explicitly request a mutable version of the property using the '_' notation or by calling the DataObject.make_mutable() method on its parent container. "
 						"See the documentation of this method for further information on OVITO's data model and the shared-ownership system."));
 	_isWritableFromPython++;
@@ -352,7 +352,7 @@ void PropertyObject::updateEditableProxies(PipelineFlowState& state, ConstDataOb
 	else if(!self->elementTypes().empty()) {
 		// Create and initialize a new proxy property object. 
 		// Note: We avoid copying the property data here by constructing the proxy PropertyObject from scratch instead of cloning the original data object.
-		OORef<PropertyObject> newProxy = OORef<PropertyObject>::create(self->dataset(), ObjectCreationParams::WithoutVisElement, 0, self->dataType(), self->componentCount(), self->name(), DataBuffer::NoFlags, self->type(), self->componentNames());
+		OORef<PropertyObject> newProxy = OORef<PropertyObject>::create(ObjectCreationParams::WithoutVisElement, 0, self->dataType(), self->componentCount(), self->name(), DataBuffer::NoFlags, self->type(), self->componentNames());
 		newProxy->setTitle(self->title());
 
 		// Adopt the proxy objects corresponding to the element types, which have already been created by
@@ -387,7 +387,7 @@ const ElementType* PropertyObject::addNumericType(const PropertyContainerClass& 
 	OVITO_ASSERT(elementTypeClass->isDerivedFrom(ElementType::OOClass()));
 
 	// First initialization phase.
-	DataOORef<ElementType> elementType = static_object_cast<ElementType>(elementTypeClass->createInstance(dataset()));
+	DataOORef<ElementType> elementType = static_object_cast<ElementType>(elementTypeClass->createInstance());
 	// Second initialization phase for element types, which takes into account the assigned ID and name and the property type.
 	elementType->setNumericId(id);
 	elementType->setName(name);

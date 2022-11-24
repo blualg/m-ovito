@@ -184,10 +184,10 @@ Future<AsynchronousModifier::EnginePtr> ReferenceConfigurationModifier::createEn
 		if(referenceConfiguration()->numberOfSourceFrames() > 0) {
 			if(referenceFrame < 0 || referenceFrame >= referenceConfiguration()->numberOfSourceFrames()) {
 				if(referenceFrame > 0)
-					throwException(tr("Requested reference frame number %1 is out of range. "
+					throw Exception(tr("Requested reference frame number %1 is out of range. "
 						"The loaded reference configuration contains only %2 frame(s).").arg(referenceFrame).arg(referenceConfiguration()->numberOfSourceFrames()));
 				else
-					throwException(tr("Requested reference frame %1 is out of range. Cannot perform calculation at the current animation time.").arg(referenceFrame));
+					throw Exception(tr("Requested reference frame %1 is out of range. Cannot perform calculation at the current animation time.").arg(referenceFrame));
 			}
 
 			// Convert frame to animation time.
@@ -210,16 +210,16 @@ Future<AsynchronousModifier::EnginePtr> ReferenceConfigurationModifier::createEn
 
 		// Make sure the obtained reference configuration is valid and ready to use.
 		if(referenceInput.status().type() == PipelineStatus::Error)
-			throwException(tr("Reference configuration is not available: %1").arg(referenceInput.status().text()));
+			throw Exception(tr("Reference configuration is not available: %1").arg(referenceInput.status().text()));
 		if(!referenceInput)
-			throwException(tr("Reference configuration has not been specified yet or is empty. Please pick a reference simulation file."));
+			throw Exception(tr("Reference configuration has not been specified yet or is empty. Please pick a reference simulation file."));
 
 		// Make sure we really got back the requested reference frame.
 		if(int sourceFrame = referenceInput.data()->sourceFrame(); sourceFrame != -1 && sourceFrame != referenceFrame) {
 			if(referenceFrame > 0)
-				throwException(tr("Requested reference frame %1 is out of range. Make sure the loaded reference configuration file contains a sufficent number of frames.").arg(referenceFrame));
+				throw Exception(tr("Requested reference frame %1 is out of range. Make sure the loaded reference configuration file contains a sufficent number of frames.").arg(referenceFrame));
 			else
-				throwException(tr("Requested reference frame %1 is out of range. Cannot perform calculation at the current animation time.").arg(referenceFrame));
+				throw Exception(tr("Requested reference frame %1 is out of range. Cannot perform calculation at the current animation time.").arg(referenceFrame));
 		}
 
 		// Let subclass create the compute engine.

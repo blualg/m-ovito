@@ -139,7 +139,7 @@ std::tuple<Plane3, FloatType> SliceModifier::slicingPlane(TimePoint time, TimeIn
 			plane = cell->cellMatrix() * plane;
 		}
 		else {
-			throwException(tr("Slicing plane was specified in reduced cell coordinates but there is no simulation cell."));
+			throw Exception(tr("Slicing plane was specified in reduced cell coordinates but there is no simulation cell."));
 		}
 	}
 	else {
@@ -396,7 +396,7 @@ void SliceModifier::centerPlaneInSimulationCell(ModifierApplication* modApp)
 * Returns a short piece information (typically a string or color) to be 
 * displayed next to the modifier's title in the pipeline editor list.
 ******************************************************************************/
-QVariant SliceModifier::getPipelineEditorShortInfo(ModifierApplication* modApp) const
+QVariant SliceModifier::getPipelineEditorShortInfo(Scene* scene, ModifierApplication* modApp) const
 { 
 	Vector3 normal = this->normal();
 	return tr("(%1 %2 %3), %4").arg(normal.x(), 0, 'g', 1).arg(normal.y(), 0, 'g', 1).arg(normal.z(), 0, 'g', 1).arg(distance(), 0, 'g', 6); 

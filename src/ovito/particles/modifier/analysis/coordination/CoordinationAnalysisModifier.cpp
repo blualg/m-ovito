@@ -82,10 +82,10 @@ Future<AsynchronousModifier::EnginePtr> CoordinationAnalysisModifier::createEngi
 	// The number of sampling intervals for the radial distribution function.
 	int rdfSampleCount = std::max(numberOfBins(), 4);
 	if(rdfSampleCount > 100000)
-		throwException(tr("Requested number of histogram bins is too large. Limit is 100,000 histogram bins."));
+		throw Exception(tr("Requested number of histogram bins is too large. Limit is 100,000 histogram bins."));
 
 	if(cutoff() <= 0)
-		throwException(tr("Invalid cutoff range value. Cutoff must be positive."));
+		throw Exception(tr("Invalid cutoff range value. Cutoff must be positive."));
 
 	// Get particle types if partial RDF calculation has been requested.
 	const PropertyObject* typeProperty = nullptr;
@@ -93,7 +93,7 @@ Future<AsynchronousModifier::EnginePtr> CoordinationAnalysisModifier::createEngi
 	if(computePartialRDF()) {
 		typeProperty = particles->getProperty(ParticlesObject::TypeProperty);
 		if(!typeProperty)
-			throwException(tr("Calculation of partial RDFs requires the '%1' property, but particles don't have types assigned.").arg(ParticlesObject::OOClass().standardPropertyName(ParticlesObject::TypeProperty)));
+			throw Exception(tr("Calculation of partial RDFs requires the '%1' property, but particles don't have types assigned.").arg(ParticlesObject::OOClass().standardPropertyName(ParticlesObject::TypeProperty)));
 
 		// Build the set of unique particle type IDs.
 		for(const ElementType* pt : typeProperty->elementTypes()) {
@@ -105,7 +105,7 @@ Future<AsynchronousModifier::EnginePtr> CoordinationAnalysisModifier::createEngi
 #endif
 		}
 		if(uniqueTypeIds.empty())
-			throwException(tr("No particle types have been defined."));
+			throw Exception(tr("No particle types have been defined."));
 	}
 
 	// Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
@@ -251,7 +251,7 @@ void CoordinationAnalysisModifier::CoordinationAnalysisEngine::applyResults(cons
 	ParticlesObject* particles = state.expectMutableObject<ParticlesObject>();
 
 	if(_inputFingerprint.hasChanged(particles))
-		request.modApp()->throwException(tr("Cached modifier results are obsolete, because the number or the storage order of input particles has changed."));
+		throw Exception(tr("Cached modifier results are obsolete, because the number or the storage order of input particles has changed."));
 
 	// Output coordination numbers as a new particle property.
 	particles->createProperty(coordinationNumbers());

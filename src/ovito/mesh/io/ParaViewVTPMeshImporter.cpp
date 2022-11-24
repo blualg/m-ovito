@@ -368,7 +368,7 @@ PropertyPtr ParaViewVTPMeshImporter::FrameLoader::parseDataArray(QXmlStreamReade
 	}
 
 	// Create destination property. Initially with zero elements, will be resized later when the size of the VTK data array is known.
-	PropertyPtr property = DataOORef<PropertyObject>::create(dataset(), 0, convertToDataType, numComponents, name);
+	PropertyPtr property = DataOORef<PropertyObject>::create(0, convertToDataType, numComponents, name);
 
 	// Delegate parsing of payload to sub-routine.
 	if(!parseVTKDataArray(property.get(), xml))

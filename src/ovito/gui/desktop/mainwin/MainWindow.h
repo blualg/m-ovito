@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -119,13 +119,37 @@ public:
 	/// Determines whether the application window uses a dark theme.
 	bool darkTheme() const;
 
+	/// \brief Suspends the animation auto-key mode temporarily.
+	///
+	/// Automatic generation of animation keys is suspended by this method until a call to resumeAnim().
+	/// If suspendAnim() is called multiple times then resumeAnim() must be called the same number of
+	/// times until animation mode is enabled again.
+	///
+	/// It is recommended to use the AnimationSuspender helper class to suspend animation mode because
+	/// this is more exception save than the suspendAnim()/resumeAnim() combination.
+	void suspendAnim() { _animSuspendCount++; }
+
+	/// \brief Resumes the automatic generation of animation keys.
+	///
+	/// This re-enables animation mode after it had been suspended by a call to suspendAnim().
+	void resumeAnim() {
+		OVITO_ASSERT_MSG(_animSuspendCount > 0, "MainWindow::resumeAnim()", "resumeAnim() has been called more often than suspendAnim().");
+		_animSuspendCount--;
+	}
+
+	/// \brief Returns whether animation recording is active and animation keys should be automatically generated.
+	/// \return \c true if animating is currently turned on and not suspended; \c false otherwise.
+	///
+	/// When animating is turned on, controllers should automatically set keys when their value is changed.
+	virtual bool isAutoGenerateAnimationKeysEnabled() const override { return _autoKeyModeOn && _animSuspendCount == 0; }
+
 protected:
 
 	/// Is called when the user closes the window.
 	virtual void closeEvent(QCloseEvent* event) override;
 
 	/// Is called when the window receives an event.
-	virtual bool event(QEvent *event) override;
+	virtual bool event(QEvent* event) override;
 
 	/// Handles global key input.
 	virtual void keyPressEvent(QKeyEvent* event) override;
@@ -184,6 +208,37 @@ private:
 
 	/// The title string to use for the main window (without any dynamic content).
 	QString _baseWindowTitle;
+
+	/// Indicates whether the user has activated auto-key animation mode.
+	bool _autoKeyModeOn = false;
+
+	/// Counts the number of times the auto-key animation mode has been suspended.
+	int _animSuspendCount = 0;	
+};
+
+/**
+ * \brief A RAII helper class that suspends the atomatic generation of animation keys while it exists.
+ *
+ * You typically create an instance of this class on the stack to temporarily suspend the
+ * automatic generation of animation keys in an exception-safe way.
+ */
+class OVITO_GUI_EXPORT AnimationSuspender
+{
+public:
+
+	/// Suspends the automatic generation of animation keys by calling MainWindow::suspendAnim().
+	AnimationSuspender(MainWindow& mainWindow) noexcept : _mainWindow(mainWindow) {
+		_mainWindow.suspendAnim();
+	}
+
+	/// Resumes the automatic generation of animation keys by calling MainWindow::resumeAnim().
+	~AnimationSuspender() {
+		_mainWindow.resumeAnim();
+	}
+
+private:
+
+	MainWindow& _mainWindow;
 };
 
 }	// End of namespace

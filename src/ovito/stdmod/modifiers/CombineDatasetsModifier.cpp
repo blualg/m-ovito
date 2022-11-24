@@ -61,7 +61,7 @@ Future<PipelineFlowState> CombineDatasetsModifier::evaluate(const ModifierEvalua
 {
 	// Get the secondary data source.
 	if(!secondaryDataSource())
-		throwException(tr("No dataset to be merged has been provided."));
+		throw Exception(tr("No dataset to be merged has been provided."));
 
 	// Get the state.
 	SharedFuture<PipelineFlowState> secondaryStateFuture = secondaryDataSource()->evaluate(request);
@@ -73,14 +73,14 @@ Future<PipelineFlowState> CombineDatasetsModifier::evaluate(const ModifierEvalua
 		if(secondaryState.status().type() == PipelineStatus::Error) {
 			if(FileSource* fileSource = dynamic_object_cast<FileSource>(secondaryDataSource())) {
 				if(fileSource->sourceUrls().empty())
-					throwException(tr("Please pick an input file to be merged."));
+					throw Exception(tr("Please pick an input file to be merged."));
 			}
 			state.setStatus(secondaryState.status());
 			return std::move(state);
 		}
 
 		if(!secondaryState)
-			throwException(tr("Secondary data source has not been specified yet or is empty. Please pick an input file to be merged."));
+			throw Exception(tr("Secondary data source has not been specified yet or is empty. Please pick an input file to be merged."));
 
 		// Merge validity intervals of primary and secondary datasets.
 		state.intersectStateValidity(secondaryState.stateValidity());

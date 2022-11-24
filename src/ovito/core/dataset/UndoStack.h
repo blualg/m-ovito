@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -90,7 +90,7 @@ class OVITO_CORE_EXPORT UndoStack : public QObject
 public:
 
 	/// Constructor.
-	UndoStack();
+	explicit UndoStack(QObject* parent = nullptr);
 
 	/// \brief Begins composition of a macro command with the given text description.
 	/// \param displayName A human-readable name that is shown in the edit menu to describe the operation.
@@ -134,7 +134,7 @@ public:
 	void push(std::unique_ptr<UndoableOperation> operation);
 
 	/// \brief Pushes an operation onto the undo stack if the undo stack is currently recording.
-	/// The undo record is only created if the undo stack is recording.
+	/// The undo record is created only if the undo stack is recording.
 	template<class UndoableOperationClass, class... Args>
 	void pushIfRecording(Args&&... args) {
 		if(isRecording())
@@ -353,63 +353,47 @@ private:
 };
 
 /**
- * \brief A small helper object that suspends recording of undoable operations while it
- *        exists.
+ * \brief A RAII helper class that suspends recording of undoable operations while it exists.
  *
  * The constructor of this class calls UndoStack::suspend() and
  * the destructor calls UndoStack::resume().
  *
- * Use this to make your code exception-safe.
- * Create an instance of this class on the stack to suspend recording of operations
- * during the lifetime of the class instance.
+ * Create an instance of this class on the stack to temporarily suspend recording of operations.
  */
 class OVITO_CORE_EXPORT UndoSuspender 
 {
 public:
-	UndoSuspender(UndoStack& undoStack) noexcept : _suspendCount(&undoStack._suspendCount) { 
-		OVITO_ASSERT_MSG(!QCoreApplication::instance() || QThread::currentThread() == QCoreApplication::instance()->thread(), "UndoSuspender::UndoSuspender()", "This method must only be called from the main thread.");
-		++(*_suspendCount); 
-	}
-	UndoSuspender(const RefMaker* object) noexcept;
+	UndoSuspender(UndoStack& undoStack) noexcept;
+	UndoSuspender() noexcept;
 	~UndoSuspender() { reset(); }
-	void reset() noexcept {
-		if(_suspendCount) {
-			OVITO_ASSERT_MSG((*_suspendCount) > 0, "UndoStack::resume()", "resume() has been called more often than suspend().");
-			--(*_suspendCount);
-			_suspendCount = nullptr;
-		}
-	}
+	void reset() noexcept;
 private:
 	int* _suspendCount;
 };
 
 /**
- * Helper class that begins a new compound operation.
- * Unless the operation committed, the destructor of this class will undo all operations.
+ * RAII helper class that begins a new compound operation.
+ * Unless the operation is explicitly committed, the destructor of this class will undo all operations.
  */
 class OVITO_CORE_EXPORT UndoableTransaction
 {
 public:
 
-	/// Constructor that calls UndoStack::beginCompoundOperation().
-	UndoableTransaction(UndoStack& undoStack, const QString& displayName) : _undoStack(undoStack), _committed(false) {
-		if(!_undoStack.isSuspended())
-			_undoStack.beginCompoundOperation(displayName);
-	}
+	/// Constructor calling UndoStack::beginCompoundOperation().
+	explicit UndoableTransaction(UserInterface& userInterface, const QString& displayName);
 
-	/// Destructor that undoes all recorded operations unless commit() was called.
-	~UndoableTransaction() {
-		if(!_committed && !_undoStack.isSuspended()) {
-			_undoStack.endCompoundOperation(false);
-		}
-	}
+	/// Destructor undoing all recorded operations unless commit() was called.
+	~UndoableTransaction();
 
 	/// Commits all recorded operations by calling UndoStack::endCompoundOperation().
-	void commit() {
-		OVITO_ASSERT(!_committed);
-		_committed = true;
-		if(!_undoStack.isSuspended())
-			_undoStack.endCompoundOperation();
+	void commit();
+
+	/// \brief Pushes an operation onto the undo stack if the undo stack is currently recording.
+	/// The undo record is created only if the undo stack is recording.
+	template<class UndoableOperationClass, class... Args>
+	void pushIfRecording(Args&&... args) {
+		if(_undoStack && _undoStack->isRecording())
+			_undoStack->push(std::make_unique<UndoableOperationClass>(std::forward<Args>(args)...));
 	}
 
 	/// Executes the passed functor and catches any exceptions thrown during its execution.
@@ -417,10 +401,10 @@ public:
 	/// so far will be undone, the error message is shown to the user, and this function returns false.
 	/// If no exception is thrown, the operations are committed and this function returns true.
 	template<typename Function>
-	static bool handleExceptions(UndoStack& undoStack, const QString& operationLabel, Function&& func) {
+	static bool handleExceptions(UserInterface& userInterface, const QString& operationLabel, Function&& func) {
 		try {
-			UndoableTransaction transaction(undoStack, operationLabel);
-			func();
+			UndoableTransaction transaction(userInterface, operationLabel);
+			std::forward<Function>(func)();
 			transaction.commit();
 			return true;
 		}
@@ -432,8 +416,8 @@ public:
 
 private:
 
-	UndoStack& _undoStack;
-	bool _committed;
+	UndoStack* _undoStack = nullptr;
+	bool _committed = false;
 };
 
 }	// End of namespace

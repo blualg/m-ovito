@@ -135,7 +135,7 @@ void DelegatingModifier::evaluateSynchronous(const ModifierEvaluationRequest& re
 ******************************************************************************/
 void DelegatingModifier::applyDelegate(const ModifierEvaluationRequest& request, PipelineFlowState& state, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs)
 {
-	OVITO_ASSERT(!dataset()->undoStack().isRecording());
+	OVITO_ASSERT(!isUndoRecording());
 	OVITO_ASSERT(request.modApp()->modifier() == this);
 
 	if(!delegate() || !delegate()->isEnabled())
@@ -143,7 +143,7 @@ void DelegatingModifier::applyDelegate(const ModifierEvaluationRequest& request,
 
 	// Skip function if not applicable.
 	if(delegate()->getOOMetaClass().getApplicableObjects(state).empty())
-		throwException(tr("The modifier's pipeline input does not contain the expected kind of data."));
+		throw Exception(tr("The modifier's pipeline input does not contain the expected kind of data."));
 
 	// Call the delegate function.
 	PipelineStatus delegateStatus = delegate()->apply(request, state, state, additionalInputs);
@@ -224,7 +224,7 @@ void MultiDelegatingModifier::evaluateSynchronous(const ModifierEvaluationReques
 ******************************************************************************/
 void MultiDelegatingModifier::applyDelegates(const ModifierEvaluationRequest& request, PipelineFlowState& state, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs)
 {
-	OVITO_ASSERT(!dataset()->undoStack().isRecording());
+	OVITO_ASSERT(!isUndoRecording());
 	OVITO_ASSERT(request.modApp()->modifier() == this);
 
 	// Make a shallow copy of the input pipeline state.

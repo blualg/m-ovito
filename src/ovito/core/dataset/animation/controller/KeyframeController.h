@@ -24,7 +24,7 @@
 
 
 #include <ovito/core/Core.h>
-#include <ovito/core/dataset/DataSet.h>
+#include <ovito/core/app/UserInterface.h>
 #include <ovito/core/dataset/animation/AnimationSettings.h>
 #include "Controller.h"
 #include "AnimationKeys.h"
@@ -50,20 +50,20 @@ public:
 	virtual void rescaleTime(const TimeInterval& oldAnimationInterval, const TimeInterval& newAnimationInterval) override;
 
 	/// Calculates the largest time interval containing the given time during which the controller's value does not change.
-	virtual TimeInterval validityInterval(TimePoint time) override;
+	virtual TimeInterval validityInterval(AnimationTime time) override;
 
 	/// Determines whether the animation keys of this controller are sorted with respect to time.
 	bool areKeysSorted() const;
 
 	/// Moves the keys in the given set by the given time shift.
-	void moveKeys(const QVector<AnimationKey*> keysToMove, TimePoint shift);
+	void moveKeys(const QVector<AnimationKey*> keysToMove, AnimationTime::value_type shift);
 
 	/// Deletes the given set of keys from the controller.
 	void deleteKeys(const QVector<AnimationKey*> keysToDelete);
 
 	/// Creates am animation key at the given time.
 	/// Returns the index of the key, which may be an existing key.
-	virtual int createKey(TimePoint time) = 0;
+	virtual int createKey(AnimationTime time) = 0;
 
 protected:
 
@@ -109,7 +109,7 @@ public:
 
 	/// Creates am animation key at the given time.
 	/// Returns the index of the key, which may be an existing key.
-	virtual int createKey(TimePoint time) override {
+	virtual int createKey(AnimationTime time) override {
 		OVITO_ASSERT(areKeysSorted());
 		// Look for existing key.
 		int index;
@@ -125,7 +125,7 @@ public:
 		TimeInterval iv;
 		value_type currentValue;
 		getInterpolatedValue(time, currentValue, iv);
-		insertKey(OORef<KeyType>::create(dataset(), time, currentValue), index);
+		insertKey(OORef<KeyType>::create(time, currentValue), index);
 		OVITO_ASSERT(areKeysSorted());
 		return index;
 	}
@@ -133,7 +133,7 @@ public:
 protected:
 
 	/// Queries the controller for its value at a certain time.
-	void getInterpolatedValue(TimePoint time, value_type& result, TimeInterval& validityInterval) const {
+	void getInterpolatedValue(AnimationTime time, value_type& result, TimeInterval& validityInterval) const {
 		const QVector<KeyType*>& keys = typedKeys();
 		if(keys.empty()) {
 			result = nullvalue_type();
@@ -145,12 +145,12 @@ protected:
 		if(time <= keys.front()->time()) {
 			result = keys.front()->value();
 			if(keys.size() != 1)
-				validityInterval.intersect(TimeInterval(TimeNegativeInfinity(), keys.front()->time()));
+				validityInterval.intersect(TimeInterval(AnimationTime::negativeInfinity(), keys.front()->time()));
 		}
 		else if(time >= keys.back()->time()) {
 			result = keys.back()->value();
 			if(keys.size() != 1)
-				validityInterval.intersect(TimeInterval(keys.back()->time(), TimePositiveInfinity()));
+				validityInterval.intersect(TimeInterval(keys.back()->time(), AnimationTime::positiveInfinity()));
 		}
 		else {
 			// Intersect validity interval.
@@ -180,7 +180,7 @@ protected:
 	}
 
 	/// Creates a new animation key at the specified time or replaces the value of an existing key.
-	void setKeyValue(TimePoint time, const value_type& newValue) {
+	void setKeyValue(AnimationTime time, const value_type& newValue) {
 		const QVector<KeyType*>& keys = typedKeys();
 		int index;
 		for(index = 0; index < keys.size(); index++) {
@@ -192,22 +192,22 @@ protected:
 				break;
 			}
 		}
-		insertKey(OORef<KeyType>::create(dataset(), time, newValue), index);
+		insertKey(OORef<KeyType>::create(time, newValue), index);
 	}
 
 	/// Sets the controller's value at the specified time.
-	void setAbsoluteValue(TimePoint time, const value_type& newValue) {
+	void setAbsoluteValue(AnimationTime time, const value_type& newValue) {
 		if(keys().empty()) {
 			// Create an additional key at time 0 if the controller doesn't have any keys yet.
-			if(time != 0 && dataset()->animationSettings()->isAnimating() && newValue != nullvalue_type()) {
-				insertKey(OORef<KeyType>::create(dataset()), 0);
-				insertKey(OORef<KeyType>::create(dataset(), time, newValue), time > 0 ? 1 : 0);
+			if(time != AnimationTime(0) && ControllerManager::isAutoGenerateAnimationKeysEnabled() && newValue != nullvalue_type()) {
+				insertKey(OORef<KeyType>::create(), 0);
+				insertKey(OORef<KeyType>::create(time, newValue), time > AnimationTime(0) ? 1 : 0);
 			}
 			else {
-				insertKey(OORef<KeyType>::create(dataset(), 0, newValue), 0);
+				insertKey(OORef<KeyType>::create(AnimationTime(0), newValue), 0);
 			}
 		}
-		else if(!dataset()->animationSettings()->isAnimating()) {
+		else if(!ControllerManager::isAutoGenerateAnimationKeysEnabled()) {
 			if(keys().size() == 1) {
 				setKeyValueInternal(typedKeys().front(), newValue);
 			}
@@ -234,20 +234,20 @@ protected:
 	}
 
 	/// Changes the controller's value at the specified time.
-	void setRelativeValue(TimePoint time, const value_type& deltaValue) {
+	void setRelativeValue(AnimationTime time, const value_type& deltaValue) {
 		if(deltaValue == nullvalue_type())
 			return;
 		if(keys().empty()) {
 			// Create an additional key at time 0 if the controller doesn't have any keys yet.
-			if(time != 0 && dataset()->animationSettings()->isAnimating()) {
-				insertKey(OORef<KeyType>::create(dataset()), 0);
-				insertKey(OORef<KeyType>::create(dataset(), time, deltaValue), time > 0 ? 1 : 0);
+			if(time != AnimationTime(0) && ControllerManager::isAutoGenerateAnimationKeysEnabled()) {
+				insertKey(OORef<KeyType>::create(), 0);
+				insertKey(OORef<KeyType>::create(time, deltaValue), time > AnimationTime(0) ? 1 : 0);
 			}
 			else {
-				insertKey(OORef<KeyType>::create(dataset(), 0, deltaValue), 0);
+				insertKey(OORef<KeyType>::create(AnimationTime(0), deltaValue), 0);
 			}
 		}
-		else if(!dataset()->animationSettings()->isAnimating()) {
+		else if(!ControllerManager::isAutoGenerateAnimationKeysEnabled()) {
 			// Apply delta value to all keys.
 			for(KeyType* key : typedKeys()) {
 				value_type v = key->value();
@@ -263,24 +263,6 @@ protected:
 			setKeyValue(time, oldValue);
 		}
 		updateKeys();
-	}
-
-	/// Loads the object from a file stream.
-	/// This method is here to support reading old files written by Ovito 2.3.x or older.
-	virtual void loadFromStream(ObjectLoadStream& stream) override {
-		KeyframeController::loadFromStream(stream);
-		if(stream.formatVersion() < 20400) {
-			stream.expectChunk(0x01);
-			quint32 nkeys;
-			stream >> nkeys;
-			for(quint32 i = 0; i < nkeys; i++) {
-				TimePoint time;
-				value_type value;
-				stream >> time >> value;
-				setAbsoluteValue(time, value);
-			}
-			stream.closeChunk();
-		}
 	}
 };
 

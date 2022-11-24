@@ -128,7 +128,7 @@ void ElementSelectionSet::resetSelection(const PropertyContainer* container)
 	if(ConstDataBufferAccess<int> selectionProperty = container->getProperty(PropertyObject::GenericSelectionProperty)) {
 
 		// Make a backup of the old snapshot so it may be restored.
-		dataset()->undoStack().pushIfRecording<ReplaceSelectionOperation>(this);
+		pushIfUndoRecording<ReplaceSelectionOperation>(this);
 
 		// Obtain access to the unique identifiers of the data elements (if present).
 		ConstDataBufferAccess<qlonglong> identifierProperty;
@@ -171,7 +171,7 @@ void ElementSelectionSet::clearSelection(const PropertyContainer* container)
 	OVITO_ASSERT(container != nullptr);
 
 	// Make a backup of the old selection state so it may be restored.
-	dataset()->undoStack().pushIfRecording<ReplaceSelectionOperation>(this);
+	pushIfUndoRecording<ReplaceSelectionOperation>(this);
 
 	if(useIdentifiers() && container->getOOMetaClass().isValidStandardPropertyId(PropertyObject::GenericIdentifierProperty) && container->getProperty(PropertyObject::GenericIdentifierProperty)) {
 		_selection.clear();
@@ -191,7 +191,7 @@ void ElementSelectionSet::clearSelection(const PropertyContainer* container)
 void ElementSelectionSet::setSelection(const PropertyContainer* container, const boost::dynamic_bitset<>& selection, SelectionMode mode)
 {
 	// Make a backup of the old snapshot so it may be restored.
-	dataset()->undoStack().pushIfRecording<ReplaceSelectionOperation>(this);
+	pushIfUndoRecording<ReplaceSelectionOperation>(this);
 
 	// Obtain access to the unique identifiers of the data elements (if present).
 	ConstDataBufferAccess<qlonglong> identifierProperty;
@@ -268,7 +268,7 @@ void ElementSelectionSet::toggleElement(const PropertyContainer* container, size
 void ElementSelectionSet::toggleElementById(qlonglong elementId)
 {
 	// Make a backup of the old selection state so it may be restored.
-	dataset()->undoStack().pushIfRecording<ToggleSelectionOperation>(this, elementId);
+	pushIfUndoRecording<ToggleSelectionOperation>(this, elementId);
 
 	if(useIdentifiers()) {
 		if(_selectedIdentifiers.contains(elementId))
@@ -285,7 +285,7 @@ void ElementSelectionSet::toggleElementById(qlonglong elementId)
 void ElementSelectionSet::toggleElementByIndex(size_t elementIndex)
 {
 	// Make a backup of the old selection state so it may be restored.
-	dataset()->undoStack().pushIfRecording<ToggleSelectionOperation>(this, -1, elementIndex);
+	pushIfUndoRecording<ToggleSelectionOperation>(this, -1, elementIndex);
 
 	if(elementIndex < _selection.size())
 		_selection.flip(elementIndex);
@@ -298,7 +298,7 @@ void ElementSelectionSet::toggleElementByIndex(size_t elementIndex)
 void ElementSelectionSet::selectAll(const PropertyContainer* container)
 {
 	// Make a backup of the old selection state so it may be restored.
-	dataset()->undoStack().pushIfRecording<ReplaceSelectionOperation>(this);
+	pushIfUndoRecording<ReplaceSelectionOperation>(this);
 
 	// Obtain access to the unique identifiers of the data elements (if present).
 	ConstDataBufferAccess<qlonglong> identifierProperty;
@@ -325,7 +325,7 @@ void ElementSelectionSet::selectAll(const PropertyContainer* container)
 void ElementSelectionSet::invertSelection(const PropertyContainer* container)
 {
 	// Make a backup of the old selection state so it may be restored.
-	dataset()->undoStack().pushIfRecording<ReplaceSelectionOperation>(this);
+	pushIfUndoRecording<ReplaceSelectionOperation>(this);
 
 	// Obtain access to the unique identifiers of the data elements (if present).
 	ConstDataBufferAccess<qlonglong> identifierProperty;
@@ -358,7 +358,7 @@ PipelineStatus ElementSelectionSet::applySelection(DataBufferAccess<int> outputS
 
 		// When not using identifiers, the number of input elements must match.
 		if(outputSelectionProperty.size() != _selection.size())
-			throwException(tr("Stored selection state became invalid, because the number of input elements has changed."));
+			throw Exception(tr("Stored selection state became invalid, because the number of input elements has changed."));
 
 		// Restore selection simply by placing the snapshot into the pipeline.
 		size_t index = 0;

@@ -41,7 +41,7 @@ bool LAMMPSDumpExporter::exportData(const PipelineFlowState& state, int frameNum
 	// Get simulation cell info.
 	const SimulationCellObject* simulationCell = state.getObject<SimulationCellObject>();
 	if(!simulationCell)
-		throwException(tr("No simulation cell available. Cannot write LAMMPS file."));
+		throw Exception(tr("No simulation cell available. Cannot write LAMMPS file."));
 
 	const AffineTransformation& simCell = simulationCell->cellMatrix();
 	size_t atomsCount = particles->elementCount();
@@ -57,7 +57,7 @@ bool LAMMPSDumpExporter::exportData(const PipelineFlowState& state, int frameNum
 	FloatType yz = simCell.column(2).y();
 
 	if(simCell.column(0).y() != 0 || simCell.column(0).z() != 0 || simCell.column(1).z() != 0)
-		throwException(tr("Cannot save simulation cell to a LAMMPS dump file. This type of non-orthogonal "
+		throw Exception(tr("Cannot save simulation cell to a LAMMPS dump file. This type of non-orthogonal "
 				"cell is not supported by LAMMPS and its file format. See the documentation of LAMMPS for details."));
 
 	xlo += std::min((FloatType)0, std::min(xy, std::min(xz, xy+xz)));
@@ -93,7 +93,7 @@ bool LAMMPSDumpExporter::exportData(const PipelineFlowState& state, int frameNum
 
 	const ParticlesOutputColumnMapping& mapping = columnMapping();
 	if(mapping.empty())
-		throwException(tr("No particle properties have been selected for export to the LAMMPS dump file. Cannot write dump file with zero columns."));
+		throw Exception(tr("No particle properties have been selected for export to the LAMMPS dump file. Cannot write dump file with zero columns."));
 
 	// Write column names.
 	for(int i = 0; i < (int)mapping.size(); i++) {

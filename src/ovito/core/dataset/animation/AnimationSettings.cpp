@@ -29,9 +29,10 @@
 namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(AnimationSettings);
-DEFINE_PROPERTY_FIELD(AnimationSettings, time);
-DEFINE_PROPERTY_FIELD(AnimationSettings, animationInterval);
-DEFINE_PROPERTY_FIELD(AnimationSettings, ticksPerFrame);
+DEFINE_PROPERTY_FIELD(AnimationSettings, currentFrame);
+DEFINE_PROPERTY_FIELD(AnimationSettings, firstFrame);
+DEFINE_PROPERTY_FIELD(AnimationSettings, lastFrame);
+DEFINE_PROPERTY_FIELD(AnimationSettings, framesPerSecond);
 DEFINE_PROPERTY_FIELD(AnimationSettings, playbackSpeed);
 DEFINE_PROPERTY_FIELD(AnimationSettings, loopPlayback);
 DEFINE_PROPERTY_FIELD(AnimationSettings, playbackEveryNthFrame);
@@ -42,10 +43,11 @@ SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(AnimationSettings, playbackEveryNthFrame, I
 * Constructor.
 ******************************************************************************/
 AnimationSettings::AnimationSettings(ObjectCreationParams params) : RefTarget(params),
-		_ticksPerFrame(TICKS_PER_SECOND/10),
+		_framesPerSecond(10),
 		_playbackSpeed(1),
-		_animationInterval(0, 0),
-		_time(0),
+		_firstFrame(0),
+		_lastFrame(0),
+		_currentFrame(0),
 		_loopPlayback(true),
 		_playbackEveryNthFrame(1),
 		_autoAdjustInterval(true)
@@ -57,12 +59,12 @@ AnimationSettings::AnimationSettings(ObjectCreationParams params) : RefTarget(pa
 ******************************************************************************/
 void AnimationSettings::propertyChanged(const PropertyFieldDescriptor* field)
 {
-	if(field == PROPERTY_FIELD(time))
-		onTimeChanged();
-	else if(field == PROPERTY_FIELD(animationInterval))
-		Q_EMIT intervalChanged(animationInterval());
-	else if(field == PROPERTY_FIELD(ticksPerFrame))
-		Q_EMIT speedChanged(ticksPerFrame());
+	if(field == PROPERTY_FIELD(currentFrame))
+		onCurrentFrameChanged();
+	else if(field == PROPERTY_FIELD(firstFrame) || field == PROPERTY_FIELD(lastFrame))
+		Q_EMIT intervalChanged(firstFrame(), lastFrame());
+	else if(field == PROPERTY_FIELD(framesPerSecond))
+		Q_EMIT speedChanged();
 	else if(field == PROPERTY_FIELD(autoAdjustInterval) && autoAdjustInterval() && !isBeingLoaded())
 		adjustAnimationInterval();
 
@@ -108,52 +110,55 @@ OORef<RefTarget> AnimationSettings::clone(bool deepCopy, CloneHelper& cloneHelpe
 /******************************************************************************
 * Is called when the current animation time has changed.
 ******************************************************************************/
-void AnimationSettings::onTimeChanged()
+void AnimationSettings::onCurrentFrameChanged()
 {
-	Q_EMIT timeChanged(time());
+	Q_EMIT currentFrameChanged(currentFrame());
 	if(_isTimeChanging)
 		return;
 	_isTimeChanging = true;
 
-	// Wait until scene is complete, then generate a timeChangeComplete event.
-	_sceneReadyFuture = dataset()->whenSceneReady().then(executor(), [this]() {
-		_isTimeChanging = false;
-		Q_EMIT timeChangeComplete();
+	// Get the scene(s) that use this animation settings object.
+	Scene* scene = nullptr;
+	visitDependents([&](RefMaker* dependent) {
+		if(Scene* s = dynamic_object_cast<Scene>(dependent)) {
+			if(scene != nullptr)
+				qWarning() << "Warning: AnimationSettings object is used by more than one scene. This is not supported by the current program version.";
+			scene = s;
+		}
 	});
+
+	// Wait until scene is complete, then generate a currentFrameChangeComplete signal.
+	if(scene) {
+		_sceneReadyFuture = scene->whenReady().then(executor(), [this]() {
+			_isTimeChanging = false;
+			Q_EMIT currentFrameChangeComplete();
+		});
+	}
+	else {
+		_isTimeChanging = false;
+		Q_EMIT currentFrameChangeComplete();
+	}
 }
 
 /******************************************************************************
 * Converts a time value to its string representation.
 ******************************************************************************/
-QString AnimationSettings::timeToString(TimePoint time)
+QString AnimationSettings::timeToString(AnimationTime time)
 {
-	return QString::number(timeToFrame(time));
+	return QString::number(time.frame());
 }
 
 /******************************************************************************
 * Converts a string to a time value.
 * Throws an exception when a parsing error occurs.
 ******************************************************************************/
-TimePoint AnimationSettings::stringToTime(const QString& stringValue)
+AnimationTime AnimationSettings::stringToTime(const QString& stringValue)
 {
-	TimePoint value;
 	bool ok;
-	value = (TimePoint)stringValue.toInt(&ok);
+	int frame = stringValue.toInt(&ok);
 	if(!ok)
-		throwException(tr("Invalid frame number format: %1").arg(stringValue));
-	return frameToTime(value);
-}
-
-/******************************************************************************
-* Enables or disables auto key generation mode.
-******************************************************************************/
-void AnimationSettings::setAutoKeyMode(bool on)
-{
-	if(_autoKeyMode == on)
-		return;
-
-	_autoKeyMode = on;
-	Q_EMIT autoKeyModeChanged(_autoKeyMode);
+		throw Exception(tr("Invalid frame number format: %1").arg(stringValue));
+	return AnimationTime::fromFrame(frame);
 }
 
 /******************************************************************************
@@ -161,7 +166,7 @@ void AnimationSettings::setAutoKeyMode(bool on)
 ******************************************************************************/
 void AnimationSettings::jumpToAnimationStart()
 {
-	setTime(animationInterval().start());
+	setCurrentFrame(firstFrame());
 }
 
 /******************************************************************************
@@ -169,7 +174,7 @@ void AnimationSettings::jumpToAnimationStart()
 ******************************************************************************/
 void AnimationSettings::jumpToAnimationEnd()
 {
-	setTime(animationInterval().end());
+	setCurrentFrame(lastFrame());
 }
 
 /******************************************************************************
@@ -177,12 +182,7 @@ void AnimationSettings::jumpToAnimationEnd()
 ******************************************************************************/
 void AnimationSettings::jumpToPreviousFrame()
 {
-	// Subtract one frame from current time.
-	TimePoint newTime = frameToTime(timeToFrame(time()) - 1);
-	// Clamp new time
-	newTime = std::max(newTime, animationInterval().start());
-	// Set new time.
-	setTime(newTime);
+	setCurrentFrame(std::max(currentFrame() - 1, firstFrame()));
 }
 
 /******************************************************************************
@@ -190,12 +190,7 @@ void AnimationSettings::jumpToPreviousFrame()
 ******************************************************************************/
 void AnimationSettings::jumpToNextFrame()
 {
-	// Subtract one frame from current time.
-	TimePoint newTime = frameToTime(timeToFrame(time()) + 1);
-	// Clamp new time
-	newTime = std::min(newTime, animationInterval().end());
-	// Set new time.
-	setTime(newTime);
+	setCurrentFrame(std::min(currentFrame() + 1, lastFrame()));
 }
 
 /******************************************************************************
@@ -226,27 +221,27 @@ void AnimationSettings::startAnimationPlayback(FloatType playbackRate)
 		Q_EMIT playbackChanged(_activePlaybackRate != 0);
 
 		if(_activePlaybackRate > 0) {
-			if(time() < animationInterval().end())
+			if(currentFrame() < lastFrame())
 				scheduleNextAnimationFrame();
 			else
-				continuePlaybackAtTime(animationInterval().start());
+				continuePlaybackAtFrame(firstFrame());
 		}
 		else if(_activePlaybackRate < 0) {
-			if(time() > animationInterval().start())
+			if(currentFrame() > firstFrame())
 				scheduleNextAnimationFrame();
 			else
-				continuePlaybackAtTime(animationInterval().end());
+				continuePlaybackAtFrame(lastFrame());
 		}
 	}
 }
 
 /******************************************************************************
-* Jumps to the given animation time, then schedules the next frame as soon as
+* Jumps to the given animation frame, then schedules the next frame as soon as
 * the scene was completely shown.
 ******************************************************************************/
-void AnimationSettings::continuePlaybackAtTime(TimePoint time)
+void AnimationSettings::continuePlaybackAtFrame(int frame)
 {
-	setTime(time);
+	setCurrentFrame(frame);
 
 	if(isPlaybackActive() && _sceneReadyFuture.isValid()) {
 		// Take time as we start to render the current frame.
@@ -272,7 +267,7 @@ void AnimationSettings::scheduleNextAnimationFrame()
 	int timerSpeed = 1000 / std::abs(_activePlaybackRate);
 	if(playbackSpeed() > 1) timerSpeed /= playbackSpeed();
 	else if(playbackSpeed() < -1) timerSpeed *= -playbackSpeed();
-	int msec = timerSpeed * ticksPerFrame() / TICKS_PER_SECOND;
+	int msec = framesPerSecond() > 0.0f ? (int)(timerSpeed / framesPerSecond()) : 0;
 
 	// Take into account how long it took to render the previous frame.
 	if(_frameRenderingTimer.isValid()) {
@@ -303,31 +298,30 @@ void AnimationSettings::onPlaybackTimer()
 		return;
 
 	// Add +/-N frames to current time.
-	int newFrame = timeToFrame(time()) + (_activePlaybackRate > 0 ? 1 : -1) * std::max(1, playbackEveryNthFrame());
-	TimePoint newTime = frameToTime(newFrame);
+	int newFrame = currentFrame() + (_activePlaybackRate > 0 ? 1 : -1) * std::max(1, playbackEveryNthFrame());
 
 	// Loop back to first frame if end has been reached.
-	if(newTime > animationInterval().end()) {
-		if(loopPlayback() && animationInterval().duration() > 0) {
-			newTime = animationInterval().start();
+	if(newFrame > lastFrame()) {
+		if(loopPlayback() && lastFrame() > firstFrame()) {
+			newFrame = firstFrame();
 		}
 		else {
-			newTime = animationInterval().end();
+			newFrame = lastFrame();
 			stopAnimationPlayback();
 		}
 	}
-	else if(newTime < animationInterval().start()) {
-		if(loopPlayback() && animationInterval().duration() > 0) {
-			newTime = animationInterval().end();
+	else if(newFrame < firstFrame()) {
+		if(loopPlayback() && lastFrame() > firstFrame()) {
+			newFrame = lastFrame();
 		}
 		else {
-			newTime = animationInterval().start();
+			newFrame = firstFrame();
 			stopAnimationPlayback();
 		}
 	}
 
-	// Set new time and continue playing.
-	continuePlaybackAtTime(newTime);
+	// Set new frame and continue playing.
+	continuePlaybackAtFrame(newFrame);
 }
 
 /******************************************************************************
@@ -336,36 +330,43 @@ void AnimationSettings::onPlaybackTimer()
 ******************************************************************************/
 void AnimationSettings::adjustAnimationInterval()
 {
+#if 0 
 	TimeInterval interval;
 	_namedFrames.clear();
-	dataset()->scene()->visitObjectNodes([&interval,this](PipelineSceneNode* node) {
-		if(node->dataProvider()) {
-			int nframes = node->dataProvider()->numberOfSourceFrames();
-			if(nframes > 0) {
 
-				// Final animation interval should encompass the local intervals
-				// of all animated objects in the scene.
-				TimePoint start = node->dataProvider()->sourceFrameToAnimationTime(0);
-				if(interval.isEmpty() || start < interval.start()) interval.setStart(start);
-				TimePoint end = node->dataProvider()->sourceFrameToAnimationTime(nframes) - 1;
-				if(interval.isEmpty() || end > interval.end()) interval.setEnd(end);
+	// Visit the scenes that reference this animation settings object.
+	visitDependents([&](RefMaker* dependent) {
+		if(Scene* scene = dynamic_object_cast<Scene>(dependent)) {
+			scene->visitObjectNodes([&](PipelineSceneNode* node) {
+				if(node->dataProvider()) {
+					int nframes = node->dataProvider()->numberOfSourceFrames();
+					if(nframes > 0) {
 
-				// Save the list of the named animation frames.
-				// Merge with other list(s) from other scene objects if there are any.
-				if(_namedFrames.empty())
-					_namedFrames = node->dataProvider()->animationFrameLabels();
-				else {
-					auto additionalLabels = node->dataProvider()->animationFrameLabels();
-					if(!additionalLabels.empty())
-#if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
-						_namedFrames.insert(additionalLabels);
-#else
-						_namedFrames.unite(additionalLabels);
-#endif
+						// Final animation interval should encompass the local intervals
+						// of all animated objects in the scene.
+						TimePoint start = node->dataProvider()->sourceFrameToAnimationTime(0);
+						if(interval.isEmpty() || start < interval.start()) interval.setStart(start);
+						TimePoint end = node->dataProvider()->sourceFrameToAnimationTime(nframes) - 1;
+						if(interval.isEmpty() || end > interval.end()) interval.setEnd(end);
+
+						// Save the list of the named animation frames.
+						// Merge with other list(s) from other scene objects if there are any.
+						if(_namedFrames.empty())
+							_namedFrames = node->dataProvider()->animationFrameLabels();
+						else {
+							auto additionalLabels = node->dataProvider()->animationFrameLabels();
+							if(!additionalLabels.empty())
+		#if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
+								_namedFrames.insert(additionalLabels);
+		#else
+								_namedFrames.unite(additionalLabels);
+		#endif
+						}
+					}
 				}
-			}
+				return true;
+			});
 		}
-		return true;
 	});
 	if(interval.isEmpty())
 		interval.setInstant(0);
@@ -380,14 +381,9 @@ void AnimationSettings::adjustAnimationInterval()
 		setTime(interval.start());
 	else if(time() > interval.end())
 		setTime(interval.end());
-}
-
-/******************************************************************************
-* uspends the automatic generation of animation keys by calling
-* AnimationSettings::suspendAnim().
-******************************************************************************/
-AnimationSuspender::AnimationSuspender(RefMaker* object) : AnimationSuspender(object->dataset()->animationSettings())
-{
+#else
+	OVITO_ASSERT(false); // TODO: To be implemented
+#endif
 }
 
 }	// End of namespace

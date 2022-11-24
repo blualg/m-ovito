@@ -47,7 +47,7 @@ bool POSCARExporter::exportData(const PipelineFlowState& state, int frameNumber,
 	// Get simulation cell info.
 	const SimulationCellObject* simulationCell = state.getObject<SimulationCellObject>();
 	if(!simulationCell)
-		throwException(tr("No simulation cell available. Cannot write POSCAR file."));
+		throw Exception(tr("No simulation cell available. Cannot write POSCAR file."));
 
 	// Write POSCAR header including the simulation cell geometry.
 	textStream() << "POSCAR file written by " << Application::applicationName() << " " << Application::applicationVersionString() << "\n";

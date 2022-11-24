@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -74,94 +74,59 @@ void DataSetContainer::referenceReplaced(const PropertyFieldDescriptor* field, R
 		}
 
 		// Forward signals from the current dataset.
-		disconnect(_selectionSetReplacedConnection);
 		disconnect(_viewportConfigReplacedConnection);
 		disconnect(_animationSettingsReplacedConnection);
+		disconnect(_sceneReplacedConnection);
 		disconnect(_renderSettingsReplacedConnection);
 		disconnect(_filePathChangedConnection);
-		disconnect(_undoStackCleanChangedConnection);
 		if(currentSet()) {
-			_selectionSetReplacedConnection = connect(currentSet(), &DataSet::selectionSetReplaced, this, &DataSetContainer::onSelectionSetReplaced);
+			_sceneReplacedConnection = connect(currentSet(), &DataSet::sceneReplaced, this, &DataSetContainer::onSceneReplaced);
 			_viewportConfigReplacedConnection = connect(currentSet(), &DataSet::viewportConfigReplaced, this, &DataSetContainer::viewportConfigReplaced);
 			_animationSettingsReplacedConnection = connect(currentSet(), &DataSet::animationSettingsReplaced, this, &DataSetContainer::animationSettingsReplaced);
 			_renderSettingsReplacedConnection = connect(currentSet(), &DataSet::renderSettingsReplaced, this, &DataSetContainer::renderSettingsReplaced);
 			_filePathChangedConnection = connect(currentSet(), &DataSet::filePathChanged, this, &DataSetContainer::filePathChanged);
-			_undoStackCleanChangedConnection = connect(&currentSet()->undoStack(), &UndoStack::cleanChanged, this, &DataSetContainer::modificationStatusChanged);
 			currentSet()->_container = this;
 		}
 
 		Q_EMIT dataSetChanged(currentSet());
 
 		if(currentSet()) {
-
-			// Prepare scene for display whenever a new dataset becomes active.
-			if(Application::instance()->guiMode()) {
-				_sceneReadyScheduled = true;
-				Q_EMIT scenePreparationBegin();
-				_sceneReadyFuture = currentSet()->whenSceneReady().then(currentSet()->executor(), [this]() {
-					sceneBecameReady();
-				});
-			}
-
 			Q_EMIT viewportConfigReplaced(currentSet()->viewportConfig());
 			Q_EMIT animationSettingsReplaced(currentSet()->animationSettings());
 			Q_EMIT renderSettingsReplaced(currentSet()->renderSettings());
 			Q_EMIT filePathChanged(currentSet()->filePath());
-			Q_EMIT modificationStatusChanged(currentSet()->undoStack().isClean());
-			onSelectionSetReplaced(currentSet()->selection());
+			onSceneReplaced(currentSet()->scene());
 			onAnimationSettingsReplaced(currentSet()->animationSettings());
 		}
 		else {
-			onSelectionSetReplaced(nullptr);
+			onSceneReplaced(nullptr);
 			onAnimationSettingsReplaced(nullptr);
 			Q_EMIT viewportConfigReplaced(nullptr);
 			Q_EMIT animationSettingsReplaced(nullptr);
 			Q_EMIT renderSettingsReplaced(nullptr);
 			Q_EMIT filePathChanged(QString());
-			Q_EMIT modificationStatusChanged(true);
 		}
 	}
 	RefMaker::referenceReplaced(field, oldTarget, newTarget, listIndex);
 }
 
 /******************************************************************************
-* Is called when a RefTarget referenced by this object has generated an event.
+* This handler is invoked when the current scene of the current dataset
+* has been replaced.
 ******************************************************************************/
-bool DataSetContainer::referenceEvent(RefTarget* source, const ReferenceEvent& event)
+void DataSetContainer::onSceneReplaced(Scene* newScene)
 {
-	if(source == currentSet()) {
-		if(Application::instance()->guiMode()) {
-			if(event.type() == ReferenceEvent::TargetChanged) {
-				// Update viewports as soon as the scene becomes ready.
-				if(!_sceneReadyScheduled) {
-					_sceneReadyScheduled = true;
-					Q_EMIT scenePreparationBegin();
-					_sceneReadyFuture = currentSet()->whenSceneReady().then(currentSet()->executor(), [this]() {
-						sceneBecameReady();
-					});
-				}
-			}
-			else if(event.type() == ReferenceEvent::PreliminaryStateAvailable) {
-				// Update viewports when a new preliminiary state from one of the data pipelines
-				// becomes available (unless we are playing an animation).
-				if(!currentSet()->animationSettings()->arePreliminaryViewportUpdatesSuspended())
-					currentSet()->viewportConfig()->updateViewports();
-			}
-		}
+	// Forward signals from the current scene.
+	disconnect(_scenePreparationStartedConnection);
+	disconnect(_scenePreparationFinishedConnection);
+	disconnect(_selectionSetReplacedConnection);
+	if(newScene) {
+		_scenePreparationStartedConnection = connect(newScene, &Scene::scenePreparationStarted, this, &DataSetContainer::scenePreparationStarted);
+		_scenePreparationFinishedConnection = connect(newScene, &Scene::scenePreparationFinished, this, &DataSetContainer::scenePreparationFinished);
+		_selectionSetReplacedConnection = connect(newScene, &Scene::selectionSetReplaced, this, &DataSetContainer::onSelectionSetReplaced);
 	}
-	return RefMaker::referenceEvent(source, event);
-}
-
-/******************************************************************************
-* Is called when scene of the current dataset is ready to be displayed.
-******************************************************************************/
-void DataSetContainer::sceneBecameReady()
-{
-	_sceneReadyScheduled = false;
-	_sceneReadyFuture.reset();
-	if(currentSet())
-		currentSet()->viewportConfig()->updateViewports();
-	Q_EMIT scenePreparationEnd();
+	Q_EMIT sceneReplaced(newScene);
+	onSelectionSetReplaced(newScene ? newScene->selection() : nullptr);
 }
 
 /******************************************************************************
@@ -189,15 +154,15 @@ void DataSetContainer::onSelectionSetReplaced(SelectionSet* newSelectionSet)
 void DataSetContainer::onAnimationSettingsReplaced(AnimationSettings* newAnimationSettings)
 {
 	// Forward signals from the current animation settings object.
-	disconnect(_animationTimeChangedConnection);
-	disconnect(_animationTimeChangeCompleteConnection);
+	disconnect(_animationCurrentFrameChangedConnection);
+	disconnect(_animationCurrentFrameChangeCompleteConnection);
 	if(newAnimationSettings) {
-		_animationTimeChangedConnection = connect(newAnimationSettings, &AnimationSettings::timeChanged, this, &DataSetContainer::timeChanged);
-		_animationTimeChangeCompleteConnection = connect(newAnimationSettings, &AnimationSettings::timeChangeComplete, this, &DataSetContainer::timeChangeComplete);
+		_animationCurrentFrameChangedConnection = connect(newAnimationSettings, &AnimationSettings::currentFrameChanged, this, &DataSetContainer::currentFrameChanged);
+		_animationCurrentFrameChangeCompleteConnection = connect(newAnimationSettings, &AnimationSettings::currentFrameChangeComplete, this, &DataSetContainer::currentFrameChangeComplete);
 	}
 	if(newAnimationSettings) {
-		Q_EMIT timeChanged(newAnimationSettings->time());
-		Q_EMIT timeChangeComplete();
+		Q_EMIT currentFrameChanged(newAnimationSettings->currentFrame());
+		Q_EMIT currentFrameChangeComplete();
 	}
 }
 
@@ -206,7 +171,7 @@ void DataSetContainer::onAnimationSettingsReplaced(AnimationSettings* newAnimati
 ******************************************************************************/
 DataSet* DataSetContainer::newDataset()
 {
-	setCurrentSet(OORef<DataSet>::create(nullptr));
+	setCurrentSet(OORef<DataSet>::create());
 	return currentSet();
 }
 
@@ -229,19 +194,6 @@ bool DataSetContainer::loadDataset(const QString& filename, MainThreadOperation 
 		QDataStream dataStream(&fileStream);
 		ObjectLoadStream stream(dataStream, operation);
 
-#if 0
-		// Issue a warning when the floating-point precision of the input file does not match
-		// the precision used in this build.
-		if(stream.floatingPointPrecision() > sizeof(FloatType)) {
-			if(mainWindow()) {
-				QString msg = tr("The session state file has been written with a version of this program that uses %1-bit floating-point precision. "
-					   "The version of this program that you are currently using only supports %2-bit precision numbers. "
-					   "The precision of all numbers stored in the input file will be truncated during loading.").arg(stream.floatingPointPrecision()*8).arg(sizeof(FloatType)*8);
-				QMessageBox::warning(mainWindow(), tr("Floating-point precision mismatch"), msg);
-			}
-		}
-#endif
-
 		dataSet = stream.loadObject<DataSet>();
 		stream.close();
 
@@ -258,5 +210,21 @@ bool DataSetContainer::loadDataset(const QString& filename, MainThreadOperation 
 	setCurrentSet(dataSet);
 	return true;
 }
+
+#if 0 // TODO: Remove unused code
+/******************************************************************************
+* Returns the scene that is currently active, i.e., which is displayed in 
+* the viewport window that is currently selected.
+******************************************************************************/
+Scene* DataSetContainer::activeScene() const
+{
+	if(currentSet()) {
+		if(Viewport* vp = currentSet()->viewportConfig()->activeViewport()) {
+			return vp->scene();
+		}
+	}
+	return nullptr;
+}
+#endif
 
 }	// End of namespace

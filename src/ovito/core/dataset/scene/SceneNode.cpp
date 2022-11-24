@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -22,15 +22,17 @@
 
 #include <ovito/core/Core.h>
 #include <ovito/core/dataset/scene/SceneNode.h>
+#include <ovito/core/dataset/scene/SelectionSet.h>
+#include <ovito/core/dataset/scene/Scene.h>
 #include <ovito/core/dataset/animation/controller/LookAtController.h>
 #include <ovito/core/dataset/animation/controller/PRSTransformationController.h>
 #include <ovito/core/dataset/animation/AnimationSettings.h>
 #include <ovito/core/dataset/UndoStack.h>
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/dataset/animation/TimeInterval.h>
-#include <ovito/core/dataset/scene/SelectionSet.h>
 #include <ovito/core/oo/CloneHelper.h>
 #include <ovito/core/app/Application.h>
+#include <ovito/core/app/UserInterface.h>
 
 namespace Ovito {
 
@@ -49,7 +51,7 @@ SET_PROPERTY_FIELD_LABEL(SceneNode, displayColor, "Display color");
 SET_PROPERTY_FIELD_CHANGE_EVENT(SceneNode, nodeName, ReferenceEvent::TitleChanged);
 
 /******************************************************************************
-* Default constructor.
+* Constructor.
 ******************************************************************************/
 SceneNode::SceneNode(ObjectCreationParams params) : RefTarget(params),
 	_worldTransform(AffineTransformation::Identity()),
@@ -65,7 +67,7 @@ SceneNode::SceneNode(ObjectCreationParams params) : RefTarget(params),
 
 	if(params.createSubObjects()) {
 		// Create a transformation controller for the node.
-		setTransformationController(ControllerManager::createTransformationController(dataset()));
+		setTransformationController(ControllerManager::createTransformationController());
 	}
 }
 
@@ -73,7 +75,7 @@ SceneNode::SceneNode(ObjectCreationParams params) : RefTarget(params),
 * Returns this node's world transformation matrix.
 * This matrix contains the transformation of the parent node.
 ******************************************************************************/
-const AffineTransformation& SceneNode::getWorldTransform(TimePoint time, TimeInterval& validityInterval) const
+const AffineTransformation& SceneNode::getWorldTransform(AnimationTime time, TimeInterval& validityInterval) const
 {
 	if(!_worldTransformValidity.contains(time)) {
 		_worldTransformValidity.setInfinite();
@@ -95,7 +97,7 @@ const AffineTransformation& SceneNode::getWorldTransform(TimePoint time, TimeInt
 * This matrix  does not contain the ObjectTransform of this node and
 * does not contain the transformation of the parent node.
 ******************************************************************************/
-AffineTransformation SceneNode::getLocalTransform(TimePoint time, TimeInterval& validityInterval) const
+AffineTransformation SceneNode::getLocalTransform(AnimationTime time, TimeInterval& validityInterval) const
 {
 	AffineTransformation result = AffineTransformation::Identity();
 	if(transformationController())
@@ -158,7 +160,7 @@ LookAtController* SceneNode::setLookatTargetNode(SceneNode* targetNode)
 			// Create a look at controller.
 			OORef<LookAtController> lookAtCtrl = dynamic_object_cast<LookAtController>(prs->rotationController());
 			if(!lookAtCtrl)
-				lookAtCtrl = OORef<LookAtController>::create(dataset());
+				lookAtCtrl = OORef<LookAtController>::create();
 			lookAtCtrl->setTargetNode(targetNode);
 
 			// Assign it as rotation sub-controller.
@@ -168,13 +170,13 @@ LookAtController* SceneNode::setLookatTargetNode(SceneNode* targetNode)
 		}
 		else {
 			// Save old rotation.
-			TimePoint time = dataset()->animationSettings()->time();
+			AnimationTime time = currentAnimationTime().value_or(AnimationTime(0));
 			TimeInterval iv;
 			Rotation rotation;
 			prs->rotationController()->getRotationValue(time, rotation, iv);
 
 			// Reset to default rotation controller.
-			OORef<Controller> controller = ControllerManager::createRotationController(dataset());
+			OORef<Controller> controller = ControllerManager::createRotationController();
 			controller->setRotationValue(time, rotation, true);
 			prs->setRotationController(std::move(controller));
 		}
@@ -200,7 +202,7 @@ bool SceneNode::referenceEvent(RefTarget* source, const ReferenceEvent& event)
 	}
 	else if(event.type() == ReferenceEvent::TargetDeleted && source == lookatTargetNode()) {
 		// Lookat target node has been deleted -> delete this node too.
-		if(!dataset()->undoStack().isUndoingOrRedoing())
+		if(!isUndoingOrRedoing())
 			deleteNode();
 	}
 	else if(event.type() == ReferenceEvent::AnimationFramesChanged && children().contains(static_cast<SceneNode*>(source))) {
@@ -320,10 +322,11 @@ void SceneNode::insertChildNode(int index, SceneNode* newChild)
 	OVITO_ASSERT(newChild->parentNode() == this);
 
 	// Adjust transformation to preserve world position.
-	TimeInterval iv = TimeInterval::infinite();
-	const AffineTransformation& newParentTM = getWorldTransform(dataset()->animationSettings()->time(), iv);
+	TimeInterval iv;
+	AnimationTime time = currentAnimationTime().value_or(AnimationTime(0));
+	const AffineTransformation& newParentTM = getWorldTransform(time, iv);
 	if(newParentTM != AffineTransformation::Identity())
-		newChild->transformationController()->changeParent(dataset()->animationSettings()->time(), AffineTransformation::Identity(), newParentTM, newChild);
+		newChild->transformationController()->changeParent(time, AffineTransformation::Identity(), newParentTM, newChild);
 	newChild->invalidateWorldTransformation();
 }
 
@@ -343,11 +346,27 @@ void SceneNode::removeChildNode(int index)
 	OVITO_ASSERT(child->parentNode() == nullptr);
 
 	// Update child node.
-	TimeInterval iv = TimeInterval::infinite();
-	AffineTransformation oldParentTM = getWorldTransform(dataset()->animationSettings()->time(), iv);
+	TimeInterval iv;
+	AnimationTime time = currentAnimationTime().value_or(AnimationTime(0));
+	AffineTransformation oldParentTM = getWorldTransform(time, iv);
 	if(oldParentTM != AffineTransformation::Identity())
-		child->transformationController()->changeParent(dataset()->animationSettings()->time(), oldParentTM, AffineTransformation::Identity(), child);
+		child->transformationController()->changeParent(time, oldParentTM, AffineTransformation::Identity(), child);
 	child->invalidateWorldTransformation();
+}
+
+/******************************************************************************
+* Returns true if this node is currently selected.
+******************************************************************************/
+Scene* SceneNode::scene() const
+{
+	SceneNode* n = const_cast<SceneNode*>(this);
+	do {
+		if(n->isRootNode()) 
+			break;
+		n = n->parentNode();
+	}
+	while(n != nullptr);
+	return static_object_cast<Scene>(n);
 }
 
 /******************************************************************************
@@ -355,7 +374,11 @@ void SceneNode::removeChildNode(int index)
 ******************************************************************************/
 bool SceneNode::isSelected() const
 {
-	return dataset()->selection()->nodes().contains(const_cast<SceneNode*>(this));
+	if(Scene* sc = scene()) {
+		if(sc->selection())
+			return sc->selection()->nodes().contains(const_cast<SceneNode*>(this));
+	}
+	return false;
 }
 
 /******************************************************************************
@@ -414,7 +437,7 @@ OORef<RefTarget> SceneNode::clone(bool deepCopy, CloneHelper& cloneHelper) const
 * Returns the bounding box of the scene node in world coordinates.
 *    time - The time at which the bounding box should be returned.
 ******************************************************************************/
-Box3 SceneNode::worldBoundingBox(TimePoint time, Viewport* vp) const
+Box3 SceneNode::worldBoundingBox(AnimationTime time, Viewport* vp) const
 {
 	if(vp && isHiddenInViewport(vp, true))
 		return Box3();
@@ -462,6 +485,18 @@ bool SceneNode::isHiddenInViewport(Viewport* vp, bool includeHierarchyParent) co
 		return parentNode()->isHiddenInViewport(vp, true);
 	else
 		return false;
+}
+
+/******************************************************************************
+* Returns the animation time at which this scene node is being rendered in the GUI.
+* This method assumes that the scene node is only part of a single scene.
+******************************************************************************/
+std::optional<AnimationTime> SceneNode::currentAnimationTime() const
+{
+	if(Scene* s = scene()) {
+		return s->animationSettings()->currentTime();
+	}
+	return {};
 }
 
 }	// End of namespace

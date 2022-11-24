@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -43,13 +43,13 @@ StandardSceneRenderer::StandardSceneRenderer(ObjectCreationParams params) : Scen
 }
 
 /******************************************************************************
-* Prepares the renderer for rendering an image or animation and sets the dataset being rendered.
+* Prepares the renderer for rendering one or more frames.
 ******************************************************************************/
-bool StandardSceneRenderer::startRender(DataSet* dataset, RenderSettings* settings, const QSize& frameBufferSize)
+bool StandardSceneRenderer::startRender(const RenderSettings& settings, const QSize& frameBufferSize, MixedKeyCache& visCache)
 {
 	OVITO_ASSERT(!_internalRenderer);
 
-	if(!SceneRenderer::startRender(dataset, settings, frameBufferSize))
+	if(!SceneRenderer::startRender(settings, frameBufferSize, visCache))
 		return false;
 
 	// Create the internal renderer implementation. Choose between OpenGL and Vulkan option.
@@ -72,13 +72,13 @@ bool StandardSceneRenderer::startRender(DataSet* dataset, RenderSettings* settin
 
 	// Instantiate the renderer implementation.
 	if(!rendererClass)
-		throwException(tr("The OffscreenOpenGLSceneRenderer class is not available. Please make sure the OpenGLRenderer plugin is installed correctly."));
-	_internalRenderer = static_object_cast<SceneRenderer>(rendererClass->createInstance(this->dataset()));
+		throw Exception(tr("The OffscreenOpenGLSceneRenderer class is not available. Please make sure the OpenGLRenderer plugin is installed correctly."));
+	_internalRenderer = static_object_cast<SceneRenderer>(rendererClass->createInstance());
 
 	// Pass supersampling level requested by the user to the renderer implementation.
 	_internalRenderer->setAntialiasingHint(std::max(1, antialiasingLevel()));
 
-	if(!_internalRenderer->startRender(dataset, settings, frameBufferSize))
+	if(!_internalRenderer->startRender(settings, frameBufferSize, visCache))
 		return false;
 
 	return true;
@@ -87,12 +87,12 @@ bool StandardSceneRenderer::startRender(DataSet* dataset, RenderSettings* settin
 /******************************************************************************
 * This method is called just before renderFrame() is called.
 ******************************************************************************/
-void StandardSceneRenderer::beginFrame(TimePoint time, const ViewProjectionParameters& params, Viewport* vp, const QRect& viewportRect, FrameBuffer* frameBuffer)
+void StandardSceneRenderer::beginFrame(AnimationTime time, Scene* scene, const ViewProjectionParameters& params, Viewport* vp, const QRect& viewportRect, FrameBuffer* frameBuffer)
 {
-	SceneRenderer::beginFrame(time, params, vp, viewportRect, frameBuffer);
+	SceneRenderer::beginFrame(time, scene, params, vp, viewportRect, frameBuffer);
 
 	// Call implementation class.
-	_internalRenderer->beginFrame(time, params, vp, viewportRect, frameBuffer);
+	_internalRenderer->beginFrame(time, scene, params, vp, viewportRect, frameBuffer);
 }
 
 /******************************************************************************
@@ -118,6 +118,8 @@ bool StandardSceneRenderer::renderOverlays(bool underlays, const QRect& logicalV
 ******************************************************************************/
 void StandardSceneRenderer::endFrame(bool renderingSuccessful, const QRect& viewportRect)
 {
+	SceneRenderer::endFrame(renderingSuccessful, viewportRect);
+
 	// Call implementation class.
 	_internalRenderer->endFrame(renderingSuccessful, viewportRect);
 }

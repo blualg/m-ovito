@@ -99,13 +99,13 @@ void SelectTypeModifier::propertyChanged(const PropertyFieldDescriptor* field)
 void SelectTypeModifier::evaluateSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state)
 {
 	if(!subject())
-		throwException(tr("No input element type selected."));
+		throw Exception(tr("No input element type selected."));
 	if(sourceProperty().isNull())
-		throwException(tr("No input property selected."));
+		throw Exception(tr("No input property selected."));
 
 	// Check if the source property is the right kind of property.
 	if(sourceProperty().containerClass() != subject().dataClass())
-		throwException(tr("Modifier was set to operate on '%1', but the selected input is a '%2' property.")
+		throw Exception(tr("Modifier was set to operate on '%1', but the selected input is a '%2' property.")
 			.arg(subject().dataClass()->pythonName()).arg(sourceProperty().containerClass()->propertyClassDisplayName()));
 
 	PropertyContainer* container = state.expectMutableLeafObject(subject());
@@ -114,11 +114,11 @@ void SelectTypeModifier::evaluateSynchronous(const ModifierEvaluationRequest& re
 	// Get the input property.
 	const PropertyObject* typePropertyObject = sourceProperty().findInContainer(container);
 	if(!typePropertyObject)
-		throwException(tr("The selected input property '%1' is not present.").arg(sourceProperty().name()));
+		throw Exception(tr("The selected input property '%1' is not present.").arg(sourceProperty().name()));
 	if(typePropertyObject->componentCount() != 1)
-		throwException(tr("The input property '%1' has the wrong number of components. Must be a scalar property.").arg(typePropertyObject->name()));
+		throw Exception(tr("The input property '%1' has the wrong number of components. Must be a scalar property.").arg(typePropertyObject->name()));
 	if(typePropertyObject->dataType() != PropertyObject::Int)
-		throwException(tr("The input property '%1' has the wrong data type. Must be an integer property.").arg(typePropertyObject->name()));
+		throw Exception(tr("The input property '%1' has the wrong data type. Must be an integer property.").arg(typePropertyObject->name()));
 	ConstPropertyAccess<int> typeProperty = typePropertyObject;
 
 	// Create the selection property.
@@ -143,7 +143,7 @@ void SelectTypeModifier::evaluateSynchronous(const ModifierEvaluationRequest& re
 				}
 			}
 			if(!found)
-				throwException(tr("Type '%1' does not exist in the type list of property '%2'.").arg(typeName).arg(typePropertyObject->name()));
+				throw Exception(tr("Type '%1' does not exist in the type list of property '%2'.").arg(typeName).arg(typePropertyObject->name()));
 		}
 	}
 
@@ -222,11 +222,11 @@ void SelectTypeModifier::setElementTypeSelectionState(int elementTypeId, const Q
 * Returns a short piece information (typically a string or color) to be 
 * displayed next to the object's title in the pipeline editor.
 ******************************************************************************/
-QVariant SelectTypeModifier::getPipelineEditorShortInfo(ModifierApplication* modApp) const 
+QVariant SelectTypeModifier::getPipelineEditorShortInfo(Scene* scene, ModifierApplication* modApp) const 
 {
 	QString shortInfo;
 	if(modApp && subject() && !sourceProperty().isNull() && sourceProperty().containerClass() == subject().dataClass()) {
-		const PipelineFlowState& state = modApp->evaluateInputSynchronous(dataset()->animationSettings()->time());
+		const PipelineFlowState& state = modApp->evaluateInputSynchronous(PipelineEvaluationRequest(scene->animationSettings(), scene->animationSettings()->time()));
 		if(const PropertyContainer* container = state.getLeafObject(subject())) {
 			if(const PropertyObject* inputProperty = sourceProperty().findInContainer(container)) {
 				auto sortedIds = selectedTypeIDs().values();

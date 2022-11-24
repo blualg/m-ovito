@@ -72,9 +72,7 @@ public:
 	/// \param input The file that contains the data to check.
 	/// \return The identifier string of the format if the file format is supported by this class.
 	/// \throw Exception when something went wrong.
-	virtual std::optional<QString> determineFileFormat(const FileHandle& input, DataSet* dataset) const {
-		// Note: determineFileFormat() may only be called from the main thread.
-		OVITO_ASSERT(QThread::currentThread() == dataset->thread());
+	virtual std::optional<QString> determineFileFormat(const FileHandle& input) const {
 		return checkFileFormat(input) ? std::make_optional<QString>() : std::optional<QString>{};
 	}
 
@@ -112,7 +110,7 @@ public:
 
 	/// \brief Asks the importer if the option to replace the currently selected object
 	///        with the new file(s) is available.
-	virtual bool isReplaceExistingPossible(const std::vector<QUrl>& sourceUrls) { return false; }
+	virtual bool isReplaceExistingPossible(Scene* scene, const std::vector<QUrl>& sourceUrls) { return false; }
 
 	/// \brief Returns the priority level of this importer, which is used to order multiple files that are imported simultaneously.
 	virtual int importerPriority() const { return 0; }
@@ -122,25 +120,26 @@ public:
 	virtual void setSelectedFileFormat(const QString& formatIdentifier) { OVITO_ASSERT(formatIdentifier.isEmpty()); }
 
 	/// \brief Imports one or more files into the scene.
+	/// \param scene The scene into which to import the data.
 	/// \param sourceUrlsAndImporters The location of the file(s) to import and the corresponding importers.
 	/// \param importMode Controls how the imported data is inserted into the scene.
 	/// \param autodetectFileSequences Enables the automatic detection of file sequences.
 	/// \return \c The new pipeline if the file has been successfully imported.
 	//	        \c nullptr if the operation has been canceled by the user.
 	/// \throw Exception when the import operation has failed.
-	virtual OORef<PipelineSceneNode> importFileSet(std::vector<std::pair<QUrl, OORef<FileImporter>>> sourceUrlsAndImporters, ImportMode importMode, bool autodetectFileSequences) = 0;
+	virtual OORef<PipelineSceneNode> importFileSet(Scene* scene, std::vector<std::pair<QUrl, OORef<FileImporter>>> sourceUrlsAndImporters, ImportMode importMode, bool autodetectFileSequences) = 0;
 
 	/// \brief Tries to detect the format of the given file.
 	/// \param existingImporterHint Optional existing importer object, which is tested first agains the file. Providing this importer can speed up the auto-detection.
 	/// \return The importer class that can handle the given file. If the file format could not be recognized then NULL is returned.
 	/// \throw Exception if url is invalid or if operation has been canceled by the user.
 	/// \note This is a blocking function, which downloads the file and can take a long time to return.
-	static Future<OORef<FileImporter>> autodetectFileFormat(DataSet* dataset, const QUrl& url, OORef<FileImporter> existingImporterHint = {});
+	static Future<OORef<FileImporter>> autodetectFileFormat(RefTarget* contextObject, const QUrl& url, OORef<FileImporter> existingImporterHint = {});
 
 	/// \brief Tries to detect the format of the given file.
 	/// \param existingImporterHint Optional existing importer object, which is tested first agains the file. Providing this importer can speed up the auto-detection.
 	/// \return The importer class that can handle the given file. If the file format could not be recognized then NULL is returned.
-	static OORef<FileImporter> autodetectFileFormat(DataSet* dataset, const FileHandle& file, FileImporter* existingImporterHint = nullptr);
+	static OORef<FileImporter> autodetectFileFormat(RefTarget* contextObject, const FileHandle& file, FileImporter* existingImporterHint = nullptr);
 
 	/// Helper function that is called by sub-classes prior to file parsing in order to
 	/// activate the default "C" locale.

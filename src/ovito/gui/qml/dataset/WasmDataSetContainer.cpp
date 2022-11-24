@@ -107,7 +107,7 @@ bool WasmDataSetContainer::importFile(const QUrl& url, const FileImporterClass* 
 	if(!importerType) {
 
 		// Detect file format.
-		Future<OORef<FileImporter>> importerFuture = FileImporter::autodetectFileFormat(currentSet(), ExecutionContext::Interactive, url);
+		Future<OORef<FileImporter>> importerFuture = FileImporter::autodetectFileFormat(currentSet(), ExecutionContext::Type::Interactive, url);
 		if(!taskManager().waitForFuture(importerFuture))
 			return false;
 
@@ -119,13 +119,13 @@ bool WasmDataSetContainer::importFile(const QUrl& url, const FileImporterClass* 
 			}
 			if(fileFormatList.isEmpty())
 				fileFormatList = tr("(none)");
-			currentSet()->throwException(tr("<p>Could not detect the format of the imported file. This version of OVITO supports the following formats:</p><p><ul>%1</ul></p>").arg(fileFormatList));
+			throw Exception(tr("<p>Could not detect the format of the imported file. This version of OVITO supports the following formats:</p><p><ul>%1</ul></p>").arg(fileFormatList));
 		}
 	}
 	else {
-		importer = static_object_cast<FileImporter>(importerType->createInstance(currentSet(), ExecutionContext::Interactive));
+		importer = static_object_cast<FileImporter>(importerType->createInstance(currentSet(), ExecutionContext::Type::Interactive));
 		if(!importer)
-			currentSet()->throwException(tr("Failed to import file. Could not initialize file reader."));
+			throw Exception(tr("Failed to import file. Could not initialize file reader."));
 	}
 	urlImporters.push_back(std::make_pair(url, importer));
 

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -48,7 +48,7 @@ TimeInterval CachingPipelineObject::validityInterval(const PipelineEvaluationReq
 	TimeInterval iv = PipelineObject::validityInterval(request);
 
 	// If the requested frame is available in the cache, restrict the returned validity interval to 
-	// the validity interval of the cached state. Otherwise assume that a new pipeline computation 
+	// the validity interval of the cached state. Otherwise, assume that a new pipeline computation 
 	// will be performed and let the sub-class determine the actual validity interval.
 	const PipelineFlowState& state = pipelineCache().getAt(request.time());
 	if(state.stateValidity().contains(request.time()))

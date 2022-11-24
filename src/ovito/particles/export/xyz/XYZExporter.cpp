@@ -45,7 +45,7 @@ bool XYZExporter::exportData(const PipelineFlowState& state, int frameNumber, Ti
 
 	const ParticlesOutputColumnMapping& mapping = columnMapping();
 	if(mapping.empty())
-		throwException(tr("No particle properties have been selected for export to the XYZ file. Cannot write file with zero columns."));
+		throw Exception(tr("No particle properties have been selected for export to the XYZ file. Cannot write file with zero columns."));
 	PropertyOutputWriter columnWriter(mapping, particles, PropertyOutputWriter::WriteNamesUnderscore);
 
 	const SimulationCellObject* simulationCell = state.getObject<SimulationCellObject>();
@@ -132,7 +132,7 @@ bool XYZExporter::exportData(const PipelineFlowState& state, int frameNumber, Ti
 			// Find matching property
 			const PropertyObject* property = pref.findInContainer(particles);
 			if(property == nullptr && pref.type() != ParticlesObject::IdentifierProperty)
-				throwException(tr("Particle property '%1' cannot be exported because it does not exist.").arg(pref.name()));
+				throw Exception(tr("Particle property '%1' cannot be exported because it does not exist.").arg(pref.name()));
 
 			// Count the number of consecutive columns with the same property.
 			int nCols = 1;
@@ -151,7 +151,7 @@ bool XYZExporter::exportData(const PipelineFlowState& state, int frameNumber, Ti
 			else if(dataType == qMetaTypeId<bool>())
 				dataTypeStr = QStringLiteral("L");
 			else
-				throwException(tr("Unexpected data type '%1' for property '%2'.").arg(getQtTypeNameFromId(dataType) ? getQtTypeNameFromId(dataType) : "unknown").arg(pref.name()));
+				throw Exception(tr("Unexpected data type '%1' for property '%2'.").arg(getQtTypeNameFromId(dataType) ? getQtTypeNameFromId(dataType) : "unknown").arg(pref.name()));
 
 			if(!propertiesStr.isEmpty()) propertiesStr += QStringLiteral(":");
 			propertiesStr += QStringLiteral("%1:%2:%3").arg(columnName).arg(dataTypeStr).arg(nCols);

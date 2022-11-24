@@ -46,19 +46,19 @@ void ViewportOverlay::checkAlignmentParameterValue(int alignment) const
 	int verticalAlignment = alignment & (Qt::AlignTop | Qt::AlignBottom | Qt::AlignVCenter);
 
 	if(horizontalAlignment == 0)
-		throwException(tr("No horizontal alignment flag was specified for the %1. Please check the value you provided for the alignment parameter. It must be a combination of exactly one horizontal and one vertical alignment flag.")
+		throw Exception(tr("No horizontal alignment flag was specified for the %1. Please check the value you provided for the alignment parameter. It must be a combination of exactly one horizontal and one vertical alignment flag.")
             .arg(getOOMetaClass().name()));
 
 	if(horizontalAlignment != Qt::AlignLeft && horizontalAlignment != Qt::AlignRight && horizontalAlignment != Qt::AlignHCenter)
-		throwException(tr("More than one horizontal alignment flag was specified for the %1. Please check the value you provided for the alignment parameter. It must be a combination of exactly one horizontal and one vertical alignment flag.")
+		throw Exception(tr("More than one horizontal alignment flag was specified for the %1. Please check the value you provided for the alignment parameter. It must be a combination of exactly one horizontal and one vertical alignment flag.")
             .arg(getOOMetaClass().name()));
 
 	if(verticalAlignment == 0)
-		throwException(tr("No vertical alignment flag was specified for the %1. Please check the value you provided for the alignment parameter. It must be a combination of exactly one horizontal and one vertical alignment flag.")
+		throw Exception(tr("No vertical alignment flag was specified for the %1. Please check the value you provided for the alignment parameter. It must be a combination of exactly one horizontal and one vertical alignment flag.")
             .arg(getOOMetaClass().name()));
 
 	if(verticalAlignment != Qt::AlignTop && verticalAlignment != Qt::AlignBottom && verticalAlignment != Qt::AlignVCenter)
-		throwException(tr("More than one vertical alignment flag was specified for the %1. Please check the value you provided for the alignment parameter. It must be a combination of exactly one horizontal and one vertical alignment flag.")
+		throw Exception(tr("More than one vertical alignment flag was specified for the %1. Please check the value you provided for the alignment parameter. It must be a combination of exactly one horizontal and one vertical alignment flag.")
             .arg(getOOMetaClass().name()));
 }
 

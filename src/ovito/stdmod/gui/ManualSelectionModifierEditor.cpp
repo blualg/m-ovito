@@ -279,7 +279,7 @@ void ManualSelectionModifierEditor::resetSelection()
 	if(!mod) return;
 
 	undoableTransaction(tr("Reset selection"), [this,mod]() {
-		PipelineEvaluationRequest request(ExecutionContext::Interactive, dataset()->animationSettings()->time());
+		PipelineEvaluationRequest request(ExecutionContext::Type::Interactive, dataset()->animationSettings()->time());
 		for(ModifierApplication* modApp : modifierApplications()) {
 			mod->resetSelection(modApp, modApp->evaluateInputSynchronous(request));
 		}
@@ -295,7 +295,7 @@ void ManualSelectionModifierEditor::selectAll()
 	if(!mod) return;
 
 	undoableTransaction(tr("Select all"), [this,mod]() {
-		PipelineEvaluationRequest request(ExecutionContext::Interactive, dataset()->animationSettings()->time());
+		PipelineEvaluationRequest request(ExecutionContext::Type::Interactive, dataset()->animationSettings()->time());
 		for(ModifierApplication* modApp : modifierApplications()) {
 			mod->selectAll(modApp, modApp->evaluateInputSynchronous(request));
 		}
@@ -311,7 +311,7 @@ void ManualSelectionModifierEditor::clearSelection()
 	if(!mod) return;
 
 	undoableTransaction(tr("Clear selection"), [this,mod]() {
-		PipelineEvaluationRequest request(ExecutionContext::Interactive, dataset()->animationSettings()->time());
+		PipelineEvaluationRequest request(ExecutionContext::Type::Interactive, dataset()->animationSettings()->time());
 		for(ModifierApplication* modApp : modifierApplications()) {
 			mod->clearSelection(modApp, modApp->evaluateInputSynchronous(request));
 		}
@@ -327,7 +327,7 @@ void ManualSelectionModifierEditor::invertSelection()
 	if(!mod) return;
 
 	undoableTransaction(tr("Invert selection"), [this,mod]() {
-		PipelineEvaluationRequest request(ExecutionContext::Interactive, dataset()->animationSettings()->time());
+		PipelineEvaluationRequest request(ExecutionContext::Type::Interactive, dataset()->animationSettings()->time());
 		for(ModifierApplication* modApp : modifierApplications()) {
 			mod->invertSelection(modApp, modApp->evaluateInputSynchronous(request));
 		}
@@ -343,7 +343,7 @@ void ManualSelectionModifierEditor::onElementPicked(const ViewportPickResult& pi
 	if(!mod || !mod->subject()) return;
 
 	undoableTransaction(tr("Toggle selection"), [this, mod, elementIndex, &pickedObjectPath, &pickResult]() {
-		PipelineEvaluationRequest request(ExecutionContext::Interactive, dataset()->animationSettings()->time());
+		PipelineEvaluationRequest request(ExecutionContext::Type::Interactive, dataset()->animationSettings()->time());
 		for(ModifierApplication* modApp : modifierApplications()) {
 
 			// Make sure we are in the right data pipeline.
@@ -379,7 +379,7 @@ void ManualSelectionModifierEditor::onFence(const QVector<Point2>& fence, Viewpo
 	if(!mod || !mod->subject()) return;
 
 	undoableTransaction(tr("Select"), [this, mod, &fence, viewport, mode]() {
-		PipelineEvaluationRequest request(ExecutionContext::Interactive, dataset()->animationSettings()->time());
+		PipelineEvaluationRequest request(ExecutionContext::Type::Interactive, dataset()->animationSettings()->time());
 		for(ModifierApplication* modApp : modifierApplications()) {
 
 			// Get the modifier's input data.
@@ -407,7 +407,7 @@ void ManualSelectionModifierEditor::onFence(const QVector<Point2>& fence, Viewpo
 					mod->setSelection(modApp, modInput, selection, mode);
 				}
 				else {
-					mod->throwException(tr("Sorry, making a fence-based selection is not supported for %1.").arg(mod->subject().dataClass()->elementDescriptionName()));
+					throw Exception(tr("Sorry, making a fence-based selection is not supported for %1.").arg(mod->subject().dataClass()->elementDescriptionName()));
 				}
 				break;
 			}

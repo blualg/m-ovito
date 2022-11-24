@@ -142,7 +142,7 @@ QVariant ParameterUI::getCurrentValue() const
 			QVariant val = editObject()->property(qPrintable(propertyName()));
 			OVITO_ASSERT_MSG(val.isValid(), "ParameterUI::getCurrentValue()", qPrintable(QString("The object class %1 does not define a property with the name %2 that can be cast to QVariant type.").arg(editObject()->metaObject()->className(), propertyName())));
 			if(!val.isValid())
-				editObject()->throwException(tr("The object class %1 does not define a property with the name %2 that can be cast to QVariant type.").arg(editObject()->metaObject()->className(), propertyName()));
+				throw Exception(tr("The object class %1 does not define a property with the name %2 that can be cast to QVariant type.").arg(editObject()->metaObject()->className(), propertyName()));
 			return val;
 		}
 	}

@@ -50,14 +50,14 @@ TriMeshVis::TriMeshVis(ObjectCreationParams params) : DataVis(params),
 	_backfaceCulling(false)
 {
 	if(params.createSubObjects()) {
-		setTransparencyController(ControllerManager::createFloatController(dataset()));
+		setTransparencyController(ControllerManager::createFloatController());
 	}
 }
 
 /******************************************************************************
 * Computes the bounding box of the object.
 ******************************************************************************/
-Box3 TriMeshVis::boundingBox(TimePoint time, const ConstDataObjectPath& path, const PipelineSceneNode* contextNode, const PipelineFlowState& flowState, TimeInterval& validityInterval)
+Box3 TriMeshVis::boundingBox(AnimationTime time, const ConstDataObjectPath& path, const PipelineSceneNode* contextNode, const PipelineFlowState& flowState, TimeInterval& validityInterval)
 {
 	// Compute bounding box.
 	if(const TriMeshObject* triMeshObj = path.lastAs<TriMeshObject>()) {
@@ -69,7 +69,7 @@ Box3 TriMeshVis::boundingBox(TimePoint time, const ConstDataObjectPath& path, co
 /******************************************************************************
 * Lets the vis element render a data object.
 ******************************************************************************/
-PipelineStatus TriMeshVis::render(TimePoint time, const ConstDataObjectPath& path, const PipelineFlowState& flowState, SceneRenderer* renderer, const PipelineSceneNode* contextNode)
+PipelineStatus TriMeshVis::render(AnimationTime time, const ConstDataObjectPath& path, const PipelineFlowState& flowState, SceneRenderer* renderer, const PipelineSceneNode* contextNode)
 {
 	if(!renderer->isBoundingBoxPass()) {
 

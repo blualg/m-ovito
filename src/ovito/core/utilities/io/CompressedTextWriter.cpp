@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -22,6 +22,7 @@
 
 #include <ovito/core/Core.h>
 #include <ovito/core/dataset/DataSet.h>
+#include <ovito/core/utilities/io/FileManager.h>
 #include "CompressedTextWriter.h"
 
 #include <boost/spirit/include/karma.hpp>
@@ -31,12 +32,12 @@ namespace Ovito {
 /******************************************************************************
 * Opens the output file for writing.
 ******************************************************************************/
-CompressedTextWriter::CompressedTextWriter(QFileDevice& output, DataSet* context) :
+CompressedTextWriter::CompressedTextWriter(QFileDevice& output, QObject* errorContext) :
 	_device(output), 
 #ifdef OVITO_ZLIB_SUPPORT
 	_compressor(&output), 
 #endif
-	_context(context)
+	_errorContext(errorContext)
 {
 	_filename = output.fileName();
 
@@ -46,16 +47,16 @@ CompressedTextWriter::CompressedTextWriter(QFileDevice& output, DataSet* context
 		// Open file for writing.
 		_compressor.setStreamFormat(GzipIODevice::GzipFormat);
 		if(!_compressor.open(QIODevice::WriteOnly))
-			throw Exception(tr("Failed to open output file '%1' for writing: %2").arg(_filename).arg(_compressor.errorString()), _context);
+			throw Exception(FileManager::tr("Failed to open output file '%1' for writing: %2").arg(_filename).arg(_compressor.errorString()), _errorContext);
 		_stream = &_compressor;
 #else
-		throw Exception(tr("Cannot open file '%1' for writing. This version of OVITO was built without I/O support for gzip compressed files.").arg(_filename), _context);
+		throw Exception(tr("Cannot open file '%1' for writing. This version of OVITO was built without I/O support for gzip compressed files.").arg(_filename), _errorContext);
 #endif
 	}
 	else {
 		// Open file for writing.
 		if(!output.open(QIODevice::WriteOnly | QIODevice::Text))
-			throw Exception(tr("Failed to open output file '%1' for writing: %2").arg(_filename).arg(output.errorString()), _context);
+			throw Exception(FileManager::tr("Failed to open output file '%1' for writing: %2").arg(_filename).arg(output.errorString()), _errorContext);
 		_stream = &output;
 	}
 }
@@ -192,7 +193,7 @@ CompressedTextWriter& CompressedTextWriter::operator<<(FloatType f)
 ******************************************************************************/
 void CompressedTextWriter::reportWriteError()
 {
-	throw Exception(tr("Failed to write output file '%1': %2").arg(filename()).arg(_stream->errorString()), _context);
+	throw Exception(FileManager::tr("Failed to write output file '%1': %2").arg(filename()).arg(_stream->errorString()), _errorContext);
 }
 
 }	// End of namespace

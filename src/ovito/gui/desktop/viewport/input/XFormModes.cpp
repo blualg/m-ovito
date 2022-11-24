@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -49,7 +49,7 @@ void XFormMode::activated(bool temporaryActivation)
 	// Listen to selection change events to update the coordinate display.
 	DataSetContainer& datasetContainer = inputManager()->datasetContainer();
 	connect(&datasetContainer, &DataSetContainer::selectionChangeComplete, this, &XFormMode::onSelectionChangeComplete);
-	connect(&datasetContainer, &DataSetContainer::timeChanged, this, &XFormMode::onTimeChanged);
+	connect(&datasetContainer, &DataSetContainer::currentFrameChanged, this, &XFormMode::onCurrentFrameChanged);
 	onSelectionChangeComplete(datasetContainer.currentSet() ? datasetContainer.currentSet()->selection() : nullptr);
 }
 
@@ -66,7 +66,7 @@ void XFormMode::deactivated(bool temporary)
 		_viewport = nullptr;
 	}
 	disconnect(&inputManager()->datasetContainer(), &DataSetContainer::selectionChangeComplete, this, &XFormMode::onSelectionChangeComplete);
-	disconnect(&inputManager()->datasetContainer(), &DataSetContainer::timeChanged, this, &XFormMode::onTimeChanged);
+	disconnect(&inputManager()->datasetContainer(), &DataSetContainer::currentFrameChanged, this, &XFormMode::onCurrentFrameChanged);
 	_selectedNode.setTarget(nullptr);
 	onSelectionChangeComplete(nullptr);
 	ViewportInputMode::deactivated(temporary);
@@ -112,9 +112,9 @@ void XFormMode::onSceneNodeEvent(RefTarget* source, const ReferenceEvent& event)
 }
 
 /******************************************************************************
-* Is called when the current animation time has changed.
+* Is called when the current animation frame has changed.
 ******************************************************************************/
-void XFormMode::onTimeChanged(TimePoint time)
+void XFormMode::onCurrentFrameChanged(int frame)
 {
 	if(MainWindow* mainWindow = dynamic_cast<MainWindow*>(&inputManager()->userInterface()))
 		updateCoordinateDisplay(mainWindow->coordinateDisplay());
@@ -383,20 +383,6 @@ void RotateMode::applyXForm(const OORefVector<SceneNode>& nodeSet, FloatType mul
 		// Rotate node in transformation system.
 		Rotation scaledRot = Rotation(_rotation.axis(), _rotation.angle() * multiplier);
 		node->transformationController()->rotate(time, scaledRot, transformSystem);
-
-#if 0
-		// Translate node for off-center rotation.
-		if(!ANIM_MANAGER.isAnimating()) {
-			AffineTransformation inverseSys = transformSystem.inverse();
-			/// Get node position in parent's space.
-			AffineTransformation curTM;
-			node->transformationController()->getValue(time, curTM, iv);
-			Point3 nodePos = Point3::Origin() + curTM.translation();
-			nodePos = inverseSys * nodePos;
-			Vector3 translation = (AffineTransformation::rotation(scaledRot) * nodePos) - nodePos;
-			node->transformationController()->translate(time, translation, transformSystem);
-		}
-#endif
 	}
 }
 

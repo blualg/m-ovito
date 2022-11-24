@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2013 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -40,7 +40,7 @@ class AnimationTrackBar : public QFrame
 public:
 
 	/// Constructor.
-	AnimationTrackBar(MainWindow* mainWindow, AnimationTimeSlider* timeSlider, QWidget* parentWindow = nullptr);
+	AnimationTrackBar(MainWindow& mainWindow, AnimationTimeSlider* timeSlider, QWidget* parentWindow = nullptr);
 
 protected:
 
@@ -86,6 +86,9 @@ protected:
 	/// Displays the context menu.
 	void showKeyContextMenu(const QPoint& pos, const QVector<AnimationKey*>& clickedKeys);
 
+	/// Returns the main window hosting this widget.
+	MainWindow& mainWindow() const { return _mainWindow; }
+
 protected Q_SLOTS:
 
 	/// This is called when new animation settings have been loaded.
@@ -104,6 +107,9 @@ protected Q_SLOTS:
 	void onDeleteSelectedKeys();
 
 private:
+
+	/// The main window containing this track bar widget.
+	MainWindow& _mainWindow;
 
 	/// Pointer to the animation time slider widget.
 	AnimationTimeSlider* _timeSlider;
@@ -150,5 +156,3 @@ private:
 };
 
 }	// End of namespace
-
-

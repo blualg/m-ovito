@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -22,18 +22,7 @@
 
 #include <ovito/core/Core.h>
 #include <ovito/core/dataset/pipeline/PipelineEvaluation.h>
-#include <ovito/core/dataset/scene/PipelineSceneNode.h>
 
 namespace Ovito {
-
-/******************************************************************************
-* Starts executing the pipeline evaluation.
-******************************************************************************/
-void PipelineEvaluationFuture::reset(TimePoint time)
-{
-    SharedFuture<PipelineFlowState>::reset();
-    _request = PipelineEvaluationRequest(time);
-    _pipeline = nullptr;
-}
 
 }	// End of namespace

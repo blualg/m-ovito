@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -54,7 +54,7 @@ class OVITO_CORE_EXPORT RefMaker : public OvitoObject
 protected:
 
 	/// \brief Constructor.
-	RefMaker(DataSet* dataset = nullptr);
+	RefMaker() = default;
 
 	/////////////////////////////// Reference field events ///////////////////////////////////
 
@@ -334,29 +334,32 @@ public:
 	/// \undoable
 	void replaceReferencesTo(const RefTarget* oldTarget, const RefTarget* newTarget);
 
-	///////////////////////////// DataSet access ///////////////////////////////
+	///////////////////////////// User interface context ///////////////////////////////
 
-	/// \brief Returns the dataset this object belongs to.
-	const QPointer<DataSet>& dataset() const { return _dataset; }
+	/// Indicates whether a previously recorded action on the undo stack is currently being undone or redone.
+	bool isUndoingOrRedoing() const;
+	
+	/// Indicates whether the current action being performed should be recorded on the undo stack.
+	bool isUndoRecording() const;
 
-	/// \brief Changes the dataset this object belongs to.
-	void setDataset(QPointer<DataSet> dataset) { _dataset.swap(dataset); }
-
-	///////////////////////////// Exceptions & Errors ///////////////////////////////
-
-	/// \brief This helper method throws an Exception with the given message text.
-	[[noreturn]] void throwException(const QString& msg) const;
+	/// Pushes an operation onto the undo stack if the undo stack is currently recording.
+	/// The undo record class specified as a template parameter is instantiated only if the undo stack is recording.
+	template<class UndoableOperationClass, class... Args>
+	void pushIfUndoRecording(Args&&... args) {
+		if(isUndoRecording())
+			pushUndoRecord(std::make_unique<UndoableOperationClass>(std::forward<Args>(args)...));
+	}
 
 private:
 
-	/// \brief Checks whether this RefMaker has any (direct) strong references to a RefTarget.
+	/// Checks whether this RefMaker has any (direct) strong references to a RefTarget.
 	bool hasStrongReferenceTo(const RefTarget* target) const;
 
-	/// \brief Recursive gathering function used by getAllDependencies().
-	static void walkNode(QSet<RefTarget*>& nodes, const RefMaker* node);
+	/// Records an operation on the undo stack.
+	static void pushUndoRecord(std::unique_ptr<UndoableOperation> operation);
 
-	/// The dataset this object belongs to.
-	QPointer<DataSet> _dataset;
+	/// Recursive gathering function used by getAllDependencies().
+	static void walkNode(QSet<RefTarget*>& nodes, const RefMaker* node);
 
 	friend class RefTarget;
 	friend class PropertyFieldBase;

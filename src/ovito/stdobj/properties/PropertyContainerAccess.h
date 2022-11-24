@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -327,7 +327,7 @@ private:
 		if(!_allPropertiesMutable) {
 			// Note: Our manipulations made to the PropertyContainer should never get recorded on the undo stack.
 			// The PropertyContainerAccess class must not be used to perform user editing actions.
-			OVITO_ASSERT(QThread::currentThread() != container()->thread() || !container()->dataset()->undoStack().isRecording());
+			OVITO_ASSERT(QThread::currentThread() != container()->thread() || !container()->isUndoRecording());
 
 			// Make the container and its property array mutable.
 			mutableContainer()->makePropertiesMutable();

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -31,7 +31,7 @@ IMPLEMENT_OVITO_CLASS(SurfaceMeshRegions);
 /******************************************************************************
 * Creates a storage object for standard region properties.
 ******************************************************************************/
-PropertyPtr SurfaceMeshRegions::OOMetaClass::createStandardPropertyInternal(DataSet* dataset, size_t elementCount, int type, DataBuffer::InitializationFlags flags, const ConstDataObjectPath& containerPath) const
+PropertyPtr SurfaceMeshRegions::OOMetaClass::createStandardPropertyInternal(size_t elementCount, int type, DataBuffer::InitializationFlags flags, const ConstDataObjectPath& containerPath) const
 {
 	int dataType;
 	size_t componentCount;
@@ -69,7 +69,7 @@ PropertyPtr SurfaceMeshRegions::OOMetaClass::createStandardPropertyInternal(Data
 
 	OVITO_ASSERT(componentCount == standardPropertyComponentCount(type));
 
-	PropertyPtr property = PropertyPtr::create(dataset, elementCount, dataType, componentCount, propertyName, flags & ~DataBuffer::InitializeMemory, type, componentNames);
+	PropertyPtr property = PropertyPtr::create(elementCount, dataType, componentCount, propertyName, flags & ~DataBuffer::InitializeMemory, type, componentNames);
 
 	// Initialize memory if requested.
 	if(flags.testFlag(DataBuffer::InitializeMemory) && containerPath.size() >= 2) {

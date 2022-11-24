@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -42,14 +42,10 @@ public:
 	};
 	Q_DECLARE_FLAGS(InitializationFlags, InitializationFlag);
 
-#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
-    // Qt5 still requires the class to have a default constructor for Q_DECLARE_METATYPE.
-    constexpr ObjectCreationParams() noexcept : _dataset(nullptr) {}
-#endif
-	constexpr explicit ObjectCreationParams(DataSet* dataset) noexcept : _dataset(dataset) {}
-	constexpr explicit ObjectCreationParams(DataSet* dataset, InitializationFlags flags) noexcept : _dataset(dataset), _flags(flags) {}
+    constexpr ObjectCreationParams() noexcept = default;
+	constexpr explicit ObjectCreationParams(InitializationFlags flags) noexcept : _flags(flags) {}
 
-	constexpr DataSet* dataset() const { return _dataset; }
+	//constexpr DataSet* dataset() const { return _dataset; }
 	constexpr InitializationFlags flags() const { return _flags; }
     constexpr bool dontCreateSubObjects() const { return _flags.testFlag(DontCreateSubObjects); }
     constexpr bool createSubObjects() const { return !dontCreateSubObjects(); }
@@ -61,7 +57,6 @@ public:
 #endif
 
 private:
-	DataSet* _dataset;
 	InitializationFlags _flags{NoFlags};
 };
 
@@ -191,7 +186,6 @@ public:
 	static this_type create(ObjectCreationParams params, Args&&... args) {
         using OType = std::remove_const_t<T>;
         static_assert(std::is_base_of_v<Ovito::RefTarget, OType>, "Object class must be a RefTarget derived class");
-        OVITO_ASSERT((params.dataset() || std::is_base_of_v<Ovito::DataSet, OType>));
 		OORef<OType> obj(new OType(params, std::forward<Args>(args)...));
         if(params.loadUserDefaults())
             obj->initializeParametersToUserDefaults();
@@ -200,25 +194,25 @@ public:
 
     /// Factory method that instantiates a new object.
     template<typename... Args>
-	static this_type create(DataSet* dataset, ObjectCreationParams::InitializationFlag extraFlag, Args&&... args) {
-        return create(dataset, ObjectCreationParams::InitializationFlags(extraFlag), std::forward<Args>(args)...);
+	static this_type create(ObjectCreationParams::InitializationFlag extraFlag, Args&&... args) {
+        return create(ObjectCreationParams::InitializationFlags(extraFlag), std::forward<Args>(args)...);
     }
 
     /// Factory method that instantiates a new object.
     template<typename... Args>
-	static this_type create(DataSet* dataset, ObjectCreationParams::InitializationFlags extraFlags, Args&&... args) {
-        return create(ObjectCreationParams(dataset,
+	static this_type create(ObjectCreationParams::InitializationFlags extraFlags, Args&&... args) {
+        return create(ObjectCreationParams(
             extraFlags | (ExecutionContext::isInteractive() ? ObjectCreationParams::LoadUserDefaults : ObjectCreationParams::NoFlags)), 
             std::forward<Args>(args)...);
     }
 
     /// Factory method that instantiates a new object.
     template<typename... Args>
-	static this_type create(DataSet* dataset, Args&&... args) {
+	static this_type create(Args&&... args) {
         using OType = std::remove_const_t<T>;
         if constexpr(std::is_base_of_v<Ovito::RefTarget, OType>) {
             // All RefTarget derived classes expect a ObjectCreationParams structure.
-            return create(ObjectCreationParams(dataset, 
+            return create(ObjectCreationParams(
                 ExecutionContext::isInteractive() 
                     ? ObjectCreationParams::LoadUserDefaults 
                     : ObjectCreationParams::NoFlags), std::forward<Args>(args)...);

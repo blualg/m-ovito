@@ -212,7 +212,7 @@ void SceneNodesListModel::onSceneSelectionChanged()
 		Q_EMIT selectionChangeRequested(1);
 	}
 	else {
-		int index = sceneNodes().indexOf(selection->nodes().front().get());
+		int index = sceneNodes().indexOf(selection->nodes().front());
 		Q_EMIT selectionChangeRequested(index + 1);
 	}
 }

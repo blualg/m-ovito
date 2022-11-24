@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -159,12 +159,12 @@ void VulkanSceneRenderer::initResources()
 /******************************************************************************
 * This method is called just before renderFrame() is called.
 ******************************************************************************/
-void VulkanSceneRenderer::beginFrame(TimePoint time, const ViewProjectionParameters& params, Viewport* vp, const QRect& viewportRect, FrameBuffer* frameBuffer)
+void VulkanSceneRenderer::beginFrame(TimePoint time, Scene* scene, const ViewProjectionParameters& params, Viewport* vp, const QRect& viewportRect, FrameBuffer* frameBuffer)
 {
 	// Convert viewport rect from logical device coordinates to Vulkan framebuffer coordinates.
 	QRect vulkanViewportRect(viewportRect.x() * antialiasingLevel(), viewportRect.y() * antialiasingLevel(), viewportRect.width() * antialiasingLevel(), viewportRect.height() * antialiasingLevel());
 
-	SceneRenderer::beginFrame(time, params, vp, vulkanViewportRect, frameBuffer);
+	SceneRenderer::beginFrame(time, scene, params, vp, vulkanViewportRect, frameBuffer);
 
 	// This method may only be called from the main thread where the Vulkan device lives.
 	OVITO_ASSERT(QThread::currentThread() == context()->thread());

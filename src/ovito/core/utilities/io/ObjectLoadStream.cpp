@@ -112,10 +112,8 @@ OORef<OvitoObject> ObjectLoadStream::loadObjectInternal()
 			OVITO_ASSERT(_dataset != nullptr || record.classInfo->clazz == &DataSet::OOClass() || !record.classInfo->clazz->isDerivedFrom(RefTarget::OOClass()));
 
 			// Create an instance of the object class.
-			if(record.classInfo->clazz == &DataSet::OOClass())
-				record.object = OORef<DataSet>::create(ObjectCreationParams(nullptr, ObjectCreationParams::DontCreateSubObjects));
-			else if(record.classInfo->clazz->isDerivedFrom(RefTarget::OOClass()))
-				record.object = record.classInfo->clazz->createInstance(ObjectCreationParams(_dataset, ObjectCreationParams::DontCreateSubObjects));
+			if(record.classInfo->clazz->isDerivedFrom(RefTarget::OOClass()))
+				record.object = record.classInfo->clazz->createInstance(ObjectCreationParams(ObjectCreationParams::DontCreateSubObjects));
 			else
 				record.object = record.classInfo->clazz->createInstance();
 

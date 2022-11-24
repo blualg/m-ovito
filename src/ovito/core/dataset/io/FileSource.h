@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -80,10 +80,10 @@ public:
 	virtual int numberOfSourceFrames() const override;
 
 	/// \brief Given an animation time, computes the source frame to show.
-	virtual int animationTimeToSourceFrame(TimePoint time) const override;
+	virtual int animationTimeToSourceFrame(AnimationTime time) const override;
 
 	/// \brief Given a source frame index, returns the animation time at which it is shown.
-	virtual TimePoint sourceFrameToAnimationTime(int frame) const override;
+	virtual AnimationTime sourceFrameToAnimationTime(int frame) const override;
 
 	/// \brief Returns the human-readable labels associated with the animation frames (e.g. the simulation timestep numbers).
 	virtual QMap<int, QString> animationFrameLabels() const override;

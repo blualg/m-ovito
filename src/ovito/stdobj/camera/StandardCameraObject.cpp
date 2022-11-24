@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -76,7 +76,7 @@ RefMakerClass::SerializedClassInfo::PropertyFieldInfo::CustomDeserializationFunc
 			// Need to wait until the animation keys of the controller have been completely loaded.
 			// Only then it is safe to query the controller for its value.
 			QObject::connect(controller.get(), &Controller::controllerLoadingCompleted, &owner, [camera = static_cast<StandardCameraObject*>(&owner), controller]() {
-	            camera->setFov(controller->currentFloatValue());
+	            camera->setFov(controller->getFloatValue(AnimationTime(0)));
 			});
         };
     }
@@ -89,7 +89,7 @@ RefMakerClass::SerializedClassInfo::PropertyFieldInfo::CustomDeserializationFunc
 			// Need to wait until the animation keys of the controller have been completely loaded.
 			// Only then it is safe to query the controller for its value.
 			QObject::connect(controller.get(), &Controller::controllerLoadingCompleted, &owner, [camera = static_cast<StandardCameraObject*>(&owner), controller]() {
-	            camera->setZoom(controller->currentFloatValue());
+	            camera->setZoom(controller->getFloatValue(AnimationTime(0)));
 			});
         };
     }
@@ -99,7 +99,7 @@ RefMakerClass::SerializedClassInfo::PropertyFieldInfo::CustomDeserializationFunc
 /******************************************************************************
 * Fills in the missing fields of the camera view descriptor structure.
 ******************************************************************************/
-void StandardCameraObject::projectionParameters(TimePoint time, ViewProjectionParameters& params) const
+void StandardCameraObject::projectionParameters(AnimationTime time, ViewProjectionParameters& params) const
 {
 	// Transform scene bounding box to camera space.
 	Box3 bb = params.boundingBox.transformed(params.viewMatrix).centerScale(FloatType(1.01));
@@ -144,7 +144,7 @@ void StandardCameraObject::projectionParameters(TimePoint time, ViewProjectionPa
 /******************************************************************************
 * With a target camera, indicates the distance between the camera and its target.
 ******************************************************************************/
-FloatType StandardCameraObject::getTargetDistance(TimePoint time, const PipelineSceneNode* node)
+FloatType StandardCameraObject::getTargetDistance(AnimationTime time, const PipelineSceneNode* node)
 {
 	if(node && node->lookatTargetNode() != nullptr) {
 		TimeInterval iv;
@@ -160,7 +160,7 @@ FloatType StandardCameraObject::getTargetDistance(TimePoint time, const Pipeline
 /******************************************************************************
 * Lets the vis element render a camera object.
 ******************************************************************************/
-PipelineStatus CameraVis::render(TimePoint time, const ConstDataObjectPath& path, const PipelineFlowState& flowState, SceneRenderer* renderer, const PipelineSceneNode* contextNode)
+PipelineStatus CameraVis::render(AnimationTime time, const ConstDataObjectPath& path, const PipelineFlowState& flowState, SceneRenderer* renderer, const PipelineSceneNode* contextNode)
 {
 	// Camera objects are only visible in the interactive viewports.
 	if(renderer->isInteractive() == false || renderer->viewport() == nullptr)
@@ -182,8 +182,7 @@ PipelineStatus CameraVis::render(TimePoint time, const ConstDataObjectPath& path
 	FloatType aspectRatio = 0;
 	FloatType coneAngle = 0;
 	if(contextNode->isSelected()) {
-		if(RenderSettings* renderSettings = dataset()->renderSettings())
-			aspectRatio = renderSettings->outputImageAspectRatio();
+		aspectRatio = renderer->renderSettings().outputImageAspectRatio();
 		if(const StandardCameraObject* camera = path.lastAs<StandardCameraObject>()) {
 			if(camera->isPerspective()) {
 				coneAngle = camera->fieldOfView(time, iv);
@@ -204,7 +203,7 @@ PipelineStatus CameraVis::render(TimePoint time, const ConstDataObjectPath& path
 			>;
 
 			// Lookup the rendering primitive in the vis cache.
-			auto& conePrimitive = dataset()->visCache().get<LinePrimitive>(CacheKey(
+			auto& conePrimitive = renderer->visCache().get<LinePrimitive>(CacheKey(
 					targetDistance,
 					showTargetLine,
 					aspectRatio,
@@ -212,7 +211,7 @@ PipelineStatus CameraVis::render(TimePoint time, const ConstDataObjectPath& path
 
 			// Check if we already have a valid rendering primitive that is up to date.
 			if(!conePrimitive.positions()) {
-				DataBufferAccessAndRef<Point3> targetLineVertices = DataBufferPtr::create(renderer->dataset(), 0, DataBuffer::Float, 3);
+				DataBufferAccessAndRef<Point3> targetLineVertices = DataBufferPtr::create(0, DataBuffer::Float, 3);
 				if(targetDistance != 0) {
 					if(showTargetLine) {
 						targetLineVertices.push_back(Point3::Origin());
@@ -271,7 +270,7 @@ PipelineStatus CameraVis::render(TimePoint time, const ConstDataObjectPath& path
 
 		// Load 3d camera icon.
 		if(!_cameraIconVertices) {
-			DataBufferAccessAndRef<Point3> lines = DataBufferPtr::create(renderer->dataset(), 0, DataBuffer::Float, 3);
+			DataBufferAccessAndRef<Point3> lines = DataBufferPtr::create(0, DataBuffer::Float, 3);
 			// Load and parse PLY file that contains the camera icon.
 			QFile meshFile(QStringLiteral(":/core/3dicons/camera.ply"));
 			meshFile.open(QIODevice::ReadOnly | QIODevice::Text);
@@ -324,7 +323,7 @@ PipelineStatus CameraVis::render(TimePoint time, const ConstDataObjectPath& path
 /******************************************************************************
 * Computes the bounding box of the object.
 ******************************************************************************/
-Box3 CameraVis::boundingBox(TimePoint time, const ConstDataObjectPath& path, const PipelineSceneNode* contextNode, const PipelineFlowState& flowState, TimeInterval& validityInterval)
+Box3 CameraVis::boundingBox(AnimationTime time, const ConstDataObjectPath& path, const PipelineSceneNode* contextNode, const PipelineFlowState& flowState, TimeInterval& validityInterval)
 {
 	// This is not a physical object. It doesn't have a size.
 	return Box3(Point3::Origin(), Point3::Origin());

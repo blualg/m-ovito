@@ -483,10 +483,12 @@ void ClonePipelineDialog::onAccept()
 		}
 
 		// Insert cloned pipeline into scene.
-		_originalNode->parentNode()->addChildNode(clonedPipeline);
+		if(SceneNode* parentNode = _originalNode->parentNode())
+			parentNode->addChildNode(clonedPipeline);
 
 		// Select cloned pipeline.
-		_originalNode->dataset()->selection()->setNode(clonedPipeline);
+		if(Scene* scene = _originalNode->scene())
+			scene->selection()->setNode(clonedPipeline);
 	});
 	accept();
 }

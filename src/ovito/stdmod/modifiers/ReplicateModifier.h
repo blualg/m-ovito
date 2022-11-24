@@ -81,7 +81,7 @@ public:
 	Box3I replicaRange() const;
 
 	/// Returns a short piece information (typically a string or color) to be displayed next to the modifier's title in the pipeline editor list.
-	virtual QVariant getPipelineEditorShortInfo(ModifierApplication* modApp) const override { return tr("%1 x %2 x %3").arg(numImagesX()).arg(numImagesY()).arg(numImagesZ()); }
+	virtual QVariant getPipelineEditorShortInfo(Scene* scene, ModifierApplication* modApp) const override { return tr("%1 x %2 x %3").arg(numImagesX()).arg(numImagesY()).arg(numImagesZ()); }
 
 protected:
 

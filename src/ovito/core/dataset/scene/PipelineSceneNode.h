@@ -49,7 +49,7 @@ public:
 	virtual ~PipelineSceneNode();
 
 	/// \brief Performs a synchronous evaluation of the pipeline yielding only preliminary results.
-	const PipelineFlowState& evaluatePipelineSynchronous(bool includeVisElements);
+	const PipelineFlowState& evaluatePipelineSynchronous(AnimationTime time, bool includeVisElements);
 
 	/// \brief Performs an asynchronous evaluation of the data pipeline.
 	PipelineEvaluationFuture evaluatePipeline(const PipelineEvaluationRequest& request);
@@ -70,7 +70,7 @@ public:
 	/// \brief Returns the bounding box of the scene node.
 	/// \param time The time at which the bounding box should be computed.
 	/// \return An world axis-aligned box.
-	virtual Box3 localBoundingBox(TimePoint time, TimeInterval& validity) const override;
+	virtual Box3 localBoundingBox(AnimationTime time, TimeInterval& validity) const override;
 
 	/// \brief Deletes this node from the scene.
 	virtual void deleteNode() override;
@@ -134,7 +134,7 @@ private:
 	void collectDataObjectsForVisElement(ConstDataObjectPath& path, DataVis* vis, std::vector<ConstDataObjectPath>& dataObjectPaths) const;
 
 	/// Computes the bounding box of a data object and all its sub-objects.
-	void getDataObjectBoundingBox(TimePoint time, const DataObject* dataObj, const PipelineFlowState& state, TimeInterval& validity, Box3& bb, ConstDataObjectPath& dataObjectPath) const;
+	void getDataObjectBoundingBox(AnimationTime time, const DataObject* dataObj, const PipelineFlowState& state, TimeInterval& validity, Box3& bb, ConstDataObjectPath& dataObjectPath) const;
 
 	/// The terminal object of the pipeline that outputs the data to be rendered by this PipelineSceneNode.
 	DECLARE_MODIFIABLE_REFERENCE_FIELD(OORef<PipelineObject>, dataProvider, setDataProvider);

@@ -38,7 +38,7 @@ IMPLEMENT_OVITO_CLASS(TransformingDataVis);
 Future<PipelineFlowState> TransformingDataVis::transformData(const PipelineEvaluationRequest& request, const DataObject* dataObject, PipelineFlowState&& flowState, const std::vector<OORef<TransformedDataObject>>& cachedTransformedDataObjects)
 {
 	// We don't like undo records to be created while performing the data transformation.
-	OVITO_ASSERT(dataset()->undoStack().isRecording() == false);
+	OVITO_ASSERT(!isUndoRecording());
 
 	// Check if the cache state already contains a transformed data object that we have
 	// created earlier for the same input object. If yes, we can immediately return it.
@@ -92,12 +92,12 @@ Future<PipelineFlowState> TransformingDataVis::transformData(const PipelineEvalu
 				throw;
 			}
 			catch(const std::bad_alloc&) {
-				throwException(tr("Not enough memory."));
+				throw Exception(tr("Not enough memory."));
 			}
 			catch(const std::exception& ex) {
 				qWarning() << "WARNING: Visual element" << this << "has thrown a non-standard exception:" << ex.what();
 				OVITO_ASSERT(false);
-				throwException(tr("Exception: %1").arg(QString::fromLatin1(ex.what())));
+				throw Exception(tr("Exception: %1").arg(QString::fromLatin1(ex.what())));
 			}
 		}
 		catch(Exception& ex) {

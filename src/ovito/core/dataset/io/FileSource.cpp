@@ -141,7 +141,7 @@ bool FileSource::setSource(std::vector<QUrl> sourceUrls, FileSourceImporter* imp
 	}
 
 	// Make the import process reversible.
-	UndoableTransaction transaction(dataset()->undoStack(), tr("Set input file"));
+	UndoableTransaction transaction(ExecutionContext::current().ui(), tr("Set input file"));
 
 	// Make the call to setSource() undoable.
 	class SetSourceOperation : public UndoableOperation {
@@ -159,14 +159,14 @@ bool FileSource::setSource(std::vector<QUrl> sourceUrls, FileSourceImporter* imp
 		OORef<FileSourceImporter> _oldImporter;
 		OORef<FileSource> _obj;
 	};
-	dataset()->undoStack().pushIfRecording<SetSourceOperation>(this);
+	transaction.pushIfRecording<SetSourceOperation>(this);
 
 	_sourceUrls.set(this, PROPERTY_FIELD(sourceUrls), std::move(sourceUrls));
 	_importer.set(this, PROPERTY_FIELD(importer), importer);
 
 	// Discard previously loaded data.
-	if(!keepExistingDataCollection && !dataset()->undoStack().isUndoingOrRedoing()) {
-		UndoSuspender noUndo(dataset());
+	if(!keepExistingDataCollection && !isUndoingOrRedoing()) {
+		UndoSuspender noUndo;
 		discardDataCollection();
 	}
 	setDataCollectionFrame(-1);
@@ -221,33 +221,21 @@ void FileSource::setListOfFrames(QVector<FileSourceImporter::Frame> frames)
 {
 	_framesListFuture.reset();
 
-	// If there are too many frames, time tick values may overflow. Warn the user in this case.
-	int frameLimit = TimePositiveInfinity() - std::max(0, dataset()->animationSettings()->frameToTime(playbackStartTime()));
-	if(playbackSpeedDenominator() > playbackSpeedNumerator()) {
-		frameLimit /= std::max(1, playbackSpeedDenominator()); 
-		frameLimit *= std::max(1, playbackSpeedNumerator());
-	}
-	frameLimit /= dataset()->animationSettings()->ticksPerFrame(); 
-	if(restrictToFrame() < 0 && frames.size() >= frameLimit) {
-		qWarning() << "Warning: Number of frames in loaded trajectory exceeds the maximum supported by OVITO (" << (frameLimit-1) << " frames). "
-			"Note: You can increase the limit by setting the animation frames-per-second parameter to a higher value.";
-	}
-
 	// Determine the new validity of the existing pipeline state in the cache.
 	TimeInterval remainingCacheValidity = TimeInterval::infinite();
 
 	// Invalidate all cached frames that are no longer present.
 	if(frames.size() < _frames.size())
-		remainingCacheValidity.intersect(TimeInterval(TimeNegativeInfinity(), sourceFrameToAnimationTime(frames.size())-1));
+		remainingCacheValidity.intersect(TimeInterval(AnimationTime::negativeInfinity(), sourceFrameToAnimationTime(frames.size())-1));
 
 	// When adding additional frames to the end, the cache validity interval of the last frame must be reduced (unless we are loading for the first time).
 	if(frames.size() > _frames.size() && !_frames.empty())
-		remainingCacheValidity.intersect(TimeInterval(TimeNegativeInfinity(), sourceFrameToAnimationTime(_frames.size())-1));
+		remainingCacheValidity.intersect(TimeInterval(AnimationTime::negativeInfinity(), sourceFrameToAnimationTime(_frames.size())-1));
 
 	// Invalidate all cached frames that have changed.
 	for(int frameIndex = 0; frameIndex < _frames.size() && frameIndex < frames.size(); frameIndex++) {
 		if(frames[frameIndex] != _frames[frameIndex]) {
-			remainingCacheValidity.intersect(TimeInterval(TimeNegativeInfinity(), sourceFrameToAnimationTime(frameIndex)-1));
+			remainingCacheValidity.intersect(TimeInterval(AnimationTime::negativeInfinity(), sourceFrameToAnimationTime(frameIndex)-1));
 		}
 	}
 
@@ -272,19 +260,18 @@ void FileSource::setListOfFrames(QVector<FileSourceImporter::Frame> frames)
 	notifyDependents(ReferenceEvent::AnimationFramesChanged);
 
 	if(dataCollectionFrame() < 0 && !_originallySelectedFilename.contains(QChar('*'))) {
-		// Position time slider to the frame that corresponds to the file initially picked by the user
+		// Position time slider to the frame corresponding to the file that was initially picked by the user
 		// in the file selection dialog.
 		for(int frameIndex = 0; frameIndex < _frames.size(); frameIndex++) {
 			if(_frames[frameIndex].sourceFile.fileName() == _originallySelectedFilename) {
-				TimePoint jumpToTime = sourceFrameToAnimationTime(frameIndex);
-				AnimationSettings* animSettings = dataset()->animationSettings();
-				if(animSettings->animationInterval().contains(jumpToTime))
-					animSettings->setTime(jumpToTime);
+				AnimationTime jumpToTime = sourceFrameToAnimationTime(frameIndex);
+				notifyDependentsImpl(RequestGoToAnimationTimeEvent(this, jumpToTime));
 				break;
 			}
 		}
 	}
 	else {
+#if 0 
 		// If trajectory frames have been inserted, reposition time slider to remain at the previously selected frame.
 		if(!previouslySelectedFrame.sourceFile.isEmpty()) {
 			int currentFrameIndex = animationTimeToSourceFrame(dataset()->animationSettings()->time());
@@ -292,16 +279,17 @@ void FileSource::setListOfFrames(QVector<FileSourceImporter::Frame> frames)
 				if(_frames[currentFrameIndex].sourceFile != previouslySelectedFrame.sourceFile) {
 					for(int frameIndex = 0; frameIndex < _frames.size(); frameIndex++) {
 						if(_frames[frameIndex].sourceFile == previouslySelectedFrame.sourceFile) {
-							TimePoint jumpToTime = sourceFrameToAnimationTime(frameIndex);
-							AnimationSettings* animSettings = dataset()->animationSettings();
-							if(animSettings->animationInterval().contains(jumpToTime))
-								animSettings->setTime(jumpToTime);
+							AnimationTime jumpToTime = sourceFrameToAnimationTime(frameIndex);
+							notifyDependentsImpl(RequestGoToAnimationTimeEvent(this, jumpToTime));
 							break;
 						}
 					}
 				}
 			}
 		}
+#else
+		OVITO_ASSERT(false); // TODO: To be implemented
+#endif
 	}
 
 	// Notify UI that the list of source frames has changed.
@@ -322,30 +310,27 @@ int FileSource::numberOfSourceFrames() const
 /******************************************************************************
 * Given an animation time, computes the source frame to show.
 ******************************************************************************/
-int FileSource::animationTimeToSourceFrame(TimePoint time) const
+int FileSource::animationTimeToSourceFrame(AnimationTime time) const
 {
 	if(restrictToFrame() >= 0)
 		return restrictToFrame();
 
-	const AnimationSettings* anim = dataset()->animationSettings();
-	return (time - anim->frameToTime(playbackStartTime())) *
+	return (time - AnimationTime::fromFrame(playbackStartTime())) *
 			std::max(1, playbackSpeedNumerator()) /
-			std::max(1, playbackSpeedDenominator() * anim->ticksPerFrame());
+			std::max(1, playbackSpeedDenominator() * (int)AnimationTime::TicksPerFrame);
 }
 
 /******************************************************************************
 * Given a source frame index, returns the animation time at which it is shown.
 ******************************************************************************/
-TimePoint FileSource::sourceFrameToAnimationTime(int frame) const
+AnimationTime FileSource::sourceFrameToAnimationTime(int frame) const
 {
 	if(restrictToFrame() >= 0)
-		return 0;
+		return AnimationTime(0);
 
-	const AnimationSettings* anim = dataset()->animationSettings();
-	return frame *
-			std::max(1, playbackSpeedDenominator() * anim->ticksPerFrame()) /
-			std::max(1, playbackSpeedNumerator()) +
-			anim->frameToTime(playbackStartTime());
+	return AnimationTime::fromFrame(playbackStartTime()) + AnimationTime::fromFrame(frame).ticks() *
+			std::max(1, playbackSpeedDenominator()) /
+			std::max(1, playbackSpeedNumerator());
 }
 
 /******************************************************************************
@@ -356,12 +341,11 @@ QMap<int, QString> FileSource::animationFrameLabels() const
 	// Check if the cached list of frame labels is still available.
 	// If not, rebuild the list here.
 	if(_frameLabels.empty() && restrictToFrame() < 0) {
-		AnimationSettings* animSettings = dataset()->animationSettings();
 		int frameIndex = 0;
 		for(const FileSourceImporter::Frame& frame : _frames) {
 			if(frame.label.isEmpty()) break;
 			// Convert local source frame index to global animation frame number.
-			_frameLabels.insert(animSettings->timeToFrame(FileSource::sourceFrameToAnimationTime(frameIndex)), frame.label);
+			_frameLabels.insert(FileSource::sourceFrameToAnimationTime(frameIndex).frame(), frame.label);
 			frameIndex++;
 		}
 	}
@@ -379,9 +363,9 @@ TimeInterval FileSource::validityInterval(const PipelineEvaluationRequest& reque
 	if(restrictToFrame() < 0 && frames().size() > 1) {
 		int frame = animationTimeToSourceFrame(request.time());
 		if(frame > 0)
-			iv.intersect(TimeInterval(sourceFrameToAnimationTime(frame), TimePositiveInfinity()));
+			iv.intersect(TimeInterval(sourceFrameToAnimationTime(frame), AnimationTime::positiveInfinity()));
 		if(frame < frames().size() - 1)
-			iv.intersect(TimeInterval(TimeNegativeInfinity(), std::max(sourceFrameToAnimationTime(frame + 1) - 1, sourceFrameToAnimationTime(frame))));
+			iv.intersect(TimeInterval(AnimationTime::negativeInfinity(), std::max(sourceFrameToAnimationTime(frame + 1) - 1, sourceFrameToAnimationTime(frame))));
 	}
 
 	return iv;
@@ -429,7 +413,7 @@ Future<PipelineFlowState> FileSource::evaluateInternal(const PipelineEvaluationR
 						return PipelineFlowState(dataCollection(), PipelineStatus(PipelineStatus::Error, tr("The file source path has not been set.")));
 					}
 					if(frame >= frames().size())
-						throwException(tr("Requested source frame index is out of range."));
+						throw Exception(tr("Requested source frame index is out of range."));
 
 					// Compute the validity interval of the returned pipeline state.
 					TimeInterval interval = frameTimeInterval(frame);
@@ -437,14 +421,13 @@ Future<PipelineFlowState> FileSource::evaluateInternal(const PipelineEvaluationR
 
 					// Set up the load request to be submitted to the FileSourceImporter.
 					FileSourceImporter::LoadOperationRequest loadRequest;
-					loadRequest.dataset = dataset();
 					loadRequest.dataSource = this;
 					loadRequest.fileHandle = fileHandle;
 					loadRequest.frame = frameInfo;
 					loadRequest.isNewlyImportedFile = (dataCollection() == nullptr);
 					loadRequest.state.setData(dataCollection()
 						? DataOORef<const DataCollection>(dataCollection()) 
-						: DataOORef<const DataCollection>::create(dataset()));
+						: DataOORef<const DataCollection>::create());
 
 					// Add some standard global attributes to the pipeline state to indicate where it is coming from.
 					loadRequest.state.setAttribute(QStringLiteral("SourceFrame"), frame, this);
@@ -554,7 +537,7 @@ void FileSource::reloadFrame(bool refetchFiles, int frameIndex)
 	// When updating a single frame, we can preserve all frames up to the invalidated one.
 	TimeInterval unchangedInterval = TimeInterval::empty();
 	if(frameIndex > 0 && restrictToFrame() < 0)
-		unchangedInterval = TimeInterval(TimeNegativeInfinity(), frameTimeInterval(frameIndex-1).end());
+		unchangedInterval = TimeInterval(AnimationTime::negativeInfinity(), frameTimeInterval(frameIndex-1).end());
 	
 	// Throw away cached frame data and notify pipeline that an update is in order.
 	pipelineCache().invalidate(unchangedInterval);

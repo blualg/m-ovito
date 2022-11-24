@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -97,7 +97,7 @@ RenderSettings::RenderSettings(ObjectCreationParams params) : RefTarget(params),
 {
 	if(params.createSubObjects()) {
 		// Setup default background color.
-		setBackgroundColorController(ControllerManager::createColorController(dataset()));
+		setBackgroundColorController(ControllerManager::createColorController());
 		setBackgroundColor(Color(1,1,1));
 
 		// Create an instance of the default renderer class.

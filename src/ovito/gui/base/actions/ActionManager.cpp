@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -59,9 +59,32 @@ ActionManager::ActionManager(QObject* parent, UserInterface& userInterface) : QA
 	createCommandAction(ACTION_HELP_SHOW_SCRIPTING_HELP, tr("Scripting Reference"), "help_scripting_manual", tr("Open the Python API documentation."));
 	createCommandAction(ACTION_HELP_GRAPHICS_SYSINFO, tr("System Information"), "help_system_info", tr("Display system and graphics hardware information."));
 
-	createCommandAction(ACTION_EDIT_UNDO, tr("Undo"), "edit_undo", tr("Reverse the last action."), QKeySequence::Undo);
-	createCommandAction(ACTION_EDIT_REDO, tr("Redo"), "edit_redo", tr("Restore the previously reversed action."), QKeySequence::Redo);
-	createCommandAction(ACTION_EDIT_CLEAR_UNDO_STACK, tr("Clear Undo Stack"), nullptr, tr("Discards all existing undo records."))->setVisible(false);
+	QAction* undoAction = createCommandAction(ACTION_EDIT_UNDO, tr("Undo"), "edit_undo", tr("Reverse the last action."), QKeySequence::Undo);
+	QAction* redoAction = createCommandAction(ACTION_EDIT_REDO, tr("Redo"), "edit_redo", tr("Restore the previously reversed action."), QKeySequence::Redo);
+	QAction* clearUndoStackAction = createCommandAction(ACTION_EDIT_CLEAR_UNDO_STACK, tr("Clear Undo Stack"), nullptr, tr("Discards all existing undo records."));
+	clearUndoStackAction->setVisible(false);
+	if(UndoStack* undoStack = userInterface.undoStack()) {
+		undoAction->setEnabled(undoStack->canUndo());
+		redoAction->setEnabled(undoStack->canRedo());
+		undoAction->setText(tr("Undo %1").arg(undoStack->undoText()));
+		redoAction->setText(tr("Redo %1").arg(undoStack->redoText()));
+		connect(undoStack, &UndoStack::canUndoChanged, undoAction, &QAction::setEnabled);
+		connect(undoStack, &UndoStack::canRedoChanged, redoAction, &QAction::setEnabled);
+		connect(undoStack, &UndoStack::undoTextChanged, undoAction, [undoAction](const QString& undoText) {
+			undoAction->setText(tr("Undo %1").arg(undoText));
+		});
+		connect(undoStack, &UndoStack::redoTextChanged, redoAction, [redoAction](const QString& redoText) {
+			redoAction->setText(tr("Redo %1").arg(redoText));
+		});
+		connect(undoAction, &QAction::triggered, undoStack, &UndoStack::undo);
+		connect(redoAction, &QAction::triggered, undoStack, &UndoStack::redo);
+		connect(clearUndoStackAction, &QAction::triggered, undoStack, &UndoStack::clear);
+	}
+	else {
+		undoAction->setEnabled(false);
+		redoAction->setEnabled(false);
+		clearUndoStackAction->setEnabled(false);		
+	}
 
 	QAction* createNewPipelineAcion = createCommandAction(ACTION_NEW_PIPELINE_FILESOURCE, tr("External data file"), "edit_create_pipeline", tr("Creates a new pipeline with an external file as data source."));
 	QAction* clonePipelineAction = createCommandAction(ACTION_EDIT_CLONE_PIPELINE, tr("Clone Pipeline..."), "edit_clone_pipeline", tr("Duplicate the current pipeline to show multiple datasets side by side."));
@@ -130,39 +153,8 @@ DataSet* ActionManager::dataset() const
 
 void ActionManager::onDataSetChanged(DataSet* newDataSet)
 {
-	disconnect(_canUndoChangedConnection);
-	disconnect(_canRedoChangedConnection);
-	disconnect(_undoTextChangedConnection);
-	disconnect(_redoTextChangedConnection);
-	disconnect(_undoTriggeredConnection);
-	disconnect(_redoTriggeredConnection);
-	disconnect(_clearUndoStackTriggeredConnection);
-	QAction* undoAction = getAction(ACTION_EDIT_UNDO);
-	QAction* redoAction = getAction(ACTION_EDIT_REDO);
-	QAction* clearUndoStackAction = getAction(ACTION_EDIT_CLEAR_UNDO_STACK);
-	if(newDataSet) {
-		undoAction->setEnabled(newDataSet->undoStack().canUndo());
-		redoAction->setEnabled(newDataSet->undoStack().canRedo());
-		clearUndoStackAction->setEnabled(true);
-		undoAction->setText(tr("Undo %1").arg(newDataSet->undoStack().undoText()));
-		redoAction->setText(tr("Redo %1").arg(newDataSet->undoStack().redoText()));
-		_canUndoChangedConnection = connect(&newDataSet->undoStack(), &UndoStack::canUndoChanged, undoAction, &QAction::setEnabled);
-		_canRedoChangedConnection = connect(&newDataSet->undoStack(), &UndoStack::canRedoChanged, redoAction, &QAction::setEnabled);
-		_undoTextChangedConnection = connect(&newDataSet->undoStack(), &UndoStack::undoTextChanged, [this,undoAction](const QString& undoText) {
-			undoAction->setText(tr("Undo %1").arg(undoText));
-		});
-		_redoTextChangedConnection = connect(&newDataSet->undoStack(), &UndoStack::redoTextChanged, [this,redoAction](const QString& redoText) {
-			redoAction->setText(tr("Redo %1").arg(redoText));
-		});
-		_undoTriggeredConnection = connect(undoAction, &QAction::triggered, &newDataSet->undoStack(), &UndoStack::undo);
-		_redoTriggeredConnection = connect(redoAction, &QAction::triggered, &newDataSet->undoStack(), &UndoStack::redo);
-		_clearUndoStackTriggeredConnection = connect(clearUndoStackAction, &QAction::triggered, &newDataSet->undoStack(), &UndoStack::clear);
-	}
-	else {
-		undoAction->setEnabled(false);
-		redoAction->setEnabled(false);
-		clearUndoStackAction->setEnabled(false);
-	}
+	// Turn off auto-key animation mode.
+	getAction(ACTION_AUTO_KEY_MODE_TOGGLE)->setChecked(false);
 }
 
 /******************************************************************************
@@ -170,41 +162,35 @@ void ActionManager::onDataSetChanged(DataSet* newDataSet)
 ******************************************************************************/
 void ActionManager::onAnimationSettingsReplaced(AnimationSettings* newAnimationSettings)
 {
-	disconnect(_autoKeyModeChangedConnection);
-	disconnect(_autoKeyModeToggledConnection);
 	disconnect(_animationIntervalChangedConnection);
 	disconnect(_animationPlaybackChangedConnection);
 	disconnect(_animationPlaybackToggledConnection);
 	if(newAnimationSettings) {
-		QAction* autoKeyModeAction = getAction(ACTION_AUTO_KEY_MODE_TOGGLE);
 		QAction* animationPlaybackAction = getAction(ACTION_TOGGLE_ANIMATION_PLAYBACK);
-		autoKeyModeAction->setChecked(newAnimationSettings->autoKeyMode());
 		animationPlaybackAction->setChecked(newAnimationSettings->isPlaybackActive());
-		_autoKeyModeChangedConnection = connect(newAnimationSettings, &AnimationSettings::autoKeyModeChanged, autoKeyModeAction, &QAction::setChecked);
-		_autoKeyModeToggledConnection = connect(autoKeyModeAction, &QAction::toggled, newAnimationSettings, &AnimationSettings::setAutoKeyMode);
 		_animationIntervalChangedConnection = connect(newAnimationSettings, &AnimationSettings::intervalChanged, this, &ActionManager::onAnimationIntervalChanged);
 		_animationPlaybackChangedConnection = connect(newAnimationSettings, &AnimationSettings::playbackChanged, animationPlaybackAction, &QAction::setChecked);
 		_animationPlaybackToggledConnection = connect(animationPlaybackAction, &QAction::toggled, newAnimationSettings, &AnimationSettings::setAnimationPlayback);
-		onAnimationIntervalChanged(newAnimationSettings->animationInterval());
+		onAnimationIntervalChanged(newAnimationSettings->firstFrame(), newAnimationSettings->lastFrame());
 	}
 	else {
-		onAnimationIntervalChanged(TimeInterval(0));
+		onAnimationIntervalChanged(0, 0);
 	}
 }
 
 /******************************************************************************
 * This is called when the active animation interval has changed.
 ******************************************************************************/
-void ActionManager::onAnimationIntervalChanged(TimeInterval newAnimationInterval)
+void ActionManager::onAnimationIntervalChanged(int firstFrame, int lastFrame)
 {
-	bool isAnimationInterval = newAnimationInterval.duration() != 0;
-	getAction(ACTION_GOTO_START_OF_ANIMATION)->setEnabled(isAnimationInterval);
-	getAction(ACTION_GOTO_PREVIOUS_FRAME)->setEnabled(isAnimationInterval);
-	getAction(ACTION_TOGGLE_ANIMATION_PLAYBACK)->setEnabled(isAnimationInterval);
-	getAction(ACTION_GOTO_NEXT_FRAME)->setEnabled(isAnimationInterval);
-	getAction(ACTION_GOTO_END_OF_ANIMATION)->setEnabled(isAnimationInterval);
-	getAction(ACTION_AUTO_KEY_MODE_TOGGLE)->setEnabled(isAnimationInterval);
-	if(!isAnimationInterval && getAction(ACTION_AUTO_KEY_MODE_TOGGLE)->isChecked())
+	bool isAnimation = (lastFrame > firstFrame);
+	getAction(ACTION_GOTO_START_OF_ANIMATION)->setEnabled(isAnimation);
+	getAction(ACTION_GOTO_PREVIOUS_FRAME)->setEnabled(isAnimation);
+	getAction(ACTION_TOGGLE_ANIMATION_PLAYBACK)->setEnabled(isAnimation);
+	getAction(ACTION_GOTO_NEXT_FRAME)->setEnabled(isAnimation);
+	getAction(ACTION_GOTO_END_OF_ANIMATION)->setEnabled(isAnimation);
+	getAction(ACTION_AUTO_KEY_MODE_TOGGLE)->setEnabled(isAnimation);
+	if(!isAnimation && getAction(ACTION_AUTO_KEY_MODE_TOGGLE)->isChecked())
 		getAction(ACTION_AUTO_KEY_MODE_TOGGLE)->setChecked(false);
 }
 
@@ -370,18 +356,23 @@ void ActionManager::updateActionStates()
 }
 
 /******************************************************************************
-* Handles ACTION_EDIT_DELETE command
+* Handles ACTION_EDIT_DELETE command.
 ******************************************************************************/
 void ActionManager::on_EditDelete_triggered()
 {
-	UndoableTransaction::handleExceptions(dataset()->undoStack(), tr("Delete pipeline"), [this]() {
-		// Delete all nodes in selection set.
-		for(SceneNode* node : dataset()->selection()->nodes())
-			node->deleteNode();
+	UndoableTransaction::handleExceptions(userInterface(), tr("Delete pipeline"), [this]() {
+		// Get active scene.
+		if(Viewport* vp = dataset()->viewportConfig()->activeViewport()) {
+			if(Scene* scene = vp->scene()) {
+				// Delete all nodes in selection set.
+				for(SceneNode* node : scene->selection()->nodes())
+					node->deleteNode();
 
-		// Automatically select one of the remaining nodes.
-		if(dataset()->scene()->children().isEmpty() == false)
-			dataset()->selection()->setNode(dataset()->scene()->children().front());
+				// Automatically select one of the remaining nodes.
+				if(scene->children().isEmpty() == false)
+					scene->selection()->setNode(scene->children().front());
+			}
+		}
 	});
 }
 
@@ -479,6 +470,5 @@ void ActionManager::openHelpTopic(const QString& helpTopicId)
 		Exception(QStringLiteral("Could not launch browser to display manual. The requested URL is:\n%1").arg(url.toDisplayString())).reportError();
 	}
 }
-
 
 }	// End of namespace

@@ -267,6 +267,13 @@ void WidgetActionManager::on_FileRemoteImport_triggered()
 ******************************************************************************/
 void WidgetActionManager::on_FileExport_triggered()
 {
+	// Get the scene from which data is to be exported.
+	OORef<Scene> scene = userInterface().activeScene();
+	if(!scene) {
+		Exception(tr("There currently is no active scene that can be exported."), dataset()).reportError();
+		return;
+	}
+
 	// Build filter string.
 	QStringList filterStrings;
 	QVector<const FileExporterClass*> exporterTypes = PluginManager::instance().metaclassMembers<FileExporter>();
@@ -299,9 +306,11 @@ void WidgetActionManager::on_FileExport_triggered()
 	dialog.setFileMode(QFileDialog::AnyFile);
 
 	// Go to the last directory used.
-	QString lastExportDirectory = settings.value("last_export_dir").toString();
-	if(!lastExportDirectory.isEmpty())
-		dialog.setDirectory(lastExportDirectory);
+	if(HistoryFileDialog::keepWorkingDirectoryHistoryEnabled()) {
+		QString lastExportDirectory = settings.value("last_export_dir").toString();
+		if(!lastExportDirectory.isEmpty())
+			dialog.setDirectory(lastExportDirectory);
+	}
 	// Select the last export filter being used ...
 	QString lastExportFilter = settings.value("last_export_filter").toString();
 	if(!lastExportFilter.isEmpty())
@@ -316,8 +325,10 @@ void WidgetActionManager::on_FileExport_triggered()
 
 	QString exportFile = files.front();
 
-	// Remember directory for the next time...
-	settings.setValue("last_export_dir", dialog.directory().absolutePath());
+	if(HistoryFileDialog::keepWorkingDirectoryHistoryEnabled()) {
+		// Remember directory for the next time...
+		settings.setValue("last_export_dir", dialog.directory().absolutePath());
+	}
 	// Remember export filter for the next time...
 	settings.setValue("last_export_filter", dialog.selectedNameFilter());
 
@@ -334,13 +345,13 @@ void WidgetActionManager::on_FileExport_triggered()
 
 		// Block until the scene is ready.
 		{
-			ProgressDialog progressDialog(&mainWindow(), mainWindow(), tr("Waiting for pipelines to complete"));
-			if(!dataset()->whenSceneReady().waitForFinished())
+			ProgressDialog progressDialog(&mainWindow(), mainWindow(), tr("Waiting for pipeline computations to complete"));
+			if(!scene->whenReady().waitForFinished())
 				return;
 		}
 
-		// Choose the pipelines to be exported.
-		exporter->selectDefaultExportableData();
+		// If the exporter supports it, automatically choose the pipeline(s) and data object(s) to be exported.
+		exporter->selectDefaultExportableData(scene);
 
 		// Let the user adjust the settings of the exporter.
 		FileExporterSettingsDialog settingsDialog(mainWindow(), exporter);

@@ -89,7 +89,7 @@ bool CAExporter::exportFrame(int frameNumber, TimePoint time, const QString& fil
 	const SurfaceMesh* defectMesh = meshExportEnabled() ? state.getObject<SurfaceMesh>() : nullptr;
 
 	if(!dislocationObj && !defectMesh && !microstructureObj)
-		throwException(tr("Dataset to be exported contains no dislocation lines nor a surface mesh. Cannot write CA file."));
+		throw Exception(tr("Dataset to be exported contains no dislocation lines nor a surface mesh. Cannot write CA file."));
 
 	// Write file header.
 	textStream() << "CA_FILE_VERSION 6\n";

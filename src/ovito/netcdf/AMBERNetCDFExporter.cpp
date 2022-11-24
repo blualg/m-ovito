@@ -212,10 +212,10 @@ bool AMBERNetCDFExporter::exportData(const PipelineFlowState& state, int frameNu
 				// Skip the identifier property if it doesn't exist.
 				if(c->type() == ParticlesObject::IdentifierProperty)
 					continue;
-				throwException(tr("Invalid list of particle properties to be exported. The property '%1' does not exist.").arg(c->name()));
+				throw Exception(tr("Invalid list of particle properties to be exported. The property '%1' does not exist.").arg(c->name()));
 			}
 			if((int)prop->componentCount() <= std::max(0, c->vectorComponent()))
-				throwException(tr("The output vector component selected for column %1 is out of range. The particle property '%2' has only %3 component(s).").arg(c - columnMapping().begin() + 1).arg(c->name()).arg(prop->componentCount()));
+				throw Exception(tr("The output vector component selected for column %1 is out of range. The particle property '%2' has only %3 component(s).").arg(c - columnMapping().begin() + 1).arg(c->name()).arg(prop->componentCount()));
 
 			// For certain standard properties we need to use NetCDF variables according to the AMBER convention.
 			// All other properties are output as NetCDF variables under their normal name.
@@ -263,7 +263,7 @@ bool AMBERNetCDFExporter::exportData(const PipelineFlowState& state, int frameNu
 		size_t na;
 		NCERR(nc_inq_dimlen(_ncid, _atom_dim, &na));
 		if(na != atomsCount)
-			throwException(tr("Number of particles did change between animation frames. Writing a NetCDF trajectory file with "
+			throw Exception(tr("Number of particles did change between animation frames. Writing a NetCDF trajectory file with "
 				"a varying number of atoms is not supported by the AMBER format convention."));
 	}
 
@@ -337,11 +337,11 @@ bool AMBERNetCDFExporter::exportData(const PipelineFlowState& state, int frameNu
 		// Look up the property to be exported.
 		const PropertyObject* prop = outColumn.property.findInContainer(particles);
 		if(!prop)
-			throwException(tr("The property '%1' cannot be exported, because it does not exist at frame %2.").arg(outColumn.property.name()).arg(frameNumber));
+			throw Exception(tr("The property '%1' cannot be exported, because it does not exist at frame %2.").arg(outColumn.property.name()).arg(frameNumber));
 		if((int)prop->componentCount() != outColumn.componentCount)
-			throwException(tr("Particle property '%1' cannot be exported, because its number of components has changed at frame %2.").arg(outColumn.property.name()).arg(frameNumber));
+			throw Exception(tr("Particle property '%1' cannot be exported, because its number of components has changed at frame %2.").arg(outColumn.property.name()).arg(frameNumber));
 		if(prop->dataType() != outColumn.dataType)
-			throwException(tr("Particle property '%1' cannot be exported, because its data type has changed at frame %2.").arg(outColumn.property.name()).arg(frameNumber));
+			throw Exception(tr("Particle property '%1' cannot be exported, because its data type has changed at frame %2.").arg(outColumn.property.name()).arg(frameNumber));
 
 		// Write property data to file.
 		count[2] = outColumn.componentCount;

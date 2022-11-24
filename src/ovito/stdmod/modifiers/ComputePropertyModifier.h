@@ -195,7 +195,7 @@ public:
 	/// \undoable
 	void setExpression(const QString& expression, int index = 0) {
 		if(index < 0 || index >= expressions().size())
-			throwException("Property component index is out of range.");
+			throw Exception("Property component index is out of range.");
 		QStringList copy = _expressions;
 		copy[index] = expression;
 		setExpressions(std::move(copy));
@@ -207,7 +207,7 @@ public:
 	/// \undoable
 	const QString& expression(int index = 0) const {
 		if(index < 0 || index >= expressions().size())
-			throwException("Property component index is out of range.");
+			throw Exception("Property component index is out of range.");
 		return expressions()[index];
 	}
 
@@ -228,7 +228,7 @@ public:
 	QStringList propertyComponentNames() const;
 
 	/// Returns a short piece information (typically a string or color) to be displayed next to the modifier's title in the pipeline editor list.
-	virtual QVariant getPipelineEditorShortInfo(ModifierApplication* modApp) const override { return outputProperty().name(); }
+	virtual QVariant getPipelineEditorShortInfo(Scene* scene, ModifierApplication* modApp) const override { return outputProperty().name(); }
 
 protected:
 

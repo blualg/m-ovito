@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -36,7 +36,7 @@ void SelectionSet::push_back(SceneNode* node)
 {
 	OVITO_CHECK_OBJECT_POINTER(node);
 	if(nodes().contains(node))
-		throwException(tr("Node is already in the selection set."));
+		throw Exception(tr("Node is already in the selection set."));
 
 	// Insert into children array.
 	_nodes.push_back(this, PROPERTY_FIELD(nodes), node);
@@ -49,7 +49,7 @@ void SelectionSet::insert(int index, SceneNode* node)
 {
 	OVITO_CHECK_OBJECT_POINTER(node);
 	if(nodes().contains(node))
-		throwException(tr("Node is already in the selection set."));
+		throw Exception(tr("Node is already in the selection set."));
 
 	// Insert into children array.
 	_nodes.insert(this, PROPERTY_FIELD(nodes), index, node);

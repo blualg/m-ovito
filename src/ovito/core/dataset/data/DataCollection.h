@@ -318,7 +318,7 @@ public:
 	/// assigns the given data source object, and finally inserts the data object into this pipeline flow state.
 	template<class DataObjectType, typename... Args>
 	DataObjectType* createObject(const PipelineObject* dataSource, Args&&... args) {
-		OORef<DataObjectType> obj = OORef<DataObjectType>::create(this->dataset(), std::forward<Args>(args)...);
+		OORef<DataObjectType> obj = OORef<DataObjectType>::create(std::forward<Args>(args)...);
 		obj->setDataSource(const_cast<PipelineObject*>(dataSource));
 		addObject(obj);
 		return obj;

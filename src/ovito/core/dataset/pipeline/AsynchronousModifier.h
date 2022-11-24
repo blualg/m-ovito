@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -85,9 +85,6 @@ public:
 
 		/// Returns the object to be set as data source of data objects newly created by the engine.
 		const PipelineObject* dataSource() const { return _request.modApp(); }
-
-		/// Returns the context dataset this engine is running in.
-		DataSet* dataset() const { return _request.dataset(); }
 
 	private:
 

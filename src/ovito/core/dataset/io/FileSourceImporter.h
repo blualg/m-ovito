@@ -90,9 +90,6 @@ public:
 
 	struct LoadOperationRequest {
 
-		/// The global dataset.
-		DataSet* dataset = nullptr;
-
 		/// The source file information.
 		Frame frame;
 
@@ -102,7 +99,7 @@ public:
 		/// Holds the data objects loaded from the file. DataCollection contains the data from a previous trajectory frame if any. 
 		PipelineFlowState state;
 
-		/// Pointer to the FileSource that initiated the load operation.
+		/// The FileSource that initiated the load operation.
 		QPointer<PipelineObject> dataSource;
 
 		/// If a loaded data collection consists of sub-collections, this string specifies the 
@@ -127,9 +124,6 @@ public:
 
 		/// Constructor.
 		FrameLoader(const LoadOperationRequest& request) : _loadRequest(request) {}
-
-		/// Returns the global dataset this frame loader belongs to.
-		DataSet* dataset() const { return loadRequest().dataset; }
 
 		/// Returns the source file information.
 		const Frame& frame() const { return loadRequest().frame; }
@@ -212,10 +206,10 @@ public:
 
 	/// \brief Asks the importer if the option to replace the currently selected object
 	///        with the new file(s) is available.
-	virtual bool isReplaceExistingPossible(const std::vector<QUrl>& sourceUrls) override;
+	virtual bool isReplaceExistingPossible(Scene* scene, const std::vector<QUrl>& sourceUrls) override;
 
 	/// \brief Imports the given file(s) into the scene.
-	virtual OORef<PipelineSceneNode> importFileSet(std::vector<std::pair<QUrl, OORef<FileImporter>>> sourceUrlsAndImporters, ImportMode importMode, bool autodetectFileSequences) override;
+	virtual OORef<PipelineSceneNode> importFileSet(Scene* scene, std::vector<std::pair<QUrl, OORef<FileImporter>>> sourceUrlsAndImporters, ImportMode importMode, bool autodetectFileSequences) override;
 
 	//////////////////////////// Specific methods ////////////////////////////////
 
@@ -251,7 +245,7 @@ public:
 	virtual Future<QVector<Frame>> discoverFrames(const FileHandle& fileHandle);
 
 	/// \brief Returns the list of files that match the given wildcard pattern.
-	static Future<std::vector<QUrl>> findWildcardMatches(const QUrl& sourceUrl, DataSet* dataset);
+	static Future<std::vector<QUrl>> findWildcardMatches(const QUrl& sourceUrl);
 
 	/// \brief Sends a request to the FileSource owning this importer to reload the input file.
 	void requestReload(bool refetchFiles = false, int frame = -1);

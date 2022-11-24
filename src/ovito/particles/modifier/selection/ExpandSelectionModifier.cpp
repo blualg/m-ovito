@@ -96,7 +96,7 @@ Future<AsynchronousModifier::EnginePtr> ExpandSelectionModifier::createEngine(co
 		return std::make_shared<ExpandSelectionBondedEngine>(request, particles, posProperty, inputCell, inputSelection, numberOfIterations(), particles->expectBondsTopology());
 	}
 	else {
-		throwException(tr("Invalid selection expansion mode."));
+		throw Exception(tr("Invalid selection expansion mode."));
 	}
 }
 
@@ -209,7 +209,7 @@ void ExpandSelectionModifier::ExpandSelectionEngine::applyResults(const Modifier
 	// Get the output particles.
 	ParticlesObject* particles = state.expectMutableObject<ParticlesObject>();
 	if(_inputFingerprint.hasChanged(particles))
-		request.modApp()->throwException(tr("Cached modifier results are obsolete, because the number or the storage order of input particles has changed."));
+		throw Exception(tr("Cached modifier results are obsolete, because the number or the storage order of input particles has changed."));
 
 	// Output the selection property.
 	particles->createProperty(outputSelection());

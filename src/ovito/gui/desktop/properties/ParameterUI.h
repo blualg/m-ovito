@@ -20,11 +20,6 @@
 //
 ////////////////////////////////////////////////////////////////////////////////////////
 
-/**
- * \file ParameterUI.h
- * \brief Contains the definition of the Ovito::ParameterUI class and some derived classes.
- */
-
 #pragma once
 
 

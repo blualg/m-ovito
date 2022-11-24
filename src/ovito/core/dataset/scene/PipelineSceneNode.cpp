@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -32,6 +32,7 @@
 #include <ovito/core/dataset/UndoStackOperations.h>
 #include <ovito/core/viewport/Viewport.h>
 #include <ovito/core/app/Application.h>
+#include <ovito/core/app/UserInterface.h>
 #include <ovito/core/oo/CloneHelper.h>
 
 namespace Ovito {
@@ -68,9 +69,9 @@ PipelineSceneNode::~PipelineSceneNode() // NOLINT
 /******************************************************************************
 * Performs a synchronous evaluation of the pipeline yielding only preliminary results.
 ******************************************************************************/
-const PipelineFlowState& PipelineSceneNode::evaluatePipelineSynchronous(bool includeVisElements)
+const PipelineFlowState& PipelineSceneNode::evaluatePipelineSynchronous(AnimationTime time, bool includeVisElements)
 {	
-	PipelineEvaluationRequest request(dataset()->animationSettings()->time());
+	PipelineEvaluationRequest request(time, time.frame());
 	return includeVisElements ? 
 		_pipelineRenderingCache.evaluatePipelineSynchronous(request) : 
 		_pipelineCache.evaluatePipelineSynchronous(request);
@@ -127,8 +128,9 @@ void PipelineSceneNode::collectVisElements(const DataObject* dataObj, std::vecto
 ******************************************************************************/
 void PipelineSceneNode::updateVisElementList(const PipelineFlowState& state)
 {
-	// Only gather vis elements that are present in the pipeline at the current animation time.
-	if(!state.stateValidity().contains(dataset()->animationSettings()->time()))
+	// Only gather vis elements that are present in the pipeline at the animation time currently shown in the GUI.
+	std::optional<AnimationTime> time = currentAnimationTime();
+	if(!time || !state.stateValidity().contains(*time))
 		return;
 
 	// Collect all visual elements from the current pipeline state.
@@ -183,7 +185,7 @@ bool PipelineSceneNode::referenceEvent(RefTarget* source, const ReferenceEvent& 
 			invalidatePipelineCache(TimeInterval::empty(), true);
 
 			// Data provider has been deleted -> delete scene node as well.
-			if(!dataset()->undoStack().isUndoingOrRedoing())
+			if(!isUndoingOrRedoing())
 				deleteNode();
 		}
 		else if(event.type() == ReferenceEvent::PipelineChanged) {
@@ -332,12 +334,13 @@ QString PipelineSceneNode::objectTitle() const
 ******************************************************************************/
 ModifierApplication* PipelineSceneNode::applyModifier(Modifier* modifier)
 {
-	OVITO_ASSERT(modifier);
+	OVITO_ASSERT(modifier);	
 
 	OORef<ModifierApplication> modApp = modifier->createModifierApplication();
 	modApp->setModifier(modifier);
 	modApp->setInput(dataProvider());
-	modifier->initializeModifier(ModifierInitializationRequest(dataset()->animationSettings()->time(), modApp));
+	AnimationTime time = currentAnimationTime().value_or(AnimationTime(0));
+	modifier->initializeModifier(ModifierInitializationRequest(time, time.frame(), modApp));
 	setDataProvider(modApp);
 	return modApp;
 }
@@ -378,9 +381,9 @@ void PipelineSceneNode::setPipelineSource(PipelineObject* sourceObject)
 /******************************************************************************
 * Computes the bounding box of the scene node in local coordinates.
 ******************************************************************************/
-Box3 PipelineSceneNode::localBoundingBox(TimePoint time, TimeInterval& validity) const
+Box3 PipelineSceneNode::localBoundingBox(AnimationTime time, TimeInterval& validity) const
 {
-	const PipelineFlowState& state = const_cast<PipelineSceneNode*>(this)->evaluatePipelineSynchronous(true);
+	const PipelineFlowState& state = const_cast<PipelineSceneNode*>(this)->evaluatePipelineSynchronous(time, true);
 
 	// Let visual elements compute the bounding boxes of the data objects.
 	Box3 bb;
@@ -395,13 +398,13 @@ Box3 PipelineSceneNode::localBoundingBox(TimePoint time, TimeInterval& validity)
 /******************************************************************************
 * Computes the bounding box of a data object and all its sub-objects.
 ******************************************************************************/
-void PipelineSceneNode::getDataObjectBoundingBox(TimePoint time, const DataObject* dataObj, const PipelineFlowState& state, TimeInterval& validity, Box3& bb, ConstDataObjectPath& dataObjectPath) const
+void PipelineSceneNode::getDataObjectBoundingBox(AnimationTime time, const DataObject* dataObj, const PipelineFlowState& state, TimeInterval& validity, Box3& bb, ConstDataObjectPath& dataObjectPath) const
 {
 	bool isOnStack = false;
 
 	// Call all vis elements of the data object.
 	for(DataVis* vis : dataObj->visElements()) {
-		// Let the PipelineSceneNode substitude the vis element with another one.
+		// Let the pipeline substitude the vis element with another one.
 		vis = getReplacementVisElement(vis);
 		if(vis->isEnabled()) {
 			// Push the data object onto the stack.
@@ -419,7 +422,7 @@ void PipelineSceneNode::getDataObjectBoundingBox(TimePoint time, const DataObjec
 		}
 	}
 
-	// Recursively visit the sub-objects of the data object and render them as well.
+	// Recursively visit all sub-objects of this data object and render them as well.
 	dataObj->visitSubObjects([&](const DataObject* subObject) {
 		// Push the data object onto the stack.
 		if(!isOnStack) {
@@ -487,7 +490,7 @@ void PipelineSceneNode::referenceRemoved(const PropertyFieldDescriptor* field, R
 	if(field == PROPERTY_FIELD(replacedVisElements) && !isAboutToBeDeleted()) {
 		// If an upstream vis element is being removed from the list, because the weakly referenced vis element is being deleted,
 		// then also discard our corresponding replacement element managed by the pipeline.
-		if(!dataset()->undoStack().isUndoingOrRedoing()) {
+		if(!isUndoingOrRedoing()) {
 			OVITO_ASSERT(replacedVisElements().size() + 1 == replacementVisElements().size());
 			_replacementVisElements.remove(this, PROPERTY_FIELD(replacementVisElements), listIndex);
 		}
@@ -529,7 +532,7 @@ void PipelineSceneNode::loadFromStreamComplete(ObjectLoadStream& stream)
 		}
 	}
 	OVITO_ASSERT(replacedVisElements().size() == replacementVisElements().size());
-	OVITO_ASSERT(!dataset()->undoStack().isRecording());
+	OVITO_ASSERT(!isUndoRecording());
 }
 
 /******************************************************************************
@@ -563,8 +566,7 @@ DataVis* PipelineSceneNode::makeVisElementIndependent(DataVis* visElement)
 	DataVis* newVis = clonedVisElement.get();
 
 	// Make sure the scene gets notified that the pipeline is changing if the operation is being undone.
-	if(dataset()->undoStack().isRecording())
-		dataset()->undoStack().push(std::make_unique<TargetChangedUndoOperation>(this));
+	pushIfUndoRecording<TargetChangedUndoOperation>(this);
 
 	// Put the copy into our mapping table, which will subsequently be applied
 	// after every pipeline evaluation to replace the upstream visual element
@@ -580,8 +582,7 @@ DataVis* PipelineSceneNode::makeVisElementIndependent(DataVis* visElement)
 	OVITO_ASSERT(replacedVisElements().size() == replacementVisElements().size());
 
 	// Make sure the scene gets notified that the pipeline is changing if the operation is being redone.
-	if(dataset()->undoStack().isRecording())
-		dataset()->undoStack().push(std::make_unique<TargetChangedRedoOperation>(this));
+	pushIfUndoRecording<TargetChangedRedoOperation>(this);
 
 	notifyTargetChanged();
 

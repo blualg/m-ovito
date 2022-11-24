@@ -90,7 +90,7 @@ Future<AsynchronousModifier::EnginePtr> ElasticStrainModifier::createEngine(cons
 	const PropertyObject* posProperty = particles->expectProperty(ParticlesObject::PositionProperty);
 	const SimulationCellObject* simCell = input.expectObject<SimulationCellObject>();
 	if(simCell->is2D())
-		throwException(tr("The elastic strain calculation modifier does not support 2d simulation cells."));
+		throw Exception(tr("The elastic strain calculation modifier does not support 2d simulation cells."));
 
 	// Build list of preferred crystal orientations.
 	std::vector<Matrix3> preferredCrystalOrientations;

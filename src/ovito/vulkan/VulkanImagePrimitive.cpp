@@ -50,7 +50,7 @@ void VulkanSceneRenderer::initImagePrimitivePipelines()
     layoutInfo.pBindings = &samplerLayoutBinding;
     VkResult err = deviceFunctions()->vkCreateDescriptorSetLayout(logicalDevice(), &layoutInfo, nullptr, &_imagePrimitivePipelines.descriptorSetLayout);
     if(err != VK_SUCCESS)
-        throwException(QStringLiteral("Failed to create Vulkan descriptor set layout (error code %1).").arg(err));
+        throw Exception(QStringLiteral("Failed to create Vulkan descriptor set layout (error code %1).").arg(err));
 
     // Create pipeline.
     _imagePrimitivePipelines.imageQuad.create(*context(),

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -59,14 +59,14 @@ OffscreenVulkanSceneRenderer::OffscreenVulkanSceneRenderer(ObjectCreationParams 
 }
 
 /******************************************************************************
-* Prepares the renderer for rendering and sets the data set that is being rendered.
+* Prepares the renderer for rendering one or more frames.
 ******************************************************************************/
-bool OffscreenVulkanSceneRenderer::startRender(DataSet* dataset, RenderSettings* settings, const QSize& frameBufferSize)
+bool OffscreenVulkanSceneRenderer::startRender(const RenderSettings& settings, const QSize& frameBufferSize, MixedKeyCache& visCache)
 {
 	// This method may only be called from the main thread where the Vulkan device lives.
 	OVITO_ASSERT(QThread::currentThread() == context()->thread());
 
-	if(!VulkanSceneRenderer::startRender(dataset, settings, frameBufferSize))
+	if(!VulkanSceneRenderer::startRender(settings, frameBufferSize, visCache))
 		return false;
 
 	// Do not create Vulkan frame buffers twice.
@@ -87,7 +87,7 @@ bool OffscreenVulkanSceneRenderer::startRender(DataSet* dataset, RenderSettings*
 
 	// Initialize the logical Vulkan context.
 	if(!context()->create(nullptr))
-        throwException(tr("The Vulkan rendering context could not be initialized."));
+        throw Exception(tr("The Vulkan rendering context could not be initialized."));
 
 	// Determine internal framebuffer size when using supersampling.
 	_outputSize = frameBufferSize;
@@ -119,7 +119,7 @@ bool OffscreenVulkanSceneRenderer::startRender(DataSet* dataset, RenderSettings*
 	}
 
 	if(!context()->createVulkanImage(this->frameBufferSize(), dsFormat, VK_SAMPLE_COUNT_1_BIT, usage, aspectFlags, &_dsImage, &_dsMem, &_dsView, 1))
-		throwException(tr("Could not create Vulkan offscreen depth-buffer image."));
+		throw Exception(tr("Could not create Vulkan offscreen depth-buffer image."));
 
 	// Create renderpass.
 	std::array<VkAttachmentDescription, 2> attchmentDescriptions = {};
@@ -264,7 +264,7 @@ bool OffscreenVulkanSceneRenderer::startRender(DataSet* dataset, RenderSettings*
 /******************************************************************************
 * This method is called just before renderFrame() is called.
 ******************************************************************************/
-void OffscreenVulkanSceneRenderer::beginFrame(TimePoint time, const ViewProjectionParameters& params, Viewport* vp, const QRect& viewportRect, FrameBuffer* frameBuffer)
+void OffscreenVulkanSceneRenderer::beginFrame(TimePoint time, Scene* scene, const ViewProjectionParameters& params, Viewport* vp, const QRect& viewportRect, FrameBuffer* frameBuffer)
 {
 	// This method must be called from the main thread where the Vulkan device lives.
 	OVITO_ASSERT(QThread::currentThread() == context()->thread());
@@ -321,7 +321,7 @@ void OffscreenVulkanSceneRenderer::beginFrame(TimePoint time, const ViewProjecti
 	QRect shiftedViewportRect = viewportRect;
 	shiftedViewportRect.moveTo(0,0);
 
-	VulkanSceneRenderer::beginFrame(time, params, vp, shiftedViewportRect, frameBuffer);
+	VulkanSceneRenderer::beginFrame(time, scene, params, vp, shiftedViewportRect, frameBuffer);
 }
 
 /******************************************************************************

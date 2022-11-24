@@ -76,12 +76,12 @@ bool VTKDislocationsExporter::exportFrame(int frameNumber, TimePoint time, const
 	// Look up the RenderableDislocationLines object in the pipeline state.
 	const RenderableDislocationLines* renderableLines = state.getObject<RenderableDislocationLines>();
 	if(!renderableLines)
-		throwException(tr("The object to be exported does not contain any exportable dislocation line data."));
+		throw Exception(tr("The object to be exported does not contain any exportable dislocation line data."));
 
 	// Get the original dislocation lines.
 	const DislocationNetworkObject* dislocationsObj = dynamic_object_cast<DislocationNetworkObject>(renderableLines->sourceDataObject().get());
 	if(!dislocationsObj)
-		throwException(tr("The object to be exported does not contain any exportable dislocation line data."));
+		throw Exception(tr("The object to be exported does not contain any exportable dislocation line data."));
 
 	operation.setProgressText(tr("Writing file %1").arg(filePath));
 
@@ -89,7 +89,7 @@ bool VTKDislocationsExporter::exportFrame(int frameNumber, TimePoint time, const
 	std::vector<size_t> polyVertexCounts;
 	for(size_t i = 0; i < renderableLines->lineSegments().size(); i++) {
 		if(renderableLines->lineSegments()[i].dislocationIndex >= dislocationsObj->segments().size())
-			throwException(tr("Inconsistent data: Dislocation index out of range."));
+			throw Exception(tr("Inconsistent data: Dislocation index out of range."));
 		if(i != 0) {
 			const auto& s1 = renderableLines->lineSegments()[i-1];
 			const auto& s2 = renderableLines->lineSegments()[i];

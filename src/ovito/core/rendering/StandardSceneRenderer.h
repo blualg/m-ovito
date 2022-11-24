@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -43,11 +43,11 @@ public:
 	/// Constructor.
 	Q_INVOKABLE StandardSceneRenderer(ObjectCreationParams params);
 
-	/// Prepares the renderer for rendering an image or animation and sets the dataset being rendered.
-	virtual bool startRender(DataSet* dataset, RenderSettings* settings, const QSize& frameBufferSize) override;
+	/// Prepares the renderer for rendering one or more frames.
+	virtual bool startRender(const RenderSettings& settings, const QSize& frameBufferSize, MixedKeyCache& visCache) override;
 
 	/// This method is called just before renderFrame() is called.
-	virtual void beginFrame(TimePoint time, const ViewProjectionParameters& params, Viewport* vp, const QRect& viewportRect, FrameBuffer* frameBuffer) override;
+	virtual void beginFrame(AnimationTime time, Scene* scene, const ViewProjectionParameters& params, Viewport* vp, const QRect& viewportRect, FrameBuffer* frameBuffer) override;
 
 	/// Renders the current animation frame.
 	virtual bool renderFrame(const QRect& viewportRect, MainThreadOperation& operation) override;

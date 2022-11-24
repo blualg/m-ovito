@@ -83,7 +83,7 @@ public:
 	void setIsolevel(FloatType value) { if(isolevelController()) isolevelController()->setCurrentFloatValue(value); }
 
 	/// Returns a short piece information (typically a string or color) to be displayed next to the modifier's title in the pipeline editor list.
-	virtual QVariant getPipelineEditorShortInfo(ModifierApplication* modApp) const override { return tr("%1=%2").arg(sourceProperty().nameWithComponent()).arg(isolevel()); }
+	virtual QVariant getPipelineEditorShortInfo(Scene* scene, ModifierApplication* modApp) const override { return tr("%1=%2").arg(sourceProperty().nameWithComponent()).arg(isolevel()); }
 
 	/// Transfers voxel grid properties to the vertices of a surfaces mesh.
 	static bool transferPropertiesFromGridToMesh(ProgressingTask& operation, SurfaceMeshAccess& mesh, const std::vector<ConstPropertyPtr>& fieldProperties, VoxelGrid::GridDimensions gridShape);

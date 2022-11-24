@@ -33,6 +33,7 @@
 #include <ovito/gui/base/viewport/ViewportInputManager.h>
 #include <ovito/gui/base/actions/ActionManager.h>
 #include <ovito/core/dataset/DataSetContainer.h>
+#include <ovito/core/dataset/UndoStack.h>
 #include <ovito/core/viewport/ViewportConfiguration.h>
 #include <ovito/core/viewport/ViewportWindowInterface.h>
 #include <ovito/core/app/StandaloneApplication.h>
@@ -71,6 +72,9 @@ MainWindow::MainWindow() : UserInterface(_datasetContainer, _taskManager), _data
 	// Create input manager.
 	setViewportInputManager(new ViewportInputManager(this, *this));
 
+	// Create an undo stack.
+	setUndoStack(new UndoStack(this));
+
 	// Create actions.
 	setActionManager(new WidgetActionManager(this, *this));
 
@@ -86,12 +90,15 @@ MainWindow::MainWindow() : UserInterface(_datasetContainer, _taskManager), _data
 	// Create the main toolbar.
 	createMainToolbar();
 
+	// Store current state of ACTION_AUTO_KEY_MODE_TOGGLE in a member variable for quick access in isAutoGenerateAnimationKeysEnabled().
+	connect(actionManager()->getAction(ACTION_AUTO_KEY_MODE_TOGGLE), &QAction::toggled, this, [&](bool checked) { _autoKeyModeOn = checked; });
+
 	// Create the viewports panel and the data inspector panel.
 	QSplitter* dataInspectorSplitter = new QSplitter();
 	dataInspectorSplitter->setOrientation(Qt::Vertical);
 	dataInspectorSplitter->setChildrenCollapsible(false);
 	dataInspectorSplitter->setHandleWidth(0);
-	_viewportsPanel = new ViewportsPanel(this);
+	_viewportsPanel = new ViewportsPanel(*this);
 	dataInspectorSplitter->addWidget(_viewportsPanel);
 	_dataInspector = new DataInspectorPanel(*this);
 	dataInspectorSplitter->addWidget(_dataInspector);
@@ -109,9 +116,9 @@ MainWindow::MainWindow() : UserInterface(_datasetContainer, _taskManager), _data
 	animationPanel->setLayout(animationPanelLayout);
 
 	// Create animation time slider
-	AnimationTimeSlider* timeSlider = new AnimationTimeSlider(this);
+	AnimationTimeSlider* timeSlider = new AnimationTimeSlider(*this);
 	animationPanelLayout->addWidget(timeSlider);
-	AnimationTrackBar* trackBar = new AnimationTrackBar(this, timeSlider);
+	AnimationTrackBar* trackBar = new AnimationTrackBar(*this, timeSlider);
 	animationPanelLayout->addWidget(trackBar);
 
 	// Create status bar.
@@ -233,7 +240,7 @@ MainWindow::MainWindow() : UserInterface(_datasetContainer, _taskManager), _data
 
 	// Update window title when document path changes.
 	connect(&_datasetContainer, &DataSetContainer::filePathChanged, this, [this](const QString& filePath) { setWindowFilePath(filePath); });
-	connect(&_datasetContainer, &DataSetContainer::modificationStatusChanged, this, [this](bool isClean) { setWindowModified(!isClean); });
+	connect(undoStack(), &UndoStack::cleanChanged, this, [this](bool isClean) { setWindowModified(!isClean); });
 
 	// Accept files via drag & drop.
 	setAcceptDrops(true);

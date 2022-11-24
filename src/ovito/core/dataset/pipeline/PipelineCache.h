@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -54,7 +54,7 @@ public:
 	const PipelineFlowState& evaluatePipelineStageSynchronous(const PipelineEvaluationRequest& request);
 
 	/// Looks up the pipeline state for the given animation time.
-	const PipelineFlowState& getAt(TimePoint time) const;
+	const PipelineFlowState& getAt(AnimationTime time) const;
 
 	/// Returns the cached results from the last synchronous pipeline evaluation, which is used for interactive viewport rendering.
 	const PipelineFlowState& synchronousState() const { return _synchronousState; }

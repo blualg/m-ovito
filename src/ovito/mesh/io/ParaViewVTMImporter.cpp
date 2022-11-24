@@ -183,7 +183,7 @@ std::vector<ParaViewVTMBlockInfo> ParaViewVTMImporter::loadVTMFile(const FileHan
 ******************************************************************************/
 Future<PipelineFlowState> ParaViewVTMImporter::loadFrame(const LoadOperationRequest& request)
 {
-	OVITO_ASSERT(dataset()->undoStack().isRecordingThread() == false);
+	OVITO_ASSERT(!isUndoRecording());
 
 	struct ExtendedLoadRequest : public LoadOperationRequest {
 		/// Constructor.
@@ -240,7 +240,7 @@ Future<PipelineFlowState> ParaViewVTMImporter::loadFrame(const LoadOperationRequ
 				// Detect file format and create an importer for it.
 				// This currently works only for FileSourceImporters. Files handled by other kinds of importers will be skipped.
 				// VTK dataset blocks using a file format not supported by OVITO are silently ignored.
-				OORef<FileSourceImporter> importer = dynamic_object_cast<FileSourceImporter>(FileImporter::autodetectFileFormat(request.dataset, file));
+				OORef<FileSourceImporter> importer = dynamic_object_cast<FileSourceImporter>(FileImporter::autodetectFileFormat(request.dataSource, file));
 				if(!importer)
 					return Future<>::createImmediateEmpty();
 
@@ -289,7 +289,6 @@ Future<PipelineFlowState> ParaViewVTMImporter::loadFrame(const LoadOperationRequ
 			catch(Exception& ex) {
 				// Handle file errors, e.g. if the data block file referenced in the VTM file does not exist.
 				request.state.setStatus(PipelineStatus(ex, QChar(' ')));
-				ex.setContext(request.dataset);
 				ex.prependGeneralMessage(tr("Failed to access data file referenced by block '%1' in VTK multi-block file.").arg(request.dataBlockPrefix));
 				ex.reportError();
 				// We treat such an error as recoverable and continue with loading the remaining data blocks. 

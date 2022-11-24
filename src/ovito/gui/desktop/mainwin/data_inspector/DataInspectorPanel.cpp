@@ -93,10 +93,10 @@ DataInspectorPanel::DataInspectorPanel(MainWindow& mainWindow) :
 	connect(_tabBar, &QTabBar::currentChanged, this, &DataInspectorPanel::onCurrentTabChanged);
 	connect(_appletContainer, &QStackedWidget::currentChanged, this, &DataInspectorPanel::onCurrentPageChanged);
 	connect(&datasetContainer(), &DataSetContainer::selectionChangeComplete, this, &DataInspectorPanel::onSceneSelectionChanged);
-	connect(&datasetContainer(), &GuiDataSetContainer::scenePreparationBegin, this, &DataInspectorPanel::onScenePreparationBegin);
-	connect(&datasetContainer(), &GuiDataSetContainer::scenePreparationEnd, this, &DataInspectorPanel::onScenePreparationEnd);
-	connect(&datasetContainer(), &DataSetContainer::timeChanged, this, &DataInspectorPanel::onScenePreparationBegin);
-	connect(&datasetContainer(), &DataSetContainer::timeChangeComplete, this, &DataInspectorPanel::onScenePreparationEnd);
+	connect(&datasetContainer(), &GuiDataSetContainer::scenePreparationStarted, this, &DataInspectorPanel::onScenePreparationStarted);
+	connect(&datasetContainer(), &GuiDataSetContainer::scenePreparationFinished, this, &DataInspectorPanel::onScenePreparationFinished);
+	connect(&datasetContainer(), &DataSetContainer::timeChanged, this, &DataInspectorPanel::onScenePreparationStarted);
+	connect(&datasetContainer(), &DataSetContainer::timeChangeComplete, this, &DataInspectorPanel::onScenePreparationFinished);
 	connect(&_selectedNodeListener, &RefTargetListenerBase::notificationEvent, this, &DataInspectorPanel::onSceneNodeNotificationEvent);
 
 	updateTabs(nullptr);
@@ -150,11 +150,10 @@ void DataInspectorPanel::open()
 /******************************************************************************
 * This is called whenever the scene node selection has changed.
 ******************************************************************************/
-void DataInspectorPanel::onSceneSelectionChanged()
+void DataInspectorPanel::onSceneSelectionChanged(SelectionSet* selection)
 {
 	// Find the first selected PipelineSceneNode and make it the active node:
 	PipelineSceneNode* selectedNode = nullptr;
-	SelectionSet* selection = datasetContainer().currentSet() ? datasetContainer().currentSet()->selection() : nullptr;
 	if(selection) {
 		for(SceneNode* node : selection->nodes()) {
 			selectedNode = dynamic_object_cast<PipelineSceneNode>(node);
@@ -178,7 +177,7 @@ void DataInspectorPanel::onSceneNodeNotificationEvent(RefTarget* source, const R
 * Is emitted whenever the scene of the current dataset has been changed and
 * is being made ready for rendering.
 ******************************************************************************/
-void DataInspectorPanel::onScenePreparationBegin()
+void DataInspectorPanel::onScenePreparationStarted()
 {
 	_activityDelayTimer.start(400,  Qt::CoarseTimer, this);
 }
@@ -186,7 +185,7 @@ void DataInspectorPanel::onScenePreparationBegin()
 /******************************************************************************
 *  Is called whenever the scene became ready for rendering.
 ******************************************************************************/
-void DataInspectorPanel::onScenePreparationEnd()
+void DataInspectorPanel::onScenePreparationFinished()
 {
 	_activityDelayTimer.stop();
 	_waitingForSceneIndicator->hide();

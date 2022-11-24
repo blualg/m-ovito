@@ -140,15 +140,15 @@ void CreateIsosurfaceModifier::initializeModifier(const ModifierInitializationRe
 Future<AsynchronousModifier::EnginePtr> CreateIsosurfaceModifier::createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input)
 {
 	if(!subject())
-		throwException(tr("No input voxel grid set."));
+		throw Exception(tr("No input voxel grid set."));
 	if(subject().dataClass() != &VoxelGrid::OOClass())
-		throwException(tr("Selected modifier input is not a voxel data grid."));
+		throw Exception(tr("Selected modifier input is not a voxel data grid."));
 	if(sourceProperty().isNull())
-		throwException(tr("Please select an input field quantity for the isosurface calculation."));
+		throw Exception(tr("Please select an input field quantity for the isosurface calculation."));
 
 	// Check if the source property is the right kind of property.
 	if(sourceProperty().containerClass() != subject().dataClass())
-		throwException(tr("Modifier was set to operate on '%1', but the selected input is a '%2' property.")
+		throw Exception(tr("Modifier was set to operate on '%1', but the selected input is a '%2' property.")
 			.arg(subject().dataClass()->pythonName()).arg(sourceProperty().containerClass()->propertyClassDisplayName()));
 
 	// Get modifier inputs.
@@ -156,18 +156,18 @@ Future<AsynchronousModifier::EnginePtr> CreateIsosurfaceModifier::createEngine(c
 	voxelGrid->verifyIntegrity();
 	OVITO_ASSERT(voxelGrid->domain());
 	if(voxelGrid->domain()->is2D())
-		throwException(tr("Cannot generate isosurface for a two-dimensional voxel grid. Input must be a 3d grid."));
+		throw Exception(tr("Cannot generate isosurface for a two-dimensional voxel grid. Input must be a 3d grid."));
 	const PropertyObject* property = sourceProperty().findInContainer(voxelGrid);
 	if(!property)
-		throwException(tr("The selected voxel property with the name '%1' does not exist.").arg(sourceProperty().name()));
+		throw Exception(tr("The selected voxel property with the name '%1' does not exist.").arg(sourceProperty().name()));
 	if(sourceProperty().vectorComponent() >= (int)property->componentCount())
-		throwException(tr("The selected vector component is out of range. The property '%1' contains only %2 values per voxel.").arg(sourceProperty().name()).arg(property->componentCount()));
+		throw Exception(tr("The selected vector component is out of range. The property '%1' contains only %2 values per voxel.").arg(sourceProperty().name()).arg(property->componentCount()));
 	if(property->dataType() != PropertyObject::Float)
-		throwException(tr("Wrong data type. Can construct isosurface only for floating-point values."));
+		throw Exception(tr("Wrong data type. Can construct isosurface only for floating-point values."));
 
 	for(size_t dim = 0; dim < 3; dim++)
 		if(voxelGrid->shape()[dim] <= 1)
-			throwException(tr("Cannot generate isosurface for this voxel grid with dimensions %1 x %2 x %3. Must be at least 2 voxels wide in each spatial direction.")
+			throw Exception(tr("Cannot generate isosurface for this voxel grid with dimensions %1 x %2 x %3. Must be at least 2 voxels wide in each spatial direction.")
 				.arg(voxelGrid->shape()[0]).arg(voxelGrid->shape()[1]).arg(voxelGrid->shape()[2]));
 
 	TimeInterval validityInterval = input.stateValidity();

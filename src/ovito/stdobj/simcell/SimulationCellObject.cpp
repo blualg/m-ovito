@@ -115,7 +115,7 @@ void SimulationCellObject::updateEditableProxies(PipelineFlowState& state, Const
 	}
 	else {
 		// Create and initialize a new proxy.
-		OORef<SimulationCellObject> newProxy = OORef<SimulationCellObject>::create(dataset(), ObjectCreationParams::WithoutVisElement);
+		OORef<SimulationCellObject> newProxy = OORef<SimulationCellObject>::create(ObjectCreationParams::WithoutVisElement);
 		newProxy->setPbcFlags(pbcFlags());
 		newProxy->setIs2D(is2D());
 		newProxy->setCellMatrix(cellMatrix());
@@ -135,7 +135,7 @@ void SimulationCellObject::updateEditableProxies(PipelineFlowState& state, Const
 void SimulationCellObject::makeWritableFromPython()
 {
 	if(!isSafeToModify())
-		throwException(tr("Modifying the cell is not allowed, because the SimulationCell object is currently shared by more than one data collection. "
+		throw Exception(tr("Modifying the cell is not allowed, because the SimulationCell object is currently shared by more than one data collection. "
 							"Please explicitly request a mutable version of the SimulationCell object by using the '_' notation."));
 	_isWritableFromPython++;
 }

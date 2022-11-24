@@ -67,7 +67,7 @@ void ManualSelectionModifier::propertyChanged(const PropertyFieldDescriptor* fie
 	// Whenever the subject of this modifier is changed, reset the selection.
 	if(field == PROPERTY_FIELD(GenericPropertyModifier::subject) && !isBeingLoaded()) {
 		for(ModifierApplication* modApp : modifierApplications()) {
-			PipelineEvaluationRequest request(dataset()->animationSettings()->time());
+			PipelineEvaluationRequest request(dataset()->animationSettings(), dataset()->animationSettings()->time());
 			resetSelection(modApp, modApp->evaluateInputSynchronous(request));
 		}
 	}
@@ -82,7 +82,7 @@ void ManualSelectionModifier::evaluateSynchronous(const ModifierEvaluationReques
 	// Retrieve the selection stored in the modifier application.
 	ElementSelectionSet* selectionSet = getSelectionSet(request.modApp(), false);
 	if(!selectionSet)
-		throwException(tr("No stored selection set available. Please reset the selection state."));
+		throw Exception(tr("No stored selection set available. Please reset the selection state."));
 
 	if(subject()) {
 		PropertyContainer* container = state.expectMutableLeafObject(subject());
@@ -105,7 +105,7 @@ ElementSelectionSet* ManualSelectionModifier::getSelectionSet(ModifierApplicatio
 {
 	ManualSelectionModifierApplication* myModApp = dynamic_object_cast<ManualSelectionModifierApplication>(modApp);
 	if(!myModApp)
-		throwException(tr("Manual selection modifier is not associated with a ManualSelectionModifierApplication."));
+		throw Exception(tr("Manual selection modifier is not associated with a ManualSelectionModifierApplication."));
 
 	ElementSelectionSet* selectionSet = myModApp->selectionSet();
 	if(!selectionSet && createIfNotExist)
@@ -165,7 +165,7 @@ void ManualSelectionModifier::toggleElementSelection(ModifierApplication* modApp
 {
 	ElementSelectionSet* selectionSet = getSelectionSet(modApp, false);
 	if(!selectionSet)
-		throwException(tr("No stored selection set available. Please reset the selection state."));
+		throw Exception(tr("No stored selection set available. Please reset the selection state."));
 	if(subject()) {
 		const PropertyContainer* container = state.expectLeafObject(subject());
 		selectionSet->toggleElement(container, elementIndex);

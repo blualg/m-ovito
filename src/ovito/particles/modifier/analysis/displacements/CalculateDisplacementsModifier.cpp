@@ -69,7 +69,7 @@ Future<AsynchronousModifier::EnginePtr> CalculateDisplacementsModifier::createEn
 	// Get the reference particle position.
 	const ParticlesObject* refParticles = referenceState.getObject<ParticlesObject>();
 	if(!refParticles)
-		throwException(tr("Reference configuration does not contain particles."));
+		throw Exception(tr("Reference configuration does not contain particles."));
 	refParticles->verifyIntegrity();
 	const PropertyObject* refPosProperty = refParticles->expectProperty(ParticlesObject::PositionProperty);
 
@@ -77,7 +77,7 @@ Future<AsynchronousModifier::EnginePtr> CalculateDisplacementsModifier::createEn
 	const SimulationCellObject* inputCell = input.expectObject<SimulationCellObject>();
 	const SimulationCellObject* refCell = referenceState.getObject<SimulationCellObject>();
 	if(!refCell)
-		throwException(tr("Reference configuration does not contain simulation cell info."));
+		throw Exception(tr("Reference configuration does not contain simulation cell info."));
 
 	// Get particle identifiers.
 	const PropertyObject* identifierProperty = particles->getProperty(ParticlesObject::IdentifierProperty);
@@ -170,7 +170,7 @@ void CalculateDisplacementsModifier::DisplacementEngine::applyResults(const Modi
 	ParticlesObject* particles = state.expectMutableObject<ParticlesObject>();
 
 	if(_inputFingerprint.hasChanged(particles))
-		request.modApp()->throwException(tr("Cached modifier results are obsolete, because the number or the storage order of input particles has changed."));
+		throw Exception(tr("Cached modifier results are obsolete, because the number or the storage order of input particles has changed."));
 
 	displacements()->setVisElement(modifier->vectorVis());
 	particles->createProperty(displacements());

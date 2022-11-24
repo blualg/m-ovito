@@ -176,7 +176,7 @@ Future<AsynchronousModifier::EnginePtr> DislocationAnalysisModifier::createEngin
 	const PropertyObject* posProperty = particles->expectProperty(ParticlesObject::PositionProperty);
 	const SimulationCellObject* simCell = input.expectObject<SimulationCellObject>();
 	if(simCell->is2D())
-		throwException(tr("The DXA modifier does not support 2d simulation cells."));
+		throw Exception(tr("The DXA modifier does not support 2d simulation cells."));
 
 	// Get particle selection.
 	const PropertyObject* selectionProperty = onlySelectedParticles() ? particles->expectProperty(ParticlesObject::SelectionProperty) : nullptr;

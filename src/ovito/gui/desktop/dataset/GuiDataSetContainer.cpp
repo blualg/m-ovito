@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -179,12 +179,12 @@ bool GuiDataSetContainer::importFiles(const std::vector<QUrl>& urls, MainThreadO
 
 			importer = importerFuture.result();
 			if(!importer)
-				currentSet()->throwException(tr("Could not auto-detect the format of the file %1. The file format might not be supported.").arg(url.fileName()));
+				throw Exception(tr("Could not auto-detect the format of the file %1. The file format might not be supported.").arg(url.fileName()));
 		}
 		else {
 			importer = static_object_cast<FileImporter>(importerType->createInstance(currentSet()));
 			if(!importer)
-				currentSet()->throwException(tr("Failed to import file. Could not initialize import service."));
+				throw Exception(tr("Failed to import file. Could not initialize import service."));
 			importer->setSelectedFileFormat(importerFormat);
 		}
 
@@ -221,7 +221,7 @@ bool GuiDataSetContainer::importFiles(const std::vector<QUrl>& urls, MainThreadO
 
 	const QUrl& url = urlImporters.front().first;
 	OORef<FileImporter> importer = urlImporters.front().second;
-	if(importer->isReplaceExistingPossible(urls)) {
+	if(importer->isReplaceExistingPossible(currentSet()->scene(), urls)) {
 		// Ask user if the existing pipeline should be preserved or reset.
 		QMessageBox msgBox(QMessageBox::Question, tr("Import file"),
 				tr("Do you want to reset the existing pipeline?"),
@@ -284,7 +284,18 @@ bool GuiDataSetContainer::importFiles(const std::vector<QUrl>& urls, MainThreadO
 		}
 	}
 
-	return importer->importFileSet(std::move(urlImporters), importMode, true);
+	// Do not create any animation keys during import.
+	AnimationSuspender animSuspender(mainWindow());
+
+	if(OORef<PipelineSceneNode> pipeline = importer->importFileSet(currentSet()->scene(), std::move(urlImporters), importMode, true)) {
+		if(importMode == FileImporter::ResetScene) {
+			currentSet()->undoStack().clear();
+			currentSet()->setFilePath(QString());
+		} 
+		return true;
+	}
+
+	return false;
 }
 
 }	// End of namespace

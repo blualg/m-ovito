@@ -96,16 +96,16 @@ void ColorByTypeModifier::propertyChanged(const PropertyFieldDescriptor* field)
 void ColorByTypeModifier::evaluateSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state)
 {
 #ifdef OVITO_BUILD_BASIC
-	throwException(tr("%1: This program feature is only available in OVITO Pro. Please visit our website www.ovito.org for more information.").arg(objectTitle()));
+	throw Exception(tr("%1: This program feature is only available in OVITO Pro. Please visit our website www.ovito.org for more information.").arg(objectTitle()));
 #else
 	if(!subject())
-		throwException(tr("No input element type selected."));
+		throw Exception(tr("No input element type selected."));
 	if(!sourceProperty())
-		throwException(tr("No input property selected."));
+		throw Exception(tr("No input property selected."));
 
 	// Check if the source property is the right kind of property.
 	if(sourceProperty().containerClass() != subject().dataClass())
-		throwException(tr("Modifier was set to operate on '%1', but the selected input is a '%2' property.")
+		throw Exception(tr("Modifier was set to operate on '%1', but the selected input is a '%2' property.")
 			.arg(subject().dataClass()->pythonName()).arg(sourceProperty().containerClass()->propertyClassDisplayName()));
 
 	DataObjectPath objectPath = state.expectMutableObject(subject());
@@ -115,11 +115,11 @@ void ColorByTypeModifier::evaluateSynchronous(const ModifierEvaluationRequest& r
 	// Get the input property.
 	const PropertyObject* typePropertyObject = sourceProperty().findInContainer(container);
 	if(!typePropertyObject)
-		throwException(tr("The selected input property '%1' is not present.").arg(sourceProperty().name()));
+		throw Exception(tr("The selected input property '%1' is not present.").arg(sourceProperty().name()));
 	if(typePropertyObject->componentCount() != 1)
-		throwException(tr("The input property '%1' has the wrong number of components. Must be a scalar property.").arg(typePropertyObject->name()));
+		throw Exception(tr("The input property '%1' has the wrong number of components. Must be a scalar property.").arg(typePropertyObject->name()));
 	if(typePropertyObject->dataType() != PropertyObject::Int)
-		throwException(tr("The input property '%1' has the wrong data type. Must be an integer property.").arg(typePropertyObject->name()));
+		throw Exception(tr("The input property '%1' has the wrong data type. Must be an integer property.").arg(typePropertyObject->name()));
 	ConstPropertyAccess<int> typeProperty = typePropertyObject;
 
 	// Get the selection property if enabled by the user.

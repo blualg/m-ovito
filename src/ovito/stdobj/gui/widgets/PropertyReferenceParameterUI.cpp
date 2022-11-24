@@ -139,7 +139,7 @@ PropertyReference PropertyReferenceParameterUI::getPropertyReference()
 			QVariant val = editObject()->property(propertyName());
 			OVITO_ASSERT_MSG(val.isValid() && val.canConvert<PropertyReference>(), "PropertyReferenceParameterUI::updateUI()", qPrintable(QString("The object class %1 does not define a property with the name %2 of type PropertyReference.").arg(editObject()->metaObject()->className(), QString(propertyName()))));
 			if(!val.isValid() || !val.canConvert<PropertyReference>()) {
-				editObject()->throwException(tr("The object class %1 does not define a property with the name %2 that can be cast to a PropertyReference.").arg(editObject()->metaObject()->className(), QString(propertyName())));
+				throw Exception(tr("The object class %1 does not define a property with the name %2 that can be cast to a PropertyReference.").arg(editObject()->metaObject()->className(), QString(propertyName())));
 			}
 			return val.value<PropertyReference>();
 		}

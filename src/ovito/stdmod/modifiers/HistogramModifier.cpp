@@ -125,13 +125,13 @@ void HistogramModifier::propertyChanged(const PropertyFieldDescriptor* field)
 void HistogramModifier::evaluateSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state)
 {
 	if(!subject())
-		throwException(tr("No data element type set."));
+		throw Exception(tr("No data element type set."));
 	if(sourceProperty().isNull())
-		throwException(tr("No input property selected."));
+		throw Exception(tr("No input property selected."));
 
 	// Check if the source property is the right kind of property.
 	if(sourceProperty().containerClass() != subject().dataClass())
-		throwException(tr("Modifier was set to operate on '%1', but the selected input is a '%2' property.")
+		throw Exception(tr("Modifier was set to operate on '%1', but the selected input is a '%2' property.")
 			.arg(subject().dataClass()->pythonName()).arg(sourceProperty().containerClass()->propertyClassDisplayName()));
 
 	// Look up the property container object.
@@ -141,11 +141,11 @@ void HistogramModifier::evaluateSynchronous(const ModifierEvaluationRequest& req
 	// Get the input property.
 	const PropertyObject* property = sourceProperty().findInContainer(container);
 	if(!property)
-		throwException(tr("The selected input property '%1' is not present.").arg(sourceProperty().name()));
+		throw Exception(tr("The selected input property '%1' is not present.").arg(sourceProperty().name()));
 
 	size_t vecComponent = std::max(0, sourceProperty().vectorComponent());
 	if(vecComponent >= property->componentCount())
-		throwException(tr("The selected vector component is out of range. The property '%1' has only %2 components per element.").arg(property->name()).arg(property->componentCount()));
+		throw Exception(tr("The selected vector component is out of range. The property '%1' has only %2 components per element.").arg(property->name()).arg(property->componentCount()));
 	size_t vecComponentCount = property->componentCount();
 
 	// Get the input selection if filtering was enabled by the user.
@@ -308,7 +308,7 @@ void HistogramModifier::evaluateSynchronous(const ModifierEvaluationRequest& req
 			}
 		}
 		else {
-			throwException(tr("The property '%1' has a data type that is not supported by the histogram modifier.").arg(property->name()));
+			throw Exception(tr("The property '%1' has a data type that is not supported by the histogram modifier.").arg(property->name()));
 		}
 	}
 	else {

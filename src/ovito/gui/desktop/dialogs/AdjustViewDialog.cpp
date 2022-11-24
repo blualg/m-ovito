@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -43,6 +43,9 @@ AdjustViewDialog::AdjustViewDialog(Viewport* viewport, QWidget* parent) :
 	QWidget* widget = new QWidget();
 	setWidget(widget);
 
+	OVITO_ASSERT(viewport->window());
+	DataSet* dataset = viewport->window()->dataset();
+
 	_oldViewType = viewport->viewType();
 	_oldCameraTM = viewport->cameraTransformation();
 	_oldFOV = viewport->fieldOfView();
@@ -75,9 +78,9 @@ AdjustViewDialog::AdjustViewDialog(Viewport* viewport, QWidget* parent) :
 	_camPosXSpinner = new SpinnerWidget();
 	_camPosYSpinner = new SpinnerWidget();
 	_camPosZSpinner = new SpinnerWidget();
-	_camPosXSpinner->setUnit(viewport->dataset()->unitsManager().worldUnit());
-	_camPosYSpinner->setUnit(viewport->dataset()->unitsManager().worldUnit());
-	_camPosZSpinner->setUnit(viewport->dataset()->unitsManager().worldUnit());
+	_camPosXSpinner->setUnit(dataset->unitsManager().worldUnit());
+	_camPosYSpinner->setUnit(dataset->unitsManager().worldUnit());
+	_camPosZSpinner->setUnit(dataset->unitsManager().worldUnit());
 
 	fieldLayout = new QHBoxLayout();
 	fieldLayout->setContentsMargins(0,0,0,0);
@@ -121,9 +124,9 @@ AdjustViewDialog::AdjustViewDialog(Viewport* viewport, QWidget* parent) :
 	_camDirXSpinner = new SpinnerWidget();
 	_camDirYSpinner = new SpinnerWidget();
 	_camDirZSpinner = new SpinnerWidget();
-	_camDirXSpinner->setUnit(viewport->dataset()->unitsManager().worldUnit());
-	_camDirYSpinner->setUnit(viewport->dataset()->unitsManager().worldUnit());
-	_camDirZSpinner->setUnit(viewport->dataset()->unitsManager().worldUnit());
+	_camDirXSpinner->setUnit(dataset->unitsManager().worldUnit());
+	_camDirYSpinner->setUnit(dataset->unitsManager().worldUnit());
+	_camDirZSpinner->setUnit(dataset->unitsManager().worldUnit());
 
 	fieldLayout = new QHBoxLayout();
 	fieldLayout->setContentsMargins(0,0,0,0);
@@ -167,9 +170,9 @@ AdjustViewDialog::AdjustViewDialog(Viewport* viewport, QWidget* parent) :
 	_upDirXSpinner = new SpinnerWidget();
 	_upDirYSpinner = new SpinnerWidget();
 	_upDirZSpinner = new SpinnerWidget();
-	_upDirXSpinner->setUnit(viewport->dataset()->unitsManager().worldUnit());
-	_upDirYSpinner->setUnit(viewport->dataset()->unitsManager().worldUnit());
-	_upDirZSpinner->setUnit(viewport->dataset()->unitsManager().worldUnit());
+	_upDirXSpinner->setUnit(dataset->unitsManager().worldUnit());
+	_upDirYSpinner->setUnit(dataset->unitsManager().worldUnit());
+	_upDirZSpinner->setUnit(dataset->unitsManager().worldUnit());
 
 	fieldLayout = new QHBoxLayout();
 	fieldLayout->setContentsMargins(0,0,0,0);
@@ -220,7 +223,7 @@ AdjustViewDialog::AdjustViewDialog(Viewport* viewport, QWidget* parent) :
 
 	gridLayout->addWidget(new QLabel(tr("View angle:")), 1, 1);
 	_camFOVAngleSpinner = new SpinnerWidget();
-	_camFOVAngleSpinner->setUnit(viewport->dataset()->unitsManager().angleUnit());
+	_camFOVAngleSpinner->setUnit(dataset->unitsManager().angleUnit());
 	_camFOVAngleSpinner->setMinValue(FloatType(1e-4));
 	_camFOVAngleSpinner->setMaxValue(FLOATTYPE_PI - FloatType(1e-2));
 	_camFOVAngleSpinner->setFloatValue(qDegreesToRadians(FloatType(35)));
@@ -243,7 +246,7 @@ AdjustViewDialog::AdjustViewDialog(Viewport* viewport, QWidget* parent) :
 
 	gridLayout->addWidget(new QLabel(tr("Field of view:")), 3, 1);
 	_camFOVSpinner = new SpinnerWidget();
-	_camFOVSpinner->setUnit(viewport->dataset()->unitsManager().worldUnit());
+	_camFOVSpinner->setUnit(dataset->unitsManager().worldUnit());
 	_camFOVSpinner->setMinValue(FloatType(1e-4));
 	_camFOVSpinner->setFloatValue(200);
 	_camFOVSpinner->setEnabled(false);

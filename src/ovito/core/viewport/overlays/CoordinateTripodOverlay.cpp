@@ -95,7 +95,7 @@ CoordinateTripodOverlay::CoordinateTripodOverlay(ObjectCreationParams params) : 
 ******************************************************************************/
 void CoordinateTripodOverlay::propertyChanged(const PropertyFieldDescriptor* field)
 {
-	if(field == PROPERTY_FIELD(alignment) && !isBeingLoaded() && !isAboutToBeDeleted() && !dataset()->undoStack().isUndoingOrRedoing() && ExecutionContext::isInteractive()) {
+	if(field == PROPERTY_FIELD(alignment) && !isBeingLoaded() && !isAboutToBeDeleted() && !isUndoingOrRedoing() && ExecutionContext::isInteractive()) {
 		// Automatically reset offset to zero when user changes the alignment of the overlay in the viewport.
 		setOffsetX(0);
 		setOffsetY(0);
@@ -169,7 +169,7 @@ void CoordinateTripodOverlay::render(SceneRenderer* renderer, const QRect& logic
 
 	auto renderSolidJoint = [&]() {
 	    // Look up the image primitive for the axis arrow in the cache.
-		auto& [imagePrimitive, offset] = dataset()->visCache().get<std::tuple<ImagePrimitive, QPointF>>(
+		auto& [imagePrimitive, offset] = renderer->visCache().get<std::tuple<ImagePrimitive, QPointF>>(
 			RendererResourceKey<struct SolidJointImageCache, Matrix3, FloatType>{ 
 				renderer->projParams().viewMatrix.linear(),
 				lineWidth
@@ -216,7 +216,7 @@ void CoordinateTripodOverlay::render(SceneRenderer* renderer, const QRect& logic
 		FloatType labelMargin = lineWidth * 2.5;
 
 	    // Look up the image primitive for the axis arrow in the cache.
-		auto& [imagePrimitive, offset, addedMargin] = dataset()->visCache().get<std::tuple<ImagePrimitive, QPointF, FloatType>>(
+		auto& [imagePrimitive, offset, addedMargin] = renderer->visCache().get<std::tuple<ImagePrimitive, QPointF, FloatType>>(
 			RendererResourceKey<struct ArrowAxisImageCache, TripodStyle, Vector3, FloatType, Color>{ 
 				tripodStyle(),
 				dir3d,

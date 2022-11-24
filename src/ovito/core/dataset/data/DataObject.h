@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -67,7 +67,7 @@ public:
 	/// should take validity intervals of all sub-objects and sub-controllers into account.
 	///
 	/// The default implementation returns TimeInterval::infinite().
-	virtual TimeInterval objectValidity(TimePoint time) { return TimeInterval::infinite(); }
+	virtual TimeInterval objectValidity(AnimationTime time) { return TimeInterval::infinite(); }
 
 	/// \brief Attaches a visualization elements to this data object that will be responsible for rendering the
 	///        data.

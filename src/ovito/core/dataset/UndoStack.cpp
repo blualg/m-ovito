@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -23,18 +23,18 @@
 #include <ovito/core/Core.h>
 #include <ovito/core/oo/RefMaker.h>
 #include <ovito/core/dataset/DataSet.h>
+#include <ovito/core/app/UserInterface.h>
 #include "UndoStack.h"
 #include "UndoStackOperations.h"
 
 namespace Ovito {
 
 /******************************************************************************
-* Increments the suspend count of the undo stack associated with the given
-* object.
+* Increments the suspend count of the undo stack.
 ******************************************************************************/
-UndoSuspender::UndoSuspender(const RefMaker* object) noexcept
+UndoSuspender::UndoSuspender() noexcept
 {
-	OVITO_CHECK_OBJECT_POINTER(object);
+#if 0 // TODO: Implement global undo suspender
 	if(object->dataset() && QThread::currentThread() == object->thread()) {
 		_suspendCount = &object->dataset()->undoStack()._suspendCount;
 		++(*_suspendCount);
@@ -42,12 +42,70 @@ UndoSuspender::UndoSuspender(const RefMaker* object) noexcept
 	else {
 		_suspendCount = nullptr;
 	}
+#else
+	OVITO_ASSERT(false);
+#endif
 }
+
+/******************************************************************************
+* Increments the suspend count of the undo stack.
+******************************************************************************/
+UndoSuspender::UndoSuspender(UndoStack& undoStack) noexcept : _suspendCount(&undoStack._suspendCount)
+{
+	++(*_suspendCount);
+}
+
+/******************************************************************************
+* Increments the suspend count of the undo stack.
+******************************************************************************/
+void UndoSuspender::reset() noexcept
+{
+#if 0 // TODO: Implement global undo suspender
+	if(_suspendCount) {
+		OVITO_ASSERT_MSG((*_suspendCount) > 0, "UndoSuspender::reset()", "resume() has been called more often than suspend().");
+		--(*_suspendCount);
+		_suspendCount = nullptr;
+	}
+#else
+	OVITO_ASSERT(false);
+#endif
+}
+
+/******************************************************************************
+* Constructor calling UndoStack::beginCompoundOperation().
+******************************************************************************/
+UndoableTransaction::UndoableTransaction(UserInterface& userInterface, const QString& displayName) : _undoStack(userInterface.undoStack())
+{
+	if(_undoStack && !_undoStack->isSuspended())
+		_undoStack->beginCompoundOperation(displayName);
+}
+
+/******************************************************************************
+* Destructor undoing all recorded operations unless commit() was called.
+******************************************************************************/
+UndoableTransaction::~UndoableTransaction() 
+{
+	if(!_committed && _undoStack && !_undoStack->isSuspended()) {
+		_undoStack->endCompoundOperation(false);
+	}
+}
+
+/******************************************************************************
+* Commits all recorded operations by calling UndoStack::endCompoundOperation().
+******************************************************************************/
+void UndoableTransaction::commit() 
+{
+	OVITO_ASSERT(!_committed);
+	_committed = true;
+	if(_undoStack && !_undoStack->isSuspended())
+		_undoStack->endCompoundOperation();
+}
+
 
 /******************************************************************************
 * Initializes the undo manager.
 ******************************************************************************/
-UndoStack::UndoStack()
+UndoStack::UndoStack(QObject* parent) : QObject(parent)
 {
 }
 

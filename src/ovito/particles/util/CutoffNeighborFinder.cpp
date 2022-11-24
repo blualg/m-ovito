@@ -48,7 +48,7 @@ bool CutoffNeighborFinder::prepare(FloatType cutoffRadius, ConstPropertyAccess<P
 	if(cell && cell->isDegenerate()) {
 		is2D = cell->is2D();
 		if(cell->hasPbcCorrected())
-			cell->throwException("Invalid input: Periodic simulation cell is degenerate.");
+			throw Exception("Invalid input: Periodic simulation cell is degenerate.");
 		else
 			cell = nullptr;
 	}

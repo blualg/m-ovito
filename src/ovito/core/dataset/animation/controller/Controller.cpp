@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -21,26 +21,26 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/core/Core.h>
+#include <ovito/core/app/UserInterface.h>
 #include <ovito/core/dataset/animation/controller/Controller.h>
 #include <ovito/core/dataset/animation/controller/ConstantControllers.h>
 #include <ovito/core/dataset/animation/controller/LinearInterpolationControllers.h>
 #include <ovito/core/dataset/animation/controller/SplineInterpolationControllers.h>
 #include <ovito/core/dataset/animation/controller/TCBInterpolationControllers.h>
 #include <ovito/core/dataset/animation/controller/PRSTransformationController.h>
-#include <ovito/core/dataset/animation/AnimationSettings.h>
-#include <ovito/core/dataset/DataSet.h>
 
 namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(Controller);
 
+#if 0 // TODO: Removed unused code
 /******************************************************************************
 * Returns the float controller's value at the current animation time.
 ******************************************************************************/
 FloatType Controller::currentFloatValue()
 {
 	TimeInterval iv;
-	return getFloatValue(dataset()->animationSettings()->time(), iv);
+	return getFloatValue(ui().currentAnimationTime(), iv);
 }
 
 /******************************************************************************
@@ -49,7 +49,7 @@ FloatType Controller::currentFloatValue()
 int Controller::currentIntValue()
 {
 	TimeInterval iv;
-	return getIntValue(dataset()->animationSettings()->time(), iv);
+	return getIntValue(ui().currentAnimationTime(), iv);
 }
 
 /******************************************************************************
@@ -58,7 +58,7 @@ int Controller::currentIntValue()
 Vector3 Controller::currentVector3Value()
 {
 	Vector3 v; TimeInterval iv;
-	getVector3Value(dataset()->animationSettings()->time(), v, iv);
+	getVector3Value(ui().currentAnimationTime(), v, iv);
 	return v;
 }
 
@@ -67,7 +67,7 @@ Vector3 Controller::currentVector3Value()
 ******************************************************************************/
 void Controller::setCurrentFloatValue(FloatType newValue)
 {
-	setFloatValue(dataset()->animationSettings()->time(), newValue);
+	setFloatValue(ui().currentAnimationTime(), newValue);
 }
 
 /******************************************************************************
@@ -75,7 +75,7 @@ void Controller::setCurrentFloatValue(FloatType newValue)
 ******************************************************************************/
 void Controller::setCurrentIntValue(int newValue)
 {
-	setIntValue(dataset()->animationSettings()->time(), newValue);
+	setIntValue(ui().currentAnimationTime(), newValue);
 }
 
 /******************************************************************************
@@ -83,64 +83,77 @@ void Controller::setCurrentIntValue(int newValue)
 ******************************************************************************/
 void Controller::setCurrentVector3Value(const Vector3& newValue)
 {
-	setVector3Value(dataset()->animationSettings()->time(), newValue);
+	setVector3Value(ui().currentAnimationTime(), newValue);
 }
+#endif
 
 /******************************************************************************
 * Creates a new float controller.
 ******************************************************************************/
-OORef<Controller> ControllerManager::createFloatController(DataSet* dataset)
+OORef<Controller> ControllerManager::createFloatController()
 {
-	return OORef<LinearFloatController>::create(dataset);
+	return OORef<LinearFloatController>::create();
 }
 
 /******************************************************************************
 * Creates a new integer controller.
 ******************************************************************************/
-OORef<Controller> ControllerManager::createIntController(DataSet* dataset)
+OORef<Controller> ControllerManager::createIntController()
 {
-	return OORef<LinearIntegerController>::create(dataset);
+	return OORef<LinearIntegerController>::create();
 }
 
 /******************************************************************************
 * Creates a new Vector3 controller.
 ******************************************************************************/
-OORef<Controller> ControllerManager::createVector3Controller(DataSet* dataset)
+OORef<Controller> ControllerManager::createVector3Controller()
 {
-	return OORef<LinearVectorController>::create(dataset);
+	return OORef<LinearVectorController>::create();
 }
 
 /******************************************************************************
 * Creates a new position controller.
 ******************************************************************************/
-OORef<Controller> ControllerManager::createPositionController(DataSet* dataset)
+OORef<Controller> ControllerManager::createPositionController()
 {
-	//return new TCBPositionController(dataset);
-	return OORef<SplinePositionController>::create(dataset);
+	return OORef<SplinePositionController>::create();
 }
 
 /******************************************************************************
 * Creates a new rotation controller.
 ******************************************************************************/
-OORef<Controller> ControllerManager::createRotationController(DataSet* dataset)
+OORef<Controller> ControllerManager::createRotationController()
 {
-	return OORef<LinearRotationController>::create(dataset);
+	return OORef<LinearRotationController>::create();
 }
 
 /******************************************************************************
 * Creates a new scaling controller.
 ******************************************************************************/
-OORef<Controller> ControllerManager::createScalingController(DataSet* dataset)
+OORef<Controller> ControllerManager::createScalingController()
 {
-	return OORef<LinearScalingController>::create(dataset);
+	return OORef<LinearScalingController>::create();
 }
 
 /******************************************************************************
 * Creates a new transformation controller.
 ******************************************************************************/
-OORef<Controller> ControllerManager::createTransformationController(DataSet* dataset)
+OORef<Controller> ControllerManager::createTransformationController()
 {
-	return OORef<PRSTransformationController>::create(dataset);
+	return OORef<PRSTransformationController>::create();
+}
+
+/******************************************************************************
+* Queries whether the user has activated auto-key mode and controllers should automatically
+* generate new animation keys whenever their current value is changed by the user.
+******************************************************************************/
+bool ControllerManager::isAutoGenerateAnimationKeysEnabled()
+{
+	const ExecutionContext& context = ExecutionContext::current();
+	if(context.isValid()) {
+		return context.ui().isAutoGenerateAnimationKeysEnabled();
+	}
+	return false;	
 }
 
 }	// End of namespace

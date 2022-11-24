@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -58,6 +58,9 @@ private Q_SLOTS:
 
 private:
 
+	MainWindow& _mainWindow;
+	DataSet* _dataset;
+	Scene* _scene;
 	QTableView* _tableWidget;
 	QAbstractTableModel* _model;
 	QAction* _addKeyAction;

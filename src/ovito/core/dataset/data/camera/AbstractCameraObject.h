@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -49,13 +49,13 @@ public:
 	///   - ViewProjectionParameters::aspectRatio (The aspect ratio (height/width) of the viewport)
 	///   - ViewProjectionParameters::viewMatrix (The world to view space transformation)
 	///   - ViewProjectionParameters::boundingBox (The bounding box of the scene in world space coordinates)
-	virtual void projectionParameters(TimePoint time, ViewProjectionParameters& projParams) const = 0;
+	virtual void projectionParameters(AnimationTime time, ViewProjectionParameters& projParams) const = 0;
 
 	/// \brief Returns whether this camera uses a perspective projection.
 	virtual bool isPerspectiveCamera() const = 0;
 
 	/// \brief Returns the field of view of the camera.
-	virtual FloatType fieldOfView(TimePoint time, TimeInterval& validityInterval) const = 0;
+	virtual FloatType fieldOfView(AnimationTime time, TimeInterval& validityInterval) const = 0;
 };
 
 }	// End of namespace

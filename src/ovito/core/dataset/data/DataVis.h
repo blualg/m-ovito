@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -55,7 +55,7 @@ public:
 	///
 	/// The world transformation matrix is already set up when this method is called by the
 	/// system. The data has to be rendered in the local object coordinate system.
-	virtual PipelineStatus render(TimePoint time, const ConstDataObjectPath& path, const PipelineFlowState& flowState, SceneRenderer* renderer, const PipelineSceneNode* contextNode) = 0;
+	virtual PipelineStatus render(AnimationTime time, const ConstDataObjectPath& path, const PipelineFlowState& flowState, SceneRenderer* renderer, const PipelineSceneNode* contextNode) = 0;
 
 	/// \brief Computes the view-independent bounding box of the given data object.
 	/// \param time The animation time for which the bounding box should be computed.
@@ -64,7 +64,7 @@ public:
 	/// \param flowState The pipeline evaluation result of the object node.
 	/// \param validityInterval The time interval to be reduced by the method to report the duration of validity of the computed box.
 	/// \return The bounding box of the visual element in local object coordinates.
-	virtual Box3 boundingBox(TimePoint time, const ConstDataObjectPath& path, const PipelineSceneNode* contextNode, const PipelineFlowState& flowState, TimeInterval& validityInterval) = 0;
+	virtual Box3 boundingBox(AnimationTime time, const ConstDataObjectPath& path, const PipelineSceneNode* contextNode, const PipelineFlowState& flowState, TimeInterval& validityInterval) = 0;
 
 	/// \brief Indicates whether this visual element should be surrounded by a selection marker in the viewports when it is selected.
 	/// \return \c true to let the system render a selection marker around the object when it is selected.

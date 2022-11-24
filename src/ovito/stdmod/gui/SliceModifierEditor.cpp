@@ -444,7 +444,7 @@ void PickPlanePointsInputMode::alignPlane(SliceModifier* mod)
 	try {
 		Plane3 worldPlane(_pickedPoints[0], _pickedPoints[1], _pickedPoints[2], true);
 		if(worldPlane.normal.equals(Vector3::Zero(), FLOATTYPE_EPSILON))
-			mod->throwException(tr("Cannot set the new slicing plane. The three selected points are colinear."));
+			throw Exception(tr("Cannot set the new slicing plane. The three selected points are colinear."));
 
 		// Get the object-to-world transformation for the currently selected object.
 		ModifierApplication* modApp = mod->someModifierApplication();

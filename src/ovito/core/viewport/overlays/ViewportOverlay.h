@@ -43,6 +43,9 @@ protected:
 
 public:
 
+	/// \brief This virtual method gets called when the overlay is being newly attached to a viewport. 
+	virtual void initializeOverlay(Viewport* viewport) {}
+
 	/// \brief This method asks the overlay to paint its contents over the rendered image.
 	virtual void render(SceneRenderer* renderer, const QRect& logicalViewportRect, const QRect& physicalViewportRect, MainThreadOperation& operation) = 0;
 

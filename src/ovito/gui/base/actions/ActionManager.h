@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -260,7 +260,7 @@ private Q_SLOTS:
 	void onAnimationSettingsReplaced(AnimationSettings* newAnimationSettings);
 
 	/// This is called when the active animation interval has changed.
-	void onAnimationIntervalChanged(TimeInterval newAnimationInterval);
+	void onAnimationIntervalChanged(int firstFrame, int lastFrame);
 
 	/// This is called when new viewport configuration has been loaded.
 	void onViewportConfigurationReplaced(ViewportConfiguration* newViewportConfiguration);
@@ -293,15 +293,6 @@ private:
 	/// The list of registered actions.
 	QVector<QAction*> _actions;
 
-	QMetaObject::Connection _canUndoChangedConnection;
-	QMetaObject::Connection _canRedoChangedConnection;
-	QMetaObject::Connection _undoTextChangedConnection;
-	QMetaObject::Connection _redoTextChangedConnection;
-	QMetaObject::Connection _undoTriggeredConnection;
-	QMetaObject::Connection _redoTriggeredConnection;
-	QMetaObject::Connection _clearUndoStackTriggeredConnection;
-	QMetaObject::Connection _autoKeyModeChangedConnection;
-	QMetaObject::Connection _autoKeyModeToggledConnection;
 	QMetaObject::Connection _animationIntervalChangedConnection;
 	QMetaObject::Connection _animationPlaybackChangedConnection;
 	QMetaObject::Connection _animationPlaybackToggledConnection;

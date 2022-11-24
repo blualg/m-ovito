@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -59,7 +59,7 @@ public:
 	Q_INVOKABLE StandardCameraObject(ObjectCreationParams params);
 
 	/// With a target camera, indicates the distance between the camera and its target.
-	static FloatType getTargetDistance(TimePoint time, const PipelineSceneNode* node);
+	static FloatType getTargetDistance(AnimationTime time, const PipelineSceneNode* node);
 
 	/// \brief Returns a structure describing the camera's projection.
 	/// \param[in] time The animation time for which the camera's projection parameters should be determined.
@@ -68,13 +68,13 @@ public:
 	///   - ViewProjectionParameters::aspectRatio (The aspect ratio (height/width) of the viewport)
 	///   - ViewProjectionParameters::viewMatrix (The world to view space transformation)
 	///   - ViewProjectionParameters::boundingBox (The bounding box of the scene in world space coordinates)
-	virtual void projectionParameters(TimePoint time, ViewProjectionParameters& projParams) const override;
+	virtual void projectionParameters(AnimationTime time, ViewProjectionParameters& projParams) const override;
 
 	/// \brief Returns whether this camera uses a perspective projection.
 	virtual bool isPerspectiveCamera() const override { return isPerspective(); }
 
 	/// \brief Returns the field of view of the camera.
-	virtual FloatType fieldOfView(TimePoint time, TimeInterval& validityInterval) const override {
+	virtual FloatType fieldOfView(AnimationTime time, TimeInterval& validityInterval) const override {
 		return isPerspective() ? fov() : zoom();
 	}
 
@@ -104,10 +104,10 @@ public:
 	Q_INVOKABLE CameraVis(ObjectCreationParams params) : DataVis(params) {}
 
 	/// \brief Lets the vis element render a camera object.
-	virtual PipelineStatus render(TimePoint time, const ConstDataObjectPath& path, const PipelineFlowState& flowState, SceneRenderer* renderer, const PipelineSceneNode* contextNode) override;
+	virtual PipelineStatus render(AnimationTime time, const ConstDataObjectPath& path, const PipelineFlowState& flowState, SceneRenderer* renderer, const PipelineSceneNode* contextNode) override;
 
 	/// \brief Computes the bounding box of the object.
-	virtual Box3 boundingBox(TimePoint time, const ConstDataObjectPath& path, const PipelineSceneNode* contextNode, const PipelineFlowState& flowState, TimeInterval& validityInterval) override;
+	virtual Box3 boundingBox(AnimationTime time, const ConstDataObjectPath& path, const PipelineSceneNode* contextNode, const PipelineFlowState& flowState, TimeInterval& validityInterval) override;
 
 private:
 

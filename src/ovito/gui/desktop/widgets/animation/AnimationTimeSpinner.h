@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2013 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -43,17 +43,14 @@ public:
 
 protected Q_SLOTS:
 
-	/// Is called when a another dataset has become the active dataset.
-	void onDataSetReplaced(DataSet* newDataSet);
-
 	/// This is called when new animation settings have been loaded.
 	void onAnimationSettingsReplaced(AnimationSettings* newAnimationSettings);
 
-	/// This is called by the AnimManager when the current animation time has changed.
-	void onTimeChanged(TimePoint newTime);
+	/// This is called when the current animation time has changed.
+	void onCurrentFrameChanged(int newFrame);
 
-	/// This is called by the AnimManager when the animation interval has changed.
-	void onIntervalChanged(TimeInterval newAnimationInterval);
+	/// This is called when the animation interval has changed.
+	void onIntervalChanged(int firstFrame, int lastFrame);
 
 	/// Is called when the spinner value has been changed by the user.
 	void onSpinnerValueChanged();
@@ -61,12 +58,10 @@ protected Q_SLOTS:
 private:
 
 	/// The current animation settings object.
-	AnimationSettings* _animSettings;
+	AnimationSettings* _animSettings = nullptr;
 
 	QMetaObject::Connection _animIntervalChangedConnection;
-	QMetaObject::Connection _timeChangedConnection;
+	QMetaObject::Connection _currentFrameChangedConnection;
 };
 
 }	// End of namespace
-
-

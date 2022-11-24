@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2016 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -41,7 +41,7 @@ public:
 	using typename BaseKeyClass::value_type;
 
 	/// Constructor.
-	TCBAnimationKey(ObjectCreationParams params, TimePoint time, const value_type& value)
+	TCBAnimationKey(ObjectCreationParams params, AnimationTime time, const value_type& value)
 		: BaseKeyClass(params, time, value), _easeTo(0), _easeFrom(0), _tension(0), _continuity(0), _bias(0) {}
 
 public:
@@ -72,7 +72,7 @@ class OVITO_CORE_EXPORT FloatTCBAnimationKey : public TCBAnimationKey<FloatAnima
 public:
 
 	/// Constructor.
-	Q_INVOKABLE FloatTCBAnimationKey(ObjectCreationParams params, TimePoint time = 0, FloatType value = 0) 
+	Q_INVOKABLE FloatTCBAnimationKey(ObjectCreationParams params, AnimationTime time = AnimationTime(0), FloatType value = 0) 
 		: TCBAnimationKey<FloatAnimationKey>(params, time, value) {}
 };
 
@@ -86,7 +86,7 @@ class OVITO_CORE_EXPORT PositionTCBAnimationKey : public TCBAnimationKey<Positio
 public:
 
 	/// Constructor.
-	Q_INVOKABLE PositionTCBAnimationKey(ObjectCreationParams params, TimePoint time = 0, const Vector3& value = Vector3::Zero()) 
+	Q_INVOKABLE PositionTCBAnimationKey(ObjectCreationParams params, AnimationTime time = AnimationTime(0), const Vector3& value = Vector3::Zero()) 
 		: TCBAnimationKey<PositionAnimationKey>(params, time, value) {}
 };
 
@@ -97,7 +97,7 @@ public:
  */
 template<typename KeyType>
 struct TCBKeyInterpolator {
-	typename KeyType::value_type operator()(TimePoint time, KeyType* key0, KeyType* key1, KeyType* key2, KeyType* key3) const {
+	typename KeyType::value_type operator()(AnimationTime time, KeyType* key0, KeyType* key1, KeyType* key2, KeyType* key3) const {
 		OVITO_ASSERT(key2->time() > key1->time());
 		FloatType t = (FloatType)(time - key1->time()) / (key2->time() - key1->time());
 		typename KeyType::tangent_type chord01 = key0 ? (key1->value() - key0->value()) : typename KeyType::nullvalue_type();
@@ -140,12 +140,12 @@ public:
 		: TCBControllerBase<PositionTCBAnimationKey, Controller::ControllerTypePosition>(params) {}
 
 	/// \brief Gets the controller's value at a certain animation time.
-	virtual void getPositionValue(TimePoint time, Vector3& value, TimeInterval& validityInterval) override {
+	virtual void getPositionValue(AnimationTime time, Vector3& value, TimeInterval& validityInterval) override {
 		getInterpolatedValue(time, value, validityInterval);
 	}
 
 	/// \brief Sets the controller's value at the given animation time.
-	virtual void setPositionValue(TimePoint time, const Vector3& newValue, bool isAbsolute) override {
+	virtual void setPositionValue(AnimationTime time, const Vector3& newValue, bool isAbsolute) override {
 		if(isAbsolute)
 			setAbsoluteValue(time, newValue);
 		else

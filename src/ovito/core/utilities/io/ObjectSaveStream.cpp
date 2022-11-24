@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -36,7 +36,6 @@ ObjectSaveStream::~ObjectSaveStream()
 		ObjectSaveStream::close();
 	}
 	catch(Exception& ex) {
-		if(!ex.context()) ex.setContext(_dataset);
 		ex.reportError();
 	}
 }
@@ -59,11 +58,6 @@ void ObjectSaveStream::saveObject(const OvitoObject* object, bool excludeRecompu
 		if(id == 0) {
 			_objects.push_back({object, excludeRecomputableData});
 			id = (quint32)_objects.size();
-
-			if(object->getOOClass() == DataSet::OOClass())
-				_dataset = const_cast<DataSet*>(static_object_cast<DataSet>(object));
-
-			OVITO_ASSERT(_dataset == nullptr || !object->getOOClass().isDerivedFrom(RefTarget::OOClass()) || static_object_cast<RefTarget>(object)->dataset() == _dataset);
 		}
 		else {
 			OVITO_ASSERT(_objects[id-1].object == object);

@@ -115,10 +115,10 @@ const PipelineStatus& PipelineListItem::status() const
 /******************************************************************************
 * Returns a short piece information (typically a string or color) to be displayed next to the object's title in the pipeline editor.
 ******************************************************************************/
-QVariant PipelineListItem::shortInfo() const
+QVariant PipelineListItem::shortInfo(PipelineSceneNode* selectedPipeline) const
 {
 	if(ActiveObject* activeObject = dynamic_object_cast<ActiveObject>(object())) {
-		return activeObject->getPipelineEditorShortInfo();
+		return activeObject->getPipelineEditorShortInfo(selectedPipeline->scene());
 	}
 	return {};
 }

@@ -187,7 +187,7 @@ public:
 	ConstPropertyPtr inputBondColors(bool ignoreExistingColorProperty = false) const;
 
 	/// Returns the base point and vector information for visualizing a vector property from this container using a VectorVis element.
-	virtual std::tuple<ConstDataBufferPtr, ConstDataBufferPtr> getVectorVisData(const ConstDataObjectPath& path, const PipelineFlowState& state) const override {
+	virtual std::tuple<ConstDataBufferPtr, ConstDataBufferPtr> getVectorVisData(const ConstDataObjectPath& path, const PipelineFlowState& state, SceneRenderer* renderer) const override {
 		return { getProperty(PositionProperty), path.lastAs<DataBuffer>() }; 
 	}
 

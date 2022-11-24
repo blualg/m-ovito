@@ -65,16 +65,16 @@ QString PropertyContainer::objectTitle() const
 const PropertyObject* PropertyContainer::expectProperty(int typeId) const
 {
 	if(!getOOMetaClass().isValidStandardPropertyId(typeId))
-		throwException(tr("Selections are not supported for %1.").arg(getOOMetaClass().propertyClassDisplayName()));
+		throw Exception(tr("Selections are not supported for %1.").arg(getOOMetaClass().propertyClassDisplayName()));
 	const PropertyObject* property = getProperty(typeId);
 	if(!property) {
 		if(typeId == PropertyObject::GenericSelectionProperty)
-			throwException(tr("The operation requires an input %1 selection.").arg(getOOMetaClass().elementDescriptionName()));
+			throw Exception(tr("The operation requires an input %1 selection.").arg(getOOMetaClass().elementDescriptionName()));
 		else
-			throwException(tr("Required %2 property '%1' does not exist in the input dataset.").arg(getOOMetaClass().standardPropertyName(typeId), getOOMetaClass().elementDescriptionName()));
+			throw Exception(tr("Required %2 property '%1' does not exist in the input dataset.").arg(getOOMetaClass().standardPropertyName(typeId), getOOMetaClass().elementDescriptionName()));
 	}
 	if(property->size() != elementCount())
-		throwException(tr("Property array '%1' has wrong length. It does not match the number of elements in the parent container.").arg(property->name()));
+		throw Exception(tr("Property array '%1' has wrong length. It does not match the number of elements in the parent container.").arg(property->name()));
 	return property;
 }
 
@@ -85,13 +85,13 @@ const PropertyObject* PropertyContainer::expectProperty(const QString& propertyN
 {
 	const PropertyObject* property = getProperty(propertyName);
 	if(!property)
-		throwException(tr("Required property '%1' does not exist in the input dataset.").arg(propertyName));
+		throw Exception(tr("Required property '%1' does not exist in the input dataset.").arg(propertyName));
 	if(property->dataType() != dataType)
-		throwException(tr("Property '%1' does not have the required data type in the pipeline dataset.").arg(property->name()));
+		throw Exception(tr("Property '%1' does not have the required data type in the pipeline dataset.").arg(property->name()));
 	if(property->componentCount() != componentCount)
-		throwException(tr("Property '%1' does not have the required number of components in the pipeline dataset.").arg(property->name()));
+		throw Exception(tr("Property '%1' does not have the required number of components in the pipeline dataset.").arg(property->name()));
 	if(property->size() != elementCount())
-		throwException(tr("Property array '%1' has wrong length. It does not match the number of elements in the parent container.").arg(property->name()));
+		throw Exception(tr("Property array '%1' has wrong length. It does not match the number of elements in the parent container.").arg(property->name()));
 	return property;
 }
 
@@ -164,11 +164,11 @@ PropertyObject* PropertyContainer::createProperty(int typeId, DataBuffer::Initia
 
 	if(getOOMetaClass().isValidStandardPropertyId(typeId) == false) {
 		if(typeId == PropertyObject::GenericSelectionProperty)
-			throwException(tr("Creating selections is not supported for %1.").arg(getOOMetaClass().propertyClassDisplayName()));
+			throw Exception(tr("Creating selections is not supported for %1.").arg(getOOMetaClass().propertyClassDisplayName()));
 		else if(typeId == PropertyObject::GenericColorProperty)
-			throwException(tr("Assigning colors is not supported for %1.").arg(getOOMetaClass().propertyClassDisplayName()));
+			throw Exception(tr("Assigning colors is not supported for %1.").arg(getOOMetaClass().propertyClassDisplayName()));
 		else
-			throwException(tr("%1 is not a standard property ID supported by the '%2' object class.").arg(typeId).arg(getOOMetaClass().propertyClassDisplayName()));
+			throw Exception(tr("%1 is not a standard property ID supported by the '%2' object class.").arg(typeId).arg(getOOMetaClass().propertyClassDisplayName()));
 	}
 
 	// Check if property already exists in the output.
@@ -181,14 +181,14 @@ PropertyObject* PropertyContainer::createProperty(int typeId, DataBuffer::Initia
 
 		// If no memory initialization is requested, create a new PropertyObject from scratch and just adopt 
 		// the existing ElementType list to save time.	
-		PropertyPtr newProperty = getOOMetaClass().createStandardProperty(dataset(), elementCount(), typeId, flags, containerPath);
+		PropertyPtr newProperty = getOOMetaClass().createStandardProperty(elementCount(), typeId, flags, containerPath);
 		newProperty->setElementTypes(existingProperty->elementTypes());
 		replaceReferencesTo(existingProperty, newProperty);
 		return newProperty;
 	}
 	else {
 		// Create a new property object.
-		PropertyPtr newProperty = getOOMetaClass().createStandardProperty(dataset(), elementCount(), typeId, flags, containerPath);
+		PropertyPtr newProperty = getOOMetaClass().createStandardProperty(elementCount(), typeId, flags, containerPath);
 		addProperty(newProperty);
 		return newProperty;
 	}
@@ -208,9 +208,9 @@ PropertyObject* PropertyContainer::createProperty(const QString& name, int dataT
 	// Check if property already exists in the output.
 	if(existingProperty) {
 		if(existingProperty->dataType() != dataType)
-			throwException(tr("Existing property '%1' has a different data type.").arg(name));
+			throw Exception(tr("Existing property '%1' has a different data type.").arg(name));
 		if(existingProperty->componentCount() != componentCount)
-			throwException(tr("Existing property '%1' has a different number of components.").arg(name));
+			throw Exception(tr("Existing property '%1' has a different number of components.").arg(name));
 
 		PropertyObject* newProperty = makeMutable(existingProperty);
 		OVITO_ASSERT(newProperty->isSafeToModify());
@@ -219,7 +219,7 @@ PropertyObject* PropertyContainer::createProperty(const QString& name, int dataT
 	}
 	else {
 		// Create a new property object.
-		PropertyPtr newProperty = getOOMetaClass().createUserProperty(dataset(), elementCount(), dataType, componentCount, name, flags, 0, std::move(componentNames));
+		PropertyPtr newProperty = getOOMetaClass().createUserProperty(elementCount(), dataType, componentCount, name, flags, 0, std::move(componentNames));
 		addProperty(newProperty);
 		return newProperty;
 	}
@@ -244,7 +244,7 @@ const PropertyObject* PropertyContainer::createProperty(const PropertyObject* pr
 #ifdef OVITO_DEBUG
 		qDebug() << "Property array size mismatch. Container has" << elementCount() << "existing elements. New property" << property->name() << "to be added has" << property->size() << "elements.";
 #endif
-		throwException(tr("Cannot add new %1 property '%2': Array length is not consistent with number of elements in the parent container.").arg(getOOMetaClass().propertyClassDisplayName()).arg(property->name()));
+		throw Exception(tr("Cannot add new %1 property '%2': Array length is not consistent with number of elements in the parent container.").arg(getOOMetaClass().propertyClassDisplayName()).arg(property->name()));
 	}
 
 	// Check if the same property already exists in the container.
@@ -284,7 +284,7 @@ void PropertyContainer::setContent(size_t newElementCount, const DataRefVector<P
 		OVITO_ASSERT(!properties().contains(property));
 		if(property->size() != newElementCount) {
 			OVITO_ASSERT(false);
-			throwException(tr("Cannot add new %1 property '%2': Array length does not match number of elements in the parent container.").arg(getOOMetaClass().propertyClassDisplayName()).arg(property->name()));
+			throw Exception(tr("Cannot add new %1 property '%2': Array length does not match number of elements in the parent container.").arg(getOOMetaClass().propertyClassDisplayName()).arg(property->name()));
 		}
 	}
 
@@ -309,7 +309,7 @@ void PropertyContainer::replicate(size_t n, bool replicatePropertyValues)
 
 	size_t newCount = elementCount() * n;
 	if(newCount / n != elementCount())
-		throwException(tr("Replicate operation failed: Maximum number of elements exceeded."));
+		throw Exception(tr("Replicate operation failed: Maximum number of elements exceeded."));
 
 	// Make sure the property arrays can be safely modified and replicate the values in each of them.
 	for(PropertyObject* property : makePropertiesMutable())
@@ -366,7 +366,7 @@ void PropertyContainer::verifyIntegrity() const
 	for(const PropertyObject* property : properties()) {
 //		OVITO_ASSERT_MSG(property->size() == c, "PropertyContainer::verifyIntegrity()", qPrintable(QString("Property array '%1' has wrong length. It does not match the number of elements in the parent %2 container.").arg(property->name()).arg(getOOMetaClass().propertyClassDisplayName())));
 		if(property->size() != c) {
-			throwException(tr("Property array '%1' has wrong length. It does not match the number of elements in the parent %2 container.").arg(property->name()).arg(getOOMetaClass().propertyClassDisplayName()));
+			throw Exception(tr("Property array '%1' has wrong length. It does not match the number of elements in the parent %2 container.").arg(property->name()).arg(getOOMetaClass().propertyClassDisplayName()));
 		}
 	}
 }

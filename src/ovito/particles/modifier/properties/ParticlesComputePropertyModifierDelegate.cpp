@@ -88,7 +88,7 @@ std::shared_ptr<ComputePropertyModifierDelegate::PropertyComputeEngine> Particle
 				QStringList expressions)
 {
 	if(!neighborExpressions().empty() && neighborExpressions().size() != outputProperty->componentCount() && (neighborExpressions().size() != 1 || !neighborExpressions().front().isEmpty()))
-		throwException(tr("Number of neighbor expressions that have been specified (%1) does not match the number of components per particle (%2) of the output property '%3'.")
+		throw Exception(tr("Number of neighbor expressions that have been specified (%1) does not match the number of components per particle (%2) of the output property '%3'.")
 			.arg(neighborExpressions().size()).arg(outputProperty->componentCount()).arg(outputProperty->name()));
 
 	const ParticlesObject* particles = input.expectObject<ParticlesObject>();
@@ -324,7 +324,7 @@ void ParticlesComputePropertyModifierDelegate::Engine::perform()
 void ParticlesComputePropertyModifierDelegate::Engine::applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state)
 {
 	if(_inputFingerprint.hasChanged(state.expectObject<ParticlesObject>()))
-		request.modApp()->throwException(tr("Cached modifier results are obsolete, because the number or the storage order of input particles has changed."));
+		throw Exception(tr("Cached modifier results are obsolete, because the number or the storage order of input particles has changed."));
 
 	PropertyComputeEngine::applyResults(request, state);
 }

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -72,9 +72,9 @@ void PropertyContainerClass::registerStandardProperty(int typeId, QString name, 
 /******************************************************************************
 * Creates a new property object for a standard property of this container class.
 ******************************************************************************/
-PropertyPtr PropertyContainerClass::createStandardProperty(DataSet* dataset, size_t elementCount, int type, DataBuffer::InitializationFlags flags, const ConstDataObjectPath& containerPath) const 
+PropertyPtr PropertyContainerClass::createStandardProperty(size_t elementCount, int type, DataBuffer::InitializationFlags flags, const ConstDataObjectPath& containerPath) const 
 {
-	PropertyPtr property = createStandardPropertyInternal(dataset, elementCount, type, flags, containerPath);
+	PropertyPtr property = createStandardPropertyInternal(elementCount, type, flags, containerPath);
 	if(property && property->type() != 0)
 		property->setTitle(standardPropertyTitle(property->type()));
 	return property;

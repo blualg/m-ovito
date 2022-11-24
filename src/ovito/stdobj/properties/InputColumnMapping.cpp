@@ -208,7 +208,7 @@ InputColumnReader::InputColumnReader(StandardFrameLoader& frameLoader, const Inp
 		if(dataType != QMetaType::Void) {
 
 			if(dataType != PropertyObject::Int && dataType != PropertyObject::Int64 && dataType != PropertyObject::Float)
-				_container->throwException(tr("Invalid user-defined target property (data type %1) for input file column %2").arg(dataType).arg(i+1));
+				throw Exception(tr("Invalid user-defined target property (data type %1) for input file column %2").arg(dataType).arg(i+1));
 
 			PropertyObject* property;
 			if(pref.type() != PropertyObject::GenericUserProperty) {
@@ -309,7 +309,7 @@ const char* InputColumnReader::readElement(size_t elementIndex, const char* s, c
 		if(s == s_end) break;
 	}
 	if(columnIndex < _properties.size())
-		_container->throwException(tr("Data line in input file does not contain enough columns. Expected %1 file columns, but found only %2.").arg(_properties.size()).arg(columnIndex));
+		throw Exception(tr("Data line in input file does not contain enough columns. Expected %1 file columns, but found only %2.").arg(_properties.size()).arg(columnIndex));
 
 	if(_readingTypeNamesFromSeparateColumns)
 		assignTypeNamesFromSeparateColumns();
@@ -344,7 +344,7 @@ void InputColumnReader::readElement(size_t elementIndex, const char* s)
 		s++;
 	}
 	if(columnIndex < _properties.size())
-		_container->throwException(tr("Data line in input file does not contain enough columns. Expected %1 file columns, but found only %2.").arg(_properties.size()).arg(columnIndex));
+		throw Exception(tr("Data line in input file does not contain enough columns. Expected %1 file columns, but found only %2.").arg(_properties.size()).arg(columnIndex));
 
 	if(_readingTypeNamesFromSeparateColumns)
 		assignTypeNamesFromSeparateColumns();
@@ -386,11 +386,11 @@ void InputColumnReader::parseField(size_t elementIndex, int columnIndex, const c
 	if(!prec.property || !prec.data) return;
 
 	if(elementIndex >= prec.count)
-		_container->throwException(tr("Too many data lines in input file. Expected only %1 lines.").arg(prec.count));
+		throw Exception(tr("Too many data lines in input file. Expected only %1 lines.").arg(prec.count));
 
 	if(prec.dataType == PropertyObject::Float) {
 		if(!parseFloatType(token, token_end, *reinterpret_cast<FloatType*>(prec.data + elementIndex * prec.stride)))
-			_container->throwException(tr("Invalid floating-point value in column %1 (%2): \"%3\"").arg(columnIndex+1).arg(prec.property->name()).arg(QString::fromLocal8Bit(token, token_end - token)));
+			throw Exception(tr("Invalid floating-point value in column %1 (%2): \"%3\"").arg(columnIndex+1).arg(prec.property->name()).arg(QString::fromLocal8Bit(token, token_end - token)));
 	}
 	else if(prec.dataType == PropertyObject::Int) {
 		int& d = *reinterpret_cast<int*>(prec.data + elementIndex * prec.stride);
@@ -399,7 +399,7 @@ void InputColumnReader::parseField(size_t elementIndex, int columnIndex, const c
 			if(!ok) {
 				ok = parseBool(token, token_end, d);
 				if(!ok)
-					_container->throwException(tr("Invalid integer/bool value in column %1 (%2): \"%3\"").arg(columnIndex+1).arg(prec.property->name()).arg(QString::fromLocal8Bit(token, token_end - token)));
+					throw Exception(tr("Invalid integer/bool value in column %1 (%2): \"%3\"").arg(columnIndex+1).arg(prec.property->name()).arg(QString::fromLocal8Bit(token, token_end - token)));
 			}
 		}
 		else {
@@ -419,7 +419,7 @@ void InputColumnReader::parseField(size_t elementIndex, int columnIndex, const c
 	else if(prec.dataType == PropertyObject::Int64) {
 		qlonglong& d = *reinterpret_cast<qlonglong*>(prec.data + elementIndex * prec.stride);
 		if(!parseInt64(token, token_end, d))
-			_container->throwException(tr("Invalid 64-bit integer value in column %1 (%2): \"%3\"").arg(columnIndex+1).arg(prec.property->name()).arg(QString::fromLocal8Bit(token, token_end - token)));
+			throw Exception(tr("Invalid 64-bit integer value in column %1 (%2): \"%3\"").arg(columnIndex+1).arg(prec.property->name()).arg(QString::fromLocal8Bit(token, token_end - token)));
 	}
 }
 
@@ -431,7 +431,7 @@ void InputColumnReader::readElement(size_t elementIndex, const double* values, i
 {
 	OVITO_ASSERT(_properties.size() == _mapping.size());
 	if(nvalues < _properties.size())
-		_container->throwException(tr("Data record in input file does not contain enough columns. Expected %1 file columns, but found only %2.").arg(_properties.size()).arg(nvalues));
+		throw Exception(tr("Data record in input file does not contain enough columns. Expected %1 file columns, but found only %2.").arg(_properties.size()).arg(nvalues));
 
 	auto prec = _properties.cbegin();
 	const double* token = values;
@@ -440,7 +440,7 @@ void InputColumnReader::readElement(size_t elementIndex, const double* values, i
 		if(!prec->property) continue;
 
 		if(elementIndex >= prec->count)
-			_container->throwException(tr("Too many data values in input file. Expected only %1 values.").arg(prec->count));
+			throw Exception(tr("Too many data values in input file. Expected only %1 values.").arg(prec->count));
 
 		if(prec->data) {
 			if(prec->dataType == PropertyObject::Float) {

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -63,9 +63,9 @@ public:
 	FloatType outputImageAspectRatio() const { return (FloatType)outputImageHeight() / (FloatType)outputImageWidth(); }
 
 	/// Returns the background color of the rendered image.
-	Color backgroundColor() const { return backgroundColorController() ? backgroundColorController()->currentColorValue() : Color(0,0,0); }
+	Color backgroundColor() const { return backgroundColorController() ? backgroundColorController()->getColorValue(AnimationTime(0)) : Color(0,0,0); }
 	/// Sets the background color of the rendered image.
-	void setBackgroundColor(const Color& color) { if(backgroundColorController()) backgroundColorController()->setCurrentColorValue(color); }
+	void setBackgroundColor(const Color& color) { if(backgroundColorController()) backgroundColorController()->setColorValue(AnimationTime(0), color); }
 
 	/// Returns the output filename of the rendered image.
 	const QString& imageFilename() const { return imageInfo().filename(); }

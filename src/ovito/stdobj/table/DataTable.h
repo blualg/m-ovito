@@ -43,7 +43,7 @@ class OVITO_STDOBJ_EXPORT DataTable : public PropertyContainer
 		using PropertyContainerClass::PropertyContainerClass;
 
 		/// Creates a storage object for standard data table properties.
-		virtual PropertyPtr createStandardPropertyInternal(DataSet* dataset, size_t elementCount, int type, DataBuffer::InitializationFlags flags, const ConstDataObjectPath& containerPath) const override;
+		virtual PropertyPtr createStandardPropertyInternal(size_t elementCount, int type, DataBuffer::InitializationFlags flags, const ConstDataObjectPath& containerPath) const override;
 
 	protected:
 

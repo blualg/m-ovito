@@ -75,7 +75,7 @@ Future<AsynchronousModifier::EnginePtr> AtomicStrainModifier::createEngineIntern
 	// Get the reference particle position.
 	const ParticlesObject* refParticles = referenceState.getObject<ParticlesObject>();
 	if(!refParticles)
-		throwException(tr("Reference configuration does not contain particle positions."));
+		throw Exception(tr("Reference configuration does not contain particle positions."));
 	refParticles->verifyIntegrity();
 	const PropertyObject* refPosProperty = refParticles->expectProperty(ParticlesObject::PositionProperty);
 
@@ -83,13 +83,13 @@ Future<AsynchronousModifier::EnginePtr> AtomicStrainModifier::createEngineIntern
 	const SimulationCellObject* inputCell = input.expectObject<SimulationCellObject>();
 	const SimulationCellObject* refCell = referenceState.getObject<SimulationCellObject>();
 	if(!refCell)
-		throwException(tr("Reference configuration does not contain simulation cell info."));
+		throw Exception(tr("Reference configuration does not contain simulation cell info."));
 
 	// Vaildate the simulation cells.
 	if((!inputCell->is2D() && inputCell->volume3D() < FLOATTYPE_EPSILON) || (inputCell->is2D() && inputCell->volume2D() < FLOATTYPE_EPSILON))
-		throwException(tr("Simulation cell is degenerate in the deformed configuration."));
+		throw Exception(tr("Simulation cell is degenerate in the deformed configuration."));
 	if((!inputCell->is2D() && refCell->volume3D() < FLOATTYPE_EPSILON) || (inputCell->is2D() && refCell->volume2D() < FLOATTYPE_EPSILON))
-		throwException(tr("Simulation cell is degenerate in the reference configuration."));
+		throw Exception(tr("Simulation cell is degenerate in the reference configuration."));
 
 	// Get particle identifiers.
 	const PropertyObject* identifierProperty = particles->getProperty(ParticlesObject::IdentifierProperty);
@@ -339,7 +339,7 @@ void AtomicStrainModifier::AtomicStrainEngine::applyResults(const ModifierEvalua
 	ParticlesObject* particles = state.expectMutableObject<ParticlesObject>();
 
 	if(_inputFingerprint.hasChanged(particles))
-		request.modApp()->throwException(tr("Cached modifier results are obsolete, because the number or the storage order of input particles has changed."));
+		throw Exception(tr("Cached modifier results are obsolete, because the number or the storage order of input particles has changed."));
 
 	OVITO_ASSERT(shearStrains());
 	OVITO_ASSERT(shearStrains()->size() == particles->elementCount());

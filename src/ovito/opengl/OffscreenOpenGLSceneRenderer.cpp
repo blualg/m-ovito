@@ -79,16 +79,16 @@ void OffscreenOpenGLSceneRenderer::createOffscreenSurface()
 }
 
 /******************************************************************************
-* Prepares the renderer for rendering and sets the dataset that is being rendered.
+* Prepares the renderer for rendering one or more frames.
 ******************************************************************************/
-bool OffscreenOpenGLSceneRenderer::startRender(DataSet* dataset, RenderSettings* settings, const QSize& frameBufferSize)
+bool OffscreenOpenGLSceneRenderer::startRender(const RenderSettings& settings, const QSize& frameBufferSize, MixedKeyCache& visCache)
 {
 	if(Application::instance()->headlessMode())
 		throwRendererException(tr("Cannot use OpenGL renderer when running in headless mode. "
 				"Please use a different rendering engine or run program on a machine where access to "
 				"graphics hardware is possible."));
 
-	if(!OpenGLSceneRenderer::startRender(dataset, settings, frameBufferSize))
+	if(!OpenGLSceneRenderer::startRender(settings, frameBufferSize, visCache))
 		return false;
 
 	if(!globalOffscreenContext.hasLocalData() || !globalOffscreenContext.localData()) {
@@ -137,7 +137,7 @@ bool OffscreenOpenGLSceneRenderer::startRender(DataSet* dataset, RenderSettings*
 /******************************************************************************
 * This method is called just before renderFrame() is called.
 ******************************************************************************/
-void OffscreenOpenGLSceneRenderer::beginFrame(TimePoint time, const ViewProjectionParameters& params, Viewport* vp, const QRect& viewportRect, FrameBuffer* frameBuffer)
+void OffscreenOpenGLSceneRenderer::beginFrame(AnimationTime time, Scene* scene, const ViewProjectionParameters& params, Viewport* vp, const QRect& viewportRect, FrameBuffer* frameBuffer)
 {
 	// Make GL context current.
 	if(!_offscreenContext || !_offscreenContext->makeCurrent(_offscreenSurface))
@@ -152,7 +152,7 @@ void OffscreenOpenGLSceneRenderer::beginFrame(TimePoint time, const ViewProjecti
 	QRect shiftedViewportRect = viewportRect;
 	shiftedViewportRect.moveTo(0,0);
 
-	OpenGLSceneRenderer::beginFrame(time, params, vp, shiftedViewportRect, frameBuffer);
+	OpenGLSceneRenderer::beginFrame(time, scene, params, vp, shiftedViewportRect, frameBuffer);
 }
 
 /******************************************************************************

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -45,7 +45,7 @@ TargetObject::TargetObject(ObjectCreationParams params) : DataObject(params)
 /******************************************************************************
 * Lets the vis element render a data object.
 ******************************************************************************/
-PipelineStatus TargetVis::render(TimePoint time, const ConstDataObjectPath& path, const PipelineFlowState& flowState, SceneRenderer* renderer, const PipelineSceneNode* contextNode)
+PipelineStatus TargetVis::render(AnimationTime time, const ConstDataObjectPath& path, const PipelineFlowState& flowState, SceneRenderer* renderer, const PipelineSceneNode* contextNode)
 {
 	// Target objects are only visible in the viewports.
 	if(renderer->isInteractive() == false || renderer->viewport() == nullptr)
@@ -59,8 +59,8 @@ PipelineStatus TargetVis::render(TimePoint time, const ConstDataObjectPath& path
 	if(!renderer->isBoundingBoxPass()) {
 
 		// Cache the line vertices for the icon.
-		RendererResourceKey<struct WireframeCube, DataSet*> cacheKey{ renderer->dataset() };
-		auto& vertexPositions = dataset()->visCache().get<ConstDataBufferPtr>(std::move(cacheKey));
+		RendererResourceKey<struct WireframeCube> cacheKey;
+		auto& vertexPositions = renderer->visCache().get<ConstDataBufferPtr>(std::move(cacheKey));
 
 		// Initialize geometry of wireframe cube.
 		if(!vertexPositions) {
@@ -78,7 +78,7 @@ PipelineStatus TargetVis::render(TimePoint time, const ConstDataObjectPath& path
 				{ 1, -1,  1}, { 1, 1, 1},
 				{-1, -1,  1}, {-1, 1, 1}
 			};
-			DataBufferAccessAndRef<Point3> vertices = DataBufferPtr::create(renderer->dataset(), sizeof(linePoints) / sizeof(Point3), DataBuffer::Float, 3);
+			DataBufferAccessAndRef<Point3> vertices = DataBufferPtr::create(sizeof(linePoints) / sizeof(Point3), DataBuffer::Float, 3);
 			boost::copy(linePoints, vertices.begin());
 			vertexPositions = vertices.take();
 		}
@@ -106,7 +106,7 @@ PipelineStatus TargetVis::render(TimePoint time, const ConstDataObjectPath& path
 /******************************************************************************
 * Computes the bounding box of the object.
 ******************************************************************************/
-Box3 TargetVis::boundingBox(TimePoint time, const ConstDataObjectPath& path, const PipelineSceneNode* contextNode, const PipelineFlowState& flowState, TimeInterval& validityInterval)
+Box3 TargetVis::boundingBox(AnimationTime time, const ConstDataObjectPath& path, const PipelineSceneNode* contextNode, const PipelineFlowState& flowState, TimeInterval& validityInterval)
 {
 	// This is not a physical object. It is point-like and doesn't have any size.
 	return Box3(Point3::Origin(), Point3::Origin());

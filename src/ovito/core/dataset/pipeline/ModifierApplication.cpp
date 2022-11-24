@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -265,7 +265,7 @@ SharedFuture<PipelineFlowState> ModifierApplication::evaluateInput(const Pipelin
 /******************************************************************************
 *  Asks the object for the result of the upstream data pipeline at several animation times.
 ******************************************************************************/
-Future<std::vector<PipelineFlowState>> ModifierApplication::evaluateInputMultiple(const PipelineEvaluationRequest& request, std::vector<TimePoint> times) const
+Future<std::vector<PipelineFlowState>> ModifierApplication::evaluateInputMultiple(const PipelineEvaluationRequest& request, std::vector<AnimationTime> times) const
 {
 	// Without a data source, this ModifierApplication doesn't produce any data.
 	if(!input())
@@ -359,12 +359,12 @@ Future<PipelineFlowState> ModifierApplication::evaluateInternal(const PipelineEv
 						throw;
 					}
 					catch(const std::bad_alloc&) {
-						throwException(tr("Not enough memory."));
+						throw Exception(tr("Not enough memory."));
 					}
 					catch(const std::exception& ex) {
 						qWarning() << "WARNING: Modifier" << modifier() << "has thrown a non-standard exception:" << ex.what();
 						OVITO_ASSERT(false);
-						throwException(tr("Exception: %1").arg(QString::fromLatin1(ex.what())));
+						throw Exception(tr("Exception: %1").arg(QString::fromLatin1(ex.what())));
 					}
 				}
 				catch(Exception& ex) {
@@ -389,15 +389,16 @@ Future<PipelineFlowState> ModifierApplication::evaluateInternal(const PipelineEv
 ******************************************************************************/
 PipelineFlowState ModifierApplication::evaluateInternalSynchronous(const PipelineEvaluationRequest& request)
 {
+	OVITO_ASSERT(!isUndoRecording());
+
 	PipelineFlowState state;
 	
 	if(input()) {
-		UndoSuspender noUndo(this);
 		// First get the preliminary results from the upstream pipeline.
 		state = input()->evaluateSynchronous(request);
 		try {
 			if(!state)
-				throwException(tr("Modifier input is empty."));
+				throw Exception(tr("Modifier input is empty."));
 
 			// Apply modifier:
 			if(modifierAndGroupEnabled())
@@ -441,7 +442,7 @@ int ModifierApplication::numberOfSourceFrames() const
 /******************************************************************************
 * Given an animation time, computes the source frame to show.
 ******************************************************************************/
-int ModifierApplication::animationTimeToSourceFrame(TimePoint time) const
+int ModifierApplication::animationTimeToSourceFrame(AnimationTime time) const
 {
 	int frame = input() ? input()->animationTimeToSourceFrame(time) : CachingPipelineObject::animationTimeToSourceFrame(time);
 	if(modifierAndGroupEnabled())
@@ -452,9 +453,9 @@ int ModifierApplication::animationTimeToSourceFrame(TimePoint time) const
 /******************************************************************************
 * Given a source frame index, returns the animation time at which it is shown.
 ******************************************************************************/
-TimePoint ModifierApplication::sourceFrameToAnimationTime(int frame) const
+AnimationTime ModifierApplication::sourceFrameToAnimationTime(int frame) const
 {
-	TimePoint time = input() ? input()->sourceFrameToAnimationTime(frame) : CachingPipelineObject::sourceFrameToAnimationTime(frame);
+	AnimationTime time = input() ? input()->sourceFrameToAnimationTime(frame) : CachingPipelineObject::sourceFrameToAnimationTime(frame);
 	if(modifierAndGroupEnabled())
 		time = modifier()->sourceFrameToAnimationTime(frame, time);
 	return time;
@@ -475,11 +476,11 @@ QMap<int, QString> ModifierApplication::animationFrameLabels() const
 * Returns a short piece information (typically a string or color) to be 
 * displayed next to the object's title in the pipeline editor.
 ******************************************************************************/
-QVariant ModifierApplication::getPipelineEditorShortInfo() const 
+QVariant ModifierApplication::getPipelineEditorShortInfo(Scene* scene) const 
 {
-	QVariant info = ActiveObject::getPipelineEditorShortInfo();
+	QVariant info = ActiveObject::getPipelineEditorShortInfo(scene);
 	if(!info.isValid() && modifier())
-		info.setValue(modifier()->getPipelineEditorShortInfo(const_cast<ModifierApplication*>(this)));
+		info.setValue(modifier()->getPipelineEditorShortInfo(scene, const_cast<ModifierApplication*>(this)));
 	return info;
 }
 

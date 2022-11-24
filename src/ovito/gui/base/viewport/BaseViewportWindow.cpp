@@ -70,7 +70,7 @@ void BaseViewportWindow::mouseDoubleClickEvent(QMouseEvent* event)
 ******************************************************************************/
 void BaseViewportWindow::mousePressEvent(QMouseEvent* event)
 {
-	viewport()->dataset()->viewportConfig()->setActiveViewport(viewport());
+	dataset()->viewportConfig()->setActiveViewport(viewport());
 
 	// Intercept mouse clicks on the viewport caption.
 	if(contextMenuArea().contains(ViewportInputMode::getMousePosition(event))) {

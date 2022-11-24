@@ -70,7 +70,7 @@ bool AmbientOcclusionModifier::OOMetaClass::isApplicableTo(const DataCollection&
 Future<AsynchronousModifier::EnginePtr> AmbientOcclusionModifier::createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input)
 {
 	if(Application::instance()->headlessMode()) {
-		throwException(tr(
+		throw Exception(tr(
 				"OVITO's ambient occlusion modifier requires OpenGL support and cannot be used in headless mode, that is if the application is running without access to a graphics environment. "
 				"Please see https://docs.ovito.org/python/modules/ovito_vis.html#ovito.vis.OpenGLRenderer for instructions "
 				"on how to enable OpenGL support in Python script environments."));
@@ -100,7 +100,7 @@ Future<AsynchronousModifier::EnginePtr> AmbientOcclusionModifier::createEngine(c
 	// Create the offscreen renderer implementation.
 	OvitoClassPtr rendererClass = PluginManager::instance().findClass("OpenGLRenderer", "OffscreenOpenGLSceneRenderer");
 	if(!rendererClass)
-		throwException(tr("The OffscreenOpenGLSceneRenderer class is not available. Please make sure the OpenGLRenderer plugin is installed correctly."));
+		throw Exception(tr("The OffscreenOpenGLSceneRenderer class is not available. Please make sure the OpenGLRenderer plugin is installed correctly."));
 	OORef<SceneRenderer> renderer = static_object_cast<SceneRenderer>(rendererClass->createInstance(dataset()));
 
 	// Activate picking mode, because we want to render particles using false colors.
@@ -276,7 +276,7 @@ void AmbientOcclusionModifier::AmbientOcclusionEngine::applyResults(const Modifi
 
 	ParticlesObject* particles = state.expectMutableObject<ParticlesObject>();
 	if(_inputFingerprint.hasChanged(particles))
-		request.modApp()->throwException(tr("Cached modifier results are obsolete, because the number or the storage order of input particles has changed."));
+		throw Exception(tr("Cached modifier results are obsolete, because the number or the storage order of input particles has changed."));
 	OVITO_ASSERT(brightness() && particles->elementCount() == brightness()->size());
 
 	// Get effective intensity.

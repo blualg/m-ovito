@@ -108,15 +108,15 @@ Future<AsynchronousModifier::EnginePtr> GrainSegmentationModifier::createEngine(
 	// Make sure the PTM modifier has been executed first and its output is available.
 	const PropertyObject* structureProperty = particles->getProperty(ParticlesObject::StructureTypeProperty);
 	if(!structureProperty)
-		throwException(tr("Grain segmentation requires Polyhedral Template Matching (PTM) output. Please insert the PTM modifier into the pipeline first."));
+		throw Exception(tr("Grain segmentation requires Polyhedral Template Matching (PTM) output. Please insert the PTM modifier into the pipeline first."));
 	const PropertyObject* orientationProperty = particles->getProperty(ParticlesObject::OrientationProperty);
 	if(!orientationProperty)
-		throwException(tr("Grain segmentation requires lattice orientation information. Please activate the 'Lattice orientations' option of the PTM modifier."));
+		throw Exception(tr("Grain segmentation requires lattice orientation information. Please activate the 'Lattice orientations' option of the PTM modifier."));
 	const PropertyObject* correspondenceProperty = particles->expectProperty("Correspondences", PropertyObject::Int64);
 
 	const SimulationCellObject* simCell = input.expectObject<SimulationCellObject>();
 	if(simCell->is2D())
-		throwException(tr("The grain segmentation modifier does not support 2d simulation cells."));
+		throw Exception(tr("The grain segmentation modifier does not support 2d simulation cells."));
 
 	// Initialize PTM library.
 	ptm_initialize_global();
@@ -147,7 +147,7 @@ void GrainSegmentationEngine1::applyResults(const ModifierEvaluationRequest& req
 	particles->verifyIntegrity();
 
 	if(_inputFingerprint.hasChanged(particles))
-		request.modApp()->throwException(GrainSegmentationModifier::tr("Cached modifier results are obsolete, because the number or the storage order of input particles has changed."));
+		throw Exception(GrainSegmentationModifier::tr("Cached modifier results are obsolete, because the number or the storage order of input particles has changed."));
 
 	// Output the edges of the neighbor graph.
 	if(_outputBondsToPipeline && modifier->outputBonds()) {

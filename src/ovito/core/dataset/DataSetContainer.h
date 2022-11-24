@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -92,6 +92,10 @@ Q_SIGNALS:
 	/// \note This signal is NOT emitted when the parameters of the current viewport configuration change.
     void viewportConfigReplaced(ViewportConfiguration* newViewportConfiguration);
 
+	/// \brief This signal is emitted whenever the active scene of current dataset has been replaced by a new one.
+	/// \note This signal is NOT emitted when the contents of the current scene change.
+    void sceneReplaced(Scene* newScene);
+
 	/// \brief This signal is emitted whenever the current animation settings of the current dataset have been replaced by new ones.
 	/// \note This signal is NOT emitted when the parameters of the current animation settings object change.
     void animationSettingsReplaced(AnimationSettings* newAnimationSettings);
@@ -101,36 +105,33 @@ Q_SIGNALS:
 	/// \note This signal is NOT emitted when parameters of the current render settings object change.
     void renderSettingsReplaced(RenderSettings* newRenderSettings);
 
-	/// \brief This signal is emitted when the current animation time has changed or if the current animation settings have been replaced.
-    void timeChanged(TimePoint newTime);
+	/// \brief This signal is emitted when the current animation frame has changed or if the current animation settings have been replaced.
+    void currentFrameChanged(int newFrame);
 
-	/// \brief This signal is emitted when the scene becomes ready after the current animation time has changed.
-	void timeChangeComplete();
+	/// \brief This signal is emitted when the scene becomes ready after the current animation frame has changed.
+	void currentFrameChangeComplete();
 
 	/// \brief This signal is emitted whenever the file path of the active dataset changes.
 	void filePathChanged(const QString& filePath);
 
-	/// \brief This signal is emitted whenever the modification status (clean state) of the active dataset changes.
-	void modificationStatusChanged(bool isClean);
-
-	/// \brief Is emitted whenever the scene of the current dataset has been changed and is being made ready for rendering.
-	void scenePreparationBegin();
+	/// \brief Is emitted whenever the scene of the current dataset is being made ready for rendering after it was changed in some way.
+	void scenePreparationStarted();
 
 	/// \brief Is emitted whenever the scene of the current dataset became ready for rendering.
-	void scenePreparationEnd();
+	void scenePreparationFinished();
 
 protected:
 
 	/// Is called when the value of a reference field of this RefMaker changes.
 	virtual void referenceReplaced(const PropertyFieldDescriptor* field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex) override;
 
-	/// Is called when a RefTarget referenced by this object has generated an event.
-	virtual bool referenceEvent(RefTarget* source, const ReferenceEvent& event) override;
-
 protected Q_SLOTS:
 
 	/// This handler is invoked when the current selection set of the current dataset has been replaced.
     void onSelectionSetReplaced(SelectionSet* newSelectionSet);
+
+	/// This handler is invoked when the current scene of the current dataset has been replaced.
+    void onSceneReplaced(Scene* newScene);
 
 	/// This handler is invoked when the current animation settings of the current dataset have been replaced.
     void onAnimationSettingsReplaced(AnimationSettings* newAnimationSettings);
@@ -140,31 +141,24 @@ private:
 	/// The current dataset being edited by the user.
 	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<DataSet>, currentSet, setCurrentSet, PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_NO_CHANGE_MESSAGE);
 
-	/// Is called when scene of the current dataset is ready to be displayed.
-	void sceneBecameReady();
-
 	/// The manager of asynchronous tasks associated with this container.
 	TaskManager& _taskManager;
 
 	/// The abstract user interface this container is part of.
 	UserInterface& _userInterface;
 
-	/// Indicates whether we are already waiting for the scene to become ready.
-	bool _sceneReadyScheduled = false;
-
-	/// The task that makes the scene ready for interactive rendering in the viewports.
-	SharedFuture<> _sceneReadyFuture;
-
 	QMetaObject::Connection _selectionSetReplacedConnection;
 	QMetaObject::Connection _selectionSetChangedConnection;
 	QMetaObject::Connection _selectionSetChangeCompleteConnection;
 	QMetaObject::Connection _viewportConfigReplacedConnection;
 	QMetaObject::Connection _animationSettingsReplacedConnection;
+	QMetaObject::Connection _sceneReplacedConnection;
 	QMetaObject::Connection _renderSettingsReplacedConnection;
-	QMetaObject::Connection _animationTimeChangedConnection;
-	QMetaObject::Connection _animationTimeChangeCompleteConnection;
-	QMetaObject::Connection _undoStackCleanChangedConnection;
+	QMetaObject::Connection _animationCurrentFrameChangedConnection;
+	QMetaObject::Connection _animationCurrentFrameChangeCompleteConnection;
 	QMetaObject::Connection _filePathChangedConnection;
+	QMetaObject::Connection _scenePreparationStartedConnection;
+	QMetaObject::Connection _scenePreparationFinishedConnection;
 };
 
 }	// End of namespace

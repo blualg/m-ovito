@@ -224,7 +224,7 @@ bool ColorCodingModifier::adjustRange()
 
 	// Loop over all input data.
 	bool success = false;
-	PipelineEvaluationRequest request(dataset()->animationSettings()->time());
+	PipelineEvaluationRequest request(dataset()->animationSettings());
 	for(ModifierApplication* modApp : modifierApplications()) {
 		const PipelineFlowState& inputState = modApp->evaluateInputSynchronous(request);
 
@@ -265,7 +265,7 @@ bool ColorCodingModifier::adjustRangeGlobal(MainThreadOperation& operation)
 		for(ModifierApplication* modApp : modifierApplications()) {
 
 			// Evaluate data pipeline up to this color coding modifier.
-			SharedFuture<PipelineFlowState> stateFuture = modApp->evaluateInput(PipelineEvaluationRequest(time));
+			SharedFuture<PipelineFlowState> stateFuture = modApp->evaluateInput(PipelineEvaluationRequest(time, dataset()->animationSettings()->timeToFrame(time)));
 			if(!stateFuture.waitForFinished())
 				break;
 
@@ -339,13 +339,13 @@ PipelineStatus ColorCodingModifierDelegate::apply(const ModifierEvaluationReques
 	const ColorCodingModifier* mod = static_object_cast<ColorCodingModifier>(request.modifier());
 
 	if(!mod->colorGradient())
-		throwException(tr("No color gradient has been selected."));
+		throw Exception(tr("No color gradient has been selected."));
 
 	// Get the source property.
 	const PropertyReference& sourceProperty = mod->sourceProperty();
 	int vecComponent;
 	if(sourceProperty.isNull())
-		throwException(tr("No source property was set as input for color coding."));
+		throw Exception(tr("No source property was set as input for color coding."));
 
 	// Look up the selected property container. Make sure we can safely modify it.
 	DataObjectPath objectPath = state.expectMutableObject(inputContainerRef());
@@ -353,7 +353,7 @@ PipelineStatus ColorCodingModifierDelegate::apply(const ModifierEvaluationReques
 
 	// Check if the source property is the right kind of property.
 	if(sourceProperty.containerClass() != &container->getOOMetaClass())
-		throwException(tr("Color coding modifier was set to operate on '%1', but the selected input is a '%2' property.")
+		throw Exception(tr("Color coding modifier was set to operate on '%1', but the selected input is a '%2' property.")
 			.arg(getOOMetaClass().pythonDataName()).arg(sourceProperty.containerClass()->propertyClassDisplayName()));
 
 	// Make sure input data structure is ok.
@@ -361,9 +361,9 @@ PipelineStatus ColorCodingModifierDelegate::apply(const ModifierEvaluationReques
 
 	ConstPropertyPtr property = sourceProperty.findInContainer(container);
 	if(!property)
-		throwException(tr("The property with the name '%1' does not exist.").arg(sourceProperty.name()));
+		throw Exception(tr("The property with the name '%1' does not exist.").arg(sourceProperty.name()));
 	if(sourceProperty.vectorComponent() >= (int)property->componentCount())
-		throwException(tr("The vector component is out of range. The property '%1' has only %2 values per data element.").arg(sourceProperty.name()).arg(property->componentCount()));
+		throw Exception(tr("The vector component is out of range. The property '%1' has only %2 values per data element.").arg(sourceProperty.name()).arg(property->componentCount()));
 	vecComponent = std::max(0, sourceProperty.vectorComponent());
 
 	// Get the selection property if enabled by the user.
@@ -428,7 +428,7 @@ PipelineStatus ColorCodingModifierDelegate::apply(const ModifierEvaluationReques
 		colorProperty[i] = mod->colorGradient()->valueToColor(t);
 	});
 	if(!result)
-		throwException(tr("The property '%1' has an invalid or non-numeric data type.").arg(property->name()));
+		throw Exception(tr("The property '%1' has an invalid or non-numeric data type.").arg(property->name()));
 
 	return PipelineStatus::Success;
 }

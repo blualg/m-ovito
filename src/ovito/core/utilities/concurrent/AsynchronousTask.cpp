@@ -58,7 +58,8 @@ void AsynchronousTaskBase::startInThreadPool(QThreadPool* pool)
 	this->_thisTask = this->shared_from_this();
 	this->_submittedToPool = pool;
 	// Inherit execution context from parent task.
-	_executionContextType = ExecutionContext::current();
+	_executionContext = ExecutionContext::current();
+	OVITO_ASSERT(_executionContext.isValid());
 	this->setStarted();
 	pool->start(this);
 }
@@ -72,7 +73,8 @@ void AsynchronousTaskBase::startInThisThread()
 	OVITO_ASSERT(!this->_submittedToPool);
 	OVITO_ASSERT(!this->isStarted());
 	// Inherit execution context from parent task.
-	_executionContextType = ExecutionContext::current();
+	_executionContext = ExecutionContext::current();
+	OVITO_ASSERT(_executionContext.isValid());
 	this->setStarted();
 	this->run();
 }
@@ -83,7 +85,9 @@ void AsynchronousTaskBase::startInThisThread()
 void AsynchronousTaskBase::run() 
 {
 	OVITO_ASSERT(isStarted());
-	ExecutionContext::Scope execScope(_executionContextType);
+	OVITO_ASSERT(_executionContext.isValid());
+	
+	ExecutionContext::Scope execScope(_executionContext);
 	try {
 		// Execute the work function in the scope of this task object.
 		Task::Scope taskScope(this);

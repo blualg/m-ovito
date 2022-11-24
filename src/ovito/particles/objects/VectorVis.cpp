@@ -208,7 +208,7 @@ PipelineStatus VectorVis::render(TimePoint time, const ConstDataObjectPath& path
 
 	// Make sure we don't exceed our internal limits.
 	if(vectorProperty && vectorProperty->size() > (size_t)std::numeric_limits<int>::max()) {
-		throwException(tr("This version of OVITO cannot render more than %1 vector arrows.").arg(std::numeric_limits<int>::max()));
+		throw Exception(tr("This version of OVITO cannot render more than %1 vector arrows.").arg(std::numeric_limits<int>::max()));
 	}
 
 	// Look for selected pseudo-coloring property.

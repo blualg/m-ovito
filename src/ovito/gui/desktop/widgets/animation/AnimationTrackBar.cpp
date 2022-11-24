@@ -35,8 +35,9 @@ using namespace std;
 /******************************************************************************
 * The constructor of the AnimationTrackBar class.
 ******************************************************************************/
-AnimationTrackBar::AnimationTrackBar(MainWindow* mainWindow, AnimationTimeSlider* timeSlider, QWidget* parent) :
+AnimationTrackBar::AnimationTrackBar(MainWindow& mainWindow, AnimationTimeSlider* timeSlider, QWidget* parent) :
 	QFrame(parent), 
+	_mainWindow(mainWindow),
 	_timeSlider(timeSlider), 
 	_animSettings(nullptr),
 	_keyPen(Qt::black), 
@@ -57,8 +58,8 @@ AnimationTrackBar::AnimationTrackBar(MainWindow* mainWindow, AnimationTimeSlider
 	setAutoFillBackground(true);
 	setMouseTracking(true);
 
-	connect(&mainWindow->datasetContainer(), &DataSetContainer::animationSettingsReplaced, this, &AnimationTrackBar::onAnimationSettingsReplaced);
-	connect(&mainWindow->datasetContainer(), &DataSetContainer::selectionChangeComplete, this, &AnimationTrackBar::onRebuildControllerList);
+	connect(&mainWindow.datasetContainer(), &DataSetContainer::animationSettingsReplaced, this, &AnimationTrackBar::onAnimationSettingsReplaced);
+	connect(&mainWindow.datasetContainer(), &DataSetContainer::selectionChangeComplete, this, &AnimationTrackBar::onRebuildControllerList);
 	connect(&_objects, &VectorRefTargetListener<RefTarget>::notificationEvent, this, &AnimationTrackBar::onObjectNotificationEvent);
 	connect(&_controllers, &VectorRefTargetListener<KeyframeController>::notificationEvent, this, &AnimationTrackBar::onControllerNotificationEvent);
 }
@@ -205,7 +206,7 @@ void AnimationTrackBar::onRebuildControllerList()
 
 	if(_animSettings) {
 		// Traverse object graphs of selected scene nodes to find all animation controllers.
-		SelectionSet* selection = _animSettings->dataset()->selection();
+		SelectionSet* selection = mainWindow().activeScene()->selection();
 		for(SceneNode* node : selection->nodes()) {
 			if(PipelineSceneNode* objNode = dynamic_object_cast<PipelineSceneNode>(node))
 				findControllers(objNode);

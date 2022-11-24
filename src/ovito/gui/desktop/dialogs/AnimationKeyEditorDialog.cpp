@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -96,8 +96,8 @@ class AnimationKeyModel : public QAbstractTableModel
 public:
 
 	/// Constructor.
-	AnimationKeyModel(KeyframeController* ctrl, const PropertyFieldDescriptor* propertyField, QObject* parent = nullptr)
-		: QAbstractTableModel(parent), _propertyField(propertyField) {
+	AnimationKeyModel(Scene* scene, KeyframeController* ctrl, const PropertyFieldDescriptor* propertyField, QObject* parent = nullptr)
+		: QAbstractTableModel(parent), _scene(scene), _propertyField(propertyField) {
 		_ctrl.setTarget(ctrl);
 		_ctrlType = ctrl->controllerType();
 		_keys.setTargets(ctrl->keys());
@@ -229,7 +229,7 @@ public:
 		else if(orientation == Qt::Vertical && role == Qt::DisplayRole) {
 			if(section >= 0 && section < keys().size()) {
 				const AnimationKey* key = keys()[section];
-				return QVariant::fromValue(tr("Time: %1").arg(key->dataset()->animationSettings()->timeToString(key->time())));
+				return QVariant::fromValue(tr("Time: %1").arg(_scene->animationSettings()->timeToString(key->time())));
 			}
 		}
 		return QAbstractTableModel::headerData(section, orientation, role);
@@ -288,6 +288,9 @@ public:
 
 private:
 
+	/// The active scene.
+	Scene* _scene;
+
 	/// The controller whose keys are being edited.
 	RefTargetListener<KeyframeController> _ctrl;
 
@@ -306,14 +309,19 @@ private:
 ******************************************************************************/
 AnimationKeyEditorDialog::AnimationKeyEditorDialog(KeyframeController* ctrl, const PropertyFieldDescriptor* propertyField, QWidget* parent, MainWindow& mainWindow) :
 	QDialog(parent),
-	UndoableTransaction(ctrl->dataset()->undoStack(), tr("Edit animatable parameter"))
+	UndoableTransaction(mainWindow, tr("Edit animatable parameter")),
+	_mainWindow(mainWindow),
+	_dataset(mainWindow.datasetContainer().currentSet()),
+	_scene(mainWindow.activeScene())
 {
+	OVITO_ASSERT(_dataset && _scene);
+
 	setWindowTitle(tr("Parameter animation: %1").arg(propertyField->displayName()));
 	_ctrl.setTarget(ctrl);
-
+	
 	// Make sure the controller has at least one animation key.
 	if(ctrl->keys().empty()) {
-		try { ctrl->createKey(0); }
+		try { ctrl->createKey(AnimationTime(0)); }
 		catch(const Exception&) {}
 	}
 
@@ -321,7 +329,7 @@ AnimationKeyEditorDialog::AnimationKeyEditorDialog(KeyframeController* ctrl, con
 
 	mainLayout->addWidget(new QLabel(tr("Animation keys:")));
 	_tableWidget = new QTableView();
-	AnimationKeyModel* model = new AnimationKeyModel(ctrl, propertyField, _tableWidget);
+	AnimationKeyModel* model = new AnimationKeyModel(_scene, ctrl, propertyField, _tableWidget);
 	_model = model;
 	QItemSelectionModel* selModel = _tableWidget->selectionModel();
 	_tableWidget->setModel(_model);
@@ -338,7 +346,7 @@ AnimationKeyEditorDialog::AnimationKeyEditorDialog(KeyframeController* ctrl, con
 		minValue = propertyField->numericalParameterInfo()->minValue;
 		maxValue = propertyField->numericalParameterInfo()->maxValue;
 		if(propertyField->numericalParameterInfo()->unitType != nullptr)
-			units = ctrl->dataset()->unitsManager().getUnit(propertyField->numericalParameterInfo()->unitType);
+			units = _dataset->unitsManager().getUnit(propertyField->numericalParameterInfo()->unitType);
 	}
 
 	if(ctrl->controllerType() != Controller::ControllerTypeRotation) {
@@ -347,8 +355,8 @@ AnimationKeyEditorDialog::AnimationKeyEditorDialog(KeyframeController* ctrl, con
 			_tableWidget->setItemDelegateForColumn(col, numericalDelegate);
 	}
 	else {
-		NumericalItemDelegate* axisDelegate = new NumericalItemDelegate(_tableWidget, ctrl->dataset()->unitsManager().worldUnit(), FLOATTYPE_MIN, FLOATTYPE_MAX);
-		NumericalItemDelegate* angleDelegate = new NumericalItemDelegate(_tableWidget, ctrl->dataset()->unitsManager().angleUnit(), FLOATTYPE_MIN, FLOATTYPE_MAX);
+		NumericalItemDelegate* axisDelegate = new NumericalItemDelegate(_tableWidget, _dataset->unitsManager().worldUnit(), FLOATTYPE_MIN, FLOATTYPE_MAX);
+		NumericalItemDelegate* angleDelegate = new NumericalItemDelegate(_tableWidget, _dataset->unitsManager().angleUnit(), FLOATTYPE_MIN, FLOATTYPE_MAX);
 		_tableWidget->setItemDelegateForColumn(0, axisDelegate);
 		_tableWidget->setItemDelegateForColumn(1, axisDelegate);
 		_tableWidget->setItemDelegateForColumn(2, axisDelegate);
@@ -374,7 +382,7 @@ AnimationKeyEditorDialog::AnimationKeyEditorDialog(KeyframeController* ctrl, con
 	toolbar->addSeparator();
 	QAction* animSettingsAction = toolbar->addAction(QIcon::fromTheme("animation_settings"), tr("Animation settings..."));
 	connect(animSettingsAction, &QAction::triggered, [this]() {
-		AnimationSettingsDialog(this->ctrl()->dataset()->animationSettings(), this).exec();
+		AnimationSettingsDialog(_mainWindow, _scene->animationSettings(), this).exec();
 	});
 
 	hlayout->addWidget(toolbar);
@@ -441,10 +449,10 @@ void AnimationKeyEditorDialog::onAddKey()
 	subLayout->addWidget(timeEdit);
 	SpinnerWidget* timeSpinner = new SpinnerWidget();
 	timeSpinner->setTextBox(timeEdit);
-	timeSpinner->setUnit(ctrl()->dataset()->unitsManager().timeUnit());
-	timeSpinner->setIntValue(ctrl()->dataset()->animationSettings()->time());
-	timeSpinner->setMinValue(ctrl()->dataset()->animationSettings()->animationInterval().start());
-	timeSpinner->setMaxValue(ctrl()->dataset()->animationSettings()->animationInterval().end());
+	timeSpinner->setUnit(_dataset->unitsManager().integerIdentityUnit());
+	timeSpinner->setIntValue(_dataset->animationSettings()->currentFrame());
+	timeSpinner->setMinValue(_dataset->animationSettings()->firstFrame());
+	timeSpinner->setMaxValue(_dataset->animationSettings()->lastFrame());
 	subLayout->addWidget(timeSpinner);
 	mainLayout->addLayout(subLayout);
 	QDialogButtonBox* buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, Qt::Horizontal, &dlg);
@@ -453,7 +461,7 @@ void AnimationKeyEditorDialog::onAddKey()
 	mainLayout->addWidget(buttonBox);
 	if(dlg.exec() == QDialog::Accepted) {
 		try {
-			int index = ctrl()->createKey(timeSpinner->intValue());
+			int index = ctrl()->createKey(AnimationTime::fromFrame(timeSpinner->intValue()));
 			_tableWidget->selectRow(index);
 		}
 		catch(const Exception& ex) {

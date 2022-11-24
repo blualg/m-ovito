@@ -138,7 +138,7 @@ Future<PipelineFlowState> FreezePropertyModifier::evaluate(const ModifierEvaluat
 						return std::move(state);
 					}
 					else {
-						throwException(tr("The property '%1' is not present in the input state.").arg(sourceProperty().name()));
+						throw Exception(tr("The property '%1' is not present in the input state.").arg(sourceProperty().name()));
 					}
 				}
 				myModApp->invalidateFrozenState();
@@ -154,19 +154,19 @@ Future<PipelineFlowState> FreezePropertyModifier::evaluate(const ModifierEvaluat
 void FreezePropertyModifier::evaluateSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state)
 {
 	if(!subject())
-		throwException(tr("No property type selected."));
+		throw Exception(tr("No property type selected."));
 
 	if(sourceProperty().isNull()) {
 		state.setStatus(PipelineStatus(PipelineStatus::Warning, tr("No source property selected.")));
 		return;
 	}
 	if(destinationProperty().isNull())
-		throwException(tr("No output property selected."));
+		throw Exception(tr("No output property selected."));
 
 	// Retrieve the property values stored in the ModifierApplication.
 	FreezePropertyModifierApplication* myModApp = dynamic_object_cast<FreezePropertyModifierApplication>(request.modApp());
 	if(!myModApp || !myModApp->property())
-		throwException(tr("No stored property values available."));
+		throw Exception(tr("No stored property values available."));
 
 	// Look up the property container object.
    	PropertyContainer* container = state.expectMutableLeafObject(subject());
@@ -179,7 +179,7 @@ void FreezePropertyModifier::evaluateSynchronous(const ModifierEvaluationRequest
 		if(outputProperty->dataType() != myModApp->property()->dataType()
 			|| outputProperty->componentCount() != myModApp->property()->componentCount()
 			|| outputProperty->stride() != myModApp->property()->stride())
-			throwException(tr("Types of source property and output property are not compatible. Cannot restore saved property values."));
+			throw Exception(tr("Types of source property and output property are not compatible. Cannot restore saved property values."));
 	}
 	else {
 		outputProperty = container->createProperty(destinationProperty().name(),
@@ -202,7 +202,7 @@ void FreezePropertyModifier::evaluateSynchronous(const ModifierEvaluationRequest
 		size_t index = 0;
 		for(auto id : storedIds) {
 			if(!idmap.insert(std::make_pair(id, index)).second)
-				throwException(tr("Detected duplicate element ID %1 in saved snapshot. Cannot apply saved property values.").arg(id));
+				throw Exception(tr("Detected duplicate element ID %1 in saved snapshot. Cannot apply saved property values.").arg(id));
 			index++;
 		}
 		storedIds.reset();
@@ -213,7 +213,7 @@ void FreezePropertyModifier::evaluateSynchronous(const ModifierEvaluationRequest
 		for(size_t& mappedIndex : mapping) {
 			auto mapEntry = idmap.find(*id++);
 			if(mapEntry == idmap.end())
-				throwException(tr("Detected new element ID %1, which didn't exist when the snapshot was created. Cannot restore saved property values.").arg(*id));
+				throw Exception(tr("Detected new element ID %1, which didn't exist when the snapshot was created. Cannot restore saved property values.").arg(*id));
 			mappedIndex = mapEntry->second;
 		}
 		idProperty.reset();
@@ -224,7 +224,7 @@ void FreezePropertyModifier::evaluateSynchronous(const ModifierEvaluationRequest
 	else {
 		// Make sure the number of elements didn't change when no IDs are defined.
 		if(myModApp->property()->size() != outputProperty->size())
-			throwException(tr("Number of input elements has changed. Cannot restore saved property values. There were %1 elements when the snapshot was created. Now there are %2.").arg(myModApp->property()->size()).arg(outputProperty->size()));
+			throw Exception(tr("Number of input elements has changed. Cannot restore saved property values. There were %1 elements when the snapshot was created. Now there are %2.").arg(myModApp->property()->size()).arg(outputProperty->size()));
 
 		if(outputProperty->dataType() == myModApp->property()->dataType() && outputProperty->stride() == myModApp->property()->stride())
 			outputProperty->copyFrom(*myModApp->property());

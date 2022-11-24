@@ -76,32 +76,32 @@ void SurfaceMesh::verifyMeshIntegrity() const
 {
 	OVITO_CHECK_OBJECT_POINTER(topology());
 	if(!topology())
-		throwException(tr("Surface mesh has no topology object attached."));
+		throw Exception(tr("Surface mesh has no topology object attached."));
 
 	OVITO_CHECK_OBJECT_POINTER(vertices());
 	if(!vertices())
-		throwException(tr("Surface mesh has no vertex properties container attached."));
+		throw Exception(tr("Surface mesh has no vertex properties container attached."));
 	OVITO_CHECK_OBJECT_POINTER(vertices()->getProperty(SurfaceMeshVertices::PositionProperty));
 	if(!vertices()->getProperty(SurfaceMeshVertices::PositionProperty))
-		throwException(tr("Invalid data structure. Surface mesh is missing the position vertex property."));
+		throw Exception(tr("Invalid data structure. Surface mesh is missing the position vertex property."));
 	OVITO_ASSERT(topology()->vertexCount() == vertices()->elementCount());
 	if(topology()->vertexCount() != vertices()->elementCount())
-		throwException(tr("Length of vertex property arrays of surface mesh do not match number of vertices in the mesh topology."));
+		throw Exception(tr("Length of vertex property arrays of surface mesh do not match number of vertices in the mesh topology."));
 
 	OVITO_CHECK_OBJECT_POINTER(faces());
 	if(!faces())
-		throwException(tr("Surface mesh has no face properties container attached."));
+		throw Exception(tr("Surface mesh has no face properties container attached."));
 	OVITO_ASSERT(faces()->properties().empty() || topology()->faceCount() == faces()->elementCount());
 	if(!faces()->properties().empty() && topology()->faceCount() != faces()->elementCount())
-		throwException(tr("Length of face property arrays of surface mesh do not match number of faces in the mesh topology."));
+		throw Exception(tr("Length of face property arrays of surface mesh do not match number of faces in the mesh topology."));
 
 	OVITO_CHECK_OBJECT_POINTER(regions());
 	if(!regions())
-		throwException(tr("Surface mesh has no region properties container attached."));
+		throw Exception(tr("Surface mesh has no region properties container attached."));
 
 	OVITO_ASSERT(spaceFillingRegion() == InvalidIndex || spaceFillingRegion() >= 0);
 	if(spaceFillingRegion() != InvalidIndex && spaceFillingRegion() < 0)
-		throwException(tr("Space filling region ID set for surface mesh must not be negative."));
+		throw Exception(tr("Space filling region ID set for surface mesh must not be negative."));
 
 	vertices()->verifyIntegrity();
 	faces()->verifyIntegrity();

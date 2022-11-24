@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2013 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -40,12 +40,12 @@ void KeyframeController::rescaleTime(const TimeInterval& oldAnimationInterval, c
 		return;
 
 	for(AnimationKey* key : keys()) {
-		TimePoint newTime;
+		AnimationTime newTime(0);
 		if(oldAnimationInterval.duration() != 0)
-			newTime = (qint64)(key->time() - oldAnimationInterval.start()) * newAnimationInterval.duration()
-						/ oldAnimationInterval.duration() + newAnimationInterval.start();
+			newTime = newAnimationInterval.start() + (key->time() - oldAnimationInterval.start()) * newAnimationInterval.duration()
+						/ oldAnimationInterval.duration();
 		else
-			newTime = key->time() - oldAnimationInterval.start() + newAnimationInterval.start();
+			newTime = newAnimationInterval.start() + (key->time() - oldAnimationInterval.start());
 		key->setTime(newTime);
 	}
 	OVITO_ASSERT(areKeysSorted());
@@ -56,15 +56,15 @@ void KeyframeController::rescaleTime(const TimeInterval& oldAnimationInterval, c
 * Calculates the largest time interval containing the given time during
 * which the controller's value does not change.
 ******************************************************************************/
-TimeInterval KeyframeController::validityInterval(TimePoint time)
+TimeInterval KeyframeController::validityInterval(AnimationTime time)
 {
 	OVITO_ASSERT(areKeysSorted());
 	if(keys().size() <= 1)
 		return TimeInterval::infinite();
 	else if(time <= keys().front()->time())
-		return TimeInterval(TimeNegativeInfinity(), keys().front()->time());
+		return TimeInterval(AnimationTime::negativeInfinity(), keys().front()->time());
 	else if(time >= keys().back()->time())
-		return TimeInterval(keys().back()->time(), TimePositiveInfinity());
+		return TimeInterval(keys().back()->time(), AnimationTime::positiveInfinity());
 	else
 		return TimeInterval(time);
 }
@@ -120,7 +120,7 @@ bool KeyframeController::areKeysSorted() const
 /******************************************************************************
 * Moves the keys in the given set by the given time shift.
 ******************************************************************************/
-void KeyframeController::moveKeys(const QVector<AnimationKey*> keysToMove, TimePoint shift)
+void KeyframeController::moveKeys(const QVector<AnimationKey*> keysToMove, AnimationTime::value_type shift)
 {
 	if(shift == 0)
 		return;

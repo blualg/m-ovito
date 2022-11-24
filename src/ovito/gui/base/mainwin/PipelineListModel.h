@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -24,6 +24,7 @@
 
 
 #include <ovito/gui/base/GUIBase.h>
+#include <ovito/core/app/UserInterface.h>
 #include <ovito/core/oo/RefTarget.h>
 #include <ovito/core/oo/RefTargetListener.h>
 #include <ovito/core/dataset/pipeline/ModifierApplication.h>
@@ -57,7 +58,7 @@ public:
 	};
 
 	/// Constructor.
-	PipelineListModel(DataSetContainer& datasetContainer, ActionManager* actionManager, QObject* parent);
+	PipelineListModel(UserInterface& userInterface, QObject* parent);
 
 	/// Returns the number of list items.
 	virtual int rowCount(const QModelIndex& parent = QModelIndex()) const override { return (int)_items.size(); }
@@ -76,9 +77,6 @@ public:
 
 	/// Returns the icon size to be used by the list widget.
 	QSize iconSize() const { return _statusInfoIcon.size(); }
-
-	/// Discards all list items.
-	void clear();
 
 	/// Returns the associated selection model.
 	QItemSelectionModel* selectionModel() const { return _selectionModel; }
@@ -123,7 +121,7 @@ public:
 	PipelineSceneNode* selectedPipeline() const { return _selectedPipeline.target(); }
 
 	/// Returns the container of the dataset being edited.
-	DataSetContainer& datasetContainer() { return _datasetContainer; }
+	DataSetContainer& datasetContainer() { return _userInterface.datasetContainer(); }
 
 	/// Inserts the given modifier(s) into the currently selected pipeline.
 	void applyModifiers(const QVector<OORef<Modifier>>& modifiers, ModifierGroup* group = nullptr);
@@ -202,6 +200,9 @@ public Q_SLOTS:
 	}
 
 private Q_SLOTS:
+
+	/// Is called when a different pipeline scene node is selected.
+	void onSceneSelectionChangeComplete(SelectionSet* selection);
 
 	/// Is called when the QItemSelectionModel changes.
 	void onSelectionModelChanged();
@@ -286,8 +287,8 @@ private:
 	/// The foreground brush used for list items that are disabled.
 	QBrush _disabledForegroundBrush;
 
-	/// Container of the dataset being edited.
-	DataSetContainer& _datasetContainer;
+	/// The abstract user interface.
+	UserInterface& _userInterface;
 
 	/// The action that deletes the selected list item.
 	QAction* _deleteItemAction;

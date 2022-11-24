@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -29,38 +29,88 @@
 
 namespace Ovito {
 
-/**
- * \brief A point in animation time.
- *
- * One animation time unit is 1/4800 of a second in real time.
- *
- * Note that this is an integer data type. Times are measured
- * in discrete steps of 1/4800 of a second to avoid rounding errors.
- */
-using TimePoint = int;
+class AnimationTime final
+{
+public:
 
-/// The number of time ticks per second.
-enum { TICKS_PER_SECOND = 4800 };
+	using value_type = std::int64_t;
+	Q_DECL_CONSTEXPR static value_type TicksPerFrame = 1000;
 
-/// Returns the smallest possible time value.
-constexpr inline TimePoint TimeNegativeInfinity() noexcept {
-	return std::numeric_limits<TimePoint>::lowest();
-}
+	/// Default constructor.
+	Q_DECL_CONSTEXPR AnimationTime() noexcept : _value(0) {}
 
-/// Returns the largest possible time value.
-constexpr inline TimePoint TimePositiveInfinity() noexcept {
-	return std::numeric_limits<TimePoint>::max();
-}
+	/// Constructs a time value from a numeric value.
+	Q_DECL_CONSTEXPR explicit AnimationTime(value_type ticks) noexcept : _value(ticks) {}
 
-/// Converts time tick units to seconds.
-constexpr inline FloatType TimeToSeconds(TimePoint t) noexcept {
-	return (FloatType)t / TICKS_PER_SECOND;
-}
+	/// Returns the animation frame corresponding to this time value.	
+	Q_DECL_CONSTEXPR int frame() const noexcept { return static_cast<int>(_value / TicksPerFrame); }
 
-/// Converts seconds to internal time ticks.
-inline TimePoint TimeFromSeconds(FloatType timeInSeconds) noexcept {
-	return (TimePoint)std::round(timeInSeconds * TICKS_PER_SECOND);
-}
+	/// Returns the animation time value.	
+	Q_DECL_CONSTEXPR value_type ticks() const noexcept { return _value; }
+
+	/// Equal comparison.
+	Q_DECL_CONSTEXPR bool operator==(const AnimationTime& other) const noexcept { return _value == other._value; }
+
+	/// Not-equal comparison.
+	Q_DECL_CONSTEXPR bool operator!=(const AnimationTime& other) const noexcept { return _value != other._value; }
+
+	/// Less-than comparison.
+	Q_DECL_CONSTEXPR bool operator<(const AnimationTime& other) const noexcept { return _value < other._value; }
+
+	/// Less-than-or-equal comparison.
+	Q_DECL_CONSTEXPR bool operator<=(const AnimationTime& other) const noexcept { return _value <= other._value; }
+
+	/// Greater-than comparison.
+	Q_DECL_CONSTEXPR bool operator>(const AnimationTime& other) const noexcept { return _value > other._value; }
+
+	/// Greater-than-or-equal comparison.
+	Q_DECL_CONSTEXPR bool operator>=(const AnimationTime& other) const noexcept { return _value >= other._value; }
+
+	/// Time difference.
+	friend Q_DECL_CONSTEXPR value_type operator-(const AnimationTime& a, const AnimationTime& b) noexcept { return a._value - b._value; }
+
+	/// Time addition.
+	friend Q_DECL_CONSTEXPR AnimationTime operator+(const AnimationTime& a, value_type delta) noexcept { return AnimationTime(a._value + delta); }
+
+	/// Time subtraction.
+	friend Q_DECL_CONSTEXPR AnimationTime operator-(const AnimationTime& a, value_type delta) noexcept { return AnimationTime(a._value - delta); }
+
+	/// Returns the smallest time value (negative infinity).
+	static Q_DECL_CONSTEXPR AnimationTime negativeInfinity() noexcept { return AnimationTime(std::numeric_limits<value_type>::lowest()); }
+
+	/// Returns the largest time value (positive infinity).
+	static Q_DECL_CONSTEXPR AnimationTime positiveInfinity() noexcept { return AnimationTime(std::numeric_limits<value_type>::max()); }
+
+	/// Constructs a time value corresponding to the given frame.	
+	static Q_DECL_CONSTEXPR AnimationTime fromFrame(int frame) noexcept { return AnimationTime(TicksPerFrame * static_cast<value_type>(frame)); }
+
+	/// \brief Writes an animation time to a binary output stream.
+	/// \param stream The output stream.
+	/// \param time The time to write to the output stream \a stream.
+	/// \return The output stream \a stream.
+	friend SaveStream& operator<<(SaveStream& stream, const AnimationTime& time) {
+		return stream << time.ticks();
+	}
+
+	/// \brief Reads an animation time value from a binary input stream.
+	/// \param stream The input stream.
+	/// \param time Reference to a variable where the parsed data will be stored.
+	/// \return The input stream \a stream.
+	friend LoadStream& operator>>(LoadStream& stream, AnimationTime& time) {
+		stream >> time._value;
+		return stream;
+	}
+
+	/// \brief Writes a time value to the debug stream.
+	friend QDebug operator<<(QDebug stream, const AnimationTime& time) {
+		stream.nospace() << time.ticks() << " (frame " << time.frame() << ")";
+		return stream.space();
+	}
+
+private:
+
+	value_type _value;
+};
 
 /**
  * \brief An interval on the animation time line, which is defined by a start and an end time.
@@ -72,49 +122,49 @@ public:
 	/// \brief Creates an empty time interval.
 	///
 	/// Both start time and end time are initialized to negative infinity.
-	Q_DECL_CONSTEXPR TimeInterval() noexcept : _start(TimeNegativeInfinity()), _end(TimeNegativeInfinity()) {}
+	Q_DECL_CONSTEXPR TimeInterval() noexcept : _start{AnimationTime::negativeInfinity()}, _end{AnimationTime::negativeInfinity()} {}
 
 	/// \brief Initializes the interval with start and end values.
 	/// \param start The start time of the time interval.
 	/// \param end The end time (including) of the time interval.
-	Q_DECL_CONSTEXPR TimeInterval(TimePoint start, TimePoint end) noexcept : _start(start), _end(end) {}
+	Q_DECL_CONSTEXPR TimeInterval(AnimationTime start, AnimationTime end) noexcept : _start(start), _end(end) {}
 
 	/// \brief Initializes the interval to an instant time.
 	/// \param time The time where the interval starts and ends.
-	Q_DECL_CONSTEXPR TimeInterval(TimePoint time) noexcept : _start(time), _end(time) {}
+	Q_DECL_CONSTEXPR TimeInterval(AnimationTime time) noexcept : _start(time), _end(time) {}
 
 	/// \brief Returns the start time of the interval.
 	/// \return The beginning of the time interval.
-	Q_DECL_CONSTEXPR TimePoint start() const noexcept { return _start; }
+	Q_DECL_CONSTEXPR AnimationTime start() const noexcept { return _start; }
 
 	/// \brief Returns the end time of the interval.
 	/// \return The time at which the interval end.
-	Q_DECL_CONSTEXPR TimePoint end() const noexcept { return _end; }
+	Q_DECL_CONSTEXPR AnimationTime end() const noexcept { return _end; }
 
 	/// \brief Sets the start time of the interval.
 	/// \param start The new start time.
-	void setStart(TimePoint start) noexcept { _start = start; }
+	void setStart(AnimationTime start) noexcept { _start = start; }
 
 	/// \brief Sets the end time of the interval.
 	/// \param end The new end time.
-	void setEnd(TimePoint end) noexcept { _end = end; }
+	void setEnd(AnimationTime end) noexcept { _end = end; }
 
 	/// \brief Checks if this is an empty time interval.
 	/// \return \c true if the start time of the interval is behind the end time or if the
-	///         end time is negative infinity (TimeNegativeInfinity);
+	///         end time is negative infinity;
 	///         \c false otherwise.
 	/// \sa setEmpty()
-	Q_DECL_CONSTEXPR bool isEmpty() const noexcept { return (end() == TimeNegativeInfinity() || start() > end()); }
+	Q_DECL_CONSTEXPR bool isEmpty() const noexcept { return (end() == AnimationTime::negativeInfinity() || start() > end()); }
 
 	/// \brief Returns whether this is the infinite time interval.
 	/// \return \c true if the start time is negative infinity and the end time of the interval is positive infinity.
 	/// \sa setInfinite()
-	Q_DECL_CONSTEXPR bool isInfinite() const noexcept { return (end() == TimePositiveInfinity() && start() == TimeNegativeInfinity()); }
+	Q_DECL_CONSTEXPR bool isInfinite() const noexcept { return (end() == AnimationTime::positiveInfinity() && start() == AnimationTime::negativeInfinity()); }
 
 	/// \brief Returns the duration of the time interval.
 	/// \return The difference between the end and the start time.
 	/// \sa setDuration()
-	Q_DECL_CONSTEXPR TimePoint duration() const noexcept { return end() - start(); }
+	Q_DECL_CONSTEXPR AnimationTime::value_type duration() const noexcept { return end() - start(); }
 
 	/// \brief Sets the duration of the time interval.
 	/// \param duration The new duration of the interval.
@@ -123,25 +173,25 @@ public:
 	/// start() + duration().
 	///
 	/// \sa duration()
-	void setDuration(TimePoint duration) noexcept { setEnd(start() + duration); }
+	void setDuration(AnimationTime::value_type duration) noexcept { setEnd(start() + duration); }
 
 	/// \brief Sets this interval's start time to negative infinity and it's end time to positive infinity.
 	/// \sa isInfinite()
 	void setInfinite() noexcept {
-		setStart(TimeNegativeInfinity());
-		setEnd(TimePositiveInfinity());
+		setStart(AnimationTime::negativeInfinity());
+		setEnd(AnimationTime::positiveInfinity());
 	}
 
 	/// \brief Sets this interval's start and end time to negative infinity.
 	/// \sa isEmpty()
 	void setEmpty() noexcept {
-		setStart(TimeNegativeInfinity());
-		setEnd(TimeNegativeInfinity());
+		setStart(AnimationTime::negativeInfinity());
+		setEnd(AnimationTime::negativeInfinity());
 	}
 
 	/// \brief Sets this interval's start and end time to the instant time given.
 	/// \param time This value is assigned to both, the start and the end time of the interval.
-	void setInstant(TimePoint time) noexcept {
+	void setInstant(AnimationTime time) noexcept {
 		setStart(time);
 		setEnd(time);
 	}
@@ -168,7 +218,7 @@ public:
 	/// \brief Returns whether a time lies between start and end time of this interval.
 	/// \param time The time to check.
 	/// \return \c true if \a time is equal or larger than start() and smaller or equal than end().
-	Q_DECL_CONSTEXPR bool contains(TimePoint time) const noexcept {
+	Q_DECL_CONSTEXPR bool contains(AnimationTime time) const noexcept {
 		return (start() <= time && time <= end());
 	}
 
@@ -198,46 +248,41 @@ public:
 	}
 
 	/// Return the infinite time interval that contains all time values.
-	static Q_DECL_CONSTEXPR TimeInterval infinite() noexcept { return TimeInterval(TimeNegativeInfinity(), TimePositiveInfinity()); }
+	static Q_DECL_CONSTEXPR TimeInterval infinite() noexcept { return TimeInterval(AnimationTime::negativeInfinity(), AnimationTime::positiveInfinity()); }
 
 	/// Return the empty time interval that contains no time values.
-	static Q_DECL_CONSTEXPR TimeInterval empty() noexcept { return TimeInterval(TimeNegativeInfinity()); }
+	static Q_DECL_CONSTEXPR TimeInterval empty() noexcept { return TimeInterval(); }
+
+	/// \brief Writes a time interval to a binary output stream.
+	/// \param stream The output stream.
+	/// \param iv The time interval to write to the output stream \a stream.
+	/// \return The output stream \a stream.
+	/// \relates TimeInterval
+	friend inline SaveStream& operator<<(SaveStream& stream, const TimeInterval& iv) {
+		return stream << iv.start() << iv.end();
+	}
+
+	/// \brief Reads a time interval from a binary input stream.
+	/// \param stream The input stream.
+	/// \param iv Reference to a variable where the parsed data will be stored.
+	/// \return The input stream \a stream.
+	/// \relates TimeInterval
+	friend inline LoadStream& operator>>(LoadStream& stream, TimeInterval& iv) {
+		stream >> iv._start >> iv._end;
+		return stream;
+	}
+
+	/// \brief Writes a time interval to the debug stream.
+	/// \relates TimeInterval
+	friend inline QDebug operator<<(QDebug stream, const TimeInterval& iv) {
+		stream.nospace() << "[" << iv.start() << ", " << iv.end() << "]";
+		return stream.space();
+	}
 
 private:
 
-	TimePoint _start, _end;
-
-	friend LoadStream& operator>>(LoadStream& stream, TimeInterval& iv);
+	AnimationTime _start, _end;
 };
-
-/// \brief Writes a time interval to a binary output stream.
-/// \param stream The output stream.
-/// \param iv The time interval to write to the output stream \a stream.
-/// \return The output stream \a stream.
-/// \relates TimeInterval
-inline SaveStream& operator<<(SaveStream& stream, const TimeInterval& iv)
-{
-	return stream << iv.start() << iv.end();
-}
-
-/// \brief Reads a time interval from a binary input stream.
-/// \param stream The input stream.
-/// \param iv Reference to a variable where the parsed data will be stored.
-/// \return The input stream \a stream.
-/// \relates TimeInterval
-inline LoadStream& operator>>(LoadStream& stream, TimeInterval& iv)
-{
-	stream >> iv._start >> iv._end;
-	return stream;
-}
-
-/// \brief Writes a time interval to the debug stream.
-/// \relates TimeInterval
-inline QDebug operator<<(QDebug stream, const TimeInterval& iv)
-{
-	stream.nospace() << "[" << iv.start() << ", " << iv.end() << "]";
-	return stream.space();
-}
 
 /**
  * This data structure manages the union of multiple, non-overlapping animation time intervals.
@@ -261,7 +306,7 @@ public:
 	TimeIntervalUnion() = default;
 
 	/// Constructs a union that includes only the given animation time instant.
-	explicit TimeIntervalUnion(TimePoint time) : base_class{{ TimeInterval(time) }} {}
+	explicit TimeIntervalUnion(AnimationTime time) : base_class{{ TimeInterval(time) }} {}
 
 	/// Add a time interval to the union.
 	void add(TimeInterval iv) {
@@ -278,7 +323,7 @@ public:
 					iv.setStart(iter->end() + 1);
 				if(iv.end() >= iter->start() && iv.end() <= iter->end())
 					iv.setEnd(iter->start() - 1);
-				if(iv.start() > iv.end())
+				if(iv.isEmpty())
 					return;
 				++iter;
 			}
@@ -318,5 +363,8 @@ inline QDebug operator<<(QDebug stream, const TimeIntervalUnion& ivu)
 
 }	// End of namespace
 
+Q_DECLARE_METATYPE(Ovito::AnimationTime);
+Q_DECLARE_TYPEINFO(Ovito::AnimationTime, Q_PRIMITIVE_TYPE);
+
 Q_DECLARE_METATYPE(Ovito::TimeInterval);
-Q_DECLARE_TYPEINFO(Ovito::TimeInterval, Q_MOVABLE_TYPE);
+Q_DECLARE_TYPEINFO(Ovito::TimeInterval, Q_RELOCATABLE_TYPE);

@@ -66,7 +66,7 @@ public:
 	bool isObjectActive() const { return _isInActivateState; }
 
 	/// \brief Returns a short piece information (typically a string or color) to be displayed next to the object's title in the pipeline editor.
-	virtual QVariant getPipelineEditorShortInfo() const;
+	virtual QVariant getPipelineEditorShortInfo(Scene* scene) const;
 
 Q_SIGNALS:
 

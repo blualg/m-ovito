@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -172,6 +172,7 @@ public:
 		OVITO_ASSERT(eventType != ReferenceEvent::ReferenceAdded);
 		OVITO_ASSERT(eventType != ReferenceEvent::ReferenceRemoved);
 		OVITO_ASSERT(eventType != ReferenceEvent::CheckIsReferencedBy);
+		OVITO_ASSERT(eventType != ReferenceEvent::RequestGoToAnimationTime);
 		const_cast<RefTarget*>(this)->notifyDependentsImpl(ReferenceEvent(eventType, const_cast<RefTarget*>(this)));
 	}
 

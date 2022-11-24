@@ -54,7 +54,7 @@ public:
 	virtual void evaluateSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state) {}
 
 	/// \brief Determines the time interval over which a computed pipeline state will remain valid.
-	virtual TimeInterval validityInterval(const ModifierEvaluationRequest& request) const;
+	virtual TimeInterval validityInterval(const ModifierEvaluationRequest& request) const { return TimeInterval::infinite(); }
 
 	/// \brief Asks the modifier for the set of animation time intervals that should be cached by the upstream pipeline.
 	virtual void inputCachingHints(TimeIntervalUnion& cachingIntervals, ModifierApplication* modApp) {}
@@ -103,7 +103,7 @@ public:
 	PipelineStatus globalStatus() const;
 
 	/// \brief Returns a short piece information (typically a string or color) to be displayed next to the modifier's title in the pipeline editor list.
-	virtual QVariant getPipelineEditorShortInfo(ModifierApplication* modApp) const { return {}; }
+	virtual QVariant getPipelineEditorShortInfo(Scene* scene, ModifierApplication* modApp) const { return {}; }
 
 	/// \brief This method is called by the system when the modifier has been inserted into a data pipeline.
 	virtual void initializeModifier(const ModifierInitializationRequest& request) {}
@@ -120,10 +120,10 @@ public:
 	virtual int numberOfOutputFrames(ModifierApplication* modApp) const;
 
 	/// \brief Given an animation time, computes the source frame to show.
-	virtual int animationTimeToSourceFrame(TimePoint time, int inputFrame) const { return inputFrame; }
+	virtual int animationTimeToSourceFrame(AnimationTime time, int inputFrame) const { return inputFrame; }
 
 	/// \brief Given a source frame index, returns the animation time at which it is shown.
-	virtual TimePoint sourceFrameToAnimationTime(int frame, TimePoint inputTime) const { return inputTime; }
+	virtual AnimationTime sourceFrameToAnimationTime(int frame, AnimationTime inputTime) const { return inputTime; }
 
 	/// \brief Returns the human-readable labels associated with the animation frames (e.g. the simulation timestep numbers).
 	virtual QMap<int, QString> animationFrameLabels(QMap<int, QString> inputLabels) const { return std::move(inputLabels); }

@@ -30,7 +30,8 @@ namespace Ovito {
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-OverlayListModel::OverlayListModel(QObject* parent) : QAbstractListModel(parent),
+OverlayListModel::OverlayListModel(QObject* parent, UserInterface& userInterface) : QAbstractListModel(parent),
+	_userInterface(userInterface),
 	_statusInfoIcon(":/guibase/mainwin/status/status_info.png"),
 	_statusWarningIcon(":/guibase/mainwin/status/status_warning.png"),
 	_statusErrorIcon(":/guibase/mainwin/status/status_error.png"),
@@ -197,7 +198,7 @@ QVariant OverlayListModel::data(const QModelIndex& index, int role) const
 		return item->title(selectedViewport());
 	}
 	else if(role == StatusInfoRole) {
-		return item->shortInfo();
+		return item->shortInfo(selectedViewport());
 	}
 	else if(role == Qt::DecorationRole) {
 		if(item->overlay()) {
@@ -256,7 +257,7 @@ bool OverlayListModel::setData(const QModelIndex& index, const QVariant& value, 
 	if(role == Qt::CheckStateRole) {
 		OverlayListItem* item = this->item(index.row());
 		if(ViewportOverlay* overlay = item->overlay()) {
-			UndoableTransaction::handleExceptions(overlay->dataset()->undoStack(),
+			UndoableTransaction::handleExceptions(_userInterface,
 					(value == Qt::Checked) ? tr("Show layer") : tr("Hide layer"), [overlay, &value]() {
 				overlay->setEnabled(value == Qt::Checked);
 			});
@@ -267,7 +268,7 @@ bool OverlayListModel::setData(const QModelIndex& index, const QVariant& value, 
 		if(ViewportOverlay* overlay = item->overlay()) {
 			QString newName = value.toString();
 			if(overlay->objectTitle() != newName) {
-				UndoableTransaction::handleExceptions(overlay->dataset()->undoStack(), tr("Rename layer"), [overlay, &newName]() {
+				UndoableTransaction::handleExceptions(_userInterface, tr("Rename layer"), [overlay, &newName]() {
 					overlay->setObjectTitle(newName);
 				});
 			}

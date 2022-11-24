@@ -158,7 +158,7 @@ bool ParticleType::loadShapeMesh(const QUrl& sourceUrl, MainThreadOperation& ope
 			importer->setSelectedFileFormat(importerFormat);
 	}
 	if(!importer)
-		throwException(tr("Could not detect the format of the geometry file. The format might not be supported."));
+		throw Exception(tr("Could not detect the format of the geometry file. The format might not be supported."));
 
 	// Create a temporary FileSource for loading the geometry data from the file.
 	OORef<FileSource> fileSource = OORef<FileSource>::create(dataset());
@@ -174,7 +174,7 @@ bool ParticleType::loadShapeMesh(const QUrl& sourceUrl, MainThreadOperation& ope
 		return false;
 	}
 	if(!state)
-		throwException(tr("The loaded geometry file does not provide any valid mesh data."));
+		throw Exception(tr("The loaded geometry file does not provide any valid mesh data."));
 	DataOORef<TriMeshObject> meshObj = DataOORef<TriMeshObject>::makeCopy(state.expectObject<TriMeshObject>());
 
 	// Throw away any visual elements attached to the mesh object.

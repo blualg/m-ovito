@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -35,12 +35,13 @@ IMPLEMENT_OVITO_CLASS(RefTarget);
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-RefTarget::RefTarget(ObjectCreationParams params) : RefMaker(params.dataset()) 
+RefTarget::RefTarget(ObjectCreationParams params) 
 {
-	OVITO_CHECK_POINTER(dataset());
+	// A Qt application object must exist.
+	OVITO_ASSERT_MSG(QCoreApplication::instance() != nullptr, "RefTarget::RefTarget()", "Creating an instance of a RefTarget-derived class is only allowed while a Qt application object exists.");
 
 	// Ovito objects always live in the main thread.
-	moveToThread(dataset()->thread());
+	moveToThread(QCoreApplication::instance()->thread());
 }
 
 #ifdef OVITO_DEBUG
@@ -66,7 +67,7 @@ void RefTarget::aboutToBeDeleted()
 	OVITO_ASSERT_MSG(!QCoreApplication::instance() || QThread::currentThread() == QCoreApplication::instance()->thread(), "RefTarget::aboutToBeDeleted()", "This function may only be called from the main thread.");
 
 	// Make sure undo recording is not active while deleting the object from memory.
-	UndoSuspender noUndo(this);
+	UndoSuspender noUndo;
 
 	// This will remove all references to this target object.
 	notifyDependents(ReferenceEvent::TargetDeleted);
@@ -164,11 +165,11 @@ OORef<RefTarget> RefTarget::clone(bool deepCopy, CloneHelper& cloneHelper) const
 	// Create a new instance of the object's class.
 	// Note: Calling low-level method createInstanceImpl() instead of createInstanceImpl() here to avoid initialization of
 	// object parameters to default values. Default initialization is not needed when cloning an object.
-	OORef<RefTarget> clone = static_object_cast<RefTarget>(getOOClass().createInstanceImpl(ObjectCreationParams(dataset(), ObjectCreationParams::DontCreateSubObjects)));
+	OORef<RefTarget> clone = static_object_cast<RefTarget>(getOOClass().createInstanceImpl(ObjectCreationParams(ObjectCreationParams::DontCreateSubObjects)));
 	OVITO_ASSERT(clone);
 	OVITO_ASSERT(clone->getOOClass().isDerivedFrom(getOOClass()));
 	if(!clone || !clone->getOOClass().isDerivedFrom(getOOClass()))
-		throwException(tr("Failed to create clone instance of class %1.").arg(getOOClass().name()));
+		throw Exception(tr("Failed to create clone instance of class %1.").arg(getOOClass().name()));
 
 	// Clone properties and referenced objects.
 	for(const PropertyFieldDescriptor* field : getOOMetaClass().propertyFields()) {
@@ -277,7 +278,11 @@ RefTargetExecutor RefTarget::executor(bool requireDeferredExecution) const
 ******************************************************************************/
 TaskManager& RefTarget::taskManager() const
 {
+#if 0 // TODO: Implement access to global TaskManager
 	return dataset()->container()->taskManager();
+#else
+	OVITO_ASSERT(false);
+#endif
 }
 
 }	// End of namespace

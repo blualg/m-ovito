@@ -74,9 +74,12 @@ WidgetActionManager::WidgetActionManager(QObject* parent, MainWindow& mainWindow
 ******************************************************************************/
 void WidgetActionManager::on_ClonePipeline_triggered()
 {
-	if(PipelineSceneNode* pipeline = dynamic_object_cast<PipelineSceneNode>(dataset()->selection()->firstNode())) {
-		ClonePipelineDialog dialog(pipeline, &mainWindow());
-		dialog.exec();
+	// Get the scene from which data is to be exported.
+	if(Scene* scene = userInterface().activeScene()) {
+		if(PipelineSceneNode* pipeline = dynamic_object_cast<PipelineSceneNode>(scene->selection()->firstNode())) {
+			ClonePipelineDialog dialog(pipeline, &mainWindow());
+			dialog.exec();
+		}
 	}
 }
 
@@ -85,14 +88,16 @@ void WidgetActionManager::on_ClonePipeline_triggered()
 ******************************************************************************/
 void WidgetActionManager::on_RenamePipeline_triggered()
 {
-	if(OORef<PipelineSceneNode> pipeline = dynamic_object_cast<PipelineSceneNode>(dataset()->selection()->firstNode())) {
-		QString oldPipelineName = pipeline->objectTitle();
-		bool ok;
-		QString pipelineName = QInputDialog::getText(&mainWindow(), tr("Rename pipeline"), tr("New pipeline name:                                         "), QLineEdit::Normal, oldPipelineName, &ok).trimmed();
-		if(ok && pipelineName != oldPipelineName) {
-			UndoableTransaction::handleExceptions(dataset()->undoStack(), tr("Rename pipeline"), [&]() {
-				pipeline->setNodeName(pipelineName);
-			});
+	if(Scene* scene = userInterface().activeScene()) {
+		if(OORef<PipelineSceneNode> pipeline = dynamic_object_cast<PipelineSceneNode>(scene->selection()->firstNode())) {
+			QString oldPipelineName = pipeline->objectTitle();
+			bool ok;
+			QString pipelineName = QInputDialog::getText(&mainWindow(), tr("Rename pipeline"), tr("New pipeline name:                                         "), QLineEdit::Normal, oldPipelineName, &ok).trimmed();
+			if(ok && pipelineName != oldPipelineName) {
+				UndoableTransaction::handleExceptions(dataset()->undoStack(), tr("Rename pipeline"), [&]() {
+					pipeline->setNodeName(pipelineName);
+				});
+			}
 		}
 	}
 }
@@ -107,7 +112,7 @@ void WidgetActionManager::on_NewPipelineFileSource_triggered()
 	UndoableTransaction::handleExceptions(dataset()->undoStack(), tr("Create pipeline"), [&]() {
 
 #ifndef OVITO_BUILD_PROFESSIONAL
-		dataset()->throwException(tr("OVITO Pro is required to insert more than one pipeline into the scene. Please visit <a href=\"https://www.ovito.org/about/ovito-pro/\">www.ovito.org</a> for more information on the extended version of our software."));
+		throw Exception(tr("OVITO Pro is required to insert more than one pipeline into the scene. Please visit <a href=\"https://www.ovito.org/about/ovito-pro/\">www.ovito.org</a> for more information on the extended version of our software."));
 #endif
 
 		// Do not create any animation keys.
@@ -122,11 +127,13 @@ void WidgetActionManager::on_NewPipelineFileSource_triggered()
 		OORef<PipelineSceneNode> pipeline = OORef<PipelineSceneNode>::create(dataset());
 		pipeline->setDataProvider(fileSource);
 
-		// Insert pipeline into scene.
-		dataset()->scene()->addChildNode(pipeline);
+		if(Scene* scene = userInterface().activeScene()) {
+			// Insert pipeline into scene.
+			scene->addChildNode(pipeline);
 
-		// Select new object in the scene.
-		dataset()->selection()->setNode(pipeline);
+			// Select new object in the scene.
+			scene->selection()->setNode(pipeline);
+		}
 	});	
 }
 

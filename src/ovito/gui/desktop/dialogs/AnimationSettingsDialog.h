@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -39,7 +39,7 @@ class OVITO_GUI_EXPORT AnimationSettingsDialog : public QDialog, private Undoabl
 public:
 
 	/// Constructor.
-	AnimationSettingsDialog(AnimationSettings* animSettings, QWidget* parentWindow = nullptr);
+	AnimationSettingsDialog(MainWindow& mainWindow, AnimationSettings* animSettings, QWidget* parentWindow = nullptr);
 
 private Q_SLOTS:
 
@@ -71,7 +71,7 @@ private:
 	QCheckBox* loopPlaybackBox;
 	QGroupBox* animIntervalBox;
 
-	bool ticksPerFrameModified = false;
+	bool framesPerSecondModified = false;
 	bool playbackSpeedModified = false;
 	bool loopPlaybackModified = false;
 };

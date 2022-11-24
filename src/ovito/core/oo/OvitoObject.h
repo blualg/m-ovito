@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -74,11 +74,11 @@ public:
 	/// Returns the type descriptor that every OvitoObject-derived class has.
 	static const OvitoClass& OOClass() { return __OOClass_instance; }
 
-	/// \brief The default constructor. Sets the reference count to zero.
+	/// \brief Default constructor, which initializes the reference count to zero.
 	OvitoObject() = default;
 
 #ifdef OVITO_DEBUG
-	/// \brief The destructor.
+	/// \brief Destructor.
 	virtual ~OvitoObject();
 #endif
 

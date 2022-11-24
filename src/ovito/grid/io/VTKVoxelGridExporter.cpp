@@ -71,7 +71,7 @@ bool VTKVoxelGridExporter::exportFrame(int frameNumber, TimePoint time, const QS
 	DataObjectReference objectRef(&VoxelGrid::OOClass(), dataObjectToExport().dataPath());
 	const VoxelGrid* voxelGrid = static_object_cast<VoxelGrid>(state.getLeafObject(objectRef));
 	if(!voxelGrid) {
-		throwException(tr("The pipeline output does not contain the voxel grid to be exported (animation frame: %1; object key: %2). Available grid keys: (%3)")
+		throw Exception(tr("The pipeline output does not contain the voxel grid to be exported (animation frame: %1; object key: %2). Available grid keys: (%3)")
 			.arg(frameNumber).arg(objectRef.dataPath()).arg(getAvailableDataObjectList(state, VoxelGrid::OOClass())));
 	}
 
@@ -160,7 +160,7 @@ bool VTKVoxelGridExporter::exportFrame(int frameNumber, TimePoint time, const QS
 				}
 			}
 			else {
-				throwException(tr("Grid property '%1' has a non-standard data type that cannot be exported.").arg(prop->name()));
+				throw Exception(tr("Grid property '%1' has a non-standard data type that cannot be exported.").arg(prop->name()));
 			}
 		}
 	}

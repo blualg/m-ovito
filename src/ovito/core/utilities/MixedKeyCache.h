@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -37,7 +37,7 @@ namespace Ovito {
 /**
  * \brief A cache data structure that can handle arbitrary keys and data values.
  */
-class MixedKeyCache
+class OVITO_CORE_EXPORT MixedKeyCache
 {
 public:
 

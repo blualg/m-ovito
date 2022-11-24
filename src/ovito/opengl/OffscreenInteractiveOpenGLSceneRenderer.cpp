@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -34,7 +34,7 @@ IMPLEMENT_OVITO_CLASS(OffscreenInteractiveOpenGLSceneRenderer);
 /******************************************************************************
 * This method is called just before renderFrame() is called.
 ******************************************************************************/
-void OffscreenInteractiveOpenGLSceneRenderer::beginFrame(TimePoint time, const ViewProjectionParameters& params, Viewport* vp, const QRect& viewportRect, FrameBuffer* frameBuffer)
+void OffscreenInteractiveOpenGLSceneRenderer::beginFrame(AnimationTime time, Scene* scene, const ViewProjectionParameters& params, Viewport* vp, const QRect& viewportRect, FrameBuffer* frameBuffer)
 {
 	OVITO_ASSERT(vp);
 
@@ -120,7 +120,7 @@ void OffscreenInteractiveOpenGLSceneRenderer::beginFrame(TimePoint time, const V
 		setPrimaryFramebuffer(_framebufferObjectGLES);
 	}
 
-	OpenGLSceneRenderer::beginFrame(time, params, vp, viewportRect, frameBuffer);
+	OpenGLSceneRenderer::beginFrame(time, scene, params, vp, viewportRect, frameBuffer);
 }
 
 /******************************************************************************

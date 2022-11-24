@@ -191,6 +191,9 @@ void DataTableInspectionApplet::exportDataToFile()
 		// Set scene node to be exported.
 		exporter->setNodeToExport(currentPipeline());
 
+		// If the exporter supports it, automatically choose the data object(s) to be exported.
+		exporter->selectDefaultExportableData(currentPipeline()->scene());
+
 		// Set data table to be exported.
 		exporter->setDataObjectToExport(DataObjectReference(&DataTable::OOClass(), table->identifier(), table->title()));
 

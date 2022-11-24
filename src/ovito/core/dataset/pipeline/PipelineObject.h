@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -46,11 +46,8 @@ public:
 	/// \brief Asks the pipeline stage to compute the results.
 	virtual SharedFuture<PipelineFlowState> evaluate(const PipelineEvaluationRequest& request) = 0;
 
-	/// \brief Asks the pipeline stage to compute the results for several animation times.
-	Future<std::vector<PipelineFlowState>> evaluateMultiple(const PipelineEvaluationRequest& request, std::vector<TimePoint> times);
-
-	/// \brief Asks the pipeline stage to compute the preliminary results in a synchronous fashion at the current animation time.
-	PipelineFlowState evaluateSynchronousAtCurrentTime();
+	/// \brief Asks the pipeline stage to compute the results for several animation times in a row.
+	Future<std::vector<PipelineFlowState>> evaluateMultiple(const PipelineEvaluationRequest& request, std::vector<AnimationTime> times);
 
 	/// \brief Asks the pipeline stage to compute the preliminary results in a synchronous fashion.
 	virtual PipelineFlowState evaluateSynchronous(const PipelineEvaluationRequest& request);
@@ -70,10 +67,10 @@ public:
 	virtual int numberOfSourceFrames() const { return 1; }
 
 	/// \brief Given an animation time, computes the source frame to show.
-	virtual int animationTimeToSourceFrame(TimePoint time) const;
+	virtual int animationTimeToSourceFrame(AnimationTime time) const;
 
 	/// \brief Given a source frame index, returns the animation time at which it is shown.
-	virtual TimePoint sourceFrameToAnimationTime(int frame) const;
+	virtual AnimationTime sourceFrameToAnimationTime(int frame) const;
 
 	/// \brief Returns the human-readable labels associated with the animation frames (e.g. the simulation timestep numbers).
 	virtual QMap<int, QString> animationFrameLabels() const { return {}; }
@@ -81,6 +78,10 @@ public:
 	/// Returns the data collection that is managed by this object (if it is a data source).
 	/// The returned data collection will be displayed under the data source in the pipeline editor.
 	virtual const DataCollection* getSourceDataCollection() const { return nullptr; }
+
+	/// Returns the animation time at which the pipeline thiis object is part of is being rendered in the GUI.
+	/// This method assumes that the pipeline(s) this object is part of are all in the same scene.
+	std::optional<AnimationTime> currentAnimationTime() const;	
 };
 
 }	// End of namespace

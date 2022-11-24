@@ -96,7 +96,7 @@ bool LAMMPSDataExporter::exportData(const PipelineFlowState& state, int frameNum
 	// Get simulation cell info.
 	const SimulationCellObject* simulationCell = state.getObject<SimulationCellObject>();
 	if(!simulationCell)
-		throwException(tr("No simulation cell defined. Cannot write LAMMPS file."));
+		throw Exception(tr("No simulation cell defined. Cannot write LAMMPS file."));
 	const AffineTransformation& simCell = simulationCell->cellMatrix();
 
 	// Set up output columns for the Atoms section.
@@ -435,7 +435,7 @@ bool LAMMPSDataExporter::exportData(const PipelineFlowState& state, int frameNum
 			size_t atomIndex1 = bondTopologyProperty[i][0];
 			size_t atomIndex2 = bondTopologyProperty[i][1];
 			if(atomIndex1 >= particles->elementCount() || atomIndex2 >= particles->elementCount())
-				throwException(tr("Particle indices in the bond topology array are out of range."));
+				throw Exception(tr("Particle indices in the bond topology array are out of range."));
 			textStream() << bondIndex++;
 			textStream() << ' ';
 			textStream() << (bondTypeArray ? bondTypeArray[i] : 1);
@@ -461,7 +461,7 @@ bool LAMMPSDataExporter::exportData(const PipelineFlowState& state, int frameNum
 			size_t atomIndex2 = angleTopologyProperty[i][1];
 			size_t atomIndex3 = angleTopologyProperty[i][2];
 			if(atomIndex1 >= particles->elementCount() || atomIndex2 >= particles->elementCount() || atomIndex3 >= particles->elementCount())
-				throwException(tr("Particle indices in the angle topology array are out of range."));
+				throw Exception(tr("Particle indices in the angle topology array are out of range."));
 			textStream() << angleIndex++;
 			textStream() << ' ';
 			textStream() << (angleTypeArray ? angleTypeArray[i] : 1);
@@ -490,7 +490,7 @@ bool LAMMPSDataExporter::exportData(const PipelineFlowState& state, int frameNum
 			size_t atomIndex3 = dihedralTopologyProperty[i][2];
 			size_t atomIndex4 = dihedralTopologyProperty[i][3];
 			if(atomIndex1 >= particles->elementCount() || atomIndex2 >= particles->elementCount() || atomIndex3 >= particles->elementCount() || atomIndex4 >= particles->elementCount())
-				throwException(tr("Particle indices in the dihedral topology array are out of range."));
+				throw Exception(tr("Particle indices in the dihedral topology array are out of range."));
 			textStream() << dihedralIndex++;
 			textStream() << ' ';
 			textStream() << (dihedralTypeArray ? dihedralTypeArray[i] : 1);
@@ -521,7 +521,7 @@ bool LAMMPSDataExporter::exportData(const PipelineFlowState& state, int frameNum
 			size_t atomIndex3 = improperTopologyProperty[i][2];
 			size_t atomIndex4 = improperTopologyProperty[i][3];
 			if(atomIndex1 >= particles->elementCount() || atomIndex2 >= particles->elementCount() || atomIndex3 >= particles->elementCount() || atomIndex4 >= particles->elementCount())
-				throwException(tr("Particle indices in the improper topology array are out of range."));
+				throw Exception(tr("Particle indices in the improper topology array are out of range."));
 			textStream() << improperIndex++;
 			textStream() << ' ';
 			textStream() << (improperTypeArray ? improperTypeArray[i] : 1);

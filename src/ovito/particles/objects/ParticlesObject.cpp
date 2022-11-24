@@ -118,7 +118,7 @@ ImpropersObject* ParticlesObject::makeImpropersMutable()
 const BondsObject* ParticlesObject::expectBonds() const
 {
     if(!bonds())
-		throwException(tr("This operation requires bonds as input, but the particle system has no bond topology defined."));
+		throw Exception(tr("This operation requires bonds as input, but the particle system has no bond topology defined."));
 	return bonds();
 }
 
@@ -889,7 +889,7 @@ boost::dynamic_bitset<> ParticlesObject::OOMetaClass::viewportFenceSelection(con
 	if(ConstPropertyAccess<Point3> posProperty = particles->getProperty(ParticlesObject::PositionProperty)) {
 
 		if(!particles->visElement() || particles->visElement()->isEnabled() == false)
-			node->throwException(tr("Cannot select particles while the corresponding visual element is disabled. Please enable the display of particles first."));
+			throw Exception(tr("Cannot select particles while the corresponding visual element is disabled. Please enable the display of particles first."));
 
 		boost::dynamic_bitset<> fullSelection(posProperty.size());
 		QMutex mutex;

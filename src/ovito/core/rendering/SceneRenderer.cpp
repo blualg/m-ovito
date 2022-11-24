@@ -50,7 +50,7 @@ IMPLEMENT_OVITO_CLASS(ObjectPickInfo);
 ******************************************************************************/
 void SceneRenderer::throwRendererException(const QString& msg) const
 {
-	throw RendererException(msg, dataset());
+	throw RendererException(msg, const_cast<SceneRenderer*>(this));
 }
 
 /******************************************************************************
@@ -78,15 +78,17 @@ FloatType SceneRenderer::defaultLinePickingWidth()
 /******************************************************************************
 * Computes the bounding box of the entire scene to be rendered.
 ******************************************************************************/
-Box3 SceneRenderer::computeSceneBoundingBox(TimePoint time, const ViewProjectionParameters& params, Viewport* vp, MainThreadOperation& operation)
+Box3 SceneRenderer::computeSceneBoundingBox(AnimationTime time, Scene* scene, const ViewProjectionParameters& params, Viewport* vp, MainThreadOperation& operation)
 {
-	OVITO_CHECK_OBJECT_POINTER(renderDataset()); // startRender() must be called first.
+	OVITO_CHECK_OBJECT_POINTER(scene);
+	OVITO_ASSERT(!_scene);
 
 	try {
 		_sceneBoundingBox.setEmpty();
 		_isBoundingBoxPass = true;
 		_time = time;
 		_viewport = vp;
+		_scene = scene;
 		setProjParams(params);
 
 		// Perform bounding box rendering pass.
@@ -104,17 +106,18 @@ Box3 SceneRenderer::computeSceneBoundingBox(TimePoint time, const ViewProjection
 		throw;
 	}
 
+	_scene = nullptr;
 	return _sceneBoundingBox;
 }
 
 /******************************************************************************
-* Prepares the renderer for rendering and sets the data set to be rendered.
+* Prepares the renderer for rendering one or more frames.
 ******************************************************************************/
-bool SceneRenderer::startRender(DataSet* dataset, RenderSettings* settings, const QSize& frameBufferSize) 
+bool SceneRenderer::startRender(const RenderSettings& settings, const QSize& frameBufferSize, MixedKeyCache& visCache)
 {
-	OVITO_ASSERT_MSG(_renderDataset == nullptr, "SceneRenderer::startRender()", "startRender() called again without calling endRender() first.");
-	_renderDataset = dataset;
-	_renderSettings = settings;
+	OVITO_ASSERT_MSG(_renderSettings == nullptr, "SceneRenderer::startRender()", "startRender() called again without calling endRender() first.");
+	_renderSettings = &settings;
+	_visCache = &visCache;
 	return true;
 }
 
@@ -123,17 +126,21 @@ bool SceneRenderer::startRender(DataSet* dataset, RenderSettings* settings, cons
 ******************************************************************************/
 void SceneRenderer::endRender() 
 {
-	_renderDataset = nullptr;
 	_renderSettings = nullptr;
+	_visCache = nullptr;
 }
 
 /******************************************************************************
 * Sets the view projection parameters, the animation frame to render,
 * and the viewport being rendered.
 ******************************************************************************/
-void SceneRenderer::beginFrame(TimePoint time, const ViewProjectionParameters& params, Viewport* vp, const QRect& viewportRect, FrameBuffer* frameBuffer) 
+void SceneRenderer::beginFrame(AnimationTime time, Scene* scene, const ViewProjectionParameters& params, Viewport* vp, const QRect& viewportRect, FrameBuffer* frameBuffer) 
 {
+	OVITO_ASSERT(scene != nullptr);
+	OVITO_ASSERT(!_scene);
+
 	_time = time;
+	_scene = scene;
 	setProjParams(params);
 	_viewport = vp;
 	_viewportRect = viewportRect;
@@ -143,15 +150,23 @@ void SceneRenderer::beginFrame(TimePoint time, const ViewProjectionParameters& p
 }
 
 /******************************************************************************
+* Sets the view projection parameters, the animation frame to render,
+* and the viewport being rendered.
+******************************************************************************/
+void SceneRenderer::endFrame(bool renderingSuccessful, const QRect& viewportRect)
+{
+	endPickObject();
+	_scene.reset();
+}
+
+/******************************************************************************
 * Renders all nodes in the scene
 ******************************************************************************/
 bool SceneRenderer::renderScene(MainThreadOperation& operation)
 {
-	OVITO_CHECK_OBJECT_POINTER(renderDataset());
-
-	if(Scene* scene = renderDataset()->scene()) {
+	if(scene()) {
 		// Recursively render all scene nodes.
-		return renderNode(scene, operation);
+		return renderNode(scene(), operation);
 	}
 
 	return true;
@@ -162,6 +177,7 @@ bool SceneRenderer::renderScene(MainThreadOperation& operation)
 ******************************************************************************/
 bool SceneRenderer::renderNode(SceneNode* node, MainThreadOperation& operation)
 {
+	OVITO_ASSERT(scene());
     OVITO_CHECK_OBJECT_POINTER(node);
 
 	// Skip node if it is hidden in the current viewport.
@@ -182,7 +198,7 @@ bool SceneRenderer::renderNode(SceneNode* node, MainThreadOperation& operation)
 			// Evaluate data pipeline of object node and render the results.
 			PipelineEvaluationFuture pipelineEvaluation;
 			if(waitForLongOperationsEnabled()) {
-				pipelineEvaluation = pipeline->evaluateRenderingPipeline(PipelineEvaluationRequest(time()));
+				pipelineEvaluation = pipeline->evaluateRenderingPipeline(PipelineEvaluationRequest(time(), frame()));
 				if(!pipelineEvaluation.waitForFinished())
 					return false;
 
@@ -192,7 +208,7 @@ bool SceneRenderer::renderNode(SceneNode* node, MainThreadOperation& operation)
 			}
 			const PipelineFlowState& state = pipelineEvaluation.isValid() ?
 												pipelineEvaluation.result() :
-												pipeline->evaluatePipelineSynchronous(true);
+												pipeline->evaluatePipelineSynchronous(time(), true);
 
 			if(state) {
 				// Invoke all vis elements of all data objects in the pipeline state.
@@ -240,20 +256,20 @@ void SceneRenderer::renderDataObject(const DataObject* dataObj, const PipelineSc
 				status = vis->render(time(), dataObjectPath, state, this, pipeline);
 				// Pass error status codes to the exception handler below.
 				if(status.type() == PipelineStatus::Error)
-					throwException(status.text());
+					throw Exception(status.text());
 				// In console mode, print warning messages to the terminal.
 				if(status.type() == PipelineStatus::Warning && !status.text().isEmpty() && Application::instance()->consoleMode()) {
 					qWarning() << "WARNING: Visual element" << vis->objectTitle() << "reported:" << status.text();
 				}
 			}
 			catch(SceneRenderer::RendererException& ex) {
-				ex.setContext(vis->dataset());
+				ex.setContext(this);
 				// Always interrupt rendering process by rethrowing the exception.
 				throw;
 			}
 			catch(Exception& ex) {
 				status = ex;
-				ex.setContext(vis->dataset());
+				ex.setContext(this);
 				ex.prependGeneralMessage(tr("Visual element '%1' reported an error during rendering.").arg(vis->objectTitle()));
 				// If the vis element fails, interrupt rendering process in console mode; swallow exceptions in GUI mode.
 				if(!isInteractive()) 
@@ -310,15 +326,15 @@ ConstDataBufferPtr SceneRenderer::getNodeTrajectory(const SceneNode* node)
 {
 	Controller* ctrl = node->transformationController();
 	if(ctrl && ctrl->isAnimated()) {
-		AnimationSettings* animSettings = node->dataset()->animationSettings();
+		AnimationSettings* animSettings = scene()->animationSettings();
 		int firstFrame = animSettings->firstFrame();
 		int lastFrame = animSettings->lastFrame();
 		OVITO_ASSERT(lastFrame >= firstFrame);
-		DataBufferAccessAndRef<Point3> vertices = DataBufferPtr::create(dataset(), lastFrame - firstFrame + 1, DataBuffer::Float, 3);
+		DataBufferAccessAndRef<Point3> vertices = DataBufferPtr::create(lastFrame - firstFrame + 1, DataBuffer::Float, 3);
 		auto v = vertices.begin();
 		for(int frame = firstFrame; frame <= lastFrame; frame++) {
 			TimeInterval iv;
-			const Vector3& pos = node->getWorldTransform(animSettings->frameToTime(frame), iv).translation();
+			const Vector3& pos = node->getWorldTransform(AnimationTime::fromFrame(frame), iv).translation();
 			*v++ = Point3::Origin() + pos;
 		}
 		OVITO_ASSERT(v == vertices.end());
@@ -342,7 +358,7 @@ void SceneRenderer::renderNodeTrajectory(const SceneNode* node)
 
 			// Render lines connecting the trajectory points.
 			if(trajectory->size() >= 2) {
-				DataBufferAccessAndRef<Point3> lineVertices = DataBufferPtr::create(dataset(), (trajectory->size() - 1) * 2, DataBuffer::Float, 3);
+				DataBufferAccessAndRef<Point3> lineVertices = DataBufferPtr::create((trajectory->size() - 1) * 2, DataBuffer::Float, 3);
 				ConstDataBufferAccess<Point3> trajectoryPoints(trajectory);
 				for(size_t index = 0; index < trajectory->size(); index++) {
 					if(index != 0)
@@ -377,6 +393,7 @@ void SceneRenderer::renderNodeTrajectory(const SceneNode* node)
 void SceneRenderer::renderInteractiveContent(MainThreadOperation& operation)
 {
 	OVITO_ASSERT(viewport());
+	OVITO_ASSERT(scene());
 
 	// Render construction grid.
 	if(viewport()->isGridVisible())
@@ -407,10 +424,12 @@ void SceneRenderer::renderInteractiveContent(MainThreadOperation& operation)
 void SceneRenderer::renderModifiers(bool renderOverlay, MainThreadOperation& operation)
 {
 	// Visit all objects in the scene.
-	renderDataset()->scene()->visitObjectNodes([this, renderOverlay, &operation](PipelineSceneNode* pipeline) {
-		renderModifiers(pipeline, renderOverlay, operation);
-		return true;
-	});
+	if(scene()) {
+		scene()->visitObjectNodes([this, renderOverlay, &operation](PipelineSceneNode* pipeline) {
+			renderModifiers(pipeline, renderOverlay, operation);
+			return true;
+		});
+	}
 }
 
 /******************************************************************************
@@ -428,7 +447,7 @@ void SceneRenderer::renderModifiers(PipelineSceneNode* pipeline, bool renderOver
 
 		try {
 			// Render modifier.
-			mod->renderModifierVisual(ModifierEvaluationRequest(time(), modApp), pipeline, this, renderOverlay);
+			mod->renderModifierVisual(ModifierEvaluationRequest(scene()->animationSettings(), modApp), pipeline, this, renderOverlay);
 		}
 		catch(const Exception& ex) {
 			// Swallow exceptions, because we are in interactive rendering mode.
@@ -452,7 +471,7 @@ void SceneRenderer::render2DPolyline(const Point2* points, int count, const Colo
 	LinePrimitive primitive;
 	primitive.setUniformColor(color);
 
-	DataBufferAccessAndRef<Point3> vertices = DataBufferPtr::create(dataset(), (closed ? count : count-1) * 2, DataBuffer::Float, 3);
+	DataBufferAccessAndRef<Point3> vertices = DataBufferPtr::create((closed ? count : count-1) * 2, DataBuffer::Float, 3);
 	Point3* lineSegment = vertices.begin();
 	for(int i = 0; i < count - 1; i++, lineSegment += 2) {
 		lineSegment[0] = Point3(points[i].x(), points[i].y(), 0.0);
@@ -662,8 +681,8 @@ void SceneRenderer::renderGrid()
 		// Allocate vertex buffer.
 		int numVertices = 2 * (numLinesX + numLinesY);
 
-		DataBufferAccessAndRef<Point3> vertexPositions = DataBufferPtr::create(dataset(), numVertices, DataBuffer::Float, 3);
-		DataBufferAccessAndRef<ColorA> vertexColors = DataBufferPtr::create(dataset(), numVertices, DataBuffer::Float, 4);
+		DataBufferAccessAndRef<Point3> vertexPositions = DataBufferPtr::create(numVertices, DataBuffer::Float, 3);
+		DataBufferAccessAndRef<ColorA> vertexColors = DataBufferPtr::create(numVertices, DataBuffer::Float, 4);
 
 		// Build lines array.
 		ColorA color = Viewport::viewportColor(ViewportSettings::COLOR_GRID);
@@ -774,7 +793,7 @@ void SceneRenderer::renderTextDefaultImplementation(const TextPrimitive& primiti
 		return;
 	
     // Look up the image primitive for the text label in the cache.
-	auto& [imagePrimitive, offset] = dataset()->visCache().get<std::tuple<ImagePrimitive, QPointF>>(
+	auto& [imagePrimitive, offset] = visCache().get<std::tuple<ImagePrimitive, QPointF>>(
 		RendererResourceKey<struct TextImageCache, QString, ColorA, ColorA, ColorA, FloatType, qreal, QString, bool, int, Qt::TextFormat>{ 
 			primitive.text(), 
 			primitive.color(), 
@@ -1100,7 +1119,7 @@ ConstDataBufferPtr MeshPrimitive::generateWireframeLines() const
 	}
 
 	// Allocate storage buffer for line elements.
-	DataBufferAccessAndRef<Point3> lines = DataBufferPtr::create(mesh()->dataset(), numVisibleEdges * 2, DataBuffer::Float, 3);
+	DataBufferAccessAndRef<Point3> lines = DataBufferPtr::create(numVisibleEdges * 2, DataBuffer::Float, 3);
 
 	// Generate line elements.
 	const QVector<Point3>& vertices = mesh()->vertices();

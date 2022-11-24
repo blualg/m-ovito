@@ -444,22 +444,22 @@ void ModifierListModel::insertModifier()
 	DataSet* dataset = _userInterface.datasetContainer().currentSet();
 
 	// Instantiate the new modifier(s) and insert them into the pipeline.
-	UndoableTransaction::handleExceptions(dataset->undoStack(), tr("Insert modifier"), [&]() {
+	UndoableTransaction::handleExceptions(_userInterface, tr("Insert modifier"), [&]() {
 
 		if(action->modifierClass()) {
 			// Create an instance of the modifier.
-			OORef<Modifier> modifier = static_object_cast<Modifier>(action->modifierClass()->createInstance(dataset));
+			OORef<Modifier> modifier = static_object_cast<Modifier>(action->modifierClass()->createInstance());
 			// Insert modifier into the data pipeline.
 			_pipelineListModel->applyModifiers({modifier});
 		}
 		else if(!action->templateName().isEmpty()) {
 			// Load modifier template from the store.
-			MainThreadOperation operation = MainThreadOperation::create(dataset->userInterface());
+			MainThreadOperation operation = MainThreadOperation::create(_userInterface);
 			QVector<OORef<Modifier>> modifierSet = ModifierTemplates::get()->instantiateTemplate(action->templateName(), dataset, operation);
 			// Put the modifiers into a group if the template consists of two or more modifiers.
 			OORef<ModifierGroup> modifierGroup;
 			if(modifierSet.size() >= 2) {
-				modifierGroup = OORef<ModifierGroup>::create(dataset);
+				modifierGroup = OORef<ModifierGroup>::create();
 				modifierGroup->setCollapsed(true);
 				modifierGroup->setTitle(action->templateName());
 			}
@@ -473,8 +473,8 @@ void ModifierListModel::insertModifier()
 					const Modifier::OOMetaClass* modifierClass = static_cast<const Modifier::OOMetaClass*>(clazz);
 
 					// Instantiate the PythonScriptModifier class.
-					UndoSuspender noUndo(dataset->undoStack());
-					OORef<Modifier> modifier = static_object_cast<Modifier>(modifierClass->createInstance(dataset));
+					UndoSuspender noUndo;
+					OORef<Modifier> modifier = static_object_cast<Modifier>(modifierClass->createInstance());
 					OVITO_CHECK_OBJECT_POINTER(modifier);
 					modifier->setTitle(action->text());
 
@@ -581,12 +581,12 @@ void ModifierListModel::updateActionState()
 
 	// Evaluate pipeline at the selected stage.
 	if(currentItem) {
-		if(DataSet* dataset = _pipelineListModel->datasetContainer().currentSet()) {
+		if(Scene* scene = _userInterface.activeScene()) {
 			if(PipelineObject* pipelineObject = dynamic_object_cast<PipelineObject>(currentItem->object())) {
-				inputState = pipelineObject->evaluateSynchronousAtCurrentTime();
+				inputState = pipelineObject->evaluateSynchronous(PipelineEvaluationRequest(scene->animationSettings()));
 			}
 			else if(PipelineSceneNode* pipeline = _pipelineListModel->selectedPipeline()) {
-				inputState = pipeline->evaluatePipelineSynchronous(false);
+				inputState = pipeline->evaluatePipelineSynchronous(scene->animationSettings()->currentTime(), false);
 			}
 		}
 	}

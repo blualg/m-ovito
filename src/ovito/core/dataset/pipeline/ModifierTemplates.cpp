@@ -164,7 +164,7 @@ QVector<OORef<Modifier>> ModifierTemplates::instantiateTemplate(const QString& t
 
 	QVector<OORef<Modifier>> modifierSet;
 	try {
-		UndoSuspender noUndo(dataset->undoStack());
+		UndoSuspender noUndo;
 #ifndef OVITO_DISABLE_QSETTINGS
 		QSettings settings;
 		settings.beginGroup(modTemplateStoreGroup);

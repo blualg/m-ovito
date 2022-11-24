@@ -57,7 +57,7 @@ SimulationCellVis::SimulationCellVis(ObjectCreationParams params) : DataVis(para
 /******************************************************************************
 * Computes the bounding box of the object.
 ******************************************************************************/
-Box3 SimulationCellVis::boundingBox(TimePoint time, const ConstDataObjectPath& path, const PipelineSceneNode* contextNode, const PipelineFlowState& flowState, TimeInterval& validityInterval)
+Box3 SimulationCellVis::boundingBox(AnimationTime time, const ConstDataObjectPath& path, const PipelineSceneNode* contextNode, const PipelineFlowState& flowState, TimeInterval& validityInterval)
 {
 	const SimulationCellObject* cellObject = path.lastAs<SimulationCellObject>();
 	if(!cellObject)
@@ -75,7 +75,7 @@ Box3 SimulationCellVis::boundingBox(TimePoint time, const ConstDataObjectPath& p
 /******************************************************************************
 * Lets the visualization element render the data object.
 ******************************************************************************/
-PipelineStatus SimulationCellVis::render(TimePoint time, const ConstDataObjectPath& path, const PipelineFlowState& flowState, SceneRenderer* renderer, const PipelineSceneNode* contextNode)
+PipelineStatus SimulationCellVis::render(AnimationTime time, const ConstDataObjectPath& path, const PipelineFlowState& flowState, SceneRenderer* renderer, const PipelineSceneNode* contextNode)
 {
 	const SimulationCellObject* cell = path.lastAs<SimulationCellObject>();
 	if(!cell) return {};
@@ -109,18 +109,18 @@ PipelineStatus SimulationCellVis::render(TimePoint time, const ConstDataObjectPa
 /******************************************************************************
 * Renders the given simulation cell using lines.
 ******************************************************************************/
-void SimulationCellVis::renderWireframe(TimePoint time, const SimulationCellObject* cell, const PipelineFlowState& flowState, SceneRenderer* renderer, const PipelineSceneNode* contextNode)
+void SimulationCellVis::renderWireframe(AnimationTime time, const SimulationCellObject* cell, const PipelineFlowState& flowState, SceneRenderer* renderer, const PipelineSceneNode* contextNode)
 {
 	OVITO_ASSERT(!renderer->isBoundingBoxPass());
 
 	// Look up the vertex data in the vis cache.
-	RendererResourceKey<struct WireframeVertices, DataSet*, bool> cacheKey{ renderer->dataset(), cell->is2D() };
-	auto& lineVertices = dataset()->visCache().get<ConstDataBufferPtr>(std::move(cacheKey));
+	RendererResourceKey<struct WireframeVertices, bool> cacheKey{ cell->is2D() };
+	auto& lineVertices = renderer->visCache().get<ConstDataBufferPtr>(std::move(cacheKey));
 
 	// Check if we already have a valid rendering primitive that is up to date.
 	if(!lineVertices) {
 		// Depending on whether this cell is 3D or 2D, create a wireframe unit cube or unit square.
-		DataBufferAccessAndRef<Point3> corners = DataBufferPtr::create(renderer->dataset(), cell->is2D() ? 8 : 24, DataBuffer::Float, 3);
+		DataBufferAccessAndRef<Point3> corners = DataBufferPtr::create(cell->is2D() ? 8 : 24, DataBuffer::Float, 3);
 		corners[0] = Point3(0,0,0);
 		corners[1] = Point3(1,0,0);
 		corners[2] = Point3(1,0,0);
@@ -171,7 +171,7 @@ void SimulationCellVis::renderWireframe(TimePoint time, const SimulationCellObje
 /******************************************************************************
 * Renders the given simulation cell using solid shading mode.
 ******************************************************************************/
-void SimulationCellVis::renderSolid(TimePoint time, const SimulationCellObject* cell, const PipelineFlowState& flowState, SceneRenderer* renderer, const PipelineSceneNode* contextNode)
+void SimulationCellVis::renderSolid(AnimationTime time, const SimulationCellObject* cell, const PipelineFlowState& flowState, SceneRenderer* renderer, const PipelineSceneNode* contextNode)
 {
 	OVITO_ASSERT(!renderer->isBoundingBoxPass());
 
@@ -185,7 +185,7 @@ void SimulationCellVis::renderSolid(TimePoint time, const SimulationCellObject* 
 	};
 
 	// Lookup the rendering primitive in the vis cache.
-	auto& visCache = dataset()->visCache().get<CacheValue>(std::move(cacheKey));
+	auto& visCache = renderer->visCache().get<CacheValue>(std::move(cacheKey));
 
 	// Check if we already have a valid rendering primitive that is up to date.
 	if(!visCache.corners.positions()) {
@@ -196,13 +196,13 @@ void SimulationCellVis::renderSolid(TimePoint time, const SimulationCellObject* 
 		visCache.edges.setUniformWidth(2 * cellLineWidth());
 
 		// Create a data buffer for the box corner coordinates.
-		DataBufferAccessAndRef<Point3> corners = DataBufferPtr::create(dataset(), cell->is2D() ? 4 : 8, DataBuffer::Float, 3);
+		DataBufferAccessAndRef<Point3> corners = DataBufferPtr::create(cell->is2D() ? 4 : 8, DataBuffer::Float, 3);
 
 		// Create a data buffer for the cylinder base points.
-		DataBufferAccessAndRef<Point3> basePoints = DataBufferPtr::create(dataset(), cell->is2D() ? 4 : 12, DataBuffer::Float, 3);
+		DataBufferAccessAndRef<Point3> basePoints = DataBufferPtr::create(cell->is2D() ? 4 : 12, DataBuffer::Float, 3);
 
 		// Create a data buffer for the cylinder head points.
-		DataBufferAccessAndRef<Point3> headPoints = DataBufferPtr::create(dataset(), cell->is2D() ? 4 : 12, DataBuffer::Float, 3);
+		DataBufferAccessAndRef<Point3> headPoints = DataBufferPtr::create(cell->is2D() ? 4 : 12, DataBuffer::Float, 3);
 
 		corners[0] = cell->cellOrigin();
 		if(cell->is2D()) corners[0].z() = 0; // For 2D cells, implicitly set z-coordinate of origin to zero.

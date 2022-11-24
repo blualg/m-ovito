@@ -221,12 +221,12 @@ PipelineFlowState PropertiesEditor::getPipelineInput() const
 {
 	// When editing a modifier, request pipeline input state from the modifier application being edit in the parent editor.
 	if(ModifierApplication* modApp = dynamic_object_cast<ModifierApplication>(editObject())) {
-		return modApp->evaluateInputSynchronous(PipelineEvaluationRequest(dataset()->animationSettings()->time()));
+		return modApp->evaluateInputSynchronous(PipelineEvaluationRequest(mainWindow().activeScene()));
 	}
 
 	// When editing a DataVis element, request pipeline input state from the current scene node.
 	if(DataVis* vis = dynamic_object_cast<DataVis>(editObject())) {
-		if(PipelineSceneNode* pipelineNode = dynamic_object_cast<PipelineSceneNode>(dataset()->selection()->firstNode())) {
+		if(PipelineSceneNode* pipelineNode = dynamic_object_cast<PipelineSceneNode>(mainWindow().activeScene()->selection()->firstNode())) {
 			OVITO_ASSERT(vis->pipelines(true).contains(pipelineNode));
 			OVITO_ASSERT(pipelineNode->visElements().contains(vis));
 			return pipelineNode->evaluatePipelineSynchronous(false);
@@ -321,7 +321,7 @@ ConstDataObjectRefPath PropertiesEditor::getVisDataObjectPath() const
 	if(DataVis* vis = dynamic_object_cast<DataVis>(editObject())) {
 		// We'll now try to find the DataObject this DataVis element is associated with.
 		// Let's start looking in the output data collection of the currently selected pipeline scene node.
-		if(PipelineSceneNode* pipelineNode = dynamic_object_cast<PipelineSceneNode>(dataset()->selection()->firstNode())) {
+		if(PipelineSceneNode* pipelineNode = dynamic_object_cast<PipelineSceneNode>(mainWindow().activeScene()->selection()->firstNode())) {
 			const PipelineFlowState& state = pipelineNode->evaluatePipelineSynchronous(false);
 			std::vector<ConstDataObjectPath> dataObjectPaths = pipelineNode->getDataObjectsForVisElement(state, vis);
 			if(!dataObjectPaths.empty()) {

@@ -44,11 +44,11 @@ public:
 	/// Constructor.
 	Q_INVOKABLE OffscreenOpenGLSceneRenderer(ObjectCreationParams params);
 
-	/// Prepares the renderer for rendering and sets the data set that is being rendered.
-	virtual bool startRender(DataSet* dataset, RenderSettings* settings, const QSize& frameBufferSize) override;
+	/// Prepares the renderer for rendering one or more frames.
+	virtual bool startRender(const RenderSettings& settings, const QSize& frameBufferSize, MixedKeyCache& visCache) override;
 
 	/// This method is called just before renderFrame() is called.
-	virtual void beginFrame(TimePoint time, const ViewProjectionParameters& params, Viewport* vp, const QRect& viewportRect, FrameBuffer* frameBuffer) override;
+	virtual void beginFrame(AnimationTime time, Scene* scene, const ViewProjectionParameters& params, Viewport* vp, const QRect& viewportRect, FrameBuffer* frameBuffer) override;
 
 	/// Renders the current animation frame.
 	virtual bool renderFrame(const QRect& viewportRect, MainThreadOperation& operation) override;

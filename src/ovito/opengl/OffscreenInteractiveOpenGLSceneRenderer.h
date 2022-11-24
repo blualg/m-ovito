@@ -41,7 +41,7 @@ public:
 	using OpenGLSceneRenderer::OpenGLSceneRenderer;
 
 	/// This method is called just before renderFrame() is called.
-	virtual void beginFrame(TimePoint time, const ViewProjectionParameters& params, Viewport* vp, const QRect& viewportRect, FrameBuffer* frameBuffer) override;
+	virtual void beginFrame(AnimationTime time, Scene* scene, const ViewProjectionParameters& params, Viewport* vp, const QRect& viewportRect, FrameBuffer* frameBuffer) override;
 
 	/// Renders the current animation frame.
 	virtual bool renderFrame(const QRect& viewportRect, MainThreadOperation& operation) override;

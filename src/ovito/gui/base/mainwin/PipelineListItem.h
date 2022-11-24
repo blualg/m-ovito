@@ -68,7 +68,7 @@ public:
 	const PipelineStatus& status() const;
 
 	/// Returns a short piece information (typically a string or color) to be displayed next to the object's title in the pipeline editor.
-	QVariant shortInfo() const;
+	QVariant shortInfo(PipelineSceneNode* selectedPipeline) const;
 
 	/// Returns whether an active computation is in progress for this object.
 	bool isObjectActive() const;

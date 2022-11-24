@@ -139,7 +139,7 @@ Future<AsynchronousModifier::EnginePtr> VoronoiAnalysisModifier::createEngine(co
 	// Get simulation cell.
 	const SimulationCellObject* inputCell = input.expectObject<SimulationCellObject>();
 	if(inputCell->is2D())
-		throwException(tr("The Voronoi modifier does not support 2d simulation cells."));
+		throw Exception(tr("The Voronoi modifier does not support 2d simulation cells."));
 
 	// Get selection particle property.
 	const PropertyObject* selectionProperty = onlySelected() ? particles->expectProperty(ParticlesObject::SelectionProperty) : nullptr;
@@ -151,7 +151,7 @@ Future<AsynchronousModifier::EnginePtr> VoronoiAnalysisModifier::createEngine(co
 
 	// The Voro++ library uses 32-bit integers. It cannot handle more than 2^31 input points.
 	if(posProperty->size() > (size_t)std::numeric_limits<int>::max())
-		throwException(tr("Voronoi analysis modifier is limited to a maximum of %1 particles in the current program version.").arg(std::numeric_limits<int>::max()));
+		throw Exception(tr("Voronoi analysis modifier is limited to a maximum of %1 particles in the current program version.").arg(std::numeric_limits<int>::max()));
 
 	DataOORef<SurfaceMesh> polyhedraMesh;
 	if(computePolyhedra()) {
@@ -827,7 +827,7 @@ void VoronoiAnalysisModifier::VoronoiAnalysisEngine::applyResults(const Modifier
 	ParticlesObject* particles = state.expectMutableObject<ParticlesObject>();
 
 	if(_inputFingerprint.hasChanged(particles))
-		request.modApp()->throwException(tr("Cached modifier results are obsolete, because the number or the storage order of input particles has changed."));
+		throw Exception(tr("Cached modifier results are obsolete, because the number or the storage order of input particles has changed."));
 
 	particles->createProperty(coordinationNumbers());
 	particles->createProperty(atomicVolumes());

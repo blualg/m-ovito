@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -231,11 +231,11 @@ void OpenGLOffscreenViewportWindow::renderViewport()
 	_repaintTimer.stop();
 
 	// Do nothing if windows has been detached from its viewport.
-	if(!viewport() || !viewport()->dataset())
+	if(!viewport())
 		return;
 
 	OVITO_ASSERT_MSG(!viewport()->isRendering(), "OpenGLOffscreenViewportWindow::renderViewport()", "Recursive viewport repaint detected.");
-	OVITO_ASSERT_MSG(!viewport()->dataset()->viewportConfig()->isRendering(), "OpenGLOffscreenViewportWindow::renderViewport()", "Recursive viewport repaint detected.");
+	OVITO_ASSERT_MSG(!dataset()->viewportConfig()->isRendering(), "OpenGLOffscreenViewportWindow::renderViewport()", "Recursive viewport repaint detected.");
 
 	// Do not re-enter rendering function of the same viewport.
 	if(viewport()->isRendering())
@@ -244,7 +244,7 @@ void OpenGLOffscreenViewportWindow::renderViewport()
 	// Invalidate picking buffer every time the visible contents of the viewport change.
 	_pickingRenderer->resetPickingBuffer();
 
-	if(!viewport()->dataset()->viewportConfig()->isSuspended()) {
+	if(!dataset()->viewportConfig()->isSuspended()) {
 
 		// Request a new frame from the resource manager for this render pass.
 		OpenGLResourceManager::ResourceFrameHandle previousResourceFrame = _viewportRenderer->currentResourceFrame();
@@ -273,7 +273,6 @@ void OpenGLOffscreenViewportWindow::renderViewport()
 				_imageCallback(std::move(renderedImage));
 		}
 		catch(Exception& ex) {
-			if(ex.context() == nullptr) ex.setContext(viewport()->dataset());
 			ex.prependGeneralMessage(tr("An unexpected error occurred while rendering the viewport contents."));
 
 			QString openGLReport;
@@ -297,7 +296,7 @@ void OpenGLOffscreenViewportWindow::renderViewport()
 	}
 	else {
 		// Make sure viewport gets refreshed as soon as updates are enabled again.
-		viewport()->dataset()->viewportConfig()->updateViewports();
+		dataset()->viewportConfig()->updateViewports();
 	}
 }
 

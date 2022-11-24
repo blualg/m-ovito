@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -78,9 +78,6 @@ private:
 
 	/// Contains all objects ordered by ID.
 	std::vector<ObjectRecord> _objects;
-
-	/// The current dataset being saved.
-	DataSet* _dataset = nullptr;
 
 	/// The task context in which this I/O operation is being performed.
 	MainThreadOperation& _operation;	

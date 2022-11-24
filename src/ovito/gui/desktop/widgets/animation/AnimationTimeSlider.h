@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -29,7 +29,7 @@
 namespace Ovito {
 
 /**
- * This slider component controls the current scene time.
+ * A slider widget that lets the user control the current animation time.
  */
 class AnimationTimeSlider : public QFrame
 {
@@ -38,13 +38,13 @@ class AnimationTimeSlider : public QFrame
 public:
 
 	/// Constructor.
-	AnimationTimeSlider(MainWindow* mainWindow, QWidget* parentWindow = nullptr);
+	AnimationTimeSlider(MainWindow& mainWindow, QWidget* parentWindow = nullptr);
 
-	/// Computes the x position within the widget corresponding to the given animation time.
-	int timeToPos(TimePoint time);
+	/// Computes the x position within the widget corresponding to the given animation frame.
+	int frameToPos(int frame);
 
 	/// Converts a distance in pixels to a time difference.
-	TimePoint distanceToTimeDifference(int distance);
+	int distanceToFrameDifference(int distance);
 
 	/// Computes the current position of the slider thumb.
 	QRect thumbRectangle();
@@ -53,7 +53,7 @@ public:
 	int thumbWidth() const;
 
 	/// Computes the time ticks to draw.
-	std::tuple<TimePoint,TimePoint,TimePoint> tickRange(int tickWidth);
+	std::tuple<int,int,int> tickRange(int tickWidth);
 
 	/// Computes the maximum width of a frame tick label.
 	int maxTickLabelWidth();
@@ -105,22 +105,21 @@ private:
 	/// The default palette used to the draw the time slide background.
 	QPalette _normalPalette;
 
-	/// The color palette used to the draw the time slide background when Auto Key mode is active.
+	/// The color palette used to the draw the time slide background when auto-key animation mode is active.
 	QPalette _autoKeyModePalette;
 
 	/// The palette used to the draw the slider.
 	QPalette _sliderPalette;
 
 	/// The main window.
-	MainWindow* _mainWindow;
+	MainWindow& _mainWindow;
 
 	/// The current animation settings object.
 	AnimationSettings* _animSettings = nullptr;
 
-	QMetaObject::Connection _autoKeyModeChangedConnection;
 	QMetaObject::Connection _animIntervalChangedConnection;
 	QMetaObject::Connection _timeFormatChangedConnection;
-	QMetaObject::Connection _timeChangedConnection;
+	QMetaObject::Connection _currentFrameChangedConnection;
 };
 
 }	// End of namespace

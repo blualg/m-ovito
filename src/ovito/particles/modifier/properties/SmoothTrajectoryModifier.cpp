@@ -232,7 +232,7 @@ void SmoothTrajectoryModifier::interpolateState(PipelineFlowState& state1, const
 
 	// Make sure the obtained reference configuration is valid and ready to use.
 	if(state2.status().type() == PipelineStatus::Error)
-		throwException(tr("Input state for frame %1 is not available: %2").arg(request.modApp()->animationTimeToSourceFrame(time2)).arg(state2.status().text()));
+		throw Exception(tr("Input state for frame %1 is not available: %2").arg(request.modApp()->animationTimeToSourceFrame(time2)).arg(state2.status().text()));
 
 	OVITO_ASSERT(time2 > time1);
 	FloatType t = (FloatType)(request.time() - time1) / (time2 - time1);
@@ -246,7 +246,7 @@ void SmoothTrajectoryModifier::interpolateState(PipelineFlowState& state1, const
 	const ParticlesObject* particles1 = state1.expectObject<ParticlesObject>();
 	const ParticlesObject* particles2 = state2.getObject<ParticlesObject>();
 	if(!particles2 || particles1->elementCount() != particles2->elementCount())
-		throwException(tr("Cannot interpolate between consecutive simulation frames, because they contain different numbers of particles."));
+		throw Exception(tr("Cannot interpolate between consecutive simulation frames, because they contain different numbers of particles."));
 	particles1->verifyIntegrity();
 	particles2->verifyIntegrity();
 	ConstPropertyAccess<Point3> posProperty2 = particles2->expectProperty(ParticlesObject::PositionProperty);
@@ -261,7 +261,7 @@ void SmoothTrajectoryModifier::interpolateState(PipelineFlowState& state1, const
 		size_t index = 0;
 		for(auto id : idProperty2) {
 			if(!idmap.insert(std::make_pair(id,index)).second)
-				throwException(tr("Detected duplicate particle ID: %1. Cannot interpolate trajectories in this case.").arg(id));
+				throw Exception(tr("Detected duplicate particle ID: %1. Cannot interpolate trajectories in this case.").arg(id));
 			index++;
 		}
 
@@ -270,7 +270,7 @@ void SmoothTrajectoryModifier::interpolateState(PipelineFlowState& state1, const
 			for(Point3& p1 : outputPositions) {
 				auto mapEntry = idmap.find(*id);
 				if(mapEntry == idmap.end())
-					throwException(tr("Cannot interpolate between consecutive frames, because the identity of particles changes between frames."));
+					throw Exception(tr("Cannot interpolate between consecutive frames, because the identity of particles changes between frames."));
 				Vector3 delta = cell1->wrapVector(posProperty2[mapEntry->second] - p1);
 				p1 += delta * t;
 				++id;
@@ -281,7 +281,7 @@ void SmoothTrajectoryModifier::interpolateState(PipelineFlowState& state1, const
 			for(Point3& p1 : outputPositions) {
 				auto mapEntry = idmap.find(*id);
 				if(mapEntry == idmap.end())
-					throwException(tr("Cannot interpolate between consecutive frames, because the identity of particles changes between frames."));
+					throw Exception(tr("Cannot interpolate between consecutive frames, because the identity of particles changes between frames."));
 				p1 += (posProperty2[mapEntry->second] - p1) * t;
 				++id;
 			}
@@ -409,7 +409,7 @@ void SmoothTrajectoryModifier::averageState(PipelineFlowState& state1, const std
 
 		// Make sure the obtained reference configuration is valid and ready to use.
 		if(state2.status().type() == PipelineStatus::Error)
-			throwException(tr("An input frame for trajectory smoothing is unavailable: %1").arg(state2.status().text()));
+			throw Exception(tr("An input frame for trajectory smoothing is unavailable: %1").arg(state2.status().text()));
 
 		const ParticlesObject* particles2 = state2.getObject<ParticlesObject>();
 		if(!particles2)
@@ -433,7 +433,7 @@ void SmoothTrajectoryModifier::averageState(PipelineFlowState& state1, const std
 			size_t index = 0;
 			for(auto id : idProperty2) {
 				if(!idmap.insert(std::make_pair(id,index)).second)
-					throwException(tr("Detected duplicate particle ID: %1. Cannot smooth trajectories in this case.").arg(id));
+					throw Exception(tr("Detected duplicate particle ID: %1. Cannot smooth trajectories in this case.").arg(id));
 				index++;
 			}
 

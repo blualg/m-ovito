@@ -140,13 +140,16 @@ void GlobalAttributesInspectionApplet::exportToFile()
 	// Export to selected file.
 	try {
 		// Create exporter service.
-		OORef<AttributeFileExporter> exporter = OORef<AttributeFileExporter>::create(currentPipeline()->dataset());
+		OORef<AttributeFileExporter> exporter = OORef<AttributeFileExporter>::create();
 
 		// Pass output filename to exporter.
 		exporter->setOutputFilename(exportFile);
 
 		// Set scene node to be exported.
 		exporter->setNodeToExport(currentPipeline());
+
+		// If the exporter supports it, automatically choose the data object(s) to be exported.
+		exporter->selectDefaultExportableData(currentPipeline()->scene());
 
 		// Let the user adjust the export settings.
 		FileExporterSettingsDialog settingsDialog(mainWindow(), exporter);

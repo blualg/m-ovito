@@ -60,6 +60,28 @@ std::shared_ptr<FrameBuffer> UserInterface::createAndShowFrameBuffer(int width, 
 }
 
 /******************************************************************************
+* Returns the scene that is currently active, i.e., which is shown in the viewport window that is currently selected.
+******************************************************************************/
+Scene* UserInterface::activeScene() const
+{
+	if(DataSet* dataset = datasetContainer().currentSet()) {
+		if(Viewport* vp = dataset->viewportConfig()->activeViewport()) {
+			return vp->scene();
+		}
+	}
+	return nullptr;
+}
+
+/******************************************************************************
+* Indicates whether the program session is being closed and all task in progress should be canceled.
+******************************************************************************/
+bool UserInterface::isShuttingDown() const
+{
+	// If the application is closing down, the current dataset has been removed from the container.
+	return datasetContainer().currentSet() == nullptr;
+}
+
+/******************************************************************************
 * Queries the system's information and graphics capabilities.
 ******************************************************************************/
 QString UserInterface::generateSystemReport()

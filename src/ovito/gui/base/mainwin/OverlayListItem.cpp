@@ -84,10 +84,10 @@ QString OverlayListItem::title(Viewport* selectedViewport) const
 /******************************************************************************
 * Returns a short piece information (typically a string or color) to be displayed next to the object's title in the pipeline editor.
 ******************************************************************************/
-QVariant OverlayListItem::shortInfo() const
+QVariant OverlayListItem::shortInfo(Viewport* selectedViewport) const
 {
-	if(overlay()) {
-		return overlay()->getPipelineEditorShortInfo();
+	if(overlay() && selectedViewport->scene()) {
+		return overlay()->getPipelineEditorShortInfo(selectedViewport->scene());
 	}
 	return {};
 }

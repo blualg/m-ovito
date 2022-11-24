@@ -37,21 +37,21 @@ IMPLEMENT_OVITO_CLASS(FileImporter);
 /******************************************************************************
 * Tries to detect the format of the given file.
 ******************************************************************************/
-Future<OORef<FileImporter>> FileImporter::autodetectFileFormat(DataSet* dataset, const QUrl& url, OORef<FileImporter> existingImporterHint)
+Future<OORef<FileImporter>> FileImporter::autodetectFileFormat(RefTarget* contextObject, const QUrl& url, OORef<FileImporter> existingImporterHint)
 {
 	if(!url.isValid())
-		dataset->throwException(tr("Invalid path or URL."));
+		throw Exception(tr("Invalid path or URL."));
 
 	// Resolve filename if it contains a wildcard.
-	return FileSourceImporter::findWildcardMatches(url, dataset).then(dataset->executor(), [dataset, existingImporterHint = std::move(existingImporterHint)](std::vector<QUrl>&& urls) {
+	return FileSourceImporter::findWildcardMatches(url).then(contextObject->executor(), [contextObject, existingImporterHint = std::move(existingImporterHint)](std::vector<QUrl>&& urls) {
 		if(urls.empty())
-			dataset->throwException(tr("There are no files in the directory matching the filename pattern."));
+			throw Exception(tr("There are no files in the directory matching the filename pattern."));
 
 		// Download file so we can determine its format.
 		return Application::instance()->fileManager().fetchUrl(urls.front())
-			.then(dataset->executor(), [dataset, url = urls.front(), existingImporterHint = std::move(existingImporterHint)](const FileHandle& file) {
+			.then(contextObject->executor(), [contextObject, url = urls.front(), existingImporterHint = std::move(existingImporterHint)](const FileHandle& file) {
 				// Detect file format.
-				return autodetectFileFormat(dataset, file, std::move(existingImporterHint));
+				return autodetectFileFormat(contextObject, file, std::move(existingImporterHint));
 			});
 	});
 }
@@ -59,14 +59,12 @@ Future<OORef<FileImporter>> FileImporter::autodetectFileFormat(DataSet* dataset,
 /******************************************************************************
 * Tries to detect the format of the given file.
 ******************************************************************************/
-OORef<FileImporter> FileImporter::autodetectFileFormat(DataSet* dataset, const FileHandle& file, FileImporter* existingImporterHint)
+OORef<FileImporter> FileImporter::autodetectFileFormat(RefTarget* contextObject, const FileHandle& file, FileImporter* existingImporterHint)
 {
 	// Note: FileImporter::autodetectFileFormat() may only be called from the main thread.
 	// Event though the implementation of autodetectFileFormat() itself is thread-safe,
 	// FileImporterClass::determineFileFormat() is currently limited to the main thread.
-	OVITO_ASSERT(QThread::currentThread() == dataset->thread());
-	// Note: FileSourceImporter::loadFrame() may not be called while undo recording is active.
-	OVITO_ASSERT(dataset->undoStack().isRecordingThread() == false);
+	OVITO_ASSERT(QCoreApplication::instance() && QThread::currentThread() == QCoreApplication::instance()->thread());
 
 	// Cache for the format of files already loaded during the current program session.
 	//
@@ -90,7 +88,7 @@ OORef<FileImporter> FileImporter::autodetectFileFormat(DataSet* dataset, const F
 		}
 		else {
 			// Create a new importer class instance and configure it.
-			OORef<FileImporter> importer = static_object_cast<FileImporter>(clazz->createInstance(dataset));
+			OORef<FileImporter> importer = static_object_cast<FileImporter>(clazz->createInstance());
 			importer->setSelectedFileFormat(format);
 			return importer;
 		}
@@ -100,7 +98,7 @@ OORef<FileImporter> FileImporter::autodetectFileFormat(DataSet* dataset, const F
 	// If caller has provided an existing importer, check it first against the file.
 	if(existingImporterHint) {
 		try {
-			if(std::optional<QString> formatIdentifier = existingImporterHint->getOOMetaClass().determineFileFormat(file, dataset)) {
+			if(std::optional<QString> formatIdentifier = existingImporterHint->getOOMetaClass().determineFileFormat(file)) {
 				// Insert detected format into cache to speed up future requests for the same file.
 				locker.relock();
 				formatDetectionCache.emplace(fileIdentifier, std::make_pair(&existingImporterHint->getOOMetaClass(), *formatIdentifier));
@@ -116,13 +114,13 @@ OORef<FileImporter> FileImporter::autodetectFileFormat(DataSet* dataset, const F
 	// Test all installed importer types.
 	for(const FileImporterClass* importerClass : PluginManager::instance().metaclassMembers<FileImporter>()) {
 		try {
-			if(std::optional<QString> formatIdentifier = importerClass->determineFileFormat(file, dataset)) {
+			if(std::optional<QString> formatIdentifier = importerClass->determineFileFormat(file)) {
 				// Insert detected format into cache to speed up future requests for the same file.
 				locker.relock();
 				formatDetectionCache.emplace(fileIdentifier, std::make_pair(importerClass, *formatIdentifier));
 
 				// Instantiate the file importer for this file format.
-				OORef<FileImporter> importer = static_object_cast<FileImporter>(importerClass->createInstance(dataset));
+				OORef<FileImporter> importer = static_object_cast<FileImporter>(importerClass->createInstance());
 				importer->setSelectedFileFormat(*formatIdentifier);
 				return importer;
 			}

@@ -83,7 +83,7 @@ bool DataTablePlotExporter::exportFrame(int frameNumber, TimePoint time, const Q
 	DataObjectReference objectRef(&DataTable::OOClass(), dataObjectToExport().dataPath());
 	const DataTable* table = static_object_cast<DataTable>(state.getLeafObject(objectRef));
 	if(!table) {
-		throwException(tr("The pipeline output does not contain the data table to be exported (animation frame: %1; object key: %2). Available data tables: (%3)")
+		throw Exception(tr("The pipeline output does not contain the data table to be exported (animation frame: %1; object key: %2). Available data tables: (%3)")
 			.arg(frameNumber).arg(objectRef.dataPath()).arg(getAvailableDataObjectList(state, DataTable::OOClass())));
 	}
 	table->verifyIntegrity();

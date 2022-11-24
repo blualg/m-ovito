@@ -95,7 +95,7 @@ AffineTransformation AffineTransformationModifier::effectiveAffineTransformation
 	else {
 		const SimulationCellObject* simCell = state.getObject<SimulationCellObject>();
 		if(!simCell || simCell->cellMatrix().determinant() == 0 || simCell->isDegenerate())
-			throwException(tr("Input simulation cell does not exist or is degenerate. Transformation to target cell would be singular."));
+			throw Exception(tr("Input simulation cell does not exist or is degenerate. Transformation to target cell would be singular."));
 
 		tm = targetCell() * state.expectObject<SimulationCellObject>()->inverseMatrix();
 	}

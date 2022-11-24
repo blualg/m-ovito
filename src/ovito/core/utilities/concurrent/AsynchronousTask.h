@@ -64,8 +64,8 @@ private:
     /// The thread pool this task has been submitted to for execution (if any).
     QThreadPool* _submittedToPool = nullptr;
 
-	/// The type of execution context that this task inherits from its parent task.
-	ExecutionContext::Type _executionContextType;
+	/// The execution context that this task inherits from its parent task.
+	ExecutionContext _executionContext;
 
 	friend class Task;
 	template<typename... R> friend class AsynchronousTask;

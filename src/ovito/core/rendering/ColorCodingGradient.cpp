@@ -61,7 +61,7 @@ void ColorCodingImageGradient::loadImage(const QString& filename)
 {
 	QImage image(filename);
 	if(image.isNull())
-		throwException(tr("Could not load image file '%1'.").arg(filename));
+		throw Exception(tr("Could not load image file '%1'.").arg(filename));
 	setImage(image);
 }
 

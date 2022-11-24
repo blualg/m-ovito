@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -38,9 +38,11 @@ DEFINE_PROPERTY_FIELD(AttributeFileExporter, attributesToExport);
 AttributeFileExporter::AttributeFileExporter(ObjectCreationParams params) : FileExporter(params)
 {
 	if(params.loadUserDefaults()) {
+#if 0 // TODO: Implement access to animation time interval
 		// This exporter is typically used to export attributes as functions of time.
 		if(dataset()->animationSettings()->animationInterval().duration() != 0)
 			setExportAnimation(true);
+#endif
 
 #ifndef OVITO_DISABLE_QSETTINGS
 		// Restore last output column mapping.
@@ -62,7 +64,7 @@ bool AttributeFileExporter::openOutputFile(const QString& filePath, int numberOf
 	OVITO_ASSERT(!_outputStream);
 
 	_outputFile.setFileName(filePath);
-	_outputStream = std::make_unique<CompressedTextWriter>(_outputFile, dataset());
+	_outputStream = std::make_unique<CompressedTextWriter>(_outputFile, this);
 
 	textStream() << "#";
 	for(const QString& attrName : attributesToExport()) {
@@ -91,9 +93,9 @@ void AttributeFileExporter::closeOutputFile(bool exportCompleted)
 * Evaluates the pipeline of the PipelineSceneNode to be exported and returns
 * the attributes list.
 ******************************************************************************/
-bool AttributeFileExporter::getAttributesMap(TimePoint time, QVariantMap& attributes, MainThreadOperation& operation)
+bool AttributeFileExporter::getAttributesMap(int frame, QVariantMap& attributes, MainThreadOperation& operation)
 {
-	const PipelineFlowState& state = getPipelineDataToBeExported(time, operation);
+	const PipelineFlowState& state = getPipelineDataToBeExported(frame, operation);
 	if(operation.isCanceled())
 		return false;
 
@@ -101,7 +103,7 @@ bool AttributeFileExporter::getAttributesMap(TimePoint time, QVariantMap& attrib
 	attributes = state.data()->buildAttributesMap();
 
 	// Add the implicit animation frame attribute.
-	attributes.insert(QStringLiteral("Frame"), dataset()->animationSettings()->timeToFrame(time));
+	attributes.insert(QStringLiteral("Frame"), frame);
 
 	return true;
 }
@@ -109,16 +111,16 @@ bool AttributeFileExporter::getAttributesMap(TimePoint time, QVariantMap& attrib
 /******************************************************************************
  * Exports a single animation frame to the current output file.
  *****************************************************************************/
-bool AttributeFileExporter::exportFrame(int frameNumber, TimePoint time, const QString& filePath, MainThreadOperation& operation)
+bool AttributeFileExporter::exportFrame(int frameNumber, const QString& filePath, MainThreadOperation& operation)
 {
 	QVariantMap attrMap;
-	if(!getAttributesMap(time, attrMap, operation))
+	if(!getAttributesMap(frameNumber, attrMap, operation))
 		return false;
 
 	// Write the values of all attributes marked for export to the output file.
 	for(const QString& attrName : attributesToExport()) {
 		if(!attrMap.contains(attrName))
-			throwException(tr("The global attribute '%1' to be exported is not available at animation frame %2.").arg(attrName).arg(frameNumber));
+			throw Exception(tr("The global attribute '%1' to be exported is not available at animation frame %2.").arg(attrName).arg(frameNumber));
 		QString str = attrMap.value(attrName).toString();
 
 		// Put string in quotes if it contains whitespace.

@@ -28,6 +28,7 @@
 #include <ovito/core/dataset/data/TransformingDataVis.h>
 #include <ovito/core/dataset/data/TransformedDataObject.h>
 #include <ovito/core/app/Application.h>
+#include <ovito/core/app/UserInterface.h>
 #include <ovito/core/utilities/concurrent/Future.h>
 #include <ovito/core/utilities/concurrent/TaskManager.h>
 
@@ -187,8 +188,9 @@ SharedFuture<PipelineFlowState> PipelineCache::evaluatePipeline(const PipelineEv
 			}
 			else {
 				// We also have a new preliminary state. Inform the upstream pipeline about it.
-				if(pipelineObject->performPreliminaryUpdateAfterEvaluation() && Application::instance()->guiMode()) {
-					if(state.stateValidity().contains(pipelineObject->dataset()->animationSettings()->time())) {
+				if(pipelineObject->performPreliminaryUpdateAfterEvaluation()) {
+					std::optional<AnimationTime> time = pipelineObject->currentAnimationTime();
+					if(time && state.stateValidity().contains(*time)) {
 						// Adopt the newly computed state as the current synchronous cache state.
 						_synchronousState = state;
 						_synchronousState.setStateValidity(TimeInterval::infinite());
@@ -244,11 +246,10 @@ void PipelineCache::cleanupEvaluation(std::forward_list<EvaluationInProgress>::i
 void PipelineCache::insertState(const PipelineFlowState& state)
 {
 	OVITO_ASSERT(!QCoreApplication::instance() || QThread::currentThread() == QCoreApplication::instance()->thread());
-	OVITO_ASSERT(!ownerObject()->dataset()->undoStack().isRecording());
+	OVITO_ASSERT(!ownerObject()->isUndoRecording());
 
-	// Keep only cached states that overlap with the previously requested time interval.
-	// Throw away existing cached states that do not overlap with the requested time intervals,
-	// or which *do* overlap with the newly computed state and are now outdated.
+	// Evict existing states from cache that do not overlap with the requested time intervals,
+	// or which *do* overlap with the newly computed state and have now become outdated.
 	_cachedStates.erase(std::remove_if(_cachedStates.begin(), _cachedStates.end(), [&](const PipelineFlowState& cachedState) {
 		if(cachedState.stateValidity().overlap(state.stateValidity()))
 			return true;
@@ -257,7 +258,7 @@ void PipelineCache::insertState(const PipelineFlowState& state)
 	}), _cachedStates.end());
 
 	// Decide whether to store the newly computed state in the cache or not. 
-	// To keep it, its validity interval must overlap with one of the requested time intervals.
+	// To keep it, its validity interval must be overlapping with one of the requested time intervals.
 	if(std::any_of(_requestedIntervals.cbegin(), _requestedIntervals.cend(), 
 			std::bind(&TimeInterval::overlap, state.stateValidity(), std::placeholders::_1))) {
 		_cachedStates.push_back(state);
@@ -271,10 +272,18 @@ void PipelineCache::insertState(const PipelineFlowState& state)
 ******************************************************************************/
 const PipelineFlowState& PipelineCache::evaluatePipelineSynchronous(const PipelineEvaluationRequest& request)
 {
+	PipelineSceneNode* pipeline = static_object_cast<PipelineSceneNode>(ownerObject());
+
 	// First, check if we can serve the request from the asynchronous evaluation cache.
 	if(const PipelineFlowState& cachedState = getAt(request.time())) {
-		if(cachedState.stateValidity().contains(ownerObject()->dataset()->animationSettings()->time()))
-			_synchronousState = cachedState;
+		if(cachedState.data() != _synchronousState.data()) {
+			// Adopt the state from the asynchronous evaluation as new synchronous state
+			// if it is valid at the current animation time being displayed in the GUI. 
+			std::optional<AnimationTime> time = pipeline->currentAnimationTime();
+			if(time && cachedState.stateValidity().contains(*time)) {
+				_synchronousState = cachedState;
+			}
+		}
 		return cachedState;
 	}
 	else {
@@ -282,11 +291,10 @@ const PipelineFlowState& PipelineCache::evaluatePipelineSynchronous(const Pipeli
 		if(!_synchronousState.stateValidity().contains(request.time())) {
 			
 			// If no cached results are available, re-evaluate the pipeline.
-			PipelineSceneNode* pipeline = static_object_cast<PipelineSceneNode>(ownerObject());
 			if(pipeline->dataProvider()) {
 				// Adopt new state produced by the pipeline if it is not empty. 
 				// Otherwise stick with the old state from our own cache.
-				UndoSuspender noUndo(pipeline);
+				UndoSuspender noUndo;
 				if(PipelineFlowState newPreliminaryState = pipeline->dataProvider()->evaluateSynchronous(request)) {
 					_synchronousState = std::move(newPreliminaryState);
 
@@ -313,10 +321,17 @@ const PipelineFlowState& PipelineCache::evaluatePipelineSynchronous(const Pipeli
 ******************************************************************************/
 const PipelineFlowState& PipelineCache::evaluatePipelineStageSynchronous(const PipelineEvaluationRequest& request)
 {
+	CachingPipelineObject* pipelineObject = static_object_cast<CachingPipelineObject>(ownerObject());
+
 	// First, check if we can serve the request from the asynchronous evaluation cache.
 	if(const PipelineFlowState& cachedState = getAt(request.time())) {
-		if(cachedState.stateValidity().contains(ownerObject()->dataset()->animationSettings()->time())) {
-			_synchronousState = cachedState;
+		if(cachedState.data() != _synchronousState.data()) {
+			// Adopt the state from the asynchronous evaluation as new synchronous state
+			// if it is valid at the current animation time being displayed in the GUI. 
+			std::optional<AnimationTime> time = pipelineObject->currentAnimationTime();
+			if(time && cachedState.stateValidity().contains(*time)) {
+				_synchronousState = cachedState;
+			}
 		}
 		return cachedState;
 	}
@@ -326,8 +341,7 @@ const PipelineFlowState& PipelineCache::evaluatePipelineStageSynchronous(const P
 			// If no cached results are available, re-evaluate the pipeline.
 			// Adopt new state produced by the pipeline if it is not empty. 
 			// Otherwise stick with the old state from our own cache.
-			CachingPipelineObject* pipelineObject = static_object_cast<CachingPipelineObject>(ownerObject());
-			UndoSuspender noUndo(pipelineObject);
+			UndoSuspender noUndo;
 			if(PipelineFlowState newState = pipelineObject->evaluateInternalSynchronous(request)) {
 				_synchronousState = std::move(newState);
 			}
@@ -405,7 +419,7 @@ void PipelineCache::overrideCache(const DataCollection* dataCollection, const Ti
 /******************************************************************************
 * Looks up the pipeline state for the given animation time.
 ******************************************************************************/
-const PipelineFlowState& PipelineCache::getAt(TimePoint time) const
+const PipelineFlowState& PipelineCache::getAt(AnimationTime time) const
 {
 	for(const PipelineFlowState& state : _cachedStates) {
 		if(state.stateValidity().contains(time))
@@ -441,8 +455,17 @@ void PipelineCache::setPrecomputeAllFrames(bool enable)
 		if(!_precomputeAllFrames) {
 			// Interrupt the precomputation process if it is currently in progress.
 			_precomputeFramesOperation.reset();
-			// Throw away all precomputed data (except current frame) to reduce memory footprint.
-			invalidate(TimeInterval(ownerObject()->dataset()->animationSettings()->time()));
+
+			if(PipelineSceneNode* pipeline = dynamic_object_cast<PipelineSceneNode>(ownerObject())) {
+				if(std::optional<AnimationTime> currentAnimationTime = pipeline->currentAnimationTime()) {
+					// Throw away all precomputed data (except current frame) to reduce memory footprint.
+					invalidate(TimeInterval(*currentAnimationTime));
+					return;
+				}
+			}
+
+			// Throw away all precomputed data to reduce memory footprint.
+			invalidate();
 		}
 	}
 }
@@ -494,7 +517,7 @@ void PipelineCache::precomputeNextAnimationFrame()
 
 	// Determine what is the next animation frame that needs to be precomputed.
 	int nextFrame = 0;
-	TimePoint nextFrameTime;
+	AnimationTime nextFrameTime;
 	while(nextFrame < numSourceFrames) {
 		nextFrameTime = pipelineObject->sourceFrameToAnimationTime(nextFrame);
 		const PipelineFlowState& state = getAt(nextFrameTime);
@@ -515,21 +538,25 @@ void PipelineCache::precomputeNextAnimationFrame()
 	}
 
 	// Request the next frame from the input trajectory.
-	_precomputeFrameFuture = evaluatePipeline(PipelineEvaluationRequest(nextFrameTime));
+	_precomputeFrameFuture = evaluatePipeline(PipelineEvaluationRequest(nextFrameTime, nextFrame));
 
 	// Wait until input frame is ready.
 	_precomputeFrameFuture.finally(ownerObject()->executor(true), [this](Task& task) {
 		try {
 			// If the pipeline evaluation has been canceled for some reason, we interrupt the precomputation process.
-			if(!ownerObject()->dataset() || !_precomputeFramesOperation.isValid() || _precomputeFramesOperation.isFinished() || task.isCanceled()) {
+			if(ownerObject()->isAboutToBeDeleted() || !_precomputeFramesOperation.isValid() || _precomputeFramesOperation.isFinished() || task.isCanceled()) {
 				_precomputeFramesOperation.reset();
 				OVITO_ASSERT(!_precomputeFrameFuture.isValid());
 				return;
 			}
 			OVITO_ASSERT(_precomputeFrameFuture.isValid());
 
+#if 0 // TODO: Remove unused code
 			// Store the computed frame in the pipeline cache.
-			insertState(_precomputeFrameFuture.result());
+			if(!_precomputeFrameFuture.result().stateValidity().isEmpty()) {
+				insertState(_precomputeFrameFuture.result());
+			}
+#endif
 
 			// Schedule the pipeline evaluation at the next frame.
 			precomputeNextAnimationFrame();

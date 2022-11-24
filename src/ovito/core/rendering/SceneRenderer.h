@@ -31,8 +31,10 @@
 #include <ovito/core/Core.h>
 #include <ovito/core/dataset/animation/TimeInterval.h>
 #include <ovito/core/dataset/scene/PipelineSceneNode.h>
+#include <ovito/core/dataset/scene/Scene.h>
 #include <ovito/core/oo/RefTarget.h>
 #include <ovito/core/viewport/ViewportProjectionParameters.h>
+#include <ovito/core/viewport/Viewport.h>
 #include "LinePrimitive.h"
 #include "ParticlePrimitive.h"
 #include "TextPrimitive.h"
@@ -94,15 +96,11 @@ public:
 	virtual void setAntialiasingHint(int antialiasingLevel) {}
 
 	/// Prepares the renderer for rendering and sets the dataset to be rendered.
-	virtual bool startRender(DataSet* dataset, RenderSettings* settings, const QSize& frameBufferSize);
-
-	/// Returns the dataset being rendered.
-	/// This information is only available between calls to startRender() and endRender().
-	DataSet* renderDataset() const { return _renderDataset; }
+	virtual bool startRender(const RenderSettings& settings, const QSize& frameBufferSize, MixedKeyCache& visCache);
 
 	/// Returns the general rendering settings.
 	/// This information is only available between calls to startRender() and endRender().
-	RenderSettings* renderSettings() const { return _renderSettings; }
+	const RenderSettings& renderSettings() const { OVITO_ASSERT(_renderSettings != nullptr); return *_renderSettings; }
 
 	/// Is called after rendering has finished.
 	virtual void endRender();
@@ -114,7 +112,10 @@ public:
 	void setProjParams(const ViewProjectionParameters& params) { _projParams = params; }
 
 	/// Returns the animation time being rendered.
-	TimePoint time() const { return _time; }
+	AnimationTime time() const { return _time; }
+
+	/// Returns the animation frame being rendered.
+	int frame() const { return _time.frame(); }
 
 	/// Returns the viewport whose contents are currently being rendered.
 	/// This may be NULL.
@@ -126,18 +127,20 @@ public:
 	/// Returns the rectangular region of the framebuffer we are rendering into (in device coordinates).
 	const QRect& viewportRect() const { return _viewportRect; }
 
+	/// Returns the scene currently being rendered. Only valid between calls to beginFrame()/endFrame().
+	Scene* scene() const { return _scene; }
+
 	/// Returns the device pixel ratio of the output device we are rendering to.
 	virtual qreal devicePixelRatio() const;
 
 	/// \brief Computes the bounding box of the entire scene to be rendered.
-	/// \param time The time at which the bounding box should be computed.
 	/// \return An axis-aligned box in the world coordinate system that contains
 	///         everything to be rendered.
-	Box3 computeSceneBoundingBox(TimePoint time, const ViewProjectionParameters& params, Viewport* vp, MainThreadOperation& operation);
+	Box3 computeSceneBoundingBox(AnimationTime time, Scene* scene, const ViewProjectionParameters& params, Viewport* vp, MainThreadOperation& operation);
 
 	/// Sets the view projection parameters, the animation frame to render,
 	/// and the viewport being rendered.
-	virtual void beginFrame(TimePoint time, const ViewProjectionParameters& params, Viewport* vp, const QRect& viewportRect, FrameBuffer* frameBuffer);
+	virtual void beginFrame(AnimationTime time, Scene* scene, const ViewProjectionParameters& params, Viewport* vp, const QRect& viewportRect, FrameBuffer* frameBuffer);
 
 	/// Renders the current animation frame.
 	/// Returns false if the operation has been canceled by the user.
@@ -148,9 +151,10 @@ public:
 	virtual bool renderOverlays(bool underlays, const QRect& logicalViewportRect, const QRect& physicalViewportRect, MainThreadOperation& operation);
 
 	/// This method is called after renderFrame() has been called.
-	virtual void endFrame(bool renderingSuccessful, const QRect& viewportRect) {
-		endPickObject();
-	}
+	virtual void endFrame(bool renderingSuccessful, const QRect& viewportRect);
+
+	/// Returns the data cache to be used by visualization elements.
+	MixedKeyCache& visCache() const { OVITO_ASSERT(_visCache != nullptr); return *_visCache; }
 
 	/// Changes the current local-to-world transformation matrix.
 	void setWorldTransform(const AffineTransformation& tm) {
@@ -301,10 +305,13 @@ private:
 	DataSet* _renderDataset = nullptr;
 
 	/// The render settings for the current rendering pass.
-	RenderSettings* _renderSettings = nullptr;
+	const RenderSettings* _renderSettings = nullptr;
+
+	/// The scene being rendered in the current frame.
+	OORef<Scene> _scene;
 
 	/// The viewport whose contents are currently being rendered.
-	Viewport* _viewport = nullptr;
+	OORef<Viewport> _viewport;
 
 	/// The framebuffer we are rendering into (is null for interactive renderers).
 	FrameBuffer* _frameBuffer = nullptr;
@@ -319,7 +326,10 @@ private:
 	AffineTransformation _modelViewTM = AffineTransformation::Identity();
 
 	/// The animation time being rendered.
-	TimePoint _time;
+	AnimationTime _time;
+
+	/// The data cache to be used by visualization elements.
+	MixedKeyCache* _visCache = nullptr;
 
 	/// Indicates that an object picking pass is active.
 	bool _isPicking = false;

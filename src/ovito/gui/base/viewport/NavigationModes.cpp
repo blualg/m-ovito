@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -57,7 +57,8 @@ void NavigationMode::deactivated(bool temporary)
 		// Restore old settings if view change has not been committed.
 		_viewport->setCameraTransformation(_oldCameraTM);
 		_viewport->setFieldOfView(_oldFieldOfView);
-		_viewport->dataset()->undoStack().endCompoundOperation(false);
+		if(inputManager()->userInterface().undoStack())
+			inputManager()->userInterface().undoStack()->endCompoundOperation(false);
 		_viewport = nullptr;
 	}
 	inputManager()->removeViewportGizmo(inputManager()->pickOrbitCenterMode());
@@ -105,7 +106,8 @@ void NavigationMode::mousePressEvent(ViewportWindowInterface* vpwin, QMouseEvent
 		_oldViewMatrix = _viewport->projectionParams().viewMatrix;
 		_oldInverseViewMatrix = _viewport->projectionParams().inverseViewMatrix;
 		_currentOrbitCenter = _viewport->orbitCenter();
-		_viewport->dataset()->undoStack().beginCompoundOperation(tr("Modify camera"));
+		if(inputManager()->userInterface().undoStack())
+			inputManager()->userInterface().undoStack()->beginCompoundOperation(tr("Modify camera"));
 	}
 }
 
@@ -116,7 +118,8 @@ void NavigationMode::mouseReleaseEvent(ViewportWindowInterface* vpwin, QMouseEve
 {
 	if(_viewport) {
 		// Commit view change.
-		_viewport->dataset()->undoStack().endCompoundOperation();
+		if(inputManager()->userInterface().undoStack())
+			inputManager()->userInterface().undoStack()->endCompoundOperation();
 		_viewport = nullptr;
 
 		if(_temporaryActivation)
@@ -143,11 +146,12 @@ void NavigationMode::mouseMoveEvent(ViewportWindowInterface* vpwin, QMouseEvent*
 	if(_viewport == vpwin->viewport()) {
 		QPointF pos = getMousePosition(event);
 
-		_viewport->dataset()->undoStack().resetCurrentCompoundOperation();
+		if(inputManager()->userInterface().undoStack())
+			inputManager()->userInterface().undoStack()->resetCurrentCompoundOperation();
 		modifyView(vpwin, _viewport, pos - _startPoint, false);
 
 		// Force immediate viewport repaint.
-		_viewport->dataset()->viewportConfig()->processViewportUpdates();
+		vpwin->dataset()->viewportConfig()->processViewportUpdates();
 	}
 }
 
@@ -179,23 +183,23 @@ void PanMode::modifyView(ViewportWindowInterface* vpwin, Viewport* vp, QPointF d
 	FloatType deltaX = -scaling * delta.x();
 	FloatType deltaY =  scaling * delta.y();
 	Vector3 displacement = _oldInverseViewMatrix * Vector3(deltaX, deltaY, 0);
-	if(vp->viewNode() == nullptr || vp->viewType() != Viewport::VIEW_SCENENODE) {
+	if(vp->viewNode() == nullptr || vp->viewType() != Viewport::VIEW_SCENENODE || !vp->scene()) {
 		vp->setCameraPosition(_oldCameraPosition + displacement);
 	}
 	else {
 		// Get parent's system.
 		TimeInterval iv;
 		const AffineTransformation& parentSys =
-				vp->viewNode()->parentNode()->getWorldTransform(vp->dataset()->animationSettings()->time(), iv);
+				vp->viewNode()->parentNode()->getWorldTransform(vp->scene()->animationSettings()->currentTime(), iv);
 
 		// Move node in parent's system.
 		vp->viewNode()->transformationController()->translate(
-				vp->dataset()->animationSettings()->time(), displacement, parentSys.inverse());
+				vp->scene()->animationSettings()->currentTime(), displacement, parentSys.inverse());
 
 		// If it's a target camera, move target as well.
 		if(vp->viewNode()->lookatTargetNode()) {
 			vp->viewNode()->lookatTargetNode()->transformationController()->translate(
-					vp->dataset()->animationSettings()->time(), displacement, parentSys.inverse());
+					vp->scene()->animationSettings()->currentTime(), displacement, parentSys.inverse());
 		}
 	}
 }
@@ -210,14 +214,14 @@ void ZoomMode::modifyView(ViewportWindowInterface* vpwin, Viewport* vp, QPointF 
 {
 	if(vp->isPerspectiveProjection()) {
 		FloatType amount =  FloatType(-5) * sceneSizeFactor(vp) * delta.y();
-		if(vp->viewNode() == nullptr || vp->viewType() != Viewport::VIEW_SCENENODE) {
+		if(vp->viewNode() == nullptr || vp->viewType() != Viewport::VIEW_SCENENODE || !vp->scene()) {
 			vp->setCameraPosition(_oldCameraPosition + _oldCameraDirection.resized(amount));
 		}
 		else {
 			TimeInterval iv;
-			const AffineTransformation& sys = vp->viewNode()->getWorldTransform(vp->dataset()->animationSettings()->time(), iv);
+			const AffineTransformation& sys = vp->viewNode()->getWorldTransform(vp->scene()->animationSettings()->currentTime(), iv);
 			vp->viewNode()->transformationController()->translate(
-					vp->dataset()->animationSettings()->time(), Vector3(0,0,-amount), sys);
+					vp->scene()->animationSettings()->currentTime(), Vector3(0,0,-amount), sys);
 		}
 	}
 	else {
@@ -240,11 +244,12 @@ void ZoomMode::modifyView(ViewportWindowInterface* vpwin, Viewport* vp, QPointF 
 FloatType ZoomMode::sceneSizeFactor(Viewport* vp)
 {
 	OVITO_CHECK_OBJECT_POINTER(vp);
-	Box3 sceneBoundingBox = vp->dataset()->scene()->worldBoundingBox(vp->dataset()->animationSettings()->time(), vp);
-	if(!sceneBoundingBox.isEmpty())
-		return sceneBoundingBox.size().length() * FloatType(5e-4);
-	else
-		return FloatType(0.1);
+	if(vp->scene()) {
+		Box3 sceneBoundingBox = vp->scene()->worldBoundingBox(vp->scene()->animationSettings()->currentTime(), vp);
+		if(!sceneBoundingBox.isEmpty())
+			return sceneBoundingBox.size().length() * FloatType(5e-4);
+	}
+	return FloatType(0.1);
 }
 
 /******************************************************************************
@@ -252,7 +257,7 @@ FloatType ZoomMode::sceneSizeFactor(Viewport* vp)
 ******************************************************************************/
 void ZoomMode::zoom(Viewport* vp, FloatType steps)
 {
-	if(vp->viewNode() == nullptr || vp->viewType() != Viewport::VIEW_SCENENODE) {
+	if(vp->viewNode() == nullptr || vp->viewType() != Viewport::VIEW_SCENENODE || !vp->scene()) {
 		if(vp->isPerspectiveProjection()) {
 			vp->setCameraPosition(vp->cameraPosition() + vp->cameraDirection().resized(sceneSizeFactor(vp) * steps));
 		}
@@ -261,12 +266,12 @@ void ZoomMode::zoom(Viewport* vp, FloatType steps)
 		}
 	}
 	else {
-		UndoableTransaction::handleExceptions(vp->dataset()->undoStack(), tr("Zoom viewport"), [this, steps, vp]() {
+		UndoableTransaction::handleExceptions(inputManager()->userInterface(), tr("Zoom viewport"), [this, steps, vp]() {
 			if(vp->isPerspectiveProjection()) {
 				FloatType amount = sceneSizeFactor(vp) * steps;
 				TimeInterval iv;
-				const AffineTransformation& sys = vp->viewNode()->getWorldTransform(vp->dataset()->animationSettings()->time(), iv);
-				vp->viewNode()->transformationController()->translate(vp->dataset()->animationSettings()->time(), Vector3(0,0,-amount), sys);
+				const AffineTransformation& sys = vp->viewNode()->getWorldTransform(vp->scene()->animationSettings()->currentTime(), iv);
+				vp->viewNode()->transformationController()->translate(vp->scene()->animationSettings()->currentTime(), Vector3(0,0,-amount), sys);
 			}
 			else {
 				if(PipelineObject* cameraSource = getViewportCamera(vp)) {
@@ -344,7 +349,7 @@ void OrbitMode::modifyView(ViewportWindowInterface* vpwin, Viewport* vp, QPointF
 		else if(phi + deltaPhi > FLOATTYPE_PI - FLOATTYPE_EPSILON)
 			deltaPhi = FLOATTYPE_PI - FLOATTYPE_EPSILON - phi;
 
-		if(vp->viewNode() == nullptr || vp->viewType() != Viewport::VIEW_SCENENODE) {
+		if(vp->viewNode() == nullptr || vp->viewType() != Viewport::VIEW_SCENENODE || !vp->scene()) {
 			AffineTransformation newTM =
 					AffineTransformation::translation(t1) *
 					AffineTransformation::rotation(Rotation(ViewportSettings::getSettings().upVector(), -deltaTheta)) *
@@ -357,7 +362,7 @@ void OrbitMode::modifyView(ViewportWindowInterface* vpwin, Viewport* vp, QPointF
 		}
 		else {
 			Controller* ctrl = vp->viewNode()->transformationController();
-			TimePoint time = vp->dataset()->animationSettings()->time();
+			AnimationTime time = vp->scene()->animationSettings()->currentTime();
 			Rotation rotX(Vector3(1,0,0), deltaPhi, false);
 			ctrl->rotate(time, rotX, _oldInverseViewMatrix);
 			Rotation rotZ(ViewportSettings::getSettings().upVector(), -deltaTheta);
@@ -369,7 +374,7 @@ void OrbitMode::modifyView(ViewportWindowInterface* vpwin, Viewport* vp, QPointF
 		}
 	}
 	else {
-		if(vp->viewNode() == nullptr || vp->viewType() != Viewport::VIEW_SCENENODE) {
+		if(vp->viewNode() == nullptr || vp->viewType() != Viewport::VIEW_SCENENODE || !vp->scene()) {
 			AffineTransformation newTM = _oldInverseViewMatrix *
 					AffineTransformation::translation(t2) *
 					AffineTransformation::rotationY(-deltaTheta) *
@@ -380,7 +385,7 @@ void OrbitMode::modifyView(ViewportWindowInterface* vpwin, Viewport* vp, QPointF
 		}
 		else {
 			Controller* ctrl = vp->viewNode()->transformationController();
-			TimePoint time = vp->dataset()->animationSettings()->time();
+			AnimationTime time = vp->scene()->animationSettings()->currentTime();
 			Rotation rot = Rotation(Vector3(0,1,0), -deltaTheta, false) * Rotation(Vector3(1,0,0), deltaPhi, false);
 			ctrl->rotate(time, rot, _oldInverseViewMatrix);
 			Vector3 translation = t2 - (Matrix3::rotation(rot) * t2);
@@ -399,14 +404,16 @@ bool PickOrbitCenterMode::pickOrbitCenter(ViewportWindowInterface* vpwin, const 
 {
 	Point3 p;
 	Viewport* vp = vpwin->viewport();
+	if(!vp || !vp->scene())
+		return false;
 	if(findIntersection(vpwin, pos, p)) {
-		vp->dataset()->viewportConfig()->setOrbitCenterMode(ViewportConfiguration::ORBIT_USER_DEFINED);
-		vp->dataset()->viewportConfig()->setUserOrbitCenter(p);
+		vp->scene()->setOrbitCenterMode(Scene::ORBIT_USER_DEFINED);
+		vp->scene()->setUserOrbitCenter(p);
 		return true;
 	}
 	else {
-		vp->dataset()->viewportConfig()->setOrbitCenterMode(ViewportConfiguration::ORBIT_SELECTION_CENTER);
-		vp->dataset()->viewportConfig()->setUserOrbitCenter(Point3::Origin());
+		vp->scene()->setOrbitCenterMode(Scene::ORBIT_SELECTION_CENTER);
+		vp->scene()->setUserOrbitCenter(Point3::Origin());
 		vpwin->userInterface().showStatusBarMessage(tr("No object has been picked. Resetting orbit center to default position."), 1200);
 		return false;
 	}
@@ -463,19 +470,19 @@ bool PickOrbitCenterMode::findIntersection(ViewportWindowInterface* vpwin, const
 ******************************************************************************/
 void PickOrbitCenterMode::renderOverlay3D(Viewport* vp, SceneRenderer* renderer)
 {
-	if(renderer->isPicking())
+	if(renderer->isPicking() || !vp->scene())
 		return;
 
 	// Render center of rotation.
-	Point3 center = vp->dataset()->viewportConfig()->orbitCenter(vp);
+	Point3 center = vp->scene()->orbitCenter(vp);
 	FloatType symbolSize = vp->nonScalingSize(center);
 	renderer->setWorldTransform(AffineTransformation::translation(center - Point3::Origin()) * AffineTransformation::scaling(symbolSize));
 
 	if(!renderer->isBoundingBoxPass()) {
 		// Create rendering primitive.
-		DataBufferAccessAndRef<Point3> basePositions = DataBufferPtr::create(vp->dataset(), 3, DataBuffer::Float, 3);
-		DataBufferAccessAndRef<Point3> headPositions = DataBufferPtr::create(vp->dataset(), 3, DataBuffer::Float, 3);
-		DataBufferAccessAndRef<Color> colors = DataBufferPtr::create(vp->dataset(), 3, DataBuffer::Float, 3);
+		DataBufferAccessAndRef<Point3> basePositions = DataBufferPtr::create(3, DataBuffer::Float, 3);
+		DataBufferAccessAndRef<Point3> headPositions = DataBufferPtr::create(3, DataBuffer::Float, 3);
+		DataBufferAccessAndRef<Color> colors = DataBufferPtr::create(3, DataBuffer::Float, 3);
 		basePositions[0] = Point3(-1,0,0); headPositions[0] = Point3(1,0,0); colors[0] = Color(1,0,0);
 		basePositions[1] = Point3(0,-1,0); headPositions[1] = Point3(0,1,0); colors[1] = Color(0,1,0);
 		basePositions[2] = Point3(0,0,-1); headPositions[2] = Point3(0,0,1); colors[2] = Color(0.4,0.4,1);

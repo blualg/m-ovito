@@ -308,7 +308,7 @@ void InteractiveMolecularDynamicsModifier::evaluateSynchronous(const ModifierEva
 	outputParticles->verifyIntegrity();
 
 	if(_coordinates->size() != outputParticles->elementCount())
-		throwException(tr("Number of local particles (%1) does not match number of coordinates received from IMD server (%2).").arg(outputParticles->elementCount()).arg(_coordinates->size()));
+		throw Exception(tr("Number of local particles (%1) does not match number of coordinates received from IMD server (%2).").arg(outputParticles->elementCount()).arg(_coordinates->size()));
 
 	// Try to replace particle positions with coordinates received from server.
 	outputParticles->createProperty(_coordinates);

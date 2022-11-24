@@ -46,14 +46,6 @@ Modifier::Modifier(ObjectCreationParams params) : RefTarget(params),
 }
 
 /******************************************************************************
-* Determines the time interval over which a computed pipeline state will remain valid.
-******************************************************************************/
-TimeInterval Modifier::validityInterval(const ModifierEvaluationRequest& request) const
-{
-	return TimeInterval::infinite();
-}
-
-/******************************************************************************
 * Create a new modifier application that refers to this modifier instance.
 ******************************************************************************/
 OORef<ModifierApplication> Modifier::createModifierApplication()
@@ -62,19 +54,19 @@ OORef<ModifierApplication> Modifier::createModifierApplication()
 	for(OvitoClassPtr clazz = &getOOClass(); clazz != nullptr; clazz = clazz->superClass()) {
 		if(OvitoClassPtr modAppClass = ModifierApplication::registry().getModAppClass(clazz)) {
 			if(!modAppClass->isDerivedFrom(ModifierApplication::OOClass()))
-				throwException(tr("The modifier application class %1 assigned to the Modifier-derived class %2 is not derived from ModifierApplication.").arg(modAppClass->name(), clazz->name()));
+				throw Exception(tr("The modifier application class %1 assigned to the Modifier-derived class %2 is not derived from ModifierApplication.").arg(modAppClass->name(), clazz->name()));
 #ifdef OVITO_DEBUG
 			for(OvitoClassPtr superClazz = clazz->superClass(); superClazz != nullptr; superClazz = superClazz->superClass()) {
 				if(OvitoClassPtr modAppSuperClass = ModifierApplication::registry().getModAppClass(superClazz)) {
 					if(!modAppClass->isDerivedFrom(*modAppSuperClass))
-						throwException(tr("The modifier application class %1 assigned to the Modifier-derived class %2 is not derived from the ModifierApplication specialization %3.").arg(modAppClass->name(), clazz->name(), modAppSuperClass->name()));
+						throw Exception(tr("The modifier application class %1 assigned to the Modifier-derived class %2 is not derived from the ModifierApplication specialization %3.").arg(modAppClass->name(), clazz->name(), modAppSuperClass->name()));
 				}
 			}
 #endif
-			return static_object_cast<ModifierApplication>(modAppClass->createInstance(dataset()));
+			return static_object_cast<ModifierApplication>(modAppClass->createInstance());
 		}
 	}
-	return OORef<ModifierApplication>::create(dataset());
+	return OORef<ModifierApplication>::create();
 }
 
 /******************************************************************************

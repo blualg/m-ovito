@@ -129,7 +129,7 @@ Future<AsynchronousModifier::EnginePtr> ConstructSurfaceModifier::createEngine(c
 	// Get simulation cell.
 	const SimulationCellObject* simCell = input.expectObject<SimulationCellObject>();
 	if(simCell->is2D())
-		throwException(tr("The construct surface mesh modifier does not support 2d simulation cells."));
+		throw Exception(tr("The construct surface mesh modifier does not support 2d simulation cells."));
 
 	// Collect the set of particle properties that should be transferred over to the surface mesh vertices.
 	std::vector<ConstPropertyPtr> particleProperties;

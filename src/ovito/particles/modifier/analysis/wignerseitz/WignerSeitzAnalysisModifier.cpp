@@ -59,7 +59,7 @@ Future<AsynchronousModifier::EnginePtr> WignerSeitzAnalysisModifier::createEngin
 	// Get the reference particle position.
 	const ParticlesObject* refParticles = referenceState.getObject<ParticlesObject>();
 	if(!refParticles)
-		throwException(tr("Reference configuration does not contain any particles."));
+		throw Exception(tr("Reference configuration does not contain any particles."));
 	refParticles->verifyIntegrity();
 	const PropertyObject* refPosProperty = refParticles->expectProperty(ParticlesObject::PositionProperty);
 
@@ -67,15 +67,15 @@ Future<AsynchronousModifier::EnginePtr> WignerSeitzAnalysisModifier::createEngin
 	const SimulationCellObject* inputCell = input.expectObject<SimulationCellObject>();
 	const SimulationCellObject* refCell = referenceState.getObject<SimulationCellObject>();
 	if(!refCell)
-		throwException(tr("Reference configuration has no simulation cell."));
+		throw Exception(tr("Reference configuration has no simulation cell."));
 
 	// Validate simulation cells.
 	if(inputCell->is2D())
-		throwException(tr("Wigner-Seitz analysis is not supported for 2d systems."));
+		throw Exception(tr("Wigner-Seitz analysis is not supported for 2d systems."));
 	if(inputCell->volume3D() < FLOATTYPE_EPSILON)
-		throwException(tr("Simulation cell is degenerate in the current configuration."));
+		throw Exception(tr("Simulation cell is degenerate in the current configuration."));
 	if(refCell->volume3D() < FLOATTYPE_EPSILON)
-		throwException(tr("Simulation cell is degenerate in the reference configuration."));
+		throw Exception(tr("Simulation cell is degenerate in the reference configuration."));
 
 	// Get the particle types of the current configuration.
 	const PropertyObject* typeProperty = nullptr;
@@ -266,7 +266,7 @@ void WignerSeitzAnalysisModifier::WignerSeitzAnalysisEngine::applyResults(const 
 {
 	const ParticlesObject* refParticles = referenceState().getObject<ParticlesObject>();
 	if(!refParticles)
-		request.modApp()->throwException(tr("This modifier cannot be evaluated, because the reference configuration does not contain any particles."));
+		throw Exception(tr("This modifier cannot be evaluated, because the reference configuration does not contain any particles."));
 
 	if(!siteTypes()) {
 		// Replace complete particles set with the reference configuration.
@@ -278,7 +278,7 @@ void WignerSeitzAnalysisModifier::WignerSeitzAnalysisEngine::applyResults(const 
 
 	ParticlesObject* particles = state.expectMutableObject<ParticlesObject>();
 	if(occupancyNumbers()->size() != particles->elementCount())
-		request.modApp()->throwException(tr("Cached modifier results are obsolete, because the number of input particles has changed."));
+		throw Exception(tr("Cached modifier results are obsolete, because the number of input particles has changed."));
 	const PropertyObject* posProperty = particles->expectProperty(ParticlesObject::PositionProperty);
 
 	particles->createProperty(occupancyNumbers());

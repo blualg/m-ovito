@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -33,12 +33,12 @@ namespace Ovito {
 UnitsManager::UnitsManager(DataSet* dataset) : _dataset(dataset)
 {
 	// Create standard unit objects.
-	_units[&FloatParameterUnit::staticMetaObject] = _floatIdentityUnit = new FloatParameterUnit(this, dataset);
-	_units[&IntegerParameterUnit::staticMetaObject] = _integerIdentityUnit = new IntegerParameterUnit(this, dataset);
-	_units[&TimeParameterUnit::staticMetaObject] = _timeUnit = new TimeParameterUnit(this, dataset);
-	_units[&PercentParameterUnit::staticMetaObject] = _percentUnit = new PercentParameterUnit(this, dataset);
-	_units[&AngleParameterUnit::staticMetaObject] = _angleUnit = new AngleParameterUnit(this, dataset);
-	_units[&WorldParameterUnit::staticMetaObject] = _worldUnit = new WorldParameterUnit(this, dataset);
+	_units[&FloatParameterUnit::staticMetaObject] = _floatIdentityUnit = new FloatParameterUnit(this);
+	_units[&IntegerParameterUnit::staticMetaObject] = _integerIdentityUnit = new IntegerParameterUnit(this);
+	_units[&TimeParameterUnit::staticMetaObject] = _timeUnit = new TimeParameterUnit(this);
+	_units[&PercentParameterUnit::staticMetaObject] = _percentUnit = new PercentParameterUnit(this);
+	_units[&AngleParameterUnit::staticMetaObject] = _angleUnit = new AngleParameterUnit(this);
+	_units[&WorldParameterUnit::staticMetaObject] = _worldUnit = new WorldParameterUnit(this);
 }
 
 /******************************************************************************
@@ -68,7 +68,7 @@ FloatType FloatParameterUnit::parseString(const QString& valueString)
 	bool ok;
 	value = valueString.toDouble(&ok);
 	if(!ok)
-		dataset()->throwException(tr("Invalid floating-point value: %1").arg(valueString));
+		throw Exception(tr("Invalid floating-point value: %1").arg(valueString));
 	return (FloatType)value;
 }
 
@@ -113,7 +113,7 @@ FloatType IntegerParameterUnit::parseString(const QString& valueString)
 	bool ok;
 	value = valueString.toInt(&ok);
 	if(!ok)
-		dataset()->throwException(tr("Invalid integer value: %1").arg(valueString));
+		throw Exception(tr("Invalid integer value: %1").arg(valueString));
 	return (FloatType)value;
 }
 
@@ -134,21 +134,15 @@ QString PercentParameterUnit::formatValue(FloatType value)
 }
 
 /******************************************************************************
-* Constructor.
-******************************************************************************/
-TimeParameterUnit::TimeParameterUnit(QObject* parent, DataSet* dataset) : IntegerParameterUnit(parent, dataset)
-{
-	connect(dataset, &DataSet::animationSettingsReplaced, this, &TimeParameterUnit::onAnimationSettingsReplaced);
-	_animSettings = dataset->animationSettings();
-}
-
-/******************************************************************************
 * Converts the given string to a time value.
 ******************************************************************************/
 FloatType TimeParameterUnit::parseString(const QString& valueString)
 {
-	if(!_animSettings) return 0;
-	return _animSettings->stringToTime(valueString);
+	bool ok;
+	int frame = valueString.toInt(&ok);
+	if(!ok)
+		throw Exception(tr("Invalid frame number format: %1").arg(valueString));
+	return AnimationTime::fromFrame(frame).ticks();
 }
 
 /******************************************************************************
@@ -156,8 +150,7 @@ FloatType TimeParameterUnit::parseString(const QString& valueString)
 ******************************************************************************/
 QString TimeParameterUnit::formatValue(FloatType value)
 {
-	if(!_animSettings) return QString();
-	return _animSettings->timeToString((TimePoint)value);
+	return QString::number(AnimationTime(static_cast<AnimationTime::value_type>(value)).frame());
 }
 
 /******************************************************************************
@@ -166,11 +159,10 @@ QString TimeParameterUnit::formatValue(FloatType value)
 ******************************************************************************/
 FloatType TimeParameterUnit::stepSize(FloatType currentValue, bool upDirection)
 {
-	if(!_animSettings) return 0;
 	if(upDirection)
-		return std::ceil((currentValue + FloatType(1)) / _animSettings->ticksPerFrame()) * _animSettings->ticksPerFrame() - currentValue;
+		return std::ceil((currentValue + FloatType(1)) / AnimationTime::TicksPerFrame) * AnimationTime::TicksPerFrame - currentValue;
 	else
-		return currentValue - std::floor((currentValue - FloatType(1)) / _animSettings->ticksPerFrame()) * _animSettings->ticksPerFrame();
+		return currentValue - std::floor((currentValue - FloatType(1)) / AnimationTime::TicksPerFrame) * AnimationTime::TicksPerFrame;
 }
 
 /******************************************************************************
@@ -179,24 +171,7 @@ FloatType TimeParameterUnit::stepSize(FloatType currentValue, bool upDirection)
 ******************************************************************************/
 FloatType TimeParameterUnit::roundValue(FloatType value)
 {
-	if(!_animSettings) return value;
-	return std::round(value / _animSettings->ticksPerFrame()) * _animSettings->ticksPerFrame();
-}
-
-/******************************************************************************
-* This is called whenever the current animation settings of the dataset have
-* been replaced by new ones.
-******************************************************************************/
-void TimeParameterUnit::onAnimationSettingsReplaced(AnimationSettings* newAnimationSettings)
-{
-	disconnect(_speedChangedConnection);
-	disconnect(_timeFormatChangedConnection);
-	_animSettings = newAnimationSettings;
-	if(newAnimationSettings) {
-		_speedChangedConnection = connect(newAnimationSettings, &AnimationSettings::speedChanged, this, &TimeParameterUnit::formatChanged);
-		_timeFormatChangedConnection = connect(newAnimationSettings, &AnimationSettings::timeFormatChanged, this, &TimeParameterUnit::formatChanged);
-	}
-	Q_EMIT formatChanged();
+	return std::round(value / AnimationTime::TicksPerFrame) * AnimationTime::TicksPerFrame;
 }
 
 }	// End of namespace

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -42,15 +42,6 @@ class OVITO_CORE_EXPORT ViewportConfiguration : public RefTarget
 	Q_PROPERTY(Ovito::Viewport* activeViewport READ activeViewport WRITE setActiveViewport NOTIFY activeViewportChanged)
 	Q_PROPERTY(Ovito::Viewport* maximizedViewport READ maximizedViewport WRITE setMaximizedViewport NOTIFY maximizedViewportChanged)
 #endif
-
-public:
-
-	enum OrbitCenterMode {
-		ORBIT_SELECTION_CENTER,		///< Take the center of mass of the current selection as orbit center.
-									///< If there is no selection, use scene bounding box.
-		ORBIT_USER_DEFINED			///< Use the orbit center set by the user.
-	};
-	Q_ENUM(OrbitCenterMode);
 
 public:
 
@@ -105,19 +96,6 @@ public:
 
 public Q_SLOTS:
 
-	/// \brief Sets the active viewport.
-	/// \param vp The viewport to be made active.
-	void setActiveViewportSlot(Viewport* vp) {
-		setActiveViewport(vp);
-	}
-
-	/// \brief Maximizes a viewport.
-	/// \param vp The viewport to be maximized or \c NULL to restore the currently maximized viewport to
-	///           its original state.
-	void setMaximizedViewportSlot(Viewport* vp) {
-		setMaximizedViewport(vp);
-	}
-
 	/// \brief Zooms all viewports to the extents of the currently selected nodes.
 	void zoomToSelectionExtents();
 
@@ -149,9 +127,6 @@ Q_SIGNALS:
 	/// This signal is emitted when one of the viewports has been maximized.
 	void maximizedViewportChanged(Viewport* maximizedViewport);
 
-	/// This signal is emitted when the camera orbit center haa changed.
-	void cameraOrbitCenterChanged();
-
 	/// This signal is emitted whenever the updating of viewports is resumed.
 	void viewportUpdateResumed();
 
@@ -162,9 +137,6 @@ protected:
 
 	/// Is called when the value of a reference field of this RefMaker changes.
 	virtual void referenceReplaced(const PropertyFieldDescriptor* field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex) override;
-
-	/// Is called when the value of a property of this object has changed.
-	virtual void propertyChanged(const PropertyFieldDescriptor* field) override;
 
 	/// Is called when a RefTarget referenced by this object has generated an event.
 	virtual bool referenceEvent(RefTarget* source, const ReferenceEvent& event) override;
@@ -177,7 +149,7 @@ private:
 	/// Rebuilds the linear list of all viewports that are part of the current viewport layout tree. 
 	void updateListOfViewports();
 
-	/// The list of all viewports which are automatically refreshed when the scene changes.
+	/// List of all viewports which get automatically refreshed whenever their scene changes.
 	DECLARE_VECTOR_REFERENCE_FIELD_FLAGS(Viewport*, viewports, PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_WEAK_REF);
 
 	/// The active viewport. May be null.
@@ -185,12 +157,6 @@ private:
 
 	/// The maximized viewport if any.
 	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(Viewport*, maximizedViewport, setMaximizedViewport, PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_WEAK_REF);
-
-	/// Controls around which point the viewport camera should orbit.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(OrbitCenterMode, orbitCenterMode, setOrbitCenterMode, PROPERTY_FIELD_NO_UNDO);
-
-	/// Position of the orbiting center picked by the user.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(Point3, userOrbitCenter, setUserOrbitCenter, PROPERTY_FIELD_NO_UNDO);
 
 	/// The viewport layout tree's root node.
 	DECLARE_MODIFIABLE_REFERENCE_FIELD(OORef<ViewportLayoutCell>, layoutRootCell, setLayoutRootCell);
@@ -202,13 +168,8 @@ private:
 	bool _viewportsNeedUpdate = false;
 };
 
-
 /**
- * \brief Small helper class that suspends viewport redrawing while it
- * exists.
- *
- * The constructor of this class calls ViewportConfiguration::suspendViewportUpdates() and
- * the destructor calls ViewportConfiguration::resumeViewportUpdates().
+ * \brief RAII helper class that suspends viewport redrawing while it exists.
  *
  * Use this to make your code exception-safe.
  * Just create an instance of this class on the stack to suspend viewport updates
@@ -217,11 +178,11 @@ private:
 class OVITO_CORE_EXPORT ViewportSuspender 
 {
 public:
-	ViewportSuspender(ViewportConfiguration* vpconf) noexcept : _vpconf(*vpconf) { _vpconf.suspendViewportUpdates(); }
-	ViewportSuspender(RefMaker* object) noexcept;
-	~ViewportSuspender() { _vpconf.resumeViewportUpdates(); }
+//	ViewportSuspender(ViewportConfiguration* vpconf) noexcept : _vpconf(*vpconf) { _vpconf.suspendViewportUpdates(); }
+	ViewportSuspender(UserInterface& userInterface) noexcept;
+//	~ViewportSuspender() { _vpconf.resumeViewportUpdates(); }
 private:
-	ViewportConfiguration& _vpconf;
+//	ViewportConfiguration& _vpconf;
 };
 
 }	// End of namespace
