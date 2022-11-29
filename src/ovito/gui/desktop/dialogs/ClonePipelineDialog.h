@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -44,7 +44,7 @@ public:
 	};
 
 	/// Constructor.
-	ClonePipelineDialog(PipelineSceneNode* node, QWidget* parentWindow = nullptr);
+	ClonePipelineDialog(MainWindow& mainWindow, PipelineSceneNode* node, QWidget* parentWindow = nullptr);
 
 private Q_SLOTS:
 
@@ -78,6 +78,9 @@ private:
 		void setCloneMode(CloneMode mode) { return actionGroup->actions()[mode]->setChecked(true); }
 		bool isModifier() const { return !modApps.empty(); }
 	};
+
+	/// The parent window.
+	MainWindow& _mainWindow; 
 
 	/// The graphics scene for the pipeline layout.
 	QGraphicsScene _pipelineScene;

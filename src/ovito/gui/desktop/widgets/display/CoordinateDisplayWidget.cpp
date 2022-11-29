@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2013 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -22,8 +22,7 @@
 
 #include <ovito/gui/desktop/GUI.h>
 #include <ovito/gui/desktop/widgets/general/SpinnerWidget.h>
-#include <ovito/core/dataset/DataSet.h>
-#include <ovito/core/dataset/DataSetContainer.h>
+#include <ovito/gui/desktop/mainwin/MainWindow.h>
 #include <ovito/core/dataset/UndoStack.h>
 #include <ovito/core/viewport/ViewportConfiguration.h>
 #include "CoordinateDisplayWidget.h"
@@ -33,9 +32,8 @@ namespace Ovito {
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-CoordinateDisplayWidget::CoordinateDisplayWidget(DataSetContainer& datasetContainer, QWidget* parent) : QFrame(parent), _datasetContainer(datasetContainer)
+CoordinateDisplayWidget::CoordinateDisplayWidget(MainWindow& mainWindow, QWidget* parent) : QFrame(parent), _mainWindow(mainWindow)
 {
-	//setFrameStyle(QFrame::Panel | QFrame::Sunken);
 	QHBoxLayout* layout = new QHBoxLayout(this);
 	layout->setContentsMargins(2,0,2,0);
 	layout->setSpacing(0);
@@ -125,22 +123,20 @@ void CoordinateDisplayWidget::deactivate()
 ******************************************************************************/
 void CoordinateDisplayWidget::onSpinnerValueChanged()
 {
-	if(DataSet* dataset = _datasetContainer.currentSet()) {
-		int component;
-		if(sender() == _spinners[0]) component = 0;
-		else if(sender() == _spinners[1]) component = 1;
-		else if(sender() == _spinners[2]) component = 2;
-		else return;
-		ViewportSuspender noVPUpdate(dataset->viewportConfig());
-		if(!dataset->undoStack().isRecording()) {
-			UndoableTransaction transaction(dataset->undoStack(), _undoOperationName);
-			Q_EMIT valueEntered(component, _spinners[component]->floatValue());
-			transaction.commit();
-		}
-		else {
-			dataset->undoStack().resetCurrentCompoundOperation();
-			Q_EMIT valueEntered(component, _spinners[component]->floatValue());
-		}
+	int component;
+	if(sender() == _spinners[0]) component = 0;
+	else if(sender() == _spinners[1]) component = 1;
+	else if(sender() == _spinners[2]) component = 2;
+	else return;
+	ViewportSuspender noVPUpdate(_mainWindow);
+	if(!_mainWindow.undoStack()->isRecording()) {
+		UndoableTransaction transaction(_mainWindow, _undoOperationName);
+		Q_EMIT valueEntered(component, _spinners[component]->floatValue());
+		transaction.commit();
+	}
+	else {
+		_mainWindow.undoStack()->resetCurrentCompoundOperation();
+		Q_EMIT valueEntered(component, _spinners[component]->floatValue());
 	}
 }
 
@@ -149,9 +145,7 @@ void CoordinateDisplayWidget::onSpinnerValueChanged()
 ******************************************************************************/
 void CoordinateDisplayWidget::onSpinnerDragStart()
 {
-	if(DataSet* dataset = _datasetContainer.currentSet()) {
-		dataset->undoStack().beginCompoundOperation(_undoOperationName);
-	}
+	_mainWindow.undoStack()->beginCompoundOperation(_undoOperationName);
 }
 
 /******************************************************************************
@@ -159,9 +153,7 @@ void CoordinateDisplayWidget::onSpinnerDragStart()
 ******************************************************************************/
 void CoordinateDisplayWidget::onSpinnerDragStop()
 {
-	if(DataSet* dataset = _datasetContainer.currentSet()) {
-		dataset->undoStack().endCompoundOperation();
-	}
+	_mainWindow.undoStack()->endCompoundOperation();
 }
 
 /******************************************************************************
@@ -169,9 +161,7 @@ void CoordinateDisplayWidget::onSpinnerDragStop()
 ******************************************************************************/
 void CoordinateDisplayWidget::onSpinnerDragAbort()
 {
-	if(DataSet* dataset = _datasetContainer.currentSet()) {
-		dataset->undoStack().endCompoundOperation(false);
-	}
+	_mainWindow.undoStack()->endCompoundOperation(false);
 }
 
 }	// End of namespace

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -63,9 +63,9 @@ void Vector3ParameterUI::updatePropertyValue()
 		try {
 			if(isReferenceFieldUI()) {
 				if(Controller* ctrl = dynamic_object_cast<Controller>(parameterObject())) {
-					Vector3 val = ctrl->currentVector3Value();
+					Vector3 val = ctrl->getVector3Value(currentAnimationTime().value_or(AnimationTime(0)));
 					val[_component] = spinner()->floatValue();
-					ctrl->setCurrentVector3Value(val);
+					ctrl->setVector3Value(currentAnimationTime().value_or(AnimationTime(0)), val);
 				}
 			}
 			else if(isQtPropertyUI()) {
@@ -115,7 +115,7 @@ void Vector3ParameterUI::updateUI()
 	if(editObject() && spinner() && !spinner()->isDragging()) {
 		if(isReferenceFieldUI()) {
 			if(Controller* ctrl = dynamic_object_cast<Controller>(parameterObject())) {
-				spinner()->setFloatValue(ctrl->currentVector3Value()[_component]);
+				spinner()->setFloatValue(ctrl->getVector3Value(currentAnimationTime().value_or(AnimationTime(0)))[_component]);
 			}
 		}
 		else {

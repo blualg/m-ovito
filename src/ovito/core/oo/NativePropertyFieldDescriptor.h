@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -25,6 +25,7 @@
 
 #include <ovito/core/Core.h>
 #include <ovito/core/oo/ReferenceEvent.h>
+#include <ovito/core/utilities/units/UnitsManager.h>
 #include "PropertyFieldDescriptor.h"
 
 namespace Ovito {

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -80,8 +80,10 @@ void FileSourcePlaybackRateEditor::createUI(const RolloutInsertionParameters& ro
 	QPushButton* animSettingsBtn = new QPushButton(tr("Animation settings..."));
 	sublayout->addWidget(animSettingsBtn, 5, 2);
 	connect(animSettingsBtn, &QPushButton::clicked, this, [this]() {
-		AnimationSettingsDialog(dataset()->animationSettings(), container()->window()).exec();
-		updateInformation();
+		if(_animationSettings) {
+			AnimationSettingsDialog(mainWindow(), _animationSettings, container()->window()).exec();
+			updateInformation();
+		}
 	});
 
 	connect(_trajectoryModeBtn, &QRadioButton::toggled, playbackSpeedNumeratorUI, &IntegerParameterUI::setEnabled);
@@ -140,6 +142,12 @@ void FileSourcePlaybackRateEditor::createUI(const RolloutInsertionParameters& ro
 		disconnect(con1);
 		disconnect(con2);
 
+		// Get the animation settings object from the scene.
+		if(Scene* scene = mainWindow().activeScene())
+			_animationSettings = scene->animationSettings();
+		else
+			_animationSettings.reset();
+
 		// Update displayed information.
 		updateFramesList();
 		updateInformation();
@@ -148,7 +156,7 @@ void FileSourcePlaybackRateEditor::createUI(const RolloutInsertionParameters& ro
 		con1 = editObject ? connect(static_object_cast<FileSource>(editObject), &FileSource::framesListChanged, this, &FileSourcePlaybackRateEditor::updateFramesList) : QMetaObject::Connection();
 
 		// Update the information display when animation interval changes.
-		con2 = editObject ? connect(editObject->dataset()->animationSettings(), &AnimationSettings::intervalChanged, this, &FileSourcePlaybackRateEditor::updateInformation) : QMetaObject::Connection();
+		con2 = _animationSettings ? connect(_animationSettings.get(), &AnimationSettings::intervalChanged, this, &FileSourcePlaybackRateEditor::updateInformation) : QMetaObject::Connection();
 	});
 
 	connect(this, &PropertiesEditor::contentsChanged, this, &FileSourcePlaybackRateEditor::updateInformation);
@@ -160,13 +168,12 @@ void FileSourcePlaybackRateEditor::createUI(const RolloutInsertionParameters& ro
 void FileSourcePlaybackRateEditor::updateInformation()
 {
 	FileSource* fileSource = static_object_cast<FileSource>(editObject());
-	if(!fileSource) return; 
+	if(!fileSource || !_animationSettings) return; 
 
 	_numTrajectoryFramesDisplay->setText(tr("%n frame(s)", nullptr, fileSource->frames().size()));
 
-	AnimationSettings* anim = fileSource->dataset()->animationSettings();
-	_numAnimationFramesDisplay->setText(tr("%n frame(s)", nullptr, anim->lastFrame() - anim->firstFrame() + 1) + 
-		(!anim->autoAdjustInterval() ? tr(" (fixed)") : QString()));
+	_numAnimationFramesDisplay->setText(tr("%n frame(s)", nullptr, _animationSettings->lastFrame() - _animationSettings->firstFrame() + 1) + 
+		(!_animationSettings->autoAdjustInterval() ? tr(" (fixed)") : QString()));
 
 	if(fileSource->restrictToFrame() < 0) {
 		_staticFrameModeBtn->setChecked(false);

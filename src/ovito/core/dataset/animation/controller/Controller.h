@@ -116,6 +116,15 @@ public:
 	/// \param[in,out] validityInterval This interval is reduced to the period during which the controller's value doesn't change.
 	virtual void getVector3Value(AnimationTime time, Vector3& result, TimeInterval& validityInterval) { result = Vector3::Zero(); OVITO_ASSERT_MSG(false, "Controller::getVector3Value()", "This method should be overridden."); }
 
+	/// \brief Queries a vector controller's value at a certain animation time.
+	/// \param[in] time The animation time at which the controller's value should be computed.
+	Vector3 getVector3Value(AnimationTime time) { 
+		TimeInterval iv;
+		Vector3 v;
+		getVector3Value(time, v, iv);
+		return v;
+	}
+
 	/// \brief Queries a Vector3 controller's value at a certain animation time as a color.
 	/// \param[in] time The animation time at which the controller's value should be computed.
 	/// \param[out] result This output variable takes the controller's values.
@@ -194,20 +203,6 @@ public:
 	/// \param[in,out] validityInterval This interval is reduced to the period during which the controller's value doesn't change.
 	virtual void applyTransformation(AnimationTime time, AffineTransformation& result, TimeInterval& validityInterval) { OVITO_ASSERT_MSG(false, "Controller::applyTransformation()", "This method should be overridden."); }
 
-#if 0 // TODO: Removed unused code
-	/// \brief Returns the float controller's value at the current animation time.
-	FloatType currentFloatValue();
-
-	/// \brief Returns the integers controller's value at the current animation time.
-	int currentIntValue();
-
-	/// \brief Returns the Vector3 controller's value at the current animation time.
-	Vector3 currentVector3Value();
-
-	/// \brief Returns the Color controller's value at the current animation time.
-	Color currentColorValue() { return Color(currentVector3Value()); }
-#endif
-
 	/// \brief Sets a float controller's value at the given animation time.
 	/// \param time The animation time at which to set the controller's value.
 	/// \param newValue The new value to be assigned to the controller.
@@ -258,31 +253,6 @@ public:
 	/// \param newValue The new value to be assigned to the controller.
 	/// \param isAbsolute Specifies whether the transformation is absolute or should be applied to the existing transformation.
 	virtual void setTransformationValue(AnimationTime time, const AffineTransformation& newValue, bool isAbsolute) { OVITO_ASSERT_MSG(false, "Controller::setTransformationValue()", "This method should be overridden."); }
-
-#if 0 // TODO: Removed unused code
-	/// \brief Sets the controller's value at the current animation time.
-	/// \param newValue The new value to be assigned to the controller.
-	void setCurrentFloatValue(FloatType newValue);
-
-	/// \brief Sets the controller's value at the current animation time.
-	/// \param newValue The new value to be assigned to the controller.
-	void setCurrentIntValue(int newValue);
-
-	/// \brief Sets the controller's value at the current animation time.
-	/// \param newValue The new value to be assigned to the controller.
-	void setCurrentVector3Value(const Vector3& newValue);
-
-	/// \brief Sets the controller's value at the current animation time.
-	/// \param newValue The new value to be assigned to the controller.
-	void setCurrentColorValue(const Color& newValue) {
-		if(sizeof(Color) == sizeof(Vector3)) {
-			setCurrentVector3Value(reinterpret_cast<const Vector3&>(newValue));
-		}
-		else {
-			setCurrentVector3Value(Vector3(newValue));
-		}
-	}
-#endif
 
 	/// \brief Adjusts the controller's value after a scene node has gotten a new parent node.
 	/// \param time The animation at which to change the controller's parent.

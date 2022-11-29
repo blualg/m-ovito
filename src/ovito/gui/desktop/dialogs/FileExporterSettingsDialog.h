@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2018 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -38,12 +38,13 @@ class OVITO_GUI_EXPORT FileExporterSettingsDialog : public QDialog
 public:
 
 	/// Constructor.
-	FileExporterSettingsDialog(MainWindow& mainWindow, FileExporter* exporter);
+	FileExporterSettingsDialog(MainWindow& mainWindow, Scene& scene, FileExporter* exporter);
 
 	virtual int exec() override {
 		// If there is no animation sequence (just a single frame), and if the exporter does not expose any other settings,
-		// then it is possible to skip showing the settings dialog altogether.
-		if(_skipDialog) return QDialog::Accepted;
+		// then we can skip showing the dialog box altogether.
+		if(_skipDialog) 
+			return QDialog::Accepted;
 		return QDialog::exec();
 	}
 

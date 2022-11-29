@@ -93,13 +93,12 @@ DataInspectorPanel::DataInspectorPanel(MainWindow& mainWindow) :
 	connect(_tabBar, &QTabBar::currentChanged, this, &DataInspectorPanel::onCurrentTabChanged);
 	connect(_appletContainer, &QStackedWidget::currentChanged, this, &DataInspectorPanel::onCurrentPageChanged);
 	connect(&datasetContainer(), &DataSetContainer::selectionChangeComplete, this, &DataInspectorPanel::onSceneSelectionChanged);
-	connect(&datasetContainer(), &GuiDataSetContainer::scenePreparationStarted, this, &DataInspectorPanel::onScenePreparationStarted);
-	connect(&datasetContainer(), &GuiDataSetContainer::scenePreparationFinished, this, &DataInspectorPanel::onScenePreparationFinished);
-	connect(&datasetContainer(), &DataSetContainer::timeChanged, this, &DataInspectorPanel::onScenePreparationStarted);
-	connect(&datasetContainer(), &DataSetContainer::timeChangeComplete, this, &DataInspectorPanel::onScenePreparationFinished);
-	connect(&_selectedNodeListener, &RefTargetListenerBase::notificationEvent, this, &DataInspectorPanel::onSceneNodeNotificationEvent);
+	connect(&datasetContainer(), &DataSetContainer::scenePreparationStarted, this, &DataInspectorPanel::onScenePreparationStarted);
+	connect(&datasetContainer(), &DataSetContainer::scenePreparationFinished, this, &DataInspectorPanel::onScenePreparationFinished);
+	connect(&datasetContainer(), &DataSetContainer::currentFrameChanged, this, &DataInspectorPanel::onScenePreparationStarted);
+	connect(&datasetContainer(), &DataSetContainer::currentFrameChangeComplete, this, &DataInspectorPanel::onScenePreparationFinished);
 
-	updateTabs(nullptr);
+	updateTabsList();
 }
 
 /******************************************************************************
@@ -160,17 +159,10 @@ void DataInspectorPanel::onSceneSelectionChanged(SelectionSet* selection)
 			if(selectedNode) break;
 		}
 	}
-	if(selectedNode != _selectedNodeListener.target()) {
-		_selectedNodeListener.setTarget(selectedNode);
+	if(selectedNode != _selectedPipeline) {
+		_selectedPipeline = selectedNode;
 		updateInspector();
 	}
-}
-
-/******************************************************************************
-* This is called whenever the selected scene node sends an event.
-******************************************************************************/
-void DataInspectorPanel::onSceneNodeNotificationEvent(RefTarget* source, const ReferenceEvent& event)
-{
 }
 
 /******************************************************************************
@@ -179,7 +171,7 @@ void DataInspectorPanel::onSceneNodeNotificationEvent(RefTarget* source, const R
 ******************************************************************************/
 void DataInspectorPanel::onScenePreparationStarted()
 {
-	_activityDelayTimer.start(400,  Qt::CoarseTimer, this);
+	_activityDelayTimer.start(400, Qt::CoarseTimer, this);
 }
 
 /******************************************************************************
@@ -213,20 +205,17 @@ void DataInspectorPanel::timerEvent(QTimerEvent* event)
 void DataInspectorPanel::resizeEvent(QResizeEvent* event)
 {
 	QWidget::resizeEvent(event);
-	bool isActive = (_appletContainer->height() > 0);
-	if(!_inspectorActive && isActive) {
+	bool isPanelOpen = (_appletContainer->height() > 0);
+	if(!_inspectorActive && isPanelOpen) {
 		_inspectorActive = true;
 		_expandCollapseButton->setIcon(_collapseIcon);
 		_expandCollapseButton->setToolTip(tr("Collapse"));
 		if(_activeAppletIndex >= 0 && _activeAppletIndex < _applets.size()) {
-			const PipelineFlowState& pipelineState = _selectedNodeListener.target() ?
-				_selectedNodeListener.target()->evaluatePipelineSynchronous(true) :
-				PipelineFlowState();
-			_applets[_activeAppletIndex]->updateDisplay(pipelineState, _selectedNodeListener.target());
+			_applets[_activeAppletIndex]->updateDisplay();
 		}
 		_appletContainer->setEnabled(true);
 	}
-	else if(_inspectorActive && !isActive) {
+	else if(_inspectorActive && !isPanelOpen) {
 		_inspectorActive = false;
 		_expandCollapseButton->setIcon(_expandIcon);
 		_expandCollapseButton->setToolTip(tr("Expand"));
@@ -243,17 +232,15 @@ void DataInspectorPanel::resizeEvent(QResizeEvent* event)
 void DataInspectorPanel::updateInspector()
 {
 	// Obtain the pipeline output of the currently selected scene node.
-	const PipelineFlowState& pipelineState = _selectedNodeListener.target() ?
-		_selectedNodeListener.target()->evaluatePipelineSynchronous(true) :
-		PipelineFlowState();
+	updatePipelineOutput();
 
-	// Update the list of displayed tabs.
-	updateTabs(pipelineState.data());
+	// Update the list of visible tabs.
+	updateTabsList();
 
-	// Update displayed content.
+	// Update content displayed by the current inpector tab page.
 	if(_inspectorActive) {
 		if(_activeAppletIndex >= 0 && _activeAppletIndex < _applets.size()) {
-			_applets[_activeAppletIndex]->updateDisplay(pipelineState, _selectedNodeListener.target());
+			_applets[_activeAppletIndex]->updateDisplay();
 		}
 	}
 }
@@ -261,10 +248,11 @@ void DataInspectorPanel::updateInspector()
 /******************************************************************************
 * Updates the list of visible tabs.
 ******************************************************************************/
-void DataInspectorPanel::updateTabs(const DataCollection* dataCollection)
+void DataInspectorPanel::updateTabsList()
 {
 	OVITO_ASSERT(_appletsToTabs.size() == _applets.size());
 	size_t numActiveApplets = 0;
+	const DataCollection* dataCollection = pipelineOutput().data();
 
 	// Remove tabs that have become inactive.
 	for(int appletIndex = _applets.size()-1; appletIndex >= 0; appletIndex--) {
@@ -314,6 +302,21 @@ void DataInspectorPanel::updateTabs(const DataCollection* dataCollection)
 }
 
 /******************************************************************************
+* Evaluates the selected pipeline to obtains its output state.
+******************************************************************************/
+bool DataInspectorPanel::updatePipelineOutput()
+{
+	if(selectedPipeline()) {
+		if(Scene* scene = mainWindow().activeScene()) {
+			_pipelineOutput = selectedPipeline()->evaluatePipelineSynchronous(scene->animationSettings()->currentTime(), true);
+			return true;
+		}
+	}
+	_pipelineOutput.reset();
+	return false;
+}
+
+/******************************************************************************
 * Is called when the user selects a new tab.
 ******************************************************************************/
 void DataInspectorPanel::onCurrentTabChanged(int tabIndex)
@@ -337,11 +340,9 @@ void DataInspectorPanel::onCurrentPageChanged(int index)
 	_activeAppletIndex = index;
 
 	if(_inspectorActive && _activeAppletIndex >= 0 && _activeAppletIndex < _applets.size()) {
-		// Obtain the pipeline output of the currently selected scene node.
-		const PipelineFlowState& pipelineState = _selectedNodeListener.target() ?
-			_selectedNodeListener.target()->evaluatePipelineSynchronous(true) :
-			PipelineFlowState();
-		_applets[_activeAppletIndex]->updateDisplay(pipelineState, _selectedNodeListener.target());
+		// Obtain the output of the currently selected pipeline and update the new tab page.
+		updatePipelineOutput();
+		_applets[_activeAppletIndex]->updateDisplay();
 	}
 }
 
@@ -350,21 +351,19 @@ void DataInspectorPanel::onCurrentPageChanged(int index)
 ******************************************************************************/
 bool DataInspectorPanel::selectDataObject(PipelineObject* dataSource, const QString& objectIdentifierHint, const QVariant& modeHint)
 {
-	if(!_selectedNodeListener.target())
+	// Obtain the output of the currently selected pipeline.
+	if(!updatePipelineOutput())
 		return false;
 
-	// Obtain the output of the currently selected pipeline.
-	const PipelineFlowState& pipelineState = _selectedNodeListener.target()->evaluatePipelineSynchronous(true);
-
 	// Update the list of displayed tabs.
-	updateTabs(pipelineState.data());
+	updateTabsList();
 
 	for(int appletIndex = 0; appletIndex < _applets.size(); appletIndex++) {
 		if(_appletsToTabs[appletIndex] == -1) continue;
 		DataInspectionApplet* applet = _applets[appletIndex];
 
 		// Update content of the tab.
-		applet->updateDisplay(pipelineState, _selectedNodeListener.target());
+		applet->updateDisplay();
 
 		// Check if this applet contains the requested data object.
 		if(applet->selectDataObject(dataSource, objectIdentifierHint, modeHint)) {

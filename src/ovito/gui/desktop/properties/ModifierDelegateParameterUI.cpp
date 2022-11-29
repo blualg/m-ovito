@@ -219,7 +219,7 @@ void ModifierDelegateParameterUI::updatePropertyValue()
 				if(DelegatingModifier* delegatingMod = dynamic_object_cast<DelegatingModifier>(mod)) {
 					if(delegatingMod->delegate() == nullptr || &delegatingMod->delegate()->getOOClass() != delegateType || delegatingMod->delegate()->inputDataObject() != ref) {
 						// Create the new delegate object.
-						OORef<ModifierDelegate> delegate = static_object_cast<ModifierDelegate>(delegateType->createInstance(mod->dataset()));
+						OORef<ModifierDelegate> delegate = static_object_cast<ModifierDelegate>(delegateType->createInstance());
 						// Set which input data object the delegate should operate on.
 						delegate->setInputDataObject(ref);
 						// Activate the new delegate.
@@ -229,7 +229,7 @@ void ModifierDelegateParameterUI::updatePropertyValue()
 				else if(AsynchronousDelegatingModifier* delegatingMod = dynamic_object_cast<AsynchronousDelegatingModifier>(mod)) {
 					if(delegatingMod->delegate() == nullptr || &delegatingMod->delegate()->getOOClass() != delegateType || delegatingMod->delegate()->inputDataObject() != ref) {
 						// Create the new delegate object.
-						OORef<ModifierDelegate> delegate = static_object_cast<ModifierDelegate>(delegateType->createInstance(mod->dataset()));
+						OORef<ModifierDelegate> delegate = static_object_cast<ModifierDelegate>(delegateType->createInstance());
 						// Set which input data object the delegate should operate on.
 						delegate->setInputDataObject(ref);
 						// Activate the new delegate.

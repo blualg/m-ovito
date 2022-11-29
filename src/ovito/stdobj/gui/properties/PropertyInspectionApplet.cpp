@@ -60,14 +60,14 @@ void PropertyInspectionApplet::createBaseWidgets()
 /******************************************************************************
 * Updates the contents displayed in the inspector.
 ******************************************************************************/
-void PropertyInspectionApplet::updateDisplay(const PipelineFlowState& state, PipelineSceneNode* pipeline)
+void PropertyInspectionApplet::updateDisplay()
 {
 	// Clear filter expression when a different scene node has been selected.
 	if(pipeline != currentPipeline()) {
 		_resetFilterAction->trigger();
 	}
 
-	DataInspectionApplet::updateDisplay(state, pipeline);
+	DataInspectionApplet::updateDisplay();
 }
 
 /******************************************************************************

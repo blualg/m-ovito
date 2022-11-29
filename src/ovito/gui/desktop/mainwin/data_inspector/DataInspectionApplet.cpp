@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -33,12 +33,36 @@ namespace Ovito {
 IMPLEMENT_OVITO_CLASS(DataInspectionApplet);
 
 /******************************************************************************
+* Returns the panel hosting this applet.
+******************************************************************************/
+DataInspectorPanel* DataInspectionApplet::inspectorPanel() const 
+{ 
+    OVITO_ASSERT(qobject_cast<DataInspectorPanel*>(parent()));
+    return static_cast<DataInspectorPanel*>(parent()); 
+}
+
+/******************************************************************************
 * Returns the main window this applet is embedded in.
 ******************************************************************************/
 MainWindow& DataInspectionApplet::mainWindow() const
 {
-    OVITO_ASSERT(qobject_cast<DataInspectorPanel*>(parent()));
-    return static_cast<DataInspectorPanel*>(parent())->mainWindow();
+    return inspectorPanel()->mainWindow();
+}
+
+/******************************************************************************
+* Returns the currently selected data pipeline in the scene.
+******************************************************************************/
+PipelineSceneNode* DataInspectionApplet::currentPipeline() const 
+{
+    return inspectorPanel()->selectedPipeline(); 
+}
+
+/******************************************************************************
+* Returns the current output of the data pipeline displayed in the applet.
+******************************************************************************/
+const PipelineFlowState& DataInspectionApplet::currentState() const 
+{
+    return inspectorPanel()->pipelineOutput(); 
 }
 
 /******************************************************************************
@@ -139,10 +163,8 @@ QListWidget* DataInspectionApplet::objectSelectionWidget()
 /******************************************************************************
 * Updates the contents displayed in the inspector.
 ******************************************************************************/
-void DataInspectionApplet::updateDisplay(const PipelineFlowState& state, PipelineSceneNode* pipeline)
+void DataInspectionApplet::updateDisplay()
 {
-	_pipelineNode = pipeline;
-	_pipelineState = state;
     updateDataObjectList();
 }
 

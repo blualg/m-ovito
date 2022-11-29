@@ -267,8 +267,8 @@ void GuiApplication::postStartupInitialization(MainThreadOperation& operation)
 		catch(const Exception& ex) {
 			ex.reportError();
 		}
-		if(datasetContainer.currentSet())
-			datasetContainer.currentSet()->undoStack().setClean();
+		if(operation.userInterface().undoStack())
+			operation.userInterface().undoStack()->clear();
 	}
 
 	StandaloneApplication::postStartupInitialization(operation);
@@ -304,7 +304,7 @@ bool GuiApplication::eventFilter(QObject* watched, QEvent* event)
 				}
 				else {
 					mainWindow->datasetContainer().importFiles({openEvent->url()}, MainThreadOperation::create(*mainWindow, true));
-					mainWindow->datasetContainer().currentSet()->undoStack().setClean();
+					mainWindow->undoStack()->clear();
 				}
 			}
 		}

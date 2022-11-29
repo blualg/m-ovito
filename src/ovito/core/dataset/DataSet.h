@@ -27,24 +27,21 @@
 #include <ovito/core/oo/RefTarget.h>
 #include <ovito/core/oo/PropertyField.h>
 #include <ovito/core/dataset/animation/TimeInterval.h>
-#include <ovito/core/dataset/animation/AnimationSettings.h>
-#include <ovito/core/dataset/scene/Scene.h>
 #include <ovito/core/rendering/RenderSettings.h>
 #include <ovito/core/viewport/ViewportConfiguration.h>
-#include <ovito/core/utilities/units/UnitsManager.h>
 #include <ovito/core/utilities/MixedKeyCache.h>
 
 namespace Ovito {
 
 /**
- * \brief Stores the current program state including the three-dimensional scene, viewport configuration,
+ * \brief Stores the current program state including the list of viewports, the scene, viewport configuration,
  *        render settings etc.
  *
  * A DataSet represents the state of the current user session.
  * It can be completely saved to a file (.ovito suffix) and loaded again at a later time.
  *
  * The DataSet class consists of various sub-objects that store different aspects. The
- * ViewportConfiguration object returned by viewportConfig(), for example, stores the list
+ * ViewportConfiguration object returned by viewportConfig(), for example, holds the list
  * of viewports.
  */
 class OVITO_CORE_EXPORT DataSet final : public RefTarget
@@ -76,16 +73,8 @@ public:
 		}
 	}
 
-	/// \brief Returns the manager of ParameterUnit objects.
-	UnitsManager& unitsManager() { return _unitsManager; }
-
 	/// \brief Returns the container this dataset belongs to.
 	DataSetContainer* container() const;
-
-#if 0 // TODO: Remove unused code
-	/// Returns the abstract user interface this dataset was opened in.
-	UserInterface& userInterface() const;
-#endif
 
 	/// \brief Rescales the animation keys of all controllers in the scene.
 	/// \param oldAnimationInterval The old animation interval, which will be mapped to the new animation interval.
@@ -135,12 +124,6 @@ public:
 	/// Provides access to the global data cache used by visualzation elements.
 	MixedKeyCache& visCache() { return _visCache; }
 
-	/// Alias for sceneRoot() getter.
-	Scene* scene() const { return sceneRoot(); }
-
-	/// Indicates whether the dataset is the active one in the current program session.
-	bool isActive() const { return !_container.isNull(); }
-
 Q_SIGNALS:
 
 	/// \brief This signal is emitted whenever the current viewport configuration of this dataset
@@ -148,24 +131,10 @@ Q_SIGNALS:
 	/// \note This signal is NOT emitted when parameters of the current viewport configuration change.
     void viewportConfigReplaced(ViewportConfiguration* newViewportConfiguration);
 
-	/// \brief This signal is emitted whenever the current animation settings of this dataset
-	///        have been replaced by new ones.
-	/// \note This signal is NOT emitted when parameters of the current animation settings object change.
-    void animationSettingsReplaced(AnimationSettings* newAnimationSettings);
-
-	/// \brief This signal is emitted whenever the current scene of this dataset
-	///        has been replaced by a new one.
-	/// \note This signal is NOT emitted when the contents of the current scene change.
-    void sceneReplaced(Scene* newScene);
-
 	/// \brief This signal is emitted whenever the current render settings of this dataset
 	///        have been replaced by new ones.
 	/// \note This signal is NOT emitted when parameters of the current render settings object change.
     void renderSettingsReplaced(RenderSettings* newRenderSettings);
-
-	/// \brief This signal is emitted whenever a different scene of this dataset becomes the active one.
-	/// \note This signal is NOT emitted when the contents of the active scene change.
-    void activeSceneChanged(Scene* activeScene);
 
 	/// \brief This signal is emitted whenever the dataset has been saved under a new file name.
     void filePathChanged(const QString& filePath);
@@ -185,7 +154,7 @@ private:
 			FrameBuffer& frameBuffer, const std::vector<std::pair<Viewport*, QRectF>>& viewportLayout, VideoEncoder* videoEncoder, MainThreadOperation& operation);
 
 	/// Returns a viewport configuration that is used as template for new scenes.
-	OORef<ViewportConfiguration> createDefaultViewportConfiguration(ObjectCreationParams params);
+	static OORef<ViewportConfiguration> createDefaultViewportConfiguration(ObjectCreationParams params);
 
 private Q_SLOTS:
 
@@ -197,31 +166,16 @@ private:
 	/// The configuration of the interactive viewports in the OVITO desktop application.
 	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<ViewportConfiguration>, viewportConfig, setViewportConfig, PROPERTY_FIELD_NO_CHANGE_MESSAGE | PROPERTY_FIELD_ALWAYS_DEEP_COPY | PROPERTY_FIELD_MEMORIZE);
 
-	/// The active scene, which is shown in the viewport of the OVITO desktop application.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<Scene>, sceneRoot, setSceneRoot, PROPERTY_FIELD_NO_CHANGE_MESSAGE | PROPERTY_FIELD_ALWAYS_DEEP_COPY | PROPERTY_FIELD_MEMORIZE);
-
-	/// The active animation settings of the OVITO desktop application.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<AnimationSettings>, animationSettings, setAnimationSettings, PROPERTY_FIELD_NO_CHANGE_MESSAGE | PROPERTY_FIELD_ALWAYS_DEEP_COPY | PROPERTY_FIELD_MEMORIZE);
-
 	/// The settings for rendering an output image of the scene.
 	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<RenderSettings>, renderSettings, setRenderSettings, PROPERTY_FIELD_NO_CHANGE_MESSAGE | PROPERTY_FIELD_ALWAYS_DEEP_COPY | PROPERTY_FIELD_MEMORIZE);
 
 	/// The file path this DataSet has been saved to.
 	QString _filePath;
 
-	/// The manager of ParameterUnit objects.
-	UnitsManager _unitsManager;
-
-	/// This signal/slot connection updates the viewports when the animation time changes.
-	QMetaObject::Connection _updateViewportOnTimeChangeConnection;
-
-	/// Connection to the ViewportConfiguration::activeViewportChanged() signal.
-	QMetaObject::Connection _activeViewportChangedConnection;
-
 	/// The DataSetContainer which currently hosts this DataSet.
 	QPointer<DataSetContainer> _container;
 
-	/// Data cache used by visualzation elements.
+	/// Data cache used by visualization elements to store rendering primitives.
 	MixedKeyCache _visCache;
 
 	friend class DataSetContainer;

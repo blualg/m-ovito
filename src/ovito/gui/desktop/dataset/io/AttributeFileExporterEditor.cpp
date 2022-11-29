@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2018 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -118,7 +118,7 @@ void AttributeFileExporterEditor::updateAttributesList()
 	try {
 		QVariantMap attrMap;
 		ProgressDialog progressDialog(container(), mainWindow());
-		if(!exporter->getAttributesMap(exporter->dataset()->animationSettings()->time(), attrMap, progressDialog))
+		if(!exporter->getAttributesMap(exporter->sceneToExport()->animationSettings()->currentFrame(), attrMap, progressDialog))
 			throw Exception(tr("Operation has been canceled by the user."));
 		for(const QString& attrName : attrMap.keys())
 			insertAttributeItem(attrName, exporter->attributesToExport());

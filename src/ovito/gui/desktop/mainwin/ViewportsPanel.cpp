@@ -23,6 +23,7 @@
 #include <ovito/gui/desktop/GUI.h>
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
 #include <ovito/gui/desktop/viewport/ViewportMenu.h>
+#include <ovito/gui/base/actions/ActionManager.h>
 #include <ovito/gui/base/viewport/BaseViewportWindow.h>
 #include <ovito/gui/base/viewport/ViewportInputMode.h>
 #include <ovito/gui/base/viewport/ViewportInputManager.h>
@@ -42,10 +43,12 @@ ViewportsPanel::ViewportsPanel(MainWindow& mainWindow) : _mainWindow(mainWindow)
 {
 	// Activate the new viewport layout as soon as a new state file is loaded.
 	connect(&mainWindow.datasetContainer(), &DataSetContainer::viewportConfigReplaced, this, &ViewportsPanel::onViewportConfigurationReplaced);
-	connect(&mainWindow.datasetContainer(), &DataSetContainer::animationSettingsReplaced, this, &ViewportsPanel::onAnimationSettingsReplaced);
 
 	// Track viewport input mode changes.
 	connect(mainWindow.viewportInputManager(), &ViewportInputManager::inputModeChanged, this, &ViewportsPanel::onInputModeChanged);
+
+	// Repaint when auto-key animation mode is toggled.
+	connect(mainWindow.actionManager()->getAction(ACTION_AUTO_KEY_MODE_TOGGLE), &QAction::toggled, this, qOverload<>(&ViewportsPanel::update));
 
 	// Prevent the viewports from collpasing and disappearing completely. 
 	setMinimumSize(40, 40);
@@ -98,7 +101,7 @@ QWidget* ViewportsPanel::viewportWidget(Viewport* vp)
 	// Create the viewport window if it hasn't been created for this viewport yet.
 	if(!vp->window() && !_graphicsInitializationErrorOccurred) {
 		try {
-			BaseViewportWindow* viewportWindow = createViewportWindow(vp, _mainWindow, this);
+			BaseViewportWindow* viewportWindow = createViewportWindow(*vp, _mainWindow, this);
 			if(!viewportWindow || !viewportWindow->widget())
 				throw Exception(tr("Failed to create viewport window or there is no realtime graphics implementation available. Please check your OVITO installation and the graphics capabilities of your system."));
 			if(_viewportConfig->activeViewport() == vp)
@@ -179,20 +182,6 @@ void ViewportsPanel::recreateViewportWindows()
 }
 
 /******************************************************************************
-* This is called when new animation settings have been loaded.
-******************************************************************************/
-void ViewportsPanel::onAnimationSettingsReplaced(AnimationSettings* newAnimationSettings)
-{
-	disconnect(_autoKeyModeChangedConnection);
-	_animSettings = newAnimationSettings;
-
-	if(newAnimationSettings) {
-		_autoKeyModeChangedConnection = connect(newAnimationSettings, &AnimationSettings::autoKeyModeChanged, this, (void (ViewportsPanel::*)())&ViewportsPanel::update);
-	}
-	update();
-}
-
-/******************************************************************************
 * This is called when the current viewport input mode has changed.
 ******************************************************************************/
 void ViewportsPanel::onInputModeChanged(ViewportInputMode* oldMode, ViewportInputMode* newMode)
@@ -245,7 +234,7 @@ void ViewportsPanel::paintEvent(QPaintEvent* event)
 	if(_hoveredSplitter == -1 || !_highlightSplitter) {
 		// Choose a color for the viewport border.
 		Color borderColor;
-		if(_animSettings && _animSettings->autoKeyMode())
+		if(_mainWindow.actionManager()->getAction(ACTION_AUTO_KEY_MODE_TOGGLE)->isChecked())
 			borderColor = Viewport::viewportColor(ViewportSettings::COLOR_ANIMATION_MODE);
 		else
 			borderColor = Viewport::viewportColor(ViewportSettings::COLOR_ACTIVE_VIEWPORT_BORDER);
@@ -424,7 +413,7 @@ void ViewportsPanel::mousePressEvent(QMouseEvent* event)
 			if(region.area.contains(event->pos())) {
 				_draggedSplitter = index;
 				_hoveredSplitter = index;
-				_viewportConfig->dataset()->undoStack().beginCompoundOperation(tr("Resize viewports"));
+				_mainWindow.undoStack()->beginCompoundOperation(tr("Resize viewports"));
 				_dragStartPos = event->pos();
 				update(region.area);
 				break;
@@ -443,7 +432,7 @@ void ViewportsPanel::mouseMoveEvent(QMouseEvent* event)
 		// Temporarily block the viewportLayoutChanged() signal from the ViewportConfiguration to avoid
 		// an unnecessary relayout of the viewport windows while resetting the undo operation.
 		QSignalBlocker signalBlocker(_viewportConfig);
-		_viewportConfig->dataset()->undoStack().resetCurrentCompoundOperation();
+		_mainWindow.undoStack()->resetCurrentCompoundOperation();
 		signalBlocker.unblock();
 
 		const SplitterRectangle& splitter = _splitterRegions[_draggedSplitter];
@@ -504,7 +493,7 @@ void ViewportsPanel::mouseReleaseEvent(QMouseEvent* event)
 			const auto& region = _splitterRegions[_draggedSplitter];
 			_hoveredSplitter = _draggedSplitter;
 			_draggedSplitter = -1;
-			_viewportConfig->dataset()->undoStack().endCompoundOperation();
+			_mainWindow.undoStack()->endCompoundOperation();
 			update(region.area);
 		}
     }
@@ -570,7 +559,7 @@ void ViewportsPanel::showSplitterContextMenu(const SplitterRectangle& splitter, 
 	QAction* distributeEvenlyAction = contextMenu.addAction(tr("Resize evenly"));
 	distributeEvenlyAction->setEnabled(!splitter.cell->isEvenlySubdivided());
 	connect(distributeEvenlyAction, &QAction::triggered, this, [&]() {
-		UndoableTransaction::handleExceptions(_viewportConfig->dataset()->undoStack(), tr("Resize viewports"), [&]() {
+		UndoableTransaction::handleExceptions(_mainWindow, tr("Resize viewports"), [&]() {
 			splitter.cell->setChildWeights(std::vector<FloatType>(splitter.cell->children().size(), 1.0));
 		});
 	});
@@ -586,9 +575,9 @@ void ViewportsPanel::showSplitterContextMenu(const SplitterRectangle& splitter, 
 			if(!adjacentCell->children().empty())
 				adjacentCell = adjacentCell->children().back();
 		}
-		OORef<ViewportLayoutCell> newCell = OORef<ViewportLayoutCell>::create(splitter.cell->dataset());
+		OORef<ViewportLayoutCell> newCell = OORef<ViewportLayoutCell>::create();
 		newCell->setViewport(CloneHelper().cloneObject(adjacentViewport, true));
-		UndoableTransaction::handleExceptions(_viewportConfig->dataset()->undoStack(), tr("Insert viewport"), [&]() {
+		UndoableTransaction::handleExceptions(_mainWindow, tr("Insert viewport"), [&]() {
 			_viewportConfig->setActiveViewport(newCell->viewport());
 			splitter.cell->insertChild(splitter.childCellIndex + 1, std::move(newCell), splitter.cell->childWeights()[splitter.childCellIndex]);
 		});
@@ -603,7 +592,7 @@ void ViewportsPanel::showSplitterContextMenu(const SplitterRectangle& splitter, 
 		deleteCell1Action->setText((splitter.cell->splitDirection() == ViewportLayoutCell::Horizontal) ? tr("Delete viewport on left") : tr("Delete viewport above"));
 	contextMenu.addAction(deleteCell1Action);
 	connect(deleteCell1Action, &QAction::triggered, this, [&]() {
-		UndoableTransaction::handleExceptions(_viewportConfig->dataset()->undoStack(), tr("Delete viewport(s)"), [&]() {
+		UndoableTransaction::handleExceptions(_mainWindow, tr("Delete viewport(s)"), [&]() {
 			splitter.cell->removeChild(splitter.childCellIndex);
 		});
 	});
@@ -616,7 +605,7 @@ void ViewportsPanel::showSplitterContextMenu(const SplitterRectangle& splitter, 
 		deleteCell2Action->setText((splitter.cell->splitDirection() == ViewportLayoutCell::Horizontal) ? tr("Delete viewport on right") : tr("Delete viewport below"));
 	contextMenu.addAction(deleteCell2Action);
 	connect(deleteCell2Action, &QAction::triggered, this, [&]() {
-		UndoableTransaction::handleExceptions(_viewportConfig->dataset()->undoStack(), tr("Delete viewport(s)"), [&]() {
+		UndoableTransaction::handleExceptions(_mainWindow, tr("Delete viewport(s)"), [&]() {
 			splitter.cell->removeChild(splitter.childCellIndex + 1);
 			_viewportConfig->layoutRootCell()->pruneViewportLayoutTree();
 		});
@@ -632,7 +621,7 @@ void ViewportsPanel::showSplitterContextMenu(const SplitterRectangle& splitter, 
 bool ViewportsPanel::onKeyShortcut(QKeyEvent* event)
 {
 	// Suppress viewport navigation shortcuts when a list/table widget has the focus.
-	QWidget* focusWidget = _mainWindow->focusWidget();
+	QWidget* focusWidget = _mainWindow.focusWidget();
 	if(qobject_cast<QAbstractItemView*>(focusWidget))
 		return false;
 
@@ -643,38 +632,38 @@ bool ViewportsPanel::onKeyShortcut(QKeyEvent* event)
 	qreal delta = 1.0;
 	if(event->key() == Qt::Key_Left) {
 		if(!(event->modifiers() & Qt::ShiftModifier))
-			_mainWindow->viewportInputManager()->orbitMode()->discreteStep(vp->window(), QPointF(-delta, 0));
+			_mainWindow.viewportInputManager()->orbitMode()->discreteStep(vp->window(), QPointF(-delta, 0));
 		else
-			_mainWindow->viewportInputManager()->panMode()->discreteStep(vp->window(), QPointF(-delta, 0));
+			_mainWindow.viewportInputManager()->panMode()->discreteStep(vp->window(), QPointF(-delta, 0));
 		return true;
 	}
 	else if(event->key() == Qt::Key_Right) {
 		if(!(event->modifiers() & Qt::ShiftModifier))
-			_mainWindow->viewportInputManager()->orbitMode()->discreteStep(vp->window(), QPointF(delta, 0));
+			_mainWindow.viewportInputManager()->orbitMode()->discreteStep(vp->window(), QPointF(delta, 0));
 		else
-			_mainWindow->viewportInputManager()->panMode()->discreteStep(vp->window(), QPointF(delta, 0));
+			_mainWindow.viewportInputManager()->panMode()->discreteStep(vp->window(), QPointF(delta, 0));
 		return true;
 	}
 	else if(event->key() == Qt::Key_Up) {
 		if(!(event->modifiers() & Qt::ShiftModifier))
-			_mainWindow->viewportInputManager()->orbitMode()->discreteStep(vp->window(), QPointF(0, -delta));
+			_mainWindow.viewportInputManager()->orbitMode()->discreteStep(vp->window(), QPointF(0, -delta));
 		else
-			_mainWindow->viewportInputManager()->panMode()->discreteStep(vp->window(), QPointF(0, -delta));
+			_mainWindow.viewportInputManager()->panMode()->discreteStep(vp->window(), QPointF(0, -delta));
 		return true;
 	}
 	else if(event->key() == Qt::Key_Down) {
 		if(!(event->modifiers() & Qt::ShiftModifier))
-			_mainWindow->viewportInputManager()->orbitMode()->discreteStep(vp->window(), QPointF(0, delta));
+			_mainWindow.viewportInputManager()->orbitMode()->discreteStep(vp->window(), QPointF(0, delta));
 		else
-			_mainWindow->viewportInputManager()->panMode()->discreteStep(vp->window(), QPointF(0, delta));
+			_mainWindow.viewportInputManager()->panMode()->discreteStep(vp->window(), QPointF(0, delta));
 		return true;
 	}
 	else if(event->matches(QKeySequence::ZoomIn)) {
-		_mainWindow->viewportInputManager()->zoomMode()->zoom(vp, 50);
+		_mainWindow.viewportInputManager()->zoomMode()->zoom(vp, 50);
 		return true;
 	}
 	else if(event->matches(QKeySequence::ZoomOut)) {
-		_mainWindow->viewportInputManager()->zoomMode()->zoom(vp, -50);
+		_mainWindow.viewportInputManager()->zoomMode()->zoom(vp, -50);
 		return true;
 	}
 	return false;

@@ -85,7 +85,7 @@ QWidget* BondInspectionApplet::createWidget()
 /******************************************************************************
 * Updates the contents displayed in the inspector.
 ******************************************************************************/
-void BondInspectionApplet::updateDisplay(const PipelineFlowState& state, PipelineSceneNode* pipeline)
+void BondInspectionApplet::updateDisplay()
 {
 	// Clear selection when a different scene object has been selected.
 	if(pipeline != currentPipeline())

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -59,8 +59,8 @@ public:
 	/// Creates and returns the list widget displaying the list of data object objects.
 	QListWidget* objectSelectionWidget();
 
-	/// Lets the applet update the contents displayed in the inspector.
-	virtual void updateDisplay(const PipelineFlowState& state, PipelineSceneNode* pipeline);
+	/// Makes the applet update its data display.
+	virtual void updateDisplay();
 
 	/// This is called when the applet is no longer visible.
 	virtual void deactivate() {}
@@ -69,16 +69,19 @@ public:
 	virtual bool selectDataObject(PipelineObject* dataSource, const QString& objectIdentifierHint, const QVariant& modeHint);
 
 	/// Returns the currently selected data pipeline in the scene.
-	PipelineSceneNode* currentPipeline() const { return _pipelineNode.data(); }
+	PipelineSceneNode* currentPipeline() const;
 
 	/// Returns the current output of the data pipeline displayed in the applet.
-	const PipelineFlowState& currentState() const { return _pipelineState; }
+	const PipelineFlowState& currentState() const;
 
 	/// Returns the data object that is currently selected.
 	const DataObject* selectedDataObject() const { return _selectedDataObject; }
 
 	/// Returns the data collection path of the currently selected data object.
 	const ConstDataObjectPath& selectedDataObjectPath() const { return _selectedDataObjectPath; }
+
+	/// Returns the panel hosting this applet.
+	DataInspectorPanel* inspectorPanel() const;
 
 protected:
 
@@ -114,7 +117,7 @@ public:
 
 private:
 
-	/// The type of data object displayed by this applet.
+	/// The type of data objects displayed by this applet.
 	const DataObject::OOMetaClass& _dataObjectClass;
 
 	/// The widget for selecting the current data object.
@@ -128,12 +131,6 @@ private:
 
 	/// Pointer to the currently selected data object.
 	const DataObject* _selectedDataObject = nullptr;
-
-	/// The currently selected pipeline in the scene.
-	QPointer<PipelineSceneNode> _pipelineNode;
-
-	/// The pipeline output data being displayed.
-	PipelineFlowState _pipelineState;
 };
 
 }	// End of namespace

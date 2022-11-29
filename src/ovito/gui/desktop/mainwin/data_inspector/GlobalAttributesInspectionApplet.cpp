@@ -80,10 +80,10 @@ QWidget* GlobalAttributesInspectionApplet::createWidget()
 /******************************************************************************
 * Updates the contents displayed in the inspector.
 ******************************************************************************/
-void GlobalAttributesInspectionApplet::updateDisplay(const PipelineFlowState& state, PipelineSceneNode* pipeline)
+void GlobalAttributesInspectionApplet::updateDisplay()
 {
-	DataInspectionApplet::updateDisplay(state, pipeline);
-	_tableModel->setContents(state.data());
+	DataInspectionApplet::updateDisplay();
+	_tableModel->setContents(currentState().data());
 }
 
 /******************************************************************************
@@ -149,10 +149,11 @@ void GlobalAttributesInspectionApplet::exportToFile()
 		exporter->setNodeToExport(currentPipeline());
 
 		// If the exporter supports it, automatically choose the data object(s) to be exported.
-		exporter->selectDefaultExportableData(currentPipeline()->scene());
+		exporter->selectDefaultExportableData(mainWindow().datasetContainer().currentSet(), currentPipeline()->scene());
+		OVITO_ASSERT(exporter->sceneToExport());
 
 		// Let the user adjust the export settings.
-		FileExporterSettingsDialog settingsDialog(mainWindow(), exporter);
+		FileExporterSettingsDialog settingsDialog(mainWindow(), *exporter->sceneToExport(), exporter);
 		if(settingsDialog.exec() != QDialog::Accepted)
 			return;
 

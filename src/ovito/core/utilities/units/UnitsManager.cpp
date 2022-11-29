@@ -21,8 +21,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/core/Core.h>
-#include <ovito/core/dataset/DataSet.h>
-#include <ovito/core/dataset/animation/AnimationSettings.h>
+#include <ovito/core/dataset/animation/TimeInterval.h>
 #include "UnitsManager.h"
 
 namespace Ovito {
@@ -30,7 +29,7 @@ namespace Ovito {
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-UnitsManager::UnitsManager(DataSet* dataset) : _dataset(dataset)
+UnitsManager::UnitsManager()
 {
 	// Create standard unit objects.
 	_units[&FloatParameterUnit::staticMetaObject] = _floatIdentityUnit = new FloatParameterUnit(this);
@@ -52,7 +51,7 @@ ParameterUnit* UnitsManager::getUnit(const QMetaObject* parameterUnitClass)
 		return item->second;
 
 	// Create an instance of this class.
-	ParameterUnit* unit = qobject_cast<ParameterUnit*>(parameterUnitClass->newInstance(Q_ARG(QObject*, this), Q_ARG(DataSet*, _dataset)));
+	ParameterUnit* unit = qobject_cast<ParameterUnit*>(parameterUnitClass->newInstance(Q_ARG(QObject*, this)));
 	OVITO_ASSERT_MSG(unit != nullptr, "UnitsManager::getUnit()", "Failed to create instance of requested parameter unit type.");
 	_units.insert({ parameterUnitClass, unit });
 

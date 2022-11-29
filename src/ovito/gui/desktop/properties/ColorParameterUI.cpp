@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -73,7 +73,7 @@ void ColorParameterUI::resetUI()
 
 	if(isReferenceFieldUI() && editObject()) {
 		// Update the displayed value when the animation time has changed.
-		connect(dataset()->container(), &DataSetContainer::timeChanged, this, &ColorParameterUI::updateUI, Qt::UniqueConnection);
+		connect(&mainWindow().datasetContainer(), &DataSetContainer::currentFrameChanged, this, &ColorParameterUI::updateUI, Qt::UniqueConnection);
 	}
 }
 
@@ -84,9 +84,9 @@ void ColorParameterUI::updateUI()
 {
 	if(editObject() && colorPicker()) {
 		if(isReferenceFieldUI()) {
-			Controller* ctrl = dynamic_object_cast<Controller>(parameterObject());
-			if(ctrl)
-				colorPicker()->setColor(ctrl->currentColorValue());
+			if(Controller* ctrl = dynamic_object_cast<Controller>(parameterObject())) {
+				colorPicker()->setColor(ctrl->getColorValue(currentAnimationTime().value_or(AnimationTime(0))));
+			}
 		}
 		else if(isPropertyFieldUI()) {
 			QVariant currentValue = editObject()->getPropertyFieldValue(propertyField());
@@ -124,8 +124,9 @@ void ColorParameterUI::onColorPickerChanged()
 	if(colorPicker() && editObject()) {
 		undoableTransaction(tr("Change color"), [this]() {
 			if(isReferenceFieldUI()) {
-				if(Controller* ctrl = dynamic_object_cast<Controller>(parameterObject()))
-					ctrl->setCurrentColorValue(colorPicker()->color());
+				if(Controller* ctrl = dynamic_object_cast<Controller>(parameterObject())) {
+					ctrl->setColorValue(currentAnimationTime().value_or(AnimationTime(0)), colorPicker()->color());
+				}
 			}
 			else if(isPropertyFieldUI()) {
 				editor()->changePropertyFieldValue(propertyField(), QVariant::fromValue((QColor)colorPicker()->color()));

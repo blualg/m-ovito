@@ -21,11 +21,12 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/gui/desktop/GUI.h>
+#include <ovito/gui/desktop/mainwin/MainWindow.h>
+#include <ovito/gui/base/actions/ActionManager.h>
+#include <ovito/gui/base/viewport/ViewportInputMode.h>
 #include <ovito/core/dataset/animation/AnimationSettings.h>
 #include <ovito/core/viewport/ViewportConfiguration.h>
 #include <ovito/core/dataset/DataSetContainer.h>
-#include <ovito/gui/desktop/mainwin/MainWindow.h>
-#include <ovito/gui/base/viewport/ViewportInputMode.h>
 #include "AnimationTimeSlider.h"
 
 namespace Ovito {
@@ -138,7 +139,7 @@ void AnimationTimeSlider::paintEvent(QPaintEvent* event)
 int AnimationTimeSlider::maxTickLabelWidth()
 {
 	if(!_animSettings) return 0;
-	QString label = QString::number(_animSettings->timeToFrame(_animSettings->animationInterval().end()));
+	QString label = QString::number(_animSettings->lastFrame());
 	return fontMetrics().boundingRect(label).width() + 20;
 }
 
@@ -276,7 +277,7 @@ void AnimationTimeSlider::mouseMoveEvent(QMouseEvent* event)
 		_animSettings->setCurrentFrame(newFrame);
 
 		// Force immediate viewport update.
-		_mainWindow->processViewportUpdates();
+		_mainWindow.processViewportUpdates();
 		repaint();
 	}
 	else if(_animSettings->lastFrame() > _animSettings->firstFrame()) {

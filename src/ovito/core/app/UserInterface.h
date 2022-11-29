@@ -26,6 +26,7 @@
 #include <ovito/core/Core.h>
 #include <ovito/core/dataset/DataSetContainer.h>
 #include <ovito/core/utilities/concurrent/TaskManager.h>
+#include <ovito/core/utilities/units/UnitsManager.h>
 
 namespace Ovito {
 
@@ -56,6 +57,9 @@ public:
 	/// Returns the manager of asynchronous tasks belonging to this user interface.
 	TaskManager& taskManager() const { return _taskManager; }
 
+	/// Returns the manager of ParameterUnit objects.
+	UnitsManager& unitsManager() { return _unitsManager; }
+
 	/// Gives the active viewport the input focus.
 	virtual void setViewportInputFocus() {}
 	
@@ -71,6 +75,9 @@ public:
 	/// Tells the UI to process any pending events in the event queue and return immediately.
 	/// The function can return true to indicate that the running operation should be canceled. 
 	virtual bool processEvents();
+
+	/// Immediately repaints all viewports that have been flagged for an update.
+	virtual void processViewportUpdates() {}
 
 	/// Returns the manager of the user interface actions.
 	ActionManager* actionManager() const { return _actionManager; }
@@ -120,6 +127,9 @@ private:
 
 	/// The undo stack keeping track of changes made by the user to the current dataset.
 	UndoStack* _undoStack = nullptr;
+
+	/// The manager of ParameterUnit objects.
+	UnitsManager _unitsManager;
 };
 
 }	// End of namespace

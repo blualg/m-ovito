@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -85,7 +85,7 @@ void IntegerCheckBoxParameterUI::resetUI()
 
 	if(isReferenceFieldUI() && editObject()) {
 		// Update the displayed value when the animation time has changed.
-		connect(dataset()->container(), &DataSetContainer::timeChanged, this, &IntegerCheckBoxParameterUI::updateUI, Qt::UniqueConnection);
+		connect(&mainWindow().datasetContainer(), &DataSetContainer::currentFrameChanged, this, &IntegerCheckBoxParameterUI::updateUI, Qt::UniqueConnection);
 	}
 }
 
@@ -100,8 +100,9 @@ void IntegerCheckBoxParameterUI::updateUI()
 	if(checkBox() && editObject()) {
 		int value = _uncheckedValue;
 		if(isReferenceFieldUI()) {
-			if(Controller* ctrl = dynamic_object_cast<Controller>(parameterObject()))
-				value = ctrl->currentIntValue();
+			if(Controller* ctrl = dynamic_object_cast<Controller>(parameterObject())) {
+				value = ctrl->getIntValue(currentAnimationTime().value_or(AnimationTime(0)));
+			}
 		}
 		else {
 			if(isQtPropertyUI()) {
@@ -148,7 +149,7 @@ void IntegerCheckBoxParameterUI::updatePropertyValue()
 			int value = checkBox()->isChecked() ? _checkedValue : _uncheckedValue;
 			if(isReferenceFieldUI()) {
 				if(Controller* ctrl = dynamic_object_cast<Controller>(parameterObject())) {
-					ctrl->setCurrentIntValue(value);
+					ctrl->setIntValue(currentAnimationTime().value_or(AnimationTime(0)), value);
 					updateUI();
 				}
 			}

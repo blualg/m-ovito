@@ -116,7 +116,7 @@ QWidget* ParticleInspectionApplet::createWidget()
 /******************************************************************************
 * Updates the contents displayed in the inspector.
 ******************************************************************************/
-void ParticleInspectionApplet::updateDisplay(const PipelineFlowState& state, PipelineSceneNode* pipeline)
+void ParticleInspectionApplet::updateDisplay()
 {
 	// Clear selection when a different scene object has been selected.
 	if(pipeline != currentPipeline())

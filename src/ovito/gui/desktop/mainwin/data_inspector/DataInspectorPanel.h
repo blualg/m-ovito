@@ -49,6 +49,12 @@ public:
 	/// Returns the main window this panel is part of.
 	MainWindow& mainWindow() const { return _mainWindow; }
 
+	/// Returns the currently selected pipeline whose output is being shown by the data inspector.
+	PipelineSceneNode* selectedPipeline() const { return _selectedPipeline; }
+
+	/// Returns the most recent output data of the selected pipeline, which is displayed in the data inspector panel.
+	const PipelineFlowState& pipelineOutput() const { return _pipelineOutput; }
+
 public Q_SLOTS:
 
 	/// Hides the inspector panel.
@@ -64,9 +70,6 @@ protected Q_SLOTS:
 
 	/// This is called whenever the scene node selection has changed.
 	void onSceneSelectionChanged(SelectionSet* selection);
-
-	/// This is called whenever the selected scene node sends an event.
-	void onSceneNodeNotificationEvent(RefTarget* source, const ReferenceEvent& event);
 
 	/// Is emitted whenever the scene of the current dataset has been changed and is being made ready for rendering.
 	void onScenePreparationStarted();
@@ -104,7 +107,10 @@ protected:
 private:
 
 	/// Updates the list of visible tabs.
-	void updateTabs(const DataCollection* dataCollection);
+	void updateTabsList();
+
+	/// Evaluates the selected pipeline to obtains its output state.
+	bool updatePipelineOutput();
 
 	/// Returns the dataset container this panel is associated with.
 	GuiDataSetContainer& datasetContainer() const { return mainWindow().datasetContainer(); }
@@ -129,8 +135,11 @@ private:
 	/// The container for the applet widgets.
 	QStackedWidget* _appletContainer;
 
-	/// Listenes to messages from the currently selected object node.
-	RefTargetListener<PipelineSceneNode> _selectedNodeListener;
+	/// Listens to messages from the currently selected pipeline.
+	OORef<PipelineSceneNode> _selectedPipeline;
+
+	/// The most recent output data of the selected pipeline, which is displayed in the data inspector panel.
+	PipelineFlowState _pipelineOutput;
 
 	/// This timer is used to play the activity animation with some delay.
 	QBasicTimer _activityDelayTimer;

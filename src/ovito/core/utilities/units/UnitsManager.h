@@ -332,7 +332,7 @@ class OVITO_CORE_EXPORT UnitsManager : public QObject
 public:
 
 	/// Constructor.
-	UnitsManager(DataSet* dataset);
+	UnitsManager();
 
 	/// \brief Returns the instance of a parameter unit service.
 	/// \param parameterUnitClass Specifies the unit type. This must a ParameterUnit derived class.
@@ -361,9 +361,6 @@ public:
 	WorldParameterUnit* worldUnit() { return _worldUnit; }
 
 private:
-
-	/// The dataset this units manager belongs to.
-	DataSet* _dataset;
 
 	/// The list of unit types.
 	std::map<const QMetaObject*, ParameterUnit*> _units;

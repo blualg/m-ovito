@@ -61,8 +61,10 @@ void XFormMode::deactivated(bool temporary)
 {
 	if(viewport()) {
 		// Restore old state if change has not been committed.
-		viewport()->dataset()->undoStack().endCompoundOperation(false);
-		viewport()->dataset()->undoStack().endCompoundOperation(false);
+		if(UndoStack* undoStack = inputManager()->userInterface().undoStack()) {
+			undoStack->endCompoundOperation(false);
+			undoStack->endCompoundOperation(false);
+		}
 		_viewport = nullptr;
 	}
 	disconnect(&inputManager()->datasetContainer(), &DataSetContainer::selectionChangeComplete, this, &XFormMode::onSelectionChangeComplete);
@@ -133,9 +135,11 @@ void XFormMode::mousePressEvent(ViewportWindowInterface* vpwin, QMouseEvent* eve
 			if(pickResult.isValid()) {
 				_viewport = vpwin->viewport();
 				_startPoint = getMousePosition(event);
-				viewport()->dataset()->undoStack().beginCompoundOperation(undoDisplayName());
-				viewport()->dataset()->selection()->setNode(pickResult.pipelineNode());
-				viewport()->dataset()->undoStack().beginCompoundOperation(undoDisplayName());
+				if(UndoStack* undoStack = inputManager()->userInterface().undoStack())
+					undoStack->beginCompoundOperation(undoDisplayName());
+				viewport()->scene()->selection()->setNode(pickResult.pipelineNode());
+				if(UndoStack* undoStack = inputManager()->userInterface().undoStack())
+					undoStack->beginCompoundOperation(undoDisplayName());
 				startXForm();
 			}
 		}
@@ -144,8 +148,10 @@ void XFormMode::mousePressEvent(ViewportWindowInterface* vpwin, QMouseEvent* eve
 	else if(event->button() == Qt::RightButton) {
 		if(viewport()) {
 			// Restore old state when aborting the operation.
-			viewport()->dataset()->undoStack().endCompoundOperation(false);
-			viewport()->dataset()->undoStack().endCompoundOperation(false);
+			if(UndoStack* undoStack = inputManager()->userInterface().undoStack()) {
+				undoStack->endCompoundOperation(false);
+				undoStack->endCompoundOperation(false);
+			}
 			_viewport = nullptr;
 			return;
 		}
@@ -160,8 +166,10 @@ void XFormMode::mouseReleaseEvent(ViewportWindowInterface* vpwin, QMouseEvent* e
 {
 	if(viewport()) {
 		// Commit change.
-		viewport()->dataset()->undoStack().endCompoundOperation();
-		viewport()->dataset()->undoStack().endCompoundOperation();
+		if(UndoStack* undoStack = inputManager()->userInterface().undoStack()) {
+			undoStack->endCompoundOperation();
+			undoStack->endCompoundOperation();
+		}
 		_viewport = nullptr;
 	}
 	ViewportInputMode::mouseReleaseEvent(vpwin, event);
@@ -178,11 +186,13 @@ void XFormMode::mouseMoveEvent(ViewportWindowInterface* vpwin, QMouseEvent* even
 		// generates may be too old.
 		_currentPoint = vpwin->getCurrentMousePos();
 
-		viewport()->dataset()->undoStack().resetCurrentCompoundOperation();
+		if(UndoStack* undoStack = inputManager()->userInterface().undoStack())
+			undoStack->resetCurrentCompoundOperation();
+		
 		doXForm();
 
 		// Force immediate viewport repaints.
-		viewport()->dataset()->viewportConfig()->processViewportUpdates();
+		inputManager()->userInterface().processViewportUpdates();
 	}
 	else {
 		// Change mouse cursor while hovering over an object.
@@ -198,8 +208,10 @@ void XFormMode::focusOutEvent(ViewportWindowInterface* vpwin, QFocusEvent* event
 {
 	if(viewport()) {
 		// Restore old state if change has not been committed.
-		viewport()->dataset()->undoStack().endCompoundOperation(false);
-		viewport()->dataset()->undoStack().endCompoundOperation(false);
+		if(UndoStack* undoStack = inputManager()->userInterface().undoStack()) {
+			undoStack->endCompoundOperation(false);
+			undoStack->endCompoundOperation(false);
+		}
 		_viewport = nullptr;
 	}
 }

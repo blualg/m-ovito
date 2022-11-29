@@ -201,7 +201,7 @@ ModifyCommandPage::ModifyCommandPage(MainWindow& mainWindow, QWidget* parent) : 
 			}
 		}
 		if(!objects.empty()) {
-			CopyPipelineItemDialog dlg(&mainWindow, _pipelineListModel->selectedPipeline(), std::move(objects));
+			CopyPipelineItemDialog dlg(_mainWindow, &_mainWindow, _pipelineListModel->selectedPipeline(), std::move(objects));
 			dlg.exec();
 		}
 	});

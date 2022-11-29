@@ -42,7 +42,7 @@ class OVITO_STDOBJGUI_EXPORT PropertyInspectionApplet : public DataInspectionApp
 public:
 
 	/// Lets the applet update the contents displayed in the inspector.
-	virtual void updateDisplay(const PipelineFlowState& state, PipelineSceneNode* pipeline) override;
+	virtual void updateDisplay() override;
 
 	/// Returns the data display widget.
 	QTableView* tableView() const { return _tableView; }

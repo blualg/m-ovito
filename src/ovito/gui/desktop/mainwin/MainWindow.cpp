@@ -138,7 +138,7 @@ MainWindow::MainWindow() : UserInterface(_datasetContainer, _taskManager), _data
 	taskDisplay->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
 	_statusBarLayout->addWidget(taskDisplay, 1);
 
-	_coordinateDisplay = new CoordinateDisplayWidget(datasetContainer(), animationPanel);
+	_coordinateDisplay = new CoordinateDisplayWidget(*this, animationPanel);
 	_coordinateDisplay->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
 	_statusBarLayout->addWidget(_coordinateDisplay);
 	_statusBarLayout->addStrut(std::max(_coordinateDisplay->sizeHint().height(), taskDisplay->sizeHint().height()));

@@ -30,6 +30,7 @@
 #include <ovito/gui/desktop/properties/BooleanRadioButtonParameterUI.h>
 #include <ovito/gui/desktop/dialogs/SaveImageFileDialog.h>
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
+#include <ovito/gui/desktop/mainwin/ViewportsPanel.h>
 #include <ovito/gui/desktop/widgets/general/HtmlListWidget.h>
 #include <ovito/gui/base/actions/ActionManager.h>
 #include <ovito/core/rendering/RenderSettings.h>
@@ -356,7 +357,7 @@ void RenderSettingsEditor::onSwitchRenderer()
 	int newIndex = rendererListWidget->row(selItems.front());
 	if(!settings->renderer() || &settings->renderer()->getOOClass() != rendererClasses[newIndex]) {
 		undoableTransaction(tr("Switch renderer"), [settings, newIndex, &rendererClasses]() {
-			OORef<SceneRenderer> renderer = static_object_cast<SceneRenderer>(rendererClasses[newIndex]->createInstance(settings->dataset()));
+			OORef<SceneRenderer> renderer = static_object_cast<SceneRenderer>(rendererClasses[newIndex]->createInstance());
 			settings->setRenderer(std::move(renderer));
 		});
 	}
@@ -418,8 +419,10 @@ void RenderSettingsEditor::onViewportPreviewModeToggled(bool checked)
 				activeViewport()->setRenderPreviewMode(checked);
 		}
 		else {
-			for(Viewport* vp : rs->dataset()->viewportConfig()->viewports())
-				vp->setRenderPreviewMode(checked);
+			if(ViewportConfiguration* viewportConfig = mainWindow().viewportsPanel()->viewportConfiguration()) {
+				for(Viewport* vp : viewportConfig->viewports())
+					vp->setRenderPreviewMode(checked);
+			}
 		}
 	}
 }

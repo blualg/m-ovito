@@ -71,12 +71,12 @@ void AnimationTrackBar::onAnimationSettingsReplaced(AnimationSettings* newAnimat
 {
 	disconnect(_animIntervalChangedConnection);
 	disconnect(_timeFormatChangedConnection);
-	disconnect(_timeChangedConnection);
+	disconnect(_currentFrameChangedConnection);
 	_animSettings = newAnimationSettings;
 	if(newAnimationSettings) {
-		_animIntervalChangedConnection = connect(newAnimationSettings, &AnimationSettings::intervalChanged, this, (void (AnimationTrackBar::*)())&AnimationTrackBar::update);
-		_timeFormatChangedConnection = connect(newAnimationSettings, &AnimationSettings::timeFormatChanged, this, (void (AnimationTrackBar::*)())&AnimationTrackBar::update);
-		_timeChangedConnection = connect(newAnimationSettings, &AnimationSettings::timeChanged, this, (void (AnimationTrackBar::*)())&AnimationTrackBar::update);
+		_animIntervalChangedConnection = connect(newAnimationSettings, &AnimationSettings::intervalChanged, this, qOverload<>(&AnimationTrackBar::update));
+		_timeFormatChangedConnection = connect(newAnimationSettings, &AnimationSettings::timeFormatChanged, this, qOverload<>(&AnimationTrackBar::update));
+		_currentFrameChangedConnection = connect(newAnimationSettings, &AnimationSettings::currentFrameChanged, this, qOverload<>(&AnimationTrackBar::update));
 	}
 	update();
 }
@@ -90,23 +90,23 @@ void AnimationTrackBar::paintEvent(QPaintEvent* event)
 
 	// Paint track bar only if there is more than one animation frame.
 	if(!_animSettings) return;
-	int numFrames = (int)(_animSettings->animationInterval().duration() / _animSettings->ticksPerFrame()) + 1;
+	int numFrames = _animSettings->lastFrame() - _animSettings->firstFrame() + 1;
 	if(numFrames <= 1) return;
 
 	QPainter painter(this);
 
 	QRect clientRect = frameRect();
 	clientRect.adjust(frameWidth(), frameWidth(), -frameWidth(), -frameWidth());
-	TimePoint startTime, timeStep, endTime;
-	std::tie(startTime, timeStep, endTime) = _timeSlider->tickRange(10);
+	int startFrame, frameStep, endFrame;
+	std::tie(startFrame, frameStep, endFrame) = _timeSlider->tickRange(10);
 
-	TimePoint startTimeMajor, timeStepMajor;
-	std::tie(startTimeMajor, timeStepMajor, std::ignore) = _timeSlider->tickRange(_timeSlider->maxTickLabelWidth());
+	int startFrameMajor, frameStepMajor;
+	std::tie(startFrameMajor, frameStepMajor, std::ignore) = _timeSlider->tickRange(_timeSlider->maxTickLabelWidth());
 
 	painter.setPen(QPen(QColor(180,180,220)));
-	for(TimePoint time = startTime; time <= endTime; time += timeStep) {
-		int pos = _timeSlider->timeToPos(time);
-		if((time - startTimeMajor)%timeStepMajor == 0)
+	for(int frame = startFrame; frame <= endFrame; frame += frameStep) {
+		int pos = _timeSlider->frameToPos(frame);
+		if((frame - startFrameMajor) % frameStepMajor == 0)
 			painter.drawLine(pos, clientRect.top(), pos, clientRect.bottom());
 		else
 			painter.drawLine(pos, clientRect.top(), pos, clientRect.center().y());
@@ -123,12 +123,12 @@ void AnimationTrackBar::paintEvent(QPaintEvent* event)
 	}
 
 	// Draw the current time marker.
-	int currentTimePos = _timeSlider->timeToPos(_animSettings->time());
+	int currentFramePos = _timeSlider->frameToPos(_animSettings->currentFrame());
 	painter.setBrush(Qt::blue);
 	painter.setPen(Qt::black);
-	QPoint marker[3] = {{ currentTimePos - 3, clientRect.top() },
-						{ currentTimePos + 3, clientRect.top() },
-						{ currentTimePos    , clientRect.top() + 3 }
+	QPoint marker[3] = {{ currentFramePos - 3, clientRect.top() },
+						{ currentFramePos + 3, clientRect.top() },
+						{ currentFramePos    , clientRect.top() + 3 }
 	};
 	painter.drawConvexPolygon(marker, 3);
 }
@@ -139,8 +139,8 @@ void AnimationTrackBar::paintEvent(QPaintEvent* event)
 QRect AnimationTrackBar::keyRect(AnimationKey* key, bool forDisplay) const
 {
 	// Don't draw keys that are not within the active animation interval.
-	if(key->time() < _animSettings->animationInterval().start() ||
-		key->time() > _animSettings->animationInterval().end()) return QRect();
+	if(key->time().frame() < _animSettings->firstFrame() ||
+		key->time().frame() > _animSettings->lastFrame()) return QRect();
 
 	QRect clientRect = frameRect();
 	clientRect.adjust(frameWidth(), frameWidth(), -frameWidth(), -frameWidth());
@@ -365,7 +365,7 @@ void AnimationTrackBar::mousePressEvent(QMouseEvent* event)
 	else if(event->button() == Qt::RightButton) {
 		if(_isDragging) {
 			_isDragging = false;
-			_animSettings->dataset()->undoStack().endCompoundOperation(false);
+			mainWindow().undoStack()->endCompoundOperation(false);
 		}
 		else {
 			_isDragging = false;
@@ -406,24 +406,22 @@ void AnimationTrackBar::mouseMoveEvent(QMouseEvent* event)
 	}
 	else if(_dragStartPos >= 0) {
 		if(!_isDragging && std::abs(_dragStartPos - event->pos().x()) > 4) {
-			_animSettings->dataset()->undoStack().beginCompoundOperation(tr("Move animation keys"));
+			mainWindow().undoStack()->beginCompoundOperation(tr("Move animation keys"));
 			_isDragging = true;
 		}
 		if(_isDragging) {
 			int delta = event->pos().x() - _dragStartPos;
-			TimePoint timeDelta = _timeSlider->distanceToTimeDifference(delta);
-			timeDelta = _animSettings->snapTime(timeDelta);
-			TimeInterval interval = _animSettings->animationInterval();
-			_animSettings->dataset()->undoStack().resetCurrentCompoundOperation();
+			int frameDelta = _timeSlider->distanceToFrameDifference(delta);
+			mainWindow().undoStack()->resetCurrentCompoundOperation();
 			// Clamp to animation interval.
 			for(AnimationKey* key : _selectedKeys.targets()) {
-				TimePoint newTime = key->time() + timeDelta;
-				if(newTime < interval.start()) timeDelta += interval.start() - newTime;
-				if(newTime > interval.end()) timeDelta -= newTime - interval.end();
+				int newFrame = key->time().frame() + frameDelta;
+				if(newFrame < _animSettings->firstFrame()) frameDelta += _animSettings->firstFrame() - newFrame;
+				if(newFrame > _animSettings->lastFrame()) frameDelta -= newFrame - _animSettings->lastFrame();
 			}
 			// Move keys.
 			for(KeyframeController* ctrl : _controllers.targets()) {
-				ctrl->moveKeys(_selectedKeys.targets(), timeDelta);
+				ctrl->moveKeys(_selectedKeys.targets(), AnimationTime::TicksPerFrame * frameDelta);
 			}
 		}
 		event->accept();
@@ -438,7 +436,7 @@ void AnimationTrackBar::mouseReleaseEvent(QMouseEvent* event)
 	if(_isDragging) {
 		_isDragging = false;
 		if(event->button() == Qt::LeftButton)
-			_animSettings->dataset()->undoStack().endCompoundOperation(true);
+			mainWindow().undoStack()->endCompoundOperation(true);
 		event->accept();
 	}
 }
@@ -459,7 +457,7 @@ QString AnimationTrackBar::keyValueString(AnimationKey* key) const
 	}
 	else if(value.userType() == qMetaTypeId<Rotation>()) {
 		Rotation rot = value.value<Rotation>();
-		return QString("axis (%1, %2, %3), angle: %4°").arg(rot.axis().x()).arg(rot.axis().y()).arg(rot.axis().z()).arg(rot.angle() * FloatType(180) / FLOATTYPE_PI);
+		return QString("axis (%1, %2, %3), angle: %4°").arg(rot.axis().x()).arg(rot.axis().y()).arg(rot.axis().z()).arg(qRadiansToDegrees(rot.angle()));
 	}
 	else if(value.userType() == qMetaTypeId<Scaling>()) {
 		Scaling s = value.value<Scaling>();
@@ -498,9 +496,9 @@ void AnimationTrackBar::showKeyContextMenu(const QPoint& pos, const QVector<Anim
 	contextMenu.addSeparator();
 	QAction* jumpToTimeAction = contextMenu.addAction(tr("Jump to key"));
 	if(clickedKeys.empty() == false) {
-		TimePoint time = clickedKeys.front()->time();
-		connect(jumpToTimeAction, &QAction::triggered, [this, time]() {
-			_animSettings->setTime(time);
+		int frame = clickedKeys.front()->time().frame();
+		connect(jumpToTimeAction, &QAction::triggered, [this, frame]() {
+			_animSettings->setCurrentFrame(frame);
 		});
 	}
 	else jumpToTimeAction->setEnabled(false);
@@ -513,7 +511,7 @@ void AnimationTrackBar::showKeyContextMenu(const QPoint& pos, const QVector<Anim
 ******************************************************************************/
 void AnimationTrackBar::onDeleteSelectedKeys()
 {
-	UndoableTransaction::handleExceptions(_animSettings->dataset()->undoStack(), tr("Delete animation keys"), [this]() {
+	UndoableTransaction::handleExceptions(mainWindow(), tr("Delete animation keys"), [this]() {
 		for(KeyframeController* ctrl : _controllers.targets()) {
 			ctrl->deleteKeys(_selectedKeys.targets());
 		}

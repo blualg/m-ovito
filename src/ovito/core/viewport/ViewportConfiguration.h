@@ -178,11 +178,7 @@ private:
 class OVITO_CORE_EXPORT ViewportSuspender 
 {
 public:
-//	ViewportSuspender(ViewportConfiguration* vpconf) noexcept : _vpconf(*vpconf) { _vpconf.suspendViewportUpdates(); }
 	ViewportSuspender(UserInterface& userInterface) noexcept;
-//	~ViewportSuspender() { _vpconf.resumeViewportUpdates(); }
-private:
-//	ViewportConfiguration& _vpconf;
 };
 
 }	// End of namespace

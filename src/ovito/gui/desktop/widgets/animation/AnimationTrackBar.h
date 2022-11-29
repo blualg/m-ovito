@@ -152,7 +152,7 @@ private:
 
 	QMetaObject::Connection _animIntervalChangedConnection;
 	QMetaObject::Connection _timeFormatChangedConnection;
-	QMetaObject::Connection _timeChangedConnection;
+	QMetaObject::Connection _currentFrameChangedConnection;
 };
 
 }	// End of namespace

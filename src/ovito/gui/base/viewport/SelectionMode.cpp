@@ -56,11 +56,11 @@ void SelectionMode::mouseReleaseEvent(ViewportWindowInterface* vpwin, QMouseEven
 		// Select object under mouse cursor.
 		ViewportPickResult pickResult = vpwin->pick(_clickPoint);
 		if(pickResult.isValid() && _viewport->scene()) {
-			if(vpwin->userInterface().undoStack())
-				vpwin->userInterface().undoStack()->beginCompoundOperation(tr("Select"));
+			if(UndoStack* undoStack = inputManager()->userInterface().undoStack())
+				undoStack->beginCompoundOperation(tr("Select"));
 			_viewport->scene()->selection()->setNode(pickResult.pipelineNode());
-			if(vpwin->userInterface().undoStack())
-				vpwin->userInterface().undoStack()->endCompoundOperation();
+			if(UndoStack* undoStack = inputManager()->userInterface().undoStack())
+				undoStack->endCompoundOperation();
 		}
 		_viewport = nullptr;
 	}

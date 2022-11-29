@@ -129,7 +129,7 @@ void MoveOverlayInputMode::mouseMoveEvent(ViewportWindowInterface* vpwin, QMouse
 			}
 
 			// Force immediate viewport repaints.
-			viewport()->dataset()->viewportConfig()->processViewportUpdates();
+			inputManager()->userInterface().processViewportUpdates();
 		}
 	}
 	else {

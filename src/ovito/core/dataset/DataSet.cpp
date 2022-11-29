@@ -40,23 +40,17 @@ namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(DataSet);
 DEFINE_REFERENCE_FIELD(DataSet, viewportConfig);
-DEFINE_REFERENCE_FIELD(DataSet, animationSettings);
-DEFINE_REFERENCE_FIELD(DataSet, sceneRoot);
 DEFINE_REFERENCE_FIELD(DataSet, renderSettings);
 SET_PROPERTY_FIELD_LABEL(DataSet, viewportConfig, "Viewport Configuration");
-SET_PROPERTY_FIELD_LABEL(DataSet, animationSettings, "Animation Settings");
-SET_PROPERTY_FIELD_LABEL(DataSet, sceneRoot, "Scene");
 SET_PROPERTY_FIELD_LABEL(DataSet, renderSettings, "Render Settings");
 
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-DataSet::DataSet(ObjectCreationParams params) : RefTarget(params), _unitsManager(this)
+DataSet::DataSet(ObjectCreationParams params) : RefTarget(params)
 {
 	if(params.createSubObjects()) {
 		setViewportConfig(createDefaultViewportConfiguration(params));
-		setAnimationSettings(OORef<AnimationSettings>::create(params));
-		setSceneRoot(OORef<Scene>::create(params));
 		setRenderSettings(OORef<RenderSettings>::create(params));
 	}
 }
@@ -76,19 +70,26 @@ OORef<ViewportConfiguration> DataSet::createDefaultViewportConfiguration(ObjectC
 	OORef<ViewportConfiguration> viewConfig = OORef<ViewportConfiguration>::create(params);
 
 	if(!StandaloneApplication::instance() || !StandaloneApplication::instance()->cmdLineParser().isSet("noviewports")) {
-		UndoSuspender noUndo;
+
+		// Create a scene with animation settings.
+		OORef<Scene> scene = OORef<Scene>::create(params);
+		OVITO_ASSERT(scene->animationSettings());
 
 		// Create the 4 standard viewports.
 		OORef<Viewport> topView = OORef<Viewport>::create(params);
+		topView->setScene(scene);
 		topView->setViewType(Viewport::VIEW_TOP);
 
 		OORef<Viewport> frontView = OORef<Viewport>::create(params);
+		frontView->setScene(scene);
 		frontView->setViewType(Viewport::VIEW_FRONT);
 
 		OORef<Viewport> leftView = OORef<Viewport>::create(params);
+		leftView->setScene(scene);
 		leftView->setViewType(Viewport::VIEW_LEFT);
 
 		OORef<Viewport> perspectiveView = OORef<Viewport>::create(params);
+		perspectiveView->setScene(scene);
 		perspectiveView->setViewType(Viewport::VIEW_PERSPECTIVE);
 		perspectiveView->setCameraTransformation(ViewportSettings::getSettings().coordinateSystemOrientation() * AffineTransformation::lookAlong({90, -120, 100}, {-90, 120, -100}, {0,0,1}).inverse());
 
@@ -145,7 +146,7 @@ bool DataSet::referenceEvent(RefTarget* source, const ReferenceEvent& event)
 
 	if(event.type() == ReferenceEvent::TargetChanged) {
 		// Propagate change events only from certain sources to the DataSetContainer.
-		return (source == scene() || source == renderSettings());
+		return (source == renderSettings());
 	}
 	return RefTarget::referenceEvent(source, event);
 }
@@ -160,7 +161,6 @@ void DataSet::referenceReplaced(const PropertyFieldDescriptor* field, RefTarget*
 		if(viewportConfig())
 			_activeViewportChangedConnection = connect(viewportConfig(), &ViewportConfiguration::activeViewportChanged, this, &DataSet::onActiveViewportChanged);
 		Q_EMIT viewportConfigReplaced(viewportConfig());
-		Q_EMIT activeSceneChanged((viewportConfig() && viewportConfig()->activeViewport()) ? viewportConfig()->activeViewport()->scene() : nullptr);
 	}
 	else if(field == PROPERTY_FIELD(animationSettings)) {
 		// Stop animation playback when animation settings are being replaced.
@@ -199,16 +199,6 @@ DataSetContainer* DataSet::container() const
 	OVITO_ASSERT_MSG(!_container.isNull(), "DataSet::container()", "DataSet is not in a DataSetContainer.");
 	return _container.data();
 }
-
-#if 0 // TODO: Remove unused code
-/******************************************************************************
-* Returns the abstract user interface this dataset was opened in.
-******************************************************************************/
-UserInterface& DataSet::userInterface() const
-{
-	return container()->userInterface();
-}
-#endif
 
 /******************************************************************************
 * Rescales the animation keys of all controllers in the scene.

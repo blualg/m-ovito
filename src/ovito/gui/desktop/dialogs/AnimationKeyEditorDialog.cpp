@@ -346,7 +346,7 @@ AnimationKeyEditorDialog::AnimationKeyEditorDialog(KeyframeController* ctrl, con
 		minValue = propertyField->numericalParameterInfo()->minValue;
 		maxValue = propertyField->numericalParameterInfo()->maxValue;
 		if(propertyField->numericalParameterInfo()->unitType != nullptr)
-			units = _dataset->unitsManager().getUnit(propertyField->numericalParameterInfo()->unitType);
+			units = mainWindow.unitsManager().getUnit(propertyField->numericalParameterInfo()->unitType);
 	}
 
 	if(ctrl->controllerType() != Controller::ControllerTypeRotation) {
@@ -355,8 +355,8 @@ AnimationKeyEditorDialog::AnimationKeyEditorDialog(KeyframeController* ctrl, con
 			_tableWidget->setItemDelegateForColumn(col, numericalDelegate);
 	}
 	else {
-		NumericalItemDelegate* axisDelegate = new NumericalItemDelegate(_tableWidget, _dataset->unitsManager().worldUnit(), FLOATTYPE_MIN, FLOATTYPE_MAX);
-		NumericalItemDelegate* angleDelegate = new NumericalItemDelegate(_tableWidget, _dataset->unitsManager().angleUnit(), FLOATTYPE_MIN, FLOATTYPE_MAX);
+		NumericalItemDelegate* axisDelegate = new NumericalItemDelegate(_tableWidget, mainWindow.unitsManager().worldUnit(), FLOATTYPE_MIN, FLOATTYPE_MAX);
+		NumericalItemDelegate* angleDelegate = new NumericalItemDelegate(_tableWidget, mainWindow.unitsManager().angleUnit(), FLOATTYPE_MIN, FLOATTYPE_MAX);
 		_tableWidget->setItemDelegateForColumn(0, axisDelegate);
 		_tableWidget->setItemDelegateForColumn(1, axisDelegate);
 		_tableWidget->setItemDelegateForColumn(2, axisDelegate);
@@ -449,7 +449,7 @@ void AnimationKeyEditorDialog::onAddKey()
 	subLayout->addWidget(timeEdit);
 	SpinnerWidget* timeSpinner = new SpinnerWidget();
 	timeSpinner->setTextBox(timeEdit);
-	timeSpinner->setUnit(_dataset->unitsManager().integerIdentityUnit());
+	timeSpinner->setUnit(_mainWindow.unitsManager().integerIdentityUnit());
 	timeSpinner->setIntValue(_dataset->animationSettings()->currentFrame());
 	timeSpinner->setMinValue(_dataset->animationSettings()->firstFrame());
 	timeSpinner->setMaxValue(_dataset->animationSettings()->lastFrame());

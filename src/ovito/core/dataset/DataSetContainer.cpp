@@ -97,6 +97,7 @@ void DataSetContainer::referenceReplaced(const PropertyFieldDescriptor* field, R
 			Q_EMIT filePathChanged(currentSet()->filePath());
 			onSceneReplaced(currentSet()->scene());
 			onAnimationSettingsReplaced(currentSet()->animationSettings());
+			onViewportConfigReplaced(currentSet()->viewportConfig());			
 		}
 		else {
 			onSceneReplaced(nullptr);
@@ -111,34 +112,48 @@ void DataSetContainer::referenceReplaced(const PropertyFieldDescriptor* field, R
 }
 
 /******************************************************************************
-* This handler is invoked when the current scene of the current dataset
-* has been replaced.
+* This handler is called when another viewport configuration becomes the active one.
+******************************************************************************/
+void DataSetContainer::onViewportConfigReplaced(ViewportConfiguration* viewportConfig)
+{
+	disconnect(_activeViewportChangedConnection);
+	if(viewportConfig) {
+		// Forward signals from the current viewport config.
+		_activeViewportChangedConnection = connect(viewportConfig, &ViewportConfiguration::activeViewportChanged, this, &DataSetContainer::activeViewportChanged);
+	}
+	Q_EMIT activeViewportChanged(viewportConfig ? viewportConfig->activeViewport() : nullptr);
+}
+
+/******************************************************************************
+* This handler is called when another scene becomes the active one.
 ******************************************************************************/
 void DataSetContainer::onSceneReplaced(Scene* newScene)
 {
-	// Forward signals from the current scene.
 	disconnect(_scenePreparationStartedConnection);
 	disconnect(_scenePreparationFinishedConnection);
 	disconnect(_selectionSetReplacedConnection);
+	_activeScene = newScene;
 	if(newScene) {
+		// Forward signals from the current scene.
 		_scenePreparationStartedConnection = connect(newScene, &Scene::scenePreparationStarted, this, &DataSetContainer::scenePreparationStarted);
 		_scenePreparationFinishedConnection = connect(newScene, &Scene::scenePreparationFinished, this, &DataSetContainer::scenePreparationFinished);
 		_selectionSetReplacedConnection = connect(newScene, &Scene::selectionSetReplaced, this, &DataSetContainer::onSelectionSetReplaced);
 	}
 	Q_EMIT sceneReplaced(newScene);
+	onAnimationSettingsReplaced(newScene ? newScene->animationSettings() : nullptr);
 	onSelectionSetReplaced(newScene ? newScene->selection() : nullptr);
 }
 
 /******************************************************************************
-* This handler is invoked when the current selection set of the current dataset
-* has been replaced.
+* This handler is called when another selection set becomes the active one.
 ******************************************************************************/
 void DataSetContainer::onSelectionSetReplaced(SelectionSet* newSelectionSet)
 {
-	// Forward signals from the current selection set.
 	disconnect(_selectionSetChangedConnection);
 	disconnect(_selectionSetChangeCompleteConnection);
+	_activeSelectionSet = newSelectionSet;
 	if(newSelectionSet) {
+		// Forward signals from the current selection set.
 		_selectionSetChangedConnection = connect(newSelectionSet, &SelectionSet::selectionChanged, this, &DataSetContainer::selectionChanged);
 		_selectionSetChangeCompleteConnection = connect(newSelectionSet, &SelectionSet::selectionChangeComplete, this, &DataSetContainer::selectionChangeComplete);
 	}
@@ -148,19 +163,26 @@ void DataSetContainer::onSelectionSetReplaced(SelectionSet* newSelectionSet)
 }
 
 /******************************************************************************
-* This handler is invoked when the current animation settings of the current
-* dataset have been replaced.
+* This handler is called when another animation settings object becomes the active one.
 ******************************************************************************/
 void DataSetContainer::onAnimationSettingsReplaced(AnimationSettings* newAnimationSettings)
 {
-	// Forward signals from the current animation settings object.
 	disconnect(_animationCurrentFrameChangedConnection);
 	disconnect(_animationCurrentFrameChangeCompleteConnection);
+	disconnect(_animationIntervalChangedConnection);
+	if(_activeAnimationSettings) {
+		// Stop animation playback before switching to a new animation settings object.
+		_activeAnimationSettings->stopAnimationPlayback();
+	}
+	_activeAnimationSettings = newAnimationSettings;
 	if(newAnimationSettings) {
+		// Forward signals from the current animation settings object.
 		_animationCurrentFrameChangedConnection = connect(newAnimationSettings, &AnimationSettings::currentFrameChanged, this, &DataSetContainer::currentFrameChanged);
 		_animationCurrentFrameChangeCompleteConnection = connect(newAnimationSettings, &AnimationSettings::currentFrameChangeComplete, this, &DataSetContainer::currentFrameChangeComplete);
+		_animationIntervalChangedConnection = connect(newAnimationSettings, &AnimationSettings::intervalChanged, this, &DataSetContainer::animationIntervalChanged);
 	}
 	if(newAnimationSettings) {
+		Q_EMIT animationIntervalChanged(newAnimationSettings->firstFrame(), newAnimationSettings->lastFrame());
 		Q_EMIT currentFrameChanged(newAnimationSettings->currentFrame());
 		Q_EMIT currentFrameChangeComplete();
 	}

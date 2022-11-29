@@ -101,6 +101,9 @@ public:
 	/// \brief Returns the top-level window hosting this editor panel.
 	QWidget* parentWindow() const;
 
+	/// \brief Returns the current animation time.
+	std::optional<AnimationTime> currentAnimationTime() const;
+
 	/// \brief Creates an object that represents a longer-running operation executed in the main or GUI thread 
 	///        in the context of this properties editor 
 	MainThreadOperation createOperation() {
@@ -129,7 +132,7 @@ public:
 	/// so far will be undone and an error message is shown to the user.
 	template<typename Function>
 	bool undoableTransaction(const QString& operationLabel, Function&& func) {
-		return UndoableTransaction::handleExceptions(dataset()->undoStack(), operationLabel, std::forward<Function>(func));
+		return UndoableTransaction::handleExceptions(mainWindow(), operationLabel, std::forward<Function>(func));
 	}
 
 	/// Changes the value of a non-animatable property field of the object being edited.

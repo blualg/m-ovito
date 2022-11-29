@@ -56,7 +56,7 @@ public:
 	virtual QWidget* createWidget() override;
 
 	/// Updates the contents displayed in the inspector.
-	virtual void updateDisplay(const PipelineFlowState& state, PipelineSceneNode* pipeline) override;
+	virtual void updateDisplay() override;
 
 	/// This is called when the applet is no longer visible.
 	virtual void deactivate() override;

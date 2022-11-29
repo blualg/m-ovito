@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -62,6 +62,7 @@ private:
 	QRadioButton* _trajectoryModeBtn;
 	QRadioButton* _staticFrameModeBtn;
 	IntegerParameterUI* _staticFrameNumberUI;
+	OORef<AnimationSettings> _animationSettings;
 };
 
 }	// End of namespace

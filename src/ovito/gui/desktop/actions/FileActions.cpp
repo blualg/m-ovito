@@ -219,7 +219,7 @@ void WidgetActionManager::on_FileImport_triggered()
 {
 	try {
 		// Let the user select one or more files.
-		ImportFileDialog dialog(PluginManager::instance().metaclassMembers<FileImporter>(), dataset(), &mainWindow(), tr("Load File"), true);
+		ImportFileDialog dialog(PluginManager::instance().metaclassMembers<FileImporter>(), &mainWindow(), tr("Load File"), true);
 		if(dialog.exec() != QDialog::Accepted)
 			return;
 
@@ -244,7 +244,7 @@ void WidgetActionManager::on_FileRemoteImport_triggered()
 {
 	try {
 		// Let the user enter the URL of the remote file.
-		ImportRemoteFileDialog dialog(PluginManager::instance().metaclassMembers<FileImporter>(), dataset(), &mainWindow(), tr("Load Remote File"));
+		ImportRemoteFileDialog dialog(PluginManager::instance().metaclassMembers<FileImporter>(), &mainWindow(), tr("Load Remote File"));
 		if(dialog.exec() != QDialog::Accepted)
 			return;
 
@@ -338,7 +338,7 @@ void WidgetActionManager::on_FileExport_triggered()
 		OVITO_ASSERT(exportFilterIndex >= 0 && exportFilterIndex < exporterTypes.size());
 
 		// Create exporter and initialize it.
-		OORef<FileExporter> exporter = static_object_cast<FileExporter>(exporterTypes[exportFilterIndex]->createInstance(dataset()));
+		OORef<FileExporter> exporter = static_object_cast<FileExporter>(exporterTypes[exportFilterIndex]->createInstance());
 
 		// Pass output filename to exporter.
 		exporter->setOutputFilename(exportFile);
@@ -351,10 +351,10 @@ void WidgetActionManager::on_FileExport_triggered()
 		}
 
 		// If the exporter supports it, automatically choose the pipeline(s) and data object(s) to be exported.
-		exporter->selectDefaultExportableData(scene);
+		exporter->selectDefaultExportableData(dataset(), scene);
 
 		// Let the user adjust the settings of the exporter.
-		FileExporterSettingsDialog settingsDialog(mainWindow(), exporter);
+		FileExporterSettingsDialog settingsDialog(mainWindow(), *scene, exporter);
 		if(settingsDialog.exec() != QDialog::Accepted)
 			return;
 

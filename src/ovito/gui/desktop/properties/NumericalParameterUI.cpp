@@ -109,7 +109,7 @@ void NumericalParameterUI::resetUI()
 		if(editObject()) {
 			ParameterUnit* unit = nullptr;
 			if(parameterUnitType())
-				unit = dataset()->unitsManager().getUnit(parameterUnitType());
+				unit = mainWindow().unitsManager().getUnit(parameterUnitType());
 			spinner()->setUnit(unit);
 		}
 		else {
@@ -120,7 +120,7 @@ void NumericalParameterUI::resetUI()
 
 	if(isReferenceFieldUI() && editObject()) {
 		// Update the displayed value when the animation time has changed.
-		connect(dataset()->container(), &DataSetContainer::timeChanged, this, &NumericalParameterUI::updateUI, Qt::UniqueConnection);
+		connect(&mainWindow().datasetContainer(), &DataSetContainer::currentFrameChanged, this, &NumericalParameterUI::updateUI, Qt::UniqueConnection);
 	}
 
 	PropertyParameterUI::resetUI();
@@ -153,14 +153,14 @@ void NumericalParameterUI::setEnabled(bool enabled)
 ******************************************************************************/
 void NumericalParameterUI::onSpinnerValueChanged()
 {
-	ViewportSuspender noVPUpdate(dataset()->viewportConfig());
+	ViewportSuspender noVPUpdate(mainWindow());
 	if(!_isDraggingSpinner) {
-		UndoableTransaction transaction(dataset()->undoStack(), tr("Change parameter"));
+		UndoableTransaction transaction(mainWindow(), tr("Change parameter"));
 		updatePropertyValue();
 		transaction.commit();
 	}
 	else {
-		dataset()->undoStack().resetCurrentCompoundOperation();
+		mainWindow().undoStack()->resetCurrentCompoundOperation();
 		updatePropertyValue();
 	}
 }
@@ -171,7 +171,7 @@ void NumericalParameterUI::onSpinnerValueChanged()
 void NumericalParameterUI::onSpinnerDragStart()
 {
 	OVITO_ASSERT(!_isDraggingSpinner);
-	dataset()->undoStack().beginCompoundOperation(tr("Change parameter"));
+	mainWindow().undoStack()->beginCompoundOperation(tr("Change parameter"));
 	_isDraggingSpinner = true;
 }
 
@@ -181,7 +181,7 @@ void NumericalParameterUI::onSpinnerDragStart()
 void NumericalParameterUI::onSpinnerDragStop()
 {
 	OVITO_ASSERT(_isDraggingSpinner);
-	dataset()->undoStack().endCompoundOperation();
+	mainWindow().undoStack()->endCompoundOperation();
 	_isDraggingSpinner = false;
 }
 
@@ -191,7 +191,7 @@ void NumericalParameterUI::onSpinnerDragStop()
 void NumericalParameterUI::onSpinnerDragAbort()
 {
 	OVITO_ASSERT(_isDraggingSpinner);
-	dataset()->undoStack().endCompoundOperation(false);
+	mainWindow().undoStack()->endCompoundOperation(false);
 	_isDraggingSpinner = false;
 }
 

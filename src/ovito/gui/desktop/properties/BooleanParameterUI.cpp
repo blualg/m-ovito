@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -79,7 +79,7 @@ void BooleanParameterUI::resetUI()
 
 	if(isReferenceFieldUI() && editObject()) {
 		// Update the displayed value when the animation time has changed.
-		connect(dataset()->container(), &DataSetContainer::timeChanged, this, &BooleanParameterUI::updateUI, Qt::UniqueConnection);
+		connect(&mainWindow().datasetContainer(), &DataSetContainer::currentFrameChanged, this, &BooleanParameterUI::updateUI, Qt::UniqueConnection);
 	}
 }
 

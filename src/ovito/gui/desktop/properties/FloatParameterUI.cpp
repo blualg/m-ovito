@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -54,8 +54,9 @@ void FloatParameterUI::updatePropertyValue()
 {
 	if(editObject() && spinner()) {
 		if(isReferenceFieldUI()) {
-			if(Controller* ctrl = dynamic_object_cast<Controller>(parameterObject()))
-				ctrl->setCurrentFloatValue(spinner()->floatValue());
+			if(Controller* ctrl = dynamic_object_cast<Controller>(parameterObject())) {
+				ctrl->setFloatValue(currentAnimationTime().value_or(AnimationTime(0)), spinner()->floatValue());
+			}
 		}
 		else if(isQtPropertyUI()) {
 			if(!editObject()->setProperty(propertyName(), spinner()->floatValue())) {
@@ -77,8 +78,9 @@ void FloatParameterUI::updateUI()
 	if(editObject() && spinner() && !spinner()->isDragging()) {
 		try {
 			if(isReferenceFieldUI()) {
-				if(Controller* ctrl = dynamic_object_cast<Controller>(parameterObject()))
-					spinner()->setFloatValue(ctrl->currentFloatValue());
+				if(Controller* ctrl = dynamic_object_cast<Controller>(parameterObject())) {
+					spinner()->setFloatValue(ctrl->getFloatValue(currentAnimationTime().value_or(AnimationTime(0))));
+				}
 			}
 			else {
 				QVariant val(0.0);

@@ -92,6 +92,9 @@ Q_SIGNALS:
 	/// \note This signal is NOT emitted when the parameters of the current viewport configuration change.
     void viewportConfigReplaced(ViewportConfiguration* newViewportConfiguration);
 
+	/// \brief This signal is emitted when another viewport became active.
+	void activeViewportChanged(Viewport* activeViewport);
+
 	/// \brief This signal is emitted whenever the active scene of current dataset has been replaced by a new one.
 	/// \note This signal is NOT emitted when the contents of the current scene change.
     void sceneReplaced(Scene* newScene);
@@ -111,6 +114,9 @@ Q_SIGNALS:
 	/// \brief This signal is emitted when the scene becomes ready after the current animation frame has changed.
 	void currentFrameChangeComplete();
 
+	/// \brief This signal is emitted whenever the length of the active animation interval changes.
+	void animationIntervalChanged(int firstFrame, int lastFrame);
+
 	/// \brief This signal is emitted whenever the file path of the active dataset changes.
 	void filePathChanged(const QString& filePath);
 
@@ -127,13 +133,16 @@ protected:
 
 protected Q_SLOTS:
 
-	/// This handler is invoked when the current selection set of the current dataset has been replaced.
-    void onSelectionSetReplaced(SelectionSet* newSelectionSet);
+	/// This handler is called when another viewport configuration becomes the active one.
+    void onViewportConfigReplaced(ViewportConfiguration* viewportConfig);
 
-	/// This handler is invoked when the current scene of the current dataset has been replaced.
+	/// This handler is called when another scene becomes the active one.
     void onSceneReplaced(Scene* newScene);
 
-	/// This handler is invoked when the current animation settings of the current dataset have been replaced.
+	/// This handler is called when another selection set becomes the active one.
+    void onSelectionSetReplaced(SelectionSet* newSelectionSet);
+
+	/// This handler is called when another animation settings object becomes the active one.
     void onAnimationSettingsReplaced(AnimationSettings* newAnimationSettings);
 
 private:
@@ -147,15 +156,25 @@ private:
 	/// The abstract user interface this container is part of.
 	UserInterface& _userInterface;
 
+	/// Reference to the currently active scene.
+	OORef<Scene> _activeScene;
+
+	/// Reference to the currently active animation settings.
+	OORef<AnimationSettings> _activeAnimationSettings;
+
+	/// Reference to the currently scene node selection set.
+	OORef<SelectionSet> _activeSelectionSet;
+
 	QMetaObject::Connection _selectionSetReplacedConnection;
 	QMetaObject::Connection _selectionSetChangedConnection;
 	QMetaObject::Connection _selectionSetChangeCompleteConnection;
 	QMetaObject::Connection _viewportConfigReplacedConnection;
-	QMetaObject::Connection _animationSettingsReplacedConnection;
+	QMetaObject::Connection _activeViewportChangedConnection;
 	QMetaObject::Connection _sceneReplacedConnection;
 	QMetaObject::Connection _renderSettingsReplacedConnection;
 	QMetaObject::Connection _animationCurrentFrameChangedConnection;
 	QMetaObject::Connection _animationCurrentFrameChangeCompleteConnection;
+	QMetaObject::Connection _animationIntervalChangedConnection;
 	QMetaObject::Connection _filePathChangedConnection;
 	QMetaObject::Connection _scenePreparationStartedConnection;
 	QMetaObject::Connection _scenePreparationFinishedConnection;

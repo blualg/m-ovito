@@ -33,60 +33,6 @@ namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(Controller);
 
-#if 0 // TODO: Removed unused code
-/******************************************************************************
-* Returns the float controller's value at the current animation time.
-******************************************************************************/
-FloatType Controller::currentFloatValue()
-{
-	TimeInterval iv;
-	return getFloatValue(ui().currentAnimationTime(), iv);
-}
-
-/******************************************************************************
-* Returns the integers controller's value at the current animation time.
-******************************************************************************/
-int Controller::currentIntValue()
-{
-	TimeInterval iv;
-	return getIntValue(ui().currentAnimationTime(), iv);
-}
-
-/******************************************************************************
-* Returns the Vector3 controller's value at the current animation time.
-******************************************************************************/
-Vector3 Controller::currentVector3Value()
-{
-	Vector3 v; TimeInterval iv;
-	getVector3Value(ui().currentAnimationTime(), v, iv);
-	return v;
-}
-
-/******************************************************************************
-* Sets the controller's value at the current animation time.
-******************************************************************************/
-void Controller::setCurrentFloatValue(FloatType newValue)
-{
-	setFloatValue(ui().currentAnimationTime(), newValue);
-}
-
-/******************************************************************************
-* Sets the controller's value at the current animation time.
-******************************************************************************/
-void Controller::setCurrentIntValue(int newValue)
-{
-	setIntValue(ui().currentAnimationTime(), newValue);
-}
-
-/******************************************************************************
-* Sets the controller's value at the current animation time.
-******************************************************************************/
-void Controller::setCurrentVector3Value(const Vector3& newValue)
-{
-	setVector3Value(ui().currentAnimationTime(), newValue);
-}
-#endif
-
 /******************************************************************************
 * Creates a new float controller.
 ******************************************************************************/

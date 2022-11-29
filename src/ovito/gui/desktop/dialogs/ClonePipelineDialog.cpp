@@ -33,8 +33,8 @@ namespace Ovito {
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-ClonePipelineDialog::ClonePipelineDialog(PipelineSceneNode* node, QWidget* parent) :
-	QDialog(parent), _originalNode(node)
+ClonePipelineDialog::ClonePipelineDialog(MainWindow& mainWindow, PipelineSceneNode* node, QWidget* parent) :
+	QDialog(parent), _mainWindow(mainWindow), _originalNode(node)
 {
 	setWindowTitle(tr("Clone pipeline"));
 
@@ -421,16 +421,19 @@ void ClonePipelineDialog::updateGraphicsScene()
 ******************************************************************************/
 void ClonePipelineDialog::onAccept()
 {
-	UndoableTransaction::handleExceptions(_originalNode->dataset()->undoStack(), tr("Clone pipeline"), [this]() {
+	UndoableTransaction::handleExceptions(_mainWindow, tr("Clone pipeline"), [this]() {
 		if(_pipelineItems.empty()) return;
 
 		// Do not create any animation keys during cloning.
-		AnimationSuspender animSuspender(_originalNode);
+		AnimationSuspender animSuspender(_mainWindow);
 
 		// Clone the scene node.
 		CloneHelper cloneHelper;
 		OORef<PipelineSceneNode> clonedPipeline = cloneHelper.cloneObject(_originalNode, false);
 		OVITO_ASSERT(clonedPipeline->dataProvider() == _originalNode->dataProvider());
+
+		// The scene we are working in.
+		Scene* scene = _originalNode->scene();
 
 		// Clone the pipeline objects.
 		OORef<PipelineObject> precedingObj;
@@ -475,7 +478,7 @@ void ClonePipelineDialog::onAccept()
 		// Translate cloned pipeline.
 		int displacementMode = _displacementDirectionGroup->checkedAction()->data().toInt();
 		if(displacementMode != -1) {
-			TimePoint time = _originalNode->dataset()->animationSettings()->time();
+			AnimationTime time = scene ? scene->animationSettings()->currentTime() : AnimationTime(0);
 			const Box3& bbox = _originalNode->worldBoundingBox(time);
 			Vector3 translation = Vector3::Zero();
 			translation[displacementMode] = bbox.size(displacementMode) + FloatType(0.2) * bbox.size().length();
@@ -487,7 +490,7 @@ void ClonePipelineDialog::onAccept()
 			parentNode->addChildNode(clonedPipeline);
 
 		// Select cloned pipeline.
-		if(Scene* scene = _originalNode->scene())
+		if(scene)
 			scene->selection()->setNode(clonedPipeline);
 	});
 	accept();

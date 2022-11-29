@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -41,7 +41,7 @@ DEFINE_REFERENCE_FIELD(PropertyParameterUI, parameterObject);
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-ParameterUI::ParameterUI(PropertiesEditor* parent) : RefMaker(nullptr)
+ParameterUI::ParameterUI(PropertiesEditor* parent)
 {
 	OVITO_ASSERT(parent);
 	setParent(parent);
@@ -137,19 +137,20 @@ void PropertyParameterUI::memorizeDefaultParameterValue()
 		propertyField()->memorizeDefaultValue(editObject());
 	}
 	else if(isReferenceFieldUI() && !propertyField()->isVector()) {
-		Controller* ctrl = dynamic_object_cast<Controller>(parameterObject());
-		if(ctrl) {
-			QSettings settings;
-			settings.beginGroup(editObject()->getOOClass().plugin()->pluginId());
-			settings.beginGroup(editObject()->getOOClass().name());
-			if(ctrl->controllerType() == Controller::ControllerTypeFloat) {
-				settings.setValue(propertyField()->identifier(), QVariant::fromValue(ctrl->currentFloatValue()));
-			}
-			else if(ctrl->controllerType() == Controller::ControllerTypeInt) {
-				settings.setValue(propertyField()->identifier(), QVariant::fromValue(ctrl->currentIntValue()));
-			}
-			else if(ctrl->controllerType() == Controller::ControllerTypeVector3) {
-				settings.setValue(propertyField()->identifier(), QVariant::fromValue(ctrl->currentVector3Value()));
+		if(Controller* ctrl = dynamic_object_cast<Controller>(parameterObject())) {
+			if(Scene* scene = mainWindow().activeScene()) {
+				QSettings settings;
+				settings.beginGroup(editObject()->getOOClass().plugin()->pluginId());
+				settings.beginGroup(editObject()->getOOClass().name());
+				if(ctrl->controllerType() == Controller::ControllerTypeFloat) {
+					settings.setValue(propertyField()->identifier(), QVariant::fromValue(ctrl->getFloatValue(scene->animationSettings()->currentTime())));
+				}
+				else if(ctrl->controllerType() == Controller::ControllerTypeInt) {
+					settings.setValue(propertyField()->identifier(), QVariant::fromValue(ctrl->getIntValue(scene->animationSettings()->currentTime())));
+				}
+				else if(ctrl->controllerType() == Controller::ControllerTypeVector3) {
+					settings.setValue(propertyField()->identifier(), QVariant::fromValue(ctrl->getVector3Value(scene->animationSettings()->currentTime())));
+				}
 			}
 		}
 	}

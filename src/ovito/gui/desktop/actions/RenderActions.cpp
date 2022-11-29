@@ -45,9 +45,13 @@ void WidgetActionManager::on_RenderActiveViewport_triggered()
 
 		// Get the current render settings.
 		RenderSettings* renderSettings = dataset()->renderSettings();
+		if(!renderSettings)
+			throw Exception(tr("Cannot render without an active RenderSettings object."));
 
 		// Get the current viewport configuration.
 		ViewportConfiguration* viewportConfig = dataset()->viewportConfig();
+		if(!viewportConfig)
+			throw Exception(tr("Cannot render without an active ViewportConfiguration object."));
 
 		// Create a task object that represents the rendering operation.
 		MainThreadOperation renderingOperation = MainThreadOperation::create(mainWindow(), true);
@@ -56,7 +60,7 @@ void WidgetActionManager::on_RenderActiveViewport_triggered()
 		std::shared_ptr<FrameBuffer> frameBuffer = mainWindow().createAndShowFrameBuffer(renderSettings->outputImageWidth(), renderSettings->outputImageHeight(), renderingOperation);
 
 		// Call high-level rendering function, which will take care of the rest.
-		dataset()->renderScene(renderSettings, viewportConfig, frameBuffer.get(), renderingOperation);
+		dataset()->renderScene(*renderSettings, *viewportConfig, *frameBuffer, renderingOperation);
 	}
 	catch(Exception& ex) {
 		ex.logError();

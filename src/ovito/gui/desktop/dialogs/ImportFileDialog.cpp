@@ -30,7 +30,7 @@ namespace Ovito {
 /******************************************************************************
 * Constructs the dialog window.
 ******************************************************************************/
-ImportFileDialog::ImportFileDialog(const QVector<const FileImporterClass*>& importerTypes, DataSet* dataset, QWidget* parent, const QString& caption, bool allowMultiSelection, const QString& dialogClass) :
+ImportFileDialog::ImportFileDialog(const QVector<const FileImporterClass*>& importerTypes, QWidget* parent, const QString& caption, bool allowMultiSelection, const QString& dialogClass) :
 	HistoryFileDialog(dialogClass, parent, caption)
 {
 	if(importerTypes.empty())

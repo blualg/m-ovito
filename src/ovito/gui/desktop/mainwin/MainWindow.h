@@ -86,8 +86,8 @@ public:
 	/// Saves the layout of the docked widgets to the settings store.
 	void saveLayout();
 
-	/// Immediately repaints all viewports that are flagged for an update.
-	void processViewportUpdates();
+	/// Immediately repaints all viewports that have been flagged for an update.
+	virtual void processViewportUpdates() override;
 
 	/// Returns the container that keeps a reference to the current dataset.
 	GuiDataSetContainer& datasetContainer() { return _datasetContainer; }

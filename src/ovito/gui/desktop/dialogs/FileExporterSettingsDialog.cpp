@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2018 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -35,16 +35,18 @@ namespace Ovito {
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-FileExporterSettingsDialog::FileExporterSettingsDialog(MainWindow& mainWindow, FileExporter* exporter)
+FileExporterSettingsDialog::FileExporterSettingsDialog(MainWindow& mainWindow, Scene& scene, FileExporter* exporter)
 	: QDialog(&mainWindow), _exporter(exporter)
 {
+	OVITO_ASSERT(exporter->sceneToExport() == &scene);
+
 	setWindowTitle(tr("Data Export Settings"));
 
 	_mainLayout = new QVBoxLayout(this);
 	QGroupBox* groupBox;
 	QGridLayout* groupLayout;
 
-	// Create "Export sequence" group box for selecting the animation interval to be exported.
+	// Create "Export sequence" group box, which lets the user select the animation interval to be exported.
 	groupBox = new QGroupBox(tr("Export frame sequence"), this);
 	_mainLayout->addWidget(groupBox);
 
@@ -54,7 +56,7 @@ FileExporterSettingsDialog::FileExporterSettingsDialog(MainWindow& mainWindow, F
 	_rangeButtonGroup = new QButtonGroup(this);
 
 	bool exportAnim = _exporter->exportAnimation();
-	if(!exportAnim && exporter->dataset()->animationSettings()->animationInterval().duration() == 0)
+	if(!exportAnim && scene.animationSettings()->lastFrame() <= scene.animationSettings()->firstFrame())
 		groupBox->setEnabled(false);
 	else
 		_skipDialog = false;
@@ -72,7 +74,7 @@ FileExporterSettingsDialog::FileExporterSettingsDialog(MainWindow& mainWindow, F
 	frameRangeLayout->addWidget(frameSequenceBtn);
 	frameRangeLayout->addSpacing(10);
 	frameSequenceBtn->setChecked(exportAnim);
-	frameSequenceBtn->setEnabled(exporter->dataset()->animationSettings()->animationInterval().duration() != 0);
+	frameSequenceBtn->setEnabled(scene.animationSettings()->lastFrame() > scene.animationSettings()->firstFrame());
 
 	class ShortLineEdit : public QLineEdit {
 	public:
@@ -84,27 +86,24 @@ FileExporterSettingsDialog::FileExporterSettingsDialog(MainWindow& mainWindow, F
 
 	frameRangeLayout->addWidget(new QLabel(tr("From frame:")));
 	_startTimeSpinner = new SpinnerWidget();
-	_startTimeSpinner->setUnit(exporter->dataset()->unitsManager().timeUnit());
-	_startTimeSpinner->setIntValue(exporter->dataset()->animationSettings()->frameToTime(_exporter->startFrame()));
+	_startTimeSpinner->setIntValue(scene.animationSettings()->firstFrame());
 	_startTimeSpinner->setTextBox(new ShortLineEdit());
-	_startTimeSpinner->setMinValue(exporter->dataset()->animationSettings()->animationInterval().start());
-	_startTimeSpinner->setMaxValue(exporter->dataset()->animationSettings()->animationInterval().end());
+	_startTimeSpinner->setMinValue(scene.animationSettings()->firstFrame());
+	_startTimeSpinner->setMaxValue(scene.animationSettings()->lastFrame());
 	frameRangeLayout->addWidget(_startTimeSpinner->textBox());
 	frameRangeLayout->addWidget(_startTimeSpinner);
 	frameRangeLayout->addSpacing(8);
 	frameRangeLayout->addWidget(new QLabel(tr("To:")));
 	_endTimeSpinner = new SpinnerWidget();
-	_endTimeSpinner->setUnit(exporter->dataset()->unitsManager().timeUnit());
-	_endTimeSpinner->setIntValue(exporter->dataset()->animationSettings()->frameToTime(_exporter->endFrame()));
+	_endTimeSpinner->setIntValue(scene.animationSettings()->lastFrame());
 	_endTimeSpinner->setTextBox(new ShortLineEdit());
-	_endTimeSpinner->setMinValue(exporter->dataset()->animationSettings()->animationInterval().start());
-	_endTimeSpinner->setMaxValue(exporter->dataset()->animationSettings()->animationInterval().end());
+	_endTimeSpinner->setMinValue(scene.animationSettings()->firstFrame());
+	_endTimeSpinner->setMaxValue(scene.animationSettings()->lastFrame());
 	frameRangeLayout->addWidget(_endTimeSpinner->textBox());
 	frameRangeLayout->addWidget(_endTimeSpinner);
 	frameRangeLayout->addSpacing(8);
 	frameRangeLayout->addWidget(new QLabel(tr("Every Nth frame:")));
 	_nthFrameSpinner = new SpinnerWidget();
-	_nthFrameSpinner->setUnit(exporter->dataset()->unitsManager().integerIdentityUnit());
 	_nthFrameSpinner->setIntValue(_exporter->everyNthFrame());
 	_nthFrameSpinner->setTextBox(new ShortLineEdit());
 	_nthFrameSpinner->setMinValue(1);
@@ -167,7 +166,7 @@ FileExporterSettingsDialog::FileExporterSettingsDialog(MainWindow& mainWindow, F
 	groupLayout->setColumnStretch(4, 1);
 	groupLayout->addWidget(_dataObjectBox, 0, 4);
 
-	exporter->dataset()->scene()->visitChildren([this, exporter](SceneNode* node) {
+	scene.visitChildren([this, exporter](SceneNode* node) {
 		if(exporter->isSuitableNode(node)) {
 			_sceneNodeBox->addItem(node->objectTitle(), QVariant::fromValue(OORef<OvitoObject>(node)));
 			if(node == exporter->nodeToExport())
@@ -223,9 +222,9 @@ void FileExporterSettingsDialog::updateDataObjectList()
 	_dataObjectBox->clear();
 
 	std::vector<DataObjectClassPtr> objClasses = _exporter->exportableDataObjectClass();
-	if(!objClasses.empty()) {
+	if(!objClasses.empty() && _exporter->sceneToExport()) {
 		if(PipelineSceneNode* pipeline = dynamic_object_cast<PipelineSceneNode>(_exporter->nodeToExport())) {
-			if(const PipelineFlowState& state = pipeline->evaluatePipelineSynchronous(true)) {
+			if(const PipelineFlowState& state = pipeline->evaluatePipelineSynchronous(_exporter->sceneToExport()->animationSettings()->currentTime(), true)) {
 				for(DataObjectClassPtr clazz : objClasses) {
 					OVITO_ASSERT(clazz != nullptr);
 					for(const ConstDataObjectPath& dataPath : state.data()->getObjectsRecursive(*clazz)) {
@@ -265,8 +264,8 @@ void FileExporterSettingsDialog::onOk()
 		_exporter->setExportAnimation(_rangeButtonGroup->checkedId() == 1);
 		_exporter->setUseWildcardFilename(_fileGroupButtonGroup ? (_fileGroupButtonGroup->checkedId() == 1) : _exporter->exportAnimation());
 		_exporter->setWildcardFilename(_wildcardTextbox->text());
-		_exporter->setStartFrame(_exporter->dataset()->animationSettings()->timeToFrame(_startTimeSpinner->intValue()));
-		_exporter->setEndFrame(_exporter->dataset()->animationSettings()->timeToFrame(std::max(_endTimeSpinner->intValue(), _startTimeSpinner->intValue())));
+		_exporter->setStartFrame(_startTimeSpinner->intValue());
+		_exporter->setEndFrame(std::max(_endTimeSpinner->intValue(), _startTimeSpinner->intValue()));
 		_exporter->setEveryNthFrame(_nthFrameSpinner->intValue());
 
 		accept();

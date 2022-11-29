@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2013 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -39,7 +39,7 @@ class OVITO_GUI_EXPORT CoordinateDisplayWidget : public QFrame
 public:
 
 	/// \brief Constructs the widget.
-	CoordinateDisplayWidget(DataSetContainer& datasetContainer, QWidget* parent = nullptr);
+	CoordinateDisplayWidget(MainWindow& mainWindow, QWidget* parent = nullptr);
 
 	/// \brief Shows the coordinate display widget.
 	void activate(const QString& undoOperationName);
@@ -93,11 +93,9 @@ protected Q_SLOT:
 
 private:
 
-	DataSetContainer& _datasetContainer;
+	MainWindow& _mainWindow;
 	SpinnerWidget* _spinners[3];
 	QString _undoOperationName;
 };
 
 }	// End of namespace
-
-

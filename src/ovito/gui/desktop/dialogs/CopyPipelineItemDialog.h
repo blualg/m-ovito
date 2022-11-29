@@ -37,7 +37,7 @@ class CopyPipelineItemDialog : public QDialog
 public:
 
 	/// Constructor.
-	CopyPipelineItemDialog(QWidget* parentWindow, PipelineSceneNode* sourcePipeline, QVector<OORef<PipelineObject>> pipelineObjects);
+	CopyPipelineItemDialog(MainWindow& mainWindow, QWidget* parentWindow, PipelineSceneNode* sourcePipeline, QVector<OORef<PipelineObject>> pipelineObjects);
 
 private Q_SLOTS:
 
@@ -46,8 +46,8 @@ private Q_SLOTS:
 
 private:
 
-	/// The current dataset.
-	DataSet* _dataset;
+	/// The parent window.
+	MainWindow& _mainWindow; 
 
 	/// The source pipeline.
 	OORef<PipelineSceneNode> _sourcePipeline;

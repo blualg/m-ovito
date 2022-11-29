@@ -43,6 +43,9 @@ public:
 	/// Computes the x position within the widget corresponding to the given animation frame.
 	int frameToPos(int frame);
 
+	/// Computes the x position within the widget corresponding to the given animation time.
+	int timeToPos(AnimationTime time) { return frameToPos(time.frame()); }
+
 	/// Converts a distance in pixels to a time difference.
 	int distanceToFrameDifference(int distance);
 

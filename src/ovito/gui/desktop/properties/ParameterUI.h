@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -55,6 +55,12 @@ public:
 		return static_cast<PropertiesEditor*>(this->parent()); 
 	}
 
+	/// \brief Returns the main window that is hosting this parameter UI.
+	MainWindow& mainWindow() const { return editor()->mainWindow(); }
+
+	/// \brief Returns the current animation time.
+	std::optional<AnimationTime> currentAnimationTime() const { return editor()->currentAnimationTime(); }
+
 	/// \brief Returns the enabled state of the UI.
 	/// \return \c true if this parameter's value can be changed by the user;
 	///         \c false otherwise.
@@ -67,20 +73,12 @@ public:
 	/// \sa isEnabled()
 	bool isDisabled() const { return !isEnabled(); }
 
-	/// \brief Returns the dataset currently being edited.
-	DataSet* dataset() {
-		if(editObject())
-			_dataset = editObject()->dataset();
-		OVITO_ASSERT_MSG(!_dataset.isNull(), "ParameterUI::dataset()", "Can access dataset only while editing an object.");
-		return _dataset.data();
-	}
-
 	/// \brief Executes the passed functor and catches any exceptions thrown during its execution.
 	/// If an exception is thrown by the functor, all changes done by the functor
 	/// so far will be undone and an error message is shown to the user.
 	template<typename Function>
 	void undoableTransaction(const QString& operationLabel, Function&& func) {
-		UndoableTransaction::handleExceptions(dataset()->undoStack(), operationLabel, std::forward<Function>(func));
+		UndoableTransaction::handleExceptions(mainWindow(), operationLabel, std::forward<Function>(func));
 	}
 
 public:
@@ -137,9 +135,6 @@ private:
 
 	/// Stores whether this UI is enabled.
 	bool _enabled = true;
-
-	/// The dataset currently being edited.
-	QPointer<DataSet> _dataset;
 };
 
 /**

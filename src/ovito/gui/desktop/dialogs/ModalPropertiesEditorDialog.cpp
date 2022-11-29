@@ -34,7 +34,7 @@ namespace Ovito {
 * The constructor of the dialog.
 ******************************************************************************/
 ModalPropertiesEditorDialog::ModalPropertiesEditorDialog(RefTarget* object, OORef<PropertiesEditor> editor, QWidget* parent, MainWindow& mainWindow, const QString& dialogTitle, const QString& undoString, const QString& helpTopic) :
-		QDialog(parent), _editor(std::move(editor)), UndoableTransaction(object->dataset()->undoStack(), undoString)
+		QDialog(parent), _editor(std::move(editor)), UndoableTransaction(mainWindow, undoString)
 {
 	setWindowTitle(dialogTitle);
 

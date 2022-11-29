@@ -104,9 +104,9 @@ QWidget* DislocationInspectionApplet::createWidget()
 /******************************************************************************
 * Updates the contents displayed in the inspector.
 ******************************************************************************/
-void DislocationInspectionApplet::updateDisplay(const PipelineFlowState& state, PipelineSceneNode* pipeline)
+void DislocationInspectionApplet::updateDisplay()
 {
-	DataInspectionApplet::updateDisplay(state, pipeline);
+	DataInspectionApplet::updateDisplay();
 
 	_tableModel->setContents(state);
 }

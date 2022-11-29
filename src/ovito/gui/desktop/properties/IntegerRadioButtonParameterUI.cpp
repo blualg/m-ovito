@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -92,7 +92,7 @@ void IntegerRadioButtonParameterUI::resetUI()
 
 	if(isReferenceFieldUI() && editObject()) {
 		// Update the displayed value when the animation time has changed.
-		connect(dataset()->container(), &DataSetContainer::timeChanged, this, &IntegerRadioButtonParameterUI::updateUI, Qt::UniqueConnection);
+		connect(&mainWindow().datasetContainer(), &DataSetContainer::currentFrameChanged, this, &IntegerRadioButtonParameterUI::updateUI, Qt::UniqueConnection);
 	}
 }
 
@@ -107,8 +107,9 @@ void IntegerRadioButtonParameterUI::updateUI()
 	if(buttonGroup() && editObject()) {
 		int id = buttonGroup()->checkedId();
 		if(isReferenceFieldUI()) {
-			if(Controller* ctrl = dynamic_object_cast<Controller>(parameterObject()))
-				id = ctrl->currentIntValue();
+			if(Controller* ctrl = dynamic_object_cast<Controller>(parameterObject())) {
+				id = ctrl->getIntValue(currentAnimationTime().value_or(AnimationTime(0)));
+			}
 		}
 		else {
 			if(isQtPropertyUI()) {
@@ -164,7 +165,7 @@ void IntegerRadioButtonParameterUI::updatePropertyValue()
 			undoableTransaction(tr("Change parameter"), [this, id]() {
 				if(isReferenceFieldUI()) {
 					if(Controller* ctrl = dynamic_object_cast<Controller>(parameterObject())) {
-						ctrl->setCurrentIntValue(id);
+						ctrl->setIntValue(currentAnimationTime().value_or(AnimationTime(0)), id);
 						updateUI();
 					}
 				}

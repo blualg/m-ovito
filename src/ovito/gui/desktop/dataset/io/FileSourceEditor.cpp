@@ -218,7 +218,7 @@ void FileSourceEditor::onPickLocalInputFile()
 			auto importerClasses = PluginManager::instance().metaclassMembers<FileImporter>(FileSourceImporter::OOClass());
 
 			// Let the user select a file by displaying a dialog window.
-			ImportFileDialog dialog(importerClasses, dataset(), container()->window(), tr("Pick input file"), false);
+			ImportFileDialog dialog(importerClasses, container()->window(), tr("Pick input file"), false);
 
 			// Select the previously imported file in the file dialog.
 			if(fileSource->dataCollectionFrame() >= 0 && fileSource->dataCollectionFrame() < fileSource->frames().size()) {
@@ -266,7 +266,7 @@ void FileSourceEditor::onPickRemoteInputFile()
 			auto importerClasses = PluginManager::instance().metaclassMembers<FileImporter>(FileSourceImporter::OOClass());
 
 			// Let the user select a new URL.
-			ImportRemoteFileDialog dialog(importerClasses, dataset(), container()->window(), tr("Pick source"));
+			ImportRemoteFileDialog dialog(importerClasses, container()->window(), tr("Pick source"));
 			QUrl oldUrl;
 			if(fileSource->dataCollectionFrame() >= 0 && fileSource->dataCollectionFrame() < fileSource->frames().size())
 				oldUrl = fileSource->frames()[fileSource->dataCollectionFrame()].sourceFile;
@@ -300,7 +300,7 @@ bool FileSourceEditor::importNewFile(FileSource* fileSource, const QUrl& url, Ov
 	if(!importerType) {
 
 		// Detect file format.
-		Future<OORef<FileImporter>> importerFuture = FileImporter::autodetectFileFormat(fileSource->dataset(), url, fileSource->importer());
+		Future<OORef<FileImporter>> importerFuture = FileImporter::autodetectFileFormat(fileSource, url, fileSource->importer());
 		if(!importerFuture.waitForFinished())
 			return false;
 
@@ -316,7 +316,7 @@ bool FileSourceEditor::importNewFile(FileSource* fileSource, const QUrl& url, Ov
 		}
 		else {
 			// Create a new importer instance.
-			importer = static_object_cast<FileImporter>(importerType->createInstance(fileSource->dataset()));
+			importer = static_object_cast<FileImporter>(importerType->createInstance());
 			if(!importer)
 				return false;
 		}
@@ -349,7 +349,7 @@ bool FileSourceEditor::importNewFile(FileSource* fileSource, const QUrl& url, Ov
 	}
 
 	// Temporarily suppress viewport updates while setting up the newly imported data.
-	ViewportSuspender noVPUpdate(fileSource->dataset()->viewportConfig());
+	ViewportSuspender noVPUpdate(mainWindow());
 
 	// Show the optional user interface (which is provided by the corresponding FileImporterEditor class) for the new importer.
 	for(OvitoClassPtr clazz = &newImporter->getOOClass(); clazz != nullptr; clazz = clazz->superClass()) {
@@ -387,12 +387,12 @@ void FileSourceEditor::onReloadAnimation()
 {
 	if(FileSource* fileSource = static_object_cast<FileSource>(editObject())) {
 		// Let the FileSource update the list of source animation frames.
-		// After the update is complete, jump to the last of the newly added animation frames.
+		// After the update is complete, jump to the last one of the newly added animation frames.
 		int oldFrameCount = fileSource->frames().size();
-		fileSource->updateListOfFrames(true).finally(fileSource->executor(), [fileSource, oldFrameCount](Task& task) {
-			if(!task.isCanceled() && fileSource->frames().size() > oldFrameCount) {
-				TimePoint time = fileSource->sourceFrameToAnimationTime(fileSource->frames().size() - 1);
-				fileSource->dataset()->animationSettings()->setTime(time);
+		fileSource->updateListOfFrames(true).finally(fileSource->executor(), [fileSource, oldFrameCount, scene=OORef<Scene>(mainWindow().activeScene())](Task& task) {
+			if(!task.isCanceled() && fileSource->frames().size() > oldFrameCount && scene) {
+				AnimationTime time = fileSource->sourceFrameToAnimationTime(fileSource->frames().size() - 1);				
+				scene->animationSettings()->setCurrentFrame(time.frame());
 			}
 		});
 	}
@@ -532,7 +532,9 @@ void FileSourceEditor::onFrameSelected(int index)
 	if(!fileSource) return;
 
 	if(fileSource->restrictToFrame() < 0) {
-		dataset()->animationSettings()->setTime(fileSource->sourceFrameToAnimationTime(index));
+		if(Scene* scene = mainWindow().activeScene()) {
+			scene->animationSettings()->setCurrentFrame(fileSource->sourceFrameToAnimationTime(index).frame());
+		}
 	}
 	else {
 		undoableTransaction(tr("Select static frame"), [&]() {

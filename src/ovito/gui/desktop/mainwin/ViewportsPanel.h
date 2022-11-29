@@ -93,9 +93,6 @@ private Q_SLOTS:
 	/// This is called when a new viewport configuration has been loaded.
 	void onViewportConfigurationReplaced(ViewportConfiguration* newViewportConfiguration);
 
-	/// This is called when new animation settings have been loaded.
-	void onAnimationSettingsReplaced(AnimationSettings* newAnimationSettings);
-
 	/// This is called when the current viewport input mode has changed.
 	void onInputModeChanged(ViewportInputMode* oldMode, ViewportInputMode* newMode);
 
@@ -121,11 +118,9 @@ private:
 	QMetaObject::Connection _activeViewportChangedConnection;
 	QMetaObject::Connection _maximizedViewportChangedConnection;
 	QMetaObject::Connection _viewportLayoutChangedConnection;
-	QMetaObject::Connection _autoKeyModeChangedConnection;
 	QMetaObject::Connection _activeModeCursorChangedConnection;
 
 	OORef<ViewportConfiguration> _viewportConfig;
-	OORef<AnimationSettings> _animSettings;
 	MainWindow& _mainWindow;
 	bool _graphicsInitializationErrorOccurred = false; 
 

@@ -33,8 +33,8 @@ namespace Ovito {
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-CopyPipelineItemDialog::CopyPipelineItemDialog(QWidget* parent, PipelineSceneNode* sourcePipeline, QVector<OORef<PipelineObject>> pipelineObjects) :
-	QDialog(parent), _dataset(sourcePipeline->dataset()), _sourcePipeline(sourcePipeline), _pipelineObjects(std::move(pipelineObjects))
+CopyPipelineItemDialog::CopyPipelineItemDialog(MainWindow& mainWindow, QWidget* parent, PipelineSceneNode* sourcePipeline, QVector<OORef<PipelineObject>> pipelineObjects) :
+	QDialog(parent), _mainWindow(mainWindow), _sourcePipeline(sourcePipeline), _pipelineObjects(std::move(pipelineObjects))
 {
 	setWindowTitle(tr("Copy Pipeline Items"));
 
@@ -49,24 +49,26 @@ CopyPipelineItemDialog::CopyPipelineItemDialog(QWidget* parent, PipelineSceneNod
 	gridLayout->addWidget(_destinationPipelineList, 0, 1);
 
 	// Populate list of scene pipelines.
-	_dataset->scene()->visitChildren([&](SceneNode* node) -> bool {
-		if(PipelineSceneNode* pipeline = dynamic_object_cast<PipelineSceneNode>(node)) {
-			QString itemLabel = pipeline->objectTitle();
-			if(pipeline == sourcePipeline)
-				itemLabel += tr(" (source pipeline)");
-			_destinationPipelineList->addItem(std::move(itemLabel), QVariant::fromValue(OORef<OvitoObject>(pipeline)));
-			if(pipeline == sourcePipeline)
-				_destinationPipelineList->setCurrentIndex(_destinationPipelineList->count() - 1);
-			else {
-#ifndef OVITO_BUILD_PROFESSIONAL
-				QStandardItem* item = static_cast<QStandardItemModel*>(_destinationPipelineList->model())->item(_destinationPipelineList->count() - 1);
-				item->setEnabled(false);
-				item->setText(item->text() + " (requires OVITO Pro)");
-#endif
+	if(Scene* scene = _mainWindow.activeScene()) {
+		scene->visitChildren([&](SceneNode* node) -> bool {
+			if(PipelineSceneNode* pipeline = dynamic_object_cast<PipelineSceneNode>(node)) {
+				QString itemLabel = pipeline->objectTitle();
+				if(pipeline == sourcePipeline)
+					itemLabel += tr(" (source pipeline)");
+				_destinationPipelineList->addItem(std::move(itemLabel), QVariant::fromValue(OORef<OvitoObject>(pipeline)));
+				if(pipeline == sourcePipeline)
+					_destinationPipelineList->setCurrentIndex(_destinationPipelineList->count() - 1);
+				else {
+	#ifndef OVITO_BUILD_PROFESSIONAL
+					QStandardItem* item = static_cast<QStandardItemModel*>(_destinationPipelineList->model())->item(_destinationPipelineList->count() - 1);
+					item->setEnabled(false);
+					item->setText(item->text() + " (requires OVITO Pro)");
+	#endif
+				}
 			}
-		}
-		return true;
-	});
+			return true;
+		});
+	}
 
 	gridLayout->addWidget(new QLabel(tr("Insert at:")), 1, 0);
 	QButtonGroup* insertionPositionGroup = new QButtonGroup(this);
@@ -104,12 +106,12 @@ CopyPipelineItemDialog::CopyPipelineItemDialog(QWidget* parent, PipelineSceneNod
 ******************************************************************************/
 void CopyPipelineItemDialog::onAccept()
 {
-	UndoableTransaction::handleExceptions(_dataset->undoStack(), tr("Copy pipeline item"), [this]() {
+	UndoableTransaction::handleExceptions(_mainWindow, tr("Copy pipeline item"), [this]() {
 		OORef<PipelineSceneNode> destinationPipeline = static_object_cast<PipelineSceneNode>(_destinationPipelineList->currentData().value<OORef<OvitoObject>>());
 		CloneHelper cloneHelper;
 
 		// Do not create any animation keys during cloning.
-		AnimationSuspender animSuspender(_dataset);
+		AnimationSuspender animSuspender(_mainWindow);
 
 		OORef<PipelineObject> precedingObj;
 		for(auto item = _pipelineObjects.crbegin(); item != _pipelineObjects.crend(); ++item) {

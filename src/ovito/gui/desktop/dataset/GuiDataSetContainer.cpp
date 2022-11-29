@@ -44,6 +44,8 @@ IMPLEMENT_OVITO_CLASS(GuiDataSetContainer);
 ******************************************************************************/
 GuiDataSetContainer::GuiDataSetContainer(TaskManager& taskManager, MainWindow& mainWindow) : DataSetContainer(taskManager, mainWindow), _mainWindow(mainWindow)
 {
+	// Reset undo stack whenever a new dataset is loaded.
+	connect(this, &DataSetContainer::dataSetChanged, mainWindow.undoStack(), &UndoStack::clear);
 }
 
 /******************************************************************************
@@ -61,7 +63,7 @@ bool GuiDataSetContainer::fileSave()
 	// Save dataset to file.
 	try {
 		currentSet()->saveToFile(currentSet()->filePath(), MainThreadOperation::create(mainWindow(), true));
-		currentSet()->undoStack().setClean();
+		mainWindow().undoStack()->setClean();
 	}
 	catch(const Exception& ex) {
 		ex.reportError();
@@ -131,7 +133,7 @@ bool GuiDataSetContainer::fileSaveAs(const QString& filename)
 ******************************************************************************/
 bool GuiDataSetContainer::askForSaveChanges()
 {
-	if(!currentSet() || currentSet()->undoStack().isClean() || currentSet()->filePath().isEmpty())
+	if(!currentSet() || mainWindow().undoStack()->isClean() || currentSet()->filePath().isEmpty())
 		return true;
 
 	QString message;
@@ -182,7 +184,7 @@ bool GuiDataSetContainer::importFiles(const std::vector<QUrl>& urls, MainThreadO
 				throw Exception(tr("Could not auto-detect the format of the file %1. The file format might not be supported.").arg(url.fileName()));
 		}
 		else {
-			importer = static_object_cast<FileImporter>(importerType->createInstance(currentSet()));
+			importer = static_object_cast<FileImporter>(importerType->createInstance());
 			if(!importer)
 				throw Exception(tr("Failed to import file. Could not initialize import service."));
 			importer->setSelectedFileFormat(importerFormat);
@@ -289,7 +291,7 @@ bool GuiDataSetContainer::importFiles(const std::vector<QUrl>& urls, MainThreadO
 
 	if(OORef<PipelineSceneNode> pipeline = importer->importFileSet(currentSet()->scene(), std::move(urlImporters), importMode, true)) {
 		if(importMode == FileImporter::ResetScene) {
-			currentSet()->undoStack().clear();
+			mainWindow().undoStack()->clear();
 			currentSet()->setFilePath(QString());
 		} 
 		return true;

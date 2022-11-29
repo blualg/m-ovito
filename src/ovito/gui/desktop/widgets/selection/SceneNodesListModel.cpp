@@ -203,7 +203,7 @@ void SceneNodesListModel::onDataSetChanged(DataSet* newDataSet)
 }
 
 /******************************************************************************
-* This is called whenever the node selection has changed.
+* This is called whenever the scene node selection has changed.
 ******************************************************************************/
 void SceneNodesListModel::onSceneSelectionChanged()
 {
