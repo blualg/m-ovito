@@ -27,12 +27,12 @@ Installation instructions
 =========================
 
 *Linux*:
-    Extract the downloaded :file:`.tar.xz` archive file using the `tar <https://www.computerhope.com/unix/utar.htm>`_ command: :command:`tar xJfv ovito-3.7.0-x86_64.tar.xz`.
+    Extract the downloaded :file:`.tar.xz` archive file using the `tar <https://www.computerhope.com/unix/utar.htm>`_ command: :command:`tar xJfv ovito-{{OVITO_VERSION_STRING}}-x86_64.tar.xz`.
     This will create a new sub-directory containing the program files.
     Change into that directory and start OVITO by running the executable :command:`./bin/ovito`.
 
 *Windows*:
-    Run the installer program :file:`ovito-x.y.z-win64.exe` to install OVITO in a directory of your choice.
+    Run the installer program :file:`ovito-{{OVITO_VERSION_STRING}}-win64.exe` to install OVITO in a directory of your choice.
     Note that Windows might ask whether you really want to launch the installer because it was downloaded from the web and is not digitally signed.
 
 *macOS*:
