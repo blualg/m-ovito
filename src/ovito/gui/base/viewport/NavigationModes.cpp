@@ -151,7 +151,7 @@ void NavigationMode::mouseMoveEvent(ViewportWindowInterface* vpwin, QMouseEvent*
 		modifyView(vpwin, _viewport, pos - _startPoint, false);
 
 		// Force immediate viewport repaint.
-		inputManager()->userInterface().processViewportUpdates();
+		inputManager()->userInterface().processViewportUpdateRequests();
 	}
 }
 
@@ -266,7 +266,7 @@ void ZoomMode::zoom(Viewport* vp, FloatType steps)
 		}
 	}
 	else {
-		UndoableTransaction::handleExceptions(inputManager()->userInterface(), tr("Zoom viewport"), [this, steps, vp]() {
+		inputManager()->userInterface().performTransaction(tr("Zoom viewport"), [this, steps, vp]() {
 			if(vp->isPerspectiveProjection()) {
 				FloatType amount = sceneSizeFactor(vp) * steps;
 				TimeInterval iv;

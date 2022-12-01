@@ -73,10 +73,13 @@ MainWindow::MainWindow() : UserInterface(_datasetContainer, _taskManager), _data
 	setViewportInputManager(new ViewportInputManager(this, *this));
 
 	// Create an undo stack.
-	setUndoStack(new UndoStack(this));
+	setUndoStack(new UndoStack(*this, this));
 
 	// Create actions.
 	setActionManager(new WidgetActionManager(this, *this));
+
+	// Reset undo stack whenever a new dataset is loaded.
+	connect(&datasetContainer(), &DataSetContainer::dataSetChanged, undoStack(), &UndoStack::clear);
 
 	// Let GUI application services register their actions.
 	for(const auto& service : StandaloneApplication::instance()->applicationServices()) {
@@ -164,7 +167,7 @@ MainWindow::MainWindow() : UserInterface(_datasetContainer, _taskManager), _data
 	};
 	QLineEdit* timeEditBox = new TimeEditBox();
 	timeEditBox->setToolTip(tr("Current Animation Time"));
-	AnimationTimeSpinner* currentTimeSpinner = new AnimationTimeSpinner(this);
+	AnimationTimeSpinner* currentTimeSpinner = new AnimationTimeSpinner(*this);
 	currentTimeSpinner->setTextBox(timeEditBox);
 	animationTimeSpinnerLayout->addWidget(timeEditBox, 1);
 	animationTimeSpinnerLayout->addWidget(currentTimeSpinner);
@@ -394,7 +397,7 @@ void MainWindow::createMainToolbar()
 	pipelinesLabel->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
 	pipelinesLabel->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
 	_mainToolbar->addWidget(pipelinesLabel);
-	_mainToolbar->addWidget(new SceneNodeSelectionBox(_datasetContainer, actionManager()));
+	_mainToolbar->addWidget(new SceneNodeSelectionBox(*this));
 }
 
 /******************************************************************************
@@ -427,7 +430,7 @@ void MainWindow::keyPressEvent(QKeyEvent* event)
 ******************************************************************************/
 void MainWindow::closeEvent(QCloseEvent* event)
 {
-	try {
+	if(!handleExceptions([&] {
 		// Save changes made to the current dataset.
 		if(!datasetContainer().askForSaveChanges()) {
 			event->ignore();
@@ -445,10 +448,8 @@ void MainWindow::closeEvent(QCloseEvent* event)
 
 		// Destroys the window.
 		event->accept();
-	}
-	catch(const Exception& ex) {
+	})) {
 		event->ignore();
-		ex.reportError();
 	}
 }
 
@@ -457,21 +458,12 @@ void MainWindow::closeEvent(QCloseEvent* event)
 ******************************************************************************/
 void MainWindow::exitWithFatalError(const Exception& ex) 
 { 
-	if(viewportsPanel()->viewportConfiguration())
-		viewportsPanel()->viewportConfiguration()->suspendViewportUpdates();
-	ex.reportError(true);
+	suspendViewportUpdates();
+	reportError(ex, true);
 	QTimer::singleShot(0, this, [this]() {
 		QMainWindow::close(); 
 		QCoreApplication::exit(1);
 	});
-}
-
-/******************************************************************************
-* Immediately repaints all viewports that are flagged for an update.
-******************************************************************************/
-void MainWindow::processViewportUpdates()
-{
-	datasetContainer().currentSet()->viewportConfig()->processViewportUpdates();
 }
 
 /******************************************************************************
@@ -544,7 +536,7 @@ void MainWindow::dropEvent(QDropEvent* event)
 		datasetContainer().importFiles(std::move(importUrls), MainThreadOperation::create(*this, true));
 	}
 	catch(const Exception& ex) {
-		ex.reportError();
+		reportError(ex);
 	}
 }
 
@@ -586,7 +578,7 @@ std::shared_ptr<FrameBuffer> MainWindow::createAndShowFrameBuffer(int width, int
 {
 	// Create the frame buffer window.
 	if(!_frameBufferWindow) {
-		_frameBufferWindow = new FrameBufferWindow(this);
+		_frameBufferWindow = new FrameBufferWindow(*this, this);
 		_frameBufferWindow->setWindowTitle(tr("Render output"));
 	}
 	std::shared_ptr<FrameBuffer> fb = _frameBufferWindow->createFrameBuffer(width, height);
@@ -609,6 +601,90 @@ bool MainWindow::darkTheme() const
 #else
 	return false;
 #endif	
+}
+
+/******************************************************************************
+* Handler function for exceptions.
+******************************************************************************/
+void MainWindow::reportError(const Exception& ex, bool blocking)
+{
+	OVITO_ASSERT(QThread::currentThread() == this->thread());
+
+	// Always display errors in the terminal window too.
+	UserInterface::reportError(ex, blocking);
+
+	if(!blocking) {
+		// Deferred display of the error message after execution returns to the main event loop.
+		if(_errorList.empty())
+			QMetaObject::invokeMethod(this, "showErrorMessages", Qt::QueuedConnection);
+
+		// Queue error messages.
+		_errorList.push_back(ex);
+	}
+	else {
+		_errorList.push_back(ex);
+		showErrorMessages();
+	}
+}
+
+/******************************************************************************
+* Displays an error message to the user that is associated with a particular child window or dialog.
+******************************************************************************/
+void MainWindow::reportError(const Exception& exception, QWidget* window)
+{
+	// Prepare a message box dialog.
+	QPointer<QMessageBox> msgbox = new QMessageBox();
+	msgbox->setWindowTitle(tr("Error - %1").arg(Application::applicationName()));
+	msgbox->setStandardButtons(QMessageBox::Ok);
+	msgbox->setText(exception.message());
+	msgbox->setIcon(QMessageBox::Critical);
+	msgbox->setTextInteractionFlags(Qt::TextBrowserInteraction);
+
+	// Stop animation playback when an error occurred.
+	QAction* playbackAction = actionManager()->getAction(ACTION_TOGGLE_ANIMATION_PLAYBACK);
+	if(playbackAction && playbackAction->isChecked())
+		playbackAction->trigger();
+
+	if(window && window->isVisible()) {
+		// If there currently is a modal dialog box being shown,
+		// make the error message dialog a child of this dialog to prevent a UI dead-lock.
+		for(QDialog* dialog : window->findChildren<QDialog*>()) {
+			if(dialog->isModal()) {
+				window = dialog;
+				dialog->show();
+				break;
+			}
+		}
+		msgbox->setParent(window);
+		msgbox->setWindowModality(Qt::WindowModal);
+	}
+
+	// If the exception is associated with additional message strings,
+	// show them in the Details section of the message box dialog.
+	if(exception.messages().size() > 1) {
+		QString detailText;
+		for(int i = 1; i < exception.messages().size(); i++)
+			detailText += exception.messages()[i] + QStringLiteral("\n");
+		msgbox->setDetailedText(detailText);
+	}
+
+	// Show message box.
+	msgbox->exec();
+
+	// Discard message box.
+	delete msgbox.data();
+}
+
+/******************************************************************************
+* Displays an error message box. This slot is called by reportError().
+******************************************************************************/
+void MainWindow::showErrorMessages()
+{
+	while(!_errorList.empty()) {
+		// Show next exception from queue.
+		reportError(_errorList.front(), this);
+		_errorList.pop_front();
+	}
 }
 
 }	// End of namespace

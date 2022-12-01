@@ -47,6 +47,9 @@ public:
 	/// \brief Deactivates the coordinate display widget.
 	void deactivate();
 
+	/// \brief Returns the main window hosting this widget.
+	MainWindow& mainWindow() const { return _mainWindow; }
+
 	/// Sets the values displayed by the coordinate display widget.
 	void setValues(const Vector3& xyz) {
 		if(!_spinners[0]->isDragging()) _spinners[0]->setFloatValue(xyz.x());

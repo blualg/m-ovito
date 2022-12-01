@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -262,7 +262,7 @@ void RenderSettingsEditor::onChooseImageFilename()
 
 	SaveImageFileDialog fileDialog(container(), tr("Output image file"), true, settings->imageInfo());
 	if(fileDialog.exec()) {
-		undoableTransaction(tr("Change output file"), [settings, &fileDialog]() {
+		performTransaction(tr("Change output file"), [settings, &fileDialog]() {
 			settings->setImageInfo(fileDialog.imageInfo());
 			settings->setSaveToFile(true);
 		});
@@ -276,7 +276,7 @@ void RenderSettingsEditor::onSizePresetActivated(int index)
 {
 	RenderSettings* settings = static_object_cast<RenderSettings>(editObject());
 	if(settings && index >= 2 && index < 2+sizeof(imageSizePresets)/sizeof(imageSizePresets[0])) {
-		undoableTransaction(tr("Change output dimensions"), [settings, index]() {
+		performTransaction(tr("Change output dimensions"), [settings, index]() {
 			settings->setOutputImageWidth(imageSizePresets[index-2][0]);
 			settings->setOutputImageHeight(imageSizePresets[index-2][1]);
 			PROPERTY_FIELD(RenderSettings::outputImageWidth)->memorizeDefaultValue(settings);
@@ -342,8 +342,8 @@ void RenderSettingsEditor::onSwitchRenderer()
 	QDialogButtonBox* buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel | QDialogButtonBox::Help);
 	connect(buttonBox, &QDialogButtonBox::accepted, &dlg, &QDialog::accept);
 	connect(buttonBox, &QDialogButtonBox::rejected, &dlg, &QDialog::reject);
-	connect(buttonBox, &QDialogButtonBox::helpRequested, []() {
-		ActionManager::openHelpTopic("usage.rendering");
+	connect(buttonBox, &QDialogButtonBox::helpRequested, this, [&]() {
+		mainWindow().actionManager()->openHelpTopic("usage.rendering");
 	});
 	connect(rendererListWidget, &QListWidget::itemDoubleClicked, &dlg, &QDialog::accept);
 	layout->addWidget(buttonBox, 2, 1, Qt::AlignRight);
@@ -356,7 +356,7 @@ void RenderSettingsEditor::onSwitchRenderer()
 
 	int newIndex = rendererListWidget->row(selItems.front());
 	if(!settings->renderer() || &settings->renderer()->getOOClass() != rendererClasses[newIndex]) {
-		undoableTransaction(tr("Switch renderer"), [settings, newIndex, &rendererClasses]() {
+		performTransaction(tr("Switch renderer"), [settings, newIndex, &rendererClasses]() {
 			OORef<SceneRenderer> renderer = static_object_cast<SceneRenderer>(rendererClasses[newIndex]->createInstance());
 			settings->setRenderer(std::move(renderer));
 		});
@@ -414,16 +414,18 @@ void RenderSettingsEditor::referenceReplaced(const PropertyFieldDescriptor* fiel
 void RenderSettingsEditor::onViewportPreviewModeToggled(bool checked)
 {
 	if(RenderSettings* rs = static_object_cast<RenderSettings>(editObject())) {
-		if(!rs->renderAllViewports()) {
-			if(activeViewport())
-				activeViewport()->setRenderPreviewMode(checked);
-		}
-		else {
-			if(ViewportConfiguration* viewportConfig = mainWindow().viewportsPanel()->viewportConfiguration()) {
-				for(Viewport* vp : viewportConfig->viewports())
-					vp->setRenderPreviewMode(checked);
+		performTransaction(tr("Toggle preview mode"), [&]() {
+			if(!rs->renderAllViewports()) {
+				if(activeViewport())
+					activeViewport()->setRenderPreviewMode(checked);
 			}
-		}
+			else {
+				if(ViewportConfiguration* viewportConfig = mainWindow().viewportsPanel()->viewportConfiguration()) {
+					for(Viewport* vp : viewportConfig->viewports())
+						vp->setRenderPreviewMode(checked);
+				}
+			}
+		});
 	}
 }
 

@@ -32,12 +32,11 @@ namespace Ovito {
 /******************************************************************************
 * Opens the output file for writing.
 ******************************************************************************/
-CompressedTextWriter::CompressedTextWriter(QFileDevice& output, QObject* errorContext) :
-	_device(output), 
+CompressedTextWriter::CompressedTextWriter(QFileDevice& output) :
+	_device(output) 
 #ifdef OVITO_ZLIB_SUPPORT
-	_compressor(&output), 
+	,_compressor(&output)
 #endif
-	_errorContext(errorContext)
 {
 	_filename = output.fileName();
 
@@ -47,16 +46,16 @@ CompressedTextWriter::CompressedTextWriter(QFileDevice& output, QObject* errorCo
 		// Open file for writing.
 		_compressor.setStreamFormat(GzipIODevice::GzipFormat);
 		if(!_compressor.open(QIODevice::WriteOnly))
-			throw Exception(FileManager::tr("Failed to open output file '%1' for writing: %2").arg(_filename).arg(_compressor.errorString()), _errorContext);
+			throw Exception(FileManager::tr("Failed to open output file '%1' for writing: %2").arg(_filename).arg(_compressor.errorString()));
 		_stream = &_compressor;
 #else
-		throw Exception(tr("Cannot open file '%1' for writing. This version of OVITO was built without I/O support for gzip compressed files.").arg(_filename), _errorContext);
+		throw Exception(tr("Cannot open file '%1' for writing. This version of OVITO was built without I/O support for gzip compressed files.").arg(_filename));
 #endif
 	}
 	else {
 		// Open file for writing.
 		if(!output.open(QIODevice::WriteOnly | QIODevice::Text))
-			throw Exception(FileManager::tr("Failed to open output file '%1' for writing: %2").arg(_filename).arg(output.errorString()), _errorContext);
+			throw Exception(FileManager::tr("Failed to open output file '%1' for writing: %2").arg(_filename).arg(output.errorString()));
 		_stream = &output;
 	}
 }
@@ -193,7 +192,7 @@ CompressedTextWriter& CompressedTextWriter::operator<<(FloatType f)
 ******************************************************************************/
 void CompressedTextWriter::reportWriteError()
 {
-	throw Exception(FileManager::tr("Failed to write output file '%1': %2").arg(filename()).arg(_stream->errorString()), _errorContext);
+	throw Exception(FileManager::tr("Failed to write output file '%1': %2").arg(filename()).arg(_stream->errorString()));
 }
 
 }	// End of namespace

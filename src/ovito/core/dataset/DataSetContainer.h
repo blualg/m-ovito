@@ -61,6 +61,15 @@ public:
 	/// Loads the given session state file and makes it the current dataset.
 	bool loadDataset(const QString& filename, MainThreadOperation operation);
 
+	/// Returns the currently active scene.
+	Scene* activeScene() const { return _activeScene; }
+
+	/// Returns the currently active animation settings.
+	AnimationSettings* activeAnimationSettings() const { return _activeAnimationSettings; }
+
+	/// Returns the currently scene node selection set.
+	SelectionSet* activeSelectionSet() const { return _activeSelectionSet; }
+
 Q_SIGNALS:
 
 	/// Is emitted when a another dataset has become the active dataset.
@@ -117,6 +126,9 @@ Q_SIGNALS:
 	/// \brief This signal is emitted whenever the length of the active animation interval changes.
 	void animationIntervalChanged(int firstFrame, int lastFrame);
 
+	/// \brief This signal is emitted when the time to string conversion format has changed.
+	void timeFormatChanged();
+
 	/// \brief This signal is emitted whenever the file path of the active dataset changes.
 	void filePathChanged(const QString& filePath);
 
@@ -135,6 +147,9 @@ protected Q_SLOTS:
 
 	/// This handler is called when another viewport configuration becomes the active one.
     void onViewportConfigReplaced(ViewportConfiguration* viewportConfig);
+
+	/// This handler is called when another viewport becomes the active one.
+	void onActiveViewportChanged(Viewport* activeViewport);
 
 	/// This handler is called when another scene becomes the active one.
     void onSceneReplaced(Scene* newScene);
@@ -170,11 +185,11 @@ private:
 	QMetaObject::Connection _selectionSetChangeCompleteConnection;
 	QMetaObject::Connection _viewportConfigReplacedConnection;
 	QMetaObject::Connection _activeViewportChangedConnection;
-	QMetaObject::Connection _sceneReplacedConnection;
 	QMetaObject::Connection _renderSettingsReplacedConnection;
 	QMetaObject::Connection _animationCurrentFrameChangedConnection;
 	QMetaObject::Connection _animationCurrentFrameChangeCompleteConnection;
 	QMetaObject::Connection _animationIntervalChangedConnection;
+	QMetaObject::Connection _timeFormatChangedConnection;
 	QMetaObject::Connection _filePathChangedConnection;
 	QMetaObject::Connection _scenePreparationStartedConnection;
 	QMetaObject::Connection _scenePreparationFinishedConnection;

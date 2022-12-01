@@ -162,7 +162,7 @@ void IntegerRadioButtonParameterUI::updatePropertyValue()
 	if(buttonGroup() && editObject()) {
 		int id = buttonGroup()->checkedId();
 		if(id != -1) {
-			undoableTransaction(tr("Change parameter"), [this, id]() {
+			performTransaction(tr("Change parameter"), [this, id]() {
 				if(isReferenceFieldUI()) {
 					if(Controller* ctrl = dynamic_object_cast<Controller>(parameterObject())) {
 						ctrl->setIntValue(currentAnimationTime().value_or(AnimationTime(0)), id);

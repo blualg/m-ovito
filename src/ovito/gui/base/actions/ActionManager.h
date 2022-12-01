@@ -206,11 +206,6 @@ public:
 	/// Returns the list of registered actions.
 	const QVector<QAction*>& actions() const { return _actions; }
 
-	/// \brief Invokes the command action with the given ID.
-	/// \param actionId The unique identifier string of the action to invoke.
-	/// \throw Exception if the action does not exist or if an error occurs during the action invocation.
-	void invokeAction(const QString& actionId);
-
 	/// \brief Registers a new action with the ActionManager.
 	/// \param action The action to be registered. The ActionManager will take ownership of the object.
 	void addAction(QAction* action);
@@ -235,7 +230,7 @@ public:
 	void deleteAction(QAction* action);
 
 	/// Shows the online manual and opens the given help page.
-	static void openHelpTopic(const QString& page);
+	void openHelpTopic(const QString& page);
 
 	/// \brief Returns the number of rows in this list model.
 	virtual int rowCount(const QModelIndex& parent) const override { return _actions.size(); }

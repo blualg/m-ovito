@@ -499,7 +499,7 @@ void PipelineListModel::deleteItems(const QVector<PipelineListItem*>& items)
 	}
 
 	// Perform the deletion one by one.
-	UndoableTransaction::handleExceptions(_userInterface, tr("Delete modifier"), [&]() {
+	_userInterface.performTransaction(tr("Delete modifier"), [&]() {
 		for(ModifierApplication* modApp : modApps) {
 			deleteModifierApplication(modApp);
 		}
@@ -513,7 +513,7 @@ void PipelineListModel::deleteItems(const QVector<PipelineListItem*>& items)
 ******************************************************************************/
 void PipelineListModel::deleteModifierApplication(ModifierApplication* modApp)
 {
-	UndoableTransaction::handleExceptions(_userInterface, tr("Delete modifier"), [modApp = OORef<ModifierApplication>(modApp), this]() {
+	_userInterface.performTransaction(tr("Delete modifier"), [modApp = OORef<ModifierApplication>(modApp), this]() {
 		modApp->visitDependents([&](RefMaker* dependent) {
 			if(ModifierApplication* precedingModApp = dynamic_object_cast<ModifierApplication>(dependent)) {
 				if(precedingModApp->input() == modApp) {
@@ -687,23 +687,20 @@ bool PipelineListModel::setData(const QModelIndex& index, const QVariant& value,
 	if(role == Qt::CheckStateRole || role == CheckedRole) {
 		PipelineListItem* item = this->item(index.row());
 		if(DataVis* vis = dynamic_object_cast<DataVis>(item->object())) {
-			UndoableTransaction::handleExceptions(_userInterface,
-					(value.toBool()) ? tr("Enable visual element") : tr("Disable visual element"), [vis, &value]() {
+			_userInterface.performTransaction((value.toBool()) ? tr("Enable visual element") : tr("Disable visual element"), [vis, &value]() {
 				vis->setEnabled(value.toBool());
 			});
 			return true;
 		}
 		else if(ModifierApplication* modApp = dynamic_object_cast<ModifierApplication>(item->object())) {
-			UndoableTransaction::handleExceptions(_userInterface,
-					(value.toInt() != Qt::Unchecked) ? tr("Enable modifier") : tr("Disable modifier"), [modApp, &value, index, role, this]() {
+			_userInterface.performTransaction((value.toInt() != Qt::Unchecked) ? tr("Enable modifier") : tr("Disable modifier"), [modApp, &value, index, role, this]() {
 				if(modApp->modifier()) 
 					modApp->modifier()->setEnabled(value.toInt() != Qt::Unchecked);
 			});
 			return true;
 		}
 		else if(ModifierGroup* group = dynamic_object_cast<ModifierGroup>(item->object())) {
-			UndoableTransaction::handleExceptions(_userInterface,
-					(value.toBool()) ? tr("Enable modifier group") : tr("Disable modifier group"), [group, &value]() {
+			_userInterface.performTransaction((value.toBool()) ? tr("Enable modifier group") : tr("Disable modifier group"), [group, &value]() {
 				group->setEnabled(value.toBool());
 			});
 			return true;
@@ -714,7 +711,7 @@ bool PipelineListModel::setData(const QModelIndex& index, const QVariant& value,
 		if(DataVis* vis = dynamic_object_cast<DataVis>(item->object())) {
 			QString newName = value.toString();
 			if(vis->objectTitle() != newName) {
-				UndoableTransaction::handleExceptions(_userInterface, tr("Rename visual element"), [vis, &newName]() {
+				_userInterface.performTransaction(tr("Rename visual element"), [vis, &newName]() {
 					vis->setObjectTitle(newName);
 				});
 			}
@@ -723,7 +720,7 @@ bool PipelineListModel::setData(const QModelIndex& index, const QVariant& value,
 		else if(ModifierApplication* modApp = dynamic_object_cast<ModifierApplication>(item->object())) {
 			QString newName = value.toString();
 			if(modApp->modifier() && modApp->modifier()->objectTitle() != newName) {
-				UndoableTransaction::handleExceptions(_userInterface, tr("Rename modifier"), [modApp, &newName]() {
+				_userInterface.performTransaction(tr("Rename modifier"), [modApp, &newName]() {
 					modApp->modifier()->setObjectTitle(newName);
 				});
 			}
@@ -732,7 +729,7 @@ bool PipelineListModel::setData(const QModelIndex& index, const QVariant& value,
 		else if(ModifierGroup* group = dynamic_object_cast<ModifierGroup>(item->object())) {
 			QString newName = value.toString();
 			if(group->objectTitle() != newName) {
-				UndoableTransaction::handleExceptions(_userInterface, tr("Rename modifier group"), [group, &newName]() {
+				_userInterface.performTransaction(tr("Rename modifier group"), [group, &newName]() {
 					group->setObjectTitle(newName);
 				});
 			}
@@ -1071,7 +1068,7 @@ bool PipelineListModel::performDragAndDropOperation(const QVector<int>& indexLis
 		if(destinationGroup && tail == insertAfter)
 			destinationGroup = nullptr;
 
-		UndoableTransaction::handleExceptions(_userInterface, tr("Move modifier"), [&]() {
+		_userInterface.performTransaction(tr("Move modifier"), [&]() {
 			// Make the pipeline rearrangement.
 			moveModifierRange(head, tail, insertBefore, insertAfter);
 
@@ -1176,7 +1173,7 @@ void PipelineListModel::moveItemUp(PipelineListItem* item)
 	if(!item) return;
 
 	if(OORef<ModifierApplication> modApp = dynamic_object_cast<ModifierApplication>(item->object())) {
-		UndoableTransaction::handleExceptions(_userInterface, tr("Move modifier up"), [modApp]() {
+		_userInterface.performTransaction(tr("Move modifier up"), [modApp]() {
 			if(OORef<ModifierApplication> predecessor = modApp->getPredecessorModApp()) {
 				OVITO_ASSERT(!predecessor->pipelines(true).empty());
 				if(modApp->modifierGroup() != nullptr && predecessor->modifierGroup() != modApp->modifierGroup()) {
@@ -1263,7 +1260,7 @@ void PipelineListModel::moveItemUp(PipelineListItem* item)
 		}
 
 		// Make the pipeline rearrangement.
-		UndoableTransaction::handleExceptions(_userInterface, tr("Move modifier group up"), [&]() {
+		_userInterface.performTransaction(tr("Move modifier group up"), [&]() {
 			insertBefore->visitDependents([&](RefMaker* dependent) {
 				if(ModifierApplication* predecessor = dynamic_object_cast<ModifierApplication>(dependent)) {
 					OVITO_ASSERT(predecessor->input() == insertBefore);
@@ -1289,7 +1286,7 @@ void PipelineListModel::moveItemDown(PipelineListItem* item)
 	if(!item) return;
 
 	if(OORef<ModifierApplication> modApp = dynamic_object_cast<ModifierApplication>(item->object())) {
-		UndoableTransaction::handleExceptions(_userInterface, tr("Move modifier down"), [modApp]() {
+		_userInterface.performTransaction(tr("Move modifier down"), [modApp]() {
 			OORef<ModifierApplication> successor = dynamic_object_cast<ModifierApplication>(modApp->input());
 			if(successor && successor->isPipelineBranch(true) == false) {
 				if(modApp->modifierGroup() != nullptr && successor->modifierGroup() != modApp->modifierGroup()) {
@@ -1353,7 +1350,7 @@ void PipelineListModel::moveItemDown(PipelineListItem* item)
 		}
 
 		// Make the pipeline rearrangement.
-		UndoableTransaction::handleExceptions(_userInterface, tr("Move modifier group down"), [&]() {
+		_userInterface.performTransaction(tr("Move modifier group down"), [&]() {
 			headModApp->visitDependents([&](RefMaker* dependent) {
 				if(ModifierApplication* predecessor = dynamic_object_cast<ModifierApplication>(dependent)) {
 					predecessor->setInput(successor);
@@ -1380,14 +1377,14 @@ void PipelineListModel::makeElementIndependent()
 	if(!item) return;
 
 	if(DataVis* visElement = dynamic_object_cast<DataVis>(item->object())) {
-		UndoableTransaction::handleExceptions(_userInterface, tr("Make visual element independent"), [&]() {
+		_userInterface.performTransaction(tr("Make visual element independent"), [&]() {
 			PipelineSceneNode* pipeline = selectedPipeline();
 			DataVis* replacementVisElement = pipeline->makeVisElementIndependent(visElement);
 			setNextObjectToSelect(replacementVisElement);
 		});
 	}
 	else if(PipelineObject* selectedPipelineObj = dynamic_object_cast<PipelineObject>(item->object())) {
-		UndoableTransaction::handleExceptions(_userInterface, tr("Make pipeline element independent"), [&]() {
+		_userInterface.performTransaction(tr("Make pipeline element independent"), [&]() {
 			CloneHelper cloneHelper;
 			PipelineObject* clonedObject = makeElementIndependentImpl(selectedPipelineObj, cloneHelper);
 			if(clonedObject)
@@ -1395,7 +1392,7 @@ void PipelineListModel::makeElementIndependent()
 		});
 	}
 	else if(ModifierGroup* selectedGroup = dynamic_object_cast<ModifierGroup>(item->object())) {
-		UndoableTransaction::handleExceptions(_userInterface, tr("Make modifier group independent"), [&]() {
+		_userInterface.performTransaction(tr("Make modifier group independent"), [&]() {
 			CloneHelper cloneHelper;
 			for(ModifierApplication* modApp : selectedGroup->modifierApplications()) {
 				ModifierApplication* clonedModApp = static_object_cast<ModifierApplication>(makeElementIndependentImpl(modApp, cloneHelper));
@@ -1485,7 +1482,7 @@ void PipelineListModel::toggleModifierGroup()
 		if(!existingGroup) {
 			// Create a new group.
 			OORef<ModifierGroup> group = OORef<ModifierGroup>::create();
-			UndoableTransaction::handleExceptions(_userInterface, tr("Create modifier group"), [&]() {
+			_userInterface.performTransaction(tr("Create modifier group"), [&]() {
 				for(RefTarget* obj : objects) {
 					if(ModifierApplication* modApp = dynamic_object_cast<ModifierApplication>(obj)) {
 						modApp->setModifierGroup(group);
@@ -1502,7 +1499,7 @@ void PipelineListModel::toggleModifierGroup()
 	if(!existingGroup)
 		existingGroup = dynamic_object_cast<ModifierGroup>(objects.front());
 	if(existingGroup) {
-		UndoableTransaction::handleExceptions(_userInterface, tr("Dissolve modifier group"), [&]() {
+		_userInterface.performTransaction(tr("Dissolve modifier group"), [&]() {
 			QVector<ModifierApplication*> groupModApps = existingGroup->modifierApplications();
 			setNextObjectToSelect(groupModApps.front());
 			for(ModifierApplication* modApp : groupModApps) {

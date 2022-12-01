@@ -23,6 +23,7 @@
 #include <ovito/gui/base/GUIBase.h>
 #include <ovito/core/dataset/scene/PipelineSceneNode.h>
 #include <ovito/core/dataset/DataSetContainer.h>
+#include <ovito/core/app/UserInterface.h>
 #include "OverlayListModel.h"
 
 namespace Ovito {
@@ -257,8 +258,7 @@ bool OverlayListModel::setData(const QModelIndex& index, const QVariant& value, 
 	if(role == Qt::CheckStateRole) {
 		OverlayListItem* item = this->item(index.row());
 		if(ViewportOverlay* overlay = item->overlay()) {
-			UndoableTransaction::handleExceptions(_userInterface,
-					(value == Qt::Checked) ? tr("Show layer") : tr("Hide layer"), [overlay, &value]() {
+			_userInterface.performTransaction((value == Qt::Checked) ? tr("Show layer") : tr("Hide layer"), [overlay, &value]() {
 				overlay->setEnabled(value == Qt::Checked);
 			});
 		}
@@ -268,7 +268,7 @@ bool OverlayListModel::setData(const QModelIndex& index, const QVariant& value, 
 		if(ViewportOverlay* overlay = item->overlay()) {
 			QString newName = value.toString();
 			if(overlay->objectTitle() != newName) {
-				UndoableTransaction::handleExceptions(_userInterface, tr("Rename layer"), [overlay, &newName]() {
+				_userInterface.performTransaction(tr("Rename layer"), [overlay, &newName]() {
 					overlay->setObjectTitle(newName);
 				});
 			}

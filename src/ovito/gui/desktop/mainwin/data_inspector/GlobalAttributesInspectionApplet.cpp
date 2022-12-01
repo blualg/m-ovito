@@ -153,7 +153,7 @@ void GlobalAttributesInspectionApplet::exportToFile()
 		OVITO_ASSERT(exporter->sceneToExport());
 
 		// Let the user adjust the export settings.
-		FileExporterSettingsDialog settingsDialog(mainWindow(), *exporter->sceneToExport(), exporter);
+		FileExporterSettingsDialog settingsDialog(mainWindow(), *exporter->sceneToExport(), exporter, &mainWindow());
 		if(settingsDialog.exec() != QDialog::Accepted)
 			return;
 
@@ -164,7 +164,7 @@ void GlobalAttributesInspectionApplet::exportToFile()
 		exporter->doExport(progressDialog);
 	}
 	catch(const Exception& ex) {
-		ex.reportError();
+		mainWindow().reportError(ex);
 	}
 }
 

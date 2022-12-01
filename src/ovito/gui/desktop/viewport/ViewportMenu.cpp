@@ -36,7 +36,11 @@ namespace Ovito {
 /******************************************************************************
 * Initializes the menu.
 ******************************************************************************/
-ViewportMenu::ViewportMenu(Viewport* viewport, QWidget* viewportWidget) : QMenu(viewportWidget), _viewport(viewport), _viewportWidget(viewportWidget)
+ViewportMenu::ViewportMenu(MainWindow& mainWindow, Viewport* viewport, QWidget* viewportWidget) : 
+	QMenu(viewportWidget), 
+	_mainWindow(mainWindow),
+	_viewport(viewport), 
+	_viewportWidget(viewportWidget)
 {
 	QAction* action;
 
@@ -97,9 +101,11 @@ ViewportMenu::ViewportMenu(Viewport* viewport, QWidget* viewportWidget) : QMenu(
 
 	addSeparator();
 
+	ViewportConfiguration* viewportConfig = mainWindow.datasetContainer().currentSet()->viewportConfig();
+
 	if(ViewportLayoutCell* layoutCell = viewport->layoutCell()) {
 		QMenu* layoutMenu = addMenu(tr("Window Layout"));
-		layoutMenu->setEnabled(viewport != viewport->dataset()->viewportConfig()->maximizedViewport());
+		layoutMenu->setEnabled(viewport != viewportConfig->maximizedViewport());
 		_layoutCell = layoutCell;
 		OVITO_ASSERT(layoutCell->splitDirection() == ViewportLayoutCell::None && layoutCell->children().empty());
 
@@ -119,7 +125,7 @@ ViewportMenu::ViewportMenu(Viewport* viewport, QWidget* viewportWidget) : QMenu(
 
 	// Pipeline visibility
 	QMenu* visibilityMenu = addMenu(tr("Pipeline Visibility"));
-	for(SceneNode* node : viewport->dataset()->scene()->children()) {
+	for(SceneNode* node : viewport->scene()->children()) {
 		QAction* action = visibilityMenu->addAction(node->objectTitle());
 		action->setData(QVariant::fromValue(OORef<OvitoObject>(node)));
 		action->setCheckable(true);
@@ -151,8 +157,8 @@ void ViewportMenu::onShowViewTypeMenu()
 	connect(viewNodeGroup, &QActionGroup::triggered, this, &ViewportMenu::onViewNode);
 
 	// Find all camera nodes in the scene.
-	_viewport->dataset()->scene()->visitObjectNodes([this, viewNodeGroup](PipelineSceneNode* node) -> bool {
-		const PipelineFlowState& state = node->evaluatePipelineSynchronous(false);
+	_viewport->scene()->visitObjectNodes([this, viewNodeGroup](PipelineSceneNode* node) -> bool {
+		const PipelineFlowState& state = node->evaluatePipelineSynchronous(_viewport->scene()->animationSettings()->currentTime(), false);
 		if(state.data() && state.data()->containsObject<AbstractCameraObject>()) {
 			// Add a menu entry for this camera node.
 			QAction* action = viewNodeGroup->addAction(node->nodeName());
@@ -180,7 +186,9 @@ void ViewportMenu::onShowViewTypeMenu()
 ******************************************************************************/
 void ViewportMenu::onRenderPreviewMode(bool checked)
 {
-	_viewport->setRenderPreviewMode(checked);
+	_mainWindow.handleExceptions([&] {
+		_viewport->setRenderPreviewMode(checked);
+	});
 }
 
 /******************************************************************************
@@ -188,7 +196,9 @@ void ViewportMenu::onRenderPreviewMode(bool checked)
 ******************************************************************************/
 void ViewportMenu::onShowGrid(bool checked)
 {
-	_viewport->setGridVisible(checked);
+	_mainWindow.handleExceptions([&] {
+		_viewport->setGridVisible(checked);
+	});
 }
 
 /******************************************************************************
@@ -205,14 +215,17 @@ void ViewportMenu::onConstrainRotation(bool checked)
 ******************************************************************************/
 void ViewportMenu::onViewType(QAction* action)
 {
-	_viewport->setViewType((Viewport::ViewType)action->data().toInt(), true, false);
+	_mainWindow.handleExceptions([&] {
+		_viewport->setViewType(static_cast<Viewport::ViewType>(action->data().toInt()), true, false);
 
-	// Remember which viewport was maximized across program sessions.
-	// The same viewport will be maximized next time OVITO is started.
-	if(_viewport->dataset()->viewportConfig()->maximizedViewport() == _viewport) {
-		ViewportSettings::getSettings().setDefaultMaximizedViewportType(_viewport->viewType());
-		ViewportSettings::getSettings().save();
-	}
+		// Remember which viewport was maximized across program sessions.
+		// The same viewport will be maximized next time OVITO is started.
+		ViewportConfiguration* viewportConfig = _mainWindow.datasetContainer().currentSet()->viewportConfig();
+		if(viewportConfig->maximizedViewport() == _viewport) {
+			ViewportSettings::getSettings().setDefaultMaximizedViewportType(_viewport->viewType());
+			ViewportSettings::getSettings().save();
+		}
+	});
 }
 
 /******************************************************************************
@@ -220,7 +233,7 @@ void ViewportMenu::onViewType(QAction* action)
 ******************************************************************************/
 void ViewportMenu::onAdjustView()
 {
-	AdjustViewDialog* dialog = new AdjustViewDialog(_viewport, _viewportWidget);
+	AdjustViewDialog* dialog = new AdjustViewDialog(_mainWindow, _viewport, _viewportWidget);
 	dialog->show();
 }
 
@@ -232,7 +245,7 @@ void ViewportMenu::onViewNode(QAction* action)
 	PipelineSceneNode* viewNode = static_cast<PipelineSceneNode*>(action->data().value<void*>());
 	OVITO_CHECK_OBJECT_POINTER(viewNode);
 
-	UndoableTransaction::handleExceptions(_viewport->dataset()->undoStack(), tr("Set camera"), [this, viewNode]() {
+	_mainWindow.performTransaction(tr("Set camera"), [this, viewNode]() {
 		_viewport->setViewNode(viewNode);
 		OVITO_ASSERT(_viewport->viewType() == Viewport::VIEW_SCENENODE);
 	});
@@ -243,26 +256,25 @@ void ViewportMenu::onViewNode(QAction* action)
 ******************************************************************************/
 void ViewportMenu::onCreateCamera()
 {
-	UndoableTransaction::handleExceptions(_viewport->dataset()->undoStack(), tr("Create camera"), [this]() {
-		Scene* scene = _viewport->dataset()->scene();
-		AnimationSuspender animSuspender(_viewport->dataset()->animationSettings());
+	_mainWindow.performTransaction(tr("Create camera"), [this]() {
+		Scene* scene = _viewport->scene();
+		AnimationSuspender animSuspender(_mainWindow);
 
 		// Create and initialize the camera object.
 		OORef<PipelineSceneNode> cameraNode;
 		{
-			UndoSuspender noUndo(_viewport);
-			OVITO_ASSERT(_viewport = _viewport->dataset()->viewportConfig()->activeViewport());
-
+			UndoSuspender noUndo;
+	
 			// Create an instance of the StandardCameraSource class.
 			OvitoClassPtr cameraSourceType = PluginManager::instance().findClass(QStringLiteral("StdObj"), QStringLiteral("StandardCameraSource"));
 			if(!cameraSourceType)
 				throw Exception(tr("OVITO has been built without support for camera objects."));
 
 			// Note: The StandardCameraSource constructor will adopt the current parameters of this Viewport automatically.
-			OORef<PipelineObject> cameraSource = static_object_cast<PipelineObject>(cameraSourceType->createInstance(_viewport->dataset()));
+			OORef<PipelineObject> cameraSource = static_object_cast<PipelineObject>(cameraSourceType->createInstance());
 
 			// Create an object node with a data source for the camera.
-			cameraNode = OORef<PipelineSceneNode>::create(_viewport->dataset());
+			cameraNode = OORef<PipelineSceneNode>::create();
 			cameraNode->setDataProvider(std::move(cameraSource));
 
 			// Give the new node a name.
@@ -275,7 +287,7 @@ void ViewportMenu::onCreateCamera()
 				tm = tm * AffineTransformation::translation(
 						Vector3(0, 0, -_viewport->projectionParams().znear + FloatType(0.2) * (_viewport->projectionParams().zfar -_viewport->projectionParams().znear)));
 			}
-			cameraNode->transformationController()->setTransformationValue(0, tm, true);
+			cameraNode->transformationController()->setTransformationValue(AnimationTime(0), tm, true);
 		}
 
 		// Insert node into scene.
@@ -292,10 +304,11 @@ void ViewportMenu::onCreateCamera()
 ******************************************************************************/
 void ViewportMenu::onDeleteViewport()
 {
-	UndoableTransaction::handleExceptions(_layoutCell->dataset()->undoStack(), tr("Remove viewport"), [&]() {
+	_mainWindow.performTransaction(tr("Remove viewport"), [&]() {
 		if(ViewportLayoutCell* parentCell = _layoutCell->parentCell()) {
 			parentCell->removeChild(parentCell->children().indexOf(_layoutCell));
-			_viewport->dataset()->viewportConfig()->layoutRootCell()->pruneViewportLayoutTree();
+			ViewportConfiguration* viewportConfig = _mainWindow.datasetContainer().currentSet()->viewportConfig();
+			viewportConfig->layoutRootCell()->pruneViewportLayoutTree();
 		}
 	});
 }
@@ -305,9 +318,9 @@ void ViewportMenu::onDeleteViewport()
 ******************************************************************************/
 void ViewportMenu::onSplitViewport(ViewportLayoutCell::SplitDirection direction)
 {
-	UndoableTransaction::handleExceptions(_layoutCell->dataset()->undoStack(), tr("Split viewport"), [&]() {
+	_mainWindow.performTransaction(tr("Split viewport"), [&]() {
 
-		OORef<ViewportLayoutCell> newCell = OORef<ViewportLayoutCell>::create(_layoutCell->dataset());
+		OORef<ViewportLayoutCell> newCell = OORef<ViewportLayoutCell>::create();
 		newCell->setViewport(CloneHelper().cloneObject(_viewport, true));
 
 		if(ViewportLayoutCell* parentCell = _layoutCell->parentCell()) {
@@ -319,7 +332,7 @@ void ViewportMenu::onSplitViewport(ViewportLayoutCell::SplitDirection direction)
 			}
 		}
 
-		OORef<ViewportLayoutCell> newCell2 = OORef<ViewportLayoutCell>::create(_layoutCell->dataset());
+		OORef<ViewportLayoutCell> newCell2 = OORef<ViewportLayoutCell>::create();
 		newCell2->setViewport(_viewport);
 
 		_layoutCell->setSplitDirection(direction);
@@ -337,7 +350,7 @@ void ViewportMenu::onPipelineVisibility(bool checked)
 	QAction* action = qobject_cast<QAction*>(sender());
 	OVITO_ASSERT(action);
 
-	UndoableTransaction::handleExceptions(_viewport->dataset()->undoStack(), tr("Change pipeline visibility"), [&]() {
+	_mainWindow.performTransaction(tr("Change pipeline visibility"), [&]() {
 		if(OORef<SceneNode> node = static_object_cast<SceneNode>(action->data().value<OORef<OvitoObject>>())) {
 			node->setPerViewportVisibility(_viewport, checked);
 		}

@@ -444,7 +444,7 @@ void ModifierListModel::insertModifier()
 	DataSet* dataset = _userInterface.datasetContainer().currentSet();
 
 	// Instantiate the new modifier(s) and insert them into the pipeline.
-	UndoableTransaction::handleExceptions(_userInterface, tr("Insert modifier"), [&]() {
+	_userInterface.performTransaction(tr("Insert modifier"), [&]() {
 
 		if(action->modifierClass()) {
 			// Create an instance of the modifier.
@@ -581,12 +581,12 @@ void ModifierListModel::updateActionState()
 
 	// Evaluate pipeline at the selected stage.
 	if(currentItem) {
-		if(Scene* scene = _userInterface.activeScene()) {
+		if(AnimationSettings* anim = _userInterface.datasetContainer().activeAnimationSettings()) {
 			if(PipelineObject* pipelineObject = dynamic_object_cast<PipelineObject>(currentItem->object())) {
-				inputState = pipelineObject->evaluateSynchronous(PipelineEvaluationRequest(scene->animationSettings()));
+				inputState = pipelineObject->evaluateSynchronous(PipelineEvaluationRequest(anim));
 			}
 			else if(PipelineSceneNode* pipeline = _pipelineListModel->selectedPipeline()) {
-				inputState = pipeline->evaluatePipelineSynchronous(scene->animationSettings()->currentTime(), false);
+				inputState = pipeline->evaluatePipelineSynchronous(anim->currentTime(), false);
 			}
 		}
 	}

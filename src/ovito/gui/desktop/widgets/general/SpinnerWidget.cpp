@@ -113,7 +113,7 @@ void SpinnerWidget::onTextChanged()
 			bool ok;
 			FloatType newValue = textBox()->text().toDouble(&ok);
 			if(!ok)
-				throw Exception(tr("Invalid floating-point value: %1").arg(textBox()->text()), this);
+				throw Exception(tr("Invalid floating-point value: %1").arg(textBox()->text()));
 			setFloatValue(newValue, true);
 		}
 	}
@@ -373,7 +373,7 @@ void SpinnerWidget::mouseMoveEvent(QMouseEvent* event)
 
 					// Repaint viewports for immediate visual feedback when changing a parameter.
 					if(MainWindow* mainWindow = qobject_cast<MainWindow*>(window()))
-						mainWindow->processViewportUpdates();
+						mainWindow->processViewportUpdateRequests();
 
 					// Also repaint text box for immediate visual updates.
 					if(textBox())

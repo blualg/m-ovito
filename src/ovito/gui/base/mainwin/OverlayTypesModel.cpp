@@ -21,8 +21,8 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/gui/base/GUIBase.h>
-#include <ovito/core/app/UserInterface.h>
 #include <ovito/gui/base/actions/ActionManager.h>
+#include <ovito/core/app/UserInterface.h>
 #include <ovito/core/app/PluginManager.h>
 #include <ovito/core/dataset/DataSetContainer.h>
 #include "OverlayTypesModel.h"
@@ -194,7 +194,7 @@ void OverlayTypesModel::insertViewportLayer()
 	if(!vp) return;
 
 	// Instantiate the new layer and add it to the active viewport.
-	UndoableTransaction::handleExceptions(_userInterface, tr("Insert viewport layer"), [&]() {
+	_userInterface.performTransaction(tr("Insert viewport layer"), [&]() {
 
 		if(action->layerClass()) {
 

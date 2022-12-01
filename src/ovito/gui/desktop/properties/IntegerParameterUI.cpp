@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -75,7 +75,7 @@ void IntegerParameterUI::updatePropertyValue()
 void IntegerParameterUI::updateUI()
 {
 	if(editObject() && spinner() && !spinner()->isDragging()) {
-		try {
+		handleExceptions([&] {
 			if(isReferenceFieldUI()) {
 				if(Controller* ctrl = dynamic_object_cast<Controller>(parameterObject())) {
 					spinner()->setIntValue(ctrl->getIntValue(currentAnimationTime().value_or(AnimationTime(0))));
@@ -96,10 +96,7 @@ void IntegerParameterUI::updateUI()
 				}
 				spinner()->setIntValue(val.toInt());
 			}
-		}
-		catch(const Exception& ex) {
-			ex.reportError();
-		}
+		});
 	}
 }
 

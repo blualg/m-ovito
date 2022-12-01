@@ -39,7 +39,7 @@ class AdjustViewDialog : public QDockWidget
 public:
 
 	/// Constructor.
-	AdjustViewDialog(Viewport* viewport, QWidget* parentWindow);
+	AdjustViewDialog(MainWindow& mainWindow, Viewport* viewport, QWidget* parentWindow);
 
 private Q_SLOTS:
 
@@ -54,6 +54,7 @@ private Q_SLOTS:
 
 private:
 
+	MainWindow& _mainWindow;
 	bool _isUpdatingGUI = false;
 
 	QRadioButton* _camPerspective;

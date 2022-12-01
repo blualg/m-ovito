@@ -30,6 +30,7 @@
 #include <ovito/core/dataset/scene/Scene.h>
 #include <ovito/core/dataset/data/camera/AbstractCameraObject.h>
 #include <ovito/core/dataset/DataSetContainer.h>
+#include <ovito/core/app/Application.h>
 #include <ovito/core/app/UserInterface.h>
 
 /// The default field of view in world units used for orthogonal view types when the scene is empty.
@@ -364,14 +365,16 @@ void Viewport::zoomToBox(const Box3& box, FloatType viewportAspectRatio)
 		if(!window())
 			return;
 		if(renderPreviewMode()) {
-			viewportAspectRatio = renderAspectRatio(window()->dataset());
+			if(DataSet* dataset = window()->userInterface().datasetContainer().currentSet())
+				viewportAspectRatio = renderAspectRatio(dataset);
 		}
-		else {
+		if(viewportAspectRatio == 0) {
 			QSize vpSize = windowSize();
-			viewportAspectRatio = (vpSize.width() > 0) ? ((FloatType)vpSize.height() / vpSize.width()) : FloatType(1);
+			if(vpSize.width() > 0)
+				viewportAspectRatio = (FloatType)vpSize.height() / vpSize.width();
 		}
 		if(viewportAspectRatio == 0)
-			return;
+			viewportAspectRatio = 1;
 	}
 
 	if(isPerspectiveProjection()) {
@@ -409,8 +412,7 @@ bool Viewport::referenceEvent(RefTarget* source, const ReferenceEvent& event)
 	if(event.type() == ReferenceEvent::TargetChanged) {
 		if(source == scene()) {
 			// Redraw viewport window whenver the scene changes.
-			if(window())
-				prepareSceneThenRedraw();
+			prepareSceneThenRedraw();
 		}
 		else if(source == viewNode()) {
 			// Adopt camera information from view node.
@@ -470,9 +472,7 @@ void Viewport::referenceReplaced(const PropertyFieldDescriptor* field, RefTarget
 	else if(field == PROPERTY_FIELD(scene)) {
 		_sceneReadyFuture.reset();
 		_sceneReadyScheduled = false;
-		if(scene() && window()) {
-			prepareSceneThenRedraw();
-		}
+		prepareSceneThenRedraw();
 		// Repaint viewport when the camera orbit center changes.
 		if(oldTarget)
 			disconnect(static_object_cast<Scene>(oldTarget), &Scene::cameraOrbitCenterChanged, this, &Viewport::updateViewport);
@@ -589,8 +589,9 @@ void Viewport::processUpdateRequest()
 void Viewport::renderInteractive(UserInterface& userInterface, DataSet* dataset, SceneRenderer* renderer)
 {
 	OVITO_ASSERT_MSG(!isRendering(), "Viewport::renderInteractive()", "Viewport is already rendering.");
+	OVITO_ASSERT(dataset && dataset->renderSettings());
 
-	if(!scene())
+	if(!scene() || !dataset || !dataset->renderSettings())
 		return;
 
 	QRect vpRect(QPoint(0,0), windowSize());
@@ -600,10 +601,9 @@ void Viewport::renderInteractive(UserInterface& userInterface, DataSet* dataset,
 	try {
 		_isRendering = true;
 		AnimationTime time = scene()->animationSettings()->currentTime();
-		OVITO_ASSERT(dataset->renderSettings() != nullptr);
 
 		// Set up the renderer.
-		renderer->startRender(*dataset->renderSettings(), vpRect.size(), dataset->visCache());
+		renderer->startRender(*dataset->renderSettings(), vpRect.size(), Application::instance()->visCache());
 
 		// This is the async operation object used when calling rendering functions in the following.
 		MainThreadOperation renderOperation = MainThreadOperation::create(userInterface);
@@ -635,13 +635,15 @@ void Viewport::renderInteractive(UserInterface& userInterface, DataSet* dataset,
 				QRect renderViewportRect = this->renderViewportRect(dataset);
 				if(!renderViewportRect.isEmpty()) {
 					Box2 renderFrameBox = renderFrameRect(dataset);
-					QRect renderFrameRect(
-							(renderFrameBox.minc.x() + 1) * vpRect.width() / 2,
-							(renderFrameBox.minc.y() + 1) * vpRect.height() / 2,
-							renderFrameBox.width() * vpRect.width() / 2,
-							renderFrameBox.height() * vpRect.height() / 2);
-					renderer->setProjParams(computeProjectionParameters(time, (FloatType)renderViewportRect.height() / renderViewportRect.width(), renderer->waitForLongOperationsEnabled(), boundingBox));
-					renderer->renderOverlays(true, renderViewportRect, renderFrameRect, renderOperation);
+					if(!renderFrameBox.isEmpty()) {
+						QRect renderFrameRect(
+								(renderFrameBox.minc.x() + 1) * vpRect.width() / 2,
+								(renderFrameBox.minc.y() + 1) * vpRect.height() / 2,
+								renderFrameBox.width() * vpRect.width() / 2,
+								renderFrameBox.height() * vpRect.height() / 2);
+						renderer->setProjParams(computeProjectionParameters(time, (FloatType)renderViewportRect.height() / renderViewportRect.width(), renderer->waitForLongOperationsEnabled(), boundingBox));
+						renderer->renderOverlays(true, renderViewportRect, renderFrameRect, renderOperation);
+					}
 				}
 			}
 		}
@@ -658,13 +660,15 @@ void Viewport::renderInteractive(UserInterface& userInterface, DataSet* dataset,
 				QRect renderViewportRect = this->renderViewportRect(dataset);
 				if(!renderViewportRect.isEmpty()) {
 					Box2 renderFrameBox = renderFrameRect(dataset);
-					QRect renderFrameRect(
-							(renderFrameBox.minc.x() + 1) * vpRect.width() / 2,
-							(renderFrameBox.minc.y() + 1) * vpRect.height() / 2,
-							renderFrameBox.width() * vpRect.width() / 2,
-							renderFrameBox.height() * vpRect.height() / 2);
-					renderer->setProjParams(computeProjectionParameters(time, (FloatType)renderViewportRect.height() / renderViewportRect.width(), renderer->waitForLongOperationsEnabled(), boundingBox));
-					renderer->renderOverlays(false, renderViewportRect, renderFrameRect, renderOperation);
+					if(!renderFrameBox.isEmpty()) {
+						QRect renderFrameRect(
+								(renderFrameBox.minc.x() + 1) * vpRect.width() / 2,
+								(renderFrameBox.minc.y() + 1) * vpRect.height() / 2,
+								renderFrameBox.width() * vpRect.width() / 2,
+								renderFrameBox.height() * vpRect.height() / 2);
+						renderer->setProjParams(computeProjectionParameters(time, (FloatType)renderViewportRect.height() / renderViewportRect.width(), renderer->waitForLongOperationsEnabled(), boundingBox));
+						renderer->renderOverlays(false, renderViewportRect, renderFrameRect, renderOperation);
+					}
 				}
 			}
 		}
@@ -680,7 +684,7 @@ void Viewport::renderInteractive(UserInterface& userInterface, DataSet* dataset,
 
 		// Discard unused vis element resources.
 		if(!renderer->isPicking())
-			renderer->visCache().discardUnusedObjects();
+			Application::instance()->visCache().discardUnusedObjects();
 
 		_isRendering = false;
 	}
@@ -695,13 +699,13 @@ void Viewport::renderInteractive(UserInterface& userInterface, DataSet* dataset,
 ******************************************************************************/
 QRect Viewport::renderViewportRect(DataSet* dataset) const
 {
-	RenderSettings* renderSettings = dataset->renderSettings();
+	RenderSettings* renderSettings = dataset ? dataset->renderSettings() : nullptr;
 	if(!renderSettings)
 		return QRect();
 	QRect frameBufferRect(0, 0, renderSettings->outputImageWidth(), renderSettings->outputImageHeight());
 
 	// Aspect ratio of the viewport rectangle in the rendered output image.
-	if(renderSettings->renderAllViewports()) {
+	if(renderSettings->renderAllViewports() && dataset->viewportConfig()) {
 
 		// Compute target rectangles of all viewports of the current layout.
 		// TODO: This should be optimized. Computing the full layout everytime seems unnecessary.
@@ -724,7 +728,7 @@ FloatType Viewport::renderAspectRatio(DataSet* dataset) const
 {
 	QRect rect = renderViewportRect(dataset);
 	if(rect.isEmpty())
-		return 1.0;
+		return 0;
 
 	return (FloatType)rect.height() / (FloatType)rect.width();
 }
@@ -740,6 +744,9 @@ void Viewport::adjustProjectionForRenderFrame(DataSet* dataset, ViewProjectionPa
 		return;
 
 	FloatType renderAspectRatio = this->renderAspectRatio(dataset);
+	if(renderAspectRatio == 0.0)
+		return;
+
 	FloatType windowAspectRatio = (FloatType)vpSize.height() / vpSize.width();
 
 	if(_projParams.isPerspective) {
@@ -770,10 +777,12 @@ Box2 Viewport::renderFrameRect(DataSet* dataset) const
 {
 	QSize vpSize = windowSize();
 	if(vpSize.isEmpty())
-		return { Point2(-1), Point2(+1) };
+		return {};
 
 	// Aspect ratio of the viewport rectangle in the rendered output image.
 	FloatType renderAspectRatio = this->renderAspectRatio(dataset);
+	if(renderAspectRatio == 0.0)
+		return {};
 
 	// Compute a rectangle fitted into the viewport window that has the same aspect ratio as the rendered viewport image.
 	FloatType windowAspectRatio = (FloatType)vpSize.height() / vpSize.width();
@@ -949,16 +958,12 @@ void Viewport::setWindow(ViewportWindowInterface* window)
 ******************************************************************************/
 void Viewport::prepareSceneThenRedraw()
 {
-	OVITO_ASSERT(scene() != nullptr);
-	OVITO_ASSERT(window() != nullptr);
-
-	if(!_sceneReadyScheduled) {
+	if(!_sceneReadyScheduled && window() && scene()) {
 		_sceneReadyScheduled = true;
 		_sceneReadyFuture = scene()->whenReady().then(executor(), [this]() {
 			_sceneReadyScheduled = false;
 			_sceneReadyFuture.reset();
-			if(window())
-				updateViewport();
+			updateViewport();
 		});
 	}
 }

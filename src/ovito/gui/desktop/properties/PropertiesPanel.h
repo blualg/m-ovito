@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -40,7 +40,7 @@ class OVITO_GUI_EXPORT PropertiesPanel : public RolloutContainer
 public:
 
 	/// Constructs the panel.
-	PropertiesPanel(QWidget* parent, MainWindow& mainWindow);
+	PropertiesPanel(MainWindow& mainWindow, QWidget* parent = nullptr);
 
 	/// Destructs the panel.
 	virtual ~PropertiesPanel();

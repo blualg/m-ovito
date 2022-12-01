@@ -29,7 +29,6 @@
 #include <ovito/core/dataset/animation/TimeInterval.h>
 #include <ovito/core/rendering/RenderSettings.h>
 #include <ovito/core/viewport/ViewportConfiguration.h>
-#include <ovito/core/utilities/MixedKeyCache.h>
 
 namespace Ovito {
 
@@ -90,25 +89,6 @@ public:
 	/// \undoable
 	virtual void rescaleTime(const TimeInterval& oldAnimationInterval, const TimeInterval& newAnimationInterval) override;
 
-	/// \brief This is the high-level rendering function, which invokes the renderer to generate one or more
-	///        output images of the scene. All rendering parameters are specified in the RenderSettings and ViewportConfiguration objects.
-	/// \param renderSettings A RenderSettings object that specifies output image size, animation range to render etc.
-	/// \param viewportConfiguration The viewport configuration to render.
-	/// \param frameBuffer The frame buffer that will receive the rendered image. When rendering an animation
-	///        sequence, the buffer will contain only the last rendered frame when the function returns.
-	/// \return true on success; false if operation has been canceled by the user.
-	/// \throw Exception on error.
-	bool renderScene(const RenderSettings& renderSettings, const ViewportConfiguration& viewportConfiguration, FrameBuffer& frameBuffer, MainThreadOperation& operation);
-
-	/// \brief This is the high-level rendering function, which invokes the renderer to generate one or more
-	///        output images of the scene. All rendering parameters are specified in the RenderSettings object.
-	/// \param renderSettings A RenderSettings object that specifies output image size, animation range to render etc.
-	/// \param viewportLayout The viewport layout.
-	/// \param frameBuffer The frame buffer that will receive the rendered image. 
-	/// \return true on success; false if operation has been canceled by the user.
-	/// \throw Exception on error.
-	bool renderScene(const RenderSettings& renderSettings, const std::vector<std::pair<Viewport*, QRectF>>& viewportLayout, FrameBuffer& frameBuffer, MainThreadOperation& operation);
-
 	/// \brief Saves the dataset to a session state file.
 	/// \throw Exception on error.
 	///
@@ -120,9 +100,6 @@ public:
 	///
 	/// Note that this method does NOT invoke setFilePath().
 	void loadFromFile(const QString& filePath, MainThreadOperation operation);
-
-	/// Provides access to the global data cache used by visualzation elements.
-	MixedKeyCache& visCache() { return _visCache; }
 
 Q_SIGNALS:
 
@@ -149,17 +126,8 @@ protected:
 
 private:
 
-	/// Renders a single frame and saves the output file. This is part of the implementation of the renderScene() method.
-	bool renderFrame(int frameNumber, const RenderSettings& settings, SceneRenderer& renderer,
-			FrameBuffer& frameBuffer, const std::vector<std::pair<Viewport*, QRectF>>& viewportLayout, VideoEncoder* videoEncoder, MainThreadOperation& operation);
-
 	/// Returns a viewport configuration that is used as template for new scenes.
 	static OORef<ViewportConfiguration> createDefaultViewportConfiguration(ObjectCreationParams params);
-
-private Q_SLOTS:
-
-	/// Is called whenever a different viewport becomes the currently active one.
-	void onActiveViewportChanged(Viewport* activeViewport);
 
 private:
 
@@ -174,9 +142,6 @@ private:
 
 	/// The DataSetContainer which currently hosts this DataSet.
 	QPointer<DataSetContainer> _container;
-
-	/// Data cache used by visualization elements to store rendering primitives.
-	MixedKeyCache _visCache;
 
 	friend class DataSetContainer;
 };

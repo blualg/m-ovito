@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -22,8 +22,9 @@
 
 #include <ovito/gui/base/GUIBase.h>
 #include <ovito/gui/base/actions/ActionManager.h>
-#include <ovito/core/dataset/DataSet.h>
+#include <ovito/core/dataset/DataSetContainer.h>
 #include <ovito/core/dataset/animation/AnimationSettings.h>
+#include <ovito/core/app/UserInterface.h>
 
 namespace Ovito {
 
@@ -32,7 +33,8 @@ namespace Ovito {
 ******************************************************************************/
 void ActionManager::on_AnimationGotoStart_triggered()
 {
-	dataset()->animationSettings()->jumpToAnimationStart();
+	if(AnimationSettings* anim = userInterface().datasetContainer().activeAnimationSettings())
+		anim->jumpToAnimationStart();
 }
 
 /******************************************************************************
@@ -40,7 +42,8 @@ void ActionManager::on_AnimationGotoStart_triggered()
 ******************************************************************************/
 void ActionManager::on_AnimationGotoEnd_triggered()
 {
-	dataset()->animationSettings()->jumpToAnimationEnd();
+	if(AnimationSettings* anim = userInterface().datasetContainer().activeAnimationSettings())
+		anim->jumpToAnimationEnd();
 }
 
 /******************************************************************************
@@ -48,7 +51,8 @@ void ActionManager::on_AnimationGotoEnd_triggered()
 ******************************************************************************/
 void ActionManager::on_AnimationGotoPreviousFrame_triggered()
 {
-	dataset()->animationSettings()->jumpToPreviousFrame();
+	if(AnimationSettings* anim = userInterface().datasetContainer().activeAnimationSettings())
+		anim->jumpToPreviousFrame();
 }
 
 /******************************************************************************
@@ -56,7 +60,8 @@ void ActionManager::on_AnimationGotoPreviousFrame_triggered()
 ******************************************************************************/
 void ActionManager::on_AnimationGotoNextFrame_triggered()
 {
-	dataset()->animationSettings()->jumpToNextFrame();
+	if(AnimationSettings* anim = userInterface().datasetContainer().activeAnimationSettings())
+		anim->jumpToNextFrame();
 }
 
 /******************************************************************************

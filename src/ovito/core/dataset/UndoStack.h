@@ -90,7 +90,7 @@ class OVITO_CORE_EXPORT UndoStack : public QObject
 public:
 
 	/// Constructor.
-	explicit UndoStack(QObject* parent = nullptr);
+	explicit UndoStack(UserInterface& userInterface, QObject* parent = nullptr);
 
 	/// \brief Begins composition of a macro command with the given text description.
 	/// \param displayName A human-readable name that is shown in the edit menu to describe the operation.
@@ -268,7 +268,6 @@ Q_SIGNALS:
 
 private:
 
-
 	/**
 	 * \brief This class is used to combine multiple UndoableOperation objects into one.
 	 */
@@ -322,6 +321,9 @@ private:
 	};
 
 private:
+
+	/// The user interface this stack belongs to.
+	UserInterface& _userInterface;
 
 	/// The stack with records of undoable operations.
 	std::deque<std::unique_ptr<UndoableOperation>> _operations;
@@ -394,24 +396,6 @@ public:
 	void pushIfRecording(Args&&... args) {
 		if(_undoStack && _undoStack->isRecording())
 			_undoStack->push(std::make_unique<UndoableOperationClass>(std::forward<Args>(args)...));
-	}
-
-	/// Executes the passed functor and catches any exceptions thrown during its execution.
-	/// If an exception is thrown by the functor, all changes done by the functor
-	/// so far will be undone, the error message is shown to the user, and this function returns false.
-	/// If no exception is thrown, the operations are committed and this function returns true.
-	template<typename Function>
-	static bool handleExceptions(UserInterface& userInterface, const QString& operationLabel, Function&& func) {
-		try {
-			UndoableTransaction transaction(userInterface, operationLabel);
-			std::forward<Function>(func)();
-			transaction.commit();
-			return true;
-		}
-		catch(const Exception& ex) {
-			ex.reportError();
-			return false;
-		}
 	}
 
 private:

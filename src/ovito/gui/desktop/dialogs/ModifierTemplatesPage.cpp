@@ -36,9 +36,8 @@ IMPLEMENT_OVITO_CLASS(ModifierTemplatesPage);
 /******************************************************************************
 * Creates the widget that contains the plugin specific setting controls.
 ******************************************************************************/
-void ModifierTemplatesPage::insertSettingsDialogPage(ApplicationSettingsDialog* settingsDialog, QTabWidget* tabWidget)
+void ModifierTemplatesPage::insertSettingsDialogPage(QTabWidget* tabWidget)
 {
-	_settingsDialog = settingsDialog;
 	QWidget* page = new QWidget();
 	tabWidget->addTab(page, tr("Modifier templates"));
 	QGridLayout* layout1 = new QGridLayout(page);
@@ -54,7 +53,7 @@ void ModifierTemplatesPage::insertSettingsDialogPage(ApplicationSettingsDialog* 
 	layout1->setRowMinimumHeight(1, 10);
 
 	layout1->addWidget(new QLabel(tr("Modifier templates:")), 2, 0);
-	_listWidget = new QListView(settingsDialog);
+	_listWidget = new QListView(page);
 	_listWidget->setUniformItemSizes(true);
 	_listWidget->setModel(ModifierTemplates::get());
 	layout1->addWidget(_listWidget, 3, 0);
@@ -96,7 +95,7 @@ void ModifierTemplatesPage::insertSettingsDialogPage(ApplicationSettingsDialog* 
 void ModifierTemplatesPage::onCreateTemplate()
 {
 	try {
-		QDialog dlg(_settingsDialog);
+		QDialog dlg(settingsDialog());
 		dlg.setWindowTitle(tr("Create Modifier Template"));
 		QVBoxLayout* mainLayout = new QVBoxLayout(&dlg);
 		mainLayout->setSpacing(2);
@@ -106,7 +105,7 @@ void ModifierTemplatesPage::onCreateTemplate()
 		modifierListWidget->setUniformRowHeights(true);
 		modifierListWidget->setRootIsDecorated(false);
 		modifierListWidget->header()->hide();
-		PipelineListModel* pipelineModel = _settingsDialog->mainWindow().commandPanel()->modifyPage()->pipelineListModel();
+		PipelineListModel* pipelineModel = mainWindow().commandPanel()->modifyPage()->pipelineListModel();
 		QVector<RefTarget*> selectedPipelineObjects = pipelineModel->selectedObjects();
 		QVector<QTreeWidgetItem*> itemList;
 		int rowCount = 0;
@@ -198,8 +197,8 @@ void ModifierTemplatesPage::onCreateTemplate()
 		connect(buttonBox, &QDialogButtonBox::rejected, &dlg, &QDialog::reject);
 
 		// Implement Help button.
-		connect(buttonBox, &QDialogButtonBox::helpRequested, []() {
-			ActionManager::openHelpTopic(QStringLiteral("manual:modifier_templates"));
+		connect(buttonBox, &QDialogButtonBox::helpRequested, settingsDialog(), [&]() {
+			mainWindow().actionManager()->openHelpTopic(QStringLiteral("manual:modifier_templates"));
 		});
 
 		mainLayout->addWidget(buttonBox);
@@ -211,15 +210,14 @@ void ModifierTemplatesPage::onCreateTemplate()
 				}
 			}
 			OVITO_ASSERT(!selectedModifierList.empty());
-			MainThreadOperation operation = MainThreadOperation::create(_settingsDialog->mainWindow());
+			MainThreadOperation operation = MainThreadOperation::create(mainWindow());
 			int idx = ModifierTemplates::get()->createTemplate(nameBox->currentText().trimmed(), selectedModifierList, operation);
 			_listWidget->setCurrentIndex(_listWidget->model()->index(idx, 0));
 			_dirtyFlag = true;
 		}
 	}
-	catch(Exception& ex) {
-		ex.setContext(_settingsDialog);
-		ex.reportError(true);
+	catch(const Exception& ex) {
+		reportError(ex);
 	}
 }
 
@@ -237,9 +235,8 @@ void ModifierTemplatesPage::onDeleteTemplate()
 			_dirtyFlag = true;
 		}
 	}
-	catch(Exception& ex) {
-		ex.setContext(_settingsDialog);
-		ex.reportError(true);
+	catch(const Exception& ex) {
+		reportError(ex);
 	}
 }
 
@@ -253,7 +250,7 @@ void ModifierTemplatesPage::onRenameTemplate()
 			QString oldTemplateName = ModifierTemplates::get()->templateList()[index.row()];
 			QString newTemplateName = oldTemplateName;
 			for(;;) {
-				newTemplateName = QInputDialog::getText(_settingsDialog, tr("Rename modifier template"),
+				newTemplateName = QInputDialog::getText(settingsDialog(), tr("Rename modifier template"),
 					tr("Please enter a new name for the modifier template:"),
 					QLineEdit::Normal, newTemplateName);
 				if(newTemplateName.isEmpty() || newTemplateName == oldTemplateName) break;
@@ -263,14 +260,13 @@ void ModifierTemplatesPage::onRenameTemplate()
 					break;
 				}
 				else {
-					QMessageBox::critical(_settingsDialog, tr("Rename modifier template"), tr("A modifier template with the name '%1' already exists. Please choose a different name.").arg(newTemplateName));
+					QMessageBox::critical(settingsDialog(), tr("Rename modifier template"), tr("A modifier template with the name '%1' already exists. Please choose a different name.").arg(newTemplateName));
 				}
 			}
 		}
 	}
-	catch(Exception& ex) {
-		ex.setContext(_settingsDialog);
-		ex.reportError(true);
+	catch(const Exception& ex) {
+		reportError(ex);
 	}
 }
 
@@ -283,7 +279,7 @@ void ModifierTemplatesPage::onExportTemplates()
 		if(ModifierTemplates::get()->templateList().empty())
 			throw Exception(tr("There are no modifier templates to export."));
 
-		QString filename = QFileDialog::getSaveFileName(_settingsDialog,
+		QString filename = QFileDialog::getSaveFileName(settingsDialog(),
 			tr("Export Modifier Templates"), QString(), tr("OVITO Modifier Templates (*.ovmod)"));
 		if(filename.isEmpty())
 			return;
@@ -296,9 +292,8 @@ void ModifierTemplatesPage::onExportTemplates()
 		if(settings.status() != QSettings::NoError)
 			throw Exception(tr("I/O error while writing modifier template file."));
 	}
-	catch(Exception& ex) {
-		ex.setContext(_settingsDialog);
-		ex.reportError(true);
+	catch(const Exception& ex) {
+		reportError(ex);
 	}
 }
 
@@ -308,7 +303,7 @@ void ModifierTemplatesPage::onExportTemplates()
 void ModifierTemplatesPage::onImportTemplates()
 {
 	try {
-		QString filename = QFileDialog::getOpenFileName(_settingsDialog,
+		QString filename = QFileDialog::getOpenFileName(settingsDialog(),
 			tr("Import Modifier Templates"), QString(), tr("OVITO Modifier Templates (*.ovmod)"));
 		if(filename.isEmpty())
 			return;
@@ -321,16 +316,15 @@ void ModifierTemplatesPage::onImportTemplates()
 
 		_dirtyFlag = true;
 	}
-	catch(Exception& ex) {
-		ex.setContext(_settingsDialog);
-		ex.reportError(true);
+	catch(const Exception& ex) {
+		reportError(ex);
 	}
 }
 
 /******************************************************************************
 * Lets the page save all changed settings.
 ******************************************************************************/
-void ModifierTemplatesPage::saveValues(ApplicationSettingsDialog* settingsDialog, QTabWidget* tabWidget)
+void ModifierTemplatesPage::saveValues(QTabWidget* tabWidget)
 {
 	if(_dirtyFlag) {
 		ModifierTemplates::get()->commit();
@@ -342,7 +336,7 @@ void ModifierTemplatesPage::saveValues(ApplicationSettingsDialog* settingsDialog
 * Lets the settings page restore the original values of changed settings when 
 * the user presses the Cancel button.
 ******************************************************************************/
-void ModifierTemplatesPage::restoreValues(ApplicationSettingsDialog* settingsDialog, QTabWidget* tabWidget)
+void ModifierTemplatesPage::restoreValues(QTabWidget* tabWidget)
 {
 	try {
 		if(_dirtyFlag) {
@@ -350,9 +344,8 @@ void ModifierTemplatesPage::restoreValues(ApplicationSettingsDialog* settingsDia
 			_dirtyFlag = false;
 		}
 	}
-	catch(Exception& ex) {
-		ex.setContext(_settingsDialog);
-		ex.reportError(true);
+	catch(const Exception& ex) {
+		reportError(ex);
 	}
 }
 

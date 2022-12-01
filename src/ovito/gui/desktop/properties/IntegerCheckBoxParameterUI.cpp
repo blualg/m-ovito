@@ -145,7 +145,7 @@ void IntegerCheckBoxParameterUI::setEnabled(bool enabled)
 void IntegerCheckBoxParameterUI::updatePropertyValue()
 {
 	if(checkBox() && editObject()) {
-		undoableTransaction(tr("Change parameter"), [this]() {
+		performTransaction(tr("Change parameter value"), [&]() {
 			int value = checkBox()->isChecked() ? _checkedValue : _uncheckedValue;
 			if(isReferenceFieldUI()) {
 				if(Controller* ctrl = dynamic_object_cast<Controller>(parameterObject())) {

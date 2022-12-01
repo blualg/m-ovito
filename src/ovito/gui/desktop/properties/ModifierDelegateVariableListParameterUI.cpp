@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -220,7 +220,7 @@ void ModifierDelegateVariableListParameterUI::onAddDelegate()
 {
 	if(!editObject()) return;
 
-	undoableTransaction(tr("Add modifier input"), [&]() {
+	performTransaction(tr("Add modifier input"), [&]() {
 		// Add an empty delegate slot to the modifier.
 		MultiDelegatingModifier* modifier = static_object_cast<MultiDelegatingModifier>(editObject());
 		modifier->_delegates.push_back(modifier, PROPERTY_FIELD(MultiDelegatingModifier::delegates), nullptr);
@@ -241,7 +241,7 @@ void ModifierDelegateVariableListParameterUI::onRemoveDelegate()
 	int index = _removeDelegateActions.indexOf(action);
 	OVITO_ASSERT(index >= 0);
 
-	undoableTransaction(tr("Remove modifier input"), [&]() {
+	performTransaction(tr("Remove modifier input"), [&]() {
 		MultiDelegatingModifier* modifier = static_object_cast<MultiDelegatingModifier>(editObject());
 		modifier->_delegates.remove(modifier, PROPERTY_FIELD(MultiDelegatingModifier::delegates), index);
 	});
@@ -268,7 +268,7 @@ void ModifierDelegateVariableListParameterUI::onDelegateSelected(int index)
 	// Get the selected data object.
 	DataObjectReference ref = comboBox->currentData(Qt::UserRole + 1).value<DataObjectReference>();
 
-	undoableTransaction(tr("Select modifier input"), [&]() {
+	performTransaction(tr("Select modifier input"), [&]() {
 		MultiDelegatingModifier* modifier = static_object_cast<MultiDelegatingModifier>(editObject());
 		OVITO_ASSERT(boost::range::equal(modifier->delegates(), delegates()));
 

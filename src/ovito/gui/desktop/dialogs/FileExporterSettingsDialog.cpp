@@ -35,8 +35,8 @@ namespace Ovito {
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-FileExporterSettingsDialog::FileExporterSettingsDialog(MainWindow& mainWindow, Scene& scene, FileExporter* exporter)
-	: QDialog(&mainWindow), _exporter(exporter)
+FileExporterSettingsDialog::FileExporterSettingsDialog(MainWindow& mainWindow, Scene& scene, FileExporter* exporter, QWidget* parent)
+	: QDialog(parent), _mainWindow(mainWindow), _exporter(exporter)
 {
 	OVITO_ASSERT(exporter->sceneToExport() == &scene);
 
@@ -198,9 +198,9 @@ FileExporterSettingsDialog::FileExporterSettingsDialog(MainWindow& mainWindow, S
 	});
 
 	// Show the optional UI of the exporter.
-	if(OORef<PropertiesEditor> editor = PropertiesEditor::create(exporter)) {
+	if(OORef<PropertiesEditor> editor = PropertiesEditor::create(mainWindow, exporter)) {
 		if(editor->getOOMetaClass() != DefaultPropertiesEditor::OOClass()) {
-			PropertiesPanel* propPanel = new PropertiesPanel(this, mainWindow);
+			PropertiesPanel* propPanel = new PropertiesPanel(mainWindow, this);
 			_mainLayout->addWidget(propPanel);
 			propPanel->setEditObject(exporter);
 			_skipDialog = false;
@@ -271,7 +271,7 @@ void FileExporterSettingsDialog::onOk()
 		accept();
 	}
 	catch(const Exception& ex) {
-		ex.reportError();
+		_mainWindow.reportError(ex, this);
 	}
 }
 

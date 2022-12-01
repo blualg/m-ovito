@@ -22,11 +22,10 @@
 
 #include <ovito/gui/desktop/GUI.h>
 #include <ovito/gui/base/actions/ActionManager.h>
-#include <ovito/core/dataset/scene/SceneNode.h>
+#include <ovito/gui/desktop/mainwin/MainWindow.h>
+#include <ovito/core/dataset/DataSetContainer.h>
 #include <ovito/core/dataset/scene/Scene.h>
 #include <ovito/core/dataset/scene/SelectionSet.h>
-#include <ovito/core/dataset/DataSetContainer.h>
-#include <ovito/core/dataset/DataSet.h>
 #include "SceneNodesListModel.h"
 
 namespace Ovito {
@@ -34,16 +33,15 @@ namespace Ovito {
 /******************************************************************************
 * Constructs the model.
 ******************************************************************************/
-SceneNodesListModel::SceneNodesListModel(DataSetContainer& datasetContainer, ActionManager* actionManager, QWidget* parent) : QAbstractListModel(parent),
-	_datasetContainer(datasetContainer),
+SceneNodesListModel::SceneNodesListModel(MainWindow& mainWindow, QWidget* parent) : QAbstractListModel(parent),
+	_mainWindow(mainWindow),
 	_pipelineSceneNodeIcon(QIcon::fromTheme("edit_pipeline_icon"))
 {
-	// React to the dataset being replaced.
-	connect(&datasetContainer, &DataSetContainer::dataSetChanged, this, &SceneNodesListModel::onDataSetChanged);
+	// React to the scene being replaced.
+	connect(&mainWindow.datasetContainer(), &DataSetContainer::sceneReplaced, this, &SceneNodesListModel::onSceneReplaced);
 
 	// Listen for scene node selection changes.
-	connect(&datasetContainer, &DataSetContainer::selectionChangeComplete, this, &SceneNodesListModel::onSceneSelectionChanged);
-	connect(this, &SceneNodesListModel::modelReset, this, &SceneNodesListModel::onSceneSelectionChanged);
+	connect(&mainWindow.datasetContainer(), &DataSetContainer::selectionChangeComplete, this, &SceneNodesListModel::onSceneSelectionChanged);
 
 	// Listen for signals from the root scene node.
 	connect(&_sceneListener, &RefTargetListener<Scene>::notificationEvent, this, &SceneNodesListModel::onSceneNotificationEvent);
@@ -60,12 +58,12 @@ QT_WARNING_DISABLE_DEPRECATED
 	connect(qGuiApp, &QGuiApplication::paletteChanged, this, &SceneNodesListModel::updateColorPalette);
 QT_WARNING_POP
 
-	for(QAction* action : actionManager->actions()) {
+	for(QAction* action : mainWindow.actionManager()->actions()) {
 		if(action->objectName().startsWith("NewPipeline."))
 			_pipelineActions.push_back(action);
 	}
 	_pipelineActions.push_back(nullptr); // Separator
-	_pipelineActions.push_back(actionManager->getAction(ACTION_EDIT_CLONE_PIPELINE));
+	_pipelineActions.push_back(mainWindow.actionManager()->getAction(ACTION_EDIT_CLONE_PIPELINE));
 }
 
 /******************************************************************************
@@ -183,31 +181,28 @@ Qt::ItemFlags SceneNodesListModel::flags(const QModelIndex& index) const
 }
 
 /******************************************************************************
-* This is called when a new dataset has been loaded.
+* This is called when a new scene becomes active.
 ******************************************************************************/
-void SceneNodesListModel::onDataSetChanged(DataSet* newDataSet)
+void SceneNodesListModel::onSceneReplaced(Scene* newScene)
 {
 	beginResetModel();
 	_deferredUpdateList.clear();
 	_nodeListener.clear();
-	_sceneListener.setTarget(nullptr);
-	if(newDataSet) {
-		_sceneListener.setTarget(newDataSet->scene());
-		newDataSet->scene()->visitChildren([this](SceneNode* node) -> bool {
+	_sceneListener.setTarget(newScene);
+	if(newScene) {
+		newScene->visitChildren([&](SceneNode* node) -> bool {
 			_nodeListener.push_back(node);
 			return true;
 		});
 	}
 	endResetModel();
-	onSceneSelectionChanged();
 }
 
 /******************************************************************************
 * This is called whenever the scene node selection has changed.
 ******************************************************************************/
-void SceneNodesListModel::onSceneSelectionChanged()
+void SceneNodesListModel::onSceneSelectionChanged(SelectionSet* selection)
 {
-	SelectionSet* selection = _datasetContainer.currentSet() ? _datasetContainer.currentSet()->selection() : nullptr;
 	if(!selection || selection->nodes().empty()) {
 		Q_EMIT selectionChangeRequested(1);
 	}
@@ -262,7 +257,8 @@ void SceneNodesListModel::onNodeNotificationEvent(RefTarget* source, const Refer
 	// If a node is being removed from the scene, remove it from our internal list.
 	if(event.type() == ReferenceEvent::ReferenceRemoved || event.type() == ReferenceEvent::ReferenceChanged) {
 		// Don't know how else to do this in a safe manner. Rebuild the entire model from scratch.
-		onDataSetChanged(_datasetContainer.currentSet());
+		onSceneReplaced(_mainWindow.datasetContainer().activeScene());
+		onSceneSelectionChanged(_mainWindow.datasetContainer().activeSelectionSet());
 	}
 
 	// If a node is being renamed, let the model emit an update signal.
@@ -298,18 +294,20 @@ void SceneNodesListModel::activateItem(int index)
 	// Change scene node selection when a scene node has been selected in the combobox.
 	int pipelineIndex = index - firstSceneNodeIndex();
 	if(pipelineIndex >= 0 && pipelineIndex < sceneNodes().size()) {
-		SceneNode* node = sceneNodes()[pipelineIndex];
-		if(_datasetContainer.currentSet() && node) {
-			UndoableTransaction::handleExceptions(_datasetContainer.currentSet()->undoStack(), tr("Select pipeline"), [&]() {
-				_datasetContainer.currentSet()->selection()->setNode(node);
+		if(SceneNode* node = sceneNodes()[pipelineIndex]) {
+			_mainWindow.performTransaction(tr("Select pipeline"), [&]() {
+				if(SelectionSet* selection = _mainWindow.datasetContainer().activeSelectionSet())
+					selection->setNode(node);
 			});
 		}
 		return;
 	}
 
-	// This resets the current item of the combobox back to the selected scene node.
-	onSceneSelectionChanged();
+	// This is to reset the current item of the combobox back to the selected scene node
+	// after the user has selected an action item.
+	onSceneSelectionChanged(_mainWindow.datasetContainer().activeSelectionSet());
 
+	// Determine the selected action item and execute the action.
 	int actionIndex = index - firstActionIndex();
 	if(actionIndex >= 0 && actionIndex < _pipelineActions.size()) {
 		if(QAction* action = _pipelineActions[actionIndex])
@@ -325,17 +323,15 @@ void SceneNodesListModel::deleteItem(int index)
 	// Change scene node selection when a scene node has been selected in the combobox.
 	int pipelineIndex = index - firstSceneNodeIndex();
 	if(pipelineIndex >= 0 && pipelineIndex < sceneNodes().size()) {
-		SceneNode* node = sceneNodes()[pipelineIndex];
-		if(_datasetContainer.currentSet() && node) {
-			UndoableTransaction::handleExceptions(_datasetContainer.currentSet()->undoStack(), tr("Delete pipeline"), [&]() {
+		if(SceneNode* node = sceneNodes()[pipelineIndex]) {
+			_mainWindow.performTransaction(tr("Delete pipeline"), [&]() {
 				bool wasSelected = node->isSelected();
 				node->deleteNode();
 
 				// Automatically select one of the remaining nodes.
-				DataSet* dataset = _datasetContainer.currentSet();
-				if(wasSelected && dataset->scene()->children().isEmpty() == false)
-					dataset->selection()->setNode(dataset->scene()->children().front());
-
+				Scene* scene = _sceneListener.target();
+				if(wasSelected && scene && scene->children().isEmpty() == false)
+					scene->selection()->setNode(scene->children().front());
 			});
 		}
 	}

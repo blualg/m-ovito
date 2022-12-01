@@ -112,7 +112,7 @@ void VariantComboBoxParameterUI::setEnabled(bool enabled)
 void VariantComboBoxParameterUI::updatePropertyValue()
 {
 	if(comboBox() && editObject() && comboBox()->currentIndex() >= 0) {
-		undoableTransaction(tr("Change parameter"), [this]() {
+		performTransaction(tr("Change parameter"), [this]() {
 			QVariant newValue;
 			if(comboBox()->isEditable())
 				newValue = comboBox()->currentText();

@@ -63,47 +63,35 @@ void DataSetContainer::referenceReplaced(const PropertyFieldDescriptor* field, R
 {
 	if(field == PROPERTY_FIELD(currentSet)) {
 
-		if(oldTarget) {
-			DataSet* oldDataSet = static_object_cast<DataSet>(oldTarget);
-
-			// Stop animation playback for the old dataset.
-			oldDataSet->animationSettings()->stopAnimationPlayback();
-
-			if(oldDataSet->_container == this)
-				oldDataSet->_container = nullptr;
+		// Detach old dataset from this container.
+		if(DataSet* oldDataSet = static_object_cast<DataSet>(oldTarget)) {
+			OVITO_ASSERT(oldDataSet->_container == this);
+			oldDataSet->_container = nullptr;
 		}
 
 		// Forward signals from the current dataset.
 		disconnect(_viewportConfigReplacedConnection);
-		disconnect(_animationSettingsReplacedConnection);
-		disconnect(_sceneReplacedConnection);
 		disconnect(_renderSettingsReplacedConnection);
 		disconnect(_filePathChangedConnection);
 		if(currentSet()) {
-			_sceneReplacedConnection = connect(currentSet(), &DataSet::sceneReplaced, this, &DataSetContainer::onSceneReplaced);
-			_viewportConfigReplacedConnection = connect(currentSet(), &DataSet::viewportConfigReplaced, this, &DataSetContainer::viewportConfigReplaced);
-			_animationSettingsReplacedConnection = connect(currentSet(), &DataSet::animationSettingsReplaced, this, &DataSetContainer::animationSettingsReplaced);
+			currentSet()->_container = this;
+			_viewportConfigReplacedConnection = connect(currentSet(), &DataSet::viewportConfigReplaced, this, &DataSetContainer::onViewportConfigReplaced);
 			_renderSettingsReplacedConnection = connect(currentSet(), &DataSet::renderSettingsReplaced, this, &DataSetContainer::renderSettingsReplaced);
 			_filePathChangedConnection = connect(currentSet(), &DataSet::filePathChanged, this, &DataSetContainer::filePathChanged);
-			currentSet()->_container = this;
 		}
 
 		Q_EMIT dataSetChanged(currentSet());
 
+		// Discard all objects in the vis cache.
+		Application::instance()->visCache().reset();
+
 		if(currentSet()) {
-			Q_EMIT viewportConfigReplaced(currentSet()->viewportConfig());
-			Q_EMIT animationSettingsReplaced(currentSet()->animationSettings());
 			Q_EMIT renderSettingsReplaced(currentSet()->renderSettings());
 			Q_EMIT filePathChanged(currentSet()->filePath());
-			onSceneReplaced(currentSet()->scene());
-			onAnimationSettingsReplaced(currentSet()->animationSettings());
 			onViewportConfigReplaced(currentSet()->viewportConfig());			
 		}
 		else {
-			onSceneReplaced(nullptr);
-			onAnimationSettingsReplaced(nullptr);
-			Q_EMIT viewportConfigReplaced(nullptr);
-			Q_EMIT animationSettingsReplaced(nullptr);
+			onViewportConfigReplaced(nullptr);
 			Q_EMIT renderSettingsReplaced(nullptr);
 			Q_EMIT filePathChanged(QString());
 		}
@@ -119,9 +107,19 @@ void DataSetContainer::onViewportConfigReplaced(ViewportConfiguration* viewportC
 	disconnect(_activeViewportChangedConnection);
 	if(viewportConfig) {
 		// Forward signals from the current viewport config.
-		_activeViewportChangedConnection = connect(viewportConfig, &ViewportConfiguration::activeViewportChanged, this, &DataSetContainer::activeViewportChanged);
+		_activeViewportChangedConnection = connect(viewportConfig, &ViewportConfiguration::activeViewportChanged, this, &DataSetContainer::onActiveViewportChanged);
 	}
-	Q_EMIT activeViewportChanged(viewportConfig ? viewportConfig->activeViewport() : nullptr);
+	Q_EMIT viewportConfigReplaced(viewportConfig);
+	onActiveViewportChanged(viewportConfig ? viewportConfig->activeViewport() : nullptr);
+}
+
+/******************************************************************************
+* This handler is called when another viewport becomes the active one.
+******************************************************************************/
+void DataSetContainer::onActiveViewportChanged(Viewport* activeViewport)
+{
+	onSceneReplaced(activeViewport ? activeViewport->scene() : nullptr);
+	Q_EMIT activeViewportChanged(activeViewport);
 }
 
 /******************************************************************************
@@ -129,6 +127,8 @@ void DataSetContainer::onViewportConfigReplaced(ViewportConfiguration* viewportC
 ******************************************************************************/
 void DataSetContainer::onSceneReplaced(Scene* newScene)
 {
+	if(newScene == _activeScene)
+		return;
 	disconnect(_scenePreparationStartedConnection);
 	disconnect(_scenePreparationFinishedConnection);
 	disconnect(_selectionSetReplacedConnection);
@@ -149,6 +149,8 @@ void DataSetContainer::onSceneReplaced(Scene* newScene)
 ******************************************************************************/
 void DataSetContainer::onSelectionSetReplaced(SelectionSet* newSelectionSet)
 {
+	if(newSelectionSet == _activeSelectionSet)
+		return;
 	disconnect(_selectionSetChangedConnection);
 	disconnect(_selectionSetChangeCompleteConnection);
 	_activeSelectionSet = newSelectionSet;
@@ -167,9 +169,12 @@ void DataSetContainer::onSelectionSetReplaced(SelectionSet* newSelectionSet)
 ******************************************************************************/
 void DataSetContainer::onAnimationSettingsReplaced(AnimationSettings* newAnimationSettings)
 {
+	if(newAnimationSettings == _activeAnimationSettings)
+		return;
 	disconnect(_animationCurrentFrameChangedConnection);
 	disconnect(_animationCurrentFrameChangeCompleteConnection);
 	disconnect(_animationIntervalChangedConnection);
+	disconnect(_timeFormatChangedConnection);
 	if(_activeAnimationSettings) {
 		// Stop animation playback before switching to a new animation settings object.
 		_activeAnimationSettings->stopAnimationPlayback();
@@ -180,12 +185,15 @@ void DataSetContainer::onAnimationSettingsReplaced(AnimationSettings* newAnimati
 		_animationCurrentFrameChangedConnection = connect(newAnimationSettings, &AnimationSettings::currentFrameChanged, this, &DataSetContainer::currentFrameChanged);
 		_animationCurrentFrameChangeCompleteConnection = connect(newAnimationSettings, &AnimationSettings::currentFrameChangeComplete, this, &DataSetContainer::currentFrameChangeComplete);
 		_animationIntervalChangedConnection = connect(newAnimationSettings, &AnimationSettings::intervalChanged, this, &DataSetContainer::animationIntervalChanged);
+		_timeFormatChangedConnection = connect(newAnimationSettings, &AnimationSettings::timeFormatChanged, this, &DataSetContainer::timeFormatChanged);
 	}
 	if(newAnimationSettings) {
 		Q_EMIT animationIntervalChanged(newAnimationSettings->firstFrame(), newAnimationSettings->lastFrame());
 		Q_EMIT currentFrameChanged(newAnimationSettings->currentFrame());
 		Q_EMIT currentFrameChangeComplete();
+		Q_EMIT timeFormatChanged();
 	}
+	Q_EMIT animationSettingsReplaced(newAnimationSettings);
 }
 
 /******************************************************************************
@@ -207,46 +215,24 @@ bool DataSetContainer::loadDataset(const QString& filename, MainThreadOperation 
 
 	// Load dataset from file.
 	OORef<DataSet> dataSet;
-	try {
 
-		QFile fileStream(absoluteFilepath);
-		if(!fileStream.open(QIODevice::ReadOnly))
-			throw Exception(tr("Failed to open session state file '%1' for reading: %2").arg(absoluteFilepath).arg(fileStream.errorString()), this);
+	QFile fileStream(absoluteFilepath);
+	if(!fileStream.open(QIODevice::ReadOnly))
+		throw Exception(tr("Failed to open session state file '%1' for reading: %2").arg(absoluteFilepath).arg(fileStream.errorString()));
 
-		QDataStream dataStream(&fileStream);
-		ObjectLoadStream stream(dataStream, operation);
+	QDataStream dataStream(&fileStream);
+	ObjectLoadStream stream(dataStream, operation);
 
-		dataSet = stream.loadObject<DataSet>();
-		stream.close();
+	dataSet = stream.loadObject<DataSet>();
+	stream.close();
 
-		if(!dataSet)
-			throw Exception(tr("Session state file '%1' does not contain a dataset.").arg(absoluteFilepath), this);
-	}
-	catch(Exception& ex) {
-		// Provide a local context for the error.
-		ex.setContext(this);
-		throw ex;
-	}
+	if(!dataSet)
+		throw Exception(tr("Session state file '%1' does not contain a dataset.").arg(absoluteFilepath));
+		
 	OVITO_CHECK_OBJECT_POINTER(dataSet);
 	dataSet->setFilePath(absoluteFilepath);
 	setCurrentSet(dataSet);
 	return true;
 }
-
-#if 0 // TODO: Remove unused code
-/******************************************************************************
-* Returns the scene that is currently active, i.e., which is displayed in 
-* the viewport window that is currently selected.
-******************************************************************************/
-Scene* DataSetContainer::activeScene() const
-{
-	if(currentSet()) {
-		if(Viewport* vp = currentSet()->viewportConfig()->activeViewport()) {
-			return vp->scene();
-		}
-	}
-	return nullptr;
-}
-#endif
 
 }	// End of namespace

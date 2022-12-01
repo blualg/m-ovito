@@ -33,7 +33,7 @@ namespace Ovito {
 /**
  * This dialog box allows to edit the animation keys of an animatable parameter.
  */
-class AnimationKeyEditorDialog : public QDialog, private UndoableTransaction
+class AnimationKeyEditorDialog : public QDialog, private UndoableTransaction, ExecutionContext::Scope
 {
 	Q_OBJECT
 
@@ -59,14 +59,14 @@ private Q_SLOTS:
 private:
 
 	MainWindow& _mainWindow;
-	DataSet* _dataset;
-	Scene* _scene;
 	QTableView* _tableWidget;
 	QAbstractTableModel* _model;
 	QAction* _addKeyAction;
 	QAction* _deleteKeyAction;
 	RefTargetListener<KeyframeController> _ctrl;
 	PropertiesPanel* _keyPropPanel;
+
+	friend class AnimationKeyModel;
 };
 
 }	// End of namespace

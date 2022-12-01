@@ -67,7 +67,6 @@ bool STLImporter::OOMetaClass::checkFileFormat(const FileHandle& file) const
 		}
 	}
 
-
 	// Open input file again and check if it is a binary STL file.
 	std::unique_ptr<QIODevice> device = file.createIODevice();
 	if(!device->open(QIODevice::ReadOnly))

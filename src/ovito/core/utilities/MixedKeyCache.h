@@ -78,6 +78,11 @@ public:
 		_entries.erase(end_entry, _entries.end());
 	}
 
+	/// Discards all contents of the cache.
+	void reset() {
+		_entries.clear();
+	}
+
 private:
 
 	/// Stores all key-value pairs of the cache. 

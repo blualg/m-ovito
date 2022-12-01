@@ -22,7 +22,7 @@
 
 #include <ovito/core/Core.h>
 #include <ovito/core/oo/OvitoObject.h>
-#include <ovito/core/dataset/DataSet.h>
+#include <ovito/core/app/UserInterface.h>
 #include "ObjectSaveStream.h"
 
 namespace Ovito {
@@ -36,7 +36,7 @@ ObjectSaveStream::~ObjectSaveStream()
 		ObjectSaveStream::close();
 	}
 	catch(Exception& ex) {
-		ex.reportError();
+		operation().userInterface().reportError(ex);
 	}
 }
 

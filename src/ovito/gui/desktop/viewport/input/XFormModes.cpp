@@ -50,7 +50,7 @@ void XFormMode::activated(bool temporaryActivation)
 	DataSetContainer& datasetContainer = inputManager()->datasetContainer();
 	connect(&datasetContainer, &DataSetContainer::selectionChangeComplete, this, &XFormMode::onSelectionChangeComplete);
 	connect(&datasetContainer, &DataSetContainer::currentFrameChanged, this, &XFormMode::onCurrentFrameChanged);
-	onSelectionChangeComplete(datasetContainer.currentSet() ? datasetContainer.currentSet()->selection() : nullptr);
+	onSelectionChangeComplete(datasetContainer.activeSelectionSet());
 }
 
 /******************************************************************************
@@ -192,7 +192,7 @@ void XFormMode::mouseMoveEvent(ViewportWindowInterface* vpwin, QMouseEvent* even
 		doXForm();
 
 		// Force immediate viewport repaints.
-		inputManager()->userInterface().processViewportUpdates();
+		inputManager()->userInterface().processViewportUpdateRequests();
 	}
 	else {
 		// Change mouse cursor while hovering over an object.
@@ -221,11 +221,16 @@ void XFormMode::focusOutEvent(ViewportWindowInterface* vpwin, QFocusEvent* event
 ******************************************************************************/
 Point3 XFormMode::transformationCenter()
 {
+	OVITO_ASSERT(viewport());
+	OVITO_ASSERT(viewport()->scene());
+	if(!viewport() || !viewport()->scene())
+		return Point3::Origin();
+
 	Point3 center = Point3::Origin();
-	SelectionSet* selection = viewport()->dataset()->selection();
+	SelectionSet* selection = viewport()->scene()->selection();
 	if(selection && !selection->nodes().empty()) {
 		TimeInterval interval;
-		TimePoint time = selection->dataset()->animationSettings()->time();
+		AnimationTime time = viewport()->scene()->animationSettings()->currentTime();
 		for(SceneNode* node : selection->nodes()) {
 			const AffineTransformation& nodeTM = node->getWorldTransform(time, interval);
 			center += nodeTM.translation();
@@ -265,14 +270,14 @@ void MoveMode::doXForm()
 		_delta = _translationSystem * (point2 - _initialPoint);
 
 		// Apply transformation to selected nodes.
-		applyXForm(viewport()->dataset()->selection()->nodes(), 1);
+		applyXForm(viewport()->scene()->animationSettings()->currentTime(), viewport()->scene()->selection()->nodes(), 1);
 	}
 }
 
 /******************************************************************************
 * Applies the current transformation to a set of nodes.
 ******************************************************************************/
-void MoveMode::applyXForm(const OORefVector<SceneNode>& nodeSet, FloatType multiplier)
+void MoveMode::applyXForm(AnimationTime time, const QVector<SceneNode*>& nodeSet, FloatType multiplier)
 {
 	for(SceneNode* node : nodeSet) {
 		OVITO_CHECK_OBJECT_POINTER(node);
@@ -283,7 +288,6 @@ void MoveMode::applyXForm(const OORefVector<SceneNode>& nodeSet, FloatType multi
 
 		// Get parent's system.
 		TimeInterval iv;
-		TimePoint time = node->dataset()->animationSettings()->time();
 		const AffineTransformation& translationSys = node->parentNode()->getWorldTransform(time, iv);
 
 		// Move node in parent's system.
@@ -297,15 +301,15 @@ void MoveMode::applyXForm(const OORefVector<SceneNode>& nodeSet, FloatType multi
 void MoveMode::updateCoordinateDisplay(CoordinateDisplayWidget* coordDisplay)
 {
 	if(_selectedNode.target()) {
-		DataSet* dataset = _selectedNode.target()->dataset();
-		coordDisplay->setUnit(dataset->unitsManager().worldUnit());
-		Controller* ctrl = _selectedNode.target()->transformationController();
-		if(ctrl) {
-			TimeInterval iv;
-			Vector3 translation;
-			ctrl->getPositionValue(dataset->animationSettings()->time(), translation, iv);
-			coordDisplay->setValues(translation);
-			return;
+		coordDisplay->setUnit(coordDisplay->mainWindow().unitsManager().worldUnit());
+		if(Controller* ctrl = _selectedNode.target()->transformationController()) {
+			if(AnimationSettings* anim = inputManager()->datasetContainer().activeAnimationSettings()) {
+				TimeInterval iv;
+				Vector3 translation;
+				ctrl->getPositionValue(anim->currentTime(), translation, iv);
+				coordDisplay->setValues(translation);
+				return;
+			}
 		}
 	}
 	coordDisplay->setValues(Vector3::Zero());
@@ -318,14 +322,14 @@ void MoveMode::updateCoordinateDisplay(CoordinateDisplayWidget* coordDisplay)
 void MoveMode::onCoordinateValueEntered(int component, FloatType value)
 {
 	if(_selectedNode.target()) {
-		Controller* ctrl = _selectedNode.target()->transformationController();
-		if(ctrl) {
-			TimeInterval iv;
-			Vector3 translation;
-			DataSet* dataset = _selectedNode.target()->dataset();
-			ctrl->getPositionValue(dataset->animationSettings()->time(), translation, iv);
-			translation[component] = value;
-			ctrl->setPositionValue(dataset->animationSettings()->time(), translation, true);
+		if(Controller* ctrl = _selectedNode.target()->transformationController()) {
+			if(AnimationSettings* anim = inputManager()->datasetContainer().activeAnimationSettings()) {
+				TimeInterval iv;
+				Vector3 translation;
+				ctrl->getPositionValue(anim->currentTime(), translation, iv);
+				translation[component] = value;
+				ctrl->setPositionValue(anim->currentTime(), translation, true);
+			}
 		}
 	}
 }
@@ -337,10 +341,8 @@ void MoveMode::onCoordinateValueEntered(int component, FloatType value)
 void MoveMode::onAnimateTransformationButton()
 {
 	if(_selectedNode.target()) {
-		PRSTransformationController* prs_ctrl = dynamic_object_cast<PRSTransformationController>(_selectedNode.target()->transformationController());
-		if(prs_ctrl) {
-			KeyframeController* ctrl = dynamic_object_cast<KeyframeController>(prs_ctrl->positionController());
-			if(ctrl) {
+		if(PRSTransformationController* prs_ctrl = dynamic_object_cast<PRSTransformationController>(_selectedNode.target()->transformationController())) {
+			if(KeyframeController* ctrl = dynamic_object_cast<KeyframeController>(prs_ctrl->positionController())) {
 				if(MainWindow* mainWindow = dynamic_cast<MainWindow*>(&inputManager()->userInterface())) {
 					AnimationKeyEditorDialog dlg(ctrl, PROPERTY_FIELD(PRSTransformationController::positionController), mainWindow, *mainWindow);
 					dlg.exec();
@@ -370,13 +372,13 @@ void RotateMode::doXForm()
 	_rotation = Rotation(Vector3(0,0,1), angle1);
 
 	// Apply transformation to selected nodes.
-	applyXForm(viewport()->dataset()->selection()->nodes(), 1);
+	applyXForm(viewport()->scene()->animationSettings()->currentTime(), viewport()->scene()->selection()->nodes(), 1);
 }
 
 /******************************************************************************
 * Applies the current transformation to a set of nodes.
 ******************************************************************************/
-void RotateMode::applyXForm(const OORefVector<SceneNode>& nodeSet, FloatType multiplier)
+void RotateMode::applyXForm(AnimationTime time, const QVector<SceneNode*>& nodeSet, FloatType multiplier)
 {
 	for(SceneNode* node : nodeSet) {
 		OVITO_CHECK_OBJECT_POINTER(node);
@@ -388,7 +390,6 @@ void RotateMode::applyXForm(const OORefVector<SceneNode>& nodeSet, FloatType mul
 
 		// Make transformation system relative to parent's tm.
 		TimeInterval iv;
-		TimePoint time = node->dataset()->animationSettings()->time();
 		const AffineTransformation& parentTM = node->parentNode()->getWorldTransform(time, iv);
 		transformSystem = transformSystem * parentTM.inverse();
 
@@ -404,16 +405,16 @@ void RotateMode::applyXForm(const OORefVector<SceneNode>& nodeSet, FloatType mul
 void RotateMode::updateCoordinateDisplay(CoordinateDisplayWidget* coordDisplay)
 {
 	if(_selectedNode.target()) {
-		DataSet* dataset = _selectedNode.target()->dataset();
-		coordDisplay->setUnit(dataset->unitsManager().angleUnit());
-		Controller* ctrl = _selectedNode.target()->transformationController();
-		if(ctrl) {
-			TimeInterval iv;
-			Rotation rotation;
-			ctrl->getRotationValue(dataset->animationSettings()->time(), rotation, iv);
-			Vector3 euler = rotation.toEuler(Matrix3::szyx);
-			coordDisplay->setValues(Vector3(euler[2], euler[1], euler[0]));
-			return;
+		coordDisplay->setUnit(coordDisplay->mainWindow().unitsManager().angleUnit());
+		if(Controller* ctrl = _selectedNode.target()->transformationController()) {
+			if(AnimationSettings* anim = inputManager()->datasetContainer().activeAnimationSettings()) {
+				TimeInterval iv;
+				Rotation rotation;
+				ctrl->getRotationValue(anim->currentTime(), rotation, iv);
+				Vector3 euler = rotation.toEuler(Matrix3::szyx);
+				coordDisplay->setValues(Vector3(euler[2], euler[1], euler[0]));
+				return;
+			}
 		}
 	}
 	coordDisplay->setValues(Vector3::Zero());
@@ -426,15 +427,15 @@ void RotateMode::updateCoordinateDisplay(CoordinateDisplayWidget* coordDisplay)
 void RotateMode::onCoordinateValueEntered(int component, FloatType value)
 {
 	if(_selectedNode.target()) {
-		Controller* ctrl = _selectedNode.target()->transformationController();
-		if(ctrl) {
+		if(Controller* ctrl = _selectedNode.target()->transformationController()) {
 			if(MainWindow* mainWindow = dynamic_cast<MainWindow*>(&inputManager()->userInterface())) {
 				TimeInterval iv;
-				DataSet* dataset = _selectedNode.target()->dataset();
 				CoordinateDisplayWidget* coordDisplay = mainWindow->coordinateDisplay();
 				Vector3 euler = coordDisplay->getValues();
 				Rotation rotation = Rotation::fromEuler(Vector3(euler[2], euler[1], euler[0]), Matrix3::szyx);
-				ctrl->setRotationValue(dataset->animationSettings()->time(), rotation, true);
+				if(AnimationSettings* anim = mainWindow->datasetContainer().activeAnimationSettings()) {
+					ctrl->setRotationValue(anim->currentTime(), rotation, true);
+				}
 			}
 		}
 	}

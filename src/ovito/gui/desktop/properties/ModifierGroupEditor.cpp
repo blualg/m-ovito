@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -60,7 +60,7 @@ void ModifierGroupEditor::referenceReplaced(const PropertyFieldDescriptor* field
 ******************************************************************************/
 void ModifierGroupEditor::updateSubEditors()
 {
-	try {
+	handleExceptions([&] {
 		auto subEditorIter = _subEditors.begin();
 		if(ModifierGroup* group = static_object_cast<ModifierGroup>(editObject())) {
 			// Get the group's modifier applications.
@@ -75,7 +75,7 @@ void ModifierGroupEditor::updateSubEditors()
 				}
 				else {
 					// Create a new sub-editor for this sub-object.
-					OORef<PropertiesEditor> editor = PropertiesEditor::create(modApp);
+					OORef<PropertiesEditor> editor = PropertiesEditor::create(mainWindow(), modApp);
 					if(editor) {
 						editor->initialize(container(), _rolloutParams, this);
 						editor->setEditObject(modApp);
@@ -88,10 +88,7 @@ void ModifierGroupEditor::updateSubEditors()
 		}
 		// Close excess sub-editors.
 		_subEditors.erase(subEditorIter, _subEditors.end());
-	}
-	catch(const Exception& ex) {
-		ex.reportError();
-	}
+	});
 }
 
 }	// End of namespace

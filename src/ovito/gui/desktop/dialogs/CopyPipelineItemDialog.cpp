@@ -49,7 +49,7 @@ CopyPipelineItemDialog::CopyPipelineItemDialog(MainWindow& mainWindow, QWidget* 
 	gridLayout->addWidget(_destinationPipelineList, 0, 1);
 
 	// Populate list of scene pipelines.
-	if(Scene* scene = _mainWindow.activeScene()) {
+	if(Scene* scene = _mainWindow.datasetContainer().activeScene()) {
 		scene->visitChildren([&](SceneNode* node) -> bool {
 			if(PipelineSceneNode* pipeline = dynamic_object_cast<PipelineSceneNode>(node)) {
 				QString itemLabel = pipeline->objectTitle();
@@ -95,8 +95,8 @@ CopyPipelineItemDialog::CopyPipelineItemDialog(MainWindow& mainWindow, QWidget* 
 	QDialogButtonBox* buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel | QDialogButtonBox::Help, Qt::Horizontal, this);
 	connect(buttonBox, &QDialogButtonBox::accepted, this, &CopyPipelineItemDialog::onAccept);
 	connect(buttonBox, &QDialogButtonBox::rejected, this, &CopyPipelineItemDialog::reject);
-	connect(buttonBox, &QDialogButtonBox::helpRequested, []() {
-		ActionManager::openHelpTopic("manual:clone_pipeline.copy_pipeline_items_dialog");
+	connect(buttonBox, &QDialogButtonBox::helpRequested, &mainWindow, [&mainWindow]() {
+		mainWindow.actionManager()->openHelpTopic("manual:clone_pipeline.copy_pipeline_items_dialog");
 	});
 	mainLayout->addWidget(buttonBox);
 }
@@ -106,7 +106,7 @@ CopyPipelineItemDialog::CopyPipelineItemDialog(MainWindow& mainWindow, QWidget* 
 ******************************************************************************/
 void CopyPipelineItemDialog::onAccept()
 {
-	UndoableTransaction::handleExceptions(_mainWindow, tr("Copy pipeline item"), [this]() {
+	_mainWindow.performTransaction(tr("Copy pipeline item"), [this]() {
 		OORef<PipelineSceneNode> destinationPipeline = static_object_cast<PipelineSceneNode>(_destinationPipelineList->currentData().value<OORef<OvitoObject>>());
 		CloneHelper cloneHelper;
 

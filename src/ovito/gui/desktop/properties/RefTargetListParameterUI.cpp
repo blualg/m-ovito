@@ -164,7 +164,7 @@ void RefTargetListParameterUI::onSelectionChanged()
 ******************************************************************************/
 void RefTargetListParameterUI::openSubEditor()
 {
-	try {
+	handleExceptions([&] {
 		RefTarget* selection = selectedObject();
 
 		if(subEditor()) {
@@ -178,7 +178,7 @@ void RefTargetListParameterUI::openSubEditor()
 		}
 		if(!subEditor() && editor()) {
 			if(selection) {
-				_subEditor = PropertiesEditor::create(selection);
+				_subEditor = PropertiesEditor::create(mainWindow(), selection);
 			}
 			else if(_defaultEditorClass) {
 				_subEditor = dynamic_object_cast<PropertiesEditor>(_defaultEditorClass->createInstance());
@@ -193,10 +193,7 @@ void RefTargetListParameterUI::openSubEditor()
 		if(subEditor()) {
 			subEditor()->setEditObject(selection);
 		}
-	}
-	catch(const Exception& ex) {
-		ex.reportError();
-	}
+	});
 }
 
 /******************************************************************************

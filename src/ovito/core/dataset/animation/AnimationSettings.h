@@ -71,6 +71,9 @@ public:
 	/// Returns whether the current animation interval consists of a one static frame only.
 	bool isSingleFrame() const { return firstFrame() >= lastFrame(); }
 
+	/// Returns the number of frames in the current animation interval.
+	int numberOfFrames() const { return lastFrame() - firstFrame() + 1; }
+
 	/// \brief Suspends updates of the viewports whenever preliminary data pipeline results are available.
 	void suspendPreliminaryViewportUpdates() { _preliminaryViewportUpdatesSuspendCount++; }
 
@@ -188,7 +191,7 @@ private:
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(int, playbackEveryNthFrame, setPlaybackEveryNthFrame);
 
 	/// Controls whether the animation interval is automatically adjusted to accommodate all loaded
-	/// source animations in the scene.
+	/// trajectories in the scene.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, autoAdjustInterval, setAutoAdjustInterval);
 
     /// List of names assigned to animation frames.

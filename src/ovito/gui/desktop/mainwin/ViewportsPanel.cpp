@@ -111,7 +111,7 @@ QWidget* ViewportsPanel::viewportWidget(Viewport* vp)
 		}
 		catch(const Exception& ex) {
 			_graphicsInitializationErrorOccurred = true;
-			ex.reportError(true);
+			_mainWindow.reportError(ex, true);
 			return nullptr;
 		}
 	}
@@ -136,7 +136,7 @@ void ViewportsPanel::onViewportMenuRequested(const QPoint& pos)
 	OVITO_ASSERT(vpwin && vpwin->widget() && vpwin->widget()->parentWidget() == this);
 
 	// Create the context menu for the viewport.
-	ViewportMenu contextMenu(viewport, vpwin->widget());
+	ViewportMenu contextMenu(_mainWindow, viewport, vpwin->widget());
 
 	// Show menu.
 	contextMenu.show(pos);
@@ -325,12 +325,18 @@ void ViewportsPanel::layoutViewports()
 		layoutViewportsRecursive(_viewportConfig->layoutRootCell(), rect());
 	}
 
+	// Automatically activate a different viewport if the currently active one has been hidden.
 	if(_viewportConfig->maximizedViewport() && !_viewportConfig->maximizedViewport()->window()) {
-		_viewportConfig->setMaximizedViewport(viewports.empty() ? nullptr : viewports.front());
-		_viewportConfig->setActiveViewport(_viewportConfig->maximizedViewport());
+		_mainWindow.handleExceptions([&] {
+			_viewportConfig->setMaximizedViewport(viewports.empty() ? nullptr : viewports.front());
+			_viewportConfig->setActiveViewport(_viewportConfig->maximizedViewport());
+		});
 	}
-	if(_viewportConfig->activeViewport() && !_viewportConfig->activeViewport()->window())
-		_viewportConfig->setActiveViewport(viewports.empty() ? nullptr : viewports.front());
+	if(_viewportConfig->activeViewport() && !_viewportConfig->activeViewport()->window()) {
+		_mainWindow.handleExceptions([&] {
+			_viewportConfig->setActiveViewport(viewports.empty() ? nullptr : viewports.front());
+		});
+	}
 }
 
 /******************************************************************************
@@ -429,34 +435,36 @@ void ViewportsPanel::mousePressEvent(QMouseEvent* event)
 void ViewportsPanel::mouseMoveEvent(QMouseEvent* event)
 {
     if(_draggedSplitter != -1) {
-		// Temporarily block the viewportLayoutChanged() signal from the ViewportConfiguration to avoid
-		// an unnecessary relayout of the viewport windows while resetting the undo operation.
-		QSignalBlocker signalBlocker(_viewportConfig);
-		_mainWindow.undoStack()->resetCurrentCompoundOperation();
-		signalBlocker.unblock();
+		_mainWindow.handleExceptions([&] {
+			// Temporarily block the viewportLayoutChanged() signal from the ViewportConfiguration to avoid
+			// an unnecessary relayout of the viewport windows while resetting the undo operation.
+			QSignalBlocker signalBlocker(_viewportConfig);
+			_mainWindow.undoStack()->resetCurrentCompoundOperation();
+			signalBlocker.unblock();
 
-		const SplitterRectangle& splitter = _splitterRegions[_draggedSplitter];
-		ViewportLayoutCell* parentCell = splitter.cell;
+			const SplitterRectangle& splitter = _splitterRegions[_draggedSplitter];
+			ViewportLayoutCell* parentCell = splitter.cell;
 
-		// Convert mouse motion from pixels to relative size coordinates.
-		FloatType delta;
-		if(parentCell->splitDirection() == ViewportLayoutCell::Horizontal)
-			delta = (event->pos().x() - _dragStartPos.x()) * splitter.dragFactor;
-		else
-			delta = (event->pos().y() - _dragStartPos.y()) * splitter.dragFactor;
+			// Convert mouse motion from pixels to relative size coordinates.
+			FloatType delta;
+			if(parentCell->splitDirection() == ViewportLayoutCell::Horizontal)
+				delta = (event->pos().x() - _dragStartPos.x()) * splitter.dragFactor;
+			else
+				delta = (event->pos().y() - _dragStartPos.y()) * splitter.dragFactor;
 
-		// Minimum size a cell may have.
-		FloatType minWeight = 0.1 * parentCell->totalChildWeights();
+			// Minimum size a cell may have.
+			FloatType minWeight = 0.1 * parentCell->totalChildWeights();
 
-		// Apply movement within bounds.
-		auto childWeights = parentCell->childWeights();
-		OVITO_ASSERT(childWeights.size() > splitter.childCellIndex + 1);
-		delta = qBound(minWeight - childWeights[splitter.childCellIndex], delta, childWeights[splitter.childCellIndex + 1] - minWeight);
-		childWeights[splitter.childCellIndex] += delta;
-		childWeights[splitter.childCellIndex + 1] -= delta;
+			// Apply movement within bounds.
+			auto childWeights = parentCell->childWeights();
+			OVITO_ASSERT(childWeights.size() > splitter.childCellIndex + 1);
+			delta = qBound(minWeight - childWeights[splitter.childCellIndex], delta, childWeights[splitter.childCellIndex + 1] - minWeight);
+			childWeights[splitter.childCellIndex] += delta;
+			childWeights[splitter.childCellIndex + 1] -= delta;
 
-		// Set the new split weights.
-		parentCell->setChildWeights(std::move(childWeights));
+			// Set the new split weights.
+			parentCell->setChildWeights(std::move(childWeights));
+		});
     }
 	else if(event->button() == Qt::NoButton) {
 		int index = 0;
@@ -559,7 +567,7 @@ void ViewportsPanel::showSplitterContextMenu(const SplitterRectangle& splitter, 
 	QAction* distributeEvenlyAction = contextMenu.addAction(tr("Resize evenly"));
 	distributeEvenlyAction->setEnabled(!splitter.cell->isEvenlySubdivided());
 	connect(distributeEvenlyAction, &QAction::triggered, this, [&]() {
-		UndoableTransaction::handleExceptions(_mainWindow, tr("Resize viewports"), [&]() {
+		_mainWindow.performTransaction(tr("Resize viewports"), [&]() {
 			splitter.cell->setChildWeights(std::vector<FloatType>(splitter.cell->children().size(), 1.0));
 		});
 	});
@@ -575,9 +583,9 @@ void ViewportsPanel::showSplitterContextMenu(const SplitterRectangle& splitter, 
 			if(!adjacentCell->children().empty())
 				adjacentCell = adjacentCell->children().back();
 		}
-		OORef<ViewportLayoutCell> newCell = OORef<ViewportLayoutCell>::create();
-		newCell->setViewport(CloneHelper().cloneObject(adjacentViewport, true));
-		UndoableTransaction::handleExceptions(_mainWindow, tr("Insert viewport"), [&]() {
+		_mainWindow.performTransaction(tr("Insert viewport"), [&]() {
+			OORef<ViewportLayoutCell> newCell = OORef<ViewportLayoutCell>::create();
+			newCell->setViewport(CloneHelper().cloneObject(adjacentViewport, true));
 			_viewportConfig->setActiveViewport(newCell->viewport());
 			splitter.cell->insertChild(splitter.childCellIndex + 1, std::move(newCell), splitter.cell->childWeights()[splitter.childCellIndex]);
 		});
@@ -592,7 +600,7 @@ void ViewportsPanel::showSplitterContextMenu(const SplitterRectangle& splitter, 
 		deleteCell1Action->setText((splitter.cell->splitDirection() == ViewportLayoutCell::Horizontal) ? tr("Delete viewport on left") : tr("Delete viewport above"));
 	contextMenu.addAction(deleteCell1Action);
 	connect(deleteCell1Action, &QAction::triggered, this, [&]() {
-		UndoableTransaction::handleExceptions(_mainWindow, tr("Delete viewport(s)"), [&]() {
+		_mainWindow.performTransaction(tr("Delete viewport(s)"), [&]() {
 			splitter.cell->removeChild(splitter.childCellIndex);
 		});
 	});
@@ -605,7 +613,7 @@ void ViewportsPanel::showSplitterContextMenu(const SplitterRectangle& splitter, 
 		deleteCell2Action->setText((splitter.cell->splitDirection() == ViewportLayoutCell::Horizontal) ? tr("Delete viewport on right") : tr("Delete viewport below"));
 	contextMenu.addAction(deleteCell2Action);
 	connect(deleteCell2Action, &QAction::triggered, this, [&]() {
-		UndoableTransaction::handleExceptions(_mainWindow, tr("Delete viewport(s)"), [&]() {
+		_mainWindow.performTransaction(tr("Delete viewport(s)"), [&]() {
 			splitter.cell->removeChild(splitter.childCellIndex + 1);
 			_viewportConfig->layoutRootCell()->pruneViewportLayoutTree();
 		});

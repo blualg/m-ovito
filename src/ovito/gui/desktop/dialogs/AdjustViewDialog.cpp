@@ -31,10 +31,11 @@
 namespace Ovito {
 
 /******************************************************************************
-* The constructor of the camera dialog.
+* Constructor.
 ******************************************************************************/
-AdjustViewDialog::AdjustViewDialog(Viewport* viewport, QWidget* parent) :
-	QDockWidget(tr("Adjust View"), parent)
+AdjustViewDialog::AdjustViewDialog(MainWindow& mainWindow, Viewport* viewport, QWidget* parent) :
+	QDockWidget(tr("Adjust View"), parent),
+	_mainWindow(mainWindow)
 {
 	setFeatures(QDockWidget::DockWidgetFloatable | QDockWidget::DockWidgetClosable);
 	setAllowedAreas(Qt::NoDockWidgetArea);
@@ -44,7 +45,6 @@ AdjustViewDialog::AdjustViewDialog(Viewport* viewport, QWidget* parent) :
 	setWidget(widget);
 
 	OVITO_ASSERT(viewport->window());
-	UserInterface& ui = viewport->window()->userInterface();
 
 	_oldViewType = viewport->viewType();
 	_oldCameraTM = viewport->cameraTransformation();
@@ -78,9 +78,9 @@ AdjustViewDialog::AdjustViewDialog(Viewport* viewport, QWidget* parent) :
 	_camPosXSpinner = new SpinnerWidget();
 	_camPosYSpinner = new SpinnerWidget();
 	_camPosZSpinner = new SpinnerWidget();
-	_camPosXSpinner->setUnit(ui.unitsManager().worldUnit());
-	_camPosYSpinner->setUnit(ui.unitsManager().worldUnit());
-	_camPosZSpinner->setUnit(ui.unitsManager().worldUnit());
+	_camPosXSpinner->setUnit(mainWindow.unitsManager().worldUnit());
+	_camPosYSpinner->setUnit(mainWindow.unitsManager().worldUnit());
+	_camPosZSpinner->setUnit(mainWindow.unitsManager().worldUnit());
 
 	fieldLayout = new QHBoxLayout();
 	fieldLayout->setContentsMargins(0,0,0,0);
@@ -124,9 +124,9 @@ AdjustViewDialog::AdjustViewDialog(Viewport* viewport, QWidget* parent) :
 	_camDirXSpinner = new SpinnerWidget();
 	_camDirYSpinner = new SpinnerWidget();
 	_camDirZSpinner = new SpinnerWidget();
-	_camDirXSpinner->setUnit(ui.unitsManager().worldUnit());
-	_camDirYSpinner->setUnit(ui.unitsManager().worldUnit());
-	_camDirZSpinner->setUnit(ui.unitsManager().worldUnit());
+	_camDirXSpinner->setUnit(mainWindow.unitsManager().worldUnit());
+	_camDirYSpinner->setUnit(mainWindow.unitsManager().worldUnit());
+	_camDirZSpinner->setUnit(mainWindow.unitsManager().worldUnit());
 
 	fieldLayout = new QHBoxLayout();
 	fieldLayout->setContentsMargins(0,0,0,0);
@@ -170,9 +170,9 @@ AdjustViewDialog::AdjustViewDialog(Viewport* viewport, QWidget* parent) :
 	_upDirXSpinner = new SpinnerWidget();
 	_upDirYSpinner = new SpinnerWidget();
 	_upDirZSpinner = new SpinnerWidget();
-	_upDirXSpinner->setUnit(ui.unitsManager().worldUnit());
-	_upDirYSpinner->setUnit(ui.unitsManager().worldUnit());
-	_upDirZSpinner->setUnit(ui.unitsManager().worldUnit());
+	_upDirXSpinner->setUnit(mainWindow.unitsManager().worldUnit());
+	_upDirYSpinner->setUnit(mainWindow.unitsManager().worldUnit());
+	_upDirZSpinner->setUnit(mainWindow.unitsManager().worldUnit());
 
 	fieldLayout = new QHBoxLayout();
 	fieldLayout->setContentsMargins(0,0,0,0);
@@ -223,7 +223,7 @@ AdjustViewDialog::AdjustViewDialog(Viewport* viewport, QWidget* parent) :
 
 	gridLayout->addWidget(new QLabel(tr("View angle:")), 1, 1);
 	_camFOVAngleSpinner = new SpinnerWidget();
-	_camFOVAngleSpinner->setUnit(ui.unitsManager().angleUnit());
+	_camFOVAngleSpinner->setUnit(mainWindow.unitsManager().angleUnit());
 	_camFOVAngleSpinner->setMinValue(FloatType(1e-4));
 	_camFOVAngleSpinner->setMaxValue(FLOATTYPE_PI - FloatType(1e-2));
 	_camFOVAngleSpinner->setFloatValue(qDegreesToRadians(FloatType(35)));
@@ -246,7 +246,7 @@ AdjustViewDialog::AdjustViewDialog(Viewport* viewport, QWidget* parent) :
 
 	gridLayout->addWidget(new QLabel(tr("Field of view:")), 3, 1);
 	_camFOVSpinner = new SpinnerWidget();
-	_camFOVSpinner->setUnit(ui.unitsManager().worldUnit());
+	_camFOVSpinner->setUnit(mainWindow.unitsManager().worldUnit());
 	_camFOVSpinner->setMinValue(FloatType(1e-4));
 	_camFOVSpinner->setFloatValue(200);
 	_camFOVSpinner->setEnabled(false);
@@ -265,8 +265,8 @@ AdjustViewDialog::AdjustViewDialog(Viewport* viewport, QWidget* parent) :
 	QDialogButtonBox* buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel | QDialogButtonBox::Help, Qt::Horizontal, this);
 	connect(buttonBox, &QDialogButtonBox::accepted, this, &AdjustViewDialog::close);
 	connect(buttonBox, &QDialogButtonBox::rejected, this, &AdjustViewDialog::onCancel);
-	connect(buttonBox, &QDialogButtonBox::helpRequested, []() {
-		ActionManager::openHelpTopic("manual:viewports.adjust_view_dialog");
+	connect(buttonBox, &QDialogButtonBox::helpRequested, &mainWindow, [&mainWindow]() {
+		mainWindow.actionManager()->openHelpTopic("manual:viewports.adjust_view_dialog");
 	});
 	mainLayout->addWidget(buttonBox);
 
@@ -317,18 +317,21 @@ void AdjustViewDialog::onAdjustCamera()
 {
 	if(_isUpdatingGUI)
 		return;
-	Viewport* viewport = _viewportListener.target();
-	if(_camPerspective->isChecked()) {
-		viewport->setViewType(Viewport::VIEW_PERSPECTIVE);
-		viewport->setFieldOfView(_camFOVAngleSpinner->floatValue());
-	}
-	else {
-		viewport->setViewType(Viewport::VIEW_ORTHO);
-		viewport->setFieldOfView(_camFOVSpinner->floatValue());
-	}
 
-	viewport->setCameraPosition(Point3(_camPosXSpinner->floatValue(), _camPosYSpinner->floatValue(), _camPosZSpinner->floatValue()));
-	viewport->setCameraDirection(Vector3(_camDirXSpinner->floatValue(), _camDirYSpinner->floatValue(), _camDirZSpinner->floatValue()));
+	_mainWindow.handleExceptions([&] {
+		Viewport* viewport = _viewportListener.target();
+		if(_camPerspective->isChecked()) {
+			viewport->setViewType(Viewport::VIEW_PERSPECTIVE);
+			viewport->setFieldOfView(_camFOVAngleSpinner->floatValue());
+		}
+		else {
+			viewport->setViewType(Viewport::VIEW_ORTHO);
+			viewport->setFieldOfView(_camFOVSpinner->floatValue());
+		}
+
+		viewport->setCameraPosition(Point3(_camPosXSpinner->floatValue(), _camPosYSpinner->floatValue(), _camPosZSpinner->floatValue()));
+		viewport->setCameraDirection(Vector3(_camDirXSpinner->floatValue(), _camDirYSpinner->floatValue(), _camDirZSpinner->floatValue()));
+	});
 }
 
 /******************************************************************************
@@ -336,11 +339,13 @@ void AdjustViewDialog::onAdjustCamera()
 ******************************************************************************/
 void AdjustViewDialog::onCancel()
 {
-	Viewport* viewport = _viewportListener.target();
-	viewport->setViewType(_oldViewType);
-	viewport->setCameraTransformation(_oldCameraTM);
-	viewport->setFieldOfView(_oldFOV);
-
+	// Restore previous viewport camera settings.
+	_mainWindow.handleExceptions([&] {
+		Viewport* viewport = _viewportListener.target();
+		viewport->setViewType(_oldViewType);
+		viewport->setCameraTransformation(_oldCameraTM);
+		viewport->setFieldOfView(_oldFOV);
+	});
 	close();
 }
 

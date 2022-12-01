@@ -33,7 +33,7 @@ IMPLEMENT_OVITO_CLASS(ViewportSettingsPage);
 /******************************************************************************
 * Creates the widget that contains the plugin specific setting controls.
 ******************************************************************************/
-void ViewportSettingsPage::insertSettingsDialogPage(ApplicationSettingsDialog* settingsDialog, QTabWidget* tabWidget)
+void ViewportSettingsPage::insertSettingsDialogPage(QTabWidget* tabWidget)
 {
 	// Retrieve current settings.
 	_viewportSettings.assign(ViewportSettings::getSettings());
@@ -120,7 +120,7 @@ void ViewportSettingsPage::insertSettingsDialogPage(ApplicationSettingsDialog* s
 		// list of available devices to the application settings store, from where we can read them.
 		QString dummyBuffer;
 		QTextStream dummyStream(&dummyBuffer);
-		rendererClass->querySystemInformation(dummyStream, settingsDialog->mainWindow());
+		rendererClass->querySystemInformation(dummyStream, mainWindow());
 
 		settings.beginGroup("rendering/vulkan");
 		int numDevices = settings.beginReadArray("available_devices");
@@ -181,7 +181,7 @@ void ViewportSettingsPage::insertSettingsDialogPage(ApplicationSettingsDialog* s
 /******************************************************************************
 * Lets the settings page validate the values entered by the user before saving them.
 ******************************************************************************/
-bool ViewportSettingsPage::validateValues(ApplicationSettingsDialog* settingsDialog, QTabWidget* tabWidget)
+bool ViewportSettingsPage::validateValues(QTabWidget* tabWidget)
 {
 	QSettings settings;
 
@@ -192,7 +192,7 @@ bool ViewportSettingsPage::validateValues(ApplicationSettingsDialog* settingsDia
 	if(isVulkanSelected != wasVulkanSelected && isVulkanSelected) {
 		// Warn the user that some Vulkan implementations may be incompatible with Ovito and can 
 		// render the application unusable.
-		QMessageBox msgBox(settingsDialog);
+		QMessageBox msgBox(settingsDialog());
 		msgBox.setIcon(QMessageBox::Question);
 		msgBox.setText("Are you sure you want to enable the Vulkan-based viewport renderer?");
 		msgBox.setInformativeText(tr(
@@ -206,7 +206,7 @@ bool ViewportSettingsPage::validateValues(ApplicationSettingsDialog* settingsDia
 		int ret = msgBox.exec();
 		if(ret != QMessageBox::Ok) {
 			if(ret == QMessageBox::Help) {
-				settingsDialog->onHelp();
+				settingsDialog()->onHelp();
 			}
 			return false;
 		}
@@ -218,7 +218,7 @@ bool ViewportSettingsPage::validateValues(ApplicationSettingsDialog* settingsDia
 /******************************************************************************
 * Lets the page save all changed settings.
 ******************************************************************************/
-void ViewportSettingsPage::saveValues(ApplicationSettingsDialog* settingsDialog, QTabWidget* tabWidget)
+void ViewportSettingsPage::saveValues(QTabWidget* tabWidget)
 {
 	QSettings settings;
 

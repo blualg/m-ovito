@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -155,13 +155,15 @@ void NumericalParameterUI::onSpinnerValueChanged()
 {
 	ViewportSuspender noVPUpdate(mainWindow());
 	if(!_isDraggingSpinner) {
-		UndoableTransaction transaction(mainWindow(), tr("Change parameter"));
-		updatePropertyValue();
-		transaction.commit();
+		performTransaction(tr("Change parameter value"), [&]() {
+			updatePropertyValue();
+		});
 	}
 	else {
-		mainWindow().undoStack()->resetCurrentCompoundOperation();
-		updatePropertyValue();
+		handleExceptions([&]() {
+			mainWindow().undoStack()->resetCurrentCompoundOperation();
+			updatePropertyValue();
+		});
 	}
 }
 

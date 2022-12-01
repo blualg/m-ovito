@@ -74,11 +74,18 @@ public:
 	bool isDisabled() const { return !isEnabled(); }
 
 	/// \brief Executes the passed functor and catches any exceptions thrown during its execution.
-	/// If an exception is thrown by the functor, all changes done by the functor
+	/// If an exception is thrown by the functor, all data changes performed by the functor
 	/// so far will be undone and an error message is shown to the user.
 	template<typename Function>
-	void undoableTransaction(const QString& operationLabel, Function&& func) {
-		UndoableTransaction::handleExceptions(mainWindow(), operationLabel, std::forward<Function>(func));
+	bool performTransaction(const QString& undoOperationName, Function&& func) const {
+		return editor()->performTransaction(undoOperationName, std::forward<Function>(func));
+	}
+
+	/// Executes a functor and catches any exceptions thrown during its execution.
+	/// If an exception is thrown by the functor, the error message is displayed to the user and this function returns false.
+	template<typename Function>
+	bool handleExceptions(Function&& func) const {
+		return editor()->handleExceptions(std::forward<Function>(func));
 	}
 
 public:

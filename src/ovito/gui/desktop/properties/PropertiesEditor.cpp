@@ -46,7 +46,7 @@ PropertiesEditor::Registry& PropertiesEditor::registry()
 /******************************************************************************
 * Creates a PropertiesEditor for an object.
 ******************************************************************************/
-OORef<PropertiesEditor> PropertiesEditor::create(RefTarget* obj)
+OORef<PropertiesEditor> PropertiesEditor::create(MainWindow& mainWindow, RefTarget* obj)
 {
 	OVITO_CHECK_POINTER(obj);
 	try {
@@ -61,10 +61,8 @@ OORef<PropertiesEditor> PropertiesEditor::create(RefTarget* obj)
 		}
 	}
 	catch(Exception& ex) {
-		if(ex.context() == nullptr) 
-			ex.setContext(obj);
 		ex.prependGeneralMessage(tr("Failed to create editor component for the '%1' object.").arg(obj->objectTitle()));
-		ex.reportError();
+		mainWindow.reportError(ex);
 	}
 	return nullptr;
 }
@@ -225,13 +223,15 @@ PipelineFlowState PropertiesEditor::getPipelineInput() const
 			return modApp->evaluateInputSynchronous(PipelineEvaluationRequest(*time, time->frame()));
 	}
 
-	// When editing a DataVis element, request pipeline state from the current scene node.
+	// When editing a DataVis element, request pipeline state from the selected scene node.
 	if(DataVis* vis = dynamic_object_cast<DataVis>(editObject())) {
-		if(PipelineSceneNode* pipelineNode = dynamic_object_cast<PipelineSceneNode>(mainWindow().activeScene()->selection()->firstNode())) {
-			if(std::optional<AnimationTime> time = currentAnimationTime()) {
-				OVITO_ASSERT(vis->pipelines(true).contains(pipelineNode));
-				OVITO_ASSERT(pipelineNode->visElements().contains(vis));
-				return pipelineNode->evaluatePipelineSynchronous(*time, false);
+		if(SelectionSet* selection = mainWindow().datasetContainer().activeSelectionSet()) {
+			if(PipelineSceneNode* pipelineNode = dynamic_object_cast<PipelineSceneNode>(selection->firstNode())) {
+				if(std::optional<AnimationTime> time = currentAnimationTime()) {
+					OVITO_ASSERT(vis->pipelines(true).contains(pipelineNode));
+					OVITO_ASSERT(pipelineNode->visElements().contains(vis));
+					return pipelineNode->evaluatePipelineSynchronous(*time, false);
+				}
 			}
 		}
 	}
@@ -328,12 +328,14 @@ ConstDataObjectRefPath PropertiesEditor::getVisDataObjectPath() const
 	if(DataVis* vis = dynamic_object_cast<DataVis>(editObject())) {
 		// We'll now try to find the DataObject this DataVis element is associated with.
 		// Let's start looking in the output data collection of the currently selected pipeline scene node.
-		if(PipelineSceneNode* pipelineNode = dynamic_object_cast<PipelineSceneNode>(mainWindow().activeScene()->selection()->firstNode())) {
-			const PipelineFlowState& state = pipelineNode->evaluatePipelineSynchronous(currentAnimationTime().value_or(AnimationTime(0)), false);
-			std::vector<ConstDataObjectPath> dataObjectPaths = pipelineNode->getDataObjectsForVisElement(state, vis);
-			if(!dataObjectPaths.empty()) {
-				// Return just the first path from the list.
-				return ConstDataObjectRefPath(dataObjectPaths.front().begin(), dataObjectPaths.front().end());
+		if(SelectionSet* selection = mainWindow().datasetContainer().activeSelectionSet()) {
+			if(PipelineSceneNode* pipelineNode = dynamic_object_cast<PipelineSceneNode>(selection->firstNode())) {
+				const PipelineFlowState& state = pipelineNode->evaluatePipelineSynchronous(currentAnimationTime().value_or(AnimationTime(0)), false);
+				std::vector<ConstDataObjectPath> dataObjectPaths = pipelineNode->getDataObjectsForVisElement(state, vis);
+				if(!dataObjectPaths.empty()) {
+					// Return just the first path from the list.
+					return ConstDataObjectRefPath(dataObjectPaths.front().begin(), dataObjectPaths.front().end());
+				}
 			}
 		}
 		return {};
@@ -360,8 +362,8 @@ ConstDataObjectRef PropertiesEditor::getVisDataObject() const
 ******************************************************************************/
 std::optional<AnimationTime> PropertiesEditor::currentAnimationTime() const
 {
-	if(Scene* scene = mainWindow().activeScene())
-		return scene->animationSettings()->currentTime();
+	if(AnimationSettings* anim = mainWindow().datasetContainer().activeAnimationSettings())
+		return anim->currentTime();
 	return {};
 }
 

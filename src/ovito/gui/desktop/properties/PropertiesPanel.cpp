@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -30,8 +30,8 @@ namespace Ovito {
 /******************************************************************************
 * Constructs the panel.
 ******************************************************************************/
-PropertiesPanel::PropertiesPanel(QWidget* parent, MainWindow& mainWindow) :
-	RolloutContainer(parent, &mainWindow), _mainWindow(mainWindow)
+PropertiesPanel::PropertiesPanel(MainWindow& mainWindow, QWidget* parent) :
+	RolloutContainer(mainWindow, parent), _mainWindow(mainWindow)
 {
 }
 
@@ -62,7 +62,7 @@ void PropertiesPanel::setEditObject(RefTarget* newEditObject, OORef<PropertiesEd
 				editor()->setEditObject(newEditObject);
 			}
 			catch(const Exception& ex) {
-				ex.reportError();
+				mainWindow().reportError(ex, this);
 			}
 			return;
 		}
@@ -75,7 +75,7 @@ void PropertiesPanel::setEditObject(RefTarget* newEditObject, OORef<PropertiesEd
 	if(newEditObject) {
 		// Open new properties editor.
 		try {
-			_editor = newEditor ? std::move(newEditor) : PropertiesEditor::create(newEditObject);
+			_editor = newEditor ? std::move(newEditor) : PropertiesEditor::create(mainWindow(), newEditObject);
 			if(editor()) {
 				if(!editor()->container())
 					editor()->initialize(this, RolloutInsertionParameters(), nullptr);
@@ -84,7 +84,7 @@ void PropertiesPanel::setEditObject(RefTarget* newEditObject, OORef<PropertiesEd
 		}
 		catch(const Exception& ex) {
 			_editor.reset();
-			ex.reportError();
+			mainWindow().reportError(ex, this);
 		}
 	}
 }

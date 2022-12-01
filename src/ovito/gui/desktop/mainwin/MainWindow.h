@@ -86,9 +86,6 @@ public:
 	/// Saves the layout of the docked widgets to the settings store.
 	void saveLayout();
 
-	/// Immediately repaints all viewports that have been flagged for an update.
-	virtual void processViewportUpdates() override;
-
 	/// Returns the container that keeps a reference to the current dataset.
 	GuiDataSetContainer& datasetContainer() { return _datasetContainer; }
 
@@ -143,6 +140,12 @@ public:
 	/// When animating is turned on, controllers should automatically set keys when their value is changed.
 	virtual bool isAutoGenerateAnimationKeysEnabled() const override { return _autoKeyModeOn && _animSuspendCount == 0; }
 
+	/// Displays an error message to the user.
+	virtual void reportError(const Exception& ex, bool blocking = false) override;
+
+	/// Displays an error message to the user that is associated with a particular child window or dialog.
+	void reportError(const Exception& exception, QWidget* window);
+
 protected:
 
 	/// Is called when the user closes the window.
@@ -159,6 +162,11 @@ protected:
 
 	/// Called by the system when the drag is dropped on this window.
 	virtual void dropEvent(QDropEvent* event) override;
+
+private Q_SLOTS:
+
+	/// Displays an error message box. This slot is called by reportError().
+	void showErrorMessages();
 
 private:
 
@@ -214,6 +222,9 @@ private:
 
 	/// Counts the number of times the auto-key animation mode has been suspended.
 	int _animSuspendCount = 0;	
+
+	/// List of errors to be displayed by showErrorMessages().
+	std::deque<Exception> _errorList;
 };
 
 /**

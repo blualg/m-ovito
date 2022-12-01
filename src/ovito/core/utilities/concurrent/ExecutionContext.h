@@ -86,6 +86,9 @@ public:
     /// Constructor.
     explicit Scope(const ExecutionContext& context) noexcept : _previous(ExecutionContext::current()) { ExecutionContext::setCurrent(context); }
 
+    /// Constructor.
+    explicit Scope(Type type, UserInterface& ui) noexcept : Scope(ExecutionContext(type, ui)) {}
+
     /// Destructor.
     ~Scope() { ExecutionContext::setCurrent(_previous); }
 

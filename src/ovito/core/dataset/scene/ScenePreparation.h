@@ -1,0 +1,110 @@
+////////////////////////////////////////////////////////////////////////////////////////
+//
+//  Copyright 2022 OVITO GmbH, Germany
+//
+//  This file is part of OVITO (Open Visualization Tool).
+//
+//  OVITO is free software; you can redistribute it and/or modify it either under the
+//  terms of the GNU General Public License version 3 as published by the Free Software
+//  Foundation (the "GPL") or, at your option, under the terms of the MIT License.
+//  If you do not alter this notice, a recipient may use your version of this
+//  file under either the GPL or the MIT License.
+//
+//  You should have received a copy of the GPL along with this program in a
+//  file LICENSE.GPL.txt.  You should have received a copy of the MIT License along
+//  with this program in a file LICENSE.MIT.txt
+//
+//  This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY KIND,
+//  either express or implied. See the GPL or the MIT License for the specific language
+//  governing rights and limitations.
+//
+////////////////////////////////////////////////////////////////////////////////////////
+
+#pragma once
+
+
+#include <ovito/core/Core.h>
+#include <ovito/core/dataset/pipeline/PipelineEvaluation.h>
+#include <ovito/core/utilities/concurrent/TaskWatcher.h>
+#include "SceneNode.h"
+
+namespace Ovito {
+
+/**
+ * \brief This object requests all pipelines in a Scene to provide results for the current animation time.
+ */
+class OVITO_CORE_EXPORT ScenePreparation : public RefMaker
+{
+	OVITO_CLASS(ScenePreparation)
+
+public:
+
+	/// Constructor.
+	ScenePreparation(UserInterface& userInterface);
+
+	/// Destructor.
+	virtual ~ScenePreparation();
+
+	/// Returns the abstract user interface in which this object operates.
+	UserInterface& userInterface() const { return _userInterface; }
+
+	/// Returns a future that get fulfilled once all data pipelines in the scene
+	/// have been completely evaluated at the current animation time.
+	SharedFuture<> whenReady();
+
+Q_SIGNALS:
+
+	/// Is emitted whenever the scene is being made ready for rendering after it was changed in some way.
+	void scenePreparationStarted();
+
+	/// Is emitted whenever the scene became ready for rendering.
+	void scenePreparationFinished();
+
+protected:
+
+	/// Is called when a RefTarget referenced by this object has generated an event.
+	virtual bool referenceEvent(RefTarget* source, const ReferenceEvent& event) override;
+
+	/// Is called when the value of a reference field of this RefMaker changes.
+	virtual void referenceReplaced(const PropertyFieldDescriptor* field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex) override;
+
+private Q_SLOTS:
+
+	/// Is called when the evaluation of a pipeline in the scene has finished.
+	void pipelineEvaluationFinished();
+
+private:
+
+	/// Requests the (re-)evaluation of all data pipelines in the current scene.
+	Q_INVOKABLE void makeReady(bool forceReevaluation);
+
+	/// Requests the (re-)evaluation of all data pipelines next time execution returns to the event loop.
+	void makeReadyLater(bool forceReevaluation) { 
+		QMetaObject::invokeMethod(this, "makeReady", Qt::QueuedConnection, Q_ARG(bool, forceReevaluation));
+	}
+
+private:
+
+	/// The scene being prepared.
+	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(Scene*, scene, setScene, PROPERTY_FIELD_WEAK_REF | PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES);
+
+	/// The abstract user interface in which this object operates.
+	UserInterface& _userInterface;
+
+	/// The promise to make the scene ready.
+	Promise<> _sceneReadyPromise;
+
+	/// The animation frame at which the scene was made ready. This is used to detect time changes.
+	int _completedFrame;
+
+	/// The scene that was made ready. This is used to detect replacements of the active scene.
+	Scene* _completedScene;
+
+	/// The current pipeline evaluation that is in progress.
+	PipelineEvaluationFuture _pipelineEvaluation;
+
+	/// The watcher object that is used to monitor the evaluation of data pipelines in the scene.
+	TaskWatcher _pipelineEvaluationWatcher;
+};
+
+}	// End of namespace

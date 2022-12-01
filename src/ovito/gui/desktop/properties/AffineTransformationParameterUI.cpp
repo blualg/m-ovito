@@ -54,7 +54,7 @@ AffineTransformationParameterUI::AffineTransformationParameterUI(PropertiesEdito
 void AffineTransformationParameterUI::updatePropertyValue()
 {
 	if(editObject() && spinner()) {
-		try {
+		performTransaction(tr("Change parameter value"), [&]() {
 			if(isQtPropertyUI()) {
 				QVariant currentValue = editObject()->property(propertyName());
 				if(currentValue.canConvert<AffineTransformation>()) {
@@ -76,10 +76,7 @@ void AffineTransformationParameterUI::updatePropertyValue()
 				editor()->changePropertyFieldValue(propertyField(), currentValue);
 			}
 			Q_EMIT valueEntered();
-		}
-		catch(const Exception& ex) {
-			ex.reportError();
-		}
+		});
 	}
 }
 

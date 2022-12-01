@@ -21,6 +21,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/gui/desktop/GUI.h>
+#include <ovito/gui/desktop/mainwin/MainWindow.h>
 #include <ovito/core/utilities/io/FileManager.h>
 #include <ovito/core/utilities/SortZipped.h>
 #include "ImportRemoteFileDialog.h"
@@ -30,7 +31,7 @@ namespace Ovito {
 /******************************************************************************
 * Constructs the dialog window.
 ******************************************************************************/
-ImportRemoteFileDialog::ImportRemoteFileDialog(const QVector<const FileImporterClass*>& importerTypes, QWidget* parent, const QString& caption) : QDialog(parent)
+ImportRemoteFileDialog::ImportRemoteFileDialog(MainWindow& mainWindow, const QVector<const FileImporterClass*>& importerTypes, QWidget* parent, const QString& caption) : QDialog(parent), _mainWindow(mainWindow)
 {
 	setWindowTitle(caption);
 
@@ -143,7 +144,7 @@ void ImportRemoteFileDialog::onOk()
 		accept();
 	}
 	catch(const Exception& ex) {
-		ex.reportError();
+		_mainWindow.reportError(ex, this);
 	}
 }
 

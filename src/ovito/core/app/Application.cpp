@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -327,10 +327,10 @@ void Application::createQtApplication(int& argc, char** argv)
 /******************************************************************************
 * Handler function for exceptions.
 ******************************************************************************/
-void Application::reportError(const Exception& exception, bool /*blocking*/)
+void Application::reportError(const Exception& ex)
 {
-	for(int i = exception.messages().size() - 1; i >= 0; i--) {
-		qInfo().noquote() << "ERROR:" << exception.messages()[i];
+	for(auto msg = ex.messages().crbegin(); msg != ex.messages().crend(); ++msg) {
+		qInfo().noquote() << "ERROR:" << *msg;
 	}
 }
 

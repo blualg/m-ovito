@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -63,7 +63,7 @@ bool DefaultPropertiesEditor::referenceEvent(RefTarget* source, const ReferenceE
 ******************************************************************************/
 void DefaultPropertiesEditor::updateSubEditors()
 {
-	try {
+	handleExceptions([&] {
 		auto subEditorIter = _subEditors.begin();
 		if(editObject()) {
 			// Automatically open sub-editors for reference fields that have the PROPERTY_FIELD_OPEN_SUBEDITOR flag.
@@ -82,7 +82,7 @@ void DefaultPropertiesEditor::updateSubEditors()
 						}
 						else {
 							// Create a new sub-editor for this sub-object.
-							OORef<PropertiesEditor> editor = PropertiesEditor::create(subobject);
+							OORef<PropertiesEditor> editor = PropertiesEditor::create(mainWindow(), subobject);
 							if(editor) {
 								editor->initialize(container(), _rolloutParams, this);
 								editor->setEditObject(subobject);
@@ -106,7 +106,7 @@ void DefaultPropertiesEditor::updateSubEditors()
 							}
 							else {
 								// Create a new sub-editor for this sub-object.
-								OORef<PropertiesEditor> editor = PropertiesEditor::create(subobject);
+								OORef<PropertiesEditor> editor = PropertiesEditor::create(mainWindow(), subobject);
 								if(editor) {
 									editor->initialize(container(), _rolloutParams, this);
 									editor->setEditObject(subobject);
@@ -122,10 +122,7 @@ void DefaultPropertiesEditor::updateSubEditors()
 		}
 		// Close excess sub-editors.
 		_subEditors.erase(subEditorIter, _subEditors.end());
-	}
-	catch(const Exception& ex) {
-		ex.reportError();
-	}
+	});
 }
 
 }	// End of namespace

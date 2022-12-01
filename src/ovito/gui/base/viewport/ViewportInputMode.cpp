@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -25,6 +25,7 @@
 #include <ovito/core/viewport/ViewportConfiguration.h>
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/dataset/DataSetContainer.h>
+#include <ovito/core/app/UserInterface.h>
 #include "ViewportInputManager.h"
 #include "ViewportInputMode.h"
 #include "NavigationModes.h"
@@ -193,10 +194,7 @@ void ViewportInputMode::focusOutEvent(ViewportWindowInterface* vpwin, QFocusEven
 void ViewportInputMode::requestViewportUpdate()
 {
 	if(isActive()) {
-		DataSet* dataset = inputManager()->datasetContainer().currentSet();
-		if(dataset && dataset->viewportConfig()) {
-			dataset->viewportConfig()->updateViewports();
-		}
+		inputManager()->userInterface().updateViewports();
 	}
 }
 

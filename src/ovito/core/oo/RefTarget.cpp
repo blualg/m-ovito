@@ -272,17 +272,4 @@ RefTargetExecutor RefTarget::executor(bool requireDeferredExecution) const
 	return RefTargetExecutor(this, requireDeferredExecution);
 }
 
-/******************************************************************************
-* Returns a reference to the manager for asycnhronous tasks associated with 
-* this object's dataset. 
-******************************************************************************/
-TaskManager& RefTarget::taskManager() const
-{
-#if 0 // TODO: Implement access to global TaskManager
-	return dataset()->container()->taskManager();
-#else
-	OVITO_ASSERT(false);
-#endif
-}
-
 }	// End of namespace

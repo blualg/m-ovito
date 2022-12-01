@@ -34,17 +34,16 @@ namespace Ovito {
 ******************************************************************************/
 UndoSuspender::UndoSuspender() noexcept
 {
-#if 0 // TODO: Implement global undo suspender
-	if(object->dataset() && QThread::currentThread() == object->thread()) {
-		_suspendCount = &object->dataset()->undoStack()._suspendCount;
-		++(*_suspendCount);
+	if(ExecutionContext::current().isValid()) {
+		if(UndoStack* undoStack = ExecutionContext::current().ui().undoStack()) {
+			if(QThread::currentThread() == undoStack->thread()) {
+				_suspendCount = &undoStack->_suspendCount;
+				++(*_suspendCount);
+				return;
+			}
+		}
 	}
-	else {
-		_suspendCount = nullptr;
-	}
-#else
-	OVITO_ASSERT(false);
-#endif
+	_suspendCount = nullptr;
 }
 
 /******************************************************************************
@@ -60,15 +59,11 @@ UndoSuspender::UndoSuspender(UndoStack& undoStack) noexcept : _suspendCount(&und
 ******************************************************************************/
 void UndoSuspender::reset() noexcept
 {
-#if 0 // TODO: Implement global undo suspender
 	if(_suspendCount) {
 		OVITO_ASSERT_MSG((*_suspendCount) > 0, "UndoSuspender::reset()", "resume() has been called more often than suspend().");
 		--(*_suspendCount);
 		_suspendCount = nullptr;
 	}
-#else
-	OVITO_ASSERT(false);
-#endif
 }
 
 /******************************************************************************
@@ -105,7 +100,7 @@ void UndoableTransaction::commit()
 /******************************************************************************
 * Initializes the undo manager.
 ******************************************************************************/
-UndoStack::UndoStack(QObject* parent) : QObject(parent)
+UndoStack::UndoStack(UserInterface& userInterface, QObject* parent) : QObject(parent), _userInterface(userInterface)
 {
 }
 
@@ -203,7 +198,7 @@ void UndoStack::resetCurrentCompoundOperation()
 		cop->clear();
 	}
 	catch(const Exception& ex) {
-		ex.reportError();
+		_userInterface.reportError(ex);
 	}
 	_isUndoing = false;
 }
@@ -272,18 +267,16 @@ void UndoStack::undo()
 	OVITO_ASSERT(isRecording() == false);
 	OVITO_ASSERT(isUndoingOrRedoing() == false);
 	OVITO_ASSERT_MSG(_compoundStack.empty(), "UndoStack::undo()", "Cannot undo last operation while a compound operation is open.");
-	if(!canUndo()) return;
+	if(!canUndo()) 
+		return;
 
 	UndoableOperation* curOp = _operations[index()].get();
 	OVITO_CHECK_POINTER(curOp);
 	_isUndoing = true;
 	suspend();
-	try {
+	_userInterface.handleExceptions([&] {
 		curOp->undo();
-	}
-	catch(const Exception& ex) {
-		ex.reportError();
-	}
+	});
 	_isUndoing = false;
 	resume();
 	_index--;
@@ -303,18 +296,16 @@ void UndoStack::redo()
 	OVITO_ASSERT(isRecording() == false);
 	OVITO_ASSERT(isUndoingOrRedoing() == false);
 	OVITO_ASSERT_MSG(_compoundStack.empty(), "UndoStack::redo()", "Cannot redo operation while a compound operation is open.");
-	if(!canRedo()) return;
+	if(!canRedo()) 
+		return;
 
 	UndoableOperation* nextOp = _operations[index() + 1].get();
 	OVITO_CHECK_POINTER(nextOp);
 	_isRedoing = true;
 	suspend();
-	try {
+	_userInterface.handleExceptions([&] {
 		nextOp->redo();
-	}
-	catch(const Exception& ex) {
-		ex.reportError();
-	}
+	});
 	_isRedoing = false;
 	resume();
 	_index++;

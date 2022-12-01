@@ -82,7 +82,6 @@ Future<PipelineFlowState> BasePipelineSource::postprocessDataCollection(int anim
 			return state;
 		}
 		catch(Exception& ex) {
-			ex.setContext(this);
 			setStatus(ex);
 			ex.prependGeneralMessage(tr("Pipeline source reported:"));
 			return PipelineFlowState(dataCollection(), PipelineStatus(ex, QChar(' ')), frameInterval);

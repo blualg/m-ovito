@@ -138,18 +138,18 @@ void PropertyParameterUI::memorizeDefaultParameterValue()
 	}
 	else if(isReferenceFieldUI() && !propertyField()->isVector()) {
 		if(Controller* ctrl = dynamic_object_cast<Controller>(parameterObject())) {
-			if(Scene* scene = mainWindow().activeScene()) {
+			if(AnimationSettings* anim = mainWindow().datasetContainer().activeAnimationSettings()) {
 				QSettings settings;
 				settings.beginGroup(editObject()->getOOClass().plugin()->pluginId());
 				settings.beginGroup(editObject()->getOOClass().name());
 				if(ctrl->controllerType() == Controller::ControllerTypeFloat) {
-					settings.setValue(propertyField()->identifier(), QVariant::fromValue(ctrl->getFloatValue(scene->animationSettings()->currentTime())));
+					settings.setValue(propertyField()->identifier(), QVariant::fromValue(ctrl->getFloatValue(anim->currentTime())));
 				}
 				else if(ctrl->controllerType() == Controller::ControllerTypeInt) {
-					settings.setValue(propertyField()->identifier(), QVariant::fromValue(ctrl->getIntValue(scene->animationSettings()->currentTime())));
+					settings.setValue(propertyField()->identifier(), QVariant::fromValue(ctrl->getIntValue(anim->currentTime())));
 				}
 				else if(ctrl->controllerType() == Controller::ControllerTypeVector3) {
-					settings.setValue(propertyField()->identifier(), QVariant::fromValue(ctrl->getVector3Value(scene->animationSettings()->currentTime())));
+					settings.setValue(propertyField()->identifier(), QVariant::fromValue(ctrl->getVector3Value(anim->currentTime())));
 				}
 			}
 		}

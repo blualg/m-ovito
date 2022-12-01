@@ -216,7 +216,7 @@ void GuiApplication::postStartupInitialization(MainThreadOperation& operation)
 				datasetContainer.loadDataset(startupFilename, operation.createSubTask(true));
 			}
 			catch(const Exception& ex) {
-				ex.reportError();
+				operation.userInterface().reportError(ex);
 			}
 		}
 	}
@@ -232,7 +232,7 @@ void GuiApplication::postStartupInitialization(MainThreadOperation& operation)
 			}
 			catch(Exception& ex) {
 				ex.prependGeneralMessage(tr("An error occured while loading the user's default session state from the file: %1").arg(defaultsFilePath));
-				ex.reportError();
+				operation.userInterface().reportError(ex);
 			}
 		}
 	}
@@ -265,7 +265,7 @@ void GuiApplication::postStartupInitialization(MainThreadOperation& operation)
 				throw Exception(tr("Detected multiple command line arguments: Cannot open multiple session state files at the same time."));
 		}
 		catch(const Exception& ex) {
-			ex.reportError();
+			operation.userInterface().reportError(ex);
 		}
 		if(operation.userInterface().undoStack())
 			operation.userInterface().undoStack()->clear();
@@ -281,24 +281,24 @@ bool GuiApplication::eventFilter(QObject* watched, QEvent* event)
 {
 	if(event->type() == QEvent::FileOpen) {
 		QFileOpenEvent* openEvent = static_cast<QFileOpenEvent*>(event);
-		try {
-			MainWindow* mainWindow = qobject_cast<MainWindow*>(QApplication::activeWindow());
+		MainWindow* mainWindow = qobject_cast<MainWindow*>(QApplication::activeWindow());
 
-			// If the main window is not the active window, look up it up among the list of all top-level windows
-			// Only use it for opening the imported file if there currently is only a single MainWindow instance.
-			if(!mainWindow) {
-				for(QWidget* widget : QApplication::topLevelWidgets()) {
-					if(MainWindow* mw = qobject_cast<MainWindow*>(widget)) {
-						if(!mainWindow) mainWindow = mw;
-						else {
-							mainWindow = nullptr;
-							break;
-						}
+		// If the main window is not the active window, look up it up among the list of all top-level windows
+		// Only use it for opening the imported file if there currently is only a single MainWindow instance.
+		if(!mainWindow) {
+			for(QWidget* widget : QApplication::topLevelWidgets()) {
+				if(MainWindow* mw = qobject_cast<MainWindow*>(widget)) {
+					if(!mainWindow) mainWindow = mw;
+					else {
+						mainWindow = nullptr;
+						break;
 					}
 				}
 			}
+		}
 
-			if(mainWindow) {
+		if(mainWindow) {
+			try {
 				if(openEvent->file().endsWith(".ovito", Qt::CaseInsensitive)) {
 					mainWindow->datasetContainer().loadDataset(openEvent->file(), MainThreadOperation::create(*mainWindow, true));
 				}
@@ -307,9 +307,9 @@ bool GuiApplication::eventFilter(QObject* watched, QEvent* event)
 					mainWindow->undoStack()->clear();
 				}
 			}
-		}
-		catch(const Exception& ex) {
-			ex.reportError();
+			catch(const Exception& ex) {
+				mainWindow->reportError(ex);
+			}
 		}
 	}
 	return StandaloneApplication::eventFilter(watched, event);
@@ -318,101 +318,33 @@ bool GuiApplication::eventFilter(QObject* watched, QEvent* event)
 /******************************************************************************
 * Handler function for exceptions used in GUI mode.
 ******************************************************************************/
-void GuiApplication::reportError(const Exception& ex, bool blocking)
+void GuiApplication::reportError(const Exception& ex)
 {
 	OVITO_ASSERT(QThread::currentThread() == this->thread());
 
 	// Always display errors in the terminal window.
-	Application::reportError(ex, blocking);
+	Application::reportError(ex);
 
+	// In GUI mode, display a message box (application modal).
 	if(guiMode()) {
-		if(!blocking) {
-
-			// Deferred display of the error.
-			if(_errorList.empty())
-				QMetaObject::invokeMethod(this, "showErrorMessages", Qt::QueuedConnection);
-
-			// Queue error messages.
-			_errorList.push_back(ex);
-		}
-		else {
-			_errorList.push_back(ex);
-			showErrorMessages();
-		}
-	}
-}
-
-/******************************************************************************
-* Displays an error message box. This slot is called by reportError().
-******************************************************************************/
-void GuiApplication::showErrorMessages()
-{
-	while(!_errorList.empty()) {
-
-		// Show next exception from queue.
-		const Exception& exception = _errorList.front();
-
-		// Prepare a message box dialog.
-		QPointer<QMessageBox> msgbox = new QMessageBox();
-		msgbox->setWindowTitle(tr("Error - %1").arg(Application::applicationName()));
-		msgbox->setStandardButtons(QMessageBox::Ok);
-		msgbox->setText(exception.message());
-		msgbox->setIcon(QMessageBox::Critical);
-		msgbox->setTextInteractionFlags(Qt::TextBrowserInteraction);
-
-		// If the exception has been thrown within the context of a DataSet or a DataSetContainer,
-		// show the message box under the corresponding window.
-		QWidget* window = nullptr;
-		if(DataSet* dataset = qobject_cast<DataSet*>(exception.context())) {
-			if(GuiDataSetContainer* datasetContainer = qobject_cast<GuiDataSetContainer*>(dataset->container()))
-				window = &datasetContainer->mainWindow();
-		}
-		else if(GuiDataSetContainer* datasetContainer = qobject_cast<GuiDataSetContainer*>(exception.context())) {
-			window = &datasetContainer->mainWindow();
-		}
-		else {
-			window = qobject_cast<QWidget*>(exception.context());
-		}
-
-		if(window) {
-
-			// Stop animation playback when an error occurred.
-			if(MainWindow* mainWindow = qobject_cast<MainWindow*>(window)) {
-				QAction* playbackAction = mainWindow->actionManager()->getAction(ACTION_TOGGLE_ANIMATION_PLAYBACK);
-				if(playbackAction->isChecked())
-					playbackAction->trigger();
-			}
-
-			// If there currently is a modal dialog box being shown,
-			// make the error message dialog a child of this dialog to prevent a UI dead-lock.
-			for(QDialog* dialog : window->findChildren<QDialog*>()) {
-				if(dialog->isModal()) {
-					window = dialog;
-					dialog->show();
-					break;
-				}
-			}
-
-			msgbox->setParent(window);
-			msgbox->setWindowModality(Qt::WindowModal);
-		}
+		QMessageBox msgbox;
+		msgbox.setWindowTitle(tr("Error - %1").arg(applicationName()));
+		msgbox.setStandardButtons(QMessageBox::Ok);
+		msgbox.setText(ex.message());
+		msgbox.setIcon(QMessageBox::Critical);
+		msgbox.setTextInteractionFlags(Qt::TextBrowserInteraction);
 
 		// If the exception is associated with additional message strings,
 		// show them in the Details section of the message box dialog.
-		if(exception.messages().size() > 1) {
+		if(ex.messages().size() > 1) {
 			QString detailText;
-			for(int i = 1; i < exception.messages().size(); i++)
-				detailText += exception.messages()[i] + QStringLiteral("\n");
-			msgbox->setDetailedText(detailText);
+			for(int i = 1; i < ex.messages().size(); i++)
+				detailText += ex.messages()[i] + QStringLiteral("\n");
+			msgbox.setDetailedText(detailText);
 		}
 
 		// Show message box.
-		msgbox->exec();
-		if(!msgbox)
-			return;
-		else
-			delete msgbox;
-		_errorList.pop_front();
+		msgbox.exec();
 	}
 }
 

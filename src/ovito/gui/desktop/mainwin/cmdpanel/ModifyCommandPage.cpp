@@ -210,7 +210,7 @@ ModifyCommandPage::ModifyCommandPage(MainWindow& mainWindow, QWidget* parent) : 
 	layout->setRowStretch(2, 1);
 
 	// Create the properties panel.
-	_propertiesPanel = new PropertiesPanel(nullptr, mainWindow);
+	_propertiesPanel = new PropertiesPanel(mainWindow);
 	_propertiesPanel->setFrameStyle(QFrame::NoFrame | QFrame::Plain);
 	_splitter->addWidget(_propertiesPanel);
 	_splitter->setStretchFactor(1,1);
@@ -256,8 +256,7 @@ void ModifyCommandPage::onSelectedItemChanged()
 
 		// Request a viewport update whenever a new item in the pipeline editor is selected, 
 		// because the currently selected modifier may render gizmos in the viewports. 
-		if(_mainWindow.datasetContainer().currentSet())
-			_mainWindow.datasetContainer().currentSet()->viewportConfig()->updateViewports();
+		_mainWindow.updateViewports();
 	}
 
 	// Whenever no object is selected, show information about the program.
@@ -277,14 +276,14 @@ void ModifyCommandPage::onModifierStackDoubleClicked(const QModelIndex& index)
 
 	if(ModifierApplication* modApp = dynamic_object_cast<ModifierApplication>(item->object())) {
 		// Toggle enabled state of modifier.
-		UndoableTransaction::handleExceptions(_mainWindow, tr("Toggle modifier state"), [modApp]() {
+		_mainWindow.performTransaction(tr("Toggle modifier state"), [modApp]() {
 			modApp->modifier()->setEnabled(!modApp->modifier()->isEnabled());
 		});
 	}
 
 	if(DataVis* vis = dynamic_object_cast<DataVis>(item->object())) {
 		// Toggle enabled state of vis element.
-		UndoableTransaction::handleExceptions(_mainWindow, tr("Toggle visual element"), [vis]() {
+		_mainWindow.performTransaction(tr("Toggle visual element"), [vis]() {
 			vis->setEnabled(!vis->isEnabled());
 		});
 	}

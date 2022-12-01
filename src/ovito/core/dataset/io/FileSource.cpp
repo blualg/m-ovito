@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -26,6 +26,7 @@
 #include <ovito/core/utilities/io/ObjectSaveStream.h>
 #include <ovito/core/utilities/io/FileManager.h>
 #include <ovito/core/app/Application.h>
+#include <ovito/core/app/UserInterface.h>
 #include <ovito/core/viewport/Viewport.h>
 #include <ovito/core/viewport/ViewportConfiguration.h>
 #include <ovito/core/dataset/scene/PipelineSceneNode.h>
@@ -200,15 +201,15 @@ SharedFuture<QVector<FileSourceImporter::Frame>> FileSource::updateListOfFrames(
 	// Update the list of frames.
 	SharedFuture<QVector<FileSourceImporter::Frame>> framesFuture = requestFrameList(true);
 
-	// Display error messages to the user.
+	// Display any errors during load operation to the user.
 	framesFuture.finally(executor(), [](Task& task) {
 		try { task.throwPossibleException(); }
-		catch(const Exception& ex) { ex.reportError(); }
+		catch(const Exception& ex) { ExecutionContext::current().ui().reportError(ex); }
 		catch(...) {}
 	});
 
 	// Show progress in the main window status bar.
-	taskManager().registerFuture(framesFuture);
+	ExecutionContext::current().ui().taskManager().registerFuture(framesFuture);
 
 	return framesFuture;
 }

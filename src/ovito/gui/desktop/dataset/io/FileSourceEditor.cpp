@@ -243,7 +243,7 @@ void FileSourceEditor::onPickLocalInputFile()
 		importNewFile(fileSource, newSourceUrl, importerType, importerFormat, createOperation());
 	}
 	catch(const Exception& ex) {
-		ex.reportError();
+		mainWindow().reportError(ex);
 	}
 }
 
@@ -266,7 +266,7 @@ void FileSourceEditor::onPickRemoteInputFile()
 			auto importerClasses = PluginManager::instance().metaclassMembers<FileImporter>(FileSourceImporter::OOClass());
 
 			// Let the user select a new URL.
-			ImportRemoteFileDialog dialog(importerClasses, container()->window(), tr("Pick source"));
+			ImportRemoteFileDialog dialog(mainWindow(), importerClasses, container()->window(), tr("Pick source"));
 			QUrl oldUrl;
 			if(fileSource->dataCollectionFrame() >= 0 && fileSource->dataCollectionFrame() < fileSource->frames().size())
 				oldUrl = fileSource->frames()[fileSource->dataCollectionFrame()].sourceFile;
@@ -284,7 +284,7 @@ void FileSourceEditor::onPickRemoteInputFile()
 		importNewFile(fileSource, newSourceUrl, importerType, importerFormat, createOperation());
 	}
 	catch(const Exception& ex) {
-		ex.reportError();
+		mainWindow().reportError(ex);
 	}
 }
 
@@ -389,10 +389,10 @@ void FileSourceEditor::onReloadAnimation()
 		// Let the FileSource update the list of source animation frames.
 		// After the update is complete, jump to the last one of the newly added animation frames.
 		int oldFrameCount = fileSource->frames().size();
-		fileSource->updateListOfFrames(true).finally(fileSource->executor(), [fileSource, oldFrameCount, scene=OORef<Scene>(mainWindow().activeScene())](Task& task) {
-			if(!task.isCanceled() && fileSource->frames().size() > oldFrameCount && scene) {
+		fileSource->updateListOfFrames(true).finally(fileSource->executor(), [fileSource, oldFrameCount, anim=OORef<AnimationSettings>(mainWindow().datasetContainer().activeAnimationSettings())](Task& task) {
+			if(!task.isCanceled() && fileSource->frames().size() > oldFrameCount && anim) {
 				AnimationTime time = fileSource->sourceFrameToAnimationTime(fileSource->frames().size() - 1);				
-				scene->animationSettings()->setCurrentFrame(time.frame());
+				anim->setCurrentFrame(time.frame());
 			}
 		});
 	}
@@ -406,7 +406,7 @@ void FileSourceEditor::onWildcardPatternEntered()
 	FileSource* fileSource = static_object_cast<FileSource>(editObject());
 	OVITO_CHECK_OBJECT_POINTER(fileSource);
 
-	undoableTransaction(tr("Change wildcard pattern"), [this, fileSource]() {
+	performTransaction(tr("Change wildcard pattern"), [this, fileSource]() {
 		if(!fileSource->importer())
 			return;
 
@@ -532,12 +532,12 @@ void FileSourceEditor::onFrameSelected(int index)
 	if(!fileSource) return;
 
 	if(fileSource->restrictToFrame() < 0) {
-		if(Scene* scene = mainWindow().activeScene()) {
-			scene->animationSettings()->setCurrentFrame(fileSource->sourceFrameToAnimationTime(index).frame());
+		if(AnimationSettings* anim = mainWindow().datasetContainer().activeAnimationSettings()) {
+			anim->setCurrentFrame(fileSource->sourceFrameToAnimationTime(index).frame());
 		}
 	}
 	else {
-		undoableTransaction(tr("Select static frame"), [&]() {
+		performTransaction(tr("Select static frame"), [&]() {
 			fileSource->setRestrictToFrame(index);
 		});
 	}

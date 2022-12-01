@@ -52,10 +52,10 @@ private:
 	virtual void run() final override;
 
 	/// Submits the task for execution to a thread pool.
-	void startInThreadPool(QThreadPool* pool);
+	void startInThreadPool(QThreadPool* pool, bool showInUserInterface);
 
 	/// Runs the task's work function immediately in the current thread.
-	void startInThisThread();
+	void startInThisThread(bool showInUserInterface);
 
 	/// A shared pointer to the task itself, which is used to keep the C++ object alive
 	/// while the task is transferred to and executed in a thread pool.
@@ -76,18 +76,11 @@ class AsynchronousTask : public detail::TaskWithStorage<std::tuple<R...>, Asynch
 {
 public:
 
-	/// Schedules the task for execution in the global thread pool, registers it with the given TaskManager, 
-	/// and returns a future for the task's results.
-	Future<R...> runAsync(TaskManager& taskManager) {
-		taskManager.registerTask(*this);
-		return runAsync();
-	}
-
 	/// Schedules the task for execution in the global thread pool and returns a future for the task's results.
-	Future<R...> runAsync() {
+	Future<R...> runAsync(bool showInUserInterface) {
 #ifndef OVITO_DISABLE_THREADING
 		// Submit the task for execution in a worker thread.
-		return runAsync(QThreadPool::globalInstance());
+		return runAsync(QThreadPool::globalInstance(), showInUserInterface);
 #else
 		// If multi-threading is not available, run the task immediately.
 		return runImmediately();
@@ -96,8 +89,8 @@ public:
 
 #ifndef OVITO_DISABLE_THREADING
 	/// Submits the task to a thread pool for execution and returns a future for the task's results.
-	Future<R...> runAsync(QThreadPool* pool) {
-		this->startInThreadPool(pool);
+	Future<R...> runAsync(QThreadPool* pool, bool showInUserInterface) {
+		this->startInThreadPool(pool, showInUserInterface);
 		return Future<R...>::createFromTask(this->shared_from_this());
 	}
 #endif
@@ -105,7 +98,7 @@ public:
 	/// Schedules the given function for execution in a worker thread.
 	/// The function should accept a reference to a ProgressingTask as a parameter.
 	template<typename Function>
-	static Future<R...> runAsync(Function&& f) {
+	static Future<R...> runAsync(Function&& f, bool showInUserInterface) {
 		class FuncAsyncTask : public AsynchronousTask {
 		public:
 			FuncAsyncTask(Function&& f) : _func(std::forward<Function>(f)) {}
@@ -114,13 +107,13 @@ public:
 			std::decay_t<Function> _func;
 		};
 		auto task = std::make_shared<FuncAsyncTask>(std::forward<Function>(f));
-		return task->runAsync();
+		return task->runAsync(showInUserInterface);
 	}
 
 	/// Runs the given function in a separate worker thread and waits until the function returns.
 	/// Returns false if execution has been canceled due to cancelation of the task calling this function.
 	template<typename Function>
-	static bool runAsyncAndJoin(Function&& f) {
+	static bool runAsyncAndJoin(Function&& f, bool showInUserInterface) {
 		QWaitCondition wc;
 		QMutex waitMutex;
 		bool done = false;
@@ -129,7 +122,7 @@ public:
 			QMutexLocker locker(&waitMutex);
 			done = true;
 			wc.wakeAll();
-		});
+		}, showInUserInterface);
 		bool result = std::move(future).waitForFinished();
 		waitMutex.lock();
 		if(!done)
@@ -139,8 +132,8 @@ public:
 	}
 
 	/// Runs the task in place and returns a future for the task's results.
-	Future<R...> runImmediately() {
-		this->startInThisThread();
+	Future<R...> runImmediately(bool showInUserInterface) {
+		this->startInThisThread(showInUserInterface);
 		return Future<R...>::createFromTask(this->shared_from_this());
 	}
 

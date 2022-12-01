@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -27,6 +27,7 @@
 #include <ovito/core/viewport/Viewport.h>
 #include <ovito/core/viewport/ViewportConfiguration.h>
 #include <ovito/core/dataset/DataSet.h>
+#include <ovito/core/dataset/DataSetContainer.h>
 #include "BaseViewportWindow.h"
 
 namespace Ovito {
@@ -54,13 +55,9 @@ void BaseViewportWindow::mouseDoubleClickEvent(QMouseEvent* event)
 {
 	if(inputManager()) {
 		if(ViewportInputMode* mode = inputManager()->activeMode()) {
-			try {
+			inputManager()->userInterface().handleExceptions([&] {
 				mode->mouseDoubleClickEvent(this, event);
-			}
-			catch(const Exception& ex) {
-				qWarning() << "Uncaught exception in viewport mouse event handler:";
-				ex.logError();
-			}
+			});
 		}
 	}
 }
@@ -70,7 +67,17 @@ void BaseViewportWindow::mouseDoubleClickEvent(QMouseEvent* event)
 ******************************************************************************/
 void BaseViewportWindow::mousePressEvent(QMouseEvent* event)
 {
-	dataset()->viewportConfig()->setActiveViewport(viewport());
+	if(!inputManager())
+		return;
+
+	// Make this viewport the active one.
+	if(DataSet* dataset = userInterface().datasetContainer().currentSet()) {
+		if(ViewportConfiguration* viewportConfig = dataset->viewportConfig()) {
+			inputManager()->userInterface().handleExceptions([&] {
+				viewportConfig->setActiveViewport(viewport());
+			});
+		}
+	}
 
 	// Intercept mouse clicks on the viewport caption.
 	if(contextMenuArea().contains(ViewportInputMode::getMousePosition(event))) {
@@ -78,16 +85,10 @@ void BaseViewportWindow::mousePressEvent(QMouseEvent* event)
 		return;
 	}
 
-	if(inputManager()) {
-		if(ViewportInputMode* mode = inputManager()->activeMode()) {
-			try {
-				mode->mousePressEvent(this, event);
-			}
-			catch(const Exception& ex) {
-				qWarning() << "Uncaught exception in viewport mouse event handler:";
-				ex.logError();
-			}
-		}
+	if(ViewportInputMode* mode = inputManager()->activeMode()) {
+		inputManager()->userInterface().handleExceptions([&] {
+			mode->mousePressEvent(this, event);
+		});
 	}
 }
 
@@ -98,13 +99,9 @@ void BaseViewportWindow::mouseReleaseEvent(QMouseEvent* event)
 {
 	if(inputManager()) {
 		if(ViewportInputMode* mode = inputManager()->activeMode()) {
-			try {
+			inputManager()->userInterface().handleExceptions([&] {
 				mode->mouseReleaseEvent(this, event);
-			}
-			catch(const Exception& ex) {
-				qWarning() << "Uncaught exception in viewport mouse event handler:";
-				ex.logError();
-			}
+			});
 		}
 	}
 }
@@ -125,13 +122,9 @@ void BaseViewportWindow::mouseMoveEvent(QMouseEvent* event)
 
 	if(inputManager()) {
 		if(ViewportInputMode* mode = inputManager()->activeMode()) {
-			try {
+			inputManager()->userInterface().handleExceptions([&] {
 				mode->mouseMoveEvent(this, event);
-			}
-			catch(const Exception& ex) {
-				qWarning() << "Uncaught exception in viewport mouse event handler:";
-				ex.logError();
-			}
+			});
 		}
 	}
 }
@@ -143,13 +136,9 @@ void BaseViewportWindow::wheelEvent(QWheelEvent* event)
 {
 	if(inputManager()) {
 		if(ViewportInputMode* mode = inputManager()->activeMode()) {
-			try {
+			inputManager()->userInterface().handleExceptions([&] {
 				mode->wheelEvent(this, event);
-			}
-			catch(const Exception& ex) {
-				qWarning() << "Uncaught exception in viewport mouse event handler:";
-				ex.logError();
-			}
+			});
 		}
 	}
 }
@@ -173,13 +162,9 @@ void BaseViewportWindow::focusOutEvent(QFocusEvent* event)
 {
 	if(inputManager()) {
 		if(ViewportInputMode* mode = inputManager()->activeMode()) {
-			try {
+			inputManager()->userInterface().handleExceptions([&] {
 				mode->focusOutEvent(this, event);
-			}
-			catch(const Exception& ex) {
-				qWarning() << "Uncaught exception in viewport event handler:";
-				ex.logError();
-			}
+			});
 		}
 	}
 }
@@ -191,14 +176,10 @@ void BaseViewportWindow::keyPressEvent(QKeyEvent* event)
 {
 	if(inputManager()) {
 		if(ViewportInputMode* mode = inputManager()->activeMode()) {
-			try {
+			inputManager()->userInterface().handleExceptions([&] {
 				if(mode->keyPressEvent(this, event))
 					return; // Do not propagate handled key events to base class.
-			}
-			catch(const Exception& ex) {
-				qWarning() << "Uncaught exception in viewport key-press event handler:";
-				ex.logError();
-			}
+			});
 		}
 	}
 }

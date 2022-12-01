@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -85,7 +85,7 @@ protected:
 	virtual QString undoDisplayName() = 0;
 
 	/// Applies the current transformation to a set of nodes.
-	virtual void applyXForm(const OORefVector<SceneNode>& nodeSet, FloatType multiplier) {}
+	virtual void applyXForm(AnimationTime time, const QVector<SceneNode*>& nodeSet, FloatType multiplier) {}
 
 	/// Updates the values displayed in the coordinate display widget.
 	virtual void updateCoordinateDisplay(CoordinateDisplayWidget* coordDisplay) {}
@@ -151,7 +151,7 @@ protected:
 	virtual void doXForm() override;
 
 	/// Applies the current transformation to a set of nodes.
-	virtual void applyXForm(const OORefVector<SceneNode>& nodeSet, FloatType multiplier) override;
+	virtual void applyXForm(AnimationTime time, const QVector<SceneNode*>& nodeSet, FloatType multiplier) override;
 
 	/// Updates the values displayed in the coordinate display widget.
 	virtual void updateCoordinateDisplay(CoordinateDisplayWidget* coordDisplay) override;
@@ -200,7 +200,7 @@ protected:
 	virtual void doXForm() override;
 
 	/// Applies the current transformation to a set of nodes.
-	virtual void applyXForm(const OORefVector<SceneNode>& nodeSet, FloatType multiplier) override;
+	virtual void applyXForm(AnimationTime time, const QVector<SceneNode*>& nodeSet, FloatType multiplier) override;
 
 	/// Updates the values displayed in the coordinate display widget.
 	virtual void updateCoordinateDisplay(CoordinateDisplayWidget* coordDisplay) override;

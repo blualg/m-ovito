@@ -46,9 +46,6 @@ public:
 	/// Associates this window with a different viewport.
 	void setViewport(Viewport* vp);
 
-	/// Returns the dataset this viewport window is associated with.
-	DataSet* dataset() const { return _dataset; }
-
 	/// Returns the viewport associated with this window.
 	Viewport* viewport() const { return _viewport; }
 
@@ -129,9 +126,6 @@ private:
 
 	/// The abstract user interface hosting this viewport window.
 	UserInterface& _userInterface;
-
-	/// The dataset this viewport window is associated with.
-	DataSet* _dataset;
 
 	/// The viewport associated with this window.
 	Viewport* _viewport;

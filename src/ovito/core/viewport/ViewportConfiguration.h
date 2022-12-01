@@ -48,32 +48,6 @@ public:
 	/// Constructor.
 	Q_INVOKABLE ViewportConfiguration(ObjectCreationParams params);
 
-	/// \brief Immediately repaints all viewports that have been scheduled for an update using updateViewports().
-	/// \sa updateViewports()
-	void processViewportUpdates();
-
-	/// \brief A call to this method suspends redrawing of the viewports.
-	///
-	/// To resume redrawing of viewports call resumeViewportUpdates().
-	///
-	/// Calling updateViewports() while redrawing is suspended will update the
-	/// viewports as soon as redrawing is resumed.
-	///
-	/// Normally you should use the ViewportSuspender helper class to suspend viewport update.
-	/// It has the advantage of being exception-safe.
-	///
-	/// \sa resumeViewportUpdates(), isSuspended(), ViewportSuspender
-	void suspendViewportUpdates() { _viewportSuspendCount++; }
-
-	/// \brief This will resume redrawing of the viewports after a call to suspendViewportUpdates().
-	/// \sa suspendViewportUpdates(), isSuspended()
-	void resumeViewportUpdates();
-
-	/// \brief Returns whether viewport updates are suspended.
-	/// \return \c true if suspendViewportUpdates() has been called to suspend any viewport updates.
-	/// \sa suspendViewportUpdates(), resumeViewportUpdates()
-	bool isSuspended() const { return _viewportSuspendCount > 0; }
-
 	/// \brief Returns whether any of the viewports
 	///        is currently being updated.
 	/// \return \c true if there is currently a rendering operation going on.
@@ -106,19 +80,6 @@ public Q_SLOTS:
 	///        when the pipeline has been fully evaluated and the extents are known.
 	void zoomToSelectionExtentsWhenReady();
 
-	/// \brief This will flag all viewports for redrawing.
-	///
-	/// This function does not cause an immediate repaint of the viewports; instead it schedules a
-	/// paint event for processing when Qt returns to the main event loop. You can call this method as often
-	/// as you want; it will return immediately and will cause only one viewport repaint when Qt returns to the
-	/// main event loop.
-	///
-	/// To update only a single viewport, Viewport::updateViewport() should be used.
-	///
-	/// To redraw all viewports immediately without waiting for the paint event to be processed,
-	/// call processViewportUpdates() subsequently.
-	void updateViewports();
-
 Q_SIGNALS:
 
 	/// This signal is emitted when another viewport became active.
@@ -126,9 +87,6 @@ Q_SIGNALS:
 
 	/// This signal is emitted when one of the viewports has been maximized.
 	void maximizedViewportChanged(Viewport* maximizedViewport);
-
-	/// This signal is emitted whenever the updating of viewports is resumed.
-	void viewportUpdateResumed();
 
 	/// This signal is sent whenver the layout of the viewports changes.
 	void viewportLayoutChanged();
@@ -160,25 +118,6 @@ private:
 
 	/// The viewport layout tree's root node.
 	DECLARE_MODIFIABLE_REFERENCE_FIELD(OORef<ViewportLayoutCell>, layoutRootCell, setLayoutRootCell);
-
-	/// This counter is for suspending the viewport updates.
-	int _viewportSuspendCount = 0;
-
-	/// Indicates that the viewports have been invalidated while updates were suspended.
-	bool _viewportsNeedUpdate = false;
-};
-
-/**
- * \brief RAII helper class that suspends viewport redrawing while it exists.
- *
- * Use this to make your code exception-safe.
- * Just create an instance of this class on the stack to suspend viewport updates
- * during the lifetime of the class instance.
- */
-class OVITO_CORE_EXPORT ViewportSuspender 
-{
-public:
-	ViewportSuspender(UserInterface& userInterface) noexcept;
 };
 
 }	// End of namespace

@@ -33,32 +33,11 @@ using namespace std;
 /******************************************************************************
 * Constructs the spinner control.
 ******************************************************************************/
-AnimationTimeSpinner::AnimationTimeSpinner(MainWindow* mainWindow, QWidget* parent) : SpinnerWidget(parent)
+AnimationTimeSpinner::AnimationTimeSpinner(MainWindow& mainWindow, QWidget* parent) : SpinnerWidget(parent), _mainWindow(mainWindow)
 {
 	connect(this, &SpinnerWidget::spinnerValueChanged, this, &AnimationTimeSpinner::onSpinnerValueChanged);
-	connect(&mainWindow->datasetContainer(), &DataSetContainer::animationSettingsReplaced, this, &AnimationTimeSpinner::onAnimationSettingsReplaced);
-
-	onAnimationSettingsReplaced(mainWindow->datasetContainer().currentSet() ? mainWindow->datasetContainer().currentSet()->animationSettings() : nullptr);
-}
-
-/******************************************************************************
-* This is called when new animation settings have been loaded.
-******************************************************************************/
-void AnimationTimeSpinner::onAnimationSettingsReplaced(AnimationSettings* newAnimationSettings)
-{
-	disconnect(_animIntervalChangedConnection);
-	disconnect(_currentFrameChangedConnection);
-	_animSettings = newAnimationSettings;
-	if(newAnimationSettings) {
-		_animIntervalChangedConnection = connect(newAnimationSettings, &AnimationSettings::intervalChanged, this, &AnimationTimeSpinner::onIntervalChanged);
-		_currentFrameChangedConnection = connect(newAnimationSettings, &AnimationSettings::currentFrameChanged, this, &AnimationTimeSpinner::onCurrentFrameChanged);
-		onIntervalChanged(newAnimationSettings->firstFrame(), newAnimationSettings->lastFrame());
-		onCurrentFrameChanged(newAnimationSettings->currentFrame());
-	}
-	else {
-		onIntervalChanged(0, 0);
-		onCurrentFrameChanged(0);
-	}
+	connect(&mainWindow.datasetContainer(), &DataSetContainer::currentFrameChanged, this, &AnimationTimeSpinner::onCurrentFrameChanged);
+	connect(&mainWindow.datasetContainer(), &DataSetContainer::animationIntervalChanged, this, &AnimationTimeSpinner::onIntervalChanged);
 }
 
 /******************************************************************************
@@ -86,8 +65,8 @@ void AnimationTimeSpinner::onIntervalChanged(int firstFrame, int lastFrame)
 void AnimationTimeSpinner::onSpinnerValueChanged()
 {
 	// Set a new animation time.
-	if(_animSettings)
-		_animSettings->setCurrentFrame(intValue());
+	if(AnimationSettings* anim = _mainWindow.datasetContainer().activeAnimationSettings())
+		anim->setCurrentFrame(intValue());
 }
 
 }	// End of namespace

@@ -35,11 +35,11 @@ namespace Ovito {
 class OVITO_GUI_EXPORT FrameBufferWindow : public QMainWindow
 {
 	Q_OBJECT
-	
+
 public:
 
 	/// Constructor.
-	FrameBufferWindow(QWidget* parent = nullptr);
+	FrameBufferWindow(MainWindow& mainWindow, QWidget* parent = nullptr);
 
 	/// Return the FrameBuffer that is currently shown in the widget (can be NULL).
 	const std::shared_ptr<FrameBuffer>& frameBuffer() const { return _frameBufferWidget->frameBuffer(); }
@@ -86,6 +86,9 @@ protected:
 	virtual void closeEvent(QCloseEvent* event) override;
 
 private:
+
+	/// The main window this child window is associated with.
+	MainWindow& _mainWindow;
 
 	/// The widget that displays the FrameBuffer.
 	FrameBufferWidget* _frameBufferWidget;

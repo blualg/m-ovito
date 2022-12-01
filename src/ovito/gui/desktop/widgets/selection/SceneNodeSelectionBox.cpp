@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -21,8 +21,9 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/gui/desktop/GUI.h>
-#include <ovito/core/dataset/DataSet.h>
-#include <ovito/core/dataset/scene/SceneNode.h>
+#include <ovito/gui/desktop/mainwin/MainWindow.h>
+#include <ovito/core/dataset/DataSetContainer.h>
+#include <ovito/core/dataset/scene/Scene.h>
 #include "SceneNodeSelectionBox.h"
 #include "SceneNodesListModel.h"
 
@@ -31,7 +32,7 @@ namespace Ovito {
 /******************************************************************************
 * Constructs the widget.
 ******************************************************************************/
-SceneNodeSelectionBox::SceneNodeSelectionBox(DataSetContainer& datasetContainer, ActionManager* actionManager, QWidget* parent) : QComboBox(parent)
+SceneNodeSelectionBox::SceneNodeSelectionBox(MainWindow& mainWindow, QWidget* parent) : QComboBox(parent), _mainWindow(mainWindow)
 {
 	setInsertPolicy(QComboBox::NoInsert);
 	setEditable(false);
@@ -45,7 +46,7 @@ SceneNodeSelectionBox::SceneNodeSelectionBox(DataSetContainer& datasetContainer,
 	setIconSize(QSize(24, 24));
 
 	// Set the list model, which tracks the list of pipelines in the scene.
-	setModel(new SceneNodesListModel(datasetContainer, actionManager, this));
+	setModel(new SceneNodesListModel(mainWindow, this));
 
 	// Wire the combobox selection to the list model.
 	connect(this, qOverload<int>(&QComboBox::activated), static_cast<SceneNodesListModel*>(model()), &SceneNodesListModel::activateItem);
@@ -71,7 +72,7 @@ void SceneNodeSelectionBox::renameSceneNode(int index)
 		bool ok;
 		QString newName = QInputDialog::getText(window(), tr("Change pipeline name"), tr("Pipeline name:                                         "), QLineEdit::Normal, oldName, &ok).trimmed();
 		if(ok && newName != oldName) {
-			UndoableTransaction::handleExceptions(sceneNode->dataset()->undoStack(), tr("Rename pipeline"), [&]() {
+			_mainWindow.performTransaction(tr("Rename pipeline"), [&]() {
 				sceneNode->setNodeName(newName);
 			});
 		}

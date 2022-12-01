@@ -233,9 +233,6 @@ public:
 	/// in the context (and the thread) of this object.
 	RefTargetExecutor executor(bool requireDeferredExecution = false) const;
 
-	/// Returns a reference to the manager for asycnhronous tasks associated with this object's dataset. 
-	TaskManager& taskManager() const;
-
 	/// \brief Rescales the times of all animation keys from the old animation interval to the new interval.
 	/// \param oldAnimationInterval The old animation interval, which should be mapped to the new animation interval.
 	/// \param newAnimationInterval The new animation interval.

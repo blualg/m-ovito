@@ -22,7 +22,7 @@
 
 #include <ovito/gui/desktop/GUI.h>
 #include <ovito/gui/desktop/dialogs/SaveImageFileDialog.h>
-#include <ovito/core/app/UserInterface.h>
+#include <ovito/gui/desktop/mainwin/MainWindow.h>
 #include <ovito/core/utilities/concurrent/TaskWatcher.h>
 #include "FrameBufferWindow.h"
 
@@ -31,8 +31,9 @@ namespace Ovito {
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-FrameBufferWindow::FrameBufferWindow(QWidget* parent) :
-	QMainWindow(parent, (Qt::WindowFlags)(Qt::Tool | Qt::CustomizeWindowHint | Qt::WindowMaximizeButtonHint | Qt::WindowCloseButtonHint))
+FrameBufferWindow::FrameBufferWindow(MainWindow& mainWindow, QWidget* parent) :
+	QMainWindow(parent, (Qt::WindowFlags)(Qt::Tool | Qt::CustomizeWindowHint | Qt::WindowMaximizeButtonHint | Qt::WindowCloseButtonHint)),
+	_mainWindow(mainWindow)
 {
 	// Note: The following setAttribute() call has been commented out, because it leads to sporadic program crashes (Qt 5.12.5).
 	// setAttribute(Qt::WA_MacAlwaysShowToolWindow);
@@ -195,8 +196,7 @@ void FrameBufferWindow::saveImage()
 	if(fileDialog.exec()) {
 		QString imageFilename = fileDialog.imageInfo().filename();
 		if(!frameBuffer()->image().save(imageFilename, fileDialog.imageInfo().format())) {
-			Exception ex(tr("Failed to save image to file '%1'.").arg(imageFilename));
-			ex.reportError();
+			_mainWindow.reportError(tr("Failed to save image to file '%1'.").arg(imageFilename), this);
 		}
 	}
 }

@@ -185,7 +185,6 @@ QVector<OORef<Modifier>> ModifierTemplates::instantiateTemplate(const QString& t
 		stream.close();
 	}
 	catch(Exception& ex) {
-		if(ex.context() == nullptr) ex.setContext(dataset);
 		ex.prependGeneralMessage(tr("Failed to load stored modifier template."));
 		throw;
 	}

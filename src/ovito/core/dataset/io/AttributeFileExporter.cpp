@@ -64,7 +64,7 @@ bool AttributeFileExporter::openOutputFile(const QString& filePath, int numberOf
 	OVITO_ASSERT(!_outputStream);
 
 	_outputFile.setFileName(filePath);
-	_outputStream = std::make_unique<CompressedTextWriter>(_outputFile, this);
+	_outputStream = std::make_unique<CompressedTextWriter>(_outputFile);
 
 	textStream() << "#";
 	for(const QString& attrName : attributesToExport()) {

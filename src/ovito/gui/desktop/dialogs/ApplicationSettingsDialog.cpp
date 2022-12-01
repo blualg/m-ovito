@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -47,10 +47,11 @@ ApplicationSettingsDialog::ApplicationSettingsDialog(MainWindow& mainWindow, Ovi
 	for(OvitoClassPtr clazz : PluginManager::instance().listClasses(ApplicationSettingsDialogPage::OOClass())) {
 		try {
 			OORef<ApplicationSettingsDialogPage> page = static_object_cast<ApplicationSettingsDialogPage>(clazz->createInstance());
-			_pages.push_back(page);
+			page->_settingsDialog = this;
+			_pages.push_back(std::move(page));
 		}
 		catch(const Exception& ex) {
-			ex.reportError();
+			mainWindow.reportError(ex);
 		}
 	}
 
@@ -61,7 +62,7 @@ ApplicationSettingsDialog::ApplicationSettingsDialog(MainWindow& mainWindow, Ovi
 	int defaultPage = 0;
 	for(const auto& page : _pages) {
 		if(startPage && startPage->isMember(page)) defaultPage = _tabWidget->count();
-		page->insertSettingsDialogPage(this, _tabWidget);
+		page->insertSettingsDialogPage(_tabWidget);
 	}
 	_tabWidget->setCurrentIndex(defaultPage);
 
@@ -89,22 +90,21 @@ void ApplicationSettingsDialog::onOk()
 	try {
 		// Let all pages validate the changes the user made to the settings.
 		for(const OORef<ApplicationSettingsDialogPage>& page : _pages) {
-			if(!page->validateValues(this, _tabWidget)) {
+			if(!page->validateValues(_tabWidget)) {
 				return;
 			}
 		}
 
 		// Let all pages save their settings.
 		for(const OORef<ApplicationSettingsDialogPage>& page : _pages) {
-			page->saveValues(this, _tabWidget);
+			page->saveValues(_tabWidget);
 		}
 
 		// Close dialog box.
 		accept();
 	}
-	catch(Exception& ex) {
-		ex.setContext(this);
-		ex.reportError(true);
+	catch(const Exception& ex) {
+		mainWindow().reportError(ex, this);
 	}
 }
 
@@ -116,10 +116,10 @@ void ApplicationSettingsDialog::onCancel()
 	try {
 		// Let all pages restore their settings to the old values.
 		for(const OORef<ApplicationSettingsDialogPage>& page : _pages)
-			page->restoreValues(this, _tabWidget);
+			page->restoreValues(_tabWidget);
 	}
-	catch(Exception& ex) {
-		ex.reportError();
+	catch(const Exception& ex) {
+		mainWindow().reportError(ex, this);
 	}
 }
 
@@ -128,7 +128,23 @@ void ApplicationSettingsDialog::onCancel()
 ******************************************************************************/
 void ApplicationSettingsDialog::onHelp()
 {
-	ActionManager::openHelpTopic(QStringLiteral("manual:application_settings"));
+	mainWindow().actionManager()->openHelpTopic(QStringLiteral("manual:application_settings"));
+}
+
+/******************************************************************************
+* Returns the main window hosting this settings page.
+******************************************************************************/
+MainWindow& ApplicationSettingsDialogPage::mainWindow() const
+{
+	return settingsDialog()->mainWindow();
+}
+
+/******************************************************************************
+* Displays an error message to the user.
+******************************************************************************/
+void ApplicationSettingsDialogPage::reportError(const Exception& ex)
+{
+	mainWindow().reportError(ex, settingsDialog());
 }
 
 }	// End of namespace

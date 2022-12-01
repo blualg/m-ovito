@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2018 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -21,22 +21,21 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/core/Core.h>
-#include <ovito/core/app/Application.h>
 #include "Exception.h"
 
 namespace Ovito {
 
-Exception::Exception(QObject* context) : _context(context)
+Exception::Exception()
 {
 	_messages.push_back("An exception has occurred.");
 }
 
-Exception::Exception(const QString& message, QObject* context) : _context(context)
+Exception::Exception(const QString& message)
 {
 	_messages.push_back(message);
 }
 
-Exception::Exception(QStringList errorMessages, QObject* context) : _messages(std::move(errorMessages)), _context(context)
+Exception::Exception(QStringList errorMessages) : _messages(std::move(errorMessages))
 {
 }
 
@@ -57,15 +56,6 @@ void Exception::logError() const
 	for(const QString& msg : _messages) {
 		qCritical().noquote() << msg;
 	}
-}
-
-void Exception::reportError(bool blocking) const
-{
-	Application* app = Application::instance();
-	if(!app)
-		logError();
-	else
-		app->reportError(*this, blocking);
 }
 
 }	// namespace Ovito

@@ -26,6 +26,7 @@
 #include <ovito/core/viewport/ViewportConfiguration.h>
 #include <ovito/core/app/Application.h>
 #include <ovito/core/dataset/DataSet.h>
+#include <ovito/core/dataset/DataSetContainer.h>
 #include <ovito/opengl/OpenGLSceneRenderer.h>
 #include <ovito/opengl/PickingOpenGLSceneRenderer.h>
 #include "OpenGLViewportWindow.h"
@@ -110,7 +111,6 @@ void OpenGLViewportWindow::processViewportUpdate()
 {
 	if(_updateRequested) {
 		OVITO_ASSERT_MSG(!viewport()->isRendering(), "OpenGLViewportWindow::processUpdateRequest()", "Recursive viewport repaint detected.");
-		OVITO_ASSERT_MSG(!dataset()->viewportConfig()->isRendering(), "OpenGLViewportWindow::processUpdateRequest()", "Recursive viewport repaint detected.");
 		repaint();
 	}
 }
@@ -123,17 +123,23 @@ ViewportPickResult OpenGLViewportWindow::pick(const QPointF& pos)
 	ViewportPickResult result;
 
 	// Cannot perform picking while viewport is not visible or currently rendering or when updates are disabled.
-	if(isVisible() && !viewport()->isRendering() && !dataset()->viewportConfig()->isSuspended() && pickingRenderer()) {
+	if(isVisible() && !viewport()->isRendering() && !userInterface().areViewportUpdatesSuspended() && pickingRenderer()) {
 		OpenGLResourceManager::ResourceFrameHandle previousResourceFrame = 0;
 		try {
 			if(pickingRenderer()->isRefreshRequired()) {
-				// Request a new frame from the resource manager for this render pass.
-				previousResourceFrame = pickingRenderer()->currentResourceFrame();
-				pickingRenderer()->setCurrentResourceFrame(OpenGLResourceManager::instance()->acquireResourceFrame());
-				pickingRenderer()->setPrimaryFramebuffer(defaultFramebufferObject());
+				// A dataset is required for rendering.
+				if(DataSet* dataset = userInterface().datasetContainer().currentSet()) {
+					// Request a new frame from the resource manager for this render pass.
+					previousResourceFrame = pickingRenderer()->currentResourceFrame();
+					pickingRenderer()->setCurrentResourceFrame(OpenGLResourceManager::instance()->acquireResourceFrame());
+					pickingRenderer()->setPrimaryFramebuffer(defaultFramebufferObject());
 
-				// Let the viewport do the actual rendering work.
-				viewport()->renderInteractive(userInterface(), dataset(), pickingRenderer());
+					// Let the viewport do the actual rendering work.
+					viewport()->renderInteractive(userInterface(), dataset, pickingRenderer());
+				}
+				else {
+					return result; // Return null result if no dataset is available.
+				}
 			}
 
 			// Query which object is located at the given window position.
@@ -149,7 +155,7 @@ ViewportPickResult OpenGLViewportWindow::pick(const QPointF& pos)
 			}
 		}
 		catch(const Exception& ex) {
-			ex.reportError();
+			userInterface().reportError(ex);
 		}
 
 		// Release the resources created by the OpenGL renderer during the last render pass before the current pass.
@@ -192,7 +198,6 @@ void OpenGLViewportWindow::paintGL()
 		return;
 
 	OVITO_ASSERT_MSG(!viewport()->isRendering(), "OpenGLViewportWindow::paintGL()", "Recursive viewport repaint detected.");
-	OVITO_ASSERT_MSG(!dataset()->viewportConfig()->isRendering(), "OpenGLViewportWindow::paintGL()", "Recursive viewport repaint detected.");
 
 	// Do not re-enter rendering function of the same viewport.
 	if(viewport()->isRendering())
@@ -209,7 +214,12 @@ void OpenGLViewportWindow::paintGL()
 	// Invalidate picking buffer every time the visible contents of the viewport change.
 	_pickingRenderer->resetPickingBuffer();
 
-	if(!dataset()->viewportConfig()->isSuspended()) {
+	// A dataset is required for rendering.
+	DataSet* dataset = userInterface().datasetContainer().currentSet();
+	if(!dataset)
+		return;
+
+	if(!userInterface().areViewportUpdatesSuspended()) {
 
 		if(format.majorVersion() < OVITO_OPENGL_MINIMUM_VERSION_MAJOR || (format.majorVersion() == OVITO_OPENGL_MINIMUM_VERSION_MAJOR && format.minorVersion() < OVITO_OPENGL_MINIMUM_VERSION_MINOR)) {
 			// Avoid infinite recursion.
@@ -238,14 +248,14 @@ void OpenGLViewportWindow::paintGL()
 		}
 		
 #ifdef Q_OS_WIN
-		if(OpenGLSceneRenderer::openGLRenderer() == "Intel(R) HD Graphics" || OpenGLSceneRenderer::openGLRenderer() == "Intel(R) HD Graphics 2000" || OpenGLSceneRenderer::openGLRenderer() == "Intel(R) HD Graphics 3000") {
+		if(OpenGLSceneRenderer::openGLRenderer() == "Intel(R) HD Graphics" || OpenGLSceneRenderer::openGLRenderer() == "Intel(R) HD Graphics 2000" || OpenGLSceneRenderer::openGLRenderer() == "Intel(R) HD Graphics 3000" || OpenGLSceneRenderer::openGLRenderer() == "Intel(R) HD Graphics 4400") {
 			// Avoid infinite recursion.
 			static bool errorMessageShown = false;
 			if(!errorMessageShown) {
 				errorMessageShown = true;
 				userInterface().exitWithFatalError(Exception(tr(
 						"The graphics chip installed in this system is not compatible with OVITO, unfortunately.\n\n"
-						"Intel(R) HD Graphics, an integrated graphics chip released in the years 2010/2011, does not support the specific OpenGL functions required by OVITO. "
+						"Intel(R) HD Graphics, an integrated graphics chip released in the years 2010/2011/2012, does not support the specific OpenGL functions required by OVITO. "
 						"There is no known workaround to make OVITO work on systems with this particular graphics unit. Please use OVITO on a computer with a more modern graphics processor.\n\n"
 						"Detected graphics interface:\n\n"
 						"OpenGL vendor: %1\n"
@@ -269,7 +279,7 @@ void OpenGLViewportWindow::paintGL()
 
 		try {
 			// Let the Viewport class do the actual rendering work.
-			viewport()->renderInteractive(userInterface(), dataset(), _viewportRenderer);
+			viewport()->renderInteractive(userInterface(), dataset, _viewportRenderer);
 		}
 		catch(Exception& ex) {
 			ex.prependGeneralMessage(tr("An unexpected error occurred while rendering the viewport contents. The program will quit."));
@@ -294,8 +304,8 @@ void OpenGLViewportWindow::paintGL()
 		}
 	}
 	else {
-		// Make sure viewport gets refreshed as soon as updates are enabled again.
-		dataset()->viewportConfig()->updateViewports();
+		// Make sure viewport is refreshed as soon as updates get re-enabled.
+		userInterface().updateViewports();
 	}
 }
 

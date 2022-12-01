@@ -24,6 +24,7 @@
 
 
 #include <ovito/gui/desktop/GUI.h>
+#include <ovito/gui/desktop/mainwin/MainWindow.h>
 #include <ovito/core/oo/RefTargetListener.h>
 #include <ovito/core/dataset/animation/controller/KeyframeController.h>
 #include "AnimationTimeSlider.h"
@@ -89,10 +90,10 @@ protected:
 	/// Returns the main window hosting this widget.
 	MainWindow& mainWindow() const { return _mainWindow; }
 
-protected Q_SLOTS:
+	/// Returns the animation settings that is currently active.
+	AnimationSettings* animSettings() const { return _mainWindow.datasetContainer().activeAnimationSettings(); }
 
-	/// This is called when new animation settings have been loaded.
-	void onAnimationSettingsReplaced(AnimationSettings* newAnimationSettings);
+protected Q_SLOTS:
 
 	/// This is called when the current scene node selection has changed.
 	void onRebuildControllerList();
@@ -113,9 +114,6 @@ private:
 
 	/// Pointer to the animation time slider widget.
 	AnimationTimeSlider* _timeSlider;
-
-	/// The current animation settings object.
-	AnimationSettings* _animSettings;
 
 	/// This list of animation controllers that are shown in the track bar.
 	VectorRefTargetListener<KeyframeController> _controllers;
@@ -150,9 +148,7 @@ private:
 	/// Indicates that an update of the list of controllers has been scheduled.
 	bool _deferredUpdateScheduled = false;
 
-	QMetaObject::Connection _animIntervalChangedConnection;
 	QMetaObject::Connection _timeFormatChangedConnection;
-	QMetaObject::Connection _currentFrameChangedConnection;
 };
 
 }	// End of namespace

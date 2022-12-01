@@ -93,8 +93,8 @@ ClonePipelineDialog::ClonePipelineDialog(MainWindow& mainWindow, PipelineSceneNo
 	QDialogButtonBox* buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel | QDialogButtonBox::Help, Qt::Horizontal, this);
 	connect(buttonBox, &QDialogButtonBox::accepted, this, &ClonePipelineDialog::onAccept);
 	connect(buttonBox, &QDialogButtonBox::rejected, this, &ClonePipelineDialog::reject);
-	connect(buttonBox, &QDialogButtonBox::helpRequested, []() {
-		ActionManager::openHelpTopic("manual:clone_pipeline");
+	connect(buttonBox, &QDialogButtonBox::helpRequested, &mainWindow, [&mainWindow]() {
+		mainWindow.actionManager()->openHelpTopic("manual:clone_pipeline");
 	});
 	mainLayout->addWidget(buttonBox);
 
@@ -421,7 +421,7 @@ void ClonePipelineDialog::updateGraphicsScene()
 ******************************************************************************/
 void ClonePipelineDialog::onAccept()
 {
-	UndoableTransaction::handleExceptions(_mainWindow, tr("Clone pipeline"), [this]() {
+	_mainWindow.performTransaction(tr("Clone pipeline"), [this]() {
 		if(_pipelineItems.empty()) return;
 
 		// Do not create any animation keys during cloning.

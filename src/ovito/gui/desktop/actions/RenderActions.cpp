@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -36,12 +36,15 @@ namespace Ovito {
 void WidgetActionManager::on_RenderActiveViewport_triggered()
 {
 	try {
+		ExecutionContext::Scope executionScope(ExecutionContext::Type::Interactive, mainWindow());
+
 		// Set input focus to main window.
 		// This will process any pending user inputs in QLineEdit fields that haven't been processed yet.
 		mainWindow().setFocus();
 
 		// Stop animation playback.
-		dataset()->animationSettings()->stopAnimationPlayback();
+		if(AnimationSettings* anim = userInterface().datasetContainer().activeAnimationSettings())
+			anim->stopAnimationPlayback();
 
 		// Get the current render settings.
 		RenderSettings* renderSettings = dataset()->renderSettings();
@@ -60,17 +63,12 @@ void WidgetActionManager::on_RenderActiveViewport_triggered()
 		std::shared_ptr<FrameBuffer> frameBuffer = mainWindow().createAndShowFrameBuffer(renderSettings->outputImageWidth(), renderSettings->outputImageHeight(), renderingOperation);
 
 		// Call high-level rendering function, which will take care of the rest.
-		dataset()->renderScene(*renderSettings, *viewportConfig, *frameBuffer, renderingOperation);
+		renderSettings->renderScene(*viewportConfig, *frameBuffer, renderingOperation);
 	}
-	catch(Exception& ex) {
+	catch(const Exception& ex) {
 		ex.logError();
-		
 		// Make sure the error message dialog gets shown in front of the framebuffer window by GuiApplication::showErrorMessages(), not behind it.
-		// This can be achieved by associating the error with the framebuffer window. 
-		if(mainWindow().frameBufferWindow() && mainWindow().frameBufferWindow()->isVisible())
-			ex.setContext(mainWindow().frameBufferWindow());
-
-		ex.reportError();
+		mainWindow().reportError(ex, mainWindow().frameBufferWindow());
 	}
 }
 

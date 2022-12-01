@@ -38,7 +38,7 @@ class OVITO_GUI_EXPORT FileExporterSettingsDialog : public QDialog
 public:
 
 	/// Constructor.
-	FileExporterSettingsDialog(MainWindow& mainWindow, Scene& scene, FileExporter* exporter);
+	FileExporterSettingsDialog(MainWindow& mainWindow, Scene& scene, FileExporter* exporter, QWidget* parent);
 
 	virtual int exec() override {
 		// If there is no animation sequence (just a single frame), and if the exporter does not expose any other settings,
@@ -58,6 +58,7 @@ protected Q_SLOTS:
 
 protected:
 
+	MainWindow& _mainWindow;
 	QVBoxLayout* _mainLayout;
 	OORef<FileExporter> _exporter;
 	SpinnerWidget* _startTimeSpinner;

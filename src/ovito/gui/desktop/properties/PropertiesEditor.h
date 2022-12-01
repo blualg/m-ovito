@@ -75,7 +75,7 @@ public:
 	///         Returns NULL if no editor component is registered for the RefTarget type.
 	///
 	/// The returned editor object is not initialized yet. Call initialize() once to do so.
-	static OORef<PropertiesEditor> create(RefTarget* obj);
+	static OORef<PropertiesEditor> create(MainWindow& mainWindow, RefTarget* obj);
 
 	/// \brief The virtual destructor.
 	virtual ~PropertiesEditor() { clearAllReferences(); }
@@ -127,14 +127,6 @@ public:
 	/// \param noticeText A text to displayed in the rollout panel to inform the user why the rollout has been disabled.
 	void disableRollout(QWidget* rolloutWidget, const QString& noticeText);
 
-	/// \brief Executes the passed functor and catches any exceptions thrown during its execution.
-	/// If an exception is thrown by the functor, all changes done by the functor
-	/// so far will be undone and an error message is shown to the user.
-	template<typename Function>
-	bool undoableTransaction(const QString& operationLabel, Function&& func) {
-		return UndoableTransaction::handleExceptions(mainWindow(), operationLabel, std::forward<Function>(func));
-	}
-
 	/// Changes the value of a non-animatable property field of the object being edited.
 	void changePropertyFieldValue(const PropertyFieldDescriptor* field, const QVariant& newValue);
 
@@ -160,6 +152,39 @@ public:
 
 	/// For an editor of a DataVis element, returns the data collection path to the DataObject which the DataVis element is attached to.
 	ConstDataObjectRefPath getVisDataObjectPath() const;
+
+	/// \brief Executes the passed functor and catches any exceptions thrown during its execution.
+	/// If an exception is thrown by the functor, all data changes performed by the functor
+	/// so far will be undone and an error message is shown to the user.
+	template<typename Function>
+	bool performTransaction(const QString& undoOperationName, Function&& func) {
+		try {
+			ExecutionContext::Scope executionScope(ExecutionContext::Type::Interactive, mainWindow());
+			UndoableTransaction transaction(mainWindow(), undoOperationName);
+			std::forward<Function>(func)();
+			transaction.commit();
+			return true;
+		}
+		catch(const Exception& ex) {
+			mainWindow().reportError(ex, parentWindow());
+			return false;
+		}
+	}
+
+	/// Executes a functor and catches any exceptions thrown during its execution.
+	/// If an exception is thrown by the functor, the error message is displayed to the user and this function returns false.
+	template<typename Function>
+	bool handleExceptions(Function&& func) const {
+		try {
+			ExecutionContext::Scope executionScope(ExecutionContext::Type::Interactive, mainWindow());
+			std::forward<Function>(func)();
+			return true;
+		}
+		catch(const Exception& ex) {
+			mainWindow().reportError(ex, parentWindow());
+			return false;
+		}
+	}
 
 public Q_SLOTS:
 

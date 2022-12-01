@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -228,7 +228,7 @@ class OVITO_GUI_EXPORT RolloutContainer : public QScrollArea
 public:
 
 	/// Constructs the rollout container.
-	RolloutContainer(QWidget* parent = nullptr, MainWindow* mainWindow = nullptr);
+	RolloutContainer(MainWindow& mainWindow, QWidget* parent = nullptr);
 
 	/// Adds a new rollout to the container.
 	Rollout* addRollout(QWidget* content, const QString& title, const RolloutInsertionParameters& param = RolloutInsertionParameters(), const QString& helpPageUrl = {});
@@ -241,7 +241,7 @@ public:
 	Rollout* findRolloutFromWidget(QWidget* content) const;
 
 	/// The main window that provides the context for this UI element.
-	MainWindow* mainWindow() const { return _mainWindow; }
+	MainWindow& mainWindow() const { return _mainWindow; }
 
 protected:
 
@@ -272,7 +272,7 @@ public Q_SLOTS:
 private:
 
 	/// The main window that provides the context for this UI element.
-	MainWindow* _mainWindow = nullptr;
+	MainWindow& _mainWindow;
 
 	int _updateGeometryTimer = 0;
 };

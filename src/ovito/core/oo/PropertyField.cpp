@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -24,6 +24,7 @@
 #include <ovito/core/oo/PropertyFieldDescriptor.h>
 #include <ovito/core/oo/RefTarget.h>
 #include <ovito/core/app/PluginManager.h>
+#include <ovito/core/app/UserInterface.h>
 #include <ovito/core/dataset/UndoStack.h>
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/dataset/data/DataObject.h>
@@ -78,14 +79,17 @@ void PropertyFieldBase::generatePropertyChangedEvent(RefMaker* owner, const Prop
 bool PropertyFieldBase::isUndoRecordingActive(RefMaker* owner, const PropertyFieldDescriptor* descriptor)
 {
 	if(descriptor->automaticUndo()) {
+		// Make sure the calling code did not forget to create a proper execution context.
+		OVITO_ASSERT(ExecutionContext::current().isValid());
 		// Undo recording is only performed in the main thread.
-		if(QThread::currentThread() != owner->thread())
-			return false;
-#if 0
-		return owner->dataset()->undoStack().isRecording();
-#else
-		OVITO_ASSERT(false); // TODO: Implement undo recording
-#endif
+		if(QThread::currentThread() == owner->thread()) {
+			// Get the active undo stack in the current execution context.
+			if(ExecutionContext::current().isValid()) {
+				if(UndoStack* undoStack = ExecutionContext::current().ui().undoStack()) {
+					return undoStack->isRecording();
+				}
+			}
+		}
 	}
 	return false;
 }
@@ -96,11 +100,12 @@ bool PropertyFieldBase::isUndoRecordingActive(RefMaker* owner, const PropertyFie
 void PropertyFieldBase::pushUndoRecord(RefMaker* owner, std::unique_ptr<UndoableOperation>&& operation)
 {
 	OVITO_ASSERT_MSG(!QCoreApplication::instance() || QThread::currentThread() == QCoreApplication::instance()->thread(), "PropertyFieldBase::pushUndoRecord()", "This function may only be called from the main thread.");
-#if 0
-	owner->dataset()->undoStack().push(std::move(operation));
-#else
-		OVITO_ASSERT(false); // TODO: Implement undo recording
-#endif
+	OVITO_ASSERT(ExecutionContext::current().isValid());
+	UndoStack* undoStack = ExecutionContext::current().ui().undoStack();
+	OVITO_ASSERT(undoStack);
+	OVITO_ASSERT(QThread::currentThread() == undoStack->thread());
+	OVITO_ASSERT(undoStack->isRecording());
+	undoStack->push(std::move(operation));
 }
 
 /******************************************************************************

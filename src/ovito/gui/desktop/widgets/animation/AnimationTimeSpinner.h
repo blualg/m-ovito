@@ -25,7 +25,6 @@
 
 #include <ovito/gui/desktop/GUI.h>
 #include <ovito/gui/desktop/widgets/general/SpinnerWidget.h>
-#include <ovito/core/dataset/animation/TimeInterval.h>
 
 namespace Ovito {
 
@@ -39,12 +38,9 @@ class OVITO_GUI_EXPORT AnimationTimeSpinner : public SpinnerWidget
 public:
 
 	/// Constructs the spinner control.
-	AnimationTimeSpinner(MainWindow* mainWindow, QWidget* parent = 0);
+	AnimationTimeSpinner(MainWindow& mainWindow, QWidget* parent = 0);
 
 protected Q_SLOTS:
-
-	/// This is called when new animation settings have been loaded.
-	void onAnimationSettingsReplaced(AnimationSettings* newAnimationSettings);
 
 	/// This is called when the current animation time has changed.
 	void onCurrentFrameChanged(int newFrame);
@@ -57,11 +53,7 @@ protected Q_SLOTS:
 
 private:
 
-	/// The current animation settings object.
-	AnimationSettings* _animSettings = nullptr;
-
-	QMetaObject::Connection _animIntervalChangedConnection;
-	QMetaObject::Connection _currentFrameChangedConnection;
+	MainWindow& _mainWindow;
 };
 
 }	// End of namespace

@@ -136,7 +136,7 @@ OverlayCommandPage::OverlayCommandPage(MainWindow& mainWindow, QWidget* parent) 
 	layout->addWidget(_splitter, 1);
 
 	// Create the properties panel.
-	_propertiesPanel = new PropertiesPanel(nullptr, mainWindow);
+	_propertiesPanel = new PropertiesPanel(mainWindow);
 	_propertiesPanel->setFrameStyle(QFrame::NoFrame | QFrame::Plain);
 	_splitter->addWidget(_propertiesPanel);
 	_splitter->setStretchFactor(1,1);
@@ -226,7 +226,7 @@ void OverlayCommandPage::onItemSelectionChanged()
 void OverlayCommandPage::onDeleteLayer()
 {
 	if(ViewportOverlay* layer = selectedLayer()) {
-		UndoableTransaction::handleExceptions(_mainWindow, tr("Delete layer"), [layer]() {
+		_mainWindow.performTransaction(tr("Delete layer"), [layer]() {
 			layer->deleteReferenceObject();
 		});
 	}
@@ -240,7 +240,7 @@ void OverlayCommandPage::onLayerDoubleClicked(const QModelIndex& index)
 	if(OverlayListItem* item = overlayListModel()->item(index.row())) {
 		if(ViewportOverlay* layer = item->overlay()) {
 			// Toggle enabled state of layer.
-			UndoableTransaction::handleExceptions(_mainWindow, tr("Toggle layer visibility"), [layer]() {
+			_mainWindow.performTransaction(tr("Toggle layer visibility"), [layer]() {
 				layer->setEnabled(!layer->isEnabled());
 			});
 		}
@@ -258,7 +258,7 @@ void OverlayCommandPage::onLayerMoveUp()
 	OORef<ViewportOverlay> layer = selectedItem->overlay();
 	if(!layer) return;
 
-	UndoableTransaction::handleExceptions(_mainWindow, tr("Move layer up"), [&]() {
+	_mainWindow.performTransaction(tr("Move layer up"), [&]() {
 		int overlayIndex = vp->overlays().indexOf(layer);
 		int underlayIndex = vp->underlays().indexOf(layer);
 		if(overlayIndex >= 0 && overlayIndex < vp->overlays().size() - 1) {
@@ -292,7 +292,7 @@ void OverlayCommandPage::onLayerMoveDown()
 	OORef<ViewportOverlay> layer = selectedItem->overlay();
 	if(!layer) return;
 
-	UndoableTransaction::handleExceptions(_mainWindow, tr("Move layer down"), [&]() {
+	_mainWindow.performTransaction(tr("Move layer down"), [&]() {
 		int underlayIndex = vp->underlays().indexOf(layer);
 		int overlayIndex = vp->overlays().indexOf(layer);
 		if(underlayIndex >= 1) {

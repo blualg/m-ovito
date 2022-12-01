@@ -330,11 +330,11 @@ void AnimationSettings::onPlaybackTimer()
 ******************************************************************************/
 void AnimationSettings::adjustAnimationInterval()
 {
-#if 0 
-	TimeInterval interval;
+	int firstFrame = std::numeric_limits<int>::max();
+	int lastFrame = std::numeric_limits<int>::lowest();
 	_namedFrames.clear();
 
-	// Visit the scenes that reference this animation settings object.
+	// Visit all scenes that reference this animation settings object.
 	visitDependents([&](RefMaker* dependent) {
 		if(Scene* scene = dynamic_object_cast<Scene>(dependent)) {
 			scene->visitObjectNodes([&](PipelineSceneNode* node) {
@@ -344,10 +344,10 @@ void AnimationSettings::adjustAnimationInterval()
 
 						// Final animation interval should encompass the local intervals
 						// of all animated objects in the scene.
-						TimePoint start = node->dataProvider()->sourceFrameToAnimationTime(0);
-						if(interval.isEmpty() || start < interval.start()) interval.setStart(start);
-						TimePoint end = node->dataProvider()->sourceFrameToAnimationTime(nframes) - 1;
-						if(interval.isEmpty() || end > interval.end()) interval.setEnd(end);
+						int start = node->dataProvider()->sourceFrameToAnimationTime(0).frame();
+						if(start < firstFrame) firstFrame = start;
+						int end = node->dataProvider()->sourceFrameToAnimationTime(nframes - 1).frame();
+						if(end > lastFrame) lastFrame = end;
 
 						// Save the list of the named animation frames.
 						// Merge with other list(s) from other scene objects if there are any.
@@ -356,11 +356,11 @@ void AnimationSettings::adjustAnimationInterval()
 						else {
 							auto additionalLabels = node->dataProvider()->animationFrameLabels();
 							if(!additionalLabels.empty())
-		#if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
+#if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
 								_namedFrames.insert(additionalLabels);
-		#else
+#else
 								_namedFrames.unite(additionalLabels);
-		#endif
+#endif
 						}
 					}
 				}
@@ -368,22 +368,11 @@ void AnimationSettings::adjustAnimationInterval()
 			});
 		}
 	});
-	if(interval.isEmpty())
-		interval.setInstant(0);
-	else {
-		// Round interval to nearest frame time.
-		// Always include frame 0 in the animation interval.
-		interval.setStart(std::min(0, frameToTime(timeToFrame(interval.start()))));
-		interval.setEnd(frameToTime(timeToFrame(interval.end())));
-	}
-	setAnimationInterval(interval);
-	if(time() < interval.start())
-		setTime(interval.start());
-	else if(time() > interval.end())
-		setTime(interval.end());
-#else
-	OVITO_ASSERT(false); // TODO: To be implemented
-#endif
+	if(firstFrame > lastFrame)
+		firstFrame = lastFrame = 0;
+	setFirstFrame(firstFrame);
+	setLastFrame(lastFrame);
+	setCurrentFrame(qBound(firstFrame, currentFrame(), lastFrame));
 }
 
 }	// End of namespace

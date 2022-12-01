@@ -21,6 +21,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/core/Core.h>
+#include <ovito/core/app/UserInterface.h>
 #include "AsynchronousTask.h"
 
 namespace Ovito {
@@ -48,34 +49,55 @@ AsynchronousTaskBase::~AsynchronousTaskBase()
 /******************************************************************************
 * Submits the task for execution to a thread pool.
 ******************************************************************************/
-void AsynchronousTaskBase::startInThreadPool(QThreadPool* pool) 
+void AsynchronousTaskBase::startInThreadPool(QThreadPool* pool, bool showInUserInterface) 
 {
 	OVITO_ASSERT(pool);
 	OVITO_ASSERT(!this->_thisTask);
 	OVITO_ASSERT(!this->_submittedToPool);
 	OVITO_ASSERT(!this->isStarted());
+
 	// Store a shared_ptr to this task to keep it alive while running.
 	this->_thisTask = this->shared_from_this();
 	this->_submittedToPool = pool;
+	
 	// Inherit execution context from parent task.
 	_executionContext = ExecutionContext::current();
 	OVITO_ASSERT(_executionContext.isValid());
+
+	// Register task with UI task manager if requested.
+	if(showInUserInterface) {
+		_executionContext.ui().taskManager().registerTask(*this);
+	}
+	
+	// Mark this task as started.
 	this->setStarted();
+	
+	// Submit to thread pool.
 	pool->start(this);
 }
 
 /******************************************************************************
 * Runs the task's work function immediately in the current thread.
 ******************************************************************************/
-void AsynchronousTaskBase::startInThisThread() 
+void AsynchronousTaskBase::startInThisThread(bool showInUserInterface) 
 {
 	OVITO_ASSERT(!this->_thisTask);
 	OVITO_ASSERT(!this->_submittedToPool);
 	OVITO_ASSERT(!this->isStarted());
+
 	// Inherit execution context from parent task.
 	_executionContext = ExecutionContext::current();
 	OVITO_ASSERT(_executionContext.isValid());
+
+	// Register task with UI task manager if requested.
+	if(showInUserInterface) {
+		_executionContext.ui().taskManager().registerTask(*this);
+	}
+
+	// Mark this task as started.
 	this->setStarted();
+
+	// Execute it now.
 	this->run();
 }
 

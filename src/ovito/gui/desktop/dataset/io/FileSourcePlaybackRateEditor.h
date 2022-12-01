@@ -62,7 +62,6 @@ private:
 	QRadioButton* _trajectoryModeBtn;
 	QRadioButton* _staticFrameModeBtn;
 	IntegerParameterUI* _staticFrameNumberUI;
-	OORef<AnimationSettings> _animationSettings;
 };
 
 }	// End of namespace

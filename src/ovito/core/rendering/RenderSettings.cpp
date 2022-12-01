@@ -23,9 +23,16 @@
 #include <ovito/core/Core.h>
 #include <ovito/core/rendering/SceneRenderer.h>
 #include <ovito/core/rendering/StandardSceneRenderer.h>
+#include <ovito/core/rendering/FrameBuffer.h>
 #include <ovito/core/utilities/units/UnitsManager.h>
 #include <ovito/core/dataset/DataSet.h>
+#include <ovito/core/app/Application.h>
+#include <ovito/core/app/UserInterface.h>
 #include "RenderSettings.h"
+
+#ifdef OVITO_VIDEO_OUTPUT_SUPPORT
+	#include <ovito/core/utilities/io/video/VideoEncoder.h>
+#endif
 
 namespace Ovito {
 
@@ -114,6 +121,275 @@ void RenderSettings::setImageFilename(const QString& filename)
 	ImageInfo newInfo = imageInfo();
 	newInfo.setFilename(filename);
 	setImageInfo(newInfo);
+}
+
+/******************************************************************************
+* This is the high-level rendering function, which invokes the renderer to 
+* generate one or more output images of the scene. 
+******************************************************************************/
+bool RenderSettings::renderScene(const ViewportConfiguration& viewportConfiguration, FrameBuffer& frameBuffer, MainThreadOperation& operation)
+{
+	std::vector<std::pair<Viewport*, QRectF>> viewportLayout;
+	if(renderAllViewports()) {
+		// When rendering an entire viewport layout, determine the each viewport's destination rectangle within the output frame buffer.
+		QSizeF borderSize(0,0);
+		if(layoutSeperatorsEnabled()) {
+			// Convert separator width from pixels to reduced units, which are relative to the framebuffer width/height.
+			borderSize.setWidth( 1.0 / outputImageWidth()  * layoutSeperatorWidth()); 
+			borderSize.setHeight(1.0 / outputImageHeight() * layoutSeperatorWidth()); 
+		}
+		viewportLayout = viewportConfiguration.getViewportRectangles(QRectF(0,0,1,1), borderSize);
+	}
+	else if(viewportConfiguration.activeViewport()) {
+		// When rendering just the active viewport, create an ad-hoc layout for the single viewport.
+		viewportLayout.push_back({ viewportConfiguration.activeViewport(), QRectF(0,0,1,1) });
+	}
+
+	// Get the active animation settings.
+	AnimationSettings* animationSettings = nullptr;
+	if(Viewport* vp = viewportConfiguration.activeViewport()) {
+		if(vp->scene())
+			animationSettings = vp->scene()->animationSettings();
+	}
+
+	return renderScene(viewportLayout, animationSettings, frameBuffer, operation);
+}
+
+/******************************************************************************
+* This is the high-level rendering function, which invokes the renderer to 
+* generate one or more output images of the scene. 
+******************************************************************************/
+bool RenderSettings::renderScene(const std::vector<std::pair<Viewport*, QRectF>>& viewportLayout, AnimationSettings* animationSettings, FrameBuffer& frameBuffer, MainThreadOperation& operation)
+{
+	// Get the selected scene renderer.
+	// Note: Using ref-counted pointer here, because the renderer may potentially be deleted before the current function returns. 
+	OORef<SceneRenderer> renderer = this->renderer();
+	if(!renderer) 
+		throw Exception(tr("No rendering engine has been selected."));
+
+	// Create a ref-counted pointer to ourself to keep the RenderSettings alive even if the application 
+	// is shutting down while we are still in this function.
+	OORef<RenderSettings> self(this);
+
+	bool notCanceled = true;
+	try {
+
+		// Resize output frame buffer.
+		if(frameBuffer.size() != QSize(outputImageWidth(), outputImageHeight())) {
+			frameBuffer.setSize(QSize(outputImageWidth(), outputImageHeight()));
+			frameBuffer.clear();
+		}
+
+		// Don't update viewports while rendering.
+		ViewportSuspender noVPUpdates(operation.userInterface());
+
+		// Determine the size of the rendering frame buffer. It must fit the largest viewport rectangle.
+		QSize largestViewportRectSize(0,0);
+		for(const std::pair<Viewport*, QRectF>& rect : viewportLayout) {
+			// Convert viewport layout rect from relative coordinates to frame buffer pixel coordinates and round to nearest integers.
+			QRectF pixelRect(rect.second.x() * frameBuffer.width(), rect.second.y() * frameBuffer.height(), rect.second.width() * frameBuffer.width(), rect.second.height() * frameBuffer.height());
+			largestViewportRectSize = largestViewportRectSize.expandedTo(pixelRect.toRect().size());
+		}
+		if(largestViewportRectSize.isEmpty())
+			throw Exception(tr("There is no valid viewport to be rendered."));
+
+		// Initialize the renderer.
+		operation.setProgressText(tr("Initializing renderer"));
+		if(renderer->startRender(*this, largestViewportRectSize, Application::instance()->visCache())) {
+
+			VideoEncoder* videoEncoder = nullptr;
+#ifdef OVITO_VIDEO_OUTPUT_SUPPORT
+			std::unique_ptr<VideoEncoder> videoEncoderPtr;
+			// Initialize video encoder.
+			if(saveToFile() && imageInfo().isMovie()) {
+
+				if(imageFilename().isEmpty())
+					throw Exception(tr("Cannot save rendered images to movie file. Output filename has not been specified."));
+
+				videoEncoderPtr = std::make_unique<VideoEncoder>();
+				videoEncoder = videoEncoderPtr.get();
+				float fps = framesPerSecond();
+				if(fps <= 0)
+					fps = animationSettings ? animationSettings->framesPerSecond() : 1.0f;
+				videoEncoder->openFile(imageFilename(), outputImageWidth(), outputImageHeight(), fps);
+			}
+#endif
+
+			if(renderingRangeType() == RenderSettings::CURRENT_FRAME) {
+				// Render a single frame.
+				int frameNumber = animationSettings ? animationSettings->currentFrame() : 0;
+				operation.setProgressText(tr("Rendering frame %1").arg(frameNumber));
+				notCanceled = renderFrame(frameNumber, *renderer, frameBuffer, viewportLayout, videoEncoder, operation);
+			}
+			else if(renderingRangeType() == RenderSettings::CUSTOM_FRAME) {
+				// Render a specific frame.
+				int frameNumber = customFrame();
+				operation.setProgressText(tr("Rendering frame %1").arg(frameNumber));
+				notCanceled = renderFrame(frameNumber, *renderer, frameBuffer, viewportLayout, videoEncoder, operation);
+			}
+			else if(renderingRangeType() == RenderSettings::ANIMATION_INTERVAL || renderingRangeType() == RenderSettings::CUSTOM_INTERVAL) {
+				// Render an animation interval.
+				int firstFrameNumber, numberOfFrames;
+				if(renderingRangeType() == RenderSettings::ANIMATION_INTERVAL) {
+					firstFrameNumber = animationSettings ? animationSettings->firstFrame() : 0;
+					numberOfFrames = animationSettings ? (animationSettings->lastFrame() - firstFrameNumber + 1) : 0;
+				}
+				else {
+					firstFrameNumber = customRangeStart();
+					numberOfFrames = (customRangeEnd() - firstFrameNumber + 1);
+				}
+				numberOfFrames = (numberOfFrames + everyNthFrame() - 1) / everyNthFrame();
+				if(numberOfFrames < 1)
+					throw Exception(tr("Invalid rendering range: Frame %1 to %2").arg(customRangeStart()).arg(customRangeEnd()));
+				operation.setProgressMaximum(numberOfFrames);
+
+				// Render frames, one by one.
+				for(int frameIndex = 0; frameIndex < numberOfFrames && notCanceled && !operation.isCanceled(); frameIndex++) {
+					int frameNumber = firstFrameNumber + frameIndex * everyNthFrame() + fileNumberBase();
+
+					operation.setProgressValue(frameIndex);
+					operation.setProgressText(tr("Rendering animation frame %1 of %2").arg(frameIndex+1).arg(numberOfFrames));
+
+					MainThreadOperation frameOperation = operation.createSubTask(true);
+					notCanceled = renderFrame(frameNumber, *renderer, frameBuffer, viewportLayout, videoEncoder, frameOperation);
+					if(!notCanceled) break;
+
+					// Periodically free visual element resources during animation rendering to avoid clogging the memory.
+					Application::instance()->visCache().discardUnusedObjects();
+				}
+			}
+
+#ifdef OVITO_VIDEO_OUTPUT_SUPPORT
+			// Finalize movie file.
+			if(videoEncoder)
+				videoEncoder->closeFile();
+#endif
+		}
+
+		// Shutdown renderer.
+		renderer->endRender();
+
+		// Free visual element resources to avoid clogging the memory in cases where render() gets called repeatedly from a script.
+		if(!ExecutionContext::isInteractive())
+			Application::instance()->visCache().discardUnusedObjects();
+	}
+	catch(Exception& ex) {
+		// Shutdown renderer.
+		renderer->endRender();
+		throw;
+	}
+
+	return notCanceled;
+}
+
+/******************************************************************************
+* Renders a single frame and saves the output file.
+******************************************************************************/
+bool RenderSettings::renderFrame(int frameNumber, SceneRenderer& renderer, 
+		FrameBuffer& frameBuffer, const std::vector<std::pair<Viewport*, QRectF>>& viewportLayout, VideoEncoder* videoEncoder, MainThreadOperation& operation)
+{
+	// Determine output filename for this frame.
+	QString outputFilename;
+	if(saveToFile() && !videoEncoder) {
+		outputFilename = imageFilename();
+		if(outputFilename.isEmpty())
+			throw Exception(tr("Cannot save rendered image to file, because no output filename has been specified."));
+
+		// Append frame number to filename when rendering an animation.
+		if(renderingRangeType() != RenderSettings::CURRENT_FRAME && renderingRangeType() != RenderSettings::CUSTOM_FRAME) {
+			QFileInfo fileInfo(outputFilename);
+			outputFilename = fileInfo.path() + QChar('/') + fileInfo.baseName() + QString("%1.").arg(frameNumber, 4, 10, QChar('0')) + fileInfo.completeSuffix();
+
+			// Check for existing image file and skip.
+			if(skipExistingImages() && QFileInfo(outputFilename).isFile())
+				return true;
+		}
+	}
+
+	// Compute relative weights of the viewport rectangles for the progress display. 
+	std::vector<int> progressWeights(viewportLayout.size());
+	std::transform(viewportLayout.cbegin(), viewportLayout.cend(), progressWeights.begin(), [&](const auto& r) {
+		return r.second.width() * r.second.height() * frameBuffer.width() * frameBuffer.height();
+	});
+	operation.beginProgressSubStepsWithWeights(std::move(progressWeights));
+
+	AnimationTime renderTime = AnimationTime::fromFrame(frameNumber);
+
+	// Render each viewport of the layout one after the other.
+	for(const std::pair<Viewport*, QRectF>& viewportRect : viewportLayout) {
+		Viewport* viewport = viewportRect.first;
+
+		// Convert viewport layout rect from relative coordinates to frame buffer pixel coordinates and round to nearest integers.
+		QRectF pixelRect(viewportRect.second.x() * frameBuffer.width(), viewportRect.second.y() * frameBuffer.height(), viewportRect.second.width() * frameBuffer.width(), viewportRect.second.height() * frameBuffer.height());
+		QRect destinationRect = pixelRect.toRect();
+
+		if(!destinationRect.isEmpty()) {
+
+			// Set up preliminary projection.
+			FloatType viewportAspectRatio = (FloatType)destinationRect.height() / (FloatType)destinationRect.width();
+			ViewProjectionParameters projParams = viewport->computeProjectionParameters(renderTime, viewportAspectRatio, renderer.waitForLongOperationsEnabled());
+
+			// Request scene bounding box.
+			Box3 boundingBox = renderer.computeSceneBoundingBox(renderTime, viewport->scene(), projParams, nullptr, operation);
+			if(operation.isCanceled())
+				return false;
+
+			// Determine final view projection.
+			projParams = viewport->computeProjectionParameters(renderTime, viewportAspectRatio, renderer.waitForLongOperationsEnabled(), boundingBox);
+
+			// Render one frame.
+			try {
+				renderer.beginFrame(renderTime, viewport->scene(), projParams, viewport, destinationRect, &frameBuffer);
+
+				// Clear frame buffer with background color.
+				ColorA clearColor = generateAlphaChannel() ? ColorA(0,0,0,0) : ColorA(backgroundColor());
+				frameBuffer.clear(clearColor, destinationRect);
+
+				// Render viewport "underlays".
+				if(!renderer.renderOverlays(true, destinationRect, destinationRect, operation)) {
+					renderer.endFrame(false, destinationRect);
+					return false;
+				}
+
+				// Let the scene renderer do its work.
+				if(!renderer.renderFrame(destinationRect, operation)) {
+					renderer.endFrame(false, destinationRect);
+					return false;
+				}
+
+				// Render viewport "overlays" on top.
+				if(!renderer.renderOverlays(false, destinationRect, destinationRect, operation)) {
+					renderer.endFrame(false, destinationRect);
+					return false;
+				}
+
+				renderer.endFrame(true, destinationRect);
+			}
+			catch(...) {
+				renderer.endFrame(false, destinationRect);
+				throw;
+			}
+		}
+
+		operation.nextProgressSubStep();
+	}
+	operation.endProgressSubSteps();
+
+	// Save rendered image to disk.
+	if(saveToFile()) {
+		if(!videoEncoder) {
+			OVITO_ASSERT(!outputFilename.isEmpty());
+			if(!frameBuffer.image().save(outputFilename, imageInfo().format()))
+				throw Exception(tr("Failed to save rendered image to output file '%1'.").arg(outputFilename));
+		}
+		else {
+#ifdef OVITO_VIDEO_OUTPUT_SUPPORT
+			videoEncoder->writeFrame(frameBuffer.image());
+#endif
+		}
+	}
+
+	return !operation.isCanceled();
 }
 
 }	// End of namespace

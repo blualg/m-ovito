@@ -72,6 +72,28 @@ public:
 	/// Sets the output filename of the rendered image.
 	void setImageFilename(const QString& filename);
 
+	/// \brief This is the high-level rendering function, which invokes the renderer to generate one or more
+	///        output images of the scene. 
+	/// \param viewportConfiguration The viewport configuration to render.
+	/// \param frameBuffer The frame buffer that will receive the rendered image. When rendering an animation
+	///        sequence, the buffer will contain only the last rendered frame when the function returns.
+	/// \return true on success; false if operation has been canceled by the user.
+	/// \throw Exception on error.
+	bool renderScene(const ViewportConfiguration& viewportConfiguration, FrameBuffer& frameBuffer, MainThreadOperation& operation);
+
+	/// \brief This is the high-level rendering function, which invokes the renderer to generate one or more
+	///        output images of the scene. 
+	/// \param viewportLayout The viewport layout.
+	/// \param frameBuffer The frame buffer that will receive the rendered image. 
+	/// \return true on success; false if operation has been canceled by the user.
+	/// \throw Exception on error.
+	bool renderScene(const std::vector<std::pair<Viewport*, QRectF>>& viewportLayout, AnimationSettings* animationSettings, FrameBuffer& frameBuffer, MainThreadOperation& operation);
+
+private:
+
+	/// Renders a single frame and saves the output file. This is part of the implementation of the renderScene() method.
+	bool renderFrame(int frameNumber, SceneRenderer& renderer, FrameBuffer& frameBuffer, const std::vector<std::pair<Viewport*, QRectF>>& viewportLayout, VideoEncoder* videoEncoder, MainThreadOperation& operation);
+
 private:
 
 	/// Contains the output filename and format of the image to be rendered.

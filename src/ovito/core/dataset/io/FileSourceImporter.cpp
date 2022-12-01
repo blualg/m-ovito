@@ -30,6 +30,7 @@
 #include <ovito/core/dataset/animation/AnimationSettings.h>
 #include <ovito/core/viewport/ViewportConfiguration.h>
 #include <ovito/core/utilities/io/FileManager.h>
+#include <ovito/core/app/UserInterface.h>
 #include <ovito/core/app/Application.h>
 #include "FileSourceImporter.h"
 #include "FileSource.h"
@@ -63,16 +64,14 @@ void FileSourceImporter::propertyChanged(const PropertyFieldDescriptor* field)
 void FileSourceImporter::requestReload(bool refetchFiles, int frame)
 {
 	OVITO_ASSERT_MSG(!QCoreApplication::instance() || QThread::currentThread() == QCoreApplication::instance()->thread(), "FileSourceImporter::requestReload", "This function may only be called from the main thread.");
+	OVITO_ASSERT(ExecutionContext::current().isValid());
 
 	// Retrieve the FileSource that owns this importer by looking it up in the list of dependents.
 	visitDependents([&](RefMaker* dependent) {
 		if(FileSource* fileSource = dynamic_object_cast<FileSource>(dependent)) {
-			try {
+			ExecutionContext::current().ui().handleExceptions([&] {
 				fileSource->reloadFrame(refetchFiles, frame);
-			}
-			catch(const Exception& ex) {
-				ex.reportError();
-			}
+			});
 		}
 		else if(FileSourceImporter* parentImporter = dynamic_object_cast<FileSourceImporter>(dependent)) {
 			// If this importer is a child of another importer, forward the reload request to the parent importer.
@@ -87,16 +86,16 @@ void FileSourceImporter::requestReload(bool refetchFiles, int frame)
 ******************************************************************************/
 void FileSourceImporter::requestFramesUpdate(bool refetchCurrentFile)
 {
+	OVITO_ASSERT_MSG(!QCoreApplication::instance() || QThread::currentThread() == QCoreApplication::instance()->thread(), "FileSourceImporter::requestReload", "This function may only be called from the main thread.");
+	OVITO_ASSERT(ExecutionContext::current().isValid());
+
 	// Retrieve the FileSource that owns this importer by looking it up in the list of dependents.
 	visitDependents([&](RefMaker* dependent) {
 		if(FileSource* fileSource = dynamic_object_cast<FileSource>(dependent)) {
-			try {
-				// Scan input source for animation frames.
+			// Scan input source for animation frames.
+			ExecutionContext::current().ui().handleExceptions([&] {
 				fileSource->updateListOfFrames(refetchCurrentFile);
-			}
-			catch(const Exception& ex) {
-				ex.reportError();
-			}
+			});
 		}
 		else if(FileSourceImporter* parentImporter = dynamic_object_cast<FileSourceImporter>(dependent)) {
 			// If this importer is a child of another importer, forward the update request to the parent importer.
@@ -284,8 +283,8 @@ bool FileSourceImporter::isWildcardPattern(const QUrl& sourceUrl)
 ******************************************************************************/
 Future<QVector<FileSourceImporter::Frame>> FileSourceImporter::discoverFrames(const std::vector<QUrl>& sourceUrls)
 {
-	// Note: FileSourceImporter::discoverFrames() may only be called from the main thread.
-	OVITO_ASSERT(QThread::currentThread() == this->thread());
+	OVITO_ASSERT_MSG(!QCoreApplication::instance() || QThread::currentThread() == QCoreApplication::instance()->thread(), "FileSourceImporter::discoverFrames", "This function may only be called from the main thread.");
+	OVITO_ASSERT(ExecutionContext::current().isValid());
 
 	// No output if there is no input.
 	if(sourceUrls.empty())
@@ -323,6 +322,9 @@ Future<QVector<FileSourceImporter::Frame>> FileSourceImporter::discoverFrames(co
 ******************************************************************************/
 Future<QVector<FileSourceImporter::Frame>> FileSourceImporter::discoverFrames(const QUrl& sourceUrl)
 {
+	OVITO_ASSERT_MSG(!QCoreApplication::instance() || QThread::currentThread() == QCoreApplication::instance()->thread(), "FileSourceImporter::discoverFrames", "This function may only be called from the main thread.");
+	OVITO_ASSERT(ExecutionContext::current().isValid());
+
 	if(shouldScanFileForFrames(sourceUrl)) {
 
 		// Check if filename is a wildcard pattern.
@@ -371,9 +373,12 @@ Future<QVector<FileSourceImporter::Frame>> FileSourceImporter::discoverFrames(co
 ******************************************************************************/
 Future<QVector<FileSourceImporter::Frame>> FileSourceImporter::discoverFrames(const FileHandle& fileHandle)
 {
+	OVITO_ASSERT_MSG(!QCoreApplication::instance() || QThread::currentThread() == QCoreApplication::instance()->thread(), "FileSourceImporter::discoverFrames", "This function may only be called from the main thread.");
+	OVITO_ASSERT(ExecutionContext::current().isValid());
+
 	// Scan file.
 	if(FrameFinderPtr frameFinder = createFrameFinder(fileHandle))
-		return frameFinder->runAsync(taskManager());
+		return frameFinder->runAsync(true);
 	else
 		return QVector<Frame>{{ Frame(fileHandle) }};
 }
@@ -383,8 +388,9 @@ Future<QVector<FileSourceImporter::Frame>> FileSourceImporter::discoverFrames(co
 ******************************************************************************/
 Future<PipelineFlowState> FileSourceImporter::loadFrame(const LoadOperationRequest& request)
 {
-	// Note: FileSourceImporter::loadFrame() may only be called from the main thread.
-	OVITO_ASSERT(QThread::currentThread() == this->thread());
+	OVITO_ASSERT_MSG(!QCoreApplication::instance() || QThread::currentThread() == QCoreApplication::instance()->thread(), "FileSourceImporter::loadFrame", "This function may only be called from the main thread.");
+	OVITO_ASSERT(ExecutionContext::current().isValid());
+
 	// Note: FileSourceImporter::loadFrame() may not be called while undo recording is active.
 	OVITO_ASSERT(!isUndoRecording());
 
@@ -393,7 +399,7 @@ Future<PipelineFlowState> FileSourceImporter::loadFrame(const LoadOperationReque
 	OVITO_ASSERT(frameLoader);
 
 	// Execute the loader in a background thread.
-	Future<PipelineFlowState> future = frameLoader->runAsync(taskManager());
+	Future<PipelineFlowState> future = frameLoader->runAsync(true);
 
 	// If the parser has detects additional frames following the first frame in the 
 	// input file being loaded, automatically turn on scanning of the input file.

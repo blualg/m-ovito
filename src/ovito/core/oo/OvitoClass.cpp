@@ -131,24 +131,17 @@ OORef<OvitoObject> OvitoClass::createInstance() const
 	if(isAbstract())
 		throw Exception(OvitoObject::tr("Cannot instantiate abstract class '%1'.").arg(name()));
 
-	OVITO_ASSERT_MSG(!isDerivedFrom(RefTarget::OOClass()), "OvitoClass::createInstance()", "This method overload must not be used to instantiate RefTarget derived classes.");
+	// Special handling of RefTarget-derived classes.
+	if(isDerivedFrom(RefTarget::OOClass())) {
+		return createInstance(ObjectCreationParams(
+			ExecutionContext::isInteractive() 
+				? ObjectCreationParams::LoadUserDefaults 
+				: ObjectCreationParams::NoFlags));
+	}
 
 	// Instantiate the class.
 	return createInstanceImpl({});
 }
-
-#if 0 // TODO: Remove unused code
-/******************************************************************************
-* Creates an instance of this object class.
-******************************************************************************/
-OORef<RefTarget> OvitoClass::createInstance() const
-{
-	return createInstance(ObjectCreationParams(
-		ExecutionContext::isInteractive() 
-			? ObjectCreationParams::LoadUserDefaults 
-			: ObjectCreationParams::NoFlags));
-}
-#endif
 
 /******************************************************************************
 * Creates an instance of this object class.
@@ -183,12 +176,8 @@ OORef<RefTarget> OvitoClass::createInstance(ObjectCreationParams params) const
 
 	OVITO_ASSERT_MSG(isDerivedFrom(RefTarget::OOClass()), "OvitoClass::createInstance()", "This method overload must only be used to instantiate RefTarget-derived classes.");
 
-#if 0
 	// Don't record object initialization on the undo stack.
-	UndoSuspender noUndo(ui());
-#else
-	OVITO_ASSERT(false);	// TODO: Implement undo suspender
-#endif
+	UndoSuspender noUndo;
 
 	// Instantiate the class.
 	OORef<RefTarget> obj = static_object_cast<RefTarget>(createInstanceImpl(params));

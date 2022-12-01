@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -139,7 +139,7 @@ void BooleanRadioButtonParameterUI::setEnabled(bool enabled)
 void BooleanRadioButtonParameterUI::updatePropertyValue()
 {
 	if(buttonGroup() && editObject()) {
-		undoableTransaction(tr("Change parameter"), [this]() {
+		performTransaction(tr("Change parameter value"), [&]() {
 			int id = buttonGroup()->checkedId();
 			if(id != -1) {
 				QVariant oldval;

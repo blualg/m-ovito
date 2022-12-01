@@ -24,6 +24,7 @@
 #include <ovito/core/app/Application.h>
 #include <ovito/core/app/PluginManager.h>
 #include <ovito/core/rendering/FrameBuffer.h>
+#include <ovito/core/dataset/DataSetContainer.h>
 #include "UserInterface.h"
 
 #include <QOperatingSystemVersion>
@@ -37,8 +38,18 @@ namespace Ovito {
 ******************************************************************************/
 void UserInterface::exitWithFatalError(const Exception& ex) 
 {
-	ex.reportError(true);
+	reportError(ex, true);
 	QCoreApplication::exit(1);
+}
+
+/******************************************************************************
+* Displays the error message(s) stored in the Exception object to the user.
+******************************************************************************/
+void UserInterface::reportError(const Exception& ex, bool blocking)
+{
+	for(auto msg = ex.messages().crbegin(); msg != ex.messages().crend(); ++msg) {
+		qInfo().noquote() << "ERROR:" << *msg;
+	}
 }
 
 /******************************************************************************
@@ -60,25 +71,63 @@ std::shared_ptr<FrameBuffer> UserInterface::createAndShowFrameBuffer(int width, 
 }
 
 /******************************************************************************
-* Returns the scene that is currently active, i.e., which is shown in the viewport window that is currently selected.
-******************************************************************************/
-Scene* UserInterface::activeScene() const
-{
-	if(DataSet* dataset = datasetContainer().currentSet()) {
-		if(Viewport* vp = dataset->viewportConfig()->activeViewport()) {
-			return vp->scene();
-		}
-	}
-	return nullptr;
-}
-
-/******************************************************************************
 * Indicates whether the program session is being closed and all task in progress should be canceled.
 ******************************************************************************/
 bool UserInterface::isShuttingDown() const
 {
 	// If the application is closing down, the current dataset has been removed from the container.
 	return datasetContainer().currentSet() == nullptr;
+}
+
+/******************************************************************************
+* This immediately redraws the viewports reflecting all
+* changes made to the scene.
+******************************************************************************/
+void UserInterface::processViewportUpdateRequests()
+{
+	if(areViewportUpdatesSuspended())
+		return;
+
+	if(DataSet* dataset = datasetContainer().currentSet()) {
+		if(ViewportConfiguration* viewportConfig = dataset->viewportConfig()) {
+			for(Viewport* vp : viewportConfig->viewports())
+				vp->processUpdateRequest();
+		}
+	}
+}
+
+/******************************************************************************
+* Flags all viewports for redrawing.
+******************************************************************************/
+void UserInterface::updateViewports()
+{
+	// Check if viewport updates are suppressed.
+	if(areViewportUpdatesSuspended()) {
+		_viewportsNeedUpdate = true;
+		return;
+	}
+	_viewportsNeedUpdate = false;
+
+	if(DataSet* dataset = datasetContainer().currentSet()) {
+		if(ViewportConfiguration* viewportConfig = dataset->viewportConfig()) {
+			for(Viewport* vp : viewportConfig->viewports())
+				vp->updateViewport();
+		}
+	}
+}
+
+/******************************************************************************
+* This will resume redrawing of the viewports after a call to suspendViewportUpdates().
+******************************************************************************/
+void UserInterface::resumeViewportUpdates()
+{
+	OVITO_ASSERT(areViewportUpdatesSuspended());
+	_viewportSuspendCount--;
+	if(_viewportSuspendCount == 0) {
+		//Q_EMIT viewportUpdateResumed();
+		if(_viewportsNeedUpdate)
+			updateViewports();
+	}
 }
 
 /******************************************************************************

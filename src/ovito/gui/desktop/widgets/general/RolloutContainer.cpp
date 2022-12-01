@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -31,8 +31,7 @@ namespace Ovito {
 /******************************************************************************
 * Constructs the container.
 ******************************************************************************/
-RolloutContainer::RolloutContainer(QWidget* parent, MainWindow* mainWindow) : QScrollArea(parent),
-	_mainWindow(mainWindow)
+RolloutContainer::RolloutContainer(MainWindow& mainWindow, QWidget* parent) : QScrollArea(parent), _mainWindow(mainWindow)
 {
 	setFrameStyle(QFrame::Panel | QFrame::Sunken);
 	setWidgetResizable(true);
@@ -343,7 +342,8 @@ void Rollout::paintEvent(QPaintEvent* event)
 ******************************************************************************/
 void Rollout::onHelpButton()
 {
-	ActionManager::openHelpTopic(_helpPageUrl);
+	if(RolloutContainer* rolloutContainer = container())
+		rolloutContainer->mainWindow().actionManager()->openHelpTopic(_helpPageUrl);
 }
 
 /******************************************************************************

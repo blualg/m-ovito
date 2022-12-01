@@ -307,8 +307,8 @@ void DataInspectorPanel::updateTabsList()
 bool DataInspectorPanel::updatePipelineOutput()
 {
 	if(selectedPipeline()) {
-		if(Scene* scene = mainWindow().activeScene()) {
-			_pipelineOutput = selectedPipeline()->evaluatePipelineSynchronous(scene->animationSettings()->currentTime(), true);
+		if(AnimationSettings* anim = mainWindow().datasetContainer().activeAnimationSettings()) {
+			_pipelineOutput = selectedPipeline()->evaluatePipelineSynchronous(anim->currentTime(), true);
 			return true;
 		}
 	}

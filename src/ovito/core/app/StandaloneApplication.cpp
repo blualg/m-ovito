@@ -95,14 +95,14 @@ bool StandaloneApplication::initialize(int& argc, char** argv)
 		}
 	}
 	catch(const Exception& ex) {
-		ex.reportError(true);
+		reportError(ex);
 		return false;
 	}
 
 	// Create Qt application object.
 	createQtApplication(argc, argv);
 
-	// Reactivate default "C" locale, which, in the meantime, might have been changed by QCoreApplication.
+	// Reactivate default "C" locale, which, in the meantime, may have been changed by QCoreApplication.
 	std::setlocale(LC_NUMERIC, "C");
 
 	try {
@@ -151,6 +151,7 @@ bool StandaloneApplication::initialize(int& argc, char** argv)
 		// Complete the startup process by calling postStartupInitialization() once the main event loop is running.
 		QMetaObject::invokeMethod(this, [this, startupOperation = std::move(startupOperation)]() mutable {
 			try {
+				ExecutionContext::Scope executionScope(ExecutionContext::Type::Interactive, startupOperation.userInterface());
 				postStartupInitialization(startupOperation);
 				if(startupOperation.isCanceled()) 
 					QCoreApplication::exit(1);
@@ -160,12 +161,12 @@ bool StandaloneApplication::initialize(int& argc, char** argv)
 				if(consoleMode())
 					startupOperation.userInterface().exitWithFatalError(ex);
 				else
-					ex.reportError(true);
+					reportError(ex);
 			}
 		}, Qt::QueuedConnection);
 	}
 	catch(const Exception& ex) {
-		ex.reportError(true);
+		reportError(ex);
 		shutdown();
 		return false;
 	}

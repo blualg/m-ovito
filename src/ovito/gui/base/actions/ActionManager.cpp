@@ -223,16 +223,6 @@ void ActionManager::onSelectionChangeComplete(SelectionSet* selection)
 }
 
 /******************************************************************************
-* Invokes the command action with the given ID.
-******************************************************************************/
-void ActionManager::invokeAction(const QString& actionId)
-{
-	QAction* action = getAction(actionId);
-	if(!action) throw Exception(tr("Action with id '%1' is not defined.").arg(actionId), dataset());
-	action->trigger();
-}
-
-/******************************************************************************
 * Registers an action with the ActionManager.
 ******************************************************************************/
 void ActionManager::addAction(QAction* action)
@@ -360,7 +350,7 @@ void ActionManager::updateActionStates()
 ******************************************************************************/
 void ActionManager::on_EditDelete_triggered()
 {
-	UndoableTransaction::handleExceptions(userInterface(), tr("Delete pipeline"), [this]() {
+	userInterface().performTransaction(tr("Delete pipeline"), [&]() {
 		// Get active scene.
 		if(Viewport* vp = dataset()->viewportConfig()->activeViewport()) {
 			if(Scene* scene = vp->scene()) {
@@ -467,7 +457,7 @@ void ActionManager::openHelpTopic(const QString& helpTopicId)
 
 	// Use the local web browser to display the help page.
 	if(!QDesktopServices::openUrl(url)) {
-		Exception(QStringLiteral("Could not launch browser to display manual. The requested URL is:\n%1").arg(url.toDisplayString())).reportError();
+		userInterface().reportError(QStringLiteral("Failed to launch browser to display OVITO user manual. The requested URL was:\n%1").arg(url.toDisplayString()));
 	}
 }
 

@@ -45,11 +45,11 @@ namespace Ovito {
  * \code
  *     try {
  *         ...
- *         if(error) throw Exception("The operation failed.");
+ *         if(error condition) throw Exception("The operation failed.");
  *         ...
  *     }
  *     catch(const Exception& ex) {
- *         ex.reportError();
+ *         userInterface.reportError(ex);
  *     }
  * \endcode
  *
@@ -92,18 +92,16 @@ public:
 
 	/// Creates an exception with a default error message.
 	/// You should use the constructor taking a message string instead to construct an Exception.
-	Exception(QObject* context = nullptr);
+	Exception();
 
 	/// Initializes the Exception object with a message string describing the error that has occurred.
 	/// \param message The human-readable message describing the error, which will be displayed by showError().
-	/// \param context Pointer to an optional object that provides the context for this exception or error.
-	explicit Exception(const QString& message, QObject* context = nullptr);
+	Exception(const QString& message);
 
 	/// \brief Multi-message constructor that initializes the Exception object with multiple message string.
 	/// \param errorMessages The list of message strings describing the error. The list should be ordered with
 	///                      the most general error description first, followed by the more detailed information.
-	/// \param context Pointer to an optional object that provides the context for this exception or error.
-	explicit Exception(QStringList errorMessages, QObject* context = nullptr);
+	explicit Exception(QStringList errorMessages);
 
 	// Default destructor.
 	virtual ~Exception() = default;
@@ -132,22 +130,6 @@ public:
 	/// No modal dialog box is shown in GUI mode.
 	void logError() const;
 
-	/// Displays the error message(s) stored in the Exception object to the user.
-	///
-	/// In the graphical program mode, this method will display a modal message box.
-	/// In console mode, this method just prints the error messages(s) to the console.
-	///
-	/// Note that, unless 'blocking' is true, the reporting happens asynchronously in GUI mode.
-	/// The method returns immediately and the error messaeg is displayed to the user at a later time,
-	/// as soon as control returns to the event loop.
-	void reportError(bool blocking = false) const;
-
-	/// Returns a pointer to an object that provides the context for this exception or error.
-	QObject* context() const { return _context; }
-
-	/// Sets the context object for this exception or error.
-	void setContext(QObject* context) { _context = context; }
-
 #ifndef OVITO_DISABLE_THREADING
 
 	//////////////////////////////////////////////////////////////////////////////////////
@@ -166,9 +148,6 @@ private:
 	/// The message strings describing the exception.
 	/// This list is ordered with the most general error description coming first followed by the more detailed information.
 	QStringList _messages;
-
-	/// Pointer to an object that provides the context for this exception or error.
-	QPointer<QObject> _context;
 };
 
 }	// namespace Ovito

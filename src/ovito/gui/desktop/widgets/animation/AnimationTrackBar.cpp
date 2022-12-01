@@ -39,7 +39,6 @@ AnimationTrackBar::AnimationTrackBar(MainWindow& mainWindow, AnimationTimeSlider
 	QFrame(parent), 
 	_mainWindow(mainWindow),
 	_timeSlider(timeSlider), 
-	_animSettings(nullptr),
 	_keyPen(Qt::black), 
 	_selectedKeyPen(QColor(255,255,255)), 
 	_selectionCursor(Qt::CrossCursor),
@@ -58,27 +57,12 @@ AnimationTrackBar::AnimationTrackBar(MainWindow& mainWindow, AnimationTimeSlider
 	setAutoFillBackground(true);
 	setMouseTracking(true);
 
-	connect(&mainWindow.datasetContainer(), &DataSetContainer::animationSettingsReplaced, this, &AnimationTrackBar::onAnimationSettingsReplaced);
+	connect(&mainWindow.datasetContainer(), &DataSetContainer::animationIntervalChanged, this, qOverload<>(&AnimationTrackBar::update));
+	connect(&mainWindow.datasetContainer(), &DataSetContainer::currentFrameChanged, this, qOverload<>(&AnimationTrackBar::update));
+	connect(&mainWindow.datasetContainer(), &DataSetContainer::timeFormatChanged, this, qOverload<>(&AnimationTrackBar::update));
 	connect(&mainWindow.datasetContainer(), &DataSetContainer::selectionChangeComplete, this, &AnimationTrackBar::onRebuildControllerList);
 	connect(&_objects, &VectorRefTargetListener<RefTarget>::notificationEvent, this, &AnimationTrackBar::onObjectNotificationEvent);
 	connect(&_controllers, &VectorRefTargetListener<KeyframeController>::notificationEvent, this, &AnimationTrackBar::onControllerNotificationEvent);
-}
-
-/******************************************************************************
-* This is called when new animation settings have been loaded.
-******************************************************************************/
-void AnimationTrackBar::onAnimationSettingsReplaced(AnimationSettings* newAnimationSettings)
-{
-	disconnect(_animIntervalChangedConnection);
-	disconnect(_timeFormatChangedConnection);
-	disconnect(_currentFrameChangedConnection);
-	_animSettings = newAnimationSettings;
-	if(newAnimationSettings) {
-		_animIntervalChangedConnection = connect(newAnimationSettings, &AnimationSettings::intervalChanged, this, qOverload<>(&AnimationTrackBar::update));
-		_timeFormatChangedConnection = connect(newAnimationSettings, &AnimationSettings::timeFormatChanged, this, qOverload<>(&AnimationTrackBar::update));
-		_currentFrameChangedConnection = connect(newAnimationSettings, &AnimationSettings::currentFrameChanged, this, qOverload<>(&AnimationTrackBar::update));
-	}
-	update();
 }
 
 /******************************************************************************
@@ -89,8 +73,8 @@ void AnimationTrackBar::paintEvent(QPaintEvent* event)
 	QFrame::paintEvent(event);
 
 	// Paint track bar only if there is more than one animation frame.
-	if(!_animSettings) return;
-	int numFrames = _animSettings->lastFrame() - _animSettings->firstFrame() + 1;
+	if(!animSettings()) return;
+	int numFrames = animSettings()->numberOfFrames();
 	if(numFrames <= 1) return;
 
 	QPainter painter(this);
@@ -123,7 +107,7 @@ void AnimationTrackBar::paintEvent(QPaintEvent* event)
 	}
 
 	// Draw the current time marker.
-	int currentFramePos = _timeSlider->frameToPos(_animSettings->currentFrame());
+	int currentFramePos = _timeSlider->frameToPos(animSettings()->currentFrame());
 	painter.setBrush(Qt::blue);
 	painter.setPen(Qt::black);
 	QPoint marker[3] = {{ currentFramePos - 3, clientRect.top() },
@@ -138,9 +122,11 @@ void AnimationTrackBar::paintEvent(QPaintEvent* event)
 ******************************************************************************/
 QRect AnimationTrackBar::keyRect(AnimationKey* key, bool forDisplay) const
 {
+	OVITO_ASSERT(animSettings());
+
 	// Don't draw keys that are not within the active animation interval.
-	if(key->time().frame() < _animSettings->firstFrame() ||
-		key->time().frame() > _animSettings->lastFrame()) return QRect();
+	if(key->time().frame() < animSettings()->firstFrame() ||
+		key->time().frame() > animSettings()->lastFrame()) return QRect();
 
 	QRect clientRect = frameRect();
 	clientRect.adjust(frameWidth(), frameWidth(), -frameWidth(), -frameWidth());
@@ -204,15 +190,14 @@ void AnimationTrackBar::onRebuildControllerList()
 	_selectedKeys.clear();
 	_parameterNames.clear();
 
-	if(_animSettings) {
-		// Traverse object graphs of selected scene nodes to find all animation controllers.
-		SelectionSet* selection = mainWindow().activeScene()->selection();
+	// Traverse object graphs of selected scene nodes to find all animation controllers.
+	if(SelectionSet* selection = mainWindow().datasetContainer().activeSelectionSet()) {
 		for(SceneNode* node : selection->nodes()) {
 			if(PipelineSceneNode* objNode = dynamic_object_cast<PipelineSceneNode>(node))
 				findControllers(objNode);
 		}
 	}
-
+	
 	_deferredUpdateScheduled = false;
 	update();
 }
@@ -392,9 +377,9 @@ void AnimationTrackBar::mouseMoveEvent(QMouseEvent* event)
 			unsetCursor();
 			QToolTip::hideText();
 		}
-		else {
+		else if(animSettings()) {
 			setCursor(_selectionCursor);
-			QString tooltipText = tr("<p style='white-space:pre'>Time position %1:").arg(_animSettings->timeToString(keys.front()->time()));
+			QString tooltipText = tr("<p style='white-space:pre'>Time position %1:").arg(animSettings()->timeToString(keys.front()->time()));
 			for(AnimationKey* key : keys) {
 				tooltipText += QStringLiteral("<br>  %1: %2")
 						.arg(_parameterNames[controllerIndexFromKey(key)])
@@ -404,7 +389,7 @@ void AnimationTrackBar::mouseMoveEvent(QMouseEvent* event)
 			QToolTip::showText(mapToGlobal(event->pos()), tooltipText, this);
 		}
 	}
-	else if(_dragStartPos >= 0) {
+	else if(_dragStartPos >= 0 && animSettings()) {
 		if(!_isDragging && std::abs(_dragStartPos - event->pos().x()) > 4) {
 			mainWindow().undoStack()->beginCompoundOperation(tr("Move animation keys"));
 			_isDragging = true;
@@ -416,13 +401,15 @@ void AnimationTrackBar::mouseMoveEvent(QMouseEvent* event)
 			// Clamp to animation interval.
 			for(AnimationKey* key : _selectedKeys.targets()) {
 				int newFrame = key->time().frame() + frameDelta;
-				if(newFrame < _animSettings->firstFrame()) frameDelta += _animSettings->firstFrame() - newFrame;
-				if(newFrame > _animSettings->lastFrame()) frameDelta -= newFrame - _animSettings->lastFrame();
+				if(newFrame < animSettings()->firstFrame()) frameDelta += animSettings()->firstFrame() - newFrame;
+				if(newFrame > animSettings()->lastFrame()) frameDelta -= newFrame - animSettings()->lastFrame();
 			}
-			// Move keys.
-			for(KeyframeController* ctrl : _controllers.targets()) {
-				ctrl->moveKeys(_selectedKeys.targets(), AnimationTime::TicksPerFrame * frameDelta);
-			}
+			mainWindow().handleExceptions([&] {
+				// Move keys.
+				for(KeyframeController* ctrl : _controllers.targets()) {
+					ctrl->moveKeys(_selectedKeys.targets(), AnimationTime::TicksPerFrame * frameDelta);
+				}
+			});
 		}
 		event->accept();
 	}
@@ -497,8 +484,10 @@ void AnimationTrackBar::showKeyContextMenu(const QPoint& pos, const QVector<Anim
 	QAction* jumpToTimeAction = contextMenu.addAction(tr("Jump to key"));
 	if(clickedKeys.empty() == false) {
 		int frame = clickedKeys.front()->time().frame();
-		connect(jumpToTimeAction, &QAction::triggered, [this, frame]() {
-			_animSettings->setCurrentFrame(frame);
+		connect(jumpToTimeAction, &QAction::triggered, animSettings(), [this, frame]() {
+			mainWindow().handleExceptions([&] {
+				animSettings()->setCurrentFrame(frame);
+			});
 		});
 	}
 	else jumpToTimeAction->setEnabled(false);
@@ -511,7 +500,7 @@ void AnimationTrackBar::showKeyContextMenu(const QPoint& pos, const QVector<Anim
 ******************************************************************************/
 void AnimationTrackBar::onDeleteSelectedKeys()
 {
-	UndoableTransaction::handleExceptions(mainWindow(), tr("Delete animation keys"), [this]() {
+	mainWindow().performTransaction(tr("Delete animation keys"), [this]() {
 		for(KeyframeController* ctrl : _controllers.targets()) {
 			ctrl->deleteKeys(_selectedKeys.targets());
 		}

@@ -51,7 +51,7 @@ public:
 	virtual void createQtApplication(int& argc, char** argv) override;
 
 	/// Handler function for exceptions.
-	virtual void reportError(const Exception& exception, bool blocking) override;
+	virtual void reportError(const Exception& exception) override;
 
 protected:
 
@@ -70,18 +70,10 @@ protected:
 	/// Handles events sent to the Qt application object.
 	virtual bool eventFilter(QObject* watched, QEvent* event) override;
 
-private Q_SLOTS:
-
-	/// Displays an error message box. This slot is called by reportError().
-	void showErrorMessages();
-
 private:
 
 	/// Initializes the graphical user interface of the application.
 	void initializeGUI();
-
-	/// List of errors to be displayed by showErrorMessages().
-	std::deque<Exception> _errorList;
 
 	/// The global file manager.
 	GuiFileManager _fileManager;

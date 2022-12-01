@@ -34,7 +34,7 @@ IMPLEMENT_OVITO_CLASS(GeneralSettingsPage);
 /******************************************************************************
 * Creates the widget that contains the plugin specific setting controls.
 ******************************************************************************/
-void GeneralSettingsPage::insertSettingsDialogPage(ApplicationSettingsDialog* settingsDialog, QTabWidget* tabWidget)
+void GeneralSettingsPage::insertSettingsDialogPage(QTabWidget* tabWidget)
 {
 	QWidget* page = new QWidget();
 	tabWidget->addTab(page, tr("General"));
@@ -79,7 +79,7 @@ void GeneralSettingsPage::insertSettingsDialogPage(ApplicationSettingsDialog* se
 /******************************************************************************
 * Lets the page save all changed settings.
 ******************************************************************************/
-void GeneralSettingsPage::saveValues(ApplicationSettingsDialog* settingsDialog, QTabWidget* tabWidget)
+void GeneralSettingsPage::saveValues(QTabWidget* tabWidget)
 {
 	HistoryFileDialog::setKeepWorkingDirectoryHistoryEnabled(_keepDirHistory->isChecked());
 	ModifierListModel::setUseCategoriesGlobal(_sortModifiersByCategory->isChecked());

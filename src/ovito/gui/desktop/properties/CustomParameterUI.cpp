@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -117,7 +117,7 @@ void CustomParameterUI::setEnabled(bool enabled)
 void CustomParameterUI::updatePropertyValue()
 {
 	if(widget() && editObject()) {
-		undoableTransaction(tr("Change parameter"), [this]() {
+		performTransaction(tr("Change parameter"), [this]() {
 			QVariant newValue = _updatePropertyFunction();
 
             if(isQtPropertyUI()) {

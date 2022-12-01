@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -42,13 +42,13 @@ public:
 	Q_INVOKABLE ModifierTemplatesPage() = default;
 
 	/// \brief Creates the widget.
-	virtual void insertSettingsDialogPage(ApplicationSettingsDialog* settingsDialog, QTabWidget* tabWidget) override;
+	virtual void insertSettingsDialogPage(QTabWidget* tabWidget) override;
 
 	/// \brief Lets the settings page to save all values entered by the user.
-	virtual void saveValues(ApplicationSettingsDialog* settingsDialog, QTabWidget* tabWidget) override;
+	virtual void saveValues(QTabWidget* tabWidget) override;
 
 	/// \brief Lets the settings page restore the original values of changed settings when the user presses the Cancel button.
-	virtual void restoreValues(ApplicationSettingsDialog* settingsDialog, QTabWidget* tabWidget) override;
+	virtual void restoreValues(QTabWidget* tabWidget) override;
 
 	/// \brief Returns an integer value that is used to sort the dialog pages in ascending order.
 	virtual int pageSortingKey() const override { return 3; }
@@ -73,7 +73,6 @@ private Q_SLOTS:
 private:
 
 	QListView* _listWidget;
-	ApplicationSettingsDialog* _settingsDialog;
 	bool _dirtyFlag = false;
 };
 

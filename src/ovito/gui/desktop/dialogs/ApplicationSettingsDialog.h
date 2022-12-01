@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -45,25 +45,36 @@ protected:
 public:
 
 	/// \brief Creates the tab that is inserted into the settings dialog.
-	/// \param settingsDialog The settings dialog box.
 	/// \param tabWidget The QTabWidget into which the method should insert the settings page.
-	virtual void insertSettingsDialogPage(ApplicationSettingsDialog* settingsDialog, QTabWidget* tabWidget) = 0;
+	virtual void insertSettingsDialogPage(QTabWidget* tabWidget) = 0;
 
 	/// \brief Lets the settings page validate the values entered by the user before saving them.
-	/// \param settingsDialog The settings dialog box.
 	/// \return true if the settings are valid; false if settings need to be corrected by the user and the dialog should not be closed.
-	virtual bool validateValues(ApplicationSettingsDialog* settingsDialog, QTabWidget* tabWidget) { return true; }
+	virtual bool validateValues(QTabWidget* tabWidget) { return true; }
 
 	/// \brief Lets the settings page to save all values entered by the user.
-	/// \param settingsDialog The settings dialog box.
-	virtual void saveValues(ApplicationSettingsDialog* settingsDialog, QTabWidget* tabWidget) {}
+	virtual void saveValues(QTabWidget* tabWidget) {}
 
 	/// \brief Lets the settings page restore the original values of changed settings.
-	/// \param settingsDialog The settings dialog box.
-	virtual void restoreValues(ApplicationSettingsDialog* settingsDialog, QTabWidget* tabWidget) {}
+	virtual void restoreValues(QTabWidget* tabWidget) {}
 
 	/// \brief Returns an integer value that is used to sort the dialog pages in ascending order.
 	virtual int pageSortingKey() const { return 1000; }
+
+	/// Returns the parent dialog hosting this settings page.
+	ApplicationSettingsDialog* settingsDialog() const { OVITO_ASSERT(_settingsDialog); return _settingsDialog; }
+
+	/// Returns the main window hosting this settings page.
+	MainWindow& mainWindow() const;
+
+	/// Displays an error message to the user.
+	void reportError(const Exception& ex);
+
+private:
+
+	ApplicationSettingsDialog* _settingsDialog = nullptr;
+
+	friend class ApplicationSettingsDialog;
 };
 
 /**

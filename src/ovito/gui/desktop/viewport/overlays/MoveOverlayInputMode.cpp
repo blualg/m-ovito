@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -59,7 +59,8 @@ void MoveOverlayInputMode::deactivated(bool temporary)
 {
 	if(viewport()) {
 		// Restore old state if change has not been committed.
-		viewport()->dataset()->undoStack().endCompoundOperation(false);
+		if(UndoStack* undoStack = inputManager()->userInterface().undoStack())
+			undoStack->endCompoundOperation(false);
 		_viewport = nullptr;
 	}
 	inputManager()->userInterface().clearStatusBarMessage();
@@ -77,7 +78,8 @@ void MoveOverlayInputMode::mousePressEvent(ViewportWindowInterface* vpwin, QMous
 			if(layer && (vpwin->viewport()->overlays().contains(layer) || vpwin->viewport()->underlays().contains(layer))) {
 				_viewport = vpwin->viewport();
 				_startPoint = getMousePosition(event);
-				viewport()->dataset()->undoStack().beginCompoundOperation(tr("Move overlay"));
+				if(UndoStack* undoStack = inputManager()->userInterface().undoStack())
+					undoStack->beginCompoundOperation(tr("Move overlay"));
 			}
 		}
 		return;
@@ -85,7 +87,8 @@ void MoveOverlayInputMode::mousePressEvent(ViewportWindowInterface* vpwin, QMous
 	else if(event->button() == Qt::RightButton) {
 		if(viewport()) {
 			// Restore old state when aborting the move operation.
-			viewport()->dataset()->undoStack().endCompoundOperation(false);
+			if(UndoStack* undoStack = inputManager()->userInterface().undoStack())
+				undoStack->endCompoundOperation(false);
 			_viewport = nullptr;
 			return;
 		}
@@ -110,26 +113,29 @@ void MoveOverlayInputMode::mouseMoveEvent(ViewportWindowInterface* vpwin, QMouse
 			_currentPoint = vpwin->getCurrentMousePos();
 
 			// Reset the layer's position first before moving it again below.
-			viewport()->dataset()->undoStack().resetCurrentCompoundOperation();
+			if(UndoStack* undoStack = inputManager()->userInterface().undoStack())
+				undoStack->resetCurrentCompoundOperation();
 
-			// Compute the displacement based on the new mouse position.
-			Box2 renderFrameRect = viewport()->renderFrameRect(vpwin->dataset());
-			QSize vpSize = vpwin->viewportWindowDeviceIndependentSize();
-			Vector2 delta;
-			delta.x() =  (FloatType)(_currentPoint.x() - _startPoint.x()) / vpSize.width() / renderFrameRect.width() * 2;
-			delta.y() = -(FloatType)(_currentPoint.y() - _startPoint.y()) / vpSize.height() / renderFrameRect.height() * 2;
-
-			// Move the layer.
 			try {
-				layer->moveLayerInViewport(delta);
+				// Compute the displacement based on the new mouse position.
+				Box2 renderFrameRect = viewport()->renderFrameRect(inputManager()->datasetContainer().currentSet());
+				if(!renderFrameRect.isEmpty()) {
+					QSize vpSize = vpwin->viewportWindowDeviceIndependentSize();
+					Vector2 delta;
+					delta.x() =  (FloatType)(_currentPoint.x() - _startPoint.x()) / vpSize.width() / renderFrameRect.width() * 2;
+					delta.y() = -(FloatType)(_currentPoint.y() - _startPoint.y()) / vpSize.height() / renderFrameRect.height() * 2;
+
+					// Move the layer.
+					layer->moveLayerInViewport(delta);
+				}
 			}
 			catch(const Exception& ex) {
 				inputManager()->removeInputMode(this);
-				ex.reportError();
+				inputManager()->userInterface().reportError(ex);
 			}
 
 			// Force immediate viewport repaints.
-			inputManager()->userInterface().processViewportUpdates();
+			inputManager()->userInterface().processViewportUpdateRequests();
 		}
 	}
 	else {
@@ -145,7 +151,8 @@ void MoveOverlayInputMode::mouseReleaseEvent(ViewportWindowInterface* vpwin, QMo
 {
 	if(viewport()) {
 		// Commit change.
-		viewport()->dataset()->undoStack().endCompoundOperation();
+		if(UndoStack* undoStack = inputManager()->userInterface().undoStack())
+			undoStack->endCompoundOperation();
 		_viewport = nullptr;
 	}
 	ViewportInputMode::mouseReleaseEvent(vpwin, event);

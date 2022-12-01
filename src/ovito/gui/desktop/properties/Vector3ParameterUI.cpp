@@ -60,7 +60,7 @@ Vector3ParameterUI::Vector3ParameterUI(PropertiesEditor* parentEditor, const Pro
 void Vector3ParameterUI::updatePropertyValue()
 {
 	if(editObject() && spinner()) {
-		try {
+		handleExceptions([&] {
 			if(isReferenceFieldUI()) {
 				if(Controller* ctrl = dynamic_object_cast<Controller>(parameterObject())) {
 					Vector3 val = ctrl->getVector3Value(currentAnimationTime().value_or(AnimationTime(0)));
@@ -100,10 +100,7 @@ void Vector3ParameterUI::updatePropertyValue()
 			}
 
 			Q_EMIT valueEntered();
-		}
-		catch(const Exception& ex) {
-			ex.reportError();
-		}
+		});
 	}
 }
 

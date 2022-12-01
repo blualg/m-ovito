@@ -26,6 +26,7 @@
 #include <ovito/core/rendering/SceneRenderer.h>
 #include <ovito/core/rendering/RenderSettings.h>
 #include <ovito/core/dataset/DataSet.h>
+#include <ovito/core/dataset/DataSetContainer.h>
 #include <ovito/core/dataset/data/DataBufferAccess.h>
 #include <ovito/core/app/UserInterface.h>
 
@@ -45,10 +46,8 @@ ViewportWindowInterface::Registry& ViewportWindowInterface::registry()
 ******************************************************************************/
 ViewportWindowInterface::ViewportWindowInterface(UserInterface& userInterface, Viewport* vp) : 
 	_userInterface(userInterface),
-	_dataset(userInterface.datasetContainer().currentSet()),
 	_viewport(vp)
 {
-	OVITO_ASSERT(_dataset);
 	OVITO_ASSERT(vp);
 
 	// Associate the viewport with this window.
@@ -163,7 +162,9 @@ void ViewportWindowInterface::renderOrientationIndicator(SceneRenderer* renderer
 void ViewportWindowInterface::renderRenderFrame(SceneRenderer* renderer)
 {
 	// The render frame in viewport coordinates.
-	Box2 frameRect = viewport()->renderFrameRect(dataset());
+	Box2 frameRect = viewport()->renderFrameRect(userInterface().datasetContainer().currentSet());
+	if(frameRect.isEmpty())
+		return;
 
 	// Create a 1x1 pixel semi-transparent image, which is used to fill reactangular areas with a uniform color.
 	static QImage image;

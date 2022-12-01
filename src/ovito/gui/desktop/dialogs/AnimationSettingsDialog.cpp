@@ -33,8 +33,12 @@ namespace Ovito {
 /******************************************************************************
 * The constructor of the animation settings dialog.
 ******************************************************************************/
-AnimationSettingsDialog::AnimationSettingsDialog(MainWindow& mainWindow, AnimationSettings* animSettings, QWidget* parent) :
-		QDialog(parent), _animSettings(animSettings), UndoableTransaction(mainWindow, tr("Change animation settings"))
+AnimationSettingsDialog::AnimationSettingsDialog(MainWindow& mainWindow, QWidget* parent) :
+		QDialog(parent), 
+		UndoableTransaction(mainWindow, tr("Change animation settings")),
+		ExecutionContext::Scope(ExecutionContext::Type::Interactive, mainWindow),
+		_mainWindow(mainWindow),
+		_animSettings(mainWindow.datasetContainer().activeAnimationSettings())
 {
 	setWindowTitle(tr("Animation Settings"));
 
@@ -106,14 +110,17 @@ AnimationSettingsDialog::AnimationSettingsDialog(MainWindow& mainWindow, Animati
 	everyNthFrameSpinner->setMinValue(1);
 	contentLayout->addWidget(everyNthFrameSpinner, 1, 3);
 	connect(everyNthFrameSpinner, &SpinnerWidget::spinnerValueChanged, this, [this]() {
-		_animSettings->setPlaybackEveryNthFrame(everyNthFrameSpinner->intValue());
+		_mainWindow.performTransaction(tr("Change animation step size"), [&] {
+			_animSettings->setPlaybackEveryNthFrame(everyNthFrameSpinner->intValue());
+		});
 	});
 
 	loopPlaybackBox = new QCheckBox(tr("Loop playback"));
 	contentLayout->addWidget(loopPlaybackBox, 2, 2, 1, 2);
 	connect(loopPlaybackBox, &QCheckBox::clicked, this, [this](bool checked) {
-		_animSettings->setLoopPlayback(checked);
-		loopPlaybackModified = true;
+		loopPlaybackModified = _mainWindow.performTransaction(tr("Change animation loop playback"), [&] {
+			_animSettings->setLoopPlayback(checked);
+		});
 	});
 
 	animIntervalBox = new QGroupBox(tr("Custom animation interval"));
@@ -142,8 +149,10 @@ AnimationSettingsDialog::AnimationSettingsDialog(MainWindow& mainWindow, Animati
 	connect(animEndSpinner, &SpinnerWidget::spinnerValueChanged, this, &AnimationSettingsDialog::onAnimationIntervalChanged);
 
 	connect(animIntervalBox, &QGroupBox::clicked, this, [this](bool checked) {
-		_animSettings->setAutoAdjustInterval(!checked);
-		updateUI();
+		_mainWindow.performTransaction(tr("Toggle animation interval"), [&] {
+			_animSettings->setAutoAdjustInterval(!checked);
+			updateUI();
+		});
 	});
 
 	QDialogButtonBox* buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel | QDialogButtonBox::Help, Qt::Horizontal, this);
@@ -151,8 +160,8 @@ AnimationSettingsDialog::AnimationSettingsDialog(MainWindow& mainWindow, Animati
 	connect(buttonBox, &QDialogButtonBox::rejected, this, &AnimationSettingsDialog::reject);
 
 	// Implement Help button.
-	connect(buttonBox, &QDialogButtonBox::helpRequested, []() {
-		ActionManager::openHelpTopic(QStringLiteral("manual:animation.animation_settings_dialog"));
+	connect(buttonBox, &QDialogButtonBox::helpRequested, &mainWindow, [&mainWindow]() {
+		mainWindow.actionManager()->openHelpTopic(QStringLiteral("manual:animation.animation_settings_dialog"));
 	});
 
 	layout1->addWidget(buttonBox);
@@ -199,8 +208,9 @@ void AnimationSettingsDialog::onFramesPerSecondChanged(int index)
 	float newFramesPerSecond = fpsBox->itemData(index).toFloat();
 	OVITO_ASSERT(newFramesPerSecond != 0.0f);
 
-	_animSettings->setFramesPerSecond(newFramesPerSecond);
-	framesPerSecondModified = true;
+	framesPerSecondModified = _mainWindow.performTransaction(tr("Change fps value"), [&] {
+		_animSettings->setFramesPerSecond(newFramesPerSecond);
+	});
 
 	// Update dialog controls to reflect new values.
 	updateUI();
@@ -215,8 +225,9 @@ void AnimationSettingsDialog::onPlaybackSpeedChanged(int index)
 	OVITO_ASSERT(newPlaybackSpeed != 0);
 
 	// Change the animation speed.
-	_animSettings->setPlaybackSpeed(newPlaybackSpeed);
-	playbackSpeedModified = true;
+	playbackSpeedModified = _mainWindow.performTransaction(tr("Change playback speed"), [&] {
+		_animSettings->setPlaybackSpeed(newPlaybackSpeed);
+	});
 
 	// Update dialog controls to reflect new values.
 	updateUI();
@@ -232,9 +243,11 @@ void AnimationSettingsDialog::onAnimationIntervalChanged()
 	if(lastFrame < firstFrame)
 		lastFrame = firstFrame;
 
-	_animSettings->setFirstFrame(firstFrame);
-	_animSettings->setLastFrame(lastFrame);
-	_animSettings->setCurrentFrame(qBound(firstFrame, _animSettings->currentFrame(), lastFrame));
+	_mainWindow.performTransaction(tr("Change interval"), [&] {
+		_animSettings->setFirstFrame(firstFrame);
+		_animSettings->setLastFrame(lastFrame);
+		_animSettings->setCurrentFrame(qBound(firstFrame, _animSettings->currentFrame(), lastFrame));
+	});
 
 	// Update dialog controls to reflect new values.
 	updateUI();

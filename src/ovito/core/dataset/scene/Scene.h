@@ -26,9 +26,7 @@
 #include <ovito/core/Core.h>
 #include <ovito/core/dataset/animation/TimeInterval.h>
 #include <ovito/core/dataset/animation/AnimationSettings.h>
-#include <ovito/core/dataset/pipeline/PipelineEvaluation.h>
 #include <ovito/core/dataset/scene/SelectionSet.h>
-#include <ovito/core/utilities/concurrent/TaskWatcher.h>
 #include "SceneNode.h"
 
 namespace Ovito {
@@ -55,9 +53,6 @@ public:
 	/// \brief Creates an empty scene.
 	Q_INVOKABLE Scene(ObjectCreationParams params, AnimationSettings* animationSettings = nullptr);
 
-	/// \brief Destructor.
-	virtual ~Scene();
-
 	/// \brief Searches the scene for a node with the given name.
 	/// \param nodeName The name to look for.
 	/// \return The scene node or \c nullptr, if there is no node with the given name.
@@ -82,20 +77,10 @@ public:
 			children().back()->deleteNode();
 	}
 
-	/// \brief Returns a future that is triggered once all data pipelines in the scene
-	///        have been completely evaluated at the current animation time.
-	SharedFuture<> whenReady();
-
 	/// \brief Returns the current location around which the viewport camera orbits.
 	Point3 orbitCenter(Viewport* vp) const;
 
 Q_SIGNALS:
-
-	/// \brief Is emitted whenever the scene is being made ready for rendering after it was changed in some way.
-	void scenePreparationStarted();
-
-	/// \brief Is emitted whenever the scene became ready for rendering.
-	void scenePreparationFinished();
 
 	/// This signal is emitted when the camera orbit center has been moved to a different location.
 	void cameraOrbitCenterChanged();
@@ -106,9 +91,6 @@ Q_SIGNALS:
 
 protected:
 
-	/// Sends an event to all dependents of this RefTarget.
-	virtual void notifyDependentsImpl(const ReferenceEvent& event) override;
-
 	/// Is called when a RefTarget referenced by this object has generated an event.
 	virtual bool referenceEvent(RefTarget* source, const ReferenceEvent& event) override;
 
@@ -117,24 +99,6 @@ protected:
 
 	/// Is called when the value of a property of this object has changed.
 	virtual void propertyChanged(const PropertyFieldDescriptor* field) override;
-
-private Q_SLOTS:
-
-	/// Is called when the evaluation of a pipeline in the scene has finished.
-	void pipelineEvaluationFinished();
-
-	/// Is called whenver viewport updates are resumed.
-	void onViewportUpdatesResumed();
-
-private:
-
-	/// Requests the (re-)evaluation of all data pipelines in the current scene.
-	Q_INVOKABLE void makeReady(bool forceReevaluation);
-
-	/// Requests the (re-)evaluation of all data pipelines next time execution returns to the event loop.
-	void makeReadyLater(bool forceReevaluation) { 
-		QMetaObject::invokeMethod(this, "makeReady", Qt::QueuedConnection, Q_ARG(bool, forceReevaluation));
-	}
 
 private:
 
@@ -149,21 +113,6 @@ private:
 
 	/// Position of the orbiting center picked by the user.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(Point3, userOrbitCenter, setUserOrbitCenter, PROPERTY_FIELD_NO_UNDO);
-
-	/// The promise to make the scene ready.
-	Promise<> _sceneReadyPromise;
-
-	/// The last animation frame at which the scene was made ready.
-	int _sceneReadyFrame;
-
-	/// The current pipeline evaluation that is in progress.
-	PipelineEvaluationFuture _pipelineEvaluation;
-
-	/// The watcher object that is used to monitor the evaluation of data pipelines in the scene.
-	TaskWatcher _pipelineEvaluationWatcher;
-
-	/// Qt connection to the ViewportConfiguration::viewportUpdateResumed() signal.
-	QMetaObject::Connection _viewportUpdateResumedConnection;
 };
 
 }	// End of namespace

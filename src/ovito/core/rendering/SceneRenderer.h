@@ -89,9 +89,6 @@ public:
 		using Exception::Exception;
 	};
 
-	/// This helper method throws a RendererException with the given message text.
-	void throwRendererException(const QString& msg) const;
-
 	/// This may be called on a renderer before startRender() to control its supersampling level.
 	virtual void setAntialiasingHint(int antialiasingLevel) {}
 

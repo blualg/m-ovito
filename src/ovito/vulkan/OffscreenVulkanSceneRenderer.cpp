@@ -98,7 +98,7 @@ bool OffscreenVulkanSceneRenderer::startRender(const RenderSettings& settings, c
 	VkImageUsageFlags usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
 	VkImageAspectFlags aspectFlags = VK_IMAGE_ASPECT_COLOR_BIT;
 	if(!context()->createVulkanImage(this->frameBufferSize(), colorFormat, VK_SAMPLE_COUNT_1_BIT, usage, aspectFlags, &_colorImage, &_colorMem, &_colorView, 1))
-		throwRendererException(tr("Could not create Vulkan offscreen image buffer."));
+		throw RendererException(tr("Could not create Vulkan offscreen image buffer."));
 
 	// Create Vulkan depth-stencil buffer image.
 	VkFormat dsFormat = _grabDepthBuffer ? VK_FORMAT_D24_UNORM_S8_UINT : context()->depthStencilFormat();
@@ -181,7 +181,7 @@ bool OffscreenVulkanSceneRenderer::startRender(const RenderSettings& settings, c
 	VkResult err = deviceFunctions()->vkCreateRenderPass(logicalDevice(), &renderPassInfo, nullptr, &_renderPass);
     if(err != VK_SUCCESS) {
         qWarning("OffscreenVulkanSceneRenderer: Failed to create renderpass: %d", err);
-		throwRendererException(tr("Failed to create Vulkan renderpass for offscreen rendering."));
+		throw RendererException(tr("Failed to create Vulkan renderpass for offscreen rendering."));
     }
     setDefaultRenderPass(_renderPass);
 
@@ -199,7 +199,7 @@ bool OffscreenVulkanSceneRenderer::startRender(const RenderSettings& settings, c
 	err = deviceFunctions()->vkCreateFramebuffer(logicalDevice(), &framebufferCreateInfo, nullptr, &_framebuffer);
     if(err != VK_SUCCESS) {
         qWarning("OffscreenVulkanSceneRenderer: Failed to create framebuffer: %d", err);
-		throwRendererException(tr("Failed to create Vulkan framebuffer for offscreen rendering."));
+		throw RendererException(tr("Failed to create Vulkan framebuffer for offscreen rendering."));
     }
 
 	// Create the linear tiled destination image to copy to and to read the memory from.
@@ -220,7 +220,7 @@ bool OffscreenVulkanSceneRenderer::startRender(const RenderSettings& settings, c
 	err = deviceFunctions()->vkCreateImage(logicalDevice(), &imgCreateInfo, nullptr, &_frameGrabImage);
 	if(err != VK_SUCCESS) {
         qWarning("OffscreenVulkanSceneRenderer: Failed to create image for readback: %d", err);
-        throwRendererException(tr("Failed to create Vulkan image for framebuffer readback."));
+        throw RendererException(tr("Failed to create Vulkan image for framebuffer readback."));
     }
 
 	// Create memory to back up the image.
@@ -235,12 +235,12 @@ bool OffscreenVulkanSceneRenderer::startRender(const RenderSettings& settings, c
 	err = deviceFunctions()->vkAllocateMemory(logicalDevice(), &memAllocInfo, nullptr, &_frameGrabImageMem);
 	if(err != VK_SUCCESS) {
         qWarning("OffscreenVulkanSceneRenderer: Failed to allocate image memory for readback: %d", err);
-        throwRendererException(tr("Failed to allocate Vulkan image memory for framebuffer readback."));
+        throw RendererException(tr("Failed to allocate Vulkan image memory for framebuffer readback."));
     }
 	deviceFunctions()->vkBindImageMemory(logicalDevice(), _frameGrabImage, _frameGrabImageMem, 0);
 	if(err != VK_SUCCESS) {
         qWarning("OffscreenVulkanSceneRenderer: Failed to bind readback image memory: %d", err);
-        throwRendererException(tr("Failed to bind Vulkan image memory for framebuffer readback."));
+        throw RendererException(tr("Failed to bind Vulkan image memory for framebuffer readback."));
     }
 
 	// Create a host-visible staging buffer for grabbing the depth buffer contents after rendering is complete.
@@ -254,7 +254,7 @@ bool OffscreenVulkanSceneRenderer::startRender(const RenderSettings& settings, c
 		err = vmaCreateBuffer(context()->allocator(), &bufferInfo, &allocInfo, &_depthGrabBuffer, &_depthGrabBufferAllocation, nullptr);
 		if(err != VK_SUCCESS) {
 			qWarning("OffscreenVulkanSceneRenderer: Failed to create staging buffer for reading back depth-buffer: %d", err);
-			throwRendererException(tr("Failed to create staging buffer for reading back depth-buffer."));
+			throw RendererException(tr("Failed to create staging buffer for reading back depth-buffer."));
 		}
 	}
 
@@ -274,7 +274,7 @@ void OffscreenVulkanSceneRenderer::beginFrame(TimePoint time, Scene* scene, cons
     VkResult err = deviceFunctions()->vkAllocateCommandBuffers(logicalDevice(), &cmdBufInfo, &_cmdBuf);
     if(err != VK_SUCCESS) {
 		qWarning("OffscreenVulkanSceneRenderer: Failed to allocate frame command buffer: %d", err);
-		throwRendererException(tr("Failed to allocate Vulkan frame command buffer."));
+		throw RendererException(tr("Failed to allocate Vulkan frame command buffer."));
     }
 
 	// Pass command buffer to base class implementation.
@@ -289,7 +289,7 @@ void OffscreenVulkanSceneRenderer::beginFrame(TimePoint time, Scene* scene, cons
     err = deviceFunctions()->vkBeginCommandBuffer(_cmdBuf, &cmdBufBeginInfo);
     if(err != VK_SUCCESS) {
 		qWarning("OffscreenVulkanSceneRenderer: Failed to begin frame command buffer: %d", err);
-		throwRendererException(tr("Failed to begin Vulkan frame command buffer."));
+		throw RendererException(tr("Failed to begin Vulkan frame command buffer."));
     }
 
 	// Always render with a fully transparent background. 
@@ -413,7 +413,7 @@ void OffscreenVulkanSceneRenderer::endFrame(bool renderingSuccessful, const QRec
     VkResult err = deviceFunctions()->vkEndCommandBuffer(currentCommandBuffer());
     if(err != VK_SUCCESS) {
 		qWarning("OffscreenVulkanSceneRenderer: Failed to end frame command buffer: %d", err);
-		throwRendererException(tr("Failed to end Vulkan frame command buffer."));
+		throw RendererException(tr("Failed to end Vulkan frame command buffer."));
     }
 
 	// Unless rendering has been interrupted, submit draw calls and prepare for reading back the Vulkan framebuffer contents.
@@ -435,7 +435,7 @@ void OffscreenVulkanSceneRenderer::endFrame(bool renderingSuccessful, const QRec
 		err = deviceFunctions()->vkQueueSubmit(context()->graphicsQueue(), 1, &submitInfo, fence);
 		if(err != VK_SUCCESS) {
 			qWarning("OffscreenVulkanSceneRenderer: Failed to submit commands to Vulkan queue: %d", err);
-			throwRendererException(tr("Failed to submit commands to Vulkan queue."));
+			throw RendererException(tr("Failed to submit commands to Vulkan queue."));
 		}
 
 		// Block until the current frame is done.
@@ -453,7 +453,7 @@ void OffscreenVulkanSceneRenderer::endFrame(bool renderingSuccessful, const QRec
 		err = deviceFunctions()->vkMapMemory(logicalDevice(), _frameGrabImageMem, layout.offset, layout.size, 0, reinterpret_cast<void**>(&p));
 		if(err != VK_SUCCESS) {
 			qWarning("OffscreenVulkanSceneRenderer: Failed to map readback image memory after transfer: %d", err);
-			throwRendererException(tr("Failed to map readback Vulkan image memory after transfer."));
+			throw RendererException(tr("Failed to map readback Vulkan image memory after transfer."));
 		}
 
 		// Copy pixel data over to a QImage.

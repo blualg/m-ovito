@@ -44,8 +44,6 @@ IMPLEMENT_OVITO_CLASS(GuiDataSetContainer);
 ******************************************************************************/
 GuiDataSetContainer::GuiDataSetContainer(TaskManager& taskManager, MainWindow& mainWindow) : DataSetContainer(taskManager, mainWindow), _mainWindow(mainWindow)
 {
-	// Reset undo stack whenever a new dataset is loaded.
-	connect(this, &DataSetContainer::dataSetChanged, mainWindow.undoStack(), &UndoStack::clear);
 }
 
 /******************************************************************************
@@ -66,7 +64,7 @@ bool GuiDataSetContainer::fileSave()
 		mainWindow().undoStack()->setClean();
 	}
 	catch(const Exception& ex) {
-		ex.reportError();
+		mainWindow().reportError(ex);
 		return false;
 	}
 
@@ -163,19 +161,22 @@ bool GuiDataSetContainer::askForSaveChanges()
 ******************************************************************************/
 bool GuiDataSetContainer::importFiles(const std::vector<QUrl>& urls, MainThreadOperation operation, const FileImporterClass* importerType, const QString& importerFormat)
 {
-	OVITO_ASSERT(currentSet() != nullptr);
 	OVITO_ASSERT(!urls.empty());
+
+	// Create a reference to the active scene to keep it alive during this long-running operation.
+	OORef<Scene> scene = activeScene();
+	OVITO_ASSERT(scene);
 
 	std::vector<std::pair<QUrl, OORef<FileImporter>>> urlImporters;
 	for(const QUrl& url : urls) {
 		if(!url.isValid())
-			throw Exception(tr("Failed to import file. URL is not valid: %1").arg(url.toString()), currentSet());
+			throw Exception(tr("Failed to import file. URL is not valid: %1").arg(url.toString()));
 
 		OORef<FileImporter> importer;
 		if(!importerType) {
 
 			// Detect file format.
-			Future<OORef<FileImporter>> importerFuture = FileImporter::autodetectFileFormat(currentSet(), url);
+			Future<OORef<FileImporter>> importerFuture = FileImporter::autodetectFileFormat(scene, url);
 			if(!importerFuture.waitForFinished())
 				return false;
 
@@ -223,7 +224,7 @@ bool GuiDataSetContainer::importFiles(const std::vector<QUrl>& urls, MainThreadO
 
 	const QUrl& url = urlImporters.front().first;
 	OORef<FileImporter> importer = urlImporters.front().second;
-	if(importer->isReplaceExistingPossible(currentSet()->scene(), urls)) {
+	if(importer->isReplaceExistingPossible(scene, urls)) {
 		// Ask user if the existing pipeline should be preserved or reset.
 		QMessageBox msgBox(QMessageBox::Question, tr("Import file"),
 				tr("Do you want to reset the existing pipeline?"),
@@ -265,7 +266,7 @@ bool GuiDataSetContainer::importFiles(const std::vector<QUrl>& urls, MainThreadO
 			importMode = FileImporter::ReplaceSelected;
 		}
 	}
-	else if(currentSet()->scene()->children().empty() == false) {
+	else if(scene->children().empty() == false) {
 		// Ask user if the current scene should be completely replaced by the imported data.
 		QMessageBox::StandardButton result = QMessageBox::question(&mainWindow(), tr("Import file"),
 			tr("Do you want to keep the existing objects in the current scene?"),
@@ -289,7 +290,7 @@ bool GuiDataSetContainer::importFiles(const std::vector<QUrl>& urls, MainThreadO
 	// Do not create any animation keys during import.
 	AnimationSuspender animSuspender(mainWindow());
 
-	if(OORef<PipelineSceneNode> pipeline = importer->importFileSet(currentSet()->scene(), std::move(urlImporters), importMode, true)) {
+	if(OORef<PipelineSceneNode> pipeline = importer->importFileSet(scene, std::move(urlImporters), importMode, true)) {
 		if(importMode == FileImporter::ResetScene) {
 			mainWindow().undoStack()->clear();
 			currentSet()->setFilePath(QString());

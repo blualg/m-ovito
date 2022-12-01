@@ -82,6 +82,7 @@ SET(SourceFiles
 	dataset/scene/SceneNode.cpp
 	dataset/scene/PipelineSceneNode.cpp
 	dataset/scene/Scene.cpp
+	dataset/scene/ScenePreparation.cpp
 	dataset/scene/SelectionSet.cpp
 	dataset/data/DataVis.cpp
 	dataset/data/DataObject.cpp

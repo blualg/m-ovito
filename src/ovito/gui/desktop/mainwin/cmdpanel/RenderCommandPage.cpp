@@ -38,7 +38,7 @@ RenderCommandPage::RenderCommandPage(MainWindow& mainWindow, QWidget* parent) : 
 	layout->setContentsMargins(2,2,2,2);
 
 	// Create the properties panel.
-	propertiesPanel = new PropertiesPanel(this, mainWindow);
+	propertiesPanel = new PropertiesPanel(mainWindow);
 	propertiesPanel->setFrameStyle(QFrame::NoFrame | QFrame::Plain);
 	layout->addWidget(propertiesPanel, 1);
 

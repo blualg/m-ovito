@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -172,10 +172,7 @@ void ViewportInputManager::addViewportGizmo(ViewportGizmo* gizmo)
 		_viewportGizmos.push_back(gizmo);
 
 		// Update viewports to show gzimo overlay.
-		DataSet* dataset = _datasetContainer.currentSet();
-		if(dataset && dataset->viewportConfig()) {
-			dataset->viewportConfig()->updateViewports();
-		}
+		userInterface().updateViewports();
 	}
 }
 
@@ -189,11 +186,8 @@ void ViewportInputManager::removeViewportGizmo(ViewportGizmo* gizmo)
 	if(iter != _viewportGizmos.end()) {
 		_viewportGizmos.erase(iter);
 
-		// Update viewports.
-		DataSet* dataset = _datasetContainer.currentSet();
-		if(dataset && dataset->viewportConfig()) {
-			dataset->viewportConfig()->updateViewports();
-		}
+		// Update viewports to hide gizmo.
+		userInterface().updateViewports();
 	}
 }
 

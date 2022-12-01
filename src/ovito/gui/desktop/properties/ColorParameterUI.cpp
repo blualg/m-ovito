@@ -122,7 +122,7 @@ void ColorParameterUI::setEnabled(bool enabled)
 void ColorParameterUI::onColorPickerChanged()
 {
 	if(colorPicker() && editObject()) {
-		undoableTransaction(tr("Change color"), [this]() {
+		performTransaction(tr("Change color"), [this]() {
 			if(isReferenceFieldUI()) {
 				if(Controller* ctrl = dynamic_object_cast<Controller>(parameterObject())) {
 					ctrl->setColorValue(currentAnimationTime().value_or(AnimationTime(0)), colorPicker()->color());

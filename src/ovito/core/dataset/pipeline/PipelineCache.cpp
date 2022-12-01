@@ -55,6 +55,7 @@ PipelineCache::~PipelineCache() // NOLINT
 SharedFuture<PipelineFlowState> PipelineCache::evaluatePipeline(const PipelineEvaluationRequest& request)
 {
 	OVITO_ASSERT(!QCoreApplication::instance() || QThread::currentThread() == QCoreApplication::instance()->thread());
+	OVITO_ASSERT(ExecutionContext::current().isValid());
 	OVITO_ASSERT_MSG(_preparingEvaluation == false, "PipelineCache::evaluatePipeline", "Function is not reentrant.");
 
 	// Update the times for which we should keep computed pipeline outputs.
@@ -479,8 +480,10 @@ void PipelineCache::startFramePrecomputation(const PipelineEvaluationRequest& re
 	if(_precomputeAllFrames && !_precomputeFramesOperation.isValid() && !_allFramesPrecomputed) {
 		// Create the async operation object that manages the frame precomputation.
 		_precomputeFramesOperation = Promise<>::create<ProgressingTask>(true);
-		// Display progress in the user interface
-		ownerObject()->taskManager().registerPromise(_precomputeFramesOperation);
+
+		// Show progress of the operation in the user interface by registering the asynchronous task.
+		if(ExecutionContext::current().isValid())
+			ExecutionContext::current().ui().taskManager().registerPromise(_precomputeFramesOperation);
 
 		// Determine the number of frames that need to be precomputed.
 		PipelineObject* pipelineObject = dynamic_object_cast<PipelineObject>(ownerObject());

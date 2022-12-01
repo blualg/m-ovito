@@ -80,8 +80,8 @@ void FileSourcePlaybackRateEditor::createUI(const RolloutInsertionParameters& ro
 	QPushButton* animSettingsBtn = new QPushButton(tr("Animation settings..."));
 	sublayout->addWidget(animSettingsBtn, 5, 2);
 	connect(animSettingsBtn, &QPushButton::clicked, this, [this]() {
-		if(_animationSettings) {
-			AnimationSettingsDialog(mainWindow(), _animationSettings, container()->window()).exec();
+		if(editObject()) {
+			AnimationSettingsDialog(mainWindow(), container()->window()).exec();
 			updateInformation();
 		}
 	});
@@ -91,7 +91,7 @@ void FileSourcePlaybackRateEditor::createUI(const RolloutInsertionParameters& ro
 	connect(_trajectoryModeBtn, &QRadioButton::toggled, playbackStartUI, &IntegerParameterUI::setEnabled);
 	connect(_trajectoryModeBtn, &QRadioButton::clicked, this, [&](bool checked) {
 		if(checked)
-			undoableTransaction(tr("Change trajectory playback"), [&]() {
+			performTransaction(tr("Change trajectory playback"), [&]() {
 				if(FileSource* fileSource = static_object_cast<FileSource>(editObject()))
 					fileSource->setRestrictToFrame(-1);
 			});
@@ -121,7 +121,7 @@ void FileSourcePlaybackRateEditor::createUI(const RolloutInsertionParameters& ro
 	_framesListModel = new QStringListModel(this);
 	_framesListBox->setModel(_framesListModel);
 	connect(_framesListBox, qOverload<int>(&QComboBox::activated), this, [&](int index) {
-		undoableTransaction(tr("Change trajectory playback"), [&]() {
+		performTransaction(tr("Change trajectory playback"), [&]() {
 			if(FileSource* fileSource = static_object_cast<FileSource>(editObject()))
 				fileSource->setRestrictToFrame(index);
 		});
@@ -131,22 +131,15 @@ void FileSourcePlaybackRateEditor::createUI(const RolloutInsertionParameters& ro
 	connect(_staticFrameModeBtn, &QRadioButton::toggled, _staticFrameNumberUI, &IntegerParameterUI::setEnabled);
 	connect(_staticFrameModeBtn, &QRadioButton::clicked, this, [&](bool checked) {
 		if(checked)
-			undoableTransaction(tr("Change trajectory playback"), [&]() {
+			performTransaction(tr("Change trajectory playback"), [&]() {
 				if(FileSource* fileSource = static_object_cast<FileSource>(editObject()))
 					fileSource->setRestrictToFrame(fileSource->dataCollectionFrame());
 			});
 	});
 
 	// Whenever a new FileSource gets loaded into the editor:
-	connect(this, &PropertiesEditor::contentsReplaced, this, [this, con1 = QMetaObject::Connection(), con2 = QMetaObject::Connection()](RefTarget* editObject) mutable {
+	connect(this, &PropertiesEditor::contentsReplaced, this, [this, con1 = QMetaObject::Connection()](RefTarget* editObject) mutable {
 		disconnect(con1);
-		disconnect(con2);
-
-		// Get the animation settings object from the scene.
-		if(Scene* scene = mainWindow().activeScene())
-			_animationSettings = scene->animationSettings();
-		else
-			_animationSettings.reset();
 
 		// Update displayed information.
 		updateFramesList();
@@ -154,10 +147,10 @@ void FileSourcePlaybackRateEditor::createUI(const RolloutInsertionParameters& ro
 
 		// Update the frames list displayed in the UI whenever it changes.
 		con1 = editObject ? connect(static_object_cast<FileSource>(editObject), &FileSource::framesListChanged, this, &FileSourcePlaybackRateEditor::updateFramesList) : QMetaObject::Connection();
-
-		// Update the information display when animation interval changes.
-		con2 = _animationSettings ? connect(_animationSettings.get(), &AnimationSettings::intervalChanged, this, &FileSourcePlaybackRateEditor::updateInformation) : QMetaObject::Connection();
 	});
+
+	// Update the information display when animation interval changes.
+	connect(&mainWindow().datasetContainer(), &DataSetContainer::animationIntervalChanged, this, &FileSourcePlaybackRateEditor::updateInformation);
 
 	connect(this, &PropertiesEditor::contentsChanged, this, &FileSourcePlaybackRateEditor::updateInformation);
 }
@@ -168,12 +161,13 @@ void FileSourcePlaybackRateEditor::createUI(const RolloutInsertionParameters& ro
 void FileSourcePlaybackRateEditor::updateInformation()
 {
 	FileSource* fileSource = static_object_cast<FileSource>(editObject());
-	if(!fileSource || !_animationSettings) return; 
+	AnimationSettings* animationSettings = mainWindow().datasetContainer().activeAnimationSettings();
+	if(!fileSource || !animationSettings) return; 
 
 	_numTrajectoryFramesDisplay->setText(tr("%n frame(s)", nullptr, fileSource->frames().size()));
 
-	_numAnimationFramesDisplay->setText(tr("%n frame(s)", nullptr, _animationSettings->lastFrame() - _animationSettings->firstFrame() + 1) + 
-		(!_animationSettings->autoAdjustInterval() ? tr(" (fixed)") : QString()));
+	_numAnimationFramesDisplay->setText(tr("%n frame(s)", nullptr, animationSettings->numberOfFrames()) + 
+		(!animationSettings->autoAdjustInterval() ? tr(" (fixed)") : QString()));
 
 	if(fileSource->restrictToFrame() < 0) {
 		_staticFrameModeBtn->setChecked(false);

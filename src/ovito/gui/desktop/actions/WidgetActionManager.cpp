@@ -74,9 +74,8 @@ WidgetActionManager::WidgetActionManager(QObject* parent, MainWindow& mainWindow
 ******************************************************************************/
 void WidgetActionManager::on_ClonePipeline_triggered()
 {
-	// Get the scene from which data is to be exported.
-	if(Scene* scene = userInterface().activeScene()) {
-		if(PipelineSceneNode* pipeline = dynamic_object_cast<PipelineSceneNode>(scene->selection()->firstNode())) {
+	if(SelectionSet* selection = userInterface().datasetContainer().activeSelectionSet()) {
+		if(PipelineSceneNode* pipeline = dynamic_object_cast<PipelineSceneNode>(selection->firstNode())) {
 			ClonePipelineDialog dialog(mainWindow(), pipeline, &mainWindow());
 			dialog.exec();
 		}
@@ -88,13 +87,13 @@ void WidgetActionManager::on_ClonePipeline_triggered()
 ******************************************************************************/
 void WidgetActionManager::on_RenamePipeline_triggered()
 {
-	if(Scene* scene = userInterface().activeScene()) {
-		if(OORef<PipelineSceneNode> pipeline = dynamic_object_cast<PipelineSceneNode>(scene->selection()->firstNode())) {
+	if(SelectionSet* selection = userInterface().datasetContainer().activeSelectionSet()) {
+		if(OORef<PipelineSceneNode> pipeline = dynamic_object_cast<PipelineSceneNode>(selection->firstNode())) {
 			QString oldPipelineName = pipeline->objectTitle();
 			bool ok;
 			QString pipelineName = QInputDialog::getText(&mainWindow(), tr("Rename pipeline"), tr("New pipeline name:                                         "), QLineEdit::Normal, oldPipelineName, &ok).trimmed();
 			if(ok && pipelineName != oldPipelineName) {
-				UndoableTransaction::handleExceptions(mainWindow(), tr("Rename pipeline"), [&]() {
+				mainWindow().performTransaction(tr("Rename pipeline"), [&]() {
 					pipeline->setNodeName(pipelineName);
 				});
 			}
@@ -107,27 +106,25 @@ void WidgetActionManager::on_RenamePipeline_triggered()
 ******************************************************************************/
 void WidgetActionManager::on_NewPipelineFileSource_triggered()
 {
-	if(!dataset()) return;
-
-	UndoableTransaction::handleExceptions(mainWindow(), tr("Create pipeline"), [&]() {
+	mainWindow().performTransaction(tr("Create pipeline"), [&]() {
 
 #ifndef OVITO_BUILD_PROFESSIONAL
 		throw Exception(tr("OVITO Pro is required to insert more than one pipeline into the scene. Please visit <a href=\"https://www.ovito.org/about/ovito-pro/\">www.ovito.org</a> for more information on the extended version of our software."));
 #endif
 
-		// Do not create any animation keys.
-		AnimationSuspender animSuspender(mainWindow());
-		// Pause viewport updates while updating the scene.
-		ViewportSuspender noUpdates(mainWindow());
+		if(Scene* scene = userInterface().datasetContainer().activeScene()) {
+			// Do not create any animation keys.
+			AnimationSuspender animSuspender(mainWindow());
+			// Pause viewport updates while updating the scene.
+			ViewportSuspender noUpdates(mainWindow());
 
-		// Create the FileSource.
-		OORef<FileSource> fileSource = OORef<FileSource>::create();
+			// Create the FileSource.
+			OORef<FileSource> fileSource = OORef<FileSource>::create();
 
-		// Create pipeline scene node.
-		OORef<PipelineSceneNode> pipeline = OORef<PipelineSceneNode>::create();
-		pipeline->setDataProvider(fileSource);
+			// Create pipeline scene node.
+			OORef<PipelineSceneNode> pipeline = OORef<PipelineSceneNode>::create();
+			pipeline->setDataProvider(fileSource);
 
-		if(Scene* scene = userInterface().activeScene()) {
 			// Insert pipeline into scene.
 			scene->addChildNode(pipeline);
 
@@ -142,8 +139,8 @@ void WidgetActionManager::on_NewPipelineFileSource_triggered()
 ******************************************************************************/
 void WidgetActionManager::on_AnimationSettings_triggered()
 {
-	if(Scene* scene = mainWindow().activeScene())
-		AnimationSettingsDialog(mainWindow(), scene->animationSettings(), &mainWindow()).exec();
+	if(mainWindow().datasetContainer().activeAnimationSettings())
+		AnimationSettingsDialog(mainWindow(), &mainWindow()).exec();
 }
 
 }	// End of namespace

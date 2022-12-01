@@ -42,14 +42,14 @@ public:
 	Q_INVOKABLE ViewportSettingsPage() = default;
 
 	/// \brief Creates the widget.
-	virtual void insertSettingsDialogPage(ApplicationSettingsDialog* settingsDialog, QTabWidget* tabWidget) override;
+	virtual void insertSettingsDialogPage(QTabWidget* tabWidget) override;
 
 	/// \brief Lets the settings page validate the values entered by the user before saving them.
-	virtual bool validateValues(ApplicationSettingsDialog* settingsDialog, QTabWidget* tabWidget) override;
+	virtual bool validateValues(QTabWidget* tabWidget) override;
 
 	/// \brief Lets the settings page to save all values entered by the user.
 	/// \param settingsDialog The settings dialog box.
-	virtual void saveValues(ApplicationSettingsDialog* settingsDialog, QTabWidget* tabWidget) override;
+	virtual void saveValues(QTabWidget* tabWidget) override;
 
 	/// \brief Returns an integer value that is used to sort the dialog pages in ascending order.
 	virtual int pageSortingKey() const override { return 2; }

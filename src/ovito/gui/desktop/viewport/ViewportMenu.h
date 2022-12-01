@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -39,7 +39,7 @@ class OVITO_GUI_EXPORT ViewportMenu : public QMenu
 public:
 
 	/// Initializes the menu.
-	ViewportMenu(Viewport* viewport, QWidget* viewportWidget);
+	ViewportMenu(MainWindow& mainWindow, Viewport* viewport, QWidget* viewportWidget);
 
 	/// Displays the menu.
 	void show(const QPoint& pos);
@@ -59,6 +59,9 @@ private Q_SLOTS:
 	void onPipelineVisibility(bool checked);
 
 private:
+
+	/// The main window this context menu belongs to.
+	MainWindow& _mainWindow;
 
 	/// The viewport this menu belongs to.
 	Viewport* _viewport;

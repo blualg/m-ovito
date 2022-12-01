@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -79,12 +79,16 @@ class SceneNodeSelectionBox : public QComboBox
 public:
 
 	/// Constructs the widget.
-	SceneNodeSelectionBox(DataSetContainer& datasetContainer, ActionManager* actionManager, QWidget* parent = nullptr);
+	SceneNodeSelectionBox(MainWindow& mainWindow, QWidget* parent = nullptr);
 
 private Q_SLOTS:
 
 	/// Lets the user rename a list item.
 	void renameSceneNode(int index);
+
+private:
+
+	MainWindow& _mainWindow;
 };
 
 }	// End of namespace

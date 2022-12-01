@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -64,10 +64,9 @@ bool ModifierDelegateFixedListParameterUI::setItemData(RefTarget* target, const 
 	if(index.column() == 0 && role == Qt::CheckStateRole) {
 		if(ModifierDelegate* delegate = dynamic_object_cast<ModifierDelegate>(target)) {
 			bool enabled = (value.toInt() == Qt::Checked);
-			undoableTransaction(tr("Enable/disable data element"), [delegate, enabled]() {
+			return performTransaction(tr("Enable/disable data element"), [delegate, enabled]() {
 				delegate->setEnabled(enabled);
 			});
-			return true;
 		}
 	}
 

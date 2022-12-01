@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -21,6 +21,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/core/Core.h>
+#include <ovito/core/app/Application.h>
 #include "PluginManager.h"
 
 #ifndef OVITO_BUILD_MONOLITHIC
@@ -130,8 +131,7 @@ void PluginManager::loadAllPlugins()
 			QLibrary* library = new QLibrary(filePath, this);
 			library->setLoadHints(QLibrary::ExportExternalSymbolsHint);
 			if(!library->load()) {
-				Exception ex(QString("Failed to load native plugin library.\nLibrary file: %1\nError: %2").arg(filePath, library->errorString()));
-				ex.reportError(true);
+				Application::instance()->reportError(QStringLiteral("Failed to load native plugin library.\nLibrary file: %1\nError: %2").arg(filePath, library->errorString()));
 			}
 		}
 	}

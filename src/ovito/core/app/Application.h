@@ -26,6 +26,7 @@
 #include <ovito/core/Core.h>
 #include <ovito/core/utilities/Exception.h>
 #include <ovito/core/utilities/concurrent/TaskManager.h>
+#include <ovito/core/utilities/MixedKeyCache.h>
 
 namespace Ovito {
 
@@ -80,6 +81,9 @@ public:
 	/// Returns the global FileManager class instance.
 	FileManager& fileManager() { return _fileManager; }
 
+	/// Returns the global data cache used by visualzation elements to store rendering primitives.
+	MixedKeyCache& visCache() { return _visCache; }
+
 	/// Returns the number of parallel threads to be used by the application when doing computations.
 	int idealThreadCount() const { return _idealThreadCount; }
 
@@ -105,7 +109,7 @@ public:
 	virtual void createQtApplication(int& argc, char** argv);
 
 	/// Handler function for exceptions.
-	virtual void reportError(const Exception& exception, bool blocking);
+	virtual void reportError(const Exception& exception);
 
 #ifndef Q_OS_WASM
 	/// Returns the application-wide network access manager object.
@@ -123,7 +127,7 @@ protected:
 	/// The number of parallel threads to be used by the application when doing computations.
 	int _idealThreadCount = 1;
 
-	/// The root task manager, which manages all asynchronous tasks that are associated with a specific user interface or dataset.
+	/// The root task manager, which manages all asynchronous tasks that are NOT associated with a specific user interface or dataset.
 	TaskManager _taskManager;
 
 	/// The global file manager instance.
@@ -133,6 +137,9 @@ protected:
 	/// The application-wide network manager object.
 	QNetworkAccessManager* _networkAccessManager = nullptr;
 #endif
+
+	/// Data cache used by visualization elements to store rendering primitives.
+	MixedKeyCache _visCache;
 
 	/// The default message handler method of Qt.
 	static QtMessageHandler defaultQtMessageHandler;

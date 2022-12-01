@@ -41,10 +41,10 @@ public:
 	Q_INVOKABLE GeneralSettingsPage() = default;
 
 	/// \brief Creates the widget.
-	virtual void insertSettingsDialogPage(ApplicationSettingsDialog* settingsDialog, QTabWidget* tabWidget) override;
+	virtual void insertSettingsDialogPage(QTabWidget* tabWidget) override;
 
 	/// \brief Lets the settings page to save all values entered by the user.
-	virtual void saveValues(ApplicationSettingsDialog* settingsDialog, QTabWidget* tabWidget) override;
+	virtual void saveValues(QTabWidget* tabWidget) override;
 
 	/// \brief Returns an integer value that is used to sort the dialog pages in ascending order.
 	virtual int pageSortingKey() const override { return 1; }

@@ -45,8 +45,7 @@ void SubObjectParameterUI::resetUI()
 {
 	PropertyParameterUI::resetUI();
 
-	try {
-
+	handleExceptions([&] {
 		// Close editor if it is no longer needed.
 		if(subEditor()) {
 			if(!parameterObject() || subEditor()->editObject() == nullptr ||
@@ -58,7 +57,7 @@ void SubObjectParameterUI::resetUI()
 		}
 		if(!parameterObject() || !isEnabled()) return;
 		if(!subEditor()) {
-			_subEditor = PropertiesEditor::create(parameterObject());
+			_subEditor = PropertiesEditor::create(mainWindow(), parameterObject());
 			if(subEditor()) {
 				subEditor()->initialize(editor()->container(), _rolloutParams, editor());
 			}
@@ -67,10 +66,7 @@ void SubObjectParameterUI::resetUI()
 		if(subEditor()) {
 			subEditor()->setEditObject(parameterObject());
 		}
-	}
-	catch(const Exception& ex) {
-		ex.reportError();
-	}
+	});
 }
 
 /******************************************************************************

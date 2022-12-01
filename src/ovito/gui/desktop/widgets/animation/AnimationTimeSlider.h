@@ -24,6 +24,7 @@
 
 
 #include <ovito/gui/desktop/GUI.h>
+#include <ovito/gui/desktop/mainwin/MainWindow.h>
 #include <ovito/core/dataset/animation/TimeInterval.h>
 
 namespace Ovito {
@@ -67,6 +68,9 @@ public:
 	/// Returns the minimum size of the widget.
 	virtual QSize minimumSizeHint() const override { return sizeHint(); }
 
+	/// Returns the animation settings that is currently active.
+	AnimationSettings* animSettings() const { return _mainWindow.datasetContainer().activeAnimationSettings(); }
+
 protected:
 
 	/// Handles paint events.
@@ -94,9 +98,6 @@ private:
 
 protected Q_SLOTS:
 
-	/// This is called when new animation settings have been loaded.
-	void onAnimationSettingsReplaced(AnimationSettings* newAnimationSettings);
-
 	/// Is called whenever the Auto Key mode is activated or deactivated.
 	void onAutoKeyModeChanged(bool active);
 
@@ -116,13 +117,6 @@ private:
 
 	/// The main window.
 	MainWindow& _mainWindow;
-
-	/// The current animation settings object.
-	AnimationSettings* _animSettings = nullptr;
-
-	QMetaObject::Connection _animIntervalChangedConnection;
-	QMetaObject::Connection _timeFormatChangedConnection;
-	QMetaObject::Connection _currentFrameChangedConnection;
 };
 
 }	// End of namespace

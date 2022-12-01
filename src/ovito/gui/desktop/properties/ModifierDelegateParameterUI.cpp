@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -213,7 +213,7 @@ void ModifierDelegateParameterUI::updatePropertyValue()
 {
 	Modifier* mod = dynamic_object_cast<Modifier>(editObject());
 	if(comboBox() && mod) {
-		undoableTransaction(tr("Change input type"), [this,mod]() {
+		performTransaction(tr("Change input type"), [this,mod]() {
 			if(OvitoClassPtr delegateType = comboBox()->currentData().value<OvitoClassPtr>()) {
 				DataObjectReference ref = comboBox()->currentData(Qt::UserRole + 1).value<DataObjectReference>();
 				if(DelegatingModifier* delegatingMod = dynamic_object_cast<DelegatingModifier>(mod)) {

@@ -125,7 +125,7 @@ void WidgetActionManager::on_FileNewWindow_triggered()
 			}
 			catch(Exception& ex) {
 				ex.prependGeneralMessage(tr("An error occured while loading the user's default session state from the file: %1").arg(defaultsFilePath));
-				ex.reportError();
+				mainWin->reportError(ex);
 			}
 		}
 
@@ -134,7 +134,7 @@ void WidgetActionManager::on_FileNewWindow_triggered()
 		}
 	}
 	catch(const Exception& ex) {
-		ex.reportError();
+		mainWindow().reportError(ex);
 	}
 }
 
@@ -169,7 +169,7 @@ void WidgetActionManager::on_FileOpen_triggered()
 		mainWindow().datasetContainer().loadDataset(filename, MainThreadOperation::create(mainWindow(), true));
 	}
 	catch(const Exception& ex) {
-		ex.reportError();
+		mainWindow().reportError(ex);
 	}
 }
 
@@ -186,7 +186,7 @@ void WidgetActionManager::on_FileSave_triggered()
 		mainWindow().datasetContainer().fileSave();
 	}
 	catch(const Exception& ex) {
-		ex.reportError();
+		mainWindow().reportError(ex);
 	}
 }
 
@@ -199,7 +199,7 @@ void WidgetActionManager::on_FileSaveAs_triggered()
 		mainWindow().datasetContainer().fileSaveAs();
 	}
 	catch(const Exception& ex) {
-		ex.reportError();
+		mainWindow().reportError(ex);
 	}
 }
 
@@ -233,7 +233,7 @@ void WidgetActionManager::on_FileImport_triggered()
 			importerClass, importerFormat);
 	}
 	catch(const Exception& ex) {
-		ex.reportError();
+		mainWindow().reportError(ex);
 	}
 }
 
@@ -244,7 +244,7 @@ void WidgetActionManager::on_FileRemoteImport_triggered()
 {
 	try {
 		// Let the user enter the URL of the remote file.
-		ImportRemoteFileDialog dialog(PluginManager::instance().metaclassMembers<FileImporter>(), &mainWindow(), tr("Load Remote File"));
+		ImportRemoteFileDialog dialog(mainWindow(), PluginManager::instance().metaclassMembers<FileImporter>(), &mainWindow(), tr("Load Remote File"));
 		if(dialog.exec() != QDialog::Accepted)
 			return;
 
@@ -258,7 +258,7 @@ void WidgetActionManager::on_FileRemoteImport_triggered()
 			importerClass, importerFormat);
 	}
 	catch(const Exception& ex) {
-		ex.reportError();
+		mainWindow().reportError(ex);
 	}
 }
 
@@ -268,9 +268,9 @@ void WidgetActionManager::on_FileRemoteImport_triggered()
 void WidgetActionManager::on_FileExport_triggered()
 {
 	// Get the scene from which data is to be exported.
-	OORef<Scene> scene = userInterface().activeScene();
+	OORef<Scene> scene = userInterface().datasetContainer().activeScene();
 	if(!scene) {
-		Exception(tr("There currently is no active scene that can be exported."), dataset()).reportError();
+		mainWindow().reportError(tr("There currently is no active scene that can be exported."));
 		return;
 	}
 
@@ -278,7 +278,7 @@ void WidgetActionManager::on_FileExport_triggered()
 	QStringList filterStrings;
 	QVector<const FileExporterClass*> exporterTypes = PluginManager::instance().metaclassMembers<FileExporter>();
 	if(exporterTypes.empty()) {
-		Exception(tr("This function is disabled, because no file exporter plugins have been installed."), dataset()).reportError();
+		mainWindow().reportError(tr("This function is disabled, because no file exporter plugins have been installed."));
 		return;
 	}
 	std::sort(exporterTypes.begin(), exporterTypes.end(), [](const FileExporterClass* a, const FileExporterClass* b) {
@@ -354,7 +354,7 @@ void WidgetActionManager::on_FileExport_triggered()
 		exporter->selectDefaultExportableData(dataset(), scene);
 
 		// Let the user adjust the settings of the exporter.
-		FileExporterSettingsDialog settingsDialog(mainWindow(), *scene, exporter);
+		FileExporterSettingsDialog settingsDialog(mainWindow(), *scene, exporter, &mainWindow());
 		if(settingsDialog.exec() != QDialog::Accepted)
 			return;
 
@@ -365,7 +365,7 @@ void WidgetActionManager::on_FileExport_triggered()
 		exporter->doExport(progressDialog);
 	}
 	catch(const Exception& ex) {
-		ex.reportError();
+		mainWindow().reportError(ex);
 	}
 }
 

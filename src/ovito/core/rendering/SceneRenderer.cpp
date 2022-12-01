@@ -46,14 +46,6 @@ IMPLEMENT_OVITO_CLASS(SceneRenderer);
 IMPLEMENT_OVITO_CLASS(ObjectPickInfo);
 
 /******************************************************************************
-* This helper method throws a RendererException with the given message text.
-******************************************************************************/
-void SceneRenderer::throwRendererException(const QString& msg) const
-{
-	throw RendererException(msg, const_cast<SceneRenderer*>(this));
-}
-
-/******************************************************************************
 * Returns the device pixel ratio of the output device we are rendering to.
 ******************************************************************************/
 qreal SceneRenderer::devicePixelRatio() const
@@ -263,13 +255,11 @@ void SceneRenderer::renderDataObject(const DataObject* dataObj, const PipelineSc
 				}
 			}
 			catch(SceneRenderer::RendererException& ex) {
-				ex.setContext(this);
 				// Always interrupt rendering process by rethrowing the exception.
 				throw;
 			}
 			catch(Exception& ex) {
 				status = ex;
-				ex.setContext(this);
 				ex.prependGeneralMessage(tr("Visual element '%1' reported an error during rendering.").arg(vis->objectTitle()));
 				// If the vis element fails, interrupt rendering process in console mode; swallow exceptions in GUI mode.
 				if(!isInteractive()) 

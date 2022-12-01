@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -199,10 +199,12 @@ void TextLabelOverlayEditor::updateSourcesList()
 	_nodeComboBox->clear();
 	if(TextLabelOverlay* overlay = static_object_cast<TextLabelOverlay>(editObject())) {
 		// Enumerate all pipelines in the scene.
-		overlay->dataset()->scene()->visitObjectNodes([&](PipelineSceneNode* pipeline) {
-			_nodeComboBox->addItem(pipeline->objectTitle(), QVariant::fromValue(pipeline));
-			return true;
-		});
+		if(mainWindow().datasetContainer().activeScene()) {
+			mainWindow().datasetContainer().activeScene()->visitObjectNodes([&](PipelineSceneNode* pipeline) {
+				_nodeComboBox->addItem(pipeline->objectTitle(), QVariant::fromValue(pipeline));
+				return true;
+			});
+		}
 		_nodeComboBox->setCurrentIndex(_nodeComboBox->findData(QVariant::fromValue(overlay->sourceNode())));
 	}
 	if(_nodeComboBox->count() == 0) 
@@ -219,7 +221,7 @@ void TextLabelOverlayEditor::updateEditorFields()
 	PipelineSceneNode* node = nullptr;
 	if(TextLabelOverlay* overlay = static_object_cast<TextLabelOverlay>(editObject())) {
 		if((node = overlay->sourceNode())) {
-			const PipelineFlowState& flowState = node->evaluatePipelineSynchronous(false);
+			const PipelineFlowState& flowState = node->evaluatePipelineSynchronous(currentAnimationTime().value_or(AnimationTime(0)), false);
 			str.append(tr("<p>Dynamic attributes that can be referenced in the label text:</b><ul>"));
 			if(flowState.data()) {
 				for(const QString& attrName : flowState.buildAttributesMap().keys()) {
