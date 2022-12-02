@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -21,6 +21,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/stdobj/gui/StdObjGui.h>
+#include <ovito/gui/desktop/mainwin/MainWindow.h>
 #include "InputColumnMappingDialog.h"
 
 namespace Ovito::StdObj {
@@ -34,7 +35,8 @@ enum {
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-InputColumnMappingDialog::InputColumnMappingDialog(const InputColumnMapping& mapping, QWidget* parent) : QDialog(parent), 
+InputColumnMappingDialog::InputColumnMappingDialog(MainWindow& mainWindow, const InputColumnMapping& mapping, QWidget* parent) : QDialog(parent), 
+	_mainWindow(mainWindow),
 	_containerClass(mapping.containerClass())
 {
 	OVITO_ASSERT(_containerClass);
@@ -137,17 +139,13 @@ QString InputColumnMappingDialog::dataTypeToString(int dataType)
 ******************************************************************************/
 void InputColumnMappingDialog::onOk()
 {
-	try {
+	_mainWindow.handleExceptions([&]() {
 		// First, validate the current mapping.
 		mapping().validate();
 
 		// Close dialog box.
 		accept();
-	}
-	catch(Exception& ex) {
-		ex.setContext(this);
-		ex.reportError(true);
-	}
+	});
 }
 
 /******************************************************************************
@@ -274,7 +272,7 @@ InputColumnMapping InputColumnMappingDialog::mapping() const
  *****************************************************************************/
 void InputColumnMappingDialog::onSavePreset()
 {
-	try {
+	_mainWindow.handleExceptions([&]() {
 		// Get current mapping.
 		InputColumnMapping m = mapping();
 		m.validate();
@@ -321,11 +319,7 @@ void InputColumnMappingDialog::onSavePreset()
 		    settings.setValue("data", presetData[i]);
 		}
 		settings.endArray();
-	}
-	catch(Exception& ex) {
-		ex.setContext(this);
-		ex.reportError(true);
-	}
+	});
 }
 
 /******************************************************************************
@@ -333,7 +327,7 @@ void InputColumnMappingDialog::onSavePreset()
  *****************************************************************************/
 void InputColumnMappingDialog::onLoadPreset()
 {
-	try {
+	_mainWindow.handleExceptions([&]() {
 		// Load list of presets.
 		QSettings settings;
 		settings.beginGroup("inputcolumnmapping");
@@ -377,11 +371,7 @@ void InputColumnMappingDialog::onLoadPreset()
 			_propertyBoxes[index]->setEnabled(false);
 			updateVectorComponentList(index);
 		}
-	}
-	catch(Exception& ex) {
-		ex.setContext(this);
-		ex.reportError(true);
-	}
+	});
 }
 
 }	// End of namespace

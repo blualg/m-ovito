@@ -34,6 +34,7 @@
 #include <ovito/core/dataset/io/FileImporter.h>
 #include <ovito/core/dataset/io/FileExporter.h>
 #include <ovito/core/dataset/scene/SelectionSet.h>
+#include <ovito/core/dataset/scene/ScenePreparation.h>
 #include <ovito/core/dataset/animation/AnimationSettings.h>
 
 namespace Ovito {
@@ -111,7 +112,7 @@ void WidgetActionManager::on_HelpSystemInfo_triggered()
 ******************************************************************************/
 void WidgetActionManager::on_FileNewWindow_triggered()
 {
-	try {
+	mainWindow().handleExceptions([&] {
 		MainWindow* mainWin = new MainWindow();
 		mainWin->show();
 		mainWin->restoreLayout();
@@ -132,10 +133,7 @@ void WidgetActionManager::on_FileNewWindow_triggered()
 		if(mainWin->datasetContainer().currentSet() == nullptr) {
 			mainWin->datasetContainer().newDataset();
 		}
-	}
-	catch(const Exception& ex) {
-		mainWindow().reportError(ex);
-	}
+	});
 }
 
 /******************************************************************************
@@ -143,7 +141,7 @@ void WidgetActionManager::on_FileNewWindow_triggered()
 ******************************************************************************/
 void WidgetActionManager::on_FileOpen_triggered()
 {
-	try {
+	mainWindow().handleExceptions([&] {
 		if(!mainWindow().datasetContainer().askForSaveChanges())
 			return;
 
@@ -167,10 +165,7 @@ void WidgetActionManager::on_FileOpen_triggered()
 		settings.setValue("last_directory", QFileInfo(filename).absolutePath());
 
 		mainWindow().datasetContainer().loadDataset(filename, MainThreadOperation::create(mainWindow(), true));
-	}
-	catch(const Exception& ex) {
-		mainWindow().reportError(ex);
-	}
+	});
 }
 
 /******************************************************************************
@@ -182,12 +177,9 @@ void WidgetActionManager::on_FileSave_triggered()
 	// This will process any pending user inputs in QLineEdit fields.
 	mainWindow().setFocus();
 
-	try {
+	mainWindow().handleExceptions([&] {
 		mainWindow().datasetContainer().fileSave();
-	}
-	catch(const Exception& ex) {
-		mainWindow().reportError(ex);
-	}
+	});
 }
 
 /******************************************************************************
@@ -195,12 +187,9 @@ void WidgetActionManager::on_FileSave_triggered()
 ******************************************************************************/
 void WidgetActionManager::on_FileSaveAs_triggered()
 {
-	try {
+	mainWindow().handleExceptions([&] {
 		mainWindow().datasetContainer().fileSaveAs();
-	}
-	catch(const Exception& ex) {
-		mainWindow().reportError(ex);
-	}
+	});
 }
 
 /******************************************************************************
@@ -217,7 +206,7 @@ void WidgetActionManager::on_Settings_triggered()
 ******************************************************************************/
 void WidgetActionManager::on_FileImport_triggered()
 {
-	try {
+	mainWindow().handleExceptions([&] {
 		// Let the user select one or more files.
 		ImportFileDialog dialog(PluginManager::instance().metaclassMembers<FileImporter>(), &mainWindow(), tr("Load File"), true);
 		if(dialog.exec() != QDialog::Accepted)
@@ -231,10 +220,7 @@ void WidgetActionManager::on_FileImport_triggered()
 			dialog.urlsToImport(), 
 			MainThreadOperation::create(mainWindow(), true),
 			importerClass, importerFormat);
-	}
-	catch(const Exception& ex) {
-		mainWindow().reportError(ex);
-	}
+	});
 }
 
 /******************************************************************************
@@ -242,7 +228,7 @@ void WidgetActionManager::on_FileImport_triggered()
 ******************************************************************************/
 void WidgetActionManager::on_FileRemoteImport_triggered()
 {
-	try {
+	mainWindow().handleExceptions([&] {
 		// Let the user enter the URL of the remote file.
 		ImportRemoteFileDialog dialog(mainWindow(), PluginManager::instance().metaclassMembers<FileImporter>(), &mainWindow(), tr("Load Remote File"));
 		if(dialog.exec() != QDialog::Accepted)
@@ -256,10 +242,7 @@ void WidgetActionManager::on_FileRemoteImport_triggered()
 			{ dialog.urlToImport() }, 
 			MainThreadOperation::create(mainWindow(), true),
 			importerClass, importerFormat);
-	}
-	catch(const Exception& ex) {
-		mainWindow().reportError(ex);
-	}
+	});
 }
 
 /******************************************************************************
@@ -333,7 +316,7 @@ void WidgetActionManager::on_FileExport_triggered()
 	settings.setValue("last_export_filter", dialog.selectedNameFilter());
 
 	// Export to selected file.
-	try {
+	mainWindow().handleExceptions([&] {
 		int exportFilterIndex = filterStrings.indexOf(dialog.selectedNameFilter());
 		OVITO_ASSERT(exportFilterIndex >= 0 && exportFilterIndex < exporterTypes.size());
 
@@ -343,10 +326,10 @@ void WidgetActionManager::on_FileExport_triggered()
 		// Pass output filename to exporter.
 		exporter->setOutputFilename(exportFile);
 
-		// Block until the scene is ready.
+		// Block until all output data is available for the exporter to inspect it and pick a good default export set.
 		{
 			ProgressDialog progressDialog(&mainWindow(), mainWindow(), tr("Waiting for pipeline computations to complete"));
-			if(!scene->whenReady().waitForFinished())
+			if(!ScenePreparation(mainWindow(), scene).whenReady().waitForFinished())
 				return;
 		}
 
@@ -363,10 +346,7 @@ void WidgetActionManager::on_FileExport_triggered()
 
 		// Let the exporter do its work.
 		exporter->doExport(progressDialog);
-	}
-	catch(const Exception& ex) {
-		mainWindow().reportError(ex);
-	}
+	});
 }
 
 }	// End of namespace

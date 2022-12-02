@@ -34,7 +34,7 @@ namespace Ovito {
  * \brief A data cache for PipelineFlowState objects, which is used in the implementation of the PipelineSceneNode 
  *        and the CachingPipelineObject class.
  */
-class OVITO_CORE_EXPORT PipelineCache
+class OVITO_CORE_EXPORT PipelineCache final
 {
 public:
 
@@ -98,8 +98,11 @@ private:
 	/// Requests the next frame from the pipeline that needs to be precomputed.
 	void precomputeNextAnimationFrame();
 
+	/// Determines the current animation time shown in the GUI.
+	std::optional<AnimationTime> currentAnimationTime() const;
+
 	/// The contents of the cache.
-	std::vector<PipelineFlowState> _cachedStates;
+	QVarLengthArray<PipelineFlowState, 1> _cachedStates;
 
 	/// Results from the last synchronous pipeline evaluation, which is used for interactive viewport rendering.
 	PipelineFlowState _synchronousState;

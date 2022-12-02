@@ -63,7 +63,9 @@ public:
 	FloatType outputImageAspectRatio() const { return (FloatType)outputImageHeight() / (FloatType)outputImageWidth(); }
 
 	/// Returns the background color of the rendered image.
-	Color backgroundColor() const { return backgroundColorController() ? backgroundColorController()->getColorValue(AnimationTime(0)) : Color(0,0,0); }
+	Color backgroundColor() const { return backgroundColorAt(AnimationTime(0)); }
+	/// Returns the background color of the rendered image at the given animation time.
+	Color backgroundColorAt(AnimationTime time) const { return backgroundColorController() ? backgroundColorController()->getColorValue(time) : Color(0,0,0); }
 	/// Sets the background color of the rendered image.
 	void setBackgroundColor(const Color& color) { if(backgroundColorController()) backgroundColorController()->setColorValue(AnimationTime(0), color); }
 

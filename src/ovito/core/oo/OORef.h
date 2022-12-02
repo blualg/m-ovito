@@ -25,6 +25,7 @@
 
 #include <ovito/core/Core.h>
 #include <ovito/core/utilities/concurrent/ExecutionContext.h>
+#include <ovito/core/dataset/UndoStack.h>
 
 namespace Ovito {
 
@@ -186,7 +187,16 @@ public:
 	static this_type create(ObjectCreationParams params, Args&&... args) {
         using OType = std::remove_const_t<T>;
         static_assert(std::is_base_of_v<Ovito::RefTarget, OType>, "Object class must be a RefTarget derived class");
+        // Don't record object initialization on the undo stack.
+        UndoSuspender noUndo;
+#ifndef OVITO_DEBUG
 		OORef<OType> obj(new OType(params, std::forward<Args>(args)...));
+#else
+        OType* obj_ = new OType(params, std::forward<Args>(args)...);
+        // Mark the object as having been allocated on the heap before moving it into the OORef<>.
+        obj_->_isAllocatedOnTheHeap = true;
+		OORef<OType> obj(obj_);
+#endif
         if(params.loadUserDefaults())
             obj->initializeParametersToUserDefaults();
         return obj;
@@ -219,7 +229,14 @@ public:
         }
         else {
             // Objects not derived from RefTarget do not expect a ObjectCreationParams.
+#ifndef OVITO_DEBUG
     		return new OType(std::forward<Args>(args)...);
+#else
+            OType* obj = new OType(std::forward<Args>(args)...);
+            // Mark the object as having been allocated on the heap before moving it into the OORef<>.
+            obj->_isAllocatedOnTheHeap = true;
+            return obj;
+#endif
         }
 	}
 };

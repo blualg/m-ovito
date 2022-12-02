@@ -26,6 +26,7 @@
 #include <ovito/core/Core.h>
 #include <ovito/core/oo/RefMakerClass.h>
 #include <ovito/core/oo/ReferenceEvent.h>
+#include <ovito/core/dataset/UndoStack.h>
 
 namespace Ovito {
 
@@ -336,18 +337,18 @@ public:
 
 	///////////////////////////// User interface context ///////////////////////////////
 
-	/// Indicates whether a previously recorded action on the undo stack is currently being undone or redone.
-	bool isUndoingOrRedoing() const;
-	
 	/// Indicates whether the current action being performed should be recorded on the undo stack.
-	bool isUndoRecording() const;
+	static bool isUndoRecording() { return CompoundOperation::isUndoRecording(); }
 
+	/// Indicates whether a previously recorded action on the undo stack is currently being undone or redone.
+	static bool isUndoingOrRedoing() { return CompoundOperation::isUndoingOrRedoing(); }
+	
 	/// Pushes an operation onto the undo stack if the undo stack is currently recording.
 	/// The undo record class specified as a template parameter is instantiated only if the undo stack is recording.
 	template<class UndoableOperationClass, class... Args>
 	void pushIfUndoRecording(Args&&... args) {
 		if(isUndoRecording())
-			pushUndoRecord(std::make_unique<UndoableOperationClass>(std::forward<Args>(args)...));
+			CompoundOperation::current()->addOperation(std::make_unique<UndoableOperationClass>(std::forward<Args>(args)...));
 	}
 
 private:

@@ -342,7 +342,7 @@ bool RenderSettings::renderFrame(int frameNumber, SceneRenderer& renderer,
 				renderer.beginFrame(renderTime, viewport->scene(), projParams, viewport, destinationRect, &frameBuffer);
 
 				// Clear frame buffer with background color.
-				ColorA clearColor = generateAlphaChannel() ? ColorA(0,0,0,0) : ColorA(backgroundColor());
+				ColorA clearColor = generateAlphaChannel() ? ColorA(0,0,0,0) : ColorA(backgroundColorAt(renderTime));
 				frameBuffer.clear(clearColor, destinationRect);
 
 				// Render viewport "underlays".

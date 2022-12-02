@@ -133,7 +133,7 @@ using continuation_future_type = std::conditional_t<returns_future_v<F,FutureTyp
 
 /// The simplest implementation of the Executor concept.
 /// The inline executor runs a work function immediately and in place.
-/// See RefTargetExecutor for another implementation of the executor concept.
+/// See OvitoObjectExecutor for another implementation of the executor concept.
 struct InlineExecutor {
 	template<typename Function>
 	static constexpr Function&& schedule(Function&& f) noexcept {

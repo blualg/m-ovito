@@ -39,10 +39,7 @@ public:
     };
 
     /// Returns the context the current thread performs its actions in.
-    static const ExecutionContext& current() noexcept;
-
-    /// Sets the context the current thread performs its actions in.
-    static void setCurrent(const ExecutionContext& context) noexcept;
+    static ExecutionContext& current() noexcept;
 
     /// Returns true if the current operation is performed by the user.
     static bool isInteractive() noexcept { return current().type() == Type::Interactive; }
@@ -84,13 +81,13 @@ class OVITO_CORE_EXPORT ExecutionContext::Scope
 public:
 
     /// Constructor.
-    explicit Scope(const ExecutionContext& context) noexcept : _previous(ExecutionContext::current()) { ExecutionContext::setCurrent(context); }
+    explicit Scope(ExecutionContext context) noexcept : _previous(std::exchange(ExecutionContext::current(), std::move(context))) {}
 
     /// Constructor.
     explicit Scope(Type type, UserInterface& ui) noexcept : Scope(ExecutionContext(type, ui)) {}
 
     /// Destructor.
-    ~Scope() { ExecutionContext::setCurrent(_previous); }
+    ~Scope() noexcept { ExecutionContext::current() = std::move(_previous); }
 
 private:
 

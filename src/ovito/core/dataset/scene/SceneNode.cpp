@@ -29,6 +29,7 @@
 #include <ovito/core/dataset/animation/AnimationSettings.h>
 #include <ovito/core/dataset/UndoStack.h>
 #include <ovito/core/dataset/DataSet.h>
+#include <ovito/core/dataset/DataSetContainer.h>
 #include <ovito/core/dataset/animation/TimeInterval.h>
 #include <ovito/core/oo/CloneHelper.h>
 #include <ovito/core/app/Application.h>
@@ -147,7 +148,7 @@ void SceneNode::deleteNode()
 * be deleted if this scene node is deleted and vice versa.
 * Returns the newly created LookAtController assigned as rotation controller for this node.
 ******************************************************************************/
-LookAtController* SceneNode::setLookatTargetNode(SceneNode* targetNode)
+LookAtController* SceneNode::setLookatTargetNode(AnimationTime time, SceneNode* targetNode)
 {
 	_lookatTargetNode.set(this, PROPERTY_FIELD(lookatTargetNode), targetNode);
 
@@ -170,7 +171,6 @@ LookAtController* SceneNode::setLookatTargetNode(SceneNode* targetNode)
 		}
 		else {
 			// Save old rotation.
-			AnimationTime time = currentAnimationTime().value_or(AnimationTime(0));
 			TimeInterval iv;
 			Rotation rotation;
 			prs->rotationController()->getRotationValue(time, rotation, iv);
@@ -323,7 +323,9 @@ void SceneNode::insertChildNode(int index, SceneNode* newChild)
 
 	// Adjust transformation to preserve world position.
 	TimeInterval iv;
-	AnimationTime time = currentAnimationTime().value_or(AnimationTime(0));
+	AnimationTime time(0);
+	if(ExecutionContext::current().isValid())
+		time = ExecutionContext::current().ui().datasetContainer().currentAnimationTime();
 	const AffineTransformation& newParentTM = getWorldTransform(time, iv);
 	if(newParentTM != AffineTransformation::Identity())
 		newChild->transformationController()->changeParent(time, AffineTransformation::Identity(), newParentTM, newChild);
@@ -347,7 +349,9 @@ void SceneNode::removeChildNode(int index)
 
 	// Update child node.
 	TimeInterval iv;
-	AnimationTime time = currentAnimationTime().value_or(AnimationTime(0));
+	AnimationTime time(0);
+	if(ExecutionContext::current().isValid())
+		time = ExecutionContext::current().ui().datasetContainer().currentAnimationTime();
 	AffineTransformation oldParentTM = getWorldTransform(time, iv);
 	if(oldParentTM != AffineTransformation::Identity())
 		child->transformationController()->changeParent(time, oldParentTM, AffineTransformation::Identity(), child);
@@ -427,7 +431,7 @@ OORef<RefTarget> SceneNode::clone(bool deepCopy, CloneHelper& cloneHelper) const
 		}
 
 		// Set new target for look-at controller.
-		clone->setLookatTargetNode(clone->lookatTargetNode());
+		clone->setLookatTargetNode(AnimationTime(0), clone->lookatTargetNode());
 	}
 
 	return clone;
@@ -487,6 +491,7 @@ bool SceneNode::isHiddenInViewport(Viewport* vp, bool includeHierarchyParent) co
 		return false;
 }
 
+#if 0 // TODO: Remove dead code
 /******************************************************************************
 * Returns the animation time at which this scene node is being rendered in the GUI.
 * This method assumes that the scene node is only part of a single scene.
@@ -498,5 +503,6 @@ std::optional<AnimationTime> SceneNode::currentAnimationTime() const
 	}
 	return {};
 }
+#endif
 
 }	// End of namespace

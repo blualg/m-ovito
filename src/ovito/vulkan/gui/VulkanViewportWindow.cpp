@@ -64,6 +64,9 @@ VulkanViewportWindow::VulkanViewportWindow(Viewport* viewport, UserInterface* us
 	_widget->setMouseTracking(true);
     _widget->setFocusPolicy(Qt::StrongFocus);
     _widget->setAcceptDrops(false); // File drop events are handled by the root main window. This makes them propagate up the widget hierarchy.
+
+	// Rerender window whenever requested by the system.
+	connect(&scenePreparation(), &ScenePreparation::viewportUpdateRequest, this, &VulkanViewportWindow::renderLater);
 }
 
 /******************************************************************************
@@ -729,7 +732,7 @@ void VulkanViewportWindow::beginFrame()
     if(!viewport()->renderPreviewMode())
         backgroundColor = Viewport::viewportColor(ViewportSettings::COLOR_VIEWPORT_BKG);
     else if(viewport()->dataset()->renderSettings())
-        backgroundColor = viewport()->dataset()->renderSettings()->backgroundColor();
+        backgroundColor = viewport()->dataset()->renderSettings()->backgroundColorAt();
 
     VkClearColorValue clearColor = {{ (float)backgroundColor.r(), (float)backgroundColor.g(), (float)backgroundColor.b(), (float)backgroundColor.a() }};
     VkClearDepthStencilValue clearDS = { 1, 0 };

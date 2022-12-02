@@ -208,7 +208,7 @@ OvitoObject* OvitoClass::createInstanceImpl(ObjectCreationParams params) const
 
 	OvitoObject* obj;
 
-	if(isDerivedFrom(RefTarget::OOClass()) && *this != DataSet::OOClass()) {
+	if(isDerivedFrom(RefTarget::OOClass())) {
 		obj = qobject_cast<OvitoObject*>(qtMetaObject()->newInstance(Q_ARG(ObjectCreationParams, params)));
 	}
 	else {
@@ -217,6 +217,11 @@ OvitoObject* OvitoClass::createInstanceImpl(ObjectCreationParams params) const
 
 	if(!obj)
 		throw Exception(OvitoObject::tr("Failed to instantiate class '%1'.").arg(name()));
+
+#ifdef OVITO_DEBUG
+	// Mark the object as having been allocated on the heap.
+	obj->_isAllocatedOnTheHeap = true;
+#endif
 
 	return obj;
 }

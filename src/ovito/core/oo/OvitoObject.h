@@ -110,6 +110,10 @@ public:
 	/// Returns the class descriptor for this object.
 	const OvitoClass& getOOMetaClass() const { return OOClass(); }
 
+	/// Returns an executor object to be used with Future<>::then(), which executes work
+	/// in the context (and the thread) of this object.
+	OvitoObjectExecutor executor(bool requireDeferredExecution = false) const;
+
 protected:
 
 	/// \brief Saves the internal data of this object to an output stream.
@@ -168,6 +172,7 @@ private:
 	/// \brief Increments the reference count by one.
 	void incrementReferenceCount() const noexcept {
 		OVITO_CHECK_OBJECT_POINTER(this);
+		OVITO_ASSERT_MSG(_isAllocatedOnTheHeap, "OvitoObject::incrementReferenceCount()", "Cannot use OORef<> to hold an object that has not been created with OORef<>::create().");
 		_referenceCount.ref();
 	}
 
@@ -176,6 +181,7 @@ private:
 	/// When the reference count becomes zero, then the object deletes itself automatically.
 	void decrementReferenceCount() const noexcept {
 		OVITO_CHECK_OBJECT_POINTER(this);
+		OVITO_ASSERT_MSG(_isAllocatedOnTheHeap, "OvitoObject::decrementReferenceCount()", "Cannot use OORef<> to hold an object that was allocated on the stack.");
 		if(!_referenceCount.deref()) {
 			const_cast<OvitoObject*>(this)->deleteObjectInternal();
 		}
@@ -198,6 +204,12 @@ private:
 	/// the object is still alive and has not been deleted. When the object is deleted, the
 	/// destructor sets the field to a different value to indicate that the object is no longer alive.
 	quint32 _magicAliveCode = 0x87ABCDEF;
+
+	/// Indicates that this object lives on the heap, because it has been created by the OORef<>::create() method.
+	/// Otherwise it was allocated on the stack, which means the object's reference counting mechanism may not be used.
+	bool _isAllocatedOnTheHeap = false;
+
+	friend class OvitoClass;
 #endif
 
 	// Give OORef smart-pointer class access to the internal reference counter.
@@ -318,3 +330,4 @@ Q_DECLARE_SMART_POINTER_METATYPE(Ovito::OORef);
 
 #include <ovito/core/utilities/io/ObjectSaveStream.h>
 #include <ovito/core/utilities/io/ObjectLoadStream.h>
+#include <ovito/core/oo/OvitoObjectExecutor.h>

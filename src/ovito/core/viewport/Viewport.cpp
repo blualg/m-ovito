@@ -411,8 +411,10 @@ bool Viewport::referenceEvent(RefTarget* source, const ReferenceEvent& event)
 {
 	if(event.type() == ReferenceEvent::TargetChanged) {
 		if(source == scene()) {
+#if 0 // TODO: Remove dead code
 			// Redraw viewport window whenver the scene changes.
 			prepareSceneThenRedraw();
+#endif
 		}
 		else if(source == viewNode()) {
 			// Adopt camera information from view node.
@@ -434,12 +436,6 @@ bool Viewport::referenceEvent(RefTarget* source, const ReferenceEvent& event)
 			// Update viewport when one of the layers has changed.
 			updateViewport();
 		}
-	}
-	else if(event.type() == ReferenceEvent::PreliminaryStateAvailable && source == scene()) {
-		// Update viewport window when a new preliminiary state from one of the data pipelines in the scene
-		// becomes available (unless we are playing an animation).
-		if(window() && !scene()->animationSettings()->arePreliminaryViewportUpdatesSuspended())
-			updateViewport();
 	}
 	else if(source == viewNode() && event.type() == ReferenceEvent::TitleChanged) {
 		// Update viewport title when camera node has been renamed.
@@ -470,14 +466,22 @@ void Viewport::referenceReplaced(const PropertyFieldDescriptor* field, RefTarget
 		updateViewport();
 	}
 	else if(field == PROPERTY_FIELD(scene)) {
+#if 0 // TODO: Remove dead code
 		_sceneReadyFuture.reset();
 		_sceneReadyScheduled = false;
 		prepareSceneThenRedraw();
-		// Repaint viewport when the camera orbit center changes.
+#endif
+
+		// Keep scene reference of viewport window in sync.
+		if(window())
+			window()->scenePreparation().setScene(scene());
+
+		// Repaint viewport whenever the camera orbit center changes.
 		if(oldTarget)
 			disconnect(static_object_cast<Scene>(oldTarget), &Scene::cameraOrbitCenterChanged, this, &Viewport::updateViewport);
 		if(newTarget)
 			connect(static_object_cast<Scene>(newTarget), &Scene::cameraOrbitCenterChanged, this, &Viewport::updateViewport);
+		
 		Q_EMIT viewportChanged();
 	}
 	RefTarget::referenceReplaced(field, oldTarget, newTarget, listIndex);
@@ -953,6 +957,7 @@ void Viewport::setWindow(ViewportWindowInterface* window)
 	_window = window; 
 }
 
+#if 0 // TODO: Remove dead code
 /******************************************************************************
 * Prepares the scene prior to rendering the viewport.
 ******************************************************************************/
@@ -967,5 +972,6 @@ void Viewport::prepareSceneThenRedraw()
 		});
 	}
 }
+#endif
 
 }	// End of namespace

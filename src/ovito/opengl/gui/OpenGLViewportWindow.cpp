@@ -56,6 +56,9 @@ OpenGLViewportWindow::OpenGLViewportWindow(Viewport* vp, UserInterface* userInte
 	// Make sure the viewport window releases its resources before the application shuts down, e.g.
 	// due to a Python script error.
 	connect(QCoreApplication::instance(), &QObject::destroyed, this, [this]() { releaseResources(); });
+
+	// Rerender window whenever requested by the system.
+	connect(&scenePreparation(), &ScenePreparation::viewportUpdateRequest, this, &OpenGLViewportWindow::renderLater);
 }
 
 /******************************************************************************

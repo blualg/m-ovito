@@ -153,9 +153,9 @@ public:
 	bool performTransaction(const QString& undoOperationName, Function&& func) {
 		try {
 			ExecutionContext::Scope executionScope(ExecutionContext::Type::Interactive, *this);
-			UndoableTransaction transaction(*this, undoOperationName);
+			UndoableTransaction transaction(undoOperationName);
 			std::forward<Function>(func)();
-			transaction.commit();
+			transaction.commit(*this);
 			return true;
 		}
 		catch(const Exception& ex) {

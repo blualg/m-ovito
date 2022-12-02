@@ -60,7 +60,7 @@ AnimationSettings::AnimationSettings(ObjectCreationParams params) : RefTarget(pa
 void AnimationSettings::propertyChanged(const PropertyFieldDescriptor* field)
 {
 	if(field == PROPERTY_FIELD(currentFrame))
-		onCurrentFrameChanged();
+		Q_EMIT currentFrameChanged(currentFrame());
 	else if(field == PROPERTY_FIELD(firstFrame) || field == PROPERTY_FIELD(lastFrame))
 		Q_EMIT intervalChanged(firstFrame(), lastFrame());
 	else if(field == PROPERTY_FIELD(framesPerSecond))
@@ -105,39 +105,6 @@ OORef<RefTarget> AnimationSettings::clone(bool deepCopy, CloneHelper& cloneHelpe
 	clone->_namedFrames = this->_namedFrames;
 
 	return clone;
-}
-
-/******************************************************************************
-* Is called when the current animation time has changed.
-******************************************************************************/
-void AnimationSettings::onCurrentFrameChanged()
-{
-	Q_EMIT currentFrameChanged(currentFrame());
-	if(_isTimeChanging)
-		return;
-	_isTimeChanging = true;
-
-	// Get the scene(s) that use this animation settings object.
-	Scene* scene = nullptr;
-	visitDependents([&](RefMaker* dependent) {
-		if(Scene* s = dynamic_object_cast<Scene>(dependent)) {
-			if(scene != nullptr)
-				qWarning() << "Warning: AnimationSettings object is used by more than one scene. This is not supported by the current program version.";
-			scene = s;
-		}
-	});
-
-	// Wait until scene is complete, then generate a currentFrameChangeComplete signal.
-	if(scene) {
-		_sceneReadyFuture = scene->whenReady().then(executor(), [this]() {
-			_isTimeChanging = false;
-			Q_EMIT currentFrameChangeComplete();
-		});
-	}
-	else {
-		_isTimeChanging = false;
-		Q_EMIT currentFrameChangeComplete();
-	}
 }
 
 /******************************************************************************
@@ -191,137 +158,6 @@ void AnimationSettings::jumpToPreviousFrame()
 void AnimationSettings::jumpToNextFrame()
 {
 	setCurrentFrame(std::min(currentFrame() + 1, lastFrame()));
-}
-
-/******************************************************************************
-* Starts or stops animation playback in the viewports.
-******************************************************************************/
-void AnimationSettings::setAnimationPlayback(bool on)
-{
-	if(on) {
-		startAnimationPlayback(
-			(QGuiApplication::keyboardModifiers() & Qt::ShiftModifier)
-			? -1 : 1);
-	}
-	else {
-		stopAnimationPlayback();
-	}
-}
-
-/******************************************************************************
-* Starts playback of the animation in the viewports.
-******************************************************************************/
-void AnimationSettings::startAnimationPlayback(FloatType playbackRate)
-{
-	if(isSingleFrame())
-		playbackRate = 0;
-		
-	if(_activePlaybackRate != playbackRate) {
-		_activePlaybackRate = playbackRate;
-		Q_EMIT playbackChanged(_activePlaybackRate != 0);
-
-		if(_activePlaybackRate > 0) {
-			if(currentFrame() < lastFrame())
-				scheduleNextAnimationFrame();
-			else
-				continuePlaybackAtFrame(firstFrame());
-		}
-		else if(_activePlaybackRate < 0) {
-			if(currentFrame() > firstFrame())
-				scheduleNextAnimationFrame();
-			else
-				continuePlaybackAtFrame(lastFrame());
-		}
-	}
-}
-
-/******************************************************************************
-* Jumps to the given animation frame, then schedules the next frame as soon as
-* the scene was completely shown.
-******************************************************************************/
-void AnimationSettings::continuePlaybackAtFrame(int frame)
-{
-	setCurrentFrame(frame);
-
-	if(isPlaybackActive() && _sceneReadyFuture.isValid()) {
-		// Take time as we start to render the current frame.
-		_frameRenderingTimer.start();
-
-		// Once the scene is ready, schedule the next animation frame.
-		_sceneReadyFuture.finally(executor(), [this](UNUSED_CONTINUATION_FUNC_PARAM) {
-			if(_sceneReadyFuture.isCanceled())
-				stopAnimationPlayback();
-			else
-				scheduleNextAnimationFrame();
-		});
-	}
-}
-
-/******************************************************************************
-* Starts a timer to show the next animation frame.
-******************************************************************************/
-void AnimationSettings::scheduleNextAnimationFrame()
-{
-	if(!isPlaybackActive()) return;
-
-	int timerSpeed = 1000 / std::abs(_activePlaybackRate);
-	if(playbackSpeed() > 1) timerSpeed /= playbackSpeed();
-	else if(playbackSpeed() < -1) timerSpeed *= -playbackSpeed();
-	int msec = framesPerSecond() > 0.0f ? (int)(timerSpeed / framesPerSecond()) : 0;
-
-	// Take into account how long it took to render the previous frame.
-	if(_frameRenderingTimer.isValid()) {
-		msec -= _frameRenderingTimer.elapsed();
-	}
-	QTimer::singleShot(std::max(msec, 0), this, &AnimationSettings::onPlaybackTimer);
-}
-
-/******************************************************************************
-* Stops playback of the animation in the viewports.
-******************************************************************************/
-void AnimationSettings::stopAnimationPlayback()
-{
-	if(isPlaybackActive()) {
-		_activePlaybackRate = 0;
-		_frameRenderingTimer.invalidate();
-		Q_EMIT playbackChanged(false);
-	}
-}
-
-/******************************************************************************
-* Timer callback used during animation playback.
-******************************************************************************/
-void AnimationSettings::onPlaybackTimer()
-{
-	// Check if the animation playback has been deactivated in the meantime.
-	if(!isPlaybackActive())
-		return;
-
-	// Add +/-N frames to current time.
-	int newFrame = currentFrame() + (_activePlaybackRate > 0 ? 1 : -1) * std::max(1, playbackEveryNthFrame());
-
-	// Loop back to first frame if end has been reached.
-	if(newFrame > lastFrame()) {
-		if(loopPlayback() && lastFrame() > firstFrame()) {
-			newFrame = firstFrame();
-		}
-		else {
-			newFrame = lastFrame();
-			stopAnimationPlayback();
-		}
-	}
-	else if(newFrame < firstFrame()) {
-		if(loopPlayback() && lastFrame() > firstFrame()) {
-			newFrame = lastFrame();
-		}
-		else {
-			newFrame = firstFrame();
-			stopAnimationPlayback();
-		}
-	}
-
-	// Set new frame and continue playing.
-	continuePlaybackAtFrame(newFrame);
 }
 
 /******************************************************************************

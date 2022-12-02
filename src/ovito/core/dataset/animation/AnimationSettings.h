@@ -26,7 +26,6 @@
 #include <ovito/core/Core.h>
 #include <ovito/core/dataset/animation/TimeInterval.h>
 #include <ovito/core/oo/RefTarget.h>
-#include <ovito/core/utilities/concurrent/SharedFuture.h>
 #include "TimeInterval.h"
 
 namespace Ovito {
@@ -44,7 +43,7 @@ public:
 	/// \param dataset The context dataset.
 	Q_INVOKABLE AnimationSettings(ObjectCreationParams params);
 
-	/// \brief Returns the animation time that corresponds to the current animation frame at which the time slider is positioned. 
+	/// \brief Returns the time that corresponds to the current frame at which the time slider is positioned. 
 	AnimationTime currentTime() const { return AnimationTime::fromFrame(currentFrame()); }
 
     /// \brief Returns the list of names assigned to animation frames.
@@ -61,19 +60,13 @@ public:
 	/// \throw Exception when a parsing error occurs.
 	AnimationTime stringToTime(const QString& stringValue);
 
-	/// \brief Indicates that the animation time has recently been changed via setTime(), and the scene
-	///        is still being prepared for displaying the new frame.
-	bool isTimeChanging() const { return _isTimeChanging; }
-
-	/// Returns whether the animation is currently being played back in the viewports.
-	bool isPlaybackActive() const { return _activePlaybackRate != 0; }
-
 	/// Returns whether the current animation interval consists of a one static frame only.
 	bool isSingleFrame() const { return firstFrame() >= lastFrame(); }
 
 	/// Returns the number of frames in the current animation interval.
 	int numberOfFrames() const { return lastFrame() - firstFrame() + 1; }
 
+#if 0 // TODO: Remove dead code
 	/// \brief Suspends updates of the viewports whenever preliminary data pipeline results are available.
 	void suspendPreliminaryViewportUpdates() { _preliminaryViewportUpdatesSuspendCount++; }
 
@@ -85,6 +78,7 @@ public:
 
 	/// Returns whether viewports should be updated whenever preliminary pipeline results are available.  
 	bool arePreliminaryViewportUpdatesSuspended() const { return isPlaybackActive() || _preliminaryViewportUpdatesSuspendCount > 0; }
+#endif
 
 public Q_SLOTS:
 
@@ -100,15 +94,6 @@ public Q_SLOTS:
 	/// \brief Jumps to the previous animation frame.
 	void jumpToPreviousFrame();
 
-	/// \brief Starts playback of the animation in the viewports.
-	void startAnimationPlayback(FloatType playbackRate = FloatType(1));
-
-	/// \brief Stops playback of the animation in the viewports.
-	void stopAnimationPlayback();
-
-	/// \brief Starts or stops animation playback in the viewports.
-	void setAnimationPlayback(bool on);
-
 	/// Sets whether the animation is played back in a loop in the interactive viewports.
     void setLoopPlaybackSlot(bool loop) { setLoopPlayback(loop); }
 
@@ -121,8 +106,10 @@ Q_SIGNALS:
 	/// This signal is emitted when the current animation frame has changed.
 	void currentFrameChanged(int frame);
 
+#if 0 // TODO: Remove dead code
 	/// This signal is emitted when the scene becomes ready after the current animation frame has changed.
 	void currentFrameChangeComplete();
+#endif
 
 	/// This signal is emitted when the active animation interval has changed.
 	void intervalChanged(int firstFrame, int lastFrame);
@@ -132,20 +119,6 @@ Q_SIGNALS:
 
 	/// This signal is emitted when the time to string conversion format has changed.
 	void timeFormatChanged();
-
-	/// This signal is emitted when the animation playback is started or stopped.
-	void playbackChanged(bool active);
-
-private Q_SLOTS:
-
-	/// \brief Is called when the current animation time has changed.
-	void onCurrentFrameChanged();
-
-	/// \brief Timer callback used during animation playback.
-	void onPlaybackTimer();
-
-	/// Starts a timer to show the next animation frame.
-	void scheduleNextAnimationFrame();
 
 protected:
 
@@ -160,9 +133,6 @@ protected:
 
 	/// \brief Creates a copy of this object.
 	virtual OORef<RefTarget> clone(bool deepCopy, CloneHelper& cloneHelper) const override;
-
-	/// Jumps to the given animation frame, then schedules the next frame as soon as the scene was completely shown.
-	void continuePlaybackAtFrame(int frame);
 
 private:
 
@@ -197,22 +167,11 @@ private:
     /// List of names assigned to animation frames.
     QMap<int,QString> _namedFrames;
 
-	/// Indicates that the animation has been changed, and the scene is still being prepared for display of the new frame.
-	bool _isTimeChanging = false;
-
 	/// Counts the number of times preliminary viewport updates have been suspended.
 	int _preliminaryViewportUpdatesSuspendCount = 0;
-
-	/// Indicates that the animation is currently being played back in the viewports.
-	FloatType _activePlaybackRate = 0;
-
-	/// Task that prepares the scene after an animation time change.
-	SharedFuture<> _sceneReadyFuture;
-
-	/// Measures how long it took to load, compute, and render the current animation frame.
-	QElapsedTimer _frameRenderingTimer;
 };
 
+#if 0 // TODO: Remove dead code
 /**
  * \brief A helper class that suspends preliminary viewport updates while it exists.
  *
@@ -237,5 +196,6 @@ private:
 
 	QPointer<AnimationSettings> _animSettings;
 };
+#endif
 
 }	// End of namespace

@@ -406,9 +406,9 @@ void PipelineListModel::applyModifiers(const QVector<OORef<Modifier>>& modifiers
 {
 	if(modifiers.empty() || !selectedPipeline())
 		return;
-	Scene* scene = selectedPipeline()->scene();
-	if(!scene)
-		return;
+
+	// Get current animation time.
+	AnimationTime time = datasetContainer().currentAnimationTime();
 
 	// Get the selected pipeline item. The new modifier is inserted right behind it in the pipeline.
 	PipelineListItem* currentItem = selectedItem();
@@ -445,7 +445,7 @@ void PipelineListModel::applyModifiers(const QVector<OORef<Modifier>>& modifiers
 				modApp->setModifier(modifier);
 				modApp->setInput(pobj);
 				modApp->setModifierGroup(modifierGroup);
-				modifier->initializeModifier(ModifierInitializationRequest(scene->animationSettings(), modApp));
+				modifier->initializeModifier(ModifierInitializationRequest(time, time.frame(), modApp));
 				setNextObjectToSelect(modApp);
 				for(RefMaker* dependent : dependentsList) {
 					if(ModifierApplication* predecessorModApp = dynamic_object_cast<ModifierApplication>(dependent)) {
@@ -466,7 +466,7 @@ void PipelineListModel::applyModifiers(const QVector<OORef<Modifier>>& modifiers
 
 	// Insert modifiers at the end of the selected pipelines.
 	for(int index = modifiers.size() - 1; index >= 0; --index) {
-		ModifierApplication* modApp = selectedPipeline()->applyModifier(modifiers[index]);
+		ModifierApplication* modApp = selectedPipeline()->applyModifier(time, modifiers[index]);
 		if(group)
 			modApp->setModifierGroup(group);
 		else

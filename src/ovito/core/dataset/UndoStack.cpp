@@ -67,35 +67,52 @@ void UndoSuspender::reset() noexcept
 }
 
 /******************************************************************************
-* Constructor calling UndoStack::beginCompoundOperation().
+* Returns the currently active compound operation (either while recording 
+* operations or while undoing/redoing an operation).
 ******************************************************************************/
-UndoableTransaction::UndoableTransaction(UserInterface& userInterface, const QString& displayName) : _undoStack(userInterface.undoStack())
+CompoundOperation*& CompoundOperation::current()
 {
-	if(_undoStack && !_undoStack->isSuspended())
-		_undoStack->beginCompoundOperation(displayName);
+    // The active operation in the current thread.
+    static thread_local CompoundOperation* _current = nullptr;
+
+    return _current; 
 }
 
 /******************************************************************************
-* Destructor undoing all recorded operations unless commit() was called.
+* Indicates whether undo recording is currently active.
 ******************************************************************************/
-UndoableTransaction::~UndoableTransaction() 
+bool CompoundOperation::isUndoRecording()
 {
-	if(!_committed && _undoStack && !_undoStack->isSuspended()) {
-		_undoStack->endCompoundOperation(false);
-	}
+	if(CompoundOperation* op = CompoundOperation::current())
+		return !op->_isUndoingOrRedoing;
+	return false;
 }
 
 /******************************************************************************
-* Commits all recorded operations by calling UndoStack::endCompoundOperation().
+* Indicates whether previously recorded operations are currently 
+* being undo or redone.
+******************************************************************************/
+bool CompoundOperation::isUndoingOrRedoing()
+{
+	if(CompoundOperation* op = CompoundOperation::current())
+		return op->_isUndoingOrRedoing;
+	return false;
+}
+
+/******************************************************************************
+* Commits the recorded operations by placing them on the undo stack (if there is one in the current execution context).
 ******************************************************************************/
 void UndoableTransaction::commit() 
 {
-	OVITO_ASSERT(!_committed);
-	_committed = true;
-	if(_undoStack && !_undoStack->isSuspended())
-		_undoStack->endCompoundOperation();
+	if(ExecutionContext::current().isValid()) {
+		if(UndoStack* undoStack = ExecutionContext::current().ui().undoStack()) {
+			if(QThread::currentThread() == undoStack->thread()) {
+				undoStack->push(std::move(_operation));
+			}
+		}
+	}
+	_operation.reset();
 }
-
 
 /******************************************************************************
 * Initializes the undo manager.
@@ -105,10 +122,10 @@ UndoStack::UndoStack(UserInterface& userInterface, QObject* parent) : QObject(pa
 }
 
 /******************************************************************************
-* Registers a single undoable operation.
+* Records an operation.
 * This object will be put onto the undo stack.
 ******************************************************************************/
-void UndoStack::push(std::unique_ptr<UndoableOperation> operation)
+void UndoStack::push(std::unique_ptr<CompoundOperation> operation)
 {
 	OVITO_CHECK_POINTER(operation.get());
 	OVITO_ASSERT_MSG(!QCoreApplication::instance() || QThread::currentThread() == QCoreApplication::instance()->thread(), "UndoStack::push()", "This function may only be called from the main thread.");
@@ -138,6 +155,7 @@ void UndoStack::push(std::unique_ptr<UndoableOperation> operation)
 	}
 }
 
+#if 0 // TODO: Remove dead code	/// The stack of open compound records.
 /******************************************************************************
 * Opens a new compound operation and assigns it the given display name.
 ******************************************************************************/
@@ -202,6 +220,7 @@ void UndoStack::resetCurrentCompoundOperation()
 	}
 	_isUndoing = false;
 }
+#endif
 
 /******************************************************************************
 * Shrinks the undo stack to maximum number of undo steps.

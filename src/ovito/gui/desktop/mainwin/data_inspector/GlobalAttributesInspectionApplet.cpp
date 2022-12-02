@@ -138,7 +138,7 @@ void GlobalAttributesInspectionApplet::exportToFile()
 	settings.setValue("last_export_dir", dialog.directory().absolutePath());
 
 	// Export to selected file.
-	try {
+	mainWindow().handleExceptions([&] {
 		// Create exporter service.
 		OORef<AttributeFileExporter> exporter = OORef<AttributeFileExporter>::create();
 
@@ -162,10 +162,7 @@ void GlobalAttributesInspectionApplet::exportToFile()
 
 		// Let the exporter do its job.
 		exporter->doExport(progressDialog);
-	}
-	catch(const Exception& ex) {
-		mainWindow().reportError(ex);
-	}
+	});
 }
 
 }	// End of namespace

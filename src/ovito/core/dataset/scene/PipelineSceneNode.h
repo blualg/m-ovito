@@ -62,7 +62,7 @@ public:
 	void setPipelineSource(PipelineObject* sourceObject);
 
 	/// \brief Applies a modifier by appending it to the end of the node's data pipeline.
-	ModifierApplication* applyModifier(Modifier* modifier);
+	ModifierApplication* applyModifier(AnimationTime time, Modifier* modifier);
 
 	/// \brief Returns the title of this object.
 	virtual QString objectTitle() const override;

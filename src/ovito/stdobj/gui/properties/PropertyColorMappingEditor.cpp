@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -248,8 +248,8 @@ void PropertyColorMappingEditor::onColorGradientSelected(int index)
 
 	OvitoClassPtr descriptor = _colorGradientList->itemData(index).value<OvitoClassPtr>();
 	if(descriptor) {
-		undoableTransaction(tr("Change color gradient"), [&]() {
-			OORef<ColorCodingGradient> gradient = static_object_cast<ColorCodingGradient>(descriptor->createInstance(mapping->dataset()));
+		performTransaction(tr("Change color gradient"), [&]() {
+			OORef<ColorCodingGradient> gradient = static_object_cast<ColorCodingGradient>(descriptor->createInstance());
 			if(gradient) {
 				mapping->setColorGradient(std::move(gradient));
 
@@ -262,10 +262,10 @@ void PropertyColorMappingEditor::onColorGradientSelected(int index)
 		});
 	}
 	else if(index == _colorGradientList->count() - 1) {
-		undoableTransaction(tr("Change color gradient"), [&]() {
+		performTransaction(tr("Change color gradient"), [&]() {
 			LoadImageFileDialog fileDialog(container(), tr("Pick color map image"));
 			if(fileDialog.exec()) {
-				OORef<ColorCodingImageGradient> gradient = OORef<ColorCodingImageGradient>::create(mapping->dataset());
+				OORef<ColorCodingImageGradient> gradient = OORef<ColorCodingImageGradient>::create();
 				gradient->loadImage(fileDialog.imageInfo().filename());
 				mapping->setColorGradient(std::move(gradient));
 			}
@@ -278,7 +278,7 @@ void PropertyColorMappingEditor::onColorGradientSelected(int index)
 ******************************************************************************/
 void PropertyColorMappingEditor::onAdjustRange()
 {
-	undoableTransaction(tr("Adjust range"), [&]() {
+	performTransaction(tr("Adjust range"), [&]() {
 		if(PropertyColorMapping* mapping = static_object_cast<PropertyColorMapping>(editObject())) {
 			if(std::optional<std::pair<FloatType, FloatType>> range = determineValueRange()) {
 				mapping->setStartValue(range->first);
@@ -294,7 +294,7 @@ void PropertyColorMappingEditor::onAdjustRange()
 void PropertyColorMappingEditor::onReverseRange()
 {
 	if(PropertyColorMapping* mapping = static_object_cast<PropertyColorMapping>(editObject())) {
-		undoableTransaction(tr("Reverse range"), [&]() {
+		performTransaction(tr("Reverse range"), [&]() {
 			// Swap start and end value.
 			mapping->reverseRange();
 		});
@@ -324,8 +324,7 @@ void PropertyColorMappingEditor::onExportColorScale()
 
 		QString imageFilename = fileDialog.imageInfo().filename();
 		if(!image.scaled(legendWidth, legendHeight, Qt::IgnoreAspectRatio, Qt::FastTransformation).save(imageFilename, fileDialog.imageInfo().format())) {
-			Exception ex(tr("Failed to save image to file '%1'.").arg(imageFilename));
-			ex.reportError();
+			mainWindow().reportError(tr("Failed to save image to file '%1'.").arg(imageFilename));
 		}
 	}
 }
@@ -340,18 +339,17 @@ QIcon PropertyColorMappingEditor::iconFromColorMapClass(OvitoClassPtr clazz)
 	if(auto item = iconCache.find(clazz); item != iconCache.end())
 		return item->second;
 
-	if(DataSet* dataset = mainWindow().datasetContainer().currentSet()) {
-		try {
-			// Create a temporary instance of the color map class.
-			OORef<ColorCodingGradient> map = static_object_cast<ColorCodingGradient>(clazz->createInstance(dataset));
-			if(map) {
-				QIcon icon = iconFromColorMap(map);
-				iconCache.insert(std::make_pair(clazz, icon));
-				return icon;
-			}
+	try {
+		// Create a temporary instance of the color map class.
+		OORef<ColorCodingGradient> map = static_object_cast<ColorCodingGradient>(clazz->createInstance());
+		if(map) {
+			QIcon icon = iconFromColorMap(map);
+			iconCache.insert(std::make_pair(clazz, icon));
+			return icon;
 		}
-		catch(...) {}
 	}
+	catch(...) {}
+
 	return QIcon();
 }
 

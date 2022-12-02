@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -275,7 +275,7 @@ void PropertyReferenceParameterUI::setEnabled(bool enabled)
 void PropertyReferenceParameterUI::updatePropertyValue()
 {
 	if(comboBox() && editObject() && comboBox()->currentText().isEmpty() == false) {
-		undoableTransaction(tr("Change parameter"), [this]() {
+		performTransaction(tr("Change parameter"), [this]() {
 			PropertyReference pref = _comboBox->currentProperty();
 			if(isQtPropertyUI()) {
 

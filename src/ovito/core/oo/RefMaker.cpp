@@ -700,44 +700,4 @@ void RefMaker::copyInitialParametersToObject(RefMaker* obj) const
 	}
 }
 
-/******************************************************************************
-* Indicates whether a previously recorded action on the undo stack is currently 
-* being undone or redone.
-******************************************************************************/
-bool RefMaker::isUndoingOrRedoing() const
-{
-	const ExecutionContext& context = ExecutionContext::current();
-	if(context.isValid()) {
-		if(UndoStack* undoStack = context.ui().undoStack()) {
-			return undoStack->isUndoingOrRedoing();
-		}
-	}
-	return false;
-}
-
-/******************************************************************************
-* Indicates whether the current action being performed should be recorded 
-* on the undo stack.
-******************************************************************************/
-bool RefMaker::isUndoRecording() const
-{
-	const ExecutionContext& context = ExecutionContext::current();
-	if(context.isValid()) {
-		if(UndoStack* undoStack = context.ui().undoStack()) {
-			return undoStack->isRecording();
-		}
-	}
-	return false;
-}
-
-/******************************************************************************
-* Records an operation on the undo stack.
-******************************************************************************/
-void RefMaker::pushUndoRecord(std::unique_ptr<UndoableOperation> operation)
-{
-	const ExecutionContext& context = ExecutionContext::current();
-	OVITO_ASSERT(context.isValid());
-	context.ui().undoStack()->push(std::move(operation));
-}
-
 }	// End of namespace

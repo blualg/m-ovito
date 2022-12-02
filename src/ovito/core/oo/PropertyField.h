@@ -46,12 +46,6 @@ protected:
 	/// Generates a notification event to inform the dependents of the field's owner that it has changed.
 	static void generatePropertyChangedEvent(RefMaker* owner, const PropertyFieldDescriptor* descriptor);
 
-	/// Indicates whether undo records should be created.
-	static bool isUndoRecordingActive(RefMaker* owner, const PropertyFieldDescriptor* descriptor);
-
-	/// Puts a record on the undo stack.
-	static void pushUndoRecord(RefMaker* owner, std::unique_ptr<UndoableOperation>&& operation);
-
 protected:
 
 	/// This abstract undo record class keeps a strong reference object whose property has been changed.
@@ -111,8 +105,8 @@ public:
 			if(get() == newValue) return;
 		}
 		if constexpr(!(flags & PROPERTY_FIELD_NO_UNDO)) {
-			if(isUndoRecordingActive(owner, descriptor))
-				pushUndoRecord(owner, std::make_unique<PropertyChangeOperation>(owner, *this, descriptor));
+			if(descriptor->automaticUndo() && CompoundOperation::current())
+				CompoundOperation::current()->addOperation(std::make_unique<PropertyChangeOperation>(owner, *this, descriptor));
 		}
 		mutableValue() = std::forward<T>(newValue);
 		valueChangedInternal(owner, descriptor);

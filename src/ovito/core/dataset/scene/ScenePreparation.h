@@ -31,7 +31,7 @@
 namespace Ovito {
 
 /**
- * \brief This object requests all pipelines in a Scene to provide results for the current animation time.
+ * \brief This object performs evaluation of all pipelines in a Scene to prepare them for rendering in the interactive viewports.
  */
 class OVITO_CORE_EXPORT ScenePreparation : public RefMaker
 {
@@ -40,7 +40,7 @@ class OVITO_CORE_EXPORT ScenePreparation : public RefMaker
 public:
 
 	/// Constructor.
-	ScenePreparation(UserInterface& userInterface);
+	explicit ScenePreparation(UserInterface& userInterface, Scene* scene = nullptr);
 
 	/// Destructor.
 	virtual ~ScenePreparation();
@@ -59,6 +59,9 @@ Q_SIGNALS:
 
 	/// Is emitted whenever the scene became ready for rendering.
 	void scenePreparationFinished();
+
+	/// Is emitted whenever its time to repaint the viewports showing the active scene.
+	void viewportUpdateRequest();
 
 protected:
 
@@ -86,7 +89,7 @@ private:
 private:
 
 	/// The scene being prepared.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(Scene*, scene, setScene, PROPERTY_FIELD_WEAK_REF | PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES);
+	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(Scene*, scene, setScene, PROPERTY_FIELD_WEAK_REF | PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES | PROPERTY_FIELD_NO_CHANGE_MESSAGE);
 
 	/// The abstract user interface in which this object operates.
 	UserInterface& _userInterface;
@@ -97,7 +100,7 @@ private:
 	/// The animation frame at which the scene was made ready. This is used to detect time changes.
 	int _completedFrame;
 
-	/// The scene that was made ready. This is used to detect replacements of the active scene.
+	/// The scene that was made ready recently. This is used to detect a change of the active scene.
 	Scene* _completedScene;
 
 	/// The current pipeline evaluation that is in progress.

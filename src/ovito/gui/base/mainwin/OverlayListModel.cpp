@@ -122,15 +122,15 @@ void OverlayListModel::refreshList()
 	// Create list items.
 	QList<OORef<OverlayListItem>> items;
 	if(selectedViewport()) {
-		items.push_back(new OverlayListItem(nullptr, OverlayListItem::ViewportHeader));
+		items.push_back(OORef<OverlayListItem>::create(nullptr, OverlayListItem::ViewportHeader));
 		for(auto layer = selectedViewport()->overlays().crbegin(); layer != selectedViewport()->overlays().crend(); ++layer) {
-			items.push_back(new OverlayListItem(*layer, OverlayListItem::Layer));
+			items.push_back(OORef<OverlayListItem>::create(*layer, OverlayListItem::Layer));
 		}
 		if(!selectedViewport()->overlays().empty() || !selectedViewport()->underlays().empty()) {
-			items.push_back(new OverlayListItem(nullptr, OverlayListItem::SceneLayer));
+			items.push_back(OORef<OverlayListItem>::create(nullptr, OverlayListItem::SceneLayer));
 		}
 		for(auto layer = selectedViewport()->underlays().crbegin(); layer != selectedViewport()->underlays().crend(); ++layer) {
-			items.push_back(new OverlayListItem(*layer, OverlayListItem::Layer));
+			items.push_back(OORef<OverlayListItem>::create(*layer, OverlayListItem::Layer));
 		}
 	}
 	int selIndex = -1;

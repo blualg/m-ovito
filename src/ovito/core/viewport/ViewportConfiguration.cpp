@@ -124,6 +124,7 @@ void ViewportConfiguration::zoomToSceneExtents()
 ******************************************************************************/
 void ViewportConfiguration::zoomToSelectionExtentsWhenReady()
 {
+#if 0
 	for(Viewport* vp : viewports()) {
 		if(vp->scene()) {
 			vp->scene()->whenReady().finally(vp->executor(), [this, vp](Task& task) {
@@ -132,6 +133,9 @@ void ViewportConfiguration::zoomToSelectionExtentsWhenReady()
 			});
 		}
 	}
+#else
+	OVITO_ASSERT(0); // TODO: Make this work
+#endif
 }
 
 /******************************************************************************

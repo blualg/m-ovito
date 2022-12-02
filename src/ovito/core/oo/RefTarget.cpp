@@ -263,13 +263,4 @@ bool RefTarget::isObjectBeingEdited() const
 	return (property("OVITO_OBJECT_EDIT_COUNTER").toInt() != 0);
 }
 
-/******************************************************************************
-* Returns an executor object to be used with Future<>::then(), which executes work
-* in the context (and the thread) of this object.
-******************************************************************************/
-RefTargetExecutor RefTarget::executor(bool requireDeferredExecution) const
-{
-	return RefTargetExecutor(this, requireDeferredExecution);
-}
-
 }	// End of namespace

@@ -22,7 +22,7 @@
 
 #include <ovito/gui/base/GUIBase.h>
 #include <ovito/core/app/UserInterface.h>
-#include <ovito/core/dataset/DataSet.h>
+#include <ovito/core/dataset/DataSetContainer.h>
 #include <ovito/core/dataset/UndoStack.h>
 #include <ovito/core/dataset/scene/SelectionSet.h>
 #include <ovito/core/viewport/ViewportConfiguration.h>
@@ -84,7 +84,7 @@ void SelectionMode::deactivated(bool temporary)
 void SelectionMode::mouseMoveEvent(ViewportWindowInterface* vpwin, QMouseEvent* event)
 {
 	// Suppress object picking while animation playback is active, because the offscreen rendering slows down the playback.
-	bool isPlaybackActive = vpwin->viewport()->scene() ? vpwin->viewport()->scene()->animationSettings()->isPlaybackActive() : false;
+	bool isPlaybackActive = vpwin->userInterface().datasetContainer().isPlaybackActive();
 
 	// Perform object picking under the mouse cursor.
 	ViewportPickResult pickResult = !isPlaybackActive ? vpwin->pick(getMousePosition(event)) : ViewportPickResult{};

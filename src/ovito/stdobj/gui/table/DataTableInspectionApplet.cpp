@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -177,13 +177,13 @@ void DataTableInspectionApplet::exportDataToFile()
 	settings.setValue("last_export_dir", dialog.directory().absolutePath());
 
 	// Export to selected file.
-	try {
+	mainWindow().handleExceptions([&] {
 		// Create exporter service.
 		OORef<FileExporter> exporter;
 		if(_stackedWidget->currentIndex() == 0)
-			exporter = OORef<DataTablePlotExporter>::create(table->dataset());
+			exporter = OORef<DataTablePlotExporter>::create();
 		else
-			exporter = OORef<DataTableExporter>::create(table->dataset());
+			exporter = OORef<DataTableExporter>::create();
 
 		// Pass output filename to exporter.
 		exporter->setOutputFilename(exportFile);
@@ -192,13 +192,13 @@ void DataTableInspectionApplet::exportDataToFile()
 		exporter->setNodeToExport(currentPipeline());
 
 		// If the exporter supports it, automatically choose the data object(s) to be exported.
-		exporter->selectDefaultExportableData(currentPipeline()->scene());
+		exporter->selectDefaultExportableData(mainWindow().datasetContainer().currentSet(), currentPipeline()->scene());
 
 		// Set data table to be exported.
 		exporter->setDataObjectToExport(DataObjectReference(&DataTable::OOClass(), table->identifier(), table->title()));
 
 		// Let the user adjust the export settings.
-		FileExporterSettingsDialog settingsDialog(mainWindow(), exporter);
+		FileExporterSettingsDialog settingsDialog(mainWindow(), *exporter->sceneToExport(), exporter, &mainWindow());
 		if(settingsDialog.exec() != QDialog::Accepted)
 			return;
 
@@ -207,10 +207,7 @@ void DataTableInspectionApplet::exportDataToFile()
 
 		// Let the exporter do its job.
 		exporter->doExport(progressDialog);
-	}
-	catch(const Exception& ex) {
-		ex.reportError();
-	}
+	});
 }
 
 }	// End of namespace

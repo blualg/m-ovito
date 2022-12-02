@@ -33,7 +33,8 @@ namespace Ovito {
 ******************************************************************************/
 DataInspectorPanel::DataInspectorPanel(MainWindow& mainWindow) :
 	_mainWindow(mainWindow),
-	_waitingForSceneAnim(":/gui/mainwin/inspector/waiting.gif")
+	_waitingForSceneAnim(":/gui/mainwin/inspector/waiting.gif"),
+	_scenePreparation(mainWindow)
 {
 	// Create data inspection applets.
 	for(OvitoClassPtr clazz : PluginManager::instance().listClasses(DataInspectionApplet::OOClass())) {
@@ -93,10 +94,9 @@ DataInspectorPanel::DataInspectorPanel(MainWindow& mainWindow) :
 	connect(_tabBar, &QTabBar::currentChanged, this, &DataInspectorPanel::onCurrentTabChanged);
 	connect(_appletContainer, &QStackedWidget::currentChanged, this, &DataInspectorPanel::onCurrentPageChanged);
 	connect(&datasetContainer(), &DataSetContainer::selectionChangeComplete, this, &DataInspectorPanel::onSceneSelectionChanged);
-	connect(&datasetContainer(), &DataSetContainer::scenePreparationStarted, this, &DataInspectorPanel::onScenePreparationStarted);
-	connect(&datasetContainer(), &DataSetContainer::scenePreparationFinished, this, &DataInspectorPanel::onScenePreparationFinished);
-	connect(&datasetContainer(), &DataSetContainer::currentFrameChanged, this, &DataInspectorPanel::onScenePreparationStarted);
-	connect(&datasetContainer(), &DataSetContainer::currentFrameChangeComplete, this, &DataInspectorPanel::onScenePreparationFinished);
+	connect(&datasetContainer(), &DataSetContainer::sceneReplaced, &_scenePreparation, [this](Scene* scene) { _scenePreparation.setScene(scene); });
+	connect(&_scenePreparation, &ScenePreparation::scenePreparationStarted, this, &DataInspectorPanel::onScenePreparationStarted);
+	connect(&_scenePreparation, &ScenePreparation::scenePreparationFinished, this, &DataInspectorPanel::onScenePreparationFinished);
 
 	updateTabsList();
 }
@@ -161,6 +161,7 @@ void DataInspectorPanel::onSceneSelectionChanged(SelectionSet* selection)
 	}
 	if(selectedNode != _selectedPipeline) {
 		_selectedPipeline = selectedNode;
+		Q_EMIT selectedPipelineChanged(selectedNode);
 		updateInspector();
 	}
 }

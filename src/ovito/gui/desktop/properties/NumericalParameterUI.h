@@ -137,9 +137,6 @@ private:
 
 	/// Creates the widgets for this property UI.
 	void initUIControls(const QString& labelText);
-
-	/// The signal/slot connection that informs the parameter UI about animation time changes.
-	QMetaObject::Connection _animationTimeChangedConnection;
 };
 
 }	// End of namespace

@@ -46,7 +46,8 @@ ViewportWindowInterface::Registry& ViewportWindowInterface::registry()
 ******************************************************************************/
 ViewportWindowInterface::ViewportWindowInterface(UserInterface& userInterface, Viewport* vp) : 
 	_userInterface(userInterface),
-	_viewport(vp)
+	_viewport(vp),
+	_scenePreparation(userInterface, vp->scene())
 {
 	OVITO_ASSERT(vp);
 
@@ -73,6 +74,7 @@ void ViewportWindowInterface::destroyViewportWindow()
 	OVITO_ASSERT(_viewport != nullptr); 
 	_viewport->setWindow(nullptr); 
 	_viewport = nullptr;
+	_scenePreparation.setScene(nullptr);
 }
 
 /******************************************************************************
@@ -213,7 +215,7 @@ QRectF ViewportWindowInterface::renderViewportTitle(SceneRenderer* renderer, boo
 #endif
 	primitive.setText(str);
 	Color textColor = Viewport::viewportColor(ViewportSettings::COLOR_VIEWPORT_CAPTION);
-	if(viewport()->renderPreviewMode() && textColor == renderer->renderSettings().backgroundColor())
+	if(viewport()->renderPreviewMode() && textColor == renderer->renderSettings().backgroundColorAt(renderer->time()))
 		textColor = Vector3(1,1,1) - (Vector3)textColor;
 	primitive.setColor(textColor);
 

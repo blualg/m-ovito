@@ -306,11 +306,11 @@ void OpenGLSceneRenderer::initializeGLState()
 		if(!viewport()->renderPreviewMode())
 			setClearColor(Viewport::viewportColor(ViewportSettings::COLOR_VIEWPORT_BKG));
 		else
-			setClearColor(renderSettings().backgroundColor());
+			setClearColor(renderSettings().backgroundColorAt(time()));
     }
 	else {
 		if(!isPicking())
-			setClearColor(ColorA(renderSettings().backgroundColor(), 0));
+			setClearColor(ColorA(renderSettings().backgroundColorAt(time()), 0));
 	}
     OVITO_REPORT_OPENGL_ERRORS(this);
 }

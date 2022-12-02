@@ -52,9 +52,6 @@ public:
 	/// Returns the interactive scene renderer used by the viewport window to render the graphics.
 	virtual SceneRenderer* sceneRenderer() const override { return _viewportRenderer; }
 
-    /// \brief Puts an update request for this window in the event loop.
-	virtual void renderLater() override;
-
 	/// If an update request is pending for this viewport window, immediately
 	/// processes it and redraw the window contents.
 	virtual void processViewportUpdate() override;
@@ -98,6 +95,11 @@ public:
 
 	/// Determines the object that is located under the given mouse cursor position.
 	virtual ViewportPickResult pick(const QPointF& pos) override;
+
+public Q_SLOTS:
+
+    /// \brief Puts an update request for this window in the event loop.
+	virtual void renderLater() override;
 
 protected:
 

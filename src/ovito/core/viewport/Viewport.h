@@ -288,9 +288,6 @@ protected:
 	/// Determines the aspect ratio of this viewport's area in the rendered output image. 
 	FloatType renderAspectRatio(DataSet* dataset) const;
 
-	/// Prepares the scene prior to rendering the viewport.
-	void prepareSceneThenRedraw();
-
 private Q_SLOTS:
 
 	/// This is called when the global viewport settings have changed.
@@ -343,12 +340,6 @@ private:
 
 	/// The GUI window associated with this viewport.
 	ViewportWindowInterface* _window = nullptr;
-
-	/// Indicates whether the (visible) viewport is currently waiting for the scene to become ready.
-	bool _sceneReadyScheduled = false;
-
-	/// The task that makes the scene ready for interactive rendering in the (visible) viewport.
-	SharedFuture<> _sceneReadyFuture;
 };
 
 }	// End of namespace

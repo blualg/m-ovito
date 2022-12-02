@@ -35,10 +35,13 @@ DEFINE_REFERENCE_FIELD(ScenePreparation, scene);
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-ScenePreparation::ScenePreparation(UserInterface& userInterface) : _userInterface(userInterface)
+ScenePreparation::ScenePreparation(UserInterface& userInterface, Scene* scene) : _userInterface(userInterface)
 {
 	// Get notified when an ongoing pipeline evaluation task finishes.
 	connect(&_pipelineEvaluationWatcher, &TaskWatcher::finished, this, &ScenePreparation::pipelineEvaluationFinished);
+
+	// Activate the initial scene provided to the constructor.
+	setScene(scene);
 }
 
 /******************************************************************************
@@ -74,9 +77,9 @@ SharedFuture<> ScenePreparation::whenReady()
 			Q_EMIT scenePreparationStarted();
 
 			// Reset the promise to the null state as soon as it gets canceled.
-			_sceneReadyPromise.finally([self = QPointer<QObject>(this)](UNUSED_CONTINUATION_FUNC_PARAM) {
+			_sceneReadyPromise.finally(executor(), [this](UNUSED_CONTINUATION_FUNC_PARAM) noexcept {
 				// Emit signal to indicate we've finished preparing the scene.
-				Q_EMIT QMetaMethod::fromSignal(&ScenePreparation::scenePreparationFinished).invoke(self);
+				Q_EMIT scenePreparationFinished();
 			});
 
 			// This will call makeReady() soon in order to evaluate all pipelines in the scene.
@@ -97,7 +100,7 @@ SharedFuture<> ScenePreparation::whenReady()
 ******************************************************************************/
 void ScenePreparation::makeReady(bool forceReevaluation)
 {
-	// Make sure that whenReady() was called before.
+	// Only continue if whenReady() was called before.
 	if(!_sceneReadyPromise.isValid()) {
 		return;
 	}
@@ -228,6 +231,14 @@ bool ScenePreparation::referenceEvent(RefTarget* source, const ReferenceEvent& e
 			makeReadyLater(true);
 		}
 	}
+	else if(event.type() == ReferenceEvent::PreliminaryStateAvailable && source == scene()) {
+		// Update viewport window when a new preliminiary state from one of the data pipelines in the scene
+		// becomes available (unless we are playing an animation).
+#if 0 // TODO: Make this work
+		if(!scene()->animationSettings()->arePreliminaryViewportUpdatesSuspended())
+#endif
+			Q_EMIT viewportUpdateRequest();
+	}
 	return RefMaker::referenceEvent(source, event);
 }
 
@@ -239,7 +250,17 @@ void ScenePreparation::referenceReplaced(const PropertyFieldDescriptor* field, R
 	if(field == PROPERTY_FIELD(scene)) {
 		_pipelineEvaluationWatcher.reset();
 		_pipelineEvaluation.reset();
-		makeReady(true);
+		_sceneReadyPromise.reset();
+#if 0 // TODO: Remove dead code
+		// Install a signal/slot connection that updates the viewports every time the animation time changes.
+		if(field == PROPERTY_FIELD(animationSettings)) {
+			disconnect(_updateViewportOnTimeChangeConnection);
+			if(animationSettings() && viewportConfig()) {
+				_updateViewportOnTimeChangeConnection = connect(animationSettings(), &AnimationSettings::timeChangeComplete, viewportConfig(), &ViewportConfiguration::updateViewports);
+				viewportConfig()->updateViewports();
+			}
+		}
+#endif
 	}
 	RefMaker::referenceReplaced(field, oldTarget, newTarget, listIndex);
 }

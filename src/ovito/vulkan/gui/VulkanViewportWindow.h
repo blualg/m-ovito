@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -49,9 +49,6 @@ public:
 
 	/// Returns the interactive scene renderer used by the viewport window to render the graphics.
 	virtual SceneRenderer* sceneRenderer() const override { return _viewportRenderer; }
-
-    /// \brief Puts an update request for this window in the event loop.
-	virtual void renderLater() override;
 
 	/// If an update request is pending for this viewport window, immediately
 	/// processes it and redraw the window contents.
@@ -133,6 +130,11 @@ public:
 
 	/// Returns the renderer of the interactive viewport window.
 	ViewportVulkanSceneRenderer* renderer() const { return _viewportRenderer; }
+
+public Q_SLOTS:
+
+    /// \brief Puts an update request for this window in the event loop.
+	virtual void renderLater() override;
 
 protected:
 

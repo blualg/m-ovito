@@ -117,6 +117,7 @@ Future<std::vector<PipelineFlowState>> PipelineObject::evaluateMultiple(const Pi
 	});
 }
 
+#if 0 // TODO: Remove dead code
 /******************************************************************************
 * Returns the animation time at which the pipeline thiis object is part of is being rendered in the GUI.
 * This method assumes that the pipeline(s) this object is part of are all in the same scene.
@@ -129,5 +130,6 @@ std::optional<AnimationTime> PipelineObject::currentAnimationTime() const
 	}
 	return {};
 }
+#endif
 
 }	// End of namespace

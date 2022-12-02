@@ -129,14 +129,14 @@ void DataSetContainer::onSceneReplaced(Scene* newScene)
 {
 	if(newScene == _activeScene)
 		return;
-	disconnect(_scenePreparationStartedConnection);
-	disconnect(_scenePreparationFinishedConnection);
 	disconnect(_selectionSetReplacedConnection);
 	_activeScene = newScene;
+	if(_animationPlayback) {
+		_animationPlayback->stopAnimationPlayback();
+		_animationPlayback->setScene(newScene);
+	}
 	if(newScene) {
 		// Forward signals from the current scene.
-		_scenePreparationStartedConnection = connect(newScene, &Scene::scenePreparationStarted, this, &DataSetContainer::scenePreparationStarted);
-		_scenePreparationFinishedConnection = connect(newScene, &Scene::scenePreparationFinished, this, &DataSetContainer::scenePreparationFinished);
 		_selectionSetReplacedConnection = connect(newScene, &Scene::selectionSetReplaced, this, &DataSetContainer::onSelectionSetReplaced);
 	}
 	Q_EMIT sceneReplaced(newScene);
@@ -172,25 +172,18 @@ void DataSetContainer::onAnimationSettingsReplaced(AnimationSettings* newAnimati
 	if(newAnimationSettings == _activeAnimationSettings)
 		return;
 	disconnect(_animationCurrentFrameChangedConnection);
-	disconnect(_animationCurrentFrameChangeCompleteConnection);
 	disconnect(_animationIntervalChangedConnection);
 	disconnect(_timeFormatChangedConnection);
-	if(_activeAnimationSettings) {
-		// Stop animation playback before switching to a new animation settings object.
-		_activeAnimationSettings->stopAnimationPlayback();
-	}
 	_activeAnimationSettings = newAnimationSettings;
 	if(newAnimationSettings) {
 		// Forward signals from the current animation settings object.
 		_animationCurrentFrameChangedConnection = connect(newAnimationSettings, &AnimationSettings::currentFrameChanged, this, &DataSetContainer::currentFrameChanged);
-		_animationCurrentFrameChangeCompleteConnection = connect(newAnimationSettings, &AnimationSettings::currentFrameChangeComplete, this, &DataSetContainer::currentFrameChangeComplete);
 		_animationIntervalChangedConnection = connect(newAnimationSettings, &AnimationSettings::intervalChanged, this, &DataSetContainer::animationIntervalChanged);
 		_timeFormatChangedConnection = connect(newAnimationSettings, &AnimationSettings::timeFormatChanged, this, &DataSetContainer::timeFormatChanged);
 	}
 	if(newAnimationSettings) {
 		Q_EMIT animationIntervalChanged(newAnimationSettings->firstFrame(), newAnimationSettings->lastFrame());
 		Q_EMIT currentFrameChanged(newAnimationSettings->currentFrame());
-		Q_EMIT currentFrameChangeComplete();
 		Q_EMIT timeFormatChanged();
 	}
 	Q_EMIT animationSettingsReplaced(newAnimationSettings);
@@ -233,6 +226,18 @@ bool DataSetContainer::loadDataset(const QString& filename, MainThreadOperation 
 	dataSet->setFilePath(absoluteFilepath);
 	setCurrentSet(dataSet);
 	return true;
+}
+
+/******************************************************************************
+* Create the animation playback helper object on demand.
+******************************************************************************/
+SceneAnimationPlayback* DataSetContainer::createAnimationPlayback()
+{
+	if(!_animationPlayback) {
+		_animationPlayback = OORef<SceneAnimationPlayback>::create(userInterface(), activeScene());
+		connect(_animationPlayback.get(), &SceneAnimationPlayback::playbackChanged, this, &DataSetContainer::playbackChanged);
+	}
+	return _animationPlayback;
 }
 
 }	// End of namespace

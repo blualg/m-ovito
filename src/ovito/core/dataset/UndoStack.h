@@ -70,6 +70,72 @@ public:
 };
 
 /**
+ * \brief Container class that holds a sequence of UndoableOperation objects.
+ */
+class OVITO_CORE_EXPORT CompoundOperation final : public UndoableOperation
+{
+public:
+
+	/// Returns the currently active compound operation (either while recording operations or while undoing/redoing an operation).
+	static CompoundOperation*& current();
+
+	/// Indicates whether undo recording is currently active.
+	static bool isUndoRecording();
+
+	/// Indicates whether previously recorded operations are currently being undo or redone.
+	static bool isUndoingOrRedoing();
+
+public:
+
+	/// \brief Creates an empty compound operation with the given display name.
+	/// \param name The localized and human-readable display name for this compound operation.
+	explicit CompoundOperation(const QString& name) : _displayName(name) {}
+
+	/// \brief Provides a localized, human readable description of this operation.
+	/// \return A localized string that describes the operation. It is shown in the
+	///         edit menu of the application.
+	virtual QString displayName() const override { return _displayName; }
+
+	/// \brief Sets this operation's display name to a new string.
+	/// \param newName The localized and human-readable display name for this compound operation.
+	/// \sa displayName()
+	void setDisplayName(const QString& newName) { _displayName = newName; }
+
+	/// Undo the edit operation that was made.
+	virtual void undo() override;
+
+	/// Re-apply the change, assuming that it has been undone.
+	virtual void redo() override;
+
+	/// \brief Adds a sub-record to this compound operation.
+	/// \param operation An instance of a UndoableOperation derived class that encapsulates
+	///                  the operation. The CompoundOperation becomes the owner of
+	///                  this object and is responsible for its deletion.
+	void addOperation(std::unique_ptr<UndoableOperation> operation) { _subOperations.push_back(std::move(operation)); }
+
+	/// \brief Indicates whether this UndoableOperation is significant or can be ignored.
+	/// \return \c true if the CompoundOperation contains at least one sub-operation; \c false it is empty.
+	bool isSignificant() const { return _subOperations.empty() == false; }
+
+	/// \brief Removes all sub-operations from this compound operation.
+	void clear() { _subOperations.clear(); }
+
+	/// For debugging purposes only.
+	void debugPrint(int level);
+
+private:
+
+	/// List of contained operations.
+	std::vector<std::unique_ptr<UndoableOperation>> _subOperations;
+
+	/// Stores the display name of this compound passed to the constructor.
+	QString _displayName;
+
+	/// Indicates if the operations in this container are currently being undone or redone.
+	bool _isUndoingOrRedoing = false;
+};
+
+/**
  * \brief Stores and manages the undo stack.
  *
  * The UndoStack records all user operations. Operations can be undone or reversed
@@ -92,6 +158,7 @@ public:
 	/// Constructor.
 	explicit UndoStack(UserInterface& userInterface, QObject* parent = nullptr);
 
+#if 0 // TODO: Remove dead code	/// The stack of open compound records.
 	/// \brief Begins composition of a macro command with the given text description.
 	/// \param displayName A human-readable name that is shown in the edit menu to describe the operation.
 	///
@@ -126,13 +193,13 @@ public:
 	bool isRecordingThread() const {
 		return (QThread::currentThread() == this->thread()) && isRecording(); 
 	}
+#endif
 
-	/// \brief Records a single operation.
-	/// \param operation An instance of a UndoableOperation derived class that encapsulates
-	///                  the operation. The UndoStack becomes the owner of
-	///                  this object and is responsible for its deletion.
-	void push(std::unique_ptr<UndoableOperation> operation);
+	/// \brief Records an operation.
+	/// \param operation The operation to put on the stack.
+	void push(std::unique_ptr<CompoundOperation> operation);
 
+#if 0 // TODO: Remove dead code	/// The stack of open compound records.
 	/// \brief Pushes an operation onto the undo stack if the undo stack is currently recording.
 	/// The undo record is created only if the undo stack is recording.
 	template<class UndoableOperationClass, class... Args>
@@ -179,6 +246,7 @@ public:
 	/// \return \c true if currently an operation from the undo stack is being undone or redone, i.e.
 	///         isUndoing() or isRedoing() returns \c true; \c false otherwise.
 	bool isUndoingOrRedoing() const { return isUndoing() || isRedoing(); }
+#endif
 
 	/// \brief Returns true if there is an operation available for undo; otherwise returns false.
 	bool canUndo() const { return index() >= 0; }
@@ -268,69 +336,17 @@ Q_SIGNALS:
 
 private:
 
-	/**
-	 * \brief This class is used to combine multiple UndoableOperation objects into one.
-	 */
-	class CompoundOperation : public UndoableOperation
-	{
-	public:
-
-		/// \brief Creates an empty compound operation with the given display name.
-		/// \param name The localized and human-readable display name for this compound operation.
-		CompoundOperation(const QString& name) : _displayName(name) {}
-
-		/// \brief Provides a localized, human readable description of this operation.
-		/// \return A localized string that describes the operation. It is shown in the
-		///         edit menu of the application.
-		virtual QString displayName() const override { return _displayName; }
-
-		/// \brief Sets this operation's display name to a new string.
-		/// \param newName The localized and human-readable display name for this compound operation.
-		/// \sa displayName()
-		void setDisplayName(const QString& newName) { _displayName = newName; }
-
-		/// Undo the edit operation that was made.
-		virtual void undo() override;
-
-		/// Re-apply the change, assuming that it has been undone.
-		virtual void redo() override;
-
-		/// \brief Adds a sub-record to this compound operation.
-		/// \param operation An instance of a UndoableOperation derived class that encapsulates
-		///                  the operation. The CompoundOperation becomes the owner of
-		///                  this object and is responsible for its deletion.
-		void addOperation(std::unique_ptr<UndoableOperation> operation) { _subOperations.push_back(std::move(operation)); }
-
-		/// \brief Indicates whether this UndoableOperation is significant or can be ignored.
-		/// \return \c true if the CompoundOperation contains at least one sub-operation; \c false it is empty.
-		bool isSignificant() const { return _subOperations.empty() == false; }
-
-		/// \brief Removes all sub-operations from this compound operation.
-		void clear() { _subOperations.clear(); }
-
-		/// For debugging purposes only.
-		void debugPrint(int level);
-
-	private:
-
-		/// List of contained operations.
-		std::vector<std::unique_ptr<UndoableOperation>> _subOperations;
-
-		/// Stores the display name of this compound passed to the constructor.
-		QString _displayName;
-	};
-
-private:
-
 	/// The user interface this stack belongs to.
 	UserInterface& _userInterface;
 
 	/// The stack with records of undoable operations.
-	std::deque<std::unique_ptr<UndoableOperation>> _operations;
+	std::deque<std::unique_ptr<CompoundOperation>> _operations;
 
+#if 0 // TODO: Remove dead code	/// The stack of open compound records.
 	/// A call to suspend() increases this value by one.
 	/// A call to resume() decreases it.
 	int _suspendCount = 0;
+#endif
 
 	/// Current position in the undo stack. This is where
 	/// new undoable edits will be inserted.
@@ -339,8 +355,9 @@ private:
 	/// The state which has been marked as clean.
 	int _cleanIndex = -1;
 
-	/// The stack of open compound records.
+#if 0 // TODO: Remove dead code	/// The stack of open compound records.
 	std::vector<std::unique_ptr<CompoundOperation>> _compoundStack;
+#endif
 
 	/// Maximum number of records in the undo stack.
 	int _undoLimit = 20;
@@ -352,25 +369,21 @@ private:
 	bool _isRedoing = false;
 
 	friend class UndoSuspender;
+	friend class UndoableTransaction;
 };
 
 /**
  * \brief A RAII helper class that suspends recording of undoable operations while it exists.
- *
- * The constructor of this class calls UndoStack::suspend() and
- * the destructor calls UndoStack::resume().
- *
+ * 
  * Create an instance of this class on the stack to temporarily suspend recording of operations.
  */
-class OVITO_CORE_EXPORT UndoSuspender 
+class OVITO_CORE_EXPORT UndoSuspender
 {
 public:
-	UndoSuspender(UndoStack& undoStack) noexcept;
-	UndoSuspender() noexcept;
-	~UndoSuspender() { reset(); }
-	void reset() noexcept;
+	explicit UndoSuspender(CompoundOperation* operation = nullptr) noexcept : _previous(std::exchange(CompoundOperation::current(), operation)) {}
+	~UndoSuspender() noexcept { CompoundOperation::current() = _previous; }
 private:
-	int* _suspendCount;
+	CompoundOperation* _previous;
 };
 
 /**
@@ -381,15 +394,28 @@ class OVITO_CORE_EXPORT UndoableTransaction
 {
 public:
 
-	/// Constructor calling UndoStack::beginCompoundOperation().
-	explicit UndoableTransaction(UserInterface& userInterface, const QString& displayName);
+	/// Default constructor.
+	UndoableTransaction() = default;
+
+	/// Constructor which opens a new transaction.
+	explicit UndoableTransaction(const QString& undoOperationName) : _operation(std::make_unique<CompoundOperation>(undoOperationName)) {}
 
 	/// Destructor undoing all recorded operations unless commit() was called.
-	~UndoableTransaction();
+	~UndoableTransaction() {
+		if(_operation) _operation->undo();
+	}
 
-	/// Commits all recorded operations by calling UndoStack::endCompoundOperation().
-	void commit();
+	/// Commits the recorded operations by placing them on the undo stack (if there is one in the current execution context).
+	void commit(UserInterface& userInterface);
 
+	/// Records an operation as part of the current transaction.
+	template<class UndoableOperationClass, class... Args>
+	void push(Args&&... args) {
+		OVITO_ASSERT((bool)_operation);
+		_operation->addOperation(std::make_unique<UndoableOperationClass>(std::forward<Args>(args)...));
+	}
+
+#if 0 // TODO: Remove dead code
 	/// \brief Pushes an operation onto the undo stack if the undo stack is currently recording.
 	/// The undo record is created only if the undo stack is recording.
 	template<class UndoableOperationClass, class... Args>
@@ -397,11 +423,11 @@ public:
 		if(_undoStack && _undoStack->isRecording())
 			_undoStack->push(std::make_unique<UndoableOperationClass>(std::forward<Args>(args)...));
 	}
+#endif
 
 private:
 
-	UndoStack* _undoStack = nullptr;
-	bool _committed = false;
+	std::unique_ptr<CompoundOperation> _operation; 
 };
 
 }	// End of namespace

@@ -25,6 +25,7 @@
 #include <ovito/core/app/UserInterface.h>
 #include <ovito/core/viewport/Viewport.h>
 #include <ovito/core/dataset/DataSet.h>
+#include <ovito/core/dataset/DataSetContainer.h>
 #include <ovito/core/dataset/UndoStackOperations.h>
 #include <ovito/core/dataset/data/DataCollection.h>
 #include <ovito/core/dataset/pipeline/StaticSource.h>
@@ -182,8 +183,8 @@ void StandardCameraSource::setIsTargetCamera(bool enable)
 {
 	pushIfUndoRecording<TargetChangedUndoOperation>(this);
 
-	// Determine the current scene animation time.
-	AnimationTime time = currentAnimationTime().value_or(AnimationTime(0));
+	// TODO: Use current scene animation time instead.
+	AnimationTime time(0);
 
 	for(PipelineSceneNode* node : pipelines(true)) {
 		if(node->lookatTargetNode() == nullptr && enable) {
@@ -202,7 +203,7 @@ void StandardCameraSource::setIsTargetCamera(bool enable)
 				Vector3 cameraDir = cameraTM.column(2).normalized();
 				Vector3 targetPos = cameraPos - targetDistance(time) * cameraDir;
 				targetNode->transformationController()->translate(time, targetPos, AffineTransformation::Identity());
-				node->setLookatTargetNode(targetNode);
+				node->setLookatTargetNode(time, targetNode);
 			}
 		}
 		else if(node->lookatTargetNode() != nullptr && !enable) {

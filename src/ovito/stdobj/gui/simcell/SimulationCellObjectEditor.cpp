@@ -178,7 +178,7 @@ void SimulationCellEditor::updateSimulationBoxSize()
 	if(!cell) return;
 
 	const AffineTransformation& cellTM = cell->cellMatrix();
-	ParameterUnit* worldUnit = dataset()->unitsManager().worldUnit();
+	ParameterUnit* worldUnit = mainWindow().unitsManager().worldUnit();
 
 	for(size_t dim = 0; dim < 3; dim++) {
 		_boxSizeFields[dim]->setText(worldUnit->formatValue(cellTM(dim, dim)));

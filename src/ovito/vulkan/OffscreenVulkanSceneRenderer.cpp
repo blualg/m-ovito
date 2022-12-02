@@ -296,9 +296,10 @@ void OffscreenVulkanSceneRenderer::beginFrame(TimePoint time, Scene* scene, cons
 	// Compositing with the viewport layer content will be performed in an OVITO FrameBuffer. 
     VkClearColorValue clearColor = {{ 0, 0, 0, 0 }};
 	if(renderSettings() && !isPicking()) {
-		clearColor.float32[0] = qBound(0.0f, static_cast<float>(renderSettings()->backgroundColor().r()), 1.0f);
-		clearColor.float32[1] = qBound(0.0f, static_cast<float>(renderSettings()->backgroundColor().g()), 1.0f);
-		clearColor.float32[2] = qBound(0.0f, static_cast<float>(renderSettings()->backgroundColor().b()), 1.0f);
+		ColorT<float> bgcolor = renderSettings()->backgroundColorAt(time);
+		clearColor.float32[0] = qBound(0.0f, bgcolor.r(), 1.0f);
+		clearColor.float32[1] = qBound(0.0f, bgcolor.g(), 1.0f);
+		clearColor.float32[2] = qBound(0.0f, bgcolor.b(), 1.0f);
 	}
     VkClearDepthStencilValue clearDS = { 1, 0 };
     VkClearValue clearValues[2];

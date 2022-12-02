@@ -128,11 +128,6 @@ void PipelineSceneNode::collectVisElements(const DataObject* dataObj, std::vecto
 ******************************************************************************/
 void PipelineSceneNode::updateVisElementList(const PipelineFlowState& state)
 {
-	// Only gather vis elements that are present in the pipeline at the animation time currently shown in the GUI.
-	std::optional<AnimationTime> time = currentAnimationTime();
-	if(!time || !state.stateValidity().contains(*time))
-		return;
-
 	// Collect all visual elements from the current pipeline state.
 	std::vector<DataVis*> newVisElements;
 	if(state.data())
@@ -332,14 +327,13 @@ QString PipelineSceneNode::objectTitle() const
 * Applies a modifier by appending it to the end of the node's modification
 * pipeline.
 ******************************************************************************/
-ModifierApplication* PipelineSceneNode::applyModifier(Modifier* modifier)
+ModifierApplication* PipelineSceneNode::applyModifier(AnimationTime time, Modifier* modifier)
 {
 	OVITO_ASSERT(modifier);	
 
 	OORef<ModifierApplication> modApp = modifier->createModifierApplication();
 	modApp->setModifier(modifier);
 	modApp->setInput(dataProvider());
-	AnimationTime time = currentAnimationTime().value_or(AnimationTime(0));
 	modifier->initializeModifier(ModifierInitializationRequest(time, time.frame(), modApp));
 	setDataProvider(modApp);
 	return modApp;

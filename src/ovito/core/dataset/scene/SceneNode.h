@@ -172,7 +172,7 @@ public:
 	///
 	/// The target node will automatically be deleted if this SceneNode is deleted and vice versa.
 	/// \undoable
-	LookAtController* setLookatTargetNode(SceneNode* targetNode);
+	LookAtController* setLookatTargetNode(AnimationTime time, SceneNode* targetNode);
 
 	/// \brief Returns the bounding box of the scene node in local coordinates.
 	/// \param time The time at which the bounding box should be computed.
@@ -222,9 +222,11 @@ public:
 	/// specifically in the given viewport.
 	bool isHiddenInViewport(Viewport* vp, bool includeHierarchyParent) const;
 
+#if 0 // TODO: Remove dead code
 	/// Returns the animation time at which this scene node is being rendered in the GUI.
 	/// This method assumes that the scene node is only part of a single scene.
 	std::optional<AnimationTime> currentAnimationTime() const;
+#endif
 
 protected:
 

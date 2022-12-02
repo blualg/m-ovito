@@ -289,8 +289,6 @@ private:
 	QVector<QAction*> _actions;
 
 	QMetaObject::Connection _animationIntervalChangedConnection;
-	QMetaObject::Connection _animationPlaybackChangedConnection;
-	QMetaObject::Connection _animationPlaybackToggledConnection;
 	QMetaObject::Connection _maximizedViewportChangedConnection;
 };
 

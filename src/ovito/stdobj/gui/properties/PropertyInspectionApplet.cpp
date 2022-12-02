@@ -54,20 +54,10 @@ void PropertyInspectionApplet::createBaseWidgets()
 	_tableView->setModel(_filterModel);
 	_cleanupHandler.add(_tableView);
 
+	// Clear filter expression whenever a different scene pipeline is being selected by the user.
+	connect(this, &DataInspectionApplet::currentObjectChanged, _resetFilterAction, &QAction::trigger);
+	// Update tabular display whenever the user selects a different property container in the list.
 	connect(this, &DataInspectionApplet::currentObjectChanged, this, &PropertyInspectionApplet::onCurrentContainerChanged);
-}
-
-/******************************************************************************
-* Updates the contents displayed in the inspector.
-******************************************************************************/
-void PropertyInspectionApplet::updateDisplay()
-{
-	// Clear filter expression when a different scene node has been selected.
-	if(pipeline != currentPipeline()) {
-		_resetFilterAction->trigger();
-	}
-
-	DataInspectionApplet::updateDisplay();
 }
 
 /******************************************************************************

@@ -24,7 +24,7 @@
 #include <ovito/core/dataset/pipeline/PipelineCache.h>
 #include <ovito/core/dataset/pipeline/CachingPipelineObject.h>
 #include <ovito/core/dataset/scene/PipelineSceneNode.h>
-#include <ovito/core/dataset/DataSet.h>
+#include <ovito/core/dataset/DataSetContainer.h>
 #include <ovito/core/dataset/data/TransformingDataVis.h>
 #include <ovito/core/dataset/data/TransformedDataObject.h>
 #include <ovito/core/app/Application.h>
@@ -184,13 +184,17 @@ SharedFuture<PipelineFlowState> PipelineCache::evaluatePipeline(const PipelineEv
 			insertState(state);
 			if(pipeline) {
 				// Let the pipeline update its list of vis elements based on the new pipeline results.
-				if(!_includeVisElements)
-					pipeline->updateVisElementList(state);
+				if(!_includeVisElements) {
+					// Only gather vis elements that are present in the pipeline at the animation time currently shown in the GUI.
+					std::optional<AnimationTime> time = currentAnimationTime();
+					if(state.stateValidity().contains(*time))
+						pipeline->updateVisElementList(state);
+				}
 			}
 			else {
 				// We also have a new preliminary state. Inform the upstream pipeline about it.
 				if(pipelineObject->performPreliminaryUpdateAfterEvaluation()) {
-					std::optional<AnimationTime> time = pipelineObject->currentAnimationTime();
+					std::optional<AnimationTime> time = currentAnimationTime();
 					if(time && state.stateValidity().contains(*time)) {
 						// Adopt the newly computed state as the current synchronous cache state.
 						_synchronousState = state;
@@ -280,7 +284,7 @@ const PipelineFlowState& PipelineCache::evaluatePipelineSynchronous(const Pipeli
 		if(cachedState.data() != _synchronousState.data()) {
 			// Adopt the state from the asynchronous evaluation as new synchronous state
 			// if it is valid at the current animation time being displayed in the GUI. 
-			std::optional<AnimationTime> time = pipeline->currentAnimationTime();
+			std::optional<AnimationTime> time = currentAnimationTime();
 			if(time && cachedState.stateValidity().contains(*time)) {
 				_synchronousState = cachedState;
 			}
@@ -329,7 +333,7 @@ const PipelineFlowState& PipelineCache::evaluatePipelineStageSynchronous(const P
 		if(cachedState.data() != _synchronousState.data()) {
 			// Adopt the state from the asynchronous evaluation as new synchronous state
 			// if it is valid at the current animation time being displayed in the GUI. 
-			std::optional<AnimationTime> time = pipelineObject->currentAnimationTime();
+			std::optional<AnimationTime> time = currentAnimationTime();
 			if(time && cachedState.stateValidity().contains(*time)) {
 				_synchronousState = cachedState;
 			}
@@ -457,16 +461,14 @@ void PipelineCache::setPrecomputeAllFrames(bool enable)
 			// Interrupt the precomputation process if it is currently in progress.
 			_precomputeFramesOperation.reset();
 
-			if(PipelineSceneNode* pipeline = dynamic_object_cast<PipelineSceneNode>(ownerObject())) {
-				if(std::optional<AnimationTime> currentAnimationTime = pipeline->currentAnimationTime()) {
-					// Throw away all precomputed data (except current frame) to reduce memory footprint.
-					invalidate(TimeInterval(*currentAnimationTime));
-					return;
-				}
+			if(std::optional<AnimationTime> time = currentAnimationTime()) {
+				// Throw away all precomputed data (except frame currently shown in the GUI) to reduce memory footprint.
+				invalidate(TimeInterval(*time));
 			}
-
-			// Throw away all precomputed data to reduce memory footprint.
-			invalidate();
+			else {
+				// Throw away all precomputed data to reduce memory footprint.
+				invalidate();
+			}
 		}
 	}
 }
@@ -570,6 +572,18 @@ void PipelineCache::precomputeNextAnimationFrame()
 			_precomputeFramesOperation.setFinished();
 		}
 	});
+}
+
+/******************************************************************************
+* Determines the current animation time shown in the GUI.
+******************************************************************************/
+std::optional<AnimationTime> PipelineCache::currentAnimationTime() const
+{
+	OVITO_ASSERT(ExecutionContext::current().isValid());
+
+	if(AnimationSettings* anim = ExecutionContext::current().ui().datasetContainer().activeAnimationSettings())
+		return anim->currentTime();
+	return {};
 }
 
 }	// End of namespace

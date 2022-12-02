@@ -74,41 +74,6 @@ void PropertyFieldBase::generatePropertyChangedEvent(RefMaker* owner, const Prop
 }
 
 /******************************************************************************
-* Indicates whether undo records should be created.
-******************************************************************************/
-bool PropertyFieldBase::isUndoRecordingActive(RefMaker* owner, const PropertyFieldDescriptor* descriptor)
-{
-	if(descriptor->automaticUndo()) {
-		// Make sure the calling code did not forget to create a proper execution context.
-		OVITO_ASSERT(ExecutionContext::current().isValid());
-		// Undo recording is only performed in the main thread.
-		if(QThread::currentThread() == owner->thread()) {
-			// Get the active undo stack in the current execution context.
-			if(ExecutionContext::current().isValid()) {
-				if(UndoStack* undoStack = ExecutionContext::current().ui().undoStack()) {
-					return undoStack->isRecording();
-				}
-			}
-		}
-	}
-	return false;
-}
-
-/******************************************************************************
-* Puts a record on the undo stack.
-******************************************************************************/
-void PropertyFieldBase::pushUndoRecord(RefMaker* owner, std::unique_ptr<UndoableOperation>&& operation)
-{
-	OVITO_ASSERT_MSG(!QCoreApplication::instance() || QThread::currentThread() == QCoreApplication::instance()->thread(), "PropertyFieldBase::pushUndoRecord()", "This function may only be called from the main thread.");
-	OVITO_ASSERT(ExecutionContext::current().isValid());
-	UndoStack* undoStack = ExecutionContext::current().ui().undoStack();
-	OVITO_ASSERT(undoStack);
-	OVITO_ASSERT(QThread::currentThread() == undoStack->thread());
-	OVITO_ASSERT(undoStack->isRecording());
-	undoStack->push(std::move(operation));
-}
-
-/******************************************************************************
 * Constructor.
 ******************************************************************************/
 PropertyFieldBase::PropertyFieldOperation::PropertyFieldOperation(RefMaker* owner, const PropertyFieldDescriptor* descriptor) :
@@ -183,10 +148,10 @@ template<typename T> void SingleReferenceFieldBase<T>::set(RefMaker* owner, cons
 		}
 	};
 
-	if(isUndoRecordingActive(owner, descriptor)) {
+	if(descriptor->automaticUndo() && CompoundOperation::current()) {
 		auto op = std::make_unique<SetReferenceOperation>(owner, std::move(newTarget), *this, descriptor);
 		op->redo();
-		pushUndoRecord(owner, std::move(op));
+		CompoundOperation::current()->addOperation(std::move(op));
 	}
 	else {
 		swapReference(owner, descriptor, newTarget);
@@ -308,10 +273,10 @@ template<typename T> void VectorReferenceFieldBase<T>::set(RefMaker* owner, cons
 		}
 	};
 
-	if(isUndoRecordingActive(owner, descriptor)) {
+	if(descriptor->automaticUndo() && CompoundOperation::current()) {
 		auto op = std::make_unique<SetReferenceOperation>(owner, std::move(newTarget), i, *this, descriptor);
 		op->redo();
-		pushUndoRecord(owner, std::move(op));
+		CompoundOperation::current()->addOperation(std::move(op));
 	}
 	else {
 		swapReference(owner, descriptor, i, newTarget);
@@ -372,11 +337,11 @@ template<typename T> auto VectorReferenceFieldBase<T>::insert(RefMaker* owner, c
 		}
 	};
 
-	if(isUndoRecordingActive(owner, descriptor)) {
+	if(descriptor->automaticUndo() && CompoundOperation::current()) {
 		auto op = std::make_unique<InsertReferenceOperation>(owner, std::move(newTarget), i, *this, descriptor);
 		op->redo();
 		int index = op->insertionIndex();
-		pushUndoRecord(owner, std::move(op));
+		CompoundOperation::current()->addOperation(std::move(op));
 		return index;
 	}
 	else {
@@ -433,10 +398,10 @@ template<typename T> void VectorReferenceFieldBase<T>::remove(RefMaker* owner, c
 		}
 	};
 
-	if(isUndoRecordingActive(owner, descriptor)) {
+	if(descriptor->automaticUndo() && CompoundOperation::current()) {
 		auto op = std::make_unique<RemoveReferenceOperation>(owner, i, *this, descriptor);
 		op->redo();
-		pushUndoRecord(owner, std::move(op));
+		CompoundOperation::current()->addOperation(std::move(op));
 	}
 	else {
 		pointer deadStorage;

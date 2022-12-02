@@ -27,6 +27,7 @@
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
 #include <ovito/gui/base/viewport/ViewportInputMode.h>
 #include <ovito/core/oo/RefTargetListener.h>
+#include <ovito/core/dataset/scene/ScenePreparation.h>
 #include "DataInspectionApplet.h"
 
 namespace Ovito {
@@ -89,6 +90,11 @@ protected Q_SLOTS:
 	/// Is called whenever the user has switched to a different page of the inspector.
 	void onCurrentPageChanged(int index);
 
+Q_SIGNALS:
+
+	/// Signal is emitted whenenver a different pipeline becomes the selected one.
+	void selectedPipelineChanged(PipelineSceneNode* newPipeline);
+
 protected:
 
 	virtual void mouseReleaseEvent(QMouseEvent* event) override {
@@ -137,6 +143,9 @@ private:
 
 	/// Listens to messages from the currently selected pipeline.
 	OORef<PipelineSceneNode> _selectedPipeline;
+
+	/// Helper object which asks the scene pipelines to compute their results.
+	ScenePreparation _scenePreparation;
 
 	/// The most recent output data of the selected pipeline, which is displayed in the data inspector panel.
 	PipelineFlowState _pipelineOutput;

@@ -229,10 +229,6 @@ public:
 	/// \brief Determines if this object's properties are currently being edited in an editor.
 	bool isObjectBeingEdited() const;
 
-	/// Returns an executor object to be used with Future<>::then(), which executes work
-	/// in the context (and the thread) of this object.
-	RefTargetExecutor executor(bool requireDeferredExecution = false) const;
-
 	/// \brief Rescales the times of all animation keys from the old animation interval to the new interval.
 	/// \param oldAnimationInterval The old animation interval, which should be mapped to the new animation interval.
 	/// \param newAnimationInterval The new animation interval.
@@ -255,5 +251,3 @@ private:
 
 Q_DECLARE_METATYPE(Ovito::ObjectCreationParams)
 Q_DECLARE_OPERATORS_FOR_FLAGS(Ovito::ObjectCreationParams::InitializationFlags);
-
-#include <ovito/core/oo/RefTargetExecutor.h>

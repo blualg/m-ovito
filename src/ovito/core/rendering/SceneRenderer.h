@@ -35,6 +35,7 @@
 #include <ovito/core/oo/RefTarget.h>
 #include <ovito/core/viewport/ViewportProjectionParameters.h>
 #include <ovito/core/viewport/Viewport.h>
+#include <ovito/core/utilities/MixedKeyCache.h>
 #include "LinePrimitive.h"
 #include "ParticlePrimitive.h"
 #include "TextPrimitive.h"

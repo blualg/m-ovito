@@ -158,7 +158,7 @@ void PropertyContainerParameterUI::updateUI()
 void PropertyContainerParameterUI::updatePropertyValue()
 {
 	if(comboBox() && editObject()) {
-		undoableTransaction(tr("Select input data object"), [this]() {
+		performTransaction(tr("Select input data object"), [this]() {
 
 			PropertyContainerReference containerRef = comboBox()->currentData().value<PropertyContainerReference>();
 

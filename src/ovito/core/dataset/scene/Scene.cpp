@@ -134,18 +134,9 @@ void Scene::referenceReplaced(const PropertyFieldDescriptor* field, RefTarget* o
 	if(field == PROPERTY_FIELD(selection)) {
 		Q_EMIT selectionSetReplaced(selection());
 	}
-
-#if 0 // TODO: Make this work
-	// Install a signal/slot connection that updates the viewports every time the animation time has changed.
-	if(field == PROPERTY_FIELD(animationSettings)) {
-		disconnect(_updateViewportOnTimeChangeConnection);
-		if(animationSettings() && viewportConfig()) {
-			_updateViewportOnTimeChangeConnection = connect(animationSettings(), &AnimationSettings::timeChangeComplete, viewportConfig(), &ViewportConfiguration::updateViewports);
-			viewportConfig()->updateViewports();
-		}
+	else if(field == PROPERTY_FIELD(animationSettings)) {
+		OVITO_ASSERT(oldTarget == nullptr || newTarget == nullptr); // Note: Replacing the animation settings of a scene is not yet supported.
 	}
-#endif
-
 	SceneNode::referenceReplaced(field, oldTarget, newTarget, listIndex);
 }
 

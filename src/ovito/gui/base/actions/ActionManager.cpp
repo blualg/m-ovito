@@ -126,8 +126,13 @@ ActionManager::ActionManager(QObject* parent, UserInterface& userInterface) : QA
 	createCommandAction(ACTION_START_ANIMATION_PLAYBACK, tr("Start Animation Playback"), "animation_play", tr("Start playing the animation in the viewports."));
 	createCommandAction(ACTION_STOP_ANIMATION_PLAYBACK, tr("Stop Animation Playback"), "animation_stop", tr("Stop playing the animation in the viewports."));
 	createCommandAction(ACTION_ANIMATION_SETTINGS, tr("Animation Settings"), "animation_settings", tr("Open the animation settings dialog."));
-	createCommandAction(ACTION_TOGGLE_ANIMATION_PLAYBACK, tr("Play Animation"), "animation_play", tr("Start/stop animation playback. Hold down Shift key to play backwards."), Qt::Key_Space)->setCheckable(true);
 	createCommandAction(ACTION_AUTO_KEY_MODE_TOGGLE, tr("Auto Key Mode"), "animation_auto_key_mode", tr("Toggle auto-key mode for creating animation keys."))->setCheckable(true);
+
+	QAction* toggleAnimationPlaybackAction = createCommandAction(ACTION_TOGGLE_ANIMATION_PLAYBACK, tr("Play Animation"), "animation_play", tr("Start/stop animation playback. Hold down Shift key to play backwards."), Qt::Key_Space);
+	toggleAnimationPlaybackAction->setCheckable(true);
+	toggleAnimationPlaybackAction->setChecked(userInterface.datasetContainer().isPlaybackActive());
+	connect(&userInterface.datasetContainer(), &DataSetContainer::playbackChanged, toggleAnimationPlaybackAction, &QAction::setChecked);
+	connect(toggleAnimationPlaybackAction, &QAction::toggled, &userInterface.datasetContainer(), &DataSetContainer::setAnimationPlayback);
 
 	connect(getAction(ACTION_VIEWPORT_MAXIMIZE), &QAction::triggered, this, &ActionManager::on_ViewportMaximize_triggered);
 	connect(getAction(ACTION_VIEWPORT_ZOOM_SCENE_EXTENTS), &QAction::triggered, this, &ActionManager::on_ViewportZoomSceneExtents_triggered);
@@ -163,14 +168,8 @@ void ActionManager::onDataSetChanged(DataSet* newDataSet)
 void ActionManager::onAnimationSettingsReplaced(AnimationSettings* newAnimationSettings)
 {
 	disconnect(_animationIntervalChangedConnection);
-	disconnect(_animationPlaybackChangedConnection);
-	disconnect(_animationPlaybackToggledConnection);
 	if(newAnimationSettings) {
-		QAction* animationPlaybackAction = getAction(ACTION_TOGGLE_ANIMATION_PLAYBACK);
-		animationPlaybackAction->setChecked(newAnimationSettings->isPlaybackActive());
 		_animationIntervalChangedConnection = connect(newAnimationSettings, &AnimationSettings::intervalChanged, this, &ActionManager::onAnimationIntervalChanged);
-		_animationPlaybackChangedConnection = connect(newAnimationSettings, &AnimationSettings::playbackChanged, animationPlaybackAction, &QAction::setChecked);
-		_animationPlaybackToggledConnection = connect(animationPlaybackAction, &QAction::toggled, newAnimationSettings, &AnimationSettings::setAnimationPlayback);
 		onAnimationIntervalChanged(newAnimationSettings->firstFrame(), newAnimationSettings->lastFrame());
 	}
 	else {

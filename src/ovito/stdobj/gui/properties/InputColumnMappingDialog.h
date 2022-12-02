@@ -38,7 +38,7 @@ class OVITO_STDOBJGUI_EXPORT InputColumnMappingDialog : public QDialog
 public:
 
 	/// Constructor.
-	InputColumnMappingDialog(const InputColumnMapping& mapping, QWidget* parent);
+	InputColumnMappingDialog(MainWindow& mainWindow, const InputColumnMapping& mapping, QWidget* parent);
 
 	/// Fills the editor with the given mapping.
 	void setMapping(const InputColumnMapping& mapping);
@@ -64,6 +64,8 @@ protected:
 
 	/// \brief Returns the string representation of a property's data type.
 	static QString dataTypeToString(int dataType);
+
+	MainWindow& _mainWindow;
 
 	/// The property container type.
 	PropertyContainerClassPtr _containerClass = nullptr;

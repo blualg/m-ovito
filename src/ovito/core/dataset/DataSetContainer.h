@@ -26,6 +26,7 @@
 #include <ovito/core/Core.h>
 #include <ovito/core/dataset/animation/TimeInterval.h>
 #include <ovito/core/dataset/DataSet.h>
+#include <ovito/core/dataset/scene/SceneAnimationPlayback.h>
 #include <ovito/core/oo/RefMaker.h>
 
 namespace Ovito {
@@ -69,6 +70,23 @@ public:
 
 	/// Returns the currently scene node selection set.
 	SelectionSet* activeSelectionSet() const { return _activeSelectionSet; }
+
+	/// Returns the current time of the active animation settings object.
+	AnimationTime currentAnimationTime() const { return activeAnimationSettings() ? activeAnimationSettings()->currentTime() : AnimationTime(0); }
+
+	/// Returns whether the animation is currently being played back in the interactive viewports.
+	bool isPlaybackActive() const { return _animationPlayback && _animationPlayback->isPlaybackActive(); }
+
+public Q_SLOTS:
+
+	/// \brief Starts playback of the animation in the viewports.
+	void startAnimationPlayback(FloatType playbackRate = FloatType(1)) { createAnimationPlayback()->startAnimationPlayback(playbackRate); }
+
+	/// \brief Stops playback of the animation in the viewports.
+	void stopAnimationPlayback() { if(_animationPlayback) _animationPlayback->stopAnimationPlayback(); }
+
+	/// \brief Starts or stops animation playback in the viewports.
+	void setAnimationPlayback(bool on) { createAnimationPlayback()->setAnimationPlayback(on); }
 
 Q_SIGNALS:
 
@@ -120,9 +138,6 @@ Q_SIGNALS:
 	/// \brief This signal is emitted when the current animation frame has changed or if the current animation settings have been replaced.
     void currentFrameChanged(int newFrame);
 
-	/// \brief This signal is emitted when the scene becomes ready after the current animation frame has changed.
-	void currentFrameChangeComplete();
-
 	/// \brief This signal is emitted whenever the length of the active animation interval changes.
 	void animationIntervalChanged(int firstFrame, int lastFrame);
 
@@ -132,16 +147,16 @@ Q_SIGNALS:
 	/// \brief This signal is emitted whenever the file path of the active dataset changes.
 	void filePathChanged(const QString& filePath);
 
-	/// \brief Is emitted whenever the scene of the current dataset is being made ready for rendering after it was changed in some way.
-	void scenePreparationStarted();
-
-	/// \brief Is emitted whenever the scene of the current dataset became ready for rendering.
-	void scenePreparationFinished();
+	/// This signal is emitted when the animation playback is started or stopped.
+	void playbackChanged(bool active);
 
 protected:
 
 	/// Is called when the value of a reference field of this RefMaker changes.
 	virtual void referenceReplaced(const PropertyFieldDescriptor* field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex) override;
+
+	/// Create the animation playback helper object on demand.
+	SceneAnimationPlayback* createAnimationPlayback();
 
 protected Q_SLOTS:
 
@@ -180,6 +195,9 @@ private:
 	/// Reference to the currently scene node selection set.
 	OORef<SelectionSet> _activeSelectionSet;
 
+	/// Helper object responsible for playing back the frames of the animation in the interactive viewports.
+	OORef<SceneAnimationPlayback> _animationPlayback;
+
 	QMetaObject::Connection _selectionSetReplacedConnection;
 	QMetaObject::Connection _selectionSetChangedConnection;
 	QMetaObject::Connection _selectionSetChangeCompleteConnection;
@@ -187,12 +205,9 @@ private:
 	QMetaObject::Connection _activeViewportChangedConnection;
 	QMetaObject::Connection _renderSettingsReplacedConnection;
 	QMetaObject::Connection _animationCurrentFrameChangedConnection;
-	QMetaObject::Connection _animationCurrentFrameChangeCompleteConnection;
 	QMetaObject::Connection _animationIntervalChangedConnection;
 	QMetaObject::Connection _timeFormatChangedConnection;
 	QMetaObject::Connection _filePathChangedConnection;
-	QMetaObject::Connection _scenePreparationStartedConnection;
-	QMetaObject::Connection _scenePreparationFinishedConnection;
 };
 
 }	// End of namespace

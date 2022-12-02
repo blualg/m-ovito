@@ -109,7 +109,7 @@ void AsynchronousTaskBase::run()
 	OVITO_ASSERT(isStarted());
 	OVITO_ASSERT(_executionContext.isValid());
 	
-	ExecutionContext::Scope execScope(_executionContext);
+	ExecutionContext::Scope execScope(std::move(_executionContext));
 	try {
 		// Execute the work function in the scope of this task object.
 		Task::Scope taskScope(this);

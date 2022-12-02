@@ -23,6 +23,7 @@
 #include <ovito/gui/desktop/GUI.h>
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
 #include <ovito/gui/desktop/widgets/general/ElidedTextLabel.h>
+#include <ovito/core/utilities/concurrent/TaskWatcher.h>
 #include "ProgressDialog.h"
 
 namespace Ovito {

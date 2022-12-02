@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -40,9 +40,6 @@ class OVITO_STDOBJGUI_EXPORT PropertyInspectionApplet : public DataInspectionApp
 	OVITO_CLASS(PropertyInspectionApplet)
 
 public:
-
-	/// Lets the applet update the contents displayed in the inspector.
-	virtual void updateDisplay() override;
 
 	/// Returns the data display widget.
 	QTableView* tableView() const { return _tableView; }

@@ -42,9 +42,8 @@ void WidgetActionManager::on_RenderActiveViewport_triggered()
 		// This will process any pending user inputs in QLineEdit fields that haven't been processed yet.
 		mainWindow().setFocus();
 
-		// Stop animation playback.
-		if(AnimationSettings* anim = userInterface().datasetContainer().activeAnimationSettings())
-			anim->stopAnimationPlayback();
+		// Stop animation playback in the interactive viewports before rendering an image.
+		userInterface().datasetContainer().stopAnimationPlayback();
 
 		// Get the current render settings.
 		RenderSettings* renderSettings = dataset()->renderSettings();
