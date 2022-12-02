@@ -147,7 +147,7 @@ bool SurfaceMeshAccess::smoothMesh(int numIterations, ProgressingTask& task, Flo
 ******************************************************************************/
 std::optional<std::pair<SurfaceMeshAccess::region_index, FloatType>> SurfaceMeshAccess::locatePoint(const Point3& location, FloatType epsilon, const boost::dynamic_bitset<>& faceSubset) const
 {
-	// Determine which vertex is closest to the test point.
+	// Determine which vertex is closest to the query point.
 	FloatType closestDistanceSq = FLOATTYPE_MAX;
 	vertex_index closestVertex = InvalidIndex;
 	Vector3 closestNormal, closestVector;
@@ -161,7 +161,7 @@ std::optional<std::pair<SurfaceMeshAccess::region_index, FloatType>> SurfaceMesh
 		if(distSq < closestDistanceSq) {
 			// Compute pseudo-normal at the vertex.
 			// Note that a vertex may have multiple pseudo-normals if it is part of multiple manifolds.
-			// We need to compute the normal belonging to each manifold and use the one that is facing 
+			// If the manifold is two-sided, we need to compute the normal belonging to each manifold and use the one that is facing 
 			// away from the query point (if any).
 			Vector3 pseudoNormal = Vector3::Zero();
 			edge_index firstEdge = firstVertexEdge(vindex);
@@ -197,8 +197,8 @@ std::optional<std::pair<SurfaceMeshAccess::region_index, FloatType>> SurfaceMesh
 					while(edge != firstEdge);
 					closestRegion = hasFaceRegions() ? faceRegion(adjacentFace(firstEdge)) : 0;
 
-					// We can stop if pseudo-normal is facing away from query point.
-					if(pseudoNormal.dot(r) > -epsilon) 
+					// We can stop if the manifold is two-sided and the pseudo-normal is facing away from query point.
+					if(pseudoNormal.dot(r) > -epsilon || !hasOppositeFace(adjacentFace(edge))) 
 						break;
 					pseudoNormal.setZero();
 				}
@@ -281,7 +281,7 @@ std::optional<std::pair<SurfaceMeshAccess::region_index, FloatType>> SurfaceMesh
 			bool isInsideTriangle = true;
 			Vector3 vertexVector = r;
 			for(size_t v = 0; v < 3; v++) {
-				if(vertexVector.dot(normal.cross(edgeVectors[v])) >= 0.0) {
+				if(vertexVector.dot(normal.cross(edgeVectors[v])) >= FLOATTYPE_EPSILON) {
 					isInsideTriangle = false;
 					break;
 				}
@@ -310,8 +310,8 @@ std::optional<std::pair<SurfaceMeshAccess::region_index, FloatType>> SurfaceMesh
 	}
 
 	FloatType dot = closestNormal.dot(closestVector);
-	if(dot >= epsilon) return std::make_pair(closestRegion, sqrt(closestDistanceSq));
-	if(dot <= -epsilon) return std::make_pair(spaceFillingRegion(), sqrt(closestDistanceSq));
+	if(dot >= epsilon) return std::make_pair(closestRegion, std::sqrt(closestDistanceSq));
+	if(dot <= -epsilon) return std::make_pair(spaceFillingRegion(), std::sqrt(closestDistanceSq));
 	return {};
 }
 
