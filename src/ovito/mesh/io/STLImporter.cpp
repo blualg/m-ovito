@@ -54,7 +54,7 @@ bool STLImporter::OOMetaClass::checkFileFormat(const FileHandle& file) const
 		CompressedTextReader stream(file);
 		// Read first line. It should start with the word "solid".
 		stream.readLine(256);
-		if(stream.lineStartsWithToken("solid")) {
+		if(stream.lineStartsWithToken("solid", true)) {
 			// Read a couple of more lines until we find the first "facet normal" line, just to make sure.
 			while(!stream.eof()) {
 				const char* line = stream.readLineTrimLeft();
@@ -107,7 +107,7 @@ void STLImporter::FrameLoader::loadFile()
 
 	// Read first line and check if it begins with the mandatory "solid" keyword.
 	stream.readLine(1024);
-	if(stream.lineStartsWithToken("solid")) {
+	if(stream.lineStartsWithToken("solid", true)) {
 		setProgressMaximum(stream.underlyingSize());
 
 		// Parse file line by line.

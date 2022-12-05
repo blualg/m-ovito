@@ -250,3 +250,11 @@ try:
         spelling_exclude_patterns=['licenses/*']
 except:
     pass
+
+# This hook replaces {{OVITO_VERSION_STRING}} in codeblocks and other contexts with the current OVITO release number.
+# See https://stackoverflow.com/a/56328457
+def ovitoVersionReplace(app, docname, source):
+    source[0] = source[0].replace("{{OVITO_VERSION_STRING}}", app.config.release)
+
+def setup(app):
+    app.connect('source-read', ovitoVersionReplace)
