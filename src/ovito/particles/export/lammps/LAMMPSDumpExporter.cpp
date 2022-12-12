@@ -32,7 +32,7 @@ IMPLEMENT_OVITO_CLASS(LAMMPSDumpExporter);
 /******************************************************************************
 * Writes the particles of one animation frame to the current output file.
 ******************************************************************************/
-bool LAMMPSDumpExporter::exportData(const PipelineFlowState& state, int frameNumber, TimePoint time, const QString& filePath, MainThreadOperation& operation)
+bool LAMMPSDumpExporter::exportData(const PipelineFlowState& state, int frameNumber, const QString& filePath, MainThreadOperation& operation)
 {
 	// Get particles.
 	const ParticlesObject* particles = state.expectObject<ParticlesObject>();

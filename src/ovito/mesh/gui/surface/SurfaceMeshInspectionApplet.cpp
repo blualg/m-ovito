@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -101,9 +101,9 @@ QWidget* SurfaceMeshInspectionApplet::createWidget()
 ******************************************************************************/
 void SurfaceMeshInspectionApplet::onCurrentDataObjectChanged()
 {
-	_verticesApplet->updateDisplay(currentState(), currentPipeline());
-	_facesApplet->updateDisplay(currentState(), currentPipeline());
-	_regionsApplet->updateDisplay(currentState(), currentPipeline());
+	_verticesApplet->updateDisplay();
+	_facesApplet->updateDisplay();
+	_regionsApplet->updateDisplay();
 }
 
 /******************************************************************************

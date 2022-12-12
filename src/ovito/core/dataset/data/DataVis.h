@@ -58,13 +58,7 @@ public:
 	virtual PipelineStatus render(AnimationTime time, const ConstDataObjectPath& path, const PipelineFlowState& flowState, SceneRenderer* renderer, const PipelineSceneNode* contextNode) = 0;
 
 	/// \brief Computes the view-independent bounding box of the given data object.
-	/// \param time The animation time for which the bounding box should be computed.
-	/// \param path The data object for which to compute the bounding box and all its parent objects.
-	/// \param contextNode The pipeline node which this vis element belongs to.
-	/// \param flowState The pipeline evaluation result of the object node.
-	/// \param validityInterval The time interval to be reduced by the method to report the duration of validity of the computed box.
-	/// \return The bounding box of the visual element in local object coordinates.
-	virtual Box3 boundingBox(AnimationTime time, const ConstDataObjectPath& path, const PipelineSceneNode* contextNode, const PipelineFlowState& flowState, TimeInterval& validityInterval) = 0;
+	virtual Box3 boundingBox(AnimationTime time, const ConstDataObjectPath& path, const PipelineSceneNode* contextNode, const PipelineFlowState& flowState, MixedKeyCache& visCache, TimeInterval& validityInterval) = 0;
 
 	/// \brief Indicates whether this visual element should be surrounded by a selection marker in the viewports when it is selected.
 	/// \return \c true to let the system render a selection marker around the object when it is selected.

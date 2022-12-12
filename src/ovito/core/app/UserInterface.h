@@ -26,7 +26,8 @@
 #include <ovito/core/Core.h>
 #include <ovito/core/utilities/concurrent/TaskManager.h>
 #include <ovito/core/utilities/units/UnitsManager.h>
-#include <ovito/core/dataset/UndoStack.h>
+#include <ovito/core/app/undo/UndoableOperation.h>
+#include <ovito/core/app/undo/UndoableTransaction.h>
 
 namespace Ovito {
 
@@ -121,6 +122,18 @@ public:
 	/// Returns whether viewport updates are currently suspended.
 	bool areViewportUpdatesSuspended() const { return _viewportSuspendCount > 0; }
 
+	/// Suspends updates of the viewports whenever preliminary data pipeline results are available.
+	void suspendPreliminaryViewportUpdates() { _preliminaryViewportUpdatesSuspendCount++; }
+
+	/// \brief Resumes updates of the viewports whenever preliminary data pipeline results are available.
+	void resumePreliminaryViewportUpdates() {
+		OVITO_ASSERT_MSG(_preliminaryViewportUpdatesSuspendCount > 0, "UserInterface::resumePreliminaryViewportUpdates()", "resumePreliminaryViewportUpdates() has been called more often than suspendPreliminaryViewportUpdates().");
+		_preliminaryViewportUpdatesSuspendCount--;
+	}
+
+	/// Returns whether viewports should be updated whenever preliminary pipeline results are available.  
+	bool arePreliminaryViewportUpdatesSuspended() const { return _preliminaryViewportUpdatesSuspendCount != 0; }
+
 	/// Flags all viewports for redrawing.
 	///
 	/// This function does not lead to an immediate repainting of the viewports; instead it schedules a
@@ -130,6 +143,12 @@ public:
 	///
 	/// To redraw all viewports immediately, also call processViewportUpdateRequests().
 	void updateViewports();
+
+	/// Returns whether any of the visible interactive viewports is currently being rendered.
+	bool isRenderingInteractiveViewports() const { return _viewportBeingRendered != nullptr; }
+
+	/// Zooms all visible viewports to the extents of the scene when all scene pipelines have been fully evaluated and the extents are known.
+	void zoomToSceneExtentsWhenReady();
 
 	/// Executes a functor that performs some actions in an interactive context and catches any exceptions thrown during its execution.
 	/// If an exception is thrown by the functor, the error message is displayed to the user and this function returns false.
@@ -147,21 +166,27 @@ public:
 	}
 
 	/// Executes a functor provided by the caller that performs undoable actions in an interactive context.
+	/// If an exception is thrown by the functor, the error message is displayed 
+	/// to the user, and this function returns false. 
+	template<typename Function>
+	bool performActions(UndoableTransaction& transaction, Function&& func) {
+		OVITO_ASSERT(transaction.operation());
+		OVITO_ASSERT(&transaction.userInterface() == this);
+		UndoSuspender activateUndo(transaction.operation());
+		return handleExceptions(std::forward<Function>(func));
+	}
+
+	/// Executes a functor provided by the caller that performs undoable actions in an interactive context.
 	/// If an exception is thrown by the functor, all data changes performed by the functor so far will be undone, the error message is displayed 
 	/// to the user, and this function returns false. If no exception is thrown, all performed actions are committed and this function returns true.
 	template<typename Function>
 	bool performTransaction(const QString& undoOperationName, Function&& func) {
-		try {
-			ExecutionContext::Scope executionScope(ExecutionContext::Type::Interactive, *this);
-			UndoableTransaction transaction(undoOperationName);
-			std::forward<Function>(func)();
-			transaction.commit(*this);
+		UndoableTransaction transaction(*this, undoOperationName);
+		if(performActions(transaction, std::forward<Function>(func))) {
+			transaction.commit();
 			return true;
 		}
-		catch(const Exception& ex) {
-			reportError(ex);
-			return false;
-		}
+		return false;
 	}
 
 protected:
@@ -197,6 +222,14 @@ private:
 
 	/// Indicates that the viewports have been invalidated while updates were suspended.
 	bool _viewportsNeedUpdate = false;
+
+	/// Counts the number of times preliminary viewport updates have been suspended.
+	int _preliminaryViewportUpdatesSuspendCount = 0;
+
+	/// The interactive viewport currently being rendered.
+	Viewport* _viewportBeingRendered = nullptr;
+
+	friend class Viewport;
 };
 
 /**
@@ -217,6 +250,29 @@ public:
 	}
 private:
 	UserInterface& _ui;
+};
+
+/**
+ * \brief A helper class that suspends preliminary viewport updates while it exists.
+ */
+class OVITO_CORE_EXPORT PreliminaryViewportUpdatesSuspender
+{
+public:
+
+	/// Suspends the automatic generation of animation keys by calling UserInterface::suspendPreliminaryViewportUpdates().
+	/// \param animSettings The animation settings object.
+	PreliminaryViewportUpdatesSuspender(UserInterface& userInterface) : _userInterface(userInterface) {
+		userInterface.suspendPreliminaryViewportUpdates();
+	}
+
+	/// Resumes the automatic generation of animation keys by calling UserInterface::resumePreliminaryViewportUpdates().
+	~PreliminaryViewportUpdatesSuspender() {
+		_userInterface.resumePreliminaryViewportUpdates();
+	}
+
+private:
+
+	UserInterface& _userInterface;
 };
 
 }	// End of namespace

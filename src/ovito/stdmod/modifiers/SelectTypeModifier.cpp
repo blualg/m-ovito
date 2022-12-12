@@ -22,7 +22,7 @@
 
 #include <ovito/stdmod/StdMod.h>
 #include <ovito/core/dataset/DataSet.h>
-#include <ovito/core/dataset/UndoStack.h>
+#include <ovito/core/app/undo/UndoableOperation.h>
 #include <ovito/core/dataset/pipeline/ModifierApplication.h>
 #include <ovito/stdobj/properties/PropertyObject.h>
 #include <ovito/stdobj/properties/PropertyContainer.h>
@@ -81,7 +81,7 @@ void SelectTypeModifier::initializeModifier(const ModifierInitializationRequest&
 ******************************************************************************/
 void SelectTypeModifier::propertyChanged(const PropertyFieldDescriptor* field)
 {
-	if(field == PROPERTY_FIELD(GenericPropertyModifier::subject) && !isBeingLoaded() && !dataset()->undoStack().isUndoingOrRedoing()) {
+	if(field == PROPERTY_FIELD(GenericPropertyModifier::subject) && !isBeingLoaded() && !isUndoingOrRedoing()) {
 		// Whenever the selected property class of this modifier is changed, update the source property reference accordingly.
 		setSourceProperty(sourceProperty().convertToContainerClass(subject().dataClass()));
 	}
@@ -224,9 +224,12 @@ void SelectTypeModifier::setElementTypeSelectionState(int elementTypeId, const Q
 ******************************************************************************/
 QVariant SelectTypeModifier::getPipelineEditorShortInfo(Scene* scene, ModifierApplication* modApp) const 
 {
+	OVITO_ASSERT(ExecutionContext::current().isValid());
+	OVITO_ASSERT(scene);
+	
 	QString shortInfo;
 	if(modApp && subject() && !sourceProperty().isNull() && sourceProperty().containerClass() == subject().dataClass()) {
-		const PipelineFlowState& state = modApp->evaluateInputSynchronous(PipelineEvaluationRequest(scene->animationSettings(), scene->animationSettings()->time()));
+		const PipelineFlowState& state = modApp->evaluateInputSynchronous(PipelineEvaluationRequest(scene->animationSettings()));
 		if(const PropertyContainer* container = state.getLeafObject(subject())) {
 			if(const PropertyObject* inputProperty = sourceProperty().findInContainer(container)) {
 				auto sortedIds = selectedTypeIDs().values();

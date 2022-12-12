@@ -26,7 +26,7 @@
 #include <ovito/gui/desktop/dialogs/AnimationKeyEditorDialog.h>
 #include <ovito/gui/desktop/mainwin/ViewportsPanel.h>
 #include <ovito/gui/base/viewport/ViewportInputManager.h>
-#include <ovito/core/dataset/UndoStack.h>
+#include <ovito/core/app/undo/UndoableOperation.h>
 #include <ovito/core/dataset/animation/AnimationSettings.h>
 #include <ovito/core/dataset/animation/controller/PRSTransformationController.h>
 #include <ovito/core/dataset/animation/controller/KeyframeController.h>
@@ -61,10 +61,7 @@ void XFormMode::deactivated(bool temporary)
 {
 	if(viewport()) {
 		// Restore old state if change has not been committed.
-		if(UndoStack* undoStack = inputManager()->userInterface().undoStack()) {
-			undoStack->endCompoundOperation(false);
-			undoStack->endCompoundOperation(false);
-		}
+		_undoTransaction.cancel();
 		_viewport = nullptr;
 	}
 	disconnect(&inputManager()->datasetContainer(), &DataSetContainer::selectionChangeComplete, this, &XFormMode::onSelectionChangeComplete);
@@ -135,11 +132,11 @@ void XFormMode::mousePressEvent(ViewportWindowInterface* vpwin, QMouseEvent* eve
 			if(pickResult.isValid()) {
 				_viewport = vpwin->viewport();
 				_startPoint = getMousePosition(event);
-				if(UndoStack* undoStack = inputManager()->userInterface().undoStack())
-					undoStack->beginCompoundOperation(undoDisplayName());
-				viewport()->scene()->selection()->setNode(pickResult.pipelineNode());
-				if(UndoStack* undoStack = inputManager()->userInterface().undoStack())
-					undoStack->beginCompoundOperation(undoDisplayName());
+				_undoTransaction.begin(inputManager()->userInterface(), undoDisplayName());
+				inputManager()->userInterface().performActions(_undoTransaction, [&] {
+					viewport()->scene()->selection()->setNode(pickResult.pipelineNode());
+				});
+				_undoSelectionOperation = _undoTransaction.snapshot();
 				startXForm();
 			}
 		}
@@ -148,10 +145,7 @@ void XFormMode::mousePressEvent(ViewportWindowInterface* vpwin, QMouseEvent* eve
 	else if(event->button() == Qt::RightButton) {
 		if(viewport()) {
 			// Restore old state when aborting the operation.
-			if(UndoStack* undoStack = inputManager()->userInterface().undoStack()) {
-				undoStack->endCompoundOperation(false);
-				undoStack->endCompoundOperation(false);
-			}
+			_undoTransaction.cancel();
 			_viewport = nullptr;
 			return;
 		}
@@ -166,10 +160,7 @@ void XFormMode::mouseReleaseEvent(ViewportWindowInterface* vpwin, QMouseEvent* e
 {
 	if(viewport()) {
 		// Commit change.
-		if(UndoStack* undoStack = inputManager()->userInterface().undoStack()) {
-			undoStack->endCompoundOperation();
-			undoStack->endCompoundOperation();
-		}
+		_undoTransaction.commit();
 		_viewport = nullptr;
 	}
 	ViewportInputMode::mouseReleaseEvent(vpwin, event);
@@ -186,10 +177,12 @@ void XFormMode::mouseMoveEvent(ViewportWindowInterface* vpwin, QMouseEvent* even
 		// generates may be too old.
 		_currentPoint = vpwin->getCurrentMousePos();
 
-		if(UndoStack* undoStack = inputManager()->userInterface().undoStack())
-			undoStack->resetCurrentCompoundOperation();
+		// Revert the previous x-form operation.
+		_undoTransaction.revertTo(_undoSelectionOperation);
 		
-		doXForm();
+		inputManager()->userInterface().performActions(_undoTransaction, [&] {
+			doXForm();
+		});
 
 		// Force immediate viewport repaints.
 		inputManager()->userInterface().processViewportUpdateRequests();
@@ -208,10 +201,7 @@ void XFormMode::focusOutEvent(ViewportWindowInterface* vpwin, QFocusEvent* event
 {
 	if(viewport()) {
 		// Restore old state if change has not been committed.
-		if(UndoStack* undoStack = inputManager()->userInterface().undoStack()) {
-			undoStack->endCompoundOperation(false);
-			undoStack->endCompoundOperation(false);
-		}
+		_undoTransaction.cancel();
 		_viewport = nullptr;
 	}
 }

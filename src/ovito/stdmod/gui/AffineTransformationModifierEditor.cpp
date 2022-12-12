@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -192,14 +192,16 @@ void AffineTransformationModifierEditor::updateUI()
 ******************************************************************************/
 void AffineTransformationModifierEditor::onSpinnerValueChanged()
 {
-	if(!dataset()->undoStack().isRecording()) {
-		UndoableTransaction transaction(dataset()->undoStack(), tr("Change parameter"));
-		updateParameterValue();
-		transaction.commit();
+	if(!_undoTransaction.operation()) {
+		performTransaction(tr("Change parameter"), [&] {
+			updateParameterValue();
+		});
 	}
 	else {
-		dataset()->undoStack().resetCurrentCompoundOperation();
-		updateParameterValue();
+		_undoTransaction.revert();
+		performActions(_undoTransaction, [&] {
+			updateParameterValue();
+		});
 	}
 }
 
@@ -229,8 +231,7 @@ void AffineTransformationModifierEditor::updateParameterValue()
 ******************************************************************************/
 void AffineTransformationModifierEditor::onSpinnerDragStart()
 {
-	OVITO_ASSERT(!dataset()->undoStack().isRecording());
-	dataset()->undoStack().beginCompoundOperation(tr("Change parameter"));
+	_undoTransaction.begin(mainWindow(), tr("Change parameter"));
 }
 
 /******************************************************************************
@@ -238,8 +239,7 @@ void AffineTransformationModifierEditor::onSpinnerDragStart()
 ******************************************************************************/
 void AffineTransformationModifierEditor::onSpinnerDragStop()
 {
-	OVITO_ASSERT(dataset()->undoStack().isRecording());
-	dataset()->undoStack().endCompoundOperation();
+	_undoTransaction.commit();
 }
 
 /******************************************************************************
@@ -247,8 +247,7 @@ void AffineTransformationModifierEditor::onSpinnerDragStop()
 ******************************************************************************/
 void AffineTransformationModifierEditor::onSpinnerDragAbort()
 {
-	OVITO_ASSERT(dataset()->undoStack().isRecording());
-	dataset()->undoStack().endCompoundOperation(false);
+	_undoTransaction.cancel();
 }
 
 /******************************************************************************
@@ -290,10 +289,8 @@ void AffineTransformationModifierEditor::onEnterRotation()
 	AffineTransformationModifier* mod = static_object_cast<AffineTransformationModifier>(editObject());
 	if(!mod) return;
 
-	OVITO_ASSERT(!dataset()->undoStack().isRecording());
-	dataset()->undoStack().beginCompoundOperation(tr("Set transformation matrix"));
-
-	try {
+	_undoTransaction.begin(mainWindow(), tr("Set transformation matrix"));
+	if(!handleExceptions([&] {
 		QDialog dlg(container()->window());
 		dlg.setWindowTitle(tr("Enter rotation axis and angle"));
 		QVBoxLayout* mainLayout = new QVBoxLayout(&dlg);
@@ -317,9 +314,9 @@ void AffineTransformationModifierEditor::onEnterRotation()
 		axisSpinnerX->setTextBox(axisEditX);
 		axisSpinnerY->setTextBox(axisEditY);
 		axisSpinnerZ->setTextBox(axisEditZ);
-		axisSpinnerX->setUnit(mod->dataset()->unitsManager().worldUnit());
-		axisSpinnerY->setUnit(mod->dataset()->unitsManager().worldUnit());
-		axisSpinnerZ->setUnit(mod->dataset()->unitsManager().worldUnit());
+		axisSpinnerX->setUnit(mainWindow().unitsManager().worldUnit());
+		axisSpinnerY->setUnit(mainWindow().unitsManager().worldUnit());
+		axisSpinnerZ->setUnit(mainWindow().unitsManager().worldUnit());
 		layout->addWidget(axisEditX, 1, 0);
 		layout->addWidget(axisSpinnerX, 1, 1);
 		layout->addWidget(axisEditY, 1, 3);
@@ -330,7 +327,7 @@ void AffineTransformationModifierEditor::onEnterRotation()
 		QLineEdit* angleEdit = new QLineEdit();
 		SpinnerWidget* angleSpinner = new SpinnerWidget();
 		angleSpinner->setTextBox(angleEdit);
-		angleSpinner->setUnit(mod->dataset()->unitsManager().angleUnit());
+		angleSpinner->setUnit(mainWindow().unitsManager().angleUnit());
 		layout->addWidget(angleEdit, 3, 0);
 		layout->addWidget(angleSpinner, 3, 1);
 		layout->addWidget(new QLabel(tr("Center of rotation:")), 4, 0, 1, 8);
@@ -343,9 +340,9 @@ void AffineTransformationModifierEditor::onEnterRotation()
 		centerSpinnerX->setTextBox(centerEditX);
 		centerSpinnerY->setTextBox(centerEditY);
 		centerSpinnerZ->setTextBox(centerEditZ);
-		centerSpinnerX->setUnit(mod->dataset()->unitsManager().worldUnit());
-		centerSpinnerY->setUnit(mod->dataset()->unitsManager().worldUnit());
-		centerSpinnerZ->setUnit(mod->dataset()->unitsManager().worldUnit());
+		centerSpinnerX->setUnit(mainWindow().unitsManager().worldUnit());
+		centerSpinnerY->setUnit(mainWindow().unitsManager().worldUnit());
+		centerSpinnerZ->setUnit(mainWindow().unitsManager().worldUnit());
 		layout->addWidget(centerEditX, 5, 0);
 		layout->addWidget(centerSpinnerX, 5, 1);
 		layout->addWidget(centerEditY, 5, 3);
@@ -393,21 +390,25 @@ void AffineTransformationModifierEditor::onEnterRotation()
 			}
 		}
 		else {
-			const Point3 center = dataset()->viewportConfig()->orbitCenter(dataset()->viewportConfig()->activeViewport());
+			Point3 center = Point3::Origin();
+			if(Viewport* vp = activeViewport())
+				center = vp->orbitCenter();
 			centerSpinnerX->setFloatValue(center.x());
 			centerSpinnerY->setFloatValue(center.y());
 			centerSpinnerZ->setFloatValue(center.z());
 		}
 
-		auto updateMatrix = [mod, angleSpinner, axisSpinnerX, axisSpinnerY, axisSpinnerZ, centerSpinnerX, centerSpinnerY, centerSpinnerZ]() {
+		auto updateMatrix = [mod, angleSpinner, axisSpinnerX, axisSpinnerY, axisSpinnerZ, centerSpinnerX, centerSpinnerY, centerSpinnerZ, this]() {
 			Vector3 axis(axisSpinnerX->floatValue(), axisSpinnerY->floatValue(), axisSpinnerZ->floatValue());
 			if(axis == Vector3::Zero()) axis = Vector3(0,0,1);
 			Vector3 center(centerSpinnerX->floatValue(), centerSpinnerY->floatValue(), centerSpinnerZ->floatValue());
 			Rotation rot(axis, angleSpinner->floatValue());
 			AffineTransformation tm = AffineTransformation::translation(center) * AffineTransformation::rotation(rot) * AffineTransformation::translation(-center);
-			mod->dataset()->undoStack().resetCurrentCompoundOperation();
-			mod->setTranslationReducedCoordinates(false);
-			mod->setTransformationTM(tm);
+			_undoTransaction.revert();
+			performActions(_undoTransaction, [&] {
+				mod->setTranslationReducedCoordinates(false);
+				mod->setTransformationTM(tm);
+			});
 		};
 
 		connect(angleSpinner, &SpinnerWidget::spinnerValueChanged, updateMatrix);
@@ -423,16 +424,12 @@ void AffineTransformationModifierEditor::onEnterRotation()
 		connect(buttonBox, &QDialogButtonBox::rejected, &dlg, &QDialog::reject);
 		mainLayout->addWidget(buttonBox);
 		if(dlg.exec() == QDialog::Accepted) {
-			dataset()->undoStack().endCompoundOperation();
+			_undoTransaction.commit();
 		}
 		else {
-			dataset()->undoStack().endCompoundOperation(false);
+			_undoTransaction.cancel();
 		}
-	}
-	catch(const Exception& ex) {
-		dataset()->undoStack().endCompoundOperation(false);
-		ex.reportError();
-	}
+	})) _undoTransaction.cancel();
 }
 
 }	// End of namespace

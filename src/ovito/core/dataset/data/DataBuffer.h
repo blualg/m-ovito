@@ -68,10 +68,10 @@ public:
 	/// \brief Creates an empty buffer.
 	Q_INVOKABLE DataBuffer(ObjectCreationParams params) : DataObject(params) {}
 
-	/// \brief Constructor that creates and initializes a new property array.
+	/// \brief Constructor that creates and initializes a new buffer array.
 	DataBuffer(ObjectCreationParams params, size_t elementCount, int dataType, size_t componentCount = 1, InitializationFlags flags = NoFlags, QStringList componentNames = QStringList());
 
-	/// \brief Returns the number of elements stored in the property array.
+	/// \brief Returns the number of elements stored in the buffer array.
 	size_t size() const { return _numElements; }
 
 	/// \brief Resizes the buffer.
@@ -108,26 +108,26 @@ public:
 	/// \return The number of data values stored per element in this buffer object.
 	size_t componentCount() const { return _componentCount; }
 
-	/// \brief Returns the human-readable names for the vector components if this is a vector property.
-	/// \return The names of the vector components if this property contains more than one value per element.
-	///         If this is only a single-valued property then an empty list is returned by this method.
+	/// \brief Returns the human-readable names for the vector components if this is a vector buffer.
+	/// \return The names of the vector components if this buffer contains more than one value per element.
+	///         If this is only a scalar value buffer then an empty list is returned by this method.
 	const QStringList& componentNames() const { return _componentNames; }
 
-	/// \brief Sets the human-readable names for the vector components if this is a vector property.
+	/// \brief Sets the human-readable names for the vector components if this is a vector buffer.
 	void setComponentNames(QStringList names) {
 		OVITO_ASSERT(names.empty() || names.size() == componentCount());
 		_componentNames = std::move(names);
 	}
 
-	/// Changes the data type of the property in place and convert the values stored in the property.
+	/// Changes the data type of the buffer in place and converts the stored values.
 	void convertDataType(int newDataType);
 
-	/// \brief Returns a read-only pointer to the raw element data stored in this property array.
+	/// \brief Returns a read-only pointer to the raw element data stored in this buffer.
 	const uint8_t* cbuffer() const {
 		return _data.get();
 	}
 
-	/// \brief Returns a read-write pointer to the raw element data stored in this property array.
+	/// \brief Returns a read-write pointer to the raw element data stored in this buffer.
 	uint8_t* buffer() {
 		return _data.get();
 	}
@@ -169,7 +169,7 @@ public:
 			fill(value);
 	}
 
-	// Set all property values to zeros.
+	// Set all stored values to zeros.
 	void fillZero() {
 		prepareWriteAccess();
 		std::memset(_data.get(), 0, this->size() * this->stride());
@@ -204,7 +204,7 @@ public:
 	/// Component count and data type of source and destination must be compatible.
 	void copyRangeFrom(const DataBuffer& source, size_t sourceIndex, size_t destIndex, size_t count);
 
-	/// Copies the values in this property array to the given output iterator if it is compatible.
+	/// Copies the values stored this buffer to the given output iterator if it is compatible.
 	/// Returns false if copying was not possible, because the data type of the array and the output iterator
 	/// are not compatible.
 	template<typename Iter>
@@ -270,12 +270,12 @@ public:
 		return false;
 	}
 
-	/// Checks if this property storage and its contents exactly match those of another property storage.
+	/// Checks if this buffer|s metadata and the contents exactly match those of another buffer.
 	bool equals(const DataBuffer& other) const;
 	
 	////////////////////////////// Data access management //////////////////////////////
 
-	/// Informs the property object that a read accessor is becoming active.
+	/// Informs the buffer object that a read accessor is becoming active.
 	inline void prepareReadAccess() const {
 #ifdef OVITO_DEBUG
 		if(_activeAccessors.fetchAndAddAcquire(1) == -1) {
@@ -284,7 +284,7 @@ public:
 #endif
 	}
 
-	/// Informs the property object that a read accessor is done.
+	/// Informs the buffer object that a read accessor is done.
 	inline void finishReadAccess() const {
 #ifdef OVITO_DEBUG
 		int oldValue = _activeAccessors.fetchAndSubRelease(1);
@@ -292,7 +292,7 @@ public:
 #endif
 	}
 
-	/// Informs the property object that a read/write accessor is becoming active.
+	/// Informs the buffer object that a read/write accessor is becoming active.
 	inline void prepareWriteAccess() const {
 #ifdef OVITO_DEBUG
 		if(_activeAccessors.fetchAndStoreAcquire(-1) != 0) {
@@ -301,7 +301,7 @@ public:
 #endif
 	}
 
-	/// Informs the property object that a write accessor is done.
+	/// Informs the buffer object that a write accessor is done.
 	inline void finishWriteAccess() const {
 #ifdef OVITO_DEBUG
 		int oldValue = _activeAccessors.fetchAndStoreRelease(0);
@@ -340,15 +340,15 @@ private:
 	/// The number of vector components per element.
 	size_t _componentCount = 0;
 
-	/// The names of the vector components if this property consists of more than one value per element.
+	/// The names of the vector components if this array stores more than one value per element.
 	QStringList _componentNames;
 
 	/// The internal memory buffer holding the data elements.
 	std::unique_ptr<uint8_t[]> _data;
 
 #ifdef OVITO_DEBUG
-	/// In the debug builds, this counter keeps track of how many read or write accessors 
-	/// to this property are currently active.
+	/// In debug builds this counter keeps track of how many read or write accessors 
+	/// are currently referencing this buffer object.
 	mutable QAtomicInteger<int> _activeAccessors = 0;
 #endif
 };

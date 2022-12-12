@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -152,14 +152,15 @@ void CreateIsosurfaceModifierEditor::onPickerActivated(bool on)
 {
 	if(on) {
 		if(CreateIsosurfaceModifier* modifier = static_object_cast<CreateIsosurfaceModifier>(editObject())) {
-			dataset()->undoStack().beginCompoundOperation(tr("Change iso-value"));
-			_interactionInProgress = true;
+			_undoTransaction.begin(mainWindow(), tr("Change iso-value"));
 		}
 	}
 	else {
-		if(_interactionInProgress) {
-			dataset()->undoStack().endCompoundOperation(true);
-			_interactionInProgress = false;
+		if(_undoTransaction.operation()) {
+			if(editObject())
+				_undoTransaction.commit();
+			else
+				_undoTransaction.cancel();
 		}
 	}
 }
@@ -170,9 +171,10 @@ void CreateIsosurfaceModifierEditor::onPickerActivated(bool on)
 void CreateIsosurfaceModifierEditor::onPickerPoint(const QPointF& pt)
 {
 	if(CreateIsosurfaceModifier* modifier = static_object_cast<CreateIsosurfaceModifier>(editObject())) {
-		OVITO_ASSERT(_interactionInProgress);
-		dataset()->undoStack().resetCurrentCompoundOperation();
-		modifier->setIsolevel(pt.x());
+		_undoTransaction.revert();
+		performActions(_undoTransaction, [&] {
+			modifier->setIsolevel(pt.x());
+		});
 	}
 }
 

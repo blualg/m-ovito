@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2018 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -60,7 +60,7 @@ public:
 protected:
 
 	/// \brief Writes the particles of one animation frame to the current output file.
-	virtual bool exportData(const PipelineFlowState& state, int frameNumber, TimePoint time, const QString& filePath, MainThreadOperation& operation) override;
+	virtual bool exportData(const PipelineFlowState& state, int frameNumber, const QString& filePath, MainThreadOperation& operation) override;
 };
 
 }	// End of namespace

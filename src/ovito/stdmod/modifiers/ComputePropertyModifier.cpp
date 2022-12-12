@@ -127,7 +127,7 @@ QStringList ComputePropertyModifier::propertyComponentNames() const
 ******************************************************************************/
 void ComputePropertyModifier::referenceReplaced(const PropertyFieldDescriptor* field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex)
 {
-	if(field == PROPERTY_FIELD(AsynchronousDelegatingModifier::delegate) && !isAboutToBeDeleted() && !isBeingLoaded() && !dataset()->undoStack().isUndoingOrRedoing()) {
+	if(field == PROPERTY_FIELD(AsynchronousDelegatingModifier::delegate) && !isAboutToBeDeleted() && !isBeingLoaded() && !isUndoingOrRedoing()) {
 		setOutputProperty(outputProperty().convertToContainerClass(delegate() ? delegate()->inputContainerClass() : nullptr));
 		if(delegate()) delegate()->setComponentCount(expressions().size());
 	}
@@ -156,9 +156,6 @@ Future<AsynchronousModifier::EnginePtr> ComputePropertyModifier::createEngine(co
 	// Get the number of input elements.
 	size_t nelements = container->elementCount();
 
-	// The current animation frame number.
-	int currentFrame = dataset()->animationSettings()->timeToFrame(request.time());
-
 	// Get input selection property and existing property data.
 	ConstPropertyPtr selectionProperty;
 	if(onlySelectedElements() && container->getOOMetaClass().isValidStandardPropertyId(PropertyObject::GenericSelectionProperty)) {
@@ -181,10 +178,10 @@ Future<AsynchronousModifier::EnginePtr> ComputePropertyModifier::createEngine(co
 	else {
 		// Allocate new data array.
 		if(outputProperty().type() != PropertyObject::GenericUserProperty) {
-			outp = container->getOOMetaClass().createStandardProperty(dataset(), nelements, outputProperty().type(), onlySelectedElements() ? DataBuffer::InitializeMemory : DataBuffer::NoFlags, objectPath);
+			outp = container->getOOMetaClass().createStandardProperty(nelements, outputProperty().type(), onlySelectedElements() ? DataBuffer::InitializeMemory : DataBuffer::NoFlags, objectPath);
 		}
 		else if(!outputProperty().name().isEmpty() && propertyComponentCount() > 0) {
-			outp = container->getOOMetaClass().createUserProperty(dataset(), nelements, PropertyObject::Float, propertyComponentCount(), outputProperty().name(), onlySelectedElements() ? DataBuffer::InitializeMemory : DataBuffer::NoFlags);
+			outp = container->getOOMetaClass().createUserProperty(nelements, PropertyObject::Float, propertyComponentCount(), outputProperty().name(), onlySelectedElements() ? DataBuffer::InitializeMemory : DataBuffer::NoFlags);
 		}
 		else {
 			throw Exception(tr("Output property of compute property modifier has not been specified."));
@@ -259,7 +256,7 @@ std::shared_ptr<ComputePropertyModifierDelegate::PropertyComputeEngine> ComputeP
 			std::move(outputProperty),
 			std::move(selectionProperty),
 			std::move(expressions),
-			dataset()->animationSettings()->timeToFrame(request.time()),
+			request.time().frame(), // Note: Using global animation frame here, because that's what the user expects.
 			std::make_unique<PropertyExpressionEvaluator>());
 }
 

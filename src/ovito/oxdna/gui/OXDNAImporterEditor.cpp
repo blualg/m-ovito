@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -104,7 +104,7 @@ void OXDNAImporterEditor::onChooseTopologyFile()
 	}
 
 	if(fileDialog.exec() == QDialog::Accepted) {
-		undoableTransaction(tr("Set topology file"), [importer, &fileDialog]() {
+		performTransaction(tr("Set topology file"), [importer, &fileDialog]() {
 			const QStringList& selectedFiles = fileDialog.selectedFiles();
 			if(!selectedFiles.empty()) {
 				importer->setTopologyFileUrl(QUrl::fromLocalFile(selectedFiles.front()));

@@ -21,7 +21,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/gui/base/GUIBase.h>
-#include <ovito/core/dataset/UndoStack.h>
 #include <ovito/core/dataset/DataSetContainer.h>
 #include <ovito/core/dataset/scene/SelectionSet.h>
 #include <ovito/core/dataset/scene/Scene.h>
@@ -30,6 +29,7 @@
 #include <ovito/gui/base/viewport/ViewportInputMode.h>
 #include <ovito/gui/base/viewport/ViewportInputManager.h>
 #include <ovito/core/app/UserInterface.h>
+#include <ovito/core/app/undo/UndoStack.h>
 #include <ovito/gui/base/actions/ViewportModeAction.h>
 #include "ActionManager.h"
 
@@ -351,16 +351,14 @@ void ActionManager::on_EditDelete_triggered()
 {
 	userInterface().performTransaction(tr("Delete pipeline"), [&]() {
 		// Get active scene.
-		if(Viewport* vp = dataset()->viewportConfig()->activeViewport()) {
-			if(Scene* scene = vp->scene()) {
-				// Delete all nodes in selection set.
-				for(SceneNode* node : scene->selection()->nodes())
-					node->deleteNode();
+		if(Scene* scene = userInterface().datasetContainer().activeScene()) {
+			// Delete all nodes in selection set.
+			for(SceneNode* node : scene->selection()->nodes())
+				node->deleteNode();
 
-				// Automatically select one of the remaining nodes.
-				if(scene->children().isEmpty() == false)
-					scene->selection()->setNode(scene->children().front());
-			}
+			// Automatically select one of the remaining nodes.
+			if(scene->children().isEmpty() == false)
+				scene->selection()->setNode(scene->children().front());
 		}
 	});
 }

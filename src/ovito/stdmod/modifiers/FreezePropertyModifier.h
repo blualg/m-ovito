@@ -76,7 +76,7 @@ private:
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(PropertyReference, destinationProperty, setDestinationProperty);
 
 	/// Animation time at which the frozen property is taken.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD(TimePoint, freezeTime, setFreezeTime);
+	DECLARE_MODIFIABLE_PROPERTY_FIELD(AnimationTime, freezeTime, setFreezeTime);
 };
 
 /**
@@ -97,7 +97,7 @@ public:
 	void updateStoredData(const PropertyObject* property, const PropertyObject* identifiers, TimeInterval validityInterval);
 
 	/// Returns true if the frozen state for given animation time is already stored.
-	bool hasFrozenState(TimePoint time) const { return _validityInterval.contains(time); }
+	bool hasFrozenState(AnimationTime time) const { return _validityInterval.contains(time); }
 
 	/// Clears the stored state.
 	void invalidateFrozenState() {

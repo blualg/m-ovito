@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -97,7 +97,7 @@ void ParaViewVTUSimulationCellImporter::FrameLoader::loadFile()
 				break;
 
 			// Load the VTK data array into a Nx3 buffer of floats.
-			DataBufferPtr buffer = DataBufferPtr::create(dataset(), numberOfPoints, DataBuffer::Float, 3);
+			DataBufferPtr buffer = DataBufferPtr::create(numberOfPoints, DataBuffer::Float, 3);
 			if(!ParaViewVTPMeshImporter::parseVTKDataArray(buffer, xml))
 				break;
 

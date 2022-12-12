@@ -116,8 +116,11 @@ PipelineListItem* PipelineListModel::selectedItem() const
 ******************************************************************************/
 void PipelineListModel::onSceneSelectionChangeComplete(SelectionSet* selection)
 {
-	_selectedPipeline.setTarget(selection ? dynamic_object_cast<PipelineSceneNode>(selection->firstNode()) : nullptr);
-	refreshListLater();
+	PipelineSceneNode* pipeline = selection ? dynamic_object_cast<PipelineSceneNode>(selection->firstNode()) : nullptr;
+	if(pipeline != selectedPipeline()) {
+		_selectedPipeline.setTarget(pipeline);
+		refreshListLater();
+	}
 }
 
 /******************************************************************************
@@ -210,7 +213,7 @@ void PipelineListModel::refreshList()
 
 	// Determine the currently selected objects and select them again after the list has been rebuilt.
 	// _nextObjectToSelect may have been set to replace the selection.
-	if(!_nextObjectToSelect) {
+	if(!_nextObjectToSelect && _previouslySelectedPipeline.data() == selectedPipeline()) {
 		for(const QModelIndex& idx : _selectionModel->selectedRows()) {
 			OVITO_ASSERT(idx.isValid() && idx.row() < items().size());
 			_previouslySelectedItems.push_back(items()[idx.row()]);
@@ -285,6 +288,7 @@ void PipelineListModel::refreshList()
 	_nextObjectToSelect = nullptr;
 	_itemsRefreshPending.clear();
 	_previouslySelectedItems.clear();
+	_previouslySelectedPipeline = selectedPipeline();
 
 	// Update the selection.
 	_selectedItems.clear();
@@ -445,7 +449,7 @@ void PipelineListModel::applyModifiers(const QVector<OORef<Modifier>>& modifiers
 				modApp->setModifier(modifier);
 				modApp->setInput(pobj);
 				modApp->setModifierGroup(modifierGroup);
-				modifier->initializeModifier(ModifierInitializationRequest(time, time.frame(), modApp));
+				modifier->initializeModifier(ModifierInitializationRequest(time, modApp));
 				setNextObjectToSelect(modApp);
 				for(RefMaker* dependent : dependentsList) {
 					if(ModifierApplication* predecessorModApp = dynamic_object_cast<ModifierApplication>(dependent)) {
@@ -585,7 +589,12 @@ QVariant PipelineListModel::data(const QModelIndex& index, int role) const
 			return static_object_cast<ModifierGroup>(item->object())->isCollapsed();
 	}
 	else if(role == StatusInfoRole) {
-		return item->shortInfo(selectedPipeline());
+		if(PipelineSceneNode* pipeline = selectedPipeline()) {
+			QVariant v;
+			if(_userInterface.handleExceptions([&] {
+				v = item->shortInfo(pipeline);
+			})) return v;
+		}
 	}
 	else if(role == Qt::DecorationRole) {
 		// This role is only used by the QWidgets GUI.

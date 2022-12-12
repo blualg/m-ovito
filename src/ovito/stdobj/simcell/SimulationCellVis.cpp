@@ -57,7 +57,7 @@ SimulationCellVis::SimulationCellVis(ObjectCreationParams params) : DataVis(para
 /******************************************************************************
 * Computes the bounding box of the object.
 ******************************************************************************/
-Box3 SimulationCellVis::boundingBox(AnimationTime time, const ConstDataObjectPath& path, const PipelineSceneNode* contextNode, const PipelineFlowState& flowState, TimeInterval& validityInterval)
+Box3 SimulationCellVis::boundingBox(AnimationTime time, const ConstDataObjectPath& path, const PipelineSceneNode* contextNode, const PipelineFlowState& flowState, MixedKeyCache& visCache, TimeInterval& validityInterval)
 {
 	const SimulationCellObject* cellObject = path.lastAs<SimulationCellObject>();
 	if(!cellObject)
@@ -86,7 +86,7 @@ PipelineStatus SimulationCellVis::render(AnimationTime time, const ConstDataObje
 		}
 		else {
 			TimeInterval validityInterval;
-			renderer->addToLocalBoundingBox(boundingBox(time, path, contextNode, flowState, validityInterval));
+			renderer->addToLocalBoundingBox(boundingBox(time, path, contextNode, flowState, renderer->visCache(), validityInterval));
 		}
 	}
 	else {
@@ -98,7 +98,7 @@ PipelineStatus SimulationCellVis::render(AnimationTime time, const ConstDataObje
 		}
 		else {
 			TimeInterval validityInterval;
-			Box3 bb = boundingBox(time, path, contextNode, flowState, validityInterval);
+			Box3 bb = boundingBox(time, path, contextNode, flowState, renderer->visCache(), validityInterval);
 			renderer->addToLocalBoundingBox(bb.padBox(cellLineWidth()));
 		}
 	}

@@ -168,7 +168,7 @@ bool SelectTypeModifierEditor::ViewModel::setData(const QModelIndex& index, cons
 					types.insert(_elementTypes[index.row()]->numericId());
 				else
 					types.remove(_elementTypes[index.row()]->numericId());
-				editor()->undoableTransaction(tr("Select type"), [&]() {
+				editor()->performTransaction(tr("Select type"), [&]() {
 					mod->setSelectedTypeIDs(std::move(types));
 				});
 				return true;

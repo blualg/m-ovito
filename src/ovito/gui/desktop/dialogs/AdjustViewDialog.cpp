@@ -339,6 +339,8 @@ void AdjustViewDialog::onAdjustCamera()
 ******************************************************************************/
 void AdjustViewDialog::onCancel()
 {
+	setFocus(); // Remove focus from child widgets to make all input widgets commit their values.
+
 	// Restore previous viewport camera settings.
 	_mainWindow.handleExceptions([&] {
 		Viewport* viewport = _viewportListener.target();

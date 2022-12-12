@@ -112,7 +112,7 @@ void ScatterPlotModifier::initializeModifier(const ModifierInitializationRequest
 ******************************************************************************/
 void ScatterPlotModifier::propertyChanged(const PropertyFieldDescriptor* field)
 {
-	if(field == PROPERTY_FIELD(GenericPropertyModifier::subject) && !isBeingLoaded() && !dataset()->undoStack().isUndoingOrRedoing()) {
+	if(field == PROPERTY_FIELD(GenericPropertyModifier::subject) && !isBeingLoaded() && !isUndoingOrRedoing()) {
 		// Whenever the selected property class of this modifier is changed, update the source property references.
 		setXAxisProperty(xAxisProperty().convertToContainerClass(subject().dataClass()));
 		setYAxisProperty(yAxisProperty().convertToContainerClass(subject().dataClass()));
@@ -191,8 +191,8 @@ void ScatterPlotModifier::evaluateSynchronous(const ModifierEvaluationRequest& r
 	}
 
 	// Create output arrays.
-	PropertyAccessAndRef<FloatType> out_x = DataTable::OOClass().createUserProperty(dataset(), container->elementCount(), PropertyObject::Float, 1, xAxisProperty().nameWithComponent());
-	PropertyAccessAndRef<FloatType> out_y = DataTable::OOClass().createUserProperty(dataset(), container->elementCount(), PropertyObject::Float, 1, yAxisProperty().nameWithComponent());
+	PropertyAccessAndRef<FloatType> out_x = DataTable::OOClass().createUserProperty(container->elementCount(), PropertyObject::Float, 1, xAxisProperty().nameWithComponent());
+	PropertyAccessAndRef<FloatType> out_y = DataTable::OOClass().createUserProperty(container->elementCount(), PropertyObject::Float, 1, yAxisProperty().nameWithComponent());
 
 	// Collect X coordinates.
 	if(!xProperty->copyTo(out_x.begin(), xVecComponent))

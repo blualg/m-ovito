@@ -69,7 +69,7 @@ void ParaDiSImporter::FrameLoader::loadFile()
 		microstructureObj = state().makeMutable(existingMicrostructure);
 	}
 	else {
-		microstructureObj = state().createObjectWithVis<Microstructure>(dataSource(), OORef<DislocationVis>::create(dataset()));
+		microstructureObj = state().createObjectWithVis<Microstructure>(dataSource(), OORef<DislocationVis>::create());
 	}
 	MicrostructureAccess microstructure(microstructureObj);
     microstructure.clearMesh();
@@ -252,34 +252,34 @@ void ParaDiSImporter::FrameLoader::loadFile()
 	PropertyObject* phaseProperty = microstructureObj->makeRegionsMutable()->expectMutableProperty(SurfaceMeshRegions::PhaseProperty);
 	DataOORef<MicrostructurePhase> phase = dynamic_object_cast<MicrostructurePhase>(phaseProperty->elementType(latticeStructure));
 	if(!phaseProperty->elementType(latticeStructure)) {
-		DataOORef<MicrostructurePhase> phase = DataOORef<MicrostructurePhase>::create(dataset());
+		DataOORef<MicrostructurePhase> phase = DataOORef<MicrostructurePhase>::create();
 		phase->setNumericId(latticeStructure);
 		phase->setName(ParticleType::getPredefinedStructureTypeName(latticeStructure));
         phase->initializeType(ParticlePropertyReference(ParticlesObject::StructureTypeProperty));
     	if(latticeStructure == ParticleType::PredefinedStructureType::BCC) {
             phase->setCrystalSymmetryClass(MicrostructurePhase::CrystalSymmetryClass::CubicSymmetry);
             if(phase->burgersVectorFamilies().empty()) {
-                phase->addBurgersVectorFamily(OORef<BurgersVectorFamily>::create(phase->dataset()));
-                phase->addBurgersVectorFamily(OORef<BurgersVectorFamily>::create(phase->dataset(), 11, tr("1/2<111>"), Vector3(1.0f/2.0f, 1.0f/2.0f, 1.0f/2.0f), Color(0,1,0)));
-                phase->addBurgersVectorFamily(OORef<BurgersVectorFamily>::create(phase->dataset(), 12, tr("<100>"), Vector3(1.0f, 0.0f, 0.0f), Color(1, 0.3f, 0.8f)));
-                phase->addBurgersVectorFamily(OORef<BurgersVectorFamily>::create(phase->dataset(), 13, tr("<110>"), Vector3(1.0f, 1.0f, 0.0f), Color(0.2f, 0.5f, 1.0f)));
+                phase->addBurgersVectorFamily(OORef<BurgersVectorFamily>::create());
+                phase->addBurgersVectorFamily(OORef<BurgersVectorFamily>::create(11, tr("1/2<111>"), Vector3(1.0f/2.0f, 1.0f/2.0f, 1.0f/2.0f), Color(0,1,0)));
+                phase->addBurgersVectorFamily(OORef<BurgersVectorFamily>::create(12, tr("<100>"), Vector3(1.0f, 0.0f, 0.0f), Color(1, 0.3f, 0.8f)));
+                phase->addBurgersVectorFamily(OORef<BurgersVectorFamily>::create(13, tr("<110>"), Vector3(1.0f, 1.0f, 0.0f), Color(0.2f, 0.5f, 1.0f)));
             }
         }
         else if(latticeStructure == ParticleType::PredefinedStructureType::FCC) {
             phase->setCrystalSymmetryClass(MicrostructurePhase::CrystalSymmetryClass::CubicSymmetry);
             if(phase->burgersVectorFamilies().empty()) {
-                phase->addBurgersVectorFamily(OORef<BurgersVectorFamily>::create(phase->dataset()));
-                phase->addBurgersVectorFamily(OORef<BurgersVectorFamily>::create(phase->dataset(), 1, tr("1/2<110> (Perfect)"), Vector3(1.0f/2.0f, 1.0f/2.0f, 0.0f), Color(0.2f,0.2f,1)));
-                phase->addBurgersVectorFamily(OORef<BurgersVectorFamily>::create(phase->dataset(), 2, tr("1/6<112> (Shockley)"), Vector3(1.0f/6.0f, 1.0f/6.0f, 2.0f/6.0f), Color(0,1,0)));
-                phase->addBurgersVectorFamily(OORef<BurgersVectorFamily>::create(phase->dataset(), 3, tr("1/6<110> (Stair-rod)"), Vector3(1.0f/6.0f, 1.0f/6.0f, 0.0f/6.0f), Color(1,0,1)));
-                phase->addBurgersVectorFamily(OORef<BurgersVectorFamily>::create(phase->dataset(), 4, tr("1/3<001> (Hirth)"), Vector3(1.0f/3.0f, 0.0f, 0.0f), Color(1,1,0)));
-                phase->addBurgersVectorFamily(OORef<BurgersVectorFamily>::create(phase->dataset(), 5, tr("1/3<111> (Frank)"), Vector3(1.0f/3.0f, 1.0f/3.0f, 1.0f/3.0f), Color(0,1,1)));
+                phase->addBurgersVectorFamily(OORef<BurgersVectorFamily>::create());
+                phase->addBurgersVectorFamily(OORef<BurgersVectorFamily>::create(1, tr("1/2<110> (Perfect)"), Vector3(1.0f/2.0f, 1.0f/2.0f, 0.0f), Color(0.2f,0.2f,1)));
+                phase->addBurgersVectorFamily(OORef<BurgersVectorFamily>::create(2, tr("1/6<112> (Shockley)"), Vector3(1.0f/6.0f, 1.0f/6.0f, 2.0f/6.0f), Color(0,1,0)));
+                phase->addBurgersVectorFamily(OORef<BurgersVectorFamily>::create(3, tr("1/6<110> (Stair-rod)"), Vector3(1.0f/6.0f, 1.0f/6.0f, 0.0f/6.0f), Color(1,0,1)));
+                phase->addBurgersVectorFamily(OORef<BurgersVectorFamily>::create(4, tr("1/3<001> (Hirth)"), Vector3(1.0f/3.0f, 0.0f, 0.0f), Color(1,1,0)));
+                phase->addBurgersVectorFamily(OORef<BurgersVectorFamily>::create(5, tr("1/3<111> (Frank)"), Vector3(1.0f/3.0f, 1.0f/3.0f, 1.0f/3.0f), Color(0,1,1)));
             }
         }
         else {
             phase->setCrystalSymmetryClass(MicrostructurePhase::CrystalSymmetryClass::NoSymmetry);
             if(phase->burgersVectorFamilies().empty()) {
-                OORef<BurgersVectorFamily> family = OORef<BurgersVectorFamily>::create(phase->dataset());
+                OORef<BurgersVectorFamily> family = OORef<BurgersVectorFamily>::create();
                 family->setColor(Color(0.7,0.7,0.7));
                 phase->addBurgersVectorFamily(std::move(family));
             }

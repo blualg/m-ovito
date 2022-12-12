@@ -24,8 +24,6 @@
 #include <ovito/particles/objects/ParticlesVis.h>
 #include <ovito/particles/objects/BondType.h>
 #include <ovito/particles/objects/ParticleType.h>
-#include <ovito/core/app/Application.h>
-#include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/dataset/pipeline/PipelineFlowState.h>
 #include <ovito/core/utilities/concurrent/ParallelFor.h>
 #include "ParticlesObject.h"
@@ -415,7 +413,7 @@ void ParticlesObject::addBonds(const std::vector<Bond>& newBonds, BondsVis* bond
 	BondsObject* mutableBonds;
 	if(!bonds()) {
 		// Create the bonds object.
-		DataOORef<BondsObject> bonds = DataOORef<BondsObject>::create(dataset());
+		DataOORef<BondsObject> bonds = DataOORef<BondsObject>::create();
 		mutableBonds = bonds.get();
 		setBonds(std::move(bonds));
 	}
@@ -439,7 +437,7 @@ ConstPropertyPtr ParticlesObject::inputParticleColors() const
 	}
 
 	// Return an array with uniform colors if there is no vis element attached to the particles object.
-	PropertyPtr colors = ParticlesObject::OOClass().createStandardProperty(dataset(), elementCount(), ParticlesObject::ColorProperty);
+	PropertyPtr colors = ParticlesObject::OOClass().createStandardProperty(elementCount(), ParticlesObject::ColorProperty);
 	colors->fill(Color(1,1,1));
 	return colors;
 }
@@ -458,7 +456,7 @@ ConstPropertyPtr ParticlesObject::inputBondColors(bool ignoreExistingColorProper
 			OVITO_ASSERT(bonds()->elementCount() * 2 == halfBondColors.size());
 
 			// Map half-bond colors to full bond colors.
-			PropertyAccessAndRef<Color> colors = BondsObject::OOClass().createStandardProperty(dataset(), bonds()->elementCount(), BondsObject::ColorProperty);
+			PropertyAccessAndRef<Color> colors = BondsObject::OOClass().createStandardProperty(bonds()->elementCount(), BondsObject::ColorProperty);
 			auto ci = halfBondColors.cbegin();
 			for(Color& co : colors) {
 				co = *ci;
@@ -468,7 +466,7 @@ ConstPropertyPtr ParticlesObject::inputBondColors(bool ignoreExistingColorProper
 		}
 
 		// If no vis element is available, create an array filled with the default bond color.
-		PropertyPtr colors = BondsObject::OOClass().createStandardProperty(dataset(), bonds()->elementCount(), BondsObject::ColorProperty);
+		PropertyPtr colors = BondsObject::OOClass().createStandardProperty(bonds()->elementCount(), BondsObject::ColorProperty);
 		colors->fill<Color>(Color(1,1,1));
 		return colors;
     }
@@ -488,7 +486,7 @@ ConstPropertyPtr ParticlesObject::inputParticleRadii() const
 	}
 
 	// Return uniform default radius for all particles.
-	PropertyPtr buffer = OOClass().createStandardProperty(dataset(), elementCount(), ParticlesObject::RadiusProperty);
+	PropertyPtr buffer = OOClass().createStandardProperty(elementCount(), ParticlesObject::RadiusProperty);
 	buffer->fill<FloatType>(1);
 	return buffer;
 }
@@ -511,7 +509,7 @@ ConstPropertyPtr ParticlesObject::inputParticleMasses() const
 		if(boost::algorithm::any_of(massMap, [](const std::pair<int,FloatType>& it) { return it.second != 0; })) {
 
 			// Allocate output array.
-			PropertyAccessAndRef<FloatType> massProperty = ParticlesObject::OOClass().createStandardProperty(dataset(), elementCount(), ParticlesObject::MassProperty);
+			PropertyAccessAndRef<FloatType> massProperty = ParticlesObject::OOClass().createStandardProperty(elementCount(), ParticlesObject::MassProperty);
 
 			// Fill output array using lookup table.
 			ConstPropertyAccess<int> typeData(typeProperty);
@@ -528,13 +526,13 @@ ConstPropertyPtr ParticlesObject::inputParticleMasses() const
 	}
 
 	// Return uniform default mass 0 for all particles.
-	return OOClass().createStandardProperty(dataset(), elementCount(), ParticlesObject::MassProperty, DataBuffer::InitializeMemory);
+	return OOClass().createStandardProperty(elementCount(), ParticlesObject::MassProperty, DataBuffer::InitializeMemory);
 }
 
 /******************************************************************************
 * Creates a storage object for standard particle properties.
 ******************************************************************************/
-PropertyPtr ParticlesObject::OOMetaClass::createStandardPropertyInternal(DataSet* dataset, size_t elementCount, int type, DataBuffer::InitializationFlags flags, const ConstDataObjectPath& containerPath) const
+PropertyPtr ParticlesObject::OOMetaClass::createStandardPropertyInternal(size_t elementCount, int type, DataBuffer::InitializationFlags flags, const ConstDataObjectPath& containerPath) const
 {
 	// Certain standard properties need to be initialized with default values determined by the visual element attached to the property container.
 	if(flags.testFlag(DataBuffer::InitializeMemory) && !containerPath.empty()) {
@@ -654,7 +652,7 @@ PropertyPtr ParticlesObject::OOMetaClass::createStandardPropertyInternal(DataSet
 	OVITO_ASSERT(componentCount == standardPropertyComponentCount(type));
 
 	// Allocate the storage array.
-	PropertyPtr property = PropertyPtr::create(dataset, elementCount, dataType, componentCount, propertyName, flags & ~DataBuffer::InitializeMemory, type, componentNames);
+	PropertyPtr property = PropertyPtr::create(elementCount, dataType, componentCount, propertyName, flags & ~DataBuffer::InitializeMemory, type, componentNames);
 
 	// Initialize memory if requested.
 	if(flags.testFlag(DataBuffer::InitializeMemory) && !containerPath.empty()) {
@@ -689,14 +687,14 @@ PropertyPtr ParticlesObject::OOMetaClass::createStandardPropertyInternal(DataSet
 
 	// Some properties get an attached visual element.
 	if(type == ParticlesObject::DisplacementProperty) {
-		OORef<VectorVis> vis = OORef<VectorVis>::create(dataset);
+		OORef<VectorVis> vis = OORef<VectorVis>::create();
 		vis->setObjectTitle(tr("Displacements"));
 		vis->setEnabled(false);
 		vis->freezeInitialParameterValues({SHADOW_PROPERTY_FIELD(ActiveObject::title), SHADOW_PROPERTY_FIELD(ActiveObject::isEnabled)});
 		property->addVisElement(std::move(vis));
 	}
 	else if(type == ParticlesObject::ForceProperty) {
-		OORef<VectorVis> vis = OORef<VectorVis>::create(dataset);
+		OORef<VectorVis> vis = OORef<VectorVis>::create();
 		vis->setObjectTitle(tr("Forces"));
 		vis->setEnabled(false);
 		vis->setReverseArrowDirection(false);
@@ -705,7 +703,7 @@ PropertyPtr ParticlesObject::OOMetaClass::createStandardPropertyInternal(DataSet
 		property->addVisElement(std::move(vis));
 	}
 	else if(type == ParticlesObject::VelocityProperty) {
-		OORef<VectorVis> vis = OORef<VectorVis>::create(dataset);
+		OORef<VectorVis> vis = OORef<VectorVis>::create();
 		vis->setObjectTitle(tr("Velocities"));
 		vis->setEnabled(false);
 		vis->setReverseArrowDirection(false);
@@ -714,7 +712,7 @@ PropertyPtr ParticlesObject::OOMetaClass::createStandardPropertyInternal(DataSet
 		property->addVisElement(std::move(vis));
 	}
 	else if(type == ParticlesObject::DipoleOrientationProperty) {
-		OORef<VectorVis> vis = OORef<VectorVis>::create(dataset);
+		OORef<VectorVis> vis = OORef<VectorVis>::create();
 		vis->setObjectTitle(tr("Dipoles"));
 		vis->setEnabled(false);
 		vis->setReverseArrowDirection(false);

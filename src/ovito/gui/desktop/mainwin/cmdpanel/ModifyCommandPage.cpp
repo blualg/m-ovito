@@ -27,7 +27,7 @@
 #include <ovito/core/dataset/scene/PipelineSceneNode.h>
 #include <ovito/core/dataset/scene/SelectionSet.h>
 #include <ovito/core/viewport/ViewportConfiguration.h>
-#include <ovito/core/dataset/UndoStack.h>
+#include <ovito/core/app/undo/UndoableOperation.h>
 #include <ovito/core/dataset/DataSetContainer.h>
 #include <ovito/core/app/Application.h>
 #include <ovito/core/oo/CloneHelper.h>

@@ -22,7 +22,7 @@
 
 #include <ovito/stdmod/StdMod.h>
 #include <ovito/core/dataset/DataSet.h>
-#include <ovito/core/dataset/UndoStack.h>
+#include <ovito/core/app/undo/UndoableOperation.h>
 #include <ovito/core/dataset/pipeline/ModifierApplication.h>
 #include <ovito/core/app/Application.h>
 #include <ovito/stdobj/properties/PropertyObject.h>
@@ -84,7 +84,7 @@ void ColorByTypeModifier::initializeModifier(const ModifierInitializationRequest
 void ColorByTypeModifier::propertyChanged(const PropertyFieldDescriptor* field)
 {
 	// Whenever the selected property class of this modifier is changed, update the source property reference accordingly.
-	if(field == PROPERTY_FIELD(GenericPropertyModifier::subject) && !isBeingLoaded() && !dataset()->undoStack().isUndoingOrRedoing()) {
+	if(field == PROPERTY_FIELD(GenericPropertyModifier::subject) && !isBeingLoaded() && !isUndoingOrRedoing()) {
 		setSourceProperty(sourceProperty().convertToContainerClass(subject().dataClass()));
 	}
 	GenericPropertyModifier::propertyChanged(field);

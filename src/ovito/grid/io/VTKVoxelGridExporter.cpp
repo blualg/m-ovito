@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -38,7 +38,7 @@ bool VTKVoxelGridExporter::openOutputFile(const QString& filePath, int numberOfF
 	OVITO_ASSERT(!_outputStream);
 
 	_outputFile.setFileName(filePath);
-	_outputStream.reset(new CompressedTextWriter(_outputFile, dataset()));
+	_outputStream = std::make_unique<CompressedTextWriter>(_outputFile);
 
 	return true;
 }
@@ -60,10 +60,10 @@ void VTKVoxelGridExporter::closeOutputFile(bool exportCompleted)
 /******************************************************************************
  * Exports a single animation frame to the current output file.
  *****************************************************************************/
-bool VTKVoxelGridExporter::exportFrame(int frameNumber, TimePoint time, const QString& filePath, MainThreadOperation& operation)
+bool VTKVoxelGridExporter::exportFrame(int frameNumber, const QString& filePath, MainThreadOperation& operation)
 {
 	// Evaluate pipeline.
-	const PipelineFlowState& state = getPipelineDataToBeExported(time, operation);
+	const PipelineFlowState& state = getPipelineDataToBeExported(frameNumber, operation);
 	if(operation.isCanceled())
 		return false;
 

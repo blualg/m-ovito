@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -23,11 +23,11 @@
 #include <ovito/particles/Particles.h>
 #include <ovito/particles/objects/ParticlesObject.h>
 #include <ovito/stdobj/simcell/SimulationCellObject.h>
-#include <ovito/core/dataset/DataSet.h>
+#include <ovito/core/dataset/DataSetContainer.h>
 #include <ovito/core/dataset/pipeline/ModifierApplication.h>
 #include <ovito/core/utilities/units/UnitsManager.h>
 #include <ovito/core/utilities/concurrent/ParallelFor.h>
-#include <ovito/core/app/Application.h>
+#include <ovito/core/app/UserInterface.h>
 #include "InteractiveMolecularDynamicsModifier.h"
 
 #include <QtEndian>
@@ -87,8 +87,9 @@ bool InteractiveMolecularDynamicsModifier::OOMetaClass::isApplicableTo(const Dat
 /******************************************************************************
 * Starts establishing a connection to the remote IMD server.
 ******************************************************************************/
-void InteractiveMolecularDynamicsModifier::connectToServer()
+void InteractiveMolecularDynamicsModifier::connectToServer(UserInterface& userInterface)
 {
+	_userInterface = &userInterface;
 	if(_socket.state() == QAbstractSocket::UnconnectedState) {
 		_messageBytesToReceive = 0;
 		_numFramesReceived = 0;
@@ -109,6 +110,8 @@ void InteractiveMolecularDynamicsModifier::disconnectFromServer()
 	else {
 		_socket.abort();
 	}
+	_userInterface = nullptr;
+	_preliminaryUpdateSuspender.reset();
 }
 
 /******************************************************************************
@@ -116,7 +119,8 @@ void InteractiveMolecularDynamicsModifier::disconnectFromServer()
 ******************************************************************************/
 void InteractiveMolecularDynamicsModifier::connectionStateChanged()
 {
-	if(isAboutToBeDeleted()) return;
+	if(isAboutToBeDeleted()) 
+		return;
 
 	switch(_socket.state()) {
 	case QAbstractSocket::UnconnectedState:
@@ -139,6 +143,7 @@ void InteractiveMolecularDynamicsModifier::connectionStateChanged()
 			_modifierStatus = PipelineStatus(PipelineStatus::Success, tr("Closing connection to IMD server..."));
 		_isConnected = false;
 		_preliminaryUpdateSuspender.reset();
+		_userInterface = nullptr;
 		break;
 	}
 
@@ -164,6 +169,8 @@ void InteractiveMolecularDynamicsModifier::protocolError(const QString& errorStr
 	_isConnected = false;
 	_socket.abort();
 	_modifierStatus = PipelineStatus(statusType, tr("IMD connection error: %1").arg(errorString));
+	_userInterface = nullptr;
+	_preliminaryUpdateSuspender.reset();
 	notifyTargetChanged();
 }
 
@@ -249,28 +256,32 @@ void InteractiveMolecularDynamicsModifier::dataReceived()
 				_messageBytesToReceive = 0;
 
 				// Convert data array into particle coordinates property.
-				_coordinates = ParticlesObject::OOClass().createStandardProperty(dataset(), numCoords, ParticlesObject::PositionProperty);
+				_coordinates = ParticlesObject::OOClass().createStandardProperty(numCoords, ParticlesObject::PositionProperty);
 				std::transform(coords.cbegin(), coords.cend(), PropertyAccess<Point3>(_coordinates).begin(), [](const Point_3<float>& p) { return p.toDataType<FloatType>(); });
 
 				// Notify pipeline system that this modifier has new results. 
 				_numFramesReceived++;
 				_modifierStatus = PipelineStatus(PipelineStatus::Success, tr("Connected to IMD server.\n%n frames received.", nullptr, _numFramesReceived));
-				if(!_preliminaryUpdateSuspender) {
+				if(!_preliminaryUpdateSuspender && _userInterface) {
 					// Suppress viewport updates that normally occur when preliminary pipeline updates are available.
 					// That's because the user propably likes to see only the final pipeline output when playing 
 					// an IMD trajectory pseudo-animation. 
-					_preliminaryUpdateSuspender.emplace(dataset()->animationSettings());
+					_preliminaryUpdateSuspender.emplace(*_userInterface);
 				}
-				if(!_pipelineUpdatePending) {
-					_pipelineUpdatePending = true;
-					// Wait until pipeline update that is currently in progress has completed before
-					// triggering a new pipeline update.
-					dataset()->whenSceneReady().finally(executor(), [&](Task& task) {
-						if(!task.isCanceled()) {
-							_pipelineUpdatePending = false;
-							notifyTargetChanged();
+				if(!_pipelineUpdatePending && _userInterface) {
+					if(Viewport* viewport = _userInterface->datasetContainer().activeViewport()) {
+						if(viewport->window()) {
+							_pipelineUpdatePending = true;
+							// Wait until pipeline update that is currently in progress has completed before
+							// triggering a new pipeline update.
+							viewport->window()->scenePreparation().future().finally(executor(), [&](Task& task) {
+								if(!task.isCanceled()) {
+									_pipelineUpdatePending = false;
+									notifyTargetChanged();
+								}
+							});
 						}
-					});
+					}
 				}
 			}
 			else if(_header.type == IMD_ENERGIES) {

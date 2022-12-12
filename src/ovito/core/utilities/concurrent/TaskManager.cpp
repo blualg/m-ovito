@@ -23,7 +23,7 @@
 #include <ovito/core/Core.h>
 #include <ovito/core/utilities/concurrent/TaskManager.h>
 #include <ovito/core/utilities/concurrent/TaskWatcher.h>
-#include <ovito/core/oo/OvitoObjectExecutor.h>
+#include <ovito/core/oo/ObjectExecutor.h>
 
 namespace Ovito {
 
@@ -187,7 +187,7 @@ void TaskManager::shutdown()
 
 	do {
 		QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
-		QCoreApplication::sendPostedEvents(nullptr, OvitoObjectExecutor::workEventType());
+		QCoreApplication::sendPostedEvents(nullptr, ObjectExecutor::workEventType());
 	}
 	while(!runningTasks().empty());
 }

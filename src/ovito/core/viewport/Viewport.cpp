@@ -72,6 +72,13 @@ Viewport::Viewport(ObjectCreationParams params) : RefTarget(params),
 		_isGridVisible(false)
 {
 	connect(&ViewportSettings::getSettings(), &ViewportSettings::settingsChanged, this, &Viewport::viewportSettingsChanged);
+
+	// Automatically associate the new viewport with the gloabl scene (if there is one).
+	// This is mainly done for the Python interface, where each viewport created by the user is automatically
+	// associated with some scene.
+	if(params.createSubObjects() && ExecutionContext::isScripting()) {
+		setScene(ExecutionContext::current().ui().datasetContainer().activeScene());
+	}
 }
 
 /******************************************************************************
@@ -261,7 +268,7 @@ ViewProjectionParameters Viewport::computeProjectionParameters(AnimationTime tim
 		// Evaluate data pipeline of the camera scene node.
 		PipelineEvaluationFuture pipelineEvaluation;
 		if(asynchronousEvaluation) {
-			pipelineEvaluation = viewNode()->evaluatePipeline(PipelineEvaluationRequest(time, time.frame()));
+			pipelineEvaluation = viewNode()->evaluatePipeline(PipelineEvaluationRequest(time));
 			if(!pipelineEvaluation.waitForFinished())
 				pipelineEvaluation = {};
 		}
@@ -349,6 +356,21 @@ void Viewport::zoomToSelectionExtents(FloatType viewportAspectRatio)
 }
 
 /******************************************************************************
+* Zooms to the extents of the scene once the scene is ready. 
+* This only works for viewports with an associated window.
+******************************************************************************/
+void Viewport::zoomToSceneExtentsWhenReady()
+{
+	if(scene() && window()) {
+		window()->scenePreparation().future().finally(executor(), [&](Task& task) noexcept {
+			if(!task.isCanceled()) {
+				zoomToSceneExtents();
+			}
+		});
+	}
+}
+
+/******************************************************************************
 * Zooms to the extents of the given bounding box.
 ******************************************************************************/
 void Viewport::zoomToBox(const Box3& box, FloatType viewportAspectRatio)
@@ -410,13 +432,7 @@ void Viewport::zoomToBox(const Box3& box, FloatType viewportAspectRatio)
 bool Viewport::referenceEvent(RefTarget* source, const ReferenceEvent& event)
 {
 	if(event.type() == ReferenceEvent::TargetChanged) {
-		if(source == scene()) {
-#if 0 // TODO: Remove dead code
-			// Redraw viewport window whenver the scene changes.
-			prepareSceneThenRedraw();
-#endif
-		}
-		else if(source == viewNode()) {
+		if(source == viewNode()) {
 			// Adopt camera information from view node.
 			if(viewType() == VIEW_SCENENODE && !isBeingLoaded() && !isAboutToBeDeleted() && scene()) {
 				// Get camera transformation and settings (FOV etc.).
@@ -466,12 +482,6 @@ void Viewport::referenceReplaced(const PropertyFieldDescriptor* field, RefTarget
 		updateViewport();
 	}
 	else if(field == PROPERTY_FIELD(scene)) {
-#if 0 // TODO: Remove dead code
-		_sceneReadyFuture.reset();
-		_sceneReadyScheduled = false;
-		prepareSceneThenRedraw();
-#endif
-
 		// Keep scene reference of viewport window in sync.
 		if(window())
 			window()->scenePreparation().setScene(scene());
@@ -482,6 +492,7 @@ void Viewport::referenceReplaced(const PropertyFieldDescriptor* field, RefTarget
 		if(newTarget)
 			connect(static_object_cast<Scene>(newTarget), &Scene::cameraOrbitCenterChanged, this, &Viewport::updateViewport);
 		
+		Q_EMIT sceneReplaced(scene());
 		Q_EMIT viewportChanged();
 	}
 	RefTarget::referenceReplaced(field, oldTarget, newTarget, listIndex);
@@ -592,7 +603,7 @@ void Viewport::processUpdateRequest()
 ******************************************************************************/
 void Viewport::renderInteractive(UserInterface& userInterface, DataSet* dataset, SceneRenderer* renderer)
 {
-	OVITO_ASSERT_MSG(!isRendering(), "Viewport::renderInteractive()", "Viewport is already rendering.");
+	OVITO_ASSERT_MSG(!userInterface.isRenderingInteractiveViewports(), "Viewport::renderInteractive()", "Another viewport is already rendering.");
 	OVITO_ASSERT(dataset && dataset->renderSettings());
 
 	if(!scene() || !dataset || !dataset->renderSettings())
@@ -603,14 +614,18 @@ void Viewport::renderInteractive(UserInterface& userInterface, DataSet* dataset,
 		return;
 
 	try {
-		_isRendering = true;
-		AnimationTime time = scene()->animationSettings()->currentTime();
-
-		// Set up the renderer.
-		renderer->startRender(*dataset->renderSettings(), vpRect.size(), Application::instance()->visCache());
+		OVITO_ASSERT(userInterface._viewportBeingRendered == nullptr);
+		userInterface._viewportBeingRendered = this;
 
 		// This is the async operation object used when calling rendering functions in the following.
 		MainThreadOperation renderOperation = MainThreadOperation::create(userInterface);
+		// All actions here are performed in an interactive execution context.
+		ExecutionContext::Scope executionContext(ExecutionContext::Type::Interactive, userInterface);
+
+		AnimationTime time = scene()->animationSettings()->currentTime();
+
+		// Set up the renderer.
+		renderer->startRender(dataset->renderSettings(), vpRect.size(), Application::instance()->visCache());
 
 		// Set up preliminary projection without a known bounding box.
 		FloatType aspectRatio = (FloatType)vpRect.height() / vpRect.width();
@@ -690,10 +705,10 @@ void Viewport::renderInteractive(UserInterface& userInterface, DataSet* dataset,
 		if(!renderer->isPicking())
 			Application::instance()->visCache().discardUnusedObjects();
 
-		_isRendering = false;
+		userInterface._viewportBeingRendered = nullptr;
 	}
 	catch(...) {
-		_isRendering = false;
+		userInterface._viewportBeingRendered = nullptr;
 		throw;
 	}
 }
@@ -809,24 +824,23 @@ Box2 Viewport::renderFrameRect(DataSet* dataset) const
 ******************************************************************************/
 FloatType Viewport::nonScalingSize(const Point3& worldPosition)
 {
-	if(!window()) return 1;
-
 	// Get window size in device-independent pixels.
-	int height = window()->viewportWindowDeviceIndependentSize().height();
+	int height = window() ? window()->viewportWindowDeviceIndependentSize().height() : 0;
+	if(height == 0) 
+		return 1;
 
-	if(height == 0) return 1;
-
-	const FloatType baseSize = 60;
+	constexpr FloatType baseSize = 60;
 
 	if(isPerspectiveProjection()) {
 
 		Point3 p = projectionParams().viewMatrix * worldPosition;
-		if(p.z() == 0) return FloatType(1);
-
         Point3 p1 = projectionParams().projectionMatrix * p;
-		Point3 p2 = projectionParams().projectionMatrix * (p + Vector3(1,0,0));
+		Point3 p2 = projectionParams().projectionMatrix * (p + Vector3(0,1,0));
+		FloatType dist = (p1 - p2).length();
+		if(std::abs(dist) < FLOATTYPE_EPSILON)
+			return 1;
 
-		return FloatType(0.8) * baseSize / (p1 - p2).length() / (FloatType)height;
+		return FloatType(0.8) * baseSize / dist / (FloatType)height;
 	}
 	else {
 		return _projParams.fieldOfView / (FloatType)height * baseSize;
@@ -919,7 +933,26 @@ Point3 Viewport::orbitCenter()
 		return Point3::Origin() + viewNode()->lookatTargetNode()->getWorldTransform(time, iv).translation();
 	}
 	else if(scene()) {
-		Point3 currentOrbitCenter = scene()->orbitCenter(this);
+		Point3 currentOrbitCenter = Point3::Origin();
+
+		// Compute scene's orbiting center.
+		if(scene()->orbitCenterMode() == Scene::OrbitCenterMode::ORBIT_SELECTION_CENTER) {
+			AnimationTime time = scene()->animationSettings()->currentTime();
+			Box3 selectionBoundingBox;
+			for(SceneNode* node : scene()->selection()->nodes()) {
+				selectionBoundingBox.addBox(node->worldBoundingBox(time, this));
+			}
+			if(!selectionBoundingBox.isEmpty())
+				currentOrbitCenter = selectionBoundingBox.center();
+			else {
+				Box3 sceneBoundingBox = scene()->worldBoundingBox(time, this);
+				if(!sceneBoundingBox.isEmpty())
+					currentOrbitCenter = sceneBoundingBox.center();
+			}
+		}
+		else if(scene()->orbitCenterMode() == Scene::OrbitCenterMode::ORBIT_USER_DEFINED) {
+			currentOrbitCenter = scene()->userOrbitCenter();
+		}
 
 		if(viewNode() && isPerspectiveProjection()) {
 			// If a free camera node is selected, the current orbit center is at the same location as the camera.
@@ -956,22 +989,5 @@ void Viewport::setWindow(ViewportWindowInterface* window)
 { 
 	_window = window; 
 }
-
-#if 0 // TODO: Remove dead code
-/******************************************************************************
-* Prepares the scene prior to rendering the viewport.
-******************************************************************************/
-void Viewport::prepareSceneThenRedraw()
-{
-	if(!_sceneReadyScheduled && window() && scene()) {
-		_sceneReadyScheduled = true;
-		_sceneReadyFuture = scene()->whenReady().then(executor(), [this]() {
-			_sceneReadyScheduled = false;
-			_sceneReadyFuture.reset();
-			updateViewport();
-		});
-	}
-}
-#endif
 
 }	// End of namespace

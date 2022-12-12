@@ -27,7 +27,6 @@
 #include <ovito/gui/desktop/widgets/general/RolloutContainer.h>
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
 #include <ovito/core/oo/RefTarget.h>
-#include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/utilities/DeferredMethodInvocation.h>
 #include "PropertiesPanel.h"
 
@@ -101,9 +100,6 @@ public:
 	/// \brief Returns the top-level window hosting this editor panel.
 	QWidget* parentWindow() const;
 
-	/// \brief Returns the current animation time.
-	std::optional<AnimationTime> currentAnimationTime() const;
-
 	/// \brief Creates an object that represents a longer-running operation executed in the main or GUI thread 
 	///        in the context of this properties editor 
 	MainThreadOperation createOperation() {
@@ -153,37 +149,57 @@ public:
 	/// For an editor of a DataVis element, returns the data collection path to the DataObject which the DataVis element is attached to.
 	ConstDataObjectRefPath getVisDataObjectPath() const;
 
-	/// \brief Executes the passed functor and catches any exceptions thrown during its execution.
-	/// If an exception is thrown by the functor, all data changes performed by the functor
-	/// so far will be undone and an error message is shown to the user.
-	template<typename Function>
-	bool performTransaction(const QString& undoOperationName, Function&& func) {
-		try {
-			ExecutionContext::Scope executionScope(ExecutionContext::Type::Interactive, mainWindow());
-			UndoableTransaction transaction(mainWindow(), undoOperationName);
-			std::forward<Function>(func)();
-			transaction.commit();
-			return true;
-		}
-		catch(const Exception& ex) {
-			mainWindow().reportError(ex, parentWindow());
-			return false;
-		}
-	}
+	/// Returns the current animation time of the scene the object being edited belongs to.
+	AnimationTime currentAnimationTime() const;
+
+	/// Returns the viewport that is currently selected.
+	Viewport* activeViewport() const;
 
 	/// Executes a functor and catches any exceptions thrown during its execution.
 	/// If an exception is thrown by the functor, the error message is displayed to the user and this function returns false.
 	template<typename Function>
 	bool handleExceptions(Function&& func) const {
-		try {
-			ExecutionContext::Scope executionScope(ExecutionContext::Type::Interactive, mainWindow());
-			std::forward<Function>(func)();
-			return true;
-		}
-		catch(const Exception& ex) {
-			mainWindow().reportError(ex, parentWindow());
-			return false;
-		}
+		return mainWindow().handleExceptions(std::forward<Function>(func));
+	}
+
+	/// Executes a functor provided by the caller that performs undoable actions in an interactive context.
+	/// If an exception is thrown by the functor, the error message is displayed 
+	/// to the user, and this function returns false. 
+	template<typename Function>
+	bool performActions(UndoableTransaction& transaction, Function&& func) {
+		return mainWindow().performActions(transaction, std::forward<Function>(func));
+	}
+
+	/// \brief Executes the passed functor and catches any exceptions thrown during its execution.
+	/// If an exception is thrown by the functor, all data changes performed by the functor
+	/// so far will be undone and an error message is shown to the user.
+	template<typename Function>
+	bool performTransaction(const QString& undoOperationName, Function&& func) {
+		return mainWindow().performTransaction(undoOperationName, std::forward<Function>(func));
+	}
+
+	/// \brief Recursively visits all pipelines in the current scene
+	///        and invokes the given visitor function for every PipelineSceneNode.
+	///
+	/// \param fn A function that takes an PipelineSceneNode pointer as argument and returns a boolean value.
+	/// \return true if all pipelines have been visited; false if the loop has been
+	///         terminated early because the visitor function has returned false.
+	///
+	/// The visitor function must return a boolean value to indicate whether
+	/// it wants to continue visit more pipelines. A return value of false
+	/// leads to early termination and no further nodes are visited.
+	template<typename Function>
+	bool visitScenePipelines(Function&& fn) const {
+		if(Scene* scene = mainWindow().datasetContainer().activeScene())
+			return scene->visitObjectNodes(std::forward<Function>(fn));
+		return true;
+	}
+
+	/// Returns the pipeline that is currently selected.
+	PipelineSceneNode* selectedPipeline() const {
+		if(Scene* scene = mainWindow().datasetContainer().activeScene())
+			return dynamic_object_cast<PipelineSceneNode>(scene->selection()->firstNode());
+		return nullptr;
 	}
 
 public Q_SLOTS:

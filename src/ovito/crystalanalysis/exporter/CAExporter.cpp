@@ -44,7 +44,7 @@ bool CAExporter::openOutputFile(const QString& filePath, int numberOfFrames, Mai
 	OVITO_ASSERT(!_outputStream);
 
 	_outputFile.setFileName(filePath);
-	_outputStream.reset(new CompressedTextWriter(_outputFile, dataset()));
+	_outputStream = std::make_unique<CompressedTextWriter>(_outputFile);
 
 	return true;
 }
@@ -66,10 +66,10 @@ void CAExporter::closeOutputFile(bool exportCompleted)
 /******************************************************************************
  * Exports a single animation frame to the current output file.
  *****************************************************************************/
-bool CAExporter::exportFrame(int frameNumber, TimePoint time, const QString& filePath, MainThreadOperation& operation)
+bool CAExporter::exportFrame(int frameNumber, const QString& filePath, MainThreadOperation& operation)
 {
 	// Evaluate data pipeline.
-	const PipelineFlowState& state = getPipelineDataToBeExported(time, operation);
+	const PipelineFlowState& state = getPipelineDataToBeExported(frameNumber, operation);
 	if(operation.isCanceled())
 		return false;
 

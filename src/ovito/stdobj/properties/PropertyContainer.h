@@ -182,7 +182,7 @@ public:
 	void verifyIntegrity() const;
 
 	/// Returns the base point and vector information for visualizing a vector property from this container using a VectorVis element.
-	virtual std::tuple<ConstDataBufferPtr, ConstDataBufferPtr> getVectorVisData(const ConstDataObjectPath& path, const PipelineFlowState& state, SceneRenderer* renderer) const { return {}; }
+	virtual std::tuple<ConstDataBufferPtr, ConstDataBufferPtr> getVectorVisData(const ConstDataObjectPath& path, const PipelineFlowState& state, MixedKeyCache& visCache) const { return {}; }
 
 	/// Generates the info string to be displayed in the OVITO status bar for an element from this container.
 	virtual QString elementInfoString(size_t elementIndex, const ConstDataObjectRefPath& path = {}) const;

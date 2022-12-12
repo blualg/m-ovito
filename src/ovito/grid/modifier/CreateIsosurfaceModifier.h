@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -77,10 +77,10 @@ public:
 	virtual bool performPreliminaryUpdateAfterEvaluation() override { return false; }
 
 	/// Returns the level at which to create the isosurface.
-	FloatType isolevel() const { return isolevelController() ? isolevelController()->currentFloatValue() : 0; }
+	FloatType isolevel() const { return isolevelController() ? isolevelController()->getFloatValue(AnimationTime(0)) : 0; }
 
 	/// Sets the level at which to create the isosurface.
-	void setIsolevel(FloatType value) { if(isolevelController()) isolevelController()->setCurrentFloatValue(value); }
+	void setIsolevel(FloatType value) { if(isolevelController()) isolevelController()->setFloatValue(AnimationTime(0), value); }
 
 	/// Returns a short piece information (typically a string or color) to be displayed next to the modifier's title in the pipeline editor list.
 	virtual QVariant getPipelineEditorShortInfo(Scene* scene, ModifierApplication* modApp) const override { return tr("%1=%2").arg(sourceProperty().nameWithComponent()).arg(isolevel()); }

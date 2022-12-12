@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -24,6 +24,7 @@
 #include <ovito/particles/objects/ParticlesObject.h>
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
 #include <ovito/gui/desktop/widgets/general/AutocompleteLineEdit.h>
+#include <ovito/gui/desktop/mainwin/data_inspector/DataInspectorPanel.h>
 #include <ovito/gui/base/actions/ViewportModeAction.h>
 #include <ovito/core/viewport/ViewportWindowInterface.h>
 #include <ovito/core/dataset/data/DataBufferAccess.h>
@@ -103,6 +104,10 @@ QWidget* ParticleInspectionApplet::createWidget()
 	connect(filterExpressionEdit(), &AutocompleteLineEdit::editingFinished, this, [this]() {
 		_pickingMode->resetSelection();
 	});
+	connect(inspectorPanel(), &DataInspectorPanel::selectedPipelineChanged, this, [this]() {
+		_pickingMode->resetSelection();
+	});
+	
 	connect(_measuringModeAction, &QAction::toggled, _distanceTable, &QWidget::setVisible);
 	connect(_measuringModeAction, &QAction::toggled, _angleTable, &QWidget::setVisible);
 	connect(_measuringModeAction, &QAction::toggled, this, &ParticleInspectionApplet::updateDistanceTable);
@@ -118,11 +123,7 @@ QWidget* ParticleInspectionApplet::createWidget()
 ******************************************************************************/
 void ParticleInspectionApplet::updateDisplay()
 {
-	// Clear selection when a different scene object has been selected.
-	if(pipeline != currentPipeline())
-		_pickingMode->resetSelection();
-
-	PropertyInspectionApplet::updateDisplay(state, pipeline);
+	PropertyInspectionApplet::updateDisplay();
 
 	if(_measuringModeAction->isChecked()) {
 		updateDistanceTable();
@@ -290,7 +291,7 @@ void ParticleInspectionApplet::PickingMode::renderOverlay3D(Viewport* vp, SceneR
 		std::array<Point3,4> vertices;
 		auto outVertex = vertices.begin();
 		for(auto& element : _pickedElements) {
-			const PipelineFlowState& flowState = element.objNode->evaluatePipelineSynchronous(true);
+			const PipelineFlowState& flowState = element.objNode->evaluatePipelineSynchronous(renderer->time(), true);
 			if(const ParticlesObject* particles = flowState.getObject<ParticlesObject>()) {
 				// If particle selection is based on ID, find particle with the given ID.
 				size_t particleIndex = element.particleIndex;
@@ -306,7 +307,7 @@ void ParticleInspectionApplet::PickingMode::renderOverlay3D(Viewport* vp, SceneR
 				if(ConstPropertyAccess<Point3> posProperty = particles->getProperty(ParticlesObject::PositionProperty)) {
 					if(particleIndex < posProperty.size()) {
 						TimeInterval iv;
-						const AffineTransformation& nodeTM = element.objNode->getWorldTransform(renderer->dataset()->animationSettings()->time(), iv);
+						const AffineTransformation& nodeTM = element.objNode->getWorldTransform(renderer->time(), iv);
 						*outVertex++ = nodeTM * posProperty[particleIndex];
 					}
 				}
@@ -317,7 +318,7 @@ void ParticleInspectionApplet::PickingMode::renderOverlay3D(Viewport* vp, SceneR
 
 		// Generate pair-wise line elements.
 		size_t n = std::distance(vertices.begin(), outVertex); 
-		DataBufferAccessAndRef<Point3> lines = DataBufferPtr::create(vp->dataset(), n * (n - 1), DataBuffer::Float, 3);
+		DataBufferAccessAndRef<Point3> lines = DataBufferPtr::create(n * (n - 1), DataBuffer::Float, 3);
 		auto iter = lines.begin();
 		for(auto v1 = vertices.begin(); v1 != outVertex; ++v1) {
 			for(auto v2 = v1 + 1; v2 != outVertex; ++v2) {

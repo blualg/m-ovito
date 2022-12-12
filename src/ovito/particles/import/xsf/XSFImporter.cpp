@@ -317,7 +317,7 @@ void XSFImporter::FrameLoader::loadFile()
 				voxelGrid->mutableDomain()->setCellMatrix(cell);
 			}
 			else {
-				DataOORef<SimulationCellObject> simCell = DataOORef<SimulationCellObject>::create(dataset(), cell, true, true, true, false);
+				DataOORef<SimulationCellObject> simCell = DataOORef<SimulationCellObject>::create(cell, true, true, true, false);
 				simCell->setDataSource(dataSource());
 				voxelGrid->setDomain(std::move(simCell));
 			}

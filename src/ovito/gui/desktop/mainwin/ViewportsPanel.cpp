@@ -419,7 +419,7 @@ void ViewportsPanel::mousePressEvent(QMouseEvent* event)
 			if(region.area.contains(event->pos())) {
 				_draggedSplitter = index;
 				_hoveredSplitter = index;
-				_mainWindow.undoStack()->beginCompoundOperation(tr("Resize viewports"));
+				_undoTransaction.begin(_mainWindow, tr("Resize viewports"));
 				_dragStartPos = event->pos();
 				update(region.area);
 				break;
@@ -435,13 +435,13 @@ void ViewportsPanel::mousePressEvent(QMouseEvent* event)
 void ViewportsPanel::mouseMoveEvent(QMouseEvent* event)
 {
     if(_draggedSplitter != -1) {
-		_mainWindow.handleExceptions([&] {
-			// Temporarily block the viewportLayoutChanged() signal from the ViewportConfiguration to avoid
-			// an unnecessary relayout of the viewport windows while resetting the undo operation.
-			QSignalBlocker signalBlocker(_viewportConfig);
-			_mainWindow.undoStack()->resetCurrentCompoundOperation();
-			signalBlocker.unblock();
+		// Temporarily block the viewportLayoutChanged() signal from the ViewportConfiguration to avoid
+		// an unnecessary relayout of the viewport windows while resetting the undo operation.
+		QSignalBlocker signalBlocker(_viewportConfig);
+		_undoTransaction.revert();
+		signalBlocker.unblock();
 
+		_mainWindow.performActions(_undoTransaction, [&] {
 			const SplitterRectangle& splitter = _splitterRegions[_draggedSplitter];
 			ViewportLayoutCell* parentCell = splitter.cell;
 
@@ -501,7 +501,7 @@ void ViewportsPanel::mouseReleaseEvent(QMouseEvent* event)
 			const auto& region = _splitterRegions[_draggedSplitter];
 			_hoveredSplitter = _draggedSplitter;
 			_draggedSplitter = -1;
-			_mainWindow.undoStack()->endCompoundOperation();
+			_undoTransaction.commit();
 			update(region.area);
 		}
     }

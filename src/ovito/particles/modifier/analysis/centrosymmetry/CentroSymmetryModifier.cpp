@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -25,7 +25,6 @@
 #include <ovito/particles/objects/ParticlesObject.h>
 #include <ovito/stdobj/simcell/SimulationCellObject.h>
 #include <ovito/stdobj/table/DataTable.h>
-#include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/utilities/concurrent/ParallelFor.h>
 #include <ovito/core/utilities/units/UnitsManager.h>
 #include <ovito/core/dataset/pipeline/ModifierApplication.h>
@@ -86,7 +85,7 @@ Future<AsynchronousModifier::EnginePtr> CentroSymmetryModifier::createEngine(con
 	const PropertyObject* selectionProperty = onlySelectedParticles() ? particles->expectProperty(ParticlesObject::SelectionProperty) : nullptr;
 
 	// Create an empty data table for the CSP value histogram to be computed.
-	DataOORef<DataTable> histogram = DataOORef<DataTable>::create(dataset(), DataTable::Line, tr("CSP distribution"));
+	DataOORef<DataTable> histogram = DataOORef<DataTable>::create(DataTable::Line, tr("CSP distribution"));
 	histogram->setIdentifier(input.generateUniqueIdentifier<DataTable>(QStringLiteral("csp-centrosymmetry")));
 	histogram->setDataSource(request.modApp());
 	histogram->setAxisLabelX(tr("CSP"));
@@ -127,7 +126,7 @@ void CentroSymmetryModifier::CentroSymmetryEngine::perform()
 	if(cspHistogramBinSize <= 0) cspHistogramBinSize = 1;
 	
 	// Perform binning of CSP values.
-	PropertyAccessAndRef<qlonglong> histogramCounts = DataTable::OOClass().createUserProperty(dataset(), numHistogramBins, PropertyObject::Int64, 1, tr("Count"), DataBuffer::InitializeMemory);
+	PropertyAccessAndRef<qlonglong> histogramCounts = DataTable::OOClass().createUserProperty(numHistogramBins, PropertyObject::Int64, 1, tr("Count"), DataBuffer::InitializeMemory);
 	const int* sel = selectionData ? selectionData.begin() : nullptr;
 	for(FloatType cspValue : cspArray) {
 		OVITO_ASSERT(cspValue >= 0);

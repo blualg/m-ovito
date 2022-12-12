@@ -21,7 +21,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/stdobj/gui/StdObjGui.h>
-#include <ovito/core/dataset/UndoStack.h>
+#include <ovito/core/app/undo/UndoableOperation.h>
 #include <ovito/core/dataset/animation/AnimationSettings.h>
 #include "PropertyReferenceParameterUI.h"
 

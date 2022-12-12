@@ -112,24 +112,9 @@ Future<std::vector<PipelineFlowState>> PipelineObject::evaluateMultiple(const Pi
 		std::move(times), 
 		executor(true), // require deferred execution
 	[request = PipelineEvaluationRequest(request), this](AnimationTime time) mutable {
-		request.setTimeAndFrame(time, this->animationTimeToSourceFrame(time));
+		request.setTime(time);
 		return this->evaluate(request);
 	});
 }
-
-#if 0 // TODO: Remove dead code
-/******************************************************************************
-* Returns the animation time at which the pipeline thiis object is part of is being rendered in the GUI.
-* This method assumes that the pipeline(s) this object is part of are all in the same scene.
-******************************************************************************/
-std::optional<AnimationTime> PipelineObject::currentAnimationTime() const
-{
-	QSet<PipelineSceneNode*> p = pipelines(true);
-	if(!p.empty()) {
-		return (*p.cbegin())->currentAnimationTime();
-	}
-	return {};
-}
-#endif
 
 }	// End of namespace

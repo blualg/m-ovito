@@ -68,7 +68,7 @@ StructureAnalysis::StructureAnalysis(ConstPropertyPtr positions, const Simulatio
 	_structureTypes(std::move(outputStructures)),
 	_structureTypesArray(_structureTypes),
 	_particleSelection(std::move(particleSelection)),
-	_atomClusters(ParticlesObject::OOClass().createStandardProperty(positions->dataset(), positions->size(), ParticlesObject::ClusterProperty, DataBuffer::InitializeMemory)),
+	_atomClusters(ParticlesObject::OOClass().createStandardProperty(positions->size(), ParticlesObject::ClusterProperty, DataBuffer::InitializeMemory)),
 	_atomClustersArray(_atomClusters),
 	_atomSymmetryPermutations(positions->size()),
 	_clusterGraph(std::make_shared<ClusterGraph>()),

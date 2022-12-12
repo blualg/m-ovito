@@ -53,8 +53,8 @@ public:
 	/// Returns the abstract user interface hosting this viewport window.
 	UserInterface& userInterface() const { return _userInterface; }
 
-	/// Returns the ibject responsible for evaluating all pipelines in the scene to prepare interactive rendering.
-	ScenePreparation& scenePreparation() { return _scenePreparation; }
+	/// Returns the object responsible for evaluating all pipelines in the scene to prepare interactive rendering.
+	ScenePreparation& scenePreparation() { return *_scenePreparation; }
 
     /// Puts an update request for this window in the event loop.
 	virtual void renderLater() = 0;
@@ -146,7 +146,7 @@ private:
 	TextPrimitive _orientationTripodLabels[3];
 
 	/// Object responsible for evaluating all pipelines in the scene to prepare interactive rendering.
-	ScenePreparation _scenePreparation;
+	OORef<ScenePreparation> _scenePreparation;
 };
 
 /// This macro registers a viewport window implementation in ViewportWindowInterface::registry() at compile time.

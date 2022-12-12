@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -28,6 +28,7 @@
 #include <ovito/core/utilities/concurrent/Reduce.h>
 #include <ovito/core/app/Application.h>
 #include <ovito/core/app/PluginManager.h>
+#include <ovito/core/app/UserInterface.h>
 #include <ovito/stdobj/properties/PropertyContainer.h>
 #include "ParaViewVTMImporter.h"
 
@@ -209,8 +210,12 @@ Future<PipelineFlowState> ParaViewVTMImporter::loadFrame(const LoadOperationRequ
 		modifiedRequest.filters.back()->preprocessDatasets(blockDatasets, modifiedRequest, *this);
 	}
 
+	OORef<PipelineObject> fileSource = request.dataSource.data();
+	if(!fileSource)
+		throw Exception(QStringLiteral("Object requesting the data import has been deleted."));
+
 	// Load each dataset referenced by the VTM file. 
-	Future<ExtendedLoadRequest> future = reduce_sequential(std::move(modifiedRequest), std::move(blockDatasets), dataset()->executor(true), [](const ParaViewVTMBlockInfo& blockInfo, ExtendedLoadRequest& request) {
+	Future<ExtendedLoadRequest> future = reduce_sequential(std::move(modifiedRequest), std::move(blockDatasets), fileSource->executor(true), [](const ParaViewVTMBlockInfo& blockInfo, ExtendedLoadRequest& request) {
 
 		// We can skip empty datasets which are not associated with a VTK file.
 		if(blockInfo.location.isEmpty())
@@ -221,9 +226,15 @@ Future<PipelineFlowState> ParaViewVTMImporter::loadFrame(const LoadOperationRequ
 		request.blockInfo = blockInfo;
 		request.appendData = (blockInfo.pieceIndex > 0); // Append data (instead of replacing it) when loading subsequent partial blocks of a piece-wise (parallel) dataset.
 
+		OORef<PipelineObject> fileSource = request.dataSource.data();
+		if(!fileSource)
+			throw Exception(QStringLiteral("Object requesting the data import has been deleted."));
+
 		// Retrieve the data file, then detect its format.
 		// Note: FileImporter::autodetectFileFormat() may only be called from the main thread.
-		return Application::instance()->fileManager().fetchUrl(blockInfo.location).then(request.dataset->executor(), [&request](const SharedFuture<FileHandle>& fileFuture) mutable -> Future<> {
+		return Application::instance()->fileManager().fetchUrl(blockInfo.location).then(fileSource->executor(), [&request](const SharedFuture<FileHandle>& fileFuture) mutable -> Future<> {
+			OVITO_ASSERT(ExecutionContext::current().isValid());
+
 			try {
 				// Obtain a handle to the referenced data file.
 				const FileHandle& file = fileFuture.result();
@@ -240,7 +251,7 @@ Future<PipelineFlowState> ParaViewVTMImporter::loadFrame(const LoadOperationRequ
 				// Detect file format and create an importer for it.
 				// This currently works only for FileSourceImporters. Files handled by other kinds of importers will be skipped.
 				// VTK dataset blocks using a file format not supported by OVITO are silently ignored.
-				OORef<FileSourceImporter> importer = dynamic_object_cast<FileSourceImporter>(FileImporter::autodetectFileFormat(request.dataSource, file));
+				OORef<FileSourceImporter> importer = dynamic_object_cast<FileSourceImporter>(FileImporter::autodetectFileFormat(file));
 				if(!importer)
 					return Future<>::createImmediateEmpty();
 
@@ -290,7 +301,7 @@ Future<PipelineFlowState> ParaViewVTMImporter::loadFrame(const LoadOperationRequ
 				// Handle file errors, e.g. if the data block file referenced in the VTM file does not exist.
 				request.state.setStatus(PipelineStatus(ex, QChar(' ')));
 				ex.prependGeneralMessage(tr("Failed to access data file referenced by block '%1' in VTK multi-block file.").arg(request.dataBlockPrefix));
-				ex.reportError();
+				ExecutionContext::current().ui().reportError(ex);
 				// We treat such an error as recoverable and continue with loading the remaining data blocks. 
 				return Future<>::createImmediateEmpty();
 			}

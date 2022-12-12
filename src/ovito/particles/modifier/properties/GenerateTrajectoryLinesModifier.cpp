@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -24,10 +24,10 @@
 #include <ovito/particles/objects/ParticlesObject.h>
 #include <ovito/particles/objects/TrajectoryObject.h>
 #include <ovito/stdobj/simcell/SimulationCellObject.h>
+#include <ovito/core/dataset/DataSetContainer.h>
 #include <ovito/core/dataset/animation/AnimationSettings.h>
 #include <ovito/core/dataset/pipeline/PipelineEvaluation.h>
-#include <ovito/core/dataset/DataSet.h>
-#include <ovito/core/app/Application.h>
+#include <ovito/core/app/UserInterface.h>
 #include <ovito/core/viewport/ViewportConfiguration.h>
 #include <ovito/core/utilities/units/UnitsManager.h>
 #include "GenerateTrajectoryLinesModifier.h"
@@ -66,8 +66,8 @@ SET_MODIFIER_APPLICATION_TYPE(GenerateTrajectoryLinesModifier, GenerateTrajector
 GenerateTrajectoryLinesModifier::GenerateTrajectoryLinesModifier(ObjectCreationParams params) : Modifier(params),
 	_onlySelectedParticles(true),
 	_useCustomInterval(false),
-	_customIntervalStart(params.dataset()->animationSettings()->animationInterval().start()),
-	_customIntervalEnd(params.dataset()->animationSettings()->animationInterval().end()),
+	_customIntervalStart(0),
+	_customIntervalEnd(0),
 	_everyNthFrame(1),
 	_unwrapTrajectories(true),
 	_transferParticleProperties(false)
@@ -75,6 +75,20 @@ GenerateTrajectoryLinesModifier::GenerateTrajectoryLinesModifier(ObjectCreationP
 	if(params.createSubObjects()) {
 		// Create the vis element for rendering the trajectories created by the modifier.
 		setTrajectoryVis(OORef<TrajectoryVis>::create(params));
+	}
+}
+
+/******************************************************************************
+* This method is called by the system when the modifier has been inserted into a pipeline.
+******************************************************************************/
+void GenerateTrajectoryLinesModifier::initializeModifier(const ModifierInitializationRequest& request)
+{
+	Modifier::initializeModifier(request);
+
+	if(ExecutionContext::isInteractive()) {
+		auto [firstFrame, lastFrame] = ExecutionContext::current().ui().datasetContainer().currentAnimationInterval();
+		setCustomIntervalStart(firstFrame);
+		setCustomIntervalEnd(lastFrame);
 	}
 }
 
@@ -102,10 +116,9 @@ void GenerateTrajectoryLinesModifier::evaluateSynchronous(const ModifierEvaluati
 /******************************************************************************
 * Updates the stored trajectories from the source particle object.
 ******************************************************************************/
-bool GenerateTrajectoryLinesModifier::generateTrajectories(MainThreadOperation& operation)
+bool GenerateTrajectoryLinesModifier::generateTrajectories(AnimationTime currentTime, MainThreadOperation& operation)
 {
 	OVITO_ASSERT(operation.isCurrent());
-	TimePoint currentTime = dataset()->animationSettings()->time();
 	
 	for(ModifierApplication* modApp : modifierApplications()) {
 		GenerateTrajectoryLinesModifierApplication* myModApp = dynamic_object_cast<GenerateTrajectoryLinesModifierApplication>(modApp);
@@ -144,23 +157,24 @@ bool GenerateTrajectoryLinesModifier::generateTrajectories(MainThreadOperation& 
 		}
 
 		// Determine time interval over which trajectories should be generated.
-		TimeInterval interval;
-		if(useCustomInterval())
-			interval = customInterval();
-		else
-			interval = TimeInterval(myModApp->sourceFrameToAnimationTime(0), myModApp->sourceFrameToAnimationTime(myModApp->numberOfSourceFrames() - 1));
-
-		if(interval.duration() <= 0)
+		int startFrame, endFrame;
+		if(useCustomInterval()) {
+			startFrame = customIntervalStart();
+			endFrame = customIntervalEnd();
+		}
+		else {
+			startFrame = 0;
+			endFrame = myModApp->numberOfSourceFrames() - 1;
+		}
+		if(startFrame >= endFrame)
 			throw Exception(tr("The current simulation sequence consists only of a single frame. Thus, no trajectory lines were created."));
 
 		// Generate list of animation times at which particle positions should be sampled.
-		QVector<TimePoint> sampleTimes;
-		QVector<int> sampleFrames;
-		for(TimePoint time = interval.start(); time <= interval.end(); time += everyNthFrame() * dataset()->animationSettings()->ticksPerFrame()) {
-			sampleTimes.push_back(time);
-			sampleFrames.push_back(dataset()->animationSettings()->timeToFrame(time));
+		std::vector<int> sampleFrames;
+		for(int frame = startFrame; frame <= endFrame; frame += everyNthFrame()) {
+			sampleFrames.push_back(frame);
 		}
-		operation.setProgressMaximum(sampleTimes.size());
+		operation.setProgressMaximum(sampleFrames.size());
 
 		// Collect particle positions to generate trajectory line vertices.
 		std::vector<Point3> pointData;
@@ -169,17 +183,17 @@ bool GenerateTrajectoryLinesModifier::generateTrajectories(MainThreadOperation& 
 		std::vector<uint8_t> samplingPropertyData;
 		std::vector<DataOORef<const SimulationCellObject>> cells;
 		int timeIndex = 0;
-		for(TimePoint time : sampleTimes) {
+		for(int frame : sampleFrames) {
 			operation.setProgressText(tr("Generating trajectory lines (frame %1 of %2)").arg(operation.progressValue()+1).arg(operation.progressMaximum()));
 
-			SharedFuture<PipelineFlowState> stateFuture = myModApp->evaluateInput(PipelineEvaluationRequest(time));
+			SharedFuture<PipelineFlowState> stateFuture = myModApp->evaluateInput(PipelineEvaluationRequest(myModApp->sourceFrameToAnimationTime(frame)));
 			if(!stateFuture.waitForFinished())
 				return false;
 
 			const PipelineFlowState& state = stateFuture.result();
 			const ParticlesObject* particles = state.getObject<ParticlesObject>();
 			if(!particles)
-				throw Exception(tr("Input data contains no particles at frame %1.").arg(dataset()->animationSettings()->timeToFrame(time)));
+				throw Exception(tr("Input data contains no particles at frame %1.").arg(frame));
 			particles->verifyIntegrity();
 			ConstPropertyAccess<Point3> posProperty = particles->expectProperty(ParticlesObject::PositionProperty);
 
@@ -191,14 +205,14 @@ bool GenerateTrajectoryLinesModifier::generateTrajectories(MainThreadOperation& 
 				particleSamplingProperty = particleProperty().findInContainer(particles);
 				if(!particleSamplingProperty)
 					throw Exception(tr("The particle property '%1' to be sampled and transferred to the trajectory lines does not exist (at frame %2). "
-						"Perhaps you need to restrict the sampling time interval to those times where the property is available.").arg(particleProperty().name()).arg(dataset()->animationSettings()->timeToFrame(time)));
+						"Perhaps you need to restrict the sampling time interval to those times where the property is available.").arg(particleProperty().name()).arg(frame));
 			}
 
 			if(onlySelectedParticles()) {
 				if(!selectedIdentifiers.empty()) {
 					ConstPropertyAccess<qlonglong> identifierProperty = particles->getProperty(ParticlesObject::IdentifierProperty);
 					if(!identifierProperty || identifierProperty.size() != posProperty.size())
-						throw Exception(tr("Input particles do not possess identifiers at frame %1.").arg(dataset()->animationSettings()->timeToFrame(time)));
+						throw Exception(tr("Input particles do not possess identifiers at frame %1.").arg(frame));
 
 					// Create a mapping from IDs to indices.
 					std::map<qlonglong,size_t> idmap;
@@ -280,116 +294,142 @@ bool GenerateTrajectoryLinesModifier::generateTrajectories(MainThreadOperation& 
 		if(operation.isCanceled())
 			return false;
 
-		// Do not create undo records for the following operations.
-		UndoSuspender noUndo(dataset());
+		// Do not create undo records while computing the trajectories.
+		DataOORef<TrajectoryObject> trajObj = DataOORef<TrajectoryObject>::create();
+		{
+			UndoSuspender noUndo;
+			
+			// Copy re-ordered trajectory points.
+			trajObj->setElementCount(pointData.size());
+			PropertyAccess<Point3> trajPosProperty = trajObj->createProperty(TrajectoryObject::PositionProperty);
+			auto piter = permutation.cbegin();
+			for(Point3& p : trajPosProperty) {
+				p = pointData[*piter++];
+			}
 
-		// Create the trajectory lines data object.
-		DataOORef<TrajectoryObject> trajObj = DataOORef<TrajectoryObject>::create(dataset());
+			// Copy re-ordered trajectory time stamps.
+			PropertyAccess<int> trajTimeProperty = trajObj->createProperty(TrajectoryObject::SampleTimeProperty);
+			piter = permutation.cbegin();
+			for(int& t : trajTimeProperty) {
+				t = sampleFrames[timeData[*piter++]];
+			}
 
-		// Copy re-ordered trajectory points.
-		trajObj->setElementCount(pointData.size());
-		PropertyAccess<Point3> trajPosProperty = trajObj->createProperty(TrajectoryObject::PositionProperty);
-		auto piter = permutation.cbegin();
-		for(Point3& p : trajPosProperty) {
-			p = pointData[*piter++];
-		}
+			// Copy re-ordered trajectory ids.
+			PropertyAccess<qlonglong> trajIdProperty = trajObj->createProperty(TrajectoryObject::ParticleIdentifierProperty);
+			piter = permutation.cbegin();
+			for(qlonglong& id : trajIdProperty) {
+				id = idData[*piter++];
+			}
 
-		// Copy re-ordered trajectory time stamps.
-		PropertyAccess<int> trajTimeProperty = trajObj->createProperty(TrajectoryObject::SampleTimeProperty);
-		piter = permutation.cbegin();
-		for(int& t : trajTimeProperty) {
-			t = sampleFrames[timeData[*piter++]];
-		}
+			// Create the trajectory line property receiving the sampled particle property values.
+			if(transferParticleProperties() && particleProperty() && particleProperty().type() != ParticlesObject::PositionProperty) {
+				if(const PropertyObject* inputProperty = particleProperty().findInContainer(particles)) {
+					OVITO_ASSERT(samplingPropertyData.size() == inputProperty->stride() * trajObj->elementCount());
+					if(samplingPropertyData.size() != inputProperty->stride() * trajObj->elementCount())
+						throw Exception(tr("Sampling buffer size mismatch. Sampled particle property '%1' seems to have a varying component count.").arg(inputProperty->name()));
 
-		// Copy re-ordered trajectory ids.
-		PropertyAccess<qlonglong> trajIdProperty = trajObj->createProperty(TrajectoryObject::ParticleIdentifierProperty);
-		piter = permutation.cbegin();
-		for(qlonglong& id : trajIdProperty) {
-			id = idData[*piter++];
-		}
+					// Create a corresponding output property of the trajectory lines.
+					PropertyAccess<void,true> samplingProperty;
+					if(TrajectoryObject::OOClass().isValidStandardPropertyId(inputProperty->type())) {
+						// Input particle property is also a standard property for trajectory lines.
+						samplingProperty = trajObj->createProperty(inputProperty->type());
+						OVITO_ASSERT(samplingProperty.dataType() == inputProperty->dataType());
+						OVITO_ASSERT(samplingProperty.stride() == inputProperty->stride());
+					}
+					else if(TrajectoryObject::OOClass().standardPropertyTypeId(inputProperty->name()) != 0) {
+						// Input property name is that of a standard property for trajectory lines.
+						// Must rename the property to avoid naming conflict, because user properties may not have a standard property name.
+						QString newPropertyName = inputProperty->name() + tr("_particles");
+						samplingProperty = trajObj->createProperty(newPropertyName, inputProperty->dataType(), inputProperty->componentCount(), DataBuffer::NoFlags, inputProperty->componentNames());
+					}
+					else {
+						// Input property is a user property for trajectory lines.
+						samplingProperty = trajObj->createProperty(inputProperty->name(), inputProperty->dataType(), inputProperty->componentCount(), DataBuffer::NoFlags, inputProperty->componentNames());
+					}
 
-		// Create the trajectory line property receiving the sampled particle property values.
-		if(transferParticleProperties() && particleProperty() && particleProperty().type() != ParticlesObject::PositionProperty) {
-			if(const PropertyObject* inputProperty = particleProperty().findInContainer(particles)) {
-				OVITO_ASSERT(samplingPropertyData.size() == inputProperty->stride() * trajObj->elementCount());
-				if(samplingPropertyData.size() != inputProperty->stride() * trajObj->elementCount())
-					throw Exception(tr("Sampling buffer size mismatch. Sampled particle property '%1' seems to have a varying component count.").arg(inputProperty->name()));
-
-				// Create a corresponding output property of the trajectory lines.
-				PropertyAccess<void,true> samplingProperty;
-				if(TrajectoryObject::OOClass().isValidStandardPropertyId(inputProperty->type())) {
-					// Input particle property is also a standard property for trajectory lines.
-					samplingProperty = trajObj->createProperty(inputProperty->type());
-					OVITO_ASSERT(samplingProperty.dataType() == inputProperty->dataType());
-					OVITO_ASSERT(samplingProperty.stride() == inputProperty->stride());
-				}
-				else if(TrajectoryObject::OOClass().standardPropertyTypeId(inputProperty->name()) != 0) {
-					// Input property name is that of a standard property for trajectory lines.
-					// Must rename the property to avoid naming conflict, because user properties may not have a standard property name.
-					QString newPropertyName = inputProperty->name() + tr("_particles");
-					samplingProperty = trajObj->createProperty(newPropertyName, inputProperty->dataType(), inputProperty->componentCount(), DataBuffer::NoFlags, inputProperty->componentNames());
-				}
-				else {
-					// Input property is a user property for trajectory lines.
-					samplingProperty = trajObj->createProperty(inputProperty->name(), inputProperty->dataType(), inputProperty->componentCount(), DataBuffer::NoFlags, inputProperty->componentNames());
-				}
-
-				// Copy property values from temporary sampling buffer to destination trajectory line property.
-				const uint8_t* src = samplingPropertyData.data();
-				uint8_t* dst = samplingProperty.data();
-				size_t stride = samplingProperty.stride();
-				piter = permutation.cbegin();
-				for(size_t mapping : permutation) {
-					OVITO_ASSERT(stride * (mapping + 1) <= samplingPropertyData.size());
-					std::memcpy(dst, src + stride * mapping, stride);
-					dst += stride;
+					// Copy property values from temporary sampling buffer to destination trajectory line property.
+					const uint8_t* src = samplingPropertyData.data();
+					uint8_t* dst = samplingProperty.data();
+					size_t stride = samplingProperty.stride();
+					piter = permutation.cbegin();
+					for(size_t mapping : permutation) {
+						OVITO_ASSERT(stride * (mapping + 1) <= samplingPropertyData.size());
+						std::memcpy(dst, src + stride * mapping, stride);
+						dst += stride;
+					}
 				}
 			}
-		}
 
-		if(operation.isCanceled())
-			return false;
+			if(operation.isCanceled())
+				return false;
 
-		// Unwrap trajectory vertices at periodic boundaries of the simulation cell.
-		if(unwrapTrajectories() && pointData.size() >= 2 && !cells.empty() && cells.front() && cells.front()->hasPbcCorrected()) {
-			operation.setProgressText(tr("Unwrapping trajectory lines"));
-			operation.setProgressMaximum(trajPosProperty.size() - 1);
-			Point3* pos = trajPosProperty.begin();
-			piter = permutation.cbegin();
-			const qlonglong* id = trajIdProperty.cbegin();
-			for(auto pos_end = pos + trajPosProperty.size() - 1; pos != pos_end; ++pos, ++piter, ++id) {
-				if(!operation.incrementProgressValue())
-					return false;
-				if(id[0] == id[1]) {
-					const SimulationCellObject* cell1 = cells[timeData[piter[0]]];
-					const SimulationCellObject* cell2 = cells[timeData[piter[1]]];
-					if(cell1 && cell2) {
-						const Point3& p1 = pos[0];
-						Point3 p2 = pos[1];
-						for(size_t dim = 0; dim < 3; dim++) {
-							if(cell1->hasPbcCorrected(dim)) {
-								FloatType reduced1 = cell1->inverseMatrix().prodrow(p1, dim);
-								FloatType reduced2 = cell2->inverseMatrix().prodrow(p2, dim);
-								FloatType delta = reduced2 - reduced1;
-								FloatType shift = std::floor(delta + FloatType(0.5));
-								if(shift != 0) {
-									pos[1] -= cell2->matrix().column(dim) * shift;
+			// Unwrap trajectory vertices at periodic boundaries of the simulation cell.
+			if(unwrapTrajectories() && pointData.size() >= 2 && !cells.empty() && cells.front() && cells.front()->hasPbcCorrected()) {
+				operation.setProgressText(tr("Unwrapping trajectory lines"));
+				operation.setProgressMaximum(trajPosProperty.size() - 1);
+				Point3* pos = trajPosProperty.begin();
+				piter = permutation.cbegin();
+				const qlonglong* id = trajIdProperty.cbegin();
+				for(auto pos_end = pos + trajPosProperty.size() - 1; pos != pos_end; ++pos, ++piter, ++id) {
+					if(!operation.incrementProgressValue())
+						return false;
+					if(id[0] == id[1]) {
+						const SimulationCellObject* cell1 = cells[timeData[piter[0]]];
+						const SimulationCellObject* cell2 = cells[timeData[piter[1]]];
+						if(cell1 && cell2) {
+							const Point3& p1 = pos[0];
+							Point3 p2 = pos[1];
+							for(size_t dim = 0; dim < 3; dim++) {
+								if(cell1->hasPbcCorrected(dim)) {
+									FloatType reduced1 = cell1->inverseMatrix().prodrow(p1, dim);
+									FloatType reduced2 = cell2->inverseMatrix().prodrow(p2, dim);
+									FloatType delta = reduced2 - reduced1;
+									FloatType shift = std::floor(delta + FloatType(0.5));
+									if(shift != 0) {
+										pos[1] -= cell2->matrix().column(dim) * shift;
+									}
 								}
 							}
 						}
 					}
 				}
 			}
+
+			trajObj->setVisElement(trajectoryVis());
+
+			// Enable undo recording again from here on, because the trajectory line generation should be an undoable operation.
 		}
-
-		trajObj->setVisElement(trajectoryVis());
-
-		noUndo.reset(); // The trajectory line generation should be an undoable operation.
 
 		// Store generated trajectory lines in the ModifierApplication.
 		myModApp->setTrajectoryData(std::move(trajObj));
 	}
 	return true;
+}
+
+/******************************************************************************
+* This method is called once for this object after it has been completely
+* loaded from a stream.
+******************************************************************************/
+void GenerateTrajectoryLinesModifier::loadFromStreamComplete(ObjectLoadStream& stream)
+{
+	Modifier::loadFromStreamComplete(stream);
+
+	// For backward compatibility with OVITO 3.7: 
+	// Convert legacy time values from ticks to frames. This requires access to the AnimationSettings object, which is stored in the scene.
+	if(stream.formatVersion() <= 30008) {
+		if(ModifierApplication* modApp = someModifierApplication()) {
+			QSet<PipelineSceneNode*> pipelines = modApp->pipelines(true);
+			if(!pipelines.empty()) {
+				if(Scene* scene = (*pipelines.begin())->scene()) {
+					if(scene->animationSettings()) {
+						int ticksPerFrame = (int)std::round(4800.0f / scene->animationSettings()->framesPerSecond());
+						setCustomIntervalStart(customIntervalStart() / ticksPerFrame);
+						setCustomIntervalEnd(customIntervalEnd() / ticksPerFrame);
+					}
+				}
+			}
+		}
+	}
 }
 
 }	// End of namespace

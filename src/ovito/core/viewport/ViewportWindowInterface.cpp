@@ -47,7 +47,7 @@ ViewportWindowInterface::Registry& ViewportWindowInterface::registry()
 ViewportWindowInterface::ViewportWindowInterface(UserInterface& userInterface, Viewport* vp) : 
 	_userInterface(userInterface),
 	_viewport(vp),
-	_scenePreparation(userInterface, vp->scene())
+	_scenePreparation(OORef<ScenePreparation>::create(userInterface, vp->scene()))
 {
 	OVITO_ASSERT(vp);
 
@@ -74,7 +74,7 @@ void ViewportWindowInterface::destroyViewportWindow()
 	OVITO_ASSERT(_viewport != nullptr); 
 	_viewport->setWindow(nullptr); 
 	_viewport = nullptr;
-	_scenePreparation.setScene(nullptr);
+	scenePreparation().setScene(nullptr);
 }
 
 /******************************************************************************

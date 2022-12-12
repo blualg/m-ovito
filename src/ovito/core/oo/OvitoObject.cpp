@@ -79,13 +79,4 @@ bool OvitoObject::isBeingLoaded() const
 	return (qobject_cast<ObjectLoadStream*>(parent()) != nullptr);
 }
 
-/******************************************************************************
-* Returns an executor object to be used with Future<>::then(), which executes work
-* in the context (and the thread) of this object.
-******************************************************************************/
-OvitoObjectExecutor OvitoObject::executor(bool requireDeferredExecution) const
-{
-	return OvitoObjectExecutor(this, requireDeferredExecution);
-}
-
 }	// End of namespace

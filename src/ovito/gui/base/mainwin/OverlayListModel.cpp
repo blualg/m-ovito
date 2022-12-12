@@ -199,7 +199,12 @@ QVariant OverlayListModel::data(const QModelIndex& index, int role) const
 		return item->title(selectedViewport());
 	}
 	else if(role == StatusInfoRole) {
-		return item->shortInfo(selectedViewport());
+		if(selectedViewport()) {
+			QVariant v;
+			if(_userInterface.handleExceptions([&] {
+				v = item->shortInfo(selectedViewport());
+			})) return v;
+		}
 	}
 	else if(role == Qt::DecorationRole) {
 		if(item->overlay()) {

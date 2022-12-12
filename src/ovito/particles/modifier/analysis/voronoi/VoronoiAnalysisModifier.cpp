@@ -156,7 +156,7 @@ Future<AsynchronousModifier::EnginePtr> VoronoiAnalysisModifier::createEngine(co
 	DataOORef<SurfaceMesh> polyhedraMesh;
 	if(computePolyhedra()) {
 		// Output the surface mesh representing the computed Voronoi polyhedra.
-		polyhedraMesh = DataOORef<SurfaceMesh>::create(dataset(), ObjectCreationParams::WithoutVisElement, tr("Voronoi polyhedra"));
+		polyhedraMesh = DataOORef<SurfaceMesh>::create(ObjectCreationParams::WithoutVisElement, tr("Voronoi polyhedra"));
 		polyhedraMesh->setIdentifier(input.generateUniqueIdentifier<SurfaceMesh>(QStringLiteral("voronoi-polyhedra")));
 		polyhedraMesh->setDataSource(request.modApp());
 		polyhedraMesh->setDomain(inputCell);
@@ -247,7 +247,7 @@ void VoronoiAnalysisModifier::VoronoiAnalysisEngine::perform()
 
 	if(_positions->size() == 0 || _simCell->volume3D() == 0) {
 		if(maxFaceOrders()) {
-			_voronoiIndices = ParticlesObject::OOClass().createUserProperty(_positions->dataset(), _positions->size(), PropertyObject::Int, 3, QStringLiteral("Voronoi Index"), DataBuffer::InitializeMemory);
+			_voronoiIndices = ParticlesObject::OOClass().createUserProperty(_positions->size(), PropertyObject::Int, 3, QStringLiteral("Voronoi Index"), DataBuffer::InitializeMemory);
 			// Re-use the output particle property as an output mesh region property.
 			if(_polyhedraMesh) {
 				polyhedraMesh.addRegionProperty(voronoiIndices());
@@ -618,7 +618,7 @@ void VoronoiAnalysisModifier::VoronoiAnalysisEngine::perform()
 
 	if(maxFaceOrders()) {
 		size_t componentCount = qBound(1, _maxFaceOrder.load(), FaceOrderStorageLimit);
-		_voronoiIndices = ParticlesObject::OOClass().createUserProperty(_positions->dataset(), _positions->size(), PropertyObject::Int, componentCount, QStringLiteral("Voronoi Index"), DataBuffer::InitializeMemory);
+		_voronoiIndices = ParticlesObject::OOClass().createUserProperty(_positions->size(), PropertyObject::Int, componentCount, QStringLiteral("Voronoi Index"), DataBuffer::InitializeMemory);
 		PropertyAccess<int,true> voronoiIndicesArray(_voronoiIndices);
 		auto indexData = voronoiBuffer.cbegin();
 		for(size_t particleIndex : voronoiBufferIndex) {

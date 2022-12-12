@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -67,8 +67,8 @@ private:
 	/// The plot item for indicating the current iso level value.
 	QwtPlotMarker* _isoLevelIndicator;
 
-	/// Indicates that the user is currently interacting with the plot widget.
-	bool _interactionInProgress = false;
+	/// Used to make changes to the iso level reversible.
+	UndoableTransaction _undoTransaction;
 };
 
 }	// End of namespace

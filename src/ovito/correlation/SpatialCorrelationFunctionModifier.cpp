@@ -475,7 +475,7 @@ void SpatialCorrelationFunctionModifier::CorrelationAnalysisEngine::computeFftCo
 	}
 
 	// Averaged reciprocal space correlation function.
-	_reciprocalSpaceCorrelation = DataTable::OOClass().createUserProperty(positions()->dataset(), numberOfWavevectorBins, PropertyObject::Float, 1, tr("C(q)"), DataBuffer::InitializeMemory);
+	_reciprocalSpaceCorrelation = DataTable::OOClass().createUserProperty(numberOfWavevectorBins, PropertyObject::Float, 1, tr("C(q)"), DataBuffer::InitializeMemory);
 	_reciprocalSpaceCorrelationRange = 2 * FLOATTYPE_PI * minReciprocalSpaceVector * numberOfWavevectorBins;
 
 	std::vector<int> numberOfValues(numberOfWavevectorBins, 0);
@@ -557,9 +557,9 @@ void SpatialCorrelationFunctionModifier::CorrelationAnalysisEngine::computeFftCo
 	FloatType gridSpacing = minCellFaceDistance / (2 * numberOfDistanceBins);
 
 	// Radially averaged real space correlation function.
-	_realSpaceCorrelation = DataTable::OOClass().createUserProperty(positions()->dataset(), numberOfDistanceBins, PropertyObject::Float, 1, tr("C(r)"), DataBuffer::InitializeMemory);
+	_realSpaceCorrelation = DataTable::OOClass().createUserProperty(numberOfDistanceBins, PropertyObject::Float, 1, tr("C(r)"), DataBuffer::InitializeMemory);
 	_realSpaceCorrelationRange = minCellFaceDistance / 2;
-	_realSpaceRDF = DataTable::OOClass().createUserProperty(positions()->dataset(), numberOfDistanceBins, PropertyObject::Float, 1, tr("g(r)"), DataBuffer::InitializeMemory);
+	_realSpaceRDF = DataTable::OOClass().createUserProperty(numberOfDistanceBins, PropertyObject::Float, 1, tr("g(r)"), DataBuffer::InitializeMemory);
 
 	numberOfValues = std::vector<int>(numberOfDistanceBins, 0);
 	PropertyAccess<FloatType> realSpaceCorrelationData(_realSpaceCorrelation);
@@ -643,7 +643,7 @@ void SpatialCorrelationFunctionModifier::CorrelationAnalysisEngine::computeNeigh
 	}
 
 	// Allocate neighbor RDF.
-	_neighRDF = DataTable::OOClass().createUserProperty(positions()->dataset(), neighCorrelation()->size(), PropertyObject::Float, 1, tr("Neighbor g(r)"), DataBuffer::InitializeMemory);
+	_neighRDF = DataTable::OOClass().createUserProperty(neighCorrelation()->size(), PropertyObject::Float, 1, tr("Neighbor g(r)"), DataBuffer::InitializeMemory);
 
 	// Prepare the neighbor list.
 	CutoffNeighborFinder neighborListBuilder;

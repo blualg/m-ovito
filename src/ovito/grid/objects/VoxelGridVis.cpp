@@ -52,7 +52,7 @@ VoxelGridVis::VoxelGridVis(ObjectCreationParams params) : DataVis(params),
 {
 	if(params.createSubObjects()) {
 		// Create animation controller for the transparency parameter.
-		setTransparencyController(ControllerManager::createFloatController(dataset()));
+		setTransparencyController(ControllerManager::createFloatController());
 
 		// Create a color mapping object for pseudo-color visualization of a grid property.
 		setColorMapping(OORef<PropertyColorMapping>::create(params));
@@ -71,14 +71,14 @@ void VoxelGridVis::loadFromStreamComplete(ObjectLoadStream& stream)
 	// Create a color mapping sub-object if it wasn't loaded from the state file.
 	if(!colorMapping()) {
 		// Create a color mapping object for pseudo-color visualization of a grid property.
-		setColorMapping(OORef<PropertyColorMapping>::create(dataset()));
+		setColorMapping(OORef<PropertyColorMapping>::create());
 	}
 }
 
 /******************************************************************************
 * Computes the bounding box of the displayed data.
 ******************************************************************************/
-Box3 VoxelGridVis::boundingBox(TimePoint time, const ConstDataObjectPath& path, const PipelineSceneNode* contextNode, const PipelineFlowState& flowState, TimeInterval& validityInterval)
+Box3 VoxelGridVis::boundingBox(AnimationTime time, const ConstDataObjectPath& path, const PipelineSceneNode* contextNode, const PipelineFlowState& flowState, MixedKeyCache& visCache, TimeInterval& validityInterval)
 {
 	if(const VoxelGrid* gridObj = path.lastAs<VoxelGrid>()) {
 		if(gridObj->domain()) {
@@ -95,14 +95,14 @@ Box3 VoxelGridVis::boundingBox(TimePoint time, const ConstDataObjectPath& path, 
 /******************************************************************************
 * Lets the visualization element render the data object.
 ******************************************************************************/
-PipelineStatus VoxelGridVis::render(TimePoint time, const ConstDataObjectPath& path, const PipelineFlowState& flowState, SceneRenderer* renderer, const PipelineSceneNode* contextNode)
+PipelineStatus VoxelGridVis::render(AnimationTime time, const ConstDataObjectPath& path, const PipelineFlowState& flowState, SceneRenderer* renderer, const PipelineSceneNode* contextNode)
 {
 	PipelineStatus status;
 
 	// Check if this is just the bounding box computation pass.
 	if(renderer->isBoundingBoxPass()) {
 		TimeInterval validityInterval;
-		renderer->addToLocalBoundingBox(boundingBox(time, path, contextNode, flowState, validityInterval));
+		renderer->addToLocalBoundingBox(boundingBox(time, path, contextNode, flowState, renderer->visCache(), validityInterval));
 		return status;
 	}
 
@@ -163,7 +163,7 @@ PipelineStatus VoxelGridVis::render(TimePoint time, const ConstDataObjectPath& p
 	FloatType alpha = FloatType(1) - transp;
 
 	// Look up the rendering primitive in the vis cache.
-	auto& primitives = dataset()->visCache().get<CacheValue>(CacheKey(
+	auto& primitives = renderer->visCache().get<CacheValue>(CacheKey(
 		gridObj, 
 		colorProperty, 
 		pseudoColorProperty, 
@@ -180,9 +180,9 @@ PipelineStatus VoxelGridVis::render(TimePoint time, const ConstDataObjectPath& p
 			if(colorArray || pseudoColorArray)
 				trianglesPerCell = 8;
 		}
-		primitives.pickInfo = new VoxelGridPickInfo(this, gridObj, trianglesPerCell);
+		primitives.pickInfo = OORef<VoxelGridPickInfo>::create(this, gridObj, trianglesPerCell);
 		if(gridObj->domain()) {
-			DataOORef<TriMeshObject> mesh = DataOORef<TriMeshObject>::create(dataset(), ObjectCreationParams::WithoutVisElement);
+			DataOORef<TriMeshObject> mesh = DataOORef<TriMeshObject>::create(ObjectCreationParams::WithoutVisElement);
 			if(colorArray) {
 				if(interpolateColors()) mesh->setHasVertexColors(true);
 				else mesh->setHasFaceColors(true);

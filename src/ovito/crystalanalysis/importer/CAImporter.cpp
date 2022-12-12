@@ -547,7 +547,7 @@ void CAImporter::FrameLoader::loadFile()
 			if(dislocationNetwork->structureByName(patterns[i].longName))
 				continue;
 
-			DataOORef<MicrostructurePhase> pattern = DataOORef<MicrostructurePhase>::create(dataset());
+			DataOORef<MicrostructurePhase> pattern = DataOORef<MicrostructurePhase>::create();
 			pattern->setColor(patterns[i].color);
 			pattern->setShortName(patterns[i].shortName);
 			pattern->setLongName(patterns[i].longName);
@@ -559,7 +559,7 @@ void CAImporter::FrameLoader::loadFile()
 
 			// Add Burgers vector families.
 			for(int j = 0; j < patterns[i].burgersVectorFamilies.size(); j++) {
-				DataOORef<BurgersVectorFamily> family = DataOORef<BurgersVectorFamily>::create(dataset());
+				DataOORef<BurgersVectorFamily> family = DataOORef<BurgersVectorFamily>::create();
 				family->setNumericId(patterns[i].burgersVectorFamilies[j].id);
 				family->setColor(patterns[i].burgersVectorFamilies[j].color);
 				family->setName(patterns[i].burgersVectorFamilies[j].name);
@@ -570,7 +570,7 @@ void CAImporter::FrameLoader::loadFile()
 
 			// Make sure there always is a default family.
 			if(pattern->burgersVectorFamilies().empty())
-				pattern->addBurgersVectorFamily(DataOORef<BurgersVectorFamily>::create(dataset()));
+				pattern->addBurgersVectorFamily(DataOORef<BurgersVectorFamily>::create());
 		}
 
 		// Determine the main crystal structure of the system, which has the most atoms.

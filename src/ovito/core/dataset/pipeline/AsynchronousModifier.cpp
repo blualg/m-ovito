@@ -44,6 +44,7 @@ template class OVITO_CORE_EXPORT Future<AsynchronousModifier::EnginePtr>;
 Future<PipelineFlowState> AsynchronousModifier::evaluate(const ModifierEvaluationRequest& request, const PipelineFlowState& input)
 {
 	OVITO_ASSERT(!isUndoRecording());
+	OVITO_ASSERT(ExecutionContext::current().isValid());
 
 	// Get the modifier application, which stores cached computation results.
 	const AsynchronousModifierApplication* asyncModApp = dynamic_object_cast<AsynchronousModifierApplication>(request.modApp());

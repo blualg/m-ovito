@@ -94,7 +94,7 @@ public:
 	virtual void setAntialiasingHint(int antialiasingLevel) {}
 
 	/// Prepares the renderer for rendering and sets the dataset to be rendered.
-	virtual bool startRender(const RenderSettings& settings, const QSize& frameBufferSize, MixedKeyCache& visCache);
+	virtual bool startRender(const RenderSettings* settings, const QSize& frameBufferSize, MixedKeyCache& visCache);
 
 	/// Returns the general rendering settings.
 	/// This information is only available between calls to startRender() and endRender().
@@ -126,7 +126,7 @@ public:
 	const QRect& viewportRect() const { return _viewportRect; }
 
 	/// Returns the scene currently being rendered. Only valid between calls to beginFrame()/endFrame().
-	Scene* scene() const { return _scene; }
+	Scene* scene() const { OVITO_ASSERT(_scene); return _scene; }
 
 	/// Returns the device pixel ratio of the output device we are rendering to.
 	virtual qreal devicePixelRatio() const;
@@ -299,9 +299,6 @@ private:
 	/// Renders a data object and all its sub-objects.
 	void renderDataObject(const DataObject* dataObj, const PipelineSceneNode* pipeline, const PipelineFlowState& state, ConstDataObjectPath& dataObjectPath);
 
-	/// The dataset being rendered in the current rendering pass.
-	DataSet* _renderDataset = nullptr;
-
 	/// The render settings for the current rendering pass.
 	const RenderSettings* _renderSettings = nullptr;
 
@@ -363,7 +360,7 @@ class OVITO_CORE_EXPORT ViewportPickResult
 public:
 
 	/// Indicates whether an object was picked or not.
-	bool isValid() const { return _pipelineNode != nullptr; }
+	bool isValid() const { return (bool)_pipelineNode; }
 
 	/// Returns the scene node that has been picked.
 	PipelineSceneNode* pipelineNode() const { return _pipelineNode; }

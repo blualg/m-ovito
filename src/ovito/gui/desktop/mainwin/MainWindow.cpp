@@ -33,7 +33,7 @@
 #include <ovito/gui/base/viewport/ViewportInputManager.h>
 #include <ovito/gui/base/actions/ActionManager.h>
 #include <ovito/core/dataset/DataSetContainer.h>
-#include <ovito/core/dataset/UndoStack.h>
+#include <ovito/core/app/undo/UndoStack.h>
 #include <ovito/core/viewport/ViewportConfiguration.h>
 #include <ovito/core/viewport/ViewportWindowInterface.h>
 #include <ovito/core/app/StandaloneApplication.h>

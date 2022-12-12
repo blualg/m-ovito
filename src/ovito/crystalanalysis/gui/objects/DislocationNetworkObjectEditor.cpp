@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2019 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -109,7 +109,7 @@ void DislocationNetworkObjectEditor::onDoubleClickPattern(const QModelIndex& ind
 	if(!newColor.isValid() || newColor == oldColor)
 		return;
 
-	undoableTransaction(tr("Change structure type color"), [pattern, &newColor]() {
+	performTransaction(tr("Change structure type color"), [pattern, &newColor]() {
 		pattern->setColor(Color(newColor));
 	});
 }

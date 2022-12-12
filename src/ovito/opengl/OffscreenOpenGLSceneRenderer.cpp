@@ -81,7 +81,7 @@ void OffscreenOpenGLSceneRenderer::createOffscreenSurface()
 /******************************************************************************
 * Prepares the renderer for rendering one or more frames.
 ******************************************************************************/
-bool OffscreenOpenGLSceneRenderer::startRender(const RenderSettings& settings, const QSize& frameBufferSize, MixedKeyCache& visCache)
+bool OffscreenOpenGLSceneRenderer::startRender(const RenderSettings* settings, const QSize& frameBufferSize, MixedKeyCache& visCache)
 {
 	if(Application::instance()->headlessMode())
 		throw RendererException(tr("Cannot use OpenGL renderer when running in headless mode. "

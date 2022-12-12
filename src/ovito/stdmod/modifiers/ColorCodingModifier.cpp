@@ -63,9 +63,9 @@ ColorCodingModifier::ColorCodingModifier(ObjectCreationParams params) : Delegati
 	_autoAdjustRange(false)
 {
 	if(params.createSubObjects()) {
-		setColorGradient(OORef<ColorCodingHSVGradient>::create(dataset()));
-		setStartValueController(ControllerManager::createFloatController(dataset()));
-		setEndValueController(ControllerManager::createFloatController(dataset()));
+		setColorGradient(OORef<ColorCodingHSVGradient>::create());
+		setStartValueController(ControllerManager::createFloatController());
+		setEndValueController(ControllerManager::createFloatController());
 
 		// Let this modifier act on particles by default.
 		createDefaultModifierDelegate(ColorCodingModifierDelegate::OOClass(), QStringLiteral("ParticlesColorCodingModifierDelegate"), params);
@@ -149,7 +149,7 @@ void ColorCodingModifier::initializeModifier(const ModifierInitializationRequest
 		}
 
 		// Automatically adjust value range to input.
-		adjustRange();
+		adjustRange(request.time());
 	}
 }
 
@@ -159,7 +159,7 @@ void ColorCodingModifier::initializeModifier(const ModifierInitializationRequest
 void ColorCodingModifier::referenceReplaced(const PropertyFieldDescriptor* field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex)
 {
 	// Whenever the delegate of this modifier is being replaced, update the source property reference.
-	if(field == PROPERTY_FIELD(DelegatingModifier::delegate) && !isBeingLoaded() && !isAboutToBeDeleted() && !dataset()->undoStack().isUndoingOrRedoing()) {
+	if(field == PROPERTY_FIELD(DelegatingModifier::delegate) && !isBeingLoaded() && !isAboutToBeDeleted() && !isUndoingOrRedoing()) {
 		setSourceProperty(sourceProperty().convertToContainerClass(delegate() ? delegate()->inputContainerClass() : nullptr));
 	}
 	DelegatingModifier::referenceReplaced(field, oldTarget, newTarget, listIndex);
@@ -214,17 +214,16 @@ bool ColorCodingModifier::determinePropertyValueRange(const PipelineFlowState& s
 
 /******************************************************************************
 * Sets the start and end value to the minimum and maximum value
-* in the selected particle or bond property.
-* Returns true if successful.
+* in the selected input property. Returns true if successful.
 ******************************************************************************/
-bool ColorCodingModifier::adjustRange()
+bool ColorCodingModifier::adjustRange(AnimationTime time)
 {
 	FloatType minValue = std::numeric_limits<FloatType>::max();
 	FloatType maxValue = std::numeric_limits<FloatType>::lowest();
 
 	// Loop over all input data.
 	bool success = false;
-	PipelineEvaluationRequest request(dataset()->animationSettings());
+	PipelineEvaluationRequest request(time);
 	for(ModifierApplication* modApp : modifierApplications()) {
 		const PipelineFlowState& inputState = modApp->evaluateInputSynchronous(request);
 
@@ -236,9 +235,9 @@ bool ColorCodingModifier::adjustRange()
 
 	// Adjust range of color coding.
 	if(startValueController())
-		startValueController()->setCurrentFloatValue(minValue);
+		startValueController()->setFloatValue(time, minValue);
 	if(endValueController())
-		endValueController()->setCurrentFloatValue(maxValue);
+		endValueController()->setFloatValue(time, maxValue);
 
 	return true;
 }
@@ -247,25 +246,22 @@ bool ColorCodingModifier::adjustRange()
 * Sets the start and end value to the minimum and maximum value of the selected
 * particle or bond property determined over the entire animation sequence.
 ******************************************************************************/
-bool ColorCodingModifier::adjustRangeGlobal(MainThreadOperation& operation)
+bool ColorCodingModifier::adjustRangeGlobal(MainThreadOperation& operation, int startFrame, int endFrame)
 {
-	ViewportSuspender noVPUpdates(this);
-
-	TimeInterval interval = dataset()->animationSettings()->animationInterval();
-	operation.setProgressMaximum(interval.duration() / dataset()->animationSettings()->ticksPerFrame() + 1);
+	operation.setProgressMaximum(endFrame - startFrame + 1);
 
 	FloatType minValue = std::numeric_limits<FloatType>::max();
 	FloatType maxValue = std::numeric_limits<FloatType>::lowest();
 
 	// Loop over all animation frames, evaluate data pipeline, and determine
 	// minimum and maximum values.
-	for(TimePoint time = interval.start(); time <= interval.end() && !operation.isCanceled(); time += dataset()->animationSettings()->ticksPerFrame()) {
-		operation.setProgressText(tr("Analyzing frame %1").arg(dataset()->animationSettings()->timeToFrame(time)));
+	for(int frame = startFrame; frame <= endFrame && !operation.isCanceled(); frame++) {
+		operation.setProgressText(tr("Analyzing frame %1").arg(frame));
 
 		for(ModifierApplication* modApp : modifierApplications()) {
 
 			// Evaluate data pipeline up to this color coding modifier.
-			SharedFuture<PipelineFlowState> stateFuture = modApp->evaluateInput(PipelineEvaluationRequest(time, dataset()->animationSettings()->timeToFrame(time)));
+			SharedFuture<PipelineFlowState> stateFuture = modApp->evaluateInput(PipelineEvaluationRequest(AnimationTime::fromFrame(frame)));
 			if(!stateFuture.waitForFinished())
 				break;
 
@@ -277,10 +273,10 @@ bool ColorCodingModifier::adjustRangeGlobal(MainThreadOperation& operation)
 
 	if(!operation.isCanceled()) {
 		// Adjust range of color coding to the min/max values.
-		if(startValueController() && minValue != std::numeric_limits<FloatType>::max())
-			startValueController()->setCurrentFloatValue(minValue);
-		if(endValueController() && maxValue != std::numeric_limits<FloatType>::lowest())
-			endValueController()->setCurrentFloatValue(maxValue);
+		if(minValue != std::numeric_limits<FloatType>::max())
+			setStartValue(minValue);
+		if(maxValue != std::numeric_limits<FloatType>::lowest())
+			setEndValue(maxValue);
 
 		return true;
 	}
@@ -317,7 +313,7 @@ void ColorCodingModifier::setColorGradientType(const QString& typeName)
 		qWarning() << "setColorGradientType: Color gradient class" << typeName << "does not exist.";
 		return;
 	}
-	OORef<ColorCodingGradient> gradient = static_object_cast<ColorCodingGradient>(descriptor->createInstance(dataset()));
+	OORef<ColorCodingGradient> gradient = static_object_cast<ColorCodingGradient>(descriptor->createInstance());
 	if(gradient) {
 		setColorGradient(std::move(gradient));
 #ifndef OVITO_DISABLE_QSETTINGS

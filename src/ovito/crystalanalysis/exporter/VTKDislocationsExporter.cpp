@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -42,7 +42,7 @@ bool VTKDislocationsExporter::openOutputFile(const QString& filePath, int number
 	OVITO_ASSERT(!_outputStream);
 
 	_outputFile.setFileName(filePath);
-	_outputStream.reset(new CompressedTextWriter(_outputFile, dataset()));
+	_outputStream = std::make_unique<CompressedTextWriter>(_outputFile);
 
 	return true;
 }
@@ -64,12 +64,12 @@ void VTKDislocationsExporter::closeOutputFile(bool exportCompleted)
 /******************************************************************************
  * Exports a single animation frame to the current output file.
  *****************************************************************************/
-bool VTKDislocationsExporter::exportFrame(int frameNumber, TimePoint time, const QString& filePath, MainThreadOperation& operation)
+bool VTKDislocationsExporter::exportFrame(int frameNumber, const QString& filePath, MainThreadOperation& operation)
 {
 	// Evaluate data pipeline.
 	// Note: We are requesting the renderable flow state from the pipeline,
 	// because we are interested in clipped (post-processed) dislocation lines.
-	const PipelineFlowState& state = getPipelineDataToBeExported(time, operation, true);
+	const PipelineFlowState& state = getPipelineDataToBeExported(frameNumber, operation, true);
 	if(operation.isCanceled())
 		return false;
 

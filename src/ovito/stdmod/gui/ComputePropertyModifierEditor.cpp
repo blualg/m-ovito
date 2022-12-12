@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -235,7 +235,7 @@ void ComputePropertyModifierEditor::onExpressionEditingFinished()
 		expr = edit->text();
 	}
 	OVITO_ASSERT(index >= 0);
-	undoableTransaction(tr("Change expression"), [mod, expr, index]() {
+	performTransaction(tr("Change expression"), [mod, expr, index]() {
 		QStringList expressions = mod->expressions();
 		expressions[index] = expr;
 		mod->setExpressions(expressions);

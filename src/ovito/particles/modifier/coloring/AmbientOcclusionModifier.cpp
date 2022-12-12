@@ -101,7 +101,7 @@ Future<AsynchronousModifier::EnginePtr> AmbientOcclusionModifier::createEngine(c
 	OvitoClassPtr rendererClass = PluginManager::instance().findClass("OpenGLRenderer", "OffscreenOpenGLSceneRenderer");
 	if(!rendererClass)
 		throw Exception(tr("The OffscreenOpenGLSceneRenderer class is not available. Please make sure the OpenGLRenderer plugin is installed correctly."));
-	OORef<SceneRenderer> renderer = static_object_cast<SceneRenderer>(rendererClass->createInstance(dataset()));
+	OORef<SceneRenderer> renderer = static_object_cast<SceneRenderer>(rendererClass->createInstance());
 
 	// Activate picking mode, because we want to render particles using false colors.
 	renderer->setPicking(true);
@@ -122,7 +122,7 @@ AmbientOcclusionModifier::AmbientOcclusionEngine::AmbientOcclusionEngine(const M
 	_particleRadii(std::move(particleRadii)),
 	_boundingBox(boundingBox),
 	_renderer(std::move(renderer)),
-	_brightness(DataBufferPtr::create(request.dataset(), fingerprint.particleCount(), PropertyObject::Float, 1, DataBuffer::InitializeMemory)),
+	_brightness(DataBufferPtr::create(fingerprint.particleCount(), PropertyObject::Float, 1, DataBuffer::InitializeMemory)),
 	_inputFingerprint(std::move(fingerprint))
 {
 	OVITO_ASSERT(_particleRadii->size() == _positions->size());
@@ -143,8 +143,12 @@ void AmbientOcclusionModifier::AmbientOcclusionEngine::perform()
 		FrameBuffer frameBuffer(_resolution, _resolution);
 		QRect frameBufferRect(QPoint(0,0), frameBuffer.size());
 
+		// Create a local vis cache, because we are not in the main thread.
+		// But we assume that this cache is not being used much anyway.
+		MixedKeyCache visCache;
+
 		// Initialize the renderer.
-		_renderer->startRender(nullptr, nullptr, frameBufferRect.size());
+		_renderer->startRender(nullptr, frameBufferRect.size(), visCache);
 		try {
 			// The buffered particle geometry used for rendering the particles.
 			ParticlePrimitive particleBuffer;
@@ -187,7 +191,7 @@ void AmbientOcclusionModifier::AmbientOcclusionEngine::perform()
 				// frame buffer contents.
 				frameBuffer.image() = QImage();
 
-				_renderer->beginFrame(0, projParams, nullptr, frameBufferRect, &frameBuffer);
+				_renderer->beginFrame(AnimationTime(0), nullptr, projParams, nullptr, frameBufferRect, &frameBuffer);
 				_renderer->setWorldTransform(AffineTransformation::Identity());
 				_renderer->resetPickingBuffer();
 				try {
@@ -235,6 +239,9 @@ void AmbientOcclusionModifier::AmbientOcclusionEngine::perform()
 			throw;
 		}
 		_renderer->endRender();
+
+		// The vis cache should remain unused when rendering just a bunch of spherical particles.
+		OVITO_ASSERT(visCache.size() == 0);
 
 		if(isCanceled()) return;
 		setProgressValue(_samplingCount);

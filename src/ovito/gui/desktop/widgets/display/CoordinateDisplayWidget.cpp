@@ -23,8 +23,7 @@
 #include <ovito/gui/desktop/GUI.h>
 #include <ovito/gui/desktop/widgets/general/SpinnerWidget.h>
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
-#include <ovito/core/dataset/UndoStack.h>
-#include <ovito/core/viewport/ViewportConfiguration.h>
+#include <ovito/core/app/undo/UndoableOperation.h>
 #include "CoordinateDisplayWidget.h"
 
 namespace Ovito {
@@ -128,15 +127,16 @@ void CoordinateDisplayWidget::onSpinnerValueChanged()
 	else if(sender() == _spinners[1]) component = 1;
 	else if(sender() == _spinners[2]) component = 2;
 	else return;
-	ViewportSuspender noVPUpdate(_mainWindow);
-	if(!_mainWindow.undoStack()->isRecording()) {
-		UndoableTransaction transaction(_mainWindow, _undoOperationName);
-		Q_EMIT valueEntered(component, _spinners[component]->floatValue());
-		transaction.commit();
+	if(!_undoTransaction.operation()) {
+		_mainWindow.performTransaction(_undoOperationName, [&] {
+			Q_EMIT valueEntered(component, _spinners[component]->floatValue());
+		});
 	}
 	else {
-		_mainWindow.undoStack()->resetCurrentCompoundOperation();
-		Q_EMIT valueEntered(component, _spinners[component]->floatValue());
+		_undoTransaction.revert();
+		_undoTransaction.userInterface().performActions(_undoTransaction, [&] {
+			Q_EMIT valueEntered(component, _spinners[component]->floatValue());
+		});
 	}
 }
 
@@ -145,7 +145,7 @@ void CoordinateDisplayWidget::onSpinnerValueChanged()
 ******************************************************************************/
 void CoordinateDisplayWidget::onSpinnerDragStart()
 {
-	_mainWindow.undoStack()->beginCompoundOperation(_undoOperationName);
+	_undoTransaction.begin(_mainWindow, _undoOperationName);
 }
 
 /******************************************************************************
@@ -153,7 +153,7 @@ void CoordinateDisplayWidget::onSpinnerDragStart()
 ******************************************************************************/
 void CoordinateDisplayWidget::onSpinnerDragStop()
 {
-	_mainWindow.undoStack()->endCompoundOperation();
+	_undoTransaction.commit();
 }
 
 /******************************************************************************
@@ -161,7 +161,7 @@ void CoordinateDisplayWidget::onSpinnerDragStop()
 ******************************************************************************/
 void CoordinateDisplayWidget::onSpinnerDragAbort()
 {
-	_mainWindow.undoStack()->endCompoundOperation(false);
+	_undoTransaction.cancel();
 }
 
 }	// End of namespace

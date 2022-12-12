@@ -24,7 +24,7 @@
 #include <ovito/core/viewport/Viewport.h>
 #include <ovito/core/rendering/RenderSettings.h>
 #include <ovito/core/app/Application.h>
-#include <ovito/core/dataset/DataSet.h>
+#include <ovito/core/app/UserInterface.h>
 #include <ovito/core/dataset/scene/Scene.h>
 #include <ovito/core/dataset/scene/PipelineSceneNode.h>
 #include <ovito/core/dataset/pipeline/ModifierApplication.h>
@@ -95,38 +95,50 @@ ColorLegendOverlay::ColorLegendOverlay(ObjectCreationParams params) : ViewportOv
 	_borderEnabled(false),
 	_borderColor(0,0,0)
 {
-	// Find a ColorCodingModifier in the scene that we can connect to.
-	dataset()->scene()->visitObjectNodes([&](PipelineSceneNode* pipeline) {
-		PipelineObject* obj = pipeline->dataProvider();
-		while(obj) {
-			if(ModifierApplication* modApp = dynamic_object_cast<ModifierApplication>(obj)) {
-				if(ColorCodingModifier* mod = dynamic_object_cast<ColorCodingModifier>(modApp->modifier())) {
-					setModifier(mod);
-					if(mod->isEnabled())
-						return false;	// Stop search.
-				}
-				obj = modApp->input();
-			}
-			else break;
-		}
-		return true;
-	});
+}
 
-	// If there is no ColorCodingModifier in the scene, initialize the overlay to use 
-	// the first available typed property as color source.
-	if(params.loadUserDefaults() && modifier() == nullptr && !sourceProperty()) {
-		dataset()->scene()->visitObjectNodes([&](PipelineSceneNode* pipeline) {
-			const PipelineFlowState& state = pipeline->evaluatePipelineSynchronous(false);
-			for(const ConstDataObjectPath& dataPath : state.getObjectsRecursive(PropertyObject::OOClass())) {
-				const PropertyObject* property = static_object_cast<PropertyObject>(dataPath.back());
-				// Check if the property is a typed property, i.e. it has one or more ElementType objects attached to it.
-				if(property->isTypedProperty() && dataPath.size() >= 2) {
-					setSourceProperty(dataPath);
-					return false;
+/******************************************************************************
+* Is called when the overlay is being newly attached to a viewport. 
+******************************************************************************/
+void ColorLegendOverlay::initializeOverlay(Viewport* viewport)
+{
+	if(ExecutionContext::isInteractive()) {
+		
+		// Find a ColorCodingModifier in the scene that we can connect to.
+		if(!modifier() && !sourceProperty() && viewport->scene()) {
+			viewport->scene()->visitObjectNodes([&](PipelineSceneNode* pipeline) {
+				PipelineObject* obj = pipeline->dataProvider();
+				while(obj) {
+					if(ModifierApplication* modApp = dynamic_object_cast<ModifierApplication>(obj)) {
+						if(ColorCodingModifier* mod = dynamic_object_cast<ColorCodingModifier>(modApp->modifier())) {
+							setModifier(mod);
+							if(mod->isEnabled())
+								return false; // Stop search.
+						}
+						obj = modApp->input();
+					}
+					else break;
 				}
-			}
-			return true;
-		});
+				return true;
+			});
+		}
+
+		// If there is no ColorCodingModifier in the scene, initialize the overlay to use 
+		// the first available typed property as color source.
+		if(!modifier() && !sourceProperty() && viewport->scene()) {
+			viewport->scene()->visitObjectNodes([&](PipelineSceneNode* pipeline) {
+				const PipelineFlowState& state = pipeline->evaluatePipelineSynchronous(viewport->scene()->animationSettings()->currentTime(), false);
+				for(const ConstDataObjectPath& dataPath : state.getObjectsRecursive(PropertyObject::OOClass())) {
+					const PropertyObject* property = static_object_cast<PropertyObject>(dataPath.back());
+					// Check if the property is a typed property, i.e. it has one or more ElementType objects attached to it.
+					if(property->isTypedProperty() && dataPath.size() >= 2) {
+						setSourceProperty(dataPath);
+						return false; // Stop search.
+					}
+				}
+				return true;
+			});
+		}
 	}
 }
 
@@ -135,7 +147,7 @@ ColorLegendOverlay::ColorLegendOverlay(ObjectCreationParams params) : ViewportOv
 ******************************************************************************/
 void ColorLegendOverlay::propertyChanged(const PropertyFieldDescriptor* field)
 {
-	if(field == PROPERTY_FIELD(alignment) && !isBeingLoaded() && !isAboutToBeDeleted() && !dataset()->undoStack().isUndoingOrRedoing() && ExecutionContext::isInteractive()) {
+	if(field == PROPERTY_FIELD(alignment) && !isBeingLoaded() && !isAboutToBeDeleted() && !isUndoingOrRedoing() && ExecutionContext::isInteractive()) {
 		// Automatically reset offset to zero when user changes the alignment of the overlay in the viewport.
 		setOffsetX(0);
 		setOffsetY(0);
@@ -210,18 +222,18 @@ void ColorLegendOverlay::render(SceneRenderer* renderer, const QRect& logicalVie
 	}
 	else if(sourceProperty()) {
 		// Look up the typed property in one of the scene's pipeline outputs.
-		dataset()->scene()->visitObjectNodes([&](PipelineSceneNode* pipeline) {
+		renderer->scene()->visitObjectNodes([&](PipelineSceneNode* pipeline) {
 
 			// Evaulate pipeline and obtain output data collection.
 			if(!renderer->isInteractive()) {
-				PipelineEvaluationFuture pipelineEvaluation = pipeline->evaluatePipeline(PipelineEvaluationRequest(renderer->scene()->animationSettings(), renderer->time()));
+				PipelineEvaluationFuture pipelineEvaluation = pipeline->evaluatePipeline(PipelineEvaluationRequest(renderer->time()));
 				if(!pipelineEvaluation.waitForFinished())
 					return false;
 				// Look up the typed property.
 				typedProperty = pipelineEvaluation.result().getLeafObject(sourceProperty());
 			}
 			else {
-				const PipelineFlowState& state = pipeline->evaluatePipelineSynchronous(false);
+				const PipelineFlowState& state = pipeline->evaluatePipelineSynchronous(renderer->time(), false);
 				// Look up the typed property.
 				typedProperty = state.getLeafObject(sourceProperty());
 			}
@@ -238,7 +250,7 @@ void ColorLegendOverlay::render(SceneRenderer* renderer, const QRect& logicalVie
 			// Set warning status to be displayed in the GUI.
 			setStatus(PipelineStatus(PipelineStatus::Warning, tr("The property '%1' is not available in the pipeline output.").arg(sourceProperty().dataTitleOrString())));
 
-			// Escalate to an error state if in batch mode.
+			// Escalate to an error state if in terminal mode.
 			if(Application::instance()->consoleMode())
 				throw Exception(tr("The property '%1' set as source of the color legend is not present in the data pipeline output.").arg(sourceProperty().dataTitleOrString()));
 			else
@@ -248,7 +260,7 @@ void ColorLegendOverlay::render(SceneRenderer* renderer, const QRect& logicalVie
 			// Set warning status to be displayed in the GUI.
 			setStatus(PipelineStatus(PipelineStatus::Warning, tr("The property '%1' is not a typed property.").arg(sourceProperty().dataTitleOrString())));
 
-			// Escalate to an error state if in batch mode.
+			// Escalate to an error state if in terminal mode.
 			if(Application::instance()->consoleMode())
 				throw Exception(tr("The property '%1' set as source of the color legend is not a typed property, i.e., it has no ElementType(s) attached.").arg(sourceProperty().dataTitleOrString()));
 			else
@@ -262,7 +274,7 @@ void ColorLegendOverlay::render(SceneRenderer* renderer, const QRect& logicalVie
 		// Set warning status to be displayed in the GUI.
 		setStatus(PipelineStatus(PipelineStatus::Warning, tr("No source Color Coding modifier has been selected for this color legend.")));
 
-		// Escalate to an error state if in batch mode.
+		// Escalate to an error state if in terminal mode.
 		if(Application::instance()->consoleMode()) {
 			throw Exception(tr("You are trying to render a Viewport with a ColorLegendOverlay whose 'modifier' property has "
 							  "not been set to any ColorCodingModifier. Did you forget to assign a source for the color legend?"));
@@ -309,7 +321,7 @@ void ColorLegendOverlay::render(SceneRenderer* renderer, const QRect& logicalVie
 			endValue = std::numeric_limits<FloatType>::quiet_NaN();
 			if(ModifierApplication* modApp = modifier()->someModifierApplication()) {
 				QVariant minValue, maxValue;
-				PipelineEvaluationRequest request(renderer->scene()->animationSettings(), renderer->time());
+				PipelineEvaluationRequest request(renderer->time());
 				if(!renderer->isInteractive()) {
 					SharedFuture<PipelineFlowState> stateFuture = modApp->evaluate(request);
 					if(!stateFuture.waitForFinished())
@@ -349,7 +361,7 @@ void ColorLegendOverlay::drawContinuousColorMap(SceneRenderer* renderer, const Q
 		return;
 
 	// Look up the image primitive for the color bar in the cache.
-	auto& [imagePrimitive, offset] = dataset()->visCache().get<std::tuple<ImagePrimitive, QPointF>>(
+	auto& [imagePrimitive, offset] = renderer->visCache().get<std::tuple<ImagePrimitive, QPointF>>(
 		RendererResourceKey<struct ColorBarImageCache, OORef<ColorCodingGradient>, FloatType, int, bool, Color, QSizeF>{ 
 			mapping.gradient(),
 			renderer->devicePixelRatio(),
@@ -510,7 +522,7 @@ void ColorLegendOverlay::drawDiscreteColorMap(SceneRenderer* renderer, const QRe
 	}
 
 	// Look up the image primitive for the color bar in the cache.
-	auto& [imagePrimitive, offset] = dataset()->visCache().get<std::tuple<ImagePrimitive, QPointF>>(
+	auto& [imagePrimitive, offset] = renderer->visCache().get<std::tuple<ImagePrimitive, QPointF>>(
 		RendererResourceKey<struct TypeColorsImageCache, std::vector<Color>, FloatType, int, bool, Color, QSizeF>{ 
 			typeColors,
 			renderer->devicePixelRatio(),

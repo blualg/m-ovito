@@ -195,7 +195,7 @@ bool RenderSettings::renderScene(const std::vector<std::pair<Viewport*, QRectF>>
 
 		// Initialize the renderer.
 		operation.setProgressText(tr("Initializing renderer"));
-		if(renderer->startRender(*this, largestViewportRectSize, Application::instance()->visCache())) {
+		if(renderer->startRender(this, largestViewportRectSize, Application::instance()->visCache())) {
 
 			VideoEncoder* videoEncoder = nullptr;
 #ifdef OVITO_VIDEO_OUTPUT_SUPPORT

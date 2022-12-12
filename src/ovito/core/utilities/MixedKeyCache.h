@@ -83,12 +83,14 @@ public:
 		_entries.clear();
 	}
 
+	/// Returns the number of items currently stored in the cache.
+	size_t size() const { return _entries.size(); }
+
 private:
 
 	/// Stores all key-value pairs of the cache. 
-	/// Note we are using std::deque instead of std::vector here, because we require stability of pointers.
-	/// get() returns references to elements in the cache, which must remain valid even when new objects are added
-	/// to the cache.
+	/// Note we are using std::deque instead of std::vector here, because we require stability of pointers to elements in the container.
+	/// get() returns references to elements in the cache, which must remain valid even when additional objects are added to the cache.
 	std::deque<std::tuple<any_moveonly, any_moveonly, bool>> _entries;
 };
 

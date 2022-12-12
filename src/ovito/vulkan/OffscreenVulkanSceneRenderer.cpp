@@ -61,7 +61,7 @@ OffscreenVulkanSceneRenderer::OffscreenVulkanSceneRenderer(ObjectCreationParams 
 /******************************************************************************
 * Prepares the renderer for rendering one or more frames.
 ******************************************************************************/
-bool OffscreenVulkanSceneRenderer::startRender(const RenderSettings& settings, const QSize& frameBufferSize, MixedKeyCache& visCache)
+bool OffscreenVulkanSceneRenderer::startRender(const RenderSettings* settings, const QSize& frameBufferSize, MixedKeyCache& visCache)
 {
 	// This method may only be called from the main thread where the Vulkan device lives.
 	OVITO_ASSERT(QThread::currentThread() == context()->thread());

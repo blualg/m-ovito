@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -176,7 +176,7 @@ bool StructureListParameterUI::setItemData(RefTarget* target, const QModelIndex&
 	if(index.column() == 0 && role == Qt::CheckStateRole) {
 		if(ElementType* stype = static_object_cast<ElementType>(objectAtIndex(index.row()))) {
 			bool enabled = (value.toInt() == Qt::Checked);
-			undoableTransaction(tr("Enable/disable structure type"), [&]() {
+			performTransaction(tr("Enable/disable structure type"), [&]() {
 				stype->setEnabled(enabled);
 			});
 			return true;
@@ -184,7 +184,7 @@ bool StructureListParameterUI::setItemData(RefTarget* target, const QModelIndex&
 	}
 	else if(index.column() == 1 && role == Qt::EditRole) {
 		if(ElementType* stype = static_object_cast<ElementType>(objectAtIndex(index.row()))) {
-			undoableTransaction(tr("Rename structure type"), [&]() {
+			performTransaction(tr("Rename structure type"), [&]() {
 				stype->setName(value.toString().trimmed());
 			});
 			return true;
@@ -213,7 +213,7 @@ void StructureListParameterUI::onDoubleClickStructureType(const QModelIndex& ind
 	QColor newColor = dlg.selectedColor();
 	if(newColor == oldColor) return;
 
-	undoableTransaction(tr("Change structure type color"), [&]() {
+	performTransaction(tr("Change structure type color"), [&]() {
 		stype->setColor(Color(newColor));
 	});
 }

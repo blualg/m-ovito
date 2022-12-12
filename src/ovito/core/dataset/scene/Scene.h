@@ -77,9 +77,6 @@ public:
 			children().back()->deleteNode();
 	}
 
-	/// \brief Returns the current location around which the viewport camera orbits.
-	Point3 orbitCenter(Viewport* vp) const;
-
 Q_SIGNALS:
 
 	/// This signal is emitted when the camera orbit center has been moved to a different location.
@@ -103,7 +100,7 @@ protected:
 private:
 
 	/// The animation timeline of this scene.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<AnimationSettings>, animationSettings, setAnimationSettings, PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES);
+	DECLARE_MODIFIABLE_REFERENCE_FIELD(OORef<AnimationSettings>, animationSettings, setAnimationSettings);
 
 	/// The current object selection set.
 	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<SelectionSet>, selection, setSelection, PROPERTY_FIELD_NO_CHANGE_MESSAGE | PROPERTY_FIELD_ALWAYS_DEEP_COPY | PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES);

@@ -36,16 +36,25 @@ namespace Ovito {
  * \brief Stores the current program state including the list of viewports, the scene, viewport configuration,
  *        render settings etc.
  *
- * A DataSet represents the state of the current user session.
- * It can be completely saved to a file (.ovito suffix) and loaded again at a later time.
- *
- * The DataSet class consists of various sub-objects that store different aspects. The
- * ViewportConfiguration object returned by viewportConfig(), for example, holds the list
- * of viewports.
+ * A DataSet represents the state of the current program session.
+ * It can be saved to a file (.ovito suffix) and loaded again at a later time.
  */
 class OVITO_CORE_EXPORT DataSet final : public RefTarget
 {
-	OVITO_CLASS(DataSet)
+	/// Give this class its own metaclass.
+	class DataSetClass : public RefTarget::OOMetaClass
+	{
+	public:
+
+		/// Inherit constructor from base class.
+		using RefTarget::OOMetaClass::OOMetaClass;
+
+		/// Provides a custom function that takes are of the deserialization of a serialized property field that has been removed from the class. 
+		/// This is needed for backward compatibility with OVITO 3.7.
+		virtual SerializedClassInfo::PropertyFieldInfo::CustomDeserializationFunctionPtr overrideFieldDeserialization(const SerializedClassInfo::PropertyFieldInfo& field) const override;
+	};
+
+	OVITO_CLASS_META(DataSet, DataSetClass)	
 
 #ifdef OVITO_QML_GUI
 	Q_PROPERTY(Ovito::ViewportConfiguration* viewportConfiguration READ viewportConfig WRITE setViewportConfig NOTIFY viewportConfigReplaced)
@@ -123,6 +132,9 @@ protected:
 
 	/// Is called when the value of a reference field of this RefMaker changes.
 	virtual void referenceReplaced(const PropertyFieldDescriptor* field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex) override;
+
+	/// This method is called once for this object after it has been completely loaded from a stream.
+	virtual void loadFromStreamComplete(ObjectLoadStream& stream) override;
 
 private:
 

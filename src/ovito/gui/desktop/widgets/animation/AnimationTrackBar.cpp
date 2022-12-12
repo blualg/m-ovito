@@ -350,7 +350,7 @@ void AnimationTrackBar::mousePressEvent(QMouseEvent* event)
 	else if(event->button() == Qt::RightButton) {
 		if(_isDragging) {
 			_isDragging = false;
-			mainWindow().undoStack()->endCompoundOperation(false);
+			_undoTransaction.cancel();
 		}
 		else {
 			_isDragging = false;
@@ -391,20 +391,20 @@ void AnimationTrackBar::mouseMoveEvent(QMouseEvent* event)
 	}
 	else if(_dragStartPos >= 0 && animSettings()) {
 		if(!_isDragging && std::abs(_dragStartPos - event->pos().x()) > 4) {
-			mainWindow().undoStack()->beginCompoundOperation(tr("Move animation keys"));
+			_undoTransaction.begin(mainWindow(), tr("Move animation keys"));
 			_isDragging = true;
 		}
 		if(_isDragging) {
 			int delta = event->pos().x() - _dragStartPos;
 			int frameDelta = _timeSlider->distanceToFrameDifference(delta);
-			mainWindow().undoStack()->resetCurrentCompoundOperation();
-			// Clamp to animation interval.
-			for(AnimationKey* key : _selectedKeys.targets()) {
-				int newFrame = key->time().frame() + frameDelta;
-				if(newFrame < animSettings()->firstFrame()) frameDelta += animSettings()->firstFrame() - newFrame;
-				if(newFrame > animSettings()->lastFrame()) frameDelta -= newFrame - animSettings()->lastFrame();
-			}
-			mainWindow().handleExceptions([&] {
+			_undoTransaction.revert();
+			_undoTransaction.userInterface().performActions(_undoTransaction, [&] {
+				// Clamp to animation interval.
+				for(AnimationKey* key : _selectedKeys.targets()) {
+					int newFrame = key->time().frame() + frameDelta;
+					if(newFrame < animSettings()->firstFrame()) frameDelta += animSettings()->firstFrame() - newFrame;
+					if(newFrame > animSettings()->lastFrame()) frameDelta -= newFrame - animSettings()->lastFrame();
+				}
 				// Move keys.
 				for(KeyframeController* ctrl : _controllers.targets()) {
 					ctrl->moveKeys(_selectedKeys.targets(), AnimationTime::TicksPerFrame * frameDelta);
@@ -423,7 +423,7 @@ void AnimationTrackBar::mouseReleaseEvent(QMouseEvent* event)
 	if(_isDragging) {
 		_isDragging = false;
 		if(event->button() == Qt::LeftButton)
-			mainWindow().undoStack()->endCompoundOperation(true);
+			_undoTransaction.commit();
 		event->accept();
 	}
 }

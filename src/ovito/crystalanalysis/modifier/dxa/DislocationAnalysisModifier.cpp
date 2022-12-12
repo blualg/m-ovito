@@ -193,7 +193,7 @@ Future<AsynchronousModifier::EnginePtr> DislocationAnalysisModifier::createEngin
 		grainProperty = nullptr;
 
 	// Create an empty surface mesh object.
-	DataOORef<SurfaceMesh> defectMesh = DataOORef<SurfaceMesh>::create(dataset(), ObjectCreationParams::WithoutVisElement, tr("Defect mesh"));
+	DataOORef<SurfaceMesh> defectMesh = DataOORef<SurfaceMesh>::create(ObjectCreationParams::WithoutVisElement, tr("Defect mesh"));
 	defectMesh->setIdentifier(input.generateUniqueIdentifier<SurfaceMesh>(QStringLiteral("dxa-defect-mesh")));
 	defectMesh->setDataSource(request.modApp());
 	defectMesh->setDomain(simCell);
@@ -202,7 +202,7 @@ Future<AsynchronousModifier::EnginePtr> DislocationAnalysisModifier::createEngin
 	// Create an empty surface mesh object for the optional interface mesh.
 	DataOORef<SurfaceMesh> interfaceMesh;
 	if(outputInterfaceMesh()) {
-		interfaceMesh = DataOORef<SurfaceMesh>::create(dataset(), ObjectCreationParams::WithoutVisElement, tr("Interface mesh"));
+		interfaceMesh = DataOORef<SurfaceMesh>::create(ObjectCreationParams::WithoutVisElement, tr("Interface mesh"));
 		interfaceMesh->setIdentifier(input.generateUniqueIdentifier<SurfaceMesh>(QStringLiteral("dxa-interface-mesh")));
 		interfaceMesh->setDataSource(request.modApp());
 		interfaceMesh->setDomain(simCell);

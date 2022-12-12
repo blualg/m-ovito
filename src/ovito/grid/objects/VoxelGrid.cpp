@@ -59,7 +59,7 @@ void VoxelGrid::OOMetaClass::initialize()
 /******************************************************************************
 * Creates a storage object for standard voxel properties.
 ******************************************************************************/
-PropertyPtr VoxelGrid::OOMetaClass::createStandardPropertyInternal(DataSet* dataset, size_t elementCount, int type, DataBuffer::InitializationFlags flags, const ConstDataObjectPath& containerPath) const
+PropertyPtr VoxelGrid::OOMetaClass::createStandardPropertyInternal(size_t elementCount, int type, DataBuffer::InitializationFlags flags, const ConstDataObjectPath& containerPath) const
 {
 	int dataType;
 	size_t componentCount;
@@ -79,7 +79,7 @@ PropertyPtr VoxelGrid::OOMetaClass::createStandardPropertyInternal(DataSet* data
 
 	OVITO_ASSERT(componentCount == standardPropertyComponentCount(type));
 
-	PropertyPtr property = PropertyPtr::create(dataset, elementCount, dataType, componentCount, propertyName, flags & ~DataBuffer::InitializeMemory, type, componentNames);
+	PropertyPtr property = PropertyPtr::create(elementCount, dataType, componentCount, propertyName, flags & ~DataBuffer::InitializeMemory, type, componentNames);
 
 	if(flags.testFlag(DataBuffer::InitializeMemory)) {
 		// Default-initialize property values with zeros.
@@ -168,7 +168,7 @@ QString VoxelGrid::elementInfoString(size_t elementIndex, const ConstDataObjectR
 * Returns the base point and vector information for visualizing a vector 
 * property from this container using a VectorVis element.
 ******************************************************************************/
-std::tuple<ConstDataBufferPtr, ConstDataBufferPtr> VoxelGrid::getVectorVisData(const ConstDataObjectPath& path, const PipelineFlowState& state, SceneRenderer* renderer) const
+std::tuple<ConstDataBufferPtr, ConstDataBufferPtr> VoxelGrid::getVectorVisData(const ConstDataObjectPath& path, const PipelineFlowState& state, MixedKeyCache& visCache) const
 {
 	OVITO_ASSERT(path.lastAs<VoxelGrid>(1) == this);
 
@@ -177,11 +177,11 @@ std::tuple<ConstDataBufferPtr, ConstDataBufferPtr> VoxelGrid::getVectorVisData(c
 
 	// Look up the cell center coordinates in the cache.
 	using CacheKey = RendererResourceKey<struct VoxelGridCellCentersCache, ConstDataObjectRef>;
-	auto& basePositions = dataset()->visCache().get<ConstDataBufferPtr>(CacheKey(this));
+	auto& basePositions = visCache.get<ConstDataBufferPtr>(CacheKey(this));
 
 	if(!basePositions) {
 		// Compute grid cell centers.
-		DataBufferAccessAndRef<Point3> centers = DataBufferPtr::create(dataset(), elementCount(), DataBuffer::Float, 3);
+		DataBufferAccessAndRef<Point3> centers = DataBufferPtr::create(elementCount(), DataBuffer::Float, 3);
 		if(centers.size() != 0) {
 			OVITO_ASSERT(shape()[0] != 0 && shape()[1] != 0 && shape()[2] != 0);
 			Point3 xyz;

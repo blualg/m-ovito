@@ -148,6 +148,9 @@ private:
 	/// Indicates that an update of the list of controllers has been scheduled.
 	bool _deferredUpdateScheduled = false;
 
+	/// To revert changes while dragging keys with the mouse.
+	UndoableTransaction _undoTransaction;
+
 	QMetaObject::Connection _timeFormatChangedConnection;
 };
 

@@ -26,6 +26,7 @@
 #include <ovito/gui/desktop/GUI.h>
 #include <ovito/core/viewport/ViewportConfiguration.h>
 #include <ovito/core/dataset/animation/AnimationSettings.h>
+#include <ovito/core/app/undo/UndoableTransaction.h>
 
 namespace Ovito {
 
@@ -134,6 +135,7 @@ private:
 	int _draggedSplitter = -1;
 	QPoint _dragStartPos;
 	QBasicTimer _highlightSplitterTimer;
+	UndoableTransaction _undoTransaction;
 };
 
 }	// End of namespace

@@ -117,8 +117,11 @@ const PipelineStatus& PipelineListItem::status() const
 ******************************************************************************/
 QVariant PipelineListItem::shortInfo(PipelineSceneNode* selectedPipeline) const
 {
+	OVITO_ASSERT(ExecutionContext::current().isValid());
 	if(ActiveObject* activeObject = dynamic_object_cast<ActiveObject>(object())) {
-		return activeObject->getPipelineEditorShortInfo(selectedPipeline->scene());
+		if(Scene* scene = selectedPipeline->scene()) {
+			return activeObject->getPipelineEditorShortInfo(scene);
+		}
 	}
 	return {};
 }

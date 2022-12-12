@@ -106,6 +106,7 @@ CopyPipelineItemDialog::CopyPipelineItemDialog(MainWindow& mainWindow, QWidget* 
 ******************************************************************************/
 void CopyPipelineItemDialog::onAccept()
 {
+	setFocus(); // Remove focus from child widgets to commit newly entered values in text widgets etc.
 	_mainWindow.performTransaction(tr("Copy pipeline item"), [this]() {
 		OORef<PipelineSceneNode> destinationPipeline = static_object_cast<PipelineSceneNode>(_destinationPipelineList->currentData().value<OORef<OvitoObject>>());
 		CloneHelper cloneHelper;

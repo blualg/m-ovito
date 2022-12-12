@@ -98,8 +98,8 @@ void ReferenceConfigurationModifier::inputCachingHints(TimeIntervalUnion& cachin
 			for(const TimeInterval& iv : originalIntervals) {
 				int startFrame = modApp->animationTimeToSourceFrame(iv.start());
 				int endFrame = modApp->animationTimeToSourceFrame(iv.end());
-				TimePoint shiftedStartTime = modApp->sourceFrameToAnimationTime(startFrame + referenceFrameOffset());
-				TimePoint shiftedEndTime = modApp->sourceFrameToAnimationTime(endFrame + referenceFrameOffset());
+				AnimationTime shiftedStartTime = modApp->sourceFrameToAnimationTime(startFrame + referenceFrameOffset());
+				AnimationTime shiftedEndTime = modApp->sourceFrameToAnimationTime(endFrame + referenceFrameOffset());
 				cachingIntervals.add(TimeInterval(shiftedStartTime, shiftedEndTime));
 			}
 		}
@@ -170,7 +170,7 @@ Future<AsynchronousModifier::EnginePtr> ReferenceConfigurationModifier::createEn
 	SharedFuture<PipelineFlowState> refState;
 	if(!referenceConfiguration()) {
 		// Convert frame to animation time.
-		TimePoint referenceTime = request.modApp()->sourceFrameToAnimationTime(referenceFrame);
+		AnimationTime referenceTime = request.modApp()->sourceFrameToAnimationTime(referenceFrame);
 		
 		// Set up the pipeline request for obtaining the reference configuration.
 		PipelineEvaluationRequest referenceRequest = request;
@@ -191,10 +191,11 @@ Future<AsynchronousModifier::EnginePtr> ReferenceConfigurationModifier::createEn
 			}
 
 			// Convert frame to animation time.
-			TimePoint referenceTime = referenceConfiguration()->sourceFrameToAnimationTime(referenceFrame);
+			AnimationTime referenceTime = referenceConfiguration()->sourceFrameToAnimationTime(referenceFrame);
 
 			// Set up the pipeline request for obtaining the reference configuration.
-			PipelineEvaluationRequest referenceRequest(referenceTime, request.breakOnError());
+			PipelineEvaluationRequest referenceRequest(referenceTime);
+			referenceRequest.setBreakOnError(request.breakOnError());
 
 			// Send the request to the pipeline branch.
 			refState = referenceConfiguration()->evaluate(referenceRequest);

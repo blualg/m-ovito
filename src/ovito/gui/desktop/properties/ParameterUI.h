@@ -25,6 +25,7 @@
 
 #include <ovito/gui/desktop/GUI.h>
 #include <ovito/core/oo/RefTarget.h>
+#include <ovito/core/app/undo/UndoableTransaction.h>
 #include "PropertiesEditor.h"
 
 namespace Ovito {
@@ -73,19 +74,27 @@ public:
 	/// \sa isEnabled()
 	bool isDisabled() const { return !isEnabled(); }
 
-	/// \brief Executes the passed functor and catches any exceptions thrown during its execution.
-	/// If an exception is thrown by the functor, all data changes performed by the functor
-	/// so far will be undone and an error message is shown to the user.
-	template<typename Function>
-	bool performTransaction(const QString& undoOperationName, Function&& func) const {
-		return editor()->performTransaction(undoOperationName, std::forward<Function>(func));
-	}
-
 	/// Executes a functor and catches any exceptions thrown during its execution.
 	/// If an exception is thrown by the functor, the error message is displayed to the user and this function returns false.
 	template<typename Function>
 	bool handleExceptions(Function&& func) const {
 		return editor()->handleExceptions(std::forward<Function>(func));
+	}
+
+	/// Executes a functor provided by the caller that performs undoable actions in an interactive context.
+	/// If an exception is thrown by the functor, the error message is displayed 
+	/// to the user, and this function returns false. 
+	template<typename Function>
+	bool performActions(UndoableTransaction& transaction, Function&& func) {
+		return editor()->performActions(transaction, std::forward<Function>(func));
+	}
+
+	/// Executes the passed functor and catches any exceptions thrown during its execution.
+	/// If an exception is thrown by the functor, all data changes performed by the functor
+	/// so far will be undone and an error message is shown to the user.
+	template<typename Function>
+	bool performTransaction(const QString& undoOperationName, Function&& func) const {
+		return editor()->performTransaction(undoOperationName, std::forward<Function>(func));
 	}
 
 public:

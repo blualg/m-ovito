@@ -43,7 +43,7 @@
 namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(TextLabelOverlayEditor);
-DEFINE_REFERENCE_FIELD(TextLabelOverlayEditor, sourceNode);
+DEFINE_REFERENCE_FIELD(TextLabelOverlayEditor, sourcePipeline);
 SET_OVITO_OBJECT_EDITOR(TextLabelOverlay, TextLabelOverlayEditor);
 
 /******************************************************************************
@@ -135,29 +135,28 @@ void TextLabelOverlayEditor::createUI(const RolloutInsertionParameters& rolloutP
 	variablesLayout->setSpacing(4);
 	variablesLayout->setColumnStretch(1, 1);
 
-	_nodeComboBox = new PopupUpdateComboBox();
-	connect(_nodeComboBox, &PopupUpdateComboBox::dropDownActivated, this, &TextLabelOverlayEditor::updateSourcesList); 
+	_pipelineComboBox = new PopupUpdateComboBox();
+	connect(_pipelineComboBox, &PopupUpdateComboBox::dropDownActivated, this, &TextLabelOverlayEditor::updateSourcesList); 
 
-	CustomParameterUI* sourcePUI = new CustomParameterUI(this, "sourceNode", _nodeComboBox,
+	CustomParameterUI* sourcePUI = new CustomParameterUI(this, "sourceNode", _pipelineComboBox,
 			// updateWidgetFunction:
 			[this](const QVariant& value) {
-				_nodeComboBox->clear();
-				PipelineSceneNode* node = dynamic_object_cast<PipelineSceneNode>(value.value<PipelineSceneNode*>());
-				if(node) {
-					_nodeComboBox->addItem(node->objectTitle(), QVariant::fromValue(node));
+				_pipelineComboBox->clear();
+				if(PipelineSceneNode* pipeline = dynamic_object_cast<PipelineSceneNode>(value.value<PipelineSceneNode*>())) {
+					_pipelineComboBox->addItem(pipeline->objectTitle(), QVariant::fromValue(pipeline));
 				}
 				else {
-					_nodeComboBox->addItem(tr("<none>"));
+					_pipelineComboBox->addItem(tr("<none>"));
 				}
-				_nodeComboBox->setCurrentIndex(0);
+				_pipelineComboBox->setCurrentIndex(0);
 			},
 			// updatePropertyFunction:
 			[this]() {
-				return _nodeComboBox->currentData();
+				return _pipelineComboBox->currentData();
 			},
 			// resetUIFunction:
 			{});
-	connect(_nodeComboBox, qOverload<int>(&QComboBox::activated), sourcePUI, &CustomParameterUI::updatePropertyValue);
+	connect(_pipelineComboBox, qOverload<int>(&QComboBox::activated), sourcePUI, &CustomParameterUI::updatePropertyValue);
 	variablesLayout->addWidget(new QLabel(tr("Source pipeline:")), 0, 0, 1, 2);
 	variablesLayout->addWidget(sourcePUI->widget(), 1, 0, 1, 2);
 
@@ -182,10 +181,10 @@ bool TextLabelOverlayEditor::referenceEvent(RefTarget* source, const ReferenceEv
 	if(source == editObject() && event.type() == ReferenceEvent::TargetChanged && static_cast<const TargetChangedEvent&>(event).field() == PROPERTY_FIELD(TextLabelOverlay::sourceNode)) {
 		updateEditorFields();
 	}
-	else if(source == sourceNode() && (event.type() == ReferenceEvent::PreliminaryStateAvailable || event.type() == ReferenceEvent::TargetChanged)) {
+	else if(source == sourcePipeline() && (event.type() == ReferenceEvent::PreliminaryStateAvailable || event.type() == ReferenceEvent::TargetChanged)) {
 		updateEditorFieldsLater(this);
 	}
-	else if(source == sourceNode() && event.type() == ReferenceEvent::TitleChanged) {
+	else if(source == sourcePipeline() && event.type() == ReferenceEvent::TitleChanged) {
 		updateSourcesList();
 	}
 	return PropertiesEditor::referenceEvent(source, event);
@@ -196,19 +195,17 @@ bool TextLabelOverlayEditor::referenceEvent(RefTarget* source, const ReferenceEv
 ******************************************************************************/
 void TextLabelOverlayEditor::updateSourcesList()
 {
-	_nodeComboBox->clear();
+	_pipelineComboBox->clear();
 	if(TextLabelOverlay* overlay = static_object_cast<TextLabelOverlay>(editObject())) {
 		// Enumerate all pipelines in the scene.
-		if(mainWindow().datasetContainer().activeScene()) {
-			mainWindow().datasetContainer().activeScene()->visitObjectNodes([&](PipelineSceneNode* pipeline) {
-				_nodeComboBox->addItem(pipeline->objectTitle(), QVariant::fromValue(pipeline));
-				return true;
-			});
-		}
-		_nodeComboBox->setCurrentIndex(_nodeComboBox->findData(QVariant::fromValue(overlay->sourceNode())));
+		visitScenePipelines([&](PipelineSceneNode* pipeline) {
+			_pipelineComboBox->addItem(pipeline->objectTitle(), QVariant::fromValue(pipeline));
+			return true;
+		});
+		_pipelineComboBox->setCurrentIndex(_pipelineComboBox->findData(QVariant::fromValue(overlay->sourceNode())));
 	}
-	if(_nodeComboBox->count() == 0) 
-		_nodeComboBox->addItem(tr("<none>"));
+	if(_pipelineComboBox->count() == 0) 
+		_pipelineComboBox->addItem(tr("<none>"));
 }
 
 /******************************************************************************
@@ -218,21 +215,23 @@ void TextLabelOverlayEditor::updateEditorFields()
 {
 	QString str;
 	QStringList variableNames;
-	PipelineSceneNode* node = nullptr;
+	PipelineSceneNode* pipeline = nullptr;
 	if(TextLabelOverlay* overlay = static_object_cast<TextLabelOverlay>(editObject())) {
-		if((node = overlay->sourceNode())) {
-			const PipelineFlowState& flowState = node->evaluatePipelineSynchronous(currentAnimationTime().value_or(AnimationTime(0)), false);
-			str.append(tr("<p>Dynamic attributes that can be referenced in the label text:</b><ul>"));
-			if(flowState.data()) {
-				for(const QString& attrName : flowState.buildAttributesMap().keys()) {
-					str.append(QStringLiteral("<li>[%1]</li>").arg(attrName.toHtmlEscaped()));
-					variableNames.push_back(QStringLiteral("[") + attrName + QStringLiteral("]"));
+		if((pipeline = overlay->sourceNode())) {
+			handleExceptions([&] {
+				const PipelineFlowState& flowState = pipeline->evaluatePipelineSynchronous(currentAnimationTime(), false);
+				if(flowState.data()) {
+					str.append(tr("<p>Dynamic attributes that can be referenced in the label text:</b><ul>"));
+					for(const QString& attrName : flowState.buildAttributesMap().keys()) {
+						str.append(QStringLiteral("<li>[%1]</li>").arg(attrName.toHtmlEscaped()));
+						variableNames.push_back(QStringLiteral("[") + attrName + QStringLiteral("]"));
+					}
+					str.append(QStringLiteral("</ul></p><p></p>"));
 				}
-			}
-			str.append(QStringLiteral("</ul></p><p></p>"));
+			});
 		}
 	}
-	setSourceNode(node);
+	setSourcePipeline(pipeline);
 
 	_attributeNamesList->setText(str);
 	_attributeNamesList->updateGeometry();

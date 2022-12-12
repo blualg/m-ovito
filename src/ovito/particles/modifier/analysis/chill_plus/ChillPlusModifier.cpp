@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //  Copyright 2019 Henrik Andersen Sveinsson
 //
 //  This file is part of OVITO (Open Visualization Tool).
@@ -27,8 +27,6 @@
 #include <ovito/core/dataset/pipeline/ModifierApplication.h>
 #include <ovito/core/utilities/units/UnitsManager.h>
 #include <ovito/core/utilities/concurrent/ParallelFor.h>
-#include <ovito/core/app/Application.h>
-#include <ovito/core/dataset/DataSet.h>
 #include "ChillPlusModifier.h"
 
 namespace Ovito::Particles {

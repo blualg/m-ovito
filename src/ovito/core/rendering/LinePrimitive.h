@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -45,17 +45,17 @@ public:
 
 	/// \brief Sets the coordinates of the line vertices.
 	template<typename InputIterator>
-	void setPositions(DataSet* dataset, InputIterator begin, InputIterator end) {
+	void makePositions(InputIterator begin, InputIterator end) {
 		size_t count = std::distance(begin, end);
-		DataBufferAccessAndRef<Point3> buffer = DataBufferPtr::create(dataset, count, DataBuffer::Float, 3);
+		DataBufferAccessAndRef<Point3> buffer = DataBufferPtr::create(count, DataBuffer::Float, 3);
 		std::copy(std::move(begin), std::move(end), buffer.begin());
 		setPositions(buffer.take());
 	}
 
 	/// \brief Sets the coordinates of the line vertices.
 	template<typename Range>
-	void setPositions(DataSet* dataset, const Range& range) {
-		setPositions(dataset, std::begin(range), std::end(range));
+	void makePositions(const Range& range) {
+		makePositions(std::begin(range), std::end(range));
 	}
 
 	/// Returns the buffer storing the vertex positions.
@@ -69,17 +69,17 @@ public:
 
 	/// \brief Sets the colors of the vertices.
 	template<typename InputIterator>
-	void setColors(DataSet* dataset, InputIterator begin, InputIterator end) {
+	void makeColors(InputIterator begin, InputIterator end) {
 		size_t count = std::distance(begin, end);
-		DataBufferAccessAndRef<ColorA> buffer = DataBufferPtr::create(dataset, count, DataBuffer::Float, 4);
+		DataBufferAccessAndRef<ColorA> buffer = DataBufferPtr::create(count, DataBuffer::Float, 4);
 		std::copy(std::move(begin), std::move(end), buffer.begin());
 		setColors(buffer.take());
 	}
 
 	/// \brief Sets the colors of the vertices.
 	template<typename Range>
-	void setColors(DataSet* dataset, const Range& range) {
-		setColors(dataset, std::begin(range), std::end(range));
+	void makeColors(const Range& range) {
+		makeColors(std::begin(range), std::end(range));
 	}
 
 	/// Returns the buffer storing the per-vertex colors.

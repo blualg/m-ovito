@@ -92,19 +92,21 @@ void WidgetActionManager::on_HelpShowScriptingReference_triggered()
 ******************************************************************************/
 void WidgetActionManager::on_HelpSystemInfo_triggered()
 {
-	QDialog dlg(&mainWindow());
-	dlg.setWindowTitle(tr("System Information"));
-	QVBoxLayout* layout = new QVBoxLayout(&dlg);
-	QTextEdit* textEdit = new QTextEdit(&dlg);
-	textEdit->setReadOnly(true);
-	textEdit->setPlainText(mainWindow().generateSystemReport());
-	textEdit->setMinimumSize(QSize(600, 400));
-	layout->addWidget(textEdit);
-	QDialogButtonBox* buttonBox = new QDialogButtonBox(QDialogButtonBox::Close, Qt::Horizontal, &dlg);
-	connect(buttonBox, &QDialogButtonBox::rejected, &dlg, &QDialog::accept);
-	connect(buttonBox->addButton(tr("Copy to clipboard"), QDialogButtonBox::ActionRole), &QPushButton::clicked, [textEdit]() { QApplication::clipboard()->setText(textEdit->toPlainText()); });
-	layout->addWidget(buttonBox);
-	dlg.exec();
+	userInterface().handleExceptions([&] {
+		QDialog dlg(&mainWindow());
+		dlg.setWindowTitle(tr("System Information"));
+		QVBoxLayout* layout = new QVBoxLayout(&dlg);
+		QTextEdit* textEdit = new QTextEdit(&dlg);
+		textEdit->setReadOnly(true);
+		textEdit->setPlainText(mainWindow().generateSystemReport());
+		textEdit->setMinimumSize(QSize(600, 400));
+		layout->addWidget(textEdit);
+		QDialogButtonBox* buttonBox = new QDialogButtonBox(QDialogButtonBox::Close, Qt::Horizontal, &dlg);
+		connect(buttonBox, &QDialogButtonBox::rejected, &dlg, &QDialog::accept);
+		connect(buttonBox->addButton(tr("Copy to clipboard"), QDialogButtonBox::ActionRole), &QPushButton::clicked, [textEdit]() { QApplication::clipboard()->setText(textEdit->toPlainText()); });
+		layout->addWidget(buttonBox);
+		dlg.exec();
+	});
 }
 
 /******************************************************************************
@@ -187,6 +189,10 @@ void WidgetActionManager::on_FileSave_triggered()
 ******************************************************************************/
 void WidgetActionManager::on_FileSaveAs_triggered()
 {
+	// Set focus to main window.
+	// This will process any pending user inputs in QLineEdit fields.
+	mainWindow().setFocus();
+
 	mainWindow().handleExceptions([&] {
 		mainWindow().datasetContainer().fileSaveAs();
 	});
@@ -253,15 +259,19 @@ void WidgetActionManager::on_FileExport_triggered()
 	// Get the scene from which data is to be exported.
 	OORef<Scene> scene = userInterface().datasetContainer().activeScene();
 	if(!scene) {
-		mainWindow().reportError(tr("There currently is no active scene that can be exported."));
+		userInterface().reportError(tr("There currently is no active scene that can be exported."));
 		return;
 	}
+
+	// Set focus to main window.
+	// This will process any pending user inputs in QLineEdit fields.
+	mainWindow().setFocus();
 
 	// Build filter string.
 	QStringList filterStrings;
 	QVector<const FileExporterClass*> exporterTypes = PluginManager::instance().metaclassMembers<FileExporter>();
 	if(exporterTypes.empty()) {
-		mainWindow().reportError(tr("This function is disabled, because no file exporter plugins have been installed."));
+		userInterface().reportError(tr("This function is disabled, because no file exporter plugins have been installed."));
 		return;
 	}
 	std::sort(exporterTypes.begin(), exporterTypes.end(), [](const FileExporterClass* a, const FileExporterClass* b) {
@@ -329,7 +339,7 @@ void WidgetActionManager::on_FileExport_triggered()
 		// Block until all output data is available for the exporter to inspect it and pick a good default export set.
 		{
 			ProgressDialog progressDialog(&mainWindow(), mainWindow(), tr("Waiting for pipeline computations to complete"));
-			if(!ScenePreparation(mainWindow(), scene).whenReady().waitForFinished())
+			if(!OORef<ScenePreparation>::create(mainWindow(), scene)->future().waitForFinished())
 				return;
 		}
 

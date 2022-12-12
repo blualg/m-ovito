@@ -76,7 +76,7 @@ public:
 	}
 
 	/// Returns the base point and vector information for visualizing a vector property from this container using a VectorVis element.
-	virtual std::tuple<ConstDataBufferPtr, ConstDataBufferPtr> getVectorVisData(const ConstDataObjectPath& path, const PipelineFlowState& state, SceneRenderer* renderer) const override;
+	virtual std::tuple<ConstDataBufferPtr, ConstDataBufferPtr> getVectorVisData(const ConstDataObjectPath& path, const PipelineFlowState& state, MixedKeyCache& visCache) const override;
 };
 
 }	// End of namespace

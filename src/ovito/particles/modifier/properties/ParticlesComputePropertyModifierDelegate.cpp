@@ -102,7 +102,7 @@ std::shared_ptr<ComputePropertyModifierDelegate::PropertyComputeEngine> Particle
 			containerPath,
 			std::move(selectionProperty),
 			std::move(expressions),
-			dataset()->animationSettings()->timeToFrame(request.time()),
+			request.time().frame(),
 			input,
 			positions,
 			neighborExpressions(),

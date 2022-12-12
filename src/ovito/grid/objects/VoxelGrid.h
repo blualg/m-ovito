@@ -44,7 +44,7 @@ class OVITO_GRID_EXPORT VoxelGrid : public PropertyContainer
 		using PropertyContainerClass::PropertyContainerClass;
 
 		/// \brief Create a storage object for standard voxel properties.
-		virtual PropertyPtr createStandardPropertyInternal(DataSet* dataset, size_t elementCount, int type, DataBuffer::InitializationFlags flags, const ConstDataObjectPath& containerPath) const override;
+		virtual PropertyPtr createStandardPropertyInternal(size_t elementCount, int type, DataBuffer::InitializationFlags flags, const ConstDataObjectPath& containerPath) const override;
 
 	protected:
 
@@ -96,7 +96,7 @@ public:
 	}
 
 	/// Returns the base point and vector information for visualizing a vector property from this container using a VectorVis element.
-	virtual std::tuple<ConstDataBufferPtr, ConstDataBufferPtr> getVectorVisData(const ConstDataObjectPath& path, const PipelineFlowState& state, SceneRenderer* renderer) const override;
+	virtual std::tuple<ConstDataBufferPtr, ConstDataBufferPtr> getVectorVisData(const ConstDataObjectPath& path, const PipelineFlowState& state, MixedKeyCache& visCache) const override;
 
 	/// Generates the info string to be displayed in the OVITO status bar for an element from this container.
 	virtual QString elementInfoString(size_t elementIndex, const ConstDataObjectRefPath& path = {}) const override;

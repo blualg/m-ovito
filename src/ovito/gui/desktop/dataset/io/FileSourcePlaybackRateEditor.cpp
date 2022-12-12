@@ -97,7 +97,7 @@ void FileSourcePlaybackRateEditor::createUI(const RolloutInsertionParameters& ro
 			});
 	});
 
-	_staticFrameModeBtn = new QRadioButton(tr("Extract one static frame:"));
+	_staticFrameModeBtn = new QRadioButton(tr("Extract a static frame:"));
 	layout->addSpacing(12);
 	layout->addWidget(_staticFrameModeBtn);
 

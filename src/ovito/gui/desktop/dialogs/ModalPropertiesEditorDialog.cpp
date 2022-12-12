@@ -24,7 +24,7 @@
 #include <ovito/gui/desktop/properties/PropertiesPanel.h>
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
 #include <ovito/gui/base/actions/ActionManager.h>
-#include <ovito/core/dataset/UndoStack.h>
+#include <ovito/core/app/undo/UndoableOperation.h>
 #include <ovito/core/dataset/DataSet.h>
 #include "ModalPropertiesEditorDialog.h"
 
@@ -51,6 +51,7 @@ ModalPropertiesEditorDialog::ModalPropertiesEditorDialog(RefTarget* object, OORe
 
 	connect(buttonBox, &QDialogButtonBox::rejected, this, &ModalPropertiesEditorDialog::reject);
 	connect(buttonBox, &QDialogButtonBox::accepted, this, [&]() {
+		setFocus(); // Remove focus from child widgets to commit newly entered values in text widgets etc.
 		commit();
 		accept();
 	});

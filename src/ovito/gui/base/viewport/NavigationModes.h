@@ -26,6 +26,7 @@
 #include <ovito/gui/base/GUIBase.h>
 #include <ovito/core/rendering/CylinderPrimitive.h>
 #include <ovito/core/viewport/ViewportGizmo.h>
+#include <ovito/core/app/undo/UndoableTransaction.h>
 #include "ViewportInputMode.h"
 
 namespace Ovito {
@@ -60,7 +61,7 @@ public:
 protected:
 
 	/// Protected constructor.
-	NavigationMode(QObject* parent) : ViewportInputMode(parent) {}
+	using ViewportInputMode::ViewportInputMode;
 
 	/// Computes the new view based on the new mouse position.
 	virtual void modifyView(ViewportWindowInterface* vpwin, Viewport* vp, QPointF delta, bool discreteStep) {}
@@ -107,6 +108,9 @@ protected:
 
 	/// The cached orbit center as determined when the navigation mode was activated.
 	Point3 _currentOrbitCenter;
+
+	/// Used to make changes to the viewport camera reversible.
+	UndoableTransaction _undoTransaction;
 };
 
 /******************************************************************************

@@ -57,7 +57,7 @@ TriMeshVis::TriMeshVis(ObjectCreationParams params) : DataVis(params),
 /******************************************************************************
 * Computes the bounding box of the object.
 ******************************************************************************/
-Box3 TriMeshVis::boundingBox(AnimationTime time, const ConstDataObjectPath& path, const PipelineSceneNode* contextNode, const PipelineFlowState& flowState, TimeInterval& validityInterval)
+Box3 TriMeshVis::boundingBox(AnimationTime time, const ConstDataObjectPath& path, const PipelineSceneNode* contextNode, const PipelineFlowState& flowState, MixedKeyCache& visCache, TimeInterval& validityInterval)
 {
 	// Compute bounding box.
 	if(const TriMeshObject* triMeshObj = path.lastAs<TriMeshObject>()) {
@@ -93,7 +93,7 @@ PipelineStatus TriMeshVis::render(AnimationTime time, const ConstDataObjectPath&
 	else {
 		// Add mesh to bounding box.
 		TimeInterval validityInterval;
-		renderer->addToLocalBoundingBox(boundingBox(time, path, contextNode, flowState, validityInterval));
+		renderer->addToLocalBoundingBox(boundingBox(time, path, contextNode, flowState, renderer->visCache(), validityInterval));
 	}
 
 	return {};

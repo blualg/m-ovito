@@ -63,7 +63,7 @@ public:
 	virtual PipelineStatus render(AnimationTime time, const ConstDataObjectPath& path, const PipelineFlowState& flowState, SceneRenderer* renderer, const PipelineSceneNode* contextNode) override;
 
 	/// Computes the bounding box of the object.
-	virtual Box3 boundingBox(AnimationTime time, const ConstDataObjectPath& path, const PipelineSceneNode* contextNode, const PipelineFlowState& flowState, TimeInterval& validityInterval) override;
+	virtual Box3 boundingBox(AnimationTime time, const ConstDataObjectPath& path, const PipelineSceneNode* contextNode, const PipelineFlowState& flowState, MixedKeyCache& visCache, TimeInterval& validityInterval) override;
 
 	/// Returns the transparency of the surface mesh.
 	FloatType surfaceTransparency() const { return surfaceTransparencyController() ? surfaceTransparencyController()->getFloatValue(AnimationTime(0)) : 0.0f; }
@@ -241,7 +241,7 @@ private:
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(ColorMappingMode, colorMappingMode, setColorMappingMode);
 
 	/// Controls whether the mesh gets clipped at non-periodic cell boundaries.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, clipAtDomainBoundaries, setClipAtDomainBoundaries, PROPERTY_FIELD_MEMORIZE);
+	DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, clipAtDomainBoundaries, setClipAtDomainBoundaries);
 	DECLARE_SHADOW_PROPERTY_FIELD(clipAtDomainBoundaries);
 };
 

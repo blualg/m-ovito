@@ -76,12 +76,12 @@ public:
 	}
 
 	/// Given an animation time, computes the source frame to show.
-	virtual int animationTimeToSourceFrame(TimePoint time, int inputFrame) const override {
+	virtual int animationTimeToSourceFrame(AnimationTime time, int inputFrame) const override {
 		return trajectorySource() ? trajectorySource()->animationTimeToSourceFrame(time) : inputFrame;
 	}
 
 	/// Given a source frame index, returns the animation time at which it is shown.
-	virtual TimePoint sourceFrameToAnimationTime(int frame, TimePoint inputTime) const override {
+	virtual AnimationTime sourceFrameToAnimationTime(int frame, AnimationTime inputTime) const override {
 		return trajectorySource() ? trajectorySource()->sourceFrameToAnimationTime(frame) : inputTime;
 	}
 

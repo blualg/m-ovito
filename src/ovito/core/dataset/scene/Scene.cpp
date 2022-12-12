@@ -55,20 +55,6 @@ Scene::Scene(ObjectCreationParams params, AnimationSettings* animationSettings) 
 			setAnimationSettings(OORef<AnimationSettings>::create(params));
 		setSelection(OORef<SelectionSet>::create(params));
 	}
-
-#if 0 // TODO: Make this work
-	// Get notified whenever viewport updates are re-enabled.
-	if(dataset()->viewportConfig()) {
-		_viewportUpdateResumedConnection = connect(dataset()->viewportConfig(), &ViewportConfiguration::viewportUpdateResumed, this, &Scene::onViewportUpdatesResumed);
-	}
-
-	// In case the global viewport configuration gets replaced, update the signal connection.
-	connect(dataset(), &DataSet::viewportConfigReplaced, this, [&](ViewportConfiguration* newViewportConfiguration) {
-		disconnect(_viewportUpdateResumedConnection);
-		if(newViewportConfiguration)
-			_viewportUpdateResumedConnection = connect(newViewportConfiguration, &ViewportConfiguration::viewportUpdateResumed, this, &Scene::onViewportUpdatesResumed);
-	});
-#endif
 }
 
 /******************************************************************************
@@ -149,35 +135,6 @@ void Scene::propertyChanged(const PropertyFieldDescriptor* field)
 		Q_EMIT cameraOrbitCenterChanged();
 	}
 	SceneNode::propertyChanged(field);
-}
-
-/******************************************************************************
-* Returns the world space point around which the viewport camera orbits.
-******************************************************************************/
-Point3 Scene::orbitCenter(Viewport* vp) const
-{
-	OVITO_ASSERT(vp != nullptr);
-	OVITO_ASSERT(animationSettings());
-
-	// Update orbiting center.
-	if(orbitCenterMode() == ORBIT_SELECTION_CENTER) {
-		AnimationTime time = animationSettings()->currentTime();
-		Box3 selectionBoundingBox;
-		for(SceneNode* node : selection()->nodes()) {
-			selectionBoundingBox.addBox(node->worldBoundingBox(time, vp));
-		}
-		if(!selectionBoundingBox.isEmpty())
-			return selectionBoundingBox.center();
-		else {
-			Box3 sceneBoundingBox = worldBoundingBox(time, vp);
-			if(!sceneBoundingBox.isEmpty())
-				return sceneBoundingBox.center();
-		}
-	}
-	else if(orbitCenterMode() == ORBIT_USER_DEFINED) {
-		return _userOrbitCenter;
-	}
-	return Point3::Origin();
 }
 
 }	// End of namespace

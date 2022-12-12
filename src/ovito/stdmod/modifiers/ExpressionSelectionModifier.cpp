@@ -72,7 +72,7 @@ PipelineStatus ExpressionSelectionModifierDelegate::apply(const ModifierEvaluati
 	ExpressionSelectionModifier* expressionMod = static_object_cast<ExpressionSelectionModifier>(request.modifier());
 
 	// The current animation frame number.
-	int currentFrame = dataset()->animationSettings()->timeToFrame(request.time());
+	int currentFrame = request.time().frame(); // Note: Using global animation frame here, because that's what the user expects.
 
 	// Look up the input property container.
    	DataObjectPath objectPath = state.expectMutableObject(inputContainerRef());

@@ -35,9 +35,9 @@ IMPLEMENT_OVITO_CLASS(ParticleExporter);
 * Evaluates the pipeline of an PipelineSceneNode and makes sure that the data to be
 * exported contains particles and throws an exception if not.
 ******************************************************************************/
-PipelineFlowState ParticleExporter::getParticleData(TimePoint time, MainThreadOperation& operation) const
+PipelineFlowState ParticleExporter::getParticleData(int frame, MainThreadOperation& operation) const
 {
-	PipelineFlowState state = getPipelineDataToBeExported(time, operation);
+	PipelineFlowState state = getPipelineDataToBeExported(frame, operation);
 	if(operation.isCanceled())
 		return {};
 
@@ -68,7 +68,7 @@ bool ParticleExporter::openOutputFile(const QString& filePath, int numberOfFrame
 	OVITO_ASSERT(!_outputStream);
 
 	_outputFile.setFileName(filePath);
-	_outputStream.reset(new CompressedTextWriter(_outputFile, dataset()));
+	_outputStream = std::make_unique<CompressedTextWriter>(_outputFile);
 	_outputStream->setFloatPrecision(floatOutputPrecision());
 
 	return true;
@@ -91,10 +91,10 @@ void ParticleExporter::closeOutputFile(bool exportCompleted)
 /******************************************************************************
  * Exports a single animation frame to the current output file.
  *****************************************************************************/
-bool ParticleExporter::exportFrame(int frameNumber, TimePoint time, const QString& filePath, MainThreadOperation& operation)
+bool ParticleExporter::exportFrame(int frameNumber, const QString& filePath, MainThreadOperation& operation)
 {
 	// Retreive the particle data to be exported.
-	const PipelineFlowState& state = getParticleData(time, operation);
+	const PipelineFlowState& state = getParticleData(frameNumber, operation);
 	if(operation.isCanceled() || !state)
 		return false;
 
@@ -102,7 +102,7 @@ bool ParticleExporter::exportFrame(int frameNumber, TimePoint time, const QStrin
 	operation.setProgressText(tr("Writing file %1").arg(filePath));
 
 	// Let the subclass do the work.
-	return exportData(state, frameNumber, time, filePath, operation);
+	return exportData(state, frameNumber, filePath, operation);
 }
 
 }	// End of namespace

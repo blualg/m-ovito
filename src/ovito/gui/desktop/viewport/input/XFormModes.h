@@ -125,6 +125,12 @@ protected:
 
 	/// This monitors the selected node to update the coordinate display.
 	RefTargetListener<SceneNode> _selectedNode;
+
+	/// To undo changes while dragging the mouse.
+	UndoableTransaction _undoTransaction;
+
+	/// The undo stack index at which the selection operation ends and at which the x-form operation begins.
+	int _undoSelectionOperation;
 };
 
 /******************************************************************************

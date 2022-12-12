@@ -139,6 +139,7 @@ QString InputColumnMappingDialog::dataTypeToString(int dataType)
 ******************************************************************************/
 void InputColumnMappingDialog::onOk()
 {
+	setFocus(); // Remove focus from child widgets to commit newly entered values in text widgets etc.
 	_mainWindow.handleExceptions([&]() {
 		// First, validate the current mapping.
 		mapping().validate();

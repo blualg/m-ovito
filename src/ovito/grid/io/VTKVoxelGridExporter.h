@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -70,7 +70,7 @@ protected:
 	virtual void closeOutputFile(bool exportCompleted) override;
 
 	/// \brief Exports a single animation frame to the current output file.
-	virtual bool exportFrame(int frameNumber, TimePoint time, const QString& filePath, MainThreadOperation& operation) override;
+	virtual bool exportFrame(int frameNumber, const QString& filePath, MainThreadOperation& operation) override;
 
 	/// Returns the current file this exporter is writing to.
 	QFile& outputFile() { return _outputFile; }

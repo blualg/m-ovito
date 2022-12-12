@@ -65,7 +65,7 @@ VulkanViewportWindow::VulkanViewportWindow(Viewport* viewport, UserInterface* us
     _widget->setFocusPolicy(Qt::StrongFocus);
     _widget->setAcceptDrops(false); // File drop events are handled by the root main window. This makes them propagate up the widget hierarchy.
 
-	// Rerender window whenever requested by the system.
+	// Re-render window whenever requested by the system.
 	connect(&scenePreparation(), &ScenePreparation::viewportUpdateRequest, this, &VulkanViewportWindow::renderLater);
 }
 
@@ -88,8 +88,7 @@ void VulkanViewportWindow::renderLater()
 void VulkanViewportWindow::processViewportUpdate()
 {
 	if(_updateRequested) {
-        OVITO_ASSERT_MSG(!viewport()->isRendering(), "VulkanViewportWindow::processUpdateRequest()", "Recursive viewport repaint detected.");
-        OVITO_ASSERT_MSG(!viewport()->dataset()->viewportConfig()->isRendering(), "VulkanViewportWindow::processUpdateRequest()", "Recursive viewport repaint detected.");
+		OVITO_ASSERT_MSG(!userInterface().isRenderingInteractiveViewports(), "VulkanViewportWindow::processUpdateRequest()", "Recursive viewport repaint detected.");
 
         // Note: All we can do is request a deferred window update. 
         // A QWindow has no way of forcing an immediate repaint.
@@ -105,7 +104,7 @@ ViewportPickResult VulkanViewportWindow::pick(const QPointF& pos)
 	ViewportPickResult result;
 
 	// Cannot perform picking while viewport is not visible or currently rendering or when updates are disabled.
-	if(isVisible() && !viewport()->isRendering() && !viewport()->dataset()->viewportConfig()->isSuspended() && pickingRenderer()) {
+	if(isVisible() && !userInterface().isRenderingInteractiveViewports() && !viewport()->dataset()->viewportConfig()->isSuspended() && pickingRenderer()) {
 		try {
 			if(pickingRenderer()->isRefreshRequired()) {
 				// Let the viewport do the actual rendering work.
@@ -759,7 +758,7 @@ void VulkanViewportWindow::beginFrame()
 	_updateRequested = false;
 
 	// Do not re-enter rendering function of the same viewport.
-	if(viewport() && !viewport()->isRendering()) {
+	if(viewport() && !userInterface().isRenderingInteractiveViewports()) {
         if(!viewport()->dataset()->viewportConfig()->isSuspended()) {
             try {
                 // Let the Viewport class do the actual rendering work.

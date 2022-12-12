@@ -27,7 +27,7 @@
 #include <ovito/core/oo/RefTarget.h>
 #include <ovito/core/utilities/io/ObjectSaveStream.h>
 #include <ovito/core/utilities/io/ObjectLoadStream.h>
-#include <ovito/core/dataset/UndoStack.h>
+#include <ovito/core/app/undo/UndoableOperation.h>
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/dataset/animation/controller/Controller.h>
 #include <ovito/core/dataset/animation/AnimationSettings.h>

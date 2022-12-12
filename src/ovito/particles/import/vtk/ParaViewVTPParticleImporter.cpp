@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -155,7 +155,7 @@ void ParaViewVTPParticleImporter::FrameLoader::loadFile()
 						if(elementTypeClass) {
 							for(int t : ConstPropertyAccess<int>(property).csubrange(baseParticleIndex, property->size())) {
 								if(!property->elementType(t)) {
-									DataOORef<ElementType> elementType = static_object_cast<ElementType>(elementTypeClass->createInstance(dataset()));
+									DataOORef<ElementType> elementType = static_object_cast<ElementType>(elementTypeClass->createInstance());
 									elementType->setNumericId(t);
 									elementType->initializeType(PropertyReference(&ParticlesObject::OOClass(), property), ExecutionContext::isInteractive());
 									if(elementTypeClass == &ParticleType::OOClass()) {
@@ -338,7 +338,7 @@ PropertyObject* ParaViewVTPParticleImporter::FrameLoader::createParticleProperty
 ******************************************************************************/
 void ParaViewVTPParticleImporter::FrameLoader::loadParticleShape(ParticleType* particleType)
 {
-	OVITO_ASSERT(dataset()->undoStack().isRecordingThread() == false);
+	OVITO_ASSERT(!isUndoRecording());
 
 	// According to Aspherix convention, particle type -1 has no shape.
 	if(particleType->numericId() < 0)
@@ -358,21 +358,20 @@ void ParaViewVTPParticleImporter::FrameLoader::loadParticleShape(ParticleType* p
 	// Note: Invoking a file importer is currently only allowed from the main thread. This may change in the future.
 	const QUrl& geometryFileUrl = _particleShapeFiles[particleType->numericId()].location;
 	Future<PipelineFlowState> stateFuture = Application::instance()->fileManager().fetchUrl(geometryFileUrl)
-			.then(particleType->executor(ExecutionContext::Type::Scripting), [particleType,dataSource=dataSource()](const FileHandle& fileHandle) {
+			.then(particleType->executor(), [particleType, dataSource=dataSource()](const FileHandle& fileHandle) {
 
 		// Detect geometry file format and create an importer for it.
 		// Note: For loading particle shape geometries we only accept FileSourceImporters.
-		OORef<FileSourceImporter> importer = dynamic_object_cast<FileSourceImporter>(FileImporter::autodetectFileFormat(particleType->dataset(), fileHandle));
+		OORef<FileSourceImporter> importer = dynamic_object_cast<FileSourceImporter>(FileImporter::autodetectFileFormat(fileHandle));
 		if(!importer)
 			return Future<PipelineFlowState>::createImmediateEmpty();
 
 		// Set up a file load request to be passed to the importer.
 		LoadOperationRequest loadRequest;
-		loadRequest.dataset = particleType->dataset();
 		loadRequest.dataSource = dataSource;
 		loadRequest.fileHandle = fileHandle;
 		loadRequest.frame = Frame(fileHandle);
-		loadRequest.state = PipelineFlowState(DataOORef<const DataCollection>::create(particleType->dataset()), PipelineStatus::Success);
+		loadRequest.state = PipelineFlowState(DataOORef<const DataCollection>::create(), PipelineStatus::Success);
 
 		// Let the importer parse the geometry file.
 		return importer->loadFrame(loadRequest);
@@ -390,7 +389,7 @@ void ParaViewVTPParticleImporter::FrameLoader::loadParticleShape(ParticleType* p
 	if(!meshObj) {
 		if(const SurfaceMesh* surfaceMesh = state.getObject<SurfaceMesh>()) {
 			// Convert surface mesh to triangle mesh.
-			DataOORef<TriMeshObject> triMesh = DataOORef<TriMeshObject>::create(dataset(), ObjectCreationParams::WithoutVisElement);
+			DataOORef<TriMeshObject> triMesh = DataOORef<TriMeshObject>::create(ObjectCreationParams::WithoutVisElement);
 			SurfaceMeshAccess(surfaceMesh).convertToTriMesh(*triMesh, false);
 			meshObj.reset(std::move(triMesh));
 		}

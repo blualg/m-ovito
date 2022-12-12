@@ -56,9 +56,6 @@ public:
 
 protected Q_SLOTS:
 
-	/// This is called whenever the current viewport configuration of current dataset has been replaced by a new one.
-	void onViewportConfigReplaced(ViewportConfiguration* newViewportConfiguration);
-
 	/// This is called when another viewport became active.
 	void onActiveViewportChanged(Viewport* activeViewport);
 
@@ -96,9 +93,6 @@ private:
 
 	/// This panel shows the properties of the selected overlay.
 	PropertiesPanel* _propertiesPanel;
-
-	/// Signal connection for detecting active viewport changes.
-	QMetaObject::Connection _activeViewportChangedConnection;
 
 	/// The GUI action that deletes the currently selected viewport layer.
 	QAction* _deleteLayerAction;

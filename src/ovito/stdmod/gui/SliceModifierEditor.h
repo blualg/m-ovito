@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -88,7 +88,7 @@ class PickPlanePointsInputMode : public ViewportInputMode, public ViewportGizmo
 public:
 
 	/// Constructor.
-	PickPlanePointsInputMode(SliceModifierEditor* editor) : ViewportInputMode(editor), _editor(editor) {}
+	explicit PickPlanePointsInputMode(SliceModifierEditor* editor) : ViewportInputMode(editor), _editor(editor) {}
 
 	/// Handles the mouse events for a Viewport.
 	virtual void mouseReleaseEvent(ViewportWindowInterface* vpwin, QMouseEvent* event) override;

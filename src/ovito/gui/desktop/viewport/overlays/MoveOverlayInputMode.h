@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -78,6 +78,9 @@ private:
 
 	/// The cursor shown when in the wrong viewport.
 	QCursor _forbiddenCursor;
+
+	/// To undo changes while dragging the mouse.
+	UndoableTransaction _undoTransaction;
 };
 
 }	// End of namespace

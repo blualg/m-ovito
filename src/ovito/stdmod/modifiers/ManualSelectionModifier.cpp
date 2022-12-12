@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -24,7 +24,8 @@
 #include <ovito/stdobj/properties/PropertyObject.h>
 #include <ovito/stdobj/properties/PropertyContainer.h>
 #include <ovito/core/dataset/pipeline/ModifierApplication.h>
-#include <ovito/core/dataset/DataSet.h>
+#include <ovito/core/dataset/DataSetContainer.h>
+#include <ovito/core/app/UserInterface.h>
 #include "ManualSelectionModifier.h"
 
 namespace Ovito::StdMod {
@@ -65,9 +66,9 @@ void ManualSelectionModifier::initializeModifier(const ModifierInitializationReq
 void ManualSelectionModifier::propertyChanged(const PropertyFieldDescriptor* field)
 {
 	// Whenever the subject of this modifier is changed, reset the selection.
-	if(field == PROPERTY_FIELD(GenericPropertyModifier::subject) && !isBeingLoaded()) {
+	if(field == PROPERTY_FIELD(GenericPropertyModifier::subject) && !isBeingLoaded() && !isUndoingOrRedoing() && ExecutionContext::isInteractive()) {
+		PipelineEvaluationRequest request(ExecutionContext::current().ui().datasetContainer().currentAnimationTime());
 		for(ModifierApplication* modApp : modifierApplications()) {
-			PipelineEvaluationRequest request(dataset()->animationSettings(), dataset()->animationSettings()->time());
 			resetSelection(modApp, modApp->evaluateInputSynchronous(request));
 		}
 	}
@@ -109,7 +110,7 @@ ElementSelectionSet* ManualSelectionModifier::getSelectionSet(ModifierApplicatio
 
 	ElementSelectionSet* selectionSet = myModApp->selectionSet();
 	if(!selectionSet && createIfNotExist)
-		myModApp->setSelectionSet(selectionSet = OORef<ElementSelectionSet>::create(dataset()));
+		myModApp->setSelectionSet(selectionSet = OORef<ElementSelectionSet>::create());
 
 	return selectionSet;
 }

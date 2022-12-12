@@ -23,7 +23,7 @@
 #include <ovito/gui/desktop/GUI.h>
 #include <ovito/gui/desktop/properties/FontParameterUI.h>
 #include <ovito/gui/desktop/dialogs/FontSelectionDialog.h>
-#include <ovito/core/dataset/UndoStack.h>
+#include <ovito/core/app/undo/UndoableOperation.h>
 #include <ovito/core/dataset/DataSetContainer.h>
 
 namespace Ovito {

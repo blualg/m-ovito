@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -67,8 +67,7 @@ void FreezePropertyModifierEditor::createUI(const RolloutInsertionParameters& ro
 	layout->addWidget(destPropertyUI->comboBox());
 	layout->addSpacing(8);
 	connect(this, &PropertiesEditor::contentsChanged, this, [sourcePropertyUI,destPropertyUI](RefTarget* editObject) {
-		FreezePropertyModifier* modifier = static_object_cast<FreezePropertyModifier>(editObject);
-		if(modifier) {
+		if(FreezePropertyModifier* modifier = static_object_cast<FreezePropertyModifier>(editObject)) {
 			sourcePropertyUI->setContainerRef(modifier->subject());
 			destPropertyUI->setContainerRef(modifier->subject());
 		}
@@ -101,7 +100,7 @@ void FreezePropertyModifierEditor::onSourcePropertyChanged()
 	FreezePropertyModifier* mod = static_object_cast<FreezePropertyModifier>(editObject());
 	if(!mod) return;
 
-	undoableTransaction(tr("Freeze property"), [this,mod]() {
+	performTransaction(tr("Freeze property"), [this,mod]() {
 		// When the user selects a different source property, adjust the destination property automatically.
 		mod->setDestinationProperty(mod->sourceProperty());
 	});

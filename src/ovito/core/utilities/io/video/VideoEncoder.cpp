@@ -135,6 +135,11 @@ void VideoEncoder::openFile(const QString& filename, int width, int height, floa
 	else _frameDuplication = 1;
 	framesPerSecond *= _frameDuplication; 
 
+	// TODO: Support more fps values <1.0. Right now we are limited to 0.1, 0.2, and 0.5 fps.
+	int fpsNum = (framesPerSecond < 1.0f) ? 10 : 1;
+	int fpsDen = std::max(1, (int)std::round(framesPerSecond * fpsNum));
+	OVITO_ASSERT(std::abs(fpsDen - framesPerSecond * fpsNum) < 1e-6f);
+
 	const AVOutputFormat* outputFormat;
 	if(format == nullptr) {
 		// Auto detect the output format from the file name.
@@ -196,8 +201,8 @@ void VideoEncoder::openFile(const QString& filename, int width, int height, floa
 	_codecContext->bit_rate = 0;
 	_codecContext->width = width;
 	_codecContext->height = height;
-	_codecContext->time_base.num = _videoStream->time_base.num = std::max(1, (int)framesPerSecond);
-	_codecContext->time_base.den = _videoStream->time_base.den = 1;
+	_codecContext->time_base.num = _videoStream->time_base.num = fpsNum;
+	_codecContext->time_base.den = _videoStream->time_base.den = fpsDen;
 	_codecContext->gop_size = 12;	// Emit one intra frame every twelve frames at most.
 	_codecContext->framerate = av_inv_q(_codecContext->time_base);
 	_videoStream->avg_frame_rate = av_inv_q(_codecContext->time_base);
@@ -275,7 +280,7 @@ void VideoEncoder::openFile(const QString& filename, int width, int height, floa
 		const AVFilter* buffersrc = ::avfilter_get_by_name("buffer");
 		const AVFilter* buffersink = ::avfilter_get_by_name("buffersink");
 
-		AVRational time_base = { std::max(1, (int)framesPerSecond), 1 };
+		AVRational time_base = { fpsNum, fpsDen };
 		AVRational aspect_pixel = { 1, 1 };
 
 		AVFilterInOut* inputs = ::avfilter_inout_alloc();

@@ -88,6 +88,8 @@ ApplicationSettingsDialog::ApplicationSettingsDialog(MainWindow& mainWindow, Ovi
 void ApplicationSettingsDialog::onOk()
 {
 	try {
+		setFocus(); // Remove focus from child widgets to commit newly entered values in text widgets etc.
+
 		// Let all pages validate the changes the user made to the settings.
 		for(const OORef<ApplicationSettingsDialogPage>& page : _pages) {
 			if(!page->validateValues(_tabWidget)) {
@@ -114,6 +116,8 @@ void ApplicationSettingsDialog::onOk()
 void ApplicationSettingsDialog::onCancel()
 {
 	try {
+		setFocus(); // Remove focus from child widgets to commit newly entered values in text widgets etc.
+		
 		// Let all pages restore their settings to the old values.
 		for(const OORef<ApplicationSettingsDialogPage>& page : _pages)
 			page->restoreValues(_tabWidget);

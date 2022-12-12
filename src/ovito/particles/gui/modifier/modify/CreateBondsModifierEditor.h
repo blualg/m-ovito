@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -63,7 +63,7 @@ private:
 	public:
 		typedef std::vector<std::pair<OORef<ElementType>,OORef<ElementType>>> ContentType;
 
-		using QAbstractTableModel::QAbstractTableModel;
+		explicit PairCutoffTableModel(CreateBondsModifierEditor* owner) : QAbstractTableModel(owner) {}
 		virtual int	rowCount(const QModelIndex& parent) const override { return !_data.empty() ? _data.size() : 1; }
 		virtual int	columnCount(const QModelIndex& parent) const override { return 3; }
 		virtual QVariant data(const QModelIndex& index, int role) const override;
@@ -90,6 +90,7 @@ private:
 			endResetModel();
 		}
 		void updateContent() { Q_EMIT dataChanged(index(0,2), index(_data.size()-1,2)); }
+		CreateBondsModifierEditor* editor() const { return static_cast<CreateBondsModifierEditor*>(parent()); }
 	private:
 		ContentType _data;
 		OORef<CreateBondsModifier> _modifier;

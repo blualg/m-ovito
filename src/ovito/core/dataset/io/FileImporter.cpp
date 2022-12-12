@@ -24,8 +24,6 @@
 #include <ovito/core/app/PluginManager.h>
 #include <ovito/core/utilities/io/FileManager.h>
 #include <ovito/core/utilities/concurrent/TaskManager.h>
-#include <ovito/core/dataset/DataSet.h>
-#include <ovito/core/dataset/DataSetContainer.h>
 #include <ovito/core/dataset/io/FileSourceImporter.h>
 #include <ovito/core/app/Application.h>
 #include "FileImporter.h"
@@ -37,21 +35,23 @@ IMPLEMENT_OVITO_CLASS(FileImporter);
 /******************************************************************************
 * Tries to detect the format of the given file.
 ******************************************************************************/
-Future<OORef<FileImporter>> FileImporter::autodetectFileFormat(RefTarget* contextObject, const QUrl& url, OORef<FileImporter> existingImporterHint)
+Future<OORef<FileImporter>> FileImporter::autodetectFileFormat(const QUrl& url, OORef<FileImporter> existingImporterHint)
 {
 	if(!url.isValid())
 		throw Exception(tr("Invalid path or URL."));
+	if(!QCoreApplication::instance())
+		throw Exception(tr("File format detection requires a global QCoreApplication object."));
 
 	// Resolve filename if it contains a wildcard.
-	return FileSourceImporter::findWildcardMatches(url).then(contextObject->executor(), [contextObject, existingImporterHint = std::move(existingImporterHint)](std::vector<QUrl>&& urls) {
+	return FileSourceImporter::findWildcardMatches(url).then(ObjectExecutor(QCoreApplication::instance(), false), [existingImporterHint = std::move(existingImporterHint)](std::vector<QUrl>&& urls) {
 		if(urls.empty())
 			throw Exception(tr("There are no files in the directory matching the filename pattern."));
 
 		// Download file so we can determine its format.
 		return Application::instance()->fileManager().fetchUrl(urls.front())
-			.then(contextObject->executor(), [contextObject, url = urls.front(), existingImporterHint = std::move(existingImporterHint)](const FileHandle& file) {
+			.then([url = urls.front(), existingImporterHint = std::move(existingImporterHint)](const FileHandle& file) {
 				// Detect file format.
-				return autodetectFileFormat(contextObject, file, std::move(existingImporterHint));
+				return autodetectFileFormat(file, std::move(existingImporterHint));
 			});
 	});
 }
@@ -59,7 +59,7 @@ Future<OORef<FileImporter>> FileImporter::autodetectFileFormat(RefTarget* contex
 /******************************************************************************
 * Tries to detect the format of the given file.
 ******************************************************************************/
-OORef<FileImporter> FileImporter::autodetectFileFormat(RefTarget* contextObject, const FileHandle& file, FileImporter* existingImporterHint)
+OORef<FileImporter> FileImporter::autodetectFileFormat(const FileHandle& file, FileImporter* existingImporterHint)
 {
 	// Note: FileImporter::autodetectFileFormat() may only be called from the main thread.
 	// Event though the implementation of autodetectFileFormat() itself is thread-safe,

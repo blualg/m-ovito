@@ -22,7 +22,7 @@
 
 #include <ovito/gui/desktop/GUI.h>
 #include <ovito/core/viewport/ViewportConfiguration.h>
-#include <ovito/core/dataset/UndoStack.h>
+#include <ovito/core/app/undo/UndoableOperation.h>
 #include <ovito/core/dataset/DataSetContainer.h>
 #include <ovito/core/app/PluginManager.h>
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
@@ -141,7 +141,7 @@ OverlayCommandPage::OverlayCommandPage(MainWindow& mainWindow, QWidget* parent) 
 	_splitter->addWidget(_propertiesPanel);
 	_splitter->setStretchFactor(1,1);
 
-	connect(&_mainWindow.datasetContainer(), &DataSetContainer::viewportConfigReplaced, this, &OverlayCommandPage::onViewportConfigReplaced);
+	connect(&_mainWindow.datasetContainer(), &DataSetContainer::activeViewportChanged, this, &OverlayCommandPage::onActiveViewportChanged);
 }
 
 /******************************************************************************
@@ -176,25 +176,12 @@ ViewportOverlay* OverlayCommandPage::selectedLayer() const
 }
 
 /******************************************************************************
-* This is called whenever the current viewport configuration of current dataset
-* has been replaced by a new one.
-******************************************************************************/
-void OverlayCommandPage::onViewportConfigReplaced(ViewportConfiguration* newViewportConfiguration)
-{
-	disconnect(_activeViewportChangedConnection);
-	_propertiesPanel->setEditObject(nullptr);
-	if(newViewportConfiguration) {
-		_activeViewportChangedConnection = connect(newViewportConfiguration, &ViewportConfiguration::activeViewportChanged, this, &OverlayCommandPage::onActiveViewportChanged);
-		onActiveViewportChanged(newViewportConfiguration->activeViewport());
-	}
-	else onActiveViewportChanged(nullptr);
-}
-
-/******************************************************************************
 * This is called when another viewport became active.
 ******************************************************************************/
 void OverlayCommandPage::onActiveViewportChanged(Viewport* activeViewport)
 {
+	if(!activeViewport)
+		_propertiesPanel->setEditObject(nullptr);
 	overlayListModel()->setSelectedViewport(activeViewport);
 	_newLayerBox->setEnabled(activeViewport != nullptr && _newLayerBox->count() > 1);
 }

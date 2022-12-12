@@ -83,7 +83,7 @@ bool XYZImporterEditor::inspectNewFile(FileImporter* importer, const QUrl& sourc
 		}
 	}
 
-	InputColumnMappingDialog dialog(mapping, &mainWindow);
+	InputColumnMappingDialog dialog(mainWindow, mapping, &mainWindow);
 	if(dialog.exec() == QDialog::Accepted) {
 		xyzImporter->setColumnMapping(dialog.mapping());
 
@@ -124,7 +124,7 @@ bool XYZImporterEditor::showEditColumnMappingDialog(XYZImporter* importer, const
 		mapping = customMapping;
 	}
 
-	InputColumnMappingDialog dialog(mapping, parentWindow());
+	InputColumnMappingDialog dialog(mainWindow(), mapping, parentWindow());
 	if(dialog.exec() == QDialog::Accepted) {
 		importer->setColumnMapping(dialog.mapping());
 		// Remember the user-defined mapping for the next time.
@@ -198,7 +198,7 @@ void XYZImporterEditor::createUI(const RolloutInsertionParameters& rolloutParams
 void XYZImporterEditor::onEditColumnMapping()
 {
 	if(XYZImporter* importer = static_object_cast<XYZImporter>(editObject())) {
-		UndoableTransaction::handleExceptions(importer->dataset()->undoStack(), tr("Change file column mapping"), [this, importer]() {
+		performTransaction(tr("Change file column mapping"), [this, importer]() {
 
 			// Determine the currently loaded data file of the FileSource.
 			FileSource* fileSource = importer->fileSource();

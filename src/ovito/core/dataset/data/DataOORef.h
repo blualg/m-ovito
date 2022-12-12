@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -302,6 +302,5 @@ template<class T> inline bool operator<(const DataOORef<T>& a, const DataOORef<T
 {
     return std::less<T*>()(a.get(), b.get());
 }
-
 
 }	// End of namespace

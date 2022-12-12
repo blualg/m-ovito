@@ -48,17 +48,13 @@ public:
 	/// Constructor.
 	Q_INVOKABLE ViewportConfiguration(ObjectCreationParams params);
 
-	/// \brief Returns whether any of the viewports
-	///        is currently being updated.
-	/// \return \c true if there is currently a rendering operation going on.
-	bool isRendering() const;
-
-	/// Returns the current location around which the viewport camera orbits.
-	Point3 orbitCenter(Viewport* vp);
-
 	/// Registers a viewport with the configuration object so that it takes part in the automatic viewport refresh mechanism.
 	/// This method is currently used in the implementation of the Viewport.create_qt_widget() Python method.
-	void registerViewport(Viewport* vp) { _viewports.push_back(this, PROPERTY_FIELD(viewports), vp); }
+	void registerViewport(Viewport* vp) {
+		OVITO_ASSERT(vp);
+		if(!viewports().contains(vp))
+			_viewports.push_back(this, PROPERTY_FIELD(viewports), vp); 
+	}
 
 	/// Determines the effective rectangles for all the viewports in the layout hierarchy.
 	std::vector<std::pair<Viewport*, QRectF>> getViewportRectangles(const QRectF& rect = QRectF(0,0,1,1), const QSizeF& borderSize = QSizeF(0,0)) const {
@@ -76,9 +72,9 @@ public Q_SLOTS:
 	/// \brief Zooms to the extents of the scene.
 	void zoomToSceneExtents();
 
-	/// \brief Zooms all viewports to the extents of the currently selected nodes 
-	///        when the pipeline has been fully evaluated and the extents are known.
-	void zoomToSelectionExtentsWhenReady();
+	/// \brief Zooms all viewports to the extents of the scene 
+	///        when all scene pipelines have been fully evaluated and the extents are known.
+	void zoomToSceneExtentsWhenReady();
 
 Q_SIGNALS:
 

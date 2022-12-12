@@ -22,7 +22,7 @@
 
 #include <ovito/gui/desktop/GUI.h>
 #include <ovito/gui/desktop/properties/NumericalParameterUI.h>
-#include <ovito/core/dataset/UndoStack.h>
+#include <ovito/core/app/undo/UndoableOperation.h>
 #include <ovito/core/dataset/DataSetContainer.h>
 #include <ovito/core/viewport/ViewportConfiguration.h>
 #include <ovito/core/dataset/animation/AnimationSettings.h>
@@ -153,15 +153,14 @@ void NumericalParameterUI::setEnabled(bool enabled)
 ******************************************************************************/
 void NumericalParameterUI::onSpinnerValueChanged()
 {
-	ViewportSuspender noVPUpdate(mainWindow());
 	if(!_isDraggingSpinner) {
 		performTransaction(tr("Change parameter value"), [&]() {
 			updatePropertyValue();
 		});
 	}
 	else {
-		handleExceptions([&]() {
-			mainWindow().undoStack()->resetCurrentCompoundOperation();
+		_undoTransaction.revert();
+		performActions(_undoTransaction, [&] {
 			updatePropertyValue();
 		});
 	}
@@ -173,7 +172,7 @@ void NumericalParameterUI::onSpinnerValueChanged()
 void NumericalParameterUI::onSpinnerDragStart()
 {
 	OVITO_ASSERT(!_isDraggingSpinner);
-	mainWindow().undoStack()->beginCompoundOperation(tr("Change parameter"));
+	_undoTransaction.begin(mainWindow(), tr("Change parameter"));
 	_isDraggingSpinner = true;
 }
 
@@ -183,7 +182,7 @@ void NumericalParameterUI::onSpinnerDragStart()
 void NumericalParameterUI::onSpinnerDragStop()
 {
 	OVITO_ASSERT(_isDraggingSpinner);
-	mainWindow().undoStack()->endCompoundOperation();
+	_undoTransaction.commit();
 	_isDraggingSpinner = false;
 }
 
@@ -193,7 +192,7 @@ void NumericalParameterUI::onSpinnerDragStop()
 void NumericalParameterUI::onSpinnerDragAbort()
 {
 	OVITO_ASSERT(_isDraggingSpinner);
-	mainWindow().undoStack()->endCompoundOperation(false);
+	_undoTransaction.cancel();
 	_isDraggingSpinner = false;
 }
 

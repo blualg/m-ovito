@@ -120,7 +120,7 @@ Future<PipelineFlowState> ParaViewPVDImporter::loadFrame(const LoadOperationRequ
 	OVITO_ASSERT(QThread::currentThread() == this->thread());
 
 	// Detect format of the referenced file and create an importer for it.
-	OORef<FileImporter> importer = FileImporter::autodetectFileFormat(dataset(), request.fileHandle, childImporter());
+	OORef<FileImporter> importer = FileImporter::autodetectFileFormat(request.fileHandle, childImporter());
 
 	// This works only for FileSourceImporters.
 	// File formats handled by other kinds of importers will be skipped.

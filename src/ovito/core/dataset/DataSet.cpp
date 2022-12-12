@@ -155,18 +155,6 @@ void DataSet::referenceReplaced(const PropertyFieldDescriptor* field, RefTarget*
 	else if(field == PROPERTY_FIELD(renderSettings)) {
 		Q_EMIT renderSettingsReplaced(renderSettings());
 	}
-
-#if 0 // TODO: Remove ununsed code
-	// Install a signal/slot connection that updates the viewports every time the animation time has changed.
-	if(field == PROPERTY_FIELD(viewportConfig) || field == PROPERTY_FIELD(animationSettings)) {
-		disconnect(_updateViewportOnTimeChangeConnection);
-		if(animationSettings() && viewportConfig()) {
-			_updateViewportOnTimeChangeConnection = connect(animationSettings(), &AnimationSettings::timeChangeComplete, viewportConfig(), &ViewportConfiguration::updateViewports);
-			viewportConfig()->updateViewports();
-		}
-	}
-#endif
-
 	RefTarget::referenceReplaced(field, oldTarget, newTarget, listIndex);
 }
 
@@ -233,6 +221,56 @@ void DataSet::loadFromFile(const QString& filePath, MainThreadOperation operatio
 	if(fileStream.error() != QFile::NoError)
 		throw Exception(tr("Failed to load state file '%1'.").arg(absolutePath));		
 	fileStream.close();
+}
+
+/******************************************************************************
+* Provides a custom function that takes are of the deserialization of a 
+* serialized property field that has been removed from the class. 
+* This is needed for file backward compatibility with OVITO 3.7.
+******************************************************************************/
+RefMakerClass::SerializedClassInfo::PropertyFieldInfo::CustomDeserializationFunctionPtr DataSet::OOMetaClass::overrideFieldDeserialization(const SerializedClassInfo::PropertyFieldInfo& field) const
+{
+    // The DataSet class used to store an AnimationSettings object and the scene root node in OVITO 3.7 and earlier.
+    if(field.definingClass == &DataSet::OOClass() && (field.identifier == "animationSettings" || field.identifier == "sceneRoot" || field.identifier == "selection")) {
+        return [](const SerializedClassInfo::PropertyFieldInfo& field, ObjectLoadStream& stream, RefMaker& owner) {
+			// Load the legacy objects from the stream and temporarily store them in a QObject property.
+			// Once the entire DataSet has been loaded, loadFromStreamComplete() will store them in the right place.   
+			stream.expectChunk(0x02);
+			if(field.identifier == "animationSettings")
+				owner.setProperty("_animationSettings", QVariant::fromValue(stream.loadObject<AnimationSettings>()));
+			else if(field.identifier == "sceneRoot")
+				owner.setProperty("_sceneRoot", QVariant::fromValue(stream.loadObject<Scene>()));
+			else if(field.identifier == "selection")
+				owner.setProperty("_selection", QVariant::fromValue(stream.loadObject<SelectionSet>()));
+            stream.closeChunk();
+        };
+    }
+    return nullptr;
+}
+
+/******************************************************************************
+* This method is called once for this object after it has been completely
+* loaded from a stream.
+******************************************************************************/
+void DataSet::loadFromStreamComplete(ObjectLoadStream& stream)
+{
+	RefTarget::loadFromStreamComplete(stream);
+
+	// For backward compatibility with OVITO 3.7:
+	if(stream.formatVersion() <= 30008) {
+		// Retrieve legacy AnimationSettings and Scene loaded by the overrideFieldDeserialization() method.
+		OORef<AnimationSettings> animSettings = property("_animationSettings").value<OORef<AnimationSettings>>();
+		OORef<Scene> scene = property("_sceneRoot").value<OORef<Scene>>();
+		OORef<SelectionSet> selection = property("_selection").value<OORef<SelectionSet>>();
+		OVITO_ASSERT(animSettings && scene && selection);
+		scene->setAnimationSettings(std::move(animSettings));
+		scene->setSelection(std::move(selection));
+		for(Viewport* vp : viewportConfig()->viewports())
+			vp->setScene(scene);
+		setProperty("_animationSettings", QVariant());
+		setProperty("_sceneRoot", QVariant());
+		setProperty("_selection", QVariant());
+	}
 }
 
 }	// End of namespace

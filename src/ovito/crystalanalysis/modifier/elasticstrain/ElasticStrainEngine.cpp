@@ -45,9 +45,9 @@ ElasticStrainEngine::ElasticStrainEngine(
 	_inputCrystalStructure(inputCrystalStructure),
 	_latticeConstant(latticeConstant),
 	_pushStrainTensorsForward(pushStrainTensorsForward),
-	_volumetricStrains(ParticlesObject::OOClass().createUserProperty(request.dataset(), positions->size(), PropertyObject::Float, 1, QStringLiteral("Volumetric Strain"))),
-	_strainTensors(calculateStrainTensors ? ParticlesObject::OOClass().createStandardProperty(request.dataset(), positions->size(), ParticlesObject::ElasticStrainTensorProperty) : nullptr),
-	_deformationGradients(calculateDeformationGradients ? ParticlesObject::OOClass().createStandardProperty(request.dataset(), positions->size(), ParticlesObject::ElasticDeformationGradientProperty) : nullptr)
+	_volumetricStrains(ParticlesObject::OOClass().createUserProperty(positions->size(), PropertyObject::Float, 1, QStringLiteral("Volumetric Strain"))),
+	_strainTensors(calculateStrainTensors ? ParticlesObject::OOClass().createStandardProperty(positions->size(), ParticlesObject::ElasticStrainTensorProperty) : nullptr),
+	_deformationGradients(calculateDeformationGradients ? ParticlesObject::OOClass().createStandardProperty(positions->size(), ParticlesObject::ElasticDeformationGradientProperty) : nullptr)
 {
 	setAtomClusters(_structureAnalysis->atomClusters());
 	if(inputCrystalStructure == StructureAnalysis::LATTICE_FCC || inputCrystalStructure == StructureAnalysis::LATTICE_BCC || inputCrystalStructure == StructureAnalysis::LATTICE_CUBIC_DIAMOND) {

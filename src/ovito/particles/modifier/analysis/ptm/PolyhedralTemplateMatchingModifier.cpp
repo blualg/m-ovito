@@ -136,13 +136,13 @@ PolyhedralTemplateMatchingModifier::PTMEngine::PTMEngine(const ModifierEvaluatio
 		const OORefVector<ElementType>& structureTypes, const OORefVector<ElementType>& orderingTypes, ConstPropertyPtr selection,
 		bool outputInteratomicDistance, bool outputOrientation, bool outputDeformationGradient) :
 	StructureIdentificationEngine(request, std::move(fingerprint), positions, simCell, structureTypes, std::move(selection)),
-	_rmsd(ParticlesObject::OOClass().createUserProperty(request.dataset(), positions->size(), PropertyObject::Float, 1, QStringLiteral("RMSD"))),
-	_interatomicDistances(outputInteratomicDistance ? ParticlesObject::OOClass().createUserProperty(request.dataset(), positions->size(), PropertyObject::Float, 1, QStringLiteral("Interatomic Distance"), DataBuffer::InitializeMemory) : nullptr),
-	_orientations(outputOrientation ? ParticlesObject::OOClass().createStandardProperty(request.dataset(), positions->size(), ParticlesObject::OrientationProperty, DataBuffer::InitializeMemory) : nullptr),
-	_deformationGradients(outputDeformationGradient ? ParticlesObject::OOClass().createStandardProperty(request.dataset(), positions->size(), ParticlesObject::ElasticDeformationGradientProperty, DataBuffer::InitializeMemory) : nullptr),
-	_orderingTypes(particleTypes ? ParticlesObject::OOClass().createUserProperty(request.dataset(), positions->size(), PropertyObject::Int, 1, QStringLiteral("Ordering Type"), DataBuffer::InitializeMemory) : nullptr),
-	_correspondences(outputOrientation ? ParticlesObject::OOClass().createUserProperty(request.dataset(), positions->size(), PropertyObject::Int64, 1, QStringLiteral("Correspondences"), DataBuffer::InitializeMemory) : nullptr),	// only output correspondences if orientations are selected
-	_rmsdHistogram(DataTable::OOClass().createUserProperty(request.dataset(), 100, PropertyObject::Int64, 1, tr("Count"), DataBuffer::InitializeMemory))
+	_rmsd(ParticlesObject::OOClass().createUserProperty(positions->size(), PropertyObject::Float, 1, QStringLiteral("RMSD"))),
+	_interatomicDistances(outputInteratomicDistance ? ParticlesObject::OOClass().createUserProperty(positions->size(), PropertyObject::Float, 1, QStringLiteral("Interatomic Distance"), DataBuffer::InitializeMemory) : nullptr),
+	_orientations(outputOrientation ? ParticlesObject::OOClass().createStandardProperty(positions->size(), ParticlesObject::OrientationProperty, DataBuffer::InitializeMemory) : nullptr),
+	_deformationGradients(outputDeformationGradient ? ParticlesObject::OOClass().createStandardProperty(positions->size(), ParticlesObject::ElasticDeformationGradientProperty, DataBuffer::InitializeMemory) : nullptr),
+	_orderingTypes(particleTypes ? ParticlesObject::OOClass().createUserProperty(positions->size(), PropertyObject::Int, 1, QStringLiteral("Ordering Type"), DataBuffer::InitializeMemory) : nullptr),
+	_correspondences(outputOrientation ? ParticlesObject::OOClass().createUserProperty(positions->size(), PropertyObject::Int64, 1, QStringLiteral("Correspondences"), DataBuffer::InitializeMemory) : nullptr),	// only output correspondences if orientations are selected
+	_rmsdHistogram(DataTable::OOClass().createUserProperty(100, PropertyObject::Int64, 1, tr("Count"), DataBuffer::InitializeMemory))
 {
 	_algorithm.emplace();
 	_algorithm->setCalculateDefGradient(outputDeformationGradient);

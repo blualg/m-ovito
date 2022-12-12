@@ -24,7 +24,7 @@
 
 
 #include <ovito/core/dataset/animation/AnimationSettings.h>
-#include <ovito/core/dataset/UndoStack.h>
+#include <ovito/core/app/undo/UndoableOperation.h>
 #include <ovito/gui/desktop/widgets/general/SpinnerWidget.h>
 
 namespace Ovito {
@@ -32,7 +32,7 @@ namespace Ovito {
 /**
  * This dialog box lets the user manage the animation settings.
  */
-class OVITO_GUI_EXPORT AnimationSettingsDialog : public QDialog, private UndoableTransaction, ExecutionContext::Scope
+class OVITO_GUI_EXPORT AnimationSettingsDialog : public QDialog, private UndoableTransaction
 {
 	Q_OBJECT
 

@@ -53,6 +53,7 @@ Future<PipelineFlowState> BasePipelineSource::postprocessDataCollection(int anim
 {
 	return std::move(future).then(executor(), [this, animationFrame, frameInterval](Future<PipelineFlowState> future) -> PipelineFlowState {
 		OVITO_ASSERT(future.isFinished() && !future.isCanceled());
+		OVITO_ASSERT(ExecutionContext::current().isValid());
 
 		try {
 			PipelineFlowState state = future.result();
@@ -61,7 +62,6 @@ Future<PipelineFlowState> BasePipelineSource::postprocessDataCollection(int anim
 			// Check if the generated pipeline state is valid.
 			if(state.data() && state.status().type() != PipelineStatus::Error) {
 
-#if 0 // TODO: Make this work
 				// In GUI mode, create editable proxy objects for the data objects in the generated collection.
 				if(Application::instance()->guiMode()) {
 					_updatingEditableProxies = true;
@@ -71,12 +71,11 @@ Future<PipelineFlowState> BasePipelineSource::postprocessDataCollection(int anim
 				}
 
 				// Adopt the generated data collection as our new master data collection (only if it is for the current animation time).
-				if(state.stateValidity().contains(dataset()->animationSettings()->time())) {
+				if(state.stateValidity().contains(ExecutionContext::current().ui().datasetContainer().currentAnimationTime())) {
 					setDataCollectionFrame(animationFrame);
 					setDataCollection(state.data());
 					notifyDependents(ReferenceEvent::PreliminaryStateAvailable);
 				}
-#endif
 			}
 
 			return state;
@@ -103,13 +102,14 @@ Future<PipelineFlowState> BasePipelineSource::postprocessDataCollection(int anim
 ******************************************************************************/
 Future<PipelineFlowState> BasePipelineSource::postprocessCachedState(const PipelineEvaluationRequest& request, const PipelineFlowState& cachedState)
 {
+	OVITO_ASSERT(ExecutionContext::current().isValid());
+
 	PipelineFlowState state = cachedState;
 	setStatus(state.status());
 
 	if(state.data() && state.status().type() != PipelineStatus::Error) {
 		UndoSuspender noUndo;
 
-#if 0 // TODO: Make this work
 		// In GUI mode, create editable proxy objects for the data objects in the generated collection.
 		if(Application::instance()->guiMode()) {
 			_updatingEditableProxies = true;
@@ -119,11 +119,10 @@ Future<PipelineFlowState> BasePipelineSource::postprocessCachedState(const Pipel
 		}
 
 		// Adopt the generated data collection as our new master data collection (only if it is for the current animation time).
-		if(state.stateValidity().contains(dataset()->animationSettings()->time())) {
+		if(state.stateValidity().contains(ExecutionContext::current().ui().datasetContainer().currentAnimationTime())) {
 			setDataCollectionFrame(animationTimeToSourceFrame(request.time()));
 			setDataCollection(state.data());
 		}
-#endif
 	}
 
 	return CachingPipelineObject::postprocessCachedState(request, state);

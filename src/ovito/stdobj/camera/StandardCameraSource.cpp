@@ -23,10 +23,10 @@
 #include <ovito/stdobj/StdObj.h>
 #include <ovito/core/app/Application.h>
 #include <ovito/core/app/UserInterface.h>
+#include <ovito/core/app/undo/RefTargetOperations.h>
 #include <ovito/core/viewport/Viewport.h>
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/dataset/DataSetContainer.h>
-#include <ovito/core/dataset/UndoStackOperations.h>
 #include <ovito/core/dataset/data/DataCollection.h>
 #include <ovito/core/dataset/pipeline/StaticSource.h>
 #include <ovito/core/dataset/scene/PipelineSceneNode.h>
@@ -61,18 +61,13 @@ StandardCameraSource::StandardCameraSource(ObjectCreationParams params) : Pipeli
 		zoomController()->setFloatValue(AnimationTime(0), 200);
 
 		// Adopt the view parameters from the currently active Viewport.
-		if(params.loadUserDefaults()) {
-			OVITO_ASSERT(ExecutionContext::current().isValid());
-			if(ExecutionContext::current().isValid()) {
-				if(DataSet* dataset = ExecutionContext::current().ui().datasetContainer().currentSet()) {
-					if(Viewport* vp = dataset->viewportConfig()->activeViewport()) {
-						setIsPerspective(vp->isPerspectiveProjection());
-						if(vp->isPerspectiveProjection())
-							fovController()->setFloatValue(AnimationTime(0), vp->fieldOfView());
-						else
-							zoomController()->setFloatValue(AnimationTime(0), vp->fieldOfView());
-					}
-				}
+		if(ExecutionContext::current().isInteractive()) {
+			if(Viewport* vp = ExecutionContext::current().ui().datasetContainer().activeViewport()) {
+				setIsPerspective(vp->isPerspectiveProjection());
+				if(vp->isPerspectiveProjection())
+					fovController()->setFloatValue(AnimationTime(0), vp->fieldOfView());
+				else
+					zoomController()->setFloatValue(AnimationTime(0), vp->fieldOfView());
 			}
 		}
 	}
@@ -183,8 +178,8 @@ void StandardCameraSource::setIsTargetCamera(bool enable)
 {
 	pushIfUndoRecording<TargetChangedUndoOperation>(this);
 
-	// TODO: Use current scene animation time instead.
-	AnimationTime time(0);
+	// Use current scene animation time to initialize camera objects.
+	AnimationTime time = ExecutionContext::current().ui().datasetContainer().currentAnimationTime();
 
 	for(PipelineSceneNode* node : pipelines(true)) {
 		if(node->lookatTargetNode() == nullptr && enable) {

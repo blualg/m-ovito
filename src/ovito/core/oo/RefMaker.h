@@ -26,7 +26,7 @@
 #include <ovito/core/Core.h>
 #include <ovito/core/oo/RefMakerClass.h>
 #include <ovito/core/oo/ReferenceEvent.h>
-#include <ovito/core/dataset/UndoStack.h>
+#include <ovito/core/app/undo/UndoableOperation.h>
 
 namespace Ovito {
 
@@ -191,7 +191,7 @@ protected:
 	virtual void saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData) const override;
 
 	/// \brief Loads the class' contents from an input stream.
-	/// \param stream The source stream.
+	/// \param stream The source data stream.
 	/// \throw Exception when a parsing error has occurred.
 	///
 	/// Derived classes can overwrite this virtual method to read their specific data
@@ -205,10 +205,10 @@ protected:
 	virtual void loadFromStream(ObjectLoadStream& stream) override;
 
 	/// \brief Allows the object to parse the serialized contents of a property field in a custom way.
-	/// \param stream The source stream.
+	/// \param stream The source data stream.
 	/// \param serializedField The property field to be parsed.
 	/// \throw Exception when a parsing error has occurred.
-	/// \return \c true if the function has parsed the field; \c false if the default parsing routine should be invoked.
+	/// \return \c true if the function has parsed the field; \c false if the standard parsing routine should be invoked.
 	///
 	/// Overriding this method is useful if a property field has been replaced by another. To maintain file
 	/// compatibility, the object can parse the value of the old property field from the file and store it in the new field.
@@ -355,9 +355,6 @@ private:
 
 	/// Checks whether this RefMaker has any (direct) strong references to a RefTarget.
 	bool hasStrongReferenceTo(const RefTarget* target) const;
-
-	/// Records an operation on the undo stack.
-	static void pushUndoRecord(std::unique_ptr<UndoableOperation> operation);
 
 	/// Recursive gathering function used by getAllDependencies().
 	static void walkNode(QSet<RefTarget*>& nodes, const RefMaker* node);

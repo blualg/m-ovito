@@ -49,7 +49,7 @@ public:
 	virtual ~PipelineSceneNode();
 
 	/// \brief Performs a synchronous evaluation of the pipeline yielding only preliminary results.
-	const PipelineFlowState& evaluatePipelineSynchronous(AnimationTime time, bool includeVisElements);
+	const PipelineFlowState& evaluatePipelineSynchronous(const PipelineEvaluationRequest& request, bool includeVisElements);
 
 	/// \brief Performs an asynchronous evaluation of the data pipeline.
 	PipelineEvaluationFuture evaluatePipeline(const PipelineEvaluationRequest& request);
@@ -68,7 +68,6 @@ public:
 	virtual QString objectTitle() const override;
 
 	/// \brief Returns the bounding box of the scene node.
-	/// \param time The time at which the bounding box should be computed.
 	/// \return An world axis-aligned box.
 	virtual Box3 localBoundingBox(AnimationTime time, TimeInterval& validity) const override;
 

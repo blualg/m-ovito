@@ -185,7 +185,7 @@ void ParticleTypeEditor::createUI(const RolloutInsertionParameters& rolloutParam
 	connect(loadShapeBtn, &QPushButton::clicked, this, [this]() {
 		if(OORef<ParticleType> ptype = static_object_cast<ParticleType>(editObject())) {
 
-			undoableTransaction(tr("Load particle shape"), [&]() {
+			performTransaction(tr("Load particle shape"), [&]() {
 				QUrl selectedFile;
 				const FileImporterClass* fileImporterClass = nullptr;
 				QString fileImporterFormat;
@@ -200,7 +200,7 @@ void ParticleTypeEditor::createUI(const RolloutInsertionParameters& rolloutParam
 					}
 
 					// Let the user select a geometry file to import.
-					ImportFileDialog fileDialog(meshImporters, ptype->dataset(), &mainWindow(), tr("Load geometry file"), false, QStringLiteral("particle_shape_mesh"));
+					ImportFileDialog fileDialog(meshImporters, &mainWindow(), tr("Load geometry file"), false, QStringLiteral("particle_shape_mesh"));
 					if(fileDialog.exec() != QDialog::Accepted)
 						return;
 
@@ -259,7 +259,7 @@ QToolButton* ParticleTypeEditor::createPresetsMenuButton(const QString& paramete
 	loadPresetAction->setStatusTip(tr("Reset current %1 back to user-defined or hard-coded default value for this particle type.").arg(parameterName));
 	connect(loadPresetAction, &QAction::triggered, this, [this,parameterName,resetFunc]() {
 		if(ParticleType* ptype = static_object_cast<ParticleType>(editObject())) {
-			undoableTransaction(tr("Reset particle type %1").arg(parameterName), [&]() {
+			performTransaction(tr("Reset particle type %1").arg(parameterName), [&]() {
 				resetFunc(ptype);
 				mainWindow().showStatusBarMessage(tr("Reset %1 of particle type '%2' to default value.").arg(parameterName).arg(ptype->nameOrNumericId()), 4000);
 			});

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -473,17 +473,17 @@ void ModifierListModel::insertModifier()
 					const Modifier::OOMetaClass* modifierClass = static_cast<const Modifier::OOMetaClass*>(clazz);
 
 					// Instantiate the PythonScriptModifier class.
-					UndoSuspender noUndo;
 					OORef<Modifier> modifier = static_object_cast<Modifier>(modifierClass->createInstance());
 					OVITO_CHECK_OBJECT_POINTER(modifier);
-					modifier->setTitle(action->text());
+					{
+						UndoSuspender noUndo;
+						modifier->setTitle(action->text());
 
-					// Load the script code from the template file.
-					bool callSuccessful = QMetaObject::invokeMethod(modifier, "loadCodeTemplate", Qt::DirectConnection, Q_ARG(const QString&, action->scriptPath()));
-					OVITO_ASSERT(callSuccessful);
+						// Load the script code from the template file.
+						bool callSuccessful = QMetaObject::invokeMethod(modifier, "loadCodeTemplate", Qt::DirectConnection, Q_ARG(const QString&, action->scriptPath()));
+						OVITO_ASSERT(callSuccessful);
+					}
 
-					// Resume undo recording.
-					noUndo.reset();
 					// Insert modifier(s) into the data pipeline.
 					_pipelineListModel->applyModifiers({modifier});
 				}
@@ -582,12 +582,14 @@ void ModifierListModel::updateActionState()
 	// Evaluate pipeline at the selected stage.
 	if(currentItem) {
 		if(AnimationSettings* anim = _userInterface.datasetContainer().activeAnimationSettings()) {
-			if(PipelineObject* pipelineObject = dynamic_object_cast<PipelineObject>(currentItem->object())) {
-				inputState = pipelineObject->evaluateSynchronous(PipelineEvaluationRequest(anim));
-			}
-			else if(PipelineSceneNode* pipeline = _pipelineListModel->selectedPipeline()) {
-				inputState = pipeline->evaluatePipelineSynchronous(anim->currentTime(), false);
-			}
+			_userInterface.handleExceptions([&] {
+				if(PipelineObject* pipelineObject = dynamic_object_cast<PipelineObject>(currentItem->object())) {
+					inputState = pipelineObject->evaluateSynchronous(PipelineEvaluationRequest(anim));
+				}
+				else if(PipelineSceneNode* pipeline = _pipelineListModel->selectedPipeline()) {
+					inputState = pipeline->evaluatePipelineSynchronous(anim->currentTime(), false);
+				}
+			});
 		}
 	}
 

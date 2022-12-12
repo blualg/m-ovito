@@ -79,7 +79,7 @@ bool AMBERNetCDFImporterEditor::showEditColumnMappingDialog(AMBERNetCDFImporter*
 		mapping = customMapping;
 	}
 
-	InputColumnMappingDialog dialog(mapping, parentWindow());
+	InputColumnMappingDialog dialog(mainWindow(), mapping, parentWindow());
 	if(dialog.exec() == QDialog::Accepted) {
 		importer->setCustomColumnMapping(dialog.mapping());
 		importer->setUseCustomColumnMapping(true);
@@ -138,11 +138,12 @@ void AMBERNetCDFImporterEditor::createUI(const RolloutInsertionParameters& rollo
 void AMBERNetCDFImporterEditor::onEditColumnMapping()
 {
 	if(AMBERNetCDFImporter* importer = static_object_cast<AMBERNetCDFImporter>(editObject())) {
-		UndoableTransaction::handleExceptions(importer->dataset()->undoStack(), tr("Change file column mapping"), [this, importer]() {
+		performTransaction(tr("Change file column mapping"), [this, importer]() {
 
 			// Determine the currently loaded data file of the FileSource.
 			FileSource* fileSource = importer->fileSource();
-			if(!fileSource || fileSource->frames().empty()) return;
+			if(!fileSource || fileSource->frames().empty()) 
+				return;
 			int frameIndex = qBound(0, fileSource->dataCollectionFrame(), fileSource->frames().size()-1);
 
 			// Show the dialog box, which lets the user modify the file column mapping.

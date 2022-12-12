@@ -29,7 +29,7 @@
 #include <ovito/core/dataset/data/camera/AbstractCameraObject.h>
 #include <ovito/core/dataset/data/DataBufferAccess.h>
 #include <ovito/core/dataset/scene/Scene.h>
-#include <ovito/core/dataset/UndoStack.h>
+#include <ovito/core/app/undo/UndoableOperation.h>
 #include <ovito/core/dataset/DataSet.h>
 #include "ViewportInputManager.h"
 #include "NavigationModes.h"
@@ -57,8 +57,7 @@ void NavigationMode::deactivated(bool temporary)
 		// Restore old settings if view change has not been committed.
 		_viewport->setCameraTransformation(_oldCameraTM);
 		_viewport->setFieldOfView(_oldFieldOfView);
-		if(inputManager()->userInterface().undoStack())
-			inputManager()->userInterface().undoStack()->endCompoundOperation(false);
+		_undoTransaction.cancel();
 		_viewport = nullptr;
 	}
 	inputManager()->removeViewportGizmo(inputManager()->pickOrbitCenterMode());
@@ -106,8 +105,7 @@ void NavigationMode::mousePressEvent(ViewportWindowInterface* vpwin, QMouseEvent
 		_oldViewMatrix = _viewport->projectionParams().viewMatrix;
 		_oldInverseViewMatrix = _viewport->projectionParams().inverseViewMatrix;
 		_currentOrbitCenter = _viewport->orbitCenter();
-		if(inputManager()->userInterface().undoStack())
-			inputManager()->userInterface().undoStack()->beginCompoundOperation(tr("Modify camera"));
+		_undoTransaction.begin(inputManager()->userInterface(), tr("Modify camera"));
 	}
 }
 
@@ -118,8 +116,7 @@ void NavigationMode::mouseReleaseEvent(ViewportWindowInterface* vpwin, QMouseEve
 {
 	if(_viewport) {
 		// Commit view change.
-		if(inputManager()->userInterface().undoStack())
-			inputManager()->userInterface().undoStack()->endCompoundOperation();
+		_undoTransaction.commit();
 		_viewport = nullptr;
 
 		if(_temporaryActivation)
@@ -146,9 +143,10 @@ void NavigationMode::mouseMoveEvent(ViewportWindowInterface* vpwin, QMouseEvent*
 	if(_viewport == vpwin->viewport()) {
 		QPointF pos = getMousePosition(event);
 
-		if(inputManager()->userInterface().undoStack())
-			inputManager()->userInterface().undoStack()->resetCurrentCompoundOperation();
-		modifyView(vpwin, _viewport, pos - _startPoint, false);
+		_undoTransaction.revert();
+		inputManager()->userInterface().performActions(_undoTransaction, [&] {
+			modifyView(vpwin, _viewport, pos - _startPoint, false);
+		});
 
 		// Force immediate viewport repaint.
 		inputManager()->userInterface().processViewportUpdateRequests();
@@ -474,7 +472,7 @@ void PickOrbitCenterMode::renderOverlay3D(Viewport* vp, SceneRenderer* renderer)
 		return;
 
 	// Render center of rotation.
-	Point3 center = vp->scene()->orbitCenter(vp);
+	Point3 center = vp->orbitCenter();
 	FloatType symbolSize = vp->nonScalingSize(center);
 	renderer->setWorldTransform(AffineTransformation::translation(center - Point3::Origin()) * AffineTransformation::scaling(symbolSize));
 

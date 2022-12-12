@@ -105,10 +105,10 @@ Box3 SceneRenderer::computeSceneBoundingBox(AnimationTime time, Scene* scene, co
 /******************************************************************************
 * Prepares the renderer for rendering one or more frames.
 ******************************************************************************/
-bool SceneRenderer::startRender(const RenderSettings& settings, const QSize& frameBufferSize, MixedKeyCache& visCache)
+bool SceneRenderer::startRender(const RenderSettings* settings, const QSize& frameBufferSize, MixedKeyCache& visCache)
 {
 	OVITO_ASSERT_MSG(_renderSettings == nullptr, "SceneRenderer::startRender()", "startRender() called again without calling endRender() first.");
-	_renderSettings = &settings;
+	_renderSettings = settings;
 	_visCache = &visCache;
 	return true;
 }
@@ -128,7 +128,6 @@ void SceneRenderer::endRender()
 ******************************************************************************/
 void SceneRenderer::beginFrame(AnimationTime time, Scene* scene, const ViewProjectionParameters& params, Viewport* vp, const QRect& viewportRect, FrameBuffer* frameBuffer) 
 {
-	OVITO_ASSERT(scene != nullptr);
 	OVITO_ASSERT(!_scene);
 
 	_time = time;
@@ -190,7 +189,7 @@ bool SceneRenderer::renderNode(SceneNode* node, MainThreadOperation& operation)
 			// Evaluate data pipeline of object node and render the results.
 			PipelineEvaluationFuture pipelineEvaluation;
 			if(waitForLongOperationsEnabled()) {
-				pipelineEvaluation = pipeline->evaluateRenderingPipeline(PipelineEvaluationRequest(time(), frame()));
+				pipelineEvaluation = pipeline->evaluateRenderingPipeline(PipelineEvaluationRequest(time()));
 				if(!pipelineEvaluation.waitForFinished())
 					return false;
 

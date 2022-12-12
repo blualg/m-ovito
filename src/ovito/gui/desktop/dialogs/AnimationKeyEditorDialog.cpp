@@ -307,7 +307,6 @@ private:
 AnimationKeyEditorDialog::AnimationKeyEditorDialog(KeyframeController* ctrl, const PropertyFieldDescriptor* propertyField, QWidget* parent, MainWindow& mainWindow) :
 	QDialog(parent),
 	UndoableTransaction(mainWindow, tr("Edit animatable parameter")),
-	ExecutionContext::Scope(ExecutionContext::Type::Interactive, mainWindow),
 	_mainWindow(mainWindow)
 {
 	setWindowTitle(tr("Parameter animation: %1").arg(propertyField->displayName()));
@@ -315,8 +314,10 @@ AnimationKeyEditorDialog::AnimationKeyEditorDialog(KeyframeController* ctrl, con
 	
 	// Make sure the controller has at least one animation key.
 	if(ctrl->keys().empty()) {
-		try { ctrl->createKey(AnimationTime(0)); }
-		catch(const Exception&) {}
+		_mainWindow.performActions(*this, [&] {
+			try { ctrl->createKey(AnimationTime(0)); }
+			catch(const Exception&) {}
+		});
 	}
 
 	QVBoxLayout* mainLayout = new QVBoxLayout(this);
@@ -422,6 +423,7 @@ AnimationKeyEditorDialog::AnimationKeyEditorDialog(KeyframeController* ctrl, con
 ******************************************************************************/
 void AnimationKeyEditorDialog::onOk()
 {
+	setFocus(); // Remove focus from child widgets to commit newly entered values in text widgets etc.
 	commit();
 	accept();
 }
@@ -457,7 +459,7 @@ void AnimationKeyEditorDialog::onAddKey()
 	connect(buttonBox, &QDialogButtonBox::rejected, &dlg, &QDialog::reject);
 	mainLayout->addWidget(buttonBox);
 	if(dlg.exec() == QDialog::Accepted) {
-		_mainWindow.performTransaction(tr("Add animation key"), [&]() {
+		_mainWindow.performActions(*this, [&]() {
 			int index = ctrl()->createKey(AnimationTime::fromFrame(timeSpinner->intValue()));
 			_tableWidget->selectRow(index);
 		});
@@ -470,7 +472,7 @@ void AnimationKeyEditorDialog::onAddKey()
 void AnimationKeyEditorDialog::onDeleteKey()
 {
 	QModelIndexList selection = _tableWidget->selectionModel()->selectedRows();
-	_mainWindow.performTransaction(tr("Delete animation key"), [&]() {
+	_mainWindow.performActions(*this, [&]() {
 		QVector<AnimationKey*> keysToDelete;
 		for(const QModelIndex& index : selection) {
 			OVITO_ASSERT(index.row() >= 0 && index.row() < ctrl()->keys().size());

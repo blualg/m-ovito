@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2017 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -50,10 +50,11 @@ bool ParticlePickingHelper::pickParticle(ViewportWindowInterface* vpwin, const Q
 			if(posProperty && particleIndex < posProperty.size()) {
 				// Save reference to the selected particle.
 				TimeInterval iv;
+				AnimationTime time = vpwin->viewport()->scene()->animationSettings()->currentTime();
 				result.objNode = vpPickResult.pipelineNode();
 				result.particleIndex = particleIndex;
 				result.localPos = posProperty[result.particleIndex];
-				result.worldPos = result.objNode->getWorldTransform(vpwin->viewport()->dataset()->animationSettings()->time(), iv) * result.localPos;
+				result.worldPos = result.objNode->getWorldTransform(time, iv) * result.localPos;
 
 				// Determine particle ID.
 				ConstPropertyAccess<qlonglong> identifierProperty = particles->getProperty(ParticlesObject::IdentifierProperty);
@@ -82,7 +83,7 @@ void ParticlePickingHelper::renderSelectionMarker(Viewport* vp, SceneRenderer* r
 	if(!renderer->isInteractive() || renderer->isPicking())
 		return;
 
-	const PipelineFlowState& flowState = pickRecord.objNode->evaluatePipelineSynchronous(true);
+	const PipelineFlowState& flowState = pickRecord.objNode->evaluatePipelineSynchronous(renderer->time(), true);
 	const ParticlesObject* particles = flowState.getObject<ParticlesObject>();
 	if(!particles) return;
 
@@ -105,7 +106,7 @@ void ParticlePickingHelper::renderSelectionMarker(Viewport* vp, SceneRenderer* r
 
 	// Set up transformation.
 	TimeInterval iv;
-	const AffineTransformation& nodeTM = pickRecord.objNode->getWorldTransform(vp->dataset()->animationSettings()->time(), iv);
+	const AffineTransformation& nodeTM = pickRecord.objNode->getWorldTransform(renderer->time(), iv);
 	renderer->setWorldTransform(nodeTM);
 
 	// Render highlight marker.

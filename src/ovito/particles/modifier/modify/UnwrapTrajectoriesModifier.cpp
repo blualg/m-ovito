@@ -24,8 +24,7 @@
 #include <ovito/particles/objects/ParticlesObject.h>
 #include <ovito/particles/objects/BondsObject.h>
 #include <ovito/stdobj/simcell/SimulationCellObject.h>
-#include <ovito/core/dataset/DataSet.h>
-#include <ovito/core/app/Application.h>
+#include <ovito/core/app/UserInterface.h>
 #include <ovito/core/utilities/concurrent/TaskManager.h>
 #include <ovito/core/utilities/concurrent/ForEach.h>
 #include "UnwrapTrajectoriesModifier.h"
@@ -85,7 +84,7 @@ void UnwrapTrajectoriesModifier::evaluateSynchronous(const ModifierEvaluationReq
 	// animation time. This would lead to artifacts, because particles might get unwrapped even though they haven't crossed
 	// a periodic cell boundary yet. To avoid this from happening, we try to determine the true animation time of the
 	// current input data collection and use it for looking up the unwrap information.
-	TimePoint time = request.time();
+	AnimationTime time = request.time();
 	int sourceFrame = state.data()->sourceFrame();
 	if(sourceFrame != -1)
 		time = request.modApp()->sourceFrameToAnimationTime(sourceFrame);
@@ -105,7 +104,7 @@ SharedFuture<> UnwrapTrajectoriesModifierApplication::detectPeriodicCrossings(co
 
 		// Determine the range of animation frames to be processed.
 		int startFrame = 0;
-		if(unwrappedUpToTime() != TimeNegativeInfinity())
+		if(unwrappedUpToTime() != AnimationTime::negativeInfinity())
 			startFrame = animationTimeToSourceFrame(unwrappedUpToTime());
 		int endFrame = std::max(numberOfSourceFrames(), startFrame);
 		auto inputFrameRange = boost::irange(startFrame, endFrame);
@@ -124,7 +123,8 @@ SharedFuture<> UnwrapTrajectoriesModifierApplication::detectPeriodicCrossings(co
 		// Display progress in the UI.
 		OVITO_ASSERT(_unwrapOperation.task()->isProgressingTask());
 		static_cast<ProgressingTask*>(_unwrapOperation.task().get())->setProgressText(tr("Unwrapping particle trajectories"));
-		taskManager().registerFuture(_unwrapOperation);
+		if(ExecutionContext::current().isValid())
+			ExecutionContext::current().ui().taskManager().registerFuture(_unwrapOperation);
 		registerActiveFuture(_unwrapOperation);
 	}
 	return _unwrapOperation;
@@ -136,7 +136,7 @@ SharedFuture<> UnwrapTrajectoriesModifierApplication::detectPeriodicCrossings(co
 ******************************************************************************/
 void UnwrapTrajectoriesModifierApplication::invalidateUnwrapData()
 {
-	_unwrappedUpToTime = TimeNegativeInfinity();
+	_unwrappedUpToTime = AnimationTime::negativeInfinity();
 	_unwrapRecords.clear();
 	_unflipRecords.clear();
 	_unwrapOperation.reset();
@@ -313,7 +313,7 @@ void UnwrapTrajectoriesModifierApplication::unwrapParticleCoordinates(const Modi
 ******************************************************************************/
 void UnwrapTrajectoriesModifierApplication::WorkingData::operator()(int frame, const PipelineFlowState& state)
 {
-	TimePoint time = _modApp->sourceFrameToAnimationTime(frame);
+	AnimationTime time = _modApp->sourceFrameToAnimationTime(frame);
 
 	// Get simulation cell geometry and boundary conditions.
 	const SimulationCellObject* cell = state.getObject<SimulationCellObject>();

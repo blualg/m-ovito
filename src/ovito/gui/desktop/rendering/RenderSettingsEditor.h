@@ -69,9 +69,6 @@ private Q_SLOTS:
 	/// Lets the user choose a different plug-in rendering engine.
 	void onSwitchRenderer();
 
-	/// This is called whenever the current viewport configuration of current dataset has been replaced by a new one.
-	void onViewportConfigReplaced(ViewportConfiguration* newViewportConfiguration);
-
 	/// This is called when another viewport became active.
 	void onActiveViewportChanged(Viewport* activeViewport);
 
@@ -85,9 +82,6 @@ private:
 
 	QComboBox* _sizePresetsBox;
 	QCheckBox* _viewportPreviewModeBox;
-
-	/// Signal connection for detecting active viewport changes.
-	QMetaObject::Connection _activeViewportChangedConnection;
 };
 
 }	// End of namespace

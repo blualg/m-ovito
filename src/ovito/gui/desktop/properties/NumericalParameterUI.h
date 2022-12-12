@@ -25,6 +25,7 @@
 
 #include <ovito/gui/desktop/GUI.h>
 #include <ovito/gui/desktop/widgets/general/SpinnerWidget.h>
+#include <ovito/core/app/undo/UndoableTransaction.h>
 #include "ParameterUI.h"
 
 namespace Ovito {
@@ -137,6 +138,9 @@ private:
 
 	/// Creates the widgets for this property UI.
 	void initUIControls(const QString& labelText);
+
+	/// To undo value changes during mouse dragging.
+	UndoableTransaction _undoTransaction;
 };
 
 }	// End of namespace

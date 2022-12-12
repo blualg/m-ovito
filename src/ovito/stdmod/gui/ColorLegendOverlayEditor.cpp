@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -192,10 +192,9 @@ void ColorLegendOverlayEditor::updateSourcesList()
 
 	_sourcesComboBox->clear();
 	if(ColorLegendOverlay* overlay = static_object_cast<ColorLegendOverlay>(editObject())) {
-
 		// List all ColorCodingModifiers, typed PropertyObjects, and PropertyColorMappings in the scene. To find them, visit all
 		// pipelines and iterate over their modifier applications and output data collections.
-		overlay->dataset()->scene()->visitObjectNodes([&](PipelineSceneNode* pipeline) {
+		visitScenePipelines([&](PipelineSceneNode* pipeline) {
 
 			// Go through the visual elements of the pipeline and look if any one has a PropertyColorMapping attached to it.
 			for(DataVis* vis : pipeline->visElements()) {
@@ -228,7 +227,7 @@ void ColorLegendOverlayEditor::updateSourcesList()
 			}
 
 			// Now evaluate the pipeline and look for typed properties in its output data collection.
-			const PipelineFlowState& state = pipeline->evaluatePipelineSynchronous(false);
+			const PipelineFlowState& state = pipeline->evaluatePipelineSynchronous(currentAnimationTime(), false);
 			for(const ConstDataObjectPath& dataPath : state.getObjectsRecursive(PropertyObject::OOClass())) {
 				const PropertyObject* property = static_object_cast<PropertyObject>(dataPath.back());
 
@@ -294,7 +293,7 @@ void ColorLegendOverlayEditor::updateSourcesList()
 void ColorLegendOverlayEditor::colorSourceSelected()
 {
 	if(ColorLegendOverlay* overlay = static_object_cast<ColorLegendOverlay>(editObject())) {
-		undoableTransaction(tr("Select color source"), [&]() {
+		performTransaction(tr("Select color source"), [&]() {
 			QVariant selectedData = static_cast<QComboBox*>(sender())->currentData();
 
 			if(selectedData.canConvert<ColorCodingModifier*>()) {

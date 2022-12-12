@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -94,7 +94,7 @@ private:
 			_positions(std::move(positions)),
 			_selection(std::move(selection)),
 			_simCell(simCell),
-			_csp(ParticlesObject::OOClass().createStandardProperty(request.dataset(), fingerprint.particleCount(), ParticlesObject::CentroSymmetryProperty)),
+			_csp(ParticlesObject::OOClass().createStandardProperty(fingerprint.particleCount(), ParticlesObject::CentroSymmetryProperty)),
 			_inputFingerprint(std::move(fingerprint)),
 			_histogram(std::move(histogram)) {}
 

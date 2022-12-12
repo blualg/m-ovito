@@ -106,20 +106,20 @@ public:
 	virtual TimeInterval validityInterval(const ModifierEvaluationRequest& request) const override;
 
 	/// Returns the range start value.
-	FloatType startValue() const { return startValueController() ? startValueController()->currentFloatValue() : 0; }
+	FloatType startValue() const { return startValueController() ? startValueController()->getFloatValue(AnimationTime(0)) : 0; }
 
 	/// Sets the range start value.
-	void setStartValue(FloatType value) { if(startValueController()) startValueController()->setCurrentFloatValue(value); }
+	void setStartValue(FloatType value) { if(startValueController()) startValueController()->setFloatValue(AnimationTime(0), value); }
 
 	/// Returns the range end value.
-	FloatType endValue() const { return endValueController() ? endValueController()->currentFloatValue() : 0; }
+	FloatType endValue() const { return endValueController() ? endValueController()->getFloatValue(AnimationTime(0)) : 0; }
 
 	/// Sets the range end value.
-	void setEndValue(FloatType value) { if(endValueController()) endValueController()->setCurrentFloatValue(value); }
+	void setEndValue(FloatType value) { if(endValueController()) endValueController()->setFloatValue(AnimationTime(0), value); }
 
 	/// Sets the start and end value to the minimum and maximum value of the selected input property
 	/// determined over the entire animation sequence.
-	bool adjustRangeGlobal(MainThreadOperation& operation);
+	bool adjustRangeGlobal(MainThreadOperation& operation, int startFrame, int endFrame);
 
 	/// Returns the current delegate of this modifier.
 	ColorCodingModifierDelegate* delegate() const {
@@ -137,11 +137,11 @@ public:
 	/// Returns a short piece information (typically a string or color) to be displayed next to the modifier's title in the pipeline editor list.
 	virtual QVariant getPipelineEditorShortInfo(Scene* scene, ModifierApplication* modApp) const override { return sourceProperty().nameWithComponent(); }
 
-public Q_SLOTS:
-
 	/// Sets the start and end value to the minimum and maximum value of the selected input property.
 	/// Returns true if successful.
-	bool adjustRange();
+	bool adjustRange(AnimationTime time);
+
+public Q_SLOTS:
 
 	/// Swaps the minimum and maximum values to reverse the color scale.
 	void reverseRange();

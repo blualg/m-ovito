@@ -52,6 +52,8 @@ SET(SourceFiles
 	app/PluginManager.cpp
 	app/StandaloneApplication.cpp
 	app/UserInterface.cpp
+	app/undo/UndoableOperation.cpp
+	app/undo/UndoStack.cpp
 	oo/CloneHelper.cpp
 	oo/OvitoClass.cpp
 	oo/OvitoObject.cpp
@@ -73,7 +75,6 @@ SET(SourceFiles
 	dataset/animation/controller/PRSTransformationController.cpp
 	dataset/DataSet.cpp
 	dataset/DataSetContainer.cpp
-	dataset/UndoStack.cpp
 	dataset/io/FileImporter.cpp
 	dataset/io/FileExporter.cpp
 	dataset/io/FileSourceImporter.cpp

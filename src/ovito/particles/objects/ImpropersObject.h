@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -42,7 +42,7 @@ class OVITO_PARTICLES_EXPORT ImpropersObject : public PropertyContainer
 		using PropertyContainerClass::PropertyContainerClass;
 
 		/// \brief Create a storage object for standard properties.
-		virtual PropertyPtr createStandardPropertyInternal(DataSet* dataset, size_t elementCount, int type, DataBuffer::InitializationFlags flags, const ConstDataObjectPath& containerPath) const override;
+		virtual PropertyPtr createStandardPropertyInternal(size_t elementCount, int type, DataBuffer::InitializationFlags flags, const ConstDataObjectPath& containerPath) const override;
 
 		/// Generates a human-readable string representation of the data object reference.
 		virtual QString formatDataObjectPath(const ConstDataObjectPath& path) const override { return this->displayName(); }

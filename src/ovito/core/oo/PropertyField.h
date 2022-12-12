@@ -25,7 +25,7 @@
 
 #include <ovito/core/Core.h>
 #include <ovito/core/oo/OvitoObject.h>
-#include <ovito/core/dataset/UndoStack.h>
+#include <ovito/core/app/undo/UndoableOperation.h>
 #include <ovito/core/oo/PropertyFieldDescriptor.h>
 #include <ovito/core/oo/ReferenceEvent.h>
 

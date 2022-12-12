@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -78,16 +78,16 @@ public:
 	/// Data structure holding the precomputed information that is needed to unwrap the particle trajectories.
 	/// For each crossing of a particle through a periodic cell boundary, the map contains one entry specifying
 	/// the particle's unique ID, the time of the crossing, the spatial dimension and the direction (positive or negative).
-	using UnwrapData = std::unordered_multimap<qlonglong, std::tuple<TimePoint, qint8, qint16>>;
+	using UnwrapData = std::unordered_multimap<qlonglong, std::tuple<AnimationTime, qint8, qint16>>;
 
 	/// Data structure holding the precomputed information that is needed to undo flipping of sheared simulation cells in LAMMPS.
-	using UnflipData = std::vector<std::pair<TimePoint, std::array<int,3>>>;
+	using UnflipData = std::vector<std::pair<AnimationTime, std::array<int,3>>>;
 
 	/// Constructor.
 	Q_INVOKABLE UnwrapTrajectoriesModifierApplication(ObjectCreationParams params) : ModifierApplication(params) {}
 
 	/// Indicates the animation time up to which trajectories have already been unwrapped.
-	TimePoint unwrappedUpToTime() const { return _unwrappedUpToTime; }
+	AnimationTime unwrappedUpToTime() const { return _unwrappedUpToTime; }
 
 	/// Returns the list of particle crossings through periodic cell boundaries.
 	const UnwrapData& unwrapRecords() const { return _unwrapRecords; }
@@ -128,7 +128,7 @@ private:
 	SharedFuture<> _unwrapOperation;
 
 	/// The animation time up to which trajectories have already been unwrapped so far.
-	TimePoint _unwrappedUpToTime = TimeNegativeInfinity();
+	AnimationTime _unwrappedUpToTime = AnimationTime::negativeInfinity();
 
 	/// The list of particle crossings through periodic cell boundaries.
 	UnwrapData _unwrapRecords;

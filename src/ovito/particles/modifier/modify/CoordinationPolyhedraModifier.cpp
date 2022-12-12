@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -102,7 +102,7 @@ Future<AsynchronousModifier::EnginePtr> CoordinationPolyhedraModifier::createEng
 	}
 
 	// Create the output data object.
-	DataOORef<SurfaceMesh> mesh = DataOORef<SurfaceMesh>::create(dataset(), ObjectCreationParams::WithoutVisElement, tr("Coordination polyhedra"));
+	DataOORef<SurfaceMesh> mesh = DataOORef<SurfaceMesh>::create(ObjectCreationParams::WithoutVisElement, tr("Coordination polyhedra"));
 	mesh->setIdentifier(input.generateUniqueIdentifier<SurfaceMesh>(QStringLiteral("coord-polyhedra")));
 	mesh->setDataSource(request.modApp());
 	mesh->setDomain(simCell);

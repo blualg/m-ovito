@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -25,6 +25,7 @@
 #include <ovito/gui/base/actions/ViewportModeAction.h>
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
 #include <ovito/gui/desktop/widgets/general/AutocompleteLineEdit.h>
+#include <ovito/gui/desktop/mainwin/data_inspector/DataInspectorPanel.h>
 #include "BondInspectionApplet.h"
 
 namespace Ovito::Particles {
@@ -78,20 +79,11 @@ QWidget* BondInspectionApplet::createWidget()
 	connect(filterExpressionEdit(), &AutocompleteLineEdit::editingFinished, this, [this]() {
 		_pickingMode->resetSelection();
 	});
+	connect(inspectorPanel(), &DataInspectorPanel::selectedPipelineChanged, this, [this]() {
+		_pickingMode->resetSelection();
+	});
 
 	return panel;
-}
-
-/******************************************************************************
-* Updates the contents displayed in the inspector.
-******************************************************************************/
-void BondInspectionApplet::updateDisplay()
-{
-	// Clear selection when a different scene object has been selected.
-	if(pipeline != currentPipeline())
-		_pickingMode->resetSelection();
-
-	PropertyInspectionApplet::updateDisplay(state, pipeline);
 }
 
 /******************************************************************************

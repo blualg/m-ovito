@@ -84,9 +84,6 @@ public:
 	/// \brief If an update request is pending for this viewport, immediately processes it and redraw the viewport.
 	void processUpdateRequest();
 
-	/// \brief Returns whether the rendering of the viewport's contents is currently in progress.
-	bool isRendering() const { return _isRendering; }
-
 	/// \brief Changes the view type.
 	/// \param type The new view type.
 	/// \param keepCameraTransformation When setting the view type to ViewType::VIEW_ORTHO or ViewType::VIEW_PERSPECTIVE,
@@ -245,6 +242,9 @@ public Q_SLOTS:
 	/// \brief Zooms to the extents of the currently selected nodes.
 	void zoomToSelectionExtents(FloatType viewportAspectRatio = 0);
 
+	/// \brief Zooms to the extents of the scene once the scene is ready. This only works for viewports with an associated window.
+	void zoomToSceneExtentsWhenReady();
+
 	/// \brief Zooms to the extents of the given bounding box.
 	void zoomToBox(const Box3& box, FloatType viewportAspectRatio = 0);
 
@@ -255,6 +255,10 @@ Q_SIGNALS:
 
 	/// This signal is emitted when the user has requested a context menu on the viewport widget.
 	void contextMenuRequested(const QPoint& pos);
+
+	/// \brief This signal is emitted whenever this viewport is associated with a different scene.
+	/// \note This signal is NOT emitted when the contents of the scene change.
+    void sceneReplaced(Scene* newScene);
 
 protected:
 
@@ -331,9 +335,6 @@ private:
 
 	/// The scene to be displayed by this viewport.
 	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<Scene>, scene, setScene, PROPERTY_FIELD_NO_SUB_ANIM | PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES);
-
-	/// This flag is true during the rendering phase.
-	bool _isRendering = false;
 
 	/// Describes the current 3D projection used to render the contents of the viewport.
 	ViewProjectionParameters _projParams;

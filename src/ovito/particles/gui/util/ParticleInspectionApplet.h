@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -90,19 +90,6 @@ private:
 		/// Constructor.
 		PickingMode(ParticleInspectionApplet* applet) : ViewportInputMode(applet), _applet(applet) {}
 
-		/// This is called by the system after the input handler has become the active handler.
-		virtual void activated(bool temporaryActivation) override {
-			ViewportInputMode::activated(temporaryActivation);
-			inputManager()->addViewportGizmo(this);
-		}
-
-		/// This is called by the system after the input handler is no longer the active handler.
-		virtual void deactivated(bool temporary) override {
-			if(!temporary)
-				inputManager()->removeViewportGizmo(this);
-			ViewportInputMode::deactivated(temporary);
-		}
-
 		/// Handles the mouse up events for a viewport.
 		virtual void mouseReleaseEvent(ViewportWindowInterface* vpwin, QMouseEvent* event) override;
 
@@ -118,6 +105,22 @@ private:
 				_pickedElements.clear();
 				requestViewportUpdate();
 			}
+		}
+		
+	protected:
+
+		/// This is called by the system after the input handler has become the active handler.
+		virtual void activated(bool temporaryActivation) override {
+			ViewportInputMode::activated(temporaryActivation);
+			inputManager()->addViewportGizmo(this);
+		}
+
+		/// This is called by the system after the input handler is no longer the active handler.
+		virtual void deactivated(bool temporary) override {
+			if(!temporary)
+				inputManager()->removeViewportGizmo(this);
+			_pickedElements.clear();
+			ViewportInputMode::deactivated(temporary);
 		}
 
 	private:

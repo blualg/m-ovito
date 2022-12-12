@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -99,7 +99,7 @@ public:
 /******************************************************************************
 * Creates the widget that contains the plugin specific setting controls.
 ******************************************************************************/
-void ParticleSettingsPage::insertSettingsDialogPage(ApplicationSettingsDialog* settingsDialog, QTabWidget* tabWidget)
+void ParticleSettingsPage::insertSettingsDialogPage(QTabWidget* tabWidget)
 {
 	QWidget* page = new QWidget();
 	tabWidget->addTab(page, tr("Particles"));
@@ -202,7 +202,7 @@ void ParticleSettingsPage::insertSettingsDialogPage(ApplicationSettingsDialog* s
 /******************************************************************************
 * Lets the page save all changed settings.
 ******************************************************************************/
-void ParticleSettingsPage::saveValues(ApplicationSettingsDialog* settingsDialog, QTabWidget* tabWidget)
+void ParticleSettingsPage::saveValues(QTabWidget* tabWidget)
 {
 	// Remove outdated settings branch from old OVITO versions.
 	QSettings settings;

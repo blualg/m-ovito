@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -133,11 +133,11 @@ void CalculateDisplacementsModifierEditor::onSourceButtonClicked(int id)
 	CalculateDisplacementsModifier* mod = static_object_cast<CalculateDisplacementsModifier>(editObject());
 	if(!mod) return;
 
-	undoableTransaction(tr("Set reference source mode"), [mod,id]() {
+	performTransaction(tr("Set reference source mode"), [mod,id]() {
 		if(id == 1) {
 			// Create a file source object, which can be used for loading
 			// the reference configuration from a separate file.
-			mod->setReferenceConfiguration(OORef<FileSource>::create(mod->dataset()));
+			mod->setReferenceConfiguration(OORef<FileSource>::create());
 		}
 		else {
 			mod->setReferenceConfiguration(nullptr);

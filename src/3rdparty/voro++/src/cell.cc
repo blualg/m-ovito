@@ -1488,13 +1488,13 @@ void voronoicell_base::draw_pov(double x,double y,double z,FILE* fp) {
 	int i,j,k;double *ptsp=pts,*pt2;
 	char posbuf1[128],posbuf2[128];
 	for(i=0;i<p;i++,ptsp+=3) {
-		sprintf(posbuf1,"%g,%g,%g",x+*ptsp*0.5,y+ptsp[1]*0.5,z+ptsp[2]*0.5);
+		snprintf(posbuf1,sizeof(posbuf1),"%g,%g,%g",x+*ptsp*0.5,y+ptsp[1]*0.5,z+ptsp[2]*0.5);
 		fprintf(fp,"sphere{<%s>,r}\n",posbuf1);
 		for(j=0;j<nu[i];j++) {
 			k=ed[i][j];
 			if(k<i) {
 				pt2=pts+3*k;
-				sprintf(posbuf2,"%g,%g,%g",x+*pt2*0.5,y+0.5*pt2[1],z+0.5*pt2[2]);
+				snprintf(posbuf2,sizeof(posbuf2),"%g,%g,%g",x+*pt2*0.5,y+0.5*pt2[1],z+0.5*pt2[2]);
 				if(strcmp(posbuf1,posbuf2)!=0) fprintf(fp,"cylinder{<%s>,<%s>,r}\n",posbuf1,posbuf2);
 			}
 		}

@@ -84,7 +84,7 @@ void GSDExporter::closeOutputFile(bool exportCompleted)
 /******************************************************************************
 * Writes the particles of one animation frame to the current output file.
 ******************************************************************************/
-bool GSDExporter::exportData(const PipelineFlowState& state, int frameNumber, TimePoint time, const QString& filePath, MainThreadOperation& operation)
+bool GSDExporter::exportData(const PipelineFlowState& state, int frameNumber, const QString& filePath, MainThreadOperation& operation)
 {
     // Get particles.
     const ParticlesObject* particles = state.expectObject<ParticlesObject>();

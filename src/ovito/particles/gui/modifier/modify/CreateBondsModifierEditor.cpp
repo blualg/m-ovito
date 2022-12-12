@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -93,7 +93,7 @@ void CreateBondsModifierEditor::createUI(const RolloutInsertionParameters& rollo
 	_pairCutoffTable = new QTableView();
 	_pairCutoffTable->verticalHeader()->setVisible(false);
 	_pairCutoffTable->setEnabled(false);
-	_pairCutoffTableModel = new PairCutoffTableModel(_pairCutoffTable);
+	_pairCutoffTableModel = new PairCutoffTableModel(this);
 	_pairCutoffTable->setModel(_pairCutoffTableModel);
 	_pairCutoffTable->verticalHeader()->setDefaultSectionSize(_pairCutoffTable->verticalHeader()->minimumSectionSize());
 	_pairCutoffTable->horizontalHeader()->setStretchLastSection(true);
@@ -206,7 +206,7 @@ bool CreateBondsModifierEditor::PairCutoffTableModel::setData(const QModelIndex&
 		bool ok;
 		FloatType cutoff = (FloatType)value.toDouble(&ok);
 		if(!ok) cutoff = 0;
-		UndoableTransaction::handleExceptions(_modifier->dataset()->undoStack(), tr("Change cutoff"), [this, &index, cutoff]() {
+		editor()->performTransaction(tr("Change cutoff"), [this, &index, cutoff]() {
 			const auto& type1 = _data[index.row()].first;
 			const auto& type2 = _data[index.row()].second;
 			_modifier->setPairwiseCutoff(

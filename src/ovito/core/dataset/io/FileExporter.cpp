@@ -70,14 +70,6 @@ FileExporter::FileExporter(ObjectCreationParams params) : RefTarget(params),
 	_floatOutputPrecision(10),
 	_ignorePipelineErrors(params.loadUserDefaults())
 {
-#if 1
-	// TODO: Set scene to be exported, which defines also the animation interval.
-	OVITO_ASSERT(false); 
-#else
-	// Use the entire animation interval export interval by default.
-	int lastFrame = dataset()->animationSettings()->timeToFrame(dataset()->animationSettings()->animationInterval().end());
-	setEndFrame(lastFrame);
-#endif
 }
 
 /******************************************************************************
@@ -112,6 +104,25 @@ void FileExporter::selectDefaultExportableData(DataSet* dataset, Scene* scene)
 
 	if(!sceneToExport())
 		setSceneToExport(scene);
+
+	// Export the entire frame interval of the selected pipeline by default.
+	if(endFrame() < startFrame()) {
+		if(PipelineSceneNode* pipeline = dynamic_object_cast<PipelineSceneNode>(nodeToExport())) {
+			if(pipeline->dataProvider()) {
+				int nframes = pipeline->dataProvider()->numberOfSourceFrames();
+				int start = pipeline->dataProvider()->sourceFrameToAnimationTime(0).frame();
+				if(start < startFrame()) setStartFrame(start);
+				int end = (pipeline->dataProvider()->sourceFrameToAnimationTime(nframes) - 1).frame();
+				if(end > endFrame()) setEndFrame(end);
+			}
+		}
+	}
+
+	// Export the entire animation interval of the scene when exporting the entire scene.
+	if(sceneToExport() && endFrame() < startFrame()) {
+		setStartFrame(sceneToExport()->animationSettings()->firstFrame());
+		setEndFrame(sceneToExport()->animationSettings()->lastFrame());
+	}
 
 	// By default, export the data of the selected pipeline.
 	if(!nodeToExport() && sceneToExport()) {
@@ -187,7 +198,8 @@ PipelineFlowState FileExporter::getPipelineDataToBeExported(int frame, MainThrea
 		throw Exception(tr("The scene object to be exported is not a data pipeline."));
 
 	// Evaluate pipeline.
-	PipelineEvaluationRequest request(AnimationTime::fromFrame(frame), frame, !ignorePipelineErrors());
+	PipelineEvaluationRequest request(AnimationTime::fromFrame(frame));
+	request.setBreakOnError(!ignorePipelineErrors());
 	PipelineEvaluationFuture future = requestRenderState ? pipeline->evaluateRenderingPipeline(request) : pipeline->evaluatePipeline(request);
 	if(!future.waitForFinished())
 		return {};
@@ -195,7 +207,7 @@ PipelineFlowState FileExporter::getPipelineDataToBeExported(int frame, MainThrea
 
 	if(!ignorePipelineErrors() && state.status().type() == PipelineStatus::Error)
 		throw Exception(tr("Export of animation frame %1 failed, because data pipeline evaluation did not succeed. Status message: %2")
-			.arg(request.frame())
+			.arg(frame)
 			.arg(state.status().text()));
 
 	if(!state)

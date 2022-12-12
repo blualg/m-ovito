@@ -32,7 +32,7 @@
 #include <ovito/core/dataset/scene/PipelineSceneNode.h>
 #include <ovito/core/dataset/io/FileImporter.h>
 #include <ovito/core/dataset/DataSetContainer.h>
-#include <ovito/core/dataset/UndoStack.h>
+#include <ovito/core/app/undo/UndoableOperation.h>
 #include "FileSource.h"
 
 namespace Ovito {
@@ -90,6 +90,8 @@ FileSource::FileSource(ObjectCreationParams params) : BasePipelineSource(params)
 ******************************************************************************/
 bool FileSource::setSource(std::vector<QUrl> sourceUrls, FileSourceImporter* importer, bool autodetectFileSequences, bool keepExistingDataCollection)
 {
+	OVITO_ASSERT(ExecutionContext::current().isValid());
+	
 	// Make relative file paths absolute.
 	for(QUrl& url : sourceUrls) {
 		if(url.isLocalFile()) {
@@ -141,9 +143,6 @@ bool FileSource::setSource(std::vector<QUrl> sourceUrls, FileSourceImporter* imp
 			return true;
 	}
 
-	// Make the import process reversible.
-	UndoableTransaction transaction(ExecutionContext::current().ui(), tr("Set input file"));
-
 	// Make the call to setSource() undoable.
 	class SetSourceOperation : public UndoableOperation {
 	public:
@@ -160,7 +159,7 @@ bool FileSource::setSource(std::vector<QUrl> sourceUrls, FileSourceImporter* imp
 		OORef<FileSourceImporter> _oldImporter;
 		OORef<FileSource> _obj;
 	};
-	transaction.pushIfRecording<SetSourceOperation>(this);
+	pushIfUndoRecording<SetSourceOperation>(this);
 
 	_sourceUrls.set(this, PROPERTY_FIELD(sourceUrls), std::move(sourceUrls));
 	_importer.set(this, PROPERTY_FIELD(importer), importer);
@@ -183,8 +182,6 @@ bool FileSource::setSource(std::vector<QUrl> sourceUrls, FileSourceImporter* imp
 	if(turnOffPatternGeneration)
 		setAutoGenerateFilePattern(false);
 
-	// Commit all performed actions recorded on the undo stack. 
-	transaction.commit();
 	return true;
 }
 
@@ -260,37 +257,35 @@ void FileSource::setListOfFrames(QVector<FileSourceImporter::Frame> frames)
 	// Adjust the global animation length to match the new number of source frames.
 	notifyDependents(ReferenceEvent::AnimationFramesChanged);
 
-	if(dataCollectionFrame() < 0 && !_originallySelectedFilename.contains(QChar('*'))) {
-		// Position time slider to the frame corresponding to the file that was initially picked by the user
-		// in the file selection dialog.
-		for(int frameIndex = 0; frameIndex < _frames.size(); frameIndex++) {
-			if(_frames[frameIndex].sourceFile.fileName() == _originallySelectedFilename) {
-				AnimationTime jumpToTime = sourceFrameToAnimationTime(frameIndex);
-				notifyDependentsImpl(RequestGoToAnimationTimeEvent(this, jumpToTime));
-				break;
+	if(ExecutionContext::isInteractive()) {
+		if(dataCollectionFrame() < 0 && !_originallySelectedFilename.contains(QChar('*'))) {
+			// Position time slider to the frame corresponding to the file that was initially picked by the user
+			// in the file selection dialog.
+			for(int frameIndex = 0; frameIndex < _frames.size(); frameIndex++) {
+				if(_frames[frameIndex].sourceFile.fileName() == _originallySelectedFilename) {
+					AnimationTime jumpToTime = sourceFrameToAnimationTime(frameIndex);
+					notifyDependentsImpl(RequestGoToAnimationTimeEvent(this, jumpToTime));
+					break;
+				}
 			}
 		}
-	}
-	else {
-#if 0 
-		// If trajectory frames have been inserted, reposition time slider to remain at the previously selected frame.
-		if(!previouslySelectedFrame.sourceFile.isEmpty()) {
-			int currentFrameIndex = animationTimeToSourceFrame(dataset()->animationSettings()->time());
-			if(currentFrameIndex >= 0 && currentFrameIndex < _frames.size()) {
-				if(_frames[currentFrameIndex].sourceFile != previouslySelectedFrame.sourceFile) {
-					for(int frameIndex = 0; frameIndex < _frames.size(); frameIndex++) {
-						if(_frames[frameIndex].sourceFile == previouslySelectedFrame.sourceFile) {
-							AnimationTime jumpToTime = sourceFrameToAnimationTime(frameIndex);
-							notifyDependentsImpl(RequestGoToAnimationTimeEvent(this, jumpToTime));
-							break;
+		else {
+			// If trajectory frames have been inserted, reposition time slider to remain at the previously selected frame.
+			if(!previouslySelectedFrame.sourceFile.isEmpty()) {
+				int currentFrameIndex = animationTimeToSourceFrame(ExecutionContext::current().ui().datasetContainer().currentAnimationTime());
+				if(currentFrameIndex >= 0 && currentFrameIndex < _frames.size()) {
+					if(_frames[currentFrameIndex].sourceFile != previouslySelectedFrame.sourceFile) {
+						for(int frameIndex = 0; frameIndex < _frames.size(); frameIndex++) {
+							if(_frames[frameIndex].sourceFile == previouslySelectedFrame.sourceFile) {
+								AnimationTime jumpToTime = sourceFrameToAnimationTime(frameIndex);
+								notifyDependentsImpl(RequestGoToAnimationTimeEvent(this, jumpToTime));
+								break;
+							}
 						}
 					}
 				}
 			}
 		}
-#else
-		OVITO_ASSERT(false); // TODO: To be implemented
-#endif
 	}
 
 	// Notify UI that the list of source frames has changed.
@@ -456,6 +451,8 @@ Future<PipelineFlowState> FileSource::evaluateInternal(const PipelineEvaluationR
 ******************************************************************************/
 SharedFuture<QVector<FileSourceImporter::Frame>> FileSource::requestFrameList(bool forceRescan)
 {
+	OVITO_ASSERT(ExecutionContext::current().isValid());
+
 	// Without an importer object the list of frames is empty.
 	if(!importer())
 		return Future<QVector<FileSourceImporter::Frame>>::createImmediateEmplace();
@@ -519,6 +516,8 @@ TimeInterval FileSource::frameTimeInterval(int frame) const
 ******************************************************************************/
 void FileSource::reloadFrame(bool refetchFiles, int frameIndex)
 {
+	OVITO_ASSERT(ExecutionContext::current().isValid());
+
 	if(!importer())
 		return;
 

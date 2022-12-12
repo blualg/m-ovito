@@ -86,6 +86,7 @@ FileExporterSettingsDialog::FileExporterSettingsDialog(MainWindow& mainWindow, S
 
 	frameRangeLayout->addWidget(new QLabel(tr("From frame:")));
 	_startTimeSpinner = new SpinnerWidget();
+	_startTimeSpinner->setUnit(mainWindow.unitsManager().integerIdentityUnit());
 	_startTimeSpinner->setIntValue(scene.animationSettings()->firstFrame());
 	_startTimeSpinner->setTextBox(new ShortLineEdit());
 	_startTimeSpinner->setMinValue(scene.animationSettings()->firstFrame());
@@ -95,6 +96,7 @@ FileExporterSettingsDialog::FileExporterSettingsDialog(MainWindow& mainWindow, S
 	frameRangeLayout->addSpacing(8);
 	frameRangeLayout->addWidget(new QLabel(tr("To:")));
 	_endTimeSpinner = new SpinnerWidget();
+	_endTimeSpinner->setUnit(mainWindow.unitsManager().integerIdentityUnit());
 	_endTimeSpinner->setIntValue(scene.animationSettings()->lastFrame());
 	_endTimeSpinner->setTextBox(new ShortLineEdit());
 	_endTimeSpinner->setMinValue(scene.animationSettings()->firstFrame());
@@ -104,6 +106,7 @@ FileExporterSettingsDialog::FileExporterSettingsDialog(MainWindow& mainWindow, S
 	frameRangeLayout->addSpacing(8);
 	frameRangeLayout->addWidget(new QLabel(tr("Every Nth frame:")));
 	_nthFrameSpinner = new SpinnerWidget();
+	_nthFrameSpinner->setUnit(mainWindow.unitsManager().integerIdentityUnit());
 	_nthFrameSpinner->setIntValue(_exporter->everyNthFrame());
 	_nthFrameSpinner->setTextBox(new ShortLineEdit());
 	_nthFrameSpinner->setMinValue(1);
@@ -186,7 +189,9 @@ FileExporterSettingsDialog::FileExporterSettingsDialog(MainWindow& mainWindow, S
 
 	// Update exporter whenever a new source pipeline has been selected by the user.
 	connect(_sceneNodeBox, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged), this, [this]() {
-		_exporter->setNodeToExport(static_object_cast<SceneNode>(_sceneNodeBox->currentData().value<OORef<OvitoObject>>()));
+		_mainWindow.handleExceptions([&] {
+			_exporter->setNodeToExport(static_object_cast<SceneNode>(_sceneNodeBox->currentData().value<OORef<OvitoObject>>()));
+		});
 	});
 
 	// Update the list of available data objects whenever the user selects a different source pipeline.
@@ -194,7 +199,9 @@ FileExporterSettingsDialog::FileExporterSettingsDialog(MainWindow& mainWindow, S
 
 	// Update the exporter whenever the user selects a new data object.
 	connect(_dataObjectBox, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged), this, [this]() {
-		_exporter->setDataObjectToExport(_dataObjectBox->currentData().value<DataObjectReference>());
+		_mainWindow.handleExceptions([&] {
+			_exporter->setDataObjectToExport(_dataObjectBox->currentData().value<DataObjectReference>());
+		});
 	});
 
 	// Show the optional UI of the exporter.
@@ -221,38 +228,40 @@ void FileExporterSettingsDialog::updateDataObjectList()
 	// Update the data objects list.
 	_dataObjectBox->clear();
 
-	std::vector<DataObjectClassPtr> objClasses = _exporter->exportableDataObjectClass();
-	if(!objClasses.empty() && _exporter->sceneToExport()) {
-		if(PipelineSceneNode* pipeline = dynamic_object_cast<PipelineSceneNode>(_exporter->nodeToExport())) {
-			if(const PipelineFlowState& state = pipeline->evaluatePipelineSynchronous(_exporter->sceneToExport()->animationSettings()->currentTime(), true)) {
-				for(DataObjectClassPtr clazz : objClasses) {
-					OVITO_ASSERT(clazz != nullptr);
-					for(const ConstDataObjectPath& dataPath : state.data()->getObjectsRecursive(*clazz)) {
-						QString title = dataPath.back()->objectTitle();
-						DataObjectReference dataRef(clazz, dataPath.toString(), title);
-						_dataObjectBox->addItem(title, QVariant::fromValue(dataRef));
-						if(dataRef == _exporter->dataObjectToExport())
-							_dataObjectBox->setCurrentIndex(_dataObjectBox->count() - 1);
+	_mainWindow.handleExceptions([&] {
+		std::vector<DataObjectClassPtr> objClasses = _exporter->exportableDataObjectClass();
+		if(!objClasses.empty() && _exporter->sceneToExport()) {
+			if(PipelineSceneNode* pipeline = dynamic_object_cast<PipelineSceneNode>(_exporter->nodeToExport())) {
+				if(const PipelineFlowState& state = pipeline->evaluatePipelineSynchronous(_exporter->sceneToExport()->animationSettings()->currentTime(), true)) {
+					for(DataObjectClassPtr clazz : objClasses) {
+						OVITO_ASSERT(clazz != nullptr);
+						for(const ConstDataObjectPath& dataPath : state.data()->getObjectsRecursive(*clazz)) {
+							QString title = dataPath.back()->objectTitle();
+							DataObjectReference dataRef(clazz, dataPath.toString(), title);
+							_dataObjectBox->addItem(title, QVariant::fromValue(dataRef));
+							if(dataRef == _exporter->dataObjectToExport())
+								_dataObjectBox->setCurrentIndex(_dataObjectBox->count() - 1);
+						}
 					}
 				}
 			}
-		}
-		if(_dataObjectBox->count() > 1) {
-			_dataObjectBox->setEnabled(true);
-			_exporter->setDataObjectToExport(_dataObjectBox->currentData().value<DataObjectReference>());
-		}
-		else if(_dataObjectBox->count() == 1) {
-			_dataObjectBox->setEnabled(false);
-			_exporter->setDataObjectToExport(_dataObjectBox->currentData().value<DataObjectReference>());
+			if(_dataObjectBox->count() > 1) {
+				_dataObjectBox->setEnabled(true);
+				_exporter->setDataObjectToExport(_dataObjectBox->currentData().value<DataObjectReference>());
+			}
+			else if(_dataObjectBox->count() == 1) {
+				_dataObjectBox->setEnabled(false);
+				_exporter->setDataObjectToExport(_dataObjectBox->currentData().value<DataObjectReference>());
+			}
+			else {
+				_dataObjectBox->setEnabled(false);
+				_dataObjectBox->addItem(tr("<no exportable data>"));
+			}
 		}
 		else {
 			_dataObjectBox->setEnabled(false);
-			_dataObjectBox->addItem(tr("<no exportable data>"));
 		}
-	}
-	else {
-		_dataObjectBox->setEnabled(false);
-	}
+	});
 }
 
 /******************************************************************************
@@ -260,7 +269,9 @@ void FileExporterSettingsDialog::updateDataObjectList()
 ******************************************************************************/
 void FileExporterSettingsDialog::onOk()
 {
-	try {
+	setFocus(); // Remove focus from child widgets to commit newly entered values in text widgets etc.
+
+	_mainWindow.handleExceptions([&] {
 		_exporter->setExportAnimation(_rangeButtonGroup->checkedId() == 1);
 		_exporter->setUseWildcardFilename(_fileGroupButtonGroup ? (_fileGroupButtonGroup->checkedId() == 1) : _exporter->exportAnimation());
 		_exporter->setWildcardFilename(_wildcardTextbox->text());
@@ -269,10 +280,7 @@ void FileExporterSettingsDialog::onOk()
 		_exporter->setEveryNthFrame(_nthFrameSpinner->intValue());
 
 		accept();
-	}
-	catch(const Exception& ex) {
-		_mainWindow.reportError(ex, this);
-	}
+	});
 }
 
 }	// End of namespace

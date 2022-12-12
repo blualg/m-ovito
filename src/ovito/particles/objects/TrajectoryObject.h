@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -42,7 +42,7 @@ class OVITO_PARTICLES_EXPORT TrajectoryObject : public PropertyContainer
 		using PropertyContainerClass::PropertyContainerClass;
 
 		/// Creates a storage object for standard properties.
-		virtual PropertyPtr createStandardPropertyInternal(DataSet* dataset, size_t elementCount, int type, DataBuffer::InitializationFlags flags, const ConstDataObjectPath& containerPath) const override;
+		virtual PropertyPtr createStandardPropertyInternal(size_t elementCount, int type, DataBuffer::InitializationFlags flags, const ConstDataObjectPath& containerPath) const override;
 
 	protected:
 
@@ -65,6 +65,11 @@ public:
 
 	/// \brief Constructor.
 	Q_INVOKABLE TrajectoryObject(ObjectCreationParams params);
+
+private:
+
+	/// The cached bounding box of the trajectory coordinates.
+	Box3 _boundingBox;
 };
 
 }	// End of namespace

@@ -84,7 +84,7 @@ void FreezePropertyModifier::initializeModifier(const ModifierInitializationRequ
 void FreezePropertyModifier::propertyChanged(const PropertyFieldDescriptor* field)
 {
 	// Whenever the selected property class of this modifier changes, update the property references accordingly.
-	if(field == PROPERTY_FIELD(GenericPropertyModifier::subject) && !isBeingLoaded() && !isAboutToBeDeleted() && !dataset()->undoStack().isUndoingOrRedoing()) {
+	if(field == PROPERTY_FIELD(GenericPropertyModifier::subject) && !isBeingLoaded() && !isAboutToBeDeleted() && !isUndoingOrRedoing()) {
 		setSourceProperty(sourceProperty().convertToContainerClass(subject().dataClass()));
 		setDestinationProperty(destinationProperty().convertToContainerClass(subject().dataClass()));
 	}

@@ -107,9 +107,9 @@ Future<AsynchronousModifier::EnginePtr> WignerSeitzAnalysisModifier::createEngin
 	// Create output properties:
 	if(outputCurrentConfig()) {
 		if(referenceIdentifierProperty)
-			engine->setSiteIdentifiers(ParticlesObject::OOClass().createUserProperty(dataset(), posProperty->size(), PropertyObject::Int64, 1, tr("Site Identifier")));
-		engine->setSiteTypes(ParticlesObject::OOClass().createUserProperty(dataset(), posProperty->size(), PropertyObject::Int, 1, tr("Site Type")));
-		engine->setSiteIndices(ParticlesObject::OOClass().createUserProperty(dataset(), posProperty->size(), PropertyObject::Int64, 1, tr("Site Index")));
+			engine->setSiteIdentifiers(ParticlesObject::OOClass().createUserProperty(posProperty->size(), PropertyObject::Int64, 1, tr("Site Identifier")));
+		engine->setSiteTypes(ParticlesObject::OOClass().createUserProperty(posProperty->size(), PropertyObject::Int, 1, tr("Site Type")));
+		engine->setSiteIndices(ParticlesObject::OOClass().createUserProperty(posProperty->size(), PropertyObject::Int64, 1, tr("Site Index")));
 	}
 
 	return engine;
@@ -197,7 +197,6 @@ void WignerSeitzAnalysisModifier::WignerSeitzAnalysisEngine::perform()
 
 	// Create output storage.
 	setOccupancyNumbers(ParticlesObject::OOClass().createUserProperty(
-		positions()->dataset(),
 		siteTypes() ? positions()->size() : refPositions()->size(),
 		PropertyObject::Int, ncomponents, tr("Occupancy")));
 	if(ncomponents > 1 && typemin != 1) {

@@ -23,7 +23,7 @@
 #include <ovito/gui/base/GUIBase.h>
 #include <ovito/core/app/UserInterface.h>
 #include <ovito/core/dataset/DataSetContainer.h>
-#include <ovito/core/dataset/UndoStack.h>
+#include <ovito/core/app/undo/UndoableOperation.h>
 #include <ovito/core/dataset/scene/SelectionSet.h>
 #include <ovito/core/viewport/ViewportConfiguration.h>
 #include <ovito/core/viewport/Viewport.h>
@@ -56,11 +56,9 @@ void SelectionMode::mouseReleaseEvent(ViewportWindowInterface* vpwin, QMouseEven
 		// Select object under mouse cursor.
 		ViewportPickResult pickResult = vpwin->pick(_clickPoint);
 		if(pickResult.isValid() && _viewport->scene()) {
-			if(UndoStack* undoStack = inputManager()->userInterface().undoStack())
-				undoStack->beginCompoundOperation(tr("Select"));
-			_viewport->scene()->selection()->setNode(pickResult.pipelineNode());
-			if(UndoStack* undoStack = inputManager()->userInterface().undoStack())
-				undoStack->endCompoundOperation();
+			inputManager()->userInterface().performTransaction(tr("Select"), [&] {
+				_viewport->scene()->selection()->setNode(pickResult.pipelineNode());
+			});
 		}
 		_viewport = nullptr;
 	}

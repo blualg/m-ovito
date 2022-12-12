@@ -60,7 +60,7 @@ VoxelGridSliceModifierDelegate::VoxelGridSliceModifierDelegate(ObjectCreationPar
 ******************************************************************************/
 PipelineStatus VoxelGridSliceModifierDelegate::apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const PipelineFlowState& inputState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs)
 {
-	OVITO_ASSERT(!dataset()->undoStack().isRecording());
+	OVITO_ASSERT(!isUndoRecording());
 	OVITO_ASSERT(inputState);
 
 	SliceModifier* mod = static_object_cast<SliceModifier>(request.modifier());

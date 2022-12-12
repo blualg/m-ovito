@@ -182,7 +182,7 @@ void GALAMOSTImporter::FrameLoader::loadFile()
 						std::rotate(q.begin(), q.begin() + 1, q.end());
 				}
 				else if(xml.name().compare(QStringLiteral("orientation")) == 0) {
-					DataOORef<PropertyObject> directions = ParticlesObject::OOClass().createUserProperty(dataset(), natoms, PropertyObject::Float, 3, QStringLiteral("Direction"));
+					DataOORef<PropertyObject> directions = ParticlesObject::OOClass().createUserProperty(natoms, PropertyObject::Float, 3, QStringLiteral("Direction"));
 					parsePropertyData(xml, directions);
 					ConstPropertyAccess<Vector3> directionsAccess(directions);
 					const Vector3* dir = directionsAccess.cbegin();

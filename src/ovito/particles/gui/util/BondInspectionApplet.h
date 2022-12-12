@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -54,9 +54,6 @@ public:
 	/// Lets the applet create the UI widget that is to be placed into the data inspector panel.
 	virtual QWidget* createWidget() override;
 
-	/// Lets the applet update the contents displayed in the inspector.
-	virtual void updateDisplay() override;
-
 	/// This is called when the applet is no longer visible.
 	virtual void deactivate() override;
 
@@ -89,6 +86,14 @@ private:
 				_pickedElements.clear();
 				requestViewportUpdate();
 			}
+		}
+
+	protected:
+
+		/// This is called by the system after the input handler is no longer the active handler.
+		virtual void deactivated(bool temporary) override {
+			_pickedElements.clear();
+			ViewportInputMode::deactivated(temporary);
 		}
 
 	private:

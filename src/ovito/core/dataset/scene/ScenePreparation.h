@@ -26,6 +26,7 @@
 #include <ovito/core/Core.h>
 #include <ovito/core/dataset/pipeline/PipelineEvaluation.h>
 #include <ovito/core/utilities/concurrent/TaskWatcher.h>
+#include <ovito/core/utilities/concurrent/MainThreadOperation.h>
 #include "SceneNode.h"
 
 namespace Ovito {
@@ -48,9 +49,8 @@ public:
 	/// Returns the abstract user interface in which this object operates.
 	UserInterface& userInterface() const { return _userInterface; }
 
-	/// Returns a future that get fulfilled once all data pipelines in the scene
-	/// have been completely evaluated at the current animation time.
-	SharedFuture<> whenReady();
+	/// Returns a future that gets fulfilled once the scene is ready.
+	SharedFuture<> future();
 
 Q_SIGNALS:
 
@@ -71,6 +71,9 @@ protected:
 	/// Is called when the value of a reference field of this RefMaker changes.
 	virtual void referenceReplaced(const PropertyFieldDescriptor* field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex) override;
 
+	/// Requests the (re-)evaluation of all data pipelines next time execution returns to the event loop.
+	void restartPreparation();
+
 private Q_SLOTS:
 
 	/// Is called when the evaluation of a pipeline in the scene has finished.
@@ -81,11 +84,6 @@ private:
 	/// Requests the (re-)evaluation of all data pipelines in the current scene.
 	Q_INVOKABLE void makeReady(bool forceReevaluation);
 
-	/// Requests the (re-)evaluation of all data pipelines next time execution returns to the event loop.
-	void makeReadyLater(bool forceReevaluation) { 
-		QMetaObject::invokeMethod(this, "makeReady", Qt::QueuedConnection, Q_ARG(bool, forceReevaluation));
-	}
-
 private:
 
 	/// The scene being prepared.
@@ -93,9 +91,6 @@ private:
 
 	/// The abstract user interface in which this object operates.
 	UserInterface& _userInterface;
-
-	/// The promise to make the scene ready.
-	Promise<> _sceneReadyPromise;
 
 	/// The animation frame at which the scene was made ready. This is used to detect time changes.
 	int _completedFrame;
@@ -106,8 +101,17 @@ private:
 	/// The current pipeline evaluation that is in progress.
 	PipelineEvaluationFuture _pipelineEvaluation;
 
-	/// The watcher object that is used to monitor the evaluation of data pipelines in the scene.
+	/// To get notified when the evaluation of the current data pipeline finishes.
 	TaskWatcher _pipelineEvaluationWatcher;
+
+	/// The promise that is fulfilled once the scene is ready.
+	Promise<> _promise;
+
+	/// A shared future which reaches the completed state once the scene is ready.
+	SharedFuture<> _future;
+
+	/// Indicates that a restart of the preparation has already been scheduled.
+	bool _isRestartScheduled = false;
 };
 
 }	// End of namespace

@@ -72,8 +72,8 @@ public:
     ~Task();
 #endif
 
-    /// Returns the task object that is currently making the call to this function.
-    static Task* currentTask() noexcept;
+    /// Returns the task object that is making the call to this function.
+    static Task*& currentTask() noexcept;
 
     /// Returns whether this shared state has been canceled by a previous call to cancel().
     bool isCanceled() const { return (_state.load(std::memory_order_relaxed) & Canceled); }
@@ -308,13 +308,13 @@ protected:
     QMutex& taskMutex() const { return _mutex; }
 
     /// Registers a task object as the current task in the current thread.
-    static void setCurrentTask(Task* task) noexcept;
+    static void setCurrentTask(Task* task) noexcept { currentTask() = task; }
 
     /// RAII helper class that can be used to register some task as the currently active task.
     class OVITO_CORE_EXPORT Scope
     {
     public:
-        explicit Scope(Task* task) noexcept : _previous(Task::currentTask()) { Task::setCurrentTask(task); }
+        explicit Scope(Task* task) noexcept : _previous(std::exchange(Task::currentTask(), task)) {}
         ~Scope() { Task::setCurrentTask(_previous); }
     private:
         Task* _previous;

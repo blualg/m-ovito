@@ -33,7 +33,7 @@ IMPLEMENT_OVITO_CLASS(FHIAimsExporter);
 /******************************************************************************
 * Writes the particles of one animation frame to the current output file.
 ******************************************************************************/
-bool FHIAimsExporter::exportData(const PipelineFlowState& state, int frameNumber, TimePoint time, const QString& filePath, MainThreadOperation& operation)
+bool FHIAimsExporter::exportData(const PipelineFlowState& state, int frameNumber, const QString& filePath, MainThreadOperation& operation)
 {
 	// Get particle positions and types.
 	const ParticlesObject* particles = state.expectObject<ParticlesObject>();

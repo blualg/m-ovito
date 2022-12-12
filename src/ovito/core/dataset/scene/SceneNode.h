@@ -134,7 +134,7 @@ public:
 	/// it wants to continue visit more nodes. A return value of false
 	/// leads to early termination and no further nodes are visited.
 	template<class Function>
-	bool visitChildren(Function fn) const {
+	bool visitChildren(Function&& fn) const {
 		for(SceneNode* child : children()) {
 			if(!fn(child) || !child->visitChildren(fn))
 				return false;
@@ -153,7 +153,7 @@ public:
 	/// it wants to continue visit more nodes. A return value of false
 	/// leads to early termination and no further nodes are visited.
 	template<class Function>
-	bool visitObjectNodes(Function fn) const {
+	bool visitObjectNodes(Function&& fn) const {
 		for(SceneNode* child : children()) {
 			if(PipelineSceneNode* objNode = dynamic_object_cast<PipelineSceneNode>(child)) {
 				if(!fn(objNode))
@@ -221,12 +221,6 @@ public:
 	/// Returns whether this scene node (or one of its parents in the node hierarchy) has been hidden 
 	/// specifically in the given viewport.
 	bool isHiddenInViewport(Viewport* vp, bool includeHierarchyParent) const;
-
-#if 0 // TODO: Remove dead code
-	/// Returns the animation time at which this scene node is being rendered in the GUI.
-	/// This method assumes that the scene node is only part of a single scene.
-	std::optional<AnimationTime> currentAnimationTime() const;
-#endif
 
 protected:
 

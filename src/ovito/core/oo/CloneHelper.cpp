@@ -23,7 +23,7 @@
 #include <ovito/core/Core.h>
 #include <ovito/core/oo/RefTarget.h>
 #include <ovito/core/dataset/DataSet.h>
-#include <ovito/core/dataset/UndoStack.h>
+#include <ovito/core/app/undo/UndoableOperation.h>
 #include "CloneHelper.h"
 
 namespace Ovito {
@@ -38,6 +38,8 @@ namespace Ovito {
 ******************************************************************************/
 RefTarget* CloneHelper::cloneObjectImpl(const RefTarget* obj, bool deepCopy)
 {
+	OVITO_ASSERT(ExecutionContext::current().isValid());
+
 	if(obj == nullptr) 
 		return nullptr;
 

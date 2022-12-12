@@ -34,7 +34,7 @@ class AnimationTime final
 public:
 
 	using value_type = std::int64_t;
-	Q_DECL_CONSTEXPR static value_type TicksPerFrame = 1000;
+	Q_DECL_CONSTEXPR static value_type TicksPerFrame = 1;
 
 	/// Default constructor.
 	Q_DECL_CONSTEXPR AnimationTime() noexcept : _value(0) {}
@@ -97,7 +97,16 @@ public:
 	/// \param time Reference to a variable where the parsed data will be stored.
 	/// \return The input stream \a stream.
 	friend LoadStream& operator>>(LoadStream& stream, AnimationTime& time) {
-		stream >> time._value;
+		if(stream.formatVersion() >= 30009) {
+			stream >> time._value;
+		}
+		else {
+			// Backward compatibility with OVITO 3.7: Old 'TimePoint' data type was a simple int, and time
+			// was measured in ticks (4800 ticks per second).
+			int timePoint;
+			stream >> timePoint;
+			time._value = timePoint;
+		}
 		return stream;
 	}
 

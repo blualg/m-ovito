@@ -34,7 +34,6 @@
 #include <ovito/core/dataset/io/FileSource.h>
 #include <ovito/core/utilities/io/FileManager.h>
 #include <ovito/core/app/Application.h>
-#include <ovito/core/viewport/ViewportConfiguration.h>
 #include <ovito/core/app/PluginManager.h>
 #include "FileSourceEditor.h"
 #include "FileSourcePlaybackRateEditor.h"
@@ -124,55 +123,46 @@ void FileSourceEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 	_fileSeriesLabel->setFont(smallFont);
 	gridlayout2->addWidget(_fileSeriesLabel, 1, 1);
 
-	if(!parentEditor()) {
+	QGroupBox* trajectoryBox = new QGroupBox(tr("Trajectory"), rollout);
+	layout->addWidget(trajectoryBox);
+	QGridLayout* gridlayout3 = new QGridLayout(trajectoryBox);
+	gridlayout3->setContentsMargins(4,4,4,4);
+	gridlayout3->setVerticalSpacing(2);
+	gridlayout3->setColumnStretch(1, 1);
 
-		QGroupBox* trajectoryBox = new QGroupBox(tr("Trajectory"), rollout);
-		layout->addWidget(trajectoryBox);
-		QGridLayout* gridlayout3 = new QGridLayout(trajectoryBox);
-		gridlayout3->setContentsMargins(4,4,4,4);
-		gridlayout3->setVerticalSpacing(2);
-		gridlayout3->setColumnStretch(1, 1);
+	label = new QLabel(tr("Current frame:"));
+	maxLabelWidth = std::max(label->sizeHint().width(), maxLabelWidth);
+	gridlayout3->addWidget(label, 0, 0);
+	_framesListBox = new QComboBox();
+	_framesListBox->setEditable(false);
+	// To improve performance of drop-down list display:
+	_framesListBox->setSizeAdjustPolicy(QComboBox::AdjustToMinimumContentsLengthWithIcon);
+	static_cast<QListView*>(_framesListBox->view())->setUniformItemSizes(true);
+	static_cast<QListView*>(_framesListBox->view())->setLayoutMode(QListView::Batched);
+	_framesListModel = new QStringListModel(this);
+	_framesListBox->setModel(_framesListModel);
+	connect(_framesListBox, qOverload<int>(&QComboBox::activated), this, &FileSourceEditor::onFrameSelected);
+	gridlayout3->addWidget(_framesListBox, 0, 1, 1, 2);
+	_timeSeriesLabel = new ElidedTextLabel(Qt::ElideRight);
+	_timeSeriesLabel->setFont(smallFont);
+	gridlayout3->addWidget(_timeSeriesLabel, 1, 1, 1, 2);
 
-		label = new QLabel(tr("Current frame:"));
-		maxLabelWidth = std::max(label->sizeHint().width(), maxLabelWidth);
-		gridlayout3->addWidget(label, 0, 0);
-		_framesListBox = new QComboBox();
-		_framesListBox->setEditable(false);
-		// To improve performance of drop-down list display:
-		_framesListBox->setSizeAdjustPolicy(QComboBox::AdjustToMinimumContentsLengthWithIcon);
-		static_cast<QListView*>(_framesListBox->view())->setUniformItemSizes(true);
-		static_cast<QListView*>(_framesListBox->view())->setLayoutMode(QListView::Batched);
-		_framesListModel = new QStringListModel(this);
-		_framesListBox->setModel(_framesListModel);
-		connect(_framesListBox, qOverload<int>(&QComboBox::activated), this, &FileSourceEditor::onFrameSelected);
-		gridlayout3->addWidget(_framesListBox, 0, 1);
-		_timeSeriesLabel = new ElidedTextLabel(Qt::ElideRight);
-		_timeSeriesLabel->setFont(smallFont);
-		gridlayout3->addWidget(_timeSeriesLabel, 1, 1);
+	label = new QLabel(tr("Playback ratio:"));
+	maxLabelWidth = std::max(label->sizeHint().width(), maxLabelWidth);
+	gridlayout3->addWidget(label, 2, 0);
 
- 		label = new QLabel(tr("Playback ratio:"));
-		maxLabelWidth = std::max(label->sizeHint().width(), maxLabelWidth);
-		gridlayout3->addWidget(label, 2, 0);
-
-		QHBoxLayout* sublayout = new QHBoxLayout();
-		sublayout->setContentsMargins(0,0,0,0);
-		sublayout->setSpacing(6);
-		gridlayout3->addLayout(sublayout, 2, 1);
-
-		_playbackRatioDisplay = new QLabel(tr("1 / 1"));
-		sublayout->addWidget(_playbackRatioDisplay);
-		sublayout->addStretch(1);
-		_editPlaybackBtn = new QPushButton(tr("Change..."));
-		sublayout->addWidget(_editPlaybackBtn);
-		connect(_editPlaybackBtn, &QPushButton::clicked, this, [&]() {
-			if(!editObject()) return;
-			ModalPropertiesEditorDialog(editObject(), new FileSourcePlaybackRateEditor(), container(), 
-				mainWindow(), tr("Configure Trajectory Playback"), tr("Change trajectory playback"), "manual:scene_objects.file_source.configure_playback").exec();
-			updateDisplayedInformation();
-		});
-		
-		gridlayout3->setColumnMinimumWidth(0, maxLabelWidth);
-	}
+	_playbackRatioDisplay = new QLabel(tr("1 / 1"));
+	gridlayout3->addWidget(_playbackRatioDisplay, 2, 1);
+	_editPlaybackBtn = new QPushButton(tr("Change..."));
+	gridlayout3->addWidget(_editPlaybackBtn, 2, 2);
+	connect(_editPlaybackBtn, &QPushButton::clicked, this, [&]() {
+		if(!editObject()) return;
+		ModalPropertiesEditorDialog(editObject(), OORef<FileSourcePlaybackRateEditor>::create(), container(), 
+			mainWindow(), tr("Configure Trajectory Playback"), tr("Change trajectory playback"), "manual:scene_objects.file_source.configure_playback").exec();
+		updateDisplayedInformation();
+	});
+	
+	gridlayout3->setColumnMinimumWidth(0, maxLabelWidth);
 	gridlayout1->setColumnMinimumWidth(0, maxLabelWidth);
 	gridlayout2->setColumnMinimumWidth(0, maxLabelWidth);
 
@@ -207,7 +197,7 @@ void FileSourceEditor::onPickLocalInputFile()
 	FileSource* fileSource = static_object_cast<FileSource>(editObject());
 	if(!fileSource) return;
 
-	try {
+	performTransaction(tr("Import new file"), [&] {
 		QUrl newSourceUrl;
 		OvitoClassPtr importerType;
 		QString importerFormat;
@@ -241,10 +231,7 @@ void FileSourceEditor::onPickLocalInputFile()
 
 		// Set the new input location.
 		importNewFile(fileSource, newSourceUrl, importerType, importerFormat, createOperation());
-	}
-	catch(const Exception& ex) {
-		mainWindow().reportError(ex);
-	}
+	});
 }
 
 /******************************************************************************
@@ -252,10 +239,10 @@ void FileSourceEditor::onPickLocalInputFile()
 ******************************************************************************/
 void FileSourceEditor::onPickRemoteInputFile()
 {
-	FileSource* fileSource = static_object_cast<FileSource>(editObject());
+	OORef<FileSource> fileSource = static_object_cast<FileSource>(editObject());
 	if(!fileSource) return;
 
-	try {
+	performTransaction(tr("Import new file"), [&] {
 		QUrl newSourceUrl;
 		OvitoClassPtr importerType;
 		QString importerFormat;
@@ -282,10 +269,7 @@ void FileSourceEditor::onPickRemoteInputFile()
 
 		// Set the new input location.
 		importNewFile(fileSource, newSourceUrl, importerType, importerFormat, createOperation());
-	}
-	catch(const Exception& ex) {
-		mainWindow().reportError(ex);
-	}
+	});
 }
 
 /******************************************************************************
@@ -300,7 +284,7 @@ bool FileSourceEditor::importNewFile(FileSource* fileSource, const QUrl& url, Ov
 	if(!importerType) {
 
 		// Detect file format.
-		Future<OORef<FileImporter>> importerFuture = FileImporter::autodetectFileFormat(fileSource, url, fileSource->importer());
+		Future<OORef<FileImporter>> importerFuture = FileImporter::autodetectFileFormat(url, fileSource->importer());
 		if(!importerFuture.waitForFinished())
 			return false;
 
@@ -348,9 +332,6 @@ bool FileSourceEditor::importNewFile(FileSource* fileSource, const QUrl& url, Ov
 			keepExistingDataCollection = true;
 	}
 
-	// Temporarily suppress viewport updates while setting up the newly imported data.
-	ViewportSuspender noVPUpdate(mainWindow());
-
 	// Show the optional user interface (which is provided by the corresponding FileImporterEditor class) for the new importer.
 	for(OvitoClassPtr clazz = &newImporter->getOOClass(); clazz != nullptr; clazz = clazz->superClass()) {
 		OvitoClassPtr editorClass = PropertiesEditor::registry().getEditorClass(clazz);
@@ -373,10 +354,12 @@ bool FileSourceEditor::importNewFile(FileSource* fileSource, const QUrl& url, Ov
 void FileSourceEditor::onReloadFrame()
 {
 	if(FileSource* fileSource = static_object_cast<FileSource>(editObject())) {
-		// Request a complete reloading of the current frame from the external file,
-		// including a refresh of the file from the remote location if it is not a 
-		// local file.
-		fileSource->reloadFrame(true, fileSource->dataCollectionFrame());
+		handleExceptions([&] {
+			// Request a complete reloading of the current frame from the external file,
+			// including a refresh of the file from the remote location if it is not a 
+			// local file.
+			fileSource->reloadFrame(true, fileSource->dataCollectionFrame());
+		});
 	}
 }
 
@@ -386,14 +369,16 @@ void FileSourceEditor::onReloadFrame()
 void FileSourceEditor::onReloadAnimation()
 {
 	if(FileSource* fileSource = static_object_cast<FileSource>(editObject())) {
-		// Let the FileSource update the list of source animation frames.
-		// After the update is complete, jump to the last one of the newly added animation frames.
-		int oldFrameCount = fileSource->frames().size();
-		fileSource->updateListOfFrames(true).finally(fileSource->executor(), [fileSource, oldFrameCount, anim=OORef<AnimationSettings>(mainWindow().datasetContainer().activeAnimationSettings())](Task& task) {
-			if(!task.isCanceled() && fileSource->frames().size() > oldFrameCount && anim) {
-				AnimationTime time = fileSource->sourceFrameToAnimationTime(fileSource->frames().size() - 1);				
-				anim->setCurrentFrame(time.frame());
-			}
+		handleExceptions([&] {
+			// Let the FileSource update the list of source animation frames.
+			// After the update is complete, jump to the last one of the newly added animation frames.
+			int oldFrameCount = fileSource->frames().size();
+			fileSource->updateListOfFrames(true).finally(fileSource->executor(), [fileSource, oldFrameCount, anim=OORef<AnimationSettings>(mainWindow().datasetContainer().activeAnimationSettings())](Task& task) {
+				if(!task.isCanceled() && fileSource->frames().size() > oldFrameCount && anim) {
+					AnimationTime time = fileSource->sourceFrameToAnimationTime(fileSource->frames().size() - 1);				
+					anim->setCurrentFrame(time.frame());
+				}
+			});
 		});
 	}
 }
@@ -458,7 +443,7 @@ void FileSourceEditor::updateDisplayedInformation()
 		wildcardPattern = fileSource->sourceUrls().front().fileName();
 	}
 	_wildcardPatternTextbox->setText(wildcardPattern);
-	_wildcardPatternTextbox->setEnabled(true);
+	_wildcardPatternTextbox->setEnabled(fileSource->importer());
 
 	_sourcePathLabel->setText(fileSource->currentDirectoryPath());
 	_filenameLabel->setText(fileSource->currentFileName());

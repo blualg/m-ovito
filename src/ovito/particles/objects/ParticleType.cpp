@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -140,51 +140,53 @@ bool ParticleType::loadShapeMesh(const QUrl& sourceUrl, MainThreadOperation& ope
     operation.setProgressText(tr("Loading mesh geometry file %1").arg(sourceUrl.fileName()));
 
 	// Temporarily disable undo recording while loading the geometry data.
-	UndoSuspender noUndo(this);
+	DataOORef<TriMeshObject> meshObj;
+	{
+		UndoSuspender noUndo;
 
-	OORef<FileSourceImporter> importer;
-	if(!importerClass) {
+		OORef<FileSourceImporter> importer;
+		if(!importerClass) {
 
-		// Inspect input file to detect its format.
-		Future<OORef<FileImporter>> importerFuture = FileImporter::autodetectFileFormat(dataset(), sourceUrl);
-		if(!importerFuture.waitForFinished())
+			// Inspect input file to detect its format.
+			Future<OORef<FileImporter>> importerFuture = FileImporter::autodetectFileFormat(sourceUrl);
+			if(!importerFuture.waitForFinished())
+				return false;
+
+			importer = dynamic_object_cast<FileSourceImporter>(importerFuture.result());
+		}
+		else {
+			importer = dynamic_object_cast<FileSourceImporter>(importerClass->createInstance());
+			if(importer)
+				importer->setSelectedFileFormat(importerFormat);
+		}
+		if(!importer)
+			throw Exception(tr("Could not detect the format of the geometry file. The format might not be supported."));
+
+		// Create a temporary FileSource for loading the geometry data from the file.
+		OORef<FileSource> fileSource = OORef<FileSource>::create();
+		fileSource->setSource({sourceUrl}, importer, false);
+		SharedFuture<PipelineFlowState> stateFuture = fileSource->evaluate(PipelineEvaluationRequest(AnimationTime(0)));
+		if(!stateFuture.waitForFinished())
 			return false;
 
-		importer = dynamic_object_cast<FileSourceImporter>(importerFuture.result());
+		// Check if the FileSource has provided some useful data.
+		PipelineFlowState state = stateFuture.result();
+		if(state.status().type() == PipelineStatus::Error) {
+			operation.cancel();
+			return false;
+		}
+		if(!state)
+			throw Exception(tr("The loaded geometry file does not provide any valid mesh data."));
+		meshObj = DataOORef<TriMeshObject>::makeCopy(state.expectObject<TriMeshObject>());
+
+		// Throw away any visual elements attached to the mesh object.
+		meshObj->setVisElement(nullptr);
+
+		// Show sharp edges of the mesh.
+		meshObj->determineEdgeVisibility();
+
+		// Turn on undo recording again. The final shape assignment should be recorded on the undo stack.
 	}
-	else {
-		importer = dynamic_object_cast<FileSourceImporter>(importerClass->createInstance(dataset()));
-		if(importer)
-			importer->setSelectedFileFormat(importerFormat);
-	}
-	if(!importer)
-		throw Exception(tr("Could not detect the format of the geometry file. The format might not be supported."));
-
-	// Create a temporary FileSource for loading the geometry data from the file.
-	OORef<FileSource> fileSource = OORef<FileSource>::create(dataset());
-	fileSource->setSource({sourceUrl}, importer, false);
-	SharedFuture<PipelineFlowState> stateFuture = fileSource->evaluate(PipelineEvaluationRequest(0));
-	if(!stateFuture.waitForFinished())
-		return false;
-
-	// Check if the FileSource has provided some useful data.
-	PipelineFlowState state = stateFuture.result();
-	if(state.status().type() == PipelineStatus::Error) {
-		operation.cancel();
-		return false;
-	}
-	if(!state)
-		throw Exception(tr("The loaded geometry file does not provide any valid mesh data."));
-	DataOORef<TriMeshObject> meshObj = DataOORef<TriMeshObject>::makeCopy(state.expectObject<TriMeshObject>());
-
-	// Throw away any visual elements attached to the mesh object.
-	meshObj->setVisElement(nullptr);
-
-	// Show sharp edges of the mesh.
-	meshObj->determineEdgeVisibility();
-
-	// Turn on undo recording again. The final shape assignment should be recorded on the undo stack.
-	noUndo.reset();
 	setShapeMesh(std::move(meshObj));
 
 	// Also switch the particle type's visualization shape to mesh-based.

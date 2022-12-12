@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2019 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -76,7 +76,7 @@ void MicrostructurePhaseEditor::createUI(const RolloutInsertionParameters& rollo
 			if(index.column() == 0 && role == Qt::CheckStateRole) {
 				if(ElementType* stype = static_object_cast<ElementType>(objectAtIndex(index.row()))) {
 					bool enabled = (value.toInt() == Qt::Checked);
-					undoableTransaction(tr("Enable/disable type"), [stype, enabled]() {
+					performTransaction(tr("Enable/disable type"), [stype, enabled]() {
 						stype->setEnabled(enabled);
 					});
 					return true;
@@ -136,7 +136,7 @@ void MicrostructurePhaseEditor::onDoubleClickBurgersFamily(const QModelIndex& in
 	if(!newColor.isValid() || newColor == oldColor)
 		return;
 
-	undoableTransaction(tr("Change Burgers vector family color"), [family, &newColor]() {
+	performTransaction(tr("Change Burgers vector family color"), [family, &newColor]() {
 		family->setColor(Color(newColor));
 	});
 }

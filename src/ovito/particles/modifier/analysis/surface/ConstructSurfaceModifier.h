@@ -95,7 +95,7 @@ private:
 			_selection(std::move(selection)),
 			_mesh(std::move(mesh)),
 			_particleProperties(std::move(particleProperties)),
-			_surfaceDistances(computeSurfaceDistance ? ParticlesObject::OOClass().createUserProperty(request.dataset(), _positions->size(), PropertyObject::Float, 1, tr("Surface Distance")) : nullptr) {}
+			_surfaceDistances(computeSurfaceDistance ? ParticlesObject::OOClass().createUserProperty(_positions->size(), PropertyObject::Float, 1, tr("Surface Distance")) : nullptr) {}
 
 		/// Returns the computed total surface area.
 		FloatType surfaceArea() const { return (FloatType)_totalSurfaceArea; }
@@ -164,8 +164,8 @@ private:
 			_smoothingLevel(smoothingLevel),
 			_identifyRegions(identifyRegions),
 			_totalCellVolume(this->mesh()->domain() ? this->mesh()->domain()->volume3D() : 0.0),
-			_surfaceParticleSelection(selectSurfaceParticles ? ParticlesObject::OOClass().createStandardProperty(request.dataset(), this->positions()->size(), ParticlesObject::SelectionProperty, DataBuffer::InitializeMemory) : nullptr),
-			_particleRegionIds(mapParticlesToRegions ? ParticlesObject::OOClass().createUserProperty(request.dataset(), this->positions()->size(), PropertyObject::Int, 1, tr("Region")) : nullptr) 
+			_surfaceParticleSelection(selectSurfaceParticles ? ParticlesObject::OOClass().createStandardProperty(this->positions()->size(), ParticlesObject::SelectionProperty, DataBuffer::InitializeMemory) : nullptr),
+			_particleRegionIds(mapParticlesToRegions ? ParticlesObject::OOClass().createUserProperty(this->positions()->size(), PropertyObject::Int, 1, tr("Region")) : nullptr) 
 			{}
 
 		/// Computes the modifier's results and stores them in this object for later retrieval.

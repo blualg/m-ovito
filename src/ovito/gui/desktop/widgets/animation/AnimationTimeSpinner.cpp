@@ -35,6 +35,7 @@ using namespace std;
 ******************************************************************************/
 AnimationTimeSpinner::AnimationTimeSpinner(MainWindow& mainWindow, QWidget* parent) : SpinnerWidget(parent), _mainWindow(mainWindow)
 {
+	setUnit(mainWindow.unitsManager().integerIdentityUnit());
 	connect(this, &SpinnerWidget::spinnerValueChanged, this, &AnimationTimeSpinner::onSpinnerValueChanged);
 	connect(&mainWindow.datasetContainer(), &DataSetContainer::currentFrameChanged, this, &AnimationTimeSpinner::onCurrentFrameChanged);
 	connect(&mainWindow.datasetContainer(), &DataSetContainer::animationIntervalChanged, this, &AnimationTimeSpinner::onIntervalChanged);

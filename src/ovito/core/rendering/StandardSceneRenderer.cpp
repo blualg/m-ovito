@@ -45,7 +45,7 @@ StandardSceneRenderer::StandardSceneRenderer(ObjectCreationParams params) : Scen
 /******************************************************************************
 * Prepares the renderer for rendering one or more frames.
 ******************************************************************************/
-bool StandardSceneRenderer::startRender(const RenderSettings& settings, const QSize& frameBufferSize, MixedKeyCache& visCache)
+bool StandardSceneRenderer::startRender(const RenderSettings* settings, const QSize& frameBufferSize, MixedKeyCache& visCache)
 {
 	OVITO_ASSERT(!_internalRenderer);
 

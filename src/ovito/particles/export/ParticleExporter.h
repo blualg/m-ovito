@@ -42,7 +42,7 @@ public:
 
 	/// \brief Evaluates the pipeline of an PipelineSceneNode and makes sure that the data to be
 	///        exported contains particles and throws an exception if not.
-	PipelineFlowState getParticleData(TimePoint time, MainThreadOperation& operation) const;
+	PipelineFlowState getParticleData(int frame, MainThreadOperation& operation) const;
 
 	/// \brief Returns the type(s) of data objects that this exporter service can export.
 	virtual std::vector<DataObjectClassPtr> exportableDataObjectClass() const override {
@@ -67,16 +67,15 @@ protected:
 	CompressedTextWriter& textStream() { return *_outputStream; }
 
 	/// \brief Exports a single animation frame to the current output file.
-	virtual bool exportFrame(int frameNumber, TimePoint time, const QString& filePath, MainThreadOperation& operation) override;
+	virtual bool exportFrame(int frameNumber, const QString& filePath, MainThreadOperation& operation) override;
 
 	/// \brief Writes the particle data of one animation frame to the current output file.
 	/// \param state The data to be exported.
 	/// \param frameNumber The animation frame to be written to the output file.
-	/// \param time The animation time to be written to the output file.
 	/// \param filePath The path of the output file.
 	/// \throws Exception on error.
 	/// \return \a false when the operation has been canceled by the user; \a true on success.
-	virtual bool exportData(const PipelineFlowState& state, int frameNumber, TimePoint time, const QString& filePath, MainThreadOperation& operation) = 0;
+	virtual bool exportData(const PipelineFlowState& state, int frameNumber, const QString& filePath, MainThreadOperation& operation) = 0;
 
 private:
 

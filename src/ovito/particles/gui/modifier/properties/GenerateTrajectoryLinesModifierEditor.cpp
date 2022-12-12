@@ -161,9 +161,9 @@ void GenerateTrajectoryLinesModifierEditor::onRegenerateTrajectory()
 	GenerateTrajectoryLinesModifier* modifier = static_object_cast<GenerateTrajectoryLinesModifier>(editObject());
 	if(!modifier) return;
 
-	undoableTransaction(tr("Generate trajectory"), [&]() {
+	performTransaction(tr("Generate trajectory"), [&]() {
 		ProgressDialog progressDialog(container(), mainWindow(), tr("Generating trajectory lines"));
-		modifier->generateTrajectories(progressDialog);
+		modifier->generateTrajectories(currentAnimationTime(), progressDialog);
 	});
 }
 

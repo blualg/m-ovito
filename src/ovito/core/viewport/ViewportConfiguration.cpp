@@ -77,30 +77,6 @@ bool ViewportConfiguration::referenceEvent(RefTarget* source, const ReferenceEve
 }
 
 /******************************************************************************
-* Return true if there is currently a rendering operation going on.
-* No new windows or dialogs should be shown during this phase
-* to prevent an infinite update loop.
-******************************************************************************/
-bool ViewportConfiguration::isRendering() const
-{
-	// Check if any of the viewport windows is rendering.
-	for(Viewport* vp : viewports())
-		if(vp->isRendering()) return true;
-
-	return false;
-}
-
-/******************************************************************************
-* Returns the world space point around which the viewport camera orbits.
-******************************************************************************/
-Point3 ViewportConfiguration::orbitCenter(Viewport* vp)
-{
-	if(vp && vp->scene())
-		return vp->scene()->orbitCenter(vp);
-	return Point3::Origin();
-}
-
-/******************************************************************************
 * Zooms all viewports to the extents of the currently selected nodes.
 ******************************************************************************/
 void ViewportConfiguration::zoomToSelectionExtents() 
@@ -119,23 +95,13 @@ void ViewportConfiguration::zoomToSceneExtents()
 }
 
 /******************************************************************************
-* Zooms all viewports to the extents of the currently selected nodes 
-* when the pipeline has been fully evaluated and the extents are known.
+* Zooms all viewports to the extents of the scene when all scene pipelines 
+* have been fully evaluated and the extents are known.
 ******************************************************************************/
-void ViewportConfiguration::zoomToSelectionExtentsWhenReady()
+void ViewportConfiguration::zoomToSceneExtentsWhenReady()
 {
-#if 0
-	for(Viewport* vp : viewports()) {
-		if(vp->scene()) {
-			vp->scene()->whenReady().finally(vp->executor(), [this, vp](Task& task) {
-				if(!task.isCanceled())
-					vp->zoomToSceneExtents();
-			});
-		}
-	}
-#else
-	OVITO_ASSERT(0); // TODO: Make this work
-#endif
+	for(Viewport* vp : viewports()) 
+		vp->zoomToSceneExtentsWhenReady();
 }
 
 /******************************************************************************

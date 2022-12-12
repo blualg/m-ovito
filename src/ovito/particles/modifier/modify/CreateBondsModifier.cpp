@@ -290,7 +290,7 @@ Future<AsynchronousModifier::EnginePtr> CreateBondsModifier::createEngine(const 
 		bondsObject->verifyIntegrity();
 	}
 	else {
-		bondsObject = DataOORef<BondsObject>::create(dataset(), ObjectCreationParams::WithoutVisElement);
+		bondsObject = DataOORef<BondsObject>::create(ObjectCreationParams::WithoutVisElement);
 		bondsObject->setDataSource(request.modApp());
 		bondsObject->setVisElement(bondsVis());
 	}

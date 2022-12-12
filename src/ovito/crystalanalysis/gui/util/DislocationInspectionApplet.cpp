@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2018 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -107,8 +107,7 @@ QWidget* DislocationInspectionApplet::createWidget()
 void DislocationInspectionApplet::updateDisplay()
 {
 	DataInspectionApplet::updateDisplay();
-
-	_tableModel->setContents(state);
+	_tableModel->setContents(currentState());
 }
 
 /******************************************************************************
@@ -261,7 +260,7 @@ void DislocationInspectionApplet::PickingMode::renderOverlay3D(Viewport* vp, Sce
 {
 	if(!_applet->currentPipeline()) return;
 
-	const PipelineFlowState& flowState = _applet->currentPipeline()->evaluatePipelineSynchronous(true);
+	const PipelineFlowState& flowState = _applet->currentPipeline()->evaluatePipelineSynchronous(renderer->time(), true);
 	const DislocationNetworkObject* dislocationObj = flowState.getObject<DislocationNetworkObject>();
 	if(!dislocationObj) return;
 	DislocationVis* vis = dynamic_object_cast<DislocationVis>(dislocationObj->visElement());
@@ -270,7 +269,7 @@ void DislocationInspectionApplet::PickingMode::renderOverlay3D(Viewport* vp, Sce
 	for(const QModelIndex& index : _applet->_tableView->selectionModel()->selectedRows()) {
 		int segmentIndex = index.row();
 		if(segmentIndex >= 0 && segmentIndex < dislocationObj->segments().size())
-			vis->renderOverlayMarker(vp->dataset()->animationSettings()->time(), dislocationObj, flowState, segmentIndex, renderer, _applet->currentPipeline());
+			vis->renderOverlayMarker(renderer->time(), dislocationObj, flowState, segmentIndex, renderer, _applet->currentPipeline());
 	}
 }
 

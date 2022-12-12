@@ -178,8 +178,6 @@ OORef<PipelineSceneNode> FileSourceImporter::importFileSet(Scene* scene, std::ve
 		}
 	}
 
-	UndoableTransaction transaction(ExecutionContext::current().ui(), tr("Import"));
-
 	OORef<FileSource> fileSource = existingFileSource;
 
 	// Create the object that will insert the imported data into the scene.
@@ -236,32 +234,26 @@ OORef<PipelineSceneNode> FileSourceImporter::importFileSet(Scene* scene, std::ve
 
 	if(importMode != ReplaceSelected && importMode != DontAddToScene) {
 		// Adjust viewports to completely show the newly imported object.
-		// This needs to happen after the data has been completely loaded.
-#if 0
-		dataset()->viewportConfig()->zoomToSelectionExtentsWhenReady();
-#else
-		OVITO_ASSERT(false); // TODO: To be implemented 
-#endif
+		// This needs to be deferred until after the data has been completely loaded and its extents are known.
+		ExecutionContext::current().ui().zoomToSceneExtentsWhenReady();
 	}
 
 	// If this importer did not handle all supplied input files, 
 	// continue importing the remaining files.
 	if(!sourceUrlsAndImporters.empty()) {
-		if(!importFurtherFiles(std::move(sourceUrlsAndImporters), importMode, autodetectFileSequences, pipeline))
+		if(!importFurtherFiles(scene, std::move(sourceUrlsAndImporters), importMode, autodetectFileSequences, pipeline))
 			return {};
 	}
 
-	transaction.commit();
 	return pipeline;
 }
 
 /******************************************************************************
 * Is called when importing multiple files of different formats.
 ******************************************************************************/
-bool FileSourceImporter::importFurtherFiles(std::vector<std::pair<QUrl, OORef<FileImporter>>> sourceUrlsAndImporters, ImportMode importMode, bool autodetectFileSequences, PipelineSceneNode* pipeline)
+bool FileSourceImporter::importFurtherFiles(Scene* scene, std::vector<std::pair<QUrl, OORef<FileImporter>>> sourceUrlsAndImporters, ImportMode importMode, bool autodetectFileSequences, PipelineSceneNode* pipeline)
 {
-	Scene* scene = pipeline->scene();
-	if(importMode == DontAddToScene || !scene)
+	if(importMode == DontAddToScene)
 		return true;	// It doesn't make sense to import additional datasets if they are not being added to the scene. They would get lost.
 
 	OVITO_ASSERT(!sourceUrlsAndImporters.empty());

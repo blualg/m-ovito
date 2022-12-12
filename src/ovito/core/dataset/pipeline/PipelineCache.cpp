@@ -189,7 +189,7 @@ SharedFuture<PipelineFlowState> PipelineCache::evaluatePipeline(const PipelineEv
 				if(!_includeVisElements) {
 					// Only gather vis elements that are present in the pipeline at the animation time currently shown in the GUI.
 					std::optional<AnimationTime> time = currentAnimationTime();
-					if(state.stateValidity().contains(*time))
+					if(time && state.stateValidity().contains(*time))
 						pipeline->updateVisElementList(state);
 				}
 			}
@@ -480,6 +480,8 @@ void PipelineCache::setPrecomputeAllFrames(bool enable)
 ******************************************************************************/
 void PipelineCache::startFramePrecomputation(const PipelineEvaluationRequest& request)
 {
+	OVITO_ASSERT(ExecutionContext::current().isValid());
+	
 	// Start the animation frame precomputation process if it has been activated.
 	if(_precomputeAllFrames && !_precomputeFramesOperation.isValid() && !_allFramesPrecomputed) {
 		// Create the async operation object that manages the frame precomputation.
@@ -545,7 +547,7 @@ void PipelineCache::precomputeNextAnimationFrame()
 	}
 
 	// Request the next frame from the input trajectory.
-	_precomputeFrameFuture = evaluatePipeline(PipelineEvaluationRequest(nextFrameTime, nextFrame));
+	_precomputeFrameFuture = evaluatePipeline(PipelineEvaluationRequest(nextFrameTime));
 
 	// Wait until input frame is ready.
 	_precomputeFrameFuture.finally(ownerObject()->executor(true), [this](Task& task) {
@@ -557,13 +559,6 @@ void PipelineCache::precomputeNextAnimationFrame()
 				return;
 			}
 			OVITO_ASSERT(_precomputeFrameFuture.isValid());
-
-#if 0 // TODO: Remove unused code
-			// Store the computed frame in the pipeline cache.
-			if(!_precomputeFrameFuture.result().stateValidity().isEmpty()) {
-				insertState(_precomputeFrameFuture.result());
-			}
-#endif
 
 			// Schedule the pipeline evaluation at the next frame.
 			precomputeNextAnimationFrame();

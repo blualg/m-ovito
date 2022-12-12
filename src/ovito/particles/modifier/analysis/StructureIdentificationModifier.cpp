@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -61,7 +61,7 @@ bool StructureIdentificationModifier::OOMetaClass::isApplicableTo(const DataColl
 ******************************************************************************/
 ElementType* StructureIdentificationModifier::createStructureType(int id, ParticleType::PredefinedStructureType predefType, ObjectCreationParams params)
 {
-	DataOORef<ElementType> stype = DataOORef<ElementType>::create(dataset());
+	DataOORef<ElementType> stype = DataOORef<ElementType>::create();
 	stype->setNumericId(id);
 	stype->setName(ParticleType::getPredefinedStructureTypeName(predefType));
 	stype->initializeType(ParticlePropertyReference(ParticlesObject::StructureTypeProperty), params.loadUserDefaults());
@@ -99,7 +99,7 @@ StructureIdentificationModifier::StructureIdentificationEngine::StructureIdentif
 	_positions(std::move(positions)),
 	_simCell(simCell),
 	_selection(std::move(selection)),
-	_structures(ParticlesObject::OOClass().createStandardProperty(request.dataset(), fingerprint.particleCount(), ParticlesObject::StructureTypeProperty)),
+	_structures(ParticlesObject::OOClass().createStandardProperty(fingerprint.particleCount(), ParticlesObject::StructureTypeProperty)),
 	_inputFingerprint(std::move(fingerprint)) 
 {
 	// Create deep copies of the structure elements types, because data objects owned by the modifier should
@@ -169,9 +169,9 @@ void StructureIdentificationModifier::StructureIdentificationEngine::applyResult
 	}
 
 	// Create the property arrays for the bar chart.
-	PropertyPtr typeCounts = DataTable::OOClass().createUserProperty(request.dataset(), maxTypeId + 1, PropertyObject::Int64, 1, tr("Count"));
+	PropertyPtr typeCounts = DataTable::OOClass().createUserProperty(maxTypeId + 1, PropertyObject::Int64, 1, tr("Count"));
 	boost::copy(_typeCounts, PropertyAccess<qlonglong>(typeCounts).begin());
-	PropertyPtr typeIds = DataTable::OOClass().createUserProperty(request.dataset(), maxTypeId + 1, PropertyObject::Int, 1, tr("Structure type"));
+	PropertyPtr typeIds = DataTable::OOClass().createUserProperty(maxTypeId + 1, PropertyObject::Int, 1, tr("Structure type"));
 	boost::algorithm::iota_n(PropertyAccess<int>(typeIds).begin(), 0, typeIds->size());
 
 	// Use the structure types as labels for the output bar chart.

@@ -189,8 +189,8 @@ public:
 		PipelineEvaluationRequest(pipelineRequest), _modApp(const_cast<ModifierApplication*>(modApp)) {}
 
 	/// Constructor.
-	ModifierEvaluationRequest(AnimationTime time, int frame, const ModifierApplication* modApp) :
-		PipelineEvaluationRequest(time, frame), _modApp(const_cast<ModifierApplication*>(modApp)) {}
+	ModifierEvaluationRequest(AnimationTime time, const ModifierApplication* modApp) :
+		PipelineEvaluationRequest(time), _modApp(const_cast<ModifierApplication*>(modApp)) {}
 
 	/// Constructor.
 	ModifierEvaluationRequest(AnimationSettings* animationSettings, const ModifierApplication* modApp) :

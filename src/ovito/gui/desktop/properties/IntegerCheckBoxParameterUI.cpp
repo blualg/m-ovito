@@ -24,7 +24,7 @@
 #include <ovito/gui/desktop/properties/IntegerCheckBoxParameterUI.h>
 #include <ovito/core/dataset/animation/controller/Controller.h>
 #include <ovito/core/dataset/animation/AnimationSettings.h>
-#include <ovito/core/dataset/UndoStack.h>
+#include <ovito/core/app/undo/UndoableOperation.h>
 #include <ovito/core/dataset/DataSetContainer.h>
 
 namespace Ovito {

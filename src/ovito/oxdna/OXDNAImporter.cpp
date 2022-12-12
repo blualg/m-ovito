@@ -163,7 +163,7 @@ void OXDNAImporter::FrameLoader::loadFile()
 
 	// Create a special visual element for rendering the nucleotides.
 	if(!dynamic_object_cast<NucleotidesVis>(particles()->visElement()))
-		particles()->setVisElement(OORef<NucleotidesVis>::create(dataset()));
+		particles()->setVisElement(OORef<NucleotidesVis>::create());
 
 	// Define nucleobase types.
 	PropertyAccess<int> baseProperty = particles()->createProperty(ParticlesObject::NucleobaseTypeProperty);

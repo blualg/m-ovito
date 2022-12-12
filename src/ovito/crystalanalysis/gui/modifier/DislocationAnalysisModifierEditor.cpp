@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -225,7 +225,7 @@ void DislocationTypeListParameterUI::onDoubleClickDislocationType(const QModelIn
 	QColor newColor = QColorDialog::getColor(oldColor, _viewWidget);
 	if(!newColor.isValid() || newColor == oldColor) return;
 
-	undoableTransaction(tr("Change dislocation type color"), [family, newColor]() {
+	performTransaction(tr("Change dislocation type color"), [family, newColor]() {
 		family->setColor(Color(newColor));
 	});
 }

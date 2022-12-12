@@ -24,7 +24,7 @@
 
 
 #include <ovito/gui/desktop/GUI.h>
-#include <ovito/core/dataset/UndoStack.h>
+#include <ovito/core/app/undo/UndoableOperation.h>
 #include <ovito/core/oo/RefTargetListener.h>
 #include <ovito/gui/desktop/properties/ParameterUI.h>
 
@@ -33,7 +33,7 @@ namespace Ovito {
 /**
  * This dialog box allows to edit the animation keys of an animatable parameter.
  */
-class AnimationKeyEditorDialog : public QDialog, private UndoableTransaction, ExecutionContext::Scope
+class AnimationKeyEditorDialog : public QDialog, private UndoableTransaction
 {
 	Q_OBJECT
 

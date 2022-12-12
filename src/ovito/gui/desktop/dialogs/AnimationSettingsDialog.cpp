@@ -24,7 +24,7 @@
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
 #include <ovito/gui/base/actions/ActionManager.h>
 #include <ovito/core/dataset/DataSet.h>
-#include <ovito/core/dataset/UndoStack.h>
+#include <ovito/core/app/undo/UndoableOperation.h>
 #include <ovito/core/utilities/units/UnitsManager.h>
 #include "AnimationSettingsDialog.h"
 
@@ -36,7 +36,6 @@ namespace Ovito {
 AnimationSettingsDialog::AnimationSettingsDialog(MainWindow& mainWindow, QWidget* parent) :
 		QDialog(parent), 
 		UndoableTransaction(mainWindow, tr("Change animation settings")),
-		ExecutionContext::Scope(ExecutionContext::Type::Interactive, mainWindow),
 		_mainWindow(mainWindow),
 		_animSettings(mainWindow.datasetContainer().activeAnimationSettings())
 {
@@ -106,11 +105,12 @@ AnimationSettingsDialog::AnimationSettingsDialog(MainWindow& mainWindow, QWidget
 	QLineEdit* everyNthFrameBox = new QLineEdit(this);
 	contentLayout->addWidget(everyNthFrameBox, 1, 2);
 	everyNthFrameSpinner = new SpinnerWidget(this);
+	everyNthFrameSpinner->setUnit(mainWindow.unitsManager().integerIdentityUnit());
 	everyNthFrameSpinner->setTextBox(everyNthFrameBox);
 	everyNthFrameSpinner->setMinValue(1);
 	contentLayout->addWidget(everyNthFrameSpinner, 1, 3);
 	connect(everyNthFrameSpinner, &SpinnerWidget::spinnerValueChanged, this, [this]() {
-		_mainWindow.performTransaction(tr("Change animation step size"), [&] {
+		_mainWindow.performActions(*this, [&] {
 			_animSettings->setPlaybackEveryNthFrame(everyNthFrameSpinner->intValue());
 		});
 	});
@@ -118,7 +118,7 @@ AnimationSettingsDialog::AnimationSettingsDialog(MainWindow& mainWindow, QWidget
 	loopPlaybackBox = new QCheckBox(tr("Loop playback"));
 	contentLayout->addWidget(loopPlaybackBox, 2, 2, 1, 2);
 	connect(loopPlaybackBox, &QCheckBox::clicked, this, [this](bool checked) {
-		loopPlaybackModified = _mainWindow.performTransaction(tr("Change animation loop playback"), [&] {
+		loopPlaybackModified = _mainWindow.performActions(*this, [&] {
 			_animSettings->setLoopPlayback(checked);
 		});
 	});
@@ -136,6 +136,7 @@ AnimationSettingsDialog::AnimationSettingsDialog(MainWindow& mainWindow, QWidget
 	QLineEdit* animStartBox = new QLineEdit(this);
 	contentLayout->addWidget(animStartBox, 0, 1);
 	animStartSpinner = new SpinnerWidget(this);
+	animStartSpinner->setUnit(mainWindow.unitsManager().integerIdentityUnit());
 	animStartSpinner->setTextBox(animStartBox);
 	contentLayout->addWidget(animStartSpinner, 0, 2);
 	connect(animStartSpinner, &SpinnerWidget::spinnerValueChanged, this, &AnimationSettingsDialog::onAnimationIntervalChanged);
@@ -144,12 +145,13 @@ AnimationSettingsDialog::AnimationSettingsDialog(MainWindow& mainWindow, QWidget
 	QLineEdit* animEndBox = new QLineEdit(this);
 	contentLayout->addWidget(animEndBox, 1, 1);
 	animEndSpinner = new SpinnerWidget(this);
+	animEndSpinner->setUnit(mainWindow.unitsManager().integerIdentityUnit());
 	animEndSpinner->setTextBox(animEndBox);
 	contentLayout->addWidget(animEndSpinner, 1, 2);
 	connect(animEndSpinner, &SpinnerWidget::spinnerValueChanged, this, &AnimationSettingsDialog::onAnimationIntervalChanged);
 
 	connect(animIntervalBox, &QGroupBox::clicked, this, [this](bool checked) {
-		_mainWindow.performTransaction(tr("Toggle animation interval"), [&] {
+		_mainWindow.performActions(*this, [&] {
 			_animSettings->setAutoAdjustInterval(!checked);
 			updateUI();
 		});
@@ -173,6 +175,8 @@ AnimationSettingsDialog::AnimationSettingsDialog(MainWindow& mainWindow, QWidget
 ******************************************************************************/
 void AnimationSettingsDialog::onOk()
 {
+	setFocus(); // Remove focus from child widgets to commit newly entered values in text widgets etc.
+
 	if(framesPerSecondModified)
 		PROPERTY_FIELD(AnimationSettings::framesPerSecond)->memorizeDefaultValue(_animSettings);
 	if(playbackSpeedModified)
@@ -208,7 +212,7 @@ void AnimationSettingsDialog::onFramesPerSecondChanged(int index)
 	float newFramesPerSecond = fpsBox->itemData(index).toFloat();
 	OVITO_ASSERT(newFramesPerSecond != 0.0f);
 
-	framesPerSecondModified = _mainWindow.performTransaction(tr("Change fps value"), [&] {
+	framesPerSecondModified = _mainWindow.performActions(*this, [&] {
 		_animSettings->setFramesPerSecond(newFramesPerSecond);
 	});
 
@@ -225,7 +229,7 @@ void AnimationSettingsDialog::onPlaybackSpeedChanged(int index)
 	OVITO_ASSERT(newPlaybackSpeed != 0);
 
 	// Change the animation speed.
-	playbackSpeedModified = _mainWindow.performTransaction(tr("Change playback speed"), [&] {
+	playbackSpeedModified = _mainWindow.performActions(*this, [&] {
 		_animSettings->setPlaybackSpeed(newPlaybackSpeed);
 	});
 
@@ -243,7 +247,7 @@ void AnimationSettingsDialog::onAnimationIntervalChanged()
 	if(lastFrame < firstFrame)
 		lastFrame = firstFrame;
 
-	_mainWindow.performTransaction(tr("Change interval"), [&] {
+	_mainWindow.performActions(*this, [&] {
 		_animSettings->setFirstFrame(firstFrame);
 		_animSettings->setLastFrame(lastFrame);
 		_animSettings->setCurrentFrame(qBound(firstFrame, _animSettings->currentFrame(), lastFrame));

@@ -80,7 +80,7 @@ VectorVis::VectorVis(ObjectCreationParams params) : DataVis(params),
 {
 	if(params.createSubObjects()) {
 		// Create animation controller for the transparency parameter.
-		setTransparencyController(ControllerManager::createFloatController(dataset()));
+		setTransparencyController(ControllerManager::createFloatController());
 
 		// Create a color mapping object for pseudo-color visualization of an auxiliary property.
 		setColorMapping(OORef<PropertyColorMapping>::create(params));
@@ -98,17 +98,17 @@ void VectorVis::loadFromStreamComplete(ObjectLoadStream& stream)
 	// For backward compatibility with OVITO 3.5.4.
 	// Create a color mapping sub-object if it wasn't loaded from the state file.
 	if(!colorMapping())
-		setColorMapping(OORef<PropertyColorMapping>::create(dataset()));
+		setColorMapping(OORef<PropertyColorMapping>::create());
 }
 
 /******************************************************************************
 * Computes the bounding box of the object.
 ******************************************************************************/
-Box3 VectorVis::boundingBox(TimePoint time, const ConstDataObjectPath& path, const PipelineSceneNode* contextNode, const PipelineFlowState& flowState, TimeInterval& validityInterval)
+Box3 VectorVis::boundingBox(AnimationTime time, const ConstDataObjectPath& path, const PipelineSceneNode* contextNode, const PipelineFlowState& flowState, MixedKeyCache& visCache, TimeInterval& validityInterval)
 {
 	const PropertyContainer* container = path.lastAs<PropertyContainer>(1);
 	if(!container) return {};
-	auto [basePositions, vectorProperty] = container->getVectorVisData(path, flowState);
+	auto [basePositions, vectorProperty] = container->getVectorVisData(path, flowState, visCache);
 	OVITO_ASSERT(!basePositions || basePositions->size() == container->elementCount());
 	OVITO_ASSERT(!basePositions || (basePositions->componentCount() == 3 && basePositions->dataType() == DataBuffer::Float));
 	if(vectorProperty && (vectorProperty->dataType() != PropertyObject::Float || vectorProperty->componentCount() != 3))
@@ -124,7 +124,7 @@ Box3 VectorVis::boundingBox(TimePoint time, const ConstDataObjectPath& path, con
 	>;
 
 	// Look up the bounding box in the vis cache.
-	auto& bbox = dataset()->visCache().get<Box3>(CacheKey(
+	auto& bbox = visCache.get<Box3>(CacheKey(
 			vectorProperty,
 			basePositions,
 			scalingFactor(),
@@ -182,13 +182,13 @@ Box3 VectorVis::arrowBoundingBox(const DataBuffer* vectorProperty, const DataBuf
 /******************************************************************************
 * Lets the visualization element render the data object.
 ******************************************************************************/
-PipelineStatus VectorVis::render(TimePoint time, const ConstDataObjectPath& path, const PipelineFlowState& flowState, SceneRenderer* renderer, const PipelineSceneNode* contextNode)
+PipelineStatus VectorVis::render(AnimationTime time, const ConstDataObjectPath& path, const PipelineFlowState& flowState, SceneRenderer* renderer, const PipelineSceneNode* contextNode)
 {
 	PipelineStatus status;
 
 	if(renderer->isBoundingBoxPass()) {
 		TimeInterval validityInterval;
-		renderer->addToLocalBoundingBox(boundingBox(time, path, contextNode, flowState, validityInterval));
+		renderer->addToLocalBoundingBox(boundingBox(time, path, contextNode, flowState, renderer->visCache(), validityInterval));
 		return status;
 	}
 
@@ -196,7 +196,7 @@ PipelineStatus VectorVis::render(TimePoint time, const ConstDataObjectPath& path
 	const PropertyContainer* container = path.lastAs<PropertyContainer>(1);
 	if(!container) return {};
 	container->verifyIntegrity();
-	auto [basePositions, vectorProperty] = container->getVectorVisData(path, flowState);
+	auto [basePositions, vectorProperty] = container->getVectorVisData(path, flowState, renderer->visCache());
 	OVITO_ASSERT(!basePositions || basePositions->size() == container->elementCount());
 	OVITO_ASSERT(!basePositions || (basePositions->componentCount() == 3 && basePositions->dataType() == DataBuffer::Float));
 	if(vectorProperty && (vectorProperty->dataType() != PropertyObject::Float || vectorProperty->componentCount() != 3))
@@ -254,7 +254,7 @@ PipelineStatus VectorVis::render(TimePoint time, const ConstDataObjectPath& path
 		transparency = transparencyController()->getFloatValue(time, iv);
 
 	// Lookup the rendering primitive in the vis cache.
-	auto& arrows = dataset()->visCache().get<CylinderPrimitive>(CacheKey(
+	auto& arrows = renderer->visCache().get<CylinderPrimitive>(CacheKey(
 			vectorProperty,
 			basePositions,
 			shadingMode(),
@@ -283,9 +283,9 @@ PipelineStatus VectorVis::render(TimePoint time, const ConstDataObjectPath& path
 		}
 
 		// Allocate data buffers.
-		DataBufferAccessAndRef<Point3> arrowBasePositions = DataBufferPtr::create(dataset(), vectorCount, DataBuffer::Float, 3);
-		DataBufferAccessAndRef<Point3> arrowHeadPositions = DataBufferPtr::create(dataset(), vectorCount, DataBuffer::Float, 3);
-		DataBufferAccessAndRef<Color> arrowColors = (vectorColorProperty || pseudoColorProperty) ? DataBufferPtr::create(dataset(), vectorCount, DataBuffer::Float, 3) : nullptr;
+		DataBufferAccessAndRef<Point3> arrowBasePositions = DataBufferPtr::create(vectorCount, DataBuffer::Float, 3);
+		DataBufferAccessAndRef<Point3> arrowHeadPositions = DataBufferPtr::create(vectorCount, DataBuffer::Float, 3);
+		DataBufferAccessAndRef<Color> arrowColors = (vectorColorProperty || pseudoColorProperty) ? DataBufferPtr::create(vectorCount, DataBuffer::Float, 3) : nullptr;
 
 		// Fill data buffers.
 		if(vectorCount) {
@@ -326,15 +326,14 @@ PipelineStatus VectorVis::render(TimePoint time, const ConstDataObjectPath& path
 		arrows.setPositions(arrowBasePositions.take(), arrowHeadPositions.take());
 		arrows.setColors(arrowColors.take());
 		if(transparency > 0.0) {
-			DataBufferPtr transparencyBuffer = DataBufferPtr::create(dataset(), vectorCount, DataBuffer::Float);
+			DataBufferPtr transparencyBuffer = DataBufferPtr::create(vectorCount, DataBuffer::Float);
 			transparencyBuffer->fill(transparency);
 			arrows.setTransparencies(std::move(transparencyBuffer));
 		}
 	}
 
 	if(renderer->isPicking()) {
-		OORef<VectorPickInfo> pickInfo(new VectorPickInfo(this, path));
-		renderer->beginPickObject(contextNode, pickInfo);
+		renderer->beginPickObject(contextNode, OORef<VectorPickInfo>::create(this, path));
 	}
 	AffineTransformation oldTM = renderer->worldTransform();
 	renderer->setWorldTransform(AffineTransformation::translation(offset()) * oldTM);

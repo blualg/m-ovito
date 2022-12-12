@@ -61,11 +61,11 @@ private:
 
 	QLabel* _attributeNamesList;
 	AutocompleteTextEdit* _textEdit;
-	PopupUpdateComboBox* _nodeComboBox;
+	PopupUpdateComboBox* _pipelineComboBox;
 	DeferredMethodInvocation<TextLabelOverlayEditor, &TextLabelOverlayEditor::updateEditorFields> updateEditorFieldsLater;
 
 	/// The PipelineSceneNode providing global attributes that can be reference in the text.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(PipelineSceneNode*, sourceNode, setSourceNode, PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_WEAK_REF | PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES | PROPERTY_FIELD_NO_CHANGE_MESSAGE | PROPERTY_FIELD_NO_UNDO);
+	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(PipelineSceneNode*, sourcePipeline, setSourcePipeline, PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_WEAK_REF | PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES | PROPERTY_FIELD_NO_CHANGE_MESSAGE | PROPERTY_FIELD_NO_UNDO);
 };
 
 }	// End of namespace

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -198,9 +198,9 @@ void SliceModifierEditor::onCoordinateTypeChanged()
 	Plane3 plane;
 	TimeInterval validityInterval;
 	if(mod->normalController())
-		mod->normalController()->getVector3Value(mod->dataset()->animationSettings()->time(), plane.normal, validityInterval);
+		mod->normalController()->getVector3Value(currentAnimationTime(), plane.normal, validityInterval);
 	if(mod->distanceController())
-		plane.dist = mod->distanceController()->getFloatValue(mod->dataset()->animationSettings()->time(), validityInterval);
+		plane.dist = mod->distanceController()->getFloatValue(currentAnimationTime(), validityInterval);
 
 	// Automatically convert current plane equation to/from reduced coordinates.
 	if(mod->reducedCoordinates()) {
@@ -226,7 +226,7 @@ void SliceModifierEditor::onAlignNormalWithAxis(const QString& link)
 	SliceModifier* mod = static_object_cast<SliceModifier>(editObject());
 	if(!mod) return;
 
-	undoableTransaction(tr("Set plane normal"), [mod, &link]() {
+	performTransaction(tr("Set plane normal"), [mod, &link]() {
 		if(link == "0")
 			mod->setNormal(Vector3(1,0,0));
 		else if(link == "1")
@@ -243,16 +243,16 @@ void SliceModifierEditor::onAlignPlaneToView()
 {
 	TimeInterval interval;
 
-	Viewport* vp = dataset()->viewportConfig()->activeViewport();
+	Viewport* vp = activeViewport();
 	if(!vp) return;
 
 	// Get the object to world transformation for the currently selected object.
-	PipelineSceneNode* node = dynamic_object_cast<PipelineSceneNode>(dataset()->selection()->firstNode());
-	if(!node) return;
-	TimePoint time = dataset()->animationSettings()->time();
-	const AffineTransformation& nodeTM = node->getWorldTransform(time, interval);
+	PipelineSceneNode* pipeline = selectedPipeline();
+	if(!pipeline) return;
+	AnimationTime time = currentAnimationTime();
+	const AffineTransformation& nodeTM = pipeline->getWorldTransform(time, interval);
 
-	undoableTransaction(tr("Align plane to view"), [&]() {
+	performTransaction(tr("Align plane to view"), [&]() {
 
 		// Get the base point of the current slicing plane in local coordinates.
 		SliceModifier* mod = static_object_cast<SliceModifier>(editObject());
@@ -289,17 +289,17 @@ void SliceModifierEditor::onAlignPlaneToView()
 ******************************************************************************/
 void SliceModifierEditor::onAlignViewToPlane()
 {
-	try {
+	handleExceptions([&] {
 		TimeInterval interval;
 
-		Viewport* vp = dataset()->viewportConfig()->activeViewport();
+		Viewport* vp = activeViewport();
 		if(!vp) return;
 
 		// Get the object to world transformation for the currently selected object
-		PipelineSceneNode* node = dynamic_object_cast<PipelineSceneNode>(dataset()->selection()->firstNode());
-		if(!node) return;
-		TimePoint time = dataset()->animationSettings()->time();
-		const AffineTransformation& nodeTM = node->getWorldTransform(time, interval);
+		PipelineSceneNode* pipeline = selectedPipeline();
+		if(!pipeline) return;
+		AnimationTime time = currentAnimationTime();
+		const AffineTransformation& nodeTM = pipeline->getWorldTransform(time, interval);
 
 		// Transform the current slicing plane to the world coordinate system.
 		SliceModifier* mod = static_object_cast<SliceModifier>(editObject());
@@ -328,10 +328,7 @@ void SliceModifierEditor::onAlignViewToPlane()
 		}
 
 		vp->zoomToSelectionExtents();
-	}
-	catch(const Exception& ex) {
-		ex.reportError();
-	}
+	});
 }
 
 /******************************************************************************
@@ -340,8 +337,8 @@ void SliceModifierEditor::onAlignViewToPlane()
 void SliceModifierEditor::onCenterOfBox()
 {
 	if(SliceModifier* mod = static_object_cast<SliceModifier>(editObject())) {
-		undoableTransaction(tr("Center plane in box"), [&]() {
-			mod->centerPlaneInSimulationCell(modifierApplication());
+		performTransaction(tr("Center plane in box"), [&]() {
+			mod->centerPlaneInSimulationCell(modifierApplication(), currentAnimationTime());
 		});
 	}
 }
@@ -441,19 +438,18 @@ void PickPlanePointsInputMode::alignPlane(SliceModifier* mod)
 {
 	OVITO_ASSERT(_numPickedPoints == 3);
 
-	try {
+	_editor->handleExceptions([&] {
 		Plane3 worldPlane(_pickedPoints[0], _pickedPoints[1], _pickedPoints[2], true);
 		if(worldPlane.normal.equals(Vector3::Zero(), FLOATTYPE_EPSILON))
 			throw Exception(tr("Cannot set the new slicing plane. The three selected points are colinear."));
 
 		// Get the object-to-world transformation for the currently selected object.
-		ModifierApplication* modApp = mod->someModifierApplication();
+		ModifierApplication* modApp = _editor->modifierApplication();
 		if(!modApp) return;
-		QSet<PipelineSceneNode*> nodes = modApp->pipelines(true);
-		if(nodes.empty()) return;
-		PipelineSceneNode* node = *nodes.begin();
+		PipelineSceneNode* node = _editor->selectedPipeline();
+		if(!node) return;
 		TimeInterval interval;
-		const AffineTransformation& nodeTM = node->getWorldTransform(mod->dataset()->animationSettings()->time(), interval);
+		const AffineTransformation& nodeTM = node->getWorldTransform(_editor->currentAnimationTime(), interval);
 
 		// Transform new plane from world to object space.
 		Plane3 localPlane = nodeTM.inverse() * worldPlane;
@@ -473,14 +469,11 @@ void PickPlanePointsInputMode::alignPlane(SliceModifier* mod)
 		if(localPlane.normal.dot(mod->normal()) < 0)
 			localPlane = -localPlane;
 
-		UndoableTransaction::handleExceptions(mod->dataset()->undoStack(), tr("Align plane to points"), [mod, &localPlane]() {
+		_editor->performTransaction(tr("Align plane to points"), [mod, &localPlane]() {
 			mod->setNormal(localPlane.normal);
 			mod->setDistance(localPlane.dist);
 		});
-	}
-	catch(const Exception& ex) {
-		ex.reportError();
-	}
+	});
 }
 
 /******************************************************************************
@@ -499,18 +492,18 @@ void PickPlanePointsInputMode::renderOverlay3D(Viewport* vp, SceneRenderer* rend
 	renderer->setWorldTransform(AffineTransformation::Identity());
 	if(!renderer->isBoundingBoxPass()) {
 		MarkerPrimitive markers(MarkerPrimitive::BoxShape);
-		markers.setPositions(vp->dataset(), _pickedPoints, _pickedPoints + npoints);
+		markers.makePositions(_pickedPoints, _pickedPoints + npoints);
 		markers.setColor(ColorA(1, 1, 1));
 		renderer->renderMarkers(markers);
 
 		if(npoints == 2) {
 			LinePrimitive lines;
-			lines.setPositions(vp->dataset(), _pickedPoints, _pickedPoints + 2);
+			lines.makePositions(_pickedPoints, _pickedPoints + 2);
 			lines.setUniformColor(ColorA(1, 1, 1));
 			renderer->renderLines(lines);
 		}
 		else if(npoints == 3) {
-			DataOORef<TriMeshObject> tri = DataOORef<TriMeshObject>::create(renderer->dataset(), ObjectCreationParams::WithoutVisElement);
+			DataOORef<TriMeshObject> tri = DataOORef<TriMeshObject>::create(ObjectCreationParams::WithoutVisElement);
 			tri->setVertexCount(3);
 			tri->setVertex(0, _pickedPoints[0]);
 			tri->setVertex(1, _pickedPoints[1]);
@@ -523,7 +516,7 @@ void PickPlanePointsInputMode::renderOverlay3D(Viewport* vp, SceneRenderer* rend
 
 			LinePrimitive lines;
 			const Point3 vertices[6] = { _pickedPoints[0], _pickedPoints[1], _pickedPoints[1], _pickedPoints[2], _pickedPoints[2], _pickedPoints[0] };
-			lines.setPositions(vp->dataset(), vertices);
+			lines.makePositions(vertices);
 			lines.setUniformColor(ColorA(1, 1, 1));
 			renderer->renderLines(lines);
 		}

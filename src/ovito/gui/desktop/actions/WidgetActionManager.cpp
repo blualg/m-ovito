@@ -21,7 +21,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/gui/desktop/GUI.h>
-#include <ovito/core/dataset/UndoStack.h>
+#include <ovito/core/app/undo/UndoableOperation.h>
 #include <ovito/core/dataset/DataSetContainer.h>
 #include <ovito/core/dataset/scene/SelectionSet.h>
 #include <ovito/core/dataset/scene/Scene.h>
@@ -115,8 +115,6 @@ void WidgetActionManager::on_NewPipelineFileSource_triggered()
 		if(Scene* scene = userInterface().datasetContainer().activeScene()) {
 			// Do not create any animation keys.
 			AnimationSuspender animSuspender(mainWindow());
-			// Pause viewport updates while updating the scene.
-			ViewportSuspender noUpdates(mainWindow());
 
 			// Create the FileSource.
 			OORef<FileSource> fileSource = OORef<FileSource>::create();

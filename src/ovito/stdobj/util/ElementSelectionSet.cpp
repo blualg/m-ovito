@@ -24,7 +24,7 @@
 #include <ovito/stdobj/properties/PropertyObject.h>
 #include <ovito/stdobj/properties/PropertyContainer.h>
 #include <ovito/core/dataset/DataSet.h>
-#include <ovito/core/dataset/UndoStack.h>
+#include <ovito/core/app/undo/UndoableOperation.h>
 #include "ElementSelectionSet.h"
 
 namespace Ovito::StdObj {

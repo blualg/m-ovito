@@ -158,7 +158,7 @@ std::tuple<int,int,int> AnimationTimeSlider::tickRange(int tickWidth)
 			return std::make_tuple(firstFrame, ticksevery, lastFrame);
 		}
 	}
-	return std::tuple<int,int,int>(0, 1, 0);
+	return std::make_tuple(0, 1, 0);
 }
 
 /******************************************************************************
@@ -168,7 +168,7 @@ int AnimationTimeSlider::frameToPos(int frame)
 {
 	if(!animSettings()) 
 		return 0;
-	FloatType fraction = (FloatType)(frame - animSettings()->firstFrame()) / std::max(1, animSettings()->numberOfFrames());
+	FloatType fraction = (FloatType)(frame - animSettings()->firstFrame()) / std::max(1, animSettings()->numberOfFrames() - 1);
 	QRect clientRect = frameRect();
 	int tw = thumbWidth();
 	int space = clientRect.width() - 2*frameWidth() - tw;
@@ -184,7 +184,7 @@ int AnimationTimeSlider::distanceToFrameDifference(int distance)
 	QRect clientRect = frameRect();
 	int tw = thumbWidth();
 	int space = clientRect.width() - 2 * frameWidth() - tw;
-	return (int)((qint64)(animSettings()->numberOfFrames()) * distance / space);
+	return (int)((qint64)(animSettings()->numberOfFrames() - 1) * distance / space);
 }
 
 /******************************************************************************
@@ -272,7 +272,7 @@ void AnimationTimeSlider::mouseMoveEvent(QMouseEvent* event)
 	else if(anim->lastFrame() > anim->firstFrame()) {
 		if(thumbRectangle().contains(event->pos()) == false) {
 			FloatType fraction = (FloatType)(newFrame - anim->firstFrame())
-					/ std::max(1, anim->numberOfFrames());
+					/ std::max(1, anim->numberOfFrames() - 1);
 			QRect clientRect = frameRect();
 			clientRect.adjust(frameWidth(), frameWidth(), -frameWidth(), -frameWidth());
 			int clientWidth = clientRect.width() - thumbWidth();
@@ -315,7 +315,7 @@ QRect AnimationTimeSlider::thumbRectangle()
 		return QRect(0,0,0,0);
 
 	int value = qBound(animSettings()->firstFrame(), animSettings()->currentFrame(), animSettings()->lastFrame());
-	FloatType fraction = (FloatType)(value - animSettings()->firstFrame()) / std::max(1, animSettings()->numberOfFrames());
+	FloatType fraction = (FloatType)(value - animSettings()->firstFrame()) / std::max(1, animSettings()->numberOfFrames() - 1);
 
 	QRect clientRect = frameRect();
 	clientRect.adjust(frameWidth(), frameWidth(), -frameWidth(), -frameWidth());

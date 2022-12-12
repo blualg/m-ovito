@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -237,7 +237,7 @@ bool ColorCodingModifierEditor::referenceEvent(RefTarget* source, const Referenc
 	else if(source == editObject() && event.type() == ReferenceEvent::TargetChanged) {
 		if(static_cast<const ReferenceFieldEvent&>(event).field() == PROPERTY_FIELD(ColorCodingModifier::autoAdjustRange)) {
 			ColorCodingModifier* mod = static_object_cast<ColorCodingModifier>(editObject());
-			if(mod->autoAdjustRange() == false && dataset()->undoStack().isRecording()) {
+			if(mod->autoAdjustRange() == false && isUndoRecording()) {
 				// When the user turns off the auto-adjust option, adopt the current automatic range
 				// as the new user-defined range.
 				FloatType newMin = _lastAutoRangeMinValue;
@@ -287,28 +287,30 @@ void ColorCodingModifierEditor::autoRangeChanged()
 	ModifierApplication* modApp = modifierApplication();
 	if(!modApp) return;
 
-	// Request the modifier's pipeline output.
-	const PipelineFlowState& state = modApp->evaluateSynchronousAtCurrentTime();
+	handleExceptions([&] {
+		// Request the modifier's pipeline output.
+		const PipelineFlowState& state = modApp->evaluateSynchronous(currentAnimationTime());
 
-	QVariant minValue = state.getAttributeValue(modApp, QStringLiteral("ColorCoding.RangeMin"));
-	QVariant maxValue = state.getAttributeValue(modApp, QStringLiteral("ColorCoding.RangeMax"));
-	if(minValue.isValid()) {
-		_lastAutoRangeMinValue = minValue.value<FloatType>();
-		_startValueUI->textBox()->setText(_startValueUI->spinner()->unit()->formatValue(_lastAutoRangeMinValue));
-	}
-	else {
-		_lastAutoRangeMinValue = std::numeric_limits<FloatType>::quiet_NaN();
-		_startValueUI->textBox()->setText(tr("###"));
-	}
+		QVariant minValue = state.getAttributeValue(modApp, QStringLiteral("ColorCoding.RangeMin"));
+		QVariant maxValue = state.getAttributeValue(modApp, QStringLiteral("ColorCoding.RangeMax"));
+		if(minValue.isValid()) {
+			_lastAutoRangeMinValue = minValue.value<FloatType>();
+			_startValueUI->textBox()->setText(_startValueUI->spinner()->unit()->formatValue(_lastAutoRangeMinValue));
+		}
+		else {
+			_lastAutoRangeMinValue = std::numeric_limits<FloatType>::quiet_NaN();
+			_startValueUI->textBox()->setText(tr("###"));
+		}
 
-	if(maxValue.isValid()) {
-		_lastAutoRangeMaxValue = maxValue.value<FloatType>();
-		_endValueUI->textBox()->setText(_endValueUI->spinner()->unit()->formatValue(_lastAutoRangeMaxValue));
-	}
-	else {
-		_lastAutoRangeMaxValue = std::numeric_limits<FloatType>::quiet_NaN();
-		_endValueUI->textBox()->setText(tr("###"));
-	}
+		if(maxValue.isValid()) {
+			_lastAutoRangeMaxValue = maxValue.value<FloatType>();
+			_endValueUI->textBox()->setText(_endValueUI->spinner()->unit()->formatValue(_lastAutoRangeMaxValue));
+		}
+		else {
+			_lastAutoRangeMaxValue = std::numeric_limits<FloatType>::quiet_NaN();
+			_endValueUI->textBox()->setText(tr("###"));
+		}
+	});
 }
 
 /******************************************************************************
@@ -321,10 +323,10 @@ FloatType ColorCodingModifierEditor::computeRangeValue(FloatType t) const
 			return modifier->startValue() + t * (modifier->endValue() - modifier->startValue());
 		}
 		else {
-			if(ModifierApplication* modApp = modifierApplication()) {
-				const PipelineFlowState& state = modApp->evaluateSynchronousAtCurrentTime();
-				QVariant minValue = state.getAttributeValue(modApp, QStringLiteral("ColorCoding.RangeMin"));
-				QVariant maxValue = state.getAttributeValue(modApp, QStringLiteral("ColorCoding.RangeMax"));
+			const PipelineFlowState& state = getPipelineOutput();
+			if(state) {
+				QVariant minValue = state.getAttributeValue(modifierApplication(), QStringLiteral("ColorCoding.RangeMin"));
+				QVariant maxValue = state.getAttributeValue(modifierApplication(), QStringLiteral("ColorCoding.RangeMax"));
 				if(minValue.isValid() && maxValue.isValid()) {
 					return minValue.value<FloatType>() + t * (maxValue.value<FloatType>() - minValue.value<FloatType>());
 				}
@@ -345,8 +347,8 @@ void ColorCodingModifierEditor::onColorGradientSelected(int index)
 
 	OvitoClassPtr descriptor = _colorGradientList->itemData(index).value<OvitoClassPtr>();
 	if(descriptor) {
-		undoableTransaction(tr("Change color gradient"), [descriptor, mod]() {
-			OORef<ColorCodingGradient> gradient = static_object_cast<ColorCodingGradient>(descriptor->createInstance(mod->dataset()));
+		performTransaction(tr("Change color gradient"), [descriptor, mod]() {
+			OORef<ColorCodingGradient> gradient = static_object_cast<ColorCodingGradient>(descriptor->createInstance());
 			if(gradient) {
 				mod->setColorGradient(gradient);
 
@@ -359,10 +361,10 @@ void ColorCodingModifierEditor::onColorGradientSelected(int index)
 		});
 	}
 	else if(index == _colorGradientList->count() - 1) {
-		undoableTransaction(tr("Change color gradient"), [this, mod]() {
+		performTransaction(tr("Change color gradient"), [this, mod]() {
 			LoadImageFileDialog fileDialog(container(), tr("Pick color map image"));
 			if(fileDialog.exec()) {
-				OORef<ColorCodingImageGradient> gradient = OORef<ColorCodingImageGradient>::create(mod->dataset());
+				OORef<ColorCodingImageGradient> gradient = OORef<ColorCodingImageGradient>::create();
 				gradient->loadImage(fileDialog.imageInfo().filename());
 				mod->setColorGradient(gradient);
 			}
@@ -378,8 +380,8 @@ void ColorCodingModifierEditor::onAdjustRange()
 	ColorCodingModifier* mod = static_object_cast<ColorCodingModifier>(editObject());
 	OVITO_CHECK_OBJECT_POINTER(mod);
 
-	undoableTransaction(tr("Adjust range"), [mod]() {
-		mod->adjustRange();
+	performTransaction(tr("Adjust range"), [&]() {
+		mod->adjustRange(currentAnimationTime());
 	});
 }
 
@@ -391,10 +393,13 @@ void ColorCodingModifierEditor::onAdjustRangeGlobal()
 	ColorCodingModifier* mod = static_object_cast<ColorCodingModifier>(editObject());
 	OVITO_CHECK_OBJECT_POINTER(mod);
 
-	undoableTransaction(tr("Adjust range"), [this, mod]() {
-		ProgressDialog progressDialog(container(), mainWindow(), tr("Determining property value range"));
-		mod->adjustRangeGlobal(progressDialog);
-	});
+	if(AnimationSettings* anim = mainWindow().datasetContainer().activeAnimationSettings()) {
+		performTransaction(tr("Adjust range"), [this, mod, firstFrame = anim->firstFrame(), lastFrame = anim->lastFrame()]() {
+			ViewportSuspender noVPUpdates(mainWindow());
+			ProgressDialog progressDialog(container(), mainWindow(), tr("Determining property value range"));
+			mod->adjustRangeGlobal(progressDialog, firstFrame, lastFrame);
+		});
+	}
 }
 
 /******************************************************************************
@@ -403,7 +408,7 @@ void ColorCodingModifierEditor::onAdjustRangeGlobal()
 void ColorCodingModifierEditor::onReverseRange()
 {
 	if(ColorCodingModifier* mod = static_object_cast<ColorCodingModifier>(editObject())) {
-		undoableTransaction(tr("Reverse range"), [mod]() {
+		performTransaction(tr("Reverse range"), [mod]() {
 			// Swap controllers for start and end value.
 			mod->reverseRange();
 		});
@@ -433,8 +438,7 @@ void ColorCodingModifierEditor::onExportColorScale()
 
 		QString imageFilename = fileDialog.imageInfo().filename();
 		if(!image.scaled(legendWidth, legendHeight, Qt::IgnoreAspectRatio, Qt::FastTransformation).save(imageFilename, fileDialog.imageInfo().format())) {
-			Exception ex(tr("Failed to save image to file '%1'.").arg(imageFilename));
-			ex.reportError();
+			mainWindow().reportError(tr("Failed to save image to file '%1'.").arg(imageFilename));
 		}
 	}
 }
@@ -449,18 +453,16 @@ QIcon ColorCodingModifierEditor::iconFromColorMapClass(OvitoClassPtr clazz)
 	if(auto entry = iconCache.find(clazz); entry != iconCache.end())
 		return entry->second;
 
-	if(DataSet* dataset = mainWindow().datasetContainer().currentSet()) {
-		try {
-			// Create a temporary instance of the color map class.
-			OORef<ColorCodingGradient> map = static_object_cast<ColorCodingGradient>(clazz->createInstance(dataset));
-			if(map) {
-				QIcon icon = iconFromColorMap(map);
-				iconCache.insert(std::make_pair(clazz, icon));
-				return icon;
-			}
+	try {
+		// Create a temporary instance of the color map class.
+		OORef<ColorCodingGradient> map = static_object_cast<ColorCodingGradient>(clazz->createInstance());
+		if(map) {
+			QIcon icon = iconFromColorMap(map);
+			iconCache.insert(std::make_pair(clazz, icon));
+			return icon;
 		}
-		catch(...) {}
 	}
+	catch(...) {}
 	return QIcon();
 }
 

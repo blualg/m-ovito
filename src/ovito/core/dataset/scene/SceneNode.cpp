@@ -27,7 +27,7 @@
 #include <ovito/core/dataset/animation/controller/LookAtController.h>
 #include <ovito/core/dataset/animation/controller/PRSTransformationController.h>
 #include <ovito/core/dataset/animation/AnimationSettings.h>
-#include <ovito/core/dataset/UndoStack.h>
+#include <ovito/core/app/undo/UndoableOperation.h>
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/dataset/DataSetContainer.h>
 #include <ovito/core/dataset/animation/TimeInterval.h>
@@ -323,9 +323,7 @@ void SceneNode::insertChildNode(int index, SceneNode* newChild)
 
 	// Adjust transformation to preserve world position.
 	TimeInterval iv;
-	AnimationTime time(0);
-	if(ExecutionContext::current().isValid())
-		time = ExecutionContext::current().ui().datasetContainer().currentAnimationTime();
+	AnimationTime time = ExecutionContext::current().ui().datasetContainer().currentAnimationTime();
 	const AffineTransformation& newParentTM = getWorldTransform(time, iv);
 	if(newParentTM != AffineTransformation::Identity())
 		newChild->transformationController()->changeParent(time, AffineTransformation::Identity(), newParentTM, newChild);
@@ -349,9 +347,7 @@ void SceneNode::removeChildNode(int index)
 
 	// Update child node.
 	TimeInterval iv;
-	AnimationTime time(0);
-	if(ExecutionContext::current().isValid())
-		time = ExecutionContext::current().ui().datasetContainer().currentAnimationTime();
+	AnimationTime time = ExecutionContext::current().ui().datasetContainer().currentAnimationTime();
 	AffineTransformation oldParentTM = getWorldTransform(time, iv);
 	if(oldParentTM != AffineTransformation::Identity())
 		child->transformationController()->changeParent(time, oldParentTM, AffineTransformation::Identity(), child);
@@ -490,19 +486,5 @@ bool SceneNode::isHiddenInViewport(Viewport* vp, bool includeHierarchyParent) co
 	else
 		return false;
 }
-
-#if 0 // TODO: Remove dead code
-/******************************************************************************
-* Returns the animation time at which this scene node is being rendered in the GUI.
-* This method assumes that the scene node is only part of a single scene.
-******************************************************************************/
-std::optional<AnimationTime> SceneNode::currentAnimationTime() const
-{
-	if(Scene* s = scene()) {
-		return s->animationSettings()->currentTime();
-	}
-	return {};
-}
-#endif
 
 }	// End of namespace

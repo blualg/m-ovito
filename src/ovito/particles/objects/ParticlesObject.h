@@ -48,7 +48,7 @@ class OVITO_PARTICLES_EXPORT ParticlesObject : public PropertyContainer
 		using PropertyContainerClass::PropertyContainerClass;
 
 		/// \brief Create a storage object for standard particle properties.
-		virtual PropertyPtr createStandardPropertyInternal(DataSet* dataset, size_t elementCount, int type, DataBuffer::InitializationFlags flags, const ConstDataObjectPath& containerPath) const override;
+		virtual PropertyPtr createStandardPropertyInternal(size_t elementCount, int type, DataBuffer::InitializationFlags flags, const ConstDataObjectPath& containerPath) const override;
 
 		/// Indicates whether this kind of property container supports picking of individual elements in the viewports.
 		virtual bool supportsViewportPicking() const override { return true; }
@@ -187,7 +187,7 @@ public:
 	ConstPropertyPtr inputBondColors(bool ignoreExistingColorProperty = false) const;
 
 	/// Returns the base point and vector information for visualizing a vector property from this container using a VectorVis element.
-	virtual std::tuple<ConstDataBufferPtr, ConstDataBufferPtr> getVectorVisData(const ConstDataObjectPath& path, const PipelineFlowState& state, SceneRenderer* renderer) const override {
+	virtual std::tuple<ConstDataBufferPtr, ConstDataBufferPtr> getVectorVisData(const ConstDataObjectPath& path, const PipelineFlowState& state, MixedKeyCache& visCache) const override {
 		return { getProperty(PositionProperty), path.lastAs<DataBuffer>() }; 
 	}
 

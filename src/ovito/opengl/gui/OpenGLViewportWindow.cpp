@@ -57,7 +57,7 @@ OpenGLViewportWindow::OpenGLViewportWindow(Viewport* vp, UserInterface* userInte
 	// due to a Python script error.
 	connect(QCoreApplication::instance(), &QObject::destroyed, this, [this]() { releaseResources(); });
 
-	// Rerender window whenever requested by the system.
+	// Re-render window whenever requested by the system.
 	connect(&scenePreparation(), &ScenePreparation::viewportUpdateRequest, this, &OpenGLViewportWindow::renderLater);
 }
 
@@ -113,7 +113,7 @@ void OpenGLViewportWindow::renderLater()
 void OpenGLViewportWindow::processViewportUpdate()
 {
 	if(_updateRequested) {
-		OVITO_ASSERT_MSG(!viewport()->isRendering(), "OpenGLViewportWindow::processUpdateRequest()", "Recursive viewport repaint detected.");
+		OVITO_ASSERT_MSG(!userInterface().isRenderingInteractiveViewports(), "OpenGLViewportWindow::processUpdateRequest()", "Recursive viewport repaint detected.");
 		repaint();
 	}
 }
@@ -126,7 +126,7 @@ ViewportPickResult OpenGLViewportWindow::pick(const QPointF& pos)
 	ViewportPickResult result;
 
 	// Cannot perform picking while viewport is not visible or currently rendering or when updates are disabled.
-	if(isVisible() && !viewport()->isRendering() && !userInterface().areViewportUpdatesSuspended() && pickingRenderer()) {
+	if(isVisible() && !userInterface().isRenderingInteractiveViewports() && !userInterface().areViewportUpdatesSuspended() && pickingRenderer()) {
 		OpenGLResourceManager::ResourceFrameHandle previousResourceFrame = 0;
 		try {
 			if(pickingRenderer()->isRefreshRequired()) {
@@ -200,10 +200,10 @@ void OpenGLViewportWindow::paintGL()
 	if(!viewport())
 		return;
 
-	OVITO_ASSERT_MSG(!viewport()->isRendering(), "OpenGLViewportWindow::paintGL()", "Recursive viewport repaint detected.");
+	OVITO_ASSERT_MSG(!userInterface().isRenderingInteractiveViewports(), "OpenGLViewportWindow::paintGL()", "Recursive viewport repaint detected.");
 
 	// Do not re-enter rendering function of the same viewport.
-	if(viewport()->isRendering())
+	if(userInterface().isRenderingInteractiveViewports())
 		return;
 
 	QSurfaceFormat format = context()->format();

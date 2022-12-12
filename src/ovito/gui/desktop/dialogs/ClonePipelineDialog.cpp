@@ -421,6 +421,8 @@ void ClonePipelineDialog::updateGraphicsScene()
 ******************************************************************************/
 void ClonePipelineDialog::onAccept()
 {
+	setFocus(); // Remove focus from child widgets to commit newly entered values in text widgets etc.
+
 	_mainWindow.performTransaction(tr("Clone pipeline"), [this]() {
 		if(_pipelineItems.empty()) return;
 

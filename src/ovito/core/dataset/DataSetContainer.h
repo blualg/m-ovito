@@ -71,8 +71,14 @@ public:
 	/// Returns the currently scene node selection set.
 	SelectionSet* activeSelectionSet() const { return _activeSelectionSet; }
 
+	/// Returns the currently active viewport.
+	Viewport* activeViewport() const { return _activeViewport; }
+
 	/// Returns the current time of the active animation settings object.
 	AnimationTime currentAnimationTime() const { return activeAnimationSettings() ? activeAnimationSettings()->currentTime() : AnimationTime(0); }
+
+	/// Returns the active animation frame interval.
+	std::pair<int, int> currentAnimationInterval() const { return activeAnimationSettings() ? std::make_pair(activeAnimationSettings()->firstFrame(), activeAnimationSettings()->lastFrame()) : std::make_pair(0, 0); }
 
 	/// Returns whether the animation is currently being played back in the interactive viewports.
 	bool isPlaybackActive() const { return _animationPlayback && _animationPlayback->isPlaybackActive(); }
@@ -80,13 +86,13 @@ public:
 public Q_SLOTS:
 
 	/// \brief Starts playback of the animation in the viewports.
-	void startAnimationPlayback(FloatType playbackRate = FloatType(1)) { createAnimationPlayback()->startAnimationPlayback(playbackRate); }
+	void startAnimationPlayback(FloatType playbackRate = FloatType(1)) { createAnimationPlayback()->startAnimationPlayback(activeScene(), playbackRate); }
 
 	/// \brief Stops playback of the animation in the viewports.
 	void stopAnimationPlayback() { if(_animationPlayback) _animationPlayback->stopAnimationPlayback(); }
 
 	/// \brief Starts or stops animation playback in the viewports.
-	void setAnimationPlayback(bool on) { createAnimationPlayback()->setAnimationPlayback(on); }
+	void setAnimationPlayback(bool on);
 
 Q_SIGNALS:
 
@@ -195,6 +201,9 @@ private:
 	/// Reference to the currently scene node selection set.
 	OORef<SelectionSet> _activeSelectionSet;
 
+	/// Reference to the currently selected viewport.
+	OORef<Viewport> _activeViewport;
+
 	/// Helper object responsible for playing back the frames of the animation in the interactive viewports.
 	OORef<SceneAnimationPlayback> _animationPlayback;
 
@@ -203,6 +212,7 @@ private:
 	QMetaObject::Connection _selectionSetChangeCompleteConnection;
 	QMetaObject::Connection _viewportConfigReplacedConnection;
 	QMetaObject::Connection _activeViewportChangedConnection;
+	QMetaObject::Connection _sceneReplacedConnection;
 	QMetaObject::Connection _renderSettingsReplacedConnection;
 	QMetaObject::Connection _animationCurrentFrameChangedConnection;
 	QMetaObject::Connection _animationIntervalChangedConnection;

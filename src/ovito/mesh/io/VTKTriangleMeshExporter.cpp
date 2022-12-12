@@ -40,7 +40,7 @@ bool VTKTriangleMeshExporter::openOutputFile(const QString& filePath, int number
 	OVITO_ASSERT(!_outputStream);
 
 	_outputFile.setFileName(filePath);
-	_outputStream.reset(new CompressedTextWriter(_outputFile));
+	_outputStream = std::make_unique<CompressedTextWriter>(_outputFile);
 
 	return true;
 }

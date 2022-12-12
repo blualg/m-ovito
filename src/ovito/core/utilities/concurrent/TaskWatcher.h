@@ -56,7 +56,10 @@ public:
 	void watch(const TaskPtr& task, bool pendingAssignment = true);
 
 	/// Detaches this watcher from the task.
-	void reset() { watch(nullptr); }
+	void reset() { 
+		if(isWatching())
+			watch(nullptr); 
+	}
 
 	/// Returns true if the task monitored by this object has been canceled.
 	bool isCanceled() const;

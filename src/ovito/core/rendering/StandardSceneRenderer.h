@@ -44,7 +44,7 @@ public:
 	Q_INVOKABLE StandardSceneRenderer(ObjectCreationParams params);
 
 	/// Prepares the renderer for rendering one or more frames.
-	virtual bool startRender(const RenderSettings& settings, const QSize& frameBufferSize, MixedKeyCache& visCache) override;
+	virtual bool startRender(const RenderSettings* settings, const QSize& frameBufferSize, MixedKeyCache& visCache) override;
 
 	/// This method is called just before renderFrame() is called.
 	virtual void beginFrame(AnimationTime time, Scene* scene, const ViewProjectionParameters& params, Viewport* vp, const QRect& viewportRect, FrameBuffer* frameBuffer) override;

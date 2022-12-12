@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -26,6 +26,7 @@
 #include <ovito/particles/Particles.h>
 #include <ovito/core/dataset/pipeline/Modifier.h>
 #include <ovito/core/dataset/animation/AnimationSettings.h>
+#include <ovito/core/app/UserInterface.h>
 
 #include <QTcpSocket>
 
@@ -70,7 +71,7 @@ public:
 	const QTcpSocket& socket() const { return _socket; }
 
 	/// Starts establishing a connection to the remote IMD server.
-	void connectToServer();
+	void connectToServer(UserInterface& userInterface);
 
 	/// Disconnects the connection to the remote IMD server.
 	void disconnectFromServer();
@@ -136,7 +137,6 @@ private:
 		float Eimpr;      ///< Improper energy, Kcal/mol
 	};      
 
-
 	/// The network hostname of the IMD server.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(QString, hostName, setHostName, PROPERTY_FIELD_MEMORIZE);
 
@@ -175,6 +175,9 @@ private:
 
 	/// This utility object is used to suppress preliminary viewport updates when playing an IMD trajectory.
 	std::optional<PreliminaryViewportUpdatesSuspender> _preliminaryUpdateSuspender;
+
+	/// The abstract user interface this modifier lives in.
+	UserInterface* _userInterface = nullptr;
 };
 
 }	// End of namespace

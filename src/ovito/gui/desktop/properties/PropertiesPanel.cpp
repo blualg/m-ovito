@@ -23,7 +23,7 @@
 #include <ovito/gui/desktop/GUI.h>
 #include <ovito/gui/desktop/properties/PropertiesPanel.h>
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
-#include <ovito/core/dataset/UndoStack.h>
+#include <ovito/core/app/undo/UndoableOperation.h>
 
 namespace Ovito {
 

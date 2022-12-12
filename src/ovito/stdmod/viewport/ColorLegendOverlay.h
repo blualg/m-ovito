@@ -44,6 +44,9 @@ public:
 	/// \brief Constructor.
 	Q_INVOKABLE ColorLegendOverlay(ObjectCreationParams params);
 
+	/// \brief This virtual method gets called when the overlay is being newly attached to a viewport. 
+	virtual void initializeOverlay(Viewport* viewport) override;
+
 	/// Lets the overlay paint its contents into the framebuffer.
 	virtual void render(SceneRenderer* renderer, const QRect& logicalViewportRect, const QRect& physicalViewportRect, MainThreadOperation& operation) override;
 

@@ -59,8 +59,7 @@ void MoveOverlayInputMode::deactivated(bool temporary)
 {
 	if(viewport()) {
 		// Restore old state if change has not been committed.
-		if(UndoStack* undoStack = inputManager()->userInterface().undoStack())
-			undoStack->endCompoundOperation(false);
+		_undoTransaction.cancel();
 		_viewport = nullptr;
 	}
 	inputManager()->userInterface().clearStatusBarMessage();
@@ -78,8 +77,7 @@ void MoveOverlayInputMode::mousePressEvent(ViewportWindowInterface* vpwin, QMous
 			if(layer && (vpwin->viewport()->overlays().contains(layer) || vpwin->viewport()->underlays().contains(layer))) {
 				_viewport = vpwin->viewport();
 				_startPoint = getMousePosition(event);
-				if(UndoStack* undoStack = inputManager()->userInterface().undoStack())
-					undoStack->beginCompoundOperation(tr("Move overlay"));
+				_undoTransaction.begin(inputManager()->userInterface(), tr("Move overlay"));
 			}
 		}
 		return;
@@ -87,8 +85,7 @@ void MoveOverlayInputMode::mousePressEvent(ViewportWindowInterface* vpwin, QMous
 	else if(event->button() == Qt::RightButton) {
 		if(viewport()) {
 			// Restore old state when aborting the move operation.
-			if(UndoStack* undoStack = inputManager()->userInterface().undoStack())
-				undoStack->endCompoundOperation(false);
+			_undoTransaction.cancel();
 			_viewport = nullptr;
 			return;
 		}
@@ -113,10 +110,9 @@ void MoveOverlayInputMode::mouseMoveEvent(ViewportWindowInterface* vpwin, QMouse
 			_currentPoint = vpwin->getCurrentMousePos();
 
 			// Reset the layer's position first before moving it again below.
-			if(UndoStack* undoStack = inputManager()->userInterface().undoStack())
-				undoStack->resetCurrentCompoundOperation();
+			_undoTransaction.revert();
 
-			try {
+			if(!inputManager()->userInterface().performActions(_undoTransaction, [&] {
 				// Compute the displacement based on the new mouse position.
 				Box2 renderFrameRect = viewport()->renderFrameRect(inputManager()->datasetContainer().currentSet());
 				if(!renderFrameRect.isEmpty()) {
@@ -128,10 +124,8 @@ void MoveOverlayInputMode::mouseMoveEvent(ViewportWindowInterface* vpwin, QMouse
 					// Move the layer.
 					layer->moveLayerInViewport(delta);
 				}
-			}
-			catch(const Exception& ex) {
+			})) {
 				inputManager()->removeInputMode(this);
-				inputManager()->userInterface().reportError(ex);
 			}
 
 			// Force immediate viewport repaints.
@@ -151,8 +145,7 @@ void MoveOverlayInputMode::mouseReleaseEvent(ViewportWindowInterface* vpwin, QMo
 {
 	if(viewport()) {
 		// Commit change.
-		if(UndoStack* undoStack = inputManager()->userInterface().undoStack())
-			undoStack->endCompoundOperation();
+		_undoTransaction.commit();
 		_viewport = nullptr;
 	}
 	ViewportInputMode::mouseReleaseEvent(vpwin, event);

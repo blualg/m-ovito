@@ -22,7 +22,7 @@
 
 #include <ovito/gui/desktop/GUI.h>
 #include <ovito/core/dataset/io/FileImporter.h>
-#include <ovito/core/dataset/UndoStack.h>
+#include <ovito/core/app/undo/UndoStack.h>
 #include <ovito/core/dataset/animation/AnimationSettings.h>
 #include <ovito/core/dataset/scene/Scene.h>
 #include <ovito/core/dataset/scene/SelectionSet.h>
@@ -176,7 +176,7 @@ bool GuiDataSetContainer::importFiles(const std::vector<QUrl>& urls, MainThreadO
 		if(!importerType) {
 
 			// Detect file format.
-			Future<OORef<FileImporter>> importerFuture = FileImporter::autodetectFileFormat(scene, url);
+			Future<OORef<FileImporter>> importerFuture = FileImporter::autodetectFileFormat(url);
 			if(!importerFuture.waitForFinished())
 				return false;
 

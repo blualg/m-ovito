@@ -29,10 +29,10 @@
 #include <ovito/core/dataset/pipeline/ModifierApplication.h>
 #include <ovito/core/dataset/DataSetContainer.h>
 #include <ovito/core/dataset/animation/AnimationSettings.h>
-#include <ovito/core/dataset/UndoStackOperations.h>
 #include <ovito/core/viewport/Viewport.h>
 #include <ovito/core/app/Application.h>
 #include <ovito/core/app/UserInterface.h>
+#include <ovito/core/app/undo/RefTargetOperations.h>
 #include <ovito/core/oo/CloneHelper.h>
 
 namespace Ovito {
@@ -69,9 +69,9 @@ PipelineSceneNode::~PipelineSceneNode() // NOLINT
 /******************************************************************************
 * Performs a synchronous evaluation of the pipeline yielding only preliminary results.
 ******************************************************************************/
-const PipelineFlowState& PipelineSceneNode::evaluatePipelineSynchronous(AnimationTime time, bool includeVisElements)
+const PipelineFlowState& PipelineSceneNode::evaluatePipelineSynchronous(const PipelineEvaluationRequest& request, bool includeVisElements)
 {	
-	PipelineEvaluationRequest request(time, time.frame());
+	OVITO_ASSERT(ExecutionContext::current().isValid());
 	return includeVisElements ? 
 		_pipelineRenderingCache.evaluatePipelineSynchronous(request) : 
 		_pipelineCache.evaluatePipelineSynchronous(request);
@@ -82,6 +82,7 @@ const PipelineFlowState& PipelineSceneNode::evaluatePipelineSynchronous(Animatio
 ******************************************************************************/
 PipelineEvaluationFuture PipelineSceneNode::evaluatePipeline(const PipelineEvaluationRequest& request)
 {
+	OVITO_ASSERT(ExecutionContext::current().isValid());
 	return PipelineEvaluationFuture(request, _pipelineCache.evaluatePipeline(request), this);
 }
 
@@ -90,6 +91,7 @@ PipelineEvaluationFuture PipelineSceneNode::evaluatePipeline(const PipelineEvalu
 ******************************************************************************/
 PipelineEvaluationFuture PipelineSceneNode::evaluateRenderingPipeline(const PipelineEvaluationRequest& request)
 {
+	OVITO_ASSERT(ExecutionContext::current().isValid());
 	return PipelineEvaluationFuture(request, _pipelineRenderingCache.evaluatePipeline(request), this);
 }
 
@@ -330,11 +332,12 @@ QString PipelineSceneNode::objectTitle() const
 ModifierApplication* PipelineSceneNode::applyModifier(AnimationTime time, Modifier* modifier)
 {
 	OVITO_ASSERT(modifier);	
+	OVITO_ASSERT(ExecutionContext::current().isValid());
 
 	OORef<ModifierApplication> modApp = modifier->createModifierApplication();
 	modApp->setModifier(modifier);
 	modApp->setInput(dataProvider());
-	modifier->initializeModifier(ModifierInitializationRequest(time, time.frame(), modApp));
+	modifier->initializeModifier(ModifierInitializationRequest(time, modApp));
 	setDataProvider(modApp);
 	return modApp;
 }
@@ -401,6 +404,8 @@ void PipelineSceneNode::getDataObjectBoundingBox(AnimationTime time, const DataO
 		// Let the pipeline substitude the vis element with another one.
 		vis = getReplacementVisElement(vis);
 		if(vis->isEnabled()) {
+			MixedKeyCache& visCache = Application::instance()->visCache();
+
 			// Push the data object onto the stack.
 			if(!isOnStack) {
 				dataObjectPath.push_back(dataObj);
@@ -408,7 +413,7 @@ void PipelineSceneNode::getDataObjectBoundingBox(AnimationTime time, const DataO
 			}
 			try {
 				// Let the vis element do the rendering.
-				bb.addBox(vis->boundingBox(time, dataObjectPath, this, state, validity));
+				bb.addBox(vis->boundingBox(time, dataObjectPath, this, state, visCache, validity));
 			}
 			catch(const Exception& ex) {
 				ex.logError();
@@ -438,6 +443,8 @@ void PipelineSceneNode::getDataObjectBoundingBox(AnimationTime time, const DataO
 ******************************************************************************/
 void PipelineSceneNode::deleteNode()
 {
+	OVITO_ASSERT(ExecutionContext::current().isValid());
+	
 	// Temporary reference to the pipeline's stages.
 	OORef<PipelineObject> oldDataProvider = dataProvider();
 

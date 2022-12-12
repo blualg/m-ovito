@@ -161,11 +161,61 @@ void AnimationSettings::jumpToNextFrame()
 }
 
 /******************************************************************************
+* Provides a custom function that takes are of the deserialization of a 
+* serialized property field that has been removed from the class. 
+* This is needed for file backward compatibility with OVITO 3.7.
+******************************************************************************/
+RefMakerClass::SerializedClassInfo::PropertyFieldInfo::CustomDeserializationFunctionPtr AnimationSettings::OOMetaClass::overrideFieldDeserialization(const SerializedClassInfo::PropertyFieldInfo& field) const
+{
+	// For backward compaibility with OVITO 3.7:
+
+    // The AnimationSettings classes used to store the animation interval in a single property field.
+    if(field.definingClass == &AnimationSettings::OOClass() && field.identifier == "animationInterval") {
+        return [](const SerializedClassInfo::PropertyFieldInfo& field, ObjectLoadStream& stream, RefMaker& owner) {
+			stream.expectChunk(0x04);
+			int intervalStart, intervalEnd;
+			stream >> intervalStart >> intervalEnd;
+			int ticksPerFrame = (int)std::round(4800.0f / static_cast<AnimationSettings&>(owner).framesPerSecond());
+			static_cast<AnimationSettings&>(owner).setFirstFrame(intervalStart / ticksPerFrame);
+			static_cast<AnimationSettings&>(owner).setLastFrame(intervalEnd / ticksPerFrame);
+            stream.closeChunk();
+        };
+    }
+
+    // The AnimationSettings classes used to store the current animation time in the field 'time'. Now it is in 'currentFrame'.
+    if(field.definingClass == &AnimationSettings::OOClass() && field.identifier == "time") {
+        return [](const SerializedClassInfo::PropertyFieldInfo& field, ObjectLoadStream& stream, RefMaker& owner) {
+			stream.expectChunk(0x04);
+			int time; // Legacy TimePoint data type
+			stream >> time;
+			int ticksPerFrame = (int)std::round(4800.0f / static_cast<AnimationSettings&>(owner).framesPerSecond());
+			static_cast<AnimationSettings&>(owner).setCurrentFrame(time / ticksPerFrame);
+            stream.closeChunk();
+        };
+    }
+
+    // The AnimationSettings classes used to store the frame rate in the field 'ticksPerFrame'. Now it is in 'framesPerSecond'.
+    if(field.definingClass == &AnimationSettings::OOClass() && field.identifier == "ticksPerFrame") {
+        return [](const SerializedClassInfo::PropertyFieldInfo& field, ObjectLoadStream& stream, RefMaker& owner) {
+			stream.expectChunk(0x04);
+			int ticksPerFrame;
+			stream >> ticksPerFrame;
+			static_cast<AnimationSettings&>(owner).setFramesPerSecond(4800.0f / ticksPerFrame);
+            stream.closeChunk();
+        };
+    }
+
+    return nullptr;
+}
+
+/******************************************************************************
 * Recalculates the length of the animation interval to accommodate all loaded
 * source animations in the scene.
 ******************************************************************************/
 void AnimationSettings::adjustAnimationInterval()
 {
+	OVITO_ASSERT(ExecutionContext::current().isValid());
+	
 	int firstFrame = std::numeric_limits<int>::max();
 	int lastFrame = std::numeric_limits<int>::lowest();
 	_namedFrames.clear();
@@ -182,7 +232,7 @@ void AnimationSettings::adjustAnimationInterval()
 						// of all animated objects in the scene.
 						int start = node->dataProvider()->sourceFrameToAnimationTime(0).frame();
 						if(start < firstFrame) firstFrame = start;
-						int end = node->dataProvider()->sourceFrameToAnimationTime(nframes - 1).frame();
+						int end = (node->dataProvider()->sourceFrameToAnimationTime(nframes) - 1).frame();
 						if(end > lastFrame) lastFrame = end;
 
 						// Save the list of the named animation frames.

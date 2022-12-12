@@ -177,7 +177,7 @@ void GrainSegmentationEngine1::applyResults(const ModifierEvaluationRequest& req
 		}
 
 		// Output disorientation angles as a bond property.
-		PropertyAccessAndRef<FloatType> neighborDisorientationAngles = BondsObject::OOClass().createUserProperty(dataset(), bonds.size(), PropertyObject::Float, 1, QStringLiteral("Disorientation"));
+		PropertyAccessAndRef<FloatType> neighborDisorientationAngles = BondsObject::OOClass().createUserProperty(bonds.size(), PropertyObject::Float, 1, QStringLiteral("Disorientation"));
 		for (size_t i = 0; i < disorientations.size(); i++) {
 			neighborDisorientationAngles[i] = disorientations[i];
 		}

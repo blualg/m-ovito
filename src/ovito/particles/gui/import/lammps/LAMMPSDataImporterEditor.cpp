@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -73,7 +73,7 @@ bool LAMMPSDataImporterEditor::inspectNewFile(FileImporter* importer, const QUrl
 			}
 		}
 
-		LAMMPSAtomStyleDialog dlg(detectedAtomStyleHints, &mainWindow);
+		LAMMPSAtomStyleDialog dlg(mainWindow, detectedAtomStyleHints, &mainWindow);
 		if(dlg.exec() != QDialog::Accepted)
 			return false;
 
@@ -117,7 +117,7 @@ void LAMMPSDataImporterEditor::createUI(const RolloutInsertionParameters& rollou
 /******************************************************************************
 * The constructor of the LAMMPSAtomStyleDialog.
 ******************************************************************************/
-LAMMPSAtomStyleDialog::LAMMPSAtomStyleDialog(LAMMPSDataImporter::LAMMPSAtomStyleHints& atomStyleHints, QWidget* parent) : QDialog(parent), _atomStyleHints(atomStyleHints)
+LAMMPSAtomStyleDialog::LAMMPSAtomStyleDialog(MainWindow& mainWindow, LAMMPSDataImporter::LAMMPSAtomStyleHints& atomStyleHints, QWidget* parent) : QDialog(parent), _atomStyleHints(atomStyleHints)
 {
 	setWindowTitle(tr("LAMMPS Data File Import"));
 
@@ -201,8 +201,8 @@ LAMMPSAtomStyleDialog::LAMMPSAtomStyleDialog(LAMMPSDataImporter::LAMMPSAtomStyle
 	_buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel | QDialogButtonBox::Help, Qt::Horizontal, this);
 	connect(_buttonBox, &QDialogButtonBox::accepted, this, &LAMMPSAtomStyleDialog::onOk);
 	connect(_buttonBox, &QDialogButtonBox::rejected, this, &LAMMPSAtomStyleDialog::reject);
-	connect(_buttonBox, &QDialogButtonBox::helpRequested, []() {
-		ActionManager::openHelpTopic("manual:file_formats.input.lammps_data");
+	connect(_buttonBox, &QDialogButtonBox::helpRequested, this, [&mainWindow]() {
+		mainWindow.actionManager()->openHelpTopic("manual:file_formats.input.lammps_data");
 	});
 
 	updateColumnList();
@@ -253,6 +253,8 @@ void LAMMPSAtomStyleDialog::updateColumnList()
 ******************************************************************************/
 void LAMMPSAtomStyleDialog::onOk()
 {
+	setFocus(); // Remove focus from child widgets to commit newly entered values in text widgets etc.
+
 	_atomStyleHints.atomStyle = static_cast<LAMMPSDataImporter::LAMMPSAtomStyle>(_atomStyleList->currentData().toInt());
 	_atomStyleHints.atomSubStyles.clear();
 	if(_atomStyleHints.atomStyle == LAMMPSDataImporter::AtomStyle_Hybrid) {

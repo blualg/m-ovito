@@ -1060,7 +1060,7 @@ private:
 
 		// Construct convex hull of remaining line segments.
 		if(!_convexHullMesh)
-			_convexHullMesh.reset(DataOORef<SurfaceMesh>::create(_mesh.topology()->dataset(), ObjectCreationParams::WithoutVisElement));
+			_convexHullMesh.reset(DataOORef<SurfaceMesh>::create(ObjectCreationParams::WithoutVisElement));
 		else
 			_convexHullMesh.clearMesh();
 		_convexHullMesh.constructConvexHull(std::vector<Point3>(lineSegments, lineSegments + numPoints));

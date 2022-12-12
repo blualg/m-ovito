@@ -75,7 +75,7 @@ namespace Ovito
 	template<typename property_data_type, int flags> class PropertyField;
 	template<typename T> class ReferenceField;
 	template<typename T> class VectorReferenceField;
-	class OvitoObjectExecutor;
+	class ObjectExecutor;
 	class DataSet;
 	class DataSetContainer;
 	class ParameterUnit;

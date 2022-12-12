@@ -72,7 +72,7 @@ protected:
 	virtual void closeOutputFile(bool exportCompleted) override;
 
 	/// \brief Writes the particles of one animation frame to the current output file.
-	virtual bool exportData(const PipelineFlowState& state, int frameNumber, TimePoint time, const QString& filePath, MainThreadOperation& operation) override;
+	virtual bool exportData(const PipelineFlowState& state, int frameNumber, const QString& filePath, MainThreadOperation& operation) override;
 
 private:
 

@@ -36,12 +36,4 @@ ExecutionContext& ExecutionContext::current() noexcept
     return _current; 
 }
 
-/*******************************************************x***********************
-* Sets the context the current thread performs its actions in.
-******************************************************************************/
-void ExecutionContext::setCurrent(const ExecutionContext& context) noexcept 
-{ 
-    current() = context; 
-}
-
 }	// End of namespace

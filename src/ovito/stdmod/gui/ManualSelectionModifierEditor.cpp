@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -123,6 +123,7 @@ public:
 		if(event->button() == Qt::LeftButton) {
 			_fence.push_back(Point2(getMousePosition(event).x(), getMousePosition(event).y())
 					* (FloatType)vpwin->devicePixelRatio());
+			_activeViewport = vpwin->viewport();
 			vpwin->viewport()->updateViewport();
 		}
 		else ViewportInputMode::mousePressEvent(vpwin, event);
@@ -150,6 +151,7 @@ public:
 				_editor->onFence(_fence, vpwin->viewport(), mode);
 			}
 			_fence.clear();
+			_activeViewport = nullptr;
 			vpwin->viewport()->updateViewport();
 		}
 		ViewportInputMode::mouseReleaseEvent(vpwin, event);
@@ -157,7 +159,7 @@ public:
 
 	/// Lets the input mode render its 2d overlay content in a viewport.
 	virtual void renderOverlay2D(Viewport* vp, SceneRenderer* renderer) override {
-		if(isActive() && vp == vp->dataset()->viewportConfig()->activeViewport() && _fence.size() >= 2) {
+		if(isActive() && vp == _activeViewport && _fence.size() >= 2) {
 			renderer->render2DPolyline(_fence.constData(), _fence.size(), ViewportSettings::getSettings().viewportColor(ViewportSettings::COLOR_SELECTION), true);
 		}
 	}
@@ -194,6 +196,7 @@ private:
 
 	ManualSelectionModifierEditor* _editor;
 	QVector<Point2> _fence;
+	Viewport* _activeViewport = nullptr;
 };
 
 /******************************************************************************
@@ -278,8 +281,8 @@ void ManualSelectionModifierEditor::resetSelection()
 	ManualSelectionModifier* mod = static_object_cast<ManualSelectionModifier>(editObject());
 	if(!mod) return;
 
-	undoableTransaction(tr("Reset selection"), [this,mod]() {
-		PipelineEvaluationRequest request(ExecutionContext::Type::Interactive, dataset()->animationSettings()->time());
+	performTransaction(tr("Reset selection"), [this,mod]() {
+		PipelineEvaluationRequest request(currentAnimationTime());
 		for(ModifierApplication* modApp : modifierApplications()) {
 			mod->resetSelection(modApp, modApp->evaluateInputSynchronous(request));
 		}
@@ -294,8 +297,8 @@ void ManualSelectionModifierEditor::selectAll()
 	ManualSelectionModifier* mod = static_object_cast<ManualSelectionModifier>(editObject());
 	if(!mod) return;
 
-	undoableTransaction(tr("Select all"), [this,mod]() {
-		PipelineEvaluationRequest request(ExecutionContext::Type::Interactive, dataset()->animationSettings()->time());
+	performTransaction(tr("Select all"), [this,mod]() {
+		PipelineEvaluationRequest request(currentAnimationTime());
 		for(ModifierApplication* modApp : modifierApplications()) {
 			mod->selectAll(modApp, modApp->evaluateInputSynchronous(request));
 		}
@@ -310,8 +313,8 @@ void ManualSelectionModifierEditor::clearSelection()
 	ManualSelectionModifier* mod = static_object_cast<ManualSelectionModifier>(editObject());
 	if(!mod) return;
 
-	undoableTransaction(tr("Clear selection"), [this,mod]() {
-		PipelineEvaluationRequest request(ExecutionContext::Type::Interactive, dataset()->animationSettings()->time());
+	performTransaction(tr("Clear selection"), [this,mod]() {
+		PipelineEvaluationRequest request(currentAnimationTime());
 		for(ModifierApplication* modApp : modifierApplications()) {
 			mod->clearSelection(modApp, modApp->evaluateInputSynchronous(request));
 		}
@@ -326,8 +329,8 @@ void ManualSelectionModifierEditor::invertSelection()
 	ManualSelectionModifier* mod = static_object_cast<ManualSelectionModifier>(editObject());
 	if(!mod) return;
 
-	undoableTransaction(tr("Invert selection"), [this,mod]() {
-		PipelineEvaluationRequest request(ExecutionContext::Type::Interactive, dataset()->animationSettings()->time());
+	performTransaction(tr("Invert selection"), [this,mod]() {
+		PipelineEvaluationRequest request(currentAnimationTime());
 		for(ModifierApplication* modApp : modifierApplications()) {
 			mod->invertSelection(modApp, modApp->evaluateInputSynchronous(request));
 		}
@@ -342,8 +345,8 @@ void ManualSelectionModifierEditor::onElementPicked(const ViewportPickResult& pi
 	ManualSelectionModifier* mod = static_object_cast<ManualSelectionModifier>(editObject());
 	if(!mod || !mod->subject()) return;
 
-	undoableTransaction(tr("Toggle selection"), [this, mod, elementIndex, &pickedObjectPath, &pickResult]() {
-		PipelineEvaluationRequest request(ExecutionContext::Type::Interactive, dataset()->animationSettings()->time());
+	performTransaction(tr("Toggle selection"), [this, mod, elementIndex, &pickedObjectPath, &pickResult]() {
+		PipelineEvaluationRequest request(currentAnimationTime());
 		for(ModifierApplication* modApp : modifierApplications()) {
 
 			// Make sure we are in the right data pipeline.
@@ -378,8 +381,8 @@ void ManualSelectionModifierEditor::onFence(const QVector<Point2>& fence, Viewpo
 	ManualSelectionModifier* mod = static_object_cast<ManualSelectionModifier>(editObject());
 	if(!mod || !mod->subject()) return;
 
-	undoableTransaction(tr("Select"), [this, mod, &fence, viewport, mode]() {
-		PipelineEvaluationRequest request(ExecutionContext::Type::Interactive, dataset()->animationSettings()->time());
+	performTransaction(tr("Select"), [this, mod, &fence, viewport, mode]() {
+		PipelineEvaluationRequest request(currentAnimationTime());
 		for(ModifierApplication* modApp : modifierApplications()) {
 
 			// Get the modifier's input data.
@@ -392,7 +395,7 @@ void ManualSelectionModifierEditor::onFence(const QVector<Point2>& fence, Viewpo
 
 				// Set up projection matrix transforming elements from object space to screen space.
 				TimeInterval interval;
-				const AffineTransformation& nodeTM = node->getWorldTransform(mod->dataset()->animationSettings()->time(), interval);
+				const AffineTransformation& nodeTM = node->getWorldTransform(request.time(), interval);
 				Matrix4 ndcToScreen = Matrix4::Identity();
 				ndcToScreen(0,0) = 0.5 * viewport->windowSize().width();
 				ndcToScreen(1,1) = 0.5 * viewport->windowSize().height();

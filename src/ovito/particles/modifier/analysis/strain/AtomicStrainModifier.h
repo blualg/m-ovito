@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -70,15 +70,15 @@ private:
 			RefConfigEngineBase(request, validityInterval, positions, simCell, refPositions, simCellRef,
 				std::move(identifiers), std::move(refIdentifiers), affineMapping, useMinimumImageConvention),
 			_cutoff(cutoff),
-			_displacements(ParticlesObject::OOClass().createStandardProperty(request.dataset(), refPositions->size(), ParticlesObject::DisplacementProperty)),
-			_shearStrains(ParticlesObject::OOClass().createUserProperty(request.dataset(), fingerprint.particleCount(), PropertyObject::Float, 1, tr("Shear Strain"))),
-			_volumetricStrains(ParticlesObject::OOClass().createUserProperty(request.dataset(), fingerprint.particleCount(), PropertyObject::Float, 1, tr("Volumetric Strain"))),
-			_strainTensors(calculateStrainTensors ? ParticlesObject::OOClass().createStandardProperty(request.dataset(), fingerprint.particleCount(), ParticlesObject::StrainTensorProperty) : nullptr),
-			_deformationGradients(calculateDeformationGradients ? ParticlesObject::OOClass().createStandardProperty(request.dataset(), fingerprint.particleCount(), ParticlesObject::DeformationGradientProperty) : nullptr),
-			_nonaffineSquaredDisplacements(calculateNonaffineSquaredDisplacements ? ParticlesObject::OOClass().createUserProperty(request.dataset(), fingerprint.particleCount(), PropertyObject::Float, 1, tr("Nonaffine Squared Displacement")) : nullptr),
-			_invalidParticles(selectInvalidParticles ? ParticlesObject::OOClass().createStandardProperty(request.dataset(), fingerprint.particleCount(), ParticlesObject::SelectionProperty) : nullptr),
-			_rotations(calculateRotations ? ParticlesObject::OOClass().createStandardProperty(request.dataset(), fingerprint.particleCount(), ParticlesObject::RotationProperty) : nullptr),
-			_stretchTensors(calculateStretchTensors ? ParticlesObject::OOClass().createStandardProperty(request.dataset(), fingerprint.particleCount(), ParticlesObject::StretchTensorProperty) : nullptr),
+			_displacements(ParticlesObject::OOClass().createStandardProperty(refPositions->size(), ParticlesObject::DisplacementProperty)),
+			_shearStrains(ParticlesObject::OOClass().createUserProperty(fingerprint.particleCount(), PropertyObject::Float, 1, tr("Shear Strain"))),
+			_volumetricStrains(ParticlesObject::OOClass().createUserProperty(fingerprint.particleCount(), PropertyObject::Float, 1, tr("Volumetric Strain"))),
+			_strainTensors(calculateStrainTensors ? ParticlesObject::OOClass().createStandardProperty(fingerprint.particleCount(), ParticlesObject::StrainTensorProperty) : nullptr),
+			_deformationGradients(calculateDeformationGradients ? ParticlesObject::OOClass().createStandardProperty(fingerprint.particleCount(), ParticlesObject::DeformationGradientProperty) : nullptr),
+			_nonaffineSquaredDisplacements(calculateNonaffineSquaredDisplacements ? ParticlesObject::OOClass().createUserProperty(fingerprint.particleCount(), PropertyObject::Float, 1, tr("Nonaffine Squared Displacement")) : nullptr),
+			_invalidParticles(selectInvalidParticles ? ParticlesObject::OOClass().createStandardProperty(fingerprint.particleCount(), ParticlesObject::SelectionProperty) : nullptr),
+			_rotations(calculateRotations ? ParticlesObject::OOClass().createStandardProperty(fingerprint.particleCount(), ParticlesObject::RotationProperty) : nullptr),
+			_stretchTensors(calculateStretchTensors ? ParticlesObject::OOClass().createStandardProperty(fingerprint.particleCount(), ParticlesObject::StretchTensorProperty) : nullptr),
 			_inputFingerprint(std::move(fingerprint)) {}
 
 		/// Computes the modifier's results.

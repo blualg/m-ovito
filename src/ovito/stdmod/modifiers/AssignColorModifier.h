@@ -96,10 +96,10 @@ public:
 	virtual TimeInterval validityInterval(const ModifierEvaluationRequest& request) const override;
 
 	/// Returns the color that is assigned to the selected elements.
-	Color color() const { return colorController() ? colorController()->currentColorValue() : Color(0,0,0); }
+	Color color() const { return colorController() ? colorController()->getColorValue(AnimationTime(0)) : Color(0,0,0); }
 
 	/// Sets the color that is assigned to the selected elements.
-	void setColor(const Color& color) { if(colorController()) colorController()->setCurrentColorValue(color); }
+	void setColor(const Color& color) { if(colorController()) colorController()->setColorValue(AnimationTime(0), color); }
 
 	/// Returns a short piece information (typically a string or color) to be displayed next to the modifier's title in the pipeline editor list.
 	virtual QVariant getPipelineEditorShortInfo(Scene* scene, ModifierApplication* modApp) const override { return QVariant::fromValue(static_cast<QColor>(color())); }

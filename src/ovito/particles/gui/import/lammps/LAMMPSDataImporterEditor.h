@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -60,7 +60,7 @@ class LAMMPSAtomStyleDialog : public QDialog
 public:
 
 	/// Constructor.
-	LAMMPSAtomStyleDialog(LAMMPSDataImporter::LAMMPSAtomStyleHints& atomStyleHints, QWidget* parentWindow = nullptr);
+	LAMMPSAtomStyleDialog(MainWindow& mainWindow, LAMMPSDataImporter::LAMMPSAtomStyleHints& atomStyleHints, QWidget* parentWindow = nullptr);
 
 private Q_SLOTS:
 

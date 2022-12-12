@@ -92,7 +92,7 @@ PipelineStatus ParticlesCombineDatasetsModifierDelegate::apply(const ModifierEva
 			}
 			else if(prop->type() != ParticlesObject::UserProperty) {
 				ConstDataObjectPath containerPath = { secondaryParticles };
-				PropertyPtr temporaryProp = ParticlesObject::OOClass().createStandardProperty(dataset(), secondaryParticles->elementCount(), prop->type(), DataBuffer::InitializeMemory, containerPath);
+				PropertyPtr temporaryProp = ParticlesObject::OOClass().createStandardProperty(secondaryParticles->elementCount(), prop->type(), DataBuffer::InitializeMemory, containerPath);
 				prop->copyRangeFrom(*temporaryProp, 0, primaryParticleCount, secondaryParticleCount);
 			}
 
@@ -168,7 +168,7 @@ PipelineStatus ParticlesCombineDatasetsModifierDelegate::apply(const ModifierEva
 				}
 				else if(prop->type() != PropertyObject::GenericUserProperty) {
 					ConstDataObjectPath containerPath = { secondaryParticles, secondaryElements };
-					PropertyPtr temporaryProp = secondaryElements->getOOMetaClass().createStandardProperty(dataset(), secondaryElementCount, prop->type(), DataBuffer::InitializeMemory, containerPath);
+					PropertyPtr temporaryProp = secondaryElements->getOOMetaClass().createStandardProperty(secondaryElementCount, prop->type(), DataBuffer::InitializeMemory, containerPath);
 					prop->copyRangeFrom(*temporaryProp, 0, primaryElementCount, secondaryElementCount);
 				}
 
@@ -222,7 +222,7 @@ PipelineStatus ParticlesCombineDatasetsModifierDelegate::apply(const ModifierEva
 	if(primaryBonds || secondaryBonds) {
 		// Create the primary bonds object if it doesn't exist yet.
 		if(!primaryBonds) {
-			particles->setBonds(DataOORef<BondsObject>::create(dataset()));
+			particles->setBonds(DataOORef<BondsObject>::create());
 			particles->makeBondsMutable()->setVisElements(secondaryBonds->visElements());
 			primaryBonds = particles->bonds();
 		}
@@ -235,7 +235,7 @@ PipelineStatus ParticlesCombineDatasetsModifierDelegate::apply(const ModifierEva
 	if(primaryAngles || secondaryAngles) {
 		// Create the primary angles object if it doesn't exist yet.
 		if(!primaryAngles) {
-			particles->setAngles(DataOORef<AnglesObject>::create(dataset()));
+			particles->setAngles(DataOORef<AnglesObject>::create());
 			particles->makeAnglesMutable()->setVisElements(secondaryAngles->visElements());
 			primaryAngles = particles->angles();
 		}
@@ -248,7 +248,7 @@ PipelineStatus ParticlesCombineDatasetsModifierDelegate::apply(const ModifierEva
 	if(primaryDihedrals || secondaryDihedrals) {
 		// Create the primary dihedrals object if it doesn't exist yet.
 		if(!primaryDihedrals) {
-			particles->setDihedrals(DataOORef<DihedralsObject>::create(dataset()));
+			particles->setDihedrals(DataOORef<DihedralsObject>::create());
 			particles->makeDihedralsMutable()->setVisElements(secondaryDihedrals->visElements());
 			primaryDihedrals = particles->dihedrals();
 		}
@@ -261,7 +261,7 @@ PipelineStatus ParticlesCombineDatasetsModifierDelegate::apply(const ModifierEva
 	if(primaryImpropers || secondaryImpropers) {
 		// Create the primary impropers object if it doesn't exist yet.
 		if(!primaryImpropers) {
-			particles->setImpropers(DataOORef<ImpropersObject>::create(dataset()));
+			particles->setImpropers(DataOORef<ImpropersObject>::create());
 			particles->makeImpropersMutable()->setVisElements(secondaryImpropers->visElements());
 			primaryImpropers = particles->impropers();
 		}
@@ -270,7 +270,7 @@ PipelineStatus ParticlesCombineDatasetsModifierDelegate::apply(const ModifierEva
 
 	int secondaryFrame = secondaryState.data() ? secondaryState.data()->sourceFrame() : 1;
 	if(secondaryFrame < 0)
-		secondaryFrame = dataset()->animationSettings()->timeToFrame(request.time());
+		secondaryFrame = request.time().frame();
 
 	QString statusMessage = tr("Merged %1 existing particles with %2 particles from frame %3 of second dataset.")
 			.arg(primaryParticleCount)

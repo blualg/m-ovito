@@ -155,9 +155,9 @@ void RenderSettingsEditor::createUI(const RolloutInsertionParameters& rolloutPar
 
 		_viewportPreviewModeBox = new QCheckBox(tr("Preview visible region"));
 		sublayout->addWidget(_viewportPreviewModeBox);
-		connect(&mainWindow().datasetContainer(), &DataSetContainer::viewportConfigReplaced, this, &RenderSettingsEditor::onViewportConfigReplaced);
+		connect(&mainWindow().datasetContainer(), &DataSetContainer::activeViewportChanged, this, &RenderSettingsEditor::onActiveViewportChanged);
 		connect(_viewportPreviewModeBox, &QCheckBox::clicked, this, &RenderSettingsEditor::onViewportPreviewModeToggled);
-		onViewportConfigReplaced(mainWindow().datasetContainer().currentSet() ? mainWindow().datasetContainer().currentSet()->viewportConfig() : nullptr);
+		onActiveViewportChanged(mainWindow().datasetContainer().activeViewport());
 
 		renderAllViewportsUI = new BooleanParameterUI(this, PROPERTY_FIELD(RenderSettings::renderAllViewports));
 		sublayout->addWidget(renderAllViewportsUI->checkBox());
@@ -361,20 +361,6 @@ void RenderSettingsEditor::onSwitchRenderer()
 			settings->setRenderer(std::move(renderer));
 		});
 	}
-}
-
-/******************************************************************************
-* This is called whenever the current viewport configuration of current dataset
-* has been replaced by a new one.
-******************************************************************************/
-void RenderSettingsEditor::onViewportConfigReplaced(ViewportConfiguration* newViewportConfiguration)
-{
-	disconnect(_activeViewportChangedConnection);
-	if(newViewportConfiguration) {
-		_activeViewportChangedConnection = connect(newViewportConfiguration, &ViewportConfiguration::activeViewportChanged, this, &RenderSettingsEditor::onActiveViewportChanged);
-		onActiveViewportChanged(newViewportConfiguration->activeViewport());
-	}
-	else onActiveViewportChanged(nullptr);
 }
 
 /******************************************************************************

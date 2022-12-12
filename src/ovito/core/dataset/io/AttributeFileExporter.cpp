@@ -21,6 +21,8 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/core/Core.h>
+#include <ovito/core/app/UserInterface.h>
+#include <ovito/core/dataset/DataSetContainer.h>
 #include <ovito/core/dataset/scene/PipelineSceneNode.h>
 #include <ovito/core/dataset/scene/SelectionSet.h>
 #include <ovito/core/dataset/data/AttributeDataObject.h>
@@ -38,11 +40,13 @@ DEFINE_PROPERTY_FIELD(AttributeFileExporter, attributesToExport);
 AttributeFileExporter::AttributeFileExporter(ObjectCreationParams params) : FileExporter(params)
 {
 	if(params.loadUserDefaults()) {
-#if 0 // TODO: Implement access to animation time interval
 		// This exporter is typically used to export attributes as functions of time.
-		if(dataset()->animationSettings()->animationInterval().duration() != 0)
-			setExportAnimation(true);
-#endif
+		if(ExecutionContext::current().isValid()) {
+			if(AnimationSettings* anim = ExecutionContext::current().ui().datasetContainer().activeAnimationSettings()) {
+				if(!anim->isSingleFrame())
+					setExportAnimation(true);
+			}
+		}
 
 #ifndef OVITO_DISABLE_QSETTINGS
 		// Restore last output column mapping.

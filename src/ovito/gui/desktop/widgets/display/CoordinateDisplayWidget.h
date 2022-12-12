@@ -99,6 +99,7 @@ private:
 	MainWindow& _mainWindow;
 	SpinnerWidget* _spinners[3];
 	QString _undoOperationName;
+	UndoableTransaction _undoTransaction;
 };
 
 }	// End of namespace

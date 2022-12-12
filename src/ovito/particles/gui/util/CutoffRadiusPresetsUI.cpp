@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -195,10 +195,10 @@ void CutoffRadiusPresetsUI::onSelect(int index)
 	FloatType r = comboBox()->itemData(index).value<FloatType>();
 	if(r != 0) {
 		if(editObject() && propertyField()) {
-			undoableTransaction(tr("Change cutoff radius"), [this, r]() {
+			performTransaction(tr("Change cutoff radius"), [this, r]() {
 				editObject()->setPropertyFieldValue(propertyField(), r);
+    			Q_EMIT valueEntered();
 			});
-			Q_EMIT valueEntered();
 		}
 	}
 	comboBox()->setCurrentIndex(0);

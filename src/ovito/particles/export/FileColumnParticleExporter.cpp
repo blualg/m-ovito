@@ -43,7 +43,6 @@ FileColumnParticleExporter::FileColumnParticleExporter(ObjectCreationParams para
 				_columnMapping.fromByteArray(settings.value("columnmapping").toByteArray());
 			}
 			catch(Exception& ex) {
-				ex.setContext(dataset());
 				ex.prependGeneralMessage(tr("Failed to load previous output column mapping from application settings store."));
 				ex.logError();
 			}

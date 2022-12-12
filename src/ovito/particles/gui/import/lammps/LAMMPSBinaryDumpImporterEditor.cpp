@@ -77,7 +77,7 @@ bool LAMMPSBinaryDumpImporterEditor::inspectNewFile(FileImporter* importer, cons
 			}
 		}
 
-		InputColumnMappingDialog dialog(mapping, &mainWindow);
+		InputColumnMappingDialog dialog(mainWindow, mapping, &mainWindow);
 		if(dialog.exec() == QDialog::Accepted) {
 			lammpsImporter->setColumnMapping(dialog.mapping());
 			// Remember the user-defined mapping for the next time.
@@ -124,7 +124,7 @@ bool LAMMPSBinaryDumpImporterEditor::showEditColumnMappingDialog(LAMMPSBinaryDum
 		mapping = customMapping;
 	}
 
-	InputColumnMappingDialog dialog(mapping, parentWindow());
+	InputColumnMappingDialog dialog(mainWindow(), mapping, parentWindow());
 	if(dialog.exec() == QDialog::Accepted) {
 		importer->setColumnMapping(dialog.mapping());
 		// Remember the user-defined mapping for the next time.
@@ -192,11 +192,12 @@ void LAMMPSBinaryDumpImporterEditor::createUI(const RolloutInsertionParameters& 
 void LAMMPSBinaryDumpImporterEditor::onEditColumnMapping()
 {
 	if(LAMMPSBinaryDumpImporter* importer = static_object_cast<LAMMPSBinaryDumpImporter>(editObject())) {
-		UndoableTransaction::handleExceptions(importer->dataset()->undoStack(), tr("Change file column mapping"), [this, importer]() {
+		performTransaction(tr("Change file column mapping"), [this, importer]() {
 
 			// Determine the currently loaded data file of the FileSource.
 			FileSource* fileSource = importer->fileSource();
-			if(!fileSource || fileSource->frames().empty()) return;
+			if(!fileSource || fileSource->frames().empty()) 
+				return;
 			int frameIndex = qBound(0, fileSource->dataCollectionFrame(), fileSource->frames().size()-1);
 
 			if(showEditColumnMappingDialog(importer, fileSource->frames()[frameIndex])) {

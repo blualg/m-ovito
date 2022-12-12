@@ -39,14 +39,12 @@ class OVITO_CORE_EXPORT PipelineEvaluationRequest
 public:
 
 	/// Constructs a request object for evaluating the pipeline at a certain animation time.
-	PipelineEvaluationRequest(AnimationTime time = AnimationTime::fromFrame(0), int frame = 0, bool breakOnError = false) : 
+	PipelineEvaluationRequest(AnimationTime time = AnimationTime::fromFrame(0)) : 
 		_time(time), 
-		_frame(frame),
-		_breakOnError(breakOnError), 
 		_cachingIntervals(time) {}
 
 	/// Constructs a request object for evaluating the pipeline at the current animation time.
-	PipelineEvaluationRequest(AnimationSettings* animationSettings) : PipelineEvaluationRequest(animationSettings->currentTime(), animationSettings->currentFrame()) {}
+	PipelineEvaluationRequest(AnimationSettings* animationSettings) : PipelineEvaluationRequest(animationSettings->currentTime()) {}
 
 	/// Constructs a request object for evaluating the pipeline using a prescribed caching pattern.
 	explicit PipelineEvaluationRequest(const TimeIntervalUnion& cachingIntervals) : _cachingIntervals(cachingIntervals) {}
@@ -54,14 +52,14 @@ public:
 	/// Returns the animation time at which the pipeline is being evaluated.
 	AnimationTime time() const { return _time; }
 
-	/// The animation frame at which the pipeline is being evaluated.
-	int frame() const { return _frame; }
-
 	/// Sets a new animation time at which the pipeline should be evaluated.
-	void setTimeAndFrame(AnimationTime time, int frame) { _time = time; _frame = frame; }
+	void setTime(AnimationTime time) { _time = time; }
 
 	/// Returns whether the pipeline system should stop the evaluation as soon as a first error occurs in one of the modifiers.
 	bool breakOnError() const { return _breakOnError; }
+
+	/// Sets whether the pipeline system should stop the evaluation as soon as a first error occurs in one of the modifiers.
+	void setBreakOnError(bool enable = true) { _breakOnError = enable; }
 
 	/// Returns the animation time intervals over which the pipeline should pre-cache the state.
 	const TimeIntervalUnion& cachingIntervals() const { return _cachingIntervals; }
@@ -73,9 +71,6 @@ private:
 
 	/// The animation time at which the pipeline is being evaluated.
 	AnimationTime _time = AnimationTime::fromFrame(0);
-
-	/// The corresponding animation frame at which the pipeline is being evaluated.
-	int _frame = 0;
 
 	/// Makes the pipeline system stop the evaluation as soon as a first error occurs in one of the modifiers.
 	bool _breakOnError = false;
@@ -112,9 +107,6 @@ public:
 
 	/// Returns the animation time at which the pipeline is being evaluated.
 	AnimationTime time() const { OVITO_ASSERT(_request); return _request->time(); }
-
-	/// Returns the animation frame at which the pipeline is being evaluated.
-	int frame() const { OVITO_ASSERT(_request); return _request->frame(); }
 
 	/// Returns the pipeline that is being evaluated.
 	PipelineSceneNode* pipeline() const { return _pipeline; }

@@ -60,7 +60,7 @@ BondsVis::BondsVis(ObjectCreationParams params) : DataVis(params),
 /******************************************************************************
 * Computes the bounding box of the visual element.
 ******************************************************************************/
-Box3 BondsVis::boundingBox(TimePoint time, const ConstDataObjectPath& path, const PipelineSceneNode* contextNode, const PipelineFlowState& flowState, TimeInterval& validityInterval)
+Box3 BondsVis::boundingBox(AnimationTime time, const ConstDataObjectPath& path, const PipelineSceneNode* contextNode, const PipelineFlowState& flowState, MixedKeyCache& visCache, TimeInterval& validityInterval)
 {
 	const BondsObject* bonds = path.lastAs<BondsObject>(0);
 	const ParticlesObject* particles = path.lastAs<ParticlesObject>(1);
@@ -84,7 +84,7 @@ Box3 BondsVis::boundingBox(TimePoint time, const ConstDataObjectPath& path, cons
 	>;
 
 	// Look up the bounding box in the vis cache.
-	auto& bbox = dataset()->visCache().get<Box3>(CacheKey(
+	auto& bbox = visCache.get<Box3>(CacheKey(
 			bondTopologyProperty,
 			bondPeriodicImageProperty,
 			bondWidthProperty,
@@ -143,11 +143,11 @@ Box3 BondsVis::boundingBox(TimePoint time, const ConstDataObjectPath& path, cons
 /******************************************************************************
 * Lets the visualization element render the data object.
 ******************************************************************************/
-PipelineStatus BondsVis::render(TimePoint time, const ConstDataObjectPath& path, const PipelineFlowState& flowState, SceneRenderer* renderer, const PipelineSceneNode* contextNode)
+PipelineStatus BondsVis::render(AnimationTime time, const ConstDataObjectPath& path, const PipelineFlowState& flowState, SceneRenderer* renderer, const PipelineSceneNode* contextNode)
 {
 	if(renderer->isBoundingBoxPass()) {
 		TimeInterval validityInterval;
-		renderer->addToLocalBoundingBox(boundingBox(time, path, contextNode, flowState, validityInterval));
+		renderer->addToLocalBoundingBox(boundingBox(time, path, contextNode, flowState, renderer->visCache(), validityInterval));
 		return {};
 	}
 
@@ -209,7 +209,7 @@ PipelineStatus BondsVis::render(TimePoint time, const ConstDataObjectPath& path,
 	};
 
 	// Lookup the rendering primitive in the vis cache.
-	auto& visCache = dataset()->visCache().get<CacheValue>(CacheKey(
+	auto& visCache = renderer->visCache().get<CacheValue>(CacheKey(
 			bondTopologyProperty,
 			bondPeriodicImageProperty,
 			positionProperty,
@@ -239,16 +239,16 @@ PipelineStatus BondsVis::render(TimePoint time, const ConstDataObjectPath& path,
 		if(bondTopologyProperty && positionProperty && bondDiameter > 0) {
 
 			// Allocate buffers for the bonds geometry.
-			DataBufferAccessAndRef<Point3> bondPositions1 = DataBufferPtr::create(dataset(), bondTopologyProperty->size() * 2, DataBuffer::Float, 3);
-			DataBufferAccessAndRef<Point3> bondPositions2 = DataBufferPtr::create(dataset(), bondTopologyProperty->size() * 2, DataBuffer::Float, 3);
-			DataBufferAccessAndRef<Color> bondColors = DataBufferPtr::create(dataset(), bondTopologyProperty->size() * 2, DataBuffer::Float, 3);
-			DataBufferAccessAndRef<FloatType> bondTransparencies = transparencyProperty ? DataBufferPtr::create(dataset(), bondTopologyProperty->size() * 2, DataBuffer::Float) : nullptr;
-			DataBufferAccessAndRef<FloatType> bondWidths = bondWidthProperty ? DataBufferPtr::create(dataset(), bondTopologyProperty->size() * 2, DataBuffer::Float) : nullptr;
+			DataBufferAccessAndRef<Point3> bondPositions1 = DataBufferPtr::create(bondTopologyProperty->size() * 2, DataBuffer::Float, 3);
+			DataBufferAccessAndRef<Point3> bondPositions2 = DataBufferPtr::create(bondTopologyProperty->size() * 2, DataBuffer::Float, 3);
+			DataBufferAccessAndRef<Color> bondColors = DataBufferPtr::create(bondTopologyProperty->size() * 2, DataBuffer::Float, 3);
+			DataBufferAccessAndRef<FloatType> bondTransparencies = transparencyProperty ? DataBufferPtr::create(bondTopologyProperty->size() * 2, DataBuffer::Float) : nullptr;
+			DataBufferAccessAndRef<FloatType> bondWidths = bondWidthProperty ? DataBufferPtr::create(bondTopologyProperty->size() * 2, DataBuffer::Float) : nullptr;
 
 			// Allocate buffers for the nodal vertices.
-			DataBufferAccessAndRef<Color> nodalColors = renderNodalVertices ? DataBufferPtr::create(dataset(), positionProperty->size(), DataBuffer::Float, 3) : nullptr;
-			DataBufferAccessAndRef<FloatType> nodalTransparencies = (renderNodalVertices && transparencyProperty) ? DataBufferPtr::create(dataset(), positionProperty->size(), DataBuffer::Float) : nullptr;
-			DataBufferAccessAndRef<int> nodalIndices = renderNodalVertices ? DataBufferPtr::create(dataset(), 0, DataBuffer::Int) : nullptr;
+			DataBufferAccessAndRef<Color> nodalColors = renderNodalVertices ? DataBufferPtr::create(positionProperty->size(), DataBuffer::Float, 3) : nullptr;
+			DataBufferAccessAndRef<FloatType> nodalTransparencies = (renderNodalVertices && transparencyProperty) ? DataBufferPtr::create(positionProperty->size(), DataBuffer::Float) : nullptr;
+			DataBufferAccessAndRef<int> nodalIndices = renderNodalVertices ? DataBufferPtr::create(0, DataBuffer::Int) : nullptr;
 			boost::dynamic_bitset<> visitedParticles(renderNodalVertices ? positionProperty->size() : 0);
 			OVITO_ASSERT(nodalColors || !nodalTransparencies);
 
@@ -369,7 +369,7 @@ PipelineStatus BondsVis::render(TimePoint time, const ConstDataObjectPath& path,
 		return {};
 
 	if(renderer->isPicking()) {
-		OORef<BondPickInfo> pickInfo(new BondPickInfo(particles, simulationCell));
+		OORef<BondPickInfo> pickInfo = OORef<BondPickInfo>::create(particles, simulationCell);
 		renderer->beginPickObject(contextNode, pickInfo);
 	}
 	renderer->renderCylinders(visCache.cylinders);
@@ -593,7 +593,7 @@ ConstPropertyPtr BondsVis::bondWidths(const BondsObject* bonds) const
 	}
 	else {
 		// Allocate output array.
-		output.reset(BondsObject::OOClass().createStandardProperty(dataset(), bonds->elementCount(), BondsObject::WidthProperty));
+		output.reset(BondsObject::OOClass().createStandardProperty(bonds->elementCount(), BondsObject::WidthProperty));
 
 		// Assign the uniform default width to all bonds.
 		output.makeMutable()->fill(bondWidth());

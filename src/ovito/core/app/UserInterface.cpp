@@ -124,9 +124,20 @@ void UserInterface::resumeViewportUpdates()
 	OVITO_ASSERT(areViewportUpdatesSuspended());
 	_viewportSuspendCount--;
 	if(_viewportSuspendCount == 0) {
-		//Q_EMIT viewportUpdateResumed();
 		if(_viewportsNeedUpdate)
 			updateViewports();
+	}
+}
+
+/******************************************************************************
+* Zooms all visible viewports to the extents of the scene when all scene 
+* pipelines have been fully evaluated and the extents are known.
+******************************************************************************/
+void UserInterface::zoomToSceneExtentsWhenReady()
+{
+	if(DataSet* dataset = datasetContainer().currentSet()) {
+		if(ViewportConfiguration* viewportConfig = dataset->viewportConfig())
+			viewportConfig->zoomToSceneExtentsWhenReady();
 	}
 }
 

@@ -73,10 +73,11 @@ SliceModifier::SliceModifier(ObjectCreationParams params) : MultiDelegatingModif
 	_reducedCoordinates(false)
 {
 	if(params.createSubObjects()) {
-		setNormalController(ControllerManager::createVector3Controller(dataset()));
-		setDistanceController(ControllerManager::createFloatController(dataset()));
-		setWidthController(ControllerManager::createFloatController(dataset()));
-		if(normalController()) normalController()->setVector3Value(0, Vector3(1,0,0));
+		setNormalController(ControllerManager::createVector3Controller());
+		setDistanceController(ControllerManager::createFloatController());
+		setWidthController(ControllerManager::createFloatController());
+		if(normalController()) 
+			normalController()->setVector3Value(AnimationTime(0), Vector3(1,0,0));
 
 		// Generate the list of delegate objects.
 		createModifierDelegates(SliceModifierDelegate::OOClass(), params);
@@ -117,7 +118,7 @@ TimeInterval SliceModifier::validityInterval(const ModifierEvaluationRequest& re
 /******************************************************************************
 * Returns the slicing plane and the slab width.
 ******************************************************************************/
-std::tuple<Plane3, FloatType> SliceModifier::slicingPlane(TimePoint time, TimeInterval& validityInterval, const PipelineFlowState& state)
+std::tuple<Plane3, FloatType> SliceModifier::slicingPlane(AnimationTime time, TimeInterval& validityInterval, const PipelineFlowState& state)
 {
 	Plane3 plane;
 
@@ -167,7 +168,7 @@ void SliceModifier::renderModifierVisual(const ModifierEvaluationRequest& reques
 /******************************************************************************
 * Renders the modifier's visual representation and computes its bounding box.
 ******************************************************************************/
-void SliceModifier::renderVisual(TimePoint time, PipelineSceneNode* contextNode, SceneRenderer* renderer, const PipelineFlowState& state)
+void SliceModifier::renderVisual(AnimationTime time, PipelineSceneNode* contextNode, SceneRenderer* renderer, const PipelineFlowState& state)
 {
 	TimeInterval interval;
 
@@ -235,7 +236,7 @@ void SliceModifier::renderPlane(SceneRenderer* renderer, const Plane3& plane, co
 		renderer->addToLocalBoundingBox(vertexBoundingBox);
 	}
 	else {
-		DataBufferAccessAndRef<Point3> positions = DataBufferPtr::create(dataset(), vertices.size(), DataBuffer::Float, 3);
+		DataBufferAccessAndRef<Point3> positions = DataBufferPtr::create(vertices.size(), DataBuffer::Float, 3);
 		boost::range::copy(vertices, positions.begin());
 		LinePrimitive buffer;
 		buffer.setPositions(positions.take());
@@ -282,12 +283,11 @@ void SliceModifier::initializeModifier(const ModifierInitializationRequest& requ
 	// the center of the cell.
 	const PipelineFlowState& input = request.modApp()->evaluateInputSynchronous(request);
 	if(const SimulationCellObject* cell = input.getObject<SimulationCellObject>()) {
-		TimeInterval iv;
-		if(distanceController() && distanceController()->getFloatValue(0, iv) == 0) {
+		if(distanceController() && distanceController()->getFloatValue(AnimationTime(0)) == 0) {
 			Point3 centerPoint = cell->cellMatrix() * Point3(0.5, 0.5, 0.5);
 			FloatType centerDistance = normal().dot(centerPoint - Point3::Origin());
 			if(std::abs(centerDistance) > FLOATTYPE_EPSILON && distanceController())
-				distanceController()->setFloatValue(0, centerDistance);
+				distanceController()->setFloatValue(AnimationTime(0), centerDistance);
 		}
 	}
 }
@@ -367,13 +367,13 @@ void SliceModifier::evaluateSynchronous(const ModifierEvaluationRequest& request
 /******************************************************************************
 * Moves the plane along its current normal vector to position in the center of the simulation cell. 
 ******************************************************************************/
-void SliceModifier::centerPlaneInSimulationCell(ModifierApplication* modApp)
+void SliceModifier::centerPlaneInSimulationCell(ModifierApplication* modApp, AnimationTime time)
 {
 	if(!modApp) return;
 
 	// Get the simulation cell from the input object to center the slicing plane in
 	// the center of the simulation cell.
-	const PipelineFlowState& input = modApp->evaluateSynchronousAtCurrentTime();
+	const PipelineFlowState& input = modApp->evaluateSynchronous(PipelineEvaluationRequest(time));
 	if(const SimulationCellObject* cell = input.getObject<SimulationCellObject>()) {
 
 		FloatType centerDistance;

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -164,7 +164,7 @@ Future<PipelineFlowState> DislocationVis::transformDataImpl(const PipelineEvalua
 	}
 
 	// Create output RenderableDislocationLines object.
-	DataOORef<RenderableDislocationLines> renderableLines = DataOORef<RenderableDislocationLines>::create(dataset(), ObjectCreationParams::WithoutVisElement, this, dataObject);
+	DataOORef<RenderableDislocationLines> renderableLines = DataOORef<RenderableDislocationLines>::create(ObjectCreationParams::WithoutVisElement, this, dataObject);
 	renderableLines->setVisElement(this);
 	renderableLines->setLineSegments(std::move(outputSegments));
 	renderableLines->setClusterGraph(std::move(clusterGraph));
@@ -176,7 +176,7 @@ Future<PipelineFlowState> DislocationVis::transformDataImpl(const PipelineEvalua
 /******************************************************************************
 * Computes the bounding box of the object.
 ******************************************************************************/
-Box3 DislocationVis::boundingBox(TimePoint time, const ConstDataObjectPath& path, const PipelineSceneNode* contextNode, const PipelineFlowState& flowState, TimeInterval& validityInterval)
+Box3 DislocationVis::boundingBox(AnimationTime time, const ConstDataObjectPath& path, const PipelineSceneNode* contextNode, const PipelineFlowState& flowState, MixedKeyCache& visCache, TimeInterval& validityInterval)
 {
 	const RenderableDislocationLines* renderableObj = path.lastAs<RenderableDislocationLines>();
 	if(!renderableObj) return {};
@@ -196,7 +196,7 @@ Box3 DislocationVis::boundingBox(TimePoint time, const ConstDataObjectPath& path
 	>;
 
 	// Look up the bounding box in the vis cache.
-	auto& bbox = dataset()->visCache().get<Box3>(CacheKey(
+	auto& bbox = visCache.get<Box3>(CacheKey(
 			renderableObj,
 			cellObject,
 			lineWidth(),
@@ -229,7 +229,7 @@ Box3 DislocationVis::boundingBox(TimePoint time, const ConstDataObjectPath& path
 /******************************************************************************
 * Lets the vis element render a data object.
 ******************************************************************************/
-PipelineStatus DislocationVis::render(TimePoint time, const ConstDataObjectPath& path, const PipelineFlowState& flowState, SceneRenderer* renderer, const PipelineSceneNode* contextNode)
+PipelineStatus DislocationVis::render(AnimationTime time, const ConstDataObjectPath& path, const PipelineFlowState& flowState, SceneRenderer* renderer, const PipelineSceneNode* contextNode)
 {
 	// Ignore render calls for the original DislocationNetworkObject or MicrostrucureObject.
 	// We are only interested in the RenderableDIslocationLines.
@@ -239,7 +239,7 @@ PipelineStatus DislocationVis::render(TimePoint time, const ConstDataObjectPath&
 	// Just compute the bounding box of the rendered objects if requested.
 	if(renderer->isBoundingBoxPass()) {
 		TimeInterval validityInterval;
-		renderer->addToLocalBoundingBox(boundingBox(time, path, contextNode, flowState, validityInterval));
+		renderer->addToLocalBoundingBox(boundingBox(time, path, contextNode, flowState, renderer->visCache(), validityInterval));
 		return {};
 	}
 
@@ -287,7 +287,7 @@ PipelineStatus DislocationVis::render(TimePoint time, const ConstDataObjectPath&
 	if(!cellObject) return {};
 
 	// Lookup the rendering primitives in the vis cache.
-	auto& primitives = dataset()->visCache().get<CacheValue>(CacheKey(
+	auto& primitives = renderer->visCache().get<CacheValue>(CacheKey(
 		domainObj,
 		renderableLines,
 		cellObject,
@@ -317,11 +317,11 @@ PipelineStatus DislocationVis::render(TimePoint time, const ConstDataObjectPath&
 		// Allocate rendering data buffers.
 		std::vector<int> subobjToSegmentMap(lineSegmentCount + cornerCount);
 		FloatType lineDiameter = std::max(lineWidth(), FloatType(0));
-		DataBufferAccessAndRef<Point3> cornerPoints = DataBufferPtr::create(dataset(), cornerCount, DataBuffer::Float, 3);
-		DataBufferAccessAndRef<Color> cornerColors = DataBufferPtr::create(dataset(), cornerCount, DataBuffer::Float, 3);
-		DataBufferAccessAndRef<Point3> baseSegmentPoints = DataBufferPtr::create(dataset(), lineSegmentCount, DataBuffer::Float, 3);
-		DataBufferAccessAndRef<Point3> headSegmentPoints = DataBufferPtr::create(dataset(), lineSegmentCount, DataBuffer::Float, 3);
-		DataBufferAccessAndRef<Color> segmentColors = DataBufferPtr::create(dataset(), lineSegmentCount, DataBuffer::Float, 3);
+		DataBufferAccessAndRef<Point3> cornerPoints = DataBufferPtr::create(cornerCount, DataBuffer::Float, 3);
+		DataBufferAccessAndRef<Color> cornerColors = DataBufferPtr::create(cornerCount, DataBuffer::Float, 3);
+		DataBufferAccessAndRef<Point3> baseSegmentPoints = DataBufferPtr::create(lineSegmentCount, DataBuffer::Float, 3);
+		DataBufferAccessAndRef<Point3> headSegmentPoints = DataBufferPtr::create(lineSegmentCount, DataBuffer::Float, 3);
+		DataBufferAccessAndRef<Color> segmentColors = DataBufferPtr::create(lineSegmentCount, DataBuffer::Float, 3);
 
 		// Build list of line segments.
 		auto cornerPointsIter = cornerPoints.begin();
@@ -428,8 +428,8 @@ PipelineStatus DislocationVis::render(TimePoint time, const ConstDataObjectPath&
 
 		if(dislocationsObj) {
 			if(showBurgersVectors()) {
-				DataBufferAccessAndRef<Point3> baseArrowPoints = DataBufferPtr::create(dataset(), dislocationsObj->segments().size(), DataBuffer::Float, 3);
-				DataBufferAccessAndRef<Point3> headArrowPoints = DataBufferPtr::create(dataset(), dislocationsObj->segments().size(), DataBuffer::Float, 3);
+				DataBufferAccessAndRef<Point3> baseArrowPoints = DataBufferPtr::create(dislocationsObj->segments().size(), DataBuffer::Float, 3);
+				DataBufferAccessAndRef<Point3> headArrowPoints = DataBufferPtr::create(dislocationsObj->segments().size(), DataBuffer::Float, 3);
 				subobjToSegmentMap.reserve(subobjToSegmentMap.size() + dislocationsObj->segments().size());
 				int arrowIndex = 0;
 				for(const DislocationSegment* segment : dislocationsObj->segments()) {
@@ -449,10 +449,10 @@ PipelineStatus DislocationVis::render(TimePoint time, const ConstDataObjectPath&
 				primitives.burgersArrows.setUniformColor(burgersVectorColor());
 				primitives.burgersArrows.setPositions(baseArrowPoints.take(), headArrowPoints.take());
 			}
-			primitives.pickInfo = new DislocationPickInfo(this, dislocationsObj, std::move(subobjToSegmentMap));
+			primitives.pickInfo = OORef<DislocationPickInfo>::create(this, dislocationsObj, std::move(subobjToSegmentMap));
 		}
 		else if(microstructureObj) {
-			primitives.pickInfo = new DislocationPickInfo(this, microstructureObj, std::move(subobjToSegmentMap));
+			primitives.pickInfo = OORef<DislocationPickInfo>::create(this, microstructureObj, std::move(subobjToSegmentMap));
 		}
 	}
 
@@ -476,7 +476,7 @@ PipelineStatus DislocationVis::render(TimePoint time, const ConstDataObjectPath&
 /******************************************************************************
 * Renders an overlay marker for a single dislocation segment.
 ******************************************************************************/
-void DislocationVis::renderOverlayMarker(TimePoint time, const DataObject* dataObject, const PipelineFlowState& flowState, int segmentIndex, SceneRenderer* renderer, const PipelineSceneNode* contextNode)
+void DislocationVis::renderOverlayMarker(AnimationTime time, const DataObject* dataObject, const PipelineFlowState& flowState, int segmentIndex, SceneRenderer* renderer, const PipelineSceneNode* contextNode)
 {
 	if(renderer->isPicking())
 		return;
@@ -497,9 +497,9 @@ void DislocationVis::renderOverlayMarker(TimePoint time, const DataObject* dataO
 	const DislocationSegment* segment = dislocationsObj->segments()[segmentIndex];
 
 	// Generate the polyline segments to render.
-	DataBufferAccessAndRef<Point3> baseSegmentPoints = DataBufferPtr::create(dataset(), 0, DataBuffer::Float, 3);
-	DataBufferAccessAndRef<Point3> headSegmentPoints = DataBufferPtr::create(dataset(), 0, DataBuffer::Float, 3);
-	DataBufferAccessAndRef<Point3> cornerVertices = DataBufferPtr::create(dataset(), 0, DataBuffer::Float, 3);
+	DataBufferAccessAndRef<Point3> baseSegmentPoints = DataBufferPtr::create(0, DataBuffer::Float, 3);
+	DataBufferAccessAndRef<Point3> headSegmentPoints = DataBufferPtr::create(0, DataBuffer::Float, 3);
+	DataBufferAccessAndRef<Point3> cornerVertices = DataBufferPtr::create(0, DataBuffer::Float, 3);
 	clipDislocationLine(segment->line, *cellObject, dislocationsObj->cuttingPlanes(), [&](const Point3& v1, const Point3& v2, bool isInitialSegment) {
 		baseSegmentPoints.push_back(v1);
 		headSegmentPoints.push_back(v2);
@@ -544,7 +544,7 @@ void DislocationVis::renderOverlayMarker(TimePoint time, const DataObject* dataO
 	renderer->renderParticles(cornerBuffer);
 
 	if(!segment->line.empty()) {
-		DataBufferAccessAndRef<Point3> wrappedHeadPos = DataBufferPtr::create(dataset(), 1, DataBuffer::Float, 3); 
+		DataBufferAccessAndRef<Point3> wrappedHeadPos = DataBufferPtr::create(1, DataBuffer::Float, 3); 
 		wrappedHeadPos[0] = cellObject->wrapPoint(segment->line.front());
 		ParticlePrimitive headBuffer;
 		headBuffer.setShadingMode(ParticlePrimitive::FlatShading);

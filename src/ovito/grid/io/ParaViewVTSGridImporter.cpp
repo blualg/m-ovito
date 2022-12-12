@@ -208,7 +208,7 @@ void ParaViewVTSGridImporter::FrameLoader::loadFile()
 
 			// Load the VTK point coordinates into a Nx3 buffer of floats.
 			size_t numberOfPoints = (pieceExtent.size(0) + 1) * (pieceExtent.size(1) + 1) * (pieceExtent.size(2) + 1);
-			DataBufferPtr buffer = DataBufferPtr::create(dataset(), numberOfPoints, DataBuffer::Float, 3);
+			DataBufferPtr buffer = DataBufferPtr::create(numberOfPoints, DataBuffer::Float, 3);
 			if(!ParaViewVTPMeshImporter::parseVTKDataArray(buffer, xml))
 				break;
 

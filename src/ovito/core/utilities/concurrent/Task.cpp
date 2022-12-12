@@ -36,23 +36,15 @@ namespace Ovito {
 std::atomic_size_t Task::_globalTaskCounter{0};
 #endif
 
-// The task that is currently the active one in the current thread.
-static thread_local Task* _currentTask = nullptr;
-
 /*******************************************************x***********************
 * Returns the task object that is currently making the call to this function.
 ******************************************************************************/
-Task* Task::currentTask() noexcept 
+Task*& Task::currentTask() noexcept 
 {
-	return _currentTask; 
-}
+	// The task that is currently the active one in the current thread.
+	static thread_local Task* _currentTask = nullptr;
 
-/*******************************************************x***********************
-* Registers a task object as the current task in the current thread.
-******************************************************************************/
-void Task::setCurrentTask(Task* task) noexcept 
-{
-	_currentTask = task; 
+	return _currentTask; 
 }
 
 #ifdef OVITO_DEBUG
@@ -298,7 +290,7 @@ bool Task::waitFor(detail::TaskReference awaitedTask)
 
 	// The task this function was called from.
 	Task* waitingTask = currentTask();
-	OVITO_ASSERT_MSG(waitingTask != nullptr, "Task::waitFor()", "No active task. This function may only be called from a task worker function.");
+	OVITO_ASSERT_MSG(waitingTask != nullptr, "Task::waitFor()", "No active task. This function may only be called from a task worker function or some other context with an active task.");
 
 	// Lock access to the waiting task (this function was called from).
 	QMutexLocker waitingTaskLocker(&waitingTask->taskMutex());

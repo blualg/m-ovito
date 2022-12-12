@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -63,14 +63,19 @@ public:
 	/// \brief Constructor.
 	Q_INVOKABLE GenerateTrajectoryLinesModifier(ObjectCreationParams params);
 	
+	/// This method is called by the system after the modifier has been inserted into a data pipeline.
+	virtual void initializeModifier(const ModifierInitializationRequest& request) override;
+
 	/// Modifies the input data synchronously.
 	virtual void evaluateSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
 
-	/// Returns the custom time interval.
-	TimeInterval customInterval() const { return TimeInterval(_customIntervalStart, _customIntervalEnd); }
-
 	/// Updates the stored trajectories from the source particle object.
-	bool generateTrajectories(MainThreadOperation& operation);
+	bool generateTrajectories(AnimationTime currentTime, MainThreadOperation& operation);
+
+protected:
+
+	/// This method is called once for this object after it has been completely loaded from a stream.
+	virtual void loadFromStreamComplete(ObjectLoadStream& stream) override;
 
 private:
 
@@ -80,11 +85,11 @@ private:
 	/// Controls whether the created trajectories span the entire animation interval or a sub-interval.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, useCustomInterval, setUseCustomInterval);
 
-	/// The start of the custom time interval.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD(TimePoint, customIntervalStart, setCustomIntervalStart);
+	/// The start of the custom frame interval.
+	DECLARE_MODIFIABLE_PROPERTY_FIELD(int, customIntervalStart, setCustomIntervalStart);
 
-	/// The end of the custom time interval.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD(TimePoint, customIntervalEnd, setCustomIntervalEnd);
+	/// The end of the custom frame interval.
+	DECLARE_MODIFIABLE_PROPERTY_FIELD(int, customIntervalEnd, setCustomIntervalEnd);
 
 	/// The sampling frequency for creating trajectories.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(int, everyNthFrame, setEveryNthFrame);

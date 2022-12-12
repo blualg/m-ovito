@@ -22,7 +22,7 @@
 
 #include <ovito/core/Core.h>
 #include <ovito/core/dataset/DataSetContainer.h>
-#include <ovito/core/dataset/UndoStack.h>
+#include <ovito/core/app/undo/UndoableOperation.h>
 #include <ovito/core/dataset/animation/AnimationSettings.h>
 #include <ovito/core/dataset/io/FileImporter.h>
 #include <ovito/core/dataset/scene/Scene.h>
@@ -118,6 +118,11 @@ void DataSetContainer::onViewportConfigReplaced(ViewportConfiguration* viewportC
 ******************************************************************************/
 void DataSetContainer::onActiveViewportChanged(Viewport* activeViewport)
 {
+	disconnect(_sceneReplacedConnection);
+	_activeViewport = activeViewport;
+	if(activeViewport) {
+		_sceneReplacedConnection = connect(activeViewport, &Viewport::sceneReplaced, this, &DataSetContainer::onSceneReplaced);
+	}
 	onSceneReplaced(activeViewport ? activeViewport->scene() : nullptr);
 	Q_EMIT activeViewportChanged(activeViewport);
 }
@@ -234,10 +239,25 @@ bool DataSetContainer::loadDataset(const QString& filename, MainThreadOperation 
 SceneAnimationPlayback* DataSetContainer::createAnimationPlayback()
 {
 	if(!_animationPlayback) {
-		_animationPlayback = OORef<SceneAnimationPlayback>::create(userInterface(), activeScene());
+		_animationPlayback = OORef<SceneAnimationPlayback>::create(userInterface());
 		connect(_animationPlayback.get(), &SceneAnimationPlayback::playbackChanged, this, &DataSetContainer::playbackChanged);
 	}
 	return _animationPlayback;
+}
+
+/******************************************************************************
+* Starts or stops animation playback in the viewports.
+******************************************************************************/
+void DataSetContainer::setAnimationPlayback(bool on)
+{
+	if(on) {
+		startAnimationPlayback(
+			(QGuiApplication::keyboardModifiers() & Qt::ShiftModifier)
+			? -1 : 1);
+	}
+	else {
+		stopAnimationPlayback();
+	}
 }
 
 }	// End of namespace

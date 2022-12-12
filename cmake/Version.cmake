@@ -1,6 +1,6 @@
 #######################################################################################
 #
-#  Copyright 2021 OVITO GmbH, Germany
+#  Copyright 2022 OVITO GmbH, Germany
 #
 #  This file is part of OVITO (Open Visualization Tool).
 #
@@ -33,8 +33,9 @@ SET(OVITO_VERSION_REVISION		"0")
 # Format version 30006 - OVITO ver>3.2.1: TimeAveragingModifier changed.
 # Format version 30007 - OVITO ver>3.3.5: New DataObject framework. Removed PropertyStorage class. Introduced PythonScriptDelegate class.
 # Format version 30008 - OVITO ver>3.5.4: Added viewport layouts.
+# Format version 30009 - OVITO ver>=3.8.0: New DataSet structure (per-viewport Scene, per-scene AnimationSettings, new AnimationTime data type)
 #
-SET(OVITO_FILE_FORMAT_VERSION	"30008")
+SET(OVITO_FILE_FORMAT_VERSION	"30009")
 
 # The application's default version string:
 SET(OVITO_VERSION_STRING "${OVITO_VERSION_MAJOR}.${OVITO_VERSION_MINOR}.${OVITO_VERSION_REVISION}")

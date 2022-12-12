@@ -66,7 +66,7 @@ StandardCameraObject::StandardCameraObject(ObjectCreationParams params) : Abstra
 ******************************************************************************/
 RefMakerClass::SerializedClassInfo::PropertyFieldInfo::CustomDeserializationFunctionPtr StandardCameraObject::OOMetaClass::overrideFieldDeserialization(const SerializedClassInfo::PropertyFieldInfo& field) const
 {
-    // The CameraObject used to manage animation controllers for FOV and Zoom parameters in OVITO 3.3. and earlier.
+    // The CameraObject used to manage animation controllers for FOV and Zoom parameters in OVITO 3.3 and earlier.
     if(field.identifier == "fovController" && field.definingClass == &StandardCameraObject::OOClass()) {
         return [](const SerializedClassInfo::PropertyFieldInfo& field, ObjectLoadStream& stream, RefMaker& owner) {
             OVITO_ASSERT(field.isReferenceField);
@@ -323,7 +323,7 @@ PipelineStatus CameraVis::render(AnimationTime time, const ConstDataObjectPath& 
 /******************************************************************************
 * Computes the bounding box of the object.
 ******************************************************************************/
-Box3 CameraVis::boundingBox(AnimationTime time, const ConstDataObjectPath& path, const PipelineSceneNode* contextNode, const PipelineFlowState& flowState, TimeInterval& validityInterval)
+Box3 CameraVis::boundingBox(AnimationTime time, const ConstDataObjectPath& path, const PipelineSceneNode* contextNode, const PipelineFlowState& flowState, MixedKeyCache& visCache, TimeInterval& validityInterval)
 {
 	// This is not a physical object. It doesn't have a size.
 	return Box3(Point3::Origin(), Point3::Origin());

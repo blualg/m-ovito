@@ -73,16 +73,16 @@ public:
 	Q_INVOKABLE VectorVis(ObjectCreationParams params);
 
 	/// \brief Lets the visualization element render the data object.
-	virtual PipelineStatus render(TimePoint time, const ConstDataObjectPath& path, const PipelineFlowState& flowState, SceneRenderer* renderer, const PipelineSceneNode* contextNode) override;
+	virtual PipelineStatus render(AnimationTime time, const ConstDataObjectPath& path, const PipelineFlowState& flowState, SceneRenderer* renderer, const PipelineSceneNode* contextNode) override;
 
 	/// \brief Computes the bounding box of the object.
-	virtual Box3 boundingBox(TimePoint time, const ConstDataObjectPath& path, const PipelineSceneNode* contextNode, const PipelineFlowState& flowState, TimeInterval& validityInterval) override;
+	virtual Box3 boundingBox(AnimationTime time, const ConstDataObjectPath& path, const PipelineSceneNode* contextNode, const PipelineFlowState& flowState, MixedKeyCache& visCache, TimeInterval& validityInterval) override;
 
 	/// Returns the transparency parameter.
-	FloatType transparency() const { return transparencyController()->currentFloatValue(); }
+	FloatType transparency() const { return transparencyController()->getFloatValue(AnimationTime(0)); }
 
 	/// Sets the transparency parameter.
-	void setTransparency(FloatType t) { transparencyController()->setCurrentFloatValue(t); }
+	void setTransparency(FloatType t) { transparencyController()->setFloatValue(AnimationTime(0), t); }
 
 public:
 

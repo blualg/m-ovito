@@ -39,7 +39,7 @@ class OVITO_CORE_EXPORT SceneAnimationPlayback : public ScenePreparation
 public:
 
 	/// Constructor.
-	explicit SceneAnimationPlayback(UserInterface& userInterface, Scene* scene = nullptr);
+	explicit SceneAnimationPlayback(UserInterface& userInterface);
 
 	/// Returns whether the animation is currently being played back in the viewports.
 	bool isPlaybackActive() const { return _activePlaybackRate != 0; }
@@ -47,13 +47,10 @@ public:
 public Q_SLOTS:
 
 	/// Starts playback of the animation.
-	void startAnimationPlayback(FloatType playbackRate = FloatType(1));
+	void startAnimationPlayback(Scene* scene, FloatType playbackRate = FloatType(1));
 
 	/// Stops playback of the animation.
 	void stopAnimationPlayback();
-
-	/// Starts or stops animation playback.
-	void setAnimationPlayback(bool on);
 
 Q_SIGNALS:
 
@@ -62,19 +59,18 @@ Q_SIGNALS:
 
 private Q_SLOTS:
 
-	/// \brief Timer callback used during animation playback.
-	void onPlaybackTimer();
-
 	/// Starts a timer to show the next animation frame.
 	void scheduleNextAnimationFrame();
+
+protected:
+
+	/// Handles timer events for this object.
+	virtual void timerEvent(QTimerEvent* event) override;
 
 private:
 
 	/// Jumps to the given animation frame, then schedules the next frame as soon as the scene was completely shown.
 	void continuePlaybackAtFrame(int frame);
-
-	/// Indicates that the animation frame has been changed, and the scene is still being prepared for display of the new frame.
-	bool _isTimeChanging = false;
 
 	/// Indicates that the animation is currently being played back in the interactive viewports.
 	FloatType _activePlaybackRate = 0;
@@ -82,8 +78,8 @@ private:
 	/// Measures how long it took to load, compute, and render the current animation frame.
 	QElapsedTimer _frameRenderingTimer;
 
-	/// Task that prepares the scene after an animation time change during playback.
-	SharedFuture<> _sceneReadyFuture;
+	/// Timer for scheduling the next animation frame.
+	QBasicTimer _nextFrameTimer;
 };
 
 }	// End of namespace

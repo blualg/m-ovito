@@ -89,10 +89,10 @@ private:
 			_faceThreshold(faceThreshold),
 			_relativeFaceThreshold(relativeFaceThreshold),
 			_computeBonds(computeBonds),
-			_coordinationNumbers(ParticlesObject::OOClass().createStandardProperty(request.dataset(), fingerprint.particleCount(), ParticlesObject::CoordinationProperty, DataBuffer::InitializeMemory)),
-			_atomicVolumes(ParticlesObject::OOClass().createUserProperty(request.dataset(), fingerprint.particleCount(), PropertyObject::Float, 1, QStringLiteral("Atomic Volume"), DataBuffer::InitializeMemory)),
-			_cavityRadii(ParticlesObject::OOClass().createUserProperty(request.dataset(), fingerprint.particleCount(), PropertyObject::Float, 1, QStringLiteral("Cavity Radius"), DataBuffer::InitializeMemory)),
-			_maxFaceOrders(computeIndices ? ParticlesObject::OOClass().createUserProperty(request.dataset(), fingerprint.particleCount(), PropertyObject::Int, 1, QStringLiteral("Max Face Order"), DataBuffer::InitializeMemory) : nullptr),
+			_coordinationNumbers(ParticlesObject::OOClass().createStandardProperty(fingerprint.particleCount(), ParticlesObject::CoordinationProperty, DataBuffer::InitializeMemory)),
+			_atomicVolumes(ParticlesObject::OOClass().createUserProperty(fingerprint.particleCount(), PropertyObject::Float, 1, QStringLiteral("Atomic Volume"), DataBuffer::InitializeMemory)),
+			_cavityRadii(ParticlesObject::OOClass().createUserProperty(fingerprint.particleCount(), PropertyObject::Float, 1, QStringLiteral("Cavity Radius"), DataBuffer::InitializeMemory)),
+			_maxFaceOrders(computeIndices ? ParticlesObject::OOClass().createUserProperty(fingerprint.particleCount(), PropertyObject::Int, 1, QStringLiteral("Max Face Order"), DataBuffer::InitializeMemory) : nullptr),
 			_inputFingerprint(std::move(fingerprint)),
 			_polyhedraMesh(std::move(polyhedraMesh)) {}
 

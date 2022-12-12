@@ -78,12 +78,6 @@ public:
 	/// Returns the data collection that is managed by this object (if it is a data source).
 	/// The returned data collection will be displayed under the data source in the pipeline editor.
 	virtual const DataCollection* getSourceDataCollection() const { return nullptr; }
-
-#if 0 // TODO: Remove dead code
-	/// Returns the animation time at which the pipeline thiis object is part of is being rendered in the GUI.
-	/// This method assumes that the pipeline(s) this object is part of are all in the same scene.
-	std::optional<AnimationTime> currentAnimationTime() const;	
-#endif
 };
 
 }	// End of namespace

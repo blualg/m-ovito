@@ -132,14 +132,12 @@ public:
 	/// \brief Tries to detect the format of the given file.
 	/// \param existingImporterHint Optional existing importer object, which is tested first agains the file. Providing this importer can speed up the auto-detection.
 	/// \return The importer class that can handle the given file. If the file format could not be recognized then NULL is returned.
-	/// \throw Exception if url is invalid or if operation has been canceled by the user.
-	/// \note This is a blocking function, which downloads the file and can take a long time to return.
-	static Future<OORef<FileImporter>> autodetectFileFormat(RefTarget* contextObject, const QUrl& url, OORef<FileImporter> existingImporterHint = {});
+	static Future<OORef<FileImporter>> autodetectFileFormat(const QUrl& url, OORef<FileImporter> existingImporterHint = {});
 
 	/// \brief Tries to detect the format of the given file.
 	/// \param existingImporterHint Optional existing importer object, which is tested first agains the file. Providing this importer can speed up the auto-detection.
 	/// \return The importer class that can handle the given file. If the file format could not be recognized then NULL is returned.
-	static OORef<FileImporter> autodetectFileFormat(RefTarget* contextObject, const FileHandle& file, FileImporter* existingImporterHint = nullptr);
+	static OORef<FileImporter> autodetectFileFormat(const FileHandle& file, FileImporter* existingImporterHint = nullptr);
 
 	/// Helper function that is called by sub-classes prior to file parsing in order to
 	/// activate the default "C" locale.

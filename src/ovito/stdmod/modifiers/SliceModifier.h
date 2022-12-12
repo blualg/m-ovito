@@ -83,28 +83,28 @@ public:
 	// Property access functions:
 
 	/// Returns the signed distance of the cutting plane from the origin.
-	FloatType distance() const { return distanceController() ? distanceController()->currentFloatValue() : 0; }
+	FloatType distance() const { return distanceController() ? distanceController()->getFloatValue(AnimationTime(0)) : 0; }
 
 	/// Sets the plane's distance from the origin.
-	void setDistance(FloatType newDistance) { if(distanceController()) distanceController()->setCurrentFloatValue(newDistance); }
+	void setDistance(FloatType newDistance) { if(distanceController()) distanceController()->setFloatValue(AnimationTime(0), newDistance); }
 
 	/// Returns the plane's normal vector.
-	Vector3 normal() const { return normalController() ? normalController()->currentVector3Value() : Vector3(0,0,1); }
+	Vector3 normal() const { return normalController() ? normalController()->getVector3Value(AnimationTime(0)) : Vector3(0,0,1); }
 
 	/// Sets the plane's normal vector.
-	void setNormal(const Vector3& newNormal) { if(normalController()) normalController()->setCurrentVector3Value(newNormal); }
+	void setNormal(const Vector3& newNormal) { if(normalController()) normalController()->setVector3Value(AnimationTime(0), newNormal); }
 
 	/// Returns the width of the slab produced by the modifier.
-	FloatType slabWidth() const { return widthController() ? widthController()->currentFloatValue() : 0; }
+	FloatType slabWidth() const { return widthController() ? widthController()->getFloatValue(AnimationTime(0)) : 0; }
 
 	/// Sets the width of the slab produced by the modifier.
-	void setSlabWidth(FloatType newWidth) { if(widthController()) widthController()->setCurrentFloatValue(newWidth); }
+	void setSlabWidth(FloatType newWidth) { if(widthController()) widthController()->setFloatValue(AnimationTime(0), newWidth); }
 
 	/// Returns the slicing plane and the slab width.
-	std::tuple<Plane3, FloatType> slicingPlane(TimePoint time, TimeInterval& validityInterval, const PipelineFlowState& state);
+	std::tuple<Plane3, FloatType> slicingPlane(AnimationTime time, TimeInterval& validityInterval, const PipelineFlowState& state);
 
 	/// Moves the plane along its current normal vector to position in the center of the simulation cell. 
-	Q_INVOKABLE void centerPlaneInSimulationCell(ModifierApplication* modApp);
+	void centerPlaneInSimulationCell(ModifierApplication* modApp, AnimationTime time);
 
 	/// Returns a short piece information (typically a string or color) to be displayed next to the modifier's title in the pipeline editor list.
 	virtual QVariant getPipelineEditorShortInfo(Scene* scene, ModifierApplication* modApp) const override;
@@ -118,7 +118,7 @@ protected:
 	virtual bool referenceEvent(RefTarget* source, const ReferenceEvent& event) override;
 
 	/// Renders the modifier's visual representation and computes its bounding box.
-	void renderVisual(TimePoint time, PipelineSceneNode* contextNode, SceneRenderer* renderer, const PipelineFlowState& state);
+	void renderVisual(AnimationTime time, PipelineSceneNode* contextNode, SceneRenderer* renderer, const PipelineFlowState& state);
 
 	/// Renders the plane in the viewport.
 	void renderPlane(SceneRenderer* renderer, const Plane3& plane, const Box3& box, const ColorA& color) const;

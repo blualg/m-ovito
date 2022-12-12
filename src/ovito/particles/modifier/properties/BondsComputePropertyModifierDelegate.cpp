@@ -65,7 +65,7 @@ std::shared_ptr<ComputePropertyModifierDelegate::PropertyComputeEngine> BondsCom
 			containerPath,
 			std::move(selectionProperty),
 			std::move(expressions),
-			dataset()->animationSettings()->timeToFrame(request.time()),
+			request.time().frame(),
 			input);
 }
 

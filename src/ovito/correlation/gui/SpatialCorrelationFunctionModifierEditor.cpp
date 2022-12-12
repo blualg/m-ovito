@@ -286,7 +286,7 @@ std::pair<FloatType,FloatType> SpatialCorrelationFunctionModifierEditor::plotDat
 												ConstPropertyAccess<FloatType> normalization)
 {
 	// Duplicate the data table, then modify the stored values.
-	UndoSuspender noUndo(table);
+	UndoSuspender noUndo;
 	CloneHelper cloneHelper;
 	OORef<DataTable> clonedTable = cloneHelper.cloneObject(table, false);
 	clonedTable->makePropertiesMutable();
@@ -423,7 +423,7 @@ void SpatialCorrelationFunctionModifierEditor::plotAllData()
 		auto realSpaceYRange = plotData(realSpaceCorrelation, _realSpacePlot, offset, uniformFactor,
 			(realSpaceRDF && modifier->normalizeRealSpaceByRDF()) ? realSpaceRDF->y() : nullptr);
 
-		UndoSuspender noUndo(modifier);
+		UndoSuspender noUndo;
 		if(!modifier->fixRealSpaceXAxisRange()) {
 			modifier->setRealSpaceXAxisRangeStart(realSpaceCorrelation->intervalStart());
 			modifier->setRealSpaceXAxisRangeEnd(realSpaceCorrelation->intervalEnd());
@@ -445,7 +445,7 @@ void SpatialCorrelationFunctionModifierEditor::plotAllData()
 			rfac = 1.0 / covariance.toDouble();
 		auto reciprocalSpaceYRange = plotData(reciprocalSpaceCorrelation, _reciprocalSpacePlot, 0.0, rfac, nullptr);
 
-		UndoSuspender noUndo(modifier);
+		UndoSuspender noUndo;
 		if(!modifier->fixReciprocalSpaceXAxisRange()) {
 			modifier->setReciprocalSpaceXAxisRangeStart(reciprocalSpaceCorrelation->intervalStart());
 			modifier->setReciprocalSpaceXAxisRangeEnd(reciprocalSpaceCorrelation->intervalEnd());

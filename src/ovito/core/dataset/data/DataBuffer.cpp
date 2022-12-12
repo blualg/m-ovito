@@ -30,7 +30,7 @@ namespace Ovito {
 IMPLEMENT_OVITO_CLASS(DataBuffer);
 
 /******************************************************************************
-* Constructor allocating a property array with given size and data layout.
+* Constructor allocating a buffer array with given size and data layout.
 ******************************************************************************/
 DataBuffer::DataBuffer(ObjectCreationParams params, size_t elementCount, int dataType, size_t componentCount, InitializationFlags flags, QStringList componentNames) :
 	DataObject(params),
@@ -54,7 +54,7 @@ DataBuffer::DataBuffer(ObjectCreationParams params, size_t elementCount, int dat
 }
 
 /******************************************************************************
-* Creates a copy of a property object.
+* Creates a copy of a buffer object.
 ******************************************************************************/
 OORef<RefTarget> DataBuffer::clone(bool deepCopy, CloneHelper& cloneHelper) const
 {
@@ -78,12 +78,12 @@ OORef<RefTarget> DataBuffer::clone(bool deepCopy, CloneHelper& cloneHelper) cons
 }
 
 /******************************************************************************
-* Resizes the property storage.
+* Resizes the storage.
 ******************************************************************************/
 void DataBuffer::resize(size_t newSize, bool preserveData)
 {
 	// Note: Do not reallocate the buffer when its size is reduced.
-	// The PropertyContainerAccess::filterResize() method relies on 
+	// The filterResize() method relies on 
 	// the data buffer's memory pointer to remain the same when the buffer is shrinked.
 	prepareWriteAccess();
 	if(newSize > _capacity || !_data) {
@@ -648,8 +648,8 @@ void DataBuffer::copyRangeFrom(const DataBuffer& source, size_t sourceIndex, siz
 }
 
 /******************************************************************************
-* Checks if this property storage and its contents exactly match those of 
-* another property storage.
+* Checks if this buffer storage and its contents exactly match those of 
+* another buffer.
 ******************************************************************************/
 bool DataBuffer::equals(const DataBuffer& other) const
 {
@@ -671,8 +671,7 @@ bool DataBuffer::equals(const DataBuffer& other) const
 }
 
 /******************************************************************************
-* Changes the data type of the property in place and convert the values stored 
-* in the property.
+* Changes the data type of the buffer in place and converts the stored values.
 ******************************************************************************/
 void DataBuffer::convertDataType(int newDataType)
 {

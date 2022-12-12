@@ -144,7 +144,7 @@ Future<AsynchronousModifier::EnginePtr> ConstructSurfaceModifier::createEngine(c
 	}
 	
 	// Create an empty surface mesh.
-	DataOORef<SurfaceMesh> mesh = DataOORef<SurfaceMesh>::create(dataset(), ObjectCreationParams::WithoutVisElement, tr("Surface"));
+	DataOORef<SurfaceMesh> mesh = DataOORef<SurfaceMesh>::create(ObjectCreationParams::WithoutVisElement, tr("Surface"));
 	mesh->setIdentifier(input.generateUniqueIdentifier<SurfaceMesh>(QStringLiteral("surface")));
 	mesh->setDataSource(request.modApp());
 	mesh->setDomain(simCell);

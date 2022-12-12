@@ -125,7 +125,7 @@ void TextLabelOverlay::render(SceneRenderer* renderer, const QRect& logicalViewp
 		checkAlignmentParameterValue(alignment());
 
 		if(sourceNode()) {
-			PipelineEvaluationFuture pipelineEvaluation = sourceNode()->evaluatePipeline(PipelineEvaluationRequest(renderer->time(), renderer->frame()));
+			PipelineEvaluationFuture pipelineEvaluation = sourceNode()->evaluatePipeline(PipelineEvaluationRequest(renderer->time()));
 			if(!pipelineEvaluation.waitForFinished())
 				return;
 			renderImplementation(renderer, physicalViewportRect, pipelineEvaluation.result());

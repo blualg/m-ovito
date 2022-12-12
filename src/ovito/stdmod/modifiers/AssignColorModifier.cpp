@@ -48,8 +48,8 @@ AssignColorModifier::AssignColorModifier(ObjectCreationParams params) : Delegati
 	_keepSelection(!params.loadUserDefaults())
 {
 	if(params.createSubObjects()) {
-		setColorController(ControllerManager::createColorController(dataset()));
-		colorController()->setColorValue(0, Color(0.3f, 0.3f, 1.0f));
+		setColorController(ControllerManager::createColorController());
+		colorController()->setColorValue(AnimationTime(0), Color(0.3f, 0.3f, 1.0f));
 
 		// Let this modifier operate on particles by default.
 		createDefaultModifierDelegate(AssignColorModifierDelegate::OOClass(), QStringLiteral("ParticlesAssignColorModifierDelegate"), params);

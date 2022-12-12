@@ -263,6 +263,9 @@ private:
 	/// List item indices that need to be repainted. A negative entry indicates a refresh of the entire list.
 	std::vector<int> _itemsRefreshPending;
 
+	/// The pipeline that was selected last time the list model was refreshed. 
+	QPointer<PipelineSceneNode> _previouslySelectedPipeline;
+
 	// Status icons:
 	QPixmap _statusInfoIcon;
 	QPixmap _statusWarningIcon;

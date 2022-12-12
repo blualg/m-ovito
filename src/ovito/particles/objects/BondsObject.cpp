@@ -25,7 +25,6 @@
 #include <ovito/particles/objects/ParticlesObject.h>
 #include <ovito/stdobj/simcell/SimulationCellObject.h>
 #include <ovito/core/app/Application.h>
-#include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/dataset/pipeline/PipelineFlowState.h>
 #include <ovito/core/utilities/concurrent/ParallelFor.h>
 #include "BondsObject.h"
@@ -244,7 +243,7 @@ ConstPropertyPtr BondsObject::inputBondWidths() const
 	}
 
 	// Return uniform default width for all bonds.
-	PropertyPtr buffer = OOClass().createStandardProperty(dataset(), elementCount(), BondsObject::WidthProperty);
+	PropertyPtr buffer = OOClass().createStandardProperty(elementCount(), BondsObject::WidthProperty);
 	buffer->fill<FloatType>(1);
 	return buffer;
 }
@@ -252,7 +251,7 @@ ConstPropertyPtr BondsObject::inputBondWidths() const
 /******************************************************************************
 * Creates a storage object for standard bond properties.
 ******************************************************************************/
-PropertyPtr BondsObject::OOMetaClass::createStandardPropertyInternal(DataSet* dataset, size_t elementCount, int type, DataBuffer::InitializationFlags flags, const ConstDataObjectPath& containerPath) const
+PropertyPtr BondsObject::OOMetaClass::createStandardPropertyInternal(size_t elementCount, int type, DataBuffer::InitializationFlags flags, const ConstDataObjectPath& containerPath) const
 {
 	// Initialize memory if requested.
 	if(flags.testFlag(DataBuffer::InitializeMemory) && containerPath.size() >= 2) {
@@ -314,7 +313,7 @@ PropertyPtr BondsObject::OOMetaClass::createStandardPropertyInternal(DataSet* da
 
 	OVITO_ASSERT(componentCount == standardPropertyComponentCount(type));
 
-	PropertyPtr property = PropertyPtr::create(dataset, elementCount, dataType, componentCount, propertyName, flags & ~DataBuffer::InitializeMemory, type, componentNames);
+	PropertyPtr property = PropertyPtr::create(elementCount, dataType, componentCount, propertyName, flags & ~DataBuffer::InitializeMemory, type, componentNames);
 
 	if(flags.testFlag(DataBuffer::InitializeMemory)) {
 		// Default-initialize property values with zeros.
@@ -567,7 +566,7 @@ boost::dynamic_bitset<> BondsObject::OOMetaClass::viewportFenceSelection(const Q
 * Returns the base point and vector information for visualizing a vector 
 * property from this container using a VectorVis element.
 ******************************************************************************/
-std::tuple<ConstDataBufferPtr, ConstDataBufferPtr> BondsObject::getVectorVisData(const ConstDataObjectPath& path, const PipelineFlowState& state, SceneRenderer* renderer) const
+std::tuple<ConstDataBufferPtr, ConstDataBufferPtr> BondsObject::getVectorVisData(const ConstDataObjectPath& path, const PipelineFlowState& state, MixedKeyCache& visCache) const
 {
 	OVITO_ASSERT(path.lastAs<BondsObject>(1) == this);
 	verifyIntegrity();
@@ -581,10 +580,10 @@ std::tuple<ConstDataBufferPtr, ConstDataBufferPtr> BondsObject::getVectorVisData
 
 			// Look up the bond centers in the cache.
 			using CacheKey = RendererResourceKey<struct BondCentersCache, ConstDataObjectRef, ConstDataObjectRef>;
-			auto& basePositions = dataset()->visCache().get<ConstDataBufferPtr>(CacheKey(particles, simulationCell));
+			auto& basePositions = visCache.get<ConstDataBufferPtr>(CacheKey(particles, simulationCell));
 			if(!basePositions) {
 				// Compute bond centers.
-				DataBufferAccessAndRef<Point3> centers = DataBufferPtr::create(dataset(), elementCount(), DataBuffer::Float, 3);
+				DataBufferAccessAndRef<Point3> centers = DataBufferPtr::create(elementCount(), DataBuffer::Float, 3);
 				ConstPropertyAccess<ParticleIndexPair> bondTopology(bondTopologyProperty);
 				ConstPropertyAccess<Vector3I> bondPeriodicImages(bondPeriodicImageProperty);
 				ConstPropertyAccess<Point3> positions(positionProperty);

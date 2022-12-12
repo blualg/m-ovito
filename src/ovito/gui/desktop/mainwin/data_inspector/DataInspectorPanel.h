@@ -145,7 +145,7 @@ private:
 	OORef<PipelineSceneNode> _selectedPipeline;
 
 	/// Helper object which asks the scene pipelines to compute their results.
-	ScenePreparation _scenePreparation;
+	OORef<ScenePreparation> _scenePreparation;
 
 	/// The most recent output data of the selected pipeline, which is displayed in the data inspector panel.
 	PipelineFlowState _pipelineOutput;

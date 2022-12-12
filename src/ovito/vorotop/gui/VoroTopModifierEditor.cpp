@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -95,7 +95,7 @@ void VoroTopModifierEditor::onLoadFilter()
 	VoroTopModifier* mod = static_object_cast<VoroTopModifier>(editObject());
 	if(!mod) return;
 
-	undoableTransaction(tr("Load VoroTop filter"), [this, mod]() {
+	performTransaction(tr("Load VoroTop filter"), [this, mod]() {
 
 		HistoryFileDialog fileDialog(QStringLiteral("vorotop_filter"), container(), tr("Pick VoroTop filter file"),
 			QString(), tr("VoroTop filter definition file (*)"));

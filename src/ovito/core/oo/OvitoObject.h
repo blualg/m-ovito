@@ -26,6 +26,7 @@
 #include <ovito/core/Core.h>
 #include <ovito/core/oo/OORef.h>
 #include <ovito/core/oo/OvitoClass.h>
+#include <ovito/core/oo/ObjectExecutor.h>
 
 namespace Ovito {
 
@@ -112,16 +113,16 @@ public:
 
 	/// Returns an executor object to be used with Future<>::then(), which executes work
 	/// in the context (and the thread) of this object.
-	OvitoObjectExecutor executor(bool requireDeferredExecution = false) const;
+	ObjectExecutor executor(bool requireDeferredExecution = false) const { return ObjectExecutor(this, requireDeferredExecution); }
 
 protected:
 
 	/// \brief Saves the internal data of this object to an output stream.
-	/// \param stream The destination stream.
+	/// \param stream The destination data stream.
 	/// \param excludeRecomputableData Controls whether the object should not store data that can be recomputed at runtime.
 	///
 	/// Subclasses can override this method to write their data fields
-	/// to a file. The derived class \b must always call the base implementation saveToStream() first
+	/// to a file. The derived class must call the base implementation saveToStream() first
 	/// before it writes its own data to the stream.
 	///
 	/// The default implementation of this method does nothing.
@@ -129,11 +130,11 @@ protected:
 	virtual void saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData) const {}
 
 	/// \brief Loads the data of this class from an input stream.
-	/// \param stream The source stream.
+	/// \param stream The source data stream.
 	/// \throw Exception when a parsing error has occurred.
 	///
 	/// Subclasses can override this method to read their saved data
-	/// from the input stream. The derived class \b must always call the base implementation of loadFromStream() first
+	/// from the input stream. The derived class must call the base implementation of loadFromStream() first
 	/// before reading its own data from the stream.
 	///
 	/// The default implementation of this method does nothing.
@@ -149,10 +150,10 @@ protected:
 	/// \sa saveToStream()
 	virtual void loadFromStream(ObjectLoadStream& stream) {}
 
-	/// \brief This method is called once for this object after they have been
-	///        completely loaded from a stream.
+	/// \brief This method is called once for this object after it has been
+	///        completely deserialized from a data stream.
 	///
-	/// It is safe to access sub-objects when overriding this this method.
+	/// It is safe to access sub-objects from this method.
 	/// The default implementation of this method does nothing.
 	virtual void loadFromStreamComplete(ObjectLoadStream& stream) {}
 
@@ -330,4 +331,4 @@ Q_DECLARE_SMART_POINTER_METATYPE(Ovito::OORef);
 
 #include <ovito/core/utilities/io/ObjectSaveStream.h>
 #include <ovito/core/utilities/io/ObjectLoadStream.h>
-#include <ovito/core/oo/OvitoObjectExecutor.h>
+#include <ovito/core/oo/ObjectExecutor.h>

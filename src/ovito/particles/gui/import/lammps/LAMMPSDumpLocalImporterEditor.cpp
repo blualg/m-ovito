@@ -79,7 +79,7 @@ bool LAMMPSDumpLocalImporterEditor::inspectNewFile(FileImporter* importer, const
 		}
 	}
 
-	InputColumnMappingDialog dialog(mapping, &mainWindow);
+	InputColumnMappingDialog dialog(mainWindow, mapping, &mainWindow);
 	if(dialog.exec() == QDialog::Accepted) {
 		lammpsImporter->setColumnMapping(dialog.mapping());
 
@@ -119,7 +119,7 @@ bool LAMMPSDumpLocalImporterEditor::showEditColumnMappingDialog(LAMMPSDumpLocalI
 		mapping = std::move(newMapping);
 	}
 
-	InputColumnMappingDialog dialog(mapping, parentWindow());
+	InputColumnMappingDialog dialog(mainWindow(), mapping, parentWindow());
 	if(dialog.exec() == QDialog::Accepted) {
 		importer->setColumnMapping(dialog.mapping());
 		// Remember the user-defined mapping for the next time.
@@ -183,11 +183,12 @@ void LAMMPSDumpLocalImporterEditor::createUI(const RolloutInsertionParameters& r
 void LAMMPSDumpLocalImporterEditor::onEditColumnMapping()
 {
 	if(LAMMPSDumpLocalImporter* importer = static_object_cast<LAMMPSDumpLocalImporter>(editObject())) {
-		UndoableTransaction::handleExceptions(importer->dataset()->undoStack(), tr("Change file column mapping"), [this, importer]() {
+		performTransaction(tr("Change file column mapping"), [this, importer]() {
 
 			// Determine the currently loaded data file of the FileSource.
 			FileSource* fileSource = importer->fileSource();
-			if(!fileSource || fileSource->frames().empty()) return;
+			if(!fileSource || fileSource->frames().empty()) 
+				return;
 			int frameIndex = qBound(0, fileSource->dataCollectionFrame(), fileSource->frames().size()-1);
 
 			// Show the dialog box, which lets the user modify the file column mapping.

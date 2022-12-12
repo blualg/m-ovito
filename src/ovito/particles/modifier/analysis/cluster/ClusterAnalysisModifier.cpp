@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -100,7 +100,7 @@ Future<AsynchronousModifier::EnginePtr> ClusterAnalysisModifier::createEngine(co
 		periodicImageBondProperty = ConstPropertyPtr(particles->bonds()->getProperty(BondsObject::PeriodicImageProperty)).makeCopy();
 		// If no PBC vectors are present, create ad-hoc vectors initialized to zero.
 		if(!periodicImageBondProperty)
-			periodicImageBondProperty = BondsObject::OOClass().createStandardProperty(dataset(), particles->bonds()->elementCount(), BondsObject::PeriodicImageProperty, DataBuffer::InitializeMemory);
+			periodicImageBondProperty = BondsObject::OOClass().createStandardProperty(particles->bonds()->elementCount(), BondsObject::PeriodicImageProperty, DataBuffer::InitializeMemory);
 	}
 
 	// Get particle masses, needed for center-of-mass calculation.
@@ -115,7 +115,7 @@ Future<AsynchronousModifier::EnginePtr> ClusterAnalysisModifier::createEngine(co
 			std::map<int,FloatType> massMap = ParticleType::typeMassMap(typeProperty);
 			// Use the per-type masses only if there is at least one type having a positive mass.
 			if(!massMap.empty() && std::any_of(massMap.cbegin(), massMap.cend(), [](const auto& i) { return i.second > 0; })) {
-				PropertyAccessAndRef<FloatType> massArray(ParticlesObject::OOClass().createStandardProperty(dataset(), particles->elementCount(), ParticlesObject::MassProperty));
+				PropertyAccessAndRef<FloatType> massArray(ParticlesObject::OOClass().createStandardProperty(particles->elementCount(), ParticlesObject::MassProperty));
 				boost::transform(ConstPropertyAccess<int>(typeProperty), massArray.begin(), [&](int t) {
 					auto iter = massMap.find(t);
 					if(iter != massMap.end()) return iter->second;

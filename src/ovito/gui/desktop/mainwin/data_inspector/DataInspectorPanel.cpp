@@ -34,7 +34,7 @@ namespace Ovito {
 DataInspectorPanel::DataInspectorPanel(MainWindow& mainWindow) :
 	_mainWindow(mainWindow),
 	_waitingForSceneAnim(":/gui/mainwin/inspector/waiting.gif"),
-	_scenePreparation(mainWindow)
+	_scenePreparation(OORef<ScenePreparation>::create(mainWindow))
 {
 	// Create data inspection applets.
 	for(OvitoClassPtr clazz : PluginManager::instance().listClasses(DataInspectionApplet::OOClass())) {
@@ -94,9 +94,9 @@ DataInspectorPanel::DataInspectorPanel(MainWindow& mainWindow) :
 	connect(_tabBar, &QTabBar::currentChanged, this, &DataInspectorPanel::onCurrentTabChanged);
 	connect(_appletContainer, &QStackedWidget::currentChanged, this, &DataInspectorPanel::onCurrentPageChanged);
 	connect(&datasetContainer(), &DataSetContainer::selectionChangeComplete, this, &DataInspectorPanel::onSceneSelectionChanged);
-	connect(&datasetContainer(), &DataSetContainer::sceneReplaced, &_scenePreparation, [this](Scene* scene) { _scenePreparation.setScene(scene); });
-	connect(&_scenePreparation, &ScenePreparation::scenePreparationStarted, this, &DataInspectorPanel::onScenePreparationStarted);
-	connect(&_scenePreparation, &ScenePreparation::scenePreparationFinished, this, &DataInspectorPanel::onScenePreparationFinished);
+	connect(&datasetContainer(), &DataSetContainer::sceneReplaced, _scenePreparation.get(), [this](Scene* scene) { _scenePreparation->setScene(scene); });
+	connect(_scenePreparation.get(), &ScenePreparation::scenePreparationStarted, this, &DataInspectorPanel::onScenePreparationStarted);
+	connect(_scenePreparation.get(), &ScenePreparation::scenePreparationFinished, this, &DataInspectorPanel::onScenePreparationFinished);
 
 	updateTabsList();
 }
@@ -309,8 +309,11 @@ bool DataInspectorPanel::updatePipelineOutput()
 {
 	if(selectedPipeline()) {
 		if(AnimationSettings* anim = mainWindow().datasetContainer().activeAnimationSettings()) {
-			_pipelineOutput = selectedPipeline()->evaluatePipelineSynchronous(anim->currentTime(), true);
-			return true;
+			if(mainWindow().handleExceptions([&] {
+				_pipelineOutput = selectedPipeline()->evaluatePipelineSynchronous(anim->currentTime(), true);
+			})) {
+				return true;
+			}
 		}
 	}
 	_pipelineOutput.reset();

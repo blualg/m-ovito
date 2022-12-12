@@ -106,7 +106,7 @@ PipelineStatus TargetVis::render(AnimationTime time, const ConstDataObjectPath& 
 /******************************************************************************
 * Computes the bounding box of the object.
 ******************************************************************************/
-Box3 TargetVis::boundingBox(AnimationTime time, const ConstDataObjectPath& path, const PipelineSceneNode* contextNode, const PipelineFlowState& flowState, TimeInterval& validityInterval)
+Box3 TargetVis::boundingBox(AnimationTime time, const ConstDataObjectPath& path, const PipelineSceneNode* contextNode, const PipelineFlowState& flowState, MixedKeyCache& visCache, TimeInterval& validityInterval)
 {
 	// This is not a physical object. It is point-like and doesn't have any size.
 	return Box3(Point3::Origin(), Point3::Origin());

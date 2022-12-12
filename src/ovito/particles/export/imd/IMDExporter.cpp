@@ -34,7 +34,7 @@ IMPLEMENT_OVITO_CLASS(IMDExporter);
 /******************************************************************************
 * Writes the particles of one animation frame to the current output file.
 ******************************************************************************/
-bool IMDExporter::exportData(const PipelineFlowState& state, int frameNumber, TimePoint time, const QString& filePath, MainThreadOperation& operation)
+bool IMDExporter::exportData(const PipelineFlowState& state, int frameNumber, const QString& filePath, MainThreadOperation& operation)
 {
 	const ParticlesObject* particles = state.expectObject<ParticlesObject>();
 	particles->verifyIntegrity();

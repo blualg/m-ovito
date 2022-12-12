@@ -27,7 +27,7 @@ one particular frame from the loaded trajectory.
 
 In the :ref:`External file <scene_objects.file_source>` panel, press the `Playback ratio` :guilabel:`Change...` button to open the 
 :ref:`Configure Trajectory Playback <scene_objects.file_source.configure_playback>` dialog. 
-Activate the option :guilabel:`Extract one static frame` and choose the simulation timestep for which you would like to create a turntable animation.
+Activate the option :guilabel:`Extract a static frame` and choose the simulation timestep for which you would like to create a turntable animation.
 
 The timeline of OVITO no longer shows the original series of trajectory frames now - as if you had loaded a data file containing just a single simulation snapshot.
 

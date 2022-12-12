@@ -97,13 +97,16 @@ auto for_each_sequential(
 
 		/// Start execution of the task.
 		void go() noexcept {
+			OVITO_ASSERT(_iterator == std::begin(_range));
 			// Begin execution of first iteration.
-			if(_iterator != std::end(_range))
+			if(_iterator != std::end(_range)) {
 #ifndef OVITO_MSVC_2017_COMPATIBILITY
 				_executor.schedule(detail::bind_front(&ForEachTask::iteration_begin, static_pointer_cast<ForEachTask>(this->shared_from_this())))();
 #else
 				_executor.schedule([self = static_pointer_cast<ForEachTask>(this->shared_from_this())](UNUSED_CONTINUATION_FUNC_PARAM) noexcept { self->iteration_begin(); })(*this);
 #endif
+				OVITO_ASSERT_MSG(_iterator == std::begin(_range), "for_each_sequential()", "An executor that performs deferred execution is required.");
+			}
 			else
 				this->setFinished();
 		}

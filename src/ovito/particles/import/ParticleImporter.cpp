@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -86,7 +86,7 @@ BondsObject* ParticleImporter::FrameLoader::bonds()
 			_bonds = particles()->makeBondsMutable();
 		}
 		else {
-			particles()->setBonds(DataOORef<BondsObject>::create(dataset()));
+			particles()->setBonds(DataOORef<BondsObject>::create());
 			_bonds = particles()->makeBondsMutable();
 			_bonds->setDataSource(dataSource());
 			_areBondsNewlyCreated = true;
@@ -106,7 +106,7 @@ AnglesObject* ParticleImporter::FrameLoader::angles()
 			_angles = particles()->makeAnglesMutable();
 		}
 		else {
-			particles()->setAngles(DataOORef<AnglesObject>::create(dataset()));
+			particles()->setAngles(DataOORef<AnglesObject>::create());
 			_angles = particles()->makeAnglesMutable();
 			_angles->setDataSource(dataSource());
 			_areAnglesNewlyCreated = true;
@@ -126,7 +126,7 @@ DihedralsObject* ParticleImporter::FrameLoader::dihedrals()
 			_dihedrals = particles()->makeDihedralsMutable();
 		}
 		else {
-			particles()->setDihedrals(DataOORef<DihedralsObject>::create(dataset()));
+			particles()->setDihedrals(DataOORef<DihedralsObject>::create());
 			_dihedrals = particles()->makeDihedralsMutable();
 			_dihedrals->setDataSource(dataSource());
 			_areDihedralsNewlyCreated = true;
@@ -146,7 +146,7 @@ ImpropersObject* ParticleImporter::FrameLoader::impropers()
 			_impropers = particles()->makeImpropersMutable();
 		}
 		else {
-			particles()->setImpropers(DataOORef<ImpropersObject>::create(dataset()));
+			particles()->setImpropers(DataOORef<ImpropersObject>::create());
 			_impropers = particles()->makeImpropersMutable();
 			_impropers->setDataSource(dataSource());
 			_areImpropersNewlyCreated = true;
@@ -499,14 +499,14 @@ void ParticleImporter::FrameLoader::loadFile()
 /******************************************************************************
 * Is called when importing multiple files of different formats.
 ******************************************************************************/
-bool ParticleImporter::importFurtherFiles(std::vector<std::pair<QUrl, OORef<FileImporter>>> sourceUrlsAndImporters, ImportMode importMode, bool autodetectFileSequences, PipelineSceneNode* pipeline)
+bool ParticleImporter::importFurtherFiles(Scene* scene, std::vector<std::pair<QUrl, OORef<FileImporter>>> sourceUrlsAndImporters, ImportMode importMode, bool autodetectFileSequences, PipelineSceneNode* pipeline)
 {
 	OVITO_ASSERT(!sourceUrlsAndImporters.empty());
 	OORef<ParticleImporter> nextImporter = dynamic_object_cast<ParticleImporter>(sourceUrlsAndImporters.front().second);
 	if(this->isTrajectoryFormat() == false && nextImporter && nextImporter->isTrajectoryFormat() == true) {
 
 		// Create a new file source for loading the trajectory.
-		OORef<FileSource> fileSource = OORef<FileSource>::create(dataset());
+		OORef<FileSource> fileSource = OORef<FileSource>::create();
 
 		// Concatenate all files from the input list having the same file format into one sequence,
 		// which gets handled by the trajectory importer.
@@ -525,14 +525,14 @@ bool ParticleImporter::importFurtherFiles(std::vector<std::pair<QUrl, OORef<File
 			return {};
 
 		// Create a modifier for injecting the trajectory data into the existing pipeline.
-		OORef<LoadTrajectoryModifier> loadTrjMod = OORef<LoadTrajectoryModifier>::create(dataset());
+		OORef<LoadTrajectoryModifier> loadTrjMod = OORef<LoadTrajectoryModifier>::create();
 		loadTrjMod->setTrajectorySource(std::move(fileSource));
-		pipeline->applyModifier(std::move(loadTrjMod));
+		pipeline->applyModifier(scene->animationSettings()->currentTime(), std::move(loadTrjMod));
 
 		if(sourceUrlsAndImporters.empty())
 			return true;
 	}
-	return FileSourceImporter::importFurtherFiles(std::move(sourceUrlsAndImporters), importMode, autodetectFileSequences, pipeline);
+	return FileSourceImporter::importFurtherFiles(scene, std::move(sourceUrlsAndImporters), importMode, autodetectFileSequences, pipeline);
 }
 
 }	// End of namespace

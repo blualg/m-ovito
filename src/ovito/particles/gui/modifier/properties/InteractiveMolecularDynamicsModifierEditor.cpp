@@ -84,7 +84,7 @@ void InteractiveMolecularDynamicsModifierEditor::createUI(const RolloutInsertion
 		if(!modifier) return;
 
 		if(modifier->socket().state() == QAbstractSocket::UnconnectedState)
-			modifier->connectToServer();
+			modifier->connectToServer(mainWindow());
 		else
 			modifier->disconnectFromServer();
 	});

@@ -185,7 +185,7 @@ void ParticlesComputePropertyModifierDelegateEditor::onExpressionEditingFinished
 	}
 	else return;
 	OVITO_ASSERT(index >= 0);
-	undoableTransaction(tr("Change neighbor expression"), [delegate, expr, index]() {
+	performTransaction(tr("Change neighbor expression"), [delegate, expr, index]() {
 		QStringList expressions = delegate->neighborExpressions();
 		expressions[index] = expr;
 		delegate->setNeighborExpressions(expressions);

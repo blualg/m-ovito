@@ -21,7 +21,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/core/Core.h>
-#include <ovito/core/dataset/UndoStack.h>
 #include <ovito/core/utilities/io/FileManager.h>
 #include "Application.h"
 

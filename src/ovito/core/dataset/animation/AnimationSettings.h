@@ -35,7 +35,20 @@ namespace Ovito {
  */
 class OVITO_CORE_EXPORT AnimationSettings : public RefTarget
 {
-	OVITO_CLASS(AnimationSettings)
+	/// Give this class its own metaclass.
+	class AnimationSettingsClass : public RefTarget::OOMetaClass
+	{
+	public:
+
+		/// Inherit constructor from base class.
+		using RefTarget::OOMetaClass::OOMetaClass;
+
+		/// Provides a custom function that takes are of the deserialization of a serialized property field that has been removed from the class. 
+		/// This is needed for backward compatibility with OVITO 3.7.
+		virtual SerializedClassInfo::PropertyFieldInfo::CustomDeserializationFunctionPtr overrideFieldDeserialization(const SerializedClassInfo::PropertyFieldInfo& field) const override;
+	};
+
+	OVITO_CLASS_META(AnimationSettings, AnimationSettingsClass)
 
 public:
 
@@ -66,20 +79,6 @@ public:
 	/// Returns the number of frames in the current animation interval.
 	int numberOfFrames() const { return lastFrame() - firstFrame() + 1; }
 
-#if 0 // TODO: Remove dead code
-	/// \brief Suspends updates of the viewports whenever preliminary data pipeline results are available.
-	void suspendPreliminaryViewportUpdates() { _preliminaryViewportUpdatesSuspendCount++; }
-
-	/// \brief Resumes updates of the viewports whenever preliminary data pipeline results are available.
-	void resumePreliminaryViewportUpdates() {
-		OVITO_ASSERT_MSG(_preliminaryViewportUpdatesSuspendCount > 0, "AnimationSettings::resumePreliminaryViewportUpdates()", "resumePreliminaryViewportUpdates() has been called more often than suspendPreliminaryViewportUpdates().");
-		_preliminaryViewportUpdatesSuspendCount--;
-	}
-
-	/// Returns whether viewports should be updated whenever preliminary pipeline results are available.  
-	bool arePreliminaryViewportUpdatesSuspended() const { return isPlaybackActive() || _preliminaryViewportUpdatesSuspendCount > 0; }
-#endif
-
 public Q_SLOTS:
 
 	/// \brief Sets the current animation time to the start of the animation interval.
@@ -105,11 +104,6 @@ Q_SIGNALS:
 
 	/// This signal is emitted when the current animation frame has changed.
 	void currentFrameChanged(int frame);
-
-#if 0 // TODO: Remove dead code
-	/// This signal is emitted when the scene becomes ready after the current animation frame has changed.
-	void currentFrameChangeComplete();
-#endif
 
 	/// This signal is emitted when the active animation interval has changed.
 	void intervalChanged(int firstFrame, int lastFrame);
@@ -166,36 +160,6 @@ private:
 
     /// List of names assigned to animation frames.
     QMap<int,QString> _namedFrames;
-
-	/// Counts the number of times preliminary viewport updates have been suspended.
-	int _preliminaryViewportUpdatesSuspendCount = 0;
 };
-
-#if 0 // TODO: Remove dead code
-/**
- * \brief A helper class that suspends preliminary viewport updates while it exists.
- *
- * \sa AnimationSettings
- */
-class OVITO_CORE_EXPORT PreliminaryViewportUpdatesSuspender
-{
-public:
-
-	/// Suspends the automatic generation of animation keys by calling AnimationSettings::suspendPreliminaryViewportUpdates().
-	/// \param animSettings The animation settings object.
-	PreliminaryViewportUpdatesSuspender(AnimationSettings* animSettings) : _animSettings(animSettings) {
-		animSettings->suspendPreliminaryViewportUpdates();
-	}
-
-	/// Resumes the automatic generation of animation keys by calling AnimationSettings::resumePreliminaryViewportUpdates().
-	~PreliminaryViewportUpdatesSuspender() {
-		if(_animSettings) _animSettings->resumePreliminaryViewportUpdates();
-	}
-
-private:
-
-	QPointer<AnimationSettings> _animSettings;
-};
-#endif
 
 }	// End of namespace
