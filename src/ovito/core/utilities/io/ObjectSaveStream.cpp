@@ -35,7 +35,7 @@ ObjectSaveStream::~ObjectSaveStream()
 	try {
 		ObjectSaveStream::close();
 	}
-	catch(Exception& ex) {
+	catch(const Exception& ex) {
 		operation().userInterface().reportError(ex);
 	}
 }

@@ -67,11 +67,8 @@ public:
 		return static_object_cast<T>(std::move(ptr));
 	}
 
-	/// Returns the dataset to which objects loaded from the stream will be added to.
-	DataSet* dataset() const { return _dataset; }
-
 	/// Sets the dataset to which objects loaded from the stream should be added to.
-	void setDataset(DataSet* dataset) { _dataset = dataset; }
+	void setDatasetToBePopulated(DataSet* dataset) { _dataset = dataset; }
 
 	/// Returns a reference to the task context in which this I/O operation is being performed.
 	MainThreadOperation& operation() const { return _operation; }

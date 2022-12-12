@@ -440,9 +440,6 @@ void ModifierListModel::insertModifier()
 	ModifierAction* action = qobject_cast<ModifierAction*>(sender());
 	OVITO_ASSERT(action);
 
-	// Get the current dataset.
-	DataSet* dataset = _userInterface.datasetContainer().currentSet();
-
 	// Instantiate the new modifier(s) and insert them into the pipeline.
 	_userInterface.performTransaction(tr("Insert modifier"), [&]() {
 
@@ -455,7 +452,7 @@ void ModifierListModel::insertModifier()
 		else if(!action->templateName().isEmpty()) {
 			// Load modifier template from the store.
 			MainThreadOperation operation = MainThreadOperation::create(_userInterface);
-			QVector<OORef<Modifier>> modifierSet = ModifierTemplates::get()->instantiateTemplate(action->templateName(), dataset, operation);
+			QVector<OORef<Modifier>> modifierSet = ModifierTemplates::get()->instantiateTemplate(action->templateName(), operation);
 			// Put the modifiers into a group if the template consists of two or more modifiers.
 			OORef<ModifierGroup> modifierGroup;
 			if(modifierSet.size() >= 2) {

@@ -117,14 +117,15 @@ OORef<OvitoObject> ObjectLoadStream::loadObjectInternal()
 			else
 				record.object = record.classInfo->clazz->createInstance();
 
-			// When deserializing a DataSet, use it as the context for all subsequently deserialized objects.
 			if(record.classInfo->clazz == &DataSet::OOClass()) {
+				// When deserializing a DataSet, the caller may have provided a pre-existing DataSet which should be populated with the serialized sub-objects.
+				// Otherwise, create a new DataSet instance.
 				if(_dataset == nullptr) {
-					setDataset(static_object_cast<DataSet>(record.object.get()));
+					setDatasetToBePopulated(static_object_cast<DataSet>(record.object.get()));
 				}
 				else {
 					// If an existing DataSet has been provided, load the objects from the stream into 
-					// that existing Dataset instead of creating a new one.
+					// that existing Dataset instead of creating a new one. This feature is used in DataSet::loadFromFile();
 					record.object = _dataset;
 				}
 			}

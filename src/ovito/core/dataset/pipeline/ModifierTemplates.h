@@ -79,7 +79,7 @@ public:
 	void renameTemplate(const QString& oldTemplateName, const QString& newTemplateName);
 
 	/// \brief Instantiates the modifiers that are stored under the given template name.
-	QVector<OORef<Modifier>> instantiateTemplate(const QString& templateName, DataSet* dataset, MainThreadOperation& operation);
+	QVector<OORef<Modifier>> instantiateTemplate(const QString& templateName, MainThreadOperation& operation);
 
 	/// \brief Returns the serialized modifier data for the given template.
 	QByteArray templateData(const QString& templateName);

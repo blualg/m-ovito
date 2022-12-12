@@ -66,7 +66,7 @@ SharedFuture<PipelineFlowState> PipelineCache::evaluatePipeline(const PipelineEv
 
 	CachingPipelineObject* pipelineObject = dynamic_object_cast<CachingPipelineObject>(ownerObject());
 
-	// Check if we can serve the request immediately using the cached state(s).
+	// Check if we can serve the request immediately by returning one of the cached states.
 	for(const PipelineFlowState& state : _cachedStates) {
 		if(state.stateValidity().contains(request.time())) {
 			startFramePrecomputation(request);

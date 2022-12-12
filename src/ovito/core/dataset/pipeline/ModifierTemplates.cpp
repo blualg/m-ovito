@@ -158,10 +158,8 @@ QByteArray ModifierTemplates::templateData(const QString& templateName)
 /******************************************************************************
 * Instantiates the modifiers that are stored under the given template name.
 ******************************************************************************/
-QVector<OORef<Modifier>> ModifierTemplates::instantiateTemplate(const QString& templateName, DataSet* dataset, MainThreadOperation& operation)
+QVector<OORef<Modifier>> ModifierTemplates::instantiateTemplate(const QString& templateName, MainThreadOperation& operation)
 {
-	OVITO_ASSERT(dataset != nullptr);
-
 	QVector<OORef<Modifier>> modifierSet;
 	try {
 		UndoSuspender noUndo;
@@ -176,7 +174,6 @@ QVector<OORef<Modifier>> ModifierTemplates::instantiateTemplate(const QString& t
 			throw Exception(tr("Modifier template with the name '%1' does not exist.").arg(templateName));
 		QDataStream dstream(buffer);
 		ObjectLoadStream stream(dstream, operation);
-		stream.setDataset(dataset);
 		for(int chunkId = stream.expectChunkRange(0,1); chunkId == 1; chunkId = stream.expectChunkRange(0,1)) {
 			modifierSet.push_back(stream.loadObject<Modifier>());
 			stream.closeChunk();

@@ -214,7 +214,7 @@ void DataSet::loadFromFile(const QString& filePath, MainThreadOperation operatio
 
 	QDataStream dataStream(&fileStream);
 	ObjectLoadStream stream(dataStream, operation);
-	stream.setDataset(this);
+	stream.setDatasetToBePopulated(this);
 	OORef<DataSet> dataSet = stream.loadObject<DataSet>();
 	stream.close();
 
