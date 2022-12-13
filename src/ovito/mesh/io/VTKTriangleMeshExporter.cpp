@@ -34,15 +34,13 @@ DEFINE_PROPERTY_FIELD(VTKTriangleMeshExporter, exportCapPolygons);
  * This is called once for every output file to be written and before
  * exportData() is called.
  *****************************************************************************/
-bool VTKTriangleMeshExporter::openOutputFile(const QString& filePath, int numberOfFrames, MainThreadOperation& operation)
+void VTKTriangleMeshExporter::openOutputFile(const QString& filePath, int numberOfFrames)
 {
 	OVITO_ASSERT(!_outputFile.isOpen());
 	OVITO_ASSERT(!_outputStream);
 
 	_outputFile.setFileName(filePath);
 	_outputStream = std::make_unique<CompressedTextWriter>(_outputFile);
-
-	return true;
 }
 
 /******************************************************************************
@@ -67,7 +65,7 @@ bool VTKTriangleMeshExporter::exportFrame(int frameNumber, const QString& filePa
 	// Evaluate pipeline.
 	// Note: We are requesting the rendering state from the pipeline,
 	// because we are interested in renderable triangle meshes.
-	const PipelineFlowState& state = getPipelineDataToBeExported(frameNumber, operation, true);
+	const PipelineFlowState& state = getPipelineDataToBeExported(frameNumber, true);
 	if(operation.isCanceled())
 		return false;
 

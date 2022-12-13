@@ -24,17 +24,8 @@
 
 
 #include <ovito/core/Core.h>
+#include <ovito/core/utilities/concurrent/ExecutionContext.h>
 #include <type_traits>
-
-// Activate workarounds for compiler deficiencies in MSVC 2017.
-#if defined(_MSC_VER) && _MSC_VER < 1920
-	#define OVITO_MSVC_2017_COMPATIBILITY
-
-	// std::is_invocable<> is unusable in MSVC 2017. Need to fallback to uniform function signatures.
-	#define UNUSED_CONTINUATION_FUNC_PARAM Ovito::Task&	
-#else 
-	#define UNUSED_CONTINUATION_FUNC_PARAM void
-#endif
 
 namespace Ovito::detail {
 
@@ -135,10 +126,19 @@ using continuation_future_type = std::conditional_t<returns_future_v<F,FutureTyp
 /// The inline executor runs a work function immediately and in place.
 /// See ObjectExecutor for another implementation of the executor concept.
 struct InlineExecutor {
+
 	template<typename Function>
-	static constexpr Function&& schedule(Function&& f) noexcept {
-		return std::forward<Function>(f);
+	static constexpr void execute(Function&& f) noexcept {
+		std::invoke(std::forward<Function>(f));
 	}
+
+	template<typename Function>
+	static constexpr auto schedule(Function&& f) noexcept {
+		return [f = std::forward<Function>(f), context = ExecutionContext::current()]() mutable noexcept {
+			ExecutionContext::Scope execScope(std::move(context));
+			std::invoke(std::move(f));
+		};
+	}	
 };
 
 } // End of namespace

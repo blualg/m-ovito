@@ -199,7 +199,7 @@ SharedFuture<QVector<FileSourceImporter::Frame>> FileSource::updateListOfFrames(
 	SharedFuture<QVector<FileSourceImporter::Frame>> framesFuture = requestFrameList(true);
 
 	// Display any errors during load operation to the user.
-	framesFuture.finally(executor(), [](Task& task) {
+	framesFuture.finally(*this, [](Task& task) {
 		try { task.throwPossibleException(); }
 		catch(const Exception& ex) { ExecutionContext::current().ui().reportError(ex); }
 		catch(...) {}
@@ -384,7 +384,7 @@ Future<PipelineFlowState> FileSource::evaluateInternal(const PipelineEvaluationR
 
 	// First request the list of source frames and wait until it becomes available.
 	Future<PipelineFlowState> stateFuture = requestFrameList(false)
-		.then(executor(), [this, frame](const QVector<FileSourceImporter::Frame>& sourceFrames) -> Future<PipelineFlowState> {
+		.then(*this, [this, frame](const QVector<FileSourceImporter::Frame>& sourceFrames) -> Future<PipelineFlowState> {
 
 			// Is the requested frame out of range?
 			if(frame >= sourceFrames.size()) {
@@ -401,7 +401,7 @@ Future<PipelineFlowState> FileSource::evaluateInternal(const PipelineEvaluationR
 
 			// Retrieve the file.
 			Future<PipelineFlowState> loadFrameFuture = Application::instance()->fileManager().fetchUrl(sourceFrames[frame].sourceFile)
-				.then(executor(), [this, frame](const FileHandle& fileHandle) -> Future<PipelineFlowState> {
+				.then(*this, [this, frame](const FileHandle& fileHandle) -> Future<PipelineFlowState> {
 
 					// Without an importer object we have to give up immediately.
 					if(!importer()) {
@@ -472,10 +472,10 @@ SharedFuture<QVector<FileSourceImporter::Frame>> FileSource::requestFrameList(bo
 	// Forward request to the importer object.
 	// Intercept future results when they become available and cache them.
 	_framesListFuture = importer()->discoverFrames(sourceUrls())
-		// Note that execution of the following continuation function is explicitly deferred,
+		// Note that execution of the following continuation function is explicitly deferred to a later time,
 		// because setListOfFrames() generates a TargetChanged event, which is not allowed during
 		// a synchronous call to the pipeline evaulation function.
-		.then(executor(true), [this](QVector<FileSourceImporter::Frame>&& frameList) {
+		.then(ObjectExecutor(this, true), [this](QVector<FileSourceImporter::Frame>&& frameList) {
 			// Store the new list of frames in the FileSource. 
 			setListOfFrames(frameList);
 			// Pass the frame list on to the caller.

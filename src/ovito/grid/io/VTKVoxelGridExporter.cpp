@@ -32,15 +32,13 @@ IMPLEMENT_OVITO_CLASS(VTKVoxelGridExporter);
  * This is called once for every output file to be written and before
  * exportData() is called.
  *****************************************************************************/
-bool VTKVoxelGridExporter::openOutputFile(const QString& filePath, int numberOfFrames, MainThreadOperation& operation)
+void VTKVoxelGridExporter::openOutputFile(const QString& filePath, int numberOfFrames)
 {
 	OVITO_ASSERT(!_outputFile.isOpen());
 	OVITO_ASSERT(!_outputStream);
 
 	_outputFile.setFileName(filePath);
 	_outputStream = std::make_unique<CompressedTextWriter>(_outputFile);
-
-	return true;
 }
 
 /******************************************************************************
@@ -63,7 +61,7 @@ void VTKVoxelGridExporter::closeOutputFile(bool exportCompleted)
 bool VTKVoxelGridExporter::exportFrame(int frameNumber, const QString& filePath, MainThreadOperation& operation)
 {
 	// Evaluate pipeline.
-	const PipelineFlowState& state = getPipelineDataToBeExported(frameNumber, operation);
+	const PipelineFlowState& state = getPipelineDataToBeExported(frameNumber);
 	if(operation.isCanceled())
 		return false;
 

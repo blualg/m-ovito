@@ -140,7 +140,7 @@ Future<PipelineFlowState> SmoothTrajectoryModifier::evaluate(const ModifierEvalu
 
 		// Wait for the second frame to become available.
 		return request.modApp()->evaluateInput(frameRequest)
-			.then(executor(), [this, request, state = input, time1, time2](const PipelineFlowState& nextState) mutable {
+			.then(*this, [this, request, state = input, time1, time2](const PipelineFlowState& nextState) mutable {
 				// Compute interpolated state.
 				interpolateState(state, nextState, request, time1, time2);
 				return std::move(state);
@@ -165,7 +165,7 @@ Future<PipelineFlowState> SmoothTrajectoryModifier::evaluate(const ModifierEvalu
 
 		// Obtain the range of input frames from the upstream pipeline.
 		return request.modApp()->evaluateInputMultiple(frameRequest, std::move(otherTimes))
-			.then(executor(), [this, state = input, request](const std::vector<PipelineFlowState>& otherStates) mutable {
+			.then(*this, [this, state = input, request](const std::vector<PipelineFlowState>& otherStates) mutable {
 				// Compute smoothed state.
 				averageState(state, otherStates, request);
 				return std::move(state);

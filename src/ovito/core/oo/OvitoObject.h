@@ -111,9 +111,55 @@ public:
 	/// Returns the class descriptor for this object.
 	const OvitoClass& getOOMetaClass() const { return OOClass(); }
 
-	/// Returns an executor object to be used with Future<>::then(), which executes work
-	/// in the context (and the thread) of this object.
-	ObjectExecutor executor(bool requireDeferredExecution = false) const { return ObjectExecutor(this, requireDeferredExecution); }
+	/// This method implements the Executor interface.
+	/// It creates some work that can be submitted for execution later and which will be executed in the context of this object.
+	/// If the object gets deleted in the meantime, the work will be discarded.
+	template<typename Function>
+	auto schedule(Function&& f) const {
+		OVITO_ASSERT(this);
+		OVITO_ASSERT(ExecutionContext::current().isValid());
+		// Note: Avoiding the use of C++17 capture this-by-copy here, because it is not fully supported by the MSVC 2017 compiler.
+		return [obj = QPointer<const QObject>(this), context = ExecutionContext::current(), f = std::forward<Function>(f)]() mutable noexcept {
+			if(!obj.isNull() && !QCoreApplication::closingDown()) {
+				if(!QCoreApplication::instance() || QThread::currentThread() != QCoreApplication::instance()->thread()) {
+					// When not in the main thread, or if deferred execution was requested, schedule work for later execution in the main thread.
+					auto event = new detail::ObjectExecutorWorkEvent<Function>(ObjectExecutor::workEventType(), std::move(obj), std::move(context), std::move(f));
+					QCoreApplication::postEvent(const_cast<QObject*>(event->object()), event);
+				}
+				else {
+					// When already in the main thread, execute work immediately.
+					ExecutionContext::Scope execScope(std::move(context)); 
+
+					// Temporarily suspend undo recording, because deferred operations never get recorded by convention.
+					UndoSuspender noUndo;
+
+					// Execute the work function.
+					std::invoke(std::move(f));
+				}
+			}
+		};
+	}
+
+	/// This method implements the Executor interface.
+	/// It executes work in the context of this object.
+	template<typename Function>
+	void execute(Function&& f) const {
+		OVITO_ASSERT(this);
+		OVITO_ASSERT(ExecutionContext::current().isValid());
+		if(!QCoreApplication::closingDown()) {
+			if(!QCoreApplication::instance() || QThread::currentThread() != this->thread()) {
+				// When not in the main thread, or if deferred execution was requested, schedule work for later execution in the main thread.
+				auto event = new detail::ObjectExecutorWorkEvent<Function>(ObjectExecutor::workEventType(), this, ExecutionContext::current(), std::forward<Function>(f));
+				QCoreApplication::postEvent(const_cast<QObject*>(event->object()), event);
+			}
+			else {
+				// Temporarily suspend undo recording, because deferred operations never get recorded by convention.
+				UndoSuspender noUndo;
+				// Execute the work function.
+				std::invoke(std::forward<Function>(f));
+			}
+		}
+	}
 
 protected:
 

@@ -45,9 +45,8 @@ public:
 
 	/// \brief Initializes the ObjectLoadStream.
 	/// \param source The Qt data stream from which the data is read. This stream must support random access.
-	/// \param operation The task to which the I/O operation belongs.
 	/// \throw Exception if the source stream does not support random access, or if an I/O error occurs.
-	ObjectLoadStream(QDataStream& source, MainThreadOperation& operation);
+	explicit ObjectLoadStream(QDataStream& source);
 
 	// Calls close() to close the ObjectLoadStream.
 	virtual ~ObjectLoadStream() { ObjectLoadStream::close(); }
@@ -69,9 +68,6 @@ public:
 
 	/// Sets the dataset to which objects loaded from the stream should be added to.
 	void setDatasetToBePopulated(DataSet* dataset) { _dataset = dataset; }
-
-	/// Returns a reference to the task context in which this I/O operation is being performed.
-	MainThreadOperation& operation() const { return _operation; }
 
 	/// Returns the class info for an object currently being deserialized from the stream.
 	/// This method may only be called from within an OvitoObject::loadFromStream() method.
@@ -112,9 +108,6 @@ private:
 
 	/// The current dataset being loaded.
 	DataSet* _dataset = nullptr;
-
-	/// The task context in which this I/O operation is being performed.
-	MainThreadOperation& _operation;
 };
 
 }	// End of namespace

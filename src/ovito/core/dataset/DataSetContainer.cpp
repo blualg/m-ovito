@@ -206,7 +206,7 @@ DataSet* DataSetContainer::newDataset()
 /******************************************************************************
 * Loads the given session state file and makes it the current dataset.
 ******************************************************************************/
-bool DataSetContainer::loadDataset(const QString& filename, MainThreadOperation operation)
+void DataSetContainer::loadDataset(const QString& filename)
 {
 	// Make path absolute.
 	QString absoluteFilepath = QFileInfo(filename).absoluteFilePath();
@@ -219,7 +219,7 @@ bool DataSetContainer::loadDataset(const QString& filename, MainThreadOperation 
 		throw Exception(tr("Failed to open session state file '%1' for reading: %2").arg(absoluteFilepath).arg(fileStream.errorString()));
 
 	QDataStream dataStream(&fileStream);
-	ObjectLoadStream stream(dataStream, operation);
+	ObjectLoadStream stream(dataStream);
 
 	dataSet = stream.loadObject<DataSet>();
 	stream.close();
@@ -230,7 +230,6 @@ bool DataSetContainer::loadDataset(const QString& filename, MainThreadOperation 
 	OVITO_CHECK_OBJECT_POINTER(dataSet);
 	dataSet->setFilePath(absoluteFilepath);
 	setCurrentSet(dataSet);
-	return true;
 }
 
 /******************************************************************************

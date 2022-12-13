@@ -33,7 +33,7 @@ namespace Ovito {
 /******************************************************************************
 * Opens the stream for reading.
 ******************************************************************************/
-ObjectLoadStream::ObjectLoadStream(QDataStream& source, MainThreadOperation& operation) : LoadStream(source), _operation(operation)
+ObjectLoadStream::ObjectLoadStream(QDataStream& source) : LoadStream(source)
 {
 	qint64 oldPos = filePosition();
 
@@ -108,9 +108,6 @@ OORef<OvitoObject> ObjectLoadStream::loadObjectInternal()
 			return record.object;
 		}
 		else {
-			// When loading a RefTarget-derived class from the stream, we must already have a current DataSet as context.
-			OVITO_ASSERT(_dataset != nullptr || record.classInfo->clazz == &DataSet::OOClass() || !record.classInfo->clazz->isDerivedFrom(RefTarget::OOClass()));
-
 			// Create an instance of the object class.
 			if(record.classInfo->clazz->isDerivedFrom(RefTarget::OOClass()))
 				record.object = record.classInfo->clazz->createInstance(ObjectCreationParams(ObjectCreationParams::DontCreateSubObjects));
@@ -130,7 +127,7 @@ OORef<OvitoObject> ObjectLoadStream::loadObjectInternal()
 				}
 			}
 			else {
-				OVITO_ASSERT(!record.classInfo->clazz->isDerivedFrom(RefTarget::OOClass()) || _dataset != nullptr);
+				OVITO_ASSERT(!record.classInfo->clazz->isDerivedFrom(DataSet::OOClass()));
 			}
 
 			_objectsToLoad.push_back(objectId - 1);

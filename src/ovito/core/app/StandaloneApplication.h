@@ -73,7 +73,7 @@ public:
 protected Q_SLOTS:
 
 	/// Is called at program startup once the event loop is running.
-	virtual void postStartupInitialization(MainThreadOperation& operation);
+	virtual void postStartupInitialization();
 
 protected:
 

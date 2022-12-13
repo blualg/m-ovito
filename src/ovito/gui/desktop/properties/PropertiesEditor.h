@@ -100,12 +100,6 @@ public:
 	/// \brief Returns the top-level window hosting this editor panel.
 	QWidget* parentWindow() const;
 
-	/// \brief Creates an object that represents a longer-running operation executed in the main or GUI thread 
-	///        in the context of this properties editor 
-	MainThreadOperation createOperation() {
-		return MainThreadOperation::create(mainWindow()); 
-	}
-
 	/// \brief Returns a pointer to the parent editor which has opened this editor for one of its sub-components.
 	PropertiesEditor* parentEditor() const { return _parentEditor; }
 

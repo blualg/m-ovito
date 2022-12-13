@@ -116,10 +116,8 @@ void GenerateTrajectoryLinesModifier::evaluateSynchronous(const ModifierEvaluati
 /******************************************************************************
 * Updates the stored trajectories from the source particle object.
 ******************************************************************************/
-bool GenerateTrajectoryLinesModifier::generateTrajectories(AnimationTime currentTime, MainThreadOperation& operation)
+bool GenerateTrajectoryLinesModifier::generateTrajectories(AnimationTime currentTime, MainThreadOperation operation)
 {
-	OVITO_ASSERT(operation.isCurrent());
-	
 	for(ModifierApplication* modApp : modifierApplications()) {
 		GenerateTrajectoryLinesModifierApplication* myModApp = dynamic_object_cast<GenerateTrajectoryLinesModifierApplication>(modApp);
 		if(!myModApp) continue;

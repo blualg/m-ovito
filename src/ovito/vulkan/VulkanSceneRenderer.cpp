@@ -200,11 +200,11 @@ void VulkanSceneRenderer::beginFrame(TimePoint time, Scene* scene, const ViewPro
 bool VulkanSceneRenderer::renderFrame(const QRect& viewportRect, MainThreadOperation& operation)
 {
 	// Render the 3D scene objects.
-	if(renderScene(operation)) {
+	if(renderScene()) {
 
 		// Call virtual method to render additional content that is only visible in the interactive viewports.
         if(viewport() && isInteractive()) {
-    		renderInteractiveContent(operation);
+    		renderInteractiveContent();
         }
 
 		// Render translucent objects in a second pass.

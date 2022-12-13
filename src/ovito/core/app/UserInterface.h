@@ -26,6 +26,7 @@
 #include <ovito/core/Core.h>
 #include <ovito/core/utilities/concurrent/TaskManager.h>
 #include <ovito/core/utilities/units/UnitsManager.h>
+#include <ovito/core/utilities/Invoke.h>
 #include <ovito/core/app/undo/UndoableOperation.h>
 #include <ovito/core/app/undo/UndoableTransaction.h>
 
@@ -97,7 +98,7 @@ public:
 	QString generateSystemReport();
 
 	/// Creates a frame buffer of the requested size for rendering into and displays it in the user interface.
-	virtual std::shared_ptr<FrameBuffer> createAndShowFrameBuffer(int width, int height, MainThreadOperation& renderingOperation);
+	virtual std::shared_ptr<FrameBuffer> createAndShowFrameBuffer(int width, int height, bool showRenderingOperationProgress);
 
 	/// Returns the undo stack, which keeps track of changes made by the user to the current dataset. 
 	/// It may be none if not running as a desktop application.
@@ -153,11 +154,16 @@ public:
 	/// Executes a functor that performs some actions in an interactive context and catches any exceptions thrown during its execution.
 	/// If an exception is thrown by the functor, the error message is displayed to the user and this function returns false.
 	template<typename Function>
-	bool handleExceptions(Function&& func) {
+	bool handleExceptions(Function&& func, bool visibleInUserInterface = false) {
 		try {
-			ExecutionContext::Scope executionScope(ExecutionContext::Type::Interactive, *this);
-			std::forward<Function>(func)();
-			return true;
+			MainThreadOperation operation(ExecutionContext::Type::Interactive, *this, visibleInUserInterface);
+			if constexpr(detail::is_invocable_v<Function, MainThreadOperation&>) {
+				std::forward<Function>(func)(operation);
+			}
+			else {
+				std::forward<Function>(func)();
+			}
+			return !operation.isCanceled();
 		}
 		catch(const Exception& ex) {
 			reportError(ex);
@@ -242,7 +248,7 @@ private:
 class OVITO_CORE_EXPORT ViewportSuspender 
 {
 public:
-	ViewportSuspender(UserInterface& userInterface) noexcept : _ui(userInterface) {
+	ViewportSuspender(UserInterface& userInterface = ExecutionContext::current().ui()) noexcept : _ui(userInterface) {
 		userInterface.suspendViewportUpdates();
 	}
 	~ViewportSuspender() {

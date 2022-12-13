@@ -394,10 +394,10 @@ void ColorCodingModifierEditor::onAdjustRangeGlobal()
 	OVITO_CHECK_OBJECT_POINTER(mod);
 
 	if(AnimationSettings* anim = mainWindow().datasetContainer().activeAnimationSettings()) {
-		performTransaction(tr("Adjust range"), [this, mod, firstFrame = anim->firstFrame(), lastFrame = anim->lastFrame()]() {
-			ViewportSuspender noVPUpdates(mainWindow());
-			ProgressDialog progressDialog(container(), mainWindow(), tr("Determining property value range"));
-			mod->adjustRangeGlobal(progressDialog, firstFrame, lastFrame);
+		performTransaction(tr("Adjust range"), [this, mod, firstFrame=anim->firstFrame(), lastFrame=anim->lastFrame()](MainThreadOperation& operation) {
+			ViewportSuspender noVPUpdates;
+			ProgressDialog progressDialog(container(), tr("Determining property value range"));
+			mod->adjustRangeGlobal(operation, firstFrame, lastFrame);
 		});
 	}
 }

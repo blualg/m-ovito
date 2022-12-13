@@ -110,7 +110,7 @@ Future<std::vector<PipelineFlowState>> PipelineObject::evaluateMultiple(const Pi
 	// Perform the evaluation for all requested animation frames:
 	return map_sequential(
 		std::move(times), 
-		executor(true), // require deferred execution
+		ObjectExecutor(this, true), // require deferred execution
 	[request = PipelineEvaluationRequest(request), this](AnimationTime time) mutable {
 		request.setTime(time);
 		return this->evaluate(request);

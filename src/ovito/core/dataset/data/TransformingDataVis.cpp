@@ -75,7 +75,7 @@ Future<PipelineFlowState> TransformingDataVis::transformData(const PipelineEvalu
 
 	// Post-process the results before returning them to the caller.
 	// Turn any exception that was thrown during evaluation into a valid pipeline state with an error code.
-	future = future.then(executor(), [this, inputData = std::move(inputData)](Future<PipelineFlowState> future) mutable {
+	future = future.then(*this, [this, inputData = std::move(inputData)](Future<PipelineFlowState> future) mutable {
 		OVITO_ASSERT(!future.isCanceled());
 		try {
 			try {

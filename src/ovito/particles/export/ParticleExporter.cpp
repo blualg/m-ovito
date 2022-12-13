@@ -35,10 +35,10 @@ IMPLEMENT_OVITO_CLASS(ParticleExporter);
 * Evaluates the pipeline of an PipelineSceneNode and makes sure that the data to be
 * exported contains particles and throws an exception if not.
 ******************************************************************************/
-PipelineFlowState ParticleExporter::getParticleData(int frame, MainThreadOperation& operation) const
+PipelineFlowState ParticleExporter::getParticleData(int frame) const
 {
-	PipelineFlowState state = getPipelineDataToBeExported(frame, operation);
-	if(operation.isCanceled())
+	PipelineFlowState state = getPipelineDataToBeExported(frame);
+	if(!state)
 		return {};
 
 	const ParticlesObject* particles = state.getObject<ParticlesObject>();
@@ -62,7 +62,7 @@ PipelineFlowState ParticleExporter::getParticleData(int frame, MainThreadOperati
  * This is called once for every output file to be written and before
  * exportFrame() is called.
  *****************************************************************************/
-bool ParticleExporter::openOutputFile(const QString& filePath, int numberOfFrames, MainThreadOperation& operation)
+void ParticleExporter::openOutputFile(const QString& filePath, int numberOfFrames)
 {
 	OVITO_ASSERT(!_outputFile.isOpen());
 	OVITO_ASSERT(!_outputStream);
@@ -70,8 +70,6 @@ bool ParticleExporter::openOutputFile(const QString& filePath, int numberOfFrame
 	_outputFile.setFileName(filePath);
 	_outputStream = std::make_unique<CompressedTextWriter>(_outputFile);
 	_outputStream->setFloatPrecision(floatOutputPrecision());
-
-	return true;
 }
 
 /******************************************************************************
@@ -94,7 +92,7 @@ void ParticleExporter::closeOutputFile(bool exportCompleted)
 bool ParticleExporter::exportFrame(int frameNumber, const QString& filePath, MainThreadOperation& operation)
 {
 	// Retreive the particle data to be exported.
-	const PipelineFlowState& state = getParticleData(frameNumber, operation);
+	const PipelineFlowState& state = getParticleData(frameNumber);
 	if(operation.isCanceled() || !state)
 		return false;
 

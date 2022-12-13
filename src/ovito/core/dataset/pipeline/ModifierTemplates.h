@@ -64,7 +64,7 @@ public:
 	/// \param templateName The name of the new template. If a temnplate with the same name exists, it is overwritten.
 	/// \param modifiers The list of one or more modifiers from which the template should be created.
 	/// \return The index of the created template.
-	int createTemplate(const QString& templateName, const QVector<OORef<Modifier>>& modifiers, MainThreadOperation& operation);
+	int createTemplate(const QString& templateName, const QVector<OORef<Modifier>>& modifiers);
 
 	/// \brief Creates a new modifier template from a serialized version of the modifier.
 	/// \param templateName The name of the new template. If a temnplate with the same name exists, it is overwritten.
@@ -79,7 +79,7 @@ public:
 	void renameTemplate(const QString& oldTemplateName, const QString& newTemplateName);
 
 	/// \brief Instantiates the modifiers that are stored under the given template name.
-	QVector<OORef<Modifier>> instantiateTemplate(const QString& templateName, MainThreadOperation& operation);
+	QVector<OORef<Modifier>> instantiateTemplate(const QString& templateName);
 
 	/// \brief Returns the serialized modifier data for the given template.
 	QByteArray templateData(const QString& templateName);

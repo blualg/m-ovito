@@ -42,7 +42,7 @@ public:
 
 	/// \brief Evaluates the pipeline of an PipelineSceneNode and makes sure that the data to be
 	///        exported contains particles and throws an exception if not.
-	PipelineFlowState getParticleData(int frame, MainThreadOperation& operation) const;
+	PipelineFlowState getParticleData(int frame) const;
 
 	/// \brief Returns the type(s) of data objects that this exporter service can export.
 	virtual std::vector<DataObjectClassPtr> exportableDataObjectClass() const override {
@@ -55,7 +55,7 @@ protected:
 	using FileExporter::FileExporter;
 
 	/// \brief This is called once for every output file to be written and before exportFrame() is called.
-	virtual bool openOutputFile(const QString& filePath, int numberOfFrames, MainThreadOperation& operation) override;
+	virtual void openOutputFile(const QString& filePath, int numberOfFrames) override;
 
 	/// \brief This is called once for every output file written after exportFrame() has been called.
 	virtual void closeOutputFile(bool exportCompleted) override;

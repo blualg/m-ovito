@@ -94,7 +94,7 @@ void ModifierTemplatesPage::insertSettingsDialogPage(QTabWidget* tabWidget)
 ******************************************************************************/
 void ModifierTemplatesPage::onCreateTemplate()
 {
-	try {
+	mainWindow().handleExceptions([&] {
 		QDialog dlg(settingsDialog());
 		dlg.setWindowTitle(tr("Create Modifier Template"));
 		QVBoxLayout* mainLayout = new QVBoxLayout(&dlg);
@@ -210,15 +210,11 @@ void ModifierTemplatesPage::onCreateTemplate()
 				}
 			}
 			OVITO_ASSERT(!selectedModifierList.empty());
-			MainThreadOperation operation = MainThreadOperation::create(mainWindow());
-			int idx = ModifierTemplates::get()->createTemplate(nameBox->currentText().trimmed(), selectedModifierList, operation);
+			int idx = ModifierTemplates::get()->createTemplate(nameBox->currentText().trimmed(), selectedModifierList);
 			_listWidget->setCurrentIndex(_listWidget->model()->index(idx, 0));
 			_dirtyFlag = true;
 		}
-	}
-	catch(const Exception& ex) {
-		reportError(ex);
-	}
+	});
 }
 
 /******************************************************************************
@@ -226,7 +222,7 @@ void ModifierTemplatesPage::onCreateTemplate()
 ******************************************************************************/
 void ModifierTemplatesPage::onDeleteTemplate()
 {
-	try {
+	mainWindow().handleExceptions([&] {
 		QStringList selectedTemplates;
 		for(const QModelIndex& index : _listWidget->selectionModel()->selectedRows())
 			selectedTemplates.push_back(ModifierTemplates::get()->templateList()[index.row()]);
@@ -234,10 +230,7 @@ void ModifierTemplatesPage::onDeleteTemplate()
 			ModifierTemplates::get()->removeTemplate(templateName);
 			_dirtyFlag = true;
 		}
-	}
-	catch(const Exception& ex) {
-		reportError(ex);
-	}
+	});
 }
 
 /******************************************************************************
@@ -245,7 +238,7 @@ void ModifierTemplatesPage::onDeleteTemplate()
 ******************************************************************************/
 void ModifierTemplatesPage::onRenameTemplate()
 {
-	try {
+	mainWindow().handleExceptions([&] {
 		for(const QModelIndex& index : _listWidget->selectionModel()->selectedRows()) {
 			QString oldTemplateName = ModifierTemplates::get()->templateList()[index.row()];
 			QString newTemplateName = oldTemplateName;
@@ -264,10 +257,7 @@ void ModifierTemplatesPage::onRenameTemplate()
 				}
 			}
 		}
-	}
-	catch(const Exception& ex) {
-		reportError(ex);
-	}
+	});
 }
 
 /******************************************************************************
@@ -275,7 +265,7 @@ void ModifierTemplatesPage::onRenameTemplate()
 ******************************************************************************/
 void ModifierTemplatesPage::onExportTemplates()
 {
-	try {
+	mainWindow().handleExceptions([&] {
 		if(ModifierTemplates::get()->templateList().empty())
 			throw Exception(tr("There are no modifier templates to export."));
 
@@ -291,10 +281,7 @@ void ModifierTemplatesPage::onExportTemplates()
 		settings.sync();
 		if(settings.status() != QSettings::NoError)
 			throw Exception(tr("I/O error while writing modifier template file."));
-	}
-	catch(const Exception& ex) {
-		reportError(ex);
-	}
+	});
 }
 
 /******************************************************************************
@@ -302,7 +289,7 @@ void ModifierTemplatesPage::onExportTemplates()
 ******************************************************************************/
 void ModifierTemplatesPage::onImportTemplates()
 {
-	try {
+	mainWindow().handleExceptions([&] {
 		QString filename = QFileDialog::getOpenFileName(settingsDialog(),
 			tr("Import Modifier Templates"), QString(), tr("OVITO Modifier Templates (*.ovmod)"));
 		if(filename.isEmpty())
@@ -315,10 +302,7 @@ void ModifierTemplatesPage::onImportTemplates()
 			throw Exception(tr("The selected file does not contain any modifier templates."));
 
 		_dirtyFlag = true;
-	}
-	catch(const Exception& ex) {
-		reportError(ex);
-	}
+	});
 }
 
 /******************************************************************************
@@ -338,15 +322,12 @@ void ModifierTemplatesPage::saveValues(QTabWidget* tabWidget)
 ******************************************************************************/
 void ModifierTemplatesPage::restoreValues(QTabWidget* tabWidget)
 {
-	try {
+	mainWindow().handleExceptions([&] {
 		if(_dirtyFlag) {
 			ModifierTemplates::get()->restore();
 			_dirtyFlag = false;
 		}
-	}
-	catch(const Exception& ex) {
-		reportError(ex);
-	}
+	});
 }
 
 }	// End of namespace

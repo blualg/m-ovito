@@ -51,7 +51,7 @@ GSDExporter::~GSDExporter()
  * This is called once for every output file to be written and before
  * exportFrame() is called.
  *****************************************************************************/
-bool GSDExporter::openOutputFile(const QString& filePath, int numberOfFrames, MainThreadOperation& operation)
+void GSDExporter::openOutputFile(const QString& filePath, int numberOfFrames)
 {
     OVITO_ASSERT(!outputFile().isOpen());
     outputFile().setFileName(filePath);
@@ -62,8 +62,6 @@ bool GSDExporter::openOutputFile(const QString& filePath, int numberOfFrames, Ma
 #else
     _gsdFile = GSDFile::create(QDir::toNativeSeparators(filePath).toStdWString().c_str(), "ovito", "hoomd", 1, 4);
 #endif
-
-    return true;
 }
 
 /******************************************************************************

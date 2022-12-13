@@ -132,11 +132,14 @@ SharedFuture<R...>::then(Executor&& executor, Function&& f)
 	result_future_type future = promise.future();
 	continuation_task_type* continuationTask = static_cast<continuation_task_type*>(promise.task().get());
 
-	// Run the following function once the existing task finishes to invoke the user's continuation function.
+	// Let the continuation task inherit the current execution context.
+	ExecutionContext::Scope execScope(promise.task());
+
+	// Run the following function once the existing task finishes. We'll then invoke the user's continuation function.
 	continuationTask->whenTaskFinishes(
 			this->task(),
 			std::forward<Executor>(executor), 
-			[f = std::forward<Function>(f), promise = std::move(promise)](UNUSED_CONTINUATION_FUNC_PARAM) mutable noexcept {
+			[f = std::forward<Function>(f), promise = std::move(promise)]() mutable noexcept {
 
 		// Get the task that is about to continue.
 		continuation_task_type* continuationTask = static_cast<continuation_task_type*>(promise.task().get());

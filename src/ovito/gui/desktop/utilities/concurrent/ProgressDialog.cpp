@@ -31,9 +31,10 @@ namespace Ovito {
 /******************************************************************************
 * Initializes the dialog window.
 ******************************************************************************/
-ProgressDialog::ProgressDialog(QWidget* parent, UserInterface& userInterface, const QString& dialogTitle) : QDialog(parent),
-	MainThreadOperation(MainThreadOperation::create(userInterface, true))
+ProgressDialog::ProgressDialog(QWidget* parent, TaskPtr task, const QString& dialogTitle) : QDialog(parent), _task(std::move(task))
 {
+	OVITO_ASSERT(_task);
+
 	setWindowModality(Qt::WindowModal);
 	setWindowTitle(dialogTitle);
 
@@ -92,8 +93,9 @@ ProgressDialog::ProgressDialog(QWidget* parent, UserInterface& userInterface, co
 		connect(taskWatcher, &TaskWatcher::finished, statusLabel, &QObject::deleteLater);
 	};
 
-	// Create UI for every running task.
-	for(TaskWatcher* watcher : userInterface.taskManager().runningTasks()) {
+	// Create UI for every already running task.
+	TaskManager& taskManager = ExecutionContext::current().ui().taskManager();
+	for(TaskWatcher* watcher : taskManager.runningTasks()) {
 		createUIForTask(watcher);
 	}
 
@@ -103,6 +105,7 @@ ProgressDialog::ProgressDialog(QWidget* parent, UserInterface& userInterface, co
 		g.setWidth(450);
 		setGeometry(g);
 	}
+
 	// Center dialog in parent window.
 	if(parent) {
 		QSize s = frameGeometry().size();
@@ -114,7 +117,7 @@ ProgressDialog::ProgressDialog(QWidget* parent, UserInterface& userInterface, co
 	}
 
 	// Create a separate progress bar for every new active task.
-	connect(&userInterface.taskManager(), &TaskManager::taskStarted, this, std::move(createUIForTask));
+	connect(&taskManager, &TaskManager::taskStarted, this, std::move(createUIForTask));
 
 	// Show the dialog with a short delay.
 	// This prevents the dialog from showing up for short tasks that terminate very quickly.
@@ -127,7 +130,7 @@ ProgressDialog::ProgressDialog(QWidget* parent, UserInterface& userInterface, co
 void ProgressDialog::closeEvent(QCloseEvent* event)
 {
 	// Cancel the root operation associated with this dialog.
-	this->cancel();
+	_task->cancel();
 
 	if(event->spontaneous())
 		event->ignore();
@@ -141,7 +144,7 @@ void ProgressDialog::closeEvent(QCloseEvent* event)
 void ProgressDialog::reject()
 {
 	// Cancel the root operation associated with this dialog.
-	this->cancel();
+	_task->cancel();
 }
 
 }	// End of namespace

@@ -45,12 +45,11 @@ public:
 
 	/// \brief Imports a set of files into the current dataset.
 	/// \param urls The locations of the files to import.
-	/// \param operation The process in which this operation is being performed.
 	/// \param importerType The FileImporter type selected by the user. If null, the file's format will be auto-detected.
 	/// \param importerFormat The sub-format name selected by the user, which is supported by the selected importer class.
 	/// \return true if the file(s) were successfully imported; false if operation has been canceled by the user.
 	/// \throw Exception on error.
-	bool importFiles(const std::vector<QUrl>& urls, MainThreadOperation operation, const FileImporterClass* importerType = nullptr, const QString& importerFormat = {});
+	bool importFiles(const std::vector<QUrl>& urls, const FileImporterClass* importerType = nullptr, const QString& importerFormat = {});
 
 	/// \brief Save the current dataset.
 	/// \return \c true, if the dataset has been saved; \c false if the operation has been canceled by the user.

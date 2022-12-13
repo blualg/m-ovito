@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -207,7 +207,7 @@ Future<AsynchronousModifier::EnginePtr> ReferenceConfigurationModifier::createEn
 	}
 
 	// Wait for the reference configuration to become available.
-	return refState.then(executor(), [this, request, input = input, referenceFrame, validityInterval](const PipelineFlowState& referenceInput) {
+	return refState.then(*this, [this, request, input = input, referenceFrame, validityInterval](const PipelineFlowState& referenceInput) {
 
 		// Make sure the obtained reference configuration is valid and ready to use.
 		if(referenceInput.status().type() == PipelineStatus::Error)

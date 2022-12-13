@@ -104,6 +104,19 @@ DataInspectorPanel::DataInspectorPanel(MainWindow& mainWindow) :
 /******************************************************************************
 * Is called when the user clicked on the tab bar.
 ******************************************************************************/
+void DataInspectorPanel::changeEvent(QEvent* event) 
+{
+	if(event->type() == QEvent::EnabledChange) {
+		// Temporarily disable updates of the inspector widget while the widget is disabled.
+		// This happens, for example, during image rendering when the entire main window gets disabled.
+		_scenePreparation->setScene(isEnabled() ? datasetContainer().activeScene() : nullptr);
+	}
+	QWidget::changeEvent(event);
+}
+
+/******************************************************************************
+* Is called when the user clicked on the tab bar.
+******************************************************************************/
 void DataInspectorPanel::onTabBarClicked(int index)
 {
 	if(index == -1 || _appletContainer->height() == 0) {

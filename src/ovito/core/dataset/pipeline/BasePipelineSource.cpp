@@ -51,7 +51,7 @@ BasePipelineSource::BasePipelineSource(ObjectCreationParams params) : CachingPip
 ******************************************************************************/
 Future<PipelineFlowState> BasePipelineSource::postprocessDataCollection(int animationFrame, TimeInterval frameInterval, Future<PipelineFlowState> future)
 {
-	return std::move(future).then(executor(), [this, animationFrame, frameInterval](Future<PipelineFlowState> future) -> PipelineFlowState {
+	return std::move(future).then(*this, [this, animationFrame, frameInterval](Future<PipelineFlowState> future) -> PipelineFlowState {
 		OVITO_ASSERT(future.isFinished() && !future.isCanceled());
 		OVITO_ASSERT(ExecutionContext::current().isValid());
 

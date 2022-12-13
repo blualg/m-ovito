@@ -24,6 +24,7 @@
 
 
 #include <ovito/core/Core.h>
+#include <ovito/core/utilities/BindFront.h>
 #include <function2/function2.hpp>
 #include "detail/FutureDetail.h"
 
@@ -33,6 +34,7 @@ namespace detail {
     class TaskReference; // Forward declaration
     class TaskCallbackBase;
     template<typename Derived> class TaskCallback;
+    template<typename tuple_type, typename task_type> class ContinuationTask;
 }
 
 /**
@@ -71,9 +73,6 @@ public:
     /// Destructor.
     ~Task();
 #endif
-
-    /// Returns the task object that is making the call to this function.
-    static Task*& currentTask() noexcept;
 
     /// Returns whether this shared state has been canceled by a previous call to cancel().
     bool isCanceled() const { return (_state.load(std::memory_order_relaxed) & Canceled); }
@@ -142,20 +141,16 @@ public:
 
 	/// Runs the given continuation function once this task has reached either the 'finished' or the 'canceled' state.
 	/// Note that the continuation function will always be executed, even if this task was canceled or set to an error state.
-    /// The callable may take one optional parameter: a reference to the Task object that completed.
     template<typename Executor, typename Function>
     void finally(Executor&& executor, Function&& f) {
-        MutexLocker locker(&taskMutex());
-        addContinuation(std::forward<Executor>(executor).schedule(std::forward<Function>(f)), locker);
+        addContinuation(std::forward<Executor>(executor), detail::bind_front(std::forward<Function>(f), std::ref(*this)));
     }
 
 	/// Runs the given continuation function once this task has reached either the 'finished' or the 'canceled' state.
 	/// Note that the continuation function will always be executed, even if this task was canceled or set to an error state.
-    /// The callable may take one optional parameter: a reference to the Task object that completed.
     template<typename Function>
     void finally(Function&& f) { 
-        MutexLocker locker(&taskMutex());
-        addContinuation(std::forward<Function>(f), locker); 
+        addContinuation(detail::InlineExecutor{}, detail::bind_front(std::forward<Function>(f), std::ref(*this))); 
     }
 
     /// Accessor function for the internal results storage.
@@ -245,20 +240,18 @@ protected:
 
     /// Registers a callback function that will be run when this task reaches the 'finished' state. 
     /// If the task is already in one of these states, the continuation function is invoked immediately.
-    template<typename Function>
-    void addContinuation(Function&& f, MutexLocker& locker) {
+    template<typename Executor, typename Function>
+    void addContinuation(Executor&& executor, Function&& f) {
+        MutexLocker locker(&taskMutex());
         // Check if task is already finished.
         if(isFinished()) {
             // Run continuation function immediately.
             locker.unlock();
-            if constexpr(detail::is_invocable_v<Function, Task&>)
-                std::forward<Function>(f)(*this);
-            else
-                std::forward<Function>(f)();
+            std::forward<Executor>(executor).execute(std::forward<Function>(f));
         }
         else {
             // Otherwise, insert into list to run continuation function later.
-            registerContinuation(std::forward<Function>(f));
+            registerContinuation(std::forward<Executor>(executor).schedule(std::forward<Function>(f)));
         }
     }
 
@@ -268,11 +261,11 @@ protected:
     void registerContinuation(Function&& f) {
         OVITO_ASSERT(!isFinished());
         // Insert into list. Will run continuation function once the task finishes.
-        if constexpr(detail::is_invocable_v<Function, Task&>)
-            _continuations.push_back(fu2::unique_function<void(Task&) noexcept>{std::forward<Function>(f)});
-        else
-            _continuations.push_back(fu2::unique_function<void(Task&) noexcept>{
-                [f = std::forward<Function>(f)](Task&) mutable noexcept { return std::forward<Function>(f)(); }});
+#if QT_VERSION >= QT_VERSION_CHECK(6, 3, 0)
+        _continuations.emplace_back(std::forward<Function>(f));
+#else
+        _continuations.push_back(fu2::unique_function<void() noexcept>{std::forward<Function>(f)});
+#endif
     }
 
     /// Puts this task into the 'started' state (without newly locking the task).
@@ -307,19 +300,6 @@ protected:
     /// Returns the mutex that is used to manage concurrent access to this task.
     QMutex& taskMutex() const { return _mutex; }
 
-    /// Registers a task object as the current task in the current thread.
-    static void setCurrentTask(Task* task) noexcept { currentTask() = task; }
-
-    /// RAII helper class that can be used to register some task as the currently active task.
-    class OVITO_CORE_EXPORT Scope
-    {
-    public:
-        explicit Scope(Task* task) noexcept : _previous(std::exchange(Task::currentTask(), task)) {}
-        ~Scope() { Task::setCurrentTask(_previous); }
-    private:
-        Task* _previous;
-    };
-
     /// The current state this task is in.
     std::atomic_int _state;
 
@@ -330,7 +310,7 @@ protected:
     mutable QMutex _mutex;
 
     /// List of continuation functions that will be called when this task enters the 'finished' or the 'canceled' state.
-    QVarLengthArray<fu2::unique_function<void(Task&) noexcept>, 2> _continuations;
+    QVarLengthArray<fu2::unique_function<void() noexcept>, 2> _continuations;
 
     /// Holds the exception object when this shared state is in the failed state.
     std::exception_ptr _exceptionStore;
@@ -352,11 +332,11 @@ protected:
     friend class FutureBase;
     friend class PromiseBase;
     friend class MainThreadOperation;
-    friend class MainThreadTaskWrapper;
     friend class AsynchronousTaskBase;
     friend class detail::TaskReference;
     friend class detail::TaskCallbackBase;
     template<typename Derived> friend class detail::TaskCallback;
+    template<typename tuple_type, typename task_type> friend class detail::ContinuationTask;
     template<typename... R2> friend class Future;
     template<typename... R2> friend class SharedFuture;
     template<typename... R2> friend class Promise;

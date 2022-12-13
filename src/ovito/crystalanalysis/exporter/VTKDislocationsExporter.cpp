@@ -36,15 +36,13 @@ IMPLEMENT_OVITO_CLASS(VTKDislocationsExporter);
  * This is called once for every output file to be written and before
  * exportFrame() is called.
  *****************************************************************************/
-bool VTKDislocationsExporter::openOutputFile(const QString& filePath, int numberOfFrames, MainThreadOperation& operation)
+void VTKDislocationsExporter::openOutputFile(const QString& filePath, int numberOfFrames)
 {
 	OVITO_ASSERT(!_outputFile.isOpen());
 	OVITO_ASSERT(!_outputStream);
 
 	_outputFile.setFileName(filePath);
 	_outputStream = std::make_unique<CompressedTextWriter>(_outputFile);
-
-	return true;
 }
 
 /******************************************************************************
@@ -69,7 +67,7 @@ bool VTKDislocationsExporter::exportFrame(int frameNumber, const QString& filePa
 	// Evaluate data pipeline.
 	// Note: We are requesting the renderable flow state from the pipeline,
 	// because we are interested in clipped (post-processed) dislocation lines.
-	const PipelineFlowState& state = getPipelineDataToBeExported(frameNumber, operation, true);
+	const PipelineFlowState& state = getPipelineDataToBeExported(frameNumber, true);
 	if(operation.isCanceled())
 		return false;
 

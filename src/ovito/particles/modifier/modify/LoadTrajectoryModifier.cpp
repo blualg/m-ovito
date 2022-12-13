@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -84,7 +84,7 @@ Future<PipelineFlowState> LoadTrajectoryModifier::evaluate(const ModifierEvaluat
 	SharedFuture<PipelineFlowState> trajStateFuture = trajectorySource()->evaluate(request);
 
 	// Wait for the data to become available.
-	return trajStateFuture.then(request.modApp()->executor(), [state = input, request](const PipelineFlowState& trajState) mutable {
+	return trajStateFuture.then(*request.modApp(), [state = input, request](const PipelineFlowState& trajState) mutable {
 
 		if(LoadTrajectoryModifier* trajModifier = dynamic_object_cast<LoadTrajectoryModifier>(request.modifier())) {
 			// Make sure the obtained configuration is valid and ready to use.

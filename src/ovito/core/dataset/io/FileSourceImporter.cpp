@@ -295,7 +295,7 @@ Future<QVector<FileSourceImporter::Frame>> FileSourceImporter::discoverFrames(co
 			future = discoverFrames(url);
 		}
 		else {
-			future = future.then(executor(), [this, combinedList, url](const QVector<Frame>& frames) {
+			future = future.then(*this, [this, combinedList, url](const QVector<Frame>& frames) {
 				*combinedList += frames;
 				return discoverFrames(url);
 			});
@@ -323,14 +323,14 @@ Future<QVector<FileSourceImporter::Frame>> FileSourceImporter::discoverFrames(co
 		// If yes, find all matching files and scan each one of them.
 		if(isWildcardPattern(sourceUrl)) {
 			return findWildcardMatches(sourceUrl)
-				.then(executor(), [this](const std::vector<QUrl>& fileList) {
+				.then(*this, [this](const std::vector<QUrl>& fileList) {
 					return discoverFrames(fileList);
 				});
 		}
 
 		// Fetch file, then scan it.
 		return Application::instance()->fileManager().fetchUrl(sourceUrl)
-			.then(executor(), [this](const FileHandle& fileHandle) {
+			.then(*this, [this](const FileHandle& fileHandle) {
 				return discoverFrames(fileHandle);
 			});
 	}
@@ -338,7 +338,7 @@ Future<QVector<FileSourceImporter::Frame>> FileSourceImporter::discoverFrames(co
 		if(isWildcardPattern(sourceUrl)) {
 			// Find all files matching the file pattern.
 			return findWildcardMatches(sourceUrl)
-				.then(executor(), [](const std::vector<QUrl>& fileList) {
+				.then(*this, [](const std::vector<QUrl>& fileList) {
 					// Turn the file list into a frame list.
 					QVector<Frame> frames;
 					frames.reserve(fileList.size());
@@ -398,12 +398,13 @@ Future<PipelineFlowState> FileSourceImporter::loadFrame(const LoadOperationReque
 	// Only automatically turn scanning on if the file is being newly imported, i.e. if the file source has not loaded a data collection yet.
 	if(request.isNewlyImportedFile) {
 		// Note: Changing a parameter of the file importer must be done in the correct thread.
-		future.finally(executor(), [this](Task& task) {
+		future.finally(*this, [this](Task& task) noexcept {
 			if(!task.isCanceled()) {
 				FrameLoader& frameLoader = static_cast<FrameLoader&>(task);
-				if(frameLoader.additionalFramesDetected()) {
-					UndoSuspender noUndo;
-					setMultiTimestepFile(true);
+				if(frameLoader.additionalFramesDetected() && !isMultiTimestepFile()) {
+					ExecutionContext::current().ui().handleExceptions([&] {
+						setMultiTimestepFile(true);
+					});
 				}
 			}
 		});

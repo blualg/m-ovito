@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -52,12 +52,10 @@ DataTablePlotExporter::DataTablePlotExporter(ObjectCreationParams params) : File
 /******************************************************************************
  * This is called once for every output file to be written.
  *****************************************************************************/
-bool DataTablePlotExporter::openOutputFile(const QString& filePath, int numberOfFrames, MainThreadOperation& operation)
+void DataTablePlotExporter::openOutputFile(const QString& filePath, int numberOfFrames)
 {
 	OVITO_ASSERT(!_outputFile.isOpen());
 	_outputFile.setFileName(filePath);
-
-	return true;
 }
 
 /******************************************************************************
@@ -75,8 +73,8 @@ void DataTablePlotExporter::closeOutputFile(bool exportCompleted)
 bool DataTablePlotExporter::exportFrame(int frameNumber, const QString& filePath, MainThreadOperation& operation)
 {
 	// Evaluate pipeline.
-	const PipelineFlowState& state = getPipelineDataToBeExported(frameNumber, operation);
-	if(operation.isCanceled())
+	const PipelineFlowState& state = getPipelineDataToBeExported(frameNumber);
+	if(!state)
 		return false;
 
 	// Look up the DataTable to be exported in the pipeline state.

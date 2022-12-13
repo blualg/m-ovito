@@ -181,7 +181,7 @@ void DataSet::rescaleTime(const TimeInterval& oldAnimationInterval, const TimeIn
 /******************************************************************************
 * Saves the dataset to a session state file.
 ******************************************************************************/
-void DataSet::saveToFile(const QString& filePath, MainThreadOperation operation) const
+void DataSet::saveToFile(const QString& filePath) const
 {
 	// Make path absolute.
 	QString absolutePath = QFileInfo(filePath).absoluteFilePath();
@@ -191,7 +191,7 @@ void DataSet::saveToFile(const QString& filePath, MainThreadOperation operation)
     	throw Exception(tr("Failed to open output file '%1' for writing: %2").arg(absolutePath).arg(fileStream.errorString()));
 
 	QDataStream dataStream(&fileStream);
-	ObjectSaveStream stream(dataStream, operation);
+	ObjectSaveStream stream(dataStream);
 	stream.saveObject(this);
 	stream.close();
 
@@ -203,7 +203,7 @@ void DataSet::saveToFile(const QString& filePath, MainThreadOperation operation)
 /******************************************************************************
 * Loads the dataset's contents from a session state file.
 ******************************************************************************/
-void DataSet::loadFromFile(const QString& filePath, MainThreadOperation operation)
+void DataSet::loadFromFile(const QString& filePath)
 {
 	// Make path absolute.
 	QString absolutePath = QFileInfo(filePath).absoluteFilePath();
@@ -213,7 +213,7 @@ void DataSet::loadFromFile(const QString& filePath, MainThreadOperation operatio
     	throw Exception(tr("Failed to open file '%1' for reading: %2").arg(absolutePath).arg(fileStream.errorString()));
 
 	QDataStream dataStream(&fileStream);
-	ObjectLoadStream stream(dataStream, operation);
+	ObjectLoadStream stream(dataStream);
 	stream.setDatasetToBePopulated(this);
 	OORef<DataSet> dataSet = stream.loadObject<DataSet>();
 	stream.close();

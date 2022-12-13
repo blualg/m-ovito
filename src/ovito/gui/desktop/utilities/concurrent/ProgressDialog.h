@@ -28,12 +28,20 @@
 
 namespace Ovito {
 
-class OVITO_GUI_EXPORT ProgressDialog : public QDialog, public MainThreadOperation
+class OVITO_GUI_EXPORT ProgressDialog : public QDialog
 {
 public:
 
 	/// Constructor.
-	ProgressDialog(QWidget* parent, UserInterface& userInterface, const QString& dialogTitle = QString());
+	explicit ProgressDialog(QWidget* parent, TaskPtr task = ExecutionContext::current().task(), const QString& dialogTitle = QString());
+
+	/// Constructor.
+	explicit ProgressDialog(QWidget* parent, const QString& dialogTitle) : 
+		ProgressDialog(parent, ExecutionContext::current().task(), dialogTitle) {}
+
+	/// Constructor.
+	explicit ProgressDialog(QWidget* parent, const FutureBase& future, const QString& dialogTitle = QString()) : 
+		ProgressDialog(parent, future.task(), dialogTitle) {}
 
 protected:
 
@@ -42,6 +50,11 @@ protected:
 
 	/// Is called when the user tries to close the dialog.
 	virtual void reject() override;
+
+private:
+
+	/// The task shown in this dialog.
+	TaskPtr _task;
 };
 
 }	// End of namespace

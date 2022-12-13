@@ -31,15 +31,13 @@ IMPLEMENT_OVITO_CLASS(DataTableExporter);
  * This is called once for every output file to be written and before
  * exportData() is called.
  *****************************************************************************/
-bool DataTableExporter::openOutputFile(const QString& filePath, int numberOfFrames, MainThreadOperation& operation)
+void DataTableExporter::openOutputFile(const QString& filePath, int numberOfFrames)
 {
 	OVITO_ASSERT(!_outputFile.isOpen());
 	OVITO_ASSERT(!_outputStream);
 
 	_outputFile.setFileName(filePath);
 	_outputStream = std::make_unique<CompressedTextWriter>(_outputFile);
-
-	return true;
 }
 
 /******************************************************************************
@@ -62,8 +60,8 @@ void DataTableExporter::closeOutputFile(bool exportCompleted)
 bool DataTableExporter::exportFrame(int frameNumber, const QString& filePath, MainThreadOperation& operation)
 {
 	// Evaluate pipeline.
-	const PipelineFlowState& state = getPipelineDataToBeExported(frameNumber, operation);
-	if(operation.isCanceled())
+	const PipelineFlowState& state = getPipelineDataToBeExported(frameNumber);
+	if(!state)
 		return false;
 
 	// Look up the DataTable to be exported in the pipeline state.

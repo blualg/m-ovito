@@ -132,7 +132,7 @@ bool StandaloneApplication::initialize(int& argc, char** argv)
 			return true;
 		}
 
-		// Prepares the application to start running.
+		// Prepares the application to start running. Creates the global Qt application object.
 		MainThreadOperation startupOperation = startupApplication();
 		if(!startupOperation.isValid()) {
 			shutdown();
@@ -142,45 +142,50 @@ bool StandaloneApplication::initialize(int& argc, char** argv)
 		// Notify registered application services that application is starting up.
 		for(const auto& service : applicationServices()) {
 			// If any of the service callbacks returns false, abort the application startup process.
-			if(!service->applicationStarting(startupOperation)) {
+			if(!service->applicationStarting()) {
 				shutdown();
 				return false;
 			}
 		}
 
 		// Complete the startup process by calling postStartupInitialization() once the main event loop is running.
-		QMetaObject::invokeMethod(this, [this, startupOperation = std::move(startupOperation)]() mutable {
+		ObjectExecutor(this, true).execute([this, promise=Promise<>(std::move(startupOperation))]() {
 			try {
-				ExecutionContext::Scope executionScope(ExecutionContext::Type::Interactive, startupOperation.userInterface());
-				postStartupInitialization(startupOperation);
-				if(startupOperation.isCanceled()) 
+				// Let the application perform late initialization steps.
+				postStartupInitialization();
+
+				// If someone has canceled the startup process, quit the application.
+				if(promise.isCanceled()) 
 					QCoreApplication::exit(1);
+				else
+					promise.setFinished();
 			}
 			catch(const Exception& ex) {
 				// Shutdown with error exit code when running in scripting mode.
 				if(consoleMode())
-					startupOperation.userInterface().exitWithFatalError(ex);
+					ExecutionContext::current().ui().exitWithFatalError(ex);
 				else
 					reportError(ex);
 			}
-		}, Qt::QueuedConnection);
+		});
 	}
 	catch(const Exception& ex) {
 		reportError(ex);
 		shutdown();
 		return false;
 	}
+
 	return true;
 }
 
 /******************************************************************************
 * Is called at program startup once the event loop is running.
 ******************************************************************************/
-void StandaloneApplication::postStartupInitialization(MainThreadOperation& operation)
+void StandaloneApplication::postStartupInitialization()
 {
 	// Notify registered application services that the application is fully running now.
 	for(const auto& service : applicationServices())
-		service->applicationStarted(operation);
+		service->applicationStarted();
 }
 
 /******************************************************************************

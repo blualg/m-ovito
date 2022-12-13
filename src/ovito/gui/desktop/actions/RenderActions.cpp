@@ -35,8 +35,7 @@ namespace Ovito {
 ******************************************************************************/
 void WidgetActionManager::on_RenderActiveViewport_triggered()
 {
-	try {
-		ExecutionContext::Scope executionScope(ExecutionContext::Type::Interactive, mainWindow());
+	mainWindow().handleExceptions([&] {
 
 		// Set input focus to main window.
 		// This will process any pending user inputs in QLineEdit fields that haven't been processed yet.
@@ -56,19 +55,14 @@ void WidgetActionManager::on_RenderActiveViewport_triggered()
 			throw Exception(tr("Cannot render without an active ViewportConfiguration object."));
 
 		// Create a task object that represents the rendering operation.
-		MainThreadOperation renderingOperation = MainThreadOperation::create(mainWindow(), true);
+		MainThreadOperation renderingOperation(true);
 
 		// Allocate and resize frame buffer and display the frame buffer window.
-		std::shared_ptr<FrameBuffer> frameBuffer = mainWindow().createAndShowFrameBuffer(renderSettings->outputImageWidth(), renderSettings->outputImageHeight(), renderingOperation);
+		std::shared_ptr<FrameBuffer> frameBuffer = mainWindow().createAndShowFrameBuffer(renderSettings->outputImageWidth(), renderSettings->outputImageHeight(), true);
 
 		// Call high-level rendering function, which will take care of the rest.
 		renderSettings->renderScene(*viewportConfig, *frameBuffer, renderingOperation);
-	}
-	catch(const Exception& ex) {
-		ex.logError();
-		// Make sure the error message dialog gets shown in front of the framebuffer window by GuiApplication::showErrorMessages(), not behind it.
-		mainWindow().reportError(ex, mainWindow().frameBufferWindow());
-	}
+	});
 }
 
 }	// End of namespace

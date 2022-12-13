@@ -123,7 +123,7 @@ void WidgetActionManager::on_FileNewWindow_triggered()
 		QString defaultsFilePath = QStandardPaths::locate(QStandardPaths::AppDataLocation, QStringLiteral("defaults.ovito"));
 		if(!defaultsFilePath.isEmpty()) {
 			try {
-				mainWin->datasetContainer().loadDataset(defaultsFilePath, MainThreadOperation::create(*mainWin));
+				mainWin->datasetContainer().loadDataset(defaultsFilePath);
 				mainWin->datasetContainer().currentSet()->setFilePath({});
 			}
 			catch(Exception& ex) {
@@ -166,7 +166,7 @@ void WidgetActionManager::on_FileOpen_triggered()
 		// Remember directory for the next time...
 		settings.setValue("last_directory", QFileInfo(filename).absolutePath());
 
-		mainWindow().datasetContainer().loadDataset(filename, MainThreadOperation::create(mainWindow(), true));
+		mainWindow().datasetContainer().loadDataset(filename);
 	});
 }
 
@@ -212,7 +212,7 @@ void WidgetActionManager::on_Settings_triggered()
 ******************************************************************************/
 void WidgetActionManager::on_FileImport_triggered()
 {
-	mainWindow().handleExceptions([&] {
+	mainWindow().performTransaction(tr("Import data"), [&] {
 		// Let the user select one or more files.
 		ImportFileDialog dialog(PluginManager::instance().metaclassMembers<FileImporter>(), &mainWindow(), tr("Load File"), true);
 		if(dialog.exec() != QDialog::Accepted)
@@ -224,7 +224,6 @@ void WidgetActionManager::on_FileImport_triggered()
 		// Import the selected file(s).
 		mainWindow().datasetContainer().importFiles(
 			dialog.urlsToImport(), 
-			MainThreadOperation::create(mainWindow(), true),
 			importerClass, importerFormat);
 	});
 }
@@ -234,7 +233,7 @@ void WidgetActionManager::on_FileImport_triggered()
 ******************************************************************************/
 void WidgetActionManager::on_FileRemoteImport_triggered()
 {
-	mainWindow().handleExceptions([&] {
+	mainWindow().performTransaction(tr("Import data"), [&] {
 		// Let the user enter the URL of the remote file.
 		ImportRemoteFileDialog dialog(mainWindow(), PluginManager::instance().metaclassMembers<FileImporter>(), &mainWindow(), tr("Load Remote File"));
 		if(dialog.exec() != QDialog::Accepted)
@@ -246,7 +245,6 @@ void WidgetActionManager::on_FileRemoteImport_triggered()
 		// Import URL.
 		mainWindow().datasetContainer().importFiles(
 			{ dialog.urlToImport() }, 
-			MainThreadOperation::create(mainWindow(), true),
 			importerClass, importerFormat);
 	});
 }
@@ -326,7 +324,7 @@ void WidgetActionManager::on_FileExport_triggered()
 	settings.setValue("last_export_filter", dialog.selectedNameFilter());
 
 	// Export to selected file.
-	mainWindow().handleExceptions([&] {
+	mainWindow().handleExceptions([&]() {
 		int exportFilterIndex = filterStrings.indexOf(dialog.selectedNameFilter());
 		OVITO_ASSERT(exportFilterIndex >= 0 && exportFilterIndex < exporterTypes.size());
 
@@ -338,7 +336,7 @@ void WidgetActionManager::on_FileExport_triggered()
 
 		// Block until all output data is available for the exporter to inspect it and pick a good default export set.
 		{
-			ProgressDialog progressDialog(&mainWindow(), mainWindow(), tr("Waiting for pipeline computations to complete"));
+			ProgressDialog progressDialog(&mainWindow(), tr("Waiting for pipeline computations to complete"));
 			if(!OORef<ScenePreparation>::create(mainWindow(), scene)->future().waitForFinished())
 				return;
 		}
@@ -352,10 +350,10 @@ void WidgetActionManager::on_FileExport_triggered()
 			return;
 
 		// Show progress dialog.
-		ProgressDialog progressDialog(&mainWindow(), mainWindow(), tr("Exporting to file"));
+		ProgressDialog progressDialog(&mainWindow(), tr("Exporting to file"));
 
 		// Let the exporter do its work.
-		exporter->doExport(progressDialog);
+		exporter->doExport(MainThreadOperation(true));
 	});
 }
 

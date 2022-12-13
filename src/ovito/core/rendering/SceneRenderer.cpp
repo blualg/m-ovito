@@ -70,7 +70,7 @@ FloatType SceneRenderer::defaultLinePickingWidth()
 /******************************************************************************
 * Computes the bounding box of the entire scene to be rendered.
 ******************************************************************************/
-Box3 SceneRenderer::computeSceneBoundingBox(AnimationTime time, Scene* scene, const ViewProjectionParameters& params, Viewport* vp, MainThreadOperation& operation)
+Box3 SceneRenderer::computeSceneBoundingBox(AnimationTime time, Scene* scene, const ViewProjectionParameters& params, Viewport* vp)
 {
 	OVITO_CHECK_OBJECT_POINTER(scene);
 	OVITO_ASSERT(!_scene);
@@ -84,11 +84,11 @@ Box3 SceneRenderer::computeSceneBoundingBox(AnimationTime time, Scene* scene, co
 		setProjParams(params);
 
 		// Perform bounding box rendering pass.
-		if(renderScene(operation)) {
+		if(renderScene()) {
 
 			// Include other visual content that is only visible in the interactive viewports.
 			if(isInteractive())
-				renderInteractiveContent(operation);
+				renderInteractiveContent();
 		}
 
 		_isBoundingBoxPass = false;
@@ -153,11 +153,11 @@ void SceneRenderer::endFrame(bool renderingSuccessful, const QRect& viewportRect
 /******************************************************************************
 * Renders all nodes in the scene
 ******************************************************************************/
-bool SceneRenderer::renderScene(MainThreadOperation& operation)
+bool SceneRenderer::renderScene()
 {
 	if(scene()) {
 		// Recursively render all scene nodes.
-		return renderNode(scene(), operation);
+		return renderNode(scene());
 	}
 
 	return true;
@@ -166,7 +166,7 @@ bool SceneRenderer::renderScene(MainThreadOperation& operation)
 /******************************************************************************
 * Render a scene node (and all its children).
 ******************************************************************************/
-bool SceneRenderer::renderNode(SceneNode* node, MainThreadOperation& operation)
+bool SceneRenderer::renderNode(SceneNode* node)
 {
 	OVITO_ASSERT(scene());
     OVITO_CHECK_OBJECT_POINTER(node);
@@ -217,11 +217,11 @@ bool SceneRenderer::renderNode(SceneNode* node, MainThreadOperation& operation)
 
 	// Render child nodes.
 	for(SceneNode* child : node->children()) {
-		if(!renderNode(child, operation))
+		if(!renderNode(child))
 			return false;
 	}
 
-	return !operation.isCanceled();
+	return true;
 }
 
 /******************************************************************************
@@ -379,7 +379,7 @@ void SceneRenderer::renderNodeTrajectory(const SceneNode* node)
 * This virtual method is responsible for rendering additional content that is only
 * visible in the interactive viewports.
 ******************************************************************************/
-void SceneRenderer::renderInteractiveContent(MainThreadOperation& operation)
+void SceneRenderer::renderInteractiveContent()
 {
 	OVITO_ASSERT(viewport());
 	OVITO_ASSERT(scene());
@@ -389,10 +389,10 @@ void SceneRenderer::renderInteractiveContent(MainThreadOperation& operation)
 		renderGrid();
 
 	// Render visual 3D representation of the modifiers.
-	renderModifiers(false, operation);
+	renderModifiers(false);
 
 	// Render visual 2D representation of the modifiers.
-	renderModifiers(true, operation);
+	renderModifiers(true);
 
 	// Render viewport gizmos.
 	if(ViewportWindowInterface* viewportWindow = viewport()->window()) {
@@ -410,12 +410,12 @@ void SceneRenderer::renderInteractiveContent(MainThreadOperation& operation)
 /******************************************************************************
 * Renders the visual representation of the modifiers.
 ******************************************************************************/
-void SceneRenderer::renderModifiers(bool renderOverlay, MainThreadOperation& operation)
+void SceneRenderer::renderModifiers(bool renderOverlay)
 {
 	// Visit all objects in the scene.
 	if(scene()) {
-		scene()->visitObjectNodes([this, renderOverlay, &operation](PipelineSceneNode* pipeline) {
-			renderModifiers(pipeline, renderOverlay, operation);
+		scene()->visitObjectNodes([&](PipelineSceneNode* pipeline) {
+			renderModifiers(pipeline, renderOverlay);
 			return true;
 		});
 	}
@@ -424,7 +424,7 @@ void SceneRenderer::renderModifiers(bool renderOverlay, MainThreadOperation& ope
 /******************************************************************************
 * Renders the visual representation of the modifiers in a pipeline.
 ******************************************************************************/
-void SceneRenderer::renderModifiers(PipelineSceneNode* pipeline, bool renderOverlay, MainThreadOperation& operation)
+void SceneRenderer::renderModifiers(PipelineSceneNode* pipeline, bool renderOverlay)
 {
 	ModifierApplication* modApp = dynamic_object_cast<ModifierApplication>(pipeline->dataProvider());
 	while(modApp) {

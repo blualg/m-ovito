@@ -185,7 +185,7 @@ void ParticleTypeEditor::createUI(const RolloutInsertionParameters& rolloutParam
 	connect(loadShapeBtn, &QPushButton::clicked, this, [this]() {
 		if(OORef<ParticleType> ptype = static_object_cast<ParticleType>(editObject())) {
 
-			performTransaction(tr("Load particle shape"), [&]() {
+			performTransaction(tr("Load particle shape"), [&](MainThreadOperation& operation) {
 				QUrl selectedFile;
 				const FileImporterClass* fileImporterClass = nullptr;
 				QString fileImporterFormat;
@@ -209,8 +209,8 @@ void ParticleTypeEditor::createUI(const RolloutInsertionParameters& rolloutParam
 				}
 
 				// Load the geometry from the selected file.
-				ProgressDialog progressDialog(container(), mainWindow(), tr("Loading geometry file"));
-				ptype->loadShapeMesh(selectedFile, progressDialog, fileImporterClass, fileImporterFormat);
+				ProgressDialog progressDialog(container(), tr("Loading geometry file"));
+				ptype->loadShapeMesh(selectedFile, MainThreadOperation(true), fileImporterClass, fileImporterFormat);
 			});
 		}
 	});

@@ -25,6 +25,7 @@
 #include <ovito/core/dataset/DataSetContainer.h>
 #include <ovito/core/dataset/pipeline/AsynchronousModifierApplication.h>
 #include <ovito/core/app/Application.h>
+#include <ovito/core/utilities/concurrent/LaunchTask.h>
 #include "AsynchronousModifier.h"
 
 #ifdef Q_OS_LINUX
@@ -67,6 +68,9 @@ Future<PipelineFlowState> AsynchronousModifier::evaluate(const ModifierEvaluatio
 	{
 	public:
 
+		/// The type of future associated with this task type. This is used by the launchTask() function.
+		using future_type = Future<PipelineFlowState>;
+
 		/// Constructor.
 		EngineExecutionTask(const ModifierEvaluationRequest& request, EnginePtr engine, const PipelineFlowState& state, std::vector<EnginePtr> validStages = {}) : 
 				detail::ContinuationTask<std::tuple<PipelineFlowState>, Task>(Task::Started, std::forward_as_tuple(state)),
@@ -76,24 +80,49 @@ Future<PipelineFlowState> AsynchronousModifier::evaluate(const ModifierEvaluatio
 				_validStages(std::move(validStages)) {}
 
 		/// Starts running the next compute engine.
-		void submitEngine() noexcept {
+		void operator()() noexcept {
 			OVITO_ASSERT(_modApp);
 			OVITO_ASSERT(_engine);
 			
-			// Restrict the validity interval of the engine to the validity interval of the input pipeline state.
-			TimeInterval iv = _engine->validityInterval();
-			iv.intersect(resultsStorage().stateValidity());
-			_engine->setValidityInterval(iv);
-			_validStages.push_back(_engine);
+			if(isCanceled()) {
+				setFinished();
+			}
+			else if(!_engine->isFinished()) {
+				// Restrict the validity interval of the engine to the validity interval of the input pipeline state.
+				TimeInterval iv = _engine->validityInterval();
+				iv.intersect(resultsStorage().stateValidity());
+				_engine->setValidityInterval(iv);
+				_validStages.push_back(_engine);
 
-			auto future = 
-				_engine->preferSynchronousExecution() 
-				? _engine->runImmediately(true)
-				: _engine->runAsync(true);
+				auto future = 
+					_engine->preferSynchronousExecution() 
+					? _engine->runImmediately(true)
+					: _engine->runAsync(true);
 
-			// Schedule next iteration upon completion of the future returned by the user function.
-			this->whenTaskFinishes(std::move(future), _modApp->executor(), 
-				[this_ = static_pointer_cast<EngineExecutionTask>(this->shared_from_this())](UNUSED_CONTINUATION_FUNC_PARAM) noexcept { this_->executionFinished(); });
+				// Schedule next iteration upon completion of the future returned by the user function.
+				this->whenTaskFinishes(std::move(future), *_modApp, detail::bind_front(&EngineExecutionTask::executionFinished, this));
+			}
+			else if(EnginePtr continuationEngine = _engine->createContinuationEngine(_request, resultsStorage())) {
+
+				// Restrict the validity of the continuation engine to the validity interval of the parent engine.
+				TimeInterval iv = continuationEngine->validityInterval();
+				iv.intersect(_engine->validityInterval());
+				continuationEngine->setValidityInterval(iv);
+
+				// Repeat the cycle with the new engine.
+				_engine = std::move(continuationEngine);
+				(*this)();
+			}
+			else {
+				// If the current engine has no continuation, we are done.
+
+				// Add the computed results to the input pipeline state.
+				_engine->applyResults(_request, resultsStorage());
+				resultsStorage().intersectStateValidity(_engine->validityInterval());
+				_modApp->setCompletedEngine(std::move(_engine));
+				_modApp->setValidStages(std::move(_validStages));
+				setFinished();
+			}
 		}
 
 		/// Is called by the system when the current compute engine finishes.
@@ -118,32 +147,8 @@ Future<PipelineFlowState> AsynchronousModifier::evaluate(const ModifierEvaluatio
 			}
 			locker.unlock();
 
-			processEngineResults();
-		}
-
-		void processEngineResults() noexcept {
-			// Ask the compute engine for a continuation engine.
-			if(EnginePtr continuationEngine = _engine->createContinuationEngine(_request, resultsStorage())) {
-
-				// Restrict the validity of the continuation engine to the validity interval of the parent engine.
-				TimeInterval iv = continuationEngine->validityInterval();
-				iv.intersect(_engine->validityInterval());
-				continuationEngine->setValidityInterval(iv);
-
-				// Repeat the cycle with the new engine.
-				_engine = std::move(continuationEngine);
-				submitEngine();
-			}
-			else {
-				// If the current engine has no continuation, we are done.
-
-				// Add the computed results to the input pipeline state.
-				_engine->applyResults(_request, resultsStorage());
-				resultsStorage().intersectStateValidity(_engine->validityInterval());
-				_modApp->setCompletedEngine(std::move(_engine));
-				_modApp->setValidStages(std::move(_validStages));
-				setFinished();
-			}
+			// Continue.
+			(*this)();
 		}
 
 	private:
@@ -157,19 +162,15 @@ Future<PipelineFlowState> AsynchronousModifier::evaluate(const ModifierEvaluatio
 	// Check if there are any partially completed computation results that can serve as starting point for a new computation.
 	if(!asyncModApp->validStages().empty() && asyncModApp->validStages().back()->validityInterval().contains(request.time())) {
 		// Create the asynchronous task object and continue the execution of engines.
-		auto task = std::make_shared<EngineExecutionTask>(request, asyncModApp->validStages().back(), input, asyncModApp->validStages());
-		task->processEngineResults();
-		return Future<PipelineFlowState>::createFromTask(std::move(task));
+		return launchTask<false>(std::make_shared<EngineExecutionTask>(request, asyncModApp->validStages().back(), input, asyncModApp->validStages()));
 	}
 	else {
 		// Otherwise, ask the subclass to create a new compute engine to perform the computation from scratch.
-		return createEngine(request, input).then(executor(), [this, request = request, input = input, modApp = QPointer<const AsynchronousModifierApplication>(asyncModApp)](EnginePtr engine) mutable {
+		return createEngine(request, input).then(*this, [this, request = request, input = input, modApp = QPointer<const AsynchronousModifierApplication>(asyncModApp)](EnginePtr engine) mutable {
 			if(!modApp || modApp->modifier() != this)
 				throw Exception(tr("Modifier has been deleted from the pipeline."));
 			// Create the asynchronous task object and start running the engine.
-			auto task = std::make_shared<EngineExecutionTask>(std::move(request), std::move(engine), std::move(input));
-			task->submitEngine();
-			return Future<PipelineFlowState>::createFromTask(std::move(task));
+			return launchTask<false>(std::make_shared<EngineExecutionTask>(std::move(request), std::move(engine), std::move(input)));
 		});
 	}
 }

@@ -62,7 +62,7 @@ AttributeFileExporter::AttributeFileExporter(ObjectCreationParams params) : File
  * This is called once for every output file to be written and before
  * exportData() is called.
 *****************************************************************************/
-bool AttributeFileExporter::openOutputFile(const QString& filePath, int numberOfFrames, MainThreadOperation& operation)
+void AttributeFileExporter::openOutputFile(const QString& filePath, int numberOfFrames)
 {
 	OVITO_ASSERT(!_outputFile.isOpen());
 	OVITO_ASSERT(!_outputStream);
@@ -75,8 +75,6 @@ bool AttributeFileExporter::openOutputFile(const QString& filePath, int numberOf
 		textStream() << " \"" << attrName << "\"";
 	}
 	textStream() << "\n";
-
-	return true;
 }
 
 /******************************************************************************
@@ -97,10 +95,10 @@ void AttributeFileExporter::closeOutputFile(bool exportCompleted)
 * Evaluates the pipeline of the PipelineSceneNode to be exported and returns
 * the attributes list.
 ******************************************************************************/
-bool AttributeFileExporter::getAttributesMap(int frame, QVariantMap& attributes, MainThreadOperation& operation)
+bool AttributeFileExporter::getAttributesMap(int frame, QVariantMap& attributes)
 {
-	const PipelineFlowState& state = getPipelineDataToBeExported(frame, operation);
-	if(operation.isCanceled())
+	const PipelineFlowState& state = getPipelineDataToBeExported(frame);
+	if(!state)
 		return false;
 
 	// Build list of attributes.
@@ -118,7 +116,7 @@ bool AttributeFileExporter::getAttributesMap(int frame, QVariantMap& attributes,
 bool AttributeFileExporter::exportFrame(int frameNumber, const QString& filePath, MainThreadOperation& operation)
 {
 	QVariantMap attrMap;
-	if(!getAttributesMap(frameNumber, attrMap, operation))
+	if(!getAttributesMap(frameNumber, attrMap))
 		return false;
 
 	// Write the values of all attributes marked for export to the output file.

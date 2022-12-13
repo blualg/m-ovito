@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -162,8 +162,8 @@ void GenerateTrajectoryLinesModifierEditor::onRegenerateTrajectory()
 	if(!modifier) return;
 
 	performTransaction(tr("Generate trajectory"), [&]() {
-		ProgressDialog progressDialog(container(), mainWindow(), tr("Generating trajectory lines"));
-		modifier->generateTrajectories(currentAnimationTime(), progressDialog);
+		ProgressDialog progressDialog(container(), tr("Generating trajectory lines"));
+		modifier->generateTrajectories(currentAnimationTime(), MainThreadOperation(true));
 	});
 }
 

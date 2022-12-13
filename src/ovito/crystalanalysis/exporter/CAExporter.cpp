@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -38,15 +38,13 @@ IMPLEMENT_OVITO_CLASS(CAExporter);
  * This is called once for every output file to be written and before
  * exportFrame() is called.
  *****************************************************************************/
-bool CAExporter::openOutputFile(const QString& filePath, int numberOfFrames, MainThreadOperation& operation)
+void CAExporter::openOutputFile(const QString& filePath, int numberOfFrames)
 {
 	OVITO_ASSERT(!_outputFile.isOpen());
 	OVITO_ASSERT(!_outputStream);
 
 	_outputFile.setFileName(filePath);
 	_outputStream = std::make_unique<CompressedTextWriter>(_outputFile);
-
-	return true;
 }
 
 /******************************************************************************
@@ -69,7 +67,7 @@ void CAExporter::closeOutputFile(bool exportCompleted)
 bool CAExporter::exportFrame(int frameNumber, const QString& filePath, MainThreadOperation& operation)
 {
 	// Evaluate data pipeline.
-	const PipelineFlowState& state = getPipelineDataToBeExported(frameNumber, operation);
+	const PipelineFlowState& state = getPipelineDataToBeExported(frameNumber);
 	if(operation.isCanceled())
 		return false;
 

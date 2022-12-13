@@ -57,14 +57,12 @@ private:
 	/// Runs the task's work function immediately in the current thread.
 	void startInThisThread(bool showInUserInterface);
 
-	/// A shared pointer to the task itself, which is used to keep the C++ object alive
-	/// while the task is transferred to and executed in a thread pool.
-	TaskPtr _thisTask;
-
     /// The thread pool this task has been submitted to for execution (if any).
     QThreadPool* _submittedToPool = nullptr;
 
 	/// The execution context that this task inherits from its parent task.
+	/// Note: This object holds a shared pointer to this task object, which keeps this C++ object alive
+	/// while the task is transferred to and executed in a thread pool.
 	ExecutionContext _executionContext;
 
 	friend class Task;
@@ -102,7 +100,7 @@ public:
 		class FuncAsyncTask : public AsynchronousTask {
 		public:
 			FuncAsyncTask(Function&& f) : _func(std::forward<Function>(f)) {}
-			virtual void perform() override { std::move(_func)(*this); }
+			virtual void perform() override { std::invoke(std::move(_func), *this); }
 		private:
 			std::decay_t<Function> _func;
 		};

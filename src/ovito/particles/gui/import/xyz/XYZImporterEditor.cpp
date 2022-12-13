@@ -45,7 +45,7 @@ bool XYZImporterEditor::inspectNewFile(FileImporter* importer, const QUrl& sourc
 
 	{
 		// Block UI until reading is done.
-		ProgressDialog progressDialog(&mainWindow, mainWindow, tr("Inspecting file header"));
+		ProgressDialog progressDialog(&mainWindow, inspectFuture, tr("Inspecting file header"));
 		if(!inspectFuture.waitForFinished())
 			return false;
 	}
@@ -109,7 +109,7 @@ bool XYZImporterEditor::showEditColumnMappingDialog(XYZImporter* importer, const
 
 	{
 		// Block UI until reading is done.
-		ProgressDialog progressDialog(parentWindow(), mainWindow(), tr("Inspecting file header"));
+		ProgressDialog progressDialog(parentWindow(),inspectFuture, tr("Inspecting file header"));
 		if(!inspectFuture.waitForFinished())
 			return false;
 	}

@@ -72,7 +72,7 @@ public:
 protected:
 
 	/// \brief This is called once for every output file to be written and before exportFrame() is called.
-	virtual bool openOutputFile(const QString& filePath, int numberOfFrames, MainThreadOperation& operation) override;
+	virtual void openOutputFile(const QString& filePath, int numberOfFrames) override;
 
 	/// \brief This is called once for every output file written after exportFrame() has been called.
 	virtual void closeOutputFile(bool exportCompleted) override;

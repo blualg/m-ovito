@@ -70,7 +70,7 @@ public:
 	virtual void evaluateSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
 
 	/// Updates the stored trajectories from the source particle object.
-	bool generateTrajectories(AnimationTime currentTime, MainThreadOperation& operation);
+	bool generateTrajectories(AnimationTime currentTime, MainThreadOperation operation);
 
 protected:
 

@@ -230,7 +230,7 @@ void FileSourceEditor::onPickLocalInputFile()
 		}
 
 		// Set the new input location.
-		importNewFile(fileSource, newSourceUrl, importerType, importerFormat, createOperation());
+		importNewFile(fileSource, newSourceUrl, importerType, importerFormat);
 	});
 }
 
@@ -268,16 +268,15 @@ void FileSourceEditor::onPickRemoteInputFile()
 		}
 
 		// Set the new input location.
-		importNewFile(fileSource, newSourceUrl, importerType, importerFormat, createOperation());
+		importNewFile(fileSource, newSourceUrl, importerType, importerFormat);
 	});
 }
 
 /******************************************************************************
 * Loads a new file into the FileSource.
 ******************************************************************************/
-bool FileSourceEditor::importNewFile(FileSource* fileSource, const QUrl& url, OvitoClassPtr importerType, const QString& importerFormat, MainThreadOperation operation)
+bool FileSourceEditor::importNewFile(FileSource* fileSource, const QUrl& url, OvitoClassPtr importerType, const QString& importerFormat)
 {
-	OVITO_ASSERT(operation.isCurrent());
 	OORef<FileImporter> importer;
 
 	// Create file importer instance.
@@ -373,7 +372,7 @@ void FileSourceEditor::onReloadAnimation()
 			// Let the FileSource update the list of source animation frames.
 			// After the update is complete, jump to the last one of the newly added animation frames.
 			int oldFrameCount = fileSource->frames().size();
-			fileSource->updateListOfFrames(true).finally(fileSource->executor(), [fileSource, oldFrameCount, anim=OORef<AnimationSettings>(mainWindow().datasetContainer().activeAnimationSettings())](Task& task) {
+			fileSource->updateListOfFrames(true).finally(*fileSource, [fileSource, oldFrameCount, anim=OORef<AnimationSettings>(mainWindow().datasetContainer().activeAnimationSettings())](Task& task) noexcept {
 				if(!task.isCanceled() && fileSource->frames().size() > oldFrameCount && anim) {
 					AnimationTime time = fileSource->sourceFrameToAnimationTime(fileSource->frames().size() - 1);				
 					anim->setCurrentFrame(time.frame());

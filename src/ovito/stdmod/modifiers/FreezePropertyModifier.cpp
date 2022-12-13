@@ -117,7 +117,7 @@ Future<PipelineFlowState> FreezePropertyModifier::evaluate(const ModifierEvaluat
 
 	// Request the frozen state from the upstream pipeline.
 	return request.modApp()->evaluateInput(upstreamRequest)
-		.then(executor(), [this, request, modApp = OORef<ModifierApplication>(request.modApp()), state = input](const PipelineFlowState& frozenState) mutable {
+		.then(*this, [this, request, modApp = OORef<ModifierApplication>(request.modApp()), state = input](const PipelineFlowState& frozenState) mutable {
 
 			// Extract the input property.
 			if(FreezePropertyModifierApplication* myModApp = dynamic_object_cast<FreezePropertyModifierApplication>(request.modApp())) {

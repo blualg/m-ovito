@@ -67,9 +67,6 @@ public:
 	/// Returns the main window hosting this settings page.
 	MainWindow& mainWindow() const;
 
-	/// Displays an error message to the user.
-	void reportError(const Exception& ex);
-
 private:
 
 	ApplicationSettingsDialog* _settingsDialog = nullptr;

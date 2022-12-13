@@ -60,7 +60,7 @@ public:
 	DataSet* newDataset();
 
 	/// Loads the given session state file and makes it the current dataset.
-	bool loadDataset(const QString& filename, MainThreadOperation operation);
+	void loadDataset(const QString& filename);
 
 	/// Returns the currently active scene.
 	Scene* activeScene() const { return _activeScene; }

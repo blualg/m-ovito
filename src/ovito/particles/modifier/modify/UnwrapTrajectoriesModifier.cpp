@@ -64,7 +64,7 @@ Future<PipelineFlowState> UnwrapTrajectoriesModifier::evaluate(const ModifierEva
 
 			// Without the periodic image flags information, we have to scan the particle trajectories
 			// from beginning to end before making them continuous.
-			return unwrapModApp->detectPeriodicCrossings(request).then(unwrapModApp->executor(), [state = input, request]() mutable {
+			return unwrapModApp->detectPeriodicCrossings(request).then(*unwrapModApp, [state = input, request]() mutable {
 				static_object_cast<UnwrapTrajectoriesModifierApplication>(request.modApp())->unwrapParticleCoordinates(request, state);
 				return std::move(state);
 			});
@@ -112,7 +112,7 @@ SharedFuture<> UnwrapTrajectoriesModifierApplication::detectPeriodicCrossings(co
 		// Iterate over all frames of the input range in sequential order.
 		_unwrapOperation = for_each_sequential(
 			std::move(inputFrameRange), 
-			executor(true), // require deferred execution of each frame
+			ObjectExecutor(this, true), // Require deferred execution of each frame
 			// Requests the next frame from the upstream pipeline.
 			[this](int frame) {
 				return evaluateInput(PipelineEvaluationRequest(sourceFrameToAnimationTime(frame)));

@@ -274,7 +274,7 @@ void InteractiveMolecularDynamicsModifier::dataReceived()
 							_pipelineUpdatePending = true;
 							// Wait until pipeline update that is currently in progress has completed before
 							// triggering a new pipeline update.
-							viewport->window()->scenePreparation().future().finally(executor(), [&](Task& task) {
+							viewport->window()->scenePreparation().future().finally(*this, [&](Task& task) noexcept {
 								if(!task.isCanceled()) {
 									_pipelineUpdatePending = false;
 									notifyTargetChanged();

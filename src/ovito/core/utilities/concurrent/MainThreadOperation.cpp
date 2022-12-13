@@ -29,21 +29,50 @@
 
 namespace Ovito {
 
+/**
+ * Task type which is created by the MainThreadOperation class.
+*/
+class MainThreadTask : public ProgressingTask, public detail::TaskCallback<MainThreadTask>
+{
+public:
+
+	MainThreadTask(const TaskPtr& parentTask) noexcept : ProgressingTask(Task::Started) {
+		if(parentTask) {
+			// When this sub-task gets canceled, we cancel the parent task too.
+			this->registerContinuation([this]() noexcept {
+				if(isCanceled() && callbackTask() && !callbackTask()->isCanceled())
+					callbackTask()->cancel();
+			});
+
+			// Register a callback function to get notified when the parent task gets canceled.
+			registerCallback(parentTask.get(), true);
+		}
+	}
+
+	/// Callback function, which is invoked whenever the state of the parent task changes.
+	bool taskStateChangedCallback(int state) noexcept {
+		if(state & Canceled)
+			this->cancel();
+		// When the parent task finishes, we should detach our callback function immediately,
+		// because a task object may not have callbacks registered at the end of its lifetime.
+		if(state & Finished) {
+			OVITO_ASSERT(isFinished());
+			return false; // Returning false indicates that the callback wishes to be unregistered.
+		}
+		return true;
+	}
+};
+
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-MainThreadOperation::MainThreadOperation(TaskPtr p, UserInterface& userInterface, bool visibleInUserInterface) noexcept :
-	Promise<>(std::move(p)), _userInterface(userInterface), _parentTask(Task::currentTask())
+MainThreadOperation::MainThreadOperation(ExecutionContext::Type contextType, UserInterface& userInterface, bool visibleInUserInterface) :
+	Promise<>(std::make_shared<MainThreadTask>(
+		ExecutionContext::current().isValid() ? ExecutionContext::current().task() : nullptr)), 
+	ExecutionContext::Scope(contextType, userInterface, task())
 {
-	OVITO_ASSERT(isValid());
-	OVITO_ASSERT(isStarted());
-	OVITO_ASSERT(task()->isProgressingTask());
-
 	// Usage of MainThreadOperation is only permitted in the main thread.
 	OVITO_ASSERT_MSG(!QCoreApplication::instance() || QThread::currentThread() == QCoreApplication::instance()->thread(), "MainThreadOperation", "MainThreadOperation may only be created in the main thread.");
-
-	// Make this task the active one.
-	Task::setCurrentTask(task().get());
 
 	// Register the container MainThreadOperation with the TaskManager to display its progress in the UI.
 	if(visibleInUserInterface)
@@ -51,14 +80,19 @@ MainThreadOperation::MainThreadOperation(TaskPtr p, UserInterface& userInterface
 }
 
 /******************************************************************************
-* Puts the promise into the 'finished' state and detaches it from the underlying task object.
+* Constructor creating a sub-task.
 ******************************************************************************/
-void MainThreadOperation::reset() 
+MainThreadOperation::MainThreadOperation(bool visibleInUserInterface) : MainThreadOperation(ExecutionContext::current().type(), ExecutionContext::current().ui(), visibleInUserInterface)
+{
+}
+
+/******************************************************************************
+* Destructor puts the promise into the 'finished' state.
+******************************************************************************/
+MainThreadOperation::~MainThreadOperation() 
 {
 	if(TaskPtr task = std::move(_task)) {
-		// This task is no longer the active one.
-		OVITO_ASSERT(Task::currentTask() == task.get());
-		Task::setCurrentTask(_parentTask);
+		OVITO_ASSERT(ExecutionContext::current().task() == task);
 		OVITO_ASSERT(task->isStarted());
 		task->setFinished();
 	}
@@ -70,56 +104,13 @@ void MainThreadOperation::reset()
 void MainThreadOperation::processUIEvents() const
 {
 	OVITO_ASSERT(isValid());
-	OVITO_ASSERT(Task::currentTask() == task().get());
+	OVITO_ASSERT(ExecutionContext::current().task() == task());
 
-	Task::setCurrentTask(nullptr);
-	if(userInterface().processEvents()) {
+	UserInterface& ui = ExecutionContext::current().ui();
+	ExecutionContext::Scope nullScope(ExecutionContext{});
+	if(ui.processEvents()) {
 		cancel();
 	}
-
-	OVITO_ASSERT(Task::currentTask() == nullptr);
-	Task::setCurrentTask(task().get());
-}
-
-/******************************************************************************
-* Creates a separate MainThreadOperation that represents a sub-task of the running operation.
-* If the parent task gets canceled, the sub-task is canceled as well, and vice versa.
-******************************************************************************/
-MainThreadOperation MainThreadOperation::createSubTask(bool visibleInUserInterface) 
-{
-	OVITO_ASSERT(isValid());
-	OVITO_ASSERT(task().get() == Task::currentTask());
-
-	class MainThreadSubTask : public ProgressingTask, public detail::TaskCallback<MainThreadSubTask>
-	{
-	public:
-		MainThreadSubTask(const TaskPtr& parentTask) noexcept : ProgressingTask(Task::Started) {
-			// Register a callback function to get notified when the parent task gets canceled.
-			registerCallback(parentTask.get(), true);
-
-			// When this sub-task gets canceled, we cancel the parent task too.
-			this->registerContinuation([](Task& thisTask) noexcept {
-				MainThreadSubTask& self = static_cast<MainThreadSubTask&>(thisTask);
-				if(self.isCanceled() && self.callbackTask() && !self.callbackTask()->isCanceled())
-					self.callbackTask()->cancel();
-			});
-		}
-
-		/// Callback function, which is invoked whenever the state of the parent task changes.
-		bool taskStateChangedCallback(int state) noexcept {
-			if(state & Canceled)
-				this->cancel();
-			// When the parent task finishes, we should detach our callback function immediately,
-			// because a task object may not have callbacks registered at the end of its lifetime.
-			if(state & Finished) {
-				OVITO_ASSERT(isFinished());
-				return false; // Returning false indicates that the callback wishes to be unregistered.
-			}
-			return true;
-		}
-	};
-
-	return MainThreadOperation(std::make_shared<MainThreadSubTask>(task()), userInterface(), visibleInUserInterface);
 }
 
 /******************************************************************************

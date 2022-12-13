@@ -127,10 +127,8 @@ PipelineStatus VoxelGridSliceModifierDelegate::apply(const ModifierEvaluationReq
 					return planeGridSpace.pointDistance(Point3(i,j,k));
 				};
 
-				auto localOperation = std::make_shared<ProgressingTask>(Task::Started);
 				MarchingCubes mc(mesh, gridShape[0]*resolution, gridShape[1]*resolution, gridShape[2]*resolution, false, std::move(getFieldValue), true);
-				mc.generateIsosurface(0.0, *localOperation);
-				localOperation->setFinished();
+				mc.generateIsosurface(0.0, MainThreadOperation(false).progressingTask());
 			}
 
 			// Create a manifold by connecting adjacent faces.

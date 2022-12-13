@@ -72,7 +72,7 @@ public:
 	virtual void exitWithFatalError(const Exception& ex) override;
 
 	/// Creates a frame buffer of the requested size for rendering and displays it in a window in the user interface.
-	virtual std::shared_ptr<FrameBuffer> createAndShowFrameBuffer(int width, int height, MainThreadOperation& renderingOperation) override;
+	virtual std::shared_ptr<FrameBuffer> createAndShowFrameBuffer(int width, int height, bool showRenderingOperationProgress) override;
 
 	/// Returns the frame buffer window for displaying the rendered image (may be null).
 	FrameBufferWindow* frameBufferWindow() const { return _frameBufferWindow; }

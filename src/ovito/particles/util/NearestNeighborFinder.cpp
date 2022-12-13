@@ -35,7 +35,7 @@ bool NearestNeighborFinder::prepare(ConstPropertyAccess<Point3> posProperty, con
 {
 	OVITO_ASSERT(posProperty);
 	OVITO_ASSERT(cellData);
-	Task* currentTask = Task::currentTask();
+	Task* currentTask = ExecutionContext::current().task().get();
 	OVITO_ASSERT(currentTask != nullptr);
 
 	simCell = cellData;

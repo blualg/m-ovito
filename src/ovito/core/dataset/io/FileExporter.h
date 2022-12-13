@@ -91,8 +91,7 @@ public:
 	/// \brief Exports the scene data to the output file(s).
 	/// \return \c true if the output file has been successfully written;
 	///         \c false if the export operation has been canceled by the user.
-	/// \throws Util::Exception if the export operation has failed due to an error.
-	virtual bool doExport(MainThreadOperation& operation);
+	virtual bool doExport(MainThreadOperation operation);
 
 	/// Helper function that is called by sub-classes prior to file output in order to
 	/// activate the default "C" locale.
@@ -102,7 +101,7 @@ public:
 	virtual bool supportsMultiFrameFiles() const { return false; }
 
 	/// \brief Evaluates the pipeline whose data is to be exported.
-	PipelineFlowState getPipelineDataToBeExported(int frame, MainThreadOperation& operation, bool requestRenderState = false) const;
+	PipelineFlowState getPipelineDataToBeExported(int frame, bool requestRenderState = false) const;
 
 	/// \brief Returns a string with the list of available data objects of the given type.
 	QString getAvailableDataObjectList(const PipelineFlowState& state, const DataObject::OOMetaClass& objectType) const;
@@ -113,7 +112,7 @@ protected:
 	FileExporter(ObjectCreationParams params);
 
 	/// \brief This is called once for every output file to be written and before exportFrame() is called.
-	virtual bool openOutputFile(const QString& filePath, int numberOfFrames, MainThreadOperation& operation) = 0;
+	virtual void openOutputFile(const QString& filePath, int numberOfFrames) = 0;
 
 	/// \brief This is called once for every output file written after exportFrame() has been called.
 	virtual void closeOutputFile(bool exportCompleted) = 0;

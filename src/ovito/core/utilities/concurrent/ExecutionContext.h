@@ -54,7 +54,13 @@ public:
     ExecutionContext() noexcept = default;
 
     /// Constructor for a new execution context.
-    explicit ExecutionContext(Type type, UserInterface& ui) noexcept : _type(type), _ui(&ui) { OVITO_ASSERT(isValid()); }
+    explicit ExecutionContext(Type type, UserInterface& ui, TaskPtr task) noexcept : _type(type), _ui(&ui), _task(std::move(task)) { OVITO_ASSERT(isValid()); }
+
+    /// Constructor creating a derived execution context.
+    explicit ExecutionContext(const ExecutionContext& other, TaskPtr task) noexcept : ExecutionContext(other.type(), other.ui(), std::move(task)) {}
+
+    /// Constructor creating a derived execution context.
+    explicit ExecutionContext(TaskPtr task) noexcept : ExecutionContext(ExecutionContext::current(), std::move(task)) {}
 
     /// Returns whether this context is not of type 'None'.
     bool isValid() const noexcept { return type() != Type::None; }
@@ -69,10 +75,17 @@ public:
         return *_ui; 
     }
 
+    /// Returns the active task object.
+    const TaskPtr& task() const noexcept {
+        OVITO_ASSERT(isValid()); 
+        return _task; 
+    } 
+
 private:
 
     Type _type = Type::None;
     UserInterface* _ui = nullptr;
+    TaskPtr _task;
 };
 
 /// RAII helper class that can be used to temporarily set the current execution context.
@@ -84,10 +97,25 @@ public:
     explicit Scope(ExecutionContext context) noexcept : _previous(std::exchange(ExecutionContext::current(), std::move(context))) {}
 
     /// Constructor.
-    explicit Scope(Type type, UserInterface& ui) noexcept : Scope(ExecutionContext(type, ui)) {}
+    explicit Scope(Type type, UserInterface& ui, TaskPtr task) noexcept : Scope(ExecutionContext(type, ui, std::move(task))) {}
+
+    /// Constructor.
+    explicit Scope(TaskPtr task) noexcept : Scope(ExecutionContext(std::move(task))) {}
 
     /// Destructor.
     ~Scope() noexcept { ExecutionContext::current() = std::move(_previous); }
+
+    /// Not a movable type.
+    Scope(Scope&& other) = delete;
+
+    /// Not a copyable type.
+    Scope(const Scope& other) = delete;
+
+    /// Not a movable type.
+    Scope& operator=(Scope&& other) = delete;
+
+    /// Not a copyable type.
+    Scope& operator=(const Scope& other) = delete;
 
 private:
 

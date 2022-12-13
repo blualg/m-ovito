@@ -36,17 +36,6 @@ namespace Ovito {
 std::atomic_size_t Task::_globalTaskCounter{0};
 #endif
 
-/*******************************************************x***********************
-* Returns the task object that is currently making the call to this function.
-******************************************************************************/
-Task*& Task::currentTask() noexcept 
-{
-	// The task that is currently the active one in the current thread.
-	static thread_local Task* _currentTask = nullptr;
-
-	return _currentTask; 
-}
-
 #ifdef OVITO_DEBUG
 /*******************************************************x***********************
 * Destructor.
@@ -70,7 +59,8 @@ Task::~Task()
 	// at program termination. 
 	_globalTaskCounter.fetch_sub(1);
 
-	OVITO_ASSERT(currentTask() != this);
+	// Make sure we never delete the task that is currently active.
+	OVITO_ASSERT(!ExecutionContext::current().isValid() || ExecutionContext::current().task().get() != this);
 }
 #endif
 
@@ -145,7 +135,7 @@ void Task::finishLocked(MutexLocker& locker) noexcept
 
 	// Run all continuation functions.
 	for(auto& cont : continuations)
-		std::move(cont)(*this);
+		std::move(cont)();
 }
 
 /******************************************************************************
@@ -189,7 +179,7 @@ void Task::cancelAndFinishLocked(MutexLocker& locker) noexcept
 
 	// Run the continuation functions.
 	for(auto& cont : continuations)
-		std::move(cont)(*this);
+		std::move(cont)();
 }
 
 /******************************************************************************
@@ -289,7 +279,7 @@ bool Task::waitFor(detail::TaskReference awaitedTask)
 	OVITO_ASSERT(awaitedTask);
 
 	// The task this function was called from.
-	Task* waitingTask = currentTask();
+	Task* waitingTask = ExecutionContext::current().task().get();
 	OVITO_ASSERT_MSG(waitingTask != nullptr, "Task::waitFor()", "No active task. This function may only be called from a task worker function or some other context with an active task.");
 
 	// Lock access to the waiting task (this function was called from).
@@ -413,7 +403,9 @@ bool Task::waitFor(detail::TaskReference awaitedTask)
 
 		{
 			// Temporarily switch back to a null context while in the event loop.
-			ExecutionContext::Scope executionContextScope(ExecutionContext{});
+			ExecutionContext::Scope execScope(ExecutionContext{});
+			// Also suspend undo recording while in the event loop.
+			UndoSuspender noUndo;
 
 			// Enter the local event loop.
 			eventLoop.exec();

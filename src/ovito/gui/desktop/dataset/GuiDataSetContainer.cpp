@@ -59,16 +59,10 @@ bool GuiDataSetContainer::fileSave()
 		return fileSaveAs();
 
 	// Save dataset to file.
-	try {
-		currentSet()->saveToFile(currentSet()->filePath(), MainThreadOperation::create(mainWindow(), true));
+	return userInterface().handleExceptions([&] {
+		currentSet()->saveToFile(currentSet()->filePath());
 		mainWindow().undoStack()->setClean();
-	}
-	catch(const Exception& ex) {
-		mainWindow().reportError(ex);
-		return false;
-	}
-
-	return true;
+	});
 }
 
 /******************************************************************************
@@ -159,8 +153,9 @@ bool GuiDataSetContainer::askForSaveChanges()
 /******************************************************************************
 * Imports a given file into the scene.
 ******************************************************************************/
-bool GuiDataSetContainer::importFiles(const std::vector<QUrl>& urls, MainThreadOperation operation, const FileImporterClass* importerType, const QString& importerFormat)
+bool GuiDataSetContainer::importFiles(const std::vector<QUrl>& urls, const FileImporterClass* importerType, const QString& importerFormat)
 {
+	OVITO_ASSERT(ExecutionContext::current().isValid());
 	OVITO_ASSERT(!urls.empty());
 
 	// Create a reference to the active scene to keep it alive during this long-running operation.

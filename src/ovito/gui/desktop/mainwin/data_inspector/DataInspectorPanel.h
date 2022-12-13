@@ -56,6 +56,11 @@ public:
 	/// Returns the most recent output data of the selected pipeline, which is displayed in the data inspector panel.
 	const PipelineFlowState& pipelineOutput() const { return _pipelineOutput; }
 
+protected:
+
+	/// Handle state changes of the QWidget.
+	virtual void changeEvent(QEvent* event) override;
+
 public Q_SLOTS:
 
 	/// Hides the inspector panel.

@@ -518,14 +518,15 @@ void MainWindow::dragEnterEvent(QDragEnterEvent* event)
 void MainWindow::dropEvent(QDropEvent* event)
 {
     event->acceptProposedAction();
-	try {
-		std::vector<QUrl> importUrls;
+	std::vector<QUrl> importUrls;
+	handleExceptions([&] {
 		for(const QUrl& url : event->mimeData()->urls()) {
 			if(url.fileName().endsWith(".ovito", Qt::CaseInsensitive)) {
 				if(url.isLocalFile()) {
 					if(datasetContainer().askForSaveChanges()) {
-						datasetContainer().loadDataset(url.toLocalFile(), MainThreadOperation::create(*this, true));
+						datasetContainer().loadDataset(url.toLocalFile());
 					}
+					importUrls.clear();
 					return;
 				}
 			}
@@ -533,10 +534,11 @@ void MainWindow::dropEvent(QDropEvent* event)
 				importUrls.push_back(url);
 			}
 		}
-		datasetContainer().importFiles(std::move(importUrls), MainThreadOperation::create(*this, true));
-	}
-	catch(const Exception& ex) {
-		reportError(ex);
+	});
+	if(!importUrls.empty()) {
+		performTransaction(tr("Import data"), [&] {
+			datasetContainer().importFiles(std::move(importUrls));
+		});
 	}
 }
 
@@ -574,7 +576,7 @@ void MainWindow::clearStatusBarMessage()
 /******************************************************************************
 * Creates a frame buffer of the requested size and displays it as a window in the user interface.
 ******************************************************************************/
-std::shared_ptr<FrameBuffer> MainWindow::createAndShowFrameBuffer(int width, int height, MainThreadOperation& renderingOperation) 
+std::shared_ptr<FrameBuffer> MainWindow::createAndShowFrameBuffer(int width, int height, bool showRenderingOperationProgress) 
 {
 	// Create the frame buffer window.
 	if(!_frameBufferWindow) {
@@ -583,7 +585,8 @@ std::shared_ptr<FrameBuffer> MainWindow::createAndShowFrameBuffer(int width, int
 	}
 	std::shared_ptr<FrameBuffer> fb = _frameBufferWindow->createFrameBuffer(width, height);
 	_frameBufferWindow->showAndActivateWindow();
-	_frameBufferWindow->showRenderingOperation(renderingOperation);
+	if(showRenderingOperationProgress)
+		_frameBufferWindow->showRenderingOperation();
 	return fb;
 }
 
@@ -646,6 +649,15 @@ void MainWindow::reportError(const Exception& exception, QWidget* window)
 		playbackAction->trigger();
 
 	if(window && window->isVisible()) {
+		// If there currently is floating window being shown (e.g. the FrameBufferWindow),
+		// make the error message dialog a child of this floating window to show it in front.
+		for(QMainWindow* floatingChildWindow : window->findChildren<QMainWindow*>()) {
+			if(floatingChildWindow->isVisible() && floatingChildWindow->isActiveWindow()) {
+				window = floatingChildWindow;
+				break;
+			}
+		}
+
 		// If there currently is a modal dialog box being shown,
 		// make the error message dialog a child of this dialog to prevent a UI dead-lock.
 		for(QDialog* dialog : window->findChildren<QDialog*>()) {

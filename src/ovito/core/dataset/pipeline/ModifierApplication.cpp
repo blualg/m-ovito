@@ -314,7 +314,7 @@ Future<PipelineFlowState> ModifierApplication::evaluateInternal(const PipelineEv
 
 	// Obtain input data and pass it on to the modifier.
 	return evaluateInput(modifierRequest)
-		.then(executor(), [this, modifierRequest](PipelineFlowState inputData) -> Future<PipelineFlowState> {
+		.then(*this, [this, modifierRequest](PipelineFlowState inputData) -> Future<PipelineFlowState> {
 
 			// Clear the status of the input unless it is an error.
 			if(inputData.status().type() != PipelineStatus::Error) {
@@ -344,7 +344,7 @@ Future<PipelineFlowState> ModifierApplication::evaluateInternal(const PipelineEv
 			// Post-process the modifier results before returning them to the caller.
 			// Turn any exception that was thrown during modifier evaluation into a
 			// valid pipeline state with an error code.
-			return future.then(executor(), [this, inputData = std::move(inputData)](Future<PipelineFlowState> future) mutable {
+			return future.then(*this, [this, inputData = std::move(inputData)](Future<PipelineFlowState> future) mutable {
 				OVITO_ASSERT(future.isFinished() && !future.isCanceled());
 				try {
 					try {

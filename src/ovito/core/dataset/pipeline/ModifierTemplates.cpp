@@ -22,7 +22,6 @@
 
 #include <ovito/core/Core.h>
 #include <ovito/core/dataset/pipeline/Modifier.h>
-#include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/app/Application.h>
 #include <ovito/core/app/UserInterface.h>
 #include "ModifierTemplates.h"
@@ -51,14 +50,14 @@ ModifierTemplates::ModifierTemplates(QObject* parent) : QAbstractListModel(paren
 /******************************************************************************
 * Creates a new modifier template on the basis of the given modifier(s).
 ******************************************************************************/
-int ModifierTemplates::createTemplate(const QString& templateName, const QVector<OORef<Modifier>>& modifiers, MainThreadOperation& operation)
+int ModifierTemplates::createTemplate(const QString& templateName, const QVector<OORef<Modifier>>& modifiers)
 {
 	if(modifiers.empty())
 		throw Exception(tr("Expected non-empty modifier list for creating a new modifier template."));
 
 	QByteArray buffer;
 	QDataStream dstream(&buffer, QIODevice::WriteOnly);
-	ObjectSaveStream stream(dstream, operation);
+	ObjectSaveStream stream(dstream);
 
 	// Serialize modifiers.
 	for(Modifier* modifier : modifiers) {
@@ -158,7 +157,7 @@ QByteArray ModifierTemplates::templateData(const QString& templateName)
 /******************************************************************************
 * Instantiates the modifiers that are stored under the given template name.
 ******************************************************************************/
-QVector<OORef<Modifier>> ModifierTemplates::instantiateTemplate(const QString& templateName, MainThreadOperation& operation)
+QVector<OORef<Modifier>> ModifierTemplates::instantiateTemplate(const QString& templateName)
 {
 	QVector<OORef<Modifier>> modifierSet;
 	try {
@@ -173,7 +172,7 @@ QVector<OORef<Modifier>> ModifierTemplates::instantiateTemplate(const QString& t
 		if(buffer.isEmpty())
 			throw Exception(tr("Modifier template with the name '%1' does not exist.").arg(templateName));
 		QDataStream dstream(buffer);
-		ObjectLoadStream stream(dstream, operation);
+		ObjectLoadStream stream(dstream);
 		for(int chunkId = stream.expectChunkRange(0,1); chunkId == 1; chunkId = stream.expectChunkRange(0,1)) {
 			modifierSet.push_back(stream.loadObject<Modifier>());
 			stream.closeChunk();

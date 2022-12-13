@@ -362,7 +362,7 @@ void Viewport::zoomToSelectionExtents(FloatType viewportAspectRatio)
 void Viewport::zoomToSceneExtentsWhenReady()
 {
 	if(scene() && window()) {
-		window()->scenePreparation().future().finally(executor(), [&](Task& task) noexcept {
+		window()->scenePreparation().future().finally(*this, [this](Task& task) noexcept {
 			if(!task.isCanceled()) {
 				zoomToSceneExtents();
 			}
@@ -618,9 +618,7 @@ void Viewport::renderInteractive(UserInterface& userInterface, DataSet* dataset,
 		userInterface._viewportBeingRendered = this;
 
 		// This is the async operation object used when calling rendering functions in the following.
-		MainThreadOperation renderOperation = MainThreadOperation::create(userInterface);
-		// All actions here are performed in an interactive execution context.
-		ExecutionContext::Scope executionContext(ExecutionContext::Type::Interactive, userInterface);
+		MainThreadOperation renderOperation(ExecutionContext::Type::Interactive, userInterface, false);
 
 		AnimationTime time = scene()->animationSettings()->currentTime();
 
@@ -636,7 +634,7 @@ void Viewport::renderInteractive(UserInterface& userInterface, DataSet* dataset,
 			adjustProjectionForRenderFrame(dataset, _projParams);
 
 		// Determine scene bounding box.
-		Box3 boundingBox = renderer->computeSceneBoundingBox(time, scene(), _projParams, this, renderOperation);
+		Box3 boundingBox = renderer->computeSceneBoundingBox(time, scene(), _projParams, this);
 
 		// Set up final projection with the now known bounding box.
 		_projParams = computeProjectionParameters(time, aspectRatio, renderer->waitForLongOperationsEnabled(), boundingBox);

@@ -53,8 +53,9 @@ VoroTopModifier::VoroTopModifier(ObjectCreationParams params) : StructureIdentif
 /******************************************************************************
  * Loads a new filter definition into the modifier.
  ******************************************************************************/
-bool VoroTopModifier::loadFilterDefinition(const QString& filepath, MainThreadOperation& operation)
+bool VoroTopModifier::loadFilterDefinition(const QString& filepath)
 {
+    MainThreadOperation operation(true);
     operation.setProgressText(tr("Loading VoroTop filter %1").arg(filepath));
 
     // Open filter file for reading.

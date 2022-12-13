@@ -145,13 +145,17 @@ void FrameBufferWindow::showAndActivateWindow()
 /******************************************************************************
 * Makes the framebuffer modal while a rendering operation is in progress and displays the progress in the window.
 ******************************************************************************/
-void FrameBufferWindow::showRenderingOperation(MainThreadOperation& renderingOperation)
+void FrameBufferWindow::showRenderingOperation()
 {
+	OVITO_ASSERT(ExecutionContext::current().task());
 	OVITO_ASSERT(!_renderingWatcher);
+
 	_renderingWatcher = new TaskWatcher(this);
 
 	connect(_renderingWatcher, &TaskWatcher::started, this, [this]() {
+		// Disable main window while rendering is in progress.
 		parentWidget()->setEnabled(false);
+		// Re-enable this floating child window.
 		this->setEnabled(true);
 		_saveToFileAction->setEnabled(false);
 		_copyToClipboardAction->setEnabled(false);
@@ -172,15 +176,15 @@ void FrameBufferWindow::showRenderingOperation(MainThreadOperation& renderingOpe
 		_renderingWatcher->deleteLater();
 	});
 
-	_renderingWatcher->watch(renderingOperation.task());
+	_renderingWatcher->watch(ExecutionContext::current().task());
 
 	// Create UI for every running task.
-	for(TaskWatcher* watcher : renderingOperation.userInterface().taskManager().runningTasks()) {
+	for(TaskWatcher* watcher : ExecutionContext::current().ui().taskManager().runningTasks()) {
 		createTaskProgressWidgets(watcher);
 	}
 
 	// Create a separate progress bar for every new active task.
-	connect(&renderingOperation.userInterface().taskManager(), &TaskManager::taskStarted, this, &FrameBufferWindow::createTaskProgressWidgets, Qt::UniqueConnection);
+	connect(&ExecutionContext::current().ui().taskManager(), &TaskManager::taskStarted, this, &FrameBufferWindow::createTaskProgressWidgets, Qt::UniqueConnection);
 }
 
 /******************************************************************************

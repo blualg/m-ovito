@@ -188,7 +188,7 @@ bool FileExporter::isSuitablePipelineOutput(const PipelineFlowState& state) cons
 /******************************************************************************
 * Evaluates the pipeline whose data is to be exported.
 ******************************************************************************/
-PipelineFlowState FileExporter::getPipelineDataToBeExported(int frame, MainThreadOperation& operation, bool requestRenderState) const
+PipelineFlowState FileExporter::getPipelineDataToBeExported(int frame, bool requestRenderState) const
 {
 	if(!sceneToExport())
 		throw Exception(tr("No scene has been specified for file export."));
@@ -219,7 +219,7 @@ PipelineFlowState FileExporter::getPipelineDataToBeExported(int frame, MainThrea
 /******************************************************************************
  * Exports the scene data to the output file(s).
  *****************************************************************************/
-bool FileExporter::doExport(MainThreadOperation& operation)
+bool FileExporter::doExport(MainThreadOperation operation)
 {
 	if(outputFilename().isEmpty())
 		throw Exception(tr("The output filename not been set for the file exporter."));
@@ -259,8 +259,7 @@ bool FileExporter::doExport(MainThreadOperation& operation)
 
 	// Open output file for writing.
 	if(!exportAnimation() || !useWildcardFilename()) {
-		if(!openOutputFile(filename, numberOfFrames, operation))
-			return false;
+		openOutputFile(filename, numberOfFrames);
 	}
 
 	try {
@@ -271,19 +270,19 @@ bool FileExporter::doExport(MainThreadOperation& operation)
 
 			int frameNumber = firstFrameNumber + frameIndex * everyNthFrame();
 
+			// Open per-frame output file.
 			if(exportAnimation() && useWildcardFilename()) {
 				// Generate an output filename based on the wildcard pattern.
 				filename = dir.absoluteFilePath(QFileInfo(wildcardFilename()).fileName());
 				filename.replace(QChar('*'), QString::number(frameNumber));
-
-				if(!openOutputFile(filename, 1, operation))
-					return false;
+				openOutputFile(filename, 1);
 			}
 
 			operation.setProgressText(tr("Exporting frame %1 to file '%2'").arg(frameNumber).arg(filename));
 
 			exportFrame(frameNumber, filename, operation);
 
+			// Close per-frame output file.
 			if(exportAnimation() && useWildcardFilename())
 				closeOutputFile(!operation.isCanceled());
 

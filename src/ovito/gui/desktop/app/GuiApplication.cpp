@@ -190,20 +190,21 @@ MainThreadOperation GuiApplication::startupApplication()
 			return nullptr;
 		}
 #endif
-		return MainThreadOperation::create(*mainWin);
+		return MainThreadOperation(ExecutionContext::Type::Interactive, *mainWin, false);
 	}
 	else {
 		// Use this application's command line user interface.
-		return MainThreadOperation::create(*this);
+		return MainThreadOperation(ExecutionContext::Type::Interactive, *this, false);
 	}
 }
 
 /******************************************************************************
 * Is called at program startup once the event loop is running.
 ******************************************************************************/
-void GuiApplication::postStartupInitialization(MainThreadOperation& operation)
+void GuiApplication::postStartupInitialization()
 {
-	DataSetContainer& datasetContainer = operation.userInterface().datasetContainer();
+	UserInterface& userInterface = ExecutionContext::current().ui();
+	DataSetContainer& datasetContainer = userInterface.datasetContainer();
 
 	// This is to quit the application's event loop right after we are done executing the startup actions
 	// (only when running in console mode). In GUI mode, the main window will keep the event loop going.
@@ -214,10 +215,11 @@ void GuiApplication::postStartupInitialization(MainThreadOperation& operation)
 		QString startupFilename = cmdLineParser().positionalArguments().front();
 		if(startupFilename.endsWith(".ovito", Qt::CaseInsensitive)) {
 			try {
-				datasetContainer.loadDataset(startupFilename, operation.createSubTask(true));
+				// TODO: Create sub-task for this operation.
+				datasetContainer.loadDataset(startupFilename);
 			}
 			catch(const Exception& ex) {
-				operation.userInterface().reportError(ex);
+				userInterface.reportError(ex);
 			}
 		}
 	}
@@ -228,12 +230,13 @@ void GuiApplication::postStartupInitialization(MainThreadOperation& operation)
 		QString defaultsFilePath = QStandardPaths::locate(QStandardPaths::AppDataLocation, QStringLiteral("defaults.ovito"));
 		if(!defaultsFilePath.isEmpty()) {
 			try {
-				datasetContainer.loadDataset(defaultsFilePath, operation.createSubTask(true));
+				// TODO: Create sub-task for this operation.
+				datasetContainer.loadDataset(defaultsFilePath);
 				datasetContainer.currentSet()->setFilePath({});
 			}
 			catch(Exception& ex) {
 				ex.prependGeneralMessage(tr("An error occured while loading the user's default session state from the file: %1").arg(defaultsFilePath));
-				operation.userInterface().reportError(ex);
+				userInterface.reportError(ex);
 			}
 		}
 	}
@@ -258,7 +261,7 @@ void GuiApplication::postStartupInitialization(MainThreadOperation& operation)
 				if(numSessionFiles)
 					throw Exception(tr("Detected multiple command line arguments: Cannot open a session state file and a simulation data file at the same time."));
 				if(GuiDataSetContainer* guiContainer = dynamic_object_cast<GuiDataSetContainer>(&datasetContainer))
-					guiContainer->importFiles(std::move(importUrls), operation.createSubTask(true));
+					guiContainer->importFiles(std::move(importUrls)); // TODO: Create sub-task for this operation.
 				else
 					throw Exception(tr("Cannot import data files from the command line when running in console mode."));
 			}
@@ -266,13 +269,15 @@ void GuiApplication::postStartupInitialization(MainThreadOperation& operation)
 				throw Exception(tr("Detected multiple command line arguments: Cannot open multiple session state files at the same time."));
 		}
 		catch(const Exception& ex) {
-			operation.userInterface().reportError(ex);
+			userInterface.reportError(ex);
 		}
-		if(operation.userInterface().undoStack())
-			operation.userInterface().undoStack()->clear();
+
+		// Make sure we start with a clean undo stack at application startup.
+		if(userInterface.undoStack())
+			userInterface.undoStack()->clear();
 	}
 
-	StandaloneApplication::postStartupInitialization(operation);
+	StandaloneApplication::postStartupInitialization();
 }
 
 /******************************************************************************
@@ -299,18 +304,15 @@ bool GuiApplication::eventFilter(QObject* watched, QEvent* event)
 		}
 
 		if(mainWindow) {
-			try {
+			mainWindow->handleExceptions([&] {
 				if(openEvent->file().endsWith(".ovito", Qt::CaseInsensitive)) {
-					mainWindow->datasetContainer().loadDataset(openEvent->file(), MainThreadOperation::create(*mainWindow, true));
+					mainWindow->datasetContainer().loadDataset(openEvent->file()); // TODO: Create sub-task for this operation.
 				}
 				else {
-					mainWindow->datasetContainer().importFiles({openEvent->url()}, MainThreadOperation::create(*mainWindow, true));
+					mainWindow->datasetContainer().importFiles({openEvent->url()}); // TODO: Create sub-task for this operation.
 					mainWindow->undoStack()->clear();
 				}
-			}
-			catch(const Exception& ex) {
-				mainWindow->reportError(ex);
-			}
+			});
 		}
 	}
 	return StandaloneApplication::eventFilter(watched, event);

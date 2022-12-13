@@ -65,7 +65,7 @@ protected:
 	virtual MainThreadOperation startupApplication() override;
 
 	/// Is called at program startup once the event loop is running.
-	virtual void postStartupInitialization(MainThreadOperation& operation) override;
+	virtual void postStartupInitialization() override;
 
 	/// Handles events sent to the Qt application object.
 	virtual bool eventFilter(QObject* watched, QEvent* event) override;

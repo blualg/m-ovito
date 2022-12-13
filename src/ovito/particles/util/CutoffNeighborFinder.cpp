@@ -33,8 +33,8 @@ namespace Ovito::Particles {
 bool CutoffNeighborFinder::prepare(FloatType cutoffRadius, ConstPropertyAccess<Point3> positions, const SimulationCellObject* cell, ConstPropertyAccess<int> selectionProperty)
 {
 	OVITO_ASSERT(positions);
-	Task* currentTask = Task::currentTask();
-	OVITO_ASSERT(currentTask != nullptr);
+	Task* currentTask = ExecutionContext::current().task().get();
+	OVITO_ASSERT(currentTask);
 
 	_cutoffRadius = cutoffRadius;
 	_cutoffRadiusSquared = cutoffRadius * cutoffRadius;

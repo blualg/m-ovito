@@ -82,7 +82,7 @@ public:
 
 	/// Runs the given continuation function once this future has reached either the 'finished' or the 'canceled' state.
 	/// Note that the continuation function will always be executed, even if this future was canceled or set to an error state.
-    /// The callable may take one optional parameter: a reference to the underlying Task object.
+    /// The callable must accept one parameter: a reference to the underlying Task object.
     template<typename Executor, typename Function>
     void finally(Executor&& executor, Function&& f) noexcept {
 		OVITO_ASSERT_MSG(isValid(), "FutureBase::finally()", "Future must be valid.");
@@ -91,7 +91,7 @@ public:
 
 	/// Runs the given continuation function once this future has reached either the 'finished' or the 'canceled' state.
 	/// Note that the continuation function will always be executed, even if this future was canceled or set to an error state.
-    /// The callable may take one optional parameter: a reference to the underlying Task object.
+    /// The callable must accept one parameter: a reference to the underlying Task object.
     template<typename Function>
     void finally(Function&& f) noexcept {
 		OVITO_ASSERT_MSG(isValid(), "FutureBase::finally()", "Future must be valid.");
@@ -279,11 +279,14 @@ Future<R...>::then(Executor&& executor, Function&& f)
 	result_future_type future = promise.future();
 	continuation_task_type* continuationTask = static_cast<continuation_task_type*>(promise.task().get());
 
-	// Run the following function once the existing task finishes to invoke the user's continuation function.
+	// Let the continuation task inherit the current execution context.
+	ExecutionContext::Scope execScope(promise.task());
+
+	// Run the following function once the existing task finishes. We'll then invoke the user's continuation function.
 	continuationTask->whenTaskFinishes(
 			this->takeTaskReference(), // The reference to the existing task is moved from this future into the continuation task.
 			std::forward<Executor>(executor), 
-			[f = std::forward<Function>(f), promise = std::move(promise)](UNUSED_CONTINUATION_FUNC_PARAM) mutable noexcept {
+			[f = std::forward<Function>(f), promise = std::move(promise)]() mutable noexcept {
 
 		// Get the task that is about to continue.
 		continuation_task_type* continuationTask = static_cast<continuation_task_type*>(promise.task().get());

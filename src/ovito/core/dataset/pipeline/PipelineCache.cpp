@@ -136,7 +136,7 @@ SharedFuture<PipelineFlowState> PipelineCache::evaluatePipeline(const PipelineEv
 	// When requesting the pipeline output with the effect of visualization elements, 
 	// let the visualization elements operate on the data collection.
 	if(_includeVisElements) {
-		future = future.then(ownerObject()->executor(), [this, request, pipeline](const PipelineFlowState& state) {
+		future = future.then(*ownerObject(), [this, request, pipeline](const PipelineFlowState& state) {
 			// Give every visualization element the opportunity to apply an asynchronous data transformation.
 			Future<PipelineFlowState> stateFuture;
 			if(state) {
@@ -151,7 +151,7 @@ SharedFuture<PipelineFlowState> PipelineCache::evaluatePipeline(const PipelineEv
 								}
 								else {
 									OORef<PipelineSceneNode> pipelineRef{pipeline}; // Used to keep the pipeline object alive.
-									stateFuture = stateFuture.then(transformingVis->executor(), [request, dataObj, transformingVis, this, pipeline = std::move(pipelineRef)](PipelineFlowState&& state) {
+									stateFuture = stateFuture.then(*transformingVis, [request, dataObj, transformingVis, this, pipeline = std::move(pipelineRef)](PipelineFlowState&& state) {
 										return transformingVis->transformData(request, dataObj, std::move(state), _cachedTransformedDataObjects);
 									});
 								}
@@ -166,7 +166,7 @@ SharedFuture<PipelineFlowState> PipelineCache::evaluatePipeline(const PipelineEv
 			}
 			else {
 				// Cache the transformed data objects created by transforming visualization elements.
-				stateFuture = stateFuture.then(ownerObject()->executor(), [this](PipelineFlowState&& state) {
+				stateFuture = stateFuture.then(*ownerObject(), [this](PipelineFlowState&& state) {
 					cacheTransformedDataObjects(state);
 					return std::move(state);
 				});
@@ -176,7 +176,7 @@ SharedFuture<PipelineFlowState> PipelineCache::evaluatePipeline(const PipelineEv
 	}
 
 	// Store evaluation results in this cache.
-	future = future.then(ownerObject()->executor(), [this, pipeline, pipelineObject, evaluation](PipelineFlowState state) {
+	future = future.then(*ownerObject(), [this, pipeline, pipelineObject, evaluation](PipelineFlowState state) {
 
 		// Restrict the validity of the state.
 		state.intersectStateValidity(evaluation->validityInterval);
@@ -220,7 +220,7 @@ SharedFuture<PipelineFlowState> PipelineCache::evaluatePipeline(const PipelineEv
 #endif
 
 	// Remove evaluation record from the list of ongoing evaluations once it is finished (successfully or not).
-	future.finally(ownerObject()->executor(), [this, evaluation](UNUSED_CONTINUATION_FUNC_PARAM) {
+	future.finally(*ownerObject(), [this, evaluation](Task&) noexcept {
 		cleanupEvaluation(evaluation);
 	});
 
@@ -500,7 +500,7 @@ void PipelineCache::startFramePrecomputation(const PipelineEvaluationRequest& re
 
 		// Automatically reset the async operation object and the current frame precomputation when the 
 		// task gets canceled by the system.
-		_precomputeFramesOperation.finally(ownerObject()->executor(), [this](UNUSED_CONTINUATION_FUNC_PARAM) {
+		_precomputeFramesOperation.finally(*ownerObject(), [this](Task&) noexcept {
 			_precomputeFrameFuture.reset();
 			_precomputeFramesOperation.reset();
 		});
@@ -550,7 +550,7 @@ void PipelineCache::precomputeNextAnimationFrame()
 	_precomputeFrameFuture = evaluatePipeline(PipelineEvaluationRequest(nextFrameTime));
 
 	// Wait until input frame is ready.
-	_precomputeFrameFuture.finally(ownerObject()->executor(true), [this](Task& task) {
+	_precomputeFrameFuture.finally(*ownerObject(), [this](Task& task) {
 		try {
 			// If the pipeline evaluation has been canceled for some reason, we interrupt the precomputation process.
 			if(ownerObject()->isAboutToBeDeleted() || !_precomputeFramesOperation.isValid() || _precomputeFramesOperation.isFinished() || task.isCanceled()) {

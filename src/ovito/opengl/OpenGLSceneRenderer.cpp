@@ -348,12 +348,12 @@ bool OpenGLSceneRenderer::renderFrame(const QRect& viewportRect, MainThreadOpera
     OVITO_REPORT_OPENGL_ERRORS(this);
 
 	// Let the visual elements in the scene send their primitives to this renderer.
-	if(renderScene(operation)) {
+	if(renderScene()) {
 		OVITO_REPORT_OPENGL_ERRORS(this);
 
 		// Render additional content that is only visible in the interactive viewports.
 		if(viewport() && isInteractive()) {
-			renderInteractiveContent(operation);
+			renderInteractiveContent();
 			OVITO_REPORT_OPENGL_ERRORS(this);
 		}
 

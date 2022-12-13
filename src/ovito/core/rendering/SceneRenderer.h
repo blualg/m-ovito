@@ -134,7 +134,7 @@ public:
 	/// \brief Computes the bounding box of the entire scene to be rendered.
 	/// \return An axis-aligned box in the world coordinate system that contains
 	///         everything to be rendered.
-	Box3 computeSceneBoundingBox(AnimationTime time, Scene* scene, const ViewProjectionParameters& params, Viewport* vp, MainThreadOperation& operation);
+	Box3 computeSceneBoundingBox(AnimationTime time, Scene* scene, const ViewProjectionParameters& params, Viewport* vp);
 
 	/// Sets the view projection parameters, the animation frame to render,
 	/// and the viewport being rendered.
@@ -258,14 +258,14 @@ protected:
 	using RefTarget::RefTarget;
 
 	/// \brief Renders all nodes in the scene.
-	virtual bool renderScene(MainThreadOperation& operation);
+	virtual bool renderScene();
 
 	/// \brief Render a scene node (and all its children).
-	virtual bool renderNode(SceneNode* node, MainThreadOperation& operation);
+	virtual bool renderNode(SceneNode* node);
 
 	/// \brief This virtual method is responsible for rendering additional content that is only
 	///       visible in the interactive viewports.
-	virtual void renderInteractiveContent(MainThreadOperation& operation);
+	virtual void renderInteractiveContent();
 
 	/// \brief This is called during rendering whenever the rendering process has been temporarily
 	///        interrupted by an event loop and before rendering is resumed. It gives the renderer
@@ -273,10 +273,10 @@ protected:
 	virtual void resumeRendering() {}
 
 	/// \brief Renders the visual representation of the modifiers.
-	void renderModifiers(bool renderOverlay, MainThreadOperation& operation);
+	void renderModifiers(bool renderOverlay);
 
 	/// \brief Renders the visual representation of the modifiers.
-	void renderModifiers(PipelineSceneNode* pipeline, bool renderOverlay, MainThreadOperation& operation);
+	void renderModifiers(PipelineSceneNode* pipeline, bool renderOverlay);
 
 	/// \brief Gets the trajectory of motion of a node. The returned data buffer stores an array of 
 	///        Point3 (if the node's position is animated) or a null pointer (if the node's position is static).

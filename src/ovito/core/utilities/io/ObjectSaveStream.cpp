@@ -36,7 +36,10 @@ ObjectSaveStream::~ObjectSaveStream()
 		ObjectSaveStream::close();
 	}
 	catch(const Exception& ex) {
-		operation().userInterface().reportError(ex);
+		if(ExecutionContext::current().isValid())
+			ExecutionContext::current().ui().reportError(ex);
+		else
+			ex.logError();
 	}
 }
 

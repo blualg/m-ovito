@@ -181,7 +181,7 @@ bool RenderSettings::renderScene(const std::vector<std::pair<Viewport*, QRectF>>
 		}
 
 		// Don't update viewports while rendering.
-		ViewportSuspender noVPUpdates(operation.userInterface());
+		ViewportSuspender noVPUpdates;
 
 		// Determine the size of the rendering frame buffer. It must fit the largest viewport rectangle.
 		QSize largestViewportRectSize(0,0);
@@ -250,7 +250,7 @@ bool RenderSettings::renderScene(const std::vector<std::pair<Viewport*, QRectF>>
 					operation.setProgressValue(frameIndex);
 					operation.setProgressText(tr("Rendering animation frame %1 of %2").arg(frameIndex+1).arg(numberOfFrames));
 
-					MainThreadOperation frameOperation = operation.createSubTask(true);
+					MainThreadOperation frameOperation(true);
 					notCanceled = renderFrame(frameNumber, *renderer, frameBuffer, viewportLayout, videoEncoder, frameOperation);
 					if(!notCanceled) break;
 
@@ -330,7 +330,7 @@ bool RenderSettings::renderFrame(int frameNumber, SceneRenderer& renderer,
 			ViewProjectionParameters projParams = viewport->computeProjectionParameters(renderTime, viewportAspectRatio, renderer.waitForLongOperationsEnabled());
 
 			// Request scene bounding box.
-			Box3 boundingBox = renderer.computeSceneBoundingBox(renderTime, viewport->scene(), projParams, nullptr, operation);
+			Box3 boundingBox = renderer.computeSceneBoundingBox(renderTime, viewport->scene(), projParams, nullptr);
 			if(operation.isCanceled())
 				return false;
 

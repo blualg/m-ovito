@@ -43,6 +43,7 @@ class TaskWithStorage : public TaskBase
 #endif
 {
 public:
+
     /// \brief Constructor assigning the task's results storage and forwarding any extra arguments to the task class constructor.
     /// \param initialResult The value to assign to the results storage tuple.
     template<typename InitialValue>

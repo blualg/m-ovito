@@ -143,12 +143,4 @@ MainWindow& ApplicationSettingsDialogPage::mainWindow() const
 	return settingsDialog()->mainWindow();
 }
 
-/******************************************************************************
-* Displays an error message to the user.
-******************************************************************************/
-void ApplicationSettingsDialogPage::reportError(const Exception& ex)
-{
-	mainWindow().reportError(ex, settingsDialog());
-}
-
 }	// End of namespace

@@ -120,7 +120,7 @@ void ActiveObject::registerActiveTask(const TaskPtr& task)
 	if(!task->isFinished() && Application::instance()->guiMode()) {
 		incrementNumberOfActiveTasks();
 		// Reset the pending status after the Future is fulfilled.
-		task->finally(executor(), std::bind(&ActiveObject::decrementNumberOfActiveTasks, this));
+		task->finally(*this, std::bind(&ActiveObject::decrementNumberOfActiveTasks, this));
 	}
 }
 

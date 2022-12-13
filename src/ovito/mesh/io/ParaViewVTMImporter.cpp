@@ -215,7 +215,7 @@ Future<PipelineFlowState> ParaViewVTMImporter::loadFrame(const LoadOperationRequ
 		throw Exception(QStringLiteral("Object requesting the data import has been deleted."));
 
 	// Load each dataset referenced by the VTM file. 
-	Future<ExtendedLoadRequest> future = reduce_sequential(std::move(modifiedRequest), std::move(blockDatasets), fileSource->executor(true), [](const ParaViewVTMBlockInfo& blockInfo, ExtendedLoadRequest& request) {
+	Future<ExtendedLoadRequest> future = reduce_sequential(std::move(modifiedRequest), std::move(blockDatasets), ObjectExecutor(fileSource, true), [](const ParaViewVTMBlockInfo& blockInfo, ExtendedLoadRequest& request) {
 
 		// We can skip empty datasets which are not associated with a VTK file.
 		if(blockInfo.location.isEmpty())
@@ -232,7 +232,7 @@ Future<PipelineFlowState> ParaViewVTMImporter::loadFrame(const LoadOperationRequ
 
 		// Retrieve the data file, then detect its format.
 		// Note: FileImporter::autodetectFileFormat() may only be called from the main thread.
-		return Application::instance()->fileManager().fetchUrl(blockInfo.location).then(fileSource->executor(), [&request](const SharedFuture<FileHandle>& fileFuture) mutable -> Future<> {
+		return Application::instance()->fileManager().fetchUrl(blockInfo.location).then(*fileSource, [&request](const SharedFuture<FileHandle>& fileFuture) mutable -> Future<> {
 			OVITO_ASSERT(ExecutionContext::current().isValid());
 
 			try {

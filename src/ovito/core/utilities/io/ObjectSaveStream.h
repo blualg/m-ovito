@@ -46,9 +46,8 @@ public:
 
 	/// \brief Initializes the ObjectSaveStream.
 	/// \param destination The Qt data stream to which data is written. This stream must support random access.
-	/// \param operation The task to which the I/O operation belongs.
 	/// \throw Exception if the source stream does not support random access, or if an I/O error occurs.
-	ObjectSaveStream(QDataStream& destination, MainThreadOperation& operation) : SaveStream(destination), _operation(operation) {}
+	explicit ObjectSaveStream(QDataStream& destination) : SaveStream(destination) {}
 
 	/// Calls close() to close the ObjectSaveStream.
 	virtual ~ObjectSaveStream();
@@ -56,9 +55,6 @@ public:
 	/// \brief Closes this ObjectSaveStream, but not the underlying QDataStream passed to the constructor.
 	/// \throw Exception if an I/O error has occurred.
 	virtual void close() override;
-
-	/// Returns a reference to the task context in which this I/O operation is being performed.
-	MainThreadOperation& operation() const { return _operation; }
 
 	/// \brief Serializes an object and writes its data to the output stream.
 	/// \throw Exception if an I/O error has occurred.
@@ -78,9 +74,6 @@ private:
 
 	/// Contains all objects ordered by ID.
 	std::vector<ObjectRecord> _objects;
-
-	/// The task context in which this I/O operation is being performed.
-	MainThreadOperation& _operation;	
 };
 
 }	// End of namespace

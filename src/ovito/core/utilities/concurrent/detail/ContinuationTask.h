@@ -27,6 +27,7 @@
 #include "TaskWithStorage.h"
 #include "TaskReference.h"
 #include "TaskCallback.h"
+#include "../ExecutionContext.h"
 
 namespace Ovito::detail {
 
@@ -61,6 +62,7 @@ public:
 	template<typename Executor, typename Function>
 	void whenTaskFinishes(TaskReference awaitedTask, Executor&& executor, Function&& f) noexcept {
 		OVITO_ASSERT(awaitedTask);
+		OVITO_ASSERT(ExecutionContext::current().task().get() == this);
 
 		// Attach to the task to be waited on.
 		QMutexLocker locker(&this->taskMutex());
@@ -69,11 +71,7 @@ public:
 			locker.unlock();
 			// Bail out and do not attach to the input task if this continuation task is already canceled.
 			// Still run continuation function, because the caller may depend on it.
-#ifndef OVITO_MSVC_2017_COMPATIBILITY
-			std::forward<Executor>(executor).schedule(std::forward<Function>(f))();
-#else // Workaround for compiler deficiency in MSVC 2017. std::is_invocable<> doesn't return correct results.
-			std::forward<Executor>(executor).schedule(std::forward<Function>(f))(*awaitedTask);
-#endif
+			std::forward<Executor>(executor).execute(std::forward<Function>(f));
 			return;
 		}
 		OVITO_ASSERT(!this->isFinished());
@@ -82,7 +80,7 @@ public:
 		locker.unlock();
 
 		// Run the work function once the task finishes.
-		t->finally(std::forward<Executor>(executor), std::forward<Function>(f));
+        t->addContinuation(std::forward<Executor>(executor), std::forward<Function>(f));
 	}
 
 	/// Sets the result of this task upon completion of the preceding task.
@@ -99,7 +97,7 @@ public:
 			// Continuation function returns a result value or void.
 			try {
 				// Execute the continuation function in the scope of this task object.
-				Task::Scope taskScope(this);
+				OVITO_ASSERT(ExecutionContext::current().task().get() == this);
 
 				if constexpr(!detail::returns_void_v<Function, FutureType>) {
 					// Function returns non-void results.
@@ -130,7 +128,7 @@ public:
 			std::decay_t<callable_result_t<Function, FutureType>> nextFuture;
 			try {
 				// Execute the continuation function in the scope of this task object.
-				Task::Scope taskScope(this);
+				OVITO_ASSERT(ExecutionContext::current().task().get() == this);
 
 				// Call the continuation function with the results of the finished task or the finished future itself.
 				if constexpr(!detail::is_invocable_v<Function, FutureType>)
@@ -150,7 +148,7 @@ public:
 			locker.unlock();
 
 			// Get results from the future's task once it completes and use it as the results of this continuation task.
-			nextFuture.finally([promise = std::move(promise)]() mutable noexcept {
+			nextFuture.task()->addContinuation(detail::InlineExecutor{}, [promise = std::move(promise)]() mutable noexcept {
 				ContinuationTask* thisTask = static_cast<ContinuationTask*>(promise.task().get());
 
 				// Manage access to the task that represents the continuation.
@@ -188,11 +186,11 @@ private:
 	/// Register a callback function with this task, which gets invoked when the task gets canceled.
 	void registerFinallyFunction() {
 		// When this task gets canceled, we should discard the reference to the task we are waiting for in order to cancel it as well.
-		this->registerContinuation([](Task& thisTask) noexcept {
-			QMutexLocker locker(&static_cast<ContinuationTask&>(thisTask).taskMutex());
+		this->registerContinuation([this]() noexcept {
+			QMutexLocker locker(&this->taskMutex());
 			// Move the dependency on the preceding task out of this object. This may implicitly cancel the 
 			// awaited task when the reference goes out of scope.
-			auto awaitedTask = static_cast<ContinuationTask&>(thisTask).takeAwaitedTask();
+			auto awaitedTask = this->takeAwaitedTask();
 			// Note: It's critical to first unlock the mutex before releasing the reference to the awaited task.
 			locker.unlock(); 
 		});

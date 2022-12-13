@@ -60,7 +60,7 @@ IMPLEMENT_OVITO_CLASS(AMBERNetCDFExporter);
  * This is called once for every output file to be written and before
  * exportFrame() is called.
  *****************************************************************************/
-bool AMBERNetCDFExporter::openOutputFile(const QString& filePath, int numberOfFrames, MainThreadOperation& operation)
+void AMBERNetCDFExporter::openOutputFile(const QString& filePath, int numberOfFrames)
 {
 	// Only serial access to NetCDF functions is allowed, because they are not thread-safe.
 	NetCDFExclusiveAccess locker;
@@ -127,8 +127,6 @@ bool AMBERNetCDFExporter::openOutputFile(const QString& filePath, int numberOfFr
 
 	// Number of simulation frames written so far.
 	_frameCounter = 0;
-
-	return true;
 }
 
 /******************************************************************************

@@ -65,7 +65,7 @@ bool UserInterface::processEvents()
 /******************************************************************************
 * Creates a frame buffer of the requested size and displays it as a window in the user interface.
 ******************************************************************************/
-std::shared_ptr<FrameBuffer> UserInterface::createAndShowFrameBuffer(int width, int height, MainThreadOperation& renderingOperation) 
+std::shared_ptr<FrameBuffer> UserInterface::createAndShowFrameBuffer(int width, int height, bool showRenderingOperationProgress) 
 { 
 	return std::make_shared<FrameBuffer>(width, height);
 }

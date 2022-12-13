@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -27,6 +27,7 @@
 #include <ovito/core/app/Application.h>
 #include <ovito/core/app/UserInterface.h>
 #include "ProgressingTask.h"
+#include "LaunchTask.h"
 
 #ifndef OVITO_DISABLE_THREADING
 	#include <future>
@@ -141,14 +142,19 @@ void parallelFor(T loopCount, Function&& kernel)
 }
 
 template<typename T, class Kernel>
-Future<> parallelForAsync(UserInterface& userInterface, T loopCount, Kernel&& kernel, const QString& taskDescription, T progressChunkSize = 1024)
+Future<> parallelForAsync(T loopCount, Kernel&& kernel, const QString& taskDescription, T progressChunkSize = 1024)
 {
 	class AsyncTask : public ProgressingTask 
 	{
 	public:
-		AsyncTask(Kernel&& kernel) : ProgressingTask(Task::Started), _kernel(std::forward<Kernel>(kernel)) {}
+		/// The type of future associated with this task type. This is used by the launchTask() function.
+		using future_type = Future<>;
 
-		void go(T loopCount, T progressChunkSize) 
+		AsyncTask(Kernel&& kernel, const QString& taskDescription) : ProgressingTask(Task::Started), _kernel(std::forward<Kernel>(kernel)) {
+			setProgressText(taskDescription);
+		}
+
+		void operator()(T loopCount, T progressChunkSize) 
 		{
 			setProgressMaximum(loopCount / progressChunkSize);
 			size_t num_threads = Application::instance()->idealThreadCount();
@@ -159,7 +165,9 @@ Future<> parallelForAsync(UserInterface& userInterface, T loopCount, Kernel&& ke
 			for(size_t t = 0; t < num_threads; t++) {
 				if(t == num_threads - 1)
 					endIndex += loopCount % num_threads;
-				std::thread([self = static_pointer_cast<AsyncTask>(this->shared_from_this()), startIndex, endIndex, progressChunkSize]() {
+				std::thread([context = ExecutionContext(this->shared_from_this()), startIndex, endIndex, progressChunkSize]() mutable {
+					AsyncTask* self = static_cast<AsyncTask*>(context.task().get());
+					ExecutionContext::Scope execScope(std::move(context));
 					try {
 						for(T i = startIndex; i < endIndex && !self->isCanceled(); ) {
 							self->_kernel(i++);
@@ -188,14 +196,10 @@ Future<> parallelForAsync(UserInterface& userInterface, T loopCount, Kernel&& ke
 		std::atomic<size_t> _remainingThreads;
 	};
 
-	// Create the task object and start running.
-	auto task = std::make_shared<AsyncTask>(std::forward<Kernel>(kernel));
-	task->setProgressText(taskDescription);
-	task->go(loopCount, progressChunkSize);
-	// Display progress of task in the UI.
-	userInterface.taskManager().registerTask(task);
-	// Return a future to the caller.
-	return Future<>::createFromTask(std::move(task));
+	// Launch the task and return a future to the caller.
+	return launchTask<true>(
+		std::make_shared<AsyncTask>(std::forward<Kernel>(kernel), taskDescription), 
+		loopCount, progressChunkSize);
 }
 
 template<class Function>

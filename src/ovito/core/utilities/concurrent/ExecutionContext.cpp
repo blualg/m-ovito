@@ -33,7 +33,7 @@ ExecutionContext& ExecutionContext::current() noexcept
     // The active execution context in the current thread.
     static thread_local ExecutionContext _current;
 
-    return _current; 
+    return _current;
 }
 
 }	// End of namespace

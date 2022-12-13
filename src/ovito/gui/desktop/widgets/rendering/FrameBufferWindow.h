@@ -54,7 +54,7 @@ public:
 	void showAndActivateWindow();
 
 	/// Makes the framebuffer modal while a rendering operation is in progress and displays the progress in the window.
-	void showRenderingOperation(MainThreadOperation& renderingOperation);
+	void showRenderingOperation();
 
 public Q_SLOTS:
 

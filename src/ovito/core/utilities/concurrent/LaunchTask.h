@@ -24,35 +24,36 @@
 
 
 #include <ovito/core/Core.h>
+#include <ovito/core/utilities/concurrent/ExecutionContext.h>
+#include <ovito/core/app/UserInterface.h>
 
 namespace Ovito {
 
 /**
- * \brief Abstract base class for services that want to perform actions on
- *        application startup.
- *
- * If you derive a subclass, a single instance of it will automatically be
- * created by the system and its virtual callback methods will be called at
- * appropriate times during the application life-cycle.
- *
- * For example, it is possible for a plugin to register additional command line
- * options with the central Application and react to them when they are used
- * by the user.
- */
-class OVITO_CORE_EXPORT ApplicationService : public OvitoObject
+ * Helper function which launches a task by invoking the task's call operator.
+ * It returns a future to the task's results.
+ * 
+ * The task class must define a type named future_type, 
+ * which specifies the type of Future to be returned
+ * by the function.
+*/
+template<bool RegisterWithTaskManager, class TaskType, typename... Args>
+auto launchTask(std::shared_ptr<TaskType> task, Args&&... args)
 {
-	OVITO_CLASS(ApplicationService)
+	using future_type = typename TaskType::future_type;
 
-public:
+	// Make the task the active one.
+	ExecutionContext::Scope execScope(task);
 
-	/// \brief Registers additional command line options when running in standalone application mode.
-	virtual void registerCommandLineOptions(QCommandLineParser& cmdLineParser) {}
+	// Register task if requested to show it in the UI.
+	if constexpr(RegisterWithTaskManager)
+		ExecutionContext::current().ui().taskManager().registerTask(task);
 
-	/// \brief Is called by the system during standalone application startup after the main window has been created.
-	virtual bool applicationStarting() { return true; }
+	// Launch the task.
+	(*task)(std::forward<Args>(args)...);
 
-	/// \brief Is called by the system after the standalone application has been completely initialized.
-	virtual void applicationStarted() {}
-};
+	// Return the future to the caller.
+	return future_type::createFromTask(std::move(task));
+}
 
 }	// End of namespace

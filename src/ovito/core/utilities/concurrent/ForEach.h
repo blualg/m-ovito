@@ -26,6 +26,7 @@
 #include <ovito/core/Core.h>
 #include <ovito/core/utilities/BindFront.h>
 #include "detail/ContinuationTask.h"
+#include "LaunchTask.h"
 
 namespace Ovito {
 
@@ -76,6 +77,9 @@ auto for_each_sequential(
     {
     public:
 
+		/// The type of future associated with this task type. This is used by the launchTask() function.
+		using future_type = Future<std::decay_t<ResultType>...>;
+
 		/// Constructor.
 		ForEachTask(
 			InputRange&& inputRange, 
@@ -95,23 +99,20 @@ auto for_each_sequential(
 				this->setProgressMaximum(std::distance(_iterator, std::end(_range)));
 		}
 
-		/// Start execution of the task.
-		void go() noexcept {
+		/// Starts execution of the task.
+		void operator()() noexcept {
 			OVITO_ASSERT(_iterator == std::begin(_range));
 			// Begin execution of first iteration.
 			if(_iterator != std::end(_range)) {
-#ifndef OVITO_MSVC_2017_COMPATIBILITY
-				_executor.schedule(detail::bind_front(&ForEachTask::iteration_begin, static_pointer_cast<ForEachTask>(this->shared_from_this())))();
-#else
-				_executor.schedule([self = static_pointer_cast<ForEachTask>(this->shared_from_this())](UNUSED_CONTINUATION_FUNC_PARAM) noexcept { self->iteration_begin(); })(*this);
-#endif
+				_executor.execute(detail::bind_front(&ForEachTask::iteration_begin, this));
 				OVITO_ASSERT_MSG(_iterator == std::begin(_range), "for_each_sequential()", "An executor that performs deferred execution is required.");
 			}
-			else
+			else {
 				this->setFinished();
+			}
 		}
 
-		/// Method that provides public read/write access to the internal results storage of this task.
+		/// Inherit method that provides public read/write access to the internal results storage of this task.
 		using detail::ContinuationTask<task_tuple_type, task_base_class>::resultsStorage;
 
 		/// Performs the next iteration of the mapping process.
@@ -140,12 +141,7 @@ auto for_each_sequential(
 				}
 				OVITO_ASSERT(future.isValid());
 				// Schedule next iteration upon completion of the future returned by the user function.
-				this->whenTaskFinishes(future.takeTaskReference(), _executor, 
-#ifndef OVITO_MSVC_2017_COMPATIBILITY
-					detail::bind_front(&ForEachTask::iteration_complete, static_pointer_cast<ForEachTask>(this->shared_from_this())));
-#else
-					[self = static_pointer_cast<ForEachTask>(this->shared_from_this())](UNUSED_CONTINUATION_FUNC_PARAM) noexcept { self->iteration_complete(); });
-#endif
+				this->whenTaskFinishes(future.takeTaskReference(), _executor, detail::bind_front(&ForEachTask::iteration_complete, this));
 			}
 			else {
 				// Inform caller that the task has finished and the result is available.
@@ -221,21 +217,13 @@ auto for_each_sequential(
         typename InputRange::iterator _iterator;
     };
 
-	// Create the task object.
-	std::shared_ptr<ForEachTask> task = std::make_shared<ForEachTask>(
+	// Launch the task.
+	return launchTask<false>(std::make_shared<ForEachTask>(
         std::forward<InputRange>(inputRange), 
         std::forward<Executor>(executor), 
 		std::forward<StartIterFunc>(startFunc),
 		std::forward<CompleteIterFunc>(completeFunc),
-		std::forward<ResultType>(initialResult)...);
-
-	// Start iterating over the input range.
-	// Note: Cannot do this in the task's constructor, because creating a temporary std::shared_ptr<> referring to 
-	// the task object isn't valid there. 
-	task->go();
-	
-	// Return a future to the caller.
-	return Future<std::decay_t<ResultType>...>::createFromTask(std::move(task));
+		std::forward<ResultType>(initialResult)...));
 }
 
 }	// End of namespace

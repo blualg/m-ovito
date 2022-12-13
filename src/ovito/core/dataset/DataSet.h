@@ -102,13 +102,13 @@ public:
 	/// \throw Exception on error.
 	///
 	/// Note that this method does NOT invoke setFilePath().
-	void saveToFile(const QString& filePath, MainThreadOperation operation) const;
+	void saveToFile(const QString& filePath) const;
 
 	/// \brief Loads the dataset contents from a session state file.
 	/// \throw Exception on error.
 	///
 	/// Note that this method does NOT invoke setFilePath().
-	void loadFromFile(const QString& filePath, MainThreadOperation operation);
+	void loadFromFile(const QString& filePath);
 
 Q_SIGNALS:
 

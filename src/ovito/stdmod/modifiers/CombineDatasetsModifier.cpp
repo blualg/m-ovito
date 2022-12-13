@@ -67,7 +67,7 @@ Future<PipelineFlowState> CombineDatasetsModifier::evaluate(const ModifierEvalua
 	SharedFuture<PipelineFlowState> secondaryStateFuture = secondaryDataSource()->evaluate(request);
 
 	// Wait for the data to become available.
-	return secondaryStateFuture.then(executor(), [this, state = input, request, modApp = OORef<const ModifierApplication>(request.modApp())](const PipelineFlowState& secondaryState) mutable {
+	return secondaryStateFuture.then(*this, [this, state = input, request, modApp = OORef<const ModifierApplication>(request.modApp())](const PipelineFlowState& secondaryState) mutable {
 
 		// Make sure the obtained dataset is valid and ready to use.
 		if(secondaryState.status().type() == PipelineStatus::Error) {

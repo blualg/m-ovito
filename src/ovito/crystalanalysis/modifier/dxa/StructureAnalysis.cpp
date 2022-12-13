@@ -453,8 +453,6 @@ void StructureAnalysis::initializeListOfStructures()
 ******************************************************************************/
 bool StructureAnalysis::identifyStructures(ProgressingTask& operation)
 {
-	OVITO_ASSERT(Task::currentTask() == &operation);
-
 	// Prepare the neighbor list.
 	int maxNeighborListSize = std::min((int)_neighborListsSize + 1, (int)MAX_NEIGHBORS);
 	NearestNeighborFinder neighFinder(maxNeighborListSize);
