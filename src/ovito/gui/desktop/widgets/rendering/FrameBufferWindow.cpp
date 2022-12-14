@@ -147,7 +147,8 @@ void FrameBufferWindow::showAndActivateWindow()
 ******************************************************************************/
 void FrameBufferWindow::showRenderingOperation()
 {
-	OVITO_ASSERT(ExecutionContext::current().task());
+	OVITO_ASSERT(Task::current());
+	OVITO_ASSERT(ExecutionContext::current().isValid());
 	OVITO_ASSERT(!_renderingWatcher);
 
 	_renderingWatcher = new TaskWatcher(this);
@@ -176,7 +177,7 @@ void FrameBufferWindow::showRenderingOperation()
 		_renderingWatcher->deleteLater();
 	});
 
-	_renderingWatcher->watch(ExecutionContext::current().task());
+	_renderingWatcher->watch(Task::current()->shared_from_this());
 
 	// Create UI for every running task.
 	for(TaskWatcher* watcher : ExecutionContext::current().ui().taskManager().runningTasks()) {

@@ -53,7 +53,12 @@ public:
 	const TaskPtr& task() const { return _task; }
 
 	/// Makes this watcher monitor the given task.
-	void watch(const TaskPtr& task, bool pendingAssignment = true);
+	void watch(Task* task, bool pendingAssignment = true);
+
+	/// Makes this watcher monitor the given task.
+	void watch(const TaskPtr& task, bool pendingAssignment = true) { 
+		watch(task.get(), pendingAssignment);
+	}
 
 	/// Detaches this watcher from the task.
 	void reset() { 

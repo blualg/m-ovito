@@ -47,6 +47,11 @@ public:
 	/// Sets the value of the key.
 	virtual bool setValueQVariant(const QVariant& v) = 0;
 
+protected:
+
+	/// This method is called once for this object after it has been completely loaded from a stream.
+	virtual void loadFromStreamComplete(ObjectLoadStream& stream) override;
+
 private:
 
 	/// The animation time at which the key is positioned.

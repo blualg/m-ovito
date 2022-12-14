@@ -86,7 +86,7 @@ public:
 	virtual QVariant getPipelineEditorShortInfo(Scene* scene, ModifierApplication* modApp) const override { return tr("%1=%2").arg(sourceProperty().nameWithComponent()).arg(isolevel()); }
 
 	/// Transfers voxel grid properties to the vertices of a surfaces mesh.
-	static bool transferPropertiesFromGridToMesh(ProgressingTask& operation, SurfaceMeshAccess& mesh, const std::vector<ConstPropertyPtr>& fieldProperties, VoxelGrid::GridDimensions gridShape);
+	static bool transferPropertiesFromGridToMesh(SurfaceMeshAccess& mesh, const std::vector<ConstPropertyPtr>& fieldProperties, VoxelGrid::GridDimensions gridShape);
 
 protected:
 

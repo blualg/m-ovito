@@ -323,7 +323,7 @@ void ParticleImporter::FrameLoader::generateBonds()
 
 	// Multi-threaded loop over all particles, each thread producing a partial bonds list.
 	size_t particleCount = positionProperty->size();
-	auto partialBondsLists = parallelForCollect<std::vector<Bond>>(particleCount, *this, [&](size_t particleIndex, std::vector<Bond>& bondList) {
+	auto partialBondsLists = parallelForCollect<std::vector<Bond>>(particleCount, [&](size_t particleIndex, std::vector<Bond>& bondList) {
 		// Kernel called for each particle: Iterate over the particle's neighbors withing the cutoff range.
 		for(CutoffNeighborFinder::Query neighborQuery(neighborFinder, particleIndex); !neighborQuery.atEnd(); neighborQuery.next()) {
 			int type1 = particleTypesArray[particleIndex];

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -84,13 +84,13 @@ void AcklandJonesModifier::AcklandJonesAnalysisEngine::perform()
 
 	// Perform analysis on each particle.
 	if(!selection()) {
-		parallelFor(positions()->size(), *this, [&](size_t index) {
+		parallelForWithProgress(positions()->size(), [&](size_t index) {
 			output[index] = determineStructure(neighborFinder, index);
 		});
 	}
 	else {
 		ConstPropertyAccess<int> selectionData(selection());
-		parallelFor(positions()->size(), *this, [&](size_t index) {
+		parallelForWithProgress(positions()->size(), [&](size_t index) {
 			// Skip particles that are not included in the analysis.
 			if(selectionData[index])
 				output[index] = determineStructure(neighborFinder, index);

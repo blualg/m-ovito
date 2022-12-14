@@ -105,7 +105,7 @@ bool GrainSegmentationEngine1::createNeighborBonds()
 	std::mutex bondsMutex;
 
 	// Perform analysis on each particle.
-	parallelForChunks(_numParticles, *this, [&](size_t startIndex, size_t count, ProgressingTask& operation) {
+	parallelForChunksWithProgress(_numParticles, [&](size_t startIndex, size_t count, ProgressingTask& operation) {
 
 		// Construct thread-local neighbor finder.
 		PTMNeighborFinder::Query neighQuery(neighFinder);
@@ -261,7 +261,7 @@ bool GrainSegmentationEngine1::computeDisorientationAngles()
 	// Compute disorientation angles associated with the neighbor graph edges.
 	setProgressText(GrainSegmentationModifier::tr("Grain segmentation - misorientation calculation"));
 
-	parallelFor(_neighborBonds.size(), *this, [&](size_t bondIndex) {
+	parallelForWithProgress(_neighborBonds.size(), [&](size_t bondIndex) {
 		NeighborBond& bond = _neighborBonds[bondIndex];
 		bond.disorientation = PTMAlgorithm::calculate_disorientation(_adjustedStructureTypes[bond.a],
 																	 _adjustedStructureTypes[bond.b],

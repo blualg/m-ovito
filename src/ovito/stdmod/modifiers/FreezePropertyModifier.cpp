@@ -39,7 +39,6 @@ DEFINE_PROPERTY_FIELD(FreezePropertyModifier, freezeTime);
 SET_PROPERTY_FIELD_LABEL(FreezePropertyModifier, sourceProperty, "Property");
 SET_PROPERTY_FIELD_LABEL(FreezePropertyModifier, destinationProperty, "Destination property");
 SET_PROPERTY_FIELD_LABEL(FreezePropertyModifier, freezeTime, "Freeze at frame");
-SET_PROPERTY_FIELD_UNITS(FreezePropertyModifier, freezeTime, TimeParameterUnit);
 
 IMPLEMENT_OVITO_CLASS(FreezePropertyModifierApplication);
 DEFINE_REFERENCE_FIELD(FreezePropertyModifierApplication, property);
@@ -103,7 +102,7 @@ Future<PipelineFlowState> FreezePropertyModifier::evaluate(const ModifierEvaluat
 {
 	// Check if we already have the frozen property available.
 	if(FreezePropertyModifierApplication* myModApp = dynamic_object_cast<FreezePropertyModifierApplication>(request.modApp())) {
-		if(myModApp->hasFrozenState(freezeTime())) {
+		if(myModApp->hasFrozenState(AnimationTime::fromFrame(freezeTime()))) {
 			// Perform replacement of the property in the input pipeline state.
 			PipelineFlowState output = input;
 			evaluateSynchronous(request, output);
@@ -113,7 +112,7 @@ Future<PipelineFlowState> FreezePropertyModifier::evaluate(const ModifierEvaluat
 
 	// Set up the upstream pipeline request.
 	PipelineEvaluationRequest upstreamRequest = request;
-	upstreamRequest.setTime(freezeTime());
+	upstreamRequest.setTime(AnimationTime::fromFrame(freezeTime()));
 
 	// Request the frozen state from the upstream pipeline.
 	return request.modApp()->evaluateInput(upstreamRequest)
@@ -265,7 +264,7 @@ bool FreezePropertyModifierApplication::referenceEvent(RefTarget* source, const 
 	if(event.type() == ReferenceEvent::TargetChanged) {
 		if(source == input()) {
 			if(FreezePropertyModifier* mod = dynamic_object_cast<FreezePropertyModifier>(modifier())) {
-				if(static_cast<const TargetChangedEvent&>(event).unchangedInterval().contains(mod->freezeTime()) == false) {
+				if(static_cast<const TargetChangedEvent&>(event).unchangedInterval().contains(AnimationTime::fromFrame(mod->freezeTime())) == false) {
 					// Invalidate cached state.
 					invalidateFrozenState();
 					notifyTargetChanged();
@@ -278,6 +277,31 @@ bool FreezePropertyModifierApplication::referenceEvent(RefTarget* source, const 
 		}
 	}
 	return ModifierApplication::referenceEvent(source, event);
+}
+
+/******************************************************************************
+* This method is called once for this object after it has been completely
+* loaded from a stream.
+******************************************************************************/
+void FreezePropertyModifier::loadFromStreamComplete(ObjectLoadStream& stream)
+{
+	GenericPropertyModifier::loadFromStreamComplete(stream);
+
+	// For backward compatibility with OVITO 3.7: 
+	// Convert legacy time value from ticks to frames. This requires access to the AnimationSettings object, which is stored in the scene.
+	if(stream.formatVersion() <= 30008) {
+		if(ModifierApplication* modApp = someModifierApplication()) {
+			QSet<PipelineSceneNode*> pipelines = modApp->pipelines(true);
+			if(!pipelines.empty()) {
+				if(Scene* scene = (*pipelines.begin())->scene()) {
+					if(scene->animationSettings()) {
+						int ticksPerFrame = (int)std::round(4800.0f / scene->animationSettings()->framesPerSecond());
+						setFreezeTime(freezeTime() / ticksPerFrame);
+					}
+				}
+			}
+		}
+	}
 }
 
 }	// End of namespace

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -35,7 +35,7 @@ bool NearestNeighborFinder::prepare(ConstPropertyAccess<Point3> posProperty, con
 {
 	OVITO_ASSERT(posProperty);
 	OVITO_ASSERT(cellData);
-	Task* currentTask = ExecutionContext::current().task().get();
+	Task* currentTask = Task::current();
 	OVITO_ASSERT(currentTask != nullptr);
 
 	simCell = cellData;

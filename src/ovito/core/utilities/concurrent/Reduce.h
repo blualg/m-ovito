@@ -37,11 +37,7 @@ auto reduce_sequential(ResultType&& initialResultValue, InputRange&& inputRange,
 		// Iteration start function:
 		std::forward<Function>(f),
 		// Iteration completed function (a no-op):
-#ifndef OVITO_MSVC_2017_COMPATIBILITY
 		[](typename InputRange::const_reference iterValue) {},
-#else
-		[](typename InputRange::const_reference iterValue, ResultType&) {},
-#endif
 		std::forward<ResultType>(initialResultValue));
 }
 

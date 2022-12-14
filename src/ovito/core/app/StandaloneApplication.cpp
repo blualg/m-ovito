@@ -150,6 +150,7 @@ bool StandaloneApplication::initialize(int& argc, char** argv)
 
 		// Complete the startup process by calling postStartupInitialization() once the main event loop is running.
 		ObjectExecutor(this, true).execute([this, promise=Promise<>(std::move(startupOperation))]() {
+			Task::Scope taskScope(promise.task());
 			try {
 				// Let the application perform late initialization steps.
 				postStartupInitialization();

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 202 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -22,6 +22,8 @@
 
 #include <ovito/core/Core.h>
 #include <ovito/core/utilities/units/UnitsManager.h>
+#include <ovito/core/viewport/Viewport.h>
+#include <ovito/core/dataset/DataSet.h>
 #include "AnimationKeys.h"
 
 namespace Ovito {
@@ -48,5 +50,27 @@ SET_PROPERTY_FIELD_LABEL(Vector3AnimationKey, value, "Value");
 SET_PROPERTY_FIELD_LABEL(PositionAnimationKey, value, "Value");
 SET_PROPERTY_FIELD_LABEL(RotationAnimationKey, value, "Value");
 SET_PROPERTY_FIELD_LABEL(ScalingAnimationKey, value, "Value");
+
+/******************************************************************************
+* This method is called once for this object after it has been completely
+* loaded from a stream.
+******************************************************************************/
+void AnimationKey::loadFromStreamComplete(ObjectLoadStream& stream)
+{
+	RefTarget::loadFromStreamComplete(stream);
+
+	// For backward compatibility with OVITO 3.7: 
+	// Convert legacy time value. This requires access to the AnimationSettings object, which is stored in the scene.
+	if(stream.formatVersion() <= 30008 && stream.datasetToBePopulated()) {
+        if(Viewport* vp = stream.datasetToBePopulated()->viewportConfig()->activeViewport()) {
+            if(Scene* scene = vp->scene()) {
+                if(scene->animationSettings()) {
+                    int ticksPerFrame = (int)std::round(4800.0f / scene->animationSettings()->framesPerSecond());
+                    setTime(AnimationTime::fromFrame(time().ticks() / ticksPerFrame));
+                }
+			}
+		}
+	}
+}
 
 }	// End of namespace

@@ -36,7 +36,7 @@ class MainThreadTask : public ProgressingTask, public detail::TaskCallback<MainT
 {
 public:
 
-	MainThreadTask(const TaskPtr& parentTask) noexcept : ProgressingTask(Task::Started) {
+	MainThreadTask(Task* parentTask) noexcept : ProgressingTask(Task::Started) {
 		if(parentTask) {
 			// When this sub-task gets canceled, we cancel the parent task too.
 			this->registerContinuation([this]() noexcept {
@@ -45,7 +45,7 @@ public:
 			});
 
 			// Register a callback function to get notified when the parent task gets canceled.
-			registerCallback(parentTask.get(), true);
+			registerCallback(parentTask, true);
 		}
 	}
 
@@ -67,9 +67,9 @@ public:
 * Constructor.
 ******************************************************************************/
 MainThreadOperation::MainThreadOperation(ExecutionContext::Type contextType, UserInterface& userInterface, bool visibleInUserInterface) :
-	Promise<>(std::make_shared<MainThreadTask>(
-		ExecutionContext::current().isValid() ? ExecutionContext::current().task() : nullptr)), 
-	ExecutionContext::Scope(contextType, userInterface, task())
+	Promise<>(std::make_shared<MainThreadTask>(Task::current())),
+	ExecutionContext::Scope(contextType, userInterface),
+	Task::Scope(task())
 {
 	// Usage of MainThreadOperation is only permitted in the main thread.
 	OVITO_ASSERT_MSG(!QCoreApplication::instance() || QThread::currentThread() == QCoreApplication::instance()->thread(), "MainThreadOperation", "MainThreadOperation may only be created in the main thread.");
@@ -89,10 +89,10 @@ MainThreadOperation::MainThreadOperation(bool visibleInUserInterface) : MainThre
 /******************************************************************************
 * Destructor puts the promise into the 'finished' state.
 ******************************************************************************/
-MainThreadOperation::~MainThreadOperation() 
+MainThreadOperation::~MainThreadOperation()
 {
 	if(TaskPtr task = std::move(_task)) {
-		OVITO_ASSERT(ExecutionContext::current().task() == task);
+		OVITO_ASSERT(Task::current() == task.get());
 		OVITO_ASSERT(task->isStarted());
 		task->setFinished();
 	}
@@ -104,17 +104,15 @@ MainThreadOperation::~MainThreadOperation()
 void MainThreadOperation::processUIEvents() const
 {
 	OVITO_ASSERT(isValid());
-	OVITO_ASSERT(ExecutionContext::current().task() == task());
+	OVITO_ASSERT(Task::current() == task().get());
 
-	UserInterface& ui = ExecutionContext::current().ui();
-	ExecutionContext::Scope nullScope(ExecutionContext{});
-	if(ui.processEvents()) {
+	if(ExecutionContext::current().ui().processEvents()) {
 		cancel();
 	}
 }
 
 /******************************************************************************
-* Puts the task object back into the started state. 
+* Puts the task object back into the started state.
 ******************************************************************************/
 void MainThreadOperation::restart()
 {

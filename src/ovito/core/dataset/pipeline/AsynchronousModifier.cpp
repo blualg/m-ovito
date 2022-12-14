@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -100,7 +100,7 @@ Future<PipelineFlowState> AsynchronousModifier::evaluate(const ModifierEvaluatio
 					: _engine->runAsync(true);
 
 				// Schedule next iteration upon completion of the future returned by the user function.
-				this->whenTaskFinishes(std::move(future), *_modApp, detail::bind_front(&EngineExecutionTask::executionFinished, this));
+				this->whenTaskFinishes(std::move(future), *_modApp, detail::bind_front(&EngineExecutionTask::executionFinished, static_pointer_cast<EngineExecutionTask>(this->shared_from_this())));
 			}
 			else if(EnginePtr continuationEngine = _engine->createContinuationEngine(_request, resultsStorage())) {
 
@@ -127,6 +127,8 @@ Future<PipelineFlowState> AsynchronousModifier::evaluate(const ModifierEvaluatio
 
 		/// Is called by the system when the current compute engine finishes.
 		void executionFinished() noexcept {
+			Task::Scope taskScope(this);
+
 			// Lock access to this task object.
 			QMutexLocker locker(&this->taskMutex());
 

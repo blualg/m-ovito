@@ -133,7 +133,7 @@ void CoordinationAnalysisModifier::CoordinationAnalysisEngine::perform()
 
 	// Parallel calculation loop:
 	std::mutex mutex;
-	parallelForChunks(particleCount, *this, [&](size_t startIndex, size_t chunkSize, ProgressingTask& operation) {
+	parallelForChunksWithProgress(particleCount, [&](size_t startIndex, size_t chunkSize, ProgressingTask& operation) {
 		size_t typeCount = _computePartialRdfs ? uniqueTypeIds().size() : 1;
 		size_t binCount = rdfY()->size();
 		size_t rdfCount = rdfY()->componentCount();

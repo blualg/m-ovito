@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -79,15 +79,15 @@ void DislocationAnalysisEngine::perform()
 	setProgressText(DislocationAnalysisModifier::tr("Dislocation analysis (DXA)"));
 
 	beginProgressSubStepsWithWeights({ 35, 6, 1, 220, 60, 1, 53, 190, 146, 20, 4, 4 });
-	if(!_structureAnalysis->identifyStructures(*this))
+	if(!_structureAnalysis->identifyStructures())
 		return;
 
 	nextProgressSubStep();
-	if(!_structureAnalysis->buildClusters(*this))
+	if(!_structureAnalysis->buildClusters())
 		return;
 
 	nextProgressSubStep();
-	if(!_structureAnalysis->connectClusters(*this))
+	if(!_structureAnalysis->connectClusters())
 		return;
 
 #if 0

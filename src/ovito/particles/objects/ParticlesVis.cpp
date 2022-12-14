@@ -640,7 +640,7 @@ void ParticlesVis::renderMeshBasedParticles(const ParticlesObject* particles, Sc
 				perInstanceData[typeIndex].particleTMs.take(), 
 				perInstanceData[typeIndex].particleColors.take());
 			// Create a picking structure for this set of particles.
-			meshVisCache[typeIndex].pickInfo = new ParticlePickInfo(this, particles, perInstanceData[typeIndex].particleIndices.take());
+			meshVisCache[typeIndex].pickInfo = OORef<ParticlePickInfo>::create(this, particles, perInstanceData[typeIndex].particleIndices.take());
 		}
 	}
 	OVITO_ASSERT(meshVisCache.size() == shapeMeshParticleTypes.size());

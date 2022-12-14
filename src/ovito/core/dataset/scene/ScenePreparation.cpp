@@ -130,7 +130,7 @@ void ScenePreparation::makeReady(bool forceReevaluation)
 	_completedFrame = scene()->animationSettings()->currentFrame();
 	_completedScene = scene();
 	PipelineEvaluationRequest request(scene()->animationSettings());
-	ExecutionContext::Scope executionScope(ExecutionContext::Type::Interactive, userInterface(), nullptr);
+	ExecutionContext::Scope executionScope(ExecutionContext::Type::Interactive, userInterface());
 
 	// Go through all pipelines of the scene until we find one 
 	// that is not completely evaulated yet.

@@ -67,6 +67,9 @@ protected:
 	/// Is called when the value of a property of this object has changed.
 	virtual void propertyChanged(const PropertyFieldDescriptor* field) override;
 
+	/// This method is called once for this object after it has been completely loaded from a stream.
+	virtual void loadFromStreamComplete(ObjectLoadStream& stream) override;
+
 private:
 
 	/// The particle property that is preserved by this modifier.
@@ -75,8 +78,8 @@ private:
 	/// The particle property to which the stored values should be written
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(PropertyReference, destinationProperty, setDestinationProperty);
 
-	/// Animation time at which the frozen property is taken.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD(AnimationTime, freezeTime, setFreezeTime);
+	/// Animation frame at which the frozen property is taken.
+	DECLARE_MODIFIABLE_PROPERTY_FIELD(int, freezeTime, setFreezeTime);
 };
 
 /**

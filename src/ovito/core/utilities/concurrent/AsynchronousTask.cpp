@@ -52,15 +52,16 @@ AsynchronousTaskBase::~AsynchronousTaskBase()
 void AsynchronousTaskBase::startInThreadPool(QThreadPool* pool, bool showInUserInterface) 
 {
 	OVITO_ASSERT(pool);
-	OVITO_ASSERT(!this->_executionContext.isValid());
+	OVITO_ASSERT(!this->_thisTask);
 	OVITO_ASSERT(!this->_submittedToPool);
 	OVITO_ASSERT(!this->isStarted());
 
+	// Store a shared_ptr to this task to keep it alive while running.
+	this->_thisTask = this->shared_from_this();
 	this->_submittedToPool = pool;
 	
 	// Inherit execution context from parent task.
-	// Note: This stores a shared_ptr to this task to keep it alive while running.
-	_executionContext = ExecutionContext(shared_from_this());
+	_executionContext = ExecutionContext::current();
 	OVITO_ASSERT(_executionContext.isValid());
 
 	// Register task with UI task manager if requested.
@@ -80,12 +81,12 @@ void AsynchronousTaskBase::startInThreadPool(QThreadPool* pool, bool showInUserI
 ******************************************************************************/
 void AsynchronousTaskBase::startInThisThread(bool showInUserInterface) 
 {
-	OVITO_ASSERT(!this->_executionContext.isValid());
+	OVITO_ASSERT(!this->_thisTask);
 	OVITO_ASSERT(!this->_submittedToPool);
 	OVITO_ASSERT(!this->isStarted());
 
 	// Inherit execution context from parent task.
-	_executionContext = ExecutionContext(shared_from_this());
+	_executionContext = ExecutionContext::current();
 	OVITO_ASSERT(_executionContext.isValid());
 
 	// Register task with UI task manager if requested.
@@ -108,16 +109,20 @@ void AsynchronousTaskBase::run()
 	OVITO_ASSERT(isStarted());
 	OVITO_ASSERT(_executionContext.isValid());
 	
-	// Execute the work function in the scope of this task object.
+	// Execute the work function in the original execution context.
 	ExecutionContext::Scope execScope(std::move(_executionContext));
+	
 	try {
+		// Execute the work function in the scope of this task object.
+		Task::Scope taskScope(this);
+
 		perform();
 	}
 	catch(...) {
 		captureException();
 	}
 	setFinished();
-	_executionContext = {}; // No need to keep the task object alive any longer.
+	_thisTask.reset(); // No need to keep the task object alive any longer.
 }
 
 }	// End of namespace

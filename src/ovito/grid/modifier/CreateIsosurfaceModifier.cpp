@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -248,7 +248,7 @@ void CreateIsosurfaceModifier::ComputeIsosurfaceEngine::perform()
 		return;
 
 	// Copy field values from voxel grid to surface mesh vertices.
-	if(!transferPropertiesFromGridToMesh(*this, mesh, auxiliaryProperties(), _gridShape))
+	if(!transferPropertiesFromGridToMesh(mesh, auxiliaryProperties(), _gridShape))
 		return;
 
 	// Transform mesh vertices from orthogonal grid space to world space.
@@ -313,8 +313,10 @@ void CreateIsosurfaceModifier::ComputeIsosurfaceEngine::applyResults(const Modif
 /******************************************************************************
 * Transfers voxel grid properties to the vertices of a surfaces mesh.
 ******************************************************************************/
-bool CreateIsosurfaceModifier::transferPropertiesFromGridToMesh(ProgressingTask& operation, SurfaceMeshAccess& mesh, const std::vector<ConstPropertyPtr>& fieldProperties, VoxelGrid::GridDimensions gridShape)
+bool CreateIsosurfaceModifier::transferPropertiesFromGridToMesh(SurfaceMeshAccess& mesh, const std::vector<ConstPropertyPtr>& fieldProperties, VoxelGrid::GridDimensions gridShape)
 {
+	OVITO_ASSERT(Task::current() && Task::current()->isProgressingTask());
+
 	// Create destination properties for transferring voxel values to the surface vertices.
 	std::vector<std::pair<ConstPropertyAccess<void,true>, PropertyAccess<void,true>>> propertyMapping;
 	for(const ConstPropertyPtr& fieldProperty : fieldProperties) {
@@ -340,7 +342,7 @@ bool CreateIsosurfaceModifier::transferPropertiesFromGridToMesh(ProgressingTask&
 
 	// Transfer values of field properties to the created mesh vertices.
 	if(!propertyMapping.empty()) {
-		parallelFor(mesh.vertexCount(), operation, [&](size_t vertexIndex) {
+		parallelForWithProgress(mesh.vertexCount(), [&](size_t vertexIndex) {
 			// Trilinear interpolation scheme.
 			size_t cornerIndices[8];
 			FloatType cornerWeights[8];
@@ -389,7 +391,7 @@ bool CreateIsosurfaceModifier::transferPropertiesFromGridToMesh(ProgressingTask&
 			}
 		});
 	}
-	return !operation.isCanceled();
+	return !Task::current()->isCanceled();
 }
 
 }	// End of namespace

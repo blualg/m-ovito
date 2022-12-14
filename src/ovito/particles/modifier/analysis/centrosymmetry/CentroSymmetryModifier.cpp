@@ -111,7 +111,7 @@ void CentroSymmetryModifier::CentroSymmetryEngine::perform()
 
 	// Perform analysis on each particle.
 	ConstPropertyAccess<int> selectionData(selection());
-	parallelFor(positions()->size(), *this, [&](size_t index) {
+	parallelForWithProgress(positions()->size(), [&](size_t index) {
 		if(!selectionData || selectionData[index])
 			cspArray[index] = computeCSP(neighFinder, index, _mode);
 		else

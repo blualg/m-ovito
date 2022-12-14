@@ -36,13 +36,15 @@
 namespace Ovito {
 
 template<typename T, class Function>
-bool parallelFor(
+bool parallelForWithProgress(
 		T loopCount,
-		ProgressingTask& promise,
 		Function&& kernel,
 		T progressChunkSize = 1024)
 {
-	promise.setProgressMaximum(loopCount / progressChunkSize);
+	OVITO_ASSERT(Task::current());
+	OVITO_ASSERT(Task::current()->isProgressingTask());
+	ProgressingTask* task = static_cast<ProgressingTask*>(Task::current());
+	task->setProgressMaximum(loopCount / progressChunkSize);
 
 #ifndef OVITO_DISABLE_THREADING
 	std::vector<std::future<void>> workers;
@@ -53,7 +55,9 @@ bool parallelFor(
 	for(size_t t = 0; t < num_threads; t++) {
 		if(t == num_threads - 1)
 			endIndex += loopCount % num_threads;
-		workers.push_back(std::async(std::launch::async, [&promise, &kernel, startIndex, endIndex, progressChunkSize]() {
+		workers.push_back(std::async(std::launch::async, [&kernel, startIndex, endIndex, progressChunkSize, context=ExecutionContext::current(), task]() mutable {
+			Task::Scope taskScope(task);
+			ExecutionContext::Scope execScope(std::move(context));
 			for(T i = startIndex; i < endIndex;) {
 				// Execute kernel.
 				kernel(i);
@@ -63,9 +67,9 @@ bool parallelFor(
 				// Update progress indicator.
 				if((i % progressChunkSize) == 0) {
 					OVITO_ASSERT(i != 0);
-					promise.incrementProgressValue();
+					task->incrementProgressValue();
 				}
-				if(promise.isCanceled())
+				if(task->isCanceled())
 					return;
 			}
 		}));
@@ -86,15 +90,15 @@ bool parallelFor(
 		// Update progress indicator.
 		if((i % progressChunkSize) == 0) {
 			OVITO_ASSERT(i != 0);
-			promise.incrementProgressValue();
+			task->incrementProgressValue();
 		}
-		if(promise.isCanceled())
+		if(task->isCanceled())
 			break;
 	}
 #endif
 
-	promise.incrementProgressValue(loopCount % progressChunkSize);
-	return !promise.isCanceled();
+	task->incrementProgressValue(loopCount % progressChunkSize);
+	return !task->isCanceled();
 }
 
 template<typename T, class Function>
@@ -120,7 +124,9 @@ void parallelFor(T loopCount, Function&& kernel)
 		}
 		else {
 			OVITO_ASSERT(endIndex <= loopCount);
-			workers.push_back(std::async(std::launch::async, [&kernel, startIndex, endIndex]() {
+			workers.push_back(std::async(std::launch::async, [&kernel, startIndex, endIndex, context=ExecutionContext::current(), task=Task::current()]() mutable {
+				Task::Scope taskScope(std::move(task));
+				ExecutionContext::Scope execScope(std::move(context));
 				for(T i = startIndex; i < endIndex; ++i) {
 					kernel(i);
 				}
@@ -165,8 +171,8 @@ Future<> parallelForAsync(T loopCount, Kernel&& kernel, const QString& taskDescr
 			for(size_t t = 0; t < num_threads; t++) {
 				if(t == num_threads - 1)
 					endIndex += loopCount % num_threads;
-				std::thread([context = ExecutionContext(this->shared_from_this()), startIndex, endIndex, progressChunkSize]() mutable {
-					AsyncTask* self = static_cast<AsyncTask*>(context.task().get());
+				std::thread([context = ExecutionContext::current(), self = static_pointer_cast<AsyncTask>(this->shared_from_this()), startIndex, endIndex, progressChunkSize]() mutable {
+					Task::Scope taskScope(self);
 					ExecutionContext::Scope execScope(std::move(context));
 					try {
 						for(T i = startIndex; i < endIndex && !self->isCanceled(); ) {
@@ -203,8 +209,12 @@ Future<> parallelForAsync(T loopCount, Kernel&& kernel, const QString& taskDescr
 }
 
 template<class Function>
-bool parallelForChunks(size_t loopCount, ProgressingTask& operation, Function kernel)
+bool parallelForChunksWithProgress(size_t loopCount, Function kernel)
 {
+	OVITO_ASSERT(Task::current());
+	OVITO_ASSERT(Task::current()->isProgressingTask());
+	ProgressingTask* task = static_cast<ProgressingTask*>(Task::current());
+
 #ifndef OVITO_DISABLE_THREADING
 	std::vector<std::future<void>> workers;
 	size_t num_threads = Application::instance()->idealThreadCount();
@@ -218,11 +228,13 @@ bool parallelForChunks(size_t loopCount, ProgressingTask& operation, Function ke
 		if(t == num_threads - 1) {
 			chunkSize += loopCount % num_threads;
 			OVITO_ASSERT(startIndex + chunkSize == loopCount);
-			kernel(startIndex, chunkSize, operation);
+			kernel(startIndex, chunkSize, *task);
 		}
 		else {
-			workers.push_back(std::async(std::launch::async, [&kernel, startIndex, chunkSize, &operation]() {
-				kernel(startIndex, chunkSize, operation);
+			workers.push_back(std::async(std::launch::async, [&kernel, startIndex, chunkSize, context=ExecutionContext::current(), task]() mutable {
+				Task::Scope taskScope(task);
+				ExecutionContext::Scope execScope(std::move(context));
+				kernel(startIndex, chunkSize, *task);
 			}));
 		}
 		startIndex += chunkSize;
@@ -232,10 +244,10 @@ bool parallelForChunks(size_t loopCount, ProgressingTask& operation, Function ke
 	for(auto& t : workers)
 		t.get();
 #else
-	kernel(0, loopCount, promise);
+	kernel(0, loopCount, *task);
 #endif
 
-	return !operation.isCanceled();
+	return !task->isCanceled();
 }
 
 template<class Function>
@@ -257,7 +269,9 @@ void parallelForChunks(size_t loopCount, Function kernel)
 			kernel(startIndex, chunkSize);
 		}
 		else {
-			workers.push_back(std::async(std::launch::async, [&kernel, startIndex, chunkSize]() {
+			workers.push_back(std::async(std::launch::async, [&kernel, startIndex, chunkSize, context=ExecutionContext::current(), task=Task::current()]() {
+				Task::Scope taskScope(std::move(task));
+				ExecutionContext::Scope execScope(std::move(context));
 				kernel(startIndex, chunkSize);
 			}));
 		}
@@ -273,9 +287,12 @@ void parallelForChunks(size_t loopCount, Function kernel)
 }
 
 template<typename ResultObject, class Function>
-std::vector<ResultObject> parallelForCollect(size_t loopCount, ProgressingTask& task, Function&& kernel, size_t progressChunkSize = 1024)
+std::vector<ResultObject> parallelForCollect(size_t loopCount, Function&& kernel, size_t progressChunkSize = 1024)
 {
-	task.setProgressMaximum(loopCount / progressChunkSize);
+	OVITO_ASSERT(Task::current());
+	OVITO_ASSERT(Task::current()->isProgressingTask());
+	ProgressingTask* task = static_cast<ProgressingTask*>(Task::current());
+	task->setProgressMaximum(loopCount / progressChunkSize);
 
 #ifndef OVITO_DISABLE_THREADING
 	std::vector<std::future<void>> workers;
@@ -287,7 +304,9 @@ std::vector<ResultObject> parallelForCollect(size_t loopCount, ProgressingTask& 
 	for(size_t t = 0; t < num_threads; t++) {
 		if(t == num_threads - 1)
 			endIndex += loopCount % num_threads;
-		workers.push_back(std::async(std::launch::async, [&task, &kernel, startIndex, endIndex, progressChunkSize, threadResult = &results[t]]() {
+		workers.push_back(std::async(std::launch::async, [&kernel, startIndex, endIndex, progressChunkSize, threadResult = &results[t], context=ExecutionContext::current(), task]() {
+			Task::Scope taskScope(task);
+			ExecutionContext::Scope execScope(std::move(context));
 			for(size_t i = startIndex; i < endIndex;) {
 				// Execute kernel.
 				kernel(i, *threadResult);
@@ -297,9 +316,9 @@ std::vector<ResultObject> parallelForCollect(size_t loopCount, ProgressingTask& 
 				// Update progress indicator.
 				if((i % progressChunkSize) == 0) {
 					OVITO_ASSERT(i != 0);
-					task.incrementProgressValue();
+					task->incrementProgressValue();
 				}
-				if(task.isCanceled())
+				if(task->isCanceled())
 					return;
 			}
 		}));
@@ -328,8 +347,8 @@ std::vector<ResultObject> parallelForCollect(size_t loopCount, ProgressingTask& 
 	}
 #endif
 
-	task.incrementProgressValue(loopCount % progressChunkSize);
-	if(task.isCanceled())
+	task->incrementProgressValue(loopCount % progressChunkSize);
+	if(task->isCanceled())
 		results.clear();
 	return results;
 }

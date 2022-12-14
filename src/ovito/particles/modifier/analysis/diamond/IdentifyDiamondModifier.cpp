@@ -92,7 +92,7 @@ void IdentifyDiamondModifier::DiamondIdentificationEngine::perform()
 
 	// Determine four nearest neighbors of each atom and store vectors in the working array.
 	ConstPropertyAccess<int> selectionData(selection());
-	parallelFor(positions()->size(), *this, [&](size_t index) {
+	parallelForWithProgress(positions()->size(), [&](size_t index) {
 		// Skip particles that are not included in the analysis.
 		if(selectionData && selectionData[index] == 0)
 			return;
@@ -115,7 +115,7 @@ void IdentifyDiamondModifier::DiamondIdentificationEngine::perform()
 
 	// Perform structure identification.
 	setProgressText(tr("Identifying diamond structures"));
-	parallelFor(positions()->size(), *this, [&](size_t index) {
+	parallelForWithProgress(positions()->size(), [&](size_t index) {
 		// Mark atom as 'other' by default.
 		output[index] = OTHER;
 

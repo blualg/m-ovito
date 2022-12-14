@@ -155,9 +155,9 @@ PipelineStatus VoxelGridSliceModifierDelegate::apply(const ModifierEvaluationReq
 				fieldProperties.push_back(property);
 
 			// Copy field values from voxel grid to surface mesh vertices.
-			auto localOperation = std::make_shared<ProgressingTask>(Task::Started);
-			CreateIsosurfaceModifier::transferPropertiesFromGridToMesh(*localOperation, mesh, fieldProperties, gridShape);
-			localOperation->setFinished();
+			Promise<> localOperation = Promise<>::create<ProgressingTask>(true);
+			Task::Scope taskScope(localOperation.task());
+			CreateIsosurfaceModifier::transferPropertiesFromGridToMesh(mesh, fieldProperties, gridShape);
 
 			// Transform mesh vertices from orthogonal grid space to world space.
 			const AffineTransformation tm = cell->matrix() * Matrix3(

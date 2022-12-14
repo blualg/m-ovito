@@ -279,9 +279,6 @@ Future<R...>::then(Executor&& executor, Function&& f)
 	result_future_type future = promise.future();
 	continuation_task_type* continuationTask = static_cast<continuation_task_type*>(promise.task().get());
 
-	// Let the continuation task inherit the current execution context.
-	ExecutionContext::Scope execScope(promise.task());
-
 	// Run the following function once the existing task finishes. We'll then invoke the user's continuation function.
 	continuationTask->whenTaskFinishes(
 			this->takeTaskReference(), // The reference to the existing task is moved from this future into the continuation task.
@@ -318,10 +315,10 @@ Future<R...>::then(Executor&& executor, Function&& f)
 				return;
 			}
 		}
+		locker.unlock();
 
 		// Now it's time to execute the continuation function supplied by the user.
 		// Assign the function's return value as result of the continuation task.
-		locker.unlock();
 		continuationTask->fulfillWith(std::move(promise), std::forward<Function>(f), Future<R...>(std::move(finishedTask)));
 	});
 

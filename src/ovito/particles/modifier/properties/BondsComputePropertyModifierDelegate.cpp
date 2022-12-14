@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -104,7 +104,7 @@ void BondsComputePropertyModifierDelegate::Engine::perform()
 	setProgressMaximum(outputProperty()->size());
 
 	// Parallelized loop over all bonds.
-	parallelForChunks(outputProperty()->size(), *this, [this](size_t startIndex, size_t count, ProgressingTask& operation) {
+	parallelForChunksWithProgress(outputProperty()->size(), [this](size_t startIndex, size_t count, ProgressingTask& operation) {
 		BondExpressionEvaluator::Worker worker(*_evaluator);
 
 		size_t endIndex = startIndex + count;

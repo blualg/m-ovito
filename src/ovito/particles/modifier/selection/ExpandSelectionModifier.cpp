@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -145,7 +145,7 @@ void ExpandSelectionModifier::ExpandSelectionNearestEngine::expandSelection()
 	OVITO_ASSERT(inputSelection() != outputSelection());
 	ConstPropertyAccess<int> inputSelectionArray(inputSelection());
 	PropertyAccess<int> outputSelectionArray(outputSelection());
-	parallelFor(positions()->size(), *this, [&](size_t index) {
+	parallelForWithProgress(positions()->size(), [&](size_t index) {
 		if(!inputSelectionArray[index]) return;
 
 		NearestNeighborFinder::Query<MAX_NEAREST_NEIGHBORS> neighQuery(neighFinder);
@@ -168,7 +168,7 @@ void ExpandSelectionModifier::ExpandSelectionBondedEngine::expandSelection()
 	ConstPropertyAccess<ParticleIndexPair> bondTopologyArray(_bondTopology);
 
 	size_t particleCount = inputSelection()->size();
-	parallelFor(_bondTopology->size(), *this, [&](size_t index) {
+	parallelForWithProgress(_bondTopology->size(), [&](size_t index) {
 		size_t index1 = bondTopologyArray[index][0];
 		size_t index2 = bondTopologyArray[index][1];
 		if(index1 >= particleCount || index2 >= particleCount)
@@ -193,7 +193,7 @@ void ExpandSelectionModifier::ExpandSelectionCutoffEngine::expandSelection()
 	PropertyAccess<int> outputSelectionArray(outputSelection());
 	ConstPropertyAccess<int> inputSelectionArray(inputSelection());
 
-	parallelFor(positions()->size(), *this, [&](size_t index) {
+	parallelForWithProgress(positions()->size(), [&](size_t index) {
 		if(!inputSelectionArray[index]) return;
 		for(CutoffNeighborFinder::Query neighQuery(neighborListBuilder, index); !neighQuery.atEnd(); neighQuery.next()) {
 			outputSelectionArray[neighQuery.current()] = 1;

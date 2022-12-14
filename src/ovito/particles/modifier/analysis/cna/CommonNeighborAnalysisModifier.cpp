@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -111,13 +111,13 @@ void CommonNeighborAnalysisModifier::AdaptiveCNAEngine::perform()
 
 	// Perform analysis on each particle.
 	if(!selection()) {
-		parallelFor(positions()->size(), *this, [&](size_t index) {
+		parallelForWithProgress(positions()->size(), [&](size_t index) {
 			output[index] = determineStructureAdaptive(neighFinder, index);
 		});
 	}
 	else {
 		ConstPropertyAccess<int> selectionData(selection());
-		parallelFor(positions()->size(), *this, [&](size_t index) {
+		parallelForWithProgress(positions()->size(), [&](size_t index) {
 			// Skip particles that are not included in the analysis.
 			if(selectionData[index])
 				output[index] = determineStructureAdaptive(neighFinder, index);
@@ -147,13 +147,13 @@ void CommonNeighborAnalysisModifier::IntervalCNAEngine::perform()
 
 	// Perform analysis on each particle.
 	if(!selection()) {
-		parallelFor(positions()->size(), *this, [&](size_t index) {
+		parallelForWithProgress(positions()->size(), [&](size_t index) {
 			output[index] = determineStructureInterval(neighFinder, index);
 		});
 	}
 	else {
 		ConstPropertyAccess<int> selectionData(selection());
-		parallelFor(positions()->size(), *this, [&](size_t index) {
+		parallelForWithProgress(positions()->size(), [&](size_t index) {
 			// Skip particles that are not included in the analysis.
 			if(selectionData[index])
 				output[index] = determineStructureInterval(neighFinder, index);
@@ -180,13 +180,13 @@ void CommonNeighborAnalysisModifier::FixedCNAEngine::perform()
 
 	// Perform analysis on each particle.
 	if(!selection()) {
-		parallelFor(positions()->size(), *this, [&](size_t index) {
+		parallelForWithProgress(positions()->size(), [&](size_t index) {
 			output[index] = determineStructureFixed(neighborListBuilder, index);
 		});
 	}
 	else {
 		ConstPropertyAccess<int> selectionData(selection());
-		parallelFor(positions()->size(), *this, [&](size_t index) {
+		parallelForWithProgress(positions()->size(), [&](size_t index) {
 			// Skip particles that are not included in the analysis.
 			if(selectionData[index])
 				output[index] = determineStructureFixed(neighborListBuilder, index);
@@ -215,7 +215,7 @@ void CommonNeighborAnalysisModifier::BondCNAEngine::perform()
 	ConstPropertyAccess<ParticleIndexPair> bonds(bondTopology());
 	ConstPropertyAccess<Vector3I> bondPeriodicImagesData(bondPeriodicImages());
 	PropertyAccess<Vector3I> cnaIndicesData(cnaIndices());
-	parallelFor(bonds.size(), *this, [&](size_t bondIndex) {
+	parallelForWithProgress(bonds.size(), [&](size_t bondIndex) {
 		size_t currentBondParticle1 = bonds[bondIndex][0];
 		size_t currentBondParticle2 = bonds[bondIndex][1];
 		if(currentBondParticle1 >= positions()->size()) return;
@@ -280,7 +280,7 @@ void CommonNeighborAnalysisModifier::BondCNAEngine::perform()
 	ConstPropertyAccess<int> selectionData(selection());
 	
 	// Classify particles.
-	parallelFor(positions()->size(), *this, [&](size_t particleIndex) {
+	parallelForWithProgress(positions()->size(), [&](size_t particleIndex) {
 
 		int n421 = 0;
 		int n422 = 0;

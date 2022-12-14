@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -188,7 +188,7 @@ void PolyhedralTemplateMatchingModifier::PTMEngine::perform()
 
 	// Pre-order neighbors of each particle.
 	std::vector<uint64_t> cachedNeighbors(positions()->size());
-	parallelForChunks(positions()->size(), *this, [&](size_t startIndex, size_t count, ProgressingTask& operation) {
+	parallelForChunksWithProgress(positions()->size(), [&](size_t startIndex, size_t count, ProgressingTask& operation) {
 		// Create a thread-local kernel for the PTM algorithm.
 		PTMAlgorithm::Kernel kernel(*_algorithm);
 
@@ -228,7 +228,7 @@ void PolyhedralTemplateMatchingModifier::PTMEngine::perform()
 	PropertyAccess<qlonglong> correspondencesArray(correspondences());
 
 	// Perform analysis on each particle.
-	parallelForChunks(positions()->size(), *this, [&](size_t startIndex, size_t count, ProgressingTask& operation) {
+	parallelForChunksWithProgress(positions()->size(), [&](size_t startIndex, size_t count, ProgressingTask& operation) {
 
 		// Create a thread-local kernel for the PTM algorithm.
 		PTMAlgorithm::Kernel kernel(*_algorithm);

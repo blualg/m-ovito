@@ -69,6 +69,9 @@ public:
 	/// Sets the dataset to which objects loaded from the stream should be added to.
 	void setDatasetToBePopulated(DataSet* dataset) { _dataset = dataset; }
 
+	/// Returns the dataset which is being loaded (may be null).
+	DataSet* datasetToBePopulated() const { return _dataset; }
+
 	/// Returns the class info for an object currently being deserialized from the stream.
 	/// This method may only be called from within an OvitoObject::loadFromStream() method.
 	const OvitoClass::SerializedClassInfo* getSerializedClassInfo() const {

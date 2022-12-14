@@ -112,6 +112,9 @@ protected:
 	/// Loads the class' contents from an input stream.
 	virtual void loadFromStream(ObjectLoadStream& stream) override;
 
+	/// This method is called once for this object after it has been completely loaded from a stream.
+	virtual void loadFromStreamComplete(ObjectLoadStream& stream) override;
+
 	/// \brief Is called when a RefTarget referenced by this object has generated an event.
 	virtual bool referenceEvent(RefTarget* source, const ReferenceEvent& event) override;
 

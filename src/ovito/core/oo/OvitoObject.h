@@ -118,24 +118,10 @@ public:
 	auto schedule(Function&& f) const {
 		OVITO_ASSERT(this);
 		OVITO_ASSERT(ExecutionContext::current().isValid());
-		// Note: Avoiding the use of C++17 capture this-by-copy here, because it is not fully supported by the MSVC 2017 compiler.
 		return [obj = QPointer<const QObject>(this), context = ExecutionContext::current(), f = std::forward<Function>(f)]() mutable noexcept {
-			if(!obj.isNull() && !QCoreApplication::closingDown()) {
-				if(!QCoreApplication::instance() || QThread::currentThread() != QCoreApplication::instance()->thread()) {
-					// When not in the main thread, or if deferred execution was requested, schedule work for later execution in the main thread.
-					auto event = new detail::ObjectExecutorWorkEvent<Function>(ObjectExecutor::workEventType(), std::move(obj), std::move(context), std::move(f));
-					QCoreApplication::postEvent(const_cast<QObject*>(event->object()), event);
-				}
-				else {
-					// When already in the main thread, execute work immediately.
-					ExecutionContext::Scope execScope(std::move(context)); 
-
-					// Temporarily suspend undo recording, because deferred operations never get recorded by convention.
-					UndoSuspender noUndo;
-
-					// Execute the work function.
-					std::invoke(std::move(f));
-				}
+			if(const OvitoObject* self = static_cast<const OvitoObject*>(obj.data())) {
+				ExecutionContext::Scope execScope(std::move(context));
+				self->execute(std::move(f));
 			}
 		};
 	}
@@ -146,18 +132,16 @@ public:
 	void execute(Function&& f) const {
 		OVITO_ASSERT(this);
 		OVITO_ASSERT(ExecutionContext::current().isValid());
-		if(!QCoreApplication::closingDown()) {
-			if(!QCoreApplication::instance() || QThread::currentThread() != this->thread()) {
-				// When not in the main thread, or if deferred execution was requested, schedule work for later execution in the main thread.
-				auto event = new detail::ObjectExecutorWorkEvent<Function>(ObjectExecutor::workEventType(), this, ExecutionContext::current(), std::forward<Function>(f));
-				QCoreApplication::postEvent(const_cast<QObject*>(event->object()), event);
-			}
-			else {
-				// Temporarily suspend undo recording, because deferred operations never get recorded by convention.
-				UndoSuspender noUndo;
-				// Execute the work function.
-				std::invoke(std::forward<Function>(f));
-			}
+		if(QThread::currentThread() != this->thread()) {
+			// When not in the main thread, or if deferred execution was requested, schedule work for later execution in the main thread.
+			auto event = new detail::ObjectExecutorWorkEvent<Function>(ObjectExecutor::workEventType(), this, ExecutionContext::current(), std::forward<Function>(f));
+			QCoreApplication::postEvent(const_cast<QObject*>(event->object()), event);
+		}
+		else {
+			// Temporarily suspend undo recording, because deferred operations never get recorded by convention.
+			UndoSuspender noUndo;
+			// Execute the work function.
+			std::invoke(std::forward<Function>(f));
 		}
 	}
 

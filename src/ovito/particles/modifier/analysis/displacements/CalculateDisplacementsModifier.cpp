@@ -109,7 +109,7 @@ void CalculateDisplacementsModifier::DisplacementEngine::perform()
 
 	// Compute displacement vectors.
 	if(affineMapping() != NO_MAPPING) {
-		parallelForChunks(displacements()->size(), *this, [&](size_t startIndex, size_t count, Task& task) {
+		parallelForChunksWithProgress(displacements()->size(), [&](size_t startIndex, size_t count, ProgressingTask& task) {
 			Vector3* u = displacementsArray.begin() + startIndex;
 			FloatType* umag = displacementMagnitudesArray.begin() + startIndex;
 			const Point3* p = positionsArray.cbegin() + startIndex;
@@ -132,7 +132,7 @@ void CalculateDisplacementsModifier::DisplacementEngine::perform()
 		});
 	}
 	else {
-		parallelForChunks(displacements()->size(), *this, [&] (size_t startIndex, size_t count, Task& task) {
+		parallelForChunksWithProgress(displacements()->size(), [&] (size_t startIndex, size_t count, ProgressingTask& task) {
 			Vector3* u = displacementsArray.begin() + startIndex;
 			FloatType* umag = displacementMagnitudesArray.begin() + startIndex;
 			const Point3* p = positionsArray.cbegin() + startIndex;

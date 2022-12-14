@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //  Copyright 2017 Emanuel A. Lazar
 //
 //  This file is part of OVITO (Open Visualization Tool).
@@ -501,7 +501,7 @@ void VoroTopModifier::VoroTopAnalysisEngine::perform()
         Point3 corner2 = corner1 + cell()->matrix().column(0) + cell()->matrix().column(1) + cell()->matrix().column(2);
 
         // Perform analysis, particle-wise parallel.
-        parallelFor(positions()->size(), *this, [&](size_t index) {
+        parallelForWithProgress(positions()->size(), [&](size_t index) {
 
             // Reset structure type.
             structuresArray[index] = 0;

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -118,7 +118,7 @@ void AtomicStrainModifier::AtomicStrainEngine::perform()
 	PropertyAccess<Vector3> displacementsArray(displacements());
 	ConstPropertyAccess<Point3> positionsArray(positions());
 	ConstPropertyAccess<Point3> refPositionsArray(refPositions());
-	parallelForChunks(displacements()->size(), *this, [&](size_t startIndex, size_t count, Task& task) {
+	parallelForChunksWithProgress(displacements()->size(), [&](size_t startIndex, size_t count, ProgressingTask& task) {
 		Vector3* u = displacementsArray.begin() + startIndex;
 		const Point3* p0 = refPositionsArray.cbegin() + startIndex;
 		auto index = refToCurrentIndexMap().cbegin() + startIndex;
@@ -161,7 +161,7 @@ void AtomicStrainModifier::AtomicStrainEngine::perform()
 	PropertyAccess<SymmetricTensor2> stretchTensorsArray(stretchTensors());
 
 	// Perform individual strain calculation for each particle.
-	parallelFor(positions()->size(), *this, [&](size_t particleIndex) {
+	parallelForWithProgress(positions()->size(), [&](size_t particleIndex) {
 
 		// Note: We do the following calculations using double precision numbers to
 		// minimize numerical errors. Final results will be converted back to

@@ -296,7 +296,7 @@ void ComputePropertyModifierDelegate::PropertyComputeEngine::perform()
 	setProgressMaximum(outputProperty()->size());
 
 	// Parallelized loop over all data elements.
-	parallelForChunks(outputProperty()->size(), *this, [this](size_t startIndex, size_t count, ProgressingTask& operation) {
+	parallelForChunksWithProgress(outputProperty()->size(), [this](size_t startIndex, size_t count, ProgressingTask& operation) {
 		PropertyExpressionEvaluator::Worker worker(*_evaluator);
 
 		size_t endIndex = startIndex + count;

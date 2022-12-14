@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -451,7 +451,7 @@ void StructureAnalysis::initializeListOfStructures()
 /******************************************************************************
 * Identifies the atomic structures.
 ******************************************************************************/
-bool StructureAnalysis::identifyStructures(ProgressingTask& operation)
+bool StructureAnalysis::identifyStructures()
 {
 	// Prepare the neighbor list.
 	int maxNeighborListSize = std::min((int)_neighborListsSize + 1, (int)MAX_NEIGHBORS);
@@ -462,7 +462,7 @@ bool StructureAnalysis::identifyStructures(ProgressingTask& operation)
 	// Identify local structure around each particle.
 	_maximumNeighborDistance = 0;
 
-	return parallelFor(positions()->size(), operation, [this, &neighFinder](size_t index) {
+	return parallelForWithProgress(positions()->size(), [this, &neighFinder](size_t index) {
 		determineLocalStructure(neighFinder, index);
 	});
 }
@@ -761,8 +761,10 @@ void StructureAnalysis::determineLocalStructure(NearestNeighborFinder& neighList
 /******************************************************************************
 * Combines adjacent atoms to clusters.
 ******************************************************************************/
-bool StructureAnalysis::buildClusters(ProgressingTask& operation)
+bool StructureAnalysis::buildClusters()
 {
+	OVITO_ASSERT(Task::current() && Task::current()->isProgressingTask());
+	ProgressingTask& operation = static_cast<ProgressingTask&>(*Task::current());
 	operation.setProgressMaximum(positions()->size());
 	int progressCounter = 0;
 	ConstPropertyAccess<Point3> positionsArray(positions());
@@ -932,8 +934,10 @@ bool StructureAnalysis::buildClusters(ProgressingTask& operation)
 /******************************************************************************
 * Determines the transition matrices between clusters.
 ******************************************************************************/
-bool StructureAnalysis::connectClusters(ProgressingTask& operation)
+bool StructureAnalysis::connectClusters()
 {
+	OVITO_ASSERT(Task::current() && Task::current()->isProgressingTask());
+	ProgressingTask& operation = static_cast<ProgressingTask&>(*Task::current());
 	operation.setProgressMaximum(positions()->size());
 
 	for(size_t atomIndex = 0; atomIndex < positions()->size(); atomIndex++) {
@@ -1036,8 +1040,10 @@ bool StructureAnalysis::connectClusters(ProgressingTask& operation)
 /******************************************************************************
 * Combines clusters to super clusters.
 ******************************************************************************/
-bool StructureAnalysis::formSuperClusters(ProgressingTask& operation)
+bool StructureAnalysis::formSuperClusters()
 {
+	OVITO_ASSERT(Task::current());
+	Task& operation = *Task::current();
 	size_t oldTransitionCount = clusterGraph()->clusterTransitions().size();
 
 	for(size_t clusterIndex = 0; clusterIndex < clusterGraph()->clusters().size(); clusterIndex++) {

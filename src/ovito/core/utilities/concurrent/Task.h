@@ -74,6 +74,12 @@ public:
     ~Task();
 #endif
 
+    /// Returns the task object that is the active one in the current thread.
+    static Task*& current() noexcept;
+
+    /// RAII helper class that can be used to temporarily set the active task.
+    class Scope;
+
     /// Returns whether this shared state has been canceled by a previous call to cancel().
     bool isCanceled() const { return (_state.load(std::memory_order_relaxed) & Canceled); }
 
@@ -341,5 +347,40 @@ protected:
     template<typename... R2> friend class SharedFuture;
     template<typename... R2> friend class Promise;
 };
+
+/**
+ * RAII helper class that allows setting a task to be the active task temporarily.
+ */
+class Task::Scope
+{
+public:
+
+    /// Constructor taking a raw pointer to a task.
+    explicit Scope(Task* task) noexcept : _previous(std::exchange(current(), std::move(task))) {}
+
+    /// Constructor taking a smart pointer to a task.
+    template<class TaskType>
+    explicit Scope(const std::shared_ptr<TaskType>& task) noexcept : Scope(task.get()) {}
+
+    /// Destructor.
+    ~Scope() noexcept { current() = std::move(_previous); }
+
+    /// Not a movable type.
+    Scope(Scope&& other) = delete;
+
+    /// Not a copyable type.
+    Scope(const Scope& other) = delete;
+
+    /// Not a movable type.
+    Scope& operator=(Scope&& other) = delete;
+
+    /// Not a copyable type.
+    Scope& operator=(const Scope& other) = delete;
+
+private:
+
+    Task* _previous;
+};
+
 
 }	// End of namespace

@@ -30,10 +30,10 @@
 namespace Ovito::detail {
 
 /*
-	* is_future<T>
-	*
-	* Determines whether T is some specialization of the Future<> or SharedFuture<> class templates.
-	*/
+* is_future<T>
+*
+* Determines whether T is some specialization of the Future<> or SharedFuture<> class templates.
+*/
 
 template<typename T>
 struct is_future : std::false_type {};
@@ -48,10 +48,10 @@ template<typename T>
 inline constexpr bool is_future_v = is_future<std::decay_t<T>>::value;
 
 /*
-	* is_shared_future<T>
-	*
-	* Determines whether T is some specialization of the SharedFuture<> class template.
-	*/
+* is_shared_future<T>
+*
+* Determines whether T is some specialization of the SharedFuture<> class template.
+*/
 
 /// Determines whether a type T is some specialization of the SharedFuture class template.
 template<typename T>
@@ -64,10 +64,10 @@ template<typename T>
 inline constexpr bool is_shared_future_v = is_shared_future<std::decay_t<T>>::value;
 
 /*
-	* callable_result<F,FutureType>
-	*
-	* Determines the return value type of some callable F, which gets called with the FutureType itself or the results of the future as arguments.
-	*/
+* callable_result<F,FutureType>
+*
+* Determines the return value type of some callable F, which gets called with the FutureType itself or the results of the future as arguments.
+*/
 
 template<typename F, typename... Args>
 struct invoke_result_with_tuple : invoke_result<F, Args...> {};
@@ -95,19 +95,19 @@ template<typename F, typename FutureType>
 inline constexpr bool returns_void_v = std::is_void_v<callable_result_t<F, FutureType>>;
 
 /*
-	* returns_future<F,FutureType>
-	*
-	* Determines whether some callable F, which gets called with the FutureType itself or the results of the future as arguments, returns a future.
-	*/
+* returns_future<F,FutureType>
+*
+* Determines whether some callable F, which gets called with the FutureType itself or the results of the future as arguments, returns a future.
+*/
 
 template<typename F, typename FutureType>
 inline constexpr bool returns_future_v = is_future_v<callable_result_t<F, FutureType>>;
 
 /*
-	* future_for<T>
-	*
-	* For some type T, which may be void, returns the corresponding Future<> type.
-	*/
+* future_for<T>
+*
+* For some type T, which may be void, returns the corresponding Future<> type.
+*/
 template<typename T>
 using future_for_t = std::conditional_t<std::is_void_v<T>, Future<>, Future<std::decay_t<T>>>;
 

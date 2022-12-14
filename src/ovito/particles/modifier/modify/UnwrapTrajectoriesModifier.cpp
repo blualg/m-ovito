@@ -123,8 +123,7 @@ SharedFuture<> UnwrapTrajectoriesModifierApplication::detectPeriodicCrossings(co
 		// Display progress in the UI.
 		OVITO_ASSERT(_unwrapOperation.task()->isProgressingTask());
 		static_cast<ProgressingTask*>(_unwrapOperation.task().get())->setProgressText(tr("Unwrapping particle trajectories"));
-		if(ExecutionContext::current().isValid())
-			ExecutionContext::current().ui().taskManager().registerFuture(_unwrapOperation);
+		ExecutionContext::current().ui().taskManager().registerFuture(_unwrapOperation);
 		registerActiveFuture(_unwrapOperation);
 	}
 	return _unwrapOperation;
@@ -455,6 +454,35 @@ void UnwrapTrajectoriesModifierApplication::loadFromStream(ObjectLoadStream& str
 		}
 	}
 	stream.closeChunk();
+}
+
+/******************************************************************************
+* This method is called once for this object after it has been completely
+* loaded from a stream.
+******************************************************************************/
+void UnwrapTrajectoriesModifierApplication::loadFromStreamComplete(ObjectLoadStream& stream)
+{
+	ModifierApplication::loadFromStreamComplete(stream);
+
+	// For backward compatibility with OVITO 3.7: 
+	// Convert legacy time values from ticks to frames. This requires access to the AnimationSettings object, which is stored at scene level.
+	if(stream.formatVersion() <= 30008) {
+		QSet<PipelineSceneNode*> pipelines = this->pipelines(true);
+		if(!pipelines.empty()) {
+			if(Scene* scene = (*pipelines.begin())->scene()) {
+				if(scene->animationSettings()) {
+					int ticksPerFrame = (int)std::round(4800.0f / scene->animationSettings()->framesPerSecond());
+					_unwrappedUpToTime = AnimationTime::fromFrame(_unwrappedUpToTime.ticks() / ticksPerFrame);
+					for(auto& record : _unwrapRecords) {
+						std::get<0>(record.second) = AnimationTime::fromFrame(std::get<0>(record.second).ticks() / ticksPerFrame);
+					}
+					for(auto& record : _unflipRecords) {
+						std::get<0>(record) = AnimationTime::fromFrame(std::get<0>(record).ticks() / ticksPerFrame);
+					}
+				}
+			}
+		}
+	}
 }
 
 }	// End of namespace

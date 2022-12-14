@@ -43,7 +43,7 @@ auto launchTask(std::shared_ptr<TaskType> task, Args&&... args)
 	using future_type = typename TaskType::future_type;
 
 	// Make the task the active one.
-	ExecutionContext::Scope execScope(task);
+	Task::Scope taskScope(task);
 
 	// Register task if requested to show it in the UI.
 	if constexpr(RegisterWithTaskManager)

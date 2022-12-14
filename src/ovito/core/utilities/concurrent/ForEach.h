@@ -30,30 +30,6 @@
 
 namespace Ovito {
 
-#ifdef OVITO_MSVC_2017_COMPATIBILITY
-namespace detail {
-	template<typename F, typename IterVal, typename... R>
-	void invokeCompleteFunc(F&& f, IterVal&& iterVal, Future<>&& future, std::tuple<R...>& resultsStorage) {
-		std::forward<F>(f)(std::forward<IterVal>(iterVal), std::get<R>(resultsStorage)...);
-	}
-
-	template<typename F, typename IterVal, typename... R>
-	void invokeCompleteFunc(F&& f, IterVal&& iterVal, SharedFuture<>&& future, std::tuple<R...>& resultsStorage) {
-		std::forward<F>(f)(std::forward<IterVal>(iterVal), std::get<R>(resultsStorage)...);
-	}
-
-	template<typename F, typename IterVal, typename T, typename... R>
-	void invokeCompleteFunc(F&& f, IterVal&& iterVal, Future<T>&& future, std::tuple<R...>& resultsStorage) {
-		std::forward<F>(f)(std::forward<IterVal>(iterVal), std::move(future).result(), std::get<R>(resultsStorage)...);
-	}
-
-	template<typename F, typename IterVal, typename T, typename... R>
-	void invokeCompleteFunc(F&& f, IterVal&& iterVal, SharedFuture<T>&& future, std::tuple<R...>& resultsStorage) {
-		std::forward<F>(f)(std::forward<IterVal>(iterVal), std::move(future).result(), std::get<R>(resultsStorage)...);
-	}
-}
-#endif
-
 template<typename InputRange, class Executor, typename StartIterFunc, typename CompleteIterFunc, typename... ResultType>
 auto for_each_sequential(
 	InputRange&& inputRange, 
@@ -104,7 +80,7 @@ auto for_each_sequential(
 			OVITO_ASSERT(_iterator == std::begin(_range));
 			// Begin execution of first iteration.
 			if(_iterator != std::end(_range)) {
-				_executor.execute(detail::bind_front(&ForEachTask::iteration_begin, this));
+				_executor.execute(detail::bind_front(&ForEachTask::iteration_begin, static_pointer_cast<ForEachTask>(this->shared_from_this())));
 				OVITO_ASSERT_MSG(_iterator == std::begin(_range), "for_each_sequential()", "An executor that performs deferred execution is required.");
 			}
 			else {
@@ -125,15 +101,12 @@ auto for_each_sequential(
 			if(_iterator != std::end(_range) && !this->isCanceled()) {
 				output_future_type future;
 				try {
-#ifndef OVITO_MSVC_2017_COMPATIBILITY
+					Task::Scope taskScope(this);
 					// Call the user-provided function with the current loop value and, optionally, the task's result storage 
 					if constexpr(detail::is_invocable_v<std::decay_t<StartIterFunc>, decltype(*_iterator), std::decay_t<ResultType>&...> && std::tuple_size_v<task_tuple_type> == 1)
-						future = _startFunc(*_iterator, this->resultsStorage());
+						future = std::invoke(_startFunc, *_iterator, this->resultsStorage());
 					else
-						future = _startFunc(*_iterator);
-#else
-					future = _startFunc(*_iterator, std::get<ResultType>(this->resultsTupleStorage())...);
-#endif
+						future = std::invoke(_startFunc, *_iterator);
 				}
 				catch(...) {
 					this->captureExceptionAndFinish();
@@ -141,7 +114,7 @@ auto for_each_sequential(
 				}
 				OVITO_ASSERT(future.isValid());
 				// Schedule next iteration upon completion of the future returned by the user function.
-				this->whenTaskFinishes(future.takeTaskReference(), _executor, detail::bind_front(&ForEachTask::iteration_complete, this));
+				this->whenTaskFinishes(future.takeTaskReference(), _executor, detail::bind_front(&ForEachTask::iteration_complete, static_pointer_cast<ForEachTask>(this->shared_from_this())));
 			}
 			else {
 				// Inform caller that the task has finished and the result is available.
@@ -173,21 +146,18 @@ auto for_each_sequential(
 			locker.unlock();
 
 			try {
+				Task::Scope taskScope(this);
 				// Invoke the user function that completes this iteration by processing the results returned by the future.
-#ifndef OVITO_MSVC_2017_COMPATIBILITY
 				if constexpr(std::tuple_size_v<typename output_future_type::tuple_type> == 1) {
 					if constexpr(detail::is_invocable_v<CompleteIterFunc, decltype(*_iterator), decltype(std::move(future).result()), std::decay_t<ResultType>&...> && std::tuple_size_v<task_tuple_type> == 1)
-						_completeFunc(*_iterator, std::move(future).result(), resultsStorage());
+						std::invoke(_completeFunc, *_iterator, std::move(future).result(), resultsStorage());
 					else if constexpr(detail::is_invocable_v<CompleteIterFunc, decltype(*_iterator), decltype(std::move(future).result())>)
-						_completeFunc(*_iterator, std::move(future).result());
+						std::invoke(_completeFunc, *_iterator, std::move(future).result());
 					else
-						_completeFunc(*_iterator);
+						std::invoke(_completeFunc, *_iterator);
 				}
 				else
-					_completeFunc(*_iterator);
-#else
-				detail::invokeCompleteFunc(_completeFunc, *_iterator, std::move(future), this->resultsTupleStorage());
-#endif
+					std::invoke(_completeFunc, *_iterator);
 			}
 			catch(...) {
 				this->captureExceptionAndFinish();

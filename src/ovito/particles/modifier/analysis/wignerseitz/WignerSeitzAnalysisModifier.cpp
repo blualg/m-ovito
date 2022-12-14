@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -169,7 +169,7 @@ void WignerSeitzAnalysisModifier::WignerSeitzAnalysisEngine::perform()
 	ConstPropertyAccess<Point3> positionsArray(positions());
 	if(ncomponents == 1) {
 		// Without per-type occupancies:
-		parallelFor(positions()->size(), *this, [&](size_t index) {
+		parallelForWithProgress(positions()->size(), [&](size_t index) {
 			const Point3& p = positionsArray[index];
 			FloatType closestDistanceSq;
 			size_t closestIndex = neighborTree.findClosestParticle((affineMapping() == TO_REFERENCE_CELL) ? (tm * p) : p, closestDistanceSq);
@@ -182,7 +182,7 @@ void WignerSeitzAnalysisModifier::WignerSeitzAnalysisEngine::perform()
 	else {
 		// With per-type occupancies:
 		ConstPropertyAccess<int> particleTypesArray(particleTypes());
-		parallelFor(positions()->size(), *this, [&](size_t index) {
+		parallelForWithProgress(positions()->size(), [&](size_t index) {
 			const Point3& p = positionsArray[index];
 			FloatType closestDistanceSq;
 			size_t closestIndex = neighborTree.findClosestParticle((affineMapping() == TO_REFERENCE_CELL) ? (tm * p) : p, closestDistanceSq);

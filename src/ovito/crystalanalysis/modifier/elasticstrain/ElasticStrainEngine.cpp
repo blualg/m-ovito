@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -69,19 +69,19 @@ void ElasticStrainEngine::perform()
 	setProgressText(ElasticStrainModifier::tr("Calculating elastic strain tensors"));
 
 	beginProgressSubStepsWithWeights({ 35, 6, 1, 1, 20 });
-	if(!_structureAnalysis->identifyStructures(*this))
+	if(!_structureAnalysis->identifyStructures())
 		return;
 
 	nextProgressSubStep();
-	if(!_structureAnalysis->buildClusters(*this))
+	if(!_structureAnalysis->buildClusters())
 		return;
 
 	nextProgressSubStep();
-	if(!_structureAnalysis->connectClusters(*this))
+	if(!_structureAnalysis->connectClusters())
 		return;
 
 	nextProgressSubStep();
-	if(!_structureAnalysis->formSuperClusters(*this))
+	if(!_structureAnalysis->formSuperClusters())
 		return;
 
 	nextProgressSubStep();
@@ -91,7 +91,7 @@ void ElasticStrainEngine::perform()
 	PropertyAccess<SymmetricTensor2> strainTensorsArray(strainTensors());
 	PropertyAccess<FloatType> volumetricStrainsArray(volumetricStrains());
 
-	parallelFor(positions()->size(), *this, [&](size_t particleIndex) {
+	parallelForWithProgress(positions()->size(), [&](size_t particleIndex) {
 
 		Cluster* localCluster = _structureAnalysis->atomCluster(particleIndex);
 		if(localCluster->id != 0) {

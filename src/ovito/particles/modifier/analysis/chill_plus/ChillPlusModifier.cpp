@@ -98,7 +98,7 @@ void ChillPlusModifier::ChillPlusEngine::perform()
     q_values = boost::numeric::ublas::matrix<std::complex<float>>(particleCount, 7);
 
     // Parallel calculation loop:
-    parallelFor(particleCount, *this, [&](size_t index) {
+    parallelForWithProgress(particleCount, [&](size_t index) {
         int coordination = 0;
         for(int m = -3; m <= 3; m++) {
             q_values(index, m+3) = compute_q_lm(neighborListBuilder, index, 3, m);
@@ -107,7 +107,7 @@ void ChillPlusModifier::ChillPlusEngine::perform()
     if(isCanceled()) return;
 
     // For each particle, count the bonds and determine structure
-    parallelFor(particleCount, *this, [&](size_t index) {
+    parallelForWithProgress(particleCount, [&](size_t index) {
         // Skip particles that are not included in the analysis.
         if(selectionData && !selectionData[index]) {
             output[index] = OTHER;

@@ -543,7 +543,7 @@ void ConstructSurfaceModifier::GaussianDensityEngine::perform()
 	gridToCartesian.column(2) /= gridDims[2] - (mesh()->domain()->hasPbc(2)?0:1);
 
 	// Compute the accumulated density at each grid point.
-	parallelFor(densityData.size(), *this, [&](size_t voxelIndex) {
+	parallelForWithProgress(densityData.size(), [&](size_t voxelIndex) {
 
 		// Determine the center coordinates of the current grid cell.
 		size_t ix = voxelIndex % gridDims[0];
@@ -648,7 +648,7 @@ void ConstructSurfaceModifier::GaussianDensityEngine::perform()
 	// Transfer property values from particles to the mesh vertices.
 	if(!propertyMapping.empty()) {
 		// Compute the accumulated density at each grid point.
-		parallelFor(mesh.vertexCount(), *this, [&](size_t vertexIndex) {
+		parallelForWithProgress(mesh.vertexCount(), [&](size_t vertexIndex) {
 			// Visit all particles in the vicinity of the vertex.
 			FloatType weightSum = 0;
 			for(CutoffNeighborFinder::Query neighQuery(neighFinder, mesh.vertexPosition(vertexIndex)); !neighQuery.atEnd(); neighQuery.next()) {
@@ -731,7 +731,7 @@ void ConstructSurfaceModifier::ConstructSurfaceEngineBase::computeSurfaceDistanc
 
 	// Perform computation for each particle.
 	size_t progressChunkSize = 64;
-	parallelFor(positions()->size(), *this, [&](size_t index) {
+	parallelForWithProgress(positions()->size(), [&](size_t index) {
 		auto result = mesh.locatePoint(positionArray[index], 0.0);
 		distanceArray[index] = result ? result->second : 0.0;
 	}, progressChunkSize);

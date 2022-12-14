@@ -326,7 +326,7 @@ void CreateBondsModifier::BondsEngine::perform()
 	// Generate bonds.
 	size_t particleCount = _particles->elementCount();
 	// Multi-threaded loop over all particles, each thread producing a partial bonds list.
-	auto partialBondsLists = parallelForCollect<std::vector<Bond>>(particleCount, *this, [&](size_t particleIndex, std::vector<Bond>& bondList) {
+	auto partialBondsLists = parallelForCollect<std::vector<Bond>>(particleCount, [&](size_t particleIndex, std::vector<Bond>& bondList) {
 
 		// Get the type of the central particles.
 		int type1;

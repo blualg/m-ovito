@@ -39,9 +39,9 @@ class ObjectExecutorWorkEvent : public QEvent
 public:
 
 	/// Constructor.
-	explicit ObjectExecutorWorkEvent(QEvent::Type eventType, QPointer<const QObject>&& obj, const ExecutionContext& context, std::decay_t<Function>&& f) :
+	explicit ObjectExecutorWorkEvent(QEvent::Type eventType, QPointer<const QObject>&& obj, ExecutionContext context, std::decay_t<Function>&& f) :
 		QEvent(eventType), 
-		_executionContext(context),
+		_executionContext(std::move(context)),
 		_callable(std::move(f)) {
 			OVITO_ASSERT(_executionContext.isValid());
 			_obj.swap(obj);
@@ -99,14 +99,15 @@ public:
 		OVITO_ASSERT(ExecutionContext::current().isValid());
 		// Note: Avoiding the use of C++17 capture this-by-copy here, because it is not fully supported by the MSVC 2017 compiler.
 		return [f = std::forward<Function>(f), executor = *this, context = ExecutionContext::current()]() mutable noexcept {
-			if(executor.object() && !QCoreApplication::closingDown()) {
-				if(executor._deferredExecution || !QCoreApplication::instance() || QThread::currentThread() != QCoreApplication::instance()->thread()) {
+			if(executor.object() && QCoreApplication::instance()) {
+				if(executor._deferredExecution || QThread::currentThread() != QCoreApplication::instance()->thread()) {
 					// When not in the main thread, or if deferred execution was requested, schedule work for later execution in the main thread.
 					auto event = new detail::ObjectExecutorWorkEvent<Function>(workEventType(), std::move(executor._obj), std::move(context), std::move(f));
 					QCoreApplication::postEvent(const_cast<QObject*>(event->object()), event);
 				}
-				else {
-					// When already in the main thread, execute work immediately.
+				else { // When already in the main thread, execute work immediately.
+					
+					// Activate the execution context to which the work was submitted.
 					ExecutionContext::Scope execScope(std::move(context));
 
 					// Temporarily suspend undo recording, because deferred operations never get recorded by convention.
@@ -123,8 +124,8 @@ public:
 	template<typename Function>
 	void execute(Function&& f) {
 		OVITO_ASSERT(ExecutionContext::current().isValid());
-		if(object() && !QCoreApplication::closingDown()) {
-			if(_deferredExecution || !QCoreApplication::instance() || QThread::currentThread() != QCoreApplication::instance()->thread()) {
+		if(object() && QCoreApplication::instance()) {
+			if(_deferredExecution || QThread::currentThread() != QCoreApplication::instance()->thread()) {
 				// When not in the main thread, or if deferred execution was requested, schedule work for later execution in the main thread.
 				auto event = new detail::ObjectExecutorWorkEvent<Function>(workEventType(), object(), ExecutionContext::current(), std::move(f));
 				QCoreApplication::postEvent(const_cast<QObject*>(event->object()), event);

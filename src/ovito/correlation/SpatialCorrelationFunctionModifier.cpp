@@ -655,7 +655,7 @@ void SpatialCorrelationFunctionModifier::CorrelationAnalysisEngine::computeNeigh
 	size_t vecComponent2 = _vecComponent2;
 	setProgressMaximum(particleCount);
 	std::mutex mutex;
-	parallelForChunks(particleCount, *this, [&,this](size_t startIndex, size_t chunkSize, ProgressingTask& operation) {
+	parallelForChunksWithProgress(particleCount, [&,this](size_t startIndex, size_t chunkSize, ProgressingTask& operation) {
 		FloatType gridSpacing = (neighCutoff() + FLOATTYPE_EPSILON) / neighCorrelation()->size();
 		std::vector<FloatType> threadLocalCorrelation(neighCorrelation()->size(), 0);
 		std::vector<int> threadLocalRDF(neighCorrelation()->size(), 0);

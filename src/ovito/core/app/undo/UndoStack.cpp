@@ -90,8 +90,6 @@ void UndoStack::limitUndoStack()
 void UndoStack::clear()
 {
 	OVITO_ASSERT(CompoundOperation::isUndoingOrRedoing() == false);
-	OVITO_ASSERT(CompoundOperation::isUndoRecording() == false);
-	OVITO_ASSERT(!CompoundOperation::current());
 
 	_operations.clear();
 	_index = -1;

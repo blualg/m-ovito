@@ -36,6 +36,17 @@ namespace Ovito {
 std::atomic_size_t Task::_globalTaskCounter{0};
 #endif
 
+/*******************************************************x***********************
+* Returns the task object that is the active one in the current thread.
+******************************************************************************/
+Task*& Task::current() noexcept 
+{
+    // The active task in the current thread.
+    static thread_local Task* _current = nullptr;
+
+    return _current;
+}
+
 #ifdef OVITO_DEBUG
 /*******************************************************x***********************
 * Destructor.
@@ -58,9 +69,6 @@ Task::~Task()
 	// In debug builds we keep track of how many task objects exist to check whether they all get destroyed correctly 
 	// at program termination. 
 	_globalTaskCounter.fetch_sub(1);
-
-	// Make sure we never delete the task that is currently active.
-	OVITO_ASSERT(!ExecutionContext::current().isValid() || ExecutionContext::current().task().get() != this);
 }
 #endif
 
@@ -279,7 +287,7 @@ bool Task::waitFor(detail::TaskReference awaitedTask)
 	OVITO_ASSERT(awaitedTask);
 
 	// The task this function was called from.
-	Task* waitingTask = ExecutionContext::current().task().get();
+	Task* waitingTask = Task::current();
 	OVITO_ASSERT_MSG(waitingTask != nullptr, "Task::waitFor()", "No active task. This function may only be called from a task worker function or some other context with an active task.");
 
 	// Lock access to the waiting task (this function was called from).
@@ -404,6 +412,8 @@ bool Task::waitFor(detail::TaskReference awaitedTask)
 		{
 			// Temporarily switch back to a null context while in the event loop.
 			ExecutionContext::Scope execScope(ExecutionContext{});
+			// Also switch back to the null task.
+			Task::Scope taskScope(nullptr);
 			// Also suspend undo recording while in the event loop.
 			UndoSuspender noUndo;
 

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -237,7 +237,7 @@ void ParticlesComputePropertyModifierDelegate::Engine::perform()
 	setProgressMaximum(positions()->size());
 
 	// Parallelized loop over all particles.
-	parallelForChunks(positions()->size(), *this, [this, &neighborFinder](size_t startIndex, size_t count, ProgressingTask& operation) {
+	parallelForChunksWithProgress(positions()->size(), [this, &neighborFinder](size_t startIndex, size_t count, ProgressingTask& operation) {
 		ParticleExpressionEvaluator::Worker worker(*_evaluator);
 		ParticleExpressionEvaluator::Worker neighborWorker(*_neighborEvaluator);
 

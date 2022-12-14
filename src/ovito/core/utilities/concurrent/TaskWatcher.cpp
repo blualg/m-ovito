@@ -27,11 +27,11 @@
 
 namespace Ovito {
 
-void TaskWatcher::watch(const TaskPtr& task, bool pendingAssignment)
+void TaskWatcher::watch(Task* task, bool pendingAssignment)
 {
 	OVITO_ASSERT_MSG(QThread::currentThread() == this->thread(), "TaskWatcher::watch", "Function may only be called from the thread the TaskWatcher belongs to.");
 
-	if(task == _task)
+	if(task == _task.get())
 		return;
 
 	if(isRegistered())
@@ -45,9 +45,11 @@ void TaskWatcher::watch(const TaskPtr& task, bool pendingAssignment)
 	        QCoreApplication::removePostedEvents(this);
 		}
 	}
-	_task = task;
-	if(_task)
+	if(task) {
+		_task = task->shared_from_this();
 		registerCallback(_task.get(), true); // Request replay of state changes of the running task.
+	}
+	else _task.reset();
 }
 
 /// Cancels the operation being watched by this watcher.

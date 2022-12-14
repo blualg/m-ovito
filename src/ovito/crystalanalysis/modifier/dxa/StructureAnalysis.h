@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -103,16 +103,16 @@ public:
 			bool identifyPlanarDefects = true);
 
 	/// Identifies the atomic structures.
-	bool identifyStructures(ProgressingTask& operation);
+	bool identifyStructures();
 
 	/// Combines adjacent atoms to clusters.
-	bool buildClusters(ProgressingTask& operation);
+	bool buildClusters();
 
 	/// Determines the transition matrices between clusters.
-	bool connectClusters(ProgressingTask& operation);
+	bool connectClusters();
 
 	/// Combines clusters to super clusters.
-	bool formSuperClusters(ProgressingTask& operation);
+	bool formSuperClusters();
 
 	/// Returns the number of input atoms.
 	int atomCount() const { return positions()->size(); }

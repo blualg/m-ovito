@@ -58,6 +58,12 @@ void UserInterface::reportError(const Exception& ex, bool blocking)
 ******************************************************************************/
 bool UserInterface::processEvents()
 {
+	// While control is in the event loop, no context should be active.
+	// Temporarily switch back to null contexts here.
+	ExecutionContext::Scope execScope(ExecutionContext{});
+	Task::Scope taskScope(nullptr);
+	UndoSuspender noUndo;
+
 	QCoreApplication::processEvents();
 	return false;
 }

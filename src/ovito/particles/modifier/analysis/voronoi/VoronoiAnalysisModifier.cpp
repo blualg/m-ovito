@@ -552,7 +552,7 @@ void VoronoiAnalysisModifier::VoronoiAnalysisEngine::perform()
 
 		// Perform analysis, particle-wise parallel.
 		setProgressMaximum(_positions->size());
-		parallelForChunks(_positions->size(), *this, [&](size_t startIndex, size_t chunkSize, ProgressingTask& operation) {
+		parallelForChunksWithProgress(_positions->size(), [&](size_t startIndex, size_t chunkSize, ProgressingTask& operation) {
 			std::vector<int> localVoronoiBuffer;
 			std::vector<size_t> localVoronoiBufferIndex;
 			for(size_t index = startIndex; chunkSize--; index++) {

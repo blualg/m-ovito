@@ -33,11 +33,11 @@ class OVITO_GUI_EXPORT ProgressDialog : public QDialog
 public:
 
 	/// Constructor.
-	explicit ProgressDialog(QWidget* parent, TaskPtr task = ExecutionContext::current().task(), const QString& dialogTitle = QString());
+	explicit ProgressDialog(QWidget* parent, TaskPtr task, const QString& dialogTitle = QString());
 
 	/// Constructor.
-	explicit ProgressDialog(QWidget* parent, const QString& dialogTitle) : 
-		ProgressDialog(parent, ExecutionContext::current().task(), dialogTitle) {}
+	explicit ProgressDialog(QWidget* parent, const QString& dialogTitle = QString()) : 
+		ProgressDialog(parent, Task::current()->shared_from_this(), dialogTitle) {}
 
 	/// Constructor.
 	explicit ProgressDialog(QWidget* parent, const FutureBase& future, const QString& dialogTitle = QString()) : 
