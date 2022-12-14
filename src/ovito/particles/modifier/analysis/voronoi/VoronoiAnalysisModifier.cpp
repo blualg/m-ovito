@@ -280,7 +280,7 @@ void VoronoiAnalysisModifier::VoronoiAnalysisEngine::perform()
 		atomicVolumesArray[index] = (FloatType)vol;
 
 		// Compute cell max radius.
-		double maxRad = std::sqrt(v.max_radius_squared());
+		double maxRad = 0.5 * std::sqrt(v.max_radius_squared());
 		cavityRadiiArray[index] = (FloatType)maxRad;
 
 		// Accumulate total volume of Voronoi cells.
