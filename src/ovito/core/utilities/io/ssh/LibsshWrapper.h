@@ -73,7 +73,13 @@ public:
 #endif
     using ssh_get_status_ptr = int (*)(ssh_session session);
     using ssh_is_connected_ptr = int (*)(ssh_session session);
+#if LIBSSH_VERSION_INT >= SSH_VERSION_INT(0, 9, 6)
+    using ssh_session_is_known_server_ptr = enum ssh_known_hosts_e (*)(ssh_session session);
+    using ssh_session_update_known_hosts_ptr = int (*)(ssh_session session);
+#else
     using ssh_is_server_known_ptr = int (*)(ssh_session session);
+    using ssh_write_knownhost_ptr = int (*)(ssh_session session);
+#endif
     using ssh_key_free_ptr = void (*)(ssh_key key);
     using ssh_new_ptr = ssh_session (*)(void);
     using ssh_options_get_ptr = int (*)(ssh_session session, enum ssh_options_e type, char **value);
@@ -89,14 +95,13 @@ public:
     using ssh_userauth_password_ptr = int (*)(ssh_session session, const char *username, const char *password);
     using ssh_userauth_kbdint_ptr = int (*)(ssh_session session, const char *user, const char *submethods);
     using ssh_userauth_kbdint_getnprompts_ptr = int (*)(ssh_session session);
-    using ssh_write_knownhost_ptr = int (*)(ssh_session session);
     using ssh_string_free_char_ptr = void (*)(char *s);
     using ssh_userauth_kbdint_getinstruction_ptr = const char* (*)(ssh_session session);
     using ssh_userauth_kbdint_setanswer_ptr = int (*)(ssh_session session, unsigned int i, const char *answer);
     using ssh_userauth_kbdint_getprompt_ptr = const char* (*)(ssh_session session, unsigned int i, char *echo);
     using ssh_userauth_list_ptr = int (*)(ssh_session session, const char *username);
     using _ssh_log_ptr = void (*)(int verbosity, const char *function, const char *format, ...);
-#if LIBSSH_VERSION_INT >= SSH_VERSION_INT(7,0,0)
+#if LIBSSH_VERSION_INT >= SSH_VERSION_INT(0,7,0)
     using ssh_set_channel_callbacks_ptr = int (*)(ssh_channel channel, ssh_channel_callbacks cb);
     using ssh_remove_channel_callbacks_ptr = int (*)(ssh_channel channel, ssh_channel_callbacks cb);
 #endif
@@ -131,7 +136,13 @@ public:
 #endif
     OVITO_LIBSSH_RESOLVE_FUNCTION(ssh_get_status)
     OVITO_LIBSSH_RESOLVE_FUNCTION(ssh_is_connected)
+#if LIBSSH_VERSION_INT >= SSH_VERSION_INT(0, 9, 6)
+    OVITO_LIBSSH_RESOLVE_FUNCTION(ssh_session_is_known_server)
+    OVITO_LIBSSH_RESOLVE_FUNCTION(ssh_session_update_known_hosts)
+#else
     OVITO_LIBSSH_RESOLVE_FUNCTION(ssh_is_server_known)
+    OVITO_LIBSSH_RESOLVE_FUNCTION(ssh_write_knownhost)
+#endif
     OVITO_LIBSSH_RESOLVE_FUNCTION(ssh_key_free)
     OVITO_LIBSSH_RESOLVE_FUNCTION(ssh_new)
     OVITO_LIBSSH_RESOLVE_FUNCTION(ssh_options_get)
@@ -147,14 +158,13 @@ public:
     OVITO_LIBSSH_RESOLVE_FUNCTION(ssh_userauth_password)
     OVITO_LIBSSH_RESOLVE_FUNCTION(ssh_userauth_kbdint)
     OVITO_LIBSSH_RESOLVE_FUNCTION(ssh_userauth_kbdint_getnprompts)
-    OVITO_LIBSSH_RESOLVE_FUNCTION(ssh_write_knownhost)
     OVITO_LIBSSH_RESOLVE_FUNCTION(ssh_string_free_char)
     OVITO_LIBSSH_RESOLVE_FUNCTION(ssh_userauth_kbdint_getinstruction)
     OVITO_LIBSSH_RESOLVE_FUNCTION(ssh_userauth_kbdint_setanswer)
     OVITO_LIBSSH_RESOLVE_FUNCTION(ssh_userauth_kbdint_getprompt)
     OVITO_LIBSSH_RESOLVE_FUNCTION(ssh_userauth_list)
     OVITO_LIBSSH_RESOLVE_FUNCTION(_ssh_log)
-#if LIBSSH_VERSION_INT >= SSH_VERSION_INT(7,0,0)
+#if LIBSSH_VERSION_INT >= SSH_VERSION_INT(0,7,0)
     OVITO_LIBSSH_RESOLVE_FUNCTION(ssh_set_channel_callbacks)
     OVITO_LIBSSH_RESOLVE_FUNCTION(ssh_remove_channel_callbacks)
 #endif

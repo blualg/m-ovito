@@ -100,7 +100,7 @@ void ProcessChannel::closeChannel()
         }
 
         if(channel()) {
-#if LIBSSH_VERSION_INT >= SSH_VERSION_INT(7,0,0)
+#if LIBSSH_VERSION_INT >= SSH_VERSION_INT(0,7,0)
             LibsshWrapper::ssh_remove_channel_callbacks()(channel(), &_channelCallbacks);
 #endif
             if(LibsshWrapper::ssh_channel_close()(channel()) != SSH_OK) {
@@ -231,7 +231,7 @@ void ProcessChannel::processState()
             }
             OVITO_ASSERT(connection()->isConnected());
 
-#if LIBSSH_VERSION_INT >= SSH_VERSION_INT(7,0,0)
+#if LIBSSH_VERSION_INT >= SSH_VERSION_INT(0,7,0)
             // Register callback functions for libssh channel:
             memset(&_channelCallbacks, 0, sizeof(_channelCallbacks));
             _channelCallbacks.userdata = this;

@@ -251,10 +251,27 @@ void SshConnection::processState()
         return;
 
     case StateServerIsKnown:
-QT_WARNING_PUSH
-QT_WARNING_DISABLE_DEPRECATED
+#if LIBSSH_VERSION_INT >= SSH_VERSION_INT(0, 9, 6)
+        switch(auto knownState = LibsshWrapper::ssh_session_is_known_server()(_session)) {
+        case SSH_KNOWN_HOSTS_ERROR:
+            setState(StateError, false);
+            return;
+
+        case SSH_KNOWN_HOSTS_UNKNOWN:
+        case SSH_KNOWN_HOSTS_CHANGED:
+        case SSH_KNOWN_HOSTS_OTHER:
+        case SSH_KNOWN_HOSTS_NOT_FOUND:
+            _unknownHostType = static_cast<HostState>(knownState);
+            setState(StateUnknownHost, false);
+            return;
+
+        case SSH_KNOWN_HOSTS_OK:
+            _unknownHostType = HostKnown;
+            tryNextAuth();
+            return;
+        }
+#else
         switch(auto knownState = LibsshWrapper::ssh_is_server_known()(_session)) {
-QT_WARNING_POP
         case SSH_SERVER_ERROR:
             setState(StateError, false);
             return;
@@ -272,6 +289,7 @@ QT_WARNING_POP
             tryNextAuth();
             return;
         }
+#endif
         return;
 
     case StateAuthContinue:
@@ -655,10 +673,11 @@ QString SshConnection::hostPublicKeyHash()
 ******************************************************************************/
 bool SshConnection::markCurrentHostKnown()
 {
-QT_WARNING_PUSH
-QT_WARNING_DISABLE_DEPRECATED
+#if LIBSSH_VERSION_INT >= SSH_VERSION_INT(0, 9, 6)
+    switch(LibsshWrapper::ssh_session_update_known_hosts()(_session)) {
+#else
     switch(LibsshWrapper::ssh_write_knownhost()(_session)) {
-QT_WARNING_POP
+#endif
     case SSH_OK:
         setState(StateServerIsKnown, true);
         return true;

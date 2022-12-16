@@ -60,11 +60,19 @@ class SshConnection : public QObject
 public:
 
     enum HostState {
+#if LIBSSH_VERSION_INT >= SSH_VERSION_INT(0, 9, 6)
+        HostKnown                   = SSH_KNOWN_HOSTS_OK,
+        HostUnknown                 = SSH_KNOWN_HOSTS_UNKNOWN,
+        HostKeyChanged              = SSH_KNOWN_HOSTS_CHANGED,
+        HostKeyTypeChanged          = SSH_KNOWN_HOSTS_OTHER,
+        HostKnownHostsFileMissing   = SSH_KNOWN_HOSTS_NOT_FOUND
+#else
         HostKnown                   = SSH_SERVER_KNOWN_OK,
         HostUnknown                 = SSH_SERVER_NOT_KNOWN,
         HostKeyChanged              = SSH_SERVER_KNOWN_CHANGED,
         HostKeyTypeChanged          = SSH_SERVER_FOUND_OTHER,
         HostKnownHostsFileMissing   = SSH_SERVER_FILE_NOT_FOUND
+#endif
     };
     Q_ENUM(HostState)
 
