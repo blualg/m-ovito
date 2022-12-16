@@ -743,4 +743,17 @@ QString FileSource::currentDirectoryPath() const
 	return {};
 }
 
+/******************************************************************************
+* Creates a copy of this object.
+******************************************************************************/
+OORef<RefTarget> FileSource::clone(bool deepCopy, CloneHelper& cloneHelper) const
+{
+	// Let the base class create an instance of this class.
+	OORef<FileSource> clone = static_object_cast<FileSource>(BasePipelineSource::clone(deepCopy, cloneHelper));
+	clone->_frames = this->_frames;
+	clone->_frameLabels = this->_frameLabels;
+	clone->_numberOfFiles = this->_numberOfFiles;
+	return clone;
+}
+
 }	// End of namespace
