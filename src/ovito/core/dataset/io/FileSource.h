@@ -128,6 +128,9 @@ protected:
 	/// Computes the time interval covered on the timeline by the given source animation frame.
 	virtual TimeInterval frameTimeInterval(int frame) const override;
 
+	/// Creates a copy of this object.
+	virtual OORef<RefTarget> clone(bool deepCopy, CloneHelper& cloneHelper) const override;
+
 private:
 
 	/// Updates the internal list of input frames.
