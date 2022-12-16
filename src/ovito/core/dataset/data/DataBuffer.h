@@ -238,16 +238,18 @@ public:
 
 	/// Calls a functor provided by the caller for every value of the given vector component.
 	template<typename F>
-	bool forEach(size_t component, F f) const {
+	bool forEach(size_t component, F&& func) const {
 		size_t cmpntCount = componentCount();
+		if(component >= cmpntCount) 
+			return false;
 		size_t s = size();
-		if(component >= cmpntCount) return false;
-		if(s == 0) return true;
+		if(s == 0) 
+			return true;
 		if(dataType() == DataBuffer::Int) {
 			prepareReadAccess();
 			auto v = reinterpret_cast<const int*>(cbuffer()) + component;
 			for(size_t i = 0; i < s; i++, v += cmpntCount)
-				f(i, *v);
+				std::invoke(std::forward<F>(func), i, *v);
 			finishReadAccess();
 			return true;
 		}
@@ -255,7 +257,7 @@ public:
 			prepareReadAccess();
 			auto v = reinterpret_cast<const qlonglong*>(cbuffer()) + component;
 			for(size_t i = 0; i < s; i++, v += cmpntCount)
-				f(i, *v);
+				std::invoke(std::forward<F>(func), i, *v);
 			finishReadAccess();
 			return true;
 		}
@@ -263,7 +265,7 @@ public:
 			prepareReadAccess();
 			auto v = reinterpret_cast<const FloatType*>(cbuffer()) + component;
 			for(size_t i = 0; i < s; i++, v += cmpntCount)
-				f(i, *v);
+				std::invoke(std::forward<F>(func), i, *v);
 			finishReadAccess();
 			return true;
 		}

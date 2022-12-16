@@ -217,6 +217,9 @@ ModifyCommandPage::ModifyCommandPage(MainWindow& mainWindow, QWidget* parent) : 
 
 	// Create About panel.
 	createAboutPanel();
+
+	// Initialize state.
+	onSelectedItemChanged();
 }
 
 /******************************************************************************

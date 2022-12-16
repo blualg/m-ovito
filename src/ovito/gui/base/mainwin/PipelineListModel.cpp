@@ -90,6 +90,8 @@ QT_WARNING_POP
 	connect(_makeElementIndependentAction, &QAction::triggered, this, &PipelineListModel::makeElementIndependent);
 	_copyItemToPipelineAction = userInterface.actionManager()->createCommandAction(ACTION_PIPELINE_COPY_ITEM, tr("Copy To..."), "modify_pipeline_copy_item_to", tr("Copy an item to another pipeline or within the current pipeline."));
 	_renamePipelineItemAction = userInterface.actionManager()->createCommandAction(ACTION_PIPELINE_RENAME_ITEM, tr("Rename..."), "edit_rename_pipeline_item", tr("Rename the selected pipeline entry."));
+
+	updateActions();
 }
 
 /******************************************************************************
