@@ -36,6 +36,9 @@ class OVITO_CORE_EXPORT DataObjectPathTemplate : public QVarLengthArray<DataObje
 {
 public:
 
+	/// Size data type
+	using typename QVarLengthArray<DataObjectPtr, 3>::size_type;
+
 	/// Inherit constructors from base class.
 	using QVarLengthArray<DataObjectPtr, 3>::QVarLengthArray;
 
@@ -79,13 +82,13 @@ public:
 	}
 
 	/// Returns the n-th to last data object in the path - or null if the path is shorter than requested.
-	auto last(size_t n = 0) const { 
+	auto last(size_type n = 0) const { 
 		return this->size() <= n ? nullptr : to_address((*this)[this->size() - n - 1]); 
 	}
 
 	/// Returns the n-th to last data object in the path if it's a specific kind of object - or null if the path is shorter than requested.
 	template<class DataObjectType>
-	auto lastAs(size_t n = 0) const { 
+	auto lastAs(size_type n = 0) const { 
 		return this->size() <= n ? nullptr : dynamic_object_cast<DataObjectType>(to_address((*this)[this->size() - n - 1])); 
 	}
 

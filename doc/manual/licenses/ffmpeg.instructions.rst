@@ -52,12 +52,12 @@ The following commands have been used to generate them::
 macOS
 """""
 
-OVITO for macOS includes shared libraries that have been built from the unmodified sources of ffmpeg 4.2.5.
+OVITO for macOS includes shared libraries that have been built from the unmodified sources of ffmpeg 4.2.8.
 The following commands have been used to generate them::
 
   git clone https://git.ffmpeg.org/ffmpeg.git ffmpeg_source
   cd ffmpeg_source
-  git checkout n4.2.5
+  git checkout n4.2.8
   export MACOSX_DEPLOYMENT_TARGET=10.14
   ./configure \
     --disable-network \

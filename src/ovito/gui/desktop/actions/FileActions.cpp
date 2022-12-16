@@ -299,9 +299,11 @@ void WidgetActionManager::on_FileExport_triggered()
 	dialog.setFileMode(QFileDialog::AnyFile);
 
 	// Go to the last directory used.
-	QString lastExportDirectory = settings.value("last_export_dir").toString();
-	if(!lastExportDirectory.isEmpty())
-		dialog.setDirectory(lastExportDirectory);
+	if(HistoryFileDialog::keepWorkingDirectoryHistoryEnabled()) {
+		QString lastExportDirectory = settings.value("last_export_dir").toString();
+		if(!lastExportDirectory.isEmpty())
+			dialog.setDirectory(lastExportDirectory);
+	}
 	// Select the last export filter being used ...
 	QString lastExportFilter = settings.value("last_export_filter").toString();
 	if(!lastExportFilter.isEmpty())
@@ -316,8 +318,10 @@ void WidgetActionManager::on_FileExport_triggered()
 
 	QString exportFile = files.front();
 
-	// Remember directory for the next time...
-	settings.setValue("last_export_dir", dialog.directory().absolutePath());
+	if(HistoryFileDialog::keepWorkingDirectoryHistoryEnabled()) {
+		// Remember directory for the next time...
+		settings.setValue("last_export_dir", dialog.directory().absolutePath());
+	}
 	// Remember export filter for the next time...
 	settings.setValue("last_export_filter", dialog.selectedNameFilter());
 

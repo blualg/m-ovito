@@ -9,13 +9,13 @@ In accordance with the requirements of this license, this page provides instruct
 Windows
 """""""
 
-OVITO for Windows includes binaries that have been built from the unmodified sources of libssh 0.9.6.
+OVITO for Windows includes binaries that have been built from the unmodified sources of libssh 0.10.4.
 The following commands have been used to generate them::
 
   # Compiler: Microsoft Visual C++ 2019 (command line tools)
-  # OpenSSL version: 1.1.1p
-  # Zlib version: 1.2.11
-  cd libssh-0.9.6
+  # OpenSSL version: 1.1.1s
+  # Zlib version: 1.2.13
+  cd libssh-0.10.4
   mkdir build
   cd build
   cmake -G "NMake Makefiles" ^
@@ -44,7 +44,7 @@ The following commands were used to build it::
 macOS
 """""
 
-OVITO for macOS (Apple Silicon, arm64) includes a binary version of libssh 0.9.6 that has been built via `Homebrew <https://brew.sh>`__: ``brew install libssh``
+OVITO for macOS (Apple Silicon, arm64) includes a binary version of libssh 0.10.4 that has been built via `Homebrew <https://brew.sh>`__: ``brew install libssh``
 See the corresponding `formulae <https://formulae.brew.sh/formula/libssh>`__.
 
 OVITO for macOS (Intel x86_64) includes a binary version of libssh 0.8.9 that has been built via `MacPorts <https://www.macports.org>`__: ``port install -s libssh``

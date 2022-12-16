@@ -94,15 +94,15 @@ MainThreadOperation MainThreadOperation::createSubTask(bool visibleInUserInterfa
 	{
 	public:
 		MainThreadSubTask(const TaskPtr& parentTask) noexcept : ProgressingTask(Task::Started) {
-			// Register a callback function to get notified when the parent task gets canceled.
-			registerCallback(parentTask.get(), true);
-
 			// When this sub-task gets canceled, we cancel the parent task too.
 			this->registerContinuation([](Task& thisTask) noexcept {
 				MainThreadSubTask& self = static_cast<MainThreadSubTask&>(thisTask);
 				if(self.isCanceled() && self.callbackTask() && !self.callbackTask()->isCanceled())
 					self.callbackTask()->cancel();
 			});
+
+			// Register a callback function to get notified when the parent task gets canceled.
+			registerCallback(parentTask.get(), true);
 		}
 
 		/// Callback function, which is invoked whenever the state of the parent task changes.

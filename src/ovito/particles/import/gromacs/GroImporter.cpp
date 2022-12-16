@@ -313,6 +313,18 @@ void GroImporter::FrameLoader::loadFile()
 			else if(atomNameStart[1] == 'i') element = gemmi::Element(gemmi::El::Ni);
 			else element = gemmi::Element(gemmi::El::N);
 		}
+		else if(atomNameStart[0] == 'S') { // Exceptions for two-letter elements SI, FE, and BR - added in OVITO 3.7.12.
+			if(atomNameStart[1] == 'I') element = gemmi::Element(gemmi::El::Si);
+			else element = gemmi::Element(gemmi::El::S);
+		}
+		else if(atomNameStart[0] == 'F') { // Exceptions for two-letter elements elements SI, FE, and BR - added in OVITO 3.7.12.
+			if(atomNameStart[1] == 'E') element = gemmi::Element(gemmi::El::Fe);
+			else element = gemmi::Element(gemmi::El::F);
+		}
+		else if(atomNameStart[0] == 'B') { // Exceptions for two-letter elements SI, FE, and BR - added in OVITO 3.7.12.
+			if(atomNameStart[1] == 'R') element = gemmi::Element(gemmi::El::Br);
+			else element = gemmi::Element(gemmi::El::B);
+		}
 		else {
 			const char singleLetterName[2] = { atomNameStart[0], '\0' };
 			element = gemmi::Element(singleLetterName);
