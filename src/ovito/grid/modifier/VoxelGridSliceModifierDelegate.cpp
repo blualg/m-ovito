@@ -109,7 +109,7 @@ PipelineStatus VoxelGridSliceModifierDelegate::apply(const ModifierEvaluationReq
 			SurfaceMeshAccess mesh(meshObj);
 
 			// The level of subdivision.
-			const int resolution = 2;
+			constexpr int resolution = 2;
 
 			// Get domain of voxel grid.
 			VoxelGrid::GridDimensions gridShape = voxelGrid->shape();
@@ -120,6 +120,9 @@ PipelineStatus VoxelGridSliceModifierDelegate::apply(const ModifierEvaluationReq
 						gridShape[dim]--;
 				}
 			}
+
+			// Indicates for each generated mesh face which voxel grid cell it is located in.
+			std::vector<std::tuple<int,int,int>> meshFaceVoxelCoordinates;
 
 			Plane3 planeGridSpace;
 			for(int pidx = 0; pidx < numPlanes; pidx++) {
@@ -134,12 +137,58 @@ PipelineStatus VoxelGridSliceModifierDelegate::apply(const ModifierEvaluationReq
 					return planeGridSpace.pointDistance(Point3(i,j,k));
 				};
 
-				MarchingCubes mc(mesh, gridShape[0]*resolution, gridShape[1]*resolution, gridShape[2]*resolution, false, std::move(getFieldValue), true);
+				// Run the marching cubes algorithm to generate the mesh for the cross-section. 
+				MarchingCubes mc(mesh, gridShape[0]*resolution, gridShape[1]*resolution, gridShape[2]*resolution, false, std::move(getFieldValue), true, true);
 				mc.generateIsosurface(0.0, MainThreadOperation(false).progressingTask());
+
+				// Take output data.
+				if(meshFaceVoxelCoordinates.empty())
+					meshFaceVoxelCoordinates = mc.takeMeshFaceVoxelCoordinates();
+				else
+					meshFaceVoxelCoordinates.insert(meshFaceVoxelCoordinates.end(), mc.meshFaceVoxelCoordinates().begin(), mc.meshFaceVoxelCoordinates().end());
 			}
 
 			// Create a manifold by connecting adjacent faces.
 			mesh.connectOppositeHalfedges();
+
+			// Collect the set of voxel grid properties that should be transferred over to the isosurface mesh vertices and faces.
+			std::vector<ConstPropertyPtr> fieldProperties;
+			for(const PropertyObject* property : voxelGrid->properties())
+				fieldProperties.push_back(property);
+
+			if(!fieldProperties.empty()) {
+				// Determine the mapping of mesh faces to voxel grid cells.
+				OVITO_ASSERT(mesh.faceCount() == meshFaceVoxelCoordinates.size());
+				std::vector<size_t> voxelFaceMapping(meshFaceVoxelCoordinates.size());
+				std::transform(meshFaceVoxelCoordinates.cbegin(), meshFaceVoxelCoordinates.cend(), voxelFaceMapping.begin(), [shape=voxelGrid->shape()](const auto& coords) {
+					const auto& [x, y, z] = coords;
+					OVITO_ASSERT(x >= 0 && y >= 0 && z >= 0);
+					return std::min((size_t)z / resolution, shape[2]-1) * (shape[0] * shape[1]) + std::min((size_t)y / resolution, shape[1]-1) * shape[0] + std::min((size_t)x / resolution, shape[0]-1);
+				});
+
+				// Copy field values from voxel grid to surface mesh faces.
+				for(const ConstPropertyPtr& fieldProperty : fieldProperties) {
+					PropertyObject* faceProperty;
+					if(SurfaceMeshFaces::OOClass().isValidStandardPropertyId(fieldProperty->type())) {
+						// Input voxel property is also a standard property for mesh faces.
+						faceProperty = mesh.createFaceProperty(static_cast<SurfaceMeshFaces::Type>(fieldProperty->type()));
+						OVITO_ASSERT(faceProperty->dataType() == fieldProperty->dataType());
+						OVITO_ASSERT(faceProperty->stride() == fieldProperty->stride());
+					}
+					else if(SurfaceMeshFaces::OOClass().standardPropertyTypeId(fieldProperty->name()) != 0) {
+						// Input property name is that of a standard property for mesh faces.
+						// Must rename the property to avoid conflict, because user properties may not have a standard property name.
+						QString newPropertyName = fieldProperty->name() + tr("_field");
+						faceProperty = mesh.createFaceProperty(newPropertyName, fieldProperty->dataType(), fieldProperty->componentCount(), DataBuffer::NoFlags, fieldProperty->componentNames());
+					}
+					else {
+						// Input property is a user property for mesh faces.
+						faceProperty = mesh.createFaceProperty(fieldProperty->name(), fieldProperty->dataType(), fieldProperty->componentCount(), DataBuffer::NoFlags, fieldProperty->componentNames());
+					}
+					// Copy property values from voxel cells over to mesh faces.
+					fieldProperty->mappedCopyTo(*faceProperty, voxelFaceMapping);
+				}
+			}
 
 			// Form quadrilaterals from pairs of triangles.
 			// This only makes sense when the slicing plane is aligned with the grid cells axes such that only quads result from 
@@ -155,11 +204,6 @@ PipelineStatus VoxelGridSliceModifierDelegate::apply(const ModifierEvaluationReq
 				FloatType(1) / resolution, 0, 0, -0.5 + FloatType(1) / resolution,
 				0, FloatType(1) / resolution, 0, -0.5 + FloatType(1) / resolution,
 				0, 0, FloatType(1) / resolution, -0.5 + FloatType(1) / resolution));
-
-			// Collect the set of voxel grid properties that should be transferred over to the isosurface mesh vertices.
-			std::vector<ConstPropertyPtr> fieldProperties;
-			for(const PropertyObject* property : voxelGrid->properties())
-				fieldProperties.push_back(property);
 
 			// An active task is required for transferPropertiesFromGridToMesh().
 			Promise<> localOperation = Promise<>::create<ProgressingTask>(true);

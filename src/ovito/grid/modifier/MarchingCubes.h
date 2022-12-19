@@ -37,12 +37,19 @@ class OVITO_GRID_EXPORT MarchingCubes
 public:
 
     // Constructor
-    MarchingCubes(SurfaceMeshAccess& outputMesh, int size_x, int size_y, int size_z, bool lowerIsSolid, std::function<FloatType(int i, int j, int k)> field, bool infiniteDomain = false);
+    MarchingCubes(SurfaceMeshAccess& outputMesh, int size_x, int size_y, int size_z, bool lowerIsSolid, std::function<FloatType(int i, int j, int k)> field, bool infiniteDomain = false, bool outputCellCoordinates = false);
 
+    /// The main algorithm routine. 
     bool generateIsosurface(FloatType iso, ProgressingTask& operation);
 
     /// Returns the generated surface mesh.
     const SurfaceMeshAccess& mesh() const { return _outputMesh; }
+
+    /// Returns the array indicating for each generated mesh face which voxel grid cell it is located in.
+    const std::vector<std::tuple<int,int,int>>& meshFaceVoxelCoordinates() const { return std::move(_meshFaceVoxelCoordinates); }
+
+    /// Returns the array indicating for each generated mesh face which voxel grid cell it is located in.
+    std::vector<std::tuple<int,int,int>>&& takeMeshFaceVoxelCoordinates() { return std::move(_meshFaceVoxelCoordinates); }
 
 private:
 
@@ -120,9 +127,13 @@ private:
     bool _infiniteDomain; ///< Controls whether the volumetric domain is infinite extended. 
                           ///< Setting this to true will result in an isosource that is not closed.  
                           ///< This option is used by the VoxelGridSliceModifierDelegate to construct the slice plane.
+    bool _outputCellCoordinates; ///< Controls whether the algorithm should keep track for each generated mesh face in which voxel grid it is located.
 
     /// Vertices created along cube edges.
     std::vector<SurfaceMeshAccess::vertex_index> _cubeVerts;
+
+    /// Stores for each generated mesh face which voxel grid cell it is located in.
+    std::vector<std::tuple<int,int,int>> _meshFaceVoxelCoordinates;
 
     FloatType     _cube[8];   ///< values of the implicit function on the active cube
     unsigned char _lut_entry; ///< cube sign representation in [0..255]

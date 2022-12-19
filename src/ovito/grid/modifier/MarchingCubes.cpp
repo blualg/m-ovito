@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -29,10 +29,11 @@ namespace Ovito::Grid {
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-MarchingCubes::MarchingCubes(SurfaceMeshAccess& outputMesh, int size_x, int size_y, int size_z, bool lowerIsSolid, std::function<FloatType(int i, int j, int k)> field, bool infiniteDomain) :
+MarchingCubes::MarchingCubes(SurfaceMeshAccess& outputMesh, int size_x, int size_y, int size_z, bool lowerIsSolid, std::function<FloatType(int i, int j, int k)> field, bool infiniteDomain, bool outputCellCoordinates) :
     _outputMesh(outputMesh),
     _pbcFlags(outputMesh.domain()->pbcFlags()),
     _infiniteDomain(infiniteDomain),
+    _outputCellCoordinates(outputCellCoordinates),
     _size_x(size_x + (_pbcFlags[0] ? 0 : 1)),
     _size_y(size_y + (_pbcFlags[1] ? 0 : 1)),
     _size_z(size_z + (_pbcFlags[2] ? 0 : 1)),
@@ -637,6 +638,8 @@ void MarchingCubes::addTriangle(int i, int j, int k, const signed char* trig, si
                 _outputMesh.createFace({tv[0], tv[1], tv[2]}, 0);
             else
                 _outputMesh.createFace({tv[2], tv[1], tv[0]}, 0);
+            if(_outputCellCoordinates)
+                _meshFaceVoxelCoordinates.emplace_back(i, j, k);
         }
     }
 }
