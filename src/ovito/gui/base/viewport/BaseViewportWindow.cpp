@@ -43,9 +43,12 @@ ViewportInputManager* BaseViewportWindow::inputManager() const
 /******************************************************************************
 * Returns the list of gizmos to render in the viewport.
 ******************************************************************************/
-const std::vector<ViewportGizmo*>& BaseViewportWindow::viewportGizmos()
+span<ViewportGizmo*> BaseViewportWindow::viewportGizmos()
 {
-	return inputManager()->viewportGizmos();
+	if(ViewportInputManager* man = inputManager())
+		return span<ViewportGizmo*>{const_cast<ViewportGizmo**>(man->viewportGizmos().data()), man->viewportGizmos().size()};
+	else
+		return {};
 }
 
 /******************************************************************************
