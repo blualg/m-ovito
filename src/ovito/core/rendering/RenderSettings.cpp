@@ -273,7 +273,7 @@ bool RenderSettings::renderScene(const std::vector<std::pair<Viewport*, QRectF>>
 		if(!ExecutionContext::isInteractive())
 			Application::instance()->visCache().discardUnusedObjects();
 	}
-	catch(Exception& ex) {
+	catch(Exception&) {
 		// Shutdown renderer.
 		renderer->endRender();
 		throw;

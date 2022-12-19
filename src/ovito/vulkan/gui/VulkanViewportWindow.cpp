@@ -40,12 +40,16 @@ VulkanViewportWindow::VulkanViewportWindow(Viewport* viewport, UserInterface* us
 {
     // Create the VulkanContext, a wrapper for the Vulkan logical device.
 	// Share the same device with by all viewport windows.
-	for(Viewport* vp : viewport->dataset()->viewportConfig()->viewports()) {
-		if(VulkanViewportWindow* window = dynamic_cast<VulkanViewportWindow*>(vp->window())) {
-			_context = window->context();
-            break;
-		}
-	}
+    if(DataSet* dataset = userInterface->datasetContainer().currentSet()) {
+        if(ViewportConfiguration* viewportConfig = dataset->viewportConfig()) {
+            for(Viewport* vp : viewportConfig->viewports()) {
+                if(VulkanViewportWindow* window = dynamic_cast<VulkanViewportWindow*>(vp->window())) {
+                    _context = window->context();
+                    break;
+                }
+            }
+        }
+    }
     if(!_context)
         _context = std::make_shared<VulkanContext>();
 
@@ -76,7 +80,7 @@ void VulkanViewportWindow::renderLater()
 {
     // Request a deferred refresh of the QWindow.
 	_updateRequested = true;
-    if(viewport() && !viewport()->dataset()->viewportConfig()->isSuspended()) {
+    if(viewport() && !userInterface().areViewportUpdatesSuspended()) {
     	QWindow::requestUpdate();
     }
 }
@@ -104,11 +108,17 @@ ViewportPickResult VulkanViewportWindow::pick(const QPointF& pos)
 	ViewportPickResult result;
 
 	// Cannot perform picking while viewport is not visible or currently rendering or when updates are disabled.
-	if(isVisible() && !userInterface().isRenderingInteractiveViewports() && !viewport()->dataset()->viewportConfig()->isSuspended() && pickingRenderer()) {
+	if(isVisible() && !userInterface().isRenderingInteractiveViewports() && !userInterface().areViewportUpdatesSuspended() && pickingRenderer()) {
 		try {
 			if(pickingRenderer()->isRefreshRequired()) {
-				// Let the viewport do the actual rendering work.
-				viewport()->renderInteractive(pickingRenderer());
+				// A dataset is required for rendering.
+				if(DataSet* dataset = userInterface().datasetContainer().currentSet()) {
+                    // Let the viewport do the actual rendering work.
+                    viewport()->renderInteractive(userInterface(), dataset, pickingRenderer());
+                }
+                else {
+					return result; // Return null result if no dataset is available.
+                }
 			}
 
 			// Query which object is located at the given window position.
@@ -124,7 +134,7 @@ ViewportPickResult VulkanViewportWindow::pick(const QPointF& pos)
 			}
 		}
 		catch(const Exception& ex) {
-			ex.reportError();
+			userInterface().reportError(ex);
 		}
 	}
 
@@ -260,7 +270,7 @@ void VulkanViewportWindow::init()
             throw Exception(tr("The selected Vulkan queue family does not support presenting to this viewport window."));
     }
     catch(const Exception& ex) {
-        ex.reportError();
+        userInterface().reportError(ex);
         _status = StatusFail;
         return;
     }
@@ -310,10 +320,10 @@ void VulkanViewportWindow::init()
     OVITO_ASSERT(!_pickingRenderer);
 
 	// Create the interactive viewport renderer. Pass our shared Vulkan device to the renderer.
-    _viewportRenderer = OORef<ViewportVulkanSceneRenderer>::create(viewport()->dataset(), context());
+    _viewportRenderer = OORef<ViewportVulkanSceneRenderer>::create(context());
 
 	// Create the object picking renderer.
-	_pickingRenderer = OORef<PickingVulkanSceneRenderer>::create(viewport()->dataset(), context(), this);
+	_pickingRenderer = OORef<PickingVulkanSceneRenderer>::create(context(), this);
 
     _status = StatusDeviceReady;
 }
@@ -726,12 +736,15 @@ void VulkanViewportWindow::beginFrame()
     const QSize sz = swapChainImageSize();
     renderer()->setFrameBufferSize(sz);
 
+	// A dataset is required for rendering.
+	DataSet* dataset = userInterface().datasetContainer().currentSet();
+
     // Use the viewport's background color to clear frame buffer.
     ColorA backgroundColor{0,0,0,1};
     if(!viewport()->renderPreviewMode())
         backgroundColor = Viewport::viewportColor(ViewportSettings::COLOR_VIEWPORT_BKG);
-    else if(viewport()->dataset()->renderSettings())
-        backgroundColor = viewport()->dataset()->renderSettings()->backgroundColorAt();
+    else if(dataset && dataset->renderSettings())
+        backgroundColor = dataset->renderSettings()->backgroundColorAt(viewport()->scene() ? viewport()->scene()->animationSettings()->currentTime() : userInterface().datasetContainer().currentAnimationTime());
 
     VkClearColorValue clearColor = {{ (float)backgroundColor.r(), (float)backgroundColor.g(), (float)backgroundColor.b(), (float)backgroundColor.a() }};
     VkClearDepthStencilValue clearDS = { 1, 0 };
@@ -758,21 +771,20 @@ void VulkanViewportWindow::beginFrame()
 	_updateRequested = false;
 
 	// Do not re-enter rendering function of the same viewport.
-	if(viewport() && !userInterface().isRenderingInteractiveViewports()) {
-        if(!viewport()->dataset()->viewportConfig()->isSuspended()) {
+	if(viewport() && !userInterface().isRenderingInteractiveViewports() && dataset) {
+        if(!userInterface().areViewportUpdatesSuspended()) {
             try {
                 // Let the Viewport class do the actual rendering work.
-                viewport()->renderInteractive(_viewportRenderer);
+                viewport()->renderInteractive(userInterface(), dataset, _viewportRenderer);
             }
             catch(Exception& ex) {
-                if(ex.context() == nullptr) ex.setContext(viewport()->dataset());
                 ex.prependGeneralMessage(tr("An unexpected error occurred while rendering the viewport contents. The program will quit."));
                 userInterface().exitWithFatalError(ex);
             }
         }
         else {
             // Make sure viewport gets refreshed as soon as updates are enabled again.
-            viewport()->dataset()->viewportConfig()->updateViewports();
+            userInterface().updateViewports();
         }
     }
 

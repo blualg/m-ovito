@@ -43,6 +43,9 @@ class OVITO_CORE_EXPORT UndoableOperation
 {
 public:
 
+	/// \brief Default constructor.
+	UndoableOperation() = default;
+
 	/// \brief A virtual destructor.
 	///
 	/// The default implementation does nothing.
@@ -67,6 +70,12 @@ public:
 	/// The default implementation calls undo(). That means, undo() must be implemented such
 	/// that it works both ways.
 	virtual void redo() { undo(); }
+
+	/// Undoable operation records are not copyable or movable.
+	UndoableOperation(const UndoableOperation& other) = delete;
+	UndoableOperation(UndoableOperation&& other) = delete;
+	UndoableOperation& operator=(const UndoableOperation& other) = delete;
+	UndoableOperation& operator=(UndoableOperation&& other) = delete;
 };
 
 /**
@@ -124,7 +133,7 @@ public:
 	void revertTo(int position);
 
 	/// \brief Returns the number of operations recorded in this container.
-	int count() const { return _subOperations.size(); }
+	int count() const { return (int)_subOperations.size(); }
 
 	/// For debugging purposes only.
 	void debugPrint(int level);

@@ -253,7 +253,7 @@ void SceneRenderer::renderDataObject(const DataObject* dataObj, const PipelineSc
 					qWarning() << "WARNING: Visual element" << vis->objectTitle() << "reported:" << status.text();
 				}
 			}
-			catch(SceneRenderer::RendererException& ex) {
+			catch(SceneRenderer::RendererException&) {
 				// Always interrupt rendering process by rethrowing the exception.
 				throw;
 			}

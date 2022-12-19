@@ -21,7 +21,8 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/core/Core.h>
-#include <ovito/core/dataset/DataSet.h>
+#include <ovito/core/dataset/DataSetContainer.h>
+#include <ovito/core/app/UserInterface.h>
 #include <ovito/core/viewport/Viewport.h>
 #include <ovito/core/viewport/ViewportConfiguration.h>
 #include "OffscreenVulkanSceneRenderer.h"
@@ -34,11 +35,11 @@ IMPLEMENT_OVITO_CLASS(OffscreenVulkanSceneRenderer);
 * Helper function that looks for an existing logical Vulkan context in the current
 * scene which can use for offscreen rendering.
 ******************************************************************************/
-static std::shared_ptr<VulkanContext> selectVulkanContext(DataSet* dataset)
+static std::shared_ptr<VulkanContext> selectVulkanContext()
 {
 	// Use the Vulkan device used for the interactive viewport windows
 	// also for offscreen rendering if available. 
-	for(Viewport* vp : dataset->viewportConfig()->viewports()) {
+	if(Viewport* vp = ExecutionContext::current().ui().datasetContainer().activeViewport()) {
 		if(ViewportWindowInterface* window = vp->window()) {
 			if(VulkanSceneRenderer* renderer = dynamic_object_cast<VulkanSceneRenderer>(window->sceneRenderer())) {
 				return renderer->context();
@@ -54,7 +55,7 @@ static std::shared_ptr<VulkanContext> selectVulkanContext(DataSet* dataset)
 * Constructor.
 ******************************************************************************/
 OffscreenVulkanSceneRenderer::OffscreenVulkanSceneRenderer(ObjectCreationParams params, std::shared_ptr<VulkanContext> vulkanContext, bool grabDepthBuffer) 
-	: VulkanSceneRenderer(params, vulkanContext ? std::move(vulkanContext) : selectVulkanContext(params.dataset())), _grabDepthBuffer(grabDepthBuffer) 
+	: VulkanSceneRenderer(params, vulkanContext ? std::move(vulkanContext) : selectVulkanContext()), _grabDepthBuffer(grabDepthBuffer) 
 {
 }
 
@@ -295,8 +296,8 @@ void OffscreenVulkanSceneRenderer::beginFrame(AnimationTime time, Scene* scene, 
 	// Always render with a fully transparent background. 
 	// Compositing with the viewport layer content will be performed in an OVITO FrameBuffer. 
     VkClearColorValue clearColor = {{ 0, 0, 0, 0 }};
-	if(renderSettings() && !isPicking()) {
-		ColorT<float> bgcolor = renderSettings()->backgroundColorAt(time);
+	if(!isPicking()) {
+		ColorT<float> bgcolor = ColorT<float>(renderSettings().backgroundColorAt(time));
 		clearColor.float32[0] = qBound(0.0f, bgcolor.r(), 1.0f);
 		clearColor.float32[1] = qBound(0.0f, bgcolor.g(), 1.0f);
 		clearColor.float32[2] = qBound(0.0f, bgcolor.b(), 1.0f);

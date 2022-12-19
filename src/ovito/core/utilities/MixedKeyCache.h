@@ -41,6 +41,13 @@ class OVITO_CORE_EXPORT MixedKeyCache
 {
 public:
 
+	/// Default constructor
+	MixedKeyCache() = default;
+
+	// Caches are not copyable.
+	MixedKeyCache(const MixedKeyCache& other) = delete;
+	MixedKeyCache& operator=(const MixedKeyCache& other) = delete;
+
 	/// Returns a reference to the value for the given key.
 	/// Creates a new cache entry with a default-initialized value if the key doesn't exist.
 	template<typename Value, typename Key>

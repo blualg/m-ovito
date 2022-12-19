@@ -42,7 +42,7 @@ public:
 	explicit PickingVulkanSceneRenderer(ObjectCreationParams params, std::shared_ptr<VulkanContext> vulkanDevice, ViewportWindowInterface* window);
 
 	/// This method is called just before renderFrame() is called.
-	virtual void beginFrame(AnimationTime time, const ViewProjectionParameters& params, Viewport* vp, const QRect& viewportRect, FrameBuffer* frameBuffer) override;
+	virtual void beginFrame(AnimationTime time, Scene* scene, const ViewProjectionParameters& params, Viewport* vp, const QRect& viewportRect, FrameBuffer* frameBuffer) override;
 
 	/// Renders the current animation frame.
 	virtual bool renderFrame(const QRect& viewportRect, MainThreadOperation& operation) override;
