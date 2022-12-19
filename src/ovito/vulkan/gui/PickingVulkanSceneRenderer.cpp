@@ -43,7 +43,7 @@ PickingVulkanSceneRenderer::PickingVulkanSceneRenderer(ObjectCreationParams para
 /******************************************************************************
 * This method is called just before renderFrame() is called.
 ******************************************************************************/
-void PickingVulkanSceneRenderer::beginFrame(TimePoint time, const ViewProjectionParameters& params, Viewport* vp, const QRect& viewportRect, FrameBuffer* frameBuffer)
+void PickingVulkanSceneRenderer::beginFrame(AnimationTime time, const ViewProjectionParameters& params, Viewport* vp, const QRect& viewportRect, FrameBuffer* frameBuffer)
 {
 	// Caller should never provide an external frame buffer.
 	OVITO_ASSERT(!frameBuffer);

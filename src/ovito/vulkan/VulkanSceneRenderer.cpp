@@ -159,7 +159,7 @@ void VulkanSceneRenderer::initResources()
 /******************************************************************************
 * This method is called just before renderFrame() is called.
 ******************************************************************************/
-void VulkanSceneRenderer::beginFrame(TimePoint time, Scene* scene, const ViewProjectionParameters& params, Viewport* vp, const QRect& viewportRect, FrameBuffer* frameBuffer)
+void VulkanSceneRenderer::beginFrame(AnimationTime time, Scene* scene, const ViewProjectionParameters& params, Viewport* vp, const QRect& viewportRect, FrameBuffer* frameBuffer)
 {
 	// Convert viewport rect from logical device coordinates to Vulkan framebuffer coordinates.
 	QRect vulkanViewportRect(viewportRect.x() * antialiasingLevel(), viewportRect.y() * antialiasingLevel(), viewportRect.width() * antialiasingLevel(), viewportRect.height() * antialiasingLevel());

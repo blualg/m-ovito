@@ -264,7 +264,7 @@ bool OffscreenVulkanSceneRenderer::startRender(const RenderSettings* settings, c
 /******************************************************************************
 * This method is called just before renderFrame() is called.
 ******************************************************************************/
-void OffscreenVulkanSceneRenderer::beginFrame(TimePoint time, Scene* scene, const ViewProjectionParameters& params, Viewport* vp, const QRect& viewportRect, FrameBuffer* frameBuffer)
+void OffscreenVulkanSceneRenderer::beginFrame(AnimationTime time, Scene* scene, const ViewProjectionParameters& params, Viewport* vp, const QRect& viewportRect, FrameBuffer* frameBuffer)
 {
 	// This method must be called from the main thread where the Vulkan device lives.
 	OVITO_ASSERT(QThread::currentThread() == context()->thread());
