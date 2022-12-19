@@ -33,7 +33,7 @@ class AnimationTime final
 {
 public:
 
-	using value_type = std::int64_t;
+	using value_type = qint64;
 	Q_DECL_CONSTEXPR static value_type TicksPerFrame = 1;
 
 	/// Default constructor.
