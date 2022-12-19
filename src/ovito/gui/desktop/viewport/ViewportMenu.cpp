@@ -156,17 +156,20 @@ void ViewportMenu::onShowViewTypeMenu()
 	QActionGroup* viewNodeGroup = new QActionGroup(this);
 	connect(viewNodeGroup, &QActionGroup::triggered, this, &ViewportMenu::onViewNode);
 
-	// Find all camera nodes in the scene.
-	_viewport->scene()->visitObjectNodes([this, viewNodeGroup](PipelineSceneNode* node) -> bool {
-		const PipelineFlowState& state = node->evaluatePipelineSynchronous(_viewport->scene()->animationSettings()->currentTime(), false);
-		if(state.data() && state.data()->containsObject<AbstractCameraObject>()) {
-			// Add a menu entry for this camera node.
-			QAction* action = viewNodeGroup->addAction(node->nodeName());
-			action->setCheckable(true);
-			action->setChecked(_viewport->viewNode() == node);
-			action->setData(QVariant::fromValue((void*)node));
-		}
-		return true;
+	// Pipeline evaulation performed in the following requires a valid execution context.
+	_mainWindow.handleExceptions([&] {
+		// Find all camera nodes in the scene.
+		_viewport->scene()->visitObjectNodes([this, viewNodeGroup](PipelineSceneNode* node) -> bool {
+			const PipelineFlowState& state = node->evaluatePipelineSynchronous(_viewport->scene()->animationSettings()->currentTime(), false);
+			if(state.data() && state.data()->containsObject<AbstractCameraObject>()) {
+				// Add a menu entry for this camera node.
+				QAction* action = viewNodeGroup->addAction(node->nodeName());
+				action->setCheckable(true);
+				action->setChecked(_viewport->viewNode() == node);
+				action->setData(QVariant::fromValue((void*)node));
+			}
+			return true;
+		});
 	});
 
 	// Add menu entries to menu.

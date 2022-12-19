@@ -89,8 +89,8 @@ class OVITO_GRID_EXPORT VoxelGridPickInfo : public ObjectPickInfo
 public:
 
 	/// Constructor.
-	VoxelGridPickInfo(const VoxelGridVis* visElement, const VoxelGrid* voxelGrid, size_t trianglesPerCell) :
-		_visElement(visElement), _voxelGrid(voxelGrid), _trianglesPerCell(trianglesPerCell) {}
+	VoxelGridPickInfo(const VoxelGridVis* visElement, const VoxelGrid* voxelGrid, std::array<int, 3> numCells, size_t trianglesPerCell) :
+		_visElement(visElement), _voxelGrid(voxelGrid), _numCells(numCells), _trianglesPerCell(trianglesPerCell) {}
 
 	/// Returns the data object.
 	const DataOORef<const VoxelGrid>& voxelGrid() const { return _voxelGrid; }
@@ -108,6 +108,9 @@ private:
 
 	/// The vis element that rendered the voxel grid.
 	OORef<VoxelGridVis> _visElement;
+
+	/// Number of visible cells in each grid direction. 
+	std::array<int, 3> _numCells;
 
 	/// The number of triangles rendered per voxel grid cell.
 	size_t _trianglesPerCell;

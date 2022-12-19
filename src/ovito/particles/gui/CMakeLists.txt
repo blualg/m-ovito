@@ -75,6 +75,7 @@ OVITO_STANDARD_PLUGIN(ParticlesGui
 		import/gromacs/XTCImporterEditor.cpp
 		import/vasp/POSCARImporterEditor.cpp
 		import/xyz/XYZImporterEditor.cpp
+		import/cube/GaussianCubeImporterEditor.cpp
 		export/FileColumnParticleExporterEditor.cpp
 		export/lammps/LAMMPSDataExporterEditor.cpp
 		export/lammps/LAMMPSDumpExporterEditor.cpp

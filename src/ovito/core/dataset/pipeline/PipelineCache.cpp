@@ -56,6 +56,7 @@ SharedFuture<PipelineFlowState> PipelineCache::evaluatePipeline(const PipelineEv
 {
 	OVITO_ASSERT(!QCoreApplication::instance() || QThread::currentThread() == QCoreApplication::instance()->thread());
 	OVITO_ASSERT(ExecutionContext::current().isValid());
+	OVITO_ASSERT(Task::current());
 	OVITO_ASSERT_MSG(_preparingEvaluation == false, "PipelineCache::evaluatePipeline", "Function is not reentrant.");
 
 	// Update the times for which we should keep computed pipeline outputs.

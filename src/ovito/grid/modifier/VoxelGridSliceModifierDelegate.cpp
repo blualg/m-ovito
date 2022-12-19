@@ -84,9 +84,6 @@ PipelineStatus VoxelGridSliceModifierDelegate::apply(const ModifierEvaluationReq
 
 	for(const DataObject* obj : inputState.data()->objects()) {
 		if(const VoxelGrid* voxelGrid = dynamic_object_cast<VoxelGrid>(obj)) {
-			// Get domain of voxel grid.
-			VoxelGrid::GridDimensions gridShape = voxelGrid->shape();
-
 			// Verify consistency of input property container.
 			voxelGrid->verifyIntegrity();
 
@@ -113,6 +110,16 @@ PipelineStatus VoxelGridSliceModifierDelegate::apply(const ModifierEvaluationReq
 
 			// The level of subdivision.
 			const int resolution = 2;
+
+			// Get domain of voxel grid.
+			VoxelGrid::GridDimensions gridShape = voxelGrid->shape();
+			// Adjust for non-periodic point-based grids.
+			if(voxelGrid->gridType() == VoxelGrid::GridType::PointData) {
+				for(size_t dim = 0; dim < 3; dim++) {
+					if(!voxelGrid->domain()->hasPbcCorrected(dim) && gridShape[dim] >= 2)
+						gridShape[dim]--;
+				}
+			}
 
 			Plane3 planeGridSpace;
 			for(int pidx = 0; pidx < numPlanes; pidx++) {
@@ -154,10 +161,12 @@ PipelineStatus VoxelGridSliceModifierDelegate::apply(const ModifierEvaluationReq
 			for(const PropertyObject* property : voxelGrid->properties())
 				fieldProperties.push_back(property);
 
-			// Copy field values from voxel grid to surface mesh vertices.
+			// An active task is required for transferPropertiesFromGridToMesh().
 			Promise<> localOperation = Promise<>::create<ProgressingTask>(true);
 			Task::Scope taskScope(localOperation.task());
-			CreateIsosurfaceModifier::transferPropertiesFromGridToMesh(mesh, fieldProperties, gridShape);
+
+			// Copy field values from voxel grid to surface mesh vertices.
+			CreateIsosurfaceModifier::transferPropertiesFromGridToMesh(mesh, fieldProperties, *voxelGrid->domain(), voxelGrid->shape(), voxelGrid->gridType());
 
 			// Transform mesh vertices from orthogonal grid space to world space.
 			const AffineTransformation tm = cell->matrix() * Matrix3(

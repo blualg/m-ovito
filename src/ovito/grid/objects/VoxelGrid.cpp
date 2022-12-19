@@ -28,9 +28,12 @@ namespace Ovito::Grid {
 
 IMPLEMENT_OVITO_CLASS(VoxelGrid);
 DEFINE_RUNTIME_PROPERTY_FIELD(VoxelGrid, shape);
+DEFINE_PROPERTY_FIELD(VoxelGrid, gridType);
+DEFINE_SHADOW_PROPERTY_FIELD(VoxelGrid, gridType);
 DEFINE_REFERENCE_FIELD(VoxelGrid, domain);
 SET_PROPERTY_FIELD_LABEL(VoxelGrid, shape, "Shape");
 SET_PROPERTY_FIELD_LABEL(VoxelGrid, domain, "Domain");
+SET_PROPERTY_FIELD_LABEL(VoxelGrid, gridType, "Grid type");
 
 /******************************************************************************
 * Registers all standard properties with the property traits class.
@@ -92,7 +95,8 @@ PropertyPtr VoxelGrid::OOMetaClass::createStandardPropertyInternal(size_t elemen
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-VoxelGrid::VoxelGrid(ObjectCreationParams params, const QString& title) : PropertyContainer(params, title)
+VoxelGrid::VoxelGrid(ObjectCreationParams params, const QString& title) : PropertyContainer(params, title),
+	_gridType(CellData)
 {
 	// Create and attach a default visualization element for rendering the grid.
 	if(params.createVisElement())
@@ -154,7 +158,7 @@ void VoxelGrid::verifyIntegrity() const
 QString VoxelGrid::elementInfoString(size_t elementIndex, const ConstDataObjectRefPath& path) const
 {
 	std::array<size_t, 3> coords = voxelCoords(elementIndex);
-    QString str = tr("Cell ");
+    QString str = (gridType() == GridType::CellData) ? tr("Cell ") : tr("Point ");
 	if(domain() && domain()->is2D() && shape()[2] <= 1)
 		str += QStringLiteral("(%1, %2)").arg(coords[0]).arg(coords[1]);
 	else
@@ -180,26 +184,45 @@ std::tuple<ConstDataBufferPtr, ConstDataBufferPtr> VoxelGrid::getVectorVisData(c
 	auto& basePositions = visCache.get<ConstDataBufferPtr>(CacheKey(this));
 
 	if(!basePositions) {
-		// Compute grid cell centers.
-		DataBufferAccessAndRef<Point3> centers = DataBufferPtr::create(elementCount(), DataBuffer::Float, 3);
-		if(centers.size() != 0) {
-			OVITO_ASSERT(shape()[0] != 0 && shape()[1] != 0 && shape()[2] != 0);
-			Point3 xyz;
-			FloatType dx = FloatType(1) / shape()[0];
-			FloatType dy = FloatType(1) / shape()[1];
-			FloatType dz = FloatType(1) / shape()[2];
-			auto c = centers.begin();
-			size_t x,y,z;
-			for(z = 0, xyz.z() = dz/2; z < shape()[2]; z++, xyz.z() += dz) {
-				if(domain()->is2D()) xyz.z() = 0;
-				for(y = 0, xyz.y() = dy/2; y < shape()[1]; y++, xyz.y() += dy) {
-					for(x = 0, xyz.x() = dx/2; x < shape()[0]; x++, xyz.x() += dx) {
-						*c++ = domain()->reducedToAbsolute(xyz);
+		DataBufferAccessAndRef<Point3> points = DataBufferPtr::create(elementCount(), DataBuffer::Float, 3);
+		if(points.size() != 0) {
+			if(gridType() == GridType::CellData) {
+				// Compute grid cell centers.
+				OVITO_ASSERT(shape()[0] != 0 && shape()[1] != 0 && shape()[2] != 0);
+				Point3 xyz;
+				FloatType dx = FloatType(1) / shape()[0];
+				FloatType dy = FloatType(1) / shape()[1];
+				FloatType dz = FloatType(1) / shape()[2];
+				auto p = points.begin();
+				size_t x,y,z;
+				for(z = 0, xyz.z() = dz/2; z < shape()[2]; z++, xyz.z() += dz) {
+					if(domain()->is2D()) xyz.z() = 0;
+					for(y = 0, xyz.y() = dy/2; y < shape()[1]; y++, xyz.y() += dy) {
+						for(x = 0, xyz.x() = dx/2; x < shape()[0]; x++, xyz.x() += dx) {
+							*p++ = domain()->reducedToAbsolute(xyz);
+						}
 					}
 				}
 			}
+			else if(gridType() == GridType::PointData) {
+				// Compute grid vertex positions.
+				Point3 xyz;
+				FloatType dx = FloatType(1) / ((domain()->pbcFlags()[0] || shape()[0] == 1) ? shape()[0] : (shape()[0] - 1));
+				FloatType dy = FloatType(1) / ((domain()->pbcFlags()[1] || shape()[1] == 1) ? shape()[1] : (shape()[1] - 1));
+				FloatType dz = FloatType(1) / ((domain()->pbcFlags()[2] || shape()[2] == 1) ? shape()[2] : (shape()[2] - 1));
+				auto p = points.begin();
+				size_t x,y,z;
+				for(z = 0, xyz.z() = 0; z < shape()[2]; z++, xyz.z() += dz) {
+					for(y = 0, xyz.y() = 0; y < shape()[1]; y++, xyz.y() += dy) {
+						for(x = 0, xyz.x() = 0; x < shape()[0]; x++, xyz.x() += dx) {
+							*p++ = domain()->reducedToAbsolute(xyz);
+						}
+					}
+				}
+			}
+			else OVITO_ASSERT(false);
 		}
-		basePositions = centers.take();
+		basePositions = points.take();
 	}
 	return { basePositions, path.lastAs<DataBuffer>() };
 }

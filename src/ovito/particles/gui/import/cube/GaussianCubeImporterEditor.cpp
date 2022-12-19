@@ -21,38 +21,45 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/particles/gui/ParticlesGui.h>
-#include <ovito/particles/import/gromacs/GroImporter.h>
+#include <ovito/particles/import/cube/GaussianCubeImporter.h>
 #include <ovito/gui/desktop/properties/BooleanParameterUI.h>
-#include "GroImporterEditor.h"
+#include <ovito/gui/desktop/properties/IntegerRadioButtonParameterUI.h>
+#include "GaussianCubeImporterEditor.h"
 
 namespace Ovito::Particles {
 
-IMPLEMENT_OVITO_CLASS(GroImporterEditor);
-SET_OVITO_OBJECT_EDITOR(GroImporter, GroImporterEditor);
+IMPLEMENT_OVITO_CLASS(GaussianCubeImporterEditor);
+SET_OVITO_OBJECT_EDITOR(GaussianCubeImporter, GaussianCubeImporterEditor);
 
 /******************************************************************************
 * Sets up the UI widgets of the editor.
 ******************************************************************************/
-void GroImporterEditor::createUI(const RolloutInsertionParameters& rolloutParams)
+void GaussianCubeImporterEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 {
 	// Create a rollout.
-	QWidget* rollout = createRollout(tr("Gromacs reader"), rolloutParams);
+	QWidget* rollout = createRollout(tr("Gaussian Cube reader"), rolloutParams, "manual:file_formats.input.cube");
 
     // Create the rollout contents.
 	QVBoxLayout* layout = new QVBoxLayout(rollout);
 	layout->setContentsMargins(4,4,4,4);
 	layout->setSpacing(4);
 
-	QGroupBox* optionsBox = new QGroupBox(tr("Options"), rollout);
-	QVBoxLayout* sublayout = new QVBoxLayout(optionsBox);
+	QGroupBox* gridOptionsBox = new QGroupBox(tr("Volumetric grid type"), rollout);
+	QVBoxLayout* sublayout = new QVBoxLayout(gridOptionsBox);
 	sublayout->setContentsMargins(4,4,4,4);
-	layout->addWidget(optionsBox);
-
-	// Center simulation cell.
-	BooleanParameterUI* recenterCellUI = new BooleanParameterUI(this, PROPERTY_FIELD(ParticleImporter::recenterCell));
-	sublayout->addWidget(recenterCellUI->checkBox());
+	layout->addWidget(gridOptionsBox);
 	
-	// Generate bonds.
+	// Grid type
+	IntegerRadioButtonParameterUI* gridTypeUI = new IntegerRadioButtonParameterUI(this, PROPERTY_FIELD(GaussianCubeImporter::gridType));
+	sublayout->addWidget(gridTypeUI->addRadioButton(VoxelGrid::GridType::PointData, tr("Point-based grid")));
+	sublayout->addWidget(gridTypeUI->addRadioButton(VoxelGrid::GridType::CellData, tr("Cell-based grid")));
+
+	QGroupBox* atomicOptionsBox = new QGroupBox(tr("Atomic structure"), rollout);
+	sublayout = new QVBoxLayout(atomicOptionsBox);
+	sublayout->setContentsMargins(4,4,4,4);
+	layout->addWidget(atomicOptionsBox);
+	
+	// Generate bonds
 	BooleanParameterUI* generateBondsUI = new BooleanParameterUI(this, PROPERTY_FIELD(ParticleImporter::generateBonds));
 	sublayout->addWidget(generateBondsUI->checkBox());
 }

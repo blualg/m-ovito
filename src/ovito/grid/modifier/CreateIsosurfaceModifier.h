@@ -86,7 +86,7 @@ public:
 	virtual QVariant getPipelineEditorShortInfo(Scene* scene, ModifierApplication* modApp) const override { return tr("%1=%2").arg(sourceProperty().nameWithComponent()).arg(isolevel()); }
 
 	/// Transfers voxel grid properties to the vertices of a surfaces mesh.
-	static bool transferPropertiesFromGridToMesh(SurfaceMeshAccess& mesh, const std::vector<ConstPropertyPtr>& fieldProperties, VoxelGrid::GridDimensions gridShape);
+	static bool transferPropertiesFromGridToMesh(SurfaceMeshAccess& mesh, const std::vector<ConstPropertyPtr>& fieldProperties, const SimulationCellObject& gridDomain, VoxelGrid::GridDimensions gridShape, VoxelGrid::GridType gridType);
 
 protected:
 
@@ -107,9 +107,10 @@ private:
 	public:
 
 		/// Constructor.
-		ComputeIsosurfaceEngine(const ModifierEvaluationRequest& request, const TimeInterval& validityInterval, const VoxelGrid::GridDimensions& gridShape, ConstPropertyPtr property, int vectorComponent, DataOORef<SurfaceMesh> mesh, FloatType isolevel, std::vector<ConstPropertyPtr> auxiliaryProperties, DataOORef<DataTable> histogram) :
+		ComputeIsosurfaceEngine(const ModifierEvaluationRequest& request, const TimeInterval& validityInterval, const VoxelGrid::GridDimensions& gridShape, VoxelGrid::GridType gridType, ConstPropertyPtr property, int vectorComponent, DataOORef<SurfaceMesh> mesh, FloatType isolevel, std::vector<ConstPropertyPtr> auxiliaryProperties, DataOORef<DataTable> histogram) :
 			Engine(request, validityInterval),
 			_gridShape(gridShape),
+			_gridType(gridType),
 			_property(std::move(property)),
 			_vectorComponent(std::max(vectorComponent, 0)),
 			_mesh(std::move(mesh)),
@@ -133,6 +134,7 @@ private:
 
 		const VoxelGrid::GridDimensions _gridShape;
 		const FloatType _isolevel;
+		VoxelGrid::GridType _gridType;
 		const int _vectorComponent;
 		ConstPropertyPtr _property;
 

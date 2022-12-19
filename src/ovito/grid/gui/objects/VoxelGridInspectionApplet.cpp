@@ -85,6 +85,7 @@ void VoxelGridInspectionApplet::onCurrentContainerChanged(const DataObject* data
 			else
 				text += tr("<p><b>Grid vector 3:</b> (%1 %2 %3)</p>").arg(v3.x()).arg(v3.y()).arg(v3.z());
 			text += tr("<p><b>Grid origin:</b> (%1 %2 %3)</p>").arg(origin.x()).arg(origin.y()).arg(origin.z());
+			text += tr("<p><b>Grid type:</b> %1</p>").arg(grid->gridType() == VoxelGrid::GridType::PointData ? tr("point data") : tr("cell data"));
 		}
 		_gridInfoLabel->setText(text);
 	}

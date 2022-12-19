@@ -195,7 +195,7 @@ Future<AsynchronousModifier::EnginePtr> CreateIsosurfaceModifier::createEngine(c
 	histogram->setAxisLabelX(sourceProperty().nameWithComponent());
 	
 	// Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
-	return std::make_shared<ComputeIsosurfaceEngine>(request, validityInterval, voxelGrid->shape(), property,
+	return std::make_shared<ComputeIsosurfaceEngine>(request, validityInterval, voxelGrid->shape(), voxelGrid->gridType(), property,
 			sourceProperty().vectorComponent(), std::move(mesh), isolevel, std::move(auxiliaryProperties),
 			std::move(histogram));
 }
@@ -219,21 +219,21 @@ void CreateIsosurfaceModifier::ComputeIsosurfaceEngine::perform()
             if(i == _gridShape[0]) i = 0;
         }
         else {
-            if(i == 0 || i == _gridShape[0] + 1) return std::numeric_limits<FloatType>::lowest();
+            if(i == 0 || i > _gridShape[0]) return std::numeric_limits<FloatType>::lowest();
             i--;
         }
         if(_pbcFlags[1]) {
             if(j == _gridShape[1]) j = 0;
         }
         else {
-            if(j == 0 || j == _gridShape[1] + 1) return std::numeric_limits<FloatType>::lowest();
+            if(j == 0 || j > _gridShape[1]) return std::numeric_limits<FloatType>::lowest();
             j--;
         }
         if(_pbcFlags[2]) {
             if(k == _gridShape[2]) k = 0;
         }
         else {
-            if(k == 0 || k == _gridShape[2] + 1) return std::numeric_limits<FloatType>::lowest();
+            if(k == 0 || k > _gridShape[2]) return std::numeric_limits<FloatType>::lowest();
             k--;
         }
         OVITO_ASSERT(i >= 0 && i < _gridShape[0]);
@@ -242,21 +242,32 @@ void CreateIsosurfaceModifier::ComputeIsosurfaceEngine::perform()
         return _data[(i + j*_gridShape[0] + k*_gridShape[0]*_gridShape[1]) * _dataStride];
     };
 
+	// Prepare the output mesh structure.
 	SurfaceMeshAccess mesh(std::move(_mesh));
+
+	// Invoke marching cubes algorithm.
 	MarchingCubes mc(mesh, _gridShape[0], _gridShape[1], _gridShape[2], false, std::move(getFieldValue));
 	if(!mc.generateIsosurface(_isolevel, *this))
 		return;
 
 	// Copy field values from voxel grid to surface mesh vertices.
-	if(!transferPropertiesFromGridToMesh(mesh, auxiliaryProperties(), _gridShape))
+	if(!transferPropertiesFromGridToMesh(mesh, auxiliaryProperties(), *mesh.domain(), _gridShape, _gridType))
 		return;
+
+	// Adjust for non-periodic point-based grids.
+	VoxelGrid::GridDimensions mcShape = _gridShape;
+	if(_gridType == VoxelGrid::GridType::PointData) {
+		if(!mesh.domain()->hasPbcCorrected(0) && mcShape[0] >= 2) mcShape[0]--;
+		if(!mesh.domain()->hasPbcCorrected(1) && mcShape[1] >= 2) mcShape[1]--;
+		if(!mesh.domain()->hasPbcCorrected(2) && mcShape[2] >= 2) mcShape[2]--;
+	}
 
 	// Transform mesh vertices from orthogonal grid space to world space.
 	const AffineTransformation tm = mesh.domain()->cellMatrix() * Matrix3(
-		FloatType(1) / _gridShape[0], 0, 0,
-		0, FloatType(1) / _gridShape[1], 0,
-		0, 0, FloatType(1) / _gridShape[2]) *
-		AffineTransformation::translation(Vector3(0.5, 0.5, 0.5));
+		FloatType(1) / mcShape[0], 0, 0,
+		0, FloatType(1) / mcShape[1], 0,
+		0, 0, FloatType(1) / mcShape[2]) *
+		AffineTransformation::translation(Vector3(_gridType == VoxelGrid::GridType::PointData ? 0.0 : 0.5));
 	mesh.transformVertices(tm);
 
 	// Flip surface orientation if cell matrix is a mirror transformation.
@@ -313,7 +324,7 @@ void CreateIsosurfaceModifier::ComputeIsosurfaceEngine::applyResults(const Modif
 /******************************************************************************
 * Transfers voxel grid properties to the vertices of a surfaces mesh.
 ******************************************************************************/
-bool CreateIsosurfaceModifier::transferPropertiesFromGridToMesh(SurfaceMeshAccess& mesh, const std::vector<ConstPropertyPtr>& fieldProperties, VoxelGrid::GridDimensions gridShape)
+bool CreateIsosurfaceModifier::transferPropertiesFromGridToMesh(SurfaceMeshAccess& mesh, const std::vector<ConstPropertyPtr>& fieldProperties, const SimulationCellObject& gridDomain, VoxelGrid::GridDimensions gridShape, VoxelGrid::GridType gridType)
 {
 	OVITO_ASSERT(Task::current() && Task::current()->isProgressingTask());
 
@@ -330,24 +341,29 @@ bool CreateIsosurfaceModifier::transferPropertiesFromGridToMesh(SurfaceMeshAcces
 		else if(SurfaceMeshVertices::OOClass().standardPropertyTypeId(fieldProperty->name()) != 0) {
 			// Input property name is that of a standard property for mesh vertices.
 			// Must rename the property to avoid conflict, because user properties may not have a standard property name.
+			// Always use floating point data type for vertex property, because field values get blended.
 			QString newPropertyName = fieldProperty->name() + tr("_field");
-			vertexProperty = mesh.createVertexProperty(newPropertyName, fieldProperty->dataType(), fieldProperty->componentCount(), DataBuffer::InitializeMemory, fieldProperty->componentNames());
+			vertexProperty = mesh.createVertexProperty(newPropertyName, DataBuffer::Float, fieldProperty->componentCount(), DataBuffer::InitializeMemory, fieldProperty->componentNames());
 		}
 		else {
 			// Input property is a user property for mesh vertices.
-			vertexProperty = mesh.createVertexProperty(fieldProperty->name(), fieldProperty->dataType(), fieldProperty->componentCount(), DataBuffer::InitializeMemory, fieldProperty->componentNames());
+			// Always use floating point data type for vertex property, because field values get blended.
+			vertexProperty = mesh.createVertexProperty(fieldProperty->name(), DataBuffer::Float, fieldProperty->componentCount(), DataBuffer::InitializeMemory, fieldProperty->componentNames());
 		}
 		propertyMapping.emplace_back(fieldProperty, std::move(vertexProperty));
 	}
 
 	// Transfer values of field properties to the created mesh vertices.
 	if(!propertyMapping.empty()) {
+		std::array<bool,3> pbcFlags = gridDomain.pbcFlagsCorrected();
 		parallelForWithProgress(mesh.vertexCount(), [&](size_t vertexIndex) {
 			// Trilinear interpolation scheme.
 			size_t cornerIndices[8];
 			FloatType cornerWeights[8];
-			const Point3& p = mesh.vertexPosition(vertexIndex);
 			OVITO_ASSERT(mesh.firstVertexEdge(vertexIndex) != SurfaceMesh::InvalidIndex);
+			Point3 p = mesh.vertexPosition(vertexIndex);
+			if(gridType == VoxelGrid::GridType::PointData) 
+				p += Vector3(FloatType(0.5));
 			Vector3 x0, x1;
 			Vector3I x0_vc, x1_vc;
 			for(size_t dim = 0; dim < 3; dim++) {
@@ -356,7 +372,7 @@ bool CreateIsosurfaceModifier::transferPropertiesFromGridToMesh(SurfaceMeshAcces
 				FloatType fl = std::floor(p[dim]);
 				x1[dim] = p[dim] - fl;
 				x0[dim] = FloatType(1) - x1[dim];
-				if(!mesh.hasPbc(dim)) {
+				if(!pbcFlags[dim]) {
 					x0_vc[dim] = qBound(0, (int)fl, (int)gridShape[dim] - 1);
 					x1_vc[dim] = qBound(0, (int)fl + 1, (int)gridShape[dim] - 1);
 				}
@@ -381,12 +397,12 @@ bool CreateIsosurfaceModifier::transferPropertiesFromGridToMesh(SurfaceMeshAcces
 			cornerIndices[5] = x0_vc.x() + x1_vc.y() * gridShape[0] + x1_vc.z() * gridShape[0] * gridShape[1];
 			cornerIndices[6] = x1_vc.x() + x1_vc.y() * gridShape[0] + x0_vc.z() * gridShape[0] * gridShape[1];
 			cornerIndices[7] = x1_vc.x() + x1_vc.y() * gridShape[0] + x1_vc.z() * gridShape[0] * gridShape[1];
-			for(auto& p : propertyMapping) {
-				for(size_t component = 0; component < p.first.componentCount(); component++) {
+			for(auto& prop : propertyMapping) {
+				for(size_t component = 0; component < prop.first.componentCount(); component++) {
 					FloatType v = 0;
 					for(size_t i = 0; i < 8; i++)
-						v += cornerWeights[i] * p.first.get<FloatType>(cornerIndices[i], component);
-					p.second.set<FloatType>(vertexIndex, component, v);
+						v += cornerWeights[i] * prop.first.get<FloatType>(cornerIndices[i], component);
+					prop.second.set<FloatType>(vertexIndex, component, v);
 				}
 			}
 		});

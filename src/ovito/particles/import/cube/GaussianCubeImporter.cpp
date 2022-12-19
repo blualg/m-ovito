@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -24,6 +24,7 @@
 #include <ovito/particles/objects/ParticlesObject.h>
 #include <ovito/particles/objects/ParticleType.h>
 #include <ovito/grid/objects/VoxelGrid.h>
+#include <ovito/grid/objects/VoxelGridVis.h>
 #include <ovito/stdobj/simcell/SimulationCellObject.h>
 #include <ovito/core/utilities/io/NumberParsing.h>
 #include <ovito/core/utilities/io/CompressedTextReader.h>
@@ -32,6 +33,21 @@
 namespace Ovito::Particles {
 
 IMPLEMENT_OVITO_CLASS(GaussianCubeImporter);
+DEFINE_PROPERTY_FIELD(GaussianCubeImporter, gridType);
+SET_PROPERTY_FIELD_LABEL(GaussianCubeImporter, gridType, "Grid type");
+
+/******************************************************************************
+* Is called when the value of a property of this object has changed.
+******************************************************************************/
+void GaussianCubeImporter::propertyChanged(const PropertyFieldDescriptor* field)
+{
+	ParticleImporter::propertyChanged(field);
+
+	if(field == PROPERTY_FIELD(generateBonds) || field == PROPERTY_FIELD(gridType)) {
+		// Reload input file(s) when this option gets changed by the user.
+		requestReload();
+	}
+}
 
 /******************************************************************************
 * Checks if the given file has format that can be read by this importer.
@@ -148,6 +164,10 @@ void GaussianCubeImporter::FrameLoader::loadFile()
 			addNumericType(ParticlesObject::OOClass(), typeProperty.buffer(), atomicNumber, {});
 	}
 
+	// Release property accessors.
+	posProperty.reset();
+	typeProperty.reset();
+
 	// Parse voxel field table.
 	const char* s = stream.readLine();
 	size_t nfields = 0;
@@ -186,18 +206,23 @@ void GaussianCubeImporter::FrameLoader::loadFile()
 
 	// Create the voxel grid data object.
 	VoxelGrid* voxelGrid = state().getMutableObject<VoxelGrid>();
+	VoxelGridVis* newVoxelGridVis = nullptr;
 	if(!voxelGrid) {
 		voxelGrid = state().createObject<VoxelGrid>(dataSource());
-		voxelGrid->visElement()->setEnabled(false);
-		voxelGrid->visElement()->freezeInitialParameterValues({SHADOW_PROPERTY_FIELD(ActiveObject::isEnabled)});
+		newVoxelGridVis = voxelGrid->visElement<VoxelGridVis>();
+		newVoxelGridVis->setEnabled(false);
+		newVoxelGridVis->freezeInitialParameterValues({SHADOW_PROPERTY_FIELD(ActiveObject::isEnabled)});
 	}
+	voxelGrid->setGridType(_gridType);
+	voxelGrid->freezeInitialParameterValues({SHADOW_PROPERTY_FIELD(VoxelGrid::gridType)});
 	voxelGrid->setDomain(simulationCell());
 	voxelGrid->setIdentifier(QStringLiteral("imported"));
 	voxelGrid->setShape(gridSize);
 	voxelGrid->setContent(gridSize[0] * gridSize[1] * gridSize[2], {});
 
 	// Create the voxel grid property.
-	PropertyAccess<FloatType, true> fieldQuantity = voxelGrid->createProperty(QStringLiteral("Property"), PropertyObject::Float, nfields, DataBuffer::NoFlags, std::move(componentNames));
+	PropertyObject* property = voxelGrid->createProperty(QStringLiteral("Property"), PropertyObject::Float, nfields, DataBuffer::NoFlags, std::move(componentNames));
+	PropertyAccess<FloatType, true> fieldQuantity(property);
 
 	// Parse voxel data.
 	for(size_t x = 0; x < gridSize[0]; x++) {
@@ -224,7 +249,25 @@ void GaussianCubeImporter::FrameLoader::loadFile()
 			}
 		}
 	}
+
+	// Automatically select the property for pseudo-coloring of the grid and adjust the value range.
+	// But only if this is the first time the file reader is loading the file.
+	if(newVoxelGridVis && newVoxelGridVis->colorMapping()->sourceProperty().isNull() && fieldQuantity.size() != 0) {
+		newVoxelGridVis->colorMapping()->setSourceProperty(VoxelPropertyReference(property, nfields != 1 ? 0 : -1));
+		auto range = fieldQuantity.componentRange(0);
+		auto [min, max] = std::minmax_element(std::begin(range), std::end(range));
+		newVoxelGridVis->colorMapping()->setStartValue(*min);
+		newVoxelGridVis->colorMapping()->setEndValue(*max);
+	}
+
+	fieldQuantity.reset();
 	voxelGrid->verifyIntegrity();
+
+	// Generate ad-hoc bonds between atoms based on their van der Waals radii.
+	if(_generateBonds)
+		generateBonds();
+	else
+		setBondCount(0);
 
 	state().setStatus(tr("%1 atoms\n%2 x %3 x %4 voxel grid").arg(numAtoms).arg(gridSize[0]).arg(gridSize[1]).arg(gridSize[2]));
 

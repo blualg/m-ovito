@@ -1,0 +1,1250 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   sodipodi:docname="grid_types.svg"
+   id="svg5"
+   version="1.1"
+   viewBox="0 0 210 297"
+   height="297mm"
+   width="210mm"
+   inkscape:version="1.2.1 (9c6d41e, 2022-07-14)"
+   inkscape:export-filename="../../../../doc/python/introduction/graphics/grid_type_celldata.png"
+   inkscape:export-xdpi="100"
+   inkscape:export-ydpi="100"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:xlink="http://www.w3.org/1999/xlink"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview7"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:document-units="mm"
+     showgrid="false"
+     inkscape:zoom="0.84096521"
+     inkscape:cx="456.02362"
+     inkscape:cy="906.1017"
+     inkscape:window-width="1920"
+     inkscape:window-height="966"
+     inkscape:window-x="1728"
+     inkscape:window-y="25"
+     inkscape:window-maximized="0"
+     inkscape:current-layer="layer1" />
+  <defs
+     id="defs2">
+    <marker
+       style="overflow:visible"
+       id="Arrow1"
+       refX="0"
+       refY="0"
+       orient="auto-start-reverse"
+       inkscape:stockid="Arrow1"
+       markerWidth="4.0606604"
+       markerHeight="6.7071066"
+       viewBox="0 0 4.0606602 6.7071068"
+       inkscape:isstock="true"
+       inkscape:collect="always"
+       preserveAspectRatio="xMidYMid">
+      <path
+         style="fill:none;stroke:context-stroke;stroke-width:1;stroke-linecap:butt"
+         d="M 3,-3 0,0 3,3"
+         id="path5057"
+         transform="rotate(180,0.125,0)"
+         sodipodi:nodetypes="ccc" />
+    </marker>
+    <marker
+       style="overflow:visible"
+       id="Arrow1-1"
+       refX="0"
+       refY="0"
+       orient="auto-start-reverse"
+       inkscape:stockid="Arrow1"
+       markerWidth="4.0606604"
+       markerHeight="6.7071066"
+       viewBox="0 0 4.0606602 6.7071068"
+       inkscape:isstock="true"
+       inkscape:collect="always"
+       preserveAspectRatio="xMidYMid">
+      <path
+         style="fill:none;stroke:context-stroke;stroke-width:1;stroke-linecap:butt"
+         d="M 3,-3 0,0 3,3"
+         id="path5057-4"
+         transform="rotate(180,0.125,0)"
+         sodipodi:nodetypes="ccc" />
+    </marker>
+    <marker
+       style="overflow:visible"
+       id="Arrow1-1-0"
+       refX="0"
+       refY="0"
+       orient="auto-start-reverse"
+       inkscape:stockid="Arrow1"
+       markerWidth="4.0606604"
+       markerHeight="6.7071066"
+       viewBox="0 0 4.0606602 6.7071068"
+       inkscape:isstock="true"
+       inkscape:collect="always"
+       preserveAspectRatio="xMidYMid">
+      <path
+         style="fill:none;stroke:context-stroke;stroke-width:1;stroke-linecap:butt"
+         d="M 3,-3 0,0 3,3"
+         id="path5057-4-3"
+         transform="rotate(180,0.125,0)"
+         sodipodi:nodetypes="ccc" />
+    </marker>
+    <marker
+       style="overflow:visible"
+       id="Arrow1-2"
+       refX="0"
+       refY="0"
+       orient="auto-start-reverse"
+       inkscape:stockid="Arrow1"
+       markerWidth="4.0606604"
+       markerHeight="6.7071066"
+       viewBox="0 0 4.0606602 6.7071068"
+       inkscape:isstock="true"
+       inkscape:collect="always"
+       preserveAspectRatio="xMidYMid">
+      <path
+         style="fill:none;stroke:context-stroke;stroke-width:1;stroke-linecap:butt"
+         d="M 3,-3 0,0 3,3"
+         id="path5057-2"
+         transform="rotate(180,0.125,0)"
+         sodipodi:nodetypes="ccc" />
+    </marker>
+  </defs>
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1">
+    <rect
+       style="fill:#f4eed7;stroke:none;stroke-width:0.157;stroke-dasharray:0.264583, 0.79375"
+       id="rect2019-2"
+       width="50"
+       height="50"
+       x="122.89547"
+       y="121.93645"
+       inkscape:export-filename="../../../../doc/python/introduction/graphics/grid_type_celldata.png"
+       inkscape:export-xdpi="500"
+       inkscape:export-ydpi="500" />
+    <rect
+       style="fill:#f4eed7;stroke:none;stroke-width:0.157;stroke-dasharray:0.264583, 0.79375"
+       id="rect2019-9"
+       width="50"
+       height="50"
+       x="46.261131"
+       y="121.80415" />
+    <rect
+       style="fill:#f4eed7;stroke:none;stroke-width:0.157;stroke-dasharray:0.264583, 0.79375"
+       id="rect2019"
+       width="50"
+       height="50"
+       x="127.18316"
+       y="35.232014"
+       inkscape:export-filename="../../../../doc/python/introduction/graphics/grid_type_celldata.png"
+       inkscape:export-xdpi="500"
+       inkscape:export-ydpi="500" />
+    <g
+       inkscape:label="GridCartesian:X1:Y1"
+       transform="translate(122.89547,121.93644)"
+       id="g1220">
+      <g
+         inkscape:label="MajorXGridlines"
+         id="g1198" />
+      <g
+         inkscape:label="MajorYGridlines"
+         id="g1200" />
+      <g
+         inkscape:label="SubMinorXGridlines"
+         id="g1208">
+        <path
+           style="fill:none;stroke:#000000;stroke-width:0.079375"
+           d="M 12.5,0 V 50"
+           inkscape:label="SubminorXDiv0:0:1"
+           id="path1202" />
+        <path
+           style="fill:none;stroke:#000000;stroke-width:0.079375"
+           d="M 25,0 V 50"
+           inkscape:label="SubminorXDiv0:0:2"
+           id="path1204" />
+        <path
+           style="fill:none;stroke:#000000;stroke-width:0.079375"
+           d="M 37.5,0 V 50"
+           inkscape:label="SubminorXDiv0:0:3"
+           id="path1206" />
+      </g>
+      <g
+         inkscape:label="SubMinorYGridlines"
+         id="g1216">
+        <path
+           style="fill:none;stroke:#000000;stroke-width:0.079375"
+           d="M 0,12.5 H 50"
+           inkscape:label="SubminorXDiv0:0:1"
+           id="path1210" />
+        <path
+           style="fill:none;stroke:#000000;stroke-width:0.079375"
+           d="M 0,25 H 50"
+           inkscape:label="SubminorXDiv0:0:2"
+           id="path1212" />
+        <path
+           style="fill:none;stroke:#000000;stroke-width:0.079375"
+           d="M 0,37.5 H 50"
+           inkscape:label="SubminorXDiv0:0:3"
+           id="path1214" />
+      </g>
+      <rect
+         x="0"
+         y="0"
+         width="50"
+         height="50"
+         style="fill:none;stroke:#000000;stroke-width:0.264583"
+         inkscape:label="Border"
+         id="rect1218" />
+    </g>
+    <g
+       inkscape:label="GridCartesian:X1:Y1"
+       transform="translate(46.26113,121.80415)"
+       id="g1454">
+      <g
+         inkscape:label="MajorXGridlines"
+         id="g1436" />
+      <g
+         inkscape:label="MajorYGridlines"
+         id="g1438" />
+      <g
+         inkscape:label="SubMinorXGridlines"
+         id="g1444">
+        <path
+           style="fill:none;stroke:#000000;stroke-width:0.079375"
+           d="M 16.6667,0 V 50"
+           inkscape:label="SubminorXDiv0:0:1"
+           id="path1440" />
+        <path
+           style="fill:none;stroke:#000000;stroke-width:0.079375"
+           d="M 33.3333,0 V 50"
+           inkscape:label="SubminorXDiv0:0:2"
+           id="path1442" />
+      </g>
+      <g
+         inkscape:label="SubMinorYGridlines"
+         id="g1450">
+        <path
+           style="fill:none;stroke:#000000;stroke-width:0.079375"
+           d="M 0,16.6667 H 50"
+           inkscape:label="SubminorXDiv0:0:1"
+           id="path1446" />
+        <path
+           style="fill:none;stroke:#000000;stroke-width:0.079375"
+           d="M 0,33.3333 H 50"
+           inkscape:label="SubminorXDiv0:0:2"
+           id="path1448" />
+      </g>
+      <rect
+         x="0"
+         y="0"
+         width="50"
+         height="50"
+         style="fill:none;stroke:#000000;stroke-width:0.264583"
+         inkscape:label="Border"
+         id="rect1452" />
+    </g>
+    <circle
+       style="fill:#ff0000;stroke:none;stroke-width:0.0522849;stroke-dasharray:0.0881127, 0.264338"
+       id="path1525"
+       cx="122.76318"
+       cy="172.06874"
+       r="1.0274905" />
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-weight:normal;font-size:2.82222px;line-height:1.25;font-family:sans-serif;fill:#666666;fill-opacity:1;stroke:none;stroke-width:0.264583"
+       x="123.47888"
+       y="175.77652"
+       id="text1633"><tspan
+         sodipodi:role="line"
+         id="tspan1631"
+         style="font-size:2.82222px;fill:#666666;stroke-width:0.264583"
+         x="123.47888"
+         y="175.77652">(0,0)</tspan></text>
+    <use
+       x="0"
+       y="0"
+       xlink:href="#path1525"
+       id="use1707"
+       transform="translate(12.592606,-0.13229132)" />
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-weight:normal;font-size:2.82222px;line-height:1.25;font-family:sans-serif;fill:#666666;fill-opacity:1;stroke:none;stroke-width:0.264583"
+       x="136.07149"
+       y="175.64423"
+       id="use1709"><tspan
+         sodipodi:role="line"
+         id="tspan1725"
+         style="font-size:2.82222px;fill:#666666;stroke-width:0.264583"
+         x="136.07149"
+         y="175.64423">(1,0)</tspan></text>
+    <use
+       x="0"
+       y="0"
+       xlink:href="#path1525"
+       id="use1711"
+       transform="translate(25.185212,-0.13229132)" />
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-weight:normal;font-size:2.82222px;line-height:1.25;font-family:sans-serif;fill:#666666;fill-opacity:1;stroke:none;stroke-width:0.264583"
+       x="148.66409"
+       y="175.64423"
+       id="use1713"><tspan
+         sodipodi:role="line"
+         id="tspan1729"
+         style="font-size:2.82222px;fill:#666666;stroke-width:0.264583"
+         x="148.66409"
+         y="175.64423">(2,0)</tspan></text>
+    <use
+       x="0"
+       y="0"
+       xlink:href="#use1707"
+       id="use1715"
+       transform="translate(25)" />
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-weight:normal;font-size:2.82222px;line-height:1.25;font-family:sans-serif;fill:#666666;fill-opacity:1;stroke:none;stroke-width:0.264583"
+       x="161.2567"
+       y="175.51193"
+       id="use1717"><tspan
+         sodipodi:role="line"
+         id="tspan1733"
+         style="font-size:2.82222px;fill:#666666;stroke-width:0.264583"
+         x="161.2567"
+         y="175.51193">(3,0)</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-weight:normal;font-size:10.5833px;line-height:1.25;font-family:sans-serif;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.264583"
+       x="108.78732"
+       y="103.58701"
+       id="text1721"><tspan
+         sodipodi:role="line"
+         id="tspan1719"
+         style="stroke-width:0.264583"
+         x="108.78732"
+         y="103.58701" /></text>
+    <use
+       x="0"
+       y="0"
+       xlink:href="#path1525"
+       id="use1737"
+       transform="translate(-0.05291887,-12.5)" />
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-weight:normal;font-size:2.82222px;line-height:1.25;font-family:sans-serif;fill:#666666;fill-opacity:1;stroke:none;stroke-width:0.264583"
+       x="123.42597"
+       y="163.27652"
+       id="use1739"><tspan
+         sodipodi:role="line"
+         id="tspan1829"
+         style="font-size:2.82222px;fill:#666666;stroke-width:0.264583"
+         x="123.42597"
+         y="163.27652">(0,1)</tspan></text>
+    <use
+       x="0"
+       y="0"
+       xlink:href="#use1707"
+       id="use1741"
+       transform="translate(-0.05291887,-12.5)" />
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-weight:normal;font-size:2.82222px;line-height:1.25;font-family:sans-serif;fill:#666666;fill-opacity:1;stroke:none;stroke-width:0.264583"
+       x="136.01857"
+       y="163.14423"
+       id="use1743"><tspan
+         sodipodi:role="line"
+         id="tspan1825"
+         style="font-size:2.82222px;fill:#666666;stroke-width:0.264583"
+         x="136.01857"
+         y="163.14423">(1,1)</tspan></text>
+    <use
+       x="0"
+       y="0"
+       xlink:href="#use1711"
+       id="use1745"
+       transform="translate(-0.05291887,-12.5)" />
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-weight:normal;font-size:2.82222px;line-height:1.25;font-family:sans-serif;fill:#666666;fill-opacity:1;stroke:none;stroke-width:0.264583"
+       x="148.61119"
+       y="163.14423"
+       id="use1747"><tspan
+         sodipodi:role="line"
+         id="tspan1821"
+         style="font-size:2.82222px;fill:#666666;stroke-width:0.264583"
+         x="148.61119"
+         y="163.14423">(2,1)</tspan></text>
+    <use
+       x="0"
+       y="0"
+       xlink:href="#use1715"
+       id="use1749"
+       transform="translate(0.13229313,-12.5)" />
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-weight:normal;font-size:2.82222px;line-height:1.25;font-family:sans-serif;fill:#666666;fill-opacity:1;stroke:none;stroke-width:0.264583"
+       x="161.20378"
+       y="163.01193"
+       id="use1751"><tspan
+         sodipodi:role="line"
+         id="tspan1817"
+         style="font-size:2.82222px;fill:#666666;stroke-width:0.264583"
+         x="161.20378"
+         y="163.01193">(3,1)</tspan></text>
+    <use
+       x="0"
+       y="0"
+       xlink:href="#use1737"
+       id="use1753"
+       transform="translate(-8.7068332e-7,-12.5)" />
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-weight:normal;font-size:2.82222px;line-height:1.25;font-family:sans-serif;fill:#666666;fill-opacity:1;stroke:none;stroke-width:0.264583"
+       x="123.42597"
+       y="150.77652"
+       id="use1755"><tspan
+         sodipodi:role="line"
+         id="tspan1813"
+         style="font-size:2.82222px;fill:#666666;stroke-width:0.264583"
+         x="123.42597"
+         y="150.77652">(0,2)</tspan></text>
+    <use
+       x="0"
+       y="0"
+       xlink:href="#use1741"
+       id="use1757"
+       transform="translate(-8.7068332e-7,-12.5)" />
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-weight:normal;font-size:2.82222px;line-height:1.25;font-family:sans-serif;fill:#666666;fill-opacity:1;stroke:none;stroke-width:0.264583"
+       x="136.01857"
+       y="150.64423"
+       id="use1759"><tspan
+         sodipodi:role="line"
+         id="tspan1809"
+         style="font-size:2.82222px;fill:#666666;stroke-width:0.264583"
+         x="136.01857"
+         y="150.64423">(1,2)</tspan></text>
+    <use
+       x="0"
+       y="0"
+       xlink:href="#use1745"
+       id="use1761"
+       transform="translate(-8.7068332e-7,-12.5)" />
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-weight:normal;font-size:2.82222px;line-height:1.25;font-family:sans-serif;fill:#666666;fill-opacity:1;stroke:none;stroke-width:0.264583"
+       x="148.61119"
+       y="150.64423"
+       id="use1763"><tspan
+         sodipodi:role="line"
+         id="tspan1805"
+         style="font-size:2.82222px;fill:#666666;stroke-width:0.264583"
+         x="148.61119"
+         y="150.64423">(2,2)</tspan></text>
+    <use
+       x="0"
+       y="0"
+       xlink:href="#use1749"
+       id="use1765"
+       transform="translate(-8.7068332e-7,-12.5)" />
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-weight:normal;font-size:2.82222px;line-height:1.25;font-family:sans-serif;fill:#666666;fill-opacity:1;stroke:none;stroke-width:0.264583"
+       x="161.20378"
+       y="150.51193"
+       id="use1767"><tspan
+         sodipodi:role="line"
+         id="tspan1801"
+         style="font-size:2.82222px;fill:#666666;stroke-width:0.264583"
+         x="161.20378"
+         y="150.51193">(3,2)</tspan></text>
+    <use
+       x="0"
+       y="0"
+       xlink:href="#use1753"
+       id="use1769"
+       transform="translate(-8.7068332e-7,-12.5)" />
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-weight:normal;font-size:2.82222px;line-height:1.25;font-family:sans-serif;fill:#666666;fill-opacity:1;stroke:none;stroke-width:0.264583"
+       x="123.42597"
+       y="138.27652"
+       id="use1771"><tspan
+         sodipodi:role="line"
+         id="tspan1797"
+         style="font-size:2.82222px;fill:#666666;stroke-width:0.264583"
+         x="123.42597"
+         y="138.27652">(0,3)</tspan></text>
+    <use
+       x="0"
+       y="0"
+       xlink:href="#use1757"
+       id="use1773"
+       transform="translate(-8.7068332e-7,-12.5)" />
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-weight:normal;font-size:2.82222px;line-height:1.25;font-family:sans-serif;fill:#666666;fill-opacity:1;stroke:none;stroke-width:0.264583"
+       x="136.01857"
+       y="138.14423"
+       id="use1775"><tspan
+         sodipodi:role="line"
+         id="tspan1793"
+         style="font-size:2.82222px;fill:#666666;stroke-width:0.264583"
+         x="136.01857"
+         y="138.14423">(1,3)</tspan></text>
+    <use
+       x="0"
+       y="0"
+       xlink:href="#use1761"
+       id="use1777"
+       transform="translate(-8.7068332e-7,-12.5)" />
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-weight:normal;font-size:2.82222px;line-height:1.25;font-family:sans-serif;fill:#666666;fill-opacity:1;stroke:none;stroke-width:0.264583"
+       x="148.61119"
+       y="138.14423"
+       id="use1779"><tspan
+         sodipodi:role="line"
+         id="tspan1789"
+         style="font-size:2.82222px;fill:#666666;stroke-width:0.264583"
+         x="148.61119"
+         y="138.14423">(2,3)</tspan></text>
+    <use
+       x="0"
+       y="0"
+       xlink:href="#use1765"
+       id="use1781"
+       transform="translate(-8.7068332e-7,-12.5)" />
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-weight:normal;font-size:2.82222px;line-height:1.25;font-family:sans-serif;fill:#666666;fill-opacity:1;stroke:none;stroke-width:0.264583"
+       x="161.20378"
+       y="138.01193"
+       id="use1783"><tspan
+         sodipodi:role="line"
+         id="tspan1785"
+         style="font-size:2.82222px;fill:#666666;stroke-width:0.264583"
+         x="161.20378"
+         y="138.01193">(3,3)</tspan></text>
+    <rect
+       style="fill:#f4eed7;stroke:none;stroke-width:0.157;stroke-dasharray:0.264583, 0.79375"
+       id="rect2019-2-4"
+       width="50"
+       height="50"
+       x="57.557655"
+       y="224.17796"
+       inkscape:export-filename="../images/io/voxel_grid_types.png"
+       inkscape:export-xdpi="500"
+       inkscape:export-ydpi="500" />
+    <path
+       style="fill:none;stroke:#000000;stroke-width:0.565;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;marker-end:url(#Arrow1);stroke-dasharray:none"
+       d="M 57.557653,274.17797 H 107.55766"
+       id="path4045" />
+    <path
+       style="fill:none;stroke:#000000;stroke-width:0.565;stroke-linecap:butt;stroke-linejoin:miter;stroke-dasharray:none;stroke-opacity:1;marker-end:url(#Arrow1-1)"
+       d="m 57.557661,274.17796 v -50"
+       id="path4045-6"
+       sodipodi:nodetypes="cc" />
+    <g
+       inkscape:label="GridCartesian:X1:Y1"
+       transform="translate(57.557661,224.17796)"
+       id="g1220-5">
+      <g
+         inkscape:label="MajorXGridlines"
+         id="g1198-3" />
+      <g
+         inkscape:label="MajorYGridlines"
+         id="g1200-0" />
+      <g
+         inkscape:label="SubMinorXGridlines"
+         id="g1208-1">
+        <path
+           style="fill:none;stroke:#000000;stroke-width:0.079375"
+           d="M 12.5,0 V 50"
+           inkscape:label="SubminorXDiv0:0:1"
+           id="path1202-9" />
+        <path
+           style="fill:none;stroke:#000000;stroke-width:0.079375"
+           d="M 25,0 V 50"
+           inkscape:label="SubminorXDiv0:0:2"
+           id="path1204-4" />
+        <path
+           style="fill:none;stroke:#000000;stroke-width:0.079375"
+           d="M 37.5,0 V 50"
+           inkscape:label="SubminorXDiv0:0:3"
+           id="path1206-5" />
+      </g>
+      <g
+         inkscape:label="SubMinorYGridlines"
+         id="g1216-9">
+        <path
+           style="fill:none;stroke:#000000;stroke-width:0.079375"
+           d="M 0,12.5 H 50"
+           inkscape:label="SubminorXDiv0:0:1"
+           id="path1210-3" />
+        <path
+           style="fill:none;stroke:#000000;stroke-width:0.079375"
+           d="M 0,25 H 50"
+           inkscape:label="SubminorXDiv0:0:2"
+           id="path1212-9" />
+        <path
+           style="fill:none;stroke:#000000;stroke-width:0.079375"
+           d="M 0,37.5 H 50"
+           inkscape:label="SubminorXDiv0:0:3"
+           id="path1214-6" />
+      </g>
+      <rect
+         x="0"
+         y="0"
+         width="50"
+         height="50"
+         style="fill:none;stroke:#000000;stroke-width:0.264583"
+         inkscape:label="Border"
+         id="rect1218-6" />
+    </g>
+    <circle
+       style="fill:#ff0000;stroke:none;stroke-width:0.0522849;stroke-dasharray:0.0881127, 0.264338"
+       id="path1525-4"
+       cx="57.425377"
+       cy="274.31027"
+       r="1.0274905" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#path1525-4"
+       id="use1707-2"
+       transform="translate(12.592606,-0.13228969)" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#path1525-4"
+       id="use1711-0"
+       transform="translate(25.185212,-0.13228969)" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#use1707-2"
+       id="use1715-9"
+       transform="translate(25)" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#path1525-4"
+       id="use1737-1"
+       transform="translate(-0.05291887,-12.5)" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#use1707-2"
+       id="use1741-1"
+       transform="translate(-0.05291887,-12.5)" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#use1711-0"
+       id="use1745-1"
+       transform="translate(-0.05291887,-12.5)" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#use1715-9"
+       id="use1749-0"
+       transform="translate(0.13229314,-12.5)" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#use1737-1"
+       id="use1753-7"
+       transform="translate(-8.6333333e-7,-12.5)" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#use1741-1"
+       id="use1757-3"
+       transform="translate(-8.6333333e-7,-12.5)" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#use1745-1"
+       id="use1761-7"
+       transform="translate(-8.6333333e-7,-12.5)" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#use1749-0"
+       id="use1765-1"
+       transform="translate(-8.6333333e-7,-12.5)" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#use1753-7"
+       id="use1769-6"
+       transform="translate(-8.6333333e-7,-12.5)" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#use1757-3"
+       id="use1773-1"
+       transform="translate(-8.6333333e-7,-12.5)" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#use1761-7"
+       id="use1777-3"
+       transform="translate(-8.6333333e-7,-12.5)" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#use1765-1"
+       id="use1781-6"
+       transform="translate(-8.6333333e-7,-12.5)" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#g1220"
+       id="use1833"
+       transform="translate(4.2876901,-86.704426)"
+       style="fill:#ffe6d5" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#path1525"
+       id="use1835"
+       transform="translate(10.537624,-93.347633)" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#text1633"
+       id="use1837"
+       transform="translate(6.3042881,-93.347633)" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#use1707"
+       id="use1839"
+       transform="translate(10.537624,-93.347633)" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#use1709"
+       id="use1841"
+       transform="translate(6.3042881,-93.347633)" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#use1711"
+       id="use1843"
+       transform="translate(10.537624,-93.347633)" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#use1713"
+       id="use1845"
+       transform="translate(6.3042881,-93.347633)" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#use1715"
+       id="use1847"
+       transform="translate(10.537624,-93.347633)" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#use1717"
+       id="use1849"
+       transform="translate(6.3042881,-93.347633)" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#use1737"
+       id="use1851"
+       transform="translate(10.537624,-93.347633)" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#use1739"
+       id="use1853"
+       transform="translate(6.3042881,-93.347633)" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#use1741"
+       id="use1855"
+       transform="translate(10.537624,-93.347633)" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#use1743"
+       id="use1857"
+       transform="translate(6.3042881,-93.347633)" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#use1745"
+       id="use1859"
+       transform="translate(10.537624,-93.347633)" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#use1747"
+       id="use1861"
+       transform="translate(6.3042881,-93.347633)" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#use1749"
+       id="use1863"
+       transform="translate(10.537624,-93.347633)" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#use1751"
+       id="use1865"
+       transform="translate(6.3042881,-93.347633)" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#use1753"
+       id="use1867"
+       transform="translate(10.537624,-93.347633)" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#use1755"
+       id="use1869"
+       transform="translate(6.3042881,-93.347633)" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#use1757"
+       id="use1871"
+       transform="translate(10.537624,-93.347633)" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#use1759"
+       id="use1873"
+       transform="translate(6.3042881,-93.347633)" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#use1761"
+       id="use1875"
+       transform="translate(10.537624,-93.347633)" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#use1763"
+       id="use1877"
+       transform="translate(6.3042881,-93.347633)" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#use1765"
+       id="use1879"
+       transform="translate(10.537624,-93.347633)" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#use1767"
+       id="use1881"
+       transform="translate(6.3042881,-93.347633)" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#use1769"
+       id="use1883"
+       transform="translate(10.537624,-93.347633)" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#use1771"
+       id="use1885"
+       transform="translate(6.3042881,-93.347633)" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#use1773"
+       id="use1887"
+       transform="translate(10.537624,-93.347633)" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#use1775"
+       id="use1889"
+       transform="translate(6.3042881,-93.347633)" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#use1777"
+       id="use1891"
+       transform="translate(10.537624,-93.347633)" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#use1779"
+       id="use1893"
+       transform="translate(6.3042881,-93.347633)" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#use1781"
+       id="use1895"
+       transform="translate(10.537624,-93.347633)" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#use1783"
+       id="use1897"
+       transform="translate(6.3042881,-93.347633)" />
+    <rect
+       style="fill:#f4eed7;stroke:none;stroke-width:0.157;stroke-dasharray:0.264583, 0.79375"
+       id="rect2019-23"
+       width="50"
+       height="50"
+       x="125.37041"
+       y="224.17796"
+       inkscape:export-filename="../../../../doc/python/introduction/graphics/grid_type_celldata.png"
+       inkscape:export-xdpi="500"
+       inkscape:export-ydpi="500" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#g1220"
+       id="use1833-8"
+       transform="translate(2.4749442,102.24153)"
+       style="fill:#ffe6d5" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#path1525"
+       id="use1835-7"
+       transform="translate(8.7248782,95.598319)" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#use1707"
+       id="use1839-0"
+       transform="translate(8.7248782,95.598319)" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#use1711"
+       id="use1843-5"
+       transform="translate(8.7248782,95.598319)" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#use1715"
+       id="use1847-1"
+       transform="translate(8.7248782,95.598319)" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#use1737"
+       id="use1851-6"
+       transform="translate(8.7248782,95.598319)" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#use1741"
+       id="use1855-3"
+       transform="translate(8.7248782,95.598319)" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#use1745"
+       id="use1859-5"
+       transform="translate(8.7248782,95.598319)" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#use1749"
+       id="use1863-2"
+       transform="translate(8.7248782,95.598319)" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#use1753"
+       id="use1867-2"
+       transform="translate(8.7248782,95.598319)" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#use1757"
+       id="use1871-1"
+       transform="translate(8.7248782,95.598319)" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#use1761"
+       id="use1875-0"
+       transform="translate(8.7248782,95.598319)" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#use1765"
+       id="use1879-7"
+       transform="translate(8.7248782,95.598319)" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#use1769"
+       id="use1883-7"
+       transform="translate(8.7248782,95.598319)" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#use1773"
+       id="use1887-5"
+       transform="translate(8.7248782,95.598319)" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#use1777"
+       id="use1891-7"
+       transform="translate(8.7248782,95.598319)" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#use1781"
+       id="use1895-2"
+       transform="translate(8.7248782,95.598319)" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#path1525"
+       id="use1903"
+       transform="translate(-76.634336,-0.13229935)" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#text1633"
+       id="use1905"
+       transform="translate(-76.634336,-0.13229935)" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#use1707"
+       id="use1907"
+       transform="translate(-72.388263,-0.13229952)" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#use1709"
+       id="use1909"
+       transform="translate(-72.388263,-0.13229952)" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#use1711"
+       id="use1911"
+       transform="translate(-68.314269,-0.13229952)" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#use1713"
+       id="use1913"
+       transform="translate(-68.314269,-0.13229952)" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#use1715"
+       id="use1915"
+       transform="translate(-64.187354)" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#use1717"
+       id="use1917"
+       transform="translate(-64.187354)" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#use1737"
+       id="use1919"
+       transform="translate(-76.449126,-4.3916033)" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#use1739"
+       id="use1921"
+       transform="translate(-76.449126,-4.3916033)" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#use1741"
+       id="use1923"
+       transform="translate(-72.203053,-4.3916035)" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#use1743"
+       id="use1925"
+       transform="translate(-72.203053,-4.3916035)" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#use1745"
+       id="use1927"
+       transform="translate(-68.129059,-4.3916035)" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#use1747"
+       id="use1929"
+       transform="translate(-68.129059,-4.3916035)" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#use1749"
+       id="use1931"
+       transform="translate(-64.226944,-4.259312)" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#use1751"
+       id="use1933"
+       transform="translate(-64.226944,-4.259312)" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#use1753"
+       id="use1935"
+       transform="translate(-76.449126,-8.5582033)" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#use1755"
+       id="use1937"
+       transform="translate(-76.449126,-8.5582033)" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#use1757"
+       id="use1939"
+       transform="translate(-72.203053,-8.5582035)" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#use1759"
+       id="use1941"
+       transform="translate(-72.203053,-8.5582035)" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#use1761"
+       id="use1943"
+       transform="translate(-68.129059,-8.5582035)" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#use1763"
+       id="use1945"
+       transform="translate(-68.129059,-8.5582035)" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#use1765"
+       id="use1947"
+       transform="translate(-64.226944,-8.425912)" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#use1767"
+       id="use1949"
+       transform="translate(-64.226944,-8.425912)" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#use1769"
+       id="use1951"
+       transform="translate(-76.581417,-12.896882)" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#use1771"
+       id="use1953"
+       transform="translate(-76.581417,-12.896882)" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#use1773"
+       id="use1955"
+       transform="translate(-72.335344,-12.896882)" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#use1775"
+       id="use1957"
+       transform="translate(-72.335344,-12.896882)" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#use1777"
+       id="use1959"
+       transform="translate(-68.26135,-12.896882)" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#use1779"
+       id="use1961"
+       transform="translate(-68.26135,-12.896882)" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#use1781"
+       id="use1963"
+       transform="translate(-64.359235,-12.764591)" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#use1783"
+       id="use1965"
+       transform="translate(-64.359235,-12.764591)" />
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-weight:normal;font-size:4.58611px;line-height:1.25;font-family:sans-serif;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.264583"
+       x="82.501183"
+       y="220.24428"
+       id="text3890"><tspan
+         sodipodi:role="line"
+         id="tspan3888"
+         style="font-size:4.58611px;text-align:center;text-anchor:middle;stroke-width:0.264583"
+         x="82.501183"
+         y="220.24428"
+         dx="0 0">Point-based grid</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-weight:normal;font-size:4.58611px;line-height:1.25;font-family:sans-serif;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.264583"
+       x="149.8343"
+       y="220.17804"
+       id="text3890-4"><tspan
+         sodipodi:role="line"
+         id="tspan3888-9"
+         style="font-size:4.58611px;text-align:center;text-anchor:middle;stroke-width:0.264583"
+         x="149.8343"
+         y="220.17804">Cell-based grid</tspan></text>
+    <path
+       style="fill:none;stroke:#000000;stroke-width:0.565;stroke-linecap:butt;stroke-linejoin:miter;stroke-dasharray:none;stroke-opacity:1;marker-end:url(#Arrow1-2)"
+       d="m 125.3704,274.17799 h 50.00001"
+       id="path4045-1" />
+    <path
+       style="fill:none;stroke:#000000;stroke-width:0.565;stroke-linecap:butt;stroke-linejoin:miter;stroke-dasharray:none;stroke-opacity:1;marker-end:url(#Arrow1-1-0)"
+       d="m 125.37041,274.17798 v -50"
+       id="path4045-6-4"
+       sodipodi:nodetypes="cc" />
+  </g>
+</svg>

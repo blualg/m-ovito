@@ -7,6 +7,7 @@ Input file formats
   :hidden:
 
   input/cfg_atomeye
+  input/gaussian_cube
   input/lammps_data
   input/lammps_dump
   input/lammps_dump_local
@@ -129,10 +130,9 @@ OVITO can read the following file formats:
     -
 
   * - Cube 
-    - File format used by the *Gaussian* simulation package. Specifications of the format can be found
-      `here <https://h5cube-spec.readthedocs.io/en/latest/cubeformat.html>`__ and `here <http://paulbourke.net/dataformats/cube/>`__.  
+    - File format used by the *Gaussian* simulation package and other ab initio codes. 
     - :ref:`particles <scene_objects.particles>`, :ref:`voxel grids <scene_objects.voxel_grid>`             
-    -
+    - :ref:`Details <file_formats.input.cube>`
              
   * - IMD 
     - File format used by the molecular dynamics code `IMD <http://imd.itap.physik.uni-stuttgart.de/>`__.  

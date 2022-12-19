@@ -57,10 +57,19 @@ class OVITO_GRID_EXPORT VoxelGrid : public PropertyContainer
 
 public:
 
+	/// \brief The types of uniform grids supported by OVITO.
+	enum GridType {
+		CellData,	///< Data values are associated with the voxel cell centers.
+		PointData,	///< Data values are associated with the grid points (cell corners).
+	};
+	Q_ENUM(GridType);
+
+public:
+
 	/// Data type used to store the number of cells of the voxel grid in each dimension.
 	using GridDimensions = std::array<size_t,3>;
 
-	/// \brief The list of standard voxel properties.
+	/// \brief The list of predefined voxel grid properties.
 	enum Type {
 		UserProperty = PropertyObject::GenericUserProperty,	//< This is reserved for user-defined properties.
 		ColorProperty = PropertyObject::GenericColorProperty
@@ -79,7 +88,7 @@ public:
 	/// If this is not the case, the method throws an exception.
 	void verifyIntegrity() const;
 
-	/// Converts a grid coordinate to a linear voxel array index.
+	/// Converts logical grid coordinates to a linear array index.
 	size_t voxelIndex(size_t x, size_t y, size_t z) const {
 		OVITO_ASSERT(x >= 0 && x < shape()[0]);
 		OVITO_ASSERT(y >= 0 && y < shape()[1]);
@@ -87,7 +96,7 @@ public:
 		return z * (shape()[0] * shape()[1]) + y * shape()[0] + x;
 	}
 
-	/// Converts a linear voxel array index into grid coordinates.
+	/// Converts a linear array index into logical grid coordinates.
 	std::array<size_t, 3> voxelCoords(size_t index) const {
 		OVITO_ASSERT(index < elementCount());
 		size_t yz = shape()[0] * shape()[1];
@@ -113,6 +122,11 @@ private:
 
 	/// The shape of the grid (i.e. number of voxels in each dimension).
 	DECLARE_RUNTIME_PROPERTY_FIELD(GridDimensions, shape, setShape);
+
+	/// Determines whether the stored field values are volume- or vertex-based, i.e.,
+	/// whether values are associated with the voxel cells or with the corner points of the grid cells.
+	DECLARE_MODIFIABLE_PROPERTY_FIELD(GridType, gridType, setGridType);
+	DECLARE_SHADOW_PROPERTY_FIELD(gridType);
 
 	/// The domain the object is embedded in.
 	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(DataOORef<const SimulationCellObject>, domain, setDomain, PROPERTY_FIELD_NO_SUB_ANIM);

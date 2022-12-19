@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -24,6 +24,7 @@
 #include <ovito/particles/objects/ParticlesObject.h>
 #include <ovito/particles/objects/ParticleType.h>
 #include <ovito/grid/objects/VoxelGrid.h>
+#include <ovito/grid/objects/VoxelGridVis.h>
 #include <ovito/stdobj/properties/InputColumnMapping.h>
 #include <ovito/stdobj/simcell/SimulationCellObject.h>
 #include <ovito/core/utilities/io/NumberParsing.h>
@@ -109,6 +110,8 @@ void XSFImporter::FrameLoader::loadFile()
 	int frameNumber = frame().lineNumber + 1;
 
 	VoxelGrid* voxelGrid = nullptr;
+	VoxelGridVis* newVoxelGridVis = nullptr;
+
 	while(!stream.eof()) {
 		if(isCanceled()) return;
 		const char* line = stream.readLineTrimLeft(1024);
@@ -281,10 +284,13 @@ void XSFImporter::FrameLoader::loadFile()
 			voxelGrid = state().getMutableLeafObject<VoxelGrid>(VoxelGrid::OOClass(), gridId);
 			if(!voxelGrid) {
 				voxelGrid = state().createObject<VoxelGrid>(dataSource(), gridId);
-				voxelGrid->visElement()->setEnabled(false);
-				voxelGrid->visElement()->setTitle(voxelGrid->title());
-				voxelGrid->visElement()->freezeInitialParameterValues({SHADOW_PROPERTY_FIELD(ActiveObject::isEnabled), SHADOW_PROPERTY_FIELD(ActiveObject::title)});
+				newVoxelGridVis = voxelGrid->visElement<VoxelGridVis>();
+				newVoxelGridVis->setEnabled(false);
+				newVoxelGridVis->setTitle(voxelGrid->title());
+				newVoxelGridVis->freezeInitialParameterValues({SHADOW_PROPERTY_FIELD(ActiveObject::isEnabled), SHADOW_PROPERTY_FIELD(ActiveObject::title)});
 			}
+			voxelGrid->setGridType(VoxelGrid::GridType::PointData);
+			voxelGrid->freezeInitialParameterValues({SHADOW_PROPERTY_FIELD(VoxelGrid::gridType)});
 			voxelGrid->setDomain(simulationCell());
 			voxelGrid->setIdentifier(gridId);
 		}
@@ -341,6 +347,15 @@ void XSFImporter::FrameLoader::loadFile()
 					s++;
 
 				if(!setProgressValueIntermittent(i)) return;
+			}
+
+			// Automatically select the property for pseudo-coloring of the grid and adjust the value range.
+			// But only if this is the first time the file reader is loading the file.
+			if(newVoxelGridVis && newVoxelGridVis->colorMapping()->sourceProperty().isNull() && fieldQuantity.size() != 0) {
+				newVoxelGridVis->colorMapping()->setSourceProperty(VoxelPropertyReference(name));
+				auto [min, max] = std::minmax_element(fieldQuantity.cbegin(), fieldQuantity.cend());
+				newVoxelGridVis->colorMapping()->setStartValue(*min);
+				newVoxelGridVis->colorMapping()->setEndValue(*max);
 			}
 		}
 	}

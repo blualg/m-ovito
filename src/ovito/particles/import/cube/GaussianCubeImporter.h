@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -25,6 +25,7 @@
 
 #include <ovito/particles/Particles.h>
 #include <ovito/particles/import/ParticleImporter.h>
+#include <ovito/grid/objects/VoxelGrid.h>
 #include <ovito/core/dataset/DataSetContainer.h>
 
 namespace Ovito::Particles {
@@ -56,7 +57,7 @@ class OVITO_PARTICLES_EXPORT GaussianCubeImporter : public ParticleImporter
 public:
 
 	/// \brief Constructs a new instance of this class.
-	Q_INVOKABLE GaussianCubeImporter(ObjectCreationParams params) : ParticleImporter(params) {}
+	Q_INVOKABLE GaussianCubeImporter(ObjectCreationParams params) : ParticleImporter(params), _gridType(VoxelGrid::GridType::PointData) {}
 
 	/// Returns the title of this object.
 	virtual QString objectTitle() const override { return tr("Cube"); }
@@ -64,8 +65,13 @@ public:
 	/// Creates an asynchronous loader object that loads the data for the given frame from the external file.
 	virtual FileSourceImporter::FrameLoaderPtr createFrameLoader(const LoadOperationRequest& request) override {
 		activateCLocale();
-		return std::make_shared<FrameLoader>(request, recenterCell());
+		return std::make_shared<FrameLoader>(request, recenterCell(), generateBonds(), gridType());
 	}
+
+protected:
+
+	/// Is called when the value of a property of this object has changed.
+	virtual void propertyChanged(const PropertyFieldDescriptor* field) override;
 
 private:
 
@@ -74,14 +80,27 @@ private:
 	{
 	public:
 
-		/// Inherit constructor from base class.
-		using ParticleImporter::FrameLoader::FrameLoader;
+		/// Constructor.
+		FrameLoader(const LoadOperationRequest& request, bool recenterCell, bool generateBonds, VoxelGrid::GridType gridType) : ParticleImporter::FrameLoader::FrameLoader(request, recenterCell), _generateBonds(generateBonds), _gridType(gridType) {}
 
 	protected:
 
 		/// Reads the frame data from the external file.
 		virtual void loadFile() override;
+
+	private:
+
+		/// Controls the generation of ad-hoc bonds during data import.
+		bool _generateBonds;
+
+		/// The type of grid to be imported.
+		VoxelGrid::GridType _gridType;
 	};
+
+private:
+
+	/// Controls whether the grid's sampling points are point-based or cell-based.
+	DECLARE_MODIFIABLE_PROPERTY_FIELD(VoxelGrid::GridType, gridType, setGridType);
 };
 
 }	// End of namespace

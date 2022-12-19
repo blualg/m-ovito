@@ -29,16 +29,16 @@
 namespace Ovito::Particles {
 
 /**
- * \brief A properties editor for the GroImporter class.
+ * \brief A properties editor for the GaussianCubeImporter class.
  */
-class GroImporterEditor : public FileImporterEditor
+class GaussianCubeImporterEditor : public FileImporterEditor
 {
-	OVITO_CLASS(GroImporterEditor)
+	OVITO_CLASS(GaussianCubeImporterEditor)
 
 public:
 
 	/// Constructor.
-	Q_INVOKABLE GroImporterEditor() {}
+	Q_INVOKABLE GaussianCubeImporterEditor() {}
 
 protected:
 
