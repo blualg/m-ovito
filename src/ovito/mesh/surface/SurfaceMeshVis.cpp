@@ -1658,9 +1658,14 @@ bool SurfaceMeshVis::PrepareSurfaceEngine::isCornerInside2DRegion(const std::vec
 				closestVertex = v1;
 
 				// Compute pseuso-normal at vertex.
-				auto v0 = (v1 == contour.begin()) ? (contour.end() - 1) : (v1 - 1);
-				Vector2 edgeDir = (*v2) - (*v0);
-				Vector2 normal(edgeDir.y(), -edgeDir.x());
+				auto v0 = (v1 == contour.begin()) ? std::prev(contour.end()) : std::prev(v1);
+				Vector2 edge1 = (*v2) - (*v1);
+				Vector2 edge2 = (*v1) - (*v0);
+				Vector2 normal1(edge1.y(), -edge1.x());
+				Vector2 normal2(edge2.y(), -edge2.x());
+				normal1.normalizeSafely();
+				normal2.normalizeSafely();
+				Vector2 normal = normal1 + normal2;
 				isInside = (normal.dot(r) > 0);
 			}
 
