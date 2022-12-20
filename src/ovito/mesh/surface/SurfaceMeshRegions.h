@@ -75,6 +75,11 @@ public:
 		// Assign the default data object identifier.
 		setIdentifier(OOClass().pythonName());
 	}
+
+	/// Deletes elements for which bits are set in the given bit-mask.
+	virtual size_t deleteElements(const boost::dynamic_bitset<>& mask) override {
+		throw Exception(tr("Deleting regions from a SurfaceMesh is not supported via this method. Call SurfaceMesh.delete_regions() on the parent object instead."));
+	}
 };
 
 }	// End of namespace

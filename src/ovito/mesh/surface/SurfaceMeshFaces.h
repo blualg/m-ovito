@@ -77,6 +77,11 @@ public:
 
 	/// Returns the base point and vector information for visualizing a vector property from this container using a VectorVis element.
 	virtual std::tuple<ConstDataBufferPtr, ConstDataBufferPtr> getVectorVisData(const ConstDataObjectPath& path, const PipelineFlowState& state, MixedKeyCache& visCache) const override;
+
+	/// Deletes elements for which bits are set in the given bit-mask.
+	virtual size_t deleteElements(const boost::dynamic_bitset<>& mask) override {
+		throw Exception(tr("Deleting faces from a SurfaceMesh is not supported via this method. Call SurfaceMesh.delete_faces() on the parent object instead."));
+	}
 };
 
 }	// End of namespace

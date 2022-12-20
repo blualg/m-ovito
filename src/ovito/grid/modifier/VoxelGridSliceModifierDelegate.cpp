@@ -109,7 +109,7 @@ PipelineStatus VoxelGridSliceModifierDelegate::apply(const ModifierEvaluationReq
 			SurfaceMeshAccess mesh(meshObj);
 
 			// The level of subdivision.
-			constexpr int resolution = 2;
+			static constexpr int resolution = 2;
 
 			// Get domain of voxel grid.
 			VoxelGrid::GridDimensions gridShape = voxelGrid->shape();
@@ -160,7 +160,7 @@ PipelineStatus VoxelGridSliceModifierDelegate::apply(const ModifierEvaluationReq
 				// Determine the mapping of mesh faces to voxel grid cells.
 				OVITO_ASSERT(mesh.faceCount() == meshFaceVoxelCoordinates.size());
 				std::vector<size_t> voxelFaceMapping(meshFaceVoxelCoordinates.size());
-				std::transform(meshFaceVoxelCoordinates.cbegin(), meshFaceVoxelCoordinates.cend(), voxelFaceMapping.begin(), [shape=voxelGrid->shape()](const auto& coords) {
+				std::transform(meshFaceVoxelCoordinates.cbegin(), meshFaceVoxelCoordinates.cend(), voxelFaceMapping.begin(), [&, shape=voxelGrid->shape()](const auto& coords) {
 					const auto& [x, y, z] = coords;
 					OVITO_ASSERT(x >= 0 && y >= 0 && z >= 0);
 					return std::min((size_t)z / resolution, shape[2]-1) * (shape[0] * shape[1]) + std::min((size_t)y / resolution, shape[1]-1) * shape[0] + std::min((size_t)x / resolution, shape[0]-1);
