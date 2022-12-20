@@ -226,20 +226,24 @@ void ColorLegendOverlayEditor::updateSourcesList()
 				else break;
 			}
 
-			// Now evaluate the pipeline and look for typed properties in its output data collection.
-			const PipelineFlowState& state = pipeline->evaluatePipelineSynchronous(currentAnimationTime(), false);
-			for(const ConstDataObjectPath& dataPath : state.getObjectsRecursive(PropertyObject::OOClass())) {
-				const PropertyObject* property = static_object_cast<PropertyObject>(dataPath.back());
+			// Pipeline evaluations require a valid execution context.
+			handleExceptions([&] {
 
-				// Check if the property is a typed property, i.e. it has one or more ElementType objects attached to it.
-				if(property->isTypedProperty() && dataPath.size() >= 2) {
-					QVariant ref = QVariant::fromValue(PropertyDataObjectReference(dataPath));
-					
-					// Append typed properties at the end of the list.
-					if(_sourcesComboBox->findData(ref) < 0)
-						_sourcesComboBox->addItem(dataPath.toUIString(), std::move(ref));
+				// Now evaluate the pipeline and look for typed properties in its output data collection.
+				const PipelineFlowState& state = pipeline->evaluatePipelineSynchronous(currentAnimationTime(), false);
+				for(const ConstDataObjectPath& dataPath : state.getObjectsRecursive(PropertyObject::OOClass())) {
+					const PropertyObject* property = static_object_cast<PropertyObject>(dataPath.back());
+
+					// Check if the property is a typed property, i.e. it has one or more ElementType objects attached to it.
+					if(property->isTypedProperty() && dataPath.size() >= 2) {
+						QVariant ref = QVariant::fromValue(PropertyDataObjectReference(dataPath));
+						
+						// Append typed properties at the end of the list.
+						if(_sourcesComboBox->findData(ref) < 0)
+							_sourcesComboBox->addItem(dataPath.toUIString(), std::move(ref));
+					}
 				}
-			}
+			});
 
 			return true;
 		});

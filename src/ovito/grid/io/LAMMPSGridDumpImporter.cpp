@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -20,24 +20,20 @@
 //
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#include <ovito/particles/Particles.h>
-#include <ovito/particles/objects/ParticlesObject.h>
+#include <ovito/grid/Grid.h>
+#include <ovito/grid/objects/VoxelGrid.h>
 #include <ovito/stdobj/simcell/SimulationCellObject.h>
-#include <ovito/core/app/Application.h>
 #include <ovito/core/utilities/io/CompressedTextReader.h>
-#include <ovito/core/utilities/io/FileManager.h>
-#include "LAMMPSDumpLocalImporter.h"
+#include "LAMMPSGridDumpImporter.h"
 
-namespace Ovito::Particles {
+namespace Ovito::Grid {
 
-IMPLEMENT_OVITO_CLASS(LAMMPSDumpLocalImporter);
-DEFINE_PROPERTY_FIELD(LAMMPSDumpLocalImporter, columnMapping);
-SET_PROPERTY_FIELD_LABEL(LAMMPSDumpLocalImporter, columnMapping, "File column mapping");
+IMPLEMENT_OVITO_CLASS(LAMMPSGridDumpImporter);
 
 /******************************************************************************
 * Checks if the given file has format that can be read by this importer.
 ******************************************************************************/
-bool LAMMPSDumpLocalImporter::OOMetaClass::checkFileFormat(const FileHandle& file) const
+bool LAMMPSGridDumpImporter::OOMetaClass::checkFileFormat(const FileHandle& file) const
 {
 	// Open input file.
 	CompressedTextReader stream(file);
@@ -49,12 +45,12 @@ bool LAMMPSDumpLocalImporter::OOMetaClass::checkFileFormat(const FileHandle& fil
 	if(!stream.lineStartsWith("ITEM: TIMESTEP") && !stream.lineStartsWith("ITEM: UNITS") && !stream.lineStartsWith("ITEM: TIME"))
 		return false;
 
-	// Continue reading until "ITEM: NUMBER OF ENTRIES" line is encountered.
+	// Continue reading until "ITEM: GRID SIZE" line is encountered.
 	for(int i = 0; i < 20; i++) {
 		if(stream.eof())
 			return false;
 		stream.readLine();
-		if(stream.lineStartsWith("ITEM: NUMBER OF ENTRIES"))
+		if(stream.lineStartsWith("ITEM: GRID SIZE"))
 			return true;
 	}
 
@@ -64,14 +60,14 @@ bool LAMMPSDumpLocalImporter::OOMetaClass::checkFileFormat(const FileHandle& fil
 /******************************************************************************
 * Scans the data file and builds a list of source frames.
 ******************************************************************************/
-void LAMMPSDumpLocalImporter::FrameFinder::discoverFramesInFile(QVector<FileSourceImporter::Frame>& frames)
+void LAMMPSGridDumpImporter::FrameFinder::discoverFramesInFile(QVector<FileSourceImporter::Frame>& frames)
 {
 	CompressedTextReader stream(fileHandle());
-	setProgressText(tr("Scanning LAMMPS dump local file %1").arg(fileHandle().toString()));
+	setProgressText(tr("Scanning LAMMPS grid dump file %1").arg(fileHandle().toString()));
 	setProgressMaximum(stream.underlyingSize());
 
 	unsigned long long timestep = 0;
-	size_t numElements = 0;
+	size_t numVoxels = 0;
 	Frame frame(fileHandle());
 
 	while(!stream.eof() && !isCanceled()) {
@@ -84,7 +80,7 @@ void LAMMPSDumpLocalImporter::FrameFinder::discoverFramesInFile(QVector<FileSour
 		do {
 			if(stream.lineStartsWith("ITEM: TIMESTEP")) {
 				if(sscanf(stream.readLine(), "%llu", &timestep) != 1)
-					throw Exception(tr("LAMMPS dump local file parsing error. Invalid timestep number (line %1):\n%2").arg(stream.lineNumber()).arg(stream.lineString()));
+					throw Exception(tr("LAMMPS grid dump file parsing error. Invalid timestep number (line %1):\n%2").arg(stream.lineNumber()).arg(stream.lineString()));
 				frame.byteOffset = byteOffset;
 				frame.lineNumber = lineNumber;
 				frame.label = QString("Timestep %1").arg(timestep);
@@ -95,18 +91,18 @@ void LAMMPSDumpLocalImporter::FrameFinder::discoverFramesInFile(QVector<FileSour
 				stream.readLine();
 				stream.readLine();
 			}
-			else if(stream.lineStartsWith("ITEM: NUMBER OF ENTRIES")) {
-				// Parse number of entries.
-				unsigned long long u;
-				if(sscanf(stream.readLine(), "%llu", &u) != 1)
-					throw Exception(tr("LAMMPS dump local file parsing error. Invalid number of entries in line %1:\n%2").arg(stream.lineNumber()).arg(stream.lineString()));
-				if(u > 100'000'000'000ll)
-					throw Exception(tr("LAMMPS dump local file parsing error. Number of entries in line %1 is too large. The LAMMPS dump local file reader doesn't accept files with more than 100 entries.").arg(stream.lineNumber()));
-				numElements = (size_t)u;
+			else if(stream.lineStartsWith("ITEM: GRID SIZE")) {
+				// Parse grid size.
+				unsigned long long nx, ny, nz;
+				if(sscanf(stream.readLine(), "%llu %llu %llu", &nx, &ny, &nz) != 3)
+					throw Exception(tr("LAMMPS grid dump file parsing error. Invalid grid size in line %1:\n%2").arg(stream.lineNumber()).arg(stream.lineString()));
+				if(nx > 100'000'000ll || ny > 100'000'000ll || nz > 100'000'000ll)
+					throw Exception(tr("LAMMPS grid dump file parsing error. Number of grid cells in line %1 is too large. The file reader doesn't accept files with more than 100 million cells in each direction.").arg(stream.lineNumber()));
+				numVoxels = (size_t)nx * (size_t)ny * (size_t)nz;
 				break;
 			}
-			else if(stream.lineStartsWith("ITEM: ENTRIES")) {
-				for(size_t i = 0; i < numElements; i++) {
+			else if(stream.lineStartsWith("ITEM: GRID CELLS")) {
+				for(size_t i = 0; i < numVoxels; i++) {
 					stream.readLine();
 					if(!setProgressValueIntermittent(stream.underlyingByteOffset()))
 						return;
@@ -123,7 +119,7 @@ void LAMMPSDumpLocalImporter::FrameFinder::discoverFramesInFile(QVector<FileSour
 				}
 			}
 			else {
-				throw Exception(tr("LAMMPS dump local file parsing error. Line %1 of file %2 is invalid.").arg(stream.lineNumber()).arg(stream.filename()));
+				throw Exception(tr("LAMMPS grid dump file parsing error. Line %1 of file %2 is invalid.").arg(stream.lineNumber()).arg(stream.filename()));
 			}
 		}
 		while(!stream.eof());
@@ -133,21 +129,19 @@ void LAMMPSDumpLocalImporter::FrameFinder::discoverFramesInFile(QVector<FileSour
 /******************************************************************************
 * Parses the given input file.
 ******************************************************************************/
-void LAMMPSDumpLocalImporter::FrameLoader::loadFile()
+void LAMMPSGridDumpImporter::FrameLoader::loadFile()
 {
 	// Open file for reading.
 	CompressedTextReader stream(fileHandle());
-	setProgressText(tr("Reading LAMMPS dump local file %1").arg(fileHandle().toString()));
+	setProgressText(tr("Reading LAMMPS grid dump file %1").arg(fileHandle().toString()));
 
 	// Jump to byte offset.
 	if(frame().byteOffset != 0)
 		stream.seek(frame().byteOffset, frame().lineNumber);
 
-	// Hide particles, because this importer loads non-particle data.
-	particles()->setVisElement(nullptr);
-
 	unsigned long long timestep;
-	size_t numElements = 0;
+	size_t numVoxels = 0;
+	VoxelGrid::GridDimensions gridDims = {0, 0, 0};
 
 	while(!stream.eof()) {
 
@@ -157,26 +151,15 @@ void LAMMPSDumpLocalImporter::FrameLoader::loadFile()
 		do {
 			if(stream.lineStartsWith("ITEM: TIMESTEP")) {
 				if(sscanf(stream.readLine(), "%llu", &timestep) != 1)
-					throw Exception(tr("LAMMPS dump local file parsing error. Invalid timestep number (line %1):\n%2").arg(stream.lineNumber()).arg(stream.lineString()));
+					throw Exception(tr("LAMMPS grid dump file parsing error. Invalid timestep number (line %1):\n%2").arg(stream.lineNumber()).arg(stream.lineString()));
 				state().setAttribute(QStringLiteral("Timestep"), QVariant::fromValue(timestep), dataSource());
 				break;
 			}
 			else if(stream.lineStartsWithToken("ITEM: TIME")) {
 				FloatType simulationTime;
 				if(sscanf(stream.readLine(), FLOATTYPE_SCANF_STRING, &simulationTime) != 1)
-					throw Exception(tr("LAMMPS dump local file parsing error. Invalid time value (line %1):\n%2").arg(stream.lineNumber()).arg(stream.lineString()));
+					throw Exception(tr("LAMMPS grid dump file parsing error. Invalid time value (line %1):\n%2").arg(stream.lineNumber()).arg(stream.lineString()));
 				state().setAttribute(QStringLiteral("Time"), QVariant::fromValue(simulationTime), dataSource());
-				break;
-			}
-			else if(stream.lineStartsWith("ITEM: NUMBER OF ENTRIES")) {
-				// Parse number of entries.
-				unsigned long long u;
-				if(sscanf(stream.readLine(), "%llu", &u) != 1)
-					throw Exception(tr("LAMMPS dump local file parsing error. Invalid number of entries in line %1:\n%2").arg(stream.lineNumber()).arg(stream.lineString()));
-
-				numElements = (size_t)u;
-				setBondCount(numElements);
-				setProgressMaximum(u);
 				break;
 			}
 			else if(stream.lineStartsWith("ITEM: BOX BOUNDS xy xz yz")) {
@@ -191,7 +174,7 @@ void LAMMPSDumpLocalImporter::FrameLoader::loadFile()
 				Box3 simBox;
 				for(int k = 0; k < 3; k++) {
 					if(sscanf(stream.readLine(), FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING, &simBox.minc[k], &simBox.maxc[k], &tiltFactors[k]) != 3)
-						throw Exception(tr("Invalid box size in line %1 of LAMMPS dump local file: %2").arg(stream.lineNumber()).arg(stream.lineString()));
+						throw Exception(tr("Invalid box size in line %1 of LAMMPS dump file: %2").arg(stream.lineNumber()).arg(stream.lineString()));
 				}
 
 				// LAMMPS only stores the outer bounding box of the simulation cell in the dump file.
@@ -217,7 +200,7 @@ void LAMMPSDumpLocalImporter::FrameLoader::loadFile()
 				Box3 simBox;
 				for(int k = 0; k < 3; k++) {
 					if(sscanf(stream.readLine(), FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING, &simBox.minc[k], &simBox.maxc[k]) != 2)
-						throw Exception(tr("Invalid box size in line %1 of LAMMPS dump local file: %2").arg(stream.lineNumber()).arg(stream.lineString()));
+						throw Exception(tr("Invalid box size in line %1 of dump file: %2").arg(stream.lineNumber()).arg(stream.lineString()));
 				}
 
 				simulationCell()->setCellMatrix(AffineTransformation(
@@ -227,15 +210,76 @@ void LAMMPSDumpLocalImporter::FrameLoader::loadFile()
 						simBox.minc - Point3::Origin()));
 				break;
 			}
-			else if(stream.lineStartsWith("ITEM: ENTRIES")) {
+			else if(stream.lineStartsWith("ITEM: GRID SIZE")) {
+				// Parse grid size.
+				unsigned long long nx, ny, nz;
+				if(sscanf(stream.readLine(), "%llu %llu %llu", &nx, &ny, &nz) != 3)
+					throw Exception(tr("LAMMPS grid dump file parsing error. Invalid grid size in line %1:\n%2").arg(stream.lineNumber()).arg(stream.lineString()));
+				numVoxels = (size_t)nx * (size_t)ny * (size_t)nz;
+				gridDims = {nx, ny, nz};
+				setProgressMaximum(numVoxels);
+				break;
+			}
+			else if(stream.lineStartsWith("ITEM: GRID CELLS")) {
+
+				// The unique identifier of the import voxel grid. 
+				// This default identifier may be replaced below by a grid name found in the file. 
+				QString gridIdentifier = QStringLiteral("imported");
 
 				// Read the column names list.
 				QStringList tokens = FileImporter::splitString(stream.lineString());
-				OVITO_ASSERT(tokens[0] == "ITEM:" && tokens[1] == "ENTRIES");
-				QStringList fileColumnNames = tokens.mid(2);
+				OVITO_ASSERT(tokens[0] == "ITEM:" && tokens[1] == "GRID" && tokens[2] == "CELLS");
+				QStringList fileColumnNames = tokens.mid(3);
+
+				// Set up column-to-property mapping.
+				VoxelInputColumnMapping columnMapping;
+				columnMapping.resize(fileColumnNames.size());
+				for(int i = 0; i < fileColumnNames.size(); i++) {
+					QString propertyName = fileColumnNames[i];
+					int vectorComponent = 0;
+					int dataType = PropertyObject::Float;
+
+					// Parse LAMMPScolumn name, which should have the form <fix/compute name>:<grid name>:<data field>.
+					QStringList tokens = fileColumnNames[i].split(QChar(':'));
+					if(tokens.size() == 3 && !tokens[0].isEmpty() && !tokens[2].isEmpty()) {
+						// Use LAMMPS fix/compute name as property name.
+						propertyName = tokens[0];
+
+						// Extract vector component from 3rd field.
+						if(tokens[2] == QStringLiteral("count")) {
+							propertyName += QStringLiteral("_count");
+							dataType = PropertyObject::Int64;
+						}
+						else if(tokens[2].startsWith(QStringLiteral("data[")) && tokens[2].endsWith(QChar(']'))) {
+							unsigned int index = tokens[2].mid(5, tokens[2].size() - 6).toUInt();
+							if(index > 0)
+								vectorComponent = index - 1;
+							else
+								propertyName += QChar('_') + tokens[2];
+						}
+						else propertyName += QChar('_') + tokens[2];
+
+						// Adopt LAMMPS grid name as OVITO VoxelGrid identifier.
+						if(!tokens[1].isEmpty() && !tokens[1].contains(QChar('/')))
+							gridIdentifier = tokens[1];
+					}
+
+					columnMapping.mapCustomColumn(i, propertyName, dataType, vectorComponent);
+					columnMapping[i].columnName = fileColumnNames[i];
+				}
+
+				// Create the destination voxel grid.
+				VoxelGrid* voxelGrid = state().getMutableLeafObject<VoxelGrid>(VoxelGrid::OOClass(), gridIdentifier);
+				if(!voxelGrid) {
+					voxelGrid = state().createObject<VoxelGrid>(dataSource());
+					voxelGrid->setIdentifier(gridIdentifier);
+				}
+				voxelGrid->setShape(gridDims);
+				voxelGrid->setElementCount(numVoxels);
+				voxelGrid->setDomain(simulationCell());
 
 				// Parse data columns.
-				InputColumnReader columnParser(*this, _columnMapping, bonds());
+				InputColumnReader columnParser(*this, columnMapping, voxelGrid);
 
 				// If possible, use memory-mapped file access for best performance.
 				const char* s_start;
@@ -244,7 +288,7 @@ void LAMMPSDumpLocalImporter::FrameLoader::loadFile()
 				auto s = s_start;
 				int lineNumber = stream.lineNumber() + 1;
 				try {
-					for(size_t i = 0; i < numElements; i++, lineNumber++) {
+					for(size_t i = 0; i < numVoxels; i++, lineNumber++) {
 						if(!setProgressValueIntermittent(i)) return;
 						if(!s)
 							columnParser.readElement(i, stream.readLine());
@@ -253,25 +297,13 @@ void LAMMPSDumpLocalImporter::FrameLoader::loadFile()
 					}
 				}
 				catch(Exception& ex) {
-					throw ex.prependGeneralMessage(tr("Parsing error in line %1 of LAMMPS dump local file.").arg(lineNumber));
+					throw ex.prependGeneralMessage(tr("Parsing error in line %1 of LAMMPS grid dump file.").arg(lineNumber));
 				}
 				if(s) {
 					stream.munmap();
 					stream.seek(stream.byteOffset() + (s - s_start));
 				}
-
-				// Sort the element types since we created them on the go while parsing the file. Otherwise their order be dependent on the first occurrence of element types in the file.
-				columnParser.sortElementTypes();
 				columnParser.reset();
-
-				// If the bond "Topology" property was loaded, we need to shift particle indices by 1, because LAMMPS
-				// uses 1-based atom IDs and OVITO uses 0-based indices.
-				if(PropertyAccess<ParticleIndexPair> topologyProperty = bonds()->getMutableProperty(BondsObject::TopologyProperty)) {
-					for(ParticleIndexPair& ab : topologyProperty) {
-						ab[0] -= 1;
-						ab[1] -= 1;
-					}
-				}
 
 				// Detect if there are more simulation frames following in the file.
 				if(!stream.eof()) {
@@ -280,13 +312,12 @@ void LAMMPSDumpLocalImporter::FrameLoader::loadFile()
 						signalAdditionalFrames();
 				}
 
-				state().setStatus(tr("%1 bonds at timestep %2").arg(numElements).arg(timestep));
+				state().setStatus(tr("%1 x %2 x %3 grid at timestep %4").arg(gridDims[0]).arg(gridDims[1]).arg(gridDims[2]).arg(timestep));
 
 				// Call base implementation to finalize the loaded data.
-				ParticleImporter::FrameLoader::loadFile();
+				StandardFrameLoader::loadFile();
 
 				return; // Done!
-
 			}
 			else if(stream.lineStartsWith("ITEM:")) {
 				// For the sake of forward compatibility, we ignore unknown ITEM sections.
@@ -298,56 +329,13 @@ void LAMMPSDumpLocalImporter::FrameLoader::loadFile()
 				}
 			}
 			else {
-				throw Exception(tr("LAMMPS dump local file parsing error. Line %1 of file %2 is invalid.").arg(stream.lineNumber()).arg(stream.filename()));
+				throw Exception(tr("LAMMPS grid dump file parsing error. Line %1 of file %2 is invalid.").arg(stream.lineNumber()).arg(stream.filename()));
 			}
 		}
 		while(!stream.eof());
 	}
 
-	throw Exception(tr("LAMMPS dump local file parsing error. Unexpected end of file at line %1 or \"ITEM: ENTRIES\" section is not present in dump file.").arg(stream.lineNumber()));
-}
-
-/******************************************************************************
-* Inspects the header of the given file and returns the number of file columns.
-******************************************************************************/
-Future<BondInputColumnMapping> LAMMPSDumpLocalImporter::inspectFileHeader(const Frame& frame)
-{
-	activateCLocale();
-
-	// Retrieve file.
-	return Application::instance()->fileManager().fetchUrl(frame.sourceFile)
-		.then([](const FileHandle& fileHandle) {
-
-			// Start parsing the file up to the specification of the file columns.
-			CompressedTextReader stream(fileHandle);
-
-			BondInputColumnMapping detectedColumnMapping;
-			while(!stream.eof()) {
-				// Parse next line.
-				stream.readLine();
-
-				if(stream.lineStartsWith("ITEM: ENTRIES")) {
-					// Read the column names list.
-					QStringList tokens = FileImporter::splitString(stream.lineString());
-					OVITO_ASSERT(tokens[0] == "ITEM:" && tokens[1] == "ENTRIES");
-					QStringList fileColumnNames = tokens.mid(2);
-
-					if(fileColumnNames.isEmpty()) {
-						// If no file columns names are available, count at least the number of columns in the first data line.
-						stream.readLine();
-						int columnCount = FileImporter::splitString(stream.lineString()).size();
-						detectedColumnMapping.resize(columnCount);
-					}
-					else {
-						detectedColumnMapping.resize(fileColumnNames.size());
-						for(int i = 0; i < fileColumnNames.size(); i++)
-							detectedColumnMapping[i].columnName = fileColumnNames[i];
-					}
-					break;
-				}
-			}
-			return detectedColumnMapping;
-		});
+	throw Exception(tr("LAMMPS grid dump file parsing error. Unexpected end of file at line %1 or \"ITEM: GRID CELLS\" section is not present in dump file.").arg(stream.lineNumber()));
 }
 
 }	// End of namespace

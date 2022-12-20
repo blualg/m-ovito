@@ -10,6 +10,7 @@ Input file formats
   input/gaussian_cube
   input/lammps_data
   input/lammps_dump
+  input/lammps_dump_grid
   input/lammps_dump_local
   input/reaxff
   input/xyz
@@ -41,6 +42,11 @@ OVITO can read the following file formats:
       per-bond quantities from such files generated in reactive molecular dynamics simulations.  
     - :ref:`bonds <scene_objects.bonds>`
     - :ref:`Details <file_formats.input.lammps_dump_local>`
+
+  * - LAMMPS dump grid
+    - File format containing volumetric data written by the *dump grid* command of LAMMPS. 
+    - :ref:`voxel grids <scene_objects.voxel_grid>`
+    - :ref:`Details <file_formats.input.lammps_dump_grid>`
 
   * - ReaxFF bonds
     - File format written by the LAMMPS `fix reaxff/bonds <https://docs.lammps.org/fix_reaxff_bonds.html>`__ command and the original ReaxFF code of Adri van Duin. 

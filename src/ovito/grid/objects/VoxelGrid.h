@@ -26,6 +26,7 @@
 #include <ovito/grid/Grid.h>
 #include <ovito/stdobj/properties/PropertyContainer.h>
 #include <ovito/stdobj/properties/PropertyReference.h>
+#include <ovito/stdobj/properties/InputColumnMapping.h>
 #include <ovito/stdobj/simcell/SimulationCellObject.h>
 
 namespace Ovito::Grid {
@@ -137,7 +138,12 @@ private:
  */
 using VoxelPropertyReference = TypedPropertyReference<VoxelGrid>;
 
+/**
+ * Encapsulates a mapping of input file columns to voxel grid properties.
+ */
+using VoxelInputColumnMapping = TypedInputColumnMapping<VoxelGrid>;
 
 }	// End of namespace
 
 Q_DECLARE_METATYPE(Ovito::Grid::VoxelPropertyReference);
+Q_DECLARE_METATYPE(Ovito::Grid::VoxelInputColumnMapping);

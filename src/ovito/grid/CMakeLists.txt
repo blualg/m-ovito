@@ -31,6 +31,7 @@ SET(SourceFiles
 	io/VTKVoxelGridExporter.cpp
 	io/ParaViewVTIGridImporter.cpp
 	io/ParaViewVTSGridImporter.cpp
+	io/LAMMPSGridDumpImporter.cpp
 )
 
 IF(OVITO_BUILD_PLUGIN_STDMOD)

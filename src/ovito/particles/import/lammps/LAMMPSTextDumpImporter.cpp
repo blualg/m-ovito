@@ -71,9 +71,6 @@ void LAMMPSTextDumpImporter::FrameFinder::discoverFramesInFile(QVector<FileSourc
 	setProgressText(tr("Scanning LAMMPS dump file %1").arg(fileHandle().toString()));
 	setProgressMaximum(stream.underlyingSize());
 
-	// Regular expression for whitespace characters.
-	QRegularExpression ws_re(QStringLiteral("\\s+"));
-
 	unsigned long long timestep = 0;
 	size_t numParticles = 0;
 	Frame frame(fileHandle());

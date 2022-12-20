@@ -105,7 +105,7 @@ void ColorLegendOverlay::initializeOverlay(Viewport* viewport)
 	if(ExecutionContext::isInteractive()) {
 		
 		// Find a ColorCodingModifier in the scene that we can connect to.
-		if(!modifier() && !sourceProperty() && viewport->scene()) {
+		if(!modifier() && !sourceProperty() && !colorMapping() && viewport->scene()) {
 			viewport->scene()->visitObjectNodes([&](PipelineSceneNode* pipeline) {
 				PipelineObject* obj = pipeline->dataProvider();
 				while(obj) {
@@ -125,7 +125,7 @@ void ColorLegendOverlay::initializeOverlay(Viewport* viewport)
 
 		// If there is no ColorCodingModifier in the scene, initialize the overlay to use 
 		// the first available typed property as color source.
-		if(!modifier() && !sourceProperty() && viewport->scene()) {
+		if(!modifier() && !sourceProperty() && !colorMapping() && viewport->scene()) {
 			viewport->scene()->visitObjectNodes([&](PipelineSceneNode* pipeline) {
 				const PipelineFlowState& state = pipeline->evaluatePipelineSynchronous(viewport->scene()->animationSettings()->currentTime(), false);
 				for(const ConstDataObjectPath& dataPath : state.getObjectsRecursive(PropertyObject::OOClass())) {
@@ -134,6 +134,28 @@ void ColorLegendOverlay::initializeOverlay(Viewport* viewport)
 					if(property->isTypedProperty() && dataPath.size() >= 2) {
 						setSourceProperty(dataPath);
 						return false; // Stop search.
+					}
+				}
+				return true;
+			});
+		}
+
+		// If we still don't have a valid source, look for a visual element in the scene which uses pseudo-color mapping.
+		if(!modifier() && !sourceProperty() && !colorMapping() && viewport->scene()) {
+			viewport->scene()->visitObjectNodes([&](PipelineSceneNode* pipeline) {
+				for(DataVis* vis : pipeline->visElements()) {
+					if(vis->isEnabled()) {
+						for(const PropertyFieldDescriptor* field : vis->getOOMetaClass().propertyFields()) {
+							if(field->isReferenceField() && !field->isWeakReference() && field->targetClass()->isDerivedFrom(PropertyColorMapping::OOClass()) && !field->flags().testFlag(PROPERTY_FIELD_NO_SUB_ANIM) && !field->isVector()) {
+								if(PropertyColorMapping* mapping = static_object_cast<PropertyColorMapping>(vis->getReferenceFieldTarget(field))) {
+									if(mapping->sourceProperty()) {
+										setColorMapping(mapping);
+										return false; // Stop search.
+									}
+								}
+								break;
+							}
+						}
 					}
 				}
 				return true;
