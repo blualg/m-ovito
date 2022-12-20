@@ -217,7 +217,7 @@ void CoordinationPolyhedraModifier::ComputePolyhedraEngine::perform()
 
 			// Create the corresponding output mesh vertex property.
 			PropertyPtr vertexProperty;
-			if(SurfaceMeshVertices::OOClass().isValidStandardPropertyId(particleProperty->type())) {
+			if(particleProperty->type() < PropertyObject::FirstSpecificProperty && SurfaceMeshVertices::OOClass().isValidStandardPropertyId(particleProperty->type())) {
 				// Input property is also a standard property for mesh vertices.
 				vertexProperty = mesh.createVertexProperty(static_cast<SurfaceMeshVertices::Type>(particleProperty->type()));
 				OVITO_ASSERT(vertexProperty->dataType() == particleProperty->dataType());
@@ -240,7 +240,7 @@ void CoordinationPolyhedraModifier::ComputePolyhedraEngine::perform()
 
 			// Create the corresponding output mesh region property.
 			PropertyPtr regionProperty;
-			if(SurfaceMeshRegions::OOClass().isValidStandardPropertyId(particleProperty->type())) {
+			if(particleProperty->type() < PropertyObject::FirstSpecificProperty && SurfaceMeshRegions::OOClass().isValidStandardPropertyId(particleProperty->type())) {
 				// Input property is also a standard property for mesh regions.
 				regionProperty = mesh.createRegionProperty(static_cast<SurfaceMeshRegions::Type>(particleProperty->type()));
 				OVITO_ASSERT(regionProperty->dataType() == particleProperty->dataType());

@@ -377,7 +377,7 @@ void ConstructSurfaceModifier::AlphaShapeEngine::perform()
 	// Create mesh vertex properties.
 	for(const ConstPropertyPtr& particleProperty : particleProperties()) {
 		PropertyPtr vertexProperty;
-		if(SurfaceMeshVertices::OOClass().isValidStandardPropertyId(particleProperty->type())) {
+		if(particleProperty->type() < PropertyObject::FirstSpecificProperty && SurfaceMeshVertices::OOClass().isValidStandardPropertyId(particleProperty->type())) {
 			// Input property is also a standard property for mesh vertices.
 			vertexProperty = mesh.createVertexProperty(static_cast<SurfaceMeshVertices::Type>(particleProperty->type()));
 			OVITO_ASSERT(vertexProperty->dataType() == particleProperty->dataType());
@@ -624,7 +624,7 @@ void ConstructSurfaceModifier::GaussianDensityEngine::perform()
 		// Can only transfer floating-point properties, because we'll need to blend values of several particles.
 		if(particleProperty->dataType() == PropertyObject::Float) {
 			PropertyPtr vertexProperty;
-			if(SurfaceMeshVertices::OOClass().isValidStandardPropertyId(particleProperty->type())) {
+			if(particleProperty->type() < PropertyObject::FirstSpecificProperty && SurfaceMeshVertices::OOClass().isValidStandardPropertyId(particleProperty->type())) {
 				// Input property is also a standard property for mesh vertices.
 				vertexProperty = mesh.createVertexProperty(static_cast<SurfaceMeshVertices::Type>(particleProperty->type()), DataBuffer::InitializeMemory);
 				OVITO_ASSERT(vertexProperty->dataType() == particleProperty->dataType());
