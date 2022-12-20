@@ -326,7 +326,7 @@ bool GenerateTrajectoryLinesModifier::generateTrajectories(AnimationTime current
 
 					// Create a corresponding output property of the trajectory lines.
 					PropertyAccess<void,true> samplingProperty;
-					if(TrajectoryObject::OOClass().isValidStandardPropertyId(inputProperty->type())) {
+					if(inputProperty->type() < PropertyObject::FirstSpecificProperty && TrajectoryObject::OOClass().isValidStandardPropertyId(inputProperty->type())) {
 						// Input particle property is also a standard property for trajectory lines.
 						samplingProperty = trajObj->createProperty(inputProperty->type());
 						OVITO_ASSERT(samplingProperty.dataType() == inputProperty->dataType());

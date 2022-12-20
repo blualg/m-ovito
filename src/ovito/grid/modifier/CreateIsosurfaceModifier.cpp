@@ -332,7 +332,7 @@ bool CreateIsosurfaceModifier::transferPropertiesFromGridToMesh(SurfaceMeshAcces
 	std::vector<std::pair<ConstPropertyAccess<void,true>, PropertyAccess<void,true>>> propertyMapping;
 	for(const ConstPropertyPtr& fieldProperty : fieldProperties) {
 		PropertyPtr vertexProperty;
-		if(SurfaceMeshVertices::OOClass().isValidStandardPropertyId(fieldProperty->type())) {
+		if(fieldProperty->type() < PropertyObject::FirstSpecificProperty && SurfaceMeshVertices::OOClass().isValidStandardPropertyId(fieldProperty->type())) {
 			// Input voxel property is also a standard property for mesh vertices.
 			vertexProperty = mesh.createVertexProperty(static_cast<SurfaceMeshVertices::Type>(fieldProperty->type()), DataBuffer::InitializeMemory);
 			OVITO_ASSERT(vertexProperty->dataType() == fieldProperty->dataType());
