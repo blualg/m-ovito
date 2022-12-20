@@ -157,6 +157,7 @@ void LoadTrajectoryModifier::applyTrajectoryState(PipelineFlowState& state, cons
 				if(refMap.insert(std::make_pair(id, index++)).second == false)
 					throw Exception(tr("Particles with duplicate identifiers detected in trajectory dataset."));
 			}
+			trajIdentifierProperty.reset();
 
 			// Check for duplicate identifiers in topology dataset.
 			std::vector<size_t> idSet(identifierProperty.cbegin(), identifierProperty.cend());
@@ -164,26 +165,49 @@ void LoadTrajectoryModifier::applyTrajectoryState(PipelineFlowState& state, cons
 			if(boost::adjacent_find(idSet) != idSet.cend())
 				throw Exception(tr("Particles with duplicate identifiers detected in topology dataset."));
 
+			// Used to keep track of which topology particles are going to be deleted.
+			boost::dynamic_bitset<> deletionMask; 
+
 			// Build mapping of particle indices from the topology dataset to the corresponding indices in the trajectory dataset.
-			const qlonglong* id = identifierProperty.cbegin();
-			for(auto& mappedIndex : indexToIndexMap) {
-				auto iter = refMap.find(*id);
-				if(iter == refMap.end())
-					throw Exception(tr("Particle id %1 from topology dataset not found in trajectory dataset.").arg(*id));
-				mappedIndex = iter->second;
-				refMap.erase(iter);
-				++id;
+			auto mappedIndex = indexToIndexMap.begin();
+			size_t idx = 0;
+			for(auto id : identifierProperty) {
+				auto iter = refMap.find(id);
+				if(iter == refMap.end()) {
+					// Existing particle from topology dataset was not found in the trajectory dataset.
+					// Mark the particle for deletion.
+					if(deletionMask.size() == 0) 
+						deletionMask = boost::dynamic_bitset<>(indexToIndexMap.size());
+					deletionMask.set(idx);
+				}
+				else {
+					*mappedIndex++ = iter->second;
+					refMap.erase(iter);
+				}
+				idx++;
 			}
+			identifierProperty.reset();
+
+			// Delete outdated particles, which have disappeared during the course of the simulation.
+			if(deletionMask.size() != 0) {
+				OVITO_ASSERT(mappedIndex < indexToIndexMap.end());
+				indexToIndexMap.erase(mappedIndex, indexToIndexMap.end());
+				particles->deleteElements(deletionMask);
+			}
+			else {
+				OVITO_ASSERT(mappedIndex == indexToIndexMap.end());
+			}
+			OVITO_ASSERT(indexToIndexMap.size() == particles->elementCount());
 
 			// Check if the trajectory dataset contains excess particles that are not present in the topology dataset yet.
-			if(!refMap.empty()) {
+			if(!refMap.empty()) {				
 				// Insert the new particles after the existing particles in the topology dataset.
 				particles->setElementCount(particles->elementCount() + refMap.size());
 				indexToIndexMap.reserve(indexToIndexMap.size() + refMap.size());
 
 				// Extend index mapping and particle identifier property.
 				PropertyAccess<qlonglong> identifierProperty = particles->expectMutableProperty(ParticlesObject::IdentifierProperty);
-				qlonglong* id = identifierProperty.begin() + indexToIndexMap.size();
+				auto id = identifierProperty.begin() + indexToIndexMap.size();
 				for(const auto& entry : refMap) {
 					*id++ = entry.first;
 					indexToIndexMap.push_back(entry.second);

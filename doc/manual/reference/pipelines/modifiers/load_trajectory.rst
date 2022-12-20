@@ -41,8 +41,8 @@ Particle ordering
 
 The modifier needs to assign the coordinates read from in the trajectory file to the corresponding particles from
 the topology dataset. In order to do this mapping correctly, the modifier uses the unique identifiers of particles (``Particle Identifier`` property) 
-if available. Otherwise, the modifier simply assumes that the storage orders of particles in the topology and the trajectory
-file are the same.
+if available. Otherwise, the modifier simply assumes that the storage order of particles in the topology and in the trajectory
+file is the same.
 
 .. _particles.modifiers.load_trajectory.varying_bonds:
 
