@@ -53,6 +53,7 @@ private:
 
 	QCheckBox* _keepDirHistory;
 	QCheckBox* _sortModifiersByCategory;
+	QButtonGroup* _importMultipleFilesBehavior;
 #if !defined(OVITO_BUILD_APPSTORE_VERSION)
 	QCheckBox* _enableUpdateChecks;
 #endif

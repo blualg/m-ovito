@@ -142,7 +142,7 @@ bool FileSourceImporter::isReplaceExistingPossible(Scene* scene, const std::vect
 * Return false if the import has been aborted by the user.
 * Throws an exception when the import has failed.
 ******************************************************************************/
-OORef<PipelineSceneNode> FileSourceImporter::importFileSet(Scene* scene, std::vector<std::pair<QUrl, OORef<FileImporter>>> sourceUrlsAndImporters, ImportMode importMode, bool autodetectFileSequences)
+OORef<PipelineSceneNode> FileSourceImporter::importFileSet(Scene* scene, std::vector<std::pair<QUrl, OORef<FileImporter>>> sourceUrlsAndImporters, ImportMode importMode, bool autodetectFileSequences, MultiFileImportMode multiFileImportMode)
 {
 	OVITO_ASSERT(!sourceUrlsAndImporters.empty());
 	OORef<FileSource> existingFileSource;
@@ -173,7 +173,7 @@ OORef<PipelineSceneNode> FileSourceImporter::importFileSet(Scene* scene, std::ve
 			importMode = ResetScene;
 		else {
 #ifndef OVITO_BUILD_PROFESSIONAL
-			throw Exception(tr("Sorry, this operation cannot be performed with OVITO Basic. Importing multiple independent datasets into the same scene requires <a href=\"https://www.ovito.org/about/ovito-pro/\">OVITO Pro</a>."));
+			throw Exception(tr("Sorry, this operation cannot be performed in OVITO Basic. Importing multiple datasets into the same scene is supported by <a href=\"https://www.ovito.org/about/ovito-pro/\">OVITO Pro</a>."));
 #endif
 		}
 	}
@@ -220,10 +220,12 @@ OORef<PipelineSceneNode> FileSourceImporter::importFileSet(Scene* scene, std::ve
 	OVITO_ASSERT(sourceUrlsAndImporters.front().second == this);
 	sourceUrls.push_back(std::move(sourceUrlsAndImporters.front().first));
 	auto iter = std::next(sourceUrlsAndImporters.begin());
-	for(; iter != sourceUrlsAndImporters.end(); ++iter) {
-		if(iter->second->getOOClass() != this->getOOClass())
-			break;
-		sourceUrls.push_back(std::move(iter->first));		
+	if(multiFileImportMode == ImportAsTrajectory) {
+		for(; iter != sourceUrlsAndImporters.end(); ++iter) {
+			if(iter->second->getOOClass() != this->getOOClass())
+				break;
+			sourceUrls.push_back(std::move(iter->first));		
+		}
 	}
 	sourceUrlsAndImporters.erase(sourceUrlsAndImporters.begin(), iter); 
 
@@ -241,7 +243,7 @@ OORef<PipelineSceneNode> FileSourceImporter::importFileSet(Scene* scene, std::ve
 	// If this importer did not handle all supplied input files, 
 	// continue importing the remaining files.
 	if(!sourceUrlsAndImporters.empty()) {
-		if(!importFurtherFiles(scene, std::move(sourceUrlsAndImporters), importMode, autodetectFileSequences, pipeline))
+		if(!importFurtherFiles(scene, std::move(sourceUrlsAndImporters), importMode, autodetectFileSequences, multiFileImportMode, pipeline))
 			return {};
 	}
 
@@ -251,14 +253,14 @@ OORef<PipelineSceneNode> FileSourceImporter::importFileSet(Scene* scene, std::ve
 /******************************************************************************
 * Is called when importing multiple files of different formats.
 ******************************************************************************/
-bool FileSourceImporter::importFurtherFiles(Scene* scene, std::vector<std::pair<QUrl, OORef<FileImporter>>> sourceUrlsAndImporters, ImportMode importMode, bool autodetectFileSequences, PipelineSceneNode* pipeline)
+bool FileSourceImporter::importFurtherFiles(Scene* scene, std::vector<std::pair<QUrl, OORef<FileImporter>>> sourceUrlsAndImporters, ImportMode importMode, bool autodetectFileSequences, MultiFileImportMode multiFileImportMode, PipelineSceneNode* pipeline)
 {
 	if(importMode == DontAddToScene)
 		return true;	// It doesn't make sense to import additional datasets if they are not being added to the scene. They would get lost.
 
 	OVITO_ASSERT(!sourceUrlsAndImporters.empty());
 	OORef<FileImporter> importer = sourceUrlsAndImporters.front().second;
-	return importer->importFileSet(scene, std::move(sourceUrlsAndImporters), AddToScene, autodetectFileSequences);
+	return importer->importFileSet(scene, std::move(sourceUrlsAndImporters), AddToScene, autodetectFileSequences, multiFileImportMode);
 }
 
 /******************************************************************************

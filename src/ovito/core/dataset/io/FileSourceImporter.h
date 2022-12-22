@@ -209,7 +209,7 @@ public:
 	virtual bool isReplaceExistingPossible(Scene* scene, const std::vector<QUrl>& sourceUrls) override;
 
 	/// \brief Imports the given file(s) into the scene.
-	virtual OORef<PipelineSceneNode> importFileSet(Scene* scene, std::vector<std::pair<QUrl, OORef<FileImporter>>> sourceUrlsAndImporters, ImportMode importMode, bool autodetectFileSequences) override;
+	virtual OORef<PipelineSceneNode> importFileSet(Scene* scene, std::vector<std::pair<QUrl, OORef<FileImporter>>> sourceUrlsAndImporters, ImportMode importMode, bool autodetectFileSequences, MultiFileImportMode multiFileImportMode) override;
 
 	//////////////////////////// Specific methods ////////////////////////////////
 
@@ -291,7 +291,7 @@ protected:
 	virtual bool shouldScanFileForFrames(const QUrl& sourceUrl) const { return isMultiTimestepFile(); }
 
 	/// Is called when importing multiple files of different formats.
-	virtual bool importFurtherFiles(Scene* scene, std::vector<std::pair<QUrl, OORef<FileImporter>>> sourceUrlsAndImporters, ImportMode importMode, bool autodetectFileSequences, PipelineSceneNode* pipeline);
+	virtual bool importFurtherFiles(Scene* scene, std::vector<std::pair<QUrl, OORef<FileImporter>>> sourceUrlsAndImporters, ImportMode importMode, bool autodetectFileSequences, MultiFileImportMode multiFileImportMode, PipelineSceneNode* pipeline);
 
 private:
 

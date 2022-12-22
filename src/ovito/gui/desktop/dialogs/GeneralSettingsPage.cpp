@@ -23,8 +23,10 @@
 #include <ovito/gui/desktop/GUI.h>
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
 #include <ovito/gui/desktop/dialogs/HistoryFileDialog.h>
+#include <ovito/gui/desktop/dialogs/ImportFileDialog.h>
 #include <ovito/gui/base/mainwin/ModifierListModel.h>
 #include <ovito/core/app/Application.h>
+#include <ovito/core/dataset/io/FileImporter.h>
 #include "GeneralSettingsPage.h"
 
 namespace Ovito {
@@ -47,7 +49,7 @@ void GeneralSettingsPage::insertSettingsDialogPage(QTabWidget* tabWidget)
 	layout1->addWidget(uiGroupBox);
 	QGridLayout* layout2 = new QGridLayout(uiGroupBox);
 
-	_keepDirHistory = new QCheckBox(tr("Seperate folders for data import/export and session states"));
+	_keepDirHistory = new QCheckBox(tr("Use seperate working directories for data import/export and session states"));
 	_keepDirHistory->setToolTip(tr(
 			"<p>Maintain individual working directories for different types of file I/O operations.</p>"));
 	layout2->addWidget(_keepDirHistory, 0, 0);
@@ -57,6 +59,26 @@ void GeneralSettingsPage::insertSettingsDialogPage(QTabWidget* tabWidget)
 	_sortModifiersByCategory->setToolTip(tr("<p>Show a categorized list of available modifiers in the command panel.</p>"));
 	layout2->addWidget(_sortModifiersByCategory, 1, 0);
 	_sortModifiersByCategory->setChecked(ModifierListModel::useCategoriesGlobal());
+
+	// Group "Data import":
+	QGroupBox* importGroupBox = new QGroupBox(tr("Data import options"), page);
+	layout1->addWidget(importGroupBox);
+	layout2 = new QGridLayout(importGroupBox);
+	layout2->setColumnStretch(1, 1);
+
+	layout2->addWidget(new QLabel(tr("Import multiple files of the same type:")), 0, 0);
+	_importMultipleFilesBehavior = new QButtonGroup(this);
+	QRadioButton* asTrajectoryBtn = new QRadioButton(tr("As trajectory (default)"));
+	QRadioButton* asSeparateObjectsBtn = new QRadioButton(tr("As separate objects"));
+	_importMultipleFilesBehavior->addButton(asTrajectoryBtn, FileImporter::ImportAsTrajectory);
+	_importMultipleFilesBehavior->addButton(asSeparateObjectsBtn, FileImporter::ImportAsSeparateObjects);
+	_importMultipleFilesBehavior->button(ImportFileDialog::multiFileImportMode())->setChecked(true);
+	layout2->addWidget(asTrajectoryBtn, 0, 1);
+	layout2->addWidget(asSeparateObjectsBtn, 1, 1);
+#ifndef OVITO_BUILD_PROFESSIONAL
+	asTrajectoryBtn->setEnabled(false);
+	asSeparateObjectsBtn->setEnabled(false);
+#endif
 
 	// Group "Program updates":
 #if !defined(OVITO_BUILD_APPSTORE_VERSION)
@@ -83,6 +105,9 @@ void GeneralSettingsPage::saveValues(QTabWidget* tabWidget)
 {
 	HistoryFileDialog::setKeepWorkingDirectoryHistoryEnabled(_keepDirHistory->isChecked());
 	ModifierListModel::setUseCategoriesGlobal(_sortModifiersByCategory->isChecked());
+#ifdef OVITO_BUILD_PROFESSIONAL
+	ImportFileDialog::setMultiFileImportMode(static_cast<FileImporter::MultiFileImportMode>(_importMultipleFilesBehavior->checkedId()));
+#endif
 
 #if !defined(OVITO_BUILD_APPSTORE_VERSION)
 	QSettings settings;

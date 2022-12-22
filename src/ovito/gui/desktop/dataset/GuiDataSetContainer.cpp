@@ -33,6 +33,7 @@
 #include <ovito/core/utilities/io/FileManager.h>
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
 #include <ovito/gui/desktop/dataset/io/FileImporterEditor.h>
+#include <ovito/gui/desktop/dialogs/ImportFileDialog.h>
 #include "GuiDataSetContainer.h"
 
 namespace Ovito {
@@ -285,7 +286,7 @@ bool GuiDataSetContainer::importFiles(const std::vector<QUrl>& urls, const FileI
 	// Do not create any animation keys during import.
 	AnimationSuspender animSuspender(mainWindow());
 
-	if(OORef<PipelineSceneNode> pipeline = importer->importFileSet(scene, std::move(urlImporters), importMode, true)) {
+	if(OORef<PipelineSceneNode> pipeline = importer->importFileSet(scene, std::move(urlImporters), importMode, true, ImportFileDialog::multiFileImportMode())) {
 		if(importMode == FileImporter::ResetScene) {
 			mainWindow().undoStack()->clear();
 			currentSet()->setFilePath(QString());

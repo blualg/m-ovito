@@ -499,7 +499,7 @@ void ParticleImporter::FrameLoader::loadFile()
 /******************************************************************************
 * Is called when importing multiple files of different formats.
 ******************************************************************************/
-bool ParticleImporter::importFurtherFiles(Scene* scene, std::vector<std::pair<QUrl, OORef<FileImporter>>> sourceUrlsAndImporters, ImportMode importMode, bool autodetectFileSequences, PipelineSceneNode* pipeline)
+bool ParticleImporter::importFurtherFiles(Scene* scene, std::vector<std::pair<QUrl, OORef<FileImporter>>> sourceUrlsAndImporters, ImportMode importMode, bool autodetectFileSequences, MultiFileImportMode multiFileImportMode, PipelineSceneNode* pipeline)
 {
 	OVITO_ASSERT(!sourceUrlsAndImporters.empty());
 	OORef<ParticleImporter> nextImporter = dynamic_object_cast<ParticleImporter>(sourceUrlsAndImporters.front().second);
@@ -513,10 +513,12 @@ bool ParticleImporter::importFurtherFiles(Scene* scene, std::vector<std::pair<QU
 		std::vector<QUrl> sourceUrls;
 		sourceUrls.push_back(std::move(sourceUrlsAndImporters.front().first));
 		auto iter = std::next(sourceUrlsAndImporters.begin());
-		for(; iter != sourceUrlsAndImporters.end(); ++iter) {
-			if(iter->second->getOOClass() != nextImporter->getOOClass())
-				break;
-			sourceUrls.push_back(std::move(iter->first));		
+		if(multiFileImportMode == ImportAsTrajectory) {
+			for(; iter != sourceUrlsAndImporters.end(); ++iter) {
+				if(iter->second->getOOClass() != nextImporter->getOOClass())
+					break;
+				sourceUrls.push_back(std::move(iter->first));		
+			}
 		}
 		sourceUrlsAndImporters.erase(sourceUrlsAndImporters.begin(), iter);
 
@@ -532,7 +534,7 @@ bool ParticleImporter::importFurtherFiles(Scene* scene, std::vector<std::pair<QU
 		if(sourceUrlsAndImporters.empty())
 			return true;
 	}
-	return FileSourceImporter::importFurtherFiles(scene, std::move(sourceUrlsAndImporters), importMode, autodetectFileSequences, pipeline);
+	return FileSourceImporter::importFurtherFiles(scene, std::move(sourceUrlsAndImporters), importMode, autodetectFileSequences, multiFileImportMode, pipeline);
 }
 
 }	// End of namespace

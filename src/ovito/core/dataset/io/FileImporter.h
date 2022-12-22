@@ -108,6 +108,13 @@ public:
 	};
 	Q_ENUM(ImportMode);
 
+	/// Options for what should happen if the user imports several files of the same kind.
+	enum MultiFileImportMode {
+		ImportAsTrajectory,
+		ImportAsSeparateObjects
+	};
+	Q_ENUMS(MultiFileImportMode);
+
 	/// \brief Asks the importer if the option to replace the currently selected object
 	///        with the new file(s) is available.
 	virtual bool isReplaceExistingPossible(Scene* scene, const std::vector<QUrl>& sourceUrls) { return false; }
@@ -124,10 +131,11 @@ public:
 	/// \param sourceUrlsAndImporters The location of the file(s) to import and the corresponding importers.
 	/// \param importMode Controls how the imported data is inserted into the scene.
 	/// \param autodetectFileSequences Enables the automatic detection of file sequences.
+	/// \param multiFileImportMode Specifies what should happen if the user imports several files of the same kind.
 	/// \return \c The new pipeline if the file has been successfully imported.
 	//	        \c nullptr if the operation has been canceled by the user.
 	/// \throw Exception when the import operation has failed.
-	virtual OORef<PipelineSceneNode> importFileSet(Scene* scene, std::vector<std::pair<QUrl, OORef<FileImporter>>> sourceUrlsAndImporters, ImportMode importMode, bool autodetectFileSequences) = 0;
+	virtual OORef<PipelineSceneNode> importFileSet(Scene* scene, std::vector<std::pair<QUrl, OORef<FileImporter>>> sourceUrlsAndImporters, ImportMode importMode, bool autodetectFileSequences, MultiFileImportMode multiFileImportMode) = 0;
 
 	/// \brief Tries to detect the format of the given file.
 	/// \param existingImporterHint Optional existing importer object, which is tested first agains the file. Providing this importer can speed up the auto-detection.
