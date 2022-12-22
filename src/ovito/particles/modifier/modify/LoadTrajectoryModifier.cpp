@@ -218,8 +218,15 @@ void LoadTrajectoryModifier::applyTrajectoryState(PipelineFlowState& state, cons
 		}
 		else {
 			// Topology dataset and trajectory data must contain the same number of particles.
+			// Also prevent a common mistake: User forgot to dump atom IDs to the trajectory file.
 			if(trajectoryParticles->elementCount() != particles->elementCount()) {
 				throw Exception(tr("Cannot apply trajectories to current particle dataset. Numbers of particles in the trajectory file and in the topology file do not match."));
+			}
+			else if(identifierProperty) {
+				throw Exception(tr("Particles in the topology dataset have identifiers, but trajectory particles do not. This likely is a mistake. Please ensure the trajectory file contains identifiers too."));
+			}
+			else if(trajIdentifierProperty) {
+				throw Exception(tr("Particles in the trajectory dataset have identifiers, but topology particles do not. This likely is a mistake. Please ensure the topology file contains identifiers too."));
 			}
 
 			// When particle identifiers are not available, use trivial 1-to-1 mapping.
