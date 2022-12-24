@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -37,11 +37,13 @@ DEFINE_PROPERTY_FIELD(LAMMPSDataExporter, atomSubStyles);
 DEFINE_PROPERTY_FIELD(LAMMPSDataExporter, omitMassesSection);
 DEFINE_PROPERTY_FIELD(LAMMPSDataExporter, ignoreParticleIdentifiers);
 DEFINE_PROPERTY_FIELD(LAMMPSDataExporter, exportTypeNames);
+DEFINE_PROPERTY_FIELD(LAMMPSDataExporter, generateConsecutiveTypeIds);
 SET_PROPERTY_FIELD_LABEL(LAMMPSDataExporter, atomStyle, "Atom style");
 SET_PROPERTY_FIELD_LABEL(LAMMPSDataExporter, atomSubStyles, "Atom sub-styles");
 SET_PROPERTY_FIELD_LABEL(LAMMPSDataExporter, omitMassesSection, "Omit 'Masses' section");
 SET_PROPERTY_FIELD_LABEL(LAMMPSDataExporter, ignoreParticleIdentifiers, "Ignore particle identifiers");
 SET_PROPERTY_FIELD_LABEL(LAMMPSDataExporter, exportTypeNames, "Export type names");
+SET_PROPERTY_FIELD_LABEL(LAMMPSDataExporter, generateConsecutiveTypeIds, "Generate consecutive type IDs");
 
 /******************************************************************************
 * Writes the particles of one animation frame to the current output file.
@@ -63,46 +65,41 @@ bool LAMMPSDataExporter::exportData(const PipelineFlowState& state, int frameNum
 	}
 
 	const PropertyObject* particleTypeProperty = particles->getProperty(ParticlesObject::TypeProperty);
-	ConstPropertyAccess<int> particleTypeArray(particleTypeProperty);
 
 	// Get the bond data to be exported.
 	const BondsObject* bonds = particles->bonds();
 	if(bonds) bonds->verifyIntegrity();
 	ConstPropertyAccess<ParticleIndexPair> bondTopologyProperty = bonds ? bonds->getTopology() : nullptr;
 	const PropertyObject* bondTypeProperty = bonds ? bonds->getProperty(BondsObject::TypeProperty) : nullptr;
-	ConstPropertyAccess<int> bondTypeArray(bondTypeProperty);
 
 	// Get the angle data to be exported.
 	const AnglesObject* angles = particles->angles();
 	if(angles) angles->verifyIntegrity();
 	ConstPropertyAccess<ParticleIndexTriplet> angleTopologyProperty = angles ? angles->getTopology() : nullptr;
 	const PropertyObject* angleTypeProperty = angles ? angles->getProperty(AnglesObject::TypeProperty) : nullptr;
-	ConstPropertyAccess<int> angleTypeArray(angleTypeProperty);
 
 	// Get the dihedral data to be exported.
 	const DihedralsObject* dihedrals = particles->dihedrals();
 	if(dihedrals) dihedrals->verifyIntegrity();
 	ConstPropertyAccess<ParticleIndexQuadruplet> dihedralTopologyProperty = dihedrals ? dihedrals->getTopology() : nullptr;
 	const PropertyObject* dihedralTypeProperty = dihedrals ? dihedrals->getProperty(DihedralsObject::TypeProperty) : nullptr;
-	ConstPropertyAccess<int> dihedralTypeArray(dihedralTypeProperty);
 
 	// Get the improper data to be exported.
 	const ImpropersObject* impropers = particles->impropers();
 	if(impropers) impropers->verifyIntegrity();
 	ConstPropertyAccess<ParticleIndexQuadruplet> improperTopologyProperty = impropers ? impropers->getTopology() : nullptr;
 	const PropertyObject* improperTypeProperty = impropers ? impropers->getProperty(ImpropersObject::TypeProperty) : nullptr;
-	ConstPropertyAccess<int> improperTypeArray(improperTypeProperty);
 
 	// Get simulation cell info.
 	const SimulationCellObject* simulationCell = state.getObject<SimulationCellObject>();
 	if(!simulationCell)
-		throw Exception(tr("No simulation cell defined. Cannot write LAMMPS file."));
+		throw Exception(tr("There is no simulation cell defined. It is needed to write a LAMMPS data file."));
 	const AffineTransformation& simCell = simulationCell->cellMatrix();
 
 	// Set up output columns for the Atoms section.
-	TypedOutputColumnMapping<ParticlesObject> outputColumnMapping;
-	for(const InputColumnInfo& col : LAMMPSDataImporter::createColumnMapping(atomStyle(), atomSubStyles())) {
-		outputColumnMapping.push_back(col.property);
+	TypedOutputColumnMapping<ParticlesObject> atomsOutputColumnMapping;
+	for(const InputColumnInfo& col : LAMMPSDataImporter::createAtomsColumnMapping(atomStyle(), atomSubStyles())) {
+		atomsOutputColumnMapping.push_back(col.property);
 		OVITO_ASSERT(col.property.type() != ParticlesObject::UserProperty || col.property.vectorComponent() == 0);
 		const PropertyObject* property = col.property.findInContainer(particles);
 		if(!property) {
@@ -159,9 +156,9 @@ bool LAMMPSDataExporter::exportData(const PipelineFlowState& state, int frameNum
 
 	// The periodic image flags are optional and appear as trailing three columns if present.
 	if(const PropertyObject* periodicImageProperty = particles->getProperty(ParticlesObject::PeriodicImageProperty)) {
-		outputColumnMapping.emplace_back(periodicImageProperty, 0);
-		outputColumnMapping.emplace_back(periodicImageProperty, 1);
-		outputColumnMapping.emplace_back(periodicImageProperty, 2);
+		atomsOutputColumnMapping.emplace_back(periodicImageProperty, 0);
+		atomsOutputColumnMapping.emplace_back(periodicImageProperty, 1);
+		atomsOutputColumnMapping.emplace_back(periodicImageProperty, 2);
 	}
 
 	// Transform triclinic cell to LAMMPS canonical format.
@@ -223,48 +220,81 @@ bool LAMMPSDataExporter::exportData(const PipelineFlowState& state, int frameNum
 	if(writeImpropers)
 		textStream() << impropers->elementCount() << " impropers\n";
 
-	int numLAMMPSAtomTypes = 1;
-	if(particleTypeArray && particleTypeArray.size() > 0) {
-		numLAMMPSAtomTypes = qMax(particleTypeProperty->elementTypes().size(), *boost::max_element(particleTypeArray));
-		textStream() << numLAMMPSAtomTypes << " atom types\n";
-	}
-	else textStream() << "1 atom types\n";
-
-	int numLAMMPSBondTypes = 1;
-	if(writeBonds) {
-		if(bondTypeArray && bondTypeArray.size() > 0) {
-			numLAMMPSBondTypes = qMax(bondTypeProperty->elementTypes().size(), *boost::max_element(bondTypeArray));
-			textStream() << numLAMMPSBondTypes << " bond types\n";
+	// Given an OVITO typed property, determines which and how many LAMMPS types are being output. 
+	auto generateTypeMapping = [&](const PropertyObject* typeProperty) {
+		std::vector<const ElementType*> typeList;
+		std::map<int, int> typeMapping;
+		if(typeProperty) {
+			for(const ElementType* t : typeProperty->elementTypes()) {
+				if(generateConsecutiveTypeIds()) {
+					int nextId = typeMapping.size() + 1;
+					typeMapping[t->numericId()] = nextId;
+					typeList.push_back(t);
+				}
+				else {
+					if(t->numericId() <= 0) {
+						throw Exception(tr("Type '%1' associated with property '%2' has non-positive ID %3. LAMMPS supports only positive IDs. Activate the 'Generate consecutive type IDs' option during export to avoid this error.")
+							.arg(t->nameOrNumericId()).arg(typeProperty->name()).arg(t->numericId()));
+					}
+					typeList.resize(qMax(typeList.size(), (size_t)t->numericId()), nullptr);
+					typeList[t->numericId() - 1] = t;
+				}
+			}
 		}
-		else textStream() << "1 bond types\n";
+		if(typeList.empty()) {
+			typeList.push_back(nullptr);
+		}
+		if(typeProperty && typeProperty->size() > 0) {
+			ConstPropertyAccess<int> typeValuesArray(typeProperty);;
+			if(generateConsecutiveTypeIds()) {
+				boost::for_each(typeValuesArray, [&](int id) {
+					if(typeMapping.find(id) == typeMapping.end()) {
+						typeMapping.insert(std::make_pair(id, typeMapping.size() + 1));
+						typeList.push_back(nullptr);
+					}
+				});
+			}
+			else {
+				auto [minel, maxel] = std::minmax_element(typeValuesArray.cbegin(), typeValuesArray.cend());
+				if(*minel <= 0) {
+					throw Exception(tr("Property '%1' contains non-positive element %2. LAMMPS supports only positive IDs. Activate the 'Generate consecutive type IDs' option during export to avoid this error.")
+						.arg(typeProperty->name()).arg(*minel));
+				}
+				if(*maxel > typeList.size())
+					typeList.resize(*maxel);
+			}
+		}
+		return std::make_tuple(std::move(typeList), std::move(typeMapping));
+	};
+
+	auto [atomTypeList, atomTypeMapping] = generateTypeMapping(particleTypeProperty);
+	textStream() << atomTypeList.size() << " atom types\n";
+
+	// Substitude the original IDs stored in the 'Particle Type' property array. 
+	if(generateConsecutiveTypeIds() && particleTypeProperty) {
+		PropertyAccess<int> typeArray = particles->makeMutable(particleTypeProperty);
+		for(int& id : typeArray) {
+			OVITO_ASSERT(atomTypeMapping.find(id) != atomTypeMapping.end());
+			id = atomTypeMapping[id];
+		}
+		particleTypeProperty = static_object_cast<PropertyObject>(typeArray.buffer());
 	}
 
-	int numLAMMPSAngleTypes = 1;
-	if(writeAngles) {
-		if(angleTypeArray && angleTypeArray.size() > 0) {
-			numLAMMPSAngleTypes = qMax(angleTypeProperty->elementTypes().size(), *boost::max_element(angleTypeArray));
-			textStream() << numLAMMPSAngleTypes << " angle types\n";
-		}
-		else textStream() << "1 angle types\n";
-	}
+	auto [bondTypeList, bondTypeMapping] = generateTypeMapping(bondTypeProperty);
+	if(writeBonds)
+		textStream() << bondTypeList.size() << " bond types\n";
 
-	int numLAMMPSDihedralTypes = 1;
-	if(writeDihedrals) {
-		if(dihedralTypeArray && dihedralTypeArray.size() > 0) {
-			numLAMMPSDihedralTypes = qMax(dihedralTypeProperty->elementTypes().size(), *boost::max_element(dihedralTypeArray));
-			textStream() << numLAMMPSDihedralTypes << " dihedral types\n";
-		}
-		else textStream() << "1 dihedral types\n";
-	}
+	auto [angleTypeList, angleTypeMapping] = generateTypeMapping(angleTypeProperty);
+	if(writeAngles)
+		textStream() << angleTypeList.size() << " angle types\n";
 
-	int numLAMMPSImproperTypes = 1;
-	if(writeImpropers) {
-		if(improperTypeArray && improperTypeArray.size() > 0) {
-			numLAMMPSImproperTypes = qMax(improperTypeProperty->elementTypes().size(), *boost::max_element(improperTypeArray));
-			textStream() << numLAMMPSImproperTypes << " improper types\n";
-		}
-		else textStream() << "1 improper types\n";
-	}
+	auto [dihedralTypeList, dihedralTypeMapping] = generateTypeMapping(dihedralTypeProperty);
+	if(writeDihedrals)
+		textStream() << dihedralTypeList.size() << " dihedral types\n";
+
+	auto [improperTypeList, improperTypeMapping] = generateTypeMapping(improperTypeProperty);
+	if(writeImpropers)
+		textStream() << improperTypeList.size() << " improper types\n";
 
 	size_t numEllipsoids = 0;
 	ConstPropertyAccess<Vector3> asphericalShapeProperty = particles->getProperty(ParticlesObject::AsphericalShapeProperty);
@@ -301,54 +331,42 @@ bool LAMMPSDataExporter::exportData(const PipelineFlowState& state, int frameNum
 			return typeName;
 		};
 
-		// Write "Atom Type Labels" sections.
-		if(particleTypeProperty) {
-			textStream() << "Atom Type Labels\n\n";
-			for(int typeId = 1; typeId <= numLAMMPSAtomTypes; typeId++) {
-				const ElementType* type = particleTypeProperty->elementType(typeId);
+		auto writeLAMMPSTypeLabels = [&](const std::vector<const ElementType*>& typeList) {
+			for(int typeId = 1; typeId <= (int)typeList.size(); typeId++) {
+				const ElementType* type = typeList[typeId - 1];
 				textStream() << typeId << " " << makeLAMMPSTypeLabel(type ? type->nameOrNumericId() : ElementType::generateDefaultTypeName(typeId)) << "\n";
 			}
 			textStream() << "\n";			
+		};
+
+		// Write "Atom Type Labels" sections.
+		if(particleTypeProperty) {
+			textStream() << "Atom Type Labels\n\n";
+			writeLAMMPSTypeLabels(atomTypeList);
 		}
 
 		// Write "Bond Type Labels" sections.
 		if(writeBonds && bondTypeProperty) {
 			textStream() << "Bond Type Labels\n\n";
-			for(int typeId = 1; typeId <= numLAMMPSBondTypes; typeId++) {
-				const ElementType* type = bondTypeProperty->elementType(typeId);
-				textStream() << typeId << " " << makeLAMMPSTypeLabel(type ? type->nameOrNumericId() : ElementType::generateDefaultTypeName(typeId)) << "\n";
-			}
-			textStream() << "\n";			
+			writeLAMMPSTypeLabels(bondTypeList);
 		}
 
 		// Write "Angle Type Labels" sections.
 		if(writeAngles && angleTypeProperty) {
 			textStream() << "Angle Type Labels\n\n";
-			for(int typeId = 1; typeId <= numLAMMPSAngleTypes; typeId++) {
-				const ElementType* type = angleTypeProperty->elementType(typeId);
-				textStream() << typeId << " " << makeLAMMPSTypeLabel(type ? type->nameOrNumericId() : ElementType::generateDefaultTypeName(typeId)) << "\n";
-			}
-			textStream() << "\n";			
+			writeLAMMPSTypeLabels(angleTypeList);
 		}
 
 		// Write "Dihedral Type Labels" sections.
 		if(writeDihedrals && dihedralTypeProperty) {
 			textStream() << "Dihedral Type Labels\n\n";
-			for(int typeId = 1; typeId <= numLAMMPSDihedralTypes; typeId++) {
-				const ElementType* type = dihedralTypeProperty->elementType(typeId);
-				textStream() << typeId << " " << makeLAMMPSTypeLabel(type ? type->nameOrNumericId() : ElementType::generateDefaultTypeName(typeId)) << "\n";
-			}
-			textStream() << "\n";			
+			writeLAMMPSTypeLabels(dihedralTypeList);
 		}
 
 		// Write "Improper Type Labels" sections.
 		if(writeImpropers && improperTypeProperty) {
 			textStream() << "Improper Type Labels\n\n";
-			for(int typeId = 1; typeId <= numLAMMPSImproperTypes; typeId++) {
-				const ElementType* type = improperTypeProperty->elementType(typeId);
-				textStream() << typeId << " " << makeLAMMPSTypeLabel(type ? type->nameOrNumericId() : ElementType::generateDefaultTypeName(typeId)) << "\n";
-			}
-			textStream() << "\n";			
+			writeLAMMPSTypeLabels(improperTypeList);
 		}
 	} 
 
@@ -364,8 +382,8 @@ bool LAMMPSDataExporter::exportData(const PipelineFlowState& state, int frameNum
 		}); 
 		if(hasNonzeroMass) {
 			textStream() << "Masses\n\n";
-			for(int atomType = 1; atomType <= numLAMMPSAtomTypes; atomType++) {
-				if(const ParticleType* ptype = dynamic_object_cast<ParticleType>(particleTypeProperty->elementType(atomType))) {
+			for(int atomType = 1; atomType <= (int)atomTypeList.size(); atomType++) {
+				if(const ParticleType* ptype = dynamic_object_cast<ParticleType>(atomTypeList[atomType - 1])) {
 					textStream() << atomType << " " << ((ptype->mass() > 0.0) ? ptype->mass() : 1.0);
 					if(!ptype->name().isEmpty())
 						textStream() << "  # " << ptype->name();
@@ -403,8 +421,9 @@ bool LAMMPSDataExporter::exportData(const PipelineFlowState& state, int frameNum
 	operation.setProgressMaximum(totalProgressCount);
 	qlonglong currentProgress = 0;
 
+	// Write atoms list.
 	size_t atomsCount = particles->elementCount();
-	PropertyOutputWriter columnWriter(outputColumnMapping, particles, PropertyOutputWriter::WriteNumericIds);
+	PropertyOutputWriter columnWriter(atomsOutputColumnMapping, particles, PropertyOutputWriter::WriteNumericIds);
 	for(size_t i = 0; i < atomsCount; i++) {
 		columnWriter.writeElement(i, textStream());
 		if(!operation.setProgressValueIntermittent(currentProgress++))
@@ -413,14 +432,28 @@ bool LAMMPSDataExporter::exportData(const PipelineFlowState& state, int frameNum
 
 	// Write velocities.
 	if(velocityProperty) {
+		// Set up output columns for the Velocities section.
+		TypedOutputColumnMapping<ParticlesObject> velocitiesOutputColumnMapping;
+		for(const InputColumnInfo& col : LAMMPSDataImporter::createVelocitiesColumnMapping(atomStyle(), atomSubStyles())) {
+			velocitiesOutputColumnMapping.push_back(col.property);
+			OVITO_ASSERT(col.property.type() != ParticlesObject::UserProperty || col.property.vectorComponent() == 0);
+			const PropertyObject* property = col.property.findInContainer(particles);
+			if(!property) {
+				// If the property does not exist, implicitly create it and fill it with default values.
+				if(col.property.type() != ParticlesObject::IdentifierProperty) {
+					PropertyObject* newProperty = nullptr;
+					if(col.property.type() != ParticlesObject::UserProperty)
+						newProperty = particles->createProperty(col.property.type(), DataBuffer::InitializeMemory);
+					else
+						newProperty = particles->createProperty(col.property.name(), PropertyObject::Float, 1, DataBuffer::InitializeMemory);
+					OVITO_ASSERT(col.property.findInContainer(particles) == newProperty);
+				}
+			}
+		}		
 		textStream() << "\nVelocities\n\n";
-		const Vector3* v = velocityProperty.cbegin();
-		for(size_t i = 0; i < velocityProperty.size(); i++, ++v) {
-			textStream() << (identifierProperty ? identifierProperty[i] : (i+1));
-			for(size_t k = 0; k < 3; k++)
-				textStream() << ' ' << (*v)[k];
-			textStream() << '\n';
-
+		PropertyOutputWriter columnWriter(velocitiesOutputColumnMapping, particles, PropertyOutputWriter::WriteNumericIds);
+		for(size_t i = 0; i < atomsCount; i++) {
+			columnWriter.writeElement(i, textStream());
 			if(!operation.setProgressValueIntermittent(currentProgress++))
 				return false;
 		}
@@ -430,6 +463,7 @@ bool LAMMPSDataExporter::exportData(const PipelineFlowState& state, int frameNum
 	if(writeBonds) {
 		textStream() << "\nBonds\n\n";
 
+		ConstPropertyAccess<int> bondTypeArray(bondTypeProperty);;
 		size_t bondIndex = 1;
 		for(size_t i = 0; i < bondTopologyProperty.size(); i++) {
 			size_t atomIndex1 = bondTopologyProperty[i][0];
@@ -438,7 +472,7 @@ bool LAMMPSDataExporter::exportData(const PipelineFlowState& state, int frameNum
 				throw Exception(tr("Particle indices in the bond topology array are out of range."));
 			textStream() << bondIndex++;
 			textStream() << ' ';
-			textStream() << (bondTypeArray ? bondTypeArray[i] : 1);
+			textStream() << (bondTypeArray ? (generateConsecutiveTypeIds() ? bondTypeMapping[bondTypeArray[i]] : bondTypeArray[i]) : 1);
 			textStream() << ' ';
 			textStream() << (identifierProperty ? identifierProperty[atomIndex1] : (atomIndex1+1));
 			textStream() << ' ';
@@ -455,6 +489,7 @@ bool LAMMPSDataExporter::exportData(const PipelineFlowState& state, int frameNum
 	if(writeAngles) {
 		textStream() << "\nAngles\n\n";
 
+		ConstPropertyAccess<int> angleTypeArray(angleTypeProperty);;
 		size_t angleIndex = 1;
 		for(size_t i = 0; i < angleTopologyProperty.size(); i++) {
 			size_t atomIndex1 = angleTopologyProperty[i][0];
@@ -464,7 +499,7 @@ bool LAMMPSDataExporter::exportData(const PipelineFlowState& state, int frameNum
 				throw Exception(tr("Particle indices in the angle topology array are out of range."));
 			textStream() << angleIndex++;
 			textStream() << ' ';
-			textStream() << (angleTypeArray ? angleTypeArray[i] : 1);
+			textStream() << (angleTypeArray ? (generateConsecutiveTypeIds() ? angleTypeMapping[angleTypeArray[i]] : angleTypeArray[i]) : 1);
 			textStream() << ' ';
 			textStream() << (identifierProperty ? identifierProperty[atomIndex1] : (atomIndex1+1));
 			textStream() << ' ';
@@ -483,6 +518,7 @@ bool LAMMPSDataExporter::exportData(const PipelineFlowState& state, int frameNum
 	if(writeDihedrals) {
 		textStream() << "\nDihedrals\n\n";
 
+		ConstPropertyAccess<int> dihedralTypeArray(dihedralTypeProperty);;
 		size_t dihedralIndex = 1;
 		for(size_t i = 0; i < dihedralTopologyProperty.size(); i++) {
 			size_t atomIndex1 = dihedralTopologyProperty[i][0];
@@ -493,7 +529,7 @@ bool LAMMPSDataExporter::exportData(const PipelineFlowState& state, int frameNum
 				throw Exception(tr("Particle indices in the dihedral topology array are out of range."));
 			textStream() << dihedralIndex++;
 			textStream() << ' ';
-			textStream() << (dihedralTypeArray ? dihedralTypeArray[i] : 1);
+			textStream() << (dihedralTypeArray ? (generateConsecutiveTypeIds() ? dihedralTypeMapping[dihedralTypeArray[i]] : dihedralTypeArray[i]) : 1);
 			textStream() << ' ';
 			textStream() << (identifierProperty ? identifierProperty[atomIndex1] : (atomIndex1+1));
 			textStream() << ' ';
@@ -514,6 +550,7 @@ bool LAMMPSDataExporter::exportData(const PipelineFlowState& state, int frameNum
 	if(writeImpropers) {
 		textStream() << "\nImpropers\n\n";
 
+		ConstPropertyAccess<int> improperTypeArray(improperTypeProperty);;
 		size_t improperIndex = 1;
 		for(size_t i = 0; i < improperTopologyProperty.size(); i++) {
 			size_t atomIndex1 = improperTopologyProperty[i][0];
@@ -524,7 +561,7 @@ bool LAMMPSDataExporter::exportData(const PipelineFlowState& state, int frameNum
 				throw Exception(tr("Particle indices in the improper topology array are out of range."));
 			textStream() << improperIndex++;
 			textStream() << ' ';
-			textStream() << (improperTypeArray ? improperTypeArray[i] : 1);
+			textStream() << (improperTypeArray ? (generateConsecutiveTypeIds() ? improperTypeMapping[improperTypeArray[i]] : improperTypeArray[i]) : 1);
 			textStream() << ' ';
 			textStream() << (identifierProperty ? identifierProperty[atomIndex1] : (atomIndex1+1));
 			textStream() << ' ';

@@ -1,15 +1,21 @@
 .. _development.build_linux:
 
 Building OVITO on Linux
-=============================
+=======================
 
-The following instructions have been written for Ubuntu Linux 20.04 and compatible Debian-based distributions.
-Other Linux distributions may require slightly different build steps.
+The following instructions have been written for Ubuntu Linux 22.04 and compatible distributions.
 
 Installing dependencies
 -----------------------
 
-First, install the required :ref:`build tools and third-party libraries <development.requirements>`:
+First, install the required :ref:`build tools and third-party libraries <development.requirements>` 
+as follows:
+
+.. note:: 
+  
+  OVITO can be built against Qt5 (>=5.12) or Qt6 (>=6.2). We recommend using the newest release of the Qt 
+  cross-platform framework, which is available as a download from https://www.qt.io/download. Alternatively,
+  you can use the Qt5 or Qt6 development files provided by the package manager of your Linux distro.
 
 .. list-table::
    :width: 100%
@@ -21,10 +27,11 @@ First, install the required :ref:`build tools and third-party libraries <develop
    * - Ubuntu / Debian
      - .. code::
 
-          sudo apt-get install build-essential git cmake-curses-gui qt5-default libqt5svg5-dev \
+          sudo apt-get install build-essential git cmake-curses-gui qt6-base-dev \
                 libboost-dev libavcodec-dev libavdevice-dev libavfilter-dev libavformat-dev \
-                libavresample-dev libavutil-dev libswscale-dev libnetcdf-dev libhdf5-dev \
-                libhdf5-serial-dev libssh-dev python3-sphinx python3-sphinx-rtd-theme
+                libavutil-dev libswscale-dev libnetcdf-dev libhdf5-dev libhdf5-serial-dev \
+                libglu1-mesa-dev libvulkan-dev ninja-build \
+                libssh-dev python3-sphinx python3-sphinx-rtd-theme
 
    * - openSUSE
      - .. code::
@@ -71,14 +78,14 @@ Create a build directory and let `CMake <https://www.cmake.org/>`_ generate a Ma
   cd ovito
   mkdir build
   cd build
-  cmake -DCMAKE_BUILD_TYPE=Release ..
+  cmake -G Ninja -DCMAKE_BUILD_TYPE=Release ..
 
 If this step fails, you can now run :command:`ccmake .` to start up the
 `CMake <https://www.cmake.org/>`_ configuration program and adjust the build options as needed.
 
 To build OVITO run::
 
-  make -j4
+  cmake --build . --parallel
 
 If this step is successful, the :program:`ovito` executable can be found in the directory :file:`ovito/build/bin/`.
-The command :command:`make documentation` builds the HTML pages of the user manual (requires Sphinx Python package and Sphinx RTD theme).
+The command :command:`cmake --build . --target documentation` builds the HTML pages of the user manual (requires Sphinx Python package and Sphinx RTD theme).

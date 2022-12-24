@@ -145,7 +145,7 @@ LAMMPSAtomStyleDialog::LAMMPSAtomStyleDialog(MainWindow& mainWindow, LAMMPSDataI
 		LAMMPSDataImporter::LAMMPSAtomStyle atomStyle = static_cast<LAMMPSDataImporter::LAMMPSAtomStyle>(i);
 		_atomStyleList->addItem(LAMMPSDataImporter::atomStyleName(atomStyle), QVariant::fromValue(i));
 		if(_atomStyleHints.atomDataColumnCount != 0 && atomStyle != LAMMPSDataImporter::AtomStyle_Hybrid) {
-			ParticleInputColumnMapping mapping = LAMMPSDataImporter::createColumnMapping(atomStyle, {}, _atomStyleHints.atomDataColumnCount);
+			ParticleInputColumnMapping mapping = LAMMPSDataImporter::createAtomsColumnMapping(atomStyle, {}, _atomStyleHints.atomDataColumnCount);
 			if(mapping.size() != _atomStyleHints.atomDataColumnCount)
 				static_cast<QStandardItemModel*>(_atomStyleList->model())->item(i - 1)->setFlags(Qt::ItemIsSelectable | Qt::ItemNeverHasChildren);
 		}
@@ -228,7 +228,7 @@ void LAMMPSAtomStyleDialog::updateColumnList()
 			hybridSubstyles.push_back(substyle);
 	}
 
-	ParticleInputColumnMapping mapping = LAMMPSDataImporter::createColumnMapping(atomStyle, hybridSubstyles, _atomStyleHints.atomDataColumnCount);
+	ParticleInputColumnMapping mapping = LAMMPSDataImporter::createAtomsColumnMapping(atomStyle, hybridSubstyles, _atomStyleHints.atomDataColumnCount);
 	QString text;
 	for(const InputColumnInfo& column : mapping) {
 		if(!text.isEmpty())

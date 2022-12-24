@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -85,8 +85,11 @@ void LAMMPSDataExporterEditor::createUI(const RolloutInsertionParameters& rollou
 	BooleanParameterUI* ignoreParticleIdentifiersUI = new BooleanParameterUI(this, PROPERTY_FIELD(LAMMPSDataExporter::ignoreParticleIdentifiers));
 	layout->addWidget(ignoreParticleIdentifiersUI->checkBox(), 4, 0, 1, 2);
 
+	BooleanParameterUI* generateConsecutiveTypeIdsUI = new BooleanParameterUI(this, PROPERTY_FIELD(LAMMPSDataExporter::generateConsecutiveTypeIds));
+	layout->addWidget(generateConsecutiveTypeIdsUI->checkBox(), 5, 0, 1, 2);
+
 	BooleanParameterUI* exportTypeNamesUI = new BooleanParameterUI(this, PROPERTY_FIELD(LAMMPSDataExporter::exportTypeNames));
-	layout->addWidget(exportTypeNamesUI->checkBox(), 5, 0, 1, 2);
+	layout->addWidget(exportTypeNamesUI->checkBox(), 6, 0, 1, 2);
 
 	connect(this, &PropertiesEditor::contentsChanged, this, &LAMMPSDataExporterEditor::updateUI);
 }

@@ -247,10 +247,10 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
 				if(_atomStyleHints.atomStyle == AtomStyle_Hybrid && _atomStyleHints.atomSubStyles.empty())
 					throw Exception(tr("The sub-styles of LAMMPS atom style 'hybrid' could not be automatically detected. Please specify the list of sub-styles during data file import."));
 
-				// Set up mapping of file columns to internal particle properties.
+				// Set up mapping of file columns to OVITO particle properties.
 				// The number and order of file columns in a LAMMPS data file depends
 				// on the atom style detected above.
-				ParticleInputColumnMapping columnMapping = createColumnMapping(_atomStyleHints.atomStyle, _atomStyleHints.atomSubStyles, _atomStyleHints.atomDataColumnCount);
+				ParticleInputColumnMapping columnMapping = createAtomsColumnMapping(_atomStyleHints.atomStyle, _atomStyleHints.atomSubStyles, _atomStyleHints.atomDataColumnCount);
 				if(_atomStyleHints.atomDataColumnCount != 0 && columnMapping.size() != _atomStyleHints.atomDataColumnCount)
 					throw Exception(tr("The LAMMPS atom style specified during data file import seems wrong. "
 						"The actual number of file columns (=%1) is not as expected for LAMMPS atom style '%2' (=%3).")
@@ -295,34 +295,46 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
 			foundAtomsSection = true;
 		}
 		else if(keyword.startsWith("Velocities")) {
+			// Set up mapping of file columns to OVITO particle properties.
+			// The number and order of file columns in a LAMMPS data file depends
+			// on the atom style detected above.
+			ParticleInputColumnMapping columnMapping = createVelocitiesColumnMapping(_atomStyleHints.atomStyle, _atomStyleHints.atomSubStyles);
 
-			// Get the atomic IDs.
+			// Do not parse the atom ID in the first column.
+			OVITO_ASSERT(!columnMapping.empty() && columnMapping[0].property.type() == ParticlesObject::IdentifierProperty);
+			columnMapping[0].unmap();
+
+			// Access the atomic IDs.
 			ConstPropertyAccess<qlonglong> identifierProperty = particles()->getProperty(ParticlesObject::IdentifierProperty);
 			if(!identifierProperty)
 				throw Exception(tr("Atoms section must precede Velocities section in data file (error in line %1).").arg(stream.lineNumber()));
 
-			// Create the velocity property.
-			PropertyAccess<Vector3> velocityProperty = particles()->createProperty(ParticlesObject::VelocityProperty, DataBuffer::InitializeMemory);
-			
-			for(size_t i = 0; i < (size_t)natoms; i++) {
-				if(!setProgressValueIntermittent(i)) return;
-				stream.readLine();
+			// Parse data in the Velocities section line by line:
+			InputColumnReader columnParser(*this, columnMapping, particles(), false, false);
+			try {
+				for(size_t i = 0; i < (size_t)natoms; i++) {
+					if(!setProgressValueIntermittent(i)) return;
+					stream.readLine();
 
-				Vector3 v;
-				qlonglong atomId;
+					// Parse the atom ID at the beginning of the line to perform remapping to
+					// the correct particle index.
+					qlonglong atomId;
+					if(sscanf(stream.line(), "%llu", &atomId) != 1)
+						throw Exception(tr("Invalid atom ID in line %1").arg(stream.lineNumber()));
 
-    			if(sscanf(stream.line(), "%llu " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING, &atomId, &v.x(), &v.y(), &v.z()) != 4)
-					throw Exception(tr("Invalid velocity specification (line %1): %2").arg(stream.lineNumber()).arg(stream.lineString()));
+					size_t atomIndex = i;
+					if(atomId != identifierProperty[i]) {
+						auto iter = atomIdMap.find(atomId);
+						if(iter == atomIdMap.end())
+							throw Exception(tr("Nonexistent atom ID encountered in line %1 of data file.").arg(stream.lineNumber()));
+						atomIndex = iter->second;
+					}
 
-    			size_t atomIndex = i;
-    			if(atomId != identifierProperty[i]) {
-					auto iter = atomIdMap.find(atomId);
-					if(iter == atomIdMap.end())
-    					throw Exception(tr("Nonexistent atom ID encountered in line %1 of data file.").arg(stream.lineNumber()));
-					atomIndex = iter->second;
-    			}
-
-				velocityProperty[atomIndex] = v;
+					columnParser.readElement(atomIndex, stream.line());
+				}
+			}
+			catch(Exception& ex) {
+				throw ex.prependGeneralMessage(tr("Parsing error in line %1 of LAMMPS data file.").arg(stream.lineNumber()));
 			}
 		}
 		else if(keyword.startsWith("Atom Type Labels")) {
@@ -915,7 +927,7 @@ void LAMMPSDataImporter::detectAtomStyle(const char* firstLine, const QByteArray
 	}
 	else {
 		// Check if the number of columns present in the data file matches the expected count for the selected atom style.
-		ParticleInputColumnMapping columnMapping = createColumnMapping(info.atomStyle, {}, info.atomDataColumnCount);
+		ParticleInputColumnMapping columnMapping = createAtomsColumnMapping(info.atomStyle, {}, info.atomDataColumnCount);
 		if(columnMapping.size() == info.atomDataColumnCount) 
 			return;
 	}
@@ -972,9 +984,9 @@ QString LAMMPSDataImporter::atomStyleName(LAMMPSAtomStyle atomStyle)
 }
 
 /******************************************************************************
-* Sets up the mapping of data file columns to internal particle properties based on the selected LAMMPS atom style.
+* Sets up the mapping of data file columns in the 'Atoms' section to internal particle properties based on the selected LAMMPS atom style.
 ******************************************************************************/
-ParticleInputColumnMapping LAMMPSDataImporter::createColumnMapping(LAMMPSAtomStyle atomStyle, const std::vector<LAMMPSAtomStyle>& atomSubStyles, int dataColumnCount)
+ParticleInputColumnMapping LAMMPSDataImporter::createAtomsColumnMapping(LAMMPSAtomStyle atomStyle, const std::vector<LAMMPSAtomStyle>& atomSubStyles, int dataColumnCount)
 {
 	ParticleInputColumnMapping columnMapping;
 	switch(atomStyle) {
@@ -1366,7 +1378,7 @@ ParticleInputColumnMapping LAMMPSDataImporter::createColumnMapping(LAMMPSAtomSty
 		columnMapping.mapStandardColumn(3, ParticlesObject::PositionProperty, 1);
 		columnMapping.mapStandardColumn(4, ParticlesObject::PositionProperty, 2);
 		for(LAMMPSAtomStyle substyle : atomSubStyles) {
-			ParticleInputColumnMapping substyleColumns = createColumnMapping(substyle, {}, 0);
+			ParticleInputColumnMapping substyleColumns = createAtomsColumnMapping(substyle, {}, 0);
 			for(const InputColumnInfo& substyleColumn : substyleColumns) {
 				OVITO_ASSERT(substyleColumn.columnName.isEmpty() == false);
 				if(std::none_of(columnMapping.begin(), columnMapping.end(), [&](const InputColumnInfo& column) {
@@ -1389,6 +1401,64 @@ ParticleInputColumnMapping LAMMPSDataImporter::createColumnMapping(LAMMPSAtomSty
 		columnMapping[columnMapping.size() - 3].columnName = QStringLiteral("nx");
 		columnMapping[columnMapping.size() - 2].columnName = QStringLiteral("ny");
 		columnMapping[columnMapping.size() - 1].columnName = QStringLiteral("nz");
+	}
+	return columnMapping;
+}
+
+/******************************************************************************
+* Sets up the mapping of data file columns in the 'Velocities' section to internal particle properties based on the selected LAMMPS atom style.
+******************************************************************************/
+ParticleInputColumnMapping LAMMPSDataImporter::createVelocitiesColumnMapping(LAMMPSAtomStyle atomStyle, const std::vector<LAMMPSAtomStyle>& atomSubStyles)
+{
+	ParticleInputColumnMapping columnMapping;
+	columnMapping.resize(4);
+	columnMapping[0].columnName = "atom-ID";
+	columnMapping[1].columnName = "vx";
+	columnMapping[2].columnName = "vy";
+	columnMapping[3].columnName = "vz";
+	columnMapping.mapStandardColumn(0, ParticlesObject::IdentifierProperty);
+	columnMapping.mapStandardColumn(1, ParticlesObject::VelocityProperty, 0);
+	columnMapping.mapStandardColumn(2, ParticlesObject::VelocityProperty, 1);
+	columnMapping.mapStandardColumn(3, ParticlesObject::VelocityProperty, 2);
+	switch(atomStyle) {
+	case AtomStyle_Sphere:
+		columnMapping.resize(7);
+		columnMapping[4].columnName = "wx";
+		columnMapping[5].columnName = "wy";
+		columnMapping[6].columnName = "wz";
+		columnMapping.mapStandardColumn(4, ParticlesObject::AngularVelocityProperty, 0);
+		columnMapping.mapStandardColumn(5, ParticlesObject::AngularVelocityProperty, 1);
+		columnMapping.mapStandardColumn(6, ParticlesObject::AngularVelocityProperty, 2);
+		break;
+	case AtomStyle_Electron:
+		columnMapping.resize(5);
+		columnMapping[4].columnName = "ervel";
+		columnMapping.mapCustomColumn(4, QStringLiteral("ervel"), PropertyObject::Float);
+		break;
+	case AtomStyle_Ellipsoid:
+		columnMapping.resize(7);
+		columnMapping[4].columnName = "lx";
+		columnMapping[5].columnName = "ly";
+		columnMapping[6].columnName = "lz";
+		columnMapping.mapStandardColumn(4, ParticlesObject::AngularMomentumProperty, 0);
+		columnMapping.mapStandardColumn(5, ParticlesObject::AngularMomentumProperty, 1);
+		columnMapping.mapStandardColumn(6, ParticlesObject::AngularMomentumProperty, 2);
+		break;
+	case AtomStyle_Hybrid:
+		for(LAMMPSAtomStyle substyle : atomSubStyles) {
+			ParticleInputColumnMapping substyleColumns = createVelocitiesColumnMapping(substyle, {});
+			for(const InputColumnInfo& substyleColumn : substyleColumns) {
+				OVITO_ASSERT(substyleColumn.columnName.isEmpty() == false);
+				if(std::none_of(columnMapping.begin(), columnMapping.end(), [&](const InputColumnInfo& column) {
+					return column.columnName == substyleColumn.columnName;
+				})) {
+					columnMapping.push_back(substyleColumn);
+				}
+			}
+		}
+		break;
+	default:
+		break;
 	}
 	return columnMapping;
 }

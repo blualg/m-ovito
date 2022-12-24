@@ -219,7 +219,7 @@ public:
 	///        to the target properties.
 	/// \param container The property container where the parsed data will be stored in.
 	/// \throws Exception if the mapping is not valid.
-	InputColumnReader(StandardFrameLoader& frameLoader, const InputColumnMapping& mapping, PropertyContainer* container, bool removeExistingProperties = true);
+	InputColumnReader(StandardFrameLoader& frameLoader, const InputColumnMapping& mapping, PropertyContainer* container, bool removeExistingProperties = true, bool validateMapping = true);
 
 	/// \brief Tells the parser to read the names of element types from the given file column
 	void readTypeNamesFromColumn(int nameColumn, int numericIdColumn);

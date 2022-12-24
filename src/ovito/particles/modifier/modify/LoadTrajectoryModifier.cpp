@@ -223,7 +223,14 @@ void LoadTrajectoryModifier::applyTrajectoryState(PipelineFlowState& state, cons
 				throw Exception(tr("Cannot apply trajectories to current particle dataset. Numbers of particles in the trajectory file and in the topology file do not match."));
 			}
 			else if(identifierProperty) {
-				throw Exception(tr("Particles in the topology dataset have identifiers, but trajectory particles do not. This likely is a mistake. Please ensure the trajectory file contains identifiers too."));
+				// We make an exception if topology identifiers are in sorted order forming a consecutive sequence.
+				// Gromacs GRO files, for example, contain atom numbers (IDs) and Gromacs XTC files do not.
+				// This exception has been introduced to support this particular combination of topology & trajectory files.
+				qlonglong idx = 1;
+				for(const qlonglong& id : identifierProperty) {
+					if(id != idx++)
+						throw Exception(tr("Particles in the topology dataset have identifiers, but trajectory particles do not. This likely is a mistake. Please ensure the trajectory file contains identifiers too."));
+				}
 			}
 			else if(trajIdentifierProperty) {
 				throw Exception(tr("Particles in the trajectory dataset have identifiers, but topology particles do not. This likely is a mistake. Please ensure the topology file contains identifiers too."));

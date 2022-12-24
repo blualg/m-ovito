@@ -115,8 +115,11 @@ public:
 	/// Parses a hint string for the LAMMPS atom style.
 	static LAMMPSAtomStyle parseAtomStyleHint(const QString& atomStyleHint);
 
-	/// Sets up the mapping of data file columns to internal particle properties based on the selected LAMMPS atom style.
-	static ParticleInputColumnMapping createColumnMapping(LAMMPSAtomStyle atomStyle, const std::vector<LAMMPSAtomStyle>& atomSubStyles, int dataColumnCount = 0);
+	/// Sets up the mapping of data file columns in the 'Atoms' section to internal particle properties based on the selected LAMMPS atom style.
+	static ParticleInputColumnMapping createAtomsColumnMapping(LAMMPSAtomStyle atomStyle, const std::vector<LAMMPSAtomStyle>& atomSubStyles, int dataColumnCount = 0);
+
+	/// Sets up the mapping of data file columns in the 'Velocities' section to internal particle properties based on the selected LAMMPS atom style.
+	static ParticleInputColumnMapping createVelocitiesColumnMapping(LAMMPSAtomStyle atomStyle, const std::vector<LAMMPSAtomStyle>& atomSubStyles);
 
 private:
 

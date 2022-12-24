@@ -190,10 +190,11 @@ void InputColumnMapping::validate() const
 /******************************************************************************
  * Initializes the object.
  *****************************************************************************/
-InputColumnReader::InputColumnReader(StandardFrameLoader& frameLoader, const InputColumnMapping& mapping, PropertyContainer* container, bool removeExistingProperties)
+InputColumnReader::InputColumnReader(StandardFrameLoader& frameLoader, const InputColumnMapping& mapping, PropertyContainer* container, bool removeExistingProperties, bool validateMapping)
 	: _frameLoader(frameLoader), _mapping(mapping), _container(container)
 {
-	mapping.validate();
+	if(validateMapping)
+		mapping.validate();
 
 	// Create target properties as defined by the mapping.
 	for(int i = 0; i < (int)mapping.size(); i++) {
@@ -246,7 +247,7 @@ InputColumnReader::InputColumnReader(StandardFrameLoader& frameLoader, const Inp
 			rec.dataType = rec.property->dataType();
 			rec.stride = rec.property->stride();
 			
-			// Create a property memory accessor, but one per property.
+			// Create a property memory accessor, but only one per property if multiple columns are mapped to that property.
 			auto sharedTargetProperty = std::find_if(_properties.begin(), _properties.end(), [&](const TargetPropertyRecord& other) { return other.property == property; });
 			if(sharedTargetProperty == _properties.end()) {
 				rec.propertyArray = PropertyAccess<void,true>(rec.property);

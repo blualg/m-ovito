@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -57,7 +57,8 @@ public:
 		_atomStyle(LAMMPSDataImporter::AtomStyle_Atomic), 
 		_omitMassesSection(false),
 		_ignoreParticleIdentifiers(false),
-		_exportTypeNames(false) {}
+		_exportTypeNames(false),
+		_generateConsecutiveTypeIds(false) {}
 
 protected:
 
@@ -80,6 +81,9 @@ private:
 
 	/// Exports the type names of particles, bonds, angles, etc.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, exportTypeNames, setExportTypeNames);
+
+	/// Controls whether new consecutive IDs are assigned to particle/bond/... types during export.
+	DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, generateConsecutiveTypeIds, setGenerateConsecutiveTypeIds);
 };
 
 }	// End of namespace
