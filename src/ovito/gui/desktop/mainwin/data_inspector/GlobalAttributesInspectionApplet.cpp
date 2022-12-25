@@ -58,7 +58,6 @@ QWidget* GlobalAttributesInspectionApplet::createWidget()
 	toolbar->setOrientation(Qt::Vertical);
 	toolbar->setToolButtonStyle(Qt::ToolButtonIconOnly);
 	toolbar->setIconSize(QSize(22,22));
-	toolbar->setStyleSheet("QToolBar { padding: 0px; margin: 0px; border: 0px none black; spacing: 0px; }");
 
 	QAction* exportToFileAction = new QAction(QIcon::fromTheme("file_save_as"), tr("Export attributes to text file"), this);
 	connect(exportToFileAction, &QAction::triggered, this, &GlobalAttributesInspectionApplet::exportToFile);

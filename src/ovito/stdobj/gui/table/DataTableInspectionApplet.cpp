@@ -58,7 +58,6 @@ QWidget* DataTableInspectionApplet::createWidget()
 	toolbar->setOrientation(Qt::Vertical);
 	toolbar->setToolButtonStyle(Qt::ToolButtonIconOnly);
 	toolbar->setIconSize(QSize(22,22));
-	toolbar->setStyleSheet("QToolBar { padding: 0px; margin: 0px; border: 0px none black; spacing: 0px; }");
 
 	QActionGroup* plotTypeActionGroup = new QActionGroup(this);
 	_switchToPlotAction = plotTypeActionGroup->addAction(QIcon::fromTheme("inspector_view_chart"), tr("Chart view"));

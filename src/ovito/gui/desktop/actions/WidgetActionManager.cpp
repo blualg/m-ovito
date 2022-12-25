@@ -108,11 +108,13 @@ void WidgetActionManager::on_NewPipelineFileSource_triggered()
 {
 	mainWindow().performTransaction(tr("Create pipeline"), [&]() {
 
+		if(Scene* scene = userInterface().datasetContainer().activeScene()) {
+
 #ifndef OVITO_BUILD_PROFESSIONAL
-		throw Exception(tr("OVITO Pro is required to insert more than one pipeline into the scene. Please visit <a href=\"https://www.ovito.org/about/ovito-pro/\">www.ovito.org</a> for more information on the extended version of our software."));
+			if(!scene->children().empty())
+				throw Exception(tr("OVITO Pro is required to insert more than one pipeline into the scene. Please visit <a href=\"https://www.ovito.org/about/ovito-pro/\">www.ovito.org</a> for more information on the extended version of our software."));
 #endif
 
-		if(Scene* scene = userInterface().datasetContainer().activeScene()) {
 			// Do not create any animation keys.
 			AnimationSuspender animSuspender(mainWindow());
 

@@ -50,7 +50,6 @@ QWidget* SurfaceMeshInspectionApplet::createWidget()
 	toolbar->setOrientation(Qt::Vertical);
 	toolbar->setToolButtonStyle(Qt::ToolButtonIconOnly);
 	toolbar->setIconSize(QSize(22,22));
-	toolbar->setStyleSheet("QToolBar { padding: 0px; margin: 0px; border: 0px none black; spacing: 0px; }");
 
 	QActionGroup* subobjectActionGroup = new QActionGroup(this);
 	_switchToVerticesAction = subobjectActionGroup->addAction(QIcon::fromTheme("inspector_view_mesh_vertices"), tr("Vertices"));
@@ -181,7 +180,6 @@ QWidget* SurfaceMeshVertexInspectionApplet::createWidget()
 	toolbar->setOrientation(Qt::Horizontal);
 	toolbar->setToolButtonStyle(Qt::ToolButtonIconOnly);
 	toolbar->setIconSize(QSize(18,18));
-	toolbar->setStyleSheet("QToolBar { padding: 0px; margin: 0px; border: 0px none black; spacing: 0px; }");
 	toolbar->addAction(resetFilterAction());
 	layout->addWidget(toolbar, 0, 0);
 
@@ -213,7 +211,6 @@ QWidget* SurfaceMeshFaceInspectionApplet::createWidget()
 	toolbar->setOrientation(Qt::Horizontal);
 	toolbar->setToolButtonStyle(Qt::ToolButtonIconOnly);
 	toolbar->setIconSize(QSize(18,18));
-	toolbar->setStyleSheet("QToolBar { padding: 0px; margin: 0px; border: 0px none black; spacing: 0px; }");
 	toolbar->addAction(resetFilterAction());
 	layout->addWidget(toolbar, 0, 0);
 
@@ -245,7 +242,6 @@ QWidget* SurfaceMeshRegionInspectionApplet::createWidget()
 	toolbar->setOrientation(Qt::Horizontal);
 	toolbar->setToolButtonStyle(Qt::ToolButtonIconOnly);
 	toolbar->setIconSize(QSize(18,18));
-	toolbar->setStyleSheet("QToolBar { padding: 0px; margin: 0px; border: 0px none black; spacing: 0px; }");
 	toolbar->addAction(resetFilterAction());
 	layout->addWidget(toolbar, 0, 0);
 

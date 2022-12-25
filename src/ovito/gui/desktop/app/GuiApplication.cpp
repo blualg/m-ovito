@@ -22,6 +22,7 @@
 
 #include <ovito/gui/desktop/GUI.h>
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
+#include <ovito/gui/desktop/mainwin/OvitoStyle.h>
 #include <ovito/gui/desktop/dataset/GuiDataSetContainer.h>
 #include <ovito/gui/base/actions/ActionManager.h>
 #include <ovito/core/app/undo/UndoStack.h>
@@ -129,7 +130,11 @@ void GuiApplication::createQtApplication(int& argc, char** argv)
 		QApplication::setStyle("Fusion");
 #endif
 
+		// Create the global application object.
 		new QApplication(argc, argv);
+
+		// Install our customized UI style.
+		QApplication::setStyle(new OvitoStyle());
 
 		// Verify that a global sharing OpenGL context has been created by the Qt application as requested.
 		OVITO_ASSERT(QOpenGLContext::globalShareContext() != nullptr);

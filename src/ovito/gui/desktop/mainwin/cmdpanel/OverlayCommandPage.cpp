@@ -108,9 +108,6 @@ OverlayCommandPage::OverlayCommandPage(MainWindow& mainWindow, QWidget* parent) 
 
 	QToolBar* editToolbar = new QToolBar(this);
 	editToolbar->setOrientation(Qt::Vertical);
-#ifndef Q_OS_MACOS
-	editToolbar->setStyleSheet("QToolBar { padding: 0px; margin: 0px; border: 0px none black; }");
-#endif
 	subLayout->addWidget(editToolbar);
 
 	ActionManager* actionManager = mainWindow.actionManager();

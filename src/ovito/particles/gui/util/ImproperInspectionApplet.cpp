@@ -46,7 +46,6 @@ QWidget* ImproperInspectionApplet::createWidget()
 	toolbar->setOrientation(Qt::Horizontal);
 	toolbar->setToolButtonStyle(Qt::ToolButtonIconOnly);
 	toolbar->setIconSize(QSize(18,18));
-	toolbar->setStyleSheet("QToolBar { padding: 0px; margin: 0px; border: 0px none black; spacing: 0px; }");
 	toolbar->addAction(resetFilterAction());
 	layout->addWidget(toolbar, 0, 0);
 

@@ -59,7 +59,6 @@ void FileSourceEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 	QVBoxLayout* sublayout;
 
 	QToolBar* toolbar = new QToolBar(rollout);
-	toolbar->setStyleSheet("QToolBar { padding: 0px; margin: 0px; border: 0px none black; }");
 	layout->addWidget(toolbar);
 
 	toolbar->addAction(QIcon::fromTheme("file_import_object_changefile"), tr("Pick new file"), this, SLOT(onPickLocalInputFile()));

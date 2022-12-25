@@ -182,7 +182,6 @@ MainWindow::MainWindow() : UserInterface(_datasetContainer, _taskManager), _data
 	animationControlPanelLayout->addWidget(animationControlBar1);
 	animationControlPanelLayout->addWidget(animationControlBar2);
 	animationControlPanelLayout->addStretch(1);
-	animationControlPanel->setStyleSheet("QToolBar { padding: 0px; margin: 0px; border: 0px none black; } QToolButton { padding: 0px; margin: 0px }");
 	animationControlPanel->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Preferred);
 
 	// Create the viewport control toolbar.
@@ -205,7 +204,6 @@ MainWindow::MainWindow() : UserInterface(_datasetContainer, _taskManager), _data
 	viewportControlPanelLayout->addLayout(sublayout);
 	viewportControlPanelLayout->addStretch(1);
 	viewportControlPanel->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Preferred);
-	viewportControlPanel->setStyleSheet("QToolBar { padding: 0px; margin: 0px; border: 0px none black; } QToolButton { padding: 0px; margin: 0px }");
 
 	// Create the command panel.
 	_commandPanel = new CommandPanel(*this, this);

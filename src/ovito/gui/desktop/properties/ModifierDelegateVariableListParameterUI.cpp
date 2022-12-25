@@ -43,7 +43,6 @@ ModifierDelegateVariableListParameterUI::ModifierDelegateVariableListParameterUI
 	layout->setContentsMargins(0,0,0,0);
 
 	QToolBar* toolbar = new QToolBar();
-	toolbar->setStyleSheet("QToolBar { padding: 0px; margin: 0px; border: 0px none black; }");
 	toolbar->setFloatable(false);
 	toolbar->setIconSize(QSize(16,16));
 	QAction* addDelegateAction = toolbar->addAction(QIcon::fromTheme("animation_add_key"), tr("Add entry"));
@@ -148,7 +147,6 @@ void ModifierDelegateVariableListParameterUI::referenceInserted(const PropertyFi
 		connect(comboBox, qOverload<int>(&QComboBox::activated), this, &ModifierDelegateVariableListParameterUI::onDelegateSelected);
 		sublayout->addWidget(comboBox, 1);
 		QToolBar* toolbar = new QToolBar();
-		toolbar->setStyleSheet("QToolBar { padding: 0px; margin: 0px; border: 0px none black; }");
 		toolbar->setFloatable(false);
 		toolbar->setIconSize(QSize(16,16));
 		QAction* removeDelegateAction = toolbar->addAction(QIcon::fromTheme("animation_delete_key"), tr("Remove entry"));

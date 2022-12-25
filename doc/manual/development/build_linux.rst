@@ -27,7 +27,7 @@ as follows:
    * - Ubuntu / Debian
      - .. code::
 
-          sudo apt-get install build-essential git cmake-curses-gui qt6-base-dev \
+          sudo apt-get install build-essential git cmake-curses-gui qt6-base-dev libqt6svg6 \
                 libboost-dev libavcodec-dev libavdevice-dev libavfilter-dev libavformat-dev \
                 libavutil-dev libswscale-dev libnetcdf-dev libhdf5-dev libhdf5-serial-dev \
                 libglu1-mesa-dev libvulkan-dev ninja-build \
