@@ -28,10 +28,12 @@
 #include <ovito/core/app/undo/UndoStack.h>
 #include "GuiApplication.h"
 
-#include <QDBusConnection>
-#include <QDBusMessage>
-#include <QDBusVariant>
-#include <QDBusReply>
+#ifdef Q_OS_LINUX
+	#include <QDBusConnection>
+	#include <QDBusMessage>
+	#include <QDBusVariant>
+	#include <QDBusReply>
+#endif
 
 // Registers the embedded Qt resource files embedded in a statically linked executable at application startup. 
 // Following the Qt documentation, this needs to be placed outside of any C++ namespace.
@@ -461,7 +463,7 @@ bool GuiApplication::usingDarkTheme() const
 bool GuiApplication::detectDarkTheme() const
 {
 #if defined(Q_OS_MACOS)
-	auto bg = palette().color(QPalette::Active, QPalette::Window);
+	auto bg = qApp->palette().color(QPalette::Active, QPalette::Window);
 	if(bg.lightness() < 100)
 		return true;
 	return false;
