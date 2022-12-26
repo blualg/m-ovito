@@ -195,9 +195,6 @@ MainThreadOperation GuiApplication::startupApplication()
 	if(guiMode()) {
 		// Set up graphical user interface.
 
-		if(!QImageReader::supportedImageFormats().contains("svg"))
-			throw Exception(tr("OVITO requires support for the SVG image format. Please install a version of the Qt framework that includes the Qt Svg module.")); 			
-
 		// Activate icon theme that matches the current UI theme.
 		bool darkTheme = usingDarkTheme();
 		QIcon::setThemeName(darkTheme ? QStringLiteral("ovito-dark") : QStringLiteral("ovito-light"));
