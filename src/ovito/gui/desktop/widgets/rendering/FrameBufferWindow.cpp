@@ -47,6 +47,7 @@ FrameBufferWindow::FrameBufferWindow(MainWindow& mainWindow, QWidget* parent) :
 	setCentralWidget(centralContainer);
 
 	QToolBar* toolBar = addToolBar(tr("Frame Buffer"));
+	toolBar->setMovable(false);
 	_saveToFileAction = toolBar->addAction(QIcon::fromTheme("framebuffer_save_picture"), tr("Save to file"), this, &FrameBufferWindow::saveImage);
 	_copyToClipboardAction = toolBar->addAction(QIcon::fromTheme("framebuffer_copy_picture_to_clipboard"), tr("Copy to clipboard"), this, &FrameBufferWindow::copyImageToClipboard);
 	toolBar->addSeparator();

@@ -113,9 +113,6 @@ public:
 	/// Sets the file path associated with this window and updates the window's title.
 	void setWindowFilePath(const QString& filePath);
 
-	/// Determines whether the application window uses a dark theme.
-	bool darkTheme() const;
-
 	/// \brief Suspends the animation auto-key mode temporarily.
 	///
 	/// Automatic generation of animation keys is suspended by this method until a call to resumeAnim().

@@ -28,6 +28,11 @@
 #include <ovito/core/app/undo/UndoStack.h>
 #include "GuiApplication.h"
 
+#include <QDBusConnection>
+#include <QDBusMessage>
+#include <QDBusVariant>
+#include <QDBusReply>
+
 // Registers the embedded Qt resource files embedded in a statically linked executable at application startup. 
 // Following the Qt documentation, this needs to be placed outside of any C++ namespace.
 static void registerQtResources()
@@ -114,7 +119,7 @@ void GuiApplication::createQtApplication(int& argc, char** argv)
 	else {
 		// OVITO prefers the "C" locale over the system's default locale.
 		QLocale::setDefault(QLocale::c());
-
+		
 #if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
 		// Enable high-resolution toolbar icons on hi-dpi screens.
 		QCoreApplication::setAttribute(Qt::AA_UseHighDpiPixmaps);
@@ -144,6 +149,42 @@ void GuiApplication::createQtApplication(int& argc, char** argv)
 	QCoreApplication::instance()->installEventFilter(this);
 }
 
+#if defined(Q_OS_LINUX)
+static void activateThemeColors(bool dark)
+{
+	static const QPalette lightPalette = qApp->palette();
+	static const QPalette darkPalette = []() {
+		QColor darkGray(53, 53, 53);
+		QColor gray(128, 128, 128);
+		QColor black(25, 25, 25);
+		QColor blue(42, 130, 218);
+
+		QPalette darkPalette;
+		darkPalette.setColor(QPalette::Window, darkGray);
+		darkPalette.setColor(QPalette::WindowText, Qt::white);
+		darkPalette.setColor(QPalette::Base, black);
+		darkPalette.setColor(QPalette::AlternateBase, darkGray);
+		darkPalette.setColor(QPalette::ToolTipBase, blue);
+		darkPalette.setColor(QPalette::ToolTipText, Qt::white);
+		darkPalette.setColor(QPalette::Text, Qt::white);
+		darkPalette.setColor(QPalette::Button, darkGray);
+		darkPalette.setColor(QPalette::ButtonText, Qt::white);
+		darkPalette.setColor(QPalette::Link, blue);
+		darkPalette.setColor(QPalette::Highlight, blue);
+		darkPalette.setColor(QPalette::HighlightedText, Qt::black);
+		darkPalette.setColor(QPalette::PlaceholderText, QColor(83,83,83));
+
+		darkPalette.setColor(QPalette::Active, QPalette::Button, gray.darker());
+		darkPalette.setColor(QPalette::Disabled, QPalette::ButtonText, gray);
+		darkPalette.setColor(QPalette::Disabled, QPalette::WindowText, gray);
+		darkPalette.setColor(QPalette::Disabled, QPalette::Text, gray);
+		darkPalette.setColor(QPalette::Disabled, QPalette::Light, darkGray);
+		return darkPalette;
+	}();
+	qApp->setPalette(dark ? darkPalette : lightPalette);
+}
+#endif
+
 /******************************************************************************
 * Prepares application to start running.
 ******************************************************************************/
@@ -151,6 +192,50 @@ MainThreadOperation GuiApplication::startupApplication()
 {
 	if(guiMode()) {
 		// Set up graphical user interface.
+
+		if(!QImageReader::supportedImageFormats().contains("svg"))
+			throw Exception(tr("OVITO requires support for the SVG image format. Please install a version of the Qt framework that includes the Qt Svg module.")); 			
+
+		// Activate icon theme that matches the current UI theme.
+		bool darkTheme = usingDarkTheme();
+		QIcon::setThemeName(darkTheme ? QStringLiteral("ovito-dark") : QStringLiteral("ovito-light"));
+
+#if defined(Q_OS_LINUX)
+		if(darkTheme)
+			activateThemeColors(true);
+
+		if(qgetenv("XDG_CURRENT_DESKTOP") != "KDE") {
+			// Install handler to get notified whenever the system color theme is changed by the user.
+			// This involves permanently running the external process 'gsettings monitor org.gnome.desktop.interface color-scheme' and 'gtk-theme'.
+			auto installThemeNotificationHandler = [&](const QString& settingsKey) {
+				QProcess* gsettingsProcess = new QProcess(this);
+				connect(gsettingsProcess, &QProcess::readyReadStandardOutput, this, [this]() {
+					QByteArray output = static_cast<QProcess*>(sender())->readAllStandardOutput().toLower();
+					if(output.contains("-dark")) {
+						_usingDarkTheme = true;
+						activateThemeColors(true);
+					}
+					else if(!output.isEmpty()) {
+						_usingDarkTheme = false;
+						activateThemeColors(false);
+					}
+				});
+
+				// Terminate gsettings process when the window closes.
+				connect(qApp, &QGuiApplication::lastWindowClosed, gsettingsProcess, [gsettingsProcess]() {
+					gsettingsProcess->terminate();
+					gsettingsProcess->waitForFinished(1000);
+				});
+
+				// Launch gsettings monitoring process.
+				gsettingsProcess->start("gsettings", QStringList() << "monitor" << "org.gnome.desktop.interface" << settingsKey);
+			};
+			if(qgetenv("XDG_CURRENT_DESKTOP") != "XFCE")
+				installThemeNotificationHandler(QStringLiteral("color-scheme"));
+			else
+				installThemeNotificationHandler(QStringLiteral("gtk-theme"));
+		}
+#endif
 
 		// Set the application icon.
 		QIcon mainWindowIcon;
@@ -355,5 +440,74 @@ void GuiApplication::reportError(const Exception& ex)
 		msgbox.exec();
 	}
 }
+
+/******************************************************************************
+* Returns whether the application currently uses a dark UI theme.
+******************************************************************************/
+bool GuiApplication::usingDarkTheme() const
+{
+#ifndef Q_OS_LINUX
+	return detectDarkTheme();
+#else
+	if(!_usingDarkTheme.has_value())
+		_usingDarkTheme = detectDarkTheme();
+	return *_usingDarkTheme;
+#endif
+}
+
+/******************************************************************************
+* Queries the system to determine whether the desktop currently uses a dark desktop theme.
+******************************************************************************/
+bool GuiApplication::detectDarkTheme() const
+{
+#if defined(Q_OS_MACOS)
+	auto bg = palette().color(QPalette::Active, QPalette::Window);
+	if(bg.lightness() < 100)
+		return true;
+	return false;
+#elif defined(Q_OS_LINUX)
+	if(qgetenv("XDG_CURRENT_DESKTOP") == "KDE") {
+		// On KDE, query system theme preference via D-Bus protocol.
+		QDBusMessage message = QDBusMessage::createMethodCall(QStringLiteral("org.freedesktop.portal.Desktop"),
+		                                         QStringLiteral("/org/freedesktop/portal/desktop"),
+		                                         QStringLiteral("org.freedesktop.portal.Settings"),
+		                                         QStringLiteral("Read"));
+		message << QStringLiteral("org.freedesktop.appearance") << QStringLiteral("color-scheme");
+
+		QDBusReply<QVariant> reply = QDBusConnection::sessionBus().call(message);
+		if(reply.isValid()) {
+		    const QDBusVariant dbusVariant = qvariant_cast<QDBusVariant>(reply.value());
+		    return dbusVariant.variant().toUInt() == 1;  // 0=none, 1=prefer dark, 2=prefer light
+		}
+	}
+    
+	QProcess process;
+	QByteArray gsettingsOutput;
+	if(qgetenv("XDG_CURRENT_DESKTOP") != "XFCE") {
+#if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
+		process.start("gsettings", QStringList() << "get" << "org.gnome.desktop.interface" << "color-scheme", QIODevice::ReadOnly);
+#else
+		process.start("gsettings get org.gnome.desktop.interface color-scheme", QIODevice::ReadOnly);
+#endif
+		process.waitForFinished();
+		gsettingsOutput = process.readAllStandardOutput();
+	}
+	if(gsettingsOutput.isEmpty()) {
+#if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
+		process.start("gsettings", QStringList() << "get" << "org.gnome.desktop.interface" << "gtk-theme", QIODevice::ReadOnly);
+#else
+		process.start("gsettings get org.gnome.desktop.interface gtk-theme", QIODevice::ReadOnly);
+#endif
+		process.waitForFinished();
+		gsettingsOutput = process.readAllStandardOutput();
+	}
+	if(gsettingsOutput.toLower().contains("-dark"))
+		return true;
+	return false;
+#else
+	return false;
+#endif	
+}
+
 
 }	// End of namespace

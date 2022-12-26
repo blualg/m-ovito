@@ -35,6 +35,7 @@ class OvitoStyle : public QProxyStyle
 {
 public:
 
+#ifdef Q_OS_MACOS
 	int pixelMetric(QStyle::PixelMetric metric, const QStyleOption* option = nullptr, const QWidget* widget = nullptr) const override {
 		if(metric == PM_ToolBarFrameWidth || metric == PM_ToolBarItemMargin) {
 			if(!isMainWindowToolbar(widget))
@@ -42,6 +43,7 @@ public:
 		}
 		return QProxyStyle::pixelMetric(metric, option, widget);
 	}
+#endif
 
 	void drawControl(ControlElement element, const QStyleOption* option, QPainter* painter, const QWidget* widget = nullptr) const override {
 		if(element == CE_ToolBar) {
@@ -51,6 +53,7 @@ public:
 		QProxyStyle::drawControl(element, option, painter, widget);
 	}
 
+#ifdef Q_OS_MACOS
 	QSize sizeFromContents(ContentsType ct, const QStyleOption* option, const QSize& csz, const QWidget* widget) const override {
 		if(ct == CT_ToolButton) {
 			if(widget && !isMainWindowToolbar(widget->parentWidget()))
@@ -60,6 +63,7 @@ public:
 		}
 		return QProxyStyle::sizeFromContents(ct, option, csz, widget);
 	}
+#endif
 
 private:
 

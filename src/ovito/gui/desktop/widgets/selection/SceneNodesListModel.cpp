@@ -72,7 +72,11 @@ QT_WARNING_POP
 void SceneNodesListModel::updateColorPalette(const QPalette& palette)
 {
 	bool darkTheme = palette.color(QPalette::Active, QPalette::Window).lightness() < 100;
+#ifndef Q_OS_LINUX
 	_sectionHeaderBackgroundBrush = darkTheme ? palette.mid() : QBrush{Qt::lightGray, Qt::Dense4Pattern};
+#else
+	_sectionHeaderBackgroundBrush = darkTheme ? palette.window() : QBrush{Qt::lightGray, Qt::Dense4Pattern};
+#endif
 	_sectionHeaderForegroundBrush = QBrush(darkTheme ? QColor(Qt::blue).lighter() : QColor(Qt::blue));
 }
 

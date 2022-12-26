@@ -21,7 +21,12 @@
 #######################################################################################
 
 # Find the required Qt modules.
-FIND_PACKAGE(${OVITO_QT_MAJOR_VERSION} ${OVITO_MINIMUM_REQUIRED_QT_VERSION} COMPONENTS Widgets Network REQUIRED)
+SET(OVITO_GUI_REQUIRED_QT_COMPONENTS Widgets Network)
+IF(UNIX AND NOT APPLE)
+	# On Linux, the DBus component is needed to access dark/light desktop theme settings.
+	LIST(APPEND OVITO_GUI_REQUIRED_QT_COMPONENTS DBus)
+ENDIF()
+FIND_PACKAGE(${OVITO_QT_MAJOR_VERSION} ${OVITO_MINIMUM_REQUIRED_QT_VERSION} COMPONENTS ${OVITO_GUI_REQUIRED_QT_COMPONENTS} REQUIRED)
 
 # Define plugin module.
 OVITO_STANDARD_PLUGIN(Gui
@@ -134,6 +139,9 @@ OVITO_STANDARD_PLUGIN(Gui
 	PRECOMPILED_HEADERS
 		GUI.h
 )
+IF(UNIX AND NOT APPLE)
+	TARGET_LINK_LIBRARIES(Gui PRIVATE ${OVITO_QT_MAJOR_VERSION}::DBus)
+ENDIF()
 
 # Inject copyright notice text into the source code.
 SET_PROPERTY(SOURCE actions/FileActions.cpp

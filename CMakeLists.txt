@@ -65,13 +65,25 @@ OPTION(OVITO_BUILD_SSH_CLIENT "Build the SSH client for remote file access (requ
 OPTION(OVITO_LIBSSH_RUNTIME_LINKING "Load libssh at runtime" "OFF")
 
 # Decide which version of the Qt framework to use. Ovito supports Qt5 (>=5.12) and Qt6 (>=6.2). 
-SET(OVITO_QT_MAJOR_VERSION "Qt5" CACHE STRING "The major version of the Qt framework to use (Qt5 or Qt6).")
-SET_PROPERTY(CACHE OVITO_QT_MAJOR_VERSION PROPERTY STRINGS Qt5 Qt6)
-IF(OVITO_QT_MAJOR_VERSION STREQUAL "Qt5")
-	SET(OVITO_MINIMUM_REQUIRED_QT_VERSION 5.12)
+# We look for Qt6 first.
+SET(OVITO_MINIMUM_REQUIRED_QT_VERSION 6.2)
+FIND_PACKAGE(Qt6 ${OVITO_MINIMUM_REQUIRED_QT_VERSION} COMPONENTS Core)
+IF(Qt6_FOUND AND TARGET Qt6::Core)
+	SET(OVITO_QT_MAJOR_VERSION "Qt6")
 ELSE()
-	SET(OVITO_MINIMUM_REQUIRED_QT_VERSION 6.2)
+	# If Qt6 wasn't found, look for Qt5.
+	SET(OVITO_MINIMUM_REQUIRED_QT_VERSION 5.12)
+	FIND_PACKAGE(Qt5 ${OVITO_MINIMUM_REQUIRED_QT_VERSION} COMPONENTS Core)
+	IF(Qt5_FOUND AND TARGET Qt5::Core)
+		SET(OVITO_QT_MAJOR_VERSION "Qt5")
+	ELSE()
+		MESSAGE(FATAL_ERROR "Could not locate Qt5 or Qt6 framework. Ovito requires one of them, preferrably Qt 6.2 or above.")
+	ENDIF()
 ENDIF()
+MESSAGE(STATUS "Using ${OVITO_QT_MAJOR_VERSION}")
+
+# Look for optional Vulkan SDK.
+FIND_PACKAGE(Vulkan)
 
 # Define user options that control the building of OVITO's standard plugins.
 OPTION(OVITO_BUILD_PLUGIN_STDOBJ "Build the standard objects plugin." "ON")
@@ -85,7 +97,7 @@ OPTION(OVITO_BUILD_PLUGIN_CORRELATION "Build the spatial correlation function mo
 OPTION(OVITO_BUILD_PLUGIN_VOROTOP "Build the VoroTop modifier plugin." "ON")
 OPTION(OVITO_BUILD_PLUGIN_GALAMOST "Build the GALAMOST I/O plugin." "ON")
 OPTION(OVITO_BUILD_PLUGIN_OXDNA "Build the oxDNA I/O plugin." "ON")
-OPTION(OVITO_BUILD_PLUGIN_VULKAN "Build the Vulkan renderer plugin." "OFF")
+OPTION(OVITO_BUILD_PLUGIN_VULKAN "Build the Vulkan renderer plugin." "${VULKAN_FOUND}")
 
 # This is a global list of plugin targets that will be built.
 # It will get populated by the OVITO_PLUGIN function.

@@ -272,7 +272,11 @@ QT_WARNING_POP
 void ModifierListModel::updateColorPalette(const QPalette& palette)
 {
 	bool darkTheme = palette.color(QPalette::Active, QPalette::Window).lightness() < 100;
+#ifndef Q_OS_LINUX
 	_categoryBackgroundBrush = darkTheme ? palette.mid() : QBrush{Qt::lightGray, Qt::Dense4Pattern};
+#else
+	_categoryBackgroundBrush = darkTheme ? palette.window() : QBrush{Qt::lightGray, Qt::Dense4Pattern};
+#endif
 	_categoryForegroundBrush = QBrush(darkTheme ? QColor(Qt::blue).lighter() : QColor(Qt::blue));
 }
 

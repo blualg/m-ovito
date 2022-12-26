@@ -100,7 +100,11 @@ QT_WARNING_POP
 void PipelineListModel::updateColorPalette(const QPalette& palette)
 {
 	bool darkTheme = palette.color(QPalette::Active, QPalette::Window).lightness() < 100;
+#ifndef Q_OS_LINUX
 	_sectionHeaderBackgroundBrush = QBrush(palette.color(QPalette::Midlight));
+#else
+	_sectionHeaderBackgroundBrush = darkTheme ? palette.window() : QBrush(palette.color(QPalette::Midlight));
+#endif
 	_sectionHeaderForegroundBrush = QBrush(darkTheme ? QColor(Qt::blue).lighter() : QColor(Qt::blue));
 	_disabledForegroundBrush = palette.brush(QPalette::Disabled, QPalette::Text);
 }

@@ -52,6 +52,9 @@ public:
 
 	/// Handler function for exceptions.
 	virtual void reportError(const Exception& exception) override;
+	
+	/// Returns whether the application currently uses a dark UI theme.
+	bool usingDarkTheme() const;
 
 protected:
 
@@ -75,11 +78,19 @@ private:
 	/// Initializes the graphical user interface of the application.
 	void initializeGUI();
 
+	/// Queries the system to determine whether the desktop currently uses a dark desktop theme.
+	bool detectDarkTheme() const;
+
 	/// The global file manager.
 	GuiFileManager _fileManager;
 
 	/// The global dataset container (only used in command line mode).
 	DataSetContainer _globalDatasetContainer;
+	
+#ifdef Q_OS_LINUX
+	/// For cahing the results of detectDarkTheme().
+	mutable std::optional<bool> _usingDarkTheme;
+#endif
 };
 
 }	// End of namespace

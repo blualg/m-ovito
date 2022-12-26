@@ -22,6 +22,7 @@
 
 #include <ovito/gui/desktop/GUI.h>
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
+#include <ovito/gui/desktop/app/GuiApplication.h>
 #include <ovito/gui/base/actions/ActionManager.h>
 #include <ovito/gui/base/viewport/ViewportInputMode.h>
 #include <ovito/core/dataset/animation/AnimationSettings.h>
@@ -62,7 +63,7 @@ void AnimationTimeSlider::updateColorPalettes()
 	_autoKeyModePalette.setColor(QPalette::Window, QColor(240, 60, 60));
 	_sliderPalette = QGuiApplication::palette();
 	_sliderPalette.setColor(QPalette::Button, 
-		_mainWindow.darkTheme() ?
+		GuiApplication::instance()->usingDarkTheme() ?
 		_sliderPalette.color(QPalette::Button).lighter(150) :
 		_sliderPalette.color(QPalette::Button).darker(110));
 }

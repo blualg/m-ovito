@@ -21,6 +21,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/gui/desktop/GUI.h>
+#include <ovito/gui/desktop/app/GuiApplication.h>
 #include <ovito/gui/desktop/app/GuiApplicationService.h>
 #include <ovito/gui/desktop/widgets/animation/AnimationTimeSpinner.h>
 #include <ovito/gui/desktop/widgets/animation/AnimationTimeSlider.h>
@@ -58,9 +59,6 @@ MainWindow::MainWindow() : UserInterface(_datasetContainer, _taskManager), _data
 #endif
 	setWindowTitle(_baseWindowTitle);
 	setAttribute(Qt::WA_DeleteOnClose);
-
-	// Activate our icon theme.
-	QIcon::setThemeName(darkTheme() ? "ovito-dark" : "ovito-light");
 
 	// Set up the layout of docking widgets.
 	setCorner(Qt::BottomLeftCorner, Qt::LeftDockWidgetArea);
@@ -183,6 +181,7 @@ MainWindow::MainWindow() : UserInterface(_datasetContainer, _taskManager), _data
 	animationControlPanelLayout->addWidget(animationControlBar2);
 	animationControlPanelLayout->addStretch(1);
 	animationControlPanel->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Preferred);
+	animationTimeSpinnerContainer->setStyle(QApplication::style());
 
 	// Create the viewport control toolbar.
 	QToolBar* viewportControlBar1 = new QToolBar();
@@ -408,8 +407,8 @@ bool MainWindow::event(QEvent* event)
 		return true;
 	}
 	else if(event->type() == QEvent::ApplicationPaletteChange) {
-		// Switch icon theme.
-		QIcon::setThemeName(darkTheme() ? "ovito-dark" : "ovito-light");
+		// Switch icon theme to match with the current UI theme.
+		QIcon::setThemeName(GuiApplication::instance()->usingDarkTheme() ? QStringLiteral("ovito-dark") : QStringLiteral("ovito-light"));
 	}
 	return QMainWindow::event(event);
 }
@@ -586,22 +585,6 @@ std::shared_ptr<FrameBuffer> MainWindow::createAndShowFrameBuffer(int width, int
 	if(showRenderingOperationProgress)
 		_frameBufferWindow->showRenderingOperation();
 	return fb;
-}
-
-/******************************************************************************
-* Determines whether the application window uses a dark theme.
-******************************************************************************/
-bool MainWindow::darkTheme() const
-{
-#ifdef Q_OS_MACOS
-	auto bg = palette().color(QPalette::Active, QPalette::Window);
-	if(bg.lightness() < 100)
-		return true;
-	
-	return false;
-#else
-	return false;
-#endif	
 }
 
 /******************************************************************************
