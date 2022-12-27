@@ -13,6 +13,7 @@ test_linux:
       - cmake
            -DCMAKE_BUILD_TYPE=Debug
            -DOVITO_BUILD_DOCUMENTATION=ON
+           -DOVITO_BUILD_PLUGIN_VULKAN=OFF
            -DCMAKE_INSTALL_PREFIX=../install
            ..
       

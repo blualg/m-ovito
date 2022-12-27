@@ -82,7 +82,7 @@ ELSE()
 ENDIF()
 MESSAGE(STATUS "Using ${OVITO_QT_MAJOR_VERSION}")
 
-# Look for optional Vulkan SDK.
+# Look for optional Vulkan SDK (requires version 1.1 or above).
 FIND_PACKAGE(Vulkan)
 
 # Define user options that control the building of OVITO's standard plugins.
@@ -97,7 +97,7 @@ OPTION(OVITO_BUILD_PLUGIN_CORRELATION "Build the spatial correlation function mo
 OPTION(OVITO_BUILD_PLUGIN_VOROTOP "Build the VoroTop modifier plugin." "ON")
 OPTION(OVITO_BUILD_PLUGIN_GALAMOST "Build the GALAMOST I/O plugin." "ON")
 OPTION(OVITO_BUILD_PLUGIN_OXDNA "Build the oxDNA I/O plugin." "ON")
-OPTION(OVITO_BUILD_PLUGIN_VULKAN "Build the Vulkan renderer plugin." "${VULKAN_FOUND}")
+OPTION(OVITO_BUILD_PLUGIN_VULKAN "Build the Vulkan renderer plugin." "${Vulkan_FOUND}")
 
 # This is a global list of plugin targets that will be built.
 # It will get populated by the OVITO_PLUGIN function.

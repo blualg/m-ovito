@@ -78,6 +78,7 @@ void GeneralSettingsPage::insertSettingsDialogPage(QTabWidget* tabWidget)
 #ifndef OVITO_BUILD_PROFESSIONAL
 	asTrajectoryBtn->setEnabled(false);
 	asSeparateObjectsBtn->setEnabled(false);
+	asSeparateObjectsBtn->setText(asSeparateObjectsBtn->text() + tr(" (requires OVITO Pro)"));
 #endif
 
 	// Group "Program updates":

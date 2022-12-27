@@ -175,9 +175,9 @@ ELSEIF(WIN32 AND NOT OVITO_BUILD_CONDA)
 
 	# Create a qt.conf file.
 	# This is required to let Qt search for its plugin modules in the program directory.
-	FILE(WRITE "${OVITO_BINARY_DIRECTORY}/qt.conf" "[Paths]\nPlugins = plugins/")
+	FILE(WRITE "${OVITO_BINARY_DIRECTORY}/qt.conf" "[Paths]\nPlugins = plugins/\n\n[Platforms]\nWindowsArguments = darkmode=2")
 	INSTALL(CODE "
-	    FILE(WRITE \"\${CMAKE_INSTALL_PREFIX}/${OVITO_RELATIVE_BINARY_DIRECTORY}/qt.conf\" \"[Paths]\\nPlugins = plugins/\")
+	    FILE(WRITE \"\${CMAKE_INSTALL_PREFIX}/${OVITO_RELATIVE_BINARY_DIRECTORY}/qt.conf\" \"[Paths]\\nPlugins = plugins/\\n\\n[Platforms]\\nWindowsArguments = darkmode=2\")
 		")
 
 ELSEIF(APPLE AND NOT OVITO_BUILD_CONDA)

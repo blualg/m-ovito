@@ -175,7 +175,6 @@ static void activateThemeColors(bool dark)
 		darkPalette.setColor(QPalette::Highlight, blue);
 		darkPalette.setColor(QPalette::HighlightedText, Qt::black);
 		darkPalette.setColor(QPalette::PlaceholderText, QColor(83,83,83));
-
 		darkPalette.setColor(QPalette::Active, QPalette::Button, gray.darker());
 		darkPalette.setColor(QPalette::Disabled, QPalette::ButtonText, gray);
 		darkPalette.setColor(QPalette::Disabled, QPalette::WindowText, gray);
@@ -459,12 +458,13 @@ bool GuiApplication::usingDarkTheme() const
 ******************************************************************************/
 bool GuiApplication::detectDarkTheme() const
 {
-#if defined(Q_OS_MACOS)
-	auto bg = qApp->palette().color(QPalette::Active, QPalette::Window);
-	if(bg.lightness() < 100)
-		return true;
-	return false;
-#elif defined(Q_OS_LINUX)
+#ifndef Q_OS_LINUX
+	// It's likely a dark theme if the window background is darker than the foreground text color.
+	const QPalette& palette = qApp->palette();
+	auto bg = palette.color(QPalette::Active, QPalette::Window);
+	auto txt = palette.color(QPalette::Active, QPalette::Text);
+	return bg.lightness() < txt.lightness();
+#else // Q_OS_LINUX
 	if(qgetenv("XDG_CURRENT_DESKTOP") == "KDE") {
 		// On KDE, query system theme preference via D-Bus protocol.
 		QDBusMessage message = QDBusMessage::createMethodCall(QStringLiteral("org.freedesktop.portal.Desktop"),
@@ -502,8 +502,6 @@ bool GuiApplication::detectDarkTheme() const
 	}
 	if(gsettingsOutput.toLower().contains("-dark"))
 		return true;
-	return false;
-#else
 	return false;
 #endif	
 }
