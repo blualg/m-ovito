@@ -75,17 +75,20 @@ sessions. The first is to save the entire modifier, including the definition of 
 Modifier templates you've saved appear as additional entries in the list of available modifiers, allowing you to easily access your user-defined modifier scripts and 
 insert them into new data pipelines.
 
-The second option is to save the Python code as a :file:`.py` source file into one of the following directories on your computer. 
-OVITO Pro automatically scans these directories at program startup and displays all :file:`.py` scripts in the list of available modifiers.
+The second option is to save the Python code as a :file:`.py` source file in one of the following directories on your computer. 
+OVITO Pro automatically scans these directories at program startup and displays all :file:`*.py` scripts it finds in the list of available modifiers.
 
-  * Linux: :file:`<INSTALLDIR>/share/ovito/scripts/modifiers/*.py` and :file:`<HOME>/.config/Ovito/scripts/modifiers/*.py` (Note: The base path :file:`<HOME>/.config` may be overridden by the ``XDG_CONFIG_HOME`` environment variable)
-  * Windows: :file:`<INSTALLDIR>/scripts/modifiers/*.py` and :file:`<HOME>/AppData/Local/Ovito/scripts/modifiers/*.py`
-  * macOS: :file:`<INSTALLDIR>/Ovito.app/Contents/Resources/scripts/modifiers/*.py` and :file:`<HOME>/Library/Preferences/Ovito/scripts/modifiers/*.py`
-  * Anaconda: :file:`<INSTALLDIR>/share/ovito/scripts/modifiers/*.py` and one of the platform-dependent directories 
+=========== =============================================
+Platform    Storage location for user-defined modifier scripts  
+=========== =============================================
+Linux       :file:`~/.config/Ovito/scripts/modifiers/`
+Windows     :file:`~/AppData/Local/Ovito/scripts/modifiers/`
+macOS       :file:`~/Library/Preferences/Ovito/scripts/modifiers/`
+=========== =============================================
 
-Here, :file:`<HOME>` and :file:`<INSTALLDIR>` refer to your home directory and the OVITO Pro installation directory, 
-respectively. The OVITO Pro installation directory already contains a bunch of predefined Python modifier files that are shipped 
-with the program.
+On Linux, note that the standard configuration path :file:`~/.config/` may be overridden by the environment variable ``XDG_CONFIG_HOME`` on your system. 
+On Windows, the :file:`~/AppData/` directory is hidden by default. To access it, you may have to enable the option *Show hidden files, folders, and drives* in
+the Windows Explorer settings.
 
 Examples
 """"""""

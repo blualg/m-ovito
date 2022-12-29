@@ -240,9 +240,13 @@ IF(MSVC AND OVITO_BUILD_CONDA)
 	TARGET_COMPILE_OPTIONS(Core PUBLIC "/wd4996")
 ENDIF()
 
-# Compute the relative path where the plugin libraries get installed relative to the executable. 
+# Compute the relative path from the OVITO executable to where the plugin libraries get installed. 
 FILE(RELATIVE_PATH OVITO_PLUGINS_RELATIVE_PATH "${OVITO_BINARY_DIRECTORY}" "${OVITO_PLUGINS_DIRECTORY}")
 TARGET_COMPILE_DEFINITIONS(Core PRIVATE "OVITO_PLUGINS_RELATIVE_PATH=\"${OVITO_PLUGINS_RELATIVE_PATH}\"")
+
+# Compute the relative path from the OVITO executable to where the Python module layer gets installed. 
+FILE(RELATIVE_PATH OVITO_PYTHON_LAYER_PATH "${OVITO_BINARY_DIRECTORY}" "${OVITO_PYTHON_DIRECTORY}")
+TARGET_COMPILE_DEFINITIONS(Core PRIVATE "OVITO_PYTHON_LAYER_PATH=\"${OVITO_PYTHON_LAYER_PATH}\"")
 
 # Link to the pthread library on Linux platform.
 IF(UNIX AND NOT APPLE)

@@ -66,7 +66,7 @@ OverlayAction* OverlayAction::createForScript(const QString& fileName, const QDi
 	// Generate a unique identifier for the action:
 	action->setObjectName(QStringLiteral("InsertViewportLayerScript.%1").arg(action->_scriptPath));
 
-	// Set the action's UI display name. Chop of ".py" extension of filename.
+	// Set the action's UI display name. Chop off ".py" extension of filename.
 	action->setText(fileName.chopped(3));
 
 	// Give the layer type a status bar text.
@@ -102,8 +102,8 @@ OverlayTypesModel::OverlayTypesModel(QObject* parent, UserInterface& userInterfa
 	}
 
 	// Add the built-in extension script directory.
-	QDir prefixDir(QCoreApplication::applicationDirPath());
-	_layerScriptDirectories.push_back(prefixDir.absolutePath() + QChar('/') + QStringLiteral(OVITO_SCRIPT_EXTENSIONS_RELATIVE_PATH) + QStringLiteral("/layers"));
+	_layerScriptDirectories.push_back(PluginManager::instance().pythonDir() + QStringLiteral("/ovito/_extensions/scripts/layers"));
+
 	// Add the user extension script directory.
 	_layerScriptDirectories.push_back(QDir::homePath() + QStringLiteral("/.config/Ovito/scripts/layers"));
 	for(QDir& dir : _layerScriptDirectories)
@@ -113,6 +113,9 @@ OverlayTypesModel::OverlayTypesModel(QObject* parent, UserInterface& userInterfa
 	for(const QDir& scriptsDirectory : _layerScriptDirectories) {
 		QStringList scriptFiles = scriptsDirectory.entryList(QStringList() << QStringLiteral("*.py"), QDir::Files, QDir::Name);
 		for(const QString& fileName : scriptFiles) {
+			// Filter out __init__.py.
+			if(fileName == QStringLiteral("__init__.py"))
+				continue;
 
 			// Create action for the layer script.
 			OverlayAction* action = OverlayAction::createForScript(fileName, scriptsDirectory);

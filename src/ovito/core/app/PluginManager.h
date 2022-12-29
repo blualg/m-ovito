@@ -164,6 +164,9 @@ public:
 	/// \brief Returns the list of directories containing the Ovito plugins.
 	QList<QDir> pluginDirs();
 
+	/// \brief Returns the path where OVITO Pro's Python files reside.
+	QString pythonDir();
+
 	/// \brief Destructor that unloads all plugins.
 	~PluginManager();
 

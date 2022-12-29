@@ -93,6 +93,15 @@ QList<QDir> PluginManager::pluginDirs()
 }
 
 /******************************************************************************
+* Returns the path where OVITO Pro's Python files reside.
+******************************************************************************/
+QString PluginManager::pythonDir()
+{
+	QDir prefixDir(QCoreApplication::applicationDirPath());
+	return QDir(prefixDir.filePath(QStringLiteral(OVITO_PYTHON_LAYER_PATH))).absolutePath();
+}
+
+/******************************************************************************
 * Searches the plugin directories for installed plugins and loads them.
 ******************************************************************************/
 void PluginManager::loadAllPlugins()
