@@ -121,11 +121,10 @@ combine several modifiers to accomplish more complex tasks.
   ========================================================== ==========================================================
   Python-based modifiers
   =====================================================================================================================
-  :ref:`modifiers.calculate_local_entropy` |ovito-pro|       Computes local pair entropy fingerprints of particles
-  :ref:`modifiers.shrink_wrap_box` |ovito-pro|               Resets the simulation cell to tightly fit all particles
+  :ref:`modifiers.calculate_local_entropy` |ovito-pro|       Computes local pair entropy fingerprints of particles.
+  :ref:`modifiers.identify_fcc_planar_faults` |ovito-pro|    Discerns between stacking fault and twin boundary crystal defects.
+  :ref:`modifiers.shrink_wrap_box` |ovito-pro|               Resets the simulation cell to tightly fit all particles.
   ========================================================== ==========================================================  
-
-..  :ref:`modifiers.identify_fcc_planar_faults` |ovito-pro|    Discriminates between stacking fault and twin boundary defects 
 
 .. toctree::
   :maxdepth: 1
@@ -163,6 +162,7 @@ combine several modifiers to accomplish more complex tasks.
   grain_segmentation
   histogram
   identify_diamond
+  identify_fcc_planar_faults
   interactive_molecular_dynamics
   invert_selection
   load_trajectory

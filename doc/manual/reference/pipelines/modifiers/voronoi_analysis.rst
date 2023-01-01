@@ -62,7 +62,7 @@ If you are interested in the indices computed by the modifier for a particular p
 :ref:`Data Inspector <data_inspector>` panel. It lists all properties of the particle, including the computed Voronoi indices.
 If you would like to perform a statistical analysis of the Voronoi polyhedra, e.g. to determine the Voronoi index vector that
 occurs most frequently in your system, then you can use OVITO's Python scripting interface to access the computed per-particle indices.
-You can find an example script in the :ref:`OVITO Scripting Reference <example_compute_voronoi_indices>`.
+You can find an example script in the :ref:`OVITO Python Reference <example_compute_voronoi_indices>`.
 
 Face area and edge length thresholds
 """"""""""""""""""""""""""""""""""""

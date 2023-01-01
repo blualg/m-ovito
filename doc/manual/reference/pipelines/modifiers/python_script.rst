@@ -45,7 +45,7 @@ After inserting a new Python script modifier into the pipeline you can open the 
 :guilabel:`Edit script` button. The editor window lets you change the source code for the user-defined modifier function,
 which initially consists of a few example statements. You should replace these statements with your own code, performing the 
 computations or actions that are needed to solve your specific problem. 
-See the :ref:`OVITO Scripting Reference <writing_custom_modifiers>` for further instructions on how to write user-defined modifier functions. 
+See the :ref:`OVITO Python Reference <writing_custom_modifiers>` for further instructions on how to write user-defined modifier functions. 
 Note that the Python function, which gets called by OVITO's data pipeline system, must be named ``modify()`` and have the signature shown in the example above. 
 However, you are free to define additional helper functions in the same source file and invoke them as sub-routines from your main modifier function.
 
