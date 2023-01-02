@@ -47,7 +47,7 @@ public:
 		Warning,		//< Indicates that a modifier has issued a warning.
 		Error			//< Indicates that the evaluation failed.
 	};
-	Q_ENUMS(StatusType);
+	Q_ENUM(StatusType);
 
 	/// Default constructor that creates a status object with status StatusType::Success and an empty info text.
 	PipelineStatus() = default;

@@ -34,6 +34,8 @@ namespace Ovito {
  */
 class OVITO_CORE_EXPORT LinePrimitive final
 {
+	Q_GADGET
+
 public:
 
 	/// \brief Sets the coordinates of the line vertices.

@@ -128,6 +128,13 @@ SET(SourceFiles
 	utilities/concurrent/MainThreadOperation.cpp
 	utilities/concurrent/ExecutionContext.cpp
 	rendering/SceneRenderer.cpp
+	rendering/ParticlePrimitive.cpp
+	rendering/MeshPrimitive.cpp
+	rendering/MarkerPrimitive.cpp
+	rendering/LinePrimitive.cpp
+	rendering/CylinderPrimitive.cpp
+	rendering/ImagePrimitive.cpp
+	rendering/TextPrimitive.cpp
 	rendering/RenderSettings.cpp
 	rendering/FrameBuffer.cpp
 	rendering/StandardSceneRenderer.cpp

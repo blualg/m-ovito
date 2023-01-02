@@ -54,7 +54,7 @@ public:
 		FacePseudoColoring,
 		RegionPseudoColoring
 	};
-	Q_ENUMS(ColorMappingMode);
+	Q_ENUM(ColorMappingMode);
 
 	/// \brief Constructor.
 	Q_INVOKABLE SurfaceMeshVis(ObjectCreationParams params);

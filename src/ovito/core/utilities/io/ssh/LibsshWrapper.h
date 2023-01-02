@@ -73,7 +73,7 @@ public:
 #endif
     using ssh_get_status_ptr = int (*)(ssh_session session);
     using ssh_is_connected_ptr = int (*)(ssh_session session);
-#if LIBSSH_VERSION_INT >= SSH_VERSION_INT(0, 9, 6)
+#if LIBSSH_VERSION_INT >= SSH_VERSION_INT(0, 8, 0)
     using ssh_session_is_known_server_ptr = enum ssh_known_hosts_e (*)(ssh_session session);
     using ssh_session_update_known_hosts_ptr = int (*)(ssh_session session);
 #else
@@ -136,7 +136,7 @@ public:
 #endif
     OVITO_LIBSSH_RESOLVE_FUNCTION(ssh_get_status)
     OVITO_LIBSSH_RESOLVE_FUNCTION(ssh_is_connected)
-#if LIBSSH_VERSION_INT >= SSH_VERSION_INT(0, 9, 6)
+#if LIBSSH_VERSION_INT >= SSH_VERSION_INT(0, 8, 0)
     OVITO_LIBSSH_RESOLVE_FUNCTION(ssh_session_is_known_server)
     OVITO_LIBSSH_RESOLVE_FUNCTION(ssh_session_update_known_hosts)
 #else

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -46,7 +46,10 @@ namespace Ovito::Particles {
  */
 class OVITO_PARTICLES_EXPORT PTMAlgorithm : private NearestNeighborFinder
 {
+	Q_GADGET
+
 public:
+
 	/// The structure types known by the PTM routine.
 	enum StructureType {
 		OTHER = 0,			//< Unidentified structure
@@ -54,14 +57,14 @@ public:
 		HCP,				//< Hexagonal close-packed
 		BCC,				//< Body-centered cubic
 		ICO,				//< Icosahedral structure
-		SC,				//< Simple cubic structure
-		CUBIC_DIAMOND,			//< Cubic diamond structure
-		HEX_DIAMOND,			//< Hexagonal diamond structure
+		SC,					//< Simple cubic structure
+		CUBIC_DIAMOND,		//< Cubic diamond structure
+		HEX_DIAMOND,		//< Hexagonal diamond structure
 		GRAPHENE,			//< Graphene structure
 
 		NUM_STRUCTURE_TYPES //< This counts the number of defined structure types.
 	};
-	Q_ENUMS(StructureType);
+	Q_ENUM(StructureType);
 
 	/// The lattice ordering types known by the PTM routine.
 	enum OrderingType {
@@ -76,7 +79,7 @@ public:
 
 		NUM_ORDERING_TYPES 	//< This just counts the number of defined ordering types.
 	};
-	Q_ENUMS(OrderingType);
+	Q_ENUM(OrderingType);
 
 #ifndef Q_CC_MSVC
 	/// Maximum number of input nearest neighbors needed for the PTM analysis.

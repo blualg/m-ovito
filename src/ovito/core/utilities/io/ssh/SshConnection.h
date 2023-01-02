@@ -60,7 +60,7 @@ class SshConnection : public QObject
 public:
 
     enum HostState {
-#if LIBSSH_VERSION_INT >= SSH_VERSION_INT(0, 9, 6)
+#if LIBSSH_VERSION_INT >= SSH_VERSION_INT(0, 8, 0)
         HostKnown                   = SSH_KNOWN_HOSTS_OK,
         HostUnknown                 = SSH_KNOWN_HOSTS_UNKNOWN,
         HostKeyChanged              = SSH_KNOWN_HOSTS_CHANGED,

@@ -113,7 +113,7 @@ public:
 		ImportAsTrajectory,
 		ImportAsSeparateObjects
 	};
-	Q_ENUMS(MultiFileImportMode);
+	Q_ENUM(MultiFileImportMode);
 
 	/// \brief Asks the importer if the option to replace the currently selected object
 	///        with the new file(s) is available.

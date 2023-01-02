@@ -51,7 +51,7 @@ public:
 		DataSourceHeader,
 		PipelineBranch
 	};
-	Q_ENUMS(PipelineItemType);
+	Q_ENUM(PipelineItemType);
 
 public:
 

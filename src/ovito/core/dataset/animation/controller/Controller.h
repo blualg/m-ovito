@@ -57,7 +57,7 @@ public:
 		ControllerTypeScaling,
 		ControllerTypeTransformation,
 	};
-	Q_ENUMS(ControllerType);
+	Q_ENUM(ControllerType);
 
 protected:
 

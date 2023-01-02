@@ -59,7 +59,7 @@ public:
 		ByTypeColoring,
 		ParticleBasedColoring
 	};
-	Q_ENUMS(ColoringMode);	
+	Q_ENUM(ColoringMode);	
 
 	/// Constructor.
 	Q_INVOKABLE BondsVis(ObjectCreationParams params);

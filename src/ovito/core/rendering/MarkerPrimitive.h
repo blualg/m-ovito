@@ -34,15 +34,15 @@ namespace Ovito {
  */
 class OVITO_CORE_EXPORT MarkerPrimitive final
 {
+	Q_GADGET
+
 public:
 
 	enum MarkerShape {
 		DotShape,
 		BoxShape
 	};
-	Q_ENUMS(MarkerShape);
-
-public:
+	Q_ENUM(MarkerShape);
 
 	/// Constructor.
 	explicit MarkerPrimitive(MarkerShape shape = DotShape) : _shape(shape) {}
@@ -94,6 +94,3 @@ private:
 };
 
 }	// End of namespace
-
-Q_DECLARE_METATYPE(Ovito::MarkerPrimitive::MarkerShape);
-Q_DECLARE_TYPEINFO(Ovito::MarkerPrimitive::MarkerShape, Q_PRIMITIVE_TYPE);

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -33,13 +33,15 @@ namespace Ovito {
  */
 class OVITO_CORE_EXPORT ParticlePrimitive final
 {
+	Q_GADGET
+
 public:
 
 	enum ShadingMode {
 		NormalShading,
 		FlatShading,
 	};
-	Q_ENUMS(ShadingMode);
+	Q_ENUM(ShadingMode);
 
 	enum RenderingQuality {
 		LowQuality,
@@ -47,7 +49,7 @@ public:
 		HighQuality,
 		AutoQuality
 	};
-	Q_ENUMS(RenderingQuality);
+	Q_ENUM(RenderingQuality);
 
 	enum ParticleShape {
 		SphericalShape,
@@ -56,9 +58,7 @@ public:
 		EllipsoidShape,
 		SuperquadricShape
 	};
-	Q_ENUMS(ParticleShape);
-
-public:
+	Q_ENUM(ParticleShape);
 
 	/// \brief Sets the array of particle indices to render.
 	void setIndices(ConstDataBufferPtr indices) {
@@ -232,10 +232,3 @@ private:
 };
 
 }	// End of namespace
-
-Q_DECLARE_METATYPE(Ovito::ParticlePrimitive::ShadingMode);
-Q_DECLARE_METATYPE(Ovito::ParticlePrimitive::RenderingQuality);
-Q_DECLARE_METATYPE(Ovito::ParticlePrimitive::ParticleShape);
-Q_DECLARE_TYPEINFO(Ovito::ParticlePrimitive::ShadingMode, Q_PRIMITIVE_TYPE);
-Q_DECLARE_TYPEINFO(Ovito::ParticlePrimitive::RenderingQuality, Q_PRIMITIVE_TYPE);
-Q_DECLARE_TYPEINFO(Ovito::ParticlePrimitive::ParticleShape, Q_PRIMITIVE_TYPE);

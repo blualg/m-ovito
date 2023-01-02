@@ -32,6 +32,8 @@ namespace Ovito {
  */
 class OVITO_CORE_EXPORT ImagePrimitive final
 {
+	Q_GADGET
+
 public:
 
 	/// \brief Sets the mage to be rendered.

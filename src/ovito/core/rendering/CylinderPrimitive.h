@@ -34,21 +34,21 @@ namespace Ovito {
  */
 class OVITO_CORE_EXPORT CylinderPrimitive
 {
+	Q_GADGET
+
 public:
 
 	enum ShadingMode {
 		NormalShading,
 		FlatShading,
 	};
-	Q_ENUMS(ShadingMode);
+	Q_ENUM(ShadingMode);
 
 	enum Shape {
 		CylinderShape,
 		ArrowShape,
 	};
-	Q_ENUMS(Shape);
-
-public:
+	Q_ENUM(Shape);
 
 	/// \brief Returns the shading mode for elements.
 	ShadingMode shadingMode() const { return _shadingMode; }
@@ -172,8 +172,3 @@ private:
 };
 
 }	// End of namespace
-
-Q_DECLARE_METATYPE(Ovito::CylinderPrimitive::ShadingMode);
-Q_DECLARE_METATYPE(Ovito::CylinderPrimitive::Shape);
-Q_DECLARE_TYPEINFO(Ovito::CylinderPrimitive::ShadingMode, Q_PRIMITIVE_TYPE);
-Q_DECLARE_TYPEINFO(Ovito::CylinderPrimitive::Shape, Q_PRIMITIVE_TYPE);

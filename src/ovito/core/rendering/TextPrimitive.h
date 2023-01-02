@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -32,6 +32,8 @@ namespace Ovito {
  */
 class OVITO_CORE_EXPORT TextPrimitive final
 {
+	Q_GADGET
+
 public:
 
 	/// \brief Sets the text to be rendered.

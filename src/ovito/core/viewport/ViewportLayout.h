@@ -42,7 +42,7 @@ public:
 		Horizontal,
 		Vertical
 	};
-	Q_ENUMS(SplitDirection);
+	Q_ENUM(SplitDirection);
 
 	/// Constructor.
 	Q_INVOKABLE ViewportLayoutCell(ObjectCreationParams params);

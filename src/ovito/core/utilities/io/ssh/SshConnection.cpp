@@ -251,7 +251,7 @@ void SshConnection::processState()
         return;
 
     case StateServerIsKnown:
-#if LIBSSH_VERSION_INT >= SSH_VERSION_INT(0, 9, 6)
+#if LIBSSH_VERSION_INT >= SSH_VERSION_INT(0, 8, 0)
         switch(auto knownState = LibsshWrapper::ssh_session_is_known_server()(_session)) {
         case SSH_KNOWN_HOSTS_ERROR:
             setState(StateError, false);
@@ -673,7 +673,7 @@ QString SshConnection::hostPublicKeyHash()
 ******************************************************************************/
 bool SshConnection::markCurrentHostKnown()
 {
-#if LIBSSH_VERSION_INT >= SSH_VERSION_INT(0, 9, 6)
+#if LIBSSH_VERSION_INT >= SSH_VERSION_INT(0, 8, 0)
     switch(LibsshWrapper::ssh_session_update_known_hosts()(_session)) {
 #else
     switch(LibsshWrapper::ssh_write_knownhost()(_session)) {

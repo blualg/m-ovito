@@ -65,7 +65,7 @@ public:
 		UniformColoring,
 		PseudoColoring,
 	};
-	Q_ENUMS(ColoringMode);	
+	Q_ENUM(ColoringMode);	
 
 public:
 

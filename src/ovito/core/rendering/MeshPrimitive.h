@@ -35,13 +35,15 @@ namespace Ovito {
  */
 class OVITO_CORE_EXPORT MeshPrimitive final
 {
+	Q_GADGET
+
 public:
 
 	enum DepthSortingMode {
 		AnyShapeMode,
 		ConvexShapeMode,
 	};
-	Q_ENUMS(DepthSortingMode);
+	Q_ENUM(DepthSortingMode);
 
 	/// Sets the mesh to be stored in this buffer object.
 	void setMesh(DataOORef<const TriMeshObject> mesh, DepthSortingMode depthSortingMode = AnyShapeMode) {
