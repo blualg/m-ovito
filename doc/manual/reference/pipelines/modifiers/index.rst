@@ -123,6 +123,7 @@ combine several modifiers to accomplish more complex tasks.
   =====================================================================================================================
   :ref:`modifiers.calculate_local_entropy` |ovito-pro|       Computes local pair entropy fingerprints of particles.
   :ref:`modifiers.identify_fcc_planar_faults` |ovito-pro|    Discerns between stacking fault and twin boundary crystal defects.
+  :ref:`modifiers.render_lammps_regions` |ovito-pro|         Visualize LAMMPS regions as surface meshes. 
   :ref:`modifiers.shrink_wrap_box` |ovito-pro|               Resets the simulation cell to tightly fit all particles.
   ========================================================== ==========================================================  
 
@@ -169,6 +170,7 @@ combine several modifiers to accomplish more complex tasks.
   manual_selection
   polyhedral_template_matching
   python_script
+  render_lammps_regions
   show_periodic_images
   scatter_plot
   select_particle_type
