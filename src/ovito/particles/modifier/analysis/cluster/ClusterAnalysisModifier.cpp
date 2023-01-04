@@ -33,6 +33,8 @@
 #include <ovito/core/app/Application.h>
 #include "ClusterAnalysisModifier.h"
 
+#include <boost/range/combine.hpp>
+
 namespace Ovito::Particles {
 
 IMPLEMENT_OVITO_CLASS(ClusterAnalysisModifier);
@@ -93,7 +95,7 @@ Future<AsynchronousModifier::EnginePtr> ClusterAnalysisModifier::createEngine(co
 	// Get particle selection.
 	const PropertyObject* selectionProperty = onlySelectedParticles() ? particles->expectProperty(ParticlesObject::SelectionProperty) : nullptr;
 
-	// Get the periodic image bond property if there are bonds.
+	// If there are bonds, get their periodic image property.
 	PropertyPtr periodicImageBondProperty;
 	if(unwrapParticleCoordinates() && particles->bonds()) {
 		// Create a copy of the input bond PBC vectors so that it is safe to modify them.
@@ -114,7 +116,7 @@ Future<AsynchronousModifier::EnginePtr> ClusterAnalysisModifier::createEngine(co
 			// Use per-type mass information and generate a per-particle mass array from it.
 			std::map<int,FloatType> massMap = ParticleType::typeMassMap(typeProperty);
 			// Use the per-type masses only if there is at least one type having a positive mass.
-			if(!massMap.empty() && std::any_of(massMap.cbegin(), massMap.cend(), [](const auto& i) { return i.second > 0; })) {
+			if(!massMap.empty() && boost::algorithm::any_of(massMap, [](const auto& i) { return i.second > 0; })) {
 				PropertyAccessAndRef<FloatType> massArray(ParticlesObject::OOClass().createStandardProperty(particles->elementCount(), ParticlesObject::MassProperty));
 				boost::transform(ConstPropertyAccess<int>(typeProperty), massArray.begin(), [&](int t) {
 					auto iter = massMap.find(t);
@@ -122,6 +124,18 @@ Future<AsynchronousModifier::EnginePtr> ClusterAnalysisModifier::createEngine(co
 					return FloatType(0);
 				});
 				masses = massArray.take();
+			}
+		}
+
+		// Extra check: When per-particle weights are being used, make sure they are not all zero.
+		if(masses && masses->size() != 0) {
+			if(!selectionProperty) {
+				if(!boost::algorithm::any_of(ConstPropertyAccess<FloatType>(masses), [](FloatType mass) { return mass != 0; }))
+					throw Exception(tr("Cannot compute center of mass or radius of gyration if all particle masses are zero. Please check correctness of per-particle and per-type mass values in input dataset."));
+			}
+			else {
+				if(!boost::algorithm::any_of(boost::combine(ConstPropertyAccess<FloatType>(masses), ConstPropertyAccess<int>(selectionProperty)), [](const boost::tuple<FloatType, int>& item) { return item.get<1>() && item.get<0>() != 0; }))
+					throw Exception(tr("Cannot compute center of mass or radius of gyration if all particle masses are zero. Please check correctness of per-particle and per-type mass values in input dataset."));
 			}
 		}
 	}

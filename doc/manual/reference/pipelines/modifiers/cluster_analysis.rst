@@ -46,37 +46,48 @@ This option guarantees that the first cluster (ID 1) will be the largest one in 
 Calculation of centers of mass
 """"""""""""""""""""""""""""""
 
-The modifier provides the option to compute the center of mass of each cluster. The coordinates will be output as an additional column
-in the generated clusters table (see below). The center of mass of clusters cut by a periodic simulation
-cell boundary will be correctly computed. However, if the extent of a cluster is infinite in the sense that it reconnects to itself through the periodic
-boundaries of the simulation domain, the results will be undefined.
-OVITO 3.2 and later take into account the per-particle masses when calculating the center of mass of a cluster.
+The modifier provides an option to compute the center of mass of each cluster. The center coordinates will be output as an additional column
+of the clusters table (see below). Finite clusters that are disrupted by periodic cell boundaries are handled correctly (using the *minimum image convention* if necessary). 
+However, if a cluster is infinite in the sense that it reconnects to itself through a periodic cell boundary, then the computation results will be undefined.
+
+The algorithm uses particle masses as weights when calculating the center of mass of a cluster.
 The mass information will be taken from the ``Mass`` property of individual particles (if present) or
-from the mass value set for each particle type. If neither the ``Mass`` particle property is present
-nor at least one particle type with a positive mass, then the algorithm assumes that all particles to have the same uniform weight.
+from the mass parameter of the :ref:`particle types <scene_objects.particle_types>`. 
+
+.. note::
+
+  If neither the ``Mass`` particle property is present nor mass values have been specified for at least some of the particle types, 
+  then the algorithm uses uniform weights in the computation for all particles.
 
 Calculation of gyration radius and gyration tensor
 """"""""""""""""""""""""""""""""""""""""""""""""""
 
-Furthermore, the modifier can compute the `radius of gyration <https://en.wikipedia.org/wiki/Radius_of_gyration>`__ 
-of each cluster as well as the `gyration tensor <https://en.wikipedia.org/wiki/Gyration_tensor>`__.
+The modifier can optionally compute the `radius of gyration <https://en.wikipedia.org/wiki/Radius_of_gyration>`__ 
+of each cluster as well as its `gyration tensor <https://en.wikipedia.org/wiki/Gyration_tensor>`__.
 Both quantities will appear as additional columns in the generated table of clusters. 
+
 The symmetric gyration tensor has six independent components: ``xx``, ``yy``, ``zz``, ``xy``, ``xz``, ``yz`` (in simulation units of length squared).
-The data table is accessible in the :ref:`data inspector panel <data_inspector.data_tables>`:
+The output data table is found in the :ref:`data inspector panel <data_inspector.data_tables>`:
 
 .. image:: /images/modifiers/cluster_analysis_table.png
   :width: 100%
 
 The calculation of the radius of gyration and the gyration tensor in OVITO follows the `compute gyration <https://docs.lammps.org/compute_gyration.html>`__ command 
-of the LAMMPS simulation code. It takes into account the individual particle masses (if present) or the masses of the particle types (if set).
+of the LAMMPS simulation code. It takes into account the individual particle masses (if present) or masses specified for the :ref:`particle types <scene_objects.particle_types>`.
+
+.. note::
+
+  If neither the ``Mass`` particle property is present nor mass values have been specified for at least some of the particle types, 
+  then the algorithm uses uniform weights in the computation for all particles.
 
 Unwrapping of particle coordinates
 """"""""""""""""""""""""""""""""""
 
-The modifier provides the option to "unwrap" the coordinates of particles belonging to the same cluster, mapping them from inside the periodic simulation domain to 
-outside in order for the cluster to appear as a contiguous object. 
+The modifier provides the option to "unwrap" the coordinates of particles belonging to the same cluster, mapping them outside the primary image of the periodic simulation domain
+such that each cluster appears as a contiguous object. 
+
 Note that the unwrapping will yield meaningful results only for finite clusters. It will lead to undefined results for 
-infinite clusters that are connected to themselves through a periodic cell boundary.
+infinite clusters that are connected with themselves through a periodic cell boundary.
 
 Coloring option
 """""""""""""""
