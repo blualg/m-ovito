@@ -229,7 +229,7 @@ void WidgetActionManager::on_Settings_triggered()
 ******************************************************************************/
 void WidgetActionManager::on_FileImport_triggered()
 {
-	mainWindow().performTransaction(tr("Import data"), [&] {
+	mainWindow().handleExceptions([&] {
 		// Let the user select one or more files.
 		ImportFileDialog dialog(PluginManager::instance().metaclassMembers<FileImporter>(), &mainWindow(), tr("Load File"), true);
 		if(dialog.exec() != QDialog::Accepted)
@@ -238,10 +238,22 @@ void WidgetActionManager::on_FileImport_triggered()
 		// Selected importer class and sub-format name.
 		const auto& [importerClass, importerFormat] = dialog.selectedFileImporter();
 
-		// Import the selected file(s).
-		mainWindow().datasetContainer().importFiles(
-			dialog.urlsToImport(), 
-			importerClass, importerFormat);
+		// Get list of selected files.
+		std::vector<QUrl> urlsToImport = dialog.urlsToImport();
+
+		// If user accidentally tries to import a .ovito session state file, redirect to the corresponding session loading function.
+		if(!importerClass && urlsToImport.size() == 1 && urlsToImport.front().fileName().endsWith(QStringLiteral(".ovito"))) {
+			if(mainWindow().datasetContainer().askForSaveChanges())
+				mainWindow().datasetContainer().loadDataset(urlsToImport.front().toLocalFile());
+			return;
+		}
+
+		mainWindow().performTransaction(tr("Import data"), [&, importerClass=&importerClass, importerFormat=&importerFormat] {
+			// Import the selected file(s).
+			mainWindow().datasetContainer().importFiles(
+				urlsToImport, 
+				*importerClass, *importerFormat);
+		});
 	});
 }
 
