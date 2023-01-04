@@ -298,7 +298,7 @@ void MainWindow::saveLayout()
 ******************************************************************************/
 void MainWindow::createMainMenu()
 {
-	QMenuBar* menuBar = new QMenuBar(this);
+	QMenuBar* menuBar = this->menuBar();
 
 	// Build the file menu.
 	QMenu* fileMenu = menuBar->addMenu(tr("&File"));
@@ -350,8 +350,6 @@ void MainWindow::createMainMenu()
 		if(auto gui_service = dynamic_object_cast<GuiApplicationService>(service))
 			gui_service->addActionsToMenu(*actionManager(), menuBar);
 	}
-
-	setMenuBar(menuBar);
 }
 
 /******************************************************************************
