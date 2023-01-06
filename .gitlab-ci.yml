@@ -5,23 +5,22 @@ test_linux:
    tags:
       - linux
    script:
+      # Create a build directory.
       - mkdir build
       - cd build
 
       # Configure the build.
       # For the list of required dependencies, see doc/manual/development/build_linux.rst.
-      - cmake
+      - cmake -G Ninja
            -DCMAKE_BUILD_TYPE=Debug
-           -DOVITO_BUILD_DOCUMENTATION=ON
-           -DOVITO_BUILD_PLUGIN_VULKAN=OFF
            -DCMAKE_INSTALL_PREFIX=../install
            ..
       
-      # Build the application:
-      - make -j2 install
+      # Build and install the application:
+      - cmake --build . --parallel --target install
       
-      # Test if the application can be started (at least in headless mode):
+      # Test if the application can be started -- at least in headless mode:
       - ../install/bin/ovito --nogui
 
-      # Run any tests the CMake script may define:
+      # Run any tests the CMake script may have defined:
       - ctest --output-on-failure

@@ -66,7 +66,7 @@ public:
 		return any_cast<Value&>(std::get<1>(_entries.back()));
 	}
 
-	/// This removes entries from the cache that have not been accessed since the last call to discardUnusedObjects().
+	/// Removes all entries from the cache that have not been accessed since the last call to discardUnusedObjects().
 	void discardUnusedObjects() {
 		auto entry = _entries.begin();
 		auto end_entry = _entries.end();

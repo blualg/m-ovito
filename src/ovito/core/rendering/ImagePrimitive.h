@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -38,6 +38,9 @@ public:
 
 	/// \brief Sets the mage to be rendered.
 	void setImage(const QImage& image) { _image = image; }
+
+	/// \brief Sets the mage to be rendered.
+	void setImage(QImage&& image) { _image = std::move(image); }
 
 	/// \brief Returns the image stored in the buffer.
 	const QImage& image() const { return _image; }

@@ -11,7 +11,7 @@ combine several modifiers to accomplish more complex tasks.
 
 .. table::
   :width: 100%
-  :widths: 25 75
+  :widths: 28 72
 
   ========================================================== ==========================================================
   Analysis
@@ -36,7 +36,7 @@ combine several modifiers to accomplish more complex tasks.
 
 .. table::
   :width: 100%
-  :widths: 25 75
+  :widths: 28 72
 
   ========================================================== ==========================================================
   Coloring
@@ -49,7 +49,7 @@ combine several modifiers to accomplish more complex tasks.
 
 .. table::
   :width: 100%
-  :widths: 25 75
+  :widths: 28 72
 
   ========================================================== ==========================================================
   Modification
@@ -70,7 +70,7 @@ combine several modifiers to accomplish more complex tasks.
 
 .. table::
   :width: 100%
-  :widths: 25 75
+  :widths: 28 72
 
   ========================================================== ==========================================================
   Selection
@@ -85,7 +85,7 @@ combine several modifiers to accomplish more complex tasks.
 
 .. table::
   :width: 100%
-  :widths: 25 75
+  :widths: 28 72
 
   ========================================================== ==========================================================
   Structure identification
@@ -101,7 +101,7 @@ combine several modifiers to accomplish more complex tasks.
 
 .. table::
   :width: 100%
-  :widths: 25 75
+  :widths: 28 72
 
   ========================================================== ==========================================================
   Visualization
@@ -116,7 +116,7 @@ combine several modifiers to accomplish more complex tasks.
 
 .. table::
   :width: 100%
-  :widths: 25 75
+  :widths: 28 72
 
   ========================================================== ==========================================================
   Python-based modifiers
