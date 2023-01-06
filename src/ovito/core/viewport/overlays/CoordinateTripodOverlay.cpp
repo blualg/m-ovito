@@ -191,6 +191,7 @@ void CoordinateTripodOverlay::render(SceneRenderer* renderer, const QRect& logic
 			painter.setRenderHint(QPainter::Antialiasing);
 			painter.setWindow(pixelBounds);
 			paintSolidJoint(painter, QPointF(0,0), renderer->projParams().viewMatrix, lineWidth);
+			painter.end(); // Release the QImage we've been painting into.
 			offset = imageRect.topLeft();
 			imagePrimitive.setImage(std::move(textureImage));
 		}
@@ -251,6 +252,7 @@ void CoordinateTripodOverlay::render(SceneRenderer* renderer, const QRect& logic
 				addedMargin = paintFlatArrow(painter, dir2d, arrowSize, lineWidth, tripodSize, QPointF(0,0));
 			else if(tripodStyle() == SolidArrows)
 				addedMargin += paintSolidArrow(painter, dir2d, dir3d, arrowSize, lineWidth, tripodSize, QPointF(0,0));
+			painter.end(); // Release the QImage we've been painting into.
 			offset = imageRect.topLeft();
 			imagePrimitive.setImage(std::move(textureImage));
 		}
