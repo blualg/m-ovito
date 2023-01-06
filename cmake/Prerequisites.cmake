@@ -28,7 +28,7 @@ MACRO(OVITO_INSTALL_SHARED_LIB shared_lib)
 
     # Parse macro arguments.
     CMAKE_PARSE_ARGUMENTS(ARG 
-		"" # options
+		"OPTIONAL" # options
 		"DESTINATION"  # one-value keywords
 		"" # multi-value keywords
 		${ARGN}) # strings to parse
@@ -57,7 +57,11 @@ MACRO(OVITO_INSTALL_SHARED_LIB shared_lib)
 		# Find all files/symlinks in the same directory having the same base name. 
 		FILE(GLOB lib_versions LIST_DIRECTORIES FALSE "${_shared_lib}" "${lib_base_name}.*${CMAKE_SHARED_LIBRARY_SUFFIX}" "${lib_base_name}${CMAKE_SHARED_LIBRARY_SUFFIX}.*")
 		IF(NOT lib_versions)
-			MESSAGE(FATAL_ERROR "Did not find any library files that match the file path ${_shared_lib} (globbing patterns: ${lib_base_name}.*${CMAKE_SHARED_LIBRARY_SUFFIX}; ${lib_base_name}${CMAKE_SHARED_LIBRARY_SUFFIX}.*)")
+			IF(${ARG_OPTIONAL})
+				MESSAGE(STATUS "Did not find any library files that match the file path ${_shared_lib} (globbing patterns: ${lib_base_name}.*${CMAKE_SHARED_LIBRARY_SUFFIX}; ${lib_base_name}${CMAKE_SHARED_LIBRARY_SUFFIX}.*)")
+			ELSE()
+				MESSAGE(FATAL_ERROR "Did not find any library files that match the file path ${_shared_lib} (globbing patterns: ${lib_base_name}.*${CMAKE_SHARED_LIBRARY_SUFFIX}; ${lib_base_name}${CMAKE_SHARED_LIBRARY_SUFFIX}.*)")
+			ENDIF()
 		ENDIF()
 
 		# Find all variants of the shared library name, including symbolic links.
@@ -208,13 +212,13 @@ FUNCTION(deploy_qt_framework_files)
 
 		# Install Qt plugins.
 		OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/../plugins/platforms/libqminimal.so" DESTINATION "./plugins_qt/platforms")
-		OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/../plugins/platforms/libqwayland-generic.so" DESTINATION "./plugins_qt/platforms")
+		OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/../plugins/platforms/libqwayland-generic.so" DESTINATION "./plugins_qt/platforms" OPTIONAL)
 		OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/../plugins/platforms/libqxcb.so" DESTINATION "./plugins_qt/platforms")
 		OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/../plugins/imageformats/libqgif.so" DESTINATION "./plugins_qt/imageformats")
-		OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/../plugins/imageformats/libqico.so" DESTINATION "./plugins_qt/imageformats")
-		OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/../plugins/imageformats/libqicns.so" DESTINATION "./plugins_qt/imageformats")
+		OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/../plugins/imageformats/libqico.so" DESTINATION "./plugins_qt/imageformats" OPTIONAL)
+		OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/../plugins/imageformats/libqicns.so" DESTINATION "./plugins_qt/imageformats" OPTIONAL)
 		OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/../plugins/imageformats/libqjpeg.so" DESTINATION "./plugins_qt/imageformats")
-		OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/../plugins/imageformats/libqwebp.so" DESTINATION "./plugins_qt/imageformats")
+		OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/../plugins/imageformats/libqwebp.so" DESTINATION "./plugins_qt/imageformats" OPTIONAL)
 		OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/../plugins/iconengines/libqsvgicon.so" DESTINATION "./plugins_qt/iconengines")
 		OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/../plugins/xcbglintegrations/libqxcb-glx-integration.so" DESTINATION "./plugins_qt/xcbglintegrations")
 		IF(OVITO_QT_MAJOR_VERSION STREQUAL "Qt6")
