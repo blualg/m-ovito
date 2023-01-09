@@ -31,10 +31,6 @@ Third-party software
     - :ref:`license <appendix.license.ovito_legacy>`
     - 
 
-  * - `Qt5 <https://www.qt.io/developers/>`__
-    - LGPL v3
-    - :ref:`Info <appendix.license.qt5.instructions>`
-
   * - `Qt6 <https://www.qt.io/developers/>`__
     - LGPL v3
     - :ref:`Info <appendix.license.qt6.instructions>`
@@ -106,10 +102,6 @@ Third-party software
   * - `pybind11 <https://pybind11.readthedocs.io/>`__
     - :ref:`license <appendix.license.pybind11>`
     - 
-
-  * - `PySide2 <https://pypi.org/project/PySide2/>`__
-    - LGPL v3
-    - :ref:`Info <appendix.license.pyside2.instructions>`
 
   * - `PySide6 <https://pypi.org/project/PySide6/>`__
     - LGPL v3
