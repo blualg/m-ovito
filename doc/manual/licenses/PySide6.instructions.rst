@@ -17,18 +17,20 @@ Linux
 
 OVITO Pro for Linux ships with a copy of the PySide6 module that has been built from the original sources provided by
 the Qt Company, following the standard procedure described `here <https://doc.qt.io/qtforpython/gettingstarted-linux.html>`__.
-PySide6 v6.3 has been compiled against Qt 6.3.1 (see :ref:`here <appendix.license.qt6.instructions>`) and a custom build of the `CPython <https://www.python.org>`__ 3.10 interpreter::
+PySide6 v6.4.2 has been compiled against Qt 6.4.2 (see :ref:`here <appendix.license.qt6.instructions>`) and a custom build of the `CPython <https://www.python.org>`__ 3.11 interpreter::
 
-  # Build platform: CentOS 6.10
-  # Compiler: g++ 9.1 (CentOS devtoolset-9)
+  # Build platform: CentOS 7
+  # Compiler: GCC 10
   git clone --recursive https://code.qt.io/pyside/pyside-setup
   cd pyside-setup
-  git checkout 6.3.1
+  git checkout 6.4.2
   python3 setup.py install \
     --qmake=$HOME/progs/qt6/bin/qmake \
     --ignore-git \
+    --parallel=8 \
     --no-examples \
-    --module-subset=Core,Gui,Widgets,Xml,Network,Svg \
+    --module-subset=Core,Gui,Widgets,Xml,Network,Svg,OpenGL,OpenGLWidgets \
+    --verbose-build \
     --skip-docs \
     --no-qt-tools
 

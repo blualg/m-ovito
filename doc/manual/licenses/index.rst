@@ -181,7 +181,6 @@ Third-party software
   ovito_legacy
   GPL
   FDL
-  Qt5.instructions
   Qt6.instructions
   tachyon
   muparser
@@ -201,7 +200,6 @@ Third-party software
   libssh.instructions
   ffmpeg.instructions
   pegtl
-  PySide2.instructions
   PySide6.instructions
   xdrfile
   vma

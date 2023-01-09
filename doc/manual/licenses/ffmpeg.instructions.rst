@@ -9,11 +9,11 @@ In accordance with the requirements of this license, this page provides instruct
 Windows
 """""""
 
-OVITO for Windows includes binaries that have been built from the unmodified sources of ffmpeg 4.2.1.
+OVITO for Windows includes binaries that have been built from the unmodified sources of ffmpeg 4.2.8.
 The following commands have been used to generate them::
 
   # Compiler: Microsoft Visual C++ 2019 (command line tools) + MSYS2 environment
-  # Zlib version: 1.2.11
+  # Zlib version: 1.2.13
   ./configure \
     --toolchain=msvc \
     --target-os=win64 \

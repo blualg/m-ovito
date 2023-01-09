@@ -3,7 +3,7 @@
 Numpy License
 -------------
 
-Copyright (c) 2005-2020, NumPy Developers.
+Copyright (c) 2005-2023, NumPy Developers.
 
 All rights reserved.
 
