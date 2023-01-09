@@ -189,6 +189,7 @@ QString UserInterface::generateSystemReport()
 	stream << "Multi-threading: disabled\n";
 #endif
 	stream << "Command line: " << QCoreApplication::arguments().join(' ') << "\n";
+	stream << "Python file path: " << PluginManager::instance().pythonDir() << "\n";
 	// Let the plugin class add their information to their system report.
 	for(Plugin* plugin : PluginManager::instance().plugins()) {
 		for(OvitoClassPtr clazz : plugin->classes()) {
