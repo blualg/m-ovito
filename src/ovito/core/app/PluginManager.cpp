@@ -87,6 +87,8 @@ void PluginManager::registerPlugin(Plugin* plugin)
 ******************************************************************************/
 QList<QDir> PluginManager::pluginDirs()
 {
+	// Resolve path to Ovito's plugin directory, which is specified at compile time relative to the executable path. 
+	// See ovito/core/CMakeLists.txt for details.
 	QDir prefixDir(QCoreApplication::applicationDirPath());
 	QString pluginsPath = prefixDir.absolutePath() + QChar('/') + QStringLiteral(OVITO_PLUGINS_RELATIVE_PATH);
 	return { QDir(pluginsPath) };
@@ -97,8 +99,17 @@ QList<QDir> PluginManager::pluginDirs()
 ******************************************************************************/
 QString PluginManager::pythonDir()
 {
+#ifndef OVITO_BUILD_CONDA
+	// Resolve path to Ovito's Python layer files, which is specified at compile time relative to the executable path. 
+	// See ovito/core/CMakeLists.txt for details.
 	QDir prefixDir(QCoreApplication::applicationDirPath());
 	return QDir(prefixDir.filePath(QStringLiteral(OVITO_PYTHON_LAYER_PATH))).absolutePath();
+#else
+	// Resolve path to Ovito's Python layer files, which is specified at compile time relative to the Conda prefix path.
+	// See ovito/core/CMakeLists.txt for details.
+	QDir prefixDir(QDir::fromNativeSeparators(qEnvironmentVariable("CONDA_PREFIX")));
+	return QDir(prefixDir.filePath(QStringLiteral(OVITO_PYTHON_LAYER_PATH))).absolutePath();
+#endif
 }
 
 /******************************************************************************
@@ -110,8 +121,8 @@ void PluginManager::loadAllPlugins()
 #ifndef OVITO_BUILD_MONOLITHIC
 
 #ifdef Q_OS_WIN
-	// Modify PATH enviroment variable so that Windows finds the plugin DLLs if
-	// there are dependencies between them.
+	// Extend enviroment variable PATH so that the plugin DLLs are automatically found, because
+	// there typically are inter-dependencies between them.
 	QByteArray path = qgetenv("PATH");
 	for(QDir pluginDir : pluginDirs()) {
 		path = QDir::toNativeSeparators(pluginDir.absolutePath()).toUtf8() + ";" + path;
