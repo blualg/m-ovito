@@ -66,17 +66,6 @@ Creating particle selections
 """"""""""""""""""""""""""""
 
 The modifier provides an option to select all particles located within one of the defined regions. 
-Note that this can only work if the resulting surface mesh is **closed**, i.e., it must represent a manifold
-with well-defined interior and exterior space.
-  
-In other words, creating a particle selection is not possible for region style *plane* or for other styles when used with the
-*open* keyword. A good indicator for the surface mesh being closed is when the *Cap polygons* option in 
-the :ref:`visual_elements.surface_mesh` visual element is available.
-
-.. caution::
-
-  The current implementation only supports non-overlapping regions. The generated particle selection will likely 
-  be wrong if regions overlap.
 
 Simulation cell boundaries
 """"""""""""""""""""""""""
