@@ -180,7 +180,7 @@ bool AMBERNetCDFExporter::exportData(const PipelineFlowState& state, int frameNu
 			int var;
 			if(entry.key() == NC_TIME_STR || entry.key() == QStringLiteral("SourceFrame"))
 				continue;
-			else if(getQVariantTypeId(entry.value()) == QMetaType::Double || getQVariantTypeId(entry.value()) == QMetaType::Float)
+			else if(entry.value().typeId() == QMetaType::Double || entry.value().typeId() == QMetaType::Float)
 				NCERR(nc_def_var(_ncid, qUtf8Printable(entry.key()), NC_DOUBLE, 1, &_frame_dim, &var));
 			else if(entry.value().canConvert<int>())
 				NCERR(nc_def_var(_ncid, qUtf8Printable(entry.key()), NC_INT, 1, &_frame_dim, &var));
@@ -269,7 +269,7 @@ bool AMBERNetCDFExporter::exportData(const PipelineFlowState& state, int frameNu
 	const QVariantMap& attributes = state.buildAttributesMap();
 	for(auto entry = _attributes_vars.constBegin(); entry != _attributes_vars.constEnd(); ++entry) {
 		QVariant val = attributes.value(entry.key());
-		if(getQVariantTypeId(val) == (int)QMetaType::Double || getQVariantTypeId(val) == (int)QMetaType::Float) {
+		if(val.typeId() == (int)QMetaType::Double || val.typeId() == (int)QMetaType::Float) {
 			double d = val.toDouble();
 			NCERR(nc_put_var1_double(_ncid, entry.value(), &_frameCounter, &d));
 		}

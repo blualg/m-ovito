@@ -88,7 +88,7 @@ private:
 				if(index.column() == 0) return _attributes[index.row()]->identifier();
 				else {
 					const QVariant& v = _attributes[index.row()]->value();
-					if(getQVariantTypeId(v) == QMetaType::Double)
+					if(v.typeId() == QMetaType::Double)
 						return QString::number(v.toDouble());
 					return v;
 				}

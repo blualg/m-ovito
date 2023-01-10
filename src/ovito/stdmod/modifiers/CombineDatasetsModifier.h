@@ -92,11 +92,7 @@ public:
 	/// Returns the human-readable labels associated with the animation frames (e.g. the simulation timestep numbers).
 	virtual QMap<int, QString> animationFrameLabels(QMap<int, QString> inputLabels) const override {
 		if(secondaryDataSource())
-#if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
 			inputLabels.insert(secondaryDataSource()->animationFrameLabels());
-#else
-			inputLabels.unite(secondaryDataSource()->animationFrameLabels());
-#endif
 		return std::move(inputLabels);
 	}
 

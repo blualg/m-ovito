@@ -139,18 +139,10 @@ void WasmApplication::createQtApplication(int& argc, char** argv)
 
 #else
 
-#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
-	// Enable high-resolution toolbar icons on hi-dpi screens.
-	QApplication::setAttribute(Qt::AA_UseHighDpiPixmaps);
-	QApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
-#endif
-
 	// Request single-thread Qt Quick render loop.
 	qputenv("QSG_RENDER_LOOP", "basic");
-#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
 	// Request OpenGL-based Qt Quick implementation.
 	QQuickWindow::setGraphicsApi(QSGRendererInterface::OpenGL);
-#endif
 
 	// Create an application object.
 	new QApplication(argc, argv);

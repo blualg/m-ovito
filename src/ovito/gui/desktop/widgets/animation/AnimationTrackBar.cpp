@@ -171,12 +171,7 @@ void AnimationTrackBar::paintKey(QPainter& painter, AnimationKey* key, KeyframeC
 ******************************************************************************/
 QSize AnimationTrackBar::sizeHint() const
 {
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
-	int extraHeight = 0;
-#else
-	int extraHeight = 6;
-#endif
-	return QSize(QFrame::sizeHint().width(), fontMetrics().height() * 1 + frameWidth() * 2 + extraHeight);
+	return QSize(QFrame::sizeHint().width(), fontMetrics().height() * 1 + frameWidth() * 2);
 }
 
 /******************************************************************************

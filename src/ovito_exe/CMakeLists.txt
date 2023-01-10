@@ -1,6 +1,6 @@
 #######################################################################################
 #
-#  Copyright 2022 OVITO GmbH, Germany
+#  Copyright 2023 OVITO GmbH, Germany
 #
 #  This file is part of OVITO (Open Visualization Tool).
 #
@@ -21,7 +21,7 @@
 #######################################################################################
 
 # Find the required Qt modules.
-FIND_PACKAGE(${OVITO_QT_MAJOR_VERSION} ${OVITO_MINIMUM_REQUIRED_QT_VERSION} COMPONENTS Core Gui REQUIRED)
+FIND_PACKAGE(Qt6 ${OVITO_MINIMUM_REQUIRED_QT_VERSION} COMPONENTS Core Gui REQUIRED)
 
 # Include the resource in the Win32 executable.
 IF(WIN32)
@@ -50,23 +50,23 @@ TARGET_LINK_LIBRARIES(Ovito PRIVATE Core)
 TARGET_LINK_LIBRARIES(Ovito PRIVATE Gui)
 IF(NOT OVITO_QML_GUI)
 	TARGET_LINK_LIBRARIES(Ovito PRIVATE 
-		${OVITO_QT_MAJOR_VERSION}::Core 
-		${OVITO_QT_MAJOR_VERSION}::Gui)
+		Qt6::Core 
+		Qt6::Gui)
 ELSE()
-	FIND_PACKAGE(${OVITO_QT_MAJOR_VERSION} ${OVITO_MINIMUM_REQUIRED_QT_VERSION} COMPONENTS Qml Quick QuickControls2 QuickControls2Impl QuickLayouts QuickTemplates2 LabsQmlModels Svg REQUIRED)
+	FIND_PACKAGE(Qt6 ${OVITO_MINIMUM_REQUIRED_QT_VERSION} COMPONENTS Qml Quick QuickControls2 QuickControls2Impl QuickLayouts QuickTemplates2 LabsQmlModels Svg REQUIRED)
 	TARGET_LINK_LIBRARIES(Ovito PRIVATE 
-		${OVITO_QT_MAJOR_VERSION}::Core 
-		${OVITO_QT_MAJOR_VERSION}::Gui 
-		${OVITO_QT_MAJOR_VERSION}::Qml 
-		${OVITO_QT_MAJOR_VERSION}::Quick 
-		${OVITO_QT_MAJOR_VERSION}::QuickControls2 
-		${OVITO_QT_MAJOR_VERSION}::QuickControls2Impl 
-		${OVITO_QT_MAJOR_VERSION}::QuickLayouts
-		${OVITO_QT_MAJOR_VERSION}::QuickTemplates2 
-		${OVITO_QT_MAJOR_VERSION}::LabsQmlModels
-		${OVITO_QT_MAJOR_VERSION}::Svg)
+		Qt6::Core 
+		Qt6::Gui 
+		Qt6::Qml 
+		Qt6::Quick 
+		Qt6::QuickControls2 
+		Qt6::QuickControls2Impl 
+		Qt6::QuickLayouts
+		Qt6::QuickTemplates2 
+		Qt6::LabsQmlModels
+		Qt6::Svg)
 	IF(NOT OVITO_DISABLE_THREADING)
-		TARGET_LINK_LIBRARIES(Ovito PRIVATE ${OVITO_QT_MAJOR_VERSION}::QmlWorkerScript) 
+		TARGET_LINK_LIBRARIES(Ovito PRIVATE Qt6::QmlWorkerScript) 
 	ENDIF()
 ENDIF()
 
@@ -103,8 +103,8 @@ ENDIF()
 # To avoid the dynamic linker pulling the wrong versions of the Qt module from the
 # system path, we make the executable preload the module on application startup.
 IF(UNIX AND NOT APPLE AND OVITO_REDISTRIBUTABLE_PACKAGE)
-	FIND_PACKAGE(${OVITO_QT_MAJOR_VERSION} ${OVITO_MINIMUM_REQUIRED_QT_VERSION} COMPONENTS DBus REQUIRED)
-	TARGET_LINK_LIBRARIES(Ovito PRIVATE ${OVITO_QT_MAJOR_VERSION}::DBus)
+	FIND_PACKAGE(Qt6 ${OVITO_MINIMUM_REQUIRED_QT_VERSION} COMPONENTS DBus REQUIRED)
+	TARGET_LINK_LIBRARIES(Ovito PRIVATE Qt6::DBus)
 ENDIF()
 
 SET_TARGET_PROPERTIES(Ovito PROPERTIES BUILD_WITH_INSTALL_RPATH TRUE)

@@ -1,6 +1,6 @@
 #######################################################################################
 #
-#  Copyright 2022 OVITO GmbH, Germany
+#  Copyright 2023 OVITO GmbH, Germany
 #
 #  This file is part of OVITO (Open Visualization Tool).
 #
@@ -21,7 +21,7 @@
 #######################################################################################
 
 # Find the required Qt modules.
-FIND_PACKAGE(${OVITO_QT_MAJOR_VERSION} ${OVITO_MINIMUM_REQUIRED_QT_VERSION} COMPONENTS Widgets REQUIRED)
+FIND_PACKAGE(Qt6 ${OVITO_MINIMUM_REQUIRED_QT_VERSION} COMPONENTS Widgets OpenGLWidgets REQUIRED)
 
 # Define the GUI component of the OpenGLRenderer plugin.
 OVITO_STANDARD_PLUGIN(OpenGLRendererGui
@@ -32,12 +32,6 @@ OVITO_STANDARD_PLUGIN(OpenGLRendererGui
 		OpenGLRenderer
 		GuiBase
 	LIB_DEPENDENCIES
-		${OVITO_QT_MAJOR_VERSION}::Widgets 
+		Qt6::Widgets 
+		Qt6::OpenGLWidgets
 )
-
-# QOpenGLWidget class has been moved from the Qt Widgets to the OpenGLWidgets module in Qt 6.
-# Add OpenGLWidgets as an extra dependency to the Ovito plugin module.
-IF(OVITO_QT_MAJOR_VERSION STREQUAL "Qt6")
-	FIND_PACKAGE(${OVITO_QT_MAJOR_VERSION} ${OVITO_MINIMUM_REQUIRED_QT_VERSION} COMPONENTS OpenGLWidgets REQUIRED)
-	TARGET_LINK_LIBRARIES(OpenGLRendererGui PUBLIC ${OVITO_QT_MAJOR_VERSION}::OpenGLWidgets)
-ENDIF()

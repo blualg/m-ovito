@@ -21,7 +21,7 @@
 #######################################################################################
 
 # Find the required Qt modules.
-FIND_PACKAGE(${OVITO_QT_MAJOR_VERSION} ${OVITO_MINIMUM_REQUIRED_QT_VERSION} COMPONENTS Xml REQUIRED)
+FIND_PACKAGE(Qt6 ${OVITO_MINIMUM_REQUIRED_QT_VERSION} COMPONENTS Xml REQUIRED)
 
 SET(SourceFiles
 	objects/ParticlesVis.cpp
@@ -134,7 +134,7 @@ OVITO_STANDARD_PLUGIN(Particles
 	PRIVATE_LIB_DEPENDENCIES VoroPlusPlus PolyhedralTemplateMatching MinimumWeightMatchingCentrosymmetry xdrfile
 	OPTIONAL_PLUGIN_DEPENDENCIES StdMod
 	PRECOMPILED_HEADERS Particles.h
-	LIB_DEPENDENCIES ${OVITO_QT_MAJOR_VERSION}::Xml
+	LIB_DEPENDENCIES Qt6::Xml
 )
 
 # Build corresponding GUI plugin.

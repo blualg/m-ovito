@@ -333,9 +333,6 @@ void BondsObject::OOMetaClass::initialize()
 	// Enable automatic conversion of a BondPropertyReference to a generic PropertyReference and vice versa.
 	QMetaType::registerConverter<BondPropertyReference, PropertyReference>();
 	QMetaType::registerConverter<PropertyReference, BondPropertyReference>();
-#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
-	QMetaType::registerComparators<BondPropertyReference>();
-#endif
 
 	setPropertyClassDisplayName(tr("Bonds"));
 	setElementDescriptionName(QStringLiteral("bonds"));

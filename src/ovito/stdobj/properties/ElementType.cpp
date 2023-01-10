@@ -108,7 +108,7 @@ Color ElementType::getDefaultColor(const PropertyReference& property, const QStr
 		// Use the type's name, property type and container class to look up the 
 		// default color saved by the user.
 		QVariant v = QSettings().value(getElementSettingsKey(property, QStringLiteral("color"), typeName));
-		if(v.isValid() && getQVariantTypeId(v) == QMetaType::QColor)
+		if(v.isValid() && v.typeId() == QMetaType::QColor)
 			return v.value<Color>();
 
 		// The following is for backward compatibility with OVITO 3.3.5, which used to store the 
@@ -116,19 +116,19 @@ Color ElementType::getDefaultColor(const PropertyReference& property, const QStr
 		if(property.containerClass()->name() == QStringLiteral("ParticlesObject")) {
 			// Load particle type colors.
 			QVariant v = QSettings().value(QStringLiteral("particles/defaults/color/%1/%2").arg(property.type()).arg(typeName));
-			if(v.isValid() && getQVariantTypeId(v) == QMetaType::QColor)
+			if(v.isValid() && v.typeId() == QMetaType::QColor)
 				return v.value<Color>();
 		}
 		else if(property.containerClass()->name() == QStringLiteral("BondsObject")) {
 			// Load bond type colors.
 			QVariant v = QSettings().value(QStringLiteral("bonds/defaults/color/%1/%2").arg(property.type()).arg(typeName));
-			if(v.isValid() && getQVariantTypeId(v) == QMetaType::QColor)
+			if(v.isValid() && v.typeId() == QMetaType::QColor)
 				return v.value<Color>();
 		}
 		else {
 			// Load generic element type colors.
 			QVariant v = QSettings().value(QStringLiteral("defaults/color/%1/%2").arg(property.type()).arg(typeName));
-			if(v.isValid() && getQVariantTypeId(v) == QMetaType::QColor)
+			if(v.isValid() && v.typeId() == QMetaType::QColor)
 				return v.value<Color>();
 		}
 #endif

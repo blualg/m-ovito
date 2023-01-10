@@ -739,9 +739,6 @@ void ParticlesObject::OOMetaClass::initialize()
 	// Enable automatic conversion of a ParticlePropertyReference to a generic PropertyReference and vice versa.
 	QMetaType::registerConverter<ParticlePropertyReference, PropertyReference>();
 	QMetaType::registerConverter<PropertyReference, ParticlePropertyReference>();
-#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
-	QMetaType::registerComparators<ParticlePropertyReference>();
-#endif
 
 	setPropertyClassDisplayName(tr("Particles"));
 	setElementDescriptionName(QStringLiteral("particles"));

@@ -20,9 +20,6 @@
 #
 #######################################################################################
 
-# Find the required Qt modules.
-FIND_PACKAGE(${OVITO_QT_MAJOR_VERSION} ${OVITO_MINIMUM_REQUIRED_QT_VERSION} COMPONENTS Core REQUIRED)
-
 # Build library.
 ADD_LIBRARY(muParser
 	muParser.cpp
@@ -43,8 +40,9 @@ GENERATE_EXPORT_HEADER(muParser BASE_NAME MUPARSER)
 TARGET_INCLUDE_DIRECTORIES(muParser PUBLIC "${CMAKE_CURRENT_BINARY_DIR}")
 
 # Make sure the muParser library gets compiled with the same standard flags as the other OVITO modules, which actively 
-# use the Qt framework. In particular, Qt 6.0 requires UNICODE strings on Windows platform.
-TARGET_LINK_LIBRARIES(muParser PUBLIC ${OVITO_QT_MAJOR_VERSION}::Core)
+# use the Qt framework. In particular, Qt 6 requires UNICODE strings on Windows platform.
+FIND_PACKAGE(Qt6 ${OVITO_MINIMUM_REQUIRED_QT_VERSION} COMPONENTS Core REQUIRED)
+TARGET_LINK_LIBRARIES(muParser PUBLIC Qt6::Core)
 
 IF(MSVC)
 	# Do not warn about missing dll-interface of members of an exported class.

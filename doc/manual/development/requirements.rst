@@ -26,7 +26,7 @@ The library dependencies are:
    ============================================================ ================= ===================================================
    Library                                                      Requirement       Notes
    ============================================================ ================= ===================================================
-   `Qt <http://www.qt.io/developers/>`_                         required          Used for OVITO's graphical user interface (version 5.12 or newer)
+   `Qt <http://www.qt.io/developers/>`_                         required          Used for OVITO's graphical user interface (version 6.2 or higher)
    `zlib <http://www.zlib.net/>`_                               optional          Required for reading and writing compressed files.
    `Boost <http://www.boost.org/>`_                             required          OVITO uses some utility classes from this C++ library.
    `libssh <http://www.libssh.org/>`_                           optional          Used by OVITO's built-in SSH client for remote data access.

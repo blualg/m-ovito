@@ -344,11 +344,7 @@ void SpinnerWidget::mouseMoveEvent(QMouseEvent* event)
 			QPoint cursorPos = QCursor::pos();
 			int screenY = cursorPos.y();
 			if(screenY != _lastMouseY) {
-#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
 				int screenHeight = screen()->size().height();
-#else
-				int screenHeight = QApplication::desktop()->screenGeometry().height();
-#endif
 				if(screenY <= 5 && _lastMouseY == screenHeight - 1) return;
 				if(screenY >= screenHeight - 5 && _lastMouseY == 0) return;
 

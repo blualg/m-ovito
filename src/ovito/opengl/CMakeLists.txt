@@ -20,6 +20,9 @@
 #
 #######################################################################################
 
+# Find the required Qt module.
+FIND_PACKAGE(Qt6 ${OVITO_MINIMUM_REQUIRED_QT_VERSION} COMPONENTS OpenGL REQUIRED)
+
 # Define plugin module.
 OVITO_STANDARD_PLUGIN(OpenGLRenderer
 	SOURCES
@@ -37,14 +40,9 @@ OVITO_STANDARD_PLUGIN(OpenGLRenderer
 		PickingOpenGLSceneRenderer.cpp
 		OpenGLDepthTextureBlitter.cpp
 		resources/opengl.qrc
+	LIB_DEPENDENCIES
+		Qt6::OpenGL
 )
-
-IF(OVITO_QT_MAJOR_VERSION STREQUAL "Qt6")
-	# Find the required Qt module.
-	FIND_PACKAGE(${OVITO_QT_MAJOR_VERSION} ${OVITO_MINIMUM_REQUIRED_QT_VERSION} COMPONENTS OpenGL REQUIRED)
-	# QOpenGLFunctions classes have been moved to the OpenGL module in Qt 6.
-	TARGET_LINK_LIBRARIES(OpenGLRenderer PUBLIC ${OVITO_QT_MAJOR_VERSION}::OpenGL)
-ENDIF()
 
 IF(NOT OVITO_QML_GUI AND NOT OVITO_BUILD_CONDA)
 	# Find OpenGL library.

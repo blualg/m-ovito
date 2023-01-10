@@ -130,15 +130,8 @@ void Task::finishLocked(MutexLocker& locker) noexcept
 	callCallbacks(Finished);
 
 	// Note: Move the functions into a new local list first so that we can unlock the mutex.
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0) 
 	decltype(_continuations) continuations = std::move(_continuations);
 	OVITO_ASSERT(_continuations.empty());
-#else
-	decltype(_continuations) continuations;
-	for(auto& c : _continuations)
-		continuations.append(std::move(c));
-	_continuations.clear();
-#endif
 	locker.unlock();
 
 	// Run all continuation functions.
@@ -174,15 +167,8 @@ void Task::cancelAndFinishLocked(MutexLocker& locker) noexcept
 	callCallbacks(!(state & Canceled) ? (Canceled | Finished) : Finished);
 
 	// Note: Move the functions into a new local list first so that we can unlock the mutex.
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
 	decltype(_continuations) continuations = std::move(_continuations);
 	OVITO_ASSERT(_continuations.empty());
-#else
-	decltype(_continuations) continuations;
-	for(auto& c : _continuations)
-		continuations.append(std::move(c));
-	_continuations.clear();
-#endif
 	locker.unlock();
 
 	// Run the continuation functions.

@@ -1,6 +1,6 @@
 #######################################################################################
 #
-#  Copyright 2021 OVITO GmbH, Germany
+#  Copyright 2023 OVITO GmbH, Germany
 #
 #  This file is part of OVITO (Open Visualization Tool).
 #
@@ -21,7 +21,7 @@
 #######################################################################################
 
 # Find the required Qt modules.
-FIND_PACKAGE(${OVITO_QT_MAJOR_VERSION} ${OVITO_MINIMUM_REQUIRED_QT_VERSION} COMPONENTS Core Gui Widgets PrintSupport Concurrent REQUIRED)
+FIND_PACKAGE(Qt6 ${OVITO_MINIMUM_REQUIRED_QT_VERSION} COMPONENTS Core Gui Widgets PrintSupport Concurrent REQUIRED)
 
 # Build the library.
 SET(QWT_SOURCE_FILES
@@ -131,11 +131,11 @@ SET_TARGET_PROPERTIES(Qwt PROPERTIES OUTPUT_NAME "ovito_qwt")
 
 # Link to Qt.
 TARGET_LINK_LIBRARIES(Qwt PUBLIC 
-	${OVITO_QT_MAJOR_VERSION}::Core 
-	${OVITO_QT_MAJOR_VERSION}::Gui 
-	${OVITO_QT_MAJOR_VERSION}::Widgets 
-	${OVITO_QT_MAJOR_VERSION}::PrintSupport 
-	${OVITO_QT_MAJOR_VERSION}::Concurrent)
+	Qt6::Core 
+	Qt6::Gui 
+	Qt6::Widgets 
+	Qt6::PrintSupport 
+	Qt6::Concurrent)
 
 # Tell CMake to run Qt moc on source files added to the target.
 SET_TARGET_PROPERTIES(Qwt PROPERTIES AUTOMOC ON)

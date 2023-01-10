@@ -1,6 +1,6 @@
 #######################################################################################
 #
-#  Copyright 2022 OVITO GmbH, Germany
+#  Copyright 2023 OVITO GmbH, Germany
 #
 #  This file is part of OVITO (Open Visualization Tool).
 #
@@ -26,7 +26,7 @@ IF(UNIX AND NOT APPLE)
 	# On Linux, the DBus component is needed to access dark/light desktop theme settings.
 	LIST(APPEND OVITO_GUI_REQUIRED_QT_COMPONENTS DBus)
 ENDIF()
-FIND_PACKAGE(${OVITO_QT_MAJOR_VERSION} ${OVITO_MINIMUM_REQUIRED_QT_VERSION} COMPONENTS ${OVITO_GUI_REQUIRED_QT_COMPONENTS} REQUIRED)
+FIND_PACKAGE(Qt6 ${OVITO_MINIMUM_REQUIRED_QT_VERSION} COMPONENTS ${OVITO_GUI_REQUIRED_QT_COMPONENTS} REQUIRED)
 
 # Define plugin module.
 OVITO_STANDARD_PLUGIN(Gui
@@ -134,13 +134,13 @@ OVITO_STANDARD_PLUGIN(Gui
 	PLUGIN_DEPENDENCIES
 		GuiBase
 	LIB_DEPENDENCIES
-		${OVITO_QT_MAJOR_VERSION}::Widgets 
-		${OVITO_QT_MAJOR_VERSION}::Network
+		Qt6::Widgets 
+		Qt6::Network
 	PRECOMPILED_HEADERS
 		GUI.h
 )
 IF(UNIX AND NOT APPLE)
-	TARGET_LINK_LIBRARIES(Gui PRIVATE ${OVITO_QT_MAJOR_VERSION}::DBus)
+	TARGET_LINK_LIBRARIES(Gui PRIVATE Qt6::DBus)
 ENDIF()
 
 # Inject copyright notice text into the source code.
@@ -160,7 +160,7 @@ ENDIF()
 # qtbase/src/plugins/styles/mac/qmacstyle_mac.mm, line 6702 references the embedded image resource "toolbar-ext.png", which
 # doesn't exist. Probably it has been renamed to "toolbar-ext-macstyle.png" without updating the source code.
 # We include our own version of "toolbar-ext.png" here to silence the Qt warning message.
-IF(APPLE AND OVITO_QT_MAJOR_VERSION STREQUAL "Qt6")
+IF(APPLE)
 	qt_add_resources(Gui "qt_missing_images" PREFIX "/qt-project.org/styles/macstyle/images/"
 		BASE "resources/mainwin/qt/"
 		FILES "resources/mainwin/qt/toolbar-ext.png" "resources/mainwin/qt/toolbar-ext@2x.png")

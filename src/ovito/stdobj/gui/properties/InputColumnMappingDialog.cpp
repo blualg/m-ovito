@@ -44,11 +44,7 @@ InputColumnMappingDialog::InputColumnMappingDialog(MainWindow& mainWindow, const
 	setWindowTitle(tr("File column mapping"));
 
 	_vectorCmpntSignalMapper = new QSignalMapper(this);
-#if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
 	connect(_vectorCmpntSignalMapper, &QSignalMapper::mappedInt, this, &InputColumnMappingDialog::updateVectorComponentList);
-#else
-	connect(_vectorCmpntSignalMapper, (void (QSignalMapper::*)(int))&QSignalMapper::mapped, this, &InputColumnMappingDialog::updateVectorComponentList);
-#endif
 
 	// Create the table sub-widget.
 	QVBoxLayout* layout = new QVBoxLayout(this);

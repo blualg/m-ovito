@@ -38,11 +38,7 @@ IntegerRadioButtonParameterUI::IntegerRadioButtonParameterUI(PropertiesEditor* p
 	PropertyParameterUI(parentEditor, propertyName)
 {
 	_buttonGroup = new QButtonGroup(this);
-#if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
 	connect(_buttonGroup.data(), &QButtonGroup::idClicked, this, &IntegerRadioButtonParameterUI::updatePropertyValue);
-#else
-	connect(_buttonGroup.data(), static_cast<void (QButtonGroup::*)(int)>(&QButtonGroup::buttonClicked), this, &IntegerRadioButtonParameterUI::updatePropertyValue);
-#endif
 }
 
 /******************************************************************************
@@ -52,11 +48,7 @@ IntegerRadioButtonParameterUI::IntegerRadioButtonParameterUI(PropertiesEditor* p
 	PropertyParameterUI(parentEditor, propField)
 {
 	_buttonGroup = new QButtonGroup(this);
-#if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
 	connect(_buttonGroup.data(), &QButtonGroup::idClicked, this, &IntegerRadioButtonParameterUI::updatePropertyValue);
-#else
-	connect(_buttonGroup.data(), static_cast<void (QButtonGroup::*)(int)>(&QButtonGroup::buttonClicked), this, &IntegerRadioButtonParameterUI::updatePropertyValue);
-#endif
 }
 
 /******************************************************************************

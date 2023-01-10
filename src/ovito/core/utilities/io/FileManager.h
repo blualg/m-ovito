@@ -117,11 +117,7 @@ public:
 protected:
 
 	/// Returns the mutex used internally to synchronize concurrent access to the data structures of this FileManager.
-#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
 	QRecursiveMutex& mutex() { return _mutex; }
-#else
-	QMutex& mutex() { return _mutex; }
-#endif
 
 	/// Strips a URL from username and password information.
 	static QUrl normalizeUrl(QUrl url) {
@@ -186,11 +182,7 @@ private:
 	TaskManager& _taskManager;
 
 	/// The mutex to synchronize access to above data structures.
-#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
 	QRecursiveMutex _mutex;
-#else
-	QMutex _mutex{QMutex::Recursive};
-#endif
 
 #ifdef OVITO_SSH_CLIENT
 	/// Holds open SSH connections, which are currently active.

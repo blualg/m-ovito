@@ -40,10 +40,6 @@ void PropertyContainerClass::initialize()
 		// Enable automatic conversion of a PropertyContainerReference to a generic DataObjectReference and vice versa.
 		QMetaType::registerConverter<PropertyContainerReference, DataObjectReference>();
 		QMetaType::registerConverter<DataObjectReference, PropertyContainerReference>();
-#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
-		QMetaType::registerComparators<PropertyContainerReference>();
-		QMetaType::registerComparators<PropertyDataObjectReference>();
-#endif
 	}
 }
 

@@ -122,16 +122,11 @@ void GuiApplication::createQtApplication(int& argc, char** argv)
 		// OVITO prefers the "C" locale over the system's default locale.
 		QLocale::setDefault(QLocale::c());
 		
-#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
-		// Enable high-resolution toolbar icons on hi-dpi screens.
-		QCoreApplication::setAttribute(Qt::AA_UseHighDpiPixmaps);
-		QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
-#endif
-#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0) && !defined(Q_OS_MACOS)
+#ifndef Q_OS_MACOS
 		QGuiApplication::setHighDpiScaleFactorRoundingPolicy(Qt::HighDpiScaleFactorRoundingPolicy::RoundPreferFloor);
 #endif
 
-#if defined(Q_OS_LINUX)
+#ifdef Q_OS_LINUX
 		// Enforce Fusion UI style on Linux.
 		qunsetenv("QT_STYLE_OVERRIDE");
 		QApplication::setStyle("Fusion");
@@ -151,7 +146,7 @@ void GuiApplication::createQtApplication(int& argc, char** argv)
 	QCoreApplication::instance()->installEventFilter(this);
 }
 
-#if defined(Q_OS_LINUX)
+#ifdef Q_OS_LINUX
 static void activateThemeColors(bool dark)
 {
 	static const QPalette lightPalette = qApp->palette();
@@ -198,7 +193,7 @@ MainThreadOperation GuiApplication::startupApplication()
 		bool darkTheme = usingDarkTheme();
 		QIcon::setThemeName(darkTheme ? QStringLiteral("ovito-dark") : QStringLiteral("ovito-light"));
 
-#if defined(Q_OS_LINUX)
+#ifdef Q_OS_LINUX
 		if(darkTheme)
 			activateThemeColors(true);
 
@@ -483,20 +478,12 @@ bool GuiApplication::detectDarkTheme() const
 	QProcess process;
 	QByteArray gsettingsOutput;
 	if(qgetenv("XDG_CURRENT_DESKTOP") != "XFCE") {
-#if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
 		process.start("gsettings", QStringList() << "get" << "org.gnome.desktop.interface" << "color-scheme", QIODevice::ReadOnly);
-#else
-		process.start("gsettings get org.gnome.desktop.interface color-scheme", QIODevice::ReadOnly);
-#endif
 		process.waitForFinished();
 		gsettingsOutput = process.readAllStandardOutput();
 	}
 	if(gsettingsOutput.isEmpty()) {
-#if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
 		process.start("gsettings", QStringList() << "get" << "org.gnome.desktop.interface" << "gtk-theme", QIODevice::ReadOnly);
-#else
-		process.start("gsettings get org.gnome.desktop.interface gtk-theme", QIODevice::ReadOnly);
-#endif
 		process.waitForFinished();
 		gsettingsOutput = process.readAllStandardOutput();
 	}

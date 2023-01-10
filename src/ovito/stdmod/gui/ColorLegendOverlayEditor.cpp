@@ -51,10 +51,6 @@ SET_OVITO_OBJECT_EDITOR(ColorLegendOverlay, ColorLegendOverlayEditor);
 ******************************************************************************/
 void ColorLegendOverlayEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 {
-#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
-	OVITO_ASSERT(QMetaType::hasRegisteredComparators<PropertyDataObjectReference>());
-#endif
-
 	// Create a rollout.
 	QWidget* rollout = createRollout(tr("Color legend"), rolloutParams, "manual:viewport_layers.color_legend");
 

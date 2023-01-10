@@ -40,11 +40,7 @@ ModifierDelegateParameterUI::ModifierDelegateParameterUI(PropertiesEditor* paren
 	_comboBox(new QComboBox()),
 	_delegateType(delegateType)
 {
-#if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
 	connect(comboBox(), &QComboBox::textActivated, this, &ModifierDelegateParameterUI::updatePropertyValue);
-#else
-	connect(comboBox(), qOverload<const QString&>(&QComboBox::activated), this, &ModifierDelegateParameterUI::updatePropertyValue);
-#endif
 
 	// Update the list whenever the pipeline input changes.
 	connect(parentEditor, &PropertiesEditor::pipelineInputChanged, this, &ModifierDelegateParameterUI::updateUI);

@@ -39,9 +39,7 @@
 #include <QWindow>
 #include <QScreen>
 #include <QOpenGLFunctions_3_0>
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
-	#include <QOpenGLVersionFunctionsFactory>
-#endif
+#include <QOpenGLVersionFunctionsFactory>
 #ifdef OVITO_DEBUG
 	#include <QOpenGLDebugLogger>
 #endif

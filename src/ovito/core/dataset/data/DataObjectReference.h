@@ -42,17 +42,6 @@ public:
 	/// Inherit constructors from base class.
 	using QVarLengthArray<DataObjectPtr, 3>::QVarLengthArray;
 
-#if QT_VERSION < QT_VERSION_CHECK(5, 14, 0)
-	/// Constructor taking an interator range to initialize the array.
-	template<typename InputIterator>
-	DataObjectPathTemplate(InputIterator first, InputIterator last) : QVarLengthArray<DataObjectPtr, 3>((int)std::distance(first, last)) {
-		std::copy(first, last, this->begin());
-	}
-
-	/// Default constructor.
-	DataObjectPathTemplate() : QVarLengthArray<DataObjectPtr, 3>(0) {}
-#endif
-
 	/// Converts the path to a string representation.
 	QString toString() const {
 		QString s;

@@ -1,6 +1,6 @@
 #######################################################################################
 #
-#  Copyright 2021 OVITO GmbH, Germany
+#  Copyright 2023 OVITO GmbH, Germany
 #
 #  This file is part of OVITO (Open Visualization Tool).
 #
@@ -21,7 +21,7 @@
 #######################################################################################
 
 # Find the required Qt modules.
-FIND_PACKAGE(${OVITO_QT_MAJOR_VERSION} ${OVITO_MINIMUM_REQUIRED_QT_VERSION} COMPONENTS Xml REQUIRED)
+FIND_PACKAGE(Qt6 ${OVITO_MINIMUM_REQUIRED_QT_VERSION} COMPONENTS Xml REQUIRED)
 
 SET(SourceFiles
 	surface/SurfaceMesh.cpp
@@ -64,7 +64,7 @@ OVITO_STANDARD_PLUGIN(Mesh
 		${GLUSourceFiles}
 	PLUGIN_DEPENDENCIES StdObj
 	PRECOMPILED_HEADERS Mesh.h
-	LIB_DEPENDENCIES ${OVITO_QT_MAJOR_VERSION}::Xml
+	LIB_DEPENDENCIES Qt6::Xml
 )
 
 # Polytess code does not support unity build. Need to turn it off.
