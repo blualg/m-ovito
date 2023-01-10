@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -37,6 +37,7 @@ IMPLEMENT_OVITO_CLASS(ColorCodingTableGradient);
 IMPLEMENT_OVITO_CLASS(ColorCodingImageGradient);
 
 DEFINE_PROPERTY_FIELD(ColorCodingImageGradient, image);
+DEFINE_PROPERTY_FIELD(ColorCodingImageGradient, imagePath);
 DEFINE_PROPERTY_FIELD(ColorCodingTableGradient, table);
 
 /******************************************************************************
@@ -63,6 +64,7 @@ void ColorCodingImageGradient::loadImage(const QString& filename)
 	if(image.isNull())
 		throw Exception(tr("Could not load image file '%1'.").arg(filename));
 	setImage(image);
+	setImagePath(filename);
 }
 
 /******************************************************************************

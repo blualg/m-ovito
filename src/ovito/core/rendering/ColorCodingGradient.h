@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -266,6 +266,9 @@ private:
 
 	/// The user-defined color map image.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(QImage, image, setImage);
+
+	/// The original filesystem path to the user-defined color map image.
+	DECLARE_MODIFIABLE_PROPERTY_FIELD(QString, imagePath, setImagePath);
 };
 
 }	// End of namespace
