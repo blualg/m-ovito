@@ -48,12 +48,10 @@ ImportFileDialog::ImportFileDialog(const QVector<const FileImporterClass*>& impo
 			_importerFormats.emplace_back(importerClass, format.identifier);
 		}
 	}
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
 	// Sort file formats alphabetically (but leave leading <Auto-detect> entry in place).
 	Ovito::sort_zipped(
 		Ovito::make_span(fileFilterStrings).subspan(1), 
 		Ovito::make_span( _importerFormats).subspan(1));
-#endif
 
 	setNameFilters(fileFilterStrings);
 	selectNameFilter(fileFilterStrings.front());

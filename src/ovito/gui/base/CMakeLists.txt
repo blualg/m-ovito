@@ -1,6 +1,6 @@
 #######################################################################################
 #
-#  Copyright 2021 OVITO GmbH, Germany
+#  Copyright 2023 OVITO GmbH, Germany
 #
 #  This file is part of OVITO (Open Visualization Tool).
 #
@@ -42,13 +42,6 @@ OVITO_STANDARD_PLUGIN(GuiBase
 	PRECOMPILED_HEADERS
 		GUIBase.h
 )
-
-# The GUI base module depends on the QAction class, which used to be defined only in the QtWidgets module in Qt5.
-# Starting with Qt6, the QAction class is part of the QtGui module.
-IF(OVITO_QT_MAJOR_VERSION STREQUAL "Qt5")
-	FIND_PACKAGE(${OVITO_QT_MAJOR_VERSION} ${OVITO_MINIMUM_REQUIRED_QT_VERSION} COMPONENTS Widgets REQUIRED)
-	TARGET_LINK_LIBRARIES(GuiBase PUBLIC ${OVITO_QT_MAJOR_VERSION}::Widgets)
-ENDIF()
 
 IF(NOT EMSCRIPTEN)
 	# Compute the relative path where the documentation files get installed relative to the executable. 

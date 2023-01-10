@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -109,10 +109,6 @@
 #endif
 #ifndef Q_OS_WASM
     #include <QNetworkAccessManager>
-#endif
-
-#if QT_VERSION < QT_VERSION_CHECK(5, 12, 0)
-#  error "OVITO requires Qt 5.12 or newer."
 #endif
 
 /******************************************************************************

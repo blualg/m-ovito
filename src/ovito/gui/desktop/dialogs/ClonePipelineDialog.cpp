@@ -329,22 +329,14 @@ void ClonePipelineDialog::initializeGraphicsScene()
 	}
 
 	// When the user switches an entry to 'join', then all following entries must automatically be set to 'join' too.
-#if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
 	connect(unifiedMapper, &QSignalMapper::mappedInt, this, [this](int index) {
-#else
-	connect(unifiedMapper, (void (QSignalMapper::*)(int))&QSignalMapper::mapped, this, [this](int index) {
-#endif
 		for(; index < _pipelineItems.size(); index++) {
 			_pipelineItems[index].setCloneMode(CloneMode::Join);
 		}
 	});
 
 	// When the user switches to an entry other than 'join', then all preceding entries must automatically be set to something other too.
-#if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
 	connect(nonunifiedMapper, &QSignalMapper::mappedInt, this, [this](int index) {
-#else
-	connect(nonunifiedMapper, (void (QSignalMapper::*)(int))&QSignalMapper::mapped, this, [this](int index) {
-#endif
 		for(index--; index >= 0; index--) {
 			if(_pipelineItems[index].cloneMode() == CloneMode::Join)
 				_pipelineItems[index].setCloneMode(CloneMode::Copy);

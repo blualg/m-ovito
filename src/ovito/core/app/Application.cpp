@@ -200,25 +200,6 @@ bool Application::initialize()
 	// Register generic object reference type with the Qt type system.
 	qRegisterMetaType<OORef<OvitoObject>>("OORef<OvitoObject>");
 
-	// Register Qt stream operators for basic types.
-#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
-	qRegisterMetaTypeStreamOperators<Vector2>("Ovito::Vector2");
-	qRegisterMetaTypeStreamOperators<Vector3>("Ovito::Vector3");
-	qRegisterMetaTypeStreamOperators<Vector4>("Ovito::Vector4");
-	qRegisterMetaTypeStreamOperators<Point2>("Ovito::Point2");
-	qRegisterMetaTypeStreamOperators<Point3>("Ovito::Point3");
-	qRegisterMetaTypeStreamOperators<AffineTransformation>("Ovito::AffineTransformation");
-	qRegisterMetaTypeStreamOperators<Matrix3>("Ovito::Matrix3");
-	qRegisterMetaTypeStreamOperators<Matrix4>("Ovito::Matrix4");
-	qRegisterMetaTypeStreamOperators<Box2>("Ovito::Box2");
-	qRegisterMetaTypeStreamOperators<Box3>("Ovito::Box3");
-	qRegisterMetaTypeStreamOperators<Rotation>("Ovito::Rotation");
-	qRegisterMetaTypeStreamOperators<Scaling>("Ovito::Scaling");
-	qRegisterMetaTypeStreamOperators<Quaternion>("Ovito::Quaternion");
-	qRegisterMetaTypeStreamOperators<Color>("Ovito::Color");
-	qRegisterMetaTypeStreamOperators<ColorA>("Ovito::ColorA");
-#endif
-
 	// Register Qt conversion operators for custom types.
 	QMetaType::registerConverter<QColor, Color>();
 	QMetaType::registerConverter<Color, QColor>();

@@ -372,11 +372,7 @@ bool DataCollection::getObjectImpl(const DataObject::OOMetaClass& objectClass, Q
 		});
 	}
 	else {
-#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
 		qsizetype separatorPos = pathString.indexOf(QChar('/'));
-#else
-		int separatorPos = pathString.toString().indexOf(QChar('/'));
-#endif
 		if(separatorPos == -1) {
 			if(object->identifier() != pathString) return false;
 			if(objectClass.isMember(object)) return true;
@@ -440,11 +436,7 @@ const DataObject* DataCollection::getLeafObjectImpl(const DataObject::OOMetaClas
 		return result;
 	}
 	else {
-#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
 		qsizetype separatorPos = pathString.indexOf(QChar('/'));
-#else
-		int separatorPos = pathString.toString().indexOf(QChar('/'));
-#endif
 		if(separatorPos == -1) {
 			if(objectClass.isMember(parent) && parent->identifier() == pathString)
 				return parent;

@@ -126,7 +126,7 @@ ENDMACRO()
 FUNCTION(get_all_target_dependencies OUTPUT_LIST TARGET)
 
 	# This special handling was adopted from __qt_internal_walk_libs() to avoid an error produced by older CMake versions:
-	IF(${TARGET} STREQUAL "${OVITO_QT_MAJOR_VERSION}::EntryPoint")
+	IF(${TARGET} STREQUAL "Qt6::EntryPoint")
         # We can't (and don't need to) process EntryPoint because it brings in $<TARGET_PROPERTY:prop>
         # genexes which get replaced with $<TARGET_PROPERTY:EntryPoint,prop> genexes in the code below
         # and that causes 'INTERFACE_LIBRARY targets may only have whitelisted properties.' errors
@@ -171,9 +171,9 @@ FUNCTION(deploy_qt_framework_files)
 		get_all_target_dependencies(ovito_dependency_libraries ovito_bindings)
 	ENDIF()
 
-	# Filter dependency list to find all Qt framework modules (targets starting with Qt5:: or Qt6::).
+	# Filter dependency list to find all Qt framework modules (targets starting with Qt6::).
 	FOREACH(lib ${ovito_dependency_libraries})
-		IF(lib MATCHES "^${OVITO_QT_MAJOR_VERSION}::(.+)")
+		IF(lib MATCHES "^Qt6::(.+)")
 			LIST(APPEND OVITO_REQUIRED_QT_COMPONENTS ${CMAKE_MATCH_1})
 		ENDIF()
 	ENDFOREACH()
@@ -190,7 +190,7 @@ FUNCTION(deploy_qt_framework_files)
 
 	# Pull in the Qt modules as CMake targets.
 	FOREACH(qtmodule IN LISTS OVITO_REQUIRED_QT_COMPONENTS)
-		FIND_PACKAGE(${OVITO_QT_MAJOR_VERSION} ${OVITO_MINIMUM_REQUIRED_QT_VERSION} COMPONENTS ${qtmodule} REQUIRED)
+		FIND_PACKAGE(Qt6 ${OVITO_MINIMUM_REQUIRED_QT_VERSION} COMPONENTS ${qtmodule} REQUIRED)
 	ENDFOREACH()
 
 	IF(UNIX AND NOT APPLE AND OVITO_REDISTRIBUTABLE_PACKAGE)
@@ -198,8 +198,8 @@ FUNCTION(deploy_qt_framework_files)
 		# Install copies of the Qt libraries.
 		FILE(MAKE_DIRECTORY "${OVITO_LIBRARY_DIRECTORY}/lib")
 		FOREACH(component IN LISTS OVITO_REQUIRED_QT_COMPONENTS)
-			GET_TARGET_PROPERTY(lib ${OVITO_QT_MAJOR_VERSION}::${component} LOCATION)
-			GET_TARGET_PROPERTY(lib_soname ${OVITO_QT_MAJOR_VERSION}::${component} IMPORTED_SONAME_RELEASE)
+			GET_TARGET_PROPERTY(lib Qt6::${component} LOCATION)
+			GET_TARGET_PROPERTY(lib_soname Qt6::${component} IMPORTED_SONAME_RELEASE)
 			CONFIGURE_FILE("${lib}" "${OVITO_LIBRARY_DIRECTORY}" COPYONLY)
 			GET_FILENAME_COMPONENT(lib_realname "${lib}" NAME)
 			EXECUTE_PROCESS(COMMAND "${CMAKE_COMMAND}" -E create_symlink "${lib_realname}" "${OVITO_LIBRARY_DIRECTORY}/${lib_soname}")
@@ -221,17 +221,13 @@ FUNCTION(deploy_qt_framework_files)
 		OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/../plugins/imageformats/libqwebp.so" DESTINATION "./plugins_qt/imageformats" OPTIONAL)
 		OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/../plugins/iconengines/libqsvgicon.so" DESTINATION "./plugins_qt/iconengines")
 		OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/../plugins/xcbglintegrations/libqxcb-glx-integration.so" DESTINATION "./plugins_qt/xcbglintegrations")
-		IF(OVITO_QT_MAJOR_VERSION STREQUAL "Qt6")
-			OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/../plugins/platformthemes/libqxdgdesktopportal.so" DESTINATION "./plugins_qt/platformthemes")
-			OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/../plugins/networkinformation/libqnetworkmanager.so" DESTINATION "./plugins_qt/networkinformation")
-			OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/../plugins/networkinformation/libqglib.so" DESTINATION "./plugins_qt/networkinformation" OPTIONAL)
-			OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/../plugins/tls/libqcertonlybackend.so" DESTINATION "./plugins_qt/tls" OPTIONAL)
-			OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/../plugins/tls/libqopensslbackend.so" DESTINATION "./plugins_qt/tls")
-		ELSE()
-			INSTALL(DIRECTORY "${QtBinaryPath}/../plugins/bearer" DESTINATION "${OVITO_RELATIVE_LIBRARY_DIRECTORY}/plugins_qt/")
-		ENDIF()
+		OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/../plugins/platformthemes/libqxdgdesktopportal.so" DESTINATION "./plugins_qt/platformthemes")
+		OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/../plugins/networkinformation/libqnetworkmanager.so" DESTINATION "./plugins_qt/networkinformation")
+		OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/../plugins/networkinformation/libqglib.so" DESTINATION "./plugins_qt/networkinformation" OPTIONAL)
+		OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/../plugins/tls/libqcertonlybackend.so" DESTINATION "./plugins_qt/tls" OPTIONAL)
+		OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/../plugins/tls/libqopensslbackend.so" DESTINATION "./plugins_qt/tls")
 		# The XcbQpa library is required by the Qt Gui module.
-		OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/lib${OVITO_QT_MAJOR_VERSION}XcbQpa.so" DESTINATION "./lib")
+		OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/libQt6XcbQpa.so" DESTINATION "./lib")
 
 		# Distribute libxkbcommon.so with Ovito, which is a dependency of the Qt XCB plugin that might not be present on all systems.
 		FIND_LIBRARY(OVITO_XKBCOMMON_DEP NAMES libxkbcommon.so.0 PATHS /usr/lib /usr/local/lib /usr/lib/x86_64-linux-gnu /usr/lib64 NO_DEFAULT_PATH)
@@ -265,9 +261,9 @@ FUNCTION(deploy_qt_framework_files)
 		# On Windows, the third-party library DLLs need to be installed in the OVITO directory.
 		# Gather Qt dynamic link libraries.
 		FOREACH(component IN LISTS OVITO_REQUIRED_QT_COMPONENTS)
-			GET_TARGET_PROPERTY(dll ${OVITO_QT_MAJOR_VERSION}::${component} LOCATION_${CMAKE_BUILD_TYPE})
-			IF(NOT TARGET ${OVITO_QT_MAJOR_VERSION}::${component} OR NOT dll)
-				MESSAGE(FATAL_ERROR "Target does not exist or has no LOCATION property: ${OVITO_QT_MAJOR_VERSION}::${component}")
+			GET_TARGET_PROPERTY(dll Qt6::${component} LOCATION_${CMAKE_BUILD_TYPE})
+			IF(NOT TARGET Qt6::${component} OR NOT dll)
+				MESSAGE(FATAL_ERROR "Target does not exist or has no LOCATION property: Qt6::${component}")
 			ENDIF()
 			OVITO_INSTALL_SHARED_LIB("${dll}")
 			IF(${component} MATCHES "Core")
@@ -287,11 +283,9 @@ FUNCTION(deploy_qt_framework_files)
 		OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/../plugins/imageformats/qsvg${_qt_dll_suffix}.dll" DESTINATION "plugins/imageformats/")
 		OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/../plugins/iconengines/qsvgicon${_qt_dll_suffix}.dll" DESTINATION "plugins/iconengines/")
 		OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/../plugins/styles/qwindowsvistastyle${_qt_dll_suffix}.dll" DESTINATION "plugins/styles/")
-		IF(OVITO_QT_MAJOR_VERSION STREQUAL "Qt6")
-			OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/../plugins/tls/qcertonlybackend${_qt_dll_suffix}.dll" DESTINATION "plugins/tls/")
-			OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/../plugins/tls/qopensslbackend${_qt_dll_suffix}.dll" DESTINATION "plugins/tls/")
-			OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/../plugins/tls/qschannelbackend${_qt_dll_suffix}.dll" DESTINATION "plugins/tls/")
-		ENDIF()
+		OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/../plugins/tls/qcertonlybackend${_qt_dll_suffix}.dll" DESTINATION "plugins/tls/")
+		OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/../plugins/tls/qopensslbackend${_qt_dll_suffix}.dll" DESTINATION "plugins/tls/")
+		OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/../plugins/tls/qschannelbackend${_qt_dll_suffix}.dll" DESTINATION "plugins/tls/")
 
 		# Install QML modules.
 	#	IF(OVITO_QML_GUI)

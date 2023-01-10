@@ -499,74 +499,42 @@ bool ParaViewVTPMeshImporter::parseVTKDataArray(DataBuffer* buffer, QXmlStreamRe
 		// Tokenize the XML element contents.
 		size_t nvalues = 0;
 		if(dataType == "Float32") {
-#if QT_VERSION >= QT_VERSION_CHECK(5, 15, 2)
 			tokenizeString(text, [&](QStringView sv) { float32Array.push_back(sv.toFloat()); });
-#else
-			tokenizeString(text, [&,c=QLocale::c()](QStringView sv) { float32Array.push_back(c.toFloat(sv)); });
-#endif
 			rawDataPtr = float32Array.data();
 			nvalues = float32Array.size();
 		}
 		else if(dataType == "Float64") {
-#if QT_VERSION >= QT_VERSION_CHECK(5, 15, 2)
 			tokenizeString(text, [&](QStringView sv) { float64Array.push_back(sv.toDouble()); });
-#else
-			tokenizeString(text, [&,c=QLocale::c()](QStringView sv) { float64Array.push_back(c.toDouble(sv)); });
-#endif
 			rawDataPtr = float64Array.data();
 			nvalues = float64Array.size();
 		}
 		else if(dataType == "Int32") {
-#if QT_VERSION >= QT_VERSION_CHECK(5, 15, 2)
 			tokenizeString(text, [&](QStringView sv) { int32Array.push_back(sv.toInt()); });
-#else
-			tokenizeString(text, [&,c=QLocale::c()](QStringView sv) { int32Array.push_back(c.toInt(sv)); });
-#endif
 			rawDataPtr = int32Array.data();
 			nvalues = int32Array.size();
 		}
 		else if(dataType == "UInt32") {
-#if QT_VERSION >= QT_VERSION_CHECK(5, 15, 2)
 			tokenizeString(text, [&](QStringView sv) { int32Array.push_back(sv.toUInt()); });
-#else
-			tokenizeString(text, [&,c=QLocale::c()](QStringView sv) { int32Array.push_back(c.toUInt(sv)); });
-#endif
 			rawDataPtr = int32Array.data();
 			nvalues = int32Array.size();
 		}
 		else if(dataType == "Int64") {
-#if QT_VERSION >= QT_VERSION_CHECK(5, 15, 2)
 			tokenizeString(text, [&](QStringView sv) { int64Array.push_back(sv.toLongLong()); });
-#else
-			tokenizeString(text, [&,c=QLocale::c()](QStringView sv) { int64Array.push_back(c.toLongLong(sv)); });
-#endif
 			rawDataPtr = int64Array.data();
 			nvalues = int64Array.size();
 		}
 		else if(dataType == "UInt64") {
-#if QT_VERSION >= QT_VERSION_CHECK(5, 15, 2)
 			tokenizeString(text, [&](QStringView sv) { int64Array.push_back(sv.toULongLong()); });
-#else
-			tokenizeString(text, [&,c=QLocale::c()](QStringView sv) { int64Array.push_back(c.toULongLong(sv)); });
-#endif
 			rawDataPtr = int64Array.data();
 			nvalues = int64Array.size();
 		}
 		else if(dataType == "Int16" || dataType == "UInt16") {
-#if QT_VERSION >= QT_VERSION_CHECK(5, 15, 2)
 			tokenizeString(text, [&](QStringView sv) { int16Array.push_back(sv.toShort()); });
-#else
-			tokenizeString(text, [&,c=QLocale::c()](QStringView sv) { int16Array.push_back(c.toShort(sv)); });
-#endif
 			rawDataPtr = int16Array.data();
 			nvalues = int16Array.size();
 		}
 		else if(dataType == "Int8" || dataType == "UInt8") {
-#if QT_VERSION >= QT_VERSION_CHECK(5, 15, 2)
 			tokenizeString(text, [&](QStringView sv) { int8Array.push_back(sv.toShort()); });
-#else
-			tokenizeString(text, [&,c=QLocale::c()](QStringView sv) { int8Array.push_back(c.toShort(sv)); });
-#endif
 			rawDataPtr = int8Array.data();
 			nvalues = int8Array.size();
 		}

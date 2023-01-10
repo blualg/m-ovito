@@ -1,6 +1,6 @@
 #######################################################################################
 #
-#  Copyright 2020 OVITO GmbH, Germany
+#  Copyright 2023 OVITO GmbH, Germany
 #
 #  This file is part of OVITO (Open Visualization Tool).
 #
@@ -21,7 +21,7 @@
 #######################################################################################
 
 # Find the required Qt modules.
-FIND_PACKAGE(${OVITO_QT_MAJOR_VERSION} ${OVITO_MINIMUM_REQUIRED_QT_VERSION} COMPONENTS Xml REQUIRED)
+FIND_PACKAGE(Qt6 ${OVITO_MINIMUM_REQUIRED_QT_VERSION} COMPONENTS Xml REQUIRED)
 
 SET(SourceFiles
 	objects/VoxelGrid.cpp
@@ -50,7 +50,7 @@ OVITO_STANDARD_PLUGIN(Grid
 	PLUGIN_DEPENDENCIES Mesh StdObj
 	OPTIONAL_PLUGIN_DEPENDENCIES StdMod
 	PRECOMPILED_HEADERS Grid.h
-	LIB_DEPENDENCIES ${OVITO_QT_MAJOR_VERSION}::Xml
+	LIB_DEPENDENCIES Qt6::Xml
 )
 
 # Build corresponding GUI plugin.

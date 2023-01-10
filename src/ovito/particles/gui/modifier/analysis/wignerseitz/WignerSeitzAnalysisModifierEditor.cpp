@@ -89,11 +89,7 @@ void WignerSeitzAnalysisModifierEditor::createUI(const RolloutInsertionParameter
 	sublayout->setColumnStretch(1, 1);
 
 	_sourceButtonGroup = new QButtonGroup(this);
-#if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
 	connect(_sourceButtonGroup, &QButtonGroup::idClicked, this, &WignerSeitzAnalysisModifierEditor::onSourceButtonClicked);
-#else
-	connect(_sourceButtonGroup, static_cast<void (QButtonGroup::*)(int)>(&QButtonGroup::buttonClicked), this, &WignerSeitzAnalysisModifierEditor::onSourceButtonClicked);
-#endif
 	QRadioButton* upstreamPipelineBtn = new QRadioButton(tr("Upstream pipeline"));
 	QRadioButton* externalFileBtn = new QRadioButton(tr("External file"));
 	_sourceButtonGroup->addButton(upstreamPipelineBtn, 0);

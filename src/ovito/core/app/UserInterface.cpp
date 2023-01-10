@@ -161,22 +161,14 @@ QString UserInterface::generateSystemReport()
 #if defined(Q_OS_LINUX)
 	// Get 'uname' output.
 	QProcess unameProcess;
-#if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
 	unameProcess.start("uname", QStringList() << "-m" << "-i" << "-o" << "-r" << "-v", QIODevice::ReadOnly);
-#else
-	unameProcess.start("uname -m -i -o -r -v", QIODevice::ReadOnly);
-#endif
 	unameProcess.waitForFinished();
 	QByteArray unameOutput = unameProcess.readAllStandardOutput();
 	unameOutput.replace('\n', ' ');
 	stream << "uname output: " << unameOutput << "\n";
 	// Get 'lsb_release' output.
 	QProcess lsbProcess;
-#if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
 	lsbProcess.start("lsb_release", QStringList() << "-s" << "-i" << "-d" << "-r", QIODevice::ReadOnly);
-#else
-	lsbProcess.start("lsb_release -s -i -d -r", QIODevice::ReadOnly);
-#endif
 	lsbProcess.waitForFinished();
 	QByteArray lsbOutput = lsbProcess.readAllStandardOutput();
 	lsbOutput.replace('\n', ' ');

@@ -155,7 +155,7 @@ void TextLabelOverlay::renderImplementation(SceneRenderer* renderer, const QRect
 		for(auto a = attributes.cbegin(); a != attributes.cend(); ++a) {
 
 			QString valueString;
-			if(getQVariantTypeId(a.value()) == QMetaType::Double || getQVariantTypeId(a.value()) == QMetaType::Float) {
+			if(a.value().typeId() == QMetaType::Double || a.value().typeId() == QMetaType::Float) {
 				valueString = QString::asprintf(format.constData(), a.value().toDouble());
 			}
 			else {

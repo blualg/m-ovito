@@ -64,23 +64,9 @@ OPTION(OVITO_USE_GIT_REVISION_NUMBER "Include Git revision information in OVITO 
 OPTION(OVITO_BUILD_SSH_CLIENT "Build the SSH client for remote file access (requires libssh)." "ON")
 OPTION(OVITO_LIBSSH_RUNTIME_LINKING "Load libssh at runtime" "OFF")
 
-# Decide which version of the Qt framework to use. Ovito supports Qt5 (>=5.12) and Qt6 (>=6.2). 
-# We look for Qt6 first.
+# Ovito needs Qt>=6.2. 
 SET(OVITO_MINIMUM_REQUIRED_QT_VERSION 6.2)
-FIND_PACKAGE(Qt6 ${OVITO_MINIMUM_REQUIRED_QT_VERSION} COMPONENTS Core)
-IF(Qt6_FOUND AND TARGET Qt6::Core)
-	SET(OVITO_QT_MAJOR_VERSION "Qt6")
-ELSE()
-	# If Qt6 wasn't found, look for Qt5.
-	SET(OVITO_MINIMUM_REQUIRED_QT_VERSION 5.12)
-	FIND_PACKAGE(Qt5 ${OVITO_MINIMUM_REQUIRED_QT_VERSION} COMPONENTS Core)
-	IF(Qt5_FOUND AND TARGET Qt5::Core)
-		SET(OVITO_QT_MAJOR_VERSION "Qt5")
-	ELSE()
-		MESSAGE(FATAL_ERROR "Could not locate Qt5 or Qt6 framework. Ovito requires one of them, preferrably Qt 6.2 or above.")
-	ENDIF()
-ENDIF()
-MESSAGE(STATUS "Using ${OVITO_QT_MAJOR_VERSION}")
+FIND_PACKAGE(Qt6 ${OVITO_MINIMUM_REQUIRED_QT_VERSION} COMPONENTS Core REQUIRED)
 
 # Look for optional Vulkan SDK (requires version 1.1 or above).
 FIND_PACKAGE(Vulkan)

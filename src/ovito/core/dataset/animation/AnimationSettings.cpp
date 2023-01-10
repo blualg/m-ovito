@@ -242,11 +242,7 @@ void AnimationSettings::adjustAnimationInterval()
 						else {
 							auto additionalLabels = node->dataProvider()->animationFrameLabels();
 							if(!additionalLabels.empty())
-#if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
 								_namedFrames.insert(additionalLabels);
-#else
-								_namedFrames.unite(additionalLabels);
-#endif
 						}
 					}
 				}

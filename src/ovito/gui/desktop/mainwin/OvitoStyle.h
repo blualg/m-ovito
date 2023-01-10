@@ -70,11 +70,7 @@ private:
 	static bool isMainWindowToolbar(const QWidget* widget) {
 		if(const QToolBar* toolbar = qobject_cast<const QToolBar*>(widget)) {
 			if(QMainWindow* mainWindow = qobject_cast<QMainWindow*>(toolbar->parentWidget())) {
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
 				if(mainWindow->toolBarArea(toolbar) == Qt::TopToolBarArea)
-#else
-				if(mainWindow->toolBarArea(const_cast<QToolBar*>(toolbar)) == Qt::TopToolBarArea)
-#endif
 					return true;
 			}
 		}

@@ -156,19 +156,11 @@ void ViewportsPanel::updateViewportWindows()
 /******************************************************************************
 * Handles resize events for the item.
 ******************************************************************************/
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
 void ViewportsPanel::geometryChange(const QRectF& newGeometry, const QRectF& oldGeometry)
 {
 	QQuickItem::geometryChange(newGeometry, oldGeometry);
 	layoutViewports();
 }
-#else
-void ViewportsPanel::geometryChanged(const QRectF& newGeometry, const QRectF& oldGeometry)
-{
-	QQuickItem::geometryChanged(newGeometry, oldGeometry);
-	layoutViewports();
-}
-#endif
 
 /******************************************************************************
 * Arranges the viewport windows within the container.

@@ -1,6 +1,6 @@
 #######################################################################################
 #
-#  Copyright 2021 OVITO GmbH, Germany
+#  Copyright 2023 OVITO GmbH, Germany
 #
 #  This file is part of OVITO (Open Visualization Tool).
 #
@@ -21,14 +21,14 @@
 #######################################################################################
 
 # Find the required Qt modules.
-FIND_PACKAGE(${OVITO_QT_MAJOR_VERSION} ${OVITO_MINIMUM_REQUIRED_QT_VERSION} COMPONENTS Xml REQUIRED)
+FIND_PACKAGE(Qt6 ${OVITO_MINIMUM_REQUIRED_QT_VERSION} COMPONENTS Xml REQUIRED)
 
 # Define the plugin module.
 OVITO_STANDARD_PLUGIN(Galamost
 	SOURCES
 		GALAMOSTImporter.cpp
 	PLUGIN_DEPENDENCIES Particles
-	LIB_DEPENDENCIES ${OVITO_QT_MAJOR_VERSION}::Xml
+	LIB_DEPENDENCIES Qt6::Xml
 )
 
 # Propagate list of plugins to parent scope.

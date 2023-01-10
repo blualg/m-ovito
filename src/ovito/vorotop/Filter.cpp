@@ -58,11 +58,7 @@ bool Filter::load(CompressedTextReader& stream, bool readHeaderOnly, Progressing
 			throw Exception(QString("Invalid structure type definition in line %1 of VoroTop filter definition file").arg(stream.lineNumber()));
 		if(typeId != _structureTypeLabels.size())
 			throw Exception(QString("Invalid structure type definition in line %1 of VoroTop filter definition file: Type IDs must start at 1 and form a consecutive sequence.").arg(stream.lineNumber()));
-#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
 		QStringList columns = QString::fromUtf8(line + stringLength).trimmed().split(QChar('\t'), Qt::SkipEmptyParts);
-#else
-		QStringList columns = QString::fromUtf8(line + stringLength).trimmed().split(QChar('\t'), QString::SkipEmptyParts);
-#endif
 		if(columns.empty())
 			throw Exception(QString("Invalid structure type definition in line %1 of VoroTop filter definition file: Type label is missing.").arg(stream.lineNumber()));
 		_structureTypeLabels.push_back(columns[0]);

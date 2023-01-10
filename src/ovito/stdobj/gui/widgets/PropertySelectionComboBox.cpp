@@ -83,11 +83,7 @@ void PropertySelectionComboBox::focusOutEvent(QFocusEvent* event)
 		}
 		setCurrentIndex(index);
 		Q_EMIT activated(index);
-#if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
 		Q_EMIT textActivated(currentText());
-#else
-		Q_EMIT activated(currentText());
-#endif
 	}
 	QComboBox::focusOutEvent(event);
 }

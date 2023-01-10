@@ -316,11 +316,7 @@ bool LAMMPSBinaryDumpHeader::parse(QIODevice& input)
 			if(formatRevision >= 2) {
 				// Skip reading unit style.
 				int unitStyleLen = parseInt(input);
-#if QT_VERSION >= QT_VERSION_CHECK(5, 10, 0)
 				input.skip(unitStyleLen);
-#else
-				(void)input.read(unitStyleLen);
-#endif
 
 				// Parse simulation time.
 				char time_flag = 0;

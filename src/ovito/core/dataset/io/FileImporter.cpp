@@ -149,11 +149,7 @@ void FileImporter::activateCLocale()
 QStringList FileImporter::splitString(const QString& str)
 {
 	static const QRegularExpression ws_re(QStringLiteral("\\s+"));
-#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
 	return str.split(ws_re, Qt::SkipEmptyParts);
-#else
-	return str.split(ws_re, QString::SkipEmptyParts);
-#endif
 }
 
 }	// End of namespace

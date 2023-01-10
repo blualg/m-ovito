@@ -37,11 +37,7 @@ PropertyContainerParameterUI::PropertyContainerParameterUI(PropertiesEditor* par
 	PropertyParameterUI(parentEditor, propField),
 	_comboBox(new QComboBox())
 {
-#if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
 	connect(comboBox(), &QComboBox::textActivated, this, &PropertyContainerParameterUI::updatePropertyValue);
-#else
-	connect(comboBox(), qOverload<const QString&>(&QComboBox::activated), this, &PropertyContainerParameterUI::updatePropertyValue);
-#endif
 
 	// Update the list whenever the pipeline input changes.
 	connect(parentEditor, &PropertiesEditor::pipelineInputChanged, this, &PropertyContainerParameterUI::updateUI);

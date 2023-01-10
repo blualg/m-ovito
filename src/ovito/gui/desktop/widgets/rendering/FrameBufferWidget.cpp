@@ -306,13 +306,8 @@ void FrameBufferWidget::onFrameBufferResize()
 
 	// Automatically reduce zoom factor to <100% to fit frame buffer window onto the user's screen.
 	if(frameBuffer()) {
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
 		if(QScreen* screen = this->screen()) {
 			QSize availableSize = screen->availableSize();
-#else
-		{
-			QSize availableSize = QApplication::desktop()->availableGeometry(this).size();
-#endif
 			availableSize.setWidth(availableSize.width() * 2 / 3);
 			availableSize.setHeight(availableSize.height() * 2 / 3);
 			availableSize.rheight() -= 50; // Take into account toolbar and window title bar height.

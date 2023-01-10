@@ -1,6 +1,6 @@
 #######################################################################################
 #
-#  Copyright 2021 OVITO GmbH, Germany
+#  Copyright 2023 OVITO GmbH, Germany
 #
 #  This file is part of OVITO (Open Visualization Tool).
 #
@@ -39,20 +39,18 @@ OVITO_STANDARD_PLUGIN(Gui
 		OpenGLRenderer
 		GuiBase
 	LIB_DEPENDENCIES
-		${OVITO_QT_MAJOR_VERSION}::Qml 
-		${OVITO_QT_MAJOR_VERSION}::Quick 
-		${OVITO_QT_MAJOR_VERSION}::QuickControls2 
-		${OVITO_QT_MAJOR_VERSION}::QuickTemplates2
-		${OVITO_QT_MAJOR_VERSION}::LabsQmlModels
+		Qt6::Qml 
+		Qt6::Quick 
+		Qt6::QuickControls2 
+		Qt6::QuickTemplates2
+		Qt6::LabsQmlModels
 	PRECOMPILED_HEADERS 
 		GUI.h
 )
 
 #LIST(APPEND OVITO_REQUIRED_QT_COMPONENTS Qml QmlModels Quick QuickControls2 QuickTemplates2 Svg)
-#IF(OVITO_QT_MAJOR_VERSION STREQUAL "Qt6")
-#	LIST(APPEND OVITO_REQUIRED_QT_COMPONENTS QuickControls2Impl QuickLayouts LabsQmlModels)
-#	SET(QT_MINIMUM_REQUIRED_VERSION 6.2)
-#ENDIF()
+#LIST(APPEND OVITO_REQUIRED_QT_COMPONENTS QuickControls2Impl QuickLayouts LabsQmlModels)
+#SET(QT_MINIMUM_REQUIRED_VERSION 6.2)
 # Additionally, when building for the desktop platform, we need the QtWidgets module.
 #IF(NOT EMSCRIPTEN)
 #	LIST(APPEND OVITO_REQUIRED_QT_COMPONENTS Widgets)
@@ -115,5 +113,5 @@ IF(EMSCRIPTEN)
 ENDIF()
 
 IF(NOT EMSCRIPTEN)
-	TARGET_LINK_LIBRARIES(Gui PRIVATE ${OVITO_QT_MAJOR_VERSION}::Widgets)
+	TARGET_LINK_LIBRARIES(Gui PRIVATE Qt6::Widgets)
 ENDIF()

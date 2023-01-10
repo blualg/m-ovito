@@ -92,7 +92,7 @@ void ExtendedListItemDelegate::paint(QPainter* painter, const QStyleOptionViewIt
 			painter->save();
 			painter->setClipRegion(opt.rect);
 
-			if(getQVariantTypeId(info) == QMetaType::QColor) {
+			if(info.typeId() == QMetaType::QColor) {
 				// Display a QColor as a small filled rectangle.
 				QRect textRect = style->subElementRect(QStyle::SE_ItemViewItemText, &opt, option.widget);
 				const int textMargin = style->pixelMetric(QStyle::PM_FocusFrameHMargin, nullptr, option.widget) + 1;

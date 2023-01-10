@@ -21,31 +21,22 @@
 #######################################################################################
 
 # Determine the main Qt installation directory, which contains the Qt plugin libraries to be shipped with OVITO.
-IF(OVITO_QT_MAJOR_VERSION STREQUAL "Qt6")
-	FIND_PACKAGE(${OVITO_QT_MAJOR_VERSION} ${OVITO_MINIMUM_REQUIRED_QT_VERSION} COMPONENTS Core REQUIRED)
-	SET(_qt_source_dir "${_qt_import_prefix}")
-	GET_FILENAME_COMPONENT(_qt_source_dir "${_qt_source_dir}" PATH)
-	GET_FILENAME_COMPONENT(_qt_source_dir "${_qt_source_dir}" PATH)
-	GET_FILENAME_COMPONENT(_qt_source_dir "${_qt_source_dir}" PATH)	
-	SET(_qtplugins_source_dir "${_qt_source_dir}/plugins")
-	SET(QT_LIBRARY_DIRS "${_qt_source_dir}/lib")
-ELSE()
-	SET(_qt_source_dir "${_qt5Core_install_prefix}")
-	SET(_qtplugins_source_dir "${_qt_source_dir}/plugins")
-ENDIF()
+FIND_PACKAGE(Qt6 ${OVITO_MINIMUM_REQUIRED_QT_VERSION} COMPONENTS Core REQUIRED)
+SET(_qt_source_dir "${_qt_import_prefix}")
+GET_FILENAME_COMPONENT(_qt_source_dir "${_qt_source_dir}" PATH)
+GET_FILENAME_COMPONENT(_qt_source_dir "${_qt_source_dir}" PATH)
+GET_FILENAME_COMPONENT(_qt_source_dir "${_qt_source_dir}" PATH)	
+SET(_qtplugins_source_dir "${_qt_source_dir}/plugins")
+SET(QT_LIBRARY_DIRS "${_qt_source_dir}/lib")
 
 # Install needed Qt plugins by copying directories from the Qt installation
 SET(_qtplugins_dest_dir "${MACOSX_BUNDLE_NAME}.app/Contents/PlugIns")
 INSTALL(DIRECTORY "${_qtplugins_source_dir}/imageformats" DESTINATION ${_qtplugins_dest_dir} PATTERN "*_debug.dylib" EXCLUDE PATTERN "*.dSYM" EXCLUDE)
 INSTALL(DIRECTORY "${_qtplugins_source_dir}/platforms" DESTINATION ${_qtplugins_dest_dir} PATTERN "*_debug.dylib" EXCLUDE PATTERN "*.dSYM" EXCLUDE)
 INSTALL(DIRECTORY "${_qtplugins_source_dir}/iconengines" DESTINATION ${_qtplugins_dest_dir} PATTERN "*_debug.dylib" EXCLUDE PATTERN "*.dSYM" EXCLUDE)
-IF(OVITO_QT_MAJOR_VERSION STREQUAL "Qt6" OR NOT Qt5Core_VERSION VERSION_LESS "5.12")
-	INSTALL(DIRECTORY "${_qtplugins_source_dir}/styles" DESTINATION ${_qtplugins_dest_dir} PATTERN "*_debug.dylib" EXCLUDE PATTERN "*.dSYM" EXCLUDE)
-ENDIF()
-IF(OVITO_QT_MAJOR_VERSION STREQUAL "Qt6")
-	INSTALL(DIRECTORY "${_qtplugins_source_dir}/networkinformation" DESTINATION ${_qtplugins_dest_dir} PATTERN "*_debug.dylib" EXCLUDE PATTERN "*.dSYM" EXCLUDE)
-	INSTALL(DIRECTORY "${_qtplugins_source_dir}/tls" DESTINATION ${_qtplugins_dest_dir} PATTERN "*_debug.dylib" EXCLUDE PATTERN "*.dSYM" EXCLUDE)
-ENDIF()
+INSTALL(DIRECTORY "${_qtplugins_source_dir}/styles" DESTINATION ${_qtplugins_dest_dir} PATTERN "*_debug.dylib" EXCLUDE PATTERN "*.dSYM" EXCLUDE)
+INSTALL(DIRECTORY "${_qtplugins_source_dir}/networkinformation" DESTINATION ${_qtplugins_dest_dir} PATTERN "*_debug.dylib" EXCLUDE PATTERN "*.dSYM" EXCLUDE)
+INSTALL(DIRECTORY "${_qtplugins_source_dir}/tls" DESTINATION ${_qtplugins_dest_dir} PATTERN "*_debug.dylib" EXCLUDE PATTERN "*.dSYM" EXCLUDE)
 
 # Install a qt.conf file.
 # This inserts some cmake code into the install script to write the file

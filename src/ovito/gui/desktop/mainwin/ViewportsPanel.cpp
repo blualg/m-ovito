@@ -531,11 +531,7 @@ bool ViewportsPanel::event(QEvent* event)
 	else if(event->type() == QEvent::HoverMove) {
 		if(_draggedSplitter == -1 && _hoveredSplitter != -1) {
 			if(boost::algorithm::none_of(_splitterRegions, [&](const auto& region) {
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
 				return region.area.contains(static_cast<QHoverEvent*>(event)->position().toPoint());
-#else
-				return region.area.contains(static_cast<QHoverEvent*>(event)->pos());
-#endif
 			})) {
 				const auto& region = _splitterRegions[_hoveredSplitter];
 				_hoveredSplitter = -1;

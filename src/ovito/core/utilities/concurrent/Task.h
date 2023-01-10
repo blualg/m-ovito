@@ -44,11 +44,7 @@ class OVITO_CORE_EXPORT Task : public std::enable_shared_from_this<Task>
 {
 public:
 
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
     using MutexLocker = QMutexLocker<QMutex>;
-#else
-    using MutexLocker = QMutexLocker;
-#endif
 
     /// The different states a task can be in.
     enum State {

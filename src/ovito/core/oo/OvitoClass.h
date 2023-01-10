@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -29,19 +29,10 @@
 namespace Ovito {
 
 // Some helper functions for querying information from Qt's Meta-Type system.
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
-	template<typename T> const char* getQtTypeName() { return QMetaType::fromType<T>().name(); }
-	inline const char* getQtTypeNameFromId(int typeId) { return QMetaType(typeId).name(); }
-	inline qsizetype getQtTypeSizeFromId(int typeId) { return QMetaType(typeId).sizeOf(); }
-	inline int getQtTypeIdFromName(QByteArrayView typeName) { return QMetaType::fromName(std::move(typeName)).id(); }
-	inline int getQVariantTypeId(const QVariant& v) { return v.typeId(); }
-#else
-	template<typename T> const char* getQtTypeName() { return QMetaType::typeName(qMetaTypeId<T>()); }
-	inline const char* getQtTypeNameFromId(int typeId) { return QMetaType::typeName(typeId); }
-	inline int getQtTypeSizeFromId(int typeId) { return QMetaType::sizeOf(typeId); }
-	inline int getQtTypeIdFromName(const QByteArray& typeName) { return QMetaType::type(typeName); }
-	inline int getQVariantTypeId(const QVariant& v) { return static_cast<int>(v.type()); }
-#endif
+template<typename T> const char* getQtTypeName() { return QMetaType::fromType<T>().name(); }
+inline const char* getQtTypeNameFromId(int typeId) { return QMetaType(typeId).name(); }
+inline qsizetype getQtTypeSizeFromId(int typeId) { return QMetaType(typeId).sizeOf(); }
+inline int getQtTypeIdFromName(QByteArrayView typeName) { return QMetaType::fromName(std::move(typeName)).id(); }
 
 /**
  * \brief Meta-class for classes derived from OvitoObject.

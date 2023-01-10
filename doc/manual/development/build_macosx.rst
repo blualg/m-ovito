@@ -1,7 +1,7 @@
 .. _development.build_macosx:
 
 Building OVITO on macOS
-=============================
+=======================
 
 Installing dependencies
 -----------------------
@@ -19,8 +19,8 @@ Next, download and install `Qt 6 for Mac <https://www.qt.io/download/>`_.
 
 Next, download the source code and build the shared version of the `ffmpeg <https://ffmpeg.org/>`_ video encoding library (optional)::
   
-  curl -O https://ffmpeg.org/releases/ffmpeg-4.2.1.tar.gz
-  tar xzfv ffmpeg-4.2.1.tar.gz
+  curl -O https://ffmpeg.org/releases/ffmpeg-4.2.8.tar.gz
+  tar xzfv ffmpeg-4.2.8.tar.gz
   cd ffmpeg-4.2.1
   ./configure \
     --disable-network \
@@ -49,7 +49,6 @@ Within the source directory, create a build sub-directory and let CMake generate
   cd build
   cmake -DCMAKE_BUILD_TYPE=Release \
       -DCMAKE_INSTALL_PREFIX=../install \
-      -DOVITO_QT_MAJOR_VERSION=Qt6 \
       -DCMAKE_PREFIX_PATH=`echo $HOME/Qt/6.*.*/clang_64/` \
       -DFFMPEG_INCLUDE_DIR=$HOME/ffmpeg/include \
       -DFFMPEG_LIBRARY_DIR=$HOME/ffmpeg/lib \
@@ -60,6 +59,6 @@ If this step fails, or if you want to disable individual components of OVITO, yo
 open the CMake configuration program and make changes to the build settings.
 Once you are done, build OVITO by running ::
 
-  make -j4
+  cmake --build . --parallel
 
-If this step succeeds, you can run :command:`make install` to generate an app bundle in the :file:`ovito/install/` directory.
+If this step succeeds, you can run :command:`cmake install .` to generate an app bundle in the :file:`ovito/install/` directory.

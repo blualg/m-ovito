@@ -103,11 +103,7 @@ void CalculateDisplacementsModifierEditor::createUI(const RolloutInsertionParame
 	sublayout->setSpacing(6);
 
 	_sourceButtonGroup = new QButtonGroup(this);
-#if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
 	connect(_sourceButtonGroup, &QButtonGroup::idClicked, this, &CalculateDisplacementsModifierEditor::onSourceButtonClicked);
-#else
-	connect(_sourceButtonGroup, static_cast<void (QButtonGroup::*)(int)>(&QButtonGroup::buttonClicked), this, &CalculateDisplacementsModifierEditor::onSourceButtonClicked);
-#endif
 	QRadioButton* upstreamPipelineBtn = new QRadioButton(tr("Upstream pipeline"));
 	QRadioButton* externalFileBtn = new QRadioButton(tr("External file"));
 	_sourceButtonGroup->addButton(upstreamPipelineBtn, 0);
