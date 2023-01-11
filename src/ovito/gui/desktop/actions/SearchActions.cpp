@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -109,11 +109,7 @@ void WidgetActionManager::setupCommandSearch()
 	QWidgetAction* commandQuickSearchAction = new QWidgetAction(this);
 	commandQuickSearchAction->setText(tr("Quick Command Search"));
 	commandQuickSearchAction->setObjectName(ACTION_COMMAND_QUICKSEARCH);
-#ifndef Q_OS_MACOS
-	commandQuickSearchAction->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_Q));
-#else
 	commandQuickSearchAction->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_P));
-#endif
 	commandQuickSearchAction->setStatusTip(tr("Quickly access program commands."));
 
 	// Subclass QLineEdit.
