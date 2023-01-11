@@ -230,8 +230,16 @@ bool FileExporter::doExport(MainThreadOperation operation)
 	if(!sceneToExport())
 		throw Exception(tr("No scene has been specified for file export."));
 
-	if(!nodeToExport())
-		throw Exception(tr("There is no data to be exported."));
+	if(!nodeToExport()) {
+		QString errorMsg = tr("There is no data in the current scene that can be exported to the selected file format.");
+		const std::vector<DataObjectClassPtr>& objClasses = exportableDataObjectClass();
+		if(!objClasses.empty()) {
+			errorMsg += tr("\n\nThe selected output format (%1) requires one of the following data types to be present in the pipeline output:\n").arg(getOOMetaClass().fileFilterDescription());
+			for(const DataObjectClassPtr& clazz : objClasses)
+				errorMsg += QStringLiteral("\n%1").arg(clazz->displayName());
+		}
+		throw Exception(std::move(errorMsg));
+	}
 
 	// Compute the number of frames that need to be exported.
 	int firstFrameNumber, numberOfFrames;

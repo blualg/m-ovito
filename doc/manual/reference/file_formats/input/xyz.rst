@@ -86,7 +86,10 @@ boundary conditions, and other per-frame parameters. Here is an example::
 
 In the extended XYZ format, the comment line is replaced by a series of key/value pairs. 
 The keys should be strings, and values can be integers, reals, booleans (denoted by ``T`` and ``F`` for *true* and *false*) or strings. 
-Quotes are required if a value contains any spaces (like ``Lattice`` above). 
+Quotes are required if a value contains any spaces (like in the ``Lattice`` record above).
+
+.. attention:: No whitespace is allowed in front of or after the equal sign. ``Lattice="..."`` is correct, ``Lattice = "..."`` is wrong.
+
 There are two mandatory parameters that any extended XYZ file must specify: ``Lattice`` and ``Properties``. 
 Other parameters - e.g. ``Time`` in the example above - can be added to the parameter line as needed
 and will be imported by OVITO as :ref:`global attributes <usage.global_attributes>`.
