@@ -70,8 +70,8 @@ NetCDFExclusiveAccess::~NetCDFExclusiveAccess()
 ******************************************************************************/
 void NetCDFError::ncerr(int err, const char* file, int line)
 {
-	if(err != NC_NOERR)
-		throw Exception(QString("NetCDF I/O error: %1 (line %2 of %3)").arg(QString(nc_strerror(err))).arg(line).arg(file));
+    if(err != NC_NOERR)
+        throw Exception(QString("NetCDF I/O error: %1 (line %2 of %3)").arg(QString(nc_strerror(err))).arg(line).arg(file));
 }
 
 /******************************************************************************
@@ -80,8 +80,8 @@ void NetCDFError::ncerr(int err, const char* file, int line)
 ******************************************************************************/
 void NetCDFError::ncerr_with_info(int err, const char* file, int line, const QString& info)
 {
-	if(err != NC_NOERR)
-		throw Exception(QString("NetCDF I/O error: %1 %2 (line %3 of %4)").arg(QString(nc_strerror(err))).arg(info).arg(line).arg(file));
+    if(err != NC_NOERR)
+        throw Exception(QString("NetCDF I/O error: %1 %2 (line %3 of %4)").arg(QString(nc_strerror(err))).arg(info).arg(line).arg(file));
 }
 
-}	// End of namespace
+}   // End of namespace

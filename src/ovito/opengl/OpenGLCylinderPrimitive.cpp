@@ -31,13 +31,13 @@ namespace Ovito {
 ******************************************************************************/
 void OpenGLSceneRenderer::renderCylindersImplementation(const CylinderPrimitive& primitive)
 {
-	OVITO_REPORT_OPENGL_ERRORS(this);
+    OVITO_REPORT_OPENGL_ERRORS(this);
 
     // Make sure there is something to be rendered. Otherwise, step out early.
-	if(!primitive.basePositions() || !primitive.headPositions() || primitive.basePositions()->size() == 0)
-		return;
+    if(!primitive.basePositions() || !primitive.headPositions() || primitive.basePositions()->size() == 0)
+        return;
 
-	rebindVAO();
+    rebindVAO();
 
     // The OpenGL drawing primitive.
     GLenum primitiveDrawMode = GL_TRIANGLE_STRIP;
@@ -48,8 +48,8 @@ void OpenGLSceneRenderer::renderCylindersImplementation(const CylinderPrimitive&
         renderWithPseudoColorMapping = true;
     QOpenGLTexture* colorMapTexture = nullptr;
 
-	// Activate the right OpenGL shader program.
-	OpenGLShaderHelper shader(this);
+    // Activate the right OpenGL shader program.
+    OpenGLShaderHelper shader(this);
     switch(primitive.shape()) {
         case CylinderPrimitive::CylinderShape:
             if(primitive.shadingMode() == CylinderPrimitive::NormalShading) {
@@ -70,9 +70,9 @@ void OpenGLSceneRenderer::renderCylindersImplementation(const CylinderPrimitive&
             }
             else {
                 if(!isPicking())
-					shader.load("cylinder_flat", "cylinder/cylinder_flat.vert", "cylinder/cylinder_flat.frag");
+                    shader.load("cylinder_flat", "cylinder/cylinder_flat.vert", "cylinder/cylinder_flat.frag");
                 else
-					shader.load("cylinder_flat_picking", "cylinder/cylinder_flat_picking.vert", "cylinder/cylinder_flat_picking.frag");
+                    shader.load("cylinder_flat_picking", "cylinder/cylinder_flat_picking.vert", "cylinder/cylinder_flat_picking.frag");
                 shader.setVerticesPerInstance(4); // Quad rendered as triangle strip.
             }
             break;
@@ -81,16 +81,16 @@ void OpenGLSceneRenderer::renderCylindersImplementation(const CylinderPrimitive&
             OVITO_ASSERT(!renderWithPseudoColorMapping);
             if(primitive.shadingMode() == CylinderPrimitive::NormalShading) {
                 if(!isPicking())
-					shader.load("arrow_head", "cylinder/arrow_head.vert", "cylinder/arrow_head.frag");
+                    shader.load("arrow_head", "cylinder/arrow_head.vert", "cylinder/arrow_head.frag");
                 else
-					shader.load("arrow_head_picking", "cylinder/arrow_head_picking.vert", "cylinder/arrow_head_picking.frag");
+                    shader.load("arrow_head_picking", "cylinder/arrow_head_picking.vert", "cylinder/arrow_head_picking.frag");
                 shader.setVerticesPerInstance(14); // Box rendered as triangle strip.
             }
             else {
                 if(!isPicking())
-					shader.load("arrow_flat", "cylinder/arrow_flat.vert", "cylinder/arrow_flat.frag");
+                    shader.load("arrow_flat", "cylinder/arrow_flat.vert", "cylinder/arrow_flat.frag");
                 else
-					shader.load("arrow_flat_picking", "cylinder/arrow_flat_picking.vert", "cylinder/arrow_flat_picking.frag");
+                    shader.load("arrow_flat_picking", "cylinder/arrow_flat_picking.vert", "cylinder/arrow_flat_picking.frag");
                 shader.setVerticesPerInstance(7); // 2D arrow rendered as triangle fan.
                 primitiveDrawMode = GL_TRIANGLE_FAN;
             }
@@ -100,7 +100,7 @@ void OpenGLSceneRenderer::renderCylindersImplementation(const CylinderPrimitive&
             return;
     }
 
-	shader.setInstanceCount(primitive.basePositions()->size());
+    shader.setInstanceCount(primitive.basePositions()->size());
 
     struct BaseHeadRadius {
         Vector_3<float> base;
@@ -116,15 +116,15 @@ void OpenGLSceneRenderer::renderCylindersImplementation(const CylinderPrimitive&
 
     // Are we rendering semi-transparent cylinders?
     bool useBlending = !isPicking() && (primitive.transparencies() != nullptr) && !orderIndependentTransparency();
-	if(useBlending) shader.enableBlending();
+    if(useBlending) shader.enableBlending();
 
-	// Pass picking base ID to shader.
+    // Pass picking base ID to shader.
     GLint pickingBaseId;
-	if(isPicking()) {
-		pickingBaseId = registerSubObjectIDs(primitive.basePositions()->size());
-		shader.setPickingBaseId(pickingBaseId);
-	}
-	OVITO_REPORT_OPENGL_ERRORS(this);
+    if(isPicking()) {
+        pickingBaseId = registerSubObjectIDs(primitive.basePositions()->size());
+        shader.setPickingBaseId(pickingBaseId);
+    }
+    OVITO_REPORT_OPENGL_ERRORS(this);
 
     // Pass camera viewing direction (parallel) or camera position (perspective) in object space to vertex shader.  
     if(primitive.shadingMode() == CylinderPrimitive::FlatShading) {
@@ -171,10 +171,10 @@ void OpenGLSceneRenderer::renderCylindersImplementation(const CylinderPrimitive&
         }
     });
 
-	// Bind vertex buffer to vertex attributes.
-	shader.bindBuffer(positionRadiusBuffer, "base", GL_FLOAT, 3, sizeof(BaseHeadRadius), offsetof(BaseHeadRadius, base), OpenGLShaderHelper::PerInstance);
-	shader.bindBuffer(positionRadiusBuffer, "head", GL_FLOAT, 3, sizeof(BaseHeadRadius), offsetof(BaseHeadRadius, head), OpenGLShaderHelper::PerInstance);
-	shader.bindBuffer(positionRadiusBuffer, "radius", GL_FLOAT, 1, sizeof(BaseHeadRadius), offsetof(BaseHeadRadius, radius), OpenGLShaderHelper::PerInstance);
+    // Bind vertex buffer to vertex attributes.
+    shader.bindBuffer(positionRadiusBuffer, "base", GL_FLOAT, 3, sizeof(BaseHeadRadius), offsetof(BaseHeadRadius, base), OpenGLShaderHelper::PerInstance);
+    shader.bindBuffer(positionRadiusBuffer, "head", GL_FLOAT, 3, sizeof(BaseHeadRadius), offsetof(BaseHeadRadius, head), OpenGLShaderHelper::PerInstance);
+    shader.bindBuffer(positionRadiusBuffer, "radius", GL_FLOAT, 1, sizeof(BaseHeadRadius), offsetof(BaseHeadRadius, radius), OpenGLShaderHelper::PerInstance);
 
     if(!isPicking()) {
 
@@ -289,7 +289,7 @@ void OpenGLSceneRenderer::renderCylindersImplementation(const CylinderPrimitive&
             shader.load("arrow_tail", "cylinder/arrow_tail.vert", "cylinder/arrow_tail.frag");
         else {
             shader.load("arrow_tail_picking", "cylinder/arrow_tail_picking.vert", "cylinder/arrow_tail_picking.frag");
-    		shader.setPickingBaseId(pickingBaseId);
+            shader.setPickingBaseId(pickingBaseId);
         }
 
         shader.drawArrays(GL_TRIANGLE_STRIP);
@@ -300,7 +300,7 @@ void OpenGLSceneRenderer::renderCylindersImplementation(const CylinderPrimitive&
         colorMapTexture->release();
     }
 
-	OVITO_REPORT_OPENGL_ERRORS(this);
+    OVITO_REPORT_OPENGL_ERRORS(this);
 }
 
-}	// End of namespace
+}   // End of namespace

@@ -36,4 +36,4 @@ ExecutionContext& ExecutionContext::current() noexcept
     return _current;
 }
 
-}	// End of namespace
+}   // End of namespace

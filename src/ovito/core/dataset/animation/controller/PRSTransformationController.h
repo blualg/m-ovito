@@ -40,122 +40,122 @@ namespace Ovito {
  */
 class OVITO_CORE_EXPORT PRSTransformationController : public Controller
 {
-	OVITO_CLASS(PRSTransformationController)
+    OVITO_CLASS(PRSTransformationController)
 
 public:
 
-	/// Default constructor.
-	Q_INVOKABLE PRSTransformationController(ObjectCreationParams params);
+    /// Default constructor.
+    Q_INVOKABLE PRSTransformationController(ObjectCreationParams params);
 
-	/// \brief Returns the value type of the controller.
-	virtual ControllerType controllerType() const override { return ControllerTypeTransformation; }
+    /// \brief Returns the value type of the controller.
+    virtual ControllerType controllerType() const override { return ControllerTypeTransformation; }
 
-	/// \brief Lets the transformation controller apply its value to an existing transformation matrix.
-	/// \param[in] time The animation time.
-	/// \param[in,out] result The controller will apply its transformation to this matrix.
-	/// \param[in,out] validityInterval This interval is reduced to the period during which the controller's value doesn't change.
-	virtual void applyTransformation(AnimationTime time, AffineTransformation& result, TimeInterval& validityInterval) override;
+    /// \brief Lets the transformation controller apply its value to an existing transformation matrix.
+    /// \param[in] time The animation time.
+    /// \param[in,out] result The controller will apply its transformation to this matrix.
+    /// \param[in,out] validityInterval This interval is reduced to the period during which the controller's value doesn't change.
+    virtual void applyTransformation(AnimationTime time, AffineTransformation& result, TimeInterval& validityInterval) override;
 
-	/// \brief Gets a position controller's value at a certain animation time.
-	/// \param[in] time The animation time at which the controller's value should be computed.
-	/// \param[out] result This output variable takes the controller's values.
-	/// \param[in,out] validityInterval This interval is reduced to the period during which the controller's value doesn't change.
-	virtual void getPositionValue(AnimationTime time, Vector3& result, TimeInterval& validityInterval) override { positionController()->getPositionValue(time, result, validityInterval); }
+    /// \brief Gets a position controller's value at a certain animation time.
+    /// \param[in] time The animation time at which the controller's value should be computed.
+    /// \param[out] result This output variable takes the controller's values.
+    /// \param[in,out] validityInterval This interval is reduced to the period during which the controller's value doesn't change.
+    virtual void getPositionValue(AnimationTime time, Vector3& result, TimeInterval& validityInterval) override { positionController()->getPositionValue(time, result, validityInterval); }
 
-	/// \brief Gets a rotation controller's value at a certain animation time.
-	/// \param[in] time The animation time at which the controller's value should be computed.
-	/// \param[out] result This output variable takes the controller's values.
-	/// \param[in,out] validityInterval This interval is reduced to the period during which the controller's value doesn't change.
-	virtual void getRotationValue(AnimationTime time, Rotation& result, TimeInterval& validityInterval) override { rotationController()->getRotationValue(time, result, validityInterval); }
+    /// \brief Gets a rotation controller's value at a certain animation time.
+    /// \param[in] time The animation time at which the controller's value should be computed.
+    /// \param[out] result This output variable takes the controller's values.
+    /// \param[in,out] validityInterval This interval is reduced to the period during which the controller's value doesn't change.
+    virtual void getRotationValue(AnimationTime time, Rotation& result, TimeInterval& validityInterval) override { rotationController()->getRotationValue(time, result, validityInterval); }
 
-	/// \brief Gets a scaling controller's value at a certain animation time.
-	/// \param[in] time The animation time at which the controller's value should be computed.
-	/// \param[out] result This output variable takes the controller's values.
-	/// \param[in,out] validityInterval This interval is reduced to the period during which the controller's value doesn't change.
-	virtual void getScalingValue(AnimationTime time, Scaling& result, TimeInterval& validityInterval) override { scalingController()->getScalingValue(time, result, validityInterval); }
+    /// \brief Gets a scaling controller's value at a certain animation time.
+    /// \param[in] time The animation time at which the controller's value should be computed.
+    /// \param[out] result This output variable takes the controller's values.
+    /// \param[in,out] validityInterval This interval is reduced to the period during which the controller's value doesn't change.
+    virtual void getScalingValue(AnimationTime time, Scaling& result, TimeInterval& validityInterval) override { scalingController()->getScalingValue(time, result, validityInterval); }
 
-	/// \brief Sets a transformation controller's value at the given animation time.
-	/// \param time The animation time at which to set the controller's value.
-	/// \param newValue The new value to be assigned to the controller.
-	/// \param isAbsolute Specifies whether the transformation is absolute or should be applied to the existing transformation.
-	virtual void setTransformationValue(AnimationTime time, const AffineTransformation& newValue, bool isAbsolute) override;
+    /// \brief Sets a transformation controller's value at the given animation time.
+    /// \param time The animation time at which to set the controller's value.
+    /// \param newValue The new value to be assigned to the controller.
+    /// \param isAbsolute Specifies whether the transformation is absolute or should be applied to the existing transformation.
+    virtual void setTransformationValue(AnimationTime time, const AffineTransformation& newValue, bool isAbsolute) override;
 
-	/// \brief Sets a position controller's value at the given animation time.
-	/// \param time The animation time at which to set the controller's value.
-	/// \param newValue The new value to be assigned to the controller.
-	/// \param isAbsolute Specifies whether the value is absolute or should be applied to the existing transformation.
-	virtual void setPositionValue(AnimationTime time, const Vector3& newValue, bool isAbsolute) override { positionController()->setPositionValue(time, newValue, isAbsolute); }
+    /// \brief Sets a position controller's value at the given animation time.
+    /// \param time The animation time at which to set the controller's value.
+    /// \param newValue The new value to be assigned to the controller.
+    /// \param isAbsolute Specifies whether the value is absolute or should be applied to the existing transformation.
+    virtual void setPositionValue(AnimationTime time, const Vector3& newValue, bool isAbsolute) override { positionController()->setPositionValue(time, newValue, isAbsolute); }
 
-	/// \brief Sets a rotation controller's value at the given animation time.
-	/// \param time The animation time at which to set the controller's value.
-	/// \param newValue The new value to be assigned to the controller.
-	/// \param isAbsolute Specifies whether the value is absolute or should be applied to the existing transformation.
-	virtual void setRotationValue(AnimationTime time, const Rotation& newValue, bool isAbsolute) override { rotationController()->setRotationValue(time, newValue, isAbsolute); }
+    /// \brief Sets a rotation controller's value at the given animation time.
+    /// \param time The animation time at which to set the controller's value.
+    /// \param newValue The new value to be assigned to the controller.
+    /// \param isAbsolute Specifies whether the value is absolute or should be applied to the existing transformation.
+    virtual void setRotationValue(AnimationTime time, const Rotation& newValue, bool isAbsolute) override { rotationController()->setRotationValue(time, newValue, isAbsolute); }
 
-	/// \brief Sets a scaling controller's value at the given animation time.
-	/// \param time The animation time at which to set the controller's value.
-	/// \param newValue The new value to be assigned to the controller.
-	/// \param isAbsolute Specifies whether the value is absolute or should be applied to the existing transformation.
-	virtual void setScalingValue(AnimationTime time, const Scaling& newValue, bool isAbsolute) override { scalingController()->setScalingValue(time, newValue, isAbsolute); }
+    /// \brief Sets a scaling controller's value at the given animation time.
+    /// \param time The animation time at which to set the controller's value.
+    /// \param newValue The new value to be assigned to the controller.
+    /// \param isAbsolute Specifies whether the value is absolute or should be applied to the existing transformation.
+    virtual void setScalingValue(AnimationTime time, const Scaling& newValue, bool isAbsolute) override { scalingController()->setScalingValue(time, newValue, isAbsolute); }
 
-	/// \brief Adjusts the controller's value after a scene node has gotten a new parent node.
-	/// \param time The animation at which to change the controller parent.
-	/// \param oldParentTM The transformation of the old parent node.
-	/// \param newParentTM The transformation of the new parent node.
-	/// \param contextNode The node to which this controller is assigned to.
-	virtual void changeParent(AnimationTime time, const AffineTransformation& oldParentTM, const AffineTransformation& newParentTM, SceneNode* contextNode) override;
+    /// \brief Adjusts the controller's value after a scene node has gotten a new parent node.
+    /// \param time The animation at which to change the controller parent.
+    /// \param oldParentTM The transformation of the old parent node.
+    /// \param newParentTM The transformation of the new parent node.
+    /// \param contextNode The node to which this controller is assigned to.
+    virtual void changeParent(AnimationTime time, const AffineTransformation& oldParentTM, const AffineTransformation& newParentTM, SceneNode* contextNode) override;
 
-	/// \brief Calculates the largest time interval containing the given time during which the
-	///        controller's value does not change.
-	virtual TimeInterval validityInterval(AnimationTime time) override;
+    /// \brief Calculates the largest time interval containing the given time during which the
+    ///        controller's value does not change.
+    virtual TimeInterval validityInterval(AnimationTime time) override;
 
-	/// \brief Adds a translation to the transformation.
-	/// \param time The animation at which the translation should be applied to the transformation.
-	/// \param translation The translation vector to add to the transformation. This is specified in the coordinate system given by \a axisSystem.
-	/// \param axisSystem The coordinate system in which the translation should be performed.
-	/// \undoable
-	virtual void translate(AnimationTime time, const Vector3& translation, const AffineTransformation& axisSystem) override {
-		// Transform translation vector to reference coordinate system.
-		positionController()->setPositionValue(time, axisSystem * translation, false);
-	}
+    /// \brief Adds a translation to the transformation.
+    /// \param time The animation at which the translation should be applied to the transformation.
+    /// \param translation The translation vector to add to the transformation. This is specified in the coordinate system given by \a axisSystem.
+    /// \param axisSystem The coordinate system in which the translation should be performed.
+    /// \undoable
+    virtual void translate(AnimationTime time, const Vector3& translation, const AffineTransformation& axisSystem) override {
+        // Transform translation vector to reference coordinate system.
+        positionController()->setPositionValue(time, axisSystem * translation, false);
+    }
 
-	/// \brief Adds a rotation to the transformation.
-	/// \param time The animation at which the rotation should be applied to the transformation.
-	/// \param rot The rotation to add to the transformation. This is specified in the coordinate system given by \a axisSystem.
-	/// \param axisSystem The coordinate system in which the rotation should be performed.
-	/// \undoable
-	virtual void rotate(AnimationTime time, const Rotation& rot, const AffineTransformation& axisSystem) override {
-		rotationController()->setRotationValue(time, Rotation(axisSystem * rot.axis(), rot.angle()), false);
-	}
+    /// \brief Adds a rotation to the transformation.
+    /// \param time The animation at which the rotation should be applied to the transformation.
+    /// \param rot The rotation to add to the transformation. This is specified in the coordinate system given by \a axisSystem.
+    /// \param axisSystem The coordinate system in which the rotation should be performed.
+    /// \undoable
+    virtual void rotate(AnimationTime time, const Rotation& rot, const AffineTransformation& axisSystem) override {
+        rotationController()->setRotationValue(time, Rotation(axisSystem * rot.axis(), rot.angle()), false);
+    }
 
-	/// \brief Adds a scaling to the transformation.
-	/// \param time The animation at which the scaling should be applied to the transformation.
-	/// \param s The scaling to add to the transformation.
-	/// \undoable
-	virtual void scale(AnimationTime time, const Scaling& s) override {
-		scalingController()->setScalingValue(time, s, false);
-	}
+    /// \brief Adds a scaling to the transformation.
+    /// \param time The animation at which the scaling should be applied to the transformation.
+    /// \param s The scaling to add to the transformation.
+    /// \undoable
+    virtual void scale(AnimationTime time, const Scaling& s) override {
+        scalingController()->setScalingValue(time, s, false);
+    }
 
-	/// \brief Returns the title of this object.
-	virtual QString objectTitle() const override { return tr("Transformation"); }
+    /// \brief Returns the title of this object.
+    virtual QString objectTitle() const override { return tr("Transformation"); }
 
-	/// \brief Returns whether the value of this controller is changing over time.
-	virtual bool isAnimated() const override {
-		return (positionController() && positionController()->isAnimated())
-				|| (rotationController() && rotationController()->isAnimated())
-				|| (scalingController() && scalingController()->isAnimated());
-	}
+    /// \brief Returns whether the value of this controller is changing over time.
+    virtual bool isAnimated() const override {
+        return (positionController() && positionController()->isAnimated())
+                || (rotationController() && rotationController()->isAnimated())
+                || (scalingController() && scalingController()->isAnimated());
+    }
 
 private:
 
-	/// The sub-controller for translation.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD(OORef<Controller>, positionController, setPositionController);
+    /// The sub-controller for translation.
+    DECLARE_MODIFIABLE_REFERENCE_FIELD(OORef<Controller>, positionController, setPositionController);
 
-	/// The sub-controller for rotation.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD(OORef<Controller>, rotationController, setRotationController);
+    /// The sub-controller for rotation.
+    DECLARE_MODIFIABLE_REFERENCE_FIELD(OORef<Controller>, rotationController, setRotationController);
 
-	/// The sub-controller for scaling.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD(OORef<Controller>, scalingController, setScalingController);
+    /// The sub-controller for scaling.
+    DECLARE_MODIFIABLE_REFERENCE_FIELD(OORef<Controller>, scalingController, setScalingController);
 };
 
-}	// End of namespace
+}   // End of namespace

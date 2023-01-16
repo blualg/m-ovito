@@ -32,23 +32,23 @@ namespace Ovito {
  */
 class OVITO_GUI_EXPORT ViewportModeButton : public QPushButton
 {
-	Q_OBJECT
+    Q_OBJECT
 
 public:
 
-	/// Constructor.
-	ViewportModeButton(ViewportModeAction* action, QWidget* parent = nullptr);
+    /// Constructor.
+    ViewportModeButton(ViewportModeAction* action, QWidget* parent = nullptr);
 
 protected:
 
-	virtual void hideEvent(QHideEvent* event) override {
-		// When the button becomes hidden from the user, automatically deactivate the viewport input mode.
-		// This is to prevent the viewport mode from remaining active when the user switches to another command panel tab.
-		if(!event->spontaneous() && isChecked()) 
-			click();
-		
-		QPushButton::hideEvent(event);
-	}
+    virtual void hideEvent(QHideEvent* event) override {
+        // When the button becomes hidden from the user, automatically deactivate the viewport input mode.
+        // This is to prevent the viewport mode from remaining active when the user switches to another command panel tab.
+        if(!event->spontaneous() && isChecked()) 
+            click();
+        
+        QPushButton::hideEvent(event);
+    }
 };
 
-}	// End of namespace
+}   // End of namespace

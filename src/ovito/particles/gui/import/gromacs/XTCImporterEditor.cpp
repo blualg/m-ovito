@@ -35,22 +35,22 @@ SET_OVITO_OBJECT_EDITOR(XTCImporter, XTCImporterEditor);
 ******************************************************************************/
 void XTCImporterEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 {
-	// Create a rollout.
-	QWidget* rollout = createRollout(tr("XTC reader"), rolloutParams);
+    // Create a rollout.
+    QWidget* rollout = createRollout(tr("XTC reader"), rolloutParams);
 
     // Create the rollout contents.
-	QVBoxLayout* layout = new QVBoxLayout(rollout);
-	layout->setContentsMargins(4,4,4,4);
-	layout->setSpacing(4);
+    QVBoxLayout* layout = new QVBoxLayout(rollout);
+    layout->setContentsMargins(4,4,4,4);
+    layout->setSpacing(4);
 
-	QGroupBox* optionsBox = new QGroupBox(tr("Options"), rollout);
-	QVBoxLayout* sublayout = new QVBoxLayout(optionsBox);
-	sublayout->setContentsMargins(4,4,4,4);
-	layout->addWidget(optionsBox);
+    QGroupBox* optionsBox = new QGroupBox(tr("Options"), rollout);
+    QVBoxLayout* sublayout = new QVBoxLayout(optionsBox);
+    sublayout->setContentsMargins(4,4,4,4);
+    layout->addWidget(optionsBox);
 
-	// Center simulation cell.
-	BooleanParameterUI* recenterCellUI = new BooleanParameterUI(this, PROPERTY_FIELD(ParticleImporter::recenterCell));
-	sublayout->addWidget(recenterCellUI->checkBox());
+    // Center simulation cell.
+    BooleanParameterUI* recenterCellUI = new BooleanParameterUI(this, PROPERTY_FIELD(ParticleImporter::recenterCell));
+    sublayout->addWidget(recenterCellUI->checkBox());
 }
 
-}	// End of namespace
+}   // End of namespace

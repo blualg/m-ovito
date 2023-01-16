@@ -29,15 +29,15 @@ namespace Ovito {
 * Constructor.
 ******************************************************************************/
 AutocompleteTextEdit::AutocompleteTextEdit(QWidget* parent) : QPlainTextEdit(parent),
-		_wordSplitter("(?:(?<![\\w(\\.|\\[|\\[)])(?=[\\w(\\.|\\[|\\[)])|(?<=[\\w(\\.|\\[|\\[)])(?![\\w(\\.|\\[|\\[)]))")
+        _wordSplitter("(?:(?<![\\w(\\.|\\[|\\[)])(?=[\\w(\\.|\\[|\\[)])|(?<=[\\w(\\.|\\[|\\[)])(?![\\w(\\.|\\[|\\[)]))")
 {
-	_wordListModel = new QStringListModel(this);
-	_completer = new QCompleter(this);
-	_completer->setCompletionMode(QCompleter::PopupCompletion);
-	_completer->setCaseSensitivity(Qt::CaseInsensitive);
-	_completer->setModel(_wordListModel);
-	_completer->setWidget(this);
-	connect(_completer, qOverload<const QString&>(&QCompleter::activated), this, &AutocompleteTextEdit::onComplete);
+    _wordListModel = new QStringListModel(this);
+    _completer = new QCompleter(this);
+    _completer->setCompletionMode(QCompleter::PopupCompletion);
+    _completer->setCaseSensitivity(Qt::CaseInsensitive);
+    _completer->setModel(_wordListModel);
+    _completer->setWidget(this);
+    connect(_completer, qOverload<const QString&>(&QCompleter::activated), this, &AutocompleteTextEdit::onComplete);
 }
 
 /******************************************************************************
@@ -45,20 +45,20 @@ AutocompleteTextEdit::AutocompleteTextEdit(QWidget* parent) : QPlainTextEdit(par
 ******************************************************************************/
 void AutocompleteTextEdit::onComplete(const QString& completion)
 {
-	QStringList tokens = getTokenList();
-	int pos = 0;
-	for(QString& token : tokens) {
-		pos += token.length();
-		if(pos >= textCursor().position()) {
-			int oldLen = token.length();
-			token = completion;
-			setPlainText(tokens.join(QString()));
-			QTextCursor cursor = textCursor();
-			cursor.setPosition(pos - oldLen + completion.length());
-			setTextCursor(cursor);
-			break;
-		}
-	}
+    QStringList tokens = getTokenList();
+    int pos = 0;
+    for(QString& token : tokens) {
+        pos += token.length();
+        if(pos >= textCursor().position()) {
+            int oldLen = token.length();
+            token = completion;
+            setPlainText(tokens.join(QString()));
+            QTextCursor cursor = textCursor();
+            cursor.setPosition(pos - oldLen + completion.length());
+            setTextCursor(cursor);
+            break;
+        }
+    }
 }
 
 /******************************************************************************
@@ -66,8 +66,8 @@ void AutocompleteTextEdit::onComplete(const QString& completion)
 ******************************************************************************/
 QStringList AutocompleteTextEdit::getTokenList() const
 {
-	// Split text at word boundaries. Consider '.', '[', and ']' word characters.
-	return toPlainText().split(_wordSplitter);
+    // Split text at word boundaries. Consider '.', '[', and ']' word characters.
+    return toPlainText().split(_wordSplitter);
 }
 
 /******************************************************************************
@@ -75,49 +75,49 @@ QStringList AutocompleteTextEdit::getTokenList() const
 ******************************************************************************/
 void AutocompleteTextEdit::keyPressEvent(QKeyEvent* event)
 {
-	if(_completer->popup()->isVisible()) {
-		if(event->key() == Qt::Key_Enter || event->key() == Qt::Key_Return ||
-				event->key() == Qt::Key_Escape || event->key() == Qt::Key_Tab) {
-	                event->ignore();
-	                return;
-		}
-	}
-	else if(event->key() == Qt::Key_Return || event->key() == Qt::Key_Enter) {
-		if(commitOnReturn()) {
-			Q_EMIT editingFinished();
-			return;
-		}
+    if(_completer->popup()->isVisible()) {
+        if(event->key() == Qt::Key_Enter || event->key() == Qt::Key_Return ||
+                event->key() == Qt::Key_Escape || event->key() == Qt::Key_Tab) {
+                    event->ignore();
+                    return;
+        }
+    }
+    else if(event->key() == Qt::Key_Return || event->key() == Qt::Key_Enter) {
+        if(commitOnReturn()) {
+            Q_EMIT editingFinished();
+            return;
+        }
     }
 
-	QPlainTextEdit::keyPressEvent(event);
+    QPlainTextEdit::keyPressEvent(event);
 
-	if(_wordListModel->rowCount() == 0)
-		return;
-	QStringList tokens = getTokenList();
-	if(tokens.empty())
-		return;
-	int pos = 0;
-	QString completionPrefix;
-	for(const QString& token : tokens) {
-		pos += token.length();
-		if(pos >= textCursor().position()) {
-			completionPrefix = token.trimmed();
-			break;
-		}
-	}
+    if(_wordListModel->rowCount() == 0)
+        return;
+    QStringList tokens = getTokenList();
+    if(tokens.empty())
+        return;
+    int pos = 0;
+    QString completionPrefix;
+    for(const QString& token : tokens) {
+        pos += token.length();
+        if(pos >= textCursor().position()) {
+            completionPrefix = token.trimmed();
+            break;
+        }
+    }
 
-	if(completionPrefix != _completer->completionPrefix()) {
-		_completer->setCompletionPrefix(completionPrefix);
-		_completer->popup()->setCurrentIndex(_completer->completionModel()->index(0,0));
-	}
-	if(completionPrefix.isEmpty() == false && !_wordListModel->stringList().contains(completionPrefix)) {
-		QRect cr = cursorRect();
-		cr.setWidth(_completer->popup()->sizeHintForColumn(0)
-				+ _completer->popup()->verticalScrollBar()->sizeHint().width());
-		_completer->complete(cr);
-	}
-	else
-		_completer->popup()->hide();
+    if(completionPrefix != _completer->completionPrefix()) {
+        _completer->setCompletionPrefix(completionPrefix);
+        _completer->popup()->setCurrentIndex(_completer->completionModel()->index(0,0));
+    }
+    if(completionPrefix.isEmpty() == false && !_wordListModel->stringList().contains(completionPrefix)) {
+        QRect cr = cursorRect();
+        cr.setWidth(_completer->popup()->sizeHintForColumn(0)
+                + _completer->popup()->verticalScrollBar()->sizeHint().width());
+        _completer->complete(cr);
+    }
+    else
+        _completer->popup()->hide();
 }
 
 /******************************************************************************
@@ -125,10 +125,10 @@ void AutocompleteTextEdit::keyPressEvent(QKeyEvent* event)
 ******************************************************************************/
 void AutocompleteTextEdit::focusOutEvent(QFocusEvent* event)
 {
-	if(event->reason() != Qt::PopupFocusReason || !(QApplication::activePopupWidget() && QApplication::activePopupWidget()->parentWidget() == this)) {
-		Q_EMIT editingFinished();
-	}
-	QPlainTextEdit::focusOutEvent(event);
+    if(event->reason() != Qt::PopupFocusReason || !(QApplication::activePopupWidget() && QApplication::activePopupWidget()->parentWidget() == this)) {
+        Q_EMIT editingFinished();
+    }
+    QPlainTextEdit::focusOutEvent(event);
 }
 
 /******************************************************************************
@@ -136,11 +136,11 @@ void AutocompleteTextEdit::focusOutEvent(QFocusEvent* event)
 ******************************************************************************/
 QSize AutocompleteTextEdit::sizeHint() const
 {
-	QFontMetrics m(font());
-	int lineHeight = m.lineSpacing();
-	int numLines = 3;
-	return QSize(QPlainTextEdit::sizeHint().width(), numLines * lineHeight);
+    QFontMetrics m(font());
+    int lineHeight = m.lineSpacing();
+    int numLines = 3;
+    return QSize(QPlainTextEdit::sizeHint().width(), numLines * lineHeight);
 }
 
 
-}	// End of namespace
+}   // End of namespace

@@ -35,10 +35,10 @@ using namespace std;
 ******************************************************************************/
 AnimationTimeSpinner::AnimationTimeSpinner(MainWindow& mainWindow, QWidget* parent) : SpinnerWidget(parent), _mainWindow(mainWindow)
 {
-	setUnit(mainWindow.unitsManager().integerIdentityUnit());
-	connect(this, &SpinnerWidget::spinnerValueChanged, this, &AnimationTimeSpinner::onSpinnerValueChanged);
-	connect(&mainWindow.datasetContainer(), &DataSetContainer::currentFrameChanged, this, &AnimationTimeSpinner::onCurrentFrameChanged);
-	connect(&mainWindow.datasetContainer(), &DataSetContainer::animationIntervalChanged, this, &AnimationTimeSpinner::onIntervalChanged);
+    setUnit(mainWindow.unitsManager().integerIdentityUnit());
+    connect(this, &SpinnerWidget::spinnerValueChanged, this, &AnimationTimeSpinner::onSpinnerValueChanged);
+    connect(&mainWindow.datasetContainer(), &DataSetContainer::currentFrameChanged, this, &AnimationTimeSpinner::onCurrentFrameChanged);
+    connect(&mainWindow.datasetContainer(), &DataSetContainer::animationIntervalChanged, this, &AnimationTimeSpinner::onIntervalChanged);
 }
 
 /******************************************************************************
@@ -46,7 +46,7 @@ AnimationTimeSpinner::AnimationTimeSpinner(MainWindow& mainWindow, QWidget* pare
 ******************************************************************************/
 void AnimationTimeSpinner::onCurrentFrameChanged(int newFrame)
 {
-	setIntValue(newFrame);
+    setIntValue(newFrame);
 }
 
 /******************************************************************************
@@ -54,10 +54,10 @@ void AnimationTimeSpinner::onCurrentFrameChanged(int newFrame)
 ******************************************************************************/
 void AnimationTimeSpinner::onIntervalChanged(int firstFrame, int lastFrame)
 {
-	// Set the limits of the spinner to the new animation time interval.
-	setMinValue(firstFrame);
-	setMaxValue(lastFrame);
-	setEnabled(lastFrame > firstFrame);
+    // Set the limits of the spinner to the new animation time interval.
+    setMinValue(firstFrame);
+    setMaxValue(lastFrame);
+    setEnabled(lastFrame > firstFrame);
 }
 
 /******************************************************************************
@@ -65,9 +65,9 @@ void AnimationTimeSpinner::onIntervalChanged(int firstFrame, int lastFrame)
 ******************************************************************************/
 void AnimationTimeSpinner::onSpinnerValueChanged()
 {
-	// Set a new animation time.
-	if(AnimationSettings* anim = _mainWindow.datasetContainer().activeAnimationSettings())
-		anim->setCurrentFrame(intValue());
+    // Set a new animation time.
+    if(AnimationSettings* anim = _mainWindow.datasetContainer().activeAnimationSettings())
+        anim->setCurrentFrame(intValue());
 }
 
-}	// End of namespace
+}   // End of namespace

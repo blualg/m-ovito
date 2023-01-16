@@ -33,12 +33,12 @@ namespace Ovito::StdMod {
  */
 class OVITO_STDMOD_EXPORT AffineTransformationModifierDelegate : public ModifierDelegate
 {
-	OVITO_CLASS(AffineTransformationModifierDelegate)
+    OVITO_CLASS(AffineTransformationModifierDelegate)
 
 protected:
 
-	/// Abstract class constructor.
-	using ModifierDelegate::ModifierDelegate;
+    /// Abstract class constructor.
+    using ModifierDelegate::ModifierDelegate;
 };
 
 /**
@@ -46,31 +46,31 @@ protected:
  */
 class OVITO_STDMOD_EXPORT SimulationCellAffineTransformationModifierDelegate : public AffineTransformationModifierDelegate
 {
-	/// Give the modifier delegate its own metaclass.
-	class OOMetaClass : public AffineTransformationModifierDelegate::OOMetaClass
-	{
-	public:
+    /// Give the modifier delegate its own metaclass.
+    class OOMetaClass : public AffineTransformationModifierDelegate::OOMetaClass
+    {
+    public:
 
-		/// Inherit constructor from base class.
-		using AffineTransformationModifierDelegate::OOMetaClass::OOMetaClass;
+        /// Inherit constructor from base class.
+        using AffineTransformationModifierDelegate::OOMetaClass::OOMetaClass;
 
-		/// Asks the metaclass which data objects in the given input data collection the modifier delegate can operate on.
-		virtual QVector<DataObjectReference> getApplicableObjects(const DataCollection& input) const override;
+        /// Asks the metaclass which data objects in the given input data collection the modifier delegate can operate on.
+        virtual QVector<DataObjectReference> getApplicableObjects(const DataCollection& input) const override;
 
-		/// The name by which Python scripts can refer to this modifier delegate.
-		virtual QString pythonDataName() const override { return QStringLiteral("cell"); }
-	};
+        /// The name by which Python scripts can refer to this modifier delegate.
+        virtual QString pythonDataName() const override { return QStringLiteral("cell"); }
+    };
 
-	OVITO_CLASS_META(SimulationCellAffineTransformationModifierDelegate, OOMetaClass)
-	Q_CLASSINFO("DisplayName", "Simulation cell");
+    OVITO_CLASS_META(SimulationCellAffineTransformationModifierDelegate, OOMetaClass)
+    Q_CLASSINFO("DisplayName", "Simulation cell");
 
 public:
 
-	/// Constructor.
-	Q_INVOKABLE SimulationCellAffineTransformationModifierDelegate(ObjectCreationParams params) : AffineTransformationModifierDelegate(params) {}
+    /// Constructor.
+    Q_INVOKABLE SimulationCellAffineTransformationModifierDelegate(ObjectCreationParams params) : AffineTransformationModifierDelegate(params) {}
 
-	/// Applies the modifier operation to the data in a pipeline flow state.
-	virtual PipelineStatus apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const PipelineFlowState& inputState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs) override;
+    /// Applies the modifier operation to the data in a pipeline flow state.
+    virtual PipelineStatus apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const PipelineFlowState& inputState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs) override;
 };
 
 /**
@@ -83,54 +83,54 @@ class OVITO_STDMOD_EXPORT AffineTransformationModifier : public MultiDelegatingM
 {
 public:
 
-	/// Give this modifier class its own metaclass.
-	class OOMetaClass : public MultiDelegatingModifier::OOMetaClass
-	{
-	public:
+    /// Give this modifier class its own metaclass.
+    class OOMetaClass : public MultiDelegatingModifier::OOMetaClass
+    {
+    public:
 
-		/// Inherit constructor from base class.
-		using MultiDelegatingModifier::OOMetaClass::OOMetaClass;
+        /// Inherit constructor from base class.
+        using MultiDelegatingModifier::OOMetaClass::OOMetaClass;
 
-		/// Return the metaclass of delegates for this modifier type.
-		virtual const ModifierDelegate::OOMetaClass& delegateMetaclass() const override { return AffineTransformationModifierDelegate::OOClass(); }
-	};
+        /// Return the metaclass of delegates for this modifier type.
+        virtual const ModifierDelegate::OOMetaClass& delegateMetaclass() const override { return AffineTransformationModifierDelegate::OOClass(); }
+    };
 
-	OVITO_CLASS_META(AffineTransformationModifier, OOMetaClass)
-	Q_CLASSINFO("DisplayName", "Affine transformation");
-	Q_CLASSINFO("Description", "Apply an affine transformation to the dataset.");
-	Q_CLASSINFO("ModifierCategory", "Modification");
+    OVITO_CLASS_META(AffineTransformationModifier, OOMetaClass)
+    Q_CLASSINFO("DisplayName", "Affine transformation");
+    Q_CLASSINFO("Description", "Apply an affine transformation to the dataset.");
+    Q_CLASSINFO("ModifierCategory", "Modification");
 
 public:
 
-	/// \brief Constructor.
-	Q_INVOKABLE AffineTransformationModifier(ObjectCreationParams params);
+    /// \brief Constructor.
+    Q_INVOKABLE AffineTransformationModifier(ObjectCreationParams params);
 
-	/// This method is called by the system after the modifier has been inserted into a data pipeline.
-	virtual void initializeModifier(const ModifierInitializationRequest& request) override;
+    /// This method is called by the system after the modifier has been inserted into a data pipeline.
+    virtual void initializeModifier(const ModifierInitializationRequest& request) override;
 
-	/// Returns the effective affine transformation matrix to be applied to points.
-	/// It depends on the linear matrix, the translation vector, relative/target cell mode, and 
-	/// whether the translation is specified in terms of reduced cell coordinates.
-	/// Thus, the affine transformation may depend on the current simulation cell shape.
-	AffineTransformation effectiveAffineTransformation(const PipelineFlowState& state) const;
+    /// Returns the effective affine transformation matrix to be applied to points.
+    /// It depends on the linear matrix, the translation vector, relative/target cell mode, and 
+    /// whether the translation is specified in terms of reduced cell coordinates.
+    /// Thus, the affine transformation may depend on the current simulation cell shape.
+    AffineTransformation effectiveAffineTransformation(const PipelineFlowState& state) const;
 
 protected:
 
-	/// This property fields stores the transformation matrix (used in 'relative' mode).
-	DECLARE_MODIFIABLE_PROPERTY_FIELD(AffineTransformation, transformationTM, setTransformationTM);
+    /// This property fields stores the transformation matrix (used in 'relative' mode).
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(AffineTransformation, transformationTM, setTransformationTM);
 
-	/// This property fields stores the simulation cell geometry (used in 'absolute' mode).
-	DECLARE_MODIFIABLE_PROPERTY_FIELD(AffineTransformation, targetCell, setTargetCell);
+    /// This property fields stores the simulation cell geometry (used in 'absolute' mode).
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(AffineTransformation, targetCell, setTargetCell);
 
-	/// This controls whether the transformation is applied only to the selected particles.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, selectionOnly, setSelectionOnly);
+    /// This controls whether the transformation is applied only to the selected particles.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, selectionOnly, setSelectionOnly);
 
-	/// This controls whether a relative transformation is applied to the simulation box or
-	/// the absolute cell geometry has been specified.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, relativeMode, setRelativeMode);
+    /// This controls whether a relative transformation is applied to the simulation box or
+    /// the absolute cell geometry has been specified.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, relativeMode, setRelativeMode);
 
-	/// Controls whether the translation vector is specified in reduced cell coordinated.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, translationReducedCoordinates, setTranslationReducedCoordinates);
+    /// Controls whether the translation vector is specified in reduced cell coordinated.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, translationReducedCoordinates, setTranslationReducedCoordinates);
 };
 
-}	// End of namespace
+}   // End of namespace

@@ -33,43 +33,43 @@ namespace Ovito {
  */
 class OVITO_GUI_EXPORT FileExporterSettingsDialog : public QDialog
 {
-	Q_OBJECT
+    Q_OBJECT
 
 public:
 
-	/// Constructor.
-	FileExporterSettingsDialog(MainWindow& mainWindow, Scene& scene, FileExporter* exporter, QWidget* parent);
+    /// Constructor.
+    FileExporterSettingsDialog(MainWindow& mainWindow, Scene& scene, FileExporter* exporter, QWidget* parent);
 
-	virtual int exec() override {
-		// If there is no animation sequence (just a single frame), and if the exporter does not expose any other settings,
-		// then we can skip showing the dialog box altogether.
-		if(_skipDialog) 
-			return QDialog::Accepted;
-		return QDialog::exec();
-	}
+    virtual int exec() override {
+        // If there is no animation sequence (just a single frame), and if the exporter does not expose any other settings,
+        // then we can skip showing the dialog box altogether.
+        if(_skipDialog) 
+            return QDialog::Accepted;
+        return QDialog::exec();
+    }
 
 protected Q_SLOTS:
 
-	/// This is called when the user has pressed the OK button.
-	virtual void onOk();
+    /// This is called when the user has pressed the OK button.
+    virtual void onOk();
 
-	/// Updates the displayed list of data object available for export.
-	void updateDataObjectList();
+    /// Updates the displayed list of data object available for export.
+    void updateDataObjectList();
 
 protected:
 
-	MainWindow& _mainWindow;
-	QVBoxLayout* _mainLayout;
-	OORef<FileExporter> _exporter;
-	SpinnerWidget* _startTimeSpinner;
-	SpinnerWidget* _endTimeSpinner;
-	SpinnerWidget* _nthFrameSpinner;
-	QLineEdit* _wildcardTextbox;
-	QButtonGroup* _fileGroupButtonGroup = nullptr;
-	QButtonGroup* _rangeButtonGroup;
-	QComboBox* _sceneNodeBox;
-	QComboBox* _dataObjectBox;
-	bool _skipDialog = true;
+    MainWindow& _mainWindow;
+    QVBoxLayout* _mainLayout;
+    OORef<FileExporter> _exporter;
+    SpinnerWidget* _startTimeSpinner;
+    SpinnerWidget* _endTimeSpinner;
+    SpinnerWidget* _nthFrameSpinner;
+    QLineEdit* _wildcardTextbox;
+    QButtonGroup* _fileGroupButtonGroup = nullptr;
+    QButtonGroup* _rangeButtonGroup;
+    QComboBox* _sceneNodeBox;
+    QComboBox* _dataObjectBox;
+    bool _skipDialog = true;
 };
 
-}	// End of namespace
+}   // End of namespace

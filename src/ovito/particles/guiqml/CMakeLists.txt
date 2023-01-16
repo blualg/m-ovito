@@ -22,10 +22,10 @@
 
 # Define the GUI module, which provides the user interface for the parent module.
 OVITO_STANDARD_PLUGIN(ParticlesGui
-	SOURCES
-		resources/particlesgui.qrc
-		ParticlesGui.cpp
-	PLUGIN_DEPENDENCIES 
-		Particles
-	GUI_PLUGIN
+    SOURCES
+        resources/particlesgui.qrc
+        ParticlesGui.cpp
+    PLUGIN_DEPENDENCIES 
+        Particles
+    GUI_PLUGIN
 )

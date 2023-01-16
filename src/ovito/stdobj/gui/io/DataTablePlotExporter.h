@@ -34,59 +34,59 @@ namespace Ovito::StdObj {
  */
 class OVITO_STDOBJGUI_EXPORT DataTablePlotExporter : public FileExporter
 {
-	/// Defines a metaclass specialization for this exporter type.
-	class OOMetaClass : public FileExporter::OOMetaClass
-	{
-	public:
-		/// Inherit standard constructor from base meta class.
-		using FileExporter::OOMetaClass::OOMetaClass;
+    /// Defines a metaclass specialization for this exporter type.
+    class OOMetaClass : public FileExporter::OOMetaClass
+    {
+    public:
+        /// Inherit standard constructor from base meta class.
+        using FileExporter::OOMetaClass::OOMetaClass;
 
-		/// Returns the file filter that specifies the files that can be exported by this service.
-		virtual QString fileFilter() const override { return QStringLiteral("*.pdf *.png"); }
+        /// Returns the file filter that specifies the files that can be exported by this service.
+        virtual QString fileFilter() const override { return QStringLiteral("*.pdf *.png"); }
 
-		/// Returns the filter description that is displayed in the drop-down box of the file dialog.
-		virtual QString fileFilterDescription() const override { return tr("Data Plot File"); }
-	};
+        /// Returns the filter description that is displayed in the drop-down box of the file dialog.
+        virtual QString fileFilterDescription() const override { return tr("Data Plot File"); }
+    };
 
-	OVITO_CLASS_META(DataTablePlotExporter, OOMetaClass)
+    OVITO_CLASS_META(DataTablePlotExporter, OOMetaClass)
 
 public:
 
-	/// \brief Constructs a new instance of this class.
-	Q_INVOKABLE DataTablePlotExporter(ObjectCreationParams params);
+    /// \brief Constructs a new instance of this class.
+    Q_INVOKABLE DataTablePlotExporter(ObjectCreationParams params);
 
-	/// \brief Returns the type(s) of data objects that this exporter service can export.
-	virtual std::vector<DataObjectClassPtr> exportableDataObjectClass() const override {
-		return { &DataTable::OOClass() };
-	}
+    /// \brief Returns the type(s) of data objects that this exporter service can export.
+    virtual std::vector<DataObjectClassPtr> exportableDataObjectClass() const override {
+        return { &DataTable::OOClass() };
+    }
 
 protected:
 
-	/// \brief This is called once for every output file to be written and before exportData() is called.
-	virtual void openOutputFile(const QString& filePath, int numberOfFrames) override;
+    /// \brief This is called once for every output file to be written and before exportData() is called.
+    virtual void openOutputFile(const QString& filePath, int numberOfFrames) override;
 
-	/// \brief This is called once for every output file written after exportData() has been called.
-	virtual void closeOutputFile(bool exportCompleted) override;
+    /// \brief This is called once for every output file written after exportData() has been called.
+    virtual void closeOutputFile(bool exportCompleted) override;
 
-	/// \brief Exports a single animation frame to the current output file.
-	virtual bool exportFrame(int frameNumber, const QString& filePath, MainThreadOperation& operation) override;
+    /// \brief Exports a single animation frame to the current output file.
+    virtual bool exportFrame(int frameNumber, const QString& filePath, MainThreadOperation& operation) override;
 
-	/// Returns the current file this exporter is writing to.
-	QFile& outputFile() { return _outputFile; }
+    /// Returns the current file this exporter is writing to.
+    QFile& outputFile() { return _outputFile; }
 
 private:
 
-	/// The output file stream.
-	QFile _outputFile;
+    /// The output file stream.
+    QFile _outputFile;
 
-	/// The width of the plot in millimeters.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType, plotWidth, setPlotWidth, PROPERTY_FIELD_MEMORIZE);
+    /// The width of the plot in millimeters.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType, plotWidth, setPlotWidth, PROPERTY_FIELD_MEMORIZE);
 
-	/// The height of the plot in millimeters.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType, plotHeight, setPlotHeight, PROPERTY_FIELD_MEMORIZE);
+    /// The height of the plot in millimeters.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType, plotHeight, setPlotHeight, PROPERTY_FIELD_MEMORIZE);
 
-	/// The resolution of the plot in DPI.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(int, plotDPI, setPlotDPI, PROPERTY_FIELD_MEMORIZE);
+    /// The resolution of the plot in DPI.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(int, plotDPI, setPlotDPI, PROPERTY_FIELD_MEMORIZE);
 };
 
-}	// End of namespace
+}   // End of namespace

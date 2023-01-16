@@ -40,42 +40,42 @@ class OVITO_CORE_EXPORT SimplePropertyChangeOperation : public UndoableOperation
 {
 public:
 
-	/// \brief Constructor.
-	/// \param obj The object whose property is being changed.
-	/// \param propName The identifier of the property that is changed. This is the identifier
-	///                 name given to the property in the \c Q_PROPERTY macro.
-	/// \note This class does not make a copy of the property name parameter.
-	///       So the caller should only pass constant string literals to this constructor.
-	SimplePropertyChangeOperation(OvitoObject* obj, const char* propName) :
-		_object(obj), _propertyName(propName)
-	{
-		// Make a copy of the current property value.
-		_oldValue = _object->property(_propertyName);
-		OVITO_ASSERT_MSG(_oldValue.isValid(), "SimplePropertyChangeOperation", "The object does not have a property with the given name.");
-	}
+    /// \brief Constructor.
+    /// \param obj The object whose property is being changed.
+    /// \param propName The identifier of the property that is changed. This is the identifier
+    ///                 name given to the property in the \c Q_PROPERTY macro.
+    /// \note This class does not make a copy of the property name parameter.
+    ///       So the caller should only pass constant string literals to this constructor.
+    SimplePropertyChangeOperation(OvitoObject* obj, const char* propName) :
+        _object(obj), _propertyName(propName)
+    {
+        // Make a copy of the current property value.
+        _oldValue = _object->property(_propertyName);
+        OVITO_ASSERT_MSG(_oldValue.isValid(), "SimplePropertyChangeOperation", "The object does not have a property with the given name.");
+    }
 
-	/// \brief Restores the old property value.
-	virtual void undo() override {
-		// Swap old value and current property value.
-		QVariant temp = _object->property(_propertyName);
-		_object->setProperty(_propertyName, _oldValue);
-		_oldValue = temp;
-	}
+    /// \brief Restores the old property value.
+    virtual void undo() override {
+        // Swap old value and current property value.
+        QVariant temp = _object->property(_propertyName);
+        _object->setProperty(_propertyName, _oldValue);
+        _oldValue = temp;
+    }
 
-	virtual QString displayName() const override {
-		return QStringLiteral("Set property %1 of %2").arg(_propertyName).arg(_object->getOOClass().name());
-	}
+    virtual QString displayName() const override {
+        return QStringLiteral("Set property %1 of %2").arg(_propertyName).arg(_object->getOOClass().name());
+    }
 
 private:
 
-	/// The object whose property has been changed.
-	OORef<OvitoObject> _object;
+    /// The object whose property has been changed.
+    OORef<OvitoObject> _object;
 
-	/// The name of the property that has been changed.
-	const char* _propertyName;
+    /// The name of the property that has been changed.
+    const char* _propertyName;
 
-	/// The old value of the property.
-	QVariant _oldValue;
+    /// The old value of the property.
+    QVariant _oldValue;
 };
 
 /**
@@ -85,21 +85,21 @@ class OVITO_CORE_EXPORT TargetChangedUndoOperation : public UndoableOperation
 {
 public:
 
-	/// \brief Constructor.
-	/// \param target The object that is being changed.
-	TargetChangedUndoOperation(RefTarget* target) : _target(target) {}
+    /// \brief Constructor.
+    /// \param target The object that is being changed.
+    TargetChangedUndoOperation(RefTarget* target) : _target(target) {}
 
-	virtual void undo() override;
-	virtual void redo() override {}
+    virtual void undo() override;
+    virtual void redo() override {}
 
-	virtual QString displayName() const override {
-		return QStringLiteral("Target changed undo operation");
-	}
+    virtual QString displayName() const override {
+        return QStringLiteral("Target changed undo operation");
+    }
 
 private:
 
-	/// The object that has been changed.
-	OORef<RefTarget> _target;
+    /// The object that has been changed.
+    OORef<RefTarget> _target;
 };
 
 /**
@@ -109,21 +109,21 @@ class OVITO_CORE_EXPORT TargetChangedRedoOperation : public UndoableOperation
 {
 public:
 
-	/// \brief Constructor.
-	/// \param target The object that is being changed.
-	TargetChangedRedoOperation(RefTarget* target) : _target(target) {}
+    /// \brief Constructor.
+    /// \param target The object that is being changed.
+    TargetChangedRedoOperation(RefTarget* target) : _target(target) {}
 
-	virtual void undo() override {}
-	virtual void redo() override;
+    virtual void undo() override {}
+    virtual void redo() override;
 
-	virtual QString displayName() const override {
-		return QStringLiteral("Target changed redo operation");
-	}
+    virtual QString displayName() const override {
+        return QStringLiteral("Target changed redo operation");
+    }
 
 private:
 
-	/// The object that has been changed.
-	OORef<RefTarget> _target;
+    /// The object that has been changed.
+    OORef<RefTarget> _target;
 };
 
-}	// End of namespace
+}   // End of namespace

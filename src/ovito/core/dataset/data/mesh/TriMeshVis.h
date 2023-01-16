@@ -35,39 +35,39 @@ namespace Ovito {
  */
 class OVITO_CORE_EXPORT TriMeshVis : public DataVis
 {
-	OVITO_CLASS(TriMeshVis)
-	Q_CLASSINFO("DisplayName", "Triangle mesh");
+    OVITO_CLASS(TriMeshVis)
+    Q_CLASSINFO("DisplayName", "Triangle mesh");
 
 public:
 
-	/// \brief Constructor.
-	Q_INVOKABLE TriMeshVis(ObjectCreationParams params);
+    /// \brief Constructor.
+    Q_INVOKABLE TriMeshVis(ObjectCreationParams params);
 
-	/// \brief Lets the vis element render a data object.
-	virtual PipelineStatus render(AnimationTime time, const ConstDataObjectPath& path, const PipelineFlowState& flowState, SceneRenderer* renderer, const PipelineSceneNode* contextNode) override;
+    /// \brief Lets the vis element render a data object.
+    virtual PipelineStatus render(AnimationTime time, const ConstDataObjectPath& path, const PipelineFlowState& flowState, SceneRenderer* renderer, const PipelineSceneNode* contextNode) override;
 
-	/// \brief Computes the bounding box of the object.
-	virtual Box3 boundingBox(AnimationTime time, const ConstDataObjectPath& path, const PipelineSceneNode* contextNode, const PipelineFlowState& flowState, MixedKeyCache& visCache, TimeInterval& validityInterval) override;
+    /// \brief Computes the bounding box of the object.
+    virtual Box3 boundingBox(AnimationTime time, const ConstDataObjectPath& path, const PipelineSceneNode* contextNode, const PipelineFlowState& flowState, MixedKeyCache& visCache, TimeInterval& validityInterval) override;
 
-	/// Returns the transparency parameter.
-	FloatType transparency() const { return transparencyController()->getFloatValue(AnimationTime(0)); }
+    /// Returns the transparency parameter.
+    FloatType transparency() const { return transparencyController()->getFloatValue(AnimationTime(0)); }
 
-	/// Sets the transparency parameter.
-	void setTransparency(FloatType t) { transparencyController()->setFloatValue(AnimationTime(0), t); }
+    /// Sets the transparency parameter.
+    void setTransparency(FloatType t) { transparencyController()->setFloatValue(AnimationTime(0), t); }
 
 private:
 
-	/// Controls the display color of the mesh.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(Color, color, setColor, PROPERTY_FIELD_MEMORIZE);
+    /// Controls the display color of the mesh.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(Color, color, setColor, PROPERTY_FIELD_MEMORIZE);
 
-	/// Controls the transparency of the mesh.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD(OORef<Controller>, transparencyController, setTransparencyController);
+    /// Controls the transparency of the mesh.
+    DECLARE_MODIFIABLE_REFERENCE_FIELD(OORef<Controller>, transparencyController, setTransparencyController);
 
-	/// Controls whether the polygonal edges of the mesh should be highlighted.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, highlightEdges, setHighlightEdges);
+    /// Controls whether the polygonal edges of the mesh should be highlighted.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, highlightEdges, setHighlightEdges);
 
-	/// Controls whether triangles facing away from the viewer are not rendered. 
-	DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, backfaceCulling, setBackfaceCulling);
+    /// Controls whether triangles facing away from the viewer are not rendered. 
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, backfaceCulling, setBackfaceCulling);
 };
 
-}	// End of namespace
+}   // End of namespace

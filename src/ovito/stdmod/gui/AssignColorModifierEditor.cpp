@@ -37,28 +37,28 @@ SET_OVITO_OBJECT_EDITOR(AssignColorModifier, AssignColorModifierEditor);
 ******************************************************************************/
 void AssignColorModifierEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 {
-	// Create a rollout.
-	QWidget* rollout = createRollout(tr("Assign color"), rolloutParams, "manual:particles.modifiers.assign_color");
+    // Create a rollout.
+    QWidget* rollout = createRollout(tr("Assign color"), rolloutParams, "manual:particles.modifiers.assign_color");
 
     // Create the rollout contents.
-	QGridLayout* layout = new QGridLayout(rollout);
-	layout->setContentsMargins(4,4,4,4);
-	layout->setSpacing(2);
-	layout->setColumnStretch(1, 1);
+    QGridLayout* layout = new QGridLayout(rollout);
+    layout->setContentsMargins(4,4,4,4);
+    layout->setSpacing(2);
+    layout->setColumnStretch(1, 1);
 
-	// Operate on.
-	ModifierDelegateParameterUI* delegateUI = new ModifierDelegateParameterUI(this, AssignColorModifierDelegate::OOClass());
-	layout->addWidget(new QLabel(tr("Operate on:")), 0, 0);
-	layout->addWidget(delegateUI->comboBox(), 0, 1);
+    // Operate on.
+    ModifierDelegateParameterUI* delegateUI = new ModifierDelegateParameterUI(this, AssignColorModifierDelegate::OOClass());
+    layout->addWidget(new QLabel(tr("Operate on:")), 0, 0);
+    layout->addWidget(delegateUI->comboBox(), 0, 1);
 
-	// Color parameter.
-	ColorParameterUI* constColorPUI = new ColorParameterUI(this, PROPERTY_FIELD(AssignColorModifier::colorController));
-	layout->addWidget(constColorPUI->label(), 1, 0);
-	layout->addWidget(constColorPUI->colorPicker(), 1, 1);
+    // Color parameter.
+    ColorParameterUI* constColorPUI = new ColorParameterUI(this, PROPERTY_FIELD(AssignColorModifier::colorController));
+    layout->addWidget(constColorPUI->label(), 1, 0);
+    layout->addWidget(constColorPUI->colorPicker(), 1, 1);
 
-	// Keep selection parameter.
-	BooleanParameterUI* keepSelectionPUI = new BooleanParameterUI(this, PROPERTY_FIELD(AssignColorModifier::keepSelection));
-	layout->addWidget(keepSelectionPUI->checkBox(), 2, 0, 1, 2);
+    // Keep selection parameter.
+    BooleanParameterUI* keepSelectionPUI = new BooleanParameterUI(this, PROPERTY_FIELD(AssignColorModifier::keepSelection));
+    layout->addWidget(keepSelectionPUI->checkBox(), 2, 0, 1, 2);
 }
 
-}	// End of namespace
+}   // End of namespace

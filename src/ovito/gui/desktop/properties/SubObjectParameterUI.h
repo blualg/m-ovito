@@ -35,34 +35,34 @@ namespace Ovito {
 ******************************************************************************/
 class OVITO_GUI_EXPORT SubObjectParameterUI : public PropertyParameterUI
 {
-	OVITO_CLASS(SubObjectParameterUI)
+    OVITO_CLASS(SubObjectParameterUI)
 
 public:
 
-	/// Constructor.
-	SubObjectParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* refField, const RolloutInsertionParameters& rolloutParams = RolloutInsertionParameters());
+    /// Constructor.
+    SubObjectParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* refField, const RolloutInsertionParameters& rolloutParams = RolloutInsertionParameters());
 
-	/// Destructor.
-	virtual ~SubObjectParameterUI() {}
+    /// Destructor.
+    virtual ~SubObjectParameterUI() {}
 
-	/// This method is called when a new sub-object has been assigned to the reference field of the editable object
-	/// this parameter UI is bound to. It is also called when the editable object itself has
-	/// been replaced in the editor.
-	virtual void resetUI() override;
+    /// This method is called when a new sub-object has been assigned to the reference field of the editable object
+    /// this parameter UI is bound to. It is also called when the editable object itself has
+    /// been replaced in the editor.
+    virtual void resetUI() override;
 
-	/// Returns the current sub-editor or NULL if there is none.
-	PropertiesEditor* subEditor() const { return _subEditor; }
+    /// Returns the current sub-editor or NULL if there is none.
+    PropertiesEditor* subEditor() const { return _subEditor; }
 
-	/// Sets the enabled state of the UI.
-	virtual void setEnabled(bool enabled) override;
+    /// Sets the enabled state of the UI.
+    virtual void setEnabled(bool enabled) override;
 
 protected:
 
-	/// The editor for the referenced sub-object.
-	OORef<PropertiesEditor> _subEditor;
+    /// The editor for the referenced sub-object.
+    OORef<PropertiesEditor> _subEditor;
 
-	/// Controls where the sub-editor is opened and whether the sub-editor is opened in a collapsed state.
-	RolloutInsertionParameters _rolloutParams;
+    /// Controls where the sub-editor is opened and whether the sub-editor is opened in a collapsed state.
+    RolloutInsertionParameters _rolloutParams;
 };
 
-}	// End of namespace
+}   // End of namespace

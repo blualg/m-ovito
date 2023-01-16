@@ -38,17 +38,17 @@ namespace Ovito {
  *****************************************************************************/
 inline bool parseFloatType(const char* s, const char* s_end, float& f)
 {
-	const char* s_orig = s; // Make a copy, because parse() modifies its argument.
-	if(!boost::spirit::qi::parse(s, s_end, boost::spirit::qi::float_, f)) {
-		// Fall back to string stream if Boost.Spirit parser fails (e.g. for very small numbers like 1e-204).
-		std::istringstream iss(std::string(s_orig, s_end - s_orig));
-		iss.imbue(std::locale::classic());
-		double d;
-		iss >> d;
-		if(!iss) return false;
-		f = static_cast<float>(d);
-	}
-	return true;
+    const char* s_orig = s; // Make a copy, because parse() modifies its argument.
+    if(!boost::spirit::qi::parse(s, s_end, boost::spirit::qi::float_, f)) {
+        // Fall back to string stream if Boost.Spirit parser fails (e.g. for very small numbers like 1e-204).
+        std::istringstream iss(std::string(s_orig, s_end - s_orig));
+        iss.imbue(std::locale::classic());
+        double d;
+        iss >> d;
+        if(!iss) return false;
+        f = static_cast<float>(d);
+    }
+    return true;
 }
 
 /******************************************************************************
@@ -56,15 +56,15 @@ inline bool parseFloatType(const char* s, const char* s_end, float& f)
  *****************************************************************************/
 inline bool parseFloatType(const char* s, const char* s_end, double& f)
 {
-	const char* s_orig = s; // Make a copy, because parse() modifies its argument.
-	if(!boost::spirit::qi::parse(s, s_end, boost::spirit::qi::double_, f)) {
-		// Fall back to string stream if Boost.Spirit parser fails (e.g. for very small numbers like 1e-204).
-		std::istringstream iss(std::string(s_orig, s_end - s_orig));
-		iss.imbue(std::locale::classic());
-		iss >> f;
-		if(!iss) return false;
-	}
-	return true;
+    const char* s_orig = s; // Make a copy, because parse() modifies its argument.
+    if(!boost::spirit::qi::parse(s, s_end, boost::spirit::qi::double_, f)) {
+        // Fall back to string stream if Boost.Spirit parser fails (e.g. for very small numbers like 1e-204).
+        std::istringstream iss(std::string(s_orig, s_end - s_orig));
+        iss.imbue(std::locale::classic());
+        iss >> f;
+        if(!iss) return false;
+    }
+    return true;
 }
 
 /******************************************************************************
@@ -72,7 +72,7 @@ inline bool parseFloatType(const char* s, const char* s_end, double& f)
  *****************************************************************************/
 inline bool parseInt(const char* s, const char* s_end, int& i)
 {
-	return boost::spirit::qi::parse(s, s_end, boost::spirit::qi::int_, i);
+    return boost::spirit::qi::parse(s, s_end, boost::spirit::qi::int_, i);
 }
 
 /******************************************************************************
@@ -80,7 +80,7 @@ inline bool parseInt(const char* s, const char* s_end, int& i)
  *****************************************************************************/
 inline bool parseInt64(const char* s, const char* s_end, qlonglong& i)
 {
-	return boost::spirit::qi::parse(s, s_end, boost::spirit::qi::long_long, i);
+    return boost::spirit::qi::parse(s, s_end, boost::spirit::qi::long_long, i);
 }
 
 /******************************************************************************
@@ -88,16 +88,16 @@ inline bool parseInt64(const char* s, const char* s_end, qlonglong& i)
  *****************************************************************************/
 inline bool parseBool(const char* s, const char* s_end, int& d)
 {
-	if(s_end != s + 1) return false;
-	if(s[0] == 'T') {
-		d = 1;
-		return true;
-	}
-	else if(s[0] == 'F') {
-		d = 0;
-		return true;
-	}
-	return false;
+    if(s_end != s + 1) return false;
+    if(s[0] == 'T') {
+        d = 1;
+        return true;
+    }
+    else if(s[0] == 'F') {
+        d = 0;
+        return true;
+    }
+    return false;
 }
 
-}	// End of namespace
+}   // End of namespace

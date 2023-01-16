@@ -28,20 +28,20 @@
 namespace Ovito {
 
 // The minimum OpenGL version required by Ovito:
-#define OVITO_OPENGL_MINIMUM_VERSION_MAJOR 			2
-#define OVITO_OPENGL_MINIMUM_VERSION_MINOR			1
+#define OVITO_OPENGL_MINIMUM_VERSION_MAJOR          2
+#define OVITO_OPENGL_MINIMUM_VERSION_MINOR          1
 
 // OpenGL debugging macro:
 #ifdef OVITO_DEBUG
-	#define OVITO_CHECK_OPENGL(renderer, cmd)						\
-	{																\
-		cmd;														\
-		renderer->checkOpenGLErrorStatus(#cmd, __FILE__, __LINE__);	\
-	}
+    #define OVITO_CHECK_OPENGL(renderer, cmd)                       \
+    {                                                               \
+        cmd;                                                        \
+        renderer->checkOpenGLErrorStatus(#cmd, __FILE__, __LINE__); \
+    }
     #define OVITO_REPORT_OPENGL_ERRORS(renderer) renderer->checkOpenGLErrorStatus("", __FILE__, __LINE__);
 #else
-	#define OVITO_CHECK_OPENGL(renderer, cmd) cmd
+    #define OVITO_CHECK_OPENGL(renderer, cmd) cmd
     #define OVITO_REPORT_OPENGL_ERRORS(renderer)
 #endif
 
-}	// End of namespace
+}   // End of namespace

@@ -35,14 +35,14 @@ DEFINE_REFERENCE_FIELD(ParameterUI, editObject);
 ******************************************************************************/
 void ParameterUI::referenceReplaced(const PropertyFieldDescriptor* field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex)
 {
-	if(field == PROPERTY_FIELD(editObject)) {
-		if(oldTarget) oldTarget->unsetObjectEditingFlag();
-		if(newTarget) newTarget->setObjectEditingFlag();
-		updatePropertyField();
-		Q_EMIT editObjectReplaced();
-		updateUI();
-	}
-	RefMaker::referenceReplaced(field, oldTarget, newTarget, listIndex);
+    if(field == PROPERTY_FIELD(editObject)) {
+        if(oldTarget) oldTarget->unsetObjectEditingFlag();
+        if(newTarget) newTarget->setObjectEditingFlag();
+        updatePropertyField();
+        Q_EMIT editObjectReplaced();
+        updateUI();
+    }
+    RefMaker::referenceReplaced(field, oldTarget, newTarget, listIndex);
 }
 
 /******************************************************************************
@@ -50,33 +50,33 @@ void ParameterUI::referenceReplaced(const PropertyFieldDescriptor* field, RefTar
 ******************************************************************************/
 bool ParameterUI::referenceEvent(RefTarget* source, const ReferenceEvent& event)
 {
-	if(source == editObject() && event.type() == ReferenceEvent::TargetChanged) {
-		// The edited object has changed -> update value shown in UI.
-		updateUI();
-		Q_EMIT editObjectModified();
-	}
+    if(source == editObject() && event.type() == ReferenceEvent::TargetChanged) {
+        // The edited object has changed -> update value shown in UI.
+        updateUI();
+        Q_EMIT editObjectModified();
+    }
 
 #if 0
-	if(isReferenceFieldUI()) {
-		if(source == editObject() && event.type() == ReferenceEvent::ReferenceChanged) {
-			if(propertyField() == static_cast<const ReferenceFieldEvent&>(event).field()) {
-				// The parameter value object stored in the reference field of the edited object
-				// has been replaced by another one, so update our own reference to the parameter value object.
-				if(editObject()->getReferenceField(*propertyField()) != parameterObject())
-					resetUI();
-			}
-		}
-		else if(source == parameterObject() && event.type() == ReferenceEvent::TargetChanged) {
-			// The parameter value object has changed -> update value shown in UI.
-			updateUI();
-		}
-	}
-	else if(source == editObject() && event.type() == ReferenceEvent::TargetChanged) {
-		// The edited object has changed -> update value shown in UI.
-		updateUI();
-	}
+    if(isReferenceFieldUI()) {
+        if(source == editObject() && event.type() == ReferenceEvent::ReferenceChanged) {
+            if(propertyField() == static_cast<const ReferenceFieldEvent&>(event).field()) {
+                // The parameter value object stored in the reference field of the edited object
+                // has been replaced by another one, so update our own reference to the parameter value object.
+                if(editObject()->getReferenceField(*propertyField()) != parameterObject())
+                    resetUI();
+            }
+        }
+        else if(source == parameterObject() && event.type() == ReferenceEvent::TargetChanged) {
+            // The parameter value object has changed -> update value shown in UI.
+            updateUI();
+        }
+    }
+    else if(source == editObject() && event.type() == ReferenceEvent::TargetChanged) {
+        // The edited object has changed -> update value shown in UI.
+        updateUI();
+    }
 #endif
-	return RefMaker::referenceEvent(source, event);
+    return RefMaker::referenceEvent(source, event);
 }
 
 /******************************************************************************
@@ -84,12 +84,12 @@ bool ParameterUI::referenceEvent(RefTarget* source, const ReferenceEvent& event)
 ******************************************************************************/
 void ParameterUI::updatePropertyField()
 {
-	if(editObject() && !propertyName().isEmpty()) {
-		_propertyField = editObject()->getOOMetaClass().findPropertyField(qPrintable(propertyName()), true);
-	}
-	else {
-		_propertyField = nullptr;
-	}
+    if(editObject() && !propertyName().isEmpty()) {
+        _propertyField = editObject()->getOOMetaClass().findPropertyField(qPrintable(propertyName()), true);
+    }
+    else {
+        _propertyField = nullptr;
+    }
 }
 
 /******************************************************************************
@@ -97,10 +97,10 @@ void ParameterUI::updatePropertyField()
 ******************************************************************************/
 ParameterUnit* ParameterUI::parameterUnit() const 
 {
-	if(editObject() && propertyField() && propertyField()->numericalParameterInfo()) {
-		return editObject()->dataset()->unitsManager().getUnit(propertyField()->numericalParameterInfo()->unitType);
-	}
-	return nullptr;
+    if(editObject() && propertyField() && propertyField()->numericalParameterInfo()) {
+        return editObject()->dataset()->unitsManager().getUnit(propertyField()->numericalParameterInfo()->unitType);
+    }
+    return nullptr;
 }
 
 /******************************************************************************
@@ -108,45 +108,45 @@ ParameterUnit* ParameterUI::parameterUnit() const
 ******************************************************************************/
 QVariant ParameterUI::getCurrentValue() const
 {
-	if(editObject()) {
-		if(propertyField()) {
-			if(propertyField()->isReferenceField()) {
-				RefTarget* target = editObject()->getReferenceFieldTarget(*propertyField());
-				if(Controller* ctrl = dynamic_object_cast<Controller>(target)) {
-					switch(ctrl->controllerType()) {
-					case Controller::ControllerTypeFloat:
-						return QVariant::fromValue(ctrl->currentFloatValue());
-					case Controller::ControllerTypeInt:
-						return QVariant::fromValue(ctrl->currentIntValue());
-					case Controller::ControllerTypeVector3:
-						return QVariant::fromValue(QVector3D(ctrl->currentVector3Value()));
-					default:
-						qWarning() << "ParameterUI::getCurrentValue(): Unsupported animation controller type:" << ctrl->controllerType();
-						return {};
-					}
-				}
-				else {
-					return QVariant::fromValue(target);
-				}
-			}
-			else {
-				QVariant v = editObject()->getPropertyFieldValue(*propertyField());
-				if(v.canConvert<QColor>() && v.metaType().id() != QMetaType::QString) {
-					QColor c = v.value<QColor>();
-					return QVariant::fromValue(QVector3D(c.redF(), c.greenF(), c.blueF()));
-				}
-				return v;
-			}
-		}
-		else if(!propertyName().isEmpty()) {
-			QVariant val = editObject()->property(qPrintable(propertyName()));
-			OVITO_ASSERT_MSG(val.isValid(), "ParameterUI::getCurrentValue()", qPrintable(QString("The object class %1 does not define a property with the name %2 that can be cast to QVariant type.").arg(editObject()->metaObject()->className(), propertyName())));
-			if(!val.isValid())
-				throw Exception(tr("The object class %1 does not define a property with the name %2 that can be cast to QVariant type.").arg(editObject()->metaObject()->className(), propertyName()));
-			return val;
-		}
-	}
-	return {};
+    if(editObject()) {
+        if(propertyField()) {
+            if(propertyField()->isReferenceField()) {
+                RefTarget* target = editObject()->getReferenceFieldTarget(*propertyField());
+                if(Controller* ctrl = dynamic_object_cast<Controller>(target)) {
+                    switch(ctrl->controllerType()) {
+                    case Controller::ControllerTypeFloat:
+                        return QVariant::fromValue(ctrl->currentFloatValue());
+                    case Controller::ControllerTypeInt:
+                        return QVariant::fromValue(ctrl->currentIntValue());
+                    case Controller::ControllerTypeVector3:
+                        return QVariant::fromValue(QVector3D(ctrl->currentVector3Value()));
+                    default:
+                        qWarning() << "ParameterUI::getCurrentValue(): Unsupported animation controller type:" << ctrl->controllerType();
+                        return {};
+                    }
+                }
+                else {
+                    return QVariant::fromValue(target);
+                }
+            }
+            else {
+                QVariant v = editObject()->getPropertyFieldValue(*propertyField());
+                if(v.canConvert<QColor>() && v.metaType().id() != QMetaType::QString) {
+                    QColor c = v.value<QColor>();
+                    return QVariant::fromValue(QVector3D(c.redF(), c.greenF(), c.blueF()));
+                }
+                return v;
+            }
+        }
+        else if(!propertyName().isEmpty()) {
+            QVariant val = editObject()->property(qPrintable(propertyName()));
+            OVITO_ASSERT_MSG(val.isValid(), "ParameterUI::getCurrentValue()", qPrintable(QString("The object class %1 does not define a property with the name %2 that can be cast to QVariant type.").arg(editObject()->metaObject()->className(), propertyName())));
+            if(!val.isValid())
+                throw Exception(tr("The object class %1 does not define a property with the name %2 that can be cast to QVariant type.").arg(editObject()->metaObject()->className(), propertyName()));
+            return val;
+        }
+    }
+    return {};
 }
 
 /******************************************************************************
@@ -154,43 +154,43 @@ QVariant ParameterUI::getCurrentValue() const
 ******************************************************************************/
 void ParameterUI::setCurrentValue(const QVariant& val)
 {
-	if(editObject()) {
-		UndoableTransaction::handleExceptions(editObject()->dataset()->undoStack(), tr("Change parameter"), [&]() {
-			if(propertyField()) {
-				if(propertyField()->isReferenceField()) {
-					RefTarget* target = editObject()->getReferenceFieldTarget(*propertyField());
-					if(Controller* ctrl = dynamic_object_cast<Controller>(target)) {
-						switch(ctrl->controllerType()) {
-						case Controller::ControllerTypeFloat:
-							ctrl->setCurrentFloatValue(val.toDouble());
-							break;
-						case Controller::ControllerTypeInt:
-							ctrl->setCurrentIntValue(val.toInt());
-							break;
-						case Controller::ControllerTypeVector3:
-							ctrl->setCurrentVector3Value(Vector3(val.value<QVector3D>()));
-							break;
-						default:
-							qWarning() << "ParameterUI::setCurrentValue(): Unsupported animation controller type:" << ctrl->controllerType();
-						}
-					}
-				}
-				else {
-					if(val.canConvert<QVector3D>()) {
-						editObject()->setPropertyFieldValue(*propertyField(), QVariant::fromValue(Color(val.value<QVector3D>())));
-					}
-					else {
-						editObject()->setPropertyFieldValue(*propertyField(), val);
-					}
-				}
-			}
-			else if(!propertyName().isEmpty()) {
-				if(!editObject()->setProperty(qPrintable(propertyName()), val)) {
-					OVITO_ASSERT_MSG(false, "ParameterUI::setCurrentValue()", qPrintable(QString("The value of property %1 of object class %2 could not be set.").arg(propertyName()).arg(editObject()->metaObject()->className())));
-				}
-			}
-		});
-	}
+    if(editObject()) {
+        UndoableTransaction::handleExceptions(editObject()->dataset()->undoStack(), tr("Change parameter"), [&]() {
+            if(propertyField()) {
+                if(propertyField()->isReferenceField()) {
+                    RefTarget* target = editObject()->getReferenceFieldTarget(*propertyField());
+                    if(Controller* ctrl = dynamic_object_cast<Controller>(target)) {
+                        switch(ctrl->controllerType()) {
+                        case Controller::ControllerTypeFloat:
+                            ctrl->setCurrentFloatValue(val.toDouble());
+                            break;
+                        case Controller::ControllerTypeInt:
+                            ctrl->setCurrentIntValue(val.toInt());
+                            break;
+                        case Controller::ControllerTypeVector3:
+                            ctrl->setCurrentVector3Value(Vector3(val.value<QVector3D>()));
+                            break;
+                        default:
+                            qWarning() << "ParameterUI::setCurrentValue(): Unsupported animation controller type:" << ctrl->controllerType();
+                        }
+                    }
+                }
+                else {
+                    if(val.canConvert<QVector3D>()) {
+                        editObject()->setPropertyFieldValue(*propertyField(), QVariant::fromValue(Color(val.value<QVector3D>())));
+                    }
+                    else {
+                        editObject()->setPropertyFieldValue(*propertyField(), val);
+                    }
+                }
+            }
+            else if(!propertyName().isEmpty()) {
+                if(!editObject()->setProperty(qPrintable(propertyName()), val)) {
+                    OVITO_ASSERT_MSG(false, "ParameterUI::setCurrentValue()", qPrintable(QString("The value of property %1 of object class %2 could not be set.").arg(propertyName()).arg(editObject()->metaObject()->className())));
+                }
+            }
+        });
+    }
 }
 
 /******************************************************************************
@@ -198,9 +198,9 @@ void ParameterUI::setCurrentValue(const QVariant& val)
 ******************************************************************************/
 void ParameterUI::updateUI()
 {
-	if(qmlProperty().isValid()) {
-		qmlProperty().write(getCurrentValue());
-	}
+    if(qmlProperty().isValid()) {
+        qmlProperty().write(getCurrentValue());
+    }
 }
 
 /******************************************************************************
@@ -208,16 +208,16 @@ void ParameterUI::updateUI()
 ******************************************************************************/
 QStringList ParameterUI::editorComponentList() const
 {
-	QStringList componentList;
-	if(editObject()) {
-		for(OvitoClassPtr clazz = &editObject()->getOOClass(); clazz != nullptr; clazz = clazz->superClass()) {
-			QString filePath = QStringLiteral(":/%1/editors/%2.qml").arg(clazz->plugin()->pluginId()).arg(clazz->name());
-			if(QFile::exists(filePath)) {
-				componentList.push_back(QStringLiteral("qrc") + filePath);
-			}
-		}
-	}
-	return componentList;
+    QStringList componentList;
+    if(editObject()) {
+        for(OvitoClassPtr clazz = &editObject()->getOOClass(); clazz != nullptr; clazz = clazz->superClass()) {
+            QString filePath = QStringLiteral(":/%1/editors/%2.qml").arg(clazz->plugin()->pluginId()).arg(clazz->name());
+            if(QFile::exists(filePath)) {
+                componentList.push_back(QStringLiteral("qrc") + filePath);
+            }
+        }
+    }
+    return componentList;
 }
 
 /******************************************************************************
@@ -225,17 +225,17 @@ QStringList ParameterUI::editorComponentList() const
 ******************************************************************************/
 QStringList ParameterUI::subobjectFieldList() const
 {
-	QStringList fieldList;
-	if(editObject()) {
-		for(auto fieldIter = editObject()->getOOMetaClass().propertyFields().crbegin(); fieldIter != editObject()->getOOMetaClass().propertyFields().crend(); ++fieldIter) {
-			const PropertyFieldDescriptor* field = *fieldIter;
-			if(!field->isReferenceField()) continue;
-			if(field->isVector()) continue;
-			if(!field->flags().testFlag(PROPERTY_FIELD_OPEN_SUBEDITOR)) continue;
-			fieldList.push_back(field->identifier());
-		}
-	}
-	return fieldList;
+    QStringList fieldList;
+    if(editObject()) {
+        for(auto fieldIter = editObject()->getOOMetaClass().propertyFields().crbegin(); fieldIter != editObject()->getOOMetaClass().propertyFields().crend(); ++fieldIter) {
+            const PropertyFieldDescriptor* field = *fieldIter;
+            if(!field->isReferenceField()) continue;
+            if(field->isVector()) continue;
+            if(!field->flags().testFlag(PROPERTY_FIELD_OPEN_SUBEDITOR)) continue;
+            fieldList.push_back(field->identifier());
+        }
+    }
+    return fieldList;
 }
 
 /******************************************************************************
@@ -243,10 +243,10 @@ QStringList ParameterUI::subobjectFieldList() const
 ******************************************************************************/
 FloatType ParameterUI::minParameterValue() const
 {
-	if(propertyField() && propertyField()->numericalParameterInfo()) {
-		return propertyField()->numericalParameterInfo()->minValue;
-	}
-	return std::numeric_limits<FloatType>::lowest();
+    if(propertyField() && propertyField()->numericalParameterInfo()) {
+        return propertyField()->numericalParameterInfo()->minValue;
+    }
+    return std::numeric_limits<FloatType>::lowest();
 }
 
 /******************************************************************************
@@ -254,10 +254,10 @@ FloatType ParameterUI::minParameterValue() const
 ******************************************************************************/
 FloatType ParameterUI::maxParameterValue() const
 {
-	if(propertyField() && propertyField()->numericalParameterInfo()) {
-		return propertyField()->numericalParameterInfo()->maxValue;
-	}
-	return std::numeric_limits<FloatType>::max();
+    if(propertyField() && propertyField()->numericalParameterInfo()) {
+        return propertyField()->numericalParameterInfo()->maxValue;
+    }
+    return std::numeric_limits<FloatType>::max();
 }
 
 /******************************************************************************
@@ -265,10 +265,10 @@ FloatType ParameterUI::maxParameterValue() const
 ******************************************************************************/
 QString ParameterUI::propertyDisplayName() const
 {
-	if(propertyField()) {
-		return propertyField()->displayName();
-	}
-	return {};
+    if(propertyField()) {
+        return propertyField()->displayName();
+    }
+    return {};
 }
 
-}	// End of namespace
+}   // End of namespace

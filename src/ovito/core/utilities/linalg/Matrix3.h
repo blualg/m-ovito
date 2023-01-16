@@ -459,7 +459,7 @@ public:
     static Matrix_3 scaling(const ScalingT<T>& scaling);
 };
 
-}	// End of namespace
+}   // End of namespace
 
 #include "Quaternion.h"
 #include "Scaling.h"
@@ -478,7 +478,7 @@ inline Matrix_3<T> Matrix_3<T>::rotation(const RotationT<T>& rot)
     T t = T(1) - c;
     const auto& a = rot.axis();
     OVITO_ASSERT_MSG(std::abs(a.squaredLength() - T(1)) <= T(FLOATTYPE_EPSILON), "Matrix3::rotation", "Rotation axis vector must be normalized.");
-    return Matrix_3<T>(	t * a.x() * a.x() + c,       t * a.x() * a.y() - s * a.z(), t * a.x() * a.z() + s * a.y(),
+    return Matrix_3<T>( t * a.x() * a.x() + c,       t * a.x() * a.y() - s * a.z(), t * a.x() * a.z() + s * a.y(),
                     t * a.x() * a.y() + s * a.z(), t * a.y() * a.y() + c,       t * a.y() * a.z() - s * a.x(),
                     t * a.x() * a.z() - s * a.y(), t * a.y() * a.z() + s * a.x(), t * a.z() * a.z() + c       );
 }
@@ -758,7 +758,7 @@ inline QDataStream& operator>>(QDataStream& stream, Matrix_3<T>& m) {
  */
 using Matrix3 = Matrix_3<FloatType>;
 
-}	// End of namespace
+}   // End of namespace
 
 Q_DECLARE_METATYPE(Ovito::Matrix3);
 Q_DECLARE_TYPEINFO(Ovito::Matrix3, Q_PRIMITIVE_TYPE);

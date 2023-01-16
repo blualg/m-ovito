@@ -40,40 +40,40 @@ namespace Ovito {
  */
 class OVITO_CORE_EXPORT ObjectSaveStream : public SaveStream
 {
-	Q_OBJECT
+    Q_OBJECT
 
 public:
 
-	/// \brief Initializes the ObjectSaveStream.
-	/// \param destination The Qt data stream to which data is written. This stream must support random access.
-	/// \throw Exception if the source stream does not support random access, or if an I/O error occurs.
-	explicit ObjectSaveStream(QDataStream& destination) : SaveStream(destination) {}
+    /// \brief Initializes the ObjectSaveStream.
+    /// \param destination The Qt data stream to which data is written. This stream must support random access.
+    /// \throw Exception if the source stream does not support random access, or if an I/O error occurs.
+    explicit ObjectSaveStream(QDataStream& destination) : SaveStream(destination) {}
 
-	/// Calls close() to close the ObjectSaveStream.
-	virtual ~ObjectSaveStream();
+    /// Calls close() to close the ObjectSaveStream.
+    virtual ~ObjectSaveStream();
 
-	/// \brief Closes this ObjectSaveStream, but not the underlying QDataStream passed to the constructor.
-	/// \throw Exception if an I/O error has occurred.
-	virtual void close() override;
+    /// \brief Closes this ObjectSaveStream, but not the underlying QDataStream passed to the constructor.
+    /// \throw Exception if an I/O error has occurred.
+    virtual void close() override;
 
-	/// \brief Serializes an object and writes its data to the output stream.
-	/// \throw Exception if an I/O error has occurred.
-	/// \sa ObjectLoadStream::loadObject()
-	void saveObject(const OvitoObject* object, bool excludeRecomputableData = false);
+    /// \brief Serializes an object and writes its data to the output stream.
+    /// \throw Exception if an I/O error has occurred.
+    /// \sa ObjectLoadStream::loadObject()
+    void saveObject(const OvitoObject* object, bool excludeRecomputableData = false);
 
 private:
 
-	/// A data record kept for each object written to the stream.
-	struct ObjectRecord {
-		const OvitoObject* object;
-		bool excludeRecomputableData;
-	};
+    /// A data record kept for each object written to the stream.
+    struct ObjectRecord {
+        const OvitoObject* object;
+        bool excludeRecomputableData;
+    };
 
-	/// Contains all objects stored so far and their IDs.
-	std::unordered_map<const OvitoObject*, quint32> _objectMap;
+    /// Contains all objects stored so far and their IDs.
+    std::unordered_map<const OvitoObject*, quint32> _objectMap;
 
-	/// Contains all objects ordered by ID.
-	std::vector<ObjectRecord> _objects;
+    /// Contains all objects ordered by ID.
+    std::vector<ObjectRecord> _objects;
 };
 
-}	// End of namespace
+}   // End of namespace

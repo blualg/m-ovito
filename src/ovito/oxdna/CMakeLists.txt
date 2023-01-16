@@ -22,15 +22,15 @@
 
 # Define the plugin module.
 OVITO_STANDARD_PLUGIN(oxDNA
-	SOURCES
-		OXDNAImporter.cpp
-		NucleotidesVis.cpp
-	PLUGIN_DEPENDENCIES Particles
+    SOURCES
+        OXDNAImporter.cpp
+        NucleotidesVis.cpp
+    PLUGIN_DEPENDENCIES Particles
 )
 
 # Build corresponding GUI plugin.
 IF(OVITO_BUILD_APP AND NOT OVITO_QML_GUI)
-	ADD_SUBDIRECTORY(gui)
+    ADD_SUBDIRECTORY(gui)
 ENDIF()
 
 # Propagate list of plugins to parent scope.

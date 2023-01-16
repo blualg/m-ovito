@@ -33,16 +33,16 @@ namespace Ovito {
  */
 class ModalPropertiesEditorDialog : public QDialog, private UndoableTransaction
 {
-	Q_OBJECT
+    Q_OBJECT
 
 public:
 
-	/// Constructor.
-	ModalPropertiesEditorDialog(RefTarget* object, OORef<PropertiesEditor> editor, QWidget* parentWindow, MainWindow& mainWindow, const QString& dialogTitle, const QString& undoString, const QString& helpTopic);
+    /// Constructor.
+    ModalPropertiesEditorDialog(RefTarget* object, OORef<PropertiesEditor> editor, QWidget* parentWindow, MainWindow& mainWindow, const QString& dialogTitle, const QString& undoString, const QString& helpTopic);
 
 private:
 
-	OORef<PropertiesEditor> _editor;
+    OORef<PropertiesEditor> _editor;
 };
 
-}	// End of namespace
+}   // End of namespace

@@ -33,95 +33,95 @@ namespace Ovito {
 ******************************************************************************/
 ProgressDialog::ProgressDialog(QWidget* parent, TaskPtr task, const QString& dialogTitle) : QDialog(parent), _task(std::move(task))
 {
-	OVITO_ASSERT(_task);
+    OVITO_ASSERT(_task);
 
-	setWindowModality(Qt::WindowModal);
-	setWindowTitle(dialogTitle);
+    setWindowModality(Qt::WindowModal);
+    setWindowTitle(dialogTitle);
 
-	QVBoxLayout* layout = new QVBoxLayout(this);
+    QVBoxLayout* layout = new QVBoxLayout(this);
 
 #if 0
 #ifdef Q_OS_MAC
-	// On macOS, the progress dialog has no title bar (it's a Qt::Sheet).
-	// Insert our own header text label into the dialog. 
-	if(parent && !dialogTitle.isEmpty()) {
-		QLabel* titleLabel = new QLabel(dialogTitle);
-		QFont boldFont;
-		boldFont.setWeight(QFont::Bold);
-		titleLabel->setFont(std::move(boldFont));
-		layout->addWidget(titleLabel);
-		QFrame* headerLine = new QFrame();
-		headerLine->setFrameShape(QFrame::HLine);
-		layout->addWidget(headerLine);
-	}
+    // On macOS, the progress dialog has no title bar (it's a Qt::Sheet).
+    // Insert our own header text label into the dialog. 
+    if(parent && !dialogTitle.isEmpty()) {
+        QLabel* titleLabel = new QLabel(dialogTitle);
+        QFont boldFont;
+        boldFont.setWeight(QFont::Bold);
+        titleLabel->setFont(std::move(boldFont));
+        layout->addWidget(titleLabel);
+        QFrame* headerLine = new QFrame();
+        headerLine->setFrameShape(QFrame::HLine);
+        layout->addWidget(headerLine);
+    }
 #endif
 #endif
 
-	layout->addStretch(1);
+    layout->addStretch(1);
 
-	QDialogButtonBox* buttonBox = new QDialogButtonBox(QDialogButtonBox::Cancel, this);
-	layout->addWidget(buttonBox);
+    QDialogButtonBox* buttonBox = new QDialogButtonBox(QDialogButtonBox::Cancel, this);
+    layout->addWidget(buttonBox);
 
-	// Cancel the running task when user presses the cancel button.
-	connect(buttonBox, &QDialogButtonBox::rejected, this, &ProgressDialog::reject);
+    // Cancel the running task when user presses the cancel button.
+    connect(buttonBox, &QDialogButtonBox::rejected, this, &ProgressDialog::reject);
 
-	// Helper function that sets up the UI widgets in the dialog for a newly started task.
-	auto createUIForTask = [this, layout](TaskWatcher* taskWatcher) {
-		QLabel* statusLabel = new QLabel(taskWatcher->progressText());
-		statusLabel->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Preferred);
-		QProgressBar* progressBar = new QProgressBar();
-		progressBar->setMaximum(taskWatcher->progressMaximum());
-		progressBar->setValue(taskWatcher->progressValue());
-		if(statusLabel->text().isEmpty()) {
-			statusLabel->hide();
-			progressBar->hide();
-		}
-		layout->insertWidget(layout->count() - 2, statusLabel);
-		layout->insertWidget(layout->count() - 2, progressBar);
-		connect(taskWatcher, &TaskWatcher::progressChanged, progressBar, [progressBar](qlonglong progress, qlonglong maximum) {
-			progressBar->setMaximum(maximum);
-			progressBar->setValue(progress);
-		});
-		connect(taskWatcher, &TaskWatcher::progressTextChanged, statusLabel, &QLabel::setText);
-		connect(taskWatcher, &TaskWatcher::progressTextChanged, statusLabel, [statusLabel, progressBar](const QString& text) {
-			statusLabel->setVisible(!text.isEmpty());
-			progressBar->setVisible(!text.isEmpty());
-		});
+    // Helper function that sets up the UI widgets in the dialog for a newly started task.
+    auto createUIForTask = [this, layout](TaskWatcher* taskWatcher) {
+        QLabel* statusLabel = new QLabel(taskWatcher->progressText());
+        statusLabel->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Preferred);
+        QProgressBar* progressBar = new QProgressBar();
+        progressBar->setMaximum(taskWatcher->progressMaximum());
+        progressBar->setValue(taskWatcher->progressValue());
+        if(statusLabel->text().isEmpty()) {
+            statusLabel->hide();
+            progressBar->hide();
+        }
+        layout->insertWidget(layout->count() - 2, statusLabel);
+        layout->insertWidget(layout->count() - 2, progressBar);
+        connect(taskWatcher, &TaskWatcher::progressChanged, progressBar, [progressBar](qlonglong progress, qlonglong maximum) {
+            progressBar->setMaximum(maximum);
+            progressBar->setValue(progress);
+        });
+        connect(taskWatcher, &TaskWatcher::progressTextChanged, statusLabel, &QLabel::setText);
+        connect(taskWatcher, &TaskWatcher::progressTextChanged, statusLabel, [statusLabel, progressBar](const QString& text) {
+            statusLabel->setVisible(!text.isEmpty());
+            progressBar->setVisible(!text.isEmpty());
+        });
 
-		// Remove progress display when this task finished.
-		connect(taskWatcher, &TaskWatcher::finished, progressBar, &QObject::deleteLater);
-		connect(taskWatcher, &TaskWatcher::finished, statusLabel, &QObject::deleteLater);
-	};
+        // Remove progress display when this task finished.
+        connect(taskWatcher, &TaskWatcher::finished, progressBar, &QObject::deleteLater);
+        connect(taskWatcher, &TaskWatcher::finished, statusLabel, &QObject::deleteLater);
+    };
 
-	// Create UI for every already running task.
-	TaskManager& taskManager = ExecutionContext::current().ui().taskManager();
-	for(TaskWatcher* watcher : taskManager.runningTasks()) {
-		createUIForTask(watcher);
-	}
+    // Create UI for every already running task.
+    TaskManager& taskManager = ExecutionContext::current().ui().taskManager();
+    for(TaskWatcher* watcher : taskManager.runningTasks()) {
+        createUIForTask(watcher);
+    }
 
-	// Expand dialog window to minimum width.
-	QRect g = geometry();
-	if(g.width() < 450) {
-		g.setWidth(450);
-		setGeometry(g);
-	}
+    // Expand dialog window to minimum width.
+    QRect g = geometry();
+    if(g.width() < 450) {
+        g.setWidth(450);
+        setGeometry(g);
+    }
 
-	// Center dialog in parent window.
-	if(parent) {
-		QSize s = frameGeometry().size();
-		QPoint position = parent->geometry().center() - QPoint(s.width() / 2, s.height() / 2);
-		// Make sure the window's title bar doesn't move outside the screen area:
-		if(position.x() < 0) position.setX(0);
-		if(position.y() < 0) position.setY(0);
-		move(position);
-	}
+    // Center dialog in parent window.
+    if(parent) {
+        QSize s = frameGeometry().size();
+        QPoint position = parent->geometry().center() - QPoint(s.width() / 2, s.height() / 2);
+        // Make sure the window's title bar doesn't move outside the screen area:
+        if(position.x() < 0) position.setX(0);
+        if(position.y() < 0) position.setY(0);
+        move(position);
+    }
 
-	// Create a separate progress bar for every new active task.
-	connect(&taskManager, &TaskManager::taskStarted, this, std::move(createUIForTask));
+    // Create a separate progress bar for every new active task.
+    connect(&taskManager, &TaskManager::taskStarted, this, std::move(createUIForTask));
 
-	// Show the dialog with a short delay.
-	// This prevents the dialog from showing up for short tasks that terminate very quickly.
-	QTimer::singleShot(200, this, &QDialog::open);
+    // Show the dialog with a short delay.
+    // This prevents the dialog from showing up for short tasks that terminate very quickly.
+    QTimer::singleShot(200, this, &QDialog::open);
 }
 
 /******************************************************************************
@@ -129,13 +129,13 @@ ProgressDialog::ProgressDialog(QWidget* parent, TaskPtr task, const QString& dia
 ******************************************************************************/
 void ProgressDialog::closeEvent(QCloseEvent* event)
 {
-	// Cancel the root operation associated with this dialog.
-	_task->cancel();
+    // Cancel the root operation associated with this dialog.
+    _task->cancel();
 
-	if(event->spontaneous())
-		event->ignore();
+    if(event->spontaneous())
+        event->ignore();
 
-	QDialog::closeEvent(event);
+    QDialog::closeEvent(event);
 }
 
 /******************************************************************************
@@ -143,8 +143,8 @@ void ProgressDialog::closeEvent(QCloseEvent* event)
 ******************************************************************************/
 void ProgressDialog::reject()
 {
-	// Cancel the root operation associated with this dialog.
-	_task->cancel();
+    // Cancel the root operation associated with this dialog.
+    _task->cancel();
 }
 
-}	// End of namespace
+}   // End of namespace

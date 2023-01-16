@@ -35,32 +35,32 @@ using namespace Ovito::StdMod;
  */
 class ParticlesDeleteSelectedModifierDelegate : public DeleteSelectedModifierDelegate
 {
-	/// Give the modifier delegate its own metaclass.
-	class OOMetaClass : public DeleteSelectedModifierDelegate::OOMetaClass
-	{
-	public:
+    /// Give the modifier delegate its own metaclass.
+    class OOMetaClass : public DeleteSelectedModifierDelegate::OOMetaClass
+    {
+    public:
 
-		/// Inherit constructor from base class.
-		using DeleteSelectedModifierDelegate::OOMetaClass::OOMetaClass;
+        /// Inherit constructor from base class.
+        using DeleteSelectedModifierDelegate::OOMetaClass::OOMetaClass;
 
-		/// Indicates which data objects in the given input data collection the modifier delegate is able to operate on.
-		virtual QVector<DataObjectReference> getApplicableObjects(const DataCollection& input) const override;
+        /// Indicates which data objects in the given input data collection the modifier delegate is able to operate on.
+        virtual QVector<DataObjectReference> getApplicableObjects(const DataCollection& input) const override;
 
-		/// The name by which Python scripts can refer to this modifier delegate.
-		virtual QString pythonDataName() const override { return QStringLiteral("particles"); }
-	};
+        /// The name by which Python scripts can refer to this modifier delegate.
+        virtual QString pythonDataName() const override { return QStringLiteral("particles"); }
+    };
 
-	OVITO_CLASS_META(ParticlesDeleteSelectedModifierDelegate, OOMetaClass)
+    OVITO_CLASS_META(ParticlesDeleteSelectedModifierDelegate, OOMetaClass)
 
-	Q_CLASSINFO("DisplayName", "Particles");
+    Q_CLASSINFO("DisplayName", "Particles");
 
 public:
 
-	/// Constructor.
-	Q_INVOKABLE ParticlesDeleteSelectedModifierDelegate(ObjectCreationParams params) : DeleteSelectedModifierDelegate(params) {}
+    /// Constructor.
+    Q_INVOKABLE ParticlesDeleteSelectedModifierDelegate(ObjectCreationParams params) : DeleteSelectedModifierDelegate(params) {}
 
-	/// Applies the modifier operation to the data in a pipeline flow state.
-	virtual PipelineStatus apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const PipelineFlowState& inputState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs) override;
+    /// Applies the modifier operation to the data in a pipeline flow state.
+    virtual PipelineStatus apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const PipelineFlowState& inputState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs) override;
 };
 
 /**
@@ -68,32 +68,32 @@ public:
  */
 class BondsDeleteSelectedModifierDelegate : public DeleteSelectedModifierDelegate
 {
-	/// Give the modifier delegate its own metaclass.
-	class OOMetaClass : public DeleteSelectedModifierDelegate::OOMetaClass
-	{
-	public:
+    /// Give the modifier delegate its own metaclass.
+    class OOMetaClass : public DeleteSelectedModifierDelegate::OOMetaClass
+    {
+    public:
 
-		/// Inherit constructor from base class.
-		using DeleteSelectedModifierDelegate::OOMetaClass::OOMetaClass;
+        /// Inherit constructor from base class.
+        using DeleteSelectedModifierDelegate::OOMetaClass::OOMetaClass;
 
-		/// Indicates which data objects in the given input data collection the modifier delegate is able to operate on.
-		virtual QVector<DataObjectReference> getApplicableObjects(const DataCollection& input) const override;
+        /// Indicates which data objects in the given input data collection the modifier delegate is able to operate on.
+        virtual QVector<DataObjectReference> getApplicableObjects(const DataCollection& input) const override;
 
-		/// The name by which Python scripts can refer to this modifier delegate.
-		virtual QString pythonDataName() const override { return QStringLiteral("bonds"); }
-	};
+        /// The name by which Python scripts can refer to this modifier delegate.
+        virtual QString pythonDataName() const override { return QStringLiteral("bonds"); }
+    };
 
-	OVITO_CLASS_META(BondsDeleteSelectedModifierDelegate, OOMetaClass)
+    OVITO_CLASS_META(BondsDeleteSelectedModifierDelegate, OOMetaClass)
 
-	Q_CLASSINFO("DisplayName", "Bonds");
+    Q_CLASSINFO("DisplayName", "Bonds");
 
 public:
 
-	/// Constructor.
-	Q_INVOKABLE BondsDeleteSelectedModifierDelegate(ObjectCreationParams params) : DeleteSelectedModifierDelegate(params) {}
+    /// Constructor.
+    Q_INVOKABLE BondsDeleteSelectedModifierDelegate(ObjectCreationParams params) : DeleteSelectedModifierDelegate(params) {}
 
-	/// Applies the modifier operation to the data in a pipeline flow state.
-	virtual PipelineStatus apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const PipelineFlowState& inputState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs) override;
+    /// Applies the modifier operation to the data in a pipeline flow state.
+    virtual PipelineStatus apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const PipelineFlowState& inputState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs) override;
 };
 
-}	// End of namespace
+}   // End of namespace

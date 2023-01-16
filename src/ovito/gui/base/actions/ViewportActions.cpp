@@ -33,19 +33,19 @@ namespace Ovito {
 ******************************************************************************/
 void ActionManager::on_ViewportMaximize_triggered()
 {
-	userInterface().handleExceptions([&] {
-		ViewportConfiguration* vpconf = dataset()->viewportConfig();
-		if(vpconf->maximizedViewport()) {
-			vpconf->setMaximizedViewport(nullptr);
-		}
-		else if(vpconf->activeViewport()) {
-			vpconf->setMaximizedViewport(vpconf->activeViewport());
-		}
-		// Remember which viewport was maximized across program sessions.
-		// The same viewport will be maximized next time OVITO is started.
-		ViewportSettings::getSettings().setDefaultMaximizedViewportType(vpconf->maximizedViewport() ? vpconf->maximizedViewport()->viewType() : Viewport::VIEW_NONE);
-		ViewportSettings::getSettings().save();
-	});
+    userInterface().handleExceptions([&] {
+        ViewportConfiguration* vpconf = dataset()->viewportConfig();
+        if(vpconf->maximizedViewport()) {
+            vpconf->setMaximizedViewport(nullptr);
+        }
+        else if(vpconf->activeViewport()) {
+            vpconf->setMaximizedViewport(vpconf->activeViewport());
+        }
+        // Remember which viewport was maximized across program sessions.
+        // The same viewport will be maximized next time OVITO is started.
+        ViewportSettings::getSettings().setDefaultMaximizedViewportType(vpconf->maximizedViewport() ? vpconf->maximizedViewport()->viewType() : Viewport::VIEW_NONE);
+        ViewportSettings::getSettings().save();
+    });
 }
 
 /******************************************************************************
@@ -53,14 +53,14 @@ void ActionManager::on_ViewportMaximize_triggered()
 ******************************************************************************/
 void ActionManager::on_ViewportZoomSceneExtents_triggered()
 {
-	ViewportConfiguration* vpconf = dataset()->viewportConfig();
+    ViewportConfiguration* vpconf = dataset()->viewportConfig();
 
-	userInterface().handleExceptions([&] {
-		if(vpconf->activeViewport() && !QGuiApplication::keyboardModifiers().testFlag(Qt::ControlModifier))
-			vpconf->activeViewport()->zoomToSceneExtents();
-		else
-			vpconf->zoomToSceneExtents();
-	});
+    userInterface().handleExceptions([&] {
+        if(vpconf->activeViewport() && !QGuiApplication::keyboardModifiers().testFlag(Qt::ControlModifier))
+            vpconf->activeViewport()->zoomToSceneExtents();
+        else
+            vpconf->zoomToSceneExtents();
+    });
 }
 
 /******************************************************************************
@@ -68,9 +68,9 @@ void ActionManager::on_ViewportZoomSceneExtents_triggered()
 ******************************************************************************/
 void ActionManager::on_ViewportZoomSceneExtentsAll_triggered()
 {
-	userInterface().handleExceptions([&] {
-		dataset()->viewportConfig()->zoomToSceneExtents();
-	});
+    userInterface().handleExceptions([&] {
+        dataset()->viewportConfig()->zoomToSceneExtents();
+    });
 }
 
 /******************************************************************************
@@ -78,11 +78,11 @@ void ActionManager::on_ViewportZoomSceneExtentsAll_triggered()
 ******************************************************************************/
 void ActionManager::on_ViewportZoomSelectionExtents_triggered()
 {
-	userInterface().handleExceptions([&] {
-		ViewportConfiguration* vpconf = dataset()->viewportConfig();
-		if(vpconf->activeViewport())
-			vpconf->activeViewport()->zoomToSelectionExtents();
-	});
+    userInterface().handleExceptions([&] {
+        ViewportConfiguration* vpconf = dataset()->viewportConfig();
+        if(vpconf->activeViewport())
+            vpconf->activeViewport()->zoomToSelectionExtents();
+    });
 }
 
 /******************************************************************************
@@ -90,9 +90,9 @@ void ActionManager::on_ViewportZoomSelectionExtents_triggered()
 ******************************************************************************/
 void ActionManager::on_ViewportZoomSelectionExtentsAll_triggered()
 {
-	userInterface().handleExceptions([&] {
-		dataset()->viewportConfig()->zoomToSelectionExtents();
-	});
+    userInterface().handleExceptions([&] {
+        dataset()->viewportConfig()->zoomToSelectionExtents();
+    });
 }
 
-}	// End of namespace
+}   // End of namespace

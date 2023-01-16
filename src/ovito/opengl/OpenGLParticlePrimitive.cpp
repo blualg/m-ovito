@@ -33,18 +33,18 @@ namespace Ovito {
 ******************************************************************************/
 void OpenGLSceneRenderer::renderParticlesImplementation(const ParticlePrimitive& primitive)
 {
-	OVITO_REPORT_OPENGL_ERRORS(this);
+    OVITO_REPORT_OPENGL_ERRORS(this);
 
     // Make sure there is something to be rendered. Otherwise, step out early.
-	if(!primitive.positions() || primitive.positions()->size() == 0)
-		return;
-	if(primitive.indices() && primitive.indices()->size() == 0)
+    if(!primitive.positions() || primitive.positions()->size() == 0)
+        return;
+    if(primitive.indices() && primitive.indices()->size() == 0)
         return;
 
-	rebindVAO();
+    rebindVAO();
 
-	// Activate the right OpenGL shader program.
-	OpenGLShaderHelper shader(this);
+    // Activate the right OpenGL shader program.
+    OpenGLShaderHelper shader(this);
     switch(primitive.particleShape()) {
         case ParticlePrimitive::SquareCubicShape:
             if(primitive.shadingMode() == ParticlePrimitive::NormalShading) {
@@ -204,7 +204,7 @@ void OpenGLSceneRenderer::renderParticlesImplementation(const ParticlePrimitive&
     }
 
     // The effective number of particles being rendered:
-	shader.setInstanceCount(primitive.indices() ? primitive.indices()->size() : primitive.positions()->size());
+    shader.setInstanceCount(primitive.indices() ? primitive.indices()->size() : primitive.positions()->size());
 
     // Check size limits.
     int bytesPerVertex = (primitive.particleShape() == ParticlePrimitive::BoxShape || primitive.particleShape() == ParticlePrimitive::EllipsoidShape || primitive.particleShape() == ParticlePrimitive::SuperquadricShape) 
@@ -216,13 +216,13 @@ void OpenGLSceneRenderer::renderParticlesImplementation(const ParticlePrimitive&
 
     // Are we rendering semi-transparent particles?
     bool useBlending = !isPicking() && (primitive.transparencies() != nullptr) && !orderIndependentTransparency();
-	if(useBlending) shader.enableBlending();
+    if(useBlending) shader.enableBlending();
 
-	// Pass picking base ID to shader.
-	if(isPicking()) {
-		shader.setPickingBaseId(registerSubObjectIDs(primitive.positions()->size(), primitive.indices()));
-	}
-	OVITO_REPORT_OPENGL_ERRORS(this);
+    // Pass picking base ID to shader.
+    if(isPicking()) {
+        shader.setPickingBaseId(registerSubObjectIDs(primitive.positions()->size(), primitive.indices()));
+    }
+    OVITO_REPORT_OPENGL_ERRORS(this);
 
     // Put positions and radii into one combined OpenGL buffer with 4 floats per particle.
     // Radii are optional and may be substituted with a uniform radius value.
@@ -259,13 +259,13 @@ void OpenGLSceneRenderer::renderParticlesImplementation(const ParticlePrimitive&
         }
     });
 
-	// Bind vertex buffer to vertex attributes.
-	shader.bindBuffer(positionRadiusBuffer, "position", GL_FLOAT, 3, sizeof(Vector_4<float>), 0, OpenGLShaderHelper::PerInstance);
+    // Bind vertex buffer to vertex attributes.
+    shader.bindBuffer(positionRadiusBuffer, "position", GL_FLOAT, 3, sizeof(Vector_4<float>), 0, OpenGLShaderHelper::PerInstance);
 
-	// Radius attribute is only required for certain particle shapes.
+    // Radius attribute is only required for certain particle shapes.
     if(primitive.particleShape() != ParticlePrimitive::BoxShape && primitive.particleShape() != ParticlePrimitive::EllipsoidShape && primitive.particleShape() != ParticlePrimitive::SuperquadricShape) {
-		shader.bindBuffer(positionRadiusBuffer, "radius", GL_FLOAT, 1, sizeof(Vector_4<float>), sizeof(Vector_3<float>), OpenGLShaderHelper::PerInstance);
-	}
+        shader.bindBuffer(positionRadiusBuffer, "radius", GL_FLOAT, 1, sizeof(Vector_4<float>), sizeof(Vector_3<float>), OpenGLShaderHelper::PerInstance);
+    }
 
     if(!isPicking()) {
 
@@ -349,7 +349,7 @@ void OpenGLSceneRenderer::renderParticlesImplementation(const ParticlePrimitive&
         });
 
         // Bind color vertex buffer.
-		shader.bindBuffer(colorSelectionBuffer, "color", GL_FLOAT, 4, sizeof(ColorAT<float>), 0, OpenGLShaderHelper::PerInstance);
+        shader.bindBuffer(colorSelectionBuffer, "color", GL_FLOAT, 4, sizeof(ColorAT<float>), 0, OpenGLShaderHelper::PerInstance);
     }
 
     // For box-shaped and ellipsoid particles, we need the shape/orientation vertex attribute.
@@ -451,10 +451,10 @@ void OpenGLSceneRenderer::renderParticlesImplementation(const ParticlePrimitive&
         });
 
         // Bind shape/orientation vertex buffer.
-		GLuint attrIndex = shader.shaderObject().attributeLocation("shape_orientation");
-		for(int i = 0; i < 4; i++)
-			shader.bindBuffer(shapeOrientationBuffer, attrIndex + i, GL_FLOAT, 4, sizeof(Matrix_4<float>), i * sizeof(Vector_4<float>), OpenGLShaderHelper::PerInstance);
-	}
+        GLuint attrIndex = shader.shaderObject().attributeLocation("shape_orientation");
+        for(int i = 0; i < 4; i++)
+            shader.bindBuffer(shapeOrientationBuffer, attrIndex + i, GL_FLOAT, 4, sizeof(Matrix_4<float>), i * sizeof(Vector_4<float>), OpenGLShaderHelper::PerInstance);
+    }
 
     // For superquadric particles, we need to prepare the roundness vertex attribute.
     if(primitive.particleShape() == ParticlePrimitive::SuperquadricShape) {
@@ -487,12 +487,12 @@ void OpenGLSceneRenderer::renderParticlesImplementation(const ParticlePrimitive&
         });
 
         // Bind vertex buffer.
-		shader.bindBuffer(roundnessBuffer, "roundness", GL_FLOAT, 2, sizeof(Vector_2<float>), 0, OpenGLShaderHelper::PerInstance);
+        shader.bindBuffer(roundnessBuffer, "roundness", GL_FLOAT, 2, sizeof(Vector_2<float>), 0, OpenGLShaderHelper::PerInstance);
     }
 
     if(!useBlending) {
         // Draw triangle strip instances in regular storage order (unsorted).
-		shader.drawArrays(GL_TRIANGLE_STRIP);
+        shader.drawArrays(GL_TRIANGLE_STRIP);
     }
     else {
         // Render the particles in back-to-front order. 
@@ -536,9 +536,9 @@ void OpenGLSceneRenderer::renderParticlesImplementation(const ParticlePrimitive&
 
             return sortedIndices;
         });
-	}
+    }
 
-	OVITO_REPORT_OPENGL_ERRORS(this);
+    OVITO_REPORT_OPENGL_ERRORS(this);
 }
 
-}	// End of namespace
+}   // End of namespace

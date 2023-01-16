@@ -39,65 +39,65 @@ namespace Ovito::Particles {
  */
 class OVITO_PARTICLES_EXPORT BondsVis : public DataVis
 {
-	OVITO_CLASS(BondsVis)
-	Q_CLASSINFO("DisplayName", "Bonds");
+    OVITO_CLASS(BondsVis)
+    Q_CLASSINFO("DisplayName", "Bonds");
 
     Q_PROPERTY(Ovito::Particles::BondsVis::ShadingMode shadingMode READ shadingMode WRITE setShadingMode)
 
 public:
 
-	/// The shading modes supported by the bonds vis element.
-	enum ShadingMode {
-		NormalShading = CylinderPrimitive::ShadingMode::NormalShading,
-		FlatShading = CylinderPrimitive::ShadingMode::FlatShading
-	};
-	Q_ENUM(ShadingMode);
+    /// The shading modes supported by the bonds vis element.
+    enum ShadingMode {
+        NormalShading = CylinderPrimitive::ShadingMode::NormalShading,
+        FlatShading = CylinderPrimitive::ShadingMode::FlatShading
+    };
+    Q_ENUM(ShadingMode);
 
-	/// The coloring modes supported by the vis element.
-	enum ColoringMode {
-		UniformColoring,
-		ByTypeColoring,
-		ParticleBasedColoring
-	};
-	Q_ENUM(ColoringMode);	
+    /// The coloring modes supported by the vis element.
+    enum ColoringMode {
+        UniformColoring,
+        ByTypeColoring,
+        ParticleBasedColoring
+    };
+    Q_ENUM(ColoringMode);   
 
-	/// Constructor.
-	Q_INVOKABLE BondsVis(ObjectCreationParams params);
+    /// Constructor.
+    Q_INVOKABLE BondsVis(ObjectCreationParams params);
 
-	/// Renders the visual element.
-	virtual PipelineStatus render(AnimationTime time, const ConstDataObjectPath& path, const PipelineFlowState& flowState, SceneRenderer* renderer, const PipelineSceneNode* contextNode) override;
+    /// Renders the visual element.
+    virtual PipelineStatus render(AnimationTime time, const ConstDataObjectPath& path, const PipelineFlowState& flowState, SceneRenderer* renderer, const PipelineSceneNode* contextNode) override;
 
-	/// Computes the bounding box of the visual element.
-	virtual Box3 boundingBox(AnimationTime time, const ConstDataObjectPath& path, const PipelineSceneNode* contextNode, const PipelineFlowState& flowState, MixedKeyCache& visCache, TimeInterval& validityInterval) override;
+    /// Computes the bounding box of the visual element.
+    virtual Box3 boundingBox(AnimationTime time, const ConstDataObjectPath& path, const PipelineSceneNode* contextNode, const PipelineFlowState& flowState, MixedKeyCache& visCache, TimeInterval& validityInterval) override;
 
-	/// Returns the display color used for selected bonds.
-	Color selectionBondColor() const { return Color(1,0,0); }
+    /// Returns the display color used for selected bonds.
+    Color selectionBondColor() const { return Color(1,0,0); }
 
-	/// Determines the display colors of half-bonds.
-	/// Returns an array with two colors per full bond, because the two half-bonds may have different colors.
-	std::vector<Color> halfBondColors(const ParticlesObject* particles, bool highlightSelection, ColoringMode coloringMode, bool ignoreBondColorProperty) const;
+    /// Determines the display colors of half-bonds.
+    /// Returns an array with two colors per full bond, because the two half-bonds may have different colors.
+    std::vector<Color> halfBondColors(const ParticlesObject* particles, bool highlightSelection, ColoringMode coloringMode, bool ignoreBondColorProperty) const;
 
-	/// Determines the bond widths used for rendering.
-	ConstPropertyPtr bondWidths(const BondsObject* bonds) const;
-
-protected:
-
-	/// Allows the object to parse the serialized contents of a property field in a custom way.
-	virtual bool loadPropertyFieldFromStream(ObjectLoadStream& stream, const RefMakerClass::SerializedClassInfo::PropertyFieldInfo& serializedField) override;
+    /// Determines the bond widths used for rendering.
+    ConstPropertyPtr bondWidths(const BondsObject* bonds) const;
 
 protected:
 
-	/// Display width of bonds.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType, bondWidth, setBondWidth, PROPERTY_FIELD_MEMORIZE);
+    /// Allows the object to parse the serialized contents of a property field in a custom way.
+    virtual bool loadPropertyFieldFromStream(ObjectLoadStream& stream, const RefMakerClass::SerializedClassInfo::PropertyFieldInfo& serializedField) override;
 
-	/// Uniform display color of the bonds.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(Color, bondColor, setBondColor, PROPERTY_FIELD_MEMORIZE);
+protected:
 
-	/// Shading mode for bond rendering.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(BondsVis::ShadingMode, shadingMode, setShadingMode, PROPERTY_FIELD_MEMORIZE);
+    /// Display width of bonds.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType, bondWidth, setBondWidth, PROPERTY_FIELD_MEMORIZE);
 
-	/// Determines how the bonds are colored.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(BondsVis::ColoringMode, coloringMode, setColoringMode, PROPERTY_FIELD_MEMORIZE);
+    /// Uniform display color of the bonds.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(Color, bondColor, setBondColor, PROPERTY_FIELD_MEMORIZE);
+
+    /// Shading mode for bond rendering.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(BondsVis::ShadingMode, shadingMode, setShadingMode, PROPERTY_FIELD_MEMORIZE);
+
+    /// Determines how the bonds are colored.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(BondsVis::ColoringMode, coloringMode, setColoringMode, PROPERTY_FIELD_MEMORIZE);
 };
 
 /**
@@ -106,29 +106,29 @@ protected:
  */
 class OVITO_PARTICLES_EXPORT BondPickInfo : public ObjectPickInfo
 {
-	OVITO_CLASS(BondPickInfo)
+    OVITO_CLASS(BondPickInfo)
 
 public:
 
-	/// Constructor.
-	BondPickInfo(DataOORef<const ParticlesObject> particles, DataOORef<const SimulationCellObject> simulationCell) : _particles(std::move(particles)), _simulationCell(std::move(simulationCell)) {}
+    /// Constructor.
+    BondPickInfo(DataOORef<const ParticlesObject> particles, DataOORef<const SimulationCellObject> simulationCell) : _particles(std::move(particles)), _simulationCell(std::move(simulationCell)) {}
 
-	/// Returns the particles object.
-	const DataOORef<const ParticlesObject>& particles() const { OVITO_ASSERT(_particles); return _particles; }
+    /// Returns the particles object.
+    const DataOORef<const ParticlesObject>& particles() const { OVITO_ASSERT(_particles); return _particles; }
 
-	/// Returns the simulation cell.
-	const DataOORef<const SimulationCellObject>& simulationCell() const { return _simulationCell; }
+    /// Returns the simulation cell.
+    const DataOORef<const SimulationCellObject>& simulationCell() const { return _simulationCell; }
 
-	/// Returns a human-readable string describing the picked object, which will be displayed in the status bar by OVITO.
-	virtual QString infoString(PipelineSceneNode* objectNode, quint32 subobjectId) override;
+    /// Returns a human-readable string describing the picked object, which will be displayed in the status bar by OVITO.
+    virtual QString infoString(PipelineSceneNode* objectNode, quint32 subobjectId) override;
 
 private:
 
-	/// The particles object.
-	DataOORef<const ParticlesObject> _particles;
+    /// The particles object.
+    DataOORef<const ParticlesObject> _particles;
 
-	/// The simulation cell object.
-	DataOORef<const SimulationCellObject> _simulationCell;
+    /// The simulation cell object.
+    DataOORef<const SimulationCellObject> _simulationCell;
 };
 
-}	// End of namespace
+}   // End of namespace

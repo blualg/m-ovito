@@ -38,18 +38,18 @@ OvitoClass* OvitoClass::_firstMetaClass{};
 * Constructor used for non-templated classes.
 ******************************************************************************/
 OvitoClass::OvitoClass(const QString& name, OvitoClassPtr superClass, const char* pluginId, const QMetaObject* qtClassInfo) :
-	_name(name),
-	_displayName(name),
-	_superClass(superClass),
-	_pluginId(pluginId),
-	_qtClassInfo(qtClassInfo)
+    _name(name),
+    _displayName(name),
+    _superClass(superClass),
+    _pluginId(pluginId),
+    _qtClassInfo(qtClassInfo)
 {
-	OVITO_ASSERT(superClass != nullptr || name == QStringLiteral("OvitoObject"));
-	OVITO_ASSERT(pluginId != nullptr);
+    OVITO_ASSERT(superClass != nullptr || name == QStringLiteral("OvitoObject"));
+    OVITO_ASSERT(pluginId != nullptr);
 
-	// Insert into linked list of all object types.
-	_nextMetaclass = _firstMetaClass;
-	_firstMetaClass = this;
+    // Insert into linked list of all object types.
+    _nextMetaclass = _firstMetaClass;
+    _firstMetaClass = this;
 }
 
 /******************************************************************************
@@ -57,34 +57,34 @@ OvitoClass::OvitoClass(const QString& name, OvitoClassPtr superClass, const char
 ******************************************************************************/
 void OvitoClass::initialize()
 {
-	// Class must have been initialized with a plugin id.
-	OVITO_ASSERT(_pluginId != nullptr);
+    // Class must have been initialized with a plugin id.
+    OVITO_ASSERT(_pluginId != nullptr);
 
-	// Remove namespace qualifier from Qt's class name.
-	if(qtMetaObject()) {
-		// Mark classes as abstract that don't have an invokable constructor.
-		setAbstract(qtMetaObject()->constructorCount() == 0);
+    // Remove namespace qualifier from Qt's class name.
+    if(qtMetaObject()) {
+        // Mark classes as abstract that don't have an invokable constructor.
+        setAbstract(qtMetaObject()->constructorCount() == 0);
 
-		_pureClassName = qtMetaObject()->className();
-		for(const char* p = _pureClassName; *p != '\0'; p++) {
-			if(p[0] == ':' && p[1] == ':') {
-				p++;
-				_pureClassName = p+1;
-			}
-		}
+        _pureClassName = qtMetaObject()->className();
+        for(const char* p = _pureClassName; *p != '\0'; p++) {
+            if(p[0] == ':' && p[1] == ':') {
+                p++;
+                _pureClassName = p+1;
+            }
+        }
 
-		// Fetch display name assigned to the Qt object class.
-		if(int idx = qtMetaObject()->indexOfClassInfo("DisplayName"); idx >= 0)
-			setDisplayName(QString::fromLocal8Bit(qtMetaObject()->classInfo(idx).value()));
-		
-		// Load name alias assigned to the Qt object class.
-		if(int idx = qtMetaObject()->indexOfClassInfo("ClassNameAlias"); idx >= 0)
-			setNameAlias(QString::fromLocal8Bit(qtMetaObject()->classInfo(idx).value()));
-	}
-	else {
-		// Templated classes are always abstract.
-		setAbstract(true);
-	}
+        // Fetch display name assigned to the Qt object class.
+        if(int idx = qtMetaObject()->indexOfClassInfo("DisplayName"); idx >= 0)
+            setDisplayName(QString::fromLocal8Bit(qtMetaObject()->classInfo(idx).value()));
+        
+        // Load name alias assigned to the Qt object class.
+        if(int idx = qtMetaObject()->indexOfClassInfo("ClassNameAlias"); idx >= 0)
+            setNameAlias(QString::fromLocal8Bit(qtMetaObject()->classInfo(idx).value()));
+    }
+    else {
+        // Templated classes are always abstract.
+        setAbstract(true);
+    }
 }
 
 /******************************************************************************
@@ -92,11 +92,11 @@ void OvitoClass::initialize()
 ******************************************************************************/
 QString OvitoClass::descriptionString() const
 {
-	OVITO_ASSERT(qtMetaObject());
-	int index = qtMetaObject()->indexOfClassInfo("Description");
-	if(index >= 0)
-		return QString::fromUtf8(qtMetaObject()->classInfo(index).value());
-	return QString();
+    OVITO_ASSERT(qtMetaObject());
+    int index = qtMetaObject()->indexOfClassInfo("Description");
+    if(index >= 0)
+        return QString::fromUtf8(qtMetaObject()->classInfo(index).value());
+    return QString();
 }
 
 /******************************************************************************
@@ -104,8 +104,8 @@ QString OvitoClass::descriptionString() const
 ******************************************************************************/
 bool OvitoClass::isMember(const OvitoObject* obj) const
 {
-	if(!obj) return false;
-	return obj->getOOClass().isDerivedFrom(*this);
+    if(!obj) return false;
+    return obj->getOOClass().isDerivedFrom(*this);
 }
 
 /******************************************************************************
@@ -114,33 +114,33 @@ bool OvitoClass::isMember(const OvitoObject* obj) const
 ******************************************************************************/
 OORef<OvitoObject> OvitoClass::createInstance() const
 {
-	if(plugin()) {
-		OVITO_CHECK_POINTER(plugin());
-		if(!plugin()->isLoaded()) {
-			OVITO_ASSERT(!QCoreApplication::instance() || QThread::currentThread() == QCoreApplication::instance()->thread());
-			// Load plugin first.
-			try {
-				plugin()->loadPlugin();
-			}
-			catch(Exception& ex) {
-				ex.prependGeneralMessage(OvitoObject::tr("Could not create instance of class %1. Failed to load plugin '%2'").arg(name()).arg(plugin()->pluginId()));
-				throw ex;
-			}
-		}
-	}
-	if(isAbstract())
-		throw Exception(OvitoObject::tr("Cannot instantiate abstract class '%1'.").arg(name()));
+    if(plugin()) {
+        OVITO_CHECK_POINTER(plugin());
+        if(!plugin()->isLoaded()) {
+            OVITO_ASSERT(!QCoreApplication::instance() || QThread::currentThread() == QCoreApplication::instance()->thread());
+            // Load plugin first.
+            try {
+                plugin()->loadPlugin();
+            }
+            catch(Exception& ex) {
+                ex.prependGeneralMessage(OvitoObject::tr("Could not create instance of class %1. Failed to load plugin '%2'").arg(name()).arg(plugin()->pluginId()));
+                throw ex;
+            }
+        }
+    }
+    if(isAbstract())
+        throw Exception(OvitoObject::tr("Cannot instantiate abstract class '%1'.").arg(name()));
 
-	// Special handling of RefTarget-derived classes.
-	if(isDerivedFrom(RefTarget::OOClass())) {
-		return createInstance(ObjectCreationParams(
-			ExecutionContext::isInteractive() 
-				? ObjectCreationParams::LoadUserDefaults 
-				: ObjectCreationParams::NoFlags));
-	}
+    // Special handling of RefTarget-derived classes.
+    if(isDerivedFrom(RefTarget::OOClass())) {
+        return createInstance(ObjectCreationParams(
+            ExecutionContext::isInteractive() 
+                ? ObjectCreationParams::LoadUserDefaults 
+                : ObjectCreationParams::NoFlags));
+    }
 
-	// Instantiate the class.
-	return createInstanceImpl({});
+    // Instantiate the class.
+    return createInstanceImpl({});
 }
 
 /******************************************************************************
@@ -148,7 +148,7 @@ OORef<OvitoObject> OvitoClass::createInstance() const
 ******************************************************************************/
 OORef<RefTarget> OvitoClass::createInstance(ObjectCreationParams::InitializationFlags initFlags) const
 {
-	return createInstance(ObjectCreationParams(initFlags));
+    return createInstance(ObjectCreationParams(initFlags));
 }
 
 /******************************************************************************
@@ -157,36 +157,36 @@ OORef<RefTarget> OvitoClass::createInstance(ObjectCreationParams::Initialization
 ******************************************************************************/
 OORef<RefTarget> OvitoClass::createInstance(ObjectCreationParams params) const
 {
-	if(plugin()) {
-		OVITO_CHECK_POINTER(plugin());
-		if(!plugin()->isLoaded()) {
-			OVITO_ASSERT(!QCoreApplication::instance() || QThread::currentThread() == QCoreApplication::instance()->thread());
-			// Load plugin first.
-			try {
-				plugin()->loadPlugin();
-			}
-			catch(Exception& ex) {
-				ex.prependGeneralMessage(OvitoObject::tr("Could not create instance of class %1. Failed to load plugin '%2'").arg(name()).arg(plugin()->pluginId()));
-				throw ex;
-			}
-		}
-	}
-	if(isAbstract())
-		throw Exception(OvitoObject::tr("Cannot instantiate abstract class '%1'.").arg(name()));
+    if(plugin()) {
+        OVITO_CHECK_POINTER(plugin());
+        if(!plugin()->isLoaded()) {
+            OVITO_ASSERT(!QCoreApplication::instance() || QThread::currentThread() == QCoreApplication::instance()->thread());
+            // Load plugin first.
+            try {
+                plugin()->loadPlugin();
+            }
+            catch(Exception& ex) {
+                ex.prependGeneralMessage(OvitoObject::tr("Could not create instance of class %1. Failed to load plugin '%2'").arg(name()).arg(plugin()->pluginId()));
+                throw ex;
+            }
+        }
+    }
+    if(isAbstract())
+        throw Exception(OvitoObject::tr("Cannot instantiate abstract class '%1'.").arg(name()));
 
-	OVITO_ASSERT_MSG(isDerivedFrom(RefTarget::OOClass()), "OvitoClass::createInstance()", "This method overload must only be used to instantiate RefTarget-derived classes.");
+    OVITO_ASSERT_MSG(isDerivedFrom(RefTarget::OOClass()), "OvitoClass::createInstance()", "This method overload must only be used to instantiate RefTarget-derived classes.");
 
-	// Don't record object initialization on the undo stack.
-	UndoSuspender noUndo;
+    // Don't record object initialization on the undo stack.
+    UndoSuspender noUndo;
 
-	// Instantiate the class.
-	OORef<RefTarget> obj = static_object_cast<RefTarget>(createInstanceImpl(params));
+    // Instantiate the class.
+    OORef<RefTarget> obj = static_object_cast<RefTarget>(createInstanceImpl(params));
 
-	// Initialize the parameters of the new object to default values.
-	if(params.loadUserDefaults())
-		obj->initializeParametersToUserDefaults();
+    // Initialize the parameters of the new object to default values.
+    if(params.loadUserDefaults())
+        obj->initializeParametersToUserDefaults();
 
-	return obj;
+    return obj;
 }
 
 /******************************************************************************
@@ -195,35 +195,35 @@ OORef<RefTarget> OvitoClass::createInstance(ObjectCreationParams params) const
 OvitoObject* OvitoClass::createInstanceImpl(ObjectCreationParams params) const
 {
 #ifdef OVITO_DEBUG
-	// Check if class hierarchy is consistent.
-	OvitoClassPtr ovitoSuperClass = superClass();
-	while(ovitoSuperClass && ovitoSuperClass->qtMetaObject() == nullptr)
-		ovitoSuperClass = ovitoSuperClass->superClass();
-	OVITO_ASSERT(ovitoSuperClass != nullptr);
-	const QMetaObject* qtSuperClass = qtMetaObject()->superClass();
-	while(qtSuperClass && qtSuperClass != ovitoSuperClass->qtMetaObject())
-		qtSuperClass = qtSuperClass->superClass();
-	OVITO_ASSERT_MSG(qtSuperClass != nullptr, "OvitoClass::createInstanceImpl", qPrintable(QString("Class %1 is not derived from base class %2 as specified by the object type descriptor. Qt super class is %3.").arg(name()).arg(superClass()->name()).arg(qtMetaObject()->superClass()->className())));
+    // Check if class hierarchy is consistent.
+    OvitoClassPtr ovitoSuperClass = superClass();
+    while(ovitoSuperClass && ovitoSuperClass->qtMetaObject() == nullptr)
+        ovitoSuperClass = ovitoSuperClass->superClass();
+    OVITO_ASSERT(ovitoSuperClass != nullptr);
+    const QMetaObject* qtSuperClass = qtMetaObject()->superClass();
+    while(qtSuperClass && qtSuperClass != ovitoSuperClass->qtMetaObject())
+        qtSuperClass = qtSuperClass->superClass();
+    OVITO_ASSERT_MSG(qtSuperClass != nullptr, "OvitoClass::createInstanceImpl", qPrintable(QString("Class %1 is not derived from base class %2 as specified by the object type descriptor. Qt super class is %3.").arg(name()).arg(superClass()->name()).arg(qtMetaObject()->superClass()->className())));
 #endif
 
-	OvitoObject* obj;
+    OvitoObject* obj;
 
-	if(isDerivedFrom(RefTarget::OOClass())) {
-		obj = qobject_cast<OvitoObject*>(qtMetaObject()->newInstance(Q_ARG(ObjectCreationParams, params)));
-	}
-	else {
-		obj = qobject_cast<OvitoObject*>(qtMetaObject()->newInstance());
-	}
+    if(isDerivedFrom(RefTarget::OOClass())) {
+        obj = qobject_cast<OvitoObject*>(qtMetaObject()->newInstance(Q_ARG(ObjectCreationParams, params)));
+    }
+    else {
+        obj = qobject_cast<OvitoObject*>(qtMetaObject()->newInstance());
+    }
 
-	if(!obj)
-		throw Exception(OvitoObject::tr("Failed to instantiate class '%1'.").arg(name()));
+    if(!obj)
+        throw Exception(OvitoObject::tr("Failed to instantiate class '%1'.").arg(name()));
 
 #ifdef OVITO_DEBUG
-	// Mark the object as having been allocated on the heap.
-	obj->_isAllocatedOnTheHeap = true;
+    // Mark the object as having been allocated on the heap.
+    obj->_isAllocatedOnTheHeap = true;
 #endif
 
-	return obj;
+    return obj;
 }
 
 /******************************************************************************
@@ -231,15 +231,15 @@ OvitoObject* OvitoClass::createInstanceImpl(ObjectCreationParams params) const
 ******************************************************************************/
 void OvitoClass::serializeRTTI(SaveStream& stream, OvitoClassPtr type)
 {
-	stream.beginChunk(0x10000000);
-	if(type) {
-		stream << type->plugin()->pluginId();
-		stream << type->name();
-	}
-	else {
-		stream << QString() << QString();
-	}
-	stream.endChunk();
+    stream.beginChunk(0x10000000);
+    if(type) {
+        stream << type->plugin()->pluginId();
+        stream << type->name();
+    }
+    else {
+        stream << QString() << QString();
+    }
+    stream.endChunk();
 }
 
 /******************************************************************************
@@ -248,49 +248,49 @@ void OvitoClass::serializeRTTI(SaveStream& stream, OvitoClassPtr type)
 ******************************************************************************/
 OvitoClassPtr OvitoClass::deserializeRTTI(LoadStream& stream)
 {
-	QString pluginId, className;
-	stream.expectChunk(0x10000000);
-	stream >> pluginId;
-	stream >> className;
-	stream.closeChunk();
+    QString pluginId, className;
+    stream.expectChunk(0x10000000);
+    stream >> pluginId;
+    stream >> className;
+    stream.closeChunk();
 
-	if(pluginId.isEmpty() && className.isEmpty())
-		return nullptr;
+    if(pluginId.isEmpty() && className.isEmpty())
+        return nullptr;
 
-	try {
-		// Look plugin.
-		Plugin* plugin = PluginManager::instance().plugin(pluginId);
-		if(!plugin) {
+    try {
+        // Look plugin.
+        Plugin* plugin = PluginManager::instance().plugin(pluginId);
+        if(!plugin) {
 
-			// If plugin does not exist anymore, fall back to searching other plugins for the requested class.
-			for(Plugin* otherPlugin : PluginManager::instance().plugins()) {
-				if(OvitoClassPtr clazz = otherPlugin->findClass(className))
-					return clazz;
-			}
+            // If plugin does not exist anymore, fall back to searching other plugins for the requested class.
+            for(Plugin* otherPlugin : PluginManager::instance().plugins()) {
+                if(OvitoClassPtr clazz = otherPlugin->findClass(className))
+                    return clazz;
+            }
 
-			throw Exception(OvitoObject::tr("A required plugin is not installed: %1").arg(pluginId));
-		}
-		OVITO_CHECK_POINTER(plugin);
+            throw Exception(OvitoObject::tr("A required plugin is not installed: %1").arg(pluginId));
+        }
+        OVITO_CHECK_POINTER(plugin);
 
-		// Look up class descriptor.
-		OvitoClassPtr clazz = plugin->findClass(className);
-		if(!clazz) {
+        // Look up class descriptor.
+        OvitoClassPtr clazz = plugin->findClass(className);
+        if(!clazz) {
 
-			// If class does not exist in the plugin anymore, fall back to searching other plugins for the requested class.
-			for(Plugin* otherPlugin : PluginManager::instance().plugins()) {
-				if(OvitoClassPtr clazz = otherPlugin->findClass(className))
-					return clazz;
-			}
+            // If class does not exist in the plugin anymore, fall back to searching other plugins for the requested class.
+            for(Plugin* otherPlugin : PluginManager::instance().plugins()) {
+                if(OvitoClassPtr clazz = otherPlugin->findClass(className))
+                    return clazz;
+            }
 
-			throw Exception(OvitoObject::tr("Required class '%1' not found in plugin '%2'.").arg(className, pluginId));
-		}
+            throw Exception(OvitoObject::tr("Required class '%1' not found in plugin '%2'.").arg(className, pluginId));
+        }
 
-		return clazz;
-	}
-	catch(Exception& ex) {
-		ex.prependGeneralMessage(OvitoObject::tr("File cannot be loaded, because it contains object types that are not (or no longer) available in this program version."));
-		throw ex;
-	}
+        return clazz;
+    }
+    catch(Exception& ex) {
+        ex.prependGeneralMessage(OvitoObject::tr("File cannot be loaded, because it contains object types that are not (or no longer) available in this program version."));
+        throw ex;
+    }
 }
 
 /******************************************************************************
@@ -298,8 +298,8 @@ OvitoClassPtr OvitoClass::deserializeRTTI(LoadStream& stream)
 ******************************************************************************/
 QString OvitoClass::encodeAsString(OvitoClassPtr type)
 {
-	OVITO_CHECK_POINTER(type);
-	return type->plugin()->pluginId() + QStringLiteral("::") + type->name();
+    OVITO_CHECK_POINTER(type);
+    return type->plugin()->pluginId() + QStringLiteral("::") + type->name();
 }
 
 /******************************************************************************
@@ -307,38 +307,38 @@ QString OvitoClass::encodeAsString(OvitoClassPtr type)
 ******************************************************************************/
 OvitoClassPtr OvitoClass::decodeFromString(const QString& str)
 {
-	QStringList tokens = str.split(QStringLiteral("::"));
-	if(tokens.size() != 2)
-		throw Exception(OvitoObject::tr("Invalid type or encoding: %1").arg(str));
+    QStringList tokens = str.split(QStringLiteral("::"));
+    if(tokens.size() != 2)
+        throw Exception(OvitoObject::tr("Invalid type or encoding: %1").arg(str));
 
-	// Look up plugin.
-	Plugin* plugin = PluginManager::instance().plugin(tokens[0]);
-	if(!plugin) {
+    // Look up plugin.
+    Plugin* plugin = PluginManager::instance().plugin(tokens[0]);
+    if(!plugin) {
 
-		// If plugin does not exist anymore, fall back to searching other plugins for the requested class.
-		for(Plugin* otherPlugin : PluginManager::instance().plugins()) {
-			if(OvitoClassPtr clazz = otherPlugin->findClass(tokens[1]))
-				return clazz;
-		}
+        // If plugin does not exist anymore, fall back to searching other plugins for the requested class.
+        for(Plugin* otherPlugin : PluginManager::instance().plugins()) {
+            if(OvitoClassPtr clazz = otherPlugin->findClass(tokens[1]))
+                return clazz;
+        }
 
-		throw Exception(OvitoObject::tr("A required plugin is not installed: %1").arg(tokens[0]));
-	}
-	OVITO_CHECK_POINTER(plugin);
+        throw Exception(OvitoObject::tr("A required plugin is not installed: %1").arg(tokens[0]));
+    }
+    OVITO_CHECK_POINTER(plugin);
 
-	// Look up class descriptor.
-	OvitoClassPtr clazz = plugin->findClass(tokens[1]);
-	if(!clazz) {
+    // Look up class descriptor.
+    OvitoClassPtr clazz = plugin->findClass(tokens[1]);
+    if(!clazz) {
 
-		// If class does not exist in the plugin anymore, fall back to searching other plugins for the requested class.
-		for(Plugin* otherPlugin : PluginManager::instance().plugins()) {
-			if(OvitoClassPtr clazz = otherPlugin->findClass(tokens[1]))
-				return clazz;
-		}
+        // If class does not exist in the plugin anymore, fall back to searching other plugins for the requested class.
+        for(Plugin* otherPlugin : PluginManager::instance().plugins()) {
+            if(OvitoClassPtr clazz = otherPlugin->findClass(tokens[1]))
+                return clazz;
+        }
 
-		throw Exception(OvitoObject::tr("Required class '%1' not found in plugin '%2'.").arg(tokens[1], tokens[0]));
-	}
+        throw Exception(OvitoObject::tr("Required class '%1' not found in plugin '%2'.").arg(tokens[1], tokens[0]));
+    }
 
-	return clazz;
+    return clazz;
 }
 
-}	// End of namespace
+}   // End of namespace

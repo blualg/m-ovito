@@ -34,26 +34,26 @@ namespace Ovito::CrystalAnalysis {
  */
 class OVITO_CRYSTALANALYSIS_EXPORT ClusterGraphObject : public DataObject
 {
-	OVITO_CLASS(ClusterGraphObject)
+    OVITO_CLASS(ClusterGraphObject)
 
 public:
 
-	/// \brief Constructor.
-	Q_INVOKABLE ClusterGraphObject(ObjectCreationParams params);
+    /// \brief Constructor.
+    Q_INVOKABLE ClusterGraphObject(ObjectCreationParams params);
 
-	/// Returns the title of this object.
-	virtual QString objectTitle() const override { return tr("Clusters"); }
+    /// Returns the title of this object.
+    virtual QString objectTitle() const override { return tr("Clusters"); }
 
-	/// Returns the list of nodes in the cluster graph.
-	const std::vector<Cluster*>& clusters() const { return storage()->clusters(); }
+    /// Returns the list of nodes in the cluster graph.
+    const std::vector<Cluster*>& clusters() const { return storage()->clusters(); }
 
-	/// Looks up the cluster with the given ID.
-	Cluster* findCluster(int id) const { return storage()->findCluster(id); }
+    /// Looks up the cluster with the given ID.
+    Cluster* findCluster(int id) const { return storage()->findCluster(id); }
 
 private:
 
-	/// The internal data.
-	DECLARE_RUNTIME_PROPERTY_FIELD(std::shared_ptr<ClusterGraph>, storage, setStorage);
+    /// The internal data.
+    DECLARE_RUNTIME_PROPERTY_FIELD(std::shared_ptr<ClusterGraph>, storage, setStorage);
 };
 
-}	// End of namespace
+}   // End of namespace

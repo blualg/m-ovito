@@ -37,25 +37,25 @@ SET_OVITO_OBJECT_EDITOR(TriMeshVis, TriMeshVisEditor);
 ******************************************************************************/
 void TriMeshVisEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 {
-	// Create a rollout.
-	QWidget* rollout = createRollout(tr("Triangle mesh display"), rolloutParams, "manual:visual_elements.triangle_mesh");
+    // Create a rollout.
+    QWidget* rollout = createRollout(tr("Triangle mesh display"), rolloutParams, "manual:visual_elements.triangle_mesh");
 
     // Create the rollout contents.
-	QGridLayout* layout = new QGridLayout(rollout);
-	layout->setContentsMargins(4,4,4,4);
-	layout->setSpacing(4);
-	layout->setColumnStretch(1, 1);
+    QGridLayout* layout = new QGridLayout(rollout);
+    layout->setContentsMargins(4,4,4,4);
+    layout->setSpacing(4);
+    layout->setColumnStretch(1, 1);
 
-	ColorParameterUI* colorUI = new ColorParameterUI(this, PROPERTY_FIELD(TriMeshVis::color));
-	layout->addWidget(colorUI->label(), 0, 0);
-	layout->addWidget(colorUI->colorPicker(), 0, 1);
+    ColorParameterUI* colorUI = new ColorParameterUI(this, PROPERTY_FIELD(TriMeshVis::color));
+    layout->addWidget(colorUI->label(), 0, 0);
+    layout->addWidget(colorUI->colorPicker(), 0, 1);
 
-	FloatParameterUI* transparencyUI = new FloatParameterUI(this, PROPERTY_FIELD(TriMeshVis::transparencyController));
-	layout->addWidget(transparencyUI->label(), 1, 0);
-	layout->addLayout(transparencyUI->createFieldLayout(), 1, 1);
+    FloatParameterUI* transparencyUI = new FloatParameterUI(this, PROPERTY_FIELD(TriMeshVis::transparencyController));
+    layout->addWidget(transparencyUI->label(), 1, 0);
+    layout->addLayout(transparencyUI->createFieldLayout(), 1, 1);
 
-	BooleanParameterUI* highlightEdgesUI = new BooleanParameterUI(this, PROPERTY_FIELD(TriMeshVis::highlightEdges));
-	layout->addWidget(highlightEdgesUI->checkBox(), 2, 0, 1, 2);
+    BooleanParameterUI* highlightEdgesUI = new BooleanParameterUI(this, PROPERTY_FIELD(TriMeshVis::highlightEdges));
+    layout->addWidget(highlightEdgesUI->checkBox(), 2, 0, 1, 2);
 }
 
-}	// End of namespace
+}   // End of namespace

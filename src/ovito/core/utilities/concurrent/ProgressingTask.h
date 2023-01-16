@@ -115,10 +115,10 @@ protected:
     qlonglong _progressMaximum = 0;
 
     /// The progress value of the task.
-	qlonglong _totalProgressValue = 0;
+    qlonglong _totalProgressValue = 0;
 
     /// The maximum progress value of the task.
-	qlonglong _totalProgressMaximum = 0;
+    qlonglong _totalProgressMaximum = 0;
 
     /// A description of what this task is currently doing, to be displayed in the GUI.
     QString _progressText;
@@ -131,4 +131,4 @@ protected:
     QElapsedTimer _progressTime;
 };
 
-}	// End of namespace
+}   // End of namespace

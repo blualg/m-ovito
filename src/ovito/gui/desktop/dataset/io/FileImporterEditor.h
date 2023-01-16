@@ -33,17 +33,17 @@ namespace Ovito {
  */
 class OVITO_GUI_EXPORT FileImporterEditor : public PropertiesEditor
 {
-	OVITO_CLASS(FileImporterEditor)
+    OVITO_CLASS(FileImporterEditor)
 
 public:
 
-	/// Constructor.
-	FileImporterEditor() {}
+    /// Constructor.
+    FileImporterEditor() {}
 
-	/// This is called by the system when the user has selected a new file to import.
-	virtual bool inspectNewFile(FileImporter* importer, const QUrl& sourceFile, MainWindow& mainWindow) { return true; }
+    /// This is called by the system when the user has selected a new file to import.
+    virtual bool inspectNewFile(FileImporter* importer, const QUrl& sourceFile, MainWindow& mainWindow) { return true; }
 };
 
-}	// End of namespace
+}   // End of namespace
 
 

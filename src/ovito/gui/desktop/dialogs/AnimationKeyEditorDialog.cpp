@@ -35,387 +35,387 @@ namespace Ovito {
 
 class NumericalItemDelegate : public QStyledItemDelegate
 {
-	ParameterUnit* _units;
-	FloatType _minValue, _maxValue;
+    ParameterUnit* _units;
+    FloatType _minValue, _maxValue;
 
 public:
 
-	NumericalItemDelegate(QObject* parent, ParameterUnit* units, FloatType minValue, FloatType maxValue) : QStyledItemDelegate(parent), _units(units), _minValue(minValue), _maxValue(maxValue) {}
+    NumericalItemDelegate(QObject* parent, ParameterUnit* units, FloatType minValue, FloatType maxValue) : QStyledItemDelegate(parent), _units(units), _minValue(minValue), _maxValue(maxValue) {}
 
-	virtual QString displayText(const QVariant& value, const QLocale& locale) const override {
-		if(_units)
-			return _units->formatValue(_units->nativeToUser(value.value<FloatType>()));
-		return value.toString();
-	}
+    virtual QString displayText(const QVariant& value, const QLocale& locale) const override {
+        if(_units)
+            return _units->formatValue(_units->nativeToUser(value.value<FloatType>()));
+        return value.toString();
+    }
 
-	virtual QWidget* createEditor(QWidget* parent, const QStyleOptionViewItem& option, const QModelIndex& index) const override {
-		QWidget* container = new QWidget(parent);
-		QHBoxLayout* layout = new QHBoxLayout(container);
-		layout->setSpacing(0);
-		layout->setContentsMargins(0,0,0,0);
-		QLineEdit* edit = new QLineEdit();
-		edit->setFrame(false);
-		layout->addWidget(edit, 1);
-		container->setFocusProxy(edit);
-		SpinnerWidget* spinner = new SpinnerWidget(nullptr, edit);
-		if(_units) spinner->setUnit(_units);
-		spinner->setMinValue(_minValue);
-		spinner->setMaxValue(_maxValue);
-		layout->addWidget(spinner);
-		connect(spinner, &SpinnerWidget::spinnerValueChanged, [this,container]() {
-			Q_EMIT const_cast<NumericalItemDelegate*>(this)->commitData(container);
-		});
-		return container;
-	}
+    virtual QWidget* createEditor(QWidget* parent, const QStyleOptionViewItem& option, const QModelIndex& index) const override {
+        QWidget* container = new QWidget(parent);
+        QHBoxLayout* layout = new QHBoxLayout(container);
+        layout->setSpacing(0);
+        layout->setContentsMargins(0,0,0,0);
+        QLineEdit* edit = new QLineEdit();
+        edit->setFrame(false);
+        layout->addWidget(edit, 1);
+        container->setFocusProxy(edit);
+        SpinnerWidget* spinner = new SpinnerWidget(nullptr, edit);
+        if(_units) spinner->setUnit(_units);
+        spinner->setMinValue(_minValue);
+        spinner->setMaxValue(_maxValue);
+        layout->addWidget(spinner);
+        connect(spinner, &SpinnerWidget::spinnerValueChanged, [this,container]() {
+            Q_EMIT const_cast<NumericalItemDelegate*>(this)->commitData(container);
+        });
+        return container;
+    }
 
-	virtual void setEditorData(QWidget* editor, const QModelIndex& index) const override {
-		SpinnerWidget* spinner = editor->findChild<SpinnerWidget*>();
-		QVariant data = index.data(Qt::EditRole);
-		if(data.userType() == qMetaTypeId<FloatType>())
-			spinner->setFloatValue(data.value<FloatType>());
-		else if(data.userType() == qMetaTypeId<int>())
-			spinner->setFloatValue(data.toInt());
-	}
+    virtual void setEditorData(QWidget* editor, const QModelIndex& index) const override {
+        SpinnerWidget* spinner = editor->findChild<SpinnerWidget*>();
+        QVariant data = index.data(Qt::EditRole);
+        if(data.userType() == qMetaTypeId<FloatType>())
+            spinner->setFloatValue(data.value<FloatType>());
+        else if(data.userType() == qMetaTypeId<int>())
+            spinner->setFloatValue(data.toInt());
+    }
 
-	virtual void setModelData(QWidget* editor, QAbstractItemModel* model, const QModelIndex& index) const override {
-		SpinnerWidget* spinner = editor->findChild<SpinnerWidget*>();
-		QVariant data = index.data(Qt::EditRole);
-		if(data.userType() == qMetaTypeId<FloatType>())
-			model->setData(index, QVariant::fromValue(spinner->floatValue()));
-		else if(data.userType() == qMetaTypeId<int>())
-			model->setData(index, QVariant::fromValue(spinner->intValue()));
-	}
+    virtual void setModelData(QWidget* editor, QAbstractItemModel* model, const QModelIndex& index) const override {
+        SpinnerWidget* spinner = editor->findChild<SpinnerWidget*>();
+        QVariant data = index.data(Qt::EditRole);
+        if(data.userType() == qMetaTypeId<FloatType>())
+            model->setData(index, QVariant::fromValue(spinner->floatValue()));
+        else if(data.userType() == qMetaTypeId<int>())
+            model->setData(index, QVariant::fromValue(spinner->intValue()));
+    }
 
-	virtual void updateEditorGeometry(QWidget* editor, const QStyleOptionViewItem& option, const QModelIndex& index) const override {
-		editor->setGeometry(option.rect);
-	}
+    virtual void updateEditorGeometry(QWidget* editor, const QStyleOptionViewItem& option, const QModelIndex& index) const override {
+        editor->setGeometry(option.rect);
+    }
 };
 
 class AnimationKeyModel : public QAbstractTableModel
 {
 public:
 
-	/// Constructor.
-	AnimationKeyModel(AnimationKeyEditorDialog& dialog, KeyframeController* ctrl, const PropertyFieldDescriptor* propertyField, QObject* parent = nullptr)
-		: QAbstractTableModel(parent), _dialog(dialog), _animationSettings(dialog._mainWindow.datasetContainer().activeAnimationSettings()), _propertyField(propertyField) {
-		_ctrl.setTarget(ctrl);
-		_ctrlType = ctrl->controllerType();
-		_keys.setTargets(ctrl->keys());
-		connect(&_ctrl, &RefTargetListener<KeyframeController>::notificationEvent, this, &AnimationKeyModel::onCtrlEvent);
-		connect(&_keys, &VectorRefTargetListener<AnimationKey>::notificationEvent, this, &AnimationKeyModel::onKeyEvent);
-	}
+    /// Constructor.
+    AnimationKeyModel(AnimationKeyEditorDialog& dialog, KeyframeController* ctrl, const PropertyFieldDescriptor* propertyField, QObject* parent = nullptr)
+        : QAbstractTableModel(parent), _dialog(dialog), _animationSettings(dialog._mainWindow.datasetContainer().activeAnimationSettings()), _propertyField(propertyField) {
+        _ctrl.setTarget(ctrl);
+        _ctrlType = ctrl->controllerType();
+        _keys.setTargets(ctrl->keys());
+        connect(&_ctrl, &RefTargetListener<KeyframeController>::notificationEvent, this, &AnimationKeyModel::onCtrlEvent);
+        connect(&_keys, &VectorRefTargetListener<AnimationKey>::notificationEvent, this, &AnimationKeyModel::onKeyEvent);
+    }
 
-	/// Returns the animation controller being edited.
-	KeyframeController* ctrl() const { return _ctrl.target(); }
+    /// Returns the animation controller being edited.
+    KeyframeController* ctrl() const { return _ctrl.target(); }
 
-	/// Returns the list of animation keys.
-	const QVector<AnimationKey*>& keys() const { return _keys.targets(); }
+    /// Returns the list of animation keys.
+    const QVector<AnimationKey*>& keys() const { return _keys.targets(); }
 
-	/// Returns the number of rows.
-	virtual int rowCount(const QModelIndex& parent = QModelIndex()) const override {
-		if(parent.isValid()) return 0;
-		return keys().size();
-	}
+    /// Returns the number of rows.
+    virtual int rowCount(const QModelIndex& parent = QModelIndex()) const override {
+        if(parent.isValid()) return 0;
+        return keys().size();
+    }
 
-	/// Returns the number of columns.
-	virtual int columnCount(const QModelIndex& parent = QModelIndex()) const override {
-		if(parent.isValid()) return 0;
-		else if(_ctrlType == Controller::ControllerTypeFloat || _ctrlType == Controller::ControllerTypeInt) return 1;
-		else if(_ctrlType == Controller::ControllerTypeVector3 || _ctrlType == Controller::ControllerTypePosition) return 3;
-		else if(_ctrlType == Controller::ControllerTypeRotation) return 4;
-		else return 0;
-	}
+    /// Returns the number of columns.
+    virtual int columnCount(const QModelIndex& parent = QModelIndex()) const override {
+        if(parent.isValid()) return 0;
+        else if(_ctrlType == Controller::ControllerTypeFloat || _ctrlType == Controller::ControllerTypeInt) return 1;
+        else if(_ctrlType == Controller::ControllerTypeVector3 || _ctrlType == Controller::ControllerTypePosition) return 3;
+        else if(_ctrlType == Controller::ControllerTypeRotation) return 4;
+        else return 0;
+    }
 
-	/// Returns the data stored.
-	virtual QVariant data(const QModelIndex& index, int role = Qt::DisplayRole) const override {
-		if(!index.isValid()) return QVariant();
-		if(role == Qt::DisplayRole || role == Qt::EditRole) {
-			int row = index.row();
-			if(row >= 0 && row < keys().size()) {
-				const AnimationKey* key = keys()[row];
-				if(_ctrlType == Controller::ControllerTypeFloat || _ctrlType == Controller::ControllerTypeInt) {
-					return key->valueQVariant();
-				}
-				else if(_ctrlType == Controller::ControllerTypeVector3) {
-					Vector3 v = static_object_cast<Vector3AnimationKey>(key)->value();
-					return QVariant::fromValue(v[index.column()]);
-				}
-				else if(_ctrlType == Controller::ControllerTypePosition) {
-					Vector3 v = static_object_cast<PositionAnimationKey>(key)->value();
-					return QVariant::fromValue(v[index.column()]);
-				}
-				else if(_ctrlType == Controller::ControllerTypeRotation) {
-					Rotation r = static_object_cast<RotationAnimationKey>(key)->value();
-					if(index.column() < 3)
-						return QVariant::fromValue(r.axis()[index.column()]);
-					else
-						return QVariant::fromValue(r.angle());
-				}
-			}
-		}
-		return QVariant();
-	}
+    /// Returns the data stored.
+    virtual QVariant data(const QModelIndex& index, int role = Qt::DisplayRole) const override {
+        if(!index.isValid()) return QVariant();
+        if(role == Qt::DisplayRole || role == Qt::EditRole) {
+            int row = index.row();
+            if(row >= 0 && row < keys().size()) {
+                const AnimationKey* key = keys()[row];
+                if(_ctrlType == Controller::ControllerTypeFloat || _ctrlType == Controller::ControllerTypeInt) {
+                    return key->valueQVariant();
+                }
+                else if(_ctrlType == Controller::ControllerTypeVector3) {
+                    Vector3 v = static_object_cast<Vector3AnimationKey>(key)->value();
+                    return QVariant::fromValue(v[index.column()]);
+                }
+                else if(_ctrlType == Controller::ControllerTypePosition) {
+                    Vector3 v = static_object_cast<PositionAnimationKey>(key)->value();
+                    return QVariant::fromValue(v[index.column()]);
+                }
+                else if(_ctrlType == Controller::ControllerTypeRotation) {
+                    Rotation r = static_object_cast<RotationAnimationKey>(key)->value();
+                    if(index.column() < 3)
+                        return QVariant::fromValue(r.axis()[index.column()]);
+                    else
+                        return QVariant::fromValue(r.angle());
+                }
+            }
+        }
+        return QVariant();
+    }
 
-	/// Returns the item flags for the given index.
-	virtual Qt::ItemFlags flags(const QModelIndex& index) const override {
-		if(!index.isValid())
-			return QAbstractTableModel::flags(index);
-		return Qt::ItemFlags(Qt::ItemIsSelectable | Qt::ItemIsEnabled | Qt::ItemIsEditable);
-	}
+    /// Returns the item flags for the given index.
+    virtual Qt::ItemFlags flags(const QModelIndex& index) const override {
+        if(!index.isValid())
+            return QAbstractTableModel::flags(index);
+        return Qt::ItemFlags(Qt::ItemIsSelectable | Qt::ItemIsEnabled | Qt::ItemIsEditable);
+    }
 
-	/// Sets the role data for the item at index to value.
-	virtual bool setData(const QModelIndex& index, const QVariant& value, int role) override {
-		if(index.isValid() && role == Qt::EditRole) {
-			int row = index.row();
-			if(row >= 0 && row < keys().size()) {
-				return _dialog._mainWindow.performTransaction(tr("Change animation key value"), [&]() {
-					AnimationKey* key = keys()[row];
-					if(_ctrlType == Controller::ControllerTypeFloat || _ctrlType == Controller::ControllerTypeInt) {
-						key->setValueQVariant(value);
-					}
-					else if(_ctrlType == Controller::ControllerTypeVector3) {
-						Vector3 vec = static_object_cast<Vector3AnimationKey>(key)->value();
-						vec[index.column()] = value.value<FloatType>();
-						static_object_cast<Vector3AnimationKey>(key)->setValue(vec);
-					}
-					else if(_ctrlType == Controller::ControllerTypePosition) {
-						Vector3 vec = static_object_cast<PositionAnimationKey>(key)->value();
-						vec[index.column()] = value.value<FloatType>();
-						static_object_cast<PositionAnimationKey>(key)->setValue(vec);
-					}
-					else if(_ctrlType == Controller::ControllerTypeRotation) {
-						Rotation r = static_object_cast<RotationAnimationKey>(key)->value();
-						if(index.column() < 3) {
-							Vector3 axis = r.axis();
-							axis[index.column()] = value.value<FloatType>();
-							axis.normalizeSafely();
-							r.setAxis(axis);
-						}
-						else if(index.column() == 3) {
-							r.setAngle(value.value<FloatType>());
-						}
-						static_object_cast<RotationAnimationKey>(key)->setValue(r);
-					}
-				});
-			}
-		}
-		return false;
-	}
+    /// Sets the role data for the item at index to value.
+    virtual bool setData(const QModelIndex& index, const QVariant& value, int role) override {
+        if(index.isValid() && role == Qt::EditRole) {
+            int row = index.row();
+            if(row >= 0 && row < keys().size()) {
+                return _dialog._mainWindow.performTransaction(tr("Change animation key value"), [&]() {
+                    AnimationKey* key = keys()[row];
+                    if(_ctrlType == Controller::ControllerTypeFloat || _ctrlType == Controller::ControllerTypeInt) {
+                        key->setValueQVariant(value);
+                    }
+                    else if(_ctrlType == Controller::ControllerTypeVector3) {
+                        Vector3 vec = static_object_cast<Vector3AnimationKey>(key)->value();
+                        vec[index.column()] = value.value<FloatType>();
+                        static_object_cast<Vector3AnimationKey>(key)->setValue(vec);
+                    }
+                    else if(_ctrlType == Controller::ControllerTypePosition) {
+                        Vector3 vec = static_object_cast<PositionAnimationKey>(key)->value();
+                        vec[index.column()] = value.value<FloatType>();
+                        static_object_cast<PositionAnimationKey>(key)->setValue(vec);
+                    }
+                    else if(_ctrlType == Controller::ControllerTypeRotation) {
+                        Rotation r = static_object_cast<RotationAnimationKey>(key)->value();
+                        if(index.column() < 3) {
+                            Vector3 axis = r.axis();
+                            axis[index.column()] = value.value<FloatType>();
+                            axis.normalizeSafely();
+                            r.setAxis(axis);
+                        }
+                        else if(index.column() == 3) {
+                            r.setAngle(value.value<FloatType>());
+                        }
+                        static_object_cast<RotationAnimationKey>(key)->setValue(r);
+                    }
+                });
+            }
+        }
+        return false;
+    }
 
-	/// Returns the data for the given role and section in the header with the specified orientation.
-	virtual QVariant headerData(int section, Qt::Orientation orientation, int role) const override {
-		if(orientation == Qt::Horizontal && role == Qt::DisplayRole) {
-			if(_ctrlType == Controller::ControllerTypeFloat || _ctrlType == Controller::ControllerTypeInt) {
-				return _propertyField->displayName();
-			}
-			else if(_ctrlType == Controller::ControllerTypeVector3 || _ctrlType == Controller::ControllerTypePosition) {
-				if(section == 0) return _propertyField->displayName() + QString(" (X)");
-				else if(section == 1) return _propertyField->displayName() + QString(" (Y)");
-				else if(section == 2) return _propertyField->displayName() + QString(" (Z)");
-			}
-			else if(_ctrlType == Controller::ControllerTypeRotation) {
-				if(section == 0) return _propertyField->displayName() + QString(" (Axis X)");
-				else if(section == 1) return _propertyField->displayName() + QString(" (Axis Y)");
-				else if(section == 2) return _propertyField->displayName() + QString(" (Axis Z)");
-				else if(section == 3) return _propertyField->displayName() + QString(" (Angle)");
-			}
-		}
-		else if(orientation == Qt::Vertical && role == Qt::DisplayRole) {
-			if(section >= 0 && section < keys().size() && _animationSettings) {
-				const AnimationKey* key = keys()[section];
-				return QVariant::fromValue(tr("Time: %1").arg(_animationSettings->timeToString(key->time())));
-			}
-		}
-		return QAbstractTableModel::headerData(section, orientation, role);
-	}
+    /// Returns the data for the given role and section in the header with the specified orientation.
+    virtual QVariant headerData(int section, Qt::Orientation orientation, int role) const override {
+        if(orientation == Qt::Horizontal && role == Qt::DisplayRole) {
+            if(_ctrlType == Controller::ControllerTypeFloat || _ctrlType == Controller::ControllerTypeInt) {
+                return _propertyField->displayName();
+            }
+            else if(_ctrlType == Controller::ControllerTypeVector3 || _ctrlType == Controller::ControllerTypePosition) {
+                if(section == 0) return _propertyField->displayName() + QString(" (X)");
+                else if(section == 1) return _propertyField->displayName() + QString(" (Y)");
+                else if(section == 2) return _propertyField->displayName() + QString(" (Z)");
+            }
+            else if(_ctrlType == Controller::ControllerTypeRotation) {
+                if(section == 0) return _propertyField->displayName() + QString(" (Axis X)");
+                else if(section == 1) return _propertyField->displayName() + QString(" (Axis Y)");
+                else if(section == 2) return _propertyField->displayName() + QString(" (Axis Z)");
+                else if(section == 3) return _propertyField->displayName() + QString(" (Angle)");
+            }
+        }
+        else if(orientation == Qt::Vertical && role == Qt::DisplayRole) {
+            if(section >= 0 && section < keys().size() && _animationSettings) {
+                const AnimationKey* key = keys()[section];
+                return QVariant::fromValue(tr("Time: %1").arg(_animationSettings->timeToString(key->time())));
+            }
+        }
+        return QAbstractTableModel::headerData(section, orientation, role);
+    }
 
-	/// Is called when the animation controller generates a notification event.
-	void onCtrlEvent(RefTarget* source, const ReferenceEvent& event) {
-		if(event.type() == ReferenceEvent::ReferenceRemoved) {
-			const ReferenceFieldEvent& refEvent = static_cast<const ReferenceFieldEvent&>(event);
-			if(refEvent.field() == PROPERTY_FIELD(KeyframeController::keys)) {
-				int index = keys().indexOf(static_object_cast<AnimationKey>(refEvent.oldTarget()));
-				if(index >= 0) {
-					beginRemoveRows(QModelIndex(), index, index);
-					_keys.remove(index);
-					endRemoveRows();
-				}
-				OVITO_ASSERT(keys().size() == ctrl()->keys().size());
-			}
-		}
-		else if(event.type() == ReferenceEvent::ReferenceAdded) {
-			const ReferenceFieldEvent& refEvent = static_cast<const ReferenceFieldEvent&>(event);
-			if(refEvent.field() == PROPERTY_FIELD(KeyframeController::keys)) {
-				OVITO_ASSERT(keys().size() == ctrl()->keys().size() - 1);
-				beginInsertRows(QModelIndex(), refEvent.index(), refEvent.index());
-				_keys.insert(refEvent.index(), static_object_cast<AnimationKey>(refEvent.newTarget()));
-				endInsertRows();
-			}
-		}
-		else if(event.type() == ReferenceEvent::ReferenceChanged) {
-			const ReferenceFieldEvent& refEvent = static_cast<const ReferenceFieldEvent&>(event);
-			if(refEvent.field() == PROPERTY_FIELD(KeyframeController::keys)) {
-				OVITO_ASSERT(keys().size() == ctrl()->keys().size());
-				_keys.set(refEvent.index(), static_object_cast<AnimationKey>(refEvent.newTarget()));
-				Q_EMIT dataChanged(createIndex(refEvent.index(), 0), createIndex(refEvent.index(), columnCount() - 1));
-				Q_EMIT headerDataChanged(Qt::Vertical, refEvent.index(), refEvent.index());
-			}
-		}
-	}
+    /// Is called when the animation controller generates a notification event.
+    void onCtrlEvent(RefTarget* source, const ReferenceEvent& event) {
+        if(event.type() == ReferenceEvent::ReferenceRemoved) {
+            const ReferenceFieldEvent& refEvent = static_cast<const ReferenceFieldEvent&>(event);
+            if(refEvent.field() == PROPERTY_FIELD(KeyframeController::keys)) {
+                int index = keys().indexOf(static_object_cast<AnimationKey>(refEvent.oldTarget()));
+                if(index >= 0) {
+                    beginRemoveRows(QModelIndex(), index, index);
+                    _keys.remove(index);
+                    endRemoveRows();
+                }
+                OVITO_ASSERT(keys().size() == ctrl()->keys().size());
+            }
+        }
+        else if(event.type() == ReferenceEvent::ReferenceAdded) {
+            const ReferenceFieldEvent& refEvent = static_cast<const ReferenceFieldEvent&>(event);
+            if(refEvent.field() == PROPERTY_FIELD(KeyframeController::keys)) {
+                OVITO_ASSERT(keys().size() == ctrl()->keys().size() - 1);
+                beginInsertRows(QModelIndex(), refEvent.index(), refEvent.index());
+                _keys.insert(refEvent.index(), static_object_cast<AnimationKey>(refEvent.newTarget()));
+                endInsertRows();
+            }
+        }
+        else if(event.type() == ReferenceEvent::ReferenceChanged) {
+            const ReferenceFieldEvent& refEvent = static_cast<const ReferenceFieldEvent&>(event);
+            if(refEvent.field() == PROPERTY_FIELD(KeyframeController::keys)) {
+                OVITO_ASSERT(keys().size() == ctrl()->keys().size());
+                _keys.set(refEvent.index(), static_object_cast<AnimationKey>(refEvent.newTarget()));
+                Q_EMIT dataChanged(createIndex(refEvent.index(), 0), createIndex(refEvent.index(), columnCount() - 1));
+                Q_EMIT headerDataChanged(Qt::Vertical, refEvent.index(), refEvent.index());
+            }
+        }
+    }
 
-	/// Is called when an animation key generates a notification event.
-	void onKeyEvent(RefTarget* source, const ReferenceEvent& event) {
-		if(event.type() == ReferenceEvent::TargetChanged) {
-			int index = keys().indexOf(static_object_cast<AnimationKey>(source));
-			OVITO_ASSERT(index >= 0);
-			Q_EMIT dataChanged(createIndex(index, 0), createIndex(index, columnCount() - 1));
-			Q_EMIT headerDataChanged(Qt::Vertical, index, index);
-		}
-		else if(event.type() == ReferenceEvent::TargetDeleted) {
-			int index = keys().indexOf(static_object_cast<AnimationKey>(source));
-			OVITO_ASSERT(index >= 0);
-			beginRemoveRows(QModelIndex(), index, index);
-			_keys.remove(index);
-			endRemoveRows();
-		}
-	}
+    /// Is called when an animation key generates a notification event.
+    void onKeyEvent(RefTarget* source, const ReferenceEvent& event) {
+        if(event.type() == ReferenceEvent::TargetChanged) {
+            int index = keys().indexOf(static_object_cast<AnimationKey>(source));
+            OVITO_ASSERT(index >= 0);
+            Q_EMIT dataChanged(createIndex(index, 0), createIndex(index, columnCount() - 1));
+            Q_EMIT headerDataChanged(Qt::Vertical, index, index);
+        }
+        else if(event.type() == ReferenceEvent::TargetDeleted) {
+            int index = keys().indexOf(static_object_cast<AnimationKey>(source));
+            OVITO_ASSERT(index >= 0);
+            beginRemoveRows(QModelIndex(), index, index);
+            _keys.remove(index);
+            endRemoveRows();
+        }
+    }
 
 private:
 
-	/// The parent dialog window.
-	AnimationKeyEditorDialog& _dialog;
+    /// The parent dialog window.
+    AnimationKeyEditorDialog& _dialog;
 
-	/// The active animation settings.
-	OORef<AnimationSettings> _animationSettings;
+    /// The active animation settings.
+    OORef<AnimationSettings> _animationSettings;
 
-	/// The controller whose keys are being edited.
-	RefTargetListener<KeyframeController> _ctrl;
+    /// The controller whose keys are being edited.
+    RefTargetListener<KeyframeController> _ctrl;
 
-	/// The list of keys.
-	VectorRefTargetListener<AnimationKey> _keys;
+    /// The list of keys.
+    VectorRefTargetListener<AnimationKey> _keys;
 
-	/// The type of controller being edited.
-	Controller::ControllerType _ctrlType;
+    /// The type of controller being edited.
+    Controller::ControllerType _ctrlType;
 
-	/// The property field being animated.
-	const PropertyFieldDescriptor* _propertyField;
+    /// The property field being animated.
+    const PropertyFieldDescriptor* _propertyField;
 };
 
 /******************************************************************************
 * The constructor of the dialog widget.
 ******************************************************************************/
 AnimationKeyEditorDialog::AnimationKeyEditorDialog(KeyframeController* ctrl, const PropertyFieldDescriptor* propertyField, QWidget* parent, MainWindow& mainWindow) :
-	QDialog(parent),
-	UndoableTransaction(mainWindow, tr("Edit animatable parameter")),
-	_mainWindow(mainWindow)
+    QDialog(parent),
+    UndoableTransaction(mainWindow, tr("Edit animatable parameter")),
+    _mainWindow(mainWindow)
 {
-	setWindowTitle(tr("Parameter animation: %1").arg(propertyField->displayName()));
-	_ctrl.setTarget(ctrl);
-	
-	// Make sure the controller has at least one animation key.
-	if(ctrl->keys().empty()) {
-		_mainWindow.performActions(*this, [&] {
-			try { ctrl->createKey(AnimationTime(0)); }
-			catch(const Exception&) {}
-		});
-	}
+    setWindowTitle(tr("Parameter animation: %1").arg(propertyField->displayName()));
+    _ctrl.setTarget(ctrl);
+    
+    // Make sure the controller has at least one animation key.
+    if(ctrl->keys().empty()) {
+        _mainWindow.performActions(*this, [&] {
+            try { ctrl->createKey(AnimationTime(0)); }
+            catch(const Exception&) {}
+        });
+    }
 
-	QVBoxLayout* mainLayout = new QVBoxLayout(this);
+    QVBoxLayout* mainLayout = new QVBoxLayout(this);
 
-	mainLayout->addWidget(new QLabel(tr("Animation keys:")));
-	_tableWidget = new QTableView();
-	AnimationKeyModel* model = new AnimationKeyModel(*this, ctrl, propertyField, _tableWidget);
-	_model = model;
-	QItemSelectionModel* selModel = _tableWidget->selectionModel();
-	_tableWidget->setModel(_model);
-	delete selModel;
-	_tableWidget->setSelectionBehavior(QAbstractItemView::SelectRows);
-	_tableWidget->setEditTriggers(QAbstractItemView::AllEditTriggers);
+    mainLayout->addWidget(new QLabel(tr("Animation keys:")));
+    _tableWidget = new QTableView();
+    AnimationKeyModel* model = new AnimationKeyModel(*this, ctrl, propertyField, _tableWidget);
+    _model = model;
+    QItemSelectionModel* selModel = _tableWidget->selectionModel();
+    _tableWidget->setModel(_model);
+    delete selModel;
+    _tableWidget->setSelectionBehavior(QAbstractItemView::SelectRows);
+    _tableWidget->setEditTriggers(QAbstractItemView::AllEditTriggers);
 
-	mainLayout->addStrut(model->columnCount() * 120 + 100);
+    mainLayout->addStrut(model->columnCount() * 120 + 100);
 
-	ParameterUnit* units = nullptr;
-	FloatType minValue = FLOATTYPE_MIN;
-	FloatType maxValue = FLOATTYPE_MAX;
-	if(propertyField->numericalParameterInfo()) {
-		minValue = propertyField->numericalParameterInfo()->minValue;
-		maxValue = propertyField->numericalParameterInfo()->maxValue;
-		if(propertyField->numericalParameterInfo()->unitType != nullptr)
-			units = mainWindow.unitsManager().getUnit(propertyField->numericalParameterInfo()->unitType);
-	}
+    ParameterUnit* units = nullptr;
+    FloatType minValue = FLOATTYPE_MIN;
+    FloatType maxValue = FLOATTYPE_MAX;
+    if(propertyField->numericalParameterInfo()) {
+        minValue = propertyField->numericalParameterInfo()->minValue;
+        maxValue = propertyField->numericalParameterInfo()->maxValue;
+        if(propertyField->numericalParameterInfo()->unitType != nullptr)
+            units = mainWindow.unitsManager().getUnit(propertyField->numericalParameterInfo()->unitType);
+    }
 
-	if(ctrl->controllerType() != Controller::ControllerTypeRotation) {
-		NumericalItemDelegate* numericalDelegate = new NumericalItemDelegate(_tableWidget, units, minValue, maxValue);
-		for(int col = 0; col < model->columnCount(); col++)
-			_tableWidget->setItemDelegateForColumn(col, numericalDelegate);
-	}
-	else {
-		NumericalItemDelegate* axisDelegate = new NumericalItemDelegate(_tableWidget, mainWindow.unitsManager().worldUnit(), FLOATTYPE_MIN, FLOATTYPE_MAX);
-		NumericalItemDelegate* angleDelegate = new NumericalItemDelegate(_tableWidget, mainWindow.unitsManager().angleUnit(), FLOATTYPE_MIN, FLOATTYPE_MAX);
-		_tableWidget->setItemDelegateForColumn(0, axisDelegate);
-		_tableWidget->setItemDelegateForColumn(1, axisDelegate);
-		_tableWidget->setItemDelegateForColumn(2, axisDelegate);
-		_tableWidget->setItemDelegateForColumn(3, angleDelegate);
-	}
+    if(ctrl->controllerType() != Controller::ControllerTypeRotation) {
+        NumericalItemDelegate* numericalDelegate = new NumericalItemDelegate(_tableWidget, units, minValue, maxValue);
+        for(int col = 0; col < model->columnCount(); col++)
+            _tableWidget->setItemDelegateForColumn(col, numericalDelegate);
+    }
+    else {
+        NumericalItemDelegate* axisDelegate = new NumericalItemDelegate(_tableWidget, mainWindow.unitsManager().worldUnit(), FLOATTYPE_MIN, FLOATTYPE_MAX);
+        NumericalItemDelegate* angleDelegate = new NumericalItemDelegate(_tableWidget, mainWindow.unitsManager().angleUnit(), FLOATTYPE_MIN, FLOATTYPE_MAX);
+        _tableWidget->setItemDelegateForColumn(0, axisDelegate);
+        _tableWidget->setItemDelegateForColumn(1, axisDelegate);
+        _tableWidget->setItemDelegateForColumn(2, axisDelegate);
+        _tableWidget->setItemDelegateForColumn(3, angleDelegate);
+    }
 
-	_tableWidget->resizeColumnsToContents();
+    _tableWidget->resizeColumnsToContents();
 
-	QHBoxLayout* hlayout = new QHBoxLayout();
-	hlayout->setContentsMargins(0,0,0,0);
-	hlayout->setSpacing(0);
-	hlayout->addWidget(_tableWidget, 1);
+    QHBoxLayout* hlayout = new QHBoxLayout();
+    hlayout->setContentsMargins(0,0,0,0);
+    hlayout->setSpacing(0);
+    hlayout->addWidget(_tableWidget, 1);
 
-	QToolBar* toolbar = new QToolBar();
-	toolbar->setOrientation(Qt::Vertical);
-	toolbar->setFloatable(false);
-	_addKeyAction = toolbar->addAction(QIcon::fromTheme("animation_add_key"), tr("Create animation key"));
-	connect(_addKeyAction, &QAction::triggered, this, &AnimationKeyEditorDialog::onAddKey);
-	_deleteKeyAction = toolbar->addAction(QIcon::fromTheme("animation_delete_key"), tr("Delete animation key"));
-	_deleteKeyAction->setEnabled(false);
-	connect(_deleteKeyAction, &QAction::triggered, this, &AnimationKeyEditorDialog::onDeleteKey);
+    QToolBar* toolbar = new QToolBar();
+    toolbar->setOrientation(Qt::Vertical);
+    toolbar->setFloatable(false);
+    _addKeyAction = toolbar->addAction(QIcon::fromTheme("animation_add_key"), tr("Create animation key"));
+    connect(_addKeyAction, &QAction::triggered, this, &AnimationKeyEditorDialog::onAddKey);
+    _deleteKeyAction = toolbar->addAction(QIcon::fromTheme("animation_delete_key"), tr("Delete animation key"));
+    _deleteKeyAction->setEnabled(false);
+    connect(_deleteKeyAction, &QAction::triggered, this, &AnimationKeyEditorDialog::onDeleteKey);
 
-	toolbar->addSeparator();
-	QAction* animSettingsAction = toolbar->addAction(QIcon::fromTheme("animation_settings"), tr("Animation settings..."));
-	connect(animSettingsAction, &QAction::triggered, [this]() {
-		AnimationSettingsDialog(_mainWindow, this).exec();
-	});
+    toolbar->addSeparator();
+    QAction* animSettingsAction = toolbar->addAction(QIcon::fromTheme("animation_settings"), tr("Animation settings..."));
+    connect(animSettingsAction, &QAction::triggered, [this]() {
+        AnimationSettingsDialog(_mainWindow, this).exec();
+    });
 
-	hlayout->addWidget(toolbar);
-	mainLayout->addLayout(hlayout);
+    hlayout->addWidget(toolbar);
+    mainLayout->addLayout(hlayout);
 
-	_keyPropPanel = new PropertiesPanel(mainWindow, this);
-	mainLayout->addWidget(_keyPropPanel);
+    _keyPropPanel = new PropertiesPanel(mainWindow, this);
+    mainLayout->addWidget(_keyPropPanel);
 
-	QDialogButtonBox* buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel | QDialogButtonBox::Help, Qt::Horizontal, this);
-	QPushButton* animSettingsButton = buttonBox->addButton(tr("Animation settings..."), QDialogButtonBox::ActionRole);
-	connect(buttonBox, &QDialogButtonBox::accepted, this, &AnimationKeyEditorDialog::onOk);
-	connect(buttonBox, &QDialogButtonBox::rejected, this, &AnimationKeyEditorDialog::reject);
+    QDialogButtonBox* buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel | QDialogButtonBox::Help, Qt::Horizontal, this);
+    QPushButton* animSettingsButton = buttonBox->addButton(tr("Animation settings..."), QDialogButtonBox::ActionRole);
+    connect(buttonBox, &QDialogButtonBox::accepted, this, &AnimationKeyEditorDialog::onOk);
+    connect(buttonBox, &QDialogButtonBox::rejected, this, &AnimationKeyEditorDialog::reject);
 
-	// Handler for Animation Settings... button.
-	connect(animSettingsButton, &QPushButton::clicked, mainWindow.actionManager()->getAction(ACTION_ANIMATION_SETTINGS), &QAction::trigger);
+    // Handler for Animation Settings... button.
+    connect(animSettingsButton, &QPushButton::clicked, mainWindow.actionManager()->getAction(ACTION_ANIMATION_SETTINGS), &QAction::trigger);
 
-	// Handler for Help button.
-	connect(buttonBox, &QDialogButtonBox::helpRequested, &mainWindow, [&mainWindow]() {
-		mainWindow.actionManager()->openHelpTopic(QStringLiteral("manual:usage.animation"));
-	});
+    // Handler for Help button.
+    connect(buttonBox, &QDialogButtonBox::helpRequested, &mainWindow, [&mainWindow]() {
+        mainWindow.actionManager()->openHelpTopic(QStringLiteral("manual:usage.animation"));
+    });
 
-	mainLayout->addWidget(buttonBox);
+    mainLayout->addWidget(buttonBox);
 
-	connect(_tableWidget->selectionModel(), &QItemSelectionModel::selectionChanged, [this]() {
-		QModelIndexList selection = _tableWidget->selectionModel()->selectedRows();
-		if(_model->rowCount() > 1 && selection.empty() == false) {
-			_deleteKeyAction->setEnabled(true);
-			const QModelIndex& index = selection.first();
-			OVITO_ASSERT(index.row() >= 0 && index.row() < this->ctrl()->keys().size());
-			_keyPropPanel->setEditObject(this->ctrl()->keys()[index.row()]);
-		}
-		else {
-			_deleteKeyAction->setEnabled(false);
-			_keyPropPanel->setEditObject(nullptr);
-		}
-	});
-	if(_model->rowCount() >= 0)
-		_tableWidget->selectRow(_model->rowCount() - 1);
+    connect(_tableWidget->selectionModel(), &QItemSelectionModel::selectionChanged, [this]() {
+        QModelIndexList selection = _tableWidget->selectionModel()->selectedRows();
+        if(_model->rowCount() > 1 && selection.empty() == false) {
+            _deleteKeyAction->setEnabled(true);
+            const QModelIndex& index = selection.first();
+            OVITO_ASSERT(index.row() >= 0 && index.row() < this->ctrl()->keys().size());
+            _keyPropPanel->setEditObject(this->ctrl()->keys()[index.row()]);
+        }
+        else {
+            _deleteKeyAction->setEnabled(false);
+            _keyPropPanel->setEditObject(nullptr);
+        }
+    });
+    if(_model->rowCount() >= 0)
+        _tableWidget->selectRow(_model->rowCount() - 1);
 }
 
 /******************************************************************************
@@ -423,9 +423,9 @@ AnimationKeyEditorDialog::AnimationKeyEditorDialog(KeyframeController* ctrl, con
 ******************************************************************************/
 void AnimationKeyEditorDialog::onOk()
 {
-	setFocus(); // Remove focus from child widgets to commit newly entered values in text widgets etc.
-	commit();
-	accept();
+    setFocus(); // Remove focus from child widgets to commit newly entered values in text widgets etc.
+    commit();
+    accept();
 }
 
 /******************************************************************************
@@ -433,37 +433,37 @@ void AnimationKeyEditorDialog::onOk()
 ******************************************************************************/
 void AnimationKeyEditorDialog::onAddKey()
 {
-	QDialog dlg(this);
-	dlg.setWindowTitle(tr("New animation key"));
-	QVBoxLayout* mainLayout = new QVBoxLayout(&dlg);
-	QHBoxLayout* subLayout = new QHBoxLayout();
-	subLayout->setContentsMargins(0,0,0,0);
-	subLayout->setSpacing(0);
-	subLayout->addWidget(new QLabel(tr("Create key at animation time:")));
-	subLayout->addSpacing(4);
-	QLineEdit* timeEdit = new QLineEdit();
-	subLayout->addWidget(timeEdit);
-	SpinnerWidget* timeSpinner = new SpinnerWidget();
-	timeSpinner->setTextBox(timeEdit);
-	timeSpinner->setUnit(_mainWindow.unitsManager().integerIdentityUnit());
-	if(AnimationSettings* anim = _mainWindow.datasetContainer().activeAnimationSettings()) {
-		timeSpinner->setIntValue(anim->currentFrame());
-		timeSpinner->setMinValue(anim->firstFrame());
-		timeSpinner->setMaxValue(anim->lastFrame());
-	}
-	else return;
-	subLayout->addWidget(timeSpinner);
-	mainLayout->addLayout(subLayout);
-	QDialogButtonBox* buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, Qt::Horizontal, &dlg);
-	connect(buttonBox, &QDialogButtonBox::accepted, &dlg, &QDialog::accept);
-	connect(buttonBox, &QDialogButtonBox::rejected, &dlg, &QDialog::reject);
-	mainLayout->addWidget(buttonBox);
-	if(dlg.exec() == QDialog::Accepted) {
-		_mainWindow.performActions(*this, [&]() {
-			int index = ctrl()->createKey(AnimationTime::fromFrame(timeSpinner->intValue()));
-			_tableWidget->selectRow(index);
-		});
-	}
+    QDialog dlg(this);
+    dlg.setWindowTitle(tr("New animation key"));
+    QVBoxLayout* mainLayout = new QVBoxLayout(&dlg);
+    QHBoxLayout* subLayout = new QHBoxLayout();
+    subLayout->setContentsMargins(0,0,0,0);
+    subLayout->setSpacing(0);
+    subLayout->addWidget(new QLabel(tr("Create key at animation time:")));
+    subLayout->addSpacing(4);
+    QLineEdit* timeEdit = new QLineEdit();
+    subLayout->addWidget(timeEdit);
+    SpinnerWidget* timeSpinner = new SpinnerWidget();
+    timeSpinner->setTextBox(timeEdit);
+    timeSpinner->setUnit(_mainWindow.unitsManager().integerIdentityUnit());
+    if(AnimationSettings* anim = _mainWindow.datasetContainer().activeAnimationSettings()) {
+        timeSpinner->setIntValue(anim->currentFrame());
+        timeSpinner->setMinValue(anim->firstFrame());
+        timeSpinner->setMaxValue(anim->lastFrame());
+    }
+    else return;
+    subLayout->addWidget(timeSpinner);
+    mainLayout->addLayout(subLayout);
+    QDialogButtonBox* buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, Qt::Horizontal, &dlg);
+    connect(buttonBox, &QDialogButtonBox::accepted, &dlg, &QDialog::accept);
+    connect(buttonBox, &QDialogButtonBox::rejected, &dlg, &QDialog::reject);
+    mainLayout->addWidget(buttonBox);
+    if(dlg.exec() == QDialog::Accepted) {
+        _mainWindow.performActions(*this, [&]() {
+            int index = ctrl()->createKey(AnimationTime::fromFrame(timeSpinner->intValue()));
+            _tableWidget->selectRow(index);
+        });
+    }
 }
 
 /******************************************************************************
@@ -471,15 +471,15 @@ void AnimationKeyEditorDialog::onAddKey()
 ******************************************************************************/
 void AnimationKeyEditorDialog::onDeleteKey()
 {
-	QModelIndexList selection = _tableWidget->selectionModel()->selectedRows();
-	_mainWindow.performActions(*this, [&]() {
-		QVector<AnimationKey*> keysToDelete;
-		for(const QModelIndex& index : selection) {
-			OVITO_ASSERT(index.row() >= 0 && index.row() < ctrl()->keys().size());
-			keysToDelete.push_back(ctrl()->keys()[index.row()]);
-		}
-		ctrl()->deleteKeys(keysToDelete);
-	});
+    QModelIndexList selection = _tableWidget->selectionModel()->selectedRows();
+    _mainWindow.performActions(*this, [&]() {
+        QVector<AnimationKey*> keysToDelete;
+        for(const QModelIndex& index : selection) {
+            OVITO_ASSERT(index.row() >= 0 && index.row() < ctrl()->keys().size());
+            keysToDelete.push_back(ctrl()->keys()[index.row()]);
+        }
+        ctrl()->deleteKeys(keysToDelete);
+    });
 }
 
-}	// End of namespace
+}   // End of namespace

@@ -33,17 +33,17 @@ namespace Ovito::Particles {
  */
 class VoronoiAnalysisModifierEditor : public PropertiesEditor
 {
-	OVITO_CLASS(VoronoiAnalysisModifierEditor)
+    OVITO_CLASS(VoronoiAnalysisModifierEditor)
 
 public:
 
-	/// Default constructor.
-	Q_INVOKABLE VoronoiAnalysisModifierEditor() {}
+    /// Default constructor.
+    Q_INVOKABLE VoronoiAnalysisModifierEditor() {}
 
 protected:
 
-	/// Creates the user interface controls for the editor.
-	virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
+    /// Creates the user interface controls for the editor.
+    virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
 };
 
-}	// End of namespace
+}   // End of namespace

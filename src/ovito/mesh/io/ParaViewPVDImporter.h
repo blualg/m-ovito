@@ -37,64 +37,64 @@ namespace Ovito::Mesh {
  */
 class OVITO_MESH_EXPORT ParaViewPVDImporter : public FileSourceImporter
 {
-	/// Defines a metaclass specialization for this importer type.
-	class OOMetaClass : public FileSourceImporter::OOMetaClass
-	{
-	public:
-	
-		/// Inherit standard constructor from base meta class.
-		using FileSourceImporter::OOMetaClass::OOMetaClass;
+    /// Defines a metaclass specialization for this importer type.
+    class OOMetaClass : public FileSourceImporter::OOMetaClass
+    {
+    public:
+    
+        /// Inherit standard constructor from base meta class.
+        using FileSourceImporter::OOMetaClass::OOMetaClass;
 
-		/// Returns the list of file formats that can be read by this importer class.
-		virtual Ovito::span<const SupportedFormat> supportedFormats() const override {
-			static const SupportedFormat formats[] = {{ QStringLiteral("*.pvd"), tr("ParaView PVD Files") }};
-			return formats;
-		}
+        /// Returns the list of file formats that can be read by this importer class.
+        virtual Ovito::span<const SupportedFormat> supportedFormats() const override {
+            static const SupportedFormat formats[] = {{ QStringLiteral("*.pvd"), tr("ParaView PVD Files") }};
+            return formats;
+        }
 
-		/// Checks if the given file has format that can be read by this importer.
-		virtual bool checkFileFormat(const FileHandle& file) const override;
-	};
+        /// Checks if the given file has format that can be read by this importer.
+        virtual bool checkFileFormat(const FileHandle& file) const override;
+    };
 
-	OVITO_CLASS_META(ParaViewPVDImporter, OOMetaClass)
+    OVITO_CLASS_META(ParaViewPVDImporter, OOMetaClass)
 
 public:
 
-	/// \brief Constructor.
-	Q_INVOKABLE ParaViewPVDImporter(ObjectCreationParams params) : FileSourceImporter(params) {
-		setMultiTimestepFile(true);
-	}
+    /// \brief Constructor.
+    Q_INVOKABLE ParaViewPVDImporter(ObjectCreationParams params) : FileSourceImporter(params) {
+        setMultiTimestepFile(true);
+    }
 
-	/// Returns the title of this object.
-	virtual QString objectTitle() const override { return tr("PVD"); }
+    /// Returns the title of this object.
+    virtual QString objectTitle() const override { return tr("PVD"); }
 
-	/// Loads the data for the given frame from the external file.
-	virtual Future<PipelineFlowState> loadFrame(const LoadOperationRequest& request) override;
+    /// Loads the data for the given frame from the external file.
+    virtual Future<PipelineFlowState> loadFrame(const LoadOperationRequest& request) override;
 
-	/// Creates an asynchronous task for scanning the input file for animation frames.
-	virtual std::shared_ptr<FileSourceImporter::FrameFinder> createFrameFinder(const FileHandle& file) override {
-		return std::make_shared<FrameFinder>(file);
-	}
-
-private:
-
-	/// The asynchronous task that scans the input file for animation frames.
-	class FrameFinder : public FileSourceImporter::FrameFinder
-	{
-	public:
-
-		/// Inherit constructor from base class.
-		using FileSourceImporter::FrameFinder::FrameFinder;
-
-	protected:
-
-		/// Scans the data file and builds a list of source frames.
-		virtual void discoverFramesInFile(QVector<FileSourceImporter::Frame>& frames) override;
-	};
+    /// Creates an asynchronous task for scanning the input file for animation frames.
+    virtual std::shared_ptr<FileSourceImporter::FrameFinder> createFrameFinder(const FileHandle& file) override {
+        return std::make_shared<FrameFinder>(file);
+    }
 
 private:
 
-	/// The delegate importer responsible for parsing the datasets referenced in the PVD file.
-	DECLARE_REFERENCE_FIELD_FLAGS(OORef<FileSourceImporter>, childImporter, PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_NO_CHANGE_MESSAGE | PROPERTY_FIELD_OPEN_SUBEDITOR);
+    /// The asynchronous task that scans the input file for animation frames.
+    class FrameFinder : public FileSourceImporter::FrameFinder
+    {
+    public:
+
+        /// Inherit constructor from base class.
+        using FileSourceImporter::FrameFinder::FrameFinder;
+
+    protected:
+
+        /// Scans the data file and builds a list of source frames.
+        virtual void discoverFramesInFile(QVector<FileSourceImporter::Frame>& frames) override;
+    };
+
+private:
+
+    /// The delegate importer responsible for parsing the datasets referenced in the PVD file.
+    DECLARE_REFERENCE_FIELD_FLAGS(OORef<FileSourceImporter>, childImporter, PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_NO_CHANGE_MESSAGE | PROPERTY_FIELD_OPEN_SUBEDITOR);
 };
 
-}	// End of namespace
+}   // End of namespace

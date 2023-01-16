@@ -35,9 +35,9 @@ SET_PROPERTY_FIELD_LABEL(ModifierGroup, isCollapsed, "Collapsed");
 ******************************************************************************/
 void ModifierGroup::registerModApp(ModifierApplication* modApp) 
 {
-	connect(modApp, &ModifierApplication::objectEvent, this, &ModifierGroup::modAppEvent, Qt::UniqueConnection);
-	updateCombinedStatus();
-	Q_EMIT modifierAdded(modApp);
+    connect(modApp, &ModifierApplication::objectEvent, this, &ModifierGroup::modAppEvent, Qt::UniqueConnection);
+    updateCombinedStatus();
+    Q_EMIT modifierAdded(modApp);
 }
 
 /******************************************************************************
@@ -45,9 +45,9 @@ void ModifierGroup::registerModApp(ModifierApplication* modApp)
 ******************************************************************************/
 void ModifierGroup::unregisterModApp(ModifierApplication* modApp) 
 {
-	disconnect(modApp, &ModifierApplication::objectEvent, this, &ModifierGroup::modAppEvent);
-	updateCombinedStatus();
-	Q_EMIT modifierRemoved(modApp);
+    disconnect(modApp, &ModifierApplication::objectEvent, this, &ModifierGroup::modAppEvent);
+    updateCombinedStatus();
+    Q_EMIT modifierRemoved(modApp);
 }
 
 /******************************************************************************
@@ -55,10 +55,10 @@ void ModifierGroup::unregisterModApp(ModifierApplication* modApp)
 ******************************************************************************/
 void ModifierGroup::modAppEvent(RefTarget* sender, const ReferenceEvent& event)
 {
-	if(event.type() == ReferenceEvent::ObjectStatusChanged) {
-		// Update the group's status whenever the status of one of its members changes.
-		updateCombinedStatus();
-	}
+    if(event.type() == ReferenceEvent::ObjectStatusChanged) {
+        // Update the group's status whenever the status of one of its members changes.
+        updateCombinedStatus();
+    }
 }
 
 /******************************************************************************
@@ -67,35 +67,35 @@ void ModifierGroup::modAppEvent(RefTarget* sender, const ReferenceEvent& event)
 ******************************************************************************/
 void ModifierGroup::updateCombinedStatus()
 {
-	bool isActive = false;
-	PipelineStatus combinedStatus(PipelineStatus::Success);
-	if(isEnabled()) {
-		visitDependents([&](RefMaker* dependent) {
-			if(ModifierApplication* modApp = dynamic_object_cast<ModifierApplication>(dependent)) {
-				OVITO_ASSERT(modApp->modifierGroup() == this);
-				if(modApp->isObjectActive())
-					isActive = true;
+    bool isActive = false;
+    PipelineStatus combinedStatus(PipelineStatus::Success);
+    if(isEnabled()) {
+        visitDependents([&](RefMaker* dependent) {
+            if(ModifierApplication* modApp = dynamic_object_cast<ModifierApplication>(dependent)) {
+                OVITO_ASSERT(modApp->modifierGroup() == this);
+                if(modApp->isObjectActive())
+                    isActive = true;
 
-				if(modApp->modifier() && modApp->modifier()->isEnabled()) {
-					const PipelineStatus& modAppStatus = modApp->status();
-					if(combinedStatus.type() == PipelineStatus::Success || modAppStatus.type() == PipelineStatus::Error)
-						combinedStatus.setType(modAppStatus.type());
-					if(!modAppStatus.text().isEmpty()) {
-						if(!combinedStatus.text().isEmpty())
-							combinedStatus.setText(combinedStatus.text() + QStringLiteral("\n") + modAppStatus.text());
-						else
-							combinedStatus.setText(modAppStatus.text());
-					}
-				}
-			}
-		});
-	}
+                if(modApp->modifier() && modApp->modifier()->isEnabled()) {
+                    const PipelineStatus& modAppStatus = modApp->status();
+                    if(combinedStatus.type() == PipelineStatus::Success || modAppStatus.type() == PipelineStatus::Error)
+                        combinedStatus.setType(modAppStatus.type());
+                    if(!modAppStatus.text().isEmpty()) {
+                        if(!combinedStatus.text().isEmpty())
+                            combinedStatus.setText(combinedStatus.text() + QStringLiteral("\n") + modAppStatus.text());
+                        else
+                            combinedStatus.setText(modAppStatus.text());
+                    }
+                }
+            }
+        });
+    }
 
-	if(!isObjectActive() && isActive)
-		incrementNumberOfActiveTasks();
-	else if(isObjectActive() && !isActive)
-		decrementNumberOfActiveTasks();
-	setStatus(std::move(combinedStatus));
+    if(!isObjectActive() && isActive)
+        incrementNumberOfActiveTasks();
+    else if(isObjectActive() && !isActive)
+        decrementNumberOfActiveTasks();
+    setStatus(std::move(combinedStatus));
 }
 
 /******************************************************************************
@@ -103,30 +103,30 @@ void ModifierGroup::updateCombinedStatus()
 ******************************************************************************/
 QVector<ModifierApplication*> ModifierGroup::modifierApplications() const
 {
-	// Gather the list of modapps that are part of the group.
-	QVector<ModifierApplication*> modApps;
-	visitDependents([&](RefMaker* dependent) {
-		if(ModifierApplication* modApp = dynamic_object_cast<ModifierApplication>(dependent))
-			modApps.push_back(modApp);
-	});
-	if(!modApps.empty()) {
-		// Order the modapps according to their sequence in the data pipeline.
-		boost::sort(modApps, [](ModifierApplication* a, ModifierApplication* b) {
-			return b->isReferencedBy(a);
-		});
+    // Gather the list of modapps that are part of the group.
+    QVector<ModifierApplication*> modApps;
+    visitDependents([&](RefMaker* dependent) {
+        if(ModifierApplication* modApp = dynamic_object_cast<ModifierApplication>(dependent))
+            modApps.push_back(modApp);
+    });
+    if(!modApps.empty()) {
+        // Order the modapps according to their sequence in the data pipeline.
+        boost::sort(modApps, [](ModifierApplication* a, ModifierApplication* b) {
+            return b->isReferencedBy(a);
+        });
 #ifdef OVITO_DEBUG
-		// The input (successor) of the last modapp (the group's tail) should not be part of the modifier group.
-		ModifierApplication* successor = !modApps.empty() ? dynamic_object_cast<ModifierApplication>(modApps.back()->input()) : nullptr;
-		OVITO_ASSERT(!successor || successor->modifierGroup() != this);
-		// All others should be referenced by the group's head modapp. This ensures that the modapps are all from the same pipeline branch.
-		for(ModifierApplication* modApp : modApps) {
-			OVITO_ASSERT(modApp->modifierGroup() == this);
-			OVITO_ASSERT(modApp->isReferencedBy(modApps.front()));
-		}
+        // The input (successor) of the last modapp (the group's tail) should not be part of the modifier group.
+        ModifierApplication* successor = !modApps.empty() ? dynamic_object_cast<ModifierApplication>(modApps.back()->input()) : nullptr;
+        OVITO_ASSERT(!successor || successor->modifierGroup() != this);
+        // All others should be referenced by the group's head modapp. This ensures that the modapps are all from the same pipeline branch.
+        for(ModifierApplication* modApp : modApps) {
+            OVITO_ASSERT(modApp->modifierGroup() == this);
+            OVITO_ASSERT(modApp->isReferencedBy(modApps.front()));
+        }
 #endif
-	}
-	
-	return modApps;
+    }
+    
+    return modApps;
 }
 
 /******************************************************************************
@@ -134,12 +134,12 @@ QVector<ModifierApplication*> ModifierGroup::modifierApplications() const
 ******************************************************************************/
 QSet<PipelineSceneNode*> ModifierGroup::pipelines(bool onlyScenePipelines) const
 {
-	QSet<PipelineSceneNode*> pipelineList;
-	visitDependents([&](RefMaker* dependent) {
-		if(ModifierApplication* modApp = dynamic_object_cast<ModifierApplication>(dependent))
-			pipelineList.unite(modApp->pipelines(onlyScenePipelines));
-	});
-	return pipelineList;
+    QSet<PipelineSceneNode*> pipelineList;
+    visitDependents([&](RefMaker* dependent) {
+        if(ModifierApplication* modApp = dynamic_object_cast<ModifierApplication>(dependent))
+            pipelineList.unite(modApp->pipelines(onlyScenePipelines));
+    });
+    return pipelineList;
 }
 
-}	// End of namespace
+}   // End of namespace

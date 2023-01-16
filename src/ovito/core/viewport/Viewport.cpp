@@ -34,13 +34,13 @@
 #include <ovito/core/app/UserInterface.h>
 
 /// The default field of view in world units used for orthogonal view types when the scene is empty.
-#define DEFAULT_ORTHOGONAL_FIELD_OF_VIEW		FloatType(200)
+#define DEFAULT_ORTHOGONAL_FIELD_OF_VIEW        FloatType(200)
 
 /// The default field of view angle in radians used for perspective view types when the scene is empty.
-#define DEFAULT_PERSPECTIVE_FIELD_OF_VIEW		FloatType(35*FLOATTYPE_PI/180)
+#define DEFAULT_PERSPECTIVE_FIELD_OF_VIEW       FloatType(35*FLOATTYPE_PI/180)
 
 /// Controls the margin size between the overlay render frame and the viewport border.
-#define VIEWPORT_RENDER_FRAME_SIZE				FloatType(0.93)
+#define VIEWPORT_RENDER_FRAME_SIZE              FloatType(0.93)
 
 namespace Ovito {
 
@@ -63,22 +63,22 @@ SET_PROPERTY_FIELD_CHANGE_EVENT(Viewport, viewportTitle, ReferenceEvent::TitleCh
 * Constructor.
 ******************************************************************************/
 Viewport::Viewport(ObjectCreationParams params) : RefTarget(params),
-		_viewType(VIEW_NONE),
-		_fieldOfView(100),
-		_renderPreviewMode(false),
-		_cameraTransformation(AffineTransformation::Identity()),
-		_cameraUpDirection(Vector3::Zero()),
-		_gridMatrix(AffineTransformation::Identity()),
-		_isGridVisible(false)
+        _viewType(VIEW_NONE),
+        _fieldOfView(100),
+        _renderPreviewMode(false),
+        _cameraTransformation(AffineTransformation::Identity()),
+        _cameraUpDirection(Vector3::Zero()),
+        _gridMatrix(AffineTransformation::Identity()),
+        _isGridVisible(false)
 {
-	connect(&ViewportSettings::getSettings(), &ViewportSettings::settingsChanged, this, &Viewport::viewportSettingsChanged);
+    connect(&ViewportSettings::getSettings(), &ViewportSettings::settingsChanged, this, &Viewport::viewportSettingsChanged);
 
-	// Automatically associate the new viewport with the gloabl scene (if there is one).
-	// This is mainly done for the Python interface, where each viewport created by the user is automatically
-	// associated with some scene.
-	if(params.createSubObjects() && ExecutionContext::isScripting()) {
-		setScene(ExecutionContext::current().ui().datasetContainer().activeScene());
-	}
+    // Automatically associate the new viewport with the gloabl scene (if there is one).
+    // This is mainly done for the Python interface, where each viewport created by the user is automatically
+    // associated with some scene.
+    if(params.createSubObjects() && ExecutionContext::isScripting()) {
+        setScene(ExecutionContext::current().ui().datasetContainer().activeScene());
+    }
 }
 
 /******************************************************************************
@@ -86,9 +86,9 @@ Viewport::Viewport(ObjectCreationParams params) : RefTarget(params),
 ******************************************************************************/
 Viewport::~Viewport()
 {
-	// Also destroy the associated GUI window of this viewport when the viewport is deleted.
-	if(_window)
-		_window->destroyViewportWindow();
+    // Also destroy the associated GUI window of this viewport when the viewport is deleted.
+    if(_window)
+        _window->destroyViewportWindow();
 }
 
 /******************************************************************************
@@ -96,97 +96,97 @@ Viewport::~Viewport()
 ******************************************************************************/
 void Viewport::setViewType(ViewType type, bool keepCameraTransformation, bool keepFieldOfView)
 {
-	if(type == viewType())
-		return;
+    if(type == viewType())
+        return;
 
-	// Reset camera node.
-	if(type != VIEW_SCENENODE)
-		setViewNode(nullptr);
+    // Reset camera node.
+    if(type != VIEW_SCENENODE)
+        setViewNode(nullptr);
 
-	// Setup default view.
-	Matrix3 coordSys = ViewportSettings::getSettings().coordinateSystemOrientation();
-	switch(type) {
-		case VIEW_TOP:
-			setCameraTransformation(AffineTransformation(coordSys));
-			setGridMatrix(cameraTransformation());
-			break;
-		case VIEW_BOTTOM:
-			setCameraTransformation(AffineTransformation(coordSys * Matrix3(-1,0,0, 0,1,0, 0,0,-1)));
-			setGridMatrix(cameraTransformation());
-			break;
-		case VIEW_LEFT:
-			setCameraTransformation(AffineTransformation(coordSys * Matrix3(0,0,-1, -1,0,0, 0,1,0)));
-			setGridMatrix(cameraTransformation());
-			break;
-		case VIEW_RIGHT:
-			setCameraTransformation(AffineTransformation(coordSys * Matrix3(0,0,1, 1,0,0, 0,1,0)));
-			setGridMatrix(cameraTransformation());
-			break;
-		case VIEW_FRONT:
-			setCameraTransformation(AffineTransformation(coordSys * Matrix3(1,0,0, 0,0,-1, 0,1,0)));
-			setGridMatrix(cameraTransformation());
-			break;
-		case VIEW_BACK:
-			setCameraTransformation(AffineTransformation(coordSys * Matrix3(-1,0,0, 0,0,1, 0,1,0)));
-			setGridMatrix(cameraTransformation());
-			break;
-		case VIEW_ORTHO:
-			if(!keepCameraTransformation) {
-				setCameraPosition(Point3::Origin());
-				if(viewType() == VIEW_NONE)
-					setCameraTransformation(AffineTransformation(coordSys));
-			}
-			setGridMatrix(AffineTransformation(coordSys));
-			break;
-		case VIEW_PERSPECTIVE:
-			if(!keepCameraTransformation) {
-				if(viewType() >= VIEW_TOP && viewType() <= VIEW_ORTHO) {
-					setCameraPosition(cameraPosition() - (cameraDirection().normalized() * fieldOfView()));
-				}
-				else if(viewType() != VIEW_PERSPECTIVE) {
-					setCameraPosition(ViewportSettings::getSettings().coordinateSystemOrientation() * Point3(0,0,-50));
-					setCameraDirection(ViewportSettings::getSettings().coordinateSystemOrientation() * Vector3(0,0,1));
-				}
-			}
-			setGridMatrix(AffineTransformation(coordSys));
-			break;
-		case VIEW_SCENENODE:
-			if(!keepCameraTransformation && viewNode() && scene()) {
-				TimeInterval iv;
-				setCameraTransformation(viewNode()->getWorldTransform(scene()->animationSettings()->currentTime(), iv));
-			}
-			setGridMatrix(AffineTransformation(coordSys));
-			break;
-		case VIEW_NONE:
-			setGridMatrix(AffineTransformation(coordSys));
-			break;
-	}
+    // Setup default view.
+    Matrix3 coordSys = ViewportSettings::getSettings().coordinateSystemOrientation();
+    switch(type) {
+        case VIEW_TOP:
+            setCameraTransformation(AffineTransformation(coordSys));
+            setGridMatrix(cameraTransformation());
+            break;
+        case VIEW_BOTTOM:
+            setCameraTransformation(AffineTransformation(coordSys * Matrix3(-1,0,0, 0,1,0, 0,0,-1)));
+            setGridMatrix(cameraTransformation());
+            break;
+        case VIEW_LEFT:
+            setCameraTransformation(AffineTransformation(coordSys * Matrix3(0,0,-1, -1,0,0, 0,1,0)));
+            setGridMatrix(cameraTransformation());
+            break;
+        case VIEW_RIGHT:
+            setCameraTransformation(AffineTransformation(coordSys * Matrix3(0,0,1, 1,0,0, 0,1,0)));
+            setGridMatrix(cameraTransformation());
+            break;
+        case VIEW_FRONT:
+            setCameraTransformation(AffineTransformation(coordSys * Matrix3(1,0,0, 0,0,-1, 0,1,0)));
+            setGridMatrix(cameraTransformation());
+            break;
+        case VIEW_BACK:
+            setCameraTransformation(AffineTransformation(coordSys * Matrix3(-1,0,0, 0,0,1, 0,1,0)));
+            setGridMatrix(cameraTransformation());
+            break;
+        case VIEW_ORTHO:
+            if(!keepCameraTransformation) {
+                setCameraPosition(Point3::Origin());
+                if(viewType() == VIEW_NONE)
+                    setCameraTransformation(AffineTransformation(coordSys));
+            }
+            setGridMatrix(AffineTransformation(coordSys));
+            break;
+        case VIEW_PERSPECTIVE:
+            if(!keepCameraTransformation) {
+                if(viewType() >= VIEW_TOP && viewType() <= VIEW_ORTHO) {
+                    setCameraPosition(cameraPosition() - (cameraDirection().normalized() * fieldOfView()));
+                }
+                else if(viewType() != VIEW_PERSPECTIVE) {
+                    setCameraPosition(ViewportSettings::getSettings().coordinateSystemOrientation() * Point3(0,0,-50));
+                    setCameraDirection(ViewportSettings::getSettings().coordinateSystemOrientation() * Vector3(0,0,1));
+                }
+            }
+            setGridMatrix(AffineTransformation(coordSys));
+            break;
+        case VIEW_SCENENODE:
+            if(!keepCameraTransformation && viewNode() && scene()) {
+                TimeInterval iv;
+                setCameraTransformation(viewNode()->getWorldTransform(scene()->animationSettings()->currentTime(), iv));
+            }
+            setGridMatrix(AffineTransformation(coordSys));
+            break;
+        case VIEW_NONE:
+            setGridMatrix(AffineTransformation(coordSys));
+            break;
+    }
 
-	if(!keepFieldOfView) {
-		// Reset to standard fov/zoom value when switching between perspective and parallel projections.
-		if(type == VIEW_PERSPECTIVE) {
-			if(!isPerspectiveProjection() || viewType() == VIEW_NONE)
-				setFieldOfView(DEFAULT_PERSPECTIVE_FIELD_OF_VIEW);
-		}
-		else if(type != VIEW_SCENENODE) {
-			if(isPerspectiveProjection() || viewType() == VIEW_NONE)
-				setFieldOfView(DEFAULT_ORTHOGONAL_FIELD_OF_VIEW);
-		}
-		else if(type == VIEW_SCENENODE && viewNode() && scene()) {
-			const PipelineFlowState& state = viewNode()->evaluatePipelineSynchronous(scene()->animationSettings()->currentTime(), false);
-			if(const AbstractCameraObject* camera = state.data() ? state.data()->getObject<AbstractCameraObject>() : nullptr) {
-				TimeInterval iv;
-				setFieldOfView(camera->fieldOfView(scene()->animationSettings()->currentTime(), iv));
-			}
-		}
-	}
-	else {
-		if(type == VIEW_PERSPECTIVE && fieldOfView() >= FloatType(90*FLOATTYPE_PI/180)) {
-			setFieldOfView(DEFAULT_PERSPECTIVE_FIELD_OF_VIEW);
-		}
-	}
+    if(!keepFieldOfView) {
+        // Reset to standard fov/zoom value when switching between perspective and parallel projections.
+        if(type == VIEW_PERSPECTIVE) {
+            if(!isPerspectiveProjection() || viewType() == VIEW_NONE)
+                setFieldOfView(DEFAULT_PERSPECTIVE_FIELD_OF_VIEW);
+        }
+        else if(type != VIEW_SCENENODE) {
+            if(isPerspectiveProjection() || viewType() == VIEW_NONE)
+                setFieldOfView(DEFAULT_ORTHOGONAL_FIELD_OF_VIEW);
+        }
+        else if(type == VIEW_SCENENODE && viewNode() && scene()) {
+            const PipelineFlowState& state = viewNode()->evaluatePipelineSynchronous(scene()->animationSettings()->currentTime(), false);
+            if(const AbstractCameraObject* camera = state.data() ? state.data()->getObject<AbstractCameraObject>() : nullptr) {
+                TimeInterval iv;
+                setFieldOfView(camera->fieldOfView(scene()->animationSettings()->currentTime(), iv));
+            }
+        }
+    }
+    else {
+        if(type == VIEW_PERSPECTIVE && fieldOfView() >= FloatType(90*FLOATTYPE_PI/180)) {
+            setFieldOfView(DEFAULT_PERSPECTIVE_FIELD_OF_VIEW);
+        }
+    }
 
-	_viewType.set(this, PROPERTY_FIELD(viewType), type);
+    _viewType.set(this, PROPERTY_FIELD(viewType), type);
 }
 
 /******************************************************************************
@@ -195,12 +195,12 @@ void Viewport::setViewType(ViewType type, bool keepCameraTransformation, bool ke
 ******************************************************************************/
 bool Viewport::isPerspectiveProjection() const
 {
-	if(viewType() <= VIEW_ORTHO)
-		return false;
-	else if(viewType() == VIEW_PERSPECTIVE)
-		return true;
-	else
-		return _projParams.isPerspective;
+    if(viewType() <= VIEW_ORTHO)
+        return false;
+    else if(viewType() == VIEW_PERSPECTIVE)
+        return true;
+    else
+        return _projParams.isPerspective;
 }
 
 /******************************************************************************
@@ -208,8 +208,8 @@ bool Viewport::isPerspectiveProjection() const
 ******************************************************************************/
 Vector3 Viewport::cameraDirection() const 
 {
-	if(cameraTransformation().column(2) == Vector3::Zero()) return Vector3(0,0,1);
-	else return -cameraTransformation().column(2);
+    if(cameraTransformation().column(2) == Vector3::Zero()) return Vector3(0,0,1);
+    else return -cameraTransformation().column(2);
 }
 
 /******************************************************************************
@@ -217,13 +217,13 @@ Vector3 Viewport::cameraDirection() const
 ******************************************************************************/
 void Viewport::setCameraDirection(const Vector3& newDir)
 {
-	if(newDir != Vector3::Zero()) {
-		Vector3 upVector = cameraUpDirection();
-		if(upVector.isZero()) {
-			upVector = ViewportSettings::getSettings().upVector();
-		}
-		setCameraTransformation(AffineTransformation::lookAlong(cameraPosition(), newDir, upVector).inverse());
-	}
+    if(newDir != Vector3::Zero()) {
+        Vector3 upVector = cameraUpDirection();
+        if(upVector.isZero()) {
+            upVector = ViewportSettings::getSettings().upVector();
+        }
+        setCameraTransformation(AffineTransformation::lookAlong(cameraPosition(), newDir, upVector).inverse());
+    }
 }
 
 /******************************************************************************
@@ -231,7 +231,7 @@ void Viewport::setCameraDirection(const Vector3& newDir)
 ******************************************************************************/
 Point3 Viewport::cameraPosition() const 
 {
-	return Point3::Origin() + cameraTransformation().translation();
+    return Point3::Origin() + cameraTransformation().translation();
 }
 
 /******************************************************************************
@@ -239,9 +239,9 @@ Point3 Viewport::cameraPosition() const
 ******************************************************************************/
 void Viewport::setCameraPosition(const Point3& p)
 {
-	AffineTransformation tm = cameraTransformation();
-	tm.translation() = p - Point3::Origin();
-	setCameraTransformation(tm);
+    AffineTransformation tm = cameraTransformation();
+    tm.translation() = p - Point3::Origin();
+    setCameraTransformation(tm);
 }
 
 /******************************************************************************
@@ -249,82 +249,82 @@ void Viewport::setCameraPosition(const Point3& p)
 ******************************************************************************/
 ViewProjectionParameters Viewport::computeProjectionParameters(AnimationTime time, FloatType aspectRatio, bool asynchronousEvaluation, const Box3& sceneBoundingBox)
 {
-	OVITO_ASSERT(aspectRatio > FLOATTYPE_EPSILON);
+    OVITO_ASSERT(aspectRatio > FLOATTYPE_EPSILON);
 
-	ViewProjectionParameters params;
-	params.aspectRatio = aspectRatio;
-	params.validityInterval.setInfinite();
-	if(!sceneBoundingBox.isEmpty())
-		params.boundingBox = sceneBoundingBox;
-	else
-		params.boundingBox = Box3(Point3::Origin(), 1);
+    ViewProjectionParameters params;
+    params.aspectRatio = aspectRatio;
+    params.validityInterval.setInfinite();
+    if(!sceneBoundingBox.isEmpty())
+        params.boundingBox = sceneBoundingBox;
+    else
+        params.boundingBox = Box3(Point3::Origin(), 1);
 
-	// Get transformation from view scene node.
-	if(viewType() == VIEW_SCENENODE && viewNode()) {
-		// Get camera transformation.
-		params.inverseViewMatrix = viewNode()->getWorldTransform(time, params.validityInterval);
-		params.viewMatrix = params.inverseViewMatrix.inverse();
+    // Get transformation from view scene node.
+    if(viewType() == VIEW_SCENENODE && viewNode()) {
+        // Get camera transformation.
+        params.inverseViewMatrix = viewNode()->getWorldTransform(time, params.validityInterval);
+        params.viewMatrix = params.inverseViewMatrix.inverse();
 
-		// Evaluate data pipeline of the camera scene node.
-		PipelineEvaluationFuture pipelineEvaluation;
-		if(asynchronousEvaluation) {
-			pipelineEvaluation = viewNode()->evaluatePipeline(PipelineEvaluationRequest(time));
-			if(!pipelineEvaluation.waitForFinished())
-				pipelineEvaluation = {};
-		}
-		const PipelineFlowState& state = pipelineEvaluation.isValid() ? pipelineEvaluation.result() : viewNode()->evaluatePipelineSynchronous(time, false);
+        // Evaluate data pipeline of the camera scene node.
+        PipelineEvaluationFuture pipelineEvaluation;
+        if(asynchronousEvaluation) {
+            pipelineEvaluation = viewNode()->evaluatePipeline(PipelineEvaluationRequest(time));
+            if(!pipelineEvaluation.waitForFinished())
+                pipelineEvaluation = {};
+        }
+        const PipelineFlowState& state = pipelineEvaluation.isValid() ? pipelineEvaluation.result() : viewNode()->evaluatePipelineSynchronous(time, false);
 
-		// Get camera settings (FOV etc.)
-		if(const AbstractCameraObject* camera = state.data() ? state.data()->getObject<AbstractCameraObject>() : nullptr) {
-			// Get remaining parameters from camera object.
-			camera->projectionParameters(time, params);
-		}
-		else {
-			params.fieldOfView = 1;
-			params.isPerspective = false;
-		}
-	}
-	else {
-		params.inverseViewMatrix = cameraTransformation();
-		params.viewMatrix = params.inverseViewMatrix.inverse();
-		params.fieldOfView = fieldOfView();
-		params.isPerspective = (viewType() == VIEW_PERSPECTIVE);
-	}
+        // Get camera settings (FOV etc.)
+        if(const AbstractCameraObject* camera = state.data() ? state.data()->getObject<AbstractCameraObject>() : nullptr) {
+            // Get remaining parameters from camera object.
+            camera->projectionParameters(time, params);
+        }
+        else {
+            params.fieldOfView = 1;
+            params.isPerspective = false;
+        }
+    }
+    else {
+        params.inverseViewMatrix = cameraTransformation();
+        params.viewMatrix = params.inverseViewMatrix.inverse();
+        params.fieldOfView = fieldOfView();
+        params.isPerspective = (viewType() == VIEW_PERSPECTIVE);
+    }
 
-	// Transform scene bounding box to camera space.
-	Box3 bb = params.boundingBox.transformed(params.viewMatrix).centerScale(FloatType(1.01));
+    // Transform scene bounding box to camera space.
+    Box3 bb = params.boundingBox.transformed(params.viewMatrix).centerScale(FloatType(1.01));
 
-	// Compute projection matrix.
-	if(params.isPerspective) {
-		if(bb.minc.z() < 0) {
-			params.zfar = -bb.minc.z();
-			params.znear = std::max(-bb.maxc.z(), params.zfar * FloatType(1e-4));
-		}
-		else {
-			params.zfar = std::max(params.boundingBox.size().length(), FloatType(1));
-			params.znear = params.zfar * FloatType(1e-4);
-		}
-		params.zfar = std::max(params.zfar, params.znear * FloatType(1.01));
-		params.projectionMatrix = Matrix4::perspective(params.fieldOfView, FloatType(1) / params.aspectRatio, params.znear, params.zfar);
-	}
-	else {
-		if(!bb.isEmpty()) {
-			params.znear = -bb.maxc.z();
-			params.zfar  = -bb.minc.z();
-			if(params.zfar <= params.znear)
-				params.zfar  = params.znear + FloatType(1);
-		}
-		else {
-			params.znear = 1;
-			params.zfar = 100;
-		}
-		params.projectionMatrix = Matrix4::ortho(-params.fieldOfView / params.aspectRatio, params.fieldOfView / params.aspectRatio,
-							-params.fieldOfView, params.fieldOfView,
-							params.znear, params.zfar);
-	}
-	params.inverseProjectionMatrix = params.projectionMatrix.inverse();
+    // Compute projection matrix.
+    if(params.isPerspective) {
+        if(bb.minc.z() < 0) {
+            params.zfar = -bb.minc.z();
+            params.znear = std::max(-bb.maxc.z(), params.zfar * FloatType(1e-4));
+        }
+        else {
+            params.zfar = std::max(params.boundingBox.size().length(), FloatType(1));
+            params.znear = params.zfar * FloatType(1e-4);
+        }
+        params.zfar = std::max(params.zfar, params.znear * FloatType(1.01));
+        params.projectionMatrix = Matrix4::perspective(params.fieldOfView, FloatType(1) / params.aspectRatio, params.znear, params.zfar);
+    }
+    else {
+        if(!bb.isEmpty()) {
+            params.znear = -bb.maxc.z();
+            params.zfar  = -bb.minc.z();
+            if(params.zfar <= params.znear)
+                params.zfar  = params.znear + FloatType(1);
+        }
+        else {
+            params.znear = 1;
+            params.zfar = 100;
+        }
+        params.projectionMatrix = Matrix4::ortho(-params.fieldOfView / params.aspectRatio, params.fieldOfView / params.aspectRatio,
+                            -params.fieldOfView, params.fieldOfView,
+                            params.znear, params.zfar);
+    }
+    params.inverseProjectionMatrix = params.projectionMatrix.inverse();
 
-	return params;
+    return params;
 }
 
 /******************************************************************************
@@ -332,10 +332,10 @@ ViewProjectionParameters Viewport::computeProjectionParameters(AnimationTime tim
 ******************************************************************************/
 void Viewport::zoomToSceneExtents(FloatType viewportAspectRatio)
 {
-	if(scene()) {
-		Box3 sceneBoundingBox = scene()->worldBoundingBox(scene()->animationSettings()->currentTime(), this);
-		zoomToBox(sceneBoundingBox, viewportAspectRatio);
-	}
+    if(scene()) {
+        Box3 sceneBoundingBox = scene()->worldBoundingBox(scene()->animationSettings()->currentTime(), this);
+        zoomToBox(sceneBoundingBox, viewportAspectRatio);
+    }
 }
 
 /******************************************************************************
@@ -343,16 +343,16 @@ void Viewport::zoomToSceneExtents(FloatType viewportAspectRatio)
 ******************************************************************************/
 void Viewport::zoomToSelectionExtents(FloatType viewportAspectRatio)
 {
-	if(!scene())
-		return;
-	Box3 selectionBoundingBox;
-	for(SceneNode* node : scene()->selection()->nodes()) {
-		selectionBoundingBox.addBox(node->worldBoundingBox(scene()->animationSettings()->currentTime(), this));
-	}
-	if(!selectionBoundingBox.isEmpty())
-		zoomToBox(selectionBoundingBox, viewportAspectRatio);
-	else
-		zoomToSceneExtents(viewportAspectRatio);
+    if(!scene())
+        return;
+    Box3 selectionBoundingBox;
+    for(SceneNode* node : scene()->selection()->nodes()) {
+        selectionBoundingBox.addBox(node->worldBoundingBox(scene()->animationSettings()->currentTime(), this));
+    }
+    if(!selectionBoundingBox.isEmpty())
+        zoomToBox(selectionBoundingBox, viewportAspectRatio);
+    else
+        zoomToSceneExtents(viewportAspectRatio);
 }
 
 /******************************************************************************
@@ -361,13 +361,13 @@ void Viewport::zoomToSelectionExtents(FloatType viewportAspectRatio)
 ******************************************************************************/
 void Viewport::zoomToSceneExtentsWhenReady()
 {
-	if(scene() && window()) {
-		window()->scenePreparation().future().finally(*this, [this](Task& task) noexcept {
-			if(!task.isCanceled()) {
-				zoomToSceneExtents();
-			}
-		});
-	}
+    if(scene() && window()) {
+        window()->scenePreparation().future().finally(*this, [this](Task& task) noexcept {
+            if(!task.isCanceled()) {
+                zoomToSceneExtents();
+            }
+        });
+    }
 }
 
 /******************************************************************************
@@ -375,55 +375,55 @@ void Viewport::zoomToSceneExtentsWhenReady()
 ******************************************************************************/
 void Viewport::zoomToBox(const Box3& box, FloatType viewportAspectRatio)
 {
-	if(box.isEmpty() || !scene())
-		return;
+    if(box.isEmpty() || !scene())
+        return;
 
-	if(viewType() == VIEW_SCENENODE)
-		return;	// Do not reposition the camera object.
+    if(viewType() == VIEW_SCENENODE)
+        return; // Do not reposition the camera object.
 
-	// If the caller did not specify an rendering aspect ratio for the viewport,
-	// obtain the aspect ratio from the display window associated with the viewport or the current render settings.
-	if(viewportAspectRatio == 0) {
-		if(!window())
-			return;
-		if(renderPreviewMode()) {
-			if(DataSet* dataset = window()->userInterface().datasetContainer().currentSet())
-				viewportAspectRatio = renderAspectRatio(dataset);
-		}
-		if(viewportAspectRatio == 0) {
-			QSize vpSize = windowSize();
-			if(vpSize.width() > 0)
-				viewportAspectRatio = (FloatType)vpSize.height() / vpSize.width();
-		}
-		if(viewportAspectRatio == 0)
-			viewportAspectRatio = 1;
-	}
+    // If the caller did not specify an rendering aspect ratio for the viewport,
+    // obtain the aspect ratio from the display window associated with the viewport or the current render settings.
+    if(viewportAspectRatio == 0) {
+        if(!window())
+            return;
+        if(renderPreviewMode()) {
+            if(DataSet* dataset = window()->userInterface().datasetContainer().currentSet())
+                viewportAspectRatio = renderAspectRatio(dataset);
+        }
+        if(viewportAspectRatio == 0) {
+            QSize vpSize = windowSize();
+            if(vpSize.width() > 0)
+                viewportAspectRatio = (FloatType)vpSize.height() / vpSize.width();
+        }
+        if(viewportAspectRatio == 0)
+            viewportAspectRatio = 1;
+    }
 
-	if(isPerspectiveProjection()) {
-		FloatType dist = box.size().length() * FloatType(0.5) / tan(fieldOfView() * FloatType(0.5));
-		setCameraPosition(box.center() - cameraDirection().resized(dist));
-	}
-	else {
-		// Set up projection.
-		ViewProjectionParameters projParams = computeProjectionParameters(scene()->animationSettings()->currentTime(), viewportAspectRatio, false, box);
+    if(isPerspectiveProjection()) {
+        FloatType dist = box.size().length() * FloatType(0.5) / tan(fieldOfView() * FloatType(0.5));
+        setCameraPosition(box.center() - cameraDirection().resized(dist));
+    }
+    else {
+        // Set up projection.
+        ViewProjectionParameters projParams = computeProjectionParameters(scene()->animationSettings()->currentTime(), viewportAspectRatio, false, box);
 
-		FloatType minX = FLOATTYPE_MAX, minY = FLOATTYPE_MAX;
-		FloatType maxX = FLOATTYPE_MIN, maxY = FLOATTYPE_MIN;
-		for(int i = 0; i < 8; i++) {
-			Point3 trans = projParams.viewMatrix * box[i];
-			if(trans.x() < minX) minX = trans.x();
-			if(trans.x() > maxX) maxX = trans.x();
-			if(trans.y() < minY) minY = trans.y();
-			if(trans.y() > maxY) maxY = trans.y();
-		}
-		FloatType w = std::max(maxX - minX, FloatType(1e-12));
-		FloatType h = std::max(maxY - minY, FloatType(1e-12));
-		if(viewportAspectRatio > h/w)
-			setFieldOfView(w * viewportAspectRatio * FloatType(0.55));
-		else
-			setFieldOfView(h * FloatType(0.55));
-		setCameraPosition(box.center());
-	}
+        FloatType minX = FLOATTYPE_MAX, minY = FLOATTYPE_MAX;
+        FloatType maxX = FLOATTYPE_MIN, maxY = FLOATTYPE_MIN;
+        for(int i = 0; i < 8; i++) {
+            Point3 trans = projParams.viewMatrix * box[i];
+            if(trans.x() < minX) minX = trans.x();
+            if(trans.x() > maxX) maxX = trans.x();
+            if(trans.y() < minY) minY = trans.y();
+            if(trans.y() > maxY) maxY = trans.y();
+        }
+        FloatType w = std::max(maxX - minX, FloatType(1e-12));
+        FloatType h = std::max(maxY - minY, FloatType(1e-12));
+        if(viewportAspectRatio > h/w)
+            setFieldOfView(w * viewportAspectRatio * FloatType(0.55));
+        else
+            setFieldOfView(h * FloatType(0.55));
+        setCameraPosition(box.center());
+    }
 }
 
 /******************************************************************************
@@ -431,34 +431,34 @@ void Viewport::zoomToBox(const Box3& box, FloatType viewportAspectRatio)
 ******************************************************************************/
 bool Viewport::referenceEvent(RefTarget* source, const ReferenceEvent& event)
 {
-	if(event.type() == ReferenceEvent::TargetChanged) {
-		if(source == viewNode()) {
-			// Adopt camera information from view node.
-			if(viewType() == VIEW_SCENENODE && !isBeingLoaded() && !isAboutToBeDeleted() && scene()) {
-				// Get camera transformation and settings (FOV etc.).
-				AnimationTime time = scene()->animationSettings()->currentTime();
-				TimeInterval iv;
-				setCameraTransformation(viewNode()->getWorldTransform(time, iv));
-				const PipelineFlowState& state = viewNode()->evaluatePipelineSynchronous(time, false);
-				if(const AbstractCameraObject* camera = state.data() ? state.data()->getObject<AbstractCameraObject>() : nullptr) {
-					setFieldOfView(camera->fieldOfView(time, iv));
-				}
-			}
+    if(event.type() == ReferenceEvent::TargetChanged) {
+        if(source == viewNode()) {
+            // Adopt camera information from view node.
+            if(viewType() == VIEW_SCENENODE && !isBeingLoaded() && !isAboutToBeDeleted() && scene()) {
+                // Get camera transformation and settings (FOV etc.).
+                AnimationTime time = scene()->animationSettings()->currentTime();
+                TimeInterval iv;
+                setCameraTransformation(viewNode()->getWorldTransform(time, iv));
+                const PipelineFlowState& state = viewNode()->evaluatePipelineSynchronous(time, false);
+                if(const AbstractCameraObject* camera = state.data() ? state.data()->getObject<AbstractCameraObject>() : nullptr) {
+                    setFieldOfView(camera->fieldOfView(time, iv));
+                }
+            }
 
-			// Update viewport when camera node has moved or modified.
-			updateViewport();
-		}
-		else if(_overlays.contains(source) || _underlays.contains(source)) {
-			// Update viewport when one of the layers has changed.
-			updateViewport();
-		}
-	}
-	else if(source == viewNode() && event.type() == ReferenceEvent::TitleChanged) {
-		// Update viewport title when camera node has been renamed.
-		updateViewportTitle();
-		updateViewport();
-	}
-	return RefTarget::referenceEvent(source, event);
+            // Update viewport when camera node has moved or modified.
+            updateViewport();
+        }
+        else if(_overlays.contains(source) || _underlays.contains(source)) {
+            // Update viewport when one of the layers has changed.
+            updateViewport();
+        }
+    }
+    else if(source == viewNode() && event.type() == ReferenceEvent::TitleChanged) {
+        // Update viewport title when camera node has been renamed.
+        updateViewportTitle();
+        updateViewport();
+    }
+    return RefTarget::referenceEvent(source, event);
 }
 
 /******************************************************************************
@@ -466,36 +466,36 @@ bool Viewport::referenceEvent(RefTarget* source, const ReferenceEvent& event)
 ******************************************************************************/
 void Viewport::referenceReplaced(const PropertyFieldDescriptor* field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex)
 {
-	if(field == PROPERTY_FIELD(viewNode) && !isBeingLoaded()) {
-		if(viewType() == VIEW_SCENENODE && newTarget == nullptr) {
-			// If the camera node has been deleted, switch to Orthographic or Perspective view type.
-			setViewType(isPerspectiveProjection() ? VIEW_PERSPECTIVE : VIEW_ORTHO, true);
-		}
-		else if(viewType() != VIEW_SCENENODE && newTarget != nullptr) {
-			setViewType(VIEW_SCENENODE);
-		}
+    if(field == PROPERTY_FIELD(viewNode) && !isBeingLoaded()) {
+        if(viewType() == VIEW_SCENENODE && newTarget == nullptr) {
+            // If the camera node has been deleted, switch to Orthographic or Perspective view type.
+            setViewType(isPerspectiveProjection() ? VIEW_PERSPECTIVE : VIEW_ORTHO, true);
+        }
+        else if(viewType() != VIEW_SCENENODE && newTarget != nullptr) {
+            setViewType(VIEW_SCENENODE);
+        }
 
-		// Update viewport when the camera has been replaced by another scene node.
-		updateViewportTitle();
-	}
-	else if(field == PROPERTY_FIELD(overlays) || field == PROPERTY_FIELD(underlays)) {
-		updateViewport();
-	}
-	else if(field == PROPERTY_FIELD(scene)) {
-		// Keep scene reference of viewport window in sync.
-		if(window())
-			window()->scenePreparation().setScene(scene());
+        // Update viewport when the camera has been replaced by another scene node.
+        updateViewportTitle();
+    }
+    else if(field == PROPERTY_FIELD(overlays) || field == PROPERTY_FIELD(underlays)) {
+        updateViewport();
+    }
+    else if(field == PROPERTY_FIELD(scene)) {
+        // Keep scene reference of viewport window in sync.
+        if(window())
+            window()->scenePreparation().setScene(scene());
 
-		// Repaint viewport whenever the camera orbit center changes.
-		if(oldTarget)
-			disconnect(static_object_cast<Scene>(oldTarget), &Scene::cameraOrbitCenterChanged, this, &Viewport::updateViewport);
-		if(newTarget)
-			connect(static_object_cast<Scene>(newTarget), &Scene::cameraOrbitCenterChanged, this, &Viewport::updateViewport);
-		
-		Q_EMIT sceneReplaced(scene());
-		Q_EMIT viewportChanged();
-	}
-	RefTarget::referenceReplaced(field, oldTarget, newTarget, listIndex);
+        // Repaint viewport whenever the camera orbit center changes.
+        if(oldTarget)
+            disconnect(static_object_cast<Scene>(oldTarget), &Scene::cameraOrbitCenterChanged, this, &Viewport::updateViewport);
+        if(newTarget)
+            connect(static_object_cast<Scene>(newTarget), &Scene::cameraOrbitCenterChanged, this, &Viewport::updateViewport);
+        
+        Q_EMIT sceneReplaced(scene());
+        Q_EMIT viewportChanged();
+    }
+    RefTarget::referenceReplaced(field, oldTarget, newTarget, listIndex);
 }
 
 /******************************************************************************
@@ -503,14 +503,14 @@ void Viewport::referenceReplaced(const PropertyFieldDescriptor* field, RefTarget
 ******************************************************************************/
 void Viewport::referenceInserted(const PropertyFieldDescriptor* field, RefTarget* newTarget, int listIndex)
 {
-	if(field == PROPERTY_FIELD(overlays) || field == PROPERTY_FIELD(underlays)) {
-		if(ViewportOverlay* overlay = static_object_cast<ViewportOverlay>(newTarget)) {
-			if(!isUndoingOrRedoing() && !isBeingLoaded())
-				overlay->initializeOverlay(this);
-		}
-		updateViewport();
-	}
-	RefTarget::referenceInserted(field, newTarget, listIndex);
+    if(field == PROPERTY_FIELD(overlays) || field == PROPERTY_FIELD(underlays)) {
+        if(ViewportOverlay* overlay = static_object_cast<ViewportOverlay>(newTarget)) {
+            if(!isUndoingOrRedoing() && !isBeingLoaded())
+                overlay->initializeOverlay(this);
+        }
+        updateViewport();
+    }
+    RefTarget::referenceInserted(field, newTarget, listIndex);
 }
 
 /******************************************************************************
@@ -518,10 +518,10 @@ void Viewport::referenceInserted(const PropertyFieldDescriptor* field, RefTarget
 ******************************************************************************/
 void Viewport::referenceRemoved(const PropertyFieldDescriptor* field, RefTarget* oldTarget, int listIndex)
 {
-	if(field == PROPERTY_FIELD(overlays) || field == PROPERTY_FIELD(underlays)) {
-		updateViewport();
-	}
-	RefTarget::referenceRemoved(field, oldTarget, listIndex);
+    if(field == PROPERTY_FIELD(overlays) || field == PROPERTY_FIELD(underlays)) {
+        updateViewport();
+    }
+    RefTarget::referenceRemoved(field, oldTarget, listIndex);
 }
 
 /******************************************************************************
@@ -529,18 +529,18 @@ void Viewport::referenceRemoved(const PropertyFieldDescriptor* field, RefTarget*
 ******************************************************************************/
 void Viewport::propertyChanged(const PropertyFieldDescriptor* field)
 {
-	RefTarget::propertyChanged(field);
-	if(field == PROPERTY_FIELD(viewType)) {
-		updateViewportTitle();
-	}
-	else if(field == PROPERTY_FIELD(cameraUpDirection) && !isBeingLoaded()) {
-		// Update view matrix when the up-vector has been changed.
-		setCameraDirection(cameraDirection());
-	}
-	else if(field == PROPERTY_FIELD(isGridVisible) || field == PROPERTY_FIELD(renderPreviewMode)) {
-		Q_EMIT viewportChanged();
-	}
-	updateViewport();
+    RefTarget::propertyChanged(field);
+    if(field == PROPERTY_FIELD(viewType)) {
+        updateViewportTitle();
+    }
+    else if(field == PROPERTY_FIELD(cameraUpDirection) && !isBeingLoaded()) {
+        // Update view matrix when the up-vector has been changed.
+        setCameraDirection(cameraDirection());
+    }
+    else if(field == PROPERTY_FIELD(isGridVisible) || field == PROPERTY_FIELD(renderPreviewMode)) {
+        Q_EMIT viewportChanged();
+    }
+    updateViewport();
 }
 
 /******************************************************************************
@@ -548,12 +548,12 @@ void Viewport::propertyChanged(const PropertyFieldDescriptor* field)
 ******************************************************************************/
 void Viewport::viewportSettingsChanged(ViewportSettings* newSettings)
 {
-	// Update camera TM if "up" axis has changed to make it point upward.
-	if(ViewportSettings::getSettings().constrainCameraRotation())
-		setCameraDirection(cameraDirection());
+    // Update camera TM if "up" axis has changed to make it point upward.
+    if(ViewportSettings::getSettings().constrainCameraRotation())
+        setCameraDirection(cameraDirection());
 
-	// Redraw viewport.
-	updateViewport();
+    // Redraw viewport.
+    updateViewport();
 }
 
 /******************************************************************************
@@ -561,22 +561,22 @@ void Viewport::viewportSettingsChanged(ViewportSettings* newSettings)
 ******************************************************************************/
 void Viewport::updateViewportTitle()
 {
-	// Load viewport caption string.
-	QString newTitle;
-	switch(viewType()) {
-		case VIEW_TOP: newTitle = tr("Top"); break;
-		case VIEW_BOTTOM: newTitle = tr("Bottom"); break;
-		case VIEW_FRONT: newTitle = tr("Front"); break;
-		case VIEW_BACK: newTitle = tr("Back"); break;
-		case VIEW_LEFT: newTitle = tr("Left"); break;
-		case VIEW_RIGHT: newTitle = tr("Right"); break;
-		case VIEW_ORTHO: newTitle = tr("Ortho"); break;
-		case VIEW_PERSPECTIVE: newTitle = tr("Perspective"); break;
-		case VIEW_SCENENODE: newTitle = viewNode() ? viewNode()->nodeName() : tr("No view node"); break;
-		default: OVITO_ASSERT(false); // Unknown viewport type
-	}
-	_viewportTitle.set(this, PROPERTY_FIELD(viewportTitle), std::move(newTitle));
-	Q_EMIT viewportChanged();
+    // Load viewport caption string.
+    QString newTitle;
+    switch(viewType()) {
+        case VIEW_TOP: newTitle = tr("Top"); break;
+        case VIEW_BOTTOM: newTitle = tr("Bottom"); break;
+        case VIEW_FRONT: newTitle = tr("Front"); break;
+        case VIEW_BACK: newTitle = tr("Back"); break;
+        case VIEW_LEFT: newTitle = tr("Left"); break;
+        case VIEW_RIGHT: newTitle = tr("Right"); break;
+        case VIEW_ORTHO: newTitle = tr("Ortho"); break;
+        case VIEW_PERSPECTIVE: newTitle = tr("Perspective"); break;
+        case VIEW_SCENENODE: newTitle = viewNode() ? viewNode()->nodeName() : tr("No view node"); break;
+        default: OVITO_ASSERT(false); // Unknown viewport type
+    }
+    _viewportTitle.set(this, PROPERTY_FIELD(viewportTitle), std::move(newTitle));
+    Q_EMIT viewportChanged();
 }
 
 /******************************************************************************
@@ -584,8 +584,8 @@ void Viewport::updateViewportTitle()
 ******************************************************************************/
 void Viewport::updateViewport()
 {
-	if(_window)
-		_window->renderLater();
+    if(_window)
+        _window->renderLater();
 }
 
 /******************************************************************************
@@ -594,8 +594,8 @@ void Viewport::updateViewport()
 ******************************************************************************/
 void Viewport::processUpdateRequest()
 {
-	if(_window)
-		_window->processViewportUpdate();
+    if(_window)
+        _window->processViewportUpdate();
 }
 
 /******************************************************************************
@@ -603,112 +603,112 @@ void Viewport::processUpdateRequest()
 ******************************************************************************/
 void Viewport::renderInteractive(UserInterface& userInterface, DataSet* dataset, SceneRenderer* renderer)
 {
-	OVITO_ASSERT_MSG(!userInterface.isRenderingInteractiveViewports(), "Viewport::renderInteractive()", "Another viewport is already rendering.");
-	OVITO_ASSERT(dataset && dataset->renderSettings());
+    OVITO_ASSERT_MSG(!userInterface.isRenderingInteractiveViewports(), "Viewport::renderInteractive()", "Another viewport is already rendering.");
+    OVITO_ASSERT(dataset && dataset->renderSettings());
 
-	if(!scene() || !dataset || !dataset->renderSettings())
-		return;
+    if(!scene() || !dataset || !dataset->renderSettings())
+        return;
 
-	QRect vpRect(QPoint(0,0), windowSize());
-	if(vpRect.isEmpty())
-		return;
+    QRect vpRect(QPoint(0,0), windowSize());
+    if(vpRect.isEmpty())
+        return;
 
-	try {
-		OVITO_ASSERT(userInterface._viewportBeingRendered == nullptr);
-		userInterface._viewportBeingRendered = this;
+    try {
+        OVITO_ASSERT(userInterface._viewportBeingRendered == nullptr);
+        userInterface._viewportBeingRendered = this;
 
-		// This is the async operation object used when calling rendering functions in the following.
-		MainThreadOperation renderOperation(ExecutionContext::Type::Interactive, userInterface, false);
+        // This is the async operation object used when calling rendering functions in the following.
+        MainThreadOperation renderOperation(ExecutionContext::Type::Interactive, userInterface, false);
 
-		AnimationTime time = scene()->animationSettings()->currentTime();
+        AnimationTime time = scene()->animationSettings()->currentTime();
 
-		// Set up the renderer.
-		renderer->startRender(dataset->renderSettings(), vpRect.size(), Application::instance()->visCache());
+        // Set up the renderer.
+        renderer->startRender(dataset->renderSettings(), vpRect.size(), Application::instance()->visCache());
 
-		// Set up preliminary projection without a known bounding box.
-		FloatType aspectRatio = (FloatType)vpRect.height() / vpRect.width();
-		_projParams = computeProjectionParameters(time, aspectRatio, renderer->waitForLongOperationsEnabled());
+        // Set up preliminary projection without a known bounding box.
+        FloatType aspectRatio = (FloatType)vpRect.height() / vpRect.width();
+        _projParams = computeProjectionParameters(time, aspectRatio, renderer->waitForLongOperationsEnabled());
 
-		// Adjust projection if render frame is shown.
-		if(renderPreviewMode())
-			adjustProjectionForRenderFrame(dataset, _projParams);
+        // Adjust projection if render frame is shown.
+        if(renderPreviewMode())
+            adjustProjectionForRenderFrame(dataset, _projParams);
 
-		// Determine scene bounding box.
-		Box3 boundingBox = renderer->computeSceneBoundingBox(time, scene(), _projParams, this);
+        // Determine scene bounding box.
+        Box3 boundingBox = renderer->computeSceneBoundingBox(time, scene(), _projParams, this);
 
-		// Set up final projection with the now known bounding box.
-		_projParams = computeProjectionParameters(time, aspectRatio, renderer->waitForLongOperationsEnabled(), boundingBox);
+        // Set up final projection with the now known bounding box.
+        _projParams = computeProjectionParameters(time, aspectRatio, renderer->waitForLongOperationsEnabled(), boundingBox);
 
-		// Adjust projection if render frame is shown.
-		if(renderPreviewMode())
-			adjustProjectionForRenderFrame(dataset, _projParams);
+        // Adjust projection if render frame is shown.
+        if(renderPreviewMode())
+            adjustProjectionForRenderFrame(dataset, _projParams);
 
-		// Set up the viewport renderer.
-		renderer->beginFrame(time, scene(), _projParams, this, vpRect, nullptr);
+        // Set up the viewport renderer.
+        renderer->beginFrame(time, scene(), _projParams, this, vpRect, nullptr);
 
-		// Render viewport "underlays".
-		if(renderPreviewMode() && !renderer->isPicking()) {
-			if(boost::algorithm::any_of(underlays(), [](ViewportOverlay* layer) { return layer->isEnabled(); })) {
-				QRect renderViewportRect = this->renderViewportRect(dataset);
-				if(!renderViewportRect.isEmpty()) {
-					Box2 renderFrameBox = renderFrameRect(dataset);
-					if(!renderFrameBox.isEmpty()) {
-						QRect renderFrameRect(
-								(renderFrameBox.minc.x() + 1) * vpRect.width() / 2,
-								(renderFrameBox.minc.y() + 1) * vpRect.height() / 2,
-								renderFrameBox.width() * vpRect.width() / 2,
-								renderFrameBox.height() * vpRect.height() / 2);
-						renderer->setProjParams(computeProjectionParameters(time, (FloatType)renderViewportRect.height() / renderViewportRect.width(), renderer->waitForLongOperationsEnabled(), boundingBox));
-						renderer->renderOverlays(true, renderViewportRect, renderFrameRect, renderOperation);
-					}
-				}
-			}
-		}
+        // Render viewport "underlays".
+        if(renderPreviewMode() && !renderer->isPicking()) {
+            if(boost::algorithm::any_of(underlays(), [](ViewportOverlay* layer) { return layer->isEnabled(); })) {
+                QRect renderViewportRect = this->renderViewportRect(dataset);
+                if(!renderViewportRect.isEmpty()) {
+                    Box2 renderFrameBox = renderFrameRect(dataset);
+                    if(!renderFrameBox.isEmpty()) {
+                        QRect renderFrameRect(
+                                (renderFrameBox.minc.x() + 1) * vpRect.width() / 2,
+                                (renderFrameBox.minc.y() + 1) * vpRect.height() / 2,
+                                renderFrameBox.width() * vpRect.width() / 2,
+                                renderFrameBox.height() * vpRect.height() / 2);
+                        renderer->setProjParams(computeProjectionParameters(time, (FloatType)renderViewportRect.height() / renderViewportRect.width(), renderer->waitForLongOperationsEnabled(), boundingBox));
+                        renderer->renderOverlays(true, renderViewportRect, renderFrameRect, renderOperation);
+                    }
+                }
+            }
+        }
 
-		// Pass final projection parameters to renderer.
-		renderer->setProjParams(_projParams);
+        // Pass final projection parameters to renderer.
+        renderer->setProjParams(_projParams);
 
-		// Call the viewport renderer to render the scene objects.
-		renderer->renderFrame(vpRect, renderOperation);
+        // Call the viewport renderer to render the scene objects.
+        renderer->renderFrame(vpRect, renderOperation);
 
-		// Render viewport "overlays".
-		if(renderPreviewMode() && !renderer->isPicking()) {
-			if(boost::algorithm::any_of(overlays(), [](ViewportOverlay* layer) { return layer->isEnabled(); })) {
-				QRect renderViewportRect = this->renderViewportRect(dataset);
-				if(!renderViewportRect.isEmpty()) {
-					Box2 renderFrameBox = renderFrameRect(dataset);
-					if(!renderFrameBox.isEmpty()) {
-						QRect renderFrameRect(
-								(renderFrameBox.minc.x() + 1) * vpRect.width() / 2,
-								(renderFrameBox.minc.y() + 1) * vpRect.height() / 2,
-								renderFrameBox.width() * vpRect.width() / 2,
-								renderFrameBox.height() * vpRect.height() / 2);
-						renderer->setProjParams(computeProjectionParameters(time, (FloatType)renderViewportRect.height() / renderViewportRect.width(), renderer->waitForLongOperationsEnabled(), boundingBox));
-						renderer->renderOverlays(false, renderViewportRect, renderFrameRect, renderOperation);
-					}
-				}
-			}
-		}
+        // Render viewport "overlays".
+        if(renderPreviewMode() && !renderer->isPicking()) {
+            if(boost::algorithm::any_of(overlays(), [](ViewportOverlay* layer) { return layer->isEnabled(); })) {
+                QRect renderViewportRect = this->renderViewportRect(dataset);
+                if(!renderViewportRect.isEmpty()) {
+                    Box2 renderFrameBox = renderFrameRect(dataset);
+                    if(!renderFrameBox.isEmpty()) {
+                        QRect renderFrameRect(
+                                (renderFrameBox.minc.x() + 1) * vpRect.width() / 2,
+                                (renderFrameBox.minc.y() + 1) * vpRect.height() / 2,
+                                renderFrameBox.width() * vpRect.width() / 2,
+                                renderFrameBox.height() * vpRect.height() / 2);
+                        renderer->setProjParams(computeProjectionParameters(time, (FloatType)renderViewportRect.height() / renderViewportRect.width(), renderer->waitForLongOperationsEnabled(), boundingBox));
+                        renderer->renderOverlays(false, renderViewportRect, renderFrameRect, renderOperation);
+                    }
+                }
+            }
+        }
 
-		// Let GUI window render its own graphics on top of the scene.
-		if(!renderer->isPicking()) {
-			window()->renderGui(renderer);
-		}
+        // Let GUI window render its own graphics on top of the scene.
+        if(!renderer->isPicking()) {
+            window()->renderGui(renderer);
+        }
 
-		// Finish rendering.
-		renderer->endFrame(true, vpRect);
-		renderer->endRender();
+        // Finish rendering.
+        renderer->endFrame(true, vpRect);
+        renderer->endRender();
 
-		// Discard unused vis element resources.
-		if(!renderer->isPicking())
-			Application::instance()->visCache().discardUnusedObjects();
+        // Discard unused vis element resources.
+        if(!renderer->isPicking())
+            Application::instance()->visCache().discardUnusedObjects();
 
-		userInterface._viewportBeingRendered = nullptr;
-	}
-	catch(...) {
-		userInterface._viewportBeingRendered = nullptr;
-		throw;
-	}
+        userInterface._viewportBeingRendered = nullptr;
+    }
+    catch(...) {
+        userInterface._viewportBeingRendered = nullptr;
+        throw;
+    }
 }
 
 /******************************************************************************
@@ -716,26 +716,26 @@ void Viewport::renderInteractive(UserInterface& userInterface, DataSet* dataset,
 ******************************************************************************/
 QRect Viewport::renderViewportRect(DataSet* dataset) const
 {
-	RenderSettings* renderSettings = dataset ? dataset->renderSettings() : nullptr;
-	if(!renderSettings)
-		return QRect();
-	QRect frameBufferRect(0, 0, renderSettings->outputImageWidth(), renderSettings->outputImageHeight());
+    RenderSettings* renderSettings = dataset ? dataset->renderSettings() : nullptr;
+    if(!renderSettings)
+        return QRect();
+    QRect frameBufferRect(0, 0, renderSettings->outputImageWidth(), renderSettings->outputImageHeight());
 
-	// Aspect ratio of the viewport rectangle in the rendered output image.
-	if(renderSettings->renderAllViewports() && dataset->viewportConfig()) {
+    // Aspect ratio of the viewport rectangle in the rendered output image.
+    if(renderSettings->renderAllViewports() && dataset->viewportConfig()) {
 
-		// Compute target rectangles of all viewports of the current layout.
-		// TODO: This should be optimized. Computing the full layout everytime seems unnecessary.
-		std::vector<std::pair<Viewport*, QRectF>> viewportRects = dataset->viewportConfig()->getViewportRectangles(frameBufferRect);
+        // Compute target rectangles of all viewports of the current layout.
+        // TODO: This should be optimized. Computing the full layout everytime seems unnecessary.
+        std::vector<std::pair<Viewport*, QRectF>> viewportRects = dataset->viewportConfig()->getViewportRectangles(frameBufferRect);
 
-		// Find this viewport among the list of all viewports to look up its target rectangle in the output image.
-		for(const std::pair<Viewport*, QRectF>& rect : viewportRects) {
-			if(rect.first == this)
-				return rect.second.toRect();
-		}
-	}
+        // Find this viewport among the list of all viewports to look up its target rectangle in the output image.
+        for(const std::pair<Viewport*, QRectF>& rect : viewportRects) {
+            if(rect.first == this)
+                return rect.second.toRect();
+        }
+    }
 
-	return frameBufferRect;
+    return frameBufferRect;
 }
 
 /******************************************************************************
@@ -743,11 +743,11 @@ QRect Viewport::renderViewportRect(DataSet* dataset) const
 ******************************************************************************/
 FloatType Viewport::renderAspectRatio(DataSet* dataset) const
 {
-	QRect rect = renderViewportRect(dataset);
-	if(rect.isEmpty())
-		return 0;
+    QRect rect = renderViewportRect(dataset);
+    if(rect.isEmpty())
+        return 0;
 
-	return (FloatType)rect.height() / (FloatType)rect.width();
+    return (FloatType)rect.height() / (FloatType)rect.width();
 }
 
 /******************************************************************************
@@ -756,33 +756,33 @@ FloatType Viewport::renderAspectRatio(DataSet* dataset) const
 ******************************************************************************/
 void Viewport::adjustProjectionForRenderFrame(DataSet* dataset, ViewProjectionParameters& params)
 {
-	QSize vpSize = windowSize();
-	if(vpSize.isEmpty())
-		return;
+    QSize vpSize = windowSize();
+    if(vpSize.isEmpty())
+        return;
 
-	FloatType renderAspectRatio = this->renderAspectRatio(dataset);
-	if(renderAspectRatio == 0.0)
-		return;
+    FloatType renderAspectRatio = this->renderAspectRatio(dataset);
+    if(renderAspectRatio == 0.0)
+        return;
 
-	FloatType windowAspectRatio = (FloatType)vpSize.height() / vpSize.width();
+    FloatType windowAspectRatio = (FloatType)vpSize.height() / vpSize.width();
 
-	if(_projParams.isPerspective) {
-		if(renderAspectRatio < windowAspectRatio)
-			params.fieldOfView = atan(tan(params.fieldOfView/2) / (VIEWPORT_RENDER_FRAME_SIZE / windowAspectRatio * renderAspectRatio))*2;
-		else
-			params.fieldOfView = atan(tan(params.fieldOfView/2) / VIEWPORT_RENDER_FRAME_SIZE)*2;
-		params.projectionMatrix = Matrix4::perspective(params.fieldOfView, FloatType(1) / params.aspectRatio, params.znear, params.zfar);
-	}
-	else {
-		if(renderAspectRatio < windowAspectRatio)
-			params.fieldOfView /= VIEWPORT_RENDER_FRAME_SIZE / windowAspectRatio * renderAspectRatio;
-		else
-			params.fieldOfView /= VIEWPORT_RENDER_FRAME_SIZE;
-		params.projectionMatrix = Matrix4::ortho(-params.fieldOfView / params.aspectRatio, params.fieldOfView / params.aspectRatio,
-							-params.fieldOfView, params.fieldOfView,
-							params.znear, params.zfar);
-	}
-	params.inverseProjectionMatrix = params.projectionMatrix.inverse();
+    if(_projParams.isPerspective) {
+        if(renderAspectRatio < windowAspectRatio)
+            params.fieldOfView = atan(tan(params.fieldOfView/2) / (VIEWPORT_RENDER_FRAME_SIZE / windowAspectRatio * renderAspectRatio))*2;
+        else
+            params.fieldOfView = atan(tan(params.fieldOfView/2) / VIEWPORT_RENDER_FRAME_SIZE)*2;
+        params.projectionMatrix = Matrix4::perspective(params.fieldOfView, FloatType(1) / params.aspectRatio, params.znear, params.zfar);
+    }
+    else {
+        if(renderAspectRatio < windowAspectRatio)
+            params.fieldOfView /= VIEWPORT_RENDER_FRAME_SIZE / windowAspectRatio * renderAspectRatio;
+        else
+            params.fieldOfView /= VIEWPORT_RENDER_FRAME_SIZE;
+        params.projectionMatrix = Matrix4::ortho(-params.fieldOfView / params.aspectRatio, params.fieldOfView / params.aspectRatio,
+                            -params.fieldOfView, params.fieldOfView,
+                            params.znear, params.zfar);
+    }
+    params.inverseProjectionMatrix = params.projectionMatrix.inverse();
 }
 
 /******************************************************************************
@@ -792,28 +792,28 @@ void Viewport::adjustProjectionForRenderFrame(DataSet* dataset, ViewProjectionPa
 ******************************************************************************/
 Box2 Viewport::renderFrameRect(DataSet* dataset) const
 {
-	QSize vpSize = windowSize();
-	if(vpSize.isEmpty())
-		return {};
+    QSize vpSize = windowSize();
+    if(vpSize.isEmpty())
+        return {};
 
-	// Aspect ratio of the viewport rectangle in the rendered output image.
-	FloatType renderAspectRatio = this->renderAspectRatio(dataset);
-	if(renderAspectRatio == 0.0)
-		return {};
+    // Aspect ratio of the viewport rectangle in the rendered output image.
+    FloatType renderAspectRatio = this->renderAspectRatio(dataset);
+    if(renderAspectRatio == 0.0)
+        return {};
 
-	// Compute a rectangle fitted into the viewport window that has the same aspect ratio as the rendered viewport image.
-	FloatType windowAspectRatio = (FloatType)vpSize.height() / vpSize.width();
-	FloatType frameWidth, frameHeight;
-	if(renderAspectRatio < windowAspectRatio) {
-		frameWidth = VIEWPORT_RENDER_FRAME_SIZE;
-		frameHeight = frameWidth / windowAspectRatio * renderAspectRatio;
-	}
-	else {
-		frameHeight = VIEWPORT_RENDER_FRAME_SIZE;
-		frameWidth = frameHeight / renderAspectRatio * windowAspectRatio;
-	}
+    // Compute a rectangle fitted into the viewport window that has the same aspect ratio as the rendered viewport image.
+    FloatType windowAspectRatio = (FloatType)vpSize.height() / vpSize.width();
+    FloatType frameWidth, frameHeight;
+    if(renderAspectRatio < windowAspectRatio) {
+        frameWidth = VIEWPORT_RENDER_FRAME_SIZE;
+        frameHeight = frameWidth / windowAspectRatio * renderAspectRatio;
+    }
+    else {
+        frameHeight = VIEWPORT_RENDER_FRAME_SIZE;
+        frameWidth = frameHeight / renderAspectRatio * windowAspectRatio;
+    }
 
-	return Box2(-frameWidth, -frameHeight, frameWidth, frameHeight);
+    return Box2(-frameWidth, -frameHeight, frameWidth, frameHeight);
 }
 
 /******************************************************************************
@@ -822,27 +822,27 @@ Box2 Viewport::renderFrameRect(DataSet* dataset) const
 ******************************************************************************/
 FloatType Viewport::nonScalingSize(const Point3& worldPosition)
 {
-	// Get window size in device-independent pixels.
-	int height = window() ? window()->viewportWindowDeviceIndependentSize().height() : 0;
-	if(height == 0) 
-		return 1;
+    // Get window size in device-independent pixels.
+    int height = window() ? window()->viewportWindowDeviceIndependentSize().height() : 0;
+    if(height == 0) 
+        return 1;
 
-	constexpr FloatType baseSize = 60;
+    constexpr FloatType baseSize = 60;
 
-	if(isPerspectiveProjection()) {
+    if(isPerspectiveProjection()) {
 
-		Point3 p = projectionParams().viewMatrix * worldPosition;
+        Point3 p = projectionParams().viewMatrix * worldPosition;
         Point3 p1 = projectionParams().projectionMatrix * p;
-		Point3 p2 = projectionParams().projectionMatrix * (p + Vector3(0,1,0));
-		FloatType dist = (p1 - p2).length();
-		if(std::abs(dist) < FLOATTYPE_EPSILON)
-			return 1;
+        Point3 p2 = projectionParams().projectionMatrix * (p + Vector3(0,1,0));
+        FloatType dist = (p1 - p2).length();
+        if(std::abs(dist) < FLOATTYPE_EPSILON)
+            return 1;
 
-		return FloatType(0.8) * baseSize / dist / (FloatType)height;
-	}
-	else {
-		return _projParams.fieldOfView / (FloatType)height * baseSize;
-	}
+        return FloatType(0.8) * baseSize / dist / (FloatType)height;
+    }
+    else {
+        return _projParams.fieldOfView / (FloatType)height * baseSize;
+    }
 }
 
 /******************************************************************************
@@ -851,18 +851,18 @@ FloatType Viewport::nonScalingSize(const Point3& worldPosition)
 ******************************************************************************/
 bool Viewport::snapPoint(const QPointF& screenPoint, Point3& snapPoint, const AffineTransformation& snapSystem)
 {
-	// Compute the intersection point of the ray with the X-Y plane of the snapping coordinate system.
+    // Compute the intersection point of the ray with the X-Y plane of the snapping coordinate system.
     Ray3 ray = snapSystem.inverse() * screenRay(screenPoint);
 
     Plane3 plane(Vector3(0,0,1), 0);
-	FloatType t = plane.intersectionT(ray, FloatType(1e-3));
-	if(t == FLOATTYPE_MAX) return false;
-	if(isPerspectiveProjection() && t <= 0) return false;
+    FloatType t = plane.intersectionT(ray, FloatType(1e-3));
+    if(t == FLOATTYPE_MAX) return false;
+    if(isPerspectiveProjection() && t <= 0) return false;
 
-	snapPoint = ray.point(t);
-	snapPoint.z() = 0;
+    snapPoint = ray.point(t);
+    snapPoint.z() = 0;
 
-	return true;
+    return true;
 }
 
 /******************************************************************************
@@ -870,10 +870,10 @@ bool Viewport::snapPoint(const QPointF& screenPoint, Point3& snapPoint, const Af
 ******************************************************************************/
 Ray3 Viewport::screenRay(const QPointF& screenPoint)
 {
-	QSize vpSize = windowSize();
-	return viewportRay(Point2(
-			(FloatType)screenPoint.x() / vpSize.width() * FloatType(2) - FloatType(1),
-			FloatType(1) - (FloatType)screenPoint.y() / vpSize.height() * FloatType(2)));
+    QSize vpSize = windowSize();
+    return viewportRay(Point2(
+            (FloatType)screenPoint.x() / vpSize.width() * FloatType(2) - FloatType(1),
+            FloatType(1) - (FloatType)screenPoint.y() / vpSize.height() * FloatType(2)));
 }
 
 /******************************************************************************
@@ -881,17 +881,17 @@ Ray3 Viewport::screenRay(const QPointF& screenPoint)
 ******************************************************************************/
 Ray3 Viewport::viewportRay(const Point2& viewportPoint)
 {
-	if(projectionParams().isPerspective) {
-		Point3 ndc1(viewportPoint.x(), viewportPoint.y(), 1);
-		Point3 ndc2(viewportPoint.x(), viewportPoint.y(), 0);
-		Point3 p1 = projectionParams().inverseViewMatrix * (projectionParams().inverseProjectionMatrix * ndc1);
-		Point3 p2 = projectionParams().inverseViewMatrix * (projectionParams().inverseProjectionMatrix * ndc2);
-		return { Point3::Origin() + _projParams.inverseViewMatrix.translation(), p1 - p2 };
-	}
-	else {
-		Point3 ndc(viewportPoint.x(), viewportPoint.y(), -1);
-		return { projectionParams().inverseViewMatrix * (projectionParams().inverseProjectionMatrix * ndc), projectionParams().inverseViewMatrix * Vector3(0,0,-1) };
-	}
+    if(projectionParams().isPerspective) {
+        Point3 ndc1(viewportPoint.x(), viewportPoint.y(), 1);
+        Point3 ndc2(viewportPoint.x(), viewportPoint.y(), 0);
+        Point3 p1 = projectionParams().inverseViewMatrix * (projectionParams().inverseProjectionMatrix * ndc1);
+        Point3 p2 = projectionParams().inverseViewMatrix * (projectionParams().inverseProjectionMatrix * ndc2);
+        return { Point3::Origin() + _projParams.inverseViewMatrix.translation(), p1 - p2 };
+    }
+    else {
+        Point3 ndc(viewportPoint.x(), viewportPoint.y(), -1);
+        return { projectionParams().inverseViewMatrix * (projectionParams().inverseProjectionMatrix * ndc), projectionParams().inverseViewMatrix * Vector3(0,0,-1) };
+    }
 }
 
 /******************************************************************************
@@ -902,21 +902,21 @@ Ray3 Viewport::viewportRay(const Point2& viewportPoint)
 ******************************************************************************/
 bool Viewport::computeConstructionPlaneIntersection(const Point2& viewportPosition, Point3& intersectionPoint, FloatType epsilon)
 {
-	// The construction plane in grid coordinates.
-	Plane3 gridPlane = Plane3(Vector3(0,0,1), 0);
+    // The construction plane in grid coordinates.
+    Plane3 gridPlane = Plane3(Vector3(0,0,1), 0);
 
-	// Compute the ray and transform it to the grid coordinate system.
-	Ray3 ray = gridMatrix().inverse() * viewportRay(viewportPosition);
+    // Compute the ray and transform it to the grid coordinate system.
+    Ray3 ray = gridMatrix().inverse() * viewportRay(viewportPosition);
 
-	// Compute intersection point.
-	FloatType t = gridPlane.intersectionT(ray, epsilon);
+    // Compute intersection point.
+    FloatType t = gridPlane.intersectionT(ray, epsilon);
     if(t == std::numeric_limits<FloatType>::max()) return false;
-	if(isPerspectiveProjection() && t <= 0) return false;
+    if(isPerspectiveProjection() && t <= 0) return false;
 
-	intersectionPoint = ray.point(t);
-	intersectionPoint.z() = 0;
+    intersectionPoint = ray.point(t);
+    intersectionPoint.z() = 0;
 
-	return true;
+    return true;
 }
 
 /******************************************************************************
@@ -924,44 +924,44 @@ bool Viewport::computeConstructionPlaneIntersection(const Point2& viewportPositi
 ******************************************************************************/
 Point3 Viewport::orbitCenter()
 {
-	// Use the target of a camera as the orbit center.
-	if(viewNode() && viewType() == Viewport::VIEW_SCENENODE && viewNode()->lookatTargetNode()) {
-		TimeInterval iv;
-		AnimationTime time = scene()->animationSettings()->currentTime();
-		return Point3::Origin() + viewNode()->lookatTargetNode()->getWorldTransform(time, iv).translation();
-	}
-	else if(scene()) {
-		Point3 currentOrbitCenter = Point3::Origin();
+    // Use the target of a camera as the orbit center.
+    if(viewNode() && viewType() == Viewport::VIEW_SCENENODE && viewNode()->lookatTargetNode()) {
+        TimeInterval iv;
+        AnimationTime time = scene()->animationSettings()->currentTime();
+        return Point3::Origin() + viewNode()->lookatTargetNode()->getWorldTransform(time, iv).translation();
+    }
+    else if(scene()) {
+        Point3 currentOrbitCenter = Point3::Origin();
 
-		// Compute scene's orbiting center.
-		if(scene()->orbitCenterMode() == Scene::OrbitCenterMode::ORBIT_SELECTION_CENTER) {
-			AnimationTime time = scene()->animationSettings()->currentTime();
-			Box3 selectionBoundingBox;
-			for(SceneNode* node : scene()->selection()->nodes()) {
-				selectionBoundingBox.addBox(node->worldBoundingBox(time, this));
-			}
-			if(!selectionBoundingBox.isEmpty())
-				currentOrbitCenter = selectionBoundingBox.center();
-			else {
-				Box3 sceneBoundingBox = scene()->worldBoundingBox(time, this);
-				if(!sceneBoundingBox.isEmpty())
-					currentOrbitCenter = sceneBoundingBox.center();
-			}
-		}
-		else if(scene()->orbitCenterMode() == Scene::OrbitCenterMode::ORBIT_USER_DEFINED) {
-			currentOrbitCenter = scene()->userOrbitCenter();
-		}
+        // Compute scene's orbiting center.
+        if(scene()->orbitCenterMode() == Scene::OrbitCenterMode::ORBIT_SELECTION_CENTER) {
+            AnimationTime time = scene()->animationSettings()->currentTime();
+            Box3 selectionBoundingBox;
+            for(SceneNode* node : scene()->selection()->nodes()) {
+                selectionBoundingBox.addBox(node->worldBoundingBox(time, this));
+            }
+            if(!selectionBoundingBox.isEmpty())
+                currentOrbitCenter = selectionBoundingBox.center();
+            else {
+                Box3 sceneBoundingBox = scene()->worldBoundingBox(time, this);
+                if(!sceneBoundingBox.isEmpty())
+                    currentOrbitCenter = sceneBoundingBox.center();
+            }
+        }
+        else if(scene()->orbitCenterMode() == Scene::OrbitCenterMode::ORBIT_USER_DEFINED) {
+            currentOrbitCenter = scene()->userOrbitCenter();
+        }
 
-		if(viewNode() && isPerspectiveProjection()) {
-			// If a free camera node is selected, the current orbit center is at the same location as the camera.
-			// In this case, we should shift the orbit center such that it is in front of the camera.
-			Point3 camPos = Point3::Origin() + projectionParams().inverseViewMatrix.translation();
-			if(currentOrbitCenter.equals(camPos))
-				currentOrbitCenter = camPos - FloatType(50) * projectionParams().inverseViewMatrix.column(2);
-		}
-		return currentOrbitCenter;
-	}
-	return Point3::Origin();
+        if(viewNode() && isPerspectiveProjection()) {
+            // If a free camera node is selected, the current orbit center is at the same location as the camera.
+            // In this case, we should shift the orbit center such that it is in front of the camera.
+            Point3 camPos = Point3::Origin() + projectionParams().inverseViewMatrix.translation();
+            if(currentOrbitCenter.equals(camPos))
+                currentOrbitCenter = camPos - FloatType(50) * projectionParams().inverseViewMatrix.column(2);
+        }
+        return currentOrbitCenter;
+    }
+    return Point3::Origin();
 }
 
 /******************************************************************************
@@ -969,15 +969,15 @@ Point3 Viewport::orbitCenter()
 ******************************************************************************/
 ViewportLayoutCell* Viewport::layoutCell() const
 {
-	ViewportLayoutCell* result = nullptr;
-	visitDependents([&](RefMaker* dependent) {
-		if(ViewportLayoutCell* cell = dynamic_object_cast<ViewportLayoutCell>(dependent)) {
-			OVITO_ASSERT(cell->viewport() == this);
-			OVITO_ASSERT(!result);
-			result = cell;
-		}
-	});
-	return result;
+    ViewportLayoutCell* result = nullptr;
+    visitDependents([&](RefMaker* dependent) {
+        if(ViewportLayoutCell* cell = dynamic_object_cast<ViewportLayoutCell>(dependent)) {
+            OVITO_ASSERT(cell->viewport() == this);
+            OVITO_ASSERT(!result);
+            result = cell;
+        }
+    });
+    return result;
 }
 
 /******************************************************************************
@@ -985,7 +985,7 @@ ViewportLayoutCell* Viewport::layoutCell() const
 ******************************************************************************/
 void Viewport::setWindow(ViewportWindowInterface* window) 
 { 
-	_window = window; 
+    _window = window; 
 }
 
-}	// End of namespace
+}   // End of namespace

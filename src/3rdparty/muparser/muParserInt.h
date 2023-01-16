@@ -124,7 +124,7 @@ public:
     ParserInt();
 
     virtual void InitFun();
-	  virtual void InitOprt();
+      virtual void InitOprt();
     virtual void InitConst();
     virtual void InitCharSets();
 };

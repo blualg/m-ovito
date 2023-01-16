@@ -34,12 +34,12 @@ IMPLEMENT_OVITO_CLASS(VoxelGridColorCodingModifierDelegate);
 ******************************************************************************/
 QVector<DataObjectReference> VoxelGridColorCodingModifierDelegate::OOMetaClass::getApplicableObjects(const DataCollection& input) const
 {
-	// Gather list of all VoxelGrid objects in the input data collection.
-	QVector<DataObjectReference> objects;
-	for(const ConstDataObjectPath& path : input.getObjectsRecursive(VoxelGrid::OOClass())) {
-		objects.push_back(path);
-	}
-	return objects;
+    // Gather list of all VoxelGrid objects in the input data collection.
+    QVector<DataObjectReference> objects;
+    for(const ConstDataObjectPath& path : input.getObjectsRecursive(VoxelGrid::OOClass())) {
+        objects.push_back(path);
+    }
+    return objects;
 }
 
-}	// End of namespace
+}   // End of namespace

@@ -45,10 +45,10 @@ IMPLEMENT_OVITO_CLASS(ExpressionSelectionModifierDelegate);
 ******************************************************************************/
 ExpressionSelectionModifier::ExpressionSelectionModifier(ObjectCreationParams params) : DelegatingModifier(params)
 {
-	if(params.createSubObjects()) {
-		// Let this modifier operate on particles by default.
-		createDefaultModifierDelegate(ExpressionSelectionModifierDelegate::OOClass(), QStringLiteral("ParticlesExpressionSelectionModifierDelegate"), params);
-	}
+    if(params.createSubObjects()) {
+        // Let this modifier operate on particles by default.
+        createDefaultModifierDelegate(ExpressionSelectionModifierDelegate::OOClass(), QStringLiteral("ParticlesExpressionSelectionModifierDelegate"), params);
+    }
 }
 
 /******************************************************************************
@@ -56,12 +56,12 @@ ExpressionSelectionModifier::ExpressionSelectionModifier(ObjectCreationParams pa
 ******************************************************************************/
 void ExpressionSelectionModifier::propertyChanged(const PropertyFieldDescriptor* field)
 {
-	if(field == PROPERTY_FIELD(ExpressionSelectionModifier::expression) && !isBeingLoaded()) {
-		// Changes of some modifier parameters affect the result of ExpressionSelectionModifier::getPipelineEditorShortInfo().
-		notifyDependents(ReferenceEvent::ObjectStatusChanged);
-	}
+    if(field == PROPERTY_FIELD(ExpressionSelectionModifier::expression) && !isBeingLoaded()) {
+        // Changes of some modifier parameters affect the result of ExpressionSelectionModifier::getPipelineEditorShortInfo().
+        notifyDependents(ReferenceEvent::ObjectStatusChanged);
+    }
 
-	DelegatingModifier::propertyChanged(field);
+    DelegatingModifier::propertyChanged(field);
 }
 
 /******************************************************************************
@@ -69,61 +69,61 @@ void ExpressionSelectionModifier::propertyChanged(const PropertyFieldDescriptor*
 ******************************************************************************/
 PipelineStatus ExpressionSelectionModifierDelegate::apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const PipelineFlowState& inputState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs)
 {
-	ExpressionSelectionModifier* expressionMod = static_object_cast<ExpressionSelectionModifier>(request.modifier());
+    ExpressionSelectionModifier* expressionMod = static_object_cast<ExpressionSelectionModifier>(request.modifier());
 
-	// The current animation frame number.
-	int currentFrame = request.time().frame(); // Note: Using global animation frame here, because that's what the user expects.
+    // The current animation frame number.
+    int currentFrame = request.time().frame(); // Note: Using global animation frame here, because that's what the user expects.
 
-	// Look up the input property container.
-   	DataObjectPath objectPath = state.expectMutableObject(inputContainerRef());
-	PropertyContainer* container = static_object_cast<PropertyContainer>(objectPath.back());
+    // Look up the input property container.
+    DataObjectPath objectPath = state.expectMutableObject(inputContainerRef());
+    PropertyContainer* container = static_object_cast<PropertyContainer>(objectPath.back());
 
-	// Initialize the evaluator class.
-	std::unique_ptr<PropertyExpressionEvaluator> evaluator = initializeExpressionEvaluator(QStringList(expressionMod->expression()), state, objectPath, currentFrame);
+    // Initialize the evaluator class.
+    std::unique_ptr<PropertyExpressionEvaluator> evaluator = initializeExpressionEvaluator(QStringList(expressionMod->expression()), state, objectPath, currentFrame);
 
-	// Save list of available input variables, which will be displayed in the modifier's UI.
-	expressionMod->setVariablesInfo(evaluator->inputVariableNames(), evaluator->inputVariableTable());
+    // Save list of available input variables, which will be displayed in the modifier's UI.
+    expressionMod->setVariablesInfo(evaluator->inputVariableNames(), evaluator->inputVariableTable());
 
-	// If the user has not yet entered an expression let him know which
-	// data channels can be used in the expression.
-	if(expressionMod->expression().isEmpty())
-		return PipelineStatus(PipelineStatus::Warning, tr("Please enter a Boolean expression."));
+    // If the user has not yet entered an expression let him know which
+    // data channels can be used in the expression.
+    if(expressionMod->expression().isEmpty())
+        return PipelineStatus(PipelineStatus::Warning, tr("Please enter a Boolean expression."));
 
-	// Check if expression contains an assignment ('=' operator).
-	// This should be considered a user's mistake, because the user is probably referring the comparison operator '=='.
-	if(expressionMod->expression().contains(QRegularExpression(QStringLiteral("[^=!><]=(?!=)"))))
-		throw Exception(tr("The expression contains the assignment operator '='. Please use the comparison operator '==' instead."));
+    // Check if expression contains an assignment ('=' operator).
+    // This should be considered a user's mistake, because the user is probably referring the comparison operator '=='.
+    if(expressionMod->expression().contains(QRegularExpression(QStringLiteral("[^=!><]=(?!=)"))))
+        throw Exception(tr("The expression contains the assignment operator '='. Please use the comparison operator '==' instead."));
 
-	// The number of selected elements.
-	std::atomic_size_t nselected(0);
+    // The number of selected elements.
+    std::atomic_size_t nselected(0);
 
-	// Generate the output selection property.
-	PropertyAccess<int> selProperty = container->createProperty(PropertyObject::GenericSelectionProperty);
+    // Generate the output selection property.
+    PropertyAccess<int> selProperty = container->createProperty(PropertyObject::GenericSelectionProperty);
 
-	// Evaluate Boolean expression for every input data element.
-	evaluator->evaluate([&selProperty, &nselected](size_t elementIndex, size_t componentIndex, double value) {
-		if(value) {
-			selProperty[elementIndex] = 1;
-			++nselected;
-		}
-		else {
-			selProperty[elementIndex] = 0;
-		}
-	});
+    // Evaluate Boolean expression for every input data element.
+    evaluator->evaluate([&selProperty, &nselected](size_t elementIndex, size_t componentIndex, double value) {
+        if(value) {
+            selProperty[elementIndex] = 1;
+            ++nselected;
+        }
+        else {
+            selProperty[elementIndex] = 0;
+        }
+    });
 
-	// If the expression contains a time-dependent term, then we have to restrict the validity interval
-	// of the generated selection to the current animation time.
-	if(evaluator->isTimeDependent())
-		state.intersectStateValidity(request.time());
+    // If the expression contains a time-dependent term, then we have to restrict the validity interval
+    // of the generated selection to the current animation time.
+    if(evaluator->isTimeDependent())
+        state.intersectStateValidity(request.time());
 
-	// Report the total number of selected elements as a pipeline attribute.
-	state.addAttribute(QStringLiteral("ExpressionSelection.count"), QVariant::fromValue(nselected.load()), request.modApp());
-	// For backward compatibility with OVITO 2.9.0.
-	state.addAttribute(QStringLiteral("SelectExpression.num_selected"), QVariant::fromValue(nselected.load()), request.modApp());
+    // Report the total number of selected elements as a pipeline attribute.
+    state.addAttribute(QStringLiteral("ExpressionSelection.count"), QVariant::fromValue(nselected.load()), request.modApp());
+    // For backward compatibility with OVITO 2.9.0.
+    state.addAttribute(QStringLiteral("SelectExpression.num_selected"), QVariant::fromValue(nselected.load()), request.modApp());
 
-	// Update status display in the UI.
-	QString statusMessage = tr("%1 out of %2 elements selected (%3%)").arg(nselected.load()).arg(selProperty.size()).arg((FloatType)nselected.load() * 100 / std::max((size_t)1,selProperty.size()), 0, 'f', 1);
-	return PipelineStatus(std::move(statusMessage));
+    // Update status display in the UI.
+    QString statusMessage = tr("%1 out of %2 elements selected (%3%)").arg(nselected.load()).arg(selProperty.size()).arg((FloatType)nselected.load() * 100 / std::max((size_t)1,selProperty.size()), 0, 'f', 1);
+    return PipelineStatus(std::move(statusMessage));
 }
 
 /******************************************************************************
@@ -131,9 +131,9 @@ PipelineStatus ExpressionSelectionModifierDelegate::apply(const ModifierEvaluati
 ******************************************************************************/
 std::unique_ptr<PropertyExpressionEvaluator> ExpressionSelectionModifierDelegate::initializeExpressionEvaluator(const QStringList& expressions, const PipelineFlowState& inputState, const ConstDataObjectPath& containerPath, int animationFrame)
 {
-	std::unique_ptr<PropertyExpressionEvaluator> evaluator = std::make_unique<PropertyExpressionEvaluator>();
-	evaluator->initialize(expressions, inputState, containerPath, animationFrame);
-	return evaluator;
+    std::unique_ptr<PropertyExpressionEvaluator> evaluator = std::make_unique<PropertyExpressionEvaluator>();
+    evaluator->initialize(expressions, inputState, containerPath, animationFrame);
+    return evaluator;
 }
 
-}	// End of namespace
+}   // End of namespace

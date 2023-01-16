@@ -33,19 +33,19 @@ IMPLEMENT_OVITO_CLASS(TrajectoryObject);
 ******************************************************************************/
 void TrajectoryObject::OOMetaClass::initialize()
 {
-	PropertyContainerClass::initialize();
+    PropertyContainerClass::initialize();
 
-	setPropertyClassDisplayName(tr("Trajectories"));
-	setElementDescriptionName(QStringLiteral("vertex"));
-	setPythonName(QStringLiteral("trajectories"));
+    setPropertyClassDisplayName(tr("Trajectories"));
+    setElementDescriptionName(QStringLiteral("vertex"));
+    setPythonName(QStringLiteral("trajectories"));
 
-	const QStringList emptyList;
-	const QStringList xyzList = QStringList() << "X" << "Y" << "Z";
-	const QStringList rgbList = QStringList() << "R" << "G" << "B";
-	registerStandardProperty(ColorProperty, tr("Color"), PropertyObject::Float, rgbList);
-	registerStandardProperty(PositionProperty, tr("Position"), PropertyObject::Float, xyzList);
-	registerStandardProperty(SampleTimeProperty, tr("Time"), PropertyObject::Int, emptyList);
-	registerStandardProperty(ParticleIdentifierProperty, tr("Particle Identifier"), PropertyObject::Int64, emptyList);
+    const QStringList emptyList;
+    const QStringList xyzList = QStringList() << "X" << "Y" << "Z";
+    const QStringList rgbList = QStringList() << "R" << "G" << "B";
+    registerStandardProperty(ColorProperty, tr("Color"), PropertyObject::Float, rgbList);
+    registerStandardProperty(PositionProperty, tr("Position"), PropertyObject::Float, xyzList);
+    registerStandardProperty(SampleTimeProperty, tr("Time"), PropertyObject::Int, emptyList);
+    registerStandardProperty(ParticleIdentifierProperty, tr("Particle Identifier"), PropertyObject::Int64, emptyList);
 }
 
 /******************************************************************************
@@ -53,59 +53,59 @@ void TrajectoryObject::OOMetaClass::initialize()
 ******************************************************************************/
 PropertyPtr TrajectoryObject::OOMetaClass::createStandardPropertyInternal(size_t elementCount, int type, DataBuffer::InitializationFlags flags, const ConstDataObjectPath& containerPath) const
 {
-	int dataType;
-	size_t componentCount;
+    int dataType;
+    size_t componentCount;
 
-	switch(type) {
-	case PositionProperty:
-		dataType = PropertyObject::Float;
-		componentCount = 3;
-		OVITO_ASSERT(componentCount * sizeof(FloatType) == sizeof(Point3));
-		break;
-	case ColorProperty:
-		dataType = PropertyObject::Float;
-		componentCount = 3;
-		OVITO_ASSERT(componentCount * sizeof(FloatType) == sizeof(Color));
-		break;
-	case SampleTimeProperty:
-		dataType = PropertyObject::Int;
-		componentCount = 1;
-		break;
-	case ParticleIdentifierProperty:
-		dataType = PropertyObject::Int64;
-		componentCount = 1;
-		break;
-	default:
-		OVITO_ASSERT_MSG(false, "TrajectoryObject::createStandardProperty()", "Invalid standard property type");
-		throw Exception(tr("This is not a valid standard property type: %1").arg(type));
-	}
+    switch(type) {
+    case PositionProperty:
+        dataType = PropertyObject::Float;
+        componentCount = 3;
+        OVITO_ASSERT(componentCount * sizeof(FloatType) == sizeof(Point3));
+        break;
+    case ColorProperty:
+        dataType = PropertyObject::Float;
+        componentCount = 3;
+        OVITO_ASSERT(componentCount * sizeof(FloatType) == sizeof(Color));
+        break;
+    case SampleTimeProperty:
+        dataType = PropertyObject::Int;
+        componentCount = 1;
+        break;
+    case ParticleIdentifierProperty:
+        dataType = PropertyObject::Int64;
+        componentCount = 1;
+        break;
+    default:
+        OVITO_ASSERT_MSG(false, "TrajectoryObject::createStandardProperty()", "Invalid standard property type");
+        throw Exception(tr("This is not a valid standard property type: %1").arg(type));
+    }
 
-	const QStringList& componentNames = standardPropertyComponentNames(type);
-	const QString& propertyName = standardPropertyName(type);
+    const QStringList& componentNames = standardPropertyComponentNames(type);
+    const QString& propertyName = standardPropertyName(type);
 
-	OVITO_ASSERT(componentCount == standardPropertyComponentCount(type));
+    OVITO_ASSERT(componentCount == standardPropertyComponentCount(type));
 
-	PropertyPtr property = PropertyPtr::create(elementCount, dataType, componentCount, propertyName, flags & ~DataBuffer::InitializeMemory, type, componentNames);
+    PropertyPtr property = PropertyPtr::create(elementCount, dataType, componentCount, propertyName, flags & ~DataBuffer::InitializeMemory, type, componentNames);
 
-	// Initialize memory if requested.
-	if(flags.testFlag(DataBuffer::InitializeMemory) && !containerPath.empty()) {
-		// Certain standard properties need to be initialized with default values determined by the attached visual element.
-		if(type == ColorProperty) {
-			if(const TrajectoryObject* trajectory = dynamic_object_cast<TrajectoryObject>(containerPath.back())) {
-				if(TrajectoryVis* trajectoryVis = dynamic_object_cast<TrajectoryVis>(trajectory->visElement())) {
-					property->fill(trajectoryVis->lineColor());
-					flags.setFlag(DataBuffer::InitializeMemory, false);
-				}
-			}
-		}
-	}
+    // Initialize memory if requested.
+    if(flags.testFlag(DataBuffer::InitializeMemory) && !containerPath.empty()) {
+        // Certain standard properties need to be initialized with default values determined by the attached visual element.
+        if(type == ColorProperty) {
+            if(const TrajectoryObject* trajectory = dynamic_object_cast<TrajectoryObject>(containerPath.back())) {
+                if(TrajectoryVis* trajectoryVis = dynamic_object_cast<TrajectoryVis>(trajectory->visElement())) {
+                    property->fill(trajectoryVis->lineColor());
+                    flags.setFlag(DataBuffer::InitializeMemory, false);
+                }
+            }
+        }
+    }
 
-	if(flags.testFlag(DataBuffer::InitializeMemory)) {
-		// Default-initialize property values with zeros.
-		property->fillZero();
-	}
+    if(flags.testFlag(DataBuffer::InitializeMemory)) {
+        // Default-initialize property values with zeros.
+        property->fillZero();
+    }
 
-	return property;
+    return property;
 }
 
 /******************************************************************************
@@ -113,12 +113,12 @@ PropertyPtr TrajectoryObject::OOMetaClass::createStandardPropertyInternal(size_t
 ******************************************************************************/
 TrajectoryObject::TrajectoryObject(ObjectCreationParams params) : PropertyContainer(params)
 {
-	// Assign the default data object identifier.
-	setIdentifier(OOClass().pythonName());
+    // Assign the default data object identifier.
+    setIdentifier(OOClass().pythonName());
 
-	// Create and attach a default visualization element for rendering the trajectory lines.
-	if(params.createVisElement())
-		setVisElement(OORef<TrajectoryVis>::create(params));
+    // Create and attach a default visualization element for rendering the trajectory lines.
+    if(params.createVisElement())
+        setVisElement(OORef<TrajectoryVis>::create(params));
 }
 
-}	// End of namespace
+}   // End of namespace

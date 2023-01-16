@@ -33,18 +33,18 @@ namespace Ovito::StdMod {
  */
 class OVITO_STDMOD_EXPORT ClearSelectionModifier : public GenericPropertyModifier
 {
-	OVITO_CLASS(ClearSelectionModifier)
-	Q_CLASSINFO("DisplayName", "Clear selection");
-	Q_CLASSINFO("Description", "Reset the selection state of all elements.");
-	Q_CLASSINFO("ModifierCategory", "Selection");
+    OVITO_CLASS(ClearSelectionModifier)
+    Q_CLASSINFO("DisplayName", "Clear selection");
+    Q_CLASSINFO("Description", "Reset the selection state of all elements.");
+    Q_CLASSINFO("ModifierCategory", "Selection");
 
 public:
 
-	/// \brief Constructs a new instance of this class.
-	Q_INVOKABLE ClearSelectionModifier(ObjectCreationParams params);
+    /// \brief Constructs a new instance of this class.
+    Q_INVOKABLE ClearSelectionModifier(ObjectCreationParams params);
 
-	/// Modifies the input data synchronously.
-	virtual void evaluateSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
+    /// Modifies the input data synchronously.
+    virtual void evaluateSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
 };
 
-}	// End of namespace
+}   // End of namespace

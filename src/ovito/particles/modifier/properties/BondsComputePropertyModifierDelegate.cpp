@@ -40,7 +40,7 @@ QVector<DataObjectReference> BondsComputePropertyModifierDelegate::OOMetaClass::
 {
     if(const ParticlesObject* particles = input.getObject<ParticlesObject>()) {
         if(particles->bonds())
-       		return { DataObjectReference(&ParticlesObject::OOClass()) };
+            return { DataObjectReference(&ParticlesObject::OOClass()) };
     }
     return {};
 }
@@ -50,48 +50,48 @@ QVector<DataObjectReference> BondsComputePropertyModifierDelegate::OOMetaClass::
 * modifier's results.
 ******************************************************************************/
 std::shared_ptr<ComputePropertyModifierDelegate::PropertyComputeEngine> BondsComputePropertyModifierDelegate::createEngine(
-				const ModifierEvaluationRequest& request,
-				const PipelineFlowState& input,
-				const ConstDataObjectPath& containerPath,
-				PropertyPtr outputProperty,
-				ConstPropertyPtr selectionProperty,
-				QStringList expressions)
+                const ModifierEvaluationRequest& request,
+                const PipelineFlowState& input,
+                const ConstDataObjectPath& containerPath,
+                PropertyPtr outputProperty,
+                ConstPropertyPtr selectionProperty,
+                QStringList expressions)
 {
-	// Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
-	return std::make_shared<Engine>(
-			request, 
-			input.stateValidity(),
-			std::move(outputProperty),
-			containerPath,
-			std::move(selectionProperty),
-			std::move(expressions),
-			request.time().frame(),
-			input);
+    // Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
+    return std::make_shared<Engine>(
+            request, 
+            input.stateValidity(),
+            std::move(outputProperty),
+            containerPath,
+            std::move(selectionProperty),
+            std::move(expressions),
+            request.time().frame(),
+            input);
 }
 
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
 BondsComputePropertyModifierDelegate::Engine::Engine(
-		const ModifierEvaluationRequest& request, 
-		const TimeInterval& validityInterval,
-		PropertyPtr outputProperty,
-		const ConstDataObjectPath& containerPath,
-		ConstPropertyPtr selectionProperty,
-		QStringList expressions,
-		int frameNumber,
-		const PipelineFlowState& input) :
-	ComputePropertyModifierDelegate::PropertyComputeEngine(
-			request, 
-			validityInterval,
-			input,
-			containerPath,
-			std::move(outputProperty),
-			std::move(selectionProperty),
-			std::move(expressions),
-			frameNumber,
-			std::make_unique<BondExpressionEvaluator>()),
-	_inputFingerprint(input.expectObject<ParticlesObject>())
+        const ModifierEvaluationRequest& request, 
+        const TimeInterval& validityInterval,
+        PropertyPtr outputProperty,
+        const ConstDataObjectPath& containerPath,
+        ConstPropertyPtr selectionProperty,
+        QStringList expressions,
+        int frameNumber,
+        const PipelineFlowState& input) :
+    ComputePropertyModifierDelegate::PropertyComputeEngine(
+            request, 
+            validityInterval,
+            input,
+            containerPath,
+            std::move(outputProperty),
+            std::move(selectionProperty),
+            std::move(expressions),
+            frameNumber,
+            std::make_unique<BondExpressionEvaluator>()),
+    _inputFingerprint(input.expectObject<ParticlesObject>())
 {
 }
 
@@ -100,42 +100,42 @@ BondsComputePropertyModifierDelegate::Engine::Engine(
 ******************************************************************************/
 void BondsComputePropertyModifierDelegate::Engine::perform()
 {
-	setProgressText(tr("Computing property '%1'").arg(outputProperty()->name()));
-	setProgressMaximum(outputProperty()->size());
+    setProgressText(tr("Computing property '%1'").arg(outputProperty()->name()));
+    setProgressMaximum(outputProperty()->size());
 
-	// Parallelized loop over all bonds.
-	parallelForChunksWithProgress(outputProperty()->size(), [this](size_t startIndex, size_t count, ProgressingTask& operation) {
-		BondExpressionEvaluator::Worker worker(*_evaluator);
+    // Parallelized loop over all bonds.
+    parallelForChunksWithProgress(outputProperty()->size(), [this](size_t startIndex, size_t count, ProgressingTask& operation) {
+        BondExpressionEvaluator::Worker worker(*_evaluator);
 
-		size_t endIndex = startIndex + count;
-		size_t componentCount = outputProperty()->componentCount();
-		for(size_t bondIndex = startIndex; bondIndex < endIndex; bondIndex++) {
+        size_t endIndex = startIndex + count;
+        size_t componentCount = outputProperty()->componentCount();
+        for(size_t bondIndex = startIndex; bondIndex < endIndex; bondIndex++) {
 
-			// Update progress indicator.
-			if((bondIndex % 1024) == 0)
-				operation.incrementProgressValue(1024);
+            // Update progress indicator.
+            if((bondIndex % 1024) == 0)
+                operation.incrementProgressValue(1024);
 
-			// Exit if operation was canceled.
-			if(operation.isCanceled())
-				return;
+            // Exit if operation was canceled.
+            if(operation.isCanceled())
+                return;
 
-			// Skip unselected bonds if requested.
-			if(selectionArray() && !selectionArray()[bondIndex])
-				continue;
+            // Skip unselected bonds if requested.
+            if(selectionArray() && !selectionArray()[bondIndex])
+                continue;
 
-			for(size_t component = 0; component < componentCount; component++) {
+            for(size_t component = 0; component < componentCount; component++) {
 
-				// Compute expression value.
-				FloatType value = worker.evaluate(bondIndex, component);
+                // Compute expression value.
+                FloatType value = worker.evaluate(bondIndex, component);
 
-				// Store results in output property.
-				outputArray().set(bondIndex, component, value);
-			}
-		}
-	});
+                // Store results in output property.
+                outputArray().set(bondIndex, component, value);
+            }
+        }
+    });
 
-	// Release data that is no longer needed to reduce memory footprint.
-	releaseWorkingData();
+    // Release data that is no longer needed to reduce memory footprint.
+    releaseWorkingData();
 }
 
 /******************************************************************************
@@ -143,10 +143,10 @@ void BondsComputePropertyModifierDelegate::Engine::perform()
 ******************************************************************************/
 void BondsComputePropertyModifierDelegate::Engine::applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state)
 {
-	if(_inputFingerprint.hasChanged(state.expectObject<ParticlesObject>()))
-		throw Exception(tr("Cached modifier results are obsolete, because the number or the storage order of input particles has changed."));
+    if(_inputFingerprint.hasChanged(state.expectObject<ParticlesObject>()))
+        throw Exception(tr("Cached modifier results are obsolete, because the number or the storage order of input particles has changed."));
 
-	PropertyComputeEngine::applyResults(request, state);
+    PropertyComputeEngine::applyResults(request, state);
 }
 
-}	// End of namespace
+}   // End of namespace

@@ -32,29 +32,29 @@ class OVITO_GUI_EXPORT ProgressDialog : public QDialog
 {
 public:
 
-	/// Constructor.
-	explicit ProgressDialog(QWidget* parent, TaskPtr task, const QString& dialogTitle = QString());
+    /// Constructor.
+    explicit ProgressDialog(QWidget* parent, TaskPtr task, const QString& dialogTitle = QString());
 
-	/// Constructor.
-	explicit ProgressDialog(QWidget* parent, const QString& dialogTitle = QString()) : 
-		ProgressDialog(parent, Task::current()->shared_from_this(), dialogTitle) {}
+    /// Constructor.
+    explicit ProgressDialog(QWidget* parent, const QString& dialogTitle = QString()) : 
+        ProgressDialog(parent, Task::current()->shared_from_this(), dialogTitle) {}
 
-	/// Constructor.
-	explicit ProgressDialog(QWidget* parent, const FutureBase& future, const QString& dialogTitle = QString()) : 
-		ProgressDialog(parent, future.task(), dialogTitle) {}
+    /// Constructor.
+    explicit ProgressDialog(QWidget* parent, const FutureBase& future, const QString& dialogTitle = QString()) : 
+        ProgressDialog(parent, future.task(), dialogTitle) {}
 
 protected:
 
-	/// Is called when the user tries to close the dialog.
-	virtual void closeEvent(QCloseEvent* event) override;
+    /// Is called when the user tries to close the dialog.
+    virtual void closeEvent(QCloseEvent* event) override;
 
-	/// Is called when the user tries to close the dialog.
-	virtual void reject() override;
+    /// Is called when the user tries to close the dialog.
+    virtual void reject() override;
 
 private:
 
-	/// The task shown in this dialog.
-	TaskPtr _task;
+    /// The task shown in this dialog.
+    TaskPtr _task;
 };
 
-}	// End of namespace
+}   // End of namespace

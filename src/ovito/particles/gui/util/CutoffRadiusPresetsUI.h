@@ -32,16 +32,16 @@ class OVITO_PARTICLESGUI_EXPORT ChemicalElement
 {
 public:
 
-	enum CrystalStructure {
-		Unknown, SimpleCubic, FaceCenteredCubic, BodyCenteredCubic,
-		HexagonalClosePacked, Tetragonal, Diatom, Diamond, Orthorhombic,
-		Cubic, Monoclinic, Atom, Rhombohedral
-	};
+    enum CrystalStructure {
+        Unknown, SimpleCubic, FaceCenteredCubic, BodyCenteredCubic,
+        HexagonalClosePacked, Tetragonal, Diatom, Diamond, Orthorhombic,
+        Cubic, Monoclinic, Atom, Rhombohedral
+    };
 
-	CrystalStructure structure;
-	FloatType latticeParameter;
+    CrystalStructure structure;
+    FloatType latticeParameter;
 
-	const char* elementName;
+    const char* elementName;
 };
 
 extern ChemicalElement ChemicalElements[];
@@ -49,39 +49,39 @@ extern const size_t NumberOfChemicalElements;
 
 class OVITO_PARTICLESGUI_EXPORT CutoffRadiusPresetsUI : public PropertyParameterUI
 {
-	OVITO_CLASS(CutoffRadiusPresetsUI)
+    OVITO_CLASS(CutoffRadiusPresetsUI)
 
 public:
 
-	/// Constructor for a PropertyField property.
-	CutoffRadiusPresetsUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField);
+    /// Constructor for a PropertyField property.
+    CutoffRadiusPresetsUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField);
 
-	/// Destructor.
-	virtual ~CutoffRadiusPresetsUI();
+    /// Destructor.
+    virtual ~CutoffRadiusPresetsUI();
 
-	/// This returns the QComboBox managed by this ParameterUI.
-	QComboBox* comboBox() const { return _comboBox; }
+    /// This returns the QComboBox managed by this ParameterUI.
+    QComboBox* comboBox() const { return _comboBox; }
 
-	/// Sets the enabled state of the UI.
-	virtual void setEnabled(bool enabled) override;
+    /// Sets the enabled state of the UI.
+    virtual void setEnabled(bool enabled) override;
 
-	/// This method is called when a new editable object has been assigned to the properties owner this
-	/// parameter UI belongs to.
-	virtual void resetUI() override;
+    /// This method is called when a new editable object has been assigned to the properties owner this
+    /// parameter UI belongs to.
+    virtual void resetUI() override;
 
 public:
 
-	Q_PROPERTY(QComboBox comboBox READ comboBox)
+    Q_PROPERTY(QComboBox comboBox READ comboBox)
 
 protected Q_SLOTS:
 
-	/// Is called when the user has selected an item in the cutoff presets box.
-	void onSelect(int index);
+    /// Is called when the user has selected an item in the cutoff presets box.
+    void onSelect(int index);
 
 protected:
 
-	/// The combo box control of the UI component.
-	QPointer<QComboBox> _comboBox;
+    /// The combo box control of the UI component.
+    QPointer<QComboBox> _comboBox;
 };
 
-}	// End of namespace
+}   // End of namespace

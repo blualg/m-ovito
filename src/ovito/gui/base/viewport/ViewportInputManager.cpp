@@ -33,25 +33,25 @@ namespace Ovito {
 * Initializes the viewport input manager.
 ******************************************************************************/
 ViewportInputManager::ViewportInputManager(QObject* parent, UserInterface& userInterface) : 
-	QObject(parent),
-	_datasetContainer(userInterface.datasetContainer()),
-	_userInterface(userInterface)
+    QObject(parent),
+    _datasetContainer(userInterface.datasetContainer()),
+    _userInterface(userInterface)
 {
-	OVITO_ASSERT(_userInterface.viewportInputManager() == nullptr || _userInterface.viewportInputManager() == this);
-	_userInterface.setViewportInputManager(this);
+    OVITO_ASSERT(_userInterface.viewportInputManager() == nullptr || _userInterface.viewportInputManager() == this);
+    _userInterface.setViewportInputManager(this);
 
-	_zoomMode = new ZoomMode(this);
-	_panMode = new PanMode(this);
-	_orbitMode = new OrbitMode(this);
-	_fovMode = new FOVMode(this);
-	_pickOrbitCenterMode = new PickOrbitCenterMode(this);
-	_selectionMode = new SelectionMode(this);
+    _zoomMode = new ZoomMode(this);
+    _panMode = new PanMode(this);
+    _orbitMode = new OrbitMode(this);
+    _fovMode = new FOVMode(this);
+    _pickOrbitCenterMode = new PickOrbitCenterMode(this);
+    _selectionMode = new SelectionMode(this);
 
-	// Set the scene node selection mode as the default.
-	_defaultMode = _selectionMode;
+    // Set the scene node selection mode as the default.
+    _defaultMode = _selectionMode;
 
-	// Reset the viewport input manager when a new scene has been loaded.
-	connect(&_datasetContainer, &DataSetContainer::dataSetChanged, this, &ViewportInputManager::reset);
+    // Reset the viewport input manager when a new scene has been loaded.
+    connect(&_datasetContainer, &DataSetContainer::dataSetChanged, this, &ViewportInputManager::reset);
 }
 
 /******************************************************************************
@@ -59,9 +59,9 @@ ViewportInputManager::ViewportInputManager(QObject* parent, UserInterface& userI
 ******************************************************************************/
 ViewportInputManager::~ViewportInputManager()
 {
-	for(ViewportInputMode* mode : _inputModeStack)
-		mode->_manager = nullptr;
-	_inputModeStack.clear();
+    for(ViewportInputMode* mode : _inputModeStack)
+        mode->_manager = nullptr;
+    _inputModeStack.clear();
 }
 
 /******************************************************************************
@@ -69,8 +69,8 @@ ViewportInputManager::~ViewportInputManager()
 ******************************************************************************/
 ViewportInputMode* ViewportInputManager::activeMode()
 {
-	if(_inputModeStack.empty()) return nullptr;
-	return _inputModeStack.back();
+    if(_inputModeStack.empty()) return nullptr;
+    return _inputModeStack.back();
 }
 
 /******************************************************************************
@@ -81,53 +81,53 @@ void ViewportInputManager::pushInputMode(ViewportInputMode* newMode, bool tempor
     OVITO_CHECK_POINTER(newMode);
 
     ViewportInputMode* oldMode = activeMode();
-	if(newMode == oldMode) return;
+    if(newMode == oldMode) return;
 
-	bool oldModeRemoved = false;
-	if(oldMode) {
-		if(newMode->modeType() == ViewportInputMode::ExclusiveMode) {
-			// Remove all existing input modes from the stack before activating the exclusive mode.
-			while(_inputModeStack.size() > 1)
-				removeInputMode(activeMode());
-			oldMode = activeMode();
-			if(oldMode == newMode) return;
-			oldModeRemoved = true;
-			_inputModeStack.clear();
-		}
-		else if(newMode->modeType() == ViewportInputMode::NormalMode) {
-			// Remove all non-exclusive handlers from the stack before activating the new mode.
-			while(_inputModeStack.size() > 1 && activeMode()->modeType() != ViewportInputMode::ExclusiveMode)
-				removeInputMode(activeMode());
-			oldMode = activeMode();
-			if(oldMode == newMode) return;
-			if(oldMode->modeType() != ViewportInputMode::ExclusiveMode) {
-				_inputModeStack.pop_back();
-				oldModeRemoved = true;
-			}
-		}
-		else if(newMode->modeType() == ViewportInputMode::TemporaryMode) {
-			// Remove all temporary handlers from the stack before activating the new mode.
-			if(oldMode->modeType() == ViewportInputMode::TemporaryMode) {
-				_inputModeStack.pop_back();
-				oldModeRemoved = true;
-			}
-		}
-	}
+    bool oldModeRemoved = false;
+    if(oldMode) {
+        if(newMode->modeType() == ViewportInputMode::ExclusiveMode) {
+            // Remove all existing input modes from the stack before activating the exclusive mode.
+            while(_inputModeStack.size() > 1)
+                removeInputMode(activeMode());
+            oldMode = activeMode();
+            if(oldMode == newMode) return;
+            oldModeRemoved = true;
+            _inputModeStack.clear();
+        }
+        else if(newMode->modeType() == ViewportInputMode::NormalMode) {
+            // Remove all non-exclusive handlers from the stack before activating the new mode.
+            while(_inputModeStack.size() > 1 && activeMode()->modeType() != ViewportInputMode::ExclusiveMode)
+                removeInputMode(activeMode());
+            oldMode = activeMode();
+            if(oldMode == newMode) return;
+            if(oldMode->modeType() != ViewportInputMode::ExclusiveMode) {
+                _inputModeStack.pop_back();
+                oldModeRemoved = true;
+            }
+        }
+        else if(newMode->modeType() == ViewportInputMode::TemporaryMode) {
+            // Remove all temporary handlers from the stack before activating the new mode.
+            if(oldMode->modeType() == ViewportInputMode::TemporaryMode) {
+                _inputModeStack.pop_back();
+                oldModeRemoved = true;
+            }
+        }
+    }
 
-	// Put new handler on the stack.
-	OVITO_ASSERT(newMode->_manager == nullptr);
-	newMode->_manager = this;
-	_inputModeStack.push_back(newMode);
+    // Put new handler on the stack.
+    OVITO_ASSERT(newMode->_manager == nullptr);
+    newMode->_manager = this;
+    _inputModeStack.push_back(newMode);
 
-	if(oldMode) {
-		OVITO_ASSERT(oldMode->_manager == this);
-		oldMode->deactivated(!oldModeRemoved);
-		if(oldModeRemoved)
-			oldMode->_manager = nullptr;
-	}
-	newMode->activated(temporary);
+    if(oldMode) {
+        OVITO_ASSERT(oldMode->_manager == this);
+        oldMode->deactivated(!oldModeRemoved);
+        if(oldModeRemoved)
+            oldMode->_manager = nullptr;
+    }
+    newMode->activated(temporary);
 
-	Q_EMIT inputModeChanged(oldMode, newMode);
+    Q_EMIT inputModeChanged(oldMode, newMode);
 }
 
 /******************************************************************************
@@ -135,31 +135,31 @@ void ViewportInputManager::pushInputMode(ViewportInputMode* newMode, bool tempor
 ******************************************************************************/
 void ViewportInputManager::removeInputMode(ViewportInputMode* mode)
 {
-	OVITO_CHECK_POINTER(mode);
+    OVITO_CHECK_POINTER(mode);
 
-	auto iter = std::find(_inputModeStack.begin(), _inputModeStack.end(), mode);
-	if(iter == _inputModeStack.end()) return;
+    auto iter = std::find(_inputModeStack.begin(), _inputModeStack.end(), mode);
+    if(iter == _inputModeStack.end()) return;
 
-	OVITO_ASSERT(mode->_manager == this);
+    OVITO_ASSERT(mode->_manager == this);
 
-	if(iter == _inputModeStack.end() - 1) {
-		_inputModeStack.erase(iter);
-		mode->deactivated(false);
-		if(!_inputModeStack.empty())
-			activeMode()->activated(false);
-		mode->_manager = nullptr;
+    if(iter == _inputModeStack.end() - 1) {
+        _inputModeStack.erase(iter);
+        mode->deactivated(false);
+        if(!_inputModeStack.empty())
+            activeMode()->activated(false);
+        mode->_manager = nullptr;
 
-		Q_EMIT inputModeChanged(mode, activeMode());
+        Q_EMIT inputModeChanged(mode, activeMode());
 
-		// Activate default mode when stack becomes empty.
-		if(_inputModeStack.empty())
-			pushInputMode(_defaultMode);
-	}
-	else {
-		_inputModeStack.erase(iter);
-		mode->deactivated(false);
-		mode->_manager = nullptr;
-	}
+        // Activate default mode when stack becomes empty.
+        if(_inputModeStack.empty())
+            pushInputMode(_defaultMode);
+    }
+    else {
+        _inputModeStack.erase(iter);
+        mode->deactivated(false);
+        mode->_manager = nullptr;
+    }
 }
 
 /******************************************************************************
@@ -167,13 +167,13 @@ void ViewportInputManager::removeInputMode(ViewportInputMode* mode)
 ******************************************************************************/
 void ViewportInputManager::addViewportGizmo(ViewportGizmo* gizmo)
 {
-	OVITO_ASSERT(gizmo);
-	if(std::find(viewportGizmos().begin(), viewportGizmos().end(), gizmo) == viewportGizmos().end()) {
-		_viewportGizmos.push_back(gizmo);
+    OVITO_ASSERT(gizmo);
+    if(std::find(viewportGizmos().begin(), viewportGizmos().end(), gizmo) == viewportGizmos().end()) {
+        _viewportGizmos.push_back(gizmo);
 
-		// Update viewports to show gzimo overlay.
-		userInterface().updateViewports();
-	}
+        // Update viewports to show gzimo overlay.
+        userInterface().updateViewports();
+    }
 }
 
 /******************************************************************************
@@ -181,14 +181,14 @@ void ViewportInputManager::addViewportGizmo(ViewportGizmo* gizmo)
 ******************************************************************************/
 void ViewportInputManager::removeViewportGizmo(ViewportGizmo* gizmo)
 {
-	OVITO_ASSERT(gizmo);
-	auto iter = std::find(_viewportGizmos.begin(), _viewportGizmos.end(), gizmo);
-	if(iter != _viewportGizmos.end()) {
-		_viewportGizmos.erase(iter);
+    OVITO_ASSERT(gizmo);
+    auto iter = std::find(_viewportGizmos.begin(), _viewportGizmos.end(), gizmo);
+    if(iter != _viewportGizmos.end()) {
+        _viewportGizmos.erase(iter);
 
-		// Update viewports to hide gizmo.
-		userInterface().updateViewports();
-	}
+        // Update viewports to hide gizmo.
+        userInterface().updateViewports();
+    }
 }
 
 /******************************************************************************
@@ -196,13 +196,13 @@ void ViewportInputManager::removeViewportGizmo(ViewportGizmo* gizmo)
 ******************************************************************************/
 void ViewportInputManager::reset()
 {
-	// Remove all input modes from the stack.
-	for(int i = _inputModeStack.size() - 1; i >= 0; i--)
-		removeInputMode(_inputModeStack[i]);
+    // Remove all input modes from the stack.
+    for(int i = _inputModeStack.size() - 1; i >= 0; i--)
+        removeInputMode(_inputModeStack[i]);
 
-	// Activate default mode when stack is empty.
-	if(_inputModeStack.empty())
-		pushInputMode(_defaultMode);
+    // Activate default mode when stack is empty.
+    if(_inputModeStack.empty())
+        pushInputMode(_defaultMode);
 }
 
-}	// End of namespace
+}   // End of namespace

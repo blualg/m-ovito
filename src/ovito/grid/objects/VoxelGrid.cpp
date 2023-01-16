@@ -40,20 +40,20 @@ SET_PROPERTY_FIELD_LABEL(VoxelGrid, gridType, "Grid type");
 ******************************************************************************/
 void VoxelGrid::OOMetaClass::initialize()
 {
-	PropertyContainerClass::initialize();
+    PropertyContainerClass::initialize();
 
-	// Enable automatic conversion of a VoxelPropertyReference to a generic PropertyReference and vice versa.
-	QMetaType::registerConverter<VoxelPropertyReference, PropertyReference>();
-	QMetaType::registerConverter<PropertyReference, VoxelPropertyReference>();
+    // Enable automatic conversion of a VoxelPropertyReference to a generic PropertyReference and vice versa.
+    QMetaType::registerConverter<VoxelPropertyReference, PropertyReference>();
+    QMetaType::registerConverter<PropertyReference, VoxelPropertyReference>();
 
-	setPropertyClassDisplayName(tr("Voxel grid"));
-	setElementDescriptionName(QStringLiteral("voxels"));
-	setPythonName(QStringLiteral("voxels"));
+    setPropertyClassDisplayName(tr("Voxel grid"));
+    setElementDescriptionName(QStringLiteral("voxels"));
+    setPythonName(QStringLiteral("voxels"));
 
-	const QStringList emptyList;
-	const QStringList rgbList = QStringList() << "R" << "G" << "B";
+    const QStringList emptyList;
+    const QStringList rgbList = QStringList() << "R" << "G" << "B";
 
-	registerStandardProperty(ColorProperty, tr("Color"), PropertyObject::Float, rgbList, nullptr, tr("Voxel colors"));
+    registerStandardProperty(ColorProperty, tr("Color"), PropertyObject::Float, rgbList, nullptr, tr("Voxel colors"));
 }
 
 /******************************************************************************
@@ -61,43 +61,43 @@ void VoxelGrid::OOMetaClass::initialize()
 ******************************************************************************/
 PropertyPtr VoxelGrid::OOMetaClass::createStandardPropertyInternal(size_t elementCount, int type, DataBuffer::InitializationFlags flags, const ConstDataObjectPath& containerPath) const
 {
-	int dataType;
-	size_t componentCount;
+    int dataType;
+    size_t componentCount;
 
-	switch(type) {
-	case ColorProperty:
-		dataType = PropertyObject::Float;
-		componentCount = 3;
-		OVITO_ASSERT(componentCount * sizeof(FloatType) == sizeof(Color));
-		break;
-	default:
-		OVITO_ASSERT_MSG(false, "VoxelGrid::createStandardPropertyInternal", "Invalid standard property type");
-		throw Exception(tr("This is not a valid standard voxel property type: %1").arg(type));
-	}
-	const QStringList& componentNames = standardPropertyComponentNames(type);
-	const QString& propertyName = standardPropertyName(type);
+    switch(type) {
+    case ColorProperty:
+        dataType = PropertyObject::Float;
+        componentCount = 3;
+        OVITO_ASSERT(componentCount * sizeof(FloatType) == sizeof(Color));
+        break;
+    default:
+        OVITO_ASSERT_MSG(false, "VoxelGrid::createStandardPropertyInternal", "Invalid standard property type");
+        throw Exception(tr("This is not a valid standard voxel property type: %1").arg(type));
+    }
+    const QStringList& componentNames = standardPropertyComponentNames(type);
+    const QString& propertyName = standardPropertyName(type);
 
-	OVITO_ASSERT(componentCount == standardPropertyComponentCount(type));
+    OVITO_ASSERT(componentCount == standardPropertyComponentCount(type));
 
-	PropertyPtr property = PropertyPtr::create(elementCount, dataType, componentCount, propertyName, flags & ~DataBuffer::InitializeMemory, type, componentNames);
+    PropertyPtr property = PropertyPtr::create(elementCount, dataType, componentCount, propertyName, flags & ~DataBuffer::InitializeMemory, type, componentNames);
 
-	if(flags.testFlag(DataBuffer::InitializeMemory)) {
-		// Default-initialize property values with zeros.
-		property->fillZero();
-	}
+    if(flags.testFlag(DataBuffer::InitializeMemory)) {
+        // Default-initialize property values with zeros.
+        property->fillZero();
+    }
 
-	return property;
+    return property;
 }
 
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
 VoxelGrid::VoxelGrid(ObjectCreationParams params, const QString& title) : PropertyContainer(params, title),
-	_gridType(CellData)
+    _gridType(CellData)
 {
-	// Create and attach a default visualization element for rendering the grid.
-	if(params.createVisElement())
-		setVisElement(OORef<VoxelGridVis>::create(params));
+    // Create and attach a default visualization element for rendering the grid.
+    if(params.createVisElement())
+        setVisElement(OORef<VoxelGridVis>::create(params));
 }
 
 /******************************************************************************
@@ -105,13 +105,13 @@ VoxelGrid::VoxelGrid(ObjectCreationParams params, const QString& title) : Proper
 ******************************************************************************/
 void VoxelGrid::saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData) const
 {
-	PropertyContainer::saveToStream(stream, excludeRecomputableData);
+    PropertyContainer::saveToStream(stream, excludeRecomputableData);
 
-	stream.beginChunk(0x01);
-	stream.writeSizeT(shape().size());
-	for(size_t d : shape())
-		stream.writeSizeT(d);
-	stream.endChunk();
+    stream.beginChunk(0x01);
+    stream.writeSizeT(shape().size());
+    for(size_t d : shape())
+        stream.writeSizeT(d);
+    stream.endChunk();
 }
 
 /******************************************************************************
@@ -119,17 +119,17 @@ void VoxelGrid::saveToStream(ObjectSaveStream& stream, bool excludeRecomputableD
 ******************************************************************************/
 void VoxelGrid::loadFromStream(ObjectLoadStream& stream)
 {
-	PropertyContainer::loadFromStream(stream);
+    PropertyContainer::loadFromStream(stream);
 
-	stream.expectChunk(0x01);
+    stream.expectChunk(0x01);
 
-	size_t ndim = stream.readSizeT();
-	if(ndim != _shape.get().size()) throw Exception(tr("Invalid voxel grid dimensionality."));
+    size_t ndim = stream.readSizeT();
+    if(ndim != _shape.get().size()) throw Exception(tr("Invalid voxel grid dimensionality."));
 
-	for(size_t& d : _shape.mutableValue())
-		stream.readSizeT(d);
+    for(size_t& d : _shape.mutableValue())
+        stream.readSizeT(d);
 
-	stream.closeChunk();
+    stream.closeChunk();
 }
 
 /******************************************************************************
@@ -138,15 +138,15 @@ void VoxelGrid::loadFromStream(ObjectLoadStream& stream)
 ******************************************************************************/
 void VoxelGrid::verifyIntegrity() const
 {
-	PropertyContainer::verifyIntegrity();
+    PropertyContainer::verifyIntegrity();
 
-	size_t expectedElementCount = shape()[0] * shape()[1] * shape()[2];
-	if(elementCount() != expectedElementCount)
-		throw Exception(tr("VoxelGrid has inconsistent dimensions. PropertyContainer array length (%1) does not match the number of voxel grid cells (%2) for grid shape %3x%4x%5.")
-			.arg(elementCount()).arg(expectedElementCount).arg(shape()[0]).arg(shape()[1]).arg(shape()[2]));
+    size_t expectedElementCount = shape()[0] * shape()[1] * shape()[2];
+    if(elementCount() != expectedElementCount)
+        throw Exception(tr("VoxelGrid has inconsistent dimensions. PropertyContainer array length (%1) does not match the number of voxel grid cells (%2) for grid shape %3x%4x%5.")
+            .arg(elementCount()).arg(expectedElementCount).arg(shape()[0]).arg(shape()[1]).arg(shape()[2]));
 
-	if(!domain())
-		throw Exception(tr("Voxel grid has no simulation cell assigned."));
+    if(!domain())
+        throw Exception(tr("Voxel grid has no simulation cell assigned."));
 }
 
 /******************************************************************************
@@ -154,14 +154,14 @@ void VoxelGrid::verifyIntegrity() const
 ******************************************************************************/
 QString VoxelGrid::elementInfoString(size_t elementIndex, const ConstDataObjectRefPath& path) const
 {
-	std::array<size_t, 3> coords = voxelCoords(elementIndex);
+    std::array<size_t, 3> coords = voxelCoords(elementIndex);
     QString str = (gridType() == GridType::CellData) ? tr("Cell ") : tr("Point ");
-	if(domain() && domain()->is2D() && shape()[2] <= 1)
-		str += QStringLiteral("(%1, %2)").arg(coords[0]).arg(coords[1]);
-	else
-		str += QStringLiteral("(%1, %2, %3)").arg(coords[0]).arg(coords[1]).arg(coords[2]);
-	str += QStringLiteral("<sep>");
-	str += PropertyContainer::elementInfoString(elementIndex, path);
+    if(domain() && domain()->is2D() && shape()[2] <= 1)
+        str += QStringLiteral("(%1, %2)").arg(coords[0]).arg(coords[1]);
+    else
+        str += QStringLiteral("(%1, %2, %3)").arg(coords[0]).arg(coords[1]).arg(coords[2]);
+    str += QStringLiteral("<sep>");
+    str += PropertyContainer::elementInfoString(elementIndex, path);
     return str;
 }
 
@@ -171,57 +171,57 @@ QString VoxelGrid::elementInfoString(size_t elementIndex, const ConstDataObjectR
 ******************************************************************************/
 std::tuple<ConstDataBufferPtr, ConstDataBufferPtr> VoxelGrid::getVectorVisData(const ConstDataObjectPath& path, const PipelineFlowState& state, MixedKeyCache& visCache) const
 {
-	OVITO_ASSERT(path.lastAs<VoxelGrid>(1) == this);
+    OVITO_ASSERT(path.lastAs<VoxelGrid>(1) == this);
 
-	// Make sure the voxel grid has a domain.
-	verifyIntegrity();
+    // Make sure the voxel grid has a domain.
+    verifyIntegrity();
 
-	// Look up the cell center coordinates in the cache.
-	using CacheKey = RendererResourceKey<struct VoxelGridCellCentersCache, ConstDataObjectRef>;
-	auto& basePositions = visCache.get<ConstDataBufferPtr>(CacheKey(this));
+    // Look up the cell center coordinates in the cache.
+    using CacheKey = RendererResourceKey<struct VoxelGridCellCentersCache, ConstDataObjectRef>;
+    auto& basePositions = visCache.get<ConstDataBufferPtr>(CacheKey(this));
 
-	if(!basePositions) {
-		DataBufferAccessAndRef<Point3> points = DataBufferPtr::create(elementCount(), DataBuffer::Float, 3);
-		if(points.size() != 0) {
-			if(gridType() == GridType::CellData) {
-				// Compute grid cell centers.
-				OVITO_ASSERT(shape()[0] != 0 && shape()[1] != 0 && shape()[2] != 0);
-				Point3 xyz;
-				FloatType dx = FloatType(1) / shape()[0];
-				FloatType dy = FloatType(1) / shape()[1];
-				FloatType dz = FloatType(1) / shape()[2];
-				auto p = points.begin();
-				size_t x,y,z;
-				for(z = 0, xyz.z() = dz/2; z < shape()[2]; z++, xyz.z() += dz) {
-					if(domain()->is2D()) xyz.z() = 0;
-					for(y = 0, xyz.y() = dy/2; y < shape()[1]; y++, xyz.y() += dy) {
-						for(x = 0, xyz.x() = dx/2; x < shape()[0]; x++, xyz.x() += dx) {
-							*p++ = domain()->reducedToAbsolute(xyz);
-						}
-					}
-				}
-			}
-			else if(gridType() == GridType::PointData) {
-				// Compute grid vertex positions.
-				Point3 xyz;
-				FloatType dx = FloatType(1) / ((domain()->pbcFlags()[0] || shape()[0] == 1) ? shape()[0] : (shape()[0] - 1));
-				FloatType dy = FloatType(1) / ((domain()->pbcFlags()[1] || shape()[1] == 1) ? shape()[1] : (shape()[1] - 1));
-				FloatType dz = FloatType(1) / ((domain()->pbcFlags()[2] || shape()[2] == 1) ? shape()[2] : (shape()[2] - 1));
-				auto p = points.begin();
-				size_t x,y,z;
-				for(z = 0, xyz.z() = 0; z < shape()[2]; z++, xyz.z() += dz) {
-					for(y = 0, xyz.y() = 0; y < shape()[1]; y++, xyz.y() += dy) {
-						for(x = 0, xyz.x() = 0; x < shape()[0]; x++, xyz.x() += dx) {
-							*p++ = domain()->reducedToAbsolute(xyz);
-						}
-					}
-				}
-			}
-			else OVITO_ASSERT(false);
-		}
-		basePositions = points.take();
-	}
-	return { basePositions, path.lastAs<DataBuffer>() };
+    if(!basePositions) {
+        DataBufferAccessAndRef<Point3> points = DataBufferPtr::create(elementCount(), DataBuffer::Float, 3);
+        if(points.size() != 0) {
+            if(gridType() == GridType::CellData) {
+                // Compute grid cell centers.
+                OVITO_ASSERT(shape()[0] != 0 && shape()[1] != 0 && shape()[2] != 0);
+                Point3 xyz;
+                FloatType dx = FloatType(1) / shape()[0];
+                FloatType dy = FloatType(1) / shape()[1];
+                FloatType dz = FloatType(1) / shape()[2];
+                auto p = points.begin();
+                size_t x,y,z;
+                for(z = 0, xyz.z() = dz/2; z < shape()[2]; z++, xyz.z() += dz) {
+                    if(domain()->is2D()) xyz.z() = 0;
+                    for(y = 0, xyz.y() = dy/2; y < shape()[1]; y++, xyz.y() += dy) {
+                        for(x = 0, xyz.x() = dx/2; x < shape()[0]; x++, xyz.x() += dx) {
+                            *p++ = domain()->reducedToAbsolute(xyz);
+                        }
+                    }
+                }
+            }
+            else if(gridType() == GridType::PointData) {
+                // Compute grid vertex positions.
+                Point3 xyz;
+                FloatType dx = FloatType(1) / ((domain()->pbcFlags()[0] || shape()[0] == 1) ? shape()[0] : (shape()[0] - 1));
+                FloatType dy = FloatType(1) / ((domain()->pbcFlags()[1] || shape()[1] == 1) ? shape()[1] : (shape()[1] - 1));
+                FloatType dz = FloatType(1) / ((domain()->pbcFlags()[2] || shape()[2] == 1) ? shape()[2] : (shape()[2] - 1));
+                auto p = points.begin();
+                size_t x,y,z;
+                for(z = 0, xyz.z() = 0; z < shape()[2]; z++, xyz.z() += dz) {
+                    for(y = 0, xyz.y() = 0; y < shape()[1]; y++, xyz.y() += dy) {
+                        for(x = 0, xyz.x() = 0; x < shape()[0]; x++, xyz.x() += dx) {
+                            *p++ = domain()->reducedToAbsolute(xyz);
+                        }
+                    }
+                }
+            }
+            else OVITO_ASSERT(false);
+        }
+        basePositions = points.take();
+    }
+    return { basePositions, path.lastAs<DataBuffer>() };
 }
 
-}	// End of namespace
+}   // End of namespace

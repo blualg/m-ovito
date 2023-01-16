@@ -35,35 +35,35 @@ namespace Ovito {
 ******************************************************************************/
 class OVITO_GUI_EXPORT PropertiesPanel : public RolloutContainer
 {
-	Q_OBJECT
+    Q_OBJECT
 
 public:
 
-	/// Constructs the panel.
-	PropertiesPanel(MainWindow& mainWindow, QWidget* parent = nullptr);
+    /// Constructs the panel.
+    PropertiesPanel(MainWindow& mainWindow, QWidget* parent = nullptr);
 
-	/// Destructs the panel.
-	virtual ~PropertiesPanel();
+    /// Destructs the panel.
+    virtual ~PropertiesPanel();
 
-	/// Returns the target object being edited in the panel.
-	RefTarget* editObject() const;
+    /// Returns the target object being edited in the panel.
+    RefTarget* editObject() const;
 
-	/// Sets the target object being edited in the panel.
-	void setEditObject(RefTarget* editObject, OORef<PropertiesEditor> newEditor = {});
+    /// Sets the target object being edited in the panel.
+    void setEditObject(RefTarget* editObject, OORef<PropertiesEditor> newEditor = {});
 
-	/// Returns the editor that is responsible for the object being edited.
-	PropertiesEditor* editor() const { return _editor; }
+    /// Returns the editor that is responsible for the object being edited.
+    PropertiesEditor* editor() const { return _editor; }
 
-	/// Returns the main window this properties panel is associated with.
-	MainWindow& mainWindow() const { return _mainWindow; }
+    /// Returns the main window this properties panel is associated with.
+    MainWindow& mainWindow() const { return _mainWindow; }
 
 protected:
 
-	/// The editor for the current object.
-	OORef<PropertiesEditor> _editor;
+    /// The editor for the current object.
+    OORef<PropertiesEditor> _editor;
 
-	/// The main window this properties panel is associated with.
-	MainWindow& _mainWindow;
+    /// The main window this properties panel is associated with.
+    MainWindow& _mainWindow;
 };
 
-}	// End of namespace
+}   // End of namespace

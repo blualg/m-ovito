@@ -30,31 +30,31 @@ namespace Ovito {
 ******************************************************************************/
 RemoteAuthenticationDialog::RemoteAuthenticationDialog(QWidget* parent, const QString& title, const QString& labelText) : QDialog(parent)
 {
-	setWindowTitle(title);
+    setWindowTitle(title);
 
-	QVBoxLayout* layout1 = new QVBoxLayout(this);
-	layout1->setSpacing(2);
+    QVBoxLayout* layout1 = new QVBoxLayout(this);
+    layout1->setSpacing(2);
 
-	QLabel* label = new QLabel(labelText);
-	//label->setWordWrap(true);
-	layout1->addWidget(label);
-	layout1->addSpacing(10);
+    QLabel* label = new QLabel(labelText);
+    //label->setWordWrap(true);
+    layout1->addWidget(label);
+    layout1->addSpacing(10);
 
-	layout1->addWidget(new QLabel(tr("Login:")));
-	_usernameEdit = new QLineEdit(this);
-	layout1->addWidget(_usernameEdit);
-	layout1->addSpacing(10);
+    layout1->addWidget(new QLabel(tr("Login:")));
+    _usernameEdit = new QLineEdit(this);
+    layout1->addWidget(_usernameEdit);
+    layout1->addSpacing(10);
 
-	layout1->addWidget(new QLabel(tr("Password:")));
-	_passwordEdit = new QLineEdit(this);
-	_passwordEdit->setEchoMode(QLineEdit::Password);
-	layout1->addWidget(_passwordEdit);
-	layout1->addSpacing(10);
+    layout1->addWidget(new QLabel(tr("Password:")));
+    _passwordEdit = new QLineEdit(this);
+    _passwordEdit->setEchoMode(QLineEdit::Password);
+    layout1->addWidget(_passwordEdit);
+    layout1->addSpacing(10);
 
-	QDialogButtonBox* buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, Qt::Horizontal, this);
-	connect(buttonBox, &QDialogButtonBox::accepted, this, &RemoteAuthenticationDialog::accept);
-	connect(buttonBox, &QDialogButtonBox::rejected, this, &RemoteAuthenticationDialog::reject);
-	layout1->addWidget(buttonBox);
+    QDialogButtonBox* buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, Qt::Horizontal, this);
+    connect(buttonBox, &QDialogButtonBox::accepted, this, &RemoteAuthenticationDialog::accept);
+    connect(buttonBox, &QDialogButtonBox::rejected, this, &RemoteAuthenticationDialog::reject);
+    layout1->addWidget(buttonBox);
 }
 
 /******************************************************************************
@@ -62,19 +62,19 @@ RemoteAuthenticationDialog::RemoteAuthenticationDialog(QWidget* parent, const QS
 ******************************************************************************/
 int RemoteAuthenticationDialog::exec()
 {
-	if(_usernameEdit->text().isEmpty()) {
+    if(_usernameEdit->text().isEmpty()) {
 
-		if(qEnvironmentVariableIsSet("USER"))
-			_usernameEdit->setText(QString::fromLocal8Bit(qgetenv("USER")));
-		else if(qEnvironmentVariableIsSet("USERNAME"))
-			_usernameEdit->setText(QString::fromLocal8Bit(qgetenv("USERNAME")));
+        if(qEnvironmentVariableIsSet("USER"))
+            _usernameEdit->setText(QString::fromLocal8Bit(qgetenv("USER")));
+        else if(qEnvironmentVariableIsSet("USERNAME"))
+            _usernameEdit->setText(QString::fromLocal8Bit(qgetenv("USERNAME")));
 
-		_usernameEdit->setFocus();
-	}
-	else
-		_passwordEdit->setFocus();
+        _usernameEdit->setFocus();
+    }
+    else
+        _passwordEdit->setFocus();
 
-	return QDialog::exec();
+    return QDialog::exec();
 }
 
-}	// End of namespace
+}   // End of namespace

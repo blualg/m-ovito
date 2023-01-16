@@ -33,17 +33,17 @@ namespace Ovito::Particles {
  */
 class CommonNeighborAnalysisModifierEditor : public PropertiesEditor
 {
-	OVITO_CLASS(CommonNeighborAnalysisModifierEditor)
+    OVITO_CLASS(CommonNeighborAnalysisModifierEditor)
 
 public:
 
-	/// Default constructor.
-	Q_INVOKABLE CommonNeighborAnalysisModifierEditor() {}
+    /// Default constructor.
+    Q_INVOKABLE CommonNeighborAnalysisModifierEditor() {}
 
 protected:
 
-	/// Creates the user interface controls for the editor.
-	virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
+    /// Creates the user interface controls for the editor.
+    virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
 };
 
-}	// End of namespace
+}   // End of namespace

@@ -34,10 +34,10 @@ SET_PROPERTY_FIELD_LABEL(AttributeDataObject, value, "Value");
 ******************************************************************************/
 void AttributeDataObject::saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData) const
 {
-	DataObject::saveToStream(stream, excludeRecomputableData);
-	stream.beginChunk(0x01);
-	stream << value();
-	stream.endChunk();
+    DataObject::saveToStream(stream, excludeRecomputableData);
+    stream.beginChunk(0x01);
+    stream << value();
+    stream.endChunk();
 }
 
 /******************************************************************************
@@ -45,10 +45,10 @@ void AttributeDataObject::saveToStream(ObjectSaveStream& stream, bool excludeRec
 ******************************************************************************/
 void AttributeDataObject::loadFromStream(ObjectLoadStream& stream)
 {
-	DataObject::loadFromStream(stream);
-	stream.expectChunk(0x01);
-	stream >> _value.mutableValue();
-	stream.closeChunk();
+    DataObject::loadFromStream(stream);
+    stream.expectChunk(0x01);
+    stream >> _value.mutableValue();
+    stream.closeChunk();
 }
 
-}	// End of namespace
+}   // End of namespace

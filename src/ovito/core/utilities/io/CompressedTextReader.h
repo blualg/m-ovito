@@ -26,7 +26,7 @@
 #include <ovito/core/Core.h>
 #include <ovito/core/utilities/io/FileManager.h>
 #ifdef OVITO_ZLIB_SUPPORT
-	#include <ovito/core/utilities/io/gzdevice/GzipIODevice.h>
+    #include <ovito/core/utilities/io/gzdevice/GzipIODevice.h>
 #endif
 
 namespace Ovito {
@@ -47,166 +47,166 @@ class OVITO_CORE_EXPORT CompressedTextReader
 {
 public:
 
-	/// Opens the given file for reading.
-	/// \param input The file handle the data should be reade from.
-	/// \throw Exception if an I/O error has occurred.
-	explicit CompressedTextReader(const FileHandle& input);
+    /// Opens the given file for reading.
+    /// \param input The file handle the data should be reade from.
+    /// \throw Exception if an I/O error has occurred.
+    explicit CompressedTextReader(const FileHandle& input);
 
-	/// Returns the name of the input file (without the path).
-	const QString& filename() const { return _filename; }
+    /// Returns the name of the input file (without the path).
+    const QString& filename() const { return _filename; }
 
-	/// Returns the underlying I/O device.
-	QIODevice& device() { return *_device; }
+    /// Returns the underlying I/O device.
+    QIODevice& device() { return *_device; }
 
-	/// Indicates whether the input file is compressed.
-	bool isCompressed() const { return _stream != _device.get(); }
+    /// Indicates whether the input file is compressed.
+    bool isCompressed() const { return _stream != _device.get(); }
 
-	/// Reads the next line of text from the input file.
-	/// \throw Exception if an I/O error has occurred of if there is no more line to read.
-	const char* readLine(int maxSize = 0);
+    /// Reads the next line of text from the input file.
+    /// \throw Exception if an I/O error has occurred of if there is no more line to read.
+    const char* readLine(int maxSize = 0);
 
-	/// Reads the next line of text from the input file of trims leading whitespace.
-	/// \throw Exception if an I/O error has occurred of if there is no more line to read.
-	const char* readLineTrimLeft(int maxSize = 0) {
-		const char* s = readLine(maxSize);
-		while(*s > '\0' && *s <= ' ') ++s;
-		return s;
-	}
+    /// Reads the next line of text from the input file of trims leading whitespace.
+    /// \throw Exception if an I/O error has occurred of if there is no more line to read.
+    const char* readLineTrimLeft(int maxSize = 0) {
+        const char* s = readLine(maxSize);
+        while(*s > '\0' && *s <= ' ') ++s;
+        return s;
+    }
 
-	/// Reads the next line from the input file which is non-empty.
-	/// \throw Exception if an I/O error has occurred of if there is no more non-empty line to read.
-	const char* readNonEmptyLine() {
-		for(;;) {
-			const char* line = readLineTrimLeft();
-			if(line[0] > ' ') return this->line();
-		}
-	}
+    /// Reads the next line from the input file which is non-empty.
+    /// \throw Exception if an I/O error has occurred of if there is no more non-empty line to read.
+    const char* readNonEmptyLine() {
+        for(;;) {
+            const char* line = readLineTrimLeft();
+            if(line[0] > ' ') return this->line();
+        }
+    }
 
-	/// Checks whether the end of file has been reached. Do not call readLine() when this returns \c true.
-	bool eof() const {
-		return _stream->atEnd();
-	}
+    /// Checks whether the end of file has been reached. Do not call readLine() when this returns \c true.
+    bool eof() const {
+        return _stream->atEnd();
+    }
 
-	/// Returns the last line read via readLine().
-	const char* line() const { return _line.data(); }
+    /// Returns the last line read via readLine().
+    const char* line() const { return _line.data(); }
 
-	/// Returns \c true if the last line read via readLine() begins with the given substring.
-	bool lineStartsWith(const char* s, bool ignoreLeadingWhitespace = false) const {
-		const char* l = line();
-		if(ignoreLeadingWhitespace) {
-			while(*l > '\0' && *l <= ' ') ++l;
-		}
-		for(; *s; ++s, ++l) {
-			if(*l != *s) return false;
-		}
-		return true;
-	}
+    /// Returns \c true if the last line read via readLine() begins with the given substring.
+    bool lineStartsWith(const char* s, bool ignoreLeadingWhitespace = false) const {
+        const char* l = line();
+        if(ignoreLeadingWhitespace) {
+            while(*l > '\0' && *l <= ' ') ++l;
+        }
+        for(; *s; ++s, ++l) {
+            if(*l != *s) return false;
+        }
+        return true;
+    }
 
-	/// Returns \c true if the last line read via readLine() begins with the given substring, followed by whitespace or an end-of-line.
-	bool lineStartsWithToken(const char* s, bool ignoreLeadingWhitespace = false) const {
-		const char* l = line();
-		if(ignoreLeadingWhitespace) {
-			while(*l > '\0' && *l <= ' ') ++l;
-		}
-		for(; *s; ++s, ++l) {
-			if(*l != *s) return false;
-		}
-		return *l <= ' ';
-	}
+    /// Returns \c true if the last line read via readLine() begins with the given substring, followed by whitespace or an end-of-line.
+    bool lineStartsWithToken(const char* s, bool ignoreLeadingWhitespace = false) const {
+        const char* l = line();
+        if(ignoreLeadingWhitespace) {
+            while(*l > '\0' && *l <= ' ') ++l;
+        }
+        for(; *s; ++s, ++l) {
+            if(*l != *s) return false;
+        }
+        return *l <= ' ';
+    }
 
-	/// Returns \c true if the last line read via readLine() ends with the given substring.
-	bool lineEndsWith(const char* s, bool ignoreTrailingWhitespace = true) const {
-		size_t len = qstrlen(line());
-		const char* l_end = line() + len;
-		if(ignoreTrailingWhitespace) {
-			while(len != 0 && l_end[-1] <= ' ') {
-				--l_end;
-				len--;
-			}
-		}
-		size_t len_pattern = qstrlen(s);
-		if(len < len_pattern) return false;
-		return std::equal(s, s + len_pattern, l_end - len_pattern);
-	}
+    /// Returns \c true if the last line read via readLine() ends with the given substring.
+    bool lineEndsWith(const char* s, bool ignoreTrailingWhitespace = true) const {
+        size_t len = qstrlen(line());
+        const char* l_end = line() + len;
+        if(ignoreTrailingWhitespace) {
+            while(len != 0 && l_end[-1] <= ' ') {
+                --l_end;
+                len--;
+            }
+        }
+        size_t len_pattern = qstrlen(s);
+        if(len < len_pattern) return false;
+        return std::equal(s, s + len_pattern, l_end - len_pattern);
+    }
 
-	/// Returns the last line read via readLine() as a Qt string.
-	QString lineString() const { return QString::fromUtf8(_line.data()); }
+    /// Returns the last line read via readLine() as a Qt string.
+    QString lineString() const { return QString::fromUtf8(_line.data()); }
 
-	/// Returns the current line number.
-	int lineNumber() const { return _lineNumber; }
+    /// Returns the current line number.
+    int lineNumber() const { return _lineNumber; }
 
-	/// Returns the current read position in the (uncompressed) input stream.
-	/// \sa underlyingByteOffset(), seek()
-	qint64 byteOffset() const {
-		return _byteOffset;
-	}
+    /// Returns the current read position in the (uncompressed) input stream.
+    /// \sa underlyingByteOffset(), seek()
+    qint64 byteOffset() const {
+        return _byteOffset;
+    }
 
-	/// Jumps to the given byte position in the (uncompressed) input stream.
-	/// \throw Exception if an I/O error has occurred.
-	/// \sa byteOffset()
-	void seek(qint64 pos, int lineNumber = 0) {
-		if(!_stream->seek(pos))
-			throw Exception(FileManager::tr("Failed to seek to byte offset %1 in file %2: %3").arg(pos).arg(_filename).arg(_stream->errorString()));
-		_byteOffset = pos;
-		if(lineNumber) _lineNumber = lineNumber;
-		else if(pos == 0) _lineNumber = 0;
-	}
+    /// Jumps to the given byte position in the (uncompressed) input stream.
+    /// \throw Exception if an I/O error has occurred.
+    /// \sa byteOffset()
+    void seek(qint64 pos, int lineNumber = 0) {
+        if(!_stream->seek(pos))
+            throw Exception(FileManager::tr("Failed to seek to byte offset %1 in file %2: %3").arg(pos).arg(_filename).arg(_stream->errorString()));
+        _byteOffset = pos;
+        if(lineNumber) _lineNumber = lineNumber;
+        else if(pos == 0) _lineNumber = 0;
+    }
 
-	/// Returns the current read position in the input file (which may be a compressed data stream).
-	/// \sa byteOffset()
-	qint64 underlyingByteOffset() const {
-		return _device->pos();
-	}
+    /// Returns the current read position in the input file (which may be a compressed data stream).
+    /// \sa byteOffset()
+    qint64 underlyingByteOffset() const {
+        return _device->pos();
+    }
 
-	/// Returns the size of the input file in bytes (the compressed size if file is gzipped).
-	qint64 underlyingSize() const {
-		return _device->size();
-	}
+    /// Returns the size of the input file in bytes (the compressed size if file is gzipped).
+    qint64 underlyingSize() const {
+        return _device->size();
+    }
 
-	/// Maps the input file to memory, starting at the current offset and to end of the file.
-	/// \throw Exception if an I/O error has occurred.
-	std::pair<const char*, const char*> mmap() {
-		return mmap(underlyingByteOffset(), underlyingSize() - underlyingByteOffset());
-	}
+    /// Maps the input file to memory, starting at the current offset and to end of the file.
+    /// \throw Exception if an I/O error has occurred.
+    std::pair<const char*, const char*> mmap() {
+        return mmap(underlyingByteOffset(), underlyingSize() - underlyingByteOffset());
+    }
 
-	/// Maps a part of the input file to memory.
-	/// \throw Exception if an I/O error has occurred.
-	std::pair<const char*, const char*> mmap(qint64 offset, qint64 size);
+    /// Maps a part of the input file to memory.
+    /// \throw Exception if an I/O error has occurred.
+    std::pair<const char*, const char*> mmap(qint64 offset, qint64 size);
 
-	/// Unmaps the file from memory.
-	/// \throw Exception if an I/O error has occurred.
-	void munmap();
+    /// Unmaps the file from memory.
+    /// \throw Exception if an I/O error has occurred.
+    void munmap();
 
-	/// Reads the entire file contents into memory.
-	QByteArray readAll();
+    /// Reads the entire file contents into memory.
+    QByteArray readAll();
 
 private:
 
-	/// The name of the input file (if known).
-	QString _filename;
+    /// The name of the input file (if known).
+    QString _filename;
 
-	/// Buffer holding the current text line.
-	std::vector<char> _line;
+    /// Buffer holding the current text line.
+    std::vector<char> _line;
 
-	/// The current line number.
-	int _lineNumber = 0;
+    /// The current line number.
+    int _lineNumber = 0;
 
-	/// The current position in the uncompressed data stream.
-	qint64 _byteOffset = 0;
+    /// The current position in the uncompressed data stream.
+    qint64 _byteOffset = 0;
 
-	/// The underlying input device.
-	std::unique_ptr<QIODevice> _device;
+    /// The underlying input device.
+    std::unique_ptr<QIODevice> _device;
 
 #ifdef OVITO_ZLIB_SUPPORT
-	/// The uncompressing filter stream.
-	GzipIODevice _uncompressor;
+    /// The uncompressing filter stream.
+    GzipIODevice _uncompressor;
 #endif
 
-	/// The input stream from which uncompressed data is read.
-	QIODevice* _stream = nullptr;
+    /// The input stream from which uncompressed data is read.
+    QIODevice* _stream = nullptr;
 
-	/// The pointer to the memory-mapped data.
-	uchar* _mmapPointer = nullptr;
+    /// The pointer to the memory-mapped data.
+    uchar* _mmapPointer = nullptr;
 };
 
-}	// End of namespace
+}   // End of namespace

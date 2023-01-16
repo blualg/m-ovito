@@ -31,12 +31,12 @@ namespace Ovito {
 ******************************************************************************/
 void OpenGLSceneRenderer::renderImageImplementation(const ImagePrimitive& primitive)
 {
-	OVITO_REPORT_OPENGL_ERRORS(this);
+    OVITO_REPORT_OPENGL_ERRORS(this);
 
-	if(primitive.image().isNull() || isPicking() || primitive.windowRect().isEmpty())
-		return;
+    if(primitive.image().isNull() || isPicking() || primitive.windowRect().isEmpty())
+        return;
 
-	rebindVAO();
+    rebindVAO();
 
     // Temporarily disable depth testing.
     bool wasDepthTestEnabled = glIsEnabled(GL_DEPTH_TEST);
@@ -85,7 +85,7 @@ void OpenGLSceneRenderer::renderImageImplementation(const ImagePrimitive& primit
     if(wasDepthTestEnabled) 
         glEnable(GL_DEPTH_TEST);
 
-	OVITO_REPORT_OPENGL_ERRORS(this);
+    OVITO_REPORT_OPENGL_ERRORS(this);
 }
 
-}	// End of namespace
+}   // End of namespace

@@ -53,27 +53,27 @@ namespace mu
 
         // Multiarg callbacks
         static value_type f1of1(value_type v) { return v;};
-      	
+        
         static value_type f1of2(value_type v, value_type  ) {return v;};
         static value_type f2of2(value_type  , value_type v) {return v;};
 
         static value_type f1of3(value_type v, value_type  , value_type  ) {return v;};
         static value_type f2of3(value_type  , value_type v, value_type  ) {return v;};
         static value_type f3of3(value_type  , value_type  , value_type v) {return v;};
-      	
+        
         static value_type f1of4(value_type v, value_type,   value_type  , value_type  ) {return v;}
         static value_type f2of4(value_type  , value_type v, value_type  , value_type  ) {return v;}
         static value_type f3of4(value_type  , value_type,   value_type v, value_type  ) {return v;}
         static value_type f4of4(value_type  , value_type,   value_type  , value_type v) {return v;}
 
-	      static value_type f1of5(value_type v, value_type,   value_type  , value_type  , value_type  ) { return v; }
-	      static value_type f2of5(value_type  , value_type v, value_type  , value_type  , value_type  ) { return v; }
-	      static value_type f3of5(value_type  , value_type,   value_type v, value_type  , value_type  ) { return v; }
-	      static value_type f4of5(value_type  , value_type,   value_type  , value_type v, value_type  ) { return v; }
-	      static value_type f5of5(value_type  , value_type,   value_type  , value_type  , value_type v) { return v; }
+          static value_type f1of5(value_type v, value_type,   value_type  , value_type  , value_type  ) { return v; }
+          static value_type f2of5(value_type  , value_type v, value_type  , value_type  , value_type  ) { return v; }
+          static value_type f3of5(value_type  , value_type,   value_type v, value_type  , value_type  ) { return v; }
+          static value_type f4of5(value_type  , value_type,   value_type  , value_type v, value_type  ) { return v; }
+          static value_type f5of5(value_type  , value_type,   value_type  , value_type  , value_type v) { return v; }
 
         static value_type Min(value_type a_fVal1, value_type a_fVal2) { return (a_fVal1<a_fVal2) ? a_fVal1 : a_fVal2; }
-  	    static value_type Max(value_type a_fVal1, value_type a_fVal2) { return (a_fVal1>a_fVal2) ? a_fVal1 : a_fVal2; }
+        static value_type Max(value_type a_fVal1, value_type a_fVal2) { return (a_fVal1>a_fVal2) ? a_fVal1 : a_fVal2; }
 
         static value_type plus2(value_type v1) { return v1+2; }
         static value_type times3(value_type v1) { return v1*3; }
@@ -85,7 +85,7 @@ namespace mu
 
         static value_type FirstArg(const value_type* a_afArg, int a_iArgc)
         {
-          if (!a_iArgc)	
+          if (!a_iArgc) 
             throw mu::Parser::exception_type( _T("too few arguments for function FirstArg.") );
 
           return  a_afArg[0];
@@ -93,7 +93,7 @@ namespace mu
 
         static value_type LastArg(const value_type* a_afArg, int a_iArgc)
         {
-          if (!a_iArgc)	
+          if (!a_iArgc) 
             throw mu::Parser::exception_type( _T("too few arguments for function LastArg.") );
 
           return  a_afArg[a_iArgc-1];
@@ -101,7 +101,7 @@ namespace mu
 
         static value_type Sum(const value_type* a_afArg, int a_iArgc)
         { 
-          if (!a_iArgc)	
+          if (!a_iArgc) 
             throw mu::Parser::exception_type( _T("too few arguments for function sum.") );
 
           value_type fRes=0;
@@ -166,15 +166,15 @@ namespace mu
         static int IsHexVal(const char_type *a_szExpr, int *a_iPos, value_type *a_fVal);
 
         int TestNames();
-	      int TestSyntax();
-	      int TestMultiArg();
-	      int TestPostFix();
-	      int TestExpression();
-	      int TestInfixOprt();
-	      int TestBinOprt();
-	      int TestVarConst();
-	      int TestInterface();
-	      int TestException();
+          int TestSyntax();
+          int TestMultiArg();
+          int TestPostFix();
+          int TestExpression();
+          int TestInfixOprt();
+          int TestBinOprt();
+          int TestVarConst();
+          int TestInterface();
+          int TestException();
         int TestStrArg();
         int TestIfThenElse();
 
@@ -183,12 +183,12 @@ namespace mu
     public:
         typedef int (ParserTester::*testfun_type)();
 
-	      ParserTester();
-	      void Run();
+          ParserTester();
+          void Run();
 
     private:
         std::vector<testfun_type> m_vTestFun;
-	      void AddTest(testfun_type a_pFun);
+          void AddTest(testfun_type a_pFun);
 
         // Test Double Parser
         int EqnTest(const string_type& a_str, double a_fRes, bool a_fPass);

@@ -41,64 +41,64 @@ class OVITO_CORE_EXPORT MixedKeyCache
 {
 public:
 
-	/// Default constructor
-	MixedKeyCache() = default;
+    /// Default constructor
+    MixedKeyCache() = default;
 
-	// Caches are not copyable.
-	MixedKeyCache(const MixedKeyCache& other) = delete;
-	MixedKeyCache& operator=(const MixedKeyCache& other) = delete;
+    // Caches are not copyable.
+    MixedKeyCache(const MixedKeyCache& other) = delete;
+    MixedKeyCache& operator=(const MixedKeyCache& other) = delete;
 
-	/// Returns a reference to the value for the given key.
-	/// Creates a new cache entry with a default-initialized value if the key doesn't exist.
-	template<typename Value, typename Key>
-	Value& get(Key&& key) {
-		// Check if the key exists in the cache.
-		for(auto& entry : _entries) {
-			if(std::get<0>(entry).type() == typeid(Key) && key == any_cast<const Key&>(std::get<0>(entry))) {
-				// Mark this cache entry as recently accessed.
-				std::get<2>(entry) = true;
-				// Read out the value of the cache entry.
-				return any_cast<Value&>(std::get<1>(entry));
-			}
-		}
-		// Create a new entry if key doesn't exist yet.
-		_entries.emplace_back(std::forward<Key>(key), Value{}, true);
-		return any_cast<Value&>(std::get<1>(_entries.back()));
-	}
+    /// Returns a reference to the value for the given key.
+    /// Creates a new cache entry with a default-initialized value if the key doesn't exist.
+    template<typename Value, typename Key>
+    Value& get(Key&& key) {
+        // Check if the key exists in the cache.
+        for(auto& entry : _entries) {
+            if(std::get<0>(entry).type() == typeid(Key) && key == any_cast<const Key&>(std::get<0>(entry))) {
+                // Mark this cache entry as recently accessed.
+                std::get<2>(entry) = true;
+                // Read out the value of the cache entry.
+                return any_cast<Value&>(std::get<1>(entry));
+            }
+        }
+        // Create a new entry if key doesn't exist yet.
+        _entries.emplace_back(std::forward<Key>(key), Value{}, true);
+        return any_cast<Value&>(std::get<1>(_entries.back()));
+    }
 
-	/// Removes all entries from the cache that have not been accessed since the last call to discardUnusedObjects().
-	void discardUnusedObjects() {
-		auto entry = _entries.begin();
-		auto end_entry = _entries.end();
-		while(entry != end_entry) {
-			if(!std::get<2>(*entry)) {
-				// Discard entry.
-				--end_entry;
-				*entry = std::move(*end_entry);
-			}
-			else {
-				// Reset usage marker for the entry.
-				std::get<2>(*entry) = false;
-				++entry;
-			}
-		}
-		_entries.erase(end_entry, _entries.end());
-	}
+    /// Removes all entries from the cache that have not been accessed since the last call to discardUnusedObjects().
+    void discardUnusedObjects() {
+        auto entry = _entries.begin();
+        auto end_entry = _entries.end();
+        while(entry != end_entry) {
+            if(!std::get<2>(*entry)) {
+                // Discard entry.
+                --end_entry;
+                *entry = std::move(*end_entry);
+            }
+            else {
+                // Reset usage marker for the entry.
+                std::get<2>(*entry) = false;
+                ++entry;
+            }
+        }
+        _entries.erase(end_entry, _entries.end());
+    }
 
-	/// Discards all contents of the cache.
-	void reset() {
-		_entries.clear();
-	}
+    /// Discards all contents of the cache.
+    void reset() {
+        _entries.clear();
+    }
 
-	/// Returns the number of items currently stored in the cache.
-	size_t size() const { return _entries.size(); }
+    /// Returns the number of items currently stored in the cache.
+    size_t size() const { return _entries.size(); }
 
 private:
 
-	/// Stores all key-value pairs of the cache. 
-	/// Note we are using std::deque instead of std::vector here, because we require stability of pointers to elements in the container.
-	/// get() returns references to elements in the cache, which must remain valid even when additional objects are added to the cache.
-	std::deque<std::tuple<any_moveonly, any_moveonly, bool>> _entries;
+    /// Stores all key-value pairs of the cache. 
+    /// Note we are using std::deque instead of std::vector here, because we require stability of pointers to elements in the container.
+    /// get() returns references to elements in the cache, which must remain valid even when additional objects are added to the cache.
+    std::deque<std::tuple<any_moveonly, any_moveonly, bool>> _entries;
 };
 
-}	// End of namespace
+}   // End of namespace

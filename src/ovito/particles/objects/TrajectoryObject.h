@@ -33,43 +33,43 @@ namespace Ovito::Particles {
  */
 class OVITO_PARTICLES_EXPORT TrajectoryObject : public PropertyContainer
 {
-	/// Define a new property metaclass for this property container type.
-	class OVITO_PARTICLES_EXPORT OOMetaClass : public PropertyContainerClass
-	{
-	public:
+    /// Define a new property metaclass for this property container type.
+    class OVITO_PARTICLES_EXPORT OOMetaClass : public PropertyContainerClass
+    {
+    public:
 
-		/// Inherit constructor from base class.
-		using PropertyContainerClass::PropertyContainerClass;
+        /// Inherit constructor from base class.
+        using PropertyContainerClass::PropertyContainerClass;
 
-		/// Creates a storage object for standard properties.
-		virtual PropertyPtr createStandardPropertyInternal(size_t elementCount, int type, DataBuffer::InitializationFlags flags, const ConstDataObjectPath& containerPath) const override;
+        /// Creates a storage object for standard properties.
+        virtual PropertyPtr createStandardPropertyInternal(size_t elementCount, int type, DataBuffer::InitializationFlags flags, const ConstDataObjectPath& containerPath) const override;
 
-	protected:
+    protected:
 
-		/// Is called by the system after construction of the meta-class instance.
-		virtual void initialize() override;
-	};
+        /// Is called by the system after construction of the meta-class instance.
+        virtual void initialize() override;
+    };
 
-	OVITO_CLASS_META(TrajectoryObject, OOMetaClass);
-	Q_CLASSINFO("DisplayName", "Particle trajectories");
+    OVITO_CLASS_META(TrajectoryObject, OOMetaClass);
+    Q_CLASSINFO("DisplayName", "Particle trajectories");
 
 public:
 
-	/// \brief The list of standard properties.
-	enum Type {
-		ColorProperty = PropertyObject::GenericColorProperty,
-		PositionProperty = PropertyObject::FirstSpecificProperty,
-		SampleTimeProperty,
-		ParticleIdentifierProperty
-	};
+    /// \brief The list of standard properties.
+    enum Type {
+        ColorProperty = PropertyObject::GenericColorProperty,
+        PositionProperty = PropertyObject::FirstSpecificProperty,
+        SampleTimeProperty,
+        ParticleIdentifierProperty
+    };
 
-	/// \brief Constructor.
-	Q_INVOKABLE TrajectoryObject(ObjectCreationParams params);
+    /// \brief Constructor.
+    Q_INVOKABLE TrajectoryObject(ObjectCreationParams params);
 
 private:
 
-	/// The cached bounding box of the trajectory coordinates.
-	Box3 _boundingBox;
+    /// The cached bounding box of the trajectory coordinates.
+    Box3 _boundingBox;
 };
 
-}	// End of namespace
+}   // End of namespace

@@ -34,13 +34,13 @@ Q_GLOBAL_STATIC(ViewportSettings, _currentViewportSettings);
 ******************************************************************************/
 void ViewportSettings::assign(const ViewportSettings& other)
 {
-	_viewportColors = other._viewportColors;
-	_upDirection = other._upDirection;
-	_constrainCameraRotation = other._constrainCameraRotation;
-	_viewportFont = other._viewportFont;
-	_defaultMaximizedViewportType = other._defaultMaximizedViewportType;
+    _viewportColors = other._viewportColors;
+    _upDirection = other._upDirection;
+    _constrainCameraRotation = other._constrainCameraRotation;
+    _viewportFont = other._viewportFont;
+    _defaultMaximizedViewportType = other._defaultMaximizedViewportType;
 
-	Q_EMIT settingsChanged(this);
+    Q_EMIT settingsChanged(this);
 }
 
 /******************************************************************************
@@ -48,19 +48,19 @@ void ViewportSettings::assign(const ViewportSettings& other)
 ******************************************************************************/
 ViewportSettings& ViewportSettings::getSettings()
 {
-	/// Indicates whether the settings have already been loaded from the application's settings store.
-	static bool settingsLoaded = false;
+    /// Indicates whether the settings have already been loaded from the application's settings store.
+    static bool settingsLoaded = false;
 
-	if(!settingsLoaded) {
+    if(!settingsLoaded) {
 #ifndef OVITO_DISABLE_QSETTINGS
-		QSettings settingsStore;
-		settingsStore.beginGroup("core/viewport/");
-		_currentViewportSettings->load(settingsStore);
-		settingsStore.endGroup();	
+        QSettings settingsStore;
+        settingsStore.beginGroup("core/viewport/");
+        _currentViewportSettings->load(settingsStore);
+        settingsStore.endGroup();   
 #endif
-		settingsLoaded = true;
-	}
-	return *_currentViewportSettings;
+        settingsLoaded = true;
+    }
+    return *_currentViewportSettings;
 }
 
 /******************************************************************************
@@ -68,8 +68,8 @@ ViewportSettings& ViewportSettings::getSettings()
 ******************************************************************************/
 void ViewportSettings::setSettings(const ViewportSettings& settings)
 {
-	_currentViewportSettings->assign(settings);
-	_currentViewportSettings->save();
+    _currentViewportSettings->assign(settings);
+    _currentViewportSettings->save();
 }
 
 /******************************************************************************
@@ -77,7 +77,7 @@ void ViewportSettings::setSettings(const ViewportSettings& settings)
 ******************************************************************************/
 ViewportSettings::ViewportSettings()
 {
-	restoreDefaultViewportColors();
+    restoreDefaultViewportColors();
 }
 
 /******************************************************************************
@@ -85,16 +85,16 @@ ViewportSettings::ViewportSettings()
 ******************************************************************************/
 void ViewportSettings::restoreDefaultViewportColors()
 {
-	_viewportColors[COLOR_VIEWPORT_BKG] = Color(0.0f, 0.0f, 0.0f);
-	_viewportColors[COLOR_GRID] = Color(0.5f, 0.5f, 0.5f);
-	_viewportColors[COLOR_GRID_INTENS] = Color(0.6f, 0.6f, 0.6f);
-	_viewportColors[COLOR_GRID_AXIS] = Color(0.7f, 0.7f, 0.7f);
-	_viewportColors[COLOR_VIEWPORT_CAPTION] = Color(1.0f, 1.0f, 1.0f);
-	_viewportColors[COLOR_SELECTION] = Color(1.0f, 1.0f, 1.0f);
-	_viewportColors[COLOR_UNSELECTED] = Color(0.6f, 0.6f, 1.0f);
-	_viewportColors[COLOR_ACTIVE_VIEWPORT_BORDER] = Color(1.0f, 1.0f, 0.0f);
-	_viewportColors[COLOR_ANIMATION_MODE] = Color(1.0f, 0.0f, 0.0f);
-	_viewportColors[COLOR_CAMERAS] = Color(0.5f, 0.5f, 1.0f);
+    _viewportColors[COLOR_VIEWPORT_BKG] = Color(0.0f, 0.0f, 0.0f);
+    _viewportColors[COLOR_GRID] = Color(0.5f, 0.5f, 0.5f);
+    _viewportColors[COLOR_GRID_INTENS] = Color(0.6f, 0.6f, 0.6f);
+    _viewportColors[COLOR_GRID_AXIS] = Color(0.7f, 0.7f, 0.7f);
+    _viewportColors[COLOR_VIEWPORT_CAPTION] = Color(1.0f, 1.0f, 1.0f);
+    _viewportColors[COLOR_SELECTION] = Color(1.0f, 1.0f, 1.0f);
+    _viewportColors[COLOR_UNSELECTED] = Color(0.6f, 0.6f, 1.0f);
+    _viewportColors[COLOR_ACTIVE_VIEWPORT_BORDER] = Color(1.0f, 1.0f, 0.0f);
+    _viewportColors[COLOR_ANIMATION_MODE] = Color(1.0f, 0.0f, 0.0f);
+    _viewportColors[COLOR_CAMERAS] = Color(0.5f, 0.5f, 1.0f);
 }
 
 /******************************************************************************
@@ -102,8 +102,8 @@ void ViewportSettings::restoreDefaultViewportColors()
 ******************************************************************************/
 const Color& ViewportSettings::viewportColor(ViewportColor which) const
 {
-	OVITO_ASSERT(which >= 0 && which < _viewportColors.size());
-	return _viewportColors[which];
+    OVITO_ASSERT(which >= 0 && which < _viewportColors.size());
+    return _viewportColors[which];
 }
 
 /******************************************************************************
@@ -111,11 +111,11 @@ const Color& ViewportSettings::viewportColor(ViewportColor which) const
 ******************************************************************************/
 void ViewportSettings::setViewportColor(ViewportColor which, const Color& color)
 {
-	OVITO_ASSERT(which >= 0 && which < _viewportColors.size());
-	if(_viewportColors[which] != color) {
-		_viewportColors[which] = color;
-		Q_EMIT settingsChanged(this);
-	}
+    OVITO_ASSERT(which >= 0 && which < _viewportColors.size());
+    if(_viewportColors[which] != color) {
+        _viewportColors[which] = color;
+        Q_EMIT settingsChanged(this);
+    }
 }
 
 /******************************************************************************
@@ -123,12 +123,12 @@ void ViewportSettings::setViewportColor(ViewportColor which, const Color& color)
 ******************************************************************************/
 Vector3 ViewportSettings::upVector() const
 {
-	switch(_upDirection) {
-	case X_AXIS: return { 1,0,0 };
-	case Y_AXIS: return { 0,1,0 };
-	case Z_AXIS: return { 0,0,1 };
-	default: return { 0,0,1 };
-	}
+    switch(_upDirection) {
+    case X_AXIS: return { 1,0,0 };
+    case Y_AXIS: return { 0,1,0 };
+    case Z_AXIS: return { 0,0,1 };
+    default: return { 0,0,1 };
+    }
 }
 
 /******************************************************************************
@@ -138,13 +138,13 @@ Vector3 ViewportSettings::upVector() const
 ******************************************************************************/
 Matrix3 ViewportSettings::coordinateSystemOrientation() const
 {
-	switch(_upDirection) {
-	case X_AXIS: return Matrix3(Vector3(0,1,0), Vector3(0,0,1), Vector3(1,0,0));
-	case Y_AXIS: return Matrix3(Vector3(-1,0,0), Vector3(0,0,1), Vector3(0,1,0));
-	case Z_AXIS:
-	default:
-		return Matrix3::Identity();
-	}
+    switch(_upDirection) {
+    case X_AXIS: return Matrix3(Vector3(0,1,0), Vector3(0,0,1), Vector3(1,0,0));
+    case Y_AXIS: return Matrix3(Vector3(-1,0,0), Vector3(0,0,1), Vector3(0,1,0));
+    case Z_AXIS:
+    default:
+        return Matrix3::Identity();
+    }
 }
 
 #ifndef OVITO_DISABLE_QSETTINGS
@@ -153,27 +153,27 @@ Matrix3 ViewportSettings::coordinateSystemOrientation() const
 ******************************************************************************/
 void ViewportSettings::load(QSettings& store)
 {
-	_upDirection = (UpDirection)store.value("UpDirection", QVariant::fromValue((int)_upDirection)).toInt();
-	_constrainCameraRotation = store.value("ConstrainCameraRotation", QVariant::fromValue(_constrainCameraRotation)).toBool();
-	_defaultMaximizedViewportType = store.value("DefaultMaximizedViewportType", QVariant::fromValue(_defaultMaximizedViewportType)).toInt();
-	store.beginGroup("Colors");
-	QMetaEnum colorEnum;
-	for(int i = 0; i < ViewportSettings::staticMetaObject.enumeratorCount(); i++) {
-		if(qstrcmp(ViewportSettings::staticMetaObject.enumerator(i).name(), "ViewportColor") == 0) {
-			colorEnum = ViewportSettings::staticMetaObject.enumerator(i);
-			break;
-		}
-	}
-	OVITO_ASSERT(colorEnum.isValid());
-	for(const QString& key : store.childKeys()) {
-		QColor c = store.value(key).value<QColor>();
-		bool ok;
-		int index = colorEnum.keyToValue(qUtf8Printable(key), &ok);
-		if(ok && index >= 0 && index < NUMBER_OF_COLORS && c.isValid()) {
-			_viewportColors[index] = Color(c);
-		}
-	}
-	store.endGroup();
+    _upDirection = (UpDirection)store.value("UpDirection", QVariant::fromValue((int)_upDirection)).toInt();
+    _constrainCameraRotation = store.value("ConstrainCameraRotation", QVariant::fromValue(_constrainCameraRotation)).toBool();
+    _defaultMaximizedViewportType = store.value("DefaultMaximizedViewportType", QVariant::fromValue(_defaultMaximizedViewportType)).toInt();
+    store.beginGroup("Colors");
+    QMetaEnum colorEnum;
+    for(int i = 0; i < ViewportSettings::staticMetaObject.enumeratorCount(); i++) {
+        if(qstrcmp(ViewportSettings::staticMetaObject.enumerator(i).name(), "ViewportColor") == 0) {
+            colorEnum = ViewportSettings::staticMetaObject.enumerator(i);
+            break;
+        }
+    }
+    OVITO_ASSERT(colorEnum.isValid());
+    for(const QString& key : store.childKeys()) {
+        QColor c = store.value(key).value<QColor>();
+        bool ok;
+        int index = colorEnum.keyToValue(qUtf8Printable(key), &ok);
+        if(ok && index >= 0 && index < NUMBER_OF_COLORS && c.isValid()) {
+            _viewportColors[index] = Color(c);
+        }
+    }
+    store.endGroup();
 }
 #endif
 
@@ -183,10 +183,10 @@ void ViewportSettings::load(QSettings& store)
 void ViewportSettings::save() const
 {
 #ifndef OVITO_DISABLE_QSETTINGS
-	QSettings settingsStore;
-	settingsStore.beginGroup("core/viewport/");
-	save(settingsStore);
-	settingsStore.endGroup();
+    QSettings settingsStore;
+    settingsStore.beginGroup("core/viewport/");
+    save(settingsStore);
+    settingsStore.endGroup();
 #endif
 }
 
@@ -196,24 +196,24 @@ void ViewportSettings::save() const
 ******************************************************************************/
 void ViewportSettings::save(QSettings& store) const
 {
-	store.setValue("UpDirection", (int)_upDirection);
-	store.setValue("ConstrainCameraRotation", _constrainCameraRotation);
-	store.setValue("DefaultMaximizedViewportType", _defaultMaximizedViewportType);
-	store.remove("Colors");
-	store.beginGroup("Colors");
-	QMetaEnum colorEnum;
-	for(int i = 0; i < ViewportSettings::staticMetaObject.enumeratorCount(); i++) {
-		if(qstrcmp(ViewportSettings::staticMetaObject.enumerator(i).name(), "ViewportColor") == 0) {
-			colorEnum = ViewportSettings::staticMetaObject.enumerator(i);
-			break;
-		}
-	}
-	OVITO_ASSERT(colorEnum.isValid());
+    store.setValue("UpDirection", (int)_upDirection);
+    store.setValue("ConstrainCameraRotation", _constrainCameraRotation);
+    store.setValue("DefaultMaximizedViewportType", _defaultMaximizedViewportType);
+    store.remove("Colors");
+    store.beginGroup("Colors");
+    QMetaEnum colorEnum;
+    for(int i = 0; i < ViewportSettings::staticMetaObject.enumeratorCount(); i++) {
+        if(qstrcmp(ViewportSettings::staticMetaObject.enumerator(i).name(), "ViewportColor") == 0) {
+            colorEnum = ViewportSettings::staticMetaObject.enumerator(i);
+            break;
+        }
+    }
+    OVITO_ASSERT(colorEnum.isValid());
     for(size_t i = 0; i < _viewportColors.size(); i++) {
-		store.setValue(colorEnum.key(i), QVariant::fromValue((QColor)_viewportColors[i]));
-	}
-	store.endGroup();
+        store.setValue(colorEnum.key(i), QVariant::fromValue((QColor)_viewportColors[i]));
+    }
+    store.endGroup();
 }
 #endif
 
-}	// End of namespace
+}   // End of namespace

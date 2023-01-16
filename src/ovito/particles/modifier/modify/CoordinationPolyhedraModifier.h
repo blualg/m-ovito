@@ -37,92 +37,92 @@ namespace Ovito::Particles {
  */
 class OVITO_PARTICLES_EXPORT CoordinationPolyhedraModifier : public AsynchronousModifier
 {
-	/// Give this modifier class its own metaclass.
-	class CoordinationPolyhedraModifierClass : public AsynchronousModifier::OOMetaClass
-	{
-	public:
+    /// Give this modifier class its own metaclass.
+    class CoordinationPolyhedraModifierClass : public AsynchronousModifier::OOMetaClass
+    {
+    public:
 
-		/// Inherit constructor from base metaclass.
-		using AsynchronousModifier::OOMetaClass::OOMetaClass;
+        /// Inherit constructor from base metaclass.
+        using AsynchronousModifier::OOMetaClass::OOMetaClass;
 
-		/// Asks the metaclass whether the modifier can be applied to the given input data.
-		virtual bool isApplicableTo(const DataCollection& input) const override;
-	};
+        /// Asks the metaclass whether the modifier can be applied to the given input data.
+        virtual bool isApplicableTo(const DataCollection& input) const override;
+    };
 
-	OVITO_CLASS_META(CoordinationPolyhedraModifier, CoordinationPolyhedraModifierClass)
+    OVITO_CLASS_META(CoordinationPolyhedraModifier, CoordinationPolyhedraModifierClass)
 
-	Q_CLASSINFO("DisplayName", "Coordination polyhedra");
-	Q_CLASSINFO("Description", "Visualize atomic coordination polyhedra.");
+    Q_CLASSINFO("DisplayName", "Coordination polyhedra");
+    Q_CLASSINFO("Description", "Visualize atomic coordination polyhedra.");
 #ifndef OVITO_QML_GUI
-	Q_CLASSINFO("ModifierCategory", "Visualization");
+    Q_CLASSINFO("ModifierCategory", "Visualization");
 #else
-	Q_CLASSINFO("ModifierCategory", "-");
+    Q_CLASSINFO("ModifierCategory", "-");
 #endif
 
 public:
 
-	/// Constructor.
-	Q_INVOKABLE CoordinationPolyhedraModifier(ObjectCreationParams params);
+    /// Constructor.
+    Q_INVOKABLE CoordinationPolyhedraModifier(ObjectCreationParams params);
 
 protected:
 
-	/// Creates a computation engine that will compute the modifier's results.
-	virtual Future<EnginePtr> createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input) override;
+    /// Creates a computation engine that will compute the modifier's results.
+    virtual Future<EnginePtr> createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input) override;
 
 private:
 
-	/// Computation engine that builds the polyhedra.
-	class ComputePolyhedraEngine : public Engine
-	{
-	public:
+    /// Computation engine that builds the polyhedra.
+    class ComputePolyhedraEngine : public Engine
+    {
+    public:
 
-		/// Constructor.
-		ComputePolyhedraEngine(const ModifierEvaluationRequest& request, 
-				ConstPropertyPtr positions,
-				ConstPropertyPtr selection, 
-				ConstPropertyPtr bondTopology, 
-				ConstPropertyPtr bondPeriodicImages, 
-				DataOORef<SurfaceMesh> mesh, 
-				std::vector<ConstPropertyPtr> particleProperties) :
-			Engine(request),
-			_positions(std::move(positions)),
-			_selection(std::move(selection)),
-			_bondTopology(std::move(bondTopology)),
-			_bondPeriodicImages(std::move(bondPeriodicImages)),
-			_mesh(std::move(mesh)),
-			_particleProperties(std::move(particleProperties)) {}
+        /// Constructor.
+        ComputePolyhedraEngine(const ModifierEvaluationRequest& request, 
+                ConstPropertyPtr positions,
+                ConstPropertyPtr selection, 
+                ConstPropertyPtr bondTopology, 
+                ConstPropertyPtr bondPeriodicImages, 
+                DataOORef<SurfaceMesh> mesh, 
+                std::vector<ConstPropertyPtr> particleProperties) :
+            Engine(request),
+            _positions(std::move(positions)),
+            _selection(std::move(selection)),
+            _bondTopology(std::move(bondTopology)),
+            _bondPeriodicImages(std::move(bondPeriodicImages)),
+            _mesh(std::move(mesh)),
+            _particleProperties(std::move(particleProperties)) {}
 
-		/// Computes the modifier's results and stores them in this object for later retrieval.
-		virtual void perform() override;
+        /// Computes the modifier's results and stores them in this object for later retrieval.
+        virtual void perform() override;
 
-		/// Injects the computed results into the data pipeline.
-		virtual void applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
+        /// Injects the computed results into the data pipeline.
+        virtual void applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
 
-		/// Returns the simulation cell geometry.
-		const SimulationCellObject* cell() const { return _mesh->domain(); }
+        /// Returns the simulation cell geometry.
+        const SimulationCellObject* cell() const { return _mesh->domain(); }
 
-		/// Returns the list of particle properties to copy over to the generated mesh.
-		const std::vector<ConstPropertyPtr>& particleProperties() const { return _particleProperties; }
+        /// Returns the list of particle properties to copy over to the generated mesh.
+        const std::vector<ConstPropertyPtr>& particleProperties() const { return _particleProperties; }
 
-	private:
+    private:
 
-		ConstPropertyPtr _positions;
-		ConstPropertyPtr _selection;
-		ConstPropertyPtr _bondTopology;
-		ConstPropertyPtr _bondPeriodicImages;
+        ConstPropertyPtr _positions;
+        ConstPropertyPtr _selection;
+        ConstPropertyPtr _bondTopology;
+        ConstPropertyPtr _bondPeriodicImages;
 
-		/// The generated mesh structure.
-		DataOORef<SurfaceMesh> _mesh;
+        /// The generated mesh structure.
+        DataOORef<SurfaceMesh> _mesh;
 
-		/// The list of particle properties to copy over to the generated mesh.
-		std::vector<ConstPropertyPtr> _particleProperties;
-	};
+        /// The list of particle properties to copy over to the generated mesh.
+        std::vector<ConstPropertyPtr> _particleProperties;
+    };
 
-	/// The vis element for rendering the polyhedra.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<SurfaceMeshVis>, surfaceMeshVis, setSurfaceMeshVis, PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES | PROPERTY_FIELD_MEMORIZE | PROPERTY_FIELD_OPEN_SUBEDITOR);
+    /// The vis element for rendering the polyhedra.
+    DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<SurfaceMeshVis>, surfaceMeshVis, setSurfaceMeshVis, PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES | PROPERTY_FIELD_MEMORIZE | PROPERTY_FIELD_OPEN_SUBEDITOR);
 
-	/// Controls whether property values should be copied over from the input particles to the generated mesh vertices and mesh regions.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, transferParticleProperties, setTransferParticleProperties);
+    /// Controls whether property values should be copied over from the input particles to the generated mesh vertices and mesh regions.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, transferParticleProperties, setTransferParticleProperties);
 };
 
-}	// End of namespace
+}   // End of namespace

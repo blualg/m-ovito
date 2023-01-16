@@ -23,14 +23,14 @@
 # Define the plugin module.
 OVITO_STANDARD_PLUGIN(CorrelationFunctionPlugin
     SOURCES
-		SpatialCorrelationFunctionModifier.cpp
-	PLUGIN_DEPENDENCIES Particles
-	PRIVATE_LIB_DEPENDENCIES kissfft
+        SpatialCorrelationFunctionModifier.cpp
+    PLUGIN_DEPENDENCIES Particles
+    PRIVATE_LIB_DEPENDENCIES kissfft
 )
 
 # Build corresponding GUI plugin.
 IF(OVITO_BUILD_APP AND NOT OVITO_QML_GUI)
-	ADD_SUBDIRECTORY(gui)
+    ADD_SUBDIRECTORY(gui)
 ENDIF()
 
 # Propagate list of plugins to parent scope.

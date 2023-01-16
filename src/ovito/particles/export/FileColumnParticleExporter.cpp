@@ -34,22 +34,22 @@ IMPLEMENT_OVITO_CLASS(FileColumnParticleExporter);
 FileColumnParticleExporter::FileColumnParticleExporter(ObjectCreationParams params) : ParticleExporter(params)
 {
 #ifndef OVITO_DISABLE_QSETTINGS
-	if(params.loadUserDefaults()) {
-		// Restore last output column mapping.
-		QSettings settings;
-		settings.beginGroup("exporter/particles/");
-		if(settings.contains("columnmapping")) {
-			try {
-				_columnMapping.fromByteArray(settings.value("columnmapping").toByteArray());
-			}
-			catch(Exception& ex) {
-				ex.prependGeneralMessage(tr("Failed to load previous output column mapping from application settings store."));
-				ex.logError();
-			}
-		}
-		settings.endGroup();
-	}
+    if(params.loadUserDefaults()) {
+        // Restore last output column mapping.
+        QSettings settings;
+        settings.beginGroup("exporter/particles/");
+        if(settings.contains("columnmapping")) {
+            try {
+                _columnMapping.fromByteArray(settings.value("columnmapping").toByteArray());
+            }
+            catch(Exception& ex) {
+                ex.prependGeneralMessage(tr("Failed to load previous output column mapping from application settings store."));
+                ex.logError();
+            }
+        }
+        settings.endGroup();
+    }
 #endif
 }
 
-}	// End of namespace
+}   // End of namespace

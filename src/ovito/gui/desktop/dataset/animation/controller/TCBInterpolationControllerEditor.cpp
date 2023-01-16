@@ -28,4 +28,4 @@ namespace Ovito {
 IMPLEMENT_OVITO_CLASS(PositionTCBAnimationKeyEditor);
 SET_OVITO_OBJECT_EDITOR(PositionTCBAnimationKey, PositionTCBAnimationKeyEditor);
 
-}	// End of namespace
+}   // End of namespace

@@ -33,7 +33,7 @@ IMPLEMENT_OVITO_CLASS(ModifierDelegateFixedListParameterUI);
 * The constructor.
 ******************************************************************************/
 ModifierDelegateFixedListParameterUI::ModifierDelegateFixedListParameterUI(PropertiesEditor* parentEditor, const RolloutInsertionParameters& rolloutParams, OvitoClassPtr defaultEditorClass)
-	: RefTargetListParameterUI(parentEditor, PROPERTY_FIELD(MultiDelegatingModifier::delegates), rolloutParams, defaultEditorClass)
+    : RefTargetListParameterUI(parentEditor, PROPERTY_FIELD(MultiDelegatingModifier::delegates), rolloutParams, defaultEditorClass)
 {
 }
 
@@ -42,18 +42,18 @@ ModifierDelegateFixedListParameterUI::ModifierDelegateFixedListParameterUI(Prope
 ******************************************************************************/
 QVariant ModifierDelegateFixedListParameterUI::getItemData(RefTarget* target, const QModelIndex& index, int role)
 {
-	if(role == Qt::DisplayRole) {
-		if(index.column() == 0 && target) {
-			return target->objectTitle();
-		}
-	}
-	else if(role == Qt::CheckStateRole) {
-		if(index.column() == 0) {
-			if(ModifierDelegate* delegate = dynamic_object_cast<ModifierDelegate>(target))
-				return delegate->isEnabled() ? Qt::Checked : Qt::Unchecked;
-		}
-	}
-	return {};
+    if(role == Qt::DisplayRole) {
+        if(index.column() == 0 && target) {
+            return target->objectTitle();
+        }
+    }
+    else if(role == Qt::CheckStateRole) {
+        if(index.column() == 0) {
+            if(ModifierDelegate* delegate = dynamic_object_cast<ModifierDelegate>(target))
+                return delegate->isEnabled() ? Qt::Checked : Qt::Unchecked;
+        }
+    }
+    return {};
 }
 
 /******************************************************************************
@@ -61,16 +61,16 @@ QVariant ModifierDelegateFixedListParameterUI::getItemData(RefTarget* target, co
 ******************************************************************************/
 bool ModifierDelegateFixedListParameterUI::setItemData(RefTarget* target, const QModelIndex& index, const QVariant& value, int role)
 {
-	if(index.column() == 0 && role == Qt::CheckStateRole) {
-		if(ModifierDelegate* delegate = dynamic_object_cast<ModifierDelegate>(target)) {
-			bool enabled = (value.toInt() == Qt::Checked);
-			return performTransaction(tr("Enable/disable data element"), [delegate, enabled]() {
-				delegate->setEnabled(enabled);
-			});
-		}
-	}
+    if(index.column() == 0 && role == Qt::CheckStateRole) {
+        if(ModifierDelegate* delegate = dynamic_object_cast<ModifierDelegate>(target)) {
+            bool enabled = (value.toInt() == Qt::Checked);
+            return performTransaction(tr("Enable/disable data element"), [delegate, enabled]() {
+                delegate->setEnabled(enabled);
+            });
+        }
+    }
 
-	return RefTargetListParameterUI::setItemData(target, index, value, role);
+    return RefTargetListParameterUI::setItemData(target, index, value, role);
 }
 
 /******************************************************************************
@@ -78,16 +78,16 @@ bool ModifierDelegateFixedListParameterUI::setItemData(RefTarget* target, const 
 ******************************************************************************/
 Qt::ItemFlags ModifierDelegateFixedListParameterUI::getItemFlags(RefTarget* target, const QModelIndex& index)
 {
-	Qt::ItemFlags flags = RefTargetListParameterUI::getItemFlags(target, index);
-	if(index.column() == 0) {
-		if(ModifierDelegate* delegate = dynamic_object_cast<ModifierDelegate>(target)) {
-			if(delegate->getOOMetaClass().getApplicableObjects(editor()->getPipelineInput()).empty()) {
-				flags &= ~Qt::ItemIsEnabled;
-			}
-		}
-		return flags | Qt::ItemIsUserCheckable;
-	}
-	return flags;
+    Qt::ItemFlags flags = RefTargetListParameterUI::getItemFlags(target, index);
+    if(index.column() == 0) {
+        if(ModifierDelegate* delegate = dynamic_object_cast<ModifierDelegate>(target)) {
+            if(delegate->getOOMetaClass().getApplicableObjects(editor()->getPipelineInput()).empty()) {
+                flags &= ~Qt::ItemIsEnabled;
+            }
+        }
+        return flags | Qt::ItemIsUserCheckable;
+    }
+    return flags;
 }
 
-}	// End of namespace
+}   // End of namespace

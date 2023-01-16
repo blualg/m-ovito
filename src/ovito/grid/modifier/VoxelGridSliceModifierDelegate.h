@@ -36,40 +36,40 @@ using namespace Ovito::StdMod;
  */
 class OVITO_GRID_EXPORT VoxelGridSliceModifierDelegate : public SliceModifierDelegate
 {
-	/// Give the modifier delegate its own metaclass.
-	class VoxelGridSliceModifierDelegateClass : public SliceModifierDelegate::OOMetaClass
-	{
-	public:
+    /// Give the modifier delegate its own metaclass.
+    class VoxelGridSliceModifierDelegateClass : public SliceModifierDelegate::OOMetaClass
+    {
+    public:
 
-		/// Inherit constructor from base class.
-		using SliceModifierDelegate::OOMetaClass::OOMetaClass;
+        /// Inherit constructor from base class.
+        using SliceModifierDelegate::OOMetaClass::OOMetaClass;
 
-		/// Indicates which data objects in the given input data collection the modifier delegate is able to operate on.
-		virtual QVector<DataObjectReference> getApplicableObjects(const DataCollection& input) const override {
-			if(input.containsObject<VoxelGrid>())
-				return { DataObjectReference(&VoxelGrid::OOClass()) };
-			return {};
-		}
+        /// Indicates which data objects in the given input data collection the modifier delegate is able to operate on.
+        virtual QVector<DataObjectReference> getApplicableObjects(const DataCollection& input) const override {
+            if(input.containsObject<VoxelGrid>())
+                return { DataObjectReference(&VoxelGrid::OOClass()) };
+            return {};
+        }
 
-		/// The name by which Python scripts can refer to this modifier delegate.
-		virtual QString pythonDataName() const override { return QStringLiteral("voxels"); }
-	};
+        /// The name by which Python scripts can refer to this modifier delegate.
+        virtual QString pythonDataName() const override { return QStringLiteral("voxels"); }
+    };
 
-	OVITO_CLASS_META(VoxelGridSliceModifierDelegate, VoxelGridSliceModifierDelegateClass)
-	Q_CLASSINFO("DisplayName", "Voxel grids");
+    OVITO_CLASS_META(VoxelGridSliceModifierDelegate, VoxelGridSliceModifierDelegateClass)
+    Q_CLASSINFO("DisplayName", "Voxel grids");
 
 public:
 
-	/// Constructor.
-	Q_INVOKABLE VoxelGridSliceModifierDelegate(ObjectCreationParams params);
+    /// Constructor.
+    Q_INVOKABLE VoxelGridSliceModifierDelegate(ObjectCreationParams params);
 
-	/// \brief Applies a slice operation to a data object.
-	virtual PipelineStatus apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const PipelineFlowState& inputState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs) override;
+    /// \brief Applies a slice operation to a data object.
+    virtual PipelineStatus apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const PipelineFlowState& inputState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs) override;
 
 private:
 
-	/// The vis element for rendering the generated mesh.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<SurfaceMeshVis>, surfaceMeshVis, setSurfaceMeshVis, PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES | PROPERTY_FIELD_MEMORIZE | PROPERTY_FIELD_OPEN_SUBEDITOR);
+    /// The vis element for rendering the generated mesh.
+    DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<SurfaceMeshVis>, surfaceMeshVis, setSurfaceMeshVis, PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES | PROPERTY_FIELD_MEMORIZE | PROPERTY_FIELD_OPEN_SUBEDITOR);
 };
 
-}	// End of namespace
+}   // End of namespace

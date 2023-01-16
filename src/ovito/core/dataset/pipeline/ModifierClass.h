@@ -35,28 +35,28 @@ class OVITO_CORE_EXPORT ModifierClass : public RefTarget::OOMetaClass
 {
 public:
 
-	/// Inherit standard constructor from base meta class.
-	using RefTarget::OOMetaClass::OOMetaClass;
+    /// Inherit standard constructor from base meta class.
+    using RefTarget::OOMetaClass::OOMetaClass;
 
-	/// \brief Asks the modifier metaclass whether the modifier class can be applied to the given input data.
-	/// \param input The data collection to operate on.
-	/// \return true if the modifier can operate on the provided input data; false otherwise.
-	///
-	/// This method is used to filter the list of available modifiers. The default implementation returns true.
-	virtual bool isApplicableTo(const DataCollection& input) const { return true; }
+    /// \brief Asks the modifier metaclass whether the modifier class can be applied to the given input data.
+    /// \param input The data collection to operate on.
+    /// \return true if the modifier can operate on the provided input data; false otherwise.
+    ///
+    /// This method is used to filter the list of available modifiers. The default implementation returns true.
+    virtual bool isApplicableTo(const DataCollection& input) const { return true; }
 
-	/// \brief Returns the category under which the modifier will be displayed in the modifier list box.
-	virtual QString modifierCategory() const {
-		if(qtMetaObject()) {
-			int infoIndex = qtMetaObject()->indexOfClassInfo("ModifierCategory");
-			if(infoIndex != -1) {
-				return QString::fromLocal8Bit(qtMetaObject()->classInfo(infoIndex).value());
-			}
-		}
-		return {};
-	}
+    /// \brief Returns the category under which the modifier will be displayed in the modifier list box.
+    virtual QString modifierCategory() const {
+        if(qtMetaObject()) {
+            int infoIndex = qtMetaObject()->indexOfClassInfo("ModifierCategory");
+            if(infoIndex != -1) {
+                return QString::fromLocal8Bit(qtMetaObject()->classInfo(infoIndex).value());
+            }
+        }
+        return {};
+    }
 };
 
-}	// End of namespace
+}   // End of namespace
 
 Q_DECLARE_METATYPE(Ovito::ModifierClassPtr);

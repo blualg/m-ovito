@@ -28,50 +28,50 @@
 
 namespace Ovito {
 
-class ApplicationSettingsDialog;		// defined below.
+class ApplicationSettingsDialog;        // defined below.
 
 /**
  * \brief Abstract base class for tab providers for the application's settings dialog.
  */
 class OVITO_GUI_EXPORT ApplicationSettingsDialogPage : public OvitoObject
 {
-	OVITO_CLASS(ApplicationSettingsDialogPage)
+    OVITO_CLASS(ApplicationSettingsDialogPage)
 
 protected:
 
-	/// Base class constructor.
-	ApplicationSettingsDialogPage() = default;
+    /// Base class constructor.
+    ApplicationSettingsDialogPage() = default;
 
 public:
 
-	/// \brief Creates the tab that is inserted into the settings dialog.
-	/// \param tabWidget The QTabWidget into which the method should insert the settings page.
-	virtual void insertSettingsDialogPage(QTabWidget* tabWidget) = 0;
+    /// \brief Creates the tab that is inserted into the settings dialog.
+    /// \param tabWidget The QTabWidget into which the method should insert the settings page.
+    virtual void insertSettingsDialogPage(QTabWidget* tabWidget) = 0;
 
-	/// \brief Lets the settings page validate the values entered by the user before saving them.
-	/// \return true if the settings are valid; false if settings need to be corrected by the user and the dialog should not be closed.
-	virtual bool validateValues(QTabWidget* tabWidget) { return true; }
+    /// \brief Lets the settings page validate the values entered by the user before saving them.
+    /// \return true if the settings are valid; false if settings need to be corrected by the user and the dialog should not be closed.
+    virtual bool validateValues(QTabWidget* tabWidget) { return true; }
 
-	/// \brief Lets the settings page to save all values entered by the user.
-	virtual void saveValues(QTabWidget* tabWidget) {}
+    /// \brief Lets the settings page to save all values entered by the user.
+    virtual void saveValues(QTabWidget* tabWidget) {}
 
-	/// \brief Lets the settings page restore the original values of changed settings.
-	virtual void restoreValues(QTabWidget* tabWidget) {}
+    /// \brief Lets the settings page restore the original values of changed settings.
+    virtual void restoreValues(QTabWidget* tabWidget) {}
 
-	/// \brief Returns an integer value that is used to sort the dialog pages in ascending order.
-	virtual int pageSortingKey() const { return 1000; }
+    /// \brief Returns an integer value that is used to sort the dialog pages in ascending order.
+    virtual int pageSortingKey() const { return 1000; }
 
-	/// Returns the parent dialog hosting this settings page.
-	ApplicationSettingsDialog* settingsDialog() const { OVITO_ASSERT(_settingsDialog); return _settingsDialog; }
+    /// Returns the parent dialog hosting this settings page.
+    ApplicationSettingsDialog* settingsDialog() const { OVITO_ASSERT(_settingsDialog); return _settingsDialog; }
 
-	/// Returns the main window hosting this settings page.
-	MainWindow& mainWindow() const;
+    /// Returns the main window hosting this settings page.
+    MainWindow& mainWindow() const;
 
 private:
 
-	ApplicationSettingsDialog* _settingsDialog = nullptr;
+    ApplicationSettingsDialog* _settingsDialog = nullptr;
 
-	friend class ApplicationSettingsDialog;
+    friend class ApplicationSettingsDialog;
 };
 
 /**
@@ -82,36 +82,36 @@ private:
  */
 class OVITO_GUI_EXPORT ApplicationSettingsDialog : public QDialog
 {
-	Q_OBJECT
+    Q_OBJECT
 
 public:
 
-	/// \brief Constructs the dialog window.
-	/// \param mainWindow The parent window of the settings dialog.
-	/// \param startPage An optional pointer to the ApplicationSettingsDialogPage derived class whose
-	///                  settings page should be activated initially.
-	ApplicationSettingsDialog(MainWindow& mainWindow, OvitoClassPtr startPage = nullptr);
+    /// \brief Constructs the dialog window.
+    /// \param mainWindow The parent window of the settings dialog.
+    /// \param startPage An optional pointer to the ApplicationSettingsDialogPage derived class whose
+    ///                  settings page should be activated initially.
+    ApplicationSettingsDialog(MainWindow& mainWindow, OvitoClassPtr startPage = nullptr);
 
-	/// Returns the main window the application settings dialog was opened from.
-	MainWindow& mainWindow() const { return _mainWindow; }
+    /// Returns the main window the application settings dialog was opened from.
+    MainWindow& mainWindow() const { return _mainWindow; }
 
 public Q_SLOTS:
 
-	/// This is called when the user has pressed the OK button of the settings dialog.
-	/// Validates and saves all settings made by the user and closes the dialog box.
-	void onOk();
+    /// This is called when the user has pressed the OK button of the settings dialog.
+    /// Validates and saves all settings made by the user and closes the dialog box.
+    void onOk();
 
-	/// This is called when the user closes the dialog box using the Cancel button.
-	void onCancel();
+    /// This is called when the user closes the dialog box using the Cancel button.
+    void onCancel();
 
-	/// This is called when the user has pressed the help button of the settings dialog.
-	void onHelp();
+    /// This is called when the user has pressed the help button of the settings dialog.
+    void onHelp();
 
 private:
 
-	MainWindow& _mainWindow;
-	QVector<OORef<ApplicationSettingsDialogPage>> _pages;
-	QTabWidget* _tabWidget;
+    MainWindow& _mainWindow;
+    QVector<OORef<ApplicationSettingsDialogPage>> _pages;
+    QTabWidget* _tabWidget;
 };
 
-}	// End of namespace
+}   // End of namespace

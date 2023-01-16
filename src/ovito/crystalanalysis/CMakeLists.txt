@@ -21,66 +21,66 @@
 #######################################################################################
 
 SET(SourceFiles
-	importer/CAImporter.cpp
-	importer/ParaDiSImporter.cpp
-	exporter/CAExporter.cpp
-	exporter/VTKDislocationsExporter.cpp
-	objects/BurgersVectorFamily.cpp
-	objects/ClusterGraphObject.cpp
-	objects/DislocationNetworkObject.cpp
-	objects/DislocationVis.cpp
-	objects/RenderableDislocationLines.cpp
-	objects/Microstructure.cpp
-	objects/MicrostructurePhase.cpp
-	objects/SlipSurfaceVis.cpp
-	data/ClusterGraph.cpp
-	data/DislocationNetwork.cpp
-	modifier/dxa/DislocationAnalysisModifier.cpp
-	modifier/dxa/DislocationAnalysisEngine.cpp
-	modifier/dxa/StructureAnalysis.cpp
-	modifier/dxa/CrystalPathFinder.cpp
-	modifier/dxa/ElasticMapping.cpp
-	modifier/dxa/InterfaceMesh.cpp
-	modifier/dxa/DislocationTracer.cpp
-	modifier/elasticstrain/ElasticStrainModifier.cpp
-	modifier/elasticstrain/ElasticStrainEngine.cpp
-	modifier/grains/GrainSegmentationModifier.cpp
-	modifier/grains/GrainSegmentationEngine.cpp
-	modifier/grains/NodePairSampling.cpp
-	modifier/microstructure/SimplifyMicrostructureModifier.cpp
+    importer/CAImporter.cpp
+    importer/ParaDiSImporter.cpp
+    exporter/CAExporter.cpp
+    exporter/VTKDislocationsExporter.cpp
+    objects/BurgersVectorFamily.cpp
+    objects/ClusterGraphObject.cpp
+    objects/DislocationNetworkObject.cpp
+    objects/DislocationVis.cpp
+    objects/RenderableDislocationLines.cpp
+    objects/Microstructure.cpp
+    objects/MicrostructurePhase.cpp
+    objects/SlipSurfaceVis.cpp
+    data/ClusterGraph.cpp
+    data/DislocationNetwork.cpp
+    modifier/dxa/DislocationAnalysisModifier.cpp
+    modifier/dxa/DislocationAnalysisEngine.cpp
+    modifier/dxa/StructureAnalysis.cpp
+    modifier/dxa/CrystalPathFinder.cpp
+    modifier/dxa/ElasticMapping.cpp
+    modifier/dxa/InterfaceMesh.cpp
+    modifier/dxa/DislocationTracer.cpp
+    modifier/elasticstrain/ElasticStrainModifier.cpp
+    modifier/elasticstrain/ElasticStrainEngine.cpp
+    modifier/grains/GrainSegmentationModifier.cpp
+    modifier/grains/GrainSegmentationEngine.cpp
+    modifier/grains/NodePairSampling.cpp
+    modifier/microstructure/SimplifyMicrostructureModifier.cpp
 )
 
 IF(OVITO_BUILD_PLUGIN_STDMOD)
-	LIST(APPEND SourceFiles
-		objects/DislocationSliceModifierDelegate.cpp
-		objects/DislocationReplicateModifierDelegate.cpp
-		objects/DislocationAffineTransformationModifierDelegate.cpp
-		)
+    LIST(APPEND SourceFiles
+        objects/DislocationSliceModifierDelegate.cpp
+        objects/DislocationReplicateModifierDelegate.cpp
+        objects/DislocationAffineTransformationModifierDelegate.cpp
+        )
 ENDIF()
 
 IF(TARGET NetCDFIntegration)
-	LIST(APPEND SourceFiles
-		importer/DislocImporter.cpp
-	)
+    LIST(APPEND SourceFiles
+        importer/DislocImporter.cpp
+    )
 ENDIF()
 
 # Define the plugin module.
 OVITO_STANDARD_PLUGIN(CrystalAnalysis
-	SOURCES ${SourceFiles}
-	PLUGIN_DEPENDENCIES Particles Mesh StdObj Grid Delaunay
-	PRIVATE_LIB_DEPENDENCIES PolyhedralTemplateMatching
-	OPTIONAL_PLUGIN_DEPENDENCIES StdMod
-	PRECOMPILED_HEADERS CrystalAnalysis.h
+    SOURCES ${SourceFiles}
+    PLUGIN_DEPENDENCIES Particles Mesh StdObj Grid Delaunay
+    PRIVATE_LIB_DEPENDENCIES PolyhedralTemplateMatching
+    OPTIONAL_PLUGIN_DEPENDENCIES StdMod
+    PRECOMPILED_HEADERS CrystalAnalysis.h
 )
 
 # The DislocImporter class requires NetCDF support.
 IF(TARGET NetCDFIntegration)
-	TARGET_LINK_LIBRARIES(CrystalAnalysis PRIVATE NetCDFIntegration)
+    TARGET_LINK_LIBRARIES(CrystalAnalysis PRIVATE NetCDFIntegration)
 ENDIF()
 
 # Build corresponding GUI plugin.
 IF(OVITO_BUILD_APP AND NOT OVITO_QML_GUI)
-	ADD_SUBDIRECTORY(gui)
+    ADD_SUBDIRECTORY(gui)
 ENDIF()
 
 # Propagate list of plugins to parent scope.

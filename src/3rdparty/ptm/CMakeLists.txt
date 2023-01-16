@@ -21,31 +21,31 @@
 #######################################################################################
 
 IF(WIN32)
-	# Always build this module as a static library under Windows, because PTM does not explicitly export any symbols.
-	# Building as a DLL would require tagging all symbols to be exported with __declspec(dllexport) in the source  code.
-	SET(BUILD_SHARED_LIBS OFF)
+    # Always build this module as a static library under Windows, because PTM does not explicitly export any symbols.
+    # Building as a DLL would require tagging all symbols to be exported with __declspec(dllexport) in the source  code.
+    SET(BUILD_SHARED_LIBS OFF)
 ENDIF()
 
 # Build library.
 ADD_LIBRARY(PolyhedralTemplateMatching
-	ptm_alloy_types.cpp
-	ptm_canonical_coloured.cpp
-	ptm_convex_hull_incremental.cpp
-	ptm_correspondences.cpp
-	ptm_deformation_gradient.cpp
-	ptm_graph_data.cpp
-	ptm_graph_tools.cpp
-	ptm_index.cpp
-	ptm_initialize_data.cpp
-	ptm_map_templates.cpp
-	ptm_multishell.cpp
-	ptm_neighbour_ordering.cpp
-	ptm_normalize_vertices.cpp
-	ptm_polar.cpp
-	ptm_quat.cpp
-	ptm_solid_angles.cpp
-	ptm_structure_matcher.cpp
-	ptm_voronoi_cell.cpp
+    ptm_alloy_types.cpp
+    ptm_canonical_coloured.cpp
+    ptm_convex_hull_incremental.cpp
+    ptm_correspondences.cpp
+    ptm_deformation_gradient.cpp
+    ptm_graph_data.cpp
+    ptm_graph_tools.cpp
+    ptm_index.cpp
+    ptm_initialize_data.cpp
+    ptm_map_templates.cpp
+    ptm_multishell.cpp
+    ptm_neighbour_ordering.cpp
+    ptm_normalize_vertices.cpp
+    ptm_polar.cpp
+    ptm_quat.cpp
+    ptm_solid_angles.cpp
+    ptm_structure_matcher.cpp
+    ptm_voronoi_cell.cpp
 )
 
 # Simply export all symbols defined by the PTM library, because the code doesn't explicitly export certain API symbols.
@@ -64,23 +64,23 @@ TARGET_LINK_LIBRARIES(PolyhedralTemplateMatching PRIVATE VoroPlusPlus)
 TARGET_INCLUDE_DIRECTORIES(PolyhedralTemplateMatching INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}/..")
 
 IF(EMSCRIPTEN)
-	# Adopt the Emscript compiler flags from Qt's platform target.
-	# That's because all libraries linked into the static WASM module need be built with the same flags.
-	TARGET_LINK_LIBRARIES(PolyhedralTemplateMatching PRIVATE Qt::Platform)
+    # Adopt the Emscript compiler flags from Qt's platform target.
+    # That's because all libraries linked into the static WASM module need be built with the same flags.
+    TARGET_LINK_LIBRARIES(PolyhedralTemplateMatching PRIVATE Qt::Platform)
 ENDIF()
 
 IF(MSVC)
-	# Suppress warning on conversion from size_t to int, possible loss of data.
-	TARGET_COMPILE_OPTIONS(PolyhedralTemplateMatching PRIVATE "/wd4267" "/wd4244")
+    # Suppress warning on conversion from size_t to int, possible loss of data.
+    TARGET_COMPILE_OPTIONS(PolyhedralTemplateMatching PRIVATE "/wd4267" "/wd4244")
 ENDIF()
 
 IF(NOT BUILD_SHARED_LIBS AND OVITO_BUILD_PYPI)
-	# Since we will link this library into the dynamically loaded Python extension module, we need to use the fPIC flag.
-	SET_PROPERTY(TARGET PolyhedralTemplateMatching PROPERTY POSITION_INDEPENDENT_CODE ON)
+    # Since we will link this library into the dynamically loaded Python extension module, we need to use the fPIC flag.
+    SET_PROPERTY(TARGET PolyhedralTemplateMatching PROPERTY POSITION_INDEPENDENT_CODE ON)
 ENDIF()
 
 # Export this target.
 INSTALL(TARGETS PolyhedralTemplateMatching EXPORT OVITO
-	RUNTIME DESTINATION "${OVITO_RELATIVE_LIBRARY_DIRECTORY}"
-	LIBRARY DESTINATION "${OVITO_RELATIVE_LIBRARY_DIRECTORY}"
-	ARCHIVE DESTINATION "${OVITO_RELATIVE_LIBRARY_DIRECTORY}" COMPONENT "development")
+    RUNTIME DESTINATION "${OVITO_RELATIVE_LIBRARY_DIRECTORY}"
+    LIBRARY DESTINATION "${OVITO_RELATIVE_LIBRARY_DIRECTORY}"
+    ARCHIVE DESTINATION "${OVITO_RELATIVE_LIBRARY_DIRECTORY}" COMPONENT "development")

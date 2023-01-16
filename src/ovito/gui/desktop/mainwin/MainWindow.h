@@ -37,191 +37,191 @@ namespace Ovito {
  */
 class OVITO_GUI_EXPORT MainWindow : public QMainWindow, public UserInterface
 {
-	Q_OBJECT
+    Q_OBJECT
 
 public:
 
-	/// The pages of the command panel.
-	enum CommandPanelPage {
-		MODIFY_PAGE		= 0,
-		RENDER_PAGE		= 1,
-		OVERLAY_PAGE	= 2
-	};
+    /// The pages of the command panel.
+    enum CommandPanelPage {
+        MODIFY_PAGE     = 0,
+        RENDER_PAGE     = 1,
+        OVERLAY_PAGE    = 2
+    };
 
 public:
 
-	/// Constructor of the main window class.
-	MainWindow();
+    /// Constructor of the main window class.
+    MainWindow();
 
-	/// Destructor.
-	virtual ~MainWindow();
+    /// Destructor.
+    virtual ~MainWindow();
 
-	/// Returns the main toolbar of the window.
-	QToolBar* mainToolbar() const { return _mainToolbar; }
+    /// Returns the main toolbar of the window.
+    QToolBar* mainToolbar() const { return _mainToolbar; }
 
-	/// Displays a message string in the window's status bar.
-	virtual void showStatusBarMessage(const QString& message, int timeout = 0) override;
+    /// Displays a message string in the window's status bar.
+    virtual void showStatusBarMessage(const QString& message, int timeout = 0) override;
 
-	/// Hides any messages currently displayed in the window's status bar.
-	virtual void clearStatusBarMessage() override;
+    /// Hides any messages currently displayed in the window's status bar.
+    virtual void clearStatusBarMessage() override;
 
-	/// Gives the active viewport the input focus.
-	virtual void setViewportInputFocus() override;
+    /// Gives the active viewport the input focus.
+    virtual void setViewportInputFocus() override;
 
-	/// Closes the user interface and shuts down the entire application after displaying an error message.
-	virtual void exitWithFatalError(const Exception& ex) override;
+    /// Closes the user interface and shuts down the entire application after displaying an error message.
+    virtual void exitWithFatalError(const Exception& ex) override;
 
-	/// Creates a frame buffer of the requested size for rendering and displays it in a window in the user interface.
-	virtual std::shared_ptr<FrameBuffer> createAndShowFrameBuffer(int width, int height, bool showRenderingOperationProgress) override;
+    /// Creates a frame buffer of the requested size for rendering and displays it in a window in the user interface.
+    virtual std::shared_ptr<FrameBuffer> createAndShowFrameBuffer(int width, int height, bool showRenderingOperationProgress) override;
 
-	/// Returns the frame buffer window for displaying the rendered image (may be null).
-	FrameBufferWindow* frameBufferWindow() const { return _frameBufferWindow; }
+    /// Returns the frame buffer window for displaying the rendered image (may be null).
+    FrameBufferWindow* frameBufferWindow() const { return _frameBufferWindow; }
 
-	/// Returns the recommended size for this window.
-	virtual QSize sizeHint() const override { return QSize(1024,768); }
+    /// Returns the recommended size for this window.
+    virtual QSize sizeHint() const override { return QSize(1024,768); }
 
-	/// Loads the layout of the docked widgets from the settings store.
-	void restoreLayout();
+    /// Loads the layout of the docked widgets from the settings store.
+    void restoreLayout();
 
-	/// Saves the layout of the docked widgets to the settings store.
-	void saveLayout();
+    /// Saves the layout of the docked widgets to the settings store.
+    void saveLayout();
 
-	/// Returns the container that keeps a reference to the current dataset.
-	GuiDataSetContainer& datasetContainer() { return _datasetContainer; }
+    /// Returns the container that keeps a reference to the current dataset.
+    GuiDataSetContainer& datasetContainer() { return _datasetContainer; }
 
-	/// Returns the widget that numerically displays the transformation.
-	CoordinateDisplayWidget* coordinateDisplay() const { return _coordinateDisplay; }
+    /// Returns the widget that numerically displays the transformation.
+    CoordinateDisplayWidget* coordinateDisplay() const { return _coordinateDisplay; }
 
-	/// Returns the container widget for viewports.
-	ViewportsPanel* viewportsPanel() const { return _viewportsPanel; }
+    /// Returns the container widget for viewports.
+    ViewportsPanel* viewportsPanel() const { return _viewportsPanel; }
 
-	/// Returns the layout manager for the status bar area of the main window.
-	QHBoxLayout* statusBarLayout() const { return _statusBarLayout; }
+    /// Returns the layout manager for the status bar area of the main window.
+    QHBoxLayout* statusBarLayout() const { return _statusBarLayout; }
 
-	/// Returns the page of the command panel that is currently visible.
-	CommandPanelPage currentCommandPanelPage() const;
+    /// Returns the page of the command panel that is currently visible.
+    CommandPanelPage currentCommandPanelPage() const;
 
-	/// Sets the page of the command panel that is currently visible.
-	void setCurrentCommandPanelPage(CommandPanelPage page);
+    /// Sets the page of the command panel that is currently visible.
+    void setCurrentCommandPanelPage(CommandPanelPage page);
 
-	/// Provides access to the main window's command panel.
-	CommandPanel* commandPanel() const { return _commandPanel; }
+    /// Provides access to the main window's command panel.
+    CommandPanel* commandPanel() const { return _commandPanel; }
 
-	/// Opens the data inspector panel and shows the data object generated by the given data source.
-	bool openDataInspector(PipelineObject* dataSource, const QString& objectNameHint = {}, const QVariant& modeHint = {});
+    /// Opens the data inspector panel and shows the data object generated by the given data source.
+    bool openDataInspector(PipelineObject* dataSource, const QString& objectNameHint = {}, const QVariant& modeHint = {});
 
-	/// Sets the file path associated with this window and updates the window's title.
-	void setWindowFilePath(const QString& filePath);
+    /// Sets the file path associated with this window and updates the window's title.
+    void setWindowFilePath(const QString& filePath);
 
-	/// \brief Suspends the animation auto-key mode temporarily.
-	///
-	/// Automatic generation of animation keys is suspended by this method until a call to resumeAnim().
-	/// If suspendAnim() is called multiple times then resumeAnim() must be called the same number of
-	/// times until animation mode is enabled again.
-	///
-	/// It is recommended to use the AnimationSuspender helper class to suspend animation mode because
-	/// this is more exception save than the suspendAnim()/resumeAnim() combination.
-	void suspendAnim() { _animSuspendCount++; }
+    /// \brief Suspends the animation auto-key mode temporarily.
+    ///
+    /// Automatic generation of animation keys is suspended by this method until a call to resumeAnim().
+    /// If suspendAnim() is called multiple times then resumeAnim() must be called the same number of
+    /// times until animation mode is enabled again.
+    ///
+    /// It is recommended to use the AnimationSuspender helper class to suspend animation mode because
+    /// this is more exception save than the suspendAnim()/resumeAnim() combination.
+    void suspendAnim() { _animSuspendCount++; }
 
-	/// \brief Resumes the automatic generation of animation keys.
-	///
-	/// This re-enables animation mode after it had been suspended by a call to suspendAnim().
-	void resumeAnim() {
-		OVITO_ASSERT_MSG(_animSuspendCount > 0, "MainWindow::resumeAnim()", "resumeAnim() has been called more often than suspendAnim().");
-		_animSuspendCount--;
-	}
+    /// \brief Resumes the automatic generation of animation keys.
+    ///
+    /// This re-enables animation mode after it had been suspended by a call to suspendAnim().
+    void resumeAnim() {
+        OVITO_ASSERT_MSG(_animSuspendCount > 0, "MainWindow::resumeAnim()", "resumeAnim() has been called more often than suspendAnim().");
+        _animSuspendCount--;
+    }
 
-	/// \brief Returns whether animation recording is active and animation keys should be automatically generated.
-	/// \return \c true if animating is currently turned on and not suspended; \c false otherwise.
-	///
-	/// When animating is turned on, controllers should automatically set keys when their value is changed.
-	virtual bool isAutoGenerateAnimationKeysEnabled() const override { return _autoKeyModeOn && _animSuspendCount == 0; }
+    /// \brief Returns whether animation recording is active and animation keys should be automatically generated.
+    /// \return \c true if animating is currently turned on and not suspended; \c false otherwise.
+    ///
+    /// When animating is turned on, controllers should automatically set keys when their value is changed.
+    virtual bool isAutoGenerateAnimationKeysEnabled() const override { return _autoKeyModeOn && _animSuspendCount == 0; }
 
-	/// Displays an error message to the user.
-	virtual void reportError(const Exception& ex, bool blocking = false) override;
+    /// Displays an error message to the user.
+    virtual void reportError(const Exception& ex, bool blocking = false) override;
 
-	/// Displays an error message to the user that is associated with a particular child window or dialog.
-	void reportError(const Exception& exception, QWidget* window);
+    /// Displays an error message to the user that is associated with a particular child window or dialog.
+    void reportError(const Exception& exception, QWidget* window);
 
 protected:
 
-	/// Is called when the user closes the window.
-	virtual void closeEvent(QCloseEvent* event) override;
+    /// Is called when the user closes the window.
+    virtual void closeEvent(QCloseEvent* event) override;
 
-	/// Is called when the window receives an event.
-	virtual bool event(QEvent* event) override;
+    /// Is called when the window receives an event.
+    virtual bool event(QEvent* event) override;
 
-	/// Handles global key input.
-	virtual void keyPressEvent(QKeyEvent* event) override;
+    /// Handles global key input.
+    virtual void keyPressEvent(QKeyEvent* event) override;
 
-	/// Called by the system when a drag is in progress and the mouse enters this window.
-	virtual void dragEnterEvent(QDragEnterEvent* event) override;
+    /// Called by the system when a drag is in progress and the mouse enters this window.
+    virtual void dragEnterEvent(QDragEnterEvent* event) override;
 
-	/// Called by the system when the drag is dropped on this window.
-	virtual void dropEvent(QDropEvent* event) override;
+    /// Called by the system when the drag is dropped on this window.
+    virtual void dropEvent(QDropEvent* event) override;
 
 private Q_SLOTS:
 
-	/// Displays an error message box. This slot is called by reportError().
-	void showErrorMessages();
+    /// Displays an error message box. This slot is called by reportError().
+    void showErrorMessages();
 
 private:
 
-	/// Creates the main menu.
-	void createMainMenu();
+    /// Creates the main menu.
+    void createMainMenu();
 
-	/// Creates the main toolbar.
-	void createMainToolbar();
+    /// Creates the main toolbar.
+    void createMainToolbar();
 
-	/// Creates a dock panel.
-	QDockWidget* createDockPanel(const QString& caption, const QString& objectName, Qt::DockWidgetArea dockArea, Qt::DockWidgetAreas allowedAreas, QWidget* contents);
+    /// Creates a dock panel.
+    QDockWidget* createDockPanel(const QString& caption, const QString& objectName, Qt::DockWidgetArea dockArea, Qt::DockWidgetAreas allowedAreas, QWidget* contents);
 
 private:
 
-	/// The upper main toolbar.
-	QToolBar* _mainToolbar;
+    /// The upper main toolbar.
+    QToolBar* _mainToolbar;
 
-	/// The internal status bar widget.
-	StatusBar* _statusBar;
+    /// The internal status bar widget.
+    StatusBar* _statusBar;
 
-	/// The frame buffer window displaying the rendered image.
-	FrameBufferWindow* _frameBufferWindow = nullptr;
+    /// The frame buffer window displaying the rendered image.
+    FrameBufferWindow* _frameBufferWindow = nullptr;
 
-	/// The command panel.
-	CommandPanel* _commandPanel;
+    /// The command panel.
+    CommandPanel* _commandPanel;
 
-	/// Manages the asynchronous tasks running in the context of this window.
-	TaskManager _taskManager;
+    /// Manages the asynchronous tasks running in the context of this window.
+    TaskManager _taskManager;
 
-	/// Container that keeps a reference to the current dataset.
-	GuiDataSetContainer _datasetContainer;
+    /// Container that keeps a reference to the current dataset.
+    GuiDataSetContainer _datasetContainer;
 
-	/// The container widget for viewports.
-	ViewportsPanel* _viewportsPanel;
+    /// The container widget for viewports.
+    ViewportsPanel* _viewportsPanel;
 
-	/// The widget that numerically displays the object transformation.
-	CoordinateDisplayWidget* _coordinateDisplay;
+    /// The widget that numerically displays the object transformation.
+    CoordinateDisplayWidget* _coordinateDisplay;
 
-	/// The layout manager for the status bar area of the main window.
-	QHBoxLayout* _statusBarLayout;
+    /// The layout manager for the status bar area of the main window.
+    QHBoxLayout* _statusBarLayout;
 
-	/// The OpenGL context used for rendering the viewports.
-	QPointer<QOpenGLContext> _glcontext;
+    /// The OpenGL context used for rendering the viewports.
+    QPointer<QOpenGLContext> _glcontext;
 
-	/// The UI panel containing the data inspector tabs.
-	DataInspectorPanel* _dataInspector;
+    /// The UI panel containing the data inspector tabs.
+    DataInspectorPanel* _dataInspector;
 
-	/// The title string to use for the main window (without any dynamic content).
-	QString _baseWindowTitle;
+    /// The title string to use for the main window (without any dynamic content).
+    QString _baseWindowTitle;
 
-	/// Indicates whether the user has activated auto-key animation mode.
-	bool _autoKeyModeOn = false;
+    /// Indicates whether the user has activated auto-key animation mode.
+    bool _autoKeyModeOn = false;
 
-	/// Counts the number of times the auto-key animation mode has been suspended.
-	int _animSuspendCount = 0;	
+    /// Counts the number of times the auto-key animation mode has been suspended.
+    int _animSuspendCount = 0;  
 
-	/// List of errors to be displayed by showErrorMessages().
-	std::deque<Exception> _errorList;
+    /// List of errors to be displayed by showErrorMessages().
+    std::deque<Exception> _errorList;
 };
 
 /**
@@ -234,19 +234,19 @@ class OVITO_GUI_EXPORT AnimationSuspender
 {
 public:
 
-	/// Suspends the automatic generation of animation keys by calling MainWindow::suspendAnim().
-	AnimationSuspender(MainWindow& mainWindow) noexcept : _mainWindow(mainWindow) {
-		_mainWindow.suspendAnim();
-	}
+    /// Suspends the automatic generation of animation keys by calling MainWindow::suspendAnim().
+    AnimationSuspender(MainWindow& mainWindow) noexcept : _mainWindow(mainWindow) {
+        _mainWindow.suspendAnim();
+    }
 
-	/// Resumes the automatic generation of animation keys by calling MainWindow::resumeAnim().
-	~AnimationSuspender() {
-		_mainWindow.resumeAnim();
-	}
+    /// Resumes the automatic generation of animation keys by calling MainWindow::resumeAnim().
+    ~AnimationSuspender() {
+        _mainWindow.resumeAnim();
+    }
 
 private:
 
-	MainWindow& _mainWindow;
+    MainWindow& _mainWindow;
 };
 
-}	// End of namespace
+}   // End of namespace

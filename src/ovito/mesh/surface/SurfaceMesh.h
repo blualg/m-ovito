@@ -38,8 +38,8 @@ namespace Ovito::Mesh {
  */
 class OVITO_MESH_EXPORT SurfaceMesh : public PeriodicDomainDataObject
 {
-	OVITO_CLASS(SurfaceMesh)
-	Q_CLASSINFO("DisplayName", "Surface mesh");
+    OVITO_CLASS(SurfaceMesh)
+    Q_CLASSINFO("DisplayName", "Surface mesh");
 
 public:
 
@@ -52,65 +52,65 @@ public:
     /// Special value used to indicate an invalid list index.
     constexpr static size_type InvalidIndex = SurfaceMeshTopology::InvalidIndex;
 
-	/// Constructor creating an empty SurfaceMesh object.
-	Q_INVOKABLE SurfaceMesh(ObjectCreationParams params, const QString& title = QString());
-	
-	/// Makes sure that the data structures of the surface mesh are valid and all vertex and face properties
-	/// are consistent with the topology of the mesh. If this is not the case, the method throws an exception.
-	void verifyMeshIntegrity() const;
+    /// Constructor creating an empty SurfaceMesh object.
+    Q_INVOKABLE SurfaceMesh(ObjectCreationParams params, const QString& title = QString());
+    
+    /// Makes sure that the data structures of the surface mesh are valid and all vertex and face properties
+    /// are consistent with the topology of the mesh. If this is not the case, the method throws an exception.
+    void verifyMeshIntegrity() const;
 
-	/// Duplicates the SurfaceMeshTopology sub-object if it is shared with other surface meshes.
-	/// After this method returns, the sub-object is exclusively owned by the container and
-	/// can be safely modified without unwanted side effects.
-	SurfaceMeshTopology* makeTopologyMutable() {
-		OVITO_ASSERT(topology());
-	    return makeMutable(topology());
-	}
+    /// Duplicates the SurfaceMeshTopology sub-object if it is shared with other surface meshes.
+    /// After this method returns, the sub-object is exclusively owned by the container and
+    /// can be safely modified without unwanted side effects.
+    SurfaceMeshTopology* makeTopologyMutable() {
+        OVITO_ASSERT(topology());
+        return makeMutable(topology());
+    }
 
-	/// Duplicates the SurfaceMeshVertices sub-object if it is shared with other surface meshes.
-	/// After this method returns, the sub-object is exclusively owned by the container and
-	/// can be safely modified without unwanted side effects.
-	SurfaceMeshVertices* makeVerticesMutable() {
-		OVITO_ASSERT(vertices());
-	    return makeMutable(vertices());
-	}
+    /// Duplicates the SurfaceMeshVertices sub-object if it is shared with other surface meshes.
+    /// After this method returns, the sub-object is exclusively owned by the container and
+    /// can be safely modified without unwanted side effects.
+    SurfaceMeshVertices* makeVerticesMutable() {
+        OVITO_ASSERT(vertices());
+        return makeMutable(vertices());
+    }
 
-	/// Duplicates the SurfaceMeshFaces sub-object if it is shared with other surface meshes.
-	/// After this method returns, the sub-object is exclusively owned by the container and
-	/// can be safely modified without unwanted side effects.
-	SurfaceMeshFaces* makeFacesMutable() {
-		OVITO_ASSERT(faces());
-	    return makeMutable(faces());
-	}
+    /// Duplicates the SurfaceMeshFaces sub-object if it is shared with other surface meshes.
+    /// After this method returns, the sub-object is exclusively owned by the container and
+    /// can be safely modified without unwanted side effects.
+    SurfaceMeshFaces* makeFacesMutable() {
+        OVITO_ASSERT(faces());
+        return makeMutable(faces());
+    }
 
-	/// Duplicates the SurfaceMeshRegions sub-object if it is shared with other surface meshes.
-	/// After this method returns, the sub-object is exclusively owned by the container and
-	/// can be safely modified without unwanted side effects.
-	SurfaceMeshRegions* makeRegionsMutable() {
-		OVITO_ASSERT(regions());
-	    return makeMutable(regions());
-	}
+    /// Duplicates the SurfaceMeshRegions sub-object if it is shared with other surface meshes.
+    /// After this method returns, the sub-object is exclusively owned by the container and
+    /// can be safely modified without unwanted side effects.
+    SurfaceMeshRegions* makeRegionsMutable() {
+        OVITO_ASSERT(regions());
+        return makeMutable(regions());
+    }
 
-	/// Determines which spatial region contains the given location in space.
-	std::optional<std::pair<region_index, FloatType>> locatePoint(const Point3& location, FloatType epsilon = FLOATTYPE_EPSILON) const;
+    /// Determines which spatial region contains the given location in space.
+    std::optional<std::pair<region_index, FloatType>> locatePoint(const Point3& location, FloatType epsilon = FLOATTYPE_EPSILON) const;
 
 private:
 
-	/// The data structure storing the topology of the surface mesh.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD(DataOORef<const SurfaceMeshTopology>, topology, setTopology);
+    /// The data structure storing the topology of the surface mesh.
+    DECLARE_MODIFIABLE_REFERENCE_FIELD(DataOORef<const SurfaceMeshTopology>, topology, setTopology);
 
-	/// The container holding the mesh vertex properties.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD(DataOORef<const SurfaceMeshVertices>, vertices, setVertices);
+    /// The container holding the mesh vertex properties.
+    DECLARE_MODIFIABLE_REFERENCE_FIELD(DataOORef<const SurfaceMeshVertices>, vertices, setVertices);
 
-	/// The container holding the mesh face properties.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD(DataOORef<const SurfaceMeshFaces>, faces, setFaces);
+    /// The container holding the mesh face properties.
+    DECLARE_MODIFIABLE_REFERENCE_FIELD(DataOORef<const SurfaceMeshFaces>, faces, setFaces);
 
-	/// The container holding the properties of the volumetric regions enclosed by the mesh.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD(DataOORef<const SurfaceMeshRegions>, regions, setRegions);
+    /// The container holding the properties of the volumetric regions enclosed by the mesh.
+    DECLARE_MODIFIABLE_REFERENCE_FIELD(DataOORef<const SurfaceMeshRegions>, regions, setRegions);
 
-	/// If the mesh has zero faces and is embedded in a fully periodic domain,
-	/// this indicates the volumetric region that fills the entire space.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD(SurfaceMesh::region_index, spaceFillingRegion, setSpaceFillingRegion);
+    /// If the mesh has zero faces and is embedded in a fully periodic domain,
+    /// this indicates the volumetric region that fills the entire space.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(SurfaceMesh::region_index, spaceFillingRegion, setSpaceFillingRegion);
 };
 
-}	// End of namespace
+}   // End of namespace

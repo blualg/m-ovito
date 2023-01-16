@@ -176,4 +176,4 @@ void OpenGLDepthTextureBlitter::release()
     glProgram->release();
 }
 
-}	// End of namespace
+}   // End of namespace

@@ -34,20 +34,20 @@ namespace Ovito::Particles {
  */
 class LAMMPSDataImporterEditor : public FileImporterEditor
 {
-	OVITO_CLASS(LAMMPSDataImporterEditor)
+    OVITO_CLASS(LAMMPSDataImporterEditor)
 
 public:
 
-	/// Constructor.
-	Q_INVOKABLE LAMMPSDataImporterEditor() {}
+    /// Constructor.
+    Q_INVOKABLE LAMMPSDataImporterEditor() {}
 
-	/// This is called by the system when the user has selected a new file to import.
-	virtual bool inspectNewFile(FileImporter* importer, const QUrl& sourceFile, MainWindow& mainWindow) override;
+    /// This is called by the system when the user has selected a new file to import.
+    virtual bool inspectNewFile(FileImporter* importer, const QUrl& sourceFile, MainWindow& mainWindow) override;
 
 protected:
 
-	/// Creates the user interface controls for the editor.
-	virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
+    /// Creates the user interface controls for the editor.
+    virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
 };
 
 /**
@@ -55,30 +55,30 @@ protected:
  */
 class LAMMPSAtomStyleDialog : public QDialog
 {
-	Q_OBJECT
+    Q_OBJECT
 
 public:
 
-	/// Constructor.
-	LAMMPSAtomStyleDialog(MainWindow& mainWindow, LAMMPSDataImporter::LAMMPSAtomStyleHints& atomStyleHints, QWidget* parentWindow = nullptr);
+    /// Constructor.
+    LAMMPSAtomStyleDialog(MainWindow& mainWindow, LAMMPSDataImporter::LAMMPSAtomStyleHints& atomStyleHints, QWidget* parentWindow = nullptr);
 
 private Q_SLOTS:
 
-	/// Updates the displayed list of file data columns.
-	void updateColumnList();
+    /// Updates the displayed list of file data columns.
+    void updateColumnList();
 
-	/// Saves the values entered by the user and closes the dialog.
-	void onOk();
+    /// Saves the values entered by the user and closes the dialog.
+    void onOk();
 
 private:
 
-	LAMMPSDataImporter::LAMMPSAtomStyleHints& _atomStyleHints;
-	QComboBox* _atomStyleList;
-	QLabel* _subStylesLabel;
-	std::array<QComboBox*,3> _subStyleLists;
-	QLineEdit* _columnListField;
-	QLabel* _columnMismatchLabel;
-	QDialogButtonBox* _buttonBox;
+    LAMMPSDataImporter::LAMMPSAtomStyleHints& _atomStyleHints;
+    QComboBox* _atomStyleList;
+    QLabel* _subStylesLabel;
+    std::array<QComboBox*,3> _subStyleLists;
+    QLineEdit* _columnListField;
+    QLabel* _columnMismatchLabel;
+    QDialogButtonBox* _buttonBox;
 };
 
-}	// End of namespace
+}   // End of namespace

@@ -39,112 +39,112 @@ namespace Ovito::Particles {
  */
 class ParticleInspectionApplet : public PropertyInspectionApplet
 {
-	OVITO_CLASS(ParticleInspectionApplet)
-	Q_CLASSINFO("DisplayName", "Particles");
+    OVITO_CLASS(ParticleInspectionApplet)
+    Q_CLASSINFO("DisplayName", "Particles");
 
 public:
 
-	/// Constructor.
-	Q_INVOKABLE ParticleInspectionApplet() : PropertyInspectionApplet(ParticlesObject::OOClass()) {}
+    /// Constructor.
+    Q_INVOKABLE ParticleInspectionApplet() : PropertyInspectionApplet(ParticlesObject::OOClass()) {}
 
-	/// Returns the key value for this applet that is used for ordering the applet tabs.
-	virtual int orderingKey() const override { return 0; }
+    /// Returns the key value for this applet that is used for ordering the applet tabs.
+    virtual int orderingKey() const override { return 0; }
 
-	/// Lets the applet create the UI widget that is to be placed into the data inspector panel.
-	virtual QWidget* createWidget() override;
+    /// Lets the applet create the UI widget that is to be placed into the data inspector panel.
+    virtual QWidget* createWidget() override;
 
-	/// Lets the applet update the contents displayed in the inspector.
-	virtual void updateDisplay() override;
+    /// Lets the applet update the contents displayed in the inspector.
+    virtual void updateDisplay() override;
 
-	/// This is called when the applet is no longer visible.
-	virtual void deactivate() override;
+    /// This is called when the applet is no longer visible.
+    virtual void deactivate() override;
 
 protected:
 
-	/// Creates the evaluator object for filter expressions.
-	virtual std::unique_ptr<PropertyExpressionEvaluator> createExpressionEvaluator() override {
-		return std::make_unique<ParticleExpressionEvaluator>();
-	}
+    /// Creates the evaluator object for filter expressions.
+    virtual std::unique_ptr<PropertyExpressionEvaluator> createExpressionEvaluator() override {
+        return std::make_unique<ParticleExpressionEvaluator>();
+    }
 
-	/// Determines whether the given property represents a color.
-	virtual bool isColorProperty(const PropertyObject* property) const override {
-		return PropertyInspectionApplet::isColorProperty(property)
-				|| property->type() == ParticlesObject::VectorColorProperty;
-	}
+    /// Determines whether the given property represents a color.
+    virtual bool isColorProperty(const PropertyObject* property) const override {
+        return PropertyInspectionApplet::isColorProperty(property)
+                || property->type() == ParticlesObject::VectorColorProperty;
+    }
 
 private Q_SLOTS:
 
-	/// Computes the inter-particle distances for the selected particles.
-	void updateDistanceTable();
+    /// Computes the inter-particle distances for the selected particles.
+    void updateDistanceTable();
 
-	/// Computes the angles formed by selected particles.
-	void updateAngleTable();
-
-private:
-
-	/// Viewport input mode that lets the user pick particles.
-	class PickingMode : public ViewportInputMode, ParticlePickingHelper, ViewportGizmo
-	{
-	public:
-
-		/// Constructor.
-		PickingMode(ParticleInspectionApplet* applet) : ViewportInputMode(applet), _applet(applet) {}
-
-		/// Handles the mouse up events for a viewport.
-		virtual void mouseReleaseEvent(ViewportWindowInterface* vpwin, QMouseEvent* event) override;
-
-		/// Handles the mouse move event for the given viewport.
-		virtual void mouseMoveEvent(ViewportWindowInterface* vpwin, QMouseEvent* event) override;
-
-		/// Lets the input mode render its overlay content in a viewport.
-		virtual void renderOverlay3D(Viewport* vp, SceneRenderer* renderer) override;
-
-		/// Clears the list of picked particles.
-		void resetSelection() {
-			if(!_pickedElements.empty()) {
-				_pickedElements.clear();
-				requestViewportUpdate();
-			}
-		}
-		
-	protected:
-
-		/// This is called by the system after the input handler has become the active handler.
-		virtual void activated(bool temporaryActivation) override {
-			ViewportInputMode::activated(temporaryActivation);
-			inputManager()->addViewportGizmo(this);
-		}
-
-		/// This is called by the system after the input handler is no longer the active handler.
-		virtual void deactivated(bool temporary) override {
-			if(!temporary)
-				inputManager()->removeViewportGizmo(this);
-			_pickedElements.clear();
-			ViewportInputMode::deactivated(temporary);
-		}
-
-	private:
-
-		/// The owner object.
-		ParticleInspectionApplet* _applet;
-
-		/// The list of picked particles.
-		std::vector<PickResult> _pickedElements;
-	};
+    /// Computes the angles formed by selected particles.
+    void updateAngleTable();
 
 private:
 
-	/// The viewport input for picking particles.
-	PickingMode* _pickingMode;
+    /// Viewport input mode that lets the user pick particles.
+    class PickingMode : public ViewportInputMode, ParticlePickingHelper, ViewportGizmo
+    {
+    public:
 
-	/// UI action that controls the display of inter-particle distances.
-	QAction* _measuringModeAction;
+        /// Constructor.
+        PickingMode(ParticleInspectionApplet* applet) : ViewportInputMode(applet), _applet(applet) {}
 
-	/// The table displaying the inter-particle distances.
-	QTableWidget* _distanceTable;
+        /// Handles the mouse up events for a viewport.
+        virtual void mouseReleaseEvent(ViewportWindowInterface* vpwin, QMouseEvent* event) override;
 
-	/// The table displaying the angles formed by selected particles.
-	QTableWidget* _angleTable;
+        /// Handles the mouse move event for the given viewport.
+        virtual void mouseMoveEvent(ViewportWindowInterface* vpwin, QMouseEvent* event) override;
+
+        /// Lets the input mode render its overlay content in a viewport.
+        virtual void renderOverlay3D(Viewport* vp, SceneRenderer* renderer) override;
+
+        /// Clears the list of picked particles.
+        void resetSelection() {
+            if(!_pickedElements.empty()) {
+                _pickedElements.clear();
+                requestViewportUpdate();
+            }
+        }
+        
+    protected:
+
+        /// This is called by the system after the input handler has become the active handler.
+        virtual void activated(bool temporaryActivation) override {
+            ViewportInputMode::activated(temporaryActivation);
+            inputManager()->addViewportGizmo(this);
+        }
+
+        /// This is called by the system after the input handler is no longer the active handler.
+        virtual void deactivated(bool temporary) override {
+            if(!temporary)
+                inputManager()->removeViewportGizmo(this);
+            _pickedElements.clear();
+            ViewportInputMode::deactivated(temporary);
+        }
+
+    private:
+
+        /// The owner object.
+        ParticleInspectionApplet* _applet;
+
+        /// The list of picked particles.
+        std::vector<PickResult> _pickedElements;
+    };
+
+private:
+
+    /// The viewport input for picking particles.
+    PickingMode* _pickingMode;
+
+    /// UI action that controls the display of inter-particle distances.
+    QAction* _measuringModeAction;
+
+    /// The table displaying the inter-particle distances.
+    QTableWidget* _distanceTable;
+
+    /// The table displaying the angles formed by selected particles.
+    QTableWidget* _angleTable;
 };
 
-}	// End of namespace
+}   // End of namespace

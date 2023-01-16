@@ -34,42 +34,42 @@ namespace Ovito {
 ******************************************************************************/
 class OVITO_GUI_EXPORT ModifierDelegateFixedListParameterUI : public RefTargetListParameterUI
 {
-	OVITO_CLASS(ModifierDelegateFixedListParameterUI)
+    OVITO_CLASS(ModifierDelegateFixedListParameterUI)
 
 public:
 
-	/// Constructor.
-	ModifierDelegateFixedListParameterUI(PropertiesEditor* parentEditor,
-			const RolloutInsertionParameters& rolloutParams = RolloutInsertionParameters(), OvitoClassPtr defaultEditorClass = nullptr);
+    /// Constructor.
+    ModifierDelegateFixedListParameterUI(PropertiesEditor* parentEditor,
+            const RolloutInsertionParameters& rolloutParams = RolloutInsertionParameters(), OvitoClassPtr defaultEditorClass = nullptr);
 
-	/// This method is called when a new editable object has been activated.
-	virtual void resetUI() override {
-		RefTargetListParameterUI::resetUI();
-		// Clear initial selection by default.
-		listWidget()->selectionModel()->clear();
-	}
+    /// This method is called when a new editable object has been activated.
+    virtual void resetUI() override {
+        RefTargetListParameterUI::resetUI();
+        // Clear initial selection by default.
+        listWidget()->selectionModel()->clear();
+    }
 
 protected:
 
-	/// Returns a data item from the list data model.
-	virtual QVariant getItemData(RefTarget* target, const QModelIndex& index, int role) override;
+    /// Returns a data item from the list data model.
+    virtual QVariant getItemData(RefTarget* target, const QModelIndex& index, int role) override;
 
-	/// Returns the model/view item flags for the given entry.
-	virtual Qt::ItemFlags getItemFlags(RefTarget* target, const QModelIndex& index) override;
+    /// Returns the model/view item flags for the given entry.
+    virtual Qt::ItemFlags getItemFlags(RefTarget* target, const QModelIndex& index) override;
 
-	/// Sets the role data for the item at index to value.
-	virtual bool setItemData(RefTarget* target, const QModelIndex& index, const QVariant& value, int role) override;
+    /// Sets the role data for the item at index to value.
+    virtual bool setItemData(RefTarget* target, const QModelIndex& index, const QVariant& value, int role) override;
 
-	/// Returns the number of columns for the table view.
-	virtual int tableColumnCount() override { return 1; }
+    /// Returns the number of columns for the table view.
+    virtual int tableColumnCount() override { return 1; }
 
-	/// Returns the header data under the given role for the given RefTarget.
-	virtual QVariant getHorizontalHeaderData(int index, int role) override {
-		if(role == Qt::DisplayRole) {
-			return QVariant::fromValue(tr("Data type"));
-		}
-		return RefTargetListParameterUI::getHorizontalHeaderData(index, role);
-	}
+    /// Returns the header data under the given role for the given RefTarget.
+    virtual QVariant getHorizontalHeaderData(int index, int role) override {
+        if(role == Qt::DisplayRole) {
+            return QVariant::fromValue(tr("Data type"));
+        }
+        return RefTargetListParameterUI::getHorizontalHeaderData(index, role);
+    }
 };
 
-}	// End of namespace
+}   // End of namespace

@@ -131,29 +131,29 @@ IMPLEMENT_OVITO_CLASS(CutoffRadiusPresetsUI);
 * Constructor.
 ******************************************************************************/
 CutoffRadiusPresetsUI::CutoffRadiusPresetsUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField) :
-	PropertyParameterUI(parentEditor, propField)
+    PropertyParameterUI(parentEditor, propField)
 {
-	_comboBox = new QComboBox();
+    _comboBox = new QComboBox();
 
-	QMap<ChemicalElement::CrystalStructure,QPair<QString,double> > HandledTypes;
+    QMap<ChemicalElement::CrystalStructure,QPair<QString,double> > HandledTypes;
 
-	HandledTypes.insert(ChemicalElement::FaceCenteredCubic, qMakePair(QString("%1 (fcc) - %2"), 0.5 * (1.0/sqrt(2.0) + 1.0)));			// halfway between first and second nn shell
-	HandledTypes.insert(ChemicalElement::BodyCenteredCubic, qMakePair(QString("%1 (bcc) - %2"), 0.5 * (1.0 + sqrt(2.0))  ));			// halfway between second and third nn shell
-	HandledTypes.insert(ChemicalElement::Diamond,           qMakePair(QString("%1 (dia) - %2"), 0.5 * (1.0/sqrt(2.0) + sqrt(11)/4)));	// halfway between second and third nn shell
+    HandledTypes.insert(ChemicalElement::FaceCenteredCubic, qMakePair(QString("%1 (fcc) - %2"), 0.5 * (1.0/sqrt(2.0) + 1.0)));          // halfway between first and second nn shell
+    HandledTypes.insert(ChemicalElement::BodyCenteredCubic, qMakePair(QString("%1 (bcc) - %2"), 0.5 * (1.0 + sqrt(2.0))  ));            // halfway between second and third nn shell
+    HandledTypes.insert(ChemicalElement::Diamond,           qMakePair(QString("%1 (dia) - %2"), 0.5 * (1.0/sqrt(2.0) + sqrt(11)/4)));   // halfway between second and third nn shell
 
-	for(size_t i = 0; i < NumberOfChemicalElements; i++) {
-		auto e = HandledTypes.find(ChemicalElements[i].structure);
+    for(size_t i = 0; i < NumberOfChemicalElements; i++) {
+        auto e = HandledTypes.find(ChemicalElements[i].structure);
 
-		if(e != HandledTypes.end()) {
-			FloatType r = ChemicalElements[i].latticeParameter * e.value().second;
-			comboBox()->addItem(e.value().first.arg(ChemicalElements[i].elementName).arg(r, 0, 'f', 2), r);
-		}
-	}
-	comboBox()->model()->sort(0);
-	comboBox()->insertItem(0, tr("Presets..."));
-	comboBox()->setCurrentIndex(0);
+        if(e != HandledTypes.end()) {
+            FloatType r = ChemicalElements[i].latticeParameter * e.value().second;
+            comboBox()->addItem(e.value().first.arg(ChemicalElements[i].elementName).arg(r, 0, 'f', 2), r);
+        }
+    }
+    comboBox()->model()->sort(0);
+    comboBox()->insertItem(0, tr("Presets..."));
+    comboBox()->setCurrentIndex(0);
 
-	connect(comboBox(), qOverload<int>(&QComboBox::activated), this, &CutoffRadiusPresetsUI::onSelect);
+    connect(comboBox(), qOverload<int>(&QComboBox::activated), this, &CutoffRadiusPresetsUI::onSelect);
 }
 
 /******************************************************************************
@@ -161,8 +161,8 @@ CutoffRadiusPresetsUI::CutoffRadiusPresetsUI(PropertiesEditor* parentEditor, con
 ******************************************************************************/
 CutoffRadiusPresetsUI::~CutoffRadiusPresetsUI()
 {
-	// Release GUI controls.
-	delete _comboBox;
+    // Release GUI controls.
+    delete _comboBox;
 }
 
 /******************************************************************************
@@ -170,9 +170,9 @@ CutoffRadiusPresetsUI::~CutoffRadiusPresetsUI()
 ******************************************************************************/
 void CutoffRadiusPresetsUI::setEnabled(bool enabled)
 {
-	if(enabled == isEnabled()) return;
-	PropertyParameterUI::setEnabled(enabled);
-	if(comboBox()) comboBox()->setEnabled(editObject() != NULL && isEnabled());
+    if(enabled == isEnabled()) return;
+    PropertyParameterUI::setEnabled(enabled);
+    if(comboBox()) comboBox()->setEnabled(editObject() != NULL && isEnabled());
 }
 
 /******************************************************************************
@@ -181,10 +181,10 @@ void CutoffRadiusPresetsUI::setEnabled(bool enabled)
 ******************************************************************************/
 void CutoffRadiusPresetsUI::resetUI()
 {
-	PropertyParameterUI::resetUI();
+    PropertyParameterUI::resetUI();
 
-	if(comboBox())
-		comboBox()->setEnabled(editObject() != NULL && isEnabled());
+    if(comboBox())
+        comboBox()->setEnabled(editObject() != NULL && isEnabled());
 }
 
 /******************************************************************************
@@ -192,16 +192,16 @@ void CutoffRadiusPresetsUI::resetUI()
 ******************************************************************************/
 void CutoffRadiusPresetsUI::onSelect(int index)
 {
-	FloatType r = comboBox()->itemData(index).value<FloatType>();
-	if(r != 0) {
-		if(editObject() && propertyField()) {
-			performTransaction(tr("Change cutoff radius"), [this, r]() {
-				editObject()->setPropertyFieldValue(propertyField(), r);
-    			Q_EMIT valueEntered();
-			});
-		}
-	}
-	comboBox()->setCurrentIndex(0);
+    FloatType r = comboBox()->itemData(index).value<FloatType>();
+    if(r != 0) {
+        if(editObject() && propertyField()) {
+            performTransaction(tr("Change cutoff radius"), [this, r]() {
+                editObject()->setPropertyFieldValue(propertyField(), r);
+                Q_EMIT valueEntered();
+            });
+        }
+    }
+    comboBox()->setCurrentIndex(0);
 }
 
-}	// End of namespace
+}   // End of namespace

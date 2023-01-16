@@ -34,31 +34,31 @@ namespace Ovito {
 template<class BaseKeyClass>
 class OVITO_CORE_EXPORT SplineAnimationKey : public BaseKeyClass
 {
-	OVITO_CLASS_TEMPLATE(SplineAnimationKey, BaseKeyClass)
+    OVITO_CLASS_TEMPLATE(SplineAnimationKey, BaseKeyClass)
 
 public:
 
-	using typename BaseKeyClass::value_type;
-	using typename BaseKeyClass::nullvalue_type;
-	using typename BaseKeyClass::tangent_type;
+    using typename BaseKeyClass::value_type;
+    using typename BaseKeyClass::nullvalue_type;
+    using typename BaseKeyClass::tangent_type;
 
-	/// Constructor.
-	SplineAnimationKey(ObjectCreationParams params, AnimationTime time, const value_type& value)
-		: BaseKeyClass(params, time, value), _inTangent(nullvalue_type()), _outTangent(nullvalue_type()) {}
+    /// Constructor.
+    SplineAnimationKey(ObjectCreationParams params, AnimationTime time, const value_type& value)
+        : BaseKeyClass(params, time, value), _inTangent(nullvalue_type()), _outTangent(nullvalue_type()) {}
 
-	/// \brief Returns the point that defines the incoming tangent.
-	value_type inPoint() const { return this->value() + inTangent(); }
+    /// \brief Returns the point that defines the incoming tangent.
+    value_type inPoint() const { return this->value() + inTangent(); }
 
-	/// \brief Returns the point that defines the outgoing direction.
-	value_type outPoint() const { return this->value() + outTangent(); }
+    /// \brief Returns the point that defines the outgoing direction.
+    value_type outPoint() const { return this->value() + outTangent(); }
 
 public:
 
-	/// The tangent that defines the left derivative at the key point.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD(tangent_type, inTangent, setInTangent);
+    /// The tangent that defines the left derivative at the key point.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(tangent_type, inTangent, setInTangent);
 
-	/// The tangent that defines the right derivative at the key point.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD(tangent_type, outTangent, setOutTangent);
+    /// The tangent that defines the right derivative at the key point.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(tangent_type, outTangent, setOutTangent);
 };
 
 /**
@@ -66,13 +66,13 @@ public:
  */
 class OVITO_CORE_EXPORT FloatSplineAnimationKey : public SplineAnimationKey<FloatAnimationKey>
 {
-	OVITO_CLASS(FloatSplineAnimationKey)
+    OVITO_CLASS(FloatSplineAnimationKey)
 
 public:
 
-	/// Constructor.
-	Q_INVOKABLE FloatSplineAnimationKey(ObjectCreationParams params, AnimationTime time = AnimationTime(0), FloatType value = 0) :
-		SplineAnimationKey<FloatAnimationKey>(params, time, value) {}
+    /// Constructor.
+    Q_INVOKABLE FloatSplineAnimationKey(ObjectCreationParams params, AnimationTime time = AnimationTime(0), FloatType value = 0) :
+        SplineAnimationKey<FloatAnimationKey>(params, time, value) {}
 };
 
 /**
@@ -80,13 +80,13 @@ public:
  */
 class OVITO_CORE_EXPORT PositionSplineAnimationKey : public SplineAnimationKey<PositionAnimationKey>
 {
-	OVITO_CLASS(PositionSplineAnimationKey)
+    OVITO_CLASS(PositionSplineAnimationKey)
 
 public:
 
-	/// Constructor.
-	Q_INVOKABLE PositionSplineAnimationKey(ObjectCreationParams params, AnimationTime time = AnimationTime(0), const Vector3& value = Vector3::Zero()) :
-		SplineAnimationKey<PositionAnimationKey>(params, time, value) {}
+    /// Constructor.
+    Q_INVOKABLE PositionSplineAnimationKey(ObjectCreationParams params, AnimationTime time = AnimationTime(0), const Vector3& value = Vector3::Zero()) :
+        SplineAnimationKey<PositionAnimationKey>(params, time, value) {}
 };
 
 /**
@@ -96,12 +96,12 @@ public:
  */
 template<typename KeyType>
 struct SplineKeyInterpolator {
-	typename KeyType::value_type operator()(AnimationTime time, KeyType* key0, KeyType* key1, KeyType* key2, KeyType* key3) const {
-		OVITO_ASSERT(key2->time() > key1->time());
-		FloatType t = (FloatType)(time - key1->time()) / (key2->time() - key1->time());
-		SplineValueInterpolator<typename KeyType::value_type> valueInterpolator;
-		return valueInterpolator(t, key1->value(), key2->value(), key1->outPoint(), key2->inPoint());
-	}
+    typename KeyType::value_type operator()(AnimationTime time, KeyType* key0, KeyType* key1, KeyType* key2, KeyType* key3) const {
+        OVITO_ASSERT(key2->time() > key1->time());
+        FloatType t = (FloatType)(time - key1->time()) / (key2->time() - key1->time());
+        SplineValueInterpolator<typename KeyType::value_type> valueInterpolator;
+        return valueInterpolator(t, key1->value(), key2->value(), key1->outPoint(), key2->inPoint());
+    }
 };
 
 /**
@@ -112,69 +112,69 @@ class SplineControllerBase : public KeyframeControllerTemplate<KeyType, SplineKe
 {
 public:
 
-	/// Constructor.
-	SplineControllerBase(ObjectCreationParams params) :
-		KeyframeControllerTemplate<KeyType, SplineKeyInterpolator<KeyType>, ctrlType>(params) {}
+    /// Constructor.
+    SplineControllerBase(ObjectCreationParams params) :
+        KeyframeControllerTemplate<KeyType, SplineKeyInterpolator<KeyType>, ctrlType>(params) {}
 
 protected:
 
-	/// This updates the keys after their times or values have changed.
-	virtual void updateKeys() override {
-		// Call base implementation.
-		KeyframeControllerTemplate<KeyType, SplineKeyInterpolator<KeyType>, ctrlType>::updateKeys();
+    /// This updates the keys after their times or values have changed.
+    virtual void updateKeys() override {
+        // Call base implementation.
+        KeyframeControllerTemplate<KeyType, SplineKeyInterpolator<KeyType>, ctrlType>::updateKeys();
 
-		if(this->keys().size() >= 2) {
-			auto key1 = this->typedKeys().begin();
-			auto key2 = key1 + 1;
+        if(this->keys().size() >= 2) {
+            auto key1 = this->typedKeys().begin();
+            auto key2 = key1 + 1;
 
-			// Update the tangent vector of the first key.
-			(*key1)->setOutTangent(((*key2)->value() - (*key1)->value()) / FloatType(3));
+            // Update the tangent vector of the first key.
+            (*key1)->setOutTangent(((*key2)->value() - (*key1)->value()) / FloatType(3));
 
-			// Update the tangent vectors for inner keys.
-			auto key3 = key2 + 1;
-			while(key3 != this->typedKeys().end()) {
-				typename KeyType::tangent_type tangentL = (*key2)->value() - (*key1)->value();
-				typename KeyType::tangent_type tangentR = (*key3)->value() - (*key2)->value();
-				typename KeyType::tangent_type avgTangent = (*key3)->value() - (*key1)->value();
-				(*key2)->setOutTangent(avgTangent * (tangentR.length() / avgTangent.length() / FloatType(6)));
-				(*key2)->setInTangent(-avgTangent * (tangentL.length() / avgTangent.length() / FloatType(6)));
-				key1 = key2;
-				key2 = key3;
-				++key3;
-			}
+            // Update the tangent vectors for inner keys.
+            auto key3 = key2 + 1;
+            while(key3 != this->typedKeys().end()) {
+                typename KeyType::tangent_type tangentL = (*key2)->value() - (*key1)->value();
+                typename KeyType::tangent_type tangentR = (*key3)->value() - (*key2)->value();
+                typename KeyType::tangent_type avgTangent = (*key3)->value() - (*key1)->value();
+                (*key2)->setOutTangent(avgTangent * (tangentR.length() / avgTangent.length() / FloatType(6)));
+                (*key2)->setInTangent(-avgTangent * (tangentL.length() / avgTangent.length() / FloatType(6)));
+                key1 = key2;
+                key2 = key3;
+                ++key3;
+            }
 
-			// Update the tangent vector of the last key.
-			(*key2)->setInTangent(((*key1)->value() - (*key2)->value()) / FloatType(3));
-		}
-	}
+            // Update the tangent vector of the last key.
+            (*key2)->setInTangent(((*key1)->value() - (*key2)->value()) / FloatType(3));
+        }
+    }
 };
 
 /**
  * \brief A keyframe controller that interpolates between position values using a cubic-spline interpolation scheme.
  */
 class OVITO_CORE_EXPORT SplinePositionController
-	: public SplineControllerBase<PositionSplineAnimationKey, Controller::ControllerTypePosition>
+    : public SplineControllerBase<PositionSplineAnimationKey, Controller::ControllerTypePosition>
 {
-	OVITO_CLASS(SplinePositionController)
+    OVITO_CLASS(SplinePositionController)
 
 public:
 
-	/// Constructor.
-	Q_INVOKABLE SplinePositionController(ObjectCreationParams params) :
-		SplineControllerBase<PositionSplineAnimationKey, Controller::ControllerTypePosition>(params) {}
+    /// Constructor.
+    Q_INVOKABLE SplinePositionController(ObjectCreationParams params) :
+        SplineControllerBase<PositionSplineAnimationKey, Controller::ControllerTypePosition>(params) {}
 
-	/// \brief Gets the controller's value at a certain animation time.
-	virtual void getPositionValue(AnimationTime time, Vector3& value, TimeInterval& validityInterval) override {
-		getInterpolatedValue(time, value, validityInterval);
-	}
+    /// \brief Gets the controller's value at a certain animation time.
+    virtual void getPositionValue(AnimationTime time, Vector3& value, TimeInterval& validityInterval) override {
+        getInterpolatedValue(time, value, validityInterval);
+    }
 
-	/// \brief Sets the controller's value at the given animation time.
-	virtual void setPositionValue(AnimationTime time, const Vector3& newValue, bool isAbsolute) override {
-		if(isAbsolute)
-			setAbsoluteValue(time, newValue);
-		else
-			setRelativeValue(time, newValue);
-	}
+    /// \brief Sets the controller's value at the given animation time.
+    virtual void setPositionValue(AnimationTime time, const Vector3& newValue, bool isAbsolute) override {
+        if(isAbsolute)
+            setAbsoluteValue(time, newValue);
+        else
+            setRelativeValue(time, newValue);
+    }
 };
 
-}	// End of namespace
+}   // End of namespace

@@ -38,51 +38,51 @@ IMPLEMENT_OVITO_CLASS(BondInspectionApplet);
 ******************************************************************************/
 QWidget* BondInspectionApplet::createWidget()
 {
-	createBaseWidgets();
+    createBaseWidgets();
 
-	QWidget* panel = new QWidget();
-	QGridLayout* layout = new QGridLayout(panel);
-	layout->setContentsMargins(0,0,0,0);
-	layout->setSpacing(0);
+    QWidget* panel = new QWidget();
+    QGridLayout* layout = new QGridLayout(panel);
+    layout->setContentsMargins(0,0,0,0);
+    layout->setSpacing(0);
 
-	_pickingMode = new PickingMode(this);
-	connect(this, &QObject::destroyed, _pickingMode, &ViewportInputMode::removeMode);
-	ViewportModeAction* pickModeAction = new ViewportModeAction(mainWindow(), tr("Select in viewports"), this, _pickingMode);
-	pickModeAction->setIcon(QIcon::fromTheme("particles_select_mode"));
+    _pickingMode = new PickingMode(this);
+    connect(this, &QObject::destroyed, _pickingMode, &ViewportInputMode::removeMode);
+    ViewportModeAction* pickModeAction = new ViewportModeAction(mainWindow(), tr("Select in viewports"), this, _pickingMode);
+    pickModeAction->setIcon(QIcon::fromTheme("particles_select_mode"));
 
-	QToolBar* toolbar = new QToolBar();
-	toolbar->setOrientation(Qt::Horizontal);
-	toolbar->setToolButtonStyle(Qt::ToolButtonIconOnly);
-	toolbar->setIconSize(QSize(18,18));
-	toolbar->addAction(pickModeAction);
-	toolbar->addAction(resetFilterAction());
-	layout->addWidget(toolbar, 0, 0);
+    QToolBar* toolbar = new QToolBar();
+    toolbar->setOrientation(Qt::Horizontal);
+    toolbar->setToolButtonStyle(Qt::ToolButtonIconOnly);
+    toolbar->setIconSize(QSize(18,18));
+    toolbar->addAction(pickModeAction);
+    toolbar->addAction(resetFilterAction());
+    layout->addWidget(toolbar, 0, 0);
 
-	layout->addWidget(filterExpressionEdit(), 0, 1);
-	layout->addWidget(tableView(), 1, 0, 1, 2);
-	layout->setRowStretch(1, 1);
+    layout->addWidget(filterExpressionEdit(), 0, 1);
+    layout->addWidget(tableView(), 1, 0, 1, 2);
+    layout->setRowStretch(1, 1);
 
-	QWidget* pickModeButton = toolbar->widgetForAction(pickModeAction);
-	connect(_pickingMode, &ViewportInputMode::statusChanged, pickModeButton, [pickModeButton,this](bool active) {
-		if(active) {
-			QToolTip::showText(pickModeButton->mapToGlobal(pickModeButton->rect().bottomRight()),
+    QWidget* pickModeButton = toolbar->widgetForAction(pickModeAction);
+    connect(_pickingMode, &ViewportInputMode::statusChanged, pickModeButton, [pickModeButton,this](bool active) {
+        if(active) {
+            QToolTip::showText(pickModeButton->mapToGlobal(pickModeButton->rect().bottomRight()),
 #ifndef Q_OS_MACOS
-				tr("Pick a bond in the viewports. Hold down the CONTROL key to select multiple bonds."),
+                tr("Pick a bond in the viewports. Hold down the CONTROL key to select multiple bonds."),
 #else
-				tr("Pick a bond in the viewports. Hold down the COMMAND key to select multiple bonds."),
+                tr("Pick a bond in the viewports. Hold down the COMMAND key to select multiple bonds."),
 #endif
-				pickModeButton, QRect(), 2000);
-		}
-	});
+                pickModeButton, QRect(), 2000);
+        }
+    });
 
-	connect(filterExpressionEdit(), &AutocompleteLineEdit::editingFinished, this, [this]() {
-		_pickingMode->resetSelection();
-	});
-	connect(inspectorPanel(), &DataInspectorPanel::selectedPipelineChanged, this, [this]() {
-		_pickingMode->resetSelection();
-	});
+    connect(filterExpressionEdit(), &AutocompleteLineEdit::editingFinished, this, [this]() {
+        _pickingMode->resetSelection();
+    });
+    connect(inspectorPanel(), &DataInspectorPanel::selectedPipelineChanged, this, [this]() {
+        _pickingMode->resetSelection();
+    });
 
-	return panel;
+    return panel;
 }
 
 /******************************************************************************
@@ -90,7 +90,7 @@ QWidget* BondInspectionApplet::createWidget()
 ******************************************************************************/
 void BondInspectionApplet::deactivate()
 {
-	_pickingMode->removeMode();
+    _pickingMode->removeMode();
 }
 
 /******************************************************************************
@@ -98,33 +98,33 @@ void BondInspectionApplet::deactivate()
 ******************************************************************************/
 void BondInspectionApplet::PickingMode::mouseReleaseEvent(ViewportWindowInterface* vpwin, QMouseEvent* event)
 {
-	if(event->button() == Qt::LeftButton) {
-		PickResult pickResult;
-		pickBond(vpwin, event->pos(), pickResult);
-		if(!event->modifiers().testFlag(Qt::ControlModifier))
-			_pickedElements.clear();
-		if(pickResult.sceneNode == _applet->currentPipeline()) {
-			// Don't select the same bond twice. Instead, toggle selection.
-			bool alreadySelected = false;
-			for(auto p = _pickedElements.begin(); p != _pickedElements.end(); ++p) {
-				if(p->sceneNode == pickResult.sceneNode && p->bondIndex == pickResult.bondIndex) {
-					alreadySelected = true;
-					_pickedElements.erase(p);
-					break;
-				}
-			}
-			if(!alreadySelected)
-				_pickedElements.push_back(pickResult);
-		}
-		QString filterExpression;
-		for(const auto& element : _pickedElements) {
-			if(!filterExpression.isEmpty()) filterExpression += QStringLiteral(" ||\n");
-			filterExpression += QStringLiteral("BondIndex==%1").arg(element.bondIndex);
-		}
-		_applet->setFilterExpression(filterExpression);
-		requestViewportUpdate();
-	}
-	ViewportInputMode::mouseReleaseEvent(vpwin, event);
+    if(event->button() == Qt::LeftButton) {
+        PickResult pickResult;
+        pickBond(vpwin, event->pos(), pickResult);
+        if(!event->modifiers().testFlag(Qt::ControlModifier))
+            _pickedElements.clear();
+        if(pickResult.sceneNode == _applet->currentPipeline()) {
+            // Don't select the same bond twice. Instead, toggle selection.
+            bool alreadySelected = false;
+            for(auto p = _pickedElements.begin(); p != _pickedElements.end(); ++p) {
+                if(p->sceneNode == pickResult.sceneNode && p->bondIndex == pickResult.bondIndex) {
+                    alreadySelected = true;
+                    _pickedElements.erase(p);
+                    break;
+                }
+            }
+            if(!alreadySelected)
+                _pickedElements.push_back(pickResult);
+        }
+        QString filterExpression;
+        for(const auto& element : _pickedElements) {
+            if(!filterExpression.isEmpty()) filterExpression += QStringLiteral(" ||\n");
+            filterExpression += QStringLiteral("BondIndex==%1").arg(element.bondIndex);
+        }
+        _applet->setFilterExpression(filterExpression);
+        requestViewportUpdate();
+    }
+    ViewportInputMode::mouseReleaseEvent(vpwin, event);
 }
 
 /******************************************************************************
@@ -132,14 +132,14 @@ void BondInspectionApplet::PickingMode::mouseReleaseEvent(ViewportWindowInterfac
 ******************************************************************************/
 void BondInspectionApplet::PickingMode::mouseMoveEvent(ViewportWindowInterface* vpwin, QMouseEvent* event)
 {
-	// Change mouse cursor while hovering over a bond.
-	PickResult pickResult;
-	if(pickBond(vpwin, event->pos(), pickResult) && pickResult.sceneNode == _applet->currentPipeline())
-		setCursor(SelectionMode::selectionCursor());
-	else
-		setCursor(QCursor());
+    // Change mouse cursor while hovering over a bond.
+    PickResult pickResult;
+    if(pickBond(vpwin, event->pos(), pickResult) && pickResult.sceneNode == _applet->currentPipeline())
+        setCursor(SelectionMode::selectionCursor());
+    else
+        setCursor(QCursor());
 
-	ViewportInputMode::mouseMoveEvent(vpwin, event);
+    ViewportInputMode::mouseMoveEvent(vpwin, event);
 }
 
-}	// End of namespace
+}   // End of namespace

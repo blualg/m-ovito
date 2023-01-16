@@ -66,4 +66,4 @@ SET_PROPERTY_FIELD_UNITS_AND_RANGE(PositionTCBAnimationKey, bias, FloatParameter
 
 IMPLEMENT_OVITO_CLASS(TCBPositionController);
 
-}	// End of namespace
+}   // End of namespace

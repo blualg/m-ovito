@@ -117,7 +117,7 @@ private:
 
 private:
 
-	const std::array<bool,3> _pbcFlags; ///< PBC flags
+    const std::array<bool,3> _pbcFlags; ///< PBC flags
     int _size_x;  ///< width  of the grid
     int _size_y;  ///< depth  of the grid
     int _size_z;  ///< height of the grid
@@ -151,4 +151,4 @@ private:
 #endif
 };
 
-}	// End of namespace
+}   // End of namespace

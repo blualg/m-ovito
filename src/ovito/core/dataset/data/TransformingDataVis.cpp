@@ -37,91 +37,91 @@ IMPLEMENT_OVITO_CLASS(TransformingDataVis);
 ******************************************************************************/
 Future<PipelineFlowState> TransformingDataVis::transformData(const PipelineEvaluationRequest& request, const DataObject* dataObject, PipelineFlowState&& flowState, const std::vector<OORef<TransformedDataObject>>& cachedTransformedDataObjects)
 {
-	// We don't like undo records to be created while performing the data transformation.
-	OVITO_ASSERT(!isUndoRecording());
+    // We don't like undo records to be created while performing the data transformation.
+    OVITO_ASSERT(!isUndoRecording());
 
-	// Check if the cache state already contains a transformed data object that we have
-	// created earlier for the same input object. If yes, we can immediately return it.
-	for(const auto& transformedDataObject : cachedTransformedDataObjects) {
-		if(transformedDataObject->sourceDataObject() == dataObject && transformedDataObject->visElement() == this && transformedDataObject->visElementRevision() == revisionNumber()) {
-			flowState.mutableData()->addObject(transformedDataObject);
-			return std::move(flowState);
-		}
-	}
+    // Check if the cache state already contains a transformed data object that we have
+    // created earlier for the same input object. If yes, we can immediately return it.
+    for(const auto& transformedDataObject : cachedTransformedDataObjects) {
+        if(transformedDataObject->sourceDataObject() == dataObject && transformedDataObject->visElement() == this && transformedDataObject->visElementRevision() == revisionNumber()) {
+            flowState.mutableData()->addObject(transformedDataObject);
+            return std::move(flowState);
+        }
+    }
 
-	// Clear the status of the input unless it is an error.
-	if(flowState.status().type() != PipelineStatus::Error) {
-		flowState.setStatus(PipelineStatus::Success);
-	}
-	else if(request.breakOnError()) {
-		// Skip all following vis transformations once an error has occured along the pipeline.
-		return std::move(flowState);
-	}
+    // Clear the status of the input unless it is an error.
+    if(flowState.status().type() != PipelineStatus::Error) {
+        flowState.setStatus(PipelineStatus::Success);
+    }
+    else if(request.breakOnError()) {
+        // Skip all following vis transformations once an error has occured along the pipeline.
+        return std::move(flowState);
+    }
 
-	// Make a copy of the input state. We might need it later when an error occurs.
-	PipelineFlowState inputData = flowState;
+    // Make a copy of the input state. We might need it later when an error occurs.
+    PipelineFlowState inputData = flowState;
 
-	Future<PipelineFlowState> future;
-	try {
-		// Let the transforming vis element do its job.
-		future = transformDataImpl(request, dataObject, std::move(flowState));
+    Future<PipelineFlowState> future;
+    try {
+        // Let the transforming vis element do its job.
+        future = transformDataImpl(request, dataObject, std::move(flowState));
 
-		// Change status during long-running load operations.
-		registerActiveFuture(future);
-	}
-	catch(...) {
-		future = Future<PipelineFlowState>::createFailed(std::current_exception());
-	}
+        // Change status during long-running load operations.
+        registerActiveFuture(future);
+    }
+    catch(...) {
+        future = Future<PipelineFlowState>::createFailed(std::current_exception());
+    }
 
-	// Post-process the results before returning them to the caller.
-	// Turn any exception that was thrown during evaluation into a valid pipeline state with an error code.
-	future = future.then(*this, [this, inputData = std::move(inputData)](Future<PipelineFlowState> future) mutable {
-		OVITO_ASSERT(!future.isCanceled());
-		try {
-			try {
-				// Adopt the output pipeline error state to display it in the GUI (only if the pipeline input wasn't already in an error state).
-				PipelineFlowState state = future.result();
-				if(inputData.status().type() != PipelineStatus::Error)
-					setStatus(state.status());
-				else
-					setStatus(PipelineStatus::Success);
-				setManualErrorStateControl(status().type() != PipelineStatus::Success);
-				return state;
-			}
-			catch(const Exception&) {
-				throw;
-			}
-			catch(const std::bad_alloc&) {
-				throw Exception(tr("Not enough memory."));
-			}
-			catch(const std::exception& ex) {
-				qWarning() << "WARNING: Visual element" << this << "has thrown a non-standard exception:" << ex.what();
-				OVITO_ASSERT(false);
-				throw Exception(tr("Exception: %1").arg(QString::fromLatin1(ex.what())));
-			}
-		}
-		catch(Exception& ex) {
-			// If a regular exception was thrown during the data transformation process, adopt it as
-			// error state of the pipeline output and the vis element itself (to display it in the GUI).
-			setStatus(ex);
-			setManualErrorStateControl(true);
-			ex.prependGeneralMessage(tr("Visual element '%1' reported:").arg(objectTitle()));
-			inputData.setStatus(PipelineStatus(ex, QChar(' ')));
-			return std::move(inputData);
-		}
-		catch(...) {
-			// If an unknown exception type was thrown during the data transformation process (which shouldn't normally happen), set the
-			// error state of the pipeline output and the vis element itself (to indicate it in the GUI).
-			OVITO_ASSERT_MSG(false, "TransformingDataVis::transformData()", "Caught an unexpected exception type during data transformation.");
-			PipelineStatus status(PipelineStatus::Error, tr("Unknown exception caught during data object transformation '%1'.").arg(objectTitle()));
-			setStatus(status);
-			setManualErrorStateControl(true);
-			inputData.setStatus(status);
-			return std::move(inputData);
-		}
-	});
+    // Post-process the results before returning them to the caller.
+    // Turn any exception that was thrown during evaluation into a valid pipeline state with an error code.
+    future = future.then(*this, [this, inputData = std::move(inputData)](Future<PipelineFlowState> future) mutable {
+        OVITO_ASSERT(!future.isCanceled());
+        try {
+            try {
+                // Adopt the output pipeline error state to display it in the GUI (only if the pipeline input wasn't already in an error state).
+                PipelineFlowState state = future.result();
+                if(inputData.status().type() != PipelineStatus::Error)
+                    setStatus(state.status());
+                else
+                    setStatus(PipelineStatus::Success);
+                setManualErrorStateControl(status().type() != PipelineStatus::Success);
+                return state;
+            }
+            catch(const Exception&) {
+                throw;
+            }
+            catch(const std::bad_alloc&) {
+                throw Exception(tr("Not enough memory."));
+            }
+            catch(const std::exception& ex) {
+                qWarning() << "WARNING: Visual element" << this << "has thrown a non-standard exception:" << ex.what();
+                OVITO_ASSERT(false);
+                throw Exception(tr("Exception: %1").arg(QString::fromLatin1(ex.what())));
+            }
+        }
+        catch(Exception& ex) {
+            // If a regular exception was thrown during the data transformation process, adopt it as
+            // error state of the pipeline output and the vis element itself (to display it in the GUI).
+            setStatus(ex);
+            setManualErrorStateControl(true);
+            ex.prependGeneralMessage(tr("Visual element '%1' reported:").arg(objectTitle()));
+            inputData.setStatus(PipelineStatus(ex, QChar(' ')));
+            return std::move(inputData);
+        }
+        catch(...) {
+            // If an unknown exception type was thrown during the data transformation process (which shouldn't normally happen), set the
+            // error state of the pipeline output and the vis element itself (to indicate it in the GUI).
+            OVITO_ASSERT_MSG(false, "TransformingDataVis::transformData()", "Caught an unexpected exception type during data transformation.");
+            PipelineStatus status(PipelineStatus::Error, tr("Unknown exception caught during data object transformation '%1'.").arg(objectTitle()));
+            setStatus(status);
+            setManualErrorStateControl(true);
+            inputData.setStatus(status);
+            return std::move(inputData);
+        }
+    });
 
-	return future;
+    return future;
 }
 
-}	// End of namespace
+}   // End of namespace

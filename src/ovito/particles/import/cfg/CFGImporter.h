@@ -35,64 +35,64 @@ namespace Ovito::Particles {
  */
 class OVITO_PARTICLES_EXPORT CFGImporter : public ParticleImporter
 {
-	/// Defines a metaclass specialization for this importer type.
-	class OOMetaClass : public ParticleImporter::OOMetaClass
-	{
-	public:
-		/// Inherit standard constructor from base meta class.
-		using ParticleImporter::OOMetaClass::OOMetaClass;
+    /// Defines a metaclass specialization for this importer type.
+    class OOMetaClass : public ParticleImporter::OOMetaClass
+    {
+    public:
+        /// Inherit standard constructor from base meta class.
+        using ParticleImporter::OOMetaClass::OOMetaClass;
 
-		/// Returns the list of file formats that can be read by this importer class.
-		virtual Ovito::span<const SupportedFormat> supportedFormats() const override {
-			static const SupportedFormat formats[] = {{ QStringLiteral("*"), tr("CFG Files") }};
-			return formats;
-		}
+        /// Returns the list of file formats that can be read by this importer class.
+        virtual Ovito::span<const SupportedFormat> supportedFormats() const override {
+            static const SupportedFormat formats[] = {{ QStringLiteral("*"), tr("CFG Files") }};
+            return formats;
+        }
 
-		/// Checks if the given file has format that can be read by this importer.
-		virtual bool checkFileFormat(const FileHandle& file) const override;
-	};
+        /// Checks if the given file has format that can be read by this importer.
+        virtual bool checkFileFormat(const FileHandle& file) const override;
+    };
 
-	OVITO_CLASS_META(CFGImporter, OOMetaClass)
+    OVITO_CLASS_META(CFGImporter, OOMetaClass)
 
 public:
 
-	/// \brief Constructs a new instance of this class.
-	Q_INVOKABLE CFGImporter(ObjectCreationParams params) : ParticleImporter(params) {}
+    /// \brief Constructs a new instance of this class.
+    Q_INVOKABLE CFGImporter(ObjectCreationParams params) : ParticleImporter(params) {}
 
-	/// Returns the title of this object.
-	virtual QString objectTitle() const override { return tr("CFG"); }
+    /// Returns the title of this object.
+    virtual QString objectTitle() const override { return tr("CFG"); }
 
-	/// Creates an asynchronous loader object that loads the data for the given frame from the external file.
-	virtual FileSourceImporter::FrameLoaderPtr createFrameLoader(const LoadOperationRequest& request) override {
-		activateCLocale();
-		return std::make_shared<FrameLoader>(request, recenterCell(), sortParticles());
-	}
+    /// Creates an asynchronous loader object that loads the data for the given frame from the external file.
+    virtual FileSourceImporter::FrameLoaderPtr createFrameLoader(const LoadOperationRequest& request) override {
+        activateCLocale();
+        return std::make_shared<FrameLoader>(request, recenterCell(), sortParticles());
+    }
 
 private:
 
-	/// The format-specific task object that is responsible for reading an input file in the background.
-	class FrameLoader : public ParticleImporter::FrameLoader
-	{
-	public:
+    /// The format-specific task object that is responsible for reading an input file in the background.
+    class FrameLoader : public ParticleImporter::FrameLoader
+    {
+    public:
 
-		/// Constructor.
-		FrameLoader(const LoadOperationRequest& request, bool recenterCell, bool sortParticles)
-		  : ParticleImporter::FrameLoader(request, recenterCell), _sortParticles(sortParticles) {}
+        /// Constructor.
+        FrameLoader(const LoadOperationRequest& request, bool recenterCell, bool sortParticles)
+          : ParticleImporter::FrameLoader(request, recenterCell), _sortParticles(sortParticles) {}
 
-	protected:
+    protected:
 
-		/// Reads the frame data from the external file.
-		virtual void loadFile() override;
+        /// Reads the frame data from the external file.
+        virtual void loadFile() override;
 
-	private:
+    private:
 
-		bool _sortParticles;
-	};
+        bool _sortParticles;
+    };
 
 protected:
 
-	/// Guesses the mapping of input file columns to internal particle properties.
-	static void generateAutomaticColumnMapping(ParticleInputColumnMapping& mapping, const QStringList& columnNames);
+    /// Guesses the mapping of input file columns to internal particle properties.
+    static void generateAutomaticColumnMapping(ParticleInputColumnMapping& mapping, const QStringList& columnNames);
 };
 
-}	// End of namespace
+}   // End of namespace

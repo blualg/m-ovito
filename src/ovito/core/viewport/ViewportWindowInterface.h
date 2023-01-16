@@ -38,120 +38,120 @@ class OVITO_CORE_EXPORT ViewportWindowInterface
 {
 public:
 
-	/// Constructor which associates this window with the given viewport instance.
-	ViewportWindowInterface(UserInterface& userInterface, Viewport* vp);
+    /// Constructor which associates this window with the given viewport instance.
+    ViewportWindowInterface(UserInterface& userInterface, Viewport* vp);
 
-	/// Destructor.
-	~ViewportWindowInterface();
+    /// Destructor.
+    ~ViewportWindowInterface();
 
-	/// Associates this window with a different viewport.
-	void setViewport(Viewport* vp);
+    /// Associates this window with a different viewport.
+    void setViewport(Viewport* vp);
 
-	/// Returns the viewport associated with this window.
-	Viewport* viewport() const { return _viewport; }
+    /// Returns the viewport associated with this window.
+    Viewport* viewport() const { return _viewport; }
 
-	/// Returns the abstract user interface hosting this viewport window.
-	UserInterface& userInterface() const { return _userInterface; }
+    /// Returns the abstract user interface hosting this viewport window.
+    UserInterface& userInterface() const { return _userInterface; }
 
-	/// Returns the object responsible for evaluating all pipelines in the scene to prepare interactive rendering.
-	ScenePreparation& scenePreparation() { return *_scenePreparation; }
+    /// Returns the object responsible for evaluating all pipelines in the scene to prepare interactive rendering.
+    ScenePreparation& scenePreparation() { return *_scenePreparation; }
 
     /// Puts an update request for this window in the event loop.
-	virtual void renderLater() = 0;
+    virtual void renderLater() = 0;
 
-	/// If an update request is pending for this viewport window, immediately
-	/// processes it and redraw the window contents.
-	virtual void processViewportUpdate() = 0;
+    /// If an update request is pending for this viewport window, immediately
+    /// processes it and redraw the window contents.
+    virtual void processViewportUpdate() = 0;
 
-	/// Returns the current size of the viewport window (in device pixels).
-	virtual QSize viewportWindowDeviceSize() = 0;
+    /// Returns the current size of the viewport window (in device pixels).
+    virtual QSize viewportWindowDeviceSize() = 0;
 
-	/// Returns the current size of the viewport window (in device-independent pixels).
-	virtual QSize viewportWindowDeviceIndependentSize() = 0;
+    /// Returns the current size of the viewport window (in device-independent pixels).
+    virtual QSize viewportWindowDeviceIndependentSize() = 0;
 
-	/// Returns the device pixel ratio of the viewport window's canvas.
-	virtual qreal devicePixelRatio() = 0;
+    /// Returns the device pixel ratio of the viewport window's canvas.
+    virtual qreal devicePixelRatio() = 0;
 
-	/// Makes the viewport window delete itself.
-	/// This method is automatically called by the Viewport class destructor.
-	virtual void destroyViewportWindow();
+    /// Makes the viewport window delete itself.
+    /// This method is automatically called by the Viewport class destructor.
+    virtual void destroyViewportWindow();
 
-	/// Returns the interactive scene renderer used by the viewport window to render the graphics.
-	virtual SceneRenderer* sceneRenderer() const { return nullptr; }
+    /// Returns the interactive scene renderer used by the viewport window to render the graphics.
+    virtual SceneRenderer* sceneRenderer() const { return nullptr; }
 
-	/// Renders custom GUI elements in the viewport on top of the scene.
-	virtual void renderGui(SceneRenderer* renderer) = 0;
+    /// Renders custom GUI elements in the viewport on top of the scene.
+    virtual void renderGui(SceneRenderer* renderer) = 0;
 
-	/// Determines the object that is located under the given mouse cursor position.
-	virtual ViewportPickResult pick(const QPointF& pos) = 0;
+    /// Determines the object that is located under the given mouse cursor position.
+    virtual ViewportPickResult pick(const QPointF& pos) = 0;
 
-	/// Makes the OpenGL context used by the viewport window for rendering the current context.
-	virtual void makeOpenGLContextCurrent() {}
+    /// Makes the OpenGL context used by the viewport window for rendering the current context.
+    virtual void makeOpenGLContextCurrent() {}
 
-	/// Returns the list of gizmos to render in the viewport.
-	virtual span<ViewportGizmo*> viewportGizmos() = 0;
+    /// Returns the list of gizmos to render in the viewport.
+    virtual span<ViewportGizmo*> viewportGizmos() = 0;
 
-	/// Returns whether the viewport window is currently visible on screen.
-	virtual bool isVisible() const = 0;
+    /// Returns whether the viewport window is currently visible on screen.
+    virtual bool isVisible() const = 0;
 
-	/// If enabled, shows the given text in a tooltip window.
-	virtual void showToolTip(const QString& message, const QPointF& viewportLocation) {}
+    /// If enabled, shows the given text in a tooltip window.
+    virtual void showToolTip(const QString& message, const QPointF& viewportLocation) {}
 
-	/// Hides the tooltip window previously shown by showToolTip().
-	virtual void hideToolTip() {}
+    /// Hides the tooltip window previously shown by showToolTip().
+    virtual void hideToolTip() {}
 
-	/// Sets the mouse cursor shape for the window. 
-	virtual void setCursor(const QCursor& cursor) {}
+    /// Sets the mouse cursor shape for the window. 
+    virtual void setCursor(const QCursor& cursor) {}
 
-	/// Returns the current position of the mouse cursor relative to the viewport window.
-	virtual QPoint getCurrentMousePos() = 0;
+    /// Returns the current position of the mouse cursor relative to the viewport window.
+    virtual QPoint getCurrentMousePos() = 0;
 
 public:
 
-	/// Registry for viewport window implementations.
-	using Registry = QVarLengthArray<const QMetaObject*, 3>;
+    /// Registry for viewport window implementations.
+    using Registry = QVarLengthArray<const QMetaObject*, 3>;
 
-	/// Returns the global registry, which allows enumerating all installed viewport window implementations.
-	static Registry& registry();
+    /// Returns the global registry, which allows enumerating all installed viewport window implementations.
+    static Registry& registry();
 
 protected:
 
-	/// Render the axis tripod symbol in the corner of the viewport that indicates
-	/// the coordinate system orientation.
-	void renderOrientationIndicator(SceneRenderer* renderer);
+    /// Render the axis tripod symbol in the corner of the viewport that indicates
+    /// the coordinate system orientation.
+    void renderOrientationIndicator(SceneRenderer* renderer);
 
-	/// Renders the frame on top of the scene that indicates the visible rendering area.
-	void renderRenderFrame(SceneRenderer* renderer);
+    /// Renders the frame on top of the scene that indicates the visible rendering area.
+    void renderRenderFrame(SceneRenderer* renderer);
 
-	/// Renders the viewport caption text.
-	QRectF renderViewportTitle(SceneRenderer* renderer, bool hoverState);
+    /// Renders the viewport caption text.
+    QRectF renderViewportTitle(SceneRenderer* renderer, bool hoverState);
 
 private:
 
-	/// The abstract user interface hosting this viewport window.
-	UserInterface& _userInterface;
+    /// The abstract user interface hosting this viewport window.
+    UserInterface& _userInterface;
 
-	/// The viewport associated with this window.
-	Viewport* _viewport;
+    /// The viewport associated with this window.
+    Viewport* _viewport;
 
 #ifdef OVITO_DEBUG
-	/// Counts how often this viewport has been rendered during the current program session.
-	int _renderDebugCounter = 0;
+    /// Counts how often this viewport has been rendered during the current program session.
+    int _renderDebugCounter = 0;
 #endif
 
-	/// The primitive for rendering the viewport's orientation indicator.
-	LinePrimitive _orientationTripodGeometry;
+    /// The primitive for rendering the viewport's orientation indicator.
+    LinePrimitive _orientationTripodGeometry;
 
-	/// The primitive for rendering the viewport's orientation indicator labels.
-	TextPrimitive _orientationTripodLabels[3];
+    /// The primitive for rendering the viewport's orientation indicator labels.
+    TextPrimitive _orientationTripodLabels[3];
 
-	/// Object responsible for evaluating all pipelines in the scene to prepare interactive rendering.
-	OORef<ScenePreparation> _scenePreparation;
+    /// Object responsible for evaluating all pipelines in the scene to prepare interactive rendering.
+    OORef<ScenePreparation> _scenePreparation;
 };
 
 /// This macro registers a viewport window implementation in ViewportWindowInterface::registry() at compile time.
 #define OVITO_REGISTER_VIEWPORT_WINDOW_IMPLEMENTATION(WindowClass) \
-	static const int __registration##WindowClass = (Ovito::ViewportWindowInterface::registry().push_back(&WindowClass::staticMetaObject), 0);
+    static const int __registration##WindowClass = (Ovito::ViewportWindowInterface::registry().push_back(&WindowClass::staticMetaObject), 0);
 
 
-}	// End of namespace
+}   // End of namespace

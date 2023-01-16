@@ -35,59 +35,59 @@ namespace Ovito {
 ******************************************************************************/
 ObjectLoadStream::ObjectLoadStream(QDataStream& source) : LoadStream(source)
 {
-	qint64 oldPos = filePosition();
+    qint64 oldPos = filePosition();
 
-	// Jump to index at the end of the file.
-	setFilePosition(source.device()->size() - 2 * (qint64)(sizeof(qint64) + sizeof(quint32)));
+    // Jump to index at the end of the file.
+    setFilePosition(source.device()->size() - 2 * (qint64)(sizeof(qint64) + sizeof(quint32)));
 
-	// Read index of tables.
-	qint64 classTableStart, objectTableStart;
-	quint32 classCount, objectCount;
-	*this >> classTableStart;
-	*this >> classCount;
-	*this >> objectTableStart;
-	*this >> objectCount;
+    // Read index of tables.
+    qint64 classTableStart, objectTableStart;
+    quint32 classCount, objectCount;
+    *this >> classTableStart;
+    *this >> classCount;
+    *this >> objectTableStart;
+    *this >> objectCount;
 
-	// Jump to beginning of the class table.
-	setFilePosition(classTableStart);
-	expectChunk(0x200);
-	_classes.resize(classCount);
-	for(auto& classInfo : _classes) {
+    // Jump to beginning of the class table.
+    setFilePosition(classTableStart);
+    expectChunk(0x200);
+    _classes.resize(classCount);
+    for(auto& classInfo : _classes) {
 
-		// Read the runtime type from the stream.
-		expectChunk(0x201);
-		OvitoClassPtr clazz = OvitoClass::deserializeRTTI(*this);
-		closeChunk();
+        // Read the runtime type from the stream.
+        expectChunk(0x201);
+        OvitoClassPtr clazz = OvitoClass::deserializeRTTI(*this);
+        closeChunk();
 
-		// Load the plugin containing the class.
-		clazz->plugin()->loadPlugin();
+        // Load the plugin containing the class.
+        clazz->plugin()->loadPlugin();
 
-		// Create the class info structure.
-		classInfo = clazz->createClassInfoStructure();
-		classInfo->clazz = clazz;
+        // Create the class info structure.
+        classInfo = clazz->createClassInfoStructure();
+        classInfo->clazz = clazz;
 
-		// Let the metaclass read its specific information from the stream.
-		expectChunk(0x202);
-		clazz->loadClassInfo(*this, classInfo.get());
-		closeChunk();
-	}
-	closeChunk();
+        // Let the metaclass read its specific information from the stream.
+        expectChunk(0x202);
+        clazz->loadClassInfo(*this, classInfo.get());
+        closeChunk();
+    }
+    closeChunk();
 
-	// Jump to start of object table.
-	setFilePosition(objectTableStart);
-	expectChunk(0x300);
-	_objects.resize(objectCount);
-	for(ObjectRecord& record : _objects) {
-		record.object = nullptr;
-		quint32 classId;
-		*this >> classId;
-		record.classInfo = _classes[classId].get();
-		*this >> record.fileOffset;
-	}
-	closeChunk();
+    // Jump to start of object table.
+    setFilePosition(objectTableStart);
+    expectChunk(0x300);
+    _objects.resize(objectCount);
+    for(ObjectRecord& record : _objects) {
+        record.object = nullptr;
+        quint32 classId;
+        *this >> classId;
+        record.classInfo = _classes[classId].get();
+        *this >> record.fileOffset;
+    }
+    closeChunk();
 
-	// Go back to previous position in file.
-	setFilePosition(oldPos);
+    // Go back to previous position in file.
+    setFilePosition(oldPos);
 }
 
 /******************************************************************************
@@ -97,43 +97,43 @@ ObjectLoadStream::ObjectLoadStream(QDataStream& source) : LoadStream(source)
 ******************************************************************************/
 OORef<OvitoObject> ObjectLoadStream::loadObjectInternal()
 {
-	quint32 objectId;
-	*this >> objectId;
-	if(objectId == 0) {
-		return {};
-	}
-	else {
-		ObjectRecord& record = _objects[objectId - 1];
-		if(record.object != nullptr) {
-			return record.object;
-		}
-		else {
-			// Create an instance of the object class.
-			if(record.classInfo->clazz->isDerivedFrom(RefTarget::OOClass()))
-				record.object = record.classInfo->clazz->createInstance(ObjectCreationParams(ObjectCreationParams::DontCreateSubObjects));
-			else
-				record.object = record.classInfo->clazz->createInstance();
+    quint32 objectId;
+    *this >> objectId;
+    if(objectId == 0) {
+        return {};
+    }
+    else {
+        ObjectRecord& record = _objects[objectId - 1];
+        if(record.object != nullptr) {
+            return record.object;
+        }
+        else {
+            // Create an instance of the object class.
+            if(record.classInfo->clazz->isDerivedFrom(RefTarget::OOClass()))
+                record.object = record.classInfo->clazz->createInstance(ObjectCreationParams(ObjectCreationParams::DontCreateSubObjects));
+            else
+                record.object = record.classInfo->clazz->createInstance();
 
-			if(record.classInfo->clazz == &DataSet::OOClass()) {
-				// When deserializing a DataSet, the caller may have provided a pre-existing DataSet which should be populated with the serialized sub-objects.
-				// Otherwise, create a new DataSet instance.
-				if(_dataset == nullptr) {
-					setDatasetToBePopulated(static_object_cast<DataSet>(record.object.get()));
-				}
-				else {
-					// If an existing DataSet has been provided, load the objects from the stream into 
-					// that existing Dataset instead of creating a new one. This feature is used in DataSet::loadFromFile();
-					record.object = _dataset;
-				}
-			}
-			else {
-				OVITO_ASSERT(!record.classInfo->clazz->isDerivedFrom(DataSet::OOClass()));
-			}
+            if(record.classInfo->clazz == &DataSet::OOClass()) {
+                // When deserializing a DataSet, the caller may have provided a pre-existing DataSet which should be populated with the serialized sub-objects.
+                // Otherwise, create a new DataSet instance.
+                if(_dataset == nullptr) {
+                    setDatasetToBePopulated(static_object_cast<DataSet>(record.object.get()));
+                }
+                else {
+                    // If an existing DataSet has been provided, load the objects from the stream into 
+                    // that existing Dataset instead of creating a new one. This feature is used in DataSet::loadFromFile();
+                    record.object = _dataset;
+                }
+            }
+            else {
+                OVITO_ASSERT(!record.classInfo->clazz->isDerivedFrom(DataSet::OOClass()));
+            }
 
-			_objectsToLoad.push_back(objectId - 1);
-			return record.object;
-		}
-	}
+            _objectsToLoad.push_back(objectId - 1);
+            return record.object;
+        }
+    }
 }
 
 /******************************************************************************
@@ -141,56 +141,56 @@ OORef<OvitoObject> ObjectLoadStream::loadObjectInternal()
 ******************************************************************************/
 void ObjectLoadStream::close()
 {
-	// This prevents re-entrance in case of an exception.
-	if(!_currentObject) {
+    // This prevents re-entrance in case of an exception.
+    if(!_currentObject) {
 
-		// Note: Not using range-based for-loop here, because new objects may be appended to the list at any time.
-		for(int i = 0; i < _objectsToLoad.size(); i++) { // NOLINT(modernize-loop-convert)
-			quint32 index = _objectsToLoad[i];
-			_currentObject = &_objects[index];
-			OVITO_CHECK_POINTER(_currentObject);
-			OVITO_CHECK_OBJECT_POINTER(_currentObject->object);
+        // Note: Not using range-based for-loop here, because new objects may be appended to the list at any time.
+        for(int i = 0; i < _objectsToLoad.size(); i++) { // NOLINT(modernize-loop-convert)
+            quint32 index = _objectsToLoad[i];
+            _currentObject = &_objects[index];
+            OVITO_CHECK_POINTER(_currentObject);
+            OVITO_CHECK_OBJECT_POINTER(_currentObject->object);
 
-			// Seek to object data.
-			setFilePosition(_currentObject->fileOffset);
+            // Seek to object data.
+            setFilePosition(_currentObject->fileOffset);
 
-			// Load class contents.
-			try {
-				// Make the object being loaded a child of this stream object.
-				// This is to let the OvitoObject::isBeingLoaded() function detect that
-				// the object is being loaded from this stream.
-				OVITO_ASSERT(_currentObject->object->parent() == nullptr);
-				_currentObject->object->setParent(this);
-				OVITO_ASSERT(_currentObject->object->isBeingLoaded());
+            // Load class contents.
+            try {
+                // Make the object being loaded a child of this stream object.
+                // This is to let the OvitoObject::isBeingLoaded() function detect that
+                // the object is being loaded from this stream.
+                OVITO_ASSERT(_currentObject->object->parent() == nullptr);
+                _currentObject->object->setParent(this);
+                OVITO_ASSERT(_currentObject->object->isBeingLoaded());
 
-				// Let the object load its data fields.
-				_currentObject->object->loadFromStream(*this);
-			}
-			catch(Exception& ex) {
-				// Clear the being-loaded status of all objects.
-				for(const ObjectRecord& record : _objects) {
-					if(record.object)
-						record.object->setParent(nullptr);
-				}
-				throw ex.appendDetailMessage(tr("Object of class type %1 failed to load.").arg(_currentObject->object->getOOClass().name()));
-			}
-		}
+                // Let the object load its data fields.
+                _currentObject->object->loadFromStream(*this);
+            }
+            catch(Exception& ex) {
+                // Clear the being-loaded status of all objects.
+                for(const ObjectRecord& record : _objects) {
+                    if(record.object)
+                        record.object->setParent(nullptr);
+                }
+                throw ex.appendDetailMessage(tr("Object of class type %1 failed to load.").arg(_currentObject->object->getOOClass().name()));
+            }
+        }
 
-		// Now that all references are in place call, post-processing function on each loaded object.
-		for(const ObjectRecord& record : _objects) {
-			if(record.object)
-				record.object->loadFromStreamComplete(*this);
-		}
+        // Now that all references are in place call, post-processing function on each loaded object.
+        for(const ObjectRecord& record : _objects) {
+            if(record.object)
+                record.object->loadFromStreamComplete(*this);
+        }
 
-		// Clear the being-loaded status of all objects.
-		for(const ObjectRecord& record : _objects) {
-			if(record.object) {
-				OVITO_ASSERT(record.object->parent() == this);
-				record.object->setParent(nullptr);
-			}
-		}
-	}
-	LoadStream::close();
+        // Clear the being-loaded status of all objects.
+        for(const ObjectRecord& record : _objects) {
+            if(record.object) {
+                OVITO_ASSERT(record.object->parent() == this);
+                record.object->setParent(nullptr);
+            }
+        }
+    }
+    LoadStream::close();
 }
 
-}	// End of namespace
+}   // End of namespace

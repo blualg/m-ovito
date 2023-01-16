@@ -36,73 +36,73 @@ namespace Ovito::Particles {
  */
 class OVITO_PARTICLES_EXPORT ParaViewVTPParticleImporter : public ParticleImporter
 {
-	/// Defines a metaclass specialization for this importer type.
-	class OOMetaClass : public ParticleImporter::OOMetaClass
-	{
-	public:
-		/// Inherit standard constructor from base meta class.
-		using ParticleImporter::OOMetaClass::OOMetaClass;
+    /// Defines a metaclass specialization for this importer type.
+    class OOMetaClass : public ParticleImporter::OOMetaClass
+    {
+    public:
+        /// Inherit standard constructor from base meta class.
+        using ParticleImporter::OOMetaClass::OOMetaClass;
 
-		/// Returns the list of file formats that can be read by this importer class.
-		virtual Ovito::span<const SupportedFormat> supportedFormats() const override {
-			static const SupportedFormat formats[] = {{ QStringLiteral("*.vtp"), tr("Aspherix Particles Files") }};
-			return formats;
-		}
+        /// Returns the list of file formats that can be read by this importer class.
+        virtual Ovito::span<const SupportedFormat> supportedFormats() const override {
+            static const SupportedFormat formats[] = {{ QStringLiteral("*.vtp"), tr("Aspherix Particles Files") }};
+            return formats;
+        }
 
-		/// Checks if the given file has format that can be read by this importer.
-		virtual bool checkFileFormat(const FileHandle& file) const override;
-	};
+        /// Checks if the given file has format that can be read by this importer.
+        virtual bool checkFileFormat(const FileHandle& file) const override;
+    };
 
-	OVITO_CLASS_META(ParaViewVTPParticleImporter, OOMetaClass)
+    OVITO_CLASS_META(ParaViewVTPParticleImporter, OOMetaClass)
 
 public:
 
-	/// \brief Constructor.
-	Q_INVOKABLE ParaViewVTPParticleImporter(ObjectCreationParams params) : ParticleImporter(params) {}
+    /// \brief Constructor.
+    Q_INVOKABLE ParaViewVTPParticleImporter(ObjectCreationParams params) : ParticleImporter(params) {}
 
-	/// Returns the title of this object.
-	virtual QString objectTitle() const override { return tr("VTP"); }
+    /// Returns the title of this object.
+    virtual QString objectTitle() const override { return tr("VTP"); }
 
-	/// Creates an asynchronous loader object that loads the data for the given frame from the external file.
-	virtual FileSourceImporter::FrameLoaderPtr createFrameLoader(const LoadOperationRequest& request) override {
-		return std::make_shared<FrameLoader>(request, std::move(_particleShapeFiles));
-	}
+    /// Creates an asynchronous loader object that loads the data for the given frame from the external file.
+    virtual FileSourceImporter::FrameLoaderPtr createFrameLoader(const LoadOperationRequest& request) override {
+        return std::make_shared<FrameLoader>(request, std::move(_particleShapeFiles));
+    }
 
-	/// Stores the list of particle type names and corresponding shape file URLs to be loaded.
-	void setParticleShapeFileList(std::vector<ParaViewVTMBlockInfo> particleShapeFiles) {
-		_particleShapeFiles = std::move(particleShapeFiles);
-	}
+    /// Stores the list of particle type names and corresponding shape file URLs to be loaded.
+    void setParticleShapeFileList(std::vector<ParaViewVTMBlockInfo> particleShapeFiles) {
+        _particleShapeFiles = std::move(particleShapeFiles);
+    }
 
 private:
 
-	/// The format-specific task object that is responsible for reading an input file in a separate thread.
-	class FrameLoader : public ParticleImporter::FrameLoader
-	{
-	public:
+    /// The format-specific task object that is responsible for reading an input file in a separate thread.
+    class FrameLoader : public ParticleImporter::FrameLoader
+    {
+    public:
 
-		/// Constructor.
-		FrameLoader(const LoadOperationRequest& request, std::vector<ParaViewVTMBlockInfo> particleShapeFiles) 
-			: ParticleImporter::FrameLoader(request), _particleShapeFiles(std::move(particleShapeFiles)) {}
+        /// Constructor.
+        FrameLoader(const LoadOperationRequest& request, std::vector<ParaViewVTMBlockInfo> particleShapeFiles) 
+            : ParticleImporter::FrameLoader(request), _particleShapeFiles(std::move(particleShapeFiles)) {}
 
-	protected:
+    protected:
 
-		/// Reads the frame data from the external file.
-		virtual void loadFile() override;
+        /// Reads the frame data from the external file.
+        virtual void loadFile() override;
 
-		/// Creates the right kind of OVITO property object that will receive the data read from a <DataArray> element.
-		PropertyObject* createParticlePropertyForDataArray(QXmlStreamReader& xml, int& vectorComponent, bool preserveExistingData);
+        /// Creates the right kind of OVITO property object that will receive the data read from a <DataArray> element.
+        PropertyObject* createParticlePropertyForDataArray(QXmlStreamReader& xml, int& vectorComponent, bool preserveExistingData);
 
-		/// Helper method that loads the shape of a particle type from an external geometry file.
-		void loadParticleShape(ParticleType* particleType);
+        /// Helper method that loads the shape of a particle type from an external geometry file.
+        void loadParticleShape(ParticleType* particleType);
 
-		/// The list of particle type names and corresponding files containing the particle shapes.
-		/// This list is extracted by the ParticlesParaViewVTMFileFilter class from the VTM multi-block structure.
-		std::vector<ParaViewVTMBlockInfo> _particleShapeFiles;
-	};
+        /// The list of particle type names and corresponding files containing the particle shapes.
+        /// This list is extracted by the ParticlesParaViewVTMFileFilter class from the VTM multi-block structure.
+        std::vector<ParaViewVTMBlockInfo> _particleShapeFiles;
+    };
 
-	/// The list of particle type names and corresponding files containing the particle shapes.
-	/// This list is extracted by the ParticlesParaViewVTMFileFilter class from the VTM multi-block structure.
-	std::vector<ParaViewVTMBlockInfo> _particleShapeFiles;
+    /// The list of particle type names and corresponding files containing the particle shapes.
+    /// This list is extracted by the ParticlesParaViewVTMFileFilter class from the VTM multi-block structure.
+    std::vector<ParaViewVTMBlockInfo> _particleShapeFiles;
 };
 
 /**
@@ -111,23 +111,23 @@ private:
  */
 class OVITO_PARTICLES_EXPORT ParticlesParaViewVTMFileFilter : public ParaViewVTMFileFilter
 {
-	OVITO_CLASS(ParticlesParaViewVTMFileFilter)
+    OVITO_CLASS(ParticlesParaViewVTMFileFilter)
 
 public:
 
-	/// Constructor.
-	Q_INVOKABLE ParticlesParaViewVTMFileFilter() = default;
+    /// Constructor.
+    Q_INVOKABLE ParticlesParaViewVTMFileFilter() = default;
 
-	/// \brief Is called once before the datasets referenced in a multi-block VTM file will be loaded.
-	virtual void preprocessDatasets(std::vector<ParaViewVTMBlockInfo>& blockDatasets, FileSourceImporter::LoadOperationRequest& request, const ParaViewVTMImporter& vtmImporter) override;
+    /// \brief Is called once before the datasets referenced in a multi-block VTM file will be loaded.
+    virtual void preprocessDatasets(std::vector<ParaViewVTMBlockInfo>& blockDatasets, FileSourceImporter::LoadOperationRequest& request, const ParaViewVTMImporter& vtmImporter) override;
 
-	/// Is called before parsing of a dataset reference in a multi-block VTM file begins.
-	virtual void configureImporter(const ParaViewVTMBlockInfo& blockInfo, FileSourceImporter::LoadOperationRequest& loadRequest, FileSourceImporter* importer) override;
+    /// Is called before parsing of a dataset reference in a multi-block VTM file begins.
+    virtual void configureImporter(const ParaViewVTMBlockInfo& blockInfo, FileSourceImporter::LoadOperationRequest& loadRequest, FileSourceImporter* importer) override;
 
 private:
 
-	/// The list of shape files for particle types. 
-	std::vector<ParaViewVTMBlockInfo> _particleShapeFiles;
+    /// The list of shape files for particle types. 
+    std::vector<ParaViewVTMBlockInfo> _particleShapeFiles;
 };
 
-}	// End of namespace
+}   // End of namespace

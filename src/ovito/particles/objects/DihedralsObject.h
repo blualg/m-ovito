@@ -33,43 +33,43 @@ namespace Ovito::Particles {
  */
 class OVITO_PARTICLES_EXPORT DihedralsObject : public PropertyContainer
 {
-	/// Define a new property metaclass for the property container.
-	class OVITO_PARTICLES_EXPORT OOMetaClass : public PropertyContainerClass
-	{
-	public:
+    /// Define a new property metaclass for the property container.
+    class OVITO_PARTICLES_EXPORT OOMetaClass : public PropertyContainerClass
+    {
+    public:
 
-		/// Inherit constructor from base class.
-		using PropertyContainerClass::PropertyContainerClass;
+        /// Inherit constructor from base class.
+        using PropertyContainerClass::PropertyContainerClass;
 
-		/// \brief Create a storage object for standard properties.
-		virtual PropertyPtr createStandardPropertyInternal(size_t elementCount, int type, DataBuffer::InitializationFlags flags, const ConstDataObjectPath& containerPath) const override;
+        /// \brief Create a storage object for standard properties.
+        virtual PropertyPtr createStandardPropertyInternal(size_t elementCount, int type, DataBuffer::InitializationFlags flags, const ConstDataObjectPath& containerPath) const override;
 
-		/// Generates a human-readable string representation of the data object reference.
-		virtual QString formatDataObjectPath(const ConstDataObjectPath& path) const override { return this->displayName(); }
+        /// Generates a human-readable string representation of the data object reference.
+        virtual QString formatDataObjectPath(const ConstDataObjectPath& path) const override { return this->displayName(); }
 
-	protected:
+    protected:
 
-		/// Is called by the system after construction of the meta-class instance.
-		virtual void initialize() override;
-	};
+        /// Is called by the system after construction of the meta-class instance.
+        virtual void initialize() override;
+    };
 
-	OVITO_CLASS_META(DihedralsObject, OOMetaClass);
-	Q_CLASSINFO("DisplayName", "Dihedrals");
+    OVITO_CLASS_META(DihedralsObject, OOMetaClass);
+    Q_CLASSINFO("DisplayName", "Dihedrals");
 
 public:
 
-	/// \brief The list of standard dihedrals properties.
-	enum Type {
-		UserProperty = PropertyObject::GenericUserProperty,
-		TypeProperty = PropertyObject::GenericTypeProperty,
-		TopologyProperty,
-	};
+    /// \brief The list of standard dihedrals properties.
+    enum Type {
+        UserProperty = PropertyObject::GenericUserProperty,
+        TypeProperty = PropertyObject::GenericTypeProperty,
+        TopologyProperty,
+    };
 
-	/// \brief Constructor.
-	Q_INVOKABLE DihedralsObject(ObjectCreationParams params);
+    /// \brief Constructor.
+    Q_INVOKABLE DihedralsObject(ObjectCreationParams params);
 
-	/// Convinience method that returns the dihedral topology property.
-	const PropertyObject* getTopology() const { return getProperty(TopologyProperty); }
+    /// Convinience method that returns the dihedral topology property.
+    const PropertyObject* getTopology() const { return getProperty(TopologyProperty); }
 };
 
 /**
@@ -77,4 +77,4 @@ public:
  */
 using ParticleIndexQuadruplet = std::array<qlonglong, 4>;
 
-}	// End of namespace
+}   // End of namespace

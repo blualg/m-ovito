@@ -32,37 +32,37 @@ namespace Ovito {
 ******************************************************************************/
 class OVITO_GUI_EXPORT RolloutContainerLayout : public QLayout
 {
-	Q_OBJECT
+    Q_OBJECT
 
 public:
 
-	RolloutContainerLayout(QWidget* parent) : QLayout(parent) {}
-	virtual ~RolloutContainerLayout();
+    RolloutContainerLayout(QWidget* parent) : QLayout(parent) {}
+    virtual ~RolloutContainerLayout();
 
-	void addItem(QLayoutItem* item) override;
-	int count() const override { return list.size(); }
+    void addItem(QLayoutItem* item) override;
+    int count() const override { return list.size(); }
 
-	void insertWidget(int index, QWidget* widgets);
+    void insertWidget(int index, QWidget* widgets);
 
-	void setGeometry(const QRect& r) override;
+    void setGeometry(const QRect& r) override;
 
-	QSize sizeHint() const override;
+    QSize sizeHint() const override;
     QSize minimumSize() const override;
 
-	QLayoutItem* itemAt(int index) const override {
-		if(index < 0 || index >= list.size()) return nullptr;
-		return list[index];
-	}
-	QLayoutItem* takeAt(int index) override {
-		if(index < 0 || index >= list.size()) return nullptr;
-		return list.takeAt(index);
-	}
+    QLayoutItem* itemAt(int index) const override {
+        if(index < 0 || index >= list.size()) return nullptr;
+        return list[index];
+    }
+    QLayoutItem* takeAt(int index) override {
+        if(index < 0 || index >= list.size()) return nullptr;
+        return list.takeAt(index);
+    }
 
 private:
 
-	QList<QLayoutItem*> list;
+    QList<QLayoutItem*> list;
 };
 
-}	// End of namespace
+}   // End of namespace
 
 

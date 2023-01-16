@@ -34,43 +34,43 @@ namespace Ovito {
  */
 class OVITO_GUI_EXPORT WidgetActionManager : public ActionManager
 {
-	Q_OBJECT
+    Q_OBJECT
 
 public:
 
-	/// Constructor.
-	WidgetActionManager(QObject* parent, MainWindow& mainWindow);
+    /// Constructor.
+    WidgetActionManager(QObject* parent, MainWindow& mainWindow);
 
-	/// Returns the main window this action manager belongs to.
-	MainWindow& mainWindow() const { return static_cast<MainWindow&>(ActionManager::userInterface()); }
+    /// Returns the main window this action manager belongs to.
+    MainWindow& mainWindow() const { return static_cast<MainWindow&>(ActionManager::userInterface()); }
 
 private Q_SLOTS:
 
-	/// Is called when the user selects a command in the quick search field.
-	void onQuickSearchCommandSelected(const QModelIndex& index);
+    /// Is called when the user selects a command in the quick search field.
+    void onQuickSearchCommandSelected(const QModelIndex& index);
 
-	void on_Quit_triggered();
-	void on_HelpAbout_triggered();
-	void on_HelpSystemInfo_triggered();
-	void on_HelpShowOnlineHelp_triggered();
-	void on_HelpShowScriptingReference_triggered();
-	void on_FileOpen_triggered();
-	void on_FileSave_triggered();
-	void on_FileSaveAs_triggered();
-	void on_FileImport_triggered();
-	void on_FileRemoteImport_triggered();
-	void on_FileExport_triggered();
-	void on_FileNewWindow_triggered();
-	void on_Settings_triggered();
-	void on_AnimationSettings_triggered();
-	void on_RenderActiveViewport_triggered();
-	void on_ClonePipeline_triggered();
-	void on_RenamePipeline_triggered();
-	void on_NewPipelineFileSource_triggered();
+    void on_Quit_triggered();
+    void on_HelpAbout_triggered();
+    void on_HelpSystemInfo_triggered();
+    void on_HelpShowOnlineHelp_triggered();
+    void on_HelpShowScriptingReference_triggered();
+    void on_FileOpen_triggered();
+    void on_FileSave_triggered();
+    void on_FileSaveAs_triggered();
+    void on_FileImport_triggered();
+    void on_FileRemoteImport_triggered();
+    void on_FileExport_triggered();
+    void on_FileNewWindow_triggered();
+    void on_Settings_triggered();
+    void on_AnimationSettings_triggered();
+    void on_RenderActiveViewport_triggered();
+    void on_ClonePipeline_triggered();
+    void on_RenamePipeline_triggered();
+    void on_NewPipelineFileSource_triggered();
 
 private:
 
-	void setupCommandSearch();
+    void setupCommandSearch();
 };
 
-}	// End of namespace
+}   // End of namespace

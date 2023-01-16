@@ -36,49 +36,49 @@ namespace Ovito {
 ******************************************************************************/
 class OVITO_GUIBASE_EXPORT SelectionMode : public ViewportInputMode
 {
-	Q_OBJECT
+    Q_OBJECT
 
 public:
 
-	/// Constructor.
-	SelectionMode(QObject* parent) : ViewportInputMode(parent) {}
+    /// Constructor.
+    SelectionMode(QObject* parent) : ViewportInputMode(parent) {}
 
-	/// \brief Returns the activation behavior of this input mode.
-	virtual InputModeType modeType() override { return ExclusiveMode; }
+    /// \brief Returns the activation behavior of this input mode.
+    virtual InputModeType modeType() override { return ExclusiveMode; }
 
-	/// \brief Handles the mouse down event for the given viewport.
-	virtual void mousePressEvent(ViewportWindowInterface* vpwin, QMouseEvent* event) override;
+    /// \brief Handles the mouse down event for the given viewport.
+    virtual void mousePressEvent(ViewportWindowInterface* vpwin, QMouseEvent* event) override;
 
-	/// \brief Handles the mouse up event for the given viewport.
-	virtual void mouseReleaseEvent(ViewportWindowInterface* vpwin, QMouseEvent* event) override;
+    /// \brief Handles the mouse up event for the given viewport.
+    virtual void mouseReleaseEvent(ViewportWindowInterface* vpwin, QMouseEvent* event) override;
 
-	/// \brief Handles the mouse move event for the given viewport.
-	virtual void mouseMoveEvent(ViewportWindowInterface* vpwin, QMouseEvent* event) override;
+    /// \brief Handles the mouse move event for the given viewport.
+    virtual void mouseMoveEvent(ViewportWindowInterface* vpwin, QMouseEvent* event) override;
 
-	/// \brief Returns the cursor that is used by OVITO's viewports to indicate a selection.
-	static QCursor& selectionCursor() {
+    /// \brief Returns the cursor that is used by OVITO's viewports to indicate a selection.
+    static QCursor& selectionCursor() {
 #ifndef Q_OS_WASM
-		static QCursor hoverCursor(QPixmap(QStringLiteral(":/guibase/cursor/editing/cursor_mode_select.png")));
+        static QCursor hoverCursor(QPixmap(QStringLiteral(":/guibase/cursor/editing/cursor_mode_select.png")));
 #else
-		// WebAssembly platform does not support custom cursor shapes. Have to use one of the built-in shapes.
-		static QCursor hoverCursor(Qt::CrossCursor);
+        // WebAssembly platform does not support custom cursor shapes. Have to use one of the built-in shapes.
+        static QCursor hoverCursor(Qt::CrossCursor);
 #endif
-		return hoverCursor;
-	}
+        return hoverCursor;
+    }
 
 protected:
 
-	/// \brief This is called by the system after the input handler is
-	///        no longer the active handler.
-	virtual void deactivated(bool temporary) override;
+    /// \brief This is called by the system after the input handler is
+    ///        no longer the active handler.
+    virtual void deactivated(bool temporary) override;
 
 protected:
 
-	/// The mouse position.
-	QPointF _clickPoint;
+    /// The mouse position.
+    QPointF _clickPoint;
 
-	/// The current viewport we are working in.
-	Viewport* _viewport = nullptr;
+    /// The current viewport we are working in.
+    Viewport* _viewport = nullptr;
 };
 
-}	// End of namespace
+}   // End of namespace

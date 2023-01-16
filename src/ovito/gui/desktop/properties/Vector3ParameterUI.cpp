@@ -33,24 +33,24 @@ IMPLEMENT_OVITO_CLASS(Vector3ParameterUI);
 * Constructor for a Qt property.
 ******************************************************************************/
 Vector3ParameterUI::Vector3ParameterUI(PropertiesEditor* parentEditor, const char* propertyName, size_t vectorComponent, const QString& labelText, const QMetaObject* parameterUnitType)
-	: FloatParameterUI(parentEditor, propertyName, labelText, parameterUnitType), _component(vectorComponent)
+    : FloatParameterUI(parentEditor, propertyName, labelText, parameterUnitType), _component(vectorComponent)
 {
-	OVITO_ASSERT_MSG(vectorComponent >= 0 && vectorComponent < 3, "Vector3ParameterUI constructor", "The vector component must be in the range 0-2.");
+    OVITO_ASSERT_MSG(vectorComponent >= 0 && vectorComponent < 3, "Vector3ParameterUI constructor", "The vector component must be in the range 0-2.");
 }
 
 /******************************************************************************
 * Constructor for a PropertyField property.
 ******************************************************************************/
 Vector3ParameterUI::Vector3ParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField, size_t vectorComponent)
-	: FloatParameterUI(parentEditor, propField), _component(vectorComponent)
+    : FloatParameterUI(parentEditor, propField), _component(vectorComponent)
 {
-	OVITO_ASSERT_MSG(vectorComponent >= 0 && vectorComponent < 3, "Vector3ParameterUI constructor", "The vector component must be in the range 0-2.");
+    OVITO_ASSERT_MSG(vectorComponent >= 0 && vectorComponent < 3, "Vector3ParameterUI constructor", "The vector component must be in the range 0-2.");
 
-	switch(_component) {
-		case 0: label()->setText(propField->displayName() + " (X):"); break;
-		case 1: label()->setText(propField->displayName() + " (Y):"); break;
-		case 2: label()->setText(propField->displayName() + " (Z):"); break;
-	}
+    switch(_component) {
+        case 0: label()->setText(propField->displayName() + " (X):"); break;
+        case 1: label()->setText(propField->displayName() + " (Y):"); break;
+        case 2: label()->setText(propField->displayName() + " (Z):"); break;
+    }
 }
 
 /******************************************************************************
@@ -59,49 +59,49 @@ Vector3ParameterUI::Vector3ParameterUI(PropertiesEditor* parentEditor, const Pro
 ******************************************************************************/
 void Vector3ParameterUI::updatePropertyValue()
 {
-	if(editObject() && spinner()) {
-		handleExceptions([&] {
-			if(isReferenceFieldUI()) {
-				if(Controller* ctrl = dynamic_object_cast<Controller>(parameterObject())) {
-					Vector3 val = ctrl->getVector3Value(currentAnimationTime().value_or(AnimationTime(0)));
-					val[_component] = spinner()->floatValue();
-					ctrl->setVector3Value(currentAnimationTime().value_or(AnimationTime(0)), val);
-				}
-			}
-			else if(isQtPropertyUI()) {
-				QVariant currentValue = editObject()->property(propertyName());
-				if(currentValue.canConvert<Vector3>()) {
-					Vector3 val = currentValue.value<Vector3>();
-					val[_component] = spinner()->floatValue();
-					currentValue.setValue(val);
-				}
-				else if(currentValue.canConvert<Point3>()) {
-					Point3 val = currentValue.value<Point3>();
-					val[_component] = spinner()->floatValue();
-					currentValue.setValue(val);
-				}
-				if(!editObject()->setProperty(propertyName(), currentValue)) {
-					OVITO_ASSERT_MSG(false, "Vector3ParameterUI::updatePropertyValue()", qPrintable(QString("The value of property %1 of object class %2 could not be set.").arg(QString(propertyName()), editObject()->metaObject()->className())));
-				}
-			}
-			else if(isPropertyFieldUI()) {
-				QVariant currentValue = editObject()->getPropertyFieldValue(propertyField());
-				if(currentValue.canConvert<Vector3>()) {
-					Vector3 val = currentValue.value<Vector3>();
-					val[_component] = spinner()->floatValue();
-					currentValue.setValue(val);
-				}
-				else if(currentValue.canConvert<Point3>()) {
-					Point3 val = currentValue.value<Point3>();
-					val[_component] = spinner()->floatValue();
-					currentValue.setValue(val);
-				}
-				editor()->changePropertyFieldValue(propertyField(), currentValue);
-			}
+    if(editObject() && spinner()) {
+        handleExceptions([&] {
+            if(isReferenceFieldUI()) {
+                if(Controller* ctrl = dynamic_object_cast<Controller>(parameterObject())) {
+                    Vector3 val = ctrl->getVector3Value(currentAnimationTime().value_or(AnimationTime(0)));
+                    val[_component] = spinner()->floatValue();
+                    ctrl->setVector3Value(currentAnimationTime().value_or(AnimationTime(0)), val);
+                }
+            }
+            else if(isQtPropertyUI()) {
+                QVariant currentValue = editObject()->property(propertyName());
+                if(currentValue.canConvert<Vector3>()) {
+                    Vector3 val = currentValue.value<Vector3>();
+                    val[_component] = spinner()->floatValue();
+                    currentValue.setValue(val);
+                }
+                else if(currentValue.canConvert<Point3>()) {
+                    Point3 val = currentValue.value<Point3>();
+                    val[_component] = spinner()->floatValue();
+                    currentValue.setValue(val);
+                }
+                if(!editObject()->setProperty(propertyName(), currentValue)) {
+                    OVITO_ASSERT_MSG(false, "Vector3ParameterUI::updatePropertyValue()", qPrintable(QString("The value of property %1 of object class %2 could not be set.").arg(QString(propertyName()), editObject()->metaObject()->className())));
+                }
+            }
+            else if(isPropertyFieldUI()) {
+                QVariant currentValue = editObject()->getPropertyFieldValue(propertyField());
+                if(currentValue.canConvert<Vector3>()) {
+                    Vector3 val = currentValue.value<Vector3>();
+                    val[_component] = spinner()->floatValue();
+                    currentValue.setValue(val);
+                }
+                else if(currentValue.canConvert<Point3>()) {
+                    Point3 val = currentValue.value<Point3>();
+                    val[_component] = spinner()->floatValue();
+                    currentValue.setValue(val);
+                }
+                editor()->changePropertyFieldValue(propertyField(), currentValue);
+            }
 
-			Q_EMIT valueEntered();
-		});
-	}
+            Q_EMIT valueEntered();
+        });
+    }
 }
 
 /******************************************************************************
@@ -109,33 +109,33 @@ void Vector3ParameterUI::updatePropertyValue()
 ******************************************************************************/
 void Vector3ParameterUI::updateUI()
 {
-	if(editObject() && spinner() && !spinner()->isDragging()) {
-		if(isReferenceFieldUI()) {
-			if(Controller* ctrl = dynamic_object_cast<Controller>(parameterObject())) {
-				spinner()->setFloatValue(ctrl->getVector3Value(currentAnimationTime().value_or(AnimationTime(0)))[_component]);
-			}
-		}
-		else {
-			QVariant val;
-			if(isQtPropertyUI()) {
-				val = editObject()->property(propertyName());
-				OVITO_ASSERT_MSG(val.isValid() && (val.canConvert<Vector3>() || val.canConvert<Point3>()), "Vector3ParameterUI::updateUI()", qPrintable(QString("The object class %1 does not define a property with the name %2 that can be cast to Vector3/Point3 type.").arg(editObject()->metaObject()->className(), QString(propertyName()))));
-				if(!val.isValid() || !(val.canConvert<Vector3>() || val.canConvert<Point3>())) {
-					throw Exception(tr("The object class %1 does not define a property with the name %2 that can be cast to Vector3/Point3 type.").arg(editObject()->metaObject()->className(), QString(propertyName())));
-				}
-			}
-			else if(isPropertyFieldUI()) {
-				val = editObject()->getPropertyFieldValue(propertyField());
-				OVITO_ASSERT(val.isValid() && (val.canConvert<Vector3>() || val.canConvert<Point3>()));
-			}
-			else return;
+    if(editObject() && spinner() && !spinner()->isDragging()) {
+        if(isReferenceFieldUI()) {
+            if(Controller* ctrl = dynamic_object_cast<Controller>(parameterObject())) {
+                spinner()->setFloatValue(ctrl->getVector3Value(currentAnimationTime().value_or(AnimationTime(0)))[_component]);
+            }
+        }
+        else {
+            QVariant val;
+            if(isQtPropertyUI()) {
+                val = editObject()->property(propertyName());
+                OVITO_ASSERT_MSG(val.isValid() && (val.canConvert<Vector3>() || val.canConvert<Point3>()), "Vector3ParameterUI::updateUI()", qPrintable(QString("The object class %1 does not define a property with the name %2 that can be cast to Vector3/Point3 type.").arg(editObject()->metaObject()->className(), QString(propertyName()))));
+                if(!val.isValid() || !(val.canConvert<Vector3>() || val.canConvert<Point3>())) {
+                    throw Exception(tr("The object class %1 does not define a property with the name %2 that can be cast to Vector3/Point3 type.").arg(editObject()->metaObject()->className(), QString(propertyName())));
+                }
+            }
+            else if(isPropertyFieldUI()) {
+                val = editObject()->getPropertyFieldValue(propertyField());
+                OVITO_ASSERT(val.isValid() && (val.canConvert<Vector3>() || val.canConvert<Point3>()));
+            }
+            else return;
 
-			if(val.canConvert<Vector3>())
-				spinner()->setFloatValue(val.value<Vector3>()[_component]);
-			else if(val.canConvert<Point3>())
-				spinner()->setFloatValue(val.value<Point3>()[_component]);
-		}
-	}
+            if(val.canConvert<Vector3>())
+                spinner()->setFloatValue(val.value<Vector3>()[_component]);
+            else if(val.canConvert<Point3>())
+                spinner()->setFloatValue(val.value<Point3>()[_component]);
+        }
+    }
 }
 
-}	// End of namespace
+}   // End of namespace

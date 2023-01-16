@@ -37,110 +37,110 @@ SET_PROPERTY_FIELD_LABEL(POSCARExporter, writeReducedCoordinates, "Output reduce
 ******************************************************************************/
 bool POSCARExporter::exportData(const PipelineFlowState& state, int frameNumber, const QString& filePath, MainThreadOperation& operation)
 {
-	// Get particle positions and velocities.
-	const ParticlesObject* particles = state.expectObject<ParticlesObject>();
-	particles->verifyIntegrity();
-	ConstPropertyAccess<Point3> posProperty = particles->expectProperty(ParticlesObject::PositionProperty);
-	ConstPropertyAccess<Vector3> velocityProperty = particles->getProperty(ParticlesObject::VelocityProperty);
-	size_t particleCount = particles->elementCount();
+    // Get particle positions and velocities.
+    const ParticlesObject* particles = state.expectObject<ParticlesObject>();
+    particles->verifyIntegrity();
+    ConstPropertyAccess<Point3> posProperty = particles->expectProperty(ParticlesObject::PositionProperty);
+    ConstPropertyAccess<Vector3> velocityProperty = particles->getProperty(ParticlesObject::VelocityProperty);
+    size_t particleCount = particles->elementCount();
 
-	// Get simulation cell info.
-	const SimulationCellObject* simulationCell = state.getObject<SimulationCellObject>();
-	if(!simulationCell)
-		throw Exception(tr("No simulation cell available. Cannot write POSCAR file."));
+    // Get simulation cell info.
+    const SimulationCellObject* simulationCell = state.getObject<SimulationCellObject>();
+    if(!simulationCell)
+        throw Exception(tr("No simulation cell available. Cannot write POSCAR file."));
 
-	// Write POSCAR header including the simulation cell geometry.
-	textStream() << "POSCAR file written by " << Application::applicationName() << " " << Application::applicationVersionString() << "\n";
-	textStream() << "1\n";
-	for(size_t i = 0; i < 3; i++)
-		textStream() << simulationCell->matrix()(0, i) << ' ' << simulationCell->matrix()(1, i) << ' ' << simulationCell->matrix()(2, i) << '\n';
-	const Vector3& origin = simulationCell->matrix().translation();
+    // Write POSCAR header including the simulation cell geometry.
+    textStream() << "POSCAR file written by " << Application::applicationName() << " " << Application::applicationVersionString() << "\n";
+    textStream() << "1\n";
+    for(size_t i = 0; i < 3; i++)
+        textStream() << simulationCell->matrix()(0, i) << ' ' << simulationCell->matrix()(1, i) << ' ' << simulationCell->matrix()(2, i) << '\n';
+    const Vector3& origin = simulationCell->matrix().translation();
 
-	// Count number of particles per particle type.
-	QMap<int,int> particleCounts;
-	const PropertyObject* particleTypeProperty = particles->getProperty(ParticlesObject::TypeProperty);
-	ConstPropertyAccess<int> particleTypeArray(particleTypeProperty);
-	if(particleTypeProperty) {
-		for(int ptype : particleTypeArray)
-			particleCounts[ptype]++;
+    // Count number of particles per particle type.
+    QMap<int,int> particleCounts;
+    const PropertyObject* particleTypeProperty = particles->getProperty(ParticlesObject::TypeProperty);
+    ConstPropertyAccess<int> particleTypeArray(particleTypeProperty);
+    if(particleTypeProperty) {
+        for(int ptype : particleTypeArray)
+            particleCounts[ptype]++;
 
-		// Write line with particle type names.
-		for(auto c = particleCounts.begin(); c != particleCounts.end(); ++c) {
-			const ElementType* particleType = particleTypeProperty->elementType(c.key());
-			if(particleType) {
-				QString typeName = particleType->nameOrNumericId();
-				typeName.replace(' ', '_');
-				textStream() << typeName << ' ';
-			}
-			else textStream() << "Type" << c.key() << ' ';
-		}
-		textStream() << '\n';
+        // Write line with particle type names.
+        for(auto c = particleCounts.begin(); c != particleCounts.end(); ++c) {
+            const ElementType* particleType = particleTypeProperty->elementType(c.key());
+            if(particleType) {
+                QString typeName = particleType->nameOrNumericId();
+                typeName.replace(' ', '_');
+                textStream() << typeName << ' ';
+            }
+            else textStream() << "Type" << c.key() << ' ';
+        }
+        textStream() << '\n';
 
-		// Write line with particle counts per type.
-		for(auto c = particleCounts.begin(); c != particleCounts.end(); ++c) {
-			textStream() << c.value() << ' ';
-		}
-		textStream() << '\n';
-	}
-	else {
-		// Write line with particle type name.
-		textStream() << "A\n";
-		// Write line with particle count.
-		textStream() << particleCount << '\n';
-		particleCounts[0] = particleCount;
-	}
+        // Write line with particle counts per type.
+        for(auto c = particleCounts.begin(); c != particleCounts.end(); ++c) {
+            textStream() << c.value() << ' ';
+        }
+        textStream() << '\n';
+    }
+    else {
+        // Write line with particle type name.
+        textStream() << "A\n";
+        // Write line with particle count.
+        textStream() << particleCount << '\n';
+        particleCounts[0] = particleCount;
+    }
 
-	qlonglong totalProgressCount = particleCount;
-	if(velocityProperty) totalProgressCount += particleCount;
-	qlonglong currentProgress = 0;
-	operation.setProgressMaximum(totalProgressCount);
+    qlonglong totalProgressCount = particleCount;
+    if(velocityProperty) totalProgressCount += particleCount;
+    qlonglong currentProgress = 0;
+    operation.setProgressMaximum(totalProgressCount);
 
-	// Write atomic positions.
-	textStream() << (writeReducedCoordinates() ? "Direct\n" : "Cartesian\n");
-	for(auto c = particleCounts.begin(); c != particleCounts.end(); ++c) {
-		int ptype = c.key();
-		const Point3* p = posProperty.cbegin();
-		for(size_t i = 0; i < particleCount; i++, ++p) {
-			if(particleTypeArray && particleTypeArray[i] != ptype)
-				continue;
-			if(writeReducedCoordinates()) {
-				Point3 rp = simulationCell->absoluteToReduced(*p);
-				textStream() << rp.x() << ' ' << rp.y() << ' ' << rp.z() << '\n';
-			}
-			else {
-				textStream() << (p->x() - origin.x()) << ' ' << (p->y() - origin.y()) << ' ' << (p->z() - origin.z()) << '\n';
-			}
+    // Write atomic positions.
+    textStream() << (writeReducedCoordinates() ? "Direct\n" : "Cartesian\n");
+    for(auto c = particleCounts.begin(); c != particleCounts.end(); ++c) {
+        int ptype = c.key();
+        const Point3* p = posProperty.cbegin();
+        for(size_t i = 0; i < particleCount; i++, ++p) {
+            if(particleTypeArray && particleTypeArray[i] != ptype)
+                continue;
+            if(writeReducedCoordinates()) {
+                Point3 rp = simulationCell->absoluteToReduced(*p);
+                textStream() << rp.x() << ' ' << rp.y() << ' ' << rp.z() << '\n';
+            }
+            else {
+                textStream() << (p->x() - origin.x()) << ' ' << (p->y() - origin.y()) << ' ' << (p->z() - origin.z()) << '\n';
+            }
 
-			if(!operation.setProgressValueIntermittent(currentProgress++))
-				return false;
-		}
-	}
+            if(!operation.setProgressValueIntermittent(currentProgress++))
+                return false;
+        }
+    }
 
-	// Write atomic velocities.
-	if(velocityProperty) {
-		textStream() << (writeReducedCoordinates() ? "Direct\n" : "Cartesian\n");
-		for(auto c = particleCounts.begin(); c != particleCounts.end(); ++c) {
-			int ptype = c.key();
-			const Vector3* v = velocityProperty.cbegin();
-			for(size_t i = 0; i < particleCount; i++, ++v) {
-				if(particleTypeArray && particleTypeArray[i] != ptype)
-					continue;
+    // Write atomic velocities.
+    if(velocityProperty) {
+        textStream() << (writeReducedCoordinates() ? "Direct\n" : "Cartesian\n");
+        for(auto c = particleCounts.begin(); c != particleCounts.end(); ++c) {
+            int ptype = c.key();
+            const Vector3* v = velocityProperty.cbegin();
+            for(size_t i = 0; i < particleCount; i++, ++v) {
+                if(particleTypeArray && particleTypeArray[i] != ptype)
+                    continue;
 
-				if(writeReducedCoordinates()) {
-					Vector3 rv = simulationCell->absoluteToReduced(*v);
-					textStream() << rv.x() << ' ' << rv.y() << ' ' << rv.z() << '\n';
-				}
-				else {
-					textStream() << v->x() << ' ' << v->y() << ' ' << v->z() << '\n';
-				}
+                if(writeReducedCoordinates()) {
+                    Vector3 rv = simulationCell->absoluteToReduced(*v);
+                    textStream() << rv.x() << ' ' << rv.y() << ' ' << rv.z() << '\n';
+                }
+                else {
+                    textStream() << v->x() << ' ' << v->y() << ' ' << v->z() << '\n';
+                }
 
-				if(!operation.setProgressValueIntermittent(currentProgress++))
-					return false;
-			}
-		}
-	}
+                if(!operation.setProgressValueIntermittent(currentProgress++))
+                    return false;
+            }
+        }
+    }
 
-	return !operation.isCanceled();
+    return !operation.isCanceled();
 }
 
-}	// End of namespace
+}   // End of namespace

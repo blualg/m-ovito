@@ -37,60 +37,60 @@ namespace Ovito {
  */
 class OVITO_GUI_EXPORT GuiApplication : public StandaloneApplication, private UserInterface
 {
-	Q_OBJECT
+    Q_OBJECT
 
 public:
 
-	/// Returns the one and only instance of this class.
-	static GuiApplication* instance() { return static_cast<GuiApplication*>(Application::instance()); }
+    /// Returns the one and only instance of this class.
+    static GuiApplication* instance() { return static_cast<GuiApplication*>(Application::instance()); }
 
-	/// Constructor.
-	GuiApplication();
+    /// Constructor.
+    GuiApplication();
 
-	/// Create the global instance of the right QCoreApplication derived class.
-	virtual void createQtApplication(int& argc, char** argv) override;
+    /// Create the global instance of the right QCoreApplication derived class.
+    virtual void createQtApplication(int& argc, char** argv) override;
 
-	/// Handler function for exceptions.
-	virtual void reportError(const Exception& exception) override;
-	
-	/// Returns whether the application currently uses a dark UI theme.
-	bool usingDarkTheme() const;
+    /// Handler function for exceptions.
+    virtual void reportError(const Exception& exception) override;
+    
+    /// Returns whether the application currently uses a dark UI theme.
+    bool usingDarkTheme() const;
 
 protected:
 
-	/// Defines the program's command line parameters.
-	virtual void registerCommandLineParameters(QCommandLineParser& parser) override;
+    /// Defines the program's command line parameters.
+    virtual void registerCommandLineParameters(QCommandLineParser& parser) override;
 
-	/// Interprets the command line parameters provided to the application.
-	virtual bool processCommandLineParameters() override;
+    /// Interprets the command line parameters provided to the application.
+    virtual bool processCommandLineParameters() override;
 
-	/// Prepares application to start running.
-	virtual MainThreadOperation startupApplication() override;
+    /// Prepares application to start running.
+    virtual MainThreadOperation startupApplication() override;
 
-	/// Is called at program startup once the event loop is running.
-	virtual void postStartupInitialization() override;
+    /// Is called at program startup once the event loop is running.
+    virtual void postStartupInitialization() override;
 
-	/// Handles events sent to the Qt application object.
-	virtual bool eventFilter(QObject* watched, QEvent* event) override;
+    /// Handles events sent to the Qt application object.
+    virtual bool eventFilter(QObject* watched, QEvent* event) override;
 
 private:
 
-	/// Initializes the graphical user interface of the application.
-	void initializeGUI();
+    /// Initializes the graphical user interface of the application.
+    void initializeGUI();
 
-	/// Queries the system to determine whether the desktop currently uses a dark desktop theme.
-	bool detectDarkTheme() const;
+    /// Queries the system to determine whether the desktop currently uses a dark desktop theme.
+    bool detectDarkTheme() const;
 
-	/// The global file manager.
-	GuiFileManager _fileManager;
+    /// The global file manager.
+    GuiFileManager _fileManager;
 
-	/// The global dataset container (only used in command line mode).
-	DataSetContainer _globalDatasetContainer;
-	
+    /// The global dataset container (only used in command line mode).
+    DataSetContainer _globalDatasetContainer;
+    
 #ifdef Q_OS_LINUX
-	/// For cahing the results of detectDarkTheme().
-	mutable std::optional<bool> _usingDarkTheme;
+    /// For cahing the results of detectDarkTheme().
+    mutable std::optional<bool> _usingDarkTheme;
 #endif
 };
 
-}	// End of namespace
+}   // End of namespace

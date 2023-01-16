@@ -31,25 +31,25 @@ namespace Ovito {
 ******************************************************************************/
 bool MeshPrimitive::isFullyOpaque() const
 { 
-	if(_isMeshFullyOpaque.has_value() == false) {
-		if(!_mesh)
-			_isMeshFullyOpaque = true;
-		else if(_perInstanceColors)
-			_isMeshFullyOpaque = boost::algorithm::none_of(ConstDataBufferAccess<ColorA>(_perInstanceColors), [](const ColorA& c) { return c.a() != FloatType(1); });		
-		else if(mesh()->hasVertexColors())
-			_isMeshFullyOpaque = (uniformColor().a() >= FloatType(1)) && boost::algorithm::none_of(mesh()->vertexColors(), [](const ColorA& c) { return c.a() != FloatType(1); });
-		else if(mesh()->hasVertexPseudoColors())
-			_isMeshFullyOpaque = (uniformColor().a() >= FloatType(1));
-		else if(mesh()->hasFaceColors())
-			_isMeshFullyOpaque = (uniformColor().a() >= FloatType(1)) && boost::algorithm::none_of(mesh()->faceColors(), [](const ColorA& c) { return c.a() != FloatType(1); });
-		else if(mesh()->hasFacePseudoColors())
-			_isMeshFullyOpaque = (uniformColor().a() >= FloatType(1));
-		else if(!materialColors().empty())
-			_isMeshFullyOpaque = boost::algorithm::none_of(materialColors(), [](const ColorA& c) { return c.a() != FloatType(1); });
-		else
-			_isMeshFullyOpaque = (uniformColor().a() >= FloatType(1));
-	}
-	return *_isMeshFullyOpaque; 
+    if(_isMeshFullyOpaque.has_value() == false) {
+        if(!_mesh)
+            _isMeshFullyOpaque = true;
+        else if(_perInstanceColors)
+            _isMeshFullyOpaque = boost::algorithm::none_of(ConstDataBufferAccess<ColorA>(_perInstanceColors), [](const ColorA& c) { return c.a() != FloatType(1); });       
+        else if(mesh()->hasVertexColors())
+            _isMeshFullyOpaque = (uniformColor().a() >= FloatType(1)) && boost::algorithm::none_of(mesh()->vertexColors(), [](const ColorA& c) { return c.a() != FloatType(1); });
+        else if(mesh()->hasVertexPseudoColors())
+            _isMeshFullyOpaque = (uniformColor().a() >= FloatType(1));
+        else if(mesh()->hasFaceColors())
+            _isMeshFullyOpaque = (uniformColor().a() >= FloatType(1)) && boost::algorithm::none_of(mesh()->faceColors(), [](const ColorA& c) { return c.a() != FloatType(1); });
+        else if(mesh()->hasFacePseudoColors())
+            _isMeshFullyOpaque = (uniformColor().a() >= FloatType(1));
+        else if(!materialColors().empty())
+            _isMeshFullyOpaque = boost::algorithm::none_of(materialColors(), [](const ColorA& c) { return c.a() != FloatType(1); });
+        else
+            _isMeshFullyOpaque = (uniformColor().a() >= FloatType(1));
+    }
+    return *_isMeshFullyOpaque; 
 }
 
 /******************************************************************************
@@ -57,172 +57,172 @@ bool MeshPrimitive::isFullyOpaque() const
 ******************************************************************************/
 void MeshPrimitive::generateRenderableVertices(RenderVertex* renderableVertices, bool highlightSelectedFaces, bool enablePseudoColorMapping) const
 {
-	if(!mesh())
-		return;
+    if(!mesh())
+        return;
 
-	const QVector<Point3>& vertices = mesh()->vertices();
-	const ColorA* vertexColors = mesh()->hasVertexColors() ? mesh()->vertexColors().constData() : nullptr;
-	const ColorA* faceColors = mesh()->hasFaceColors() ? mesh()->faceColors().constData() : nullptr;
-	const FloatType* vertexPseudoColors = (enablePseudoColorMapping && mesh()->hasVertexPseudoColors()) ? mesh()->vertexPseudoColors().constData() : nullptr;
-	const FloatType* facePseudoColors = (enablePseudoColorMapping && mesh()->hasFacePseudoColors()) ? mesh()->facePseudoColors().constData() : nullptr;
-	ColorAT<float> defaultVertexColor = uniformColor().toDataType<float>();
+    const QVector<Point3>& vertices = mesh()->vertices();
+    const ColorA* vertexColors = mesh()->hasVertexColors() ? mesh()->vertexColors().constData() : nullptr;
+    const ColorA* faceColors = mesh()->hasFaceColors() ? mesh()->faceColors().constData() : nullptr;
+    const FloatType* vertexPseudoColors = (enablePseudoColorMapping && mesh()->hasVertexPseudoColors()) ? mesh()->vertexPseudoColors().constData() : nullptr;
+    const FloatType* facePseudoColors = (enablePseudoColorMapping && mesh()->hasFacePseudoColors()) ? mesh()->facePseudoColors().constData() : nullptr;
+    ColorAT<float> defaultVertexColor = uniformColor().toDataType<float>();
 
-	auto rv = renderableVertices;
+    auto rv = renderableVertices;
 
-	if(!mesh()->hasNormals()) {
-		quint32 allMask = 0;
+    if(!mesh()->hasNormals()) {
+        quint32 allMask = 0;
 
-		// Compute face normals.
-		std::vector<Vector_3<float>> faceNormals(faceCount());
-		auto faceNormal = faceNormals.begin();
-		for(const auto& face : mesh()->faces()) {
-			const Point3& p0 = vertices[face.vertex(0)];
-			Vector3 d1 = vertices[face.vertex(1)] - p0;
-			Vector3 d2 = vertices[face.vertex(2)] - p0;
-			*faceNormal = d1.cross(d2).toDataType<float>();
-			if(*faceNormal != Vector_3<float>::Zero()) {
-				allMask |= face.smoothingGroups();
-			}
-			++faceNormal;
-		}
+        // Compute face normals.
+        std::vector<Vector_3<float>> faceNormals(faceCount());
+        auto faceNormal = faceNormals.begin();
+        for(const auto& face : mesh()->faces()) {
+            const Point3& p0 = vertices[face.vertex(0)];
+            Vector3 d1 = vertices[face.vertex(1)] - p0;
+            Vector3 d2 = vertices[face.vertex(2)] - p0;
+            *faceNormal = d1.cross(d2).toDataType<float>();
+            if(*faceNormal != Vector_3<float>::Zero()) {
+                allMask |= face.smoothingGroups();
+            }
+            ++faceNormal;
+        }
 
-		// Initialize render vertices.
-		faceNormal = faceNormals.begin();
-		for(const auto& face : mesh()->faces()) {
-			// Initialize render vertices for this face.
-			for(size_t v = 0; v < 3; v++, rv++) {
-				if(face.smoothingGroups())
-					rv->normal = Vector_3<float>::Zero();
-				else
-					rv->normal = *faceNormal;
-				rv->position = vertices[face.vertex(v)].toDataType<float>();
-				if(vertexColors) {
-					rv->color = vertexColors[face.vertex(v)].toDataType<float>();
-					if(defaultVertexColor.a() != 1) rv->color.a() = defaultVertexColor.a();
-				}
-				else if(vertexPseudoColors) {
-					rv->color.r() = vertexPseudoColors[face.vertex(v)];
-					rv->color.g() = 0;
-					rv->color.b() = 0;
-					rv->color.a() = defaultVertexColor.a();
-				}
-				else if(faceColors) {
-					rv->color = faceColors->toDataType<float>();
-					if(defaultVertexColor.a() != 1) rv->color.a() = defaultVertexColor.a();
-				}
-				else if(facePseudoColors) {
-					rv->color.r() = *facePseudoColors;
-					rv->color.g() = 0;
-					rv->color.b() = 0;
-					rv->color.a() = defaultVertexColor.a();
-				}
-				else if(face.materialIndex() < materialColors().size() && face.materialIndex() >= 0) {
-					rv->color = materialColors()[face.materialIndex()].toDataType<float>();
-				}
-				else {
-					rv->color = defaultVertexColor;
-				}
+        // Initialize render vertices.
+        faceNormal = faceNormals.begin();
+        for(const auto& face : mesh()->faces()) {
+            // Initialize render vertices for this face.
+            for(size_t v = 0; v < 3; v++, rv++) {
+                if(face.smoothingGroups())
+                    rv->normal = Vector_3<float>::Zero();
+                else
+                    rv->normal = *faceNormal;
+                rv->position = vertices[face.vertex(v)].toDataType<float>();
+                if(vertexColors) {
+                    rv->color = vertexColors[face.vertex(v)].toDataType<float>();
+                    if(defaultVertexColor.a() != 1) rv->color.a() = defaultVertexColor.a();
+                }
+                else if(vertexPseudoColors) {
+                    rv->color.r() = vertexPseudoColors[face.vertex(v)];
+                    rv->color.g() = 0;
+                    rv->color.b() = 0;
+                    rv->color.a() = defaultVertexColor.a();
+                }
+                else if(faceColors) {
+                    rv->color = faceColors->toDataType<float>();
+                    if(defaultVertexColor.a() != 1) rv->color.a() = defaultVertexColor.a();
+                }
+                else if(facePseudoColors) {
+                    rv->color.r() = *facePseudoColors;
+                    rv->color.g() = 0;
+                    rv->color.b() = 0;
+                    rv->color.a() = defaultVertexColor.a();
+                }
+                else if(face.materialIndex() < materialColors().size() && face.materialIndex() >= 0) {
+                    rv->color = materialColors()[face.materialIndex()].toDataType<float>();
+                }
+                else {
+                    rv->color = defaultVertexColor;
+                }
 
-				// Override color of faces that are selected.
-				if(highlightSelectedFaces && face.isSelected()) {
-					if(!enablePseudoColorMapping)
-						rv->color = ColorAT<float>(faceSelectionColor());
-					else
-						rv->color.g() = 1.0f; // Non-zero green-component marks selected faces in pseudo-color mode.
-				}
-			}
-			++faceNormal;
-			if(faceColors) 
-				++faceColors;
-			if(facePseudoColors)
-				++facePseudoColors;
-		}
-		OVITO_ASSERT(rv == renderableVertices + 3*faceCount());
+                // Override color of faces that are selected.
+                if(highlightSelectedFaces && face.isSelected()) {
+                    if(!enablePseudoColorMapping)
+                        rv->color = ColorAT<float>(faceSelectionColor());
+                    else
+                        rv->color.g() = 1.0f; // Non-zero green-component marks selected faces in pseudo-color mode.
+                }
+            }
+            ++faceNormal;
+            if(faceColors) 
+                ++faceColors;
+            if(facePseudoColors)
+                ++facePseudoColors;
+        }
+        OVITO_ASSERT(rv == renderableVertices + 3*faceCount());
 
-		if(allMask) {
-			std::vector<Vector_3<float>> groupVertexNormals(vertexCount());
-			for(int group = 0; group < OVITO_MAX_NUM_SMOOTHING_GROUPS; group++) {
-				quint32 groupMask = quint32(1) << group;
-				if((allMask & groupMask) == 0)
-					continue;	// Group is not used.
+        if(allMask) {
+            std::vector<Vector_3<float>> groupVertexNormals(vertexCount());
+            for(int group = 0; group < OVITO_MAX_NUM_SMOOTHING_GROUPS; group++) {
+                quint32 groupMask = quint32(1) << group;
+                if((allMask & groupMask) == 0)
+                    continue;   // Group is not used.
 
-				// Reset work arrays.
-				std::fill(groupVertexNormals.begin(), groupVertexNormals.end(), Vector_3<float>::Zero());
+                // Reset work arrays.
+                std::fill(groupVertexNormals.begin(), groupVertexNormals.end(), Vector_3<float>::Zero());
 
-				// Compute vertex normals at original vertices for current smoothing group.
-				faceNormal = faceNormals.begin();
-				for(const auto& face : mesh()->faces()) {
-					// Skip faces that do not belong to the current smoothing group.
-					if(face.smoothingGroups() & groupMask) {
-						// Add face's normal to vertex normals.
-						for(size_t fv = 0; fv < 3; fv++)
-							groupVertexNormals[face.vertex(fv)] += *faceNormal;
-					}
-					++faceNormal;
-				}
+                // Compute vertex normals at original vertices for current smoothing group.
+                faceNormal = faceNormals.begin();
+                for(const auto& face : mesh()->faces()) {
+                    // Skip faces that do not belong to the current smoothing group.
+                    if(face.smoothingGroups() & groupMask) {
+                        // Add face's normal to vertex normals.
+                        for(size_t fv = 0; fv < 3; fv++)
+                            groupVertexNormals[face.vertex(fv)] += *faceNormal;
+                    }
+                    ++faceNormal;
+                }
 
-				// Transfer vertex normals from original vertices to render vertices.
-				rv = renderableVertices;
-				for(const auto& face : mesh()->faces()) {
-					if(face.smoothingGroups() & groupMask) {
-						for(size_t fv = 0; fv < 3; fv++, ++rv)
-							rv->normal += groupVertexNormals[face.vertex(fv)];
-					}
-					else rv += 3;
-				}
-			}
-		}
-	}
-	else {
-		// Use normals stored in the mesh.
-		const Vector3* faceNormal = mesh()->normals().constData();
-		for(const auto& face : mesh()->faces()) {
-			// Initialize render vertices for this face.
-			for(size_t v = 0; v < 3; v++, rv++) {
-				rv->normal = (*faceNormal++).toDataType<float>();
-				rv->position = vertices[face.vertex(v)].toDataType<float>();
-				if(vertexColors) {
-					rv->color = vertexColors[face.vertex(v)].toDataType<float>();
-					if(defaultVertexColor.a() != 1) rv->color.a() = defaultVertexColor.a();
-				}
-				else if(vertexPseudoColors) {
-					rv->color.r() = vertexPseudoColors[face.vertex(v)];
-					rv->color.g() = 0;
-					rv->color.b() = 0;
-					rv->color.a() = defaultVertexColor.a();
-				}
-				else if(faceColors) {
-					rv->color = faceColors->toDataType<float>();
-					if(defaultVertexColor.a() != 1) rv->color.a() = defaultVertexColor.a();
-				}
-				else if(facePseudoColors) {
-					rv->color.r() = *facePseudoColors;
-					rv->color.g() = 0;
-					rv->color.b() = 0;
-					rv->color.a() = defaultVertexColor.a();
-				}
-				else if(face.materialIndex() >= 0 && face.materialIndex() < materialColors().size()) {
-					rv->color = materialColors()[face.materialIndex()].toDataType<float>();
-				}
-				else {
-					rv->color = defaultVertexColor;
-				}
+                // Transfer vertex normals from original vertices to render vertices.
+                rv = renderableVertices;
+                for(const auto& face : mesh()->faces()) {
+                    if(face.smoothingGroups() & groupMask) {
+                        for(size_t fv = 0; fv < 3; fv++, ++rv)
+                            rv->normal += groupVertexNormals[face.vertex(fv)];
+                    }
+                    else rv += 3;
+                }
+            }
+        }
+    }
+    else {
+        // Use normals stored in the mesh.
+        const Vector3* faceNormal = mesh()->normals().constData();
+        for(const auto& face : mesh()->faces()) {
+            // Initialize render vertices for this face.
+            for(size_t v = 0; v < 3; v++, rv++) {
+                rv->normal = (*faceNormal++).toDataType<float>();
+                rv->position = vertices[face.vertex(v)].toDataType<float>();
+                if(vertexColors) {
+                    rv->color = vertexColors[face.vertex(v)].toDataType<float>();
+                    if(defaultVertexColor.a() != 1) rv->color.a() = defaultVertexColor.a();
+                }
+                else if(vertexPseudoColors) {
+                    rv->color.r() = vertexPseudoColors[face.vertex(v)];
+                    rv->color.g() = 0;
+                    rv->color.b() = 0;
+                    rv->color.a() = defaultVertexColor.a();
+                }
+                else if(faceColors) {
+                    rv->color = faceColors->toDataType<float>();
+                    if(defaultVertexColor.a() != 1) rv->color.a() = defaultVertexColor.a();
+                }
+                else if(facePseudoColors) {
+                    rv->color.r() = *facePseudoColors;
+                    rv->color.g() = 0;
+                    rv->color.b() = 0;
+                    rv->color.a() = defaultVertexColor.a();
+                }
+                else if(face.materialIndex() >= 0 && face.materialIndex() < materialColors().size()) {
+                    rv->color = materialColors()[face.materialIndex()].toDataType<float>();
+                }
+                else {
+                    rv->color = defaultVertexColor;
+                }
 
-				// Override color of faces that are selected.
-				if(highlightSelectedFaces && face.isSelected()) {
-					if(!enablePseudoColorMapping)
-						rv->color = ColorAT<float>(faceSelectionColor());
-					else
-						rv->color.g() = 1.0f; // Non-zero green-component marks selected faces in pseudo-color mode.
-				}
-			}
-			if(faceColors) 
-				++faceColors;
-			if(facePseudoColors)
-				++facePseudoColors;
-		}
-	}	
-	OVITO_ASSERT(rv == renderableVertices + 3*faceCount());
+                // Override color of faces that are selected.
+                if(highlightSelectedFaces && face.isSelected()) {
+                    if(!enablePseudoColorMapping)
+                        rv->color = ColorAT<float>(faceSelectionColor());
+                    else
+                        rv->color.g() = 1.0f; // Non-zero green-component marks selected faces in pseudo-color mode.
+                }
+            }
+            if(faceColors) 
+                ++faceColors;
+            if(facePseudoColors)
+                ++facePseudoColors;
+        }
+    }   
+    OVITO_ASSERT(rv == renderableVertices + 3*faceCount());
 }
 
 /******************************************************************************
@@ -230,32 +230,32 @@ void MeshPrimitive::generateRenderableVertices(RenderVertex* renderableVertices,
 ******************************************************************************/
 ConstDataBufferPtr MeshPrimitive::generateWireframeLines() const
 {
-	OVITO_ASSERT(mesh());
+    OVITO_ASSERT(mesh());
 
-	// Count how many polygon edge are in the mesh.
-	size_t numVisibleEdges = 0;
-	for(const TriMeshFace& face : mesh()->faces()) {
-		for(size_t e = 0; e < 3; e++)
-			if(face.edgeVisible(e)) numVisibleEdges++;
-	}
+    // Count how many polygon edge are in the mesh.
+    size_t numVisibleEdges = 0;
+    for(const TriMeshFace& face : mesh()->faces()) {
+        for(size_t e = 0; e < 3; e++)
+            if(face.edgeVisible(e)) numVisibleEdges++;
+    }
 
-	// Allocate storage buffer for line elements.
-	DataBufferAccessAndRef<Point3> lines = DataBufferPtr::create(numVisibleEdges * 2, DataBuffer::Float, 3);
+    // Allocate storage buffer for line elements.
+    DataBufferAccessAndRef<Point3> lines = DataBufferPtr::create(numVisibleEdges * 2, DataBuffer::Float, 3);
 
-	// Generate line elements.
-	const QVector<Point3>& vertices = mesh()->vertices();
-	Point3* outVert = lines.begin();
-	for(const TriMeshFace& face : mesh()->faces()) {
-		for(size_t e = 0; e < 3; e++) {
-			if(face.edgeVisible(e)) {
-				*outVert++ = vertices[face.vertex(e)];
-				*outVert++ = vertices[face.vertex((e+1)%3)];
-			}
-		}
-	}
-	OVITO_ASSERT(outVert == lines.end());
+    // Generate line elements.
+    const QVector<Point3>& vertices = mesh()->vertices();
+    Point3* outVert = lines.begin();
+    for(const TriMeshFace& face : mesh()->faces()) {
+        for(size_t e = 0; e < 3; e++) {
+            if(face.edgeVisible(e)) {
+                *outVert++ = vertices[face.vertex(e)];
+                *outVert++ = vertices[face.vertex((e+1)%3)];
+            }
+        }
+    }
+    OVITO_ASSERT(outVert == lines.end());
 
-	return lines.take();	
+    return lines.take();    
 }
 
-}	// End of namespace
+}   // End of namespace

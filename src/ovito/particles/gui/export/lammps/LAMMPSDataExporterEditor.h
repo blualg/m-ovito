@@ -33,29 +33,29 @@ namespace Ovito::Particles {
  */
 class LAMMPSDataExporterEditor : public PropertiesEditor
 {
-	OVITO_CLASS(LAMMPSDataExporterEditor)
+    OVITO_CLASS(LAMMPSDataExporterEditor)
 
 public:
 
-	/// Constructor.
-	Q_INVOKABLE LAMMPSDataExporterEditor() {}
+    /// Constructor.
+    Q_INVOKABLE LAMMPSDataExporterEditor() {}
 
 protected:
 
-	/// Creates the user interface controls for the editor.
-	virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
+    /// Creates the user interface controls for the editor.
+    virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
 
 private Q_SLOTS:
 
-	/// Updates the displayed values in the UI elements.
-	void updateUI();
+    /// Updates the displayed values in the UI elements.
+    void updateUI();
 
-	/// Is called whenever the user selects a sub-style for atom style hybrid.
-	void hybridSubStyleSelected();
+    /// Is called whenever the user selects a sub-style for atom style hybrid.
+    void hybridSubStyleSelected();
 
 private:
 
-	std::array<QComboBox*,3> _subStyleLists;
+    std::array<QComboBox*,3> _subStyleLists;
 };
 
-}	// End of namespace
+}   // End of namespace

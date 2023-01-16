@@ -34,243 +34,243 @@ namespace Ovito {
 * Constructor.
 ******************************************************************************/
 AdjustViewDialog::AdjustViewDialog(MainWindow& mainWindow, Viewport* viewport, QWidget* parent) :
-	QDockWidget(tr("Adjust View"), parent),
-	_mainWindow(mainWindow)
+    QDockWidget(tr("Adjust View"), parent),
+    _mainWindow(mainWindow)
 {
-	setFeatures(QDockWidget::DockWidgetFloatable | QDockWidget::DockWidgetClosable);
-	setAllowedAreas(Qt::NoDockWidgetArea);
-	setFloating(true);
-	setAttribute(Qt::WA_DeleteOnClose);
-	QWidget* widget = new QWidget();
-	setWidget(widget);
+    setFeatures(QDockWidget::DockWidgetFloatable | QDockWidget::DockWidgetClosable);
+    setAllowedAreas(Qt::NoDockWidgetArea);
+    setFloating(true);
+    setAttribute(Qt::WA_DeleteOnClose);
+    QWidget* widget = new QWidget();
+    setWidget(widget);
 
-	OVITO_ASSERT(viewport->window());
+    OVITO_ASSERT(viewport->window());
 
-	_oldViewType = viewport->viewType();
-	_oldCameraTM = viewport->cameraTransformation();
-	_oldFOV = viewport->fieldOfView();
+    _oldViewType = viewport->viewType();
+    _oldCameraTM = viewport->cameraTransformation();
+    _oldFOV = viewport->fieldOfView();
 
-	_viewportListener.setTarget(viewport);
+    _viewportListener.setTarget(viewport);
 
-	connect(&_viewportListener, &RefTargetListenerBase::notificationEvent, this, [this](RefTarget* source, const ReferenceEvent& event) {
-		// Update the values displayed in the dialog when the viewport camera is moved by the user.
-		if(event.type() == ReferenceEvent::TargetChanged)
-			updateGUI();
-		// Close the dialog when the viewport is deleted.
-		else if(event.type() == ReferenceEvent::TargetDeleted)
-			close();
-	});
+    connect(&_viewportListener, &RefTargetListenerBase::notificationEvent, this, [this](RefTarget* source, const ReferenceEvent& event) {
+        // Update the values displayed in the dialog when the viewport camera is moved by the user.
+        if(event.type() == ReferenceEvent::TargetChanged)
+            updateGUI();
+        // Close the dialog when the viewport is deleted.
+        else if(event.type() == ReferenceEvent::TargetDeleted)
+            close();
+    });
 
-	QVBoxLayout* mainLayout = new QVBoxLayout(widget);
+    QVBoxLayout* mainLayout = new QVBoxLayout(widget);
 
-	QGroupBox* viewPosBox = new QGroupBox(tr("View position"));
-	mainLayout->addWidget(viewPosBox);
+    QGroupBox* viewPosBox = new QGroupBox(tr("View position"));
+    mainLayout->addWidget(viewPosBox);
 
-	QGridLayout* gridLayout = new QGridLayout(viewPosBox);
-	gridLayout->setColumnStretch(1,1);
-	gridLayout->setColumnStretch(2,1);
-	gridLayout->setColumnStretch(3,1);
-	gridLayout->addWidget(new QLabel(tr("XYZ:")), 0, 0);
+    QGridLayout* gridLayout = new QGridLayout(viewPosBox);
+    gridLayout->setColumnStretch(1,1);
+    gridLayout->setColumnStretch(2,1);
+    gridLayout->setColumnStretch(3,1);
+    gridLayout->addWidget(new QLabel(tr("XYZ:")), 0, 0);
 
-	QHBoxLayout* fieldLayout;
-	QLineEdit* textBox;
+    QHBoxLayout* fieldLayout;
+    QLineEdit* textBox;
 
-	_camPosXSpinner = new SpinnerWidget();
-	_camPosYSpinner = new SpinnerWidget();
-	_camPosZSpinner = new SpinnerWidget();
-	_camPosXSpinner->setUnit(mainWindow.unitsManager().worldUnit());
-	_camPosYSpinner->setUnit(mainWindow.unitsManager().worldUnit());
-	_camPosZSpinner->setUnit(mainWindow.unitsManager().worldUnit());
+    _camPosXSpinner = new SpinnerWidget();
+    _camPosYSpinner = new SpinnerWidget();
+    _camPosZSpinner = new SpinnerWidget();
+    _camPosXSpinner->setUnit(mainWindow.unitsManager().worldUnit());
+    _camPosYSpinner->setUnit(mainWindow.unitsManager().worldUnit());
+    _camPosZSpinner->setUnit(mainWindow.unitsManager().worldUnit());
 
-	fieldLayout = new QHBoxLayout();
-	fieldLayout->setContentsMargins(0,0,0,0);
-	fieldLayout->setSpacing(0);
-	textBox = new QLineEdit();
-	_camPosXSpinner->setTextBox(textBox);
-	fieldLayout->addWidget(textBox);
-	fieldLayout->addWidget(_camPosXSpinner);
-	gridLayout->addLayout(fieldLayout, 0, 1);
-	connect(_camPosXSpinner, &SpinnerWidget::spinnerValueChanged, this, &AdjustViewDialog::onAdjustCamera);
+    fieldLayout = new QHBoxLayout();
+    fieldLayout->setContentsMargins(0,0,0,0);
+    fieldLayout->setSpacing(0);
+    textBox = new QLineEdit();
+    _camPosXSpinner->setTextBox(textBox);
+    fieldLayout->addWidget(textBox);
+    fieldLayout->addWidget(_camPosXSpinner);
+    gridLayout->addLayout(fieldLayout, 0, 1);
+    connect(_camPosXSpinner, &SpinnerWidget::spinnerValueChanged, this, &AdjustViewDialog::onAdjustCamera);
 
-	fieldLayout = new QHBoxLayout();
-	fieldLayout->setContentsMargins(0,0,0,0);
-	fieldLayout->setSpacing(0);
-	textBox = new QLineEdit();
-	_camPosYSpinner->setTextBox(textBox);
-	fieldLayout->addWidget(textBox);
-	fieldLayout->addWidget(_camPosYSpinner);
-	gridLayout->addLayout(fieldLayout, 0, 2);
-	connect(_camPosYSpinner, &SpinnerWidget::spinnerValueChanged, this, &AdjustViewDialog::onAdjustCamera);
+    fieldLayout = new QHBoxLayout();
+    fieldLayout->setContentsMargins(0,0,0,0);
+    fieldLayout->setSpacing(0);
+    textBox = new QLineEdit();
+    _camPosYSpinner->setTextBox(textBox);
+    fieldLayout->addWidget(textBox);
+    fieldLayout->addWidget(_camPosYSpinner);
+    gridLayout->addLayout(fieldLayout, 0, 2);
+    connect(_camPosYSpinner, &SpinnerWidget::spinnerValueChanged, this, &AdjustViewDialog::onAdjustCamera);
 
-	fieldLayout = new QHBoxLayout();
-	fieldLayout->setContentsMargins(0,0,0,0);
-	fieldLayout->setSpacing(0);
-	textBox = new QLineEdit();
-	_camPosZSpinner->setTextBox(textBox);
-	fieldLayout->addWidget(textBox);
-	fieldLayout->addWidget(_camPosZSpinner);
-	gridLayout->addLayout(fieldLayout, 0, 3);
-	connect(_camPosZSpinner, &SpinnerWidget::spinnerValueChanged, this, &AdjustViewDialog::onAdjustCamera);
+    fieldLayout = new QHBoxLayout();
+    fieldLayout->setContentsMargins(0,0,0,0);
+    fieldLayout->setSpacing(0);
+    textBox = new QLineEdit();
+    _camPosZSpinner->setTextBox(textBox);
+    fieldLayout->addWidget(textBox);
+    fieldLayout->addWidget(_camPosZSpinner);
+    gridLayout->addLayout(fieldLayout, 0, 3);
+    connect(_camPosZSpinner, &SpinnerWidget::spinnerValueChanged, this, &AdjustViewDialog::onAdjustCamera);
 
-	QGroupBox* viewDirBox = new QGroupBox(tr("View direction"));
-	mainLayout->addWidget(viewDirBox);
+    QGroupBox* viewDirBox = new QGroupBox(tr("View direction"));
+    mainLayout->addWidget(viewDirBox);
 
-	gridLayout = new QGridLayout(viewDirBox);
-	gridLayout->setColumnStretch(1,1);
-	gridLayout->setColumnStretch(2,1);
-	gridLayout->setColumnStretch(3,1);
-	gridLayout->addWidget(new QLabel(tr("XYZ:")), 0, 0);
+    gridLayout = new QGridLayout(viewDirBox);
+    gridLayout->setColumnStretch(1,1);
+    gridLayout->setColumnStretch(2,1);
+    gridLayout->setColumnStretch(3,1);
+    gridLayout->addWidget(new QLabel(tr("XYZ:")), 0, 0);
 
-	_camDirXSpinner = new SpinnerWidget();
-	_camDirYSpinner = new SpinnerWidget();
-	_camDirZSpinner = new SpinnerWidget();
-	_camDirXSpinner->setUnit(mainWindow.unitsManager().worldUnit());
-	_camDirYSpinner->setUnit(mainWindow.unitsManager().worldUnit());
-	_camDirZSpinner->setUnit(mainWindow.unitsManager().worldUnit());
+    _camDirXSpinner = new SpinnerWidget();
+    _camDirYSpinner = new SpinnerWidget();
+    _camDirZSpinner = new SpinnerWidget();
+    _camDirXSpinner->setUnit(mainWindow.unitsManager().worldUnit());
+    _camDirYSpinner->setUnit(mainWindow.unitsManager().worldUnit());
+    _camDirZSpinner->setUnit(mainWindow.unitsManager().worldUnit());
 
-	fieldLayout = new QHBoxLayout();
-	fieldLayout->setContentsMargins(0,0,0,0);
-	fieldLayout->setSpacing(0);
-	textBox = new QLineEdit();
-	_camDirXSpinner->setTextBox(textBox);
-	fieldLayout->addWidget(textBox);
-	fieldLayout->addWidget(_camDirXSpinner);
-	gridLayout->addLayout(fieldLayout, 0, 1);
-	connect(_camDirXSpinner, &SpinnerWidget::spinnerValueChanged, this, &AdjustViewDialog::onAdjustCamera);
+    fieldLayout = new QHBoxLayout();
+    fieldLayout->setContentsMargins(0,0,0,0);
+    fieldLayout->setSpacing(0);
+    textBox = new QLineEdit();
+    _camDirXSpinner->setTextBox(textBox);
+    fieldLayout->addWidget(textBox);
+    fieldLayout->addWidget(_camDirXSpinner);
+    gridLayout->addLayout(fieldLayout, 0, 1);
+    connect(_camDirXSpinner, &SpinnerWidget::spinnerValueChanged, this, &AdjustViewDialog::onAdjustCamera);
 
-	fieldLayout = new QHBoxLayout();
-	fieldLayout->setContentsMargins(0,0,0,0);
-	fieldLayout->setSpacing(0);
-	textBox = new QLineEdit();
-	_camDirYSpinner->setTextBox(textBox);
-	fieldLayout->addWidget(textBox);
-	fieldLayout->addWidget(_camDirYSpinner);
-	gridLayout->addLayout(fieldLayout, 0, 2);
-	connect(_camDirYSpinner, &SpinnerWidget::spinnerValueChanged, this, &AdjustViewDialog::onAdjustCamera);
+    fieldLayout = new QHBoxLayout();
+    fieldLayout->setContentsMargins(0,0,0,0);
+    fieldLayout->setSpacing(0);
+    textBox = new QLineEdit();
+    _camDirYSpinner->setTextBox(textBox);
+    fieldLayout->addWidget(textBox);
+    fieldLayout->addWidget(_camDirYSpinner);
+    gridLayout->addLayout(fieldLayout, 0, 2);
+    connect(_camDirYSpinner, &SpinnerWidget::spinnerValueChanged, this, &AdjustViewDialog::onAdjustCamera);
 
-	fieldLayout = new QHBoxLayout();
-	fieldLayout->setContentsMargins(0,0,0,0);
-	fieldLayout->setSpacing(0);
-	textBox = new QLineEdit();
-	_camDirZSpinner->setTextBox(textBox);
-	fieldLayout->addWidget(textBox);
-	fieldLayout->addWidget(_camDirZSpinner);
-	gridLayout->addLayout(fieldLayout, 0, 3);
-	connect(_camDirZSpinner, &SpinnerWidget::spinnerValueChanged, this, &AdjustViewDialog::onAdjustCamera);
+    fieldLayout = new QHBoxLayout();
+    fieldLayout->setContentsMargins(0,0,0,0);
+    fieldLayout->setSpacing(0);
+    textBox = new QLineEdit();
+    _camDirZSpinner->setTextBox(textBox);
+    fieldLayout->addWidget(textBox);
+    fieldLayout->addWidget(_camDirZSpinner);
+    gridLayout->addLayout(fieldLayout, 0, 3);
+    connect(_camDirZSpinner, &SpinnerWidget::spinnerValueChanged, this, &AdjustViewDialog::onAdjustCamera);
 
-	QGroupBox* upDirBox = new QGroupBox(tr("Up direction (read-only)"));
-	mainLayout->addWidget(upDirBox);
+    QGroupBox* upDirBox = new QGroupBox(tr("Up direction (read-only)"));
+    mainLayout->addWidget(upDirBox);
 
-	gridLayout = new QGridLayout(upDirBox);
-	gridLayout->setColumnStretch(1,1);
-	gridLayout->setColumnStretch(2,1);
-	gridLayout->setColumnStretch(3,1);
-	gridLayout->addWidget(new QLabel(tr("XYZ:")), 0, 0);
+    gridLayout = new QGridLayout(upDirBox);
+    gridLayout->setColumnStretch(1,1);
+    gridLayout->setColumnStretch(2,1);
+    gridLayout->setColumnStretch(3,1);
+    gridLayout->addWidget(new QLabel(tr("XYZ:")), 0, 0);
 
-	_upDirXSpinner = new SpinnerWidget();
-	_upDirYSpinner = new SpinnerWidget();
-	_upDirZSpinner = new SpinnerWidget();
-	_upDirXSpinner->setUnit(mainWindow.unitsManager().worldUnit());
-	_upDirYSpinner->setUnit(mainWindow.unitsManager().worldUnit());
-	_upDirZSpinner->setUnit(mainWindow.unitsManager().worldUnit());
+    _upDirXSpinner = new SpinnerWidget();
+    _upDirYSpinner = new SpinnerWidget();
+    _upDirZSpinner = new SpinnerWidget();
+    _upDirXSpinner->setUnit(mainWindow.unitsManager().worldUnit());
+    _upDirYSpinner->setUnit(mainWindow.unitsManager().worldUnit());
+    _upDirZSpinner->setUnit(mainWindow.unitsManager().worldUnit());
 
-	fieldLayout = new QHBoxLayout();
-	fieldLayout->setContentsMargins(0,0,0,0);
-	fieldLayout->setSpacing(0);
-	textBox = new QLineEdit();
-	textBox->setReadOnly(true);
-	_upDirXSpinner->setTextBox(textBox);
-	_upDirXSpinner->hide();
-	fieldLayout->addWidget(textBox);
-	fieldLayout->addWidget(_upDirXSpinner);
-	gridLayout->addLayout(fieldLayout, 0, 1);
-//	connect(_upDirXSpinner, &SpinnerWidget::spinnerValueChanged, this, &AdjustViewDialog::onAdjustCamera);
+    fieldLayout = new QHBoxLayout();
+    fieldLayout->setContentsMargins(0,0,0,0);
+    fieldLayout->setSpacing(0);
+    textBox = new QLineEdit();
+    textBox->setReadOnly(true);
+    _upDirXSpinner->setTextBox(textBox);
+    _upDirXSpinner->hide();
+    fieldLayout->addWidget(textBox);
+    fieldLayout->addWidget(_upDirXSpinner);
+    gridLayout->addLayout(fieldLayout, 0, 1);
+//  connect(_upDirXSpinner, &SpinnerWidget::spinnerValueChanged, this, &AdjustViewDialog::onAdjustCamera);
 
-	fieldLayout = new QHBoxLayout();
-	fieldLayout->setContentsMargins(0,0,0,0);
-	fieldLayout->setSpacing(0);
-	textBox = new QLineEdit();
-	textBox->setReadOnly(true);
-	_upDirYSpinner->setTextBox(textBox);
-	_upDirYSpinner->hide();
-	fieldLayout->addWidget(textBox);
-	fieldLayout->addWidget(_upDirYSpinner);
-	gridLayout->addLayout(fieldLayout, 0, 2);
-//	connect(_upDirYSpinner, &SpinnerWidget::spinnerValueChanged, this, &AdjustViewDialog::onAdjustCamera);
+    fieldLayout = new QHBoxLayout();
+    fieldLayout->setContentsMargins(0,0,0,0);
+    fieldLayout->setSpacing(0);
+    textBox = new QLineEdit();
+    textBox->setReadOnly(true);
+    _upDirYSpinner->setTextBox(textBox);
+    _upDirYSpinner->hide();
+    fieldLayout->addWidget(textBox);
+    fieldLayout->addWidget(_upDirYSpinner);
+    gridLayout->addLayout(fieldLayout, 0, 2);
+//  connect(_upDirYSpinner, &SpinnerWidget::spinnerValueChanged, this, &AdjustViewDialog::onAdjustCamera);
 
-	fieldLayout = new QHBoxLayout();
-	fieldLayout->setContentsMargins(0,0,0,0);
-	fieldLayout->setSpacing(0);
-	textBox = new QLineEdit();
-	textBox->setReadOnly(true);
-	_upDirZSpinner->setTextBox(textBox);
-	_upDirZSpinner->hide();
-	fieldLayout->addWidget(textBox);
-	fieldLayout->addWidget(_upDirZSpinner);
-	gridLayout->addLayout(fieldLayout, 0, 3);
-//	connect(_camDirZSpinner, &SpinnerWidget::spinnerValueChanged, this, &AdjustViewDialog::onAdjustCamera);
+    fieldLayout = new QHBoxLayout();
+    fieldLayout->setContentsMargins(0,0,0,0);
+    fieldLayout->setSpacing(0);
+    textBox = new QLineEdit();
+    textBox->setReadOnly(true);
+    _upDirZSpinner->setTextBox(textBox);
+    _upDirZSpinner->hide();
+    fieldLayout->addWidget(textBox);
+    fieldLayout->addWidget(_upDirZSpinner);
+    gridLayout->addLayout(fieldLayout, 0, 3);
+//  connect(_camDirZSpinner, &SpinnerWidget::spinnerValueChanged, this, &AdjustViewDialog::onAdjustCamera);
 
-	QGroupBox* projectionBox = new QGroupBox(tr("Projection type"));
-	mainLayout->addWidget(projectionBox);
+    QGroupBox* projectionBox = new QGroupBox(tr("Projection type"));
+    mainLayout->addWidget(projectionBox);
 
-	gridLayout = new QGridLayout(projectionBox);
-	gridLayout->setColumnMinimumWidth(0, 30);
-	gridLayout->setColumnStretch(3, 1);
+    gridLayout = new QGridLayout(projectionBox);
+    gridLayout->setColumnMinimumWidth(0, 30);
+    gridLayout->setColumnStretch(3, 1);
 
-	_camPerspective = new QRadioButton(tr("Perspective:"));
-	connect(_camPerspective, &QRadioButton::clicked, this, &AdjustViewDialog::onAdjustCamera);
-	gridLayout->addWidget(_camPerspective, 0, 0, 1, 3);
+    _camPerspective = new QRadioButton(tr("Perspective:"));
+    connect(_camPerspective, &QRadioButton::clicked, this, &AdjustViewDialog::onAdjustCamera);
+    gridLayout->addWidget(_camPerspective, 0, 0, 1, 3);
 
-	gridLayout->addWidget(new QLabel(tr("View angle:")), 1, 1);
-	_camFOVAngleSpinner = new SpinnerWidget();
-	_camFOVAngleSpinner->setUnit(mainWindow.unitsManager().angleUnit());
-	_camFOVAngleSpinner->setMinValue(FloatType(1e-4));
-	_camFOVAngleSpinner->setMaxValue(FLOATTYPE_PI - FloatType(1e-2));
-	_camFOVAngleSpinner->setFloatValue(qDegreesToRadians(FloatType(35)));
-	_camFOVAngleSpinner->setEnabled(false);
-	connect(_camPerspective, &QRadioButton::toggled, _camFOVAngleSpinner, &SpinnerWidget::setEnabled);
+    gridLayout->addWidget(new QLabel(tr("View angle:")), 1, 1);
+    _camFOVAngleSpinner = new SpinnerWidget();
+    _camFOVAngleSpinner->setUnit(mainWindow.unitsManager().angleUnit());
+    _camFOVAngleSpinner->setMinValue(FloatType(1e-4));
+    _camFOVAngleSpinner->setMaxValue(FLOATTYPE_PI - FloatType(1e-2));
+    _camFOVAngleSpinner->setFloatValue(qDegreesToRadians(FloatType(35)));
+    _camFOVAngleSpinner->setEnabled(false);
+    connect(_camPerspective, &QRadioButton::toggled, _camFOVAngleSpinner, &SpinnerWidget::setEnabled);
 
-	fieldLayout = new QHBoxLayout();
-	fieldLayout->setContentsMargins(0,0,0,0);
-	fieldLayout->setSpacing(0);
-	textBox = new QLineEdit();
-	_camFOVAngleSpinner->setTextBox(textBox);
-	fieldLayout->addWidget(textBox);
-	fieldLayout->addWidget(_camFOVAngleSpinner);
-	gridLayout->addLayout(fieldLayout, 1, 2);
-	connect(_camFOVAngleSpinner, &SpinnerWidget::spinnerValueChanged, this, &AdjustViewDialog::onAdjustCamera);
+    fieldLayout = new QHBoxLayout();
+    fieldLayout->setContentsMargins(0,0,0,0);
+    fieldLayout->setSpacing(0);
+    textBox = new QLineEdit();
+    _camFOVAngleSpinner->setTextBox(textBox);
+    fieldLayout->addWidget(textBox);
+    fieldLayout->addWidget(_camFOVAngleSpinner);
+    gridLayout->addLayout(fieldLayout, 1, 2);
+    connect(_camFOVAngleSpinner, &SpinnerWidget::spinnerValueChanged, this, &AdjustViewDialog::onAdjustCamera);
 
-	_camParallel = new QRadioButton(tr("Parallel:"));
-	connect(_camParallel, &QRadioButton::clicked, this, &AdjustViewDialog::onAdjustCamera);
-	gridLayout->addWidget(_camParallel, 2, 0, 1, 3);
+    _camParallel = new QRadioButton(tr("Parallel:"));
+    connect(_camParallel, &QRadioButton::clicked, this, &AdjustViewDialog::onAdjustCamera);
+    gridLayout->addWidget(_camParallel, 2, 0, 1, 3);
 
-	gridLayout->addWidget(new QLabel(tr("Field of view:")), 3, 1);
-	_camFOVSpinner = new SpinnerWidget();
-	_camFOVSpinner->setUnit(mainWindow.unitsManager().worldUnit());
-	_camFOVSpinner->setMinValue(FloatType(1e-4));
-	_camFOVSpinner->setFloatValue(200);
-	_camFOVSpinner->setEnabled(false);
-	connect(_camParallel, &QRadioButton::toggled, _camFOVSpinner, &SpinnerWidget::setEnabled);
+    gridLayout->addWidget(new QLabel(tr("Field of view:")), 3, 1);
+    _camFOVSpinner = new SpinnerWidget();
+    _camFOVSpinner->setUnit(mainWindow.unitsManager().worldUnit());
+    _camFOVSpinner->setMinValue(FloatType(1e-4));
+    _camFOVSpinner->setFloatValue(200);
+    _camFOVSpinner->setEnabled(false);
+    connect(_camParallel, &QRadioButton::toggled, _camFOVSpinner, &SpinnerWidget::setEnabled);
 
-	fieldLayout = new QHBoxLayout();
-	fieldLayout->setContentsMargins(0,0,0,0);
-	fieldLayout->setSpacing(0);
-	textBox = new QLineEdit();
-	_camFOVSpinner->setTextBox(textBox);
-	fieldLayout->addWidget(textBox);
-	fieldLayout->addWidget(_camFOVSpinner);
-	gridLayout->addLayout(fieldLayout, 3, 2);
-	connect(_camFOVSpinner, &SpinnerWidget::spinnerValueChanged, this, &AdjustViewDialog::onAdjustCamera);
+    fieldLayout = new QHBoxLayout();
+    fieldLayout->setContentsMargins(0,0,0,0);
+    fieldLayout->setSpacing(0);
+    textBox = new QLineEdit();
+    _camFOVSpinner->setTextBox(textBox);
+    fieldLayout->addWidget(textBox);
+    fieldLayout->addWidget(_camFOVSpinner);
+    gridLayout->addLayout(fieldLayout, 3, 2);
+    connect(_camFOVSpinner, &SpinnerWidget::spinnerValueChanged, this, &AdjustViewDialog::onAdjustCamera);
 
-	QDialogButtonBox* buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel | QDialogButtonBox::Help, Qt::Horizontal, this);
-	connect(buttonBox, &QDialogButtonBox::accepted, this, &AdjustViewDialog::close);
-	connect(buttonBox, &QDialogButtonBox::rejected, this, &AdjustViewDialog::onCancel);
-	connect(buttonBox, &QDialogButtonBox::helpRequested, &mainWindow, [&mainWindow]() {
-		mainWindow.actionManager()->openHelpTopic("manual:viewports.adjust_view_dialog");
-	});
-	mainLayout->addWidget(buttonBox);
+    QDialogButtonBox* buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel | QDialogButtonBox::Help, Qt::Horizontal, this);
+    connect(buttonBox, &QDialogButtonBox::accepted, this, &AdjustViewDialog::close);
+    connect(buttonBox, &QDialogButtonBox::rejected, this, &AdjustViewDialog::onCancel);
+    connect(buttonBox, &QDialogButtonBox::helpRequested, &mainWindow, [&mainWindow]() {
+        mainWindow.actionManager()->openHelpTopic("manual:viewports.adjust_view_dialog");
+    });
+    mainLayout->addWidget(buttonBox);
 
-	updateGUI();
+    updateGUI();
 }
 
 /******************************************************************************
@@ -278,36 +278,36 @@ AdjustViewDialog::AdjustViewDialog(MainWindow& mainWindow, Viewport* viewport, Q
 ******************************************************************************/
 void AdjustViewDialog::updateGUI()
 {
-	_isUpdatingGUI = true;
-	Viewport* viewport = _viewportListener.target();
+    _isUpdatingGUI = true;
+    Viewport* viewport = _viewportListener.target();
 
-	const Point3& cameraPos = viewport->cameraPosition();
-	_camPosXSpinner->setFloatValue(cameraPos.x());
-	_camPosYSpinner->setFloatValue(cameraPos.y());
-	_camPosZSpinner->setFloatValue(cameraPos.z());
+    const Point3& cameraPos = viewport->cameraPosition();
+    _camPosXSpinner->setFloatValue(cameraPos.x());
+    _camPosYSpinner->setFloatValue(cameraPos.y());
+    _camPosZSpinner->setFloatValue(cameraPos.z());
 
-	Vector3 oldCameraDir(_camDirXSpinner->floatValue(), _camDirYSpinner->floatValue(), _camDirZSpinner->floatValue());
-	FloatType oldDirLength = oldCameraDir.length();
-	if(oldDirLength == 0) oldDirLength = 1;
-	const Vector3& cameraDir = viewport->cameraDirection();
-	_camDirXSpinner->setFloatValue(cameraDir.x() * oldDirLength);
-	_camDirYSpinner->setFloatValue(cameraDir.y() * oldDirLength);
-	_camDirZSpinner->setFloatValue(cameraDir.z() * oldDirLength);
+    Vector3 oldCameraDir(_camDirXSpinner->floatValue(), _camDirYSpinner->floatValue(), _camDirZSpinner->floatValue());
+    FloatType oldDirLength = oldCameraDir.length();
+    if(oldDirLength == 0) oldDirLength = 1;
+    const Vector3& cameraDir = viewport->cameraDirection();
+    _camDirXSpinner->setFloatValue(cameraDir.x() * oldDirLength);
+    _camDirYSpinner->setFloatValue(cameraDir.y() * oldDirLength);
+    _camDirZSpinner->setFloatValue(cameraDir.z() * oldDirLength);
 
-	const Vector3& upDir = viewport->cameraTransformation().column(1);
-	_upDirXSpinner->setFloatValue(upDir.x());
-	_upDirYSpinner->setFloatValue(upDir.y());
-	_upDirZSpinner->setFloatValue(upDir.z());
+    const Vector3& upDir = viewport->cameraTransformation().column(1);
+    _upDirXSpinner->setFloatValue(upDir.x());
+    _upDirYSpinner->setFloatValue(upDir.y());
+    _upDirZSpinner->setFloatValue(upDir.z());
 
-	if(viewport->isPerspectiveProjection()) {
-		_camPerspective->setChecked(true);
-		_camFOVAngleSpinner->setFloatValue(viewport->fieldOfView());
-	}
-	else {
-		_camParallel->setChecked(true);
-		_camFOVSpinner->setFloatValue(viewport->fieldOfView());
-	}
-	_isUpdatingGUI = false;
+    if(viewport->isPerspectiveProjection()) {
+        _camPerspective->setChecked(true);
+        _camFOVAngleSpinner->setFloatValue(viewport->fieldOfView());
+    }
+    else {
+        _camParallel->setChecked(true);
+        _camFOVSpinner->setFloatValue(viewport->fieldOfView());
+    }
+    _isUpdatingGUI = false;
 }
 
 /******************************************************************************
@@ -315,23 +315,23 @@ void AdjustViewDialog::updateGUI()
 ******************************************************************************/
 void AdjustViewDialog::onAdjustCamera()
 {
-	if(_isUpdatingGUI)
-		return;
+    if(_isUpdatingGUI)
+        return;
 
-	_mainWindow.handleExceptions([&] {
-		Viewport* viewport = _viewportListener.target();
-		if(_camPerspective->isChecked()) {
-			viewport->setViewType(Viewport::VIEW_PERSPECTIVE);
-			viewport->setFieldOfView(_camFOVAngleSpinner->floatValue());
-		}
-		else {
-			viewport->setViewType(Viewport::VIEW_ORTHO);
-			viewport->setFieldOfView(_camFOVSpinner->floatValue());
-		}
+    _mainWindow.handleExceptions([&] {
+        Viewport* viewport = _viewportListener.target();
+        if(_camPerspective->isChecked()) {
+            viewport->setViewType(Viewport::VIEW_PERSPECTIVE);
+            viewport->setFieldOfView(_camFOVAngleSpinner->floatValue());
+        }
+        else {
+            viewport->setViewType(Viewport::VIEW_ORTHO);
+            viewport->setFieldOfView(_camFOVSpinner->floatValue());
+        }
 
-		viewport->setCameraPosition(Point3(_camPosXSpinner->floatValue(), _camPosYSpinner->floatValue(), _camPosZSpinner->floatValue()));
-		viewport->setCameraDirection(Vector3(_camDirXSpinner->floatValue(), _camDirYSpinner->floatValue(), _camDirZSpinner->floatValue()));
-	});
+        viewport->setCameraPosition(Point3(_camPosXSpinner->floatValue(), _camPosYSpinner->floatValue(), _camPosZSpinner->floatValue()));
+        viewport->setCameraDirection(Vector3(_camDirXSpinner->floatValue(), _camDirYSpinner->floatValue(), _camDirZSpinner->floatValue()));
+    });
 }
 
 /******************************************************************************
@@ -339,16 +339,16 @@ void AdjustViewDialog::onAdjustCamera()
 ******************************************************************************/
 void AdjustViewDialog::onCancel()
 {
-	setFocus(); // Remove focus from child widgets to make all input widgets commit their values.
+    setFocus(); // Remove focus from child widgets to make all input widgets commit their values.
 
-	// Restore previous viewport camera settings.
-	_mainWindow.handleExceptions([&] {
-		Viewport* viewport = _viewportListener.target();
-		viewport->setViewType(_oldViewType);
-		viewport->setCameraTransformation(_oldCameraTM);
-		viewport->setFieldOfView(_oldFOV);
-	});
-	close();
+    // Restore previous viewport camera settings.
+    _mainWindow.handleExceptions([&] {
+        Viewport* viewport = _viewportListener.target();
+        viewport->setViewType(_oldViewType);
+        viewport->setCameraTransformation(_oldCameraTM);
+        viewport->setFieldOfView(_oldFOV);
+    });
+    close();
 }
 
-}	// End of namespace
+}   // End of namespace

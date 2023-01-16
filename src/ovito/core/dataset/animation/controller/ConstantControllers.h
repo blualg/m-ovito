@@ -33,32 +33,32 @@ namespace Ovito {
  */
 class OVITO_CORE_EXPORT ConstFloatController : public Controller
 {
-	OVITO_CLASS(ConstFloatController)
+    OVITO_CLASS(ConstFloatController)
 
 public:
 
-	/// Constructor.
-	Q_INVOKABLE ConstFloatController(ObjectCreationParams params) : Controller(params), _value(0) {}
+    /// Constructor.
+    Q_INVOKABLE ConstFloatController(ObjectCreationParams params) : Controller(params), _value(0) {}
 
-	/// \brief Returns the value type of the controller.
-	virtual ControllerType controllerType() const override { return ControllerTypeFloat; }
+    /// \brief Returns the value type of the controller.
+    virtual ControllerType controllerType() const override { return ControllerTypeFloat; }
 
-	/// \brief Returns whether the value of this controller is changing over time.
-	virtual bool isAnimated() const override { return false; }
+    /// \brief Returns whether the value of this controller is changing over time.
+    virtual bool isAnimated() const override { return false; }
 
-	/// \brief Calculates the largest time interval containing the given time during which the controller's value does not change.
-	virtual TimeInterval validityInterval(AnimationTime time) override { return TimeInterval::infinite(); }
+    /// \brief Calculates the largest time interval containing the given time during which the controller's value does not change.
+    virtual TimeInterval validityInterval(AnimationTime time) override { return TimeInterval::infinite(); }
 
-	/// \brief Gets the controller's value at a certain animation time.
-	virtual FloatType getFloatValue(AnimationTime time, TimeInterval& validityInterval) override { return value(); }
+    /// \brief Gets the controller's value at a certain animation time.
+    virtual FloatType getFloatValue(AnimationTime time, TimeInterval& validityInterval) override { return value(); }
 
-	/// \brief Sets the controller's value at the given animation time.
-	virtual void setFloatValue(AnimationTime time, FloatType newValue) override { setValue(newValue); }
+    /// \brief Sets the controller's value at the given animation time.
+    virtual void setFloatValue(AnimationTime time, FloatType newValue) override { setValue(newValue); }
 
 private:
 
-	/// Stores the constant value of the controller.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD(FloatType, value, setValue);
+    /// Stores the constant value of the controller.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(FloatType, value, setValue);
 };
 
 /**
@@ -66,32 +66,32 @@ private:
  */
 class OVITO_CORE_EXPORT ConstIntegerController : public Controller
 {
-	OVITO_CLASS(ConstIntegerController)
+    OVITO_CLASS(ConstIntegerController)
 
 public:
 
-	/// Constructor.
-	Q_INVOKABLE ConstIntegerController(ObjectCreationParams params) : Controller(params), _value(0) {}
+    /// Constructor.
+    Q_INVOKABLE ConstIntegerController(ObjectCreationParams params) : Controller(params), _value(0) {}
 
-	/// \brief Returns the value type of the controller.
-	virtual ControllerType controllerType() const override { return ControllerTypeInt; }
+    /// \brief Returns the value type of the controller.
+    virtual ControllerType controllerType() const override { return ControllerTypeInt; }
 
-	/// \brief Returns whether the value of this controller is changing over time.
-	virtual bool isAnimated() const override { return false; }
+    /// \brief Returns whether the value of this controller is changing over time.
+    virtual bool isAnimated() const override { return false; }
 
-	/// \brief Calculates the largest time interval containing the given time during which the controller's value does not change.
-	virtual TimeInterval validityInterval(AnimationTime time) override { return TimeInterval::infinite(); }
+    /// \brief Calculates the largest time interval containing the given time during which the controller's value does not change.
+    virtual TimeInterval validityInterval(AnimationTime time) override { return TimeInterval::infinite(); }
 
-	/// \brief Gets the controller's value at a certain animation time.
-	virtual int getIntValue(AnimationTime time, TimeInterval& validityInterval) override { return value(); }
+    /// \brief Gets the controller's value at a certain animation time.
+    virtual int getIntValue(AnimationTime time, TimeInterval& validityInterval) override { return value(); }
 
-	/// \brief Sets the controller's value at the given animation time.
-	virtual void setIntValue(AnimationTime time, int newValue) override { setValue(newValue); }
+    /// \brief Sets the controller's value at the given animation time.
+    virtual void setIntValue(AnimationTime time, int newValue) override { setValue(newValue); }
 
 private:
 
-	/// Stores the constant value of the controller.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD(int, value, setValue);
+    /// Stores the constant value of the controller.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(int, value, setValue);
 };
 
 /**
@@ -99,32 +99,32 @@ private:
  */
 class OVITO_CORE_EXPORT ConstVectorController : public Controller
 {
-	OVITO_CLASS(ConstVectorController)
+    OVITO_CLASS(ConstVectorController)
 
 public:
 
-	/// Constructor.
-	Q_INVOKABLE ConstVectorController(ObjectCreationParams params) : Controller(params), _value(Vector3::Zero()) {}
+    /// Constructor.
+    Q_INVOKABLE ConstVectorController(ObjectCreationParams params) : Controller(params), _value(Vector3::Zero()) {}
 
-	/// \brief Returns the value type of the controller.
-	virtual ControllerType controllerType() const override { return ControllerTypeVector3; }
+    /// \brief Returns the value type of the controller.
+    virtual ControllerType controllerType() const override { return ControllerTypeVector3; }
 
-	/// \brief Returns whether the value of this controller is changing over time.
-	virtual bool isAnimated() const override { return false; }
+    /// \brief Returns whether the value of this controller is changing over time.
+    virtual bool isAnimated() const override { return false; }
 
-	/// \brief Calculates the largest time interval containing the given time during which the controller's value does not change.
-	virtual TimeInterval validityInterval(AnimationTime time) override { return TimeInterval::infinite(); }
+    /// \brief Calculates the largest time interval containing the given time during which the controller's value does not change.
+    virtual TimeInterval validityInterval(AnimationTime time) override { return TimeInterval::infinite(); }
 
-	/// \brief Gets the controller's value at a certain animation time.
-	virtual void getVector3Value(AnimationTime time, Vector3& result, TimeInterval& validityInterval) override { result = value(); }
+    /// \brief Gets the controller's value at a certain animation time.
+    virtual void getVector3Value(AnimationTime time, Vector3& result, TimeInterval& validityInterval) override { result = value(); }
 
-	/// \brief Sets the controller's value at the given animation time.
-	virtual void setVector3Value(AnimationTime time, const Vector3& newValue) override { setValue(newValue); }
+    /// \brief Sets the controller's value at the given animation time.
+    virtual void setVector3Value(AnimationTime time, const Vector3& newValue) override { setValue(newValue); }
 
 private:
 
-	/// Stores the constant value of the controller.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD(Vector3, value, setValue);
+    /// Stores the constant value of the controller.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(Vector3, value, setValue);
 };
 
 /**
@@ -132,34 +132,34 @@ private:
  */
 class OVITO_CORE_EXPORT ConstPositionController : public Controller
 {
-	OVITO_CLASS(ConstPositionController)
+    OVITO_CLASS(ConstPositionController)
 
 public:
 
-	/// Constructor.
-	Q_INVOKABLE ConstPositionController(ObjectCreationParams params) : Controller(params), _value(Vector3::Zero()) {}
+    /// Constructor.
+    Q_INVOKABLE ConstPositionController(ObjectCreationParams params) : Controller(params), _value(Vector3::Zero()) {}
 
-	/// \brief Returns the value type of the controller.
-	virtual ControllerType controllerType() const override { return ControllerTypePosition; }
+    /// \brief Returns the value type of the controller.
+    virtual ControllerType controllerType() const override { return ControllerTypePosition; }
 
-	/// \brief Returns whether the value of this controller is changing over time.
-	virtual bool isAnimated() const override { return false; }
+    /// \brief Returns whether the value of this controller is changing over time.
+    virtual bool isAnimated() const override { return false; }
 
-	/// \brief Calculates the largest time interval containing the given time during which the controller's value does not change.
-	virtual TimeInterval validityInterval(AnimationTime time) override { return TimeInterval::infinite(); }
+    /// \brief Calculates the largest time interval containing the given time during which the controller's value does not change.
+    virtual TimeInterval validityInterval(AnimationTime time) override { return TimeInterval::infinite(); }
 
-	/// \brief Gets the controller's value at a certain animation time.
-	virtual void getPositionValue(AnimationTime time, Vector3& result, TimeInterval& validityInterval) override { result = value(); }
+    /// \brief Gets the controller's value at a certain animation time.
+    virtual void getPositionValue(AnimationTime time, Vector3& result, TimeInterval& validityInterval) override { result = value(); }
 
-	/// \brief Sets a position controller's value at the given animation time.
-	virtual void setPositionValue(AnimationTime time, const Vector3& newValue, bool isAbsolute) override {
-		setValue(isAbsolute ? newValue : (newValue + value()));
-	}
+    /// \brief Sets a position controller's value at the given animation time.
+    virtual void setPositionValue(AnimationTime time, const Vector3& newValue, bool isAbsolute) override {
+        setValue(isAbsolute ? newValue : (newValue + value()));
+    }
 
 private:
 
-	/// Stores the constant value of the controller.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD(Vector3, value, setValue);
+    /// Stores the constant value of the controller.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(Vector3, value, setValue);
 };
 
 /**
@@ -167,34 +167,34 @@ private:
  */
 class OVITO_CORE_EXPORT ConstRotationController : public Controller
 {
-	OVITO_CLASS(ConstRotationController)
+    OVITO_CLASS(ConstRotationController)
 
 public:
 
-	/// Constructor.
-	Q_INVOKABLE ConstRotationController(ObjectCreationParams params) : Controller(params), _value(Rotation::Identity()) {}
+    /// Constructor.
+    Q_INVOKABLE ConstRotationController(ObjectCreationParams params) : Controller(params), _value(Rotation::Identity()) {}
 
-	/// \brief Returns the value type of the controller.
-	virtual ControllerType controllerType() const override { return ControllerTypeRotation; }
+    /// \brief Returns the value type of the controller.
+    virtual ControllerType controllerType() const override { return ControllerTypeRotation; }
 
-	/// \brief Returns whether the value of this controller is changing over time.
-	virtual bool isAnimated() const override { return false; }
+    /// \brief Returns whether the value of this controller is changing over time.
+    virtual bool isAnimated() const override { return false; }
 
-	/// \brief Calculates the largest time interval containing the given time during which the controller's value does not change.
-	virtual TimeInterval validityInterval(AnimationTime time) override { return TimeInterval::infinite(); }
+    /// \brief Calculates the largest time interval containing the given time during which the controller's value does not change.
+    virtual TimeInterval validityInterval(AnimationTime time) override { return TimeInterval::infinite(); }
 
-	/// \brief Gets the controller's value at a certain animation time.
-	virtual void getRotationValue(AnimationTime time, Rotation& result, TimeInterval& validityInterval) override { result = value(); }
+    /// \brief Gets the controller's value at a certain animation time.
+    virtual void getRotationValue(AnimationTime time, Rotation& result, TimeInterval& validityInterval) override { result = value(); }
 
-	/// \brief Sets a rotation controller's value at the given animation time.
-	virtual void setRotationValue(AnimationTime time, const Rotation& newValue, bool isAbsolute) override {
-		setValue(isAbsolute ? newValue : (newValue * value()));
-	}
+    /// \brief Sets a rotation controller's value at the given animation time.
+    virtual void setRotationValue(AnimationTime time, const Rotation& newValue, bool isAbsolute) override {
+        setValue(isAbsolute ? newValue : (newValue * value()));
+    }
 
 private:
 
-	/// Stores the constant value of the controller.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD(Rotation, value, setValue);
+    /// Stores the constant value of the controller.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(Rotation, value, setValue);
 };
 
 /**
@@ -202,34 +202,34 @@ private:
  */
 class OVITO_CORE_EXPORT ConstScalingController : public Controller
 {
-	OVITO_CLASS(ConstScalingController)
+    OVITO_CLASS(ConstScalingController)
 
 public:
 
-	/// Constructor.
-	Q_INVOKABLE ConstScalingController(ObjectCreationParams params) : Controller(params), _value(Scaling::Identity()) {}
+    /// Constructor.
+    Q_INVOKABLE ConstScalingController(ObjectCreationParams params) : Controller(params), _value(Scaling::Identity()) {}
 
-	/// \brief Returns the value type of the controller.
-	virtual ControllerType controllerType() const override { return ControllerTypeScaling; }
+    /// \brief Returns the value type of the controller.
+    virtual ControllerType controllerType() const override { return ControllerTypeScaling; }
 
-	/// \brief Returns whether the value of this controller is changing over time.
-	virtual bool isAnimated() const override { return false; }
+    /// \brief Returns whether the value of this controller is changing over time.
+    virtual bool isAnimated() const override { return false; }
 
-	/// \brief Calculates the largest time interval containing the given time during which the controller's value does not change.
-	virtual TimeInterval validityInterval(AnimationTime time) override { return TimeInterval::infinite(); }
+    /// \brief Calculates the largest time interval containing the given time during which the controller's value does not change.
+    virtual TimeInterval validityInterval(AnimationTime time) override { return TimeInterval::infinite(); }
 
-	/// \brief Gets the controller's value at a certain animation time.
-	virtual void getScalingValue(AnimationTime time, Scaling& result, TimeInterval& validityInterval) override { result = value(); }
+    /// \brief Gets the controller's value at a certain animation time.
+    virtual void getScalingValue(AnimationTime time, Scaling& result, TimeInterval& validityInterval) override { result = value(); }
 
-	/// \brief Sets a scaling controller's value at the given animation time.
-	virtual void setScalingValue(AnimationTime time, const Scaling& newValue, bool isAbsolute) override {
-		setValue(isAbsolute ? newValue : (newValue * value()));
-	}
+    /// \brief Sets a scaling controller's value at the given animation time.
+    virtual void setScalingValue(AnimationTime time, const Scaling& newValue, bool isAbsolute) override {
+        setValue(isAbsolute ? newValue : (newValue * value()));
+    }
 
 private:
 
-	/// Stores the constant value of the controller.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD(Scaling, value, setValue);
+    /// Stores the constant value of the controller.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(Scaling, value, setValue);
 };
 
-}	// End of namespace
+}   // End of namespace

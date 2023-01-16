@@ -33,43 +33,43 @@ namespace Ovito::Particles {
  */
 class OVITO_PARTICLES_EXPORT AnglesObject : public PropertyContainer
 {
-	/// Define a new property metaclass for the property container.
-	class OVITO_PARTICLES_EXPORT OOMetaClass : public PropertyContainerClass
-	{
-	public:
+    /// Define a new property metaclass for the property container.
+    class OVITO_PARTICLES_EXPORT OOMetaClass : public PropertyContainerClass
+    {
+    public:
 
-		/// Inherit constructor from base class.
-		using PropertyContainerClass::PropertyContainerClass;
+        /// Inherit constructor from base class.
+        using PropertyContainerClass::PropertyContainerClass;
 
-		/// \brief Create a storage object for standard properties.
-		virtual PropertyPtr createStandardPropertyInternal(size_t elementCount, int type, DataBuffer::InitializationFlags flags, const ConstDataObjectPath& containerPath) const override;
+        /// \brief Create a storage object for standard properties.
+        virtual PropertyPtr createStandardPropertyInternal(size_t elementCount, int type, DataBuffer::InitializationFlags flags, const ConstDataObjectPath& containerPath) const override;
 
-		/// Generates a human-readable string representation of the data object reference.
-		virtual QString formatDataObjectPath(const ConstDataObjectPath& path) const override { return this->displayName(); }
+        /// Generates a human-readable string representation of the data object reference.
+        virtual QString formatDataObjectPath(const ConstDataObjectPath& path) const override { return this->displayName(); }
 
-	protected:
+    protected:
 
-		/// Is called by the system after construction of the meta-class instance.
-		virtual void initialize() override;
-	};
+        /// Is called by the system after construction of the meta-class instance.
+        virtual void initialize() override;
+    };
 
-	OVITO_CLASS_META(AnglesObject, OOMetaClass);
-	Q_CLASSINFO("DisplayName", "Angles");
+    OVITO_CLASS_META(AnglesObject, OOMetaClass);
+    Q_CLASSINFO("DisplayName", "Angles");
 
 public:
 
-	/// \brief The list of standard angle properties.
-	enum Type {
-		UserProperty = PropertyObject::GenericUserProperty,
-		TypeProperty = PropertyObject::GenericTypeProperty,
-		TopologyProperty,
-	};
+    /// \brief The list of standard angle properties.
+    enum Type {
+        UserProperty = PropertyObject::GenericUserProperty,
+        TypeProperty = PropertyObject::GenericTypeProperty,
+        TopologyProperty,
+    };
 
-	/// \brief Constructor.
-	Q_INVOKABLE AnglesObject(ObjectCreationParams params);
+    /// \brief Constructor.
+    Q_INVOKABLE AnglesObject(ObjectCreationParams params);
 
-	/// Convinience method that returns the angle topology property.
-	const PropertyObject* getTopology() const { return getProperty(TopologyProperty); }
+    /// Convinience method that returns the angle topology property.
+    const PropertyObject* getTopology() const { return getProperty(TopologyProperty); }
 };
 
 /**
@@ -77,4 +77,4 @@ public:
  */
 using ParticleIndexTriplet = std::array<qlonglong, 3>;
 
-}	// End of namespace
+}   // End of namespace

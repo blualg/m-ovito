@@ -33,28 +33,28 @@ namespace Ovito::Particles {
  */
 class VectorVisEditor : public PropertiesEditor
 {
-	OVITO_CLASS(VectorVisEditor)
+    OVITO_CLASS(VectorVisEditor)
 
 public:
 
-	/// Constructor.
-	Q_INVOKABLE VectorVisEditor() {}
+    /// Constructor.
+    Q_INVOKABLE VectorVisEditor() {}
 
 protected:
 
-	/// Creates the user interface controls for the editor.
-	virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
+    /// Creates the user interface controls for the editor.
+    virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
 
 private Q_SLOTS:
 
-	/// Updates the coloring controls shown in the UI.
-	void updateColoringOptions();
-	
+    /// Updates the coloring controls shown in the UI.
+    void updateColoringOptions();
+    
 private:
 
-	IntegerRadioButtonParameterUI* _coloringModeUI;
-	ColorParameterUI* _arrowColorUI;
-	SubObjectParameterUI* _colorMappingParamUI;
+    IntegerRadioButtonParameterUI* _coloringModeUI;
+    ColorParameterUI* _arrowColorUI;
+    SubObjectParameterUI* _colorMappingParamUI;
 };
 
-}	// End of namespace
+}   // End of namespace

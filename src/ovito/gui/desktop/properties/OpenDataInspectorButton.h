@@ -33,26 +33,26 @@ namespace Ovito {
 ******************************************************************************/
 class OVITO_GUI_EXPORT OpenDataInspectorButton : public QPushButton
 {
-	Q_OBJECT
+    Q_OBJECT
 
 public:
 
-	/// Constructor.
-	OpenDataInspectorButton(PropertiesEditor* editor, const QString& buttonTitle, const QString& objectNameHint = {}, const QVariant& modeHint = {});
+    /// Constructor.
+    OpenDataInspectorButton(PropertiesEditor* editor, const QString& buttonTitle, const QString& objectNameHint = {}, const QVariant& modeHint = {});
 
-	/// Returns the properties editor hosting this button.
-	PropertiesEditor* editor() const { return _editor; }
+    /// Returns the properties editor hosting this button.
+    PropertiesEditor* editor() const { return _editor; }
 
 private:
 
-	/// The properties editor hosting this button.
-	PropertiesEditor* _editor;
+    /// The properties editor hosting this button.
+    PropertiesEditor* _editor;
 
-	/// Data object name hint to be passed to the data inspector when the button is clicked.
-	QString _objectNameHint;
-	
-	/// Mode hint to be passed to the data inspector when the button is clicked.
-	QVariant _modeHint;
+    /// Data object name hint to be passed to the data inspector when the button is clicked.
+    QString _objectNameHint;
+    
+    /// Mode hint to be passed to the data inspector when the button is clicked.
+    QVariant _modeHint;
 };
 
-}	// End of namespace
+}   // End of namespace

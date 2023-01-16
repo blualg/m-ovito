@@ -35,30 +35,30 @@ SET_OVITO_OBJECT_EDITOR(CAImporter, CAImporterEditor);
 ******************************************************************************/
 void CAImporterEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 {
-	// Create a rollout.
-	QWidget* rollout = createRollout(tr("Crystal analysis file"), rolloutParams);
+    // Create a rollout.
+    QWidget* rollout = createRollout(tr("Crystal analysis file"), rolloutParams);
 
     // Create the rollout contents.
-	QVBoxLayout* layout = new QVBoxLayout(rollout);
-	layout->setContentsMargins(4,4,4,4);
-	layout->setSpacing(4);
+    QVBoxLayout* layout = new QVBoxLayout(rollout);
+    layout->setContentsMargins(4,4,4,4);
+    layout->setSpacing(4);
 
-	// Multi-timestep file
-	BooleanParameterUI* multitimestepUI = new BooleanParameterUI(this, PROPERTY_FIELD(FileSourceImporter::isMultiTimestepFile));
-	// The following signal handler updates the parameter UI whenever the isMultiTimestepFile parameter of the current file source importer changes.
-	// It is needed, because target-changed messages are surpressed for this property field and the normal update mechanism for the parameter UI doesn't work.
-	connect(this, &PropertiesEditor::contentsReplaced, this, [con = QMetaObject::Connection(), multitimestepUI = multitimestepUI](RefTarget* editObject) mutable {
+    // Multi-timestep file
+    BooleanParameterUI* multitimestepUI = new BooleanParameterUI(this, PROPERTY_FIELD(FileSourceImporter::isMultiTimestepFile));
+    // The following signal handler updates the parameter UI whenever the isMultiTimestepFile parameter of the current file source importer changes.
+    // It is needed, because target-changed messages are surpressed for this property field and the normal update mechanism for the parameter UI doesn't work.
+    connect(this, &PropertiesEditor::contentsReplaced, this, [con = QMetaObject::Connection(), multitimestepUI = multitimestepUI](RefTarget* editObject) mutable {
 #ifdef _MSC_VER
-	#pragma warning(push)
-	#pragma warning(disable : 4573)
+    #pragma warning(push)
+    #pragma warning(disable : 4573)
 #endif
-		disconnect(con);
-		con = editObject ? connect(static_object_cast<FileSourceImporter>(editObject), &FileSourceImporter::isMultiTimestepFileChanged, multitimestepUI, &ParameterUI::updateUI) : QMetaObject::Connection();
+        disconnect(con);
+        con = editObject ? connect(static_object_cast<FileSourceImporter>(editObject), &FileSourceImporter::isMultiTimestepFileChanged, multitimestepUI, &ParameterUI::updateUI) : QMetaObject::Connection();
 #ifdef _MSC_VER
-	#pragma warning(pop)
+    #pragma warning(pop)
 #endif
-	});
-	layout->addWidget(multitimestepUI->checkBox());
+    });
+    layout->addWidget(multitimestepUI->checkBox());
 }
 
-}	// End of namespace
+}   // End of namespace

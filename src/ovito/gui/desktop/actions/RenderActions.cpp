@@ -35,34 +35,34 @@ namespace Ovito {
 ******************************************************************************/
 void WidgetActionManager::on_RenderActiveViewport_triggered()
 {
-	mainWindow().handleExceptions([&] {
+    mainWindow().handleExceptions([&] {
 
-		// Set input focus to main window.
-		// This will process any pending user inputs in QLineEdit fields that haven't been processed yet.
-		mainWindow().setFocus();
+        // Set input focus to main window.
+        // This will process any pending user inputs in QLineEdit fields that haven't been processed yet.
+        mainWindow().setFocus();
 
-		// Stop animation playback in the interactive viewports before rendering an image.
-		userInterface().datasetContainer().stopAnimationPlayback();
+        // Stop animation playback in the interactive viewports before rendering an image.
+        userInterface().datasetContainer().stopAnimationPlayback();
 
-		// Get the current render settings.
-		RenderSettings* renderSettings = dataset()->renderSettings();
-		if(!renderSettings)
-			throw Exception(tr("Cannot render without an active RenderSettings object."));
+        // Get the current render settings.
+        RenderSettings* renderSettings = dataset()->renderSettings();
+        if(!renderSettings)
+            throw Exception(tr("Cannot render without an active RenderSettings object."));
 
-		// Get the current viewport configuration.
-		ViewportConfiguration* viewportConfig = dataset()->viewportConfig();
-		if(!viewportConfig)
-			throw Exception(tr("Cannot render without an active ViewportConfiguration object."));
+        // Get the current viewport configuration.
+        ViewportConfiguration* viewportConfig = dataset()->viewportConfig();
+        if(!viewportConfig)
+            throw Exception(tr("Cannot render without an active ViewportConfiguration object."));
 
-		// Create a task object that represents the rendering operation.
-		MainThreadOperation renderingOperation(true);
+        // Create a task object that represents the rendering operation.
+        MainThreadOperation renderingOperation(true);
 
-		// Allocate and resize frame buffer and display the frame buffer window.
-		std::shared_ptr<FrameBuffer> frameBuffer = mainWindow().createAndShowFrameBuffer(renderSettings->outputImageWidth(), renderSettings->outputImageHeight(), true);
+        // Allocate and resize frame buffer and display the frame buffer window.
+        std::shared_ptr<FrameBuffer> frameBuffer = mainWindow().createAndShowFrameBuffer(renderSettings->outputImageWidth(), renderSettings->outputImageHeight(), true);
 
-		// Call high-level rendering function, which will take care of the rest.
-		renderSettings->renderScene(*viewportConfig, *frameBuffer, renderingOperation);
-	});
+        // Call high-level rendering function, which will take care of the rest.
+        renderSettings->renderScene(*viewportConfig, *frameBuffer, renderingOperation);
+    });
 }
 
-}	// End of namespace
+}   // End of namespace

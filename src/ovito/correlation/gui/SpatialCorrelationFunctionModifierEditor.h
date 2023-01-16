@@ -38,36 +38,36 @@ namespace Ovito::Particles {
  */
 class SpatialCorrelationFunctionModifierEditor : public PropertiesEditor
 {
-	OVITO_CLASS(SpatialCorrelationFunctionModifierEditor)
+    OVITO_CLASS(SpatialCorrelationFunctionModifierEditor)
 
 public:
 
-	/// Default constructor.
-	Q_INVOKABLE SpatialCorrelationFunctionModifierEditor() {}
+    /// Default constructor.
+    Q_INVOKABLE SpatialCorrelationFunctionModifierEditor() {}
 
 protected:
 
-	/// Creates the user interface controls for the editor.
-	virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
+    /// Creates the user interface controls for the editor.
+    virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
 
-	/// Replots one of the correlation function computed by the modifier.
-	std::pair<FloatType,FloatType> plotData(const DataTable* table, DataTablePlotWidget* plotWidget, FloatType offset, FloatType fac, ConstPropertyAccess<FloatType> normalization);
+    /// Replots one of the correlation function computed by the modifier.
+    std::pair<FloatType,FloatType> plotData(const DataTable* table, DataTablePlotWidget* plotWidget, FloatType offset, FloatType fac, ConstPropertyAccess<FloatType> normalization);
 
 protected Q_SLOTS:
 
-	/// Replots the correlation function computed by the modifier.
-	void plotAllData();
+    /// Replots the correlation function computed by the modifier.
+    void plotAllData();
 
 private:
 
-	/// The plotting widget for displaying the computed real-space correlation function.
-	DataTablePlotWidget* _realSpacePlot;
+    /// The plotting widget for displaying the computed real-space correlation function.
+    DataTablePlotWidget* _realSpacePlot;
 
-	/// The plotting widget for displaying the computed reciprocal-space correlation function.
-	DataTablePlotWidget* _reciprocalSpacePlot;
+    /// The plotting widget for displaying the computed reciprocal-space correlation function.
+    DataTablePlotWidget* _reciprocalSpacePlot;
 
-	/// The plot item for the short-ranged part of the real-space correlation function.
+    /// The plot item for the short-ranged part of the real-space correlation function.
     QwtPlotCurve* _neighCurve = nullptr;
 };
 
-}	// End of namespace
+}   // End of namespace

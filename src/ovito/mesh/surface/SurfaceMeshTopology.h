@@ -46,8 +46,8 @@ namespace Ovito::Mesh {
  */
 class OVITO_MESH_EXPORT SurfaceMeshTopology : public DataObject
 {
-	OVITO_CLASS(SurfaceMeshTopology)
-	Q_CLASSINFO("DisplayName", "Surface mesh topology");
+    OVITO_CLASS(SurfaceMeshTopology)
+    Q_CLASSINFO("DisplayName", "Surface mesh topology");
 
 public:
 
@@ -68,8 +68,8 @@ public:
 
 public:
 
-	/// Constructor creating an empty SurfaceMeshTopology object.
-	Q_INVOKABLE SurfaceMeshTopology(ObjectCreationParams params) : DataObject(params) {}
+    /// Constructor creating an empty SurfaceMeshTopology object.
+    Q_INVOKABLE SurfaceMeshTopology(ObjectCreationParams params) : DataObject(params) {}
 
     /// Removes all faces, edges and vertices from this mesh.
     void clear();
@@ -84,22 +84,22 @@ public:
     size_type edgeCount() const { return _edgeFaces.size(); }
 
     /// Returns an iterator that points to the first vertex of the mesh topology.
-	auto begin_vertices() const { return boost::make_counting_iterator<size_type>(0); }
+    auto begin_vertices() const { return boost::make_counting_iterator<size_type>(0); }
 
     /// Returns an iterator that points beyond last vertex of the mesh topology.
-	auto end_vertices() const { return boost::make_counting_iterator<size_type>(vertexCount()); }
+    auto end_vertices() const { return boost::make_counting_iterator<size_type>(vertexCount()); }
 
     /// Returns an iterator that points to the first face of the mesh topology.
-	auto begin_faces() const { return boost::make_counting_iterator<size_type>(0); }
+    auto begin_faces() const { return boost::make_counting_iterator<size_type>(0); }
 
     /// Returns an iterator that points beyond last face of the mesh topology.
-	auto end_faces() const { return boost::make_counting_iterator<size_type>(faceCount()); }
+    auto end_faces() const { return boost::make_counting_iterator<size_type>(faceCount()); }
 
     /// Returns an iterator that points to the first edge of the mesh topology.
-	auto begin_edges() const { return boost::make_counting_iterator<size_type>(0); }
+    auto begin_edges() const { return boost::make_counting_iterator<size_type>(0); }
 
     /// Returns an iterator that points beyond last edge of the mesh topology.
-	auto end_edges() const { return boost::make_counting_iterator<size_type>(edgeCount()); }
+    auto end_edges() const { return boost::make_counting_iterator<size_type>(edgeCount()); }
 
     /// Adds several new vertices to the mesh.
     /// Returns the index of the first newly-created vertex.
@@ -377,8 +377,8 @@ public:
 
 protected:
 
-	/// Creates a copy of this object.
-	virtual OORef<RefTarget> clone(bool deepCopy, CloneHelper& cloneHelper) const override;
+    /// Creates a copy of this object.
+    virtual OORef<RefTarget> clone(bool deepCopy, CloneHelper& cloneHelper) const override;
 
 private:
 
@@ -456,4 +456,4 @@ private:
     std::vector<edge_index> _nextManifoldEdges;
 };
 
-}	// End of namespace
+}   // End of namespace

@@ -35,10 +35,10 @@ namespace Ovito {
 * Constructor.
 ******************************************************************************/
 MoveOverlayInputMode::MoveOverlayInputMode(PropertiesEditor* editor) :
-		ViewportInputMode(editor),
-		_editor(editor),
-		_moveCursor(QCursor(QPixmap(QStringLiteral(":/guibase/cursor/editing/cursor_mode_move.png")))),
-		_forbiddenCursor(Qt::ForbiddenCursor)
+        ViewportInputMode(editor),
+        _editor(editor),
+        _moveCursor(QCursor(QPixmap(QStringLiteral(":/guibase/cursor/editing/cursor_mode_move.png")))),
+        _forbiddenCursor(Qt::ForbiddenCursor)
 {
 }
 
@@ -47,8 +47,8 @@ MoveOverlayInputMode::MoveOverlayInputMode(PropertiesEditor* editor) :
 ******************************************************************************/
 void MoveOverlayInputMode::activated(bool temporary)
 {
-	ViewportInputMode::activated(temporary);
-	inputManager()->userInterface().showStatusBarMessage(tr("Click and drag the mouse in the viewport to move the overlay. Right-click to cancel."));
+    ViewportInputMode::activated(temporary);
+    inputManager()->userInterface().showStatusBarMessage(tr("Click and drag the mouse in the viewport to move the overlay. Right-click to cancel."));
 }
 
 /******************************************************************************
@@ -57,13 +57,13 @@ void MoveOverlayInputMode::activated(bool temporary)
 ******************************************************************************/
 void MoveOverlayInputMode::deactivated(bool temporary)
 {
-	if(viewport()) {
-		// Restore old state if change has not been committed.
-		_undoTransaction.cancel();
-		_viewport = nullptr;
-	}
-	inputManager()->userInterface().clearStatusBarMessage();
-	ViewportInputMode::deactivated(temporary);
+    if(viewport()) {
+        // Restore old state if change has not been committed.
+        _undoTransaction.cancel();
+        _viewport = nullptr;
+    }
+    inputManager()->userInterface().clearStatusBarMessage();
+    ViewportInputMode::deactivated(temporary);
 }
 
 /******************************************************************************
@@ -71,26 +71,26 @@ void MoveOverlayInputMode::deactivated(bool temporary)
 ******************************************************************************/
 void MoveOverlayInputMode::mousePressEvent(ViewportWindowInterface* vpwin, QMouseEvent* event)
 {
-	if(event->button() == Qt::LeftButton) {
-		if(viewport() == nullptr) {
-			ViewportOverlay* layer = dynamic_object_cast<ViewportOverlay>(_editor->editObject());
-			if(layer && (vpwin->viewport()->overlays().contains(layer) || vpwin->viewport()->underlays().contains(layer))) {
-				_viewport = vpwin->viewport();
-				_startPoint = getMousePosition(event);
-				_undoTransaction.begin(inputManager()->userInterface(), tr("Move overlay"));
-			}
-		}
-		return;
-	}
-	else if(event->button() == Qt::RightButton) {
-		if(viewport()) {
-			// Restore old state when aborting the move operation.
-			_undoTransaction.cancel();
-			_viewport = nullptr;
-			return;
-		}
-	}
-	ViewportInputMode::mousePressEvent(vpwin, event);
+    if(event->button() == Qt::LeftButton) {
+        if(viewport() == nullptr) {
+            ViewportOverlay* layer = dynamic_object_cast<ViewportOverlay>(_editor->editObject());
+            if(layer && (vpwin->viewport()->overlays().contains(layer) || vpwin->viewport()->underlays().contains(layer))) {
+                _viewport = vpwin->viewport();
+                _startPoint = getMousePosition(event);
+                _undoTransaction.begin(inputManager()->userInterface(), tr("Move overlay"));
+            }
+        }
+        return;
+    }
+    else if(event->button() == Qt::RightButton) {
+        if(viewport()) {
+            // Restore old state when aborting the move operation.
+            _undoTransaction.cancel();
+            _viewport = nullptr;
+            return;
+        }
+    }
+    ViewportInputMode::mousePressEvent(vpwin, event);
 }
 
 /******************************************************************************
@@ -98,44 +98,44 @@ void MoveOverlayInputMode::mousePressEvent(ViewportWindowInterface* vpwin, QMous
 ******************************************************************************/
 void MoveOverlayInputMode::mouseMoveEvent(ViewportWindowInterface* vpwin, QMouseEvent* event)
 {
-	// Get the viewport layer being moved.
-	ViewportOverlay* layer = dynamic_object_cast<ViewportOverlay>(_editor->editObject());
-	if(layer && (vpwin->viewport()->overlays().contains(layer) || vpwin->viewport()->underlays().contains(layer))) {
-		setCursor(_moveCursor);
+    // Get the viewport layer being moved.
+    ViewportOverlay* layer = dynamic_object_cast<ViewportOverlay>(_editor->editObject());
+    if(layer && (vpwin->viewport()->overlays().contains(layer) || vpwin->viewport()->underlays().contains(layer))) {
+        setCursor(_moveCursor);
 
-		if(viewport() == vpwin->viewport()) {
-			// Take the current mouse cursor position to make the input mode
-			// look more responsive. The cursor position recorded when the mouse event was
-			// generates may be too old.
-			_currentPoint = vpwin->getCurrentMousePos();
+        if(viewport() == vpwin->viewport()) {
+            // Take the current mouse cursor position to make the input mode
+            // look more responsive. The cursor position recorded when the mouse event was
+            // generates may be too old.
+            _currentPoint = vpwin->getCurrentMousePos();
 
-			// Reset the layer's position first before moving it again below.
-			_undoTransaction.revert();
+            // Reset the layer's position first before moving it again below.
+            _undoTransaction.revert();
 
-			if(!inputManager()->userInterface().performActions(_undoTransaction, [&] {
-				// Compute the displacement based on the new mouse position.
-				Box2 renderFrameRect = viewport()->renderFrameRect(inputManager()->datasetContainer().currentSet());
-				if(!renderFrameRect.isEmpty()) {
-					QSize vpSize = vpwin->viewportWindowDeviceIndependentSize();
-					Vector2 delta;
-					delta.x() =  (FloatType)(_currentPoint.x() - _startPoint.x()) / vpSize.width() / renderFrameRect.width() * 2;
-					delta.y() = -(FloatType)(_currentPoint.y() - _startPoint.y()) / vpSize.height() / renderFrameRect.height() * 2;
+            if(!inputManager()->userInterface().performActions(_undoTransaction, [&] {
+                // Compute the displacement based on the new mouse position.
+                Box2 renderFrameRect = viewport()->renderFrameRect(inputManager()->datasetContainer().currentSet());
+                if(!renderFrameRect.isEmpty()) {
+                    QSize vpSize = vpwin->viewportWindowDeviceIndependentSize();
+                    Vector2 delta;
+                    delta.x() =  (FloatType)(_currentPoint.x() - _startPoint.x()) / vpSize.width() / renderFrameRect.width() * 2;
+                    delta.y() = -(FloatType)(_currentPoint.y() - _startPoint.y()) / vpSize.height() / renderFrameRect.height() * 2;
 
-					// Move the layer.
-					layer->moveLayerInViewport(delta);
-				}
-			})) {
-				inputManager()->removeInputMode(this);
-			}
+                    // Move the layer.
+                    layer->moveLayerInViewport(delta);
+                }
+            })) {
+                inputManager()->removeInputMode(this);
+            }
 
-			// Force immediate viewport repaints.
-			inputManager()->userInterface().processViewportUpdateRequests();
-		}
-	}
-	else {
-		setCursor(_forbiddenCursor);
-	}
-	ViewportInputMode::mouseMoveEvent(vpwin, event);
+            // Force immediate viewport repaints.
+            inputManager()->userInterface().processViewportUpdateRequests();
+        }
+    }
+    else {
+        setCursor(_forbiddenCursor);
+    }
+    ViewportInputMode::mouseMoveEvent(vpwin, event);
 }
 
 /******************************************************************************
@@ -143,12 +143,12 @@ void MoveOverlayInputMode::mouseMoveEvent(ViewportWindowInterface* vpwin, QMouse
 ******************************************************************************/
 void MoveOverlayInputMode::mouseReleaseEvent(ViewportWindowInterface* vpwin, QMouseEvent* event)
 {
-	if(viewport()) {
-		// Commit change.
-		_undoTransaction.commit();
-		_viewport = nullptr;
-	}
-	ViewportInputMode::mouseReleaseEvent(vpwin, event);
+    if(viewport()) {
+        // Commit change.
+        _undoTransaction.commit();
+        _viewport = nullptr;
+    }
+    ViewportInputMode::mouseReleaseEvent(vpwin, event);
 }
 
-}	// End of namespace
+}   // End of namespace

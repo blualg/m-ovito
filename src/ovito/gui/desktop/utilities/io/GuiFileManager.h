@@ -33,31 +33,31 @@ namespace Ovito {
  */
 class OVITO_GUI_EXPORT GuiFileManager : public FileManager
 {
-	Q_OBJECT
+    Q_OBJECT
 
 public:
 
-	/// Inherit constructor from base class.
-	using FileManager::FileManager;
+    /// Inherit constructor from base class.
+    using FileManager::FileManager;
 
 #ifdef OVITO_SSH_CLIENT
-	/// \brief Asks the user for the login password for a SSH server.
-	/// \return True on success, false if user has canceled the operation.
-	virtual bool askUserForPassword(const QString& hostname, const QString& username, QString& password) override;
+    /// \brief Asks the user for the login password for a SSH server.
+    /// \return True on success, false if user has canceled the operation.
+    virtual bool askUserForPassword(const QString& hostname, const QString& username, QString& password) override;
 
-	/// \brief Asks the user for the answer to a keyboard-interactive question sent by the SSH server.
-	/// \return True on success, false if user has canceled the operation.
-	virtual bool askUserForKbiResponse(const QString& hostname, const QString& username, const QString& instruction, const QString& question, bool showAnswer, QString& answer) override;
+    /// \brief Asks the user for the answer to a keyboard-interactive question sent by the SSH server.
+    /// \return True on success, false if user has canceled the operation.
+    virtual bool askUserForKbiResponse(const QString& hostname, const QString& username, const QString& instruction, const QString& question, bool showAnswer, QString& answer) override;
 
-	/// \brief Asks the user for the passphrase for a private SSH key.
-	/// \return True on success, false if user has canceled the operation.
-	virtual bool askUserForKeyPassphrase(const QString& hostname, const QString& prompt, QString& passphrase) override;
+    /// \brief Asks the user for the passphrase for a private SSH key.
+    /// \return True on success, false if user has canceled the operation.
+    virtual bool askUserForKeyPassphrase(const QString& hostname, const QString& prompt, QString& passphrase) override;
 
-	/// \brief Informs the user about an unknown SSH host.
-	virtual bool detectedUnknownSshServer(const QString& hostname, const QString& unknownHostMessage, const QString& hostPublicKeyHash) override;
+    /// \brief Informs the user about an unknown SSH host.
+    virtual bool detectedUnknownSshServer(const QString& hostname, const QString& unknownHostMessage, const QString& hostPublicKeyHash) override;
 #endif
 };
 
-}	// End of namespace
+}   // End of namespace
 
 

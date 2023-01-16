@@ -33,22 +33,22 @@ namespace Ovito {
 ******************************************************************************/
 CommandPanel::CommandPanel(MainWindow& mainWindow, QWidget* parent) : QWidget(parent)
 {
-	QVBoxLayout* layout = new QVBoxLayout(this);
-	layout->setContentsMargins(0,0,0,0);
+    QVBoxLayout* layout = new QVBoxLayout(this);
+    layout->setContentsMargins(0,0,0,0);
 
-	// Create tab widget
-	_tabWidget = new QTabWidget(this);
-	layout->addWidget(_tabWidget, 1);
+    // Create tab widget
+    _tabWidget = new QTabWidget(this);
+    layout->addWidget(_tabWidget, 1);
 
-	// Create the tabs.
-	_tabWidget->setDocumentMode(true);
-	_tabWidget->addTab(_modifyPage = new ModifyCommandPage(mainWindow, _tabWidget), QIcon::fromTheme("command_panel_tab_modify"), QString());
-	_tabWidget->addTab(_renderPage = new RenderCommandPage(mainWindow, _tabWidget), QIcon::fromTheme("command_panel_tab_render"), QString());
-	_tabWidget->addTab(_overlayPage = new OverlayCommandPage(mainWindow, _tabWidget), QIcon::fromTheme("command_panel_tab_overlays"), QString());
-	_tabWidget->setTabToolTip(0, tr("Pipelines"));
-	_tabWidget->setTabToolTip(1, tr("Rendering"));
-	_tabWidget->setTabToolTip(2, tr("Viewport layers"));
-	setCurrentPage(MainWindow::MODIFY_PAGE);
+    // Create the tabs.
+    _tabWidget->setDocumentMode(true);
+    _tabWidget->addTab(_modifyPage = new ModifyCommandPage(mainWindow, _tabWidget), QIcon::fromTheme("command_panel_tab_modify"), QString());
+    _tabWidget->addTab(_renderPage = new RenderCommandPage(mainWindow, _tabWidget), QIcon::fromTheme("command_panel_tab_render"), QString());
+    _tabWidget->addTab(_overlayPage = new OverlayCommandPage(mainWindow, _tabWidget), QIcon::fromTheme("command_panel_tab_overlays"), QString());
+    _tabWidget->setTabToolTip(0, tr("Pipelines"));
+    _tabWidget->setTabToolTip(1, tr("Rendering"));
+    _tabWidget->setTabToolTip(2, tr("Viewport layers"));
+    setCurrentPage(MainWindow::MODIFY_PAGE);
 }
 
 /******************************************************************************
@@ -56,9 +56,9 @@ CommandPanel::CommandPanel(MainWindow& mainWindow, QWidget* parent) : QWidget(pa
 ******************************************************************************/
 void CommandPanel::restoreLayout() 
 {
-	_modifyPage->restoreLayout();
-	_renderPage->restoreLayout();
-	_overlayPage->restoreLayout();
+    _modifyPage->restoreLayout();
+    _renderPage->restoreLayout();
+    _overlayPage->restoreLayout();
 }
 
 /******************************************************************************
@@ -66,9 +66,9 @@ void CommandPanel::restoreLayout()
 ******************************************************************************/
 void CommandPanel::saveLayout() 
 {
-	_modifyPage->saveLayout();
-	_renderPage->saveLayout();
-	_overlayPage->saveLayout();
+    _modifyPage->saveLayout();
+    _renderPage->saveLayout();
+    _overlayPage->saveLayout();
 }
 
 
@@ -76,59 +76,59 @@ void CommandPanel::saveLayout()
 * This Qt item delegate class renders the list items of the pipeline editor and other list views.
 * It extends the QStyledItemDelegate base class by displaying the 
 * PipelineStatus::shortInfo() value next to the title of each pipeline entry.
-******************************************************************************/	
+******************************************************************************/ 
 void ExtendedListItemDelegate::paint(QPainter* painter, const QStyleOptionViewItem& option, const QModelIndex& index) const
 {
-	// Render the item exactly like QStyledItemDelegate::paint().
-	QStyleOptionViewItem opt = option;
-	initStyleOption(&opt, index);
-	QStyle* style = option.widget ? option.widget->style() : QApplication::style();
-	style->drawControl(QStyle::CE_ItemViewItem, &opt, painter, option.widget);
+    // Render the item exactly like QStyledItemDelegate::paint().
+    QStyleOptionViewItem opt = option;
+    initStyleOption(&opt, index);
+    QStyle* style = option.widget ? option.widget->style() : QApplication::style();
+    style->drawControl(QStyle::CE_ItemViewItem, &opt, painter, option.widget);
 
-	if(!(opt.state & QStyle::State_Editing)) {
+    if(!(opt.state & QStyle::State_Editing)) {
 
-		// Obtain the value of the PipelineStatus::shortInfo() field from the PipelineListModel.
-		if(QVariant info = index.data(_shortInfoRole); info.isValid()) {
-			painter->save();
-			painter->setClipRegion(opt.rect);
+        // Obtain the value of the PipelineStatus::shortInfo() field from the PipelineListModel.
+        if(QVariant info = index.data(_shortInfoRole); info.isValid()) {
+            painter->save();
+            painter->setClipRegion(opt.rect);
 
-			if(info.typeId() == QMetaType::QColor) {
-				// Display a QColor as a small filled rectangle.
-				QRect textRect = style->subElementRect(QStyle::SE_ItemViewItemText, &opt, option.widget);
-				const int textMargin = style->pixelMetric(QStyle::PM_FocusFrameHMargin, nullptr, option.widget) + 1;
-				const int titleWidth = opt.fontMetrics.horizontalAdvance(opt.text + QStringLiteral("   "));
-				QRect rect = textRect.adjusted(textMargin + titleWidth, 6, -textMargin, -6); // remove width padding
-				rect.setWidth(rect.height());
-				painter->fillRect(rect, info.value<QColor>());
-			}
-			else if(info.canConvert<QString>()) {
-				// Render textual information as a text label with dimmed coloring.
-				opt.font = option.widget->font();
-				painter->setFont(opt.font);
+            if(info.typeId() == QMetaType::QColor) {
+                // Display a QColor as a small filled rectangle.
+                QRect textRect = style->subElementRect(QStyle::SE_ItemViewItemText, &opt, option.widget);
+                const int textMargin = style->pixelMetric(QStyle::PM_FocusFrameHMargin, nullptr, option.widget) + 1;
+                const int titleWidth = opt.fontMetrics.horizontalAdvance(opt.text + QStringLiteral("   "));
+                QRect rect = textRect.adjusted(textMargin + titleWidth, 6, -textMargin, -6); // remove width padding
+                rect.setWidth(rect.height());
+                painter->fillRect(rect, info.value<QColor>());
+            }
+            else if(info.canConvert<QString>()) {
+                // Render textual information as a text label with dimmed coloring.
+                opt.font = option.widget->font();
+                painter->setFont(opt.font);
 
-				// The following is adopted from QCommonStyle::drawControl().
-				QPalette::ColorGroup cg = (opt.state & QStyle::State_Enabled) ? QPalette::Normal : QPalette::Disabled;
-				if(cg == QPalette::Normal && !(opt.state & QStyle::State_Active))
-					cg = QPalette::Inactive;
-				QPalette::ColorRole textRole = (opt.state & QStyle::State_Selected) ? QPalette::HighlightedText : QPalette::Text;
-				QPalette::ColorRole backgroundRole = (opt.state & QStyle::State_Selected) ? QPalette::Highlight : QPalette::Window;
-				painter->setPen(blendColors(
-					opt.palette.color(cg, textRole),
-					opt.palette.color(cg, backgroundRole),
-					0.75));
+                // The following is adopted from QCommonStyle::drawControl().
+                QPalette::ColorGroup cg = (opt.state & QStyle::State_Enabled) ? QPalette::Normal : QPalette::Disabled;
+                if(cg == QPalette::Normal && !(opt.state & QStyle::State_Active))
+                    cg = QPalette::Inactive;
+                QPalette::ColorRole textRole = (opt.state & QStyle::State_Selected) ? QPalette::HighlightedText : QPalette::Text;
+                QPalette::ColorRole backgroundRole = (opt.state & QStyle::State_Selected) ? QPalette::Highlight : QPalette::Window;
+                painter->setPen(blendColors(
+                    opt.palette.color(cg, textRole),
+                    opt.palette.color(cg, backgroundRole),
+                    0.75));
 
-				QRect textRect = style->subElementRect(QStyle::SE_ItemViewItemText, &opt, option.widget);
-				const int textMargin = style->pixelMetric(QStyle::PM_FocusFrameHMargin, nullptr, option.widget) + 1;
-				const int titleWidth = opt.fontMetrics.horizontalAdvance(opt.text + QStringLiteral("   "));
-				textRect.adjust(textMargin + titleWidth, 0, -textMargin, 0); // remove width padding
+                QRect textRect = style->subElementRect(QStyle::SE_ItemViewItemText, &opt, option.widget);
+                const int textMargin = style->pixelMetric(QStyle::PM_FocusFrameHMargin, nullptr, option.widget) + 1;
+                const int titleWidth = opt.fontMetrics.horizontalAdvance(opt.text + QStringLiteral("   "));
+                textRect.adjust(textMargin + titleWidth, 0, -textMargin, 0); // remove width padding
 
-				QString text = opt.fontMetrics.elidedText(info.toString(), Qt::ElideRight, textRect.width());
-				painter->drawText(textRect, opt.displayAlignment, text);
-			}
+                QString text = opt.fontMetrics.elidedText(info.toString(), Qt::ElideRight, textRect.width());
+                painter->drawText(textRect, opt.displayAlignment, text);
+            }
 
-			painter->restore();
-		}
-	}
+            painter->restore();
+        }
+    }
 }
 
-}	// End of namespace
+}   // End of namespace

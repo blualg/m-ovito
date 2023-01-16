@@ -37,7 +37,7 @@ IMPLEMENT_OVITO_CLASS(WrapPeriodicImagesModifier);
 ******************************************************************************/
 bool WrapPeriodicImagesModifier::OOMetaClass::isApplicableTo(const DataCollection& input) const
 {
-	return input.containsObject<ParticlesObject>();
+    return input.containsObject<ParticlesObject>();
 }
 
 /******************************************************************************
@@ -45,56 +45,56 @@ bool WrapPeriodicImagesModifier::OOMetaClass::isApplicableTo(const DataCollectio
 ******************************************************************************/
 void WrapPeriodicImagesModifier::evaluateSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state)
 {
-	const SimulationCellObject* simCellObj = state.expectObject<SimulationCellObject>();
-	std::array<bool, 3> pbc = simCellObj->pbcFlagsCorrected();
-	if(!pbc[0] && !pbc[1] && !pbc[2]) {
-		state.setStatus(PipelineStatus(PipelineStatus::Warning, tr("No periodic boundary conditions are enabled for the simulation cell.")));
-		return;
-	}
+    const SimulationCellObject* simCellObj = state.expectObject<SimulationCellObject>();
+    std::array<bool, 3> pbc = simCellObj->pbcFlagsCorrected();
+    if(!pbc[0] && !pbc[1] && !pbc[2]) {
+        state.setStatus(PipelineStatus(PipelineStatus::Warning, tr("No periodic boundary conditions are enabled for the simulation cell.")));
+        return;
+    }
 
-	const AffineTransformation& simCell = simCellObj->cellMatrix();
-	if((simCellObj->is2D() ? simCellObj->volume2D() : simCellObj->volume3D()) < FLOATTYPE_EPSILON)
-		 throw Exception(tr("The simulation cell is degenerate."));
-	AffineTransformation inverseSimCell = simCellObj->reciprocalCellMatrix();
+    const AffineTransformation& simCell = simCellObj->cellMatrix();
+    if((simCellObj->is2D() ? simCellObj->volume2D() : simCellObj->volume3D()) < FLOATTYPE_EPSILON)
+         throw Exception(tr("The simulation cell is degenerate."));
+    AffineTransformation inverseSimCell = simCellObj->reciprocalCellMatrix();
 
-	// Make a modifiable copy of the particles object.
-	ParticlesObject* outputParticles = state.expectMutableObject<ParticlesObject>();
-	outputParticles->verifyIntegrity();
+    // Make a modifiable copy of the particles object.
+    ParticlesObject* outputParticles = state.expectMutableObject<ParticlesObject>();
+    outputParticles->verifyIntegrity();
 
-	// Make a modifiable copy of the particle position property.
-	PropertyAccess<Point3> posProperty = outputParticles->expectMutableProperty(ParticlesObject::PositionProperty);
+    // Make a modifiable copy of the particle position property.
+    PropertyAccess<Point3> posProperty = outputParticles->expectMutableProperty(ParticlesObject::PositionProperty);
 
-	// Wrap bonds by adjusting their PBC shift vectors.
-	if(outputParticles->bonds()) {
-		if(ConstPropertyAccess<ParticleIndexPair> topologyProperty = outputParticles->bonds()->getProperty(BondsObject::TopologyProperty)) {
-			PropertyAccess<Vector3I> periodicImageProperty = outputParticles->makeBondsMutable()->createProperty(BondsObject::PeriodicImageProperty, DataBuffer::InitializeMemory);
-			for(size_t bondIndex = 0; bondIndex < topologyProperty.size(); bondIndex++) {
-				size_t particleIndex1 = topologyProperty[bondIndex][0];
-				size_t particleIndex2 = topologyProperty[bondIndex][1];
-				if(particleIndex1 >= posProperty.size() || particleIndex2 >= posProperty.size())
-					continue;
-				const Point3& p1 = posProperty[particleIndex1];
-				const Point3& p2 = posProperty[particleIndex2];
-				for(size_t dim = 0; dim < 3; dim++) {
-					if(pbc[dim]) {
-						periodicImageProperty[bondIndex][dim] +=
-							  (int)std::floor(inverseSimCell.prodrow(p2, dim))
-							- (int)std::floor(inverseSimCell.prodrow(p1, dim));
-					}
-				}
-			}
-		}
-	}
+    // Wrap bonds by adjusting their PBC shift vectors.
+    if(outputParticles->bonds()) {
+        if(ConstPropertyAccess<ParticleIndexPair> topologyProperty = outputParticles->bonds()->getProperty(BondsObject::TopologyProperty)) {
+            PropertyAccess<Vector3I> periodicImageProperty = outputParticles->makeBondsMutable()->createProperty(BondsObject::PeriodicImageProperty, DataBuffer::InitializeMemory);
+            for(size_t bondIndex = 0; bondIndex < topologyProperty.size(); bondIndex++) {
+                size_t particleIndex1 = topologyProperty[bondIndex][0];
+                size_t particleIndex2 = topologyProperty[bondIndex][1];
+                if(particleIndex1 >= posProperty.size() || particleIndex2 >= posProperty.size())
+                    continue;
+                const Point3& p1 = posProperty[particleIndex1];
+                const Point3& p2 = posProperty[particleIndex2];
+                for(size_t dim = 0; dim < 3; dim++) {
+                    if(pbc[dim]) {
+                        periodicImageProperty[bondIndex][dim] +=
+                              (int)std::floor(inverseSimCell.prodrow(p2, dim))
+                            - (int)std::floor(inverseSimCell.prodrow(p1, dim));
+                    }
+                }
+            }
+        }
+    }
 
-	// Wrap particles coordinates.
-	for(size_t dim = 0; dim < 3; dim++) {
-		if(pbc[dim]) {
-			for(Point3& p : posProperty) {
-				if(FloatType n = std::floor(inverseSimCell.prodrow(p, dim)))
-					p -= simCell.column(dim) * n;
-			}
-		}
-	}
+    // Wrap particles coordinates.
+    for(size_t dim = 0; dim < 3; dim++) {
+        if(pbc[dim]) {
+            for(Point3& p : posProperty) {
+                if(FloatType n = std::floor(inverseSimCell.prodrow(p, dim)))
+                    p -= simCell.column(dim) * n;
+            }
+        }
+    }
 }
 
-}	// End of namespace
+}   // End of namespace

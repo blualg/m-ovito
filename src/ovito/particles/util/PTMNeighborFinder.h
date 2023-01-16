@@ -44,32 +44,32 @@ class OVITO_PARTICLES_EXPORT PTMNeighborFinder : private NearestNeighborFinder
 {
 public:
 
-	//// Constructor.
-	PTMNeighborFinder(bool all_properties);
+    //// Constructor.
+    PTMNeighborFinder(bool all_properties);
 
-	/// \brief Prepares the tree data structure.
-	/// \return \c false when the operation has been canceled by the user;
-	///         \c true on success.
-	/// \throw Exception on error.
-	bool prepare(ConstPropertyAccess<Point3> positions, const SimulationCellObject* cell, ConstPropertyAccess<int> selection,
-				 ConstPropertyPtr structuresArray,
-				 ConstPropertyPtr orientationsArray,
-				 ConstPropertyPtr correspondencesArray);
+    /// \brief Prepares the tree data structure.
+    /// \return \c false when the operation has been canceled by the user;
+    ///         \c true on success.
+    /// \throw Exception on error.
+    bool prepare(ConstPropertyAccess<Point3> positions, const SimulationCellObject* cell, ConstPropertyAccess<int> selection,
+                 ConstPropertyPtr structuresArray,
+                 ConstPropertyPtr orientationsArray,
+                 ConstPropertyPtr correspondencesArray);
 
-	/// Stores information about a single neighbor of the central particle.
-	struct Neighbor : public NearestNeighborFinder::Neighbor
-	{
-		Vector3 idealVector;
+    /// Stores information about a single neighbor of the central particle.
+    struct Neighbor : public NearestNeighborFinder::Neighbor
+    {
+        Vector3 idealVector;
 #if 0
-		Vector_3<int8_t> scaledVector;
+        Vector_3<int8_t> scaledVector;
 #endif
-		FloatType disorientation;
-	};
+        FloatType disorientation;
+    };
 
     /// This nested class performs a PTM calculation on a single input particle.
     /// It is thread-safe to use several Kernel objects concurrently, initialized from the same PTMNeighborFinder object.
     class OVITO_PARTICLES_EXPORT Query 
-    {	
+    {   
         /// The internal query type for finding the input set of nearest neighbors.
         using NeighborQuery = NearestNeighborFinder::Query<PTMAlgorithm::MAX_INPUT_NEIGHBORS>;
 
@@ -79,8 +79,8 @@ public:
         /// by a call to PTMNeighborFinder::prepare().
         Query(const PTMNeighborFinder& finder) : _finder(finder) {}
 
-		/// Computes the ordered list of neighbor particles fo rthe given central particle.
-		void findNeighbors(size_t particleIndex, std::optional<Quaternion> targetOrientation = {});
+        /// Computes the ordered list of neighbor particles fo rthe given central particle.
+        void findNeighbors(size_t particleIndex, std::optional<Quaternion> targetOrientation = {});
 
         /// Returns the structure type identified by the PTM for the current particle.
         PTMAlgorithm::StructureType structureType() const { return _structureType; }
@@ -94,39 +94,39 @@ public:
         /// Returns the local structure orientation computed by the PTM routine for the current particle.
         const Quaternion& orientation() const { return _orientation; }
 
-		/// Returns the list of neighbor particles.
-		const QVarLengthArray<Neighbor, PTMAlgorithm::MAX_INPUT_NEIGHBORS>& neighbors() const { return _list; }
+        /// Returns the list of neighbor particles.
+        const QVarLengthArray<Neighbor, PTMAlgorithm::MAX_INPUT_NEIGHBORS>& neighbors() const { return _list; }
 
         /// Returns the number of neighbors found for the current central particle.
         int neighborCount() const { return _list.size(); }
 
-	private:
+    private:
 
-		void getNeighbors(size_t particleIndex, int ptm_type);
-		void fillNeighbors(const NeighborQuery& neighborQuery, size_t particleIndex, int offset, int num, const double* delta);
-		void calculateRMSDScale();
+        void getNeighbors(size_t particleIndex, int ptm_type);
+        void fillNeighbors(const NeighborQuery& neighborQuery, size_t particleIndex, int offset, int num, const double* delta);
+        void calculateRMSDScale();
 
-	private:
+    private:
 
-		/// Reference to the parent neighbor finder object.
-		const PTMNeighborFinder& _finder;
+        /// Reference to the parent neighbor finder object.
+        const PTMNeighborFinder& _finder;
 
-		// Local quantities computed by the PTM algorithm:
-		double _rmsd;
-		double _interatomicDistance;
-		PTMAlgorithm::StructureType _structureType;
-		Quaternion _orientation;
+        // Local quantities computed by the PTM algorithm:
+        double _rmsd;
+        double _interatomicDistance;
+        PTMAlgorithm::StructureType _structureType;
+        Quaternion _orientation;
 
-		ptm_atomicenv_t _env;
-		int _templateIndex = 0;
-		QVarLengthArray<Neighbor, PTMAlgorithm::MAX_INPUT_NEIGHBORS> _list;
-	};
+        ptm_atomicenv_t _env;
+        int _templateIndex = 0;
+        QVarLengthArray<Neighbor, PTMAlgorithm::MAX_INPUT_NEIGHBORS> _list;
+    };
 
 private:
-	bool _all_properties;
-	ConstPropertyPtr _structuresArray;
-	ConstPropertyPtr _orientationsArray;
-	ConstPropertyPtr _correspondencesArray;
+    bool _all_properties;
+    ConstPropertyPtr _structuresArray;
+    ConstPropertyPtr _orientationsArray;
+    ConstPropertyPtr _correspondencesArray;
 };
 
-}	// End of namespace
+}   // End of namespace

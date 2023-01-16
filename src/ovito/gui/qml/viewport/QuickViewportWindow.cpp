@@ -39,16 +39,16 @@ namespace Ovito {
 ******************************************************************************/
 QuickViewportWindow::QuickViewportWindow() : ViewportWindowInterface(nullptr, nullptr)
 {
-	// Show the FBO contents upside down.
-	setMirrorVertically(true);
+    // Show the FBO contents upside down.
+    setMirrorVertically(true);
 
-	// Determine OpenGL vendor string so other parts of the code can decide
-	// which OpenGL features are safe to use.
-	OpenGLSceneRenderer::determineOpenGLInfo();
+    // Determine OpenGL vendor string so other parts of the code can decide
+    // which OpenGL features are safe to use.
+    OpenGLSceneRenderer::determineOpenGLInfo();
 
-	// Receive mouse input events.
-	setAcceptedMouseButtons(Qt::AllButtons);
-	setAcceptHoverEvents(true);
+    // Receive mouse input events.
+    setAcceptedMouseButtons(Qt::AllButtons);
+    setAcceptHoverEvents(true);
 }
 
 /******************************************************************************
@@ -56,7 +56,7 @@ QuickViewportWindow::QuickViewportWindow() : ViewportWindowInterface(nullptr, nu
 ******************************************************************************/
 QuickViewportWindow::~QuickViewportWindow() 
 {
-	releaseRenderingResources();
+    releaseRenderingResources();
 }
 
 /******************************************************************************
@@ -64,18 +64,18 @@ QuickViewportWindow::~QuickViewportWindow()
 ******************************************************************************/
 void QuickViewportWindow::setViewport(Viewport* vp)
 {
-	releaseRenderingResources();
-	ViewportWindowInterface::setViewport(vp);
+    releaseRenderingResources();
+    ViewportWindowInterface::setViewport(vp);
 
-	// Create the viewport renderer.
-	_viewportRenderer = new OpenGLSceneRenderer(viewport()->dataset());
-	_viewportRenderer->setInteractive(true);
+    // Create the viewport renderer.
+    _viewportRenderer = new OpenGLSceneRenderer(viewport()->dataset());
+    _viewportRenderer->setInteractive(true);
 
-	// Create the object picking renderer.
-	_pickingRenderer = new PickingOpenGLSceneRenderer(viewport()->dataset());
-	_pickingRenderer->setInteractive(true);
+    // Create the object picking renderer.
+    _pickingRenderer = new PickingOpenGLSceneRenderer(viewport()->dataset());
+    _pickingRenderer->setInteractive(true);
 
-	Q_EMIT viewportReplaced(viewport());
+    Q_EMIT viewportReplaced(viewport());
 }
 
 /******************************************************************************
@@ -83,15 +83,15 @@ void QuickViewportWindow::setViewport(Viewport* vp)
 ******************************************************************************/
 void QuickViewportWindow::releaseRenderingResources()
 {
-	// Release any OpenGL resources held by the viewport renderers.
-	if(_viewportRenderer && _viewportRenderer->currentResourceFrame()) {
-		OpenGLResourceManager::instance()->releaseResourceFrame(_viewportRenderer->currentResourceFrame());
-		_viewportRenderer->setCurrentResourceFrame(0);
-	}
-	if(_pickingRenderer && _pickingRenderer->currentResourceFrame()) {
-		OpenGLResourceManager::instance()->releaseResourceFrame(_pickingRenderer->currentResourceFrame());
-		_pickingRenderer->setCurrentResourceFrame(0);
-	}
+    // Release any OpenGL resources held by the viewport renderers.
+    if(_viewportRenderer && _viewportRenderer->currentResourceFrame()) {
+        OpenGLResourceManager::instance()->releaseResourceFrame(_viewportRenderer->currentResourceFrame());
+        _viewportRenderer->setCurrentResourceFrame(0);
+    }
+    if(_pickingRenderer && _pickingRenderer->currentResourceFrame()) {
+        OpenGLResourceManager::instance()->releaseResourceFrame(_pickingRenderer->currentResourceFrame());
+        _pickingRenderer->setCurrentResourceFrame(0);
+    }
 }
 
 /******************************************************************************
@@ -99,7 +99,7 @@ void QuickViewportWindow::releaseRenderingResources()
 ******************************************************************************/
 ViewportInputManager* QuickViewportWindow::inputManager() const
 {
-	return mainWindow() ? mainWindow()->viewportInputManager() : nullptr;
+    return mainWindow() ? mainWindow()->viewportInputManager() : nullptr;
 }
 
 /******************************************************************************
@@ -107,7 +107,7 @@ ViewportInputManager* QuickViewportWindow::inputManager() const
 ******************************************************************************/
 QQuickFramebufferObject::Renderer* QuickViewportWindow::createRenderer() const
 {
-	return new Renderer(const_cast<QuickViewportWindow*>(this));
+    return new Renderer(const_cast<QuickViewportWindow*>(this));
 }
 
 /******************************************************************************
@@ -115,8 +115,8 @@ QQuickFramebufferObject::Renderer* QuickViewportWindow::createRenderer() const
 ******************************************************************************/
 void QuickViewportWindow::renderLater()
 {
-	_updateRequested = true;
-	update();
+    _updateRequested = true;
+    update();
 }
 
 /******************************************************************************
@@ -125,11 +125,11 @@ void QuickViewportWindow::renderLater()
 ******************************************************************************/
 void QuickViewportWindow::processViewportUpdate()
 {
-	if(_updateRequested) {
-		OVITO_ASSERT_MSG(!viewport()->isRendering(), "QuickViewportWindow::processUpdateRequest()", "Recursive viewport repaint detected.");
-		OVITO_ASSERT_MSG(!viewport()->dataset()->viewportConfig()->isRendering(), "QuickViewportWindow::processUpdateRequest()", "Recursive viewport repaint detected.");
-//		repaint();
-	}
+    if(_updateRequested) {
+        OVITO_ASSERT_MSG(!viewport()->isRendering(), "QuickViewportWindow::processUpdateRequest()", "Recursive viewport repaint detected.");
+        OVITO_ASSERT_MSG(!viewport()->dataset()->viewportConfig()->isRendering(), "QuickViewportWindow::processUpdateRequest()", "Recursive viewport repaint detected.");
+//      repaint();
+    }
 }
 
 /******************************************************************************
@@ -137,17 +137,17 @@ void QuickViewportWindow::processViewportUpdate()
 ******************************************************************************/
 void QuickViewportWindow::mouseDoubleClickEvent(QMouseEvent* event)
 {
-	if(inputManager()) {
-		if(ViewportInputMode* mode = inputManager()->activeMode()) {
-			try {
-				mode->mouseDoubleClickEvent(this, event);
-			}
-			catch(const Exception& ex) {
-				qWarning() << "Uncaught exception in viewport mouse event handler:";
-				ex.logError();
-			}
-		}
-	}
+    if(inputManager()) {
+        if(ViewportInputMode* mode = inputManager()->activeMode()) {
+            try {
+                mode->mouseDoubleClickEvent(this, event);
+            }
+            catch(const Exception& ex) {
+                qWarning() << "Uncaught exception in viewport mouse event handler:";
+                ex.logError();
+            }
+        }
+    }
 }
 
 /******************************************************************************
@@ -155,30 +155,30 @@ void QuickViewportWindow::mouseDoubleClickEvent(QMouseEvent* event)
 ******************************************************************************/
 void QuickViewportWindow::mousePressEvent(QMouseEvent* event)
 {
-	viewport()->dataset()->viewportConfig()->setActiveViewport(viewport());
+    viewport()->dataset()->viewportConfig()->setActiveViewport(viewport());
 
-	if(event->buttons() != Qt::NoButton && !_mouseGrabWorkaround.isActive()) {
-		if(!_mouseGrabWorkaround.container()) {
-			QQuickItem* container = static_cast<MainWindow*>(mainWindow());
-			while(QQuickItem* parent = container->parentItem())
-				container = parent;
-			_mouseGrabWorkaround.setContainer(container);
-		}
-		_mouseGrabWorkaround.setActive(true, this);
-		setKeepMouseGrab(true);
-	}
+    if(event->buttons() != Qt::NoButton && !_mouseGrabWorkaround.isActive()) {
+        if(!_mouseGrabWorkaround.container()) {
+            QQuickItem* container = static_cast<MainWindow*>(mainWindow());
+            while(QQuickItem* parent = container->parentItem())
+                container = parent;
+            _mouseGrabWorkaround.setContainer(container);
+        }
+        _mouseGrabWorkaround.setActive(true, this);
+        setKeepMouseGrab(true);
+    }
 
-	if(inputManager()) {
-		if(ViewportInputMode* mode = inputManager()->activeMode()) {
-			try {
-				mode->mousePressEvent(this, event);
-			}
-			catch(const Exception& ex) {
-				qWarning() << "Uncaught exception in viewport mouse event handler:";
-				ex.logError();
-			}
-		}
-	}
+    if(inputManager()) {
+        if(ViewportInputMode* mode = inputManager()->activeMode()) {
+            try {
+                mode->mousePressEvent(this, event);
+            }
+            catch(const Exception& ex) {
+                qWarning() << "Uncaught exception in viewport mouse event handler:";
+                ex.logError();
+            }
+        }
+    }
 }
 
 /******************************************************************************
@@ -186,22 +186,22 @@ void QuickViewportWindow::mousePressEvent(QMouseEvent* event)
 ******************************************************************************/
 void QuickViewportWindow::mouseReleaseEvent(QMouseEvent* event)
 {
-	if(event->buttons() == Qt::NoButton && _mouseGrabWorkaround.isActive()) {
-		_mouseGrabWorkaround.setActive(false, this);
-		setKeepMouseGrab(false);
-	}
+    if(event->buttons() == Qt::NoButton && _mouseGrabWorkaround.isActive()) {
+        _mouseGrabWorkaround.setActive(false, this);
+        setKeepMouseGrab(false);
+    }
 
-	if(inputManager()) {
-		if(ViewportInputMode* mode = inputManager()->activeMode()) {
-			try {
-				mode->mouseReleaseEvent(this, event);
-			}
-			catch(const Exception& ex) {
-				qWarning() << "Uncaught exception in viewport mouse event handler:";
-				ex.logError();
-			}
-		}
-	}
+    if(inputManager()) {
+        if(ViewportInputMode* mode = inputManager()->activeMode()) {
+            try {
+                mode->mouseReleaseEvent(this, event);
+            }
+            catch(const Exception& ex) {
+                qWarning() << "Uncaught exception in viewport mouse event handler:";
+                ex.logError();
+            }
+        }
+    }
 }
 
 /******************************************************************************
@@ -209,17 +209,17 @@ void QuickViewportWindow::mouseReleaseEvent(QMouseEvent* event)
 ******************************************************************************/
 void QuickViewportWindow::mouseMoveEvent(QMouseEvent* event)
 {
-	if(inputManager()) {
-		if(ViewportInputMode* mode = inputManager()->activeMode()) {
-			try {
-				mode->mouseMoveEvent(this, event);
-			}
-			catch(const Exception& ex) {
-				qWarning() << "Uncaught exception in viewport mouse event handler:";
-				ex.logError();
-			}
-		}
-	}
+    if(inputManager()) {
+        if(ViewportInputMode* mode = inputManager()->activeMode()) {
+            try {
+                mode->mouseMoveEvent(this, event);
+            }
+            catch(const Exception& ex) {
+                qWarning() << "Uncaught exception in viewport mouse event handler:";
+                ex.logError();
+            }
+        }
+    }
 }
 
 /******************************************************************************
@@ -227,10 +227,10 @@ void QuickViewportWindow::mouseMoveEvent(QMouseEvent* event)
 ******************************************************************************/
 void QuickViewportWindow::hoverMoveEvent(QHoverEvent* event)
 {
-	if(event->oldPosF() != event->position()) {
-		QMouseEvent mouseEvent(QEvent::MouseMove, event->position(), Qt::NoButton, Qt::NoButton, event->modifiers());
-		mouseMoveEvent(&mouseEvent);
-	}
+    if(event->oldPosF() != event->position()) {
+        QMouseEvent mouseEvent(QEvent::MouseMove, event->position(), Qt::NoButton, Qt::NoButton, event->modifiers());
+        mouseMoveEvent(&mouseEvent);
+    }
 }
 
 /******************************************************************************
@@ -238,17 +238,17 @@ void QuickViewportWindow::hoverMoveEvent(QHoverEvent* event)
 ******************************************************************************/
 void QuickViewportWindow::wheelEvent(QWheelEvent* event)
 {
-	if(inputManager()) {
-		if(ViewportInputMode* mode = inputManager()->activeMode()) {
-			try {
-				mode->wheelEvent(this, event);
-			}
-			catch(const Exception& ex) {
-				qWarning() << "Uncaught exception in viewport mouse event handler:";
-				ex.logError();
-			}
-		}
-	}
+    if(inputManager()) {
+        if(ViewportInputMode* mode = inputManager()->activeMode()) {
+            try {
+                mode->wheelEvent(this, event);
+            }
+            catch(const Exception& ex) {
+                qWarning() << "Uncaught exception in viewport mouse event handler:";
+                ex.logError();
+            }
+        }
+    }
 }
 
 /******************************************************************************
@@ -256,7 +256,7 @@ void QuickViewportWindow::wheelEvent(QWheelEvent* event)
 ******************************************************************************/
 const std::vector<ViewportGizmo*>& QuickViewportWindow::viewportGizmos()
 {
-	return inputManager()->viewportGizmos();
+    return inputManager()->viewportGizmos();
 }
 
 /******************************************************************************
@@ -264,43 +264,43 @@ const std::vector<ViewportGizmo*>& QuickViewportWindow::viewportGizmos()
 ******************************************************************************/
 ViewportPickResult QuickViewportWindow::pick(const QPointF& pos)
 {
-	ViewportPickResult result;
+    ViewportPickResult result;
 
-	// Cannot perform picking while viewport is not visible or currently rendering or when updates are disabled.
-	if(isVisible() && !viewport()->isRendering() && !viewport()->dataset()->viewportConfig()->isSuspended() && pickingRenderer()) {
-		OpenGLResourceManager::ResourceFrameHandle previousResourceFrame = 0;
-		try {
-			if(pickingRenderer()->isRefreshRequired()) {
-				// Request a new frame from the resource manager for this render pass.
-				previousResourceFrame = pickingRenderer()->currentResourceFrame();
-				pickingRenderer()->setCurrentResourceFrame(OpenGLResourceManager::instance()->acquireResourceFrame());
+    // Cannot perform picking while viewport is not visible or currently rendering or when updates are disabled.
+    if(isVisible() && !viewport()->isRendering() && !viewport()->dataset()->viewportConfig()->isSuspended() && pickingRenderer()) {
+        OpenGLResourceManager::ResourceFrameHandle previousResourceFrame = 0;
+        try {
+            if(pickingRenderer()->isRefreshRequired()) {
+                // Request a new frame from the resource manager for this render pass.
+                previousResourceFrame = pickingRenderer()->currentResourceFrame();
+                pickingRenderer()->setCurrentResourceFrame(OpenGLResourceManager::instance()->acquireResourceFrame());
 
-				// Let the viewport do the actual rendering work.
-				viewport()->renderInteractive(pickingRenderer());
-			}
+                // Let the viewport do the actual rendering work.
+                viewport()->renderInteractive(pickingRenderer());
+            }
 
-			// Query which object is located at the given window position.
-			const QPoint pixelPos = (pos * devicePixelRatio()).toPoint();
-			const PickingOpenGLSceneRenderer::ObjectRecord* objInfo;
-			quint32 subobjectId;
-			std::tie(objInfo, subobjectId) = pickingRenderer()->objectAtLocation(pixelPos);
-			if(objInfo) {
-				result.setPipelineNode(objInfo->objectNode);
-				result.setPickInfo(objInfo->pickInfo);
-				result.setHitLocation(pickingRenderer()->worldPositionFromLocation(pixelPos));
-				result.setSubobjectId(subobjectId);
-			}
-		}
-		catch(const Exception& ex) {
-			ex.reportError();
-		}
+            // Query which object is located at the given window position.
+            const QPoint pixelPos = (pos * devicePixelRatio()).toPoint();
+            const PickingOpenGLSceneRenderer::ObjectRecord* objInfo;
+            quint32 subobjectId;
+            std::tie(objInfo, subobjectId) = pickingRenderer()->objectAtLocation(pixelPos);
+            if(objInfo) {
+                result.setPipelineNode(objInfo->objectNode);
+                result.setPickInfo(objInfo->pickInfo);
+                result.setHitLocation(pickingRenderer()->worldPositionFromLocation(pixelPos));
+                result.setSubobjectId(subobjectId);
+            }
+        }
+        catch(const Exception& ex) {
+            ex.reportError();
+        }
 
-		// Release the resources created by the OpenGL renderer during the last render pass before the current pass.
-		if(previousResourceFrame)
-			OpenGLResourceManager::instance()->releaseResourceFrame(previousResourceFrame);
-	}
+        // Release the resources created by the OpenGL renderer during the last render pass before the current pass.
+        if(previousResourceFrame)
+            OpenGLResourceManager::instance()->releaseResourceFrame(previousResourceFrame);
+    }
 
-	return result;
+    return result;
 }
 
 /******************************************************************************
@@ -308,7 +308,7 @@ ViewportPickResult QuickViewportWindow::pick(const QPointF& pos)
 ******************************************************************************/
 void QuickViewportWindow::makeOpenGLContextCurrent() 
 {
-	OVITO_ASSERT(window()->rendererInterface()->graphicsApi() == QSGRendererInterface::OpenGL);
+    OVITO_ASSERT(window()->rendererInterface()->graphicsApi() == QSGRendererInterface::OpenGL);
 }
 
 /******************************************************************************
@@ -316,52 +316,52 @@ void QuickViewportWindow::makeOpenGLContextCurrent()
 ******************************************************************************/
 void QuickViewportWindow::renderViewport()
 {
-	_updateRequested = false;
+    _updateRequested = false;
 
-	// Do not re-enter rendering function of the same viewport.
-	if(!viewport() || viewport()->isRendering())
-		return;
+    // Do not re-enter rendering function of the same viewport.
+    if(!viewport() || viewport()->isRendering())
+        return;
 
-	// Invalidate picking buffer every time the visible contents of the viewport change.
-	_pickingRenderer->reset();
+    // Invalidate picking buffer every time the visible contents of the viewport change.
+    _pickingRenderer->reset();
 
-	// Don't render anything if viewport updates are currently suspended. 
-	if(viewport()->dataset()->viewportConfig()->isSuspended())
-		return;
+    // Don't render anything if viewport updates are currently suspended. 
+    if(viewport()->dataset()->viewportConfig()->isSuspended())
+        return;
 
 #ifdef Q_OS_WASM
-	// Verify that the EXT_frag_depth OpenGL ES 2.0 extension is available.
-	static bool hasCheckedFragDepthExtension = false;
-	if(!hasCheckedFragDepthExtension) {
-		hasCheckedFragDepthExtension = true;
-		if(QOpenGLContext::currentContext()->hasExtension("EXT_frag_depth") == false) 
-			Q_EMIT viewportError(tr("WARNING: WebGL extension 'EXT_frag_depth' is not supported by your browser.\nWithout this capability, visual artifacts are expected."));
-	}
+    // Verify that the EXT_frag_depth OpenGL ES 2.0 extension is available.
+    static bool hasCheckedFragDepthExtension = false;
+    if(!hasCheckedFragDepthExtension) {
+        hasCheckedFragDepthExtension = true;
+        if(QOpenGLContext::currentContext()->hasExtension("EXT_frag_depth") == false) 
+            Q_EMIT viewportError(tr("WARNING: WebGL extension 'EXT_frag_depth' is not supported by your browser.\nWithout this capability, visual artifacts are expected."));
+    }
 #endif
 
-	// Request a new frame from the resource manager for this render pass.
-	OpenGLResourceManager::ResourceFrameHandle previousResourceFrame = _viewportRenderer->currentResourceFrame();
-	_viewportRenderer->setCurrentResourceFrame(OpenGLResourceManager::instance()->acquireResourceFrame());
+    // Request a new frame from the resource manager for this render pass.
+    OpenGLResourceManager::ResourceFrameHandle previousResourceFrame = _viewportRenderer->currentResourceFrame();
+    _viewportRenderer->setCurrentResourceFrame(OpenGLResourceManager::instance()->acquireResourceFrame());
 
-	try {
-		// Let the Viewport class do the actual rendering work.
-		viewport()->renderInteractive(_viewportRenderer);
-	}
-	catch(Exception& ex) {
-		if(ex.context() == nullptr) ex.setContext(viewport()->dataset());
-		ex.prependGeneralMessage(tr("An unexpected error occurred while rendering the viewport contents. The program will quit now."));
-		viewport()->dataset()->viewportConfig()->suspendViewportUpdates();
-		Q_EMIT viewportError(ex.messages().join(QChar('\n')));
-		ex.reportError();
-	}
+    try {
+        // Let the Viewport class do the actual rendering work.
+        viewport()->renderInteractive(_viewportRenderer);
+    }
+    catch(Exception& ex) {
+        if(ex.context() == nullptr) ex.setContext(viewport()->dataset());
+        ex.prependGeneralMessage(tr("An unexpected error occurred while rendering the viewport contents. The program will quit now."));
+        viewport()->dataset()->viewportConfig()->suspendViewportUpdates();
+        Q_EMIT viewportError(ex.messages().join(QChar('\n')));
+        ex.reportError();
+    }
 
-	// Release the resources created by the OpenGL renderer during the last render pass before the current pass.
-	if(previousResourceFrame) {
-		OpenGLResourceManager::instance()->releaseResourceFrame(previousResourceFrame);
-	}
+    // Release the resources created by the OpenGL renderer during the last render pass before the current pass.
+    if(previousResourceFrame) {
+        OpenGLResourceManager::instance()->releaseResourceFrame(previousResourceFrame);
+    }
 
-	// Reset the OpenGL context back to its default state expected by Qt Quick.
-	QQuickOpenGLUtils::resetOpenGLState();
+    // Reset the OpenGL context back to its default state expected by Qt Quick.
+    QQuickOpenGLUtils::resetOpenGLState();
 }
 
 /******************************************************************************
@@ -369,14 +369,14 @@ void QuickViewportWindow::renderViewport()
 ******************************************************************************/
 void QuickViewportWindow::renderGui(SceneRenderer* renderer)
 {
-	if(viewport()->renderPreviewMode()) {
-		// Render render frame.
-		renderRenderFrame(renderer);
-	}
-	else {
-		// Render orientation tripod.
-		renderOrientationIndicator(renderer);
-	}
+    if(viewport()->renderPreviewMode()) {
+        // Render render frame.
+        renderRenderFrame(renderer);
+    }
+    else {
+        // Render orientation tripod.
+        renderOrientationIndicator(renderer);
+    }
 }
 
-}	// End of namespace
+}   // End of namespace

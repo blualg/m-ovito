@@ -34,29 +34,29 @@ namespace Ovito {
 ******************************************************************************/
 class OVITO_GUI_EXPORT AffineTransformationParameterUI : public FloatParameterUI
 {
-	OVITO_CLASS(AffineTransformationParameterUI)
+    OVITO_CLASS(AffineTransformationParameterUI)
 
 public:
 
-	/// Constructor for a Qt property.
-	AffineTransformationParameterUI(PropertiesEditor* parentEditor, const char* propertyName, size_t row, size_t column, const QString& labelText = QString(), const QMetaObject* parameterUnitType = nullptr);
+    /// Constructor for a Qt property.
+    AffineTransformationParameterUI(PropertiesEditor* parentEditor, const char* propertyName, size_t row, size_t column, const QString& labelText = QString(), const QMetaObject* parameterUnitType = nullptr);
 
-	/// Constructor for a PropertyField property.
-	AffineTransformationParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField, size_t row, size_t column);
+    /// Constructor for a PropertyField property.
+    AffineTransformationParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField, size_t row, size_t column);
 
-	/// This method updates the displayed value of the parameter UI.
-	virtual void updateUI() override;
+    /// This method updates the displayed value of the parameter UI.
+    virtual void updateUI() override;
 
-	/// Takes the value entered by the user and stores it in the property field
-	/// this property UI is bound to.
-	virtual void updatePropertyValue() override;
+    /// Takes the value entered by the user and stores it in the property field
+    /// this property UI is bound to.
+    virtual void updatePropertyValue() override;
 
 private:
 
-	/// The matrix component to control.
-	size_t row, column;
+    /// The matrix component to control.
+    size_t row, column;
 };
 
-}	// End of namespace
+}   // End of namespace
 
 

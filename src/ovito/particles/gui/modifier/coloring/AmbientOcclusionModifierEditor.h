@@ -33,17 +33,17 @@ namespace Ovito::Particles {
  */
 class AmbientOcclusionModifierEditor : public PropertiesEditor
 {
-	OVITO_CLASS(AmbientOcclusionModifierEditor)
+    OVITO_CLASS(AmbientOcclusionModifierEditor)
 
 public:
 
-	/// Default constructor.
-	Q_INVOKABLE AmbientOcclusionModifierEditor() {}
+    /// Default constructor.
+    Q_INVOKABLE AmbientOcclusionModifierEditor() {}
 
 protected:
 
-	/// Creates the user interface controls for the editor.
-	virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
+    /// Creates the user interface controls for the editor.
+    virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
 };
 
-}	// End of namespace
+}   // End of namespace

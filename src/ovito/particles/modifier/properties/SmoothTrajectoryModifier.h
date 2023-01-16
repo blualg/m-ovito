@@ -35,63 +35,63 @@ namespace Ovito::Particles {
  */
 class OVITO_PARTICLES_EXPORT SmoothTrajectoryModifier : public Modifier
 {
-	/// Give this modifier class its own metaclass.
-	class OOMetaClass : public Modifier::OOMetaClass
-	{
-	public:
+    /// Give this modifier class its own metaclass.
+    class OOMetaClass : public Modifier::OOMetaClass
+    {
+    public:
 
-		/// Inherit constructor from base metaclass.
-		using Modifier::OOMetaClass::OOMetaClass;
+        /// Inherit constructor from base metaclass.
+        using Modifier::OOMetaClass::OOMetaClass;
 
-		/// Asks the metaclass whether the modifier can be applied to the given input data.
-		virtual bool isApplicableTo(const DataCollection& input) const override;
-	};
+        /// Asks the metaclass whether the modifier can be applied to the given input data.
+        virtual bool isApplicableTo(const DataCollection& input) const override;
+    };
 
-	OVITO_CLASS_META(SmoothTrajectoryModifier, OOMetaClass)
+    OVITO_CLASS_META(SmoothTrajectoryModifier, OOMetaClass)
 
-	Q_CLASSINFO("DisplayName", "Smooth trajectory");
-	Q_CLASSINFO("ClassNameAlias", "InterpolateTrajectoryModifier");
-	Q_CLASSINFO("Description", "Time-averaged particle positions using a sliding time window.");
+    Q_CLASSINFO("DisplayName", "Smooth trajectory");
+    Q_CLASSINFO("ClassNameAlias", "InterpolateTrajectoryModifier");
+    Q_CLASSINFO("Description", "Time-averaged particle positions using a sliding time window.");
 #ifndef OVITO_QML_GUI
-	Q_CLASSINFO("ModifierCategory", "Modification");
+    Q_CLASSINFO("ModifierCategory", "Modification");
 #else
-	Q_CLASSINFO("ModifierCategory", "-");
+    Q_CLASSINFO("ModifierCategory", "-");
 #endif
 
 public:
 
-	/// Constructor.
-	Q_INVOKABLE SmoothTrajectoryModifier(ObjectCreationParams params);
+    /// Constructor.
+    Q_INVOKABLE SmoothTrajectoryModifier(ObjectCreationParams params);
 
-	/// Determines the time interval over which a computed pipeline state will remain valid.
-	virtual TimeInterval validityInterval(const ModifierEvaluationRequest& request) const override;
+    /// Determines the time interval over which a computed pipeline state will remain valid.
+    virtual TimeInterval validityInterval(const ModifierEvaluationRequest& request) const override;
 
-	/// Asks the modifier for the set of animation time intervals that should be cached by the upstream pipeline.
-	virtual void inputCachingHints(TimeIntervalUnion& cachingIntervals, ModifierApplication* modApp) override;
+    /// Asks the modifier for the set of animation time intervals that should be cached by the upstream pipeline.
+    virtual void inputCachingHints(TimeIntervalUnion& cachingIntervals, ModifierApplication* modApp) override;
 
-	/// Is called by the ModifierApplication to let the modifier adjust the time interval of a TargetChanged event 
-	/// received from the upstream pipeline before it is propagated to the downstream pipeline.
-	virtual void restrictInputValidityInterval(TimeInterval& iv) const override;
+    /// Is called by the ModifierApplication to let the modifier adjust the time interval of a TargetChanged event 
+    /// received from the upstream pipeline before it is propagated to the downstream pipeline.
+    virtual void restrictInputValidityInterval(TimeInterval& iv) const override;
 
-	/// Modifies the input data.
-	virtual Future<PipelineFlowState> evaluate(const ModifierEvaluationRequest& request, const PipelineFlowState& input) override;
+    /// Modifies the input data.
+    virtual Future<PipelineFlowState> evaluate(const ModifierEvaluationRequest& request, const PipelineFlowState& input) override;
 
-	/// Modifies the input data synchronously.
-	virtual void evaluateSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
+    /// Modifies the input data synchronously.
+    virtual void evaluateSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
 
 private:
 
-	/// Computes the interpolated state between two input states.
-	void interpolateState(PipelineFlowState& state1, const PipelineFlowState& state2, const ModifierEvaluationRequest& request, AnimationTime time1, AnimationTime time2);
+    /// Computes the interpolated state between two input states.
+    void interpolateState(PipelineFlowState& state1, const PipelineFlowState& state2, const ModifierEvaluationRequest& request, AnimationTime time1, AnimationTime time2);
 
-	/// Computes the averaged state from several input states.
-	void averageState(PipelineFlowState& state1, const std::vector<PipelineFlowState>& otherStates, const ModifierEvaluationRequest& request);
+    /// Computes the averaged state from several input states.
+    void averageState(PipelineFlowState& state1, const std::vector<PipelineFlowState>& otherStates, const ModifierEvaluationRequest& request);
 
-	/// Controls whether the minimum image convention is used during displacement calculation.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, useMinimumImageConvention, setUseMinimumImageConvention);
+    /// Controls whether the minimum image convention is used during displacement calculation.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, useMinimumImageConvention, setUseMinimumImageConvention);
 
-	/// The number of animation frames to include in the averaging procedure.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD(int, smoothingWindowSize, setSmoothingWindowSize);
+    /// The number of animation frames to include in the averaging procedure.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(int, smoothingWindowSize, setSmoothingWindowSize);
 };
 
 /**
@@ -100,12 +100,12 @@ private:
  */
 class OVITO_PARTICLES_EXPORT InterpolateTrajectoryModifierApplication : public ModifierApplication
 {
-	OVITO_CLASS(InterpolateTrajectoryModifierApplication)
+    OVITO_CLASS(InterpolateTrajectoryModifierApplication)
 
 public:
 
-	/// Constructor.
-	Q_INVOKABLE InterpolateTrajectoryModifierApplication(ObjectCreationParams params) : ModifierApplication(params) {}
+    /// Constructor.
+    Q_INVOKABLE InterpolateTrajectoryModifierApplication(ObjectCreationParams params) : ModifierApplication(params) {}
 };
 
-}	// End of namespace
+}   // End of namespace

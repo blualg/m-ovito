@@ -35,38 +35,38 @@ namespace Ovito {
  */
 class AnimationKeyEditorDialog : public QDialog, private UndoableTransaction
 {
-	Q_OBJECT
+    Q_OBJECT
 
 public:
 
-	/// Constructor.
-	AnimationKeyEditorDialog(KeyframeController* ctrl, const PropertyFieldDescriptor* propertyField, QWidget* parent, MainWindow& mainWindow);
+    /// Constructor.
+    AnimationKeyEditorDialog(KeyframeController* ctrl, const PropertyFieldDescriptor* propertyField, QWidget* parent, MainWindow& mainWindow);
 
-	/// Returns the animation controller being edited.
-	KeyframeController* ctrl() const { return _ctrl.target(); }
+    /// Returns the animation controller being edited.
+    KeyframeController* ctrl() const { return _ctrl.target(); }
 
 private Q_SLOTS:
 
-	/// Event handler for the Ok button.
-	void onOk();
+    /// Event handler for the Ok button.
+    void onOk();
 
-	/// Handles the 'Add key' button.
-	void onAddKey();
+    /// Handles the 'Add key' button.
+    void onAddKey();
 
-	/// Handles the 'Delete key' button.
-	void onDeleteKey();
+    /// Handles the 'Delete key' button.
+    void onDeleteKey();
 
 private:
 
-	MainWindow& _mainWindow;
-	QTableView* _tableWidget;
-	QAbstractTableModel* _model;
-	QAction* _addKeyAction;
-	QAction* _deleteKeyAction;
-	RefTargetListener<KeyframeController> _ctrl;
-	PropertiesPanel* _keyPropPanel;
+    MainWindow& _mainWindow;
+    QTableView* _tableWidget;
+    QAbstractTableModel* _model;
+    QAction* _addKeyAction;
+    QAction* _deleteKeyAction;
+    RefTargetListener<KeyframeController> _ctrl;
+    PropertiesPanel* _keyPropPanel;
 
-	friend class AnimationKeyModel;
+    friend class AnimationKeyModel;
 };
 
-}	// End of namespace
+}   // End of namespace

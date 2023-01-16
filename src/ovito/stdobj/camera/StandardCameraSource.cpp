@@ -51,26 +51,26 @@ SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(StandardCameraSource, zoomController, World
 * Constructs a camera object.
 ******************************************************************************/
 StandardCameraSource::StandardCameraSource(ObjectCreationParams params) : PipelineObject(params), 
-	_isPerspective(true)
+    _isPerspective(true)
 {
-	if(params.createSubObjects()) {
-		setFovController(ControllerManager::createFloatController());
-		fovController()->setFloatValue(AnimationTime(0), FLOATTYPE_PI/4);
+    if(params.createSubObjects()) {
+        setFovController(ControllerManager::createFloatController());
+        fovController()->setFloatValue(AnimationTime(0), FLOATTYPE_PI/4);
 
-		setZoomController(ControllerManager::createFloatController());
-		zoomController()->setFloatValue(AnimationTime(0), 200);
+        setZoomController(ControllerManager::createFloatController());
+        zoomController()->setFloatValue(AnimationTime(0), 200);
 
-		// Adopt the view parameters from the currently active Viewport.
-		if(ExecutionContext::current().isInteractive()) {
-			if(Viewport* vp = ExecutionContext::current().ui().datasetContainer().activeViewport()) {
-				setIsPerspective(vp->isPerspectiveProjection());
-				if(vp->isPerspectiveProjection())
-					fovController()->setFloatValue(AnimationTime(0), vp->fieldOfView());
-				else
-					zoomController()->setFloatValue(AnimationTime(0), vp->fieldOfView());
-			}
-		}
-	}
+        // Adopt the view parameters from the currently active Viewport.
+        if(ExecutionContext::current().isInteractive()) {
+            if(Viewport* vp = ExecutionContext::current().ui().datasetContainer().activeViewport()) {
+                setIsPerspective(vp->isPerspectiveProjection());
+                if(vp->isPerspectiveProjection())
+                    fovController()->setFloatValue(AnimationTime(0), vp->fieldOfView());
+                else
+                    zoomController()->setFloatValue(AnimationTime(0), vp->fieldOfView());
+            }
+        }
+    }
 }
 
 /******************************************************************************
@@ -78,12 +78,12 @@ StandardCameraSource::StandardCameraSource(ObjectCreationParams params) : Pipeli
 ******************************************************************************/
 TimeInterval StandardCameraSource::validityInterval(const PipelineEvaluationRequest& request) const
 {
-	TimeInterval interval = PipelineObject::validityInterval(request);
-	if(isPerspective() && fovController()) 
-		interval.intersect(fovController()->validityInterval(request.time()));
-	if(!isPerspective() && zoomController()) 
-		interval.intersect(zoomController()->validityInterval(request.time()));
-	return interval;
+    TimeInterval interval = PipelineObject::validityInterval(request);
+    if(isPerspective() && fovController()) 
+        interval.intersect(fovController()->validityInterval(request.time()));
+    if(!isPerspective() && zoomController()) 
+        interval.intersect(zoomController()->validityInterval(request.time()));
+    return interval;
 }
 
 /******************************************************************************
@@ -91,20 +91,20 @@ TimeInterval StandardCameraSource::validityInterval(const PipelineEvaluationRequ
 ******************************************************************************/
 PipelineFlowState StandardCameraSource::evaluateSynchronous(const PipelineEvaluationRequest& request)
 {
-	// Create a new DataCollection.
-	DataOORef<DataCollection> data = DataOORef<DataCollection>::create();
+    // Create a new DataCollection.
+    DataOORef<DataCollection> data = DataOORef<DataCollection>::create();
 
-	// Set up the camera data object.
-	DataOORef<StandardCameraObject> camera = DataOORef<StandardCameraObject>::create();
-	camera->setDataSource(this);
-	camera->setIsPerspective(isPerspective());
-	TimeInterval stateValidity = TimeInterval::infinite();
-	if(fovController()) camera->setFov(fovController()->getFloatValue(request.time(), stateValidity));
-	if(zoomController()) camera->setZoom(zoomController()->getFloatValue(request.time(), stateValidity));
-	data->addObject(std::move(camera));
+    // Set up the camera data object.
+    DataOORef<StandardCameraObject> camera = DataOORef<StandardCameraObject>::create();
+    camera->setDataSource(this);
+    camera->setIsPerspective(isPerspective());
+    TimeInterval stateValidity = TimeInterval::infinite();
+    if(fovController()) camera->setFov(fovController()->getFloatValue(request.time(), stateValidity));
+    if(zoomController()) camera->setZoom(zoomController()->getFloatValue(request.time(), stateValidity));
+    data->addObject(std::move(camera));
 
-	// Wrap the DataCollection in a PipelineFlowState.
-	return PipelineFlowState(std::move(data), PipelineStatus::Success, stateValidity);
+    // Wrap the DataCollection in a PipelineFlowState.
+    return PipelineFlowState(std::move(data), PipelineStatus::Success, stateValidity);
 }
 
 /******************************************************************************
@@ -112,9 +112,9 @@ PipelineFlowState StandardCameraSource::evaluateSynchronous(const PipelineEvalua
 ******************************************************************************/
 FloatType StandardCameraSource::zoom() const
 {
-	if(zoomController()) 
-		return zoomController()->getFloatValue(AnimationTime(0));
-	return 200;
+    if(zoomController()) 
+        return zoomController()->getFloatValue(AnimationTime(0));
+    return 200;
 }
 
 /******************************************************************************
@@ -122,8 +122,8 @@ FloatType StandardCameraSource::zoom() const
 ******************************************************************************/
 void StandardCameraSource::setZoom(FloatType newFOV)
 {
-	if(zoomController()) 
-		zoomController()->setFloatValue(AnimationTime(0), newFOV);
+    if(zoomController()) 
+        zoomController()->setFloatValue(AnimationTime(0), newFOV);
 }
 
 /******************************************************************************
@@ -131,9 +131,9 @@ void StandardCameraSource::setZoom(FloatType newFOV)
 ******************************************************************************/
 FloatType StandardCameraSource::fov() const
 {
-	if(fovController()) 
-		return fovController()->getFloatValue(AnimationTime(0));
-	return FLOATTYPE_PI / 4;
+    if(fovController()) 
+        return fovController()->getFloatValue(AnimationTime(0));
+    return FLOATTYPE_PI / 4;
 }
 
 /******************************************************************************
@@ -141,8 +141,8 @@ FloatType StandardCameraSource::fov() const
 ******************************************************************************/
 void StandardCameraSource::setFov(FloatType newFOV)
 {
-	if(fovController()) 
-		fovController()->setFloatValue(AnimationTime(0), newFOV);
+    if(fovController()) 
+        fovController()->setFloatValue(AnimationTime(0), newFOV);
 }
 
 /******************************************************************************
@@ -150,11 +150,11 @@ void StandardCameraSource::setFov(FloatType newFOV)
 ******************************************************************************/
 bool StandardCameraSource::isTargetCamera() const
 {
-	for(PipelineSceneNode* pipeline : pipelines(true)) {
-		if(pipeline->lookatTargetNode() != nullptr)
-			return true;
-	}
-	return false;
+    for(PipelineSceneNode* pipeline : pipelines(true)) {
+        if(pipeline->lookatTargetNode() != nullptr)
+            return true;
+    }
+    return false;
 }
 
 /******************************************************************************
@@ -162,13 +162,13 @@ bool StandardCameraSource::isTargetCamera() const
 ******************************************************************************/
 FloatType StandardCameraSource::targetDistance(AnimationTime time) const
 {
-	for(PipelineSceneNode* node : pipelines(true)) {
-		if(node->lookatTargetNode() != nullptr) {
-			return StandardCameraObject::getTargetDistance(time, node);
-		}
-	}
+    for(PipelineSceneNode* node : pipelines(true)) {
+        if(node->lookatTargetNode() != nullptr) {
+            return StandardCameraObject::getTargetDistance(time, node);
+        }
+    }
 
-	return StandardCameraObject::getTargetDistance(time, nullptr);
+    return StandardCameraObject::getTargetDistance(time, nullptr);
 }
 
 /******************************************************************************
@@ -176,39 +176,39 @@ FloatType StandardCameraSource::targetDistance(AnimationTime time) const
 ******************************************************************************/
 void StandardCameraSource::setIsTargetCamera(bool enable)
 {
-	pushIfUndoRecording<TargetChangedUndoOperation>(this);
+    pushIfUndoRecording<TargetChangedUndoOperation>(this);
 
-	// Use current scene animation time to initialize camera objects.
-	AnimationTime time = ExecutionContext::current().ui().datasetContainer().currentAnimationTime();
+    // Use current scene animation time to initialize camera objects.
+    AnimationTime time = ExecutionContext::current().ui().datasetContainer().currentAnimationTime();
 
-	for(PipelineSceneNode* node : pipelines(true)) {
-		if(node->lookatTargetNode() == nullptr && enable) {
-			if(SceneNode* parentNode = node->parentNode()) {
-				DataOORef<DataCollection> dataCollection = DataOORef<DataCollection>::create();
-				dataCollection->addObject(DataOORef<TargetObject>::create());
-				OORef<StaticSource> targetSource = OORef<StaticSource>::create(dataCollection);
-				OORef<PipelineSceneNode> targetNode = OORef<PipelineSceneNode>::create();
-				targetNode->setDataProvider(targetSource);
-				targetNode->setNodeName(tr("%1.target").arg(node->nodeName()));
-				parentNode->addChildNode(targetNode);
-				// Position the new target to match the current orientation of the camera.
-				TimeInterval iv;
-				const AffineTransformation& cameraTM = node->getWorldTransform(time, iv);
-				Vector3 cameraPos = cameraTM.translation();
-				Vector3 cameraDir = cameraTM.column(2).normalized();
-				Vector3 targetPos = cameraPos - targetDistance(time) * cameraDir;
-				targetNode->transformationController()->translate(time, targetPos, AffineTransformation::Identity());
-				node->setLookatTargetNode(time, targetNode);
-			}
-		}
-		else if(node->lookatTargetNode() != nullptr && !enable) {
-			node->lookatTargetNode()->deleteNode();
-			OVITO_ASSERT(node->lookatTargetNode() == nullptr);
-		}
-	}
+    for(PipelineSceneNode* node : pipelines(true)) {
+        if(node->lookatTargetNode() == nullptr && enable) {
+            if(SceneNode* parentNode = node->parentNode()) {
+                DataOORef<DataCollection> dataCollection = DataOORef<DataCollection>::create();
+                dataCollection->addObject(DataOORef<TargetObject>::create());
+                OORef<StaticSource> targetSource = OORef<StaticSource>::create(dataCollection);
+                OORef<PipelineSceneNode> targetNode = OORef<PipelineSceneNode>::create();
+                targetNode->setDataProvider(targetSource);
+                targetNode->setNodeName(tr("%1.target").arg(node->nodeName()));
+                parentNode->addChildNode(targetNode);
+                // Position the new target to match the current orientation of the camera.
+                TimeInterval iv;
+                const AffineTransformation& cameraTM = node->getWorldTransform(time, iv);
+                Vector3 cameraPos = cameraTM.translation();
+                Vector3 cameraDir = cameraTM.column(2).normalized();
+                Vector3 targetPos = cameraPos - targetDistance(time) * cameraDir;
+                targetNode->transformationController()->translate(time, targetPos, AffineTransformation::Identity());
+                node->setLookatTargetNode(time, targetNode);
+            }
+        }
+        else if(node->lookatTargetNode() != nullptr && !enable) {
+            node->lookatTargetNode()->deleteNode();
+            OVITO_ASSERT(node->lookatTargetNode() == nullptr);
+        }
+    }
 
-	pushIfUndoRecording<TargetChangedRedoOperation>(this);
-	notifyTargetChanged();
+    pushIfUndoRecording<TargetChangedRedoOperation>(this);
+    notifyTargetChanged();
 }
 
-}	// End of namespace
+}   // End of namespace

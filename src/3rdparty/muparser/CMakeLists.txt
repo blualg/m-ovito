@@ -22,13 +22,13 @@
 
 # Build library.
 ADD_LIBRARY(muParser
-	muParser.cpp
-	muParserBytecode.cpp
-	muParserInt.cpp
-	muParserTokenReader.cpp
-	muParserError.cpp
-	muParserCallback.cpp
-	muParserBase.cpp
+    muParser.cpp
+    muParserBytecode.cpp
+    muParserInt.cpp
+    muParserTokenReader.cpp
+    muParserError.cpp
+    muParserCallback.cpp
+    muParserBase.cpp
 )
 
 # Give our library file a new name to not confuse it with any system versions of the library.
@@ -45,22 +45,22 @@ FIND_PACKAGE(Qt6 ${OVITO_MINIMUM_REQUIRED_QT_VERSION} COMPONENTS Core REQUIRED)
 TARGET_LINK_LIBRARIES(muParser PUBLIC Qt6::Core)
 
 IF(MSVC)
-	# Do not warn about missing dll-interface of members of an exported class.
-	TARGET_COMPILE_OPTIONS(muParser PRIVATE "/wd4251")
-	# Do not warn about missing dll-interface of base class of an exported class.
-	TARGET_COMPILE_OPTIONS(muParser PRIVATE "/wd4275")
+    # Do not warn about missing dll-interface of members of an exported class.
+    TARGET_COMPILE_OPTIONS(muParser PRIVATE "/wd4251")
+    # Do not warn about missing dll-interface of base class of an exported class.
+    TARGET_COMPILE_OPTIONS(muParser PRIVATE "/wd4275")
 ENDIF()
 
 # Make header files of this library available to dependent targets.
 TARGET_INCLUDE_DIRECTORIES(muParser INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}/..")
 
 IF(NOT BUILD_SHARED_LIBS AND OVITO_BUILD_PYPI)
-	# Since we will link this library into the dynamically loaded Python extension module, we need to use the fPIC flag.
-	SET_PROPERTY(TARGET muParser PROPERTY POSITION_INDEPENDENT_CODE ON)
+    # Since we will link this library into the dynamically loaded Python extension module, we need to use the fPIC flag.
+    SET_PROPERTY(TARGET muParser PROPERTY POSITION_INDEPENDENT_CODE ON)
 ENDIF()
 
 # Export this target.
 INSTALL(TARGETS muParser EXPORT OVITO
-	RUNTIME DESTINATION "${OVITO_RELATIVE_LIBRARY_DIRECTORY}"
-	LIBRARY DESTINATION "${OVITO_RELATIVE_LIBRARY_DIRECTORY}"
-	ARCHIVE DESTINATION "${OVITO_RELATIVE_LIBRARY_DIRECTORY}" COMPONENT "development")
+    RUNTIME DESTINATION "${OVITO_RELATIVE_LIBRARY_DIRECTORY}"
+    LIBRARY DESTINATION "${OVITO_RELATIVE_LIBRARY_DIRECTORY}"
+    ARCHIVE DESTINATION "${OVITO_RELATIVE_LIBRARY_DIRECTORY}" COMPONENT "development")

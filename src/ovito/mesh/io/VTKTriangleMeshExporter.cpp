@@ -36,11 +36,11 @@ DEFINE_PROPERTY_FIELD(VTKTriangleMeshExporter, exportCapPolygons);
  *****************************************************************************/
 void VTKTriangleMeshExporter::openOutputFile(const QString& filePath, int numberOfFrames)
 {
-	OVITO_ASSERT(!_outputFile.isOpen());
-	OVITO_ASSERT(!_outputStream);
+    OVITO_ASSERT(!_outputFile.isOpen());
+    OVITO_ASSERT(!_outputStream);
 
-	_outputFile.setFileName(filePath);
-	_outputStream = std::make_unique<CompressedTextWriter>(_outputFile);
+    _outputFile.setFileName(filePath);
+    _outputStream = std::make_unique<CompressedTextWriter>(_outputFile);
 }
 
 /******************************************************************************
@@ -49,12 +49,12 @@ void VTKTriangleMeshExporter::openOutputFile(const QString& filePath, int number
  *****************************************************************************/
 void VTKTriangleMeshExporter::closeOutputFile(bool exportCompleted)
 {
-	_outputStream.reset();
-	if(_outputFile.isOpen())
-		_outputFile.close();
+    _outputStream.reset();
+    if(_outputFile.isOpen())
+        _outputFile.close();
 
-	if(!exportCompleted)
-		_outputFile.remove();
+    if(!exportCompleted)
+        _outputFile.remove();
 }
 
 /******************************************************************************
@@ -62,118 +62,118 @@ void VTKTriangleMeshExporter::closeOutputFile(bool exportCompleted)
  *****************************************************************************/
 bool VTKTriangleMeshExporter::exportFrame(int frameNumber, const QString& filePath, MainThreadOperation& operation)
 {
-	// Evaluate pipeline.
-	// Note: We are requesting the rendering state from the pipeline,
-	// because we are interested in renderable triangle meshes.
-	const PipelineFlowState& state = getPipelineDataToBeExported(frameNumber, true);
-	if(operation.isCanceled())
-		return false;
+    // Evaluate pipeline.
+    // Note: We are requesting the rendering state from the pipeline,
+    // because we are interested in renderable triangle meshes.
+    const PipelineFlowState& state = getPipelineDataToBeExported(frameNumber, true);
+    if(operation.isCanceled())
+        return false;
 
-	// Look up the RenderableSurfaceMesh to be exported in the pipeline state.
-	DataObjectReference objectRef(&RenderableSurfaceMesh::OOClass(), dataObjectToExport().dataPath());
-	const RenderableSurfaceMesh* meshObj = static_object_cast<RenderableSurfaceMesh>(state.getLeafObject(objectRef));
-	if(!meshObj) {
-		throw Exception(tr("The pipeline output does not contain the surface mesh to be exported (animation frame: %1; object key: %2). Available surface mesh keys: (%3)")
-			.arg(frameNumber).arg(objectRef.dataPath()).arg(getAvailableDataObjectList(state, RenderableSurfaceMesh::OOClass())));
-	}
+    // Look up the RenderableSurfaceMesh to be exported in the pipeline state.
+    DataObjectReference objectRef(&RenderableSurfaceMesh::OOClass(), dataObjectToExport().dataPath());
+    const RenderableSurfaceMesh* meshObj = static_object_cast<RenderableSurfaceMesh>(state.getLeafObject(objectRef));
+    if(!meshObj) {
+        throw Exception(tr("The pipeline output does not contain the surface mesh to be exported (animation frame: %1; object key: %2). Available surface mesh keys: (%3)")
+            .arg(frameNumber).arg(objectRef.dataPath()).arg(getAvailableDataObjectList(state, RenderableSurfaceMesh::OOClass())));
+    }
 
-	operation.setProgressText(tr("Writing file %1").arg(filePath));
+    operation.setProgressText(tr("Writing file %1").arg(filePath));
 
-	const TriMeshObject* surfaceMesh = meshObj->surfaceMesh();
-	const TriMeshObject* capPolygonsMesh = exportCapPolygons() ? meshObj->capPolygonsMesh() : nullptr;
-	auto totalVertexCount = (surfaceMesh ? surfaceMesh->vertexCount() : 0) + (capPolygonsMesh ? capPolygonsMesh->vertexCount() : 0);
-	auto totalFaceCount = (surfaceMesh ? surfaceMesh->faceCount() : 0) + (capPolygonsMesh ? capPolygonsMesh->faceCount() : 0);
-	textStream() << "# vtk DataFile Version 3.0\n";
-	textStream() << "# Triangle surface mesh written by " << Application::applicationName() << " " << Application::applicationVersionString() << "\n";
-	textStream() << "ASCII\n";
-	textStream() << "DATASET UNSTRUCTURED_GRID\n";
-	textStream() << "POINTS " << totalVertexCount << " double\n";
-	if(surfaceMesh) {
-		for(const Point3& p : surfaceMesh->vertices())
-			textStream() << p.x() << " " << p.y() << " " << p.z() << "\n";
-	}
-	if(capPolygonsMesh) {
-		for(const Point3& p : capPolygonsMesh->vertices())
-			textStream() << p.x() << " " << p.y() << " " << p.z() << "\n";
-	}
-	textStream() << "\nCELLS " << totalFaceCount << " " << (totalFaceCount * 4) << "\n";
-	if(surfaceMesh) {
-		for(const TriMeshFace& f : surfaceMesh->faces()) {
-			textStream() << "3";
-			for(size_t i = 0; i < 3; i++)
-				textStream() << " " << f.vertex(i);
-			textStream() << "\n";
-		}
-	}
-	if(capPolygonsMesh) {
-		for(const TriMeshFace& f : capPolygonsMesh->faces()) {
-			textStream() << "3";
-			for(size_t i = 0; i < 3; i++)
-				textStream() << " " << (f.vertex(i) + (surfaceMesh ? surfaceMesh->vertexCount() : 0));
-			textStream() << "\n";
-		}
-	}
-	textStream() << "\nCELL_TYPES " << totalFaceCount << "\n";
-	for(size_t i = 0; i < totalFaceCount; i++)
-		textStream() << "5\n";	// Triangle
+    const TriMeshObject* surfaceMesh = meshObj->surfaceMesh();
+    const TriMeshObject* capPolygonsMesh = exportCapPolygons() ? meshObj->capPolygonsMesh() : nullptr;
+    auto totalVertexCount = (surfaceMesh ? surfaceMesh->vertexCount() : 0) + (capPolygonsMesh ? capPolygonsMesh->vertexCount() : 0);
+    auto totalFaceCount = (surfaceMesh ? surfaceMesh->faceCount() : 0) + (capPolygonsMesh ? capPolygonsMesh->faceCount() : 0);
+    textStream() << "# vtk DataFile Version 3.0\n";
+    textStream() << "# Triangle surface mesh written by " << Application::applicationName() << " " << Application::applicationVersionString() << "\n";
+    textStream() << "ASCII\n";
+    textStream() << "DATASET UNSTRUCTURED_GRID\n";
+    textStream() << "POINTS " << totalVertexCount << " double\n";
+    if(surfaceMesh) {
+        for(const Point3& p : surfaceMesh->vertices())
+            textStream() << p.x() << " " << p.y() << " " << p.z() << "\n";
+    }
+    if(capPolygonsMesh) {
+        for(const Point3& p : capPolygonsMesh->vertices())
+            textStream() << p.x() << " " << p.y() << " " << p.z() << "\n";
+    }
+    textStream() << "\nCELLS " << totalFaceCount << " " << (totalFaceCount * 4) << "\n";
+    if(surfaceMesh) {
+        for(const TriMeshFace& f : surfaceMesh->faces()) {
+            textStream() << "3";
+            for(size_t i = 0; i < 3; i++)
+                textStream() << " " << f.vertex(i);
+            textStream() << "\n";
+        }
+    }
+    if(capPolygonsMesh) {
+        for(const TriMeshFace& f : capPolygonsMesh->faces()) {
+            textStream() << "3";
+            for(size_t i = 0; i < 3; i++)
+                textStream() << " " << (f.vertex(i) + (surfaceMesh ? surfaceMesh->vertexCount() : 0));
+            textStream() << "\n";
+        }
+    }
+    textStream() << "\nCELL_TYPES " << totalFaceCount << "\n";
+    for(size_t i = 0; i < totalFaceCount; i++)
+        textStream() << "5\n";  // Triangle
 
-	textStream() << "\nCELL_DATA " << totalFaceCount << "\n";
-	textStream() << "SCALARS cap unsigned_char\n";
-	textStream() << "LOOKUP_TABLE default\n";
-	if(surfaceMesh) {
-		for(size_t i = 0; i < surfaceMesh->faceCount(); i++)
-			textStream() << "0\n";
-	}
-	if(capPolygonsMesh) {
-		for(size_t i = 0; i < capPolygonsMesh->faceCount(); i++)
-			textStream() << "1\n";
-	}
+    textStream() << "\nCELL_DATA " << totalFaceCount << "\n";
+    textStream() << "SCALARS cap unsigned_char\n";
+    textStream() << "LOOKUP_TABLE default\n";
+    if(surfaceMesh) {
+        for(size_t i = 0; i < surfaceMesh->faceCount(); i++)
+            textStream() << "0\n";
+    }
+    if(capPolygonsMesh) {
+        for(size_t i = 0; i < capPolygonsMesh->faceCount(); i++)
+            textStream() << "1\n";
+    }
 
-	if(!meshObj->materialColors().empty()) {
-		textStream() << "\nSCALARS material_index int\n";
-		textStream() << "LOOKUP_TABLE default\n";
-		if(surfaceMesh) {
-			for(size_t i = 0; i < surfaceMesh->faceCount(); i++)
-				textStream() << surfaceMesh->face(i).materialIndex() << "\n";
-		}
-		if(capPolygonsMesh) {
-			for(size_t i = 0; i < capPolygonsMesh->faceCount(); i++)
-				textStream() << "0\n";
-		}
+    if(!meshObj->materialColors().empty()) {
+        textStream() << "\nSCALARS material_index int\n";
+        textStream() << "LOOKUP_TABLE default\n";
+        if(surfaceMesh) {
+            for(size_t i = 0; i < surfaceMesh->faceCount(); i++)
+                textStream() << surfaceMesh->face(i).materialIndex() << "\n";
+        }
+        if(capPolygonsMesh) {
+            for(size_t i = 0; i < capPolygonsMesh->faceCount(); i++)
+                textStream() << "0\n";
+        }
 
-		textStream() << "\nCOLOR_SCALARS color 3\n";
-		if(surfaceMesh) {
-			for(size_t i = 0; i < surfaceMesh->faceCount(); i++) {
-				const ColorA& c = meshObj->materialColors()[surfaceMesh->face(i).materialIndex() % meshObj->materialColors().size()];
-				textStream() << c.r() << " " << c.g() << " " << c.b() << "\n";
-			}
-		}
-		if(capPolygonsMesh) {
-			for(size_t i = 0; i < capPolygonsMesh->faceCount(); i++)
-				textStream() << "1 1 1\n";
-		}
-	}
+        textStream() << "\nCOLOR_SCALARS color 3\n";
+        if(surfaceMesh) {
+            for(size_t i = 0; i < surfaceMesh->faceCount(); i++) {
+                const ColorA& c = meshObj->materialColors()[surfaceMesh->face(i).materialIndex() % meshObj->materialColors().size()];
+                textStream() << c.r() << " " << c.g() << " " << c.b() << "\n";
+            }
+        }
+        if(capPolygonsMesh) {
+            for(size_t i = 0; i < capPolygonsMesh->faceCount(); i++)
+                textStream() << "1 1 1\n";
+        }
+    }
 
-	if(surfaceMesh && capPolygonsMesh) {
-		textStream() << "\nPOINT_DATA " << totalVertexCount << "\n";
-		textStream() << "SCALARS cap unsigned_char\n";
-		textStream() << "LOOKUP_TABLE default\n";
-		for(size_t i = 0; i < surfaceMesh->vertexCount(); i++)
-			textStream() << "0\n";
-		for(size_t i = 0; i < capPolygonsMesh->vertexCount(); i++)
-			textStream() << "1\n";
-	}
-	if(surfaceMesh && surfaceMesh->hasVertexColors()) {
-		textStream() << "COLOR_SCALARS color 4\n";
-		for(const ColorA& c : surfaceMesh->vertexColors())
-			textStream() << c.r() << " " << c.g() << " " << c.b() << " " << c.a() << "\n";
-		if(capPolygonsMesh) {
-			for(size_t i = 0; i < capPolygonsMesh->vertexCount(); i++)
-				textStream() << "1 1 1\n";
-		}
-	}
+    if(surfaceMesh && capPolygonsMesh) {
+        textStream() << "\nPOINT_DATA " << totalVertexCount << "\n";
+        textStream() << "SCALARS cap unsigned_char\n";
+        textStream() << "LOOKUP_TABLE default\n";
+        for(size_t i = 0; i < surfaceMesh->vertexCount(); i++)
+            textStream() << "0\n";
+        for(size_t i = 0; i < capPolygonsMesh->vertexCount(); i++)
+            textStream() << "1\n";
+    }
+    if(surfaceMesh && surfaceMesh->hasVertexColors()) {
+        textStream() << "COLOR_SCALARS color 4\n";
+        for(const ColorA& c : surfaceMesh->vertexColors())
+            textStream() << c.r() << " " << c.g() << " " << c.b() << " " << c.a() << "\n";
+        if(capPolygonsMesh) {
+            for(size_t i = 0; i < capPolygonsMesh->vertexCount(); i++)
+                textStream() << "1 1 1\n";
+        }
+    }
 
-	return !operation.isCanceled();
+    return !operation.isCanceled();
 }
 
-}	// End of namespace
+}   // End of namespace

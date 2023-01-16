@@ -32,4 +32,4 @@ DEFINE_RUNTIME_PROPERTY_FIELD(RenderableSurfaceMesh, materialColors);
 DEFINE_RUNTIME_PROPERTY_FIELD(RenderableSurfaceMesh, originalFaceMap);
 DEFINE_RUNTIME_PROPERTY_FIELD(RenderableSurfaceMesh, backfaceCulling);
 
-}	// End of namespace
+}   // End of namespace

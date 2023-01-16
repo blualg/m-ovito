@@ -40,60 +40,60 @@ SET_OVITO_OBJECT_EDITOR(CommonNeighborAnalysisModifier, CommonNeighborAnalysisMo
 ******************************************************************************/
 void CommonNeighborAnalysisModifierEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 {
-	// Create a rollout.
-	QWidget* rollout = createRollout(tr("Common neighbor analysis"), rolloutParams, "manual:particles.modifiers.common_neighbor_analysis");
+    // Create a rollout.
+    QWidget* rollout = createRollout(tr("Common neighbor analysis"), rolloutParams, "manual:particles.modifiers.common_neighbor_analysis");
 
     // Create the rollout contents.
-	QVBoxLayout* layout1 = new QVBoxLayout(rollout);
-	layout1->setContentsMargins(4,4,4,4);
-	layout1->setSpacing(6);
+    QVBoxLayout* layout1 = new QVBoxLayout(rollout);
+    layout1->setContentsMargins(4,4,4,4);
+    layout1->setSpacing(6);
 
-	IntegerRadioButtonParameterUI* modeUI = new IntegerRadioButtonParameterUI(this, PROPERTY_FIELD(CommonNeighborAnalysisModifier::mode));
-	QRadioButton* bondModeBtn = modeUI->addRadioButton(CommonNeighborAnalysisModifier::BondMode, tr("Bond-based CNA (without cutoff)"));
-	QRadioButton* adaptiveModeBtn = modeUI->addRadioButton(CommonNeighborAnalysisModifier::AdaptiveCutoffMode, tr("Adaptive CNA (variable cutoff)"));
-	QRadioButton* intervalModeBtn = modeUI->addRadioButton(CommonNeighborAnalysisModifier::IntervalCutoffMode, tr("Interval CNA (variable cutoff)"));
-	QRadioButton* fixedCutoffModeBtn = modeUI->addRadioButton(CommonNeighborAnalysisModifier::FixedCutoffMode, tr("Conventional CNA (fixed cutoff)"));
-	layout1->addWidget(bondModeBtn);
-	layout1->addWidget(adaptiveModeBtn);
-	layout1->addWidget(intervalModeBtn);
-	layout1->addWidget(fixedCutoffModeBtn);
+    IntegerRadioButtonParameterUI* modeUI = new IntegerRadioButtonParameterUI(this, PROPERTY_FIELD(CommonNeighborAnalysisModifier::mode));
+    QRadioButton* bondModeBtn = modeUI->addRadioButton(CommonNeighborAnalysisModifier::BondMode, tr("Bond-based CNA (without cutoff)"));
+    QRadioButton* adaptiveModeBtn = modeUI->addRadioButton(CommonNeighborAnalysisModifier::AdaptiveCutoffMode, tr("Adaptive CNA (variable cutoff)"));
+    QRadioButton* intervalModeBtn = modeUI->addRadioButton(CommonNeighborAnalysisModifier::IntervalCutoffMode, tr("Interval CNA (variable cutoff)"));
+    QRadioButton* fixedCutoffModeBtn = modeUI->addRadioButton(CommonNeighborAnalysisModifier::FixedCutoffMode, tr("Conventional CNA (fixed cutoff)"));
+    layout1->addWidget(bondModeBtn);
+    layout1->addWidget(adaptiveModeBtn);
+    layout1->addWidget(intervalModeBtn);
+    layout1->addWidget(fixedCutoffModeBtn);
 
-	QGridLayout* gridlayout = new QGridLayout();
-	gridlayout->setContentsMargins(0,0,0,0);
-	gridlayout->setColumnStretch(2, 1);
-	gridlayout->setColumnMinimumWidth(0, 20);
+    QGridLayout* gridlayout = new QGridLayout();
+    gridlayout->setContentsMargins(0,0,0,0);
+    gridlayout->setColumnStretch(2, 1);
+    gridlayout->setColumnMinimumWidth(0, 20);
 
-	// Cutoff parameter.
-	FloatParameterUI* cutoffRadiusPUI = new FloatParameterUI(this, PROPERTY_FIELD(CommonNeighborAnalysisModifier::cutoff));
-	gridlayout->addWidget(cutoffRadiusPUI->label(), 0, 1);
-	gridlayout->addLayout(cutoffRadiusPUI->createFieldLayout(), 0, 2);
+    // Cutoff parameter.
+    FloatParameterUI* cutoffRadiusPUI = new FloatParameterUI(this, PROPERTY_FIELD(CommonNeighborAnalysisModifier::cutoff));
+    gridlayout->addWidget(cutoffRadiusPUI->label(), 0, 1);
+    gridlayout->addLayout(cutoffRadiusPUI->createFieldLayout(), 0, 2);
 
-	CutoffRadiusPresetsUI* cutoffPresetsPUI = new CutoffRadiusPresetsUI(this, PROPERTY_FIELD(CommonNeighborAnalysisModifier::cutoff));
-	gridlayout->addWidget(cutoffPresetsPUI->comboBox(), 1, 1, 1, 2);
-	layout1->addLayout(gridlayout);
+    CutoffRadiusPresetsUI* cutoffPresetsPUI = new CutoffRadiusPresetsUI(this, PROPERTY_FIELD(CommonNeighborAnalysisModifier::cutoff));
+    gridlayout->addWidget(cutoffPresetsPUI->comboBox(), 1, 1, 1, 2);
+    layout1->addLayout(gridlayout);
 
-	connect(fixedCutoffModeBtn, &QRadioButton::toggled, cutoffRadiusPUI, &FloatParameterUI::setEnabled);
-	connect(fixedCutoffModeBtn, &QRadioButton::toggled, cutoffPresetsPUI, &CutoffRadiusPresetsUI::setEnabled);
-	cutoffRadiusPUI->setEnabled(false);
-	cutoffPresetsPUI->setEnabled(false);
+    connect(fixedCutoffModeBtn, &QRadioButton::toggled, cutoffRadiusPUI, &FloatParameterUI::setEnabled);
+    connect(fixedCutoffModeBtn, &QRadioButton::toggled, cutoffPresetsPUI, &CutoffRadiusPresetsUI::setEnabled);
+    cutoffRadiusPUI->setEnabled(false);
+    cutoffPresetsPUI->setEnabled(false);
 
-	// Use only selected particles.
-	BooleanParameterUI* onlySelectedParticlesUI = new BooleanParameterUI(this, PROPERTY_FIELD(StructureIdentificationModifier::onlySelectedParticles));
-	layout1->addWidget(onlySelectedParticlesUI->checkBox());
+    // Use only selected particles.
+    BooleanParameterUI* onlySelectedParticlesUI = new BooleanParameterUI(this, PROPERTY_FIELD(StructureIdentificationModifier::onlySelectedParticles));
+    layout1->addWidget(onlySelectedParticlesUI->checkBox());
 
-	// Color by type
-	BooleanParameterUI* colorByTypeUI = new BooleanParameterUI(this, PROPERTY_FIELD(StructureIdentificationModifier::colorByType));
-	layout1->addWidget(colorByTypeUI->checkBox());
+    // Color by type
+    BooleanParameterUI* colorByTypeUI = new BooleanParameterUI(this, PROPERTY_FIELD(StructureIdentificationModifier::colorByType));
+    layout1->addWidget(colorByTypeUI->checkBox());
 
-	// Status label.
-	layout1->addSpacing(10);
-	layout1->addWidget((new ObjectStatusDisplay(this))->statusWidget());
+    // Status label.
+    layout1->addSpacing(10);
+    layout1->addWidget((new ObjectStatusDisplay(this))->statusWidget());
 
-	StructureListParameterUI* structureTypesPUI = new StructureListParameterUI(this, true);
-	layout1->addSpacing(10);
-	layout1->addWidget(new QLabel(tr("Structure types:")));
-	layout1->addWidget(structureTypesPUI->tableWidget());
-	layout1->addWidget(structureTypesPUI->createNotesLabel());
+    StructureListParameterUI* structureTypesPUI = new StructureListParameterUI(this, true);
+    layout1->addSpacing(10);
+    layout1->addWidget(new QLabel(tr("Structure types:")));
+    layout1->addWidget(structureTypesPUI->tableWidget());
+    layout1->addWidget(structureTypesPUI->createNotesLabel());
 }
 
-}	// End of namespace
+}   // End of namespace

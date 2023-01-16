@@ -34,33 +34,33 @@ namespace Ovito::Grid {
  */
 class VoxelGridInspectionApplet : public PropertyInspectionApplet
 {
-	OVITO_CLASS(VoxelGridInspectionApplet)
-	Q_CLASSINFO("DisplayName", "Voxel Grids");
+    OVITO_CLASS(VoxelGridInspectionApplet)
+    Q_CLASSINFO("DisplayName", "Voxel Grids");
 
 public:
 
-	/// Constructor.
-	Q_INVOKABLE VoxelGridInspectionApplet() : PropertyInspectionApplet(VoxelGrid::OOClass()) {}
+    /// Constructor.
+    Q_INVOKABLE VoxelGridInspectionApplet() : PropertyInspectionApplet(VoxelGrid::OOClass()) {}
 
-	/// Returns the key value for this applet that is used for ordering the applet tabs.
-	virtual int orderingKey() const override { return 210; }
+    /// Returns the key value for this applet that is used for ordering the applet tabs.
+    virtual int orderingKey() const override { return 210; }
 
-	/// Lets the applet create the UI widget that is to be placed into the data inspector panel.
-	virtual QWidget* createWidget() override;
+    /// Lets the applet create the UI widget that is to be placed into the data inspector panel.
+    virtual QWidget* createWidget() override;
 
 protected:
 
-	/// Determines the text shown in cells of the vertical header column.
-	virtual QVariant headerColumnText(int section) override;
+    /// Determines the text shown in cells of the vertical header column.
+    virtual QVariant headerColumnText(int section) override;
 
 private Q_SLOTS:
 
-	/// Is called when the user selects a different property container object in the list.
-	void onCurrentContainerChanged(const DataObject* dataObject);
+    /// Is called when the user selects a different property container object in the list.
+    void onCurrentContainerChanged(const DataObject* dataObject);
 
 private:
 
-	QLabel* _gridInfoLabel;
+    QLabel* _gridInfoLabel;
 };
 
-}	// End of namespace
+}   // End of namespace

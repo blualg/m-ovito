@@ -41,55 +41,55 @@ SET_OVITO_OBJECT_EDITOR(TrajectoryVis, TrajectoryVisEditor);
 ******************************************************************************/
 void TrajectoryVisEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 {
-	// Create a rollout.
-	QWidget* rollout = createRollout(tr("Trajectory display"), rolloutParams, "manual:visual_elements.trajectory_lines");
+    // Create a rollout.
+    QWidget* rollout = createRollout(tr("Trajectory display"), rolloutParams, "manual:visual_elements.trajectory_lines");
 
     // Create the rollout contents.
-	QGridLayout* layout = new QGridLayout(rollout);
-	layout->setContentsMargins(4,4,4,4);
-	layout->setSpacing(4);
-	layout->setColumnStretch(2, 1);
-	layout->setColumnMinimumWidth(0, 20);
+    QGridLayout* layout = new QGridLayout(rollout);
+    layout->setContentsMargins(4,4,4,4);
+    layout->setSpacing(4);
+    layout->setColumnStretch(2, 1);
+    layout->setColumnMinimumWidth(0, 20);
 
-	// Shading mode.
-	VariantComboBoxParameterUI* shadingModeUI = new VariantComboBoxParameterUI(this, PROPERTY_FIELD(TrajectoryVis::shadingMode));
-	shadingModeUI->comboBox()->addItem(tr("Normal"), QVariant::fromValue((int)CylinderPrimitive::NormalShading));
-	shadingModeUI->comboBox()->addItem(tr("Flat"), QVariant::fromValue((int)CylinderPrimitive::FlatShading));
-	layout->addWidget(new QLabel(tr("Shading:")), 0, 0, 1, 2);
-	layout->addWidget(shadingModeUI->comboBox(), 0, 2);
+    // Shading mode.
+    VariantComboBoxParameterUI* shadingModeUI = new VariantComboBoxParameterUI(this, PROPERTY_FIELD(TrajectoryVis::shadingMode));
+    shadingModeUI->comboBox()->addItem(tr("Normal"), QVariant::fromValue((int)CylinderPrimitive::NormalShading));
+    shadingModeUI->comboBox()->addItem(tr("Flat"), QVariant::fromValue((int)CylinderPrimitive::FlatShading));
+    layout->addWidget(new QLabel(tr("Shading:")), 0, 0, 1, 2);
+    layout->addWidget(shadingModeUI->comboBox(), 0, 2);
 
-	// Line width.
-	FloatParameterUI* lineWidthUI = new FloatParameterUI(this, PROPERTY_FIELD(TrajectoryVis::lineWidth));
-	layout->addWidget(lineWidthUI->label(), 1, 0, 1, 2);
-	layout->addLayout(lineWidthUI->createFieldLayout(), 1, 2);
+    // Line width.
+    FloatParameterUI* lineWidthUI = new FloatParameterUI(this, PROPERTY_FIELD(TrajectoryVis::lineWidth));
+    layout->addWidget(lineWidthUI->label(), 1, 0, 1, 2);
+    layout->addLayout(lineWidthUI->createFieldLayout(), 1, 2);
 
-	// Coloring mode.
-	layout->addWidget(new QLabel(tr("Line coloring:")), 2, 0, 1, 3);
-	_coloringModeUI = new IntegerRadioButtonParameterUI(this, PROPERTY_FIELD(TrajectoryVis::coloringMode));
-	layout->addWidget(_coloringModeUI->addRadioButton(TrajectoryVis::UniformColoring, tr("Uniform:")), 3, 1);
-	layout->addWidget(_coloringModeUI->addRadioButton(TrajectoryVis::PseudoColoring, tr("Color mapping")), 4, 1, 1, 2);
+    // Coloring mode.
+    layout->addWidget(new QLabel(tr("Line coloring:")), 2, 0, 1, 3);
+    _coloringModeUI = new IntegerRadioButtonParameterUI(this, PROPERTY_FIELD(TrajectoryVis::coloringMode));
+    layout->addWidget(_coloringModeUI->addRadioButton(TrajectoryVis::UniformColoring, tr("Uniform:")), 3, 1);
+    layout->addWidget(_coloringModeUI->addRadioButton(TrajectoryVis::PseudoColoring, tr("Color mapping")), 4, 1, 1, 2);
 
-	// Line uniform color.
-	_lineColorUI = new ColorParameterUI(this, PROPERTY_FIELD(TrajectoryVis::lineColor));
-	layout->addWidget(_lineColorUI->colorPicker(), 3, 2);
+    // Line uniform color.
+    _lineColorUI = new ColorParameterUI(this, PROPERTY_FIELD(TrajectoryVis::lineColor));
+    layout->addWidget(_lineColorUI->colorPicker(), 3, 2);
 
-	// Wrapped line display.
-	BooleanParameterUI* wrappedLinesUI = new BooleanParameterUI(this, PROPERTY_FIELD(TrajectoryVis::wrappedLines));
-	layout->addWidget(wrappedLinesUI->checkBox(), 5, 0, 1, 3);
+    // Wrapped line display.
+    BooleanParameterUI* wrappedLinesUI = new BooleanParameterUI(this, PROPERTY_FIELD(TrajectoryVis::wrappedLines));
+    layout->addWidget(wrappedLinesUI->checkBox(), 5, 0, 1, 3);
 
-	// Up to current time.
-	BooleanParameterUI* showUpToCurrentTimeUI = new BooleanParameterUI(this, PROPERTY_FIELD(TrajectoryVis::showUpToCurrentTime));
-	layout->addWidget(showUpToCurrentTimeUI->checkBox(), 6, 0, 1, 3);
+    // Up to current time.
+    BooleanParameterUI* showUpToCurrentTimeUI = new BooleanParameterUI(this, PROPERTY_FIELD(TrajectoryVis::showUpToCurrentTime));
+    layout->addWidget(showUpToCurrentTimeUI->checkBox(), 6, 0, 1, 3);
 
-	// Open a sub-editor for the property color mapping.
-	_colorMappingParamUI = new SubObjectParameterUI(this, PROPERTY_FIELD(TrajectoryVis::colorMapping), rolloutParams.after(rollout));
+    // Open a sub-editor for the property color mapping.
+    _colorMappingParamUI = new SubObjectParameterUI(this, PROPERTY_FIELD(TrajectoryVis::colorMapping), rolloutParams.after(rollout));
 
-	// Whenever the pipeline input of the vis element changes, update the list of available
-	// properties in the color mapping editor.
-	connect(this, &PropertiesEditor::pipelineInputChanged, this, &TrajectoryVisEditor::updateColoringOptions);
+    // Whenever the pipeline input of the vis element changes, update the list of available
+    // properties in the color mapping editor.
+    connect(this, &PropertiesEditor::pipelineInputChanged, this, &TrajectoryVisEditor::updateColoringOptions);
 
-	// Update the coloring controls when a parameter of the vis element has been changed.
-	connect(this, &PropertiesEditor::contentsChanged, this, &TrajectoryVisEditor::updateColoringOptions);
+    // Update the coloring controls when a parameter of the vis element has been changed.
+    connect(this, &PropertiesEditor::contentsChanged, this, &TrajectoryVisEditor::updateColoringOptions);
 }
 
 /******************************************************************************
@@ -97,26 +97,26 @@ void TrajectoryVisEditor::createUI(const RolloutInsertionParameters& rolloutPara
 ******************************************************************************/
 void TrajectoryVisEditor::updateColoringOptions()
 {
-	// Retrieve the TrajectoryObject this vis element is associated with.
-	DataOORef<const TrajectoryObject> trajectoryObject = dynamic_object_cast<const TrajectoryObject>(getVisDataObject());
+    // Retrieve the TrajectoryObject this vis element is associated with.
+    DataOORef<const TrajectoryObject> trajectoryObject = dynamic_object_cast<const TrajectoryObject>(getVisDataObject());
 
-	// Do lines have explicit RGB colors assigned ("Color" property exists)?
-	bool hasExplicitColors = (trajectoryObject && trajectoryObject->getProperty(TrajectoryObject::ColorProperty));
+    // Do lines have explicit RGB colors assigned ("Color" property exists)?
+    bool hasExplicitColors = (trajectoryObject && trajectoryObject->getProperty(TrajectoryObject::ColorProperty));
 
-	TrajectoryVis::ColoringMode coloringMode = editObject() ? static_object_cast<TrajectoryVis>(editObject())->coloringMode() : TrajectoryVis::UniformColoring;
-	if(trajectoryObject && coloringMode == TrajectoryVis::PseudoColoring && !hasExplicitColors) {
-		_colorMappingParamUI->setEnabled(true);
-		_lineColorUI->setEnabled(false);
-		// Set trajectory lines as property container containing the available properties the user can choose from.
-		static_object_cast<PropertyColorMappingEditor>(_colorMappingParamUI->subEditor())->setPropertyContainer(trajectoryObject);
-	}
-	else {
-		_colorMappingParamUI->setEnabled(false);
-		_lineColorUI->setEnabled(!hasExplicitColors);
-	}
+    TrajectoryVis::ColoringMode coloringMode = editObject() ? static_object_cast<TrajectoryVis>(editObject())->coloringMode() : TrajectoryVis::UniformColoring;
+    if(trajectoryObject && coloringMode == TrajectoryVis::PseudoColoring && !hasExplicitColors) {
+        _colorMappingParamUI->setEnabled(true);
+        _lineColorUI->setEnabled(false);
+        // Set trajectory lines as property container containing the available properties the user can choose from.
+        static_object_cast<PropertyColorMappingEditor>(_colorMappingParamUI->subEditor())->setPropertyContainer(trajectoryObject);
+    }
+    else {
+        _colorMappingParamUI->setEnabled(false);
+        _lineColorUI->setEnabled(!hasExplicitColors);
+    }
 
-	_coloringModeUI->buttonGroup()->button(TrajectoryVis::PseudoColoring)->setEnabled(trajectoryObject && !trajectoryObject->properties().isEmpty() && !hasExplicitColors);
-	_coloringModeUI->buttonGroup()->button(TrajectoryVis::UniformColoring)->setEnabled(trajectoryObject && !hasExplicitColors);
+    _coloringModeUI->buttonGroup()->button(TrajectoryVis::PseudoColoring)->setEnabled(trajectoryObject && !trajectoryObject->properties().isEmpty() && !hasExplicitColors);
+    _coloringModeUI->buttonGroup()->button(TrajectoryVis::UniformColoring)->setEnabled(trajectoryObject && !hasExplicitColors);
 }
 
-}	// End of namespace
+}   // End of namespace

@@ -33,54 +33,54 @@ IMPLEMENT_OVITO_CLASS(SurfaceMeshVertices);
 ******************************************************************************/
 PropertyPtr SurfaceMeshVertices::OOMetaClass::createStandardPropertyInternal(size_t elementCount, int type, DataBuffer::InitializationFlags flags, const ConstDataObjectPath& containerPath) const
 {
-	int dataType;
-	size_t componentCount;
+    int dataType;
+    size_t componentCount;
 
-	switch(type) {
-	case PositionProperty:
-		dataType = PropertyObject::Float;
-		componentCount = 3;
-		OVITO_ASSERT(componentCount * sizeof(FloatType) == sizeof(Point3));
-		break;
-	case SelectionProperty:
-		dataType = PropertyObject::Int;
-		componentCount = 1;
-		break;
-	case ColorProperty:
-		dataType = PropertyObject::Float;
-		componentCount = 3;
-		OVITO_ASSERT(componentCount * sizeof(FloatType) == sizeof(Color));
-		break;
-	default:
-		OVITO_ASSERT_MSG(false, "SurfaceMeshVertices::createStandardPropertyInternal", "Invalid standard property type");
-		throw Exception(tr("This is not a valid standard vertex property type: %1").arg(type));
-	}
-	const QStringList& componentNames = standardPropertyComponentNames(type);
-	const QString& propertyName = standardPropertyName(type);
+    switch(type) {
+    case PositionProperty:
+        dataType = PropertyObject::Float;
+        componentCount = 3;
+        OVITO_ASSERT(componentCount * sizeof(FloatType) == sizeof(Point3));
+        break;
+    case SelectionProperty:
+        dataType = PropertyObject::Int;
+        componentCount = 1;
+        break;
+    case ColorProperty:
+        dataType = PropertyObject::Float;
+        componentCount = 3;
+        OVITO_ASSERT(componentCount * sizeof(FloatType) == sizeof(Color));
+        break;
+    default:
+        OVITO_ASSERT_MSG(false, "SurfaceMeshVertices::createStandardPropertyInternal", "Invalid standard property type");
+        throw Exception(tr("This is not a valid standard vertex property type: %1").arg(type));
+    }
+    const QStringList& componentNames = standardPropertyComponentNames(type);
+    const QString& propertyName = standardPropertyName(type);
 
-	OVITO_ASSERT(componentCount == standardPropertyComponentCount(type));
+    OVITO_ASSERT(componentCount == standardPropertyComponentCount(type));
 
-	PropertyPtr property = PropertyPtr::create(elementCount, dataType, componentCount, propertyName, flags & ~DataBuffer::InitializeMemory, type, componentNames);
+    PropertyPtr property = PropertyPtr::create(elementCount, dataType, componentCount, propertyName, flags & ~DataBuffer::InitializeMemory, type, componentNames);
 
-	// Initialize memory if requested.
-	if(flags.testFlag(DataBuffer::InitializeMemory) && containerPath.size() >= 2) {
-		// Certain standard properties need to be initialized with default values determined by the attached visual elements.
-		if(type == ColorProperty) {
-			if(const SurfaceMesh* surfaceMesh = dynamic_object_cast<SurfaceMesh>(containerPath[containerPath.size()-2])) {
-				if(SurfaceMeshVis* vis = surfaceMesh->visElement<SurfaceMeshVis>()) {
-					property->fill(vis->surfaceColor());
-					flags.setFlag(DataBuffer::InitializeMemory, false);
-				}
-			}
-		}
-	}
+    // Initialize memory if requested.
+    if(flags.testFlag(DataBuffer::InitializeMemory) && containerPath.size() >= 2) {
+        // Certain standard properties need to be initialized with default values determined by the attached visual elements.
+        if(type == ColorProperty) {
+            if(const SurfaceMesh* surfaceMesh = dynamic_object_cast<SurfaceMesh>(containerPath[containerPath.size()-2])) {
+                if(SurfaceMeshVis* vis = surfaceMesh->visElement<SurfaceMeshVis>()) {
+                    property->fill(vis->surfaceColor());
+                    flags.setFlag(DataBuffer::InitializeMemory, false);
+                }
+            }
+        }
+    }
 
-	if(flags.testFlag(DataBuffer::InitializeMemory)) {
-		// Default-initialize property values with zeros.
-		property->fillZero();
-	}
+    if(flags.testFlag(DataBuffer::InitializeMemory)) {
+        // Default-initialize property values with zeros.
+        property->fillZero();
+    }
 
-	return property;
+    return property;
 }
 
 /******************************************************************************
@@ -88,19 +88,19 @@ PropertyPtr SurfaceMeshVertices::OOMetaClass::createStandardPropertyInternal(siz
 ******************************************************************************/
 void SurfaceMeshVertices::OOMetaClass::initialize()
 {
-	PropertyContainerClass::initialize();
+    PropertyContainerClass::initialize();
 
-	setPropertyClassDisplayName(tr("Mesh Vertices"));
-	setElementDescriptionName(QStringLiteral("vertices"));
-	setPythonName(QStringLiteral("vertices"));
+    setPropertyClassDisplayName(tr("Mesh Vertices"));
+    setElementDescriptionName(QStringLiteral("vertices"));
+    setPythonName(QStringLiteral("vertices"));
 
-	const QStringList emptyList;
-	const QStringList xyzList = QStringList() << "X" << "Y" << "Z";
-	const QStringList rgbList = QStringList() << "R" << "G" << "B";
+    const QStringList emptyList;
+    const QStringList xyzList = QStringList() << "X" << "Y" << "Z";
+    const QStringList rgbList = QStringList() << "R" << "G" << "B";
 
-	registerStandardProperty(SelectionProperty, tr("Selection"), PropertyObject::Int, emptyList);
-	registerStandardProperty(ColorProperty, tr("Color"), PropertyObject::Float, rgbList, nullptr, tr("Vertex colors"));
-	registerStandardProperty(PositionProperty, tr("Position"), PropertyObject::Float, xyzList, nullptr, tr("Vertex positions"));
+    registerStandardProperty(SelectionProperty, tr("Selection"), PropertyObject::Int, emptyList);
+    registerStandardProperty(ColorProperty, tr("Color"), PropertyObject::Float, rgbList, nullptr, tr("Vertex colors"));
+    registerStandardProperty(PositionProperty, tr("Position"), PropertyObject::Float, xyzList, nullptr, tr("Vertex positions"));
 }
 
 /******************************************************************************
@@ -108,13 +108,13 @@ void SurfaceMeshVertices::OOMetaClass::initialize()
 ******************************************************************************/
 QString SurfaceMeshVertices::OOMetaClass::formatDataObjectPath(const ConstDataObjectPath& path) const
 {
-	QString str;
-	for(const DataObject* obj : path) {
-		if(!str.isEmpty())
-			str += QStringLiteral(u" \u2192 ");  // Unicode arrow
-		str += obj->objectTitle();
-	}
-	return str;
+    QString str;
+    for(const DataObject* obj : path) {
+        if(!str.isEmpty())
+            str += QStringLiteral(u" \u2192 ");  // Unicode arrow
+        str += obj->objectTitle();
+    }
+    return str;
 }
 
 /******************************************************************************
@@ -122,13 +122,13 @@ QString SurfaceMeshVertices::OOMetaClass::formatDataObjectPath(const ConstDataOb
 ******************************************************************************/
 SurfaceMeshVertices::SurfaceMeshVertices(ObjectCreationParams params) : PropertyContainer(params)
 {
-	// Assign the default data object identifier.
-	setIdentifier(OOClass().pythonName());
+    // Assign the default data object identifier.
+    setIdentifier(OOClass().pythonName());
 
-	if(params.createSubObjects()) {
-		// Create the standard 'Position' property.
-		createProperty(SurfaceMeshVertices::PositionProperty);
-	}
+    if(params.createSubObjects()) {
+        // Create the standard 'Position' property.
+        createProperty(SurfaceMeshVertices::PositionProperty);
+    }
 }
 
 /******************************************************************************
@@ -137,32 +137,32 @@ SurfaceMeshVertices::SurfaceMeshVertices(ObjectCreationParams params) : Property
 ******************************************************************************/
 std::tuple<ConstDataBufferPtr, ConstDataBufferPtr> SurfaceMeshVertices::getVectorVisData(const ConstDataObjectPath& path, const PipelineFlowState& state, MixedKeyCache& visCache) const
 {
-	OVITO_ASSERT(path.lastAs<SurfaceMeshVertices>(1) == this);
-	if(const SurfaceMesh* mesh = path.lastAs<SurfaceMesh>(2)) {
-		mesh->verifyMeshIntegrity();
+    OVITO_ASSERT(path.lastAs<SurfaceMeshVertices>(1) == this);
+    if(const SurfaceMesh* mesh = path.lastAs<SurfaceMesh>(2)) {
+        mesh->verifyMeshIntegrity();
 
-		ConstDataBufferPtr vectorProperty = path.lastAs<DataBuffer>();
-		if(vectorProperty && vectorProperty->dataType() == PropertyObject::Float && vectorProperty->componentCount() == 3) {
-			// Does the mesh have cutting planes and do we need to perform point culling?
-			if(!mesh->cuttingPlanes().empty()) {
-				// Create a copy of the vector property in which the values of culled points
-				// will be nulled out to hide the arrow glyphs for these points.
-				DataBufferAccessAndRef<Vector3> filteredVectors = vectorProperty.makeCopy();
-				if(ConstDataBufferAccess<Point3> positions = getProperty(PositionProperty)) {
-					Vector3* v = filteredVectors.begin();
-					for(const Point3& p : positions) {
-						if(mesh->isPointCulled(p))
-							v->setZero();
-						++v;
-					}
-					vectorProperty = filteredVectors.take();
-				}
-			}
-		}
+        ConstDataBufferPtr vectorProperty = path.lastAs<DataBuffer>();
+        if(vectorProperty && vectorProperty->dataType() == PropertyObject::Float && vectorProperty->componentCount() == 3) {
+            // Does the mesh have cutting planes and do we need to perform point culling?
+            if(!mesh->cuttingPlanes().empty()) {
+                // Create a copy of the vector property in which the values of culled points
+                // will be nulled out to hide the arrow glyphs for these points.
+                DataBufferAccessAndRef<Vector3> filteredVectors = vectorProperty.makeCopy();
+                if(ConstDataBufferAccess<Point3> positions = getProperty(PositionProperty)) {
+                    Vector3* v = filteredVectors.begin();
+                    for(const Point3& p : positions) {
+                        if(mesh->isPointCulled(p))
+                            v->setZero();
+                        ++v;
+                    }
+                    vectorProperty = filteredVectors.take();
+                }
+            }
+        }
 
-		return { getProperty(PositionProperty), std::move(vectorProperty) };
-	}
-	return {};
+        return { getProperty(PositionProperty), std::move(vectorProperty) };
+    }
+    return {};
 }
 
-}	// End of namespace
+}   // End of namespace

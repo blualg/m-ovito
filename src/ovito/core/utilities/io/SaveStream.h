@@ -58,112 +58,112 @@ namespace Ovito {
  */
 class OVITO_CORE_EXPORT SaveStream : public QObject
 {
-	Q_OBJECT
+    Q_OBJECT
 
 public:
 
-	/// \brief Constructs the stream wrapper.
-	/// \param destination The sink that will receive the data. This Qt output stream must support random access.
-	/// \throw Exception if the given data stream supports only sequential access or if an I/O error occured while writing the file header.
-	SaveStream(QDataStream& destination);
+    /// \brief Constructs the stream wrapper.
+    /// \param destination The sink that will receive the data. This Qt output stream must support random access.
+    /// \throw Exception if the given data stream supports only sequential access or if an I/O error occured while writing the file header.
+    SaveStream(QDataStream& destination);
 
-	/// \brief Automatically closes the stream by calling close().
-	virtual ~SaveStream() { SaveStream::close(); }
+    /// \brief Automatically closes the stream by calling close().
+    virtual ~SaveStream() { SaveStream::close(); }
 
-	/// \brief Closes this stream, but not the underlying output stream passed to the constructor.
-	/// \throw Exception if an I/O error has occurred.
-	/// \sa isOpen()
-	virtual void close();
+    /// \brief Closes this stream, but not the underlying output stream passed to the constructor.
+    /// \throw Exception if an I/O error has occurred.
+    /// \sa isOpen()
+    virtual void close();
 
-	/// \brief Returns whether the stream is still open for write operations. Returns \c false after close() has been called.
-	/// \sa close()
-	bool isOpen() const { return _isOpen; }
+    /// \brief Returns whether the stream is still open for write operations. Returns \c false after close() has been called.
+    /// \sa close()
+    bool isOpen() const { return _isOpen; }
 
-	/// \brief Writes an array of raw bytes to the output stream.
-	/// \param buffer A pointer to the beginning of the data.
-	/// \param numBytes The number of bytes to be written.
-	/// \note No conversion is done for the data written to the stream, i.e. the data will not be stored in a platform-independent format.
-	/// \throw Exception if an I/O error has occurred.
-	void write(const void* buffer, size_t numBytes);
+    /// \brief Writes an array of raw bytes to the output stream.
+    /// \param buffer A pointer to the beginning of the data.
+    /// \param numBytes The number of bytes to be written.
+    /// \note No conversion is done for the data written to the stream, i.e. the data will not be stored in a platform-independent format.
+    /// \throw Exception if an I/O error has occurred.
+    void write(const void* buffer, size_t numBytes);
 
-	/// \brief Start a new chunk with the given identifier.
-	/// \param chunkId A identifier for this chunk. This identifier can be used
-	///                to identify the type of data contained in the chunk during file loading.
-	/// The chunk must be closed using endChunk().
-	/// \throw Exception if an I/O error has occurred.
-	/// \sa endChunk()
+    /// \brief Start a new chunk with the given identifier.
+    /// \param chunkId A identifier for this chunk. This identifier can be used
+    ///                to identify the type of data contained in the chunk during file loading.
+    /// The chunk must be closed using endChunk().
+    /// \throw Exception if an I/O error has occurred.
+    /// \sa endChunk()
     void beginChunk(quint32 chunkId);
 
-	/// \brief Closes the current chunk.
+    /// \brief Closes the current chunk.
     ///
     /// This method closes the last chunk previously opened using beginChunk().
-	/// \throw Exception if an I/O error has occurred.
+    /// \throw Exception if an I/O error has occurred.
     /// \sa beginChunk()
-	void endChunk();
+    void endChunk();
 
-	/// \brief Returns the current writing position of the underlying output stream in bytes.
-	qint64 filePosition() const { return _os.device()->pos(); }
+    /// \brief Returns the current writing position of the underlying output stream in bytes.
+    qint64 filePosition() const { return _os.device()->pos(); }
 
-	/// \brief Writes a platform-dependent unsigned integer value (can be 32 or 64 bits) to the stream.
-	/// \param value The value to be written to the stream.
-	/// \throw Exception when the I/O error has occurred.
-	void writeSizeT(size_t value) { _os << (quint64)value; }
+    /// \brief Writes a platform-dependent unsigned integer value (can be 32 or 64 bits) to the stream.
+    /// \param value The value to be written to the stream.
+    /// \throw Exception when the I/O error has occurred.
+    void writeSizeT(size_t value) { _os << (quint64)value; }
 
-	/// \brief Writes a pointer to the stream.
-	/// \param pointer The pointer to be written to the stream (can be \c nullptr).
-	///
-	/// This method generates a unique ID for the pointer and writes the ID to the stream
-	/// instead of the pointer itself.
-	///
-	/// \throw Exception if an I/O error has occurred.
-	/// \sa pointerID()
-	/// \sa LoadStream::readPointer()
-	void writePointer(void* pointer);
+    /// \brief Writes a pointer to the stream.
+    /// \param pointer The pointer to be written to the stream (can be \c nullptr).
+    ///
+    /// This method generates a unique ID for the pointer and writes the ID to the stream
+    /// instead of the pointer itself.
+    ///
+    /// \throw Exception if an I/O error has occurred.
+    /// \sa pointerID()
+    /// \sa LoadStream::readPointer()
+    void writePointer(void* pointer);
 
-	/// \brief Returns the ID for a pointer that was previously written to the stream using writePointer().
-	/// \param pointer A pointer.
-	/// \return The ID the given pointer was mapped to, or 0 if the pointer hasn't been written to the stream yet.
-	/// \sa writePointer()
-	quint64 pointerID(void* pointer) const;
+    /// \brief Returns the ID for a pointer that was previously written to the stream using writePointer().
+    /// \param pointer A pointer.
+    /// \return The ID the given pointer was mapped to, or 0 if the pointer hasn't been written to the stream yet.
+    /// \sa writePointer()
+    quint64 pointerID(void* pointer) const;
 
-	/// Provides direct access to the underlying Qt data stream.
-	QDataStream& dataStream() { return _os; }
-
-private:
-
-	/// Checks the status of the underlying output stream and throws an exception if an error has occurred.
-	void checkErrorCondition();
-
-	/// Writes a C++ enum to the stream.
-	template<typename T>
-	void writeValue(T enumValue, const std::true_type&) {
-		dataStream() << (qint32)enumValue;
-		checkErrorCondition();
-	}
-
-	/// Writes a non-enum to the stream.
-	template<typename T>
-	void writeValue(T v, const std::false_type&) {
-		dataStream() << v;
-		checkErrorCondition();
-	}
-
-	template<typename T> friend SaveStream& operator<<(SaveStream& stream, const T& v);
-	friend OVITO_CORE_EXPORT SaveStream& operator<<(SaveStream& stream, const QUrl& url);
+    /// Provides direct access to the underlying Qt data stream.
+    QDataStream& dataStream() { return _os; }
 
 private:
 
-	/// Indicates the output stream is still open.
-	bool _isOpen = false;
+    /// Checks the status of the underlying output stream and throws an exception if an error has occurred.
+    void checkErrorCondition();
 
-	/// The output stream.
-	QDataStream& _os;
+    /// Writes a C++ enum to the stream.
+    template<typename T>
+    void writeValue(T enumValue, const std::true_type&) {
+        dataStream() << (qint32)enumValue;
+        checkErrorCondition();
+    }
 
-	/// The stack of open chunks.
-	std::stack<qint64> _chunks;
+    /// Writes a non-enum to the stream.
+    template<typename T>
+    void writeValue(T v, const std::false_type&) {
+        dataStream() << v;
+        checkErrorCondition();
+    }
 
-	/// Maps pointers to IDs.
-	std::map<void*, quint64> _pointerMap;
+    template<typename T> friend SaveStream& operator<<(SaveStream& stream, const T& v);
+    friend OVITO_CORE_EXPORT SaveStream& operator<<(SaveStream& stream, const QUrl& url);
+
+private:
+
+    /// Indicates the output stream is still open.
+    bool _isOpen = false;
+
+    /// The output stream.
+    QDataStream& _os;
+
+    /// The stack of open chunks.
+    std::stack<qint64> _chunks;
+
+    /// Maps pointers to IDs.
+    std::map<void*, quint64> _pointerMap;
 };
 
 /// \brief Writes a value to a SaveStream.
@@ -178,8 +178,8 @@ private:
 template<typename T>
 inline SaveStream& operator<<(SaveStream& stream, const T& v)
 {
-	stream.writeValue(v, std::is_enum<T>());
-	return stream;
+    stream.writeValue(v, std::is_enum<T>());
+    return stream;
 }
 
 /// \brief Writes a vector container to a SaveStream.
@@ -192,10 +192,10 @@ inline SaveStream& operator<<(SaveStream& stream, const T& v)
 template<typename T>
 inline SaveStream& operator<<(SaveStream& stream, const QVector<T>& v)
 {
-	stream.writeSizeT(v.size());
-	for(const auto& el : v)
-		stream << el;
-	return stream;
+    stream.writeSizeT(v.size());
+    for(const auto& el : v)
+        stream << el;
+    return stream;
 }
 
 /// \brief Writes a Qt string list to a SaveStream.
@@ -207,8 +207,8 @@ inline SaveStream& operator<<(SaveStream& stream, const QVector<T>& v)
 /// \throw Exception if an I/O error has occurred.
 inline SaveStream& operator<<(SaveStream& stream, const QStringList& v)
 {
-	stream.dataStream() << v;
-	return stream;
+    stream.dataStream() << v;
+    return stream;
 }
 
 /// \brief Writes a vector container to a SaveStream.
@@ -221,10 +221,10 @@ inline SaveStream& operator<<(SaveStream& stream, const QStringList& v)
 template<typename T>
 inline SaveStream& operator<<(SaveStream& stream, const std::vector<T>& v)
 {
-	stream.writeSizeT(v.size());
-	for(const auto& el : v)
-		stream << el;
-	return stream;
+    stream.writeSizeT(v.size());
+    for(const auto& el : v)
+        stream << el;
+    return stream;
 }
 
 /// \brief Writes an array of values to the output stream.
@@ -237,9 +237,9 @@ inline SaveStream& operator<<(SaveStream& stream, const std::vector<T>& v)
 template<typename T, std::size_t N>
 inline SaveStream& operator<<(SaveStream& stream, const std::array<T, N>& a)
 {
-	for(typename std::array<T, N>::size_type i = 0; i < N; ++i)
-		stream << a[i];
-	return stream;
+    for(typename std::array<T, N>::size_type i = 0; i < N; ++i)
+        stream << a[i];
+    return stream;
 }
 
 /// \brief Writes Qt flag to the output stream.
@@ -252,7 +252,7 @@ inline SaveStream& operator<<(SaveStream& stream, const std::array<T, N>& a)
 template<typename Enum>
 inline SaveStream& operator<<(SaveStream& stream, const QFlags<Enum>& a)
 {
-	return stream << (typename QFlags<Enum>::enum_type)(typename QFlags<Enum>::Int)a;
+    return stream << (typename QFlags<Enum>::enum_type)(typename QFlags<Enum>::Int)a;
 }
 
 /// \brief Writes a bit vector to a SaveStream.
@@ -264,11 +264,11 @@ inline SaveStream& operator<<(SaveStream& stream, const QFlags<Enum>& a)
 /// \throw Exception if an I/O error has occurred.
 inline SaveStream& operator<<(SaveStream& stream, const boost::dynamic_bitset<>& bs)
 {
-	stream.writeSizeT(bs.size());
-	std::vector<boost::dynamic_bitset<>::block_type> blocks(bs.num_blocks());
-	boost::to_block_range(bs, blocks.begin());
-	stream.write(blocks.data(), blocks.size() * sizeof(boost::dynamic_bitset<>::block_type));
-	return stream;
+    stream.writeSizeT(bs.size());
+    std::vector<boost::dynamic_bitset<>::block_type> blocks(bs.num_blocks());
+    boost::to_block_range(bs, blocks.begin());
+    stream.write(blocks.data(), blocks.size() * sizeof(boost::dynamic_bitset<>::block_type));
+    return stream;
 }
 
 /// \brief Writes a URL to a SaveStream.
@@ -289,4 +289,4 @@ extern OVITO_CORE_EXPORT SaveStream& operator<<(SaveStream& stream, const QUrl& 
 /// \throw Exception if an I/O error has occurred.
 extern OVITO_CORE_EXPORT SaveStream& operator<<(SaveStream& stream, const OvitoClassPtr& clazz);
 
-}	// End of namespace
+}   // End of namespace

@@ -31,7 +31,7 @@ namespace Ovito {
 * Constructs the panel.
 ******************************************************************************/
 PropertiesPanel::PropertiesPanel(MainWindow& mainWindow, QWidget* parent) :
-	RolloutContainer(mainWindow, parent), _mainWindow(mainWindow)
+    RolloutContainer(mainWindow, parent), _mainWindow(mainWindow)
 {
 }
 
@@ -47,46 +47,46 @@ PropertiesPanel::~PropertiesPanel()
 ******************************************************************************/
 void PropertiesPanel::setEditObject(RefTarget* newEditObject, OORef<PropertiesEditor> newEditor)
 {
-	if(newEditObject == editObject() && (newEditObject != nullptr) == (editor() != nullptr) && !newEditor)
-		return;
+    if(newEditObject == editObject() && (newEditObject != nullptr) == (editor() != nullptr) && !newEditor)
+        return;
 
-	if(editor()) {
-		OVITO_CHECK_OBJECT_POINTER(editor());
+    if(editor()) {
+        OVITO_CHECK_OBJECT_POINTER(editor());
 
-		// Can we re-use the old editor?
-		if(newEditObject != nullptr && editor()->editObject() != nullptr
-			&& editor()->editObject()->getOOClass() == newEditObject->getOOClass()
-			&& !newEditor) {
+        // Can we re-use the old editor?
+        if(newEditObject != nullptr && editor()->editObject() != nullptr
+            && editor()->editObject()->getOOClass() == newEditObject->getOOClass()
+            && !newEditor) {
 
-			try {
-				editor()->setEditObject(newEditObject);
-			}
-			catch(const Exception& ex) {
-				mainWindow().reportError(ex, this);
-			}
-			return;
-		}
-		else {
-			// Close previous editor.
-			_editor.reset();
-		}
-	}
+            try {
+                editor()->setEditObject(newEditObject);
+            }
+            catch(const Exception& ex) {
+                mainWindow().reportError(ex, this);
+            }
+            return;
+        }
+        else {
+            // Close previous editor.
+            _editor.reset();
+        }
+    }
 
-	if(newEditObject) {
-		// Open new properties editor.
-		try {
-			_editor = newEditor ? std::move(newEditor) : PropertiesEditor::create(mainWindow(), newEditObject);
-			if(editor()) {
-				if(!editor()->container())
-					editor()->initialize(this, RolloutInsertionParameters(), nullptr);
-				editor()->setEditObject(newEditObject);
-			}
-		}
-		catch(const Exception& ex) {
-			_editor.reset();
-			mainWindow().reportError(ex, this);
-		}
-	}
+    if(newEditObject) {
+        // Open new properties editor.
+        try {
+            _editor = newEditor ? std::move(newEditor) : PropertiesEditor::create(mainWindow(), newEditObject);
+            if(editor()) {
+                if(!editor()->container())
+                    editor()->initialize(this, RolloutInsertionParameters(), nullptr);
+                editor()->setEditObject(newEditObject);
+            }
+        }
+        catch(const Exception& ex) {
+            _editor.reset();
+            mainWindow().reportError(ex, this);
+        }
+    }
 }
 
 /******************************************************************************
@@ -94,8 +94,8 @@ void PropertiesPanel::setEditObject(RefTarget* newEditObject, OORef<PropertiesEd
 ******************************************************************************/
 RefTarget* PropertiesPanel::editObject() const
 {
-	if(!editor()) return nullptr;
-	return editor()->editObject();
+    if(!editor()) return nullptr;
+    return editor()->editObject();
 }
 
-}	// End of namespace
+}   // End of namespace

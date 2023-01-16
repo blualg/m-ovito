@@ -25,13 +25,13 @@ FIND_PACKAGE(Qt6 ${OVITO_MINIMUM_REQUIRED_QT_VERSION} COMPONENTS Widgets OpenGLW
 
 # Define the GUI component of the OpenGLRenderer plugin.
 OVITO_STANDARD_PLUGIN(OpenGLRendererGui
-	SOURCES
-		OpenGLViewportWindow.cpp
-#		OpenGLOffscreenViewportWindow.cpp
-	PLUGIN_DEPENDENCIES
-		OpenGLRenderer
-		GuiBase
-	LIB_DEPENDENCIES
-		Qt6::Widgets 
-		Qt6::OpenGLWidgets
+    SOURCES
+        OpenGLViewportWindow.cpp
+#       OpenGLOffscreenViewportWindow.cpp
+    PLUGIN_DEPENDENCIES
+        OpenGLRenderer
+        GuiBase
+    LIB_DEPENDENCIES
+        Qt6::Widgets 
+        Qt6::OpenGLWidgets
 )

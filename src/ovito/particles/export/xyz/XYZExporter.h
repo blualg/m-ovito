@@ -33,48 +33,48 @@ namespace Ovito::Particles {
  */
 class OVITO_PARTICLES_EXPORT XYZExporter : public FileColumnParticleExporter
 {
-	/// Defines a metaclass specialization for this exporter type.
-	class OOMetaClass : public FileColumnParticleExporter::OOMetaClass
-	{
-	public:
-		/// Inherit standard constructor from base meta class.
-		using FileColumnParticleExporter::OOMetaClass::OOMetaClass;
+    /// Defines a metaclass specialization for this exporter type.
+    class OOMetaClass : public FileColumnParticleExporter::OOMetaClass
+    {
+    public:
+        /// Inherit standard constructor from base meta class.
+        using FileColumnParticleExporter::OOMetaClass::OOMetaClass;
 
-		/// Returns the file filter that specifies the extension of files written by this service.
-		virtual QString fileFilter() const override { return QStringLiteral("*"); }
+        /// Returns the file filter that specifies the extension of files written by this service.
+        virtual QString fileFilter() const override { return QStringLiteral("*"); }
 
-		/// Returns the filter description that is displayed in the drop-down box of the file dialog.
-		virtual QString fileFilterDescription() const override { return tr("XYZ File"); }
-	};
+        /// Returns the filter description that is displayed in the drop-down box of the file dialog.
+        virtual QString fileFilterDescription() const override { return tr("XYZ File"); }
+    };
 
-	OVITO_CLASS_META(XYZExporter, OOMetaClass)
-
-public:
-
-	/// \brief The supported XYZ sub-formats.
-	enum XYZSubFormat {
-		ParcasFormat,
-		ExtendedFormat
-	};
-	Q_ENUM(XYZSubFormat);
+    OVITO_CLASS_META(XYZExporter, OOMetaClass)
 
 public:
 
-	/// \brief Constructs a new instance of this class.
-	Q_INVOKABLE XYZExporter(ObjectCreationParams params) : FileColumnParticleExporter(params), _subFormat(ExtendedFormat) {}
+    /// \brief The supported XYZ sub-formats.
+    enum XYZSubFormat {
+        ParcasFormat,
+        ExtendedFormat
+    };
+    Q_ENUM(XYZSubFormat);
 
-	/// \brief Indicates whether this file exporter can write more than one animation frame into a single output file.
-	virtual bool supportsMultiFrameFiles() const override { return true; }
+public:
+
+    /// \brief Constructs a new instance of this class.
+    Q_INVOKABLE XYZExporter(ObjectCreationParams params) : FileColumnParticleExporter(params), _subFormat(ExtendedFormat) {}
+
+    /// \brief Indicates whether this file exporter can write more than one animation frame into a single output file.
+    virtual bool supportsMultiFrameFiles() const override { return true; }
 
 protected:
 
-	/// \brief Writes the particles of one animation frame to the current output file.
-	virtual bool exportData(const PipelineFlowState& state, int frameNumber, const QString& filePath, MainThreadOperation& operation) override;
+    /// \brief Writes the particles of one animation frame to the current output file.
+    virtual bool exportData(const PipelineFlowState& state, int frameNumber, const QString& filePath, MainThreadOperation& operation) override;
 
 private:
 
-	/// Selects the kind of XYZ file to write.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(XYZSubFormat, subFormat, setSubFormat, PROPERTY_FIELD_MEMORIZE);
+    /// Selects the kind of XYZ file to write.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(XYZSubFormat, subFormat, setSubFormat, PROPERTY_FIELD_MEMORIZE);
 };
 
-}	// End of namespace
+}   // End of namespace

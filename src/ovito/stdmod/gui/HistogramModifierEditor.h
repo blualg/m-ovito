@@ -36,30 +36,30 @@ namespace Ovito::StdMod {
  */
 class HistogramModifierEditor : public PropertiesEditor
 {
-	OVITO_CLASS(HistogramModifierEditor)
+    OVITO_CLASS(HistogramModifierEditor)
 
 public:
 
-	/// Default constructor.
-	Q_INVOKABLE HistogramModifierEditor() {}
+    /// Default constructor.
+    Q_INVOKABLE HistogramModifierEditor() {}
 
 protected:
 
-	/// Creates the user interface controls for the editor.
-	virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
+    /// Creates the user interface controls for the editor.
+    virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
 
 protected Q_SLOTS:
 
-	/// Replots the histogram computed by the modifier.
-	void plotHistogram();
+    /// Replots the histogram computed by the modifier.
+    void plotHistogram();
 
 private:
 
-	/// The graph widget to display the histogram.
-	DataTablePlotWidget* _plotWidget;
+    /// The graph widget to display the histogram.
+    DataTablePlotWidget* _plotWidget;
 
-	/// The plot item for indicating the seletion range.
-	QwtPlotZoneItem* _selectionRangeIndicator;
+    /// The plot item for indicating the seletion range.
+    QwtPlotZoneItem* _selectionRangeIndicator;
 };
 
-}	// End of namespace
+}   // End of namespace

@@ -33,36 +33,36 @@ SET_MODIFIER_APPLICATION_TYPE(AsynchronousModifier, AsynchronousModifierApplicat
 ******************************************************************************/
 bool AsynchronousModifierApplication::referenceEvent(RefTarget* source, const ReferenceEvent& event)
 {
-	if(event.type() == ReferenceEvent::TargetEnabledOrDisabled && source == modifier()) {
-		// Throw away cached results when the modifier is being disabled.
-		_validStages.clear();
-		_completedEngine.reset();
-	}
-	else if(event.type() == ReferenceEvent::PreliminaryStateAvailable && source == input()) {
-		// Throw away cached results when the modifier's input changes, unless the engine requests otherwise.
-		if(_completedEngine && !_completedEngine->pipelineInputChanged())
-			_completedEngine.reset();
-	}
-	else if((event.type() == ReferenceEvent::TargetChanged && source == input()) || (event.type() == ReferenceEvent::PipelineInputChanged && source == modifier())) {
-		// Whenever the modifier's inputs change, invalidate the cached computation results hold on to any 
-		// cached results needed for preliminary pipeline evaluation. 
-		_validStages.clear();
-		if(_completedEngine)
-			_completedEngine->setValidityInterval(TimeInterval::empty());
-	}
-	else if(event.type() == ReferenceEvent::TargetChanged && source == modifier()) {
-		// Whenever the modifier changes, invalidate the cached computation results
-		// unless the engine requests otherwise.
-		for(auto e = _validStages.begin(); e != _validStages.end(); ++e) {
-			if(!(*e)->modifierChanged(static_cast<const PropertyFieldEvent&>(event))) {
-				_validStages.erase(e, _validStages.end());
-				if(_completedEngine)
-					_completedEngine->setValidityInterval(TimeInterval::empty());
-				break;
-			}
-		}
-	}
-	return ModifierApplication::referenceEvent(source, event);
+    if(event.type() == ReferenceEvent::TargetEnabledOrDisabled && source == modifier()) {
+        // Throw away cached results when the modifier is being disabled.
+        _validStages.clear();
+        _completedEngine.reset();
+    }
+    else if(event.type() == ReferenceEvent::PreliminaryStateAvailable && source == input()) {
+        // Throw away cached results when the modifier's input changes, unless the engine requests otherwise.
+        if(_completedEngine && !_completedEngine->pipelineInputChanged())
+            _completedEngine.reset();
+    }
+    else if((event.type() == ReferenceEvent::TargetChanged && source == input()) || (event.type() == ReferenceEvent::PipelineInputChanged && source == modifier())) {
+        // Whenever the modifier's inputs change, invalidate the cached computation results hold on to any 
+        // cached results needed for preliminary pipeline evaluation. 
+        _validStages.clear();
+        if(_completedEngine)
+            _completedEngine->setValidityInterval(TimeInterval::empty());
+    }
+    else if(event.type() == ReferenceEvent::TargetChanged && source == modifier()) {
+        // Whenever the modifier changes, invalidate the cached computation results
+        // unless the engine requests otherwise.
+        for(auto e = _validStages.begin(); e != _validStages.end(); ++e) {
+            if(!(*e)->modifierChanged(static_cast<const PropertyFieldEvent&>(event))) {
+                _validStages.erase(e, _validStages.end());
+                if(_completedEngine)
+                    _completedEngine->setValidityInterval(TimeInterval::empty());
+                break;
+            }
+        }
+    }
+    return ModifierApplication::referenceEvent(source, event);
 }
 
 /******************************************************************************
@@ -70,12 +70,12 @@ bool AsynchronousModifierApplication::referenceEvent(RefTarget* source, const Re
 ******************************************************************************/
 void AsynchronousModifierApplication::referenceReplaced(const PropertyFieldDescriptor* field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex)
 {
-	// Throw away cached results when the modifier is being detached from this ModifierApplication.
-	if(field == PROPERTY_FIELD(modifier)) {
-		_validStages.clear();
-		_completedEngine.reset();
-	}
-	ModifierApplication::referenceReplaced(field, oldTarget, newTarget, listIndex);
+    // Throw away cached results when the modifier is being detached from this ModifierApplication.
+    if(field == PROPERTY_FIELD(modifier)) {
+        _validStages.clear();
+        _completedEngine.reset();
+    }
+    ModifierApplication::referenceReplaced(field, oldTarget, newTarget, listIndex);
 }
 
-}	// End of namespace
+}   // End of namespace

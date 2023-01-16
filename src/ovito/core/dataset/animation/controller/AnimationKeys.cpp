@@ -57,20 +57,20 @@ SET_PROPERTY_FIELD_LABEL(ScalingAnimationKey, value, "Value");
 ******************************************************************************/
 void AnimationKey::loadFromStreamComplete(ObjectLoadStream& stream)
 {
-	RefTarget::loadFromStreamComplete(stream);
+    RefTarget::loadFromStreamComplete(stream);
 
-	// For backward compatibility with OVITO 3.7: 
-	// Convert legacy time value. This requires access to the AnimationSettings object, which is stored in the scene.
-	if(stream.formatVersion() <= 30008 && stream.datasetToBePopulated()) {
+    // For backward compatibility with OVITO 3.7: 
+    // Convert legacy time value. This requires access to the AnimationSettings object, which is stored in the scene.
+    if(stream.formatVersion() <= 30008 && stream.datasetToBePopulated()) {
         if(Viewport* vp = stream.datasetToBePopulated()->viewportConfig()->activeViewport()) {
             if(Scene* scene = vp->scene()) {
                 if(scene->animationSettings()) {
                     int ticksPerFrame = (int)std::round(4800.0f / scene->animationSettings()->framesPerSecond());
                     setTime(AnimationTime::fromFrame(time().ticks() / ticksPerFrame));
                 }
-			}
-		}
-	}
+            }
+        }
+    }
 }
 
-}	// End of namespace
+}   // End of namespace

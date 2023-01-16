@@ -38,9 +38,9 @@ IMPLEMENT_OVITO_CLASS(BondsDeleteSelectedModifierDelegate);
 ******************************************************************************/
 QVector<DataObjectReference> ParticlesDeleteSelectedModifierDelegate::OOMetaClass::getApplicableObjects(const DataCollection& input) const
 {
-	if(input.containsObject<ParticlesObject>())
-		return { DataObjectReference(&ParticlesObject::OOClass()) };
-	return {};
+    if(input.containsObject<ParticlesObject>())
+        return { DataObjectReference(&ParticlesObject::OOClass()) };
+    return {};
 }
 
 /******************************************************************************
@@ -48,71 +48,71 @@ QVector<DataObjectReference> ParticlesDeleteSelectedModifierDelegate::OOMetaClas
 ******************************************************************************/
 PipelineStatus ParticlesDeleteSelectedModifierDelegate::apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const PipelineFlowState& inputState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs)
 {
-	size_t numParticles = 0;
-	size_t numSelected = 0;
-	size_t numDeletedBonds = 0;
-	size_t numDeletedAngles = 0;
-	size_t numDeletedDihedrals = 0;
-	size_t numDeletedImpropers = 0;
+    size_t numParticles = 0;
+    size_t numSelected = 0;
+    size_t numDeletedBonds = 0;
+    size_t numDeletedAngles = 0;
+    size_t numDeletedDihedrals = 0;
+    size_t numDeletedImpropers = 0;
 
-	// Get the particle selection.
-	if(const ParticlesObject* inputParticles = state.getObject<ParticlesObject>()) {
-		inputParticles->verifyIntegrity();
-		numParticles = inputParticles->elementCount();
-		if(const PropertyObject* selProperty = inputParticles->getProperty(ParticlesObject::SelectionProperty)) {
+    // Get the particle selection.
+    if(const ParticlesObject* inputParticles = state.getObject<ParticlesObject>()) {
+        inputParticles->verifyIntegrity();
+        numParticles = inputParticles->elementCount();
+        if(const PropertyObject* selProperty = inputParticles->getProperty(ParticlesObject::SelectionProperty)) {
 
-			// Generate filter mask.
-			boost::dynamic_bitset<> mask(selProperty->size());
-			boost::dynamic_bitset<>::size_type i = 0;
-			for(int s : ConstPropertyAccess<int>(selProperty)) {
-				if(s != 0) {
-					mask.set(i++);
-					numSelected++;
-				}
-				else {
-					mask.reset(i++);
-				}
-			}
+            // Generate filter mask.
+            boost::dynamic_bitset<> mask(selProperty->size());
+            boost::dynamic_bitset<>::size_type i = 0;
+            for(int s : ConstPropertyAccess<int>(selProperty)) {
+                if(s != 0) {
+                    mask.set(i++);
+                    numSelected++;
+                }
+                else {
+                    mask.reset(i++);
+                }
+            }
 
-			if(numSelected) {
-				// Make sure we can safely modify the particles object.
-				ParticlesObject* outputParticles = state.makeMutable(inputParticles);
+            if(numSelected) {
+                // Make sure we can safely modify the particles object.
+                ParticlesObject* outputParticles = state.makeMutable(inputParticles);
 
-				// Keep track of how many bonds, angles, etc there are.
-				size_t oldBondCount = outputParticles->bonds() ? outputParticles->bonds()->elementCount() : 0;
-				size_t oldAngleCount = outputParticles->angles() ? outputParticles->angles()->elementCount() : 0;
-				size_t oldDihedralCount = outputParticles->dihedrals() ? outputParticles->dihedrals()->elementCount() : 0;
-				size_t oldImproperCount = outputParticles->impropers() ? outputParticles->impropers()->elementCount() : 0;
+                // Keep track of how many bonds, angles, etc there are.
+                size_t oldBondCount = outputParticles->bonds() ? outputParticles->bonds()->elementCount() : 0;
+                size_t oldAngleCount = outputParticles->angles() ? outputParticles->angles()->elementCount() : 0;
+                size_t oldDihedralCount = outputParticles->dihedrals() ? outputParticles->dihedrals()->elementCount() : 0;
+                size_t oldImproperCount = outputParticles->impropers() ? outputParticles->impropers()->elementCount() : 0;
 
-				// Remove selection property.
-				outputParticles->removeProperty(selProperty);
+                // Remove selection property.
+                outputParticles->removeProperty(selProperty);
 
-				// Delete the particles.
-				outputParticles->deleteElements(mask);
+                // Delete the particles.
+                outputParticles->deleteElements(mask);
 
-				// Detect if dangling bonds have been deleted as part of the particle deletion.
-				numDeletedBonds = oldBondCount - (outputParticles->bonds() ? outputParticles->bonds()->elementCount() : 0);
-				numDeletedAngles = oldAngleCount - (outputParticles->angles() ? outputParticles->angles()->elementCount() : 0);
-				numDeletedDihedrals = oldDihedralCount - (outputParticles->dihedrals() ? outputParticles->dihedrals()->elementCount() : 0);
-				numDeletedImpropers = oldImproperCount - (outputParticles->impropers() ? outputParticles->impropers()->elementCount() : 0);
-			}
-		}
-	}
+                // Detect if dangling bonds have been deleted as part of the particle deletion.
+                numDeletedBonds = oldBondCount - (outputParticles->bonds() ? outputParticles->bonds()->elementCount() : 0);
+                numDeletedAngles = oldAngleCount - (outputParticles->angles() ? outputParticles->angles()->elementCount() : 0);
+                numDeletedDihedrals = oldDihedralCount - (outputParticles->dihedrals() ? outputParticles->dihedrals()->elementCount() : 0);
+                numDeletedImpropers = oldImproperCount - (outputParticles->impropers() ? outputParticles->impropers()->elementCount() : 0);
+            }
+        }
+    }
 
-	// Report some statistics:
-	QString statusMessage = tr("%n of %1 particles deleted (%2%)", 0, numSelected)
-		.arg(numParticles)
-		.arg((FloatType)numSelected * 100 / std::max(numParticles, (size_t)1), 0, 'f', 1);
-	if(numDeletedBonds)
-		statusMessage += tr("\n%n dangling bonds deleted", 0, numDeletedBonds);
-	if(numDeletedAngles)
-		statusMessage += tr("\n%n dangling angles deleted", 0, numDeletedAngles);
-	if(numDeletedDihedrals)
-		statusMessage += tr("\n%n dangling dihedrals deleted", 0, numDeletedDihedrals);
-	if(numDeletedImpropers)
-		statusMessage += tr("\n%n dangling impropers deleted", 0, numDeletedImpropers);
+    // Report some statistics:
+    QString statusMessage = tr("%n of %1 particles deleted (%2%)", 0, numSelected)
+        .arg(numParticles)
+        .arg((FloatType)numSelected * 100 / std::max(numParticles, (size_t)1), 0, 'f', 1);
+    if(numDeletedBonds)
+        statusMessage += tr("\n%n dangling bonds deleted", 0, numDeletedBonds);
+    if(numDeletedAngles)
+        statusMessage += tr("\n%n dangling angles deleted", 0, numDeletedAngles);
+    if(numDeletedDihedrals)
+        statusMessage += tr("\n%n dangling dihedrals deleted", 0, numDeletedDihedrals);
+    if(numDeletedImpropers)
+        statusMessage += tr("\n%n dangling impropers deleted", 0, numDeletedImpropers);
 
-	return PipelineStatus(PipelineStatus::Success, std::move(statusMessage));
+    return PipelineStatus(PipelineStatus::Success, std::move(statusMessage));
 }
 
 /******************************************************************************
@@ -123,7 +123,7 @@ QVector<DataObjectReference> BondsDeleteSelectedModifierDelegate::OOMetaClass::g
 {
     if(const ParticlesObject* particles = input.getObject<ParticlesObject>()) {
         if(particles->bonds() && particles->bonds()->getProperty(BondsObject::SelectionProperty))
-       		return { DataObjectReference(&ParticlesObject::OOClass()) };
+            return { DataObjectReference(&ParticlesObject::OOClass()) };
     }
     return {};
 }
@@ -133,49 +133,49 @@ QVector<DataObjectReference> BondsDeleteSelectedModifierDelegate::OOMetaClass::g
 ******************************************************************************/
 PipelineStatus BondsDeleteSelectedModifierDelegate::apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const PipelineFlowState& inputState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs)
 {
-	size_t numBonds = 0;
-	size_t numSelected = 0;
+    size_t numBonds = 0;
+    size_t numSelected = 0;
 
-	// Get the bond selection.
-	if(const ParticlesObject* inputParticles = state.getObject<ParticlesObject>()) {
-		if(const BondsObject* inputBonds = inputParticles->bonds()) {
-			inputBonds->verifyIntegrity();
-			numBonds = inputBonds->elementCount();
-			if(const PropertyObject* selProperty = inputBonds->getProperty(BondsObject::SelectionProperty)) {
-				// Generate filter mask.
-				boost::dynamic_bitset<> mask(selProperty->size());
-				boost::dynamic_bitset<>::size_type i = 0;
-				for(int s : ConstPropertyAccess<int>(selProperty)) {
-					if(s != 0) {
-						mask.set(i++);
-						numSelected++;
-					}
-					else {
-						mask.reset(i++);
-					}
-				}
+    // Get the bond selection.
+    if(const ParticlesObject* inputParticles = state.getObject<ParticlesObject>()) {
+        if(const BondsObject* inputBonds = inputParticles->bonds()) {
+            inputBonds->verifyIntegrity();
+            numBonds = inputBonds->elementCount();
+            if(const PropertyObject* selProperty = inputBonds->getProperty(BondsObject::SelectionProperty)) {
+                // Generate filter mask.
+                boost::dynamic_bitset<> mask(selProperty->size());
+                boost::dynamic_bitset<>::size_type i = 0;
+                for(int s : ConstPropertyAccess<int>(selProperty)) {
+                    if(s != 0) {
+                        mask.set(i++);
+                        numSelected++;
+                    }
+                    else {
+                        mask.reset(i++);
+                    }
+                }
 
-				if(numSelected) {
-					// Make sure we can safely modify the particles and the bonds object it contains.
-					ParticlesObject* outputParticles = state.makeMutable(inputParticles);
-					BondsObject* outputBonds = outputParticles->makeBondsMutable();
+                if(numSelected) {
+                    // Make sure we can safely modify the particles and the bonds object it contains.
+                    ParticlesObject* outputParticles = state.makeMutable(inputParticles);
+                    BondsObject* outputBonds = outputParticles->makeBondsMutable();
 
-					// Remove selection property.
-					outputBonds->removeProperty(selProperty);
+                    // Remove selection property.
+                    outputBonds->removeProperty(selProperty);
 
-					// Delete the bonds.
-					outputBonds->deleteElements(mask);
-				}
-			}
-		}
-	}
+                    // Delete the bonds.
+                    outputBonds->deleteElements(mask);
+                }
+            }
+        }
+    }
 
-	// Report some statistics:
-	QString statusMessage = tr("%n of %1 bonds deleted (%2%)", 0, numSelected)
-		.arg(numBonds)
-		.arg((FloatType)numSelected * 100 / std::max(numBonds, (size_t)1), 0, 'f', 1);
+    // Report some statistics:
+    QString statusMessage = tr("%n of %1 bonds deleted (%2%)", 0, numSelected)
+        .arg(numBonds)
+        .arg((FloatType)numSelected * 100 / std::max(numBonds, (size_t)1), 0, 'f', 1);
 
-	return PipelineStatus(PipelineStatus::Success, std::move(statusMessage));
+    return PipelineStatus(PipelineStatus::Success, std::move(statusMessage));
 }
 
-}	// End of namespace
+}   // End of namespace

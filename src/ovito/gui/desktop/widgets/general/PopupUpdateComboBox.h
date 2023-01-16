@@ -32,23 +32,23 @@ namespace Ovito {
  */
 class OVITO_GUI_EXPORT PopupUpdateComboBox : public QComboBox
 {
-	Q_OBJECT
+    Q_OBJECT
 
 public:
 
-	/// Initializes the widget.
-	using QComboBox::QComboBox;
+    /// Initializes the widget.
+    using QComboBox::QComboBox;
 
-	/// Is called just before the drop-down box is activated.
-	virtual void showPopup() override {
-		Q_EMIT dropDownActivated();
-		QComboBox::showPopup();
-	}
+    /// Is called just before the drop-down box is activated.
+    virtual void showPopup() override {
+        Q_EMIT dropDownActivated();
+        QComboBox::showPopup();
+    }
 
 Q_SIGNALS:
 
-	/// This signal is emited right before the drop-down list of the combobox is displayed.
-	void dropDownActivated();
+    /// This signal is emited right before the drop-down list of the combobox is displayed.
+    void dropDownActivated();
 };
 
-}	// End of namespace
+}   // End of namespace

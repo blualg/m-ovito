@@ -36,19 +36,19 @@ SET_OVITO_OBJECT_EDITOR(DeleteSelectedModifier, DeleteSelectedModifierEditor);
 ******************************************************************************/
 void DeleteSelectedModifierEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 {
-	// Create a rollout.
-	QWidget* rollout = createRollout(tr("Delete selected"), rolloutParams, "manual:particles.modifiers.delete_selected_particles");
+    // Create a rollout.
+    QWidget* rollout = createRollout(tr("Delete selected"), rolloutParams, "manual:particles.modifiers.delete_selected_particles");
 
     // Create the rollout contents.
-	QVBoxLayout* layout = new QVBoxLayout(rollout);
-	layout->setContentsMargins(4,4,4,4);
-	layout->setSpacing(8);
+    QVBoxLayout* layout = new QVBoxLayout(rollout);
+    layout->setContentsMargins(4,4,4,4);
+    layout->setSpacing(8);
 
-	ModifierDelegateFixedListParameterUI* delegatesPUI = new ModifierDelegateFixedListParameterUI(this, rolloutParams.after(rollout));
-	layout->addWidget(delegatesPUI->listWidget());
+    ModifierDelegateFixedListParameterUI* delegatesPUI = new ModifierDelegateFixedListParameterUI(this, rolloutParams.after(rollout));
+    layout->addWidget(delegatesPUI->listWidget());
 
-	// Status label.
-	layout->addWidget((new ObjectStatusDisplay(this))->statusWidget());
+    // Status label.
+    layout->addWidget((new ObjectStatusDisplay(this))->statusWidget());
 }
 
-}	// End of namespace
+}   // End of namespace

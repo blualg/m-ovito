@@ -39,57 +39,57 @@ SET_OVITO_OBJECT_EDITOR(FreezePropertyModifier, FreezePropertyModifierEditor);
 ******************************************************************************/
 void FreezePropertyModifierEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 {
-	QWidget* rollout = createRollout(tr("Freeze property"), rolloutParams, "manual:particles.modifiers.freeze_property");
+    QWidget* rollout = createRollout(tr("Freeze property"), rolloutParams, "manual:particles.modifiers.freeze_property");
 
     // Create the rollout contents.
-	QVBoxLayout* layout = new QVBoxLayout(rollout);
-	layout->setContentsMargins(4,4,4,4);
-	layout->setSpacing(2);
+    QVBoxLayout* layout = new QVBoxLayout(rollout);
+    layout->setContentsMargins(4,4,4,4);
+    layout->setSpacing(2);
 
-	PropertyContainerParameterUI* pclassUI = new PropertyContainerParameterUI(this, PROPERTY_FIELD(GenericPropertyModifier::subject));
-	layout->addWidget(new QLabel(tr("Operate on:")));
-	layout->addWidget(pclassUI->comboBox());
-	layout->addSpacing(8);
+    PropertyContainerParameterUI* pclassUI = new PropertyContainerParameterUI(this, PROPERTY_FIELD(GenericPropertyModifier::subject));
+    layout->addWidget(new QLabel(tr("Operate on:")));
+    layout->addWidget(pclassUI->comboBox());
+    layout->addSpacing(8);
 
-	// Do not list data tables as available inputs.
-	pclassUI->setContainerFilter([](const PropertyContainer* container) {
-		return DataTable::OOClass().isMember(container) == false;
-	});
+    // Do not list data tables as available inputs.
+    pclassUI->setContainerFilter([](const PropertyContainer* container) {
+        return DataTable::OOClass().isMember(container) == false;
+    });
 
-	PropertyReferenceParameterUI* sourcePropertyUI = new PropertyReferenceParameterUI(this, PROPERTY_FIELD(FreezePropertyModifier::sourceProperty), nullptr, PropertyReferenceParameterUI::ShowNoComponents, true);
-	layout->addWidget(new QLabel(tr("Property to freeze:"), rollout));
-	layout->addWidget(sourcePropertyUI->comboBox());
-	connect(sourcePropertyUI, &PropertyReferenceParameterUI::valueEntered, this, &FreezePropertyModifierEditor::onSourcePropertyChanged);
-	layout->addSpacing(8);
+    PropertyReferenceParameterUI* sourcePropertyUI = new PropertyReferenceParameterUI(this, PROPERTY_FIELD(FreezePropertyModifier::sourceProperty), nullptr, PropertyReferenceParameterUI::ShowNoComponents, true);
+    layout->addWidget(new QLabel(tr("Property to freeze:"), rollout));
+    layout->addWidget(sourcePropertyUI->comboBox());
+    connect(sourcePropertyUI, &PropertyReferenceParameterUI::valueEntered, this, &FreezePropertyModifierEditor::onSourcePropertyChanged);
+    layout->addSpacing(8);
 
-	PropertyReferenceParameterUI* destPropertyUI = new PropertyReferenceParameterUI(this, PROPERTY_FIELD(FreezePropertyModifier::destinationProperty), nullptr, PropertyReferenceParameterUI::ShowNoComponents, false);
-	layout->addWidget(new QLabel(tr("Output property:"), rollout));
-	layout->addWidget(destPropertyUI->comboBox());
-	layout->addSpacing(8);
-	connect(this, &PropertiesEditor::contentsChanged, this, [sourcePropertyUI,destPropertyUI](RefTarget* editObject) {
-		if(FreezePropertyModifier* modifier = static_object_cast<FreezePropertyModifier>(editObject)) {
-			sourcePropertyUI->setContainerRef(modifier->subject());
-			destPropertyUI->setContainerRef(modifier->subject());
-		}
-		else {
-			sourcePropertyUI->setContainerRef({});
-			destPropertyUI->setContainerRef({});
-		}
-	});
+    PropertyReferenceParameterUI* destPropertyUI = new PropertyReferenceParameterUI(this, PROPERTY_FIELD(FreezePropertyModifier::destinationProperty), nullptr, PropertyReferenceParameterUI::ShowNoComponents, false);
+    layout->addWidget(new QLabel(tr("Output property:"), rollout));
+    layout->addWidget(destPropertyUI->comboBox());
+    layout->addSpacing(8);
+    connect(this, &PropertiesEditor::contentsChanged, this, [sourcePropertyUI,destPropertyUI](RefTarget* editObject) {
+        if(FreezePropertyModifier* modifier = static_object_cast<FreezePropertyModifier>(editObject)) {
+            sourcePropertyUI->setContainerRef(modifier->subject());
+            destPropertyUI->setContainerRef(modifier->subject());
+        }
+        else {
+            sourcePropertyUI->setContainerRef({});
+            destPropertyUI->setContainerRef({});
+        }
+    });
 
-	QGridLayout* gridlayout = new QGridLayout();
-	gridlayout->setContentsMargins(0,0,0,0);
-	gridlayout->setColumnStretch(1, 1);
+    QGridLayout* gridlayout = new QGridLayout();
+    gridlayout->setContentsMargins(0,0,0,0);
+    gridlayout->setColumnStretch(1, 1);
 
-	IntegerParameterUI* freezeTimePUI = new IntegerParameterUI(this, PROPERTY_FIELD(FreezePropertyModifier::freezeTime));
-	gridlayout->addWidget(freezeTimePUI->label(), 0, 0);
-	gridlayout->addLayout(freezeTimePUI->createFieldLayout(), 0, 1);
-	layout->addLayout(gridlayout);
-	layout->addSpacing(8);
+    IntegerParameterUI* freezeTimePUI = new IntegerParameterUI(this, PROPERTY_FIELD(FreezePropertyModifier::freezeTime));
+    gridlayout->addWidget(freezeTimePUI->label(), 0, 0);
+    gridlayout->addLayout(freezeTimePUI->createFieldLayout(), 0, 1);
+    layout->addLayout(gridlayout);
+    layout->addSpacing(8);
 
-	// Status label.
-	layout->addSpacing(12);
-	layout->addWidget((new ObjectStatusDisplay(this))->statusWidget());
+    // Status label.
+    layout->addSpacing(12);
+    layout->addWidget((new ObjectStatusDisplay(this))->statusWidget());
 }
 
 /******************************************************************************
@@ -97,13 +97,13 @@ void FreezePropertyModifierEditor::createUI(const RolloutInsertionParameters& ro
 ******************************************************************************/
 void FreezePropertyModifierEditor::onSourcePropertyChanged()
 {
-	FreezePropertyModifier* mod = static_object_cast<FreezePropertyModifier>(editObject());
-	if(!mod) return;
+    FreezePropertyModifier* mod = static_object_cast<FreezePropertyModifier>(editObject());
+    if(!mod) return;
 
-	performTransaction(tr("Freeze property"), [this,mod]() {
-		// When the user selects a different source property, adjust the destination property automatically.
-		mod->setDestinationProperty(mod->sourceProperty());
-	});
+    performTransaction(tr("Freeze property"), [this,mod]() {
+        // When the user selects a different source property, adjust the destination property automatically.
+        mod->setDestinationProperty(mod->sourceProperty());
+    });
 }
 
-}	// End of namespace
+}   // End of namespace

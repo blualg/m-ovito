@@ -22,40 +22,40 @@
 
 # Define the plugin module.
 OVITO_STANDARD_PLUGIN(StdObj
-	SOURCES
-		camera/StandardCameraObject.cpp
-		camera/StandardCameraSource.cpp
-		camera/TargetObject.cpp
-		simcell/SimulationCellObject.cpp
-		simcell/SimulationCellVis.cpp
-		simcell/PeriodicDomainDataObject.cpp
-		properties/PropertyObject.cpp
-		properties/PropertyReference.cpp
-		properties/PropertyContainerClass.cpp
-		properties/PropertyContainer.cpp
-		properties/ElementType.cpp
-		properties/GenericPropertyModifier.cpp
-		properties/PropertyExpressionEvaluator.cpp
-		properties/InputColumnMapping.cpp
-		properties/PropertyColorMapping.cpp
-		table/DataTable.cpp
-		io/DataTableExporter.cpp
-		io/PropertyOutputWriter.cpp
-		io/StandardFrameLoader.cpp
-		util/ElementSelectionSet.cpp
-	LIB_DEPENDENCIES
-		muParser
-	PRECOMPILED_HEADERS 
-		StdObj.h
+    SOURCES
+        camera/StandardCameraObject.cpp
+        camera/StandardCameraSource.cpp
+        camera/TargetObject.cpp
+        simcell/SimulationCellObject.cpp
+        simcell/SimulationCellVis.cpp
+        simcell/PeriodicDomainDataObject.cpp
+        properties/PropertyObject.cpp
+        properties/PropertyReference.cpp
+        properties/PropertyContainerClass.cpp
+        properties/PropertyContainer.cpp
+        properties/ElementType.cpp
+        properties/GenericPropertyModifier.cpp
+        properties/PropertyExpressionEvaluator.cpp
+        properties/InputColumnMapping.cpp
+        properties/PropertyColorMapping.cpp
+        table/DataTable.cpp
+        io/DataTableExporter.cpp
+        io/PropertyOutputWriter.cpp
+        io/StandardFrameLoader.cpp
+        util/ElementSelectionSet.cpp
+    LIB_DEPENDENCIES
+        muParser
+    PRECOMPILED_HEADERS 
+        StdObj.h
 )
 
 # Build corresponding GUI plugin.
 IF(OVITO_BUILD_APP)
-	IF(NOT OVITO_QML_GUI)
-		ADD_SUBDIRECTORY(gui)
-	ELSE()
-		ADD_SUBDIRECTORY(guiqml)
-	ENDIF()
+    IF(NOT OVITO_QML_GUI)
+        ADD_SUBDIRECTORY(gui)
+    ELSE()
+        ADD_SUBDIRECTORY(guiqml)
+    ENDIF()
 ENDIF()
 
 # Propagate list of plugins to parent scope.

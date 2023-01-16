@@ -33,17 +33,17 @@ namespace Ovito::StdObj {
  */
 class DataTablePlotExporterEditor : public PropertiesEditor
 {
-	OVITO_CLASS(DataTablePlotExporterEditor)
+    OVITO_CLASS(DataTablePlotExporterEditor)
 
 public:
 
-	/// Constructor.
-	Q_INVOKABLE DataTablePlotExporterEditor() {}
+    /// Constructor.
+    Q_INVOKABLE DataTablePlotExporterEditor() {}
 
 protected:
 
-	/// Creates the user interface controls for the editor.
-	virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
+    /// Creates the user interface controls for the editor.
+    virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
 };
 
-}	// End of namespace
+}   // End of namespace

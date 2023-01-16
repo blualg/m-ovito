@@ -55,8 +55,8 @@ private:
     /// Indicates that this object currently has exclusive access to the NetCDF functions.
     bool _isLocked = false;
 
-	/// The global mutex used to serialize access to the NetCDF library functions.
-	static QRecursiveMutex _netcdfMutex;
+    /// The global mutex used to serialize access to the NetCDF library functions.
+    static QRecursiveMutex _netcdfMutex;
 };
 
 /**
@@ -73,4 +73,4 @@ public:
     static void ncerr_with_info(int err, const char* file, int line, const QString& info);
 };
 
-}	// End of namespace
+}   // End of namespace

@@ -36,52 +36,52 @@ class OVITO_CORE_EXPORT UndoableTransaction
 {
 public:
 
-	/// Constructor.
-	UndoableTransaction() = default;
+    /// Constructor.
+    UndoableTransaction() = default;
 
-	/// Constructor opening a new transaction.
-	explicit UndoableTransaction(UserInterface& userInterface, const QString& undoOperationName) {
-		begin(userInterface, undoOperationName);
-	}
+    /// Constructor opening a new transaction.
+    explicit UndoableTransaction(UserInterface& userInterface, const QString& undoOperationName) {
+        begin(userInterface, undoOperationName);
+    }
 
-	/// Destructor reverts all operations recorded so far, unless commit() has been called.
-	~UndoableTransaction() { 
-		if(operation())
-			cancel(); 
-	}
+    /// Destructor reverts all operations recorded so far, unless commit() has been called.
+    ~UndoableTransaction() { 
+        if(operation())
+            cancel(); 
+    }
 
-	/// Opens a new transaction.
-	void begin(UserInterface& userInterface, const QString& undoOperationName) {
-		OVITO_ASSERT(!operation());
-		_userInterface = &userInterface;
-		_operation = std::make_unique<CompoundOperation>(undoOperationName);
-	}
+    /// Opens a new transaction.
+    void begin(UserInterface& userInterface, const QString& undoOperationName) {
+        OVITO_ASSERT(!operation());
+        _userInterface = &userInterface;
+        _operation = std::make_unique<CompoundOperation>(undoOperationName);
+    }
 
-	/// Commits the recorded operations by placing them on the undo stack.
-	void commit();
+    /// Commits the recorded operations by placing them on the undo stack.
+    void commit();
 
-	/// Undo all actions recorded so far and keep the current transaction open.
-	void revert();
+    /// Undo all actions recorded so far and keep the current transaction open.
+    void revert();
 
-	/// Undo all actions recorded after the given snapshot and keep the current transaction open.
-	void revertTo(int snapshot);
+    /// Undo all actions recorded after the given snapshot and keep the current transaction open.
+    void revertTo(int snapshot);
 
-	/// Undo all actions recorded so far and close the current transaction.
-	void cancel();
+    /// Undo all actions recorded so far and close the current transaction.
+    void cancel();
 
-	/// Returns the current number of recorded operations.
-	int snapshot() const { OVITO_ASSERT(operation()); return operation()->count(); }
+    /// Returns the current number of recorded operations.
+    int snapshot() const { OVITO_ASSERT(operation()); return operation()->count(); }
 
-	/// Returns the CompoundOperation object managed by this class.
-	CompoundOperation* operation() const { return _operation.get(); }
+    /// Returns the CompoundOperation object managed by this class.
+    CompoundOperation* operation() const { return _operation.get(); }
 
-	/// Returns the user interface this transaction is associated with.
-	UserInterface& userInterface() const { OVITO_ASSERT(_userInterface); return *_userInterface; }
+    /// Returns the user interface this transaction is associated with.
+    UserInterface& userInterface() const { OVITO_ASSERT(_userInterface); return *_userInterface; }
 
 private:
 
-	UserInterface* _userInterface = nullptr;
-	std::unique_ptr<CompoundOperation> _operation; 
+    UserInterface* _userInterface = nullptr;
+    std::unique_ptr<CompoundOperation> _operation; 
 };
 
-}	// End of namespace
+}   // End of namespace

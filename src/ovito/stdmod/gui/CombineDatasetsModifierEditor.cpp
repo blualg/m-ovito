@@ -36,20 +36,20 @@ SET_OVITO_OBJECT_EDITOR(CombineDatasetsModifier, CombineDatasetsModifierEditor);
 ******************************************************************************/
 void CombineDatasetsModifierEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 {
-	// Create a rollout.
-	QWidget* rollout = createRollout(tr("Combine Datasets"), rolloutParams, "manual:particles.modifiers.combine_particle_sets");
+    // Create a rollout.
+    QWidget* rollout = createRollout(tr("Combine Datasets"), rolloutParams, "manual:particles.modifiers.combine_particle_sets");
 
     // Create the rollout contents.
-	QVBoxLayout* layout = new QVBoxLayout(rollout);
-	layout->setContentsMargins(4,4,4,4);
-	layout->setSpacing(4);
+    QVBoxLayout* layout = new QVBoxLayout(rollout);
+    layout->setContentsMargins(4,4,4,4);
+    layout->setSpacing(4);
 
-	// Status label.
-	layout->addSpacing(6);
-	layout->addWidget((new ObjectStatusDisplay(this))->statusWidget());
+    // Status label.
+    layout->addSpacing(6);
+    layout->addWidget((new ObjectStatusDisplay(this))->statusWidget());
 
-	// Open a sub-editor for the source object.
-	new SubObjectParameterUI(this, PROPERTY_FIELD(CombineDatasetsModifier::secondaryDataSource), RolloutInsertionParameters().setTitle(tr("Secondary Source: %1")));
+    // Open a sub-editor for the source object.
+    new SubObjectParameterUI(this, PROPERTY_FIELD(CombineDatasetsModifier::secondaryDataSource), RolloutInsertionParameters().setTitle(tr("Secondary Source: %1")));
 }
 
-}	// End of namespace
+}   // End of namespace

@@ -62,26 +62,26 @@ SET_PROPERTY_FIELD_CHANGE_EVENT(FileSource, sourceUrls, ReferenceEvent::TitleCha
 ******************************************************************************/
 static int countNumberOfFiles(const QVector<FileSourceImporter::Frame>& frames)
 {
-	int numberOfFiles = 0;
-	const QUrl* previousUrl = nullptr;
-	for(const FileSourceImporter::Frame& frame : frames) {
-		if(!previousUrl || (const_cast<QUrl&>(frame.sourceFile).data_ptr() != const_cast<QUrl*>(previousUrl)->data_ptr() && frame.sourceFile != *previousUrl)) {
-			numberOfFiles++;
-			previousUrl = &frame.sourceFile;
-		}
-	}
-	return numberOfFiles;
+    int numberOfFiles = 0;
+    const QUrl* previousUrl = nullptr;
+    for(const FileSourceImporter::Frame& frame : frames) {
+        if(!previousUrl || (const_cast<QUrl&>(frame.sourceFile).data_ptr() != const_cast<QUrl*>(previousUrl)->data_ptr() && frame.sourceFile != *previousUrl)) {
+            numberOfFiles++;
+            previousUrl = &frame.sourceFile;
+        }
+    }
+    return numberOfFiles;
 }
 
 /******************************************************************************
 * Constructs the object.
 ******************************************************************************/
 FileSource::FileSource(ObjectCreationParams params) : BasePipelineSource(params),
-	_playbackSpeedNumerator(1),
-	_playbackSpeedDenominator(1),
-	_playbackStartTime(0),
-	_autoGenerateFilePattern(true),
-	_restrictToFrame(-1)
+    _playbackSpeedNumerator(1),
+    _playbackSpeedDenominator(1),
+    _playbackStartTime(0),
+    _autoGenerateFilePattern(true),
+    _restrictToFrame(-1)
 {
 }
 
@@ -90,99 +90,99 @@ FileSource::FileSource(ObjectCreationParams params) : BasePipelineSource(params)
 ******************************************************************************/
 bool FileSource::setSource(std::vector<QUrl> sourceUrls, FileSourceImporter* importer, bool autodetectFileSequences, bool keepExistingDataCollection)
 {
-	OVITO_ASSERT(ExecutionContext::current().isValid());
-	
-	// Make relative file paths absolute.
-	for(QUrl& url : sourceUrls) {
-		if(url.isLocalFile()) {
-			QFileInfo fileInfo(url.toLocalFile());
-			if(fileInfo.isRelative())
-				url = QUrl::fromLocalFile(fileInfo.absoluteFilePath());
-		}
-	}
+    OVITO_ASSERT(ExecutionContext::current().isValid());
+    
+    // Make relative file paths absolute.
+    for(QUrl& url : sourceUrls) {
+        if(url.isLocalFile()) {
+            QFileInfo fileInfo(url.toLocalFile());
+            if(fileInfo.isRelative())
+                url = QUrl::fromLocalFile(fileInfo.absoluteFilePath());
+        }
+    }
 
-	if(this->sourceUrls() == sourceUrls && this->importer() == importer)
-		return true;
+    if(this->sourceUrls() == sourceUrls && this->importer() == importer)
+        return true;
 
-	if(!sourceUrls.empty()) {
-		QFileInfo fileInfo(sourceUrls.front().path());
-		_originallySelectedFilename = fileInfo.fileName();
-		if(_originallySelectedFilename.contains('*')) {
-			if(dataCollectionFrame() >= 0 && dataCollectionFrame() < frames().size())
-				_originallySelectedFilename = QFileInfo(frames()[dataCollectionFrame()].sourceFile.path()).fileName();
-		}
-	}
-	else _originallySelectedFilename.clear();
+    if(!sourceUrls.empty()) {
+        QFileInfo fileInfo(sourceUrls.front().path());
+        _originallySelectedFilename = fileInfo.fileName();
+        if(_originallySelectedFilename.contains('*')) {
+            if(dataCollectionFrame() >= 0 && dataCollectionFrame() < frames().size())
+                _originallySelectedFilename = QFileInfo(frames()[dataCollectionFrame()].sourceFile.path()).fileName();
+        }
+    }
+    else _originallySelectedFilename.clear();
 
-	bool turnOffPatternGeneration = false;
-	if(importer) {
+    bool turnOffPatternGeneration = false;
+    if(importer) {
 
-		// If single URL is not already a wildcard pattern, generate a default pattern by
-		// replacing the last sequence of numbers in the filename with a wildcard character.
-		if(autoGenerateFilePattern() && sourceUrls.size() == 1 && importer->autoGenerateWildcardPattern() && !_originallySelectedFilename.contains('*')) {
-			if(autodetectFileSequences) {
-				int startIndex, endIndex;
-				for(endIndex = _originallySelectedFilename.length() - 1; endIndex >= 0; endIndex--)
-					if(_originallySelectedFilename.at(endIndex).isNumber()) break;
-				if(endIndex >= 0) {
-					for(startIndex = endIndex-1; startIndex >= 0; startIndex--)
-						if(!_originallySelectedFilename.at(startIndex).isNumber()) break;
-					QString wildcardPattern = _originallySelectedFilename.left(startIndex+1) + '*' + _originallySelectedFilename.mid(endIndex+1);
-					QFileInfo fileInfo(sourceUrls.front().path());
-					fileInfo.setFile(fileInfo.dir(), wildcardPattern);
-					sourceUrls.front().setPath(fileInfo.filePath());
-					OVITO_ASSERT(sourceUrls.front().isValid());
-				}
-			}
-			else if(!_originallySelectedFilename.contains('*')) {
-				turnOffPatternGeneration = true;
-			}
-		}
+        // If single URL is not already a wildcard pattern, generate a default pattern by
+        // replacing the last sequence of numbers in the filename with a wildcard character.
+        if(autoGenerateFilePattern() && sourceUrls.size() == 1 && importer->autoGenerateWildcardPattern() && !_originallySelectedFilename.contains('*')) {
+            if(autodetectFileSequences) {
+                int startIndex, endIndex;
+                for(endIndex = _originallySelectedFilename.length() - 1; endIndex >= 0; endIndex--)
+                    if(_originallySelectedFilename.at(endIndex).isNumber()) break;
+                if(endIndex >= 0) {
+                    for(startIndex = endIndex-1; startIndex >= 0; startIndex--)
+                        if(!_originallySelectedFilename.at(startIndex).isNumber()) break;
+                    QString wildcardPattern = _originallySelectedFilename.left(startIndex+1) + '*' + _originallySelectedFilename.mid(endIndex+1);
+                    QFileInfo fileInfo(sourceUrls.front().path());
+                    fileInfo.setFile(fileInfo.dir(), wildcardPattern);
+                    sourceUrls.front().setPath(fileInfo.filePath());
+                    OVITO_ASSERT(sourceUrls.front().isValid());
+                }
+            }
+            else if(!_originallySelectedFilename.contains('*')) {
+                turnOffPatternGeneration = true;
+            }
+        }
 
-		if(this->sourceUrls() == sourceUrls && this->importer() == importer)
-			return true;
-	}
+        if(this->sourceUrls() == sourceUrls && this->importer() == importer)
+            return true;
+    }
 
-	// Make the call to setSource() undoable.
-	class SetSourceOperation : public UndoableOperation {
-	public:
-		SetSourceOperation(FileSource* obj) : _obj(obj), _oldUrls(obj->sourceUrls()), _oldImporter(obj->importer()) {}
-		void undo() override {
-			std::vector<QUrl> urls = _obj->sourceUrls();
-			OORef<FileSourceImporter> importer = _obj->importer();
-			_obj->setSource(std::move(_oldUrls), _oldImporter, false);
-			_oldUrls = std::move(urls);
-			_oldImporter = importer;
-		}
-	private:
-		std::vector<QUrl> _oldUrls;
-		OORef<FileSourceImporter> _oldImporter;
-		OORef<FileSource> _obj;
-	};
-	pushIfUndoRecording<SetSourceOperation>(this);
+    // Make the call to setSource() undoable.
+    class SetSourceOperation : public UndoableOperation {
+    public:
+        SetSourceOperation(FileSource* obj) : _obj(obj), _oldUrls(obj->sourceUrls()), _oldImporter(obj->importer()) {}
+        void undo() override {
+            std::vector<QUrl> urls = _obj->sourceUrls();
+            OORef<FileSourceImporter> importer = _obj->importer();
+            _obj->setSource(std::move(_oldUrls), _oldImporter, false);
+            _oldUrls = std::move(urls);
+            _oldImporter = importer;
+        }
+    private:
+        std::vector<QUrl> _oldUrls;
+        OORef<FileSourceImporter> _oldImporter;
+        OORef<FileSource> _obj;
+    };
+    pushIfUndoRecording<SetSourceOperation>(this);
 
-	_sourceUrls.set(this, PROPERTY_FIELD(sourceUrls), std::move(sourceUrls));
-	_importer.set(this, PROPERTY_FIELD(importer), importer);
+    _sourceUrls.set(this, PROPERTY_FIELD(sourceUrls), std::move(sourceUrls));
+    _importer.set(this, PROPERTY_FIELD(importer), importer);
 
-	// Discard previously loaded data.
-	if(!keepExistingDataCollection && !isUndoingOrRedoing()) {
-		UndoSuspender noUndo;
-		discardDataCollection();
-	}
-	setDataCollectionFrame(-1);
+    // Discard previously loaded data.
+    if(!keepExistingDataCollection && !isUndoingOrRedoing()) {
+        UndoSuspender noUndo;
+        discardDataCollection();
+    }
+    setDataCollectionFrame(-1);
 
-	// Trigger a reload of all frames.
-	_frames.clear();
-	pipelineCache().invalidate();
-	notifyTargetChanged();
+    // Trigger a reload of all frames.
+    _frames.clear();
+    pipelineCache().invalidate();
+    notifyTargetChanged();
 
-	// Scan the input source for animation frames.
-	updateListOfFrames();
+    // Scan the input source for animation frames.
+    updateListOfFrames();
 
-	if(turnOffPatternGeneration)
-		setAutoGenerateFilePattern(false);
+    if(turnOffPatternGeneration)
+        setAutoGenerateFilePattern(false);
 
-	return true;
+    return true;
 }
 
 /******************************************************************************
@@ -190,25 +190,25 @@ bool FileSource::setSource(std::vector<QUrl> sourceUrls, FileSourceImporter* imp
 ******************************************************************************/
 SharedFuture<QVector<FileSourceImporter::Frame>> FileSource::updateListOfFrames(bool refetchCurrentFile)
 {
-	// Remove current data file from local file cache so that it will get downloaded again in case it came from a remote location.
-	if(refetchCurrentFile && dataCollectionFrame() >= 0 && dataCollectionFrame() < frames().size()) {
-		Application::instance()->fileManager().removeFromCache(frames()[dataCollectionFrame()].sourceFile);
-	}
+    // Remove current data file from local file cache so that it will get downloaded again in case it came from a remote location.
+    if(refetchCurrentFile && dataCollectionFrame() >= 0 && dataCollectionFrame() < frames().size()) {
+        Application::instance()->fileManager().removeFromCache(frames()[dataCollectionFrame()].sourceFile);
+    }
 
-	// Update the list of frames.
-	SharedFuture<QVector<FileSourceImporter::Frame>> framesFuture = requestFrameList(true);
+    // Update the list of frames.
+    SharedFuture<QVector<FileSourceImporter::Frame>> framesFuture = requestFrameList(true);
 
-	// Display any errors during load operation to the user.
-	framesFuture.finally(*this, [](Task& task) {
-		try { task.throwPossibleException(); }
-		catch(const Exception& ex) { ExecutionContext::current().ui().reportError(ex); }
-		catch(...) {}
-	});
+    // Display any errors during load operation to the user.
+    framesFuture.finally(*this, [](Task& task) {
+        try { task.throwPossibleException(); }
+        catch(const Exception& ex) { ExecutionContext::current().ui().reportError(ex); }
+        catch(...) {}
+    });
 
-	// Show progress in the main window status bar.
-	ExecutionContext::current().ui().taskManager().registerFuture(framesFuture);
+    // Show progress in the main window status bar.
+    ExecutionContext::current().ui().taskManager().registerFuture(framesFuture);
 
-	return framesFuture;
+    return framesFuture;
 }
 
 /******************************************************************************
@@ -217,79 +217,79 @@ SharedFuture<QVector<FileSourceImporter::Frame>> FileSource::updateListOfFrames(
 ******************************************************************************/
 void FileSource::setListOfFrames(QVector<FileSourceImporter::Frame> frames)
 {
-	_framesListFuture.reset();
+    _framesListFuture.reset();
 
-	// Determine the new validity of the existing pipeline state in the cache.
-	TimeInterval remainingCacheValidity = TimeInterval::infinite();
+    // Determine the new validity of the existing pipeline state in the cache.
+    TimeInterval remainingCacheValidity = TimeInterval::infinite();
 
-	// Invalidate all cached frames that are no longer present.
-	if(frames.size() < _frames.size())
-		remainingCacheValidity.intersect(TimeInterval(AnimationTime::negativeInfinity(), sourceFrameToAnimationTime(frames.size())-1));
+    // Invalidate all cached frames that are no longer present.
+    if(frames.size() < _frames.size())
+        remainingCacheValidity.intersect(TimeInterval(AnimationTime::negativeInfinity(), sourceFrameToAnimationTime(frames.size())-1));
 
-	// When adding additional frames to the end, the cache validity interval of the last frame must be reduced (unless we are loading for the first time).
-	if(frames.size() > _frames.size() && !_frames.empty())
-		remainingCacheValidity.intersect(TimeInterval(AnimationTime::negativeInfinity(), sourceFrameToAnimationTime(_frames.size())-1));
+    // When adding additional frames to the end, the cache validity interval of the last frame must be reduced (unless we are loading for the first time).
+    if(frames.size() > _frames.size() && !_frames.empty())
+        remainingCacheValidity.intersect(TimeInterval(AnimationTime::negativeInfinity(), sourceFrameToAnimationTime(_frames.size())-1));
 
-	// Invalidate all cached frames that have changed.
-	for(int frameIndex = 0; frameIndex < _frames.size() && frameIndex < frames.size(); frameIndex++) {
-		if(frames[frameIndex] != _frames[frameIndex]) {
-			remainingCacheValidity.intersect(TimeInterval(AnimationTime::negativeInfinity(), sourceFrameToAnimationTime(frameIndex)-1));
-		}
-	}
+    // Invalidate all cached frames that have changed.
+    for(int frameIndex = 0; frameIndex < _frames.size() && frameIndex < frames.size(); frameIndex++) {
+        if(frames[frameIndex] != _frames[frameIndex]) {
+            remainingCacheValidity.intersect(TimeInterval(AnimationTime::negativeInfinity(), sourceFrameToAnimationTime(frameIndex)-1));
+        }
+    }
 
-	// Count the number of source files the trajectory frames are coming from.
-	_numberOfFiles = countNumberOfFiles(frames);
+    // Count the number of source files the trajectory frames are coming from.
+    _numberOfFiles = countNumberOfFiles(frames);
 
-	// Remember which trajectory frame the time slider is positioned at.
-	FileSourceImporter::Frame previouslySelectedFrame;
-	if(dataCollectionFrame() >= 0 && dataCollectionFrame() < _frames.size())
-		previouslySelectedFrame = _frames[dataCollectionFrame()];
+    // Remember which trajectory frame the time slider is positioned at.
+    FileSourceImporter::Frame previouslySelectedFrame;
+    if(dataCollectionFrame() >= 0 && dataCollectionFrame() < _frames.size())
+        previouslySelectedFrame = _frames[dataCollectionFrame()];
 
-	// Replace our internal list of frames.
-	_frames = std::move(frames);
-	// Reset cached frame label list. It will be rebuilt upon request by the method animationFrameLabels().
-	_frameLabels.clear();
+    // Replace our internal list of frames.
+    _frames = std::move(frames);
+    // Reset cached frame label list. It will be rebuilt upon request by the method animationFrameLabels().
+    _frameLabels.clear();
 
-	// Reduce cache validity to the range of frames that have not changed.
-	pipelineCache().invalidate(remainingCacheValidity);
-	notifyTargetChangedOutsideInterval(remainingCacheValidity);
+    // Reduce cache validity to the range of frames that have not changed.
+    pipelineCache().invalidate(remainingCacheValidity);
+    notifyTargetChangedOutsideInterval(remainingCacheValidity);
 
-	// Adjust the global animation length to match the new number of source frames.
-	notifyDependents(ReferenceEvent::AnimationFramesChanged);
+    // Adjust the global animation length to match the new number of source frames.
+    notifyDependents(ReferenceEvent::AnimationFramesChanged);
 
-	if(ExecutionContext::isInteractive()) {
-		if(dataCollectionFrame() < 0 && !_originallySelectedFilename.contains(QChar('*'))) {
-			// Position time slider to the frame corresponding to the file that was initially picked by the user
-			// in the file selection dialog.
-			for(int frameIndex = 0; frameIndex < _frames.size(); frameIndex++) {
-				if(_frames[frameIndex].sourceFile.fileName() == _originallySelectedFilename) {
-					AnimationTime jumpToTime = sourceFrameToAnimationTime(frameIndex);
-					notifyDependentsImpl(RequestGoToAnimationTimeEvent(this, jumpToTime));
-					break;
-				}
-			}
-		}
-		else {
-			// If trajectory frames have been inserted, reposition time slider to remain at the previously selected frame.
-			if(!previouslySelectedFrame.sourceFile.isEmpty()) {
-				int currentFrameIndex = animationTimeToSourceFrame(ExecutionContext::current().ui().datasetContainer().currentAnimationTime());
-				if(currentFrameIndex >= 0 && currentFrameIndex < _frames.size()) {
-					if(_frames[currentFrameIndex].sourceFile != previouslySelectedFrame.sourceFile) {
-						for(int frameIndex = 0; frameIndex < _frames.size(); frameIndex++) {
-							if(_frames[frameIndex].sourceFile == previouslySelectedFrame.sourceFile) {
-								AnimationTime jumpToTime = sourceFrameToAnimationTime(frameIndex);
-								notifyDependentsImpl(RequestGoToAnimationTimeEvent(this, jumpToTime));
-								break;
-							}
-						}
-					}
-				}
-			}
-		}
-	}
+    if(ExecutionContext::isInteractive()) {
+        if(dataCollectionFrame() < 0 && !_originallySelectedFilename.contains(QChar('*'))) {
+            // Position time slider to the frame corresponding to the file that was initially picked by the user
+            // in the file selection dialog.
+            for(int frameIndex = 0; frameIndex < _frames.size(); frameIndex++) {
+                if(_frames[frameIndex].sourceFile.fileName() == _originallySelectedFilename) {
+                    AnimationTime jumpToTime = sourceFrameToAnimationTime(frameIndex);
+                    notifyDependentsImpl(RequestGoToAnimationTimeEvent(this, jumpToTime));
+                    break;
+                }
+            }
+        }
+        else {
+            // If trajectory frames have been inserted, reposition time slider to remain at the previously selected frame.
+            if(!previouslySelectedFrame.sourceFile.isEmpty()) {
+                int currentFrameIndex = animationTimeToSourceFrame(ExecutionContext::current().ui().datasetContainer().currentAnimationTime());
+                if(currentFrameIndex >= 0 && currentFrameIndex < _frames.size()) {
+                    if(_frames[currentFrameIndex].sourceFile != previouslySelectedFrame.sourceFile) {
+                        for(int frameIndex = 0; frameIndex < _frames.size(); frameIndex++) {
+                            if(_frames[frameIndex].sourceFile == previouslySelectedFrame.sourceFile) {
+                                AnimationTime jumpToTime = sourceFrameToAnimationTime(frameIndex);
+                                notifyDependentsImpl(RequestGoToAnimationTimeEvent(this, jumpToTime));
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
 
-	// Notify UI that the list of source frames has changed.
-	Q_EMIT framesListChanged();
+    // Notify UI that the list of source frames has changed.
+    Q_EMIT framesListChanged();
 }
 
 /******************************************************************************
@@ -297,10 +297,10 @@ void FileSource::setListOfFrames(QVector<FileSourceImporter::Frame> frames)
 ******************************************************************************/
 int FileSource::numberOfSourceFrames() const 
 { 
-	if(restrictToFrame() >= 0)
-		return 1;
+    if(restrictToFrame() >= 0)
+        return 1;
 
-	return _frames.size(); 
+    return _frames.size(); 
 }
 
 /******************************************************************************
@@ -308,12 +308,12 @@ int FileSource::numberOfSourceFrames() const
 ******************************************************************************/
 int FileSource::animationTimeToSourceFrame(AnimationTime time) const
 {
-	if(restrictToFrame() >= 0)
-		return restrictToFrame();
+    if(restrictToFrame() >= 0)
+        return restrictToFrame();
 
-	return (time - AnimationTime::fromFrame(playbackStartTime())) *
-			std::max(1, playbackSpeedNumerator()) /
-			std::max(1, playbackSpeedDenominator() * (int)AnimationTime::TicksPerFrame);
+    return (time - AnimationTime::fromFrame(playbackStartTime())) *
+            std::max(1, playbackSpeedNumerator()) /
+            std::max(1, playbackSpeedDenominator() * (int)AnimationTime::TicksPerFrame);
 }
 
 /******************************************************************************
@@ -321,12 +321,12 @@ int FileSource::animationTimeToSourceFrame(AnimationTime time) const
 ******************************************************************************/
 AnimationTime FileSource::sourceFrameToAnimationTime(int frame) const
 {
-	if(restrictToFrame() >= 0)
-		return AnimationTime(0);
+    if(restrictToFrame() >= 0)
+        return AnimationTime(0);
 
-	return AnimationTime::fromFrame(playbackStartTime()) + AnimationTime::fromFrame(frame).ticks() *
-			std::max(1, playbackSpeedDenominator()) /
-			std::max(1, playbackSpeedNumerator());
+    return AnimationTime::fromFrame(playbackStartTime()) + AnimationTime::fromFrame(frame).ticks() *
+            std::max(1, playbackSpeedDenominator()) /
+            std::max(1, playbackSpeedNumerator());
 }
 
 /******************************************************************************
@@ -334,18 +334,18 @@ AnimationTime FileSource::sourceFrameToAnimationTime(int frame) const
 ******************************************************************************/
 QMap<int, QString> FileSource::animationFrameLabels() const
 {
-	// Check if the cached list of frame labels is still available.
-	// If not, rebuild the list here.
-	if(_frameLabels.empty() && restrictToFrame() < 0) {
-		int frameIndex = 0;
-		for(const FileSourceImporter::Frame& frame : _frames) {
-			if(frame.label.isEmpty()) break;
-			// Convert local source frame index to global animation frame number.
-			_frameLabels.insert(FileSource::sourceFrameToAnimationTime(frameIndex).frame(), frame.label);
-			frameIndex++;
-		}
-	}
-	return _frameLabels;
+    // Check if the cached list of frame labels is still available.
+    // If not, rebuild the list here.
+    if(_frameLabels.empty() && restrictToFrame() < 0) {
+        int frameIndex = 0;
+        for(const FileSourceImporter::Frame& frame : _frames) {
+            if(frame.label.isEmpty()) break;
+            // Convert local source frame index to global animation frame number.
+            _frameLabels.insert(FileSource::sourceFrameToAnimationTime(frameIndex).frame(), frame.label);
+            frameIndex++;
+        }
+    }
+    return _frameLabels;
 }
 
 /******************************************************************************
@@ -353,18 +353,18 @@ QMap<int, QString> FileSource::animationFrameLabels() const
 ******************************************************************************/
 TimeInterval FileSource::validityInterval(const PipelineEvaluationRequest& request) const
 {
-	TimeInterval iv = BasePipelineSource::validityInterval(request);
+    TimeInterval iv = BasePipelineSource::validityInterval(request);
 
-	// Restrict the validity interval to the duration of the requested source frame.
-	if(restrictToFrame() < 0 && frames().size() > 1) {
-		int frame = animationTimeToSourceFrame(request.time());
-		if(frame > 0)
-			iv.intersect(TimeInterval(sourceFrameToAnimationTime(frame), AnimationTime::positiveInfinity()));
-		if(frame < frames().size() - 1)
-			iv.intersect(TimeInterval(AnimationTime::negativeInfinity(), std::max(sourceFrameToAnimationTime(frame + 1) - 1, sourceFrameToAnimationTime(frame))));
-	}
+    // Restrict the validity interval to the duration of the requested source frame.
+    if(restrictToFrame() < 0 && frames().size() > 1) {
+        int frame = animationTimeToSourceFrame(request.time());
+        if(frame > 0)
+            iv.intersect(TimeInterval(sourceFrameToAnimationTime(frame), AnimationTime::positiveInfinity()));
+        if(frame < frames().size() - 1)
+            iv.intersect(TimeInterval(AnimationTime::negativeInfinity(), std::max(sourceFrameToAnimationTime(frame + 1) - 1, sourceFrameToAnimationTime(frame))));
+    }
 
-	return iv;
+    return iv;
 }
 
 /******************************************************************************
@@ -372,78 +372,78 @@ TimeInterval FileSource::validityInterval(const PipelineEvaluationRequest& reque
 ******************************************************************************/
 Future<PipelineFlowState> FileSource::evaluateInternal(const PipelineEvaluationRequest& request)
 {
-	// Convert the animation time to a frame number.
-	int frame = animationTimeToSourceFrame(request.time());
-	int frameCount = frames().size();
+    // Convert the animation time to a frame number.
+    int frame = animationTimeToSourceFrame(request.time());
+    int frameCount = frames().size();
 
-	// Clamp to frame range.
-	if(frame < 0) frame = 0;
-	else if(frame >= frameCount && frameCount > 0) frame = frameCount - 1;
+    // Clamp to frame range.
+    if(frame < 0) frame = 0;
+    else if(frame >= frameCount && frameCount > 0) frame = frameCount - 1;
 
-	OVITO_ASSERT(frameTimeInterval(frame).contains(request.time()));
+    OVITO_ASSERT(frameTimeInterval(frame).contains(request.time()));
 
-	// First request the list of source frames and wait until it becomes available.
-	Future<PipelineFlowState> stateFuture = requestFrameList(false)
-		.then(*this, [this, frame](const QVector<FileSourceImporter::Frame>& sourceFrames) -> Future<PipelineFlowState> {
+    // First request the list of source frames and wait until it becomes available.
+    Future<PipelineFlowState> stateFuture = requestFrameList(false)
+        .then(*this, [this, frame](const QVector<FileSourceImporter::Frame>& sourceFrames) -> Future<PipelineFlowState> {
 
-			// Is the requested frame out of range?
-			if(frame >= sourceFrames.size()) {
-				TimeInterval interval = TimeInterval::infinite();
-				if(frame < 0)
-					interval.setEnd(sourceFrameToAnimationTime(0) - 1);
-				else if(frame >= sourceFrames.size() && !sourceFrames.empty())
-					interval.setStart(sourceFrameToAnimationTime(sourceFrames.size()));
-				return PipelineFlowState(dataCollection(), PipelineStatus(PipelineStatus::Error, tr("The file source path is empty or has not been set (no files found).")), interval);
-			}
-			else if(frame < 0) {
-				return PipelineFlowState(dataCollection(), PipelineStatus(PipelineStatus::Error, tr("The requested source frame is out of range.")));
-			}
+            // Is the requested frame out of range?
+            if(frame >= sourceFrames.size()) {
+                TimeInterval interval = TimeInterval::infinite();
+                if(frame < 0)
+                    interval.setEnd(sourceFrameToAnimationTime(0) - 1);
+                else if(frame >= sourceFrames.size() && !sourceFrames.empty())
+                    interval.setStart(sourceFrameToAnimationTime(sourceFrames.size()));
+                return PipelineFlowState(dataCollection(), PipelineStatus(PipelineStatus::Error, tr("The file source path is empty or has not been set (no files found).")), interval);
+            }
+            else if(frame < 0) {
+                return PipelineFlowState(dataCollection(), PipelineStatus(PipelineStatus::Error, tr("The requested source frame is out of range.")));
+            }
 
-			// Retrieve the file.
-			Future<PipelineFlowState> loadFrameFuture = Application::instance()->fileManager().fetchUrl(sourceFrames[frame].sourceFile)
-				.then(*this, [this, frame](const FileHandle& fileHandle) -> Future<PipelineFlowState> {
+            // Retrieve the file.
+            Future<PipelineFlowState> loadFrameFuture = Application::instance()->fileManager().fetchUrl(sourceFrames[frame].sourceFile)
+                .then(*this, [this, frame](const FileHandle& fileHandle) -> Future<PipelineFlowState> {
 
-					// Without an importer object we have to give up immediately.
-					if(!importer()) {
-						// In case of an error, just return the stale data that we have cached.
-						return PipelineFlowState(dataCollection(), PipelineStatus(PipelineStatus::Error, tr("The file source path has not been set.")));
-					}
-					if(frame >= frames().size())
-						throw Exception(tr("Requested source frame index is out of range."));
+                    // Without an importer object we have to give up immediately.
+                    if(!importer()) {
+                        // In case of an error, just return the stale data that we have cached.
+                        return PipelineFlowState(dataCollection(), PipelineStatus(PipelineStatus::Error, tr("The file source path has not been set.")));
+                    }
+                    if(frame >= frames().size())
+                        throw Exception(tr("Requested source frame index is out of range."));
 
-					// Compute the validity interval of the returned pipeline state.
-					TimeInterval interval = frameTimeInterval(frame);
-					const FileSourceImporter::Frame& frameInfo = frames()[frame];
+                    // Compute the validity interval of the returned pipeline state.
+                    TimeInterval interval = frameTimeInterval(frame);
+                    const FileSourceImporter::Frame& frameInfo = frames()[frame];
 
-					// Set up the load request to be submitted to the FileSourceImporter.
-					FileSourceImporter::LoadOperationRequest loadRequest;
-					loadRequest.dataSource = this;
-					loadRequest.fileHandle = fileHandle;
-					loadRequest.frame = frameInfo;
-					loadRequest.isNewlyImportedFile = (dataCollection() == nullptr);
-					loadRequest.state.setData(dataCollection()
-						? DataOORef<const DataCollection>(dataCollection()) 
-						: DataOORef<const DataCollection>::create());
+                    // Set up the load request to be submitted to the FileSourceImporter.
+                    FileSourceImporter::LoadOperationRequest loadRequest;
+                    loadRequest.dataSource = this;
+                    loadRequest.fileHandle = fileHandle;
+                    loadRequest.frame = frameInfo;
+                    loadRequest.isNewlyImportedFile = (dataCollection() == nullptr);
+                    loadRequest.state.setData(dataCollection()
+                        ? DataOORef<const DataCollection>(dataCollection()) 
+                        : DataOORef<const DataCollection>::create());
 
-					// Add some standard global attributes to the pipeline state to indicate where it is coming from.
-					loadRequest.state.setAttribute(QStringLiteral("SourceFrame"), frame, this);
-					loadRequest.state.setAttribute(QStringLiteral("SourceFile"), frameInfo.sourceFile.toString(QUrl::RemovePassword | QUrl::PreferLocalFile | QUrl::PrettyDecoded), this);
+                    // Add some standard global attributes to the pipeline state to indicate where it is coming from.
+                    loadRequest.state.setAttribute(QStringLiteral("SourceFrame"), frame, this);
+                    loadRequest.state.setAttribute(QStringLiteral("SourceFile"), frameInfo.sourceFile.toString(QUrl::RemovePassword | QUrl::PreferLocalFile | QUrl::PrettyDecoded), this);
 
-					// Also give the state the precomputed validity interval.
-					loadRequest.state.setStateValidity(interval);
+                    // Also give the state the precomputed validity interval.
+                    loadRequest.state.setStateValidity(interval);
 
-					// Load the frame data and return results to the caller.
-					return importer()->loadFrame(loadRequest);
-				});
+                    // Load the frame data and return results to the caller.
+                    return importer()->loadFrame(loadRequest);
+                });
 
-			// Change activity status during long-running load operations.
-			registerActiveFuture(loadFrameFuture);
+            // Change activity status during long-running load operations.
+            registerActiveFuture(loadFrameFuture);
 
-			return loadFrameFuture;
-		});
+            return loadFrameFuture;
+        });
 
-	// Post-process the results of the loading operation before returning them to the caller.
-	return postprocessDataCollection(frame, frameTimeInterval(frame), std::move(stateFuture));
+    // Post-process the results of the loading operation before returning them to the caller.
+    return postprocessDataCollection(frame, frameTimeInterval(frame), std::move(stateFuture));
 }
 
 /******************************************************************************
@@ -451,46 +451,46 @@ Future<PipelineFlowState> FileSource::evaluateInternal(const PipelineEvaluationR
 ******************************************************************************/
 SharedFuture<QVector<FileSourceImporter::Frame>> FileSource::requestFrameList(bool forceRescan)
 {
-	OVITO_ASSERT(ExecutionContext::current().isValid());
+    OVITO_ASSERT(ExecutionContext::current().isValid());
 
-	// Without an importer object the list of frames is empty.
-	if(!importer())
-		return Future<QVector<FileSourceImporter::Frame>>::createImmediateEmplace();
+    // Without an importer object the list of frames is empty.
+    if(!importer())
+        return Future<QVector<FileSourceImporter::Frame>>::createImmediateEmplace();
 
-	// Return the active future when the frame loading process is currently in progress.
-	if(_framesListFuture.isValid()) {
-		if(!forceRescan || !_framesListFuture.isFinished())
-			return _framesListFuture;
-		_framesListFuture.reset();
-	}
+    // Return the active future when the frame loading process is currently in progress.
+    if(_framesListFuture.isValid()) {
+        if(!forceRescan || !_framesListFuture.isFinished())
+            return _framesListFuture;
+        _framesListFuture.reset();
+    }
 
-	// Return the cached frames list if available.
-	if(!_frames.empty() && !forceRescan) {
-		return _frames;
-	}
+    // Return the cached frames list if available.
+    if(!_frames.empty() && !forceRescan) {
+        return _frames;
+    }
 
-	// Forward request to the importer object.
-	// Intercept future results when they become available and cache them.
-	_framesListFuture = importer()->discoverFrames(sourceUrls())
-		// Note that execution of the following continuation function is explicitly deferred to a later time,
-		// because setListOfFrames() generates a TargetChanged event, which is not allowed during
-		// a synchronous call to the pipeline evaulation function.
-		.then(ObjectExecutor(this, true), [this](QVector<FileSourceImporter::Frame>&& frameList) {
-			// Store the new list of frames in the FileSource. 
-			setListOfFrames(frameList);
-			// Pass the frame list on to the caller.
-			return std::move(frameList);
-		});
+    // Forward request to the importer object.
+    // Intercept future results when they become available and cache them.
+    _framesListFuture = importer()->discoverFrames(sourceUrls())
+        // Note that execution of the following continuation function is explicitly deferred to a later time,
+        // because setListOfFrames() generates a TargetChanged event, which is not allowed during
+        // a synchronous call to the pipeline evaulation function.
+        .then(ObjectExecutor(this, true), [this](QVector<FileSourceImporter::Frame>&& frameList) {
+            // Store the new list of frames in the FileSource. 
+            setListOfFrames(frameList);
+            // Pass the frame list on to the caller.
+            return std::move(frameList);
+        });
 
-	// Has loading the frames list already completed?
-	// If yes, reset the future before returning from this function.
-	if(_framesListFuture.isFinished())
-		return std::move(_framesListFuture);
+    // Has loading the frames list already completed?
+    // If yes, reset the future before returning from this function.
+    if(_framesListFuture.isFinished())
+        return std::move(_framesListFuture);
 
-	// The status of this pipeline object changes while loading is in progress.
-	registerActiveFuture(_framesListFuture);
+    // The status of this pipeline object changes while loading is in progress.
+    registerActiveFuture(_framesListFuture);
 
-	return _framesListFuture;
+    return _framesListFuture;
 }
 
 /******************************************************************************
@@ -498,17 +498,17 @@ SharedFuture<QVector<FileSourceImporter::Frame>> FileSource::requestFrameList(bo
 ******************************************************************************/
 TimeInterval FileSource::frameTimeInterval(int frame) const
 {
-	OVITO_ASSERT(frame >= 0);
-	TimeInterval interval = TimeInterval::infinite();
-	if(restrictToFrame() < 0) {
-		if(frame > 0)
-			interval.setStart(sourceFrameToAnimationTime(frame));
-		if(frame < frames().size() - 1)
-			interval.setEnd(std::max(sourceFrameToAnimationTime(frame + 1) - 1, sourceFrameToAnimationTime(frame)));
-	}
-	OVITO_ASSERT(!interval.isEmpty());
-	OVITO_ASSERT(interval.contains(sourceFrameToAnimationTime(frame)));
-	return interval;
+    OVITO_ASSERT(frame >= 0);
+    TimeInterval interval = TimeInterval::infinite();
+    if(restrictToFrame() < 0) {
+        if(frame > 0)
+            interval.setStart(sourceFrameToAnimationTime(frame));
+        if(frame < frames().size() - 1)
+            interval.setEnd(std::max(sourceFrameToAnimationTime(frame + 1) - 1, sourceFrameToAnimationTime(frame)));
+    }
+    OVITO_ASSERT(!interval.isEmpty());
+    OVITO_ASSERT(interval.contains(sourceFrameToAnimationTime(frame)));
+    return interval;
 }
 
 /******************************************************************************
@@ -516,32 +516,32 @@ TimeInterval FileSource::frameTimeInterval(int frame) const
 ******************************************************************************/
 void FileSource::reloadFrame(bool refetchFiles, int frameIndex)
 {
-	OVITO_ASSERT(ExecutionContext::current().isValid());
+    OVITO_ASSERT(ExecutionContext::current().isValid());
 
-	if(!importer())
-		return;
+    if(!importer())
+        return;
 
-	// Remove source files from file cache so that they will be downloaded again
-	// if they came from a remote location.
-	if(refetchFiles) {
-		if(frameIndex >= 0 && frameIndex < frames().size()) {
-			Application::instance()->fileManager().removeFromCache(frames()[frameIndex].sourceFile);
-		}
-		else if(frameIndex == -1) {
-			for(const FileSourceImporter::Frame& frame : frames())
-				Application::instance()->fileManager().removeFromCache(frame.sourceFile);
-		}
-	}
+    // Remove source files from file cache so that they will be downloaded again
+    // if they came from a remote location.
+    if(refetchFiles) {
+        if(frameIndex >= 0 && frameIndex < frames().size()) {
+            Application::instance()->fileManager().removeFromCache(frames()[frameIndex].sourceFile);
+        }
+        else if(frameIndex == -1) {
+            for(const FileSourceImporter::Frame& frame : frames())
+                Application::instance()->fileManager().removeFromCache(frame.sourceFile);
+        }
+    }
 
-	// Determine the animation time interval for which the pipeline needs to be updated.
-	// When updating a single frame, we can preserve all frames up to the invalidated one.
-	TimeInterval unchangedInterval = TimeInterval::empty();
-	if(frameIndex > 0 && restrictToFrame() < 0)
-		unchangedInterval = TimeInterval(AnimationTime::negativeInfinity(), frameTimeInterval(frameIndex-1).end());
-	
-	// Throw away cached frame data and notify pipeline that an update is in order.
-	pipelineCache().invalidate(unchangedInterval);
-	notifyTargetChangedOutsideInterval(unchangedInterval);
+    // Determine the animation time interval for which the pipeline needs to be updated.
+    // When updating a single frame, we can preserve all frames up to the invalidated one.
+    TimeInterval unchangedInterval = TimeInterval::empty();
+    if(frameIndex > 0 && restrictToFrame() < 0)
+        unchangedInterval = TimeInterval(AnimationTime::negativeInfinity(), frameTimeInterval(frameIndex-1).end());
+    
+    // Throw away cached frame data and notify pipeline that an update is in order.
+    pipelineCache().invalidate(unchangedInterval);
+    notifyTargetChangedOutsideInterval(unchangedInterval);
 }
 
 /******************************************************************************
@@ -549,10 +549,10 @@ void FileSource::reloadFrame(bool refetchFiles, int frameIndex)
 ******************************************************************************/
 void FileSource::saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData) const
 {
-	BasePipelineSource::saveToStream(stream, excludeRecomputableData);
-	stream.beginChunk(0x03);
-	stream << _frames;
-	stream.endChunk();
+    BasePipelineSource::saveToStream(stream, excludeRecomputableData);
+    stream.beginChunk(0x03);
+    stream << _frames;
+    stream.endChunk();
 }
 
 /******************************************************************************
@@ -560,13 +560,13 @@ void FileSource::saveToStream(ObjectSaveStream& stream, bool excludeRecomputable
 ******************************************************************************/
 void FileSource::loadFromStream(ObjectLoadStream& stream)
 {
-	BasePipelineSource::loadFromStream(stream);
-	stream.expectChunk(0x03);
-	stream >> _frames;
-	stream.closeChunk();
+    BasePipelineSource::loadFromStream(stream);
+    stream.expectChunk(0x03);
+    stream >> _frames;
+    stream.closeChunk();
 
-	// Count the number of source files the trajectory frames are coming from.
-	_numberOfFiles = countNumberOfFiles(_frames);
+    // Count the number of source files the trajectory frames are coming from.
+    _numberOfFiles = countNumberOfFiles(_frames);
 }
 
 /******************************************************************************
@@ -574,17 +574,17 @@ void FileSource::loadFromStream(ObjectLoadStream& stream)
 ******************************************************************************/
 QString FileSource::objectTitle() const
 {
-	QString filename;
-	int frameIndex = dataCollectionFrame();
-	if(frameIndex >= 0 && frameIndex < frames().size()) {
-		filename = frames()[frameIndex].sourceFile.fileName();
-	}
-	else if(!sourceUrls().empty()) {
-		filename = sourceUrls().front().fileName();
-	}
-	if(importer())
-		return QString("%2 [%1]").arg(importer()->objectTitle()).arg(filename);
-	return BasePipelineSource::objectTitle();
+    QString filename;
+    int frameIndex = dataCollectionFrame();
+    if(frameIndex >= 0 && frameIndex < frames().size()) {
+        filename = frames()[frameIndex].sourceFile.fileName();
+    }
+    else if(!sourceUrls().empty()) {
+        filename = sourceUrls().front().fileName();
+    }
+    if(importer())
+        return QString("%2 [%1]").arg(importer()->objectTitle()).arg(filename);
+    return BasePipelineSource::objectTitle();
 }
 
 /******************************************************************************
@@ -592,49 +592,49 @@ QString FileSource::objectTitle() const
 ******************************************************************************/
 void FileSource::propertyChanged(const PropertyFieldDescriptor* field)
 {
-	if(field == PROPERTY_FIELD(playbackSpeedNumerator) ||
-			field == PROPERTY_FIELD(playbackSpeedDenominator) ||
-			field == PROPERTY_FIELD(playbackStartTime)) {
-	
-		// Clear frame label list. It will be regnerated upon request in animationFrameLabels().
-		_frameLabels.clear(); 
+    if(field == PROPERTY_FIELD(playbackSpeedNumerator) ||
+            field == PROPERTY_FIELD(playbackSpeedDenominator) ||
+            field == PROPERTY_FIELD(playbackStartTime)) {
+    
+        // Clear frame label list. It will be regnerated upon request in animationFrameLabels().
+        _frameLabels.clear(); 
 
-		// Invalidate cached frames, because their validity intervals have changed.
-		int unchangedFromFrame = std::min(playbackStartTime(), 0);
-		int unchangedToFrame = std::max(playbackStartTime(), 0);
-		TimeInterval unchangedInterval = (field == PROPERTY_FIELD(playbackStartTime)) ?
-			TimeInterval::empty() : 
-			TimeInterval(sourceFrameToAnimationTime(playbackStartTime()));
-		pipelineCache().invalidate(unchangedInterval);
+        // Invalidate cached frames, because their validity intervals have changed.
+        int unchangedFromFrame = std::min(playbackStartTime(), 0);
+        int unchangedToFrame = std::max(playbackStartTime(), 0);
+        TimeInterval unchangedInterval = (field == PROPERTY_FIELD(playbackStartTime)) ?
+            TimeInterval::empty() : 
+            TimeInterval(sourceFrameToAnimationTime(playbackStartTime()));
+        pipelineCache().invalidate(unchangedInterval);
 
-		// Inform animation system that global time line length probably changed.
-		notifyDependents(ReferenceEvent::AnimationFramesChanged);
-	}
-	else if(field == PROPERTY_FIELD(autoGenerateFilePattern)) {
-		if(!isBeingLoaded()) {
-			if(!autoGenerateFilePattern())
-				removeWildcardFilePattern();
-			else
-				generateWildcardFilePattern();
-		}
-	}
-	else if(field == PROPERTY_FIELD(restrictToFrame)) {
-		// Invalidate cached frames, because their validity intervals have changed.
-		pipelineCache().invalidate();
+        // Inform animation system that global time line length probably changed.
+        notifyDependents(ReferenceEvent::AnimationFramesChanged);
+    }
+    else if(field == PROPERTY_FIELD(autoGenerateFilePattern)) {
+        if(!isBeingLoaded()) {
+            if(!autoGenerateFilePattern())
+                removeWildcardFilePattern();
+            else
+                generateWildcardFilePattern();
+        }
+    }
+    else if(field == PROPERTY_FIELD(restrictToFrame)) {
+        // Invalidate cached frames, because their validity intervals have changed.
+        pipelineCache().invalidate();
 
-		// Inform animation system that global time line length probably changed.
-		notifyDependents(ReferenceEvent::AnimationFramesChanged);
-	}
-	else if(field == PROPERTY_FIELD(sourceUrls)) {
-		Q_EMIT currentFileChanged();
-	}
-	else if(field == PROPERTY_FIELD(BasePipelineSource::dataCollectionFrame)) {
-		// The active frame is part of the source's UI title.	
-		if(numberOfFiles() > 1)
-			notifyDependents(ReferenceEvent::TitleChanged);
-		Q_EMIT currentFileChanged();
-	}
-	BasePipelineSource::propertyChanged(field);
+        // Inform animation system that global time line length probably changed.
+        notifyDependents(ReferenceEvent::AnimationFramesChanged);
+    }
+    else if(field == PROPERTY_FIELD(sourceUrls)) {
+        Q_EMIT currentFileChanged();
+    }
+    else if(field == PROPERTY_FIELD(BasePipelineSource::dataCollectionFrame)) {
+        // The active frame is part of the source's UI title.   
+        if(numberOfFiles() > 1)
+            notifyDependents(ReferenceEvent::TitleChanged);
+        Q_EMIT currentFileChanged();
+    }
+    BasePipelineSource::propertyChanged(field);
 }
 
 /******************************************************************************
@@ -643,17 +643,17 @@ void FileSource::propertyChanged(const PropertyFieldDescriptor* field)
 ******************************************************************************/
 void FileSource::removeWildcardFilePattern()
 {
-	for(const QUrl& url : sourceUrls()) {
-		if(FileSourceImporter::isWildcardPattern(url)) {
-			if(dataCollectionFrame() >= 0 && dataCollectionFrame() < frames().size()) {
-				QUrl currentUrl = frames()[dataCollectionFrame()].sourceFile;
-				if(currentUrl != url) {
-					setSource({currentUrl}, importer(), false);
-					return;
-				}
-			}
-		}
-	}
+    for(const QUrl& url : sourceUrls()) {
+        if(FileSourceImporter::isWildcardPattern(url)) {
+            if(dataCollectionFrame() >= 0 && dataCollectionFrame() < frames().size()) {
+                QUrl currentUrl = frames()[dataCollectionFrame()].sourceFile;
+                if(currentUrl != url) {
+                    setSource({currentUrl}, importer(), false);
+                    return;
+                }
+            }
+        }
+    }
 }
 
 /******************************************************************************
@@ -661,30 +661,30 @@ void FileSource::removeWildcardFilePattern()
 ******************************************************************************/
 void FileSource::generateWildcardFilePattern()
 {
-	if(sourceUrls().size() == 1) {
-		const QUrl& url = sourceUrls().front();
-		if(!FileSourceImporter::isWildcardPattern(url)) {
-			
-			QString filename = url.fileName();
-			int startIndex, endIndex;
-			for(endIndex = filename.length() - 1; endIndex >= 0; endIndex--)
-				if(filename.at(endIndex).isNumber()) break;
+    if(sourceUrls().size() == 1) {
+        const QUrl& url = sourceUrls().front();
+        if(!FileSourceImporter::isWildcardPattern(url)) {
+            
+            QString filename = url.fileName();
+            int startIndex, endIndex;
+            for(endIndex = filename.length() - 1; endIndex >= 0; endIndex--)
+                if(filename.at(endIndex).isNumber()) break;
 
-			if(endIndex >= 0) {
-				for(startIndex = endIndex-1; startIndex >= 0; startIndex--)
-					if(!filename.at(startIndex).isNumber()) break;
+            if(endIndex >= 0) {
+                for(startIndex = endIndex-1; startIndex >= 0; startIndex--)
+                    if(!filename.at(startIndex).isNumber()) break;
 
-				QString wildcardPattern = filename.left(startIndex + 1) + '*' + filename.mid(endIndex + 1);
-				QFileInfo fileInfo(url.path());
-				fileInfo.setFile(fileInfo.dir(), wildcardPattern);
-				QUrl newUrl = url;
-				newUrl.setPath(fileInfo.filePath());
-				OVITO_ASSERT(newUrl.isValid());
+                QString wildcardPattern = filename.left(startIndex + 1) + '*' + filename.mid(endIndex + 1);
+                QFileInfo fileInfo(url.path());
+                fileInfo.setFile(fileInfo.dir(), wildcardPattern);
+                QUrl newUrl = url;
+                newUrl.setPath(fileInfo.filePath());
+                OVITO_ASSERT(newUrl.isValid());
 
-				setSource({newUrl}, importer(), true);
-			}	
-		}
-	}
+                setSource({newUrl}, importer(), true);
+            }   
+        }
+    }
 }
 
 /******************************************************************************
@@ -693,16 +693,16 @@ void FileSource::generateWildcardFilePattern()
 ******************************************************************************/
 QString FileSource::currentFileName() const
 {
-	if(dataCollectionFrame() >= 0 && dataCollectionFrame() < frames().size()) {
-		const FileSourceImporter::Frame& frameInfo = frames()[dataCollectionFrame()];
-		if(frameInfo.sourceFile.isLocalFile()) {
-			return QFileInfo(frameInfo.sourceFile.toLocalFile()).fileName();
-		}
-		else {
-			return QFileInfo(frameInfo.sourceFile.path()).fileName();
-		}
-	}
-	return {};
+    if(dataCollectionFrame() >= 0 && dataCollectionFrame() < frames().size()) {
+        const FileSourceImporter::Frame& frameInfo = frames()[dataCollectionFrame()];
+        if(frameInfo.sourceFile.isLocalFile()) {
+            return QFileInfo(frameInfo.sourceFile.toLocalFile()).fileName();
+        }
+        else {
+            return QFileInfo(frameInfo.sourceFile.path()).fileName();
+        }
+    }
+    return {};
 }
 
 /******************************************************************************
@@ -711,19 +711,19 @@ QString FileSource::currentFileName() const
 ******************************************************************************/
 QString FileSource::currentDirectoryPath() const
 {
-	if(!sourceUrls().empty()) {
-		if(sourceUrls().front().isLocalFile()) {
-			QFileInfo fileInfo(sourceUrls().front().toLocalFile());
-			return fileInfo.dir().path();
-		}
-		else {
-			QFileInfo fileInfo(sourceUrls().front().path());
-			QUrl url = sourceUrls().front();
-			url.setPath(fileInfo.path());
-			return url.toString(QUrl::RemovePassword | QUrl::PreferLocalFile | QUrl::PrettyDecoded);
-		}
-	}
-	return {};
+    if(!sourceUrls().empty()) {
+        if(sourceUrls().front().isLocalFile()) {
+            QFileInfo fileInfo(sourceUrls().front().toLocalFile());
+            return fileInfo.dir().path();
+        }
+        else {
+            QFileInfo fileInfo(sourceUrls().front().path());
+            QUrl url = sourceUrls().front();
+            url.setPath(fileInfo.path());
+            return url.toString(QUrl::RemovePassword | QUrl::PreferLocalFile | QUrl::PrettyDecoded);
+        }
+    }
+    return {};
 }
 
 /******************************************************************************
@@ -731,12 +731,12 @@ QString FileSource::currentDirectoryPath() const
 ******************************************************************************/
 OORef<RefTarget> FileSource::clone(bool deepCopy, CloneHelper& cloneHelper) const
 {
-	// Let the base class create an instance of this class.
-	OORef<FileSource> clone = static_object_cast<FileSource>(BasePipelineSource::clone(deepCopy, cloneHelper));
-	clone->_frames = this->_frames;
-	clone->_frameLabels = this->_frameLabels;
-	clone->_numberOfFiles = this->_numberOfFiles;
-	return clone;
+    // Let the base class create an instance of this class.
+    OORef<FileSource> clone = static_object_cast<FileSource>(BasePipelineSource::clone(deepCopy, cloneHelper));
+    clone->_frames = this->_frames;
+    clone->_frameLabels = this->_frameLabels;
+    clone->_numberOfFiles = this->_numberOfFiles;
+    return clone;
 }
 
-}	// End of namespace
+}   // End of namespace

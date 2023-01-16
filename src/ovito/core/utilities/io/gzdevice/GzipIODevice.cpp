@@ -133,26 +133,26 @@ GzipIODevice::~GzipIODevice()
 bool GzipIODevice::seek(qint64 pos)
 {
     if(isWritable())
-		return false;
+        return false;
 
-	OpenMode mode = openMode();
-	close();
+    OpenMode mode = openMode();
+    close();
     if(_device->isOpen()) {
-    	if(!_device->reset())
-    		return false;
+        if(!_device->reset())
+            return false;
     }
-	if(!open(mode))
-		return false;
+    if(!open(mode))
+        return false;
 
-	char buffer[0x10000];
-	while(pos > 0) {
-		qint64 s = read(buffer, std::min(pos, (qint64)sizeof(buffer)));
-		if(s <= 0)
-			return false;
-		pos -= s;
-	}
+    char buffer[0x10000];
+    while(pos > 0) {
+        qint64 s = read(buffer, std::min(pos, (qint64)sizeof(buffer)));
+        if(s <= 0)
+            return false;
+        pos -= s;
+    }
 
-	return true;
+    return true;
 }
 
 /*!
@@ -401,7 +401,7 @@ qint64 GzipIODevice::readData(char* data, qint64 maxSize)
     }
 
     const ZlibSize outputSize = maxSize - _zlibStruct->_zlibStream.avail_out;
-	return outputSize;
+    return outputSize;
 }
 
 
@@ -441,4 +441,4 @@ qint64 GzipIODevice::writeData(const char* data, qint64 maxSize)
     return maxSize;
 }
 
-}	// End of namespace
+}   // End of namespace

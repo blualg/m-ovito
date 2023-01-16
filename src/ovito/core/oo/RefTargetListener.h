@@ -38,41 +38,41 @@ namespace Ovito {
  */
 class OVITO_CORE_EXPORT RefTargetListenerBase : public RefMaker
 {
-	OVITO_CLASS(RefTargetListenerBase)
+    OVITO_CLASS(RefTargetListenerBase)
 
 public:
 
-	/// \brief The default constructor.
-	RefTargetListenerBase() = default;
+    /// \brief The default constructor.
+    RefTargetListenerBase() = default;
 
-	/// \brief Destructor.
-	virtual ~RefTargetListenerBase() {
-		clearAllReferences();
-	}
+    /// \brief Destructor.
+    virtual ~RefTargetListenerBase() {
+        clearAllReferences();
+    }
 
 Q_SIGNALS:
 
-	/// \brief This Qt signal is emitted by the listener each time it receives a notification
-	///        event from the current target.
-	/// \param source The object that sent the notification event.
-	/// \param event The notification event.
-	void notificationEvent(RefTarget* source, const ReferenceEvent& event);
+    /// \brief This Qt signal is emitted by the listener each time it receives a notification
+    ///        event from the current target.
+    /// \param source The object that sent the notification event.
+    /// \param event The notification event.
+    void notificationEvent(RefTarget* source, const ReferenceEvent& event);
 
 protected:
 
-	/// This method is called after the reference counter of this object has reached zero
-	/// and before the object is being deleted.
-	virtual void aboutToBeDeleted() override {
-		OVITO_ASSERT_MSG(false, "RefTargetListenerBase::aboutToBeDeleted()", "Invalid use of this class. A RefTargetListener should not be used with OORef smart-pointers.");
-	}
+    /// This method is called after the reference counter of this object has reached zero
+    /// and before the object is being deleted.
+    virtual void aboutToBeDeleted() override {
+        OVITO_ASSERT_MSG(false, "RefTargetListenerBase::aboutToBeDeleted()", "Invalid use of this class. A RefTargetListener should not be used with OORef smart-pointers.");
+    }
 
-	/// \brief Is called when the RefTarget referenced by this listener has generated an event.
-	virtual bool referenceEvent(RefTarget* source, const ReferenceEvent& event) override;
+    /// \brief Is called when the RefTarget referenced by this listener has generated an event.
+    virtual bool referenceEvent(RefTarget* source, const ReferenceEvent& event) override;
 
 private:
 
-	/// The RefTarget which is being monitored by this listener.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(RefTarget*, target, setTarget, PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_NO_CHANGE_MESSAGE | PROPERTY_FIELD_WEAK_REF);
+    /// The RefTarget which is being monitored by this listener.
+    DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(RefTarget*, target, setTarget, PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_NO_CHANGE_MESSAGE | PROPERTY_FIELD_WEAK_REF);
 };
 
 /**
@@ -86,13 +86,13 @@ class RefTargetListener : public RefTargetListenerBase
 {
 public:
 
-	/// \brief Returns the current target this listener is listening to.
-	/// \return The current target object or \c NULL.
-	T* target() const { return static_object_cast<T>(RefTargetListenerBase::target()); }
+    /// \brief Returns the current target this listener is listening to.
+    /// \return The current target object or \c NULL.
+    T* target() const { return static_object_cast<T>(RefTargetListenerBase::target()); }
 
-	/// \brief Sets the current target this listener should listen to.
-	/// \param newTarget The new target or \c NULL.
-	void setTarget(T* newTarget) { RefTargetListenerBase::setTarget(newTarget); }
+    /// \brief Sets the current target this listener should listen to.
+    /// \param newTarget The new target or \c NULL.
+    void setTarget(T* newTarget) { RefTargetListenerBase::setTarget(newTarget); }
 };
 
 /**
@@ -105,66 +105,66 @@ public:
  */
 class OVITO_CORE_EXPORT VectorRefTargetListenerBase : public RefMaker
 {
-	OVITO_CLASS(VectorRefTargetListenerBase)
+    OVITO_CLASS(VectorRefTargetListenerBase)
 
 public:
 
-	/// \brief The default constructor.
-	VectorRefTargetListenerBase() = default;
+    /// \brief The default constructor.
+    VectorRefTargetListenerBase() = default;
 
-	/// \brief Destructor.
-	virtual ~VectorRefTargetListenerBase() {
-		clearAllReferences();
-	}
+    /// \brief Destructor.
+    virtual ~VectorRefTargetListenerBase() {
+        clearAllReferences();
+    }
 
-	/// \brief Clears the list of targets.
-	void clear() { _targets.clear(this, PROPERTY_FIELD(targets));  }
+    /// \brief Clears the list of targets.
+    void clear() { _targets.clear(this, PROPERTY_FIELD(targets));  }
 
-	/// \brief Adds a new object to the list of targets this listener should listen to.
-	void push_back(RefTarget* target) { OVITO_CHECK_OBJECT_POINTER(target); _targets.push_back(this, PROPERTY_FIELD(targets), target); }
+    /// \brief Adds a new object to the list of targets this listener should listen to.
+    void push_back(RefTarget* target) { OVITO_CHECK_OBJECT_POINTER(target); _targets.push_back(this, PROPERTY_FIELD(targets), target); }
 
-	/// \brief Inserts a new object into the list of targets this listener should listen to.
-	void insert(int index, RefTarget* target) { OVITO_CHECK_OBJECT_POINTER(target); _targets.insert(this, PROPERTY_FIELD(targets), index, target); }
+    /// \brief Inserts a new object into the list of targets this listener should listen to.
+    void insert(int index, RefTarget* target) { OVITO_CHECK_OBJECT_POINTER(target); _targets.insert(this, PROPERTY_FIELD(targets), index, target); }
 
-	/// \brief Replaces an object in the list of targets this listener should listen to.
-	void set(int index, RefTarget* target) { OVITO_CHECK_OBJECT_POINTER(target); _targets.set(this, PROPERTY_FIELD(targets), index, target); }
+    /// \brief Replaces an object in the list of targets this listener should listen to.
+    void set(int index, RefTarget* target) { OVITO_CHECK_OBJECT_POINTER(target); _targets.set(this, PROPERTY_FIELD(targets), index, target); }
 
-	/// \brief Removes an object from the list of targets this listener should listen to.
-	void remove(RefTarget* target) {
-		OVITO_CHECK_OBJECT_POINTER(target);
-		int index = _targets.indexOf(target);
-		if(index >= 0)
-			_targets.remove(this, PROPERTY_FIELD(targets), index);
-	}
+    /// \brief Removes an object from the list of targets this listener should listen to.
+    void remove(RefTarget* target) {
+        OVITO_CHECK_OBJECT_POINTER(target);
+        int index = _targets.indexOf(target);
+        if(index >= 0)
+            _targets.remove(this, PROPERTY_FIELD(targets), index);
+    }
 
-	/// \brief Removes an object from the list of targets this listener should listen to.
-	void remove(int index) {
-		_targets.remove(this, PROPERTY_FIELD(targets), index);
-	}
+    /// \brief Removes an object from the list of targets this listener should listen to.
+    void remove(int index) {
+        _targets.remove(this, PROPERTY_FIELD(targets), index);
+    }
 
 Q_SIGNALS:
 
-	/// \brief This Qt signal is emitted by the listener each time it receives a notification
-	///        event from a target.
-	/// \param source The object that sent the notification event.
-	/// \param event The notification event.
-	void notificationEvent(RefTarget* source, const ReferenceEvent& event);
+    /// \brief This Qt signal is emitted by the listener each time it receives a notification
+    ///        event from a target.
+    /// \param source The object that sent the notification event.
+    /// \param event The notification event.
+    void notificationEvent(RefTarget* source, const ReferenceEvent& event);
 
 protected:
 
-	/// This method is called after the reference counter of this object has reached zero
-	/// and before the object is being deleted.
-	virtual void aboutToBeDeleted() override {
-		OVITO_ASSERT_MSG(false, "VectorRefTargetListenerBase::aboutToBeDeleted()", "Invalid use of this class. A VectorRefTargetListener should not be used with OORef smart-pointers.");
-	}
+    /// This method is called after the reference counter of this object has reached zero
+    /// and before the object is being deleted.
+    virtual void aboutToBeDeleted() override {
+        OVITO_ASSERT_MSG(false, "VectorRefTargetListenerBase::aboutToBeDeleted()", "Invalid use of this class. A VectorRefTargetListener should not be used with OORef smart-pointers.");
+    }
 
-	/// \brief Is called when a RefTarget referenced by this listener has generated an event.
-	virtual bool referenceEvent(RefTarget* source, const ReferenceEvent& event) override;
+    /// \brief Is called when a RefTarget referenced by this listener has generated an event.
+    virtual bool referenceEvent(RefTarget* source, const ReferenceEvent& event) override;
 
 private:
 
-	/// The list of RefTargets which are being monitored by this listener.
-	DECLARE_MODIFIABLE_VECTOR_REFERENCE_FIELD_FLAGS(RefTarget*, targets, setTargets, PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_NO_CHANGE_MESSAGE | PROPERTY_FIELD_WEAK_REF);
+    /// The list of RefTargets which are being monitored by this listener.
+    DECLARE_MODIFIABLE_VECTOR_REFERENCE_FIELD_FLAGS(RefTarget*, targets, setTargets, PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_NO_CHANGE_MESSAGE | PROPERTY_FIELD_WEAK_REF);
 };
 
 /**
@@ -178,34 +178,34 @@ class VectorRefTargetListener : public VectorRefTargetListenerBase
 {
 public:
 
-	/// \brief Returns the list of targets this listener is listening to.
-	/// \return The current list of target objects.
-	/// \sa setTargets()
-	const QVector<T*>& targets() const { return reinterpret_cast<const QVector<T*>&>(VectorRefTargetListenerBase::targets()); }
+    /// \brief Returns the list of targets this listener is listening to.
+    /// \return The current list of target objects.
+    /// \sa setTargets()
+    const QVector<T*>& targets() const { return reinterpret_cast<const QVector<T*>&>(VectorRefTargetListenerBase::targets()); }
 
-	/// \brief Sets the list of targets this listener should listen to.
-	/// \param newTargets The new list of targets.
-	/// \sa targets()
-	template<typename U>
-	void setTargets(U&& newTargets) { 
-		VectorRefTargetListenerBase::setTargets(std::forward<U>(newTargets)); 
-	}
+    /// \brief Sets the list of targets this listener should listen to.
+    /// \param newTargets The new list of targets.
+    /// \sa targets()
+    template<typename U>
+    void setTargets(U&& newTargets) { 
+        VectorRefTargetListenerBase::setTargets(std::forward<U>(newTargets)); 
+    }
 
-	/// \brief Sets the list of targets this listener should listen to.
-	/// \param newTargets The new list of targets.
-	/// \sa targets()
-	void setTargets(std::initializer_list<T*> newTargets) { 
-		VectorRefTargetListenerBase::setTargets(std::move(newTargets)); 
-	}
+    /// \brief Sets the list of targets this listener should listen to.
+    /// \param newTargets The new list of targets.
+    /// \sa targets()
+    void setTargets(std::initializer_list<T*> newTargets) { 
+        VectorRefTargetListenerBase::setTargets(std::move(newTargets)); 
+    }
 
-	/// \brief Adds a new object to the list of targets this listener should listen to.
-	void push_back(T* target) { VectorRefTargetListenerBase::push_back(target); }
+    /// \brief Adds a new object to the list of targets this listener should listen to.
+    void push_back(T* target) { VectorRefTargetListenerBase::push_back(target); }
 
-	/// \brief Inserts a new object into the list of targets this listener should listen to.
-	void insert(int index, T* target) { VectorRefTargetListenerBase::insert(index, target); }
+    /// \brief Inserts a new object into the list of targets this listener should listen to.
+    void insert(int index, T* target) { VectorRefTargetListenerBase::insert(index, target); }
 
-	/// \brief Replaces an object in the list of targets this listener should listen to.
-	void set(int index, T* target) { VectorRefTargetListenerBase::set(index, target); }
+    /// \brief Replaces an object in the list of targets this listener should listen to.
+    void set(int index, T* target) { VectorRefTargetListenerBase::set(index, target); }
 };
 
-}	// End of namespace
+}   // End of namespace

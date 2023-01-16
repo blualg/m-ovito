@@ -33,36 +33,36 @@ namespace Ovito {
  */
 class ModifierGroupEditor : public PropertiesEditor
 {
-	OVITO_CLASS(ModifierGroupEditor)
+    OVITO_CLASS(ModifierGroupEditor)
 
 public:
 
-	/// Constructor.
-	Q_INVOKABLE ModifierGroupEditor() = default;
+    /// Constructor.
+    Q_INVOKABLE ModifierGroupEditor() = default;
 
 protected:
 
-	/// Creates the user interface controls for the editor.
-	virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
+    /// Creates the user interface controls for the editor.
+    virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
 
-	/// Is called when the value of a reference field of this RefMaker changes.
-	virtual void referenceReplaced(const PropertyFieldDescriptor* field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex) override;
+    /// Is called when the value of a reference field of this RefMaker changes.
+    virtual void referenceReplaced(const PropertyFieldDescriptor* field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex) override;
 
 private Q_SLOTS:
 
-	/// Rebuilds the list of sub-editors for the group's modifier applications.
-	void updateSubEditors();
+    /// Rebuilds the list of sub-editors for the group's modifier applications.
+    void updateSubEditors();
 
 private:
 
-	/// The editors for the group's modifier applications.
-	std::vector<OORef<PropertiesEditor>> _subEditors;
+    /// The editors for the group's modifier applications.
+    std::vector<OORef<PropertiesEditor>> _subEditors;
 
-	/// Specifies where the sub-editors are opened and whether the sub-editors are opened in a collapsed state.
-	RolloutInsertionParameters _rolloutParams;
+    /// Specifies where the sub-editors are opened and whether the sub-editors are opened in a collapsed state.
+    RolloutInsertionParameters _rolloutParams;
 
-	QMetaObject::Connection _modifierAddedConnection;
-	QMetaObject::Connection _modifierRemovedConnection;
+    QMetaObject::Connection _modifierAddedConnection;
+    QMetaObject::Connection _modifierRemovedConnection;
 };
 
-}	// End of namespace
+}   // End of namespace

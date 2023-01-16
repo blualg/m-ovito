@@ -36,38 +36,38 @@ namespace Ovito::Particles {
  */
 class FileColumnParticleExporterEditor : public PropertiesEditor
 {
-	OVITO_CLASS(FileColumnParticleExporterEditor)
+    OVITO_CLASS(FileColumnParticleExporterEditor)
 
 public:
 
-	/// Constructor.
-	Q_INVOKABLE FileColumnParticleExporterEditor() {}
+    /// Constructor.
+    Q_INVOKABLE FileColumnParticleExporterEditor() {}
 
 protected:
 
-	/// Creates the user interface controls for the editor.
-	virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
+    /// Creates the user interface controls for the editor.
+    virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
 
-	/// This method is called when a reference target changes.
-	virtual bool referenceEvent(RefTarget* source, const ReferenceEvent& event) override;
+    /// This method is called when a reference target changes.
+    virtual bool referenceEvent(RefTarget* source, const ReferenceEvent& event) override;
 
 private Q_SLOTS:
 
-	/// Updates the displayed list of particle properties that are available for export.
-	void updateParticlePropertiesList();
+    /// Updates the displayed list of particle properties that are available for export.
+    void updateParticlePropertiesList();
 
-	/// Is called when the user checked/unchecked an item in the particle property list.
-	void onParticlePropertyItemChanged();
+    /// Is called when the user checked/unchecked an item in the particle property list.
+    void onParticlePropertyItemChanged();
 
 private:
 
-	/// Populates the column mapping list box with an entry.
-	void insertPropertyItem(ParticlePropertyReference propRef, const QString& displayName, const ParticlesOutputColumnMapping& columnMapping);
+    /// Populates the column mapping list box with an entry.
+    void insertPropertyItem(ParticlePropertyReference propRef, const QString& displayName, const ParticlesOutputColumnMapping& columnMapping);
 
-	/// This writes the settings made in the UI back to the exporter.
-	void saveChanges(FileColumnParticleExporter* particleExporter);
+    /// This writes the settings made in the UI back to the exporter.
+    void saveChanges(FileColumnParticleExporter* particleExporter);
 
-	QListWidget* _columnMappingWidget;
+    QListWidget* _columnMappingWidget;
 };
 
-}	// End of namespace
+}   // End of namespace

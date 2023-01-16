@@ -35,32 +35,32 @@ using namespace Ovito::StdMod;
  */
 class OVITO_CRYSTALANALYSIS_EXPORT DislocationSliceModifierDelegate : public SliceModifierDelegate
 {
-	/// Give the modifier delegate its own metaclass.
-	class OOMetaClass : public SliceModifierDelegate::OOMetaClass
-	{
-	public:
+    /// Give the modifier delegate its own metaclass.
+    class OOMetaClass : public SliceModifierDelegate::OOMetaClass
+    {
+    public:
 
-		/// Inherit constructor from base class.
-		using SliceModifierDelegate::OOMetaClass::OOMetaClass;
+        /// Inherit constructor from base class.
+        using SliceModifierDelegate::OOMetaClass::OOMetaClass;
 
-		/// Indicates which data objects in the given input data collection the modifier delegate is able to operate on.
-		virtual QVector<DataObjectReference> getApplicableObjects(const DataCollection& input) const override;
+        /// Indicates which data objects in the given input data collection the modifier delegate is able to operate on.
+        virtual QVector<DataObjectReference> getApplicableObjects(const DataCollection& input) const override;
 
-		/// The name by which Python scripts can refer to this modifier delegate.
-		virtual QString pythonDataName() const override { return QStringLiteral("dislocations"); }
-	};
+        /// The name by which Python scripts can refer to this modifier delegate.
+        virtual QString pythonDataName() const override { return QStringLiteral("dislocations"); }
+    };
 
-	OVITO_CLASS_META(DislocationSliceModifierDelegate, OOMetaClass)
+    OVITO_CLASS_META(DislocationSliceModifierDelegate, OOMetaClass)
 
-	Q_CLASSINFO("DisplayName", "Dislocation lines");
+    Q_CLASSINFO("DisplayName", "Dislocation lines");
 
 public:
 
-	/// Constructor.
-	Q_INVOKABLE DislocationSliceModifierDelegate(ObjectCreationParams params) : SliceModifierDelegate(params) {}
+    /// Constructor.
+    Q_INVOKABLE DislocationSliceModifierDelegate(ObjectCreationParams params) : SliceModifierDelegate(params) {}
 
-	/// \brief Applies a slice operation to a data object.
-	virtual PipelineStatus apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const PipelineFlowState& inputState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs) override;
+    /// \brief Applies a slice operation to a data object.
+    virtual PipelineStatus apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const PipelineFlowState& inputState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs) override;
 };
 
-}	// End of namespace
+}   // End of namespace

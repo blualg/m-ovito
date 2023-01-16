@@ -33,22 +33,22 @@ namespace Ovito::Particles {
  */
 class GenerateTrajectoryLinesModifierEditor : public PropertiesEditor
 {
-	OVITO_CLASS(GenerateTrajectoryLinesModifierEditor)
+    OVITO_CLASS(GenerateTrajectoryLinesModifierEditor)
 
 public:
 
-	/// Constructor.
-	Q_INVOKABLE GenerateTrajectoryLinesModifierEditor() {}
+    /// Constructor.
+    Q_INVOKABLE GenerateTrajectoryLinesModifierEditor() {}
 
 protected:
 
-	/// Creates the user interface controls for the editor.
-	virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
+    /// Creates the user interface controls for the editor.
+    virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
 
 private Q_SLOTS:
 
-	/// Is called when the user clicks the 'Regenerate trajectory' button.
-	void onRegenerateTrajectory();
+    /// Is called when the user clicks the 'Regenerate trajectory' button.
+    void onRegenerateTrajectory();
 };
 
-}	// End of namespace
+}   // End of namespace

@@ -37,9 +37,9 @@ IMPLEMENT_OVITO_CLASS(DislocationReplicateModifierDelegate);
 ******************************************************************************/
 QVector<DataObjectReference> DislocationReplicateModifierDelegate::OOMetaClass::getApplicableObjects(const DataCollection& input) const
 {
-	if(input.containsObject<DislocationNetworkObject>())
-		return { DataObjectReference(&DislocationNetworkObject::OOClass()) };
-	return {};
+    if(input.containsObject<DislocationNetworkObject>())
+        return { DataObjectReference(&DislocationNetworkObject::OOClass()) };
+    return {};
 }
 
 /******************************************************************************
@@ -47,75 +47,75 @@ QVector<DataObjectReference> DislocationReplicateModifierDelegate::OOMetaClass::
 ******************************************************************************/
 PipelineStatus DislocationReplicateModifierDelegate::apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const PipelineFlowState& inputState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs)
 {
-	ReplicateModifier* mod = static_object_cast<ReplicateModifier>(request.modifier());
+    ReplicateModifier* mod = static_object_cast<ReplicateModifier>(request.modifier());
 
-	std::array<int,3> nPBC;
-	nPBC[0] = std::max(mod->numImagesX(),1);
-	nPBC[1] = std::max(mod->numImagesY(),1);
-	nPBC[2] = std::max(mod->numImagesZ(),1);
+    std::array<int,3> nPBC;
+    nPBC[0] = std::max(mod->numImagesX(),1);
+    nPBC[1] = std::max(mod->numImagesY(),1);
+    nPBC[2] = std::max(mod->numImagesZ(),1);
 
-	size_t numCopies = nPBC[0] * nPBC[1] * nPBC[2];
-	if(numCopies <= 1)
-		return PipelineStatus::Success;
+    size_t numCopies = nPBC[0] * nPBC[1] * nPBC[2];
+    if(numCopies <= 1)
+        return PipelineStatus::Success;
 
-	Box3I newImages = mod->replicaRange();
+    Box3I newImages = mod->replicaRange();
 
-	for(const DataObject* obj : state.data()->objects()) {
-		if(const DislocationNetworkObject* existingDislocations = dynamic_object_cast<DislocationNetworkObject>(obj)) {
-			// For replication, a domain is required.
-			if(!existingDislocations->domain()) continue;
-			AffineTransformation simCell = existingDislocations->domain()->cellMatrix();
-			AffineTransformation inverseSimCell;
-			if(!simCell.inverse(inverseSimCell))
-				continue;
+    for(const DataObject* obj : state.data()->objects()) {
+        if(const DislocationNetworkObject* existingDislocations = dynamic_object_cast<DislocationNetworkObject>(obj)) {
+            // For replication, a domain is required.
+            if(!existingDislocations->domain()) continue;
+            AffineTransformation simCell = existingDislocations->domain()->cellMatrix();
+            AffineTransformation inverseSimCell;
+            if(!simCell.inverse(inverseSimCell))
+                continue;
 
-			// Create the output copy of the input dislocation object.
-			DislocationNetworkObject* newDislocations = state.makeMutable(existingDislocations);
-			std::shared_ptr<DislocationNetwork> dislocations = newDislocations->modifiableStorage();
+            // Create the output copy of the input dislocation object.
+            DislocationNetworkObject* newDislocations = state.makeMutable(existingDislocations);
+            std::shared_ptr<DislocationNetwork> dislocations = newDislocations->modifiableStorage();
 
-			// Shift existing vertices so that they form the first image at grid position (0,0,0).
-			const Vector3 imageDelta = simCell * Vector3(newImages.minc.x(), newImages.minc.y(), newImages.minc.z());
-			if(!imageDelta.isZero()) {
-				for(DislocationSegment* segment : dislocations->segments()) {
-					for(Point3& p : segment->line)
-						p += imageDelta;
-				}
-			}
+            // Shift existing vertices so that they form the first image at grid position (0,0,0).
+            const Vector3 imageDelta = simCell * Vector3(newImages.minc.x(), newImages.minc.y(), newImages.minc.z());
+            if(!imageDelta.isZero()) {
+                for(DislocationSegment* segment : dislocations->segments()) {
+                    for(Point3& p : segment->line)
+                        p += imageDelta;
+                }
+            }
 
-			// Replicate lines.
-			size_t oldSegmentCount = dislocations->segments().size();
-			for(int imageX = 0; imageX < nPBC[0]; imageX++) {
-				for(int imageY = 0; imageY < nPBC[1]; imageY++) {
-					for(int imageZ = 0; imageZ < nPBC[2]; imageZ++) {
-						if(imageX == 0 && imageY == 0 && imageZ == 0) continue;
-						// Shift vertex positions by the periodicity vector.
-						const Vector3 imageDelta = simCell * Vector3(imageX, imageY, imageZ);
-						for(size_t i = 0; i < oldSegmentCount; i++) {
-							DislocationSegment* oldSegment = dislocations->segments()[i];
-							DislocationSegment* newSegment = dislocations->createSegment(oldSegment->burgersVector);
-							newSegment->line = oldSegment->line;
-							newSegment->coreSize = oldSegment->coreSize;
-							for(Point3& p : newSegment->line)
-								p += imageDelta;
-						}
-						// TODO: Replicate nodal connectivity.
-					}
-				}
-			}
-			OVITO_ASSERT(dislocations->segments().size() == oldSegmentCount * numCopies);
+            // Replicate lines.
+            size_t oldSegmentCount = dislocations->segments().size();
+            for(int imageX = 0; imageX < nPBC[0]; imageX++) {
+                for(int imageY = 0; imageY < nPBC[1]; imageY++) {
+                    for(int imageZ = 0; imageZ < nPBC[2]; imageZ++) {
+                        if(imageX == 0 && imageY == 0 && imageZ == 0) continue;
+                        // Shift vertex positions by the periodicity vector.
+                        const Vector3 imageDelta = simCell * Vector3(imageX, imageY, imageZ);
+                        for(size_t i = 0; i < oldSegmentCount; i++) {
+                            DislocationSegment* oldSegment = dislocations->segments()[i];
+                            DislocationSegment* newSegment = dislocations->createSegment(oldSegment->burgersVector);
+                            newSegment->line = oldSegment->line;
+                            newSegment->coreSize = oldSegment->coreSize;
+                            for(Point3& p : newSegment->line)
+                                p += imageDelta;
+                        }
+                        // TODO: Replicate nodal connectivity.
+                    }
+                }
+            }
+            OVITO_ASSERT(dislocations->segments().size() == oldSegmentCount * numCopies);
 
-			// Extend the periodic domain the surface is embedded in.
-			simCell.translation() += (FloatType)newImages.minc.x() * simCell.column(0);
-			simCell.translation() += (FloatType)newImages.minc.y() * simCell.column(1);
-			simCell.translation() += (FloatType)newImages.minc.z() * simCell.column(2);
-			simCell.column(0) *= (newImages.sizeX() + 1);
-			simCell.column(1) *= (newImages.sizeY() + 1);
-			simCell.column(2) *= (newImages.sizeZ() + 1);
-			newDislocations->mutableDomain()->setCellMatrix(simCell);
-		}
-	}
+            // Extend the periodic domain the surface is embedded in.
+            simCell.translation() += (FloatType)newImages.minc.x() * simCell.column(0);
+            simCell.translation() += (FloatType)newImages.minc.y() * simCell.column(1);
+            simCell.translation() += (FloatType)newImages.minc.z() * simCell.column(2);
+            simCell.column(0) *= (newImages.sizeX() + 1);
+            simCell.column(1) *= (newImages.sizeY() + 1);
+            simCell.column(2) *= (newImages.sizeZ() + 1);
+            newDislocations->mutableDomain()->setCellMatrix(simCell);
+        }
+    }
 
-	return PipelineStatus::Success;
+    return PipelineStatus::Success;
 }
 
-}	// End of namespace
+}   // End of namespace

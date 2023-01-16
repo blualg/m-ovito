@@ -128,7 +128,7 @@ private:
     /// Returns the stderr channel.
     StderrChannel* stderrChannel() const { return _stderr; }
 
-	/// Returns the underlying SSH connection.
+    /// Returns the underlying SSH connection.
     using SshChannel::connection;
 
     /// Callback function, which is called by libssh when data is available on the channel.

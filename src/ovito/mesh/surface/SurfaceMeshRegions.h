@@ -33,53 +33,53 @@ namespace Ovito::Mesh {
  */
 class OVITO_MESH_EXPORT SurfaceMeshRegions : public PropertyContainer
 {
-	/// Define a new property metaclass for this container type.
-	class OOMetaClass : public PropertyContainerClass
-	{
-	public:
+    /// Define a new property metaclass for this container type.
+    class OOMetaClass : public PropertyContainerClass
+    {
+    public:
 
-		/// Inherit constructor from base class.
-		using PropertyContainerClass::PropertyContainerClass;
+        /// Inherit constructor from base class.
+        using PropertyContainerClass::PropertyContainerClass;
 
-		/// Create a storage object for standard region properties.
-		virtual PropertyPtr createStandardPropertyInternal(size_t elementCount, int type, DataBuffer::InitializationFlags flags, const ConstDataObjectPath& containerPath) const override;
+        /// Create a storage object for standard region properties.
+        virtual PropertyPtr createStandardPropertyInternal(size_t elementCount, int type, DataBuffer::InitializationFlags flags, const ConstDataObjectPath& containerPath) const override;
 
-		/// Generates a human-readable string representation of the data object reference.
-		virtual QString formatDataObjectPath(const ConstDataObjectPath& path) const override;
+        /// Generates a human-readable string representation of the data object reference.
+        virtual QString formatDataObjectPath(const ConstDataObjectPath& path) const override;
 
-	protected:
+    protected:
 
-		/// Is called by the system after construction of the meta-class instance.
-		virtual void initialize() override;
-	};
+        /// Is called by the system after construction of the meta-class instance.
+        virtual void initialize() override;
+    };
 
-	OVITO_CLASS_META(SurfaceMeshRegions, OOMetaClass);
-	Q_CLASSINFO("DisplayName", "Mesh Regions");
+    OVITO_CLASS_META(SurfaceMeshRegions, OOMetaClass);
+    Q_CLASSINFO("DisplayName", "Mesh Regions");
 
 public:
 
-	/// \brief The list of standard region properties.
-	enum Type {
-		UserProperty = PropertyObject::GenericUserProperty,	//< This is reserved for user-defined properties.
-		SelectionProperty = PropertyObject::GenericSelectionProperty,
-		ColorProperty = PropertyObject::GenericColorProperty,
-		PhaseProperty = PropertyObject::FirstSpecificProperty,
-		VolumeProperty,
-		SurfaceAreaProperty,
-		IsFilledProperty,
-		LatticeCorrespondenceProperty
-	};
+    /// \brief The list of standard region properties.
+    enum Type {
+        UserProperty = PropertyObject::GenericUserProperty, //< This is reserved for user-defined properties.
+        SelectionProperty = PropertyObject::GenericSelectionProperty,
+        ColorProperty = PropertyObject::GenericColorProperty,
+        PhaseProperty = PropertyObject::FirstSpecificProperty,
+        VolumeProperty,
+        SurfaceAreaProperty,
+        IsFilledProperty,
+        LatticeCorrespondenceProperty
+    };
 
-	/// \brief Constructor.
-	Q_INVOKABLE SurfaceMeshRegions(ObjectCreationParams params) : PropertyContainer(params) {
-		// Assign the default data object identifier.
-		setIdentifier(OOClass().pythonName());
-	}
+    /// \brief Constructor.
+    Q_INVOKABLE SurfaceMeshRegions(ObjectCreationParams params) : PropertyContainer(params) {
+        // Assign the default data object identifier.
+        setIdentifier(OOClass().pythonName());
+    }
 
-	/// Deletes elements for which bits are set in the given bit-mask.
-	virtual size_t deleteElements(const boost::dynamic_bitset<>& mask) override {
-		throw Exception(tr("Deleting regions from a SurfaceMesh is not supported via this method. Call SurfaceMesh.delete_regions() on the parent object instead."));
-	}
+    /// Deletes elements for which bits are set in the given bit-mask.
+    virtual size_t deleteElements(const boost::dynamic_bitset<>& mask) override {
+        throw Exception(tr("Deleting regions from a SurfaceMesh is not supported via this method. Call SurfaceMesh.delete_regions() on the parent object instead."));
+    }
 };
 
-}	// End of namespace
+}   // End of namespace

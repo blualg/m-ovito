@@ -38,70 +38,70 @@ using namespace Ovito::StdMod;
  */
 class OVITO_PARTICLES_EXPORT BondsComputePropertyModifierDelegate : public ComputePropertyModifierDelegate
 {
-	/// Give the modifier delegate its own metaclass.
-	class OOMetaClass : public ComputePropertyModifierDelegate::OOMetaClass
-	{
-	public:
+    /// Give the modifier delegate its own metaclass.
+    class OOMetaClass : public ComputePropertyModifierDelegate::OOMetaClass
+    {
+    public:
 
-		/// Inherit constructor from base class.
-		using ComputePropertyModifierDelegate::OOMetaClass::OOMetaClass;
+        /// Inherit constructor from base class.
+        using ComputePropertyModifierDelegate::OOMetaClass::OOMetaClass;
 
-		/// Indicates which data objects in the given input data collection the modifier delegate is able to operate on.
-		virtual QVector<DataObjectReference> getApplicableObjects(const DataCollection& input) const override;
+        /// Indicates which data objects in the given input data collection the modifier delegate is able to operate on.
+        virtual QVector<DataObjectReference> getApplicableObjects(const DataCollection& input) const override;
 
-		/// Indicates which class of data objects the modifier delegate is able to operate on.
-		virtual const DataObject::OOMetaClass& getApplicableObjectClass() const override { return BondsObject::OOClass(); }
+        /// Indicates which class of data objects the modifier delegate is able to operate on.
+        virtual const DataObject::OOMetaClass& getApplicableObjectClass() const override { return BondsObject::OOClass(); }
 
-		/// The name by which Python scripts can refer to this modifier delegate.
-		virtual QString pythonDataName() const override { return QStringLiteral("bonds"); }
-	};
+        /// The name by which Python scripts can refer to this modifier delegate.
+        virtual QString pythonDataName() const override { return QStringLiteral("bonds"); }
+    };
 
-	OVITO_CLASS_META(BondsComputePropertyModifierDelegate, OOMetaClass)
+    OVITO_CLASS_META(BondsComputePropertyModifierDelegate, OOMetaClass)
 
-	Q_CLASSINFO("DisplayName", "Bonds");
+    Q_CLASSINFO("DisplayName", "Bonds");
 
 public:
 
-	/// Constructor.
-	Q_INVOKABLE BondsComputePropertyModifierDelegate(ObjectCreationParams params) : ComputePropertyModifierDelegate(params) {}
+    /// Constructor.
+    Q_INVOKABLE BondsComputePropertyModifierDelegate(ObjectCreationParams params) : ComputePropertyModifierDelegate(params) {}
 
-	/// Creates a computation engine that will compute the property values.
-	virtual std::shared_ptr<ComputePropertyModifierDelegate::PropertyComputeEngine> createEngine(
-				const ModifierEvaluationRequest& request, 
-				const PipelineFlowState& input,
-				const ConstDataObjectPath& containerPath,
-				PropertyPtr outputProperty,
-				ConstPropertyPtr selectionProperty,
-				QStringList expressions) override;
+    /// Creates a computation engine that will compute the property values.
+    virtual std::shared_ptr<ComputePropertyModifierDelegate::PropertyComputeEngine> createEngine(
+                const ModifierEvaluationRequest& request, 
+                const PipelineFlowState& input,
+                const ConstDataObjectPath& containerPath,
+                PropertyPtr outputProperty,
+                ConstPropertyPtr selectionProperty,
+                QStringList expressions) override;
 
 private:
 
-	/// Asynchronous compute engine that does the actual work in a separate thread.
-	class Engine : public ComputePropertyModifierDelegate::PropertyComputeEngine
-	{
-	public:
+    /// Asynchronous compute engine that does the actual work in a separate thread.
+    class Engine : public ComputePropertyModifierDelegate::PropertyComputeEngine
+    {
+    public:
 
-		/// Constructor.
-		Engine(
-				const ModifierEvaluationRequest& request, 
-				const TimeInterval& validityInterval,
-				PropertyPtr outputProperty,
-				const ConstDataObjectPath& containerPath,
-				ConstPropertyPtr selectionProperty,
-				QStringList expressions,
-				int frameNumber,
-				const PipelineFlowState& input);
+        /// Constructor.
+        Engine(
+                const ModifierEvaluationRequest& request, 
+                const TimeInterval& validityInterval,
+                PropertyPtr outputProperty,
+                const ConstDataObjectPath& containerPath,
+                ConstPropertyPtr selectionProperty,
+                QStringList expressions,
+                int frameNumber,
+                const PipelineFlowState& input);
 
-		/// Computes the modifier's results.
-		virtual void perform() override;
+        /// Computes the modifier's results.
+        virtual void perform() override;
 
-		/// Injects the computed results into the data pipeline.
-		virtual void applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
+        /// Injects the computed results into the data pipeline.
+        virtual void applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
 
-	private:
+    private:
 
-		ParticleOrderingFingerprint _inputFingerprint;
-	};
+        ParticleOrderingFingerprint _inputFingerprint;
+    };
 };
 
-}	// End of namespace
+}   // End of namespace

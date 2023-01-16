@@ -25,10 +25,10 @@ FIND_PACKAGE(Qt6 ${OVITO_MINIMUM_REQUIRED_QT_VERSION} COMPONENTS Xml REQUIRED)
 
 # Define the plugin module.
 OVITO_STANDARD_PLUGIN(Galamost
-	SOURCES
-		GALAMOSTImporter.cpp
-	PLUGIN_DEPENDENCIES Particles
-	LIB_DEPENDENCIES Qt6::Xml
+    SOURCES
+        GALAMOSTImporter.cpp
+    PLUGIN_DEPENDENCIES Particles
+    LIB_DEPENDENCIES Qt6::Xml
 )
 
 # Propagate list of plugins to parent scope.

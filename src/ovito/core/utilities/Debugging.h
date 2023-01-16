@@ -55,6 +55,6 @@ namespace Ovito {
 ******************************************************************************/
 #define OVITO_CHECK_POINTER(pointer) OVITO_ASSERT_MSG((pointer), "OVITO_CHECK_POINTER", "Invalid object pointer.");
 
-}	// End of namespace
+}   // End of namespace
 
 

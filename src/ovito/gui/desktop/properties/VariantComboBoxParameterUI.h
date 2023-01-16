@@ -33,56 +33,56 @@ namespace Ovito {
 ******************************************************************************/
 class OVITO_GUI_EXPORT VariantComboBoxParameterUI : public PropertyParameterUI
 {
-	OVITO_CLASS(VariantComboBoxParameterUI)
+    OVITO_CLASS(VariantComboBoxParameterUI)
 
 public:
 
-	/// Constructor.
-	VariantComboBoxParameterUI(PropertiesEditor* parentEditor, const char* propertyName);
+    /// Constructor.
+    VariantComboBoxParameterUI(PropertiesEditor* parentEditor, const char* propertyName);
 
-	/// Constructor for a PropertyField property.
-	VariantComboBoxParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField);
+    /// Constructor for a PropertyField property.
+    VariantComboBoxParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField);
 
-	/// Destructor.
-	virtual ~VariantComboBoxParameterUI();
+    /// Destructor.
+    virtual ~VariantComboBoxParameterUI();
 
-	/// This returns the combo box managed by this ParameterUI.
-	QComboBox* comboBox() const { return _comboBox; }
+    /// This returns the combo box managed by this ParameterUI.
+    QComboBox* comboBox() const { return _comboBox; }
 
-	/// This method is called when a new editable object has been assigned to the properties owner this
-	/// parameter UI belongs to.
-	virtual void resetUI() override;
+    /// This method is called when a new editable object has been assigned to the properties owner this
+    /// parameter UI belongs to.
+    virtual void resetUI() override;
 
-	/// This method updates the displayed value of the property UI.
-	virtual void updateUI() override;
+    /// This method updates the displayed value of the property UI.
+    virtual void updateUI() override;
 
-	/// Sets the enabled state of the UI.
-	virtual void setEnabled(bool enabled) override;
+    /// Sets the enabled state of the UI.
+    virtual void setEnabled(bool enabled) override;
 
-	/// Sets the tooltip text for the combo box widget.
-	void setToolTip(const QString& text) const {
-		if(comboBox()) comboBox()->setToolTip(text);
-	}
+    /// Sets the tooltip text for the combo box widget.
+    void setToolTip(const QString& text) const {
+        if(comboBox()) comboBox()->setToolTip(text);
+    }
 
-	/// Sets the What's This helper text for the combo box.
-	void setWhatsThis(const QString& text) const {
-		if(comboBox()) comboBox()->setWhatsThis(text);
-	}
+    /// Sets the What's This helper text for the combo box.
+    void setWhatsThis(const QString& text) const {
+        if(comboBox()) comboBox()->setWhatsThis(text);
+    }
 
 public:
 
-	Q_PROPERTY(QComboBox comboBox READ comboBox)
+    Q_PROPERTY(QComboBox comboBox READ comboBox)
 
 public Q_SLOTS:
 
-	/// Takes the value entered by the user and stores it in the property field
-	/// this property UI is bound to.
-	void updatePropertyValue();
+    /// Takes the value entered by the user and stores it in the property field
+    /// this property UI is bound to.
+    void updatePropertyValue();
 
 protected:
 
-	/// The combo box of the UI component.
-	QPointer<QComboBox> _comboBox;
+    /// The combo box of the UI component.
+    QPointer<QComboBox> _comboBox;
 };
 
-}	// End of namespace
+}   // End of namespace

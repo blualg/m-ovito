@@ -36,14 +36,14 @@ namespace Ovito {
 ******************************************************************************/
 ViewportsPanel::ViewportsPanel()
 {
-	// Activate the new viewport layout as soon as a new state file is loaded.
-	connect(this, &QQuickItem::windowChanged, this, [this](QQuickWindow* window) {
-		if(window && mainWindow()) {
-			connect(mainWindow()->datasetContainer(), &DataSetContainer::viewportConfigReplaced, this, &ViewportsPanel::onViewportConfigurationReplaced);
-			connect(mainWindow()->datasetContainer(), &DataSetContainer::animationSettingsReplaced, this, &ViewportsPanel::onAnimationSettingsReplaced);
-			connect(mainWindow()->viewportInputManager(), &ViewportInputManager::inputModeChanged, this, &ViewportsPanel::onInputModeChanged);
-		}
-	});
+    // Activate the new viewport layout as soon as a new state file is loaded.
+    connect(this, &QQuickItem::windowChanged, this, [this](QQuickWindow* window) {
+        if(window && mainWindow()) {
+            connect(mainWindow()->datasetContainer(), &DataSetContainer::viewportConfigReplaced, this, &ViewportsPanel::onViewportConfigurationReplaced);
+            connect(mainWindow()->datasetContainer(), &DataSetContainer::animationSettingsReplaced, this, &ViewportsPanel::onAnimationSettingsReplaced);
+            connect(mainWindow()->viewportInputManager(), &ViewportInputManager::inputModeChanged, this, &ViewportsPanel::onInputModeChanged);
+        }
+    });
 }
 
 /******************************************************************************
@@ -51,58 +51,58 @@ ViewportsPanel::ViewportsPanel()
 ******************************************************************************/
 void ViewportsPanel::onViewportConfigurationReplaced(ViewportConfiguration* newViewportConfiguration)
 {
-	disconnect(_activeViewportChangedConnection);
-	disconnect(_maximizedViewportChangedConnection);
+    disconnect(_activeViewportChangedConnection);
+    disconnect(_maximizedViewportChangedConnection);
 
-	// Delete all existing viewport windows first.
-	for(QuickViewportWindow* window : findChildren<QuickViewportWindow*>())
-		delete window;
+    // Delete all existing viewport windows first.
+    for(QuickViewportWindow* window : findChildren<QuickViewportWindow*>())
+        delete window;
 
-	_viewportConfig = newViewportConfiguration;
-	if(viewportConfiguration()) {
+    _viewportConfig = newViewportConfiguration;
+    if(viewportConfiguration()) {
 
-		// Load the QML component for creating new viewport window instances.
-		if(!_viewportComponent) {
-			_viewportComponent = new QQmlComponent(qmlContext(this)->engine(), QUrl::fromLocalFile(":/gui/ui/QuickViewportWindow.qml"), QQmlComponent::PreferSynchronous, this);
-			if(_viewportComponent->isError())
-          		qWarning() << _viewportComponent->errors();
-		}
+        // Load the QML component for creating new viewport window instances.
+        if(!_viewportComponent) {
+            _viewportComponent = new QQmlComponent(qmlContext(this)->engine(), QUrl::fromLocalFile(":/gui/ui/QuickViewportWindow.qml"), QQmlComponent::PreferSynchronous, this);
+            if(_viewportComponent->isError())
+                qWarning() << _viewportComponent->errors();
+        }
 
-		// Create windows for the new viewports.
-		try {
-			for(Viewport* vp : viewportConfiguration()->viewports()) {
+        // Create windows for the new viewports.
+        try {
+            for(Viewport* vp : viewportConfiguration()->viewports()) {
 
-				// Create the window for the viewport.
-				QuickViewportWindow* vpwin = qobject_cast<QuickViewportWindow*>(_viewportComponent->create());
-				if(!vpwin) {
-					qWarning() << "Creation of QuickViewportWindow instance failed.";
-					break;
-				}
+                // Create the window for the viewport.
+                QuickViewportWindow* vpwin = qobject_cast<QuickViewportWindow*>(_viewportComponent->create());
+                if(!vpwin) {
+                    qWarning() << "Creation of QuickViewportWindow instance failed.";
+                    break;
+                }
 
-				// Associate the window with the viewport.
-				vpwin->setMainWindow(mainWindow());
-				vpwin->setViewport(vp);
+                // Associate the window with the viewport.
+                vpwin->setMainWindow(mainWindow());
+                vpwin->setViewport(vp);
 
-				// Insert viewport into Qt Quick scene.
-				vpwin->setParentItem(this);
-			}
-		}
-		catch(const Exception& ex) {
-			ex.reportError(true);
-			QMetaObject::invokeMethod(QCoreApplication::instance(), "quit", Qt::QueuedConnection);
-		}
+                // Insert viewport into Qt Quick scene.
+                vpwin->setParentItem(this);
+            }
+        }
+        catch(const Exception& ex) {
+            ex.reportError(true);
+            QMetaObject::invokeMethod(QCoreApplication::instance(), "quit", Qt::QueuedConnection);
+        }
 
-		// Repaint the viewport borders when another viewport has been activated.
-		_activeViewportChangedConnection = connect(viewportConfiguration(), &ViewportConfiguration::activeViewportChanged, this, &ViewportsPanel::updateViewportWindows);
+        // Repaint the viewport borders when another viewport has been activated.
+        _activeViewportChangedConnection = connect(viewportConfiguration(), &ViewportConfiguration::activeViewportChanged, this, &ViewportsPanel::updateViewportWindows);
 
-		// Update layout when a viewport has been maximized.
-		_maximizedViewportChangedConnection = connect(viewportConfiguration(), &ViewportConfiguration::maximizedViewportChanged, this, &ViewportsPanel::layoutViewports);
+        // Update layout when a viewport has been maximized.
+        _maximizedViewportChangedConnection = connect(viewportConfiguration(), &ViewportConfiguration::maximizedViewportChanged, this, &ViewportsPanel::layoutViewports);
 
-		// Layout viewport windows.
-		layoutViewports();
-	}
+        // Layout viewport windows.
+        layoutViewports();
+    }
 
-	Q_EMIT viewportConfigurationReplaced(viewportConfiguration());
+    Q_EMIT viewportConfigurationReplaced(viewportConfiguration());
 }
 
 /******************************************************************************
@@ -110,12 +110,12 @@ void ViewportsPanel::onViewportConfigurationReplaced(ViewportConfiguration* newV
 ******************************************************************************/
 void ViewportsPanel::onAnimationSettingsReplaced(AnimationSettings* newAnimationSettings)
 {
-	disconnect(_timeChangeCompleteConnection);
-	_animSettings = newAnimationSettings;
+    disconnect(_timeChangeCompleteConnection);
+    _animSettings = newAnimationSettings;
 
-	if(newAnimationSettings) {
-		_timeChangeCompleteConnection = connect(newAnimationSettings, &AnimationSettings::timeChangeComplete, this, &ViewportsPanel::updateViewportWindows);
-	}
+    if(newAnimationSettings) {
+        _timeChangeCompleteConnection = connect(newAnimationSettings, &AnimationSettings::timeChangeComplete, this, &ViewportsPanel::updateViewportWindows);
+    }
 }
 
 /******************************************************************************
@@ -123,12 +123,12 @@ void ViewportsPanel::onAnimationSettingsReplaced(AnimationSettings* newAnimation
 ******************************************************************************/
 void ViewportsPanel::onInputModeChanged(ViewportInputMode* oldMode, ViewportInputMode* newMode)
 {
-	disconnect(_activeModeCursorChangedConnection);
-	if(newMode) {
-		_activeModeCursorChangedConnection = connect(newMode, &ViewportInputMode::curserChanged, this, &ViewportsPanel::viewportModeCursorChanged);
-		viewportModeCursorChanged(newMode->cursor());
-	}
-	else viewportModeCursorChanged(cursor());
+    disconnect(_activeModeCursorChangedConnection);
+    if(newMode) {
+        _activeModeCursorChangedConnection = connect(newMode, &ViewportInputMode::curserChanged, this, &ViewportsPanel::viewportModeCursorChanged);
+        viewportModeCursorChanged(newMode->cursor());
+    }
+    else viewportModeCursorChanged(cursor());
 }
 
 /******************************************************************************
@@ -136,11 +136,11 @@ void ViewportsPanel::onInputModeChanged(ViewportInputMode* oldMode, ViewportInpu
 ******************************************************************************/
 void ViewportsPanel::viewportModeCursorChanged(const QCursor& cursor)
 {
-	if(!_viewportConfig) return;
+    if(!_viewportConfig) return;
 
-	for(ViewportWindowInterface* window : findChildren<QuickViewportWindow*>()) {
-		window->setCursor(cursor);
-	}
+    for(ViewportWindowInterface* window : findChildren<QuickViewportWindow*>()) {
+        window->setCursor(cursor);
+    }
 }
 
 /******************************************************************************
@@ -148,9 +148,9 @@ void ViewportsPanel::viewportModeCursorChanged(const QCursor& cursor)
 ******************************************************************************/
 void ViewportsPanel::updateViewportWindows()
 {
-	for(QuickViewportWindow* window : findChildren<QuickViewportWindow*>()) {
-		window->update();
-	}
+    for(QuickViewportWindow* window : findChildren<QuickViewportWindow*>()) {
+        window->update();
+    }
 }
 
 /******************************************************************************
@@ -158,8 +158,8 @@ void ViewportsPanel::updateViewportWindows()
 ******************************************************************************/
 void ViewportsPanel::geometryChange(const QRectF& newGeometry, const QRectF& oldGeometry)
 {
-	QQuickItem::geometryChange(newGeometry, oldGeometry);
-	layoutViewports();
+    QQuickItem::geometryChange(newGeometry, oldGeometry);
+    layoutViewports();
 }
 
 /******************************************************************************
@@ -167,54 +167,54 @@ void ViewportsPanel::geometryChange(const QRectF& newGeometry, const QRectF& old
 ******************************************************************************/
 void ViewportsPanel::layoutViewports()
 {
-	if(!_viewportConfig) return;
-	const auto& viewports = _viewportConfig->viewports();
-	Viewport* maximizedViewport = _viewportConfig->maximizedViewport();
+    if(!_viewportConfig) return;
+    const auto& viewports = _viewportConfig->viewports();
+    Viewport* maximizedViewport = _viewportConfig->maximizedViewport();
 
-	// Count the number of visible windows.
-	int nvisible = 0;
-	for(Viewport* viewport : viewports) {
-		QuickViewportWindow* vpwin = static_cast<QuickViewportWindow*>(viewport->window());
-		if(!vpwin) continue;
-		if(maximizedViewport == nullptr || maximizedViewport == viewport)
-			nvisible++;
-		else
-			vpwin->setVisible(false);
-	}
-	if(nvisible == 0) return;
+    // Count the number of visible windows.
+    int nvisible = 0;
+    for(Viewport* viewport : viewports) {
+        QuickViewportWindow* vpwin = static_cast<QuickViewportWindow*>(viewport->window());
+        if(!vpwin) continue;
+        if(maximizedViewport == nullptr || maximizedViewport == viewport)
+            nvisible++;
+        else
+            vpwin->setVisible(false);
+    }
+    if(nvisible == 0) return;
 
-	// Compute number of rows/columns
-	int rows = (int)(sqrt((double)nvisible) + 0.5);
-	int columns = (nvisible+rows-1) / rows;
+    // Compute number of rows/columns
+    int rows = (int)(sqrt((double)nvisible) + 0.5);
+    int columns = (nvisible+rows-1) / rows;
 
-	// Get client rect.
-	QRectF clientRect(QPointF(0,0), size());
+    // Get client rect.
+    QRectF clientRect(QPointF(0,0), size());
 
-	// Position items.
-	int count = 0;
-	for(Viewport* viewport : viewports) {
-		QuickViewportWindow* vpwin = static_cast<QuickViewportWindow*>(viewport->window());
-		if(!vpwin) continue;
-		if(maximizedViewport != nullptr && maximizedViewport != viewport)
-			continue;
+    // Position items.
+    int count = 0;
+    for(Viewport* viewport : viewports) {
+        QuickViewportWindow* vpwin = static_cast<QuickViewportWindow*>(viewport->window());
+        if(!vpwin) continue;
+        if(maximizedViewport != nullptr && maximizedViewport != viewport)
+            continue;
 
-		int x = count%columns;
-		int y = count/columns;
-		QRectF rect(clientRect.topLeft(), QSizeF(0,0));
-		rect.translate(clientRect.width() * x / columns, clientRect.height() * y / rows);
-		rect.setWidth((clientRect.width() * (x+1) / columns) - rect.x());
-		rect.setHeight((clientRect.height() * (y+1) / rows) - rect.y());
-		if(x != 0) rect.setLeft(rect.left() + 1.0);
-		if(y != 0) rect.setTop(rect.top() + 1.0);
-		if(x != columns-1) rect.setRight(rect.right() - 1.0);
-		if(y != rows-1) rect.setBottom(rect.bottom() - 1.0);
+        int x = count%columns;
+        int y = count/columns;
+        QRectF rect(clientRect.topLeft(), QSizeF(0,0));
+        rect.translate(clientRect.width() * x / columns, clientRect.height() * y / rows);
+        rect.setWidth((clientRect.width() * (x+1) / columns) - rect.x());
+        rect.setHeight((clientRect.height() * (y+1) / rows) - rect.y());
+        if(x != 0) rect.setLeft(rect.left() + 1.0);
+        if(y != 0) rect.setTop(rect.top() + 1.0);
+        if(x != columns-1) rect.setRight(rect.right() - 1.0);
+        if(y != rows-1) rect.setBottom(rect.bottom() - 1.0);
 
-		vpwin->setX(rect.x());
-		vpwin->setY(rect.y());
-		vpwin->setSize(rect.size());
-		vpwin->setVisible(true);
-		count++;
-	}
+        vpwin->setX(rect.x());
+        vpwin->setY(rect.y());
+        vpwin->setSize(rect.size());
+        vpwin->setVisible(true);
+        count++;
+    }
 }
 
-}	// End of namespace
+}   // End of namespace

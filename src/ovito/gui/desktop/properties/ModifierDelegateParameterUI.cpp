@@ -36,14 +36,14 @@ IMPLEMENT_OVITO_CLASS(ModifierDelegateParameterUI);
 * Constructor.
 ******************************************************************************/
 ModifierDelegateParameterUI::ModifierDelegateParameterUI(PropertiesEditor* parentEditor, const OvitoClass& delegateType) :
-	ParameterUI(parentEditor),
-	_comboBox(new QComboBox()),
-	_delegateType(delegateType)
+    ParameterUI(parentEditor),
+    _comboBox(new QComboBox()),
+    _delegateType(delegateType)
 {
-	connect(comboBox(), &QComboBox::textActivated, this, &ModifierDelegateParameterUI::updatePropertyValue);
+    connect(comboBox(), &QComboBox::textActivated, this, &ModifierDelegateParameterUI::updatePropertyValue);
 
-	// Update the list whenever the pipeline input changes.
-	connect(parentEditor, &PropertiesEditor::pipelineInputChanged, this, &ModifierDelegateParameterUI::updateUI);
+    // Update the list whenever the pipeline input changes.
+    connect(parentEditor, &PropertiesEditor::pipelineInputChanged, this, &ModifierDelegateParameterUI::updateUI);
 }
 
 /******************************************************************************
@@ -51,7 +51,7 @@ ModifierDelegateParameterUI::ModifierDelegateParameterUI(PropertiesEditor* paren
 ******************************************************************************/
 ModifierDelegateParameterUI::~ModifierDelegateParameterUI()
 {
-	delete comboBox();
+    delete comboBox();
 }
 
 /******************************************************************************
@@ -60,10 +60,10 @@ ModifierDelegateParameterUI::~ModifierDelegateParameterUI()
 ******************************************************************************/
 void ModifierDelegateParameterUI::resetUI()
 {
-	ParameterUI::resetUI();
+    ParameterUI::resetUI();
 
-	if(comboBox())
-		comboBox()->setEnabled(editObject() && isEnabled());
+    if(comboBox())
+        comboBox()->setEnabled(editObject() && isEnabled());
 }
 
 /******************************************************************************
@@ -71,13 +71,13 @@ void ModifierDelegateParameterUI::resetUI()
 ******************************************************************************/
 bool ModifierDelegateParameterUI::referenceEvent(RefTarget* source, const ReferenceEvent& event)
 {
-	if(source == editObject() && event.type() == ReferenceEvent::ReferenceChanged &&
-			(static_cast<const ReferenceFieldEvent&>(event).field() == PROPERTY_FIELD(DelegatingModifier::delegate) ||
-			static_cast<const ReferenceFieldEvent&>(event).field() == PROPERTY_FIELD(AsynchronousDelegatingModifier::delegate))) {
-		// The modifier has been assigned a new delegate -> update list of delegates
-		updateUI();
-	}
-	return ParameterUI::referenceEvent(source, event);
+    if(source == editObject() && event.type() == ReferenceEvent::ReferenceChanged &&
+            (static_cast<const ReferenceFieldEvent&>(event).field() == PROPERTY_FIELD(DelegatingModifier::delegate) ||
+            static_cast<const ReferenceFieldEvent&>(event).field() == PROPERTY_FIELD(AsynchronousDelegatingModifier::delegate))) {
+        // The modifier has been assigned a new delegate -> update list of delegates
+        updateUI();
+    }
+    return ParameterUI::referenceEvent(source, event);
 }
 
 /******************************************************************************
@@ -86,14 +86,14 @@ bool ModifierDelegateParameterUI::referenceEvent(RefTarget* source, const Refere
 ******************************************************************************/
 void ModifierDelegateParameterUI::updateUI()
 {
-	ParameterUI::updateUI();
+    ParameterUI::updateUI();
 
-	if(DelegatingModifier* modifier = dynamic_object_cast<DelegatingModifier>(editObject())) {
-		populateComboBox(comboBox(), editor(), modifier, modifier->delegate(), modifier->delegate() ? modifier->delegate()->inputDataObject() : DataObjectReference(), _delegateType);
-	}
-	else if(AsynchronousDelegatingModifier* modifier = dynamic_object_cast<AsynchronousDelegatingModifier>(editObject())) {
-		populateComboBox(comboBox(), editor(), modifier, modifier->delegate(), modifier->delegate() ? modifier->delegate()->inputDataObject() : DataObjectReference(), _delegateType);
-	}
+    if(DelegatingModifier* modifier = dynamic_object_cast<DelegatingModifier>(editObject())) {
+        populateComboBox(comboBox(), editor(), modifier, modifier->delegate(), modifier->delegate() ? modifier->delegate()->inputDataObject() : DataObjectReference(), _delegateType);
+    }
+    else if(AsynchronousDelegatingModifier* modifier = dynamic_object_cast<AsynchronousDelegatingModifier>(editObject())) {
+        populateComboBox(comboBox(), editor(), modifier, modifier->delegate(), modifier->delegate() ? modifier->delegate()->inputDataObject() : DataObjectReference(), _delegateType);
+    }
 }
 
 /******************************************************************************
@@ -101,104 +101,104 @@ void ModifierDelegateParameterUI::updateUI()
 ******************************************************************************/
 void ModifierDelegateParameterUI::populateComboBox(QComboBox* comboBox, PropertiesEditor* editor, Modifier* modifier, RefTarget* delegate, const DataObjectReference& inputDataObject, const OvitoClass& delegateType)
 {
-	OVITO_ASSERT(!delegate || delegateType.isMember(delegate));
+    OVITO_ASSERT(!delegate || delegateType.isMember(delegate));
 
-	if(modifier) {
-		comboBox->clear();
+    if(modifier) {
+        comboBox->clear();
 #ifdef Q_OS_WIN
-		comboBox->setIconSize(QSize(16,16));
+        comboBox->setIconSize(QSize(16,16));
 #endif
 
-		// Obtain pipeline inputs.
-		std::vector<PipelineFlowState> pipelineInputs = editor->getPipelineInputs();
+        // Obtain pipeline inputs.
+        std::vector<PipelineFlowState> pipelineInputs = editor->getPipelineInputs();
 
-		// Add list items for the registered delegate classes.
-		int indexToBeSelected = -1;
-		const QStandardItemModel* model = qobject_cast<const QStandardItemModel*>(comboBox->model());
-		for(const OvitoClassPtr& clazz : PluginManager::instance().listClasses(delegateType)) {
+        // Add list items for the registered delegate classes.
+        int indexToBeSelected = -1;
+        const QStandardItemModel* model = qobject_cast<const QStandardItemModel*>(comboBox->model());
+        for(const OvitoClassPtr& clazz : PluginManager::instance().listClasses(delegateType)) {
 
-			// Collect the set of data objects in the modifier's pipeline input this delegate can handle.
-			QVector<DataObjectReference> applicableObjects;
-			for(const PipelineFlowState& state : pipelineInputs) {
-				if(!state) continue;
+            // Collect the set of data objects in the modifier's pipeline input this delegate can handle.
+            QVector<DataObjectReference> applicableObjects;
+            for(const PipelineFlowState& state : pipelineInputs) {
+                if(!state) continue;
 
-				// Query the delegate for the list of input data objects it can handle.
-				QVector<DataObjectReference> objList;
-				if(clazz->isDerivedFrom(ModifierDelegate::OOClass()))
-					objList = static_cast<const ModifierDelegate::OOMetaClass*>(clazz)->getApplicableObjects(*state.data());
+                // Query the delegate for the list of input data objects it can handle.
+                QVector<DataObjectReference> objList;
+                if(clazz->isDerivedFrom(ModifierDelegate::OOClass()))
+                    objList = static_cast<const ModifierDelegate::OOMetaClass*>(clazz)->getApplicableObjects(*state.data());
 
-				// Combine the delegate's list with the existing list.
-				// Make sure no data object appears more than once.
-				if(applicableObjects.empty()) {
-					applicableObjects = std::move(objList);
-				}
-				else {
-					for(const DataObjectReference& ref : objList) {
-						if(!applicableObjects.contains(ref))
-							applicableObjects.push_back(ref);
-					}
-				}
-			}
+                // Combine the delegate's list with the existing list.
+                // Make sure no data object appears more than once.
+                if(applicableObjects.empty()) {
+                    applicableObjects = std::move(objList);
+                }
+                else {
+                    for(const DataObjectReference& ref : objList) {
+                        if(!applicableObjects.contains(ref))
+                            applicableObjects.push_back(ref);
+                    }
+                }
+            }
 
-			if(!applicableObjects.empty()) {
-				// Add an extra item to the list box for every data object that the delegate can handle.
-				for(const DataObjectReference& ref : applicableObjects) {
-					comboBox->addItem(ref.dataTitle().isEmpty() ? clazz->displayName() : ref.dataTitle(), QVariant::fromValue(clazz));
-					comboBox->setItemData(comboBox->count() - 1, QVariant::fromValue(ref), Qt::UserRole + 1);
-					if(delegate && &delegate->getOOClass() == clazz && (inputDataObject == ref || !inputDataObject)) {
-						indexToBeSelected = comboBox->count() - 1;
-					}
-				}
-			}
-			else {
-				// Even if this delegate cannot handle the input data, still show it in the list box as a disabled item.
-				comboBox->addItem(clazz->displayName(), QVariant::fromValue(clazz));
-				if(delegate && &delegate->getOOClass() == clazz)
-					indexToBeSelected = comboBox->count() - 1;
-				model->item(comboBox->count() - 1)->setEnabled(false);
-			}
-		}
+            if(!applicableObjects.empty()) {
+                // Add an extra item to the list box for every data object that the delegate can handle.
+                for(const DataObjectReference& ref : applicableObjects) {
+                    comboBox->addItem(ref.dataTitle().isEmpty() ? clazz->displayName() : ref.dataTitle(), QVariant::fromValue(clazz));
+                    comboBox->setItemData(comboBox->count() - 1, QVariant::fromValue(ref), Qt::UserRole + 1);
+                    if(delegate && &delegate->getOOClass() == clazz && (inputDataObject == ref || !inputDataObject)) {
+                        indexToBeSelected = comboBox->count() - 1;
+                    }
+                }
+            }
+            else {
+                // Even if this delegate cannot handle the input data, still show it in the list box as a disabled item.
+                comboBox->addItem(clazz->displayName(), QVariant::fromValue(clazz));
+                if(delegate && &delegate->getOOClass() == clazz)
+                    indexToBeSelected = comboBox->count() - 1;
+                model->item(comboBox->count() - 1)->setEnabled(false);
+            }
+        }
 
-		// Select the right item in the list box.
-		static QIcon warningIcon(QStringLiteral(":/guibase/mainwin/status/status_warning.png"));
-		if(delegate) {
-			if(indexToBeSelected < 0) {
-				if(delegate && inputDataObject) {
-					// Add a place-holder item if the selected data object does not exist anymore.
-					QString title = inputDataObject.dataTitle();
-					if(title.isEmpty() && inputDataObject.dataClass())
-						title = inputDataObject.dataClass()->displayName();
-					title += tr(" (not available)");
-					comboBox->addItem(title, QVariant::fromValue(QVariant::fromValue(&delegate->getOOClass())));
-					QStandardItem* item = static_cast<QStandardItemModel*>(comboBox->model())->item(comboBox->count()-1);
-					item->setIcon(warningIcon);
-				}
-				else if(comboBox->count() != 0) {
-					comboBox->addItem(tr("<Please select a data object>"));
-				}
-				indexToBeSelected = comboBox->count() - 1;
-			}
-			if(comboBox->count() == 0) {
-				comboBox->addItem(tr("<No inputs available>"));
-				QStandardItem* item = static_cast<QStandardItemModel*>(comboBox->model())->item(0);
-				item->setIcon(warningIcon);
-				indexToBeSelected = 0;
-			}
-		}
-		else {
-			if(comboBox->count() != 0)
-				comboBox->addItem(tr("<Please select a data object>"));
-			else
-				comboBox->addItem(tr("<None>"));
-			indexToBeSelected = comboBox->count() - 1;
-			QStandardItem* item = static_cast<QStandardItemModel*>(comboBox->model())->item(indexToBeSelected);
-			item->setIcon(warningIcon);
-		}
-		comboBox->setCurrentIndex(indexToBeSelected);
-	}
-	else if(comboBox) {
-		comboBox->clear();
-	}
+        // Select the right item in the list box.
+        static QIcon warningIcon(QStringLiteral(":/guibase/mainwin/status/status_warning.png"));
+        if(delegate) {
+            if(indexToBeSelected < 0) {
+                if(delegate && inputDataObject) {
+                    // Add a place-holder item if the selected data object does not exist anymore.
+                    QString title = inputDataObject.dataTitle();
+                    if(title.isEmpty() && inputDataObject.dataClass())
+                        title = inputDataObject.dataClass()->displayName();
+                    title += tr(" (not available)");
+                    comboBox->addItem(title, QVariant::fromValue(QVariant::fromValue(&delegate->getOOClass())));
+                    QStandardItem* item = static_cast<QStandardItemModel*>(comboBox->model())->item(comboBox->count()-1);
+                    item->setIcon(warningIcon);
+                }
+                else if(comboBox->count() != 0) {
+                    comboBox->addItem(tr("<Please select a data object>"));
+                }
+                indexToBeSelected = comboBox->count() - 1;
+            }
+            if(comboBox->count() == 0) {
+                comboBox->addItem(tr("<No inputs available>"));
+                QStandardItem* item = static_cast<QStandardItemModel*>(comboBox->model())->item(0);
+                item->setIcon(warningIcon);
+                indexToBeSelected = 0;
+            }
+        }
+        else {
+            if(comboBox->count() != 0)
+                comboBox->addItem(tr("<Please select a data object>"));
+            else
+                comboBox->addItem(tr("<None>"));
+            indexToBeSelected = comboBox->count() - 1;
+            QStandardItem* item = static_cast<QStandardItemModel*>(comboBox->model())->item(indexToBeSelected);
+            item->setIcon(warningIcon);
+        }
+        comboBox->setCurrentIndex(indexToBeSelected);
+    }
+    else if(comboBox) {
+        comboBox->clear();
+    }
 }
 
 /******************************************************************************
@@ -207,35 +207,35 @@ void ModifierDelegateParameterUI::populateComboBox(QComboBox* comboBox, Properti
 ******************************************************************************/
 void ModifierDelegateParameterUI::updatePropertyValue()
 {
-	Modifier* mod = dynamic_object_cast<Modifier>(editObject());
-	if(comboBox() && mod) {
-		performTransaction(tr("Change input type"), [this,mod]() {
-			if(OvitoClassPtr delegateType = comboBox()->currentData().value<OvitoClassPtr>()) {
-				DataObjectReference ref = comboBox()->currentData(Qt::UserRole + 1).value<DataObjectReference>();
-				if(DelegatingModifier* delegatingMod = dynamic_object_cast<DelegatingModifier>(mod)) {
-					if(delegatingMod->delegate() == nullptr || &delegatingMod->delegate()->getOOClass() != delegateType || delegatingMod->delegate()->inputDataObject() != ref) {
-						// Create the new delegate object.
-						OORef<ModifierDelegate> delegate = static_object_cast<ModifierDelegate>(delegateType->createInstance());
-						// Set which input data object the delegate should operate on.
-						delegate->setInputDataObject(ref);
-						// Activate the new delegate.
-						delegatingMod->setDelegate(std::move(delegate));
-					}
-				}
-				else if(AsynchronousDelegatingModifier* delegatingMod = dynamic_object_cast<AsynchronousDelegatingModifier>(mod)) {
-					if(delegatingMod->delegate() == nullptr || &delegatingMod->delegate()->getOOClass() != delegateType || delegatingMod->delegate()->inputDataObject() != ref) {
-						// Create the new delegate object.
-						OORef<ModifierDelegate> delegate = static_object_cast<ModifierDelegate>(delegateType->createInstance());
-						// Set which input data object the delegate should operate on.
-						delegate->setInputDataObject(ref);
-						// Activate the new delegate.
-						delegatingMod->setDelegate(std::move(delegate));
-					}
-				}
-			}
-			Q_EMIT valueEntered();
-		});
-	}
+    Modifier* mod = dynamic_object_cast<Modifier>(editObject());
+    if(comboBox() && mod) {
+        performTransaction(tr("Change input type"), [this,mod]() {
+            if(OvitoClassPtr delegateType = comboBox()->currentData().value<OvitoClassPtr>()) {
+                DataObjectReference ref = comboBox()->currentData(Qt::UserRole + 1).value<DataObjectReference>();
+                if(DelegatingModifier* delegatingMod = dynamic_object_cast<DelegatingModifier>(mod)) {
+                    if(delegatingMod->delegate() == nullptr || &delegatingMod->delegate()->getOOClass() != delegateType || delegatingMod->delegate()->inputDataObject() != ref) {
+                        // Create the new delegate object.
+                        OORef<ModifierDelegate> delegate = static_object_cast<ModifierDelegate>(delegateType->createInstance());
+                        // Set which input data object the delegate should operate on.
+                        delegate->setInputDataObject(ref);
+                        // Activate the new delegate.
+                        delegatingMod->setDelegate(std::move(delegate));
+                    }
+                }
+                else if(AsynchronousDelegatingModifier* delegatingMod = dynamic_object_cast<AsynchronousDelegatingModifier>(mod)) {
+                    if(delegatingMod->delegate() == nullptr || &delegatingMod->delegate()->getOOClass() != delegateType || delegatingMod->delegate()->inputDataObject() != ref) {
+                        // Create the new delegate object.
+                        OORef<ModifierDelegate> delegate = static_object_cast<ModifierDelegate>(delegateType->createInstance());
+                        // Set which input data object the delegate should operate on.
+                        delegate->setInputDataObject(ref);
+                        // Activate the new delegate.
+                        delegatingMod->setDelegate(std::move(delegate));
+                    }
+                }
+            }
+            Q_EMIT valueEntered();
+        });
+    }
 }
 
 /******************************************************************************
@@ -243,11 +243,11 @@ void ModifierDelegateParameterUI::updatePropertyValue()
 ******************************************************************************/
 void ModifierDelegateParameterUI::setEnabled(bool enabled)
 {
-	if(enabled == isEnabled()) 
-		return;
-	ParameterUI::setEnabled(enabled);
-	if(comboBox()) 
-		comboBox()->setEnabled(editObject() && isEnabled());
+    if(enabled == isEnabled()) 
+        return;
+    ParameterUI::setEnabled(enabled);
+    if(comboBox()) 
+        comboBox()->setEnabled(editObject() && isEnabled());
 }
 
-}	// End of namespace
+}   // End of namespace

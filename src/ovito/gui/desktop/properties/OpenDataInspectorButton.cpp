@@ -32,21 +32,21 @@ namespace Ovito {
 * Constructor.
 ******************************************************************************/
 OpenDataInspectorButton::OpenDataInspectorButton(PropertiesEditor* editor, const QString& buttonTitle, const QString& objectNameHint, const QVariant& modeHint)
-	: QPushButton(buttonTitle), _editor(editor), _objectNameHint(objectNameHint), _modeHint(modeHint)
+    : QPushButton(buttonTitle), _editor(editor), _objectNameHint(objectNameHint), _modeHint(modeHint)
 {
-	connect(this, &QPushButton::clicked, [this]() {
-		if(!this->editor()->modifierApplication() || !this->editor()->modifierApplication()->modifier() || !this->editor()->modifierApplication()->modifier()->isEnabled()) {
-			QToolTip::showText(mapToGlobal(QPoint(0, height()/2)), tr("No results available, because modifier is turned off."), 
-				this->editor()->container(), this->editor()->container()->rect(), 3000);
-		}
-		else if(!this->editor()->mainWindow().openDataInspector(this->editor()->modifierApplication(), _objectNameHint, _modeHint)) {
-			QToolTip::showText(mapToGlobal(QPoint(0, height()/2)), tr("Results not available yet. Try again later."), 
-				this->editor()->container(), this->editor()->container()->rect(), 3000);
-		}
-		else {
-			QToolTip::hideText();
-		}
-	});
+    connect(this, &QPushButton::clicked, [this]() {
+        if(!this->editor()->modifierApplication() || !this->editor()->modifierApplication()->modifier() || !this->editor()->modifierApplication()->modifier()->isEnabled()) {
+            QToolTip::showText(mapToGlobal(QPoint(0, height()/2)), tr("No results available, because modifier is turned off."), 
+                this->editor()->container(), this->editor()->container()->rect(), 3000);
+        }
+        else if(!this->editor()->mainWindow().openDataInspector(this->editor()->modifierApplication(), _objectNameHint, _modeHint)) {
+            QToolTip::showText(mapToGlobal(QPoint(0, height()/2)), tr("Results not available yet. Try again later."), 
+                this->editor()->container(), this->editor()->container()->rect(), 3000);
+        }
+        else {
+            QToolTip::hideText();
+        }
+    });
 }
 
-}	// End of namespace
+}   // End of namespace

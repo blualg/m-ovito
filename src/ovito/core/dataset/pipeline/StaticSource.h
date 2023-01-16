@@ -34,33 +34,33 @@ namespace Ovito {
  */
 class OVITO_CORE_EXPORT StaticSource : public PipelineObject
 {
-	OVITO_CLASS(StaticSource)
-	Q_CLASSINFO("DisplayName", "Pipeline source");
+    OVITO_CLASS(StaticSource)
+    Q_CLASSINFO("DisplayName", "Pipeline source");
 
 public:
 
-	/// \brief Standard constructor.
-	Q_INVOKABLE StaticSource(ObjectCreationParams params, DataCollection* data = nullptr);
+    /// \brief Standard constructor.
+    Q_INVOKABLE StaticSource(ObjectCreationParams params, DataCollection* data = nullptr);
 
-	/// \brief Asks the object for the result of the data pipeline.
-	virtual SharedFuture<PipelineFlowState> evaluate(const PipelineEvaluationRequest& request) override;
+    /// \brief Asks the object for the result of the data pipeline.
+    virtual SharedFuture<PipelineFlowState> evaluate(const PipelineEvaluationRequest& request) override;
 
-	/// \brief Returns the results of an immediate and preliminary evaluation of the data pipeline.
-	virtual PipelineFlowState evaluateSynchronous(const PipelineEvaluationRequest& request) override;
+    /// \brief Returns the results of an immediate and preliminary evaluation of the data pipeline.
+    virtual PipelineFlowState evaluateSynchronous(const PipelineEvaluationRequest& request) override;
 
-	/// Returns the list of data objects that are managed by this data source.
-	/// The returned data objects will be displayed as sub-objects of the data source in the pipeline editor.
-	virtual const DataCollection* getSourceDataCollection() const override { return dataCollection(); }
+    /// Returns the list of data objects that are managed by this data source.
+    /// The returned data objects will be displayed as sub-objects of the data source in the pipeline editor.
+    virtual const DataCollection* getSourceDataCollection() const override { return dataCollection(); }
 
 protected:
 
-	/// Handles reference events sent by reference targets of this object.
-	virtual bool referenceEvent(RefTarget* source, const ReferenceEvent& event) override;
+    /// Handles reference events sent by reference targets of this object.
+    virtual bool referenceEvent(RefTarget* source, const ReferenceEvent& event) override;
 
 private:
 
-	/// The data collection owned by this source.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD(DataOORef<const DataCollection>, dataCollection, setDataCollection);
+    /// The data collection owned by this source.
+    DECLARE_MODIFIABLE_REFERENCE_FIELD(DataOORef<const DataCollection>, dataCollection, setDataCollection);
 };
 
-}	// End of namespace
+}   // End of namespace

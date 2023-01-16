@@ -35,73 +35,73 @@ namespace Ovito::CrystalAnalysis {
  */
 class OVITO_CRYSTALANALYSIS_EXPORT MicrostructurePhase : public ElementType
 {
-	OVITO_CLASS(MicrostructurePhase)
+    OVITO_CLASS(MicrostructurePhase)
 
 public:
 
-	/// The dimensionality of the structure.
-	enum Dimensionality {
-		None,			///< None of the types below
-		Volumetric,		///< Volumetric phase
-		Planar,			///< Planar interface, grain boundary, stacking fault, etc.
-		Pointlike		///< Zero-dimensional defect
-	};
-	Q_ENUM(Dimensionality);
+    /// The dimensionality of the structure.
+    enum Dimensionality {
+        None,           ///< None of the types below
+        Volumetric,     ///< Volumetric phase
+        Planar,         ///< Planar interface, grain boundary, stacking fault, etc.
+        Pointlike       ///< Zero-dimensional defect
+    };
+    Q_ENUM(Dimensionality);
 
-	/// The type of symmetry of the crystal lattice.
-	enum CrystalSymmetryClass {
-		NoSymmetry,			///< Unknown or no crystal symmetry.
-		CubicSymmetry,		///< Used for cubic crystals like FCC, BCC, diamond.
-		HexagonalSymmetry	///< Used for hexagonal crystals like HCP, hexagonal diamond.
-	};
-	Q_ENUM(CrystalSymmetryClass);
+    /// The type of symmetry of the crystal lattice.
+    enum CrystalSymmetryClass {
+        NoSymmetry,         ///< Unknown or no crystal symmetry.
+        CubicSymmetry,      ///< Used for cubic crystals like FCC, BCC, diamond.
+        HexagonalSymmetry   ///< Used for hexagonal crystals like HCP, hexagonal diamond.
+    };
+    Q_ENUM(CrystalSymmetryClass);
 
 public:
 
-	/// Standard constructor.
-	Q_INVOKABLE MicrostructurePhase(ObjectCreationParams params);
+    /// Standard constructor.
+    Q_INVOKABLE MicrostructurePhase(ObjectCreationParams params);
 
-	/// Returns the lotitleng name of this phase.
-	const QString& longName() const { return name(); }
+    /// Returns the lotitleng name of this phase.
+    const QString& longName() const { return name(); }
 
-	/// Assigns a long title to this phase.
-	void setLongName(const QString& name) { setName(name); }
+    /// Assigns a long title to this phase.
+    void setLongName(const QString& name) { setName(name); }
 
-	/// Adds a new family to this phase's list of Burgers vector families.
-	void addBurgersVectorFamily(const BurgersVectorFamily* family) { _burgersVectorFamilies.push_back(this, PROPERTY_FIELD(burgersVectorFamilies), family); }
+    /// Adds a new family to this phase's list of Burgers vector families.
+    void addBurgersVectorFamily(const BurgersVectorFamily* family) { _burgersVectorFamilies.push_back(this, PROPERTY_FIELD(burgersVectorFamilies), family); }
 
-	/// Removes a family from this lattice pattern's list of Burgers vector families.
-	void removeBurgersVectorFamily(int index) { _burgersVectorFamilies.remove(this, PROPERTY_FIELD(burgersVectorFamilies), index); }
+    /// Removes a family from this lattice pattern's list of Burgers vector families.
+    void removeBurgersVectorFamily(int index) { _burgersVectorFamilies.remove(this, PROPERTY_FIELD(burgersVectorFamilies), index); }
 
-	/// Returns the default Burgers vector family, which is assigned to dislocation segments that
-	/// don't belong to any family.
-	const BurgersVectorFamily* defaultBurgersVectorFamily() const { return !burgersVectorFamilies().empty() ? burgersVectorFamilies().front() : nullptr; }
+    /// Returns the default Burgers vector family, which is assigned to dislocation segments that
+    /// don't belong to any family.
+    const BurgersVectorFamily* defaultBurgersVectorFamily() const { return !burgersVectorFamilies().empty() ? burgersVectorFamilies().front() : nullptr; }
 
-	/// Returns the display color to be used for a given Burgers vector.
-	static Color getBurgersVectorColor(const QString& latticeName, const Vector3& b);
+    /// Returns the display color to be used for a given Burgers vector.
+    static Color getBurgersVectorColor(const QString& latticeName, const Vector3& b);
 
-	/// Returns the display color to be used for a given Burgers vector.
-	static Color getBurgersVectorColor(ParticleType::PredefinedStructureType structureType, const Vector3& b);
+    /// Returns the display color to be used for a given Burgers vector.
+    static Color getBurgersVectorColor(ParticleType::PredefinedStructureType structureType, const Vector3& b);
 
-	/// Creates an editable proxy object for this DataObject and synchronizes its parameters.
-	virtual void updateEditableProxies(PipelineFlowState& state, ConstDataObjectPath& dataPath) const override;
+    /// Creates an editable proxy object for this DataObject and synchronizes its parameters.
+    virtual void updateEditableProxies(PipelineFlowState& state, ConstDataObjectPath& dataPath) const override;
 
 private:
 
-	/// The shortened title of this phase.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD(QString, shortName, setShortName);
-	DECLARE_SHADOW_PROPERTY_FIELD(shortName);
+    /// The shortened title of this phase.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(QString, shortName, setShortName);
+    DECLARE_SHADOW_PROPERTY_FIELD(shortName);
 
-	/// The dimensionality type of the phase.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD(Dimensionality, dimensionality, setDimensionality);
-	DECLARE_SHADOW_PROPERTY_FIELD(dimensionality);
+    /// The dimensionality type of the phase.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(Dimensionality, dimensionality, setDimensionality);
+    DECLARE_SHADOW_PROPERTY_FIELD(dimensionality);
 
-	/// The type of crystal symmetry of the phase if it is crystalline.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD(CrystalSymmetryClass, crystalSymmetryClass, setCrystalSymmetryClass);
-	DECLARE_SHADOW_PROPERTY_FIELD(crystalSymmetryClass);
+    /// The type of crystal symmetry of the phase if it is crystalline.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(CrystalSymmetryClass, crystalSymmetryClass, setCrystalSymmetryClass);
+    DECLARE_SHADOW_PROPERTY_FIELD(crystalSymmetryClass);
 
-	/// List of Burgers vector families defined for the phase if it is crystalline.
-	DECLARE_MODIFIABLE_VECTOR_REFERENCE_FIELD(DataOORef<const BurgersVectorFamily>, burgersVectorFamilies, setBurgersVectorFamilies);
+    /// List of Burgers vector families defined for the phase if it is crystalline.
+    DECLARE_MODIFIABLE_VECTOR_REFERENCE_FIELD(DataOORef<const BurgersVectorFamily>, burgersVectorFamilies, setBurgersVectorFamilies);
 };
 
-}	// End of namespace
+}   // End of namespace

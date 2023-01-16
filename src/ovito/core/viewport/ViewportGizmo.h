@@ -35,25 +35,25 @@ class ViewportGizmo
 {
 public:
 
-	/// \brief Lets the input mode render its 3d overlay content in a viewport.
-	/// \param vp The viewport into which the mode should render its specific overlay content.
-	/// \param renderer The renderer that should be used to display the overlay.
-	///
-	/// This method is called by the system every time the viewports are redrawn and this input
-	/// mode is on the input mode stack.
-	///
-	/// The default implementation of this method does nothing.
-	virtual void renderOverlay3D(Viewport* vp, SceneRenderer* renderer) {}
+    /// \brief Lets the input mode render its 3d overlay content in a viewport.
+    /// \param vp The viewport into which the mode should render its specific overlay content.
+    /// \param renderer The renderer that should be used to display the overlay.
+    ///
+    /// This method is called by the system every time the viewports are redrawn and this input
+    /// mode is on the input mode stack.
+    ///
+    /// The default implementation of this method does nothing.
+    virtual void renderOverlay3D(Viewport* vp, SceneRenderer* renderer) {}
 
-	/// \brief Lets the input mode render its 2d overlay content in a viewport.
-	/// \param vp The viewport into which the mode should render its specific overlay content.
-	/// \param renderer The renderer that should be used to display the overlay.
-	///
-	/// This method is called by the system every time the viewports are redrawn and this input
-	/// mode is on the input mode stack.
-	///
-	/// The default implementation of this method does nothing.
-	virtual void renderOverlay2D(Viewport* vp, SceneRenderer* renderer) {}
+    /// \brief Lets the input mode render its 2d overlay content in a viewport.
+    /// \param vp The viewport into which the mode should render its specific overlay content.
+    /// \param renderer The renderer that should be used to display the overlay.
+    ///
+    /// This method is called by the system every time the viewports are redrawn and this input
+    /// mode is on the input mode stack.
+    ///
+    /// The default implementation of this method does nothing.
+    virtual void renderOverlay2D(Viewport* vp, SceneRenderer* renderer) {}
 };
 
-}	// End of namespace
+}   // End of namespace

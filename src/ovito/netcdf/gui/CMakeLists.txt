@@ -22,9 +22,9 @@
 
 # Define the GUI module, which provides the user interface for the parent module.
 OVITO_STANDARD_PLUGIN(NetCDFPluginGui
-	SOURCES
-		AMBERNetCDFImporterEditor.cpp
-	PLUGIN_DEPENDENCIES NetCDFPlugin ParticlesGui
-	GUI_PLUGIN
-	HAS_NO_EXPORTS
+    SOURCES
+        AMBERNetCDFImporterEditor.cpp
+    PLUGIN_DEPENDENCIES NetCDFPlugin ParticlesGui
+    GUI_PLUGIN
+    HAS_NO_EXPORTS
 )

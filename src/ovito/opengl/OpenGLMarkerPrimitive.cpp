@@ -31,55 +31,55 @@ namespace Ovito {
 ******************************************************************************/
 void OpenGLSceneRenderer::renderMarkersImplementation(const MarkerPrimitive& primitive)
 {
-	OVITO_REPORT_OPENGL_ERRORS(this);
+    OVITO_REPORT_OPENGL_ERRORS(this);
 
-	// Step out early if there is nothing to render.
-	if(!primitive.positions() || primitive.positions()->size() == 0)
-		return;
+    // Step out early if there is nothing to render.
+    if(!primitive.positions() || primitive.positions()->size() == 0)
+        return;
 
-	rebindVAO();
+    rebindVAO();
 
-	OpenGLShaderHelper shader(this);
-	switch(primitive.shape()) {
-	
-	case MarkerPrimitive::BoxShape:
+    OpenGLShaderHelper shader(this);
+    switch(primitive.shape()) {
+    
+    case MarkerPrimitive::BoxShape:
 
-		if(isPicking())
-			shader.load("marker_box", "marker/marker_box.vert", "marker/marker_box.frag");
-		else
-			shader.load("marker_box_picking", "marker/marker_box_picking.vert", "marker/marker_box_picking.frag");
-		shader.setVerticesPerInstance(24); // 12 edges of a wireframe cube, 2 vertices per edge.
-		break;
+        if(isPicking())
+            shader.load("marker_box", "marker/marker_box.vert", "marker/marker_box.frag");
+        else
+            shader.load("marker_box_picking", "marker/marker_box_picking.vert", "marker/marker_box_picking.frag");
+        shader.setVerticesPerInstance(24); // 12 edges of a wireframe cube, 2 vertices per edge.
+        break;
 
-	default:
-		return;
-	}
-	shader.setInstanceCount(primitive.positions()->size());
+    default:
+        return;
+    }
+    shader.setInstanceCount(primitive.positions()->size());
 
     // Are we rendering semi-transparent markers?
     bool useBlending = !isPicking() && primitive.color().a() < 1.0;
-	if(useBlending) shader.enableBlending();
+    if(useBlending) shader.enableBlending();
 
-	if(isPicking()) {
-		// Pass picking base ID to shader.
-		shader.setPickingBaseId(registerSubObjectIDs(primitive.positions()->size()));
-	}
-	else {
-		// Pass uniform marker color to fragment shader as a uniform value.
-		shader.setUniformValue("color", primitive.color());
-	}
+    if(isPicking()) {
+        // Pass picking base ID to shader.
+        shader.setPickingBaseId(registerSubObjectIDs(primitive.positions()->size()));
+    }
+    else {
+        // Pass uniform marker color to fragment shader as a uniform value.
+        shader.setUniformValue("color", primitive.color());
+    }
 
-	// Marker sclaing factor:
-	shader.setUniformValue("marker_size", 4.0 / viewportRect().height());
+    // Marker sclaing factor:
+    shader.setUniformValue("marker_size", 4.0 / viewportRect().height());
 
-	// Upload marker positions.
-	QOpenGLBuffer positionsBuffer = shader.uploadDataBuffer(primitive.positions(), OpenGLShaderHelper::PerInstance);
-	shader.bindBuffer(positionsBuffer, "position", GL_FLOAT, 3, sizeof(Point_3<float>), 0, OpenGLShaderHelper::PerInstance);
+    // Upload marker positions.
+    QOpenGLBuffer positionsBuffer = shader.uploadDataBuffer(primitive.positions(), OpenGLShaderHelper::PerInstance);
+    shader.bindBuffer(positionsBuffer, "position", GL_FLOAT, 3, sizeof(Point_3<float>), 0, OpenGLShaderHelper::PerInstance);
 
-	// Issue instance drawing command.
-	shader.drawArrays(GL_LINES);
+    // Issue instance drawing command.
+    shader.drawArrays(GL_LINES);
 
-	OVITO_REPORT_OPENGL_ERRORS(this);
+    OVITO_REPORT_OPENGL_ERRORS(this);
 }
 
-}	// End of namespace
+}   // End of namespace

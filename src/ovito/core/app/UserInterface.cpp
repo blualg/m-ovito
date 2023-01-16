@@ -38,8 +38,8 @@ namespace Ovito {
 ******************************************************************************/
 void UserInterface::exitWithFatalError(const Exception& ex) 
 {
-	reportError(ex, true);
-	QCoreApplication::exit(1);
+    reportError(ex, true);
+    QCoreApplication::exit(1);
 }
 
 /******************************************************************************
@@ -47,9 +47,9 @@ void UserInterface::exitWithFatalError(const Exception& ex)
 ******************************************************************************/
 void UserInterface::reportError(const Exception& ex, bool blocking)
 {
-	for(auto msg = ex.messages().crbegin(); msg != ex.messages().crend(); ++msg) {
-		qInfo().noquote() << "ERROR:" << *msg;
-	}
+    for(auto msg = ex.messages().crbegin(); msg != ex.messages().crend(); ++msg) {
+        qInfo().noquote() << "ERROR:" << *msg;
+    }
 }
 
 /******************************************************************************
@@ -58,14 +58,14 @@ void UserInterface::reportError(const Exception& ex, bool blocking)
 ******************************************************************************/
 bool UserInterface::processEvents()
 {
-	// While control is in the event loop, no context should be active.
-	// Temporarily switch back to null contexts here.
-	ExecutionContext::Scope execScope(ExecutionContext{});
-	Task::Scope taskScope(nullptr);
-	UndoSuspender noUndo;
+    // While control is in the event loop, no context should be active.
+    // Temporarily switch back to null contexts here.
+    ExecutionContext::Scope execScope(ExecutionContext{});
+    Task::Scope taskScope(nullptr);
+    UndoSuspender noUndo;
 
-	QCoreApplication::processEvents();
-	return false;
+    QCoreApplication::processEvents();
+    return false;
 }
 
 /******************************************************************************
@@ -73,7 +73,7 @@ bool UserInterface::processEvents()
 ******************************************************************************/
 std::shared_ptr<FrameBuffer> UserInterface::createAndShowFrameBuffer(int width, int height, bool showRenderingOperationProgress) 
 { 
-	return std::make_shared<FrameBuffer>(width, height);
+    return std::make_shared<FrameBuffer>(width, height);
 }
 
 /******************************************************************************
@@ -81,8 +81,8 @@ std::shared_ptr<FrameBuffer> UserInterface::createAndShowFrameBuffer(int width, 
 ******************************************************************************/
 bool UserInterface::isShuttingDown() const
 {
-	// If the application is closing down, the current dataset has been removed from the container.
-	return datasetContainer().currentSet() == nullptr;
+    // If the application is closing down, the current dataset has been removed from the container.
+    return datasetContainer().currentSet() == nullptr;
 }
 
 /******************************************************************************
@@ -91,15 +91,15 @@ bool UserInterface::isShuttingDown() const
 ******************************************************************************/
 void UserInterface::processViewportUpdateRequests()
 {
-	if(areViewportUpdatesSuspended())
-		return;
+    if(areViewportUpdatesSuspended())
+        return;
 
-	if(DataSet* dataset = datasetContainer().currentSet()) {
-		if(ViewportConfiguration* viewportConfig = dataset->viewportConfig()) {
-			for(Viewport* vp : viewportConfig->viewports())
-				vp->processUpdateRequest();
-		}
-	}
+    if(DataSet* dataset = datasetContainer().currentSet()) {
+        if(ViewportConfiguration* viewportConfig = dataset->viewportConfig()) {
+            for(Viewport* vp : viewportConfig->viewports())
+                vp->processUpdateRequest();
+        }
+    }
 }
 
 /******************************************************************************
@@ -107,19 +107,19 @@ void UserInterface::processViewportUpdateRequests()
 ******************************************************************************/
 void UserInterface::updateViewports()
 {
-	// Check if viewport updates are suppressed.
-	if(areViewportUpdatesSuspended()) {
-		_viewportsNeedUpdate = true;
-		return;
-	}
-	_viewportsNeedUpdate = false;
+    // Check if viewport updates are suppressed.
+    if(areViewportUpdatesSuspended()) {
+        _viewportsNeedUpdate = true;
+        return;
+    }
+    _viewportsNeedUpdate = false;
 
-	if(DataSet* dataset = datasetContainer().currentSet()) {
-		if(ViewportConfiguration* viewportConfig = dataset->viewportConfig()) {
-			for(Viewport* vp : viewportConfig->viewports())
-				vp->updateViewport();
-		}
-	}
+    if(DataSet* dataset = datasetContainer().currentSet()) {
+        if(ViewportConfiguration* viewportConfig = dataset->viewportConfig()) {
+            for(Viewport* vp : viewportConfig->viewports())
+                vp->updateViewport();
+        }
+    }
 }
 
 /******************************************************************************
@@ -127,12 +127,12 @@ void UserInterface::updateViewports()
 ******************************************************************************/
 void UserInterface::resumeViewportUpdates()
 {
-	OVITO_ASSERT(areViewportUpdatesSuspended());
-	_viewportSuspendCount--;
-	if(_viewportSuspendCount == 0) {
-		if(_viewportsNeedUpdate)
-			updateViewports();
-	}
+    OVITO_ASSERT(areViewportUpdatesSuspended());
+    _viewportSuspendCount--;
+    if(_viewportSuspendCount == 0) {
+        if(_viewportsNeedUpdate)
+            updateViewports();
+    }
 }
 
 /******************************************************************************
@@ -141,10 +141,10 @@ void UserInterface::resumeViewportUpdates()
 ******************************************************************************/
 void UserInterface::zoomToSceneExtentsWhenReady()
 {
-	if(DataSet* dataset = datasetContainer().currentSet()) {
-		if(ViewportConfiguration* viewportConfig = dataset->viewportConfig())
-			viewportConfig->zoomToSceneExtentsWhenReady();
-	}
+    if(DataSet* dataset = datasetContainer().currentSet()) {
+        if(ViewportConfiguration* viewportConfig = dataset->viewportConfig())
+            viewportConfig->zoomToSceneExtentsWhenReady();
+    }
 }
 
 /******************************************************************************
@@ -152,43 +152,43 @@ void UserInterface::zoomToSceneExtentsWhenReady()
 ******************************************************************************/
 QString UserInterface::generateSystemReport()
 {
-	QString text;
-	QTextStream stream(&text, QIODevice::WriteOnly | QIODevice::Text);
-	stream << "======= System info =======\n";
-	stream << "Current date: " << QDateTime::currentDateTime().toString() << "\n";
-	stream << "Application: " << Application::applicationName() << " " << Application::applicationVersionString() << "\n";
-	stream << "Operating system: " <<  QOperatingSystemVersion::current().name() << " (" << QOperatingSystemVersion::current().majorVersion() << "." << QOperatingSystemVersion::current().minorVersion() << ")" << "\n";
+    QString text;
+    QTextStream stream(&text, QIODevice::WriteOnly | QIODevice::Text);
+    stream << "======= System info =======\n";
+    stream << "Current date: " << QDateTime::currentDateTime().toString() << "\n";
+    stream << "Application: " << Application::applicationName() << " " << Application::applicationVersionString() << "\n";
+    stream << "Operating system: " <<  QOperatingSystemVersion::current().name() << " (" << QOperatingSystemVersion::current().majorVersion() << "." << QOperatingSystemVersion::current().minorVersion() << ")" << "\n";
 #if defined(Q_OS_LINUX)
-	// Get 'uname' output.
-	QProcess unameProcess;
-	unameProcess.start("uname", QStringList() << "-m" << "-i" << "-o" << "-r" << "-v", QIODevice::ReadOnly);
-	unameProcess.waitForFinished();
-	QByteArray unameOutput = unameProcess.readAllStandardOutput();
-	unameOutput.replace('\n', ' ');
-	stream << "uname output: " << unameOutput << "\n";
-	// Get 'lsb_release' output.
-	QProcess lsbProcess;
-	lsbProcess.start("lsb_release", QStringList() << "-s" << "-i" << "-d" << "-r", QIODevice::ReadOnly);
-	lsbProcess.waitForFinished();
-	QByteArray lsbOutput = lsbProcess.readAllStandardOutput();
-	lsbOutput.replace('\n', ' ');
-	stream << "LSB output: " << lsbOutput << "\n";
+    // Get 'uname' output.
+    QProcess unameProcess;
+    unameProcess.start("uname", QStringList() << "-m" << "-i" << "-o" << "-r" << "-v", QIODevice::ReadOnly);
+    unameProcess.waitForFinished();
+    QByteArray unameOutput = unameProcess.readAllStandardOutput();
+    unameOutput.replace('\n', ' ');
+    stream << "uname output: " << unameOutput << "\n";
+    // Get 'lsb_release' output.
+    QProcess lsbProcess;
+    lsbProcess.start("lsb_release", QStringList() << "-s" << "-i" << "-d" << "-r", QIODevice::ReadOnly);
+    lsbProcess.waitForFinished();
+    QByteArray lsbOutput = lsbProcess.readAllStandardOutput();
+    lsbOutput.replace('\n', ' ');
+    stream << "LSB output: " << lsbOutput << "\n";
 #endif
-	stream << "Processor architecture: " << QSysInfo::currentCpuArchitecture() << "\n";
-	stream << "Floating-point type: " << (sizeof(FloatType)*8) << "-bit" << "\n";
-	stream << "Qt version: " << QT_VERSION_STR << " (" << QSysInfo::buildCpuArchitecture() << ")\n";
+    stream << "Processor architecture: " << QSysInfo::currentCpuArchitecture() << "\n";
+    stream << "Floating-point type: " << (sizeof(FloatType)*8) << "-bit" << "\n";
+    stream << "Qt version: " << QT_VERSION_STR << " (" << QSysInfo::buildCpuArchitecture() << ")\n";
 #ifdef OVITO_DISABLE_THREADING
-	stream << "Multi-threading: disabled\n";
+    stream << "Multi-threading: disabled\n";
 #endif
-	stream << "Command line: " << QCoreApplication::arguments().join(' ') << "\n";
-	stream << "Python file path: " << PluginManager::instance().pythonDir() << "\n";
-	// Let the plugin class add their information to their system report.
-	for(Plugin* plugin : PluginManager::instance().plugins()) {
-		for(OvitoClassPtr clazz : plugin->classes()) {
-			clazz->querySystemInformation(stream, *this);
-		}
-	}
-	return text;
+    stream << "Command line: " << QCoreApplication::arguments().join(' ') << "\n";
+    stream << "Python file path: " << PluginManager::instance().pythonDir() << "\n";
+    // Let the plugin class add their information to their system report.
+    for(Plugin* plugin : PluginManager::instance().plugins()) {
+        for(OvitoClassPtr clazz : plugin->classes()) {
+            clazz->querySystemInformation(stream, *this);
+        }
+    }
+    return text;
 }
 
-}	// End of namespace
+}   // End of namespace

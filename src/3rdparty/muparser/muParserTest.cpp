@@ -847,7 +847,7 @@ namespace mu
 
       // long formula (Reference: Matlab)
       iStat += EqnTest( _T("1+2-3*4/5^6*(2*(1-5+(3*7^9)*(4+6*7-3)))+12"), -7995810.09926, true);
-	  
+      
       if (iStat==0) 
         mu::console() << _T("passed") << endl;  
       else 

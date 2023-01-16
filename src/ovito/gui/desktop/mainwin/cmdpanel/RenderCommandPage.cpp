@@ -34,15 +34,15 @@ namespace Ovito {
 ******************************************************************************/
 RenderCommandPage::RenderCommandPage(MainWindow& mainWindow, QWidget* parent) : QWidget(parent)
 {
-	QVBoxLayout* layout = new QVBoxLayout(this);
-	layout->setContentsMargins(2,2,2,2);
+    QVBoxLayout* layout = new QVBoxLayout(this);
+    layout->setContentsMargins(2,2,2,2);
 
-	// Create the properties panel.
-	propertiesPanel = new PropertiesPanel(mainWindow);
-	propertiesPanel->setFrameStyle(QFrame::NoFrame | QFrame::Plain);
-	layout->addWidget(propertiesPanel, 1);
+    // Create the properties panel.
+    propertiesPanel = new PropertiesPanel(mainWindow);
+    propertiesPanel->setFrameStyle(QFrame::NoFrame | QFrame::Plain);
+    layout->addWidget(propertiesPanel, 1);
 
-	connect(&mainWindow.datasetContainer(), &DataSetContainer::dataSetChanged, this, &RenderCommandPage::onDataSetChanged);
+    connect(&mainWindow.datasetContainer(), &DataSetContainer::dataSetChanged, this, &RenderCommandPage::onDataSetChanged);
 }
 
 /******************************************************************************
@@ -50,14 +50,14 @@ RenderCommandPage::RenderCommandPage(MainWindow& mainWindow, QWidget* parent) : 
 ******************************************************************************/
 void RenderCommandPage::onDataSetChanged(DataSet* newDataSet)
 {
-	disconnect(_renderSettingsReplacedConnection);
-	if(newDataSet) {
-		_renderSettingsReplacedConnection = connect(newDataSet, &DataSet::renderSettingsReplaced, this, &RenderCommandPage::onRenderSettingsReplaced);
-		onRenderSettingsReplaced(newDataSet->renderSettings());
-	}
-	else {
-		onRenderSettingsReplaced(nullptr);
-	}
+    disconnect(_renderSettingsReplacedConnection);
+    if(newDataSet) {
+        _renderSettingsReplacedConnection = connect(newDataSet, &DataSet::renderSettingsReplaced, this, &RenderCommandPage::onRenderSettingsReplaced);
+        onRenderSettingsReplaced(newDataSet->renderSettings());
+    }
+    else {
+        onRenderSettingsReplaced(nullptr);
+    }
 }
 
 /******************************************************************************
@@ -65,7 +65,7 @@ void RenderCommandPage::onDataSetChanged(DataSet* newDataSet)
 ******************************************************************************/
 void RenderCommandPage::onRenderSettingsReplaced(RenderSettings* newRenderSettings)
 {
-	propertiesPanel->setEditObject(newRenderSettings);
+    propertiesPanel->setEditObject(newRenderSettings);
 }
 
-}	// End of namespace
+}   // End of namespace

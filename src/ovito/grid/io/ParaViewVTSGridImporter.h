@@ -37,53 +37,53 @@ namespace Ovito::Grid {
  */
 class OVITO_GRID_EXPORT ParaViewVTSGridImporter : public FileSourceImporter
 {
-	/// Defines a metaclass specialization for this importer type.
-	class OOMetaClass : public FileSourceImporter::OOMetaClass
-	{
-	public:
-		/// Inherit standard constructor from base meta class.
-		using FileSourceImporter::OOMetaClass::OOMetaClass;
+    /// Defines a metaclass specialization for this importer type.
+    class OOMetaClass : public FileSourceImporter::OOMetaClass
+    {
+    public:
+        /// Inherit standard constructor from base meta class.
+        using FileSourceImporter::OOMetaClass::OOMetaClass;
 
-		/// Returns the list of file formats that can be read by this importer class.
-		virtual Ovito::span<const SupportedFormat> supportedFormats() const override {
-			static const SupportedFormat formats[] = {{ QStringLiteral("*.vts"), tr("ParaView VTS StructuredGrid Files") }};
-			return formats;
-		}
+        /// Returns the list of file formats that can be read by this importer class.
+        virtual Ovito::span<const SupportedFormat> supportedFormats() const override {
+            static const SupportedFormat formats[] = {{ QStringLiteral("*.vts"), tr("ParaView VTS StructuredGrid Files") }};
+            return formats;
+        }
 
-		/// Checks if the given file has format that can be read by this importer.
-		virtual bool checkFileFormat(const FileHandle& file) const override;
-	};
+        /// Checks if the given file has format that can be read by this importer.
+        virtual bool checkFileFormat(const FileHandle& file) const override;
+    };
 
-	OVITO_CLASS_META(ParaViewVTSGridImporter, OOMetaClass)
+    OVITO_CLASS_META(ParaViewVTSGridImporter, OOMetaClass)
 
 public:
 
-	/// \brief Constructor.
-	Q_INVOKABLE ParaViewVTSGridImporter(ObjectCreationParams params) : FileSourceImporter(params) {}
+    /// \brief Constructor.
+    Q_INVOKABLE ParaViewVTSGridImporter(ObjectCreationParams params) : FileSourceImporter(params) {}
 
-	/// Returns the title of this object.
-	virtual QString objectTitle() const override { return tr("VTS"); }
+    /// Returns the title of this object.
+    virtual QString objectTitle() const override { return tr("VTS"); }
 
-	/// Creates an asynchronous loader object that loads the data for the given frame from the external file.
-	virtual FileSourceImporter::FrameLoaderPtr createFrameLoader(const LoadOperationRequest& request) override {
-		return std::make_shared<FrameLoader>(request);
-	}
+    /// Creates an asynchronous loader object that loads the data for the given frame from the external file.
+    virtual FileSourceImporter::FrameLoaderPtr createFrameLoader(const LoadOperationRequest& request) override {
+        return std::make_shared<FrameLoader>(request);
+    }
 
 private:
 
-	/// The format-specific task object that is responsible for reading an input file in a separate thread.
-	class FrameLoader : public StandardFrameLoader
-	{
-	public:
+    /// The format-specific task object that is responsible for reading an input file in a separate thread.
+    class FrameLoader : public StandardFrameLoader
+    {
+    public:
 
-		/// Inherit constructor from base class.
-		using StandardFrameLoader::StandardFrameLoader;
+        /// Inherit constructor from base class.
+        using StandardFrameLoader::StandardFrameLoader;
 
-	protected:
+    protected:
 
-		/// Reads the frame data from the external file.
-		virtual void loadFile() override;
-	};
+        /// Reads the frame data from the external file.
+        virtual void loadFile() override;
+    };
 };
 
 /**
@@ -92,15 +92,15 @@ private:
  */
 class OVITO_GRID_EXPORT GridParaViewVTMFileFilter : public ParaViewVTMFileFilter
 {
-	OVITO_CLASS(GridParaViewVTMFileFilter)
+    OVITO_CLASS(GridParaViewVTMFileFilter)
 
 public:
 
-	/// Constructor.
-	Q_INVOKABLE GridParaViewVTMFileFilter() = default;
+    /// Constructor.
+    Q_INVOKABLE GridParaViewVTMFileFilter() = default;
 
-	/// \brief Is called once before the datasets referenced in a multi-block VTM file will be loaded.
-	virtual void preprocessDatasets(std::vector<ParaViewVTMBlockInfo>& blockDatasets, FileSourceImporter::LoadOperationRequest& request, const ParaViewVTMImporter& vtmImporter) override;
+    /// \brief Is called once before the datasets referenced in a multi-block VTM file will be loaded.
+    virtual void preprocessDatasets(std::vector<ParaViewVTMBlockInfo>& blockDatasets, FileSourceImporter::LoadOperationRequest& request, const ParaViewVTMImporter& vtmImporter) override;
 };
 
-}	// End of namespace
+}   // End of namespace

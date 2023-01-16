@@ -56,49 +56,49 @@ class Ray_3
 {
 public:
 
-	/// A base point on the ray.
-	Point_3<T> base;
+    /// A base point on the ray.
+    Point_3<T> base;
 
-	/// The direction vector.
-	Vector_3<T> dir;
+    /// The direction vector.
+    Vector_3<T> dir;
 
-	/////////////////////////////// Constructors /////////////////////////////////
+    /////////////////////////////// Constructors /////////////////////////////////
 
-	/// Empty default constructor that does not initialize the fields of the object for performance reasons!
-	/// Both the base point and the direction vector are undefined.
-	Ray_3() = default;
+    /// Empty default constructor that does not initialize the fields of the object for performance reasons!
+    /// Both the base point and the direction vector are undefined.
+    Ray_3() = default;
 
-	/// \brief Initializes the ray with a base point and a direction vector.
-	/// \param b A point through which the ray passes.
-	/// \param d The ray's direction vector.
-	Q_DECL_CONSTEXPR Ray_3(const Point_3<T>& b, const Vector_3<T>& d) : base(b), dir(d) {}
+    /// \brief Initializes the ray with a base point and a direction vector.
+    /// \param b A point through which the ray passes.
+    /// \param d The ray's direction vector.
+    Q_DECL_CONSTEXPR Ray_3(const Point_3<T>& b, const Vector_3<T>& d) : base(b), dir(d) {}
 
-	/// \brief Initializes the ray from two points.
-	/// \param a The first point on the ray
-	/// \param b The second point on the ray.
-	///
-	/// The direction of the ray is initialized to the vector connecting \a a and \a b.
-	Q_DECL_CONSTEXPR Ray_3(const Point_3<T>& a, const Point_3<T>& b) : base(a), dir(b - a) {}
+    /// \brief Initializes the ray from two points.
+    /// \param a The first point on the ray
+    /// \param b The second point on the ray.
+    ///
+    /// The direction of the ray is initialized to the vector connecting \a a and \a b.
+    Q_DECL_CONSTEXPR Ray_3(const Point_3<T>& a, const Point_3<T>& b) : base(a), dir(b - a) {}
 
-	////////////////////////////////// Queries ///////////////////////////////////
+    ////////////////////////////////// Queries ///////////////////////////////////
 
-	/// \brief Returns a point on the ray at the specified position.
-	/// \param t Specifies the position along the ray.
-	/// \return The point (#base + #dir * \a t).
-	Q_DECL_CONSTEXPR Point_3<T> point(T t) const { return base + dir * t; }
+    /// \brief Returns a point on the ray at the specified position.
+    /// \param t Specifies the position along the ray.
+    /// \return The point (#base + #dir * \a t).
+    Q_DECL_CONSTEXPR Point_3<T> point(T t) const { return base + dir * t; }
 
     /////////////////////////////// Unary operators //////////////////////////////
 
-	/// \brief Flips the ray's direction.
-	/// \return A new ray with a reversed direction vector.
-	Q_DECL_CONSTEXPR Ray_3 operator-() const { return Ray_3(base, -dir); }
+    /// \brief Flips the ray's direction.
+    /// \return A new ray with a reversed direction vector.
+    Q_DECL_CONSTEXPR Ray_3 operator-() const { return Ray_3(base, -dir); }
 
     ////////////////////////////////// Utilities /////////////////////////////////
 
-	/// \brief Generates a string representation of this ray.
-	QString toString() const {
-		return QString("[Base: %1 Dir: %2]").arg(base.toString(), dir.toString());
-	}
+    /// \brief Generates a string representation of this ray.
+    QString toString() const {
+        return QString("[Base: %1 Dir: %2]").arg(base.toString(), dir.toString());
+    }
 };
 
 /// \brief Transforms a ray.
@@ -109,7 +109,7 @@ public:
 /// \relates Ray_3
 template<typename T>
 inline Ray_3<T> operator*(const AffineTransformationT<T>& tm, const Ray_3<T>& ray) {
-	return { tm * ray.base, (tm * ray.dir).normalized() };
+    return { tm * ray.base, (tm * ray.dir).normalized() };
 }
 
 /// \brief Prints a ray to an output stream.
@@ -119,7 +119,7 @@ inline Ray_3<T> operator*(const AffineTransformationT<T>& tm, const Ray_3<T>& ra
 /// \relates Ray_3
 template<typename T>
 inline std::ostream& operator<<(std::ostream &os, const Ray_3<T> &r) {
-	return os << '[' << r.base.x() << ' ' << r.base.y()  << ' ' << r.base.z() << "], (" << r.dir.x() << ' ' << r.dir.y()  << ' ' << r.dir.z() << ')';
+    return os << '[' << r.base.x() << ' ' << r.base.y()  << ' ' << r.base.z() << "], (" << r.dir.x() << ' ' << r.dir.y()  << ' ' << r.dir.z() << ')';
 }
 
 /// \brief Prints a ray to a Qt debug stream.
@@ -137,7 +137,7 @@ inline QDebug operator<<(QDebug dbg, const Ray_3<T>& r) {
 /// \relates Ray_3
 template<typename T>
 inline SaveStream& operator<<(SaveStream& stream, const Ray_3<T>& r) {
-	return stream << r.base << r.dir;
+    return stream << r.base << r.dir;
 }
 
 /// \brief Reads a a from a binary input stream.
@@ -147,21 +147,21 @@ inline SaveStream& operator<<(SaveStream& stream, const Ray_3<T>& r) {
 /// \relates Ray_3
 template<typename T>
 inline LoadStream& operator>>(LoadStream& stream, Ray_3<T>& r) {
-	return stream >> r.base >> r.dir;
+    return stream >> r.base >> r.dir;
 }
 
 /// \brief Writes a ray to a Qt data stream.
 /// \relates Ray_3
 template<typename T>
 inline QDataStream& operator<<(QDataStream& stream, const Ray_3<T>& r) {
-	return stream << r.base << r.dir;
+    return stream << r.base << r.dir;
 }
 
 /// \brief Reads a ray from a Qt data stream.
 /// \relates Ray_3
 template<typename T>
 inline QDataStream& operator>>(QDataStream& stream, Ray_3<T>& r) {
-	return stream >> r.base >> r.dir;
+    return stream >> r.base >> r.dir;
 }
 
 /**
@@ -170,7 +170,7 @@ inline QDataStream& operator>>(QDataStream& stream, Ray_3<T>& r) {
  */
 using Ray3 = Ray_3<FloatType>;
 
-}	// End of namespace
+}   // End of namespace
 
 Q_DECLARE_METATYPE(Ovito::Ray3);
 Q_DECLARE_TYPEINFO(Ovito::Ray3, Q_PRIMITIVE_TYPE);

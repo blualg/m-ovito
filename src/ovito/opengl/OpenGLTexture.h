@@ -40,48 +40,48 @@ class OpenGLTexture : public QOpenGLTexture
 {
 public:
 
-	/// Constructor.
-	OpenGLTexture(const QImage& image, QOpenGLTexture::MipMapGeneration genMipMaps = QOpenGLTexture::GenerateMipMaps) : QOpenGLTexture(image, genMipMaps) {
-		destroyTextureWithContext();
-	}
+    /// Constructor.
+    OpenGLTexture(const QImage& image, QOpenGLTexture::MipMapGeneration genMipMaps = QOpenGLTexture::GenerateMipMaps) : QOpenGLTexture(image, genMipMaps) {
+        destroyTextureWithContext();
+    }
 
-	/// Constructor.
-	OpenGLTexture(QOpenGLTexture::Target target) : QOpenGLTexture(target) {
-		destroyTextureWithContext();
-	}
+    /// Constructor.
+    OpenGLTexture(QOpenGLTexture::Target target) : QOpenGLTexture(target) {
+        destroyTextureWithContext();
+    }
 
-	/// Destructor.
-	~OpenGLTexture() {
-		// Uninstall signal handler.
-		if(_signalConnection)
-			QObject::disconnect(_signalConnection);
-	}
+    /// Destructor.
+    ~OpenGLTexture() {
+        // Uninstall signal handler.
+        if(_signalConnection)
+            QObject::disconnect(_signalConnection);
+    }
 
 private:
 
-	/// Wraps the QOpenGLTexture::create() method and install a signal handler
-	/// that automatically destroys the texture when then QOpenGLContext is destroyed.
-	void destroyTextureWithContext() {
-		OVITO_ASSERT(!_signalConnection);
+    /// Wraps the QOpenGLTexture::create() method and install a signal handler
+    /// that automatically destroys the texture when then QOpenGLContext is destroyed.
+    void destroyTextureWithContext() {
+        OVITO_ASSERT(!_signalConnection);
 
-		QOpenGLContext* ctx = QOpenGLContext::currentContext();
-		OVITO_ASSERT(ctx);
-		QSurface* surface = ctx->surface();
-		OVITO_ASSERT(surface);
+        QOpenGLContext* ctx = QOpenGLContext::currentContext();
+        OVITO_ASSERT(ctx);
+        QSurface* surface = ctx->surface();
+        OVITO_ASSERT(surface);
 
-		// When the QOpenGLContext::aboutToBeDestroyed signal gets fired, destroy this texture.
-		_signalConnection = QObject::connect(ctx, &QOpenGLContext::aboutToBeDestroyed, [this, ctx, surface]() {
-			OVITO_ASSERT(!QOpenGLContext::currentContext());
-			ctx->makeCurrent(surface);
-			destroy();
-			ctx->doneCurrent();
-			OpenGLTexture* self = this;
-			QObject::disconnect(_signalConnection); // This may destroy the lambda function object currently being executed.
-			self->_signalConnection = QMetaObject::Connection();
-		});
-	}
+        // When the QOpenGLContext::aboutToBeDestroyed signal gets fired, destroy this texture.
+        _signalConnection = QObject::connect(ctx, &QOpenGLContext::aboutToBeDestroyed, [this, ctx, surface]() {
+            OVITO_ASSERT(!QOpenGLContext::currentContext());
+            ctx->makeCurrent(surface);
+            destroy();
+            ctx->doneCurrent();
+            OpenGLTexture* self = this;
+            QObject::disconnect(_signalConnection); // This may destroy the lambda function object currently being executed.
+            self->_signalConnection = QMetaObject::Connection();
+        });
+    }
 
-	QMetaObject::Connection _signalConnection;
+    QMetaObject::Connection _signalConnection;
 };
 
-}	// End of namespace
+}   // End of namespace

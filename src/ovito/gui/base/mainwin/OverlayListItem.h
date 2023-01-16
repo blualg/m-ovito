@@ -35,50 +35,50 @@ namespace Ovito {
  */
 class OVITO_GUIBASE_EXPORT OverlayListItem : public RefMaker
 {
-	OVITO_CLASS(OverlayListItem)
+    OVITO_CLASS(OverlayListItem)
 
 public:
 
-	enum OverlayItemType {
-		Layer,
-		ViewportHeader,
-		SceneLayer,
-	};
+    enum OverlayItemType {
+        Layer,
+        ViewportHeader,
+        SceneLayer,
+    };
 
 public:
 
-	/// Constructor.
-	OverlayListItem(ViewportOverlay* overlay, OverlayItemType itemType);
+    /// Constructor.
+    OverlayListItem(ViewportOverlay* overlay, OverlayItemType itemType);
 
-	/// Returns the status of the object represented by the list item.
-	const PipelineStatus& status() const;
+    /// Returns the status of the object represented by the list item.
+    const PipelineStatus& status() const;
 
-	/// Returns the title text for this list item.
-	QString title(Viewport* selectedViewport) const;
+    /// Returns the title text for this list item.
+    QString title(Viewport* selectedViewport) const;
 
-	/// Returns the type of this list item.
-	OverlayItemType itemType() const { return _itemType; }
+    /// Returns the type of this list item.
+    OverlayItemType itemType() const { return _itemType; }
 
-	/// Returns a short piece information (typically a string) to be displayed next to the object's title in the UI.
-	QVariant shortInfo(Viewport* selectedViewport) const;
+    /// Returns a short piece information (typically a string) to be displayed next to the object's title in the UI.
+    QVariant shortInfo(Viewport* selectedViewport) const;
 
 Q_SIGNALS:
 
-	/// This signal is emitted when this item has changed.
-	void itemChanged(OverlayListItem* item);
+    /// This signal is emitted when this item has changed.
+    void itemChanged(OverlayListItem* item);
 
 protected:
 
-	/// This method is called when a reference target changes.
-	virtual bool referenceEvent(RefTarget* source, const ReferenceEvent& event) override;
+    /// This method is called when a reference target changes.
+    virtual bool referenceEvent(RefTarget* source, const ReferenceEvent& event) override;
 
 private:
 
-	/// The overlay represented by this item in the list box.
-	DECLARE_REFERENCE_FIELD_FLAGS(ViewportOverlay*, overlay, PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_WEAK_REF | PROPERTY_FIELD_NO_CHANGE_MESSAGE);
+    /// The overlay represented by this item in the list box.
+    DECLARE_REFERENCE_FIELD_FLAGS(ViewportOverlay*, overlay, PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_WEAK_REF | PROPERTY_FIELD_NO_CHANGE_MESSAGE);
 
-	/// The type of this list item.
-	OverlayItemType _itemType;
+    /// The type of this list item.
+    OverlayItemType _itemType;
 };
 
-}	// End of namespace
+}   // End of namespace

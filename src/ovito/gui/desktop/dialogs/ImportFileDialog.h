@@ -34,46 +34,46 @@ namespace Ovito {
  */
 class OVITO_GUI_EXPORT ImportFileDialog : public HistoryFileDialog
 {
-	Q_OBJECT
+    Q_OBJECT
 
 public:
 
-	/// Returns what should happen if the user imports several files of the same kind.
-	static FileImporter::MultiFileImportMode multiFileImportMode() {
+    /// Returns what should happen if the user imports several files of the same kind.
+    static FileImporter::MultiFileImportMode multiFileImportMode() {
 #ifdef OVITO_BUILD_PROFESSIONAL
-		return QSettings().value("file/multi_file_import_mode", FileImporter::ImportAsTrajectory).value<FileImporter::MultiFileImportMode>();
+        return QSettings().value("file/multi_file_import_mode", FileImporter::ImportAsTrajectory).value<FileImporter::MultiFileImportMode>();
 #else
-		return FileImporter::ImportAsTrajectory;
+        return FileImporter::ImportAsTrajectory;
 #endif
-	}
+    }
 
-	/// Sets what should happen if the user imports several files of the same kind.
-	static void setMultiFileImportMode(FileImporter::MultiFileImportMode mode) {
-		QSettings settings;
-		if(mode != FileImporter::ImportAsTrajectory) settings.setValue("file/multi_file_import_mode", mode);
-		else settings.remove("file/multi_file_import_mode");
-	}
+    /// Sets what should happen if the user imports several files of the same kind.
+    static void setMultiFileImportMode(FileImporter::MultiFileImportMode mode) {
+        QSettings settings;
+        if(mode != FileImporter::ImportAsTrajectory) settings.setValue("file/multi_file_import_mode", mode);
+        else settings.remove("file/multi_file_import_mode");
+    }
 
 public:
 
-	/// \brief Constructs the dialog window.
-	ImportFileDialog(const QVector<const FileImporterClass*>& importerTypes, QWidget* parent, const QString& caption, bool allowMultiSelection, const QString& dialogClass = QStringLiteral("import"));
+    /// \brief Constructs the dialog window.
+    ImportFileDialog(const QVector<const FileImporterClass*>& importerTypes, QWidget* parent, const QString& caption, bool allowMultiSelection, const QString& dialogClass = QStringLiteral("import"));
 
-	/// \brief Returns the file to import after the dialog has been closed with "OK".
-	QString fileToImport() const;
+    /// \brief Returns the file to import after the dialog has been closed with "OK".
+    QString fileToImport() const;
 
-	/// \brief Returns the file to import after the dialog has been closed with "OK".
-	QUrl urlToImport() const;
+    /// \brief Returns the file to import after the dialog has been closed with "OK".
+    QUrl urlToImport() const;
 
-	/// \brief Returns the list of files to import after the dialog has been closed with "OK".
-	std::vector<QUrl> urlsToImport() const;
+    /// \brief Returns the list of files to import after the dialog has been closed with "OK".
+    std::vector<QUrl> urlsToImport() const;
 
-	/// \brief Returns the selected importer class and sub-format name.
-	const std::pair<const FileImporterClass*, QString>& selectedFileImporter() const;
+    /// \brief Returns the selected importer class and sub-format name.
+    const std::pair<const FileImporterClass*, QString>& selectedFileImporter() const;
 
 private:
 
-	std::vector<std::pair<const FileImporterClass*, QString>> _importerFormats;
+    std::vector<std::pair<const FileImporterClass*, QString>> _importerFormats;
 };
 
-}	// End of namespace
+}   // End of namespace

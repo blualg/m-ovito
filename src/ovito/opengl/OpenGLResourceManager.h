@@ -54,4 +54,4 @@ public:
     QOpenGLTexture* uploadColorMap(ColorCodingGradient* gradient, ResourceFrameHandle resourceFrame);
 };
 
-}	// End of namespace
+}   // End of namespace

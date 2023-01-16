@@ -33,17 +33,17 @@ namespace Ovito::Particles {
  */
 class ParticlesVisEditor : public PropertiesEditor
 {
-	OVITO_CLASS(ParticlesVisEditor)
+    OVITO_CLASS(ParticlesVisEditor)
 
 public:
 
-	/// Constructor.
-	Q_INVOKABLE ParticlesVisEditor() {}
+    /// Constructor.
+    Q_INVOKABLE ParticlesVisEditor() {}
 
 protected:
 
-	/// Creates the user interface controls for the editor.
-	virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
+    /// Creates the user interface controls for the editor.
+    virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
 };
 
-}	// End of namespace
+}   // End of namespace

@@ -33,35 +33,35 @@ namespace Ovito {
  */
 class FileSourcePlaybackRateEditor : public PropertiesEditor
 {
-	OVITO_CLASS(FileSourcePlaybackRateEditor)
+    OVITO_CLASS(FileSourcePlaybackRateEditor)
 
 public:
 
-	/// Default constructor.
-	Q_INVOKABLE FileSourcePlaybackRateEditor() {}
+    /// Default constructor.
+    Q_INVOKABLE FileSourcePlaybackRateEditor() {}
 
 protected:
 
-	/// Creates the user interface controls for the editor.
-	virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
+    /// Creates the user interface controls for the editor.
+    virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
 
 private Q_SLOTS:
 
-	/// Updates the displayed information.
-	void updateInformation();
+    /// Updates the displayed information.
+    void updateInformation();
 
-	/// Updates the list of trajectory frames displayed in the UI.
-	void updateFramesList();
+    /// Updates the list of trajectory frames displayed in the UI.
+    void updateFramesList();
 
 private:
 
-	QComboBox* _framesListBox;
-	QStringListModel* _framesListModel;
-	QLabel* _numTrajectoryFramesDisplay;
-	QLabel* _numAnimationFramesDisplay;
-	QRadioButton* _trajectoryModeBtn;
-	QRadioButton* _staticFrameModeBtn;
-	IntegerParameterUI* _staticFrameNumberUI;
+    QComboBox* _framesListBox;
+    QStringListModel* _framesListModel;
+    QLabel* _numTrajectoryFramesDisplay;
+    QLabel* _numAnimationFramesDisplay;
+    QRadioButton* _trajectoryModeBtn;
+    QRadioButton* _staticFrameModeBtn;
+    IntegerParameterUI* _staticFrameNumberUI;
 };
 
-}	// End of namespace
+}   // End of namespace

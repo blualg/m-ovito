@@ -34,30 +34,30 @@ namespace Ovito {
 * The constructor of the dialog.
 ******************************************************************************/
 ModalPropertiesEditorDialog::ModalPropertiesEditorDialog(RefTarget* object, OORef<PropertiesEditor> editor, QWidget* parent, MainWindow& mainWindow, const QString& dialogTitle, const QString& undoString, const QString& helpTopic) :
-	QDialog(parent), _editor(std::move(editor)), UndoableTransaction(mainWindow, undoString)
+    QDialog(parent), _editor(std::move(editor)), UndoableTransaction(mainWindow, undoString)
 {
-	setWindowTitle(dialogTitle);
+    setWindowTitle(dialogTitle);
 
-	QVBoxLayout* layout = new QVBoxLayout(this);
+    QVBoxLayout* layout = new QVBoxLayout(this);
 
-	PropertiesPanel* propertiesPanel = new PropertiesPanel(mainWindow, this);
-	propertiesPanel->setVisible(false);
-	_editor->initialize(propertiesPanel, RolloutInsertionParameters().insertInto(this), nullptr);
-	_editor->setEditObject(object);
-	layout->addWidget(propertiesPanel, 1);
+    PropertiesPanel* propertiesPanel = new PropertiesPanel(mainWindow, this);
+    propertiesPanel->setVisible(false);
+    _editor->initialize(propertiesPanel, RolloutInsertionParameters().insertInto(this), nullptr);
+    _editor->setEditObject(object);
+    layout->addWidget(propertiesPanel, 1);
 
-	QDialogButtonBox* buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel | QDialogButtonBox::Help, Qt::Horizontal, this);
-	layout->addWidget(buttonBox);
+    QDialogButtonBox* buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel | QDialogButtonBox::Help, Qt::Horizontal, this);
+    layout->addWidget(buttonBox);
 
-	connect(buttonBox, &QDialogButtonBox::rejected, this, &ModalPropertiesEditorDialog::reject);
-	connect(buttonBox, &QDialogButtonBox::accepted, this, [&]() {
-		setFocus(); // Remove focus from child widgets to commit newly entered values in text widgets etc.
-		commit();
-		accept();
-	});
-	connect(buttonBox, &QDialogButtonBox::helpRequested, &mainWindow, [helpTopic, &mainWindow]() {
-		mainWindow.actionManager()->openHelpTopic(helpTopic);
-	});
+    connect(buttonBox, &QDialogButtonBox::rejected, this, &ModalPropertiesEditorDialog::reject);
+    connect(buttonBox, &QDialogButtonBox::accepted, this, [&]() {
+        setFocus(); // Remove focus from child widgets to commit newly entered values in text widgets etc.
+        commit();
+        accept();
+    });
+    connect(buttonBox, &QDialogButtonBox::helpRequested, &mainWindow, [helpTopic, &mainWindow]() {
+        mainWindow.actionManager()->openHelpTopic(helpTopic);
+    });
 }
 
-}	// End of namespace
+}   // End of namespace

@@ -34,43 +34,43 @@ namespace Ovito::Particles {
  */
 class ParticlesComputePropertyModifierDelegateEditor : public PropertiesEditor
 {
-	OVITO_CLASS(ParticlesComputePropertyModifierDelegateEditor)
+    OVITO_CLASS(ParticlesComputePropertyModifierDelegateEditor)
 
 public:
 
-	/// Default constructor.
-	Q_INVOKABLE ParticlesComputePropertyModifierDelegateEditor() {}
+    /// Default constructor.
+    Q_INVOKABLE ParticlesComputePropertyModifierDelegateEditor() {}
 
 protected:
 
-	/// Creates the user interface controls for the editor.
-	virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
+    /// Creates the user interface controls for the editor.
+    virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
 
-	/// This method is called when a reference target changes.
-	virtual bool referenceEvent(RefTarget* source, const ReferenceEvent& event) override;
+    /// This method is called when a reference target changes.
+    virtual bool referenceEvent(RefTarget* source, const ReferenceEvent& event) override;
 
 protected Q_SLOTS:
 
-	/// Is called when the user has typed in an expression.
-	void onExpressionEditingFinished();
+    /// Is called when the user has typed in an expression.
+    void onExpressionEditingFinished();
 
-	/// Updates the editor's input fields for the expressions.
-	void updateExpressionFields();
+    /// Updates the editor's input fields for the expressions.
+    void updateExpressionFields();
 
-	/// Updates the editor's display of the available expression variables.
-	void updateVariablesList();
+    /// Updates the editor's display of the available expression variables.
+    void updateVariablesList();
 
 private:
 
-	QGroupBox* neighborExpressionsGroupBox;
-	QList<AutocompleteLineEdit*> neighborExpressionLineEdits;
-	QList<AutocompleteTextEdit*> neighborExpressionTextEdits;
-	QList<QLabel*> neighborExpressionLabels;
-	QGridLayout* neighborExpressionsLayout;
+    QGroupBox* neighborExpressionsGroupBox;
+    QList<AutocompleteLineEdit*> neighborExpressionLineEdits;
+    QList<AutocompleteTextEdit*> neighborExpressionTextEdits;
+    QList<QLabel*> neighborExpressionLabels;
+    QGridLayout* neighborExpressionsLayout;
 
-	// For deferred invocation of the UI update functions.
-	DeferredMethodInvocation<ParticlesComputePropertyModifierDelegateEditor, &ParticlesComputePropertyModifierDelegateEditor::updateExpressionFields> updateExpressionFieldsLater;
-	DeferredMethodInvocation<ParticlesComputePropertyModifierDelegateEditor, &ParticlesComputePropertyModifierDelegateEditor::updateVariablesList> updateVariablesListLater;
+    // For deferred invocation of the UI update functions.
+    DeferredMethodInvocation<ParticlesComputePropertyModifierDelegateEditor, &ParticlesComputePropertyModifierDelegateEditor::updateExpressionFields> updateExpressionFieldsLater;
+    DeferredMethodInvocation<ParticlesComputePropertyModifierDelegateEditor, &ParticlesComputePropertyModifierDelegateEditor::updateVariablesList> updateVariablesListLater;
 };
 
-}	// End of namespace
+}   // End of namespace

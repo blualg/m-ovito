@@ -42,7 +42,7 @@ private:
     /// The internal smart-pointer to the DataObject, which keeps the object instance alive.
     OORef<T> _ref;
 
-	template<class U> friend class DataOORef;
+    template<class U> friend class DataOORef;
 
 public:
 
@@ -98,77 +98,77 @@ public:
 
     /// Copy assignment operator.
     DataOORef& operator=(T* rhs) {
-    	DataOORef(rhs).swap(*this);
-    	return *this;
+        DataOORef(rhs).swap(*this);
+        return *this;
     }
 
     /// Copy assignment operator.
     DataOORef& operator=(const DataOORef& rhs) {
-    	DataOORef(rhs).swap(*this);
-    	return *this;
+        DataOORef(rhs).swap(*this);
+        return *this;
     }
 
     /// Copy assignment and conversion operator.
     template<class U>
     DataOORef& operator=(const DataOORef<U>& rhs) {
-    	DataOORef(rhs).swap(*this);
-    	return *this;
+        DataOORef(rhs).swap(*this);
+        return *this;
     }
 
     /// Move assignment operator.
     DataOORef& operator=(DataOORef&& rhs) noexcept {
-    	DataOORef(std::move(rhs)).swap(*this);
-    	return *this;
+        DataOORef(std::move(rhs)).swap(*this);
+        return *this;
     }
 
     /// Move assignment and conversion operator.
     template<class U>
     DataOORef& operator=(DataOORef<U>&& rhs) noexcept {
-    	DataOORef(std::move(rhs)).swap(*this);
-    	return *this;
+        DataOORef(std::move(rhs)).swap(*this);
+        return *this;
     }
 
     /// Move assignment operator with OORef.
     template<class U>
     DataOORef& operator=(OORef<U>&& rhs) noexcept {
-    	DataOORef(std::move(rhs)).swap(*this);
-    	return *this;
+        DataOORef(std::move(rhs)).swap(*this);
+        return *this;
     }
 
     void reset() {
-    	DataOORef().swap(*this);
+        DataOORef().swap(*this);
     }
 
     void reset(T* rhs) {
-    	DataOORef(rhs).swap(*this);
+        DataOORef(rhs).swap(*this);
     }
 
     inline T* get() const noexcept {
-    	return _ref.get();
+        return _ref.get();
     }
 
     inline operator T*() const noexcept {
-    	return _ref.get();
+        return _ref.get();
     }
 
     inline T& operator*() const noexcept {
-    	return *_ref;
+        return *_ref;
     }
 
     inline T* operator->() const noexcept {
-    	OVITO_ASSERT(_ref);
-    	return _ref.get();
+        OVITO_ASSERT(_ref);
+        return _ref.get();
     }
 
     inline void swap(DataOORef& rhs) noexcept {
-    	_ref.swap(rhs._ref);
+        _ref.swap(rhs._ref);
     }
 
     /// Factory method instantiating a new data object and returning a smart-pointer to it.
     template<typename... Args>
-	static DataOORef create(Args&&... args) {
-		return DataOORef(OORef<T>::create(std::forward<Args>(args)...));
-	}
+    static DataOORef create(Args&&... args) {
+        return DataOORef(OORef<T>::create(std::forward<Args>(args)...));
+    }
 
     /// Returns a copy of the data object, which can be safely modified.
     DataOORef<std::remove_const_t<T>> makeCopy() const {
@@ -215,7 +215,7 @@ template<class T> T* get_pointer(const DataOORef<T>& p) noexcept
 
 template<class T> void swap(DataOORef<T>& lhs, DataOORef<T>& rhs) noexcept
 {
-	lhs.swap(rhs);
+    lhs.swap(rhs);
 }
 
 template<class T, class U> DataOORef<T> static_pointer_cast(const DataOORef<U>& p) noexcept
@@ -245,7 +245,7 @@ template<class T, class U> DataOORef<T> dynamic_pointer_cast(DataOORef<U>&& p) n
 
 template<class T> QDebug operator<<(QDebug debug, const DataOORef<T>& p)
 {
-	return debug << p.get();
+    return debug << p.get();
 }
 
 template<class T, class U> inline bool operator==(const DataOORef<T>& a, const DataOORef<U>& b) noexcept
@@ -303,4 +303,4 @@ template<class T> inline bool operator<(const DataOORef<T>& a, const DataOORef<T
     return std::less<T*>()(a.get(), b.get());
 }
 
-}	// End of namespace
+}   // End of namespace

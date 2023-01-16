@@ -33,17 +33,17 @@ namespace Ovito::Particles {
  */
 class ParcasFileImporterEditor : public FileImporterEditor
 {
-	OVITO_CLASS(ParcasFileImporterEditor)
+    OVITO_CLASS(ParcasFileImporterEditor)
 
 public:
 
-	/// Constructor.
-	Q_INVOKABLE ParcasFileImporterEditor() {}
+    /// Constructor.
+    Q_INVOKABLE ParcasFileImporterEditor() {}
 
 protected:
 
-	/// Creates the user interface controls for the editor.
-	virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
+    /// Creates the user interface controls for the editor.
+    virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
 };
 
-}	// End of namespace
+}   // End of namespace

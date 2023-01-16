@@ -242,7 +242,7 @@ public:
     /// Returns a SharedFuture that is associated with the same shared state as this promise.
     shared_future_type sharedFuture() {
         return shared_future_type(TaskPtr(task()));
-    }	
+    }   
 
     /// Sets the result value of the promise.
     template<typename... R2>
@@ -327,4 +327,4 @@ protected:
     template<typename... R2> friend class SharedFuture;
 };
 
-}	// End of namespace
+}   // End of namespace

@@ -80,196 +80,196 @@ class Point_2 : public std::array<T, 2>
 {
 public:
 
-	/// An empty type that denotes the point (0,0).
-	struct Origin {};
+    /// An empty type that denotes the point (0,0).
+    struct Origin {};
 
-	using typename std::array<T, 2>::size_type;
-	using typename std::array<T, 2>::difference_type;
-	using typename std::array<T, 2>::value_type;
-	using typename std::array<T, 2>::iterator;
-	using typename std::array<T, 2>::const_iterator;
+    using typename std::array<T, 2>::size_type;
+    using typename std::array<T, 2>::difference_type;
+    using typename std::array<T, 2>::value_type;
+    using typename std::array<T, 2>::iterator;
+    using typename std::array<T, 2>::const_iterator;
 
-	/////////////////////////////// Constructors /////////////////////////////////
+    /////////////////////////////// Constructors /////////////////////////////////
 
-	/// Constructs a point without initializing its components. The components will have an undefined value!
-	Point_2() = default;
+    /// Constructs a point without initializing its components. The components will have an undefined value!
+    Point_2() = default;
 
-	/// Constructs a point with \c x and \c y components initialized to the given value.
+    /// Constructs a point with \c x and \c y components initialized to the given value.
 #if !defined(Q_CC_MSVC) && !defined(ONLY_FOR_DOXYGEN) // The MSVC compiler and the Doxygen parser do not like C++11 array aggregate initializers.
-	Q_DECL_CONSTEXPR explicit Point_2(T val) : std::array<T, 2>{{val,val}} {}
+    Q_DECL_CONSTEXPR explicit Point_2(T val) : std::array<T, 2>{{val,val}} {}
 #else
-	explicit Point_2(T val) { this->fill(val); }
+    explicit Point_2(T val) { this->fill(val); }
 #endif
 
-	/// Initializes the coordinates of the point with the given values.
+    /// Initializes the coordinates of the point with the given values.
 #if !defined(Q_CC_MSVC) && !defined(ONLY_FOR_DOXYGEN) // The MSVC compiler and the Doxygen parser do not like C++11 array aggregate initializers.
-	Q_DECL_CONSTEXPR Point_2(T x, T y) : std::array<T, 2>{{x, y}} {}
+    Q_DECL_CONSTEXPR Point_2(T x, T y) : std::array<T, 2>{{x, y}} {}
 #else
-	Point_2(T x, T y) { this->x() = x; this->y() = y; }
+    Point_2(T x, T y) { this->x() = x; this->y() = y; }
 #endif
 
-	/// Initializes the point to the origin. All coordinates are set to zero.
+    /// Initializes the point to the origin. All coordinates are set to zero.
 #if !defined(Q_CC_MSVC) && !defined(ONLY_FOR_DOXYGEN) // The MSVC compiler and the Doxygen parser do not like C++11 array aggregate initializers.
-	Q_DECL_CONSTEXPR Point_2(Origin) : std::array<T, 2>{{T(0), T(0)}} {}
+    Q_DECL_CONSTEXPR Point_2(Origin) : std::array<T, 2>{{T(0), T(0)}} {}
 #else
-	Point_2(Origin) { this->fill(T(0)); }
+    Point_2(Origin) { this->fill(T(0)); }
 #endif
 
-	/// Initializes the point from an array coordinates.
-	Q_DECL_CONSTEXPR explicit Point_2(const std::array<T, 2>& a) : std::array<T, 2>(a) {}
+    /// Initializes the point from an array coordinates.
+    Q_DECL_CONSTEXPR explicit Point_2(const std::array<T, 2>& a) : std::array<T, 2>(a) {}
 
-	/// Casts the point to another coordinate type \a U.
-	template<typename U>
-	Q_DECL_CONSTEXPR Point_2<U> toDataType() const { return Point_2<U>(static_cast<U>(x()), static_cast<U>(y())); }
+    /// Casts the point to another coordinate type \a U.
+    template<typename U>
+    Q_DECL_CONSTEXPR Point_2<U> toDataType() const { return Point_2<U>(static_cast<U>(x()), static_cast<U>(y())); }
 
-	///////////////////////////// Assignment operators ///////////////////////////
+    ///////////////////////////// Assignment operators ///////////////////////////
 
-	/// Adds a vector to this point.
-	Point_2& operator+=(const Vector_2<T>& v) { x() += v.x(); y() += v.y(); return *this; }
+    /// Adds a vector to this point.
+    Point_2& operator+=(const Vector_2<T>& v) { x() += v.x(); y() += v.y(); return *this; }
 
-	/// Subtracts a vector from this point.
-	Point_2& operator-=(const Vector_2<T>& v) { x() -= v.x(); y() -= v.y(); return *this; }
+    /// Subtracts a vector from this point.
+    Point_2& operator-=(const Vector_2<T>& v) { x() -= v.x(); y() -= v.y(); return *this; }
 
-	/// Multiplies all coordinates of the point with a scalar value.
-	Point_2& operator*=(T s) { x() *= s; y() *= s; return *this; }
+    /// Multiplies all coordinates of the point with a scalar value.
+    Point_2& operator*=(T s) { x() *= s; y() *= s; return *this; }
 
-	/// Divides all coordinates of the point by a scalar value.
-	Point_2& operator/=(T s) { x() /= s; y() /= s; return *this; }
+    /// Divides all coordinates of the point by a scalar value.
+    Point_2& operator/=(T s) { x() /= s; y() /= s; return *this; }
 
-	/// Sets all coordinates of the point to zero.
-	Point_2& operator=(Origin) { this->fill(T(0)); return *this; }
+    /// Sets all coordinates of the point to zero.
+    Point_2& operator=(Origin) { this->fill(T(0)); return *this; }
 
-	/// Converts a point to a vector.
-	Vector_2<T> operator-(Origin) const {
-		return Vector_2<T>(*this);
-	}
+    /// Converts a point to a vector.
+    Vector_2<T> operator-(Origin) const {
+        return Vector_2<T>(*this);
+    }
 
-	//////////////////////////// Component access //////////////////////////
+    //////////////////////////// Component access //////////////////////////
 
-	/// \brief Returns the value of the X coordinate of this point.
-	Q_DECL_CONSTEXPR T x() const { return (*this)[0]; }
+    /// \brief Returns the value of the X coordinate of this point.
+    Q_DECL_CONSTEXPR T x() const { return (*this)[0]; }
 
-	/// \brief Returns the value of the Y coordinate of this point.
-	Q_DECL_CONSTEXPR T y() const { return (*this)[1]; }
+    /// \brief Returns the value of the Y coordinate of this point.
+    Q_DECL_CONSTEXPR T y() const { return (*this)[1]; }
 
-	/// \brief Returns a reference to the X coordinate of this point.
-	T& x() { return (*this)[0]; }
+    /// \brief Returns a reference to the X coordinate of this point.
+    T& x() { return (*this)[0]; }
 
-	/// \brief Returns a reference to the Y coordinate of this point.
-	T& y() { return (*this)[1]; }
+    /// \brief Returns a reference to the Y coordinate of this point.
+    T& y() { return (*this)[1]; }
 
-	////////////////////////////////// Comparison ////////////////////////////////
+    ////////////////////////////////// Comparison ////////////////////////////////
 
-	/// \brief Compares two points for exact equality.
-	/// \return \c true if all coordinates are equal; \c false otherwise.
-	Q_DECL_CONSTEXPR bool operator==(const Point_2& p) const { return (p.x()==x()) && (p.y()==y()); }
+    /// \brief Compares two points for exact equality.
+    /// \return \c true if all coordinates are equal; \c false otherwise.
+    Q_DECL_CONSTEXPR bool operator==(const Point_2& p) const { return (p.x()==x()) && (p.y()==y()); }
 
-	/// \brief Compares two points for inequality.
-	/// \return \c true if any of the coordinates is not equal; \c false if all are equal.
-	Q_DECL_CONSTEXPR bool operator!=(const Point_2& p) const { return (p.x()!=x()) || (p.y()!=y()); }
+    /// \brief Compares two points for inequality.
+    /// \return \c true if any of the coordinates is not equal; \c false if all are equal.
+    Q_DECL_CONSTEXPR bool operator!=(const Point_2& p) const { return (p.x()!=x()) || (p.y()!=y()); }
 
-	/// \brief Tests whether this point is at the origin, i.e. all of its coordinates are zero.
-	/// \return \c true if all of the coordinates are exactly zero; \c false otherwise.
-	Q_DECL_CONSTEXPR bool operator==(Origin) const { return (x()==T(0)) && (y()==T(0)); }
+    /// \brief Tests whether this point is at the origin, i.e. all of its coordinates are zero.
+    /// \return \c true if all of the coordinates are exactly zero; \c false otherwise.
+    Q_DECL_CONSTEXPR bool operator==(Origin) const { return (x()==T(0)) && (y()==T(0)); }
 
-	/// \brief Tests whether the point is not at the origin, i.e. any of the coordinates is nonzero.
-	/// \return \c true if any of the coordinates is nonzero; \c false if this is the origin point.
-	Q_DECL_CONSTEXPR bool operator!=(Origin) const { return (x()!=T(0)) || (y()!=T(0)); }
+    /// \brief Tests whether the point is not at the origin, i.e. any of the coordinates is nonzero.
+    /// \return \c true if any of the coordinates is nonzero; \c false if this is the origin point.
+    Q_DECL_CONSTEXPR bool operator!=(Origin) const { return (x()!=T(0)) || (y()!=T(0)); }
 
-	/// \brief Tests if two points are equal within a specified tolerance.
-	/// \param p The second point.
-	/// \param tolerance A non-negative threshold for the equality test. The two points are considered equal if
-	///        the absolute differences in their X and Y coordinates are all smaller than this tolerance.
-	/// \return \c true if this point is equal to the second point within the specified tolerance; \c false otherwise.
-	Q_DECL_CONSTEXPR bool equals(const Point_2& p, T tolerance = T(FLOATTYPE_EPSILON)) const {
-		return std::abs(p.x() - x()) <= tolerance && std::abs(p.y() - y()) <= tolerance;
-	}
+    /// \brief Tests if two points are equal within a specified tolerance.
+    /// \param p The second point.
+    /// \param tolerance A non-negative threshold for the equality test. The two points are considered equal if
+    ///        the absolute differences in their X and Y coordinates are all smaller than this tolerance.
+    /// \return \c true if this point is equal to the second point within the specified tolerance; \c false otherwise.
+    Q_DECL_CONSTEXPR bool equals(const Point_2& p, T tolerance = T(FLOATTYPE_EPSILON)) const {
+        return std::abs(p.x() - x()) <= tolerance && std::abs(p.y() - y()) <= tolerance;
+    }
 
-	/// \brief Tests whether this point is at the origin within a specified tolerance.
-	/// \param tolerance A non-negative threshold.
-	/// \return \c true if the absolute values of the point's coordinates are all below \a tolerance.
-	Q_DECL_CONSTEXPR bool isOrigin(T tolerance = T(FLOATTYPE_EPSILON)) const {
-		return std::abs(x()) <= tolerance && std::abs(y()) <= tolerance;
-	}
+    /// \brief Tests whether this point is at the origin within a specified tolerance.
+    /// \param tolerance A non-negative threshold.
+    /// \return \c true if the absolute values of the point's coordinates are all below \a tolerance.
+    Q_DECL_CONSTEXPR bool isOrigin(T tolerance = T(FLOATTYPE_EPSILON)) const {
+        return std::abs(x()) <= tolerance && std::abs(y()) <= tolerance;
+    }
 
-	///////////////////////////////// Utilities ////////////////////////////////
+    ///////////////////////////////// Utilities ////////////////////////////////
 
-	/// \brief Returns the index of the coordinate with the maximum value.
-	Q_DECL_CONSTEXPR inline std::size_t maxComponent() const {
-	    return (x() >= y()) ? 0 : 1;
-	}
+    /// \brief Returns the index of the coordinate with the maximum value.
+    Q_DECL_CONSTEXPR inline std::size_t maxComponent() const {
+        return (x() >= y()) ? 0 : 1;
+    }
 
-	/// \brief Returns the index of the coordinate with the minimum value.
-	Q_DECL_CONSTEXPR inline std::size_t minComponent() const {
-	    return (x() <= y()) ? 0 : 1;
-	}
+    /// \brief Returns the index of the coordinate with the minimum value.
+    Q_DECL_CONSTEXPR inline std::size_t minComponent() const {
+        return (x() <= y()) ? 0 : 1;
+    }
 
-	/// \brief Returns the midpoint that is located halfway between this point and another point.
-	Q_DECL_CONSTEXPR inline Point_2 midpoint(const Point_2& other) const {
-		return Point_2(T(0.5) * (x() + other.x()), T(0.5) * (y() + other.y()));
-	}
+    /// \brief Returns the midpoint that is located halfway between this point and another point.
+    Q_DECL_CONSTEXPR inline Point_2 midpoint(const Point_2& other) const {
+        return Point_2(T(0.5) * (x() + other.x()), T(0.5) * (y() + other.y()));
+    }
 
-	/// \brief Produces a string representation of this point.
-	/// \return A string that contains the coordinate of the point.
-	QString toString() const {
-		return QString("(%1 %2)").arg(x()).arg(y());
-	}
+    /// \brief Produces a string representation of this point.
+    /// \return A string that contains the coordinate of the point.
+    QString toString() const {
+        return QString("(%1 %2)").arg(x()).arg(y());
+    }
 };
 
 /// \brief Computes the sum of a point and a vector.
 /// \relates Point_2
 template<typename T>
 Q_DECL_CONSTEXPR Point_2<T> operator+(const Point_2<T>& a, const Vector_2<T>& b) {
-	return Point_2<T>( a.x() + b.x(), a.y() + b.y() );
+    return Point_2<T>( a.x() + b.x(), a.y() + b.y() );
 }
 
 /// \brief Computes the sum of a vector and a point.
 /// \relates Point_2
 template<typename T>
 Q_DECL_CONSTEXPR Point_2<T> operator+(const Vector_2<T>& a, const Point_2<T>& b) {
-	return b + a;
+    return b + a;
 }
 
 /// \brief Computes the vector connecting two points.
 /// \relates Point_2
 template<typename T>
 Q_DECL_CONSTEXPR Vector_2<T> operator-(const Point_2<T>& a, const Point_2<T>& b) {
-	return Vector_2<T>( a.x() - b.x(), a.y() - b.y() );
+    return Vector_2<T>( a.x() - b.x(), a.y() - b.y() );
 }
 
 /// \brief Subtracts a vector from a point.
 /// \relates Point_2
 template<typename T>
 Q_DECL_CONSTEXPR Point_2<T> operator-(const Point_2<T>& a, const Vector_2<T>& b) {
-	return Point_2<T>( a.x() - b.x(), a.y() - b.y() );
+    return Point_2<T>( a.x() - b.x(), a.y() - b.y() );
 }
 
 /// \brief Computes the component-wise product of a point and a scalar value.
 /// \relates Point_2
 template<typename T>
 Q_DECL_CONSTEXPR Point_2<T> operator*(const Point_2<T>& a, T s) {
-	return Point_2<T>( a.x() * s, a.y() * s );
+    return Point_2<T>( a.x() * s, a.y() * s );
 }
 
 /// \brief Computes the component-wise product of a point and a scalar value.
 /// \relates Point_2
 template<typename T>
 Q_DECL_CONSTEXPR Point_2<T> operator*(T s, const Point_2<T>& a) {
-	return Point_2<T>( a.x() * s, a.y() * s );
+    return Point_2<T>( a.x() * s, a.y() * s );
 }
 
 /// \brief Computes the component-wise division of a vector by a scalar value.
 /// \relates Point_2
 template<typename T>
 Q_DECL_CONSTEXPR Point_2<T> operator/(const Point_2<T>& a, T s) {
-	return Point_2<T>( a.x() / s, a.y() / s );
+    return Point_2<T>( a.x() / s, a.y() / s );
 }
 
 /// \brief Writes a point to a text output stream.
 /// \relates Point_2
 template<typename T>
 inline std::ostream& operator<<(std::ostream& os, const Point_2<T>& v) {
-	return os << "(" << v.x() << ", " << v.y() << ")";
+    return os << "(" << v.x() << ", " << v.y() << ")";
 }
 
 /// \brief Writes a point to a Qt debug stream.
@@ -284,28 +284,28 @@ inline QDebug operator<<(QDebug dbg, const Point_2<T>& v) {
 /// \relates Point_2
 template<typename T>
 inline SaveStream& operator<<(SaveStream& stream, const Point_2<T>& v) {
-	return stream << v.x() << v.y();
+    return stream << v.x() << v.y();
 }
 
 /// \brief Reads a point from a binary input stream.
 /// \relates Point_2
 template<typename T>
 inline LoadStream& operator>>(LoadStream& stream, Point_2<T>& v) {
-	return stream >> v.x() >> v.y();
+    return stream >> v.x() >> v.y();
 }
 
 /// \brief Writes a point to a Qt data stream.
 /// \relates Point_2
 template<typename T>
 inline QDataStream& operator<<(QDataStream& stream, const Point_2<T>& v) {
-	return stream << v.x() << v.y();
+    return stream << v.x() << v.y();
 }
 
 /// \brief Reads a point from a Qt data stream.
 /// \relates Point_2
 template<typename T>
 inline QDataStream& operator>>(QDataStream& stream, Point_2<T>& v) {
-	return stream >> v.x() >> v.y();
+    return stream >> v.x() >> v.y();
 }
 
 
@@ -321,7 +321,7 @@ using Point2 = Point_2<FloatType>;
  */
 using Point2I = Point_2<int>;
 
-}	// End of namespace
+}   // End of namespace
 
 // Specialize STL templates for Point_2.
 template<typename T> struct std::tuple_size<Ovito::Point_2<T>> : std::integral_constant<std::size_t, 2> {};

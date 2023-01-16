@@ -38,37 +38,37 @@ SET_OVITO_OBJECT_EDITOR(ExpressionSelectionModifier, ExpressionSelectionModifier
 ******************************************************************************/
 void ExpressionSelectionModifierEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 {
-	QWidget* rollout = createRollout(tr("Expression selection"), rolloutParams, "manual:particles.modifiers.expression_select");
+    QWidget* rollout = createRollout(tr("Expression selection"), rolloutParams, "manual:particles.modifiers.expression_select");
 
     // Create the rollout contents.
-	QVBoxLayout* layout = new QVBoxLayout(rollout);
-	layout->setContentsMargins(4,4,4,4);
-	layout->setSpacing(0);
+    QVBoxLayout* layout = new QVBoxLayout(rollout);
+    layout->setContentsMargins(4,4,4,4);
+    layout->setSpacing(0);
 
-	ModifierDelegateParameterUI* delegateUI = new ModifierDelegateParameterUI(this, ExpressionSelectionModifierDelegate::OOClass());
-	layout->addWidget(new QLabel(tr("Operate on:")));
-	layout->addWidget(delegateUI->comboBox());
+    ModifierDelegateParameterUI* delegateUI = new ModifierDelegateParameterUI(this, ExpressionSelectionModifierDelegate::OOClass());
+    layout->addWidget(new QLabel(tr("Operate on:")));
+    layout->addWidget(delegateUI->comboBox());
 
-	layout->addWidget(new QLabel(tr("Boolean expression:")));
-	StringParameterUI* expressionUI = new StringParameterUI(this, PROPERTY_FIELD(ExpressionSelectionModifier::expression));
-	expressionEdit = new AutocompleteTextEdit();
-	expressionUI->setTextBox(expressionEdit);
-	layout->addWidget(expressionUI->textBox());
+    layout->addWidget(new QLabel(tr("Boolean expression:")));
+    StringParameterUI* expressionUI = new StringParameterUI(this, PROPERTY_FIELD(ExpressionSelectionModifier::expression));
+    expressionEdit = new AutocompleteTextEdit();
+    expressionUI->setTextBox(expressionEdit);
+    layout->addWidget(expressionUI->textBox());
 
-	// Status label.
-	layout->addSpacing(12);
-	layout->addWidget((new ObjectStatusDisplay(this))->statusWidget());
+    // Status label.
+    layout->addSpacing(12);
+    layout->addWidget((new ObjectStatusDisplay(this))->statusWidget());
 
-	QWidget* variablesRollout = createRollout(tr("Variables"), rolloutParams.after(rollout), "manual:particles.modifiers.expression_select");
+    QWidget* variablesRollout = createRollout(tr("Variables"), rolloutParams.after(rollout), "manual:particles.modifiers.expression_select");
     QVBoxLayout* variablesLayout = new QVBoxLayout(variablesRollout);
     variablesLayout->setContentsMargins(4,4,4,4);
-	variableNamesList = new QLabel();
-	variableNamesList->setWordWrap(true);
-	variableNamesList->setTextInteractionFlags(Qt::TextInteractionFlags(Qt::TextSelectableByMouse | Qt::TextSelectableByKeyboard | Qt::LinksAccessibleByMouse | Qt::LinksAccessibleByKeyboard));
-	variablesLayout->addWidget(variableNamesList, 1);
+    variableNamesList = new QLabel();
+    variableNamesList->setWordWrap(true);
+    variableNamesList->setTextInteractionFlags(Qt::TextInteractionFlags(Qt::TextSelectableByMouse | Qt::TextSelectableByKeyboard | Qt::LinksAccessibleByMouse | Qt::LinksAccessibleByKeyboard));
+    variablesLayout->addWidget(variableNamesList, 1);
 
-	// Update input variables list if another modifier has been loaded into the editor.
-	connect(this, &ExpressionSelectionModifierEditor::contentsReplaced, this, &ExpressionSelectionModifierEditor::updateEditorFields);
+    // Update input variables list if another modifier has been loaded into the editor.
+    connect(this, &ExpressionSelectionModifierEditor::contentsReplaced, this, &ExpressionSelectionModifierEditor::updateEditorFields);
 }
 
 /******************************************************************************
@@ -76,10 +76,10 @@ void ExpressionSelectionModifierEditor::createUI(const RolloutInsertionParameter
 ******************************************************************************/
 bool ExpressionSelectionModifierEditor::referenceEvent(RefTarget* source, const ReferenceEvent& event)
 {
-	if(source == editObject() && event.type() == ReferenceEvent::ObjectStatusChanged) {
-		updateEditorFields();
-	}
-	return PropertiesEditor::referenceEvent(source, event);
+    if(source == editObject() && event.type() == ReferenceEvent::ObjectStatusChanged) {
+        updateEditorFields();
+    }
+    return PropertiesEditor::referenceEvent(source, event);
 }
 
 /******************************************************************************
@@ -87,12 +87,12 @@ bool ExpressionSelectionModifierEditor::referenceEvent(RefTarget* source, const 
 ******************************************************************************/
 void ExpressionSelectionModifierEditor::updateEditorFields()
 {
-	ExpressionSelectionModifier* mod = static_object_cast<ExpressionSelectionModifier>(editObject());
-	if(!mod) return;
+    ExpressionSelectionModifier* mod = static_object_cast<ExpressionSelectionModifier>(editObject());
+    if(!mod) return;
 
-	variableNamesList->setText(mod->inputVariableTable() + QStringLiteral("<p></p>"));
-	container()->updateRolloutsLater();
-	expressionEdit->setWordList(mod->inputVariableNames());
+    variableNamesList->setText(mod->inputVariableTable() + QStringLiteral("<p></p>"));
+    container()->updateRolloutsLater();
+    expressionEdit->setWordList(mod->inputVariableNames());
 }
 
-}	// End of namespace
+}   // End of namespace

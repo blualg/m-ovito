@@ -35,12 +35,12 @@ IMPLEMENT_OVITO_CLASS(ColorParameterUI);
 * The constructor.
 ******************************************************************************/
 ColorParameterUI::ColorParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField)
-	: PropertyParameterUI(parentEditor, propField)
+    : PropertyParameterUI(parentEditor, propField)
 {
-	_label = new QLabel(propField->displayName() + ":");
-	_colorPicker = new ColorPickerWidget();
-	_colorPicker->setObjectName("colorButton");
-	connect(_colorPicker.data(), &ColorPickerWidget::colorChanged, this, &ColorParameterUI::onColorPickerChanged);
+    _label = new QLabel(propField->displayName() + ":");
+    _colorPicker = new ColorPickerWidget();
+    _colorPicker->setObjectName("colorButton");
+    connect(_colorPicker.data(), &ColorPickerWidget::colorChanged, this, &ColorParameterUI::onColorPickerChanged);
 }
 
 /******************************************************************************
@@ -48,9 +48,9 @@ ColorParameterUI::ColorParameterUI(PropertiesEditor* parentEditor, const Propert
 ******************************************************************************/
 ColorParameterUI::~ColorParameterUI()
 {
-	// Release GUI controls.
-	delete label();
-	delete colorPicker();
+    // Release GUI controls.
+    delete label();
+    delete colorPicker();
 }
 
 /******************************************************************************
@@ -59,22 +59,22 @@ ColorParameterUI::~ColorParameterUI()
 ******************************************************************************/
 void ColorParameterUI::resetUI()
 {
-	PropertyParameterUI::resetUI();
+    PropertyParameterUI::resetUI();
 
-	if(colorPicker())  {
-		if(editObject() && (!isReferenceFieldUI() || parameterObject())) {
-			colorPicker()->setEnabled(isEnabled());
-		}
-		else {
-			colorPicker()->setEnabled(false);
-			colorPicker()->setColor(Color(1,1,1));
-		}
-	}
+    if(colorPicker())  {
+        if(editObject() && (!isReferenceFieldUI() || parameterObject())) {
+            colorPicker()->setEnabled(isEnabled());
+        }
+        else {
+            colorPicker()->setEnabled(false);
+            colorPicker()->setColor(Color(1,1,1));
+        }
+    }
 
-	if(isReferenceFieldUI() && editObject()) {
-		// Update the displayed value when the animation time has changed.
-		connect(&mainWindow().datasetContainer(), &DataSetContainer::currentFrameChanged, this, &ColorParameterUI::updateUI, Qt::UniqueConnection);
-	}
+    if(isReferenceFieldUI() && editObject()) {
+        // Update the displayed value when the animation time has changed.
+        connect(&mainWindow().datasetContainer(), &DataSetContainer::currentFrameChanged, this, &ColorParameterUI::updateUI, Qt::UniqueConnection);
+    }
 }
 
 /******************************************************************************
@@ -82,23 +82,23 @@ void ColorParameterUI::resetUI()
 ******************************************************************************/
 void ColorParameterUI::updateUI()
 {
-	if(editObject() && colorPicker()) {
-		if(isReferenceFieldUI()) {
-			if(Controller* ctrl = dynamic_object_cast<Controller>(parameterObject())) {
-				colorPicker()->setColor(ctrl->getColorValue(currentAnimationTime().value_or(AnimationTime(0))));
-			}
-		}
-		else if(isPropertyFieldUI()) {
-			QVariant currentValue = editObject()->getPropertyFieldValue(propertyField());
-			OVITO_ASSERT(currentValue.isValid());
-			if(currentValue.canConvert<Color>()) {
-				colorPicker()->setColor(currentValue.value<Color>());
-			}
-			else if(currentValue.canConvert<QColor>()) {
-				colorPicker()->setColor(currentValue.value<QColor>());
-			}
-		}
-	}
+    if(editObject() && colorPicker()) {
+        if(isReferenceFieldUI()) {
+            if(Controller* ctrl = dynamic_object_cast<Controller>(parameterObject())) {
+                colorPicker()->setColor(ctrl->getColorValue(currentAnimationTime().value_or(AnimationTime(0))));
+            }
+        }
+        else if(isPropertyFieldUI()) {
+            QVariant currentValue = editObject()->getPropertyFieldValue(propertyField());
+            OVITO_ASSERT(currentValue.isValid());
+            if(currentValue.canConvert<Color>()) {
+                colorPicker()->setColor(currentValue.value<Color>());
+            }
+            else if(currentValue.canConvert<QColor>()) {
+                colorPicker()->setColor(currentValue.value<QColor>());
+            }
+        }
+    }
 }
 
 /******************************************************************************
@@ -106,14 +106,14 @@ void ColorParameterUI::updateUI()
 ******************************************************************************/
 void ColorParameterUI::setEnabled(bool enabled)
 {
-	if(enabled == isEnabled()) return;
-	PropertyParameterUI::setEnabled(enabled);
-	if(colorPicker()) {
-		if(isReferenceFieldUI())
-			colorPicker()->setEnabled(parameterObject() && isEnabled());
-		else
-			colorPicker()->setEnabled(editObject() && isEnabled());
-	}
+    if(enabled == isEnabled()) return;
+    PropertyParameterUI::setEnabled(enabled);
+    if(colorPicker()) {
+        if(isReferenceFieldUI())
+            colorPicker()->setEnabled(parameterObject() && isEnabled());
+        else
+            colorPicker()->setEnabled(editObject() && isEnabled());
+    }
 }
 
 /******************************************************************************
@@ -121,19 +121,19 @@ void ColorParameterUI::setEnabled(bool enabled)
 ******************************************************************************/
 void ColorParameterUI::onColorPickerChanged()
 {
-	if(colorPicker() && editObject()) {
-		performTransaction(tr("Change color"), [this]() {
-			if(isReferenceFieldUI()) {
-				if(Controller* ctrl = dynamic_object_cast<Controller>(parameterObject())) {
-					ctrl->setColorValue(currentAnimationTime().value_or(AnimationTime(0)), colorPicker()->color());
-				}
-			}
-			else if(isPropertyFieldUI()) {
-				editor()->changePropertyFieldValue(propertyField(), QVariant::fromValue((QColor)colorPicker()->color()));
-			}
-			Q_EMIT valueEntered();
-		});
-	}
+    if(colorPicker() && editObject()) {
+        performTransaction(tr("Change color"), [this]() {
+            if(isReferenceFieldUI()) {
+                if(Controller* ctrl = dynamic_object_cast<Controller>(parameterObject())) {
+                    ctrl->setColorValue(currentAnimationTime().value_or(AnimationTime(0)), colorPicker()->color());
+                }
+            }
+            else if(isPropertyFieldUI()) {
+                editor()->changePropertyFieldValue(propertyField(), QVariant::fromValue((QColor)colorPicker()->color()));
+            }
+            Q_EMIT valueEntered();
+        });
+    }
 }
 
-}	// End of namespace
+}   // End of namespace

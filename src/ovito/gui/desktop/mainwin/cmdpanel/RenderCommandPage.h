@@ -33,33 +33,33 @@ namespace Ovito {
  */
 class OVITO_GUI_EXPORT RenderCommandPage : public QWidget
 {
-	Q_OBJECT
+    Q_OBJECT
 
 public:
 
-	/// Initializes the render page.
+    /// Initializes the render page.
     RenderCommandPage(MainWindow& mainWindow, QWidget* parent);
 
-	/// Loads the layout of the widgets from the settings store.
-	void restoreLayout() {}
+    /// Loads the layout of the widgets from the settings store.
+    void restoreLayout() {}
 
-	/// Saves the layout of the widgets to the settings store.
-	void saveLayout() {}
+    /// Saves the layout of the widgets to the settings store.
+    void saveLayout() {}
 
 private Q_SLOTS:
 
-	/// This is called when a new dataset has been loaded.
-	void onDataSetChanged(DataSet* newDataSet);
+    /// This is called when a new dataset has been loaded.
+    void onDataSetChanged(DataSet* newDataSet);
 
-	/// This is called when new render settings have been loaded.
-	void onRenderSettingsReplaced(RenderSettings* newRenderSettings);
+    /// This is called when new render settings have been loaded.
+    void onRenderSettingsReplaced(RenderSettings* newRenderSettings);
 
 private:
 
-	/// This panel shows the properties of the render settings object.
-	PropertiesPanel* propertiesPanel;
+    /// This panel shows the properties of the render settings object.
+    PropertiesPanel* propertiesPanel;
 
-	QMetaObject::Connection _renderSettingsReplacedConnection;
+    QMetaObject::Connection _renderSettingsReplacedConnection;
 };
 
-}	// End of namespace
+}   // End of namespace

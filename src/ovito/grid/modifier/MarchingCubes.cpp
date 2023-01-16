@@ -686,4 +686,4 @@ SurfaceMeshAccess::vertex_index MarchingCubes::createCenterVertex(int i, int j, 
     return _outputMesh.createVertex(p);
 }
 
-}	// End of namespace
+}   // End of namespace

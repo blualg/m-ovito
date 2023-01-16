@@ -34,22 +34,22 @@
 
 namespace Ovito::CrystalAnalysis 
 {
-	using namespace Ovito::Particles;
-	using namespace Ovito::Mesh;
-	using namespace Ovito::StdObj;
-	using namespace Ovito::Grid;
+    using namespace Ovito::Particles;
+    using namespace Ovito::Mesh;
+    using namespace Ovito::StdObj;
+    using namespace Ovito::Grid;
 
-	class MicrostructurePhase;
-	class BurgersVectorFamily;
-	class DislocationVis;
-	class DislocationNetworkObject;
-	class ClusterGraphObject;
-	class ClusterGraph;
-	class DislocationNetwork;
-	struct DislocationNode;
-	struct DislocationSegment;
-	class Microstructure;
-	class MicrostructureAccess;
+    class MicrostructurePhase;
+    class BurgersVectorFamily;
+    class DislocationVis;
+    class DislocationNetworkObject;
+    class ClusterGraphObject;
+    class ClusterGraph;
+    class DislocationNetwork;
+    struct DislocationNode;
+    struct DislocationSegment;
+    class Microstructure;
+    class MicrostructureAccess;
 }
 
 #endif

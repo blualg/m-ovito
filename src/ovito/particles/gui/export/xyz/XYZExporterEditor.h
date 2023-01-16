@@ -33,17 +33,17 @@ namespace Ovito::Particles {
  */
 class XYZExporterEditor : public FileColumnParticleExporterEditor
 {
-	OVITO_CLASS(XYZExporterEditor)
+    OVITO_CLASS(XYZExporterEditor)
 
 public:
 
-	/// Constructor.
-	Q_INVOKABLE XYZExporterEditor() {}
+    /// Constructor.
+    Q_INVOKABLE XYZExporterEditor() {}
 
 protected:
 
-	/// Creates the user interface controls for the editor.
-	virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
+    /// Creates the user interface controls for the editor.
+    virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
 };
 
-}	// End of namespace
+}   // End of namespace

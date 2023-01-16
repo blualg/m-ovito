@@ -37,25 +37,25 @@ IMPLEMENT_OVITO_CLASS(ParticleExporter);
 ******************************************************************************/
 PipelineFlowState ParticleExporter::getParticleData(int frame) const
 {
-	PipelineFlowState state = getPipelineDataToBeExported(frame);
-	if(!state)
-		return {};
+    PipelineFlowState state = getPipelineDataToBeExported(frame);
+    if(!state)
+        return {};
 
-	const ParticlesObject* particles = state.getObject<ParticlesObject>();
-	if(!particles)
-		throw Exception(tr("The selected data collection does not contain any particles that can be exported."));
-	if(!particles->getProperty(ParticlesObject::PositionProperty))
-		throw Exception(tr("The particles to be exported do not have any coordinates ('Position' property is missing)."));
+    const ParticlesObject* particles = state.getObject<ParticlesObject>();
+    if(!particles)
+        throw Exception(tr("The selected data collection does not contain any particles that can be exported."));
+    if(!particles->getProperty(ParticlesObject::PositionProperty))
+        throw Exception(tr("The particles to be exported do not have any coordinates ('Position' property is missing)."));
 
-	// Verify data, make sure array length is consistent for all particle properties.
-	particles->verifyIntegrity();
+    // Verify data, make sure array length is consistent for all particle properties.
+    particles->verifyIntegrity();
 
-	// Verify data, make sure array length is consistent for all bond properties.
-	if(particles->bonds()) {
-		particles->bonds()->verifyIntegrity();
-	}
+    // Verify data, make sure array length is consistent for all bond properties.
+    if(particles->bonds()) {
+        particles->bonds()->verifyIntegrity();
+    }
 
-	return state;
+    return state;
 }
 
 /******************************************************************************
@@ -64,12 +64,12 @@ PipelineFlowState ParticleExporter::getParticleData(int frame) const
  *****************************************************************************/
 void ParticleExporter::openOutputFile(const QString& filePath, int numberOfFrames)
 {
-	OVITO_ASSERT(!_outputFile.isOpen());
-	OVITO_ASSERT(!_outputStream);
+    OVITO_ASSERT(!_outputFile.isOpen());
+    OVITO_ASSERT(!_outputStream);
 
-	_outputFile.setFileName(filePath);
-	_outputStream = std::make_unique<CompressedTextWriter>(_outputFile);
-	_outputStream->setFloatPrecision(floatOutputPrecision());
+    _outputFile.setFileName(filePath);
+    _outputStream = std::make_unique<CompressedTextWriter>(_outputFile);
+    _outputStream->setFloatPrecision(floatOutputPrecision());
 }
 
 /******************************************************************************
@@ -78,12 +78,12 @@ void ParticleExporter::openOutputFile(const QString& filePath, int numberOfFrame
  *****************************************************************************/
 void ParticleExporter::closeOutputFile(bool exportCompleted)
 {
-	_outputStream.reset();
-	if(_outputFile.isOpen())
-		_outputFile.close();
+    _outputStream.reset();
+    if(_outputFile.isOpen())
+        _outputFile.close();
 
-	if(!exportCompleted)
-		_outputFile.remove();
+    if(!exportCompleted)
+        _outputFile.remove();
 }
 
 /******************************************************************************
@@ -91,16 +91,16 @@ void ParticleExporter::closeOutputFile(bool exportCompleted)
  *****************************************************************************/
 bool ParticleExporter::exportFrame(int frameNumber, const QString& filePath, MainThreadOperation& operation)
 {
-	// Retreive the particle data to be exported.
-	const PipelineFlowState& state = getParticleData(frameNumber);
-	if(operation.isCanceled() || !state)
-		return false;
+    // Retreive the particle data to be exported.
+    const PipelineFlowState& state = getParticleData(frameNumber);
+    if(operation.isCanceled() || !state)
+        return false;
 
-	// Set progress display.
-	operation.setProgressText(tr("Writing file %1").arg(filePath));
+    // Set progress display.
+    operation.setProgressText(tr("Writing file %1").arg(filePath));
 
-	// Let the subclass do the work.
-	return exportData(state, frameNumber, filePath, operation);
+    // Let the subclass do the work.
+    return exportData(state, frameNumber, filePath, operation);
 }
 
-}	// End of namespace
+}   // End of namespace

@@ -36,9 +36,9 @@ IMPLEMENT_OVITO_CLASS(VoxelGridAffineTransformationModifierDelegate);
 ******************************************************************************/
 QVector<DataObjectReference> VoxelGridAffineTransformationModifierDelegate::OOMetaClass::getApplicableObjects(const DataCollection& input) const
 {
-	if(input.containsObject<VoxelGrid>())
-		return { DataObjectReference(&VoxelGrid::OOClass()) };
-	return {};
+    if(input.containsObject<VoxelGrid>())
+        return { DataObjectReference(&VoxelGrid::OOClass()) };
+    return {};
 }
 
 /******************************************************************************
@@ -46,23 +46,23 @@ QVector<DataObjectReference> VoxelGridAffineTransformationModifierDelegate::OOMe
 ******************************************************************************/
 PipelineStatus VoxelGridAffineTransformationModifierDelegate::apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const PipelineFlowState& inputState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs)
 {
-	// Transform the spatial domains of VoxelGrid objects.
+    // Transform the spatial domains of VoxelGrid objects.
 
-	for(const DataObject* obj : state.data()->objects()) {
-		if(const VoxelGrid* existingObject = dynamic_object_cast<VoxelGrid>(obj)) {
-			if(existingObject->domain()) {
+    for(const DataObject* obj : state.data()->objects()) {
+        if(const VoxelGrid* existingObject = dynamic_object_cast<VoxelGrid>(obj)) {
+            if(existingObject->domain()) {
 
-				// Determine transformation matrix.
-				AffineTransformationModifier* mod = static_object_cast<AffineTransformationModifier>(request.modifier());
-				const AffineTransformation tm = mod->effectiveAffineTransformation(inputState);
+                // Determine transformation matrix.
+                AffineTransformationModifier* mod = static_object_cast<AffineTransformationModifier>(request.modifier());
+                const AffineTransformation tm = mod->effectiveAffineTransformation(inputState);
 
-				VoxelGrid* newObject = state.makeMutable(existingObject);
-				newObject->mutableDomain()->setCellMatrix(tm * existingObject->domain()->cellMatrix());
-			}
-		}
-	}
+                VoxelGrid* newObject = state.makeMutable(existingObject);
+                newObject->mutableDomain()->setCellMatrix(tm * existingObject->domain()->cellMatrix());
+            }
+        }
+    }
 
-	return PipelineStatus::Success;
+    return PipelineStatus::Success;
 }
 
-}	// End of namespace
+}   // End of namespace

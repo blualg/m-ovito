@@ -36,25 +36,25 @@ namespace Ovito {
  */
 class OVITO_CORE_EXPORT TransformedDataObject : public DataObject
 {
-	OVITO_CLASS(TransformedDataObject)
+    OVITO_CLASS(TransformedDataObject)
 
 public:
 
-	/// Constructor.
-	TransformedDataObject(ObjectCreationParams params, TransformingDataVis* creator = nullptr, const DataObject* sourceData = nullptr) : DataObject(params), 
-		_sourceDataObject(sourceData), _visElementRevision(creator ? creator->revisionNumber() : 0) {}
+    /// Constructor.
+    TransformedDataObject(ObjectCreationParams params, TransformingDataVis* creator = nullptr, const DataObject* sourceData = nullptr) : DataObject(params), 
+        _sourceDataObject(sourceData), _visElementRevision(creator ? creator->revisionNumber() : 0) {}
 
 private:
 
-	/// Stores a reference to the original DataObject this TransformedDataObject was generated from.
-	/// We use it to detect changes to the source object and avoid unnecessary regeneration
-	/// of the transient data object.
-	DECLARE_RUNTIME_PROPERTY_FIELD(DataOORef<const DataObject>, sourceDataObject, setSourceDataObject);
+    /// Stores a reference to the original DataObject this TransformedDataObject was generated from.
+    /// We use it to detect changes to the source object and avoid unnecessary regeneration
+    /// of the transient data object.
+    DECLARE_RUNTIME_PROPERTY_FIELD(DataOORef<const DataObject>, sourceDataObject, setSourceDataObject);
 
-	/// Stores a revision version number of the TransformingDataVis that created this TransformedDataObject.
-	/// We use this to detect changes to the TransformingDataVis's parameters that require a re-generation of the
-	/// transient data object.
-	DECLARE_RUNTIME_PROPERTY_FIELD(int, visElementRevision, setVisElementRevision);
+    /// Stores a revision version number of the TransformingDataVis that created this TransformedDataObject.
+    /// We use this to detect changes to the TransformingDataVis's parameters that require a re-generation of the
+    /// transient data object.
+    DECLARE_RUNTIME_PROPERTY_FIELD(int, visElementRevision, setVisElementRevision);
 };
 
-}	// End of namespace
+}   // End of namespace

@@ -33,26 +33,26 @@ namespace Ovito::CrystalAnalysis {
  */
 class DislocationNetworkObjectEditor : public PropertiesEditor
 {
-	OVITO_CLASS(DislocationNetworkObjectEditor)
+    OVITO_CLASS(DislocationNetworkObjectEditor)
 
 public:
 
-	/// Constructor.
-	Q_INVOKABLE DislocationNetworkObjectEditor() {}
+    /// Constructor.
+    Q_INVOKABLE DislocationNetworkObjectEditor() {}
 
 protected:
 
-	/// Creates the user interface controls for the editor.
-	virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
+    /// Creates the user interface controls for the editor.
+    virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
 
 protected Q_SLOTS:
 
-	/// Is called when the user has double-clicked on one of the entries in the list widget.
-	void onDoubleClickPattern(const QModelIndex& index);
+    /// Is called when the user has double-clicked on one of the entries in the list widget.
+    void onDoubleClickPattern(const QModelIndex& index);
 
 private:
 
-	RefTargetListParameterUI* typesListUI;
+    RefTargetListParameterUI* typesListUI;
 };
 
-}	// End of namespace
+}   // End of namespace

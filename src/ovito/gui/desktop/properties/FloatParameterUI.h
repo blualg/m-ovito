@@ -33,43 +33,43 @@ namespace Ovito {
 ******************************************************************************/
 class OVITO_GUI_EXPORT FloatParameterUI : public NumericalParameterUI
 {
-	OVITO_CLASS(FloatParameterUI)
+    OVITO_CLASS(FloatParameterUI)
 
 public:
 
-	/// Constructor for a Qt property.
-	FloatParameterUI(PropertiesEditor* parentEditor, const char* propertyName, const QString& labelText = QString(), const QMetaObject* parameterUnitType = nullptr);
+    /// Constructor for a Qt property.
+    FloatParameterUI(PropertiesEditor* parentEditor, const char* propertyName, const QString& labelText = QString(), const QMetaObject* parameterUnitType = nullptr);
 
-	/// Constructor for a PropertyField property.
-	FloatParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField);
+    /// Constructor for a PropertyField property.
+    FloatParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField);
 
-	/// Gets the minimum value to be entered.
-	/// This value is in native controller units.
-	FloatType minValue() const;
+    /// Gets the minimum value to be entered.
+    /// This value is in native controller units.
+    FloatType minValue() const;
 
-	/// Sets the minimum value to be entered.
-	/// This value must be specified in native controller units.
-	void setMinValue(FloatType minValue);
+    /// Sets the minimum value to be entered.
+    /// This value must be specified in native controller units.
+    void setMinValue(FloatType minValue);
 
-	/// Gets the maximum value to be entered.
-	/// This value is in native controller units.
-	FloatType maxValue() const;
+    /// Gets the maximum value to be entered.
+    /// This value is in native controller units.
+    FloatType maxValue() const;
 
-	/// Sets the maximum value to be entered.
-	/// This value must be specified in native controller units.
-	void setMaxValue(FloatType maxValue);
+    /// Sets the maximum value to be entered.
+    /// This value must be specified in native controller units.
+    void setMaxValue(FloatType maxValue);
 
-	/// This method updates the displayed value of the parameter UI.
-	virtual void updateUI() override;
+    /// This method updates the displayed value of the parameter UI.
+    virtual void updateUI() override;
 
-	/// Takes the value entered by the user and stores it in the property field
-	/// this property UI is bound to.
-	virtual void updatePropertyValue() override;
+    /// Takes the value entered by the user and stores it in the property field
+    /// this property UI is bound to.
+    virtual void updatePropertyValue() override;
 
 public:
 
-	Q_PROPERTY(FloatType minValue READ minValue WRITE setMinValue)
-	Q_PROPERTY(FloatType maxValue READ maxValue WRITE setMaxValue)
+    Q_PROPERTY(FloatType minValue READ minValue WRITE setMinValue)
+    Q_PROPERTY(FloatType maxValue READ maxValue WRITE setMaxValue)
 };
 
-}	// End of namespace
+}   // End of namespace

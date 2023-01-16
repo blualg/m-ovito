@@ -43,7 +43,7 @@
 ******************************************************************************/
 namespace Ovito {
         class MainWindow;
-        class WasmDataSetContainer;		
+        class WasmDataSetContainer;     
         class QuickViewportWindow;
 }
 

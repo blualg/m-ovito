@@ -42,14 +42,14 @@ static QThreadStorage<std::unique_ptr<QOpenGLContext>> globalOffscreenContext;
 ******************************************************************************/
 OffscreenOpenGLSceneRenderer::OffscreenOpenGLSceneRenderer(ObjectCreationParams params) : OpenGLSceneRenderer(params) 
 {
-	// Create the offscreen surface.
-	// This must happen in the main thread.
-	createOffscreenSurface();
+    // Create the offscreen surface.
+    // This must happen in the main thread.
+    createOffscreenSurface();
 
-	// Initialize OpenGL in main thread if it hasn't already been initialized.
-	// This call is a workaround for an access vialotion that otherwise occurs on Windows
-	// when creating the first OpenGL context from a worker thread when running in headless mode. 
-	OpenGLSceneRenderer::determineOpenGLInfo();
+    // Initialize OpenGL in main thread if it hasn't already been initialized.
+    // This call is a workaround for an access vialotion that otherwise occurs on Windows
+    // when creating the first OpenGL context from a worker thread when running in headless mode. 
+    OpenGLSceneRenderer::determineOpenGLInfo();
 }
 
 /******************************************************************************
@@ -57,25 +57,25 @@ OffscreenOpenGLSceneRenderer::OffscreenOpenGLSceneRenderer(ObjectCreationParams 
 ******************************************************************************/
 void OffscreenOpenGLSceneRenderer::createOffscreenSurface() 
 { 
-	// Surface creation can only be performed in the main thread.
-	OVITO_ASSERT(QThread::currentThread() == qApp->thread());
-	OVITO_ASSERT(!_offscreenContext && !_offscreenSurface);
-	
-	// OpenGL rendering and surface creation requires Qt to run in GUI mode.
-	if(Application::instance()->headlessMode()) {
-		throw RendererException(tr(
-				"OVITO's OpenGLRenderer cannot be used in headless mode, that is if the application is running without access to a graphics environment. "
-				"Please use a different rendering backend or see https://docs.ovito.org/python/modules/ovito_vis.html#ovito.vis.OpenGLRenderer for instructions "
-				"on how to enable OpenGL rendering in Python scripts."));
-	}
+    // Surface creation can only be performed in the main thread.
+    OVITO_ASSERT(QThread::currentThread() == qApp->thread());
+    OVITO_ASSERT(!_offscreenContext && !_offscreenSurface);
+    
+    // OpenGL rendering and surface creation requires Qt to run in GUI mode.
+    if(Application::instance()->headlessMode()) {
+        throw RendererException(tr(
+                "OVITO's OpenGLRenderer cannot be used in headless mode, that is if the application is running without access to a graphics environment. "
+                "Please use a different rendering backend or see https://docs.ovito.org/python/modules/ovito_vis.html#ovito.vis.OpenGLRenderer for instructions "
+                "on how to enable OpenGL rendering in Python scripts."));
+    }
 
-	if(!_offscreenSurface)
-		_offscreenSurface = new QOffscreenSurface(nullptr, this);
-	if(QOpenGLContext::globalShareContext())
-		_offscreenSurface->setFormat(QOpenGLContext::globalShareContext()->format());
-	else
-		_offscreenSurface->setFormat(QSurfaceFormat::defaultFormat());
-	_offscreenSurface->create();
+    if(!_offscreenSurface)
+        _offscreenSurface = new QOffscreenSurface(nullptr, this);
+    if(QOpenGLContext::globalShareContext())
+        _offscreenSurface->setFormat(QOpenGLContext::globalShareContext()->format());
+    else
+        _offscreenSurface->setFormat(QSurfaceFormat::defaultFormat());
+    _offscreenSurface->create();
 }
 
 /******************************************************************************
@@ -83,55 +83,55 @@ void OffscreenOpenGLSceneRenderer::createOffscreenSurface()
 ******************************************************************************/
 bool OffscreenOpenGLSceneRenderer::startRender(const RenderSettings* settings, const QSize& frameBufferSize, MixedKeyCache& visCache)
 {
-	if(Application::instance()->headlessMode())
-		throw RendererException(tr("Cannot use OpenGL renderer when running in headless mode. "
-				"Please use a different rendering engine or run program on a machine where access to "
-				"graphics hardware is possible."));
+    if(Application::instance()->headlessMode())
+        throw RendererException(tr("Cannot use OpenGL renderer when running in headless mode. "
+                "Please use a different rendering engine or run program on a machine where access to "
+                "graphics hardware is possible."));
 
-	if(!OpenGLSceneRenderer::startRender(settings, frameBufferSize, visCache))
-		return false;
+    if(!OpenGLSceneRenderer::startRender(settings, frameBufferSize, visCache))
+        return false;
 
-	if(!globalOffscreenContext.hasLocalData() || !globalOffscreenContext.localData()) {
-		// Create an OpenGL context for rendering to an offscreen buffer.
-		_offscreenContext = std::make_unique<QOpenGLContext>();
-		// The context should share its resources with interactive viewport renderers (only when operating in the same thread).
-		if(QOpenGLContext::globalShareContext() && QThread::currentThread() == QOpenGLContext::globalShareContext()->thread())
-			_offscreenContext->setShareContext(QOpenGLContext::globalShareContext());
-		if(!_offscreenContext->create())
-			throw RendererException(tr("Failed to create OpenGL context for rendering."));
-	}
-	else {
-		// Re-use existing GL context.
-		_offscreenContext = std::move(globalOffscreenContext.localData());
-	}
+    if(!globalOffscreenContext.hasLocalData() || !globalOffscreenContext.localData()) {
+        // Create an OpenGL context for rendering to an offscreen buffer.
+        _offscreenContext = std::make_unique<QOpenGLContext>();
+        // The context should share its resources with interactive viewport renderers (only when operating in the same thread).
+        if(QOpenGLContext::globalShareContext() && QThread::currentThread() == QOpenGLContext::globalShareContext()->thread())
+            _offscreenContext->setShareContext(QOpenGLContext::globalShareContext());
+        if(!_offscreenContext->create())
+            throw RendererException(tr("Failed to create OpenGL context for rendering."));
+    }
+    else {
+        // Re-use existing GL context.
+        _offscreenContext = std::move(globalOffscreenContext.localData());
+    }
 
-	// Check offscreen surface (creation must have happened in the main thread).
-	OVITO_ASSERT(_offscreenSurface);
-	if(!_offscreenSurface->isValid())
-		throw RendererException(tr("Failed to create offscreen rendering surface."));
+    // Check offscreen surface (creation must have happened in the main thread).
+    OVITO_ASSERT(_offscreenSurface);
+    if(!_offscreenSurface->isValid())
+        throw RendererException(tr("Failed to create offscreen rendering surface."));
 
-	// Make the context current.
-	if(!_offscreenContext->makeCurrent(_offscreenSurface))
-		throw RendererException(tr("Failed to make OpenGL context current."));
+    // Make the context current.
+    if(!_offscreenContext->makeCurrent(_offscreenSurface))
+        throw RendererException(tr("Failed to make OpenGL context current."));
 
-	// Determine internal framebuffer size including supersampling.
-	_framebufferSize = QSize(frameBufferSize.width() * antialiasingLevel(), frameBufferSize.height() * antialiasingLevel());
+    // Determine internal framebuffer size including supersampling.
+    _framebufferSize = QSize(frameBufferSize.width() * antialiasingLevel(), frameBufferSize.height() * antialiasingLevel());
 
-	// Create OpenGL framebuffer.
-	QOpenGLFramebufferObjectFormat framebufferFormat;
-	framebufferFormat.setAttachment(QOpenGLFramebufferObject::CombinedDepthStencil);
-	_framebufferObject = std::make_unique<QOpenGLFramebufferObject>(_framebufferSize, framebufferFormat);
-	if(!_framebufferObject->isValid())
-		throw RendererException(tr("Failed to create OpenGL framebuffer object for offscreen rendering."));
+    // Create OpenGL framebuffer.
+    QOpenGLFramebufferObjectFormat framebufferFormat;
+    framebufferFormat.setAttachment(QOpenGLFramebufferObject::CombinedDepthStencil);
+    _framebufferObject = std::make_unique<QOpenGLFramebufferObject>(_framebufferSize, framebufferFormat);
+    if(!_framebufferObject->isValid())
+        throw RendererException(tr("Failed to create OpenGL framebuffer object for offscreen rendering."));
 
-	// Bind OpenGL buffer.
-	if(!_framebufferObject->bind())
-		throw RendererException(tr("Failed to bind OpenGL framebuffer object for offscreen rendering."));
+    // Bind OpenGL buffer.
+    if(!_framebufferObject->bind())
+        throw RendererException(tr("Failed to bind OpenGL framebuffer object for offscreen rendering."));
 
-	// Tell the base class about the FBO we are rendering into.
-	setPrimaryFramebuffer(_framebufferObject->handle());
+    // Tell the base class about the FBO we are rendering into.
+    setPrimaryFramebuffer(_framebufferObject->handle());
 
-	return true;
+    return true;
 }
 
 /******************************************************************************
@@ -139,20 +139,20 @@ bool OffscreenOpenGLSceneRenderer::startRender(const RenderSettings* settings, c
 ******************************************************************************/
 void OffscreenOpenGLSceneRenderer::beginFrame(AnimationTime time, Scene* scene, const ViewProjectionParameters& params, Viewport* vp, const QRect& viewportRect, FrameBuffer* frameBuffer)
 {
-	// Make GL context current.
-	if(!_offscreenContext || !_offscreenContext->makeCurrent(_offscreenSurface))
-		throw RendererException(tr("Failed to make OpenGL context current."));
+    // Make GL context current.
+    if(!_offscreenContext || !_offscreenContext->makeCurrent(_offscreenSurface))
+        throw RendererException(tr("Failed to make OpenGL context current."));
 
-	// Tell the resource manager that we are beginning a new frame.
-	OVITO_ASSERT(currentResourceFrame() == 0);
-	setCurrentResourceFrame(OpenGLResourceManager::instance()->acquireResourceFrame());
+    // Tell the resource manager that we are beginning a new frame.
+    OVITO_ASSERT(currentResourceFrame() == 0);
+    setCurrentResourceFrame(OpenGLResourceManager::instance()->acquireResourceFrame());
 
-	// Always render into the upper left corner of the OpenGL framebuffer.
-	// That's because the OpenGL framebuffer may be smaller than the target OVITO framebuffer.
-	QRect shiftedViewportRect = viewportRect;
-	shiftedViewportRect.moveTo(0,0);
+    // Always render into the upper left corner of the OpenGL framebuffer.
+    // That's because the OpenGL framebuffer may be smaller than the target OVITO framebuffer.
+    QRect shiftedViewportRect = viewportRect;
+    shiftedViewportRect.moveTo(0,0);
 
-	OpenGLSceneRenderer::beginFrame(time, scene, params, vp, shiftedViewportRect, frameBuffer);
+    OpenGLSceneRenderer::beginFrame(time, scene, params, vp, shiftedViewportRect, frameBuffer);
 }
 
 /******************************************************************************
@@ -160,13 +160,13 @@ void OffscreenOpenGLSceneRenderer::beginFrame(AnimationTime time, Scene* scene, 
 ******************************************************************************/
 bool OffscreenOpenGLSceneRenderer::renderFrame(const QRect& viewportRect, MainThreadOperation& operation)
 {
-	// Always render into the upper left corner of the OpenGL framebuffer.
-	// That's because the OpenGL framebuffer may be smaller than the target OVITO framebuffer.
-	QRect shiftedViewportRect = viewportRect;
-	shiftedViewportRect.moveTo(0,0);
+    // Always render into the upper left corner of the OpenGL framebuffer.
+    // That's because the OpenGL framebuffer may be smaller than the target OVITO framebuffer.
+    QRect shiftedViewportRect = viewportRect;
+    shiftedViewportRect.moveTo(0,0);
 
-	// Let the base class do the main rendering work.
-	return OpenGLSceneRenderer::renderFrame(shiftedViewportRect, operation);
+    // Let the base class do the main rendering work.
+    return OpenGLSceneRenderer::renderFrame(shiftedViewportRect, operation);
 }
 
 /******************************************************************************
@@ -174,13 +174,13 @@ bool OffscreenOpenGLSceneRenderer::renderFrame(const QRect& viewportRect, MainTh
 ******************************************************************************/
 bool OffscreenOpenGLSceneRenderer::renderOverlays(bool underlays, const QRect& logicalViewportRect, const QRect& physicalViewportRect, MainThreadOperation& operation)
 {
-	// Always render into the upper left corner of the OpenGL framebuffer.
-	// That's because the OpenGL framebuffer may be smaller than the target OVITO framebuffer.
-	QRect shiftedViewportRect = physicalViewportRect;
-	shiftedViewportRect.moveTo(0,0);
+    // Always render into the upper left corner of the OpenGL framebuffer.
+    // That's because the OpenGL framebuffer may be smaller than the target OVITO framebuffer.
+    QRect shiftedViewportRect = physicalViewportRect;
+    shiftedViewportRect.moveTo(0,0);
 
-	// Delegate rendering work to base class.
-	return OpenGLSceneRenderer::renderOverlays(underlays, logicalViewportRect, shiftedViewportRect, operation);
+    // Delegate rendering work to base class.
+    return OpenGLSceneRenderer::renderOverlays(underlays, logicalViewportRect, shiftedViewportRect, operation);
 }
 
 /******************************************************************************
@@ -188,44 +188,44 @@ bool OffscreenOpenGLSceneRenderer::renderOverlays(bool underlays, const QRect& l
 ******************************************************************************/
 void OffscreenOpenGLSceneRenderer::endFrame(bool renderingSuccessful, const QRect& viewportRect)
 {
-	if(renderingSuccessful && frameBuffer()) {
+    if(renderingSuccessful && frameBuffer()) {
 
-		// Flush the contents to the FBO before extracting image.
-		glcontext()->swapBuffers(_offscreenSurface);
+        // Flush the contents to the FBO before extracting image.
+        glcontext()->swapBuffers(_offscreenSurface);
 
-		// Fetch rendered image from OpenGL framebuffer.
-		QImage renderedImage = _framebufferObject->toImage();
-		// We need it in ARGB32 format for best results.
-		renderedImage.reinterpretAsFormat(QImage::Format_ARGB32);
-		// Rescale supersampled image.
-		QSize originalSize(renderedImage.width() / antialiasingLevel(), renderedImage.height() / antialiasingLevel());
-		QImage scaledImage = renderedImage.scaled(originalSize, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+        // Fetch rendered image from OpenGL framebuffer.
+        QImage renderedImage = _framebufferObject->toImage();
+        // We need it in ARGB32 format for best results.
+        renderedImage.reinterpretAsFormat(QImage::Format_ARGB32);
+        // Rescale supersampled image.
+        QSize originalSize(renderedImage.width() / antialiasingLevel(), renderedImage.height() / antialiasingLevel());
+        QImage scaledImage = renderedImage.scaled(originalSize, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
 
-		// Transfer OpenGL image to the output frame buffer.
-		if(!frameBuffer()->image().isNull()) {
-			QPainter painter(&frameBuffer()->image());
-			painter.drawImage(viewportRect, scaledImage, QRect(0, scaledImage.height() - viewportRect.height(), viewportRect.width(), viewportRect.height()));
-		}
-		else {
-			frameBuffer()->image() = scaledImage;
-		}
-		frameBuffer()->update(viewportRect);
-	}
+        // Transfer OpenGL image to the output frame buffer.
+        if(!frameBuffer()->image().isNull()) {
+            QPainter painter(&frameBuffer()->image());
+            painter.drawImage(viewportRect, scaledImage, QRect(0, scaledImage.height() - viewportRect.height(), viewportRect.width(), viewportRect.height()));
+        }
+        else {
+            frameBuffer()->image() = scaledImage;
+        }
+        frameBuffer()->update(viewportRect);
+    }
 
-	// Tell the resource manager that we are done rendering the frame.
-	if(_previousResourceFrame) {
-		OpenGLResourceManager::instance()->releaseResourceFrame(_previousResourceFrame);
-	}
-	// Keep the resource from the last frame alive to speed up rendering of successive frames.
-	_previousResourceFrame = currentResourceFrame();
-	setCurrentResourceFrame(0);
+    // Tell the resource manager that we are done rendering the frame.
+    if(_previousResourceFrame) {
+        OpenGLResourceManager::instance()->releaseResourceFrame(_previousResourceFrame);
+    }
+    // Keep the resource from the last frame alive to speed up rendering of successive frames.
+    _previousResourceFrame = currentResourceFrame();
+    setCurrentResourceFrame(0);
 
-	// Always render into the upper left corner of the OpenGL framebuffer.
-	// That's because the OpenGL framebuffer may be smaller than the target OVITO framebuffer.
-	QRect shiftedViewportRect = viewportRect;
-	shiftedViewportRect.moveTo(0,0);
+    // Always render into the upper left corner of the OpenGL framebuffer.
+    // That's because the OpenGL framebuffer may be smaller than the target OVITO framebuffer.
+    QRect shiftedViewportRect = viewportRect;
+    shiftedViewportRect.moveTo(0,0);
 
-	OpenGLSceneRenderer::endFrame(renderingSuccessful, shiftedViewportRect);
+    OpenGLSceneRenderer::endFrame(renderingSuccessful, shiftedViewportRect);
 }
 
 /******************************************************************************
@@ -233,27 +233,27 @@ void OffscreenOpenGLSceneRenderer::endFrame(bool renderingSuccessful, const QRec
 ******************************************************************************/
 void OffscreenOpenGLSceneRenderer::endRender()
 {
-	OpenGLSceneRenderer::endRender();
+    OpenGLSceneRenderer::endRender();
 
-	// Tell the resource manager that we are done rendering the frame.
-	if(_previousResourceFrame) {
-		OpenGLResourceManager::instance()->releaseResourceFrame(_previousResourceFrame);
-		_previousResourceFrame = 0;
-	}
+    // Tell the resource manager that we are done rendering the frame.
+    if(_previousResourceFrame) {
+        OpenGLResourceManager::instance()->releaseResourceFrame(_previousResourceFrame);
+        _previousResourceFrame = 0;
+    }
 
-	// Release OpenGL resources.
-	QOpenGLFramebufferObject::bindDefault();
-	if(_offscreenContext && _offscreenContext.get() == QOpenGLContext::currentContext())
-		_offscreenContext->doneCurrent();
-	_framebufferObject.reset();
+    // Release OpenGL resources.
+    QOpenGLFramebufferObject::bindDefault();
+    if(_offscreenContext && _offscreenContext.get() == QOpenGLContext::currentContext())
+        _offscreenContext->doneCurrent();
+    _framebufferObject.reset();
 
-	// Keep GL context alive to re-use it in subsequent render passes - even if the OffscreenOpenGLSceneRenderer gets destroyed.
-	if(_offscreenContext)
-		globalOffscreenContext.localData() = std::move(_offscreenContext);
+    // Keep GL context alive to re-use it in subsequent render passes - even if the OffscreenOpenGLSceneRenderer gets destroyed.
+    if(_offscreenContext)
+        globalOffscreenContext.localData() = std::move(_offscreenContext);
 
-	_offscreenContext.reset();
-	setPrimaryFramebuffer(0);
-	// Keep offscreen surface alive and re-use it in subsequent render passes until the renderer is deleted.
+    _offscreenContext.reset();
+    setPrimaryFramebuffer(0);
+    // Keep offscreen surface alive and re-use it in subsequent render passes until the renderer is deleted.
 }
 
-}	// End of namespace
+}   // End of namespace

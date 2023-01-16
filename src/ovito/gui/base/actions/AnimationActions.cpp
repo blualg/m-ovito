@@ -33,8 +33,8 @@ namespace Ovito {
 ******************************************************************************/
 void ActionManager::on_AnimationGotoStart_triggered()
 {
-	if(AnimationSettings* anim = userInterface().datasetContainer().activeAnimationSettings())
-		anim->jumpToAnimationStart();
+    if(AnimationSettings* anim = userInterface().datasetContainer().activeAnimationSettings())
+        anim->jumpToAnimationStart();
 }
 
 /******************************************************************************
@@ -42,8 +42,8 @@ void ActionManager::on_AnimationGotoStart_triggered()
 ******************************************************************************/
 void ActionManager::on_AnimationGotoEnd_triggered()
 {
-	if(AnimationSettings* anim = userInterface().datasetContainer().activeAnimationSettings())
-		anim->jumpToAnimationEnd();
+    if(AnimationSettings* anim = userInterface().datasetContainer().activeAnimationSettings())
+        anim->jumpToAnimationEnd();
 }
 
 /******************************************************************************
@@ -51,8 +51,8 @@ void ActionManager::on_AnimationGotoEnd_triggered()
 ******************************************************************************/
 void ActionManager::on_AnimationGotoPreviousFrame_triggered()
 {
-	if(AnimationSettings* anim = userInterface().datasetContainer().activeAnimationSettings())
-		anim->jumpToPreviousFrame();
+    if(AnimationSettings* anim = userInterface().datasetContainer().activeAnimationSettings())
+        anim->jumpToPreviousFrame();
 }
 
 /******************************************************************************
@@ -60,8 +60,8 @@ void ActionManager::on_AnimationGotoPreviousFrame_triggered()
 ******************************************************************************/
 void ActionManager::on_AnimationGotoNextFrame_triggered()
 {
-	if(AnimationSettings* anim = userInterface().datasetContainer().activeAnimationSettings())
-		anim->jumpToNextFrame();
+    if(AnimationSettings* anim = userInterface().datasetContainer().activeAnimationSettings())
+        anim->jumpToNextFrame();
 }
 
 /******************************************************************************
@@ -69,8 +69,8 @@ void ActionManager::on_AnimationGotoNextFrame_triggered()
 ******************************************************************************/
 void ActionManager::on_AnimationStartPlayback_triggered()
 {
-	if(!getAction(ACTION_TOGGLE_ANIMATION_PLAYBACK)->isChecked())
-		getAction(ACTION_TOGGLE_ANIMATION_PLAYBACK)->trigger();
+    if(!getAction(ACTION_TOGGLE_ANIMATION_PLAYBACK)->isChecked())
+        getAction(ACTION_TOGGLE_ANIMATION_PLAYBACK)->trigger();
 }
 
 /******************************************************************************
@@ -78,8 +78,8 @@ void ActionManager::on_AnimationStartPlayback_triggered()
 ******************************************************************************/
 void ActionManager::on_AnimationStopPlayback_triggered()
 {
-	if(getAction(ACTION_TOGGLE_ANIMATION_PLAYBACK)->isChecked())
-		getAction(ACTION_TOGGLE_ANIMATION_PLAYBACK)->trigger();
+    if(getAction(ACTION_TOGGLE_ANIMATION_PLAYBACK)->isChecked())
+        getAction(ACTION_TOGGLE_ANIMATION_PLAYBACK)->trigger();
 }
 
-}	// End of namespace
+}   // End of namespace

@@ -42,10 +42,10 @@ SET_PROPERTY_FIELD_LABEL(DataSet, renderSettings, "Render Settings");
 ******************************************************************************/
 DataSet::DataSet(ObjectCreationParams params) : RefTarget(params)
 {
-	if(params.createSubObjects()) {
-		setViewportConfig(createDefaultViewportConfiguration(params));
-		setRenderSettings(OORef<RenderSettings>::create(params));
-	}
+    if(params.createSubObjects()) {
+        setViewportConfig(createDefaultViewportConfiguration(params));
+        setRenderSettings(OORef<RenderSettings>::create(params));
+    }
 }
 
 /******************************************************************************
@@ -60,74 +60,74 @@ DataSet::~DataSet()
 ******************************************************************************/
 OORef<ViewportConfiguration> DataSet::createDefaultViewportConfiguration(ObjectCreationParams params)
 {
-	OORef<ViewportConfiguration> viewConfig = OORef<ViewportConfiguration>::create(params);
+    OORef<ViewportConfiguration> viewConfig = OORef<ViewportConfiguration>::create(params);
 
-	if(!StandaloneApplication::instance() || !StandaloneApplication::instance()->cmdLineParser().isSet("noviewports")) {
+    if(!StandaloneApplication::instance() || !StandaloneApplication::instance()->cmdLineParser().isSet("noviewports")) {
 
-		// Create a scene with animation settings.
-		OORef<Scene> scene = OORef<Scene>::create(params);
-		OVITO_ASSERT(scene->animationSettings());
+        // Create a scene with animation settings.
+        OORef<Scene> scene = OORef<Scene>::create(params);
+        OVITO_ASSERT(scene->animationSettings());
 
-		// Create the 4 standard viewports.
-		OORef<Viewport> topView = OORef<Viewport>::create(params);
-		topView->setScene(scene);
-		topView->setViewType(Viewport::VIEW_TOP);
+        // Create the 4 standard viewports.
+        OORef<Viewport> topView = OORef<Viewport>::create(params);
+        topView->setScene(scene);
+        topView->setViewType(Viewport::VIEW_TOP);
 
-		OORef<Viewport> frontView = OORef<Viewport>::create(params);
-		frontView->setScene(scene);
-		frontView->setViewType(Viewport::VIEW_FRONT);
+        OORef<Viewport> frontView = OORef<Viewport>::create(params);
+        frontView->setScene(scene);
+        frontView->setViewType(Viewport::VIEW_FRONT);
 
-		OORef<Viewport> leftView = OORef<Viewport>::create(params);
-		leftView->setScene(scene);
-		leftView->setViewType(Viewport::VIEW_LEFT);
+        OORef<Viewport> leftView = OORef<Viewport>::create(params);
+        leftView->setScene(scene);
+        leftView->setViewType(Viewport::VIEW_LEFT);
 
-		OORef<Viewport> perspectiveView = OORef<Viewport>::create(params);
-		perspectiveView->setScene(scene);
-		perspectiveView->setViewType(Viewport::VIEW_PERSPECTIVE);
-		perspectiveView->setCameraTransformation(ViewportSettings::getSettings().coordinateSystemOrientation() * AffineTransformation::lookAlong({90, -120, 100}, {-90, 120, -100}, {0,0,1}).inverse());
+        OORef<Viewport> perspectiveView = OORef<Viewport>::create(params);
+        perspectiveView->setScene(scene);
+        perspectiveView->setViewType(Viewport::VIEW_PERSPECTIVE);
+        perspectiveView->setCameraTransformation(ViewportSettings::getSettings().coordinateSystemOrientation() * AffineTransformation::lookAlong({90, -120, 100}, {-90, 120, -100}, {0,0,1}).inverse());
 
-		// Set up the 4-pane layout of the viewports.
-		OORef<ViewportLayoutCell> rootLayoutCell = OORef<ViewportLayoutCell>::create(params);
-		rootLayoutCell->setSplitDirection(ViewportLayoutCell::Horizontal);
-		rootLayoutCell->addChild(OORef<ViewportLayoutCell>::create(params));
-		rootLayoutCell->addChild(OORef<ViewportLayoutCell>::create(params));
-		rootLayoutCell->children()[0]->setSplitDirection(ViewportLayoutCell::Vertical);
-		rootLayoutCell->children()[0]->addChild(OORef<ViewportLayoutCell>::create(params));
-		rootLayoutCell->children()[0]->addChild(OORef<ViewportLayoutCell>::create(params));
-		rootLayoutCell->children()[0]->children()[0]->setViewport(topView);
-		rootLayoutCell->children()[0]->children()[1]->setViewport(leftView);
-		rootLayoutCell->children()[1]->setSplitDirection(ViewportLayoutCell::Vertical);
-		rootLayoutCell->children()[1]->addChild(OORef<ViewportLayoutCell>::create(params));
-		rootLayoutCell->children()[1]->addChild(OORef<ViewportLayoutCell>::create(params));
-		rootLayoutCell->children()[1]->children()[0]->setViewport(frontView);
-		rootLayoutCell->children()[1]->children()[1]->setViewport(perspectiveView);
-		viewConfig->setLayoutRootCell(std::move(rootLayoutCell));
+        // Set up the 4-pane layout of the viewports.
+        OORef<ViewportLayoutCell> rootLayoutCell = OORef<ViewportLayoutCell>::create(params);
+        rootLayoutCell->setSplitDirection(ViewportLayoutCell::Horizontal);
+        rootLayoutCell->addChild(OORef<ViewportLayoutCell>::create(params));
+        rootLayoutCell->addChild(OORef<ViewportLayoutCell>::create(params));
+        rootLayoutCell->children()[0]->setSplitDirection(ViewportLayoutCell::Vertical);
+        rootLayoutCell->children()[0]->addChild(OORef<ViewportLayoutCell>::create(params));
+        rootLayoutCell->children()[0]->addChild(OORef<ViewportLayoutCell>::create(params));
+        rootLayoutCell->children()[0]->children()[0]->setViewport(topView);
+        rootLayoutCell->children()[0]->children()[1]->setViewport(leftView);
+        rootLayoutCell->children()[1]->setSplitDirection(ViewportLayoutCell::Vertical);
+        rootLayoutCell->children()[1]->addChild(OORef<ViewportLayoutCell>::create(params));
+        rootLayoutCell->children()[1]->addChild(OORef<ViewportLayoutCell>::create(params));
+        rootLayoutCell->children()[1]->children()[0]->setViewport(frontView);
+        rootLayoutCell->children()[1]->children()[1]->setViewport(perspectiveView);
+        viewConfig->setLayoutRootCell(std::move(rootLayoutCell));
 
-		viewConfig->setActiveViewport(perspectiveView);
+        viewConfig->setActiveViewport(perspectiveView);
 
 #ifndef Q_OS_WASM
-		Viewport::ViewType maximizedViewportType = static_cast<Viewport::ViewType>(ViewportSettings::getSettings().defaultMaximizedViewportType());
-		if(maximizedViewportType != Viewport::VIEW_NONE) {
-			for(Viewport* vp : viewConfig->viewports()) {
-				if(vp->viewType() == maximizedViewportType) {
-					viewConfig->setActiveViewport(vp);
-					viewConfig->setMaximizedViewport(vp);
-					break;
-				}
-			}
-			if(!viewConfig->maximizedViewport()) {
-				viewConfig->setMaximizedViewport(viewConfig->activeViewport());
-				if(maximizedViewportType > Viewport::VIEW_NONE && maximizedViewportType <= Viewport::VIEW_PERSPECTIVE)
-					viewConfig->maximizedViewport()->setViewType(maximizedViewportType);
-			}
-		}
-		else viewConfig->setMaximizedViewport(nullptr);
+        Viewport::ViewType maximizedViewportType = static_cast<Viewport::ViewType>(ViewportSettings::getSettings().defaultMaximizedViewportType());
+        if(maximizedViewportType != Viewport::VIEW_NONE) {
+            for(Viewport* vp : viewConfig->viewports()) {
+                if(vp->viewType() == maximizedViewportType) {
+                    viewConfig->setActiveViewport(vp);
+                    viewConfig->setMaximizedViewport(vp);
+                    break;
+                }
+            }
+            if(!viewConfig->maximizedViewport()) {
+                viewConfig->setMaximizedViewport(viewConfig->activeViewport());
+                if(maximizedViewportType > Viewport::VIEW_NONE && maximizedViewportType <= Viewport::VIEW_PERSPECTIVE)
+                    viewConfig->maximizedViewport()->setViewType(maximizedViewportType);
+            }
+        }
+        else viewConfig->setMaximizedViewport(nullptr);
 #else
-		viewConfig->setMaximizedViewport(viewConfig->activeViewport());
+        viewConfig->setMaximizedViewport(viewConfig->activeViewport());
 #endif
-	}
+    }
 
-	return viewConfig;
+    return viewConfig;
 }
 
 /******************************************************************************
@@ -135,13 +135,13 @@ OORef<ViewportConfiguration> DataSet::createDefaultViewportConfiguration(ObjectC
 ******************************************************************************/
 bool DataSet::referenceEvent(RefTarget* source, const ReferenceEvent& event)
 {
-	OVITO_ASSERT_MSG(!QCoreApplication::instance() || QThread::currentThread() == QCoreApplication::instance()->thread(), "DataSet::referenceEvent", "Reference events may only be processed in the main thread.");
+    OVITO_ASSERT_MSG(!QCoreApplication::instance() || QThread::currentThread() == QCoreApplication::instance()->thread(), "DataSet::referenceEvent", "Reference events may only be processed in the main thread.");
 
-	if(event.type() == ReferenceEvent::TargetChanged) {
-		// Propagate change events only from certain sources to the DataSetContainer.
-		return (source == renderSettings());
-	}
-	return RefTarget::referenceEvent(source, event);
+    if(event.type() == ReferenceEvent::TargetChanged) {
+        // Propagate change events only from certain sources to the DataSetContainer.
+        return (source == renderSettings());
+    }
+    return RefTarget::referenceEvent(source, event);
 }
 
 /******************************************************************************
@@ -149,13 +149,13 @@ bool DataSet::referenceEvent(RefTarget* source, const ReferenceEvent& event)
 ******************************************************************************/
 void DataSet::referenceReplaced(const PropertyFieldDescriptor* field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex)
 {
-	if(field == PROPERTY_FIELD(viewportConfig)) {
-		Q_EMIT viewportConfigReplaced(viewportConfig());
-	}
-	else if(field == PROPERTY_FIELD(renderSettings)) {
-		Q_EMIT renderSettingsReplaced(renderSettings());
-	}
-	RefTarget::referenceReplaced(field, oldTarget, newTarget, listIndex);
+    if(field == PROPERTY_FIELD(viewportConfig)) {
+        Q_EMIT viewportConfigReplaced(viewportConfig());
+    }
+    else if(field == PROPERTY_FIELD(renderSettings)) {
+        Q_EMIT renderSettingsReplaced(renderSettings());
+    }
+    RefTarget::referenceReplaced(field, oldTarget, newTarget, listIndex);
 }
 
 /******************************************************************************
@@ -163,8 +163,8 @@ void DataSet::referenceReplaced(const PropertyFieldDescriptor* field, RefTarget*
 ******************************************************************************/
 DataSetContainer* DataSet::container() const
 {
-	OVITO_ASSERT_MSG(!_container.isNull(), "DataSet::container()", "DataSet is not in a DataSetContainer.");
-	return _container.data();
+    OVITO_ASSERT_MSG(!_container.isNull(), "DataSet::container()", "DataSet is not in a DataSetContainer.");
+    return _container.data();
 }
 
 /******************************************************************************
@@ -172,10 +172,10 @@ DataSetContainer* DataSet::container() const
 ******************************************************************************/
 void DataSet::rescaleTime(const TimeInterval& oldAnimationInterval, const TimeInterval& newAnimationInterval)
 {
-	// Iterate over all objects in the scene.
-	for(RefTarget* reftarget : getAllDependencies()) {
-		reftarget->rescaleTime(oldAnimationInterval, newAnimationInterval);
-	}
+    // Iterate over all objects in the scene.
+    for(RefTarget* reftarget : getAllDependencies()) {
+        reftarget->rescaleTime(oldAnimationInterval, newAnimationInterval);
+    }
 }
 
 /******************************************************************************
@@ -183,21 +183,21 @@ void DataSet::rescaleTime(const TimeInterval& oldAnimationInterval, const TimeIn
 ******************************************************************************/
 void DataSet::saveToFile(const QString& filePath) const
 {
-	// Make path absolute.
-	QString absolutePath = QFileInfo(filePath).absoluteFilePath();
+    // Make path absolute.
+    QString absolutePath = QFileInfo(filePath).absoluteFilePath();
 
-	QFile fileStream(absolutePath);
+    QFile fileStream(absolutePath);
     if(!fileStream.open(QIODevice::WriteOnly))
-    	throw Exception(tr("Failed to open output file '%1' for writing: %2").arg(absolutePath).arg(fileStream.errorString()));
+        throw Exception(tr("Failed to open output file '%1' for writing: %2").arg(absolutePath).arg(fileStream.errorString()));
 
-	QDataStream dataStream(&fileStream);
-	ObjectSaveStream stream(dataStream);
-	stream.saveObject(this);
-	stream.close();
+    QDataStream dataStream(&fileStream);
+    ObjectSaveStream stream(dataStream);
+    stream.saveObject(this);
+    stream.close();
 
-	if(fileStream.error() != QFile::NoError)
-		throw Exception(tr("Failed to write session state file '%1': %2").arg(absolutePath).arg(fileStream.errorString()));
-	fileStream.close();
+    if(fileStream.error() != QFile::NoError)
+        throw Exception(tr("Failed to write session state file '%1': %2").arg(absolutePath).arg(fileStream.errorString()));
+    fileStream.close();
 }
 
 /******************************************************************************
@@ -205,22 +205,22 @@ void DataSet::saveToFile(const QString& filePath) const
 ******************************************************************************/
 void DataSet::loadFromFile(const QString& filePath)
 {
-	// Make path absolute.
-	QString absolutePath = QFileInfo(filePath).absoluteFilePath();
+    // Make path absolute.
+    QString absolutePath = QFileInfo(filePath).absoluteFilePath();
 
-	QFile fileStream(absolutePath);
+    QFile fileStream(absolutePath);
     if(!fileStream.open(QIODevice::ReadOnly))
-    	throw Exception(tr("Failed to open file '%1' for reading: %2").arg(absolutePath).arg(fileStream.errorString()));
+        throw Exception(tr("Failed to open file '%1' for reading: %2").arg(absolutePath).arg(fileStream.errorString()));
 
-	QDataStream dataStream(&fileStream);
-	ObjectLoadStream stream(dataStream);
-	stream.setDatasetToBePopulated(this);
-	OORef<DataSet> dataSet = stream.loadObject<DataSet>();
-	stream.close();
+    QDataStream dataStream(&fileStream);
+    ObjectLoadStream stream(dataStream);
+    stream.setDatasetToBePopulated(this);
+    OORef<DataSet> dataSet = stream.loadObject<DataSet>();
+    stream.close();
 
-	if(fileStream.error() != QFile::NoError)
-		throw Exception(tr("Failed to load state file '%1'.").arg(absolutePath));		
-	fileStream.close();
+    if(fileStream.error() != QFile::NoError)
+        throw Exception(tr("Failed to load state file '%1'.").arg(absolutePath));       
+    fileStream.close();
 }
 
 /******************************************************************************
@@ -233,15 +233,15 @@ RefMakerClass::SerializedClassInfo::PropertyFieldInfo::CustomDeserializationFunc
     // The DataSet class used to store an AnimationSettings object and the scene root node in OVITO 3.7 and earlier.
     if(field.definingClass == &DataSet::OOClass() && (field.identifier == "animationSettings" || field.identifier == "sceneRoot" || field.identifier == "selection")) {
         return [](const SerializedClassInfo::PropertyFieldInfo& field, ObjectLoadStream& stream, RefMaker& owner) {
-			// Load the legacy objects from the stream and temporarily store them in a QObject property.
-			// Once the entire DataSet has been loaded, loadFromStreamComplete() will store them in the right place.   
-			stream.expectChunk(0x02);
-			if(field.identifier == "animationSettings")
-				owner.setProperty("_animationSettings", QVariant::fromValue(stream.loadObject<AnimationSettings>()));
-			else if(field.identifier == "sceneRoot")
-				owner.setProperty("_sceneRoot", QVariant::fromValue(stream.loadObject<Scene>()));
-			else if(field.identifier == "selection")
-				owner.setProperty("_selection", QVariant::fromValue(stream.loadObject<SelectionSet>()));
+            // Load the legacy objects from the stream and temporarily store them in a QObject property.
+            // Once the entire DataSet has been loaded, loadFromStreamComplete() will store them in the right place.   
+            stream.expectChunk(0x02);
+            if(field.identifier == "animationSettings")
+                owner.setProperty("_animationSettings", QVariant::fromValue(stream.loadObject<AnimationSettings>()));
+            else if(field.identifier == "sceneRoot")
+                owner.setProperty("_sceneRoot", QVariant::fromValue(stream.loadObject<Scene>()));
+            else if(field.identifier == "selection")
+                owner.setProperty("_selection", QVariant::fromValue(stream.loadObject<SelectionSet>()));
             stream.closeChunk();
         };
     }
@@ -254,23 +254,23 @@ RefMakerClass::SerializedClassInfo::PropertyFieldInfo::CustomDeserializationFunc
 ******************************************************************************/
 void DataSet::loadFromStreamComplete(ObjectLoadStream& stream)
 {
-	RefTarget::loadFromStreamComplete(stream);
+    RefTarget::loadFromStreamComplete(stream);
 
-	// For backward compatibility with OVITO 3.7:
-	if(stream.formatVersion() <= 30008) {
-		// Retrieve legacy AnimationSettings and Scene loaded by the overrideFieldDeserialization() method.
-		OORef<AnimationSettings> animSettings = property("_animationSettings").value<OORef<AnimationSettings>>();
-		OORef<Scene> scene = property("_sceneRoot").value<OORef<Scene>>();
-		OORef<SelectionSet> selection = property("_selection").value<OORef<SelectionSet>>();
-		OVITO_ASSERT(animSettings && scene && selection);
-		scene->setAnimationSettings(std::move(animSettings));
-		scene->setSelection(std::move(selection));
-		for(Viewport* vp : viewportConfig()->viewports())
-			vp->setScene(scene);
-		setProperty("_animationSettings", QVariant());
-		setProperty("_sceneRoot", QVariant());
-		setProperty("_selection", QVariant());
-	}
+    // For backward compatibility with OVITO 3.7:
+    if(stream.formatVersion() <= 30008) {
+        // Retrieve legacy AnimationSettings and Scene loaded by the overrideFieldDeserialization() method.
+        OORef<AnimationSettings> animSettings = property("_animationSettings").value<OORef<AnimationSettings>>();
+        OORef<Scene> scene = property("_sceneRoot").value<OORef<Scene>>();
+        OORef<SelectionSet> selection = property("_selection").value<OORef<SelectionSet>>();
+        OVITO_ASSERT(animSettings && scene && selection);
+        scene->setAnimationSettings(std::move(animSettings));
+        scene->setSelection(std::move(selection));
+        for(Viewport* vp : viewportConfig()->viewports())
+            vp->setScene(scene);
+        setProperty("_animationSettings", QVariant());
+        setProperty("_sceneRoot", QVariant());
+        setProperty("_selection", QVariant());
+    }
 }
 
-}	// End of namespace
+}   // End of namespace

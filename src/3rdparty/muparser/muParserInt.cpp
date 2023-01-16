@@ -77,7 +77,7 @@ value_type ParserInt::UnaryMinus(value_type v)
 //---------------------------------------------------------------------------
 value_type ParserInt::Sum(const value_type* a_afArg, int a_iArgc)
 { 
-  if (!a_iArgc)	
+  if (!a_iArgc) 
     throw ParserError(_T("too few arguments for function sum."));
 
   value_type fRes=0;
@@ -90,7 +90,7 @@ value_type ParserInt::Sum(const value_type* a_afArg, int a_iArgc)
 //---------------------------------------------------------------------------
 value_type ParserInt::Min(const value_type* a_afArg, int a_iArgc)
 { 
-  if (!a_iArgc)	
+  if (!a_iArgc) 
     throw ParserError( _T("too few arguments for function min.") );
 
   value_type fRes=a_afArg[0];
@@ -103,7 +103,7 @@ value_type ParserInt::Min(const value_type* a_afArg, int a_iArgc)
 //---------------------------------------------------------------------------
 value_type ParserInt::Max(const value_type* a_afArg, int a_iArgc)
 { 
-  if (!a_iArgc)	
+  if (!a_iArgc) 
     throw ParserError(_T("too few arguments for function min."));
 
   value_type fRes=a_afArg[0];

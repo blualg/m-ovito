@@ -35,17 +35,17 @@ SET_OVITO_OBJECT_EDITOR(UnwrapTrajectoriesModifier, UnwrapTrajectoriesModifierEd
 ******************************************************************************/
 void UnwrapTrajectoriesModifierEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 {
-	// Create a rollout.
-	QWidget* rollout = createRollout(tr("Unwrap trajectories"), rolloutParams, "manual:particles.modifiers.unwrap_trajectories");
+    // Create a rollout.
+    QWidget* rollout = createRollout(tr("Unwrap trajectories"), rolloutParams, "manual:particles.modifiers.unwrap_trajectories");
 
     // Create the rollout contents.
-	QVBoxLayout* layout = new QVBoxLayout(rollout);
-	layout->setContentsMargins(4,4,4,4);
-	layout->setSpacing(6);
+    QVBoxLayout* layout = new QVBoxLayout(rollout);
+    layout->setContentsMargins(4,4,4,4);
+    layout->setSpacing(6);
 
-	// Status label.
-	layout->addWidget((new ObjectStatusDisplay(this))->statusWidget());
-	layout->addSpacing(6);
+    // Status label.
+    layout->addWidget((new ObjectStatusDisplay(this))->statusWidget());
+    layout->addSpacing(6);
 }
 
-}	// End of namespace
+}   // End of namespace

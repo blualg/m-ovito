@@ -29,72 +29,72 @@
 
 namespace Ovito {
 
-/// Constructor	for a property field that stores a non-animatable property.
+/// Constructor for a property field that stores a non-animatable property.
 PropertyFieldDescriptor::PropertyFieldDescriptor(RefMakerClass* definingClass, const char* identifier, PropertyFieldFlags flags,
-	void (*propertyStorageCopyFunc)(RefMaker*, const RefMaker*),
-	QVariant (*propertyStorageReadFunc)(const RefMaker*),
-	void (*propertyStorageWriteFunc)(RefMaker*, const QVariant&),
-	void (*propertyStorageSaveFunc)(const RefMaker*, SaveStream&),
-	void (*propertyStorageLoadFunc)(RefMaker*, LoadStream&),
-	void (*propertyStorageTakeSnapshotFunc)(RefMaker*),
-	void (*propertyStorageRestoreSnapshotFunc)(const RefMaker*, RefMaker*))
-	: _definingClassDescriptor(definingClass), _identifier(identifier), _flags(flags),
-		_propertyStorageCopyFunc(propertyStorageCopyFunc),
-		_propertyStorageReadFunc(propertyStorageReadFunc),
-		_propertyStorageWriteFunc(propertyStorageWriteFunc),
-		_propertyStorageSaveFunc(propertyStorageSaveFunc),
-		_propertyStorageLoadFunc(propertyStorageLoadFunc),
-		_propertyStorageTakeSnapshotFunc(propertyStorageTakeSnapshotFunc),
-		_propertyStorageRestoreSnapshotFunc(propertyStorageRestoreSnapshotFunc)
+    void (*propertyStorageCopyFunc)(RefMaker*, const RefMaker*),
+    QVariant (*propertyStorageReadFunc)(const RefMaker*),
+    void (*propertyStorageWriteFunc)(RefMaker*, const QVariant&),
+    void (*propertyStorageSaveFunc)(const RefMaker*, SaveStream&),
+    void (*propertyStorageLoadFunc)(RefMaker*, LoadStream&),
+    void (*propertyStorageTakeSnapshotFunc)(RefMaker*),
+    void (*propertyStorageRestoreSnapshotFunc)(const RefMaker*, RefMaker*))
+    : _definingClassDescriptor(definingClass), _identifier(identifier), _flags(flags),
+        _propertyStorageCopyFunc(propertyStorageCopyFunc),
+        _propertyStorageReadFunc(propertyStorageReadFunc),
+        _propertyStorageWriteFunc(propertyStorageWriteFunc),
+        _propertyStorageSaveFunc(propertyStorageSaveFunc),
+        _propertyStorageLoadFunc(propertyStorageLoadFunc),
+        _propertyStorageTakeSnapshotFunc(propertyStorageTakeSnapshotFunc),
+        _propertyStorageRestoreSnapshotFunc(propertyStorageRestoreSnapshotFunc)
 {
-	OVITO_ASSERT(_identifier != nullptr);
-	OVITO_ASSERT(!_flags.testFlag(PROPERTY_FIELD_VECTOR));
-	OVITO_ASSERT(definingClass != nullptr);
-	// Make sure that there is no other reference field with the same identifier in the defining class.
-	OVITO_ASSERT_MSG(definingClass->findPropertyField(identifier) == nullptr, "PropertyFieldDescriptor",
-		qPrintable(QString("Property field identifier is not unique for class %2: %1").arg(identifier).arg(definingClass->name())));
-	// Insert into linked list of reference fields stored in the defining class' descriptor.
-	this->_next = definingClass->_firstPropertyField;
-	definingClass->_firstPropertyField = this;
-//	if(qstrcmp(identifier, "identifier") == 0)
-//		qDebug() << "PropertyFieldDescriptor:" << identifier << (void*)definingClass;
+    OVITO_ASSERT(_identifier != nullptr);
+    OVITO_ASSERT(!_flags.testFlag(PROPERTY_FIELD_VECTOR));
+    OVITO_ASSERT(definingClass != nullptr);
+    // Make sure that there is no other reference field with the same identifier in the defining class.
+    OVITO_ASSERT_MSG(definingClass->findPropertyField(identifier) == nullptr, "PropertyFieldDescriptor",
+        qPrintable(QString("Property field identifier is not unique for class %2: %1").arg(identifier).arg(definingClass->name())));
+    // Insert into linked list of reference fields stored in the defining class' descriptor.
+    this->_next = definingClass->_firstPropertyField;
+    definingClass->_firstPropertyField = this;
+//  if(qstrcmp(identifier, "identifier") == 0)
+//      qDebug() << "PropertyFieldDescriptor:" << identifier << (void*)definingClass;
 }
 
-/// Constructor	for a property field that stores a single reference to a RefTarget.
+/// Constructor for a property field that stores a single reference to a RefTarget.
 PropertyFieldDescriptor::PropertyFieldDescriptor(RefMakerClass* definingClass, OvitoClassPtr targetClass, const char* identifier, PropertyFieldFlags flags, RefTarget* (*singleReferenceReadFunc)(const RefMaker*), void (*singleReferenceWriteFunc)(RefMaker*, const RefTarget*), void (*singleReferenceWriteFuncRef)(RefMaker*, OORef<RefTarget>))
-	: _definingClassDescriptor(definingClass), _targetClassDescriptor(targetClass), _identifier(identifier), _flags(flags), _singleReferenceReadFunc(singleReferenceReadFunc), _singleReferenceWriteFunc(singleReferenceWriteFunc), _singleReferenceWriteFuncRef(singleReferenceWriteFuncRef)
+    : _definingClassDescriptor(definingClass), _targetClassDescriptor(targetClass), _identifier(identifier), _flags(flags), _singleReferenceReadFunc(singleReferenceReadFunc), _singleReferenceWriteFunc(singleReferenceWriteFunc), _singleReferenceWriteFuncRef(singleReferenceWriteFuncRef)
 {
-	OVITO_ASSERT(_identifier != nullptr);
-	OVITO_ASSERT(_singleReferenceReadFunc != nullptr && _singleReferenceWriteFunc != nullptr);
-	OVITO_ASSERT(!_flags.testFlag(PROPERTY_FIELD_VECTOR));
-	OVITO_ASSERT(definingClass != nullptr);
-	OVITO_ASSERT(targetClass != nullptr);
-	// Make sure that there is no other reference field with the same identifier in the defining class.
-	OVITO_ASSERT_MSG(definingClass->findPropertyField(identifier) == nullptr, "PropertyFieldDescriptor",
-		qPrintable(QString("Property field identifier is not unique for class %2: %1").arg(identifier).arg(definingClass->name())));
-	// Insert into linked list of reference fields stored in the defining class' descriptor.
-	this->_next = definingClass->_firstPropertyField;
-	definingClass->_firstPropertyField = this;
+    OVITO_ASSERT(_identifier != nullptr);
+    OVITO_ASSERT(_singleReferenceReadFunc != nullptr && _singleReferenceWriteFunc != nullptr);
+    OVITO_ASSERT(!_flags.testFlag(PROPERTY_FIELD_VECTOR));
+    OVITO_ASSERT(definingClass != nullptr);
+    OVITO_ASSERT(targetClass != nullptr);
+    // Make sure that there is no other reference field with the same identifier in the defining class.
+    OVITO_ASSERT_MSG(definingClass->findPropertyField(identifier) == nullptr, "PropertyFieldDescriptor",
+        qPrintable(QString("Property field identifier is not unique for class %2: %1").arg(identifier).arg(definingClass->name())));
+    // Insert into linked list of reference fields stored in the defining class' descriptor.
+    this->_next = definingClass->_firstPropertyField;
+    definingClass->_firstPropertyField = this;
 }
 
-/// Constructor	for a property field that stores a vector of references to RefTarget objects.
+/// Constructor for a property field that stores a vector of references to RefTarget objects.
 PropertyFieldDescriptor::PropertyFieldDescriptor(RefMakerClass* definingClass, OvitoClassPtr targetClass, const char* identifier, PropertyFieldFlags flags, 
-		int (*vectorReferenceCountFunc)(const RefMaker*), RefTarget* (*vectorReferenceGetFunc)(const RefMaker*, int), void (*vectorReferenceSetFunc)(RefMaker*, int, const RefTarget*),
-		void (*vectorReferenceRemoveFunc)(RefMaker*, int), void (*vectorReferenceInsertFunc)(RefMaker*, int, OORef<RefTarget>))
-	: _definingClassDescriptor(definingClass), _targetClassDescriptor(targetClass), _identifier(identifier), _flags(flags), 
-		_vectorReferenceCountFunc(vectorReferenceCountFunc), _vectorReferenceGetFunc(vectorReferenceGetFunc), _vectorReferenceSetFunc(vectorReferenceSetFunc),
-		_vectorReferenceRemoveFunc(vectorReferenceRemoveFunc), _vectorReferenceInsertFunc(vectorReferenceInsertFunc)
+        int (*vectorReferenceCountFunc)(const RefMaker*), RefTarget* (*vectorReferenceGetFunc)(const RefMaker*, int), void (*vectorReferenceSetFunc)(RefMaker*, int, const RefTarget*),
+        void (*vectorReferenceRemoveFunc)(RefMaker*, int), void (*vectorReferenceInsertFunc)(RefMaker*, int, OORef<RefTarget>))
+    : _definingClassDescriptor(definingClass), _targetClassDescriptor(targetClass), _identifier(identifier), _flags(flags), 
+        _vectorReferenceCountFunc(vectorReferenceCountFunc), _vectorReferenceGetFunc(vectorReferenceGetFunc), _vectorReferenceSetFunc(vectorReferenceSetFunc),
+        _vectorReferenceRemoveFunc(vectorReferenceRemoveFunc), _vectorReferenceInsertFunc(vectorReferenceInsertFunc)
 {
-	OVITO_ASSERT(_identifier != nullptr);
-	OVITO_ASSERT(_vectorReferenceCountFunc != nullptr && _vectorReferenceGetFunc != nullptr);
-	OVITO_ASSERT(_flags.testFlag(PROPERTY_FIELD_VECTOR));
-	OVITO_ASSERT(definingClass != nullptr);
-	OVITO_ASSERT(targetClass != nullptr);
-	OVITO_ASSERT_MSG(definingClass->findPropertyField(identifier) == nullptr, "PropertyFieldDescriptor",
-		qPrintable(QString("Property field identifier is not unique for class %2: %1").arg(identifier).arg(definingClass->name())));
-	// Insert into linked list of reference fields stored in the defining class' descriptor.
-	this->_next = definingClass->_firstPropertyField;
-	definingClass->_firstPropertyField = this;
+    OVITO_ASSERT(_identifier != nullptr);
+    OVITO_ASSERT(_vectorReferenceCountFunc != nullptr && _vectorReferenceGetFunc != nullptr);
+    OVITO_ASSERT(_flags.testFlag(PROPERTY_FIELD_VECTOR));
+    OVITO_ASSERT(definingClass != nullptr);
+    OVITO_ASSERT(targetClass != nullptr);
+    OVITO_ASSERT_MSG(definingClass->findPropertyField(identifier) == nullptr, "PropertyFieldDescriptor",
+        qPrintable(QString("Property field identifier is not unique for class %2: %1").arg(identifier).arg(definingClass->name())));
+    // Insert into linked list of reference fields stored in the defining class' descriptor.
+    this->_next = definingClass->_firstPropertyField;
+    definingClass->_firstPropertyField = this;
 }
 
 /******************************************************************************
@@ -103,10 +103,10 @@ PropertyFieldDescriptor::PropertyFieldDescriptor(RefMakerClass* definingClass, O
 ******************************************************************************/
 QString PropertyFieldDescriptor::displayName() const
 {
-	if(_displayName.isEmpty())
-		return identifier();
-	else
-		return _displayName;
+    if(_displayName.isEmpty())
+        return identifier();
+    else
+        return _displayName;
 }
 
 /******************************************************************************
@@ -114,17 +114,17 @@ QString PropertyFieldDescriptor::displayName() const
 ******************************************************************************/
 void PropertyFieldDescriptor::memorizeDefaultValue(RefMaker* object) const
 {
-	OVITO_CHECK_OBJECT_POINTER(object);
+    OVITO_CHECK_OBJECT_POINTER(object);
 #ifndef OVITO_DISABLE_QSETTINGS
-	QSettings settings;
-	settings.beginGroup(object->getOOClass().plugin()->pluginId());
-	settings.beginGroup(object->getOOClass().name());
-	QVariant v = object->getPropertyFieldValue(this);
-	// Workaround for bug in Qt 5.7.0: QVariants of type float do not get correctly stored
-	// by QSettings (at least on macOS), because QVariant::Float is not an official type.
-	if(v.typeId() == QMetaType::Float)
-		v = QVariant::fromValue((double)v.toFloat());
-	settings.setValue(identifier(), v);
+    QSettings settings;
+    settings.beginGroup(object->getOOClass().plugin()->pluginId());
+    settings.beginGroup(object->getOOClass().name());
+    QVariant v = object->getPropertyFieldValue(this);
+    // Workaround for bug in Qt 5.7.0: QVariants of type float do not get correctly stored
+    // by QSettings (at least on macOS), because QVariant::Float is not an official type.
+    if(v.typeId() == QMetaType::Float)
+        v = QVariant::fromValue((double)v.toFloat());
+    settings.setValue(identifier(), v);
 #endif
 }
 
@@ -133,19 +133,19 @@ void PropertyFieldDescriptor::memorizeDefaultValue(RefMaker* object) const
 ******************************************************************************/
 bool PropertyFieldDescriptor::loadDefaultValue(RefMaker* object) const
 {
-	OVITO_CHECK_OBJECT_POINTER(object);
+    OVITO_CHECK_OBJECT_POINTER(object);
 #ifndef OVITO_DISABLE_QSETTINGS
-	QSettings settings;
-	settings.beginGroup(object->getOOClass().plugin()->pluginId());
-	settings.beginGroup(object->getOOClass().name());
-	QVariant v = settings.value(identifier());
-	if(!v.isNull()) {
-		//qDebug() << "Loading default value for parameter" << identifier() << "of class" << definingClass()->name() << ":" << v;
-		object->setPropertyFieldValue(this, v);
-		return true;
-	}
+    QSettings settings;
+    settings.beginGroup(object->getOOClass().plugin()->pluginId());
+    settings.beginGroup(object->getOOClass().name());
+    QVariant v = settings.value(identifier());
+    if(!v.isNull()) {
+        //qDebug() << "Loading default value for parameter" << identifier() << "of class" << definingClass()->name() << ":" << v;
+        object->setPropertyFieldValue(this, v);
+        return true;
+    }
 #endif
-	return false;
+    return false;
 }
 
-}	// End of namespace
+}   // End of namespace

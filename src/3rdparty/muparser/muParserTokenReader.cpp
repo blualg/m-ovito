@@ -424,9 +424,9 @@ namespace mu
               m_iSynFlags |= ( (i != cmEND) && ( i != cmBC) ) ? noEND : 0;
               break;
 
-		    case cmBO:
+            case cmBO:
               if (m_iSynFlags & noBO)
-	              Error(ecUNEXPECTED_PARENS, m_iPos, pOprtDef[i]);
+                  Error(ecUNEXPECTED_PARENS, m_iPos, pOprtDef[i]);
               
               if (m_lastTok.GetCode()==cmFUNC)
                 m_iSynFlags = noOPT | noEND | noARG_SEP | noPOSTOP | noASSIGN | noIF | noELSE;
@@ -436,7 +436,7 @@ namespace mu
               ++m_iBrackets;
               break;
 
-		    case cmBC:
+            case cmBC:
               if (m_iSynFlags & noBC)
                 Error(ecUNEXPECTED_PARENS, m_iPos, pOprtDef[i]);
 
@@ -460,14 +460,14 @@ namespace mu
               m_iSynFlags = noBC | noPOSTOP | noEND | noOPT | noIF | noELSE;
               break;
 
-		    default:      // The operator is listed in c_DefaultOprt, but not here. This is a bad thing...
+            default:      // The operator is listed in c_DefaultOprt, but not here. This is a bad thing...
               Error(ecINTERNAL_ERROR);
         } // switch operator id
 
         m_iPos += (int)len;
         a_Tok.Set( (ECmdCode)i, pOprtDef[i] );
         return true;
-	    } // if operator string found
+        } // if operator string found
     } // end of for all operator strings
   
     return false;
@@ -701,7 +701,7 @@ namespace mu
         continue;
 
       a_Tok.Set(it->second, sTok);
-  	  m_iPos += (int)it->first.length();
+      m_iPos += (int)it->first.length();
 
       m_iSynFlags = noVAL | noVAR | noFUN | noBO | noPOSTOP | noSTR | noASSIGN;
       return true;
@@ -770,7 +770,7 @@ namespace mu
   //---------------------------------------------------------------------------
   /** \brief Check wheter a token at a given position is a variable token. 
       \param a_Tok [out] If a variable token has been found it will be placed here.
-	    \return true if a variable token has been found.
+        \return true if a variable token has been found.
   */
   bool ParserTokenReader::IsVarTok(token_type &a_Tok)
   {
@@ -835,7 +835,7 @@ namespace mu
   /** \brief Check wheter a token at a given position is an undefined variable. 
 
       \param a_Tok [out] If a variable tom_pParser->m_vStringBufken has been found it will be placed here.
-	    \return true if a variable token has been found.
+        \return true if a variable token has been found.
       \throw nothrow
   */
   bool ParserTokenReader::IsUndefVarTok(token_type &a_Tok)
@@ -886,7 +886,7 @@ namespace mu
   //---------------------------------------------------------------------------
   /** \brief Check wheter a token at a given position is a string.
       \param a_Tok [out] If a variable token has been found it will be placed here.
-  	  \return true if a string token has been found.
+      \return true if a string token has been found.
       \sa IsOprt, IsFunTok, IsStrFunTok, IsValTok, IsVarTok, IsEOF, IsInfixOpTok, IsPostOpTok
       \throw nothrow
   */
@@ -914,7 +914,7 @@ namespace mu
     if (m_iSynFlags & noSTR)
       Error(ecUNEXPECTED_STR, m_iPos, strTok);
 
-		m_pParser->m_vStringBuf.push_back(strTok); // Store string in internal buffer
+        m_pParser->m_vStringBuf.push_back(strTok); // Store string in internal buffer
     a_Tok.SetString(strTok, m_pParser->m_vStringBuf.size());
 
     m_iPos += (int)strTok.length() + 2 + (int)iSkip;  // +2 wg Anf�hrungszeichen; +iSkip f�r entfernte escape zeichen

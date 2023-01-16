@@ -34,22 +34,22 @@ SET_PROPERTY_FIELD_LABEL(KeyframeController, keys, "Keys");
 ******************************************************************************/
 void KeyframeController::rescaleTime(const TimeInterval& oldAnimationInterval, const TimeInterval& newAnimationInterval)
 {
-	OVITO_ASSERT(!oldAnimationInterval.isInfinite());
-	OVITO_ASSERT(!newAnimationInterval.isInfinite());
-	if(oldAnimationInterval.duration() == 0 && oldAnimationInterval.start() == newAnimationInterval.start())
-		return;
+    OVITO_ASSERT(!oldAnimationInterval.isInfinite());
+    OVITO_ASSERT(!newAnimationInterval.isInfinite());
+    if(oldAnimationInterval.duration() == 0 && oldAnimationInterval.start() == newAnimationInterval.start())
+        return;
 
-	for(AnimationKey* key : keys()) {
-		AnimationTime newTime(0);
-		if(oldAnimationInterval.duration() != 0)
-			newTime = newAnimationInterval.start() + (key->time() - oldAnimationInterval.start()) * newAnimationInterval.duration()
-						/ oldAnimationInterval.duration();
-		else
-			newTime = newAnimationInterval.start() + (key->time() - oldAnimationInterval.start());
-		key->setTime(newTime);
-	}
-	OVITO_ASSERT(areKeysSorted());
-	updateKeys();
+    for(AnimationKey* key : keys()) {
+        AnimationTime newTime(0);
+        if(oldAnimationInterval.duration() != 0)
+            newTime = newAnimationInterval.start() + (key->time() - oldAnimationInterval.start()) * newAnimationInterval.duration()
+                        / oldAnimationInterval.duration();
+        else
+            newTime = newAnimationInterval.start() + (key->time() - oldAnimationInterval.start());
+        key->setTime(newTime);
+    }
+    OVITO_ASSERT(areKeysSorted());
+    updateKeys();
 }
 
 /******************************************************************************
@@ -58,15 +58,15 @@ void KeyframeController::rescaleTime(const TimeInterval& oldAnimationInterval, c
 ******************************************************************************/
 TimeInterval KeyframeController::validityInterval(AnimationTime time)
 {
-	OVITO_ASSERT(areKeysSorted());
-	if(keys().size() <= 1)
-		return TimeInterval::infinite();
-	else if(time <= keys().front()->time())
-		return TimeInterval(AnimationTime::negativeInfinity(), keys().front()->time());
-	else if(time >= keys().back()->time())
-		return TimeInterval(keys().back()->time(), AnimationTime::positiveInfinity());
-	else
-		return TimeInterval(time);
+    OVITO_ASSERT(areKeysSorted());
+    if(keys().size() <= 1)
+        return TimeInterval::infinite();
+    else if(time <= keys().front()->time())
+        return TimeInterval(AnimationTime::negativeInfinity(), keys().front()->time());
+    else if(time >= keys().back()->time())
+        return TimeInterval(keys().back()->time(), AnimationTime::positiveInfinity());
+    else
+        return TimeInterval(time);
 }
 
 /******************************************************************************
@@ -74,35 +74,35 @@ TimeInterval KeyframeController::validityInterval(AnimationTime time)
 ******************************************************************************/
 int KeyframeController::insertKey(AnimationKey* key, int insertionPos)
 {
-	OVITO_CHECK_OBJECT_POINTER(key);
-	OVITO_ASSERT(keys().contains(key) == false);
+    OVITO_CHECK_OBJECT_POINTER(key);
+    OVITO_ASSERT(keys().contains(key) == false);
 
-	// Determine the list position at which to insert the new key.
-	if(insertionPos == -1) {
-		for(int index = 0; index < keys().size(); index++) {
-			if(keys()[index]->time() >= key->time()) {
-				if(keys()[index]->time() == key->time()) {
-					// Replace existing key.
-					_keys.set(this, PROPERTY_FIELD(keys), index, key);
-				}
-				else {
-					// Insert new key.
-					_keys.insert(this, PROPERTY_FIELD(keys), index, key);
-				}
-				OVITO_ASSERT(areKeysSorted());
-				return index;
-			}
-		}
+    // Determine the list position at which to insert the new key.
+    if(insertionPos == -1) {
+        for(int index = 0; index < keys().size(); index++) {
+            if(keys()[index]->time() >= key->time()) {
+                if(keys()[index]->time() == key->time()) {
+                    // Replace existing key.
+                    _keys.set(this, PROPERTY_FIELD(keys), index, key);
+                }
+                else {
+                    // Insert new key.
+                    _keys.insert(this, PROPERTY_FIELD(keys), index, key);
+                }
+                OVITO_ASSERT(areKeysSorted());
+                return index;
+            }
+        }
 
-		// Insert new key at the end.
-		_keys.push_back(this, PROPERTY_FIELD(keys), key);
-		return _keys.size() - 1;
-	}
-	else {
-		_keys.insert(this, PROPERTY_FIELD(keys), insertionPos, key);
-		OVITO_ASSERT(areKeysSorted());
-		return insertionPos;
-	}
+        // Insert new key at the end.
+        _keys.push_back(this, PROPERTY_FIELD(keys), key);
+        return _keys.size() - 1;
+    }
+    else {
+        _keys.insert(this, PROPERTY_FIELD(keys), insertionPos, key);
+        OVITO_ASSERT(areKeysSorted());
+        return insertionPos;
+    }
 }
 
 /******************************************************************************
@@ -110,11 +110,11 @@ int KeyframeController::insertKey(AnimationKey* key, int insertionPos)
 ******************************************************************************/
 bool KeyframeController::areKeysSorted() const
 {
-	for(int index = 1; index < keys().size(); index++) {
-		if(keys()[index]->time() < keys()[index-1]->time())
-			return false;
-	}
-	return true;
+    for(int index = 1; index < keys().size(); index++) {
+        if(keys()[index]->time() < keys()[index-1]->time())
+            return false;
+    }
+    return true;
 }
 
 /******************************************************************************
@@ -122,25 +122,25 @@ bool KeyframeController::areKeysSorted() const
 ******************************************************************************/
 void KeyframeController::moveKeys(const QVector<AnimationKey*> keysToMove, AnimationTime::value_type shift)
 {
-	if(shift == 0)
-		return;
+    if(shift == 0)
+        return;
 
-	// First, remove the selected keys from the controller.
-	QVector<OORef<AnimationKey>> removedKeys;
-	for(AnimationKey* key : keysToMove) {
-		int index = keys().indexOf(key);
-		if(index >= 0) {
-			removedKeys.push_back(key);
-			_keys.remove(this, PROPERTY_FIELD(keys), index);
-		}
-	}
+    // First, remove the selected keys from the controller.
+    QVector<OORef<AnimationKey>> removedKeys;
+    for(AnimationKey* key : keysToMove) {
+        int index = keys().indexOf(key);
+        if(index >= 0) {
+            removedKeys.push_back(key);
+            _keys.remove(this, PROPERTY_FIELD(keys), index);
+        }
+    }
 
-	// Change times and re-insert keys into the controller.
-	for(const OORef<AnimationKey>& key : removedKeys) {
-		key->setTime(key->time() + shift);
-		insertKey(key.get());
-	}
-	updateKeys();
+    // Change times and re-insert keys into the controller.
+    for(const OORef<AnimationKey>& key : removedKeys) {
+        key->setTime(key->time() + shift);
+        insertKey(key.get());
+    }
+    updateKeys();
 }
 
 /******************************************************************************
@@ -148,9 +148,9 @@ void KeyframeController::moveKeys(const QVector<AnimationKey*> keysToMove, Anima
 ******************************************************************************/
 void KeyframeController::deleteKeys(const QVector<AnimationKey*> keysToDelete)
 {
-	for(AnimationKey* key : keysToDelete)
-		key->deleteReferenceObject();
-	updateKeys();
+    for(AnimationKey* key : keysToDelete)
+        key->deleteReferenceObject();
+    updateKeys();
 }
 
-}	// End of namespace
+}   // End of namespace

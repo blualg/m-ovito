@@ -33,51 +33,51 @@ namespace Ovito {
  */
 class OVITO_GUI_EXPORT GuiDataSetContainer : public DataSetContainer
 {
-	OVITO_CLASS(GuiDataSetContainer)
+    OVITO_CLASS(GuiDataSetContainer)
 
 public:
 
-	/// \brief Constructor.
-	GuiDataSetContainer(TaskManager& taskManager, MainWindow& mainWindow);
+    /// \brief Constructor.
+    GuiDataSetContainer(TaskManager& taskManager, MainWindow& mainWindow);
 
-	/// \brief Returns the window this dataset container is linked to.
-	MainWindow& mainWindow() const { return _mainWindow; }
+    /// \brief Returns the window this dataset container is linked to.
+    MainWindow& mainWindow() const { return _mainWindow; }
 
-	/// \brief Imports a set of files into the current dataset.
-	/// \param urls The locations of the files to import.
-	/// \param importerType The FileImporter type selected by the user. If null, the file's format will be auto-detected.
-	/// \param importerFormat The sub-format name selected by the user, which is supported by the selected importer class.
-	/// \return true if the file(s) were successfully imported; false if operation has been canceled by the user.
-	/// \throw Exception on error.
-	bool importFiles(const std::vector<QUrl>& urls, const FileImporterClass* importerType = nullptr, const QString& importerFormat = {});
+    /// \brief Imports a set of files into the current dataset.
+    /// \param urls The locations of the files to import.
+    /// \param importerType The FileImporter type selected by the user. If null, the file's format will be auto-detected.
+    /// \param importerFormat The sub-format name selected by the user, which is supported by the selected importer class.
+    /// \return true if the file(s) were successfully imported; false if operation has been canceled by the user.
+    /// \throw Exception on error.
+    bool importFiles(const std::vector<QUrl>& urls, const FileImporterClass* importerType = nullptr, const QString& importerFormat = {});
 
-	/// \brief Save the current dataset.
-	/// \return \c true, if the dataset has been saved; \c false if the operation has been canceled by the user.
-	/// \throw Exception on error.
-	///
-	/// If the current dataset has not been assigned a file path, then this method
-	/// displays a file selector dialog by calling fileSaveAs() to let the user select a file path.
-	bool fileSave();
+    /// \brief Save the current dataset.
+    /// \return \c true, if the dataset has been saved; \c false if the operation has been canceled by the user.
+    /// \throw Exception on error.
+    ///
+    /// If the current dataset has not been assigned a file path, then this method
+    /// displays a file selector dialog by calling fileSaveAs() to let the user select a file path.
+    bool fileSave();
 
-	/// \brief Lets the user select a new destination filename for the current dataset. Then saves the dataset by calling fileSave().
-	/// \param filename If \a filename is an empty string that this method asks the user for a filename. Otherwise
-	///                 the provided filename is used.
-	/// \return \c true, if the dataset has been saved; \c false if the operation has been canceled by the user.
-	/// \throw Exception on error.
-	bool fileSaveAs(const QString& filename = QString());
+    /// \brief Lets the user select a new destination filename for the current dataset. Then saves the dataset by calling fileSave().
+    /// \param filename If \a filename is an empty string that this method asks the user for a filename. Otherwise
+    ///                 the provided filename is used.
+    /// \return \c true, if the dataset has been saved; \c false if the operation has been canceled by the user.
+    /// \throw Exception on error.
+    bool fileSaveAs(const QString& filename = QString());
 
-	/// \brief Asks the user if changes made to the dataset should be saved.
-	/// \return \c false if the operation has been canceled by the user; \c true on success.
-	/// \throw Exception on error.
-	///
-	/// If the current dataset has been changed, this method asks the user if changes should be saved.
-	/// If yes, then the dataset is saved by calling fileSave().
-	bool askForSaveChanges();
+    /// \brief Asks the user if changes made to the dataset should be saved.
+    /// \return \c false if the operation has been canceled by the user; \c true on success.
+    /// \throw Exception on error.
+    ///
+    /// If the current dataset has been changed, this method asks the user if changes should be saved.
+    /// If yes, then the dataset is saved by calling fileSave().
+    bool askForSaveChanges();
 
 private:
 
-	/// The window this dataset container is linked to (may be null).
-	MainWindow& _mainWindow;
+    /// The window this dataset container is linked to (may be null).
+    MainWindow& _mainWindow;
 };
 
-}	// End of namespace
+}   // End of namespace

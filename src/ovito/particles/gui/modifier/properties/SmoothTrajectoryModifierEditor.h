@@ -33,17 +33,17 @@ namespace Ovito::Particles {
  */
 class SmoothTrajectoryModifierEditor : public PropertiesEditor
 {
-	OVITO_CLASS(SmoothTrajectoryModifierEditor)
+    OVITO_CLASS(SmoothTrajectoryModifierEditor)
 
 public:
 
-	/// Default constructor
-	Q_INVOKABLE SmoothTrajectoryModifierEditor() {}
+    /// Default constructor
+    Q_INVOKABLE SmoothTrajectoryModifierEditor() {}
 
 protected:
 
-	/// Creates the user interface controls for the editor.
-	virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
+    /// Creates the user interface controls for the editor.
+    virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
 };
 
-}	// End of namespace
+}   // End of namespace

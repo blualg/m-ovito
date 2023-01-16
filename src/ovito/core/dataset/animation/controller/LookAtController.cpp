@@ -40,10 +40,10 @@ SET_PROPERTY_FIELD_UNITS(LookAtController, rollController, AngleParameterUnit);
 ******************************************************************************/
 LookAtController::LookAtController(ObjectCreationParams params) : Controller(params)
 {
-	if(params.createSubObjects()) {
-		// Create sub-controller.
-		setRollController(ControllerManager::createFloatController());
-	}
+    if(params.createSubObjects()) {
+        // Create sub-controller.
+        setRollController(ControllerManager::createFloatController());
+    }
 }
 
 /******************************************************************************
@@ -51,37 +51,37 @@ LookAtController::LookAtController(ObjectCreationParams params) : Controller(par
 ******************************************************************************/
 void LookAtController::getRotationValue(AnimationTime time, Rotation& result, TimeInterval& validityInterval)
 {
-	// Get position of target node.
-	Vector3 targetPos = Vector3::Zero();
-	if(targetNode()) {
-		const AffineTransformation& targetTM = targetNode()->getWorldTransform(time, validityInterval);
-		targetPos = targetTM.translation();
-	}
+    // Get position of target node.
+    Vector3 targetPos = Vector3::Zero();
+    if(targetNode()) {
+        const AffineTransformation& targetTM = targetNode()->getWorldTransform(time, validityInterval);
+        targetPos = targetTM.translation();
+    }
 
-	if(!_sourcePosValidity.isEmpty())
-		validityInterval.intersect(_sourcePosValidity);
-	else
-		validityInterval.intersect(TimeInterval(time));
+    if(!_sourcePosValidity.isEmpty())
+        validityInterval.intersect(_sourcePosValidity);
+    else
+        validityInterval.intersect(TimeInterval(time));
 
-	// Get rolling angle.
-	FloatType rollAngle = 0.0;
-	if(rollController())
-		rollAngle = rollController()->getFloatValue(time, validityInterval);
+    // Get rolling angle.
+    FloatType rollAngle = 0.0;
+    if(rollController())
+        rollAngle = rollController()->getFloatValue(time, validityInterval);
 
-	if(targetPos == _sourcePos) {
-		result.setIdentity();
-		return;
-	}
+    if(targetPos == _sourcePos) {
+        result.setIdentity();
+        return;
+    }
 
-	AffineTransformation tm = AffineTransformation::lookAt(Point3::Origin() + _sourcePos, Point3::Origin() + targetPos, Vector3(0,0,1));
-	tm.translation() = Vector3::Zero();
-	result = Rotation(tm).inverse();
+    AffineTransformation tm = AffineTransformation::lookAt(Point3::Origin() + _sourcePos, Point3::Origin() + targetPos, Vector3(0,0,1));
+    tm.translation() = Vector3::Zero();
+    result = Rotation(tm).inverse();
 
-	if(rollAngle != 0.0)
-		result = result * Rotation(Vector3(0,0,1), rollAngle);
+    if(rollAngle != 0.0)
+        result = result * Rotation(Vector3(0,0,1), rollAngle);
 
-	// Reset source validity.
-	_sourcePosValidity.setEmpty();
+    // Reset source validity.
+    _sourcePosValidity.setEmpty();
 }
 
 /******************************************************************************
@@ -89,7 +89,7 @@ void LookAtController::getRotationValue(AnimationTime time, Rotation& result, Ti
 ******************************************************************************/
 void LookAtController::setRotationValue(AnimationTime time, const Rotation& newValue, bool isAbsoluteValue)
 {
-	// Cannot set value for this controller type.
+    // Cannot set value for this controller type.
 }
 
 /******************************************************************************
@@ -97,11 +97,11 @@ void LookAtController::setRotationValue(AnimationTime time, const Rotation& newV
 ******************************************************************************/
 void LookAtController::applyRotation(AnimationTime time, AffineTransformation& result, TimeInterval& validityInterval)
 {
-	// Save source position for later use.
-	_sourcePos = result.translation();
-	_sourcePosValidity = validityInterval;
+    // Save source position for later use.
+    _sourcePos = result.translation();
+    _sourcePosValidity = validityInterval;
 
-	Controller::applyRotation(time, result, validityInterval);
+    Controller::applyRotation(time, result, validityInterval);
 }
 
 /******************************************************************************
@@ -110,12 +110,12 @@ void LookAtController::applyRotation(AnimationTime time, AffineTransformation& r
 ******************************************************************************/
 TimeInterval LookAtController::validityInterval(AnimationTime time)
 {
-	TimeInterval iv = TimeInterval::infinite();
-	if(rollController())
-		iv.intersect(rollController()->validityInterval(time));
-	if(targetNode())
-		targetNode()->getWorldTransform(time, iv);
-	return iv;
+    TimeInterval iv = TimeInterval::infinite();
+    if(rollController())
+        iv.intersect(rollController()->validityInterval(time));
+    if(targetNode())
+        targetNode()->getWorldTransform(time, iv);
+    return iv;
 }
 
-}	// End of namespace
+}   // End of namespace

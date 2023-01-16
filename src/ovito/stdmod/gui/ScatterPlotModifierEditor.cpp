@@ -49,154 +49,154 @@ SET_OVITO_OBJECT_EDITOR(ScatterPlotModifier, ScatterPlotModifierEditor);
 ******************************************************************************/
 void ScatterPlotModifierEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 {
-	// Create a rollout.
-	QWidget* rollout = createRollout(tr("Scatter plot"), rolloutParams, "manual:particles.modifiers.scatter_plot");
+    // Create a rollout.
+    QWidget* rollout = createRollout(tr("Scatter plot"), rolloutParams, "manual:particles.modifiers.scatter_plot");
 
     // Create the rollout contents.
-	QVBoxLayout* layout = new QVBoxLayout(rollout);
-	layout->setContentsMargins(4,4,4,4);
-	layout->setSpacing(4);
+    QVBoxLayout* layout = new QVBoxLayout(rollout);
+    layout->setContentsMargins(4,4,4,4);
+    layout->setSpacing(4);
 
-	PropertyContainerParameterUI* pclassUI = new PropertyContainerParameterUI(this, PROPERTY_FIELD(GenericPropertyModifier::subject));
-	layout->addWidget(new QLabel(tr("Operate on:")));
-	layout->addWidget(pclassUI->comboBox());
-	layout->addSpacing(6);
+    PropertyContainerParameterUI* pclassUI = new PropertyContainerParameterUI(this, PROPERTY_FIELD(GenericPropertyModifier::subject));
+    layout->addWidget(new QLabel(tr("Operate on:")));
+    layout->addWidget(pclassUI->comboBox());
+    layout->addSpacing(6);
 
-	// Do not list data tables as available inputs.
-	pclassUI->setContainerFilter([](const PropertyContainer* container) {
-		return DataTable::OOClass().isMember(container) == false;
-	});
+    // Do not list data tables as available inputs.
+    pclassUI->setContainerFilter([](const PropertyContainer* container) {
+        return DataTable::OOClass().isMember(container) == false;
+    });
 
 
-	PropertyReferenceParameterUI* xPropertyUI = new PropertyReferenceParameterUI(this, PROPERTY_FIELD(ScatterPlotModifier::xAxisProperty));
-	layout->addWidget(new QLabel(tr("X-axis property:"), rollout));
-	layout->addWidget(xPropertyUI->comboBox());
-	PropertyReferenceParameterUI* yPropertyUI = new PropertyReferenceParameterUI(this, PROPERTY_FIELD(ScatterPlotModifier::yAxisProperty));
-	layout->addWidget(new QLabel(tr("Y-axis property:"), rollout));
-	layout->addWidget(yPropertyUI->comboBox());
-	connect(this, &PropertiesEditor::contentsChanged, this, [xPropertyUI,yPropertyUI](RefTarget* editObject) {
-		GenericPropertyModifier* modifier = static_object_cast<GenericPropertyModifier>(editObject);
-		if(modifier) {
-			xPropertyUI->setContainerRef(modifier->subject());
-			yPropertyUI->setContainerRef(modifier->subject());
-		}
-		else {
-			xPropertyUI->setContainerRef({});
-			yPropertyUI->setContainerRef({});
-		}
-	});
-	layout->addSpacing(6);
+    PropertyReferenceParameterUI* xPropertyUI = new PropertyReferenceParameterUI(this, PROPERTY_FIELD(ScatterPlotModifier::xAxisProperty));
+    layout->addWidget(new QLabel(tr("X-axis property:"), rollout));
+    layout->addWidget(xPropertyUI->comboBox());
+    PropertyReferenceParameterUI* yPropertyUI = new PropertyReferenceParameterUI(this, PROPERTY_FIELD(ScatterPlotModifier::yAxisProperty));
+    layout->addWidget(new QLabel(tr("Y-axis property:"), rollout));
+    layout->addWidget(yPropertyUI->comboBox());
+    connect(this, &PropertiesEditor::contentsChanged, this, [xPropertyUI,yPropertyUI](RefTarget* editObject) {
+        GenericPropertyModifier* modifier = static_object_cast<GenericPropertyModifier>(editObject);
+        if(modifier) {
+            xPropertyUI->setContainerRef(modifier->subject());
+            yPropertyUI->setContainerRef(modifier->subject());
+        }
+        else {
+            xPropertyUI->setContainerRef({});
+            yPropertyUI->setContainerRef({});
+        }
+    });
+    layout->addSpacing(6);
 
-	_plotWidget = new DataTablePlotWidget();
-	_plotWidget->setMinimumHeight(240);
-	_plotWidget->setMaximumHeight(240);
-	_selectionRangeIndicatorX = new QwtPlotZoneItem();
-	_selectionRangeIndicatorX->setOrientation(Qt::Vertical);
-	_selectionRangeIndicatorX->setZ(1);
-	_selectionRangeIndicatorX->attach(_plotWidget);
-	_selectionRangeIndicatorX->hide();
-	_selectionRangeIndicatorY = new QwtPlotZoneItem();
-	_selectionRangeIndicatorY->setOrientation(Qt::Horizontal);
-	_selectionRangeIndicatorY->setZ(1);
-	_selectionRangeIndicatorY->attach(_plotWidget);
-	_selectionRangeIndicatorY->hide();
+    _plotWidget = new DataTablePlotWidget();
+    _plotWidget->setMinimumHeight(240);
+    _plotWidget->setMaximumHeight(240);
+    _selectionRangeIndicatorX = new QwtPlotZoneItem();
+    _selectionRangeIndicatorX->setOrientation(Qt::Vertical);
+    _selectionRangeIndicatorX->setZ(1);
+    _selectionRangeIndicatorX->attach(_plotWidget);
+    _selectionRangeIndicatorX->hide();
+    _selectionRangeIndicatorY = new QwtPlotZoneItem();
+    _selectionRangeIndicatorY->setOrientation(Qt::Horizontal);
+    _selectionRangeIndicatorY->setZ(1);
+    _selectionRangeIndicatorY->attach(_plotWidget);
+    _selectionRangeIndicatorY->hide();
 
-	layout->addWidget(new QLabel(tr("Scatter plot:")));
-	layout->addWidget(_plotWidget);
+    layout->addWidget(new QLabel(tr("Scatter plot:")));
+    layout->addWidget(_plotWidget);
 
-	OpenDataInspectorButton* openDataInspectorBtn = new OpenDataInspectorButton(this, tr("Show in data inspector"));
-	layout->addWidget(openDataInspectorBtn);
+    OpenDataInspectorButton* openDataInspectorBtn = new OpenDataInspectorButton(this, tr("Show in data inspector"));
+    layout->addWidget(openDataInspectorBtn);
 
-	// Selection.
-	QGroupBox* selectionBox = new QGroupBox(tr("Selection"), rollout);
-	QVBoxLayout* sublayout = new QVBoxLayout(selectionBox);
-	sublayout->setContentsMargins(4,4,4,4);
-	layout->addWidget(selectionBox);
+    // Selection.
+    QGroupBox* selectionBox = new QGroupBox(tr("Selection"), rollout);
+    QVBoxLayout* sublayout = new QVBoxLayout(selectionBox);
+    sublayout->setContentsMargins(4,4,4,4);
+    layout->addWidget(selectionBox);
 
-	BooleanParameterUI* selectInRangeUI = new BooleanParameterUI(this, PROPERTY_FIELD(ScatterPlotModifier::selectXAxisInRange));
-	sublayout->addWidget(selectInRangeUI->checkBox());
+    BooleanParameterUI* selectInRangeUI = new BooleanParameterUI(this, PROPERTY_FIELD(ScatterPlotModifier::selectXAxisInRange));
+    sublayout->addWidget(selectInRangeUI->checkBox());
 
-	QHBoxLayout* hlayout = new QHBoxLayout();
-	sublayout->addLayout(hlayout);
-	FloatParameterUI* selRangeStartPUI = new FloatParameterUI(this, PROPERTY_FIELD(ScatterPlotModifier::selectionXAxisRangeStart));
-	FloatParameterUI* selRangeEndPUI = new FloatParameterUI(this, PROPERTY_FIELD(ScatterPlotModifier::selectionXAxisRangeEnd));
-	hlayout->addWidget(new QLabel(tr("From:")));
-	hlayout->addLayout(selRangeStartPUI->createFieldLayout());
-	hlayout->addSpacing(12);
-	hlayout->addWidget(new QLabel(tr("To:")));
-	hlayout->addLayout(selRangeEndPUI->createFieldLayout());
-	selRangeStartPUI->setEnabled(false);
-	selRangeEndPUI->setEnabled(false);
-	connect(selectInRangeUI->checkBox(), &QCheckBox::toggled, selRangeStartPUI, &FloatParameterUI::setEnabled);
-	connect(selectInRangeUI->checkBox(), &QCheckBox::toggled, selRangeEndPUI, &FloatParameterUI::setEnabled);
+    QHBoxLayout* hlayout = new QHBoxLayout();
+    sublayout->addLayout(hlayout);
+    FloatParameterUI* selRangeStartPUI = new FloatParameterUI(this, PROPERTY_FIELD(ScatterPlotModifier::selectionXAxisRangeStart));
+    FloatParameterUI* selRangeEndPUI = new FloatParameterUI(this, PROPERTY_FIELD(ScatterPlotModifier::selectionXAxisRangeEnd));
+    hlayout->addWidget(new QLabel(tr("From:")));
+    hlayout->addLayout(selRangeStartPUI->createFieldLayout());
+    hlayout->addSpacing(12);
+    hlayout->addWidget(new QLabel(tr("To:")));
+    hlayout->addLayout(selRangeEndPUI->createFieldLayout());
+    selRangeStartPUI->setEnabled(false);
+    selRangeEndPUI->setEnabled(false);
+    connect(selectInRangeUI->checkBox(), &QCheckBox::toggled, selRangeStartPUI, &FloatParameterUI::setEnabled);
+    connect(selectInRangeUI->checkBox(), &QCheckBox::toggled, selRangeEndPUI, &FloatParameterUI::setEnabled);
 
-	selectInRangeUI = new BooleanParameterUI(this, PROPERTY_FIELD(ScatterPlotModifier::selectYAxisInRange));
-	sublayout->addWidget(selectInRangeUI->checkBox());
+    selectInRangeUI = new BooleanParameterUI(this, PROPERTY_FIELD(ScatterPlotModifier::selectYAxisInRange));
+    sublayout->addWidget(selectInRangeUI->checkBox());
 
-	hlayout = new QHBoxLayout();
-	sublayout->addLayout(hlayout);
-	selRangeStartPUI = new FloatParameterUI(this, PROPERTY_FIELD(ScatterPlotModifier::selectionYAxisRangeStart));
-	selRangeEndPUI = new FloatParameterUI(this, PROPERTY_FIELD(ScatterPlotModifier::selectionYAxisRangeEnd));
-	hlayout->addWidget(new QLabel(tr("From:")));
-	hlayout->addLayout(selRangeStartPUI->createFieldLayout());
-	hlayout->addSpacing(12);
-	hlayout->addWidget(new QLabel(tr("To:")));
-	hlayout->addLayout(selRangeEndPUI->createFieldLayout());
-	selRangeStartPUI->setEnabled(false);
-	selRangeEndPUI->setEnabled(false);
-	connect(selectInRangeUI->checkBox(), &QCheckBox::toggled, selRangeStartPUI, &FloatParameterUI::setEnabled);
-	connect(selectInRangeUI->checkBox(), &QCheckBox::toggled, selRangeEndPUI, &FloatParameterUI::setEnabled);
+    hlayout = new QHBoxLayout();
+    sublayout->addLayout(hlayout);
+    selRangeStartPUI = new FloatParameterUI(this, PROPERTY_FIELD(ScatterPlotModifier::selectionYAxisRangeStart));
+    selRangeEndPUI = new FloatParameterUI(this, PROPERTY_FIELD(ScatterPlotModifier::selectionYAxisRangeEnd));
+    hlayout->addWidget(new QLabel(tr("From:")));
+    hlayout->addLayout(selRangeStartPUI->createFieldLayout());
+    hlayout->addSpacing(12);
+    hlayout->addWidget(new QLabel(tr("To:")));
+    hlayout->addLayout(selRangeEndPUI->createFieldLayout());
+    selRangeStartPUI->setEnabled(false);
+    selRangeEndPUI->setEnabled(false);
+    connect(selectInRangeUI->checkBox(), &QCheckBox::toggled, selRangeStartPUI, &FloatParameterUI::setEnabled);
+    connect(selectInRangeUI->checkBox(), &QCheckBox::toggled, selRangeEndPUI, &FloatParameterUI::setEnabled);
 
-	// Axes.
-	QGroupBox* axesBox = new QGroupBox(tr("Plot axes"), rollout);
-	QVBoxLayout* axesSublayout = new QVBoxLayout(axesBox);
-	axesSublayout->setContentsMargins(4,4,4,4);
-	layout->addWidget(axesBox);
-	// x-axis.
-	{
-		BooleanParameterUI* rangeUI = new BooleanParameterUI(this, PROPERTY_FIELD(ScatterPlotModifier::fixXAxisRange));
-		axesSublayout->addWidget(rangeUI->checkBox());
+    // Axes.
+    QGroupBox* axesBox = new QGroupBox(tr("Plot axes"), rollout);
+    QVBoxLayout* axesSublayout = new QVBoxLayout(axesBox);
+    axesSublayout->setContentsMargins(4,4,4,4);
+    layout->addWidget(axesBox);
+    // x-axis.
+    {
+        BooleanParameterUI* rangeUI = new BooleanParameterUI(this, PROPERTY_FIELD(ScatterPlotModifier::fixXAxisRange));
+        axesSublayout->addWidget(rangeUI->checkBox());
 
-		QHBoxLayout* hlayout = new QHBoxLayout();
-		axesSublayout->addLayout(hlayout);
-		FloatParameterUI* startPUI = new FloatParameterUI(this, PROPERTY_FIELD(ScatterPlotModifier::xAxisRangeStart));
-		FloatParameterUI* endPUI = new FloatParameterUI(this, PROPERTY_FIELD(ScatterPlotModifier::xAxisRangeEnd));
-		hlayout->addWidget(new QLabel(tr("From:")));
-		hlayout->addLayout(startPUI->createFieldLayout());
-		hlayout->addSpacing(12);
-		hlayout->addWidget(new QLabel(tr("To:")));
-		hlayout->addLayout(endPUI->createFieldLayout());
-		startPUI->setEnabled(false);
-		endPUI->setEnabled(false);
-		connect(rangeUI->checkBox(), &QCheckBox::toggled, startPUI, &FloatParameterUI::setEnabled);
-		connect(rangeUI->checkBox(), &QCheckBox::toggled, endPUI, &FloatParameterUI::setEnabled);
-	}
-	// y-axis.
-	{
-		BooleanParameterUI* rangeUI = new BooleanParameterUI(this, PROPERTY_FIELD(ScatterPlotModifier::fixYAxisRange));
-		axesSublayout->addWidget(rangeUI->checkBox());
+        QHBoxLayout* hlayout = new QHBoxLayout();
+        axesSublayout->addLayout(hlayout);
+        FloatParameterUI* startPUI = new FloatParameterUI(this, PROPERTY_FIELD(ScatterPlotModifier::xAxisRangeStart));
+        FloatParameterUI* endPUI = new FloatParameterUI(this, PROPERTY_FIELD(ScatterPlotModifier::xAxisRangeEnd));
+        hlayout->addWidget(new QLabel(tr("From:")));
+        hlayout->addLayout(startPUI->createFieldLayout());
+        hlayout->addSpacing(12);
+        hlayout->addWidget(new QLabel(tr("To:")));
+        hlayout->addLayout(endPUI->createFieldLayout());
+        startPUI->setEnabled(false);
+        endPUI->setEnabled(false);
+        connect(rangeUI->checkBox(), &QCheckBox::toggled, startPUI, &FloatParameterUI::setEnabled);
+        connect(rangeUI->checkBox(), &QCheckBox::toggled, endPUI, &FloatParameterUI::setEnabled);
+    }
+    // y-axis.
+    {
+        BooleanParameterUI* rangeUI = new BooleanParameterUI(this, PROPERTY_FIELD(ScatterPlotModifier::fixYAxisRange));
+        axesSublayout->addWidget(rangeUI->checkBox());
 
-		QHBoxLayout* hlayout = new QHBoxLayout();
-		axesSublayout->addLayout(hlayout);
-		FloatParameterUI* startPUI = new FloatParameterUI(this, PROPERTY_FIELD(ScatterPlotModifier::yAxisRangeStart));
-		FloatParameterUI* endPUI = new FloatParameterUI(this, PROPERTY_FIELD(ScatterPlotModifier::yAxisRangeEnd));
-		hlayout->addWidget(new QLabel(tr("From:")));
-		hlayout->addLayout(startPUI->createFieldLayout());
-		hlayout->addSpacing(12);
-		hlayout->addWidget(new QLabel(tr("To:")));
-		hlayout->addLayout(endPUI->createFieldLayout());
-		startPUI->setEnabled(false);
-		endPUI->setEnabled(false);
-		connect(rangeUI->checkBox(), &QCheckBox::toggled, startPUI, &FloatParameterUI::setEnabled);
-		connect(rangeUI->checkBox(), &QCheckBox::toggled, endPUI, &FloatParameterUI::setEnabled);
-	}
+        QHBoxLayout* hlayout = new QHBoxLayout();
+        axesSublayout->addLayout(hlayout);
+        FloatParameterUI* startPUI = new FloatParameterUI(this, PROPERTY_FIELD(ScatterPlotModifier::yAxisRangeStart));
+        FloatParameterUI* endPUI = new FloatParameterUI(this, PROPERTY_FIELD(ScatterPlotModifier::yAxisRangeEnd));
+        hlayout->addWidget(new QLabel(tr("From:")));
+        hlayout->addLayout(startPUI->createFieldLayout());
+        hlayout->addSpacing(12);
+        hlayout->addWidget(new QLabel(tr("To:")));
+        hlayout->addLayout(endPUI->createFieldLayout());
+        startPUI->setEnabled(false);
+        endPUI->setEnabled(false);
+        connect(rangeUI->checkBox(), &QCheckBox::toggled, startPUI, &FloatParameterUI::setEnabled);
+        connect(rangeUI->checkBox(), &QCheckBox::toggled, endPUI, &FloatParameterUI::setEnabled);
+    }
 
-	// Status label.
-	layout->addSpacing(6);
-	layout->addWidget((new ObjectStatusDisplay(this))->statusWidget());
+    // Status label.
+    layout->addSpacing(6);
+    layout->addWidget((new ObjectStatusDisplay(this))->statusWidget());
 
-	// Update data plot whenever the modifier has calculated new results.
-	connect(this, &PropertiesEditor::pipelineOutputChanged, this, &ScatterPlotModifierEditor::plotScatterPlot);
+    // Update data plot whenever the modifier has calculated new results.
+    connect(this, &PropertiesEditor::pipelineOutputChanged, this, &ScatterPlotModifierEditor::plotScatterPlot);
 }
 
 /******************************************************************************
@@ -204,51 +204,51 @@ void ScatterPlotModifierEditor::createUI(const RolloutInsertionParameters& rollo
 ******************************************************************************/
 void ScatterPlotModifierEditor::plotScatterPlot()
 {
-	ScatterPlotModifier* modifier = static_object_cast<ScatterPlotModifier>(editObject());
+    ScatterPlotModifier* modifier = static_object_cast<ScatterPlotModifier>(editObject());
 
-	if(modifier && modifier->fixXAxisRange()) {
-		_plotWidget->setAxisScale(QwtPlot::xBottom, modifier->xAxisRangeStart(), modifier->xAxisRangeEnd());
-	}
-	else {
-		_plotWidget->setAxisAutoScale(QwtPlot::xBottom);
-	}
+    if(modifier && modifier->fixXAxisRange()) {
+        _plotWidget->setAxisScale(QwtPlot::xBottom, modifier->xAxisRangeStart(), modifier->xAxisRangeEnd());
+    }
+    else {
+        _plotWidget->setAxisAutoScale(QwtPlot::xBottom);
+    }
 
-	if(modifier && modifier->fixYAxisRange()) {
-		_plotWidget->setAxisScale(QwtPlot::yLeft, modifier->yAxisRangeStart(), modifier->yAxisRangeEnd());
-	}
-	else {
-		_plotWidget->setAxisAutoScale(QwtPlot::yLeft);
-	}
+    if(modifier && modifier->fixYAxisRange()) {
+        _plotWidget->setAxisScale(QwtPlot::yLeft, modifier->yAxisRangeStart(), modifier->yAxisRangeEnd());
+    }
+    else {
+        _plotWidget->setAxisAutoScale(QwtPlot::yLeft);
+    }
 
-	if(modifier && modifier->selectXAxisInRange()) {
-		auto minmax = std::minmax(modifier->selectionXAxisRangeStart(), modifier->selectionXAxisRangeEnd());
-		_selectionRangeIndicatorX->setInterval(minmax.first, minmax.second);
-		_selectionRangeIndicatorX->show();
-	}
-	else {
-		_selectionRangeIndicatorX->hide();
-	}
+    if(modifier && modifier->selectXAxisInRange()) {
+        auto minmax = std::minmax(modifier->selectionXAxisRangeStart(), modifier->selectionXAxisRangeEnd());
+        _selectionRangeIndicatorX->setInterval(minmax.first, minmax.second);
+        _selectionRangeIndicatorX->show();
+    }
+    else {
+        _selectionRangeIndicatorX->hide();
+    }
 
-	if(modifier && modifier->selectYAxisInRange()) {
-		auto minmax = std::minmax(modifier->selectionYAxisRangeStart(), modifier->selectionYAxisRangeEnd());
-		_selectionRangeIndicatorY->setInterval(minmax.first, minmax.second);
-		_selectionRangeIndicatorY->show();
-	}
-	else {
-		_selectionRangeIndicatorY->hide();
-	}
+    if(modifier && modifier->selectYAxisInRange()) {
+        auto minmax = std::minmax(modifier->selectionYAxisRangeStart(), modifier->selectionYAxisRangeEnd());
+        _selectionRangeIndicatorY->setInterval(minmax.first, minmax.second);
+        _selectionRangeIndicatorY->show();
+    }
+    else {
+        _selectionRangeIndicatorY->hide();
+    }
 
-	if(modifier && modifierApplication()) {
-		// Request the modifier's pipeline output.
-		const PipelineFlowState& state = getPipelineOutput();
+    if(modifier && modifierApplication()) {
+        // Request the modifier's pipeline output.
+        const PipelineFlowState& state = getPipelineOutput();
 
-		// Look up the generated data table in the modifier's pipeline output.
-		const DataTable* table = state.getObjectBy<DataTable>(modifierApplication(), QStringLiteral("scatter"));
-		_plotWidget->setTable(table);
-	}
-	else {
-		_plotWidget->reset();
-	}
+        // Look up the generated data table in the modifier's pipeline output.
+        const DataTable* table = state.getObjectBy<DataTable>(modifierApplication(), QStringLiteral("scatter"));
+        _plotWidget->setTable(table);
+    }
+    else {
+        _plotWidget->reset();
+    }
 }
 
-}	// End of namespace
+}   // End of namespace

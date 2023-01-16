@@ -32,46 +32,46 @@ namespace Ovito {
  */
 class OVITO_GUIBASE_EXPORT ViewportModeAction : public QAction
 {
-	Q_OBJECT
+    Q_OBJECT
 
 public:
 
-	/// \brief Initializes the action object.
-	ViewportModeAction(UserInterface& userInterface, const QString& text, QObject* parent, ViewportInputMode* inputMode, const QColor& highlightColor = QColor());
+    /// \brief Initializes the action object.
+    ViewportModeAction(UserInterface& userInterface, const QString& text, QObject* parent, ViewportInputMode* inputMode, const QColor& highlightColor = QColor());
 
-	/// Returns the highlight color for the button controls.
-	const QColor& highlightColor() const { return _highlightColor; }
+    /// Returns the highlight color for the button controls.
+    const QColor& highlightColor() const { return _highlightColor; }
 
 public Q_SLOTS:
 
-	/// \brief Activates the viewport input mode.
-	void activateMode() {
-		onActionToggled(true);
-	}
+    /// \brief Activates the viewport input mode.
+    void activateMode() {
+        onActionToggled(true);
+    }
 
-	/// \brief Deactivates the viewport input mode.
-	void deactivateMode() {
-		onActionToggled(false);
-	}
+    /// \brief Deactivates the viewport input mode.
+    void deactivateMode() {
+        onActionToggled(false);
+    }
 
 protected Q_SLOTS:
 
-	/// Is called when the user or the program have triggered the action's state.
-	void onActionToggled(bool checked);
+    /// Is called when the user or the program have triggered the action's state.
+    void onActionToggled(bool checked);
 
-	/// Is called when the user has triggered the action's state.
-	void onActionTriggered(bool checked);
+    /// Is called when the user has triggered the action's state.
+    void onActionTriggered(bool checked);
 
 private:
 
-	/// The viewport input mode activated by this action.
-	ViewportInputMode* _inputMode;
+    /// The viewport input mode activated by this action.
+    ViewportInputMode* _inputMode;
 
-	/// The highlight color for the button controls.
-	QColor _highlightColor;
+    /// The highlight color for the button controls.
+    QColor _highlightColor;
 
-	/// The viewport input manager.
-	ViewportInputManager& _viewportInputManager;
+    /// The viewport input manager.
+    ViewportInputManager& _viewportInputManager;
 };
 
-}	// End of namespace
+}   // End of namespace

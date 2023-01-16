@@ -37,25 +37,25 @@ SET_OVITO_OBJECT_EDITOR(SimplifyMicrostructureModifier, SimplifyMicrostructureMo
 ******************************************************************************/
 void SimplifyMicrostructureModifierEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 {
-	// Create the rollout.
-	QWidget* rollout = createRollout(tr("Simplify microstructure"), rolloutParams);
+    // Create the rollout.
+    QWidget* rollout = createRollout(tr("Simplify microstructure"), rolloutParams);
 
     QGridLayout* layout = new QGridLayout(rollout);
-	layout->setContentsMargins(4,4,4,4);
-	layout->setSpacing(6);
-	layout->setColumnStretch(1, 1);
+    layout->setContentsMargins(4,4,4,4);
+    layout->setSpacing(6);
+    layout->setColumnStretch(1, 1);
 
-	IntegerParameterUI* smoothingLevelUI = new IntegerParameterUI(this, PROPERTY_FIELD(SimplifyMicrostructureModifier::smoothingLevel));
-	layout->addWidget(smoothingLevelUI->label(), 0, 0);
-	layout->addLayout(smoothingLevelUI->createFieldLayout(), 0, 1);
+    IntegerParameterUI* smoothingLevelUI = new IntegerParameterUI(this, PROPERTY_FIELD(SimplifyMicrostructureModifier::smoothingLevel));
+    layout->addWidget(smoothingLevelUI->label(), 0, 0);
+    layout->addLayout(smoothingLevelUI->createFieldLayout(), 0, 1);
 
-	FloatParameterUI* kPBUI = new FloatParameterUI(this, PROPERTY_FIELD(SimplifyMicrostructureModifier::kPB));
-	layout->addWidget(kPBUI->label(), 1, 0);
-	layout->addLayout(kPBUI->createFieldLayout(), 1, 1);
+    FloatParameterUI* kPBUI = new FloatParameterUI(this, PROPERTY_FIELD(SimplifyMicrostructureModifier::kPB));
+    layout->addWidget(kPBUI->label(), 1, 0);
+    layout->addLayout(kPBUI->createFieldLayout(), 1, 1);
 
-	FloatParameterUI* lambdaUI = new FloatParameterUI(this, PROPERTY_FIELD(SimplifyMicrostructureModifier::lambda));
-	layout->addWidget(lambdaUI->label(), 2, 0);
-	layout->addLayout(lambdaUI->createFieldLayout(), 2, 1);
+    FloatParameterUI* lambdaUI = new FloatParameterUI(this, PROPERTY_FIELD(SimplifyMicrostructureModifier::lambda));
+    layout->addWidget(lambdaUI->label(), 2, 0);
+    layout->addLayout(lambdaUI->createFieldLayout(), 2, 1);
 }
 
-}	// End of namespace
+}   // End of namespace

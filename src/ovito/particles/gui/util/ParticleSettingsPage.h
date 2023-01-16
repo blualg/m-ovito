@@ -33,33 +33,33 @@ namespace Ovito::Particles {
  */
 class ParticleSettingsPage : public ApplicationSettingsDialogPage
 {
-	OVITO_CLASS(ParticleSettingsPage)
+    OVITO_CLASS(ParticleSettingsPage)
 
 public:
 
-	/// Default constructor.
-	Q_INVOKABLE ParticleSettingsPage() = default;
+    /// Default constructor.
+    Q_INVOKABLE ParticleSettingsPage() = default;
 
-	/// \brief Creates the widget.
-	virtual void insertSettingsDialogPage(QTabWidget* tabWidget) override;
+    /// \brief Creates the widget.
+    virtual void insertSettingsDialogPage(QTabWidget* tabWidget) override;
 
-	/// \brief Lets the settings page to save all values entered by the user.
-	/// \param settingsDialog The settings dialog box.
-	virtual void saveValues(QTabWidget* tabWidget) override;
+    /// \brief Lets the settings page to save all values entered by the user.
+    /// \param settingsDialog The settings dialog box.
+    virtual void saveValues(QTabWidget* tabWidget) override;
 
-	/// \brief Returns an integer value that is used to sort the dialog pages in ascending order.
-	virtual int pageSortingKey() const override { return 4; }
+    /// \brief Returns an integer value that is used to sort the dialog pages in ascending order.
+    virtual int pageSortingKey() const override { return 4; }
 
 public Q_SLOTS:
 
-	/// Restores the built-in default particle colors and sizes.
-	void restoreBuiltinParticlePresets();
+    /// Restores the built-in default particle colors and sizes.
+    void restoreBuiltinParticlePresets();
 
 private:
 
-	QTreeWidget* _predefTypesTable;
-	QTreeWidgetItem* _particleTypesItem;
-	QTreeWidgetItem* _structureTypesItem;
+    QTreeWidget* _predefTypesTable;
+    QTreeWidgetItem* _particleTypesItem;
+    QTreeWidgetItem* _structureTypesItem;
 };
 
-}	// End of namespace
+}   // End of namespace

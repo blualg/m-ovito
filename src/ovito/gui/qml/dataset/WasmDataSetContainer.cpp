@@ -36,20 +36,20 @@ IMPLEMENT_OVITO_CLASS(WasmDataSetContainer);
 * Initializes the dataset manager.
 ******************************************************************************/
 WasmDataSetContainer::WasmDataSetContainer(MainWindow* mainWindow) :
-	_mainWindow(mainWindow)
+    _mainWindow(mainWindow)
 {
-	// Prepare scene for display whenever a new dataset becomes active.
-	if(Application::instance()->guiMode()) {
-		connect(this, &DataSetContainer::dataSetChanged, this, [this](DataSet* dataset) {
-			if(dataset) {
-				_sceneReadyScheduled = true;
-				Q_EMIT scenePreparationBegin();
-				_sceneReadyFuture = dataset->whenSceneReady().then(dataset->executor(), [this]() {
-					sceneBecameReady();
-				});
-			}
-		});
-	}
+    // Prepare scene for display whenever a new dataset becomes active.
+    if(Application::instance()->guiMode()) {
+        connect(this, &DataSetContainer::dataSetChanged, this, [this](DataSet* dataset) {
+            if(dataset) {
+                _sceneReadyScheduled = true;
+                Q_EMIT scenePreparationBegin();
+                _sceneReadyFuture = dataset->whenSceneReady().then(dataset->executor(), [this]() {
+                    sceneBecameReady();
+                });
+            }
+        });
+    }
 }
 
 /******************************************************************************
@@ -57,27 +57,27 @@ WasmDataSetContainer::WasmDataSetContainer(MainWindow* mainWindow) :
 ******************************************************************************/
 bool WasmDataSetContainer::referenceEvent(RefTarget* source, const ReferenceEvent& event)
 {
-	if(source == currentSet()) {
-		if(Application::instance()->guiMode()) {
-			if(event.type() == ReferenceEvent::TargetChanged) {
-				// Update viewports as soon as the scene becomes ready.
-				if(!_sceneReadyScheduled) {
-					_sceneReadyScheduled = true;
-					Q_EMIT scenePreparationBegin();
-					_sceneReadyFuture = currentSet()->whenSceneReady().then(currentSet()->executor(), [this]() {
-						sceneBecameReady();
-					});
-				}
-			}
-			else if(event.type() == ReferenceEvent::PreliminaryStateAvailable) {
-				// Update viewports when a new preliminiary state from one of the data pipelines
-				// becomes available (unless we are playing an animation).
-				if(!currentSet()->animationSettings()->arePreliminaryViewportUpdatesSuspended())
-					currentSet()->viewportConfig()->updateViewports();
-			}
-		}
-	}
-	return DataSetContainer::referenceEvent(source, event);
+    if(source == currentSet()) {
+        if(Application::instance()->guiMode()) {
+            if(event.type() == ReferenceEvent::TargetChanged) {
+                // Update viewports as soon as the scene becomes ready.
+                if(!_sceneReadyScheduled) {
+                    _sceneReadyScheduled = true;
+                    Q_EMIT scenePreparationBegin();
+                    _sceneReadyFuture = currentSet()->whenSceneReady().then(currentSet()->executor(), [this]() {
+                        sceneBecameReady();
+                    });
+                }
+            }
+            else if(event.type() == ReferenceEvent::PreliminaryStateAvailable) {
+                // Update viewports when a new preliminiary state from one of the data pipelines
+                // becomes available (unless we are playing an animation).
+                if(!currentSet()->animationSettings()->arePreliminaryViewportUpdatesSuspended())
+                    currentSet()->viewportConfig()->updateViewports();
+            }
+        }
+    }
+    return DataSetContainer::referenceEvent(source, event);
 }
 
 /******************************************************************************
@@ -85,11 +85,11 @@ bool WasmDataSetContainer::referenceEvent(RefTarget* source, const ReferenceEven
 ******************************************************************************/
 void WasmDataSetContainer::sceneBecameReady()
 {
-	_sceneReadyScheduled = false;
-	_sceneReadyFuture.reset();
-	if(currentSet())
-		currentSet()->viewportConfig()->updateViewports();
-	Q_EMIT scenePreparationEnd();
+    _sceneReadyScheduled = false;
+    _sceneReadyFuture.reset();
+    if(currentSet())
+        currentSet()->viewportConfig()->updateViewports();
+    Q_EMIT scenePreparationEnd();
 }
 
 /******************************************************************************
@@ -97,42 +97,42 @@ void WasmDataSetContainer::sceneBecameReady()
 ******************************************************************************/
 bool WasmDataSetContainer::importFile(const QUrl& url, const FileImporterClass* importerType)
 {
-	OVITO_ASSERT(currentSet() != nullptr);
+    OVITO_ASSERT(currentSet() != nullptr);
 
-	if(!url.isValid())
-		throw Exception(tr("Failed to import file. URL is not valid: %1").arg(url.toString()), currentSet());
+    if(!url.isValid())
+        throw Exception(tr("Failed to import file. URL is not valid: %1").arg(url.toString()), currentSet());
 
-	std::vector<std::pair<QUrl, OORef<FileImporter>>> urlImporters;
-	OORef<FileImporter> importer;
-	if(!importerType) {
+    std::vector<std::pair<QUrl, OORef<FileImporter>>> urlImporters;
+    OORef<FileImporter> importer;
+    if(!importerType) {
 
-		// Detect file format.
-		Future<OORef<FileImporter>> importerFuture = FileImporter::autodetectFileFormat(currentSet(), ExecutionContext::Type::Interactive, url);
-		if(!taskManager().waitForFuture(importerFuture))
-			return false;
+        // Detect file format.
+        Future<OORef<FileImporter>> importerFuture = FileImporter::autodetectFileFormat(currentSet(), ExecutionContext::Type::Interactive, url);
+        if(!taskManager().waitForFuture(importerFuture))
+            return false;
 
-		importer = importerFuture.result();
-		if(!importer) {
-			QString fileFormatList;
-			for(const FileImporterClass* importerClass : PluginManager::instance().metaclassMembers<FileImporter>()) {
-				fileFormatList += QStringLiteral("<li>%1</li>").arg(importerClass->fileFilterDescription().toHtmlEscaped());
-			}
-			if(fileFormatList.isEmpty())
-				fileFormatList = tr("(none)");
-			throw Exception(tr("<p>Could not detect the format of the imported file. This version of OVITO supports the following formats:</p><p><ul>%1</ul></p>").arg(fileFormatList));
-		}
-	}
-	else {
-		importer = static_object_cast<FileImporter>(importerType->createInstance(currentSet(), ExecutionContext::Type::Interactive));
-		if(!importer)
-			throw Exception(tr("Failed to import file. Could not initialize file reader."));
-	}
-	urlImporters.push_back(std::make_pair(url, importer));
+        importer = importerFuture.result();
+        if(!importer) {
+            QString fileFormatList;
+            for(const FileImporterClass* importerClass : PluginManager::instance().metaclassMembers<FileImporter>()) {
+                fileFormatList += QStringLiteral("<li>%1</li>").arg(importerClass->fileFilterDescription().toHtmlEscaped());
+            }
+            if(fileFormatList.isEmpty())
+                fileFormatList = tr("(none)");
+            throw Exception(tr("<p>Could not detect the format of the imported file. This version of OVITO supports the following formats:</p><p><ul>%1</ul></p>").arg(fileFormatList));
+        }
+    }
+    else {
+        importer = static_object_cast<FileImporter>(importerType->createInstance(currentSet(), ExecutionContext::Type::Interactive));
+        if(!importer)
+            throw Exception(tr("Failed to import file. Could not initialize file reader."));
+    }
+    urlImporters.push_back(std::make_pair(url, importer));
 
-	// Specify how the file's data should be inserted into the current scene.
-	FileImporter::ImportMode importMode = FileImporter::ResetScene;
+    // Specify how the file's data should be inserted into the current scene.
+    FileImporter::ImportMode importMode = FileImporter::ResetScene;
 
-	return importer->importFileSet(std::move(urlImporters), importMode, true);
+    return importer->importFileSet(std::move(urlImporters), importMode, true);
 }
 
-}	// End of namespace
+}   // End of namespace

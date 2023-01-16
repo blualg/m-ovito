@@ -35,52 +35,52 @@ namespace Ovito::StdMod {
  */
 class OVITO_STDMOD_EXPORT ManualSelectionModifier : public GenericPropertyModifier
 {
-	OVITO_CLASS(ManualSelectionModifier)
+    OVITO_CLASS(ManualSelectionModifier)
 
-	Q_CLASSINFO("DisplayName", "Manual selection");
-	Q_CLASSINFO("Description", "Select individual particles or bonds using the mouse.");
+    Q_CLASSINFO("DisplayName", "Manual selection");
+    Q_CLASSINFO("Description", "Select individual particles or bonds using the mouse.");
 #ifndef OVITO_QML_GUI
-	Q_CLASSINFO("ModifierCategory", "Selection");
+    Q_CLASSINFO("ModifierCategory", "Selection");
 #else
-	Q_CLASSINFO("ModifierCategory", "-");
+    Q_CLASSINFO("ModifierCategory", "-");
 #endif
 
 public:
 
-	/// Constructor.
-	Q_INVOKABLE ManualSelectionModifier(ObjectCreationParams params);
+    /// Constructor.
+    Q_INVOKABLE ManualSelectionModifier(ObjectCreationParams params);
 
-	/// This method is called by the system after the modifier has been inserted into a data pipeline.
-	virtual void initializeModifier(const ModifierInitializationRequest& request) override;
+    /// This method is called by the system after the modifier has been inserted into a data pipeline.
+    virtual void initializeModifier(const ModifierInitializationRequest& request) override;
 
-	/// Modifies the input data synchronously.
-	virtual void evaluateSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
+    /// Modifies the input data synchronously.
+    virtual void evaluateSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
 
-	/// Adopts the selection state from the modifier's input.
-	void resetSelection(ModifierApplication* modApp, const PipelineFlowState& state);
+    /// Adopts the selection state from the modifier's input.
+    void resetSelection(ModifierApplication* modApp, const PipelineFlowState& state);
 
-	/// Selects all elements.
-	void selectAll(ModifierApplication* modApp, const PipelineFlowState& state);
+    /// Selects all elements.
+    void selectAll(ModifierApplication* modApp, const PipelineFlowState& state);
 
-	/// Deselects all elements.
-	void clearSelection(ModifierApplication* modApp, const PipelineFlowState& state);
+    /// Deselects all elements.
+    void clearSelection(ModifierApplication* modApp, const PipelineFlowState& state);
 
-	/// Inverts the selection state of all elements.
-	void invertSelection(ModifierApplication* modApp, const PipelineFlowState& state);
+    /// Inverts the selection state of all elements.
+    void invertSelection(ModifierApplication* modApp, const PipelineFlowState& state);
 
-	/// Toggles the selection state of a single element.
-	void toggleElementSelection(ModifierApplication* modApp, const PipelineFlowState& state, size_t elementIndex);
+    /// Toggles the selection state of a single element.
+    void toggleElementSelection(ModifierApplication* modApp, const PipelineFlowState& state, size_t elementIndex);
 
-	/// Replaces the selection.
-	void setSelection(ModifierApplication* modApp, const PipelineFlowState& state, const boost::dynamic_bitset<>& selection, ElementSelectionSet::SelectionMode mode);
+    /// Replaces the selection.
+    void setSelection(ModifierApplication* modApp, const PipelineFlowState& state, const boost::dynamic_bitset<>& selection, ElementSelectionSet::SelectionMode mode);
 
 protected:
 
-	/// Is called when the value of a property of this object has changed.
-	virtual void propertyChanged(const PropertyFieldDescriptor* field) override;
+    /// Is called when the value of a property of this object has changed.
+    virtual void propertyChanged(const PropertyFieldDescriptor* field) override;
 
-	/// Returns the selection set object stored in the ModifierApplication, or, if it does not exist, creates one when requested.
-	ElementSelectionSet* getSelectionSet(ModifierApplication* modApp, bool createIfNotExist);
+    /// Returns the selection set object stored in the ModifierApplication, or, if it does not exist, creates one when requested.
+    ElementSelectionSet* getSelectionSet(ModifierApplication* modApp, bool createIfNotExist);
 };
 
 /**
@@ -89,17 +89,17 @@ protected:
  */
 class OVITO_STDMOD_EXPORT ManualSelectionModifierApplication : public ModifierApplication
 {
-	OVITO_CLASS(ManualSelectionModifierApplication)
+    OVITO_CLASS(ManualSelectionModifierApplication)
 
 public:
 
-	/// \brief Constructs a modifier application.
-	Q_INVOKABLE ManualSelectionModifierApplication(ObjectCreationParams params) : ModifierApplication(params) {}
+    /// \brief Constructs a modifier application.
+    Q_INVOKABLE ManualSelectionModifierApplication(ObjectCreationParams params) : ModifierApplication(params) {}
 
 private:
 
-	/// The per-application data of the modifier.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<ElementSelectionSet>, selectionSet, setSelectionSet, PROPERTY_FIELD_ALWAYS_CLONE);
+    /// The per-application data of the modifier.
+    DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<ElementSelectionSet>, selectionSet, setSelectionSet, PROPERTY_FIELD_ALWAYS_CLONE);
 };
 
-}	// End of namespace
+}   // End of namespace

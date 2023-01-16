@@ -38,86 +38,86 @@ class OVITO_CORE_EXPORT PipelineEvaluationRequest
 {
 public:
 
-	/// Constructs a request object for evaluating the pipeline at a certain animation time.
-	PipelineEvaluationRequest(AnimationTime time = AnimationTime::fromFrame(0)) : 
-		_time(time), 
-		_cachingIntervals(time) {}
+    /// Constructs a request object for evaluating the pipeline at a certain animation time.
+    PipelineEvaluationRequest(AnimationTime time = AnimationTime::fromFrame(0)) : 
+        _time(time), 
+        _cachingIntervals(time) {}
 
-	/// Constructs a request object for evaluating the pipeline at the current animation time.
-	PipelineEvaluationRequest(AnimationSettings* animationSettings) : PipelineEvaluationRequest(animationSettings->currentTime()) {}
+    /// Constructs a request object for evaluating the pipeline at the current animation time.
+    PipelineEvaluationRequest(AnimationSettings* animationSettings) : PipelineEvaluationRequest(animationSettings->currentTime()) {}
 
-	/// Constructs a request object for evaluating the pipeline using a prescribed caching pattern.
-	explicit PipelineEvaluationRequest(const TimeIntervalUnion& cachingIntervals) : _cachingIntervals(cachingIntervals) {}
+    /// Constructs a request object for evaluating the pipeline using a prescribed caching pattern.
+    explicit PipelineEvaluationRequest(const TimeIntervalUnion& cachingIntervals) : _cachingIntervals(cachingIntervals) {}
 
-	/// Returns the animation time at which the pipeline is being evaluated.
-	AnimationTime time() const { return _time; }
+    /// Returns the animation time at which the pipeline is being evaluated.
+    AnimationTime time() const { return _time; }
 
-	/// Sets a new animation time at which the pipeline should be evaluated.
-	void setTime(AnimationTime time) { _time = time; }
+    /// Sets a new animation time at which the pipeline should be evaluated.
+    void setTime(AnimationTime time) { _time = time; }
 
-	/// Returns whether the pipeline system should stop the evaluation as soon as a first error occurs in one of the modifiers.
-	bool breakOnError() const { return _breakOnError; }
+    /// Returns whether the pipeline system should stop the evaluation as soon as a first error occurs in one of the modifiers.
+    bool breakOnError() const { return _breakOnError; }
 
-	/// Sets whether the pipeline system should stop the evaluation as soon as a first error occurs in one of the modifiers.
-	void setBreakOnError(bool enable = true) { _breakOnError = enable; }
+    /// Sets whether the pipeline system should stop the evaluation as soon as a first error occurs in one of the modifiers.
+    void setBreakOnError(bool enable = true) { _breakOnError = enable; }
 
-	/// Returns the animation time intervals over which the pipeline should pre-cache the state.
-	const TimeIntervalUnion& cachingIntervals() const { return _cachingIntervals; }
+    /// Returns the animation time intervals over which the pipeline should pre-cache the state.
+    const TimeIntervalUnion& cachingIntervals() const { return _cachingIntervals; }
 
-	/// Returns a non-const reference to the animation time intervals over which the pipeline should pre-cache the state.
-	TimeIntervalUnion& modifiableCachingIntervals() { return _cachingIntervals; }
+    /// Returns a non-const reference to the animation time intervals over which the pipeline should pre-cache the state.
+    TimeIntervalUnion& modifiableCachingIntervals() { return _cachingIntervals; }
 
 private:
 
-	/// The animation time at which the pipeline is being evaluated.
-	AnimationTime _time = AnimationTime::fromFrame(0);
+    /// The animation time at which the pipeline is being evaluated.
+    AnimationTime _time = AnimationTime::fromFrame(0);
 
-	/// Makes the pipeline system stop the evaluation as soon as a first error occurs in one of the modifiers.
-	bool _breakOnError = false;
+    /// Makes the pipeline system stop the evaluation as soon as a first error occurs in one of the modifiers.
+    bool _breakOnError = false;
 
-	/// Indicates to the upstream pipeline stages which animation frames they should keep in the cache.
-	TimeIntervalUnion _cachingIntervals;
+    /// Indicates to the upstream pipeline stages which animation frames they should keep in the cache.
+    TimeIntervalUnion _cachingIntervals;
 };
 
 /**
  * \brief This helper class manages the evaluation of a PipelineSceneNode.
  */
 class OVITO_CORE_EXPORT PipelineEvaluationFuture : public SharedFuture<PipelineFlowState>
-{	
+{   
 public:
 
-	/// Default constructor.
-	PipelineEvaluationFuture() = default;
+    /// Default constructor.
+    PipelineEvaluationFuture() = default;
 
-	/// Constructs a pipeline evaluation object for a given evaluation request.
-	explicit PipelineEvaluationFuture(const PipelineEvaluationRequest& request) : _request(request) {}
+    /// Constructs a pipeline evaluation object for a given evaluation request.
+    explicit PipelineEvaluationFuture(const PipelineEvaluationRequest& request) : _request(request) {}
 
-	/// Constructs a pipeline evaluation object and initializes it with an existing future.
-	explicit PipelineEvaluationFuture(const PipelineEvaluationRequest& request, SharedFuture<PipelineFlowState>&& future, PipelineSceneNode* pipeline = nullptr) : 
-		SharedFuture<PipelineFlowState>(std::move(future)),
-		_request(request),
-		_pipeline(pipeline) {}
+    /// Constructs a pipeline evaluation object and initializes it with an existing future.
+    explicit PipelineEvaluationFuture(const PipelineEvaluationRequest& request, SharedFuture<PipelineFlowState>&& future, PipelineSceneNode* pipeline = nullptr) : 
+        SharedFuture<PipelineFlowState>(std::move(future)),
+        _request(request),
+        _pipeline(pipeline) {}
 
-	/// Resets the state of the pipeline evaluation.
-	void reset() {
-		SharedFuture<PipelineFlowState>::reset();
-		_request.reset();
-		_pipeline = nullptr;
-	}
+    /// Resets the state of the pipeline evaluation.
+    void reset() {
+        SharedFuture<PipelineFlowState>::reset();
+        _request.reset();
+        _pipeline = nullptr;
+    }
 
-	/// Returns the animation time at which the pipeline is being evaluated.
-	AnimationTime time() const { OVITO_ASSERT(_request); return _request->time(); }
+    /// Returns the animation time at which the pipeline is being evaluated.
+    AnimationTime time() const { OVITO_ASSERT(_request); return _request->time(); }
 
-	/// Returns the pipeline that is being evaluated.
-	PipelineSceneNode* pipeline() const { return _pipeline; }
+    /// Returns the pipeline that is being evaluated.
+    PipelineSceneNode* pipeline() const { return _pipeline; }
 
 private:
 
-	/// Request that triggered the pipeline evaluation.
-	std::optional<PipelineEvaluationRequest> _request;
+    /// Request that triggered the pipeline evaluation.
+    std::optional<PipelineEvaluationRequest> _request;
 
-	/// Pipeline currently being evaluated.
-	PipelineSceneNode* _pipeline = nullptr;
+    /// Pipeline currently being evaluated.
+    PipelineSceneNode* _pipeline = nullptr;
 };
 
-}	// End of namespace
+}   // End of namespace

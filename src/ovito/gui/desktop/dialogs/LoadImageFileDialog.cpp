@@ -29,13 +29,13 @@ namespace Ovito {
 * Constructs the dialog window.
 ******************************************************************************/
 LoadImageFileDialog::LoadImageFileDialog(QWidget* parent, const QString& caption, const ImageInfo& imageInfo) :
-	HistoryFileDialog("load_image", parent, caption), _imageInfo(imageInfo)
+    HistoryFileDialog("load_image", parent, caption), _imageInfo(imageInfo)
 {
-	connect(this, &QFileDialog::fileSelected, this, &LoadImageFileDialog::onFileSelected);
-	setAcceptMode(QFileDialog::AcceptOpen);
-	setNameFilter(tr("Image files (*.png *.jpg *.jpeg)"));
-	if(_imageInfo.filename().isEmpty() == false)
-		selectFile(_imageInfo.filename());
+    connect(this, &QFileDialog::fileSelected, this, &LoadImageFileDialog::onFileSelected);
+    setAcceptMode(QFileDialog::AcceptOpen);
+    setNameFilter(tr("Image files (*.png *.jpg *.jpeg)"));
+    if(_imageInfo.filename().isEmpty() == false)
+        selectFile(_imageInfo.filename());
 }
 
 /******************************************************************************
@@ -43,7 +43,7 @@ LoadImageFileDialog::LoadImageFileDialog(QWidget* parent, const QString& caption
 ******************************************************************************/
 void LoadImageFileDialog::onFileSelected(const QString& file)
 {
-	_imageInfo.setFilename(file);
+    _imageInfo.setFilename(file);
 }
 
-}	// End of namespace
+}   // End of namespace

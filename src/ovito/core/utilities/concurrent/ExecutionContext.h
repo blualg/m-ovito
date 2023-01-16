@@ -33,9 +33,9 @@ public:
 
     /// The different types of contexts in which the program's actions may be performed.
     enum class Type {
-        None,	    	///< Invalid context: No actions should be performed in this context.
-        Scripting,		///< Actions are currently performed by a script.
-        Interactive		///< Actions are currently performed by the user.
+        None,           ///< Invalid context: No actions should be performed in this context.
+        Scripting,      ///< Actions are currently performed by a script.
+        Interactive     ///< Actions are currently performed by the user.
     };
 
     /// Returns the context the current thread performs its actions in.
@@ -106,4 +106,4 @@ private:
     ExecutionContext _previous;
 };
 
-}	// End of namespace
+}   // End of namespace

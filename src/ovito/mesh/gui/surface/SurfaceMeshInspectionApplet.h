@@ -36,23 +36,23 @@ class SurfaceMeshInspectionApplet;  // defined below
  */
 class SurfaceMeshVertexInspectionApplet : public PropertyInspectionApplet
 {
-	Q_OBJECT
+    Q_OBJECT
 
 public:
 
-	/// Constructor.
-	SurfaceMeshVertexInspectionApplet(SurfaceMeshInspectionApplet* parentApplet) : PropertyInspectionApplet(SurfaceMeshVertices::OOClass()), _parentApplet(parentApplet) {}
+    /// Constructor.
+    SurfaceMeshVertexInspectionApplet(SurfaceMeshInspectionApplet* parentApplet) : PropertyInspectionApplet(SurfaceMeshVertices::OOClass()), _parentApplet(parentApplet) {}
 
-	/// Lets the applet create the UI widget that is to be placed into the data inspector panel.
-	virtual QWidget* createWidget() override;
+    /// Lets the applet create the UI widget that is to be placed into the data inspector panel.
+    virtual QWidget* createWidget() override;
 
-	/// Determines the list of data objects that are displayed by the applet.
-	virtual std::vector<ConstDataObjectPath> getDataObjectPaths() override;
+    /// Determines the list of data objects that are displayed by the applet.
+    virtual std::vector<ConstDataObjectPath> getDataObjectPaths() override;
 
 private:
 
-	/// The parent applet for the SurfaceMesh, which hosts this sub-object applet.
-	SurfaceMeshInspectionApplet* _parentApplet;
+    /// The parent applet for the SurfaceMesh, which hosts this sub-object applet.
+    SurfaceMeshInspectionApplet* _parentApplet;
 };
 
 /**
@@ -60,23 +60,23 @@ private:
  */
 class SurfaceMeshFaceInspectionApplet : public PropertyInspectionApplet
 {
-	Q_OBJECT
+    Q_OBJECT
 
 public:
 
-	/// Constructor.
-	SurfaceMeshFaceInspectionApplet(SurfaceMeshInspectionApplet* parentApplet) : PropertyInspectionApplet(SurfaceMeshFaces::OOClass()), _parentApplet(parentApplet) {}
+    /// Constructor.
+    SurfaceMeshFaceInspectionApplet(SurfaceMeshInspectionApplet* parentApplet) : PropertyInspectionApplet(SurfaceMeshFaces::OOClass()), _parentApplet(parentApplet) {}
 
-	/// Lets the applet create the UI widget that is to be placed into the data inspector panel.
-	virtual QWidget* createWidget() override;
+    /// Lets the applet create the UI widget that is to be placed into the data inspector panel.
+    virtual QWidget* createWidget() override;
 
-	/// Determines the list of data objects that are displayed by the applet.
-	virtual std::vector<ConstDataObjectPath> getDataObjectPaths() override;
+    /// Determines the list of data objects that are displayed by the applet.
+    virtual std::vector<ConstDataObjectPath> getDataObjectPaths() override;
 
 private:
 
-	/// The parent applet for the SurfaceMesh, which hosts this sub-object applet.
-	SurfaceMeshInspectionApplet* _parentApplet;
+    /// The parent applet for the SurfaceMesh, which hosts this sub-object applet.
+    SurfaceMeshInspectionApplet* _parentApplet;
 };
 
 /**
@@ -84,23 +84,23 @@ private:
  */
 class SurfaceMeshRegionInspectionApplet : public PropertyInspectionApplet
 {
-	Q_OBJECT
+    Q_OBJECT
 
 public:
 
-	/// Constructor.
-	SurfaceMeshRegionInspectionApplet(SurfaceMeshInspectionApplet* parentApplet) : PropertyInspectionApplet(SurfaceMeshRegions::OOClass()), _parentApplet(parentApplet) {}
+    /// Constructor.
+    SurfaceMeshRegionInspectionApplet(SurfaceMeshInspectionApplet* parentApplet) : PropertyInspectionApplet(SurfaceMeshRegions::OOClass()), _parentApplet(parentApplet) {}
 
-	/// Lets the applet create the UI widget that is to be placed into the data inspector panel.
-	virtual QWidget* createWidget() override;
+    /// Lets the applet create the UI widget that is to be placed into the data inspector panel.
+    virtual QWidget* createWidget() override;
 
-	/// Determines the list of data objects that are displayed by the applet.
-	virtual std::vector<ConstDataObjectPath> getDataObjectPaths() override;
+    /// Determines the list of data objects that are displayed by the applet.
+    virtual std::vector<ConstDataObjectPath> getDataObjectPaths() override;
 
 private:
 
-	/// The parent applet for the SurfaceMesh, which hosts this sub-object applet.
-	SurfaceMeshInspectionApplet* _parentApplet;
+    /// The parent applet for the SurfaceMesh, which hosts this sub-object applet.
+    SurfaceMeshInspectionApplet* _parentApplet;
 };
 
 /**
@@ -108,37 +108,37 @@ private:
  */
 class SurfaceMeshInspectionApplet : public DataInspectionApplet
 {
-	OVITO_CLASS(SurfaceMeshInspectionApplet)
-	Q_CLASSINFO("DisplayName", "Surfaces");
+    OVITO_CLASS(SurfaceMeshInspectionApplet)
+    Q_CLASSINFO("DisplayName", "Surfaces");
 
 public:
 
-	/// Constructor.
-	Q_INVOKABLE SurfaceMeshInspectionApplet() : DataInspectionApplet(SurfaceMesh::OOClass()) {}
+    /// Constructor.
+    Q_INVOKABLE SurfaceMeshInspectionApplet() : DataInspectionApplet(SurfaceMesh::OOClass()) {}
 
-	/// Returns the key value for this applet that is used for ordering the applet tabs.
-	virtual int orderingKey() const override { return 220; }
+    /// Returns the key value for this applet that is used for ordering the applet tabs.
+    virtual int orderingKey() const override { return 220; }
 
-	/// Lets the applet create the UI widget that is to be placed into the data inspector panel.
-	virtual QWidget* createWidget() override;
+    /// Lets the applet create the UI widget that is to be placed into the data inspector panel.
+    virtual QWidget* createWidget() override;
 
-	/// Selects a specific data object in this applet.
-	virtual bool selectDataObject(PipelineObject* dataSource, const QString& objectIdentifierHint, const QVariant& modeHint) override;
+    /// Selects a specific data object in this applet.
+    virtual bool selectDataObject(PipelineObject* dataSource, const QString& objectIdentifierHint, const QVariant& modeHint) override;
 
 private Q_SLOTS:
 
-	/// Is called when the user selects a different data object from the list.
-	void onCurrentDataObjectChanged();
+    /// Is called when the user selects a different data object from the list.
+    void onCurrentDataObjectChanged();
 
 private:
 
-	SurfaceMeshVertexInspectionApplet* _verticesApplet;
-	SurfaceMeshFaceInspectionApplet* _facesApplet;
-	SurfaceMeshRegionInspectionApplet* _regionsApplet;
-	QStackedWidget* _stackedWidget;
-	QAction* _switchToVerticesAction;
-	QAction* _switchToFacesAction;
-	QAction* _switchToRegionsAction;
+    SurfaceMeshVertexInspectionApplet* _verticesApplet;
+    SurfaceMeshFaceInspectionApplet* _facesApplet;
+    SurfaceMeshRegionInspectionApplet* _regionsApplet;
+    QStackedWidget* _stackedWidget;
+    QAction* _switchToVerticesAction;
+    QAction* _switchToFacesAction;
+    QAction* _switchToRegionsAction;
 };
 
-}	// End of namespace
+}   // End of namespace

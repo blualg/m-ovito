@@ -32,7 +32,7 @@ IMPLEMENT_OVITO_CLASS(SubObjectParameterUI);
 * The constructor.
 ******************************************************************************/
 SubObjectParameterUI::SubObjectParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* refField, const RolloutInsertionParameters& rolloutParams)
-	: PropertyParameterUI(parentEditor, refField), _rolloutParams(rolloutParams)
+    : PropertyParameterUI(parentEditor, refField), _rolloutParams(rolloutParams)
 {
 }
 
@@ -43,30 +43,30 @@ SubObjectParameterUI::SubObjectParameterUI(PropertiesEditor* parentEditor, const
 ******************************************************************************/
 void SubObjectParameterUI::resetUI()
 {
-	PropertyParameterUI::resetUI();
+    PropertyParameterUI::resetUI();
 
-	handleExceptions([&] {
-		// Close editor if it is no longer needed.
-		if(subEditor()) {
-			if(!parameterObject() || subEditor()->editObject() == nullptr ||
-					subEditor()->editObject()->getOOClass() != parameterObject()->getOOClass() ||
-					!isEnabled()) {
+    handleExceptions([&] {
+        // Close editor if it is no longer needed.
+        if(subEditor()) {
+            if(!parameterObject() || subEditor()->editObject() == nullptr ||
+                    subEditor()->editObject()->getOOClass() != parameterObject()->getOOClass() ||
+                    !isEnabled()) {
 
-				_subEditor = nullptr;
-			}
-		}
-		if(!parameterObject() || !isEnabled()) return;
-		if(!subEditor()) {
-			_subEditor = PropertiesEditor::create(mainWindow(), parameterObject());
-			if(subEditor()) {
-				subEditor()->initialize(editor()->container(), _rolloutParams, editor());
-			}
-		}
+                _subEditor = nullptr;
+            }
+        }
+        if(!parameterObject() || !isEnabled()) return;
+        if(!subEditor()) {
+            _subEditor = PropertiesEditor::create(mainWindow(), parameterObject());
+            if(subEditor()) {
+                subEditor()->initialize(editor()->container(), _rolloutParams, editor());
+            }
+        }
 
-		if(subEditor()) {
-			subEditor()->setEditObject(parameterObject());
-		}
-	});
+        if(subEditor()) {
+            subEditor()->setEditObject(parameterObject());
+        }
+    });
 }
 
 /******************************************************************************
@@ -74,11 +74,11 @@ void SubObjectParameterUI::resetUI()
 ******************************************************************************/
 void SubObjectParameterUI::setEnabled(bool enabled)
 {
-	if(enabled != isEnabled()) {
-		PropertyParameterUI::setEnabled(enabled);
-		if(editObject())
-			resetUI();
-	}
+    if(enabled != isEnabled()) {
+        PropertyParameterUI::setEnabled(enabled);
+        if(editObject())
+            resetUI();
+    }
 }
 
-}	// End of namespace
+}   // End of namespace

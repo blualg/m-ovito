@@ -33,22 +33,22 @@ namespace Ovito::Particles {
  */
 class ParticleTypeEditor : public PropertiesEditor
 {
-	OVITO_CLASS(ParticleTypeEditor)
+    OVITO_CLASS(ParticleTypeEditor)
 
 public:
 
-	/// Default constructor.
-	Q_INVOKABLE ParticleTypeEditor() {}
+    /// Default constructor.
+    Q_INVOKABLE ParticleTypeEditor() {}
 
 protected:
 
-	/// Creates the user interface controls for the editor.
-	virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
+    /// Creates the user interface controls for the editor.
+    virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
 
 private:
 
-	/// Creates a button that opens a menu for managing the presets for a particle type parameter. 
-	QToolButton* createPresetsMenuButton(const QString& parameterName, std::function<void(ParticleType*)> resetFunc, std::function<void(const ParticleType*)> setDefaultFunc, std::function<bool(const ParticleType*)> isUnchangedFunc);
+    /// Creates a button that opens a menu for managing the presets for a particle type parameter. 
+    QToolButton* createPresetsMenuButton(const QString& parameterName, std::function<void(ParticleType*)> resetFunc, std::function<void(const ParticleType*)> setDefaultFunc, std::function<bool(const ParticleType*)> isUnchangedFunc);
 };
 
-}	// End of namespace
+}   // End of namespace

@@ -43,15 +43,15 @@ DEFINE_REFERENCE_FIELD(PropertyParameterUI, parameterObject);
 ******************************************************************************/
 ParameterUI::ParameterUI(PropertiesEditor* parent)
 {
-	OVITO_ASSERT(parent);
-	setParent(parent);
+    OVITO_ASSERT(parent);
+    setParent(parent);
 
-	if(editor()->editObject())
-		setEditObject(editor()->editObject());
+    if(editor()->editObject())
+        setEditObject(editor()->editObject());
 
-	// Connect to the contentsReplaced() signal of the editor to synchronize the
-	// parameter UI's edit object with the editor's edit object.
-	connect(editor(), &PropertiesEditor::contentsReplaced, this, &ParameterUI::setEditObject);
+    // Connect to the contentsReplaced() signal of the editor to synchronize the
+    // parameter UI's edit object with the editor's edit object.
+    connect(editor(), &PropertiesEditor::contentsReplaced, this, &ParameterUI::setEditObject);
 }
 
 ///////////////////////////////////// PropertyParameterUI /////////////////////////////////////////
@@ -60,20 +60,20 @@ ParameterUI::ParameterUI(PropertiesEditor* parent)
 * Constructor for a Qt property.
 ******************************************************************************/
 PropertyParameterUI::PropertyParameterUI(PropertiesEditor* parent, const char* propertyName) :
-	ParameterUI(parent), _propertyName(propertyName)
+    ParameterUI(parent), _propertyName(propertyName)
 {
-	OVITO_ASSERT(propertyName);
+    OVITO_ASSERT(propertyName);
 }
 
 /******************************************************************************
 * Constructor for a PropertyField or ReferenceField property.
 ******************************************************************************/
 PropertyParameterUI::PropertyParameterUI(PropertiesEditor* parent, const PropertyFieldDescriptor* propField) :
-	ParameterUI(parent), _propField(propField)
+    ParameterUI(parent), _propField(propField)
 {
-	// If requested, save parameter value to application's settings store each time the user changes it.
-	if(propField->flags().testFlag(PROPERTY_FIELD_MEMORIZE))
-		connect(this, &PropertyParameterUI::valueEntered, this, &PropertyParameterUI::memorizeDefaultParameterValue);
+    // If requested, save parameter value to application's settings store each time the user changes it.
+    if(propField->flags().testFlag(PROPERTY_FIELD_MEMORIZE))
+        connect(this, &PropertyParameterUI::valueEntered, this, &PropertyParameterUI::memorizeDefaultParameterValue);
 }
 
 /******************************************************************************
@@ -81,25 +81,25 @@ PropertyParameterUI::PropertyParameterUI(PropertiesEditor* parent, const Propert
 ******************************************************************************/
 bool PropertyParameterUI::referenceEvent(RefTarget* source, const ReferenceEvent& event)
 {
-	if(isReferenceFieldUI()) {
-		if(source == editObject() && event.type() == ReferenceEvent::ReferenceChanged) {
-			if(propertyField() == static_cast<const ReferenceFieldEvent&>(event).field()) {
-				// The parameter value object stored in the reference field of the edited object
-				// has been replaced by another one, so update our own reference to the parameter value object.
-				if(editObject()->getReferenceFieldTarget(propertyField()) != parameterObject())
-					resetUI();
-			}
-		}
-		else if(source == parameterObject() && event.type() == ReferenceEvent::TargetChanged) {
-			// The parameter value object has changed -> update value shown in UI.
-			updateUI();
-		}
-	}
-	else if(source == editObject() && event.type() == ReferenceEvent::TargetChanged) {
-		// The edited object has changed -> update value shown in UI.
-		updateUI();
-	}
-	return ParameterUI::referenceEvent(source, event);
+    if(isReferenceFieldUI()) {
+        if(source == editObject() && event.type() == ReferenceEvent::ReferenceChanged) {
+            if(propertyField() == static_cast<const ReferenceFieldEvent&>(event).field()) {
+                // The parameter value object stored in the reference field of the edited object
+                // has been replaced by another one, so update our own reference to the parameter value object.
+                if(editObject()->getReferenceFieldTarget(propertyField()) != parameterObject())
+                    resetUI();
+            }
+        }
+        else if(source == parameterObject() && event.type() == ReferenceEvent::TargetChanged) {
+            // The parameter value object has changed -> update value shown in UI.
+            updateUI();
+        }
+    }
+    else if(source == editObject() && event.type() == ReferenceEvent::TargetChanged) {
+        // The edited object has changed -> update value shown in UI.
+        updateUI();
+    }
+    return ParameterUI::referenceEvent(source, event);
 }
 
 /******************************************************************************
@@ -109,18 +109,18 @@ bool PropertyParameterUI::referenceEvent(RefTarget* source, const ReferenceEvent
 ******************************************************************************/
 void PropertyParameterUI::resetUI()
 {
-	if(editObject() && isReferenceFieldUI()) {
-		OVITO_CHECK_OBJECT_POINTER(editObject());
-		OVITO_ASSERT(editObject() == nullptr || editObject()->getOOClass().isDerivedFrom(*propertyField()->definingClass()));
+    if(editObject() && isReferenceFieldUI()) {
+        OVITO_CHECK_OBJECT_POINTER(editObject());
+        OVITO_ASSERT(editObject() == nullptr || editObject()->getOOClass().isDerivedFrom(*propertyField()->definingClass()));
 
-		// Bind this parameter UI to the parameter object of the new edited object.
-		setParameterObject(editObject()->getReferenceFieldTarget(propertyField()));
-	}
-	else {
-		setParameterObject(nullptr);
-	}
+        // Bind this parameter UI to the parameter object of the new edited object.
+        setParameterObject(editObject()->getReferenceFieldTarget(propertyField()));
+    }
+    else {
+        setParameterObject(nullptr);
+    }
 
-	ParameterUI::resetUI();
+    ParameterUI::resetUI();
 }
 
 /******************************************************************************
@@ -130,30 +130,30 @@ void PropertyParameterUI::resetUI()
 ******************************************************************************/
 void PropertyParameterUI::memorizeDefaultParameterValue()
 {
-	if(!editObject())
-		return;
+    if(!editObject())
+        return;
 
-	if(isPropertyFieldUI()) {
-		propertyField()->memorizeDefaultValue(editObject());
-	}
-	else if(isReferenceFieldUI() && !propertyField()->isVector()) {
-		if(Controller* ctrl = dynamic_object_cast<Controller>(parameterObject())) {
-			if(AnimationSettings* anim = mainWindow().datasetContainer().activeAnimationSettings()) {
-				QSettings settings;
-				settings.beginGroup(editObject()->getOOClass().plugin()->pluginId());
-				settings.beginGroup(editObject()->getOOClass().name());
-				if(ctrl->controllerType() == Controller::ControllerTypeFloat) {
-					settings.setValue(propertyField()->identifier(), QVariant::fromValue(ctrl->getFloatValue(anim->currentTime())));
-				}
-				else if(ctrl->controllerType() == Controller::ControllerTypeInt) {
-					settings.setValue(propertyField()->identifier(), QVariant::fromValue(ctrl->getIntValue(anim->currentTime())));
-				}
-				else if(ctrl->controllerType() == Controller::ControllerTypeVector3) {
-					settings.setValue(propertyField()->identifier(), QVariant::fromValue(ctrl->getVector3Value(anim->currentTime())));
-				}
-			}
-		}
-	}
+    if(isPropertyFieldUI()) {
+        propertyField()->memorizeDefaultValue(editObject());
+    }
+    else if(isReferenceFieldUI() && !propertyField()->isVector()) {
+        if(Controller* ctrl = dynamic_object_cast<Controller>(parameterObject())) {
+            if(AnimationSettings* anim = mainWindow().datasetContainer().activeAnimationSettings()) {
+                QSettings settings;
+                settings.beginGroup(editObject()->getOOClass().plugin()->pluginId());
+                settings.beginGroup(editObject()->getOOClass().name());
+                if(ctrl->controllerType() == Controller::ControllerTypeFloat) {
+                    settings.setValue(propertyField()->identifier(), QVariant::fromValue(ctrl->getFloatValue(anim->currentTime())));
+                }
+                else if(ctrl->controllerType() == Controller::ControllerTypeInt) {
+                    settings.setValue(propertyField()->identifier(), QVariant::fromValue(ctrl->getIntValue(anim->currentTime())));
+                }
+                else if(ctrl->controllerType() == Controller::ControllerTypeVector3) {
+                    settings.setValue(propertyField()->identifier(), QVariant::fromValue(ctrl->getVector3Value(anim->currentTime())));
+                }
+            }
+        }
+    }
 }
 
 /******************************************************************************
@@ -162,13 +162,13 @@ void PropertyParameterUI::memorizeDefaultParameterValue()
 ******************************************************************************/
 void PropertyParameterUI::openAnimationKeyEditor()
 {
-	OVITO_ASSERT(editor() != nullptr);
+    OVITO_ASSERT(editor() != nullptr);
 
-	KeyframeController* ctrl = dynamic_object_cast<KeyframeController>(parameterObject());
-	if(!ctrl) return;
+    KeyframeController* ctrl = dynamic_object_cast<KeyframeController>(parameterObject());
+    if(!ctrl) return;
 
-	AnimationKeyEditorDialog dlg(ctrl, propertyField(), editor()->container(), editor()->mainWindow());
-	dlg.exec();
+    AnimationKeyEditorDialog dlg(ctrl, propertyField(), editor()->container(), editor()->mainWindow());
+    dlg.exec();
 }
 
-}	// End of namespace
+}   // End of namespace

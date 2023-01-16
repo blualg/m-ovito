@@ -35,26 +35,26 @@ namespace Ovito {
 class OVITO_CORE_EXPORT ObjectCreationParams final
 {
 public:
-	enum InitializationFlag {
-		NoFlags = 0,
+    enum InitializationFlag {
+        NoFlags = 0,
         DontCreateSubObjects = (1 << 0),//< Used when an object is being cloned or deserialized from a file stream.
         LoadUserDefaults = (1 << 1),    //< Load user-defined standard values from the application settings store.
-	    WithoutVisElement = (1 << 2),	//< Do not attach a standard visual element when creating a new data object.
-	};
-	Q_DECLARE_FLAGS(InitializationFlags, InitializationFlag);
+        WithoutVisElement = (1 << 2),   //< Do not attach a standard visual element when creating a new data object.
+    };
+    Q_DECLARE_FLAGS(InitializationFlags, InitializationFlag);
 
     constexpr ObjectCreationParams() noexcept = default;
-	constexpr explicit ObjectCreationParams(InitializationFlags flags) noexcept : _flags(flags) {}
+    constexpr explicit ObjectCreationParams(InitializationFlags flags) noexcept : _flags(flags) {}
 
-	//constexpr DataSet* dataset() const { return _dataset; }
-	constexpr InitializationFlags flags() const { return _flags; }
+    //constexpr DataSet* dataset() const { return _dataset; }
+    constexpr InitializationFlags flags() const { return _flags; }
     constexpr bool dontCreateSubObjects() const { return _flags.testFlag(DontCreateSubObjects); }
     constexpr bool createSubObjects() const { return !dontCreateSubObjects(); }
     constexpr bool loadUserDefaults() const { return _flags.testFlag(LoadUserDefaults); }
     constexpr bool createVisElement() const { return !_flags.testAnyFlags(InitializationFlags(DontCreateSubObjects | WithoutVisElement)); }
 
 private:
-	InitializationFlags _flags{NoFlags};
+    InitializationFlags _flags{NoFlags};
 };
 
 /**
@@ -70,11 +70,11 @@ class OORef
 {
 private:
 
-	using this_type = OORef;
+    using this_type = OORef;
 
     T* px = nullptr;
 
-	template<class U> friend class OORef;
+    template<class U> friend class OORef;
     template<class T2, class U> OORef<T2> friend static_pointer_cast(OORef<U>&& p) noexcept;
     template<class T2, class U> OORef<T2> friend dynamic_pointer_cast(OORef<U>&& p) noexcept;
     template<class T2, class U> OORef<T2> friend const_pointer_cast(OORef<U>&& p) noexcept;
@@ -91,122 +91,122 @@ public:
 
     /// Initialization constructor.
     OORef(const T* p) noexcept : px(const_cast<T*>(p)) {
-    	if(px) px->incrementReferenceCount();
+        if(px) px->incrementReferenceCount();
     }
 
     /// Copy constructor.
     OORef(const OORef& rhs) noexcept : px(rhs.get()) {
-    	if(px) px->incrementReferenceCount();
+        if(px) px->incrementReferenceCount();
     }
 
     /// Copy and conversion constructor.
     template<class U>
     OORef(const OORef<U>& rhs) noexcept : px(rhs.get()) {
-    	if(px) px->incrementReferenceCount();
+        if(px) px->incrementReferenceCount();
     }
 
     /// Move constructor.
     OORef(OORef&& rhs) noexcept : px(rhs.px) {
-    	rhs.px = nullptr;
+        rhs.px = nullptr;
     }
 
     /// Move and conversion constructor.
     template<class U>
     OORef(OORef<U>&& rhs) noexcept : px(rhs.px) {
-    	rhs.px = nullptr;
+        rhs.px = nullptr;
     }
 
     /// Destructor.
     ~OORef() {
-    	if(px) px->decrementReferenceCount();
+        if(px) px->decrementReferenceCount();
     }
 
     template<class U>
     OORef& operator=(const OORef<U>& rhs) {
-    	this_type(rhs).swap(*this);
-    	return *this;
+        this_type(rhs).swap(*this);
+        return *this;
     }
 
     OORef& operator=(const OORef& rhs) {
-    	this_type(rhs).swap(*this);
-    	return *this;
+        this_type(rhs).swap(*this);
+        return *this;
     }
 
     OORef& operator=(OORef&& rhs) noexcept {
-    	this_type(std::move(rhs)).swap(*this);
-    	return *this;
+        this_type(std::move(rhs)).swap(*this);
+        return *this;
     }
 
     template<class U>
     OORef& operator=(OORef<U>&& rhs) noexcept {
-    	this_type(std::move(rhs)).swap(*this);
-    	return *this;
+        this_type(std::move(rhs)).swap(*this);
+        return *this;
     }
 
     OORef& operator=(const T* rhs) {
-    	this_type(rhs).swap(*this);
-    	return *this;
+        this_type(rhs).swap(*this);
+        return *this;
     }
 
     void reset() {
-    	this_type().swap(*this);
+        this_type().swap(*this);
     }
 
     void reset(const T* rhs) {
-    	this_type(rhs).swap(*this);
+        this_type(rhs).swap(*this);
     }
 
     inline T* get() const noexcept {
-    	return px;
+        return px;
     }
 
     inline operator T*() const noexcept {
-    	return px;
+        return px;
     }
 
     inline T& operator*() const noexcept {
-    	OVITO_ASSERT(px != nullptr);
-    	return *px;
+        OVITO_ASSERT(px != nullptr);
+        return *px;
     }
 
     inline T* operator->() const noexcept {
-    	OVITO_ASSERT(px != nullptr);
-    	return px;
+        OVITO_ASSERT(px != nullptr);
+        return px;
     }
 
     inline void swap(OORef& rhs) noexcept {
-    	std::swap(px,rhs.px);
+        std::swap(px,rhs.px);
     }
 
     /// Factory method that instantiates and initializes a new object (any RefTarget derived class).
     template<typename... Args>
-	static this_type create(ObjectCreationParams params, Args&&... args) {
+    static this_type create(ObjectCreationParams params, Args&&... args) {
         using OType = std::remove_const_t<T>;
         static_assert(std::is_base_of_v<Ovito::RefTarget, OType>, "Object class must be a RefTarget derived class");
         // Don't record object initialization on the undo stack.
         UndoSuspender noUndo;
 #ifndef OVITO_DEBUG
-		OORef<OType> obj(new OType(params, std::forward<Args>(args)...));
+        OORef<OType> obj(new OType(params, std::forward<Args>(args)...));
 #else
         OType* obj_ = new OType(params, std::forward<Args>(args)...);
         // Mark the object as having been allocated on the heap before moving it into the OORef<>.
         obj_->_isAllocatedOnTheHeap = true;
-		OORef<OType> obj(obj_);
+        OORef<OType> obj(obj_);
 #endif
         if(params.loadUserDefaults())
             obj->initializeParametersToUserDefaults();
         return obj;
-	}
+    }
 
     /// Factory method that instantiates a new object.
     template<typename... Args>
-	static this_type create(ObjectCreationParams::InitializationFlag extraFlag, Args&&... args) {
+    static this_type create(ObjectCreationParams::InitializationFlag extraFlag, Args&&... args) {
         return create(ObjectCreationParams::InitializationFlags(extraFlag), std::forward<Args>(args)...);
     }
 
     /// Factory method that instantiates a new object.
     template<typename... Args>
-	static this_type create(ObjectCreationParams::InitializationFlags extraFlags, Args&&... args) {
+    static this_type create(ObjectCreationParams::InitializationFlags extraFlags, Args&&... args) {
         return create(ObjectCreationParams(
             extraFlags | (ExecutionContext::isInteractive() ? ObjectCreationParams::LoadUserDefaults : ObjectCreationParams::NoFlags)), 
             std::forward<Args>(args)...);
@@ -214,7 +214,7 @@ public:
 
     /// Factory method that instantiates a new object.
     template<typename... Args>
-	static this_type create(Args&&... args) {
+    static this_type create(Args&&... args) {
         using OType = std::remove_const_t<T>;
         if constexpr(std::is_base_of_v<Ovito::RefTarget, OType>) {
             // All RefTarget derived classes expect a ObjectCreationParams structure.
@@ -226,7 +226,7 @@ public:
         else {
             // Objects not derived from RefTarget do not expect a ObjectCreationParams.
 #ifndef OVITO_DEBUG
-    		return new OType(std::forward<Args>(args)...);
+            return new OType(std::forward<Args>(args)...);
 #else
             OType* obj = new OType(std::forward<Args>(args)...);
             // Mark the object as having been allocated on the heap before moving it into the OORef<>.
@@ -234,7 +234,7 @@ public:
             return obj;
 #endif
         }
-	}
+    }
 };
 
 template<class T, class U> inline bool operator==(const OORef<T>& a, const OORef<U>& b) noexcept
@@ -294,7 +294,7 @@ template<class T> inline bool operator<(const OORef<T>& a, const OORef<T>& b) no
 
 template<class T> void swap(OORef<T>& lhs, OORef<T>& rhs) noexcept
 {
-	lhs.swap(rhs);
+    lhs.swap(rhs);
 }
 
 template<class T> T* get_pointer(const OORef<T>& p) noexcept
@@ -344,7 +344,7 @@ template<class T, class U> OORef<T> dynamic_pointer_cast(OORef<U>&& p) noexcept
 
 template<class T> QDebug operator<<(QDebug debug, const OORef<T>& p)
 {
-	return debug << p.get();
+    return debug << p.get();
 }
 
-}	// End of namespace
+}   // End of namespace

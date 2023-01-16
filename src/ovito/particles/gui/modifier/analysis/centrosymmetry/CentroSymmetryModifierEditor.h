@@ -34,27 +34,27 @@ namespace Ovito::Particles {
  */
 class CentroSymmetryModifierEditor : public PropertiesEditor
 {
-	OVITO_CLASS(CentroSymmetryModifierEditor)
+    OVITO_CLASS(CentroSymmetryModifierEditor)
 
 public:
 
-	/// Default constructor.
-	Q_INVOKABLE CentroSymmetryModifierEditor() {}
+    /// Default constructor.
+    Q_INVOKABLE CentroSymmetryModifierEditor() {}
 
 protected Q_SLOTS:
 
-	/// Replots the histogram computed by the modifier.
-	void plotHistogram();
+    /// Replots the histogram computed by the modifier.
+    void plotHistogram();
 
 private:
 
-	/// The graph widget to display the CSP histogram.
-	DataTablePlotWidget* _cspPlotWidget;
+    /// The graph widget to display the CSP histogram.
+    DataTablePlotWidget* _cspPlotWidget;
 
 protected:
 
-	/// Creates the user interface controls for the editor.
-	virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
+    /// Creates the user interface controls for the editor.
+    virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
 };
 
-}	// End of namespace
+}   // End of namespace

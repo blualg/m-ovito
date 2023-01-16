@@ -33,41 +33,41 @@ namespace Ovito {
  */
 class OVITO_CORE_EXPORT StandardSceneRenderer : public SceneRenderer
 {
-	OVITO_CLASS(StandardSceneRenderer)
-	Q_CLASSINFO("DisplayName", "OpenGL");
-	Q_CLASSINFO("Description", "Hardware-accelerated rendering engine, also used by OVITO's interactive viewports. "
-							   "The OpenGL renderer is fast and has the smallest memory footprint.");
+    OVITO_CLASS(StandardSceneRenderer)
+    Q_CLASSINFO("DisplayName", "OpenGL");
+    Q_CLASSINFO("Description", "Hardware-accelerated rendering engine, also used by OVITO's interactive viewports. "
+                               "The OpenGL renderer is fast and has the smallest memory footprint.");
 
 public:
 
-	/// Constructor.
-	Q_INVOKABLE StandardSceneRenderer(ObjectCreationParams params);
+    /// Constructor.
+    Q_INVOKABLE StandardSceneRenderer(ObjectCreationParams params);
 
-	/// Prepares the renderer for rendering one or more frames.
-	virtual bool startRender(const RenderSettings* settings, const QSize& frameBufferSize, MixedKeyCache& visCache) override;
+    /// Prepares the renderer for rendering one or more frames.
+    virtual bool startRender(const RenderSettings* settings, const QSize& frameBufferSize, MixedKeyCache& visCache) override;
 
-	/// This method is called just before renderFrame() is called.
-	virtual void beginFrame(AnimationTime time, Scene* scene, const ViewProjectionParameters& params, Viewport* vp, const QRect& viewportRect, FrameBuffer* frameBuffer) override;
+    /// This method is called just before renderFrame() is called.
+    virtual void beginFrame(AnimationTime time, Scene* scene, const ViewProjectionParameters& params, Viewport* vp, const QRect& viewportRect, FrameBuffer* frameBuffer) override;
 
-	/// Renders the current animation frame.
-	virtual bool renderFrame(const QRect& viewportRect, MainThreadOperation& operation) override;
+    /// Renders the current animation frame.
+    virtual bool renderFrame(const QRect& viewportRect, MainThreadOperation& operation) override;
 
-	/// Renders the overlays/underlays of the viewport into the framebuffer.
-	virtual bool renderOverlays(bool underlays, const QRect& logicalViewportRect, const QRect& physicalViewportRect, MainThreadOperation& operation) override;
+    /// Renders the overlays/underlays of the viewport into the framebuffer.
+    virtual bool renderOverlays(bool underlays, const QRect& logicalViewportRect, const QRect& physicalViewportRect, MainThreadOperation& operation) override;
 
-	/// This method is called after renderFrame() has been called.
-	virtual void endFrame(bool renderingSuccessful, const QRect& viewportRect) override;
+    /// This method is called after renderFrame() has been called.
+    virtual void endFrame(bool renderingSuccessful, const QRect& viewportRect) override;
 
-	/// Is called after rendering has finished.
-	virtual void endRender() override;
+    /// Is called after rendering has finished.
+    virtual void endRender() override;
 
 private:
 
-	/// Controls the number of sub-pixels to render.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD(int, antialiasingLevel, setAntialiasingLevel);
+    /// Controls the number of sub-pixels to render.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(int, antialiasingLevel, setAntialiasingLevel);
 
-	/// The active renderer implementation (OpenGL or Vulkan). 
-	OORef<SceneRenderer> _internalRenderer;
+    /// The active renderer implementation (OpenGL or Vulkan). 
+    OORef<SceneRenderer> _internalRenderer;
 };
 
-}	// End of namespace
+}   // End of namespace

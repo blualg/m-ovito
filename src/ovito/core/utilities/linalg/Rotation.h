@@ -328,7 +328,7 @@ public:
     /// \brief Constructs a rotation from three Euler angles.
     /// \param eulerAngles The input Euler angles.
     static RotationT fromEuler(const Vector_3<T>& eulerAngles, typename Matrix_3<T>::EulerAxisSequence axisSequence = Matrix_3<T>::szyx) {
-        OVITO_ASSERT(axisSequence == Matrix_3<T>::szyx);	// TODO: Other orders not implemented yet!
+        OVITO_ASSERT(axisSequence == Matrix_3<T>::szyx);    // TODO: Other orders not implemented yet!
         return RotationT(Vector3(1,0,0), eulerAngles[2]) * RotationT(Vector3(0,1,0), eulerAngles[1]) * RotationT(Vector3(0,0,1), eulerAngles[0]);
     }
 
@@ -537,7 +537,7 @@ inline QDataStream& operator>>(QDataStream& stream, RotationT<T>& r) {
  */
 using Rotation = RotationT<FloatType>;
 
-}	// End of namespace
+}   // End of namespace
 
 Q_DECLARE_METATYPE(Ovito::Rotation);
 Q_DECLARE_TYPEINFO(Ovito::Rotation, Q_PRIMITIVE_TYPE);

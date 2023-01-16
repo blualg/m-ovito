@@ -22,26 +22,26 @@
 
 # Define the GUI module, which provides the user interface for the parent module.
 OVITO_STANDARD_PLUGIN(StdObjGui
-	SOURCES
-		camera/StandardCameraSourceEditor.cpp
-		io/DataTablePlotExporter.cpp
-		io/DataTablePlotExporterEditor.cpp
-		properties/PropertyInspectionApplet.cpp
-		properties/PropertyObjectEditor.cpp
-		properties/ElementTypeEditor.cpp
-		properties/InputColumnMappingDialog.cpp
-		properties/PropertyColorMappingEditor.cpp
-		simcell/SimulationCellObjectEditor.cpp
-		simcell/SimulationCellVisEditor.cpp
-		table/DataTableInspectionApplet.cpp
-		widgets/PropertyContainerParameterUI.cpp
-		widgets/PropertyReferenceParameterUI.cpp
-		widgets/PropertySelectionComboBox.cpp
-		widgets/DataTablePlotWidget.cpp
-	PLUGIN_DEPENDENCIES StdObj
-	LIB_DEPENDENCIES Qwt
-	PRECOMPILED_HEADERS StdObjGui.h
-	GUI_PLUGIN
+    SOURCES
+        camera/StandardCameraSourceEditor.cpp
+        io/DataTablePlotExporter.cpp
+        io/DataTablePlotExporterEditor.cpp
+        properties/PropertyInspectionApplet.cpp
+        properties/PropertyObjectEditor.cpp
+        properties/ElementTypeEditor.cpp
+        properties/InputColumnMappingDialog.cpp
+        properties/PropertyColorMappingEditor.cpp
+        simcell/SimulationCellObjectEditor.cpp
+        simcell/SimulationCellVisEditor.cpp
+        table/DataTableInspectionApplet.cpp
+        widgets/PropertyContainerParameterUI.cpp
+        widgets/PropertyReferenceParameterUI.cpp
+        widgets/PropertySelectionComboBox.cpp
+        widgets/DataTablePlotWidget.cpp
+    PLUGIN_DEPENDENCIES StdObj
+    LIB_DEPENDENCIES Qwt
+    PRECOMPILED_HEADERS StdObjGui.h
+    GUI_PLUGIN
 )
 
 # Propagate list of plugins to parent scope.

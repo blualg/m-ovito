@@ -34,54 +34,54 @@ namespace Ovito::Particles {
  */
 class OVITO_PARTICLES_EXPORT CIFImporter : public ParticleImporter
 {
-	/// Defines a metaclass specialization for this importer type.
-	class OOMetaClass : public ParticleImporter::OOMetaClass
-	{
-	public:
-		/// Inherit standard constructor from base meta class.
-		using ParticleImporter::OOMetaClass::OOMetaClass;
+    /// Defines a metaclass specialization for this importer type.
+    class OOMetaClass : public ParticleImporter::OOMetaClass
+    {
+    public:
+        /// Inherit standard constructor from base meta class.
+        using ParticleImporter::OOMetaClass::OOMetaClass;
 
-		/// Returns the list of file formats that can be read by this importer class.
-		virtual Ovito::span<const SupportedFormat> supportedFormats() const override {
-			static const SupportedFormat formats[] = {{ QStringLiteral("*.cif *.cif.gz"), tr("Crystallographic Information Files") }};
-			return formats;
-		}
+        /// Returns the list of file formats that can be read by this importer class.
+        virtual Ovito::span<const SupportedFormat> supportedFormats() const override {
+            static const SupportedFormat formats[] = {{ QStringLiteral("*.cif *.cif.gz"), tr("Crystallographic Information Files") }};
+            return formats;
+        }
 
-		/// Checks if the given file has format that can be read by this importer.
-		virtual bool checkFileFormat(const FileHandle& file) const override;
-	};
+        /// Checks if the given file has format that can be read by this importer.
+        virtual bool checkFileFormat(const FileHandle& file) const override;
+    };
 
-	OVITO_CLASS_META(CIFImporter, OOMetaClass)
+    OVITO_CLASS_META(CIFImporter, OOMetaClass)
 
 public:
 
-	/// \brief Constructs a new instance of this class.
-	Q_INVOKABLE CIFImporter(ObjectCreationParams params) : ParticleImporter(params) {}
+    /// \brief Constructs a new instance of this class.
+    Q_INVOKABLE CIFImporter(ObjectCreationParams params) : ParticleImporter(params) {}
 
-	/// Returns the title of this object.
-	virtual QString objectTitle() const override { return tr("CIF"); }
+    /// Returns the title of this object.
+    virtual QString objectTitle() const override { return tr("CIF"); }
 
-	/// Creates an asynchronous loader object that loads the data for the given frame from the external file.
-	virtual FileSourceImporter::FrameLoaderPtr createFrameLoader(const LoadOperationRequest& request) override {
-		activateCLocale();
-		return std::make_shared<FrameLoader>(request, recenterCell());
-	}
+    /// Creates an asynchronous loader object that loads the data for the given frame from the external file.
+    virtual FileSourceImporter::FrameLoaderPtr createFrameLoader(const LoadOperationRequest& request) override {
+        activateCLocale();
+        return std::make_shared<FrameLoader>(request, recenterCell());
+    }
 
 private:
 
-	/// The format-specific task object that is responsible for reading an input file in the background.
-	class FrameLoader : public ParticleImporter::FrameLoader
-	{
-	public:
+    /// The format-specific task object that is responsible for reading an input file in the background.
+    class FrameLoader : public ParticleImporter::FrameLoader
+    {
+    public:
 
-		/// Constructor.
-		using ParticleImporter::FrameLoader::FrameLoader;
+        /// Constructor.
+        using ParticleImporter::FrameLoader::FrameLoader;
 
-	protected:
+    protected:
 
-		/// Reads the frame data from the external file.
-		virtual void loadFile() override;
-	};
+        /// Reads the frame data from the external file.
+        virtual void loadFile() override;
+    };
 };
 
-}	// End of namespace
+}   // End of namespace

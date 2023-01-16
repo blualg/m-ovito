@@ -37,74 +37,74 @@ namespace Ovito::Particles {
  */
 class OVITO_PARTICLES_EXPORT GenerateTrajectoryLinesModifier : public Modifier
 {
-	/// Give this modifier class its own metaclass.
-	class GenerateTrajectoryLinesModifierClass : public ModifierClass
-	{
-	public:
+    /// Give this modifier class its own metaclass.
+    class GenerateTrajectoryLinesModifierClass : public ModifierClass
+    {
+    public:
 
-		/// Inherit constructor from base class.
-		using ModifierClass::ModifierClass;
+        /// Inherit constructor from base class.
+        using ModifierClass::ModifierClass;
 
-		/// Asks the metaclass whether the modifier can be applied to the given input data.
-		virtual bool isApplicableTo(const DataCollection& input) const override;
-	};
+        /// Asks the metaclass whether the modifier can be applied to the given input data.
+        virtual bool isApplicableTo(const DataCollection& input) const override;
+    };
 
-	OVITO_CLASS_META(GenerateTrajectoryLinesModifier, GenerateTrajectoryLinesModifierClass)
-	Q_CLASSINFO("DisplayName", "Generate trajectory lines");
-	Q_CLASSINFO("Description", "Visualize trajectory lines of moving particles.");
+    OVITO_CLASS_META(GenerateTrajectoryLinesModifier, GenerateTrajectoryLinesModifierClass)
+    Q_CLASSINFO("DisplayName", "Generate trajectory lines");
+    Q_CLASSINFO("Description", "Visualize trajectory lines of moving particles.");
 #ifndef OVITO_QML_GUI
-	Q_CLASSINFO("ModifierCategory", "Visualization");
+    Q_CLASSINFO("ModifierCategory", "Visualization");
 #else
-	Q_CLASSINFO("ModifierCategory", "-");
+    Q_CLASSINFO("ModifierCategory", "-");
 #endif
 
 public:
 
-	/// \brief Constructor.
-	Q_INVOKABLE GenerateTrajectoryLinesModifier(ObjectCreationParams params);
-	
-	/// This method is called by the system after the modifier has been inserted into a data pipeline.
-	virtual void initializeModifier(const ModifierInitializationRequest& request) override;
+    /// \brief Constructor.
+    Q_INVOKABLE GenerateTrajectoryLinesModifier(ObjectCreationParams params);
+    
+    /// This method is called by the system after the modifier has been inserted into a data pipeline.
+    virtual void initializeModifier(const ModifierInitializationRequest& request) override;
 
-	/// Modifies the input data synchronously.
-	virtual void evaluateSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
+    /// Modifies the input data synchronously.
+    virtual void evaluateSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
 
-	/// Updates the stored trajectories from the source particle object.
-	bool generateTrajectories(AnimationTime currentTime, MainThreadOperation operation);
+    /// Updates the stored trajectories from the source particle object.
+    bool generateTrajectories(AnimationTime currentTime, MainThreadOperation operation);
 
 protected:
 
-	/// This method is called once for this object after it has been completely loaded from a stream.
-	virtual void loadFromStreamComplete(ObjectLoadStream& stream) override;
+    /// This method is called once for this object after it has been completely loaded from a stream.
+    virtual void loadFromStreamComplete(ObjectLoadStream& stream) override;
 
 private:
 
-	/// Controls which particles trajectories are created for.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, onlySelectedParticles, setOnlySelectedParticles);
+    /// Controls which particles trajectories are created for.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, onlySelectedParticles, setOnlySelectedParticles);
 
-	/// Controls whether the created trajectories span the entire animation interval or a sub-interval.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, useCustomInterval, setUseCustomInterval);
+    /// Controls whether the created trajectories span the entire animation interval or a sub-interval.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, useCustomInterval, setUseCustomInterval);
 
-	/// The start of the custom frame interval.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD(int, customIntervalStart, setCustomIntervalStart);
+    /// The start of the custom frame interval.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(int, customIntervalStart, setCustomIntervalStart);
 
-	/// The end of the custom frame interval.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD(int, customIntervalEnd, setCustomIntervalEnd);
+    /// The end of the custom frame interval.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(int, customIntervalEnd, setCustomIntervalEnd);
 
-	/// The sampling frequency for creating trajectories.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD(int, everyNthFrame, setEveryNthFrame);
+    /// The sampling frequency for creating trajectories.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(int, everyNthFrame, setEveryNthFrame);
 
-	/// Controls whether trajectories are unwrapped when crossing periodic boundaries.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, unwrapTrajectories, setUnwrapTrajectories);
+    /// Controls whether trajectories are unwrapped when crossing periodic boundaries.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, unwrapTrajectories, setUnwrapTrajectories);
 
-	/// Controls whether a particle property is sampled and transfered to the output trajectory lines.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, transferParticleProperties, setTransferParticleProperties);
+    /// Controls whether a particle property is sampled and transfered to the output trajectory lines.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, transferParticleProperties, setTransferParticleProperties);
 
-	/// The particle property to be transfered to the output trajectory lines.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD(ParticlePropertyReference, particleProperty, setParticleProperty);
+    /// The particle property to be transfered to the output trajectory lines.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(ParticlePropertyReference, particleProperty, setParticleProperty);
 
-	/// The vis element for rendering the trajectory lines.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<TrajectoryVis>, trajectoryVis, setTrajectoryVis, PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES | PROPERTY_FIELD_MEMORIZE | PROPERTY_FIELD_OPEN_SUBEDITOR);
+    /// The vis element for rendering the trajectory lines.
+    DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<TrajectoryVis>, trajectoryVis, setTrajectoryVis, PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES | PROPERTY_FIELD_MEMORIZE | PROPERTY_FIELD_OPEN_SUBEDITOR);
 };
 
 /**
@@ -112,17 +112,17 @@ private:
  */
 class OVITO_PARTICLES_EXPORT GenerateTrajectoryLinesModifierApplication : public ModifierApplication
 {
-	OVITO_CLASS(GenerateTrajectoryLinesModifierApplication)
+    OVITO_CLASS(GenerateTrajectoryLinesModifierApplication)
 
 public:
 
-	/// Constructor.
-	Q_INVOKABLE GenerateTrajectoryLinesModifierApplication(ObjectCreationParams params) : ModifierApplication(params) {}
+    /// Constructor.
+    Q_INVOKABLE GenerateTrajectoryLinesModifierApplication(ObjectCreationParams params) : ModifierApplication(params) {}
 
 private:
 
-	/// The cached trajectory line data.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(DataOORef<const TrajectoryObject>, trajectoryData, setTrajectoryData, PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_NO_SUB_ANIM);
+    /// The cached trajectory line data.
+    DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(DataOORef<const TrajectoryObject>, trajectoryData, setTrajectoryData, PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_NO_SUB_ANIM);
 };
 
-}	// End of namespace
+}   // End of namespace

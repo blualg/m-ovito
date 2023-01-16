@@ -37,9 +37,9 @@ IMPLEMENT_OVITO_CLASS(BondsExpressionSelectionModifierDelegate);
 ******************************************************************************/
 QVector<DataObjectReference> ParticlesExpressionSelectionModifierDelegate::OOMetaClass::getApplicableObjects(const DataCollection& input) const
 {
-	if(input.containsObject<ParticlesObject>())
-		return { DataObjectReference(&ParticlesObject::OOClass()) };
-	return {};
+    if(input.containsObject<ParticlesObject>())
+        return { DataObjectReference(&ParticlesObject::OOClass()) };
+    return {};
 }
 
 /******************************************************************************
@@ -47,9 +47,9 @@ QVector<DataObjectReference> ParticlesExpressionSelectionModifierDelegate::OOMet
 ******************************************************************************/
 std::unique_ptr<PropertyExpressionEvaluator> ParticlesExpressionSelectionModifierDelegate::initializeExpressionEvaluator(const QStringList& expressions, const PipelineFlowState& inputState, const ConstDataObjectPath& containerPath, int animationFrame)
 {
-	std::unique_ptr<ParticleExpressionEvaluator> evaluator = std::make_unique<ParticleExpressionEvaluator>();
-	evaluator->initialize(expressions, inputState, containerPath, animationFrame);
-	return evaluator;
+    std::unique_ptr<ParticleExpressionEvaluator> evaluator = std::make_unique<ParticleExpressionEvaluator>();
+    evaluator->initialize(expressions, inputState, containerPath, animationFrame);
+    return evaluator;
 }
 
 /******************************************************************************
@@ -60,7 +60,7 @@ QVector<DataObjectReference> BondsExpressionSelectionModifierDelegate::OOMetaCla
 {
     if(const ParticlesObject* particles = input.getObject<ParticlesObject>()) {
         if(particles->bonds())
-       		return { DataObjectReference(&ParticlesObject::OOClass()) };
+            return { DataObjectReference(&ParticlesObject::OOClass()) };
     }
     return {};
 }
@@ -70,9 +70,9 @@ QVector<DataObjectReference> BondsExpressionSelectionModifierDelegate::OOMetaCla
 ******************************************************************************/
 std::unique_ptr<PropertyExpressionEvaluator> BondsExpressionSelectionModifierDelegate::initializeExpressionEvaluator(const QStringList& expressions, const PipelineFlowState& inputState, const ConstDataObjectPath& containerPath, int animationFrame)
 {
-	std::unique_ptr<BondExpressionEvaluator> evaluator = std::make_unique<BondExpressionEvaluator>();
-	evaluator->initialize(expressions, inputState, containerPath, animationFrame);
-	return evaluator;
+    std::unique_ptr<BondExpressionEvaluator> evaluator = std::make_unique<BondExpressionEvaluator>();
+    evaluator->initialize(expressions, inputState, containerPath, animationFrame);
+    return evaluator;
 }
 
-}	// End of namespace
+}   // End of namespace

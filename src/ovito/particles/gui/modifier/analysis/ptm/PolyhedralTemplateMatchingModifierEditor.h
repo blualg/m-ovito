@@ -36,30 +36,30 @@ namespace Ovito::Particles {
  */
 class PolyhedralTemplateMatchingModifierEditor : public PropertiesEditor
 {
-	OVITO_CLASS(PolyhedralTemplateMatchingModifierEditor)
+    OVITO_CLASS(PolyhedralTemplateMatchingModifierEditor)
 
 public:
 
-	/// Default constructor.
-	Q_INVOKABLE PolyhedralTemplateMatchingModifierEditor() {}
+    /// Default constructor.
+    Q_INVOKABLE PolyhedralTemplateMatchingModifierEditor() {}
 
 protected Q_SLOTS:
 
-	/// Replots the histogram computed by the modifier.
-	void plotHistogram();
+    /// Replots the histogram computed by the modifier.
+    void plotHistogram();
 
 protected:
 
-	/// Creates the user interface controls for the editor.
-	virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
+    /// Creates the user interface controls for the editor.
+    virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
 
 private:
 
-	/// The graph widget to display the RMSD histogram.
-	DataTablePlotWidget* _rmsdPlotWidget;
+    /// The graph widget to display the RMSD histogram.
+    DataTablePlotWidget* _rmsdPlotWidget;
 
-	/// Marks the RMSD cutoff in the histogram plot.
-	QwtPlotZoneItem* _rmsdRangeIndicator;
+    /// Marks the RMSD cutoff in the histogram plot.
+    QwtPlotZoneItem* _rmsdRangeIndicator;
 };
 
-}	// End of namespace
+}   // End of namespace

@@ -33,52 +33,52 @@ namespace Ovito {
 ******************************************************************************/
 class OVITO_GUI_EXPORT FilenameParameterUI : public PropertyParameterUI
 {
-	OVITO_CLASS(FilenameParameterUI)
+    OVITO_CLASS(FilenameParameterUI)
 
 public:
 
-	/// Constructor for a Qt property.
-	FilenameParameterUI(PropertiesEditor* parentEditor, const char* propertyName);
+    /// Constructor for a Qt property.
+    FilenameParameterUI(PropertiesEditor* parentEditor, const char* propertyName);
 
-	/// Constructor for a PropertyField property.
-	FilenameParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField);
+    /// Constructor for a PropertyField property.
+    FilenameParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField);
 
-	/// Destructor.
-	virtual ~FilenameParameterUI();
+    /// Destructor.
+    virtual ~FilenameParameterUI();
 
-	/// This returns the button managed by this ParameterUI.
-	QPushButton* selectorWidget() const { return _selectorButton; }
+    /// This returns the button managed by this ParameterUI.
+    QPushButton* selectorWidget() const { return _selectorButton; }
 
-	/// This method is called when a new editable object has been assigned to the properties owner this
-	/// parameter UI belongs to.
-	virtual void resetUI() override;
+    /// This method is called when a new editable object has been assigned to the properties owner this
+    /// parameter UI belongs to.
+    virtual void resetUI() override;
 
-	/// This method updates the displayed value of the property UI.
-	virtual void updateUI() override;
+    /// This method updates the displayed value of the property UI.
+    virtual void updateUI() override;
 
-	/// Sets the enabled state of the UI.
-	virtual void setEnabled(bool enabled) override;
+    /// Sets the enabled state of the UI.
+    virtual void setEnabled(bool enabled) override;
 
-	/// Sets the What's This helper text for the selector widget.
-	void setWhatsThis(const QString& text) const {
-		if(selectorWidget()) selectorWidget()->setWhatsThis(text);
-	}
+    /// Sets the What's This helper text for the selector widget.
+    void setWhatsThis(const QString& text) const {
+        if(selectorWidget()) selectorWidget()->setWhatsThis(text);
+    }
 
 public:
 
-	Q_PROPERTY(QPushButton selectorWidget READ selectorWidget)
+    Q_PROPERTY(QPushButton selectorWidget READ selectorWidget)
 
 Q_SIGNALS:
 
-	/// This signal is emitted when the file selector should be shown to let the user select a new file.
-	void showSelectionDialog();
+    /// This signal is emitted when the file selector should be shown to let the user select a new file.
+    void showSelectionDialog();
 
 protected:
 
-	/// The selector control.
-	QPointer<QPushButton> _selectorButton;
+    /// The selector control.
+    QPointer<QPushButton> _selectorButton;
 };
 
-}	// End of namespace
+}   // End of namespace
 
 

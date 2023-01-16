@@ -41,35 +41,35 @@ SET_OVITO_OBJECT_EDITOR(LAMMPSTextDumpImporter, LAMMPSTextDumpImporterEditor);
  *****************************************************************************/
 bool LAMMPSTextDumpImporterEditor::showEditColumnMappingDialog(LAMMPSTextDumpImporter* importer, const FileSourceImporter::Frame& frame)
 {
-	// Read the list of columns from the file's header.
-	Future<ParticleInputColumnMapping> inspectFuture = importer->inspectFileHeader(frame);
+    // Read the list of columns from the file's header.
+    Future<ParticleInputColumnMapping> inspectFuture = importer->inspectFileHeader(frame);
 
-	// Block UI until reading is done.
-	{
-		ProgressDialog progressDialog(parentWindow(), inspectFuture, tr("Inspecting file header"));
-		if(!inspectFuture.waitForFinished())
-			return false;
-	}
+    // Block UI until reading is done.
+    {
+        ProgressDialog progressDialog(parentWindow(), inspectFuture, tr("Inspecting file header"));
+        if(!inspectFuture.waitForFinished())
+            return false;
+    }
 
-	ParticleInputColumnMapping mapping = inspectFuture.result();
+    ParticleInputColumnMapping mapping = inspectFuture.result();
 
-	if(!importer->customColumnMapping().empty()) {
-		ParticleInputColumnMapping customMapping = importer->customColumnMapping();
-		customMapping.resize(mapping.size());
-		for(size_t i = 0; i < customMapping.size(); i++)
-			customMapping[i].columnName = mapping[i].columnName;
-		mapping = std::move(customMapping);
-	}
+    if(!importer->customColumnMapping().empty()) {
+        ParticleInputColumnMapping customMapping = importer->customColumnMapping();
+        customMapping.resize(mapping.size());
+        for(size_t i = 0; i < customMapping.size(); i++)
+            customMapping[i].columnName = mapping[i].columnName;
+        mapping = std::move(customMapping);
+    }
 
-	InputColumnMappingDialog dialog(mainWindow(), mapping, parentWindow());
-	if(dialog.exec() == QDialog::Accepted) {
-		importer->setCustomColumnMapping(dialog.mapping());
-		importer->setUseCustomColumnMapping(true);
-		return true;
-	}
-	else {
-		return false;
-	}
+    InputColumnMappingDialog dialog(mainWindow(), mapping, parentWindow());
+    if(dialog.exec() == QDialog::Accepted) {
+        importer->setCustomColumnMapping(dialog.mapping());
+        importer->setUseCustomColumnMapping(true);
+        return true;
+    }
+    else {
+        return false;
+    }
 }
 
 /******************************************************************************
@@ -77,58 +77,58 @@ bool LAMMPSTextDumpImporterEditor::showEditColumnMappingDialog(LAMMPSTextDumpImp
 ******************************************************************************/
 void LAMMPSTextDumpImporterEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 {
-	// Create a rollout.
-	QWidget* rollout = createRollout(tr("LAMMPS dump reader"), rolloutParams, "manual:file_formats.input.lammps_dump");
+    // Create a rollout.
+    QWidget* rollout = createRollout(tr("LAMMPS dump reader"), rolloutParams, "manual:file_formats.input.lammps_dump");
 
     // Create the rollout contents.
-	QVBoxLayout* layout = new QVBoxLayout(rollout);
-	layout->setContentsMargins(4,4,4,4);
-	layout->setSpacing(4);
+    QVBoxLayout* layout = new QVBoxLayout(rollout);
+    layout->setContentsMargins(4,4,4,4);
+    layout->setSpacing(4);
 
-	QGroupBox* optionsBox = new QGroupBox(tr("Options"), rollout);
-	QVBoxLayout* sublayout = new QVBoxLayout(optionsBox);
-	sublayout->setContentsMargins(4,4,4,4);
-	layout->addWidget(optionsBox);
+    QGroupBox* optionsBox = new QGroupBox(tr("Options"), rollout);
+    QVBoxLayout* sublayout = new QVBoxLayout(optionsBox);
+    sublayout->setContentsMargins(4,4,4,4);
+    layout->addWidget(optionsBox);
 
-	// Multi-timestep file
-	BooleanParameterUI* multitimestepUI = new BooleanParameterUI(this, PROPERTY_FIELD(FileSourceImporter::isMultiTimestepFile));
-	// The following signal handler updates the parameter UI whenever the isMultiTimestepFile parameter of the current file source importer changes.
-	// It is needed, because target-changed messages are surpressed for this property field and the normal update mechanism for the parameter UI doesn't work.
-	connect(this, &PropertiesEditor::contentsReplaced, this, [con = QMetaObject::Connection(), multitimestepUI = multitimestepUI](RefTarget* editObject) mutable {
+    // Multi-timestep file
+    BooleanParameterUI* multitimestepUI = new BooleanParameterUI(this, PROPERTY_FIELD(FileSourceImporter::isMultiTimestepFile));
+    // The following signal handler updates the parameter UI whenever the isMultiTimestepFile parameter of the current file source importer changes.
+    // It is needed, because target-changed messages are surpressed for this property field and the normal update mechanism for the parameter UI doesn't work.
+    connect(this, &PropertiesEditor::contentsReplaced, this, [con = QMetaObject::Connection(), multitimestepUI = multitimestepUI](RefTarget* editObject) mutable {
 #ifdef _MSC_VER
-	#pragma warning(push)
-	#pragma warning(disable : 4573)
+    #pragma warning(push)
+    #pragma warning(disable : 4573)
 #endif
-		disconnect(con);
-		con = editObject ? connect(static_object_cast<FileSourceImporter>(editObject), &FileSourceImporter::isMultiTimestepFileChanged, multitimestepUI, &ParameterUI::updateUI) : QMetaObject::Connection();
+        disconnect(con);
+        con = editObject ? connect(static_object_cast<FileSourceImporter>(editObject), &FileSourceImporter::isMultiTimestepFileChanged, multitimestepUI, &ParameterUI::updateUI) : QMetaObject::Connection();
 #ifdef _MSC_VER
-	#pragma warning(pop)
+    #pragma warning(pop)
 #endif
-	});
-	sublayout->addWidget(multitimestepUI->checkBox());
+    });
+    sublayout->addWidget(multitimestepUI->checkBox());
 
-	// Sort particles
-	BooleanParameterUI* sortParticlesUI = new BooleanParameterUI(this, PROPERTY_FIELD(ParticleImporter::sortParticles));
-	sublayout->addWidget(sortParticlesUI->checkBox());
+    // Sort particles
+    BooleanParameterUI* sortParticlesUI = new BooleanParameterUI(this, PROPERTY_FIELD(ParticleImporter::sortParticles));
+    sublayout->addWidget(sortParticlesUI->checkBox());
 
-	QGroupBox* columnMappingBox = new QGroupBox(tr("File columns"), rollout);
-	sublayout = new QVBoxLayout(columnMappingBox);
-	sublayout->setContentsMargins(4,4,4,4);
-	layout->addWidget(columnMappingBox);
+    QGroupBox* columnMappingBox = new QGroupBox(tr("File columns"), rollout);
+    sublayout = new QVBoxLayout(columnMappingBox);
+    sublayout->setContentsMargins(4,4,4,4);
+    layout->addWidget(columnMappingBox);
 
-	BooleanRadioButtonParameterUI* useCustomMappingUI = new BooleanRadioButtonParameterUI(this, PROPERTY_FIELD(LAMMPSTextDumpImporter::useCustomColumnMapping));
-	useCustomMappingUI->buttonFalse()->setText(tr("Automatic mapping"));
-	sublayout->addWidget(useCustomMappingUI->buttonFalse());
-	useCustomMappingUI->buttonTrue()->setText(tr("User-defined mapping to particle properties"));
-	sublayout->addWidget(useCustomMappingUI->buttonTrue());
-	connect(useCustomMappingUI->buttonFalse(), &QRadioButton::clicked, this, [this]() {
-		if(LAMMPSTextDumpImporter* importer = static_object_cast<LAMMPSTextDumpImporter>(editObject()))
-			importer->requestReload();
-	}, Qt::QueuedConnection);
+    BooleanRadioButtonParameterUI* useCustomMappingUI = new BooleanRadioButtonParameterUI(this, PROPERTY_FIELD(LAMMPSTextDumpImporter::useCustomColumnMapping));
+    useCustomMappingUI->buttonFalse()->setText(tr("Automatic mapping"));
+    sublayout->addWidget(useCustomMappingUI->buttonFalse());
+    useCustomMappingUI->buttonTrue()->setText(tr("User-defined mapping to particle properties"));
+    sublayout->addWidget(useCustomMappingUI->buttonTrue());
+    connect(useCustomMappingUI->buttonFalse(), &QRadioButton::clicked, this, [this]() {
+        if(LAMMPSTextDumpImporter* importer = static_object_cast<LAMMPSTextDumpImporter>(editObject()))
+            importer->requestReload();
+    }, Qt::QueuedConnection);
 
-	QPushButton* editMappingButton = new QPushButton(tr("Edit column mapping..."));
-	sublayout->addWidget(editMappingButton);
-	connect(editMappingButton, &QPushButton::clicked, this, &LAMMPSTextDumpImporterEditor::onEditColumnMapping);
+    QPushButton* editMappingButton = new QPushButton(tr("Edit column mapping..."));
+    sublayout->addWidget(editMappingButton);
+    connect(editMappingButton, &QPushButton::clicked, this, &LAMMPSTextDumpImporterEditor::onEditColumnMapping);
 }
 
 /******************************************************************************
@@ -136,21 +136,21 @@ void LAMMPSTextDumpImporterEditor::createUI(const RolloutInsertionParameters& ro
 ******************************************************************************/
 void LAMMPSTextDumpImporterEditor::onEditColumnMapping()
 {
-	if(LAMMPSTextDumpImporter* importer = static_object_cast<LAMMPSTextDumpImporter>(editObject())) {
-		performTransaction(tr("Change file column mapping"), [this, importer]() {
+    if(LAMMPSTextDumpImporter* importer = static_object_cast<LAMMPSTextDumpImporter>(editObject())) {
+        performTransaction(tr("Change file column mapping"), [this, importer]() {
 
-			// Determine the currently loaded data file of the FileSource.
-			FileSource* fileSource = importer->fileSource();
-			if(!fileSource || fileSource->frames().empty()) 
-				return;
-			int frameIndex = qBound(0, fileSource->dataCollectionFrame(), fileSource->frames().size() - 1);
+            // Determine the currently loaded data file of the FileSource.
+            FileSource* fileSource = importer->fileSource();
+            if(!fileSource || fileSource->frames().empty()) 
+                return;
+            int frameIndex = qBound(0, fileSource->dataCollectionFrame(), fileSource->frames().size() - 1);
 
-			// Show the dialog box, which lets the user modify the file column mapping.
-			if(showEditColumnMappingDialog(importer, fileSource->frames()[frameIndex])) {
-				importer->requestReload();
-			}
-		});
-	}
+            // Show the dialog box, which lets the user modify the file column mapping.
+            if(showEditColumnMappingDialog(importer, fileSource->frames()[frameIndex])) {
+                importer->requestReload();
+            }
+        });
+    }
 }
 
-}	// End of namespace
+}   // End of namespace

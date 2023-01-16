@@ -36,59 +36,59 @@ class ElasticStrainEngine : public StructureIdentificationModifier::StructureIde
 {
 public:
 
-	/// Constructor.
-	ElasticStrainEngine(const ModifierEvaluationRequest& request, ParticleOrderingFingerprint fingerprint,
-			ConstPropertyPtr positions, const SimulationCellObject* simCell,
-			int inputCrystalStructure, std::vector<Matrix3> preferredCrystalOrientations,
-			bool calculateDeformationGradients, bool calculateStrainTensors,
-			FloatType latticeConstant, FloatType caRatio, bool pushStrainTensorsForward);
+    /// Constructor.
+    ElasticStrainEngine(const ModifierEvaluationRequest& request, ParticleOrderingFingerprint fingerprint,
+            ConstPropertyPtr positions, const SimulationCellObject* simCell,
+            int inputCrystalStructure, std::vector<Matrix3> preferredCrystalOrientations,
+            bool calculateDeformationGradients, bool calculateStrainTensors,
+            FloatType latticeConstant, FloatType caRatio, bool pushStrainTensorsForward);
 
-	/// Computes the modifier's results and stores them in this object for later retrieval.
-	virtual void perform() override;
+    /// Computes the modifier's results and stores them in this object for later retrieval.
+    virtual void perform() override;
 
-	/// Injects the computed results into the data pipeline.
-	virtual void applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
+    /// Injects the computed results into the data pipeline.
+    virtual void applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
 
-	/// Returns the array of atom cluster IDs.
-	const PropertyPtr& atomClusters() const { return _atomClusters; }
+    /// Returns the array of atom cluster IDs.
+    const PropertyPtr& atomClusters() const { return _atomClusters; }
 
-	/// Assigns the array of atom cluster IDs.
-	void setAtomClusters(PropertyPtr prop) { _atomClusters = std::move(prop); }
+    /// Assigns the array of atom cluster IDs.
+    void setAtomClusters(PropertyPtr prop) { _atomClusters = std::move(prop); }
 
-	/// Returns the created cluster graph.
-	const std::shared_ptr<ClusterGraph>& clusterGraph() { return _clusterGraph; }
+    /// Returns the created cluster graph.
+    const std::shared_ptr<ClusterGraph>& clusterGraph() { return _clusterGraph; }
 
-	/// Returns the property storage that contains the computed per-particle volumetric strain values.
-	const PropertyPtr& volumetricStrains() const { return _volumetricStrains; }
+    /// Returns the property storage that contains the computed per-particle volumetric strain values.
+    const PropertyPtr& volumetricStrains() const { return _volumetricStrains; }
 
-	/// Returns the property storage that contains the computed per-particle strain tensors.
-	const PropertyPtr& strainTensors() const { return _strainTensors; }
+    /// Returns the property storage that contains the computed per-particle strain tensors.
+    const PropertyPtr& strainTensors() const { return _strainTensors; }
 
-	/// Returns the property storage that contains the computed per-particle deformation gradient tensors.
-	const PropertyPtr& deformationGradients() const { return _deformationGradients; }
+    /// Returns the property storage that contains the computed per-particle deformation gradient tensors.
+    const PropertyPtr& deformationGradients() const { return _deformationGradients; }
 
 private:
 
-	const int _inputCrystalStructure;
-	FloatType _latticeConstant;
-	FloatType _axialScaling;
-	const bool _pushStrainTensorsForward;
-	std::unique_ptr<StructureAnalysis> _structureAnalysis;
+    const int _inputCrystalStructure;
+    FloatType _latticeConstant;
+    FloatType _axialScaling;
+    const bool _pushStrainTensorsForward;
+    std::unique_ptr<StructureAnalysis> _structureAnalysis;
 
-	/// This stores the cached atom-to-cluster assignments computed by the modifier.
-	PropertyPtr _atomClusters;
+    /// This stores the cached atom-to-cluster assignments computed by the modifier.
+    PropertyPtr _atomClusters;
 
-	/// This stores the cached cluster graph computed by the modifier.
-	const std::shared_ptr<ClusterGraph> _clusterGraph;
+    /// This stores the cached cluster graph computed by the modifier.
+    const std::shared_ptr<ClusterGraph> _clusterGraph;
 
-	/// This stores the cached results of the modifier.
-	const PropertyPtr _volumetricStrains;
+    /// This stores the cached results of the modifier.
+    const PropertyPtr _volumetricStrains;
 
-	/// This stores the cached results of the modifier.
-	const PropertyPtr _strainTensors;
+    /// This stores the cached results of the modifier.
+    const PropertyPtr _strainTensors;
 
-	/// This stores the cached results of the modifier.
-	const PropertyPtr _deformationGradients;
+    /// This stores the cached results of the modifier.
+    const PropertyPtr _deformationGradients;
 };
 
-}	// End of namespace
+}   // End of namespace

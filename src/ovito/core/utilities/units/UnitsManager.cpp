@@ -31,13 +31,13 @@ namespace Ovito {
 ******************************************************************************/
 UnitsManager::UnitsManager()
 {
-	// Create standard unit objects.
-	_units[&FloatParameterUnit::staticMetaObject] = _floatIdentityUnit = new FloatParameterUnit(this);
-	_units[&IntegerParameterUnit::staticMetaObject] = _integerIdentityUnit = new IntegerParameterUnit(this);
-	_units[&TimeParameterUnit::staticMetaObject] = _timeUnit = new TimeParameterUnit(this);
-	_units[&PercentParameterUnit::staticMetaObject] = _percentUnit = new PercentParameterUnit(this);
-	_units[&AngleParameterUnit::staticMetaObject] = _angleUnit = new AngleParameterUnit(this);
-	_units[&WorldParameterUnit::staticMetaObject] = _worldUnit = new WorldParameterUnit(this);
+    // Create standard unit objects.
+    _units[&FloatParameterUnit::staticMetaObject] = _floatIdentityUnit = new FloatParameterUnit(this);
+    _units[&IntegerParameterUnit::staticMetaObject] = _integerIdentityUnit = new IntegerParameterUnit(this);
+    _units[&TimeParameterUnit::staticMetaObject] = _timeUnit = new TimeParameterUnit(this);
+    _units[&PercentParameterUnit::staticMetaObject] = _percentUnit = new PercentParameterUnit(this);
+    _units[&AngleParameterUnit::staticMetaObject] = _angleUnit = new AngleParameterUnit(this);
+    _units[&WorldParameterUnit::staticMetaObject] = _worldUnit = new WorldParameterUnit(this);
 }
 
 /******************************************************************************
@@ -45,17 +45,17 @@ UnitsManager::UnitsManager()
 ******************************************************************************/
 ParameterUnit* UnitsManager::getUnit(const QMetaObject* parameterUnitClass)
 {
-	OVITO_CHECK_POINTER(parameterUnitClass);
+    OVITO_CHECK_POINTER(parameterUnitClass);
 
-	if(auto item = _units.find(parameterUnitClass); item != _units.end())
-		return item->second;
+    if(auto item = _units.find(parameterUnitClass); item != _units.end())
+        return item->second;
 
-	// Create an instance of this class.
-	ParameterUnit* unit = qobject_cast<ParameterUnit*>(parameterUnitClass->newInstance(Q_ARG(QObject*, this)));
-	OVITO_ASSERT_MSG(unit != nullptr, "UnitsManager::getUnit()", "Failed to create instance of requested parameter unit type.");
-	_units.insert({ parameterUnitClass, unit });
+    // Create an instance of this class.
+    ParameterUnit* unit = qobject_cast<ParameterUnit*>(parameterUnitClass->newInstance(Q_ARG(QObject*, this)));
+    OVITO_ASSERT_MSG(unit != nullptr, "UnitsManager::getUnit()", "Failed to create instance of requested parameter unit type.");
+    _units.insert({ parameterUnitClass, unit });
 
-	return unit;
+    return unit;
 }
 
 /******************************************************************************
@@ -63,12 +63,12 @@ ParameterUnit* UnitsManager::getUnit(const QMetaObject* parameterUnitClass)
 ******************************************************************************/
 FloatType FloatParameterUnit::parseString(const QString& valueString)
 {
-	double value;
-	bool ok;
-	value = valueString.toDouble(&ok);
-	if(!ok)
-		throw Exception(tr("Invalid floating-point value: %1").arg(valueString));
-	return (FloatType)value;
+    double value;
+    bool ok;
+    value = valueString.toDouble(&ok);
+    if(!ok)
+        throw Exception(tr("Invalid floating-point value: %1").arg(valueString));
+    return (FloatType)value;
 }
 
 /******************************************************************************
@@ -76,15 +76,15 @@ FloatType FloatParameterUnit::parseString(const QString& valueString)
 ******************************************************************************/
 FloatType FloatParameterUnit::stepSize(FloatType currentValue, bool upDirection) 
 {
-	int exponent;
-	currentValue = nativeToUser(currentValue);
-	if(currentValue != 0) {
-		exponent = (int)std::floor(std::log10(std::abs(currentValue)) - FloatType(1));
-		if(exponent < -12) exponent = -12;
-		else if(exponent > 6) exponent = 6;
-	}
-	else exponent = 0;
-	return userToNative(std::pow(FloatType(10), exponent));
+    int exponent;
+    currentValue = nativeToUser(currentValue);
+    if(currentValue != 0) {
+        exponent = (int)std::floor(std::log10(std::abs(currentValue)) - FloatType(1));
+        if(exponent < -12) exponent = -12;
+        else if(exponent > 6) exponent = 6;
+    }
+    else exponent = 0;
+    return userToNative(std::pow(FloatType(10), exponent));
 }
 
 /******************************************************************************
@@ -92,7 +92,7 @@ FloatType FloatParameterUnit::stepSize(FloatType currentValue, bool upDirection)
 ******************************************************************************/
 FloatType FloatParameterUnit::roundValue(FloatType value)
 {
-	return value;
+    return value;
 }
 
 /******************************************************************************
@@ -100,7 +100,7 @@ FloatType FloatParameterUnit::roundValue(FloatType value)
 ******************************************************************************/
 QString FloatParameterUnit::formatValue(FloatType value) 
 {
-	return QString::number(value);
+    return QString::number(value);
 }
 
 /******************************************************************************
@@ -108,12 +108,12 @@ QString FloatParameterUnit::formatValue(FloatType value)
 ******************************************************************************/
 FloatType IntegerParameterUnit::parseString(const QString& valueString)
 {
-	int value;
-	bool ok;
-	value = valueString.toInt(&ok);
-	if(!ok)
-		throw Exception(tr("Invalid integer value: %1").arg(valueString));
-	return (FloatType)value;
+    int value;
+    bool ok;
+    value = valueString.toInt(&ok);
+    if(!ok)
+        throw Exception(tr("Invalid integer value: %1").arg(valueString));
+    return (FloatType)value;
 }
 
 /******************************************************************************
@@ -121,7 +121,7 @@ FloatType IntegerParameterUnit::parseString(const QString& valueString)
 ******************************************************************************/
 FloatType PercentParameterUnit::parseString(const QString& valueString)
 {
-	return FloatParameterUnit::parseString(QString(valueString).remove(QChar('%')));
+    return FloatParameterUnit::parseString(QString(valueString).remove(QChar('%')));
 }
 
 /******************************************************************************
@@ -129,7 +129,7 @@ FloatType PercentParameterUnit::parseString(const QString& valueString)
 ******************************************************************************/
 QString PercentParameterUnit::formatValue(FloatType value)
 {
-	return FloatParameterUnit::formatValue(value) + QStringLiteral("%");
+    return FloatParameterUnit::formatValue(value) + QStringLiteral("%");
 }
 
 /******************************************************************************
@@ -137,11 +137,11 @@ QString PercentParameterUnit::formatValue(FloatType value)
 ******************************************************************************/
 FloatType TimeParameterUnit::parseString(const QString& valueString)
 {
-	bool ok;
-	int frame = valueString.toInt(&ok);
-	if(!ok)
-		throw Exception(tr("Invalid frame number format: %1").arg(valueString));
-	return AnimationTime::fromFrame(frame).ticks();
+    bool ok;
+    int frame = valueString.toInt(&ok);
+    if(!ok)
+        throw Exception(tr("Invalid frame number format: %1").arg(valueString));
+    return AnimationTime::fromFrame(frame).ticks();
 }
 
 /******************************************************************************
@@ -149,7 +149,7 @@ FloatType TimeParameterUnit::parseString(const QString& valueString)
 ******************************************************************************/
 QString TimeParameterUnit::formatValue(FloatType value)
 {
-	return QString::number(AnimationTime(static_cast<AnimationTime::value_type>(value)).frame());
+    return QString::number(AnimationTime(static_cast<AnimationTime::value_type>(value)).frame());
 }
 
 /******************************************************************************
@@ -158,10 +158,10 @@ QString TimeParameterUnit::formatValue(FloatType value)
 ******************************************************************************/
 FloatType TimeParameterUnit::stepSize(FloatType currentValue, bool upDirection)
 {
-	if(upDirection)
-		return std::ceil((currentValue + FloatType(1)) / AnimationTime::TicksPerFrame) * AnimationTime::TicksPerFrame - currentValue;
-	else
-		return currentValue - std::floor((currentValue - FloatType(1)) / AnimationTime::TicksPerFrame) * AnimationTime::TicksPerFrame;
+    if(upDirection)
+        return std::ceil((currentValue + FloatType(1)) / AnimationTime::TicksPerFrame) * AnimationTime::TicksPerFrame - currentValue;
+    else
+        return currentValue - std::floor((currentValue - FloatType(1)) / AnimationTime::TicksPerFrame) * AnimationTime::TicksPerFrame;
 }
 
 /******************************************************************************
@@ -170,7 +170,7 @@ FloatType TimeParameterUnit::stepSize(FloatType currentValue, bool upDirection)
 ******************************************************************************/
 FloatType TimeParameterUnit::roundValue(FloatType value)
 {
-	return std::round(value / AnimationTime::TicksPerFrame) * AnimationTime::TicksPerFrame;
+    return std::round(value / AnimationTime::TicksPerFrame) * AnimationTime::TicksPerFrame;
 }
 
-}	// End of namespace
+}   // End of namespace

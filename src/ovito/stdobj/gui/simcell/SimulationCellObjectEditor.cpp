@@ -38,135 +38,135 @@ SET_OVITO_OBJECT_EDITOR(SimulationCellObject, SimulationCellEditor);
 ******************************************************************************/
 void SimulationCellEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 {
-	// Create rollout.
-	QWidget* rollout = createRollout(QString(), rolloutParams, "manual:scene_objects.simulation_cell");
+    // Create rollout.
+    QWidget* rollout = createRollout(QString(), rolloutParams, "manual:scene_objects.simulation_cell");
 
-	QVBoxLayout* layout1 = new QVBoxLayout(rollout);
-	layout1->setContentsMargins(4,4,4,4);
-	layout1->setSpacing(8);
+    QVBoxLayout* layout1 = new QVBoxLayout(rollout);
+    layout1->setContentsMargins(4,4,4,4);
+    layout1->setSpacing(8);
 
-	{
-		QGroupBox* dimensionalityGroupBox = new QGroupBox(tr("Dimensionality"), rollout);
-		layout1->addWidget(dimensionalityGroupBox);
+    {
+        QGroupBox* dimensionalityGroupBox = new QGroupBox(tr("Dimensionality"), rollout);
+        layout1->addWidget(dimensionalityGroupBox);
 
-		QGridLayout* layout2 = new QGridLayout(dimensionalityGroupBox);
-		layout2->setContentsMargins(4,4,4,4);
-		layout2->setSpacing(2);
+        QGridLayout* layout2 = new QGridLayout(dimensionalityGroupBox);
+        layout2->setContentsMargins(4,4,4,4);
+        layout2->setSpacing(2);
 
-		BooleanRadioButtonParameterUI* is2dPUI = new BooleanRadioButtonParameterUI(this, PROPERTY_FIELD(SimulationCellObject::is2D));
-		is2dPUI->buttonTrue()->setText("2D");
-		is2dPUI->buttonFalse()->setText("3D");
-		layout2->addWidget(is2dPUI->buttonTrue(), 0, 0);
-		layout2->addWidget(is2dPUI->buttonFalse(), 0, 1);
-	}
+        BooleanRadioButtonParameterUI* is2dPUI = new BooleanRadioButtonParameterUI(this, PROPERTY_FIELD(SimulationCellObject::is2D));
+        is2dPUI->buttonTrue()->setText("2D");
+        is2dPUI->buttonFalse()->setText("3D");
+        layout2->addWidget(is2dPUI->buttonTrue(), 0, 0);
+        layout2->addWidget(is2dPUI->buttonFalse(), 0, 1);
+    }
 
-	{
-		QGroupBox* pbcGroupBox = new QGroupBox(tr("Periodic boundary conditions"), rollout);
-		layout1->addWidget(pbcGroupBox);
+    {
+        QGroupBox* pbcGroupBox = new QGroupBox(tr("Periodic boundary conditions"), rollout);
+        layout1->addWidget(pbcGroupBox);
 
-		QGridLayout* layout2 = new QGridLayout(pbcGroupBox);
-		layout2->setContentsMargins(4,4,4,4);
-		layout2->setSpacing(2);
+        QGridLayout* layout2 = new QGridLayout(pbcGroupBox);
+        layout2->setContentsMargins(4,4,4,4);
+        layout2->setSpacing(2);
 
-		BooleanParameterUI* pbcxPUI = new BooleanParameterUI(this, PROPERTY_FIELD(SimulationCellObject::pbcX));
-		pbcxPUI->checkBox()->setText("X");
-		layout2->addWidget(pbcxPUI->checkBox(), 0, 0);
+        BooleanParameterUI* pbcxPUI = new BooleanParameterUI(this, PROPERTY_FIELD(SimulationCellObject::pbcX));
+        pbcxPUI->checkBox()->setText("X");
+        layout2->addWidget(pbcxPUI->checkBox(), 0, 0);
 
-		BooleanParameterUI* pbcyPUI = new BooleanParameterUI(this, PROPERTY_FIELD(SimulationCellObject::pbcY));
-		pbcyPUI->checkBox()->setText("Y");
-		layout2->addWidget(pbcyPUI->checkBox(), 0, 1);
+        BooleanParameterUI* pbcyPUI = new BooleanParameterUI(this, PROPERTY_FIELD(SimulationCellObject::pbcY));
+        pbcyPUI->checkBox()->setText("Y");
+        layout2->addWidget(pbcyPUI->checkBox(), 0, 1);
 
-		_pbczPUI = new BooleanParameterUI(this, PROPERTY_FIELD(SimulationCellObject::pbcZ));
-		_pbczPUI->checkBox()->setText("Z");
-		layout2->addWidget(_pbczPUI->checkBox(), 0, 2);
-	}
+        _pbczPUI = new BooleanParameterUI(this, PROPERTY_FIELD(SimulationCellObject::pbcZ));
+        _pbczPUI->checkBox()->setText("Z");
+        layout2->addWidget(_pbczPUI->checkBox(), 0, 2);
+    }
 
-	connect(this, &SimulationCellEditor::contentsChanged, this, &SimulationCellEditor::updateSimulationBoxSize);
+    connect(this, &SimulationCellEditor::contentsChanged, this, &SimulationCellEditor::updateSimulationBoxSize);
 
-	{
-		QGroupBox* sizeGroupBox = new QGroupBox(tr("Box dimensions"), rollout);
-		layout1->addWidget(sizeGroupBox);
+    {
+        QGroupBox* sizeGroupBox = new QGroupBox(tr("Box dimensions"), rollout);
+        layout1->addWidget(sizeGroupBox);
 
-		QGridLayout* layout2 = new QGridLayout(sizeGroupBox);
-		layout2->setContentsMargins(4,4,4,4);
-		layout2->setSpacing(4);
-		layout2->setColumnStretch(1, 1);
-		for(int i = 0; i < 3; i++) {
-			_boxSizeFields[i] = new QLineEdit(rollout);
-			_boxSizeFields[i]->setReadOnly(true);
-			layout2->addWidget(_boxSizeFields[i], i, 1);
-		}
-		layout2->addWidget(new QLabel(tr("Width (X):")), 0, 0);
-		layout2->addWidget(new QLabel(tr("Length (Y):")), 1, 0);
-		layout2->addWidget(new QLabel(tr("Height (Z):")), 2, 0);
-	}
+        QGridLayout* layout2 = new QGridLayout(sizeGroupBox);
+        layout2->setContentsMargins(4,4,4,4);
+        layout2->setSpacing(4);
+        layout2->setColumnStretch(1, 1);
+        for(int i = 0; i < 3; i++) {
+            _boxSizeFields[i] = new QLineEdit(rollout);
+            _boxSizeFields[i]->setReadOnly(true);
+            layout2->addWidget(_boxSizeFields[i], i, 1);
+        }
+        layout2->addWidget(new QLabel(tr("Width (X):")), 0, 0);
+        layout2->addWidget(new QLabel(tr("Length (Y):")), 1, 0);
+        layout2->addWidget(new QLabel(tr("Height (Z):")), 2, 0);
+    }
 
-	{
-		QGroupBox* vectorsGroupBox = new QGroupBox(tr("Geometry"), rollout);
-		layout1->addWidget(vectorsGroupBox);
+    {
+        QGroupBox* vectorsGroupBox = new QGroupBox(tr("Geometry"), rollout);
+        layout1->addWidget(vectorsGroupBox);
 
-		QVBoxLayout* sublayout = new QVBoxLayout(vectorsGroupBox);
-		sublayout->setContentsMargins(4,4,4,4);
-		sublayout->setSpacing(2);
+        QVBoxLayout* sublayout = new QVBoxLayout(vectorsGroupBox);
+        sublayout->setContentsMargins(4,4,4,4);
+        sublayout->setSpacing(2);
 
-		QString xyz[3] = { QStringLiteral("X: "), QStringLiteral("Y: "), QStringLiteral("Z: ") };
+        QString xyz[3] = { QStringLiteral("X: "), QStringLiteral("Y: "), QStringLiteral("Z: ") };
 
-		{	// First cell vector.
-			sublayout->addSpacing(6);
-			sublayout->addWidget(new QLabel(tr("Cell vector 1:"), rollout));
-			QHBoxLayout* rowLayout = new QHBoxLayout();
-			rowLayout->setContentsMargins(0,0,0,0);
-			rowLayout->setSpacing(2);
-			sublayout->addLayout(rowLayout);
-			for(int i = 0; i < 3; i++) {
-				_cellVectorFields[0][i] = new QLineEdit();
-				_cellVectorFields[0][i]->setReadOnly(true);
-				rowLayout->addWidget(_cellVectorFields[0][i], 1);
-			}
-		}
+        {   // First cell vector.
+            sublayout->addSpacing(6);
+            sublayout->addWidget(new QLabel(tr("Cell vector 1:"), rollout));
+            QHBoxLayout* rowLayout = new QHBoxLayout();
+            rowLayout->setContentsMargins(0,0,0,0);
+            rowLayout->setSpacing(2);
+            sublayout->addLayout(rowLayout);
+            for(int i = 0; i < 3; i++) {
+                _cellVectorFields[0][i] = new QLineEdit();
+                _cellVectorFields[0][i]->setReadOnly(true);
+                rowLayout->addWidget(_cellVectorFields[0][i], 1);
+            }
+        }
 
-		{	// Second cell vector.
-			sublayout->addSpacing(2);
-			sublayout->addWidget(new QLabel(tr("Cell vector 2:"), rollout));
-			QHBoxLayout* rowLayout = new QHBoxLayout();
-			rowLayout->setContentsMargins(0,0,0,0);
-			rowLayout->setSpacing(2);
-			sublayout->addLayout(rowLayout);
-			for(int i = 0; i < 3; i++) {
-				_cellVectorFields[1][i] = new QLineEdit();
-				_cellVectorFields[1][i]->setReadOnly(true);
-				rowLayout->addWidget(_cellVectorFields[1][i], 1);
-			}
-		}
+        {   // Second cell vector.
+            sublayout->addSpacing(2);
+            sublayout->addWidget(new QLabel(tr("Cell vector 2:"), rollout));
+            QHBoxLayout* rowLayout = new QHBoxLayout();
+            rowLayout->setContentsMargins(0,0,0,0);
+            rowLayout->setSpacing(2);
+            sublayout->addLayout(rowLayout);
+            for(int i = 0; i < 3; i++) {
+                _cellVectorFields[1][i] = new QLineEdit();
+                _cellVectorFields[1][i]->setReadOnly(true);
+                rowLayout->addWidget(_cellVectorFields[1][i], 1);
+            }
+        }
 
-		{	// Third cell vector.
-			sublayout->addSpacing(2);
-			sublayout->addWidget(new QLabel(tr("Cell vector 3:"), rollout));
-			QHBoxLayout* rowLayout = new QHBoxLayout();
-			rowLayout->setContentsMargins(0,0,0,0);
-			rowLayout->setSpacing(2);
-			sublayout->addLayout(rowLayout);
-			for(int i = 0; i < 3; i++) {
-				_cellVectorFields[2][i] = new QLineEdit();
-				_cellVectorFields[2][i]->setReadOnly(true);
-				rowLayout->addWidget(_cellVectorFields[2][i], 1);
-			}
-		}
+        {   // Third cell vector.
+            sublayout->addSpacing(2);
+            sublayout->addWidget(new QLabel(tr("Cell vector 3:"), rollout));
+            QHBoxLayout* rowLayout = new QHBoxLayout();
+            rowLayout->setContentsMargins(0,0,0,0);
+            rowLayout->setSpacing(2);
+            sublayout->addLayout(rowLayout);
+            for(int i = 0; i < 3; i++) {
+                _cellVectorFields[2][i] = new QLineEdit();
+                _cellVectorFields[2][i]->setReadOnly(true);
+                rowLayout->addWidget(_cellVectorFields[2][i], 1);
+            }
+        }
 
-		{	// Cell origin.
-			sublayout->addSpacing(8);
-			sublayout->addWidget(new QLabel(tr("Cell origin:"), rollout));
-			QHBoxLayout* rowLayout = new QHBoxLayout();
-			rowLayout->setContentsMargins(0,0,0,0);
-			rowLayout->setSpacing(2);
-			sublayout->addLayout(rowLayout);
-			for(int i = 0; i < 3; i++) {
-				_cellVectorFields[3][i] = new QLineEdit();
-				_cellVectorFields[3][i]->setReadOnly(true);
-				rowLayout->addWidget(_cellVectorFields[3][i], 1);
-			}
-		}
-	}
+        {   // Cell origin.
+            sublayout->addSpacing(8);
+            sublayout->addWidget(new QLabel(tr("Cell origin:"), rollout));
+            QHBoxLayout* rowLayout = new QHBoxLayout();
+            rowLayout->setContentsMargins(0,0,0,0);
+            rowLayout->setSpacing(2);
+            sublayout->addLayout(rowLayout);
+            for(int i = 0; i < 3; i++) {
+                _cellVectorFields[3][i] = new QLineEdit();
+                _cellVectorFields[3][i]->setReadOnly(true);
+                rowLayout->addWidget(_cellVectorFields[3][i], 1);
+            }
+        }
+    }
 }
 
 /******************************************************************************
@@ -174,19 +174,19 @@ void SimulationCellEditor::createUI(const RolloutInsertionParameters& rolloutPar
 ******************************************************************************/
 void SimulationCellEditor::updateSimulationBoxSize()
 {
-	SimulationCellObject* cell = static_object_cast<SimulationCellObject>(editObject());
-	if(!cell) return;
+    SimulationCellObject* cell = static_object_cast<SimulationCellObject>(editObject());
+    if(!cell) return;
 
-	const AffineTransformation& cellTM = cell->cellMatrix();
-	ParameterUnit* worldUnit = mainWindow().unitsManager().worldUnit();
+    const AffineTransformation& cellTM = cell->cellMatrix();
+    ParameterUnit* worldUnit = mainWindow().unitsManager().worldUnit();
 
-	for(size_t dim = 0; dim < 3; dim++) {
-		_boxSizeFields[dim]->setText(worldUnit->formatValue(cellTM(dim, dim)));
-		for(size_t col = 0; col < 4; col++) 
-			_cellVectorFields[col][dim]->setText(worldUnit->formatValue(cellTM(dim, col)));
-	}
+    for(size_t dim = 0; dim < 3; dim++) {
+        _boxSizeFields[dim]->setText(worldUnit->formatValue(cellTM(dim, dim)));
+        for(size_t col = 0; col < 4; col++) 
+            _cellVectorFields[col][dim]->setText(worldUnit->formatValue(cellTM(dim, col)));
+    }
 
-	_pbczPUI->setEnabled(!cell->is2D());
+    _pbczPUI->setEnabled(!cell->is2D());
 }
 
-}	// End of namespace
+}   // End of namespace

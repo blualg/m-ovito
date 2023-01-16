@@ -34,32 +34,32 @@ namespace Ovito {
 template<class BaseKeyClass>
 class OVITO_CORE_EXPORT TCBAnimationKey : public BaseKeyClass
 {
-	OVITO_CLASS_TEMPLATE(TCBAnimationKey, BaseKeyClass)
+    OVITO_CLASS_TEMPLATE(TCBAnimationKey, BaseKeyClass)
 
 public:
 
-	using typename BaseKeyClass::value_type;
+    using typename BaseKeyClass::value_type;
 
-	/// Constructor.
-	TCBAnimationKey(ObjectCreationParams params, AnimationTime time, const value_type& value)
-		: BaseKeyClass(params, time, value), _easeTo(0), _easeFrom(0), _tension(0), _continuity(0), _bias(0) {}
+    /// Constructor.
+    TCBAnimationKey(ObjectCreationParams params, AnimationTime time, const value_type& value)
+        : BaseKeyClass(params, time, value), _easeTo(0), _easeFrom(0), _tension(0), _continuity(0), _bias(0) {}
 
 public:
 
-	/// Slows the velocity of the animation curve as it approaches the key.
-	DECLARE_PROPERTY_FIELD(FloatType, easeTo);
+    /// Slows the velocity of the animation curve as it approaches the key.
+    DECLARE_PROPERTY_FIELD(FloatType, easeTo);
 
-	/// Slows the velocity of the animation curve as it leaves the key.
-	DECLARE_PROPERTY_FIELD(FloatType, easeFrom);
+    /// Slows the velocity of the animation curve as it leaves the key.
+    DECLARE_PROPERTY_FIELD(FloatType, easeFrom);
 
-	/// Controls the amount of curvature in the animation curve.
-	DECLARE_PROPERTY_FIELD(FloatType, tension);
+    /// Controls the amount of curvature in the animation curve.
+    DECLARE_PROPERTY_FIELD(FloatType, tension);
 
-	/// Controls the tangential property of the curve at the key.
-	DECLARE_PROPERTY_FIELD(FloatType, continuity);
+    /// Controls the tangential property of the curve at the key.
+    DECLARE_PROPERTY_FIELD(FloatType, continuity);
 
-	/// Controls where the animation curve occurs with respect to the key.
-	DECLARE_PROPERTY_FIELD(FloatType, bias);
+    /// Controls where the animation curve occurs with respect to the key.
+    DECLARE_PROPERTY_FIELD(FloatType, bias);
 };
 
 /**
@@ -67,13 +67,13 @@ public:
  */
 class OVITO_CORE_EXPORT FloatTCBAnimationKey : public TCBAnimationKey<FloatAnimationKey>
 {
-	OVITO_CLASS(FloatTCBAnimationKey)
+    OVITO_CLASS(FloatTCBAnimationKey)
 
 public:
 
-	/// Constructor.
-	Q_INVOKABLE FloatTCBAnimationKey(ObjectCreationParams params, AnimationTime time = AnimationTime(0), FloatType value = 0) 
-		: TCBAnimationKey<FloatAnimationKey>(params, time, value) {}
+    /// Constructor.
+    Q_INVOKABLE FloatTCBAnimationKey(ObjectCreationParams params, AnimationTime time = AnimationTime(0), FloatType value = 0) 
+        : TCBAnimationKey<FloatAnimationKey>(params, time, value) {}
 };
 
 /**
@@ -81,13 +81,13 @@ public:
  */
 class OVITO_CORE_EXPORT PositionTCBAnimationKey : public TCBAnimationKey<PositionAnimationKey>
 {
-	OVITO_CLASS(PositionTCBAnimationKey)
+    OVITO_CLASS(PositionTCBAnimationKey)
 
 public:
 
-	/// Constructor.
-	Q_INVOKABLE PositionTCBAnimationKey(ObjectCreationParams params, AnimationTime time = AnimationTime(0), const Vector3& value = Vector3::Zero()) 
-		: TCBAnimationKey<PositionAnimationKey>(params, time, value) {}
+    /// Constructor.
+    Q_INVOKABLE PositionTCBAnimationKey(ObjectCreationParams params, AnimationTime time = AnimationTime(0), const Vector3& value = Vector3::Zero()) 
+        : TCBAnimationKey<PositionAnimationKey>(params, time, value) {}
 };
 
 /**
@@ -97,19 +97,19 @@ public:
  */
 template<typename KeyType>
 struct TCBKeyInterpolator {
-	typename KeyType::value_type operator()(AnimationTime time, KeyType* key0, KeyType* key1, KeyType* key2, KeyType* key3) const {
-		OVITO_ASSERT(key2->time() > key1->time());
-		FloatType t = (FloatType)(time - key1->time()) / (key2->time() - key1->time());
-		typename KeyType::tangent_type chord01 = key0 ? (key1->value() - key0->value()) : typename KeyType::nullvalue_type();
-		typename KeyType::tangent_type chord12 = key2->value() - key1->value();
-		typename KeyType::tangent_type chord23 = key3 ? (key3->value() - key2->value()) : typename KeyType::nullvalue_type();
-		typename KeyType::tangent_type outTangent1 = ((FloatType(1) - key1->tension()) * (FloatType(1) + key1->continuity()) * (FloatType(1) + key1->bias()) / 2) * chord01 + ((FloatType(1) - key1->tension()) * (FloatType(1) - key1->continuity()) * (FloatType(1) - key1->bias()) / 2) * chord12;
-		typename KeyType::tangent_type inTangent2 = ((FloatType(1) - key2->tension()) * (FloatType(1) - key2->continuity()) * (FloatType(1) + key2->bias()) / 2) * chord12 + ((FloatType(1) - key2->tension()) * (FloatType(1) + key2->continuity()) * (FloatType(1) - key2->bias()) / 2) * chord23;
-		typename KeyType::value_type outPoint1 = key1->value() + outTangent1;
-		typename KeyType::value_type inPoint2 = key2->value() - inTangent2;
-		SplineValueInterpolator<typename KeyType::value_type> valueInterpolator;
-		return valueInterpolator(t, key1->value(), key2->value(), outPoint1, inPoint2);
-	}
+    typename KeyType::value_type operator()(AnimationTime time, KeyType* key0, KeyType* key1, KeyType* key2, KeyType* key3) const {
+        OVITO_ASSERT(key2->time() > key1->time());
+        FloatType t = (FloatType)(time - key1->time()) / (key2->time() - key1->time());
+        typename KeyType::tangent_type chord01 = key0 ? (key1->value() - key0->value()) : typename KeyType::nullvalue_type();
+        typename KeyType::tangent_type chord12 = key2->value() - key1->value();
+        typename KeyType::tangent_type chord23 = key3 ? (key3->value() - key2->value()) : typename KeyType::nullvalue_type();
+        typename KeyType::tangent_type outTangent1 = ((FloatType(1) - key1->tension()) * (FloatType(1) + key1->continuity()) * (FloatType(1) + key1->bias()) / 2) * chord01 + ((FloatType(1) - key1->tension()) * (FloatType(1) - key1->continuity()) * (FloatType(1) - key1->bias()) / 2) * chord12;
+        typename KeyType::tangent_type inTangent2 = ((FloatType(1) - key2->tension()) * (FloatType(1) - key2->continuity()) * (FloatType(1) + key2->bias()) / 2) * chord12 + ((FloatType(1) - key2->tension()) * (FloatType(1) + key2->continuity()) * (FloatType(1) - key2->bias()) / 2) * chord23;
+        typename KeyType::value_type outPoint1 = key1->value() + outTangent1;
+        typename KeyType::value_type inPoint2 = key2->value() - inTangent2;
+        SplineValueInterpolator<typename KeyType::value_type> valueInterpolator;
+        return valueInterpolator(t, key1->value(), key2->value(), outPoint1, inPoint2);
+    }
 };
 
 /**
@@ -120,37 +120,37 @@ class TCBControllerBase : public KeyframeControllerTemplate<KeyType, TCBKeyInter
 {
 public:
 
-	/// Constructor.
-	TCBControllerBase(ObjectCreationParams params)
-		: KeyframeControllerTemplate<KeyType, TCBKeyInterpolator<KeyType>, ctrlType>(params) {}
+    /// Constructor.
+    TCBControllerBase(ObjectCreationParams params)
+        : KeyframeControllerTemplate<KeyType, TCBKeyInterpolator<KeyType>, ctrlType>(params) {}
 };
 
 /**
  * \brief A keyframe controller that interpolates between position values using the TCB interpolation scheme.
  */
 class OVITO_CORE_EXPORT TCBPositionController
-	: public TCBControllerBase<PositionTCBAnimationKey, Controller::ControllerTypePosition>
+    : public TCBControllerBase<PositionTCBAnimationKey, Controller::ControllerTypePosition>
 {
-	OVITO_CLASS(TCBPositionController)
+    OVITO_CLASS(TCBPositionController)
 
 public:
 
-	/// Constructor.
-	Q_INVOKABLE TCBPositionController(ObjectCreationParams params)
-		: TCBControllerBase<PositionTCBAnimationKey, Controller::ControllerTypePosition>(params) {}
+    /// Constructor.
+    Q_INVOKABLE TCBPositionController(ObjectCreationParams params)
+        : TCBControllerBase<PositionTCBAnimationKey, Controller::ControllerTypePosition>(params) {}
 
-	/// \brief Gets the controller's value at a certain animation time.
-	virtual void getPositionValue(AnimationTime time, Vector3& value, TimeInterval& validityInterval) override {
-		getInterpolatedValue(time, value, validityInterval);
-	}
+    /// \brief Gets the controller's value at a certain animation time.
+    virtual void getPositionValue(AnimationTime time, Vector3& value, TimeInterval& validityInterval) override {
+        getInterpolatedValue(time, value, validityInterval);
+    }
 
-	/// \brief Sets the controller's value at the given animation time.
-	virtual void setPositionValue(AnimationTime time, const Vector3& newValue, bool isAbsolute) override {
-		if(isAbsolute)
-			setAbsoluteValue(time, newValue);
-		else
-			setRelativeValue(time, newValue);
-	}
+    /// \brief Sets the controller's value at the given animation time.
+    virtual void setPositionValue(AnimationTime time, const Vector3& newValue, bool isAbsolute) override {
+        if(isAbsolute)
+            setAbsoluteValue(time, newValue);
+        else
+            setRelativeValue(time, newValue);
+    }
 };
 
-}	// End of namespace
+}   // End of namespace

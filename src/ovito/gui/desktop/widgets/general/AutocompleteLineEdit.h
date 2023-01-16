@@ -37,39 +37,39 @@ namespace Ovito {
  */
 class OVITO_GUI_EXPORT AutocompleteLineEdit : public QLineEdit
 {
-	Q_OBJECT
+    Q_OBJECT
 
 public:
 
-	/// \brief Constructs the widget.
-	AutocompleteLineEdit(QWidget* parent = nullptr);
+    /// \brief Constructs the widget.
+    AutocompleteLineEdit(QWidget* parent = nullptr);
 
-	/// Sets the list of words that can be completed.
-	void setWordList(const QStringList& words) { _wordListModel->setStringList(words); }
+    /// Sets the list of words that can be completed.
+    void setWordList(const QStringList& words) { _wordListModel->setStringList(words); }
 
 protected Q_SLOTS:
 
-	/// Inserts a complete word into the text field.
-	void onComplete(const QString& completion);
+    /// Inserts a complete word into the text field.
+    void onComplete(const QString& completion);
 
 protected:
 
-	/// Handles key-press events.
-	virtual void keyPressEvent(QKeyEvent* event) override;
+    /// Handles key-press events.
+    virtual void keyPressEvent(QKeyEvent* event) override;
 
-	/// Creates a list of tokens from the current text string.
-	QStringList getTokenList() const;
+    /// Creates a list of tokens from the current text string.
+    QStringList getTokenList() const;
 
 protected:
 
-	/// The completer object used by the widget.
-	QCompleter* _completer;
+    /// The completer object used by the widget.
+    QCompleter* _completer;
 
-	/// The list model storing the words that can be completed.
-	QStringListModel* _wordListModel;
+    /// The list model storing the words that can be completed.
+    QStringListModel* _wordListModel;
 
-	/// Regular expression used to split a text into words.
-	QRegularExpression _wordSplitter;
+    /// Regular expression used to split a text into words.
+    QRegularExpression _wordSplitter;
 };
 
-}	// End of namespace
+}   // End of namespace

@@ -33,7 +33,7 @@
 namespace Ovito {
 
 #ifdef QT_NO_EXCEPTIONS
-	#error "OVITO requires Qt exception support. It seems that Qt has been built without exceptions (the macro QT_NO_EXCEPTIONS is defined). Please turn on exception support and rebuild the Qt library."
+    #error "OVITO requires Qt exception support. It seems that Qt has been built without exceptions (the macro QT_NO_EXCEPTIONS is defined). Please turn on exception support and rebuild the Qt library."
 #endif
 
 /**
@@ -83,71 +83,71 @@ namespace Ovito {
  *
  */
 #ifndef OVITO_DISABLE_THREADING
-	class OVITO_CORE_EXPORT Exception : public QException
+    class OVITO_CORE_EXPORT Exception : public QException
 #else
-	class OVITO_CORE_EXPORT Exception
+    class OVITO_CORE_EXPORT Exception
 #endif
 {
 public:
 
-	/// Creates an exception with a default error message.
-	/// You should use the constructor taking a message string instead to construct an Exception.
-	Exception();
+    /// Creates an exception with a default error message.
+    /// You should use the constructor taking a message string instead to construct an Exception.
+    Exception();
 
-	/// Initializes the Exception object with a message string describing the error that has occurred.
-	/// \param message The human-readable message describing the error, which will be displayed by showError().
-	Exception(const QString& message);
+    /// Initializes the Exception object with a message string describing the error that has occurred.
+    /// \param message The human-readable message describing the error, which will be displayed by showError().
+    Exception(const QString& message);
 
-	/// \brief Multi-message constructor that initializes the Exception object with multiple message string.
-	/// \param errorMessages The list of message strings describing the error. The list should be ordered with
-	///                      the most general error description first, followed by the more detailed information.
-	explicit Exception(QStringList errorMessages);
+    /// \brief Multi-message constructor that initializes the Exception object with multiple message string.
+    /// \param errorMessages The list of message strings describing the error. The list should be ordered with
+    ///                      the most general error description first, followed by the more detailed information.
+    explicit Exception(QStringList errorMessages);
 
-	// Default destructor.
-	virtual ~Exception() = default;
+    // Default destructor.
+    virtual ~Exception() = default;
 
-	/// \brief Appends a string to the list of message that describes the error in more detail.
-	/// \param message A human-readable description.
-	/// \return A reference to this Exception object.
-	Exception& appendDetailMessage(const QString& message);
+    /// \brief Appends a string to the list of message that describes the error in more detail.
+    /// \param message A human-readable description.
+    /// \return A reference to this Exception object.
+    Exception& appendDetailMessage(const QString& message);
 
-	/// Prepends a string to the list of messages that describes the error in a more general way than the existing message strings.
-	/// \param message The human-readable description of the error.
-	/// \return A reference to this Exception object.
-	Exception& prependGeneralMessage(const QString& message);
+    /// Prepends a string to the list of messages that describes the error in a more general way than the existing message strings.
+    /// \param message The human-readable description of the error.
+    /// \return A reference to this Exception object.
+    Exception& prependGeneralMessage(const QString& message);
 
-	/// Sets the list of error messages stored in this exception object.
-	/// \param messages The new list of messages, which completely replaces any existing messages.
-	void setMessages(const QStringList& messages) { this->_messages = messages; }
+    /// Sets the list of error messages stored in this exception object.
+    /// \param messages The new list of messages, which completely replaces any existing messages.
+    void setMessages(const QStringList& messages) { this->_messages = messages; }
 
-	/// Returns the most general message string stored in this Exception object, which describes the occurred error.
-	const QString& message() const { return _messages.front(); }
+    /// Returns the most general message string stored in this Exception object, which describes the occurred error.
+    const QString& message() const { return _messages.front(); }
 
-	/// Returns all message strings stored in this Exception object.
-	const QStringList& messages() const { return _messages; }
+    /// Returns all message strings stored in this Exception object.
+    const QStringList& messages() const { return _messages; }
 
-	/// Logs the error message(s) stored in this Exception object by printing them to the console.
-	/// No modal dialog box is shown in GUI mode.
-	void logError() const;
+    /// Logs the error message(s) stored in this Exception object by printing them to the console.
+    /// No modal dialog box is shown in GUI mode.
+    void logError() const;
 
 #ifndef OVITO_DISABLE_THREADING
 
-	//////////////////////////////////////////////////////////////////////////////////////
-	// The following two functions are required by the base class QException
+    //////////////////////////////////////////////////////////////////////////////////////
+    // The following two functions are required by the base class QException
 
-	// Raises this exception object.
-	virtual void raise() const override { throw *this; }
+    // Raises this exception object.
+    virtual void raise() const override { throw *this; }
 
-	// Creates a copy of this exception object.
-	virtual Exception* clone() const override { return new Exception(*this); }
+    // Creates a copy of this exception object.
+    virtual Exception* clone() const override { return new Exception(*this); }
 
 #endif
 
 private:
 
-	/// The message strings describing the exception.
-	/// This list is ordered with the most general error description coming first followed by the more detailed information.
-	QStringList _messages;
+    /// The message strings describing the exception.
+    /// This list is ordered with the most general error description coming first followed by the more detailed information.
+    QStringList _messages;
 };
 
-}	// namespace Ovito
+}   // namespace Ovito

@@ -41,109 +41,109 @@ namespace Ovito {
  */
 class OVITO_CORE_EXPORT Modifier : public RefTarget
 {
-	OVITO_CLASS_META(Modifier, ModifierClass)
+    OVITO_CLASS_META(Modifier, ModifierClass)
 
 protected:
 
-	/// \brief Constructor.
-	Modifier(ObjectCreationParams params);
+    /// \brief Constructor.
+    Modifier(ObjectCreationParams params);
 
 public:
 
-	/// \brief Modifies the input data synchronously.
-	virtual void evaluateSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state) {}
+    /// \brief Modifies the input data synchronously.
+    virtual void evaluateSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state) {}
 
-	/// \brief Determines the time interval over which a computed pipeline state will remain valid.
-	virtual TimeInterval validityInterval(const ModifierEvaluationRequest& request) const { return TimeInterval::infinite(); }
+    /// \brief Determines the time interval over which a computed pipeline state will remain valid.
+    virtual TimeInterval validityInterval(const ModifierEvaluationRequest& request) const { return TimeInterval::infinite(); }
 
-	/// \brief Asks the modifier for the set of animation time intervals that should be cached by the upstream pipeline.
-	virtual void inputCachingHints(TimeIntervalUnion& cachingIntervals, ModifierApplication* modApp) {}
+    /// \brief Asks the modifier for the set of animation time intervals that should be cached by the upstream pipeline.
+    virtual void inputCachingHints(TimeIntervalUnion& cachingIntervals, ModifierApplication* modApp) {}
 
-	/// \brief This method is called by the ModifierApplication to let the modifier adjust the time interval
-	/// of a TargetChanged event received from the upstream pipeline before it is propagated to the 
-	/// downstream pipeline.
-	virtual void restrictInputValidityInterval(TimeInterval& iv) const {}
+    /// \brief This method is called by the ModifierApplication to let the modifier adjust the time interval
+    /// of a TargetChanged event received from the upstream pipeline before it is propagated to the 
+    /// downstream pipeline.
+    virtual void restrictInputValidityInterval(TimeInterval& iv) const {}
 
-	/// \brief Lets the modifier render itself into a viewport.
-	/// \param contextNode The node context used to render the modifier.
-	/// \param renderer The scene renderer to use.
-	/// \param renderOverlay Specifies the rendering pass. The method is called twice by the system: First with renderOverlay==false
-	///                      to render any 3d representation of the modifier, and a second time with renderOverlay==true to render
-	///                      any overlay graphics on top of the 3d scene.
-	///
-	/// The viewport transformation is already set up when this method is called
-	/// The default implementation does nothing.
-	virtual void renderModifierVisual(const ModifierEvaluationRequest& request, PipelineSceneNode* contextNode, SceneRenderer* renderer, bool renderOverlay) {}
+    /// \brief Lets the modifier render itself into a viewport.
+    /// \param contextNode The node context used to render the modifier.
+    /// \param renderer The scene renderer to use.
+    /// \param renderOverlay Specifies the rendering pass. The method is called twice by the system: First with renderOverlay==false
+    ///                      to render any 3d representation of the modifier, and a second time with renderOverlay==true to render
+    ///                      any overlay graphics on top of the 3d scene.
+    ///
+    /// The viewport transformation is already set up when this method is called
+    /// The default implementation does nothing.
+    virtual void renderModifierVisual(const ModifierEvaluationRequest& request, PipelineSceneNode* contextNode, SceneRenderer* renderer, bool renderOverlay) {}
 
-	/// \brief Returns the list of applications of this modifier in pipelines.
-	/// \return The list of ModifierApplication objects that describe the particular applications of this Modifier.
-	///
-	/// One and the same modifier instance can be applied in several geometry pipelines.
-	/// Each application of the modifier instance is associated with a instance of the ModifierApplication class.
-	/// This method can be used to determine all applications of this Modifier instance.
-	QVector<ModifierApplication*> modifierApplications() const;
+    /// \brief Returns the list of applications of this modifier in pipelines.
+    /// \return The list of ModifierApplication objects that describe the particular applications of this Modifier.
+    ///
+    /// One and the same modifier instance can be applied in several geometry pipelines.
+    /// Each application of the modifier instance is associated with a instance of the ModifierApplication class.
+    /// This method can be used to determine all applications of this Modifier instance.
+    QVector<ModifierApplication*> modifierApplications() const;
 
-	/// \brief Returns one of the applications of this modifier in a pipeline.
-	ModifierApplication* someModifierApplication() const;
+    /// \brief Returns one of the applications of this modifier in a pipeline.
+    ModifierApplication* someModifierApplication() const;
 
-	/// \brief Create a new modifier application that refers to this modifier instance.
-	OORef<ModifierApplication> createModifierApplication();
+    /// \brief Create a new modifier application that refers to this modifier instance.
+    OORef<ModifierApplication> createModifierApplication();
 
-	/// \brief Returns the title of this modifier object.
-	virtual QString objectTitle() const override {
-		if(title().isEmpty()) return RefTarget::objectTitle();
-		else return title();
-	}
+    /// \brief Returns the title of this modifier object.
+    virtual QString objectTitle() const override {
+        if(title().isEmpty()) return RefTarget::objectTitle();
+        else return title();
+    }
 
-	/// \brief Changes the title of this modifier.
-	/// \undoable
-	void setObjectTitle(const QString& title) { setTitle(title); }
+    /// \brief Changes the title of this modifier.
+    /// \undoable
+    void setObjectTitle(const QString& title) { setTitle(title); }
 
-	/// \brief Returns the current status of the modifier's applications.
-	PipelineStatus globalStatus() const;
+    /// \brief Returns the current status of the modifier's applications.
+    PipelineStatus globalStatus() const;
 
-	/// \brief Returns a short piece information (typically a string or color) to be displayed next to the modifier's title in the pipeline editor list.
-	virtual QVariant getPipelineEditorShortInfo(Scene* scene, ModifierApplication* modApp) const { return {}; }
+    /// \brief Returns a short piece information (typically a string or color) to be displayed next to the modifier's title in the pipeline editor list.
+    virtual QVariant getPipelineEditorShortInfo(Scene* scene, ModifierApplication* modApp) const { return {}; }
 
-	/// \brief This method is called by the system when the modifier has been inserted into a data pipeline.
-	virtual void initializeModifier(const ModifierInitializationRequest& request) {}
+    /// \brief This method is called by the system when the modifier has been inserted into a data pipeline.
+    virtual void initializeModifier(const ModifierInitializationRequest& request) {}
 
-	/// \brief Decides whether a preliminary viewport update is performed after the modifier has been
-	///        evaluated but before the entire pipeline evaluation is complete.
-	virtual bool performPreliminaryUpdateAfterEvaluation() { return true; }
+    /// \brief Decides whether a preliminary viewport update is performed after the modifier has been
+    ///        evaluated but before the entire pipeline evaluation is complete.
+    virtual bool performPreliminaryUpdateAfterEvaluation() { return true; }
 
-	/// \brief Decides whether a preliminary viewport update is performed every time the modifier
-	///        itself changes.
-	virtual bool performPreliminaryUpdateAfterChange() { return true; }
+    /// \brief Decides whether a preliminary viewport update is performed every time the modifier
+    ///        itself changes.
+    virtual bool performPreliminaryUpdateAfterChange() { return true; }
 
-	/// \brief Returns the number of animation frames this modifier provides.
-	virtual int numberOfOutputFrames(ModifierApplication* modApp) const;
+    /// \brief Returns the number of animation frames this modifier provides.
+    virtual int numberOfOutputFrames(ModifierApplication* modApp) const;
 
-	/// \brief Given an animation time, computes the source frame to show.
-	virtual int animationTimeToSourceFrame(AnimationTime time, int inputFrame) const { return inputFrame; }
+    /// \brief Given an animation time, computes the source frame to show.
+    virtual int animationTimeToSourceFrame(AnimationTime time, int inputFrame) const { return inputFrame; }
 
-	/// \brief Given a source frame index, returns the animation time at which it is shown.
-	virtual AnimationTime sourceFrameToAnimationTime(int frame, AnimationTime inputTime) const { return inputTime; }
+    /// \brief Given a source frame index, returns the animation time at which it is shown.
+    virtual AnimationTime sourceFrameToAnimationTime(int frame, AnimationTime inputTime) const { return inputTime; }
 
-	/// \brief Returns the human-readable labels associated with the animation frames (e.g. the simulation timestep numbers).
-	virtual QMap<int, QString> animationFrameLabels(QMap<int, QString> inputLabels) const { return std::move(inputLabels); }
+    /// \brief Returns the human-readable labels associated with the animation frames (e.g. the simulation timestep numbers).
+    virtual QMap<int, QString> animationFrameLabels(QMap<int, QString> inputLabels) const { return std::move(inputLabels); }
 
 protected:
 
-	/// \brief Modifies the input data.
-	virtual Future<PipelineFlowState> evaluate(const ModifierEvaluationRequest& request, const PipelineFlowState& input);
+    /// \brief Modifies the input data.
+    virtual Future<PipelineFlowState> evaluate(const ModifierEvaluationRequest& request, const PipelineFlowState& input);
 
 private:
 
-	/// Flag that indicates whether the modifier is enabled.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, isEnabled, setEnabled);
+    /// Flag that indicates whether the modifier is enabled.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, isEnabled, setEnabled);
 
-	/// The user-defined title of this modifier.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD(QString, title, setTitle);
+    /// The user-defined title of this modifier.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(QString, title, setTitle);
 
-	friend ModifierApplication;
+    friend ModifierApplication;
 };
 
-}	// End of namespace
+}   // End of namespace
 
 Q_DECLARE_METATYPE(Ovito::Modifier*);

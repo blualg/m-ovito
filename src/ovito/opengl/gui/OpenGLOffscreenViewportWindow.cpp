@@ -36,63 +36,63 @@ namespace Ovito {
 * Constructor.
 ******************************************************************************/
 OpenGLOffscreenViewportWindow::OpenGLOffscreenViewportWindow(Viewport* vp, const QSize& initialSize, std::function<void(QImage)> imageCallback) : 
-	BaseViewportWindow(*this, vp),
-	UserInterface(*vp->dataset()->container(), vp->taskManager()),
-	_inputManager(nullptr, *this),
-	_imageCallback(std::move(imageCallback))
+    BaseViewportWindow(*this, vp),
+    UserInterface(*vp->dataset()->container(), vp->taskManager()),
+    _inputManager(nullptr, *this),
+    _imageCallback(std::move(imageCallback))
 {
-	OVITO_ASSERT(vp);
-	OVITO_ASSERT(qApp);
-	OVITO_ASSERT(QThread::currentThread() == qApp->thread());
+    OVITO_ASSERT(vp);
+    OVITO_ASSERT(qApp);
+    OVITO_ASSERT(QThread::currentThread() == qApp->thread());
 
-	// Assign our internal input manager to the UserInterface object.
-	setViewportInputManager(&_inputManager);
+    // Assign our internal input manager to the UserInterface object.
+    setViewportInputManager(&_inputManager);
 
-	// Create a OpenGL context for rendering to an offscreen buffer.
-	// The context should share its resources with interactive viewport renderers (only when operating in the same thread).
-	if(QOpenGLContext::globalShareContext() && QThread::currentThread() == QOpenGLContext::globalShareContext()->thread())
-		_offscreenContext.setShareContext(QOpenGLContext::globalShareContext());
-	if(!_offscreenContext.create())
-		throw Exception(tr("Failed to create OpenGL context for offscreen rendering. Please make sure OVITO is able to access the OpenGL graphics interface. On Linux systems, a running display manager may be necessary for it."));
-	
-	// Create an offscreen rendering surface.
-	_offscreenSurface = new QOffscreenSurface(nullptr, this);
-	_offscreenSurface->setFormat(_offscreenContext.format());
-	_offscreenSurface->create(); 
-	if(!_offscreenSurface->isValid())
-		throw Exception(tr("Failed to create offscreen OpenGL rendering surface."));
+    // Create a OpenGL context for rendering to an offscreen buffer.
+    // The context should share its resources with interactive viewport renderers (only when operating in the same thread).
+    if(QOpenGLContext::globalShareContext() && QThread::currentThread() == QOpenGLContext::globalShareContext()->thread())
+        _offscreenContext.setShareContext(QOpenGLContext::globalShareContext());
+    if(!_offscreenContext.create())
+        throw Exception(tr("Failed to create OpenGL context for offscreen rendering. Please make sure OVITO is able to access the OpenGL graphics interface. On Linux systems, a running display manager may be necessary for it."));
+    
+    // Create an offscreen rendering surface.
+    _offscreenSurface = new QOffscreenSurface(nullptr, this);
+    _offscreenSurface->setFormat(_offscreenContext.format());
+    _offscreenSurface->create(); 
+    if(!_offscreenSurface->isValid())
+        throw Exception(tr("Failed to create offscreen OpenGL rendering surface."));
 
-	// Make the context current.
-	if(!_offscreenContext.makeCurrent(_offscreenSurface))
-		throw Exception(tr("Failed to make OpenGL context current."));
+    // Make the context current.
+    if(!_offscreenContext.makeCurrent(_offscreenSurface))
+        throw Exception(tr("Failed to make OpenGL context current."));
 
-	// Determine OpenGL vendor string so other parts of the code can decide
-	// which OpenGL features are safe to use.
-	OpenGLSceneRenderer::determineOpenGLInfo();
+    // Determine OpenGL vendor string so other parts of the code can decide
+    // which OpenGL features are safe to use.
+    OpenGLSceneRenderer::determineOpenGLInfo();
 
-	// Create offscreen framebuffer.
-	QOpenGLFramebufferObjectFormat framebufferFormat;
-	framebufferFormat.setAttachment(QOpenGLFramebufferObject::CombinedDepthStencil);
-	_framebufferObject = std::make_unique<QOpenGLFramebufferObject>(initialSize, framebufferFormat);
-	if(!_framebufferObject->isValid())
-		throw Exception(tr("Failed to create OpenGL framebuffer object for offscreen rendering."));
+    // Create offscreen framebuffer.
+    QOpenGLFramebufferObjectFormat framebufferFormat;
+    framebufferFormat.setAttachment(QOpenGLFramebufferObject::CombinedDepthStencil);
+    _framebufferObject = std::make_unique<QOpenGLFramebufferObject>(initialSize, framebufferFormat);
+    if(!_framebufferObject->isValid())
+        throw Exception(tr("Failed to create OpenGL framebuffer object for offscreen rendering."));
 
-	_offscreenContext.doneCurrent();
+    _offscreenContext.doneCurrent();
 
-	// Create the viewport renderer.
-	_viewportRenderer = OORef<OpenGLSceneRenderer>::create(viewport()->dataset());
-	_viewportRenderer->setInteractive(true);
+    // Create the viewport renderer.
+    _viewportRenderer = OORef<OpenGLSceneRenderer>::create(viewport()->dataset());
+    _viewportRenderer->setInteractive(true);
 
-	// Create the object picking renderer.
-	_pickingRenderer = OORef<PickingOpenGLSceneRenderer>::create(viewport()->dataset());
-	_pickingRenderer->setInteractive(true);
+    // Create the object picking renderer.
+    _pickingRenderer = OORef<PickingOpenGLSceneRenderer>::create(viewport()->dataset());
+    _pickingRenderer->setInteractive(true);
 
-	// Tell the renderers about the FBO we are rendering into.
-	_viewportRenderer->setPrimaryFramebuffer(_framebufferObject->handle());
-	_pickingRenderer->setPrimaryFramebuffer(_framebufferObject->handle());
+    // Tell the renderers about the FBO we are rendering into.
+    _viewportRenderer->setPrimaryFramebuffer(_framebufferObject->handle());
+    _pickingRenderer->setPrimaryFramebuffer(_framebufferObject->handle());
 
-	// Render the window for the first time.
-	renderLater();
+    // Render the window for the first time.
+    renderLater();
 }
 
 /******************************************************************************
@@ -100,7 +100,7 @@ OpenGLOffscreenViewportWindow::OpenGLOffscreenViewportWindow(Viewport* vp, const
 ******************************************************************************/
 OpenGLOffscreenViewportWindow::~OpenGLOffscreenViewportWindow() 
 {
-	releaseResources();
+    releaseResources();
 }
 
 /******************************************************************************
@@ -108,17 +108,17 @@ OpenGLOffscreenViewportWindow::~OpenGLOffscreenViewportWindow()
 ******************************************************************************/
 void OpenGLOffscreenViewportWindow::releaseResources()
 {
-	// Release any OpenGL resources held by the viewport renderers.
-	if(_viewportRenderer && _viewportRenderer->currentResourceFrame()) {
-		makeOpenGLContextCurrent();
-		OpenGLResourceManager::instance()->releaseResourceFrame(_viewportRenderer->currentResourceFrame());
-		_viewportRenderer->setCurrentResourceFrame(0);
-	}
-	if(_pickingRenderer && _pickingRenderer->currentResourceFrame()) {
-		makeOpenGLContextCurrent();
-		OpenGLResourceManager::instance()->releaseResourceFrame(_pickingRenderer->currentResourceFrame());
-		_pickingRenderer->setCurrentResourceFrame(0);
-	}
+    // Release any OpenGL resources held by the viewport renderers.
+    if(_viewportRenderer && _viewportRenderer->currentResourceFrame()) {
+        makeOpenGLContextCurrent();
+        OpenGLResourceManager::instance()->releaseResourceFrame(_viewportRenderer->currentResourceFrame());
+        _viewportRenderer->setCurrentResourceFrame(0);
+    }
+    if(_pickingRenderer && _pickingRenderer->currentResourceFrame()) {
+        makeOpenGLContextCurrent();
+        OpenGLResourceManager::instance()->releaseResourceFrame(_pickingRenderer->currentResourceFrame());
+        _pickingRenderer->setCurrentResourceFrame(0);
+    }
 }
 
 /******************************************************************************
@@ -126,8 +126,8 @@ void OpenGLOffscreenViewportWindow::releaseResources()
 ******************************************************************************/
 void OpenGLOffscreenViewportWindow::renderLater()
 {
-	if(!_repaintTimer.isActive())
-		_repaintTimer.start(0, this);
+    if(!_repaintTimer.isActive())
+        _repaintTimer.start(0, this);
 }
 
 /******************************************************************************
@@ -136,11 +136,11 @@ void OpenGLOffscreenViewportWindow::renderLater()
 ******************************************************************************/
 void OpenGLOffscreenViewportWindow::processViewportUpdate()
 {
-	if(_immediateViewportUpdatesEnabled && _repaintTimer.isActive()) {
-		OVITO_ASSERT_MSG(!viewport()->isRendering(), "OpenGLOffscreenViewportWindow::processUpdateRequest()", "Recursive viewport repaint detected.");
-		OVITO_ASSERT_MSG(!viewport()->dataset()->viewportConfig()->isRendering(), "OpenGLOffscreenViewportWindow::processUpdateRequest()", "Recursive viewport repaint detected.");
-		renderViewport();
-	}
+    if(_immediateViewportUpdatesEnabled && _repaintTimer.isActive()) {
+        OVITO_ASSERT_MSG(!viewport()->isRendering(), "OpenGLOffscreenViewportWindow::processUpdateRequest()", "Recursive viewport repaint detected.");
+        OVITO_ASSERT_MSG(!viewport()->dataset()->viewportConfig()->isRendering(), "OpenGLOffscreenViewportWindow::processUpdateRequest()", "Recursive viewport repaint detected.");
+        renderViewport();
+    }
 }
 
 /******************************************************************************
@@ -148,10 +148,10 @@ void OpenGLOffscreenViewportWindow::processViewportUpdate()
 ******************************************************************************/
 void OpenGLOffscreenViewportWindow::timerEvent(QTimerEvent* event)
 {
-	if(event->timerId() == _repaintTimer.timerId()) {
-		renderViewport();
-	}
-	QObject::timerEvent(event);
+    if(event->timerId() == _repaintTimer.timerId()) {
+        renderViewport();
+    }
+    QObject::timerEvent(event);
 }
 
 /******************************************************************************
@@ -159,25 +159,25 @@ void OpenGLOffscreenViewportWindow::timerEvent(QTimerEvent* event)
 ******************************************************************************/
 void OpenGLOffscreenViewportWindow::setSize(const QSize& size)
 {
-	if(_framebufferObject->size() == size)
-		return;
+    if(_framebufferObject->size() == size)
+        return;
 
-	// Make the context current.
-	if(!_offscreenContext.makeCurrent(_offscreenSurface))
-		throw Exception(tr("Failed to make OpenGL context current."));
+    // Make the context current.
+    if(!_offscreenContext.makeCurrent(_offscreenSurface))
+        throw Exception(tr("Failed to make OpenGL context current."));
 
-	// Recreate offscreen framebuffer.
-	QOpenGLFramebufferObjectFormat framebufferFormat;
-	framebufferFormat.setAttachment(QOpenGLFramebufferObject::CombinedDepthStencil);
-	_framebufferObject = std::make_unique<QOpenGLFramebufferObject>(size, framebufferFormat);
-	if(!_framebufferObject->isValid())
-		throw Exception(tr("Failed to create OpenGL framebuffer object for offscreen rendering."));
+    // Recreate offscreen framebuffer.
+    QOpenGLFramebufferObjectFormat framebufferFormat;
+    framebufferFormat.setAttachment(QOpenGLFramebufferObject::CombinedDepthStencil);
+    _framebufferObject = std::make_unique<QOpenGLFramebufferObject>(size, framebufferFormat);
+    if(!_framebufferObject->isValid())
+        throw Exception(tr("Failed to create OpenGL framebuffer object for offscreen rendering."));
 
-	// Tell the renderers about the new FBO.
-	_viewportRenderer->setPrimaryFramebuffer(_framebufferObject->handle());
-	_pickingRenderer->setPrimaryFramebuffer(_framebufferObject->handle());
+    // Tell the renderers about the new FBO.
+    _viewportRenderer->setPrimaryFramebuffer(_framebufferObject->handle());
+    _pickingRenderer->setPrimaryFramebuffer(_framebufferObject->handle());
 
-	renderLater();
+    renderLater();
 }
 
 /******************************************************************************
@@ -185,42 +185,42 @@ void OpenGLOffscreenViewportWindow::setSize(const QSize& size)
 ******************************************************************************/
 ViewportPickResult OpenGLOffscreenViewportWindow::pick(const QPointF& pos)
 {
-	ViewportPickResult result;
+    ViewportPickResult result;
 
-	// Cannot perform picking while viewport is not visible or currently rendering or when updates are disabled.
-	if(isVisible() && !viewport()->isRendering() && !viewport()->dataset()->viewportConfig()->isSuspended() && pickingRenderer()) {
-		OpenGLResourceManager::ResourceFrameHandle previousResourceFrame = 0;
-		try {
-			if(pickingRenderer()->isRefreshRequired()) {
-				// Request a new frame from the resource manager for this render pass.
-				previousResourceFrame = pickingRenderer()->currentResourceFrame();
-				pickingRenderer()->setCurrentResourceFrame(OpenGLResourceManager::instance()->acquireResourceFrame());
+    // Cannot perform picking while viewport is not visible or currently rendering or when updates are disabled.
+    if(isVisible() && !viewport()->isRendering() && !viewport()->dataset()->viewportConfig()->isSuspended() && pickingRenderer()) {
+        OpenGLResourceManager::ResourceFrameHandle previousResourceFrame = 0;
+        try {
+            if(pickingRenderer()->isRefreshRequired()) {
+                // Request a new frame from the resource manager for this render pass.
+                previousResourceFrame = pickingRenderer()->currentResourceFrame();
+                pickingRenderer()->setCurrentResourceFrame(OpenGLResourceManager::instance()->acquireResourceFrame());
 
-				// Let the viewport do the actual rendering work.
-				viewport()->renderInteractive(pickingRenderer());
-			}
+                // Let the viewport do the actual rendering work.
+                viewport()->renderInteractive(pickingRenderer());
+            }
 
-			// Query which object is located at the given window position.
-			const QPoint pixelPos = (pos * devicePixelRatio()).toPoint();
-			const SceneRenderer::ObjectPickingRecord* objInfo;
-			quint32 subobjectId;
-			std::tie(objInfo, subobjectId) = pickingRenderer()->objectAtLocation(pixelPos);
-			if(objInfo) {
-				result.setPipelineNode(objInfo->objectNode);
-				result.setPickInfo(objInfo->pickInfo);
-				result.setHitLocation(pickingRenderer()->worldPositionFromLocation(pixelPos));
-				result.setSubobjectId(subobjectId);
-			}
-		}
-		catch(const Exception& ex) {
-			ex.reportError();
-		}
+            // Query which object is located at the given window position.
+            const QPoint pixelPos = (pos * devicePixelRatio()).toPoint();
+            const SceneRenderer::ObjectPickingRecord* objInfo;
+            quint32 subobjectId;
+            std::tie(objInfo, subobjectId) = pickingRenderer()->objectAtLocation(pixelPos);
+            if(objInfo) {
+                result.setPipelineNode(objInfo->objectNode);
+                result.setPickInfo(objInfo->pickInfo);
+                result.setHitLocation(pickingRenderer()->worldPositionFromLocation(pixelPos));
+                result.setSubobjectId(subobjectId);
+            }
+        }
+        catch(const Exception& ex) {
+            ex.reportError();
+        }
 
-		// Release the resources created by the OpenGL renderer during the last render pass before the current pass.
-		if(previousResourceFrame)
-			OpenGLResourceManager::instance()->releaseResourceFrame(previousResourceFrame);
-	}
-	return result;
+        // Release the resources created by the OpenGL renderer during the last render pass before the current pass.
+        if(previousResourceFrame)
+            OpenGLResourceManager::instance()->releaseResourceFrame(previousResourceFrame);
+    }
+    return result;
 }
 
 /******************************************************************************
@@ -228,76 +228,76 @@ ViewportPickResult OpenGLOffscreenViewportWindow::pick(const QPointF& pos)
 ******************************************************************************/
 void OpenGLOffscreenViewportWindow::renderViewport()
 {
-	_repaintTimer.stop();
+    _repaintTimer.stop();
 
-	// Do nothing if windows has been detached from its viewport.
-	if(!viewport())
-		return;
+    // Do nothing if windows has been detached from its viewport.
+    if(!viewport())
+        return;
 
-	OVITO_ASSERT_MSG(!viewport()->isRendering(), "OpenGLOffscreenViewportWindow::renderViewport()", "Recursive viewport repaint detected.");
-	OVITO_ASSERT_MSG(!dataset()->viewportConfig()->isRendering(), "OpenGLOffscreenViewportWindow::renderViewport()", "Recursive viewport repaint detected.");
+    OVITO_ASSERT_MSG(!viewport()->isRendering(), "OpenGLOffscreenViewportWindow::renderViewport()", "Recursive viewport repaint detected.");
+    OVITO_ASSERT_MSG(!dataset()->viewportConfig()->isRendering(), "OpenGLOffscreenViewportWindow::renderViewport()", "Recursive viewport repaint detected.");
 
-	// Do not re-enter rendering function of the same viewport.
-	if(viewport()->isRendering())
-		return;
+    // Do not re-enter rendering function of the same viewport.
+    if(viewport()->isRendering())
+        return;
 
-	// Invalidate picking buffer every time the visible contents of the viewport change.
-	_pickingRenderer->resetPickingBuffer();
+    // Invalidate picking buffer every time the visible contents of the viewport change.
+    _pickingRenderer->resetPickingBuffer();
 
-	if(!dataset()->viewportConfig()->isSuspended()) {
+    if(!dataset()->viewportConfig()->isSuspended()) {
 
-		// Request a new frame from the resource manager for this render pass.
-		OpenGLResourceManager::ResourceFrameHandle previousResourceFrame = _viewportRenderer->currentResourceFrame();
-		_viewportRenderer->setCurrentResourceFrame(OpenGLResourceManager::instance()->acquireResourceFrame());
+        // Request a new frame from the resource manager for this render pass.
+        OpenGLResourceManager::ResourceFrameHandle previousResourceFrame = _viewportRenderer->currentResourceFrame();
+        _viewportRenderer->setCurrentResourceFrame(OpenGLResourceManager::instance()->acquireResourceFrame());
 
-		try {
-			// Make the context current.
-			if(!_offscreenContext.makeCurrent(_offscreenSurface))
-				throw Exception(tr("Failed to make OpenGL context current."));
+        try {
+            // Make the context current.
+            if(!_offscreenContext.makeCurrent(_offscreenSurface))
+                throw Exception(tr("Failed to make OpenGL context current."));
 
-			// Bind OpenGL buffer.
-			if(!_framebufferObject->bind())
-				throw Exception(tr("Failed to bind OpenGL framebuffer object for offscreen rendering."));
+            // Bind OpenGL buffer.
+            if(!_framebufferObject->bind())
+                throw Exception(tr("Failed to bind OpenGL framebuffer object for offscreen rendering."));
 
-			// Let the Viewport class do the actual rendering work.
-			viewport()->renderInteractive(_viewportRenderer);
+            // Let the Viewport class do the actual rendering work.
+            viewport()->renderInteractive(_viewportRenderer);
 
-			// Flush the contents to the FBO before extracting image.
-			_offscreenContext.swapBuffers(_offscreenSurface);
+            // Flush the contents to the FBO before extracting image.
+            _offscreenContext.swapBuffers(_offscreenSurface);
 
-			// Fetch rendered image from OpenGL framebuffer.
-			QImage renderedImage = _framebufferObject->toImage();
+            // Fetch rendered image from OpenGL framebuffer.
+            QImage renderedImage = _framebufferObject->toImage();
 
-			// Invoke callback function with the rendered image.
-			if(_imageCallback)
-				_imageCallback(std::move(renderedImage));
-		}
-		catch(Exception& ex) {
-			ex.prependGeneralMessage(tr("An unexpected error occurred while rendering the viewport contents."));
+            // Invoke callback function with the rendered image.
+            if(_imageCallback)
+                _imageCallback(std::move(renderedImage));
+        }
+        catch(Exception& ex) {
+            ex.prependGeneralMessage(tr("An unexpected error occurred while rendering the viewport contents."));
 
-			QString openGLReport;
-			QTextStream stream(&openGLReport, QIODevice::WriteOnly | QIODevice::Text);
-			stream << "OpenGL version: " << _offscreenContext.format().majorVersion() << QStringLiteral(".") << _offscreenContext.format().minorVersion() << "\n";
-			stream << "OpenGL profile: " << (_offscreenContext.format().profile() == QSurfaceFormat::CoreProfile ? "core" : (_offscreenContext.format().profile() == QSurfaceFormat::CompatibilityProfile ? "compatibility" : "none")) << "\n";
-			stream << "OpenGL vendor: " << QString(OpenGLSceneRenderer::openGLVendor()) << "\n";
-			stream << "OpenGL renderer: " << QString(OpenGLSceneRenderer::openGLRenderer()) << "\n";
-			stream << "OpenGL version string: " << QString(OpenGLSceneRenderer::openGLVersion()) << "\n";
-			stream << "OpenGL shading language: " << QString(OpenGLSceneRenderer::openGLSLVersion()) << "\n";
-			stream << "OpenGL shader programs: " << QOpenGLShaderProgram::hasOpenGLShaderPrograms() << "\n";
-			ex.appendDetailMessage(openGLReport);
+            QString openGLReport;
+            QTextStream stream(&openGLReport, QIODevice::WriteOnly | QIODevice::Text);
+            stream << "OpenGL version: " << _offscreenContext.format().majorVersion() << QStringLiteral(".") << _offscreenContext.format().minorVersion() << "\n";
+            stream << "OpenGL profile: " << (_offscreenContext.format().profile() == QSurfaceFormat::CoreProfile ? "core" : (_offscreenContext.format().profile() == QSurfaceFormat::CompatibilityProfile ? "compatibility" : "none")) << "\n";
+            stream << "OpenGL vendor: " << QString(OpenGLSceneRenderer::openGLVendor()) << "\n";
+            stream << "OpenGL renderer: " << QString(OpenGLSceneRenderer::openGLRenderer()) << "\n";
+            stream << "OpenGL version string: " << QString(OpenGLSceneRenderer::openGLVersion()) << "\n";
+            stream << "OpenGL shading language: " << QString(OpenGLSceneRenderer::openGLSLVersion()) << "\n";
+            stream << "OpenGL shader programs: " << QOpenGLShaderProgram::hasOpenGLShaderPrograms() << "\n";
+            ex.appendDetailMessage(openGLReport);
 
-			userInterface().exitWithFatalError(ex);
-		}
+            userInterface().exitWithFatalError(ex);
+        }
 
-		// Release the resources created by the OpenGL renderer during the last render pass before the current pass.
-		if(previousResourceFrame) {
-			OpenGLResourceManager::instance()->releaseResourceFrame(previousResourceFrame);
-		}
-	}
-	else {
-		// Make sure viewport gets refreshed as soon as updates are enabled again.
-		dataset()->viewportConfig()->updateViewports();
-	}
+        // Release the resources created by the OpenGL renderer during the last render pass before the current pass.
+        if(previousResourceFrame) {
+            OpenGLResourceManager::instance()->releaseResourceFrame(previousResourceFrame);
+        }
+    }
+    else {
+        // Make sure viewport gets refreshed as soon as updates are enabled again.
+        dataset()->viewportConfig()->updateViewports();
+    }
 }
 
-}	// End of namespace
+}   // End of namespace

@@ -30,9 +30,9 @@
 namespace Ovito {
 
 namespace Ssh {
-	// These classes are defined elsewhere:
-	class SshConnection;
-	struct SshConnectionParameters;
+    // These classes are defined elsewhere:
+    class SshConnection;
+    struct SshConnectionParameters;
 }
 
 /**
@@ -42,39 +42,39 @@ class OVITO_CORE_EXPORT FileHandle
 {
 public:
 
-	/// Default constructor creating an invalid file handle.
-	FileHandle() = default;
+    /// Default constructor creating an invalid file handle.
+    FileHandle() = default;
 
-	/// Constructor for files located in the local file system.
-	explicit FileHandle(const QUrl& sourceUrl, const QString& localFilePath) : _sourceUrl(sourceUrl), _localFilePath(localFilePath) {}
+    /// Constructor for files located in the local file system.
+    explicit FileHandle(const QUrl& sourceUrl, const QString& localFilePath) : _sourceUrl(sourceUrl), _localFilePath(localFilePath) {}
 
-	/// Constructor for files stored in memory.
-	explicit FileHandle(const QUrl& sourceUrl, const QByteArray& fileData) : _sourceUrl(sourceUrl), _fileData(fileData) {}
+    /// Constructor for files stored in memory.
+    explicit FileHandle(const QUrl& sourceUrl, const QByteArray& fileData) : _sourceUrl(sourceUrl), _fileData(fileData) {}
 
-	/// Returns the URL denoting the source location of the data file.
-	const QUrl& sourceUrl() const { return _sourceUrl; }
+    /// Returns the URL denoting the source location of the data file.
+    const QUrl& sourceUrl() const { return _sourceUrl; }
 
-	/// Returns the path to the file in the local file system (may be empty). 
-	const QString& localFilePath() const { return _localFilePath; }
+    /// Returns the path to the file in the local file system (may be empty). 
+    const QString& localFilePath() const { return _localFilePath; }
 
-	/// Create a QIODevice that permits reading data from the file referred to by this handle.
-	std::unique_ptr<QIODevice> createIODevice() const;
+    /// Create a QIODevice that permits reading data from the file referred to by this handle.
+    std::unique_ptr<QIODevice> createIODevice() const;
 
-	/// Returns a human-readable representation of the source location referred to by this file handle.
-	QString toString() const { 
-		return _sourceUrl.toString(QUrl::RemovePassword | QUrl::PreferLocalFile | QUrl::PrettyDecoded); 
-	}
+    /// Returns a human-readable representation of the source location referred to by this file handle.
+    QString toString() const { 
+        return _sourceUrl.toString(QUrl::RemovePassword | QUrl::PreferLocalFile | QUrl::PrettyDecoded); 
+    }
 
 private:
 
-	/// The URL denoting the data source.
-	QUrl _sourceUrl;
+    /// The URL denoting the data source.
+    QUrl _sourceUrl;
 
-	/// A path to the file in the local file system. 
-	QString _localFilePath;
+    /// A path to the file in the local file system. 
+    QString _localFilePath;
 
-	/// An buffer with the file's contents.
-	QByteArray _fileData;
+    /// An buffer with the file's contents.
+    QByteArray _fileData;
 };
 
 /**
@@ -82,29 +82,29 @@ private:
  */
 class OVITO_CORE_EXPORT FileManager : public QObject
 {
-	Q_OBJECT
+    Q_OBJECT
 
 public:
 
-	/// Constructor.
-	FileManager(TaskManager& taskManager) : _taskManager(taskManager) {}
+    /// Constructor.
+    FileManager(TaskManager& taskManager) : _taskManager(taskManager) {}
 
-	/// Destructor.
-	~FileManager();
+    /// Destructor.
+    ~FileManager();
 
-	/// \brief Makes a file available locally.
-	/// \return A Future that will provide access to the file contents after it has been fetched from the remote location.
-	virtual SharedFuture<FileHandle> fetchUrl(const QUrl& url);
+    /// \brief Makes a file available locally.
+    /// \return A Future that will provide access to the file contents after it has been fetched from the remote location.
+    virtual SharedFuture<FileHandle> fetchUrl(const QUrl& url);
 
-	/// \brief Removes a cached remote file so that it will be downloaded again next time it is requested.
-	void removeFromCache(const QUrl& url);
+    /// \brief Removes a cached remote file so that it will be downloaded again next time it is requested.
+    void removeFromCache(const QUrl& url);
 
-	/// \brief Lists all files in a remote directory.
-	/// \return A Future that will provide the list of file names.
-	virtual Future<QStringList> listDirectoryContents(const QUrl& url);
+    /// \brief Lists all files in a remote directory.
+    /// \return A Future that will provide the list of file names.
+    virtual Future<QStringList> listDirectoryContents(const QUrl& url);
 
-	/// \brief Constructs a URL from a path entered by the user.
-	static QUrl urlFromUserInput(const QString& path);
+    /// \brief Constructs a URL from a path entered by the user.
+    static QUrl urlFromUserInput(const QString& path);
 
 #ifdef OVITO_SSH_CLIENT
     /// Create a new SSH connection or returns an existing connection having the same parameters.
@@ -116,31 +116,31 @@ public:
 
 protected:
 
-	/// Returns the mutex used internally to synchronize concurrent access to the data structures of this FileManager.
-	QRecursiveMutex& mutex() { return _mutex; }
+    /// Returns the mutex used internally to synchronize concurrent access to the data structures of this FileManager.
+    QRecursiveMutex& mutex() { return _mutex; }
 
-	/// Strips a URL from username and password information.
-	static QUrl normalizeUrl(QUrl url) {
-		url.setUserName({});
-		url.setPassword({});
-		return std::move(url);
-	}
+    /// Strips a URL from username and password information.
+    static QUrl normalizeUrl(QUrl url) {
+        url.setUserName({});
+        url.setPassword({});
+        return std::move(url);
+    }
 
 #ifdef OVITO_SSH_CLIENT
-	/// \brief Asks the user for the login password for a SSH server.
-	/// \return True on success, false if user has canceled the operation.
-	virtual bool askUserForPassword(const QString& hostname, const QString& username, QString& password);
+    /// \brief Asks the user for the login password for a SSH server.
+    /// \return True on success, false if user has canceled the operation.
+    virtual bool askUserForPassword(const QString& hostname, const QString& username, QString& password);
 
-	/// \brief Asks the user for the passphrase for a private SSH key.
-	/// \return True on success, false if user has canceled the operation.
-	virtual bool askUserForKeyPassphrase(const QString& hostname, const QString& prompt, QString& passphrase);
+    /// \brief Asks the user for the passphrase for a private SSH key.
+    /// \return True on success, false if user has canceled the operation.
+    virtual bool askUserForKeyPassphrase(const QString& hostname, const QString& prompt, QString& passphrase);
 
-	/// \brief Asks the user for the answer to a keyboard-interactive question sent by the SSH server.
-	/// \return True on success, false if user has canceled the operation.
-	virtual bool askUserForKbiResponse(const QString& hostname, const QString& username, const QString& instruction, const QString& question, bool showAnswer, QString& answer);
+    /// \brief Asks the user for the answer to a keyboard-interactive question sent by the SSH server.
+    /// \return True on success, false if user has canceled the operation.
+    virtual bool askUserForKbiResponse(const QString& hostname, const QString& username, const QString& instruction, const QString& question, bool showAnswer, QString& answer);
 
-	/// \brief Informs the user about an unknown SSH host.
-	virtual bool detectedUnknownSshServer(const QString& hostname, const QString& unknownHostMessage, const QString& hostPublicKeyHash);
+    /// \brief Informs the user about an unknown SSH host.
+    virtual bool detectedUnknownSshServer(const QString& hostname, const QString& unknownHostMessage, const QString& hostPublicKeyHash);
 #endif
 
 private Q_SLOTS:
@@ -149,50 +149,50 @@ private Q_SLOTS:
     /// Is called whenever an SSH connection is closed.
     void cleanupSshConnection();
 
-	/// Is called whenever a SSH connection to an yet unknown server is being established.
-	void unknownSshServer();
+    /// Is called whenever a SSH connection to an yet unknown server is being established.
+    void unknownSshServer();
 
-	/// Is called whenever a SSH connection to a server requires password authentication.
-	void needSshPassword();
+    /// Is called whenever a SSH connection to a server requires password authentication.
+    void needSshPassword();
 
-	/// Is called whenever a SSH connection to a server requires keyboard interactive authentication.
-	void needKbiAnswers();
+    /// Is called whenever a SSH connection to a server requires keyboard interactive authentication.
+    void needKbiAnswers();
 
-	/// Is called when an authentication attempt for a SSH connection failed.
-	void sshAuthenticationFailed(int auth);
+    /// Is called when an authentication attempt for a SSH connection failed.
+    void sshAuthenticationFailed(int auth);
 
-	/// Is called whenever a private SSH key requires a passphrase.
-	void needSshPassphrase(const QString& prompt);
+    /// Is called whenever a private SSH key requires a passphrase.
+    void needSshPassphrase(const QString& prompt);
 #endif
 
 private:
 
-	/// Is called when a remote file has been fetched.
-	void fileFetched(QUrl url, QTemporaryFile* localFile);
+    /// Is called when a remote file has been fetched.
+    void fileFetched(QUrl url, QTemporaryFile* localFile);
 
 private:
 
-	/// The remote files that are currently being fetched.
-	std::map<QUrl, WeakSharedFuture<FileHandle>> _pendingFiles;
+    /// The remote files that are currently being fetched.
+    std::map<QUrl, WeakSharedFuture<FileHandle>> _pendingFiles;
 
-	/// Cache holding the remote files that have already been downloaded.
-	QCache<QUrl, QTemporaryFile> _downloadedFiles{std::numeric_limits<int>::max()};
+    /// Cache holding the remote files that have already been downloaded.
+    QCache<QUrl, QTemporaryFile> _downloadedFiles{std::numeric_limits<int>::max()};
 
-	/// The manager of tasks associated with file I/O.
-	TaskManager& _taskManager;
+    /// The manager of tasks associated with file I/O.
+    TaskManager& _taskManager;
 
-	/// The mutex to synchronize access to above data structures.
-	QRecursiveMutex _mutex;
+    /// The mutex to synchronize access to above data structures.
+    QRecursiveMutex _mutex;
 
 #ifdef OVITO_SSH_CLIENT
-	/// Holds open SSH connections, which are currently active.
+    /// Holds open SSH connections, which are currently active.
     QList<Ssh::SshConnection*> _acquiredConnections;
 
-	/// Holds SSH connections, which are still open but not in use.
+    /// Holds SSH connections, which are still open but not in use.
     QList<Ssh::SshConnection*> _unacquiredConnections;
 #endif
 
-	friend class DownloadRemoteFileJob;
+    friend class DownloadRemoteFileJob;
 };
 
-}	// End of namespace
+}   // End of namespace

@@ -34,20 +34,20 @@ namespace Ovito {
 ******************************************************************************/
 MainWindow::MainWindow() : MainWindowInterface(_datasetContainer), _datasetContainer(this)
 {
-	// Create the object that manages the input modes of the viewports.
-	setViewportInputManager(new ViewportInputManager(this, _datasetContainer, this));
+    // Create the object that manages the input modes of the viewports.
+    setViewportInputManager(new ViewportInputManager(this, _datasetContainer, this));
 
-	// Create actions.
-	setActionManager(new ActionManager(this, this));
+    // Create actions.
+    setActionManager(new ActionManager(this, this));
 
-	// For timed display of texts in the status bar:
-	connect(&_statusBarTimer, &QTimer::timeout, this, &MainWindow::clearStatusBarMessage);
+    // For timed display of texts in the status bar:
+    connect(&_statusBarTimer, &QTimer::timeout, this, &MainWindow::clearStatusBarMessage);
 
-	// Create list model for the items in the selected data pipeline.
-	_pipelineListModel = new PipelineListModel(_datasetContainer, actionManager(), this);
+    // Create list model for the items in the selected data pipeline.
+    _pipelineListModel = new PipelineListModel(_datasetContainer, actionManager(), this);
 
-	// Create list of available modifiers.
-	_modifierListModel = new ModifierListModel(this, this, _pipelineListModel);
+    // Create list of available modifiers.
+    _modifierListModel = new ModifierListModel(this, this, _pipelineListModel);
 }
 
 /******************************************************************************
@@ -55,8 +55,8 @@ MainWindow::MainWindow() : MainWindowInterface(_datasetContainer), _datasetConta
 ******************************************************************************/
 MainWindow::~MainWindow()
 {
-	datasetContainer()->setCurrentSet(nullptr);
-	taskManager().cancelAllAndWait();
+    datasetContainer()->setCurrentSet(nullptr);
+    taskManager().cancelAllAndWait();
 }
 
 /******************************************************************************
@@ -64,37 +64,37 @@ MainWindow::~MainWindow()
 ******************************************************************************/
 void MainWindow::showStatusBarMessage(const QString& message, int timeout)
 {
-	if(message != _statusBarText) {
-		_statusBarText = message;
+    if(message != _statusBarText) {
+        _statusBarText = message;
 
-		static const QString separatorMarker = QStringLiteral("<sep>");
-		static const QString separatorText = QStringLiteral(" | ");
-		static const QString separatorTextColored = QStringLiteral(" <font color=\"gray\">|</font> ");
-		static const QString keyBeginMarker = QStringLiteral("<key>");
-		static const QString keyBeginText = QStringLiteral("<font color=\"#CCF\">");
-		static const QString keyEndMarker = QStringLiteral("</key>");
-		static const QString keyEndText = QStringLiteral("</font>");
-		static const QString valueBeginMarker = QStringLiteral("<val>");
-		static const QString valueBeginText = QStringLiteral("");
-		static const QString valueEndMarker = QStringLiteral("</val>");
-		static const QString valueEndText = QStringLiteral("");
+        static const QString separatorMarker = QStringLiteral("<sep>");
+        static const QString separatorText = QStringLiteral(" | ");
+        static const QString separatorTextColored = QStringLiteral(" <font color=\"gray\">|</font> ");
+        static const QString keyBeginMarker = QStringLiteral("<key>");
+        static const QString keyBeginText = QStringLiteral("<font color=\"#CCF\">");
+        static const QString keyEndMarker = QStringLiteral("</key>");
+        static const QString keyEndText = QStringLiteral("</font>");
+        static const QString valueBeginMarker = QStringLiteral("<val>");
+        static const QString valueBeginText = QStringLiteral("");
+        static const QString valueEndMarker = QStringLiteral("</val>");
+        static const QString valueEndText = QStringLiteral("");
 
-		// Create a version of the message string that does not contain any markup.
-		_statusBarTextMarkup = message;
+        // Create a version of the message string that does not contain any markup.
+        _statusBarTextMarkup = message;
         _statusBarTextMarkup.replace(separatorMarker, separatorTextColored);
         _statusBarTextMarkup.replace(keyBeginMarker, keyBeginText);
         _statusBarTextMarkup.replace(keyEndMarker, keyEndText);
         _statusBarTextMarkup.replace(valueBeginMarker, valueBeginText);
         _statusBarTextMarkup.replace(valueEndMarker, valueEndText);
 
-		Q_EMIT statusBarTextChanged(_statusBarTextMarkup);
-		if(timeout > 0) {
-			_statusBarTimer.start(timeout);
-		}
-		else {
-			_statusBarTimer.stop();
-		}
-	}
+        Q_EMIT statusBarTextChanged(_statusBarTextMarkup);
+        if(timeout > 0) {
+            _statusBarTimer.start(timeout);
+        }
+        else {
+            _statusBarTimer.stop();
+        }
+    }
 }
 
 /******************************************************************************
@@ -102,23 +102,23 @@ void MainWindow::showStatusBarMessage(const QString& message, int timeout)
 ******************************************************************************/
 void MainWindow::undoableOperation(const QString& actionDescription, const QJSValue& callbackFunction)
 {
-	OVITO_ASSERT(callbackFunction.isCallable());
+    OVITO_ASSERT(callbackFunction.isCallable());
 
-	try {
-		UndoableTransaction transaction(datasetContainer()->currentSet()->undoStack(), actionDescription);
-		QJSValue result = callbackFunction.call();
-		if(result.isError()) {
-			throw Exception(tr("Uncaught script exception at line %1 in file %2: %3")
-				.arg(result.property("lineNumber").toInt())
-				.arg(result.property("fileName").toString())
-				.arg(result.toString()));
-		}
-		transaction.commit();
-	}
-	catch(Exception& ex) {
-		ex.setContext(this);
-		ex.reportError();
-	}
+    try {
+        UndoableTransaction transaction(datasetContainer()->currentSet()->undoStack(), actionDescription);
+        QJSValue result = callbackFunction.call();
+        if(result.isError()) {
+            throw Exception(tr("Uncaught script exception at line %1 in file %2: %3")
+                .arg(result.property("lineNumber").toInt())
+                .arg(result.property("fileName").toString())
+                .arg(result.toString()));
+        }
+        transaction.commit();
+    }
+    catch(Exception& ex) {
+        ex.setContext(this);
+        ex.reportError();
+    }
 }
 
 /******************************************************************************
@@ -126,15 +126,15 @@ void MainWindow::undoableOperation(const QString& actionDescription, const QJSVa
 ******************************************************************************/
 void MainWindow::importDataFile()
 {
-	WasmFileManager::importFileIntoMemory(this, QStringLiteral("*"), [this](const QUrl& url) {
-		try {
-			if(url.isValid())
-				datasetContainer()->importFile(url);
-		}
-		catch(const Exception& ex) {
-			ex.reportError();
-		}
-	});
+    WasmFileManager::importFileIntoMemory(this, QStringLiteral("*"), [this](const QUrl& url) {
+        try {
+            if(url.isValid())
+                datasetContainer()->importFile(url);
+        }
+        catch(const Exception& ex) {
+            ex.reportError();
+        }
+    });
 }
 
-}	// End of namespace
+}   // End of namespace

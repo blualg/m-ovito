@@ -36,71 +36,71 @@ SET_OVITO_OBJECT_EDITOR(PropertyObject, PropertyObjectEditor);
 ******************************************************************************/
 void PropertyObjectEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 {
-	// Create a rollout.
-	QWidget* rollout = createRollout(QString(), rolloutParams, "manual:scene_objects.particles");
+    // Create a rollout.
+    QWidget* rollout = createRollout(QString(), rolloutParams, "manual:scene_objects.particles");
 
     // Create the rollout contents.
-	QVBoxLayout* layout = new QVBoxLayout(rollout);
-	layout->setContentsMargins(4,4,4,4);
-	layout->setSpacing(0);
+    QVBoxLayout* layout = new QVBoxLayout(rollout);
+    layout->setContentsMargins(4,4,4,4);
+    layout->setSpacing(0);
 
-	// Derive a custom class from the list parameter UI to display the element type colors, names and IDs.
-	class CustomRefTargetListParameterUI : public RefTargetListParameterUI {
-	public:
-		using RefTargetListParameterUI::RefTargetListParameterUI;
-	protected:
+    // Derive a custom class from the list parameter UI to display the element type colors, names and IDs.
+    class CustomRefTargetListParameterUI : public RefTargetListParameterUI {
+    public:
+        using RefTargetListParameterUI::RefTargetListParameterUI;
+    protected:
 
-		/// Returns a data item from the list data model.
-		virtual QVariant getItemData(RefTarget* target, const QModelIndex& index, int role) override {
-			if(const ElementType* type = static_object_cast<ElementType>(target)) {
-				if(role == Qt::DisplayRole) {
-					if(index.column() == 0) {
-						return type->nameOrNumericId();
-					}
-					else if(index.column() == 1) {
-						return type->numericId();
-					}
-				}
-				else if(role == Qt::DecorationRole) {
-					if(index.column() == 0)
-						return (QColor)type->color();
-				}
-			}
-			return RefTargetListParameterUI::getItemData(target, index, role);
-		}
+        /// Returns a data item from the list data model.
+        virtual QVariant getItemData(RefTarget* target, const QModelIndex& index, int role) override {
+            if(const ElementType* type = static_object_cast<ElementType>(target)) {
+                if(role == Qt::DisplayRole) {
+                    if(index.column() == 0) {
+                        return type->nameOrNumericId();
+                    }
+                    else if(index.column() == 1) {
+                        return type->numericId();
+                    }
+                }
+                else if(role == Qt::DecorationRole) {
+                    if(index.column() == 0)
+                        return (QColor)type->color();
+                }
+            }
+            return RefTargetListParameterUI::getItemData(target, index, role);
+        }
 
-		/// Returns the number of columns for the table view.
-		virtual int tableColumnCount() override { return 2; }
+        /// Returns the number of columns for the table view.
+        virtual int tableColumnCount() override { return 2; }
 
-		/// Returns the header data under the given role for the given RefTarget.
-		virtual QVariant getHorizontalHeaderData(int index, int role) override {
-			if(role == Qt::DisplayRole) {
-				if(index == 0)
-					return QVariant::fromValue(tr("Name"));
-				else if(index == 1)
-					return QVariant::fromValue(tr("Id"));
-			}
-			return RefTargetListParameterUI::getHorizontalHeaderData(index, role);
-		}
+        /// Returns the header data under the given role for the given RefTarget.
+        virtual QVariant getHorizontalHeaderData(int index, int role) override {
+            if(role == Qt::DisplayRole) {
+                if(index == 0)
+                    return QVariant::fromValue(tr("Name"));
+                else if(index == 1)
+                    return QVariant::fromValue(tr("Id"));
+            }
+            return RefTargetListParameterUI::getHorizontalHeaderData(index, role);
+        }
 
-		/// Opens a sub-editor for the object that is selected in the list view.
-		virtual void openSubEditor() override {
-			RefTargetListParameterUI::openSubEditor();
-			editor()->container()->updateRollouts();
-		}
-	};
+        /// Opens a sub-editor for the object that is selected in the list view.
+        virtual void openSubEditor() override {
+            RefTargetListParameterUI::openSubEditor();
+            editor()->container()->updateRollouts();
+        }
+    };
 
-	QWidget* subEditorContainer = new QWidget(rollout);
-	QVBoxLayout* sublayout = new QVBoxLayout(subEditorContainer);
-	sublayout->setContentsMargins(0,0,0,0);
-	layout->addWidget(subEditorContainer);
+    QWidget* subEditorContainer = new QWidget(rollout);
+    QVBoxLayout* sublayout = new QVBoxLayout(subEditorContainer);
+    sublayout->setContentsMargins(0,0,0,0);
+    layout->addWidget(subEditorContainer);
 
-	RefTargetListParameterUI* elementTypesListUI = new CustomRefTargetListParameterUI(this, PROPERTY_FIELD(PropertyObject::elementTypes), RolloutInsertionParameters().insertInto(subEditorContainer));
-	QTableView* tableWidget = elementTypesListUI->tableWidget(250);
-	layout->insertWidget(0, tableWidget);
-	tableWidget->verticalHeader()->setDefaultSectionSize(tableWidget->verticalHeader()->minimumSectionSize());
-	tableWidget->horizontalHeader()->setSectionResizeMode(0, QHeaderView::Stretch);
-	tableWidget->horizontalHeader()->setSectionResizeMode(1, QHeaderView::ResizeToContents);
+    RefTargetListParameterUI* elementTypesListUI = new CustomRefTargetListParameterUI(this, PROPERTY_FIELD(PropertyObject::elementTypes), RolloutInsertionParameters().insertInto(subEditorContainer));
+    QTableView* tableWidget = elementTypesListUI->tableWidget(250);
+    layout->insertWidget(0, tableWidget);
+    tableWidget->verticalHeader()->setDefaultSectionSize(tableWidget->verticalHeader()->minimumSectionSize());
+    tableWidget->horizontalHeader()->setSectionResizeMode(0, QHeaderView::Stretch);
+    tableWidget->horizontalHeader()->setSectionResizeMode(1, QHeaderView::ResizeToContents);
 }
 
-}	// End of namespace
+}   // End of namespace

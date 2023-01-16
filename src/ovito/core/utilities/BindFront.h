@@ -36,46 +36,46 @@ namespace Ovito::detail {
 template <class R, class Tuple, size_t... Idx, class... Args>
 R Apply(Tuple&& bound, std::index_sequence<Idx...>, Args&&... free) 
 {
-	return std::invoke(std::get<Idx>(std::forward<Tuple>(bound))..., std::forward<Args>(free)...);
+    return std::invoke(std::get<Idx>(std::forward<Tuple>(bound))..., std::forward<Args>(free)...);
 }
 
 template <class F, class... BoundArgs>
 class FrontBinder 
 {
-	using BoundArgsT = std::tuple<F, BoundArgs...>;
-	using Idx = std::make_index_sequence<sizeof...(BoundArgs) + 1>;
+    using BoundArgsT = std::tuple<F, BoundArgs...>;
+    using Idx = std::make_index_sequence<sizeof...(BoundArgs) + 1>;
 
-	BoundArgsT bound_args_;
+    BoundArgsT bound_args_;
 
 public:
-	template <class... Ts>
-	constexpr explicit FrontBinder(std::in_place_t, Ts&&... ts)
-		: bound_args_(std::forward<Ts>(ts)...) {}
+    template <class... Ts>
+    constexpr explicit FrontBinder(std::in_place_t, Ts&&... ts)
+        : bound_args_(std::forward<Ts>(ts)...) {}
 
-	template <class... FreeArgs, class R = detail::invoke_result_t<F&, BoundArgs&..., FreeArgs&&...>>
-	R operator()(FreeArgs&&... free_args) & noexcept(std::is_nothrow_invocable_v<F&, BoundArgs&..., FreeArgs&&...>) {
-		return Apply<R>(bound_args_, Idx(), std::forward<FreeArgs>(free_args)...);
-	}
+    template <class... FreeArgs, class R = detail::invoke_result_t<F&, BoundArgs&..., FreeArgs&&...>>
+    R operator()(FreeArgs&&... free_args) & noexcept(std::is_nothrow_invocable_v<F&, BoundArgs&..., FreeArgs&&...>) {
+        return Apply<R>(bound_args_, Idx(), std::forward<FreeArgs>(free_args)...);
+    }
 
-	template <class... FreeArgs, class R = detail::invoke_result_t<const F&, const BoundArgs&..., FreeArgs&&...>>
-	R operator()(FreeArgs&&... free_args) const& noexcept(std::is_nothrow_invocable_v<const F&, const BoundArgs&..., FreeArgs&&...>) {
-		return Apply<R>(bound_args_, Idx(), std::forward<FreeArgs>(free_args)...);
-	}
+    template <class... FreeArgs, class R = detail::invoke_result_t<const F&, const BoundArgs&..., FreeArgs&&...>>
+    R operator()(FreeArgs&&... free_args) const& noexcept(std::is_nothrow_invocable_v<const F&, const BoundArgs&..., FreeArgs&&...>) {
+        return Apply<R>(bound_args_, Idx(), std::forward<FreeArgs>(free_args)...);
+    }
 
-	template <class... FreeArgs, class R = detail::invoke_result_t<F&&, BoundArgs&&..., FreeArgs&&...>>
-	R operator()(FreeArgs&&... free_args) && noexcept(std::is_nothrow_invocable_v<F&&, BoundArgs&&..., FreeArgs&&...>) {
-		// This overload is called when *this is an rvalue. If some of the bound
-		// arguments are stored by value or rvalue reference, we move them.
-		return Apply<R>(std::move(bound_args_), Idx(), std::forward<FreeArgs>(free_args)...);
-	}
+    template <class... FreeArgs, class R = detail::invoke_result_t<F&&, BoundArgs&&..., FreeArgs&&...>>
+    R operator()(FreeArgs&&... free_args) && noexcept(std::is_nothrow_invocable_v<F&&, BoundArgs&&..., FreeArgs&&...>) {
+        // This overload is called when *this is an rvalue. If some of the bound
+        // arguments are stored by value or rvalue reference, we move them.
+        return Apply<R>(std::move(bound_args_), Idx(), std::forward<FreeArgs>(free_args)...);
+    }
 
-	template <class... FreeArgs, class R = detail::invoke_result_t<const F&&, const BoundArgs&&..., FreeArgs&&...>>
-	R operator()(FreeArgs&&... free_args) const&& noexcept(std::is_nothrow_invocable_v<const F&&, const BoundArgs&&..., FreeArgs&&...>) {
-		// This overload is called when *this is an rvalue. If some of the bound
-		// arguments are stored by value or rvalue reference, we move them.
-		return Apply<R>(std::move(bound_args_), Idx(), std::forward<FreeArgs>(free_args)...);
-	}
-};	
+    template <class... FreeArgs, class R = detail::invoke_result_t<const F&&, const BoundArgs&&..., FreeArgs&&...>>
+    R operator()(FreeArgs&&... free_args) const&& noexcept(std::is_nothrow_invocable_v<const F&&, const BoundArgs&&..., FreeArgs&&...>) {
+        // This overload is called when *this is an rvalue. If some of the bound
+        // arguments are stored by value or rvalue reference, we move them.
+        return Apply<R>(std::move(bound_args_), Idx(), std::forward<FreeArgs>(free_args)...);
+    }
+};  
 
 template <class F, class... BoundArgs>
 using bind_front_t = FrontBinder<std::decay_t<F>, std::decay_t<BoundArgs>...>;
@@ -83,9 +83,9 @@ using bind_front_t = FrontBinder<std::decay_t<F>, std::decay_t<BoundArgs>...>;
 template <class F, class... BoundArgs>
 constexpr bind_front_t<F, BoundArgs...> bind_front(F&& func, BoundArgs&&... args) 
 {
-	return bind_front_t<F, BoundArgs...>(
-		std::in_place, std::forward<F>(func),
-		std::forward<BoundArgs>(args)...);
+    return bind_front_t<F, BoundArgs...>(
+        std::in_place, std::forward<F>(func),
+        std::forward<BoundArgs>(args)...);
 }
 
 } // End of namespace

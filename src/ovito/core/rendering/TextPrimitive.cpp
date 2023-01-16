@@ -36,9 +36,9 @@ namespace Ovito {
 ******************************************************************************/
 void TextPrimitive::setPositionViewport(const SceneRenderer* renderer, const Point2& pos)
 { 
-	QSize windowSize = renderer->viewportRect().size();
-	Point2 pwin((pos.x() + 1.0) * windowSize.width() / 2.0, (-pos.y() + 1.0) * windowSize.height() / 2.0);
-	setPositionWindow(pwin);
+    QSize windowSize = renderer->viewportRect().size();
+    Point2 pwin((pos.x() + 1.0) * windowSize.width() / 2.0, (-pos.y() + 1.0) * windowSize.height() / 2.0);
+    setPositionWindow(pwin);
 }
 
 /******************************************************************************
@@ -46,35 +46,35 @@ void TextPrimitive::setPositionViewport(const SceneRenderer* renderer, const Poi
 ******************************************************************************/
 QRectF TextPrimitive::queryBounds(const SceneRenderer* renderer, Qt::TextFormat textFormatHint) const
 {
-	QRectF textBounds;
-	Qt::TextFormat resolvedTextFormat = textFormat();
-	if(resolvedTextFormat == Qt::AutoText) {
-		if(textFormatHint != Qt::AutoText) resolvedTextFormat = textFormatHint;
-		else resolvedTextFormat = Qt::mightBeRichText(text()) ? Qt::RichText : Qt::PlainText;
-	}
-	if(resolvedTextFormat != Qt::RichText) {
-		if(!useTightBox()) {
-			textBounds = QFontMetricsF(font()).boundingRect(text());
-		}
-		else {
-			QPainterPath textPath;
-			textPath.addText(0, 0, font(), text());
-			textBounds = textPath.boundingRect();
-		}
-	}
-	else {
-		QTextDocument doc;
-		doc.setUndoRedoEnabled(false);
-		doc.setHtml(text());
-		doc.setDefaultFont(font());
-		doc.setDocumentMargin(0);
-		QTextOption opt = doc.defaultTextOption();
-		opt.setAlignment(Qt::Alignment(alignment()));
-		doc.setDefaultTextOption(opt);
-		textBounds = QRectF(QPointF(0,0), doc.size());
-	}
-	qreal devicePixelRatio = renderer->devicePixelRatio();
-	return QRectF(textBounds.left() * devicePixelRatio, textBounds.top() * devicePixelRatio, textBounds.width() * devicePixelRatio, textBounds.height() * devicePixelRatio);
+    QRectF textBounds;
+    Qt::TextFormat resolvedTextFormat = textFormat();
+    if(resolvedTextFormat == Qt::AutoText) {
+        if(textFormatHint != Qt::AutoText) resolvedTextFormat = textFormatHint;
+        else resolvedTextFormat = Qt::mightBeRichText(text()) ? Qt::RichText : Qt::PlainText;
+    }
+    if(resolvedTextFormat != Qt::RichText) {
+        if(!useTightBox()) {
+            textBounds = QFontMetricsF(font()).boundingRect(text());
+        }
+        else {
+            QPainterPath textPath;
+            textPath.addText(0, 0, font(), text());
+            textBounds = textPath.boundingRect();
+        }
+    }
+    else {
+        QTextDocument doc;
+        doc.setUndoRedoEnabled(false);
+        doc.setHtml(text());
+        doc.setDefaultFont(font());
+        doc.setDocumentMargin(0);
+        QTextOption opt = doc.defaultTextOption();
+        opt.setAlignment(Qt::Alignment(alignment()));
+        doc.setDefaultTextOption(opt);
+        textBounds = QRectF(QPointF(0,0), doc.size());
+    }
+    qreal devicePixelRatio = renderer->devicePixelRatio();
+    return QRectF(textBounds.left() * devicePixelRatio, textBounds.top() * devicePixelRatio, textBounds.width() * devicePixelRatio, textBounds.height() * devicePixelRatio);
 }
 
-}	// End of namespace
+}   // End of namespace

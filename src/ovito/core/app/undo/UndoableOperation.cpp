@@ -45,9 +45,9 @@ CompoundOperation*& CompoundOperation::current()
 ******************************************************************************/
 bool CompoundOperation::isUndoRecording()
 {
-	if(CompoundOperation* op = CompoundOperation::current())
-		return !op->_isUndoingOrRedoing;
-	return false;
+    if(CompoundOperation* op = CompoundOperation::current())
+        return !op->_isUndoingOrRedoing;
+    return false;
 }
 
 /******************************************************************************
@@ -56,9 +56,9 @@ bool CompoundOperation::isUndoRecording()
 ******************************************************************************/
 bool CompoundOperation::isUndoingOrRedoing()
 {
-	if(CompoundOperation* op = CompoundOperation::current())
-		return op->_isUndoingOrRedoing;
-	return false;
+    if(CompoundOperation* op = CompoundOperation::current())
+        return op->_isUndoingOrRedoing;
+    return false;
 }
 
 /******************************************************************************
@@ -66,18 +66,18 @@ bool CompoundOperation::isUndoingOrRedoing()
 ******************************************************************************/
 void UndoableTransaction::commit() 
 {
-	OVITO_ASSERT(_operation);
+    OVITO_ASSERT(_operation);
 
-	if(CompoundOperation* parent = CompoundOperation::current()) {
-		parent->addOperation(std::move(_operation));
-	}
-	else {
-		if(UndoStack* undoStack = userInterface().undoStack()) {
-			OVITO_ASSERT(QThread::currentThread() == undoStack->thread());
-			undoStack->push(std::move(_operation));
-		}
-	}
-	_operation.reset();
+    if(CompoundOperation* parent = CompoundOperation::current()) {
+        parent->addOperation(std::move(_operation));
+    }
+    else {
+        if(UndoStack* undoStack = userInterface().undoStack()) {
+            OVITO_ASSERT(QThread::currentThread() == undoStack->thread());
+            undoStack->push(std::move(_operation));
+        }
+    }
+    _operation.reset();
 }
 
 /******************************************************************************
@@ -85,12 +85,12 @@ void UndoableTransaction::commit()
 ******************************************************************************/
 void UndoableTransaction::revert()
 {
-	OVITO_ASSERT(_operation);
+    OVITO_ASSERT(_operation);
 
-	userInterface().handleExceptions([&] {
-		_operation->undo();
-		_operation->clear();
-	});
+    userInterface().handleExceptions([&] {
+        _operation->undo();
+        _operation->clear();
+    });
 }
 
 /******************************************************************************
@@ -98,12 +98,12 @@ void UndoableTransaction::revert()
 ******************************************************************************/
 void UndoableTransaction::revertTo(int snapshot)
 {
-	OVITO_ASSERT(_operation);
+    OVITO_ASSERT(_operation);
 
-	userInterface().handleExceptions([&] {
-		_operation->revertTo(snapshot);
-		OVITO_ASSERT(_operation->count() == snapshot);
-	});
+    userInterface().handleExceptions([&] {
+        _operation->revertTo(snapshot);
+        OVITO_ASSERT(_operation->count() == snapshot);
+    });
 }
 
 /******************************************************************************
@@ -111,12 +111,12 @@ void UndoableTransaction::revertTo(int snapshot)
 ******************************************************************************/
 void UndoableTransaction::cancel()
 {
-	OVITO_ASSERT(_operation);
+    OVITO_ASSERT(_operation);
 
-	userInterface().handleExceptions([&] {
-		_operation->undo();
-	});
-	_operation.reset();
+    userInterface().handleExceptions([&] {
+        _operation->undo();
+    });
+    _operation.reset();
 }
 
 /******************************************************************************
@@ -124,23 +124,23 @@ void UndoableTransaction::cancel()
 ******************************************************************************/
 void CompoundOperation::undo()
 {
-	OVITO_ASSERT(!_isUndoingOrRedoing);
-	if(!isSignificant())
-		return;
+    OVITO_ASSERT(!_isUndoingOrRedoing);
+    if(!isSignificant())
+        return;
 
-	UndoSuspender u(this);
-	_isUndoingOrRedoing = true;
-	try {
-		for(int i = (int)_subOperations.size() - 1; i >= 0; --i) {
-			OVITO_CHECK_POINTER(_subOperations[i]);
-			_subOperations[i]->undo();
-		}
-		_isUndoingOrRedoing = false;
-	}
-	catch(...) {
-		_isUndoingOrRedoing = false;
-		throw;
-	}
+    UndoSuspender u(this);
+    _isUndoingOrRedoing = true;
+    try {
+        for(int i = (int)_subOperations.size() - 1; i >= 0; --i) {
+            OVITO_CHECK_POINTER(_subOperations[i]);
+            _subOperations[i]->undo();
+        }
+        _isUndoingOrRedoing = false;
+    }
+    catch(...) {
+        _isUndoingOrRedoing = false;
+        throw;
+    }
 }
 
 /******************************************************************************
@@ -148,23 +148,23 @@ void CompoundOperation::undo()
 ******************************************************************************/
 void CompoundOperation::redo()
 {
-	OVITO_ASSERT(!_isUndoingOrRedoing);
-	if(!isSignificant())
-		return;
+    OVITO_ASSERT(!_isUndoingOrRedoing);
+    if(!isSignificant())
+        return;
 
-	UndoSuspender u(this);
-	_isUndoingOrRedoing = true;
-	try {
-		for(const auto& op : _subOperations) {
-			OVITO_CHECK_POINTER(op);
-			op->redo();
-		}
-		_isUndoingOrRedoing = false;
-	}
-	catch(...) {
-		_isUndoingOrRedoing = false;
-		throw;
-	}
+    UndoSuspender u(this);
+    _isUndoingOrRedoing = true;
+    try {
+        for(const auto& op : _subOperations) {
+            OVITO_CHECK_POINTER(op);
+            op->redo();
+        }
+        _isUndoingOrRedoing = false;
+    }
+    catch(...) {
+        _isUndoingOrRedoing = false;
+        throw;
+    }
 }
 
 /******************************************************************************
@@ -172,24 +172,24 @@ void CompoundOperation::redo()
 ******************************************************************************/
 void CompoundOperation::revertTo(int position)
 {
-	OVITO_ASSERT(!_isUndoingOrRedoing);
-	OVITO_ASSERT(position >= 0);
-	OVITO_ASSERT(position <= count());
+    OVITO_ASSERT(!_isUndoingOrRedoing);
+    OVITO_ASSERT(position >= 0);
+    OVITO_ASSERT(position <= count());
 
-	UndoSuspender u(this);
-	_isUndoingOrRedoing = true;
-	try {
-		for(int i = (int)_subOperations.size() - 1; i >= position; --i) {
-			OVITO_CHECK_POINTER(_subOperations[i]);
-			_subOperations[i]->undo();
-		}
-		_subOperations.resize(position);
-		_isUndoingOrRedoing = false;
-	}
-	catch(...) {
-		_isUndoingOrRedoing = false;
-		throw;
-	}
+    UndoSuspender u(this);
+    _isUndoingOrRedoing = true;
+    try {
+        for(int i = (int)_subOperations.size() - 1; i >= position; --i) {
+            OVITO_CHECK_POINTER(_subOperations[i]);
+            _subOperations[i]->undo();
+        }
+        _subOperations.resize(position);
+        _isUndoingOrRedoing = false;
+    }
+    catch(...) {
+        _isUndoingOrRedoing = false;
+        throw;
+    }
 }
 
 /******************************************************************************
@@ -198,14 +198,14 @@ void CompoundOperation::revertTo(int position)
 ******************************************************************************/
 void CompoundOperation::debugPrint(int level)
 {
-	int index = 0;
-	for(const auto& op : _subOperations) {
-		qDebug() << QByteArray(level*2, ' ').constData() << index << ":" << qPrintable(op->displayName());
-		if(CompoundOperation* compOp = dynamic_cast<CompoundOperation*>(op.get())) {
-			compOp->debugPrint(level+1);
-		}
-		index++;
-	}
+    int index = 0;
+    for(const auto& op : _subOperations) {
+        qDebug() << QByteArray(level*2, ' ').constData() << index << ":" << qPrintable(op->displayName());
+        if(CompoundOperation* compOp = dynamic_cast<CompoundOperation*>(op.get())) {
+            compOp->debugPrint(level+1);
+        }
+        index++;
+    }
 }
 
 /******************************************************************************
@@ -213,7 +213,7 @@ void CompoundOperation::debugPrint(int level)
 ******************************************************************************/
 void TargetChangedUndoOperation::undo()
 {
-	_target->notifyTargetChanged();
+    _target->notifyTargetChanged();
 }
 
 /******************************************************************************
@@ -221,7 +221,7 @@ void TargetChangedUndoOperation::undo()
 ******************************************************************************/
 void TargetChangedRedoOperation::redo()
 {
-	_target->notifyTargetChanged();
+    _target->notifyTargetChanged();
 }
 
-}	// End of namespace
+}   // End of namespace

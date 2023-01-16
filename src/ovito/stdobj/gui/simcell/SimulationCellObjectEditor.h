@@ -33,28 +33,28 @@ namespace Ovito::StdObj {
  */
 class SimulationCellEditor : public PropertiesEditor
 {
-	OVITO_CLASS(SimulationCellEditor)
+    OVITO_CLASS(SimulationCellEditor)
 
 public:
 
-	/// Default constructor.
-	Q_INVOKABLE SimulationCellEditor() {}
+    /// Default constructor.
+    Q_INVOKABLE SimulationCellEditor() {}
 
 protected:
 
-	/// Creates the user interface controls for the editor.
-	virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
+    /// Creates the user interface controls for the editor.
+    virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
 
 private Q_SLOTS:
 
-	/// Updates the values displayed in the editor panel.
-	void updateSimulationBoxSize();
+    /// Updates the values displayed in the editor panel.
+    void updateSimulationBoxSize();
 
 private:
 
-	BooleanParameterUI* _pbczPUI;
-	QLineEdit* _boxSizeFields[3];
-	QLineEdit* _cellVectorFields[4][3];
+    BooleanParameterUI* _pbczPUI;
+    QLineEdit* _boxSizeFields[3];
+    QLineEdit* _cellVectorFields[4][3];
 };
 
-}	// End of namespace
+}   // End of namespace

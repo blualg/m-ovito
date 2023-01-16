@@ -25,4 +25,4 @@
 
 namespace Ovito {
 
-}	// End of namespace
+}   // End of namespace

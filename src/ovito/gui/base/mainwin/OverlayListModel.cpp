@@ -32,25 +32,25 @@ namespace Ovito {
 * Constructor.
 ******************************************************************************/
 OverlayListModel::OverlayListModel(QObject* parent, UserInterface& userInterface) : QAbstractListModel(parent),
-	_userInterface(userInterface),
-	_statusInfoIcon(":/guibase/mainwin/status/status_info.png"),
-	_statusWarningIcon(":/guibase/mainwin/status/status_warning.png"),
-	_statusErrorIcon(":/guibase/mainwin/status/status_error.png"),
-	_statusNoneIcon(":/guibase/mainwin/status/status_none.png")
+    _userInterface(userInterface),
+    _statusInfoIcon(":/guibase/mainwin/status/status_info.png"),
+    _statusWarningIcon(":/guibase/mainwin/status/status_warning.png"),
+    _statusErrorIcon(":/guibase/mainwin/status/status_error.png"),
+    _statusNoneIcon(":/guibase/mainwin/status/status_none.png")
 {
-	_selectionModel = new QItemSelectionModel(this);
-	connect(_selectionModel, &QItemSelectionModel::selectionChanged, this, &OverlayListModel::selectedItemChanged);
-	connect(&_selectedViewport, &RefTargetListener<Viewport>::notificationEvent, this, &OverlayListModel::onViewportEvent);
+    _selectionModel = new QItemSelectionModel(this);
+    connect(_selectionModel, &QItemSelectionModel::selectionChanged, this, &OverlayListModel::selectedItemChanged);
+    connect(&_selectedViewport, &RefTargetListener<Viewport>::notificationEvent, this, &OverlayListModel::onViewportEvent);
 
-	if(_sectionHeaderFont.pixelSize() < 0)
-		_sectionHeaderFont.setPointSize(_sectionHeaderFont.pointSize() * 4 / 5);
-	else
-		_sectionHeaderFont.setPixelSize(_sectionHeaderFont.pixelSize() * 4 / 5);
+    if(_sectionHeaderFont.pixelSize() < 0)
+        _sectionHeaderFont.setPointSize(_sectionHeaderFont.pointSize() * 4 / 5);
+    else
+        _sectionHeaderFont.setPixelSize(_sectionHeaderFont.pixelSize() * 4 / 5);
 
-	updateColorPalette(QGuiApplication::palette());
+    updateColorPalette(QGuiApplication::palette());
 QT_WARNING_PUSH
 QT_WARNING_DISABLE_DEPRECATED
-	connect(qGuiApp, &QGuiApplication::paletteChanged, this, &OverlayListModel::updateColorPalette);
+    connect(qGuiApp, &QGuiApplication::paletteChanged, this, &OverlayListModel::updateColorPalette);
 QT_WARNING_POP
 }
 
@@ -59,14 +59,14 @@ QT_WARNING_POP
 ******************************************************************************/
 void OverlayListModel::updateColorPalette(const QPalette& palette)
 {
-	bool darkTheme = palette.color(QPalette::Active, QPalette::Window).lightness() < 100;
+    bool darkTheme = palette.color(QPalette::Active, QPalette::Window).lightness() < 100;
 #ifndef Q_OS_LINUX
-	_sectionHeaderBackgroundBrush = QBrush(palette.color(QPalette::Midlight));
+    _sectionHeaderBackgroundBrush = QBrush(palette.color(QPalette::Midlight));
 #else
-	_sectionHeaderBackgroundBrush = darkTheme ? palette.window() : QBrush(palette.color(QPalette::Midlight));
+    _sectionHeaderBackgroundBrush = darkTheme ? palette.window() : QBrush(palette.color(QPalette::Midlight));
 #endif
-	_sectionHeaderForegroundBrush = QBrush(darkTheme ? QColor(Qt::blue).lighter() : QColor(Qt::blue));
-	_disabledForegroundBrush = palette.brush(QPalette::Disabled, QPalette::Text);
+    _sectionHeaderForegroundBrush = QBrush(darkTheme ? QColor(Qt::blue).lighter() : QColor(Qt::blue));
+    _disabledForegroundBrush = palette.brush(QPalette::Disabled, QPalette::Text);
 }
 
 /******************************************************************************
@@ -74,12 +74,12 @@ void OverlayListModel::updateColorPalette(const QPalette& palette)
 ******************************************************************************/
 void OverlayListModel::setItems(const QList<OORef<OverlayListItem>>& newItems)
 {
-	beginResetModel();
-	_items = newItems;
-	for(OverlayListItem* item : _items) {
-		connect(item, &OverlayListItem::itemChanged, this, &OverlayListModel::refreshItem);
-	}
-	endResetModel();
+    beginResetModel();
+    _items = newItems;
+    for(OverlayListItem* item : _items) {
+        connect(item, &OverlayListItem::itemChanged, this, &OverlayListModel::refreshItem);
+    }
+    endResetModel();
 }
 
 /******************************************************************************
@@ -87,11 +87,11 @@ void OverlayListModel::setItems(const QList<OORef<OverlayListItem>>& newItems)
 ******************************************************************************/
 OverlayListItem* OverlayListModel::selectedItem() const
 {
-	QModelIndexList selection = _selectionModel->selectedRows();
-	if(selection.empty())
-		return nullptr;
-	else
-		return item(selection.front().row());
+    QModelIndexList selection = _selectionModel->selectedRows();
+    if(selection.empty())
+        return nullptr;
+    else
+        return item(selection.front().row());
 }
 
 /******************************************************************************
@@ -99,11 +99,11 @@ OverlayListItem* OverlayListModel::selectedItem() const
 ******************************************************************************/
 int OverlayListModel::selectedIndex() const
 {
-	QModelIndexList selection = _selectionModel->selectedRows();
-	if(selection.size() == 1)
-		return selection.front().row();
-	else
-		return -1;
+    QModelIndexList selection = _selectionModel->selectedRows();
+    if(selection.size() == 1)
+        return selection.front().row();
+    else
+        return -1;
 }
 
 /******************************************************************************
@@ -111,55 +111,55 @@ int OverlayListModel::selectedIndex() const
 ******************************************************************************/
 void OverlayListModel::refreshList()
 {
-	_needListUpdate = false;
+    _needListUpdate = false;
 
-	// Determine the currently selected object and
-	// select it again after the list has been rebuilt (and it is still there).
-	// If _nextObjectToSelect is already non-null then the caller
-	// has specified an object to be selected.
-	if(_nextObjectToSelect == nullptr) {
-		if(OverlayListItem* item = selectedItem())
-			_nextObjectToSelect = item->overlay();
-	}
-	ViewportOverlay* defaultObjectToSelect = nullptr;
+    // Determine the currently selected object and
+    // select it again after the list has been rebuilt (and it is still there).
+    // If _nextObjectToSelect is already non-null then the caller
+    // has specified an object to be selected.
+    if(_nextObjectToSelect == nullptr) {
+        if(OverlayListItem* item = selectedItem())
+            _nextObjectToSelect = item->overlay();
+    }
+    ViewportOverlay* defaultObjectToSelect = nullptr;
 
-	// Create list items.
-	QList<OORef<OverlayListItem>> items;
-	if(selectedViewport()) {
-		items.push_back(OORef<OverlayListItem>::create(nullptr, OverlayListItem::ViewportHeader));
-		for(auto layer = selectedViewport()->overlays().crbegin(); layer != selectedViewport()->overlays().crend(); ++layer) {
-			items.push_back(OORef<OverlayListItem>::create(*layer, OverlayListItem::Layer));
-		}
-		if(!selectedViewport()->overlays().empty() || !selectedViewport()->underlays().empty()) {
-			items.push_back(OORef<OverlayListItem>::create(nullptr, OverlayListItem::SceneLayer));
-		}
-		for(auto layer = selectedViewport()->underlays().crbegin(); layer != selectedViewport()->underlays().crend(); ++layer) {
-			items.push_back(OORef<OverlayListItem>::create(*layer, OverlayListItem::Layer));
-		}
-	}
-	int selIndex = -1;
-	int selDefaultIndex = -1;
-	for(int i = 0; i < items.size(); i++) {
-		if(_nextObjectToSelect && _nextObjectToSelect == items[i]->overlay())
-			selIndex = i;
-		if(defaultObjectToSelect && defaultObjectToSelect == items[i]->overlay())
-			selDefaultIndex = i;
-	}
-	if(selIndex == -1)
-		selIndex = selDefaultIndex;
-	setItems(items);
+    // Create list items.
+    QList<OORef<OverlayListItem>> items;
+    if(selectedViewport()) {
+        items.push_back(OORef<OverlayListItem>::create(nullptr, OverlayListItem::ViewportHeader));
+        for(auto layer = selectedViewport()->overlays().crbegin(); layer != selectedViewport()->overlays().crend(); ++layer) {
+            items.push_back(OORef<OverlayListItem>::create(*layer, OverlayListItem::Layer));
+        }
+        if(!selectedViewport()->overlays().empty() || !selectedViewport()->underlays().empty()) {
+            items.push_back(OORef<OverlayListItem>::create(nullptr, OverlayListItem::SceneLayer));
+        }
+        for(auto layer = selectedViewport()->underlays().crbegin(); layer != selectedViewport()->underlays().crend(); ++layer) {
+            items.push_back(OORef<OverlayListItem>::create(*layer, OverlayListItem::Layer));
+        }
+    }
+    int selIndex = -1;
+    int selDefaultIndex = -1;
+    for(int i = 0; i < items.size(); i++) {
+        if(_nextObjectToSelect && _nextObjectToSelect == items[i]->overlay())
+            selIndex = i;
+        if(defaultObjectToSelect && defaultObjectToSelect == items[i]->overlay())
+            selDefaultIndex = i;
+    }
+    if(selIndex == -1)
+        selIndex = selDefaultIndex;
+    setItems(items);
 
-	_nextObjectToSelect = nullptr;
+    _nextObjectToSelect = nullptr;
 
-	// Select the proper item in the list box.
-	if(!items.empty()) {
-		if(selIndex == -1)
-			selIndex = items.size()-1;
-		_selectionModel->select(index(selIndex), QItemSelectionModel::SelectCurrent | QItemSelectionModel::Clear);
-	}
-	else {
-		Q_EMIT selectedItemChanged();
-	}
+    // Select the proper item in the list box.
+    if(!items.empty()) {
+        if(selIndex == -1)
+            selIndex = items.size()-1;
+        _selectionModel->select(index(selIndex), QItemSelectionModel::SelectCurrent | QItemSelectionModel::Clear);
+    }
+    else {
+        Q_EMIT selectedItemChanged();
+    }
 }
 
 /******************************************************************************
@@ -167,9 +167,9 @@ void OverlayListModel::refreshList()
 ******************************************************************************/
 void OverlayListModel::onViewportEvent(RefTarget* source, const ReferenceEvent& event)
 {
-	if(event.type() == ReferenceEvent::ReferenceChanged || event.type() == ReferenceEvent::ReferenceAdded || event.type() == ReferenceEvent::ReferenceRemoved || event.type() == ReferenceEvent::TitleChanged) {
-		requestUpdate();
-	}
+    if(event.type() == ReferenceEvent::ReferenceChanged || event.type() == ReferenceEvent::ReferenceAdded || event.type() == ReferenceEvent::ReferenceRemoved || event.type() == ReferenceEvent::TitleChanged) {
+        requestUpdate();
+    }
 }
 
 /******************************************************************************
@@ -177,15 +177,15 @@ void OverlayListModel::onViewportEvent(RefTarget* source, const ReferenceEvent& 
 ******************************************************************************/
 void OverlayListModel::refreshItem(OverlayListItem* item)
 {
-	OVITO_CHECK_OBJECT_POINTER(item);
-	int i = _items.indexOf(item);
-	if(i != -1) {
-		Q_EMIT dataChanged(index(i), index(i));
+    OVITO_CHECK_OBJECT_POINTER(item);
+    int i = _items.indexOf(item);
+    if(i != -1) {
+        Q_EMIT dataChanged(index(i), index(i));
 
-		// Also update available actions if the changed item is currently selected.
-		if(selectedItem() == item)
-			Q_EMIT selectedItemChanged();
-	}
+        // Also update available actions if the changed item is currently selected.
+        if(selectedItem() == item)
+            Q_EMIT selectedItemChanged();
+    }
 }
 
 /******************************************************************************
@@ -193,70 +193,70 @@ void OverlayListModel::refreshItem(OverlayListItem* item)
 ******************************************************************************/
 QVariant OverlayListModel::data(const QModelIndex& index, int role) const
 {
-	OVITO_ASSERT(index.row() >= 0 && index.row() < _items.size());
-	OverlayListItem* item = this->item(index.row());
+    OVITO_ASSERT(index.row() >= 0 && index.row() < _items.size());
+    OverlayListItem* item = this->item(index.row());
 
-	if(role == Qt::DisplayRole) {
-		return item->title(selectedViewport());
-	}
-	else if(role == Qt::EditRole) {
-		return item->title(selectedViewport());
-	}
-	else if(role == StatusInfoRole) {
-		if(selectedViewport()) {
-			QVariant v;
-			if(_userInterface.handleExceptions([&] {
-				v = item->shortInfo(selectedViewport());
-			})) return v;
-		}
-	}
-	else if(role == Qt::DecorationRole) {
-		if(item->overlay()) {
-			switch(item->status().type()) {
-			case PipelineStatus::Warning: return QVariant::fromValue(_statusWarningIcon);
-			case PipelineStatus::Error: return QVariant::fromValue(_statusErrorIcon);
-			default: return QVariant::fromValue(_statusNoneIcon);
-			}
-		}
-		else if(item->itemType() == OverlayListItem::SceneLayer) {
-			return QVariant::fromValue(_statusNoneIcon);
-		}
-	}
-	else if(role == Qt::ToolTipRole) {
-		return QVariant::fromValue(item->status().text());
-	}
-	else if(role == Qt::CheckStateRole) {
-		if(item->overlay()) {
-			return item->overlay()->isEnabled() ? Qt::Checked : Qt::Unchecked;
-		}
-		else if(item->itemType() == OverlayListItem::SceneLayer) {
-			return Qt::Checked;
-		}
-	}
-	else if(role == Qt::TextAlignmentRole) {
-		if(item->itemType() == OverlayListItem::ViewportHeader) {
-			return Qt::AlignCenter;
-		}
-	}
-	else if(role == Qt::BackgroundRole) {
-		if(item->overlay() == nullptr) {
-			return _sectionHeaderBackgroundBrush;
-		}
-	}
-	else if(role == Qt::ForegroundRole) {
-		if(item->overlay() && item->overlay()->isEnabled() == false) {
-			return _disabledForegroundBrush;
-		}
-		else if(item->itemType() == OverlayListItem::ViewportHeader || item->itemType() == OverlayListItem::SceneLayer) {
-			return _sectionHeaderForegroundBrush;
-		}
-	}
-	else if(role == Qt::FontRole) {
-		if(item->itemType() == OverlayListItem::ViewportHeader) {
-			return _sectionHeaderFont;
-		}
-	}
-	return {};
+    if(role == Qt::DisplayRole) {
+        return item->title(selectedViewport());
+    }
+    else if(role == Qt::EditRole) {
+        return item->title(selectedViewport());
+    }
+    else if(role == StatusInfoRole) {
+        if(selectedViewport()) {
+            QVariant v;
+            if(_userInterface.handleExceptions([&] {
+                v = item->shortInfo(selectedViewport());
+            })) return v;
+        }
+    }
+    else if(role == Qt::DecorationRole) {
+        if(item->overlay()) {
+            switch(item->status().type()) {
+            case PipelineStatus::Warning: return QVariant::fromValue(_statusWarningIcon);
+            case PipelineStatus::Error: return QVariant::fromValue(_statusErrorIcon);
+            default: return QVariant::fromValue(_statusNoneIcon);
+            }
+        }
+        else if(item->itemType() == OverlayListItem::SceneLayer) {
+            return QVariant::fromValue(_statusNoneIcon);
+        }
+    }
+    else if(role == Qt::ToolTipRole) {
+        return QVariant::fromValue(item->status().text());
+    }
+    else if(role == Qt::CheckStateRole) {
+        if(item->overlay()) {
+            return item->overlay()->isEnabled() ? Qt::Checked : Qt::Unchecked;
+        }
+        else if(item->itemType() == OverlayListItem::SceneLayer) {
+            return Qt::Checked;
+        }
+    }
+    else if(role == Qt::TextAlignmentRole) {
+        if(item->itemType() == OverlayListItem::ViewportHeader) {
+            return Qt::AlignCenter;
+        }
+    }
+    else if(role == Qt::BackgroundRole) {
+        if(item->overlay() == nullptr) {
+            return _sectionHeaderBackgroundBrush;
+        }
+    }
+    else if(role == Qt::ForegroundRole) {
+        if(item->overlay() && item->overlay()->isEnabled() == false) {
+            return _disabledForegroundBrush;
+        }
+        else if(item->itemType() == OverlayListItem::ViewportHeader || item->itemType() == OverlayListItem::SceneLayer) {
+            return _sectionHeaderForegroundBrush;
+        }
+    }
+    else if(role == Qt::FontRole) {
+        if(item->itemType() == OverlayListItem::ViewportHeader) {
+            return _sectionHeaderFont;
+        }
+    }
+    return {};
 }
 
 /******************************************************************************
@@ -264,26 +264,26 @@ QVariant OverlayListModel::data(const QModelIndex& index, int role) const
 ******************************************************************************/
 bool OverlayListModel::setData(const QModelIndex& index, const QVariant& value, int role)
 {
-	if(role == Qt::CheckStateRole) {
-		OverlayListItem* item = this->item(index.row());
-		if(ViewportOverlay* overlay = item->overlay()) {
-			_userInterface.performTransaction((value == Qt::Checked) ? tr("Show layer") : tr("Hide layer"), [overlay, &value]() {
-				overlay->setEnabled(value == Qt::Checked);
-			});
-		}
-	}
-	else if(role == Qt::EditRole) {
-		OverlayListItem* item = this->item(index.row());
-		if(ViewportOverlay* overlay = item->overlay()) {
-			QString newName = value.toString();
-			if(overlay->objectTitle() != newName) {
-				_userInterface.performTransaction(tr("Rename layer"), [overlay, &newName]() {
-					overlay->setObjectTitle(newName);
-				});
-			}
-		}
-	}
-	return QAbstractListModel::setData(index, value, role);
+    if(role == Qt::CheckStateRole) {
+        OverlayListItem* item = this->item(index.row());
+        if(ViewportOverlay* overlay = item->overlay()) {
+            _userInterface.performTransaction((value == Qt::Checked) ? tr("Show layer") : tr("Hide layer"), [overlay, &value]() {
+                overlay->setEnabled(value == Qt::Checked);
+            });
+        }
+    }
+    else if(role == Qt::EditRole) {
+        OverlayListItem* item = this->item(index.row());
+        if(ViewportOverlay* overlay = item->overlay()) {
+            QString newName = value.toString();
+            if(overlay->objectTitle() != newName) {
+                _userInterface.performTransaction(tr("Rename layer"), [overlay, &newName]() {
+                    overlay->setObjectTitle(newName);
+                });
+            }
+        }
+    }
+    return QAbstractListModel::setData(index, value, role);
 }
 
 /******************************************************************************
@@ -291,11 +291,11 @@ bool OverlayListModel::setData(const QModelIndex& index, const QVariant& value, 
 ******************************************************************************/
 Qt::ItemFlags OverlayListModel::flags(const QModelIndex& index) const
 {
-	if(index.row() >= 0 && index.row() < _items.size()) {
-		OverlayListItem* item = this->item(index.row());
-		return item->overlay() ? (QAbstractListModel::flags(index) | Qt::ItemIsUserCheckable | Qt::ItemIsEditable) : Qt::NoItemFlags;
-	}
-	return QAbstractListModel::flags(index);
+    if(index.row() >= 0 && index.row() < _items.size()) {
+        OverlayListItem* item = this->item(index.row());
+        return item->overlay() ? (QAbstractListModel::flags(index) | Qt::ItemIsUserCheckable | Qt::ItemIsEditable) : Qt::NoItemFlags;
+    }
+    return QAbstractListModel::flags(index);
 }
 
-}	// End of namespace
+}   // End of namespace

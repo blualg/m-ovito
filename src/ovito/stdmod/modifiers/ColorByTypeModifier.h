@@ -35,52 +35,52 @@ namespace Ovito::StdMod {
  */
 class OVITO_STDMOD_EXPORT ColorByTypeModifier : public GenericPropertyModifier
 {
-	OVITO_CLASS(ColorByTypeModifier)
+    OVITO_CLASS(ColorByTypeModifier)
 
 #ifndef OVITO_BUILD_BASIC
-	Q_CLASSINFO("DisplayName", "Color by type");
+    Q_CLASSINFO("DisplayName", "Color by type");
 #else
-	Q_CLASSINFO("DisplayName", "Color by type (Pro)");
+    Q_CLASSINFO("DisplayName", "Color by type (Pro)");
 #endif
-	Q_CLASSINFO("Description", "Color data elements according to a typed property.");
+    Q_CLASSINFO("Description", "Color data elements according to a typed property.");
 #ifndef OVITO_QML_GUI
-	Q_CLASSINFO("ModifierCategory", "Coloring");
+    Q_CLASSINFO("ModifierCategory", "Coloring");
 #else
-	Q_CLASSINFO("ModifierCategory", "-");
+    Q_CLASSINFO("ModifierCategory", "-");
 #endif
 
 public:
 
-	/// Constructor.
-	Q_INVOKABLE ColorByTypeModifier(ObjectCreationParams params);
+    /// Constructor.
+    Q_INVOKABLE ColorByTypeModifier(ObjectCreationParams params);
 
-	/// This method is called by the system after the modifier has been inserted into a data pipeline.
-	virtual void initializeModifier(const ModifierInitializationRequest& request) override;
+    /// This method is called by the system after the modifier has been inserted into a data pipeline.
+    virtual void initializeModifier(const ModifierInitializationRequest& request) override;
 
-	/// Modifies the input data synchronously.
-	virtual void evaluateSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
+    /// Modifies the input data synchronously.
+    virtual void evaluateSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
 
 #ifdef OVITO_QML_GUI
-	/// This helper method is called by the QML GUI (ColorByTypeModifier.qml) to extract the list of element types
-	/// from the input pipeline output state. 
-	Q_INVOKABLE QVariantList getElementTypesFromInputState(ModifierApplication* modApp) const;
+    /// This helper method is called by the QML GUI (ColorByTypeModifier.qml) to extract the list of element types
+    /// from the input pipeline output state. 
+    Q_INVOKABLE QVariantList getElementTypesFromInputState(ModifierApplication* modApp) const;
 #endif
 
 protected:
 
-	/// Is called when the value of a property of this object has changed.
-	virtual void propertyChanged(const PropertyFieldDescriptor* field) override;
+    /// Is called when the value of a property of this object has changed.
+    virtual void propertyChanged(const PropertyFieldDescriptor* field) override;
 
 private:
 
-	/// The input type property that is used as data source for the selection.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD(PropertyReference, sourceProperty, setSourceProperty);
+    /// The input type property that is used as data source for the selection.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(PropertyReference, sourceProperty, setSourceProperty);
 
-	/// Controls whether the modifier assigns a color only to selected elements.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, colorOnlySelected, setColorOnlySelected);
+    /// Controls whether the modifier assigns a color only to selected elements.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, colorOnlySelected, setColorOnlySelected);
 
-	/// Controls whether the input selection is preserved or not. If true, the current selection is cleared by the modifier to reveal the assigned colors in the interactive viewports of OVITO.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, clearSelection, setClearSelection);
+    /// Controls whether the input selection is preserved or not. If true, the current selection is cleared by the modifier to reveal the assigned colors in the interactive viewports of OVITO.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, clearSelection, setClearSelection);
 };
 
-}	// End of namespace
+}   // End of namespace

@@ -34,47 +34,47 @@ namespace Ovito {
  */
 class OVITO_GUI_EXPORT AnimationSettingsDialog : public QDialog, private UndoableTransaction
 {
-	Q_OBJECT
+    Q_OBJECT
 
 public:
 
-	/// Constructor.
-	AnimationSettingsDialog(MainWindow& mainWindow, QWidget* parentWindow = nullptr);
+    /// Constructor.
+    AnimationSettingsDialog(MainWindow& mainWindow, QWidget* parentWindow = nullptr);
 
 private Q_SLOTS:
 
-	/// Event handler for the Ok button.
-	void onOk();
+    /// Event handler for the Ok button.
+    void onOk();
 
-	/// Is called when the user has selected a new value for the frames per seconds.
-	void onFramesPerSecondChanged(int index);
+    /// Is called when the user has selected a new value for the frames per seconds.
+    void onFramesPerSecondChanged(int index);
 
-	/// Is called when the user has selected a new value for the playback speed.
-	void onPlaybackSpeedChanged(int index);
+    /// Is called when the user has selected a new value for the playback speed.
+    void onPlaybackSpeedChanged(int index);
 
-	/// Is called when the user changes the start/end values of the animation interval.
-	void onAnimationIntervalChanged();
+    /// Is called when the user changes the start/end values of the animation interval.
+    void onAnimationIntervalChanged();
 
 private:
 
-	/// Updates the values shown in the dialog.
-	void updateUI();
+    /// Updates the values shown in the dialog.
+    void updateUI();
 
-	/// The animation settings being edited.
-	OORef<AnimationSettings> _animSettings;
+    /// The animation settings being edited.
+    OORef<AnimationSettings> _animSettings;
 
-	MainWindow& _mainWindow;
-	QComboBox* fpsBox;
-	SpinnerWidget* animStartSpinner;
-	SpinnerWidget* animEndSpinner;
-	SpinnerWidget* everyNthFrameSpinner;
-	QComboBox* playbackSpeedBox;
-	QCheckBox* loopPlaybackBox;
-	QGroupBox* animIntervalBox;
+    MainWindow& _mainWindow;
+    QComboBox* fpsBox;
+    SpinnerWidget* animStartSpinner;
+    SpinnerWidget* animEndSpinner;
+    SpinnerWidget* everyNthFrameSpinner;
+    QComboBox* playbackSpeedBox;
+    QCheckBox* loopPlaybackBox;
+    QGroupBox* animIntervalBox;
 
-	bool framesPerSecondModified = false;
-	bool playbackSpeedModified = false;
-	bool loopPlaybackModified = false;
+    bool framesPerSecondModified = false;
+    bool playbackSpeedModified = false;
+    bool loopPlaybackModified = false;
 };
 
-}	// End of namespace
+}   // End of namespace

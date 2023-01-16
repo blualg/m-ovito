@@ -36,32 +36,32 @@ using namespace Ovito::StdMod;
  */
 class ParticlesSliceModifierDelegate : public SliceModifierDelegate
 {
-	/// Give the modifier delegate its own metaclass.
-	class ParticlesSliceModifierDelegateClass : public SliceModifierDelegate::OOMetaClass
-	{
-	public:
+    /// Give the modifier delegate its own metaclass.
+    class ParticlesSliceModifierDelegateClass : public SliceModifierDelegate::OOMetaClass
+    {
+    public:
 
-		/// Inherit constructor from base class.
-		using SliceModifierDelegate::OOMetaClass::OOMetaClass;
+        /// Inherit constructor from base class.
+        using SliceModifierDelegate::OOMetaClass::OOMetaClass;
 
-		/// Indicates which data objects in the given input data collection the modifier delegate is able to operate on.
-		virtual QVector<DataObjectReference> getApplicableObjects(const DataCollection& input) const override;
+        /// Indicates which data objects in the given input data collection the modifier delegate is able to operate on.
+        virtual QVector<DataObjectReference> getApplicableObjects(const DataCollection& input) const override;
 
-		/// The name by which Python scripts can refer to this modifier delegate.
-		virtual QString pythonDataName() const override { return QStringLiteral("particles"); }
-	};
+        /// The name by which Python scripts can refer to this modifier delegate.
+        virtual QString pythonDataName() const override { return QStringLiteral("particles"); }
+    };
 
-	OVITO_CLASS_META(ParticlesSliceModifierDelegate, ParticlesSliceModifierDelegateClass)
+    OVITO_CLASS_META(ParticlesSliceModifierDelegate, ParticlesSliceModifierDelegateClass)
 
-	Q_CLASSINFO("DisplayName", "Particles");
+    Q_CLASSINFO("DisplayName", "Particles");
 
 public:
 
-	/// Constructor.
-	Q_INVOKABLE ParticlesSliceModifierDelegate(ObjectCreationParams params) : SliceModifierDelegate(params) {}
+    /// Constructor.
+    Q_INVOKABLE ParticlesSliceModifierDelegate(ObjectCreationParams params) : SliceModifierDelegate(params) {}
 
-	/// Applies a slice operation to a data object.
-	virtual PipelineStatus apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const PipelineFlowState& inputState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs) override;
+    /// Applies a slice operation to a data object.
+    virtual PipelineStatus apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const PipelineFlowState& inputState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs) override;
 };
 
-}	// End of namespace
+}   // End of namespace

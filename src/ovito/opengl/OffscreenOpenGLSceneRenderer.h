@@ -37,52 +37,52 @@ namespace Ovito {
  */
 class OVITO_OPENGLRENDERER_EXPORT OffscreenOpenGLSceneRenderer : public OpenGLSceneRenderer
 {
-	OVITO_CLASS(OffscreenOpenGLSceneRenderer)
+    OVITO_CLASS(OffscreenOpenGLSceneRenderer)
 
 public:
 
-	/// Constructor.
-	Q_INVOKABLE OffscreenOpenGLSceneRenderer(ObjectCreationParams params);
+    /// Constructor.
+    Q_INVOKABLE OffscreenOpenGLSceneRenderer(ObjectCreationParams params);
 
-	/// Prepares the renderer for rendering one or more frames.
-	virtual bool startRender(const RenderSettings* settings, const QSize& frameBufferSize, MixedKeyCache& visCache) override;
+    /// Prepares the renderer for rendering one or more frames.
+    virtual bool startRender(const RenderSettings* settings, const QSize& frameBufferSize, MixedKeyCache& visCache) override;
 
-	/// This method is called just before renderFrame() is called.
-	virtual void beginFrame(AnimationTime time, Scene* scene, const ViewProjectionParameters& params, Viewport* vp, const QRect& viewportRect, FrameBuffer* frameBuffer) override;
+    /// This method is called just before renderFrame() is called.
+    virtual void beginFrame(AnimationTime time, Scene* scene, const ViewProjectionParameters& params, Viewport* vp, const QRect& viewportRect, FrameBuffer* frameBuffer) override;
 
-	/// Renders the current animation frame.
-	virtual bool renderFrame(const QRect& viewportRect, MainThreadOperation& operation) override;
+    /// Renders the current animation frame.
+    virtual bool renderFrame(const QRect& viewportRect, MainThreadOperation& operation) override;
 
-	/// Renders the overlays/underlays of the viewport into the framebuffer.
-	virtual bool renderOverlays(bool underlays, const QRect& logicalViewportRect, const QRect& physicalViewportRect, MainThreadOperation& operation) override;
+    /// Renders the overlays/underlays of the viewport into the framebuffer.
+    virtual bool renderOverlays(bool underlays, const QRect& logicalViewportRect, const QRect& physicalViewportRect, MainThreadOperation& operation) override;
 
-	/// This method is called after renderFrame() has been called.
-	virtual void endFrame(bool renderingSuccessful, const QRect& viewportRect) override;
+    /// This method is called after renderFrame() has been called.
+    virtual void endFrame(bool renderingSuccessful, const QRect& viewportRect) override;
 
-	/// Is called after rendering has finished.
-	virtual void endRender() override;
-	
+    /// Is called after rendering has finished.
+    virtual void endRender() override;
+    
 private:
 
-	/// Creates the QOffscreenSurface in the main thread.
-	void createOffscreenSurface();
+    /// Creates the QOffscreenSurface in the main thread.
+    void createOffscreenSurface();
 
 private:
 
-	/// The offscreen surface used to render into an image buffer using OpenGL.
-	QOffscreenSurface* _offscreenSurface = nullptr;
+    /// The offscreen surface used to render into an image buffer using OpenGL.
+    QOffscreenSurface* _offscreenSurface = nullptr;
 
-	/// The temporary OpenGL rendering context.
-	std::unique_ptr<QOpenGLContext> _offscreenContext;
+    /// The temporary OpenGL rendering context.
+    std::unique_ptr<QOpenGLContext> _offscreenContext;
 
-	/// The OpenGL framebuffer.
-	std::unique_ptr<QOpenGLFramebufferObject> _framebufferObject;
+    /// The OpenGL framebuffer.
+    std::unique_ptr<QOpenGLFramebufferObject> _framebufferObject;
 
-	/// The resolution of the offscreen framebuffer.
-	QSize _framebufferSize;
+    /// The resolution of the offscreen framebuffer.
+    QSize _framebufferSize;
 
-	/// The monotonically increasing identifier of the last frame that was rendered.
-	OpenGLResourceManager::ResourceFrameHandle _previousResourceFrame = 0;
+    /// The monotonically increasing identifier of the last frame that was rendered.
+    OpenGLResourceManager::ResourceFrameHandle _previousResourceFrame = 0;
 };
 
-}	// End of namespace
+}   // End of namespace

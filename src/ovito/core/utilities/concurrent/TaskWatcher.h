@@ -33,89 +33,89 @@ namespace Ovito {
  */
 class OVITO_CORE_EXPORT TaskWatcher : public QObject, private detail::ProgressTaskCallback<TaskWatcher>
 {
-	Q_OBJECT
+    Q_OBJECT
 
 public:
 
-	/// Constructor that creates a watcher that is not associated with
-	/// any future/promise yet.
-	explicit TaskWatcher(QObject* parent = nullptr) : QObject(parent) {}
+    /// Constructor that creates a watcher that is not associated with
+    /// any future/promise yet.
+    explicit TaskWatcher(QObject* parent = nullptr) : QObject(parent) {}
 
-	/// Destructor.
-	virtual ~TaskWatcher() {
-		watch(nullptr, false);
-	}
+    /// Destructor.
+    virtual ~TaskWatcher() {
+        watch(nullptr, false);
+    }
 
-	/// Returns whether this watcher is currently monitoring a task.
-	bool isWatching() const { return (bool)_task; }
+    /// Returns whether this watcher is currently monitoring a task.
+    bool isWatching() const { return (bool)_task; }
 
-	/// Returns the task being monitored by this watcher.
-	const TaskPtr& task() const { return _task; }
+    /// Returns the task being monitored by this watcher.
+    const TaskPtr& task() const { return _task; }
 
-	/// Makes this watcher monitor the given task.
-	void watch(Task* task, bool pendingAssignment = true);
+    /// Makes this watcher monitor the given task.
+    void watch(Task* task, bool pendingAssignment = true);
 
-	/// Makes this watcher monitor the given task.
-	void watch(const TaskPtr& task, bool pendingAssignment = true) { 
-		watch(task.get(), pendingAssignment);
-	}
+    /// Makes this watcher monitor the given task.
+    void watch(const TaskPtr& task, bool pendingAssignment = true) { 
+        watch(task.get(), pendingAssignment);
+    }
 
-	/// Detaches this watcher from the task.
-	void reset() { 
-		if(isWatching())
-			watch(nullptr); 
-	}
+    /// Detaches this watcher from the task.
+    void reset() { 
+        if(isWatching())
+            watch(nullptr); 
+    }
 
-	/// Returns true if the task monitored by this object has been canceled.
-	bool isCanceled() const;
+    /// Returns true if the task monitored by this object has been canceled.
+    bool isCanceled() const;
 
-	/// Returns true if the task monitored by this object has reached the 'finished' state.
-	bool isFinished() const;
+    /// Returns true if the task monitored by this object has reached the 'finished' state.
+    bool isFinished() const;
 
-	/// Returns the maximum value for the progress of the task monitored by this object.
-	qlonglong progressMaximum() const;
+    /// Returns the maximum value for the progress of the task monitored by this object.
+    qlonglong progressMaximum() const;
 
-	/// Returns the current value for the progress of the task monitored by this object.
-	qlonglong progressValue() const;
+    /// Returns the current value for the progress of the task monitored by this object.
+    qlonglong progressValue() const;
 
-	/// Returns the status text of the task monitored by this object.
-	QString progressText() const;
+    /// Returns the status text of the task monitored by this object.
+    QString progressText() const;
 
 public Q_SLOTS:
 
-	/// Cancels the operation being watched by this watcher.
-	void cancel();
+    /// Cancels the operation being watched by this watcher.
+    void cancel();
 
 Q_SIGNALS:
 
-	void finished();
-	void started();
-	void canceled();
-	void progressChanged(qlonglong progress, qlonglong maximum);
-	void progressTextChanged(const QString& progressText);
+    void finished();
+    void started();
+    void canceled();
+    void progressChanged(qlonglong progress, qlonglong maximum);
+    void progressTextChanged(const QString& progressText);
 
 private Q_SLOTS:
 
-	void taskStarted();
-	void taskCanceled();
-	void taskFinished();
-	void taskProgressChanged(qlonglong progress, qlonglong maximum);
-	void taskTextChanged();
+    void taskStarted();
+    void taskCanceled();
+    void taskFinished();
+    void taskProgressChanged(qlonglong progress, qlonglong maximum);
+    void taskTextChanged();
 
 private:
 
-	bool taskStateChangedCallback(int state);
-	void taskProgressChangedCallback(qlonglong progress, qlonglong maximum);
-	void taskTextChangedCallback();
+    bool taskStateChangedCallback(int state);
+    void taskProgressChangedCallback(qlonglong progress, qlonglong maximum);
+    void taskTextChangedCallback();
 
-	/// The task being monitored.
-	TaskPtr _task;
+    /// The task being monitored.
+    TaskPtr _task;
 
-	/// Indicates that the task has reached the 'finished' state.
+    /// Indicates that the task has reached the 'finished' state.
     bool _finished = false;
 
-	template<typename Derived> friend class detail::TaskCallback;
-	template<typename Derived> friend class detail::ProgressTaskCallback;
+    template<typename Derived> friend class detail::TaskCallback;
+    template<typename Derived> friend class detail::ProgressTaskCallback;
 };
 
-}	// End of namespace
+}   // End of namespace

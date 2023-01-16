@@ -37,51 +37,51 @@ namespace Ovito {
  */
 class OVITO_GUI_EXPORT ColorPickerWidget : public QAbstractButton
 {
-	Q_OBJECT
+    Q_OBJECT
 
 public:
 
-	/// \brief Constructs the color picker control.
-	/// \param parent The parent widget for the widget.
-	ColorPickerWidget(QWidget* parent = 0);
+    /// \brief Constructs the color picker control.
+    /// \param parent The parent widget for the widget.
+    ColorPickerWidget(QWidget* parent = 0);
 
-	/// \brief Gets the current value of the color picker.
-	/// \return The current color.
-	/// \sa setColor()
-	const Color& color() const { return _color; }
+    /// \brief Gets the current value of the color picker.
+    /// \return The current color.
+    /// \sa setColor()
+    const Color& color() const { return _color; }
 
-	/// \brief Sets the current value of the color picker.
-	/// \param newVal The new color value.
-	/// \param emitChangeSignal Controls whether the control should emit
-	///                         a colorChanged() signal when \a newVal is
-	///                         not equal to the old color.
-	/// \sa color()
-	void setColor(const Color& newVal, bool emitChangeSignal = false);
+    /// \brief Sets the current value of the color picker.
+    /// \param newVal The new color value.
+    /// \param emitChangeSignal Controls whether the control should emit
+    ///                         a colorChanged() signal when \a newVal is
+    ///                         not equal to the old color.
+    /// \sa color()
+    void setColor(const Color& newVal, bool emitChangeSignal = false);
 
-	/// Returns the preferred size of the widget.
-	virtual QSize sizeHint() const override;
+    /// Returns the preferred size of the widget.
+    virtual QSize sizeHint() const override;
 
 Q_SIGNALS:
 
-	/// \brief This signal is emitted by the color picker after its value has been changed by the user.
-	void colorChanged();
+    /// \brief This signal is emitted by the color picker after its value has been changed by the user.
+    void colorChanged();
 
 protected Q_SLOTS:
 
-	/// \brief Is called when the user has clicked on the color picker control.
-	///
-	/// This will open the color selection dialog.
-	void activateColorPicker();
+    /// \brief Is called when the user has clicked on the color picker control.
+    ///
+    /// This will open the color selection dialog.
+    void activateColorPicker();
 
 protected:
 
-	/// Paints the widget.
-	virtual void paintEvent(QPaintEvent* event) override;
+    /// Paints the widget.
+    virtual void paintEvent(QPaintEvent* event) override;
 
-	/// The currently selected color.
-	Color _color;
+    /// The currently selected color.
+    Color _color;
 };
 
-}	// End of namespace
+}   // End of namespace
 
 

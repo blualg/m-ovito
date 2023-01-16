@@ -35,12 +35,12 @@ IMPLEMENT_OVITO_CLASS(SurfaceMeshRegionsExpressionSelectionModifierDelegate);
 ******************************************************************************/
 QVector<DataObjectReference> SurfaceMeshRegionsExpressionSelectionModifierDelegate::OOMetaClass::getApplicableObjects(const DataCollection& input) const
 {
-	// Gather list of all surface mesh regions in the input data collection.
-	QVector<DataObjectReference> objects;
-	for(const ConstDataObjectPath& path : input.getObjectsRecursive(SurfaceMeshRegions::OOClass())) {
-		objects.push_back(path);
-	}
-	return objects;
+    // Gather list of all surface mesh regions in the input data collection.
+    QVector<DataObjectReference> objects;
+    for(const ConstDataObjectPath& path : input.getObjectsRecursive(SurfaceMeshRegions::OOClass())) {
+        objects.push_back(path);
+    }
+    return objects;
 }
 
-}	// End of namespace
+}   // End of namespace

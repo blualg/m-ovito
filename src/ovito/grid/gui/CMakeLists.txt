@@ -22,11 +22,11 @@
 
 # Define the GUI module, which provides the user interface for the parent module.
 OVITO_STANDARD_PLUGIN(GridGui
-	SOURCES
-		modifier/CreateIsosurfaceModifierEditor.cpp
-		objects/VoxelGridVisEditor.cpp
-		objects/VoxelGridInspectionApplet.cpp
-	PLUGIN_DEPENDENCIES Grid StdObjGui
-	GUI_PLUGIN
-	HAS_NO_EXPORTS
+    SOURCES
+        modifier/CreateIsosurfaceModifierEditor.cpp
+        objects/VoxelGridVisEditor.cpp
+        objects/VoxelGridInspectionApplet.cpp
+    PLUGIN_DEPENDENCIES Grid StdObjGui
+    GUI_PLUGIN
+    HAS_NO_EXPORTS
 )

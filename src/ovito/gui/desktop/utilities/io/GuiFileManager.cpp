@@ -33,16 +33,16 @@ namespace Ovito {
 ******************************************************************************/
 bool GuiFileManager::askUserForPassword(const QString& hostname, const QString& username, QString& password)
 {
-	if(Application::instance()->guiMode()) {
-		bool ok;
-		password = QInputDialog::getText(nullptr, tr("SSH Password Authentication"),
-			tr("<p>OVITO is connecting to remote host <b>%1</b> via SSH.</p></p>Please enter the password for user <b>%2</b>:</p>").arg(hostname.toHtmlEscaped()).arg(username.toHtmlEscaped()),
-			QLineEdit::Password, password, &ok);
-		return ok;
-	}
-	else {
-		return FileManager::askUserForPassword(hostname, username, password);
-	}
+    if(Application::instance()->guiMode()) {
+        bool ok;
+        password = QInputDialog::getText(nullptr, tr("SSH Password Authentication"),
+            tr("<p>OVITO is connecting to remote host <b>%1</b> via SSH.</p></p>Please enter the password for user <b>%2</b>:</p>").arg(hostname.toHtmlEscaped()).arg(username.toHtmlEscaped()),
+            QLineEdit::Password, password, &ok);
+        return ok;
+    }
+    else {
+        return FileManager::askUserForPassword(hostname, username, password);
+    }
 }
 
 /******************************************************************************
@@ -50,16 +50,16 @@ bool GuiFileManager::askUserForPassword(const QString& hostname, const QString& 
 ******************************************************************************/
 bool GuiFileManager::askUserForKeyPassphrase(const QString& hostname, const QString& prompt, QString& passphrase)
 {
-	if(Application::instance()->guiMode()) {
-		bool ok;
-		passphrase = QInputDialog::getText(nullptr, tr("SSH Remote Connection"),
-			tr("<p>OVITO is connecting to remote host <b>%1</b> via SSH.</p><p>%2</p>").arg(hostname.toHtmlEscaped()).arg(prompt.toHtmlEscaped()),
-			QLineEdit::Password, passphrase, &ok);
-		return ok;
-	}
-	else {
-		return FileManager::askUserForKeyPassphrase(hostname, prompt, passphrase);
-	}
+    if(Application::instance()->guiMode()) {
+        bool ok;
+        passphrase = QInputDialog::getText(nullptr, tr("SSH Remote Connection"),
+            tr("<p>OVITO is connecting to remote host <b>%1</b> via SSH.</p><p>%2</p>").arg(hostname.toHtmlEscaped()).arg(prompt.toHtmlEscaped()),
+            QLineEdit::Password, passphrase, &ok);
+        return ok;
+    }
+    else {
+        return FileManager::askUserForKeyPassphrase(hostname, prompt, passphrase);
+    }
 }
 
 /******************************************************************************
@@ -67,16 +67,16 @@ bool GuiFileManager::askUserForKeyPassphrase(const QString& hostname, const QStr
 ******************************************************************************/
 bool GuiFileManager::askUserForKbiResponse(const QString& hostname, const QString& username, const QString& instruction, const QString& question, bool showAnswer, QString& answer)
 {
-	if(Application::instance()->guiMode()) {
-		bool ok;
-		answer = QInputDialog::getText(nullptr, tr("SSH Keyboard-Interactive Authentication"),
-			tr("<p>OVITO is connecting to remote host <b>%1</b> via SSH.</p></p>Please enter your response to the following question sent by the SSH server:</p><p>%2 <b>%3</b></p>").arg(hostname.toHtmlEscaped()).arg(instruction.toHtmlEscaped()).arg(question.toHtmlEscaped()),
-			showAnswer ? QLineEdit::Normal : QLineEdit::Password, QString(), &ok);
-		return ok;
-	}
-	else {
-		return FileManager::askUserForKbiResponse(hostname, username, instruction, question, showAnswer, answer);
-	}
+    if(Application::instance()->guiMode()) {
+        bool ok;
+        answer = QInputDialog::getText(nullptr, tr("SSH Keyboard-Interactive Authentication"),
+            tr("<p>OVITO is connecting to remote host <b>%1</b> via SSH.</p></p>Please enter your response to the following question sent by the SSH server:</p><p>%2 <b>%3</b></p>").arg(hostname.toHtmlEscaped()).arg(instruction.toHtmlEscaped()).arg(question.toHtmlEscaped()),
+            showAnswer ? QLineEdit::Normal : QLineEdit::Password, QString(), &ok);
+        return ok;
+    }
+    else {
+        return FileManager::askUserForKbiResponse(hostname, username, instruction, question, showAnswer, answer);
+    }
 }
 
 /******************************************************************************
@@ -84,17 +84,17 @@ bool GuiFileManager::askUserForKbiResponse(const QString& hostname, const QStrin
 ******************************************************************************/
 bool GuiFileManager::detectedUnknownSshServer(const QString& hostname, const QString& unknownHostMessage, const QString& hostPublicKeyHash)
 {
-	if(Application::instance()->guiMode()) {
-		return QMessageBox::question(nullptr, tr("SSH Unknown Remote Host"),
-			tr("<p>OVITO is connecting to unknown remote host <b>%1</b> via SSH.</p><p>%2</p><p>Host key fingerprint is %3</p><p>Are you sure you want to continue connecting?</p>")
-			.arg(hostname.toHtmlEscaped()).arg(unknownHostMessage.toHtmlEscaped()).arg(hostPublicKeyHash),
-			QMessageBox::Yes | QMessageBox::No) == QMessageBox::Yes;
-	}
-	else {
-		return FileManager::detectedUnknownSshServer(hostname, unknownHostMessage, hostPublicKeyHash);
-	}
+    if(Application::instance()->guiMode()) {
+        return QMessageBox::question(nullptr, tr("SSH Unknown Remote Host"),
+            tr("<p>OVITO is connecting to unknown remote host <b>%1</b> via SSH.</p><p>%2</p><p>Host key fingerprint is %3</p><p>Are you sure you want to continue connecting?</p>")
+            .arg(hostname.toHtmlEscaped()).arg(unknownHostMessage.toHtmlEscaped()).arg(hostPublicKeyHash),
+            QMessageBox::Yes | QMessageBox::No) == QMessageBox::Yes;
+    }
+    else {
+        return FileManager::detectedUnknownSshServer(hostname, unknownHostMessage, hostPublicKeyHash);
+    }
 }
 
 #endif
 
-}	// End of namespace
+}   // End of namespace

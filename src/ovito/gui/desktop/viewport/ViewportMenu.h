@@ -34,46 +34,46 @@ namespace Ovito {
  */
 class OVITO_GUI_EXPORT ViewportMenu : public QMenu
 {
-	Q_OBJECT
+    Q_OBJECT
 
 public:
 
-	/// Initializes the menu.
-	ViewportMenu(MainWindow& mainWindow, Viewport* viewport, QWidget* viewportWidget);
+    /// Initializes the menu.
+    ViewportMenu(MainWindow& mainWindow, Viewport* viewport, QWidget* viewportWidget);
 
-	/// Displays the menu.
-	void show(const QPoint& pos);
+    /// Displays the menu.
+    void show(const QPoint& pos);
 
 private Q_SLOTS:
 
-	void onRenderPreviewMode(bool checked);
-	void onShowGrid(bool checked);
-	void onConstrainRotation(bool checked);
-	void onShowViewTypeMenu();
-	void onViewType(QAction* action);
-	void onAdjustView();
-	void onViewNode(QAction* action);
-	void onCreateCamera();
-	void onDeleteViewport();
-	void onSplitViewport(ViewportLayoutCell::SplitDirection direction);
-	void onPipelineVisibility(bool checked);
+    void onRenderPreviewMode(bool checked);
+    void onShowGrid(bool checked);
+    void onConstrainRotation(bool checked);
+    void onShowViewTypeMenu();
+    void onViewType(QAction* action);
+    void onAdjustView();
+    void onViewNode(QAction* action);
+    void onCreateCamera();
+    void onDeleteViewport();
+    void onSplitViewport(ViewportLayoutCell::SplitDirection direction);
+    void onPipelineVisibility(bool checked);
 
 private:
 
-	/// The main window this context menu belongs to.
-	MainWindow& _mainWindow;
+    /// The main window this context menu belongs to.
+    MainWindow& _mainWindow;
 
-	/// The viewport this menu belongs to.
-	Viewport* _viewport;
+    /// The viewport this menu belongs to.
+    Viewport* _viewport;
 
-	/// The viewport widget this menu is shown in.
-	QWidget* _viewportWidget;
+    /// The viewport widget this menu is shown in.
+    QWidget* _viewportWidget;
 
-	/// The view type sub-menu.
-	QMenu* _viewTypeMenu;
+    /// The view type sub-menu.
+    QMenu* _viewTypeMenu;
 
-	/// The cell in the window layout the viewport is living in.
-	ViewportLayoutCell* _layoutCell;
+    /// The cell in the window layout the viewport is living in.
+    ViewportLayoutCell* _layoutCell;
 };
 
-}	// End of namespace
+}   // End of namespace

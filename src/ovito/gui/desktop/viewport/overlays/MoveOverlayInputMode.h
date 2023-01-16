@@ -38,49 +38,49 @@ class OVITO_GUI_EXPORT MoveOverlayInputMode : public ViewportInputMode
 {
 public:
 
-	/// Constructor.
-	MoveOverlayInputMode(PropertiesEditor* editor);
+    /// Constructor.
+    MoveOverlayInputMode(PropertiesEditor* editor);
 
-	/// Called when the viewport input handler becomes the current one. 
-	virtual void activated(bool temporary) override;
+    /// Called when the viewport input handler becomes the current one. 
+    virtual void activated(bool temporary) override;
 
-	/// Called when the viewport input handler no longer is the current one. 
-	virtual void deactivated(bool temporary) override;
+    /// Called when the viewport input handler no longer is the current one. 
+    virtual void deactivated(bool temporary) override;
 
-	/// Handles the mouse down events for a Viewport.
-	virtual void mousePressEvent(ViewportWindowInterface* vpwin, QMouseEvent* event) override;
+    /// Handles the mouse down events for a Viewport.
+    virtual void mousePressEvent(ViewportWindowInterface* vpwin, QMouseEvent* event) override;
 
-	/// Handles the mouse move events for a Viewport.
-	virtual void mouseMoveEvent(ViewportWindowInterface* vpwin, QMouseEvent* event) override;
+    /// Handles the mouse move events for a Viewport.
+    virtual void mouseMoveEvent(ViewportWindowInterface* vpwin, QMouseEvent* event) override;
 
-	/// Handles the mouse up events for a Viewport.
-	virtual void mouseReleaseEvent(ViewportWindowInterface* vpwin, QMouseEvent* event) override;
+    /// Handles the mouse up events for a Viewport.
+    virtual void mouseReleaseEvent(ViewportWindowInterface* vpwin, QMouseEvent* event) override;
 
-	/// Returns the current viewport we are working in.
-	Viewport* viewport() const { return _viewport; }
+    /// Returns the current viewport we are working in.
+    Viewport* viewport() const { return _viewport; }
 
 private:
 
-	/// The current viewport we are working in.
-	Viewport* _viewport = nullptr;
+    /// The current viewport we are working in.
+    Viewport* _viewport = nullptr;
 
-	/// The properties editor of the viewport overlay being moved.
-	PropertiesEditor* _editor;
+    /// The properties editor of the viewport overlay being moved.
+    PropertiesEditor* _editor;
 
-	/// Mouse position at first click.
-	QPointF _startPoint;
+    /// Mouse position at first click.
+    QPointF _startPoint;
 
-	/// The current mouse position.
-	QPointF _currentPoint;
+    /// The current mouse position.
+    QPointF _currentPoint;
 
-	/// The cursor shown when the overlay can be moved.
-	QCursor _moveCursor;
+    /// The cursor shown when the overlay can be moved.
+    QCursor _moveCursor;
 
-	/// The cursor shown when in the wrong viewport.
-	QCursor _forbiddenCursor;
+    /// The cursor shown when in the wrong viewport.
+    QCursor _forbiddenCursor;
 
-	/// To undo changes while dragging the mouse.
-	UndoableTransaction _undoTransaction;
+    /// To undo changes while dragging the mouse.
+    UndoableTransaction _undoTransaction;
 };
 
-}	// End of namespace
+}   // End of namespace

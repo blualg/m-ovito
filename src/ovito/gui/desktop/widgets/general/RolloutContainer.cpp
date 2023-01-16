@@ -33,14 +33,14 @@ namespace Ovito {
 ******************************************************************************/
 RolloutContainer::RolloutContainer(MainWindow& mainWindow, QWidget* parent) : QScrollArea(parent), _mainWindow(mainWindow)
 {
-	setFrameStyle(QFrame::Panel | QFrame::Sunken);
-	setWidgetResizable(true);
-	QWidget* widget = new QWidget();
-	RolloutContainerLayout* layout = new RolloutContainerLayout(widget);
-	layout->setContentsMargins(QMargins());
-	layout->setSpacing(2);
-	widget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
-	setWidget(widget);
+    setFrameStyle(QFrame::Panel | QFrame::Sunken);
+    setWidgetResizable(true);
+    QWidget* widget = new QWidget();
+    RolloutContainerLayout* layout = new RolloutContainerLayout(widget);
+    layout->setContentsMargins(QMargins());
+    layout->setSpacing(2);
+    widget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
+    setWidget(widget);
 }
 
 /******************************************************************************
@@ -48,33 +48,33 @@ RolloutContainer::RolloutContainer(MainWindow& mainWindow, QWidget* parent) : QS
 ******************************************************************************/
 Rollout* RolloutContainer::addRollout(QWidget* content, const QString& title, const RolloutInsertionParameters& params, const QString& helpPageUrl)
 {
-	OVITO_CHECK_POINTER(content);
-	Rollout* rollout = new Rollout(widget(), content, title, params, helpPageUrl.isEmpty() ? params.helpUrl() : helpPageUrl);
-	RolloutContainerLayout* layout = static_cast<RolloutContainerLayout*>(widget()->layout());
-	bool wasInserted = false;
-	if(params._afterThisRollout) {
-		Rollout* otherRollout = qobject_cast<Rollout*>(params._afterThisRollout->parent());
-		for(int i = 0; i < layout->count(); i++) {
-			if(layout->itemAt(i)->widget() == otherRollout) {
-				wasInserted = true;
-				layout->insertWidget(i + 1, rollout);
-				break;
-			}
-		}
-	}
-	else if(params._beforeThisRollout) {
-		Rollout* otherRollout = qobject_cast<Rollout*>(params._beforeThisRollout->parent());
-		for(int i = 0; i < layout->count(); i++) {
-			if(layout->itemAt(i)->widget() == otherRollout) {
-				wasInserted = true;
-				layout->insertWidget(i, rollout);
-				break;
-			}
-		}
-	}
-	if(!wasInserted)
-		layout->addWidget(rollout);
-	return rollout;
+    OVITO_CHECK_POINTER(content);
+    Rollout* rollout = new Rollout(widget(), content, title, params, helpPageUrl.isEmpty() ? params.helpUrl() : helpPageUrl);
+    RolloutContainerLayout* layout = static_cast<RolloutContainerLayout*>(widget()->layout());
+    bool wasInserted = false;
+    if(params._afterThisRollout) {
+        Rollout* otherRollout = qobject_cast<Rollout*>(params._afterThisRollout->parent());
+        for(int i = 0; i < layout->count(); i++) {
+            if(layout->itemAt(i)->widget() == otherRollout) {
+                wasInserted = true;
+                layout->insertWidget(i + 1, rollout);
+                break;
+            }
+        }
+    }
+    else if(params._beforeThisRollout) {
+        Rollout* otherRollout = qobject_cast<Rollout*>(params._beforeThisRollout->parent());
+        for(int i = 0; i < layout->count(); i++) {
+            if(layout->itemAt(i)->widget() == otherRollout) {
+                wasInserted = true;
+                layout->insertWidget(i, rollout);
+                break;
+            }
+        }
+    }
+    if(!wasInserted)
+        layout->addWidget(rollout);
+    return rollout;
 }
 
 /******************************************************************************
@@ -82,12 +82,12 @@ Rollout* RolloutContainer::addRollout(QWidget* content, const QString& title, co
 ******************************************************************************/
 void RolloutContainer::updateRollouts()
 {
-	for(QObject* child : widget()->children()) {
-		if(child->isWidgetType()) {
-			static_cast<QWidget*>(child)->updateGeometry();
-		}
-	}
-	widget()->updateGeometry();
+    for(QObject* child : widget()->children()) {
+        if(child->isWidgetType()) {
+            static_cast<QWidget*>(child)->updateGeometry();
+        }
+    }
+    widget()->updateGeometry();
 }
 
 /******************************************************************************
@@ -95,13 +95,13 @@ void RolloutContainer::updateRollouts()
 ******************************************************************************/
 void RolloutContainer::updateRolloutsLater() 
 {
-	// Update widget layout once immediately.
-	updateRollouts();
+    // Update widget layout once immediately.
+    updateRollouts();
 
-	// Update layout a second time after some delay in case 
-	// the widgets are not up to date yet. 
-	if(!_updateGeometryTimer)
-		_updateGeometryTimer = startTimer(80); // 80 millisecs
+    // Update layout a second time after some delay in case 
+    // the widgets are not up to date yet. 
+    if(!_updateGeometryTimer)
+        _updateGeometryTimer = startTimer(80); // 80 millisecs
 }
 
 /******************************************************************************
@@ -109,76 +109,76 @@ void RolloutContainer::updateRolloutsLater()
 ******************************************************************************/
 Rollout* RolloutContainer::findRolloutFromWidget(QWidget* content) const
 {
-	for(Rollout* rollout : widget()->findChildren<Rollout*>(QString(), Qt::FindDirectChildrenOnly)) {
-		if(rollout->content() == content)
-			return rollout;
-	}
-	return nullptr;
+    for(Rollout* rollout : widget()->findChildren<Rollout*>(QString(), Qt::FindDirectChildrenOnly)) {
+        if(rollout->content() == content)
+            return rollout;
+    }
+    return nullptr;
 }
 
 /******************************************************************************
 * Constructs a rollout widget.
 ******************************************************************************/
 Rollout::Rollout(QWidget* parent, QWidget* content, const QString& title, const RolloutInsertionParameters& params, const QString& helpPageUrl) :
-	QWidget(parent), _content(content), _collapseAnimation(this, "visiblePercentage"), _useAvailableSpace(params._useAvailableSpace), _helpPageUrl(helpPageUrl)
+    QWidget(parent), _content(content), _collapseAnimation(this, "visiblePercentage"), _useAvailableSpace(params._useAvailableSpace), _helpPageUrl(helpPageUrl)
 {
-	setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
-	_collapseAnimation.setDuration(350);
-	_collapseAnimation.setEasingCurve(QEasingCurve::InOutCubic);
+    setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
+    _collapseAnimation.setDuration(350);
+    _collapseAnimation.setEasingCurve(QEasingCurve::InOutCubic);
 
-	// Set initial open/collapsed state.
-	if(!params._animateFirstOpening && !params._collapsed)
-		_visiblePercentage = 100;
-	else
-		_visiblePercentage = 0;
+    // Set initial open/collapsed state.
+    if(!params._animateFirstOpening && !params._collapsed)
+        _visiblePercentage = 100;
+    else
+        _visiblePercentage = 0;
 
-	// Insert contents.
-	_content->setParent(this);
-	_content->setVisible(true);
-	connect(_content.data(), &QWidget::destroyed, this, &Rollout::deleteLater);
+    // Insert contents.
+    _content->setParent(this);
+    _content->setVisible(true);
+    connect(_content.data(), &QWidget::destroyed, this, &Rollout::deleteLater);
 
-	// Set up title button.
-	_titleButton = new QPushButton(title, this);
-	_titleButton->setAutoFillBackground(true);
-	_titleButton->setFocusPolicy(Qt::NoFocus);
-	_titleButton->setStyleSheet("QPushButton { "
-							   "  color: white; "
-							   "  border-style: solid; "
-							   "  border-width: 1px; "
-							   "  border-radius: 0px; "
-							   "  border-color: black; "
-							   "  background-color: grey; "
-							   "  padding: 1px; "
-							   "}"
-							   "QPushButton:pressed { "
-							   "  border-color: white; "
-							   "}");
-	connect(_titleButton, &QPushButton::clicked, this, &Rollout::toggleCollapsed);
+    // Set up title button.
+    _titleButton = new QPushButton(title, this);
+    _titleButton->setAutoFillBackground(true);
+    _titleButton->setFocusPolicy(Qt::NoFocus);
+    _titleButton->setStyleSheet("QPushButton { "
+                               "  color: white; "
+                               "  border-style: solid; "
+                               "  border-width: 1px; "
+                               "  border-radius: 0px; "
+                               "  border-color: black; "
+                               "  background-color: grey; "
+                               "  padding: 1px; "
+                               "}"
+                               "QPushButton:pressed { "
+                               "  border-color: white; "
+                               "}");
+    connect(_titleButton, &QPushButton::clicked, this, &Rollout::toggleCollapsed);
 
-	if(!helpPageUrl.isEmpty()) {
-		_helpButton = new QPushButton(QStringLiteral("?"), this);
-		_helpButton->setAutoFillBackground(true);
-		_helpButton->setFocusPolicy(Qt::NoFocus);
-		_helpButton->setToolTip(tr("Open help topic"));
-		_helpButton->setStyleSheet("QPushButton { "
-								   "  color: white; "
-								   "  border-style: solid; "
-								   "  border-width: 1px; "
-								   "  border-radius: 0px; "
-								   "  border-color: black; "
-								   "  background-color: rgb(80,130,80); "
-								   "  padding: 1px; "
-								   "  min-width: 16px; "
-								   "}"
-								   "QPushButton:pressed { "
-								   "  border-color: white; "
-								   "}");
-		connect(_helpButton, &QPushButton::clicked, this, &Rollout::onHelpButton);
-	}
-	else _helpButton = nullptr;
+    if(!helpPageUrl.isEmpty()) {
+        _helpButton = new QPushButton(QStringLiteral("?"), this);
+        _helpButton->setAutoFillBackground(true);
+        _helpButton->setFocusPolicy(Qt::NoFocus);
+        _helpButton->setToolTip(tr("Open help topic"));
+        _helpButton->setStyleSheet("QPushButton { "
+                                   "  color: white; "
+                                   "  border-style: solid; "
+                                   "  border-width: 1px; "
+                                   "  border-radius: 0px; "
+                                   "  border-color: black; "
+                                   "  background-color: rgb(80,130,80); "
+                                   "  padding: 1px; "
+                                   "  min-width: 16px; "
+                                   "}"
+                                   "QPushButton:pressed { "
+                                   "  border-color: white; "
+                                   "}");
+        connect(_helpButton, &QPushButton::clicked, this, &Rollout::onHelpButton);
+    }
+    else _helpButton = nullptr;
 
-	if(params._animateFirstOpening && !params._collapsed)
-		setCollapsed(false);
+    if(params._animateFirstOpening && !params._collapsed)
+        setCollapsed(false);
 }
 
 /******************************************************************************
@@ -186,17 +186,17 @@ Rollout::Rollout(QWidget* parent, QWidget* content, const QString& title, const 
 ******************************************************************************/
 void Rollout::setCollapsed(bool collapsed)
 {
-	_collapseAnimation.stop();
-	_collapseAnimation.setStartValue(_visiblePercentage);
-	_collapseAnimation.setEndValue(collapsed ? 0 : 100);
+    _collapseAnimation.stop();
+    _collapseAnimation.setStartValue(_visiblePercentage);
+    _collapseAnimation.setEndValue(collapsed ? 0 : 100);
 
-	// When expanding rollout, adjust scroll position of container so that it becomes visible.
-	if(collapsed == false)
-		connect(&_collapseAnimation, &QVariantAnimation::valueChanged, this, &Rollout::ensureVisible);
-	else
-		disconnect(&_collapseAnimation, &QVariantAnimation::valueChanged, this, &Rollout::ensureVisible);
+    // When expanding rollout, adjust scroll position of container so that it becomes visible.
+    if(collapsed == false)
+        connect(&_collapseAnimation, &QVariantAnimation::valueChanged, this, &Rollout::ensureVisible);
+    else
+        disconnect(&_collapseAnimation, &QVariantAnimation::valueChanged, this, &Rollout::ensureVisible);
 
-	_collapseAnimation.start();
+    _collapseAnimation.start();
 }
 
 /******************************************************************************
@@ -204,13 +204,13 @@ void Rollout::setCollapsed(bool collapsed)
 ******************************************************************************/
 RolloutContainer* Rollout::container() const
 {
-	QWidget* p = parentWidget();
-	while(p != nullptr) {
-		if(RolloutContainer* container = qobject_cast<RolloutContainer*>(p))
-			return container;
-		p = p->parentWidget();
-	}
-	return nullptr;
+    QWidget* p = parentWidget();
+    while(p != nullptr) {
+        if(RolloutContainer* container = qobject_cast<RolloutContainer*>(p))
+            return container;
+        p = p->parentWidget();
+    }
+    return nullptr;
 }
 
 /******************************************************************************
@@ -218,8 +218,8 @@ RolloutContainer* Rollout::container() const
 ******************************************************************************/
 void Rollout::ensureVisible()
 {
-	if(RolloutContainer* container = this->container())
-		container->ensureWidgetVisible(this, 0, 0);
+    if(RolloutContainer* container = this->container())
+        container->ensureWidgetVisible(this, 0, 0);
 }
 
 /******************************************************************************
@@ -227,28 +227,28 @@ void Rollout::ensureVisible()
 ******************************************************************************/
 QSize Rollout::sizeHint() const
 {
-	QSize titleSize = _titleButton->sizeHint();
-	QSize contentSize(0,0);
-	if(_content)
-		contentSize = _content->sizeHint();
-	if(_noticeWidget) {
-		contentSize.setHeight(contentSize.height() + _noticeWidget->heightForWidth(width()));
-	}
-	if(_useAvailableSpace) {
-		int occupiedSpace = 0;
-		for(Rollout* rollout : parentWidget()->findChildren<Rollout*>()) {
-			if(rollout->_useAvailableSpace) continue;
-			occupiedSpace += rollout->sizeHint().height();
-		}
-		occupiedSpace += parentWidget()->layout()->spacing() * (parentWidget()->findChildren<Rollout*>().size() - 1);
-		int totalSpace = parentWidget()->parentWidget()->height();
-		int availSpace = totalSpace - occupiedSpace;
-		availSpace -= titleSize.height();
-		if(availSpace > contentSize.height())
-			contentSize.setHeight(availSpace);
-	}
-	contentSize.setHeight(contentSize.height() * visiblePercentage() / 100);
-	return QSize(std::max(titleSize.width(), contentSize.width()), titleSize.height() + contentSize.height());
+    QSize titleSize = _titleButton->sizeHint();
+    QSize contentSize(0,0);
+    if(_content)
+        contentSize = _content->sizeHint();
+    if(_noticeWidget) {
+        contentSize.setHeight(contentSize.height() + _noticeWidget->heightForWidth(width()));
+    }
+    if(_useAvailableSpace) {
+        int occupiedSpace = 0;
+        for(Rollout* rollout : parentWidget()->findChildren<Rollout*>()) {
+            if(rollout->_useAvailableSpace) continue;
+            occupiedSpace += rollout->sizeHint().height();
+        }
+        occupiedSpace += parentWidget()->layout()->spacing() * (parentWidget()->findChildren<Rollout*>().size() - 1);
+        int totalSpace = parentWidget()->parentWidget()->height();
+        int availSpace = totalSpace - occupiedSpace;
+        availSpace -= titleSize.height();
+        if(availSpace > contentSize.height())
+            contentSize.setHeight(availSpace);
+    }
+    contentSize.setHeight(contentSize.height() * visiblePercentage() / 100);
+    return QSize(std::max(titleSize.width(), contentSize.width()), titleSize.height() + contentSize.height());
 }
 
 /******************************************************************************
@@ -256,29 +256,29 @@ QSize Rollout::sizeHint() const
 ******************************************************************************/
 int Rollout::heightForWidth(int w) const
 {
-	if(!_noticeWidget) return -1;
+    if(!_noticeWidget) return -1;
 
-	int titleSize = _titleButton->sizeHint().height();
-	int contentSize = 0;
-	if(_content)
-		contentSize = _content->sizeHint().height();
-	if(_noticeWidget)
-		contentSize += _noticeWidget->heightForWidth(w);
-	if(_useAvailableSpace) {
-		int occupiedSpace = 0;
-		for(Rollout* rollout : parentWidget()->findChildren<Rollout*>()) {
-			if(rollout->_useAvailableSpace) continue;
-			occupiedSpace += rollout->sizeHint().height();
-		}
-		occupiedSpace += parentWidget()->layout()->spacing() * (parentWidget()->findChildren<Rollout*>().size() - 1);
-		int totalSpace = parentWidget()->parentWidget()->height();
-		int availSpace = totalSpace - occupiedSpace;
-		availSpace -= titleSize;
-		if(availSpace > contentSize)
-			contentSize = availSpace;
-	}
-	contentSize = contentSize * visiblePercentage() / 100;
-	return titleSize + contentSize;
+    int titleSize = _titleButton->sizeHint().height();
+    int contentSize = 0;
+    if(_content)
+        contentSize = _content->sizeHint().height();
+    if(_noticeWidget)
+        contentSize += _noticeWidget->heightForWidth(w);
+    if(_useAvailableSpace) {
+        int occupiedSpace = 0;
+        for(Rollout* rollout : parentWidget()->findChildren<Rollout*>()) {
+            if(rollout->_useAvailableSpace) continue;
+            occupiedSpace += rollout->sizeHint().height();
+        }
+        occupiedSpace += parentWidget()->layout()->spacing() * (parentWidget()->findChildren<Rollout*>().size() - 1);
+        int totalSpace = parentWidget()->parentWidget()->height();
+        int availSpace = totalSpace - occupiedSpace;
+        availSpace -= titleSize;
+        if(availSpace > contentSize)
+            contentSize = availSpace;
+    }
+    contentSize = contentSize * visiblePercentage() / 100;
+    return titleSize + contentSize;
 }
 
 /******************************************************************************
@@ -286,44 +286,44 @@ int Rollout::heightForWidth(int w) const
 ******************************************************************************/
 void Rollout::resizeEvent(QResizeEvent* event)
 {
-	int titleHeight = _titleButton->sizeHint().height();
-	int contentHeight = 0;
-	if(_content)
-		contentHeight = _content->sizeHint().height();
-	int noticeWidgetHeight = 0;
-	if(_noticeWidget) {
-		noticeWidgetHeight = _noticeWidget->heightForWidth(width());
-		contentHeight += noticeWidgetHeight;
-	}
-	if(_useAvailableSpace) {
-		int occupiedSpace = 0;
-		for(Rollout* rollout : parentWidget()->findChildren<Rollout*>()) {
-			if(rollout->_useAvailableSpace) continue;
-			occupiedSpace += rollout->sizeHint().height();
-		}
-		occupiedSpace += parentWidget()->layout()->spacing() * (parentWidget()->findChildren<Rollout*>().size() - 1);
-		int totalSpace = parentWidget()->parentWidget()->height();
-		int availSpace = totalSpace - occupiedSpace;
-		availSpace -= titleHeight;
-		if(availSpace > contentHeight)
-			contentHeight = availSpace;
-	}
-	if(_helpButton) {
-		int helpButtonWidth = titleHeight;
-		_titleButton->setGeometry(0, 0, width() - helpButtonWidth + 1, titleHeight);
-		_helpButton->setGeometry(width() - helpButtonWidth, 0, helpButtonWidth, titleHeight);
-	}
-	else {
-		_titleButton->setGeometry(0, 0, width(), titleHeight);
-	}
-	int contentY = 0;
-	if(_noticeWidget) {
-		contentY = noticeWidgetHeight;
-		_noticeWidget->setGeometry(0, height() - contentHeight, width(), noticeWidgetHeight);
-	}
-	if(_content) {
-		_content->setGeometry(0, height() - contentHeight + contentY, width(), contentHeight - contentY);
-	}
+    int titleHeight = _titleButton->sizeHint().height();
+    int contentHeight = 0;
+    if(_content)
+        contentHeight = _content->sizeHint().height();
+    int noticeWidgetHeight = 0;
+    if(_noticeWidget) {
+        noticeWidgetHeight = _noticeWidget->heightForWidth(width());
+        contentHeight += noticeWidgetHeight;
+    }
+    if(_useAvailableSpace) {
+        int occupiedSpace = 0;
+        for(Rollout* rollout : parentWidget()->findChildren<Rollout*>()) {
+            if(rollout->_useAvailableSpace) continue;
+            occupiedSpace += rollout->sizeHint().height();
+        }
+        occupiedSpace += parentWidget()->layout()->spacing() * (parentWidget()->findChildren<Rollout*>().size() - 1);
+        int totalSpace = parentWidget()->parentWidget()->height();
+        int availSpace = totalSpace - occupiedSpace;
+        availSpace -= titleHeight;
+        if(availSpace > contentHeight)
+            contentHeight = availSpace;
+    }
+    if(_helpButton) {
+        int helpButtonWidth = titleHeight;
+        _titleButton->setGeometry(0, 0, width() - helpButtonWidth + 1, titleHeight);
+        _helpButton->setGeometry(width() - helpButtonWidth, 0, helpButtonWidth, titleHeight);
+    }
+    else {
+        _titleButton->setGeometry(0, 0, width(), titleHeight);
+    }
+    int contentY = 0;
+    if(_noticeWidget) {
+        contentY = noticeWidgetHeight;
+        _noticeWidget->setGeometry(0, height() - contentHeight, width(), noticeWidgetHeight);
+    }
+    if(_content) {
+        _content->setGeometry(0, height() - contentHeight + contentY, width(), contentHeight - contentY);
+    }
 }
 
 /******************************************************************************
@@ -331,10 +331,10 @@ void Rollout::resizeEvent(QResizeEvent* event)
 ******************************************************************************/
 void Rollout::paintEvent(QPaintEvent* event)
 {
-	QPainter painter(this);
-	int y = _titleButton->height() / 2;
-	if(height()-y+1 > 0)
-		qDrawShadeRect(&painter, 0, y, width()+1, height()-y+1, palette(), true);
+    QPainter painter(this);
+    int y = _titleButton->height() / 2;
+    if(height()-y+1 > 0)
+        qDrawShadeRect(&painter, 0, y, width()+1, height()-y+1, palette(), true);
 }
 
 /******************************************************************************
@@ -342,8 +342,8 @@ void Rollout::paintEvent(QPaintEvent* event)
 ******************************************************************************/
 void Rollout::onHelpButton()
 {
-	if(RolloutContainer* rolloutContainer = container())
-		rolloutContainer->mainWindow().actionManager()->openHelpTopic(_helpPageUrl);
+    if(RolloutContainer* rolloutContainer = container())
+        rolloutContainer->mainWindow().actionManager()->openHelpTopic(_helpPageUrl);
 }
 
 /******************************************************************************
@@ -351,26 +351,26 @@ void Rollout::onHelpButton()
 ******************************************************************************/
 void Rollout::setNotice(const QString& noticeText)
 {
-	if(!noticeText.isEmpty()) {
-		if(!_noticeWidget) {
-			_noticeWidget = new QLabel(noticeText, this);
-			_noticeWidget->setMargin(4);
-			_noticeWidget->setTextFormat(Qt::RichText);
-			_noticeWidget->setTextInteractionFlags(Qt::TextBrowserInteraction);
-			_noticeWidget->setOpenExternalLinks(true);
-			_noticeWidget->setWordWrap(true);
-			_noticeWidget->setAutoFillBackground(true);
-			_noticeWidget->lower();
-			_noticeWidget->setStyleSheet("QLabel { "
-									"  background-color: rgb(230,180,180); "
-									"}");
-		}
-		else
-			_noticeWidget->setText(noticeText);
-	}
-	else {
-		delete _noticeWidget;
-	}
+    if(!noticeText.isEmpty()) {
+        if(!_noticeWidget) {
+            _noticeWidget = new QLabel(noticeText, this);
+            _noticeWidget->setMargin(4);
+            _noticeWidget->setTextFormat(Qt::RichText);
+            _noticeWidget->setTextInteractionFlags(Qt::TextBrowserInteraction);
+            _noticeWidget->setOpenExternalLinks(true);
+            _noticeWidget->setWordWrap(true);
+            _noticeWidget->setAutoFillBackground(true);
+            _noticeWidget->lower();
+            _noticeWidget->setStyleSheet("QLabel { "
+                                    "  background-color: rgb(230,180,180); "
+                                    "}");
+        }
+        else
+            _noticeWidget->setText(noticeText);
+    }
+    else {
+        delete _noticeWidget;
+    }
 }
 
-}	// End of namespace
+}   // End of namespace

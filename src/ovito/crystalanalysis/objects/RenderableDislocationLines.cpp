@@ -29,4 +29,4 @@ IMPLEMENT_OVITO_CLASS(RenderableDislocationLines);
 DEFINE_RUNTIME_PROPERTY_FIELD(RenderableDislocationLines, lineSegments);
 DEFINE_RUNTIME_PROPERTY_FIELD(RenderableDislocationLines, clusterGraph);
 
-}	// End of namespace
+}   // End of namespace

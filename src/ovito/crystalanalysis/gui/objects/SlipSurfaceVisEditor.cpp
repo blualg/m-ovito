@@ -37,30 +37,30 @@ SET_OVITO_OBJECT_EDITOR(SlipSurfaceVis, SlipSurfaceVisEditor);
 ******************************************************************************/
 void SlipSurfaceVisEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 {
-	// Create a rollout.
-	QWidget* rollout = createRollout(QString(), rolloutParams);
+    // Create a rollout.
+    QWidget* rollout = createRollout(QString(), rolloutParams);
 
     // Create the rollout contents.
-	QVBoxLayout* layout = new QVBoxLayout(rollout);
-	layout->setContentsMargins(4,4,4,4);
-	layout->setSpacing(4);
+    QVBoxLayout* layout = new QVBoxLayout(rollout);
+    layout->setContentsMargins(4,4,4,4);
+    layout->setSpacing(4);
 
-	QGroupBox* surfaceGroupBox = new QGroupBox(tr("Surface display"));
-	QGridLayout* sublayout = new QGridLayout(surfaceGroupBox);
-	sublayout->setContentsMargins(4,4,4,4);
-	sublayout->setSpacing(4);
-	sublayout->setColumnStretch(1, 1);
-	layout->addWidget(surfaceGroupBox);
+    QGroupBox* surfaceGroupBox = new QGroupBox(tr("Surface display"));
+    QGridLayout* sublayout = new QGridLayout(surfaceGroupBox);
+    sublayout->setContentsMargins(4,4,4,4);
+    sublayout->setSpacing(4);
+    sublayout->setColumnStretch(1, 1);
+    layout->addWidget(surfaceGroupBox);
 
-	FloatParameterUI* surfaceTransparencyUI = new FloatParameterUI(this, PROPERTY_FIELD(SlipSurfaceVis::surfaceTransparencyController));
-	sublayout->addWidget(new QLabel(tr("Transparency:")), 0, 0);
-	sublayout->addLayout(surfaceTransparencyUI->createFieldLayout(), 0, 1);
+    FloatParameterUI* surfaceTransparencyUI = new FloatParameterUI(this, PROPERTY_FIELD(SlipSurfaceVis::surfaceTransparencyController));
+    sublayout->addWidget(new QLabel(tr("Transparency:")), 0, 0);
+    sublayout->addLayout(surfaceTransparencyUI->createFieldLayout(), 0, 1);
 
-	BooleanParameterUI* smoothShadingUI = new BooleanParameterUI(this, PROPERTY_FIELD(SlipSurfaceVis::smoothShading));
-	sublayout->addWidget(smoothShadingUI->checkBox(), 1, 0, 1, 2);
+    BooleanParameterUI* smoothShadingUI = new BooleanParameterUI(this, PROPERTY_FIELD(SlipSurfaceVis::smoothShading));
+    sublayout->addWidget(smoothShadingUI->checkBox(), 1, 0, 1, 2);
 
-	BooleanParameterUI* highlightEdgesUI = new BooleanParameterUI(this, PROPERTY_FIELD(SlipSurfaceVis::highlightEdges));
-	sublayout->addWidget(highlightEdgesUI->checkBox(), 2, 0, 1, 2);
+    BooleanParameterUI* highlightEdgesUI = new BooleanParameterUI(this, PROPERTY_FIELD(SlipSurfaceVis::highlightEdges));
+    sublayout->addWidget(highlightEdgesUI->checkBox(), 2, 0, 1, 2);
 }
 
-}	// End of namespace
+}   // End of namespace

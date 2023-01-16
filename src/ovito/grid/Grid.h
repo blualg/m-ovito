@@ -33,11 +33,11 @@
 
 namespace Ovito::Grid 
 {
-	using namespace Ovito::Mesh;
-	using namespace Ovito::StdObj;
+    using namespace Ovito::Mesh;
+    using namespace Ovito::StdObj;
 
-	class VoxelGrid;
-	class VoxelGridVis;
+    class VoxelGrid;
+    class VoxelGridVis;
 }
 
 #endif

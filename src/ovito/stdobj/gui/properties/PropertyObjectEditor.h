@@ -33,17 +33,17 @@ namespace Ovito::StdObj {
  */
 class PropertyObjectEditor : public PropertiesEditor
 {
-	OVITO_CLASS(PropertyObjectEditor)
+    OVITO_CLASS(PropertyObjectEditor)
 
 public:
 
-	/// Default constructor.
-	Q_INVOKABLE PropertyObjectEditor() {}
+    /// Default constructor.
+    Q_INVOKABLE PropertyObjectEditor() {}
 
 protected:
 
-	/// Creates the user interface controls for the editor.
-	virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
+    /// Creates the user interface controls for the editor.
+    virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
 };
 
-}	// End of namespace
+}   // End of namespace

@@ -35,104 +35,104 @@ namespace Ovito {
  */
 class OVITO_CORE_EXPORT ActiveObject : public RefTarget
 {
-	OVITO_CLASS(ActiveObject)
+    OVITO_CLASS(ActiveObject)
 
 #ifdef OVITO_QML_GUI
-	Q_PROPERTY(PipelineStatus status READ status NOTIFY objectStatusChanged)
+    Q_PROPERTY(PipelineStatus status READ status NOTIFY objectStatusChanged)
 #endif
 
 protected:
 
-	/// \brief Constructor.
-	ActiveObject(ObjectCreationParams params);
+    /// \brief Constructor.
+    ActiveObject(ObjectCreationParams params);
 
 public:
 
-	/// \brief Returns the title of this object.
-	virtual QString objectTitle() const override {
-		if(title().isEmpty()) 
-			return RefTarget::objectTitle();
-		else
-			return title();
-	}
+    /// \brief Returns the title of this object.
+    virtual QString objectTitle() const override {
+        if(title().isEmpty()) 
+            return RefTarget::objectTitle();
+        else
+            return title();
+    }
 
-	/// \brief Changes the title of this object.
-	/// \undoable
-	void setObjectTitle(const QString& title) { 
-		setTitle(title); 
-	}
+    /// \brief Changes the title of this object.
+    /// \undoable
+    void setObjectTitle(const QString& title) { 
+        setTitle(title); 
+    }
 
-	/// \brief Returns true if at least one computation task associated with this object is currently active. 
-	bool isObjectActive() const { return _isInActivateState; }
+    /// \brief Returns true if at least one computation task associated with this object is currently active. 
+    bool isObjectActive() const { return _isInActivateState; }
 
-	/// \brief Returns a short piece information (typically a string or color) to be displayed next to the object's title in the pipeline editor.
-	virtual QVariant getPipelineEditorShortInfo(Scene* scene) const;
+    /// \brief Returns a short piece information (typically a string or color) to be displayed next to the object's title in the pipeline editor.
+    virtual QVariant getPipelineEditorShortInfo(Scene* scene) const;
 
 Q_SIGNALS:
 
 #ifdef OVITO_QML_GUI
-	/// This signal is emitted whenever the status of this object changes.
-	/// The signal is used in the QML GUI to update the status display.
-	void objectStatusChanged();
+    /// This signal is emitted whenever the status of this object changes.
+    /// The signal is used in the QML GUI to update the status display.
+    void objectStatusChanged();
 #endif
 
 protected:
 
-	/// Is called when the value of a non-animatable property field of this RefMaker has changed.
-	virtual void propertyChanged(const PropertyFieldDescriptor* field) override;
+    /// Is called when the value of a non-animatable property field of this RefMaker has changed.
+    virtual void propertyChanged(const PropertyFieldDescriptor* field) override;
 
 #ifdef OVITO_QML_GUI
-	/// Sends an event to all dependents of this RefTarget.
-	virtual void notifyDependentsImpl(const ReferenceEvent& event) override;
+    /// Sends an event to all dependents of this RefTarget.
+    virtual void notifyDependentsImpl(const ReferenceEvent& event) override;
 #endif
 
-	/// Increments the internal task counter and notifies the UI that this object is currently active.
-	void incrementNumberOfActiveTasks();
+    /// Increments the internal task counter and notifies the UI that this object is currently active.
+    void incrementNumberOfActiveTasks();
 
-	/// Decrements the internal task counter and, if the counter has reached zero, notifies the 
-	/// UI that this object is no longer active.
-	void decrementNumberOfActiveTasks();
+    /// Decrements the internal task counter and, if the counter has reached zero, notifies the 
+    /// UI that this object is no longer active.
+    void decrementNumberOfActiveTasks();
 
-	/// Registers the given asynchronous task as an active task associated with this object.
-	void registerActiveTask(const TaskPtr& task);
+    /// Registers the given asynchronous task as an active task associated with this object.
+    void registerActiveTask(const TaskPtr& task);
 
-	/// Registers the given future as an active task associated with this object.
-	void registerActiveFuture(const FutureBase& future) {
-		registerActiveTask(future.task());
-	}
+    /// Registers the given future as an active task associated with this object.
+    void registerActiveFuture(const FutureBase& future) {
+        registerActiveTask(future.task());
+    }
 
-	/// Registers the given promise as an active task associated with this object.
-	void registerActivePromise(const PromiseBase& promise) {
-		registerActiveTask(promise.task());
-	}
+    /// Registers the given promise as an active task associated with this object.
+    void registerActivePromise(const PromiseBase& promise) {
+        registerActiveTask(promise.task());
+    }
 
-	/// Handles timer events for this object.
-	virtual void timerEvent(QTimerEvent* event) override;
+    /// Handles timer events for this object.
+    virtual void timerEvent(QTimerEvent* event) override;
 
 private:
 
-	/// Controls whether the object is currently enabled.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, isEnabled, setEnabled);
-	DECLARE_SHADOW_PROPERTY_FIELD(isEnabled);
+    /// Controls whether the object is currently enabled.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, isEnabled, setEnabled);
+    DECLARE_SHADOW_PROPERTY_FIELD(isEnabled);
 
-	/// The user-defined title of this object.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD(QString, title, setTitle);
-	DECLARE_SHADOW_PROPERTY_FIELD(title);
+    /// The user-defined title of this object.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(QString, title, setTitle);
+    DECLARE_SHADOW_PROPERTY_FIELD(title);
 
-	/// The current status of this object.
-	DECLARE_RUNTIME_PROPERTY_FIELD_FLAGS(PipelineStatus, status, setStatus, PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_NO_CHANGE_MESSAGE);
+    /// The current status of this object.
+    DECLARE_RUNTIME_PROPERTY_FIELD_FLAGS(PipelineStatus, status, setStatus, PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_NO_CHANGE_MESSAGE);
 
-	/// Indicates how many running tasks are currently associated with this object.
-	int _numberOfActiveTasks = 0;
+    /// Indicates how many running tasks are currently associated with this object.
+    int _numberOfActiveTasks = 0;
 
-	/// Flag indicating wheter this object is currently displayed as active in the GUI.
-	bool _isInActivateState = false;
+    /// Flag indicating wheter this object is currently displayed as active in the GUI.
+    bool _isInActivateState = false;
 
-	/// Timer used to implement delayed UI updates of the activity state.
-	QBasicTimer _activityTimer;
+    /// Timer used to implement delayed UI updates of the activity state.
+    QBasicTimer _activityTimer;
 
-	/// Timer used to implement delayed UI updates whenever object status changes.
-	QBasicTimer _statusTimer;
+    /// Timer used to implement delayed UI updates whenever object status changes.
+    QBasicTimer _statusTimer;
 };
 
-}	// End of namespace
+}   // End of namespace

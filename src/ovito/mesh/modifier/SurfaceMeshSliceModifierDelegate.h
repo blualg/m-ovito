@@ -36,35 +36,35 @@ using namespace Ovito::StdMod;
  */
 class OVITO_MESHMOD_EXPORT SurfaceMeshSliceModifierDelegate : public SliceModifierDelegate
 {
-	/// Give the modifier delegate its own metaclass.
-	class SurfaceMeshSliceModifierDelegateClass : public SliceModifierDelegate::OOMetaClass
-	{
-	public:
+    /// Give the modifier delegate its own metaclass.
+    class SurfaceMeshSliceModifierDelegateClass : public SliceModifierDelegate::OOMetaClass
+    {
+    public:
 
-		/// Inherit constructor from base class.
-		using SliceModifierDelegate::OOMetaClass::OOMetaClass;
+        /// Inherit constructor from base class.
+        using SliceModifierDelegate::OOMetaClass::OOMetaClass;
 
-		/// Indicates which data objects in the given input data collection the modifier delegate is able to operate on.
-		virtual QVector<DataObjectReference> getApplicableObjects(const DataCollection& input) const override {
-			if(input.containsObject<SurfaceMesh>())
-				return { DataObjectReference(&SurfaceMesh::OOClass()) };
-			return {};
-		}
+        /// Indicates which data objects in the given input data collection the modifier delegate is able to operate on.
+        virtual QVector<DataObjectReference> getApplicableObjects(const DataCollection& input) const override {
+            if(input.containsObject<SurfaceMesh>())
+                return { DataObjectReference(&SurfaceMesh::OOClass()) };
+            return {};
+        }
 
-		/// The name by which Python scripts can refer to this modifier delegate.
-		virtual QString pythonDataName() const override { return QStringLiteral("surfaces"); }
-	};
+        /// The name by which Python scripts can refer to this modifier delegate.
+        virtual QString pythonDataName() const override { return QStringLiteral("surfaces"); }
+    };
 
-	OVITO_CLASS_META(SurfaceMeshSliceModifierDelegate, SurfaceMeshSliceModifierDelegateClass)
-	Q_CLASSINFO("DisplayName", "Surfaces");
+    OVITO_CLASS_META(SurfaceMeshSliceModifierDelegate, SurfaceMeshSliceModifierDelegateClass)
+    Q_CLASSINFO("DisplayName", "Surfaces");
 
 public:
 
-	/// Constructor.
-	Q_INVOKABLE SurfaceMeshSliceModifierDelegate(ObjectCreationParams params) : SliceModifierDelegate(params) {}
+    /// Constructor.
+    Q_INVOKABLE SurfaceMeshSliceModifierDelegate(ObjectCreationParams params) : SliceModifierDelegate(params) {}
 
-	/// \brief Applies a slice operation to a data object.
-	virtual PipelineStatus apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const PipelineFlowState& inputState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs) override;
+    /// \brief Applies a slice operation to a data object.
+    virtual PipelineStatus apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const PipelineFlowState& inputState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs) override;
 };
 
-}	// End of namespace
+}   // End of namespace

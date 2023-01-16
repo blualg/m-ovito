@@ -90,15 +90,15 @@ public:
 
     inline Task& operator*() const noexcept {
         OVITO_ASSERT(_ptr);
-    	return *_ptr.get();
+        return *_ptr.get();
     }
 
     inline Task* operator->() const noexcept {
         OVITO_ASSERT(_ptr);
-    	return _ptr.get();
+        return _ptr.get();
     }
 
-	explicit operator bool() const { return (bool)_ptr; }
+    explicit operator bool() const { return (bool)_ptr; }
 
 private:
 
@@ -106,4 +106,4 @@ private:
     TaskPtr _ptr;
 };
 
-}	// End of namespace
+}   // End of namespace

@@ -35,60 +35,60 @@ namespace Ovito::Particles {
  */
 class OVITO_PARTICLES_EXPORT AcklandJonesModifier : public StructureIdentificationModifier
 {
-	OVITO_CLASS(AcklandJonesModifier)
-	Q_CLASSINFO("DisplayName", "Ackland-Jones analysis");
-	Q_CLASSINFO("Description", "Identify common crystalline structures based on local bond angles.");
+    OVITO_CLASS(AcklandJonesModifier)
+    Q_CLASSINFO("DisplayName", "Ackland-Jones analysis");
+    Q_CLASSINFO("Description", "Identify common crystalline structures based on local bond angles.");
 #ifndef OVITO_QML_GUI
-	Q_CLASSINFO("ModifierCategory", "Structure identification");
+    Q_CLASSINFO("ModifierCategory", "Structure identification");
 #else
-	Q_CLASSINFO("ModifierCategory", "-");
+    Q_CLASSINFO("ModifierCategory", "-");
 #endif
 
 public:
 
-	/// The structure types recognized by the bond angle analysis.
-	enum StructureType {
-		OTHER = 0,				//< Unidentified structure
-		FCC,					//< Face-centered cubic
-		HCP,					//< Hexagonal close-packed
-		BCC,					//< Body-centered cubic
-		ICO,					//< Icosahedral structure
+    /// The structure types recognized by the bond angle analysis.
+    enum StructureType {
+        OTHER = 0,              //< Unidentified structure
+        FCC,                    //< Face-centered cubic
+        HCP,                    //< Hexagonal close-packed
+        BCC,                    //< Body-centered cubic
+        ICO,                    //< Icosahedral structure
 
-		NUM_STRUCTURE_TYPES 	//< This just counts the number of defined structure types.
-	};
-	Q_ENUM(StructureType);
+        NUM_STRUCTURE_TYPES     //< This just counts the number of defined structure types.
+    };
+    Q_ENUM(StructureType);
 
 public:
 
-	/// Constructor.
-	Q_INVOKABLE AcklandJonesModifier(ObjectCreationParams params);
+    /// Constructor.
+    Q_INVOKABLE AcklandJonesModifier(ObjectCreationParams params);
 
 protected:
 
-	/// Creates a computation engine that will compute the modifier's results.
-	virtual Future<EnginePtr> createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input) override;
+    /// Creates a computation engine that will compute the modifier's results.
+    virtual Future<EnginePtr> createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input) override;
 
 private:
 
-	/// Computes the modifier's results.
-	class AcklandJonesAnalysisEngine : public StructureIdentificationEngine
-	{
-	public:
+    /// Computes the modifier's results.
+    class AcklandJonesAnalysisEngine : public StructureIdentificationEngine
+    {
+    public:
 
-		/// Constructor.
-		using StructureIdentificationEngine::StructureIdentificationEngine;
+        /// Constructor.
+        using StructureIdentificationEngine::StructureIdentificationEngine;
 
-		/// Computes the modifier's results.
-		virtual void perform() override;
+        /// Computes the modifier's results.
+        virtual void perform() override;
 
-		/// Injects the computed results into the data pipeline.
-		virtual void applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
+        /// Injects the computed results into the data pipeline.
+        virtual void applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
 
-	private:
-	
-		/// Determines the coordination structure of a single particle using the bond-angle analysis method.
-		StructureType determineStructure(NearestNeighborFinder& neighFinder, size_t particleIndex);
-	};
+    private:
+    
+        /// Determines the coordination structure of a single particle using the bond-angle analysis method.
+        StructureType determineStructure(NearestNeighborFinder& neighFinder, size_t particleIndex);
+    };
 };
 
-}	// End of namespace
+}   // End of namespace

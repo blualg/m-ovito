@@ -37,31 +37,31 @@ SET_OVITO_OBJECT_EDITOR(AcklandJonesModifier, AcklandJonesModifierEditor);
 ******************************************************************************/
 void AcklandJonesModifierEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 {
-	// Create a rollout.
-	QWidget* rollout = createRollout(tr("Ackland-Jones analysis"), rolloutParams, "manual:particles.modifiers.bond_angle_analysis");
+    // Create a rollout.
+    QWidget* rollout = createRollout(tr("Ackland-Jones analysis"), rolloutParams, "manual:particles.modifiers.bond_angle_analysis");
 
     // Create the rollout contents.
-	QVBoxLayout* layout1 = new QVBoxLayout(rollout);
-	layout1->setContentsMargins(4,4,4,4);
-	layout1->setSpacing(4);
+    QVBoxLayout* layout1 = new QVBoxLayout(rollout);
+    layout1->setContentsMargins(4,4,4,4);
+    layout1->setSpacing(4);
 
-	// Use only selected particles.
-	BooleanParameterUI* onlySelectedParticlesUI = new BooleanParameterUI(this, PROPERTY_FIELD(StructureIdentificationModifier::onlySelectedParticles));
-	layout1->addWidget(onlySelectedParticlesUI->checkBox());
+    // Use only selected particles.
+    BooleanParameterUI* onlySelectedParticlesUI = new BooleanParameterUI(this, PROPERTY_FIELD(StructureIdentificationModifier::onlySelectedParticles));
+    layout1->addWidget(onlySelectedParticlesUI->checkBox());
 
-	// Color by type
-	BooleanParameterUI* colorByTypeUI = new BooleanParameterUI(this, PROPERTY_FIELD(StructureIdentificationModifier::colorByType));
-	layout1->addWidget(colorByTypeUI->checkBox());
+    // Color by type
+    BooleanParameterUI* colorByTypeUI = new BooleanParameterUI(this, PROPERTY_FIELD(StructureIdentificationModifier::colorByType));
+    layout1->addWidget(colorByTypeUI->checkBox());
 
-	// Status label.
-	layout1->addSpacing(10);
-	layout1->addWidget((new ObjectStatusDisplay(this))->statusWidget());
+    // Status label.
+    layout1->addSpacing(10);
+    layout1->addWidget((new ObjectStatusDisplay(this))->statusWidget());
 
-	StructureListParameterUI* structureTypesPUI = new StructureListParameterUI(this, true);
-	layout1->addSpacing(10);
-	layout1->addWidget(new QLabel(tr("Structure types:")));
-	layout1->addWidget(structureTypesPUI->tableWidget());
-	layout1->addWidget(structureTypesPUI->createNotesLabel());
+    StructureListParameterUI* structureTypesPUI = new StructureListParameterUI(this, true);
+    layout1->addSpacing(10);
+    layout1->addWidget(new QLabel(tr("Structure types:")));
+    layout1->addWidget(structureTypesPUI->tableWidget());
+    layout1->addWidget(structureTypesPUI->createNotesLabel());
 }
 
-}	// End of namespace
+}   // End of namespace

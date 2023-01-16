@@ -32,53 +32,53 @@ namespace Ovito {
  */
 class TaskDisplayWidget : public QWidget
 {
-	Q_OBJECT
+    Q_OBJECT
 
 public:
 
-	/// Constructs the widget and associates it with the main window.
-	TaskDisplayWidget(MainWindow* mainWindow);
+    /// Constructs the widget and associates it with the main window.
+    TaskDisplayWidget(MainWindow* mainWindow);
 
 private Q_SLOTS:
 
-	/// \brief Updates the displayed information in the indicator widget.
-	void updateIndicator();
+    /// \brief Updates the displayed information in the indicator widget.
+    void updateIndicator();
 
-	/// \brief Is called when a task has started to run.
-	void taskStarted(TaskWatcher* taskWatcher);
+    /// \brief Is called when a task has started to run.
+    void taskStarted(TaskWatcher* taskWatcher);
 
-	/// \brief Is called when a task has finished.
-	void taskFinished(TaskWatcher* taskWatcher);
+    /// \brief Is called when a task has finished.
+    void taskFinished(TaskWatcher* taskWatcher);
 
-	/// \brief Is called when the progress or status of a task has changed.
-	void taskProgressChanged();
+    /// \brief Is called when the progress or status of a task has changed.
+    void taskProgressChanged();
 
 protected:
 
-	/// Handles timer events for this object.
-	virtual void timerEvent(QTimerEvent* event) override;
+    /// Handles timer events for this object.
+    virtual void timerEvent(QTimerEvent* event) override;
 
 private:
 
-	/// From all currently running tasks, picks which one should be displayed in the status bar. 
-	TaskWatcher* pickVisibleTask() const;
+    /// From all currently running tasks, picks which one should be displayed in the status bar. 
+    TaskWatcher* pickVisibleTask() const;
 
 private:
 
-	/// Returns whether there are any running tasks.
-	bool anyRunningTasks() const;
+    /// Returns whether there are any running tasks.
+    bool anyRunningTasks() const;
 
-	/// The window this display widget is associated with.
-	MainWindow* _mainWindow;
+    /// The window this display widget is associated with.
+    MainWindow* _mainWindow;
 
-	/// The progress bar widget.
-	QProgressBar* _progressBar;
+    /// The progress bar widget.
+    QProgressBar* _progressBar;
 
-	/// The label that displays the current progress text.
-	QLabel* _progressTextDisplay;
+    /// The label that displays the current progress text.
+    QLabel* _progressTextDisplay;
 
-	/// This timer is used to show the progress bar with some delay.
-	QBasicTimer _delayTimer;
+    /// This timer is used to show the progress bar with some delay.
+    QBasicTimer _delayTimer;
 };
 
-}	// End of namespace
+}   // End of namespace

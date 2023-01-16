@@ -59,8 +59,8 @@ namespace mu
       
       impl_type m_Stack;  ///< This is the actual stack.
 
-    public:	
-  	 
+    public: 
+     
       //---------------------------------------------------------------------------
       ParserStack()
         :m_Stack()
@@ -79,7 +79,7 @@ namespace mu
         \throw ParserException in case the stack is empty.
         \sa pop(int &a_iErrc)
       */
-	    TValueType pop()
+        TValueType pop()
       {
         if (empty())
           throw ParserError( _T("stack is empty.") );

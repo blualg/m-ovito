@@ -861,7 +861,7 @@ namespace mu
           m_vRPN.AddFun(funTok.GetFuncAddr(), (funTok.GetArgCount()==-1) ? -iArgNumerical : iArgNumerical);
           break;
     default: // Do nothing.
-    	break;
+        break;
     }
 
     // Push dummy value representing the function result to the stack
@@ -1167,7 +1167,7 @@ namespace mu
         //      continue;
 
         //case  cmEND:
-	       //     return Stack[m_nFinalResultIdx];  
+           //     return Stack[m_nFinalResultIdx];  
 
         default:
               Error(ecINTERNAL_ERROR, 3);
@@ -1208,7 +1208,7 @@ namespace mu
         case cmSTRING:
                 opt.SetIdx((int)m_vStringBuf.size());      // Assign buffer index to token 
                 stVal.push(opt);
-		            m_vStringBuf.push_back(opt.GetAsString()); // Store string in internal buffer
+                    m_vStringBuf.push_back(opt.GetAsString()); // Store string in internal buffer
                 break;
    
         case cmVAR:
@@ -1217,7 +1217,7 @@ namespace mu
                 break;
 
         case cmVAL:
-		            stVal.push(opt);
+                    stVal.push(opt);
                 m_vRPN.AddVal( opt.GetVal() );
                 break;
 
@@ -1348,7 +1348,7 @@ namespace mu
                 if (opt.GetCode()==cmIF)
                   m_vRPN.AddIfElse(opt.GetCode());
 
-    			      // The operator can't be evaluated right now, push back to the operator stack
+                      // The operator can't be evaluated right now, push back to the operator stack
                 stOpt.push(opt);
                 break;
 
@@ -1662,7 +1662,7 @@ namespace mu
         case cmENDIF:    mu::console() << _T("ENDIF\n");  break;
         default:         mu::console() << stOprt.top().GetCode() << _T(" ");  break;
         }
-      }	
+      } 
       stOprt.pop();
     }
 

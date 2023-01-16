@@ -35,19 +35,19 @@ namespace Ovito::Particles {
  */
 class DihedralInspectionApplet : public PropertyInspectionApplet
 {
-	OVITO_CLASS(DihedralInspectionApplet)
-	Q_CLASSINFO("DisplayName", "Dihedrals");
+    OVITO_CLASS(DihedralInspectionApplet)
+    Q_CLASSINFO("DisplayName", "Dihedrals");
 
 public:
 
-	/// Constructor.
-	Q_INVOKABLE DihedralInspectionApplet() : PropertyInspectionApplet(DihedralsObject::OOClass()) {}
+    /// Constructor.
+    Q_INVOKABLE DihedralInspectionApplet() : PropertyInspectionApplet(DihedralsObject::OOClass()) {}
 
-	/// Returns the key value for this applet that is used for ordering the applet tabs.
-	virtual int orderingKey() const override { return 16; }
+    /// Returns the key value for this applet that is used for ordering the applet tabs.
+    virtual int orderingKey() const override { return 16; }
 
-	/// Lets the applet create the UI widget that is to be placed into the data inspector panel.
-	virtual QWidget* createWidget() override;
+    /// Lets the applet create the UI widget that is to be placed into the data inspector panel.
+    virtual QWidget* createWidget() override;
 };
 
-}	// End of namespace
+}   // End of namespace

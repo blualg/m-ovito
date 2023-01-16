@@ -35,8 +35,8 @@ IMPLEMENT_OVITO_CLASS(InvertSelectionModifier);
 ******************************************************************************/
 InvertSelectionModifier::InvertSelectionModifier(ObjectCreationParams params) : GenericPropertyModifier(params)
 {
-	// Operate on particles by default.
-	setDefaultSubject(QStringLiteral("Particles"), QStringLiteral("ParticlesObject"));
+    // Operate on particles by default.
+    setDefaultSubject(QStringLiteral("Particles"), QStringLiteral("ParticlesObject"));
 }
 
 /******************************************************************************
@@ -44,13 +44,13 @@ InvertSelectionModifier::InvertSelectionModifier(ObjectCreationParams params) : 
 ******************************************************************************/
 void InvertSelectionModifier::evaluateSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state)
 {
-	if(!subject())
-		throw Exception(tr("No data element type set."));
+    if(!subject())
+        throw Exception(tr("No data element type set."));
 
-   	PropertyContainer* container = state.expectMutableLeafObject(subject());
-	PropertyAccess<int> selProperty = container->createProperty(PropertyObject::GenericSelectionProperty, DataBuffer::InitializeMemory);
-	for(int& s : selProperty)
-		s = !s;
+    PropertyContainer* container = state.expectMutableLeafObject(subject());
+    PropertyAccess<int> selProperty = container->createProperty(PropertyObject::GenericSelectionProperty, DataBuffer::InitializeMemory);
+    for(int& s : selProperty)
+        s = !s;
 }
 
-}	// End of namespace
+}   // End of namespace

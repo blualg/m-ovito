@@ -25,40 +25,40 @@ ADD_LIBRARY(geogram Delaunay_psm.cpp)
 
 # Set floating-point math compiler options.
 IF((UNIX OR APPLE) AND NOT EMSCRIPTEN)
-	TARGET_COMPILE_OPTIONS(geogram PRIVATE "-frounding-math" "-ffp-contract=off")
-	IF(APPLE)
-		TARGET_COMPILE_OPTIONS(geogram PRIVATE "-Wno-ignored-optimization-argument")
-	ENDIF()
+    TARGET_COMPILE_OPTIONS(geogram PRIVATE "-frounding-math" "-ffp-contract=off")
+    IF(APPLE)
+        TARGET_COMPILE_OPTIONS(geogram PRIVATE "-Wno-ignored-optimization-argument")
+    ENDIF()
 ENDIF()
 
 # Enable Geogram's support for 64-bit indices.
 TARGET_COMPILE_DEFINITIONS(geogram PUBLIC "GARGANTUA=1")
 
 IF(NOT WIN32 AND NOT APPLE AND NOT EMSCRIPTEN)
-	# Disable atomics, because OVITO doesn't make use of Geogram's multi-threading support.
-	TARGET_COMPILE_DEFINITIONS(geogram PUBLIC "GEO_USE_DUMMY_ATOMICS=1")
+    # Disable atomics, because OVITO doesn't make use of Geogram's multi-threading support.
+    TARGET_COMPILE_DEFINITIONS(geogram PUBLIC "GEO_USE_DUMMY_ATOMICS=1")
 ENDIF()
 
 IF(MSVC)
-	# Do not warn about use of unsafe CRT Library functions.
-	TARGET_COMPILE_DEFINITIONS(geogram PRIVATE "_CRT_SECURE_NO_WARNINGS=")
-	# Do not warn about missing dll-interface of members of an exported class.
-	TARGET_COMPILE_OPTIONS(geogram PRIVATE "/wd4251")
-	# Do not warn about missing dll-interface of base class of an exported class.
-	TARGET_COMPILE_OPTIONS(geogram PRIVATE "/wd4275")
-	# Suppress warning on conversion from size_t to int, possible loss of data.
-	TARGET_COMPILE_OPTIONS(geogram PRIVATE "/wd4267" "/wd4244" "/wd4334")
-	# Do not warn on use of deprecated std::allocator members.
-	TARGET_COMPILE_DEFINITIONS(geogram PUBLIC "_SILENCE_CXX17_OLD_ALLOCATOR_MEMBERS_DEPRECATION_WARNING=")
+    # Do not warn about use of unsafe CRT Library functions.
+    TARGET_COMPILE_DEFINITIONS(geogram PRIVATE "_CRT_SECURE_NO_WARNINGS=")
+    # Do not warn about missing dll-interface of members of an exported class.
+    TARGET_COMPILE_OPTIONS(geogram PRIVATE "/wd4251")
+    # Do not warn about missing dll-interface of base class of an exported class.
+    TARGET_COMPILE_OPTIONS(geogram PRIVATE "/wd4275")
+    # Suppress warning on conversion from size_t to int, possible loss of data.
+    TARGET_COMPILE_OPTIONS(geogram PRIVATE "/wd4267" "/wd4244" "/wd4334")
+    # Do not warn on use of deprecated std::allocator members.
+    TARGET_COMPILE_DEFINITIONS(geogram PUBLIC "_SILENCE_CXX17_OLD_ALLOCATOR_MEMBERS_DEPRECATION_WARNING=")
 ENDIF()
 
 IF(BUILD_SHARED_LIBS)
-	# Build shared library version of Geogram lib.
-	TARGET_COMPILE_DEFINITIONS(geogram PRIVATE "geogram_EXPORTS")
+    # Build shared library version of Geogram lib.
+    TARGET_COMPILE_DEFINITIONS(geogram PRIVATE "geogram_EXPORTS")
 ELSE()
-	# Build static version of Geogram lib.
-	TARGET_COMPILE_DEFINITIONS(geogram PUBLIC "GEO_STATIC_LIBS=1")
-	SET_PROPERTY(TARGET geogram PROPERTY POSITION_INDEPENDENT_CODE ON)
+    # Build static version of Geogram lib.
+    TARGET_COMPILE_DEFINITIONS(geogram PUBLIC "GEO_STATIC_LIBS=1")
+    SET_PROPERTY(TARGET geogram PROPERTY POSITION_INDEPENDENT_CODE ON)
 ENDIF()
 
 # Geogram requires pthread lib on Linux platform.
@@ -67,9 +67,9 @@ FIND_PACKAGE(Threads REQUIRED)
 TARGET_LINK_LIBRARIES(geogram PUBLIC Threads::Threads)
 
 IF(EMSCRIPTEN)
-	# Adopt the Emscript compiler flags from Qt's platform target.
-	# That's because all libraries linked into the static WASM module need be built with the same flags.
-	TARGET_LINK_LIBRARIES(geogram PRIVATE Qt::Platform)
+    # Adopt the Emscript compiler flags from Qt's platform target.
+    # That's because all libraries linked into the static WASM module need be built with the same flags.
+    TARGET_LINK_LIBRARIES(geogram PRIVATE Qt::Platform)
 ENDIF()
 
 # Give our library file a new name to not confuse it with any system versions of the library.
@@ -80,6 +80,6 @@ TARGET_INCLUDE_DIRECTORIES(geogram INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}/..")
 
 # Export this target.
 INSTALL(TARGETS geogram EXPORT OVITO
-	RUNTIME DESTINATION "${OVITO_RELATIVE_LIBRARY_DIRECTORY}"
-	LIBRARY DESTINATION "${OVITO_RELATIVE_LIBRARY_DIRECTORY}"
-	ARCHIVE DESTINATION "${OVITO_RELATIVE_LIBRARY_DIRECTORY}" COMPONENT "development")
+    RUNTIME DESTINATION "${OVITO_RELATIVE_LIBRARY_DIRECTORY}"
+    LIBRARY DESTINATION "${OVITO_RELATIVE_LIBRARY_DIRECTORY}"
+    ARCHIVE DESTINATION "${OVITO_RELATIVE_LIBRARY_DIRECTORY}" COMPONENT "development")

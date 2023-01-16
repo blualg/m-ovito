@@ -33,17 +33,17 @@ namespace Ovito::CrystalAnalysis {
  */
 class DislocationVisEditor : public PropertiesEditor
 {
-	OVITO_CLASS(DislocationVisEditor)
+    OVITO_CLASS(DislocationVisEditor)
 
 public:
 
-	/// Constructor.
-	Q_INVOKABLE DislocationVisEditor() {}
+    /// Constructor.
+    Q_INVOKABLE DislocationVisEditor() {}
 
 protected:
 
-	/// Creates the user interface controls for the editor.
-	virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
+    /// Creates the user interface controls for the editor.
+    virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
 };
 
-}	// End of namespace
+}   // End of namespace

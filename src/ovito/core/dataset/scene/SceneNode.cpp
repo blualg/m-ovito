@@ -55,21 +55,21 @@ SET_PROPERTY_FIELD_CHANGE_EVENT(SceneNode, nodeName, ReferenceEvent::TitleChange
 * Constructor.
 ******************************************************************************/
 SceneNode::SceneNode(ObjectCreationParams params) : RefTarget(params),
-	_worldTransform(AffineTransformation::Identity()),
-	_worldTransformValidity(TimeInterval::empty()),
-	_boundingBoxValidity(TimeInterval::empty()),
-	_displayColor(0,0,0)
+    _worldTransform(AffineTransformation::Identity()),
+    _worldTransformValidity(TimeInterval::empty()),
+    _boundingBoxValidity(TimeInterval::empty()),
+    _displayColor(0,0,0)
 {
-	if(params.loadUserDefaults()) {
-		// Assign random color to node.
-		static std::default_random_engine rng;
-		setDisplayColor(Color::fromHSV(std::uniform_real_distribution<FloatType>()(rng), 1, 1));
-	}
+    if(params.loadUserDefaults()) {
+        // Assign random color to node.
+        static std::default_random_engine rng;
+        setDisplayColor(Color::fromHSV(std::uniform_real_distribution<FloatType>()(rng), 1, 1));
+    }
 
-	if(params.createSubObjects()) {
-		// Create a transformation controller for the node.
-		setTransformationController(ControllerManager::createTransformationController());
-	}
+    if(params.createSubObjects()) {
+        // Create a transformation controller for the node.
+        setTransformationController(ControllerManager::createTransformationController());
+    }
 }
 
 /******************************************************************************
@@ -78,19 +78,19 @@ SceneNode::SceneNode(ObjectCreationParams params) : RefTarget(params),
 ******************************************************************************/
 const AffineTransformation& SceneNode::getWorldTransform(AnimationTime time, TimeInterval& validityInterval) const
 {
-	if(!_worldTransformValidity.contains(time)) {
-		_worldTransformValidity.setInfinite();
-		_worldTransform.setIdentity();
-		// Get parent node's tm.
-		if(parentNode() && !parentNode()->isRootNode()) {
-			_worldTransform = _worldTransform * parentNode()->getWorldTransform(time, _worldTransformValidity);
-		}
-		// Apply own tm.
-		if(transformationController())
-			transformationController()->applyTransformation(time, _worldTransform, _worldTransformValidity);
-	}
-	validityInterval.intersect(_worldTransformValidity);
-	return _worldTransform;
+    if(!_worldTransformValidity.contains(time)) {
+        _worldTransformValidity.setInfinite();
+        _worldTransform.setIdentity();
+        // Get parent node's tm.
+        if(parentNode() && !parentNode()->isRootNode()) {
+            _worldTransform = _worldTransform * parentNode()->getWorldTransform(time, _worldTransformValidity);
+        }
+        // Apply own tm.
+        if(transformationController())
+            transformationController()->applyTransformation(time, _worldTransform, _worldTransformValidity);
+    }
+    validityInterval.intersect(_worldTransformValidity);
+    return _worldTransform;
 }
 
 /******************************************************************************
@@ -100,10 +100,10 @@ const AffineTransformation& SceneNode::getWorldTransform(AnimationTime time, Tim
 ******************************************************************************/
 AffineTransformation SceneNode::getLocalTransform(AnimationTime time, TimeInterval& validityInterval) const
 {
-	AffineTransformation result = AffineTransformation::Identity();
-	if(transformationController())
-		transformationController()->applyTransformation(time, result, validityInterval);
-	return result;
+    AffineTransformation result = AffineTransformation::Identity();
+    if(transformationController())
+        transformationController()->applyTransformation(time, result, validityInterval);
+    return result;
 }
 
 /******************************************************************************
@@ -112,11 +112,11 @@ AffineTransformation SceneNode::getLocalTransform(AnimationTime time, TimeInterv
 ******************************************************************************/
 void SceneNode::invalidateWorldTransformation()
 {
-	_worldTransformValidity.setEmpty();
-	invalidateBoundingBox();
-	for(SceneNode* child : children())
-		child->invalidateWorldTransformation();
-	notifyDependents(ReferenceEvent::TransformationChanged);
+    _worldTransformValidity.setEmpty();
+    invalidateBoundingBox();
+    for(SceneNode* child : children())
+        child->invalidateWorldTransformation();
+    notifyDependents(ReferenceEvent::TransformationChanged);
 }
 
 /******************************************************************************
@@ -124,22 +124,22 @@ void SceneNode::invalidateWorldTransformation()
 ******************************************************************************/
 void SceneNode::deleteNode()
 {
-	// Delete target too.
-	OORef<SceneNode> tn = lookatTargetNode();
-	if(tn) {
-		// Clear reference first to prevent infinite recursion.
-		_lookatTargetNode.set(this, PROPERTY_FIELD(lookatTargetNode), nullptr);
-		tn->deleteNode();
-	}
+    // Delete target too.
+    OORef<SceneNode> tn = lookatTargetNode();
+    if(tn) {
+        // Clear reference first to prevent infinite recursion.
+        _lookatTargetNode.set(this, PROPERTY_FIELD(lookatTargetNode), nullptr);
+        tn->deleteNode();
+    }
 
-	// Delete all child nodes recursively.
-	for(SceneNode* child : children())
-		child->deleteNode();
+    // Delete all child nodes recursively.
+    for(SceneNode* child : children())
+        child->deleteNode();
 
-	OVITO_ASSERT(children().empty());
+    OVITO_ASSERT(children().empty());
 
-	// Delete node itself.
-	deleteReferenceObject();
+    // Delete node itself.
+    deleteReferenceObject();
 }
 
 /******************************************************************************
@@ -150,39 +150,39 @@ void SceneNode::deleteNode()
 ******************************************************************************/
 LookAtController* SceneNode::setLookatTargetNode(AnimationTime time, SceneNode* targetNode)
 {
-	_lookatTargetNode.set(this, PROPERTY_FIELD(lookatTargetNode), targetNode);
+    _lookatTargetNode.set(this, PROPERTY_FIELD(lookatTargetNode), targetNode);
 
-	// Let this node look at the target.
-	PRSTransformationController* prs = dynamic_object_cast<PRSTransformationController>(transformationController());
-	if(prs) {
-		if(targetNode) {
-			OVITO_CHECK_OBJECT_POINTER(targetNode);
+    // Let this node look at the target.
+    PRSTransformationController* prs = dynamic_object_cast<PRSTransformationController>(transformationController());
+    if(prs) {
+        if(targetNode) {
+            OVITO_CHECK_OBJECT_POINTER(targetNode);
 
-			// Create a look at controller.
-			OORef<LookAtController> lookAtCtrl = dynamic_object_cast<LookAtController>(prs->rotationController());
-			if(!lookAtCtrl)
-				lookAtCtrl = OORef<LookAtController>::create();
-			lookAtCtrl->setTargetNode(targetNode);
+            // Create a look at controller.
+            OORef<LookAtController> lookAtCtrl = dynamic_object_cast<LookAtController>(prs->rotationController());
+            if(!lookAtCtrl)
+                lookAtCtrl = OORef<LookAtController>::create();
+            lookAtCtrl->setTargetNode(targetNode);
 
-			// Assign it as rotation sub-controller.
-			prs->setRotationController(std::move(lookAtCtrl));
+            // Assign it as rotation sub-controller.
+            prs->setRotationController(std::move(lookAtCtrl));
 
-			return dynamic_object_cast<LookAtController>(prs->rotationController());
-		}
-		else {
-			// Save old rotation.
-			TimeInterval iv;
-			Rotation rotation;
-			prs->rotationController()->getRotationValue(time, rotation, iv);
+            return dynamic_object_cast<LookAtController>(prs->rotationController());
+        }
+        else {
+            // Save old rotation.
+            TimeInterval iv;
+            Rotation rotation;
+            prs->rotationController()->getRotationValue(time, rotation, iv);
 
-			// Reset to default rotation controller.
-			OORef<Controller> controller = ControllerManager::createRotationController();
-			controller->setRotationValue(time, rotation, true);
-			prs->setRotationController(std::move(controller));
-		}
-	}
+            // Reset to default rotation controller.
+            OORef<Controller> controller = ControllerManager::createRotationController();
+            controller->setRotationValue(time, rotation, true);
+            prs->setRotationController(std::move(controller));
+        }
+    }
 
-	return nullptr;
+    return nullptr;
 }
 
 /******************************************************************************
@@ -190,26 +190,26 @@ LookAtController* SceneNode::setLookatTargetNode(AnimationTime time, SceneNode* 
 ******************************************************************************/
 bool SceneNode::referenceEvent(RefTarget* source, const ReferenceEvent& event)
 {
-	if(event.type() == ReferenceEvent::TargetChanged) {
-		if(source == transformationController()) {
-			// TM has changed -> rebuild world tm cache.
-			invalidateWorldTransformation();
-		}
-		else {
-			// The bounding box might have changed if the object has changed.
-			invalidateBoundingBox();
-		}
-	}
-	else if(event.type() == ReferenceEvent::TargetDeleted && source == lookatTargetNode()) {
-		// Lookat target node has been deleted -> delete this node too.
-		if(!isUndoingOrRedoing())
-			deleteNode();
-	}
-	else if(event.type() == ReferenceEvent::AnimationFramesChanged && children().contains(static_cast<SceneNode*>(source))) {
-		// Forward pipeline changed events from the scene pipelines.
-		return true;
-	}
-	return RefTarget::referenceEvent(source, event);
+    if(event.type() == ReferenceEvent::TargetChanged) {
+        if(source == transformationController()) {
+            // TM has changed -> rebuild world tm cache.
+            invalidateWorldTransformation();
+        }
+        else {
+            // The bounding box might have changed if the object has changed.
+            invalidateBoundingBox();
+        }
+    }
+    else if(event.type() == ReferenceEvent::TargetDeleted && source == lookatTargetNode()) {
+        // Lookat target node has been deleted -> delete this node too.
+        if(!isUndoingOrRedoing())
+            deleteNode();
+    }
+    else if(event.type() == ReferenceEvent::AnimationFramesChanged && children().contains(static_cast<SceneNode*>(source))) {
+        // Forward pipeline changed events from the scene pipelines.
+        return true;
+    }
+    return RefTarget::referenceEvent(source, event);
 }
 
 /******************************************************************************
@@ -217,28 +217,28 @@ bool SceneNode::referenceEvent(RefTarget* source, const ReferenceEvent& event)
 ******************************************************************************/
 void SceneNode::referenceReplaced(const PropertyFieldDescriptor* field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex)
 {
-	if(field == PROPERTY_FIELD(transformationController)) {
-		// TM controller has changed -> rebuild world tm cache.
-		invalidateWorldTransformation();
-	}
-	else if(field == PROPERTY_FIELD(children)) {
-		// A child node has been replaced.
-		SceneNode* oldChild = static_object_cast<SceneNode>(oldTarget);
-		OVITO_ASSERT(oldChild->parentNode() == this);
-		oldChild->_parentNode = nullptr;
+    if(field == PROPERTY_FIELD(transformationController)) {
+        // TM controller has changed -> rebuild world tm cache.
+        invalidateWorldTransformation();
+    }
+    else if(field == PROPERTY_FIELD(children)) {
+        // A child node has been replaced.
+        SceneNode* oldChild = static_object_cast<SceneNode>(oldTarget);
+        OVITO_ASSERT(oldChild->parentNode() == this);
+        oldChild->_parentNode = nullptr;
 
-		SceneNode* newChild = static_object_cast<SceneNode>(newTarget);
-		OVITO_CHECK_OBJECT_POINTER(newChild);
-		OVITO_ASSERT(newChild->parentNode() == nullptr);
-		newChild->_parentNode = this;
+        SceneNode* newChild = static_object_cast<SceneNode>(newTarget);
+        OVITO_CHECK_OBJECT_POINTER(newChild);
+        OVITO_ASSERT(newChild->parentNode() == nullptr);
+        newChild->_parentNode = this;
 
-		// Invalidate cached world bounding box of this parent node.
-		invalidateBoundingBox();
+        // Invalidate cached world bounding box of this parent node.
+        invalidateBoundingBox();
 
-		// The animation length might have changed when an object has been removed from the scene.
-		notifyDependents(ReferenceEvent::AnimationFramesChanged);
-	}
-	RefTarget::referenceReplaced(field, oldTarget, newTarget, listIndex);
+        // The animation length might have changed when an object has been removed from the scene.
+        notifyDependents(ReferenceEvent::AnimationFramesChanged);
+    }
+    RefTarget::referenceReplaced(field, oldTarget, newTarget, listIndex);
 }
 
 /******************************************************************************
@@ -246,21 +246,21 @@ void SceneNode::referenceReplaced(const PropertyFieldDescriptor* field, RefTarge
 ******************************************************************************/
 void SceneNode::referenceInserted(const PropertyFieldDescriptor* field, RefTarget* newTarget, int listIndex)
 {
-	if(field == PROPERTY_FIELD(children)) {
-		// A new child node has been added.
-		SceneNode* child = static_object_cast<SceneNode>(newTarget);
-		OVITO_CHECK_OBJECT_POINTER(child);
-		OVITO_ASSERT(child->parentNode() == nullptr);
-		child->_parentNode = this;
+    if(field == PROPERTY_FIELD(children)) {
+        // A new child node has been added.
+        SceneNode* child = static_object_cast<SceneNode>(newTarget);
+        OVITO_CHECK_OBJECT_POINTER(child);
+        OVITO_ASSERT(child->parentNode() == nullptr);
+        child->_parentNode = this;
 
-		// Invalidate cached world bounding box of this parent node.
-		invalidateBoundingBox();
+        // Invalidate cached world bounding box of this parent node.
+        invalidateBoundingBox();
 
-		// The animation length might have changed when an object has been removed from the scene.
-		if(!isBeingLoaded())
-			notifyDependents(ReferenceEvent::AnimationFramesChanged);
-	}
-	RefTarget::referenceInserted(field, newTarget, listIndex);
+        // The animation length might have changed when an object has been removed from the scene.
+        if(!isBeingLoaded())
+            notifyDependents(ReferenceEvent::AnimationFramesChanged);
+    }
+    RefTarget::referenceInserted(field, newTarget, listIndex);
 }
 
 /******************************************************************************
@@ -268,21 +268,21 @@ void SceneNode::referenceInserted(const PropertyFieldDescriptor* field, RefTarge
 ******************************************************************************/
 void SceneNode::referenceRemoved(const PropertyFieldDescriptor* field, RefTarget* oldTarget, int listIndex)
 {
-	if(field == PROPERTY_FIELD(children)) {
-		// A child node has been removed.
-		SceneNode* child = static_object_cast<SceneNode>(oldTarget);
-		OVITO_ASSERT(child->parentNode() == this);
-		child->_parentNode = nullptr;
+    if(field == PROPERTY_FIELD(children)) {
+        // A child node has been removed.
+        SceneNode* child = static_object_cast<SceneNode>(oldTarget);
+        OVITO_ASSERT(child->parentNode() == this);
+        child->_parentNode = nullptr;
 
-		if(!isAboutToBeDeleted()) {
-			// Invalidate cached world bounding box of this parent node.
-			invalidateBoundingBox();
+        if(!isAboutToBeDeleted()) {
+            // Invalidate cached world bounding box of this parent node.
+            invalidateBoundingBox();
 
-			// The animation length might have changed when an object has been removed from the scene.
-			notifyDependents(ReferenceEvent::AnimationFramesChanged);
-		}
-	}
-	RefTarget::referenceRemoved(field, oldTarget, listIndex);
+            // The animation length might have changed when an object has been removed from the scene.
+            notifyDependents(ReferenceEvent::AnimationFramesChanged);
+        }
+    }
+    RefTarget::referenceRemoved(field, oldTarget, listIndex);
 }
 
 /******************************************************************************
@@ -291,9 +291,9 @@ void SceneNode::referenceRemoved(const PropertyFieldDescriptor* field, RefTarget
 ******************************************************************************/
 void SceneNode::invalidateBoundingBox()
 {
-	_boundingBoxValidity.setEmpty();
-	if(parentNode())
-		parentNode()->invalidateBoundingBox();
+    _boundingBoxValidity.setEmpty();
+    if(parentNode())
+        parentNode()->invalidateBoundingBox();
 }
 
 /******************************************************************************
@@ -301,33 +301,33 @@ void SceneNode::invalidateBoundingBox()
 ******************************************************************************/
 void SceneNode::insertChildNode(int index, SceneNode* newChild)
 {
-	OVITO_CHECK_OBJECT_POINTER(newChild);
+    OVITO_CHECK_OBJECT_POINTER(newChild);
 
-	// Check whether it is already a child of this parent.
-	if(newChild->parentNode() == this) {
-		OVITO_ASSERT(children().contains(newChild));
-		return;
-	}
+    // Check whether it is already a child of this parent.
+    if(newChild->parentNode() == this) {
+        OVITO_ASSERT(children().contains(newChild));
+        return;
+    }
 
-	// Remove new child from old parent node first.
-	if(newChild->parentNode()) {
-		auto oldIndex = newChild->parentNode()->children().indexOf(newChild);
-		newChild->parentNode()->removeChildNode(oldIndex);
-	}
-	OVITO_ASSERT(newChild->parentNode() == nullptr);
+    // Remove new child from old parent node first.
+    if(newChild->parentNode()) {
+        auto oldIndex = newChild->parentNode()->children().indexOf(newChild);
+        newChild->parentNode()->removeChildNode(oldIndex);
+    }
+    OVITO_ASSERT(newChild->parentNode() == nullptr);
 
-	// Insert into children array of this parent.
-	_children.insert(this, PROPERTY_FIELD(children), index, newChild);
-	// This node should have been automatically set as the child's parent by referenceInserted().
-	OVITO_ASSERT(newChild->parentNode() == this);
+    // Insert into children array of this parent.
+    _children.insert(this, PROPERTY_FIELD(children), index, newChild);
+    // This node should have been automatically set as the child's parent by referenceInserted().
+    OVITO_ASSERT(newChild->parentNode() == this);
 
-	// Adjust transformation to preserve world position.
-	TimeInterval iv;
-	AnimationTime time = ExecutionContext::current().ui().datasetContainer().currentAnimationTime();
-	const AffineTransformation& newParentTM = getWorldTransform(time, iv);
-	if(newParentTM != AffineTransformation::Identity())
-		newChild->transformationController()->changeParent(time, AffineTransformation::Identity(), newParentTM, newChild);
-	newChild->invalidateWorldTransformation();
+    // Adjust transformation to preserve world position.
+    TimeInterval iv;
+    AnimationTime time = ExecutionContext::current().ui().datasetContainer().currentAnimationTime();
+    const AffineTransformation& newParentTM = getWorldTransform(time, iv);
+    if(newParentTM != AffineTransformation::Identity())
+        newChild->transformationController()->changeParent(time, AffineTransformation::Identity(), newParentTM, newChild);
+    newChild->invalidateWorldTransformation();
 }
 
 /******************************************************************************
@@ -335,23 +335,23 @@ void SceneNode::insertChildNode(int index, SceneNode* newChild)
 ******************************************************************************/
 void SceneNode::removeChildNode(int index)
 {
-	OVITO_ASSERT(index >= 0 && index < children().size());
+    OVITO_ASSERT(index >= 0 && index < children().size());
 
-	OORef<SceneNode> child = children()[index];
-	OVITO_ASSERT_MSG(child->parentNode() == this, "SceneNode::removeChildNode()", "The node to be removed is not a child of this parent node.");
+    OORef<SceneNode> child = children()[index];
+    OVITO_ASSERT_MSG(child->parentNode() == this, "SceneNode::removeChildNode()", "The node to be removed is not a child of this parent node.");
 
-	// Remove child node from array.
-	_children.remove(this, PROPERTY_FIELD(children), index);
-	OVITO_ASSERT(children().contains(child) == false);
-	OVITO_ASSERT(child->parentNode() == nullptr);
+    // Remove child node from array.
+    _children.remove(this, PROPERTY_FIELD(children), index);
+    OVITO_ASSERT(children().contains(child) == false);
+    OVITO_ASSERT(child->parentNode() == nullptr);
 
-	// Update child node.
-	TimeInterval iv;
-	AnimationTime time = ExecutionContext::current().ui().datasetContainer().currentAnimationTime();
-	AffineTransformation oldParentTM = getWorldTransform(time, iv);
-	if(oldParentTM != AffineTransformation::Identity())
-		child->transformationController()->changeParent(time, oldParentTM, AffineTransformation::Identity(), child);
-	child->invalidateWorldTransformation();
+    // Update child node.
+    TimeInterval iv;
+    AnimationTime time = ExecutionContext::current().ui().datasetContainer().currentAnimationTime();
+    AffineTransformation oldParentTM = getWorldTransform(time, iv);
+    if(oldParentTM != AffineTransformation::Identity())
+        child->transformationController()->changeParent(time, oldParentTM, AffineTransformation::Identity(), child);
+    child->invalidateWorldTransformation();
 }
 
 /******************************************************************************
@@ -359,14 +359,14 @@ void SceneNode::removeChildNode(int index)
 ******************************************************************************/
 Scene* SceneNode::scene() const
 {
-	SceneNode* n = const_cast<SceneNode*>(this);
-	do {
-		if(n->isRootNode()) 
-			break;
-		n = n->parentNode();
-	}
-	while(n != nullptr);
-	return static_object_cast<Scene>(n);
+    SceneNode* n = const_cast<SceneNode*>(this);
+    do {
+        if(n->isRootNode()) 
+            break;
+        n = n->parentNode();
+    }
+    while(n != nullptr);
+    return static_object_cast<Scene>(n);
 }
 
 /******************************************************************************
@@ -374,11 +374,11 @@ Scene* SceneNode::scene() const
 ******************************************************************************/
 bool SceneNode::isSelected() const
 {
-	if(Scene* sc = scene()) {
-		if(sc->selection())
-			return sc->selection()->nodes().contains(const_cast<SceneNode*>(this));
-	}
-	return false;
+    if(Scene* sc = scene()) {
+        if(sc->selection())
+            return sc->selection()->nodes().contains(const_cast<SceneNode*>(this));
+    }
+    return false;
 }
 
 /******************************************************************************
@@ -386,11 +386,11 @@ bool SceneNode::isSelected() const
 ******************************************************************************/
 void SceneNode::saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData) const
 {
-	RefTarget::saveToStream(stream, excludeRecomputableData);
+    RefTarget::saveToStream(stream, excludeRecomputableData);
 
-	stream.beginChunk(0x02);
-	// This is for future use...
-	stream.endChunk();
+    stream.beginChunk(0x02);
+    // This is for future use...
+    stream.endChunk();
 }
 
 /******************************************************************************
@@ -398,15 +398,15 @@ void SceneNode::saveToStream(ObjectSaveStream& stream, bool excludeRecomputableD
 ******************************************************************************/
 void SceneNode::loadFromStream(ObjectLoadStream& stream)
 {
-	RefTarget::loadFromStream(stream);
+    RefTarget::loadFromStream(stream);
 
-	stream.expectChunkRange(0x01, 0x02);
-	// This is for future use...
-	stream.closeChunk();
+    stream.expectChunkRange(0x01, 0x02);
+    // This is for future use...
+    stream.closeChunk();
 
-	// Restore parent/child hierarchy.
-	for(SceneNode* child : children())
-		child->_parentNode = this;
+    // Restore parent/child hierarchy.
+    for(SceneNode* child : children())
+        child->_parentNode = this;
 }
 
 /******************************************************************************
@@ -414,23 +414,23 @@ void SceneNode::loadFromStream(ObjectLoadStream& stream)
 ******************************************************************************/
 OORef<RefTarget> SceneNode::clone(bool deepCopy, CloneHelper& cloneHelper) const
 {
-	// Let the base class create an instance of this class.
-	OORef<SceneNode> clone = static_object_cast<SceneNode>(RefTarget::clone(deepCopy, cloneHelper));
+    // Let the base class create an instance of this class.
+    OORef<SceneNode> clone = static_object_cast<SceneNode>(RefTarget::clone(deepCopy, cloneHelper));
 
-	// Clone orientation target node too.
-	if(clone->lookatTargetNode()) {
-		OVITO_ASSERT(lookatTargetNode());
+    // Clone orientation target node too.
+    if(clone->lookatTargetNode()) {
+        OVITO_ASSERT(lookatTargetNode());
 
-		// Insert the cloned target into the same scene as out target.
-		if(lookatTargetNode()->parentNode() && !clone->lookatTargetNode()->parentNode()) {
-			lookatTargetNode()->parentNode()->addChildNode(clone->lookatTargetNode());
-		}
+        // Insert the cloned target into the same scene as out target.
+        if(lookatTargetNode()->parentNode() && !clone->lookatTargetNode()->parentNode()) {
+            lookatTargetNode()->parentNode()->addChildNode(clone->lookatTargetNode());
+        }
 
-		// Set new target for look-at controller.
-		clone->setLookatTargetNode(AnimationTime(0), clone->lookatTargetNode());
-	}
+        // Set new target for look-at controller.
+        clone->setLookatTargetNode(AnimationTime(0), clone->lookatTargetNode());
+    }
 
-	return clone;
+    return clone;
 }
 
 /******************************************************************************
@@ -439,19 +439,19 @@ OORef<RefTarget> SceneNode::clone(bool deepCopy, CloneHelper& cloneHelper) const
 ******************************************************************************/
 Box3 SceneNode::worldBoundingBox(AnimationTime time, Viewport* vp) const
 {
-	if(vp && isHiddenInViewport(vp, true))
-		return Box3();
+    if(vp && isHiddenInViewport(vp, true))
+        return Box3();
     if(!_boundingBoxValidity.contains(time)) {
-		_boundingBoxValidity.setInfinite();
-		_localBoundingBox = localBoundingBox(time, _boundingBoxValidity);
-	}
-	TimeInterval iv;
-	const AffineTransformation& tm = getWorldTransform(time, iv);
-	Box3 worldBoundingBox = _localBoundingBox.transformed(tm);
-	for(SceneNode* child : children()) {
-		worldBoundingBox.addBox(child->worldBoundingBox(time, vp));
-	}
-	return worldBoundingBox;
+        _boundingBoxValidity.setInfinite();
+        _localBoundingBox = localBoundingBox(time, _boundingBoxValidity);
+    }
+    TimeInterval iv;
+    const AffineTransformation& tm = getWorldTransform(time, iv);
+    Box3 worldBoundingBox = _localBoundingBox.transformed(tm);
+    for(SceneNode* child : children()) {
+        worldBoundingBox.addBox(child->worldBoundingBox(time, vp));
+    }
+    return worldBoundingBox;
 }
 
 /******************************************************************************
@@ -459,17 +459,17 @@ Box3 SceneNode::worldBoundingBox(AnimationTime time, Viewport* vp) const
 ******************************************************************************/
 void SceneNode::setPerViewportVisibility(Viewport* vp, bool visible)
 {
-	OVITO_ASSERT(vp);
+    OVITO_ASSERT(vp);
 
-	if(visible) {
-		int index = _hiddenInViewports.indexOf(vp);
-		if(index >= 0)
-			_hiddenInViewports.remove(this, PROPERTY_FIELD(hiddenInViewports), index);
-	}
-	else {
-		if(!_hiddenInViewports.contains(vp))
-			_hiddenInViewports.push_back(this, PROPERTY_FIELD(hiddenInViewports), vp);
-	}
+    if(visible) {
+        int index = _hiddenInViewports.indexOf(vp);
+        if(index >= 0)
+            _hiddenInViewports.remove(this, PROPERTY_FIELD(hiddenInViewports), index);
+    }
+    else {
+        if(!_hiddenInViewports.contains(vp))
+            _hiddenInViewports.push_back(this, PROPERTY_FIELD(hiddenInViewports), vp);
+    }
 }
 
 /******************************************************************************
@@ -478,13 +478,13 @@ void SceneNode::setPerViewportVisibility(Viewport* vp, bool visible)
 ******************************************************************************/
 bool SceneNode::isHiddenInViewport(Viewport* vp, bool includeHierarchyParent) const
 {
-	OVITO_ASSERT(vp);
-	if(_hiddenInViewports.contains(vp))
-		return true;
-	if(includeHierarchyParent && parentNode())
-		return parentNode()->isHiddenInViewport(vp, true);
-	else
-		return false;
+    OVITO_ASSERT(vp);
+    if(_hiddenInViewports.contains(vp))
+        return true;
+    if(includeHierarchyParent && parentNode())
+        return parentNode()->isHiddenInViewport(vp, true);
+    else
+        return false;
 }
 
-}	// End of namespace
+}   // End of namespace

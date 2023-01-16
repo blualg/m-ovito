@@ -34,72 +34,72 @@ namespace Ovito {
  */
 class OVITO_GUI_EXPORT CoordinateDisplayWidget : public QFrame
 {
-	Q_OBJECT
+    Q_OBJECT
 
 public:
 
-	/// \brief Constructs the widget.
-	CoordinateDisplayWidget(MainWindow& mainWindow, QWidget* parent = nullptr);
+    /// \brief Constructs the widget.
+    CoordinateDisplayWidget(MainWindow& mainWindow, QWidget* parent = nullptr);
 
-	/// \brief Shows the coordinate display widget.
-	void activate(const QString& undoOperationName);
+    /// \brief Shows the coordinate display widget.
+    void activate(const QString& undoOperationName);
 
-	/// \brief Deactivates the coordinate display widget.
-	void deactivate();
+    /// \brief Deactivates the coordinate display widget.
+    void deactivate();
 
-	/// \brief Returns the main window hosting this widget.
-	MainWindow& mainWindow() const { return _mainWindow; }
+    /// \brief Returns the main window hosting this widget.
+    MainWindow& mainWindow() const { return _mainWindow; }
 
-	/// Sets the values displayed by the coordinate display widget.
-	void setValues(const Vector3& xyz) {
-		if(!_spinners[0]->isDragging()) _spinners[0]->setFloatValue(xyz.x());
-		if(!_spinners[1]->isDragging()) _spinners[1]->setFloatValue(xyz.y());
-		if(!_spinners[2]->isDragging()) _spinners[2]->setFloatValue(xyz.z());
-	}
+    /// Sets the values displayed by the coordinate display widget.
+    void setValues(const Vector3& xyz) {
+        if(!_spinners[0]->isDragging()) _spinners[0]->setFloatValue(xyz.x());
+        if(!_spinners[1]->isDragging()) _spinners[1]->setFloatValue(xyz.y());
+        if(!_spinners[2]->isDragging()) _spinners[2]->setFloatValue(xyz.z());
+    }
 
-	/// Returns the values displayed by the coordinate display widget.
-	Vector3 getValues() const {
-		return Vector3(
-				_spinners[0]->floatValue(),
-				_spinners[1]->floatValue(),
-				_spinners[2]->floatValue());
-	}
+    /// Returns the values displayed by the coordinate display widget.
+    Vector3 getValues() const {
+        return Vector3(
+                _spinners[0]->floatValue(),
+                _spinners[1]->floatValue(),
+                _spinners[2]->floatValue());
+    }
 
-	/// Sets the units of the displayed values.
-	void setUnit(ParameterUnit* unit) {
-		_spinners[0]->setUnit(unit);
-		_spinners[1]->setUnit(unit);
-		_spinners[2]->setUnit(unit);
-	}
+    /// Sets the units of the displayed values.
+    void setUnit(ParameterUnit* unit) {
+        _spinners[0]->setUnit(unit);
+        _spinners[1]->setUnit(unit);
+        _spinners[2]->setUnit(unit);
+    }
 
 Q_SIGNALS:
 
-	/// This signal is emitted when the user has changed the value of one of the vector components.
-	void valueEntered(int component, FloatType value);
+    /// This signal is emitted when the user has changed the value of one of the vector components.
+    void valueEntered(int component, FloatType value);
 
-	/// This signal is emitted when the user presses the "Animate transformation" button.
-	void animatePressed();
+    /// This signal is emitted when the user presses the "Animate transformation" button.
+    void animatePressed();
 
 protected Q_SLOT:
 
-	/// Is called when a spinner value has been changed by the user.
-	void onSpinnerValueChanged();
+    /// Is called when a spinner value has been changed by the user.
+    void onSpinnerValueChanged();
 
-	/// Is called when the user has started a spinner drag operation.
-	void onSpinnerDragStart();
+    /// Is called when the user has started a spinner drag operation.
+    void onSpinnerDragStart();
 
-	/// Is called when the user has finished the spinner drag operation.
-	void onSpinnerDragStop();
+    /// Is called when the user has finished the spinner drag operation.
+    void onSpinnerDragStop();
 
-	/// Is called when the user has aborted the spinner drag operation.
-	void onSpinnerDragAbort();
+    /// Is called when the user has aborted the spinner drag operation.
+    void onSpinnerDragAbort();
 
 private:
 
-	MainWindow& _mainWindow;
-	SpinnerWidget* _spinners[3];
-	QString _undoOperationName;
-	UndoableTransaction _undoTransaction;
+    MainWindow& _mainWindow;
+    SpinnerWidget* _spinners[3];
+    QString _undoOperationName;
+    UndoableTransaction _undoTransaction;
 };
 
-}	// End of namespace
+}   // End of namespace

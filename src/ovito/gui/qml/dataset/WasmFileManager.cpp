@@ -39,18 +39,18 @@ namespace Ovito {
 ******************************************************************************/
 SharedFuture<FileHandle> WasmFileManager::fetchUrl(TaskManager& taskManager, const QUrl& url)
 {
-	if(url.scheme() == QStringLiteral("imported")) {
-		QUrl normalizedUrl = normalizeUrl(url);
-		QMutexLocker lock(&mutex());
+    if(url.scheme() == QStringLiteral("imported")) {
+        QUrl normalizedUrl = normalizeUrl(url);
+        QMutexLocker lock(&mutex());
 
-		// Check if requested URL is in the file cache.
+        // Check if requested URL is in the file cache.
         const auto& cacheEntry = _importedFiles.find(normalizedUrl);
-		if(cacheEntry == _importedFiles.end())
+        if(cacheEntry == _importedFiles.end())
             return Future<FileHandle>::createFailed(Exception(tr("Requested file does not exist in imported file set:\n%1").arg(url.fileName()), taskManager.datasetContainer()));
 
         // Return a file handle referring to the file data buffer previously loaded into application memory.
         return FileHandle(url, cacheEntry->second);
-	}
+    }
     return FileManager::fetchUrl(taskManager, url);
 }
 
@@ -59,18 +59,18 @@ SharedFuture<FileHandle> WasmFileManager::fetchUrl(TaskManager& taskManager, con
 ******************************************************************************/
 Future<QStringList> WasmFileManager::listDirectoryContents(TaskManager& taskManager, const QUrl& url)
 {
-	if(url.scheme() == QStringLiteral("imported")) {
-		QUrl normalizedUrl = normalizeUrl(url);
-		QMutexLocker lock(&mutex());
+    if(url.scheme() == QStringLiteral("imported")) {
+        QUrl normalizedUrl = normalizeUrl(url);
+        QMutexLocker lock(&mutex());
 
         QStringList fileList;
         for(const auto& importEntry : _importedFiles) {
-			QString path = importEntry.first.adjusted(QUrl::RemoveFilename | QUrl::StripTrailingSlash).path();
+            QString path = importEntry.first.adjusted(QUrl::RemoveFilename | QUrl::StripTrailingSlash).path();
             if(importEntry.first.host() == url.host() && path == url.path())
                 fileList.push_back(importEntry.first.fileName());
         }
         return std::move(fileList);
-	}
+    }
     return FileManager::listDirectoryContents(taskManager, url);
 }
 
@@ -341,4 +341,4 @@ void WasmFileManager::importedFileDataCanceled()
 
 #endif
 
-}	// End of namespace
+}   // End of namespace

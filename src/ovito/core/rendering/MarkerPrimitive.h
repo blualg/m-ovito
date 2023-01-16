@@ -34,63 +34,63 @@ namespace Ovito {
  */
 class OVITO_CORE_EXPORT MarkerPrimitive final
 {
-	Q_GADGET
+    Q_GADGET
 
 public:
 
-	enum MarkerShape {
-		DotShape,
-		BoxShape
-	};
-	Q_ENUM(MarkerShape);
+    enum MarkerShape {
+        DotShape,
+        BoxShape
+    };
+    Q_ENUM(MarkerShape);
 
-	/// Constructor.
-	explicit MarkerPrimitive(MarkerShape shape = DotShape) : _shape(shape) {}
+    /// Constructor.
+    explicit MarkerPrimitive(MarkerShape shape = DotShape) : _shape(shape) {}
 
-	/// \brief Sets the coordinates of the markers.
-	void setPositions(ConstDataBufferPtr coordinates) { 
-		OVITO_ASSERT(coordinates);
-		OVITO_ASSERT(coordinates->dataType() == DataBuffer::Float && coordinates->componentCount() == 3);
-		_positions = std::move(coordinates); 
-	}
+    /// \brief Sets the coordinates of the markers.
+    void setPositions(ConstDataBufferPtr coordinates) { 
+        OVITO_ASSERT(coordinates);
+        OVITO_ASSERT(coordinates->dataType() == DataBuffer::Float && coordinates->componentCount() == 3);
+        _positions = std::move(coordinates); 
+    }
 
-	/// \brief Sets the coordinates of the markers.
-	template<typename InputIterator>
-	void makePositions(InputIterator begin, InputIterator end) {
-		size_t count = std::distance(begin, end);
-		DataBufferAccessAndRef<Point3> buffer = DataBufferPtr::create(count, DataBuffer::Float, 3);
-		std::copy(std::move(begin), std::move(end), buffer.begin());
-		setPositions(buffer.take());
-	}
+    /// \brief Sets the coordinates of the markers.
+    template<typename InputIterator>
+    void makePositions(InputIterator begin, InputIterator end) {
+        size_t count = std::distance(begin, end);
+        DataBufferAccessAndRef<Point3> buffer = DataBufferPtr::create(count, DataBuffer::Float, 3);
+        std::copy(std::move(begin), std::move(end), buffer.begin());
+        setPositions(buffer.take());
+    }
 
-	/// \brief Sets the coordinates of the markers.
-	template<typename Range>
-	void makePositions(const Range& range) {
-		makePositions(std::begin(range), std::end(range));
-	}
+    /// \brief Sets the coordinates of the markers.
+    template<typename Range>
+    void makePositions(const Range& range) {
+        makePositions(std::begin(range), std::end(range));
+    }
 
-	/// Returns the buffer storing the marker positions.
-	const ConstDataBufferPtr& positions() const { return _positions; }
+    /// Returns the buffer storing the marker positions.
+    const ConstDataBufferPtr& positions() const { return _positions; }
 
-	/// \brief Sets the color of all markers to the given value.
-	void setColor(const ColorA& color) { _color = color; }
+    /// \brief Sets the color of all markers to the given value.
+    void setColor(const ColorA& color) { _color = color; }
 
-	/// \brief Returns the color of the markers.
-	const ColorA& color() const { return _color; }
+    /// \brief Returns the color of the markers.
+    const ColorA& color() const { return _color; }
 
-	/// \brief Returns the display shape of markers.
-	MarkerShape shape() const { return _shape; }
+    /// \brief Returns the display shape of markers.
+    MarkerShape shape() const { return _shape; }
 
 private:
 
-	/// Controls the shape of markers.
-	MarkerShape _shape = DotShape;
+    /// Controls the shape of markers.
+    MarkerShape _shape = DotShape;
 
-	/// The color of the markers to be rendered.
-	ColorA _color{1,1,1,1};
+    /// The color of the markers to be rendered.
+    ColorA _color{1,1,1,1};
 
-	/// The internal buffer storing the marker positions.
-	ConstDataBufferPtr _positions; // Array of Point3
+    /// The internal buffer storing the marker positions.
+    ConstDataBufferPtr _positions; // Array of Point3
 };
 
-}	// End of namespace
+}   // End of namespace

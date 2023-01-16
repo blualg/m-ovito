@@ -51,13 +51,13 @@ SET_PROPERTY_FIELD_LABEL(ParticleImporter, recenterCell, "Center simulation box 
 ******************************************************************************/
 void ParticleImporter::propertyChanged(const PropertyFieldDescriptor* field)
 {
-	FileSourceImporter::propertyChanged(field);
+    FileSourceImporter::propertyChanged(field);
 
-	if(field == PROPERTY_FIELD(sortParticles) || field == PROPERTY_FIELD(generateBonds) || field == PROPERTY_FIELD(recenterCell)) {
-		// Reload input file(s) when these options are changed by the user.
-		// But there is no need to refetch the data file(s) from the remote location. Reparsing the cached files is sufficient.
-		requestReload();
-	}
+    if(field == PROPERTY_FIELD(sortParticles) || field == PROPERTY_FIELD(generateBonds) || field == PROPERTY_FIELD(recenterCell)) {
+        // Reload input file(s) when these options are changed by the user.
+        // But there is no need to refetch the data file(s) from the remote location. Reparsing the cached files is sufficient.
+        requestReload();
+    }
 }
 
 /******************************************************************************
@@ -65,14 +65,14 @@ void ParticleImporter::propertyChanged(const PropertyFieldDescriptor* field)
 ******************************************************************************/
 ParticlesObject* ParticleImporter::FrameLoader::particles()
 {
-	if(!_particles) {
-		_particles = state().getMutableObject<ParticlesObject>();
-		if(!_particles) {
-			_particles = state().createObject<ParticlesObject>(dataSource());
-			_areParticlesNewlyCreated = true;
-		}
-	}
-	return _particles;
+    if(!_particles) {
+        _particles = state().getMutableObject<ParticlesObject>();
+        if(!_particles) {
+            _particles = state().createObject<ParticlesObject>(dataSource());
+            _areParticlesNewlyCreated = true;
+        }
+    }
+    return _particles;
 }
 
 /******************************************************************************
@@ -80,19 +80,19 @@ ParticlesObject* ParticleImporter::FrameLoader::particles()
 ******************************************************************************/
 BondsObject* ParticleImporter::FrameLoader::bonds()
 {
-	if(!_bonds) {
-		setKeepExistingTopology(true);
-		if(particles()->bonds()) {
-			_bonds = particles()->makeBondsMutable();
-		}
-		else {
-			particles()->setBonds(DataOORef<BondsObject>::create());
-			_bonds = particles()->makeBondsMutable();
-			_bonds->setDataSource(dataSource());
-			_areBondsNewlyCreated = true;
-		}
-	}
-	return _bonds;
+    if(!_bonds) {
+        setKeepExistingTopology(true);
+        if(particles()->bonds()) {
+            _bonds = particles()->makeBondsMutable();
+        }
+        else {
+            particles()->setBonds(DataOORef<BondsObject>::create());
+            _bonds = particles()->makeBondsMutable();
+            _bonds->setDataSource(dataSource());
+            _areBondsNewlyCreated = true;
+        }
+    }
+    return _bonds;
 }
 
 /******************************************************************************
@@ -100,19 +100,19 @@ BondsObject* ParticleImporter::FrameLoader::bonds()
 ******************************************************************************/
 AnglesObject* ParticleImporter::FrameLoader::angles()
 {
-	if(!_angles) {
-		setKeepExistingTopology(true);
-		if(particles()->angles()) {
-			_angles = particles()->makeAnglesMutable();
-		}
-		else {
-			particles()->setAngles(DataOORef<AnglesObject>::create());
-			_angles = particles()->makeAnglesMutable();
-			_angles->setDataSource(dataSource());
-			_areAnglesNewlyCreated = true;
-		}
-	}
-	return _angles;
+    if(!_angles) {
+        setKeepExistingTopology(true);
+        if(particles()->angles()) {
+            _angles = particles()->makeAnglesMutable();
+        }
+        else {
+            particles()->setAngles(DataOORef<AnglesObject>::create());
+            _angles = particles()->makeAnglesMutable();
+            _angles->setDataSource(dataSource());
+            _areAnglesNewlyCreated = true;
+        }
+    }
+    return _angles;
 }
 
 /******************************************************************************
@@ -120,19 +120,19 @@ AnglesObject* ParticleImporter::FrameLoader::angles()
 ******************************************************************************/
 DihedralsObject* ParticleImporter::FrameLoader::dihedrals()
 {
-	if(!_dihedrals) {
-		setKeepExistingTopology(true);
-		if(particles()->dihedrals()) {
-			_dihedrals = particles()->makeDihedralsMutable();
-		}
-		else {
-			particles()->setDihedrals(DataOORef<DihedralsObject>::create());
-			_dihedrals = particles()->makeDihedralsMutable();
-			_dihedrals->setDataSource(dataSource());
-			_areDihedralsNewlyCreated = true;
-		}
-	}
-	return _dihedrals;
+    if(!_dihedrals) {
+        setKeepExistingTopology(true);
+        if(particles()->dihedrals()) {
+            _dihedrals = particles()->makeDihedralsMutable();
+        }
+        else {
+            particles()->setDihedrals(DataOORef<DihedralsObject>::create());
+            _dihedrals = particles()->makeDihedralsMutable();
+            _dihedrals->setDataSource(dataSource());
+            _areDihedralsNewlyCreated = true;
+        }
+    }
+    return _dihedrals;
 }
 
 /******************************************************************************
@@ -140,19 +140,19 @@ DihedralsObject* ParticleImporter::FrameLoader::dihedrals()
 ******************************************************************************/
 ImpropersObject* ParticleImporter::FrameLoader::impropers()
 {
-	if(!_impropers) {
-		setKeepExistingTopology(true);
-		if(particles()->impropers()) {
-			_impropers = particles()->makeImpropersMutable();
-		}
-		else {
-			particles()->setImpropers(DataOORef<ImpropersObject>::create());
-			_impropers = particles()->makeImpropersMutable();
-			_impropers->setDataSource(dataSource());
-			_areImpropersNewlyCreated = true;
-		}
-	}
-	return _impropers;
+    if(!_impropers) {
+        setKeepExistingTopology(true);
+        if(particles()->impropers()) {
+            _impropers = particles()->makeImpropersMutable();
+        }
+        else {
+            particles()->setImpropers(DataOORef<ImpropersObject>::create());
+            _impropers = particles()->makeImpropersMutable();
+            _impropers->setDataSource(dataSource());
+            _areImpropersNewlyCreated = true;
+        }
+    }
+    return _impropers;
 }
 
 /******************************************************************************
@@ -161,14 +161,14 @@ ImpropersObject* ParticleImporter::FrameLoader::impropers()
 ******************************************************************************/
 void ParticleImporter::FrameLoader::setParticleCount(size_t count)
 {
-	if(count != 0) {
-		particles()->setElementCount(count);
-	}
-	else {
-		if(const ParticlesObject* particles = state().getObject<ParticlesObject>())
-			state().removeObject(particles);
-		_particles = nullptr;
-	}
+    if(count != 0) {
+        particles()->setElementCount(count);
+    }
+    else {
+        if(const ParticlesObject* particles = state().getObject<ParticlesObject>())
+            state().removeObject(particles);
+        _particles = nullptr;
+    }
 }
 
 /******************************************************************************
@@ -177,15 +177,15 @@ void ParticleImporter::FrameLoader::setParticleCount(size_t count)
 ******************************************************************************/
 void ParticleImporter::FrameLoader::setBondCount(size_t count)
 {
-	if(count != 0) {
-		bonds()->setElementCount(count);
-	}
-	else {
-		if(const ParticlesObject* particles = state().getObject<ParticlesObject>())
-			if(particles->bonds())
-				state().makeMutable(particles)->setBonds(nullptr);
-		_bonds = nullptr;
-	}
+    if(count != 0) {
+        bonds()->setElementCount(count);
+    }
+    else {
+        if(const ParticlesObject* particles = state().getObject<ParticlesObject>())
+            if(particles->bonds())
+                state().makeMutable(particles)->setBonds(nullptr);
+        _bonds = nullptr;
+    }
 }
 
 /******************************************************************************
@@ -194,15 +194,15 @@ void ParticleImporter::FrameLoader::setBondCount(size_t count)
 ******************************************************************************/
 void ParticleImporter::FrameLoader::setAngleCount(size_t count)
 {
-	if(count != 0) {
-		angles()->setElementCount(count);
-	}
-	else {
-		if(const ParticlesObject* particles = state().getObject<ParticlesObject>())
-			if(particles->angles())
-				state().makeMutable(particles)->setAngles(nullptr);
-		_angles = nullptr;
-	}
+    if(count != 0) {
+        angles()->setElementCount(count);
+    }
+    else {
+        if(const ParticlesObject* particles = state().getObject<ParticlesObject>())
+            if(particles->angles())
+                state().makeMutable(particles)->setAngles(nullptr);
+        _angles = nullptr;
+    }
 }
 
 /******************************************************************************
@@ -211,15 +211,15 @@ void ParticleImporter::FrameLoader::setAngleCount(size_t count)
 ******************************************************************************/
 void ParticleImporter::FrameLoader::setDihedralCount(size_t count)
 {
-	if(count != 0) {
-		dihedrals()->setElementCount(count);
-	}
-	else {
-		if(const ParticlesObject* particles = state().getObject<ParticlesObject>())
-			if(particles->dihedrals())
-				state().makeMutable(particles)->setDihedrals(nullptr);
-		_dihedrals = nullptr;
-	}
+    if(count != 0) {
+        dihedrals()->setElementCount(count);
+    }
+    else {
+        if(const ParticlesObject* particles = state().getObject<ParticlesObject>())
+            if(particles->dihedrals())
+                state().makeMutable(particles)->setDihedrals(nullptr);
+        _dihedrals = nullptr;
+    }
 }
 
 /******************************************************************************
@@ -228,15 +228,15 @@ void ParticleImporter::FrameLoader::setDihedralCount(size_t count)
 ******************************************************************************/
 void ParticleImporter::FrameLoader::setImproperCount(size_t count)
 {
-	if(count != 0) {
-		impropers()->setElementCount(count);
-	}
-	else {
-		if(const ParticlesObject* particles = state().getObject<ParticlesObject>())
-			if(particles->impropers())
-				state().makeMutable(particles)->setImpropers(nullptr);
-		_impropers = nullptr;
-	}
+    if(count != 0) {
+        impropers()->setElementCount(count);
+    }
+    else {
+        if(const ParticlesObject* particles = state().getObject<ParticlesObject>())
+            if(particles->impropers())
+                state().makeMutable(particles)->setImpropers(nullptr);
+        _impropers = nullptr;
+    }
 }
 
 /******************************************************************************
@@ -244,31 +244,31 @@ void ParticleImporter::FrameLoader::setImproperCount(size_t count)
 ******************************************************************************/
 void ParticleImporter::FrameLoader::generateBondPeriodicImageProperty()
 {
-	ConstPropertyAccess<Point3> posProperty = particles()->getProperty(ParticlesObject::PositionProperty);
-	if(!posProperty) return;
+    ConstPropertyAccess<Point3> posProperty = particles()->getProperty(ParticlesObject::PositionProperty);
+    if(!posProperty) return;
 
-	ConstPropertyAccess<ParticleIndexPair> bondTopologyProperty = bonds()->getProperty(BondsObject::TopologyProperty);
-	if(!bondTopologyProperty) return;
+    ConstPropertyAccess<ParticleIndexPair> bondTopologyProperty = bonds()->getProperty(BondsObject::TopologyProperty);
+    if(!bondTopologyProperty) return;
 
-	PropertyAccess<Vector3I> bondPeriodicImageProperty = bonds()->createProperty(BondsObject::PeriodicImageProperty);
+    PropertyAccess<Vector3I> bondPeriodicImageProperty = bonds()->createProperty(BondsObject::PeriodicImageProperty);
 
-	if(!hasSimulationCell() || !simulationCell()->hasPbcCorrected()) {
-		bondPeriodicImageProperty.take()->fill<Vector3I>(Vector3I::Zero());
-	}
-	else {
-		const AffineTransformation inverseCellMatrix = simulationCell()->inverseMatrix();
-		const std::array<bool,3> pbcFlags = simulationCell()->pbcFlagsCorrected();
-		for(size_t bondIndex = 0; bondIndex < bondTopologyProperty.size(); bondIndex++) {
-			size_t index1 = bondTopologyProperty[bondIndex][0];
-			size_t index2 = bondTopologyProperty[bondIndex][1];
-			OVITO_ASSERT(index1 < posProperty.size() && index2 < posProperty.size());
-			Vector3 delta = posProperty[index1] - posProperty[index2];
-			for(size_t dim = 0; dim < 3; dim++) {
-				if(pbcFlags[dim])
-					bondPeriodicImageProperty[bondIndex][dim] = std::lround(inverseCellMatrix.prodrow(delta, dim));
-			}
-		}
-	}
+    if(!hasSimulationCell() || !simulationCell()->hasPbcCorrected()) {
+        bondPeriodicImageProperty.take()->fill<Vector3I>(Vector3I::Zero());
+    }
+    else {
+        const AffineTransformation inverseCellMatrix = simulationCell()->inverseMatrix();
+        const std::array<bool,3> pbcFlags = simulationCell()->pbcFlagsCorrected();
+        for(size_t bondIndex = 0; bondIndex < bondTopologyProperty.size(); bondIndex++) {
+            size_t index1 = bondTopologyProperty[bondIndex][0];
+            size_t index2 = bondTopologyProperty[bondIndex][1];
+            OVITO_ASSERT(index1 < posProperty.size() && index2 < posProperty.size());
+            Vector3 delta = posProperty[index1] - posProperty[index2];
+            for(size_t dim = 0; dim < 3; dim++) {
+                if(pbcFlags[dim])
+                    bondPeriodicImageProperty[bondIndex][dim] = std::lround(inverseCellMatrix.prodrow(delta, dim));
+            }
+        }
+    }
 }
 
 /******************************************************************************
@@ -276,94 +276,94 @@ void ParticleImporter::FrameLoader::generateBondPeriodicImageProperty()
 ******************************************************************************/
 void ParticleImporter::FrameLoader::generateBonds()
 {
-	if(isCanceled()) return;
-	if(!_particles) return;
+    if(isCanceled()) return;
+    if(!_particles) return;
 
-	// Get the type particle property.
-	const PropertyObject* typeProperty = _particles->getProperty(ParticlesObject::TypeProperty);
-	const PropertyObject* positionProperty = _particles->getProperty(ParticlesObject::PositionProperty);
-	if(!typeProperty || !positionProperty) return;
+    // Get the type particle property.
+    const PropertyObject* typeProperty = _particles->getProperty(ParticlesObject::TypeProperty);
+    const PropertyObject* positionProperty = _particles->getProperty(ParticlesObject::PositionProperty);
+    if(!typeProperty || !positionProperty) return;
 
-	// Do not delete the generated bonds again in FrameLoader::loadFile(). 
-	setKeepExistingTopology(true);
+    // Do not delete the generated bonds again in FrameLoader::loadFile(). 
+    setKeepExistingTopology(true);
 
-	// Get the list of van der Waals radii.
-	std::vector<FloatType> typeVdWRadiusMap;
-	std::vector<bool> isHydrogenType;
-	FloatType maxRadius = 0;
-	for(const ElementType* type : typeProperty->elementTypes()) {
-		if(const ParticleType* ptype = dynamic_object_cast<ParticleType>(type)) {
-			if(ptype->vdwRadius() > 0.0 && ptype->numericId() >= 0) {
-				if(ptype->vdwRadius() > maxRadius)
-					maxRadius = ptype->vdwRadius();
-				if(type->numericId() >= typeVdWRadiusMap.size()) {
-					typeVdWRadiusMap.resize(type->numericId() + 1, 0.0);
-					isHydrogenType.resize(type->numericId() + 1, false);
-				}
-				typeVdWRadiusMap[type->numericId()] = ptype->vdwRadius();
-				isHydrogenType[type->numericId()] = (ptype->name() == QStringLiteral("H"));
-			}
-		}
-	}
+    // Get the list of van der Waals radii.
+    std::vector<FloatType> typeVdWRadiusMap;
+    std::vector<bool> isHydrogenType;
+    FloatType maxRadius = 0;
+    for(const ElementType* type : typeProperty->elementTypes()) {
+        if(const ParticleType* ptype = dynamic_object_cast<ParticleType>(type)) {
+            if(ptype->vdwRadius() > 0.0 && ptype->numericId() >= 0) {
+                if(ptype->vdwRadius() > maxRadius)
+                    maxRadius = ptype->vdwRadius();
+                if(type->numericId() >= typeVdWRadiusMap.size()) {
+                    typeVdWRadiusMap.resize(type->numericId() + 1, 0.0);
+                    isHydrogenType.resize(type->numericId() + 1, false);
+                }
+                typeVdWRadiusMap[type->numericId()] = ptype->vdwRadius();
+                isHydrogenType[type->numericId()] = (ptype->name() == QStringLiteral("H"));
+            }
+        }
+    }
 
-	// Determine maximum bond distance cutoff.
-	FloatType vdwPrefactor = 0.6; // Note: Value 0.6 has been adopted from VMD source code.
-	FloatType maxCutoff = vdwPrefactor * 2.0 * maxRadius;
-	if(maxCutoff == 0.0)
-		return;
-	FloatType minCutoffSquared = 1e-10 * maxCutoff * maxCutoff;
-	setProgressText(tr("Generating bonds"));
-	
-	// Prepare the neighbor list.
-	CutoffNeighborFinder neighborFinder;
-	if(!neighborFinder.prepare(maxCutoff, positionProperty, state().getObject<SimulationCellObject>(), {}))
-		return;	
+    // Determine maximum bond distance cutoff.
+    FloatType vdwPrefactor = 0.6; // Note: Value 0.6 has been adopted from VMD source code.
+    FloatType maxCutoff = vdwPrefactor * 2.0 * maxRadius;
+    if(maxCutoff == 0.0)
+        return;
+    FloatType minCutoffSquared = 1e-10 * maxCutoff * maxCutoff;
+    setProgressText(tr("Generating bonds"));
+    
+    // Prepare the neighbor list.
+    CutoffNeighborFinder neighborFinder;
+    if(!neighborFinder.prepare(maxCutoff, positionProperty, state().getObject<SimulationCellObject>(), {}))
+        return; 
 
-	ConstPropertyAccess<int> particleTypesArray(typeProperty);
+    ConstPropertyAccess<int> particleTypesArray(typeProperty);
 
-	// Multi-threaded loop over all particles, each thread producing a partial bonds list.
-	size_t particleCount = positionProperty->size();
-	auto partialBondsLists = parallelForCollect<std::vector<Bond>>(particleCount, [&](size_t particleIndex, std::vector<Bond>& bondList) {
-		// Kernel called for each particle: Iterate over the particle's neighbors withing the cutoff range.
-		for(CutoffNeighborFinder::Query neighborQuery(neighborFinder, particleIndex); !neighborQuery.atEnd(); neighborQuery.next()) {
-			int type1 = particleTypesArray[particleIndex];
-			int type2 = particleTypesArray[neighborQuery.current()];
-			if(type1 >= 0 && type2 >= 0 && type1 < (int)typeVdWRadiusMap.size() && type2 < (int)typeVdWRadiusMap.size()) {
-				if(isHydrogenType[type1] && isHydrogenType[type2])
-					continue;
-				FloatType cutoff = vdwPrefactor * (typeVdWRadiusMap[type1] + typeVdWRadiusMap[type2]);
-				if(neighborQuery.distanceSquared() <= cutoff*cutoff && neighborQuery.distanceSquared() >= minCutoffSquared) {
-					Bond bond = { particleIndex, neighborQuery.current(), neighborQuery.unwrappedPbcShift() };
-					// Skip every other bond to create only one bond per particle pair.
-					if(!bond.isOdd())
-						bondList.push_back(bond);
-				}
-			}
-		}
-	});
-	if(isCanceled())
-		return;
+    // Multi-threaded loop over all particles, each thread producing a partial bonds list.
+    size_t particleCount = positionProperty->size();
+    auto partialBondsLists = parallelForCollect<std::vector<Bond>>(particleCount, [&](size_t particleIndex, std::vector<Bond>& bondList) {
+        // Kernel called for each particle: Iterate over the particle's neighbors withing the cutoff range.
+        for(CutoffNeighborFinder::Query neighborQuery(neighborFinder, particleIndex); !neighborQuery.atEnd(); neighborQuery.next()) {
+            int type1 = particleTypesArray[particleIndex];
+            int type2 = particleTypesArray[neighborQuery.current()];
+            if(type1 >= 0 && type2 >= 0 && type1 < (int)typeVdWRadiusMap.size() && type2 < (int)typeVdWRadiusMap.size()) {
+                if(isHydrogenType[type1] && isHydrogenType[type2])
+                    continue;
+                FloatType cutoff = vdwPrefactor * (typeVdWRadiusMap[type1] + typeVdWRadiusMap[type2]);
+                if(neighborQuery.distanceSquared() <= cutoff*cutoff && neighborQuery.distanceSquared() >= minCutoffSquared) {
+                    Bond bond = { particleIndex, neighborQuery.current(), neighborQuery.unwrappedPbcShift() };
+                    // Skip every other bond to create only one bond per particle pair.
+                    if(!bond.isOdd())
+                        bondList.push_back(bond);
+                }
+            }
+        }
+    });
+    if(isCanceled())
+        return;
 
-	// Create BondsObject.
-	setBondCount(boost::accumulate(partialBondsLists, (size_t)0, [](size_t n, const std::vector<Bond>& bonds) { return n + bonds.size(); }));
-	PropertyAccess<ParticleIndexPair> bondTopologyProperty = this->bonds()->createProperty(BondsObject::TopologyProperty);
-	PropertyAccess<int> bondTypeProperty = this->bonds()->createProperty(BondsObject::TypeProperty);
-	PropertyAccess<Vector3I> bondPeriodicImageProperty = this->bonds()->createProperty(BondsObject::PeriodicImageProperty);
+    // Create BondsObject.
+    setBondCount(boost::accumulate(partialBondsLists, (size_t)0, [](size_t n, const std::vector<Bond>& bonds) { return n + bonds.size(); }));
+    PropertyAccess<ParticleIndexPair> bondTopologyProperty = this->bonds()->createProperty(BondsObject::TopologyProperty);
+    PropertyAccess<int> bondTypeProperty = this->bonds()->createProperty(BondsObject::TypeProperty);
+    PropertyAccess<Vector3I> bondPeriodicImageProperty = this->bonds()->createProperty(BondsObject::PeriodicImageProperty);
 
-	// Create bond type.
-	addNumericType(BondsObject::OOClass(), bondTypeProperty.buffer(), 1, {});
+    // Create bond type.
+    addNumericType(BondsObject::OOClass(), bondTypeProperty.buffer(), 1, {});
 
-	// Transfer bonds lists to BondsObject.
-	boost::fill(bondTypeProperty, 1);
-	auto bondTopologyIter = bondTopologyProperty.begin();
-	auto bondPBCImageIter = bondPeriodicImageProperty.begin();
-	for(const std::vector<Bond>& bondsList : partialBondsLists) {
-		for(const Bond& bond : bondsList) {
-			*bondTopologyIter++ = ParticleIndexPair{{(qlonglong)bond.index1, (qlonglong)bond.index2}};
-			*bondPBCImageIter++ = bond.pbcShift;
-		}
-	}
-	OVITO_ASSERT(bondTopologyIter == bondTopologyProperty.end());
+    // Transfer bonds lists to BondsObject.
+    boost::fill(bondTypeProperty, 1);
+    auto bondTopologyIter = bondTopologyProperty.begin();
+    auto bondPBCImageIter = bondPeriodicImageProperty.begin();
+    for(const std::vector<Bond>& bondsList : partialBondsLists) {
+        for(const Bond& bond : bondsList) {
+            *bondTopologyIter++ = ParticleIndexPair{{(qlonglong)bond.index1, (qlonglong)bond.index2}};
+            *bondPBCImageIter++ = bond.pbcShift;
+        }
+    }
+    OVITO_ASSERT(bondTopologyIter == bondTopologyProperty.end());
 }
 
 /******************************************************************************
@@ -372,17 +372,17 @@ void ParticleImporter::FrameLoader::generateBonds()
 ******************************************************************************/
 void ParticleImporter::FrameLoader::computeVelocityMagnitude()
 {
-	if(!_particles || isCanceled()) 
-		return;
+    if(!_particles || isCanceled()) 
+        return;
 
-	if(ConstPropertyAccess<Vector3> velocityVectors = _particles->getProperty(ParticlesObject::VelocityProperty)) {
-		auto v = velocityVectors.cbegin();
-		PropertyObject* magnitudeProperty = particles()->createProperty(ParticlesObject::VelocityMagnitudeProperty);
-		for(FloatType& mag : PropertyAccess<FloatType>(magnitudeProperty)) {
-			mag = v->length();
-			++v;
-		}
-	}
+    if(ConstPropertyAccess<Vector3> velocityVectors = _particles->getProperty(ParticlesObject::VelocityProperty)) {
+        auto v = velocityVectors.cbegin();
+        PropertyObject* magnitudeProperty = particles()->createProperty(ParticlesObject::VelocityMagnitudeProperty);
+        for(FloatType& mag : PropertyAccess<FloatType>(magnitudeProperty)) {
+            mag = v->length();
+            ++v;
+        }
+    }
 }
 
 /******************************************************************************
@@ -391,47 +391,47 @@ void ParticleImporter::FrameLoader::computeVelocityMagnitude()
 ******************************************************************************/
 void ParticleImporter::FrameLoader::correctOffcenterCell()
 {
-	if(isCanceled()) 
-		return;
+    if(isCanceled()) 
+        return;
 
-	// Check if a simulation cell has been defined. It must be periodic in all directions.
-	const SimulationCellObject* simulationCell = state().getObject<SimulationCellObject>();
-	if(!simulationCell || !simulationCell->hasPbc(0) || !simulationCell->hasPbc(1) || (!simulationCell->hasPbc(2) && !simulationCell->is2D())) 
-		return;
+    // Check if a simulation cell has been defined. It must be periodic in all directions.
+    const SimulationCellObject* simulationCell = state().getObject<SimulationCellObject>();
+    if(!simulationCell || !simulationCell->hasPbc(0) || !simulationCell->hasPbc(1) || (!simulationCell->hasPbc(2) && !simulationCell->is2D())) 
+        return;
 
-	// The cell corner must be located at (0,0,0).
-	if(simulationCell->cellOrigin() != Point3::Origin())
-		return;
+    // The cell corner must be located at (0,0,0).
+    if(simulationCell->cellOrigin() != Point3::Origin())
+        return;
 
-	// The current implementation is for 3D cells only.
-	if(simulationCell->is2D() || simulationCell->cellMatrix().determinant() == 0.0)
-		return;
+    // The current implementation is for 3D cells only.
+    if(simulationCell->is2D() || simulationCell->cellMatrix().determinant() == 0.0)
+        return;
 
-	// Get the particle coordinates.
-	ConstPropertyAccess<Point3> positions = _particles ? _particles->getProperty(ParticlesObject::PositionProperty) : nullptr;
-	if(!positions || positions.size() == 0)
-		return;
+    // Get the particle coordinates.
+    ConstPropertyAccess<Point3> positions = _particles ? _particles->getProperty(ParticlesObject::PositionProperty) : nullptr;
+    if(!positions || positions.size() == 0)
+        return;
 
-	// Compute bounding box of particles in reduced coordinates.
-	Box3 boundingBox;
-	const AffineTransformation reciprocalCellMatrix = simulationCell->reciprocalCellMatrix();
-	for(const Point3& p : positions)
-		boundingBox.addPoint(reciprocalCellMatrix * p);
-	OVITO_ASSERT(!boundingBox.isEmpty());
+    // Compute bounding box of particles in reduced coordinates.
+    Box3 boundingBox;
+    const AffineTransformation reciprocalCellMatrix = simulationCell->reciprocalCellMatrix();
+    for(const Point3& p : positions)
+        boundingBox.addPoint(reciprocalCellMatrix * p);
+    OVITO_ASSERT(!boundingBox.isEmpty());
 
-	// Check if reduced coordinates of particles are all in the [-0.5, 0.5] range (with an added margin).
-	if(boundingBox.minc.x() > -0.01 && boundingBox.minc.y() > -0.01 && boundingBox.minc.z() > -0.01)
-		return;
-	if(boundingBox.minc.x() < -0.51 || boundingBox.minc.y() < -0.51 || boundingBox.minc.z() < -0.51)
-		return;
-	if(boundingBox.maxc.x() > 0.51 || boundingBox.maxc.y() > 0.51 || boundingBox.maxc.z() > 0.51)
-		return;
+    // Check if reduced coordinates of particles are all in the [-0.5, 0.5] range (with an added margin).
+    if(boundingBox.minc.x() > -0.01 && boundingBox.minc.y() > -0.01 && boundingBox.minc.z() > -0.01)
+        return;
+    if(boundingBox.minc.x() < -0.51 || boundingBox.minc.y() < -0.51 || boundingBox.minc.z() < -0.51)
+        return;
+    if(boundingBox.maxc.x() > 0.51 || boundingBox.maxc.y() > 0.51 || boundingBox.maxc.z() > 0.51)
+        return;
 
-	// Translate the simulation box.
-	SimulationCellObject* newSimulationCell = state().makeMutable(simulationCell);
-	AffineTransformation cellMatrix = newSimulationCell->cellMatrix();
-	cellMatrix.translation() = cellMatrix * Vector3(-0.5, -0.5, -0.5);
-	newSimulationCell->setCellMatrix(cellMatrix);
+    // Translate the simulation box.
+    SimulationCellObject* newSimulationCell = state().makeMutable(simulationCell);
+    AffineTransformation cellMatrix = newSimulationCell->cellMatrix();
+    cellMatrix.translation() = cellMatrix * Vector3(-0.5, -0.5, -0.5);
+    newSimulationCell->setCellMatrix(cellMatrix);
 }
 
 /******************************************************************************
@@ -440,25 +440,25 @@ void ParticleImporter::FrameLoader::correctOffcenterCell()
 ******************************************************************************/
 void ParticleImporter::FrameLoader::recenterSimulationCell()
 {
-	if(isCanceled()) 
-		return;
+    if(isCanceled()) 
+        return;
 
-	SimulationCellObject* simulationCell = state().getMutableObject<SimulationCellObject>();
-	if(!simulationCell) return;
+    SimulationCellObject* simulationCell = state().getMutableObject<SimulationCellObject>();
+    if(!simulationCell) return;
 
-	AffineTransformation cellMatrix = simulationCell->cellMatrix();
-	Vector3 offset = cellMatrix * Point3(0.5, 0.5, 0.5) - Point3::Origin();
-	if(offset == Vector3::Zero()) return;
+    AffineTransformation cellMatrix = simulationCell->cellMatrix();
+    Vector3 offset = cellMatrix * Point3(0.5, 0.5, 0.5) - Point3::Origin();
+    if(offset == Vector3::Zero()) return;
 
-	cellMatrix.translation() -= offset;
-	simulationCell->setCellMatrix(cellMatrix);
+    cellMatrix.translation() -= offset;
+    simulationCell->setCellMatrix(cellMatrix);
 
-	if(_particles) {
-		if(PropertyAccess<Point3> positions = _particles->getMutableProperty(ParticlesObject::PositionProperty)) {
-			for(Point3& p : positions)
-				p -= offset;
-		}
-	}
+    if(_particles) {
+        if(PropertyAccess<Point3> positions = _particles->getMutableProperty(ParticlesObject::PositionProperty)) {
+            for(Point3& p : positions)
+                p -= offset;
+        }
+    }
 }
 
 /******************************************************************************
@@ -466,33 +466,33 @@ void ParticleImporter::FrameLoader::recenterSimulationCell()
 ******************************************************************************/
 void ParticleImporter::FrameLoader::loadFile()
 {
-	if(isCanceled())
-		return;
+    if(isCanceled())
+        return;
 
-	StandardFrameLoader::loadFile();
+    StandardFrameLoader::loadFile();
 
-	// Automatically generate the 'Velocity Magnitude' property if the 'Velocity' vector property was loaded from the input file.
-	computeVelocityMagnitude();
+    // Automatically generate the 'Velocity Magnitude' property if the 'Velocity' vector property was loaded from the input file.
+    computeVelocityMagnitude();
 
-	// Center the simulation cell on the coordinate origin if requested.
-	if(_recenterCell)
-		recenterSimulationCell();
+    // Center the simulation cell on the coordinate origin if requested.
+    if(_recenterCell)
+        recenterSimulationCell();
 
-	// If the file reader did not import any bonds, then discard 
-	// any existing bonds from a previous load operation. 
-	if(!_keepExistingTopology) {
-		if(!_bonds) setBondCount(0);
-		if(!_angles) setAngleCount(0);
-		if(!_dihedrals) setDihedralCount(0);
-		if(!_impropers) setImproperCount(0);
-	}
+    // If the file reader did not import any bonds, then discard 
+    // any existing bonds from a previous load operation. 
+    if(!_keepExistingTopology) {
+        if(!_bonds) setBondCount(0);
+        if(!_angles) setAngleCount(0);
+        if(!_dihedrals) setDihedralCount(0);
+        if(!_impropers) setImproperCount(0);
+    }
 
 #ifdef OVITO_DEBUG
-	if(_particles) _particles->verifyIntegrity();
-	if(_bonds) _bonds->verifyIntegrity();
-	if(_angles) _angles->verifyIntegrity();
-	if(_dihedrals) _dihedrals->verifyIntegrity();
-	if(_impropers) _impropers->verifyIntegrity();
+    if(_particles) _particles->verifyIntegrity();
+    if(_bonds) _bonds->verifyIntegrity();
+    if(_angles) _angles->verifyIntegrity();
+    if(_dihedrals) _dihedrals->verifyIntegrity();
+    if(_impropers) _impropers->verifyIntegrity();
 #endif
 }
 
@@ -501,40 +501,40 @@ void ParticleImporter::FrameLoader::loadFile()
 ******************************************************************************/
 bool ParticleImporter::importFurtherFiles(Scene* scene, std::vector<std::pair<QUrl, OORef<FileImporter>>> sourceUrlsAndImporters, ImportMode importMode, bool autodetectFileSequences, MultiFileImportMode multiFileImportMode, PipelineSceneNode* pipeline)
 {
-	OVITO_ASSERT(!sourceUrlsAndImporters.empty());
-	OORef<ParticleImporter> nextImporter = dynamic_object_cast<ParticleImporter>(sourceUrlsAndImporters.front().second);
-	if(this->isTrajectoryFormat() == false && nextImporter && nextImporter->isTrajectoryFormat() == true) {
+    OVITO_ASSERT(!sourceUrlsAndImporters.empty());
+    OORef<ParticleImporter> nextImporter = dynamic_object_cast<ParticleImporter>(sourceUrlsAndImporters.front().second);
+    if(this->isTrajectoryFormat() == false && nextImporter && nextImporter->isTrajectoryFormat() == true) {
 
-		// Create a new file source for loading the trajectory.
-		OORef<FileSource> fileSource = OORef<FileSource>::create();
+        // Create a new file source for loading the trajectory.
+        OORef<FileSource> fileSource = OORef<FileSource>::create();
 
-		// Concatenate all files from the input list having the same file format into one sequence,
-		// which gets handled by the trajectory importer.
-		std::vector<QUrl> sourceUrls;
-		sourceUrls.push_back(std::move(sourceUrlsAndImporters.front().first));
-		auto iter = std::next(sourceUrlsAndImporters.begin());
-		if(multiFileImportMode == ImportAsTrajectory) {
-			for(; iter != sourceUrlsAndImporters.end(); ++iter) {
-				if(iter->second->getOOClass() != nextImporter->getOOClass())
-					break;
-				sourceUrls.push_back(std::move(iter->first));		
-			}
-		}
-		sourceUrlsAndImporters.erase(sourceUrlsAndImporters.begin(), iter);
+        // Concatenate all files from the input list having the same file format into one sequence,
+        // which gets handled by the trajectory importer.
+        std::vector<QUrl> sourceUrls;
+        sourceUrls.push_back(std::move(sourceUrlsAndImporters.front().first));
+        auto iter = std::next(sourceUrlsAndImporters.begin());
+        if(multiFileImportMode == ImportAsTrajectory) {
+            for(; iter != sourceUrlsAndImporters.end(); ++iter) {
+                if(iter->second->getOOClass() != nextImporter->getOOClass())
+                    break;
+                sourceUrls.push_back(std::move(iter->first));       
+            }
+        }
+        sourceUrlsAndImporters.erase(sourceUrlsAndImporters.begin(), iter);
 
-		// Set the input file location(s) and importer.
-		if(!fileSource->setSource(std::move(sourceUrls), nextImporter, autodetectFileSequences))
-			return {};
+        // Set the input file location(s) and importer.
+        if(!fileSource->setSource(std::move(sourceUrls), nextImporter, autodetectFileSequences))
+            return {};
 
-		// Create a modifier for injecting the trajectory data into the existing pipeline.
-		OORef<LoadTrajectoryModifier> loadTrjMod = OORef<LoadTrajectoryModifier>::create();
-		loadTrjMod->setTrajectorySource(std::move(fileSource));
-		pipeline->applyModifier(scene->animationSettings()->currentTime(), std::move(loadTrjMod));
+        // Create a modifier for injecting the trajectory data into the existing pipeline.
+        OORef<LoadTrajectoryModifier> loadTrjMod = OORef<LoadTrajectoryModifier>::create();
+        loadTrjMod->setTrajectorySource(std::move(fileSource));
+        pipeline->applyModifier(scene->animationSettings()->currentTime(), std::move(loadTrjMod));
 
-		if(sourceUrlsAndImporters.empty())
-			return true;
-	}
-	return FileSourceImporter::importFurtherFiles(scene, std::move(sourceUrlsAndImporters), importMode, autodetectFileSequences, multiFileImportMode, pipeline);
+        if(sourceUrlsAndImporters.empty())
+            return true;
+    }
+    return FileSourceImporter::importFurtherFiles(scene, std::move(sourceUrlsAndImporters), importMode, autodetectFileSequences, multiFileImportMode, pipeline);
 }
 
-}	// End of namespace
+}   // End of namespace

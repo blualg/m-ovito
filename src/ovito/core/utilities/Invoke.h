@@ -475,26 +475,26 @@ namespace eggs
 
 namespace Ovito::detail 
 {
-	template <typename Fn, typename... ArgTypes>
-	constexpr bool is_invocable_v = eggs::is_invocable_v<Fn, ArgTypes...>;
+    template <typename Fn, typename... ArgTypes>
+    constexpr bool is_invocable_v = eggs::is_invocable_v<Fn, ArgTypes...>;
 
-	template <typename Fn, typename... ArgTypes>
-	using invoke_result = eggs::invoke_result<Fn, ArgTypes...>;
+    template <typename Fn, typename... ArgTypes>
+    using invoke_result = eggs::invoke_result<Fn, ArgTypes...>;
 
-	template <typename Fn, typename... ArgTypes>
-	using invoke_result_t = eggs::invoke_result_t<Fn, ArgTypes...>;
+    template <typename Fn, typename... ArgTypes>
+    using invoke_result_t = eggs::invoke_result_t<Fn, ArgTypes...>;
 }
 
 #else
 namespace Ovito::detail 
 {
-	template <typename Fn, typename... ArgTypes>
-	constexpr bool is_invocable_v = std::is_invocable_v<Fn, ArgTypes...>;
+    template <typename Fn, typename... ArgTypes>
+    constexpr bool is_invocable_v = std::is_invocable_v<Fn, ArgTypes...>;
 
-	template <typename Fn, typename... ArgTypes>
-	using invoke_result = std::invoke_result<Fn, ArgTypes...>;
+    template <typename Fn, typename... ArgTypes>
+    using invoke_result = std::invoke_result<Fn, ArgTypes...>;
 
-	template <typename Fn, typename... ArgTypes>
-	using invoke_result_t = std::invoke_result_t<Fn, ArgTypes...>;
+    template <typename Fn, typename... ArgTypes>
+    using invoke_result_t = std::invoke_result_t<Fn, ArgTypes...>;
 }
 #endif

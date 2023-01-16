@@ -50,16 +50,16 @@ IMPLEMENT_OVITO_CLASS(ReplicateModifierDelegate);
 * Constructs the modifier object.
 ******************************************************************************/
 ReplicateModifier::ReplicateModifier(ObjectCreationParams params) : MultiDelegatingModifier(params),
-	_numImagesX(1),
-	_numImagesY(1),
-	_numImagesZ(1),
-	_adjustBoxSize(true),
-	_uniqueIdentifiers(true)
+    _numImagesX(1),
+    _numImagesY(1),
+    _numImagesZ(1),
+    _adjustBoxSize(true),
+    _uniqueIdentifiers(true)
 {
-	if(params.createSubObjects()) {
-		// Generate the list of delegate objects.
-		createModifierDelegates(ReplicateModifierDelegate::OOClass(), params);
-	}
+    if(params.createSubObjects()) {
+        // Generate the list of delegate objects.
+        createModifierDelegates(ReplicateModifierDelegate::OOClass(), params);
+    }
 }
 
 /******************************************************************************
@@ -67,8 +67,8 @@ ReplicateModifier::ReplicateModifier(ObjectCreationParams params) : MultiDelegat
 ******************************************************************************/
 bool ReplicateModifier::OOMetaClass::isApplicableTo(const DataCollection& input) const
 {
-	return MultiDelegatingModifier::OOMetaClass::isApplicableTo(input)
-		&& input.containsObject<SimulationCellObject>();
+    return MultiDelegatingModifier::OOMetaClass::isApplicableTo(input)
+        && input.containsObject<SimulationCellObject>();
 }
 
 /******************************************************************************
@@ -76,12 +76,12 @@ bool ReplicateModifier::OOMetaClass::isApplicableTo(const DataCollection& input)
 ******************************************************************************/
 void ReplicateModifier::propertyChanged(const PropertyFieldDescriptor* field)
 {
-	if((field == PROPERTY_FIELD(ReplicateModifier::numImagesX) || field == PROPERTY_FIELD(ReplicateModifier::numImagesY) || field == PROPERTY_FIELD(ReplicateModifier::numImagesZ)) && !isBeingLoaded()) {
-		// Changes of some modifier parameters affect the result of ReplicateModifier::getPipelineEditorShortInfo().
-		notifyDependents(ReferenceEvent::ObjectStatusChanged);
-	}
+    if((field == PROPERTY_FIELD(ReplicateModifier::numImagesX) || field == PROPERTY_FIELD(ReplicateModifier::numImagesY) || field == PROPERTY_FIELD(ReplicateModifier::numImagesZ)) && !isBeingLoaded()) {
+        // Changes of some modifier parameters affect the result of ReplicateModifier::getPipelineEditorShortInfo().
+        notifyDependents(ReferenceEvent::ObjectStatusChanged);
+    }
 
-	MultiDelegatingModifier::propertyChanged(field);
+    MultiDelegatingModifier::propertyChanged(field);
 }
 
 /******************************************************************************
@@ -89,18 +89,18 @@ void ReplicateModifier::propertyChanged(const PropertyFieldDescriptor* field)
 ******************************************************************************/
 Box3I ReplicateModifier::replicaRange() const
 {
-	std::array<int,3> nPBC;
-	nPBC[0] = std::max(numImagesX(),1);
-	nPBC[1] = std::max(numImagesY(),1);
-	nPBC[2] = std::max(numImagesZ(),1);
-	Box3I replicaBox;
-	replicaBox.minc[0] = -(nPBC[0]-1)/2;
-	replicaBox.minc[1] = -(nPBC[1]-1)/2;
-	replicaBox.minc[2] = -(nPBC[2]-1)/2;
-	replicaBox.maxc[0] = nPBC[0]/2;
-	replicaBox.maxc[1] = nPBC[1]/2;
-	replicaBox.maxc[2] = nPBC[2]/2;
-	return replicaBox;
+    std::array<int,3> nPBC;
+    nPBC[0] = std::max(numImagesX(),1);
+    nPBC[1] = std::max(numImagesY(),1);
+    nPBC[2] = std::max(numImagesZ(),1);
+    Box3I replicaBox;
+    replicaBox.minc[0] = -(nPBC[0]-1)/2;
+    replicaBox.minc[1] = -(nPBC[1]-1)/2;
+    replicaBox.minc[2] = -(nPBC[2]-1)/2;
+    replicaBox.maxc[0] = nPBC[0]/2;
+    replicaBox.maxc[1] = nPBC[1]/2;
+    replicaBox.maxc[2] = nPBC[2]/2;
+    return replicaBox;
 }
 
 /******************************************************************************
@@ -108,22 +108,22 @@ Box3I ReplicateModifier::replicaRange() const
 ******************************************************************************/
 void ReplicateModifier::evaluateSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state)
 {
-	// Apply all enabled modifier delegates to the input data.
-	MultiDelegatingModifier::evaluateSynchronous(request, state);
+    // Apply all enabled modifier delegates to the input data.
+    MultiDelegatingModifier::evaluateSynchronous(request, state);
 
-	// Resize the simulation cell if enabled.
-	if(adjustBoxSize()) {
-		SimulationCellObject* cellObj = state.expectMutableObject<SimulationCellObject>();
-		AffineTransformation simCell = cellObj->cellMatrix();
-		Box3I newImages = replicaRange();
-		simCell.translation() += (FloatType)newImages.minc.x() * simCell.column(0);
-		simCell.translation() += (FloatType)newImages.minc.y() * simCell.column(1);
-		simCell.translation() += (FloatType)newImages.minc.z() * simCell.column(2);
-		simCell.column(0) *= (newImages.sizeX() + 1);
-		simCell.column(1) *= (newImages.sizeY() + 1);
-		simCell.column(2) *= (newImages.sizeZ() + 1);
-		cellObj->setCellMatrix(simCell);
-	}
+    // Resize the simulation cell if enabled.
+    if(adjustBoxSize()) {
+        SimulationCellObject* cellObj = state.expectMutableObject<SimulationCellObject>();
+        AffineTransformation simCell = cellObj->cellMatrix();
+        Box3I newImages = replicaRange();
+        simCell.translation() += (FloatType)newImages.minc.x() * simCell.column(0);
+        simCell.translation() += (FloatType)newImages.minc.y() * simCell.column(1);
+        simCell.translation() += (FloatType)newImages.minc.z() * simCell.column(2);
+        simCell.column(0) *= (newImages.sizeX() + 1);
+        simCell.column(1) *= (newImages.sizeY() + 1);
+        simCell.column(2) *= (newImages.sizeZ() + 1);
+        cellObj->setCellMatrix(simCell);
+    }
 }
 
-}	// End of namespace
+}   // End of namespace

@@ -42,8 +42,8 @@ SET_PROPERTY_FIELD_LABEL(MicrostructurePhase, burgersVectorFamilies, "Burgers ve
 * Constructs the MicrostructurePhase object.
 ******************************************************************************/
 MicrostructurePhase::MicrostructurePhase(ObjectCreationParams params) : ElementType(params),
-	_dimensionality(Dimensionality::None),
-	_crystalSymmetryClass(CrystalSymmetryClass::NoSymmetry)
+    _dimensionality(Dimensionality::None),
+    _crystalSymmetryClass(CrystalSymmetryClass::NoSymmetry)
 {
 }
 
@@ -52,13 +52,13 @@ MicrostructurePhase::MicrostructurePhase(ObjectCreationParams params) : ElementT
 ******************************************************************************/
 Color MicrostructurePhase::getBurgersVectorColor(const QString& latticeName, const Vector3& b)
 {
-	if(latticeName == ParticleType::getPredefinedStructureTypeName(ParticleType::PredefinedStructureType::BCC)) {
-		return getBurgersVectorColor(ParticleType::PredefinedStructureType::BCC, b);
-	}
-	else if(latticeName == ParticleType::getPredefinedStructureTypeName(ParticleType::PredefinedStructureType::FCC)) {
-		return getBurgersVectorColor(ParticleType::PredefinedStructureType::FCC, b);
-	}
-	return getBurgersVectorColor(ParticleType::PredefinedStructureType::OTHER, b);
+    if(latticeName == ParticleType::getPredefinedStructureTypeName(ParticleType::PredefinedStructureType::BCC)) {
+        return getBurgersVectorColor(ParticleType::PredefinedStructureType::BCC, b);
+    }
+    else if(latticeName == ParticleType::getPredefinedStructureTypeName(ParticleType::PredefinedStructureType::FCC)) {
+        return getBurgersVectorColor(ParticleType::PredefinedStructureType::FCC, b);
+    }
+    return getBurgersVectorColor(ParticleType::PredefinedStructureType::OTHER, b);
 }
 
 /******************************************************************************
@@ -66,81 +66,81 @@ Color MicrostructurePhase::getBurgersVectorColor(const QString& latticeName, con
 ******************************************************************************/
 Color MicrostructurePhase::getBurgersVectorColor(ParticleType::PredefinedStructureType structureType, const Vector3& b)
 {
-	if(structureType == ParticleType::PredefinedStructureType::BCC) {
-		static const Color predefinedLineColors[] = {
-				Color(0.4f,1.0f,0.4f),
-				Color(1.0f,0.2f,0.2f),
-				Color(0.4f,0.4f,1.0f),
-				Color(0.9f,0.5f,0.0f),
-				Color(1.0f,1.0f,0.0f),
-				Color(1.0f,0.4f,1.0f),
-				Color(0.7f,0.0f,1.0f)
-		};
-		static const Vector3 burgersVectors[] = {
-				{ FloatType(0.5), FloatType(0.5), FloatType(0.5) },
-				{ FloatType(-0.5), FloatType(0.5), FloatType(0.5) },
-				{ FloatType(0.5), FloatType(-0.5), FloatType(0.5) },
-				{ FloatType(0.5), FloatType(0.5), FloatType(-0.5) },
-				{ FloatType(1.0), FloatType(0.0), FloatType(0.0) },
-				{ FloatType(0.0), FloatType(1.0), FloatType(0.0) },
-				{ FloatType(0.0), FloatType(0.0), FloatType(1.0) }
-		};
-		OVITO_STATIC_ASSERT(sizeof(burgersVectors)/sizeof(burgersVectors[0]) == sizeof(predefinedLineColors)/sizeof(predefinedLineColors[0]));
-		for(size_t i = 0; i < sizeof(burgersVectors)/sizeof(burgersVectors[0]); i++) {
-			if(b.equals(burgersVectors[i], FloatType(1e-6)) || b.equals(-burgersVectors[i], FloatType(1e-6)))
-				return predefinedLineColors[i];
-		}
-	}
-	else if(structureType == ParticleType::PredefinedStructureType::FCC) {
-		static const Color predefinedLineColors[] = {
-				Color(230.0/255.0, 25.0/255.0, 75.0/255.0),
-				Color(245.0/255.0, 130.0/255.0, 48.0/255.0),
-				Color(255.0/255.0, 225.0/255.0, 25.0/255.0),
-				Color(210.0/255.0, 245.0/255.0, 60.0/255.0),
-				Color(60.0/255.0, 180.0/255.0, 75.0/255.0),
-				Color(70.0/255.0, 240.0/255.0, 240.0/255.0),
-				Color(0.0/255.0, 130.0/255.0, 200.0/255.0),
-				Color(145.0/255.0, 30.0/255.0, 180.0/255.0),
-				Color(240.0/255.0, 50.0/255.0, 230.0/255.0),
-				Color(0.0/255.0, 128.0/255.0, 128.0/255.0),
-				Color(170.0/255.0, 110.0/255.0, 40.0/255.0),
-				Color(128.0/255.0, 128.0/255.0, 0.0/255.0),
+    if(structureType == ParticleType::PredefinedStructureType::BCC) {
+        static const Color predefinedLineColors[] = {
+                Color(0.4f,1.0f,0.4f),
+                Color(1.0f,0.2f,0.2f),
+                Color(0.4f,0.4f,1.0f),
+                Color(0.9f,0.5f,0.0f),
+                Color(1.0f,1.0f,0.0f),
+                Color(1.0f,0.4f,1.0f),
+                Color(0.7f,0.0f,1.0f)
+        };
+        static const Vector3 burgersVectors[] = {
+                { FloatType(0.5), FloatType(0.5), FloatType(0.5) },
+                { FloatType(-0.5), FloatType(0.5), FloatType(0.5) },
+                { FloatType(0.5), FloatType(-0.5), FloatType(0.5) },
+                { FloatType(0.5), FloatType(0.5), FloatType(-0.5) },
+                { FloatType(1.0), FloatType(0.0), FloatType(0.0) },
+                { FloatType(0.0), FloatType(1.0), FloatType(0.0) },
+                { FloatType(0.0), FloatType(0.0), FloatType(1.0) }
+        };
+        OVITO_STATIC_ASSERT(sizeof(burgersVectors)/sizeof(burgersVectors[0]) == sizeof(predefinedLineColors)/sizeof(predefinedLineColors[0]));
+        for(size_t i = 0; i < sizeof(burgersVectors)/sizeof(burgersVectors[0]); i++) {
+            if(b.equals(burgersVectors[i], FloatType(1e-6)) || b.equals(-burgersVectors[i], FloatType(1e-6)))
+                return predefinedLineColors[i];
+        }
+    }
+    else if(structureType == ParticleType::PredefinedStructureType::FCC) {
+        static const Color predefinedLineColors[] = {
+                Color(230.0/255.0, 25.0/255.0, 75.0/255.0),
+                Color(245.0/255.0, 130.0/255.0, 48.0/255.0),
+                Color(255.0/255.0, 225.0/255.0, 25.0/255.0),
+                Color(210.0/255.0, 245.0/255.0, 60.0/255.0),
+                Color(60.0/255.0, 180.0/255.0, 75.0/255.0),
+                Color(70.0/255.0, 240.0/255.0, 240.0/255.0),
+                Color(0.0/255.0, 130.0/255.0, 200.0/255.0),
+                Color(145.0/255.0, 30.0/255.0, 180.0/255.0),
+                Color(240.0/255.0, 50.0/255.0, 230.0/255.0),
+                Color(0.0/255.0, 128.0/255.0, 128.0/255.0),
+                Color(170.0/255.0, 110.0/255.0, 40.0/255.0),
+                Color(128.0/255.0, 128.0/255.0, 0.0/255.0),
 
-				Color(0.5f,0.5f,0.5f),
-				Color(0.5f,0.5f,0.5f),
-				Color(0.5f,0.5f,0.5f),
-				Color(0.5f,0.5f,0.5f),
-				Color(0.5f,0.5f,0.5f),
-				Color(0.5f,0.5f,0.5f),
-		};
-		static const Vector3 burgersVectors[] = {
-				{ FloatType(1.0/6.0), FloatType(-2.0/6.0), FloatType(-1.0/6.0) },
-				{ FloatType(1.0/6.0), FloatType(-2.0/6.0), FloatType(1.0/6.0) },
-				{ FloatType(1.0/6.0), FloatType(-1.0/6.0), FloatType(2.0/6.0) },
-				{ FloatType(1.0/6.0), FloatType(-1.0/6.0), FloatType(-2.0/6.0) },
-				{ FloatType(1.0/6.0), FloatType(1.0/6.0), FloatType(2.0/6.0) },
-				{ FloatType(1.0/6.0), FloatType(1.0/6.0), FloatType(-2.0/6.0) },
-				{ FloatType(1.0/6.0), FloatType(2.0/6.0), FloatType(1.0/6.0) },
-				{ FloatType(1.0/6.0), FloatType(2.0/6.0), FloatType(-1.0/6.0) },
-				{ FloatType(2.0/6.0), FloatType(-1.0/6.0), FloatType(-1.0/6.0) },
-				{ FloatType(2.0/6.0), FloatType(-1.0/6.0), FloatType(1.0/6.0) },
-				{ FloatType(2.0/6.0), FloatType(1.0/6.0), FloatType(-1.0/6.0) },
-				{ FloatType(2.0/6.0), FloatType(1.0/6.0), FloatType(1.0/6.0) },
+                Color(0.5f,0.5f,0.5f),
+                Color(0.5f,0.5f,0.5f),
+                Color(0.5f,0.5f,0.5f),
+                Color(0.5f,0.5f,0.5f),
+                Color(0.5f,0.5f,0.5f),
+                Color(0.5f,0.5f,0.5f),
+        };
+        static const Vector3 burgersVectors[] = {
+                { FloatType(1.0/6.0), FloatType(-2.0/6.0), FloatType(-1.0/6.0) },
+                { FloatType(1.0/6.0), FloatType(-2.0/6.0), FloatType(1.0/6.0) },
+                { FloatType(1.0/6.0), FloatType(-1.0/6.0), FloatType(2.0/6.0) },
+                { FloatType(1.0/6.0), FloatType(-1.0/6.0), FloatType(-2.0/6.0) },
+                { FloatType(1.0/6.0), FloatType(1.0/6.0), FloatType(2.0/6.0) },
+                { FloatType(1.0/6.0), FloatType(1.0/6.0), FloatType(-2.0/6.0) },
+                { FloatType(1.0/6.0), FloatType(2.0/6.0), FloatType(1.0/6.0) },
+                { FloatType(1.0/6.0), FloatType(2.0/6.0), FloatType(-1.0/6.0) },
+                { FloatType(2.0/6.0), FloatType(-1.0/6.0), FloatType(-1.0/6.0) },
+                { FloatType(2.0/6.0), FloatType(-1.0/6.0), FloatType(1.0/6.0) },
+                { FloatType(2.0/6.0), FloatType(1.0/6.0), FloatType(-1.0/6.0) },
+                { FloatType(2.0/6.0), FloatType(1.0/6.0), FloatType(1.0/6.0) },
 
-				{ 0, FloatType(1.0/6.0), FloatType(1.0/6.0) },
-				{ 0, FloatType(1.0/6.0), FloatType(-1.0/6.0) },
-				{ FloatType(1.0/6.0), 0, FloatType(1.0/6.0) },
-				{ FloatType(1.0/6.0), 0, FloatType(-1.0/6.0) },
-				{ FloatType(1.0/6.0), FloatType(1.0/6.0), 0 },
-				{ FloatType(1.0/6.0), FloatType(-1.0/6.0), 0 },
-		};
-		OVITO_STATIC_ASSERT(sizeof(burgersVectors)/sizeof(burgersVectors[0]) == sizeof(predefinedLineColors)/sizeof(predefinedLineColors[0]));
-		for(size_t i = 0; i < sizeof(burgersVectors)/sizeof(burgersVectors[0]); i++) {
-			if(b.equals(burgersVectors[i], FloatType(1e-6)) || b.equals(-burgersVectors[i], FloatType(1e-6)))
-				return predefinedLineColors[i];
-		}
-	}
-	return Color(0.9f, 0.9f, 0.9f);
+                { 0, FloatType(1.0/6.0), FloatType(1.0/6.0) },
+                { 0, FloatType(1.0/6.0), FloatType(-1.0/6.0) },
+                { FloatType(1.0/6.0), 0, FloatType(1.0/6.0) },
+                { FloatType(1.0/6.0), 0, FloatType(-1.0/6.0) },
+                { FloatType(1.0/6.0), FloatType(1.0/6.0), 0 },
+                { FloatType(1.0/6.0), FloatType(-1.0/6.0), 0 },
+        };
+        OVITO_STATIC_ASSERT(sizeof(burgersVectors)/sizeof(burgersVectors[0]) == sizeof(predefinedLineColors)/sizeof(predefinedLineColors[0]));
+        for(size_t i = 0; i < sizeof(burgersVectors)/sizeof(burgersVectors[0]); i++) {
+            if(b.equals(burgersVectors[i], FloatType(1e-6)) || b.equals(-burgersVectors[i], FloatType(1e-6)))
+                return predefinedLineColors[i];
+        }
+    }
+    return Color(0.9f, 0.9f, 0.9f);
 }
 
 /******************************************************************************
@@ -148,23 +148,23 @@ Color MicrostructurePhase::getBurgersVectorColor(ParticleType::PredefinedStructu
 ******************************************************************************/
 void MicrostructurePhase::updateEditableProxies(PipelineFlowState& state, ConstDataObjectPath& dataPath) const
 {
-	ElementType::updateEditableProxies(state, dataPath);
+    ElementType::updateEditableProxies(state, dataPath);
 
-	// Note: 'this' may no longer exist at this point, because the sub-class implementation of the method may
-	// have already replaced it with a mutable copy.
-	const MicrostructurePhase* self = static_object_cast<MicrostructurePhase>(dataPath.back());
+    // Note: 'this' may no longer exist at this point, because the sub-class implementation of the method may
+    // have already replaced it with a mutable copy.
+    const MicrostructurePhase* self = static_object_cast<MicrostructurePhase>(dataPath.back());
 
-	if(MicrostructurePhase* proxy = static_object_cast<MicrostructurePhase>(self->editableProxy())) {
-		// Adopt the proxy objects for the Burgers vector families, which have already been created by
-		// the recursive method.
-		OVITO_ASSERT(proxy->burgersVectorFamilies().size() == self->burgersVectorFamilies().size());
-		for(int i = 0; i < self->burgersVectorFamilies().size(); i++) {
-			OVITO_ASSERT(proxy->isSafeToModify());
-			const BurgersVectorFamily* family = self->burgersVectorFamilies()[i];
-			OVITO_ASSERT(family->editableProxy());
-			proxy->_burgersVectorFamilies.set(proxy, PROPERTY_FIELD(burgersVectorFamilies), i, static_object_cast<BurgersVectorFamily>(family->editableProxy()));
-		}
-	}
+    if(MicrostructurePhase* proxy = static_object_cast<MicrostructurePhase>(self->editableProxy())) {
+        // Adopt the proxy objects for the Burgers vector families, which have already been created by
+        // the recursive method.
+        OVITO_ASSERT(proxy->burgersVectorFamilies().size() == self->burgersVectorFamilies().size());
+        for(int i = 0; i < self->burgersVectorFamilies().size(); i++) {
+            OVITO_ASSERT(proxy->isSafeToModify());
+            const BurgersVectorFamily* family = self->burgersVectorFamilies()[i];
+            OVITO_ASSERT(family->editableProxy());
+            proxy->_burgersVectorFamilies.set(proxy, PROPERTY_FIELD(burgersVectorFamilies), i, static_object_cast<BurgersVectorFamily>(family->editableProxy()));
+        }
+    }
 }
 
-}	// End of namespace
+}   // End of namespace

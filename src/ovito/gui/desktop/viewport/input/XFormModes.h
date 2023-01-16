@@ -35,102 +35,102 @@ namespace Ovito {
 ******************************************************************************/
 class OVITO_GUI_EXPORT XFormMode : public ViewportInputMode
 {
-	Q_OBJECT
+    Q_OBJECT
 
 public:
 
-	/// \brief Handles the mouse down event for the given viewport.
-	virtual void mousePressEvent(ViewportWindowInterface* vpwin, QMouseEvent* event) override;
+    /// \brief Handles the mouse down event for the given viewport.
+    virtual void mousePressEvent(ViewportWindowInterface* vpwin, QMouseEvent* event) override;
 
-	/// \brief Handles the mouse up event for the given viewport.
-	virtual void mouseReleaseEvent(ViewportWindowInterface* vpwin, QMouseEvent* event) override;
+    /// \brief Handles the mouse up event for the given viewport.
+    virtual void mouseReleaseEvent(ViewportWindowInterface* vpwin, QMouseEvent* event) override;
 
-	/// \brief Handles the mouse move event for the given viewport.
-	virtual void mouseMoveEvent(ViewportWindowInterface* vpwin, QMouseEvent* event) override;
+    /// \brief Handles the mouse move event for the given viewport.
+    virtual void mouseMoveEvent(ViewportWindowInterface* vpwin, QMouseEvent* event) override;
 
-	/// Is called when a viewport looses the input focus.
-	virtual void focusOutEvent(ViewportWindowInterface* vpwin, QFocusEvent* event) override;
+    /// Is called when a viewport looses the input focus.
+    virtual void focusOutEvent(ViewportWindowInterface* vpwin, QFocusEvent* event) override;
 
-	/// \brief Returns the origin of the transformation system to use for xform modes.
-	Point3 transformationCenter();
+    /// \brief Returns the origin of the transformation system to use for xform modes.
+    Point3 transformationCenter();
 
-	/// \brief Determines the coordinate system to use for transformation.
-	AffineTransformation transformationSystem();
+    /// \brief Determines the coordinate system to use for transformation.
+    AffineTransformation transformationSystem();
 
 protected:
 
-	/// Protected constructor.
-	XFormMode(QObject* parent, const QString& cursorImagePath) : ViewportInputMode(parent), _xformCursor(QPixmap(cursorImagePath)) {
-		connect(&_selectedNode, &RefTargetListener<SceneNode>::notificationEvent, this, &XFormMode::onSceneNodeEvent);
-	}
+    /// Protected constructor.
+    XFormMode(QObject* parent, const QString& cursorImagePath) : ViewportInputMode(parent), _xformCursor(QPixmap(cursorImagePath)) {
+        connect(&_selectedNode, &RefTargetListener<SceneNode>::notificationEvent, this, &XFormMode::onSceneNodeEvent);
+    }
 
-	/// \brief This is called by the system after the input handler has
-	///        become the active handler.
-	virtual void activated(bool temporaryActivation) override;
+    /// \brief This is called by the system after the input handler has
+    ///        become the active handler.
+    virtual void activated(bool temporaryActivation) override;
 
-	/// \brief This is called by the system after the input handler is
-	///        no longer the active handler.
-	virtual void deactivated(bool temporary) override;
+    /// \brief This is called by the system after the input handler is
+    ///        no longer the active handler.
+    virtual void deactivated(bool temporary) override;
 
-	/// Returns the current viewport we are working in.
-	Viewport* viewport() const { return _viewport; }
+    /// Returns the current viewport we are working in.
+    Viewport* viewport() const { return _viewport; }
 
-	/// Is called when the transformation operation begins.
-	virtual void startXForm() {}
+    /// Is called when the transformation operation begins.
+    virtual void startXForm() {}
 
-	/// Is repeatedly called during the transformation operation.
-	virtual void doXForm() {}
+    /// Is repeatedly called during the transformation operation.
+    virtual void doXForm() {}
 
-	/// Returns the display name for undoable operations performed by this input mode.
-	virtual QString undoDisplayName() = 0;
+    /// Returns the display name for undoable operations performed by this input mode.
+    virtual QString undoDisplayName() = 0;
 
-	/// Applies the current transformation to a set of nodes.
-	virtual void applyXForm(AnimationTime time, const QVector<SceneNode*>& nodeSet, FloatType multiplier) {}
+    /// Applies the current transformation to a set of nodes.
+    virtual void applyXForm(AnimationTime time, const QVector<SceneNode*>& nodeSet, FloatType multiplier) {}
 
-	/// Updates the values displayed in the coordinate display widget.
-	virtual void updateCoordinateDisplay(CoordinateDisplayWidget* coordDisplay) {}
+    /// Updates the values displayed in the coordinate display widget.
+    virtual void updateCoordinateDisplay(CoordinateDisplayWidget* coordDisplay) {}
 
 protected Q_SLOT:
 
-	/// Is called when the user has selected a different scene node.
-	void onSelectionChangeComplete(SelectionSet* selection);
+    /// Is called when the user has selected a different scene node.
+    void onSelectionChangeComplete(SelectionSet* selection);
 
-	/// Is called when the selected scene node generates a notification event.
-	void onSceneNodeEvent(RefTarget* source, const ReferenceEvent& event);
+    /// Is called when the selected scene node generates a notification event.
+    void onSceneNodeEvent(RefTarget* source, const ReferenceEvent& event);
 
-	/// Is called when the current animation frame has changed.
-	void onCurrentFrameChanged(int frame);
+    /// Is called when the current animation frame has changed.
+    void onCurrentFrameChanged(int frame);
 
-	/// This signal handler is called by the coordinate display widget when the user
-	/// has changed the value of one of the vector components.
-	virtual void onCoordinateValueEntered(int component, FloatType value) {}
+    /// This signal handler is called by the coordinate display widget when the user
+    /// has changed the value of one of the vector components.
+    virtual void onCoordinateValueEntered(int component, FloatType value) {}
 
-	/// This signal handler is called by the coordinate display widget when the user
-	/// has pressed the "Animate" button.
-	virtual void onAnimateTransformationButton() {}
+    /// This signal handler is called by the coordinate display widget when the user
+    /// has pressed the "Animate" button.
+    virtual void onAnimateTransformationButton() {}
 
 protected:
 
-	/// Mouse position at first click.
-	QPointF _startPoint;
+    /// Mouse position at first click.
+    QPointF _startPoint;
 
-	/// The current mouse position.
-	QPointF _currentPoint;
+    /// The current mouse position.
+    QPointF _currentPoint;
 
-	/// The current viewport we are working in.
-	Viewport* _viewport = nullptr;
+    /// The current viewport we are working in.
+    Viewport* _viewport = nullptr;
 
-	/// The cursor shown while the mouse cursor is over an object.
-	QCursor _xformCursor;
+    /// The cursor shown while the mouse cursor is over an object.
+    QCursor _xformCursor;
 
-	/// This monitors the selected node to update the coordinate display.
-	RefTargetListener<SceneNode> _selectedNode;
+    /// This monitors the selected node to update the coordinate display.
+    RefTargetListener<SceneNode> _selectedNode;
 
-	/// To undo changes while dragging the mouse.
-	UndoableTransaction _undoTransaction;
+    /// To undo changes while dragging the mouse.
+    UndoableTransaction _undoTransaction;
 
-	/// The undo stack index at which the selection operation ends and at which the x-form operation begins.
-	int _undoSelectionOperation;
+    /// The undo stack index at which the selection operation ends and at which the x-form operation begins.
+    int _undoSelectionOperation;
 };
 
 /******************************************************************************
@@ -138,48 +138,48 @@ protected:
 ******************************************************************************/
 class OVITO_GUI_EXPORT MoveMode : public XFormMode
 {
-	Q_OBJECT
+    Q_OBJECT
 
 public:
 
-	/// Constructor.
-	MoveMode(QObject* parent) : XFormMode(parent, QStringLiteral(":/guibase/cursor/editing/cursor_mode_move.png")) {}
+    /// Constructor.
+    MoveMode(QObject* parent) : XFormMode(parent, QStringLiteral(":/guibase/cursor/editing/cursor_mode_move.png")) {}
 
 protected:
 
-	/// Returns the display name for undoable operations performed by this input mode.
-	virtual QString undoDisplayName() override { return tr("Move"); }
+    /// Returns the display name for undoable operations performed by this input mode.
+    virtual QString undoDisplayName() override { return tr("Move"); }
 
-	/// Is called when the transformation operation begins.
-	virtual void startXForm() override;
+    /// Is called when the transformation operation begins.
+    virtual void startXForm() override;
 
-	/// Is repeatedly called during the transformation operation.
-	virtual void doXForm() override;
+    /// Is repeatedly called during the transformation operation.
+    virtual void doXForm() override;
 
-	/// Applies the current transformation to a set of nodes.
-	virtual void applyXForm(AnimationTime time, const QVector<SceneNode*>& nodeSet, FloatType multiplier) override;
+    /// Applies the current transformation to a set of nodes.
+    virtual void applyXForm(AnimationTime time, const QVector<SceneNode*>& nodeSet, FloatType multiplier) override;
 
-	/// Updates the values displayed in the coordinate display widget.
-	virtual void updateCoordinateDisplay(CoordinateDisplayWidget* coordDisplay) override;
+    /// Updates the values displayed in the coordinate display widget.
+    virtual void updateCoordinateDisplay(CoordinateDisplayWidget* coordDisplay) override;
 
-	/// This signal handler is called by the coordinate display widget when the user
-	/// has changed the value of one of the vector components.
-	virtual void onCoordinateValueEntered(int component, FloatType value) override;
+    /// This signal handler is called by the coordinate display widget when the user
+    /// has changed the value of one of the vector components.
+    virtual void onCoordinateValueEntered(int component, FloatType value) override;
 
-	/// This signal handler is called by the coordinate display widget when the user
-	/// has pressed the "Animate" button.
-	virtual void onAnimateTransformationButton() override;
+    /// This signal handler is called by the coordinate display widget when the user
+    /// has pressed the "Animate" button.
+    virtual void onAnimateTransformationButton() override;
 
 private:
 
-	/// The coordinate system to use for translations.
-	AffineTransformation _translationSystem;
+    /// The coordinate system to use for translations.
+    AffineTransformation _translationSystem;
 
-	/// The starting position.
-	Point3 _initialPoint;
+    /// The starting position.
+    Point3 _initialPoint;
 
-	/// The translation vector.
-	Vector3 _delta;
+    /// The translation vector.
+    Vector3 _delta;
 };
 
 /******************************************************************************
@@ -187,45 +187,45 @@ private:
 ******************************************************************************/
 class OVITO_GUI_EXPORT RotateMode : public XFormMode
 {
-	Q_OBJECT
+    Q_OBJECT
 
 public:
 
-	/// Constructor.
-	RotateMode(QObject* parent) : XFormMode(parent, QStringLiteral(":/guibase/cursor/editing/cursor_mode_rotate.png")) {}
+    /// Constructor.
+    RotateMode(QObject* parent) : XFormMode(parent, QStringLiteral(":/guibase/cursor/editing/cursor_mode_rotate.png")) {}
 
 protected:
 
-	/// Returns the display name for undoable operations performed by this input mode.
-	virtual QString undoDisplayName() override { return tr("Rotate"); }
+    /// Returns the display name for undoable operations performed by this input mode.
+    virtual QString undoDisplayName() override { return tr("Rotate"); }
 
-	/// Is called when the transformation operation begins.
-	virtual void startXForm() override;
+    /// Is called when the transformation operation begins.
+    virtual void startXForm() override;
 
-	/// Is repeatedly called during the transformation operation.
-	virtual void doXForm() override;
+    /// Is repeatedly called during the transformation operation.
+    virtual void doXForm() override;
 
-	/// Applies the current transformation to a set of nodes.
-	virtual void applyXForm(AnimationTime time, const QVector<SceneNode*>& nodeSet, FloatType multiplier) override;
+    /// Applies the current transformation to a set of nodes.
+    virtual void applyXForm(AnimationTime time, const QVector<SceneNode*>& nodeSet, FloatType multiplier) override;
 
-	/// Updates the values displayed in the coordinate display widget.
-	virtual void updateCoordinateDisplay(CoordinateDisplayWidget* coordDisplay) override;
+    /// Updates the values displayed in the coordinate display widget.
+    virtual void updateCoordinateDisplay(CoordinateDisplayWidget* coordDisplay) override;
 
-	/// This signal handler is called by the coordinate display widget when the user
-	/// has changed the value of one of the vector components.
-	virtual void onCoordinateValueEntered(int component, FloatType value) override;
+    /// This signal handler is called by the coordinate display widget when the user
+    /// has changed the value of one of the vector components.
+    virtual void onCoordinateValueEntered(int component, FloatType value) override;
 
-	/// This signal handler is called by the coordinate display widget when the user
-	/// has pressed the "Animate" button.
-	virtual void onAnimateTransformationButton() override;
+    /// This signal handler is called by the coordinate display widget when the user
+    /// has pressed the "Animate" button.
+    virtual void onAnimateTransformationButton() override;
 
 private:
 
-	/// The cached transformation center for off-center rotation.
-	Point3 _transformationCenter;
+    /// The cached transformation center for off-center rotation.
+    Point3 _transformationCenter;
 
-	/// The current rotation
-	Rotation _rotation;
+    /// The current rotation
+    Rotation _rotation;
 };
 
-}	// End of namespace
+}   // End of namespace

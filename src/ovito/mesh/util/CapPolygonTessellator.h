@@ -36,162 +36,162 @@ class OVITO_MESH_EXPORT CapPolygonTessellator
 {
 public:
 
-	enum FaceMode {
-		PeriodicFace, ///< Generate two identical cap polygons for a simulation cell boundary with periodic boundary conditions.
-		FrontFace, ///< Generate cap polygon for the front-side of the simulation cell.
-		BackFace ///< Generate cap polygon for the back-side of the simulation cell.
-	};
+    enum FaceMode {
+        PeriodicFace, ///< Generate two identical cap polygons for a simulation cell boundary with periodic boundary conditions.
+        FrontFace, ///< Generate cap polygon for the front-side of the simulation cell.
+        BackFace ///< Generate cap polygon for the back-side of the simulation cell.
+    };
 
-	/// Constructor.
-	CapPolygonTessellator(TriMeshObject& output, size_t dim, FaceMode faceMode, bool windingRuleNonzero = false) : mesh(output), dimz(dim), _faceMode(faceMode) {
-		dimx = (dimz + 1) % 3;
-		dimy = (dimz + 2) % 3;
-		tess = gluNewTess();
-		gluTessProperty(tess, GLU_TESS_WINDING_RULE, windingRuleNonzero ? GLU_TESS_WINDING_NONZERO : GLU_TESS_WINDING_ODD);
-		gluTessCallback(tess, GLU_TESS_ERROR_DATA, (void (*)())errorData);
-		gluTessCallback(tess, GLU_TESS_BEGIN_DATA, (void (*)())beginData);
-		gluTessCallback(tess, GLU_TESS_END_DATA, (void (*)())endData);
-		gluTessCallback(tess, GLU_TESS_VERTEX_DATA, (void (*)())vertexData);
-		gluTessCallback(tess, GLU_TESS_COMBINE_DATA, (void (*)())combineData);
-	}
+    /// Constructor.
+    CapPolygonTessellator(TriMeshObject& output, size_t dim, FaceMode faceMode, bool windingRuleNonzero = false) : mesh(output), dimz(dim), _faceMode(faceMode) {
+        dimx = (dimz + 1) % 3;
+        dimy = (dimz + 2) % 3;
+        tess = gluNewTess();
+        gluTessProperty(tess, GLU_TESS_WINDING_RULE, windingRuleNonzero ? GLU_TESS_WINDING_NONZERO : GLU_TESS_WINDING_ODD);
+        gluTessCallback(tess, GLU_TESS_ERROR_DATA, (void (*)())errorData);
+        gluTessCallback(tess, GLU_TESS_BEGIN_DATA, (void (*)())beginData);
+        gluTessCallback(tess, GLU_TESS_END_DATA, (void (*)())endData);
+        gluTessCallback(tess, GLU_TESS_VERTEX_DATA, (void (*)())vertexData);
+        gluTessCallback(tess, GLU_TESS_COMBINE_DATA, (void (*)())combineData);
+    }
 
-	/// Destructor.
-	~CapPolygonTessellator() {
-		gluDeleteTess(tess);
-	}
+    /// Destructor.
+    ~CapPolygonTessellator() {
+        gluDeleteTess(tess);
+    }
 
-	void beginPolygon() {
-		gluTessNormal(tess, 0, 0, 1);
-		gluTessBeginPolygon(tess, this);
-	}
+    void beginPolygon() {
+        gluTessNormal(tess, 0, 0, 1);
+        gluTessBeginPolygon(tess, this);
+    }
 
-	void endPolygon() {
-		gluTessEndPolygon(tess);
-	}
+    void endPolygon() {
+        gluTessEndPolygon(tess);
+    }
 
-	void beginContour() {
-		gluTessBeginContour(tess);
-	}
+    void beginContour() {
+        gluTessBeginContour(tess);
+    }
 
-	void endContour() {
-		gluTessEndContour(tess);
-	}
+    void endContour() {
+        gluTessEndContour(tess);
+    }
 
-	void vertex(const Point2& pos) {
-		double vertexCoord[3];
-		vertexCoord[0] = pos.x();
-		vertexCoord[1] = pos.y();
-		vertexCoord[2] = 0;
-		Point3 p;
-		p[dimx] = pos.x();
-		p[dimy] = pos.y();
-		p[dimz] = (_faceMode == BackFace) ? 1 : 0;
-		intptr_t vindex = mesh.addVertex(p);
-		if(_faceMode == PeriodicFace) {
-			p[dimz] = 1;
-			mesh.addVertex(p);
-		}
-		gluTessVertex(tess, vertexCoord, reinterpret_cast<void*>(vindex));
-	}
+    void vertex(const Point2& pos) {
+        double vertexCoord[3];
+        vertexCoord[0] = pos.x();
+        vertexCoord[1] = pos.y();
+        vertexCoord[2] = 0;
+        Point3 p;
+        p[dimx] = pos.x();
+        p[dimy] = pos.y();
+        p[dimz] = (_faceMode == BackFace) ? 1 : 0;
+        intptr_t vindex = mesh.addVertex(p);
+        if(_faceMode == PeriodicFace) {
+            p[dimz] = 1;
+            mesh.addVertex(p);
+        }
+        gluTessVertex(tess, vertexCoord, reinterpret_cast<void*>(vindex));
+    }
 
-	static void beginData(int type, void* polygon_data) {
-		CapPolygonTessellator* tessellator = static_cast<CapPolygonTessellator*>(polygon_data);
-		tessellator->primitiveType = type;
-		tessellator->vertices.clear();
-	}
+    static void beginData(int type, void* polygon_data) {
+        CapPolygonTessellator* tessellator = static_cast<CapPolygonTessellator*>(polygon_data);
+        tessellator->primitiveType = type;
+        tessellator->vertices.clear();
+    }
 
-	static void endData(void* polygon_data) {
-		CapPolygonTessellator* tessellator = static_cast<CapPolygonTessellator*>(polygon_data);
-		if(tessellator->primitiveType == GL_TRIANGLE_FAN) {
-			OVITO_ASSERT(tessellator->vertices.size() >= 4);
-			int facetVertices[3];
-			facetVertices[0] = tessellator->vertices[0];
-			facetVertices[1] = tessellator->vertices[1];
-			for(auto v = tessellator->vertices.cbegin() + 2; v != tessellator->vertices.cend(); ++v) {
-				facetVertices[2] = *v;
-				if(tessellator->_faceMode != BackFace) {
-					tessellator->mesh.addFace().setVertices(facetVertices[2], facetVertices[1], facetVertices[0]);
-					if(tessellator->_faceMode == PeriodicFace)
-						tessellator->mesh.addFace().setVertices(facetVertices[0]+1, facetVertices[1]+1, facetVertices[2]+1);
-				}
-				else {
-					tessellator->mesh.addFace().setVertices(facetVertices[0], facetVertices[1], facetVertices[2]);
-				}
-				facetVertices[1] = facetVertices[2];
-			}
-		}
-		else if(tessellator->primitiveType == GL_TRIANGLE_STRIP) {
-			OVITO_ASSERT(tessellator->vertices.size() >= 3);
-			int facetVertices[3];
-			facetVertices[0] = tessellator->vertices[0];
-			facetVertices[1] = tessellator->vertices[1];
-			bool even = true;
-			for(auto v = tessellator->vertices.cbegin() + 2; v != tessellator->vertices.cend(); ++v) {
-				facetVertices[2] = *v;
-				if(tessellator->_faceMode != BackFace) {
-					tessellator->mesh.addFace().setVertices(facetVertices[2], facetVertices[1], facetVertices[0]);
-					if(tessellator->_faceMode == PeriodicFace)
-						tessellator->mesh.addFace().setVertices(facetVertices[0]+1, facetVertices[1]+1, facetVertices[2]+1);
-				}
-				else {
-					tessellator->mesh.addFace().setVertices(facetVertices[0], facetVertices[1], facetVertices[2]);
-				}
-				if(even)
-					facetVertices[0] = facetVertices[2];
-				else
-					facetVertices[1] = facetVertices[2];
-				even = !even;
-			}
-		}
-		else if(tessellator->primitiveType == GL_TRIANGLES) {
-			for(auto v = tessellator->vertices.cbegin(); v != tessellator->vertices.cend(); v += 3) {
-				if(tessellator->_faceMode != BackFace) {
-					tessellator->mesh.addFace().setVertices(v[2], v[1], v[0]);
-					if(tessellator->_faceMode == PeriodicFace)
-						tessellator->mesh.addFace().setVertices(v[0]+1, v[1]+1, v[2]+1);
-				}
-				else {
-					tessellator->mesh.addFace().setVertices(v[0], v[1], v[2]);
-				}
-			}
-		}
-		else OVITO_ASSERT(false);
-	}
+    static void endData(void* polygon_data) {
+        CapPolygonTessellator* tessellator = static_cast<CapPolygonTessellator*>(polygon_data);
+        if(tessellator->primitiveType == GL_TRIANGLE_FAN) {
+            OVITO_ASSERT(tessellator->vertices.size() >= 4);
+            int facetVertices[3];
+            facetVertices[0] = tessellator->vertices[0];
+            facetVertices[1] = tessellator->vertices[1];
+            for(auto v = tessellator->vertices.cbegin() + 2; v != tessellator->vertices.cend(); ++v) {
+                facetVertices[2] = *v;
+                if(tessellator->_faceMode != BackFace) {
+                    tessellator->mesh.addFace().setVertices(facetVertices[2], facetVertices[1], facetVertices[0]);
+                    if(tessellator->_faceMode == PeriodicFace)
+                        tessellator->mesh.addFace().setVertices(facetVertices[0]+1, facetVertices[1]+1, facetVertices[2]+1);
+                }
+                else {
+                    tessellator->mesh.addFace().setVertices(facetVertices[0], facetVertices[1], facetVertices[2]);
+                }
+                facetVertices[1] = facetVertices[2];
+            }
+        }
+        else if(tessellator->primitiveType == GL_TRIANGLE_STRIP) {
+            OVITO_ASSERT(tessellator->vertices.size() >= 3);
+            int facetVertices[3];
+            facetVertices[0] = tessellator->vertices[0];
+            facetVertices[1] = tessellator->vertices[1];
+            bool even = true;
+            for(auto v = tessellator->vertices.cbegin() + 2; v != tessellator->vertices.cend(); ++v) {
+                facetVertices[2] = *v;
+                if(tessellator->_faceMode != BackFace) {
+                    tessellator->mesh.addFace().setVertices(facetVertices[2], facetVertices[1], facetVertices[0]);
+                    if(tessellator->_faceMode == PeriodicFace)
+                        tessellator->mesh.addFace().setVertices(facetVertices[0]+1, facetVertices[1]+1, facetVertices[2]+1);
+                }
+                else {
+                    tessellator->mesh.addFace().setVertices(facetVertices[0], facetVertices[1], facetVertices[2]);
+                }
+                if(even)
+                    facetVertices[0] = facetVertices[2];
+                else
+                    facetVertices[1] = facetVertices[2];
+                even = !even;
+            }
+        }
+        else if(tessellator->primitiveType == GL_TRIANGLES) {
+            for(auto v = tessellator->vertices.cbegin(); v != tessellator->vertices.cend(); v += 3) {
+                if(tessellator->_faceMode != BackFace) {
+                    tessellator->mesh.addFace().setVertices(v[2], v[1], v[0]);
+                    if(tessellator->_faceMode == PeriodicFace)
+                        tessellator->mesh.addFace().setVertices(v[0]+1, v[1]+1, v[2]+1);
+                }
+                else {
+                    tessellator->mesh.addFace().setVertices(v[0], v[1], v[2]);
+                }
+            }
+        }
+        else OVITO_ASSERT(false);
+    }
 
-	static void vertexData(void* vertex_data, void* polygon_data) {
-		CapPolygonTessellator* tessellator = static_cast<CapPolygonTessellator*>(polygon_data);
-		tessellator->vertices.push_back(reinterpret_cast<intptr_t>(vertex_data));
-	}
+    static void vertexData(void* vertex_data, void* polygon_data) {
+        CapPolygonTessellator* tessellator = static_cast<CapPolygonTessellator*>(polygon_data);
+        tessellator->vertices.push_back(reinterpret_cast<intptr_t>(vertex_data));
+    }
 
-	static void combineData(double coords[3], void* vertex_data[4], float weight[4], void** outDatab, void* polygon_data) {
-		CapPolygonTessellator* tessellator = static_cast<CapPolygonTessellator*>(polygon_data);
-		Point3 p;
-		p[tessellator->dimx] = coords[0];
-		p[tessellator->dimy] = coords[1];
-		p[tessellator->dimz] = (tessellator->_faceMode == BackFace) ? 1 : 0;
-		intptr_t vindex = tessellator->mesh.addVertex(p);
-		*outDatab = reinterpret_cast<void*>(vindex);
-		if(tessellator->_faceMode == PeriodicFace) {
-			p[tessellator->dimz] = 1;
-			tessellator->mesh.addVertex(p);
-		}
-	}
+    static void combineData(double coords[3], void* vertex_data[4], float weight[4], void** outDatab, void* polygon_data) {
+        CapPolygonTessellator* tessellator = static_cast<CapPolygonTessellator*>(polygon_data);
+        Point3 p;
+        p[tessellator->dimx] = coords[0];
+        p[tessellator->dimy] = coords[1];
+        p[tessellator->dimz] = (tessellator->_faceMode == BackFace) ? 1 : 0;
+        intptr_t vindex = tessellator->mesh.addVertex(p);
+        *outDatab = reinterpret_cast<void*>(vindex);
+        if(tessellator->_faceMode == PeriodicFace) {
+            p[tessellator->dimz] = 1;
+            tessellator->mesh.addVertex(p);
+        }
+    }
 
-	static void errorData(int errnum, void* polygon_data) {
-		if(errnum == GLU_TESS_NEED_COMBINE_CALLBACK)
-			qWarning() << "ERROR: Could not tessellate cap polygon. It contains overlapping contours.";
-		else
-			qWarning() << "ERROR: Could not tessellate cap polygon. Error code: " << errnum;
-	}
+    static void errorData(int errnum, void* polygon_data) {
+        if(errnum == GLU_TESS_NEED_COMBINE_CALLBACK)
+            qWarning() << "ERROR: Could not tessellate cap polygon. It contains overlapping contours.";
+        else
+            qWarning() << "ERROR: Could not tessellate cap polygon. Error code: " << errnum;
+    }
 
 private:
 
-	size_t dimx, dimy, dimz;
-	GLUtesselator* tess;
-	TriMeshObject& mesh;
-	int primitiveType;
-	std::vector<int> vertices;
-	FaceMode _faceMode;
+    size_t dimx, dimy, dimz;
+    GLUtesselator* tess;
+    TriMeshObject& mesh;
+    int primitiveType;
+    std::vector<int> vertices;
+    FaceMode _faceMode;
 };
 
-}	// End of namespace
+}   // End of namespace

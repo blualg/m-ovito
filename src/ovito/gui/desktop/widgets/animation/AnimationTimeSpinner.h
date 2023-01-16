@@ -33,27 +33,27 @@ namespace Ovito {
  */
 class OVITO_GUI_EXPORT AnimationTimeSpinner : public SpinnerWidget
 {
-	Q_OBJECT
+    Q_OBJECT
 
 public:
 
-	/// Constructs the spinner control.
-	AnimationTimeSpinner(MainWindow& mainWindow, QWidget* parent = 0);
+    /// Constructs the spinner control.
+    AnimationTimeSpinner(MainWindow& mainWindow, QWidget* parent = 0);
 
 protected Q_SLOTS:
 
-	/// This is called when the current animation time has changed.
-	void onCurrentFrameChanged(int newFrame);
+    /// This is called when the current animation time has changed.
+    void onCurrentFrameChanged(int newFrame);
 
-	/// This is called when the animation interval has changed.
-	void onIntervalChanged(int firstFrame, int lastFrame);
+    /// This is called when the animation interval has changed.
+    void onIntervalChanged(int firstFrame, int lastFrame);
 
-	/// Is called when the spinner value has been changed by the user.
-	void onSpinnerValueChanged();
+    /// Is called when the spinner value has been changed by the user.
+    void onSpinnerValueChanged();
 
 private:
 
-	MainWindow& _mainWindow;
+    MainWindow& _mainWindow;
 };
 
-}	// End of namespace
+}   // End of namespace

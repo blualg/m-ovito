@@ -31,19 +31,19 @@ namespace Ovito {
 ******************************************************************************/
 AsynchronousTaskBase::AsynchronousTaskBase(State initialState, void* resultsStorage) noexcept : ProgressingTask(State(initialState | Task::IsAsynchronous), resultsStorage) 
 {
-	QRunnable::setAutoDelete(false);
-}	
+    QRunnable::setAutoDelete(false);
+}   
 
 /******************************************************************************
 * Destructor.
 ******************************************************************************/
 AsynchronousTaskBase::~AsynchronousTaskBase() 
 {
-	// If task was never submitted for execution, cancel and finish it.
-	if(!isFinished()) {
-		cancel();
-		setFinished();
-	}
+    // If task was never submitted for execution, cancel and finish it.
+    if(!isFinished()) {
+        cancel();
+        setFinished();
+    }
 }
 
 /******************************************************************************
@@ -51,29 +51,29 @@ AsynchronousTaskBase::~AsynchronousTaskBase()
 ******************************************************************************/
 void AsynchronousTaskBase::startInThreadPool(QThreadPool* pool, bool showInUserInterface) 
 {
-	OVITO_ASSERT(pool);
-	OVITO_ASSERT(!this->_thisTask);
-	OVITO_ASSERT(!this->_submittedToPool);
-	OVITO_ASSERT(!this->isStarted());
+    OVITO_ASSERT(pool);
+    OVITO_ASSERT(!this->_thisTask);
+    OVITO_ASSERT(!this->_submittedToPool);
+    OVITO_ASSERT(!this->isStarted());
 
-	// Store a shared_ptr to this task to keep it alive while running.
-	this->_thisTask = this->shared_from_this();
-	this->_submittedToPool = pool;
-	
-	// Inherit execution context from parent task.
-	_executionContext = ExecutionContext::current();
-	OVITO_ASSERT(_executionContext.isValid());
+    // Store a shared_ptr to this task to keep it alive while running.
+    this->_thisTask = this->shared_from_this();
+    this->_submittedToPool = pool;
+    
+    // Inherit execution context from parent task.
+    _executionContext = ExecutionContext::current();
+    OVITO_ASSERT(_executionContext.isValid());
 
-	// Register task with UI task manager if requested.
-	if(showInUserInterface) {
-		_executionContext.ui().taskManager().registerTask(*this);
-	}
-	
-	// Mark this task as started.
-	this->setStarted();
-	
-	// Submit to thread pool.
-	pool->start(this);
+    // Register task with UI task manager if requested.
+    if(showInUserInterface) {
+        _executionContext.ui().taskManager().registerTask(*this);
+    }
+    
+    // Mark this task as started.
+    this->setStarted();
+    
+    // Submit to thread pool.
+    pool->start(this);
 }
 
 /******************************************************************************
@@ -81,24 +81,24 @@ void AsynchronousTaskBase::startInThreadPool(QThreadPool* pool, bool showInUserI
 ******************************************************************************/
 void AsynchronousTaskBase::startInThisThread(bool showInUserInterface) 
 {
-	OVITO_ASSERT(!this->_thisTask);
-	OVITO_ASSERT(!this->_submittedToPool);
-	OVITO_ASSERT(!this->isStarted());
+    OVITO_ASSERT(!this->_thisTask);
+    OVITO_ASSERT(!this->_submittedToPool);
+    OVITO_ASSERT(!this->isStarted());
 
-	// Inherit execution context from parent task.
-	_executionContext = ExecutionContext::current();
-	OVITO_ASSERT(_executionContext.isValid());
+    // Inherit execution context from parent task.
+    _executionContext = ExecutionContext::current();
+    OVITO_ASSERT(_executionContext.isValid());
 
-	// Register task with UI task manager if requested.
-	if(showInUserInterface) {
-		_executionContext.ui().taskManager().registerTask(*this);
-	}
+    // Register task with UI task manager if requested.
+    if(showInUserInterface) {
+        _executionContext.ui().taskManager().registerTask(*this);
+    }
 
-	// Mark this task as started.
-	this->setStarted();
+    // Mark this task as started.
+    this->setStarted();
 
-	// Execute it now.
-	this->run();
+    // Execute it now.
+    this->run();
 }
 
 /******************************************************************************
@@ -106,23 +106,23 @@ void AsynchronousTaskBase::startInThisThread(bool showInUserInterface)
 ******************************************************************************/
 void AsynchronousTaskBase::run() 
 {
-	OVITO_ASSERT(isStarted());
-	OVITO_ASSERT(_executionContext.isValid());
-	
-	// Execute the work function in the original execution context.
-	ExecutionContext::Scope execScope(std::move(_executionContext));
-	
-	try {
-		// Execute the work function in the scope of this task object.
-		Task::Scope taskScope(this);
+    OVITO_ASSERT(isStarted());
+    OVITO_ASSERT(_executionContext.isValid());
+    
+    // Execute the work function in the original execution context.
+    ExecutionContext::Scope execScope(std::move(_executionContext));
+    
+    try {
+        // Execute the work function in the scope of this task object.
+        Task::Scope taskScope(this);
 
-		perform();
-	}
-	catch(...) {
-		captureException();
-	}
-	setFinished();
-	_thisTask.reset(); // No need to keep the task object alive any longer.
+        perform();
+    }
+    catch(...) {
+        captureException();
+    }
+    setFinished();
+    _thisTask.reset(); // No need to keep the task object alive any longer.
 }
 
-}	// End of namespace
+}   // End of namespace

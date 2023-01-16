@@ -33,50 +33,50 @@ namespace Ovito {
  */
 class ModifierDelegateParameterUI : public ParameterUI
 {
-	Q_OBJECT
-	QML_ELEMENT
-	OVITO_CLASS(ModifierDelegateParameterUI)
+    Q_OBJECT
+    QML_ELEMENT
+    OVITO_CLASS(ModifierDelegateParameterUI)
 
-	Q_PROPERTY(QString delegateType READ delegateType WRITE setDelegateType)
-	Q_PROPERTY(QStringList delegateList READ delegateList NOTIFY delegateListChanged)
+    Q_PROPERTY(QString delegateType READ delegateType WRITE setDelegateType)
+    Q_PROPERTY(QStringList delegateList READ delegateList NOTIFY delegateListChanged)
 
 public:
 
-	/// Constructor.
-	ModifierDelegateParameterUI() {
-		connect(this, &ParameterUI::editObjectReplaced, this, &ModifierDelegateParameterUI::delegateListChanged);
-	}
+    /// Constructor.
+    ModifierDelegateParameterUI() {
+        connect(this, &ParameterUI::editObjectReplaced, this, &ModifierDelegateParameterUI::delegateListChanged);
+    }
 
-	/// Sets the class of delegates the user can choose from.
-	void setDelegateType(const QString& typeName);
+    /// Sets the class of delegates the user can choose from.
+    void setDelegateType(const QString& typeName);
 
-	/// Returns the class of delegates the user can choose from.
-	QString delegateType() const { return _delegateType ? _delegateType->name() : QString(); }
+    /// Returns the class of delegates the user can choose from.
+    QString delegateType() const { return _delegateType ? _delegateType->name() : QString(); }
 
-	/// Obtains the current value of the parameter from the C++ object.
-	virtual QVariant getCurrentValue() const override;
+    /// Obtains the current value of the parameter from the C++ object.
+    virtual QVariant getCurrentValue() const override;
 
-	/// Changes the current value of the C++ object parameter.
-	virtual void setCurrentValue(const QVariant& val) override;
+    /// Changes the current value of the C++ object parameter.
+    virtual void setCurrentValue(const QVariant& val) override;
 
-	/// Returns the list of available delegate types.
-	QStringList delegateList();
+    /// Returns the list of available delegate types.
+    QStringList delegateList();
 
 Q_SIGNALS:
 
-	/// This signal is emitted when the list of available delegate types changes.
-	void delegateListChanged();
+    /// This signal is emitted when the list of available delegate types changes.
+    void delegateListChanged();
 
 protected:
 
-	/// This method is called when a reference target changes.
-	virtual bool referenceEvent(RefTarget* source, const ReferenceEvent& event) override;
+    /// This method is called when a reference target changes.
+    virtual bool referenceEvent(RefTarget* source, const ReferenceEvent& event) override;
 
-	/// The type of modifier delegates, which the user can choose from.
-	OvitoClassPtr _delegateType = nullptr;
+    /// The type of modifier delegates, which the user can choose from.
+    OvitoClassPtr _delegateType = nullptr;
 
-	/// The list of available delegates.
-	QVector<std::pair<OvitoClassPtr, DataObjectReference>> _delegateList;
+    /// The list of available delegates.
+    QVector<std::pair<OvitoClassPtr, DataObjectReference>> _delegateList;
 };
 
-}	// End of namespace
+}   // End of namespace

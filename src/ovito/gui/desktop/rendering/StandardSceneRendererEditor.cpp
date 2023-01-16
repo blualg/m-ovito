@@ -35,20 +35,20 @@ SET_OVITO_OBJECT_EDITOR(StandardSceneRenderer, StandardSceneRendererEditor);
 ******************************************************************************/
 void StandardSceneRendererEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 {
-	// Create the rollout.
-	QWidget* rollout = createRollout(tr("OpenGL renderer settings"), rolloutParams, "manual:rendering.opengl_renderer");
+    // Create the rollout.
+    QWidget* rollout = createRollout(tr("OpenGL renderer settings"), rolloutParams, "manual:rendering.opengl_renderer");
 
-	QGridLayout* layout = new QGridLayout(rollout);
-	layout->setContentsMargins(4,4,4,4);
+    QGridLayout* layout = new QGridLayout(rollout);
+    layout->setContentsMargins(4,4,4,4);
 #ifndef Q_OS_MACOS
-	layout->setSpacing(2);
+    layout->setSpacing(2);
 #endif
-	layout->setColumnStretch(1, 1);
+    layout->setColumnStretch(1, 1);
 
-	// Antialiasing level
-	IntegerParameterUI* antialiasingLevelUI = new IntegerParameterUI(this, PROPERTY_FIELD(StandardSceneRenderer::antialiasingLevel));
-	layout->addWidget(antialiasingLevelUI->label(), 0, 0);
-	layout->addLayout(antialiasingLevelUI->createFieldLayout(), 0, 1);
+    // Antialiasing level
+    IntegerParameterUI* antialiasingLevelUI = new IntegerParameterUI(this, PROPERTY_FIELD(StandardSceneRenderer::antialiasingLevel));
+    layout->addWidget(antialiasingLevelUI->label(), 0, 0);
+    layout->addLayout(antialiasingLevelUI->createFieldLayout(), 0, 1);
 }
 
-}	// End of namespace
+}   // End of namespace

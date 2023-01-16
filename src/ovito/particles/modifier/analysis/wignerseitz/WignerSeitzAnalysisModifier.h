@@ -36,114 +36,114 @@ namespace Ovito::Particles {
  */
 class OVITO_PARTICLES_EXPORT WignerSeitzAnalysisModifier : public ReferenceConfigurationModifier
 {
-	OVITO_CLASS(WignerSeitzAnalysisModifier)
+    OVITO_CLASS(WignerSeitzAnalysisModifier)
 
-	Q_CLASSINFO("DisplayName", "Wigner-Seitz defect analysis");
-	Q_CLASSINFO("Description", "Identify point defects (vacancies and interstitials) in crystals.");
+    Q_CLASSINFO("DisplayName", "Wigner-Seitz defect analysis");
+    Q_CLASSINFO("Description", "Identify point defects (vacancies and interstitials) in crystals.");
 #ifndef OVITO_QML_GUI
-	Q_CLASSINFO("ModifierCategory", "Analysis");
+    Q_CLASSINFO("ModifierCategory", "Analysis");
 #else
-	Q_CLASSINFO("ModifierCategory", "-");
+    Q_CLASSINFO("ModifierCategory", "-");
 #endif
 
 public:
 
-	/// Constructor.
-	Q_INVOKABLE WignerSeitzAnalysisModifier(ObjectCreationParams params);
+    /// Constructor.
+    Q_INVOKABLE WignerSeitzAnalysisModifier(ObjectCreationParams params);
 
 protected:
 
-	/// Creates a computation engine that will compute the modifier's results.
-	virtual Future<EnginePtr> createEngineInternal(const ModifierEvaluationRequest& request, PipelineFlowState input, const PipelineFlowState& referenceState, TimeInterval validityInterval) override;
+    /// Creates a computation engine that will compute the modifier's results.
+    virtual Future<EnginePtr> createEngineInternal(const ModifierEvaluationRequest& request, PipelineFlowState input, const PipelineFlowState& referenceState, TimeInterval validityInterval) override;
 
 private:
 
-	/// Computes the modifier's results.
-	class WignerSeitzAnalysisEngine : public RefConfigEngineBase
-	{
-	public:
+    /// Computes the modifier's results.
+    class WignerSeitzAnalysisEngine : public RefConfigEngineBase
+    {
+    public:
 
-		/// Constructor.
-		WignerSeitzAnalysisEngine(const ModifierEvaluationRequest& request, const TimeInterval& validityInterval, ConstPropertyPtr positions, const SimulationCellObject* simCell,
-				PipelineFlowState referenceState, ConstPropertyPtr refPositions, const SimulationCellObject* simCellRef, AffineMappingType affineMapping,
-				ConstPropertyPtr typeProperty, int ptypeMinId, int ptypeMaxId, ConstPropertyPtr referenceTypeProperty, ConstPropertyPtr referenceIdentifierProperty) :
-			RefConfigEngineBase(request, validityInterval, std::move(positions), simCell, std::move(refPositions), simCellRef,
-				nullptr, nullptr, affineMapping, false),
-			_typeProperty(std::move(typeProperty)),
-			_ptypeMinId(ptypeMinId), _ptypeMaxId(ptypeMaxId),
-			_referenceTypeProperty(std::move(referenceTypeProperty)),
-			_referenceIdentifierProperty(std::move(referenceIdentifierProperty)),
-			_referenceState(std::move(referenceState)) {}
+        /// Constructor.
+        WignerSeitzAnalysisEngine(const ModifierEvaluationRequest& request, const TimeInterval& validityInterval, ConstPropertyPtr positions, const SimulationCellObject* simCell,
+                PipelineFlowState referenceState, ConstPropertyPtr refPositions, const SimulationCellObject* simCellRef, AffineMappingType affineMapping,
+                ConstPropertyPtr typeProperty, int ptypeMinId, int ptypeMaxId, ConstPropertyPtr referenceTypeProperty, ConstPropertyPtr referenceIdentifierProperty) :
+            RefConfigEngineBase(request, validityInterval, std::move(positions), simCell, std::move(refPositions), simCellRef,
+                nullptr, nullptr, affineMapping, false),
+            _typeProperty(std::move(typeProperty)),
+            _ptypeMinId(ptypeMinId), _ptypeMaxId(ptypeMaxId),
+            _referenceTypeProperty(std::move(referenceTypeProperty)),
+            _referenceIdentifierProperty(std::move(referenceIdentifierProperty)),
+            _referenceState(std::move(referenceState)) {}
 
-		/// Computes the modifier's results.
-		virtual void perform() override;
+        /// Computes the modifier's results.
+        virtual void perform() override;
 
-		/// Injects the computed results into the data pipeline.
-		virtual void applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
+        /// Injects the computed results into the data pipeline.
+        virtual void applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
 
-		/// Returns the number of vacant sites found during the last analysis run.
-		size_t vacancyCount() const { return _vacancyCount; }
+        /// Returns the number of vacant sites found during the last analysis run.
+        size_t vacancyCount() const { return _vacancyCount; }
 
-		/// Increments the number of vacant sites found during the last analysis run.
-		void incrementVacancyCount(size_t n = 1) { _vacancyCount += n; }
+        /// Increments the number of vacant sites found during the last analysis run.
+        void incrementVacancyCount(size_t n = 1) { _vacancyCount += n; }
 
-		/// Returns the number of interstitial atoms found during the last analysis run.
-		size_t interstitialCount() const { return _interstitialCount; }
+        /// Returns the number of interstitial atoms found during the last analysis run.
+        size_t interstitialCount() const { return _interstitialCount; }
 
-		/// Increments the number of interstitial atoms found during the last analysis run.
-		void incrementInterstitialCount(size_t n = 1) { _interstitialCount += n; }
+        /// Increments the number of interstitial atoms found during the last analysis run.
+        void incrementInterstitialCount(size_t n = 1) { _interstitialCount += n; }
 
-		/// Returns the property storage that contains the computed occupancies.
-		const PropertyPtr& occupancyNumbers() const { return _occupancyNumbers; }
+        /// Returns the property storage that contains the computed occupancies.
+        const PropertyPtr& occupancyNumbers() const { return _occupancyNumbers; }
 
-		/// Replaces the property storage for the computed occupancies.
-		void setOccupancyNumbers(PropertyPtr prop) { _occupancyNumbers = std::move(prop); }
+        /// Replaces the property storage for the computed occupancies.
+        void setOccupancyNumbers(PropertyPtr prop) { _occupancyNumbers = std::move(prop); }
 
-		/// Returns the property storage that contains the type of site each atom has been assigned to.
-		const PropertyPtr& siteTypes() const { return _siteTypes; }
+        /// Returns the property storage that contains the type of site each atom has been assigned to.
+        const PropertyPtr& siteTypes() const { return _siteTypes; }
 
-		/// Replaces the property storage for the type of the site each atom has been assigned to.
-		void setSiteTypes(PropertyPtr prop) { _siteTypes = std::move(prop); }
+        /// Replaces the property storage for the type of the site each atom has been assigned to.
+        void setSiteTypes(PropertyPtr prop) { _siteTypes = std::move(prop); }
 
-		/// Returns the property storage that contains the index of the site each atom has been assigned to.
-		const PropertyPtr& siteIndices() const { return _siteIndices; }
+        /// Returns the property storage that contains the index of the site each atom has been assigned to.
+        const PropertyPtr& siteIndices() const { return _siteIndices; }
 
-		/// Replaces the property storage for the index of the site each atom has been assigned to.
-		void setSiteIndices(PropertyPtr prop) { _siteIndices = std::move(prop); }
+        /// Replaces the property storage for the index of the site each atom has been assigned to.
+        void setSiteIndices(PropertyPtr prop) { _siteIndices = std::move(prop); }
 
-		/// Returns the property storage that contains the identifier of the site each atom has been assigned to.
-		const PropertyPtr& siteIdentifiers() const { return _siteIdentifiers; }
+        /// Returns the property storage that contains the identifier of the site each atom has been assigned to.
+        const PropertyPtr& siteIdentifiers() const { return _siteIdentifiers; }
 
-		/// Replaces the property storage for the indeitifier of the site each atom has been assigned to.
-		void setSiteIdentifiers(PropertyPtr prop) { _siteIdentifiers = std::move(prop); }
+        /// Replaces the property storage for the indeitifier of the site each atom has been assigned to.
+        void setSiteIdentifiers(PropertyPtr prop) { _siteIdentifiers = std::move(prop); }
 
-		/// Returns the reference state.
-		const PipelineFlowState& referenceState() const { return _referenceState; }
+        /// Returns the reference state.
+        const PipelineFlowState& referenceState() const { return _referenceState; }
 
-		/// Returns the property storage that contains the particle types.
-		const ConstPropertyPtr& particleTypes() const { return _typeProperty; }
+        /// Returns the property storage that contains the particle types.
+        const ConstPropertyPtr& particleTypes() const { return _typeProperty; }
 
-	private:
+    private:
 
-		ConstPropertyPtr _typeProperty;
-		ConstPropertyPtr _referenceTypeProperty;
-		ConstPropertyPtr _referenceIdentifierProperty;
-		int _ptypeMinId;
-		int _ptypeMaxId;
-		const PipelineFlowState _referenceState;
-		PropertyPtr _occupancyNumbers;
-		PropertyPtr _siteTypes;
-		PropertyPtr _siteIndices;
-		PropertyPtr _siteIdentifiers;
-		size_t _vacancyCount = 0;
-		size_t _interstitialCount = 0;
-	};
+        ConstPropertyPtr _typeProperty;
+        ConstPropertyPtr _referenceTypeProperty;
+        ConstPropertyPtr _referenceIdentifierProperty;
+        int _ptypeMinId;
+        int _ptypeMaxId;
+        const PipelineFlowState _referenceState;
+        PropertyPtr _occupancyNumbers;
+        PropertyPtr _siteTypes;
+        PropertyPtr _siteIndices;
+        PropertyPtr _siteIdentifiers;
+        size_t _vacancyCount = 0;
+        size_t _interstitialCount = 0;
+    };
 
-	/// Enables per-type occupancy numbers.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, perTypeOccupancy, setPerTypeOccupancy, PROPERTY_FIELD_MEMORIZE)
+    /// Enables per-type occupancy numbers.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, perTypeOccupancy, setPerTypeOccupancy, PROPERTY_FIELD_MEMORIZE)
 
-	/// Enables output of displaced atomic configuration instead of reference configuration.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, outputCurrentConfig, setOutputCurrentConfig, PROPERTY_FIELD_MEMORIZE)
+    /// Enables output of displaced atomic configuration instead of reference configuration.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, outputCurrentConfig, setOutputCurrentConfig, PROPERTY_FIELD_MEMORIZE)
 };
 
-}	// End of namespace
+}   // End of namespace

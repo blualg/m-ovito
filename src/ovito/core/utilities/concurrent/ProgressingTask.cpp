@@ -34,18 +34,18 @@ constexpr static int MaxProgressEmitsPerSecond = 10;
 ******************************************************************************/
 void ProgressingTask::setProgressMaximum(qlonglong maximum, bool autoReset)
 {
-	if(!autoReset && _progressMaximum == maximum)
-		return;
+    if(!autoReset && _progressMaximum == maximum)
+        return;
 
     const QMutexLocker locker(&taskMutex());
 
     _progressMaximum = maximum;
-	_progressValue = 0;
+    _progressValue = 0;
 
     updateTotalProgress();
 
-	for(detail::TaskCallbackBase* cb = _callbacks; cb != nullptr; cb = cb->_nextInList)
-		cb->callProgressChanged(_totalProgressValue, _totalProgressMaximum);
+    for(detail::TaskCallbackBase* cb = _callbacks; cb != nullptr; cb = cb->_nextInList)
+        cb->callProgressChanged(_totalProgressValue, _totalProgressMaximum);
 }
 
 /******************************************************************************
@@ -55,7 +55,7 @@ bool ProgressingTask::setProgressValue(qlonglong value)
 {
     const QMutexLocker locker(&taskMutex());
 
-	auto state = _state.load(std::memory_order_relaxed);
+    auto state = _state.load(std::memory_order_relaxed);
     if(state & (Canceled | Finished) || value == _progressValue)
         return !(state & Canceled);
 
@@ -63,10 +63,10 @@ bool ProgressingTask::setProgressValue(qlonglong value)
     updateTotalProgress();
 
     if(!_progressTime.isValid() || _totalProgressValue >= _totalProgressMaximum || _progressTime.elapsed() >= (1000 / MaxProgressEmitsPerSecond)) {
-		_progressTime.start();
+        _progressTime.start();
 
-		for(detail::TaskCallbackBase* cb = _callbacks; cb != nullptr; cb = cb->_nextInList)
-			cb->callProgressChanged(_totalProgressValue, _totalProgressMaximum);
+        for(detail::TaskCallbackBase* cb = _callbacks; cb != nullptr; cb = cb->_nextInList)
+            cb->callProgressChanged(_totalProgressValue, _totalProgressMaximum);
     }
 
     return !(state & Canceled);
@@ -79,7 +79,7 @@ bool ProgressingTask::incrementProgressValue(qlonglong increment)
 {
     const QMutexLocker locker(&taskMutex());
 
-	auto state = _state.load(std::memory_order_relaxed);
+    auto state = _state.load(std::memory_order_relaxed);
     if(state & (Canceled | Finished))
         return !(state & Canceled);
 
@@ -87,10 +87,10 @@ bool ProgressingTask::incrementProgressValue(qlonglong increment)
     updateTotalProgress();
 
     if(!_progressTime.isValid() || _totalProgressValue >= _totalProgressMaximum || _progressTime.elapsed() >= (1000 / MaxProgressEmitsPerSecond)) {
-		_progressTime.start();
+        _progressTime.start();
 
-		for(detail::TaskCallbackBase* cb = _callbacks; cb != nullptr; cb = cb->_nextInList)
-			cb->callProgressChanged(_totalProgressValue, _totalProgressMaximum);
+        for(detail::TaskCallbackBase* cb = _callbacks; cb != nullptr; cb = cb->_nextInList)
+            cb->callProgressChanged(_totalProgressValue, _totalProgressMaximum);
     }
 
     return !(state & Canceled);
@@ -101,14 +101,14 @@ bool ProgressingTask::incrementProgressValue(qlonglong increment)
 ******************************************************************************/
 bool ProgressingTask::setProgressValueIntermittent(qlonglong progressValue, int updateEvery)
 {
-	if(_intermittentUpdateCounter >= updateEvery) {
-		_intermittentUpdateCounter = 0;
-		return setProgressValue(progressValue);
-	}
-	else {
-		_intermittentUpdateCounter++;
-		return !isCanceled();
-	}
+    if(_intermittentUpdateCounter >= updateEvery) {
+        _intermittentUpdateCounter = 0;
+        return setProgressValue(progressValue);
+    }
+    else {
+        _intermittentUpdateCounter++;
+        return !isCanceled();
+    }
 }
 
 /******************************************************************************
@@ -123,8 +123,8 @@ void ProgressingTask::setProgressText(const QString& progressText)
 
     _progressText = progressText;
 
-	for(detail::TaskCallbackBase* cb = _callbacks; cb != nullptr; cb = cb->_nextInList)
-		cb->callTextChanged();
+    for(detail::TaskCallbackBase* cb = _callbacks; cb != nullptr; cb = cb->_nextInList)
+        cb->callTextChanged();
 }
 
 /******************************************************************************
@@ -132,25 +132,25 @@ void ProgressingTask::setProgressText(const QString& progressText)
 ******************************************************************************/
 void ProgressingTask::updateTotalProgress()
 {
-	if(_subTaskProgressStack.empty()) {
-		_totalProgressMaximum = _progressMaximum;
-		_totalProgressValue = _progressValue;
-	}
-	else {
-		double percentage;
-		if(_progressMaximum > 0)
-			percentage = (double)_progressValue / _progressMaximum;
-		else
-			percentage = 0;
-		for(auto level = _subTaskProgressStack.crbegin(); level != _subTaskProgressStack.crend(); ++level) {
-			OVITO_ASSERT(level->first >= 0 && level->first <= level->second.size());
-			int weightSum1 = std::accumulate(level->second.cbegin(), level->second.cbegin() + level->first, 0);
-			int weightSum2 = std::accumulate(level->second.cbegin() + level->first, level->second.cend(), 0);
-			percentage = ((double)weightSum1 + percentage * (level->first < level->second.size() ? level->second[level->first] : 0)) / (weightSum1 + weightSum2);
-		}
-		_totalProgressMaximum = 1000;
-		_totalProgressValue = (qlonglong)(percentage * 1000.0);
-	}
+    if(_subTaskProgressStack.empty()) {
+        _totalProgressMaximum = _progressMaximum;
+        _totalProgressValue = _progressValue;
+    }
+    else {
+        double percentage;
+        if(_progressMaximum > 0)
+            percentage = (double)_progressValue / _progressMaximum;
+        else
+            percentage = 0;
+        for(auto level = _subTaskProgressStack.crbegin(); level != _subTaskProgressStack.crend(); ++level) {
+            OVITO_ASSERT(level->first >= 0 && level->first <= level->second.size());
+            int weightSum1 = std::accumulate(level->second.cbegin(), level->second.cbegin() + level->first, 0);
+            int weightSum2 = std::accumulate(level->second.cbegin() + level->first, level->second.cend(), 0);
+            percentage = ((double)weightSum1 + percentage * (level->first < level->second.size() ? level->second[level->first] : 0)) / (weightSum1 + weightSum2);
+        }
+        _totalProgressMaximum = 1000;
+        _totalProgressValue = (qlonglong)(percentage * 1000.0);
+    }
 }
 
 /******************************************************************************
@@ -176,16 +176,16 @@ void ProgressingTask::nextProgressSubStep()
     if(auto state = _state.load(std::memory_order_relaxed); state & (Canceled | Finished))
         return;
 
-	OVITO_ASSERT(!_subTaskProgressStack.empty());
-	OVITO_ASSERT(_subTaskProgressStack.back().first < _subTaskProgressStack.back().second.size());
-	_subTaskProgressStack.back().first++;
+    OVITO_ASSERT(!_subTaskProgressStack.empty());
+    OVITO_ASSERT(_subTaskProgressStack.back().first < _subTaskProgressStack.back().second.size());
+    _subTaskProgressStack.back().first++;
 
     _progressMaximum = 0;
     _progressValue = 0;
     updateTotalProgress();
 
-	for(detail::TaskCallbackBase* cb = _callbacks; cb != nullptr; cb = cb->_nextInList)
-		cb->callProgressChanged(_totalProgressValue, _totalProgressMaximum);
+    for(detail::TaskCallbackBase* cb = _callbacks; cb != nullptr; cb = cb->_nextInList)
+        cb->callProgressChanged(_totalProgressValue, _totalProgressMaximum);
 }
 
 /******************************************************************************
@@ -194,10 +194,10 @@ void ProgressingTask::nextProgressSubStep()
 ******************************************************************************/
 void ProgressingTask::endProgressSubSteps()
 {
-	OVITO_ASSERT(!_subTaskProgressStack.empty());
-	_subTaskProgressStack.pop_back();
+    OVITO_ASSERT(!_subTaskProgressStack.empty());
+    _subTaskProgressStack.pop_back();
     _progressMaximum = 0;
     _progressValue = 0;
 }
 
-}	// End of namespace
+}   // End of namespace

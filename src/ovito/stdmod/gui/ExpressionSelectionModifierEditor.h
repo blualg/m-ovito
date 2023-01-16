@@ -33,30 +33,30 @@ namespace Ovito::StdMod {
  */
 class ExpressionSelectionModifierEditor : public PropertiesEditor
 {
-	OVITO_CLASS(ExpressionSelectionModifierEditor)
+    OVITO_CLASS(ExpressionSelectionModifierEditor)
 
 public:
 
-	/// Default constructor.
-	Q_INVOKABLE ExpressionSelectionModifierEditor() {}
+    /// Default constructor.
+    Q_INVOKABLE ExpressionSelectionModifierEditor() {}
 
 protected:
 
-	/// Creates the user interface controls for the editor.
-	virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
+    /// Creates the user interface controls for the editor.
+    virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
 
-	/// This method is called when a reference target changes.
-	virtual bool referenceEvent(RefTarget* source, const ReferenceEvent& event) override;
+    /// This method is called when a reference target changes.
+    virtual bool referenceEvent(RefTarget* source, const ReferenceEvent& event) override;
 
 protected Q_SLOTS:
 
-	/// Updates the enabled/disabled status of the editor's controls.
-	void updateEditorFields();
+    /// Updates the enabled/disabled status of the editor's controls.
+    void updateEditorFields();
 
 private:
 
-	QLabel* variableNamesList;
-	AutocompleteTextEdit* expressionEdit;
+    QLabel* variableNamesList;
+    AutocompleteTextEdit* expressionEdit;
 };
 
-}	// End of namespace
+}   // End of namespace

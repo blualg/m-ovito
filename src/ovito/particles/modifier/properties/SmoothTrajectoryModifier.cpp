@@ -46,8 +46,8 @@ IMPLEMENT_OVITO_CLASS(InterpolateTrajectoryModifierApplication);
 * Constructs the modifier object.
 ******************************************************************************/
 SmoothTrajectoryModifier::SmoothTrajectoryModifier(ObjectCreationParams params) : Modifier(params),
-	_useMinimumImageConvention(true),
-	_smoothingWindowSize(1)
+    _useMinimumImageConvention(true),
+    _smoothingWindowSize(1)
 {
 }
 
@@ -56,7 +56,7 @@ SmoothTrajectoryModifier::SmoothTrajectoryModifier(ObjectCreationParams params) 
 ******************************************************************************/
 bool SmoothTrajectoryModifier::OOMetaClass::isApplicableTo(const DataCollection& input) const
 {
-	return input.containsObject<ParticlesObject>();
+    return input.containsObject<ParticlesObject>();
 }
 
 /******************************************************************************
@@ -64,10 +64,10 @@ bool SmoothTrajectoryModifier::OOMetaClass::isApplicableTo(const DataCollection&
 ******************************************************************************/
 TimeInterval SmoothTrajectoryModifier::validityInterval(const ModifierEvaluationRequest& request) const
 {
-	TimeInterval iv = Modifier::validityInterval(request);
-	// Interpolation results will only be valid for the duration of the current frame.
-	iv.intersect(request.time());
-	return iv;
+    TimeInterval iv = Modifier::validityInterval(request);
+    // Interpolation results will only be valid for the duration of the current frame.
+    iv.intersect(request.time());
+    return iv;
 }
 
 /******************************************************************************
@@ -76,24 +76,24 @@ TimeInterval SmoothTrajectoryModifier::validityInterval(const ModifierEvaluation
 ******************************************************************************/
 void SmoothTrajectoryModifier::inputCachingHints(TimeIntervalUnion& cachingIntervals, ModifierApplication* modApp)
 {
-	Modifier::inputCachingHints(cachingIntervals, modApp);
+    Modifier::inputCachingHints(cachingIntervals, modApp);
 
-	TimeIntervalUnion originalIntervals = cachingIntervals;
-	for(const TimeInterval& iv : originalIntervals) {
-		// Round interval start down to the previous animation frame.
-		// Round interval end up to the next animation frame.
-		int startFrame = modApp->animationTimeToSourceFrame(iv.start());
-		int endFrame = modApp->animationTimeToSourceFrame(iv.end());
-		if(modApp->sourceFrameToAnimationTime(endFrame) < iv.end())
-			endFrame++;
-		startFrame -= (smoothingWindowSize() - 1) / 2;
-		endFrame += smoothingWindowSize() / 2;
-		AnimationTime newStartTime = modApp->sourceFrameToAnimationTime(startFrame);
-		AnimationTime newEndTime = modApp->sourceFrameToAnimationTime(endFrame);
-		OVITO_ASSERT(newStartTime <= iv.start());
-		OVITO_ASSERT(newEndTime >= iv.end());
-		cachingIntervals.add(TimeInterval(newStartTime, newEndTime));
-	}
+    TimeIntervalUnion originalIntervals = cachingIntervals;
+    for(const TimeInterval& iv : originalIntervals) {
+        // Round interval start down to the previous animation frame.
+        // Round interval end up to the next animation frame.
+        int startFrame = modApp->animationTimeToSourceFrame(iv.start());
+        int endFrame = modApp->animationTimeToSourceFrame(iv.end());
+        if(modApp->sourceFrameToAnimationTime(endFrame) < iv.end())
+            endFrame++;
+        startFrame -= (smoothingWindowSize() - 1) / 2;
+        endFrame += smoothingWindowSize() / 2;
+        AnimationTime newStartTime = modApp->sourceFrameToAnimationTime(startFrame);
+        AnimationTime newEndTime = modApp->sourceFrameToAnimationTime(endFrame);
+        OVITO_ASSERT(newStartTime <= iv.start());
+        OVITO_ASSERT(newEndTime >= iv.end());
+        cachingIntervals.add(TimeInterval(newStartTime, newEndTime));
+    }
 }
 
 /******************************************************************************
@@ -103,10 +103,10 @@ void SmoothTrajectoryModifier::inputCachingHints(TimeIntervalUnion& cachingInter
 ******************************************************************************/
 void SmoothTrajectoryModifier::restrictInputValidityInterval(TimeInterval& iv) const
 {
-	Modifier::restrictInputValidityInterval(iv);
+    Modifier::restrictInputValidityInterval(iv);
 
-	// If the upstream pipeline changes, all computed output frames of the modifier become invalid.
-	iv.setEmpty();
+    // If the upstream pipeline changes, all computed output frames of the modifier become invalid.
+    iv.setEmpty();
 }
 
 /******************************************************************************
@@ -114,63 +114,63 @@ void SmoothTrajectoryModifier::restrictInputValidityInterval(TimeInterval& iv) c
 ******************************************************************************/
 Future<PipelineFlowState> SmoothTrajectoryModifier::evaluate(const ModifierEvaluationRequest& request, const PipelineFlowState& input)
 {
-	// Determine the current frame, preferably from the attribute stored with the pipeline flow state.
-	// If the source frame attribute is not present, fall back to inferring it from the current animation time.
-	int currentFrame = input.data() ? input.data()->sourceFrame() : -1;
-	if(currentFrame < 0)
-		currentFrame = request.modApp()->animationTimeToSourceFrame(request.time());
-	AnimationTime time1 = request.modApp()->sourceFrameToAnimationTime(currentFrame);
+    // Determine the current frame, preferably from the attribute stored with the pipeline flow state.
+    // If the source frame attribute is not present, fall back to inferring it from the current animation time.
+    int currentFrame = input.data() ? input.data()->sourceFrame() : -1;
+    if(currentFrame < 0)
+        currentFrame = request.modApp()->animationTimeToSourceFrame(request.time());
+    AnimationTime time1 = request.modApp()->sourceFrameToAnimationTime(currentFrame);
 
-	// If we are exactly on a source frame, there is no need to interpolate between frames.
-	if(time1 == request.time() && smoothingWindowSize() <= 1) {
-		// The validity of the resulting state is restricted to the current animation time.
-		PipelineFlowState output = input;
-		output.intersectStateValidity(time1);
-		return output;
-	}
+    // If we are exactly on a source frame, there is no need to interpolate between frames.
+    if(time1 == request.time() && smoothingWindowSize() <= 1) {
+        // The validity of the resulting state is restricted to the current animation time.
+        PipelineFlowState output = input;
+        output.intersectStateValidity(time1);
+        return output;
+    }
 
-	if(smoothingWindowSize() == 1) {
-		// Perform interpolation between two consecutive frames.
-		int nextFrame = currentFrame + 1;
-		AnimationTime time2 = request.modApp()->sourceFrameToAnimationTime(nextFrame);
+    if(smoothingWindowSize() == 1) {
+        // Perform interpolation between two consecutive frames.
+        int nextFrame = currentFrame + 1;
+        AnimationTime time2 = request.modApp()->sourceFrameToAnimationTime(nextFrame);
 
-		// Obtain the subsequent input frame by evaluating the upstream pipeline.
-		PipelineEvaluationRequest frameRequest = request;
-		frameRequest.setTime(time2);
+        // Obtain the subsequent input frame by evaluating the upstream pipeline.
+        PipelineEvaluationRequest frameRequest = request;
+        frameRequest.setTime(time2);
 
-		// Wait for the second frame to become available.
-		return request.modApp()->evaluateInput(frameRequest)
-			.then(*this, [this, request, state = input, time1, time2](const PipelineFlowState& nextState) mutable {
-				// Compute interpolated state.
-				interpolateState(state, nextState, request, time1, time2);
-				return std::move(state);
-			});
-	}
-	else {
-		// Perform averaging of several frames. Determine frame interval first.
-		int startFrame = currentFrame - (smoothingWindowSize() - 1) / 2;
-		int endFrame = currentFrame + smoothingWindowSize() / 2;
+        // Wait for the second frame to become available.
+        return request.modApp()->evaluateInput(frameRequest)
+            .then(*this, [this, request, state = input, time1, time2](const PipelineFlowState& nextState) mutable {
+                // Compute interpolated state.
+                interpolateState(state, nextState, request, time1, time2);
+                return std::move(state);
+            });
+    }
+    else {
+        // Perform averaging of several frames. Determine frame interval first.
+        int startFrame = currentFrame - (smoothingWindowSize() - 1) / 2;
+        int endFrame = currentFrame + smoothingWindowSize() / 2;
 
-		// Prepare the upstream pipeline request.
-		PipelineEvaluationRequest frameRequest = request;
-		frameRequest.setTime(request.modApp()->sourceFrameToAnimationTime(startFrame));
+        // Prepare the upstream pipeline request.
+        PipelineEvaluationRequest frameRequest = request;
+        frameRequest.setTime(request.modApp()->sourceFrameToAnimationTime(startFrame));
 
-		// List of animation times at which to evaluate the upstream pipeline.
-		std::vector<AnimationTime> otherTimes;
-		otherTimes.reserve(endFrame - startFrame);
-		for(int frame = startFrame; frame <= endFrame; frame++) {
-			if(frame != currentFrame)
-				otherTimes.push_back(request.modApp()->sourceFrameToAnimationTime(frame));
-		}
+        // List of animation times at which to evaluate the upstream pipeline.
+        std::vector<AnimationTime> otherTimes;
+        otherTimes.reserve(endFrame - startFrame);
+        for(int frame = startFrame; frame <= endFrame; frame++) {
+            if(frame != currentFrame)
+                otherTimes.push_back(request.modApp()->sourceFrameToAnimationTime(frame));
+        }
 
-		// Obtain the range of input frames from the upstream pipeline.
-		return request.modApp()->evaluateInputMultiple(frameRequest, std::move(otherTimes))
-			.then(*this, [this, state = input, request](const std::vector<PipelineFlowState>& otherStates) mutable {
-				// Compute smoothed state.
-				averageState(state, otherStates, request);
-				return std::move(state);
-			});
-	}
+        // Obtain the range of input frames from the upstream pipeline.
+        return request.modApp()->evaluateInputMultiple(frameRequest, std::move(otherTimes))
+            .then(*this, [this, state = input, request](const std::vector<PipelineFlowState>& otherStates) mutable {
+                // Compute smoothed state.
+                averageState(state, otherStates, request);
+                return std::move(state);
+            });
+    }
 }
 
 /******************************************************************************
@@ -178,49 +178,49 @@ Future<PipelineFlowState> SmoothTrajectoryModifier::evaluate(const ModifierEvalu
 ******************************************************************************/
 void SmoothTrajectoryModifier::evaluateSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state)
 {
-	// Determine the current frame, preferably from the attribute stored with the pipeline flow state.
-	// If the source frame attribute is not present, fall back to inferring it from the current animation time.
-	int currentFrame = state.data() ? state.data()->sourceFrame() : -1;
-	if(currentFrame < 0)
-		currentFrame = request.modApp()->animationTimeToSourceFrame(request.time());
-	AnimationTime time1 = request.modApp()->sourceFrameToAnimationTime(currentFrame);
+    // Determine the current frame, preferably from the attribute stored with the pipeline flow state.
+    // If the source frame attribute is not present, fall back to inferring it from the current animation time.
+    int currentFrame = state.data() ? state.data()->sourceFrame() : -1;
+    if(currentFrame < 0)
+        currentFrame = request.modApp()->animationTimeToSourceFrame(request.time());
+    AnimationTime time1 = request.modApp()->sourceFrameToAnimationTime(currentFrame);
 
-	// If we are exactly on a source frame, there is no need to interpolate between two consecutive frames.
-	if(time1 == request.time() && smoothingWindowSize() <= 1) {
-		// The validity of the resulting state is restricted to the current animation time.
-		state.intersectStateValidity(request.time());
-		return;
-	}
+    // If we are exactly on a source frame, there is no need to interpolate between two consecutive frames.
+    if(time1 == request.time() && smoothingWindowSize() <= 1) {
+        // The validity of the resulting state is restricted to the current animation time.
+        state.intersectStateValidity(request.time());
+        return;
+    }
 
-	if(smoothingWindowSize() == 1) {
-		// Perform interpolation between two consecutive frames.
-		int nextFrame = currentFrame + 1;
-		AnimationTime time2 = request.modApp()->sourceFrameToAnimationTime(nextFrame);
+    if(smoothingWindowSize() == 1) {
+        // Perform interpolation between two consecutive frames.
+        int nextFrame = currentFrame + 1;
+        AnimationTime time2 = request.modApp()->sourceFrameToAnimationTime(nextFrame);
 
-		// Get the second frame.
-		const PipelineFlowState& state2 = request.modApp()->evaluateInputSynchronous(PipelineEvaluationRequest(time2)); 
+        // Get the second frame.
+        const PipelineFlowState& state2 = request.modApp()->evaluateInputSynchronous(PipelineEvaluationRequest(time2)); 
 
-		// Perform the actual interpolation calculation.
-		interpolateState(state, state2, request, time1, time2);
-	}
-	else {
-		// Perform averaging of several frames. Determine frame interval.
-		int startFrame = currentFrame - (smoothingWindowSize() - 1) / 2;
-		int endFrame = currentFrame + smoothingWindowSize() / 2;
+        // Perform the actual interpolation calculation.
+        interpolateState(state, state2, request, time1, time2);
+    }
+    else {
+        // Perform averaging of several frames. Determine frame interval.
+        int startFrame = currentFrame - (smoothingWindowSize() - 1) / 2;
+        int endFrame = currentFrame + smoothingWindowSize() / 2;
 
-		// Obtain the range of input frames from the upstream pipeline.
-		std::vector<PipelineFlowState> otherStates;
-		otherStates.reserve(endFrame - startFrame);
-		for(int frame = startFrame; frame <= endFrame; frame++) {
-			if(frame != currentFrame) {
-				AnimationTime time2 = request.modApp()->sourceFrameToAnimationTime(frame);
-				otherStates.push_back(request.modApp()->evaluateInputSynchronous(PipelineEvaluationRequest(time2)));
-			}
-		}
+        // Obtain the range of input frames from the upstream pipeline.
+        std::vector<PipelineFlowState> otherStates;
+        otherStates.reserve(endFrame - startFrame);
+        for(int frame = startFrame; frame <= endFrame; frame++) {
+            if(frame != currentFrame) {
+                AnimationTime time2 = request.modApp()->sourceFrameToAnimationTime(frame);
+                otherStates.push_back(request.modApp()->evaluateInputSynchronous(PipelineEvaluationRequest(time2)));
+            }
+        }
 
-		// Compute smoothed state.
-		averageState(state, otherStates, request);
-	}
+        // Compute smoothed state.
+        averageState(state, otherStates, request);
+    }
 }
 
 /******************************************************************************
@@ -228,137 +228,137 @@ void SmoothTrajectoryModifier::evaluateSynchronous(const ModifierEvaluationReque
 ******************************************************************************/
 void SmoothTrajectoryModifier::interpolateState(PipelineFlowState& state1, const PipelineFlowState& state2, const ModifierEvaluationRequest& request, AnimationTime time1, AnimationTime time2)
 {
-	OVITO_ASSERT(!isUndoRecording());
+    OVITO_ASSERT(!isUndoRecording());
 
-	// Make sure the obtained reference configuration is valid and ready to use.
-	if(state2.status().type() == PipelineStatus::Error)
-		throw Exception(tr("Input state for frame %1 is not available: %2").arg(request.modApp()->animationTimeToSourceFrame(time2)).arg(state2.status().text()));
+    // Make sure the obtained reference configuration is valid and ready to use.
+    if(state2.status().type() == PipelineStatus::Error)
+        throw Exception(tr("Input state for frame %1 is not available: %2").arg(request.modApp()->animationTimeToSourceFrame(time2)).arg(state2.status().text()));
 
-	OVITO_ASSERT(time2 > time1);
-	FloatType t = (FloatType)(request.time() - time1) / (time2 - time1);
-	if(t < 0) t = 0;
-	else if(t > 1) t = 1;
+    OVITO_ASSERT(time2 > time1);
+    FloatType t = (FloatType)(request.time() - time1) / (time2 - time1);
+    if(t < 0) t = 0;
+    else if(t > 1) t = 1;
 
-	const SimulationCellObject* cell1 = state1.getObject<SimulationCellObject>();
-	const SimulationCellObject* cell2 = state2.getObject<SimulationCellObject>();
+    const SimulationCellObject* cell1 = state1.getObject<SimulationCellObject>();
+    const SimulationCellObject* cell2 = state2.getObject<SimulationCellObject>();
 
-	// Interpolate particle positions.
-	const ParticlesObject* particles1 = state1.expectObject<ParticlesObject>();
-	const ParticlesObject* particles2 = state2.getObject<ParticlesObject>();
-	if(!particles2 || particles1->elementCount() != particles2->elementCount())
-		throw Exception(tr("Cannot interpolate between consecutive simulation frames, because they contain different numbers of particles."));
-	particles1->verifyIntegrity();
-	particles2->verifyIntegrity();
-	ConstPropertyAccess<Point3> posProperty2 = particles2->expectProperty(ParticlesObject::PositionProperty);
-	ConstPropertyAccess<qlonglong> idProperty1 = particles1->getProperty(ParticlesObject::IdentifierProperty);
-	ConstPropertyAccess<qlonglong> idProperty2 = particles2->getProperty(ParticlesObject::IdentifierProperty);
-	ParticlesObject* outputParticles = state1.makeMutable(particles1);
-	PropertyAccess<Point3> outputPositions = outputParticles->createProperty(ParticlesObject::PositionProperty, DataBuffer::InitializeMemory);
-	std::unordered_map<qlonglong, size_t> idmap;
-	if(idProperty1 && idProperty2 && !boost::equal(idProperty1, idProperty2)) {
+    // Interpolate particle positions.
+    const ParticlesObject* particles1 = state1.expectObject<ParticlesObject>();
+    const ParticlesObject* particles2 = state2.getObject<ParticlesObject>();
+    if(!particles2 || particles1->elementCount() != particles2->elementCount())
+        throw Exception(tr("Cannot interpolate between consecutive simulation frames, because they contain different numbers of particles."));
+    particles1->verifyIntegrity();
+    particles2->verifyIntegrity();
+    ConstPropertyAccess<Point3> posProperty2 = particles2->expectProperty(ParticlesObject::PositionProperty);
+    ConstPropertyAccess<qlonglong> idProperty1 = particles1->getProperty(ParticlesObject::IdentifierProperty);
+    ConstPropertyAccess<qlonglong> idProperty2 = particles2->getProperty(ParticlesObject::IdentifierProperty);
+    ParticlesObject* outputParticles = state1.makeMutable(particles1);
+    PropertyAccess<Point3> outputPositions = outputParticles->createProperty(ParticlesObject::PositionProperty, DataBuffer::InitializeMemory);
+    std::unordered_map<qlonglong, size_t> idmap;
+    if(idProperty1 && idProperty2 && !boost::equal(idProperty1, idProperty2)) {
 
-		// Build ID-to-index map.
-		size_t index = 0;
-		for(auto id : idProperty2) {
-			if(!idmap.insert(std::make_pair(id,index)).second)
-				throw Exception(tr("Detected duplicate particle ID: %1. Cannot interpolate trajectories in this case.").arg(id));
-			index++;
-		}
+        // Build ID-to-index map.
+        size_t index = 0;
+        for(auto id : idProperty2) {
+            if(!idmap.insert(std::make_pair(id,index)).second)
+                throw Exception(tr("Detected duplicate particle ID: %1. Cannot interpolate trajectories in this case.").arg(id));
+            index++;
+        }
 
-		if(useMinimumImageConvention() && cell1) {
-			auto id = idProperty1.cbegin();
-			for(Point3& p1 : outputPositions) {
-				auto mapEntry = idmap.find(*id);
-				if(mapEntry == idmap.end())
-					throw Exception(tr("Cannot interpolate between consecutive frames, because the identity of particles changes between frames."));
-				Vector3 delta = cell1->wrapVector(posProperty2[mapEntry->second] - p1);
-				p1 += delta * t;
-				++id;
-			}
-		}
-		else {
-			auto id = idProperty1.cbegin();
-			for(Point3& p1 : outputPositions) {
-				auto mapEntry = idmap.find(*id);
-				if(mapEntry == idmap.end())
-					throw Exception(tr("Cannot interpolate between consecutive frames, because the identity of particles changes between frames."));
-				p1 += (posProperty2[mapEntry->second] - p1) * t;
-				++id;
-			}
-		}
-	}
-	else {
-		const Point3* p2 = posProperty2.cbegin();
-		if(useMinimumImageConvention() && cell1) {
-			for(Point3& p1 : outputPositions) {
-				Vector3 delta = cell1->wrapVector((*p2++) - p1);
-				p1 += delta * t;
-			}
-		}
-		else {
-			for(Point3& p1 : outputPositions) {
-				p1 += ((*p2++) - p1) * t;
-			}
-		}
-	}
+        if(useMinimumImageConvention() && cell1) {
+            auto id = idProperty1.cbegin();
+            for(Point3& p1 : outputPositions) {
+                auto mapEntry = idmap.find(*id);
+                if(mapEntry == idmap.end())
+                    throw Exception(tr("Cannot interpolate between consecutive frames, because the identity of particles changes between frames."));
+                Vector3 delta = cell1->wrapVector(posProperty2[mapEntry->second] - p1);
+                p1 += delta * t;
+                ++id;
+            }
+        }
+        else {
+            auto id = idProperty1.cbegin();
+            for(Point3& p1 : outputPositions) {
+                auto mapEntry = idmap.find(*id);
+                if(mapEntry == idmap.end())
+                    throw Exception(tr("Cannot interpolate between consecutive frames, because the identity of particles changes between frames."));
+                p1 += (posProperty2[mapEntry->second] - p1) * t;
+                ++id;
+            }
+        }
+    }
+    else {
+        const Point3* p2 = posProperty2.cbegin();
+        if(useMinimumImageConvention() && cell1) {
+            for(Point3& p1 : outputPositions) {
+                Vector3 delta = cell1->wrapVector((*p2++) - p1);
+                p1 += delta * t;
+            }
+        }
+        else {
+            for(Point3& p1 : outputPositions) {
+                p1 += ((*p2++) - p1) * t;
+            }
+        }
+    }
 
-	// Interpolate particle orientations.
-	if(ConstPropertyAccess<Quaternion> orientationProperty2 = particles2->getProperty(ParticlesObject::OrientationProperty)) {
-		PropertyAccess<Quaternion> outputOrientations = outputParticles->createProperty(ParticlesObject::OrientationProperty, DataBuffer::InitializeMemory);
-		if(idProperty1 && idProperty2 && !boost::equal(idProperty1, idProperty2)) {
-			auto id = idProperty1.cbegin();
-			for(Quaternion& q1 : outputOrientations) {
-				auto mapEntry = idmap.find(*id);
-				OVITO_ASSERT(mapEntry != idmap.end());
-				q1 = Quaternion::interpolateSafely(q1, orientationProperty2[mapEntry->second], t);
-				++id;
-			}
-		}
-		else {
-			const Quaternion* q2 = orientationProperty2.cbegin();
-			for(Quaternion& q1 : outputOrientations) {
-				q1 = Quaternion::interpolateSafely(q1, *q2++, t);
-			}
-		}
-	}
+    // Interpolate particle orientations.
+    if(ConstPropertyAccess<Quaternion> orientationProperty2 = particles2->getProperty(ParticlesObject::OrientationProperty)) {
+        PropertyAccess<Quaternion> outputOrientations = outputParticles->createProperty(ParticlesObject::OrientationProperty, DataBuffer::InitializeMemory);
+        if(idProperty1 && idProperty2 && !boost::equal(idProperty1, idProperty2)) {
+            auto id = idProperty1.cbegin();
+            for(Quaternion& q1 : outputOrientations) {
+                auto mapEntry = idmap.find(*id);
+                OVITO_ASSERT(mapEntry != idmap.end());
+                q1 = Quaternion::interpolateSafely(q1, orientationProperty2[mapEntry->second], t);
+                ++id;
+            }
+        }
+        else {
+            const Quaternion* q2 = orientationProperty2.cbegin();
+            for(Quaternion& q1 : outputOrientations) {
+                q1 = Quaternion::interpolateSafely(q1, *q2++, t);
+            }
+        }
+    }
 
-	// Interpolate all scalar and continuous particle properties.
-	for(const PropertyObject* property1 : particles1->properties()) {
-		if(property1->dataType() == PropertyObject::Float && property1->componentCount() == 1) {
-			const PropertyObject* property2 = (property1->type() != 0) ? particles2->getProperty(property1->type()) : particles2->getProperty(property1->name());
-			if(property2 && property2->dataType() == property1->dataType() && property2->componentCount() == property1->componentCount()) {
-				PropertyAccess<FloatType> data1 = outputParticles->makeMutable(property1);
-				ConstPropertyAccess<FloatType> data2(property2);
-				if(idProperty1 && idProperty2 && !boost::equal(idProperty1, idProperty2)) {
-					auto id = idProperty1.cbegin();
-					for(FloatType& v1 : data1) {
-						auto mapEntry = idmap.find(*id);
-						OVITO_ASSERT(mapEntry != idmap.end());
-						v1 = v1 * (FloatType(1) - t) + data2[mapEntry->second] * t;
-						++id;
-					}
-				}
-				else {
-					const FloatType* v2 = data2.cbegin();
-					for(FloatType& v1 : data1) {
-						v1 = v1 * (FloatType(1) - t) + *v2++ * t;
-					}
-				}
+    // Interpolate all scalar and continuous particle properties.
+    for(const PropertyObject* property1 : particles1->properties()) {
+        if(property1->dataType() == PropertyObject::Float && property1->componentCount() == 1) {
+            const PropertyObject* property2 = (property1->type() != 0) ? particles2->getProperty(property1->type()) : particles2->getProperty(property1->name());
+            if(property2 && property2->dataType() == property1->dataType() && property2->componentCount() == property1->componentCount()) {
+                PropertyAccess<FloatType> data1 = outputParticles->makeMutable(property1);
+                ConstPropertyAccess<FloatType> data2(property2);
+                if(idProperty1 && idProperty2 && !boost::equal(idProperty1, idProperty2)) {
+                    auto id = idProperty1.cbegin();
+                    for(FloatType& v1 : data1) {
+                        auto mapEntry = idmap.find(*id);
+                        OVITO_ASSERT(mapEntry != idmap.end());
+                        v1 = v1 * (FloatType(1) - t) + data2[mapEntry->second] * t;
+                        ++id;
+                    }
+                }
+                else {
+                    const FloatType* v2 = data2.cbegin();
+                    for(FloatType& v1 : data1) {
+                        v1 = v1 * (FloatType(1) - t) + *v2++ * t;
+                    }
+                }
 
-			}
-		}
-	}
+            }
+        }
+    }
 
-	// Interpolate simulation cell vectors.
-	if(cell1 && cell2) {
-		const AffineTransformation cellMat1 = cell1->cellMatrix();
-		const AffineTransformation delta = cell2->cellMatrix() - cellMat1;
-		SimulationCellObject* outputCell = state1.expectMutableObject<SimulationCellObject>();
-		outputCell->setCellMatrix(cellMat1 + delta * t);
-	}
+    // Interpolate simulation cell vectors.
+    if(cell1 && cell2) {
+        const AffineTransformation cellMat1 = cell1->cellMatrix();
+        const AffineTransformation delta = cell2->cellMatrix() - cellMat1;
+        SimulationCellObject* outputCell = state1.expectMutableObject<SimulationCellObject>();
+        outputCell->setCellMatrix(cellMat1 + delta * t);
+    }
 
-	// The validity of the interpolated state is restricted to the current animation time.
-	state1.intersectStateValidity(request.time());
+    // The validity of the interpolated state is restricted to the current animation time.
+    state1.intersectStateValidity(request.time());
 }
 
 /******************************************************************************
@@ -366,195 +366,195 @@ void SmoothTrajectoryModifier::interpolateState(PipelineFlowState& state1, const
 ******************************************************************************/
 void SmoothTrajectoryModifier::averageState(PipelineFlowState& state1, const std::vector<PipelineFlowState>& otherStates, const ModifierEvaluationRequest& request)
 {
-	OVITO_ASSERT(!isUndoRecording());
+    OVITO_ASSERT(!isUndoRecording());
 
-	// Get particle positions and simulation cell of the central frame.
-	const SimulationCellObject* cell1 = state1.getObject<SimulationCellObject>();
-	const ParticlesObject* particles1 = state1.expectObject<ParticlesObject>();
-	particles1->verifyIntegrity();
-	ConstPropertyAccessAndRef<Point3> posProperty1 = particles1->expectProperty(ParticlesObject::PositionProperty);
-	ConstPropertyAccess<qlonglong> idProperty1 = particles1->getProperty(ParticlesObject::IdentifierProperty);
+    // Get particle positions and simulation cell of the central frame.
+    const SimulationCellObject* cell1 = state1.getObject<SimulationCellObject>();
+    const ParticlesObject* particles1 = state1.expectObject<ParticlesObject>();
+    particles1->verifyIntegrity();
+    ConstPropertyAccessAndRef<Point3> posProperty1 = particles1->expectProperty(ParticlesObject::PositionProperty);
+    ConstPropertyAccess<qlonglong> idProperty1 = particles1->getProperty(ParticlesObject::IdentifierProperty);
 
-	// Create a modifiable copy of the particle coordinates array.
-	ParticlesObject* outputParticles = state1.makeMutable(particles1);
-	PropertyAccess<Point3> outputPositions = outputParticles->createProperty(ParticlesObject::PositionProperty);
-	boost::fill(outputPositions, Point3::Origin());
+    // Create a modifiable copy of the particle coordinates array.
+    ParticlesObject* outputParticles = state1.makeMutable(particles1);
+    PropertyAccess<Point3> outputPositions = outputParticles->createProperty(ParticlesObject::PositionProperty);
+    boost::fill(outputPositions, Point3::Origin());
 
-	// Create output orientations array if smoothing particle orientations.
-	PropertyAccess<Quaternion> outputOrientations = particles1->getProperty(ParticlesObject::OrientationProperty)
-		? outputParticles->createProperty(ParticlesObject::OrientationProperty, DataBuffer::InitializeMemory)
-		: nullptr;
+    // Create output orientations array if smoothing particle orientations.
+    PropertyAccess<Quaternion> outputOrientations = particles1->getProperty(ParticlesObject::OrientationProperty)
+        ? outputParticles->createProperty(ParticlesObject::OrientationProperty, DataBuffer::InitializeMemory)
+        : nullptr;
 
-	// Create copies of all scalar continuous particle properties.
-	std::vector<PropertyAccess<FloatType>> outputScalarProperties;
-	for(const PropertyObject* property : particles1->properties()) {
-		if(property->dataType() == PropertyObject::Float && property->componentCount() == 1) {
-			outputScalarProperties.emplace_back(outputParticles->makeMutable(property));
-		}
-	}
+    // Create copies of all scalar continuous particle properties.
+    std::vector<PropertyAccess<FloatType>> outputScalarProperties;
+    for(const PropertyObject* property : particles1->properties()) {
+        if(property->dataType() == PropertyObject::Float && property->componentCount() == 1) {
+            outputScalarProperties.emplace_back(outputParticles->makeMutable(property));
+        }
+    }
 
-	// For interpolating the simulation cell vectors.
-	AffineTransformation averageCellMat;
-	if(cell1)
-		averageCellMat = cell1->cellMatrix();
-	int cellCount = cell1 ? 1 : 0;
+    // For interpolating the simulation cell vectors.
+    AffineTransformation averageCellMat;
+    if(cell1)
+        averageCellMat = cell1->cellMatrix();
+    int cellCount = cell1 ? 1 : 0;
 
-	// Keep track on a per-particle basis of how many different frames get averaged.
-	// This is needed to support systems with varying particle counts.
-	// Averaging only takes place over the interval of frames during which a particle exists.
-	std::vector<int> particleStateCounts(outputParticles->elementCount(), 1);
+    // Keep track on a per-particle basis of how many different frames get averaged.
+    // This is needed to support systems with varying particle counts.
+    // Averaging only takes place over the interval of frames during which a particle exists.
+    std::vector<int> particleStateCounts(outputParticles->elementCount(), 1);
 
-	// Iterate over all frames within the averaging window (except the central frame).
-	for(const PipelineFlowState& state2 : otherStates) {
+    // Iterate over all frames within the averaging window (except the central frame).
+    for(const PipelineFlowState& state2 : otherStates) {
 
-		// Make sure the obtained reference configuration is valid and ready to use.
-		if(state2.status().type() == PipelineStatus::Error)
-			throw Exception(tr("An input frame for trajectory smoothing is unavailable: %1").arg(state2.status().text()));
+        // Make sure the obtained reference configuration is valid and ready to use.
+        if(state2.status().type() == PipelineStatus::Error)
+            throw Exception(tr("An input frame for trajectory smoothing is unavailable: %1").arg(state2.status().text()));
 
-		const ParticlesObject* particles2 = state2.getObject<ParticlesObject>();
-		if(!particles2)
-			continue;
-		particles2->verifyIntegrity();
-		ConstPropertyAccess<Point3> posProperty2 = particles2->expectProperty(ParticlesObject::PositionProperty);
-		ConstPropertyAccess<qlonglong> idProperty2 = particles2->getProperty(ParticlesObject::IdentifierProperty);
+        const ParticlesObject* particles2 = state2.getObject<ParticlesObject>();
+        if(!particles2)
+            continue;
+        particles2->verifyIntegrity();
+        ConstPropertyAccess<Point3> posProperty2 = particles2->expectProperty(ParticlesObject::PositionProperty);
+        ConstPropertyAccess<qlonglong> idProperty2 = particles2->getProperty(ParticlesObject::IdentifierProperty);
 
-		// Sum up cell vectors.
-		const SimulationCellObject* cell2 = cell1 ? state2.expectObject<SimulationCellObject>() : nullptr;
-		if(cell2) {
-			averageCellMat += cell2->cellMatrix();
-			cellCount++;
-		}
-		bool wrapVectors = (useMinimumImageConvention() && cell2);
-		auto psc = particleStateCounts.begin();
+        // Sum up cell vectors.
+        const SimulationCellObject* cell2 = cell1 ? state2.expectObject<SimulationCellObject>() : nullptr;
+        if(cell2) {
+            averageCellMat += cell2->cellMatrix();
+            cellCount++;
+        }
+        bool wrapVectors = (useMinimumImageConvention() && cell2);
+        auto psc = particleStateCounts.begin();
 
-		if(idProperty1 && idProperty2 && !boost::equal(idProperty1, idProperty2)) {
-			// Build ID-to-index map.
-			std::unordered_map<qlonglong,size_t> idmap;
-			size_t index = 0;
-			for(auto id : idProperty2) {
-				if(!idmap.insert(std::make_pair(id,index)).second)
-					throw Exception(tr("Detected duplicate particle ID: %1. Cannot smooth trajectories in this case.").arg(id));
-				index++;
-			}
+        if(idProperty1 && idProperty2 && !boost::equal(idProperty1, idProperty2)) {
+            // Build ID-to-index map.
+            std::unordered_map<qlonglong,size_t> idmap;
+            size_t index = 0;
+            for(auto id : idProperty2) {
+                if(!idmap.insert(std::make_pair(id,index)).second)
+                    throw Exception(tr("Detected duplicate particle ID: %1. Cannot smooth trajectories in this case.").arg(id));
+                index++;
+            }
 
-			// Calculate mean displacements relative to current positions.
-			const Point3* p1 = posProperty1.cbegin();
-			auto id = idProperty1.cbegin();
-			for(Point3& pout : outputPositions) {
-				if(auto mapEntry = idmap.find(*id); mapEntry != idmap.end()) {
-					Vector3 delta = posProperty2[mapEntry->second] - (*p1);
-					pout += wrapVectors ? cell2->wrapVector(delta) : delta;
-					(*psc)++;
-				}
-				++p1;
-				++id;
-				++psc;
-			}
+            // Calculate mean displacements relative to current positions.
+            const Point3* p1 = posProperty1.cbegin();
+            auto id = idProperty1.cbegin();
+            for(Point3& pout : outputPositions) {
+                if(auto mapEntry = idmap.find(*id); mapEntry != idmap.end()) {
+                    Vector3 delta = posProperty2[mapEntry->second] - (*p1);
+                    pout += wrapVectors ? cell2->wrapVector(delta) : delta;
+                    (*psc)++;
+                }
+                ++p1;
+                ++id;
+                ++psc;
+            }
 
-			// Average particle orientations over time.
-			if(outputOrientations) {
-				if(ConstPropertyAccess<Quaternion> orientationProperty2 = particles2->getProperty(ParticlesObject::OrientationProperty)) {
-					auto id = idProperty1.cbegin();
-					for(Quaternion& qout : outputOrientations) {
-						if(auto mapEntry = idmap.find(*id); mapEntry != idmap.end()) {
-							const Quaternion& q2 = orientationProperty2[mapEntry->second];
-							qout.x() += q2.x();
-							qout.y() += q2.y();
-							qout.z() += q2.z();
-							qout.w() += q2.w();
-						}
-						++id;
-					}
-				}
-			}
+            // Average particle orientations over time.
+            if(outputOrientations) {
+                if(ConstPropertyAccess<Quaternion> orientationProperty2 = particles2->getProperty(ParticlesObject::OrientationProperty)) {
+                    auto id = idProperty1.cbegin();
+                    for(Quaternion& qout : outputOrientations) {
+                        if(auto mapEntry = idmap.find(*id); mapEntry != idmap.end()) {
+                            const Quaternion& q2 = orientationProperty2[mapEntry->second];
+                            qout.x() += q2.x();
+                            qout.y() += q2.y();
+                            qout.z() += q2.z();
+                            qout.w() += q2.w();
+                        }
+                        ++id;
+                    }
+                }
+            }
 
-			// Average all scalar continuous properties.
-			for(auto& accessor : outputScalarProperties) {
-				const PropertyObject* property2 = (accessor.buffer()->type() != 0) ? particles2->getProperty(accessor.buffer()->type()) : particles2->getProperty(accessor.buffer()->name());
-				if(property2 && property2->dataType() == accessor.dataType() && property2->componentCount() == accessor.componentCount()) {
-					ConstPropertyAccess<FloatType> accessor2(property2);
-					auto id = idProperty1.cbegin();
-					for(FloatType& v : accessor) {
-						if(auto mapEntry = idmap.find(*id); mapEntry != idmap.end()) {
-							v += accessor2[mapEntry->second];
-						}
-						++id;
-					}
-				}
-			}
-		}
-		else {
-			// Calculate mean displacements relative to current positions.
-			const Point3* p1 = posProperty1.cbegin();
-			const Point3* p2 = posProperty2.cbegin();
-			auto pout = outputPositions.begin();
-			for(auto pend = pout + std::min(posProperty1.size(), posProperty2.size()); pout != pend; ++pout, ++p1, ++p2, ++psc) {
-				Vector3 delta = (*p2) - (*p1);
-				*pout += wrapVectors ? cell2->wrapVector(delta) : delta;
-				(*psc)++;
-			}
-			OVITO_ASSERT(p1 == posProperty1.cend() || p2 == posProperty2.cend());
+            // Average all scalar continuous properties.
+            for(auto& accessor : outputScalarProperties) {
+                const PropertyObject* property2 = (accessor.buffer()->type() != 0) ? particles2->getProperty(accessor.buffer()->type()) : particles2->getProperty(accessor.buffer()->name());
+                if(property2 && property2->dataType() == accessor.dataType() && property2->componentCount() == accessor.componentCount()) {
+                    ConstPropertyAccess<FloatType> accessor2(property2);
+                    auto id = idProperty1.cbegin();
+                    for(FloatType& v : accessor) {
+                        if(auto mapEntry = idmap.find(*id); mapEntry != idmap.end()) {
+                            v += accessor2[mapEntry->second];
+                        }
+                        ++id;
+                    }
+                }
+            }
+        }
+        else {
+            // Calculate mean displacements relative to current positions.
+            const Point3* p1 = posProperty1.cbegin();
+            const Point3* p2 = posProperty2.cbegin();
+            auto pout = outputPositions.begin();
+            for(auto pend = pout + std::min(posProperty1.size(), posProperty2.size()); pout != pend; ++pout, ++p1, ++p2, ++psc) {
+                Vector3 delta = (*p2) - (*p1);
+                *pout += wrapVectors ? cell2->wrapVector(delta) : delta;
+                (*psc)++;
+            }
+            OVITO_ASSERT(p1 == posProperty1.cend() || p2 == posProperty2.cend());
 
-			// Average particle orientations over time.
-			if(outputOrientations) {
-				if(ConstPropertyAccess<Quaternion> orientationProperty2 = particles2->getProperty(ParticlesObject::OrientationProperty)) {
-					const Quaternion* q2 = orientationProperty2.cbegin();
-					for(Quaternion* qout = outputOrientations.begin(), *qend = qout + std::min(outputOrientations.size(), orientationProperty2.size()); qout != qend; ++qout, ++q2) {
-						qout->x() += q2->x();
-						qout->y() += q2->y();
-						qout->z() += q2->z();
-						qout->w() += q2->w();
-					}
-				}
-			}
+            // Average particle orientations over time.
+            if(outputOrientations) {
+                if(ConstPropertyAccess<Quaternion> orientationProperty2 = particles2->getProperty(ParticlesObject::OrientationProperty)) {
+                    const Quaternion* q2 = orientationProperty2.cbegin();
+                    for(Quaternion* qout = outputOrientations.begin(), *qend = qout + std::min(outputOrientations.size(), orientationProperty2.size()); qout != qend; ++qout, ++q2) {
+                        qout->x() += q2->x();
+                        qout->y() += q2->y();
+                        qout->z() += q2->z();
+                        qout->w() += q2->w();
+                    }
+                }
+            }
 
-			// Average all scalar continuous properties.
-			for(auto& accessor : outputScalarProperties) {
-				const PropertyObject* property2 = (accessor.buffer()->type() != 0) ? particles2->getProperty(accessor.buffer()->type()) : particles2->getProperty(accessor.buffer()->name());
-				if(property2 && property2->dataType() == accessor.dataType() && property2->componentCount() == accessor.componentCount()) {
-					ConstPropertyAccess<FloatType> accessor2(property2);
-					const FloatType* v2 = accessor2.cbegin();
-					for(FloatType* vout = accessor.begin(), *vend = vout + std::min(accessor.size(), accessor2.size()); vout != vend; ++vout, ++v2) {
-						*vout += *v2;
-					}
-				}
-			}
-		}
-	}
+            // Average all scalar continuous properties.
+            for(auto& accessor : outputScalarProperties) {
+                const PropertyObject* property2 = (accessor.buffer()->type() != 0) ? particles2->getProperty(accessor.buffer()->type()) : particles2->getProperty(accessor.buffer()->name());
+                if(property2 && property2->dataType() == accessor.dataType() && property2->componentCount() == accessor.componentCount()) {
+                    ConstPropertyAccess<FloatType> accessor2(property2);
+                    const FloatType* v2 = accessor2.cbegin();
+                    for(FloatType* vout = accessor.begin(), *vend = vout + std::min(accessor.size(), accessor2.size()); vout != vend; ++vout, ++v2) {
+                        *vout += *v2;
+                    }
+                }
+            }
+        }
+    }
 
-	// Calculate mean position from current position plus mean of displacement vector.
-	auto psc = particleStateCounts.cbegin();
-	const Point3* p1 = posProperty1.cbegin();
-	for(Point3& p : outputPositions) {
-		p /= (*psc++);
-		p += (*p1++) - Point3::Origin();
-	}
-	OVITO_ASSERT(psc == particleStateCounts.cend());
-	OVITO_ASSERT(p1 == posProperty1.cend());
+    // Calculate mean position from current position plus mean of displacement vector.
+    auto psc = particleStateCounts.cbegin();
+    const Point3* p1 = posProperty1.cbegin();
+    for(Point3& p : outputPositions) {
+        p /= (*psc++);
+        p += (*p1++) - Point3::Origin();
+    }
+    OVITO_ASSERT(psc == particleStateCounts.cend());
+    OVITO_ASSERT(p1 == posProperty1.cend());
 
-	// Normalize orientation quaternions.
-	if(outputOrientations) {
-		for(Quaternion& q : outputOrientations) {
-			q.normalizeSafely();
-		}
-	}
+    // Normalize orientation quaternions.
+    if(outputOrientations) {
+        for(Quaternion& q : outputOrientations) {
+            q.normalizeSafely();
+        }
+    }
 
-	// Calculate means of the auxiliary properties.
-	for(auto& accessor : outputScalarProperties) {
-		auto psc = particleStateCounts.cbegin();
-		for(FloatType& v : accessor)
-			v /= *psc++;
-		OVITO_ASSERT(psc == particleStateCounts.cend());
-	}
+    // Calculate means of the auxiliary properties.
+    for(auto& accessor : outputScalarProperties) {
+        auto psc = particleStateCounts.cbegin();
+        for(FloatType& v : accessor)
+            v /= *psc++;
+        OVITO_ASSERT(psc == particleStateCounts.cend());
+    }
 
-	// Compute average of simulation cell vectors.
-	if(cell1 && cellCount) {
-		SimulationCellObject* outputCell = state1.expectMutableObject<SimulationCellObject>();
-		outputCell->setCellMatrix(averageCellMat * (1.0 / cellCount));
-	}
+    // Compute average of simulation cell vectors.
+    if(cell1 && cellCount) {
+        SimulationCellObject* outputCell = state1.expectMutableObject<SimulationCellObject>();
+        outputCell->setCellMatrix(averageCellMat * (1.0 / cellCount));
+    }
 
-	// The validity of the interpolated state is restricted to the current animation time.
-	state1.intersectStateValidity(request.time());
+    // The validity of the interpolated state is restricted to the current animation time.
+    state1.intersectStateValidity(request.time());
 }
 
-}	// End of namespace
+}   // End of namespace

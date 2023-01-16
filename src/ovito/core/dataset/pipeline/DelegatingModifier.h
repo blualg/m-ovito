@@ -35,77 +35,77 @@ class OVITO_CORE_EXPORT ModifierDelegate : public RefTarget
 {
 public:
 
-	/// Give modifier delegates their own metaclass.
-	class OVITO_CORE_EXPORT ModifierDelegateClass : public RefTarget::OOMetaClass
-	{
-	public:
+    /// Give modifier delegates their own metaclass.
+    class OVITO_CORE_EXPORT ModifierDelegateClass : public RefTarget::OOMetaClass
+    {
+    public:
 
-		/// Inherit constructor from base class.
-		using RefTarget::OOMetaClass::OOMetaClass;
+        /// Inherit constructor from base class.
+        using RefTarget::OOMetaClass::OOMetaClass;
 
-		/// Indicates which data objects in the given input data collection the modifier delegate is able to operate on.
-		virtual QVector<DataObjectReference> getApplicableObjects(const DataCollection& input) const {
-			OVITO_ASSERT_MSG(false, "ModifierDelegate::OOMetaClass::getApplicableObjects()",
-				qPrintable(QStringLiteral("Metaclass of modifier delegate class %1 does not override the getApplicableObjects() method.").arg(name())));
-			return {};
-		}
+        /// Indicates which data objects in the given input data collection the modifier delegate is able to operate on.
+        virtual QVector<DataObjectReference> getApplicableObjects(const DataCollection& input) const {
+            OVITO_ASSERT_MSG(false, "ModifierDelegate::OOMetaClass::getApplicableObjects()",
+                qPrintable(QStringLiteral("Metaclass of modifier delegate class %1 does not override the getApplicableObjects() method.").arg(name())));
+            return {};
+        }
 
-		/// Asks the metaclass which data objects in the given input pipeline state the modifier delegate can operate on.
-		QVector<DataObjectReference> getApplicableObjects(const PipelineFlowState& input) const {
-			if(!input) return {};
-			return getApplicableObjects(*input.data());
-		}
+        /// Asks the metaclass which data objects in the given input pipeline state the modifier delegate can operate on.
+        QVector<DataObjectReference> getApplicableObjects(const PipelineFlowState& input) const {
+            if(!input) return {};
+            return getApplicableObjects(*input.data());
+        }
 
-		/// Indicates which class of data objects the modifier delegate is able to operate on.
-		virtual const DataObject::OOMetaClass& getApplicableObjectClass() const {
-			OVITO_ASSERT_MSG(false, "ModifierDelegate::OOMetaClass::getApplicableObjectClass()",
-				qPrintable(QStringLiteral("Metaclass of modifier delegate class %1 does not override the getApplicableObjectClass() method.").arg(name())));
-			return DataObject::OOClass();
-		}
+        /// Indicates which class of data objects the modifier delegate is able to operate on.
+        virtual const DataObject::OOMetaClass& getApplicableObjectClass() const {
+            OVITO_ASSERT_MSG(false, "ModifierDelegate::OOMetaClass::getApplicableObjectClass()",
+                qPrintable(QStringLiteral("Metaclass of modifier delegate class %1 does not override the getApplicableObjectClass() method.").arg(name())));
+            return DataObject::OOClass();
+        }
 
-		/// \brief The name by which Python scripts can refer to this modifier delegate.
-		virtual QString pythonDataName() const {
-			OVITO_ASSERT_MSG(false, "ModifierDelegate::OOMetaClass::pythonDataName()",
-				qPrintable(QStringLiteral("Metaclass of modifier delegate class %1 does not override the pythonDataName() method.").arg(name())));
-			return {};
-		}
-	};
+        /// \brief The name by which Python scripts can refer to this modifier delegate.
+        virtual QString pythonDataName() const {
+            OVITO_ASSERT_MSG(false, "ModifierDelegate::OOMetaClass::pythonDataName()",
+                qPrintable(QStringLiteral("Metaclass of modifier delegate class %1 does not override the pythonDataName() method.").arg(name())));
+            return {};
+        }
+    };
 
-	Q_CLASSINFO("ClassNameAlias", "AsynchronousModifierDelegate");	// For backward compatibility with OVITO 3.2.1.
-	OVITO_CLASS_META(ModifierDelegate, ModifierDelegateClass)
+    Q_CLASSINFO("ClassNameAlias", "AsynchronousModifierDelegate");  // For backward compatibility with OVITO 3.2.1.
+    OVITO_CLASS_META(ModifierDelegate, ModifierDelegateClass)
 
 #ifdef OVITO_QML_GUI
-	Q_PROPERTY(bool enabled READ isEnabled WRITE setEnabled NOTIFY propertyValueChangedSignal)
+    Q_PROPERTY(bool enabled READ isEnabled WRITE setEnabled NOTIFY propertyValueChangedSignal)
 #endif
 
 protected:
 
-	/// \brief Constructor.
-	explicit ModifierDelegate(ObjectCreationParams params, const DataObjectReference& inputDataObj = DataObjectReference()) : RefTarget(params), _isEnabled(true), _inputDataObject(inputDataObj) {}
+    /// \brief Constructor.
+    explicit ModifierDelegate(ObjectCreationParams params, const DataObjectReference& inputDataObj = DataObjectReference()) : RefTarget(params), _isEnabled(true), _inputDataObject(inputDataObj) {}
 
 public:
 
-	/// \brief Determines the time interval over which a computed pipeline state will remain valid.
-	virtual TimeInterval validityInterval(const ModifierEvaluationRequest& request) const { return TimeInterval::infinite(); }
+    /// \brief Determines the time interval over which a computed pipeline state will remain valid.
+    virtual TimeInterval validityInterval(const ModifierEvaluationRequest& request) const { return TimeInterval::infinite(); }
 
-	/// \brief Applies the modifier operation to the data in a pipeline flow state.
-	virtual PipelineStatus apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const PipelineFlowState& inputState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs) { return PipelineStatus::Success; }
+    /// \brief Applies the modifier operation to the data in a pipeline flow state.
+    virtual PipelineStatus apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const PipelineFlowState& inputState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs) { return PipelineStatus::Success; }
 
-	/// \brief Returns the modifier owning this delegate.
-	Modifier* modifier() const;
+    /// \brief Returns the modifier owning this delegate.
+    Modifier* modifier() const;
 
 #ifdef OVITO_QML_GUI
-	/// Asks the delegate whether it can operate on  the given input pipeline state.
-	Q_INVOKABLE bool canOperateOnInput(ModifierApplication* modApp) const;
+    /// Asks the delegate whether it can operate on  the given input pipeline state.
+    Q_INVOKABLE bool canOperateOnInput(ModifierApplication* modApp) const;
 #endif
 
 private:
 
-	/// Indicates whether this delegate is active or not.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, isEnabled, setEnabled);
+    /// Indicates whether this delegate is active or not.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, isEnabled, setEnabled);
 
-	/// Optionally specifies a particular input data object this delegate should operate on.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD(DataObjectReference, inputDataObject, setInputDataObject);
+    /// Optionally specifies a particular input data object this delegate should operate on.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(DataObjectReference, inputDataObject, setInputDataObject);
 };
 
 /**
@@ -115,58 +115,58 @@ class OVITO_CORE_EXPORT DelegatingModifier : public Modifier
 {
 public:
 
-	/// The abstract base class of delegates used by this modifier type.
-	using DelegateBaseType = ModifierDelegate;
+    /// The abstract base class of delegates used by this modifier type.
+    using DelegateBaseType = ModifierDelegate;
 
-	/// Give this modifier class its own metaclass.
-	class OVITO_CORE_EXPORT DelegatingModifierClass : public ModifierClass
-	{
-	public:
+    /// Give this modifier class its own metaclass.
+    class OVITO_CORE_EXPORT DelegatingModifierClass : public ModifierClass
+    {
+    public:
 
-		/// Inherit constructor from base class.
-		using ModifierClass::ModifierClass;
+        /// Inherit constructor from base class.
+        using ModifierClass::ModifierClass;
 
-		/// Asks the metaclass whether the modifier can be applied to the given input data.
-		virtual bool isApplicableTo(const DataCollection& input) const override;
+        /// Asks the metaclass whether the modifier can be applied to the given input data.
+        virtual bool isApplicableTo(const DataCollection& input) const override;
 
-		/// Return the metaclass of delegates for this modifier type.
-		virtual const ModifierDelegate::OOMetaClass& delegateMetaclass() const {
-			OVITO_ASSERT_MSG(false, "DelegatingModifier::OOMetaClass::delegateMetaclass()",
-				qPrintable(QStringLiteral("Delegating modifier class %1 does not define a corresponding delegate metaclass. "
-				"You must override the delegateMetaclass() method in the modifier's metaclass.").arg(name())));
-			return DelegateBaseType::OOClass();
-		}
-	};
+        /// Return the metaclass of delegates for this modifier type.
+        virtual const ModifierDelegate::OOMetaClass& delegateMetaclass() const {
+            OVITO_ASSERT_MSG(false, "DelegatingModifier::OOMetaClass::delegateMetaclass()",
+                qPrintable(QStringLiteral("Delegating modifier class %1 does not define a corresponding delegate metaclass. "
+                "You must override the delegateMetaclass() method in the modifier's metaclass.").arg(name())));
+            return DelegateBaseType::OOClass();
+        }
+    };
 
-	OVITO_CLASS_META(DelegatingModifier, DelegatingModifierClass)
+    OVITO_CLASS_META(DelegatingModifier, DelegatingModifierClass)
 
 #ifdef OVITO_QML_GUI
-	Q_PROPERTY(Ovito::ModifierDelegate* delegate READ delegate WRITE setDelegate NOTIFY referenceReplacedSignal)
+    Q_PROPERTY(Ovito::ModifierDelegate* delegate READ delegate WRITE setDelegate NOTIFY referenceReplacedSignal)
 #endif
 
 public:
 
-	/// Constructor.
-	using Modifier::Modifier;
+    /// Constructor.
+    using Modifier::Modifier;
 
-	/// \brief Determines the time interval over which a computed pipeline state will remain valid.
-	virtual TimeInterval validityInterval(const ModifierEvaluationRequest& request) const override;
+    /// \brief Determines the time interval over which a computed pipeline state will remain valid.
+    virtual TimeInterval validityInterval(const ModifierEvaluationRequest& request) const override;
 
-	/// Modifies the input data synchronously.
-	virtual void evaluateSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
-
-protected:
-
-	/// Creates a default delegate for this modifier.
-	void createDefaultModifierDelegate(const OvitoClass& delegateType, const QString& defaultDelegateTypeName, ObjectCreationParams params);
-
-	/// Lets the modifier's delegate operate on a pipeline flow state.
-	void applyDelegate(const ModifierEvaluationRequest& request, PipelineFlowState& state, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs = {});
+    /// Modifies the input data synchronously.
+    virtual void evaluateSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
 
 protected:
 
-	/// The modifier delegate.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<ModifierDelegate>, delegate, setDelegate, PROPERTY_FIELD_ALWAYS_CLONE | PROPERTY_FIELD_MEMORIZE);
+    /// Creates a default delegate for this modifier.
+    void createDefaultModifierDelegate(const OvitoClass& delegateType, const QString& defaultDelegateTypeName, ObjectCreationParams params);
+
+    /// Lets the modifier's delegate operate on a pipeline flow state.
+    void applyDelegate(const ModifierEvaluationRequest& request, PipelineFlowState& state, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs = {});
+
+protected:
+
+    /// The modifier delegate.
+    DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<ModifierDelegate>, delegate, setDelegate, PROPERTY_FIELD_ALWAYS_CLONE | PROPERTY_FIELD_MEMORIZE);
 };
 
 /**
@@ -176,54 +176,54 @@ class OVITO_CORE_EXPORT MultiDelegatingModifier : public Modifier
 {
 public:
 
-	/// The abstract base class of delegates used by this modifier type.
-	using DelegateBaseType = ModifierDelegate;
+    /// The abstract base class of delegates used by this modifier type.
+    using DelegateBaseType = ModifierDelegate;
 
-	/// Give this modifier class its own metaclass.
-	class OVITO_CORE_EXPORT MultiDelegatingModifierClass : public ModifierClass
-	{
-	public:
+    /// Give this modifier class its own metaclass.
+    class OVITO_CORE_EXPORT MultiDelegatingModifierClass : public ModifierClass
+    {
+    public:
 
-		/// Inherit constructor from base class.
-		using ModifierClass::ModifierClass;
+        /// Inherit constructor from base class.
+        using ModifierClass::ModifierClass;
 
-		/// Asks the metaclass whether the modifier can be applied to the given input data.
-		virtual bool isApplicableTo(const DataCollection& input) const override;
+        /// Asks the metaclass whether the modifier can be applied to the given input data.
+        virtual bool isApplicableTo(const DataCollection& input) const override;
 
-		/// Return the metaclass of delegates for this modifier type.
-		virtual const ModifierDelegate::OOMetaClass& delegateMetaclass() const {
-			OVITO_ASSERT_MSG(false, "MultiDelegatingModifier::OOMetaClass::delegateMetaclass()",
-				qPrintable(QStringLiteral("Multi-delegating modifier class %1 does not define a corresponding delegate metaclass. "
-					"You must override the delegateMetaclass() method in the modifier's metaclass.").arg(name())));
-			return ModifierDelegate::OOClass();
-		}
-	};
+        /// Return the metaclass of delegates for this modifier type.
+        virtual const ModifierDelegate::OOMetaClass& delegateMetaclass() const {
+            OVITO_ASSERT_MSG(false, "MultiDelegatingModifier::OOMetaClass::delegateMetaclass()",
+                qPrintable(QStringLiteral("Multi-delegating modifier class %1 does not define a corresponding delegate metaclass. "
+                    "You must override the delegateMetaclass() method in the modifier's metaclass.").arg(name())));
+            return ModifierDelegate::OOClass();
+        }
+    };
 
-	OVITO_CLASS_META(MultiDelegatingModifier, MultiDelegatingModifierClass)
+    OVITO_CLASS_META(MultiDelegatingModifier, MultiDelegatingModifierClass)
 
 public:
 
-	/// Constructor.
-	using Modifier::Modifier;
+    /// Constructor.
+    using Modifier::Modifier;
 
-	/// \brief Determines the time interval over which a computed pipeline state will remain valid.
-	virtual TimeInterval validityInterval(const ModifierEvaluationRequest& request) const override;
+    /// \brief Determines the time interval over which a computed pipeline state will remain valid.
+    virtual TimeInterval validityInterval(const ModifierEvaluationRequest& request) const override;
 
-	/// Modifies the input data synchronously.
-	virtual void evaluateSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
-
-protected:
-
-	/// Creates the list of delegate objects for this modifier.
-	void createModifierDelegates(const OvitoClass& delegateType, ObjectCreationParams params);
-
-	/// Lets the registered modifier delegates operate on a pipeline flow state.
-	void applyDelegates(const ModifierEvaluationRequest& request, PipelineFlowState& state, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs = {});
+    /// Modifies the input data synchronously.
+    virtual void evaluateSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
 
 protected:
 
-	/// List of modifier delegates.
-	DECLARE_VECTOR_REFERENCE_FIELD_FLAGS(OORef<ModifierDelegate>, delegates, PROPERTY_FIELD_ALWAYS_CLONE | PROPERTY_FIELD_MEMORIZE);
+    /// Creates the list of delegate objects for this modifier.
+    void createModifierDelegates(const OvitoClass& delegateType, ObjectCreationParams params);
+
+    /// Lets the registered modifier delegates operate on a pipeline flow state.
+    void applyDelegates(const ModifierEvaluationRequest& request, PipelineFlowState& state, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs = {});
+
+protected:
+
+    /// List of modifier delegates.
+    DECLARE_VECTOR_REFERENCE_FIELD_FLAGS(OORef<ModifierDelegate>, delegates, PROPERTY_FIELD_ALWAYS_CLONE | PROPERTY_FIELD_MEMORIZE);
 };
 
-}	// End of namespace
+}   // End of namespace

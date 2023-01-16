@@ -25,7 +25,7 @@
 
 #include <ovito/core/Core.h>
 #ifdef OVITO_ZLIB_SUPPORT
-	#include <ovito/core/utilities/io/gzdevice/GzipIODevice.h>
+    #include <ovito/core/utilities/io/gzdevice/GzipIODevice.h>
 #endif
 
 namespace Ovito {
@@ -42,86 +42,86 @@ class OVITO_CORE_EXPORT CompressedTextWriter
 {
 public:
 
-	/// Opens the given output file device for writing. The output file's name determines if the data gets compressed.
-	/// \param output The underlying Qt output device from to data should be written.
-	/// \throw Exception if an I/O error has occurred.
-	explicit CompressedTextWriter(QFileDevice& output);
+    /// Opens the given output file device for writing. The output file's name determines if the data gets compressed.
+    /// \param output The underlying Qt output device from to data should be written.
+    /// \throw Exception if an I/O error has occurred.
+    explicit CompressedTextWriter(QFileDevice& output);
 
-	/// Returns the name of the output file.
-	const QString& filename() const { return _filename; }
+    /// Returns the name of the output file.
+    const QString& filename() const { return _filename; }
 
-	/// Returns the underlying I/O device.
-	QFileDevice& device() { return _device; }
+    /// Returns the underlying I/O device.
+    QFileDevice& device() { return _device; }
 
-	/// Returns whether data written to this stream is being compressed.
-	bool isCompressed() const { return _stream != &_device; }
+    /// Returns whether data written to this stream is being compressed.
+    bool isCompressed() const { return _stream != &_device; }
 
-	/// Writes an integer number to the text-based output file.
-	CompressedTextWriter& operator<<(qint32 i);
+    /// Writes an integer number to the text-based output file.
+    CompressedTextWriter& operator<<(qint32 i);
 
-	/// Writes an unsigned integer number to the text-based output file.
-	CompressedTextWriter& operator<<(quint32 i);
+    /// Writes an unsigned integer number to the text-based output file.
+    CompressedTextWriter& operator<<(quint32 i);
 
-	/// Writes a 64-bit integer number to the text-based output file.
-	CompressedTextWriter& operator<<(qint64 i);
+    /// Writes a 64-bit integer number to the text-based output file.
+    CompressedTextWriter& operator<<(qint64 i);
 
-	/// Writes a 64-bit unsigned integer number to the text-based output file.
-	CompressedTextWriter& operator<<(quint64 i);
+    /// Writes a 64-bit unsigned integer number to the text-based output file.
+    CompressedTextWriter& operator<<(quint64 i);
 
 #if (!defined(Q_OS_WIN) && (QT_POINTER_SIZE != 4)) || defined(Q_OS_WASM)
-	/// Writes an unsigned integer number to the text-based output file.
-	CompressedTextWriter& operator<<(size_t i);
+    /// Writes an unsigned integer number to the text-based output file.
+    CompressedTextWriter& operator<<(size_t i);
 #endif
 
-	/// Writes a floating-point number to the text-based output file.
-	CompressedTextWriter& operator<<(FloatType f);
+    /// Writes a floating-point number to the text-based output file.
+    CompressedTextWriter& operator<<(FloatType f);
 
-	/// Writes a text string to the text-based output file.
-	CompressedTextWriter& operator<<(const char* s) {
-		if(_stream->write(s) == -1)
-			reportWriteError();
-		return *this;
-	}
+    /// Writes a text string to the text-based output file.
+    CompressedTextWriter& operator<<(const char* s) {
+        if(_stream->write(s) == -1)
+            reportWriteError();
+        return *this;
+    }
 
-	/// Writes a single character to the text-based output file.
-	CompressedTextWriter& operator<<(char c) {
-		if(!_stream->putChar(c))
-			reportWriteError();
-		return *this;
-	}
+    /// Writes a single character to the text-based output file.
+    CompressedTextWriter& operator<<(char c) {
+        if(!_stream->putChar(c))
+            reportWriteError();
+        return *this;
+    }
 
-	/// Writes a Qt string string to the text-based output file.
-	CompressedTextWriter& operator<<(const QString& s) { return *this << qPrintable(s); }
+    /// Writes a Qt string string to the text-based output file.
+    CompressedTextWriter& operator<<(const QString& s) { return *this << qPrintable(s); }
 
-	/// Returns the current output precision for floating-point numbers.
-	unsigned int floatPrecision() const { return _floatPrecision; }
+    /// Returns the current output precision for floating-point numbers.
+    unsigned int floatPrecision() const { return _floatPrecision; }
 
-	/// Changes the output precision for floating-point numbers.
-	void setFloatPrecision(unsigned int precision) {
-		_floatPrecision = std::min(precision, (unsigned int)std::numeric_limits<FloatType>::max_digits10);
-	}
+    /// Changes the output precision for floating-point numbers.
+    void setFloatPrecision(unsigned int precision) {
+        _floatPrecision = std::min(precision, (unsigned int)std::numeric_limits<FloatType>::max_digits10);
+    }
 
 private:
 
-	/// Throws an exception to report an I/O error.
-	void reportWriteError();
+    /// Throws an exception to report an I/O error.
+    void reportWriteError();
 
-	/// The name of the output file (if known).
-	QString _filename;
+    /// The name of the output file (if known).
+    QString _filename;
 
-	/// The underlying output device.
-	QFileDevice& _device;
+    /// The underlying output device.
+    QFileDevice& _device;
 
 #ifdef OVITO_ZLIB_SUPPORT
-	/// The compression filter stream.
-	GzipIODevice _compressor;
+    /// The compression filter stream.
+    GzipIODevice _compressor;
 #endif
 
-	/// The output stream.
-	QIODevice* _stream;
+    /// The output stream.
+    QIODevice* _stream;
 
-	/// The output precision for floating-point numbers.
-	unsigned int _floatPrecision = 10;
+    /// The output precision for floating-point numbers.
+    unsigned int _floatPrecision = 10;
 };
 
-}	// End of namespace
+}   // End of namespace

@@ -39,46 +39,46 @@ SET_OVITO_OBJECT_EDITOR(VoxelGridVis, VoxelGridVisEditor);
 ******************************************************************************/
 void VoxelGridVisEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 {
-	// Create a rollout.
-	QWidget* rollout = createRollout(tr("Voxel grid display"), rolloutParams, "manual:visual_elements.voxel_grid");
+    // Create a rollout.
+    QWidget* rollout = createRollout(tr("Voxel grid display"), rolloutParams, "manual:visual_elements.voxel_grid");
 
     // Create the rollout contents.
-	QGridLayout* layout = new QGridLayout(rollout);
-	layout->setContentsMargins(4,4,4,4);
-	layout->setSpacing(4);
-	layout->setColumnStretch(1, 1);
+    QGridLayout* layout = new QGridLayout(rollout);
+    layout->setContentsMargins(4,4,4,4);
+    layout->setSpacing(4);
+    layout->setColumnStretch(1, 1);
 
-	FloatParameterUI* transparencyUI = new FloatParameterUI(this, PROPERTY_FIELD(VoxelGridVis::transparencyController));
-	layout->addWidget(transparencyUI->label(), 1, 0);
-	layout->addLayout(transparencyUI->createFieldLayout(), 1, 1);
+    FloatParameterUI* transparencyUI = new FloatParameterUI(this, PROPERTY_FIELD(VoxelGridVis::transparencyController));
+    layout->addWidget(transparencyUI->label(), 1, 0);
+    layout->addLayout(transparencyUI->createFieldLayout(), 1, 1);
 
-	BooleanParameterUI* highlightLinesUI = new BooleanParameterUI(this, PROPERTY_FIELD(VoxelGridVis::highlightGridLines));
-	layout->addWidget(highlightLinesUI->checkBox(), 2, 0, 1, 2);
+    BooleanParameterUI* highlightLinesUI = new BooleanParameterUI(this, PROPERTY_FIELD(VoxelGridVis::highlightGridLines));
+    layout->addWidget(highlightLinesUI->checkBox(), 2, 0, 1, 2);
 
-	BooleanParameterUI* interpolateColorsUI = new BooleanParameterUI(this, PROPERTY_FIELD(VoxelGridVis::interpolateColors));
-	layout->addWidget(interpolateColorsUI->checkBox(), 3, 0, 1, 2);
+    BooleanParameterUI* interpolateColorsUI = new BooleanParameterUI(this, PROPERTY_FIELD(VoxelGridVis::interpolateColors));
+    layout->addWidget(interpolateColorsUI->checkBox(), 3, 0, 1, 2);
 
-	// Open a sub-editor for the property color mapping.
-	SubObjectParameterUI* colorMappingParamUI = new SubObjectParameterUI(this, PROPERTY_FIELD(VoxelGridVis::colorMapping), rolloutParams.after(rollout));
+    // Open a sub-editor for the property color mapping.
+    SubObjectParameterUI* colorMappingParamUI = new SubObjectParameterUI(this, PROPERTY_FIELD(VoxelGridVis::colorMapping), rolloutParams.after(rollout));
 
-	// Whenever the pipeline input of the vis element changes, update the list of available
-	// properties in the color mapping editor.
-	connect(this, &PropertiesEditor::pipelineInputChanged, colorMappingParamUI, [this,colorMappingParamUI]() {
-		// Retrieve the VoxelGrid object this vis element is associated with.
-		DataOORef<const PropertyContainer> container = dynamic_object_cast<const PropertyContainer>(getVisDataObject());
-		// We only show the color mapping panel if the VoxelGrid does not contain the RGB "Color" property.
-		if(container && !container->getProperty(PropertyObject::GenericColorProperty)) {
-			// Show color mapping panel.
-			colorMappingParamUI->setEnabled(true);
-			// Set it as property container containing the available properties the user can choose from.
-			static_object_cast<PropertyColorMappingEditor>(colorMappingParamUI->subEditor())->setPropertyContainer(container);
-		}
-		else {
-			// If the "Color" property is present, hide the color mapping panel, because the explicit RGB color values
-			// take precendence during rendering of the voxel grid.
-			colorMappingParamUI->setEnabled(false);
-		}
-	});
+    // Whenever the pipeline input of the vis element changes, update the list of available
+    // properties in the color mapping editor.
+    connect(this, &PropertiesEditor::pipelineInputChanged, colorMappingParamUI, [this,colorMappingParamUI]() {
+        // Retrieve the VoxelGrid object this vis element is associated with.
+        DataOORef<const PropertyContainer> container = dynamic_object_cast<const PropertyContainer>(getVisDataObject());
+        // We only show the color mapping panel if the VoxelGrid does not contain the RGB "Color" property.
+        if(container && !container->getProperty(PropertyObject::GenericColorProperty)) {
+            // Show color mapping panel.
+            colorMappingParamUI->setEnabled(true);
+            // Set it as property container containing the available properties the user can choose from.
+            static_object_cast<PropertyColorMappingEditor>(colorMappingParamUI->subEditor())->setPropertyContainer(container);
+        }
+        else {
+            // If the "Color" property is present, hide the color mapping panel, because the explicit RGB color values
+            // take precendence during rendering of the voxel grid.
+            colorMappingParamUI->setEnabled(false);
+        }
+    });
 }
 
-}	// End of namespace
+}   // End of namespace

@@ -24,7 +24,7 @@
 #include <ovito/core/utilities/concurrent/Future.h>
 #include <ovito/core/utilities/concurrent/TaskManager.h>
 #ifdef OVITO_SSH_CLIENT
-	#include <ovito/core/utilities/io/ssh/SshConnection.h>
+    #include <ovito/core/utilities/io/ssh/SshConnection.h>
 #endif
 #include "FileManager.h"
 #include "RemoteFileJob.h"
@@ -40,15 +40,15 @@ using namespace Ovito::Ssh;
 ******************************************************************************/
 std::unique_ptr<QIODevice> FileHandle::createIODevice() const 
 {
-	if(!localFilePath().isEmpty()) {
-		return std::make_unique<QFile>(localFilePath());
-	}
-	else {
-		auto buffer = std::make_unique<QBuffer>();
-		buffer->setData(_fileData);
-		OVITO_ASSERT(buffer->data().constData() == _fileData.constData()); // Rely on a shallow copy of the buffer being created.
-		return buffer;
-	}
+    if(!localFilePath().isEmpty()) {
+        return std::make_unique<QFile>(localFilePath());
+    }
+    else {
+        auto buffer = std::make_unique<QBuffer>();
+        buffer->setData(_fileData);
+        OVITO_ASSERT(buffer->data().constData() == _fileData.constData()); // Rely on a shallow copy of the buffer being created.
+        return buffer;
+    }
 }
 
 /******************************************************************************
@@ -70,49 +70,49 @@ FileManager::~FileManager()
 ******************************************************************************/
 SharedFuture<FileHandle> FileManager::fetchUrl(const QUrl& url)
 {
-	if(url.isLocalFile()) {
-		// Nothing to do to fetch local files. Simply return a finished Future object.
+    if(url.isLocalFile()) {
+        // Nothing to do to fetch local files. Simply return a finished Future object.
 
-		// But first check if the file exists.
-		QString filePath = url.toLocalFile();
-		if(!QFileInfo(filePath).exists())
-			return Future<FileHandle>::createFailed(Exception(tr("File does not exist:\n%1").arg(filePath)));
+        // But first check if the file exists.
+        QString filePath = url.toLocalFile();
+        if(!QFileInfo(filePath).exists())
+            return Future<FileHandle>::createFailed(Exception(tr("File does not exist:\n%1").arg(filePath)));
 
-		return FileHandle(url, std::move(filePath));
-	}
-	else if(url.scheme() == QStringLiteral("sftp") || url.scheme() == QStringLiteral("http") || url.scheme() == QStringLiteral("https")) {
+        return FileHandle(url, std::move(filePath));
+    }
+    else if(url.scheme() == QStringLiteral("sftp") || url.scheme() == QStringLiteral("http") || url.scheme() == QStringLiteral("https")) {
 #ifndef OVITO_SSH_CLIENT
-		if(url.scheme() == QStringLiteral("sftp"))
-			return Future<FileHandle>::createFailed(Exception(tr("URL scheme not supported. This version of OVITO was built without support for the sftp:// protocol.")));
+        if(url.scheme() == QStringLiteral("sftp"))
+            return Future<FileHandle>::createFailed(Exception(tr("URL scheme not supported. This version of OVITO was built without support for the sftp:// protocol.")));
 #endif
-		QUrl normalizedUrl = normalizeUrl(url);
-		QMutexLocker lock(&mutex());
+        QUrl normalizedUrl = normalizeUrl(url);
+        QMutexLocker lock(&mutex());
 
-		// Check if requested URL is already in the cache.
-		if(auto cacheEntry = _downloadedFiles.object(normalizedUrl)) {
-			return FileHandle(url, cacheEntry->fileName());
-		}
+        // Check if requested URL is already in the cache.
+        if(auto cacheEntry = _downloadedFiles.object(normalizedUrl)) {
+            return FileHandle(url, cacheEntry->fileName());
+        }
 
-		// Check if requested URL is already being loaded.
-		if(auto inProgressEntry = _pendingFiles.find(normalizedUrl); inProgressEntry != _pendingFiles.end()) {
-			SharedFuture<FileHandle> future = inProgressEntry->second.lock();
-			if(future.isValid())
-				return future;
-			else
-				_pendingFiles.erase(inProgressEntry);
-		}
+        // Check if requested URL is already being loaded.
+        if(auto inProgressEntry = _pendingFiles.find(normalizedUrl); inProgressEntry != _pendingFiles.end()) {
+            SharedFuture<FileHandle> future = inProgressEntry->second.lock();
+            if(future.isValid())
+                return future;
+            else
+                _pendingFiles.erase(inProgressEntry);
+        }
 
-		// Start the background download job.
-		DownloadRemoteFileJob* job = new DownloadRemoteFileJob(url);
-		auto future = job->sharedFuture();
-		// Show task progress in the GUI.
-		_taskManager.registerFuture(future);
-		_pendingFiles.emplace(normalizedUrl, future);
-		return future;
-	}
-	else {
-		return Future<FileHandle>::createFailed(Exception(tr("URL scheme '%1' not supported. The program supports only the sftp and http(s) URLs as well as local file paths.").arg(url.scheme())));
-	}
+        // Start the background download job.
+        DownloadRemoteFileJob* job = new DownloadRemoteFileJob(url);
+        auto future = job->sharedFuture();
+        // Show task progress in the GUI.
+        _taskManager.registerFuture(future);
+        _pendingFiles.emplace(normalizedUrl, future);
+        return future;
+    }
+    else {
+        return Future<FileHandle>::createFailed(Exception(tr("URL scheme '%1' not supported. The program supports only the sftp and http(s) URLs as well as local file paths.").arg(url.scheme())));
+    }
 }
 
 /******************************************************************************
@@ -120,36 +120,36 @@ SharedFuture<FileHandle> FileManager::fetchUrl(const QUrl& url)
 ******************************************************************************/
 Future<QStringList> FileManager::listDirectoryContents(const QUrl& url)
 {
-	if(url.scheme() == QStringLiteral("sftp")) {
+    if(url.scheme() == QStringLiteral("sftp")) {
 #ifdef OVITO_SSH_CLIENT
-		ListRemoteDirectoryJob* job = new ListRemoteDirectoryJob(url);
-		_taskManager.registerPromise(job->promise());
-		return job->future();
+        ListRemoteDirectoryJob* job = new ListRemoteDirectoryJob(url);
+        _taskManager.registerPromise(job->promise());
+        return job->future();
 #else
-		return Future<QStringList>::createFailed(Exception(tr("URL scheme not supported. This version of OVITO was built without support for the sftp:// protocol and can open local files only.")));
+        return Future<QStringList>::createFailed(Exception(tr("URL scheme not supported. This version of OVITO was built without support for the sftp:// protocol and can open local files only.")));
 #endif
-	}
-	else if(url.scheme() == QStringLiteral("http") || url.scheme() == QStringLiteral("https")) {
+    }
+    else if(url.scheme() == QStringLiteral("http") || url.scheme() == QStringLiteral("https")) {
 #ifndef Q_OS_WASM
-		QUrl normalizedUrl = normalizeUrl(url);
-		QMutexLocker lock(&mutex());
+        QUrl normalizedUrl = normalizeUrl(url);
+        QMutexLocker lock(&mutex());
 
-		// The http(s) protocol doesn't support directory listings. Thus, we have no means of discovering files on the server.
-		// As a workaround, we simply look in our local cache for downloaded files that are located in the requested directory.
+        // The http(s) protocol doesn't support directory listings. Thus, we have no means of discovering files on the server.
+        // As a workaround, we simply look in our local cache for downloaded files that are located in the requested directory.
         QStringList fileList;
         for(const auto& cacheEntry : _downloadedFiles.keys()) {
-			QString path = cacheEntry.adjusted(QUrl::RemoveFilename | QUrl::StripTrailingSlash).path();
+            QString path = cacheEntry.adjusted(QUrl::RemoveFilename | QUrl::StripTrailingSlash).path();
             if(cacheEntry.host() == url.host() && path == url.path())
                 fileList.push_back(cacheEntry.fileName());
         }
         return std::move(fileList);
 #else
-		return Future<QStringList>::createFailed(Exception(tr("URL scheme not supported. This version of OVITO was built without support for the http:// protocol and can open local files only.")));
+        return Future<QStringList>::createFailed(Exception(tr("URL scheme not supported. This version of OVITO was built without support for the http:// protocol and can open local files only.")));
 #endif
-	}
-	else {
-		return Future<QStringList>::createFailed(Exception(tr("Directory listings for URL scheme '%1' not supported. The program can only look for files in sftp:// locations and in local directories.").arg(url.scheme())));
-	}
+    }
+    else {
+        return Future<QStringList>::createFailed(Exception(tr("Directory listings for URL scheme '%1' not supported. The program can only look for files in sftp:// locations and in local directories.").arg(url.scheme())));
+    }
 }
 
 /******************************************************************************
@@ -158,8 +158,8 @@ Future<QStringList> FileManager::listDirectoryContents(const QUrl& url)
 ******************************************************************************/
 void FileManager::removeFromCache(const QUrl& url)
 {
-	QMutexLocker lock(&_mutex);
-	_downloadedFiles.remove(normalizeUrl(url));
+    QMutexLocker lock(&_mutex);
+    _downloadedFiles.remove(normalizeUrl(url));
 }
 
 /******************************************************************************
@@ -167,19 +167,19 @@ void FileManager::removeFromCache(const QUrl& url)
 ******************************************************************************/
 void FileManager::fileFetched(QUrl url, QTemporaryFile* localFile)
 {
-	QUrl normalizedUrl = normalizeUrl(std::move(url));
-	QMutexLocker lock(&mutex());
+    QUrl normalizedUrl = normalizeUrl(std::move(url));
+    QMutexLocker lock(&mutex());
 
-	if(auto itemInProgress = _pendingFiles.find(normalizedUrl); itemInProgress != _pendingFiles.end())
-		_pendingFiles.erase(itemInProgress);
+    if(auto itemInProgress = _pendingFiles.find(normalizedUrl); itemInProgress != _pendingFiles.end())
+        _pendingFiles.erase(itemInProgress);
 
-	if(localFile) {
-		// Store downloaded file in local cache.
-		OVITO_ASSERT(localFile->thread() == this->thread());
-		localFile->setParent(this);
-		if(!_downloadedFiles.insert(normalizedUrl, localFile, 0))
-			throw Exception(tr("Failed to insert downloaded file into file cache."));
-	}
+    if(localFile) {
+        // Store downloaded file in local cache.
+        OVITO_ASSERT(localFile->thread() == this->thread());
+        localFile->setParent(this);
+        if(!_downloadedFiles.insert(normalizedUrl, localFile, 0))
+            throw Exception(tr("Failed to insert downloaded file into file cache."));
+    }
 }
 
 /******************************************************************************
@@ -187,14 +187,14 @@ void FileManager::fileFetched(QUrl url, QTemporaryFile* localFile)
 ******************************************************************************/
 QUrl FileManager::urlFromUserInput(const QString& path)
 {
-	if(path.isEmpty())
-		return QUrl();
-	else if(path.startsWith(QStringLiteral("sftp://")) 
-			|| path.startsWith(QStringLiteral("http://")) 
-			|| path.startsWith(QStringLiteral("https://")))
-		return QUrl(path);
-	else
-		return QUrl::fromLocalFile(path);
+    if(path.isEmpty())
+        return QUrl();
+    else if(path.startsWith(QStringLiteral("sftp://")) 
+            || path.startsWith(QStringLiteral("http://")) 
+            || path.startsWith(QStringLiteral("https://")))
+        return QUrl(path);
+    else
+        return QUrl::fromLocalFile(path);
 }
 
 #ifdef OVITO_SSH_CLIENT
@@ -228,10 +228,10 @@ SshConnection* FileManager::acquireSshConnection(const SshConnectionParameters& 
     SshConnection* const connection = new SshConnection(sshParams);
     connect(connection, &SshConnection::disconnected, this, &FileManager::cleanupSshConnection);
     connect(connection, &SshConnection::unknownHost, this, &FileManager::unknownSshServer);
-	connect(connection, &SshConnection::needPassword, this, &FileManager::needSshPassword);
-	connect(connection, &SshConnection::needKbiAnswers, this, &FileManager::needKbiAnswers);
-	connect(connection, &SshConnection::authFailed, this, &FileManager::sshAuthenticationFailed);
-	connect(connection, &SshConnection::needPassphrase, this, &FileManager::needSshPassphrase);
+    connect(connection, &SshConnection::needPassword, this, &FileManager::needSshPassword);
+    connect(connection, &SshConnection::needKbiAnswers, this, &FileManager::needKbiAnswers);
+    connect(connection, &SshConnection::authFailed, this, &FileManager::sshAuthenticationFailed);
+    connect(connection, &SshConnection::needPassphrase, this, &FileManager::needSshPassphrase);
     _acquiredConnections.append(connection);
 
     return connection;
@@ -283,11 +283,11 @@ void FileManager::unknownSshServer()
     if(!connection)
         return;
 
-	if(detectedUnknownSshServer(connection->hostname(), connection->unknownHostMessage(), connection->hostPublicKeyHash())) {
-		if(connection->markCurrentHostKnown())
-			return;
-	}
-	connection->cancel();
+    if(detectedUnknownSshServer(connection->hostname(), connection->unknownHostMessage(), connection->hostPublicKeyHash())) {
+        if(connection->markCurrentHostKnown())
+            return;
+    }
+    connection->cancel();
 }
 
 /******************************************************************************
@@ -295,13 +295,13 @@ void FileManager::unknownSshServer()
 ******************************************************************************/
 bool FileManager::detectedUnknownSshServer(const QString& hostname, const QString& unknownHostMessage, const QString& hostPublicKeyHash)
 {
-	std::cout << "OVITO is connecting to remote host '" << qPrintable(hostname) << "' via SSH." << std::endl;
-	std::cout << qPrintable(unknownHostMessage) << std::endl;
-	std::cout << "Host key fingerprint is " << qPrintable(hostPublicKeyHash) << std::endl;
-	std::cout << "Are you sure you want to continue connecting (yes/no)? " << std::flush;
-	std::string reply;
-	std::cin >> reply;
-	return reply == "yes";
+    std::cout << "OVITO is connecting to remote host '" << qPrintable(hostname) << "' via SSH." << std::endl;
+    std::cout << qPrintable(unknownHostMessage) << std::endl;
+    std::cout << "Host key fingerprint is " << qPrintable(hostPublicKeyHash) << std::endl;
+    std::cout << "Are you sure you want to continue connecting (yes/no)? " << std::flush;
+    std::string reply;
+    std::cin >> reply;
+    return reply == "yes";
 }
 
 /******************************************************************************
@@ -313,13 +313,13 @@ void FileManager::sshAuthenticationFailed(int auth)
     if(!connection)
         return;
 
-	SshConnection::AuthMethods supported = connection->supportedAuthMethods();
-	if(auth & SshConnection::UseAuthPassword && supported & SshConnection::AuthMethodPassword) {
+    SshConnection::AuthMethods supported = connection->supportedAuthMethods();
+    if(auth & SshConnection::UseAuthPassword && supported & SshConnection::AuthMethodPassword) {
         connection->usePasswordAuth(true);
-	}
-	else if(auth & SshConnection::UseAuthKbi && supported & SshConnection::AuthMethodKbi) {
+    }
+    else if(auth & SshConnection::UseAuthKbi && supported & SshConnection::AuthMethodKbi) {
         connection->useKbiAuth(true);
-	}
+    }
 }
 
 /******************************************************************************
@@ -331,13 +331,13 @@ void FileManager::needSshPassword()
     if(!connection)
         return;
 
-	QString password = connection->password();
-	if(askUserForPassword(connection->hostname(), connection->username(), password)) {
-		connection->setPassword(password);
-	}
-	else {
-		connection->cancel();
-	}
+    QString password = connection->password();
+    if(askUserForPassword(connection->hostname(), connection->username(), password)) {
+        connection->setPassword(password);
+    }
+    else {
+        connection->cancel();
+    }
 }
 
 /******************************************************************************
@@ -349,18 +349,18 @@ void FileManager::needKbiAnswers()
     if(!connection)
         return;
 
-	QStringList answers;
-	for(const SshConnection::KbiQuestion& question : connection->kbiQuestions()) {
-		QString answer;
-		if(askUserForKbiResponse(connection->hostname(), connection->username(), question.instruction, question.question, question.showAnswer, answer)) {
-			answers << answer;
-		}
-		else {
-			connection->cancel();
-			return;
-		}
-	}
-	connection->setKbiAnswers(std::move(answers));
+    QStringList answers;
+    for(const SshConnection::KbiQuestion& question : connection->kbiQuestions()) {
+        QString answer;
+        if(askUserForKbiResponse(connection->hostname(), connection->username(), question.instruction, question.question, question.showAnswer, answer)) {
+            answers << answer;
+        }
+        else {
+            connection->cancel();
+            return;
+        }
+    }
+    connection->setKbiAnswers(std::move(answers));
 }
 
 /******************************************************************************
@@ -368,12 +368,12 @@ void FileManager::needKbiAnswers()
 ******************************************************************************/
 bool FileManager::askUserForPassword(const QString& hostname, const QString& username, QString& password)
 {
-	std::string pw;
-	std::cout << "Please enter the password for user '" << qPrintable(username) << "' ";
-	std::cout << "on SSH remote host '" << qPrintable(hostname) << "' (set echo off beforehand!): " << std::flush;
-	std::cin >> pw;
-	password = QString::fromStdString(pw);
-	return true;
+    std::string pw;
+    std::cout << "Please enter the password for user '" << qPrintable(username) << "' ";
+    std::cout << "on SSH remote host '" << qPrintable(hostname) << "' (set echo off beforehand!): " << std::flush;
+    std::cin >> pw;
+    password = QString::fromStdString(pw);
+    return true;
 }
 
 /******************************************************************************
@@ -381,14 +381,14 @@ bool FileManager::askUserForPassword(const QString& hostname, const QString& use
 ******************************************************************************/
 bool FileManager::askUserForKbiResponse(const QString& hostname, const QString& username, const QString& instruction, const QString& question, bool showAnswer, QString& answer)
 {
-	std::cout << "SSH keyboard interactive authentication";
-	if(!showAnswer)
-		std::cout << " (set echo off beforehand!)";
-	std::cout << " - " << qPrintable(question) << std::flush;
-	std::string pw;
-	std::cin >> pw;
-	answer = QString::fromStdString(pw);
-	return true;
+    std::cout << "SSH keyboard interactive authentication";
+    if(!showAnswer)
+        std::cout << " (set echo off beforehand!)";
+    std::cout << " - " << qPrintable(question) << std::flush;
+    std::string pw;
+    std::cin >> pw;
+    answer = QString::fromStdString(pw);
+    return true;
 }
 
 /******************************************************************************
@@ -400,10 +400,10 @@ void FileManager::needSshPassphrase(const QString& prompt)
     if(!connection)
         return;
 
-	QString passphrase;
-	if(askUserForKeyPassphrase(connection->hostname(), prompt, passphrase)) {
-		connection->setPassphrase(passphrase);
-	}
+    QString passphrase;
+    if(askUserForKeyPassphrase(connection->hostname(), prompt, passphrase)) {
+        connection->setPassphrase(passphrase);
+    }
 }
 
 /******************************************************************************
@@ -411,12 +411,12 @@ void FileManager::needSshPassphrase(const QString& prompt)
 ******************************************************************************/
 bool FileManager::askUserForKeyPassphrase(const QString& hostname, const QString& prompt, QString& passphrase)
 {
-	std::string pp;
-	std::cout << qPrintable(prompt) << std::flush;
-	std::cin >> pp;
-	passphrase = QString::fromStdString(pp);
-	return true;
+    std::string pp;
+    std::cout << qPrintable(prompt) << std::flush;
+    std::cin >> pp;
+    passphrase = QString::fromStdString(pp);
+    return true;
 }
 #endif
 
-}	// End of namespace
+}   // End of namespace

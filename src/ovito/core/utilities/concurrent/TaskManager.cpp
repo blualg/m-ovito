@@ -32,7 +32,7 @@ namespace Ovito {
 ******************************************************************************/
 TaskManager::TaskManager()
 {
-	qRegisterMetaType<TaskPtr>("TaskPtr");
+    qRegisterMetaType<TaskPtr>("TaskPtr");
 }
 
 /******************************************************************************
@@ -52,7 +52,7 @@ TaskManager::~TaskManager()
 ******************************************************************************/
 void TaskManager::registerFuture(const FutureBase& future)
 {
-	registerTask(future.task());
+    registerTask(future.task());
 }
 
 /******************************************************************************
@@ -61,7 +61,7 @@ void TaskManager::registerFuture(const FutureBase& future)
 ******************************************************************************/
 void TaskManager::registerPromise(const PromiseBase& promise)
 {
-	registerTask(promise.task());
+    registerTask(promise.task());
 }
 
 /******************************************************************************
@@ -69,8 +69,8 @@ void TaskManager::registerPromise(const PromiseBase& promise)
 ******************************************************************************/
 void TaskManager::registerTask(const TaskPtr& task)
 {
-	// Execute the function call in the main thread.
-	QMetaObject::invokeMethod(this, "addTaskInternal", Q_ARG(TaskPtr, task));
+    // Execute the function call in the main thread.
+    QMetaObject::invokeMethod(this, "addTaskInternal", Q_ARG(TaskPtr, task));
 }
 
 /******************************************************************************
@@ -78,8 +78,8 @@ void TaskManager::registerTask(const TaskPtr& task)
 ******************************************************************************/
 void TaskManager::registerTask(Task& task)
 {
-	// Execute the function call in the main thread.
-	QMetaObject::invokeMethod(this, "addTaskInternal", Q_ARG(TaskPtr, task.shared_from_this()));
+    // Execute the function call in the main thread.
+    QMetaObject::invokeMethod(this, "addTaskInternal", Q_ARG(TaskPtr, task.shared_from_this()));
 }
 
 /******************************************************************************
@@ -87,26 +87,26 @@ void TaskManager::registerTask(Task& task)
 ******************************************************************************/
 TaskWatcher* TaskManager::addTaskInternal(const TaskPtr& task)
 {
-	OVITO_ASSERT(!QCoreApplication::instance() || QThread::currentThread() == QCoreApplication::instance()->thread());
+    OVITO_ASSERT(!QCoreApplication::instance() || QThread::currentThread() == QCoreApplication::instance()->thread());
 
-	// Check if the task has already been registered before.
+    // Check if the task has already been registered before.
     // In this case, a TaskWatcher must exist for the task that has been added as a child object to the TaskManager.
-	for(QObject* childObject : children()) {
-		if(TaskWatcher* watcher = qobject_cast<TaskWatcher*>(childObject)) {
-			if(watcher->task() == task) {
-				return watcher;
-			}
-		}
-	}
+    for(QObject* childObject : children()) {
+        if(TaskWatcher* watcher = qobject_cast<TaskWatcher*>(childObject)) {
+            if(watcher->task() == task) {
+                return watcher;
+            }
+        }
+    }
 
-	// Create a task watcher, which will generate start/stop notification signals.
-	TaskWatcher* watcher = new TaskWatcher(this);
-	connect(watcher, &TaskWatcher::started, this, &TaskManager::taskStartedInternal);
-	connect(watcher, &TaskWatcher::finished, this, &TaskManager::taskFinishedInternal);
+    // Create a task watcher, which will generate start/stop notification signals.
+    TaskWatcher* watcher = new TaskWatcher(this);
+    connect(watcher, &TaskWatcher::started, this, &TaskManager::taskStartedInternal);
+    connect(watcher, &TaskWatcher::finished, this, &TaskManager::taskFinishedInternal);
 
-	// Activate the watcher.
-	watcher->watch(task);
-	return watcher;
+    // Activate the watcher.
+    watcher->watch(task);
+    return watcher;
 }
 
 /******************************************************************************
@@ -114,7 +114,7 @@ TaskWatcher* TaskManager::addTaskInternal(const TaskPtr& task)
 ******************************************************************************/
 QList<TaskWatcher*> TaskManager::registeredTasks() const 
 { 
-	return findChildren<TaskWatcher*>(QString{}, Qt::FindDirectChildrenOnly); 
+    return findChildren<TaskWatcher*>(QString{}, Qt::FindDirectChildrenOnly); 
 }
 
 /******************************************************************************
@@ -123,15 +123,15 @@ QList<TaskWatcher*> TaskManager::registeredTasks() const
 ******************************************************************************/
 void TaskManager::setConsoleLoggingEnabled(bool enabled) 
 {
-	if(_consoleLoggingEnabled != enabled) {
-		_consoleLoggingEnabled = enabled;
-		if(enabled) {
-			// Foward status messages from the active tasks to the console if logging was enabled.
-		    for(TaskWatcher* watcher : runningTasks()) {
-				connect(watcher, &TaskWatcher::progressTextChanged, this, &TaskManager::taskProgressTextChangedInternal);
-			}
-		}	
-	}
+    if(_consoleLoggingEnabled != enabled) {
+        _consoleLoggingEnabled = enabled;
+        if(enabled) {
+            // Foward status messages from the active tasks to the console if logging was enabled.
+            for(TaskWatcher* watcher : runningTasks()) {
+                connect(watcher, &TaskWatcher::progressTextChanged, this, &TaskManager::taskProgressTextChangedInternal);
+            }
+        }   
+    }
 }
 
 /******************************************************************************
@@ -139,8 +139,8 @@ void TaskManager::setConsoleLoggingEnabled(bool enabled)
 ******************************************************************************/
 void TaskManager::taskProgressTextChangedInternal(const QString& msg)
 {
-	if(!msg.isEmpty())
-		qInfo().noquote() << "OVITO:" << msg;
+    if(!msg.isEmpty())
+        qInfo().noquote() << "OVITO:" << msg;
 }
 
 /******************************************************************************
@@ -148,14 +148,14 @@ void TaskManager::taskProgressTextChangedInternal(const QString& msg)
 ******************************************************************************/
 void TaskManager::taskStartedInternal()
 {
-	TaskWatcher* watcher = static_cast<TaskWatcher*>(sender());
-	_runningTaskStack.push_back(watcher);
+    TaskWatcher* watcher = static_cast<TaskWatcher*>(sender());
+    _runningTaskStack.push_back(watcher);
 
-	// Foward status messages from the task to the console if logging is enabled.
-	if(_consoleLoggingEnabled)
-		connect(watcher, &TaskWatcher::progressTextChanged, this, &TaskManager::taskProgressTextChangedInternal);
+    // Foward status messages from the task to the console if logging is enabled.
+    if(_consoleLoggingEnabled)
+        connect(watcher, &TaskWatcher::progressTextChanged, this, &TaskManager::taskProgressTextChangedInternal);
 
-	Q_EMIT taskStarted(watcher);
+    Q_EMIT taskStarted(watcher);
 }
 
 /******************************************************************************
@@ -163,16 +163,16 @@ void TaskManager::taskStartedInternal()
 ******************************************************************************/
 void TaskManager::taskFinishedInternal()
 {
-	TaskWatcher* watcher = static_cast<TaskWatcher*>(sender());
+    TaskWatcher* watcher = static_cast<TaskWatcher*>(sender());
 
-	if(auto iter = std::find(_runningTaskStack.begin(), _runningTaskStack.end(), watcher); iter != _runningTaskStack.end()) {
-		_runningTaskStack.erase(iter);
-	}
+    if(auto iter = std::find(_runningTaskStack.begin(), _runningTaskStack.end(), watcher); iter != _runningTaskStack.end()) {
+        _runningTaskStack.erase(iter);
+    }
 
-	Q_EMIT taskFinished(watcher);
+    Q_EMIT taskFinished(watcher);
 
-	watcher->reset();
-	watcher->deleteLater();
+    watcher->reset();
+    watcher->deleteLater();
 }
 
 /******************************************************************************
@@ -180,16 +180,16 @@ void TaskManager::taskFinishedInternal()
 ******************************************************************************/
 void TaskManager::shutdown()
 {
-	for(TaskWatcher* watcher : registeredTasks()) {
-		if(watcher->task())
-			watcher->task()->cancel();
-	}
+    for(TaskWatcher* watcher : registeredTasks()) {
+        if(watcher->task())
+            watcher->task()->cancel();
+    }
 
-	do {
-		QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
-		QCoreApplication::sendPostedEvents(nullptr, ObjectExecutor::workEventType());
-	}
-	while(!runningTasks().empty());
+    do {
+        QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
+        QCoreApplication::sendPostedEvents(nullptr, ObjectExecutor::workEventType());
+    }
+    while(!runningTasks().empty());
 }
 
-}	// End of namespace
+}   // End of namespace

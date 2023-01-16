@@ -38,7 +38,7 @@ IMPLEMENT_OVITO_CLASS(PipelineObject);
 ******************************************************************************/
 PipelineFlowState PipelineObject::evaluateSynchronous(const PipelineEvaluationRequest& request) 
 { 
-	return {};
+    return {};
 }
 
 /******************************************************************************
@@ -46,19 +46,19 @@ PipelineFlowState PipelineObject::evaluateSynchronous(const PipelineEvaluationRe
 ******************************************************************************/
 QSet<PipelineSceneNode*> PipelineObject::pipelines(bool onlyScenePipelines) const
 {
-	QSet<PipelineSceneNode*> pipelineList;
-	visitDependents([&](RefMaker* dependent) {
-		if(PipelineObject* pobj = dynamic_object_cast<PipelineObject>(dependent)) {
-			pipelineList.unite(pobj->pipelines(onlyScenePipelines));
-		}
-		else if(PipelineSceneNode* pipeline = dynamic_object_cast<PipelineSceneNode>(dependent)) {
+    QSet<PipelineSceneNode*> pipelineList;
+    visitDependents([&](RefMaker* dependent) {
+        if(PipelineObject* pobj = dynamic_object_cast<PipelineObject>(dependent)) {
+            pipelineList.unite(pobj->pipelines(onlyScenePipelines));
+        }
+        else if(PipelineSceneNode* pipeline = dynamic_object_cast<PipelineSceneNode>(dependent)) {
             if(pipeline->dataProvider() == this) {
-				if(!onlyScenePipelines || pipeline->isInScene())
-		    		pipelineList.insert(pipeline);
-			}
-		}
-	});
-	return pipelineList;
+                if(!onlyScenePipelines || pipeline->isInScene())
+                    pipelineList.insert(pipeline);
+            }
+        }
+    });
+    return pipelineList;
 }
 
 /******************************************************************************
@@ -68,20 +68,20 @@ QSet<PipelineSceneNode*> PipelineObject::pipelines(bool onlyScenePipelines) cons
 ******************************************************************************/
 bool PipelineObject::isPipelineBranch(bool onlyScenePipelines) const
 {
-	int pipelineCount = 0;
-	visitDependents([&](RefMaker* dependent) {
-		if(ModifierApplication* modApp = dynamic_object_cast<ModifierApplication>(dependent)) {
-			if(modApp->input() == this && !modApp->pipelines(onlyScenePipelines).empty())
-				pipelineCount++;
-		}
-		else if(PipelineSceneNode* pipeline = dynamic_object_cast<PipelineSceneNode>(dependent)) {
+    int pipelineCount = 0;
+    visitDependents([&](RefMaker* dependent) {
+        if(ModifierApplication* modApp = dynamic_object_cast<ModifierApplication>(dependent)) {
+            if(modApp->input() == this && !modApp->pipelines(onlyScenePipelines).empty())
+                pipelineCount++;
+        }
+        else if(PipelineSceneNode* pipeline = dynamic_object_cast<PipelineSceneNode>(dependent)) {
             if(pipeline->dataProvider() == this) {
-				if(!onlyScenePipelines || pipeline->isInScene())
-		    		pipelineCount++;
-			}
-		}
-	});
-	return pipelineCount > 1;
+                if(!onlyScenePipelines || pipeline->isInScene())
+                    pipelineCount++;
+            }
+        }
+    });
+    return pipelineCount > 1;
 }
 
 /******************************************************************************
@@ -89,9 +89,9 @@ bool PipelineObject::isPipelineBranch(bool onlyScenePipelines) const
 ******************************************************************************/
 int PipelineObject::animationTimeToSourceFrame(AnimationTime time) const
 {
-	OVITO_ASSERT(time != AnimationTime::negativeInfinity());
-	OVITO_ASSERT(time != AnimationTime::positiveInfinity());
-	return time.frame();
+    OVITO_ASSERT(time != AnimationTime::negativeInfinity());
+    OVITO_ASSERT(time != AnimationTime::positiveInfinity());
+    return time.frame();
 }
 
 /******************************************************************************
@@ -99,7 +99,7 @@ int PipelineObject::animationTimeToSourceFrame(AnimationTime time) const
 ******************************************************************************/
 AnimationTime PipelineObject::sourceFrameToAnimationTime(int frame) const
 {
-	return AnimationTime::fromFrame(frame);
+    return AnimationTime::fromFrame(frame);
 }
 
 /******************************************************************************
@@ -107,14 +107,14 @@ AnimationTime PipelineObject::sourceFrameToAnimationTime(int frame) const
 ******************************************************************************/
 Future<std::vector<PipelineFlowState>> PipelineObject::evaluateMultiple(const PipelineEvaluationRequest& request, std::vector<AnimationTime> times)
 {
-	// Perform the evaluation for all requested animation frames:
-	return map_sequential(
-		std::move(times), 
-		ObjectExecutor(this, true), // require deferred execution
-	[request = PipelineEvaluationRequest(request), this](AnimationTime time) mutable {
-		request.setTime(time);
-		return this->evaluate(request);
-	});
+    // Perform the evaluation for all requested animation frames:
+    return map_sequential(
+        std::move(times), 
+        ObjectExecutor(this, true), // require deferred execution
+    [request = PipelineEvaluationRequest(request), this](AnimationTime time) mutable {
+        request.setTime(time);
+        return this->evaluate(request);
+    });
 }
 
-}	// End of namespace
+}   // End of namespace

@@ -33,17 +33,17 @@ namespace Ovito::Particles {
  */
 class LoadTrajectoryModifierEditor : public PropertiesEditor
 {
-	OVITO_CLASS(LoadTrajectoryModifierEditor)
+    OVITO_CLASS(LoadTrajectoryModifierEditor)
 
 public:
 
-	/// Default constructor.
-	Q_INVOKABLE LoadTrajectoryModifierEditor() {}
+    /// Default constructor.
+    Q_INVOKABLE LoadTrajectoryModifierEditor() {}
 
 protected:
 
-	/// Creates the user interface controls for the editor.
-	virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
+    /// Creates the user interface controls for the editor.
+    virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
 };
 
-}	// End of namespace
+}   // End of namespace

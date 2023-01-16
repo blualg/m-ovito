@@ -34,39 +34,39 @@ namespace Ovito {
 ******************************************************************************/
 struct ViewProjectionParameters
 {
-	/// The aspect ratio (height/width) of the viewport.
-	FloatType aspectRatio = FloatType(1);
+    /// The aspect ratio (height/width) of the viewport.
+    FloatType aspectRatio = FloatType(1);
 
-	/// Indicates whether this is a orthogonal or perspective projection.
-	bool isPerspective = false;
+    /// Indicates whether this is a orthogonal or perspective projection.
+    bool isPerspective = false;
 
-	/// The distance of the front clipping plane in world units.
-	FloatType znear = FloatType(0);
+    /// The distance of the front clipping plane in world units.
+    FloatType znear = FloatType(0);
 
-	/// The distance of the back clipping plane in world units.
-	FloatType zfar = FloatType(1);
+    /// The distance of the back clipping plane in world units.
+    FloatType zfar = FloatType(1);
 
-	/// For orthogonal projections this is the vertical field of view in world units.
-	/// For perspective projections this is the vertical field of view angle in radians.
-	FloatType fieldOfView = FloatType(1);
+    /// For orthogonal projections this is the vertical field of view in world units.
+    /// For perspective projections this is the vertical field of view angle in radians.
+    FloatType fieldOfView = FloatType(1);
 
-	/// The world to view space transformation matrix.
-	AffineTransformation viewMatrix = AffineTransformation::Identity();
+    /// The world to view space transformation matrix.
+    AffineTransformation viewMatrix = AffineTransformation::Identity();
 
-	/// The view space to world space transformation matrix.
-	AffineTransformation inverseViewMatrix = AffineTransformation::Identity();
+    /// The view space to world space transformation matrix.
+    AffineTransformation inverseViewMatrix = AffineTransformation::Identity();
 
-	/// The view space to screen space projection matrix.
-	Matrix4 projectionMatrix = Matrix4::Identity();
+    /// The view space to screen space projection matrix.
+    Matrix4 projectionMatrix = Matrix4::Identity();
 
-	/// The screen space to view space transformation matrix.
-	Matrix4 inverseProjectionMatrix = Matrix4::Identity();
+    /// The screen space to view space transformation matrix.
+    Matrix4 inverseProjectionMatrix = Matrix4::Identity();
 
-	/// The bounding box of the scene.
-	Box3 boundingBox;
+    /// The bounding box of the scene.
+    Box3 boundingBox;
 
-	/// Specifies the time interval during which the stored parameters stay constant.
-	TimeInterval validityInterval = TimeInterval::empty();
+    /// Specifies the time interval during which the stored parameters stay constant.
+    TimeInterval validityInterval = TimeInterval::empty();
 };
 
-}	// End of namespace
+}   // End of namespace

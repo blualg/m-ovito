@@ -33,22 +33,22 @@ IMPLEMENT_OVITO_CLASS(StringParameterUI);
 * Constructor for a Qt property.
 ******************************************************************************/
 StringParameterUI::StringParameterUI(PropertiesEditor* parentEditor, const char* propertyName) :
-	PropertyParameterUI(parentEditor, propertyName), _textBox(nullptr)
+    PropertyParameterUI(parentEditor, propertyName), _textBox(nullptr)
 {
-	// Create UI widget.
-	_textBox = new QLineEdit();
-	connect(static_cast<QLineEdit*>(_textBox.data()), &QLineEdit::editingFinished, this, &StringParameterUI::updatePropertyValue);
+    // Create UI widget.
+    _textBox = new QLineEdit();
+    connect(static_cast<QLineEdit*>(_textBox.data()), &QLineEdit::editingFinished, this, &StringParameterUI::updatePropertyValue);
 }
 
 /******************************************************************************
 * Constructor for a PropertyField property.
 ******************************************************************************/
 StringParameterUI::StringParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField) :
-	PropertyParameterUI(parentEditor, propField), _textBox(nullptr)
+    PropertyParameterUI(parentEditor, propField), _textBox(nullptr)
 {
-	// Create UI widget.
-	_textBox = new QLineEdit();
-	connect(static_cast<QLineEdit*>(_textBox.data()), &QLineEdit::editingFinished, this, &StringParameterUI::updatePropertyValue);
+    // Create UI widget.
+    _textBox = new QLineEdit();
+    connect(static_cast<QLineEdit*>(_textBox.data()), &QLineEdit::editingFinished, this, &StringParameterUI::updatePropertyValue);
 }
 
 /******************************************************************************
@@ -56,8 +56,8 @@ StringParameterUI::StringParameterUI(PropertiesEditor* parentEditor, const Prope
 ******************************************************************************/
 StringParameterUI::~StringParameterUI()
 {
-	// Release GUI widget.
-	delete _textBox;
+    // Release GUI widget.
+    delete _textBox;
 }
 
 /******************************************************************************
@@ -66,14 +66,14 @@ StringParameterUI::~StringParameterUI()
 ******************************************************************************/
 void StringParameterUI::setTextBox(QWidget* textBox)
 {
-	OVITO_ASSERT(textBox != nullptr);
-	delete _textBox;
-	_textBox = textBox;
-	if(qobject_cast<QLineEdit*>(textBox))
-		connect(static_cast<QLineEdit*>(textBox), &QLineEdit::editingFinished, this, &StringParameterUI::updatePropertyValue);
-	else if(qobject_cast<AutocompleteTextEdit*>(textBox))
-		connect(static_cast<AutocompleteTextEdit*>(textBox), &AutocompleteTextEdit::editingFinished, this, &StringParameterUI::updatePropertyValue);
-	updateUI();
+    OVITO_ASSERT(textBox != nullptr);
+    delete _textBox;
+    _textBox = textBox;
+    if(qobject_cast<QLineEdit*>(textBox))
+        connect(static_cast<QLineEdit*>(textBox), &QLineEdit::editingFinished, this, &StringParameterUI::updatePropertyValue);
+    else if(qobject_cast<AutocompleteTextEdit*>(textBox))
+        connect(static_cast<AutocompleteTextEdit*>(textBox), &AutocompleteTextEdit::editingFinished, this, &StringParameterUI::updatePropertyValue);
+    updateUI();
 }
 
 /******************************************************************************
@@ -82,22 +82,22 @@ void StringParameterUI::setTextBox(QWidget* textBox)
 ******************************************************************************/
 void StringParameterUI::resetUI()
 {
-	PropertyParameterUI::resetUI();
+    PropertyParameterUI::resetUI();
 
-	if(textBox()) {
-		if(editObject()) {
-			textBox()->setEnabled(isEnabled());
-		}
-		else {
-			textBox()->setEnabled(false);
-			if(qobject_cast<QLineEdit*>(textBox()))
-				static_cast<QLineEdit*>(textBox())->clear();
-			else if(qobject_cast<QTextEdit*>(textBox()))
-				static_cast<QTextEdit*>(textBox())->clear();
-			else if(qobject_cast<QPlainTextEdit*>(textBox()))
-				static_cast<QPlainTextEdit*>(textBox())->clear();
-		}
-	}
+    if(textBox()) {
+        if(editObject()) {
+            textBox()->setEnabled(isEnabled());
+        }
+        else {
+            textBox()->setEnabled(false);
+            if(qobject_cast<QLineEdit*>(textBox()))
+                static_cast<QLineEdit*>(textBox())->clear();
+            else if(qobject_cast<QTextEdit*>(textBox()))
+                static_cast<QTextEdit*>(textBox())->clear();
+            else if(qobject_cast<QPlainTextEdit*>(textBox()))
+                static_cast<QPlainTextEdit*>(textBox())->clear();
+        }
+    }
 }
 
 /******************************************************************************
@@ -106,34 +106,34 @@ void StringParameterUI::resetUI()
 ******************************************************************************/
 void StringParameterUI::updateUI()
 {
-	PropertyParameterUI::updateUI();
+    PropertyParameterUI::updateUI();
 
-	if(textBox() && editObject()) {
-		QVariant val;
-		if(isQtPropertyUI()) {
-			val = editObject()->property(propertyName());
-			OVITO_ASSERT_MSG(val.isValid() && val.canConvert<QString>(), "StringParameterUI::updateUI()", qPrintable(QString("The object class %1 does not define a property with the name %2 that can be cast to string type.").arg(editObject()->metaObject()->className(), QString(propertyName()))));
-			if(!val.isValid() || !val.canConvert<QString>()) {
-				throw Exception(tr("The object class %1 does not define a property with the name %2 that can be cast to string type.").arg(editObject()->metaObject()->className(), QString(propertyName())));
-			}
-		}
-		else if(isPropertyFieldUI()) {
-			val = editObject()->getPropertyFieldValue(propertyField());
-			OVITO_ASSERT(val.isValid());
-		}
-		if(QLineEdit* lineEdit = qobject_cast<QLineEdit*>(textBox()))
-			lineEdit->setText(val.toString());
-		else if(QTextEdit* textEdit = qobject_cast<QTextEdit*>(textBox())) {
-			QString newText = val.toString();
-			if(textEdit->toPlainText() != newText)
-				textEdit->setPlainText(newText);
-		}
-		else if(QPlainTextEdit* textEdit = qobject_cast<QPlainTextEdit*>(textBox())) {
-			QString newText = val.toString();
-			if(textEdit->toPlainText() != newText)
-				textEdit->setPlainText(newText);
-		}
-	}
+    if(textBox() && editObject()) {
+        QVariant val;
+        if(isQtPropertyUI()) {
+            val = editObject()->property(propertyName());
+            OVITO_ASSERT_MSG(val.isValid() && val.canConvert<QString>(), "StringParameterUI::updateUI()", qPrintable(QString("The object class %1 does not define a property with the name %2 that can be cast to string type.").arg(editObject()->metaObject()->className(), QString(propertyName()))));
+            if(!val.isValid() || !val.canConvert<QString>()) {
+                throw Exception(tr("The object class %1 does not define a property with the name %2 that can be cast to string type.").arg(editObject()->metaObject()->className(), QString(propertyName())));
+            }
+        }
+        else if(isPropertyFieldUI()) {
+            val = editObject()->getPropertyFieldValue(propertyField());
+            OVITO_ASSERT(val.isValid());
+        }
+        if(QLineEdit* lineEdit = qobject_cast<QLineEdit*>(textBox()))
+            lineEdit->setText(val.toString());
+        else if(QTextEdit* textEdit = qobject_cast<QTextEdit*>(textBox())) {
+            QString newText = val.toString();
+            if(textEdit->toPlainText() != newText)
+                textEdit->setPlainText(newText);
+        }
+        else if(QPlainTextEdit* textEdit = qobject_cast<QPlainTextEdit*>(textBox())) {
+            QString newText = val.toString();
+            if(textEdit->toPlainText() != newText)
+                textEdit->setPlainText(newText);
+        }
+    }
 }
 
 /******************************************************************************
@@ -141,10 +141,10 @@ void StringParameterUI::updateUI()
 ******************************************************************************/
 void StringParameterUI::setEnabled(bool enabled)
 {
-	if(enabled == isEnabled()) return;
-	PropertyParameterUI::setEnabled(enabled);
-	if(textBox())
-		textBox()->setEnabled(editObject() && isEnabled());
+    if(enabled == isEnabled()) return;
+    PropertyParameterUI::setEnabled(enabled);
+    if(textBox())
+        textBox()->setEnabled(editObject() && isEnabled());
 }
 
 /******************************************************************************
@@ -153,28 +153,28 @@ void StringParameterUI::setEnabled(bool enabled)
 ******************************************************************************/
 void StringParameterUI::updatePropertyValue()
 {
-	QString text;
-	if(qobject_cast<QLineEdit*>(textBox()))
-		text = static_cast<QLineEdit*>(textBox())->text();
-	else if(qobject_cast<QTextEdit*>(textBox()))
-		text = static_cast<QTextEdit*>(textBox())->toPlainText();
-	else if(qobject_cast<QPlainTextEdit*>(textBox()))
-		text = static_cast<QPlainTextEdit*>(textBox())->toPlainText();
-	else
-		return;
-	if(editObject()) {
-		performTransaction(tr("Change parameter"), [this,text]() {
-			if(isQtPropertyUI()) {
-				if(!editObject()->setProperty(propertyName(), text)) {
-					OVITO_ASSERT_MSG(false, "StringParameterUI::updatePropertyValue()", qPrintable(QString("The value of property %1 of object class %2 could not be set.").arg(QString(propertyName()), editObject()->metaObject()->className())));
-				}
-			}
-			else if(isPropertyFieldUI()) {
-				editor()->changePropertyFieldValue(propertyField(), text);
-			}
-			Q_EMIT valueEntered();
-		});
-	}
+    QString text;
+    if(qobject_cast<QLineEdit*>(textBox()))
+        text = static_cast<QLineEdit*>(textBox())->text();
+    else if(qobject_cast<QTextEdit*>(textBox()))
+        text = static_cast<QTextEdit*>(textBox())->toPlainText();
+    else if(qobject_cast<QPlainTextEdit*>(textBox()))
+        text = static_cast<QPlainTextEdit*>(textBox())->toPlainText();
+    else
+        return;
+    if(editObject()) {
+        performTransaction(tr("Change parameter"), [this,text]() {
+            if(isQtPropertyUI()) {
+                if(!editObject()->setProperty(propertyName(), text)) {
+                    OVITO_ASSERT_MSG(false, "StringParameterUI::updatePropertyValue()", qPrintable(QString("The value of property %1 of object class %2 could not be set.").arg(QString(propertyName()), editObject()->metaObject()->className())));
+                }
+            }
+            else if(isPropertyFieldUI()) {
+                editor()->changePropertyFieldValue(propertyField(), text);
+            }
+            Q_EMIT valueEntered();
+        });
+    }
 }
 
-}	// End of namespace
+}   // End of namespace

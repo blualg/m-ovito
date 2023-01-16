@@ -54,76 +54,76 @@ class OVITO_CORE_EXPORT CloneHelper
 {
 public:
 
-	/// \brief This creates a copy of a RefTarget derived object.
-	/// \param obj The input object to be cloned. Can be a \c NULL pointer.
-	/// \param deepCopy Specifies whether a deep or a shallow copy of the object should be created.
-	///                 The exact interpretation of this parameter depends on the implementation
-	///                 of the RefTarget::clone() method of the object. For a deep copy the complete
-	///                 object graph is duplicated including sub-objects. For a shallow copy the clone
-	///                 of the input object will reference the same sub-objects as the original one.
-	/// \return The clone of the input object or \c NULL if \a obj was \c NULL.
-	/// \note If this CloneHelper instance has already been used to create a copy of the
-	///       input object \a obj, then the existing clone of this object is returned.
-	template<class T>
-	OORef<T> cloneObject(const T* obj, bool deepCopy) {
-		RefTarget* p = cloneObjectImpl(obj, deepCopy);
-		OVITO_ASSERT_MSG(!p || p->getOOClass().isDerivedFrom(T::OOClass()), "CloneHelper::cloneObject", qPrintable("The clone method of class " + obj->getOOClass().name() + " did not return an assignable instance of the class " + T::OOClass().name() + "."));
-		return static_object_cast<T>(p);
-	}
+    /// \brief This creates a copy of a RefTarget derived object.
+    /// \param obj The input object to be cloned. Can be a \c NULL pointer.
+    /// \param deepCopy Specifies whether a deep or a shallow copy of the object should be created.
+    ///                 The exact interpretation of this parameter depends on the implementation
+    ///                 of the RefTarget::clone() method of the object. For a deep copy the complete
+    ///                 object graph is duplicated including sub-objects. For a shallow copy the clone
+    ///                 of the input object will reference the same sub-objects as the original one.
+    /// \return The clone of the input object or \c NULL if \a obj was \c NULL.
+    /// \note If this CloneHelper instance has already been used to create a copy of the
+    ///       input object \a obj, then the existing clone of this object is returned.
+    template<class T>
+    OORef<T> cloneObject(const T* obj, bool deepCopy) {
+        RefTarget* p = cloneObjectImpl(obj, deepCopy);
+        OVITO_ASSERT_MSG(!p || p->getOOClass().isDerivedFrom(T::OOClass()), "CloneHelper::cloneObject", qPrintable("The clone method of class " + obj->getOOClass().name() + " did not return an assignable instance of the class " + T::OOClass().name() + "."));
+        return static_object_cast<T>(p);
+    }
 
-	/// \brief This creates a copy of a RefTarget derived object.
-	/// \param obj The input object to be cloned. Can be a \c NULL pointer.
-	/// \param deepCopy Specifies whether a deep or a shallow copy of the object should be created.
-	///                 The exact interpretation of this parameter depends on the implementation
-	///                 of the RefTarget::clone() method of the object. For a deep copy the complete
-	///                 object graph is duplicated including sub-objects. For a shallow copy the clone
-	///                 of the input object will reference the same sub-objects as the original one.
-	/// \return The clone of the input object or \c NULL if \a obj was \c NULL.
-	/// \note If this CloneHelper instance has already been used to create a copy of the
-	///       input object \a obj, then the existing clone of this object is returned.
-	template<class T>
-	OORef<std::remove_const_t<T>> cloneObject(const OORef<T>& obj, bool deepCopy) {
-		return cloneObject(obj.get(), deepCopy);
-	}
+    /// \brief This creates a copy of a RefTarget derived object.
+    /// \param obj The input object to be cloned. Can be a \c NULL pointer.
+    /// \param deepCopy Specifies whether a deep or a shallow copy of the object should be created.
+    ///                 The exact interpretation of this parameter depends on the implementation
+    ///                 of the RefTarget::clone() method of the object. For a deep copy the complete
+    ///                 object graph is duplicated including sub-objects. For a shallow copy the clone
+    ///                 of the input object will reference the same sub-objects as the original one.
+    /// \return The clone of the input object or \c NULL if \a obj was \c NULL.
+    /// \note If this CloneHelper instance has already been used to create a copy of the
+    ///       input object \a obj, then the existing clone of this object is returned.
+    template<class T>
+    OORef<std::remove_const_t<T>> cloneObject(const OORef<T>& obj, bool deepCopy) {
+        return cloneObject(obj.get(), deepCopy);
+    }
 
-	/// \brief Can be used to copy a sub-object reference.
-	/// \param obj The sub-object to be cloned. Can be \c NULL.
-	/// \param deepCopy Specifies whether a deep copy of the input object should be performed.
-	/// \return A deep copy of the input object if \a deepCopy is \c true or just the unmodified input
-	///         object \a obj if \a deepCopy is \c false.
-	///
-	/// This method creates a real copy of the source object only if \a deepCopy is \c true.
-	/// Otherwise the original object is returned.
-	///
-	/// This method can be used in implementations of the RefTarget::clone() method
-	/// to copy/transfer references to sub-objects for deep copies as well as shallow copies.
-	template<class T>
-	OORef<T> copyReference(const T* obj, bool deepCopy) {
-		if(!deepCopy) return const_cast<T*>(obj);
-		return cloneObject(obj, true);
-	}
+    /// \brief Can be used to copy a sub-object reference.
+    /// \param obj The sub-object to be cloned. Can be \c NULL.
+    /// \param deepCopy Specifies whether a deep copy of the input object should be performed.
+    /// \return A deep copy of the input object if \a deepCopy is \c true or just the unmodified input
+    ///         object \a obj if \a deepCopy is \c false.
+    ///
+    /// This method creates a real copy of the source object only if \a deepCopy is \c true.
+    /// Otherwise the original object is returned.
+    ///
+    /// This method can be used in implementations of the RefTarget::clone() method
+    /// to copy/transfer references to sub-objects for deep copies as well as shallow copies.
+    template<class T>
+    OORef<T> copyReference(const T* obj, bool deepCopy) {
+        if(!deepCopy) return const_cast<T*>(obj);
+        return cloneObject(obj, true);
+    }
 
-	/// \brief If the given object has already been cloned, returns the corresponding clone object.
-	RefTarget* lookupCloneOf(const RefTarget* original) const {
-		OVITO_ASSERT(original != nullptr);
-		for(const auto& entry : _cloneTable) {
-			if(entry.first == original)
-				return entry.second;
-		}
-		return nullptr;
-	}
+    /// \brief If the given object has already been cloned, returns the corresponding clone object.
+    RefTarget* lookupCloneOf(const RefTarget* original) const {
+        OVITO_ASSERT(original != nullptr);
+        for(const auto& entry : _cloneTable) {
+            if(entry.first == original)
+                return entry.second;
+        }
+        return nullptr;
+    }
 
-	/// \brief If the given object has already been cloned, returns the corresponding clone object.
-	template<class T>
-	T* lookupCloneOf(const T* original) const { return static_cast<T*>(lookupCloneOf(static_cast<const RefTarget*>(original))); }
+    /// \brief If the given object has already been cloned, returns the corresponding clone object.
+    template<class T>
+    T* lookupCloneOf(const T* original) const { return static_cast<T*>(lookupCloneOf(static_cast<const RefTarget*>(original))); }
 
 private:
 
-	/// Untyped version of the clone function.
-	RefTarget* cloneObjectImpl(const RefTarget* obj, bool deepCopy);
+    /// Untyped version of the clone function.
+    RefTarget* cloneObjectImpl(const RefTarget* obj, bool deepCopy);
 
-	/// The table of clones created by this helper object.
-	QVarLengthArray<std::pair<const RefTarget*, OORef<RefTarget>>, 2> _cloneTable;
+    /// The table of clones created by this helper object.
+    QVarLengthArray<std::pair<const RefTarget*, OORef<RefTarget>>, 2> _cloneTable;
 };
 
-}	// End of namespace
+}   // End of namespace

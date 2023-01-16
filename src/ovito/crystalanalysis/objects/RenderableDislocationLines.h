@@ -34,40 +34,40 @@ namespace Ovito::CrystalAnalysis {
  */
 class OVITO_CRYSTALANALYSIS_EXPORT RenderableDislocationLines : public TransformedDataObject
 {
-	OVITO_CLASS(RenderableDislocationLines)
-	Q_CLASSINFO("DisplayName", "Renderable dislocations");
+    OVITO_CLASS(RenderableDislocationLines)
+    Q_CLASSINFO("DisplayName", "Renderable dislocations");
 
 public:
 
-	/// A linear segment of a dislocation line.
-	struct Segment
-	{
-		/// The two vertices of the segment.
-		std::array<Point3, 2> verts;
+    /// A linear segment of a dislocation line.
+    struct Segment
+    {
+        /// The two vertices of the segment.
+        std::array<Point3, 2> verts;
 
-		/// The Burgers vector of the segment.
-		Vector3 burgersVector;
+        /// The Burgers vector of the segment.
+        Vector3 burgersVector;
 
-		/// The crystallite the dislocation segment is embedded in.
-		int region;
+        /// The crystallite the dislocation segment is embedded in.
+        int region;
 
-		/// Identifies the original dislocation line this segment is part of.
-		int dislocationIndex;
+        /// Identifies the original dislocation line this segment is part of.
+        int dislocationIndex;
 
-		/// Equal comparison operator.
-		bool operator==(const Segment& other) const { return verts == other.verts && dislocationIndex == other.dislocationIndex && burgersVector == other.burgersVector && region == other.region; }
-	};
+        /// Equal comparison operator.
+        bool operator==(const Segment& other) const { return verts == other.verts && dislocationIndex == other.dislocationIndex && burgersVector == other.burgersVector && region == other.region; }
+    };
 
-	/// Constructor.
-	Q_INVOKABLE RenderableDislocationLines(ObjectCreationParams params, TransformingDataVis* creator = nullptr, const DataObject* sourceData = nullptr) : TransformedDataObject(params, creator, sourceData) {}
+    /// Constructor.
+    Q_INVOKABLE RenderableDislocationLines(ObjectCreationParams params, TransformingDataVis* creator = nullptr, const DataObject* sourceData = nullptr) : TransformedDataObject(params, creator, sourceData) {}
 
 private:
 
-	/// The list of clipped and wrapped line segments.
-	DECLARE_RUNTIME_PROPERTY_FIELD(std::vector<RenderableDislocationLines::Segment>, lineSegments, setLineSegments);
+    /// The list of clipped and wrapped line segments.
+    DECLARE_RUNTIME_PROPERTY_FIELD(std::vector<RenderableDislocationLines::Segment>, lineSegments, setLineSegments);
 
-	/// The associated cluster graph.
-	DECLARE_RUNTIME_PROPERTY_FIELD(std::shared_ptr<ClusterGraph>, clusterGraph, setClusterGraph);
+    /// The associated cluster graph.
+    DECLARE_RUNTIME_PROPERTY_FIELD(std::shared_ptr<ClusterGraph>, clusterGraph, setClusterGraph);
 };
 
-}	// End of namespace
+}   // End of namespace

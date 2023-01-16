@@ -55,7 +55,7 @@ extern "C" {
 #include <stdint.h>
 # if (FIXED_POINT == 32)
 #  define kiss_fft_scalar int32_t
-# else	
+# else  
 #  define kiss_fft_scalar int16_t
 # endif
 #else
@@ -123,7 +123,7 @@ void kiss_fft_stride(kiss_fft_cfg cfg,const kiss_fft_cpx *fin,kiss_fft_cpx *fout
  your compiler output to call this before you exit.
 */
 void kiss_fft_cleanup(void);
-	
+    
 
 /*
  * Returns the smallest integer k, such that k>=n and k has only "fast" factors (2,3,5)

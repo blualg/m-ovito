@@ -34,19 +34,19 @@ namespace Ovito::Particles {
  */
 class ChillPlusModifierEditor : public PropertiesEditor
 {
-	OVITO_CLASS(ChillPlusModifierEditor)
+    OVITO_CLASS(ChillPlusModifierEditor)
 
 public:
 
-	/// Default constructor.
-	Q_INVOKABLE ChillPlusModifierEditor() {}
+    /// Default constructor.
+    Q_INVOKABLE ChillPlusModifierEditor() {}
 
 protected:
 
-	/// Creates the user interface controls for the editor.
-	virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
+    /// Creates the user interface controls for the editor.
+    virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
 };
 
-}	// End of namespace
+}   // End of namespace
 
 

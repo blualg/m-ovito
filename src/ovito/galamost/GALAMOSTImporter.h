@@ -35,58 +35,58 @@ namespace Ovito::Particles {
  */
 class OVITO_GALAMOST_EXPORT GALAMOSTImporter : public ParticleImporter
 {
-	/// Defines a metaclass specialization for this importer type.
-	class OOMetaClass : public ParticleImporter::OOMetaClass
-	{
-	public:
-		/// Inherit standard constructor from base meta class.
-		using ParticleImporter::OOMetaClass::OOMetaClass;
+    /// Defines a metaclass specialization for this importer type.
+    class OOMetaClass : public ParticleImporter::OOMetaClass
+    {
+    public:
+        /// Inherit standard constructor from base meta class.
+        using ParticleImporter::OOMetaClass::OOMetaClass;
 
-		/// Returns the list of file formats that can be read by this importer class.
-		virtual Ovito::span<const SupportedFormat> supportedFormats() const override {
-			static const SupportedFormat formats[] = {{ QStringLiteral("*.xml"), tr("GALAMOST Files") }};
-			return formats;
-		}
+        /// Returns the list of file formats that can be read by this importer class.
+        virtual Ovito::span<const SupportedFormat> supportedFormats() const override {
+            static const SupportedFormat formats[] = {{ QStringLiteral("*.xml"), tr("GALAMOST Files") }};
+            return formats;
+        }
 
-		/// Checks if the given file has format that can be read by this importer.
-		virtual bool checkFileFormat(const FileHandle& file) const override;
-	};
+        /// Checks if the given file has format that can be read by this importer.
+        virtual bool checkFileFormat(const FileHandle& file) const override;
+    };
 
-	OVITO_CLASS_META(GALAMOSTImporter, OOMetaClass)
+    OVITO_CLASS_META(GALAMOSTImporter, OOMetaClass)
 
 public:
 
-	/// \brief Constructor.
-	Q_INVOKABLE GALAMOSTImporter(ObjectCreationParams params) : ParticleImporter(params) {}
+    /// \brief Constructor.
+    Q_INVOKABLE GALAMOSTImporter(ObjectCreationParams params) : ParticleImporter(params) {}
 
-	/// Returns the title of this object.
-	virtual QString objectTitle() const override { return tr("GALAMOST"); }
+    /// Returns the title of this object.
+    virtual QString objectTitle() const override { return tr("GALAMOST"); }
 
-	/// Creates an asynchronous loader object that loads the data for the given frame from the external file.
-	virtual FileSourceImporter::FrameLoaderPtr createFrameLoader(const LoadOperationRequest& request) override {
-		return std::make_shared<FrameLoader>(request);
-	}
+    /// Creates an asynchronous loader object that loads the data for the given frame from the external file.
+    virtual FileSourceImporter::FrameLoaderPtr createFrameLoader(const LoadOperationRequest& request) override {
+        return std::make_shared<FrameLoader>(request);
+    }
 
 private:
 
-	/// The format-specific task object that is responsible for reading an input file in a separate thread.
-	class FrameLoader : public ParticleImporter::FrameLoader
-	{
-	public:
+    /// The format-specific task object that is responsible for reading an input file in a separate thread.
+    class FrameLoader : public ParticleImporter::FrameLoader
+    {
+    public:
 
-		/// Constructor.
-		using ParticleImporter::FrameLoader::FrameLoader;
+        /// Constructor.
+        using ParticleImporter::FrameLoader::FrameLoader;
 
-	protected:
+    protected:
 
-		/// Reads the frame data from the external file.
-		virtual void loadFile() override;
+        /// Reads the frame data from the external file.
+        virtual void loadFile() override;
 
-	private:
+    private:
 
-		/// Parses the contents of an XML element and stores the parsed values in a target property.
-		PropertyObject* parsePropertyData(QXmlStreamReader& xml, PropertyObject* property);
-	};
+        /// Parses the contents of an XML element and stores the parsed values in a target property.
+        PropertyObject* parsePropertyData(QXmlStreamReader& xml, PropertyObject* property);
+    };
 };
 
-}	// End of namespace
+}   // End of namespace

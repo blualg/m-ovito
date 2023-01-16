@@ -33,17 +33,17 @@ namespace Ovito::StdObj {
  */
 class SimulationCellVisEditor : public PropertiesEditor
 {
-	OVITO_CLASS(SimulationCellVisEditor)
+    OVITO_CLASS(SimulationCellVisEditor)
 
 public:
 
-	/// Constructor.
-	Q_INVOKABLE SimulationCellVisEditor() {}
+    /// Constructor.
+    Q_INVOKABLE SimulationCellVisEditor() {}
 
 protected:
 
-	/// Creates the user interface controls for the editor.
-	virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
+    /// Creates the user interface controls for the editor.
+    virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
 };
 
-}	// End of namespace
+}   // End of namespace

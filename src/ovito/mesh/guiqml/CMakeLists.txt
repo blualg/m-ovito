@@ -22,9 +22,9 @@
 
 # Define the GUI module, which provides the user interface for the parent module.
 OVITO_STANDARD_PLUGIN(MeshGui
-	SOURCES
-		resources/meshgui.qrc
-	PLUGIN_DEPENDENCIES 
-		Mesh
-	GUI_PLUGIN
+    SOURCES
+        resources/meshgui.qrc
+    PLUGIN_DEPENDENCIES 
+        Mesh
+    GUI_PLUGIN
 )

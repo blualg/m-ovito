@@ -35,32 +35,32 @@ using namespace Ovito::StdMod;
  */
 class OVITO_PARTICLES_EXPORT ParticlesCombineDatasetsModifierDelegate : public CombineDatasetsModifierDelegate
 {
-	/// Give this modifier class its own metaclass.
-	class OOMetaClass : public CombineDatasetsModifierDelegate::OOMetaClass
-	{
-	public:
+    /// Give this modifier class its own metaclass.
+    class OOMetaClass : public CombineDatasetsModifierDelegate::OOMetaClass
+    {
+    public:
 
-		/// Inherit constructor from base metaclass.
-		using CombineDatasetsModifierDelegate::OOMetaClass::OOMetaClass;
+        /// Inherit constructor from base metaclass.
+        using CombineDatasetsModifierDelegate::OOMetaClass::OOMetaClass;
 
-		/// Indicates which data objects in the given input data collection the modifier delegate is able to operate on.
-		virtual QVector<DataObjectReference> getApplicableObjects(const DataCollection& input) const override;
+        /// Indicates which data objects in the given input data collection the modifier delegate is able to operate on.
+        virtual QVector<DataObjectReference> getApplicableObjects(const DataCollection& input) const override;
 
-		/// The name by which Python scripts can refer to this modifier delegate.
-		virtual QString pythonDataName() const override { return QStringLiteral("particles"); }
-	};
+        /// The name by which Python scripts can refer to this modifier delegate.
+        virtual QString pythonDataName() const override { return QStringLiteral("particles"); }
+    };
 
-	OVITO_CLASS_META(ParticlesCombineDatasetsModifierDelegate, OOMetaClass)
+    OVITO_CLASS_META(ParticlesCombineDatasetsModifierDelegate, OOMetaClass)
 
-	Q_CLASSINFO("DisplayName", "Particles");
+    Q_CLASSINFO("DisplayName", "Particles");
 
 public:
 
-	/// Constructor.
-	Q_INVOKABLE ParticlesCombineDatasetsModifierDelegate(ObjectCreationParams params) : CombineDatasetsModifierDelegate(params) {}
+    /// Constructor.
+    Q_INVOKABLE ParticlesCombineDatasetsModifierDelegate(ObjectCreationParams params) : CombineDatasetsModifierDelegate(params) {}
 
-	/// Applies the modifier operation to the data in a pipeline flow state.
-	virtual PipelineStatus apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const PipelineFlowState& inputState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs) override;
+    /// Applies the modifier operation to the data in a pipeline flow state.
+    virtual PipelineStatus apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const PipelineFlowState& inputState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs) override;
 };
 
-}	// End of namespace
+}   // End of namespace

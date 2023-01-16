@@ -40,307 +40,307 @@ namespace Ovito {
  */
 class OVITO_CORE_EXPORT Viewport : public RefTarget
 {
-	OVITO_CLASS(Viewport)
+    OVITO_CLASS(Viewport)
 
 #ifdef OVITO_QML_GUI
-	Q_PROPERTY(QString title READ viewportTitle NOTIFY viewportChanged)
-	Q_PROPERTY(bool gridVisible READ isGridVisible WRITE setGridVisible NOTIFY viewportChanged)
-	Q_PROPERTY(bool previewMode READ renderPreviewMode WRITE setRenderPreviewMode NOTIFY viewportChanged)
-	Q_PROPERTY(Ovito::Viewport::ViewType viewType READ viewType WRITE setViewType NOTIFY viewportChanged)
+    Q_PROPERTY(QString title READ viewportTitle NOTIFY viewportChanged)
+    Q_PROPERTY(bool gridVisible READ isGridVisible WRITE setGridVisible NOTIFY viewportChanged)
+    Q_PROPERTY(bool previewMode READ renderPreviewMode WRITE setRenderPreviewMode NOTIFY viewportChanged)
+    Q_PROPERTY(Ovito::Viewport::ViewType viewType READ viewType WRITE setViewType NOTIFY viewportChanged)
 #endif
 
 public:
 
-	/// View types.
-	enum ViewType {
-		VIEW_NONE,
-		VIEW_TOP,
-		VIEW_BOTTOM,
-		VIEW_FRONT,
-		VIEW_BACK,
-		VIEW_LEFT,
-		VIEW_RIGHT,
-		VIEW_ORTHO,
-		VIEW_PERSPECTIVE,
-		VIEW_SCENENODE,
-	};
-	Q_ENUM(ViewType);
+    /// View types.
+    enum ViewType {
+        VIEW_NONE,
+        VIEW_TOP,
+        VIEW_BOTTOM,
+        VIEW_FRONT,
+        VIEW_BACK,
+        VIEW_LEFT,
+        VIEW_RIGHT,
+        VIEW_ORTHO,
+        VIEW_PERSPECTIVE,
+        VIEW_SCENENODE,
+    };
+    Q_ENUM(ViewType);
 
 public:
 
-	/// \brief Constructs a new viewport.
-	Q_INVOKABLE Viewport(ObjectCreationParams params);
+    /// \brief Constructs a new viewport.
+    Q_INVOKABLE Viewport(ObjectCreationParams params);
 
-	/// \brief Destructor.
-	virtual ~Viewport();
+    /// \brief Destructor.
+    virtual ~Viewport();
 
-	/// \brief Computes the projection matrix and other parameters.
-	/// \param time The animation time for which the view is requested.
-	/// \param aspectRatio Specifies the desired aspect ratio (height/width) of the output image.
-	/// \param sceneBoundingBox The bounding box of the scene in world coordinates. This is used to calculate the near and far z-clipping planes.
-	/// \return The returned structure describes the projection used to render the contents of the viewport.
-	ViewProjectionParameters computeProjectionParameters(AnimationTime time, FloatType aspectRatio, bool asynchronousEvaluation, const Box3& sceneBoundingBox = Box3());
+    /// \brief Computes the projection matrix and other parameters.
+    /// \param time The animation time for which the view is requested.
+    /// \param aspectRatio Specifies the desired aspect ratio (height/width) of the output image.
+    /// \param sceneBoundingBox The bounding box of the scene in world coordinates. This is used to calculate the near and far z-clipping planes.
+    /// \return The returned structure describes the projection used to render the contents of the viewport.
+    ViewProjectionParameters computeProjectionParameters(AnimationTime time, FloatType aspectRatio, bool asynchronousEvaluation, const Box3& sceneBoundingBox = Box3());
 
-	/// \brief If an update request is pending for this viewport, immediately processes it and redraw the viewport.
-	void processUpdateRequest();
+    /// \brief If an update request is pending for this viewport, immediately processes it and redraw the viewport.
+    void processUpdateRequest();
 
-	/// \brief Changes the view type.
-	/// \param type The new view type.
-	/// \param keepCameraTransformation When setting the view type to ViewType::VIEW_ORTHO or ViewType::VIEW_PERSPECTIVE,
-	///        this controls whether the camera is reset to the default position/orientation or not.
-	/// \param keepFieldOfView When switching between perspective/parallel projections,
-	///        this controls whether the camera's zoom or field of view angle is reset to a standard value or not.
-	/// \note if \a type is set to ViewType::VIEW_SCENENODE then a view node should be set
-	///       using setViewNode().
-	void setViewType(ViewType type, bool keepCameraTransformation = false, bool keepFieldOfView = false);
+    /// \brief Changes the view type.
+    /// \param type The new view type.
+    /// \param keepCameraTransformation When setting the view type to ViewType::VIEW_ORTHO or ViewType::VIEW_PERSPECTIVE,
+    ///        this controls whether the camera is reset to the default position/orientation or not.
+    /// \param keepFieldOfView When switching between perspective/parallel projections,
+    ///        this controls whether the camera's zoom or field of view angle is reset to a standard value or not.
+    /// \note if \a type is set to ViewType::VIEW_SCENENODE then a view node should be set
+    ///       using setViewNode().
+    void setViewType(ViewType type, bool keepCameraTransformation = false, bool keepFieldOfView = false);
 
-	/// \brief Returns true if the viewport is using a perspective project;
-	///        returns false if it is using an orthogonal projection.
-	bool isPerspectiveProjection() const;
+    /// \brief Returns true if the viewport is using a perspective project;
+    ///        returns false if it is using an orthogonal projection.
+    bool isPerspectiveProjection() const;
 
-	/// \brief Sets the zoom of the viewport.
-	/// \param fov Vertical camera angle in radians if the viewport uses a perspective projection or
-	///            the field of view in the vertical direction in world units if the viewport
-	///            uses an orthogonal projection.
-	void setFieldOfView(FloatType fov) {
-		// Clamp FOV to reasonable interval.
-		_fieldOfView.set(this, PROPERTY_FIELD(fieldOfView), qBound(FloatType(-1e12), fov, FloatType(1e12)));
-	}
+    /// \brief Sets the zoom of the viewport.
+    /// \param fov Vertical camera angle in radians if the viewport uses a perspective projection or
+    ///            the field of view in the vertical direction in world units if the viewport
+    ///            uses an orthogonal projection.
+    void setFieldOfView(FloatType fov) {
+        // Clamp FOV to reasonable interval.
+        _fieldOfView.set(this, PROPERTY_FIELD(fieldOfView), qBound(FloatType(-1e12), fov, FloatType(1e12)));
+    }
 
-	/// \brief Returns the viewing direction of the camera.
-	Vector3 cameraDirection() const;
+    /// \brief Returns the viewing direction of the camera.
+    Vector3 cameraDirection() const;
 
-	/// \brief Changes the viewing direction of the camera.
-	void setCameraDirection(const Vector3& newDir);
+    /// \brief Changes the viewing direction of the camera.
+    void setCameraDirection(const Vector3& newDir);
 
-	/// \brief Returns the position of the camera.
-	Point3 cameraPosition() const;
+    /// \brief Returns the position of the camera.
+    Point3 cameraPosition() const;
 
-	/// \brief Sets the position of the camera.
-	void setCameraPosition(const Point3& p);
+    /// \brief Sets the position of the camera.
+    void setCameraPosition(const Point3& p);
 
-	/// Return the current 3D projection used to render the contents of the viewport.
-	const ViewProjectionParameters& projectionParams() const { return _projParams; }
+    /// Return the current 3D projection used to render the contents of the viewport.
+    const ViewProjectionParameters& projectionParams() const { return _projParams; }
 
-	/// \brief Returns the current orbit center for this viewport.
-	Point3 orbitCenter();
+    /// \brief Returns the current orbit center for this viewport.
+    Point3 orbitCenter();
 
-	/// \brief Computes the scaling factor of an object that should always appear in the same size on the screen, independent of its
-	///        position with respect to the camera.
-	FloatType nonScalingSize(const Point3& worldPosition);
+    /// \brief Computes the scaling factor of an object that should always appear in the same size on the screen, independent of its
+    ///        position with respect to the camera.
+    FloatType nonScalingSize(const Point3& worldPosition);
 
-	/// \brief Computes a point in the given coordinate system based on the given screen position and the current snapping settings.
-	/// \param[in] screenPoint A screen point relative to the upper left corner of the viewport.
-	/// \param[out] snapPoint The resulting point in the coordinate system specified by \a snapSystem. If the method returned
-	///                       \c false then the value of this output variable is undefined.
-	/// \param[in] snapSystem Specifies the coordinate system in which the snapping point should be determined.
-	/// \return \c true if a snapping point has been found; \c false if no snapping point was found for the given screen position.
-	bool snapPoint(const QPointF& screenPoint, Point3& snapPoint, const AffineTransformation& snapSystem);
+    /// \brief Computes a point in the given coordinate system based on the given screen position and the current snapping settings.
+    /// \param[in] screenPoint A screen point relative to the upper left corner of the viewport.
+    /// \param[out] snapPoint The resulting point in the coordinate system specified by \a snapSystem. If the method returned
+    ///                       \c false then the value of this output variable is undefined.
+    /// \param[in] snapSystem Specifies the coordinate system in which the snapping point should be determined.
+    /// \return \c true if a snapping point has been found; \c false if no snapping point was found for the given screen position.
+    bool snapPoint(const QPointF& screenPoint, Point3& snapPoint, const AffineTransformation& snapSystem);
 
-	/// \brief Computes a point in the grid coordinate system based on a screen position and the current snap settings.
-	/// \param[in] screenPoint A screen point relative to the upper left corner of the 3d window.
-	/// \param[out] snapPoint The resulting snap point in the viewport's grid coordinate system. If the method returned
-	///                       \c false then the value of this output variable is undefined.
-	/// \return \c true if a snapping point has been found; \c false if no snapping point was found for the given screen position.
-	bool snapPoint(const QPointF& screenPoint, Point3& snapPoint) {
-		return this->snapPoint(screenPoint, snapPoint, gridMatrix());
-	}
+    /// \brief Computes a point in the grid coordinate system based on a screen position and the current snap settings.
+    /// \param[in] screenPoint A screen point relative to the upper left corner of the 3d window.
+    /// \param[out] snapPoint The resulting snap point in the viewport's grid coordinate system. If the method returned
+    ///                       \c false then the value of this output variable is undefined.
+    /// \return \c true if a snapping point has been found; \c false if no snapping point was found for the given screen position.
+    bool snapPoint(const QPointF& screenPoint, Point3& snapPoint) {
+        return this->snapPoint(screenPoint, snapPoint, gridMatrix());
+    }
 
-	/// \brief Computes a ray in world space going through a pixel of the viewport window.
-	/// \param screenPoint A screen point relative to the upper left corner of the viewport window.
-	/// \return The ray that goes from the camera point through the specified pixel of the viewport window.
-	Ray3 screenRay(const QPointF& screenPoint);
+    /// \brief Computes a ray in world space going through a pixel of the viewport window.
+    /// \param screenPoint A screen point relative to the upper left corner of the viewport window.
+    /// \return The ray that goes from the camera point through the specified pixel of the viewport window.
+    Ray3 screenRay(const QPointF& screenPoint);
 
-	/// \brief Computes a ray in world space going through a viewport pixel.
-	/// \param viewportPoint Viewport coordinates of the point in the range [-1,+1].
-	/// \return The ray that goes from the viewpoint through the specified position in the viewport.
-	Ray3 viewportRay(const Point2& viewportPoint);
+    /// \brief Computes a ray in world space going through a viewport pixel.
+    /// \param viewportPoint Viewport coordinates of the point in the range [-1,+1].
+    /// \return The ray that goes from the viewpoint through the specified position in the viewport.
+    Ray3 viewportRay(const Point2& viewportPoint);
 
-	/// \brief Computes the intersection point of a ray going through a point in the
-	///        viewport plane with the construction grid plane.
-	/// \param[in] viewportPosition A 2d point in viewport coordinates (in the range [-1,+1]).
-	/// \param[out] intersectionPoint The coordinates of the intersection point in grid plane coordinates.
-	///                               The point can be transformed to world coordinates using the gridMatrix() transform.
-	/// \param[in] epsilon This threshold value is used to test whether the ray is parallel to the grid plane.
-	/// \return \c true if an intersection has been found; \c false if not.
-	bool computeConstructionPlaneIntersection(const Point2& viewportPosition, Point3& intersectionPoint, FloatType epsilon = FLOATTYPE_EPSILON);
+    /// \brief Computes the intersection point of a ray going through a point in the
+    ///        viewport plane with the construction grid plane.
+    /// \param[in] viewportPosition A 2d point in viewport coordinates (in the range [-1,+1]).
+    /// \param[out] intersectionPoint The coordinates of the intersection point in grid plane coordinates.
+    ///                               The point can be transformed to world coordinates using the gridMatrix() transform.
+    /// \param[in] epsilon This threshold value is used to test whether the ray is parallel to the grid plane.
+    /// \return \c true if an intersection has been found; \c false if not.
+    bool computeConstructionPlaneIntersection(const Point2& viewportPosition, Point3& intersectionPoint, FloatType epsilon = FLOATTYPE_EPSILON);
 
-	/// Returns the geometry of the render frame, i.e., the region of the viewport that
-	/// will be visible in a rendered image.
-	/// The returned box is given in viewport coordinates (interval [-1,+1]).
-	Box2 renderFrameRect(DataSet* dataset) const;
+    /// Returns the geometry of the render frame, i.e., the region of the viewport that
+    /// will be visible in a rendered image.
+    /// The returned box is given in viewport coordinates (interval [-1,+1]).
+    Box2 renderFrameRect(DataSet* dataset) const;
 
-	/// \brief Returns a color value for drawing something in the viewport. The user can configure the color for each element.
-	/// \param which The enum constant that specifies what type of element to draw.
-	/// \return The color that should be used for the given element type.
-	static const Color& viewportColor(ViewportSettings::ViewportColor which) {
-		return ViewportSettings::getSettings().viewportColor(which);
-	}
+    /// \brief Returns a color value for drawing something in the viewport. The user can configure the color for each element.
+    /// \param which The enum constant that specifies what type of element to draw.
+    /// \return The color that should be used for the given element type.
+    static const Color& viewportColor(ViewportSettings::ViewportColor which) {
+        return ViewportSettings::getSettings().viewportColor(which);
+    }
 
-	/// \brief Inserts an overlay into this viewport's list of overlays.
-	/// \param index The position at which to insert the overlay.
-	/// \param layer The overlay to insert.
-	/// \undoable
-	void insertOverlay(int index, ViewportOverlay* layer) {
-		_overlays.insert(this, PROPERTY_FIELD(overlays), index, layer);
-	}
+    /// \brief Inserts an overlay into this viewport's list of overlays.
+    /// \param index The position at which to insert the overlay.
+    /// \param layer The overlay to insert.
+    /// \undoable
+    void insertOverlay(int index, ViewportOverlay* layer) {
+        _overlays.insert(this, PROPERTY_FIELD(overlays), index, layer);
+    }
 
-	/// \brief Removes an overlay from this viewport.
-	/// \param index The index of the overlay to remove.
-	/// \undoable
-	void removeOverlay(int index) {
-		_overlays.remove(this, PROPERTY_FIELD(overlays), index);
-	}
+    /// \brief Removes an overlay from this viewport.
+    /// \param index The index of the overlay to remove.
+    /// \undoable
+    void removeOverlay(int index) {
+        _overlays.remove(this, PROPERTY_FIELD(overlays), index);
+    }
 
-	/// \brief Inserts an underlay into this viewport's list of underlays.
-	/// \param index The position at which to insert the underlay into the stack.
-	/// \param layer The underlay to insert.
-	/// \undoable
-	void insertUnderlay(int index, ViewportOverlay* layer) {
-		_underlays.insert(this, PROPERTY_FIELD(underlays), index, layer);
-	}
+    /// \brief Inserts an underlay into this viewport's list of underlays.
+    /// \param index The position at which to insert the underlay into the stack.
+    /// \param layer The underlay to insert.
+    /// \undoable
+    void insertUnderlay(int index, ViewportOverlay* layer) {
+        _underlays.insert(this, PROPERTY_FIELD(underlays), index, layer);
+    }
 
-	/// \brief Removes an underlay from this viewport.
-	/// \param index The index of the underlay to remove.
-	/// \undoable
-	void removeUnderlay(int index) {
-		_underlays.remove(this, PROPERTY_FIELD(underlays), index);
-	}
+    /// \brief Removes an underlay from this viewport.
+    /// \param index The index of the underlay to remove.
+    /// \undoable
+    void removeUnderlay(int index) {
+        _underlays.remove(this, PROPERTY_FIELD(underlays), index);
+    }
 
-	/// \brief Returns the size of the viewport's screen window (in device pixels).
-	QSize windowSize() const {
-		return window() ? window()->viewportWindowDeviceSize() : QSize(0,0);
-	}
+    /// \brief Returns the size of the viewport's screen window (in device pixels).
+    QSize windowSize() const {
+        return window() ? window()->viewportWindowDeviceSize() : QSize(0,0);
+    }
 
-	/// \brief Returns the GUI window associated with this viewport (may be none).
-	ViewportWindowInterface* window() const { return _window; }
+    /// \brief Returns the GUI window associated with this viewport (may be none).
+    ViewportWindowInterface* window() const { return _window; }
 
-	/// \brief Associates this viewport with a GUI window. This is an internal method.
-	void setWindow(ViewportWindowInterface* window);
+    /// \brief Associates this viewport with a GUI window. This is an internal method.
+    void setWindow(ViewportWindowInterface* window);
 
-	/// Returns the nested layout cell this viewport's window is currently in (if any). 
-	ViewportLayoutCell* layoutCell() const;
+    /// Returns the nested layout cell this viewport's window is currently in (if any). 
+    ViewportLayoutCell* layoutCell() const;
 
-	/// Renders the contents of the interactive viewport in a window.
-	/// This is an internal method, which should not be called by user code.
-	void renderInteractive(UserInterface& userInterface, DataSet* dataset, SceneRenderer* renderer);
+    /// Renders the contents of the interactive viewport in a window.
+    /// This is an internal method, which should not be called by user code.
+    void renderInteractive(UserInterface& userInterface, DataSet* dataset, SceneRenderer* renderer);
 
 public Q_SLOTS:
 
     /// \brief Puts an update request event for this viewport on the event loop.
     ///
-	/// Calling this method is going to redraw the viewport contents unless the viewport is hidden.
-	/// This function does not cause an immediate repaint; instead it schedules an
-	/// update request event, which is processed when execution returns to the main event loop.
-	///
-	/// To update all viewports at once you should use ViewportConfiguration::updateViewports().
-	void updateViewport();
+    /// Calling this method is going to redraw the viewport contents unless the viewport is hidden.
+    /// This function does not cause an immediate repaint; instead it schedules an
+    /// update request event, which is processed when execution returns to the main event loop.
+    ///
+    /// To update all viewports at once you should use ViewportConfiguration::updateViewports().
+    void updateViewport();
 
-	/// \brief Zooms to the extents of the scene.
-	void zoomToSceneExtents(FloatType viewportAspectRatio = 0);
+    /// \brief Zooms to the extents of the scene.
+    void zoomToSceneExtents(FloatType viewportAspectRatio = 0);
 
-	/// \brief Zooms to the extents of the currently selected nodes.
-	void zoomToSelectionExtents(FloatType viewportAspectRatio = 0);
+    /// \brief Zooms to the extents of the currently selected nodes.
+    void zoomToSelectionExtents(FloatType viewportAspectRatio = 0);
 
-	/// \brief Zooms to the extents of the scene once the scene is ready. This only works for viewports with an associated window.
-	void zoomToSceneExtentsWhenReady();
+    /// \brief Zooms to the extents of the scene once the scene is ready. This only works for viewports with an associated window.
+    void zoomToSceneExtentsWhenReady();
 
-	/// \brief Zooms to the extents of the given bounding box.
-	void zoomToBox(const Box3& box, FloatType viewportAspectRatio = 0);
+    /// \brief Zooms to the extents of the given bounding box.
+    void zoomToBox(const Box3& box, FloatType viewportAspectRatio = 0);
 
 Q_SIGNALS:
 
-	/// This signal is emitted whenever any of the UI properties of the viewport change.
-	void viewportChanged();
+    /// This signal is emitted whenever any of the UI properties of the viewport change.
+    void viewportChanged();
 
-	/// This signal is emitted when the user has requested a context menu on the viewport widget.
-	void contextMenuRequested(const QPoint& pos);
+    /// This signal is emitted when the user has requested a context menu on the viewport widget.
+    void contextMenuRequested(const QPoint& pos);
 
-	/// \brief This signal is emitted whenever this viewport is associated with a different scene.
-	/// \note This signal is NOT emitted when the contents of the scene change.
+    /// \brief This signal is emitted whenever this viewport is associated with a different scene.
+    /// \note This signal is NOT emitted when the contents of the scene change.
     void sceneReplaced(Scene* newScene);
 
 protected:
 
-	/// Is called when the value of a property field of this object has changed.
-	virtual void propertyChanged(const PropertyFieldDescriptor* field) override;
+    /// Is called when the value of a property field of this object has changed.
+    virtual void propertyChanged(const PropertyFieldDescriptor* field) override;
 
-	/// Is called when a RefTarget referenced by this object has generated an event.
-	virtual bool referenceEvent(RefTarget* source, const ReferenceEvent& event) override;
+    /// Is called when a RefTarget referenced by this object has generated an event.
+    virtual bool referenceEvent(RefTarget* source, const ReferenceEvent& event) override;
 
-	/// Is called when the value of a reference field of this RefMaker changes.
-	virtual void referenceReplaced(const PropertyFieldDescriptor* field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex) override;
+    /// Is called when the value of a reference field of this RefMaker changes.
+    virtual void referenceReplaced(const PropertyFieldDescriptor* field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex) override;
 
-	/// Is called when a RefTarget has been added to a VectorReferenceField.
-	virtual void referenceInserted(const PropertyFieldDescriptor* field, RefTarget* newTarget, int listIndex) override;
+    /// Is called when a RefTarget has been added to a VectorReferenceField.
+    virtual void referenceInserted(const PropertyFieldDescriptor* field, RefTarget* newTarget, int listIndex) override;
 
-	/// Is called when a RefTarget has been removed from a VectorReferenceField.
-	virtual void referenceRemoved(const PropertyFieldDescriptor* field, RefTarget* oldTarget, int listIndex) override;
+    /// Is called when a RefTarget has been removed from a VectorReferenceField.
+    virtual void referenceRemoved(const PropertyFieldDescriptor* field, RefTarget* oldTarget, int listIndex) override;
 
 protected:
 
-	/// Updates the title text of the viewport based on the current view type.
-	void updateViewportTitle();
+    /// Updates the title text of the viewport based on the current view type.
+    void updateViewportTitle();
 
-	/// Modifies the projection such that the render frame painted over the 3d scene exactly
-	/// matches the true visible area.
-	void adjustProjectionForRenderFrame(DataSet* dataset, ViewProjectionParameters& params);
+    /// Modifies the projection such that the render frame painted over the 3d scene exactly
+    /// matches the true visible area.
+    void adjustProjectionForRenderFrame(DataSet* dataset, ViewProjectionParameters& params);
 
-	/// Determines this viewport's area in the rendered output image. 
-	QRect renderViewportRect(DataSet* dataset) const;
+    /// Determines this viewport's area in the rendered output image. 
+    QRect renderViewportRect(DataSet* dataset) const;
 
-	/// Determines the aspect ratio of this viewport's area in the rendered output image. 
-	FloatType renderAspectRatio(DataSet* dataset) const;
+    /// Determines the aspect ratio of this viewport's area in the rendered output image. 
+    FloatType renderAspectRatio(DataSet* dataset) const;
 
 private Q_SLOTS:
 
-	/// This is called when the global viewport settings have changed.
-	void viewportSettingsChanged(ViewportSettings* newSettings);
+    /// This is called when the global viewport settings have changed.
+    void viewportSettingsChanged(ViewportSettings* newSettings);
 
 private:
 
-	/// The type of the viewport (top, left, perspective, etc.)
-	DECLARE_PROPERTY_FIELD_FLAGS(ViewType, viewType, PROPERTY_FIELD_NO_UNDO);
+    /// The type of the viewport (top, left, perspective, etc.)
+    DECLARE_PROPERTY_FIELD_FLAGS(ViewType, viewType, PROPERTY_FIELD_NO_UNDO);
 
-	/// The orientation of the grid.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(AffineTransformation, gridMatrix, setGridMatrix, PROPERTY_FIELD_NO_UNDO);
+    /// The orientation of the grid.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(AffineTransformation, gridMatrix, setGridMatrix, PROPERTY_FIELD_NO_UNDO);
 
-	/// The zoom or field of view.
-	DECLARE_PROPERTY_FIELD_FLAGS(FloatType, fieldOfView, PROPERTY_FIELD_NO_UNDO);
+    /// The zoom or field of view.
+    DECLARE_PROPERTY_FIELD_FLAGS(FloatType, fieldOfView, PROPERTY_FIELD_NO_UNDO);
 
-	/// The orientation of the camera.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(AffineTransformation, cameraTransformation, setCameraTransformation, PROPERTY_FIELD_NO_UNDO);
+    /// The orientation of the camera.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(AffineTransformation, cameraTransformation, setCameraTransformation, PROPERTY_FIELD_NO_UNDO);
 
-	/// Selectes the upward pointing direction of the virtual camera.
-	/// If nonzero, this viewport parameter overrides the global user settings.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(Vector3, cameraUpDirection, setCameraUpDirection, PROPERTY_FIELD_NO_UNDO);
+    /// Selectes the upward pointing direction of the virtual camera.
+    /// If nonzero, this viewport parameter overrides the global user settings.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(Vector3, cameraUpDirection, setCameraUpDirection, PROPERTY_FIELD_NO_UNDO);
 
-	/// Indicates whether the rendering frame is shown.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, renderPreviewMode, setRenderPreviewMode, PROPERTY_FIELD_NO_UNDO);
+    /// Indicates whether the rendering frame is shown.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, renderPreviewMode, setRenderPreviewMode, PROPERTY_FIELD_NO_UNDO);
 
-	/// Indicates whether the grid is shown.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, isGridVisible, setGridVisible, PROPERTY_FIELD_NO_UNDO);
+    /// Indicates whether the grid is shown.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, isGridVisible, setGridVisible, PROPERTY_FIELD_NO_UNDO);
 
-	/// The scene node (camera) that has been selected as the view node.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<PipelineSceneNode>, viewNode, setViewNode, PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_NO_SUB_ANIM | PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES);
+    /// The scene node (camera) that has been selected as the view node.
+    DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<PipelineSceneNode>, viewNode, setViewNode, PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_NO_SUB_ANIM | PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES);
 
-	/// The title of the viewport.
-	DECLARE_PROPERTY_FIELD_FLAGS(QString, viewportTitle, PROPERTY_FIELD_NO_UNDO);
+    /// The title of the viewport.
+    DECLARE_PROPERTY_FIELD_FLAGS(QString, viewportTitle, PROPERTY_FIELD_NO_UNDO);
 
-	/// The list of layers which are painted above the 3d scene.
-	DECLARE_VECTOR_REFERENCE_FIELD(OORef<ViewportOverlay>, overlays);
+    /// The list of layers which are painted above the 3d scene.
+    DECLARE_VECTOR_REFERENCE_FIELD(OORef<ViewportOverlay>, overlays);
 
-	/// The list of layers which are painted under the 3d scene.
-	DECLARE_VECTOR_REFERENCE_FIELD(OORef<ViewportOverlay>, underlays);
+    /// The list of layers which are painted under the 3d scene.
+    DECLARE_VECTOR_REFERENCE_FIELD(OORef<ViewportOverlay>, underlays);
 
-	/// The scene to be displayed by this viewport.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<Scene>, scene, setScene, PROPERTY_FIELD_NO_SUB_ANIM | PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES);
+    /// The scene to be displayed by this viewport.
+    DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<Scene>, scene, setScene, PROPERTY_FIELD_NO_SUB_ANIM | PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES);
 
-	/// Describes the current 3D projection used to render the contents of the viewport.
-	ViewProjectionParameters _projParams;
+    /// Describes the current 3D projection used to render the contents of the viewport.
+    ViewProjectionParameters _projParams;
 
-	/// The GUI window associated with this viewport.
-	ViewportWindowInterface* _window = nullptr;
+    /// The GUI window associated with this viewport.
+    ViewportWindowInterface* _window = nullptr;
 };
 
-}	// End of namespace
+}   // End of namespace

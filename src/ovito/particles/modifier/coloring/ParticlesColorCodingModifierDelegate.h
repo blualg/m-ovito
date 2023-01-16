@@ -37,32 +37,32 @@ using namespace Ovito::StdMod;
  */
 class ParticlesColorCodingModifierDelegate : public ColorCodingModifierDelegate
 {
-	/// Give the modifier delegate its own metaclass.
-	class OOMetaClass : public ColorCodingModifierDelegate::OOMetaClass
-	{
-	public:
+    /// Give the modifier delegate its own metaclass.
+    class OOMetaClass : public ColorCodingModifierDelegate::OOMetaClass
+    {
+    public:
 
-		/// Inherit constructor from base class.
-		using ColorCodingModifierDelegate::OOMetaClass::OOMetaClass;
+        /// Inherit constructor from base class.
+        using ColorCodingModifierDelegate::OOMetaClass::OOMetaClass;
 
-		/// Indicates which data objects in the given input data collection the modifier delegate is able to operate on.
-		virtual QVector<DataObjectReference> getApplicableObjects(const DataCollection& input) const override;
+        /// Indicates which data objects in the given input data collection the modifier delegate is able to operate on.
+        virtual QVector<DataObjectReference> getApplicableObjects(const DataCollection& input) const override;
 
-		/// Indicates which class of data objects the modifier delegate is able to operate on.
-		virtual const DataObject::OOMetaClass& getApplicableObjectClass() const override { return ParticlesObject::OOClass(); }
+        /// Indicates which class of data objects the modifier delegate is able to operate on.
+        virtual const DataObject::OOMetaClass& getApplicableObjectClass() const override { return ParticlesObject::OOClass(); }
 
-		/// The name by which Python scripts can refer to this modifier delegate.
-		virtual QString pythonDataName() const override { return QStringLiteral("particles"); }
-	};
+        /// The name by which Python scripts can refer to this modifier delegate.
+        virtual QString pythonDataName() const override { return QStringLiteral("particles"); }
+    };
 
-	OVITO_CLASS_META(ParticlesColorCodingModifierDelegate, OOMetaClass)
+    OVITO_CLASS_META(ParticlesColorCodingModifierDelegate, OOMetaClass)
 
-	Q_CLASSINFO("DisplayName", "Particles");
+    Q_CLASSINFO("DisplayName", "Particles");
 
 public:
 
-	/// Constructor.
-	Q_INVOKABLE ParticlesColorCodingModifierDelegate(ObjectCreationParams params) : ColorCodingModifierDelegate(params) {}
+    /// Constructor.
+    Q_INVOKABLE ParticlesColorCodingModifierDelegate(ObjectCreationParams params) : ColorCodingModifierDelegate(params) {}
 };
 
 /**
@@ -70,37 +70,37 @@ public:
  */
 class ParticleVectorsColorCodingModifierDelegate : public ColorCodingModifierDelegate
 {
-	/// Give the modifier delegate its own metaclass.
-	class OOMetaClass : public ColorCodingModifierDelegate::OOMetaClass
-	{
-	public:
+    /// Give the modifier delegate its own metaclass.
+    class OOMetaClass : public ColorCodingModifierDelegate::OOMetaClass
+    {
+    public:
 
-		/// Inherit constructor from base class.
-		using ColorCodingModifierDelegate::OOMetaClass::OOMetaClass;
+        /// Inherit constructor from base class.
+        using ColorCodingModifierDelegate::OOMetaClass::OOMetaClass;
 
-		/// Indicates which data objects in the given input data collection the modifier delegate is able to operate on.
-		virtual QVector<DataObjectReference> getApplicableObjects(const DataCollection& input) const override;
+        /// Indicates which data objects in the given input data collection the modifier delegate is able to operate on.
+        virtual QVector<DataObjectReference> getApplicableObjects(const DataCollection& input) const override;
 
-		/// Indicates which class of data objects the modifier delegate is able to operate on.
-		virtual const DataObject::OOMetaClass& getApplicableObjectClass() const override { return ParticlesObject::OOClass(); }
+        /// Indicates which class of data objects the modifier delegate is able to operate on.
+        virtual const DataObject::OOMetaClass& getApplicableObjectClass() const override { return ParticlesObject::OOClass(); }
 
-		/// The name by which Python scripts can refer to this modifier delegate.
-		virtual QString pythonDataName() const override { return QStringLiteral("vectors"); }
-	};
+        /// The name by which Python scripts can refer to this modifier delegate.
+        virtual QString pythonDataName() const override { return QStringLiteral("vectors"); }
+    };
 
-	OVITO_CLASS_META(ParticleVectorsColorCodingModifierDelegate, OOMetaClass)
+    OVITO_CLASS_META(ParticleVectorsColorCodingModifierDelegate, OOMetaClass)
 
-	Q_CLASSINFO("DisplayName", "Particle vectors");
+    Q_CLASSINFO("DisplayName", "Particle vectors");
 
 public:
 
-	/// Constructor.
-	Q_INVOKABLE ParticleVectorsColorCodingModifierDelegate(ObjectCreationParams params) : ColorCodingModifierDelegate(params) {}
+    /// Constructor.
+    Q_INVOKABLE ParticleVectorsColorCodingModifierDelegate(ObjectCreationParams params) : ColorCodingModifierDelegate(params) {}
 
 protected:
 
-	/// \brief returns the ID of the standard property that will receive the computed colors.
-	virtual int outputColorPropertyId() const override { return ParticlesObject::VectorColorProperty; }
+    /// \brief returns the ID of the standard property that will receive the computed colors.
+    virtual int outputColorPropertyId() const override { return ParticlesObject::VectorColorProperty; }
 };
 
 /**
@@ -108,32 +108,32 @@ protected:
  */
 class BondsColorCodingModifierDelegate : public ColorCodingModifierDelegate
 {
-	/// Give the modifier delegate its own metaclass.
-	class OOMetaClass : public ColorCodingModifierDelegate::OOMetaClass
-	{
-	public:
+    /// Give the modifier delegate its own metaclass.
+    class OOMetaClass : public ColorCodingModifierDelegate::OOMetaClass
+    {
+    public:
 
-		/// Inherit constructor from base class.
-		using ColorCodingModifierDelegate::OOMetaClass::OOMetaClass;
+        /// Inherit constructor from base class.
+        using ColorCodingModifierDelegate::OOMetaClass::OOMetaClass;
 
-		/// Indicates which data objects in the given input data collection the modifier delegate is able to operate on.
-		virtual QVector<DataObjectReference> getApplicableObjects(const DataCollection& input) const override;
+        /// Indicates which data objects in the given input data collection the modifier delegate is able to operate on.
+        virtual QVector<DataObjectReference> getApplicableObjects(const DataCollection& input) const override;
 
-		/// Indicates which class of data objects the modifier delegate is able to operate on.
-		virtual const DataObject::OOMetaClass& getApplicableObjectClass() const override { return BondsObject::OOClass(); }
+        /// Indicates which class of data objects the modifier delegate is able to operate on.
+        virtual const DataObject::OOMetaClass& getApplicableObjectClass() const override { return BondsObject::OOClass(); }
 
-		/// The name by which Python scripts can refer to this modifier delegate.
-		virtual QString pythonDataName() const override { return QStringLiteral("bonds"); }
-	};
+        /// The name by which Python scripts can refer to this modifier delegate.
+        virtual QString pythonDataName() const override { return QStringLiteral("bonds"); }
+    };
 
-	OVITO_CLASS_META(BondsColorCodingModifierDelegate, OOMetaClass)
+    OVITO_CLASS_META(BondsColorCodingModifierDelegate, OOMetaClass)
 
-	Q_CLASSINFO("DisplayName", "Bonds");
+    Q_CLASSINFO("DisplayName", "Bonds");
 
 public:
 
-	/// Constructor.
-	Q_INVOKABLE BondsColorCodingModifierDelegate(ObjectCreationParams params) : ColorCodingModifierDelegate(params) {}
+    /// Constructor.
+    Q_INVOKABLE BondsColorCodingModifierDelegate(ObjectCreationParams params) : ColorCodingModifierDelegate(params) {}
 };
 
-}	// End of namespace
+}   // End of namespace

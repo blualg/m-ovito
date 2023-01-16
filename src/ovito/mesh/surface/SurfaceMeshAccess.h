@@ -64,14 +64,14 @@ public:
     /// Destructor. Makes sure we don't leave the modified surface mesh in an inconsistent state.
     ~SurfaceMeshAccess() { reset(); }
 
-	/// Indicates whether this accessor contains a valid surface mesh object. 
-	explicit operator bool() const noexcept { return (bool)_mesh; }
+    /// Indicates whether this accessor contains a valid surface mesh object. 
+    explicit operator bool() const noexcept { return (bool)_mesh; }
 
     /// Releases the current mesh from this accessor and loads a new one.
     OORef<const SurfaceMesh> reset(const SurfaceMesh* newMesh = nullptr) noexcept;
 
-	/// Releases the SurfaceMesh after it was modified.
-	OORef<const SurfaceMesh> take() noexcept { return reset(); }
+    /// Releases the SurfaceMesh after it was modified.
+    OORef<const SurfaceMesh> take() noexcept { return reset(); }
 
     /// Exchanges the contents of this data structure with another structure.
     void swap(SurfaceMeshAccess& other) noexcept {
@@ -244,7 +244,7 @@ public:
     vertex_index createVertices(CoordinatesIterator begin, CoordinatesIterator end) {
         auto nverts = std::distance(begin, end);
         vertex_index startIndex = createVertices(nverts);
-	    std::copy(std::move(begin), std::move(end), std::next(std::begin(mutableVertexPositions()), startIndex));
+        std::copy(std::move(begin), std::move(end), std::next(std::begin(mutableVertexPositions()), startIndex));
         return startIndex;
     }
 
@@ -421,12 +421,12 @@ public:
         return regions().getPropertyValue<SurfaceMeshRegions::SurfaceAreaProperty,FloatType>(region);
     }
 
-	/// Returns the phase ID of the given region.
-	int regionPhase(region_index region) const {
+    /// Returns the phase ID of the given region.
+    int regionPhase(region_index region) const {
         OVITO_ASSERT(regions().hasProperty<SurfaceMeshRegions::PhaseProperty>());
-		OVITO_ASSERT(region >= 0 && region < regionCount());
-		return regions().getPropertyValue<SurfaceMeshRegions::PhaseProperty, int>(region);
-	}
+        OVITO_ASSERT(region >= 0 && region < regionCount());
+        return regions().getPropertyValue<SurfaceMeshRegions::PhaseProperty, int>(region);
+    }
 
     /// Links two opposite half-edges together.
     void linkOppositeEdges(edge_index edge1, edge_index edge2) {
@@ -461,8 +461,8 @@ public:
     /// Replaces the simulation box.
     void setDomain(const SimulationCellObject* domain) { mutableMesh()->setDomain(domain); } 
 
-	/// Returns whether the mesh's domain has periodic boundary conditions applied in the given direction.
-	bool hasPbc(size_t dim) const { return domain() ? domain()->hasPbc(dim) : false; }
+    /// Returns whether the mesh's domain has periodic boundary conditions applied in the given direction.
+    bool hasPbc(size_t dim) const { return domain() ? domain()->hasPbc(dim) : false; }
 
     /// Wraps a vector at periodic boundaries of the simulation cell.
     Vector3 wrapVector(const Vector3& v) const {
@@ -503,12 +503,12 @@ public:
         });
     }
 
-	/// Fairs the surface mesh.
-	bool smoothMesh(int numIterations, ProgressingTask& task, FloatType k_PB = FloatType(0.1), FloatType lambda = FloatType(0.5));
+    /// Fairs the surface mesh.
+    bool smoothMesh(int numIterations, ProgressingTask& task, FloatType k_PB = FloatType(0.1), FloatType lambda = FloatType(0.5));
 
-	/// Determines which spatial region contains the given point in space.
-	/// Returns no result if the point is exactly on a region boundary.
-	std::optional<std::pair<region_index, FloatType>> locatePoint(const Point3& location, FloatType epsilon = FLOATTYPE_EPSILON, const boost::dynamic_bitset<>& faceSubset = boost::dynamic_bitset<>()) const;
+    /// Determines which spatial region contains the given point in space.
+    /// Returns no result if the point is exactly on a region boundary.
+    std::optional<std::pair<region_index, FloatType>> locatePoint(const Point3& location, FloatType epsilon = FLOATTYPE_EPSILON, const boost::dynamic_bitset<>& faceSubset = boost::dynamic_bitset<>()) const;
 
     /// Returns one of the standard vertex properties (or null if the property is not defined).
     const PropertyObject* vertexProperty(SurfaceMeshVertices::Type ptype) const {
@@ -555,10 +555,10 @@ public:
         return mutableVertices().createProperty(ptype, flags);
     }
 
-	/// Add a new user-defined vertex property to the mesh.
-	PropertyObject* createVertexProperty(const QString& name, int dataType, size_t componentCount = 1, DataBuffer::InitializationFlags flags = DataBuffer::NoFlags, QStringList componentNames = QStringList()) {
+    /// Add a new user-defined vertex property to the mesh.
+    PropertyObject* createVertexProperty(const QString& name, int dataType, size_t componentCount = 1, DataBuffer::InitializationFlags flags = DataBuffer::NoFlags, QStringList componentNames = QStringList()) {
         return mutableVertices().createProperty(name, dataType, componentCount, flags, std::move(componentNames));
-	}
+    }
 
     /// Attaches an existing property object to the vertices of the mesh.
     void addVertexProperty(const PropertyObject* property) {
@@ -575,10 +575,10 @@ public:
         return mutableFaces().createProperty(ptype, flags);
     }
 
-	/// Add a new user-defined face property to the mesh.
-	PropertyObject* createFaceProperty(const QString& name, int dataType, size_t componentCount = 1, DataBuffer::InitializationFlags flags = DataBuffer::NoFlags, QStringList componentNames = QStringList()) {
+    /// Add a new user-defined face property to the mesh.
+    PropertyObject* createFaceProperty(const QString& name, int dataType, size_t componentCount = 1, DataBuffer::InitializationFlags flags = DataBuffer::NoFlags, QStringList componentNames = QStringList()) {
         return mutableFaces().createProperty(name, dataType, componentCount, flags, std::move(componentNames));
-	}
+    }
 
     /// Attaches an existing property object to the faces of the mesh.
     void addFaceProperty(const PropertyObject* property) {
@@ -595,10 +595,10 @@ public:
         return mutableRegions().createProperty(ptype, flags);
     }
 
-	/// Add a new user-defined region property to the mesh.
-	PropertyObject* createRegionProperty(const QString& name, int dataType, size_t componentCount = 1, DataBuffer::InitializationFlags flags = DataBuffer::NoFlags, QStringList componentNames = QStringList()) {
+    /// Add a new user-defined region property to the mesh.
+    PropertyObject* createRegionProperty(const QString& name, int dataType, size_t componentCount = 1, DataBuffer::InitializationFlags flags = DataBuffer::NoFlags, QStringList componentNames = QStringList()) {
         return mutableRegions().createProperty(name, dataType, componentCount, flags, std::move(componentNames));
-	}
+    }
 
     /// Attaches an existing property object to the regions of the mesh.
     void addRegionProperty(const PropertyObject* property) {
@@ -673,4 +673,4 @@ private:
     RegionsAccess _regions;     ///< Provides access to the region property container of the surface mesh.
 };
 
-}	// End of namespace
+}   // End of namespace

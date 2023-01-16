@@ -50,13 +50,13 @@ IMPLEMENT_OVITO_CLASS(ObjectPickInfo);
 ******************************************************************************/
 qreal SceneRenderer::devicePixelRatio() const
 {
-	if(viewport() && isInteractive()) {
-		// Query the device pixel ratio from the UI window associated with the viewport we are rendering into.
-		if(ViewportWindowInterface* window = viewport()->window())
-			return window->devicePixelRatio();
-	}
+    if(viewport() && isInteractive()) {
+        // Query the device pixel ratio from the UI window associated with the viewport we are rendering into.
+        if(ViewportWindowInterface* window = viewport()->window())
+            return window->devicePixelRatio();
+    }
 
-	return 1.0;
+    return 1.0;
 }
 
 /******************************************************************************
@@ -64,7 +64,7 @@ qreal SceneRenderer::devicePixelRatio() const
 ******************************************************************************/
 FloatType SceneRenderer::defaultLinePickingWidth()
 {
-	return FloatType(6) * devicePixelRatio();
+    return FloatType(6) * devicePixelRatio();
 }
 
 /******************************************************************************
@@ -72,34 +72,34 @@ FloatType SceneRenderer::defaultLinePickingWidth()
 ******************************************************************************/
 Box3 SceneRenderer::computeSceneBoundingBox(AnimationTime time, Scene* scene, const ViewProjectionParameters& params, Viewport* vp)
 {
-	OVITO_CHECK_OBJECT_POINTER(scene);
-	OVITO_ASSERT(!_scene);
+    OVITO_CHECK_OBJECT_POINTER(scene);
+    OVITO_ASSERT(!_scene);
 
-	try {
-		_sceneBoundingBox.setEmpty();
-		_isBoundingBoxPass = true;
-		_time = time;
-		_viewport = vp;
-		_scene = scene;
-		setProjParams(params);
+    try {
+        _sceneBoundingBox.setEmpty();
+        _isBoundingBoxPass = true;
+        _time = time;
+        _viewport = vp;
+        _scene = scene;
+        setProjParams(params);
 
-		// Perform bounding box rendering pass.
-		if(renderScene()) {
+        // Perform bounding box rendering pass.
+        if(renderScene()) {
 
-			// Include other visual content that is only visible in the interactive viewports.
-			if(isInteractive())
-				renderInteractiveContent();
-		}
+            // Include other visual content that is only visible in the interactive viewports.
+            if(isInteractive())
+                renderInteractiveContent();
+        }
 
-		_isBoundingBoxPass = false;
-	}
-	catch(...) {
-		_isBoundingBoxPass = false;
-		throw;
-	}
+        _isBoundingBoxPass = false;
+    }
+    catch(...) {
+        _isBoundingBoxPass = false;
+        throw;
+    }
 
-	_scene = nullptr;
-	return _sceneBoundingBox;
+    _scene = nullptr;
+    return _sceneBoundingBox;
 }
 
 /******************************************************************************
@@ -107,10 +107,10 @@ Box3 SceneRenderer::computeSceneBoundingBox(AnimationTime time, Scene* scene, co
 ******************************************************************************/
 bool SceneRenderer::startRender(const RenderSettings* settings, const QSize& frameBufferSize, MixedKeyCache& visCache)
 {
-	OVITO_ASSERT_MSG(_renderSettings == nullptr, "SceneRenderer::startRender()", "startRender() called again without calling endRender() first.");
-	_renderSettings = settings;
-	_visCache = &visCache;
-	return true;
+    OVITO_ASSERT_MSG(_renderSettings == nullptr, "SceneRenderer::startRender()", "startRender() called again without calling endRender() first.");
+    _renderSettings = settings;
+    _visCache = &visCache;
+    return true;
 }
 
 /******************************************************************************
@@ -118,8 +118,8 @@ bool SceneRenderer::startRender(const RenderSettings* settings, const QSize& fra
 ******************************************************************************/
 void SceneRenderer::endRender() 
 {
-	_renderSettings = nullptr;
-	_visCache = nullptr;
+    _renderSettings = nullptr;
+    _visCache = nullptr;
 }
 
 /******************************************************************************
@@ -128,16 +128,16 @@ void SceneRenderer::endRender()
 ******************************************************************************/
 void SceneRenderer::beginFrame(AnimationTime time, Scene* scene, const ViewProjectionParameters& params, Viewport* vp, const QRect& viewportRect, FrameBuffer* frameBuffer) 
 {
-	OVITO_ASSERT(!_scene);
+    OVITO_ASSERT(!_scene);
 
-	_time = time;
-	_scene = scene;
-	setProjParams(params);
-	_viewport = vp;
-	_viewportRect = viewportRect;
-	_frameBuffer = frameBuffer;
-	_modelWorldTM.setIdentity();
-	_modelViewTM = projParams().viewMatrix;
+    _time = time;
+    _scene = scene;
+    setProjParams(params);
+    _viewport = vp;
+    _viewportRect = viewportRect;
+    _frameBuffer = frameBuffer;
+    _modelWorldTM.setIdentity();
+    _modelViewTM = projParams().viewMatrix;
 }
 
 /******************************************************************************
@@ -146,8 +146,8 @@ void SceneRenderer::beginFrame(AnimationTime time, Scene* scene, const ViewProje
 ******************************************************************************/
 void SceneRenderer::endFrame(bool renderingSuccessful, const QRect& viewportRect)
 {
-	endPickObject();
-	_scene.reset();
+    endPickObject();
+    _scene.reset();
 }
 
 /******************************************************************************
@@ -155,12 +155,12 @@ void SceneRenderer::endFrame(bool renderingSuccessful, const QRect& viewportRect
 ******************************************************************************/
 bool SceneRenderer::renderScene()
 {
-	if(scene()) {
-		// Recursively render all scene nodes.
-		return renderNode(scene());
-	}
+    if(scene()) {
+        // Recursively render all scene nodes.
+        return renderNode(scene());
+    }
 
-	return true;
+    return true;
 }
 
 /******************************************************************************
@@ -168,60 +168,60 @@ bool SceneRenderer::renderScene()
 ******************************************************************************/
 bool SceneRenderer::renderNode(SceneNode* node)
 {
-	OVITO_ASSERT(scene());
+    OVITO_ASSERT(scene());
     OVITO_CHECK_OBJECT_POINTER(node);
 
-	// Skip node if it is hidden in the current viewport.
-	if(viewport() && node->isHiddenInViewport(viewport(), false))
-		return true;
+    // Skip node if it is hidden in the current viewport.
+    if(viewport() && node->isHiddenInViewport(viewport(), false))
+        return true;
 
     // Set up transformation matrix.
-	TimeInterval interval;
-	const AffineTransformation& nodeTM = node->getWorldTransform(time(), interval);
-	setWorldTransform(nodeTM);
+    TimeInterval interval;
+    const AffineTransformation& nodeTM = node->getWorldTransform(time(), interval);
+    setWorldTransform(nodeTM);
 
-	if(PipelineSceneNode* pipeline = dynamic_object_cast<PipelineSceneNode>(node)) {
+    if(PipelineSceneNode* pipeline = dynamic_object_cast<PipelineSceneNode>(node)) {
 
-		// Do not render node if it is the view node of the viewport or
-		// if it is the target of the view node.
-		if(!viewport() || !viewport()->viewNode() || (viewport()->viewNode() != node && viewport()->viewNode()->lookatTargetNode() != node)) {
+        // Do not render node if it is the view node of the viewport or
+        // if it is the target of the view node.
+        if(!viewport() || !viewport()->viewNode() || (viewport()->viewNode() != node && viewport()->viewNode()->lookatTargetNode() != node)) {
 
-			// Evaluate data pipeline of object node and render the results.
-			PipelineEvaluationFuture pipelineEvaluation;
-			if(waitForLongOperationsEnabled()) {
-				pipelineEvaluation = pipeline->evaluateRenderingPipeline(PipelineEvaluationRequest(time()));
-				if(!pipelineEvaluation.waitForFinished())
-					return false;
+            // Evaluate data pipeline of object node and render the results.
+            PipelineEvaluationFuture pipelineEvaluation;
+            if(waitForLongOperationsEnabled()) {
+                pipelineEvaluation = pipeline->evaluateRenderingPipeline(PipelineEvaluationRequest(time()));
+                if(!pipelineEvaluation.waitForFinished())
+                    return false;
 
-				// After the rendering process has been temporarily interrupted above, rendering is resumed now.
-				// Give the renderer the opportunity to restore any state that must be active (e.g. the active OpenGL context).
-				resumeRendering();
-			}
-			const PipelineFlowState& state = pipelineEvaluation.isValid() ?
-												pipelineEvaluation.result() :
-												pipeline->evaluatePipelineSynchronous(time(), true);
+                // After the rendering process has been temporarily interrupted above, rendering is resumed now.
+                // Give the renderer the opportunity to restore any state that must be active (e.g. the active OpenGL context).
+                resumeRendering();
+            }
+            const PipelineFlowState& state = pipelineEvaluation.isValid() ?
+                                                pipelineEvaluation.result() :
+                                                pipeline->evaluatePipelineSynchronous(time(), true);
 
-			if(state) {
-				// Invoke all vis elements of all data objects in the pipeline state.
-				ConstDataObjectPath dataObjectPath;
-				renderDataObject(state.data(), pipeline, state, dataObjectPath);
-				OVITO_ASSERT(dataObjectPath.empty());
-			}
-		}
-	}
+            if(state) {
+                // Invoke all vis elements of all data objects in the pipeline state.
+                ConstDataObjectPath dataObjectPath;
+                renderDataObject(state.data(), pipeline, state, dataObjectPath);
+                OVITO_ASSERT(dataObjectPath.empty());
+            }
+        }
+    }
 
-	// Render trajectory when node transformation is animated.
-	if(isInteractive() && !isPicking()) {
-		renderNodeTrajectory(node);
-	}
+    // Render trajectory when node transformation is animated.
+    if(isInteractive() && !isPicking()) {
+        renderNodeTrajectory(node);
+    }
 
-	// Render child nodes.
-	for(SceneNode* child : node->children()) {
-		if(!renderNode(child))
-			return false;
-	}
+    // Render child nodes.
+    for(SceneNode* child : node->children()) {
+        if(!renderNode(child))
+            return false;
+    }
 
-	return true;
+    return true;
 }
 
 /******************************************************************************
@@ -229,63 +229,63 @@ bool SceneRenderer::renderNode(SceneNode* node)
 ******************************************************************************/
 void SceneRenderer::renderDataObject(const DataObject* dataObj, const PipelineSceneNode* pipeline, const PipelineFlowState& state, ConstDataObjectPath& dataObjectPath)
 {
-	bool isOnStack = false;
+    bool isOnStack = false;
 
-	// Call all vis elements of the data object.
-	for(DataVis* vis : dataObj->visElements()) {
-		// Let the PipelineSceneNode substitude the vis element with another one.
-		vis = pipeline->getReplacementVisElement(vis);
-		if(vis->isEnabled()) {
-			// Push the data object onto the stack.
-			if(!isOnStack) {
-				dataObjectPath.push_back(dataObj);
-				isOnStack = true;
-			}
-			PipelineStatus status;
-			try {
-				// Let the vis element do the rendering.
-				status = vis->render(time(), dataObjectPath, state, this, pipeline);
-				// Pass error status codes to the exception handler below.
-				if(status.type() == PipelineStatus::Error)
-					throw Exception(status.text());
-				// In console mode, print warning messages to the terminal.
-				if(status.type() == PipelineStatus::Warning && !status.text().isEmpty() && Application::instance()->consoleMode()) {
-					qWarning() << "WARNING: Visual element" << vis->objectTitle() << "reported:" << status.text();
-				}
-			}
-			catch(SceneRenderer::RendererException&) {
-				// Always interrupt rendering process by rethrowing the exception.
-				throw;
-			}
-			catch(Exception& ex) {
-				status = ex;
-				ex.prependGeneralMessage(tr("Visual element '%1' reported an error during rendering.").arg(vis->objectTitle()));
-				// If the vis element fails, interrupt rendering process in console mode; swallow exceptions in GUI mode.
-				if(!isInteractive()) 
-					throw;
-			}
-			// Unless the vis element has indicated that it is in control of the status,
-			// automatically adopt the outcome of the rendering operation as status code.
-			if(!vis->manualErrorStateControl())
-				vis->setStatus(status);
-		}
-	}
+    // Call all vis elements of the data object.
+    for(DataVis* vis : dataObj->visElements()) {
+        // Let the PipelineSceneNode substitude the vis element with another one.
+        vis = pipeline->getReplacementVisElement(vis);
+        if(vis->isEnabled()) {
+            // Push the data object onto the stack.
+            if(!isOnStack) {
+                dataObjectPath.push_back(dataObj);
+                isOnStack = true;
+            }
+            PipelineStatus status;
+            try {
+                // Let the vis element do the rendering.
+                status = vis->render(time(), dataObjectPath, state, this, pipeline);
+                // Pass error status codes to the exception handler below.
+                if(status.type() == PipelineStatus::Error)
+                    throw Exception(status.text());
+                // In console mode, print warning messages to the terminal.
+                if(status.type() == PipelineStatus::Warning && !status.text().isEmpty() && Application::instance()->consoleMode()) {
+                    qWarning() << "WARNING: Visual element" << vis->objectTitle() << "reported:" << status.text();
+                }
+            }
+            catch(SceneRenderer::RendererException&) {
+                // Always interrupt rendering process by rethrowing the exception.
+                throw;
+            }
+            catch(Exception& ex) {
+                status = ex;
+                ex.prependGeneralMessage(tr("Visual element '%1' reported an error during rendering.").arg(vis->objectTitle()));
+                // If the vis element fails, interrupt rendering process in console mode; swallow exceptions in GUI mode.
+                if(!isInteractive()) 
+                    throw;
+            }
+            // Unless the vis element has indicated that it is in control of the status,
+            // automatically adopt the outcome of the rendering operation as status code.
+            if(!vis->manualErrorStateControl())
+                vis->setStatus(status);
+        }
+    }
 
-	// Recursively visit the sub-objects of the data object and render them as well.
-	dataObj->visitSubObjects([&](const DataObject* subObject) {
-		// Push the data object onto the stack.
-		if(!isOnStack) {
-			dataObjectPath.push_back(dataObj);
-			isOnStack = true;
-		}
-		renderDataObject(subObject, pipeline, state, dataObjectPath);
-		return false;
-	});
+    // Recursively visit the sub-objects of the data object and render them as well.
+    dataObj->visitSubObjects([&](const DataObject* subObject) {
+        // Push the data object onto the stack.
+        if(!isOnStack) {
+            dataObjectPath.push_back(dataObj);
+            isOnStack = true;
+        }
+        renderDataObject(subObject, pipeline, state, dataObjectPath);
+        return false;
+    });
 
-	// Pop the data object from the stack.
-	if(isOnStack) {
-		dataObjectPath.pop_back();
-	}
+    // Pop the data object from the stack.
+    if(isOnStack) {
+        dataObjectPath.pop_back();
+    }
 }
 
 /******************************************************************************
@@ -293,17 +293,17 @@ void SceneRenderer::renderDataObject(const DataObject* dataObj, const PipelineSc
 ******************************************************************************/
 bool SceneRenderer::renderOverlays(bool underlays, const QRect& logicalViewportRect, const QRect& physicalViewportRect, MainThreadOperation& operation)
 {
-	OVITO_ASSERT(!isPicking());
-	OVITO_ASSERT(viewport());
+    OVITO_ASSERT(!isPicking());
+    OVITO_ASSERT(viewport());
 
-	for(ViewportOverlay* layer : (underlays ? viewport()->underlays() : viewport()->overlays())) {
-		if(layer->isEnabled()) {
-			layer->render(this, logicalViewportRect, physicalViewportRect, operation);
-			if(operation.isCanceled())
-				return false;
-		}
-	}
-	return !operation.isCanceled();
+    for(ViewportOverlay* layer : (underlays ? viewport()->underlays() : viewport()->overlays())) {
+        if(layer->isEnabled()) {
+            layer->render(this, logicalViewportRect, physicalViewportRect, operation);
+            if(operation.isCanceled())
+                return false;
+        }
+    }
+    return !operation.isCanceled();
 }
 
 /******************************************************************************
@@ -313,23 +313,23 @@ bool SceneRenderer::renderOverlays(bool underlays, const QRect& logicalViewportR
 ******************************************************************************/
 ConstDataBufferPtr SceneRenderer::getNodeTrajectory(const SceneNode* node)
 {
-	Controller* ctrl = node->transformationController();
-	if(ctrl && ctrl->isAnimated()) {
-		AnimationSettings* animSettings = scene()->animationSettings();
-		int firstFrame = animSettings->firstFrame();
-		int lastFrame = animSettings->lastFrame();
-		OVITO_ASSERT(lastFrame >= firstFrame);
-		DataBufferAccessAndRef<Point3> vertices = DataBufferPtr::create(lastFrame - firstFrame + 1, DataBuffer::Float, 3);
-		auto v = vertices.begin();
-		for(int frame = firstFrame; frame <= lastFrame; frame++) {
-			TimeInterval iv;
-			const Vector3& pos = node->getWorldTransform(AnimationTime::fromFrame(frame), iv).translation();
-			*v++ = Point3::Origin() + pos;
-		}
-		OVITO_ASSERT(v == vertices.end());
-		return vertices.take();
-	}
-	return {};
+    Controller* ctrl = node->transformationController();
+    if(ctrl && ctrl->isAnimated()) {
+        AnimationSettings* animSettings = scene()->animationSettings();
+        int firstFrame = animSettings->firstFrame();
+        int lastFrame = animSettings->lastFrame();
+        OVITO_ASSERT(lastFrame >= firstFrame);
+        DataBufferAccessAndRef<Point3> vertices = DataBufferPtr::create(lastFrame - firstFrame + 1, DataBuffer::Float, 3);
+        auto v = vertices.begin();
+        for(int frame = firstFrame; frame <= lastFrame; frame++) {
+            TimeInterval iv;
+            const Vector3& pos = node->getWorldTransform(AnimationTime::fromFrame(frame), iv).translation();
+            *v++ = Point3::Origin() + pos;
+        }
+        OVITO_ASSERT(v == vertices.end());
+        return vertices.take();
+    }
+    return {};
 }
 
 /******************************************************************************
@@ -337,42 +337,42 @@ ConstDataBufferPtr SceneRenderer::getNodeTrajectory(const SceneNode* node)
 ******************************************************************************/
 void SceneRenderer::renderNodeTrajectory(const SceneNode* node)
 {
-	// Do not render the trajectory of the camera node of the viewport.
-	if(viewport() && viewport()->viewNode() == node) return;
+    // Do not render the trajectory of the camera node of the viewport.
+    if(viewport() && viewport()->viewNode() == node) return;
 
-	if(ConstDataBufferPtr trajectory = getNodeTrajectory(node)) {
-		setWorldTransform(AffineTransformation::Identity());
+    if(ConstDataBufferPtr trajectory = getNodeTrajectory(node)) {
+        setWorldTransform(AffineTransformation::Identity());
 
-		if(!isBoundingBoxPass()) {
+        if(!isBoundingBoxPass()) {
 
-			// Render lines connecting the trajectory points.
-			if(trajectory->size() >= 2) {
-				DataBufferAccessAndRef<Point3> lineVertices = DataBufferPtr::create((trajectory->size() - 1) * 2, DataBuffer::Float, 3);
-				ConstDataBufferAccess<Point3> trajectoryPoints(trajectory);
-				for(size_t index = 0; index < trajectory->size(); index++) {
-					if(index != 0)
-						lineVertices[index * 2 - 1] = trajectoryPoints[index];
-					if(index != trajectory->size() - 1)
-						lineVertices[index * 2] = trajectoryPoints[index];
-				}
-				LinePrimitive trajLine;
-				trajLine.setPositions(lineVertices.take());
-				trajLine.setUniformColor(ColorA(1.0, 0.8, 0.4));
-				renderLines(trajLine);
-			}
+            // Render lines connecting the trajectory points.
+            if(trajectory->size() >= 2) {
+                DataBufferAccessAndRef<Point3> lineVertices = DataBufferPtr::create((trajectory->size() - 1) * 2, DataBuffer::Float, 3);
+                ConstDataBufferAccess<Point3> trajectoryPoints(trajectory);
+                for(size_t index = 0; index < trajectory->size(); index++) {
+                    if(index != 0)
+                        lineVertices[index * 2 - 1] = trajectoryPoints[index];
+                    if(index != trajectory->size() - 1)
+                        lineVertices[index * 2] = trajectoryPoints[index];
+                }
+                LinePrimitive trajLine;
+                trajLine.setPositions(lineVertices.take());
+                trajLine.setUniformColor(ColorA(1.0, 0.8, 0.4));
+                renderLines(trajLine);
+            }
 
-			// Render the trajectory points themselves using marker primitives.
-			MarkerPrimitive frameMarkers(MarkerPrimitive::DotShape);
-			frameMarkers.setPositions(std::move(trajectory));
-			frameMarkers.setColor(ColorA(1, 1, 1));
-			renderMarkers(frameMarkers);
-		}
-		else {
-			Box3 bb;
-			bb.addPoints(ConstDataBufferAccess<Point3>(trajectory));
-			addToLocalBoundingBox(bb);
-		}
-	}
+            // Render the trajectory points themselves using marker primitives.
+            MarkerPrimitive frameMarkers(MarkerPrimitive::DotShape);
+            frameMarkers.setPositions(std::move(trajectory));
+            frameMarkers.setColor(ColorA(1, 1, 1));
+            renderMarkers(frameMarkers);
+        }
+        else {
+            Box3 bb;
+            bb.addPoints(ConstDataBufferAccess<Point3>(trajectory));
+            addToLocalBoundingBox(bb);
+        }
+    }
 }
 
 /******************************************************************************
@@ -381,30 +381,30 @@ void SceneRenderer::renderNodeTrajectory(const SceneNode* node)
 ******************************************************************************/
 void SceneRenderer::renderInteractiveContent()
 {
-	OVITO_ASSERT(viewport());
-	OVITO_ASSERT(scene());
+    OVITO_ASSERT(viewport());
+    OVITO_ASSERT(scene());
 
-	// Render construction grid.
-	if(viewport()->isGridVisible())
-		renderGrid();
+    // Render construction grid.
+    if(viewport()->isGridVisible())
+        renderGrid();
 
-	// Render visual 3D representation of the modifiers.
-	renderModifiers(false);
+    // Render visual 3D representation of the modifiers.
+    renderModifiers(false);
 
-	// Render visual 2D representation of the modifiers.
-	renderModifiers(true);
+    // Render visual 2D representation of the modifiers.
+    renderModifiers(true);
 
-	// Render viewport gizmos.
-	if(ViewportWindowInterface* viewportWindow = viewport()->window()) {
-		// First, render 3D content.
-		for(ViewportGizmo* gizmo : viewportWindow->viewportGizmos()) {
-			gizmo->renderOverlay3D(viewport(), this);
-		}
-		// Then, render 2D content on top.
-		for(ViewportGizmo* gizmo : viewportWindow->viewportGizmos()) {
-			gizmo->renderOverlay2D(viewport(), this);
-		}
-	}
+    // Render viewport gizmos.
+    if(ViewportWindowInterface* viewportWindow = viewport()->window()) {
+        // First, render 3D content.
+        for(ViewportGizmo* gizmo : viewportWindow->viewportGizmos()) {
+            gizmo->renderOverlay3D(viewport(), this);
+        }
+        // Then, render 2D content on top.
+        for(ViewportGizmo* gizmo : viewportWindow->viewportGizmos()) {
+            gizmo->renderOverlay2D(viewport(), this);
+        }
+    }
 }
 
 /******************************************************************************
@@ -412,13 +412,13 @@ void SceneRenderer::renderInteractiveContent()
 ******************************************************************************/
 void SceneRenderer::renderModifiers(bool renderOverlay)
 {
-	// Visit all objects in the scene.
-	if(scene()) {
-		scene()->visitObjectNodes([&](PipelineSceneNode* pipeline) {
-			renderModifiers(pipeline, renderOverlay);
-			return true;
-		});
-	}
+    // Visit all objects in the scene.
+    if(scene()) {
+        scene()->visitObjectNodes([&](PipelineSceneNode* pipeline) {
+            renderModifiers(pipeline, renderOverlay);
+            return true;
+        });
+    }
 }
 
 /******************************************************************************
@@ -426,26 +426,26 @@ void SceneRenderer::renderModifiers(bool renderOverlay)
 ******************************************************************************/
 void SceneRenderer::renderModifiers(PipelineSceneNode* pipeline, bool renderOverlay)
 {
-	ModifierApplication* modApp = dynamic_object_cast<ModifierApplication>(pipeline->dataProvider());
-	while(modApp) {
-		Modifier* mod = modApp->modifier();
+    ModifierApplication* modApp = dynamic_object_cast<ModifierApplication>(pipeline->dataProvider());
+    while(modApp) {
+        Modifier* mod = modApp->modifier();
 
-		// Setup local transformation.
-		TimeInterval interval;
-		setWorldTransform(pipeline->getWorldTransform(time(), interval));
+        // Setup local transformation.
+        TimeInterval interval;
+        setWorldTransform(pipeline->getWorldTransform(time(), interval));
 
-		try {
-			// Render modifier.
-			mod->renderModifierVisual(ModifierEvaluationRequest(scene()->animationSettings(), modApp), pipeline, this, renderOverlay);
-		}
-		catch(const Exception& ex) {
-			// Swallow exceptions, because we are in interactive rendering mode.
-			ex.logError();
-		}
+        try {
+            // Render modifier.
+            mod->renderModifierVisual(ModifierEvaluationRequest(scene()->animationSettings(), modApp), pipeline, this, renderOverlay);
+        }
+        catch(const Exception& ex) {
+            // Swallow exceptions, because we are in interactive rendering mode.
+            ex.logError();
+        }
 
-		// Traverse up the pipeline.
-		modApp = dynamic_object_cast<ModifierApplication>(modApp->input());
-	}
+        // Traverse up the pipeline.
+        modApp = dynamic_object_cast<ModifierApplication>(modApp->input());
+    }
 }
 
 /******************************************************************************
@@ -453,41 +453,41 @@ void SceneRenderer::renderModifiers(PipelineSceneNode* pipeline, bool renderOver
 ******************************************************************************/
 void SceneRenderer::render2DPolyline(const Point2* points, int count, const ColorA& color, bool closed)
 {
-	if(isBoundingBoxPass())
-		return;
-	OVITO_ASSERT(count >= 2);
+    if(isBoundingBoxPass())
+        return;
+    OVITO_ASSERT(count >= 2);
 
-	LinePrimitive primitive;
-	primitive.setUniformColor(color);
+    LinePrimitive primitive;
+    primitive.setUniformColor(color);
 
-	DataBufferAccessAndRef<Point3> vertices = DataBufferPtr::create((closed ? count : count-1) * 2, DataBuffer::Float, 3);
-	Point3* lineSegment = vertices.begin();
-	for(int i = 0; i < count - 1; i++, lineSegment += 2) {
-		lineSegment[0] = Point3(points[i].x(), points[i].y(), 0.0);
-		lineSegment[1] = Point3(points[i+1].x(), points[i+1].y(), 0.0);
-	}
-	if(closed) {
-		lineSegment[0] = Point3(points[count-1].x(), points[count-1].y(), 0.0);
-		lineSegment[1] = Point3(points[0].x(), points[0].y(), 0.0);
-		lineSegment += 2;
-	}
-	OVITO_ASSERT(lineSegment == vertices.end());
-	primitive.setPositions(vertices.take());
+    DataBufferAccessAndRef<Point3> vertices = DataBufferPtr::create((closed ? count : count-1) * 2, DataBuffer::Float, 3);
+    Point3* lineSegment = vertices.begin();
+    for(int i = 0; i < count - 1; i++, lineSegment += 2) {
+        lineSegment[0] = Point3(points[i].x(), points[i].y(), 0.0);
+        lineSegment[1] = Point3(points[i+1].x(), points[i+1].y(), 0.0);
+    }
+    if(closed) {
+        lineSegment[0] = Point3(points[count-1].x(), points[count-1].y(), 0.0);
+        lineSegment[1] = Point3(points[0].x(), points[0].y(), 0.0);
+        lineSegment += 2;
+    }
+    OVITO_ASSERT(lineSegment == vertices.end());
+    primitive.setPositions(vertices.take());
 
-	// Set up model-view-projection matrices.
-	ViewProjectionParameters originalProjParams = projParams();
-	ViewProjectionParameters newProjParams;
-	newProjParams.aspectRatio = originalProjParams.aspectRatio;
-	newProjParams.projectionMatrix = Matrix4::ortho(viewportRect().left(), viewportRect().right() + 1, viewportRect().bottom() + 1, viewportRect().top(), -1.0, 1.0);
-	newProjParams.inverseProjectionMatrix = newProjParams.projectionMatrix.inverse();
-	setProjParams(newProjParams);
-	setWorldTransform(AffineTransformation::Identity());
+    // Set up model-view-projection matrices.
+    ViewProjectionParameters originalProjParams = projParams();
+    ViewProjectionParameters newProjParams;
+    newProjParams.aspectRatio = originalProjParams.aspectRatio;
+    newProjParams.projectionMatrix = Matrix4::ortho(viewportRect().left(), viewportRect().right() + 1, viewportRect().bottom() + 1, viewportRect().top(), -1.0, 1.0);
+    newProjParams.inverseProjectionMatrix = newProjParams.projectionMatrix.inverse();
+    setProjParams(newProjParams);
+    setWorldTransform(AffineTransformation::Identity());
 
-	setDepthTestEnabled(false);
-	renderLines(primitive);
-	setDepthTestEnabled(true);
+    setDepthTestEnabled(false);
+    renderLines(primitive);
+    setDepthTestEnabled(true);
 
-	setProjParams(originalProjParams);
+    setProjParams(originalProjParams);
 }
 
 /******************************************************************************
@@ -496,26 +496,26 @@ void SceneRenderer::render2DPolyline(const Point2* points, int count, const Colo
 ******************************************************************************/
 FloatType SceneRenderer::projectedPixelSize(const Point3& worldPosition) const
 {
-	// Get window size in device pixels.
-	int height = viewportRect().height();
-	if(height == 0) return 0;
+    // Get window size in device pixels.
+    int height = viewportRect().height();
+    if(height == 0) return 0;
 
-	// The projected size in pixels:
-	const FloatType baseSize = 1.0 * devicePixelRatio();
+    // The projected size in pixels:
+    const FloatType baseSize = 1.0 * devicePixelRatio();
 
-	if(projParams().isPerspective) {
+    if(projParams().isPerspective) {
 
-		Point3 p = projParams().viewMatrix * worldPosition;
-		if(p.z() == 0) return 1;
+        Point3 p = projParams().viewMatrix * worldPosition;
+        if(p.z() == 0) return 1;
 
         Point3 p1 = projParams().projectionMatrix * p;
-		Point3 p2 = projParams().projectionMatrix * (p + Vector3(1,0,0));
+        Point3 p2 = projParams().projectionMatrix * (p + Vector3(1,0,0));
 
-		return baseSize / (p1 - p2).length() / (FloatType)height;
-	}
-	else {
-		return projParams().fieldOfView / (FloatType)height * baseSize;
-	}
+        return baseSize / (p1 - p2).length() / (FloatType)height;
+    }
+    else {
+        return projParams().fieldOfView / (FloatType)height * baseSize;
+    }
 }
 
 /******************************************************************************
@@ -523,13 +523,13 @@ FloatType SceneRenderer::projectedPixelSize(const Point3& worldPosition) const
 ******************************************************************************/
 quint32 SceneRenderer::beginPickObject(const PipelineSceneNode* objNode, ObjectPickInfo* pickInfo)
 {
-	if(isPicking()) {
-		_currentObjectPickingRecord.objectNode = const_cast<PipelineSceneNode*>(objNode);
-		_currentObjectPickingRecord.pickInfo = pickInfo;
-		_currentObjectPickingRecord.baseObjectID = _nextAvailablePickingID;
-		return _currentObjectPickingRecord.baseObjectID;
-	}
-	return 0;
+    if(isPicking()) {
+        _currentObjectPickingRecord.objectNode = const_cast<PipelineSceneNode*>(objNode);
+        _currentObjectPickingRecord.pickInfo = pickInfo;
+        _currentObjectPickingRecord.baseObjectID = _nextAvailablePickingID;
+        return _currentObjectPickingRecord.baseObjectID;
+    }
+    return 0;
 }
 
 /******************************************************************************
@@ -537,13 +537,13 @@ quint32 SceneRenderer::beginPickObject(const PipelineSceneNode* objNode, ObjectP
 ******************************************************************************/
 quint32 SceneRenderer::registerSubObjectIDs(quint32 subObjectCount, const ConstDataBufferPtr& indices)
 {
-	OVITO_ASSERT(isPicking());
+    OVITO_ASSERT(isPicking());
 
-	quint32 baseObjectID = _nextAvailablePickingID;
-	if(indices)
-		_currentObjectPickingRecord.indexedRanges.push_back(std::make_pair(indices, _nextAvailablePickingID - _currentObjectPickingRecord.baseObjectID));
-	_nextAvailablePickingID += subObjectCount;
-	return baseObjectID;
+    quint32 baseObjectID = _nextAvailablePickingID;
+    if(indices)
+        _currentObjectPickingRecord.indexedRanges.push_back(std::make_pair(indices, _nextAvailablePickingID - _currentObjectPickingRecord.baseObjectID));
+    _nextAvailablePickingID += subObjectCount;
+    return baseObjectID;
 }
 
 /******************************************************************************
@@ -551,15 +551,15 @@ quint32 SceneRenderer::registerSubObjectIDs(quint32 subObjectCount, const ConstD
 ******************************************************************************/
 void SceneRenderer::endPickObject()
 {
-	if(isPicking()) {
-		if(_currentObjectPickingRecord.objectNode) {
-			_objectPickingRecords.push_back(std::move(_currentObjectPickingRecord));
-		}
-		_currentObjectPickingRecord.baseObjectID = 0;
-		_currentObjectPickingRecord.objectNode = nullptr;
-		_currentObjectPickingRecord.pickInfo = nullptr;
-		_currentObjectPickingRecord.indexedRanges.clear();
-	}
+    if(isPicking()) {
+        if(_currentObjectPickingRecord.objectNode) {
+            _objectPickingRecords.push_back(std::move(_currentObjectPickingRecord));
+        }
+        _currentObjectPickingRecord.baseObjectID = 0;
+        _currentObjectPickingRecord.objectNode = nullptr;
+        _currentObjectPickingRecord.pickInfo = nullptr;
+        _currentObjectPickingRecord.indexedRanges.clear();
+    }
 }
 
 /******************************************************************************
@@ -567,13 +567,13 @@ void SceneRenderer::endPickObject()
 ******************************************************************************/
 void SceneRenderer::resetPickingBuffer()
 {
-	endPickObject();
-	_objectPickingRecords.clear();
+    endPickObject();
+    _objectPickingRecords.clear();
 #if 1
-	_nextAvailablePickingID = 1;
+    _nextAvailablePickingID = 1;
 #else
-	// This can be enabled during debugging to avoid alpha!=1 pixels in the picking render buffer.
-	_nextAvailablePickingID = 0xEF000000;
+    // This can be enabled during debugging to avoid alpha!=1 pixels in the picking render buffer.
+    _nextAvailablePickingID = 0xEF000000;
 #endif
 }
 
@@ -582,19 +582,19 @@ void SceneRenderer::resetPickingBuffer()
 ******************************************************************************/
 const SceneRenderer::ObjectPickingRecord* SceneRenderer::lookupObjectPickingRecord(quint32 objectID) const
 {
-	if(objectID == 0 || _objectPickingRecords.empty())
-		return nullptr;
+    if(objectID == 0 || _objectPickingRecords.empty())
+        return nullptr;
 
-	for(auto iter = _objectPickingRecords.begin(); iter != _objectPickingRecords.end(); iter++) {
-		if(iter->baseObjectID > objectID) {
-			OVITO_ASSERT(iter != _objectPickingRecords.begin());
-			OVITO_ASSERT(objectID >= (iter-1)->baseObjectID);
-			return &*std::prev(iter);
-		}
-	}
+    for(auto iter = _objectPickingRecords.begin(); iter != _objectPickingRecords.end(); iter++) {
+        if(iter->baseObjectID > objectID) {
+            OVITO_ASSERT(iter != _objectPickingRecords.begin());
+            OVITO_ASSERT(objectID >= (iter-1)->baseObjectID);
+            return &*std::prev(iter);
+        }
+    }
 
-	OVITO_ASSERT(objectID >= _objectPickingRecords.back().baseObjectID);
-	return &_objectPickingRecords.back();
+    OVITO_ASSERT(objectID >= _objectPickingRecords.back().baseObjectID);
+    return &_objectPickingRecords.back();
 }
 
 /******************************************************************************
@@ -602,41 +602,41 @@ const SceneRenderer::ObjectPickingRecord* SceneRenderer::lookupObjectPickingReco
 ******************************************************************************/
 std::tuple<FloatType, Box2I> SceneRenderer::determineGridRange(Viewport* vp)
 {
-	// Determine the area of the construction grid that is visible in the viewport.
-	static const Point2 testPoints[] = {
-		{-1,-1}, {1,-1}, {1, 1}, {-1, 1}, {0,1}, {0,-1}, {1,0}, {-1,0},
-		{0,1}, {0,-1}, {1,0}, {-1,0}, {-1, 0.5}, {-1,-0.5}, {1,-0.5}, {1,0.5}, {0,0}
-	};
+    // Determine the area of the construction grid that is visible in the viewport.
+    static const Point2 testPoints[] = {
+        {-1,-1}, {1,-1}, {1, 1}, {-1, 1}, {0,1}, {0,-1}, {1,0}, {-1,0},
+        {0,1}, {0,-1}, {1,0}, {-1,0}, {-1, 0.5}, {-1,-0.5}, {1,-0.5}, {1,0.5}, {0,0}
+    };
 
-	// Compute intersection points of test rays with grid plane.
-	Box2 visibleGridRect;
-	size_t numberOfIntersections = 0;
-	for(size_t i = 0; i < sizeof(testPoints)/sizeof(testPoints[0]); i++) {
-		Point3 p;
-		if(vp->computeConstructionPlaneIntersection(testPoints[i], p, 0.1f)) {
-			numberOfIntersections++;
-			visibleGridRect.addPoint(p.x(), p.y());
-		}
-	}
+    // Compute intersection points of test rays with grid plane.
+    Box2 visibleGridRect;
+    size_t numberOfIntersections = 0;
+    for(size_t i = 0; i < sizeof(testPoints)/sizeof(testPoints[0]); i++) {
+        Point3 p;
+        if(vp->computeConstructionPlaneIntersection(testPoints[i], p, 0.1f)) {
+            numberOfIntersections++;
+            visibleGridRect.addPoint(p.x(), p.y());
+        }
+    }
 
-	if(numberOfIntersections < 2) {
-		// Cannot determine visible parts of the grid.
+    if(numberOfIntersections < 2) {
+        // Cannot determine visible parts of the grid.
         return std::tuple<FloatType, Box2I>(0.0f, Box2I());
-	}
+    }
 
-	// Determine grid spacing adaptively.
-	Point3 gridCenter(visibleGridRect.center().x(), visibleGridRect.center().y(), 0);
-	FloatType gridSpacing = vp->nonScalingSize(vp->gridMatrix() * gridCenter) * 2.0f;
-	// Round to nearest power of 10.
-	gridSpacing = pow((FloatType)10, floor(log10(gridSpacing)));
+    // Determine grid spacing adaptively.
+    Point3 gridCenter(visibleGridRect.center().x(), visibleGridRect.center().y(), 0);
+    FloatType gridSpacing = vp->nonScalingSize(vp->gridMatrix() * gridCenter) * 2.0f;
+    // Round to nearest power of 10.
+    gridSpacing = pow((FloatType)10, floor(log10(gridSpacing)));
 
-	// Determine how many grid lines need to be rendered.
-	int xstart = (int)floor(visibleGridRect.minc.x() / (gridSpacing * 10)) * 10;
-	int xend = (int)ceil(visibleGridRect.maxc.x() / (gridSpacing * 10)) * 10;
-	int ystart = (int)floor(visibleGridRect.minc.y() / (gridSpacing * 10)) * 10;
-	int yend = (int)ceil(visibleGridRect.maxc.y() / (gridSpacing * 10)) * 10;
+    // Determine how many grid lines need to be rendered.
+    int xstart = (int)floor(visibleGridRect.minc.x() / (gridSpacing * 10)) * 10;
+    int xend = (int)ceil(visibleGridRect.maxc.x() / (gridSpacing * 10)) * 10;
+    int ystart = (int)floor(visibleGridRect.minc.y() / (gridSpacing * 10)) * 10;
+    int yend = (int)ceil(visibleGridRect.maxc.y() / (gridSpacing * 10)) * 10;
 
-	return std::tuple<FloatType, Box2I>(gridSpacing, Box2I(Point2I(xstart, ystart), Point2I(xend, yend)));
+    return std::tuple<FloatType, Box2I>(gridSpacing, Box2I(Point2I(xstart, ystart), Point2I(xend, yend)));
 }
 
 /******************************************************************************
@@ -644,75 +644,75 @@ std::tuple<FloatType, Box2I> SceneRenderer::determineGridRange(Viewport* vp)
 ******************************************************************************/
 void SceneRenderer::renderGrid()
 {
-	if(isPicking())
-		return;
+    if(isPicking())
+        return;
 
-	FloatType gridSpacing;
-	Box2I gridRange;
-	std::tie(gridSpacing, gridRange) = determineGridRange(viewport());
-	if(gridSpacing <= 0) return;
+    FloatType gridSpacing;
+    Box2I gridRange;
+    std::tie(gridSpacing, gridRange) = determineGridRange(viewport());
+    if(gridSpacing <= 0) return;
 
-	// Determine how many grid lines need to be rendered.
-	int xstart = gridRange.minc.x();
-	int ystart = gridRange.minc.y();
-	int numLinesX = gridRange.size(0) + 1;
-	int numLinesY = gridRange.size(1) + 1;
+    // Determine how many grid lines need to be rendered.
+    int xstart = gridRange.minc.x();
+    int ystart = gridRange.minc.y();
+    int numLinesX = gridRange.size(0) + 1;
+    int numLinesY = gridRange.size(1) + 1;
 
-	FloatType xstartF = (FloatType)xstart * gridSpacing;
-	FloatType ystartF = (FloatType)ystart * gridSpacing;
-	FloatType xendF = (FloatType)(xstart + numLinesX - 1) * gridSpacing;
-	FloatType yendF = (FloatType)(ystart + numLinesY - 1) * gridSpacing;
+    FloatType xstartF = (FloatType)xstart * gridSpacing;
+    FloatType ystartF = (FloatType)ystart * gridSpacing;
+    FloatType xendF = (FloatType)(xstart + numLinesX - 1) * gridSpacing;
+    FloatType yendF = (FloatType)(ystart + numLinesY - 1) * gridSpacing;
 
-	setWorldTransform(viewport()->gridMatrix());
+    setWorldTransform(viewport()->gridMatrix());
 
-	if(!isBoundingBoxPass()) {
+    if(!isBoundingBoxPass()) {
 
-		// Allocate vertex buffer.
-		int numVertices = 2 * (numLinesX + numLinesY);
+        // Allocate vertex buffer.
+        int numVertices = 2 * (numLinesX + numLinesY);
 
-		DataBufferAccessAndRef<Point3> vertexPositions = DataBufferPtr::create(numVertices, DataBuffer::Float, 3);
-		DataBufferAccessAndRef<ColorA> vertexColors = DataBufferPtr::create(numVertices, DataBuffer::Float, 4);
+        DataBufferAccessAndRef<Point3> vertexPositions = DataBufferPtr::create(numVertices, DataBuffer::Float, 3);
+        DataBufferAccessAndRef<ColorA> vertexColors = DataBufferPtr::create(numVertices, DataBuffer::Float, 4);
 
-		// Build lines array.
-		ColorA color = Viewport::viewportColor(ViewportSettings::COLOR_GRID);
-		ColorA majorColor = Viewport::viewportColor(ViewportSettings::COLOR_GRID_INTENS);
-		ColorA majorMajorColor = Viewport::viewportColor(ViewportSettings::COLOR_GRID_AXIS);
+        // Build lines array.
+        ColorA color = Viewport::viewportColor(ViewportSettings::COLOR_GRID);
+        ColorA majorColor = Viewport::viewportColor(ViewportSettings::COLOR_GRID_INTENS);
+        ColorA majorMajorColor = Viewport::viewportColor(ViewportSettings::COLOR_GRID_AXIS);
 
-		Point3* v = vertexPositions.begin();
-		ColorA* c = vertexColors.begin();
-		FloatType x = xstartF;
-		for(int i = xstart; i < xstart + numLinesX; i++, x += gridSpacing, c += 2) {
-			*v++ = Point3(x, ystartF, 0);
-			*v++ = Point3(x, yendF, 0);
-			if((i % 10) != 0)
-				c[0] = c[1] = color;
-			else if(i != 0)
-				c[0] = c[1] = majorColor;
-			else
-				c[0] = c[1] = majorMajorColor;
-		}
-		FloatType y = ystartF;
-		for(int i = ystart; i < ystart + numLinesY; i++, y += gridSpacing, c += 2) {
-			*v++ = Point3(xstartF, y, 0);
-			*v++ = Point3(xendF, y, 0);
-			if((i % 10) != 0)
-				c[0] = c[1] = color;
-			else if(i != 0)
-				c[0] = c[1] = majorColor;
-			else
-				c[0] = c[1] = majorMajorColor;
-		}
-		OVITO_ASSERT(c == vertexColors.end());
+        Point3* v = vertexPositions.begin();
+        ColorA* c = vertexColors.begin();
+        FloatType x = xstartF;
+        for(int i = xstart; i < xstart + numLinesX; i++, x += gridSpacing, c += 2) {
+            *v++ = Point3(x, ystartF, 0);
+            *v++ = Point3(x, yendF, 0);
+            if((i % 10) != 0)
+                c[0] = c[1] = color;
+            else if(i != 0)
+                c[0] = c[1] = majorColor;
+            else
+                c[0] = c[1] = majorMajorColor;
+        }
+        FloatType y = ystartF;
+        for(int i = ystart; i < ystart + numLinesY; i++, y += gridSpacing, c += 2) {
+            *v++ = Point3(xstartF, y, 0);
+            *v++ = Point3(xendF, y, 0);
+            if((i % 10) != 0)
+                c[0] = c[1] = color;
+            else if(i != 0)
+                c[0] = c[1] = majorColor;
+            else
+                c[0] = c[1] = majorMajorColor;
+        }
+        OVITO_ASSERT(c == vertexColors.end());
 
-		// Render grid lines.
-		LinePrimitive primitive;
-		primitive.setPositions(vertexPositions.take());
-		primitive.setColors(vertexColors.take());
-		renderLines(primitive);
-	}
-	else {
-		addToLocalBoundingBox(Box3(Point3(xstartF, ystartF, 0), Point3(xendF, yendF, 0)));
-	}
+        // Render grid lines.
+        LinePrimitive primitive;
+        primitive.setPositions(vertexPositions.take());
+        primitive.setColors(vertexColors.take());
+        renderLines(primitive);
+    }
+    else {
+        addToLocalBoundingBox(Box3(Point3(xstartF, ystartF, 0), Point3(xendF, yendF, 0)));
+    }
 }
 
 /******************************************************************************
@@ -720,120 +720,120 @@ void SceneRenderer::renderGrid()
 ******************************************************************************/
 void SceneRenderer::renderTextDefaultImplementation(const TextPrimitive& primitive, QImage::Format preferredImageFormat)
 {
-	if(primitive.text().isEmpty() || isPicking())
-		return;
-	
+    if(primitive.text().isEmpty() || isPicking())
+        return;
+    
     // Look up the image primitive for the text label in the cache.
-	auto& [imagePrimitive, offset] = visCache().get<std::tuple<ImagePrimitive, QPointF>>(
-		RendererResourceKey<struct TextImageCache, QString, ColorA, ColorA, ColorA, FloatType, qreal, QString, bool, int, Qt::TextFormat>{ 
-			primitive.text(), 
-			primitive.color(), 
-			primitive.backgroundColor(), 
-			primitive.outlineColor(),
-			primitive.outlineWidth(),
-			this->devicePixelRatio(),
-			primitive.font().key(),
-			primitive.useTightBox(),
-			primitive.alignment(),
-			primitive.textFormat()
-		});
+    auto& [imagePrimitive, offset] = visCache().get<std::tuple<ImagePrimitive, QPointF>>(
+        RendererResourceKey<struct TextImageCache, QString, ColorA, ColorA, ColorA, FloatType, qreal, QString, bool, int, Qt::TextFormat>{ 
+            primitive.text(), 
+            primitive.color(), 
+            primitive.backgroundColor(), 
+            primitive.outlineColor(),
+            primitive.outlineWidth(),
+            this->devicePixelRatio(),
+            primitive.font().key(),
+            primitive.useTightBox(),
+            primitive.alignment(),
+            primitive.textFormat()
+        });
 
-	if(imagePrimitive.image().isNull()) {
+    if(imagePrimitive.image().isNull()) {
 
-		// Determine whether the text primitive uses rich text formatting or not.
-		Qt::TextFormat resolvedTextFormat = primitive.textFormat();
-		if(resolvedTextFormat == Qt::AutoText)
-			resolvedTextFormat = Qt::mightBeRichText(primitive.text()) ? Qt::RichText : Qt::PlainText;
+        // Determine whether the text primitive uses rich text formatting or not.
+        Qt::TextFormat resolvedTextFormat = primitive.textFormat();
+        if(resolvedTextFormat == Qt::AutoText)
+            resolvedTextFormat = Qt::mightBeRichText(primitive.text()) ? Qt::RichText : Qt::PlainText;
 
-		// Measure text size in device pixel units.
-		QRectF bounds = primitive.queryBounds(this, resolvedTextFormat);
+        // Measure text size in device pixel units.
+        QRectF bounds = primitive.queryBounds(this, resolvedTextFormat);
 
-		// Add margin for the outline.
-		qreal devicePixelRatio = this->devicePixelRatio();
-		qreal outlineWidth = std::max(0.0, (primitive.outlineColor().a() > 0.0) ? (qreal)primitive.outlineWidth() : 0.0) * devicePixelRatio;
+        // Add margin for the outline.
+        qreal devicePixelRatio = this->devicePixelRatio();
+        qreal outlineWidth = std::max(0.0, (primitive.outlineColor().a() > 0.0) ? (qreal)primitive.outlineWidth() : 0.0) * devicePixelRatio;
 
-		// Convert to physical units.
-		QRect pixelBounds = bounds.adjusted(-outlineWidth, -outlineWidth, outlineWidth, outlineWidth).toAlignedRect();
+        // Convert to physical units.
+        QRect pixelBounds = bounds.adjusted(-outlineWidth, -outlineWidth, outlineWidth, outlineWidth).toAlignedRect();
 
-		// Generate texture image.
-		QImage textureImage(pixelBounds.width(), pixelBounds.height(), preferredImageFormat);
-		textureImage.setDevicePixelRatio(devicePixelRatio);
-		textureImage.fill((QColor)primitive.backgroundColor());
-//		textureImage.fill(QColor(255,0,0,100));
-		{
-			QPainter painter(&textureImage);
-			painter.setRenderHint(QPainter::Antialiasing);
-			painter.setRenderHint(QPainter::TextAntialiasing);
+        // Generate texture image.
+        QImage textureImage(pixelBounds.width(), pixelBounds.height(), preferredImageFormat);
+        textureImage.setDevicePixelRatio(devicePixelRatio);
+        textureImage.fill((QColor)primitive.backgroundColor());
+//      textureImage.fill(QColor(255,0,0,100));
+        {
+            QPainter painter(&textureImage);
+            painter.setRenderHint(QPainter::Antialiasing);
+            painter.setRenderHint(QPainter::TextAntialiasing);
 
-			QPointF textOffset(outlineWidth, outlineWidth);
-			textOffset.rx() -= bounds.left();
-			textOffset.ry() -= bounds.top();
-			textOffset.rx() /= devicePixelRatio;
-			textOffset.ry() /= devicePixelRatio;
+            QPointF textOffset(outlineWidth, outlineWidth);
+            textOffset.rx() -= bounds.left();
+            textOffset.ry() -= bounds.top();
+            textOffset.rx() /= devicePixelRatio;
+            textOffset.ry() /= devicePixelRatio;
 
-			if(resolvedTextFormat != Qt::RichText) {
-				painter.setFont(primitive.font());
+            if(resolvedTextFormat != Qt::RichText) {
+                painter.setFont(primitive.font());
 
-				if(outlineWidth != 0) {
-					QPainterPath textPath;
-					textPath.addText(textOffset, primitive.font(), primitive.text());
-					painter.setPen(QPen(QBrush(primitive.outlineColor()), primitive.outlineWidth()));
-					painter.drawPath(textPath);
-				}
+                if(outlineWidth != 0) {
+                    QPainterPath textPath;
+                    textPath.addText(textOffset, primitive.font(), primitive.text());
+                    painter.setPen(QPen(QBrush(primitive.outlineColor()), primitive.outlineWidth()));
+                    painter.drawPath(textPath);
+                }
 
-				painter.setPen((QColor)primitive.color());
-				painter.drawText(textOffset, primitive.text());
-			}
-			else {
-				QTextDocument doc;
-				doc.setUndoRedoEnabled(false);
-				doc.setDefaultFont(primitive.font());
-				doc.setHtml(primitive.text());
-				// Remove document margin.
-				doc.setDocumentMargin(0);
-				// Specify document alignment.
-				QTextOption opt = doc.defaultTextOption();
-				opt.setAlignment(Qt::Alignment(primitive.alignment()));
-				doc.setDefaultTextOption(opt);
-				doc.setTextWidth(bounds.width() / devicePixelRatio);
-				// When rendering outlined text is requested, apply the outlined text style to the entire document.
-				if(outlineWidth != 0) {
-					QTextCursor cursor(&doc);
-					cursor.select(QTextCursor::Document);
-					QTextCharFormat charFormat;
-					charFormat.setTextOutline(QPen(QBrush(primitive.outlineColor()), primitive.outlineWidth()));
-					doc.setUndoRedoEnabled(true);
-					cursor.mergeCharFormat(charFormat);
-				}
-				QAbstractTextDocumentLayout::PaintContext ctx;
-				// Specify default text color:
-				ctx.palette.setColor(QPalette::Text, (QColor)primitive.color());
-				painter.translate(textOffset);
-		        doc.documentLayout()->draw(&painter, ctx);
-				// When rendering outlined text, paint the text again on top without the outline 
-				// in order to make the outline only go outward, not inward into the letters.
-				if(outlineWidth != 0) {
-					doc.undo();
-			        doc.documentLayout()->draw(&painter, ctx);
-				}
-			}
-		}
+                painter.setPen((QColor)primitive.color());
+                painter.drawText(textOffset, primitive.text());
+            }
+            else {
+                QTextDocument doc;
+                doc.setUndoRedoEnabled(false);
+                doc.setDefaultFont(primitive.font());
+                doc.setHtml(primitive.text());
+                // Remove document margin.
+                doc.setDocumentMargin(0);
+                // Specify document alignment.
+                QTextOption opt = doc.defaultTextOption();
+                opt.setAlignment(Qt::Alignment(primitive.alignment()));
+                doc.setDefaultTextOption(opt);
+                doc.setTextWidth(bounds.width() / devicePixelRatio);
+                // When rendering outlined text is requested, apply the outlined text style to the entire document.
+                if(outlineWidth != 0) {
+                    QTextCursor cursor(&doc);
+                    cursor.select(QTextCursor::Document);
+                    QTextCharFormat charFormat;
+                    charFormat.setTextOutline(QPen(QBrush(primitive.outlineColor()), primitive.outlineWidth()));
+                    doc.setUndoRedoEnabled(true);
+                    cursor.mergeCharFormat(charFormat);
+                }
+                QAbstractTextDocumentLayout::PaintContext ctx;
+                // Specify default text color:
+                ctx.palette.setColor(QPalette::Text, (QColor)primitive.color());
+                painter.translate(textOffset);
+                doc.documentLayout()->draw(&painter, ctx);
+                // When rendering outlined text, paint the text again on top without the outline 
+                // in order to make the outline only go outward, not inward into the letters.
+                if(outlineWidth != 0) {
+                    doc.undo();
+                    doc.documentLayout()->draw(&painter, ctx);
+                }
+            }
+        }
 
-		imagePrimitive.setImage(std::move(textureImage));
-		if(!primitive.useTightBox())
-			offset = QPointF(bounds.left() - outlineWidth, -outlineWidth);
-		else
-			offset = QPointF(-outlineWidth, -outlineWidth);
+        imagePrimitive.setImage(std::move(textureImage));
+        if(!primitive.useTightBox())
+            offset = QPointF(bounds.left() - outlineWidth, -outlineWidth);
+        else
+            offset = QPointF(-outlineWidth, -outlineWidth);
 
-		if(primitive.alignment() & Qt::AlignRight) offset.rx() += -bounds.width();
-		else if(primitive.alignment() & Qt::AlignHCenter) offset.rx() += -bounds.width() / 2;
-		if(primitive.alignment() & Qt::AlignBottom) offset.ry() += -bounds.height();
-		else if(primitive.alignment() & Qt::AlignVCenter) offset.ry() += -bounds.height() / 2;
-	}
+        if(primitive.alignment() & Qt::AlignRight) offset.rx() += -bounds.width();
+        else if(primitive.alignment() & Qt::AlignHCenter) offset.rx() += -bounds.width() / 2;
+        if(primitive.alignment() & Qt::AlignBottom) offset.ry() += -bounds.height();
+        else if(primitive.alignment() & Qt::AlignVCenter) offset.ry() += -bounds.height() / 2;
+    }
 
-	QPoint alignedPos = (QPointF(primitive.position().x(), primitive.position().y()) + offset).toPoint();
-	imagePrimitive.setRectWindow(QRect(alignedPos, imagePrimitive.image().size()));
-	renderImage(imagePrimitive);
+    QPoint alignedPos = (QPointF(primitive.position().x(), primitive.position().y()) + offset).toPoint();
+    imagePrimitive.setRectWindow(QRect(alignedPos, imagePrimitive.image().size()));
+    renderImage(imagePrimitive);
 }
 
-}	// End of namespace
+}   // End of namespace

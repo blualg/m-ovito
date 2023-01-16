@@ -33,37 +33,37 @@ namespace Ovito {
  */
 class AttributeFileExporterEditor : public PropertiesEditor
 {
-	OVITO_CLASS(AttributeFileExporterEditor)
+    OVITO_CLASS(AttributeFileExporterEditor)
 
 public:
 
-	/// Constructor.
-	Q_INVOKABLE AttributeFileExporterEditor() {}
+    /// Constructor.
+    Q_INVOKABLE AttributeFileExporterEditor() {}
 
 protected:
 
-	/// Creates the user interface controls for the editor.
-	virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
+    /// Creates the user interface controls for the editor.
+    virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
 
-	/// This method is called when a reference target changes.
-	virtual bool referenceEvent(RefTarget* source, const ReferenceEvent& event) override;
+    /// This method is called when a reference target changes.
+    virtual bool referenceEvent(RefTarget* source, const ReferenceEvent& event) override;
 
 private Q_SLOTS:
 
-	/// Rebuilds the displayed list of exportable attributes.
-	void updateAttributesList();
+    /// Rebuilds the displayed list of exportable attributes.
+    void updateAttributesList();
 
-	/// Is called when the user checked/unchecked an item in the attributes list.
-	void onAttributeChanged();
+    /// Is called when the user checked/unchecked an item in the attributes list.
+    void onAttributeChanged();
 
 private:
 
-	/// Populates the column mapping list box with an entry.
-	void insertAttributeItem(const QString& displayName, const QStringList& selectedAttributeList);
+    /// Populates the column mapping list box with an entry.
+    void insertAttributeItem(const QString& displayName, const QStringList& selectedAttributeList);
 
-	QListWidget* _columnMappingWidget;
+    QListWidget* _columnMappingWidget;
 };
 
-}	// End of namespace
+}   // End of namespace
 
 

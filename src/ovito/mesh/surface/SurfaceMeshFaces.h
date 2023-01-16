@@ -33,55 +33,55 @@ namespace Ovito::Mesh {
  */
 class OVITO_MESH_EXPORT SurfaceMeshFaces : public PropertyContainer
 {
-	/// Define a new property metaclass for this container type.
-	class OOMetaClass : public PropertyContainerClass
-	{
-	public:
+    /// Define a new property metaclass for this container type.
+    class OOMetaClass : public PropertyContainerClass
+    {
+    public:
 
-		/// Inherit constructor from base class.
-		using PropertyContainerClass::PropertyContainerClass;
+        /// Inherit constructor from base class.
+        using PropertyContainerClass::PropertyContainerClass;
 
-		/// Create a storage object for standard face properties.
-		virtual PropertyPtr createStandardPropertyInternal(size_t elementCount, int type, DataBuffer::InitializationFlags flags, const ConstDataObjectPath& containerPath) const override;
+        /// Create a storage object for standard face properties.
+        virtual PropertyPtr createStandardPropertyInternal(size_t elementCount, int type, DataBuffer::InitializationFlags flags, const ConstDataObjectPath& containerPath) const override;
 
-		/// Generates a human-readable string representation of the data object reference.
-		virtual QString formatDataObjectPath(const ConstDataObjectPath& path) const override;
+        /// Generates a human-readable string representation of the data object reference.
+        virtual QString formatDataObjectPath(const ConstDataObjectPath& path) const override;
 
-	protected:
+    protected:
 
-		/// Is called by the system after construction of the meta-class instance.
-		virtual void initialize() override;
-	};
+        /// Is called by the system after construction of the meta-class instance.
+        virtual void initialize() override;
+    };
 
-	OVITO_CLASS_META(SurfaceMeshFaces, OOMetaClass);
-	Q_CLASSINFO("DisplayName", "Mesh Faces");
+    OVITO_CLASS_META(SurfaceMeshFaces, OOMetaClass);
+    Q_CLASSINFO("DisplayName", "Mesh Faces");
 
 public:
 
-	/// \brief The list of standard face properties.
-	enum Type {
-		UserProperty = PropertyObject::GenericUserProperty,	//< This is reserved for user-defined properties.
-		SelectionProperty = PropertyObject::GenericSelectionProperty,
-		ColorProperty = PropertyObject::GenericColorProperty,
-		FaceTypeProperty = PropertyObject::GenericTypeProperty,
-		RegionProperty = PropertyObject::FirstSpecificProperty,
-		BurgersVectorProperty,
-		CrystallographicNormalProperty,
-	};
+    /// \brief The list of standard face properties.
+    enum Type {
+        UserProperty = PropertyObject::GenericUserProperty, //< This is reserved for user-defined properties.
+        SelectionProperty = PropertyObject::GenericSelectionProperty,
+        ColorProperty = PropertyObject::GenericColorProperty,
+        FaceTypeProperty = PropertyObject::GenericTypeProperty,
+        RegionProperty = PropertyObject::FirstSpecificProperty,
+        BurgersVectorProperty,
+        CrystallographicNormalProperty,
+    };
 
-	/// \brief Constructor.
-	Q_INVOKABLE SurfaceMeshFaces(ObjectCreationParams params) : PropertyContainer(params) {
-		// Assign the default data object identifier.
-		setIdentifier(OOClass().pythonName());
-	}
+    /// \brief Constructor.
+    Q_INVOKABLE SurfaceMeshFaces(ObjectCreationParams params) : PropertyContainer(params) {
+        // Assign the default data object identifier.
+        setIdentifier(OOClass().pythonName());
+    }
 
-	/// Returns the base point and vector information for visualizing a vector property from this container using a VectorVis element.
-	virtual std::tuple<ConstDataBufferPtr, ConstDataBufferPtr> getVectorVisData(const ConstDataObjectPath& path, const PipelineFlowState& state, MixedKeyCache& visCache) const override;
+    /// Returns the base point and vector information for visualizing a vector property from this container using a VectorVis element.
+    virtual std::tuple<ConstDataBufferPtr, ConstDataBufferPtr> getVectorVisData(const ConstDataObjectPath& path, const PipelineFlowState& state, MixedKeyCache& visCache) const override;
 
-	/// Deletes elements for which bits are set in the given bit-mask.
-	virtual size_t deleteElements(const boost::dynamic_bitset<>& mask) override {
-		throw Exception(tr("Deleting faces from a SurfaceMesh is not supported via this method. Call SurfaceMesh.delete_faces() on the parent object instead."));
-	}
+    /// Deletes elements for which bits are set in the given bit-mask.
+    virtual size_t deleteElements(const boost::dynamic_bitset<>& mask) override {
+        throw Exception(tr("Deleting faces from a SurfaceMesh is not supported via this method. Call SurfaceMesh.delete_faces() on the parent object instead."));
+    }
 };
 
-}	// End of namespace
+}   // End of namespace

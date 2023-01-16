@@ -40,17 +40,17 @@ IMPLEMENT_OVITO_CLASS(ParaDiSImporter);
 ******************************************************************************/
 bool ParaDiSImporter::OOMetaClass::checkFileFormat(const FileHandle& file) const
 {
-	// Open input file.
-	CompressedTextReader stream(file);
+    // Open input file.
+    CompressedTextReader stream(file);
 
-	// Read just the first line of the file.
-	stream.readLine(20);
+    // Read just the first line of the file.
+    stream.readLine(20);
 
-	// ParaDiS files start with the string "dataFileVersion".
-	if(stream.lineStartsWithToken("dataFileVersion", true))
-		return true;
+    // ParaDiS files start with the string "dataFileVersion".
+    if(stream.lineStartsWithToken("dataFileVersion", true))
+        return true;
 
-	return false;
+    return false;
 }
 
 /******************************************************************************
@@ -58,20 +58,20 @@ bool ParaDiSImporter::OOMetaClass::checkFileFormat(const FileHandle& file) const
 ******************************************************************************/
 void ParaDiSImporter::FrameLoader::loadFile()
 {
-	// Open file for reading.
-	CompressedTextReader stream(fileHandle());
-	setProgressText(tr("Reading ParaDiS file %1").arg(fileHandle().toString()));
+    // Open file for reading.
+    CompressedTextReader stream(fileHandle());
+    setProgressText(tr("Reading ParaDiS file %1").arg(fileHandle().toString()));
     setProgressMaximum(stream.underlyingSize());
 
-	// Create the container structures for holding the loaded data.
-	Microstructure* microstructureObj;
-	if(const Microstructure* existingMicrostructure = state().getObject<Microstructure>()) {
-		microstructureObj = state().makeMutable(existingMicrostructure);
-	}
-	else {
-		microstructureObj = state().createObjectWithVis<Microstructure>(dataSource(), OORef<DislocationVis>::create());
-	}
-	MicrostructureAccess microstructure(microstructureObj);
+    // Create the container structures for holding the loaded data.
+    Microstructure* microstructureObj;
+    if(const Microstructure* existingMicrostructure = state().getObject<Microstructure>()) {
+        microstructureObj = state().makeMutable(existingMicrostructure);
+    }
+    else {
+        microstructureObj = state().createObjectWithVis<Microstructure>(dataSource(), OORef<DislocationVis>::create());
+    }
+    MicrostructureAccess microstructure(microstructureObj);
     microstructure.clearMesh();
 
     /// The type of crystal ("fcc", "bcc", etc.)
@@ -79,13 +79,13 @@ void ParaDiSImporter::FrameLoader::loadFile()
 
     Vector3 minCoordinates = Vector3::Zero();
     Vector3 maxCoordinates = Vector3::Zero();
-	for(;;) {
+    for(;;) {
         // Report progress.
-		if(isCanceled()) return;
-		setProgressValueIntermittent(stream.underlyingByteOffset());
+        if(isCanceled()) return;
+        setProgressValueIntermittent(stream.underlyingByteOffset());
 
         // Parse the next control parameter from the file.
-		std::pair<QString, QVariant> keyValuePair = parseControlParameter(stream);
+        std::pair<QString, QVariant> keyValuePair = parseControlParameter(stream);
         if(keyValuePair.first.isEmpty()) break; // Reached end of file.
         if(keyValuePair.second.isValid() == false) break; // Reached end of first data file section.
 
@@ -108,23 +108,23 @@ void ParaDiSImporter::FrameLoader::loadFile()
             if(keyValuePair.second.toInt() != 1)
                 throw Exception(tr("Invalid 'numFileSegments' parameter value in line %1 of ParaDiS file: %2. OVITO supports only single-segment ParaDiS files.").arg(stream.lineNumber()).arg(keyValuePair.second.toString()));
         }
-	}
+    }
 
-	simulationCell()->setCellMatrix(AffineTransformation(
+    simulationCell()->setCellMatrix(AffineTransformation(
         Vector3(maxCoordinates.x() - minCoordinates.x(), 0, 0),
         Vector3(0, maxCoordinates.y() - minCoordinates.y(), 0),
         Vector3(0, 0, maxCoordinates.z() - minCoordinates.z()),
         minCoordinates
     ));
-	simulationCell()->setPbcFlags(true, true, true);
-	if(microstructure)
-		microstructure.setDomain(simulationCell());
+    simulationCell()->setPbcFlags(true, true, true);
+    if(microstructure)
+        microstructure.setDomain(simulationCell());
 
     // Skip to third section of data file.
     for(;;) {
         // Report progress.
-		if(isCanceled()) return;
-		setProgressValueIntermittent(stream.underlyingByteOffset());
+        if(isCanceled()) return;
+        setProgressValueIntermittent(stream.underlyingByteOffset());
         if(stream.lineStartsWithToken("nodalData")) break;
         stream.readLine();
     }
@@ -140,11 +140,11 @@ void ParaDiSImporter::FrameLoader::loadFile()
     // Parse nodes list.
     while(!stream.eof()) {
         // Report progress.
-		if(isCanceled()) return;
+        if(isCanceled()) return;
         if((microstructure.vertexCount() % 1024) == 0)
-		    setProgressValueIntermittent(stream.underlyingByteOffset());
+            setProgressValueIntermittent(stream.underlyingByteOffset());
 
-		const char* line = stream.readLineTrimLeft();
+        const char* line = stream.readLineTrimLeft();
         if(line[0] <= ' ') continue; // Skip empty lines
         if(line[0] == '#') continue; // Skip comment lines
 
@@ -202,7 +202,7 @@ void ParaDiSImporter::FrameLoader::loadFile()
             // Create the line segment connecting the two nodes.
             // Skip every other segment, because the ParaDiS defines each segment twice.
             if(insertionResult.first->second < insertionResult2.first->second)
-    			microstructure.createDislocationSegment(insertionResult.first->second, insertionResult2.first->second, b, 0);
+                microstructure.createDislocationSegment(insertionResult.first->second, insertionResult2.first->second, b, 0);
 
             // Look out for <111> and <110> type dislocations.
             if(bmag111 == 0) {
@@ -243,20 +243,20 @@ void ParaDiSImporter::FrameLoader::loadFile()
     // Form continuous dislocation lines from the segments having the same Burgers vector.
     microstructure.makeContinuousDislocationLines();
 
-	state().setStatus(tr("Number of nodes: %1\nNumber of dislocations: %2")
-		.arg(microstructure.vertexCount())
-		.arg(microstructure.faceCount()));
+    state().setStatus(tr("Number of nodes: %1\nNumber of dislocations: %2")
+        .arg(microstructure.vertexCount())
+        .arg(microstructure.faceCount()));
     microstructure.reset();
 
-	// Define crystal phase.
-	PropertyObject* phaseProperty = microstructureObj->makeRegionsMutable()->expectMutableProperty(SurfaceMeshRegions::PhaseProperty);
-	DataOORef<MicrostructurePhase> phase = dynamic_object_cast<MicrostructurePhase>(phaseProperty->elementType(latticeStructure));
-	if(!phaseProperty->elementType(latticeStructure)) {
-		DataOORef<MicrostructurePhase> phase = DataOORef<MicrostructurePhase>::create();
-		phase->setNumericId(latticeStructure);
-		phase->setName(ParticleType::getPredefinedStructureTypeName(latticeStructure));
+    // Define crystal phase.
+    PropertyObject* phaseProperty = microstructureObj->makeRegionsMutable()->expectMutableProperty(SurfaceMeshRegions::PhaseProperty);
+    DataOORef<MicrostructurePhase> phase = dynamic_object_cast<MicrostructurePhase>(phaseProperty->elementType(latticeStructure));
+    if(!phaseProperty->elementType(latticeStructure)) {
+        DataOORef<MicrostructurePhase> phase = DataOORef<MicrostructurePhase>::create();
+        phase->setNumericId(latticeStructure);
+        phase->setName(ParticleType::getPredefinedStructureTypeName(latticeStructure));
         phase->initializeType(ParticlePropertyReference(ParticlesObject::StructureTypeProperty));
-    	if(latticeStructure == ParticleType::PredefinedStructureType::BCC) {
+        if(latticeStructure == ParticleType::PredefinedStructureType::BCC) {
             phase->setCrystalSymmetryClass(MicrostructurePhase::CrystalSymmetryClass::CubicSymmetry);
             if(phase->burgersVectorFamilies().empty()) {
                 phase->addBurgersVectorFamily(OORef<BurgersVectorFamily>::create());
@@ -284,11 +284,11 @@ void ParaDiSImporter::FrameLoader::loadFile()
                 phase->addBurgersVectorFamily(std::move(family));
             }
         }
-		phaseProperty->addElementType(phase);
+        phaseProperty->addElementType(phase);
     }
 
-	// Call base implementation to finalize the loaded particle data.
-	ParticleImporter::FrameLoader::loadFile();
+    // Call base implementation to finalize the loaded particle data.
+    ParticleImporter::FrameLoader::loadFile();
 }
 
 /******************************************************************************
@@ -296,22 +296,22 @@ void ParaDiSImporter::FrameLoader::loadFile()
 ******************************************************************************/
 std::pair<QString, QVariant> ParaDiSImporter::FrameLoader::parseControlParameter(CompressedTextReader& stream)
 {
-	while(!stream.eof()) {
-		const char* line = stream.readLineTrimLeft();
+    while(!stream.eof()) {
+        const char* line = stream.readLineTrimLeft();
         if(line[0] <= ' ') continue; // Skip empty lines
         if(line[0] == '#') continue; // Skip comment lines
 
         // Parse parameter identifier.
-		const char* token_end = line;
-		while(*token_end > ' ' && *token_end != '=') ++token_end;
+        const char* token_end = line;
+        while(*token_end > ' ' && *token_end != '=') ++token_end;
         QString identifier = QString::fromLatin1(line, token_end - line);
 
         // Parse parameter value.
-		while(*token_end <= ' ' && *token_end != '\0') ++token_end;
+        while(*token_end <= ' ' && *token_end != '\0') ++token_end;
         if(*token_end != '=') return { identifier, QVariant() }; // A parameter without a value.
 
         const char* value_start = token_end + 1;
-		while(*value_start <= ' ' && *value_start != '\0') ++value_start;
+        while(*value_start <= ' ' && *value_start != '\0') ++value_start;
         if(*value_start == '\0') return { identifier, QVariant() }; // A parameter without a value.
 
         if(*value_start != '[') {
@@ -340,8 +340,8 @@ std::pair<QString, QVariant> ParaDiSImporter::FrameLoader::parseControlParameter
             }
             return { identifier, std::move(values) };
         }
-	}
+    }
     return {};
 }
 
-}	// End of namespace
+}   // End of namespace

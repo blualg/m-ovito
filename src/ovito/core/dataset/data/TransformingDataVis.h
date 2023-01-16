@@ -34,39 +34,39 @@ namespace Ovito {
  */
 class OVITO_CORE_EXPORT TransformingDataVis : public DataVis
 {
-	OVITO_CLASS(TransformingDataVis)
+    OVITO_CLASS(TransformingDataVis)
 
 protected:
 
-	/// \brief Constructor.
-	using DataVis::DataVis;
+    /// \brief Constructor.
+    using DataVis::DataVis;
 
 public:
 
-	/// \brief Determines the time interval over which a computed pipeline state will remain valid.
-	virtual TimeInterval validityInterval(const PipelineEvaluationRequest& request, PipelineSceneNode* pipeline) const { return TimeInterval::infinite(); }
+    /// \brief Determines the time interval over which a computed pipeline state will remain valid.
+    virtual TimeInterval validityInterval(const PipelineEvaluationRequest& request, PipelineSceneNode* pipeline) const { return TimeInterval::infinite(); }
 
-	/// Lets the vis element transform a data object in preparation for rendering.
-	Future<PipelineFlowState> transformData(const PipelineEvaluationRequest& request, const DataObject* dataObject, PipelineFlowState&& flowState, const std::vector<OORef<TransformedDataObject>>& cachedTransformedDataObjects);
+    /// Lets the vis element transform a data object in preparation for rendering.
+    Future<PipelineFlowState> transformData(const PipelineEvaluationRequest& request, const DataObject* dataObject, PipelineFlowState&& flowState, const std::vector<OORef<TransformedDataObject>>& cachedTransformedDataObjects);
 
-	/// Returns the revision counter of this vis element, which is incremented each time one of its parameters changes.
-	int revisionNumber() const { return _revisionNumber; }
+    /// Returns the revision counter of this vis element, which is incremented each time one of its parameters changes.
+    int revisionNumber() const { return _revisionNumber; }
 
-	/// Bumps up the internal revision number of this DataVis in order to mark
-	/// all transformed data objects as outdated which have been generated so far.
-	void invalidateTransformedObjects() { _revisionNumber++; }
+    /// Bumps up the internal revision number of this DataVis in order to mark
+    /// all transformed data objects as outdated which have been generated so far.
+    void invalidateTransformedObjects() { _revisionNumber++; }
 
 protected:
 
-	/// Lets the vis element transform a data object in preparation for rendering.
-	virtual Future<PipelineFlowState> transformDataImpl(const PipelineEvaluationRequest& request, const DataObject* dataObject, PipelineFlowState&& flowState) = 0;
+    /// Lets the vis element transform a data object in preparation for rendering.
+    virtual Future<PipelineFlowState> transformDataImpl(const PipelineEvaluationRequest& request, const DataObject* dataObject, PipelineFlowState&& flowState) = 0;
 
 private:
 
-	/// The revision counter of this element.
-	/// The counter is incremented every time one of the object's parameters changes that
-	/// trigger a regeneration of the transformed data object from the input data.
-	int _revisionNumber = 0;
+    /// The revision counter of this element.
+    /// The counter is incremented every time one of the object's parameters changes that
+    /// trigger a regeneration of the transformed data object from the input data.
+    int _revisionNumber = 0;
 };
 
-}	// End of namespace
+}   // End of namespace

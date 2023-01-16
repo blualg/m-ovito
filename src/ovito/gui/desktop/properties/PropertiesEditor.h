@@ -39,231 +39,231 @@ namespace Ovito {
  */
 class OVITO_GUI_EXPORT PropertiesEditor : public RefMaker
 {
-	OVITO_CLASS(PropertiesEditor)
+    OVITO_CLASS(PropertiesEditor)
 
 public:
 
-	/// Registry for editor classes.
-	class Registry : private std::map<OvitoClassPtr, OvitoClassPtr>
-	{
-	public:
-		void registerEditorClass(OvitoClassPtr refTargetClass, OvitoClassPtr editorClass) {
-			insert(std::make_pair(refTargetClass, editorClass));
-		}
-		OvitoClassPtr getEditorClass(OvitoClassPtr refTargetClass) const {
-			auto entry = find(refTargetClass);
-			if(entry != end()) return entry->second;
-			else return nullptr;
-		}
-	};
+    /// Registry for editor classes.
+    class Registry : private std::map<OvitoClassPtr, OvitoClassPtr>
+    {
+    public:
+        void registerEditorClass(OvitoClassPtr refTargetClass, OvitoClassPtr editorClass) {
+            insert(std::make_pair(refTargetClass, editorClass));
+        }
+        OvitoClassPtr getEditorClass(OvitoClassPtr refTargetClass) const {
+            auto entry = find(refTargetClass);
+            if(entry != end()) return entry->second;
+            else return nullptr;
+        }
+    };
 
-	/// Returns the global editor registry, which allows looking up the editor class for a RefTarget class.
-	static Registry& registry();
+    /// Returns the global editor registry, which allows looking up the editor class for a RefTarget class.
+    static Registry& registry();
 
 protected:
 
-	/// \brief The constructor.
-	PropertiesEditor() = default;
+    /// \brief The constructor.
+    PropertiesEditor() = default;
 
 public:
 
-	/// \brief Creates a PropertiesEditor for an editable object.
-	/// \param obj The object for which an editor should be created.
-	/// \return The new editor component that allows the user to edit the properties of the RefTarget object.
-	///         It will be automatically destroyed by the system when the editor is closed.
-	///         Returns NULL if no editor component is registered for the RefTarget type.
-	///
-	/// The returned editor object is not initialized yet. Call initialize() once to do so.
-	static OORef<PropertiesEditor> create(MainWindow& mainWindow, RefTarget* obj);
+    /// \brief Creates a PropertiesEditor for an editable object.
+    /// \param obj The object for which an editor should be created.
+    /// \return The new editor component that allows the user to edit the properties of the RefTarget object.
+    ///         It will be automatically destroyed by the system when the editor is closed.
+    ///         Returns NULL if no editor component is registered for the RefTarget type.
+    ///
+    /// The returned editor object is not initialized yet. Call initialize() once to do so.
+    static OORef<PropertiesEditor> create(MainWindow& mainWindow, RefTarget* obj);
 
-	/// \brief The virtual destructor.
-	virtual ~PropertiesEditor() { clearAllReferences(); }
+    /// \brief The virtual destructor.
+    virtual ~PropertiesEditor() { clearAllReferences(); }
 
-	/// \brief This will bind the editor to the given container.
-	/// \param container The properties panel that's the host of the editor.
-	/// \param mainWindow The main window that hosts the editor.
-	/// \param rolloutParams Specifies how the editor's rollouts should be created.
-	/// \param parentEditor The editor that owns this editor if it is a sub-object editor; NULL otherwise.
-	///
-	/// This method is called by the PropertiesPanel class to initialize the editor and to create the UI.
-	void initialize(PropertiesPanel* container, const RolloutInsertionParameters& rolloutParams, PropertiesEditor* parentEditor);
+    /// \brief This will bind the editor to the given container.
+    /// \param container The properties panel that's the host of the editor.
+    /// \param mainWindow The main window that hosts the editor.
+    /// \param rolloutParams Specifies how the editor's rollouts should be created.
+    /// \param parentEditor The editor that owns this editor if it is a sub-object editor; NULL otherwise.
+    ///
+    /// This method is called by the PropertiesPanel class to initialize the editor and to create the UI.
+    void initialize(PropertiesPanel* container, const RolloutInsertionParameters& rolloutParams, PropertiesEditor* parentEditor);
 
-	/// \brief Returns the rollout container widget this editor is placed in.
-	PropertiesPanel* container() const { return _container; }
+    /// \brief Returns the rollout container widget this editor is placed in.
+    PropertiesPanel* container() const { return _container; }
 
-	/// \brief Returns the main window that hosts the editor.
-	MainWindow& mainWindow() const { 
-		OVITO_ASSERT(_mainWindow != nullptr); 
-		return *_mainWindow;
-	}
+    /// \brief Returns the main window that hosts the editor.
+    MainWindow& mainWindow() const { 
+        OVITO_ASSERT(_mainWindow != nullptr); 
+        return *_mainWindow;
+    }
 
-	/// \brief Returns the top-level window hosting this editor panel.
-	QWidget* parentWindow() const;
+    /// \brief Returns the top-level window hosting this editor panel.
+    QWidget* parentWindow() const;
 
-	/// \brief Returns a pointer to the parent editor which has opened this editor for one of its sub-components.
-	PropertiesEditor* parentEditor() const { return _parentEditor; }
+    /// \brief Returns a pointer to the parent editor which has opened this editor for one of its sub-components.
+    PropertiesEditor* parentEditor() const { return _parentEditor; }
 
-	/// \brief Creates a new rollout in the rollout container and returns
-	///        the empty widget that can then be filled with UI controls.
-	/// \param title The title of the rollout.
-	/// \param rolloutParams Specifies how the rollout should be created.
-	/// \param helpPage The help page or topic in the user manual that describes this rollout.
-	///
-	/// \note The rollout is automatically deleted when the editor is deleted.
-	QWidget* createRollout(const QString& title, const RolloutInsertionParameters& rolloutParams, const char* helpPage = nullptr);
+    /// \brief Creates a new rollout in the rollout container and returns
+    ///        the empty widget that can then be filled with UI controls.
+    /// \param title The title of the rollout.
+    /// \param rolloutParams Specifies how the rollout should be created.
+    /// \param helpPage The help page or topic in the user manual that describes this rollout.
+    ///
+    /// \note The rollout is automatically deleted when the editor is deleted.
+    QWidget* createRollout(const QString& title, const RolloutInsertionParameters& rolloutParams, const char* helpPage = nullptr);
 
-	/// \brief Completely disables the UI elements in the given rollout widget.
-	/// \param rolloutWidget The rollout widget to be disabled, which has been created by createRollout().
-	/// \param noticeText A text to displayed in the rollout panel to inform the user why the rollout has been disabled.
-	void disableRollout(QWidget* rolloutWidget, const QString& noticeText);
+    /// \brief Completely disables the UI elements in the given rollout widget.
+    /// \param rolloutWidget The rollout widget to be disabled, which has been created by createRollout().
+    /// \param noticeText A text to displayed in the rollout panel to inform the user why the rollout has been disabled.
+    void disableRollout(QWidget* rolloutWidget, const QString& noticeText);
 
-	/// Changes the value of a non-animatable property field of the object being edited.
-	void changePropertyFieldValue(const PropertyFieldDescriptor* field, const QVariant& newValue);
+    /// Changes the value of a non-animatable property field of the object being edited.
+    void changePropertyFieldValue(const PropertyFieldDescriptor* field, const QVariant& newValue);
 
-	/// Returns the current input data from the upstream pipeline.
-	PipelineFlowState getPipelineInput() const;
+    /// Returns the current input data from the upstream pipeline.
+    PipelineFlowState getPipelineInput() const;
 
-	/// Returns the current input data from the upstream pipeline.
-	std::vector<PipelineFlowState> getPipelineInputs() const;
+    /// Returns the current input data from the upstream pipeline.
+    std::vector<PipelineFlowState> getPipelineInputs() const;
 
-	/// Returns the current output data produced by the object being edited.
-	PipelineFlowState getPipelineOutput() const;
+    /// Returns the current output data produced by the object being edited.
+    PipelineFlowState getPipelineOutput() const;
 
-	/// Returns the first ModifierApplication of the modifier currently being edited.
-	/// If this editor does not host a modifier, nullptr is returned.
-	ModifierApplication* modifierApplication() const;
+    /// Returns the first ModifierApplication of the modifier currently being edited.
+    /// If this editor does not host a modifier, nullptr is returned.
+    ModifierApplication* modifierApplication() const;
 
-	/// Returns the list of all ModifierApplications of the modifier currently being edited.
-	/// If this editor does not host a modifier, an empty list is returned.
-	QVector<ModifierApplication*> modifierApplications() const;
+    /// Returns the list of all ModifierApplications of the modifier currently being edited.
+    /// If this editor does not host a modifier, an empty list is returned.
+    QVector<ModifierApplication*> modifierApplications() const;
 
-	/// For an editor of a DataVis element, returns the DataObject which the DataVis element is attached to.
-	ConstDataObjectRef getVisDataObject() const;
+    /// For an editor of a DataVis element, returns the DataObject which the DataVis element is attached to.
+    ConstDataObjectRef getVisDataObject() const;
 
-	/// For an editor of a DataVis element, returns the data collection path to the DataObject which the DataVis element is attached to.
-	ConstDataObjectRefPath getVisDataObjectPath() const;
+    /// For an editor of a DataVis element, returns the data collection path to the DataObject which the DataVis element is attached to.
+    ConstDataObjectRefPath getVisDataObjectPath() const;
 
-	/// Returns the current animation time of the scene the object being edited belongs to.
-	AnimationTime currentAnimationTime() const;
+    /// Returns the current animation time of the scene the object being edited belongs to.
+    AnimationTime currentAnimationTime() const;
 
-	/// Returns the viewport that is currently selected.
-	Viewport* activeViewport() const;
+    /// Returns the viewport that is currently selected.
+    Viewport* activeViewport() const;
 
-	/// Executes a functor and catches any exceptions thrown during its execution.
-	/// If an exception is thrown by the functor, the error message is displayed to the user and this function returns false.
-	template<typename Function>
-	bool handleExceptions(Function&& func) const {
-		return mainWindow().handleExceptions(std::forward<Function>(func));
-	}
+    /// Executes a functor and catches any exceptions thrown during its execution.
+    /// If an exception is thrown by the functor, the error message is displayed to the user and this function returns false.
+    template<typename Function>
+    bool handleExceptions(Function&& func) const {
+        return mainWindow().handleExceptions(std::forward<Function>(func));
+    }
 
-	/// Executes a functor provided by the caller that performs undoable actions in an interactive context.
-	/// If an exception is thrown by the functor, the error message is displayed 
-	/// to the user, and this function returns false. 
-	template<typename Function>
-	bool performActions(UndoableTransaction& transaction, Function&& func) {
-		return mainWindow().performActions(transaction, std::forward<Function>(func));
-	}
+    /// Executes a functor provided by the caller that performs undoable actions in an interactive context.
+    /// If an exception is thrown by the functor, the error message is displayed 
+    /// to the user, and this function returns false. 
+    template<typename Function>
+    bool performActions(UndoableTransaction& transaction, Function&& func) {
+        return mainWindow().performActions(transaction, std::forward<Function>(func));
+    }
 
-	/// \brief Executes the passed functor and catches any exceptions thrown during its execution.
-	/// If an exception is thrown by the functor, all data changes performed by the functor
-	/// so far will be undone and an error message is shown to the user.
-	template<typename Function>
-	bool performTransaction(const QString& undoOperationName, Function&& func) {
-		return mainWindow().performTransaction(undoOperationName, std::forward<Function>(func));
-	}
+    /// \brief Executes the passed functor and catches any exceptions thrown during its execution.
+    /// If an exception is thrown by the functor, all data changes performed by the functor
+    /// so far will be undone and an error message is shown to the user.
+    template<typename Function>
+    bool performTransaction(const QString& undoOperationName, Function&& func) {
+        return mainWindow().performTransaction(undoOperationName, std::forward<Function>(func));
+    }
 
-	/// \brief Recursively visits all pipelines in the current scene
-	///        and invokes the given visitor function for every PipelineSceneNode.
-	///
-	/// \param fn A function that takes an PipelineSceneNode pointer as argument and returns a boolean value.
-	/// \return true if all pipelines have been visited; false if the loop has been
-	///         terminated early because the visitor function has returned false.
-	///
-	/// The visitor function must return a boolean value to indicate whether
-	/// it wants to continue visit more pipelines. A return value of false
-	/// leads to early termination and no further nodes are visited.
-	template<typename Function>
-	bool visitScenePipelines(Function&& fn) const {
-		if(Scene* scene = mainWindow().datasetContainer().activeScene())
-			return scene->visitObjectNodes(std::forward<Function>(fn));
-		return true;
-	}
+    /// \brief Recursively visits all pipelines in the current scene
+    ///        and invokes the given visitor function for every PipelineSceneNode.
+    ///
+    /// \param fn A function that takes an PipelineSceneNode pointer as argument and returns a boolean value.
+    /// \return true if all pipelines have been visited; false if the loop has been
+    ///         terminated early because the visitor function has returned false.
+    ///
+    /// The visitor function must return a boolean value to indicate whether
+    /// it wants to continue visit more pipelines. A return value of false
+    /// leads to early termination and no further nodes are visited.
+    template<typename Function>
+    bool visitScenePipelines(Function&& fn) const {
+        if(Scene* scene = mainWindow().datasetContainer().activeScene())
+            return scene->visitObjectNodes(std::forward<Function>(fn));
+        return true;
+    }
 
-	/// Returns the pipeline that is currently selected.
-	PipelineSceneNode* selectedPipeline() const {
-		if(Scene* scene = mainWindow().datasetContainer().activeScene())
-			return dynamic_object_cast<PipelineSceneNode>(scene->selection()->firstNode());
-		return nullptr;
-	}
+    /// Returns the pipeline that is currently selected.
+    PipelineSceneNode* selectedPipeline() const {
+        if(Scene* scene = mainWindow().datasetContainer().activeScene())
+            return dynamic_object_cast<PipelineSceneNode>(scene->selection()->firstNode());
+        return nullptr;
+    }
 
 public Q_SLOTS:
 
-	/// \brief Sets the object being edited in this editor.
-	/// \param newObject The new object to load into the editor. This must be of the same class
-	///                  as the previous object.
-	///
-	/// This method generates a contentsReplaced() and a contentsChanged() signal.
-	void setEditObject(RefTarget* newObject);
+    /// \brief Sets the object being edited in this editor.
+    /// \param newObject The new object to load into the editor. This must be of the same class
+    ///                  as the previous object.
+    ///
+    /// This method generates a contentsReplaced() and a contentsChanged() signal.
+    void setEditObject(RefTarget* newObject);
 
 Q_SIGNALS:
 
-	/// \brief This signal is emitted by the editor when a new edit object
-	///        has been loaded into the editor via the setEditObject() method.
-	/// \sa editObject The new object loaded into the editor.
+    /// \brief This signal is emitted by the editor when a new edit object
+    ///        has been loaded into the editor via the setEditObject() method.
+    /// \sa editObject The new object loaded into the editor.
     void contentsReplaced(RefTarget* editObject);
 
-	/// \brief This signal is emitted by the editor when the current edit object has generated a TargetChanged
-	///        event or if a new object has been loaded into editor via the setEditObject() method.
-	/// \sa editObject The object that has changed.
+    /// \brief This signal is emitted by the editor when the current edit object has generated a TargetChanged
+    ///        event or if a new object has been loaded into editor via the setEditObject() method.
+    /// \sa editObject The object that has changed.
     void contentsChanged(RefTarget* editObject);
 
-	/// \brief This signal is emitted whenever the edited object has produced new results as part of a pipeline evaluation
-	///        or when a new object has been loaded into the editor. 
+    /// \brief This signal is emitted whenever the edited object has produced new results as part of a pipeline evaluation
+    ///        or when a new object has been loaded into the editor. 
     void pipelineOutputChanged();
 
-	/// \brief This signal is emitted whenever the edited object received new pipeline inputs due to an upstream pipeline change
-	///        or when a new object has been loaded into the editor. 
+    /// \brief This signal is emitted whenever the edited object received new pipeline inputs due to an upstream pipeline change
+    ///        or when a new object has been loaded into the editor. 
     void pipelineInputChanged();
 
 protected:
 
-	/// Creates the user interface controls for the editor.
-	/// This must be implemented by sub-classes.
-	virtual void createUI(const RolloutInsertionParameters& rolloutParams) = 0;
+    /// Creates the user interface controls for the editor.
+    /// This must be implemented by sub-classes.
+    virtual void createUI(const RolloutInsertionParameters& rolloutParams) = 0;
 
-	/// This method is called when a reference target changes.
-	virtual bool referenceEvent(RefTarget* source, const ReferenceEvent& event) override;
+    /// This method is called when a reference target changes.
+    virtual bool referenceEvent(RefTarget* source, const ReferenceEvent& event) override;
 
-	/// Is called when the value of a reference field of this RefMaker changes.
-	virtual void referenceReplaced(const PropertyFieldDescriptor* field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex) override;
+    /// Is called when the value of a reference field of this RefMaker changes.
+    virtual void referenceReplaced(const PropertyFieldDescriptor* field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex) override;
 
 private:
 
-	/// The container widget the editor is shown in.
-	PropertiesPanel* _container = nullptr;
+    /// The container widget the editor is shown in.
+    PropertiesPanel* _container = nullptr;
 
-	/// The main window that hosts the editor.
-	MainWindow* _mainWindow = nullptr;
+    /// The main window that hosts the editor.
+    MainWindow* _mainWindow = nullptr;
 
-	/// Pointer to the parent editor which opened this editor for a sub-component.
-	PropertiesEditor* _parentEditor = nullptr;
+    /// Pointer to the parent editor which opened this editor for a sub-component.
+    PropertiesEditor* _parentEditor = nullptr;
 
-	/// The object being edited in this editor.
-	DECLARE_REFERENCE_FIELD_FLAGS(RefTarget*, editObject, PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_NO_CHANGE_MESSAGE | PROPERTY_FIELD_WEAK_REF);
+    /// The object being edited in this editor.
+    DECLARE_REFERENCE_FIELD_FLAGS(RefTarget*, editObject, PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_NO_CHANGE_MESSAGE | PROPERTY_FIELD_WEAK_REF);
 
-	/// The list of rollout widgets that have been created by editor.
-	/// The cleanup handler is used to delete them when the editor is being deleted.
-	QObjectCleanupHandler _rollouts;
+    /// The list of rollout widgets that have been created by editor.
+    /// The cleanup handler is used to delete them when the editor is being deleted.
+    QObjectCleanupHandler _rollouts;
 
-	/// For emitting the pipelineOutputChanged() signal with a short delay.
-	DeferredMethodInvocation<PropertiesEditor, &PropertiesEditor::pipelineOutputChanged> emitPipelineOutputChangedSignal;
+    /// For emitting the pipelineOutputChanged() signal with a short delay.
+    DeferredMethodInvocation<PropertiesEditor, &PropertiesEditor::pipelineOutputChanged> emitPipelineOutputChangedSignal;
 
-	/// For emitting the pipelineInputChanged() signal with a short delay.
-	DeferredMethodInvocation<PropertiesEditor, &PropertiesEditor::pipelineInputChanged> emitPipelineInputChangedSignal;
+    /// For emitting the pipelineInputChanged() signal with a short delay.
+    DeferredMethodInvocation<PropertiesEditor, &PropertiesEditor::pipelineInputChanged> emitPipelineInputChangedSignal;
 };
 
 /// This macro is used to assign a PropertiesEditor-derived class to a RefTarget-derived class.
 #define SET_OVITO_OBJECT_EDITOR(RefTargetClass, PropertiesEditorClass) \
-	static const int __editorSetter##RefTargetClass = (Ovito::PropertiesEditor::registry().registerEditorClass(&RefTargetClass::OOClass(), &PropertiesEditorClass::OOClass()), 0);
+    static const int __editorSetter##RefTargetClass = (Ovito::PropertiesEditor::registry().registerEditorClass(&RefTargetClass::OOClass(), &PropertiesEditorClass::OOClass()), 0);
 
-}	// End of namespace
+}   // End of namespace

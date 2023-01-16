@@ -37,34 +37,34 @@ class WeakSharedFuture : private std::weak_ptr<Task>
 public:
 
 #ifndef Q_CC_MSVC
-	constexpr WeakSharedFuture() noexcept = default;
+    constexpr WeakSharedFuture() noexcept = default;
 #else
-	constexpr WeakSharedFuture() noexcept : std::weak_ptr<Task>() {}
+    constexpr WeakSharedFuture() noexcept : std::weak_ptr<Task>() {}
 #endif
 
-	WeakSharedFuture(const SharedFuture<R...>& future) noexcept : std::weak_ptr<Task>(future.task()) {}
+    WeakSharedFuture(const SharedFuture<R...>& future) noexcept : std::weak_ptr<Task>(future.task()) {}
 
-	WeakSharedFuture& operator=(const Future<R...>& f) noexcept {
-		std::weak_ptr<Task>::operator=(f.task());
-		return *this;
-	}
+    WeakSharedFuture& operator=(const Future<R...>& f) noexcept {
+        std::weak_ptr<Task>::operator=(f.task());
+        return *this;
+    }
 
-	WeakSharedFuture& operator=(const SharedFuture<R...>& f) noexcept {
-		std::weak_ptr<Task>::operator=(f.task());
-		return *this;
-	}
+    WeakSharedFuture& operator=(const SharedFuture<R...>& f) noexcept {
+        std::weak_ptr<Task>::operator=(f.task());
+        return *this;
+    }
 
-	void reset() noexcept {
-		std::weak_ptr<Task>::reset();
-	}
+    void reset() noexcept {
+        std::weak_ptr<Task>::reset();
+    }
 
-	SharedFuture<R...> lock() const noexcept {
-		return SharedFuture<R...>(std::weak_ptr<Task>::lock());
-	}
+    SharedFuture<R...> lock() const noexcept {
+        return SharedFuture<R...>(std::weak_ptr<Task>::lock());
+    }
 
-	bool expired() const noexcept {
-		return std::weak_ptr<Task>::expired();
-	}
+    bool expired() const noexcept {
+        return std::weak_ptr<Task>::expired();
+    }
 };
 
-}	// End of namespace
+}   // End of namespace

@@ -33,48 +33,48 @@ namespace Ovito {
  */
 class OVITO_GUI_EXPORT CommandPanel : public QWidget
 {
-	Q_OBJECT
+    Q_OBJECT
 
 public:
 
-	/// \brief Creates the command panel.
-	CommandPanel(MainWindow& mainWindow, QWidget* parent);
+    /// \brief Creates the command panel.
+    CommandPanel(MainWindow& mainWindow, QWidget* parent);
 
-	/// \brief Activate one of the command pages.
-	/// \param newPage The identifier of the page to activate.
-	void setCurrentPage(MainWindow::CommandPanelPage newPage) {
-		OVITO_ASSERT(newPage < _tabWidget->count());
-		_tabWidget->setCurrentIndex((int)newPage);
-	}
+    /// \brief Activate one of the command pages.
+    /// \param newPage The identifier of the page to activate.
+    void setCurrentPage(MainWindow::CommandPanelPage newPage) {
+        OVITO_ASSERT(newPage < _tabWidget->count());
+        _tabWidget->setCurrentIndex((int)newPage);
+    }
 
-	/// \brief Returns the active command page.
-	/// \return The identifier of the page that is currently active.
-	MainWindow::CommandPanelPage currentPage() const { return (MainWindow::CommandPanelPage)_tabWidget->currentIndex(); }
+    /// \brief Returns the active command page.
+    /// \return The identifier of the page that is currently active.
+    MainWindow::CommandPanelPage currentPage() const { return (MainWindow::CommandPanelPage)_tabWidget->currentIndex(); }
 
-	/// \brief Returns the modification page contained in the command panel.
-	ModifyCommandPage* modifyPage() const { return _modifyPage; }
+    /// \brief Returns the modification page contained in the command panel.
+    ModifyCommandPage* modifyPage() const { return _modifyPage; }
 
-	/// \brief Returns the rendering page contained in the command panel.
-	RenderCommandPage* renderPage() const { return _renderPage; }
+    /// \brief Returns the rendering page contained in the command panel.
+    RenderCommandPage* renderPage() const { return _renderPage; }
 
-	/// \brief Returns the viewport overlay page contained in the command panel.
-	OverlayCommandPage* overlayPage() const { return _overlayPage; }
+    /// \brief Returns the viewport overlay page contained in the command panel.
+    OverlayCommandPage* overlayPage() const { return _overlayPage; }
 
-	/// \brief Returns the default size for the command panel.
-	virtual QSize sizeHint() const { return QSize(336, 300); }
+    /// \brief Returns the default size for the command panel.
+    virtual QSize sizeHint() const { return QSize(336, 300); }
 
-	/// Loads the layout of the widgets from the settings store.
-	void restoreLayout();
+    /// Loads the layout of the widgets from the settings store.
+    void restoreLayout();
 
-	/// Saves the layout of the widgets to the settings store.
-	void saveLayout();
+    /// Saves the layout of the widgets to the settings store.
+    void saveLayout();
 
 private:
 
-	QTabWidget* _tabWidget;
-	ModifyCommandPage* _modifyPage;
-	RenderCommandPage* _renderPage;
-	OverlayCommandPage* _overlayPage;
+    QTabWidget* _tabWidget;
+    ModifyCommandPage* _modifyPage;
+    RenderCommandPage* _renderPage;
+    OverlayCommandPage* _overlayPage;
 };
 
 
@@ -86,21 +86,21 @@ private:
 class ExtendedListItemDelegate : public QStyledItemDelegate
 {
 public:
-	ExtendedListItemDelegate(QObject* parent, int shortInfoRole) : QStyledItemDelegate(parent), _shortInfoRole(shortInfoRole) {}
-	virtual void paint(QPainter* painter, const QStyleOptionViewItem& option, const QModelIndex& index) const override;
+    ExtendedListItemDelegate(QObject* parent, int shortInfoRole) : QStyledItemDelegate(parent), _shortInfoRole(shortInfoRole) {}
+    virtual void paint(QPainter* painter, const QStyleOptionViewItem& option, const QModelIndex& index) const override;
 
 private:
 
-	int _shortInfoRole;
+    int _shortInfoRole;
 
-	/// Blend two RGB colors.
-	static QColor blendColors(const QColor& color1, const QColor& color2, qreal ratio)
-	{
-		int r = color1.red() * (1 - ratio) + color2.red() * ratio;
-		int g = color1.green() * (1 - ratio) + color2.green() * ratio;
-		int b = color1.blue() * (1 - ratio) + color2.blue() * ratio;
-		return QColor(r, g, b);
-	}
+    /// Blend two RGB colors.
+    static QColor blendColors(const QColor& color1, const QColor& color2, qreal ratio)
+    {
+        int r = color1.red() * (1 - ratio) + color2.red() * ratio;
+        int g = color1.green() * (1 - ratio) + color2.green() * ratio;
+        int b = color1.blue() * (1 - ratio) + color2.blue() * ratio;
+        return QColor(r, g, b);
+    }
 };
 
-}	// End of namespace
+}   // End of namespace

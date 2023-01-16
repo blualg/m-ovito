@@ -22,10 +22,10 @@
 
 # Define the GUI module, which provides the user interface for the parent module.
 OVITO_STANDARD_PLUGIN(StdModGui
-	SOURCES
-		resources/stdmodgui.qrc
-		StdModGui.cpp
-	PLUGIN_DEPENDENCIES 
-		StdMod
-	GUI_PLUGIN
+    SOURCES
+        resources/stdmodgui.qrc
+        StdModGui.cpp
+    PLUGIN_DEPENDENCIES 
+        StdMod
+    GUI_PLUGIN
 )

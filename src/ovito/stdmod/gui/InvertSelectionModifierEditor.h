@@ -34,17 +34,17 @@ namespace Ovito::StdMod {
  */
 class InvertSelectionModifierEditor : public PropertiesEditor
 {
-	OVITO_CLASS(InvertSelectionModifierEditor)
+    OVITO_CLASS(InvertSelectionModifierEditor)
 
 public:
 
-	/// Default constructor.
-	Q_INVOKABLE InvertSelectionModifierEditor() {}
+    /// Default constructor.
+    Q_INVOKABLE InvertSelectionModifierEditor() {}
 
 protected:
 
-	/// Creates the user interface controls for the editor.
-	virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
+    /// Creates the user interface controls for the editor.
+    virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
 };
 
-}	// End of namespace
+}   // End of namespace

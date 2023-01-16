@@ -36,66 +36,66 @@ namespace Ovito::CrystalAnalysis {
  */
 class OVITO_CRYSTALANALYSIS_EXPORT CAExporter : public FileExporter
 {
-	/// Defines a metaclass specialization for this exporter type.
-	class OOMetaClass : public FileExporter::OOMetaClass
-	{
-	public:
+    /// Defines a metaclass specialization for this exporter type.
+    class OOMetaClass : public FileExporter::OOMetaClass
+    {
+    public:
 
-		/// Inherit standard constructor from base meta class.
-		using FileExporter::OOMetaClass::OOMetaClass;
+        /// Inherit standard constructor from base meta class.
+        using FileExporter::OOMetaClass::OOMetaClass;
 
-		/// Returns the file filter that specifies the extension of files written by this service.
-		virtual QString fileFilter() const override { return QStringLiteral("*.ca *.ca.gz"); }
+        /// Returns the file filter that specifies the extension of files written by this service.
+        virtual QString fileFilter() const override { return QStringLiteral("*.ca *.ca.gz"); }
 
-		/// Returns the filter description that is displayed in the drop-down box of the file dialog.
-		virtual QString fileFilterDescription() const override { return tr("Crystal Analysis File"); }
-	};
+        /// Returns the filter description that is displayed in the drop-down box of the file dialog.
+        virtual QString fileFilterDescription() const override { return tr("Crystal Analysis File"); }
+    };
 
-	OVITO_CLASS_META(CAExporter, OOMetaClass)
+    OVITO_CLASS_META(CAExporter, OOMetaClass)
 
 public:
 
-	/// \brief Constructs a new instance of this class.
-	Q_INVOKABLE CAExporter(ObjectCreationParams params) : FileExporter(params) {}
+    /// \brief Constructs a new instance of this class.
+    Q_INVOKABLE CAExporter(ObjectCreationParams params) : FileExporter(params) {}
 
-	/// Returns whether the DXA defect mesh is exported (in addition to the dislocation lines).
-	bool meshExportEnabled() const { return _meshExportEnabled; }
+    /// Returns whether the DXA defect mesh is exported (in addition to the dislocation lines).
+    bool meshExportEnabled() const { return _meshExportEnabled; }
 
-	/// Sets whether the DXA defect mesh is exported (in addition to the dislocation lines).
-	void setMeshExportEnabled(bool enable) { _meshExportEnabled = enable; }
+    /// Sets whether the DXA defect mesh is exported (in addition to the dislocation lines).
+    void setMeshExportEnabled(bool enable) { _meshExportEnabled = enable; }
 
-	/// \brief Returns the type(s) of data objects that this exporter service can export.
-	virtual std::vector<DataObjectClassPtr> exportableDataObjectClass() const override {
-		return { &DislocationNetworkObject::OOClass(), &Microstructure::OOClass() };
-	}
+    /// \brief Returns the type(s) of data objects that this exporter service can export.
+    virtual std::vector<DataObjectClassPtr> exportableDataObjectClass() const override {
+        return { &DislocationNetworkObject::OOClass(), &Microstructure::OOClass() };
+    }
 
 protected:
 
-	/// \brief This is called once for every output file to be written and before exportFrame() is called.
-	virtual void openOutputFile(const QString& filePath, int numberOfFrames) override;
+    /// \brief This is called once for every output file to be written and before exportFrame() is called.
+    virtual void openOutputFile(const QString& filePath, int numberOfFrames) override;
 
-	/// \brief This is called once for every output file written after exportFrame() has been called.
-	virtual void closeOutputFile(bool exportCompleted) override;
+    /// \brief This is called once for every output file written after exportFrame() has been called.
+    virtual void closeOutputFile(bool exportCompleted) override;
 
-	/// \brief Exports a single animation frame to the current output file.
-	virtual bool exportFrame(int frameNumber, const QString& filePath, MainThreadOperation& operation) override;
+    /// \brief Exports a single animation frame to the current output file.
+    virtual bool exportFrame(int frameNumber, const QString& filePath, MainThreadOperation& operation) override;
 
-	/// Returns the current file this exporter is writing to.
-	QFile& outputFile() { return _outputFile; }
+    /// Returns the current file this exporter is writing to.
+    QFile& outputFile() { return _outputFile; }
 
-	/// Returns the text stream used to write into the current output file.
-	CompressedTextWriter& textStream() { return *_outputStream; }
+    /// Returns the text stream used to write into the current output file.
+    CompressedTextWriter& textStream() { return *_outputStream; }
 
 private:
 
-	/// Controls whether the DXA defect mesh is exported (in addition to the dislocation lines).
-	bool _meshExportEnabled = true;
+    /// Controls whether the DXA defect mesh is exported (in addition to the dislocation lines).
+    bool _meshExportEnabled = true;
 
-	/// The output file stream.
-	QFile _outputFile;
+    /// The output file stream.
+    QFile _outputFile;
 
-	/// The stream object used to write into the output file.
-	std::unique_ptr<CompressedTextWriter> _outputStream;
+    /// The stream object used to write into the output file.
+    std::unique_ptr<CompressedTextWriter> _outputStream;
 };
 
-}	// End of namespace
+}   // End of namespace

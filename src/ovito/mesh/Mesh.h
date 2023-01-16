@@ -31,15 +31,15 @@
 #include <ovito/stdobj/StdObj.h>
 
 namespace Ovito::Mesh {
-	using namespace Ovito::StdObj;
-	class SurfaceMesh;
-	class SurfaceMeshAccess;
-	class SurfaceMeshVis;
-	class SurfaceMeshVertices;
-	class SurfaceMeshFaces;
-	class SurfaceMeshRegions;
-	class RenderableSurfaceMesh;
-	class HalfEdgeMesh;
+    using namespace Ovito::StdObj;
+    class SurfaceMesh;
+    class SurfaceMeshAccess;
+    class SurfaceMeshVis;
+    class SurfaceMeshVertices;
+    class SurfaceMeshFaces;
+    class SurfaceMeshRegions;
+    class RenderableSurfaceMesh;
+    class HalfEdgeMesh;
 }
 
 #endif

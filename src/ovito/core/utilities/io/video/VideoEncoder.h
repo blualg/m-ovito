@@ -26,16 +26,16 @@
 #include <ovito/core/Core.h>
 
 extern "C" {
-	struct AVFormatContext;
-	struct AVOutputFormat;
-	struct AVCodec;
-	struct AVStream;
-	struct AVCodecContext;
-	struct AVFrame;
-	struct AVFilterInOut;
-	struct AVFilterGraph;
-	struct AVFilterContext;
-	struct SwsContext;
+    struct AVFormatContext;
+    struct AVOutputFormat;
+    struct AVCodec;
+    struct AVStream;
+    struct AVCodecContext;
+    struct AVFrame;
+    struct AVFilterInOut;
+    struct AVFilterGraph;
+    struct AVFilterContext;
+    struct SwsContext;
 };
 
 namespace Ovito {
@@ -45,66 +45,66 @@ namespace Ovito {
  */
 class OVITO_CORE_EXPORT VideoEncoder : public QObject
 {
-	Q_OBJECT
+    Q_OBJECT
 
 public:
 
-	/**
-	 * Describes an output format supported by the video encoding engine.
-	 */
-	class Format {
-	public:
-		QByteArray name;
-		QString longName;
-		QStringList extensions;
-		const AVOutputFormat* avformat;
-	};
+    /**
+     * Describes an output format supported by the video encoding engine.
+     */
+    class Format {
+    public:
+        QByteArray name;
+        QString longName;
+        QStringList extensions;
+        const AVOutputFormat* avformat;
+    };
 
 public:
 
-	/// Constructor.
-	VideoEncoder(QObject* parent = nullptr);
+    /// Constructor.
+    VideoEncoder(QObject* parent = nullptr);
 
-	/// Destructor.
-	virtual ~VideoEncoder() { closeFile(); }
+    /// Destructor.
+    virtual ~VideoEncoder() { closeFile(); }
 
-	/// Opens a video file for writing.
-	void openFile(const QString& filename, int width, int height, float framesPerSecond, VideoEncoder::Format* format = nullptr);
+    /// Opens a video file for writing.
+    void openFile(const QString& filename, int width, int height, float framesPerSecond, VideoEncoder::Format* format = nullptr);
 
-	/// Writes a single frame into the video file.
-	void writeFrame(const QImage& image);
+    /// Writes a single frame into the video file.
+    void writeFrame(const QImage& image);
 
-	/// This closes the written video file.
-	void closeFile();
+    /// This closes the written video file.
+    void closeFile();
 
-	/// Returns the list of supported output formats.
-	static QList<Format> supportedFormats();
+    /// Returns the list of supported output formats.
+    static QList<Format> supportedFormats();
 
 private:
 
-	/// Initializes libavcodec, and register all codecs and formats.
-	static void initCodecs();
+    /// Initializes libavcodec, and register all codecs and formats.
+    static void initCodecs();
 
-	/// Returns the error string for the given error code.
-	static QString errorMessage(int errorCode);
+    /// Returns the error string for the given error code.
+    static QString errorMessage(int errorCode);
 
-	std::shared_ptr<AVFormatContext> _formatContext;
-	std::unique_ptr<quint8[]> _pictureBuf;
-	std::vector<quint8> _outputBuf;
-	std::shared_ptr<AVFrame> _frame;
-	AVStream* _videoStream = nullptr;
-	const AVCodec* _codec = nullptr;
-	std::shared_ptr<AVCodecContext> _codecContext;
-	SwsContext* _imgConvertCtx = nullptr;
-	std::shared_ptr<AVFilterGraph> _filterGraph;
-	AVFilterContext* _bufferSourceCtx = nullptr;
-	AVFilterContext* _bufferSinkCtx = nullptr;
-	bool _isOpen = false;
-	int _numFrames = 0;
-	int _frameDuplication = 1;
+    std::shared_ptr<AVFormatContext> _formatContext;
+    std::unique_ptr<quint8[]> _pictureBuf;
+    std::vector<quint8> _outputBuf;
+    std::shared_ptr<AVFrame> _frame;
+    AVStream* _videoStream = nullptr;
+    const AVCodec* _codec = nullptr;
+    std::shared_ptr<AVCodecContext> _codecContext;
+    SwsContext* _imgConvertCtx = nullptr;
+    std::shared_ptr<AVFilterGraph> _filterGraph;
+    AVFilterContext* _bufferSourceCtx = nullptr;
+    AVFilterContext* _bufferSinkCtx = nullptr;
+    bool _isOpen = false;
+    int _numFrames = 0;
+    int _frameDuplication = 1;
 
-	/// The list of supported video formats.
-	static QList<Format> _supportedFormats;
+    /// The list of supported video formats.
+    static QList<Format> _supportedFormats;
 };
 
-}	// End of namespace
+}   // End of namespace

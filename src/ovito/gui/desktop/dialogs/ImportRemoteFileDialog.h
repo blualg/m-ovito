@@ -33,40 +33,40 @@ namespace Ovito {
  */
 class OVITO_GUI_EXPORT ImportRemoteFileDialog : public QDialog
 {
-	Q_OBJECT
+    Q_OBJECT
 
 public:
 
-	/// \brief Constructs the dialog window.
-	ImportRemoteFileDialog(MainWindow& mainWindow, const QVector<const FileImporterClass*>& importerTypes, QWidget* parent = nullptr, const QString& caption = QString());
+    /// \brief Constructs the dialog window.
+    ImportRemoteFileDialog(MainWindow& mainWindow, const QVector<const FileImporterClass*>& importerTypes, QWidget* parent = nullptr, const QString& caption = QString());
 
-	/// \brief Sets the current URL in the dialog.
-	void selectFile(const QUrl& url);
+    /// \brief Sets the current URL in the dialog.
+    void selectFile(const QUrl& url);
 
-	/// \brief Returns the file to import after the dialog has been closed with "OK".
-	QUrl urlToImport() const;
+    /// \brief Returns the file to import after the dialog has been closed with "OK".
+    QUrl urlToImport() const;
 
-	/// \brief Returns the selected importer class and sub-format name.
-	const std::pair<const FileImporterClass*, QString>& selectedFileImporter() const;
+    /// \brief Returns the selected importer class and sub-format name.
+    const std::pair<const FileImporterClass*, QString>& selectedFileImporter() const;
 
-	virtual QSize sizeHint() const override {
-		return QDialog::sizeHint().expandedTo(QSize(500, 0));
-	}
+    virtual QSize sizeHint() const override {
+        return QDialog::sizeHint().expandedTo(QSize(500, 0));
+    }
 
 protected Q_SLOTS:
 
-	/// This is called when the user has pressed the OK button of the dialog.
-	/// Validates and saves all input made by the user and closes the dialog box.
-	void onOk();
+    /// This is called when the user has pressed the OK button of the dialog.
+    /// Validates and saves all input made by the user and closes the dialog box.
+    void onOk();
 
 private:
 
-	MainWindow& _mainWindow;
-	std::vector<std::pair<const FileImporterClass*, QString>> _importerFormats;
-	QComboBox* _urlEdit;
-	QComboBox* _formatSelector;
+    MainWindow& _mainWindow;
+    std::vector<std::pair<const FileImporterClass*, QString>> _importerFormats;
+    QComboBox* _urlEdit;
+    QComboBox* _formatSelector;
 };
 
-}	// End of namespace
+}   // End of namespace
 
 

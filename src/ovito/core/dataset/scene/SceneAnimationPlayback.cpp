@@ -36,7 +36,7 @@ IMPLEMENT_OVITO_CLASS(SceneAnimationPlayback);
 ******************************************************************************/
 SceneAnimationPlayback::SceneAnimationPlayback(UserInterface& userInterface) : ScenePreparation(userInterface)
 {
-	connect(this, &ScenePreparation::scenePreparationFinished, this, &SceneAnimationPlayback::scheduleNextAnimationFrame);
+    connect(this, &ScenePreparation::scenePreparationFinished, this, &SceneAnimationPlayback::scheduleNextAnimationFrame);
 }
 
 /******************************************************************************
@@ -44,41 +44,41 @@ SceneAnimationPlayback::SceneAnimationPlayback(UserInterface& userInterface) : S
 ******************************************************************************/
 void SceneAnimationPlayback::startAnimationPlayback(Scene* scene, FloatType playbackRate)
 {
-	// Do not start playback if animation interval does not contain more than a single frame.
-	if(!scene || playbackRate == 0.0f || !scene->animationSettings() || scene->animationSettings()->isSingleFrame()) {
-		scene = nullptr;
-		playbackRate = 0.0f;
-	}
+    // Do not start playback if animation interval does not contain more than a single frame.
+    if(!scene || playbackRate == 0.0f || !scene->animationSettings() || scene->animationSettings()->isSingleFrame()) {
+        scene = nullptr;
+        playbackRate = 0.0f;
+    }
 
-	if(scene && playbackRate != 0 && !isPlaybackActive()) {
-		_activePlaybackRate = playbackRate;
+    if(scene && playbackRate != 0 && !isPlaybackActive()) {
+        _activePlaybackRate = playbackRate;
 
-		// Commence the scene preparation.
-		setScene(scene);
+        // Commence the scene preparation.
+        setScene(scene);
 
-		// While animation playback is active, display only the final outcome of the pipeline evaluation.
-		// Do not re-render viewports when intermediate results become available.
-		userInterface().suspendPreliminaryViewportUpdates();
+        // While animation playback is active, display only the final outcome of the pipeline evaluation.
+        // Do not re-render viewports when intermediate results become available.
+        userInterface().suspendPreliminaryViewportUpdates();
 
-		Q_EMIT playbackChanged(true);
+        Q_EMIT playbackChanged(true);
 
-		AnimationSettings* animSettings = scene->animationSettings();
-		if(_activePlaybackRate > 0) {
-			if(animSettings->currentFrame() < animSettings->lastFrame())
-				scheduleNextAnimationFrame();
-			else
-				continuePlaybackAtFrame(animSettings->firstFrame());
-		}
-		else {
-			if(animSettings->currentFrame() > animSettings->firstFrame())
-				scheduleNextAnimationFrame();
-			else
-				continuePlaybackAtFrame(animSettings->lastFrame());
-		}
-	}
-	else {
-		stopAnimationPlayback();
-	}
+        AnimationSettings* animSettings = scene->animationSettings();
+        if(_activePlaybackRate > 0) {
+            if(animSettings->currentFrame() < animSettings->lastFrame())
+                scheduleNextAnimationFrame();
+            else
+                continuePlaybackAtFrame(animSettings->firstFrame());
+        }
+        else {
+            if(animSettings->currentFrame() > animSettings->firstFrame())
+                scheduleNextAnimationFrame();
+            else
+                continuePlaybackAtFrame(animSettings->lastFrame());
+        }
+    }
+    else {
+        stopAnimationPlayback();
+    }
 }
 
 /******************************************************************************
@@ -87,26 +87,26 @@ void SceneAnimationPlayback::startAnimationPlayback(Scene* scene, FloatType play
 ******************************************************************************/
 void SceneAnimationPlayback::continuePlaybackAtFrame(int frame)
 {
-	OVITO_ASSERT(scene());
-	OVITO_ASSERT(scene()->animationSettings());
+    OVITO_ASSERT(scene());
+    OVITO_ASSERT(scene()->animationSettings());
 
-	// The following requires a valid execution context.
-	if(!userInterface().handleExceptions([&] {
-	
-		// Move time slider to the next animation frame and request preparation of the scene for display.
-		scene()->animationSettings()->setCurrentFrame(frame);
+    // The following requires a valid execution context.
+    if(!userInterface().handleExceptions([&] {
+    
+        // Move time slider to the next animation frame and request preparation of the scene for display.
+        scene()->animationSettings()->setCurrentFrame(frame);
 
-		if(isPlaybackActive()) {
-			// Take time as we start to render the current frame.
-			_frameRenderingTimer.start();
+        if(isPlaybackActive()) {
+            // Take time as we start to render the current frame.
+            _frameRenderingTimer.start();
 
-			// Once the scene is ready, schedule the next animation frame.
-			restartPreparation();
-		}
-	})) {
-		// Stop playback on error during time change.
-		stopAnimationPlayback();
-	}
+            // Once the scene is ready, schedule the next animation frame.
+            restartPreparation();
+        }
+    })) {
+        // Stop playback on error during time change.
+        stopAnimationPlayback();
+    }
 }
 
 /******************************************************************************
@@ -114,31 +114,31 @@ void SceneAnimationPlayback::continuePlaybackAtFrame(int frame)
 ******************************************************************************/
 void SceneAnimationPlayback::scheduleNextAnimationFrame()
 {
-	if(!isPlaybackActive())
-		return;
+    if(!isPlaybackActive())
+        return;
 
-	if(!scene() || !scene()->animationSettings()) {
-		stopAnimationPlayback();
-		return;
-	}
+    if(!scene() || !scene()->animationSettings()) {
+        stopAnimationPlayback();
+        return;
+    }
 
-	if(!_nextFrameTimer.isActive()) {
-		int playbackSpeed = scene()->animationSettings()->playbackSpeed();
-		int timerSpeed = 1000 / std::abs(_activePlaybackRate);
-		if(playbackSpeed > 1) timerSpeed /= playbackSpeed;
-		else if(playbackSpeed < -1) timerSpeed *= -playbackSpeed;
+    if(!_nextFrameTimer.isActive()) {
+        int playbackSpeed = scene()->animationSettings()->playbackSpeed();
+        int timerSpeed = 1000 / std::abs(_activePlaybackRate);
+        if(playbackSpeed > 1) timerSpeed /= playbackSpeed;
+        else if(playbackSpeed < -1) timerSpeed *= -playbackSpeed;
 
-		// Time period of a single animation frame.
-		FloatType fps = scene()->animationSettings()->framesPerSecond();
-		int msec = fps > 0.0f ? (int)(timerSpeed / fps) : 0;
+        // Time period of a single animation frame.
+        FloatType fps = scene()->animationSettings()->framesPerSecond();
+        int msec = fps > 0.0f ? (int)(timerSpeed / fps) : 0;
 
-		// Take into account how long it took to render the previous frame.
-		if(_frameRenderingTimer.isValid()) {
-			msec -= _frameRenderingTimer.elapsed();
-		}
+        // Take into account how long it took to render the previous frame.
+        if(_frameRenderingTimer.isValid()) {
+            msec -= _frameRenderingTimer.elapsed();
+        }
 
-		_nextFrameTimer.start(std::max(msec, 0), Qt::CoarseTimer, this);
-	}
+        _nextFrameTimer.start(std::max(msec, 0), Qt::CoarseTimer, this);
+    }
 }
 
 /******************************************************************************
@@ -146,14 +146,14 @@ void SceneAnimationPlayback::scheduleNextAnimationFrame()
 ******************************************************************************/
 void SceneAnimationPlayback::stopAnimationPlayback()
 {
-	setScene(nullptr);
-	_nextFrameTimer.stop();
-	if(isPlaybackActive()) {
-		_activePlaybackRate = 0;
-		_frameRenderingTimer.invalidate();
-		userInterface().resumePreliminaryViewportUpdates();
-		Q_EMIT playbackChanged(false);
-	}
+    setScene(nullptr);
+    _nextFrameTimer.stop();
+    if(isPlaybackActive()) {
+        _activePlaybackRate = 0;
+        _frameRenderingTimer.invalidate();
+        userInterface().resumePreliminaryViewportUpdates();
+        Q_EMIT playbackChanged(false);
+    }
 }
 
 /******************************************************************************
@@ -161,53 +161,53 @@ void SceneAnimationPlayback::stopAnimationPlayback()
 ******************************************************************************/
 void SceneAnimationPlayback::timerEvent(QTimerEvent* event)
 {
-	if(event->timerId() == _nextFrameTimer.timerId()) {
-		_nextFrameTimer.stop();
+    if(event->timerId() == _nextFrameTimer.timerId()) {
+        _nextFrameTimer.stop();
 
-		// Check if the animation playback has been deactivated in the meantime.
-		if(!isPlaybackActive())
-			return;
+        // Check if the animation playback has been deactivated in the meantime.
+        if(!isPlaybackActive())
+            return;
 
-		if(!scene() || !scene()->animationSettings()) {
-			stopAnimationPlayback();
-			return;
-		}
-		AnimationSettings* anim = scene()->animationSettings();
+        if(!scene() || !scene()->animationSettings()) {
+            stopAnimationPlayback();
+            return;
+        }
+        AnimationSettings* anim = scene()->animationSettings();
 
-		// Add +/-N frames to current time.
-		int newFrame = anim->currentFrame() + (_activePlaybackRate > 0 ? 1 : -1) * std::max(1, anim->playbackEveryNthFrame());
+        // Add +/-N frames to current time.
+        int newFrame = anim->currentFrame() + (_activePlaybackRate > 0 ? 1 : -1) * std::max(1, anim->playbackEveryNthFrame());
 
-		// Loop back to first frame if end has been reached.
-		if(newFrame > anim->lastFrame()) {
-			if(anim->loopPlayback() && !anim->isSingleFrame()) {
-				newFrame = anim->firstFrame();
-			}
-			else {
-				newFrame = anim->lastFrame();
-				userInterface().handleExceptions([&] {
-					scene()->animationSettings()->setCurrentFrame(newFrame);
-				});
-				stopAnimationPlayback();	
-			}
-		}
-		else if(newFrame < anim->firstFrame()) {
-			if(anim->loopPlayback() && !anim->isSingleFrame()) {
-				newFrame = anim->lastFrame();
-			}
-			else {
-				newFrame = anim->firstFrame();
-				userInterface().handleExceptions([&] {
-					scene()->animationSettings()->setCurrentFrame(newFrame);
-				});
-				stopAnimationPlayback();
-			}
-		}
+        // Loop back to first frame if end has been reached.
+        if(newFrame > anim->lastFrame()) {
+            if(anim->loopPlayback() && !anim->isSingleFrame()) {
+                newFrame = anim->firstFrame();
+            }
+            else {
+                newFrame = anim->lastFrame();
+                userInterface().handleExceptions([&] {
+                    scene()->animationSettings()->setCurrentFrame(newFrame);
+                });
+                stopAnimationPlayback();    
+            }
+        }
+        else if(newFrame < anim->firstFrame()) {
+            if(anim->loopPlayback() && !anim->isSingleFrame()) {
+                newFrame = anim->lastFrame();
+            }
+            else {
+                newFrame = anim->firstFrame();
+                userInterface().handleExceptions([&] {
+                    scene()->animationSettings()->setCurrentFrame(newFrame);
+                });
+                stopAnimationPlayback();
+            }
+        }
 
-		// Set new frame and continue playing.
-		if(isPlaybackActive())
-			continuePlaybackAtFrame(newFrame);
-	}
-	ScenePreparation::timerEvent(event);
+        // Set new frame and continue playing.
+        if(isPlaybackActive())
+            continuePlaybackAtFrame(newFrame);
+    }
+    ScenePreparation::timerEvent(event);
 }
 
-}	// End of namespace
+}   // End of namespace

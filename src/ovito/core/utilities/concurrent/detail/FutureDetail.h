@@ -85,10 +85,10 @@ template<typename F, typename FutureType>
 using callable_result_t = typename callable_result<F, FutureType>::type;
 
 /*
-	* returns_void<F,FutureType>
-	*
-	* Determines some callable F, which gets called with the FutureType itself or the results of the future as arguments, returns void.
-	*/
+    * returns_void<F,FutureType>
+    *
+    * Determines some callable F, which gets called with the FutureType itself or the results of the future as arguments, returns void.
+    */
 
 /// Determines whether the return type of a callable is 'void'.
 template<typename F, typename FutureType>
@@ -119,26 +119,26 @@ using future_for_t = std::conditional_t<std::is_void_v<T>, Future<>, Future<std:
 ///
 template<typename F, typename FutureType>
 using continuation_future_type = std::conditional_t<returns_future_v<F,FutureType>,
-													callable_result_t<F,FutureType>,
-													future_for_t<callable_result_t<F,FutureType>>>;
+                                                    callable_result_t<F,FutureType>,
+                                                    future_for_t<callable_result_t<F,FutureType>>>;
 
 /// The simplest implementation of the Executor concept.
 /// The inline executor runs a work function immediately and in place.
 /// See ObjectExecutor for another implementation of the executor concept.
 struct InlineExecutor {
 
-	template<typename Function>
-	static constexpr void execute(Function&& f) noexcept {
-		std::invoke(std::forward<Function>(f));
-	}
+    template<typename Function>
+    static constexpr void execute(Function&& f) noexcept {
+        std::invoke(std::forward<Function>(f));
+    }
 
-	template<typename Function>
-	static constexpr auto schedule(Function&& f) noexcept {
-		return [f = std::forward<Function>(f), context = ExecutionContext::current()]() mutable noexcept {
-			ExecutionContext::Scope execScope(std::move(context));
-			std::invoke(std::move(f));
-		};
-	}	
+    template<typename Function>
+    static constexpr auto schedule(Function&& f) noexcept {
+        return [f = std::forward<Function>(f), context = ExecutionContext::current()]() mutable noexcept {
+            ExecutionContext::Scope execScope(std::move(context));
+            std::invoke(std::move(f));
+        };
+    }   
 };
 
 } // End of namespace

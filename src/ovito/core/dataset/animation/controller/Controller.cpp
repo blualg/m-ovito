@@ -38,7 +38,7 @@ IMPLEMENT_OVITO_CLASS(Controller);
 ******************************************************************************/
 OORef<Controller> ControllerManager::createFloatController()
 {
-	return OORef<LinearFloatController>::create();
+    return OORef<LinearFloatController>::create();
 }
 
 /******************************************************************************
@@ -46,7 +46,7 @@ OORef<Controller> ControllerManager::createFloatController()
 ******************************************************************************/
 OORef<Controller> ControllerManager::createIntController()
 {
-	return OORef<LinearIntegerController>::create();
+    return OORef<LinearIntegerController>::create();
 }
 
 /******************************************************************************
@@ -54,7 +54,7 @@ OORef<Controller> ControllerManager::createIntController()
 ******************************************************************************/
 OORef<Controller> ControllerManager::createVector3Controller()
 {
-	return OORef<LinearVectorController>::create();
+    return OORef<LinearVectorController>::create();
 }
 
 /******************************************************************************
@@ -62,7 +62,7 @@ OORef<Controller> ControllerManager::createVector3Controller()
 ******************************************************************************/
 OORef<Controller> ControllerManager::createPositionController()
 {
-	return OORef<SplinePositionController>::create();
+    return OORef<SplinePositionController>::create();
 }
 
 /******************************************************************************
@@ -70,7 +70,7 @@ OORef<Controller> ControllerManager::createPositionController()
 ******************************************************************************/
 OORef<Controller> ControllerManager::createRotationController()
 {
-	return OORef<LinearRotationController>::create();
+    return OORef<LinearRotationController>::create();
 }
 
 /******************************************************************************
@@ -78,7 +78,7 @@ OORef<Controller> ControllerManager::createRotationController()
 ******************************************************************************/
 OORef<Controller> ControllerManager::createScalingController()
 {
-	return OORef<LinearScalingController>::create();
+    return OORef<LinearScalingController>::create();
 }
 
 /******************************************************************************
@@ -86,7 +86,7 @@ OORef<Controller> ControllerManager::createScalingController()
 ******************************************************************************/
 OORef<Controller> ControllerManager::createTransformationController()
 {
-	return OORef<PRSTransformationController>::create();
+    return OORef<PRSTransformationController>::create();
 }
 
 /******************************************************************************
@@ -95,11 +95,11 @@ OORef<Controller> ControllerManager::createTransformationController()
 ******************************************************************************/
 bool ControllerManager::isAutoGenerateAnimationKeysEnabled()
 {
-	const ExecutionContext& context = ExecutionContext::current();
-	if(context.isValid()) {
-		return context.ui().isAutoGenerateAnimationKeysEnabled();
-	}
-	return false;	
+    const ExecutionContext& context = ExecutionContext::current();
+    if(context.isValid()) {
+        return context.ui().isAutoGenerateAnimationKeysEnabled();
+    }
+    return false;   
 }
 
-}	// End of namespace
+}   // End of namespace

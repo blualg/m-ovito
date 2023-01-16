@@ -45,13 +45,13 @@ SET_PROPERTY_FIELD_UNITS_AND_RANGE(TriMeshVis, transparencyController, PercentPa
 * Constructor.
 ******************************************************************************/
 TriMeshVis::TriMeshVis(ObjectCreationParams params) : DataVis(params),
-	_color(0.85, 0.85, 1),
-	_highlightEdges(false),
-	_backfaceCulling(false)
+    _color(0.85, 0.85, 1),
+    _highlightEdges(false),
+    _backfaceCulling(false)
 {
-	if(params.createSubObjects()) {
-		setTransparencyController(ControllerManager::createFloatController());
-	}
+    if(params.createSubObjects()) {
+        setTransparencyController(ControllerManager::createFloatController());
+    }
 }
 
 /******************************************************************************
@@ -59,11 +59,11 @@ TriMeshVis::TriMeshVis(ObjectCreationParams params) : DataVis(params),
 ******************************************************************************/
 Box3 TriMeshVis::boundingBox(AnimationTime time, const ConstDataObjectPath& path, const PipelineSceneNode* contextNode, const PipelineFlowState& flowState, MixedKeyCache& visCache, TimeInterval& validityInterval)
 {
-	// Compute bounding box.
-	if(const TriMeshObject* triMeshObj = path.lastAs<TriMeshObject>()) {
-		return triMeshObj->boundingBox();
-	}
-	return Box3();
+    // Compute bounding box.
+    if(const TriMeshObject* triMeshObj = path.lastAs<TriMeshObject>()) {
+        return triMeshObj->boundingBox();
+    }
+    return Box3();
 }
 
 /******************************************************************************
@@ -71,32 +71,32 @@ Box3 TriMeshVis::boundingBox(AnimationTime time, const ConstDataObjectPath& path
 ******************************************************************************/
 PipelineStatus TriMeshVis::render(AnimationTime time, const ConstDataObjectPath& path, const PipelineFlowState& flowState, SceneRenderer* renderer, const PipelineSceneNode* contextNode)
 {
-	if(!renderer->isBoundingBoxPass()) {
+    if(!renderer->isBoundingBoxPass()) {
 
-		// Obtains transparency parameter value and display color value.
-		FloatType transp = 0;
-		TimeInterval iv;
-		if(transparencyController()) transp = transparencyController()->getFloatValue(time, iv);
+        // Obtains transparency parameter value and display color value.
+        FloatType transp = 0;
+        TimeInterval iv;
+        if(transparencyController()) transp = transparencyController()->getFloatValue(time, iv);
 
-		// Prepare the mesh rendering primitive.
-		MeshPrimitive primitive;
-		primitive.setEmphasizeEdges(highlightEdges());
-		primitive.setUniformColor(ColorA(color(), FloatType(1) - transp));
-		primitive.setMesh(path.lastAs<TriMeshObject>());
-		primitive.setCullFaces(backfaceCulling());
+        // Prepare the mesh rendering primitive.
+        MeshPrimitive primitive;
+        primitive.setEmphasizeEdges(highlightEdges());
+        primitive.setUniformColor(ColorA(color(), FloatType(1) - transp));
+        primitive.setMesh(path.lastAs<TriMeshObject>());
+        primitive.setCullFaces(backfaceCulling());
 
-		// Submit primitive to the renderer.
-		renderer->beginPickObject(contextNode);
-		renderer->renderMesh(primitive);
-		renderer->endPickObject();
-	}
-	else {
-		// Add mesh to bounding box.
-		TimeInterval validityInterval;
-		renderer->addToLocalBoundingBox(boundingBox(time, path, contextNode, flowState, renderer->visCache(), validityInterval));
-	}
+        // Submit primitive to the renderer.
+        renderer->beginPickObject(contextNode);
+        renderer->renderMesh(primitive);
+        renderer->endPickObject();
+    }
+    else {
+        // Add mesh to bounding box.
+        TimeInterval validityInterval;
+        renderer->addToLocalBoundingBox(boundingBox(time, path, contextNode, flowState, renderer->visCache(), validityInterval));
+    }
 
-	return {};
+    return {};
 }
 
-}	// End of namespace
+}   // End of namespace

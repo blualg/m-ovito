@@ -33,17 +33,17 @@ namespace Ovito::Particles {
  */
 class IdentifyDiamondModifierEditor : public PropertiesEditor
 {
-	OVITO_CLASS(IdentifyDiamondModifierEditor)
+    OVITO_CLASS(IdentifyDiamondModifierEditor)
 
 public:
 
-	/// Default constructor.
-	Q_INVOKABLE IdentifyDiamondModifierEditor() {}
+    /// Default constructor.
+    Q_INVOKABLE IdentifyDiamondModifierEditor() {}
 
 protected:
 
-	/// Creates the user interface controls for the editor.
-	virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
+    /// Creates the user interface controls for the editor.
+    virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
 };
 
-}	// End of namespace
+}   // End of namespace

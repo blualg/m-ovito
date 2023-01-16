@@ -70,9 +70,9 @@ void SlipSurfaceVis::PrepareMeshEngine::determineVisibleFaces()
 {
     // Determine which faces of the input surface mesh should be included in the
     // output triangle mesh.
-	SurfaceMesh::size_type faceCount = _microstructure.faceCount();
+    SurfaceMesh::size_type faceCount = _microstructure.faceCount();
     _faceSubset.resize(faceCount);
-	for(SurfaceMesh::face_index face = 0; face < faceCount; face++) {
+    for(SurfaceMesh::face_index face = 0; face < faceCount; face++) {
         _faceSubset[face] = _microstructure.isSlipSurfaceFace(face);
     }
 }
@@ -156,4 +156,4 @@ QString SlipSurfacePickInfo::infoString(PipelineSceneNode* objectNode, quint32 s
     return str;
 }
 
-}	// End of namespace
+}   // End of namespace

@@ -35,66 +35,66 @@ class OVITO_GUIBASE_EXPORT BaseViewportWindow : public ViewportWindowInterface
 {
 public:
 
-	/// Constructor.
-	BaseViewportWindow(UserInterface& userInterface, Viewport* vp) : ViewportWindowInterface(userInterface, vp) {}
+    /// Constructor.
+    BaseViewportWindow(UserInterface& userInterface, Viewport* vp) : ViewportWindowInterface(userInterface, vp) {}
 
-	/// Returns the input manager handling mouse events of the viewport (if any).
-	ViewportInputManager* inputManager() const;
+    /// Returns the input manager handling mouse events of the viewport (if any).
+    ViewportInputManager* inputManager() const;
 
-	/// Returns the list of gizmos to render in the viewport.
-	virtual span<ViewportGizmo*> viewportGizmos() override;
+    /// Returns the list of gizmos to render in the viewport.
+    virtual span<ViewportGizmo*> viewportGizmos() override;
 
-	/// Renders custom GUI elements in the viewport on top of the scene.
-	virtual void renderGui(SceneRenderer* renderer) override;
+    /// Renders custom GUI elements in the viewport on top of the scene.
+    virtual void renderGui(SceneRenderer* renderer) override;
 
-	/// Returns the QWidget that is associated with this viewport window.
-	virtual QWidget* widget() { return nullptr; }
+    /// Returns the QWidget that is associated with this viewport window.
+    virtual QWidget* widget() { return nullptr; }
 
-	/// Returns the zone in the upper left corner of the viewport where the context menu can be activated by the user.
-	const QRectF& contextMenuArea() const { return _contextMenuArea; }
+    /// Returns the zone in the upper left corner of the viewport where the context menu can be activated by the user.
+    const QRectF& contextMenuArea() const { return _contextMenuArea; }
 
-	/// Returns whether the viewport title is shown in the user interface.
-	bool isViewportTitleVisible() const { return _showViewportTitle; }
+    /// Returns whether the viewport title is shown in the user interface.
+    bool isViewportTitleVisible() const { return _showViewportTitle; }
 
-	/// Sets whether the viewport title is shown in the user interface.
-	void setViewportTitleVisible(bool visible) { _showViewportTitle = visible; }
+    /// Sets whether the viewport title is shown in the user interface.
+    void setViewportTitleVisible(bool visible) { _showViewportTitle = visible; }
 
-	/// Is called when the mouse cursor leaves the widget.
-	void leaveEvent(QEvent* event);
+    /// Is called when the mouse cursor leaves the widget.
+    void leaveEvent(QEvent* event);
 
-	/// Handles double click events.
-	void mouseDoubleClickEvent(QMouseEvent* event);
+    /// Handles double click events.
+    void mouseDoubleClickEvent(QMouseEvent* event);
 
-	/// Handles mouse press events.
-	void mousePressEvent(QMouseEvent* event);
+    /// Handles mouse press events.
+    void mousePressEvent(QMouseEvent* event);
 
-	/// Handles mouse release events.
-	void mouseReleaseEvent(QMouseEvent* event);
+    /// Handles mouse release events.
+    void mouseReleaseEvent(QMouseEvent* event);
 
-	/// Handles mouse move events.
-	void mouseMoveEvent(QMouseEvent* event);
+    /// Handles mouse move events.
+    void mouseMoveEvent(QMouseEvent* event);
 
-	/// Handles mouse wheel events.
-	void wheelEvent(QWheelEvent* event);
+    /// Handles mouse wheel events.
+    void wheelEvent(QWheelEvent* event);
 
-	/// Is called when the widgets looses the input focus.
-	void focusOutEvent(QFocusEvent* event);
+    /// Is called when the widgets looses the input focus.
+    void focusOutEvent(QFocusEvent* event);
 
-	/// Handles key-press events.
-	void keyPressEvent(QKeyEvent* event);
+    /// Handles key-press events.
+    void keyPressEvent(QKeyEvent* event);
 
 private:
 
-	/// The zone in the upper left corner of the viewport where
-	/// the context menu can be activated by the user.
-	QRectF _contextMenuArea;
+    /// The zone in the upper left corner of the viewport where
+    /// the context menu can be activated by the user.
+    QRectF _contextMenuArea;
 
-	/// Indicates that the mouse cursor is currently positioned inside the
-	/// viewport area that activates the viewport context menu.
-	bool _cursorInContextMenuArea = false;
+    /// Indicates that the mouse cursor is currently positioned inside the
+    /// viewport area that activates the viewport context menu.
+    bool _cursorInContextMenuArea = false;
 
-	/// Controls the visibility of the viewport title in the user interface.
-	bool _showViewportTitle = true;
+    /// Controls the visibility of the viewport title in the user interface.
+    bool _showViewportTitle = true;
 };
 
-}	// End of namespace
+}   // End of namespace

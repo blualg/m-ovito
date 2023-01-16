@@ -40,27 +40,27 @@ UndoStack::UndoStack(UserInterface& userInterface, QObject* parent) : QObject(pa
 ******************************************************************************/
 void UndoStack::push(std::unique_ptr<CompoundOperation> operation)
 {
-	OVITO_ASSERT(operation);
-	OVITO_ASSERT_MSG(!QCoreApplication::instance() || QThread::currentThread() == QCoreApplication::instance()->thread(), "UndoStack::push()", "This function may only be called from the main thread.");
-	OVITO_ASSERT_MSG(CompoundOperation::isUndoingOrRedoing() == false, "UndoStack::push()", "Cannot record an operation while undoing or redoing another operation.");
-	OVITO_ASSERT(CompoundOperation::isUndoRecording() == false);
-	OVITO_ASSERT(!CompoundOperation::current());
+    OVITO_ASSERT(operation);
+    OVITO_ASSERT_MSG(!QCoreApplication::instance() || QThread::currentThread() == QCoreApplication::instance()->thread(), "UndoStack::push()", "This function may only be called from the main thread.");
+    OVITO_ASSERT_MSG(CompoundOperation::isUndoingOrRedoing() == false, "UndoStack::push()", "Cannot record an operation while undoing or redoing another operation.");
+    OVITO_ASSERT(CompoundOperation::isUndoRecording() == false);
+    OVITO_ASSERT(!CompoundOperation::current());
 
-	// Discard previously undone operations.
-	_operations.resize(index() + 1);
-	if(cleanIndex() > index()) 
-		_cleanIndex = -1;
+    // Discard previously undone operations.
+    _operations.resize(index() + 1);
+    if(cleanIndex() > index()) 
+        _cleanIndex = -1;
 
-	_operations.push_back(std::move(operation));
-	_index++;
-	OVITO_ASSERT(index() == count() - 1);
-	limitUndoStack();
-	Q_EMIT indexChanged(index());
-	Q_EMIT cleanChanged(false);
-	Q_EMIT canUndoChanged(true);
-	Q_EMIT undoTextChanged(undoText());
-	Q_EMIT canRedoChanged(false);
-	Q_EMIT redoTextChanged(QString());
+    _operations.push_back(std::move(operation));
+    _index++;
+    OVITO_ASSERT(index() == count() - 1);
+    limitUndoStack();
+    Q_EMIT indexChanged(index());
+    Q_EMIT cleanChanged(false);
+    Q_EMIT canUndoChanged(true);
+    Q_EMIT undoTextChanged(undoText());
+    Q_EMIT canRedoChanged(false);
+    Q_EMIT redoTextChanged(QString());
 }
 
 /******************************************************************************
@@ -68,20 +68,20 @@ void UndoStack::push(std::unique_ptr<CompoundOperation> operation)
 ******************************************************************************/
 void UndoStack::limitUndoStack()
 {
-	OVITO_ASSERT(CompoundOperation::isUndoingOrRedoing() == false);
-	OVITO_ASSERT(CompoundOperation::isUndoRecording() == false);
-	OVITO_ASSERT(!CompoundOperation::current());
+    OVITO_ASSERT(CompoundOperation::isUndoingOrRedoing() == false);
+    OVITO_ASSERT(CompoundOperation::isUndoRecording() == false);
+    OVITO_ASSERT(!CompoundOperation::current());
 
-	if(_undoLimit < 0) 
-		return;
-	int n = count() - _undoLimit;
-	if(n > 0) {
-		if(index() >= n) {
-			_operations.erase(_operations.begin(), _operations.begin() + n);
-			_index -= n;
-			Q_EMIT indexChanged(index());
-		}
-	}
+    if(_undoLimit < 0) 
+        return;
+    int n = count() - _undoLimit;
+    if(n > 0) {
+        if(index() >= n) {
+            _operations.erase(_operations.begin(), _operations.begin() + n);
+            _index -= n;
+            Q_EMIT indexChanged(index());
+        }
+    }
 }
 
 /******************************************************************************
@@ -89,17 +89,17 @@ void UndoStack::limitUndoStack()
 ******************************************************************************/
 void UndoStack::clear()
 {
-	OVITO_ASSERT(CompoundOperation::isUndoingOrRedoing() == false);
+    OVITO_ASSERT(CompoundOperation::isUndoingOrRedoing() == false);
 
-	_operations.clear();
-	_index = -1;
-	_cleanIndex = -1;
-	Q_EMIT indexChanged(index());
-	Q_EMIT cleanChanged(isClean());
-	Q_EMIT canUndoChanged(false);
-	Q_EMIT canRedoChanged(false);
-	Q_EMIT undoTextChanged(QString());
-	Q_EMIT redoTextChanged(QString());
+    _operations.clear();
+    _index = -1;
+    _cleanIndex = -1;
+    Q_EMIT indexChanged(index());
+    Q_EMIT cleanChanged(isClean());
+    Q_EMIT canUndoChanged(false);
+    Q_EMIT canRedoChanged(false);
+    Q_EMIT undoTextChanged(QString());
+    Q_EMIT redoTextChanged(QString());
 }
 
 /******************************************************************************
@@ -107,10 +107,10 @@ void UndoStack::clear()
 ******************************************************************************/
 void UndoStack::setClean()
 {
-	if(!isClean()) {
-		_cleanIndex = index();
-		Q_EMIT cleanChanged(true);
-	}
+    if(!isClean()) {
+        _cleanIndex = index();
+        Q_EMIT cleanChanged(true);
+    }
 }
 
 /******************************************************************************
@@ -118,10 +118,10 @@ void UndoStack::setClean()
 ******************************************************************************/
 void UndoStack::setDirty()
 {
-	bool signal = isClean();
-	_cleanIndex = -2;
-	if(signal)
-		Q_EMIT cleanChanged(false);
+    bool signal = isClean();
+    _cleanIndex = -2;
+    if(signal)
+        Q_EMIT cleanChanged(false);
 }
 
 /******************************************************************************
@@ -129,24 +129,24 @@ void UndoStack::setDirty()
 ******************************************************************************/
 void UndoStack::undo()
 {
-	OVITO_ASSERT(CompoundOperation::isUndoingOrRedoing() == false);
-	OVITO_ASSERT(CompoundOperation::isUndoRecording() == false);
-	OVITO_ASSERT(!CompoundOperation::current());
+    OVITO_ASSERT(CompoundOperation::isUndoingOrRedoing() == false);
+    OVITO_ASSERT(CompoundOperation::isUndoRecording() == false);
+    OVITO_ASSERT(!CompoundOperation::current());
 
-	if(!canUndo()) 
-		return;
+    if(!canUndo()) 
+        return;
 
-	CompoundOperation* curOp = _operations[index()].get();
-	_userInterface.handleExceptions([&] {
-		curOp->undo();
-	});
-	_index--;
-	Q_EMIT indexChanged(index());
-	Q_EMIT cleanChanged(isClean());
-	Q_EMIT canUndoChanged(canUndo());
-	Q_EMIT undoTextChanged(undoText());
-	Q_EMIT canRedoChanged(canRedo());
-	Q_EMIT redoTextChanged(redoText());
+    CompoundOperation* curOp = _operations[index()].get();
+    _userInterface.handleExceptions([&] {
+        curOp->undo();
+    });
+    _index--;
+    Q_EMIT indexChanged(index());
+    Q_EMIT cleanChanged(isClean());
+    Q_EMIT canUndoChanged(canUndo());
+    Q_EMIT undoTextChanged(undoText());
+    Q_EMIT canRedoChanged(canRedo());
+    Q_EMIT redoTextChanged(redoText());
 }
 
 /******************************************************************************
@@ -154,24 +154,24 @@ void UndoStack::undo()
 ******************************************************************************/
 void UndoStack::redo()
 {
-	OVITO_ASSERT(CompoundOperation::isUndoingOrRedoing() == false);
-	OVITO_ASSERT(CompoundOperation::isUndoRecording() == false);
-	OVITO_ASSERT(!CompoundOperation::current());
+    OVITO_ASSERT(CompoundOperation::isUndoingOrRedoing() == false);
+    OVITO_ASSERT(CompoundOperation::isUndoRecording() == false);
+    OVITO_ASSERT(!CompoundOperation::current());
 
-	if(!canRedo()) 
-		return;
+    if(!canRedo()) 
+        return;
 
-	CompoundOperation* nextOp = _operations[index() + 1].get();
-	_userInterface.handleExceptions([&] {
-		nextOp->redo();
-	});
-	_index++;
-	Q_EMIT indexChanged(index());
-	Q_EMIT cleanChanged(isClean());
-	Q_EMIT canUndoChanged(canUndo());
-	Q_EMIT undoTextChanged(undoText());
-	Q_EMIT canRedoChanged(canRedo());
-	Q_EMIT redoTextChanged(redoText());
+    CompoundOperation* nextOp = _operations[index() + 1].get();
+    _userInterface.handleExceptions([&] {
+        nextOp->redo();
+    });
+    _index++;
+    Q_EMIT indexChanged(index());
+    Q_EMIT cleanChanged(isClean());
+    Q_EMIT canUndoChanged(canUndo());
+    Q_EMIT undoTextChanged(undoText());
+    Q_EMIT canRedoChanged(canRedo());
+    Q_EMIT redoTextChanged(redoText());
 }
 
 /******************************************************************************
@@ -180,15 +180,15 @@ void UndoStack::redo()
 ******************************************************************************/
 void UndoStack::debugPrint()
 {
-	qDebug() << "Undo stack (index=" << _index << "clean index=" << _cleanIndex << "):";
-	int index = 0;
-	for(const auto& op : _operations) {
-		qDebug() << "  " << index << ":" << qPrintable(op->displayName());
-		if(CompoundOperation* compOp = dynamic_cast<CompoundOperation*>(op.get())) {
-			compOp->debugPrint(2);
-		}
-		index++;
-	}
+    qDebug() << "Undo stack (index=" << _index << "clean index=" << _cleanIndex << "):";
+    int index = 0;
+    for(const auto& op : _operations) {
+        qDebug() << "  " << index << ":" << qPrintable(op->displayName());
+        if(CompoundOperation* compOp = dynamic_cast<CompoundOperation*>(op.get())) {
+            compOp->debugPrint(2);
+        }
+        index++;
+    }
 }
 
-}	// End of namespace
+}   // End of namespace

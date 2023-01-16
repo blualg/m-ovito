@@ -32,8 +32,8 @@ IMPLEMENT_OVITO_CLASS(AnglesObject);
 ******************************************************************************/
 AnglesObject::AnglesObject(ObjectCreationParams params) : PropertyContainer(params)
 {
-	// Assign the default data object identifier.
-	setIdentifier(OOClass().pythonName());
+    // Assign the default data object identifier.
+    setIdentifier(OOClass().pythonName());
 }
 
 /******************************************************************************
@@ -41,35 +41,35 @@ AnglesObject::AnglesObject(ObjectCreationParams params) : PropertyContainer(para
 ******************************************************************************/
 PropertyPtr AnglesObject::OOMetaClass::createStandardPropertyInternal(size_t elementCount, int type, DataBuffer::InitializationFlags flags, const ConstDataObjectPath& containerPath) const
 {
-	int dataType;
-	size_t componentCount;
+    int dataType;
+    size_t componentCount;
 
-	switch(type) {
-	case TypeProperty:
-		dataType = PropertyObject::Int;
-		componentCount = 1;
-		break;
-	case TopologyProperty:
-		dataType = PropertyObject::Int64;
-		componentCount = 3;
-		break;
-	default:
-		OVITO_ASSERT_MSG(false, "AnglesObject::createStandardPropertyInternal", "Invalid standard property type");
-		throw Exception(tr("This is not a valid standard angle property type: %1").arg(type));
-	}
-	const QStringList& componentNames = standardPropertyComponentNames(type);
-	const QString& propertyName = standardPropertyName(type);
+    switch(type) {
+    case TypeProperty:
+        dataType = PropertyObject::Int;
+        componentCount = 1;
+        break;
+    case TopologyProperty:
+        dataType = PropertyObject::Int64;
+        componentCount = 3;
+        break;
+    default:
+        OVITO_ASSERT_MSG(false, "AnglesObject::createStandardPropertyInternal", "Invalid standard property type");
+        throw Exception(tr("This is not a valid standard angle property type: %1").arg(type));
+    }
+    const QStringList& componentNames = standardPropertyComponentNames(type);
+    const QString& propertyName = standardPropertyName(type);
 
-	OVITO_ASSERT(componentCount == standardPropertyComponentCount(type));
+    OVITO_ASSERT(componentCount == standardPropertyComponentCount(type));
 
-	PropertyPtr property = PropertyPtr::create(elementCount, dataType, componentCount, propertyName, flags & ~DataBuffer::InitializeMemory, type, componentNames);
+    PropertyPtr property = PropertyPtr::create(elementCount, dataType, componentCount, propertyName, flags & ~DataBuffer::InitializeMemory, type, componentNames);
 
-	if(flags.testFlag(DataBuffer::InitializeMemory)) {
-		// Default-initialize property values with zeros.
-		property->fillZero();
-	}
+    if(flags.testFlag(DataBuffer::InitializeMemory)) {
+        // Default-initialize property values with zeros.
+        property->fillZero();
+    }
 
-	return property;
+    return property;
 }
 
 /******************************************************************************
@@ -77,17 +77,17 @@ PropertyPtr AnglesObject::OOMetaClass::createStandardPropertyInternal(size_t ele
 ******************************************************************************/
 void AnglesObject::OOMetaClass::initialize()
 {
-	PropertyContainerClass::initialize();
+    PropertyContainerClass::initialize();
 
-	setPropertyClassDisplayName(tr("Angles"));
-	setElementDescriptionName(QStringLiteral("angles"));
-	setPythonName(QStringLiteral("angles"));
+    setPropertyClassDisplayName(tr("Angles"));
+    setElementDescriptionName(QStringLiteral("angles"));
+    setPythonName(QStringLiteral("angles"));
 
-	const QStringList emptyList;
-	const QStringList abcList = QStringList() << "A" << "B" << "C";
+    const QStringList emptyList;
+    const QStringList abcList = QStringList() << "A" << "B" << "C";
 
-	registerStandardProperty(TypeProperty, tr("Angle Type"), PropertyObject::Int, emptyList, &ElementType::OOClass(), tr("Angle types"));
-	registerStandardProperty(TopologyProperty, tr("Topology"), PropertyObject::Int64, abcList);
+    registerStandardProperty(TypeProperty, tr("Angle Type"), PropertyObject::Int, emptyList, &ElementType::OOClass(), tr("Angle types"));
+    registerStandardProperty(TopologyProperty, tr("Topology"), PropertyObject::Int64, abcList);
 }
 
-}	// End of namespace
+}   // End of namespace

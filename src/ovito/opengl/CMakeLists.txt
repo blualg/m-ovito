@@ -25,46 +25,46 @@ FIND_PACKAGE(Qt6 ${OVITO_MINIMUM_REQUIRED_QT_VERSION} COMPONENTS OpenGL REQUIRED
 
 # Define plugin module.
 OVITO_STANDARD_PLUGIN(OpenGLRenderer
-	SOURCES
-		OpenGLLinePrimitive.cpp
-		OpenGLParticlePrimitive.cpp
-		OpenGLImagePrimitive.cpp
-		OpenGLCylinderPrimitive.cpp
-		OpenGLMeshPrimitive.cpp
-		OpenGLMarkerPrimitive.cpp
-		OpenGLResourceManager.cpp
-		OpenGLShaderHelper.cpp
-		OpenGLSceneRenderer.cpp
-		OffscreenOpenGLSceneRenderer.cpp
-		OffscreenInteractiveOpenGLSceneRenderer.cpp
-		PickingOpenGLSceneRenderer.cpp
-		OpenGLDepthTextureBlitter.cpp
-		resources/opengl.qrc
-	LIB_DEPENDENCIES
-		Qt6::OpenGL
+    SOURCES
+        OpenGLLinePrimitive.cpp
+        OpenGLParticlePrimitive.cpp
+        OpenGLImagePrimitive.cpp
+        OpenGLCylinderPrimitive.cpp
+        OpenGLMeshPrimitive.cpp
+        OpenGLMarkerPrimitive.cpp
+        OpenGLResourceManager.cpp
+        OpenGLShaderHelper.cpp
+        OpenGLSceneRenderer.cpp
+        OffscreenOpenGLSceneRenderer.cpp
+        OffscreenInteractiveOpenGLSceneRenderer.cpp
+        PickingOpenGLSceneRenderer.cpp
+        OpenGLDepthTextureBlitter.cpp
+        resources/opengl.qrc
+    LIB_DEPENDENCIES
+        Qt6::OpenGL
 )
 
 IF(NOT OVITO_QML_GUI AND NOT OVITO_BUILD_CONDA)
-	# Find OpenGL library.
-	FIND_PACKAGE(OpenGL REQUIRED)
+    # Find OpenGL library.
+    FIND_PACKAGE(OpenGL REQUIRED)
 
-	# Define a CMake imported target for the OpenGL libraries and headers.
-	# Newer versions of CMake do that by themselves.
-	IF(NOT TARGET OpenGL::GL AND OPENGL_FOUND)
-		ADD_LIBRARY(OpenGL::GL UNKNOWN IMPORTED)
-		SET_TARGET_PROPERTIES(OpenGL::GL PROPERTIES
-			IMPORTED_LOCATION "${OPENGL_gl_LIBRARY}"
-			INTERFACE_INCLUDE_DIRECTORIES "${OPENGL_INCLUDE_DIR}"
-		)
-	ENDIF()
+    # Define a CMake imported target for the OpenGL libraries and headers.
+    # Newer versions of CMake do that by themselves.
+    IF(NOT TARGET OpenGL::GL AND OPENGL_FOUND)
+        ADD_LIBRARY(OpenGL::GL UNKNOWN IMPORTED)
+        SET_TARGET_PROPERTIES(OpenGL::GL PROPERTIES
+            IMPORTED_LOCATION "${OPENGL_gl_LIBRARY}"
+            INTERFACE_INCLUDE_DIRECTORIES "${OPENGL_INCLUDE_DIR}"
+        )
+    ENDIF()
 
-	# Link to OpenGL library.
-	TARGET_LINK_LIBRARIES(OpenGLRenderer PRIVATE OpenGL::GL)
+    # Link to OpenGL library.
+    TARGET_LINK_LIBRARIES(OpenGLRenderer PRIVATE OpenGL::GL)
 
-	IF(APPLE)
-		# OpenGL functions have been marked as deprecated since macOS 10.14. Silence the compiler warnings.
-		TARGET_COMPILE_DEFINITIONS(OpenGLRenderer PRIVATE "GL_SILENCE_DEPRECATION")
-	ENDIF()
+    IF(APPLE)
+        # OpenGL functions have been marked as deprecated since macOS 10.14. Silence the compiler warnings.
+        TARGET_COMPILE_DEFINITIONS(OpenGLRenderer PRIVATE "GL_SILENCE_DEPRECATION")
+    ENDIF()
 
 ENDIF()
 

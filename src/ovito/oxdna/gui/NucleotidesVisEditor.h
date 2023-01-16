@@ -33,17 +33,17 @@ namespace Ovito::Particles {
  */
 class NucleotidesVisEditor : public PropertiesEditor
 {
-	OVITO_CLASS(NucleotidesVisEditor)
+    OVITO_CLASS(NucleotidesVisEditor)
 
 public:
 
-	/// Constructor.
-	Q_INVOKABLE NucleotidesVisEditor() {}
+    /// Constructor.
+    Q_INVOKABLE NucleotidesVisEditor() {}
 
 protected:
 
-	/// Creates the user interface controls for the editor.
-	virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
+    /// Creates the user interface controls for the editor.
+    virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
 };
 
-}	// End of namespace
+}   // End of namespace

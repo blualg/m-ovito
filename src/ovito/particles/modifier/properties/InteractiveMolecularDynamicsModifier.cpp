@@ -48,19 +48,19 @@ SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(InteractiveMolecularDynamicsModifier, trans
 * Constructs the modifier instance.
 ******************************************************************************/
 InteractiveMolecularDynamicsModifier::InteractiveMolecularDynamicsModifier(ObjectCreationParams params) : Modifier(params),
-	_hostName(QStringLiteral("localhost")),
-	_port(8888),
-	_transmissionInterval(1),
-	_modifierStatus(PipelineStatus::Warning, tr("IMD connection not established yet."))
+    _hostName(QStringLiteral("localhost")),
+    _port(8888),
+    _transmissionInterval(1),
+    _modifierStatus(PipelineStatus::Warning, tr("IMD connection not established yet."))
 {
-	// Update modifier status whenever the server connection changes.
-	connect(&_socket, &QAbstractSocket::stateChanged, this, &InteractiveMolecularDynamicsModifier::connectionStateChanged);
+    // Update modifier status whenever the server connection changes.
+    connect(&_socket, &QAbstractSocket::stateChanged, this, &InteractiveMolecularDynamicsModifier::connectionStateChanged);
 
-	// Update modifier status whenever the a connection error occurs.
-	connect(&_socket, &QAbstractSocket::errorOccurred, this, &InteractiveMolecularDynamicsModifier::connectionError);
+    // Update modifier status whenever the a connection error occurs.
+    connect(&_socket, &QAbstractSocket::errorOccurred, this, &InteractiveMolecularDynamicsModifier::connectionError);
 
-	// Process incoming data. 
-	connect(&_socket, &QAbstractSocket::readyRead, this, &InteractiveMolecularDynamicsModifier::dataReceived);
+    // Process incoming data. 
+    connect(&_socket, &QAbstractSocket::readyRead, this, &InteractiveMolecularDynamicsModifier::dataReceived);
 }
 
 /******************************************************************************
@@ -68,8 +68,8 @@ InteractiveMolecularDynamicsModifier::InteractiveMolecularDynamicsModifier(Objec
 ******************************************************************************/
 InteractiveMolecularDynamicsModifier::~InteractiveMolecularDynamicsModifier()
 {
-	_socket.disconnect(this);
-	_socket.abort();
+    _socket.disconnect(this);
+    _socket.abort();
 }
 
 /******************************************************************************
@@ -77,7 +77,7 @@ InteractiveMolecularDynamicsModifier::~InteractiveMolecularDynamicsModifier()
 ******************************************************************************/
 bool InteractiveMolecularDynamicsModifier::OOMetaClass::isApplicableTo(const DataCollection& input) const
 {
-	return input.containsObject<ParticlesObject>();
+    return input.containsObject<ParticlesObject>();
 }
 
 /******************************************************************************
@@ -85,13 +85,13 @@ bool InteractiveMolecularDynamicsModifier::OOMetaClass::isApplicableTo(const Dat
 ******************************************************************************/
 void InteractiveMolecularDynamicsModifier::connectToServer(UserInterface& userInterface)
 {
-	_userInterface = &userInterface;
-	if(_socket.state() == QAbstractSocket::UnconnectedState) {
-		_messageBytesToReceive = 0;
-		_numFramesReceived = 0;
-		_pipelineUpdatePending = false;
-		_socket.connectToHost(hostName(), port());
-	}
+    _userInterface = &userInterface;
+    if(_socket.state() == QAbstractSocket::UnconnectedState) {
+        _messageBytesToReceive = 0;
+        _numFramesReceived = 0;
+        _pipelineUpdatePending = false;
+        _socket.connectToHost(hostName(), port());
+    }
 }
 
 /******************************************************************************
@@ -99,15 +99,15 @@ void InteractiveMolecularDynamicsModifier::connectToServer(UserInterface& userIn
 ******************************************************************************/
 void InteractiveMolecularDynamicsModifier::disconnectFromServer()
 {
-	_isConnected = false;
-	if(_socket.state() == QAbstractSocket::ConnectedState) {
-		_socket.disconnectFromHost();
-	}
-	else {
-		_socket.abort();
-	}
-	_userInterface = nullptr;
-	_preliminaryUpdateSuspender.reset();
+    _isConnected = false;
+    if(_socket.state() == QAbstractSocket::ConnectedState) {
+        _socket.disconnectFromHost();
+    }
+    else {
+        _socket.abort();
+    }
+    _userInterface = nullptr;
+    _preliminaryUpdateSuspender.reset();
 }
 
 /******************************************************************************
@@ -115,35 +115,35 @@ void InteractiveMolecularDynamicsModifier::disconnectFromServer()
 ******************************************************************************/
 void InteractiveMolecularDynamicsModifier::connectionStateChanged()
 {
-	if(isAboutToBeDeleted()) 
-		return;
+    if(isAboutToBeDeleted()) 
+        return;
 
-	switch(_socket.state()) {
-	case QAbstractSocket::UnconnectedState:
-		if(_modifierStatus.type() != PipelineStatus::Error)
-			_modifierStatus = PipelineStatus(PipelineStatus::Warning, tr("Not connected to IMD server"));
-		break;
-	case QAbstractSocket::HostLookupState:
-		_modifierStatus = PipelineStatus(PipelineStatus::Warning, tr("Looking up host name..."));
-		break;
-	case QAbstractSocket::ConnectingState:
-	case QAbstractSocket::BoundState:
-		_modifierStatus = PipelineStatus(PipelineStatus::Warning, tr("Connecting to IMD server..."));
-		break;
-	case QAbstractSocket::ConnectedState:
-	case QAbstractSocket::ListeningState:
-		_modifierStatus = PipelineStatus(PipelineStatus::Success, tr("Connected to IMD server"));
-		break;
-	case QAbstractSocket::ClosingState:
-		if(_modifierStatus.type() != PipelineStatus::Error)
-			_modifierStatus = PipelineStatus(PipelineStatus::Success, tr("Closing connection to IMD server..."));
-		_isConnected = false;
-		_preliminaryUpdateSuspender.reset();
-		_userInterface = nullptr;
-		break;
-	}
+    switch(_socket.state()) {
+    case QAbstractSocket::UnconnectedState:
+        if(_modifierStatus.type() != PipelineStatus::Error)
+            _modifierStatus = PipelineStatus(PipelineStatus::Warning, tr("Not connected to IMD server"));
+        break;
+    case QAbstractSocket::HostLookupState:
+        _modifierStatus = PipelineStatus(PipelineStatus::Warning, tr("Looking up host name..."));
+        break;
+    case QAbstractSocket::ConnectingState:
+    case QAbstractSocket::BoundState:
+        _modifierStatus = PipelineStatus(PipelineStatus::Warning, tr("Connecting to IMD server..."));
+        break;
+    case QAbstractSocket::ConnectedState:
+    case QAbstractSocket::ListeningState:
+        _modifierStatus = PipelineStatus(PipelineStatus::Success, tr("Connected to IMD server"));
+        break;
+    case QAbstractSocket::ClosingState:
+        if(_modifierStatus.type() != PipelineStatus::Error)
+            _modifierStatus = PipelineStatus(PipelineStatus::Success, tr("Closing connection to IMD server..."));
+        _isConnected = false;
+        _preliminaryUpdateSuspender.reset();
+        _userInterface = nullptr;
+        break;
+    }
 
-	notifyTargetChanged();
+    notifyTargetChanged();
 }
 
 /******************************************************************************
@@ -151,10 +151,10 @@ void InteractiveMolecularDynamicsModifier::connectionStateChanged()
 ******************************************************************************/
 void InteractiveMolecularDynamicsModifier::connectionError(QAbstractSocket::SocketError socketError)
 {
-	if(socketError != QAbstractSocket::RemoteHostClosedError)
-		protocolError(_socket.errorString());
-	else
-		_modifierStatus = PipelineStatus(PipelineStatus::Warning, tr("IMD connection closed by remote host"));
+    if(socketError != QAbstractSocket::RemoteHostClosedError)
+        protocolError(_socket.errorString());
+    else
+        _modifierStatus = PipelineStatus(PipelineStatus::Warning, tr("IMD connection closed by remote host"));
 }
 
 /******************************************************************************
@@ -162,12 +162,12 @@ void InteractiveMolecularDynamicsModifier::connectionError(QAbstractSocket::Sock
 ******************************************************************************/
 void InteractiveMolecularDynamicsModifier::protocolError(const QString& errorString, PipelineStatus::StatusType statusType)
 {
-	_isConnected = false;
-	_socket.abort();
-	_modifierStatus = PipelineStatus(statusType, tr("IMD connection error: %1").arg(errorString));
-	_userInterface = nullptr;
-	_preliminaryUpdateSuspender.reset();
-	notifyTargetChanged();
+    _isConnected = false;
+    _socket.abort();
+    _modifierStatus = PipelineStatus(statusType, tr("IMD connection error: %1").arg(errorString));
+    _userInterface = nullptr;
+    _preliminaryUpdateSuspender.reset();
+    notifyTargetChanged();
 }
 
 /******************************************************************************
@@ -175,120 +175,120 @@ void InteractiveMolecularDynamicsModifier::protocolError(const QString& errorStr
 ******************************************************************************/
 void InteractiveMolecularDynamicsModifier::dataReceived()
 {
-	while(_socket.bytesAvailable() >= sizeof(IMDHeader)) {
-		if(_messageBytesToReceive == 0) {
+    while(_socket.bytesAvailable() >= sizeof(IMDHeader)) {
+        if(_messageBytesToReceive == 0) {
 
-			// Read IMDHeader structure from input data stream.
-			if(_socket.read(reinterpret_cast<char*>(&_header), sizeof(_header)) != sizeof(IMDHeader)) {
-				protocolError(tr("IMD protocol failure. Did not received sufficient data."));
-				break;
-			}
-			_header.type = qFromBigEndian(_header.type);
+            // Read IMDHeader structure from input data stream.
+            if(_socket.read(reinterpret_cast<char*>(&_header), sizeof(_header)) != sizeof(IMDHeader)) {
+                protocolError(tr("IMD protocol failure. Did not received sufficient data."));
+                break;
+            }
+            _header.type = qFromBigEndian(_header.type);
 
-			// Expect handshaking code as first message.
-			if(_isConnected == false && _header.type != IMD_HANDSHAKE) {
-				protocolError(tr("IMD server handshaking failed. Did not receive correct handshaking code from server."));
-				break;
-			}
+            // Expect handshaking code as first message.
+            if(_isConnected == false && _header.type != IMD_HANDSHAKE) {
+                protocolError(tr("IMD server handshaking failed. Did not receive correct handshaking code from server."));
+                break;
+            }
 
-			// Handle IMD server messages.
-			if(_header.type == IMD_HANDSHAKE) {
-				const qint32 IMDVERSION = 2;
-				if(qFromBigEndian(_header.length) == IMDVERSION) _serverEndianess = QSysInfo::BigEndian;
-				else if(qFromLittleEndian(_header.length) == IMDVERSION) _serverEndianess = QSysInfo::LittleEndian;
-				else {
-					protocolError(tr("IMD server handshaking failed. Could not determine endianess of server side."));
-					break;
-				}
-				_isConnected = true;
+            // Handle IMD server messages.
+            if(_header.type == IMD_HANDSHAKE) {
+                const qint32 IMDVERSION = 2;
+                if(qFromBigEndian(_header.length) == IMDVERSION) _serverEndianess = QSysInfo::BigEndian;
+                else if(qFromLittleEndian(_header.length) == IMDVERSION) _serverEndianess = QSysInfo::LittleEndian;
+                else {
+                    protocolError(tr("IMD server handshaking failed. Could not determine endianess of server side."));
+                    break;
+                }
+                _isConnected = true;
 
-				// Send IMD_GO message back to server.
-				IMDHeader header;
-				header.type = qToBigEndian<qint32>(IMD_GO);
-				header.length = qToBigEndian<qint32>(sizeof(IMDHeader));
-				_socket.write(reinterpret_cast<const char*>(&header), sizeof(header));
+                // Send IMD_GO message back to server.
+                IMDHeader header;
+                header.type = qToBigEndian<qint32>(IMD_GO);
+                header.length = qToBigEndian<qint32>(sizeof(IMDHeader));
+                _socket.write(reinterpret_cast<const char*>(&header), sizeof(header));
 
-				// Send IMD_TRATE message to server.
-				header.type = qToBigEndian<qint32>(IMD_TRATE);
-				header.length = qToBigEndian<qint32>(transmissionInterval());
-				_socket.write(reinterpret_cast<const char*>(&header), sizeof(header));
-			}
-			else if(_header.type == IMD_FCOORDS) {
-				// Receive coordinates.
-				qint64 numCoords = qFromBigEndian(_header.length);
-				if(numCoords <= 0) {
-					protocolError(tr("Invalid number of coordinates: %1").arg(numCoords));
-					break;
-				}
-				// Calculate number of bytes to receive.
-				_messageBytesToReceive = numCoords * sizeof(float) * 3;
-			}
-			else if(_header.type == IMD_ENERGIES) {
-				// Calculate number of bytes to receive.
-				_messageBytesToReceive = sizeof(IMDEnergies);
-			}
-			else if(_header.type == IMD_IOERROR) {
-				protocolError(tr("Received I/O error signal from server"));
-				break;
-			}
-			else {
-				protocolError(tr("Unsupported IMD message type: %1").arg(_header.type));
-				break;
-			}
-		}
-		else {
-			if(_socket.bytesAvailable() < _messageBytesToReceive) 
-				break;	// Wait until more data arrives.
+                // Send IMD_TRATE message to server.
+                header.type = qToBigEndian<qint32>(IMD_TRATE);
+                header.length = qToBigEndian<qint32>(transmissionInterval());
+                _socket.write(reinterpret_cast<const char*>(&header), sizeof(header));
+            }
+            else if(_header.type == IMD_FCOORDS) {
+                // Receive coordinates.
+                qint64 numCoords = qFromBigEndian(_header.length);
+                if(numCoords <= 0) {
+                    protocolError(tr("Invalid number of coordinates: %1").arg(numCoords));
+                    break;
+                }
+                // Calculate number of bytes to receive.
+                _messageBytesToReceive = numCoords * sizeof(float) * 3;
+            }
+            else if(_header.type == IMD_ENERGIES) {
+                // Calculate number of bytes to receive.
+                _messageBytesToReceive = sizeof(IMDEnergies);
+            }
+            else if(_header.type == IMD_IOERROR) {
+                protocolError(tr("Received I/O error signal from server"));
+                break;
+            }
+            else {
+                protocolError(tr("Unsupported IMD message type: %1").arg(_header.type));
+                break;
+            }
+        }
+        else {
+            if(_socket.bytesAvailable() < _messageBytesToReceive) 
+                break;  // Wait until more data arrives.
 
-			if(_header.type == IMD_FCOORDS) {
-				// Read coordinates data from socket stream.
-				qint64 numCoords = qFromBigEndian(_header.length);
-				std::vector<Point_3<float>> coords(numCoords);
-				OVITO_ASSERT(_messageBytesToReceive == numCoords * sizeof(Point_3<float>));
-				if(_socket.read(reinterpret_cast<char*>(coords.data()), _messageBytesToReceive) != _messageBytesToReceive) {
-					protocolError(tr("Could not read sufficient data from socket"));
-					break;
-				}
-				_messageBytesToReceive = 0;
+            if(_header.type == IMD_FCOORDS) {
+                // Read coordinates data from socket stream.
+                qint64 numCoords = qFromBigEndian(_header.length);
+                std::vector<Point_3<float>> coords(numCoords);
+                OVITO_ASSERT(_messageBytesToReceive == numCoords * sizeof(Point_3<float>));
+                if(_socket.read(reinterpret_cast<char*>(coords.data()), _messageBytesToReceive) != _messageBytesToReceive) {
+                    protocolError(tr("Could not read sufficient data from socket"));
+                    break;
+                }
+                _messageBytesToReceive = 0;
 
-				// Convert data array into particle coordinates property.
-				_coordinates = ParticlesObject::OOClass().createStandardProperty(numCoords, ParticlesObject::PositionProperty);
-				std::transform(coords.cbegin(), coords.cend(), PropertyAccess<Point3>(_coordinates).begin(), [](const Point_3<float>& p) { return p.toDataType<FloatType>(); });
+                // Convert data array into particle coordinates property.
+                _coordinates = ParticlesObject::OOClass().createStandardProperty(numCoords, ParticlesObject::PositionProperty);
+                std::transform(coords.cbegin(), coords.cend(), PropertyAccess<Point3>(_coordinates).begin(), [](const Point_3<float>& p) { return p.toDataType<FloatType>(); });
 
-				// Notify pipeline system that this modifier has new results. 
-				_numFramesReceived++;
-				_modifierStatus = PipelineStatus(PipelineStatus::Success, tr("Connected to IMD server.\n%n frames received.", nullptr, _numFramesReceived));
-				if(!_preliminaryUpdateSuspender && _userInterface) {
-					// Suppress viewport updates that normally occur when preliminary pipeline updates are available.
-					// That's because the user propably likes to see only the final pipeline output when playing 
-					// an IMD trajectory pseudo-animation. 
-					_preliminaryUpdateSuspender.emplace(*_userInterface);
-				}
-				if(!_pipelineUpdatePending && _userInterface) {
-					if(Viewport* viewport = _userInterface->datasetContainer().activeViewport()) {
-						if(viewport->window()) {
-							_pipelineUpdatePending = true;
-							// Wait until pipeline update that is currently in progress has completed before
-							// triggering a new pipeline update.
-							viewport->window()->scenePreparation().future().finally(*this, [&](Task& task) noexcept {
-								if(!task.isCanceled()) {
-									_pipelineUpdatePending = false;
-									notifyTargetChanged();
-								}
-							});
-						}
-					}
-				}
-			}
-			else if(_header.type == IMD_ENERGIES) {
-				// Ignore message.
-			}
-			else {
-				protocolError(tr("Unsupported IMD message type: %1").arg(_header.type));
-				break;
-			}
-		}
-	}
+                // Notify pipeline system that this modifier has new results. 
+                _numFramesReceived++;
+                _modifierStatus = PipelineStatus(PipelineStatus::Success, tr("Connected to IMD server.\n%n frames received.", nullptr, _numFramesReceived));
+                if(!_preliminaryUpdateSuspender && _userInterface) {
+                    // Suppress viewport updates that normally occur when preliminary pipeline updates are available.
+                    // That's because the user propably likes to see only the final pipeline output when playing 
+                    // an IMD trajectory pseudo-animation. 
+                    _preliminaryUpdateSuspender.emplace(*_userInterface);
+                }
+                if(!_pipelineUpdatePending && _userInterface) {
+                    if(Viewport* viewport = _userInterface->datasetContainer().activeViewport()) {
+                        if(viewport->window()) {
+                            _pipelineUpdatePending = true;
+                            // Wait until pipeline update that is currently in progress has completed before
+                            // triggering a new pipeline update.
+                            viewport->window()->scenePreparation().future().finally(*this, [&](Task& task) noexcept {
+                                if(!task.isCanceled()) {
+                                    _pipelineUpdatePending = false;
+                                    notifyTargetChanged();
+                                }
+                            });
+                        }
+                    }
+                }
+            }
+            else if(_header.type == IMD_ENERGIES) {
+                // Ignore message.
+            }
+            else {
+                protocolError(tr("Unsupported IMD message type: %1").arg(_header.type));
+                break;
+            }
+        }
+    }
 }
 
 /******************************************************************************
@@ -296,10 +296,10 @@ void InteractiveMolecularDynamicsModifier::dataReceived()
 ******************************************************************************/
 void InteractiveMolecularDynamicsModifier::deleteReferenceObject()
 {
-	// Automatically disconnect from server when modifier is being deleted.
-	disconnectFromServer();
+    // Automatically disconnect from server when modifier is being deleted.
+    disconnectFromServer();
 
-	Modifier::deleteReferenceObject();
+    Modifier::deleteReferenceObject();
 }
 
 /******************************************************************************
@@ -307,45 +307,45 @@ void InteractiveMolecularDynamicsModifier::deleteReferenceObject()
 ******************************************************************************/
 void InteractiveMolecularDynamicsModifier::evaluateSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state)
 {
-	state.setStatus(_modifierStatus);
-	if(!state || !_coordinates) return;
+    state.setStatus(_modifierStatus);
+    if(!state || !_coordinates) return;
 
-	// Make a modifiable copy of the particles object.
-	ParticlesObject* outputParticles = state.expectMutableObject<ParticlesObject>();
-	outputParticles->verifyIntegrity();
+    // Make a modifiable copy of the particles object.
+    ParticlesObject* outputParticles = state.expectMutableObject<ParticlesObject>();
+    outputParticles->verifyIntegrity();
 
-	if(_coordinates->size() != outputParticles->elementCount())
-		throw Exception(tr("Number of local particles (%1) does not match number of coordinates received from IMD server (%2).").arg(outputParticles->elementCount()).arg(_coordinates->size()));
+    if(_coordinates->size() != outputParticles->elementCount())
+        throw Exception(tr("Number of local particles (%1) does not match number of coordinates received from IMD server (%2).").arg(outputParticles->elementCount()).arg(_coordinates->size()));
 
-	// Try to replace particle positions with coordinates received from server.
-	outputParticles->createProperty(_coordinates);
+    // Try to replace particle positions with coordinates received from server.
+    outputParticles->createProperty(_coordinates);
 
-	// Check if there are any bonds and a simulation cell with periodic boundary conditions.
-	// If so, their PBC flags need to be updated. 
-	if(outputParticles->bonds()) {
-		if(const SimulationCellObject* cell = state.getObject<SimulationCellObject>()) {
-			if(cell->hasPbcCorrected()) {
-				if(ConstPropertyAccess<ParticleIndexPair> topologyProperty = outputParticles->bonds()->getProperty(BondsObject::TopologyProperty)) {
-					ConstPropertyAccess<Point3> positions(_coordinates);
-					PropertyAccess<Vector3I> periodicImageProperty = outputParticles->makeBondsMutable()->createProperty(BondsObject::PeriodicImageProperty, DataBuffer::InitializeMemory);
-					// Recompute PBC vectors of bonds as particle may have moved over arbitrary distances.
-					parallelForChunks(topologyProperty.size(), [&](size_t startIndex, size_t count) {
-						for(size_t bondIndex = startIndex, endIndex = startIndex+count; bondIndex < endIndex; bondIndex++) {
-							size_t index1 = topologyProperty[bondIndex][0];
-							size_t index2 = topologyProperty[bondIndex][1];
-							if(index1 < positions.size() && index2 < positions.size()) {
-								Vector3 delta = cell->absoluteToReduced(positions[index1] - positions[index2]);
-								for(size_t dim = 0; dim < 3; dim++) {
-									if(cell->hasPbcCorrected(dim))
-										periodicImageProperty[bondIndex][dim] = (int)std::round(delta[dim]);
-								}
-							}
-						}
-					});
-				}
-			}
-		}
-	}
+    // Check if there are any bonds and a simulation cell with periodic boundary conditions.
+    // If so, their PBC flags need to be updated. 
+    if(outputParticles->bonds()) {
+        if(const SimulationCellObject* cell = state.getObject<SimulationCellObject>()) {
+            if(cell->hasPbcCorrected()) {
+                if(ConstPropertyAccess<ParticleIndexPair> topologyProperty = outputParticles->bonds()->getProperty(BondsObject::TopologyProperty)) {
+                    ConstPropertyAccess<Point3> positions(_coordinates);
+                    PropertyAccess<Vector3I> periodicImageProperty = outputParticles->makeBondsMutable()->createProperty(BondsObject::PeriodicImageProperty, DataBuffer::InitializeMemory);
+                    // Recompute PBC vectors of bonds as particle may have moved over arbitrary distances.
+                    parallelForChunks(topologyProperty.size(), [&](size_t startIndex, size_t count) {
+                        for(size_t bondIndex = startIndex, endIndex = startIndex+count; bondIndex < endIndex; bondIndex++) {
+                            size_t index1 = topologyProperty[bondIndex][0];
+                            size_t index2 = topologyProperty[bondIndex][1];
+                            if(index1 < positions.size() && index2 < positions.size()) {
+                                Vector3 delta = cell->absoluteToReduced(positions[index1] - positions[index2]);
+                                for(size_t dim = 0; dim < 3; dim++) {
+                                    if(cell->hasPbcCorrected(dim))
+                                        periodicImageProperty[bondIndex][dim] = (int)std::round(delta[dim]);
+                                }
+                            }
+                        }
+                    });
+                }
+            }
+        }
+    }
 }
 
 /******************************************************************************
@@ -353,22 +353,22 @@ void InteractiveMolecularDynamicsModifier::evaluateSynchronous(const ModifierEva
 ******************************************************************************/
 void InteractiveMolecularDynamicsModifier::propertyChanged(const PropertyFieldDescriptor* field)
 {
-	if(field == PROPERTY_FIELD(transmissionInterval)) {
-		if(_socket.state() == QAbstractSocket::ConnectedState && _isConnected) {
-			// Send IMD_TRATE message to server.
-			IMDHeader header;
-			header.type = qToBigEndian<qint32>(IMD_TRATE);
-			header.length = qToBigEndian<qint32>(transmissionInterval());
-			_socket.write(reinterpret_cast<const char*>(&header), sizeof(header));
-		}
-	}
-	else if(field == PROPERTY_FIELD(Modifier::isEnabled)) {
-		// Automatically disconnect from server when user disables the modifier.
-		if(!isEnabled())
-			disconnectFromServer();
-	}
+    if(field == PROPERTY_FIELD(transmissionInterval)) {
+        if(_socket.state() == QAbstractSocket::ConnectedState && _isConnected) {
+            // Send IMD_TRATE message to server.
+            IMDHeader header;
+            header.type = qToBigEndian<qint32>(IMD_TRATE);
+            header.length = qToBigEndian<qint32>(transmissionInterval());
+            _socket.write(reinterpret_cast<const char*>(&header), sizeof(header));
+        }
+    }
+    else if(field == PROPERTY_FIELD(Modifier::isEnabled)) {
+        // Automatically disconnect from server when user disables the modifier.
+        if(!isEnabled())
+            disconnectFromServer();
+    }
 
-	Modifier::propertyChanged(field);
+    Modifier::propertyChanged(field);
 }
 
-}	// End of namespace
+}   // End of namespace

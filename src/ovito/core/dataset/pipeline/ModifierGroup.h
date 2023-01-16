@@ -34,52 +34,52 @@ namespace Ovito {
  */
 class OVITO_CORE_EXPORT ModifierGroup : public ActiveObject
 {
-	OVITO_CLASS(ModifierGroup)
-	Q_CLASSINFO("DisplayName", "Modifier group");
+    OVITO_CLASS(ModifierGroup)
+    Q_CLASSINFO("DisplayName", "Modifier group");
 
 public:
 
-	/// \brief Constructs a modifier group object.
-	Q_INVOKABLE ModifierGroup(ObjectCreationParams params) : ActiveObject(params), _isCollapsed(false) {}
+    /// \brief Constructs a modifier group object.
+    Q_INVOKABLE ModifierGroup(ObjectCreationParams params) : ActiveObject(params), _isCollapsed(false) {}
 
-	/// \brief Returns the list of modifier applications that are part of this group.
-	QVector<ModifierApplication*> modifierApplications() const;
+    /// \brief Returns the list of modifier applications that are part of this group.
+    QVector<ModifierApplication*> modifierApplications() const;
 
-	/// \brief Returns the list of pipelines that contain this modifier group.
-	/// \param onlyScenePipelines If true, pipelines which are currently not part of the scene are ignored.
-	QSet<PipelineSceneNode*> pipelines(bool onlyScenePipelines) const;
+    /// \brief Returns the list of pipelines that contain this modifier group.
+    /// \param onlyScenePipelines If true, pipelines which are currently not part of the scene are ignored.
+    QSet<PipelineSceneNode*> pipelines(bool onlyScenePipelines) const;
 
 Q_SIGNALS:
 
-	/// Signal is emitted every time a modifier is added to the group.
-	void modifierAdded(ModifierApplication* modApp);
+    /// Signal is emitted every time a modifier is added to the group.
+    void modifierAdded(ModifierApplication* modApp);
 
-	/// Signal is emitted every time a modifier is removed from the group.
-	void modifierRemoved(ModifierApplication* modApp);
+    /// Signal is emitted every time a modifier is removed from the group.
+    void modifierRemoved(ModifierApplication* modApp);
 
 private Q_SLOTS:
 
-	/// \brief Is called when one of the group's modapps has generated an event.
-	void modAppEvent(RefTarget* sender, const ReferenceEvent& event);
+    /// \brief Is called when one of the group's modapps has generated an event.
+    void modAppEvent(RefTarget* sender, const ReferenceEvent& event);
 
 private:
 
-	/// This is called from a ModifierApplication whenever it becomes a member of this group.
-	void registerModApp(ModifierApplication* modApp);
+    /// This is called from a ModifierApplication whenever it becomes a member of this group.
+    void registerModApp(ModifierApplication* modApp);
 
-	/// This is called from a ModifierApplication whenever it is removed from this group.
-	void unregisterModApp(ModifierApplication* modApp);
+    /// This is called from a ModifierApplication whenever it is removed from this group.
+    void unregisterModApp(ModifierApplication* modApp);
 
-	/// This is called whenever one of the group's member modapps changes. 
-	/// It computes the combined status of the entire group.
-	void updateCombinedStatus();
+    /// This is called whenever one of the group's member modapps changes. 
+    /// It computes the combined status of the entire group.
+    void updateCombinedStatus();
 
-	friend class ModifierApplication;
+    friend class ModifierApplication;
 
 private:
 
-	/// Indicates whether this group is currently collapsed in the pipeline editor.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, isCollapsed, setCollapsed, PROPERTY_FIELD_NO_UNDO);
+    /// Indicates whether this group is currently collapsed in the pipeline editor.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, isCollapsed, setCollapsed, PROPERTY_FIELD_NO_UNDO);
 };
 
-}	// End of namespace
+}   // End of namespace

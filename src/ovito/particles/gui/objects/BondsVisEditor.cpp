@@ -40,46 +40,46 @@ SET_OVITO_OBJECT_EDITOR(BondsVis, BondsVisEditor);
 ******************************************************************************/
 void BondsVisEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 {
-	// Create a rollout.
-	QWidget* rollout = createRollout(tr("Bonds display"), rolloutParams, "manual:visual_elements.bonds");
+    // Create a rollout.
+    QWidget* rollout = createRollout(tr("Bonds display"), rolloutParams, "manual:visual_elements.bonds");
 
     // Create the rollout contents.
-	QGridLayout* layout = new QGridLayout(rollout);
-	layout->setContentsMargins(4,4,4,4);
-	layout->setSpacing(4);
-	layout->setColumnStretch(2, 1);
-	layout->setColumnMinimumWidth(0, 24);
+    QGridLayout* layout = new QGridLayout(rollout);
+    layout->setContentsMargins(4,4,4,4);
+    layout->setSpacing(4);
+    layout->setColumnStretch(2, 1);
+    layout->setColumnMinimumWidth(0, 24);
 
-	// Bond width.
-	FloatParameterUI* bondWidthUI = new FloatParameterUI(this, PROPERTY_FIELD(BondsVis::bondWidth));
-	layout->addWidget(bondWidthUI->label(), 0, 0, 1, 2);
-	layout->addLayout(bondWidthUI->createFieldLayout(), 0, 2);
+    // Bond width.
+    FloatParameterUI* bondWidthUI = new FloatParameterUI(this, PROPERTY_FIELD(BondsVis::bondWidth));
+    layout->addWidget(bondWidthUI->label(), 0, 0, 1, 2);
+    layout->addLayout(bondWidthUI->createFieldLayout(), 0, 2);
 
-	// Shading mode.
-	IntegerCheckBoxParameterUI* shadingModeUI = new IntegerCheckBoxParameterUI(this, PROPERTY_FIELD(BondsVis::shadingMode), BondsVis::NormalShading, BondsVis::FlatShading);
-	shadingModeUI->checkBox()->setText(tr("Flat shading"));
-	layout->addWidget(shadingModeUI->checkBox(), 1, 2);
+    // Shading mode.
+    IntegerCheckBoxParameterUI* shadingModeUI = new IntegerCheckBoxParameterUI(this, PROPERTY_FIELD(BondsVis::shadingMode), BondsVis::NormalShading, BondsVis::FlatShading);
+    shadingModeUI->checkBox()->setText(tr("Flat shading"));
+    layout->addWidget(shadingModeUI->checkBox(), 1, 2);
 
-	// Coloring mode.
-	layout->addWidget(new QLabel(tr("Coloring mode:")), 2, 0, 1, 3);
-	_coloringModeUI = new IntegerRadioButtonParameterUI(this, PROPERTY_FIELD(BondsVis::coloringMode));
-	layout->addWidget(_coloringModeUI->addRadioButton(BondsVis::UniformColoring, tr("Uniform:")), 3, 1);
-	
-	// Uniform color.
-	_bondColorUI = new ColorParameterUI(this, PROPERTY_FIELD(BondsVis::bondColor));
-	layout->addWidget(_bondColorUI->colorPicker(), 3, 2);
+    // Coloring mode.
+    layout->addWidget(new QLabel(tr("Coloring mode:")), 2, 0, 1, 3);
+    _coloringModeUI = new IntegerRadioButtonParameterUI(this, PROPERTY_FIELD(BondsVis::coloringMode));
+    layout->addWidget(_coloringModeUI->addRadioButton(BondsVis::UniformColoring, tr("Uniform:")), 3, 1);
+    
+    // Uniform color.
+    _bondColorUI = new ColorParameterUI(this, PROPERTY_FIELD(BondsVis::bondColor));
+    layout->addWidget(_bondColorUI->colorPicker(), 3, 2);
 
-	// By bond type coloring mode.
-	layout->addWidget(_coloringModeUI->addRadioButton(BondsVis::ByTypeColoring, tr("Bond types")), 4, 1, 1, 2);
+    // By bond type coloring mode.
+    layout->addWidget(_coloringModeUI->addRadioButton(BondsVis::ByTypeColoring, tr("Bond types")), 4, 1, 1, 2);
 
-	// By particle coloring mode.
-	layout->addWidget(_coloringModeUI->addRadioButton(BondsVis::ParticleBasedColoring, tr("Use particle colors")), 5, 1, 1, 2);
+    // By particle coloring mode.
+    layout->addWidget(_coloringModeUI->addRadioButton(BondsVis::ParticleBasedColoring, tr("Use particle colors")), 5, 1, 1, 2);
 
-	// Whenever the pipeline input of the vis element changes, update the list of available coloring options.
-	connect(this, &PropertiesEditor::pipelineInputChanged, this, &BondsVisEditor::updateColoringOptions);
+    // Whenever the pipeline input of the vis element changes, update the list of available coloring options.
+    connect(this, &PropertiesEditor::pipelineInputChanged, this, &BondsVisEditor::updateColoringOptions);
 
-	// Update the coloring controls when a parameter of the vis element has been changed.
-	connect(this, &PropertiesEditor::contentsChanged, this, &BondsVisEditor::updateColoringOptions);	
+    // Update the coloring controls when a parameter of the vis element has been changed.
+    connect(this, &PropertiesEditor::contentsChanged, this, &BondsVisEditor::updateColoringOptions);    
 }
 
 /******************************************************************************
@@ -87,19 +87,19 @@ void BondsVisEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 ******************************************************************************/
 void BondsVisEditor::updateColoringOptions()
 {
-	// Retrieve the BondsObject this vis element is associated with.
-	DataOORef<const BondsObject> bonds = dynamic_object_cast<const BondsObject>(getVisDataObject());
+    // Retrieve the BondsObject this vis element is associated with.
+    DataOORef<const BondsObject> bonds = dynamic_object_cast<const BondsObject>(getVisDataObject());
 
-	// Do the bonds have explicit RGB colors assigned ("Color" property exists)?
-	bool hasExplicitColors = (bonds && bonds->getProperty(BondsObject::ColorProperty));
+    // Do the bonds have explicit RGB colors assigned ("Color" property exists)?
+    bool hasExplicitColors = (bonds && bonds->getProperty(BondsObject::ColorProperty));
 
-	BondsVis::ColoringMode coloringMode = editObject() ? static_object_cast<BondsVis>(editObject())->coloringMode() : BondsVis::UniformColoring;
+    BondsVis::ColoringMode coloringMode = editObject() ? static_object_cast<BondsVis>(editObject())->coloringMode() : BondsVis::UniformColoring;
 
-	_bondColorUI->setEnabled(editObject() && !hasExplicitColors && coloringMode == BondsVis::UniformColoring);
+    _bondColorUI->setEnabled(editObject() && !hasExplicitColors && coloringMode == BondsVis::UniformColoring);
 
-	_coloringModeUI->buttonGroup()->button(BondsVis::UniformColoring)->setEnabled(editObject() && !hasExplicitColors);
-	_coloringModeUI->buttonGroup()->button(BondsVis::ByTypeColoring)->setEnabled(bonds && !hasExplicitColors && bonds->getProperty(BondsObject::TypeProperty));
-	_coloringModeUI->buttonGroup()->button(BondsVis::ParticleBasedColoring)->setEnabled(!hasExplicitColors);
+    _coloringModeUI->buttonGroup()->button(BondsVis::UniformColoring)->setEnabled(editObject() && !hasExplicitColors);
+    _coloringModeUI->buttonGroup()->button(BondsVis::ByTypeColoring)->setEnabled(bonds && !hasExplicitColors && bonds->getProperty(BondsObject::TypeProperty));
+    _coloringModeUI->buttonGroup()->button(BondsVis::ParticleBasedColoring)->setEnabled(!hasExplicitColors);
 }
 
-}	// End of namespace
+}   // End of namespace

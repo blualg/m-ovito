@@ -41,7 +41,7 @@ SET_PROPERTY_FIELD_CHANGE_EVENT(Modifier, title, ReferenceEvent::TitleChanged);
 * Constructor.
 ******************************************************************************/
 Modifier::Modifier(ObjectCreationParams params) : RefTarget(params),
-	_isEnabled(true)
+    _isEnabled(true)
 {
 }
 
@@ -50,23 +50,23 @@ Modifier::Modifier(ObjectCreationParams params) : RefTarget(params),
 ******************************************************************************/
 OORef<ModifierApplication> Modifier::createModifierApplication()
 {
-	// Look which ModifierApplication class has been registered for this Modifier class.
-	for(OvitoClassPtr clazz = &getOOClass(); clazz != nullptr; clazz = clazz->superClass()) {
-		if(OvitoClassPtr modAppClass = ModifierApplication::registry().getModAppClass(clazz)) {
-			if(!modAppClass->isDerivedFrom(ModifierApplication::OOClass()))
-				throw Exception(tr("The modifier application class %1 assigned to the Modifier-derived class %2 is not derived from ModifierApplication.").arg(modAppClass->name(), clazz->name()));
+    // Look which ModifierApplication class has been registered for this Modifier class.
+    for(OvitoClassPtr clazz = &getOOClass(); clazz != nullptr; clazz = clazz->superClass()) {
+        if(OvitoClassPtr modAppClass = ModifierApplication::registry().getModAppClass(clazz)) {
+            if(!modAppClass->isDerivedFrom(ModifierApplication::OOClass()))
+                throw Exception(tr("The modifier application class %1 assigned to the Modifier-derived class %2 is not derived from ModifierApplication.").arg(modAppClass->name(), clazz->name()));
 #ifdef OVITO_DEBUG
-			for(OvitoClassPtr superClazz = clazz->superClass(); superClazz != nullptr; superClazz = superClazz->superClass()) {
-				if(OvitoClassPtr modAppSuperClass = ModifierApplication::registry().getModAppClass(superClazz)) {
-					if(!modAppClass->isDerivedFrom(*modAppSuperClass))
-						throw Exception(tr("The modifier application class %1 assigned to the Modifier-derived class %2 is not derived from the ModifierApplication specialization %3.").arg(modAppClass->name(), clazz->name(), modAppSuperClass->name()));
-				}
-			}
+            for(OvitoClassPtr superClazz = clazz->superClass(); superClazz != nullptr; superClazz = superClazz->superClass()) {
+                if(OvitoClassPtr modAppSuperClass = ModifierApplication::registry().getModAppClass(superClazz)) {
+                    if(!modAppClass->isDerivedFrom(*modAppSuperClass))
+                        throw Exception(tr("The modifier application class %1 assigned to the Modifier-derived class %2 is not derived from the ModifierApplication specialization %3.").arg(modAppClass->name(), clazz->name(), modAppSuperClass->name()));
+                }
+            }
 #endif
-			return static_object_cast<ModifierApplication>(modAppClass->createInstance());
-		}
-	}
-	return OORef<ModifierApplication>::create();
+            return static_object_cast<ModifierApplication>(modAppClass->createInstance());
+        }
+    }
+    return OORef<ModifierApplication>::create();
 }
 
 /******************************************************************************
@@ -74,10 +74,10 @@ OORef<ModifierApplication> Modifier::createModifierApplication()
 ******************************************************************************/
 int Modifier::numberOfOutputFrames(ModifierApplication* modApp) const 
 { 
-	OVITO_ASSERT(modApp);
-	if(PipelineObject* input = modApp->input())
-		return input->numberOfSourceFrames();
-	return 1;
+    OVITO_ASSERT(modApp);
+    if(PipelineObject* input = modApp->input())
+        return input->numberOfSourceFrames();
+    return 1;
 }
 
 /******************************************************************************
@@ -85,10 +85,10 @@ int Modifier::numberOfOutputFrames(ModifierApplication* modApp) const
 ******************************************************************************/
 Future<PipelineFlowState> Modifier::evaluate(const ModifierEvaluationRequest& request, const PipelineFlowState& input)
 {
-	PipelineFlowState output = input;
-	if(output)
-		evaluateSynchronous(request, output);
-	return Future<PipelineFlowState>::createImmediate(std::move(output));
+    PipelineFlowState output = input;
+    if(output)
+        evaluateSynchronous(request, output);
+    return Future<PipelineFlowState>::createImmediate(std::move(output));
 }
 
 /******************************************************************************
@@ -96,13 +96,13 @@ Future<PipelineFlowState> Modifier::evaluate(const ModifierEvaluationRequest& re
 ******************************************************************************/
 QVector<ModifierApplication*> Modifier::modifierApplications() const
 {
-	QVector<ModifierApplication*> apps;
-	visitDependents([&](RefMaker* dependent) {
+    QVector<ModifierApplication*> apps;
+    visitDependents([&](RefMaker* dependent) {
         ModifierApplication* modApp = dynamic_object_cast<ModifierApplication>(dependent);
-		if(modApp != nullptr && modApp->modifier() == this)
-			apps.push_back(modApp);
-	});
-	return apps;
+        if(modApp != nullptr && modApp->modifier() == this)
+            apps.push_back(modApp);
+    });
+    return apps;
 }
 
 /******************************************************************************
@@ -110,13 +110,13 @@ QVector<ModifierApplication*> Modifier::modifierApplications() const
 ******************************************************************************/
 ModifierApplication* Modifier::someModifierApplication() const
 {
-	ModifierApplication* result = nullptr;
-	visitDependents([&](RefMaker* dependent) {
+    ModifierApplication* result = nullptr;
+    visitDependents([&](RefMaker* dependent) {
         ModifierApplication* modApp = dynamic_object_cast<ModifierApplication>(dependent);
-		if(modApp != nullptr && modApp->modifier() == this)
-			result = modApp;
-	});
-	return result;
+        if(modApp != nullptr && modApp->modifier() == this)
+            result = modApp;
+    });
+    return result;
 }
 
 /******************************************************************************
@@ -124,22 +124,22 @@ ModifierApplication* Modifier::someModifierApplication() const
 ******************************************************************************/
 PipelineStatus Modifier::globalStatus() const
 {
-	// Combine the status values of all ModifierApplications into a single status.
-	PipelineStatus result;
-	for(ModifierApplication* modApp : modifierApplications()) {
-		PipelineStatus s = modApp->status();
+    // Combine the status values of all ModifierApplications into a single status.
+    PipelineStatus result;
+    for(ModifierApplication* modApp : modifierApplications()) {
+        PipelineStatus s = modApp->status();
 
-		if(result.text().isEmpty())
-			result.setText(s.text());
-		else if(s.text() != result.text())
-			result.setText(result.text() + QStringLiteral("\n") + s.text());
+        if(result.text().isEmpty())
+            result.setText(s.text());
+        else if(s.text() != result.text())
+            result.setText(result.text() + QStringLiteral("\n") + s.text());
 
-		if(s.type() == PipelineStatus::Error)
-			result.setType(PipelineStatus::Error);
-		else if(result.type() != PipelineStatus::Error && s.type() == PipelineStatus::Warning)
-			result.setType(PipelineStatus::Warning);
-	}
-	return result;
+        if(s.type() == PipelineStatus::Error)
+            result.setType(PipelineStatus::Error);
+        else if(result.type() != PipelineStatus::Error && s.type() == PipelineStatus::Warning)
+            result.setType(PipelineStatus::Warning);
+    }
+    return result;
 }
 
-}	// End of namespace
+}   // End of namespace

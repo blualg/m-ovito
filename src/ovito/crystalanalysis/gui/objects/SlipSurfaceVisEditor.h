@@ -33,17 +33,17 @@ namespace Ovito::CrystalAnalysis {
  */
 class SlipSurfaceVisEditor : public PropertiesEditor
 {
-	OVITO_CLASS(SlipSurfaceVisEditor)
+    OVITO_CLASS(SlipSurfaceVisEditor)
 
 public:
 
-	/// Constructor.
-	Q_INVOKABLE SlipSurfaceVisEditor() {}
+    /// Constructor.
+    Q_INVOKABLE SlipSurfaceVisEditor() {}
 
 protected:
 
-	/// Creates the user interface controls for the editor.
-	virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
+    /// Creates the user interface controls for the editor.
+    virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
 };
 
-}	// End of namespace
+}   // End of namespace

@@ -22,39 +22,39 @@
 
 # Define plugin module.
 OVITO_STANDARD_PLUGIN(GuiBase
-	SOURCES
-		actions/ActionManager.cpp
-		actions/ViewportModeAction.cpp
-		actions/ViewportActions.cpp
-		actions/AnimationActions.cpp
-		mainwin/OverlayListModel.cpp
-		mainwin/OverlayListItem.cpp
-		mainwin/OverlayTypesModel.cpp
-		mainwin/PipelineListModel.cpp
-		mainwin/PipelineListItem.cpp
-		mainwin/ModifierListModel.cpp
-		viewport/ViewportInputManager.cpp
-		viewport/ViewportInputMode.cpp
-		viewport/NavigationModes.cpp
-		viewport/SelectionMode.cpp
-		viewport/BaseViewportWindow.cpp
-		resources/guibase.qrc
-	PRECOMPILED_HEADERS
-		GUIBase.h
+    SOURCES
+        actions/ActionManager.cpp
+        actions/ViewportModeAction.cpp
+        actions/ViewportActions.cpp
+        actions/AnimationActions.cpp
+        mainwin/OverlayListModel.cpp
+        mainwin/OverlayListItem.cpp
+        mainwin/OverlayTypesModel.cpp
+        mainwin/PipelineListModel.cpp
+        mainwin/PipelineListItem.cpp
+        mainwin/ModifierListModel.cpp
+        viewport/ViewportInputManager.cpp
+        viewport/ViewportInputMode.cpp
+        viewport/NavigationModes.cpp
+        viewport/SelectionMode.cpp
+        viewport/BaseViewportWindow.cpp
+        resources/guibase.qrc
+    PRECOMPILED_HEADERS
+        GUIBase.h
 )
 
 IF(NOT EMSCRIPTEN)
-	# Compute the relative path where the documentation files get installed relative to the executable. 
-	FILE(RELATIVE_PATH OVITO_DOCUMENTATION_PATH "${OVITO_BINARY_DIRECTORY}" "${OVITO_SHARE_DIRECTORY}/doc/manual/html/")
-	TARGET_COMPILE_DEFINITIONS(GuiBase PRIVATE "OVITO_DOCUMENTATION_PATH=\"${OVITO_DOCUMENTATION_PATH}\"")
+    # Compute the relative path where the documentation files get installed relative to the executable. 
+    FILE(RELATIVE_PATH OVITO_DOCUMENTATION_PATH "${OVITO_BINARY_DIRECTORY}" "${OVITO_SHARE_DIRECTORY}/doc/manual/html/")
+    TARGET_COMPILE_DEFINITIONS(GuiBase PRIVATE "OVITO_DOCUMENTATION_PATH=\"${OVITO_DOCUMENTATION_PATH}\"")
 ELSE()
-	# Download the documentation inventory file before creating the resource file.
-	FILE(DOWNLOAD https://docs.ovito.org/objects.txt "${CMAKE_CURRENT_BINARY_DIR}/objects.txt")
-	# Link the manual inventory file into the executable.
-	QT_ADD_RESOURCES(GuiBase PackagedManual
-		PREFIX "/doc/manual/"
-		BASE "${CMAKE_CURRENT_BINARY_DIR}"
-		FILES "${CMAKE_CURRENT_BINARY_DIR}/objects.txt")
+    # Download the documentation inventory file before creating the resource file.
+    FILE(DOWNLOAD https://docs.ovito.org/objects.txt "${CMAKE_CURRENT_BINARY_DIR}/objects.txt")
+    # Link the manual inventory file into the executable.
+    QT_ADD_RESOURCES(GuiBase PackagedManual
+        PREFIX "/doc/manual/"
+        BASE "${CMAKE_CURRENT_BINARY_DIR}"
+        FILES "${CMAKE_CURRENT_BINARY_DIR}/objects.txt")
 ENDIF()
 
 # Compute the relative path where the Python extension scripts get installed relative to the executable

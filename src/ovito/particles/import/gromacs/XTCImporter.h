@@ -35,78 +35,78 @@ namespace Ovito::Particles {
  */
 class OVITO_PARTICLES_EXPORT XTCImporter : public ParticleImporter
 {
-	/// Defines a metaclass specialization for this importer type.
-	class OOMetaClass : public ParticleImporter::OOMetaClass
-	{
-	public:
-		/// Inherit standard constructor from base meta class.
-		using ParticleImporter::OOMetaClass::OOMetaClass;
+    /// Defines a metaclass specialization for this importer type.
+    class OOMetaClass : public ParticleImporter::OOMetaClass
+    {
+    public:
+        /// Inherit standard constructor from base meta class.
+        using ParticleImporter::OOMetaClass::OOMetaClass;
 
-		/// Returns the list of file formats that can be read by this importer class.
-		virtual Ovito::span<const SupportedFormat> supportedFormats() const override {
-			static const SupportedFormat formats[] = {{ QStringLiteral("*.xtc"), tr("Gromacs Trajectory Files") }};
-			return formats;
-		}
+        /// Returns the list of file formats that can be read by this importer class.
+        virtual Ovito::span<const SupportedFormat> supportedFormats() const override {
+            static const SupportedFormat formats[] = {{ QStringLiteral("*.xtc"), tr("Gromacs Trajectory Files") }};
+            return formats;
+        }
 
-		/// Checks if the given file has format that can be read by this importer.
-		virtual bool checkFileFormat(const FileHandle& file) const override;
-	};
+        /// Checks if the given file has format that can be read by this importer.
+        virtual bool checkFileFormat(const FileHandle& file) const override;
+    };
 
-	OVITO_CLASS_META(XTCImporter, OOMetaClass)
+    OVITO_CLASS_META(XTCImporter, OOMetaClass)
 
 public:
 
-	/// \brief Constructs a new instance of this class.
-	Q_INVOKABLE XTCImporter(ObjectCreationParams params) : ParticleImporter(params) {
-		setMultiTimestepFile(true);
-		setRecenterCell(true);
-	}
+    /// \brief Constructs a new instance of this class.
+    Q_INVOKABLE XTCImporter(ObjectCreationParams params) : ParticleImporter(params) {
+        setMultiTimestepFile(true);
+        setRecenterCell(true);
+    }
 
-	/// Returns the title of this object.
-	virtual QString objectTitle() const override { return tr("XTC"); }
+    /// Returns the title of this object.
+    virtual QString objectTitle() const override { return tr("XTC"); }
 
-	/// Indicates whether this file importer type loads particle trajectories.
-	virtual bool isTrajectoryFormat() const override { return true; } 
+    /// Indicates whether this file importer type loads particle trajectories.
+    virtual bool isTrajectoryFormat() const override { return true; } 
 
-	/// Creates an asynchronous loader object that loads the data for the given frame from the external file.
-	virtual FileSourceImporter::FrameLoaderPtr createFrameLoader(const LoadOperationRequest& request) override {
-		return std::make_shared<FrameLoader>(request, recenterCell());
-	}
+    /// Creates an asynchronous loader object that loads the data for the given frame from the external file.
+    virtual FileSourceImporter::FrameLoaderPtr createFrameLoader(const LoadOperationRequest& request) override {
+        return std::make_shared<FrameLoader>(request, recenterCell());
+    }
 
-	/// Creates an asynchronous frame discovery object that scans the input file for contained animation frames.
-	virtual std::shared_ptr<FileSourceImporter::FrameFinder> createFrameFinder(const FileHandle& file) override {
-		return std::make_shared<FrameFinder>(file);
-	}
+    /// Creates an asynchronous frame discovery object that scans the input file for contained animation frames.
+    virtual std::shared_ptr<FileSourceImporter::FrameFinder> createFrameFinder(const FileHandle& file) override {
+        return std::make_shared<FrameFinder>(file);
+    }
 
 private:
 
-	/// The format-specific task object that is responsible for reading an input file in the background.
-	class FrameLoader : public ParticleImporter::FrameLoader
-	{
-	public:
+    /// The format-specific task object that is responsible for reading an input file in the background.
+    class FrameLoader : public ParticleImporter::FrameLoader
+    {
+    public:
 
-		/// Constructor.
-		using ParticleImporter::FrameLoader::FrameLoader;
+        /// Constructor.
+        using ParticleImporter::FrameLoader::FrameLoader;
 
-	protected:
+    protected:
 
-		/// Reads the frame data from the external file.
-		virtual void loadFile() override;
-	};
+        /// Reads the frame data from the external file.
+        virtual void loadFile() override;
+    };
 
-	/// The format-specific task object that is responsible for scanning the input file for animation frames.
-	class FrameFinder : public FileSourceImporter::FrameFinder
-	{
-	public:
+    /// The format-specific task object that is responsible for scanning the input file for animation frames.
+    class FrameFinder : public FileSourceImporter::FrameFinder
+    {
+    public:
 
-		/// Inherit constructor from base class.
-		using FileSourceImporter::FrameFinder::FrameFinder;
+        /// Inherit constructor from base class.
+        using FileSourceImporter::FrameFinder::FrameFinder;
 
-	protected:
+    protected:
 
-		/// Scans the data file and builds a list of source frames.
-		virtual void discoverFramesInFile(QVector<FileSourceImporter::Frame>& frames) override;
-	};
+        /// Scans the data file and builds a list of source frames.
+        virtual void discoverFramesInFile(QVector<FileSourceImporter::Frame>& frames) override;
+    };
 };
 
-}	// End of namespace
+}   // End of namespace

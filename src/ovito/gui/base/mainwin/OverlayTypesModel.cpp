@@ -35,24 +35,24 @@ namespace Ovito {
 ******************************************************************************/
 OverlayAction* OverlayAction::createForClass(OvitoClassPtr clazz)
 {
-	OverlayAction* action = new OverlayAction();
-	action->_layerClass = clazz;
+    OverlayAction* action = new OverlayAction();
+    action->_layerClass = clazz;
 
-	// Generate a unique identifier for the action:
-	action->setObjectName(QStringLiteral("InsertViewportLayer.%1.%2").arg(clazz->pluginId(), clazz->name()));
+    // Generate a unique identifier for the action:
+    action->setObjectName(QStringLiteral("InsertViewportLayer.%1.%2").arg(clazz->pluginId(), clazz->name()));
 
-	// Set the action's UI display name.
-	action->setText(clazz->displayName());
+    // Set the action's UI display name.
+    action->setText(clazz->displayName());
 
-	// Give the modifier a status bar text.
-	QString description = clazz->descriptionString();
-	action->setStatusTip(!description.isEmpty() ? std::move(description) : tr("Insert this viewport layer."));
+    // Give the modifier a status bar text.
+    QString description = clazz->descriptionString();
+    action->setStatusTip(!description.isEmpty() ? std::move(description) : tr("Insert this viewport layer."));
 
-	// Give the action an icon.
-	static QIcon icon = QIcon::fromTheme("overlay_action_icon");
-	action->setIcon(icon);
+    // Give the action an icon.
+    static QIcon icon = QIcon::fromTheme("overlay_action_icon");
+    action->setIcon(icon);
 
-	return action;
+    return action;
 }
 
 /******************************************************************************
@@ -60,23 +60,23 @@ OverlayAction* OverlayAction::createForClass(OvitoClassPtr clazz)
 ******************************************************************************/
 OverlayAction* OverlayAction::createForScript(const QString& fileName, const QDir& directory)
 {
-	OverlayAction* action = new OverlayAction();
-	action->_scriptPath = directory.filePath(fileName);
+    OverlayAction* action = new OverlayAction();
+    action->_scriptPath = directory.filePath(fileName);
 
-	// Generate a unique identifier for the action:
-	action->setObjectName(QStringLiteral("InsertViewportLayerScript.%1").arg(action->_scriptPath));
+    // Generate a unique identifier for the action:
+    action->setObjectName(QStringLiteral("InsertViewportLayerScript.%1").arg(action->_scriptPath));
 
-	// Set the action's UI display name. Chop off ".py" extension of filename.
-	action->setText(fileName.chopped(3));
+    // Set the action's UI display name. Chop off ".py" extension of filename.
+    action->setText(fileName.chopped(3));
 
-	// Give the layer type a status bar text.
-	action->setStatusTip(tr("Insert this Python-based viewport layer."));
+    // Give the layer type a status bar text.
+    action->setStatusTip(tr("Insert this Python-based viewport layer."));
 
-	// Give the action an icon.
-	static QIcon icon = QIcon::fromTheme("overlay_action_icon");
-	action->setIcon(icon);
-	
-	return action;
+    // Give the action an icon.
+    static QIcon icon = QIcon::fromTheme("overlay_action_icon");
+    action->setIcon(icon);
+    
+    return action;
 }
 
 /******************************************************************************
@@ -84,54 +84,54 @@ OverlayAction* OverlayAction::createForScript(const QString& fileName, const QDi
 ******************************************************************************/
 OverlayTypesModel::OverlayTypesModel(QObject* parent, UserInterface& userInterface, OverlayListModel* overlayListModel) : QAbstractListModel(parent), _userInterface(userInterface), _overlayListModel(overlayListModel)
 {
-	OVITO_ASSERT(userInterface.actionManager());
+    OVITO_ASSERT(userInterface.actionManager());
 
-	// Enumerate all built-in viewport layer classes.
-	for(OvitoClassPtr clazz : PluginManager::instance().listClasses(ViewportOverlay::OOClass())) {
+    // Enumerate all built-in viewport layer classes.
+    for(OvitoClassPtr clazz : PluginManager::instance().listClasses(ViewportOverlay::OOClass())) {
 
-		// Create action for the viewport layer class.
-		OverlayAction* action = OverlayAction::createForClass(clazz);
-		_actions.push_back(action);
+        // Create action for the viewport layer class.
+        OverlayAction* action = OverlayAction::createForClass(clazz);
+        _actions.push_back(action);
 
-		// Register it with the global ActionManager.
-		userInterface.actionManager()->addAction(action);
-		OVITO_ASSERT(action->parent() == userInterface.actionManager());
+        // Register it with the global ActionManager.
+        userInterface.actionManager()->addAction(action);
+        OVITO_ASSERT(action->parent() == userInterface.actionManager());
 
-		// Handle the insertion action.
-		connect(action, &QAction::triggered, this, &OverlayTypesModel::insertViewportLayer);
-	}
+        // Handle the insertion action.
+        connect(action, &QAction::triggered, this, &OverlayTypesModel::insertViewportLayer);
+    }
 
-	// Add the built-in extension script directory.
-	_layerScriptDirectories.push_back(PluginManager::instance().pythonDir() + QStringLiteral("/ovito/_extensions/scripts/layers"));
+    // Add the built-in extension script directory.
+    _layerScriptDirectories.push_back(PluginManager::instance().pythonDir() + QStringLiteral("/ovito/_extensions/scripts/layers"));
 
-	// Add the user extension script directory.
-	_layerScriptDirectories.push_back(QDir::homePath() + QStringLiteral("/.config/Ovito/scripts/layers"));
-	for(QDir& dir : _layerScriptDirectories)
-		dir.makeAbsolute();
+    // Add the user extension script directory.
+    _layerScriptDirectories.push_back(QDir::homePath() + QStringLiteral("/.config/Ovito/scripts/layers"));
+    for(QDir& dir : _layerScriptDirectories)
+        dir.makeAbsolute();
 
-	// Register Python script viewport layers.
-	for(const QDir& scriptsDirectory : _layerScriptDirectories) {
-		QStringList scriptFiles = scriptsDirectory.entryList(QStringList() << QStringLiteral("*.py"), QDir::Files, QDir::Name);
-		for(const QString& fileName : scriptFiles) {
-			// Filter out __init__.py.
-			if(fileName == QStringLiteral("__init__.py"))
-				continue;
+    // Register Python script viewport layers.
+    for(const QDir& scriptsDirectory : _layerScriptDirectories) {
+        QStringList scriptFiles = scriptsDirectory.entryList(QStringList() << QStringLiteral("*.py"), QDir::Files, QDir::Name);
+        for(const QString& fileName : scriptFiles) {
+            // Filter out __init__.py.
+            if(fileName == QStringLiteral("__init__.py"))
+                continue;
 
-			// Create action for the layer script.
-			OverlayAction* action = OverlayAction::createForScript(fileName, scriptsDirectory);
-			_actions.push_back(action);
+            // Create action for the layer script.
+            OverlayAction* action = OverlayAction::createForScript(fileName, scriptsDirectory);
+            _actions.push_back(action);
 
-			// Register it with the global ActionManager.
-			userInterface.actionManager()->addAction(action);
-			OVITO_ASSERT(action->parent() == userInterface.actionManager());
+            // Register it with the global ActionManager.
+            userInterface.actionManager()->addAction(action);
+            OVITO_ASSERT(action->parent() == userInterface.actionManager());
 
-			// Handle the action.
-			connect(action, &QAction::triggered, this, &OverlayTypesModel::insertViewportLayer);
-		}
-	}
+            // Handle the action.
+            connect(action, &QAction::triggered, this, &OverlayTypesModel::insertViewportLayer);
+        }
+    }
 
-	// Sort actions by name.
-	std::sort(_actions.begin(), _actions.end(), [](OverlayAction* a, OverlayAction* b) { return QString::localeAwareCompare(a->text(), b->text()) < 0; });
+    // Sort actions by name.
+    std::sort(_actions.begin(), _actions.end(), [](OverlayAction* a, OverlayAction* b) { return QString::localeAwareCompare(a->text(), b->text()) < 0; });
 }
 
 /******************************************************************************
@@ -139,13 +139,13 @@ OverlayTypesModel::OverlayTypesModel(QObject* parent, UserInterface& userInterfa
 ******************************************************************************/
 OverlayAction* OverlayTypesModel::actionFromIndex(int index) const
 {
-	if(index == 0) return nullptr;
-	index--;
+    if(index == 0) return nullptr;
+    index--;
 
-	if(index < _actions.size())
-		return _actions[index];
+    if(index < _actions.size())
+        return _actions[index];
 
-	return nullptr;
+    return nullptr;
 }
 
 /******************************************************************************
@@ -153,7 +153,7 @@ OverlayAction* OverlayTypesModel::actionFromIndex(int index) const
 ******************************************************************************/
 int OverlayTypesModel::rowCount(const QModelIndex& parent) const 
 {
-	return _actions.size() + 1; // First entry is the "Add layer..." item.
+    return _actions.size() + 1; // First entry is the "Add layer..." item.
 }
 
 /******************************************************************************
@@ -161,15 +161,15 @@ int OverlayTypesModel::rowCount(const QModelIndex& parent) const
 ******************************************************************************/
 QVariant OverlayTypesModel::data(const QModelIndex& index, int role) const
 {
-	if(role == Qt::DisplayRole) {
-		if(OverlayAction* action = actionFromIndex(index)) {
-			return action->text();
-		}
-		else {
-			return tr("Add layer...");
-		}
-	}
-	return {};
+    if(role == Qt::DisplayRole) {
+        if(OverlayAction* action = actionFromIndex(index)) {
+            return action->text();
+        }
+        else {
+            return tr("Add layer...");
+        }
+    }
+    return {};
 }
 
 /******************************************************************************
@@ -177,10 +177,10 @@ QVariant OverlayTypesModel::data(const QModelIndex& index, int role) const
 ******************************************************************************/
 Qt::ItemFlags OverlayTypesModel::flags(const QModelIndex& index) const
 {
-	if(OverlayAction* action = actionFromIndex(index))
-		return action->isEnabled() ? (Qt::ItemIsEnabled | Qt::ItemIsSelectable) : Qt::NoItemFlags;
+    if(OverlayAction* action = actionFromIndex(index))
+        return action->isEnabled() ? (Qt::ItemIsEnabled | Qt::ItemIsSelectable) : Qt::NoItemFlags;
 
-	return QAbstractListModel::flags(index);
+    return QAbstractListModel::flags(index);
 }
 
 /******************************************************************************
@@ -188,40 +188,40 @@ Qt::ItemFlags OverlayTypesModel::flags(const QModelIndex& index) const
 ******************************************************************************/
 void OverlayTypesModel::insertViewportLayer()
 {
-	// Get the action that emitted the signal.
-	OverlayAction* action = qobject_cast<OverlayAction*>(sender());
-	OVITO_ASSERT(action);
+    // Get the action that emitted the signal.
+    OverlayAction* action = qobject_cast<OverlayAction*>(sender());
+    OVITO_ASSERT(action);
 
-	// Get the current dataset and viewport.
-	Viewport* vp = _overlayListModel->selectedViewport();
-	if(!vp) return;
+    // Get the current dataset and viewport.
+    Viewport* vp = _overlayListModel->selectedViewport();
+    if(!vp) return;
 
-	// Instantiate the new layer and add it to the active viewport.
-	_userInterface.performTransaction(tr("Insert viewport layer"), [&]() {
+    // Instantiate the new layer and add it to the active viewport.
+    _userInterface.performTransaction(tr("Insert viewport layer"), [&]() {
 
-		if(action->layerClass()) {
+        if(action->layerClass()) {
 
-			int overlayIndex = -1;
-			int underlayIndex = -1;
-			if(OverlayListItem* item = _overlayListModel->selectedItem()) {
-				overlayIndex = vp->overlays().indexOf(item->overlay());
-				underlayIndex = vp->underlays().indexOf(item->overlay());
-			}
-			// Create an instance of the overlay class.
-			OORef<ViewportOverlay> layer = static_object_cast<ViewportOverlay>(action->layerClass()->createInstance());
-			// Make sure the new overlay gets selected in the UI.
-			_overlayListModel->setNextToSelectObject(layer);
-			// Insert it into either the overlays or the underlays list.
-			if(underlayIndex >= 0)
-				vp->insertUnderlay(underlayIndex+1, layer);
-			else if(overlayIndex >= 0)
-				vp->insertOverlay(overlayIndex+1, layer);
-			else
-				vp->insertOverlay(vp->overlays().size(), layer);
-			// Automatically activate preview mode to make the overlay visible.
-			vp->setRenderPreviewMode(true);
-		}
-	});
+            int overlayIndex = -1;
+            int underlayIndex = -1;
+            if(OverlayListItem* item = _overlayListModel->selectedItem()) {
+                overlayIndex = vp->overlays().indexOf(item->overlay());
+                underlayIndex = vp->underlays().indexOf(item->overlay());
+            }
+            // Create an instance of the overlay class.
+            OORef<ViewportOverlay> layer = static_object_cast<ViewportOverlay>(action->layerClass()->createInstance());
+            // Make sure the new overlay gets selected in the UI.
+            _overlayListModel->setNextToSelectObject(layer);
+            // Insert it into either the overlays or the underlays list.
+            if(underlayIndex >= 0)
+                vp->insertUnderlay(underlayIndex+1, layer);
+            else if(overlayIndex >= 0)
+                vp->insertOverlay(overlayIndex+1, layer);
+            else
+                vp->insertOverlay(vp->overlays().size(), layer);
+            // Automatically activate preview mode to make the overlay visible.
+            vp->setRenderPreviewMode(true);
+        }
+    });
 }
 
-}	// End of namespace
+}   // End of namespace

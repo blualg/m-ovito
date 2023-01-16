@@ -34,20 +34,20 @@ SET_OVITO_OBJECT_EDITOR(ClearSelectionModifier, ClearSelectionModifierEditor);
 ******************************************************************************/
 void ClearSelectionModifierEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 {
-	QWidget* rollout = createRollout(tr("Clear selection"), rolloutParams, "manual:particles.modifiers.clear_selection");
+    QWidget* rollout = createRollout(tr("Clear selection"), rolloutParams, "manual:particles.modifiers.clear_selection");
 
-	QVBoxLayout* layout = new QVBoxLayout(rollout);
-	layout->setContentsMargins(8,8,8,8);
-	layout->setSpacing(4);
+    QVBoxLayout* layout = new QVBoxLayout(rollout);
+    layout->setContentsMargins(8,8,8,8);
+    layout->setSpacing(4);
 
-	PropertyContainerParameterUI* pclassUI = new PropertyContainerParameterUI(this, PROPERTY_FIELD(GenericPropertyModifier::subject));
-	layout->addWidget(new QLabel(tr("Operate on:")));
-	layout->addWidget(pclassUI->comboBox());
+    PropertyContainerParameterUI* pclassUI = new PropertyContainerParameterUI(this, PROPERTY_FIELD(GenericPropertyModifier::subject));
+    layout->addWidget(new QLabel(tr("Operate on:")));
+    layout->addWidget(pclassUI->comboBox());
 
-	// List only property containers that support element selection.
-	pclassUI->setContainerFilter([](const PropertyContainer* container) {
-		return container->getOOMetaClass().isValidStandardPropertyId(PropertyObject::GenericSelectionProperty);
-	});
+    // List only property containers that support element selection.
+    pclassUI->setContainerFilter([](const PropertyContainer* container) {
+        return container->getOOMetaClass().isValidStandardPropertyId(PropertyObject::GenericSelectionProperty);
+    });
 }
 
-}	// End of namespace
+}   // End of namespace

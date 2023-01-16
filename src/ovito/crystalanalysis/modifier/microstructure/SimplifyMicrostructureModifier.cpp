@@ -56,7 +56,7 @@ SimplifyMicrostructureModifier::SimplifyMicrostructureModifier(ObjectCreationPar
 ******************************************************************************/
 bool SimplifyMicrostructureModifier::OOMetaClass::isApplicableTo(const DataCollection& input) const
 {
-	return input.containsObject<Microstructure>();
+    return input.containsObject<Microstructure>();
 }
 
 /******************************************************************************
@@ -65,13 +65,13 @@ bool SimplifyMicrostructureModifier::OOMetaClass::isApplicableTo(const DataColle
 ******************************************************************************/
 Future<AsynchronousModifier::EnginePtr> SimplifyMicrostructureModifier::createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input)
 {
-	// Get modifier input.
-	const Microstructure* microstructure = input.getObject<Microstructure>();
-	if(!microstructure)
-		throw Exception(tr("No microstructure found in the modifier's input."));
+    // Get modifier input.
+    const Microstructure* microstructure = input.getObject<Microstructure>();
+    if(!microstructure)
+        throw Exception(tr("No microstructure found in the modifier's input."));
 
-	// Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
-	return std::make_shared<SimplifyMicrostructureEngine>(request, microstructure, smoothingLevel(), kPB(), lambda());
+    // Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
+    return std::make_shared<SimplifyMicrostructureEngine>(request, microstructure, smoothingLevel(), kPB(), lambda());
 }
 
 /******************************************************************************
@@ -79,23 +79,23 @@ Future<AsynchronousModifier::EnginePtr> SimplifyMicrostructureModifier::createEn
 ******************************************************************************/
 void SimplifyMicrostructureModifier::SimplifyMicrostructureEngine::perform()
 {
-	setProgressText(tr("Simplifying microstructure"));
+    setProgressText(tr("Simplifying microstructure"));
 
     // Implementation of the mesh smoothing algorithm:
-	// Gabriel Taubin
-	// A Signal Processing Approach To Fair Surface Design
-	// In SIGGRAPH 95 Conference Proceedings, pages 351-358 (1995)
+    // Gabriel Taubin
+    // A Signal Processing Approach To Fair Surface Design
+    // In SIGGRAPH 95 Conference Proceedings, pages 351-358 (1995)
 
-	FloatType mu = FloatType(1) / (_kPB - FloatType(1)/_lambda);
-	setProgressMaximum(_smoothingLevel);
+    FloatType mu = FloatType(1) / (_kPB - FloatType(1)/_lambda);
+    setProgressMaximum(_smoothingLevel);
 
-	MicrostructureAccess microstructureData(_microstructure);
-	for(int iteration = 0; iteration < _smoothingLevel; iteration++) {
-		if(!setProgressValue(iteration)) return;
-		smoothMeshIteration(microstructureData, _lambda);
-		smoothMeshIteration(microstructureData, mu);
-	}
-	_microstructure = static_object_cast<const Microstructure>(microstructureData.take());
+    MicrostructureAccess microstructureData(_microstructure);
+    for(int iteration = 0; iteration < _smoothingLevel; iteration++) {
+        if(!setProgressValue(iteration)) return;
+        smoothMeshIteration(microstructureData, _lambda);
+        smoothMeshIteration(microstructureData, mu);
+    }
+    _microstructure = static_object_cast<const Microstructure>(microstructureData.take());
 }
 
 /******************************************************************************
@@ -104,9 +104,9 @@ void SimplifyMicrostructureModifier::SimplifyMicrostructureEngine::perform()
 void SimplifyMicrostructureModifier::SimplifyMicrostructureEngine::smoothMeshIteration(MicrostructureAccess& microstructureData, FloatType prefactor)
 {
 #if 0
-	// Compute displacement for each vertex.
-	std::vector<Vector3> displacements(microstructureData.vertexCount(), Vector3::Zero());
-	std::vector<int> edgeCount(microstructureData.vertexCount(), 0);
+    // Compute displacement for each vertex.
+    std::vector<Vector3> displacements(microstructureData.vertexCount(), Vector3::Zero());
+    std::vector<int> edgeCount(microstructureData.vertexCount(), 0);
 
     for(Microstructure::Face* face : microstructureData.faces()) {
         if(face->isSlipSurfaceFace() && face->isEvenFace()) {
@@ -121,18 +121,18 @@ void SimplifyMicrostructureModifier::SimplifyMicrostructureEngine::smoothMeshIte
                     displacements[edge->vertex2()->index()] -= edgeVector(edge);
                     edgeCount[edge->vertex2()->index()]++;
                 }
-				edge = edge->nextFaceEdge();
-			}
-			while(edge != face->edges());
-		}
+                edge = edge->nextFaceEdge();
+            }
+            while(edge != face->edges());
+        }
     }
 
-	// Apply computed displacements.
-	auto d = displacements.cbegin();
+    // Apply computed displacements.
+    auto d = displacements.cbegin();
     auto c = edgeCount.cbegin();
-	for(Microstructure::Vertex* vertex : microstructure()->vertices()) {
+    for(Microstructure::Vertex* vertex : microstructure()->vertices()) {
         if(*c >= 2)
-    		vertex->pos() += (*d) * (prefactor / (*c));
+            vertex->pos() += (*d) * (prefactor / (*c));
         ++d;
         ++c;
     }
@@ -144,11 +144,11 @@ void SimplifyMicrostructureModifier::SimplifyMicrostructureEngine::smoothMeshIte
 ******************************************************************************/
 void SimplifyMicrostructureModifier::SimplifyMicrostructureEngine::applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state)
 {
-	// Output simplified microstructure to the pipeline state, overwriting the input microstructure.
-	if(const Microstructure* existingMicrostructure = state.getObject<Microstructure>())
-		state.replaceObject(existingMicrostructure, _microstructure);
-	else
-		state.addObject(_microstructure);
+    // Output simplified microstructure to the pipeline state, overwriting the input microstructure.
+    if(const Microstructure* existingMicrostructure = state.getObject<Microstructure>())
+        state.replaceObject(existingMicrostructure, _microstructure);
+    else
+        state.addObject(_microstructure);
 }
 
-}	// End of namespace
+}   // End of namespace

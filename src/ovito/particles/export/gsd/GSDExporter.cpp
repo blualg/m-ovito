@@ -117,9 +117,9 @@ bool GSDExporter::exportData(const PipelineFlowState& state, int frameNumber, co
 
     // Output simulation cell geometry.
     float box[6] = { (float)hoomdCell(0,0), (float)hoomdCell.column(1).length(), (float)hoomdCell.column(2).length(),
-                    (float)(hoomdCell(0,1) / hoomdCell.column(1).length()),		// xy
-                    (float)(hoomdCell(0,2) / hoomdCell.column(2).length()),		// xz
-                    (float)(hoomdCell(1,2) / hoomdCell.column(2).length()) };	// yz
+                    (float)(hoomdCell(0,1) / hoomdCell.column(1).length()),     // xy
+                    (float)(hoomdCell(0,2) / hoomdCell.column(2).length()),     // xz
+                    (float)(hoomdCell(1,2) / hoomdCell.column(2).length()) };   // yz
     _gsdFile->writeChunk<float>("configuration/box", 6, 1, box);
 
     // Output number of particles.
@@ -144,11 +144,11 @@ bool GSDExporter::exportData(const PipelineFlowState& state, int frameNumber, co
     std::vector<Vector_3<int32_t>> imageBuffer(posProperty.size());
     for(size_t i = 0; i < ordering.size(); i++) {
         const Point3& p = posProperty[ordering[i]];
-		for(size_t dim = 0; dim < 3; dim++) {
+        for(size_t dim = 0; dim < 3; dim++) {
             FloatType s = std::floor(cell->inverseMatrix().prodrow(p, dim));
             posBuffer[i][dim] = transformation.prodrow(p - s * cell->matrix().column(dim), dim);
             imageBuffer[i][dim] = s;
-  		}
+        }
     }
     _gsdFile->writeChunk<float>("particles/position", posBuffer.size(), 3, posBuffer.data());
     if(operation.isCanceled()) return false;
@@ -272,9 +272,9 @@ bool GSDExporter::exportData(const PipelineFlowState& state, int frameNumber, co
     std::vector<size_t> reverseOrdering;
 
     // Export bonds (optional).
-	if(const BondsObject* bonds = particles->bonds()) {
+    if(const BondsObject* bonds = particles->bonds()) {
         bonds->verifyIntegrity();
-    	ConstPropertyAccess<ParticleIndexPair> bondTopologyProperty = bonds->expectProperty(BondsObject::TopologyProperty);
+        ConstPropertyAccess<ParticleIndexPair> bondTopologyProperty = bonds->expectProperty(BondsObject::TopologyProperty);
 
         // Output number of bonds.
         if(bonds->elementCount() > (size_t)std::numeric_limits<uint32_t>::max())
@@ -336,9 +336,9 @@ bool GSDExporter::exportData(const PipelineFlowState& state, int frameNumber, co
     }
 
     // Export angles (optional).
-	if(const AnglesObject* angles = particles->angles()) {
+    if(const AnglesObject* angles = particles->angles()) {
         angles->verifyIntegrity();
-    	ConstPropertyAccess<ParticleIndexTriplet> topologyProperty = angles->expectProperty(AnglesObject::TopologyProperty);
+        ConstPropertyAccess<ParticleIndexTriplet> topologyProperty = angles->expectProperty(AnglesObject::TopologyProperty);
 
         // Output number of angles.
         if(angles->elementCount() > (size_t)std::numeric_limits<uint32_t>::max())
@@ -402,9 +402,9 @@ bool GSDExporter::exportData(const PipelineFlowState& state, int frameNumber, co
     }
 
     // Export dihedrals (optional).
-	if(const DihedralsObject* dihedrals = particles->dihedrals()) {
+    if(const DihedralsObject* dihedrals = particles->dihedrals()) {
         dihedrals->verifyIntegrity();
-    	ConstPropertyAccess<ParticleIndexQuadruplet> topologyProperty = dihedrals->expectProperty(DihedralsObject::TopologyProperty);
+        ConstPropertyAccess<ParticleIndexQuadruplet> topologyProperty = dihedrals->expectProperty(DihedralsObject::TopologyProperty);
 
         // Output number of dihedrals.
         if(dihedrals->elementCount() > (size_t)std::numeric_limits<uint32_t>::max())
@@ -470,9 +470,9 @@ bool GSDExporter::exportData(const PipelineFlowState& state, int frameNumber, co
     }
 
     // Export impropers (optional).
-	if(const ImpropersObject* impropers = particles->impropers()) {
+    if(const ImpropersObject* impropers = particles->impropers()) {
         impropers->verifyIntegrity();
-    	ConstPropertyAccess<ParticleIndexQuadruplet> topologyProperty = impropers->expectProperty(ImpropersObject::TopologyProperty);
+        ConstPropertyAccess<ParticleIndexQuadruplet> topologyProperty = impropers->expectProperty(ImpropersObject::TopologyProperty);
 
         // Output number of impropers.
         if(impropers->elementCount() > (size_t)std::numeric_limits<uint32_t>::max())
@@ -543,4 +543,4 @@ bool GSDExporter::exportData(const PipelineFlowState& state, int frameNumber, co
     return !operation.isCanceled();
 }
 
-}	// End of namespace
+}   // End of namespace

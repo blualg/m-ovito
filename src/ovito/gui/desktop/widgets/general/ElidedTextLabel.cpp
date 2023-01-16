@@ -31,15 +31,15 @@ namespace Ovito {
 QRect ElidedTextLabel::documentRect() const
 {
     // The following implementation has been adopted from QLabelPrivate::documentRect().
-	QRect cr = contentsRect();
-	int m = margin();
-	cr.adjust(m, m, -m, -m);
-	m = indent();
+    QRect cr = contentsRect();
+    int m = margin();
+    cr.adjust(m, m, -m, -m);
+    m = indent();
     if(m < 0 && frameWidth()) // no indent, but we do have a frame
-    	m = fontMetrics().horizontalAdvance(QLatin1Char('x')) / 2 - margin();
+        m = fontMetrics().horizontalAdvance(QLatin1Char('x')) / 2 - margin();
     int align = QStyle::visualAlignment(layoutDirection(), alignment());
     if(m > 0) {
-		if (align & Qt::AlignLeft)
+        if (align & Qt::AlignLeft)
             cr.setLeft(cr.left() + m);
         if (align & Qt::AlignRight)
             cr.setRight(cr.right() - m);
@@ -65,7 +65,7 @@ void ElidedTextLabel::paintEvent(QPaintEvent *)
 
     // Use the label's full text as tool tip.
     if(toolTip() != text())
-    	setToolTip(text());
+        setToolTip(text());
 }
 
-}	// End of namespace
+}   // End of namespace

@@ -29,9 +29,9 @@ namespace Ovito {
 * Constructs the control.
 ******************************************************************************/
 ColorPickerWidget::ColorPickerWidget(QWidget* parent)
-	: QAbstractButton(parent), _color(1,1,1)
+    : QAbstractButton(parent), _color(1,1,1)
 {
-	connect(this, &ColorPickerWidget::clicked, this, &ColorPickerWidget::activateColorPicker);
+    connect(this, &ColorPickerWidget::clicked, this, &ColorPickerWidget::activateColorPicker);
 }
 
 /******************************************************************************
@@ -39,15 +39,15 @@ ColorPickerWidget::ColorPickerWidget(QWidget* parent)
 ******************************************************************************/
 void ColorPickerWidget::setColor(const Color& newVal, bool emitChangeSignal)
 {
-	if(newVal == _color) return;
+    if(newVal == _color) return;
 
-	// Update control.
-	_color = newVal;
-	update();
+    // Update control.
+    _color = newVal;
+    update();
 
-	// Send change message
-	if(emitChangeSignal)
-		colorChanged();
+    // Send change message
+    if(emitChangeSignal)
+        colorChanged();
 }
 
 /******************************************************************************
@@ -55,15 +55,15 @@ void ColorPickerWidget::setColor(const Color& newVal, bool emitChangeSignal)
 ******************************************************************************/
 void ColorPickerWidget::paintEvent(QPaintEvent* event)
 {
-	QPainter painter(this);
-	if(isEnabled()) {
-		QBrush brush{(QColor)color()};
-		qDrawShadePanel(&painter, rect(), palette(), isDown(), 1, &brush);
-	}
-	else {
-		painter.setPen(QPen(palette().mid(), 1));
-		painter.drawRect(rect().adjusted(0,0,-1,-1));
-	}
+    QPainter painter(this);
+    if(isEnabled()) {
+        QBrush brush{(QColor)color()};
+        qDrawShadePanel(&painter, rect(), palette(), isDown(), 1, &brush);
+    }
+    else {
+        painter.setPen(QPen(palette().mid(), 1));
+        painter.drawRect(rect().adjusted(0,0,-1,-1));
+    }
 }
 
 /******************************************************************************
@@ -72,18 +72,18 @@ void ColorPickerWidget::paintEvent(QPaintEvent* event)
 QSize ColorPickerWidget::sizeHint() const
 {
     int w = 16;
-	int h = fontMetrics().xHeight();
+    int h = fontMetrics().xHeight();
 
 #if !defined(Q_OS_MACOS)
-	QStyleOptionButton opt;
-	opt.initFrom(this);
-	opt.features = QStyleOptionButton::Flat;
-	return style()->sizeFromContents(QStyle::CT_PushButton, &opt, QSize(w, h), this).expandedTo(QSize(0,22));
+    QStyleOptionButton opt;
+    opt.initFrom(this);
+    opt.features = QStyleOptionButton::Flat;
+    return style()->sizeFromContents(QStyle::CT_PushButton, &opt, QSize(w, h), this).expandedTo(QSize(0,22));
 #else
-	QStyleOptionFrame opt;
-	opt.initFrom(this);
-	opt.features = QStyleOptionFrame::Flat;
-	return style()->sizeFromContents(QStyle::CT_LineEdit, &opt, QSize(w, h), this).expandedTo(QSize(0,22));
+    QStyleOptionFrame opt;
+    opt.initFrom(this);
+    opt.features = QStyleOptionFrame::Flat;
+    return style()->sizeFromContents(QStyle::CT_LineEdit, &opt, QSize(w, h), this).expandedTo(QSize(0,22));
 #endif
 }
 
@@ -92,10 +92,10 @@ QSize ColorPickerWidget::sizeHint() const
 ******************************************************************************/
 void ColorPickerWidget::activateColorPicker()
 {
-	QColor newColor = QColorDialog::getColor((QColor)_color, window());
-	if(newColor.isValid()) {
-		setColor(Color(newColor), true);
-	}
+    QColor newColor = QColorDialog::getColor((QColor)_color, window());
+    if(newColor.isValid()) {
+        setColor(Color(newColor), true);
+    }
 }
 
-}	// End of namespace
+}   // End of namespace

@@ -35,12 +35,12 @@ DEFINE_REFERENCE_FIELD(AsynchronousDelegatingModifier, delegate);
 ******************************************************************************/
 TimeInterval AsynchronousDelegatingModifier::validityInterval(const ModifierEvaluationRequest& request) const
 {
-	TimeInterval iv = AsynchronousModifier::validityInterval(request);
+    TimeInterval iv = AsynchronousModifier::validityInterval(request);
 
-	if(delegate() && delegate()->isEnabled())
-		iv.intersect(delegate()->validityInterval(request));
+    if(delegate() && delegate()->isEnabled())
+        iv.intersect(delegate()->validityInterval(request));
 
-	return iv;
+    return iv;
 }
 
 /******************************************************************************
@@ -48,17 +48,17 @@ TimeInterval AsynchronousDelegatingModifier::validityInterval(const ModifierEval
 ******************************************************************************/
 void AsynchronousDelegatingModifier::createDefaultModifierDelegate(const OvitoClass& delegateType, const QString& defaultDelegateTypeName, ObjectCreationParams params)
 {
-	OVITO_ASSERT(delegateType.isDerivedFrom(ModifierDelegate::OOClass()));
+    OVITO_ASSERT(delegateType.isDerivedFrom(ModifierDelegate::OOClass()));
 
-	// Find the delegate type that corresponds to the given name string.
-	for(OvitoClassPtr clazz : PluginManager::instance().listClasses(delegateType)) {
-		if(clazz->name() == defaultDelegateTypeName) {
-			OORef<ModifierDelegate> delegate = static_object_cast<ModifierDelegate>(clazz->createInstance(params));
-			setDelegate(std::move(delegate));
-			break;
-		}
-	}
-	OVITO_ASSERT_MSG(delegate(), "AsynchronousDelegatingModifier::createDefaultModifierDelegate", qPrintable(QStringLiteral("There is no delegate class named '%1' inheriting from %2.").arg(defaultDelegateTypeName).arg(delegateType.name())));
+    // Find the delegate type that corresponds to the given name string.
+    for(OvitoClassPtr clazz : PluginManager::instance().listClasses(delegateType)) {
+        if(clazz->name() == defaultDelegateTypeName) {
+            OORef<ModifierDelegate> delegate = static_object_cast<ModifierDelegate>(clazz->createInstance(params));
+            setDelegate(std::move(delegate));
+            break;
+        }
+    }
+    OVITO_ASSERT_MSG(delegate(), "AsynchronousDelegatingModifier::createDefaultModifierDelegate", qPrintable(QStringLiteral("There is no delegate class named '%1' inheriting from %2.").arg(defaultDelegateTypeName).arg(delegateType.name())));
 }
 
 /******************************************************************************
@@ -66,15 +66,15 @@ void AsynchronousDelegatingModifier::createDefaultModifierDelegate(const OvitoCl
 ******************************************************************************/
 bool AsynchronousDelegatingModifier::OOMetaClass::isApplicableTo(const DataCollection& input) const
 {
-	if(!AsynchronousModifier::OOMetaClass::isApplicableTo(input)) return false;
+    if(!AsynchronousModifier::OOMetaClass::isApplicableTo(input)) return false;
 
-	// Check if there is any modifier delegate that could handle the input data.
-	for(const ModifierDelegate::OOMetaClass* clazz : PluginManager::instance().metaclassMembers<ModifierDelegate>(delegateMetaclass())) {
-		if(clazz->getApplicableObjects(input).empty() == false)
-			return true;
-	}
+    // Check if there is any modifier delegate that could handle the input data.
+    for(const ModifierDelegate::OOMetaClass* clazz : PluginManager::instance().metaclassMembers<ModifierDelegate>(delegateMetaclass())) {
+        if(clazz->getApplicableObjects(input).empty() == false)
+            return true;
+    }
 
-	return false;
+    return false;
 }
 
-}	// End of namespace
+}   // End of namespace

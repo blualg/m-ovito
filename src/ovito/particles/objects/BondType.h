@@ -35,31 +35,31 @@ namespace Ovito::Particles {
  */
 class OVITO_PARTICLES_EXPORT BondType : public ElementType
 {
-	OVITO_CLASS(BondType)
+    OVITO_CLASS(BondType)
 
 public:
 
-	/// \brief Constructs a new bond type.
-	Q_INVOKABLE BondType(ObjectCreationParams params);
+    /// \brief Constructs a new bond type.
+    Q_INVOKABLE BondType(ObjectCreationParams params);
 
-	/// Creates an editable proxy object for this DataObject and synchronizes its parameters.
-	virtual void updateEditableProxies(PipelineFlowState& state, ConstDataObjectPath& dataPath) const override;
+    /// Creates an editable proxy object for this DataObject and synchronizes its parameters.
+    virtual void updateEditableProxies(PipelineFlowState& state, ConstDataObjectPath& dataPath) const override;
 
-	//////////////////////////////////// Utility methods ////////////////////////////////
+    //////////////////////////////////// Utility methods ////////////////////////////////
 
-	/// Builds a map from type identifiers to bond radii.
-	static std::map<int,FloatType> typeRadiusMap(const PropertyObject* typeProperty) {
-		std::map<int,FloatType> m;
-		for(const ElementType* type : typeProperty->elementTypes())
-			if(const BondType* bondType = dynamic_object_cast<BondType>(type))
-				m.insert({ type->numericId(), bondType->radius() });
-		return m;
-	}
+    /// Builds a map from type identifiers to bond radii.
+    static std::map<int,FloatType> typeRadiusMap(const PropertyObject* typeProperty) {
+        std::map<int,FloatType> m;
+        for(const ElementType* type : typeProperty->elementTypes())
+            if(const BondType* bondType = dynamic_object_cast<BondType>(type))
+                m.insert({ type->numericId(), bondType->radius() });
+        return m;
+    }
 
 private:
 
-	/// Stores the radius of the bond type.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD(FloatType, radius, setRadius);
+    /// Stores the radius of the bond type.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(FloatType, radius, setRadius);
 };
 
-}	// End of namespace
+}   // End of namespace

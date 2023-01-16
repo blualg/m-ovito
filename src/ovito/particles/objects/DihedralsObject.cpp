@@ -32,8 +32,8 @@ IMPLEMENT_OVITO_CLASS(DihedralsObject);
 ******************************************************************************/
 DihedralsObject::DihedralsObject(ObjectCreationParams params) : PropertyContainer(params)
 {
-	// Assign the default data object identifier.
-	setIdentifier(OOClass().pythonName());
+    // Assign the default data object identifier.
+    setIdentifier(OOClass().pythonName());
 }
 
 /******************************************************************************
@@ -41,35 +41,35 @@ DihedralsObject::DihedralsObject(ObjectCreationParams params) : PropertyContaine
 ******************************************************************************/
 PropertyPtr DihedralsObject::OOMetaClass::createStandardPropertyInternal(size_t elementCount, int type, DataBuffer::InitializationFlags flags, const ConstDataObjectPath& containerPath) const
 {
-	int dataType;
-	size_t componentCount;
+    int dataType;
+    size_t componentCount;
 
-	switch(type) {
-	case TypeProperty:
-		dataType = PropertyObject::Int;
-		componentCount = 1;
-		break;
-	case TopologyProperty:
-		dataType = PropertyObject::Int64;
-		componentCount = 4;
-		break;
-	default:
-		OVITO_ASSERT_MSG(false, "DihedralsObject::createStandardPropertyInternal", "Invalid standard property type");
-		throw Exception(tr("This is not a valid dihedral standard property type: %1").arg(type));
-	}
-	const QStringList& componentNames = standardPropertyComponentNames(type);
-	const QString& propertyName = standardPropertyName(type);
+    switch(type) {
+    case TypeProperty:
+        dataType = PropertyObject::Int;
+        componentCount = 1;
+        break;
+    case TopologyProperty:
+        dataType = PropertyObject::Int64;
+        componentCount = 4;
+        break;
+    default:
+        OVITO_ASSERT_MSG(false, "DihedralsObject::createStandardPropertyInternal", "Invalid standard property type");
+        throw Exception(tr("This is not a valid dihedral standard property type: %1").arg(type));
+    }
+    const QStringList& componentNames = standardPropertyComponentNames(type);
+    const QString& propertyName = standardPropertyName(type);
 
-	OVITO_ASSERT(componentCount == standardPropertyComponentCount(type));
+    OVITO_ASSERT(componentCount == standardPropertyComponentCount(type));
 
-	PropertyPtr property = PropertyPtr::create(elementCount, dataType, componentCount, propertyName, flags & ~DataBuffer::InitializeMemory, type, componentNames);
+    PropertyPtr property = PropertyPtr::create(elementCount, dataType, componentCount, propertyName, flags & ~DataBuffer::InitializeMemory, type, componentNames);
 
-	if(flags.testFlag(DataBuffer::InitializeMemory)) {
-		// Default-initialize property values with zeros.
-		property->fillZero();
-	}
+    if(flags.testFlag(DataBuffer::InitializeMemory)) {
+        // Default-initialize property values with zeros.
+        property->fillZero();
+    }
 
-	return property;
+    return property;
 }
 
 /******************************************************************************
@@ -77,17 +77,17 @@ PropertyPtr DihedralsObject::OOMetaClass::createStandardPropertyInternal(size_t 
 ******************************************************************************/
 void DihedralsObject::OOMetaClass::initialize()
 {
-	PropertyContainerClass::initialize();
+    PropertyContainerClass::initialize();
 
-	setPropertyClassDisplayName(tr("Dihedrals"));
-	setElementDescriptionName(QStringLiteral("dihedrals"));
-	setPythonName(QStringLiteral("dihedrals"));
+    setPropertyClassDisplayName(tr("Dihedrals"));
+    setElementDescriptionName(QStringLiteral("dihedrals"));
+    setPythonName(QStringLiteral("dihedrals"));
 
-	const QStringList emptyList;
-	const QStringList abcdList = QStringList() << "A" << "B" << "C" << "D";
+    const QStringList emptyList;
+    const QStringList abcdList = QStringList() << "A" << "B" << "C" << "D";
 
-	registerStandardProperty(TypeProperty, tr("Dihedral Type"), PropertyObject::Int, emptyList, &ElementType::OOClass(), tr("Dihedral types"));
-	registerStandardProperty(TopologyProperty, tr("Topology"), PropertyObject::Int64, abcdList);
+    registerStandardProperty(TypeProperty, tr("Dihedral Type"), PropertyObject::Int, emptyList, &ElementType::OOClass(), tr("Dihedral types"));
+    registerStandardProperty(TopologyProperty, tr("Topology"), PropertyObject::Int64, abcdList);
 }
 
-}	// End of namespace
+}   // End of namespace

@@ -45,14 +45,14 @@ DEFINE_PROPERTY_FIELD(ColorCodingTableGradient, table);
 ******************************************************************************/
 Color ColorCodingTableGradient::valueToColor(FloatType t)
 {
-	OVITO_ASSERT(t >= 0.0 && t <= 1.0);
-	if(table().empty()) return Color(0,0,0);
-	if(table().size() == 1) return table()[0];
-	t *= (table().size() - 1);
-	FloatType t0 = std::floor(t);
-	const Color& c1 = table()[(size_t)t0];
-	const Color& c2 = table()[(size_t)std::ceil(t)];
-	return c1 * (FloatType(1) - (t - t0)) + c2 * (t - t0);
+    OVITO_ASSERT(t >= 0.0 && t <= 1.0);
+    if(table().empty()) return Color(0,0,0);
+    if(table().size() == 1) return table()[0];
+    t *= (table().size() - 1);
+    FloatType t0 = std::floor(t);
+    const Color& c1 = table()[(size_t)t0];
+    const Color& c2 = table()[(size_t)std::ceil(t)];
+    return c1 * (FloatType(1) - (t - t0)) + c2 * (t - t0);
 }
 
 /******************************************************************************
@@ -60,11 +60,11 @@ Color ColorCodingTableGradient::valueToColor(FloatType t)
 ******************************************************************************/
 void ColorCodingImageGradient::loadImage(const QString& filename)
 {
-	QImage image(filename);
-	if(image.isNull())
-		throw Exception(tr("Could not load image file '%1'.").arg(filename));
-	setImage(image);
-	setImagePath(filename);
+    QImage image(filename);
+    if(image.isNull())
+        throw Exception(tr("Could not load image file '%1'.").arg(filename));
+    setImage(image);
+    setImagePath(filename);
 }
 
 /******************************************************************************
@@ -72,15 +72,15 @@ void ColorCodingImageGradient::loadImage(const QString& filename)
 ******************************************************************************/
 Color ColorCodingImageGradient::valueToColor(FloatType t)
 {
-	OVITO_ASSERT(t >= 0.0 && t <= 1.0);
-	if(image().isNull()) 
-		return Color(0,0,0);
-	QPoint p;
-	if(image().width() > image().height())
-		p = QPoint(std::min((int)(t * image().width()), image().width()-1), 0);
-	else
-		p = QPoint(0, std::min((int)(t * image().height()), image().height()-1));
-	return Color(image().pixel(p));
+    OVITO_ASSERT(t >= 0.0 && t <= 1.0);
+    if(image().isNull()) 
+        return Color(0,0,0);
+    QPoint p;
+    if(image().width() > image().height())
+        p = QPoint(std::min((int)(t * image().width()), image().width()-1), 0);
+    else
+        p = QPoint(0, std::min((int)(t * image().height()), image().height()-1));
+    return Color(image().pixel(p));
 }
 
-}	// End of namespace
+}   // End of namespace

@@ -33,17 +33,17 @@ namespace Ovito::Particles {
  */
 class POSCARImporterEditor : public FileImporterEditor
 {
-	OVITO_CLASS(POSCARImporterEditor)
+    OVITO_CLASS(POSCARImporterEditor)
 
 public:
 
-	/// Constructor.
-	Q_INVOKABLE POSCARImporterEditor() {}
+    /// Constructor.
+    Q_INVOKABLE POSCARImporterEditor() {}
 
 protected:
 
-	/// Creates the user interface controls for the editor.
-	virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
+    /// Creates the user interface controls for the editor.
+    virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
 };
 
-}	// End of namespace
+}   // End of namespace

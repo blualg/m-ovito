@@ -36,22 +36,22 @@ IMPLEMENT_OVITO_CLASS(NumericalParameterUI);
 * Constructor for a Qt property.
 ******************************************************************************/
 NumericalParameterUI::NumericalParameterUI(PropertiesEditor* parentEditor, const char* propertyName, const QMetaObject* defaultParameterUnitType, const QString& labelText) :
-	PropertyParameterUI(parentEditor, propertyName), _parameterUnitType(defaultParameterUnitType)
+    PropertyParameterUI(parentEditor, propertyName), _parameterUnitType(defaultParameterUnitType)
 {
-	initUIControls(labelText);
+    initUIControls(labelText);
 }
 
 /******************************************************************************
 * Constructor for a PropertyField or ReferenceField property.
 ******************************************************************************/
 NumericalParameterUI::NumericalParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField, const QMetaObject* defaultParameterUnitType) :
-	PropertyParameterUI(parentEditor, propField), _parameterUnitType(defaultParameterUnitType)
+    PropertyParameterUI(parentEditor, propField), _parameterUnitType(defaultParameterUnitType)
 {
-	// Look up the ParameterUnit type for this parameter.
-	if(propField->numericalParameterInfo() && propField->numericalParameterInfo()->unitType)
-		_parameterUnitType = propField->numericalParameterInfo()->unitType;
+    // Look up the ParameterUnit type for this parameter.
+    if(propField->numericalParameterInfo() && propField->numericalParameterInfo()->unitType)
+        _parameterUnitType = propField->numericalParameterInfo()->unitType;
 
-	initUIControls(propField->displayName() + ":");
+    initUIControls(propField->displayName() + ":");
 }
 
 /******************************************************************************
@@ -59,31 +59,31 @@ NumericalParameterUI::NumericalParameterUI(PropertiesEditor* parentEditor, const
 ******************************************************************************/
 void NumericalParameterUI::initUIControls(const QString& labelText)
 {
-	// Create UI widgets.
-	_label = new QLabel(labelText);
-	_textBox = new QLineEdit();
-	_spinner = new SpinnerWidget();
-	connect(spinner(), &SpinnerWidget::spinnerValueChanged, this, &NumericalParameterUI::onSpinnerValueChanged);
-	connect(spinner(), &SpinnerWidget::spinnerDragStart, this, &NumericalParameterUI::onSpinnerDragStart);
-	connect(spinner(), &SpinnerWidget::spinnerDragStop, this, &NumericalParameterUI::onSpinnerDragStop);
-	connect(spinner(), &SpinnerWidget::spinnerDragAbort, this, &NumericalParameterUI::onSpinnerDragAbort);
-	spinner()->setTextBox(_textBox);
-	if(propertyField()->numericalParameterInfo() != nullptr) {
-		spinner()->setMinValue(propertyField()->numericalParameterInfo()->minValue);
-		spinner()->setMaxValue(propertyField()->numericalParameterInfo()->maxValue);
-	}
+    // Create UI widgets.
+    _label = new QLabel(labelText);
+    _textBox = new QLineEdit();
+    _spinner = new SpinnerWidget();
+    connect(spinner(), &SpinnerWidget::spinnerValueChanged, this, &NumericalParameterUI::onSpinnerValueChanged);
+    connect(spinner(), &SpinnerWidget::spinnerDragStart, this, &NumericalParameterUI::onSpinnerDragStart);
+    connect(spinner(), &SpinnerWidget::spinnerDragStop, this, &NumericalParameterUI::onSpinnerDragStop);
+    connect(spinner(), &SpinnerWidget::spinnerDragAbort, this, &NumericalParameterUI::onSpinnerDragAbort);
+    spinner()->setTextBox(_textBox);
+    if(propertyField()->numericalParameterInfo() != nullptr) {
+        spinner()->setMinValue(propertyField()->numericalParameterInfo()->minValue);
+        spinner()->setMaxValue(propertyField()->numericalParameterInfo()->maxValue);
+    }
 
-	// Create animate button if parameter is animation (i.e. it's a reference to a Controller object).
-	if(isReferenceFieldUI() && propertyField()->targetClass()->isDerivedFrom(Controller::OOClass())) {
-		_animateButton = new QToolButton();
-		_animateButton->setText(tr("A"));
-		_animateButton->setFocusPolicy(Qt::NoFocus);
-		static_cast<QToolButton*>(_animateButton.data())->setAutoRaise(true);
-		static_cast<QToolButton*>(_animateButton.data())->setToolButtonStyle(Qt::ToolButtonTextOnly);
-		_animateButton->setToolTip(tr("Animate this parameter..."));
-		_animateButton->setEnabled(false);
-		connect(_animateButton.data(), &QAbstractButton::clicked, this, &NumericalParameterUI::openAnimationKeyEditor);
-	}
+    // Create animate button if parameter is animation (i.e. it's a reference to a Controller object).
+    if(isReferenceFieldUI() && propertyField()->targetClass()->isDerivedFrom(Controller::OOClass())) {
+        _animateButton = new QToolButton();
+        _animateButton->setText(tr("A"));
+        _animateButton->setFocusPolicy(Qt::NoFocus);
+        static_cast<QToolButton*>(_animateButton.data())->setAutoRaise(true);
+        static_cast<QToolButton*>(_animateButton.data())->setToolButtonStyle(Qt::ToolButtonTextOnly);
+        _animateButton->setToolTip(tr("Animate this parameter..."));
+        _animateButton->setEnabled(false);
+        connect(_animateButton.data(), &QAbstractButton::clicked, this, &NumericalParameterUI::openAnimationKeyEditor);
+    }
 }
 
 /******************************************************************************
@@ -91,11 +91,11 @@ void NumericalParameterUI::initUIControls(const QString& labelText)
 ******************************************************************************/
 NumericalParameterUI::~NumericalParameterUI()
 {
-	// Release widgets managed by this class.
-	delete label();
-	delete spinner();
-	delete textBox();
-	delete animateButton();
+    // Release widgets managed by this class.
+    delete label();
+    delete spinner();
+    delete textBox();
+    delete animateButton();
 }
 
 /******************************************************************************
@@ -104,29 +104,29 @@ NumericalParameterUI::~NumericalParameterUI()
 ******************************************************************************/
 void NumericalParameterUI::resetUI()
 {
-	if(spinner()) {
-		spinner()->setEnabled(editObject() && isEnabled());
-		if(editObject()) {
-			ParameterUnit* unit = nullptr;
-			if(parameterUnitType())
-				unit = mainWindow().unitsManager().getUnit(parameterUnitType());
-			spinner()->setUnit(unit);
-		}
-		else {
-			spinner()->setUnit(nullptr);
-			spinner()->setFloatValue(0);
-		}
-	}
+    if(spinner()) {
+        spinner()->setEnabled(editObject() && isEnabled());
+        if(editObject()) {
+            ParameterUnit* unit = nullptr;
+            if(parameterUnitType())
+                unit = mainWindow().unitsManager().getUnit(parameterUnitType());
+            spinner()->setUnit(unit);
+        }
+        else {
+            spinner()->setUnit(nullptr);
+            spinner()->setFloatValue(0);
+        }
+    }
 
-	if(isReferenceFieldUI() && editObject()) {
-		// Update the displayed value when the animation time has changed.
-		connect(&mainWindow().datasetContainer(), &DataSetContainer::currentFrameChanged, this, &NumericalParameterUI::updateUI, Qt::UniqueConnection);
-	}
+    if(isReferenceFieldUI() && editObject()) {
+        // Update the displayed value when the animation time has changed.
+        connect(&mainWindow().datasetContainer(), &DataSetContainer::currentFrameChanged, this, &NumericalParameterUI::updateUI, Qt::UniqueConnection);
+    }
 
-	PropertyParameterUI::resetUI();
+    PropertyParameterUI::resetUI();
 
-	if(animateButton())
-		animateButton()->setEnabled(editObject() && parameterObject() && isEnabled());
+    if(animateButton())
+        animateButton()->setEnabled(editObject() && parameterObject() && isEnabled());
 }
 
 /******************************************************************************
@@ -134,18 +134,18 @@ void NumericalParameterUI::resetUI()
 ******************************************************************************/
 void NumericalParameterUI::setEnabled(bool enabled)
 {
-	if(enabled == isEnabled()) return;
-	PropertyParameterUI::setEnabled(enabled);
-	if(spinner()) {
-		if(isReferenceFieldUI()) {
-			spinner()->setEnabled(parameterObject() && isEnabled());
-		}
-		else {
-			spinner()->setEnabled(editObject() && isEnabled());
-		}
-	}
-	if(animateButton())
-		animateButton()->setEnabled(editObject() && parameterObject() && isEnabled());
+    if(enabled == isEnabled()) return;
+    PropertyParameterUI::setEnabled(enabled);
+    if(spinner()) {
+        if(isReferenceFieldUI()) {
+            spinner()->setEnabled(parameterObject() && isEnabled());
+        }
+        else {
+            spinner()->setEnabled(editObject() && isEnabled());
+        }
+    }
+    if(animateButton())
+        animateButton()->setEnabled(editObject() && parameterObject() && isEnabled());
 }
 
 /******************************************************************************
@@ -153,17 +153,17 @@ void NumericalParameterUI::setEnabled(bool enabled)
 ******************************************************************************/
 void NumericalParameterUI::onSpinnerValueChanged()
 {
-	if(!_isDraggingSpinner) {
-		performTransaction(tr("Change parameter value"), [&]() {
-			updatePropertyValue();
-		});
-	}
-	else {
-		_undoTransaction.revert();
-		performActions(_undoTransaction, [&] {
-			updatePropertyValue();
-		});
-	}
+    if(!_isDraggingSpinner) {
+        performTransaction(tr("Change parameter value"), [&]() {
+            updatePropertyValue();
+        });
+    }
+    else {
+        _undoTransaction.revert();
+        performActions(_undoTransaction, [&] {
+            updatePropertyValue();
+        });
+    }
 }
 
 /******************************************************************************
@@ -171,9 +171,9 @@ void NumericalParameterUI::onSpinnerValueChanged()
 ******************************************************************************/
 void NumericalParameterUI::onSpinnerDragStart()
 {
-	OVITO_ASSERT(!_isDraggingSpinner);
-	_undoTransaction.begin(mainWindow(), tr("Change parameter"));
-	_isDraggingSpinner = true;
+    OVITO_ASSERT(!_isDraggingSpinner);
+    _undoTransaction.begin(mainWindow(), tr("Change parameter"));
+    _isDraggingSpinner = true;
 }
 
 /******************************************************************************
@@ -181,9 +181,9 @@ void NumericalParameterUI::onSpinnerDragStart()
 ******************************************************************************/
 void NumericalParameterUI::onSpinnerDragStop()
 {
-	OVITO_ASSERT(_isDraggingSpinner);
-	_undoTransaction.commit();
-	_isDraggingSpinner = false;
+    OVITO_ASSERT(_isDraggingSpinner);
+    _undoTransaction.commit();
+    _isDraggingSpinner = false;
 }
 
 /******************************************************************************
@@ -191,9 +191,9 @@ void NumericalParameterUI::onSpinnerDragStop()
 ******************************************************************************/
 void NumericalParameterUI::onSpinnerDragAbort()
 {
-	OVITO_ASSERT(_isDraggingSpinner);
-	_undoTransaction.cancel();
-	_isDraggingSpinner = false;
+    OVITO_ASSERT(_isDraggingSpinner);
+    _undoTransaction.cancel();
+    _isDraggingSpinner = false;
 }
 
 /******************************************************************************
@@ -201,14 +201,14 @@ void NumericalParameterUI::onSpinnerDragAbort()
 ******************************************************************************/
 QLayout* NumericalParameterUI::createFieldLayout() const
 {
-	QHBoxLayout* layout = new QHBoxLayout();
-	layout->setContentsMargins(0,0,0,0);
-	layout->setSpacing(0);
-	layout->addWidget(textBox());
-	layout->addWidget(spinner());
-	if(animateButton())
-		layout->addWidget(animateButton());
-	return layout;
+    QHBoxLayout* layout = new QHBoxLayout();
+    layout->setContentsMargins(0,0,0,0);
+    layout->setSpacing(0);
+    layout->addWidget(textBox());
+    layout->addWidget(spinner());
+    if(animateButton())
+        layout->addWidget(animateButton());
+    return layout;
 }
 
-}	// End of namespace
+}   // End of namespace

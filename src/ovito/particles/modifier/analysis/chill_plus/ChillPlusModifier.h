@@ -40,25 +40,25 @@ class OVITO_PARTICLES_EXPORT ChillPlusModifier : public StructureIdentificationM
     OVITO_CLASS(ChillPlusModifier)
 
     Q_CLASSINFO("DisplayName", "Chill+");
-	Q_CLASSINFO("Description", "Identify hexagonal ice, cubic ice, hydrate and other arrangements of water molecules.");
+    Q_CLASSINFO("Description", "Identify hexagonal ice, cubic ice, hydrate and other arrangements of water molecules.");
 #ifndef OVITO_QML_GUI
-	Q_CLASSINFO("ModifierCategory", "Structure identification");
+    Q_CLASSINFO("ModifierCategory", "Structure identification");
 #else
-	Q_CLASSINFO("ModifierCategory", "-");
+    Q_CLASSINFO("ModifierCategory", "-");
 #endif
 
 public:
 
     /// The structure types recognized by the Chill+ algorithm.
     enum StructureType {
-        OTHER = 0,				//< Unidentified structure
-        HEXAGONAL_ICE,			//< Hexagonal ice
-        CUBIC_ICE,				//< Cubic ice
-        INTERFACIAL_ICE,		//< Interfacial ice
-        HYDRATE,				//< Hydrate
+        OTHER = 0,              //< Unidentified structure
+        HEXAGONAL_ICE,          //< Hexagonal ice
+        CUBIC_ICE,              //< Cubic ice
+        INTERFACIAL_ICE,        //< Interfacial ice
+        HYDRATE,                //< Hydrate
         INTERFACIAL_HYDRATE,    //< Interfacial hydrate
 
-        NUM_STRUCTURE_TYPES 	//< This just counts the number of defined structure types.
+        NUM_STRUCTURE_TYPES     //< This just counts the number of defined structure types.
     };
     Q_ENUM(StructureType);
 
@@ -109,4 +109,4 @@ private:
     DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType, cutoff, setCutoff, PROPERTY_FIELD_MEMORIZE);
 };
 
-}	// End of namespace
+}   // End of namespace

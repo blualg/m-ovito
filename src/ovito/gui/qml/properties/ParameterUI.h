@@ -35,109 +35,109 @@ namespace Ovito {
  */
 class OVITO_GUI_EXPORT ParameterUI : public RefMaker, public QQmlPropertyValueSource
 {
-	Q_OBJECT
-	QML_ELEMENT
-	OVITO_CLASS(ParameterUI)
+    Q_OBJECT
+    QML_ELEMENT
+    OVITO_CLASS(ParameterUI)
 
-	Q_INTERFACES(QQmlPropertyValueSource)
+    Q_INTERFACES(QQmlPropertyValueSource)
     Q_PROPERTY(Ovito::RefTarget* editObject READ editObject WRITE setEditObject NOTIFY editObjectReplaced)
-	Q_PROPERTY(QString propertyName READ propertyName WRITE setPropertyName)
-	Q_PROPERTY(QVariant propertyValue READ getCurrentValue WRITE setCurrentValue)
-	Q_PROPERTY(QStringList editorComponentList READ editorComponentList NOTIFY editObjectReplaced)
-	Q_PROPERTY(QStringList subobjectFieldList READ subobjectFieldList NOTIFY editObjectReplaced)
-	Q_PROPERTY(FloatType minParameterValue READ minParameterValue NOTIFY editObjectReplaced)
-	Q_PROPERTY(FloatType maxParameterValue READ maxParameterValue NOTIFY editObjectReplaced)
-	Q_PROPERTY(QString propertyDisplayName READ propertyDisplayName NOTIFY editObjectReplaced)
+    Q_PROPERTY(QString propertyName READ propertyName WRITE setPropertyName)
+    Q_PROPERTY(QVariant propertyValue READ getCurrentValue WRITE setCurrentValue)
+    Q_PROPERTY(QStringList editorComponentList READ editorComponentList NOTIFY editObjectReplaced)
+    Q_PROPERTY(QStringList subobjectFieldList READ subobjectFieldList NOTIFY editObjectReplaced)
+    Q_PROPERTY(FloatType minParameterValue READ minParameterValue NOTIFY editObjectReplaced)
+    Q_PROPERTY(FloatType maxParameterValue READ maxParameterValue NOTIFY editObjectReplaced)
+    Q_PROPERTY(QString propertyDisplayName READ propertyDisplayName NOTIFY editObjectReplaced)
     Q_PROPERTY(Ovito::ParameterUnit* parameterUnit READ parameterUnit NOTIFY editObjectReplaced)
 
 public:
 
-	/// \brief Constructor.
-	ParameterUI() = default;
+    /// \brief Constructor.
+    ParameterUI() = default;
 
-	/// \brief Destructor.
-	virtual ~ParameterUI() { clearAllReferences(); }
+    /// \brief Destructor.
+    virtual ~ParameterUI() { clearAllReferences(); }
 
-	/// Returns the name of the object property exposed by this ParameterUI instance.
-	const QString& propertyName() const { return _propertyName; }
+    /// Returns the name of the object property exposed by this ParameterUI instance.
+    const QString& propertyName() const { return _propertyName; }
 
-	/// Sets the name of the object property exposed by this ParameterUI instance.
-	void setPropertyName(const QString& name) { 
-		if(name != _propertyName) {
-			_propertyName = name;
-			updatePropertyField();
-		}
-	}
+    /// Sets the name of the object property exposed by this ParameterUI instance.
+    void setPropertyName(const QString& name) { 
+        if(name != _propertyName) {
+            _propertyName = name;
+            updatePropertyField();
+        }
+    }
 
-	/// Returns the C++ RefMaker property or reference field that is exposed by this QML property source.
-	const PropertyFieldDescriptor* propertyField() const { return _propertyField; }
+    /// Returns the C++ RefMaker property or reference field that is exposed by this QML property source.
+    const PropertyFieldDescriptor* propertyField() const { return _propertyField; }
 
-	/// Set the target property for the QML value source. 
-	/// This method will be called by the QML engine when assigning a value source. 
-	virtual void setTarget(const QQmlProperty& prop) override { _qmlProperty = prop; }
+    /// Set the target property for the QML value source. 
+    /// This method will be called by the QML engine when assigning a value source. 
+    virtual void setTarget(const QQmlProperty& prop) override { _qmlProperty = prop; }
 
-	/// Updates the displayed value in the UI.
-	virtual void updateUI();
+    /// Updates the displayed value in the UI.
+    virtual void updateUI();
 
-	/// Returns the QML property this value source is attached to.
-	QQmlProperty& qmlProperty() { return _qmlProperty; }
+    /// Returns the QML property this value source is attached to.
+    QQmlProperty& qmlProperty() { return _qmlProperty; }
 
-	/// Obtains the current value of the parameter from the C++ object.
-	virtual QVariant getCurrentValue() const;
+    /// Obtains the current value of the parameter from the C++ object.
+    virtual QVariant getCurrentValue() const;
 
-	/// Changes the current value of the C++ object parameter.
-	virtual void setCurrentValue(const QVariant& val);
+    /// Changes the current value of the C++ object parameter.
+    virtual void setCurrentValue(const QVariant& val);
 
-	/// Returns the list of QML components that display the user interface for the current edit object.
-	QStringList editorComponentList() const;
+    /// Returns the list of QML components that display the user interface for the current edit object.
+    QStringList editorComponentList() const;
 
-	/// Returns the list of reference fields of the edit object for which the PROPERTY_FIELD_OPEN_SUBEDITOR flag is set.
-	QStringList subobjectFieldList() const;
+    /// Returns the list of reference fields of the edit object for which the PROPERTY_FIELD_OPEN_SUBEDITOR flag is set.
+    QStringList subobjectFieldList() const;
 
-	/// Returns the minimum value for the numeric parameter.
-	FloatType minParameterValue() const;
+    /// Returns the minimum value for the numeric parameter.
+    FloatType minParameterValue() const;
 
-	/// Returns the maximum value for the numeric parameter.
-	FloatType maxParameterValue() const;
+    /// Returns the maximum value for the numeric parameter.
+    FloatType maxParameterValue() const;
 
-	/// Returns the UI display name of the parameter.
-	QString propertyDisplayName() const;
+    /// Returns the UI display name of the parameter.
+    QString propertyDisplayName() const;
 
-	/// Returns the units object for this parameter (if it is a numerical parameter).
-	ParameterUnit* parameterUnit() const;
+    /// Returns the units object for this parameter (if it is a numerical parameter).
+    ParameterUnit* parameterUnit() const;
 
 Q_SIGNALS:
 
-	/// This signal is emitted whenever the edit object of this parameter UI is replaced.
-	void editObjectReplaced();
+    /// This signal is emitted whenever the edit object of this parameter UI is replaced.
+    void editObjectReplaced();
 
-	/// This signal is emitted whenever the edit object of this parameter UI changes.
-	void editObjectModified();
+    /// This signal is emitted whenever the edit object of this parameter UI changes.
+    void editObjectModified();
 
 protected:
 
-	/// Is called when the value of a reference field of this RefMaker changes.
-	virtual void referenceReplaced(const PropertyFieldDescriptor* field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex) override;
+    /// Is called when the value of a reference field of this RefMaker changes.
+    virtual void referenceReplaced(const PropertyFieldDescriptor* field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex) override;
 
-	/// This method is called when a reference target changes.
-	virtual bool referenceEvent(RefTarget* source, const ReferenceEvent& event) override;
+    /// This method is called when a reference target changes.
+    virtual bool referenceEvent(RefTarget* source, const ReferenceEvent& event) override;
 
-	/// Updates the internal pointer to the RefMaker property or reference field.
-	void updatePropertyField();
+    /// Updates the internal pointer to the RefMaker property or reference field.
+    void updatePropertyField();
 
 private:
 
-	/// The object whose parameter is being edited.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(RefTarget*, editObject, setEditObject, PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_WEAK_REF | PROPERTY_FIELD_NO_CHANGE_MESSAGE);
+    /// The object whose parameter is being edited.
+    DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(RefTarget*, editObject, setEditObject, PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_WEAK_REF | PROPERTY_FIELD_NO_CHANGE_MESSAGE);
 
-	/// The QML property this value source is attached to.
-	QQmlProperty _qmlProperty;
+    /// The QML property this value source is attached to.
+    QQmlProperty _qmlProperty;
 
-	/// The property or reference field being edited or NULL if bound to a QObject property.
-	const PropertyFieldDescriptor* _propertyField = nullptr;
+    /// The property or reference field being edited or NULL if bound to a QObject property.
+    const PropertyFieldDescriptor* _propertyField = nullptr;
 
-	/// The name of the property being edited.
-	QString _propertyName;
+    /// The name of the property being edited.
+    QString _propertyName;
 };
 
-}	// End of namespace
+}   // End of namespace

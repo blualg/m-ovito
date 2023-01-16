@@ -33,17 +33,17 @@ namespace Ovito::Grid {
  */
 class VoxelGridVisEditor : public PropertiesEditor
 {
-	OVITO_CLASS(VoxelGridVisEditor)
+    OVITO_CLASS(VoxelGridVisEditor)
 
 public:
 
-	/// Constructor.
-	Q_INVOKABLE VoxelGridVisEditor() {}
+    /// Constructor.
+    Q_INVOKABLE VoxelGridVisEditor() {}
 
 protected:
 
-	/// Creates the user interface controls for the editor.
-	virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
+    /// Creates the user interface controls for the editor.
+    virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
 };
 
-}	// End of namespace
+}   // End of namespace

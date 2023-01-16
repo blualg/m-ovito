@@ -31,14 +31,14 @@ namespace Ovito {
 template<typename ResultType, typename InputRange, class Executor, typename Function>
 auto reduce_sequential(ResultType&& initialResultValue, InputRange&& inputRange, Executor&& executor, Function&& f)
 {
-	return for_each_sequential(
-		std::forward<InputRange>(inputRange),
-		std::forward<Executor>(executor),
-		// Iteration start function:
-		std::forward<Function>(f),
-		// Iteration completed function (a no-op):
-		[](typename InputRange::const_reference iterValue) {},
-		std::forward<ResultType>(initialResultValue));
+    return for_each_sequential(
+        std::forward<InputRange>(inputRange),
+        std::forward<Executor>(executor),
+        // Iteration start function:
+        std::forward<Function>(f),
+        // Iteration completed function (a no-op):
+        [](typename InputRange::const_reference iterValue) {},
+        std::forward<ResultType>(initialResultValue));
 }
 
-}	// End of namespace
+}   // End of namespace

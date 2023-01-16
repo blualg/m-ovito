@@ -40,8 +40,8 @@ SET_PROPERTY_FIELD_LABEL(BasePipelineSource, dataCollectionFrame, "Active frame 
 * Constructor.
 ******************************************************************************/
 BasePipelineSource::BasePipelineSource(ObjectCreationParams params) : CachingPipelineObject(params),
-	_dataCollectionFrame(-1),
-	_userHasChangedDataCollection(false)
+    _dataCollectionFrame(-1),
+    _userHasChangedDataCollection(false)
 {
 }
 
@@ -51,50 +51,50 @@ BasePipelineSource::BasePipelineSource(ObjectCreationParams params) : CachingPip
 ******************************************************************************/
 Future<PipelineFlowState> BasePipelineSource::postprocessDataCollection(int animationFrame, TimeInterval frameInterval, Future<PipelineFlowState> future)
 {
-	return std::move(future).then(*this, [this, animationFrame, frameInterval](Future<PipelineFlowState> future) -> PipelineFlowState {
-		OVITO_ASSERT(future.isFinished() && !future.isCanceled());
-		OVITO_ASSERT(ExecutionContext::current().isValid());
+    return std::move(future).then(*this, [this, animationFrame, frameInterval](Future<PipelineFlowState> future) -> PipelineFlowState {
+        OVITO_ASSERT(future.isFinished() && !future.isCanceled());
+        OVITO_ASSERT(ExecutionContext::current().isValid());
 
-		try {
-			PipelineFlowState state = future.result();
-			setStatus(state.status());
+        try {
+            PipelineFlowState state = future.result();
+            setStatus(state.status());
 
-			// Check if the generated pipeline state is valid.
-			if(state.data() && state.status().type() != PipelineStatus::Error) {
+            // Check if the generated pipeline state is valid.
+            if(state.data() && state.status().type() != PipelineStatus::Error) {
 
-				// In GUI mode, create editable proxy objects for the data objects in the generated collection.
-				if(Application::instance()->guiMode()) {
-					_updatingEditableProxies = true;
-					ConstDataObjectPath dataPath = { state.data() };
-					state.data()->updateEditableProxies(state, dataPath);
-					_updatingEditableProxies = false;
-				}
+                // In GUI mode, create editable proxy objects for the data objects in the generated collection.
+                if(Application::instance()->guiMode()) {
+                    _updatingEditableProxies = true;
+                    ConstDataObjectPath dataPath = { state.data() };
+                    state.data()->updateEditableProxies(state, dataPath);
+                    _updatingEditableProxies = false;
+                }
 
-				// Adopt the generated data collection as our new master data collection (only if it is for the current animation time).
-				if(state.stateValidity().contains(ExecutionContext::current().ui().datasetContainer().currentAnimationTime())) {
-					setDataCollectionFrame(animationFrame);
-					setDataCollection(state.data());
-					notifyDependents(ReferenceEvent::PreliminaryStateAvailable);
-				}
-			}
+                // Adopt the generated data collection as our new master data collection (only if it is for the current animation time).
+                if(state.stateValidity().contains(ExecutionContext::current().ui().datasetContainer().currentAnimationTime())) {
+                    setDataCollectionFrame(animationFrame);
+                    setDataCollection(state.data());
+                    notifyDependents(ReferenceEvent::PreliminaryStateAvailable);
+                }
+            }
 
-			return state;
-		}
-		catch(Exception& ex) {
-			setStatus(ex);
-			ex.prependGeneralMessage(tr("Pipeline source reported:"));
-			return PipelineFlowState(dataCollection(), PipelineStatus(ex, QChar(' ')), frameInterval);
-		}
-		catch(const std::bad_alloc&) {
-			setStatus(PipelineStatus(PipelineStatus::Error, tr("Not enough memory.")));
-			return PipelineFlowState(dataCollection(), status(), frameInterval);
-		}
-		catch(...) {
-			OVITO_ASSERT_MSG(false, "BasePipelineSource::postprocessDataCollection()", "Caught an unexpected exception type during source function execution.");
-			setStatus(PipelineStatus(PipelineStatus::Error, tr("Unknown exception caught during execution of pipeline source function.")));
-			return PipelineFlowState(dataCollection(), status(), frameInterval);
-		}
-	});
+            return state;
+        }
+        catch(Exception& ex) {
+            setStatus(ex);
+            ex.prependGeneralMessage(tr("Pipeline source reported:"));
+            return PipelineFlowState(dataCollection(), PipelineStatus(ex, QChar(' ')), frameInterval);
+        }
+        catch(const std::bad_alloc&) {
+            setStatus(PipelineStatus(PipelineStatus::Error, tr("Not enough memory.")));
+            return PipelineFlowState(dataCollection(), status(), frameInterval);
+        }
+        catch(...) {
+            OVITO_ASSERT_MSG(false, "BasePipelineSource::postprocessDataCollection()", "Caught an unexpected exception type during source function execution.");
+            setStatus(PipelineStatus(PipelineStatus::Error, tr("Unknown exception caught during execution of pipeline source function.")));
+            return PipelineFlowState(dataCollection(), status(), frameInterval);
+        }
+    });
 }
 
 /******************************************************************************
@@ -102,30 +102,30 @@ Future<PipelineFlowState> BasePipelineSource::postprocessDataCollection(int anim
 ******************************************************************************/
 Future<PipelineFlowState> BasePipelineSource::postprocessCachedState(const PipelineEvaluationRequest& request, const PipelineFlowState& cachedState)
 {
-	OVITO_ASSERT(ExecutionContext::current().isValid());
+    OVITO_ASSERT(ExecutionContext::current().isValid());
 
-	PipelineFlowState state = cachedState;
-	setStatus(state.status());
+    PipelineFlowState state = cachedState;
+    setStatus(state.status());
 
-	if(state.data() && state.status().type() != PipelineStatus::Error) {
-		UndoSuspender noUndo;
+    if(state.data() && state.status().type() != PipelineStatus::Error) {
+        UndoSuspender noUndo;
 
-		// In GUI mode, create editable proxy objects for the data objects in the generated collection.
-		if(Application::instance()->guiMode()) {
-			_updatingEditableProxies = true;
-			ConstDataObjectPath dataPath = { state.data() };
-			state.data()->updateEditableProxies(state, dataPath);
-			_updatingEditableProxies = false;
-		}
+        // In GUI mode, create editable proxy objects for the data objects in the generated collection.
+        if(Application::instance()->guiMode()) {
+            _updatingEditableProxies = true;
+            ConstDataObjectPath dataPath = { state.data() };
+            state.data()->updateEditableProxies(state, dataPath);
+            _updatingEditableProxies = false;
+        }
 
-		// Adopt the generated data collection as our new master data collection (only if it is for the current animation time).
-		if(state.stateValidity().contains(ExecutionContext::current().ui().datasetContainer().currentAnimationTime())) {
-			setDataCollectionFrame(animationTimeToSourceFrame(request.time()));
-			setDataCollection(state.data());
-		}
-	}
+        // Adopt the generated data collection as our new master data collection (only if it is for the current animation time).
+        if(state.stateValidity().contains(ExecutionContext::current().ui().datasetContainer().currentAnimationTime())) {
+            setDataCollectionFrame(animationTimeToSourceFrame(request.time()));
+            setDataCollection(state.data());
+        }
+    }
 
-	return CachingPipelineObject::postprocessCachedState(request, state);
+    return CachingPipelineObject::postprocessCachedState(request, state);
 }
 
 /******************************************************************************
@@ -133,44 +133,44 @@ Future<PipelineFlowState> BasePipelineSource::postprocessCachedState(const Pipel
 ******************************************************************************/
 bool BasePipelineSource::referenceEvent(RefTarget* source, const ReferenceEvent& event)
 {
-	if(event.type() == ReferenceEvent::TargetChanged && source == dataCollection() && !_updatingEditableProxies && !event.sender()->isBeingLoaded()) {
-		if(ExecutionContext::isInteractive()) {
+    if(event.type() == ReferenceEvent::TargetChanged && source == dataCollection() && !_updatingEditableProxies && !event.sender()->isBeingLoaded()) {
+        if(ExecutionContext::isInteractive()) {
 
-			// The user has modified one of the editable proxy objects attached to the data collection.
-			// Apply the changes made to the proxy objects to the actual data objects.
-			UndoSuspender noUndo;
-			PipelineFlowState state(dataCollection(), PipelineStatus::Success);
-			_updatingEditableProxies = true;
-			_userHasChangedDataCollection.set(this, PROPERTY_FIELD(userHasChangedDataCollection), true);
-			// Temporarily detach data collection from the BasePipelineSource to ignore change signals sent by the data collection.
-			setDataCollection(nullptr);
-			ConstDataObjectPath dataPath = { state.data() };
-			state.data()->updateEditableProxies(state, dataPath);
-			// Re-attach the updated data collection to the pipeline source.
-			setDataCollection(state.data());
-			_updatingEditableProxies = false;
+            // The user has modified one of the editable proxy objects attached to the data collection.
+            // Apply the changes made to the proxy objects to the actual data objects.
+            UndoSuspender noUndo;
+            PipelineFlowState state(dataCollection(), PipelineStatus::Success);
+            _updatingEditableProxies = true;
+            _userHasChangedDataCollection.set(this, PROPERTY_FIELD(userHasChangedDataCollection), true);
+            // Temporarily detach data collection from the BasePipelineSource to ignore change signals sent by the data collection.
+            setDataCollection(nullptr);
+            ConstDataObjectPath dataPath = { state.data() };
+            state.data()->updateEditableProxies(state, dataPath);
+            // Re-attach the updated data collection to the pipeline source.
+            setDataCollection(state.data());
+            _updatingEditableProxies = false;
 
-			// Invalidate pipeline cache, except at the current animation time. 
-			// Here we use the updated data collection.
-			if(dataCollectionFrame() >= 0) {
-				pipelineCache().overrideCache(dataCollection(), frameTimeInterval(dataCollectionFrame()));
-			}
-			// Let downstream pipeline now that its input has changed.
-			notifyDependents(ReferenceEvent::PreliminaryStateAvailable);
-			notifyTargetChanged();
-		}
-		else {
-			// When the data collection was modified by a script, then we simply invalidate the pipeline cache
-			// and inform the scene that the pipeline must be re-evaluated.
-			pipelineCache().invalidate();
-			notifyTargetChanged();
-		}
-	}
-	else if(event.type() == ReferenceEvent::VisualElementModified && source == dataCollection()) {
-		// Set dirty flag when user modifies on of the visual elements associated with the current data collection.
-		_userHasChangedDataCollection.set(this, PROPERTY_FIELD(userHasChangedDataCollection), true);
-	}
-	return CachingPipelineObject::referenceEvent(source, event);
+            // Invalidate pipeline cache, except at the current animation time. 
+            // Here we use the updated data collection.
+            if(dataCollectionFrame() >= 0) {
+                pipelineCache().overrideCache(dataCollection(), frameTimeInterval(dataCollectionFrame()));
+            }
+            // Let downstream pipeline now that its input has changed.
+            notifyDependents(ReferenceEvent::PreliminaryStateAvailable);
+            notifyTargetChanged();
+        }
+        else {
+            // When the data collection was modified by a script, then we simply invalidate the pipeline cache
+            // and inform the scene that the pipeline must be re-evaluated.
+            pipelineCache().invalidate();
+            notifyTargetChanged();
+        }
+    }
+    else if(event.type() == ReferenceEvent::VisualElementModified && source == dataCollection()) {
+        // Set dirty flag when user modifies on of the visual elements associated with the current data collection.
+        _userHasChangedDataCollection.set(this, PROPERTY_FIELD(userHasChangedDataCollection), true);
+    }
+    return CachingPipelineObject::referenceEvent(source, event);
 }
 
 /******************************************************************************
@@ -178,9 +178,9 @@ bool BasePipelineSource::referenceEvent(RefTarget* source, const ReferenceEvent&
 ******************************************************************************/
 TimeInterval BasePipelineSource::frameTimeInterval(int frame) const
 {
-	return TimeInterval(
-		sourceFrameToAnimationTime(frame),
-		std::max(sourceFrameToAnimationTime(frame + 1) - 1, sourceFrameToAnimationTime(frame)));
+    return TimeInterval(
+        sourceFrameToAnimationTime(frame),
+        std::max(sourceFrameToAnimationTime(frame + 1) - 1, sourceFrameToAnimationTime(frame)));
 }
 
 /******************************************************************************
@@ -188,32 +188,32 @@ TimeInterval BasePipelineSource::frameTimeInterval(int frame) const
 ******************************************************************************/
 void BasePipelineSource::discardDataCollection()
 {
-	class ResetDataCollectionOperation : public UndoableOperation 
-	{
-	private:
-		OORef<BasePipelineSource> _source;
-	public:
-		ResetDataCollectionOperation(BasePipelineSource* source) : _source(source) {}
-		virtual void undo() override {
-			_source->setDataCollectionFrame(-1);
-			_source->pipelineCache().invalidate();
-			_source->notifyTargetChanged();
-		}
-	};
+    class ResetDataCollectionOperation : public UndoableOperation 
+    {
+    private:
+        OORef<BasePipelineSource> _source;
+    public:
+        ResetDataCollectionOperation(BasePipelineSource* source) : _source(source) {}
+        virtual void undo() override {
+            _source->setDataCollectionFrame(-1);
+            _source->pipelineCache().invalidate();
+            _source->notifyTargetChanged();
+        }
+    };
 
-	pushIfUndoRecording<ResetDataCollectionOperation>(this);
+    pushIfUndoRecording<ResetDataCollectionOperation>(this);
 
-	// Throw away cached frame data and notify pipeline that an update is in order.
-	setDataCollection(nullptr);
-	setDataCollectionFrame(-1);
-	pipelineCache().invalidate();
+    // Throw away cached frame data and notify pipeline that an update is in order.
+    setDataCollection(nullptr);
+    setDataCollectionFrame(-1);
+    pipelineCache().invalidate();
 
-	// Reset flag that keeps track of user modifications to the data collection.
-	_userHasChangedDataCollection.set(this, PROPERTY_FIELD(userHasChangedDataCollection), false);
+    // Reset flag that keeps track of user modifications to the data collection.
+    _userHasChangedDataCollection.set(this, PROPERTY_FIELD(userHasChangedDataCollection), false);
 
-	notifyTargetChanged();
+    notifyTargetChanged();
 
-	pushIfUndoRecording<ResetDataCollectionOperation>(this);
+    pushIfUndoRecording<ResetDataCollectionOperation>(this);
 }
 
-}	// End of namespace
+}   // End of namespace

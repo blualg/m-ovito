@@ -27,12 +27,12 @@ namespace Ovito {
 
 Exception::Exception()
 {
-	_messages.push_back("An exception has occurred.");
+    _messages.push_back("An exception has occurred.");
 }
 
 Exception::Exception(const QString& message)
 {
-	_messages.push_back(message);
+    _messages.push_back(message);
 }
 
 Exception::Exception(QStringList errorMessages) : _messages(std::move(errorMessages))
@@ -41,21 +41,21 @@ Exception::Exception(QStringList errorMessages) : _messages(std::move(errorMessa
 
 Exception& Exception::appendDetailMessage(const QString& message)
 {
-	_messages.push_back(message);
-	return *this;
+    _messages.push_back(message);
+    return *this;
 }
 
 Exception& Exception::prependGeneralMessage(const QString& message)
 {
-	_messages.push_front(message);
-	return *this;
+    _messages.push_front(message);
+    return *this;
 }
 
 void Exception::logError() const
 {
-	for(const QString& msg : _messages) {
-		qCritical().noquote() << msg;
-	}
+    for(const QString& msg : _messages) {
+        qCritical().noquote() << msg;
+    }
 }
 
-}	// namespace Ovito
+}   // namespace Ovito

@@ -33,45 +33,45 @@ namespace Ovito {
  */
 class OVITO_GUI_EXPORT WasmDataSetContainer : public DataSetContainer
 {
-	OVITO_CLASS(WasmDataSetContainer)
+    OVITO_CLASS(WasmDataSetContainer)
 
 public:
 
-	/// \brief Constructor.
-	WasmDataSetContainer(MainWindow* mainWindow);
+    /// \brief Constructor.
+    WasmDataSetContainer(MainWindow* mainWindow);
 
-	/// \brief Returns the window this dataset container is linked to.
-	MainWindow* mainWindow() const { return _mainWindow; }
+    /// \brief Returns the window this dataset container is linked to.
+    MainWindow* mainWindow() const { return _mainWindow; }
 
-	/// Imports a given file into the scene.
-	bool importFile(const QUrl& url, const FileImporterClass* importerType = nullptr);
+    /// Imports a given file into the scene.
+    bool importFile(const QUrl& url, const FileImporterClass* importerType = nullptr);
 
 Q_SIGNALS:
 
-	/// Is emitted whenever the scene of the current dataset has been changed and is being made ready for rendering.
-	void scenePreparationBegin();
+    /// Is emitted whenever the scene of the current dataset has been changed and is being made ready for rendering.
+    void scenePreparationBegin();
 
-	/// Is emitted whenever the scene of the current dataset became ready for rendering.
-	void scenePreparationEnd();
+    /// Is emitted whenever the scene of the current dataset became ready for rendering.
+    void scenePreparationEnd();
 
 protected:
 
-	/// Is called when a RefTarget referenced by this object has generated an event.
-	virtual bool referenceEvent(RefTarget* source, const ReferenceEvent& event) override;
+    /// Is called when a RefTarget referenced by this object has generated an event.
+    virtual bool referenceEvent(RefTarget* source, const ReferenceEvent& event) override;
 
 private:
 
-	/// Is called when scene of the current dataset is ready to be displayed.
-	void sceneBecameReady();
+    /// Is called when scene of the current dataset is ready to be displayed.
+    void sceneBecameReady();
 
-	/// The window this dataset container is linked to.
-	MainWindow* _mainWindow;
+    /// The window this dataset container is linked to.
+    MainWindow* _mainWindow;
 
-	/// Indicates whether we are already waiting for the scene to become ready.
-	bool _sceneReadyScheduled = false;
+    /// Indicates whether we are already waiting for the scene to become ready.
+    bool _sceneReadyScheduled = false;
 
-	/// The task that makes the scene ready for interactive rendering in the viewports.
-	SharedFuture<> _sceneReadyFuture;
+    /// The task that makes the scene ready for interactive rendering in the viewports.
+    SharedFuture<> _sceneReadyFuture;
 };
 
-}	// End of namespace
+}   // End of namespace

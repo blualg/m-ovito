@@ -33,29 +33,29 @@ namespace Ovito::Particles {
  */
 class BondsVisEditor : public PropertiesEditor
 {
-	OVITO_CLASS(BondsVisEditor)
+    OVITO_CLASS(BondsVisEditor)
 
 public:
 
-	/// Constructor.
-	Q_INVOKABLE BondsVisEditor() {}
+    /// Constructor.
+    Q_INVOKABLE BondsVisEditor() {}
 
 protected:
 
-	/// Creates the user interface controls for the editor.
-	virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
+    /// Creates the user interface controls for the editor.
+    virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
 
 private Q_SLOTS:
 
-	/// Updates the coloring controls shown in the UI.
-	void updateColoringOptions();
-	
+    /// Updates the coloring controls shown in the UI.
+    void updateColoringOptions();
+    
 private:
 
-	IntegerRadioButtonParameterUI* _coloringModeUI;
-	ColorParameterUI* _bondColorUI;
+    IntegerRadioButtonParameterUI* _coloringModeUI;
+    ColorParameterUI* _bondColorUI;
 };
 
-}	// End of namespace
+}   // End of namespace
 
 

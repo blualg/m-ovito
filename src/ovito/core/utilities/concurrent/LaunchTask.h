@@ -40,20 +40,20 @@ namespace Ovito {
 template<bool RegisterWithTaskManager, class TaskType, typename... Args>
 auto launchTask(std::shared_ptr<TaskType> task, Args&&... args)
 {
-	using future_type = typename TaskType::future_type;
+    using future_type = typename TaskType::future_type;
 
-	// Make the task the active one.
-	Task::Scope taskScope(task);
+    // Make the task the active one.
+    Task::Scope taskScope(task);
 
-	// Register task if requested to show it in the UI.
-	if constexpr(RegisterWithTaskManager)
-		ExecutionContext::current().ui().taskManager().registerTask(task);
+    // Register task if requested to show it in the UI.
+    if constexpr(RegisterWithTaskManager)
+        ExecutionContext::current().ui().taskManager().registerTask(task);
 
-	// Launch the task.
-	(*task)(std::forward<Args>(args)...);
+    // Launch the task.
+    (*task)(std::forward<Args>(args)...);
 
-	// Return the future to the caller.
-	return future_type::createFromTask(std::move(task));
+    // Return the future to the caller.
+    return future_type::createFromTask(std::move(task));
 }
 
-}	// End of namespace
+}   // End of namespace

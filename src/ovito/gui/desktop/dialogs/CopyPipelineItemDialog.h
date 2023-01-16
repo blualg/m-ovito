@@ -32,38 +32,38 @@ namespace Ovito {
  */
 class CopyPipelineItemDialog : public QDialog
 {
-	Q_OBJECT
+    Q_OBJECT
 
 public:
 
-	/// Constructor.
-	CopyPipelineItemDialog(MainWindow& mainWindow, QWidget* parentWindow, PipelineSceneNode* sourcePipeline, QVector<OORef<PipelineObject>> pipelineObjects);
+    /// Constructor.
+    CopyPipelineItemDialog(MainWindow& mainWindow, QWidget* parentWindow, PipelineSceneNode* sourcePipeline, QVector<OORef<PipelineObject>> pipelineObjects);
 
 private Q_SLOTS:
 
-	/// Is called when the user presses the 'Ok' button.
-	void onAccept();
+    /// Is called when the user presses the 'Ok' button.
+    void onAccept();
 
 private:
 
-	/// The parent window.
-	MainWindow& _mainWindow; 
+    /// The parent window.
+    MainWindow& _mainWindow; 
 
-	/// The source pipeline.
-	OORef<PipelineSceneNode> _sourcePipeline;
+    /// The source pipeline.
+    OORef<PipelineSceneNode> _sourcePipeline;
 
-	/// The pipeline objects to be copied.
-	QVector<OORef<PipelineObject>> _pipelineObjects;
+    /// The pipeline objects to be copied.
+    QVector<OORef<PipelineObject>> _pipelineObjects;
 
-	/// Target pipeline selector.
-	QComboBox* _destinationPipelineList;
+    /// Target pipeline selector.
+    QComboBox* _destinationPipelineList;
 
-	/// Selects the insertion position.
-	QRadioButton* _insertAtEndBtn;
-	QRadioButton* _insertAtStartBtn;
+    /// Selects the insertion position.
+    QRadioButton* _insertAtEndBtn;
+    QRadioButton* _insertAtStartBtn;
 
-	/// Controls the cloning mode.
-	QCheckBox* _shareBetweenPipelinesBox;
+    /// Controls the cloning mode.
+    QCheckBox* _shareBetweenPipelinesBox;
 };
 
-}	// End of namespace
+}   // End of namespace

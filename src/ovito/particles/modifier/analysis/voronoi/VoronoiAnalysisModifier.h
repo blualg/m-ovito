@@ -40,161 +40,161 @@ namespace Ovito::Particles {
  */
 class OVITO_PARTICLES_EXPORT VoronoiAnalysisModifier : public AsynchronousModifier
 {
-	/// Give this modifier class its own metaclass.
-	class VoronoiAnalysisModifierClass : public AsynchronousModifier::OOMetaClass
-	{
-	public:
+    /// Give this modifier class its own metaclass.
+    class VoronoiAnalysisModifierClass : public AsynchronousModifier::OOMetaClass
+    {
+    public:
 
-		/// Inherit constructor from base metaclass.
-		using AsynchronousModifier::OOMetaClass::OOMetaClass;
+        /// Inherit constructor from base metaclass.
+        using AsynchronousModifier::OOMetaClass::OOMetaClass;
 
-		/// Asks the metaclass whether the modifier can be applied to the given input data.
-		virtual bool isApplicableTo(const DataCollection& input) const override;
-	};
+        /// Asks the metaclass whether the modifier can be applied to the given input data.
+        virtual bool isApplicableTo(const DataCollection& input) const override;
+    };
 
-	OVITO_CLASS_META(VoronoiAnalysisModifier, VoronoiAnalysisModifierClass)
+    OVITO_CLASS_META(VoronoiAnalysisModifier, VoronoiAnalysisModifierClass)
 
-	Q_CLASSINFO("DisplayName", "Voronoi analysis");
-	Q_CLASSINFO("Description", "Determine nearest particle neighbors, atomic volume and Voronoi indices.");
-	Q_CLASSINFO("ModifierCategory", "Analysis");
+    Q_CLASSINFO("DisplayName", "Voronoi analysis");
+    Q_CLASSINFO("Description", "Determine nearest particle neighbors, atomic volume and Voronoi indices.");
+    Q_CLASSINFO("ModifierCategory", "Analysis");
 
 public:
 
-	/// Constructor.
-	Q_INVOKABLE VoronoiAnalysisModifier(ObjectCreationParams params);
-	
+    /// Constructor.
+    Q_INVOKABLE VoronoiAnalysisModifier(ObjectCreationParams params);
+    
 protected:
 
-	/// Creates a computation engine that will compute the modifier's results.
-	virtual Future<EnginePtr> createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input) override;
+    /// Creates a computation engine that will compute the modifier's results.
+    virtual Future<EnginePtr> createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input) override;
 
 private:
 
-	/// Computes the modifier's results.
-	class VoronoiAnalysisEngine : public Engine
-	{
-	public:
+    /// Computes the modifier's results.
+    class VoronoiAnalysisEngine : public Engine
+    {
+    public:
 
-		/// Constructor.
-		VoronoiAnalysisEngine(const ModifierEvaluationRequest& request, const TimeInterval& validityInterval, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, ConstPropertyPtr selection, ConstPropertyPtr particleIdentifiers, ConstPropertyPtr radii,
-							const SimulationCellObject* simCell, DataOORef<SurfaceMesh> polyhedraMesh,
-							bool computeIndices, bool computeBonds, FloatType edgeThreshold, FloatType faceThreshold, FloatType relativeFaceThreshold) :
-			Engine(request, validityInterval),
-			_positions(positions),
-			_selection(std::move(selection)),
-			_particleIdentifiers(std::move(particleIdentifiers)),
-			_radii(std::move(radii)),
-			_simCell(simCell),
-			_edgeThreshold(edgeThreshold),
-			_faceThreshold(faceThreshold),
-			_relativeFaceThreshold(relativeFaceThreshold),
-			_computeBonds(computeBonds),
-			_coordinationNumbers(ParticlesObject::OOClass().createStandardProperty(fingerprint.particleCount(), ParticlesObject::CoordinationProperty, DataBuffer::InitializeMemory)),
-			_atomicVolumes(ParticlesObject::OOClass().createUserProperty(fingerprint.particleCount(), PropertyObject::Float, 1, QStringLiteral("Atomic Volume"), DataBuffer::InitializeMemory)),
-			_cavityRadii(ParticlesObject::OOClass().createUserProperty(fingerprint.particleCount(), PropertyObject::Float, 1, QStringLiteral("Cavity Radius"), DataBuffer::InitializeMemory)),
-			_maxFaceOrders(computeIndices ? ParticlesObject::OOClass().createUserProperty(fingerprint.particleCount(), PropertyObject::Int, 1, QStringLiteral("Max Face Order"), DataBuffer::InitializeMemory) : nullptr),
-			_inputFingerprint(std::move(fingerprint)),
-			_polyhedraMesh(std::move(polyhedraMesh)) {}
+        /// Constructor.
+        VoronoiAnalysisEngine(const ModifierEvaluationRequest& request, const TimeInterval& validityInterval, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, ConstPropertyPtr selection, ConstPropertyPtr particleIdentifiers, ConstPropertyPtr radii,
+                            const SimulationCellObject* simCell, DataOORef<SurfaceMesh> polyhedraMesh,
+                            bool computeIndices, bool computeBonds, FloatType edgeThreshold, FloatType faceThreshold, FloatType relativeFaceThreshold) :
+            Engine(request, validityInterval),
+            _positions(positions),
+            _selection(std::move(selection)),
+            _particleIdentifiers(std::move(particleIdentifiers)),
+            _radii(std::move(radii)),
+            _simCell(simCell),
+            _edgeThreshold(edgeThreshold),
+            _faceThreshold(faceThreshold),
+            _relativeFaceThreshold(relativeFaceThreshold),
+            _computeBonds(computeBonds),
+            _coordinationNumbers(ParticlesObject::OOClass().createStandardProperty(fingerprint.particleCount(), ParticlesObject::CoordinationProperty, DataBuffer::InitializeMemory)),
+            _atomicVolumes(ParticlesObject::OOClass().createUserProperty(fingerprint.particleCount(), PropertyObject::Float, 1, QStringLiteral("Atomic Volume"), DataBuffer::InitializeMemory)),
+            _cavityRadii(ParticlesObject::OOClass().createUserProperty(fingerprint.particleCount(), PropertyObject::Float, 1, QStringLiteral("Cavity Radius"), DataBuffer::InitializeMemory)),
+            _maxFaceOrders(computeIndices ? ParticlesObject::OOClass().createUserProperty(fingerprint.particleCount(), PropertyObject::Int, 1, QStringLiteral("Max Face Order"), DataBuffer::InitializeMemory) : nullptr),
+            _inputFingerprint(std::move(fingerprint)),
+            _polyhedraMesh(std::move(polyhedraMesh)) {}
 
-		/// Computes the modifier's results.
-		virtual void perform() override;
+        /// Computes the modifier's results.
+        virtual void perform() override;
 
-		/// Injects the computed results into the data pipeline.
-		virtual void applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
+        /// Injects the computed results into the data pipeline.
+        virtual void applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
 
-		/// Returns the property storage that contains the computed coordination numbers.
-		const PropertyPtr& coordinationNumbers() const { return _coordinationNumbers; }
+        /// Returns the property storage that contains the computed coordination numbers.
+        const PropertyPtr& coordinationNumbers() const { return _coordinationNumbers; }
 
-		/// Returns the property storage that contains the computed atomic volumes.
-		const PropertyPtr& atomicVolumes() const { return _atomicVolumes; }
+        /// Returns the property storage that contains the computed atomic volumes.
+        const PropertyPtr& atomicVolumes() const { return _atomicVolumes; }
 
-		/// Returns the property storage that contains the computed cavity radii.
-		const PropertyPtr& cavityRadii() const { return _cavityRadii; }
+        /// Returns the property storage that contains the computed cavity radii.
+        const PropertyPtr& cavityRadii() const { return _cavityRadii; }
 
-		/// Returns the property storage that contains the computed Voronoi indices.
-		const PropertyPtr& voronoiIndices() const { return _voronoiIndices; }
+        /// Returns the property storage that contains the computed Voronoi indices.
+        const PropertyPtr& voronoiIndices() const { return _voronoiIndices; }
 
-		/// Returns the property storage that contains the maximum face order for each particle.
-		const PropertyPtr& maxFaceOrders() const { return _maxFaceOrders; }
+        /// Returns the property storage that contains the maximum face order for each particle.
+        const PropertyPtr& maxFaceOrders() const { return _maxFaceOrders; }
 
-		/// Returns the volume sum of all Voronoi cells computed by the modifier.
-		std::atomic<double>& voronoiVolumeSum() { return _voronoiVolumeSum; }
+        /// Returns the volume sum of all Voronoi cells computed by the modifier.
+        std::atomic<double>& voronoiVolumeSum() { return _voronoiVolumeSum; }
 
-		/// Returns the maximum number of edges of any Voronoi face.
-		std::atomic<int>& maxFaceOrder() { return _maxFaceOrder; }
+        /// Returns the maximum number of edges of any Voronoi face.
+        std::atomic<int>& maxFaceOrder() { return _maxFaceOrder; }
 
-		/// Returns the generated nearest neighbor bonds.
-		std::vector<Bond>& bonds() { return _bonds; }
+        /// Returns the generated nearest neighbor bonds.
+        std::vector<Bond>& bonds() { return _bonds; }
 
-		const SimulationCellObject* simCell() const { return _simCell; }
-		const ConstPropertyPtr& positions() const { return _positions; }
-		const ConstPropertyPtr& selection() const { return _selection; }
+        const SimulationCellObject* simCell() const { return _simCell; }
+        const ConstPropertyPtr& positions() const { return _positions; }
+        const ConstPropertyPtr& selection() const { return _selection; }
 
-	private:
+    private:
 
-		const FloatType _edgeThreshold;
-		const FloatType _faceThreshold;
-		const FloatType _relativeFaceThreshold;
-		DataOORef<const SimulationCellObject> _simCell;
-		ConstPropertyPtr _radii;
-		ConstPropertyPtr _positions;
-		ConstPropertyPtr _selection;
-		ConstPropertyPtr _particleIdentifiers;
-		bool _computeBonds;
+        const FloatType _edgeThreshold;
+        const FloatType _faceThreshold;
+        const FloatType _relativeFaceThreshold;
+        DataOORef<const SimulationCellObject> _simCell;
+        ConstPropertyPtr _radii;
+        ConstPropertyPtr _positions;
+        ConstPropertyPtr _selection;
+        ConstPropertyPtr _particleIdentifiers;
+        bool _computeBonds;
 
-		const PropertyPtr _coordinationNumbers;
-		const PropertyPtr _atomicVolumes;
-		const PropertyPtr _cavityRadii;
-		PropertyPtr _voronoiIndices;
-		const PropertyPtr _maxFaceOrders;
-		std::vector<Bond> _bonds;
-		ParticleOrderingFingerprint _inputFingerprint;
+        const PropertyPtr _coordinationNumbers;
+        const PropertyPtr _atomicVolumes;
+        const PropertyPtr _cavityRadii;
+        PropertyPtr _voronoiIndices;
+        const PropertyPtr _maxFaceOrders;
+        std::vector<Bond> _bonds;
+        ParticleOrderingFingerprint _inputFingerprint;
 
-		/// The volume sum of all Voronoi cells.
-		std::atomic<double> _voronoiVolumeSum{0.0};
+        /// The volume sum of all Voronoi cells.
+        std::atomic<double> _voronoiVolumeSum{0.0};
 
-		/// The maximum number of edges of a Voronoi face.
-		std::atomic<int> _maxFaceOrder{0};
+        /// The maximum number of edges of a Voronoi face.
+        std::atomic<int> _maxFaceOrder{0};
 
-		/// A surface mesh representing the computed polyhedral Voronoi cells.
-		DataOORef<SurfaceMesh> _polyhedraMesh;
+        /// A surface mesh representing the computed polyhedral Voronoi cells.
+        DataOORef<SurfaceMesh> _polyhedraMesh;
 
-		/// The total volume of the simulation cell.
-		FloatType _simulationBoxVolume;
+        /// The total volume of the simulation cell.
+        FloatType _simulationBoxVolume;
 
-		/// Maximum length of Voronoi index vectors produced by this modifier.
-		constexpr static int FaceOrderStorageLimit = 32;
-	};
+        /// Maximum length of Voronoi index vectors produced by this modifier.
+        constexpr static int FaceOrderStorageLimit = 32;
+    };
 
-	/// Controls whether the modifier takes into account only selected particles.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, onlySelected, setOnlySelected);
+    /// Controls whether the modifier takes into account only selected particles.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, onlySelected, setOnlySelected);
 
-	/// Controls whether the modifier takes into account particle radii.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, useRadii, setUseRadii);
+    /// Controls whether the modifier takes into account particle radii.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, useRadii, setUseRadii);
 
-	/// Controls whether the modifier computes Voronoi indices.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, computeIndices, setComputeIndices);
+    /// Controls whether the modifier computes Voronoi indices.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, computeIndices, setComputeIndices);
 
-	/// The minimum length for an edge to be counted.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD(FloatType, edgeThreshold, setEdgeThreshold);
+    /// The minimum length for an edge to be counted.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(FloatType, edgeThreshold, setEdgeThreshold);
 
-	/// The minimum area for a face to be counted.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD(FloatType, faceThreshold, setFaceThreshold);
+    /// The minimum area for a face to be counted.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(FloatType, faceThreshold, setFaceThreshold);
 
-	/// The minimum area for a face to be counted relative to the total polyhedron surface.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD(FloatType, relativeFaceThreshold, setRelativeFaceThreshold);
+    /// The minimum area for a face to be counted relative to the total polyhedron surface.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(FloatType, relativeFaceThreshold, setRelativeFaceThreshold);
 
-	/// Controls whether the modifier outputs nearest neighbor bonds.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, computeBonds, setComputeBonds);
+    /// Controls whether the modifier outputs nearest neighbor bonds.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, computeBonds, setComputeBonds);
 
-	/// Controls whether the modifier outputs Voronoi polyhedra.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, computePolyhedra, setComputePolyhedra);
+    /// Controls whether the modifier outputs Voronoi polyhedra.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, computePolyhedra, setComputePolyhedra);
 
-	/// The vis element for rendering the bonds.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<BondsVis>, bondsVis, setBondsVis, PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES | PROPERTY_FIELD_MEMORIZE);
+    /// The vis element for rendering the bonds.
+    DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<BondsVis>, bondsVis, setBondsVis, PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES | PROPERTY_FIELD_MEMORIZE);
 
-	/// The vis element for rendering the polyhedral Voronoi cells.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<SurfaceMeshVis>, polyhedraVis, setPolyhedraVis, PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES | PROPERTY_FIELD_MEMORIZE | PROPERTY_FIELD_OPEN_SUBEDITOR);
+    /// The vis element for rendering the polyhedral Voronoi cells.
+    DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<SurfaceMeshVis>, polyhedraVis, setPolyhedraVis, PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES | PROPERTY_FIELD_MEMORIZE | PROPERTY_FIELD_OPEN_SUBEDITOR);
 };
 
-}	// End of namespace
+}   // End of namespace

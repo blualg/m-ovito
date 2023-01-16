@@ -34,7 +34,7 @@ IMPLEMENT_OVITO_CLASS(FloatParameterUI);
 * Constructor for a Qt property.
 ******************************************************************************/
 FloatParameterUI::FloatParameterUI(PropertiesEditor* parentEditor, const char* propertyName, const QString& labelText, const QMetaObject* parameterUnitType) :
-	NumericalParameterUI(parentEditor, propertyName, parameterUnitType ? parameterUnitType : &FloatParameterUnit::staticMetaObject, labelText)
+    NumericalParameterUI(parentEditor, propertyName, parameterUnitType ? parameterUnitType : &FloatParameterUnit::staticMetaObject, labelText)
 {
 }
 
@@ -42,7 +42,7 @@ FloatParameterUI::FloatParameterUI(PropertiesEditor* parentEditor, const char* p
 * Constructor for a PropertyField or ReferenceField property.
 ******************************************************************************/
 FloatParameterUI::FloatParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField) :
-	NumericalParameterUI(parentEditor, propField, &FloatParameterUnit::staticMetaObject)
+    NumericalParameterUI(parentEditor, propField, &FloatParameterUnit::staticMetaObject)
 {
 }
 
@@ -52,22 +52,22 @@ FloatParameterUI::FloatParameterUI(PropertiesEditor* parentEditor, const Propert
 ******************************************************************************/
 void FloatParameterUI::updatePropertyValue()
 {
-	if(editObject() && spinner()) {
-		if(isReferenceFieldUI()) {
-			if(Controller* ctrl = dynamic_object_cast<Controller>(parameterObject())) {
-				ctrl->setFloatValue(currentAnimationTime().value_or(AnimationTime(0)), spinner()->floatValue());
-			}
-		}
-		else if(isQtPropertyUI()) {
-			if(!editObject()->setProperty(propertyName(), spinner()->floatValue())) {
-				OVITO_ASSERT_MSG(false, "FloatParameterUI::updatePropertyValue()", qPrintable(QString("The value of property %1 of object class %2 could not be set.").arg(QString(propertyName()), editObject()->metaObject()->className())));
-			}
-		}
-		else if(isPropertyFieldUI()) {
-			editor()->changePropertyFieldValue(propertyField(), spinner()->floatValue());
-		}
-		Q_EMIT valueEntered();
-	}
+    if(editObject() && spinner()) {
+        if(isReferenceFieldUI()) {
+            if(Controller* ctrl = dynamic_object_cast<Controller>(parameterObject())) {
+                ctrl->setFloatValue(currentAnimationTime().value_or(AnimationTime(0)), spinner()->floatValue());
+            }
+        }
+        else if(isQtPropertyUI()) {
+            if(!editObject()->setProperty(propertyName(), spinner()->floatValue())) {
+                OVITO_ASSERT_MSG(false, "FloatParameterUI::updatePropertyValue()", qPrintable(QString("The value of property %1 of object class %2 could not be set.").arg(QString(propertyName()), editObject()->metaObject()->className())));
+            }
+        }
+        else if(isPropertyFieldUI()) {
+            editor()->changePropertyFieldValue(propertyField(), spinner()->floatValue());
+        }
+        Q_EMIT valueEntered();
+    }
 }
 
 /******************************************************************************
@@ -75,30 +75,30 @@ void FloatParameterUI::updatePropertyValue()
 ******************************************************************************/
 void FloatParameterUI::updateUI()
 {
-	if(editObject() && spinner() && !spinner()->isDragging()) {
-		handleExceptions([&] {
-			if(isReferenceFieldUI()) {
-				if(Controller* ctrl = dynamic_object_cast<Controller>(parameterObject())) {
-					spinner()->setFloatValue(ctrl->getFloatValue(currentAnimationTime().value_or(AnimationTime(0))));
-				}
-			}
-			else {
-				QVariant val(0.0);
-				if(isQtPropertyUI()) {
-					val = editObject()->property(propertyName());
-					OVITO_ASSERT_MSG(val.isValid() && val.canConvert<FloatType>(), "FloatParameterUI::updateUI()", qPrintable(QString("The object class %1 does not define a property with the name %2 that can be cast to float type.").arg(editObject()->metaObject()->className(), QString(propertyName()))));
-					if(!val.isValid() || !val.canConvert<FloatType>()) {
-						throw Exception(tr("The object class %1 does not define a property with the name %2 that can be cast to float type.").arg(editObject()->metaObject()->className(), QString(propertyName())));
-					}
-				}
-				else if(isPropertyFieldUI()) {
-					val = editObject()->getPropertyFieldValue(propertyField());
-					OVITO_ASSERT(val.isValid());
-				}
-				spinner()->setFloatValue(val.value<FloatType>());
-			}
-		});
-	}
+    if(editObject() && spinner() && !spinner()->isDragging()) {
+        handleExceptions([&] {
+            if(isReferenceFieldUI()) {
+                if(Controller* ctrl = dynamic_object_cast<Controller>(parameterObject())) {
+                    spinner()->setFloatValue(ctrl->getFloatValue(currentAnimationTime().value_or(AnimationTime(0))));
+                }
+            }
+            else {
+                QVariant val(0.0);
+                if(isQtPropertyUI()) {
+                    val = editObject()->property(propertyName());
+                    OVITO_ASSERT_MSG(val.isValid() && val.canConvert<FloatType>(), "FloatParameterUI::updateUI()", qPrintable(QString("The object class %1 does not define a property with the name %2 that can be cast to float type.").arg(editObject()->metaObject()->className(), QString(propertyName()))));
+                    if(!val.isValid() || !val.canConvert<FloatType>()) {
+                        throw Exception(tr("The object class %1 does not define a property with the name %2 that can be cast to float type.").arg(editObject()->metaObject()->className(), QString(propertyName())));
+                    }
+                }
+                else if(isPropertyFieldUI()) {
+                    val = editObject()->getPropertyFieldValue(propertyField());
+                    OVITO_ASSERT(val.isValid());
+                }
+                spinner()->setFloatValue(val.value<FloatType>());
+            }
+        });
+    }
 }
 
 /******************************************************************************
@@ -107,7 +107,7 @@ void FloatParameterUI::updateUI()
 ******************************************************************************/
 FloatType FloatParameterUI::minValue() const
 {
-	return (spinner() ? spinner()->minValue() : FLOATTYPE_MIN);
+    return (spinner() ? spinner()->minValue() : FLOATTYPE_MIN);
 }
 
 /******************************************************************************
@@ -116,7 +116,7 @@ FloatType FloatParameterUI::minValue() const
 ******************************************************************************/
 void FloatParameterUI::setMinValue(FloatType minValue)
 {
-	if(spinner()) spinner()->setMinValue(minValue);
+    if(spinner()) spinner()->setMinValue(minValue);
 }
 
 /******************************************************************************
@@ -125,7 +125,7 @@ void FloatParameterUI::setMinValue(FloatType minValue)
 ******************************************************************************/
 FloatType FloatParameterUI::maxValue() const
 {
-	return (spinner() ? spinner()->maxValue() : FLOATTYPE_MAX);
+    return (spinner() ? spinner()->maxValue() : FLOATTYPE_MAX);
 }
 
 /******************************************************************************
@@ -134,7 +134,7 @@ FloatType FloatParameterUI::maxValue() const
 ******************************************************************************/
 void FloatParameterUI::setMaxValue(FloatType maxValue)
 {
-	if(spinner()) spinner()->setMaxValue(maxValue);
+    if(spinner()) spinner()->setMaxValue(maxValue);
 }
 
-}	// End of namespace
+}   // End of namespace

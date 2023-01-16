@@ -33,28 +33,28 @@ namespace Ovito::Particles {
  */
 class InteractiveMolecularDynamicsModifierEditor : public PropertiesEditor
 {
-	OVITO_CLASS(InteractiveMolecularDynamicsModifierEditor)
+    OVITO_CLASS(InteractiveMolecularDynamicsModifierEditor)
 
 public:
 
-	/// Default constructor
-	Q_INVOKABLE InteractiveMolecularDynamicsModifierEditor() {}
+    /// Default constructor
+    Q_INVOKABLE InteractiveMolecularDynamicsModifierEditor() {}
 
 protected:
 
-	/// Creates the user interface controls for the editor.
-	virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
+    /// Creates the user interface controls for the editor.
+    virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
 
 private Q_SLOTS:
 
-	/// Is called whenever the IMD connection state of the modifier changes.
-	void connectionStateChanged();
+    /// Is called whenever the IMD connection state of the modifier changes.
+    void connectionStateChanged();
 
 private:
 
-	StringParameterUI* _serverHostnameUI;
-	IntegerParameterUI* _serverPortUI;
-	QPushButton* _connectButton;
+    StringParameterUI* _serverHostnameUI;
+    IntegerParameterUI* _serverPortUI;
+    QPushButton* _connectButton;
 };
 
-}	// End of namespace
+}   // End of namespace

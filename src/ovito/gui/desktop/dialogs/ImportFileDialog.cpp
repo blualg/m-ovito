@@ -31,32 +31,32 @@ namespace Ovito {
 * Constructs the dialog window.
 ******************************************************************************/
 ImportFileDialog::ImportFileDialog(const QVector<const FileImporterClass*>& importerTypes, QWidget* parent, const QString& caption, bool allowMultiSelection, const QString& dialogClass) :
-	HistoryFileDialog(dialogClass, parent, caption)
+    HistoryFileDialog(dialogClass, parent, caption)
 {
-	if(importerTypes.empty())
-		throw Exception(tr("There are no importer plugins installed."));
+    if(importerTypes.empty())
+        throw Exception(tr("There are no importer plugins installed."));
 
-	// Build list of file filter strings.
-	QStringList fileFilterStrings;
-	fileFilterStrings.push_back(tr("<Auto-detect file format> (*)"));
-	_importerFormats.emplace_back(nullptr, QString());
+    // Build list of file filter strings.
+    QStringList fileFilterStrings;
+    fileFilterStrings.push_back(tr("<Auto-detect file format> (*)"));
+    _importerFormats.emplace_back(nullptr, QString());
 
-	for(const auto& importerClass : importerTypes) {
-		for(const FileImporterClass::SupportedFormat& format : importerClass->supportedFormats()) {
-			OVITO_ASSERT(!format.description.isEmpty() && !format.fileFilter.isEmpty());
-			fileFilterStrings << QString("%1 (%2)").arg(format.description, format.fileFilter);
-			_importerFormats.emplace_back(importerClass, format.identifier);
-		}
-	}
-	// Sort file formats alphabetically (but leave leading <Auto-detect> entry in place).
-	Ovito::sort_zipped(
-		Ovito::make_span(fileFilterStrings).subspan(1), 
-		Ovito::make_span( _importerFormats).subspan(1));
+    for(const auto& importerClass : importerTypes) {
+        for(const FileImporterClass::SupportedFormat& format : importerClass->supportedFormats()) {
+            OVITO_ASSERT(!format.description.isEmpty() && !format.fileFilter.isEmpty());
+            fileFilterStrings << QString("%1 (%2)").arg(format.description, format.fileFilter);
+            _importerFormats.emplace_back(importerClass, format.identifier);
+        }
+    }
+    // Sort file formats alphabetically (but leave leading <Auto-detect> entry in place).
+    Ovito::sort_zipped(
+        Ovito::make_span(fileFilterStrings).subspan(1), 
+        Ovito::make_span( _importerFormats).subspan(1));
 
-	setNameFilters(fileFilterStrings);
-	selectNameFilter(fileFilterStrings.front());
-	setAcceptMode(QFileDialog::AcceptOpen);
-	setFileMode(allowMultiSelection ? QFileDialog::ExistingFiles : QFileDialog::ExistingFile);
+    setNameFilters(fileFilterStrings);
+    selectNameFilter(fileFilterStrings.front());
+    setAcceptMode(QFileDialog::AcceptOpen);
+    setFileMode(allowMultiSelection ? QFileDialog::ExistingFiles : QFileDialog::ExistingFile);
 }
 
 /******************************************************************************
@@ -64,9 +64,9 @@ ImportFileDialog::ImportFileDialog(const QVector<const FileImporterClass*>& impo
 ******************************************************************************/
 QString ImportFileDialog::fileToImport() const
 {
-	QStringList filesToImport = selectedFiles();
-	if(filesToImport.isEmpty()) return QString();
-	return filesToImport.front();
+    QStringList filesToImport = selectedFiles();
+    if(filesToImport.isEmpty()) return QString();
+    return filesToImport.front();
 }
 
 /******************************************************************************
@@ -74,7 +74,7 @@ QString ImportFileDialog::fileToImport() const
 ******************************************************************************/
 QUrl ImportFileDialog::urlToImport() const
 {
-	return FileManager::urlFromUserInput(fileToImport());
+    return FileManager::urlFromUserInput(fileToImport());
 }
 
 /******************************************************************************
@@ -82,11 +82,11 @@ QUrl ImportFileDialog::urlToImport() const
 ******************************************************************************/
 std::vector<QUrl> ImportFileDialog::urlsToImport() const
 {
-	std::vector<QUrl> list;
-	for(const QString& file : selectedFiles()) {
-		list.push_back(FileManager::urlFromUserInput(file));
-	}
-	return list;
+    std::vector<QUrl> list;
+    for(const QString& file : selectedFiles()) {
+        list.push_back(FileManager::urlFromUserInput(file));
+    }
+    return list;
 }
 
 /******************************************************************************
@@ -94,9 +94,9 @@ std::vector<QUrl> ImportFileDialog::urlsToImport() const
 ******************************************************************************/
 const std::pair<const FileImporterClass*, QString>& ImportFileDialog::selectedFileImporter() const
 {
-	int importFilterIndex = nameFilters().indexOf(selectedNameFilter());
-	OVITO_ASSERT(importFilterIndex >= 0 && importFilterIndex < _importerFormats.size());
-	return _importerFormats[importFilterIndex];
+    int importFilterIndex = nameFilters().indexOf(selectedNameFilter());
+    OVITO_ASSERT(importFilterIndex >= 0 && importFilterIndex < _importerFormats.size());
+    return _importerFormats[importFilterIndex];
 }
 
-}	// End of namespace
+}   // End of namespace

@@ -38,7 +38,7 @@ SET_PROPERTY_FIELD_UNITS_AND_RANGE(StandardSceneRenderer, antialiasingLevel, Int
 * Constructor.
 ******************************************************************************/
 StandardSceneRenderer::StandardSceneRenderer(ObjectCreationParams params) : SceneRenderer(params), 
-	_antialiasingLevel(3) 
+    _antialiasingLevel(3) 
 {
 }
 
@@ -47,41 +47,41 @@ StandardSceneRenderer::StandardSceneRenderer(ObjectCreationParams params) : Scen
 ******************************************************************************/
 bool StandardSceneRenderer::startRender(const RenderSettings* settings, const QSize& frameBufferSize, MixedKeyCache& visCache)
 {
-	OVITO_ASSERT(!_internalRenderer);
+    OVITO_ASSERT(!_internalRenderer);
 
-	if(!SceneRenderer::startRender(settings, frameBufferSize, visCache))
-		return false;
+    if(!SceneRenderer::startRender(settings, frameBufferSize, visCache))
+        return false;
 
-	// Create the internal renderer implementation. Choose between OpenGL and Vulkan option.
-	OvitoClassPtr rendererClass = {};
+    // Create the internal renderer implementation. Choose between OpenGL and Vulkan option.
+    OvitoClassPtr rendererClass = {};
 
 #ifndef OVITO_DISABLE_QSETTINGS
-	// Did user select Vulkan as the standard graphics interface?
-	QSettings applicationSettings;
-	if(applicationSettings.value("rendering/selected_graphics_api").toString() == "Vulkan")
-		rendererClass = PluginManager::instance().findClass("VulkanRenderer", "OffscreenVulkanSceneRenderer");
+    // Did user select Vulkan as the standard graphics interface?
+    QSettings applicationSettings;
+    if(applicationSettings.value("rendering/selected_graphics_api").toString() == "Vulkan")
+        rendererClass = PluginManager::instance().findClass("VulkanRenderer", "OffscreenVulkanSceneRenderer");
 #endif
 
-	// In headless mode, OpenGL is not available (it requires a windowing system). Try Vulkan instead, which supports headless operation.
-	if(Application::instance()->headlessMode() && !rendererClass)
-		rendererClass = PluginManager::instance().findClass("VulkanRenderer", "OffscreenVulkanSceneRenderer");
+    // In headless mode, OpenGL is not available (it requires a windowing system). Try Vulkan instead, which supports headless operation.
+    if(Application::instance()->headlessMode() && !rendererClass)
+        rendererClass = PluginManager::instance().findClass("VulkanRenderer", "OffscreenVulkanSceneRenderer");
 
-	// Fall back to OpenGL renderer as the default implementation.
-	if(!rendererClass)
-		rendererClass = PluginManager::instance().findClass("OpenGLRenderer", "OffscreenOpenGLSceneRenderer");
+    // Fall back to OpenGL renderer as the default implementation.
+    if(!rendererClass)
+        rendererClass = PluginManager::instance().findClass("OpenGLRenderer", "OffscreenOpenGLSceneRenderer");
 
-	// Instantiate the renderer implementation.
-	if(!rendererClass)
-		throw Exception(tr("The OffscreenOpenGLSceneRenderer class is not available. Please make sure the OpenGLRenderer plugin is installed correctly."));
-	_internalRenderer = static_object_cast<SceneRenderer>(rendererClass->createInstance());
+    // Instantiate the renderer implementation.
+    if(!rendererClass)
+        throw Exception(tr("The OffscreenOpenGLSceneRenderer class is not available. Please make sure the OpenGLRenderer plugin is installed correctly."));
+    _internalRenderer = static_object_cast<SceneRenderer>(rendererClass->createInstance());
 
-	// Pass supersampling level requested by the user to the renderer implementation.
-	_internalRenderer->setAntialiasingHint(std::max(1, antialiasingLevel()));
+    // Pass supersampling level requested by the user to the renderer implementation.
+    _internalRenderer->setAntialiasingHint(std::max(1, antialiasingLevel()));
 
-	if(!_internalRenderer->startRender(settings, frameBufferSize, visCache))
-		return false;
+    if(!_internalRenderer->startRender(settings, frameBufferSize, visCache))
+        return false;
 
-	return true;
+    return true;
 }
 
 /******************************************************************************
@@ -89,10 +89,10 @@ bool StandardSceneRenderer::startRender(const RenderSettings* settings, const QS
 ******************************************************************************/
 void StandardSceneRenderer::beginFrame(AnimationTime time, Scene* scene, const ViewProjectionParameters& params, Viewport* vp, const QRect& viewportRect, FrameBuffer* frameBuffer)
 {
-	SceneRenderer::beginFrame(time, scene, params, vp, viewportRect, frameBuffer);
+    SceneRenderer::beginFrame(time, scene, params, vp, viewportRect, frameBuffer);
 
-	// Call implementation class.
-	_internalRenderer->beginFrame(time, scene, params, vp, viewportRect, frameBuffer);
+    // Call implementation class.
+    _internalRenderer->beginFrame(time, scene, params, vp, viewportRect, frameBuffer);
 }
 
 /******************************************************************************
@@ -100,8 +100,8 @@ void StandardSceneRenderer::beginFrame(AnimationTime time, Scene* scene, const V
 ******************************************************************************/
 bool StandardSceneRenderer::renderFrame(const QRect& viewportRect, MainThreadOperation& operation)
 {
-	// Delegate rendering work to implementation class.
-	return _internalRenderer->renderFrame(viewportRect, operation);
+    // Delegate rendering work to implementation class.
+    return _internalRenderer->renderFrame(viewportRect, operation);
 }
 
 /******************************************************************************
@@ -109,8 +109,8 @@ bool StandardSceneRenderer::renderFrame(const QRect& viewportRect, MainThreadOpe
 ******************************************************************************/
 bool StandardSceneRenderer::renderOverlays(bool underlays, const QRect& logicalViewportRect, const QRect& physicalViewportRect, MainThreadOperation& operation)
 {
-	// Delegate rendering work to implementation class.
-	return _internalRenderer->renderOverlays(underlays, logicalViewportRect, physicalViewportRect, operation);
+    // Delegate rendering work to implementation class.
+    return _internalRenderer->renderOverlays(underlays, logicalViewportRect, physicalViewportRect, operation);
 }
 
 /******************************************************************************
@@ -118,10 +118,10 @@ bool StandardSceneRenderer::renderOverlays(bool underlays, const QRect& logicalV
 ******************************************************************************/
 void StandardSceneRenderer::endFrame(bool renderingSuccessful, const QRect& viewportRect)
 {
-	SceneRenderer::endFrame(renderingSuccessful, viewportRect);
+    SceneRenderer::endFrame(renderingSuccessful, viewportRect);
 
-	// Call implementation class.
-	_internalRenderer->endFrame(renderingSuccessful, viewportRect);
+    // Call implementation class.
+    _internalRenderer->endFrame(renderingSuccessful, viewportRect);
 }
 
 /******************************************************************************
@@ -129,13 +129,13 @@ void StandardSceneRenderer::endFrame(bool renderingSuccessful, const QRect& view
 ******************************************************************************/
 void StandardSceneRenderer::endRender()
 {
-	if(_internalRenderer) {
-		// Call implementation class.
-		_internalRenderer->endRender();
-		// Release implementation.
-		_internalRenderer.reset();
-	}
-	SceneRenderer::endRender();
+    if(_internalRenderer) {
+        // Call implementation class.
+        _internalRenderer->endRender();
+        // Release implementation.
+        _internalRenderer.reset();
+    }
+    SceneRenderer::endRender();
 }
 
-}	// End of namespace
+}   // End of namespace

@@ -35,4 +35,4 @@ ClusterGraphObject::ClusterGraphObject(ObjectCreationParams params) : DataObject
 {
 }
 
-}	// End of namespace
+}   // End of namespace

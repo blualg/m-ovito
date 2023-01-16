@@ -35,36 +35,36 @@ using namespace Ovito::StdMod;
  */
 class OVITO_MESHMOD_EXPORT SurfaceMeshReplicateModifierDelegate : public ReplicateModifierDelegate
 {
-	/// Give the modifier delegate its own metaclass.
-	class OOMetaClass : public ReplicateModifierDelegate::OOMetaClass
-	{
-	public:
+    /// Give the modifier delegate its own metaclass.
+    class OOMetaClass : public ReplicateModifierDelegate::OOMetaClass
+    {
+    public:
 
-		/// Inherit constructor from base class.
-		using ReplicateModifierDelegate::OOMetaClass::OOMetaClass;
+        /// Inherit constructor from base class.
+        using ReplicateModifierDelegate::OOMetaClass::OOMetaClass;
 
-		/// Indicates which data objects in the given input data collection the modifier delegate is able to operate on.
-		virtual QVector<DataObjectReference> getApplicableObjects(const DataCollection& input) const override {
-			if(input.containsObject<SurfaceMesh>())
-				return { DataObjectReference(&SurfaceMesh::OOClass()) };
-			return {};
-		}
+        /// Indicates which data objects in the given input data collection the modifier delegate is able to operate on.
+        virtual QVector<DataObjectReference> getApplicableObjects(const DataCollection& input) const override {
+            if(input.containsObject<SurfaceMesh>())
+                return { DataObjectReference(&SurfaceMesh::OOClass()) };
+            return {};
+        }
 
-		/// The name by which Python scripts can refer to this modifier delegate.
-		virtual QString pythonDataName() const override { return QStringLiteral("surfaces"); }
-	};
+        /// The name by which Python scripts can refer to this modifier delegate.
+        virtual QString pythonDataName() const override { return QStringLiteral("surfaces"); }
+    };
 
-	OVITO_CLASS_META(SurfaceMeshReplicateModifierDelegate, OOMetaClass)
+    OVITO_CLASS_META(SurfaceMeshReplicateModifierDelegate, OOMetaClass)
 
-	Q_CLASSINFO("DisplayName", "Surfaces");
+    Q_CLASSINFO("DisplayName", "Surfaces");
 
 public:
 
-	/// Constructor.
-	Q_INVOKABLE SurfaceMeshReplicateModifierDelegate(ObjectCreationParams params) : ReplicateModifierDelegate(params) {}
+    /// Constructor.
+    Q_INVOKABLE SurfaceMeshReplicateModifierDelegate(ObjectCreationParams params) : ReplicateModifierDelegate(params) {}
 
-	/// Applies the modifier operation to the data in a pipeline flow state.
-	virtual PipelineStatus apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const PipelineFlowState& inputState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs) override;
+    /// Applies the modifier operation to the data in a pipeline flow state.
+    virtual PipelineStatus apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const PipelineFlowState& inputState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs) override;
 };
 
-}	// End of namespace
+}   // End of namespace

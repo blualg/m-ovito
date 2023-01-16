@@ -22,11 +22,11 @@
 
 # Define the GUI module, which provides the user interface for the parent module.
 OVITO_STANDARD_PLUGIN(MeshGui
-	SOURCES
-		surface/SurfaceMeshVisEditor.cpp
-		surface/SurfaceMeshInspectionApplet.cpp
-		io/ParaViewVTMImporterEditor.cpp
-	PLUGIN_DEPENDENCIES Mesh StdObjGui
-	GUI_PLUGIN
-	HAS_NO_EXPORTS
+    SOURCES
+        surface/SurfaceMeshVisEditor.cpp
+        surface/SurfaceMeshInspectionApplet.cpp
+        io/ParaViewVTMImporterEditor.cpp
+    PLUGIN_DEPENDENCIES Mesh StdObjGui
+    GUI_PLUGIN
+    HAS_NO_EXPORTS
 )

@@ -40,75 +40,75 @@ namespace Ovito::Particles {
  */
 class BondInspectionApplet : public PropertyInspectionApplet
 {
-	OVITO_CLASS(BondInspectionApplet)
-	Q_CLASSINFO("DisplayName", "Bonds");
+    OVITO_CLASS(BondInspectionApplet)
+    Q_CLASSINFO("DisplayName", "Bonds");
 
 public:
 
-	/// Constructor.
-	Q_INVOKABLE BondInspectionApplet() : PropertyInspectionApplet(BondsObject::OOClass()) {}
+    /// Constructor.
+    Q_INVOKABLE BondInspectionApplet() : PropertyInspectionApplet(BondsObject::OOClass()) {}
 
-	/// Returns the key value for this applet that is used for ordering the applet tabs.
-	virtual int orderingKey() const override { return 10; }
+    /// Returns the key value for this applet that is used for ordering the applet tabs.
+    virtual int orderingKey() const override { return 10; }
 
-	/// Lets the applet create the UI widget that is to be placed into the data inspector panel.
-	virtual QWidget* createWidget() override;
+    /// Lets the applet create the UI widget that is to be placed into the data inspector panel.
+    virtual QWidget* createWidget() override;
 
-	/// This is called when the applet is no longer visible.
-	virtual void deactivate() override;
+    /// This is called when the applet is no longer visible.
+    virtual void deactivate() override;
 
 protected:
 
-	/// Creates the evaluator object for filter expressions.
-	virtual std::unique_ptr<PropertyExpressionEvaluator> createExpressionEvaluator() override {
-		return std::make_unique<BondExpressionEvaluator>();
-	}
+    /// Creates the evaluator object for filter expressions.
+    virtual std::unique_ptr<PropertyExpressionEvaluator> createExpressionEvaluator() override {
+        return std::make_unique<BondExpressionEvaluator>();
+    }
 
 private:
 
-	/// Viewport input mode that lets the user pick bonds.
-	class PickingMode : public ViewportInputMode, BondPickingHelper
-	{
-	public:
+    /// Viewport input mode that lets the user pick bonds.
+    class PickingMode : public ViewportInputMode, BondPickingHelper
+    {
+    public:
 
-		/// Constructor.
-		PickingMode(BondInspectionApplet* applet) : ViewportInputMode(applet), _applet(applet) {}
+        /// Constructor.
+        PickingMode(BondInspectionApplet* applet) : ViewportInputMode(applet), _applet(applet) {}
 
-		/// Handles the mouse up events for a viewport.
-		virtual void mouseReleaseEvent(ViewportWindowInterface* vpwin, QMouseEvent* event) override;
+        /// Handles the mouse up events for a viewport.
+        virtual void mouseReleaseEvent(ViewportWindowInterface* vpwin, QMouseEvent* event) override;
 
-		/// Handles the mouse move event for the given viewport.
-		virtual void mouseMoveEvent(ViewportWindowInterface* vpwin, QMouseEvent* event) override;
+        /// Handles the mouse move event for the given viewport.
+        virtual void mouseMoveEvent(ViewportWindowInterface* vpwin, QMouseEvent* event) override;
 
-		/// Clears the list of picked bonds.
-		void resetSelection() {
-			if(!_pickedElements.empty()) {
-				_pickedElements.clear();
-				requestViewportUpdate();
-			}
-		}
+        /// Clears the list of picked bonds.
+        void resetSelection() {
+            if(!_pickedElements.empty()) {
+                _pickedElements.clear();
+                requestViewportUpdate();
+            }
+        }
 
-	protected:
+    protected:
 
-		/// This is called by the system after the input handler is no longer the active handler.
-		virtual void deactivated(bool temporary) override {
-			_pickedElements.clear();
-			ViewportInputMode::deactivated(temporary);
-		}
+        /// This is called by the system after the input handler is no longer the active handler.
+        virtual void deactivated(bool temporary) override {
+            _pickedElements.clear();
+            ViewportInputMode::deactivated(temporary);
+        }
 
-	private:
+    private:
 
-		/// The owner object.
-		BondInspectionApplet* _applet;
+        /// The owner object.
+        BondInspectionApplet* _applet;
 
-		/// The list of picked bonds.
-		std::vector<PickResult> _pickedElements;
-	};
+        /// The list of picked bonds.
+        std::vector<PickResult> _pickedElements;
+    };
 
 private:
 
-	/// The viewport input for picking bonds.
-	PickingMode* _pickingMode;
+    /// The viewport input for picking bonds.
+    PickingMode* _pickingMode;
 };
 
-}	// End of namespace
+}   // End of namespace

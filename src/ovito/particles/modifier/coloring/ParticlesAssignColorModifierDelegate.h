@@ -37,37 +37,37 @@ using namespace Ovito::StdMod;
  */
 class ParticlesAssignColorModifierDelegate : public AssignColorModifierDelegate
 {
-	/// Give the modifier delegate its own metaclass.
-	class ParticlesAssignColorModifierDelegateClass : public AssignColorModifierDelegate::OOMetaClass
-	{
-	public:
+    /// Give the modifier delegate its own metaclass.
+    class ParticlesAssignColorModifierDelegateClass : public AssignColorModifierDelegate::OOMetaClass
+    {
+    public:
 
-		/// Inherit constructor from base class.
-		using AssignColorModifierDelegate::OOMetaClass::OOMetaClass;
+        /// Inherit constructor from base class.
+        using AssignColorModifierDelegate::OOMetaClass::OOMetaClass;
 
-		/// Indicates which data objects in the given input data collection the modifier delegate is able to operate on.
-		virtual QVector<DataObjectReference> getApplicableObjects(const DataCollection& input) const override;
+        /// Indicates which data objects in the given input data collection the modifier delegate is able to operate on.
+        virtual QVector<DataObjectReference> getApplicableObjects(const DataCollection& input) const override;
 
-		/// Indicates which class of data objects the modifier delegate is able to operate on.
-		virtual const DataObject::OOMetaClass& getApplicableObjectClass() const override { return ParticlesObject::OOClass(); }
+        /// Indicates which class of data objects the modifier delegate is able to operate on.
+        virtual const DataObject::OOMetaClass& getApplicableObjectClass() const override { return ParticlesObject::OOClass(); }
 
-		/// The name by which Python scripts can refer to this modifier delegate.
-		virtual QString pythonDataName() const override { return QStringLiteral("particles"); }
-	};
+        /// The name by which Python scripts can refer to this modifier delegate.
+        virtual QString pythonDataName() const override { return QStringLiteral("particles"); }
+    };
 
-	OVITO_CLASS_META(ParticlesAssignColorModifierDelegate, ParticlesAssignColorModifierDelegateClass)
+    OVITO_CLASS_META(ParticlesAssignColorModifierDelegate, ParticlesAssignColorModifierDelegateClass)
 
-	Q_CLASSINFO("DisplayName", "Particles");
+    Q_CLASSINFO("DisplayName", "Particles");
 
 public:
 
-	/// Constructor.
-	Q_INVOKABLE ParticlesAssignColorModifierDelegate(ObjectCreationParams params) : AssignColorModifierDelegate(params) {}
+    /// Constructor.
+    Q_INVOKABLE ParticlesAssignColorModifierDelegate(ObjectCreationParams params) : AssignColorModifierDelegate(params) {}
 
 protected:
 
-	/// \brief returns the ID of the standard property that will receive the assigned colors.
-	virtual int outputColorPropertyId() const override { return ParticlesObject::ColorProperty; }
+    /// \brief returns the ID of the standard property that will receive the assigned colors.
+    virtual int outputColorPropertyId() const override { return ParticlesObject::ColorProperty; }
 };
 
 /**
@@ -75,37 +75,37 @@ protected:
  */
 class ParticleVectorsAssignColorModifierDelegate : public AssignColorModifierDelegate
 {
-	/// Give the modifier delegate its own metaclass.
-	class OOMetaClass : public AssignColorModifierDelegate::OOMetaClass
-	{
-	public:
+    /// Give the modifier delegate its own metaclass.
+    class OOMetaClass : public AssignColorModifierDelegate::OOMetaClass
+    {
+    public:
 
-		/// Inherit constructor from base class.
-		using AssignColorModifierDelegate::OOMetaClass::OOMetaClass;
+        /// Inherit constructor from base class.
+        using AssignColorModifierDelegate::OOMetaClass::OOMetaClass;
 
-		/// Indicates which data objects in the given input data collection the modifier delegate is able to operate on.
-		virtual QVector<DataObjectReference> getApplicableObjects(const DataCollection& input) const override;
+        /// Indicates which data objects in the given input data collection the modifier delegate is able to operate on.
+        virtual QVector<DataObjectReference> getApplicableObjects(const DataCollection& input) const override;
 
-		/// Indicates which class of data objects the modifier delegate is able to operate on.
-		virtual const DataObject::OOMetaClass& getApplicableObjectClass() const override { return ParticlesObject::OOClass(); }
+        /// Indicates which class of data objects the modifier delegate is able to operate on.
+        virtual const DataObject::OOMetaClass& getApplicableObjectClass() const override { return ParticlesObject::OOClass(); }
 
-		/// The name by which Python scripts can refer to this modifier delegate.
-		virtual QString pythonDataName() const override { return QStringLiteral("vectors"); }
-	};
+        /// The name by which Python scripts can refer to this modifier delegate.
+        virtual QString pythonDataName() const override { return QStringLiteral("vectors"); }
+    };
 
-	OVITO_CLASS_META(ParticleVectorsAssignColorModifierDelegate, OOMetaClass)
+    OVITO_CLASS_META(ParticleVectorsAssignColorModifierDelegate, OOMetaClass)
 
-	Q_CLASSINFO("DisplayName", "Particle vectors");
+    Q_CLASSINFO("DisplayName", "Particle vectors");
 
 public:
 
-	/// Constructor.
-	Q_INVOKABLE ParticleVectorsAssignColorModifierDelegate(ObjectCreationParams params) : AssignColorModifierDelegate(params) {}
+    /// Constructor.
+    Q_INVOKABLE ParticleVectorsAssignColorModifierDelegate(ObjectCreationParams params) : AssignColorModifierDelegate(params) {}
 
 protected:
 
-	/// \brief returns the ID of the standard property that will receive the assigned colors.
-	virtual int outputColorPropertyId() const override { return ParticlesObject::VectorColorProperty; }
+    /// \brief returns the ID of the standard property that will receive the assigned colors.
+    virtual int outputColorPropertyId() const override { return ParticlesObject::VectorColorProperty; }
 };
 
 /**
@@ -113,37 +113,37 @@ protected:
  */
 class BondsAssignColorModifierDelegate : public AssignColorModifierDelegate
 {
-	/// Give the modifier delegate its own metaclass.
-	class BondsAssignColorModifierDelegateClass : public AssignColorModifierDelegate::OOMetaClass
-	{
-	public:
+    /// Give the modifier delegate its own metaclass.
+    class BondsAssignColorModifierDelegateClass : public AssignColorModifierDelegate::OOMetaClass
+    {
+    public:
 
-		/// Inherit constructor from base class.
-		using AssignColorModifierDelegate::OOMetaClass::OOMetaClass;
+        /// Inherit constructor from base class.
+        using AssignColorModifierDelegate::OOMetaClass::OOMetaClass;
 
-		/// Indicates which data objects in the given input data collection the modifier delegate is able to operate on.
-		virtual QVector<DataObjectReference> getApplicableObjects(const DataCollection& input) const override;
+        /// Indicates which data objects in the given input data collection the modifier delegate is able to operate on.
+        virtual QVector<DataObjectReference> getApplicableObjects(const DataCollection& input) const override;
 
-		/// Indicates which class of data objects the modifier delegate is able to operate on.
-		virtual const DataObject::OOMetaClass& getApplicableObjectClass() const override { return BondsObject::OOClass(); }
+        /// Indicates which class of data objects the modifier delegate is able to operate on.
+        virtual const DataObject::OOMetaClass& getApplicableObjectClass() const override { return BondsObject::OOClass(); }
 
-		/// The name by which Python scripts can refer to this modifier delegate.
-		virtual QString pythonDataName() const override { return QStringLiteral("bonds"); }
-	};
+        /// The name by which Python scripts can refer to this modifier delegate.
+        virtual QString pythonDataName() const override { return QStringLiteral("bonds"); }
+    };
 
-	OVITO_CLASS_META(BondsAssignColorModifierDelegate, BondsAssignColorModifierDelegateClass)
+    OVITO_CLASS_META(BondsAssignColorModifierDelegate, BondsAssignColorModifierDelegateClass)
 
-	Q_CLASSINFO("DisplayName", "Bonds");
+    Q_CLASSINFO("DisplayName", "Bonds");
 
 public:
 
-	/// Constructor.
-	Q_INVOKABLE BondsAssignColorModifierDelegate(ObjectCreationParams params) : AssignColorModifierDelegate(params) {}
+    /// Constructor.
+    Q_INVOKABLE BondsAssignColorModifierDelegate(ObjectCreationParams params) : AssignColorModifierDelegate(params) {}
 
 protected:
 
-	/// \brief returns the ID of the standard property that will receive the computed colors.
-	virtual int outputColorPropertyId() const override { return BondsObject::ColorProperty; }
+    /// \brief returns the ID of the standard property that will receive the computed colors.
+    virtual int outputColorPropertyId() const override { return BondsObject::ColorProperty; }
 };
 
-}	// End of namespace
+}   // End of namespace

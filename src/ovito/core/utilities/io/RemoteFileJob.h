@@ -32,10 +32,10 @@ namespace Ovito {
 
 #ifdef OVITO_SSH_CLIENT
 namespace Ssh {
-	// These classes are defined elsewhere:
-	class SshConnection;
-	class ScpChannel;
-	class LsChannel;
+    // These classes are defined elsewhere:
+    class SshConnection;
+    class ScpChannel;
+    class LsChannel;
 }
 #endif
 
@@ -44,62 +44,62 @@ namespace Ssh {
  */
 class RemoteFileJob : public QObject
 {
-	Q_OBJECT
+    Q_OBJECT
 
 public:
 
-	/// Constructor.
-	RemoteFileJob(QUrl url, PromiseBase& promise);
+    /// Constructor.
+    RemoteFileJob(QUrl url, PromiseBase& promise);
 
-	/// Returns the URL being accessed.
-	const QUrl& url() const { return _url; }
+    /// Returns the URL being accessed.
+    const QUrl& url() const { return _url; }
 
     /// The associated asynchronous task of the job.
     const PromiseBase& promise() const { return _promise; }
 
 protected:
 
-	/// Opens the network connection.
-	Q_INVOKABLE void start();
+    /// Opens the network connection.
+    Q_INVOKABLE void start();
 
-	/// Closes the network connection.
-	virtual void shutdown(bool success);
+    /// Closes the network connection.
+    virtual void shutdown(bool success);
 
 protected Q_SLOTS:
 
 #ifdef OVITO_SSH_CLIENT
-	/// Handles network connection errors.
-	void connectionError();
+    /// Handles network connection errors.
+    void connectionError();
 
-	/// Handles network authentication errors.
-	void authenticationFailed();
+    /// Handles network authentication errors.
+    void authenticationFailed();
 
-	/// Is called when the network connection has been established.
+    /// Is called when the network connection has been established.
     virtual void connectionEstablished() = 0;
 #endif
 
-	/// Handles network connection cancelation by user.
-	void connectionCanceled();
+    /// Handles network connection cancelation by user.
+    void connectionCanceled();
 
-	/// Handles QNetworkReply finished signals.
-	void networkReplyFinished();
+    /// Handles QNetworkReply finished signals.
+    void networkReplyFinished();
 
-	/// Handles QNetworkReply progress signals.
-	virtual void networkReplyDownloadProgress(qint64 bytesReceived, qint64 bytesTotal) {}
+    /// Handles QNetworkReply progress signals.
+    virtual void networkReplyDownloadProgress(qint64 bytesReceived, qint64 bytesTotal) {}
 
 protected:
 
-	/// The URL of the file or directory.
-	const QUrl _url;
+    /// The URL of the file or directory.
+    const QUrl _url;
 
 #ifdef OVITO_SSH_CLIENT
-	/// The SSH connection.
-	Ovito::Ssh::SshConnection* _connection = nullptr;
+    /// The SSH connection.
+    Ovito::Ssh::SshConnection* _connection = nullptr;
 #endif
 
 #ifndef Q_OS_WASM
-	/// The Qt network request reply.
-	QNetworkReply* _networkReply = nullptr;
+    /// The Qt network request reply.
+    QNetworkReply* _networkReply = nullptr;
 #endif
 
     /// The associated asynchronous task of the job.
@@ -120,70 +120,70 @@ protected:
  */
 class DownloadRemoteFileJob : public RemoteFileJob
 {
-	Q_OBJECT
+    Q_OBJECT
 
 public:
 
-	/// Constructor.
-	DownloadRemoteFileJob(QUrl url) :
-		RemoteFileJob(std::move(url), _promise), 
-		_promise(Promise<FileHandle>::create<ProgressingTask>(false)) {}
+    /// Constructor.
+    DownloadRemoteFileJob(QUrl url) :
+        RemoteFileJob(std::move(url), _promise), 
+        _promise(Promise<FileHandle>::create<ProgressingTask>(false)) {}
 
-	/// Returns a future yielding the file downloaded by this job.
-	SharedFuture<FileHandle> sharedFuture() {
-		return _promise.sharedFuture();
-	}
+    /// Returns a future yielding the file downloaded by this job.
+    SharedFuture<FileHandle> sharedFuture() {
+        return _promise.sharedFuture();
+    }
 
 protected:
 
-	/// Closes the network connection.
-	virtual void shutdown(bool success) override;
+    /// Closes the network connection.
+    virtual void shutdown(bool success) override;
 
 #ifdef OVITO_SSH_CLIENT
-	/// Is called when the network connection has been established.
+    /// Is called when the network connection has been established.
     virtual void connectionEstablished() override;
 #endif
 
-	/// Handles QNetworkReply progress signals.
-	virtual void networkReplyDownloadProgress(qint64 bytesReceived, qint64 bytesTotal) override;
+    /// Handles QNetworkReply progress signals.
+    virtual void networkReplyDownloadProgress(qint64 bytesReceived, qint64 bytesTotal) override;
 
-	/// Writes the data received from the server so far to the local file. 
-	void storeReceivedData();
+    /// Writes the data received from the server so far to the local file. 
+    void storeReceivedData();
 
 protected Q_SLOTS:
 
 #ifdef OVITO_SSH_CLIENT
     /// Is called when the remote host starts sending the file.
-	void receivingFile(qint64 fileSize);
+    void receivingFile(qint64 fileSize);
 
     /// Is called when the remote host sent some file data.
-	void receivedData(qint64 totalReceivedBytes);
+    void receivedData(qint64 totalReceivedBytes);
 
-	/// Is called after the file has been downloaded.
-	void receivedFileComplete();
+    /// Is called after the file has been downloaded.
+    void receivedFileComplete();
 
     /// Is called when an SCP error occurs in the channel.
     void channelError();
 
-	/// Handles SSH channel close.
-	void channelClosed();
+    /// Handles SSH channel close.
+    void channelClosed();
 #endif
 
 private:
 
 #ifdef OVITO_SSH_CLIENT
-	/// The SCP channel.
+    /// The SCP channel.
     Ovito::Ssh::ScpChannel* _scpChannel = nullptr;
 #endif
 
     /// The local copy of the file.
     std::unique_ptr<QTemporaryFile> _localFile;
 
-	/// The memory-mapped destination file.
-	uchar* _fileMapping = nullptr;
+    /// The memory-mapped destination file.
+    uchar* _fileMapping = nullptr;
 
-	/// The promise through which the result of this download job is returned.
-	Promise<FileHandle> _promise;
+    /// The promise through which the result of this download job is returned.
+    Promise<FileHandle> _promise;
 };
 
 /**
@@ -191,27 +191,27 @@ private:
  */
 class ListRemoteDirectoryJob : public RemoteFileJob
 {
-	Q_OBJECT
+    Q_OBJECT
 
 public:
 
-	/// Constructor.
-	ListRemoteDirectoryJob(QUrl url) :
-		RemoteFileJob(std::move(url), _promise), 
-		_promise(Promise<QStringList>::create<ProgressingTask>(false)) {}
+    /// Constructor.
+    ListRemoteDirectoryJob(QUrl url) :
+        RemoteFileJob(std::move(url), _promise), 
+        _promise(Promise<QStringList>::create<ProgressingTask>(false)) {}
 
-	/// Returns a future yielding the file list downloaded by this job.
-	Future<QStringList> future() {
-		return _promise.future();
-	}
+    /// Returns a future yielding the file list downloaded by this job.
+    Future<QStringList> future() {
+        return _promise.future();
+    }
 
 protected:
 
-	/// Closes the network connection.
-	virtual void shutdown(bool success) override;
+    /// Closes the network connection.
+    virtual void shutdown(bool success) override;
 
 #ifdef OVITO_SSH_CLIENT
-	/// Is called when the network connection has been established.
+    /// Is called when the network connection has been established.
     virtual void connectionEstablished() override;
 #endif
 
@@ -227,19 +227,19 @@ protected Q_SLOTS:
     /// Is called when an error occurs in the SSH channel.
     void channelError();
 
-	/// Handles SSH channel close.
-	void channelClosed();
+    /// Handles SSH channel close.
+    void channelClosed();
 #endif
 
 private:
 
 #ifdef OVITO_SSH_CLIENT
-	/// The listing channel.
+    /// The listing channel.
     Ovito::Ssh::LsChannel* _lsChannel = nullptr;
 #endif
 
-	/// The promise through which the result of this job is returned.
-	Promise<QStringList> _promise;
+    /// The promise through which the result of this job is returned.
+    Promise<QStringList> _promise;
 };
 
-}	// End of namespace
+}   // End of namespace

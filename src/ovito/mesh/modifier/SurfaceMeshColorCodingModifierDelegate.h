@@ -36,37 +36,37 @@ using namespace Ovito::StdMod;
  */
 class OVITO_MESHMOD_EXPORT SurfaceMeshVerticesColorCodingModifierDelegate : public ColorCodingModifierDelegate
 {
-	/// Give the modifier delegate its own metaclass.
-	class OOMetaClass : public ColorCodingModifierDelegate::OOMetaClass
-	{
-	public:
+    /// Give the modifier delegate its own metaclass.
+    class OOMetaClass : public ColorCodingModifierDelegate::OOMetaClass
+    {
+    public:
 
-		/// Inherit constructor from base class.
-		using ColorCodingModifierDelegate::OOMetaClass::OOMetaClass;
+        /// Inherit constructor from base class.
+        using ColorCodingModifierDelegate::OOMetaClass::OOMetaClass;
 
-		/// Indicates which data objects in the given input data collection the modifier delegate is able to operate on.
-		virtual QVector<DataObjectReference> getApplicableObjects(const DataCollection& input) const override;
+        /// Indicates which data objects in the given input data collection the modifier delegate is able to operate on.
+        virtual QVector<DataObjectReference> getApplicableObjects(const DataCollection& input) const override;
 
-		/// Indicates which class of data objects the modifier delegate is able to operate on.
-		virtual const DataObject::OOMetaClass& getApplicableObjectClass() const override { return SurfaceMeshVertices::OOClass(); }
+        /// Indicates which class of data objects the modifier delegate is able to operate on.
+        virtual const DataObject::OOMetaClass& getApplicableObjectClass() const override { return SurfaceMeshVertices::OOClass(); }
 
-		/// The name by which Python scripts can refer to this modifier delegate.
-		virtual QString pythonDataName() const override { return QStringLiteral("surface_vertices"); }
-	};
+        /// The name by which Python scripts can refer to this modifier delegate.
+        virtual QString pythonDataName() const override { return QStringLiteral("surface_vertices"); }
+    };
 
-	OVITO_CLASS_META(SurfaceMeshVerticesColorCodingModifierDelegate, OOMetaClass)
+    OVITO_CLASS_META(SurfaceMeshVerticesColorCodingModifierDelegate, OOMetaClass)
 
-	Q_CLASSINFO("DisplayName", "Mesh Vertices");
+    Q_CLASSINFO("DisplayName", "Mesh Vertices");
 
 public:
 
-	/// Constructor.
-	Q_INVOKABLE SurfaceMeshVerticesColorCodingModifierDelegate(ObjectCreationParams params) : ColorCodingModifierDelegate(params) {}
+    /// Constructor.
+    Q_INVOKABLE SurfaceMeshVerticesColorCodingModifierDelegate(ObjectCreationParams params) : ColorCodingModifierDelegate(params) {}
 
 protected:
 
-	/// \brief returns the ID of the standard property that will receive the computed colors.
-	virtual int outputColorPropertyId() const override { return SurfaceMeshVertices::ColorProperty; }
+    /// \brief returns the ID of the standard property that will receive the computed colors.
+    virtual int outputColorPropertyId() const override { return SurfaceMeshVertices::ColorProperty; }
 };
 
 /**
@@ -74,37 +74,37 @@ protected:
  */
 class OVITO_MESHMOD_EXPORT SurfaceMeshFacesColorCodingModifierDelegate : public ColorCodingModifierDelegate
 {
-	/// Give the modifier delegate its own metaclass.
-	class OOMetaClass : public ColorCodingModifierDelegate::OOMetaClass
-	{
-	public:
+    /// Give the modifier delegate its own metaclass.
+    class OOMetaClass : public ColorCodingModifierDelegate::OOMetaClass
+    {
+    public:
 
-		/// Inherit constructor from base class.
-		using ColorCodingModifierDelegate::OOMetaClass::OOMetaClass;
+        /// Inherit constructor from base class.
+        using ColorCodingModifierDelegate::OOMetaClass::OOMetaClass;
 
-		/// Indicates which data objects in the given input data collection the modifier delegate is able to operate on.
-		virtual QVector<DataObjectReference> getApplicableObjects(const DataCollection& input) const override;
+        /// Indicates which data objects in the given input data collection the modifier delegate is able to operate on.
+        virtual QVector<DataObjectReference> getApplicableObjects(const DataCollection& input) const override;
 
-		/// Indicates which class of data objects the modifier delegate is able to operate on.
-		virtual const DataObject::OOMetaClass& getApplicableObjectClass() const override { return SurfaceMeshFaces::OOClass(); }
+        /// Indicates which class of data objects the modifier delegate is able to operate on.
+        virtual const DataObject::OOMetaClass& getApplicableObjectClass() const override { return SurfaceMeshFaces::OOClass(); }
 
-		/// The name by which Python scripts can refer to this modifier delegate.
-		virtual QString pythonDataName() const override { return QStringLiteral("surface_faces"); }
-	};
+        /// The name by which Python scripts can refer to this modifier delegate.
+        virtual QString pythonDataName() const override { return QStringLiteral("surface_faces"); }
+    };
 
-	OVITO_CLASS_META(SurfaceMeshFacesColorCodingModifierDelegate, OOMetaClass)
+    OVITO_CLASS_META(SurfaceMeshFacesColorCodingModifierDelegate, OOMetaClass)
 
-	Q_CLASSINFO("DisplayName", "Mesh Faces");
+    Q_CLASSINFO("DisplayName", "Mesh Faces");
 
 public:
 
-	/// Constructor.
-	Q_INVOKABLE SurfaceMeshFacesColorCodingModifierDelegate(ObjectCreationParams params) : ColorCodingModifierDelegate(params) {}
+    /// Constructor.
+    Q_INVOKABLE SurfaceMeshFacesColorCodingModifierDelegate(ObjectCreationParams params) : ColorCodingModifierDelegate(params) {}
 
 protected:
 
-	/// \brief returns the ID of the standard property that will receive the computed colors.
-	virtual int outputColorPropertyId() const override { return SurfaceMeshFaces::ColorProperty; }
+    /// \brief returns the ID of the standard property that will receive the computed colors.
+    virtual int outputColorPropertyId() const override { return SurfaceMeshFaces::ColorProperty; }
 };
 
 /**
@@ -112,37 +112,37 @@ protected:
  */
 class OVITO_MESHMOD_EXPORT SurfaceMeshRegionsColorCodingModifierDelegate : public ColorCodingModifierDelegate
 {
-	/// Give the modifier delegate its own metaclass.
-	class OOMetaClass : public ColorCodingModifierDelegate::OOMetaClass
-	{
-	public:
+    /// Give the modifier delegate its own metaclass.
+    class OOMetaClass : public ColorCodingModifierDelegate::OOMetaClass
+    {
+    public:
 
-		/// Inherit constructor from base class.
-		using ColorCodingModifierDelegate::OOMetaClass::OOMetaClass;
+        /// Inherit constructor from base class.
+        using ColorCodingModifierDelegate::OOMetaClass::OOMetaClass;
 
-		/// Indicates which data objects in the given input data collection the modifier delegate is able to operate on.
-		virtual QVector<DataObjectReference> getApplicableObjects(const DataCollection& input) const override;
+        /// Indicates which data objects in the given input data collection the modifier delegate is able to operate on.
+        virtual QVector<DataObjectReference> getApplicableObjects(const DataCollection& input) const override;
 
-		/// Indicates which class of data objects the modifier delegate is able to operate on.
-		virtual const DataObject::OOMetaClass& getApplicableObjectClass() const override { return SurfaceMeshRegions::OOClass(); }
+        /// Indicates which class of data objects the modifier delegate is able to operate on.
+        virtual const DataObject::OOMetaClass& getApplicableObjectClass() const override { return SurfaceMeshRegions::OOClass(); }
 
-		/// The name by which Python scripts can refer to this modifier delegate.
-		virtual QString pythonDataName() const override { return QStringLiteral("surface_regions"); }
-	};
+        /// The name by which Python scripts can refer to this modifier delegate.
+        virtual QString pythonDataName() const override { return QStringLiteral("surface_regions"); }
+    };
 
-	OVITO_CLASS_META(SurfaceMeshRegionsColorCodingModifierDelegate, OOMetaClass)
+    OVITO_CLASS_META(SurfaceMeshRegionsColorCodingModifierDelegate, OOMetaClass)
 
-	Q_CLASSINFO("DisplayName", "Mesh Regions");
+    Q_CLASSINFO("DisplayName", "Mesh Regions");
 
 public:
 
-	/// Constructor.
-	Q_INVOKABLE SurfaceMeshRegionsColorCodingModifierDelegate(ObjectCreationParams params) : ColorCodingModifierDelegate(params) {}
+    /// Constructor.
+    Q_INVOKABLE SurfaceMeshRegionsColorCodingModifierDelegate(ObjectCreationParams params) : ColorCodingModifierDelegate(params) {}
 
 protected:
 
-	/// \brief returns the ID of the standard property that will receive the computed colors.
-	virtual int outputColorPropertyId() const override { return SurfaceMeshRegions::ColorProperty; }
+    /// \brief returns the ID of the standard property that will receive the computed colors.
+    virtual int outputColorPropertyId() const override { return SurfaceMeshRegions::ColorProperty; }
 };
 
-}	// End of namespace
+}   // End of namespace

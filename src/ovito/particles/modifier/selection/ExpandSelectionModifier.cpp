@@ -50,10 +50,10 @@ SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(ExpandSelectionModifier, numberOfIterations
 * Constructs the modifier object.
 ******************************************************************************/
 ExpandSelectionModifier::ExpandSelectionModifier(ObjectCreationParams params) : AsynchronousModifier(params),
-	_mode(CutoffRange),
-	_cutoffRange(3.2),
-	_numNearestNeighbors(1),
-	_numberOfIterations(1)
+    _mode(CutoffRange),
+    _cutoffRange(3.2),
+    _numNearestNeighbors(1),
+    _numberOfIterations(1)
 {
 }
 
@@ -62,7 +62,7 @@ ExpandSelectionModifier::ExpandSelectionModifier(ObjectCreationParams params) : 
 ******************************************************************************/
 bool ExpandSelectionModifier::OOMetaClass::isApplicableTo(const DataCollection& input) const
 {
-	return input.containsObject<ParticlesObject>();
+    return input.containsObject<ParticlesObject>();
 }
 
 /******************************************************************************
@@ -71,33 +71,33 @@ bool ExpandSelectionModifier::OOMetaClass::isApplicableTo(const DataCollection& 
 ******************************************************************************/
 Future<AsynchronousModifier::EnginePtr> ExpandSelectionModifier::createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input)
 {
-	// Get the input particles.
-	const ParticlesObject* particles = input.expectObject<ParticlesObject>();
-	particles->verifyIntegrity();
+    // Get the input particles.
+    const ParticlesObject* particles = input.expectObject<ParticlesObject>();
+    particles->verifyIntegrity();
 
-	// Get the particle positions.
-	const PropertyObject* posProperty = particles->expectProperty(ParticlesObject::PositionProperty);
+    // Get the particle positions.
+    const PropertyObject* posProperty = particles->expectProperty(ParticlesObject::PositionProperty);
 
-	// Get the current particle selection.
-	const PropertyObject* inputSelection = particles->expectProperty(ParticlesObject::SelectionProperty);
+    // Get the current particle selection.
+    const PropertyObject* inputSelection = particles->expectProperty(ParticlesObject::SelectionProperty);
 
-	// Get simulation cell.
-	const SimulationCellObject* inputCell = input.expectObject<SimulationCellObject>();
+    // Get simulation cell.
+    const SimulationCellObject* inputCell = input.expectObject<SimulationCellObject>();
 
-	// Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
-	if(mode() == CutoffRange) {
-		return std::make_shared<ExpandSelectionCutoffEngine>(request, particles, posProperty, inputCell, inputSelection, numberOfIterations(), cutoffRange());
-	}
-	else if(mode() == NearestNeighbors) {
-		return std::make_shared<ExpandSelectionNearestEngine>(request, particles, posProperty, inputCell, inputSelection, numberOfIterations(), numNearestNeighbors());
-	}
-	else if(mode() == BondedNeighbors) {
-		particles->expectBonds()->verifyIntegrity();
-		return std::make_shared<ExpandSelectionBondedEngine>(request, particles, posProperty, inputCell, inputSelection, numberOfIterations(), particles->expectBondsTopology());
-	}
-	else {
-		throw Exception(tr("Invalid selection expansion mode."));
-	}
+    // Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
+    if(mode() == CutoffRange) {
+        return std::make_shared<ExpandSelectionCutoffEngine>(request, particles, posProperty, inputCell, inputSelection, numberOfIterations(), cutoffRange());
+    }
+    else if(mode() == NearestNeighbors) {
+        return std::make_shared<ExpandSelectionNearestEngine>(request, particles, posProperty, inputCell, inputSelection, numberOfIterations(), numNearestNeighbors());
+    }
+    else if(mode() == BondedNeighbors) {
+        particles->expectBonds()->verifyIntegrity();
+        return std::make_shared<ExpandSelectionBondedEngine>(request, particles, posProperty, inputCell, inputSelection, numberOfIterations(), particles->expectBondsTopology());
+    }
+    else {
+        throw Exception(tr("Invalid selection expansion mode."));
+    }
 }
 
 /******************************************************************************
@@ -105,28 +105,28 @@ Future<AsynchronousModifier::EnginePtr> ExpandSelectionModifier::createEngine(co
 ******************************************************************************/
 void ExpandSelectionModifier::ExpandSelectionEngine::perform()
 {
-	setProgressText(tr("Expanding particle selection"));
+    setProgressText(tr("Expanding particle selection"));
 
-	setNumSelectedParticlesInput(_inputSelection->size() - boost::count(ConstPropertyAccess<int>(_inputSelection), 0));
+    setNumSelectedParticlesInput(_inputSelection->size() - boost::count(ConstPropertyAccess<int>(_inputSelection), 0));
 
-	beginProgressSubSteps(_numIterations);
-	for(int i = 0; i < _numIterations; i++) {
-		if(i != 0) {
-			_inputSelection = outputSelection();
-			setOutputSelection(_inputSelection.makeCopy());
-			nextProgressSubStep();
-		}
-		expandSelection();
-		if(isCanceled()) return;
-	}
-	endProgressSubSteps();
+    beginProgressSubSteps(_numIterations);
+    for(int i = 0; i < _numIterations; i++) {
+        if(i != 0) {
+            _inputSelection = outputSelection();
+            setOutputSelection(_inputSelection.makeCopy());
+            nextProgressSubStep();
+        }
+        expandSelection();
+        if(isCanceled()) return;
+    }
+    endProgressSubSteps();
 
-	setNumSelectedParticlesOutput(outputSelection()->size() - boost::count(ConstPropertyAccess<int>(outputSelection()), 0));
+    setNumSelectedParticlesOutput(outputSelection()->size() - boost::count(ConstPropertyAccess<int>(outputSelection()), 0));
 
-	// Release data that is no longer needed.
-	_positions.reset();
-	_inputSelection.reset();
-	_simCell.reset();
+    // Release data that is no longer needed.
+    _positions.reset();
+    _inputSelection.reset();
+    _simCell.reset();
 }
 
 /******************************************************************************
@@ -134,28 +134,28 @@ void ExpandSelectionModifier::ExpandSelectionEngine::perform()
 ******************************************************************************/
 void ExpandSelectionModifier::ExpandSelectionNearestEngine::expandSelection()
 {
-	if(_numNearestNeighbors > MAX_NEAREST_NEIGHBORS)
-		throw Exception(tr("Invalid parameter. The expand selection modifier can expand the selection only to the %1 nearest neighbors of particles. This limit is set at compile time.").arg(MAX_NEAREST_NEIGHBORS));
+    if(_numNearestNeighbors > MAX_NEAREST_NEIGHBORS)
+        throw Exception(tr("Invalid parameter. The expand selection modifier can expand the selection only to the %1 nearest neighbors of particles. This limit is set at compile time.").arg(MAX_NEAREST_NEIGHBORS));
 
-	// Prepare the neighbor list.
-	NearestNeighborFinder neighFinder(_numNearestNeighbors);
-	if(!neighFinder.prepare(positions(), simCell(), {}))
-		return;
+    // Prepare the neighbor list.
+    NearestNeighborFinder neighFinder(_numNearestNeighbors);
+    if(!neighFinder.prepare(positions(), simCell(), {}))
+        return;
 
-	OVITO_ASSERT(inputSelection() != outputSelection());
-	ConstPropertyAccess<int> inputSelectionArray(inputSelection());
-	PropertyAccess<int> outputSelectionArray(outputSelection());
-	parallelForWithProgress(positions()->size(), [&](size_t index) {
-		if(!inputSelectionArray[index]) return;
+    OVITO_ASSERT(inputSelection() != outputSelection());
+    ConstPropertyAccess<int> inputSelectionArray(inputSelection());
+    PropertyAccess<int> outputSelectionArray(outputSelection());
+    parallelForWithProgress(positions()->size(), [&](size_t index) {
+        if(!inputSelectionArray[index]) return;
 
-		NearestNeighborFinder::Query<MAX_NEAREST_NEIGHBORS> neighQuery(neighFinder);
-		neighQuery.findNeighbors(index);
-		OVITO_ASSERT(neighQuery.results().size() <= _numNearestNeighbors);
+        NearestNeighborFinder::Query<MAX_NEAREST_NEIGHBORS> neighQuery(neighFinder);
+        neighQuery.findNeighbors(index);
+        OVITO_ASSERT(neighQuery.results().size() <= _numNearestNeighbors);
 
-		for(auto n = neighQuery.results().begin(); n != neighQuery.results().end(); ++n) {
-			outputSelectionArray[n->index] = 1;
-		}
-	});
+        for(auto n = neighQuery.results().begin(); n != neighQuery.results().end(); ++n) {
+            outputSelectionArray[n->index] = 1;
+        }
+    });
 }
 
 /******************************************************************************
@@ -163,21 +163,21 @@ void ExpandSelectionModifier::ExpandSelectionNearestEngine::expandSelection()
 ******************************************************************************/
 void ExpandSelectionModifier::ExpandSelectionBondedEngine::expandSelection()
 {
-	PropertyAccess<int> outputSelectionArray(outputSelection());
-	ConstPropertyAccess<int> inputSelectionArray(inputSelection());
-	ConstPropertyAccess<ParticleIndexPair> bondTopologyArray(_bondTopology);
+    PropertyAccess<int> outputSelectionArray(outputSelection());
+    ConstPropertyAccess<int> inputSelectionArray(inputSelection());
+    ConstPropertyAccess<ParticleIndexPair> bondTopologyArray(_bondTopology);
 
-	size_t particleCount = inputSelection()->size();
-	parallelForWithProgress(_bondTopology->size(), [&](size_t index) {
-		size_t index1 = bondTopologyArray[index][0];
-		size_t index2 = bondTopologyArray[index][1];
-		if(index1 >= particleCount || index2 >= particleCount)
-			return;
-		if(inputSelectionArray[index1])
-			outputSelectionArray[index2] = 1;
-		if(inputSelectionArray[index2])
-			outputSelectionArray[index1] = 1;
-	});
+    size_t particleCount = inputSelection()->size();
+    parallelForWithProgress(_bondTopology->size(), [&](size_t index) {
+        size_t index1 = bondTopologyArray[index][0];
+        size_t index2 = bondTopologyArray[index][1];
+        if(index1 >= particleCount || index2 >= particleCount)
+            return;
+        if(inputSelectionArray[index1])
+            outputSelectionArray[index2] = 1;
+        if(inputSelectionArray[index2])
+            outputSelectionArray[index1] = 1;
+    });
 }
 
 /******************************************************************************
@@ -185,20 +185,20 @@ void ExpandSelectionModifier::ExpandSelectionBondedEngine::expandSelection()
 ******************************************************************************/
 void ExpandSelectionModifier::ExpandSelectionCutoffEngine::expandSelection()
 {
-	// Prepare the neighbor list.
-	CutoffNeighborFinder neighborListBuilder;
-	if(!neighborListBuilder.prepare(_cutoffRange, positions(), simCell(), {}))
-		return;
+    // Prepare the neighbor list.
+    CutoffNeighborFinder neighborListBuilder;
+    if(!neighborListBuilder.prepare(_cutoffRange, positions(), simCell(), {}))
+        return;
 
-	PropertyAccess<int> outputSelectionArray(outputSelection());
-	ConstPropertyAccess<int> inputSelectionArray(inputSelection());
+    PropertyAccess<int> outputSelectionArray(outputSelection());
+    ConstPropertyAccess<int> inputSelectionArray(inputSelection());
 
-	parallelForWithProgress(positions()->size(), [&](size_t index) {
-		if(!inputSelectionArray[index]) return;
-		for(CutoffNeighborFinder::Query neighQuery(neighborListBuilder, index); !neighQuery.atEnd(); neighQuery.next()) {
-			outputSelectionArray[neighQuery.current()] = 1;
-		}
-	});
+    parallelForWithProgress(positions()->size(), [&](size_t index) {
+        if(!inputSelectionArray[index]) return;
+        for(CutoffNeighborFinder::Query neighQuery(neighborListBuilder, index); !neighQuery.atEnd(); neighQuery.next()) {
+            outputSelectionArray[neighQuery.current()] = 1;
+        }
+    });
 }
 
 /******************************************************************************
@@ -206,21 +206,21 @@ void ExpandSelectionModifier::ExpandSelectionCutoffEngine::expandSelection()
 ******************************************************************************/
 void ExpandSelectionModifier::ExpandSelectionEngine::applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state)
 {
-	// Get the output particles.
-	ParticlesObject* particles = state.expectMutableObject<ParticlesObject>();
-	if(_inputFingerprint.hasChanged(particles))
-		throw Exception(tr("Cached modifier results are obsolete, because the number or the storage order of input particles has changed."));
+    // Get the output particles.
+    ParticlesObject* particles = state.expectMutableObject<ParticlesObject>();
+    if(_inputFingerprint.hasChanged(particles))
+        throw Exception(tr("Cached modifier results are obsolete, because the number or the storage order of input particles has changed."));
 
-	// Output the selection property.
-	particles->createProperty(outputSelection());
+    // Output the selection property.
+    particles->createProperty(outputSelection());
 
-	QString msg = tr("Added %1 particles to selection.\n"
-			"Old selection count was: %2\n"
-			"New selection count is: %3")
-					.arg(numSelectedParticlesOutput() - numSelectedParticlesInput())
-					.arg(numSelectedParticlesInput())
-					.arg(numSelectedParticlesOutput());
-	state.setStatus(PipelineStatus(PipelineStatus::Success, std::move(msg)));
+    QString msg = tr("Added %1 particles to selection.\n"
+            "Old selection count was: %2\n"
+            "New selection count is: %3")
+                    .arg(numSelectedParticlesOutput() - numSelectedParticlesInput())
+                    .arg(numSelectedParticlesInput())
+                    .arg(numSelectedParticlesOutput());
+    state.setStatus(PipelineStatus(PipelineStatus::Success, std::move(msg)));
 }
 
-}	// End of namespace
+}   // End of namespace

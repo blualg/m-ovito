@@ -33,10 +33,10 @@ static QThreadStorage<OpenGLResourceManager*> glContextManagerStorage;
 
 OpenGLResourceManager* OpenGLResourceManager::instance() 
 {
-	if(!glContextManagerStorage.hasLocalData()) {
-		glContextManagerStorage.setLocalData(new OpenGLResourceManager());
-	}
-	return glContextManagerStorage.localData();
+    if(!glContextManagerStorage.hasLocalData()) {
+        glContextManagerStorage.setLocalData(new OpenGLResourceManager());
+    }
+    return glContextManagerStorage.localData();
 }
 
 /******************************************************************************
@@ -44,21 +44,21 @@ OpenGLResourceManager* OpenGLResourceManager::instance()
 ******************************************************************************/
 QOpenGLTexture* OpenGLResourceManager::uploadImage(const QImage& image, ResourceFrameHandle resourceFrame, QOpenGLTexture::MipMapGeneration genMipMaps)
 {
-	OVITO_ASSERT(!image.isNull());
+    OVITO_ASSERT(!image.isNull());
 
     // Check if this image has already been uploaded to the GPU.
-	RendererResourceKey<struct ImageCache, quint64, QOpenGLContextGroup*> cacheKey{ image.cacheKey(), QOpenGLContextGroup::currentContextGroup() };
+    RendererResourceKey<struct ImageCache, quint64, QOpenGLContextGroup*> cacheKey{ image.cacheKey(), QOpenGLContextGroup::currentContextGroup() };
     std::unique_ptr<OpenGLTexture>& texture = lookup<std::unique_ptr<OpenGLTexture>>(cacheKey, resourceFrame);
 
-	// Create the texture object.
+    // Create the texture object.
     if(!texture || !texture->isCreated()) {
-		texture = std::make_unique<OpenGLTexture>(image, genMipMaps);
-		if(genMipMaps == QOpenGLTexture::DontGenerateMipMaps) {
-			texture->setMinMagFilters(QOpenGLTexture::Nearest, QOpenGLTexture::Nearest);
-		}
-	}
+        texture = std::make_unique<OpenGLTexture>(image, genMipMaps);
+        if(genMipMaps == QOpenGLTexture::DontGenerateMipMaps) {
+            texture->setMinMagFilters(QOpenGLTexture::Nearest, QOpenGLTexture::Nearest);
+        }
+    }
 
-	return texture.get();
+    return texture.get();
 }
 
 /******************************************************************************
@@ -67,40 +67,40 @@ QOpenGLTexture* OpenGLResourceManager::uploadImage(const QImage& image, Resource
 QOpenGLTexture* OpenGLResourceManager::uploadColorMap(ColorCodingGradient* gradient, ResourceFrameHandle resourceFrame)
 {
     // Check if this color map has already been uploaded to the GPU.
-	RendererResourceKey<struct ColorMapCache, OORef<ColorCodingGradient>, QOpenGLContextGroup*> cacheKey{ gradient, QOpenGLContextGroup::currentContextGroup() };
+    RendererResourceKey<struct ColorMapCache, OORef<ColorCodingGradient>, QOpenGLContextGroup*> cacheKey{ gradient, QOpenGLContextGroup::currentContextGroup() };
     std::unique_ptr<OpenGLTexture>& texture = lookup<std::unique_ptr<OpenGLTexture>>(cacheKey, resourceFrame);
 
     if(!texture || !texture->isCreated()) {
-		// Sample the color gradient to produce a row of RGB pixel data.
-		int resolution;
-		std::vector<uint8_t> pixelData;
+        // Sample the color gradient to produce a row of RGB pixel data.
+        int resolution;
+        std::vector<uint8_t> pixelData;
 
-		if(gradient) {
-			resolution = 256;
-			pixelData.resize(resolution * 3);
-			for(int x = 0; x < resolution; x++) {
-				Color c = gradient->valueToColor((FloatType)x / (resolution - 1));
-				pixelData[x * 3 + 0] = (uint8_t)(255 * c.r());
-				pixelData[x * 3 + 1] = (uint8_t)(255 * c.g());
-				pixelData[x * 3 + 2] = (uint8_t)(255 * c.b());
-			}
-		}
-		else {
-			resolution = 1;
-			pixelData.resize(3, 255);
-		}
+        if(gradient) {
+            resolution = 256;
+            pixelData.resize(resolution * 3);
+            for(int x = 0; x < resolution; x++) {
+                Color c = gradient->valueToColor((FloatType)x / (resolution - 1));
+                pixelData[x * 3 + 0] = (uint8_t)(255 * c.r());
+                pixelData[x * 3 + 1] = (uint8_t)(255 * c.g());
+                pixelData[x * 3 + 2] = (uint8_t)(255 * c.b());
+            }
+        }
+        else {
+            resolution = 1;
+            pixelData.resize(3, 255);
+        }
 
-		// Create the 1-d texture object.
-		texture = std::make_unique<OpenGLTexture>(QOpenGLTexture::Target1D);
-		texture->setFormat(QOpenGLTexture::RGB8_UNorm);
-		texture->setSize(resolution);
-		texture->allocateStorage(QOpenGLTexture::RGB, QOpenGLTexture::UInt8);
-		texture->setAutoMipMapGenerationEnabled(true);
-		texture->setWrapMode(QOpenGLTexture::ClampToEdge);
-		texture->setData(QOpenGLTexture::RGB, QOpenGLTexture::UInt8, pixelData.data());
-	}
+        // Create the 1-d texture object.
+        texture = std::make_unique<OpenGLTexture>(QOpenGLTexture::Target1D);
+        texture->setFormat(QOpenGLTexture::RGB8_UNorm);
+        texture->setSize(resolution);
+        texture->allocateStorage(QOpenGLTexture::RGB, QOpenGLTexture::UInt8);
+        texture->setAutoMipMapGenerationEnabled(true);
+        texture->setWrapMode(QOpenGLTexture::ClampToEdge);
+        texture->setData(QOpenGLTexture::RGB, QOpenGLTexture::UInt8, pixelData.data());
+    }
 
-	return texture.get();
+    return texture.get();
 }
 
-}	// End of namespace
+}   // End of namespace

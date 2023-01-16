@@ -36,24 +36,24 @@ SET_OVITO_OBJECT_EDITOR(BurgersVectorFamily, BurgersVectorFamilyEditor);
 ******************************************************************************/
 void BurgersVectorFamilyEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 {
-	// Create a rollout.
-	QWidget* rollout = createRollout(tr("Burgers vector family"), rolloutParams);
+    // Create a rollout.
+    QWidget* rollout = createRollout(tr("Burgers vector family"), rolloutParams);
 
     // Create the rollout contents.
-	QGridLayout* layout1 = new QGridLayout(rollout);
-	layout1->setContentsMargins(4,4,4,4);
-	layout1->setSpacing(4);
-	layout1->setColumnStretch(1, 1);
+    QGridLayout* layout1 = new QGridLayout(rollout);
+    layout1->setContentsMargins(4,4,4,4);
+    layout1->setSpacing(4);
+    layout1->setColumnStretch(1, 1);
 
-	// Text box for the name of type.
-	StringParameterUI* namePUI = new StringParameterUI(this, PROPERTY_FIELD(BurgersVectorFamily::name));
-	layout1->addWidget(new QLabel(tr("Name:")), 0, 0);
-	layout1->addWidget(namePUI->textBox(), 0, 1);
+    // Text box for the name of type.
+    StringParameterUI* namePUI = new StringParameterUI(this, PROPERTY_FIELD(BurgersVectorFamily::name));
+    layout1->addWidget(new QLabel(tr("Name:")), 0, 0);
+    layout1->addWidget(namePUI->textBox(), 0, 1);
 
-	// Color parameter.
-	ColorParameterUI* colorPUI = new ColorParameterUI(this, PROPERTY_FIELD(BurgersVectorFamily::color));
-	layout1->addWidget(colorPUI->label(), 1, 0);
-	layout1->addWidget(colorPUI->colorPicker(), 1, 1);
+    // Color parameter.
+    ColorParameterUI* colorPUI = new ColorParameterUI(this, PROPERTY_FIELD(BurgersVectorFamily::color));
+    layout1->addWidget(colorPUI->label(), 1, 0);
+    layout1->addWidget(colorPUI->colorPicker(), 1, 1);
 }
 
-}	// End of namespace
+}   // End of namespace

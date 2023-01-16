@@ -35,32 +35,32 @@ using namespace Ovito::StdMod;
  */
 class ParticlesAffineTransformationModifierDelegate : public AffineTransformationModifierDelegate
 {
-	/// Give the modifier delegate its own metaclass.
-	class OOMetaClass : public AffineTransformationModifierDelegate::OOMetaClass
-	{
-	public:
+    /// Give the modifier delegate its own metaclass.
+    class OOMetaClass : public AffineTransformationModifierDelegate::OOMetaClass
+    {
+    public:
 
-		/// Inherit constructor from base class.
-		using AffineTransformationModifierDelegate::OOMetaClass::OOMetaClass;
+        /// Inherit constructor from base class.
+        using AffineTransformationModifierDelegate::OOMetaClass::OOMetaClass;
 
-		/// Indicates which data objects in the given input data collection the modifier delegate is able to operate on.
-		virtual QVector<DataObjectReference> getApplicableObjects(const DataCollection& input) const override;
+        /// Indicates which data objects in the given input data collection the modifier delegate is able to operate on.
+        virtual QVector<DataObjectReference> getApplicableObjects(const DataCollection& input) const override;
 
-		/// The name by which Python scripts can refer to this modifier delegate.
-		virtual QString pythonDataName() const override { return QStringLiteral("particles"); }
-	};
+        /// The name by which Python scripts can refer to this modifier delegate.
+        virtual QString pythonDataName() const override { return QStringLiteral("particles"); }
+    };
 
-	OVITO_CLASS_META(ParticlesAffineTransformationModifierDelegate, OOMetaClass)
+    OVITO_CLASS_META(ParticlesAffineTransformationModifierDelegate, OOMetaClass)
 
-	Q_CLASSINFO("DisplayName", "Particles");
+    Q_CLASSINFO("DisplayName", "Particles");
 
 public:
 
-	/// Constructor.
-	Q_INVOKABLE ParticlesAffineTransformationModifierDelegate(ObjectCreationParams params) : AffineTransformationModifierDelegate(params) {}
+    /// Constructor.
+    Q_INVOKABLE ParticlesAffineTransformationModifierDelegate(ObjectCreationParams params) : AffineTransformationModifierDelegate(params) {}
 
-	/// Applies the modifier operation to the data in a pipeline flow state.
-	virtual PipelineStatus apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const PipelineFlowState& inputState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs) override;
+    /// Applies the modifier operation to the data in a pipeline flow state.
+    virtual PipelineStatus apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const PipelineFlowState& inputState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs) override;
 };
 
 /**
@@ -68,37 +68,37 @@ public:
  */
 class VectorParticlePropertiesAffineTransformationModifierDelegate : public AffineTransformationModifierDelegate
 {
-	/// Give the modifier delegate its own metaclass.
-	class OOMetaClass : public AffineTransformationModifierDelegate::OOMetaClass
-	{
-	public:
+    /// Give the modifier delegate its own metaclass.
+    class OOMetaClass : public AffineTransformationModifierDelegate::OOMetaClass
+    {
+    public:
 
-		/// Inherit constructor from base class.
-		using AffineTransformationModifierDelegate::OOMetaClass::OOMetaClass;
+        /// Inherit constructor from base class.
+        using AffineTransformationModifierDelegate::OOMetaClass::OOMetaClass;
 
-		/// Indicates which data objects in the given input data collection the modifier delegate is able to operate on.
-		virtual QVector<DataObjectReference> getApplicableObjects(const DataCollection& input) const override;
+        /// Indicates which data objects in the given input data collection the modifier delegate is able to operate on.
+        virtual QVector<DataObjectReference> getApplicableObjects(const DataCollection& input) const override;
 
-		/// The name by which Python scripts can refer to this modifier delegate.
-		virtual QString pythonDataName() const override { return QStringLiteral("vector_properties"); }
-	};
+        /// The name by which Python scripts can refer to this modifier delegate.
+        virtual QString pythonDataName() const override { return QStringLiteral("vector_properties"); }
+    };
 
-	OVITO_CLASS_META(VectorParticlePropertiesAffineTransformationModifierDelegate, OOMetaClass)
+    OVITO_CLASS_META(VectorParticlePropertiesAffineTransformationModifierDelegate, OOMetaClass)
 
-	Q_CLASSINFO("DisplayName", "Vector properties");
+    Q_CLASSINFO("DisplayName", "Vector properties");
 
 public:
 
-	/// Constructor.
-	Q_INVOKABLE VectorParticlePropertiesAffineTransformationModifierDelegate(ObjectCreationParams params) : AffineTransformationModifierDelegate(params) {}
+    /// Constructor.
+    Q_INVOKABLE VectorParticlePropertiesAffineTransformationModifierDelegate(ObjectCreationParams params) : AffineTransformationModifierDelegate(params) {}
 
-	/// Applies the modifier operation to the data in a pipeline flow state.
-	virtual PipelineStatus apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const PipelineFlowState& inputState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs) override;
+    /// Applies the modifier operation to the data in a pipeline flow state.
+    virtual PipelineStatus apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const PipelineFlowState& inputState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs) override;
 
 private:
 
-	/// Decides if the given particle property is one that should be transformed.
-	static bool isTransformableProperty(const PropertyObject* property);
+    /// Decides if the given particle property is one that should be transformed.
+    static bool isTransformableProperty(const PropertyObject* property);
 };
 
-}	// End of namespace
+}   // End of namespace

@@ -36,31 +36,31 @@ using ParticlesOutputColumnMapping = TypedOutputColumnMapping<ParticlesObject>;
  */
 class OVITO_PARTICLES_EXPORT FileColumnParticleExporter : public ParticleExporter
 {
-	OVITO_CLASS(FileColumnParticleExporter)
+    OVITO_CLASS(FileColumnParticleExporter)
 
 protected:
 
-	/// \brief Constructor.
-	FileColumnParticleExporter(ObjectCreationParams params);
+    /// \brief Constructor.
+    FileColumnParticleExporter(ObjectCreationParams params);
 
 public:
 
-	/// \brief Returns the mapping of particle properties to output file columns.
-	const ParticlesOutputColumnMapping& columnMapping() const { return _columnMapping; }
+    /// \brief Returns the mapping of particle properties to output file columns.
+    const ParticlesOutputColumnMapping& columnMapping() const { return _columnMapping; }
 
-	/// \brief Sets the mapping of particle properties to output file columns.
-	void setColumnMapping(const ParticlesOutputColumnMapping& mapping) { _columnMapping = mapping; }
+    /// \brief Sets the mapping of particle properties to output file columns.
+    void setColumnMapping(const ParticlesOutputColumnMapping& mapping) { _columnMapping = mapping; }
 
 public:
 
-	Q_PROPERTY(Ovito::Particles::ParticlesOutputColumnMapping columnMapping READ columnMapping WRITE setColumnMapping)
+    Q_PROPERTY(Ovito::Particles::ParticlesOutputColumnMapping columnMapping READ columnMapping WRITE setColumnMapping)
 
 private:
 
-	/// The mapping of particle properties to output file columns.
-	ParticlesOutputColumnMapping _columnMapping;
+    /// The mapping of particle properties to output file columns.
+    ParticlesOutputColumnMapping _columnMapping;
 };
 
-}	// End of namespace
+}   // End of namespace
 
 Q_DECLARE_METATYPE(Ovito::Particles::ParticlesOutputColumnMapping);

@@ -34,39 +34,39 @@ namespace Ovito::Mesh {
  */
 class OVITO_MESH_EXPORT RenderableSurfaceMesh : public TransformedDataObject
 {
-	OVITO_CLASS(RenderableSurfaceMesh)
-	Q_CLASSINFO("DisplayName", "Renderable surface mesh");
+    OVITO_CLASS(RenderableSurfaceMesh)
+    Q_CLASSINFO("DisplayName", "Renderable surface mesh");
 
 public:
 
-	/// Constructor.
-	Q_INVOKABLE RenderableSurfaceMesh(ObjectCreationParams params, TransformingDataVis* creator = nullptr, const DataObject* sourceData = nullptr, DataOORef<const TriMeshObject> surfaceMesh = {}, DataOORef<const TriMeshObject> capPolygonsMesh = {}, bool backfaceCulling = false) 
-		: TransformedDataObject(params, creator, sourceData), 
-		_surfaceMesh(std::move(surfaceMesh)),
-		_capPolygonsMesh(std::move(capPolygonsMesh)),
-		_backfaceCulling(backfaceCulling) 
-	{
-		// Adopt the ID string from the original data object.
-		if(sourceData)
-			setIdentifier(sourceData->identifier());
-	}
+    /// Constructor.
+    Q_INVOKABLE RenderableSurfaceMesh(ObjectCreationParams params, TransformingDataVis* creator = nullptr, const DataObject* sourceData = nullptr, DataOORef<const TriMeshObject> surfaceMesh = {}, DataOORef<const TriMeshObject> capPolygonsMesh = {}, bool backfaceCulling = false) 
+        : TransformedDataObject(params, creator, sourceData), 
+        _surfaceMesh(std::move(surfaceMesh)),
+        _capPolygonsMesh(std::move(capPolygonsMesh)),
+        _backfaceCulling(backfaceCulling) 
+    {
+        // Adopt the ID string from the original data object.
+        if(sourceData)
+            setIdentifier(sourceData->identifier());
+    }
 
 private:
 
-	/// The surface part of the mesh.
-	DECLARE_RUNTIME_PROPERTY_FIELD(DataOORef<const TriMeshObject>, surfaceMesh, setSurfaceMesh);
+    /// The surface part of the mesh.
+    DECLARE_RUNTIME_PROPERTY_FIELD(DataOORef<const TriMeshObject>, surfaceMesh, setSurfaceMesh);
 
-	/// The cap polygon part of the mesh.
-	DECLARE_RUNTIME_PROPERTY_FIELD(DataOORef<const TriMeshObject>, capPolygonsMesh, setCapPolygonsMesh);
+    /// The cap polygon part of the mesh.
+    DECLARE_RUNTIME_PROPERTY_FIELD(DataOORef<const TriMeshObject>, capPolygonsMesh, setCapPolygonsMesh);
 
-	/// The material colors assigned to the surface mesh (optional).
-	DECLARE_RUNTIME_PROPERTY_FIELD(std::vector<ColorA>, materialColors, setMaterialColors);
+    /// The material colors assigned to the surface mesh (optional).
+    DECLARE_RUNTIME_PROPERTY_FIELD(std::vector<ColorA>, materialColors, setMaterialColors);
 
-	/// The mapping of triangles of the renderable surface mesh to the original mesh (optional).
-	DECLARE_RUNTIME_PROPERTY_FIELD(std::vector<size_t>, originalFaceMap, setOriginalFaceMap);
+    /// The mapping of triangles of the renderable surface mesh to the original mesh (optional).
+    DECLARE_RUNTIME_PROPERTY_FIELD(std::vector<size_t>, originalFaceMap, setOriginalFaceMap);
 
-	/// Indicates whether triangles of the surface mesh should be rendered with active backface culling.
-	DECLARE_RUNTIME_PROPERTY_FIELD(bool, backfaceCulling, setBackfaceCulling);
+    /// Indicates whether triangles of the surface mesh should be rendered with active backface culling.
+    DECLARE_RUNTIME_PROPERTY_FIELD(bool, backfaceCulling, setBackfaceCulling);
 };
 
-}	// End of namespace
+}   // End of namespace

@@ -46,137 +46,137 @@ SET_OVITO_OBJECT_EDITOR(HistogramModifier, HistogramModifierEditor);
 ******************************************************************************/
 void HistogramModifierEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 {
-	// Create a rollout.
-	QWidget* rollout = createRollout(tr("Histogram"), rolloutParams, "manual:particles.modifiers.histogram");
+    // Create a rollout.
+    QWidget* rollout = createRollout(tr("Histogram"), rolloutParams, "manual:particles.modifiers.histogram");
 
     // Create the rollout contents.
-	QVBoxLayout* layout = new QVBoxLayout(rollout);
-	layout->setContentsMargins(4,4,4,4);
-	layout->setSpacing(4);
+    QVBoxLayout* layout = new QVBoxLayout(rollout);
+    layout->setContentsMargins(4,4,4,4);
+    layout->setSpacing(4);
 
-	PropertyContainerParameterUI* pclassUI = new PropertyContainerParameterUI(this, PROPERTY_FIELD(GenericPropertyModifier::subject));
-	layout->addWidget(new QLabel(tr("Operate on:")));
-	layout->addWidget(pclassUI->comboBox());
+    PropertyContainerParameterUI* pclassUI = new PropertyContainerParameterUI(this, PROPERTY_FIELD(GenericPropertyModifier::subject));
+    layout->addWidget(new QLabel(tr("Operate on:")));
+    layout->addWidget(pclassUI->comboBox());
 
-	PropertyReferenceParameterUI* sourcePropertyUI = new PropertyReferenceParameterUI(this, PROPERTY_FIELD(HistogramModifier::sourceProperty));
-	layout->addWidget(new QLabel(tr("Property:")));
-	layout->addWidget(sourcePropertyUI->comboBox());
-	connect(this, &PropertiesEditor::contentsChanged, this, [sourcePropertyUI](RefTarget* editObject) {
-		GenericPropertyModifier* modifier = static_object_cast<GenericPropertyModifier>(editObject);
-		if(modifier)
-			sourcePropertyUI->setContainerRef(modifier->subject());
-		else
-			sourcePropertyUI->setContainerRef(nullptr);
-	});
+    PropertyReferenceParameterUI* sourcePropertyUI = new PropertyReferenceParameterUI(this, PROPERTY_FIELD(HistogramModifier::sourceProperty));
+    layout->addWidget(new QLabel(tr("Property:")));
+    layout->addWidget(sourcePropertyUI->comboBox());
+    connect(this, &PropertiesEditor::contentsChanged, this, [sourcePropertyUI](RefTarget* editObject) {
+        GenericPropertyModifier* modifier = static_object_cast<GenericPropertyModifier>(editObject);
+        if(modifier)
+            sourcePropertyUI->setContainerRef(modifier->subject());
+        else
+            sourcePropertyUI->setContainerRef(nullptr);
+    });
 
-	QGridLayout* gridlayout = new QGridLayout();
-	gridlayout->setContentsMargins(4,4,4,4);
-	gridlayout->setColumnStretch(1, 1);
+    QGridLayout* gridlayout = new QGridLayout();
+    gridlayout->setContentsMargins(4,4,4,4);
+    gridlayout->setColumnStretch(1, 1);
 
-	// Number of bins parameter.
-	IntegerParameterUI* numBinsPUI = new IntegerParameterUI(this, PROPERTY_FIELD(HistogramModifier::numberOfBins));
-	gridlayout->addWidget(numBinsPUI->label(), 0, 0);
-	gridlayout->addLayout(numBinsPUI->createFieldLayout(), 0, 1);
+    // Number of bins parameter.
+    IntegerParameterUI* numBinsPUI = new IntegerParameterUI(this, PROPERTY_FIELD(HistogramModifier::numberOfBins));
+    gridlayout->addWidget(numBinsPUI->label(), 0, 0);
+    gridlayout->addLayout(numBinsPUI->createFieldLayout(), 0, 1);
 
-	layout->addLayout(gridlayout);
+    layout->addLayout(gridlayout);
 
-	_plotWidget = new DataTablePlotWidget();
-	_plotWidget->setMinimumHeight(240);
-	_plotWidget->setMaximumHeight(240);
-	_selectionRangeIndicator = new QwtPlotZoneItem();
-	_selectionRangeIndicator->setOrientation(Qt::Vertical);
-	_selectionRangeIndicator->setZ(1);
-	_selectionRangeIndicator->attach(_plotWidget);
-	_selectionRangeIndicator->hide();
+    _plotWidget = new DataTablePlotWidget();
+    _plotWidget->setMinimumHeight(240);
+    _plotWidget->setMaximumHeight(240);
+    _selectionRangeIndicator = new QwtPlotZoneItem();
+    _selectionRangeIndicator->setOrientation(Qt::Vertical);
+    _selectionRangeIndicator->setZ(1);
+    _selectionRangeIndicator->attach(_plotWidget);
+    _selectionRangeIndicator->hide();
 
-	layout->addWidget(new QLabel(tr("Histogram:")));
-	layout->addWidget(_plotWidget);
+    layout->addWidget(new QLabel(tr("Histogram:")));
+    layout->addWidget(_plotWidget);
 
-	OpenDataInspectorButton* openDataInspectorBtn = new OpenDataInspectorButton(this, tr("Show in data inspector"));
-	layout->addWidget(openDataInspectorBtn);
+    OpenDataInspectorButton* openDataInspectorBtn = new OpenDataInspectorButton(this, tr("Show in data inspector"));
+    layout->addWidget(openDataInspectorBtn);
 
-	// Input.
-	QGroupBox* inputBox = new QGroupBox(tr("Input"), rollout);
-	QVBoxLayout* sublayout = new QVBoxLayout(inputBox);
-	sublayout->setContentsMargins(4,4,4,4);
-	layout->addWidget(inputBox);
+    // Input.
+    QGroupBox* inputBox = new QGroupBox(tr("Input"), rollout);
+    QVBoxLayout* sublayout = new QVBoxLayout(inputBox);
+    sublayout->setContentsMargins(4,4,4,4);
+    layout->addWidget(inputBox);
 
-	BooleanParameterUI* onlySelectedUI = new BooleanParameterUI(this, PROPERTY_FIELD(HistogramModifier::onlySelectedElements));
-	sublayout->addWidget(onlySelectedUI->checkBox());
+    BooleanParameterUI* onlySelectedUI = new BooleanParameterUI(this, PROPERTY_FIELD(HistogramModifier::onlySelectedElements));
+    sublayout->addWidget(onlySelectedUI->checkBox());
 
-	// Create selection.
-	QGroupBox* selectionBox = new QGroupBox(tr("Create selection"), rollout);
-	sublayout = new QVBoxLayout(selectionBox);
-	sublayout->setContentsMargins(4,4,4,4);
-	layout->addWidget(selectionBox);
+    // Create selection.
+    QGroupBox* selectionBox = new QGroupBox(tr("Create selection"), rollout);
+    sublayout = new QVBoxLayout(selectionBox);
+    sublayout->setContentsMargins(4,4,4,4);
+    layout->addWidget(selectionBox);
 
-	BooleanParameterUI* selectInRangeUI = new BooleanParameterUI(this, PROPERTY_FIELD(HistogramModifier::selectInRange));
-	sublayout->addWidget(selectInRangeUI->checkBox());
+    BooleanParameterUI* selectInRangeUI = new BooleanParameterUI(this, PROPERTY_FIELD(HistogramModifier::selectInRange));
+    sublayout->addWidget(selectInRangeUI->checkBox());
 
-	QHBoxLayout* hlayout = new QHBoxLayout();
-	sublayout->addLayout(hlayout);
-	FloatParameterUI* selRangeStartPUI = new FloatParameterUI(this, PROPERTY_FIELD(HistogramModifier::selectionRangeStart));
-	FloatParameterUI* selRangeEndPUI = new FloatParameterUI(this, PROPERTY_FIELD(HistogramModifier::selectionRangeEnd));
-	hlayout->addWidget(new QLabel(tr("From:")));
-	hlayout->addLayout(selRangeStartPUI->createFieldLayout());
-	hlayout->addSpacing(12);
-	hlayout->addWidget(new QLabel(tr("To:")));
-	hlayout->addLayout(selRangeEndPUI->createFieldLayout());
-	selRangeStartPUI->setEnabled(false);
-	selRangeEndPUI->setEnabled(false);
-	connect(selectInRangeUI->checkBox(), &QCheckBox::toggled, selRangeStartPUI, &FloatParameterUI::setEnabled);
-	connect(selectInRangeUI->checkBox(), &QCheckBox::toggled, selRangeEndPUI, &FloatParameterUI::setEnabled);
+    QHBoxLayout* hlayout = new QHBoxLayout();
+    sublayout->addLayout(hlayout);
+    FloatParameterUI* selRangeStartPUI = new FloatParameterUI(this, PROPERTY_FIELD(HistogramModifier::selectionRangeStart));
+    FloatParameterUI* selRangeEndPUI = new FloatParameterUI(this, PROPERTY_FIELD(HistogramModifier::selectionRangeEnd));
+    hlayout->addWidget(new QLabel(tr("From:")));
+    hlayout->addLayout(selRangeStartPUI->createFieldLayout());
+    hlayout->addSpacing(12);
+    hlayout->addWidget(new QLabel(tr("To:")));
+    hlayout->addLayout(selRangeEndPUI->createFieldLayout());
+    selRangeStartPUI->setEnabled(false);
+    selRangeEndPUI->setEnabled(false);
+    connect(selectInRangeUI->checkBox(), &QCheckBox::toggled, selRangeStartPUI, &FloatParameterUI::setEnabled);
+    connect(selectInRangeUI->checkBox(), &QCheckBox::toggled, selRangeEndPUI, &FloatParameterUI::setEnabled);
 
-	// Axes.
-	QGroupBox* axesBox = new QGroupBox(tr("Plot axes"), rollout);
-	QVBoxLayout* axesSublayout = new QVBoxLayout(axesBox);
-	axesSublayout->setContentsMargins(4,4,4,4);
-	layout->addWidget(axesBox);
-	// x-axis.
-	{
-		BooleanParameterUI* rangeUI = new BooleanParameterUI(this, PROPERTY_FIELD(HistogramModifier::fixXAxisRange));
-		axesSublayout->addWidget(rangeUI->checkBox());
+    // Axes.
+    QGroupBox* axesBox = new QGroupBox(tr("Plot axes"), rollout);
+    QVBoxLayout* axesSublayout = new QVBoxLayout(axesBox);
+    axesSublayout->setContentsMargins(4,4,4,4);
+    layout->addWidget(axesBox);
+    // x-axis.
+    {
+        BooleanParameterUI* rangeUI = new BooleanParameterUI(this, PROPERTY_FIELD(HistogramModifier::fixXAxisRange));
+        axesSublayout->addWidget(rangeUI->checkBox());
 
-		QHBoxLayout* hlayout = new QHBoxLayout();
-		axesSublayout->addLayout(hlayout);
-		FloatParameterUI* startPUI = new FloatParameterUI(this, PROPERTY_FIELD(HistogramModifier::xAxisRangeStart));
-		FloatParameterUI* endPUI = new FloatParameterUI(this, PROPERTY_FIELD(HistogramModifier::xAxisRangeEnd));
-		hlayout->addWidget(new QLabel(tr("From:")));
-		hlayout->addLayout(startPUI->createFieldLayout());
-		hlayout->addSpacing(12);
-		hlayout->addWidget(new QLabel(tr("To:")));
-		hlayout->addLayout(endPUI->createFieldLayout());
-		startPUI->setEnabled(false);
-		endPUI->setEnabled(false);
-		connect(rangeUI->checkBox(), &QCheckBox::toggled, startPUI, &FloatParameterUI::setEnabled);
-		connect(rangeUI->checkBox(), &QCheckBox::toggled, endPUI, &FloatParameterUI::setEnabled);
-	}
-	// y-axis.
-	{
-		BooleanParameterUI* rangeUI = new BooleanParameterUI(this, PROPERTY_FIELD(HistogramModifier::fixYAxisRange));
-		axesSublayout->addWidget(rangeUI->checkBox());
+        QHBoxLayout* hlayout = new QHBoxLayout();
+        axesSublayout->addLayout(hlayout);
+        FloatParameterUI* startPUI = new FloatParameterUI(this, PROPERTY_FIELD(HistogramModifier::xAxisRangeStart));
+        FloatParameterUI* endPUI = new FloatParameterUI(this, PROPERTY_FIELD(HistogramModifier::xAxisRangeEnd));
+        hlayout->addWidget(new QLabel(tr("From:")));
+        hlayout->addLayout(startPUI->createFieldLayout());
+        hlayout->addSpacing(12);
+        hlayout->addWidget(new QLabel(tr("To:")));
+        hlayout->addLayout(endPUI->createFieldLayout());
+        startPUI->setEnabled(false);
+        endPUI->setEnabled(false);
+        connect(rangeUI->checkBox(), &QCheckBox::toggled, startPUI, &FloatParameterUI::setEnabled);
+        connect(rangeUI->checkBox(), &QCheckBox::toggled, endPUI, &FloatParameterUI::setEnabled);
+    }
+    // y-axis.
+    {
+        BooleanParameterUI* rangeUI = new BooleanParameterUI(this, PROPERTY_FIELD(HistogramModifier::fixYAxisRange));
+        axesSublayout->addWidget(rangeUI->checkBox());
 
-		QHBoxLayout* hlayout = new QHBoxLayout();
-		axesSublayout->addLayout(hlayout);
-		FloatParameterUI* startPUI = new FloatParameterUI(this, PROPERTY_FIELD(HistogramModifier::yAxisRangeStart));
-		FloatParameterUI* endPUI = new FloatParameterUI(this, PROPERTY_FIELD(HistogramModifier::yAxisRangeEnd));
-		hlayout->addWidget(new QLabel(tr("From:")));
-		hlayout->addLayout(startPUI->createFieldLayout());
-		hlayout->addSpacing(12);
-		hlayout->addWidget(new QLabel(tr("To:")));
-		hlayout->addLayout(endPUI->createFieldLayout());
-		startPUI->setEnabled(false);
-		endPUI->setEnabled(false);
-		connect(rangeUI->checkBox(), &QCheckBox::toggled, startPUI, &FloatParameterUI::setEnabled);
-		connect(rangeUI->checkBox(), &QCheckBox::toggled, endPUI, &FloatParameterUI::setEnabled);
-	}
+        QHBoxLayout* hlayout = new QHBoxLayout();
+        axesSublayout->addLayout(hlayout);
+        FloatParameterUI* startPUI = new FloatParameterUI(this, PROPERTY_FIELD(HistogramModifier::yAxisRangeStart));
+        FloatParameterUI* endPUI = new FloatParameterUI(this, PROPERTY_FIELD(HistogramModifier::yAxisRangeEnd));
+        hlayout->addWidget(new QLabel(tr("From:")));
+        hlayout->addLayout(startPUI->createFieldLayout());
+        hlayout->addSpacing(12);
+        hlayout->addWidget(new QLabel(tr("To:")));
+        hlayout->addLayout(endPUI->createFieldLayout());
+        startPUI->setEnabled(false);
+        endPUI->setEnabled(false);
+        connect(rangeUI->checkBox(), &QCheckBox::toggled, startPUI, &FloatParameterUI::setEnabled);
+        connect(rangeUI->checkBox(), &QCheckBox::toggled, endPUI, &FloatParameterUI::setEnabled);
+    }
 
-	// Status label.
-	layout->addSpacing(6);
-	layout->addWidget((new ObjectStatusDisplay(this))->statusWidget());
+    // Status label.
+    layout->addSpacing(6);
+    layout->addWidget((new ObjectStatusDisplay(this))->statusWidget());
 
-	// Update data plot whenever the modifier has calculated new results.
-	connect(this, &PropertiesEditor::pipelineOutputChanged, this, &HistogramModifierEditor::plotHistogram);
+    // Update data plot whenever the modifier has calculated new results.
+    connect(this, &PropertiesEditor::pipelineOutputChanged, this, &HistogramModifierEditor::plotHistogram);
 }
 
 /******************************************************************************
@@ -184,36 +184,36 @@ void HistogramModifierEditor::createUI(const RolloutInsertionParameters& rollout
 ******************************************************************************/
 void HistogramModifierEditor::plotHistogram()
 {
-	HistogramModifier* modifier = static_object_cast<HistogramModifier>(editObject());
+    HistogramModifier* modifier = static_object_cast<HistogramModifier>(editObject());
 
-	if(modifier && modifier->fixYAxisRange()) {
-		_plotWidget->setAxisScale(QwtPlot::yLeft, modifier->yAxisRangeStart(), modifier->yAxisRangeEnd());
-	}
-	else {
-		_plotWidget->setAxisAutoScale(QwtPlot::yLeft);
-	}
+    if(modifier && modifier->fixYAxisRange()) {
+        _plotWidget->setAxisScale(QwtPlot::yLeft, modifier->yAxisRangeStart(), modifier->yAxisRangeEnd());
+    }
+    else {
+        _plotWidget->setAxisAutoScale(QwtPlot::yLeft);
+    }
 
-	if(modifier && modifier->selectInRange()) {
-		auto minmax = std::minmax(modifier->selectionRangeStart(), modifier->selectionRangeEnd());
-		_selectionRangeIndicator->setInterval(minmax.first, minmax.second);
-		_selectionRangeIndicator->show();
-	}
-	else {
-		_selectionRangeIndicator->hide();
-	}
+    if(modifier && modifier->selectInRange()) {
+        auto minmax = std::minmax(modifier->selectionRangeStart(), modifier->selectionRangeEnd());
+        _selectionRangeIndicator->setInterval(minmax.first, minmax.second);
+        _selectionRangeIndicator->show();
+    }
+    else {
+        _selectionRangeIndicator->hide();
+    }
 
-	if(modifier && modifierApplication()) {
-		// Request the modifier's pipeline output.
-		const PipelineFlowState& state = getPipelineOutput();
+    if(modifier && modifierApplication()) {
+        // Request the modifier's pipeline output.
+        const PipelineFlowState& state = getPipelineOutput();
 
-		// Look up the generated data table in the modifier's pipeline output.
-		QString tableName = QStringLiteral("histogram[%1]").arg(modifier->sourceProperty().nameWithComponent());
-		const DataTable* table = state.getObjectBy<DataTable>(modifierApplication(), tableName);
-		_plotWidget->setTable(table);
-	}
-	else {
-		_plotWidget->reset();
-	}
+        // Look up the generated data table in the modifier's pipeline output.
+        QString tableName = QStringLiteral("histogram[%1]").arg(modifier->sourceProperty().nameWithComponent());
+        const DataTable* table = state.getObjectBy<DataTable>(modifierApplication(), tableName);
+        _plotWidget->setTable(table);
+    }
+    else {
+        _plotWidget->reset();
+    }
 }
 
-}	// End of namespace
+}   // End of namespace

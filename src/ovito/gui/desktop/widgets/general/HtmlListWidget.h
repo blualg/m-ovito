@@ -34,16 +34,16 @@ class OVITO_GUI_EXPORT HtmlListWidget : public QListWidget
 {
 public:
 
-	/// \brief Constructs a list widget.
-	/// \param parent The parent widget for the new widget.
-	HtmlListWidget(QWidget* parent = nullptr);
+    /// \brief Constructs a list widget.
+    /// \param parent The parent widget for the new widget.
+    HtmlListWidget(QWidget* parent = nullptr);
 
-	/// Returns the recommended size for the widget.
-	virtual QSize sizeHint() const override {
-		return QSize(320, 280);
-	}
+    /// Returns the recommended size for the widget.
+    virtual QSize sizeHint() const override {
+        return QSize(320, 280);
+    }
 };
 
-}	// End of namespace
+}   // End of namespace
 
 

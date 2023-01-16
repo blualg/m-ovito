@@ -35,36 +35,36 @@ using namespace std;
 ******************************************************************************/
 SaveStream::SaveStream(QDataStream& destination) : _os(destination)
 {
-	OVITO_ASSERT(ExecutionContext::current().isValid());
-	
-	OVITO_ASSERT_MSG(!_os.device()->isSequential(), "SaveStream constructor", "SaveStream class requires a seekable output stream.");
-	if(_os.device()->isSequential())
-		throw Exception("SaveStream class requires a seekable output stream.");
+    OVITO_ASSERT(ExecutionContext::current().isValid());
+    
+    OVITO_ASSERT_MSG(!_os.device()->isSequential(), "SaveStream constructor", "SaveStream class requires a seekable output stream.");
+    if(_os.device()->isSequential())
+        throw Exception("SaveStream class requires a seekable output stream.");
 
-	_isOpen = true;
+    _isOpen = true;
 
-	// Write file header.
+    // Write file header.
 
-	// This is used to recognize the application file format.
-	*this << (quint32)0x0FACC5AB;	// The first magic file code.
-	*this << (quint32)0x0AFCCA5A;	// The second magic file code.
+    // This is used to recognize the application file format.
+    *this << (quint32)0x0FACC5AB;   // The first magic file code.
+    *this << (quint32)0x0AFCCA5A;   // The second magic file code.
 
-	// This is the version of the stream file format.
-	*this << (quint32)OVITO_FILE_FORMAT_VERSION;
-	_os.setVersion(QDataStream::Qt_5_4);
-	_os.setFloatingPointPrecision(sizeof(FloatType) == 4 ? QDataStream::SinglePrecision : QDataStream::DoublePrecision);
+    // This is the version of the stream file format.
+    *this << (quint32)OVITO_FILE_FORMAT_VERSION;
+    _os.setVersion(QDataStream::Qt_5_4);
+    _os.setFloatingPointPrecision(sizeof(FloatType) == 4 ? QDataStream::SinglePrecision : QDataStream::DoublePrecision);
 
-	// Store the floating-point precision used throughout the file.
-	*this << (quint32)sizeof(FloatType);
+    // Store the floating-point precision used throughout the file.
+    *this << (quint32)sizeof(FloatType);
 
-	// Write application name.
-	*this << Application::applicationName();
+    // Write application name.
+    *this << Application::applicationName();
 
-	// Write application version.
-	*this << (quint32)Application::applicationVersionMajor();
-	*this << (quint32)Application::applicationVersionMinor();
-	*this << (quint32)Application::applicationVersionRevision();
-	*this << Application::applicationVersionString();
+    // Write application version.
+    *this << (quint32)Application::applicationVersionMajor();
+    *this << (quint32)Application::applicationVersionMinor();
+    *this << (quint32)Application::applicationVersionRevision();
+    *this << Application::applicationVersionString();
 }
 
 /******************************************************************************
@@ -72,9 +72,9 @@ SaveStream::SaveStream(QDataStream& destination) : _os(destination)
 ******************************************************************************/
 void SaveStream::close()
 {
-	if(_isOpen) {
-		_isOpen = false;
-	}
+    if(_isOpen) {
+        _isOpen = false;
+    }
 }
 
 /******************************************************************************
@@ -82,8 +82,8 @@ void SaveStream::close()
 ******************************************************************************/
 void SaveStream::write(const void* buffer, size_t numBytes)
 {
-	if(_os.device()->write(reinterpret_cast<const char*>(buffer), numBytes) != numBytes)
-		throw Exception(tr("Failed to write output file. %1").arg(_os.device()->errorString()));
+    if(_os.device()->write(reinterpret_cast<const char*>(buffer), numBytes) != numBytes)
+        throw Exception(tr("Failed to write output file. %1").arg(_os.device()->errorString()));
 }
 
 /******************************************************************************
@@ -92,9 +92,9 @@ void SaveStream::write(const void* buffer, size_t numBytes)
 void SaveStream::beginChunk(quint32 chunkId)
 {
     *this << chunkId;
-	*this << (quint32)0;	// This will be backpatched by endChunk().
+    *this << (quint32)0;    // This will be backpatched by endChunk().
 
-	_chunks.push(filePosition());
+    _chunks.push(filePosition());
 }
 
 /******************************************************************************
@@ -102,28 +102,28 @@ void SaveStream::beginChunk(quint32 chunkId)
 ******************************************************************************/
 void SaveStream::endChunk()
 {
-	OVITO_ASSERT(!_chunks.empty());
-	qint64 chunkStart = _chunks.top();
-	_chunks.pop();
+    OVITO_ASSERT(!_chunks.empty());
+    qint64 chunkStart = _chunks.top();
+    _chunks.pop();
 
-	qint64 chunkSize = filePosition() - chunkStart;
-	OVITO_ASSERT(chunkSize >= 0 && chunkSize <= 0xFFFFFFFF);
+    qint64 chunkSize = filePosition() - chunkStart;
+    OVITO_ASSERT(chunkSize >= 0 && chunkSize <= 0xFFFFFFFF);
 
-	// Write chunk end code.
-	*this << (quint32)0x0FFFFFFF;
+    // Write chunk end code.
+    *this << (quint32)0x0FFFFFFF;
 
-	// Seek to chunk size field.
-	if(!_os.device()->seek(chunkStart - sizeof(unsigned int)) )
-		throw Exception(tr("Failed to close chunk in output file."));
+    // Seek to chunk size field.
+    if(!_os.device()->seek(chunkStart - sizeof(unsigned int)) )
+        throw Exception(tr("Failed to close chunk in output file."));
 
     // Patch chunk size field.
-	*this << (quint32)chunkSize;
+    *this << (quint32)chunkSize;
 
-	// Jump back to end of file.
-	if(!_os.device()->seek(_os.device()->size()))
-		throw Exception(tr("Failed to close chunk in output file."));
+    // Jump back to end of file.
+    if(!_os.device()->seek(_os.device()->size()))
+        throw Exception(tr("Failed to close chunk in output file."));
 
-	OVITO_ASSERT(filePosition() == chunkStart + chunkSize + sizeof(unsigned int));
+    OVITO_ASSERT(filePosition() == chunkStart + chunkSize + sizeof(unsigned int));
 }
 
 /******************************************************************************
@@ -133,12 +133,12 @@ void SaveStream::endChunk()
 ******************************************************************************/
 void SaveStream::writePointer(void* pointer)
 {
-	if(pointer == nullptr) *this << (quint64)0;
-	else {
-		quint64& id = _pointerMap[pointer];
-		if(id == 0) id = (quint64)_pointerMap.size();
-		*this << id;
-	}
+    if(pointer == nullptr) *this << (quint64)0;
+    else {
+        quint64& id = _pointerMap[pointer];
+        if(id == 0) id = (quint64)_pointerMap.size();
+        *this << id;
+    }
 }
 
 /******************************************************************************
@@ -147,10 +147,10 @@ void SaveStream::writePointer(void* pointer)
 ******************************************************************************/
 quint64 SaveStream::pointerID(void* pointer) const
 {
-	if(auto item = _pointerMap.find(pointer); item != _pointerMap.end())
-		return item->second;
-	else
-		return 0;
+    if(auto item = _pointerMap.find(pointer); item != _pointerMap.end())
+        return item->second;
+    else
+        return 0;
 }
 
 /******************************************************************************
@@ -159,9 +159,9 @@ quint64 SaveStream::pointerID(void* pointer) const
 ******************************************************************************/
 void SaveStream::checkErrorCondition()
 {
-	if(dataStream().status() != QDataStream::Ok) {
-		throw Exception(tr("I/O error: Could not write to file."));
-	}
+    if(dataStream().status() != QDataStream::Ok) {
+        throw Exception(tr("I/O error: Could not write to file."));
+    }
 }
 
 /******************************************************************************
@@ -169,8 +169,8 @@ void SaveStream::checkErrorCondition()
 ******************************************************************************/
 SaveStream& operator<<(SaveStream& stream, const OvitoClassPtr& clazz)
 {
-	OvitoClass::serializeRTTI(stream, clazz);
-	return stream;
+    OvitoClass::serializeRTTI(stream, clazz);
+    return stream;
 }
 
 /******************************************************************************
@@ -178,22 +178,22 @@ SaveStream& operator<<(SaveStream& stream, const OvitoClassPtr& clazz)
 ******************************************************************************/
 SaveStream& operator<<(SaveStream& stream, const QUrl& url)
 {
-	// Write original URL to stream.
-	stream.writeValue(url, std::false_type());
-	// Additionally write the path relative to current output file to stream.
-	// Currently this only works if the file referenced by the URL is in the same directory as the stream destination file.
-	QString relativePath;
-	if(url.isLocalFile() && !url.isRelative()) {
-		// Extract relative portion of path (only if both the scene file path and the external file path are absolute).
-		if(QFileDevice* fileDevice = qobject_cast<QFileDevice*>(stream.dataStream().device())) {
-			QFileInfo streamFile(fileDevice->fileName());
-			if(streamFile.isAbsolute()) {
-				relativePath = streamFile.dir().relativeFilePath(url.toLocalFile());
-			}
-		}
-	}
-	stream << relativePath;
-	return stream;
+    // Write original URL to stream.
+    stream.writeValue(url, std::false_type());
+    // Additionally write the path relative to current output file to stream.
+    // Currently this only works if the file referenced by the URL is in the same directory as the stream destination file.
+    QString relativePath;
+    if(url.isLocalFile() && !url.isRelative()) {
+        // Extract relative portion of path (only if both the scene file path and the external file path are absolute).
+        if(QFileDevice* fileDevice = qobject_cast<QFileDevice*>(stream.dataStream().device())) {
+            QFileInfo streamFile(fileDevice->fileName());
+            if(streamFile.isAbsolute()) {
+                relativePath = streamFile.dir().relativeFilePath(url.toLocalFile());
+            }
+        }
+    }
+    stream << relativePath;
+    return stream;
 }
 
-}	// End of namespace
+}   // End of namespace

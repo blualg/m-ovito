@@ -46,15 +46,15 @@ SET_PROPERTY_FIELD_LABEL(FileSourceImporter, isMultiTimestepFile, "File contains
 ******************************************************************************/
 void FileSourceImporter::propertyChanged(const PropertyFieldDescriptor* field)
 {
-	FileImporter::propertyChanged(field);
+    FileImporter::propertyChanged(field);
 
-	if(field == PROPERTY_FIELD(isMultiTimestepFile)) {
-		// Automatically rescan input file for animation frames when this option is changed.
-		requestFramesUpdate();
+    if(field == PROPERTY_FIELD(isMultiTimestepFile)) {
+        // Automatically rescan input file for animation frames when this option is changed.
+        requestFramesUpdate();
 
-		// Also notify the UI explicitly, because target-changed messages are supressed for this property field.
-		Q_EMIT isMultiTimestepFileChanged();
-	}
+        // Also notify the UI explicitly, because target-changed messages are supressed for this property field.
+        Q_EMIT isMultiTimestepFileChanged();
+    }
 }
 
 /******************************************************************************
@@ -63,21 +63,21 @@ void FileSourceImporter::propertyChanged(const PropertyFieldDescriptor* field)
 ******************************************************************************/
 void FileSourceImporter::requestReload(bool refetchFiles, int frame)
 {
-	OVITO_ASSERT_MSG(!QCoreApplication::instance() || QThread::currentThread() == QCoreApplication::instance()->thread(), "FileSourceImporter::requestReload", "This function may only be called from the main thread.");
-	OVITO_ASSERT(ExecutionContext::current().isValid());
+    OVITO_ASSERT_MSG(!QCoreApplication::instance() || QThread::currentThread() == QCoreApplication::instance()->thread(), "FileSourceImporter::requestReload", "This function may only be called from the main thread.");
+    OVITO_ASSERT(ExecutionContext::current().isValid());
 
-	// Retrieve the FileSource that owns this importer by looking it up in the list of dependents.
-	visitDependents([&](RefMaker* dependent) {
-		if(FileSource* fileSource = dynamic_object_cast<FileSource>(dependent)) {
-			ExecutionContext::current().ui().handleExceptions([&] {
-				fileSource->reloadFrame(refetchFiles, frame);
-			});
-		}
-		else if(FileSourceImporter* parentImporter = dynamic_object_cast<FileSourceImporter>(dependent)) {
-			// If this importer is a child of another importer, forward the reload request to the parent importer.
-			parentImporter->requestReload(refetchFiles, frame);
-		}
-	});
+    // Retrieve the FileSource that owns this importer by looking it up in the list of dependents.
+    visitDependents([&](RefMaker* dependent) {
+        if(FileSource* fileSource = dynamic_object_cast<FileSource>(dependent)) {
+            ExecutionContext::current().ui().handleExceptions([&] {
+                fileSource->reloadFrame(refetchFiles, frame);
+            });
+        }
+        else if(FileSourceImporter* parentImporter = dynamic_object_cast<FileSourceImporter>(dependent)) {
+            // If this importer is a child of another importer, forward the reload request to the parent importer.
+            parentImporter->requestReload(refetchFiles, frame);
+        }
+    });
 }
 
 /******************************************************************************
@@ -86,22 +86,22 @@ void FileSourceImporter::requestReload(bool refetchFiles, int frame)
 ******************************************************************************/
 void FileSourceImporter::requestFramesUpdate(bool refetchCurrentFile)
 {
-	OVITO_ASSERT_MSG(!QCoreApplication::instance() || QThread::currentThread() == QCoreApplication::instance()->thread(), "FileSourceImporter::requestReload", "This function may only be called from the main thread.");
-	OVITO_ASSERT(ExecutionContext::current().isValid());
+    OVITO_ASSERT_MSG(!QCoreApplication::instance() || QThread::currentThread() == QCoreApplication::instance()->thread(), "FileSourceImporter::requestReload", "This function may only be called from the main thread.");
+    OVITO_ASSERT(ExecutionContext::current().isValid());
 
-	// Retrieve the FileSource that owns this importer by looking it up in the list of dependents.
-	visitDependents([&](RefMaker* dependent) {
-		if(FileSource* fileSource = dynamic_object_cast<FileSource>(dependent)) {
-			// Scan input source for animation frames.
-			ExecutionContext::current().ui().handleExceptions([&] {
-				fileSource->updateListOfFrames(refetchCurrentFile);
-			});
-		}
-		else if(FileSourceImporter* parentImporter = dynamic_object_cast<FileSourceImporter>(dependent)) {
-			// If this importer is a child of another importer, forward the update request to the parent importer.
-			parentImporter->requestFramesUpdate(refetchCurrentFile);
-		}
-	});
+    // Retrieve the FileSource that owns this importer by looking it up in the list of dependents.
+    visitDependents([&](RefMaker* dependent) {
+        if(FileSource* fileSource = dynamic_object_cast<FileSource>(dependent)) {
+            // Scan input source for animation frames.
+            ExecutionContext::current().ui().handleExceptions([&] {
+                fileSource->updateListOfFrames(refetchCurrentFile);
+            });
+        }
+        else if(FileSourceImporter* parentImporter = dynamic_object_cast<FileSourceImporter>(dependent)) {
+            // If this importer is a child of another importer, forward the update request to the parent importer.
+            parentImporter->requestFramesUpdate(refetchCurrentFile);
+        }
+    });
 }
 
 /******************************************************************************
@@ -109,12 +109,12 @@ void FileSourceImporter::requestFramesUpdate(bool refetchCurrentFile)
 ******************************************************************************/
 FileSource* FileSourceImporter::fileSource() const
 {
-	FileSource* source = nullptr;
-	visitDependents([&](RefMaker* dependent) {
-		if(FileSource* fileSource = dynamic_object_cast<FileSource>(dependent))
-			source = fileSource;
-	});
-	return source;
+    FileSource* source = nullptr;
+    visitDependents([&](RefMaker* dependent) {
+        if(FileSource* fileSource = dynamic_object_cast<FileSource>(dependent))
+            source = fileSource;
+    });
+    return source;
 }
 
 /******************************************************************************
@@ -123,17 +123,17 @@ FileSource* FileSourceImporter::fileSource() const
 ******************************************************************************/
 bool FileSourceImporter::isReplaceExistingPossible(Scene* scene, const std::vector<QUrl>& sourceUrls)
 {
-	if(scene) {
-		// Look for an existing FileSource in the scene whose
-		// data source we can replace with the new file.
-		for(SceneNode* node : scene->selection()->nodes()) {
-			if(PipelineSceneNode* pipeline = dynamic_object_cast<PipelineSceneNode>(node)) {
-				if(dynamic_object_cast<FileSource>(pipeline->pipelineSource()))
-					return true;
-			}
-		}
-	}
-	return false;
+    if(scene) {
+        // Look for an existing FileSource in the scene whose
+        // data source we can replace with the new file.
+        for(SceneNode* node : scene->selection()->nodes()) {
+            if(PipelineSceneNode* pipeline = dynamic_object_cast<PipelineSceneNode>(node)) {
+                if(dynamic_object_cast<FileSource>(pipeline->pipelineSource()))
+                    return true;
+            }
+        }
+    }
+    return false;
 }
 
 /******************************************************************************
@@ -144,110 +144,110 @@ bool FileSourceImporter::isReplaceExistingPossible(Scene* scene, const std::vect
 ******************************************************************************/
 OORef<PipelineSceneNode> FileSourceImporter::importFileSet(Scene* scene, std::vector<std::pair<QUrl, OORef<FileImporter>>> sourceUrlsAndImporters, ImportMode importMode, bool autodetectFileSequences, MultiFileImportMode multiFileImportMode)
 {
-	OVITO_ASSERT(!sourceUrlsAndImporters.empty());
-	OORef<FileSource> existingFileSource;
-	PipelineSceneNode* existingPipeline = nullptr;
+    OVITO_ASSERT(!sourceUrlsAndImporters.empty());
+    OORef<FileSource> existingFileSource;
+    PipelineSceneNode* existingPipeline = nullptr;
 
-	if(importMode == ReplaceSelected) {
-		// Look for an existing FileSource in the scene whose
-		// data source can be replaced with the newly imported file.
-		if(scene) {
-			for(SceneNode* node : scene->selection()->nodes()) {
-				if(PipelineSceneNode* pipeline = dynamic_object_cast<PipelineSceneNode>(node)) {
-					existingFileSource = dynamic_object_cast<FileSource>(pipeline->pipelineSource());
-					if(existingFileSource) {
-						existingPipeline = pipeline;
-						break;
-					}
-				}
-			}
-		}
-	}
-	else if(importMode == ResetScene) {
-		if(scene)
-			scene->clear();
-	}
-	else if(importMode == AddToScene) {
-		OVITO_ASSERT(scene != nullptr);
-		if(scene->children().empty())
-			importMode = ResetScene;
-		else {
+    if(importMode == ReplaceSelected) {
+        // Look for an existing FileSource in the scene whose
+        // data source can be replaced with the newly imported file.
+        if(scene) {
+            for(SceneNode* node : scene->selection()->nodes()) {
+                if(PipelineSceneNode* pipeline = dynamic_object_cast<PipelineSceneNode>(node)) {
+                    existingFileSource = dynamic_object_cast<FileSource>(pipeline->pipelineSource());
+                    if(existingFileSource) {
+                        existingPipeline = pipeline;
+                        break;
+                    }
+                }
+            }
+        }
+    }
+    else if(importMode == ResetScene) {
+        if(scene)
+            scene->clear();
+    }
+    else if(importMode == AddToScene) {
+        OVITO_ASSERT(scene != nullptr);
+        if(scene->children().empty())
+            importMode = ResetScene;
+        else {
 #ifndef OVITO_BUILD_PROFESSIONAL
-			throw Exception(tr("Sorry, this operation cannot be performed in OVITO Basic. Importing multiple datasets into the same scene is supported by <a href=\"https://www.ovito.org/about/ovito-pro/\">OVITO Pro</a>."));
+            throw Exception(tr("Sorry, this operation cannot be performed in OVITO Basic. Importing multiple datasets into the same scene is supported by <a href=\"https://www.ovito.org/about/ovito-pro/\">OVITO Pro</a>."));
 #endif
-		}
-	}
+        }
+    }
 
-	OORef<FileSource> fileSource = existingFileSource;
+    OORef<FileSource> fileSource = existingFileSource;
 
-	// Create the object that will insert the imported data into the scene.
-	if(!fileSource)
-		fileSource = OORef<FileSource>::create();
+    // Create the object that will insert the imported data into the scene.
+    if(!fileSource)
+        fileSource = OORef<FileSource>::create();
 
-	// Inherit multi-timestep flag from existing importer, but only if the old importer
-	// was for the same file format. That's because the new importer may not support multi-timestep
-	// files at all.
-	if(existingFileSource && existingFileSource->importer() && existingFileSource->importer()->getOOClass() == this->getOOClass() && existingFileSource->importer()->isMultiTimestepFile())
-		setMultiTimestepFile(true);
+    // Inherit multi-timestep flag from existing importer, but only if the old importer
+    // was for the same file format. That's because the new importer may not support multi-timestep
+    // files at all.
+    if(existingFileSource && existingFileSource->importer() && existingFileSource->importer()->getOOClass() == this->getOOClass() && existingFileSource->importer()->isMultiTimestepFile())
+        setMultiTimestepFile(true);
 
-	// Create a new pipeline node in the scene for the linked data.
-	OORef<PipelineSceneNode> pipeline;
-	if(existingPipeline == nullptr) {
-		{
-			UndoSuspender unsoSuspender;	// Do not create undo records for this part.
+    // Create a new pipeline node in the scene for the linked data.
+    OORef<PipelineSceneNode> pipeline;
+    if(existingPipeline == nullptr) {
+        {
+            UndoSuspender unsoSuspender;    // Do not create undo records for this part.
 
-			// Add object to scene.
-			pipeline = OORef<PipelineSceneNode>::create();
-			pipeline->setDataProvider(fileSource);
+            // Add object to scene.
+            pipeline = OORef<PipelineSceneNode>::create();
+            pipeline->setDataProvider(fileSource);
 
-			// Let the importer subclass customize the pipeline scene node.
-			setupPipeline(pipeline, fileSource);
-		}
+            // Let the importer subclass customize the pipeline scene node.
+            setupPipeline(pipeline, fileSource);
+        }
 
-		// Insert pipeline into scene.
-		if(importMode != DontAddToScene && scene != nullptr)
-			scene->addChildNode(pipeline);
-	}
-	else pipeline = existingPipeline;
+        // Insert pipeline into scene.
+        if(importMode != DontAddToScene && scene != nullptr)
+            scene->addChildNode(pipeline);
+    }
+    else pipeline = existingPipeline;
 
-	// Select new object in the scene.
-	if(importMode != DontAddToScene && scene != nullptr)
-		scene->selection()->setNode(pipeline);
+    // Select new object in the scene.
+    if(importMode != DontAddToScene && scene != nullptr)
+        scene->selection()->setNode(pipeline);
 
-	// Concatenate all files from the input list having the same file format into one sequence,
-	// which gets handled by this importer.
-	std::vector<QUrl> sourceUrls;
-	OVITO_ASSERT(sourceUrlsAndImporters.front().second == this);
-	sourceUrls.push_back(std::move(sourceUrlsAndImporters.front().first));
-	auto iter = std::next(sourceUrlsAndImporters.begin());
-	if(multiFileImportMode == ImportAsTrajectory) {
-		for(; iter != sourceUrlsAndImporters.end(); ++iter) {
-			if(iter->second->getOOClass() != this->getOOClass())
-				break;
-			sourceUrls.push_back(std::move(iter->first));		
-		}
-	}
-	sourceUrlsAndImporters.erase(sourceUrlsAndImporters.begin(), iter); 
+    // Concatenate all files from the input list having the same file format into one sequence,
+    // which gets handled by this importer.
+    std::vector<QUrl> sourceUrls;
+    OVITO_ASSERT(sourceUrlsAndImporters.front().second == this);
+    sourceUrls.push_back(std::move(sourceUrlsAndImporters.front().first));
+    auto iter = std::next(sourceUrlsAndImporters.begin());
+    if(multiFileImportMode == ImportAsTrajectory) {
+        for(; iter != sourceUrlsAndImporters.end(); ++iter) {
+            if(iter->second->getOOClass() != this->getOOClass())
+                break;
+            sourceUrls.push_back(std::move(iter->first));       
+        }
+    }
+    sourceUrlsAndImporters.erase(sourceUrlsAndImporters.begin(), iter); 
 
-	// Set the input file location(s) and importer.
-	bool keepExistingDataCollection = true;
-	if(!fileSource->setSource(std::move(sourceUrls), this, autodetectFileSequences && (sourceUrls.size() == 1 && sourceUrlsAndImporters.empty()), keepExistingDataCollection))
-		return {};
+    // Set the input file location(s) and importer.
+    bool keepExistingDataCollection = true;
+    if(!fileSource->setSource(std::move(sourceUrls), this, autodetectFileSequences && (sourceUrls.size() == 1 && sourceUrlsAndImporters.empty()), keepExistingDataCollection))
+        return {};
 
-	if(importMode != ReplaceSelected && importMode != DontAddToScene) {
-		// Adjust viewports to completely show the newly imported object.
-		// This needs to be deferred until after the data has been completely loaded and its extents are known.
-		ExecutionContext::current().ui().zoomToSceneExtentsWhenReady();
-	}
+    if(importMode != ReplaceSelected && importMode != DontAddToScene) {
+        // Adjust viewports to completely show the newly imported object.
+        // This needs to be deferred until after the data has been completely loaded and its extents are known.
+        ExecutionContext::current().ui().zoomToSceneExtentsWhenReady();
+    }
 
-	// If this importer did not handle all supplied input files, 
-	// continue importing the remaining files.
-	if(!sourceUrlsAndImporters.empty()) {
-		if(!importFurtherFiles(scene, std::move(sourceUrlsAndImporters), importMode, autodetectFileSequences, multiFileImportMode, pipeline))
-			return {};
-	}
+    // If this importer did not handle all supplied input files, 
+    // continue importing the remaining files.
+    if(!sourceUrlsAndImporters.empty()) {
+        if(!importFurtherFiles(scene, std::move(sourceUrlsAndImporters), importMode, autodetectFileSequences, multiFileImportMode, pipeline))
+            return {};
+    }
 
-	return pipeline;
+    return pipeline;
 }
 
 /******************************************************************************
@@ -255,12 +255,12 @@ OORef<PipelineSceneNode> FileSourceImporter::importFileSet(Scene* scene, std::ve
 ******************************************************************************/
 bool FileSourceImporter::importFurtherFiles(Scene* scene, std::vector<std::pair<QUrl, OORef<FileImporter>>> sourceUrlsAndImporters, ImportMode importMode, bool autodetectFileSequences, MultiFileImportMode multiFileImportMode, PipelineSceneNode* pipeline)
 {
-	if(importMode == DontAddToScene)
-		return true;	// It doesn't make sense to import additional datasets if they are not being added to the scene. They would get lost.
+    if(importMode == DontAddToScene)
+        return true;    // It doesn't make sense to import additional datasets if they are not being added to the scene. They would get lost.
 
-	OVITO_ASSERT(!sourceUrlsAndImporters.empty());
-	OORef<FileImporter> importer = sourceUrlsAndImporters.front().second;
-	return importer->importFileSet(scene, std::move(sourceUrlsAndImporters), AddToScene, autodetectFileSequences, multiFileImportMode);
+    OVITO_ASSERT(!sourceUrlsAndImporters.empty());
+    OORef<FileImporter> importer = sourceUrlsAndImporters.front().second;
+    return importer->importFileSet(scene, std::move(sourceUrlsAndImporters), AddToScene, autodetectFileSequences, multiFileImportMode);
 }
 
 /******************************************************************************
@@ -268,7 +268,7 @@ bool FileSourceImporter::importFurtherFiles(Scene* scene, std::vector<std::pair<
 ******************************************************************************/
 bool FileSourceImporter::isWildcardPattern(const QUrl& sourceUrl)
 {
-	return QFileInfo(sourceUrl.path()).fileName().contains('*');
+    return QFileInfo(sourceUrl.path()).fileName().contains('*');
 }
 
 /******************************************************************************
@@ -277,36 +277,36 @@ bool FileSourceImporter::isWildcardPattern(const QUrl& sourceUrl)
 ******************************************************************************/
 Future<QVector<FileSourceImporter::Frame>> FileSourceImporter::discoverFrames(const std::vector<QUrl>& sourceUrls)
 {
-	OVITO_ASSERT_MSG(!QCoreApplication::instance() || QThread::currentThread() == QCoreApplication::instance()->thread(), "FileSourceImporter::discoverFrames", "This function may only be called from the main thread.");
-	OVITO_ASSERT(ExecutionContext::current().isValid());
+    OVITO_ASSERT_MSG(!QCoreApplication::instance() || QThread::currentThread() == QCoreApplication::instance()->thread(), "FileSourceImporter::discoverFrames", "This function may only be called from the main thread.");
+    OVITO_ASSERT(ExecutionContext::current().isValid());
 
-	// No output if there is no input.
-	if(sourceUrls.empty())
-		return QVector<Frame>();
+    // No output if there is no input.
+    if(sourceUrls.empty())
+        return QVector<Frame>();
 
-	// If there is only a single input path, call sub-routine handling single paths.
-	if(sourceUrls.size() == 1)
-		return discoverFrames(sourceUrls.front());
+    // If there is only a single input path, call sub-routine handling single paths.
+    if(sourceUrls.size() == 1)
+        return discoverFrames(sourceUrls.front());
 
-	// Sequentually invoke single-path routine for each input path and compile results
-	// into one big list that is returned to the caller.
-	auto combinedList = std::make_shared<QVector<Frame>>();
-	Future<QVector<Frame>> future;
-	for(const QUrl& url : sourceUrls) {
-		if(!future.isValid()) {
-			future = discoverFrames(url);
-		}
-		else {
-			future = future.then(*this, [this, combinedList, url](const QVector<Frame>& frames) {
-				*combinedList += frames;
-				return discoverFrames(url);
-			});
-		}
-	}
-	return future.then([combinedList](const QVector<Frame>& frames) {
-		*combinedList += frames;
-		return std::move(*combinedList);
-	});
+    // Sequentually invoke single-path routine for each input path and compile results
+    // into one big list that is returned to the caller.
+    auto combinedList = std::make_shared<QVector<Frame>>();
+    Future<QVector<Frame>> future;
+    for(const QUrl& url : sourceUrls) {
+        if(!future.isValid()) {
+            future = discoverFrames(url);
+        }
+        else {
+            future = future.then(*this, [this, combinedList, url](const QVector<Frame>& frames) {
+                *combinedList += frames;
+                return discoverFrames(url);
+            });
+        }
+    }
+    return future.then([combinedList](const QVector<Frame>& frames) {
+        *combinedList += frames;
+        return std::move(*combinedList);
+    });
 }
 
 
@@ -316,49 +316,49 @@ Future<QVector<FileSourceImporter::Frame>> FileSourceImporter::discoverFrames(co
 ******************************************************************************/
 Future<QVector<FileSourceImporter::Frame>> FileSourceImporter::discoverFrames(const QUrl& sourceUrl)
 {
-	OVITO_ASSERT_MSG(!QCoreApplication::instance() || QThread::currentThread() == QCoreApplication::instance()->thread(), "FileSourceImporter::discoverFrames", "This function may only be called from the main thread.");
-	OVITO_ASSERT(ExecutionContext::current().isValid());
+    OVITO_ASSERT_MSG(!QCoreApplication::instance() || QThread::currentThread() == QCoreApplication::instance()->thread(), "FileSourceImporter::discoverFrames", "This function may only be called from the main thread.");
+    OVITO_ASSERT(ExecutionContext::current().isValid());
 
-	if(shouldScanFileForFrames(sourceUrl)) {
+    if(shouldScanFileForFrames(sourceUrl)) {
 
-		// Check if filename is a wildcard pattern.
-		// If yes, find all matching files and scan each one of them.
-		if(isWildcardPattern(sourceUrl)) {
-			return findWildcardMatches(sourceUrl)
-				.then(*this, [this](const std::vector<QUrl>& fileList) {
-					return discoverFrames(fileList);
-				});
-		}
+        // Check if filename is a wildcard pattern.
+        // If yes, find all matching files and scan each one of them.
+        if(isWildcardPattern(sourceUrl)) {
+            return findWildcardMatches(sourceUrl)
+                .then(*this, [this](const std::vector<QUrl>& fileList) {
+                    return discoverFrames(fileList);
+                });
+        }
 
-		// Fetch file, then scan it.
-		return Application::instance()->fileManager().fetchUrl(sourceUrl)
-			.then(*this, [this](const FileHandle& fileHandle) {
-				return discoverFrames(fileHandle);
-			});
-	}
-	else {
-		if(isWildcardPattern(sourceUrl)) {
-			// Find all files matching the file pattern.
-			return findWildcardMatches(sourceUrl)
-				.then(*this, [](const std::vector<QUrl>& fileList) {
-					// Turn the file list into a frame list.
-					QVector<Frame> frames;
-					frames.reserve(fileList.size());
-					for(const QUrl& url : fileList) {
-						QFileInfo fileInfo(url.path());
-						QDateTime dateTime = url.isLocalFile() ? fileInfo.lastModified() : QDateTime();
-						frames.push_back(Frame(url, 0, 1, dateTime, fileInfo.fileName()));
-					}
-					return frames;
-				});
-		}
-		else {
-			// Build just a single frame from the source URL.
-			QFileInfo fileInfo(sourceUrl.path());
-			QDateTime dateTime = sourceUrl.isLocalFile() ? fileInfo.lastModified() : QDateTime();
-			return QVector<Frame>{{ Frame(sourceUrl, 0, 1, dateTime, fileInfo.fileName()) }};
-		}
-	}
+        // Fetch file, then scan it.
+        return Application::instance()->fileManager().fetchUrl(sourceUrl)
+            .then(*this, [this](const FileHandle& fileHandle) {
+                return discoverFrames(fileHandle);
+            });
+    }
+    else {
+        if(isWildcardPattern(sourceUrl)) {
+            // Find all files matching the file pattern.
+            return findWildcardMatches(sourceUrl)
+                .then(*this, [](const std::vector<QUrl>& fileList) {
+                    // Turn the file list into a frame list.
+                    QVector<Frame> frames;
+                    frames.reserve(fileList.size());
+                    for(const QUrl& url : fileList) {
+                        QFileInfo fileInfo(url.path());
+                        QDateTime dateTime = url.isLocalFile() ? fileInfo.lastModified() : QDateTime();
+                        frames.push_back(Frame(url, 0, 1, dateTime, fileInfo.fileName()));
+                    }
+                    return frames;
+                });
+        }
+        else {
+            // Build just a single frame from the source URL.
+            QFileInfo fileInfo(sourceUrl.path());
+            QDateTime dateTime = sourceUrl.isLocalFile() ? fileInfo.lastModified() : QDateTime();
+            return QVector<Frame>{{ Frame(sourceUrl, 0, 1, dateTime, fileInfo.fileName()) }};
+        }
+    }
 }
 
 /******************************************************************************
@@ -367,14 +367,14 @@ Future<QVector<FileSourceImporter::Frame>> FileSourceImporter::discoverFrames(co
 ******************************************************************************/
 Future<QVector<FileSourceImporter::Frame>> FileSourceImporter::discoverFrames(const FileHandle& fileHandle)
 {
-	OVITO_ASSERT_MSG(!QCoreApplication::instance() || QThread::currentThread() == QCoreApplication::instance()->thread(), "FileSourceImporter::discoverFrames", "This function may only be called from the main thread.");
-	OVITO_ASSERT(ExecutionContext::current().isValid());
+    OVITO_ASSERT_MSG(!QCoreApplication::instance() || QThread::currentThread() == QCoreApplication::instance()->thread(), "FileSourceImporter::discoverFrames", "This function may only be called from the main thread.");
+    OVITO_ASSERT(ExecutionContext::current().isValid());
 
-	// Scan file.
-	if(FrameFinderPtr frameFinder = createFrameFinder(fileHandle))
-		return frameFinder->runAsync(true);
-	else
-		return QVector<Frame>{{ Frame(fileHandle) }};
+    // Scan file.
+    if(FrameFinderPtr frameFinder = createFrameFinder(fileHandle))
+        return frameFinder->runAsync(true);
+    else
+        return QVector<Frame>{{ Frame(fileHandle) }};
 }
 
 /******************************************************************************
@@ -382,37 +382,37 @@ Future<QVector<FileSourceImporter::Frame>> FileSourceImporter::discoverFrames(co
 ******************************************************************************/
 Future<PipelineFlowState> FileSourceImporter::loadFrame(const LoadOperationRequest& request)
 {
-	OVITO_ASSERT_MSG(!QCoreApplication::instance() || QThread::currentThread() == QCoreApplication::instance()->thread(), "FileSourceImporter::loadFrame", "This function may only be called from the main thread.");
-	OVITO_ASSERT(ExecutionContext::current().isValid());
+    OVITO_ASSERT_MSG(!QCoreApplication::instance() || QThread::currentThread() == QCoreApplication::instance()->thread(), "FileSourceImporter::loadFrame", "This function may only be called from the main thread.");
+    OVITO_ASSERT(ExecutionContext::current().isValid());
 
-	// Note: FileSourceImporter::loadFrame() may not be called while undo recording is active.
-	OVITO_ASSERT(!isUndoRecording());
+    // Note: FileSourceImporter::loadFrame() may not be called while undo recording is active.
+    OVITO_ASSERT(!isUndoRecording());
 
-	// Create the frame loader for the requested frame.
-	FrameLoaderPtr frameLoader = createFrameLoader(request);
-	OVITO_ASSERT(frameLoader);
+    // Create the frame loader for the requested frame.
+    FrameLoaderPtr frameLoader = createFrameLoader(request);
+    OVITO_ASSERT(frameLoader);
 
-	// Execute the loader in a background thread.
-	Future<PipelineFlowState> future = frameLoader->runAsync(true);
+    // Execute the loader in a background thread.
+    Future<PipelineFlowState> future = frameLoader->runAsync(true);
 
-	// If the parser has detects additional frames following the first frame in the 
-	// input file being loaded, automatically turn on scanning of the input file.
-	// Only automatically turn scanning on if the file is being newly imported, i.e. if the file source has not loaded a data collection yet.
-	if(request.isNewlyImportedFile) {
-		// Note: Changing a parameter of the file importer must be done in the correct thread.
-		future.finally(*this, [this](Task& task) noexcept {
-			if(!task.isCanceled()) {
-				FrameLoader& frameLoader = static_cast<FrameLoader&>(task);
-				if(frameLoader.additionalFramesDetected() && !isMultiTimestepFile()) {
-					ExecutionContext::current().ui().handleExceptions([&] {
-						setMultiTimestepFile(true);
-					});
-				}
-			}
-		});
-	}
+    // If the parser has detects additional frames following the first frame in the 
+    // input file being loaded, automatically turn on scanning of the input file.
+    // Only automatically turn scanning on if the file is being newly imported, i.e. if the file source has not loaded a data collection yet.
+    if(request.isNewlyImportedFile) {
+        // Note: Changing a parameter of the file importer must be done in the correct thread.
+        future.finally(*this, [this](Task& task) noexcept {
+            if(!task.isCanceled()) {
+                FrameLoader& frameLoader = static_cast<FrameLoader&>(task);
+                if(frameLoader.additionalFramesDetected() && !isMultiTimestepFile()) {
+                    ExecutionContext::current().ui().handleExceptions([&] {
+                        setMultiTimestepFile(true);
+                    });
+                }
+            }
+        });
+    }
 
-	return future;
+    return future;
 }
 
 /******************************************************************************
@@ -420,19 +420,19 @@ Future<PipelineFlowState> FileSourceImporter::loadFrame(const LoadOperationReque
 ******************************************************************************/
 void FileSourceImporter::FrameFinder::perform()
 {
-	QVector<Frame> frameList;
-	try {		
-		discoverFramesInFile(frameList);
-	}
-	catch(const Exception&) {
-		// Silently ignore parsing and I/O errors if at least two frames have been read.
-		// Keep all frames read up to where the error occurred.
-		if(frameList.size() <= 1)
-			throw;
-		else
-			frameList.pop_back();		// Remove last discovered frame because it may be corrupted or only partially written.
-	}
-	setResult(std::move(frameList));
+    QVector<Frame> frameList;
+    try {       
+        discoverFramesInFile(frameList);
+    }
+    catch(const Exception&) {
+        // Silently ignore parsing and I/O errors if at least two frames have been read.
+        // Keep all frames read up to where the error occurred.
+        if(frameList.size() <= 1)
+            throw;
+        else
+            frameList.pop_back();       // Remove last discovered frame because it may be corrupted or only partially written.
+    }
+    setResult(std::move(frameList));
 }
 
 /******************************************************************************
@@ -440,8 +440,8 @@ void FileSourceImporter::FrameFinder::perform()
 ******************************************************************************/
 void FileSourceImporter::FrameFinder::discoverFramesInFile(QVector<FileSourceImporter::Frame>& frames)
 {
-	// By default, register a single frame.
-	frames.push_back(Frame(fileHandle()));
+    // By default, register a single frame.
+    frames.push_back(Frame(fileHandle()));
 }
 
 /******************************************************************************
@@ -449,96 +449,96 @@ void FileSourceImporter::FrameFinder::discoverFramesInFile(QVector<FileSourceImp
 ******************************************************************************/
 Future<std::vector<QUrl>> FileSourceImporter::findWildcardMatches(const QUrl& sourceUrl)
 {
-	// Determine whether the filename contains a wildcard character.
-	if(!isWildcardPattern(sourceUrl)) {
+    // Determine whether the filename contains a wildcard character.
+    if(!isWildcardPattern(sourceUrl)) {
 
-		// It's not a wildcard pattern. Register just a single frame.
-		return std::vector<QUrl>{ sourceUrl };
-	}
-	else {
-		QFileInfo fileInfo(sourceUrl.path());
-		QString pattern = fileInfo.fileName();
+        // It's not a wildcard pattern. Register just a single frame.
+        return std::vector<QUrl>{ sourceUrl };
+    }
+    else {
+        QFileInfo fileInfo(sourceUrl.path());
+        QString pattern = fileInfo.fileName();
 
-		QDir directory;
-		bool isLocalPath = false;
-		Future<QStringList> entriesFuture;
+        QDir directory;
+        bool isLocalPath = false;
+        Future<QStringList> entriesFuture;
 
-		// Scan the directory for files matching the wildcard pattern.
-		if(sourceUrl.isLocalFile()) {
+        // Scan the directory for files matching the wildcard pattern.
+        if(sourceUrl.isLocalFile()) {
 
-			QStringList entries;
-			isLocalPath = true;
-			directory = QFileInfo(sourceUrl.toLocalFile()).dir();
-			for(const QString& filename : directory.entryList(QDir::Files|QDir::NoDotAndDotDot|QDir::Hidden, QDir::Name)) {
-				if(matchesWildcardPattern(pattern, filename))
-					entries << filename;
-			}
-			entriesFuture = Future<QStringList>::createImmediate(std::move(entries));
-		}
-		else {
+            QStringList entries;
+            isLocalPath = true;
+            directory = QFileInfo(sourceUrl.toLocalFile()).dir();
+            for(const QString& filename : directory.entryList(QDir::Files|QDir::NoDotAndDotDot|QDir::Hidden, QDir::Name)) {
+                if(matchesWildcardPattern(pattern, filename))
+                    entries << filename;
+            }
+            entriesFuture = Future<QStringList>::createImmediate(std::move(entries));
+        }
+        else {
 
-			directory = fileInfo.dir();
-			QUrl directoryUrl = sourceUrl;
-			directoryUrl.setPath(fileInfo.path());
+            directory = fileInfo.dir();
+            QUrl directoryUrl = sourceUrl;
+            directoryUrl.setPath(fileInfo.path());
 
-			// Retrieve list of files in remote directory.
-			Future<QStringList> remoteFileListFuture = Application::instance()->fileManager().listDirectoryContents(directoryUrl);
+            // Retrieve list of files in remote directory.
+            Future<QStringList> remoteFileListFuture = Application::instance()->fileManager().listDirectoryContents(directoryUrl);
 
-			// Filter file names.
-			entriesFuture = remoteFileListFuture.then([pattern](QStringList&& remoteFileList) {
-				QStringList entries;
-				for(const QString& filename : remoteFileList) {
-					if(matchesWildcardPattern(pattern, filename))
-						entries << filename;
-				}
-				return entries;
-			});
-		}
+            // Filter file names.
+            entriesFuture = remoteFileListFuture.then([pattern](QStringList&& remoteFileList) {
+                QStringList entries;
+                for(const QString& filename : remoteFileList) {
+                    if(matchesWildcardPattern(pattern, filename))
+                        entries << filename;
+                }
+                return entries;
+            });
+        }
 
-		// Sort the file list.
-		return entriesFuture.then([isLocalPath, sourceUrl, directory](QStringList&& entries) {
+        // Sort the file list.
+        return entriesFuture.then([isLocalPath, sourceUrl, directory](QStringList&& entries) {
 
-			// A file called "abc9.xyz" must come before a file named "abc10.xyz", which is not
-			// the default lexicographic ordering.
-			QMap<QString, QString> sortedFilenames;
-			for(QString& oldName : entries) {
-				// Generate a new name from the original filename that yields the correct ordering.
-				QString newName;
-				QString number;
-				for(QChar c : oldName) {
-					if(!c.isDigit()) {
-						if(!number.isEmpty()) {
-							newName.append(number.rightJustified(12, '0'));
-							number.clear();
-						}
-						newName.append(c);
-					}
-					else number.append(c);
-				}
-				if(!number.isEmpty())
-					newName.append(number.rightJustified(12, '0'));
-				if(!sortedFilenames.contains(newName))
-					sortedFilenames[newName] = std::move(oldName);
-				else
-					sortedFilenames[oldName] = oldName;
-			}
+            // A file called "abc9.xyz" must come before a file named "abc10.xyz", which is not
+            // the default lexicographic ordering.
+            QMap<QString, QString> sortedFilenames;
+            for(QString& oldName : entries) {
+                // Generate a new name from the original filename that yields the correct ordering.
+                QString newName;
+                QString number;
+                for(QChar c : oldName) {
+                    if(!c.isDigit()) {
+                        if(!number.isEmpty()) {
+                            newName.append(number.rightJustified(12, '0'));
+                            number.clear();
+                        }
+                        newName.append(c);
+                    }
+                    else number.append(c);
+                }
+                if(!number.isEmpty())
+                    newName.append(number.rightJustified(12, '0'));
+                if(!sortedFilenames.contains(newName))
+                    sortedFilenames[newName] = std::move(oldName);
+                else
+                    sortedFilenames[oldName] = oldName;
+            }
 
-			// Generate final list of frames.
-			std::vector<QUrl> urls;
-			urls.reserve(sortedFilenames.size());
-			for(auto iter = sortedFilenames.constBegin(); iter != sortedFilenames.constEnd(); ++iter) {
-				QFileInfo fileInfo(directory, iter.value());
-				QUrl url = sourceUrl;
-				if(isLocalPath)
-					url = QUrl::fromLocalFile(fileInfo.filePath());
-				else
-					url.setPath(fileInfo.filePath());
-				urls.push_back(url);
-			}
+            // Generate final list of frames.
+            std::vector<QUrl> urls;
+            urls.reserve(sortedFilenames.size());
+            for(auto iter = sortedFilenames.constBegin(); iter != sortedFilenames.constEnd(); ++iter) {
+                QFileInfo fileInfo(directory, iter.value());
+                QUrl url = sourceUrl;
+                if(isLocalPath)
+                    url = QUrl::fromLocalFile(fileInfo.filePath());
+                else
+                    url.setPath(fileInfo.filePath());
+                urls.push_back(url);
+            }
 
-			return urls;
-		});
-	}
+            return urls;
+        });
+    }
 }
 
 /******************************************************************************
@@ -546,23 +546,23 @@ Future<std::vector<QUrl>> FileSourceImporter::findWildcardMatches(const QUrl& so
 ******************************************************************************/
 bool FileSourceImporter::matchesWildcardPattern(const QString& pattern, const QString& filename)
 {
-	QString::const_iterator p = pattern.constBegin();
-	QString::const_iterator f = filename.constBegin();
-	while(p != pattern.constEnd() && f != filename.constEnd()) {
-		if(*p == QChar('*')) {
-			if(!f->isDigit())
-				return false;
-			do { ++f; }
-			while(f != filename.constEnd() && f->isDigit());
-			++p;
-			continue;
-		}
-		else if(*p != *f)
-			return false;
-		++p;
-		++f;
-	}
-	return p == pattern.constEnd() && f == filename.constEnd();
+    QString::const_iterator p = pattern.constBegin();
+    QString::const_iterator f = filename.constBegin();
+    while(p != pattern.constEnd() && f != filename.constEnd()) {
+        if(*p == QChar('*')) {
+            if(!f->isDigit())
+                return false;
+            do { ++f; }
+            while(f != filename.constEnd() && f->isDigit());
+            ++p;
+            continue;
+        }
+        else if(*p != *f)
+            return false;
+        ++p;
+        ++f;
+    }
+    return p == pattern.constEnd() && f == filename.constEnd();
 }
 
 /******************************************************************************
@@ -570,10 +570,10 @@ bool FileSourceImporter::matchesWildcardPattern(const QString& pattern, const QS
 ******************************************************************************/
 SaveStream& operator<<(SaveStream& stream, const FileSourceImporter::Frame& frame)
 {
-	stream.beginChunk(0x03);
-	stream << frame.sourceFile << frame.byteOffset << frame.lineNumber << frame.lastModificationTime << frame.label << frame.parserData;
-	stream.endChunk();
-	return stream;
+    stream.beginChunk(0x03);
+    stream << frame.sourceFile << frame.byteOffset << frame.lineNumber << frame.lastModificationTime << frame.label << frame.parserData;
+    stream.endChunk();
+    return stream;
 }
 
 /******************************************************************************
@@ -581,10 +581,10 @@ SaveStream& operator<<(SaveStream& stream, const FileSourceImporter::Frame& fram
 ******************************************************************************/
 LoadStream& operator>>(LoadStream& stream, FileSourceImporter::Frame& frame)
 {
-	stream.expectChunk(0x03);
-	stream >> frame.sourceFile >> frame.byteOffset >> frame.lineNumber >> frame.lastModificationTime >> frame.label >> frame.parserData;
-	stream.closeChunk();
-	return stream;
+    stream.expectChunk(0x03);
+    stream >> frame.sourceFile >> frame.byteOffset >> frame.lineNumber >> frame.lastModificationTime >> frame.label >> frame.parserData;
+    stream.closeChunk();
+    return stream;
 }
 
 /******************************************************************************
@@ -593,11 +593,11 @@ LoadStream& operator>>(LoadStream& stream, FileSourceImporter::Frame& frame)
 ******************************************************************************/
 void FileSourceImporter::FrameLoader::perform()
 {
-	// Let the subclass implementation parse the file.
-	loadFile();
+    // Let the subclass implementation parse the file.
+    loadFile();
 
-	// Pass the constructed pipeline state back to the caller.
-	setResult(std::move(_loadRequest.state));
+    // Pass the constructed pipeline state back to the caller.
+    setResult(std::move(_loadRequest.state));
 }
 
-}	// End of namespace
+}   // End of namespace

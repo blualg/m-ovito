@@ -38,27 +38,27 @@ namespace Ovito::Particles {
 ******************************************************************************/
 bool BondPickingHelper::pickBond(ViewportWindowInterface* vpwin, const QPoint& clickPoint, PickResult& result)
 {
-	ViewportPickResult vpPickResult = vpwin->pick(clickPoint);
-	// Check if user has clicked on something.
-	if(vpPickResult.isValid()) {
+    ViewportPickResult vpPickResult = vpwin->pick(clickPoint);
+    // Check if user has clicked on something.
+    if(vpPickResult.isValid()) {
 
-		// Check if that was a bond.
-		if(BondPickInfo* pickInfo = dynamic_object_cast<BondPickInfo>(vpPickResult.pickInfo())) {
-			if(pickInfo->particles()->bonds()) {
-				size_t bondIndex = vpPickResult.subobjectId() / 2;
-				const PropertyObject* topologyProperty = pickInfo->particles()->bonds()->getTopology();
-				if(topologyProperty && topologyProperty->size() > bondIndex) {
-					// Save reference to the selected bond.
-					result.sceneNode = vpPickResult.pipelineNode();
-					result.bondIndex = bondIndex;
-					return true;
-				}
-			}
-		}
-	}
+        // Check if that was a bond.
+        if(BondPickInfo* pickInfo = dynamic_object_cast<BondPickInfo>(vpPickResult.pickInfo())) {
+            if(pickInfo->particles()->bonds()) {
+                size_t bondIndex = vpPickResult.subobjectId() / 2;
+                const PropertyObject* topologyProperty = pickInfo->particles()->bonds()->getTopology();
+                if(topologyProperty && topologyProperty->size() > bondIndex) {
+                    // Save reference to the selected bond.
+                    result.sceneNode = vpPickResult.pipelineNode();
+                    result.bondIndex = bondIndex;
+                    return true;
+                }
+            }
+        }
+    }
 
-	result.sceneNode = nullptr;
-	return false;
+    result.sceneNode = nullptr;
+    return false;
 }
 
-}	// End of namespace
+}   // End of namespace

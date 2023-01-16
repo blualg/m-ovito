@@ -33,55 +33,55 @@ namespace Ovito::StdObj {
  */
 class OVITO_STDOBJGUI_EXPORT InputColumnMappingDialog : public QDialog
 {
-	Q_OBJECT
+    Q_OBJECT
 
 public:
 
-	/// Constructor.
-	InputColumnMappingDialog(MainWindow& mainWindow, const InputColumnMapping& mapping, QWidget* parent);
+    /// Constructor.
+    InputColumnMappingDialog(MainWindow& mainWindow, const InputColumnMapping& mapping, QWidget* parent);
 
-	/// Fills the editor with the given mapping.
-	void setMapping(const InputColumnMapping& mapping);
+    /// Fills the editor with the given mapping.
+    void setMapping(const InputColumnMapping& mapping);
 
-	/// Returns the user-defined column mapping.
-	InputColumnMapping mapping() const;
+    /// Returns the user-defined column mapping.
+    InputColumnMapping mapping() const;
 
 protected Q_SLOTS:
 
-	/// This is called when the user has pressed the OK button.
-	void onOk();
+    /// This is called when the user has pressed the OK button.
+    void onOk();
 
-	/// Updates the list of vector components for the given file column.
-	void updateVectorComponentList(int columnIndex);
+    /// Updates the list of vector components for the given file column.
+    void updateVectorComponentList(int columnIndex);
 
-	/// Saves the current mapping as a preset.
-	void onSavePreset();
+    /// Saves the current mapping as a preset.
+    void onSavePreset();
 
-	/// Loads a preset mapping.
-	void onLoadPreset();
+    /// Loads a preset mapping.
+    void onLoadPreset();
 
 protected:
 
-	/// \brief Returns the string representation of a property's data type.
-	static QString dataTypeToString(int dataType);
+    /// \brief Returns the string representation of a property's data type.
+    static QString dataTypeToString(int dataType);
 
-	MainWindow& _mainWindow;
+    MainWindow& _mainWindow;
 
-	/// The property container type.
-	PropertyContainerClassPtr _containerClass = nullptr;
+    /// The property container type.
+    PropertyContainerClassPtr _containerClass = nullptr;
 
-	/// The main table widget that contains the entries for each data column of the input file.
-	QTableWidget* _tableWidget;
+    /// The main table widget that contains the entries for each data column of the input file.
+    QTableWidget* _tableWidget;
 
-	QVector<QCheckBox*> _fileColumnBoxes;
-	QVector<QComboBox*> _propertyBoxes;
-	QVector<QComboBox*> _vectorComponentBoxes;
-	QVector<int> _propertyDataTypes;
+    QVector<QCheckBox*> _fileColumnBoxes;
+    QVector<QComboBox*> _propertyBoxes;
+    QVector<QComboBox*> _vectorComponentBoxes;
+    QVector<int> _propertyDataTypes;
 
-	QSignalMapper* _vectorCmpntSignalMapper;
+    QSignalMapper* _vectorCmpntSignalMapper;
 
-	QLabel* _fileExcerptLabel;
-	QTextEdit* _fileExcerptField;
+    QLabel* _fileExcerptLabel;
+    QTextEdit* _fileExcerptField;
 };
 
-}	// End of namespace
+}   // End of namespace

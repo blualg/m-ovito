@@ -37,7 +37,7 @@ namespace Ovito {
 ******************************************************************************/
 ViewportInputManager* BaseViewportWindow::inputManager() const
 {
-	return userInterface().viewportInputManager();
+    return userInterface().viewportInputManager();
 }
 
 /******************************************************************************
@@ -45,10 +45,10 @@ ViewportInputManager* BaseViewportWindow::inputManager() const
 ******************************************************************************/
 span<ViewportGizmo*> BaseViewportWindow::viewportGizmos()
 {
-	if(ViewportInputManager* man = inputManager())
-		return span<ViewportGizmo*>{const_cast<ViewportGizmo**>(man->viewportGizmos().data()), man->viewportGizmos().size()};
-	else
-		return {};
+    if(ViewportInputManager* man = inputManager())
+        return span<ViewportGizmo*>{const_cast<ViewportGizmo**>(man->viewportGizmos().data()), man->viewportGizmos().size()};
+    else
+        return {};
 }
 
 /******************************************************************************
@@ -56,13 +56,13 @@ span<ViewportGizmo*> BaseViewportWindow::viewportGizmos()
 ******************************************************************************/
 void BaseViewportWindow::mouseDoubleClickEvent(QMouseEvent* event)
 {
-	if(inputManager()) {
-		if(ViewportInputMode* mode = inputManager()->activeMode()) {
-			inputManager()->userInterface().handleExceptions([&] {
-				mode->mouseDoubleClickEvent(this, event);
-			});
-		}
-	}
+    if(inputManager()) {
+        if(ViewportInputMode* mode = inputManager()->activeMode()) {
+            inputManager()->userInterface().handleExceptions([&] {
+                mode->mouseDoubleClickEvent(this, event);
+            });
+        }
+    }
 }
 
 /******************************************************************************
@@ -70,29 +70,29 @@ void BaseViewportWindow::mouseDoubleClickEvent(QMouseEvent* event)
 ******************************************************************************/
 void BaseViewportWindow::mousePressEvent(QMouseEvent* event)
 {
-	if(!inputManager())
-		return;
+    if(!inputManager())
+        return;
 
-	// Make this viewport the active one.
-	if(DataSet* dataset = userInterface().datasetContainer().currentSet()) {
-		if(ViewportConfiguration* viewportConfig = dataset->viewportConfig()) {
-			inputManager()->userInterface().handleExceptions([&] {
-				viewportConfig->setActiveViewport(viewport());
-			});
-		}
-	}
+    // Make this viewport the active one.
+    if(DataSet* dataset = userInterface().datasetContainer().currentSet()) {
+        if(ViewportConfiguration* viewportConfig = dataset->viewportConfig()) {
+            inputManager()->userInterface().handleExceptions([&] {
+                viewportConfig->setActiveViewport(viewport());
+            });
+        }
+    }
 
-	// Intercept mouse clicks on the viewport caption.
-	if(contextMenuArea().contains(ViewportInputMode::getMousePosition(event))) {
-		Q_EMIT viewport()->contextMenuRequested(event->pos());
-		return;
-	}
+    // Intercept mouse clicks on the viewport caption.
+    if(contextMenuArea().contains(ViewportInputMode::getMousePosition(event))) {
+        Q_EMIT viewport()->contextMenuRequested(event->pos());
+        return;
+    }
 
-	if(ViewportInputMode* mode = inputManager()->activeMode()) {
-		inputManager()->userInterface().handleExceptions([&] {
-			mode->mousePressEvent(this, event);
-		});
-	}
+    if(ViewportInputMode* mode = inputManager()->activeMode()) {
+        inputManager()->userInterface().handleExceptions([&] {
+            mode->mousePressEvent(this, event);
+        });
+    }
 }
 
 /******************************************************************************
@@ -100,13 +100,13 @@ void BaseViewportWindow::mousePressEvent(QMouseEvent* event)
 ******************************************************************************/
 void BaseViewportWindow::mouseReleaseEvent(QMouseEvent* event)
 {
-	if(inputManager()) {
-		if(ViewportInputMode* mode = inputManager()->activeMode()) {
-			inputManager()->userInterface().handleExceptions([&] {
-				mode->mouseReleaseEvent(this, event);
-			});
-		}
-	}
+    if(inputManager()) {
+        if(ViewportInputMode* mode = inputManager()->activeMode()) {
+            inputManager()->userInterface().handleExceptions([&] {
+                mode->mouseReleaseEvent(this, event);
+            });
+        }
+    }
 }
 
 /******************************************************************************
@@ -114,22 +114,22 @@ void BaseViewportWindow::mouseReleaseEvent(QMouseEvent* event)
 ******************************************************************************/
 void BaseViewportWindow::mouseMoveEvent(QMouseEvent* event)
 {
-	if(contextMenuArea().contains(ViewportInputMode::getMousePosition(event)) && !_cursorInContextMenuArea && event->buttons() == Qt::NoButton) {
-		_cursorInContextMenuArea = true;
-		viewport()->updateViewport();
-	}
-	else if(!contextMenuArea().contains(ViewportInputMode::getMousePosition(event)) && _cursorInContextMenuArea) {
-		_cursorInContextMenuArea = false;
-		viewport()->updateViewport();
-	}
+    if(contextMenuArea().contains(ViewportInputMode::getMousePosition(event)) && !_cursorInContextMenuArea && event->buttons() == Qt::NoButton) {
+        _cursorInContextMenuArea = true;
+        viewport()->updateViewport();
+    }
+    else if(!contextMenuArea().contains(ViewportInputMode::getMousePosition(event)) && _cursorInContextMenuArea) {
+        _cursorInContextMenuArea = false;
+        viewport()->updateViewport();
+    }
 
-	if(inputManager()) {
-		if(ViewportInputMode* mode = inputManager()->activeMode()) {
-			inputManager()->userInterface().handleExceptions([&] {
-				mode->mouseMoveEvent(this, event);
-			});
-		}
-	}
+    if(inputManager()) {
+        if(ViewportInputMode* mode = inputManager()->activeMode()) {
+            inputManager()->userInterface().handleExceptions([&] {
+                mode->mouseMoveEvent(this, event);
+            });
+        }
+    }
 }
 
 /******************************************************************************
@@ -137,13 +137,13 @@ void BaseViewportWindow::mouseMoveEvent(QMouseEvent* event)
 ******************************************************************************/
 void BaseViewportWindow::wheelEvent(QWheelEvent* event)
 {
-	if(inputManager()) {
-		if(ViewportInputMode* mode = inputManager()->activeMode()) {
-			inputManager()->userInterface().handleExceptions([&] {
-				mode->wheelEvent(this, event);
-			});
-		}
-	}
+    if(inputManager()) {
+        if(ViewportInputMode* mode = inputManager()->activeMode()) {
+            inputManager()->userInterface().handleExceptions([&] {
+                mode->wheelEvent(this, event);
+            });
+        }
+    }
 }
 
 /******************************************************************************
@@ -151,11 +151,11 @@ void BaseViewportWindow::wheelEvent(QWheelEvent* event)
 ******************************************************************************/
 void BaseViewportWindow::leaveEvent(QEvent* event)
 {
-	if(_cursorInContextMenuArea) {
-		_cursorInContextMenuArea = false;
-		viewport()->updateViewport();
-	}
-	userInterface().clearStatusBarMessage();
+    if(_cursorInContextMenuArea) {
+        _cursorInContextMenuArea = false;
+        viewport()->updateViewport();
+    }
+    userInterface().clearStatusBarMessage();
 }
 
 /******************************************************************************
@@ -163,13 +163,13 @@ void BaseViewportWindow::leaveEvent(QEvent* event)
 ******************************************************************************/
 void BaseViewportWindow::focusOutEvent(QFocusEvent* event)
 {
-	if(inputManager()) {
-		if(ViewportInputMode* mode = inputManager()->activeMode()) {
-			inputManager()->userInterface().handleExceptions([&] {
-				mode->focusOutEvent(this, event);
-			});
-		}
-	}
+    if(inputManager()) {
+        if(ViewportInputMode* mode = inputManager()->activeMode()) {
+            inputManager()->userInterface().handleExceptions([&] {
+                mode->focusOutEvent(this, event);
+            });
+        }
+    }
 }
 
 /******************************************************************************
@@ -177,14 +177,14 @@ void BaseViewportWindow::focusOutEvent(QFocusEvent* event)
 ******************************************************************************/
 void BaseViewportWindow::keyPressEvent(QKeyEvent* event)
 {
-	if(inputManager()) {
-		if(ViewportInputMode* mode = inputManager()->activeMode()) {
-			inputManager()->userInterface().handleExceptions([&] {
-				if(mode->keyPressEvent(this, event))
-					return; // Do not propagate handled key events to base class.
-			});
-		}
-	}
+    if(inputManager()) {
+        if(ViewportInputMode* mode = inputManager()->activeMode()) {
+            inputManager()->userInterface().handleExceptions([&] {
+                if(mode->keyPressEvent(this, event))
+                    return; // Do not propagate handled key events to base class.
+            });
+        }
+    }
 }
 
 /******************************************************************************
@@ -192,20 +192,20 @@ void BaseViewportWindow::keyPressEvent(QKeyEvent* event)
 ******************************************************************************/
 void BaseViewportWindow::renderGui(SceneRenderer* renderer)
 {
-	if(viewport()->renderPreviewMode()) {
-		// Render render frame.
-		renderRenderFrame(renderer);
-	}
-	else {
-		// Render orientation tripod.
-		renderOrientationIndicator(renderer);
-	}
+    if(viewport()->renderPreviewMode()) {
+        // Render render frame.
+        renderRenderFrame(renderer);
+    }
+    else {
+        // Render orientation tripod.
+        renderOrientationIndicator(renderer);
+    }
 
-	// Render viewport caption.
-	if(isViewportTitleVisible())
-		_contextMenuArea = renderViewportTitle(renderer, _cursorInContextMenuArea);
-	else
-		_contextMenuArea = QRectF();
+    // Render viewport caption.
+    if(isViewportTitleVisible())
+        _contextMenuArea = renderViewportTitle(renderer, _cursorInContextMenuArea);
+    else
+        _contextMenuArea = QRectF();
 }
 
-}	// End of namespace
+}   // End of namespace

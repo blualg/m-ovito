@@ -62,13 +62,13 @@ SET_PROPERTY_FIELD_UNITS_AND_RANGE(FileExporter, floatOutputPrecision, IntegerPa
 * Constructs a new instance of the class.
 ******************************************************************************/
 FileExporter::FileExporter(ObjectCreationParams params) : RefTarget(params),
-	_exportAnimation(false),
-	_useWildcardFilename(false),
-	_startFrame(0),
-	_endFrame(-1),
-	_everyNthFrame(1),
-	_floatOutputPrecision(10),
-	_ignorePipelineErrors(params.loadUserDefaults())
+    _exportAnimation(false),
+    _useWildcardFilename(false),
+    _startFrame(0),
+    _endFrame(-1),
+    _everyNthFrame(1),
+    _floatOutputPrecision(10),
+    _ignorePipelineErrors(params.loadUserDefaults())
 {
 }
 
@@ -77,21 +77,21 @@ FileExporter::FileExporter(ObjectCreationParams params) : RefTarget(params),
 ******************************************************************************/
 void FileExporter::setOutputFilename(const QString& filename)
 {
-	_outputFilename.set(this, PROPERTY_FIELD(outputFilename), filename);
+    _outputFilename.set(this, PROPERTY_FIELD(outputFilename), filename);
 
-	// Generate a default wildcard pattern from the filename.
-	if(wildcardFilename().isEmpty()) {
-		QString fn = QFileInfo(filename).fileName();
-		if(!fn.contains('*')) {
-			int dotIndex = fn.lastIndexOf('.');
-			if(dotIndex > 0)
-				setWildcardFilename(fn.left(dotIndex) + QStringLiteral(".*") + fn.mid(dotIndex));
-			else
-				setWildcardFilename(fn + QStringLiteral(".*"));
-		}
-		else
-			setWildcardFilename(fn);
-	}
+    // Generate a default wildcard pattern from the filename.
+    if(wildcardFilename().isEmpty()) {
+        QString fn = QFileInfo(filename).fileName();
+        if(!fn.contains('*')) {
+            int dotIndex = fn.lastIndexOf('.');
+            if(dotIndex > 0)
+                setWildcardFilename(fn.left(dotIndex) + QStringLiteral(".*") + fn.mid(dotIndex));
+            else
+                setWildcardFilename(fn + QStringLiteral(".*"));
+        }
+        else
+            setWildcardFilename(fn);
+    }
 }
 
 /******************************************************************************
@@ -99,55 +99,55 @@ void FileExporter::setOutputFilename(const QString& filename)
 ******************************************************************************/
 void FileExporter::selectDefaultExportableData(DataSet* dataset, Scene* scene)
 {
-	if(!datasetToExport())
-		setDatasetToExport(dataset);
+    if(!datasetToExport())
+        setDatasetToExport(dataset);
 
-	if(!sceneToExport())
-		setSceneToExport(scene);
+    if(!sceneToExport())
+        setSceneToExport(scene);
 
-	// Export the entire frame interval of the selected pipeline by default.
-	if(endFrame() < startFrame()) {
-		if(PipelineSceneNode* pipeline = dynamic_object_cast<PipelineSceneNode>(nodeToExport())) {
-			if(pipeline->dataProvider()) {
-				int nframes = pipeline->dataProvider()->numberOfSourceFrames();
-				int start = pipeline->dataProvider()->sourceFrameToAnimationTime(0).frame();
-				if(start < startFrame()) setStartFrame(start);
-				int end = (pipeline->dataProvider()->sourceFrameToAnimationTime(nframes) - 1).frame();
-				if(end > endFrame()) setEndFrame(end);
-			}
-		}
-	}
+    // Export the entire frame interval of the selected pipeline by default.
+    if(endFrame() < startFrame()) {
+        if(PipelineSceneNode* pipeline = dynamic_object_cast<PipelineSceneNode>(nodeToExport())) {
+            if(pipeline->dataProvider()) {
+                int nframes = pipeline->dataProvider()->numberOfSourceFrames();
+                int start = pipeline->dataProvider()->sourceFrameToAnimationTime(0).frame();
+                if(start < startFrame()) setStartFrame(start);
+                int end = (pipeline->dataProvider()->sourceFrameToAnimationTime(nframes) - 1).frame();
+                if(end > endFrame()) setEndFrame(end);
+            }
+        }
+    }
 
-	// Export the entire animation interval of the scene when exporting the entire scene.
-	if(sceneToExport() && endFrame() < startFrame()) {
-		setStartFrame(sceneToExport()->animationSettings()->firstFrame());
-		setEndFrame(sceneToExport()->animationSettings()->lastFrame());
-	}
+    // Export the entire animation interval of the scene when exporting the entire scene.
+    if(sceneToExport() && endFrame() < startFrame()) {
+        setStartFrame(sceneToExport()->animationSettings()->firstFrame());
+        setEndFrame(sceneToExport()->animationSettings()->lastFrame());
+    }
 
-	// By default, export the data of the selected pipeline.
-	if(!nodeToExport() && sceneToExport()) {
-		if(SceneNode* selectedNode = sceneToExport()->selection()->firstNode()) {
-			if(isSuitableNode(selectedNode)) {
-				setNodeToExport(selectedNode);
-			}
-		}
-	}
+    // By default, export the data of the selected pipeline.
+    if(!nodeToExport() && sceneToExport()) {
+        if(SceneNode* selectedNode = sceneToExport()->selection()->firstNode()) {
+            if(isSuitableNode(selectedNode)) {
+                setNodeToExport(selectedNode);
+            }
+        }
+    }
 
-	// If no scene node is currently selected, pick the first suitable node from the scene.
-	if(!nodeToExport() && sceneToExport()) {
-		if(isSuitableNode(sceneToExport())) {
-			setNodeToExport(sceneToExport());
-		}
-		else {
-			sceneToExport()->visitChildren([this](SceneNode* node) {
-				if(isSuitableNode(node)) {
-					setNodeToExport(node);
-					return false;
-				}
-				return true;
-			});
-		}
-	}
+    // If no scene node is currently selected, pick the first suitable node from the scene.
+    if(!nodeToExport() && sceneToExport()) {
+        if(isSuitableNode(sceneToExport())) {
+            setNodeToExport(sceneToExport());
+        }
+        else {
+            sceneToExport()->visitChildren([this](SceneNode* node) {
+                if(isSuitableNode(node)) {
+                    setNodeToExport(node);
+                    return false;
+                }
+                return true;
+            });
+        }
+    }
 }
 
 /******************************************************************************
@@ -158,12 +158,12 @@ void FileExporter::selectDefaultExportableData(DataSet* dataset, Scene* scene)
 ******************************************************************************/
 bool FileExporter::isSuitableNode(SceneNode* node) const
 {
-	if(PipelineSceneNode* pipeline = dynamic_object_cast<PipelineSceneNode>(node)) {
-		if(sceneToExport()) {
-			return isSuitablePipelineOutput(pipeline->evaluatePipelineSynchronous(sceneToExport()->animationSettings()->currentTime(), true));
-		}
-	}
-	return false;
+    if(PipelineSceneNode* pipeline = dynamic_object_cast<PipelineSceneNode>(node)) {
+        if(sceneToExport()) {
+            return isSuitablePipelineOutput(pipeline->evaluatePipelineSynchronous(sceneToExport()->animationSettings()->currentTime(), true));
+        }
+    }
+    return false;
 }
 
 /******************************************************************************
@@ -174,15 +174,15 @@ bool FileExporter::isSuitableNode(SceneNode* node) const
 ******************************************************************************/
 bool FileExporter::isSuitablePipelineOutput(const PipelineFlowState& state) const
 {
-	if(!state) return false;
-	std::vector<DataObjectClassPtr> objClasses = exportableDataObjectClass();
-	if(objClasses.empty())
-		return true;
-	for(DataObjectClassPtr objClass : objClasses) {
-		if(state.containsObjectRecursive(*objClass))
-			return true;
-	}
-	return false;
+    if(!state) return false;
+    std::vector<DataObjectClassPtr> objClasses = exportableDataObjectClass();
+    if(objClasses.empty())
+        return true;
+    for(DataObjectClassPtr objClass : objClasses) {
+        if(state.containsObjectRecursive(*objClass))
+            return true;
+    }
+    return false;
 }
 
 /******************************************************************************
@@ -190,30 +190,30 @@ bool FileExporter::isSuitablePipelineOutput(const PipelineFlowState& state) cons
 ******************************************************************************/
 PipelineFlowState FileExporter::getPipelineDataToBeExported(int frame, bool requestRenderState) const
 {
-	if(!sceneToExport())
-		throw Exception(tr("No scene has been specified for file export."));
+    if(!sceneToExport())
+        throw Exception(tr("No scene has been specified for file export."));
 
-	PipelineSceneNode* pipeline = dynamic_object_cast<PipelineSceneNode>(nodeToExport());
-	if(!pipeline)
-		throw Exception(tr("The scene object to be exported is not a data pipeline."));
+    PipelineSceneNode* pipeline = dynamic_object_cast<PipelineSceneNode>(nodeToExport());
+    if(!pipeline)
+        throw Exception(tr("The scene object to be exported is not a data pipeline."));
 
-	// Evaluate pipeline.
-	PipelineEvaluationRequest request(AnimationTime::fromFrame(frame));
-	request.setBreakOnError(!ignorePipelineErrors());
-	PipelineEvaluationFuture future = requestRenderState ? pipeline->evaluateRenderingPipeline(request) : pipeline->evaluatePipeline(request);
-	if(!future.waitForFinished())
-		return {};
-	PipelineFlowState state = future.result();
+    // Evaluate pipeline.
+    PipelineEvaluationRequest request(AnimationTime::fromFrame(frame));
+    request.setBreakOnError(!ignorePipelineErrors());
+    PipelineEvaluationFuture future = requestRenderState ? pipeline->evaluateRenderingPipeline(request) : pipeline->evaluatePipeline(request);
+    if(!future.waitForFinished())
+        return {};
+    PipelineFlowState state = future.result();
 
-	if(!ignorePipelineErrors() && state.status().type() == PipelineStatus::Error)
-		throw Exception(tr("Export of animation frame %1 failed, because data pipeline evaluation did not succeed. Status message: %2")
-			.arg(frame)
-			.arg(state.status().text()));
+    if(!ignorePipelineErrors() && state.status().type() == PipelineStatus::Error)
+        throw Exception(tr("Export of animation frame %1 failed, because data pipeline evaluation did not succeed. Status message: %2")
+            .arg(frame)
+            .arg(state.status().text()));
 
-	if(!state)
-		throw Exception(tr("The data collection to be exported is empty."));
+    if(!state)
+        throw Exception(tr("The data collection to be exported is empty."));
 
-	return state;
+    return state;
 }
 
 /******************************************************************************
@@ -221,94 +221,94 @@ PipelineFlowState FileExporter::getPipelineDataToBeExported(int frame, bool requ
  *****************************************************************************/
 bool FileExporter::doExport(MainThreadOperation operation)
 {
-	if(outputFilename().isEmpty())
-		throw Exception(tr("The output filename not been set for the file exporter."));
+    if(outputFilename().isEmpty())
+        throw Exception(tr("The output filename not been set for the file exporter."));
 
-	if(startFrame() > endFrame())
-		throw Exception(tr("The animation interval to be exported is empty or has not been set."));
+    if(startFrame() > endFrame())
+        throw Exception(tr("The animation interval to be exported is empty or has not been set."));
 
-	if(!sceneToExport())
-		throw Exception(tr("No scene has been specified for file export."));
+    if(!sceneToExport())
+        throw Exception(tr("No scene has been specified for file export."));
 
-	if(!nodeToExport()) {
-		QString errorMsg = tr("There is no data in the current scene that can be exported to the selected file format.");
-		const std::vector<DataObjectClassPtr>& objClasses = exportableDataObjectClass();
-		if(!objClasses.empty()) {
-			errorMsg += tr("\n\nThe selected output format (%1) requires one of the following data types to be present in the pipeline output:\n").arg(getOOMetaClass().fileFilterDescription());
-			for(const DataObjectClassPtr& clazz : objClasses)
-				errorMsg += QStringLiteral("\n%1").arg(clazz->displayName());
-		}
-		throw Exception(std::move(errorMsg));
-	}
+    if(!nodeToExport()) {
+        QString errorMsg = tr("There is no data in the current scene that can be exported to the selected file format.");
+        const std::vector<DataObjectClassPtr>& objClasses = exportableDataObjectClass();
+        if(!objClasses.empty()) {
+            errorMsg += tr("\n\nThe selected output format (%1) requires one of the following data types to be present in the pipeline output:\n").arg(getOOMetaClass().fileFilterDescription());
+            for(const DataObjectClassPtr& clazz : objClasses)
+                errorMsg += QStringLiteral("\n%1").arg(clazz->displayName());
+        }
+        throw Exception(std::move(errorMsg));
+    }
 
-	// Compute the number of frames that need to be exported.
-	int firstFrameNumber, numberOfFrames;
-	if(exportAnimation()) {
-		firstFrameNumber = startFrame();
-		numberOfFrames = (endFrame() - startFrame() + everyNthFrame()) / everyNthFrame();
-		if(numberOfFrames < 1 || everyNthFrame() < 1)
-			throw Exception(tr("Invalid export animation range: Frame %1 to %2").arg(startFrame()).arg(endFrame()));
-	}
-	else {
-		firstFrameNumber = sceneToExport()->animationSettings()->currentFrame();
-		numberOfFrames = 1;
-	}
+    // Compute the number of frames that need to be exported.
+    int firstFrameNumber, numberOfFrames;
+    if(exportAnimation()) {
+        firstFrameNumber = startFrame();
+        numberOfFrames = (endFrame() - startFrame() + everyNthFrame()) / everyNthFrame();
+        if(numberOfFrames < 1 || everyNthFrame() < 1)
+            throw Exception(tr("Invalid export animation range: Frame %1 to %2").arg(startFrame()).arg(endFrame()));
+    }
+    else {
+        firstFrameNumber = sceneToExport()->animationSettings()->currentFrame();
+        numberOfFrames = 1;
+    }
 
-	// Validate export settings.
-	if(exportAnimation() && useWildcardFilename()) {
-		if(wildcardFilename().isEmpty())
-			throw Exception(tr("Cannot write animation frame to separate files. Wildcard pattern has not been specified."));
-		if(!wildcardFilename().contains(QChar('*')))
-			throw Exception(tr("Cannot write animation frames to separate files. The filename must contain the '*' wildcard character, which gets replaced by the frame number."));
-	}
+    // Validate export settings.
+    if(exportAnimation() && useWildcardFilename()) {
+        if(wildcardFilename().isEmpty())
+            throw Exception(tr("Cannot write animation frame to separate files. Wildcard pattern has not been specified."));
+        if(!wildcardFilename().contains(QChar('*')))
+            throw Exception(tr("Cannot write animation frames to separate files. The filename must contain the '*' wildcard character, which gets replaced by the frame number."));
+    }
 
-	QDir dir = QFileInfo(outputFilename()).dir();
-	QString filename = outputFilename();
+    QDir dir = QFileInfo(outputFilename()).dir();
+    QString filename = outputFilename();
 
-	// Open output file for writing.
-	if(!exportAnimation() || !useWildcardFilename()) {
-		openOutputFile(filename, numberOfFrames);
-	}
+    // Open output file for writing.
+    if(!exportAnimation() || !useWildcardFilename()) {
+        openOutputFile(filename, numberOfFrames);
+    }
 
-	try {
-		// Export animation frames.
-		operation.setProgressMaximum(numberOfFrames);
-		for(int frameIndex = 0; frameIndex < numberOfFrames; frameIndex++) {
-			operation.setProgressValue(frameIndex);
+    try {
+        // Export animation frames.
+        operation.setProgressMaximum(numberOfFrames);
+        for(int frameIndex = 0; frameIndex < numberOfFrames; frameIndex++) {
+            operation.setProgressValue(frameIndex);
 
-			int frameNumber = firstFrameNumber + frameIndex * everyNthFrame();
+            int frameNumber = firstFrameNumber + frameIndex * everyNthFrame();
 
-			// Open per-frame output file.
-			if(exportAnimation() && useWildcardFilename()) {
-				// Generate an output filename based on the wildcard pattern.
-				filename = dir.absoluteFilePath(QFileInfo(wildcardFilename()).fileName());
-				filename.replace(QChar('*'), QString::number(frameNumber));
-				openOutputFile(filename, 1);
-			}
+            // Open per-frame output file.
+            if(exportAnimation() && useWildcardFilename()) {
+                // Generate an output filename based on the wildcard pattern.
+                filename = dir.absoluteFilePath(QFileInfo(wildcardFilename()).fileName());
+                filename.replace(QChar('*'), QString::number(frameNumber));
+                openOutputFile(filename, 1);
+            }
 
-			operation.setProgressText(tr("Exporting frame %1 to file '%2'").arg(frameNumber).arg(filename));
+            operation.setProgressText(tr("Exporting frame %1 to file '%2'").arg(frameNumber).arg(filename));
 
-			exportFrame(frameNumber, filename, operation);
+            exportFrame(frameNumber, filename, operation);
 
-			// Close per-frame output file.
-			if(exportAnimation() && useWildcardFilename())
-				closeOutputFile(!operation.isCanceled());
+            // Close per-frame output file.
+            if(exportAnimation() && useWildcardFilename())
+                closeOutputFile(!operation.isCanceled());
 
-			if(operation.isCanceled())
-				break;
-		}
-	}
-	catch(...) {
-		closeOutputFile(false);
-		throw;
-	}
+            if(operation.isCanceled())
+                break;
+        }
+    }
+    catch(...) {
+        closeOutputFile(false);
+        throw;
+    }
 
-	// Close output file.
-	if(!exportAnimation() || !useWildcardFilename()) {
-		closeOutputFile(!operation.isCanceled());
-	}
+    // Close output file.
+    if(!exportAnimation() || !useWildcardFilename()) {
+        closeOutputFile(!operation.isCanceled());
+    }
 
-	return !operation.isCanceled();
+    return !operation.isCanceled();
 }
 
 /******************************************************************************
@@ -316,7 +316,7 @@ bool FileExporter::doExport(MainThreadOperation operation)
  *****************************************************************************/
 bool FileExporter::exportFrame(int frameNumber, const QString& filePath, MainThreadOperation& operation)
 {
-	return !operation.isCanceled();
+    return !operation.isCanceled();
 }
 
 /******************************************************************************
@@ -325,9 +325,9 @@ bool FileExporter::exportFrame(int frameNumber, const QString& filePath, MainThr
 ******************************************************************************/
 void FileExporter::activateCLocale()
 {
-	// The setlocale() function is not thread-safe and should only be called from the main thread.
-	if(QCoreApplication::instance() || QThread::currentThread() == QCoreApplication::instance()->thread())
-		std::setlocale(LC_ALL, "C");
+    // The setlocale() function is not thread-safe and should only be called from the main thread.
+    if(QCoreApplication::instance() || QThread::currentThread() == QCoreApplication::instance()->thread())
+        std::setlocale(LC_ALL, "C");
 }
 
 /******************************************************************************
@@ -335,19 +335,19 @@ void FileExporter::activateCLocale()
 ******************************************************************************/
 QString FileExporter::getAvailableDataObjectList(const PipelineFlowState& state, const DataObject::OOMetaClass& objectType) const
 {
-	QString str;
-	if(state) {
-		for(const ConstDataObjectPath& dataPath : state.data()->getObjectsRecursive(objectType)) {
-			QString pathString = dataPath.toString();
-			if(!pathString.isEmpty()) {
-				if(!str.isEmpty()) str += QStringLiteral(", ");
-				str += pathString;
-			}
-		}
-	}
-	if(str.isEmpty())
-		str = tr("<none>");
-	return str;
+    QString str;
+    if(state) {
+        for(const ConstDataObjectPath& dataPath : state.data()->getObjectsRecursive(objectType)) {
+            QString pathString = dataPath.toString();
+            if(!pathString.isEmpty()) {
+                if(!str.isEmpty()) str += QStringLiteral(", ");
+                str += pathString;
+            }
+        }
+    }
+    if(str.isEmpty())
+        str = tr("<none>");
+    return str;
 }
 
-}	// End of namespace
+}   // End of namespace

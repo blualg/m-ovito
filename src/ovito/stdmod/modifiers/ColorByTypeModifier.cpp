@@ -43,11 +43,11 @@ SET_PROPERTY_FIELD_LABEL(ColorByTypeModifier, clearSelection, "Clear selection")
 * Constructs the modifier object.
 ******************************************************************************/
 ColorByTypeModifier::ColorByTypeModifier(ObjectCreationParams params) : GenericPropertyModifier(params),
-	_colorOnlySelected(false),
-	_clearSelection(true)
+    _colorOnlySelected(false),
+    _clearSelection(true)
 {
-	// Operate on particles by default.
-	setDefaultSubject(QStringLiteral("Particles"), QStringLiteral("ParticlesObject"));
+    // Operate on particles by default.
+    setDefaultSubject(QStringLiteral("Particles"), QStringLiteral("ParticlesObject"));
 }
 
 /******************************************************************************
@@ -56,26 +56,26 @@ ColorByTypeModifier::ColorByTypeModifier(ObjectCreationParams params) : GenericP
 ******************************************************************************/
 void ColorByTypeModifier::initializeModifier(const ModifierInitializationRequest& request)
 {
-	GenericPropertyModifier::initializeModifier(request);
+    GenericPropertyModifier::initializeModifier(request);
 
-	if(sourceProperty().isNull() && subject()) {
+    if(sourceProperty().isNull() && subject()) {
 
-		// When the modifier is first inserted, automatically select the most recently added
-		// typed property (in GUI mode) or the canonical type property (in script mode).
-		const PipelineFlowState& input = request.modApp()->evaluateInputSynchronous(request);
-		if(const PropertyContainer* container = input.getLeafObject(subject())) {
-			PropertyReference bestProperty;
-			for(const PropertyObject* property : container->properties()) {
-				if(property->isTypedProperty()) {
-					if(ExecutionContext::isInteractive() || property->type() == PropertyObject::GenericTypeProperty) {
-						bestProperty = PropertyReference(subject().dataClass(), property);
-					}
-				}
-			}
-			if(!bestProperty.isNull())
-				setSourceProperty(bestProperty);
-		}
-	}
+        // When the modifier is first inserted, automatically select the most recently added
+        // typed property (in GUI mode) or the canonical type property (in script mode).
+        const PipelineFlowState& input = request.modApp()->evaluateInputSynchronous(request);
+        if(const PropertyContainer* container = input.getLeafObject(subject())) {
+            PropertyReference bestProperty;
+            for(const PropertyObject* property : container->properties()) {
+                if(property->isTypedProperty()) {
+                    if(ExecutionContext::isInteractive() || property->type() == PropertyObject::GenericTypeProperty) {
+                        bestProperty = PropertyReference(subject().dataClass(), property);
+                    }
+                }
+            }
+            if(!bestProperty.isNull())
+                setSourceProperty(bestProperty);
+        }
+    }
 }
 
 /******************************************************************************
@@ -83,11 +83,11 @@ void ColorByTypeModifier::initializeModifier(const ModifierInitializationRequest
 ******************************************************************************/
 void ColorByTypeModifier::propertyChanged(const PropertyFieldDescriptor* field)
 {
-	// Whenever the selected property class of this modifier is changed, update the source property reference accordingly.
-	if(field == PROPERTY_FIELD(GenericPropertyModifier::subject) && !isBeingLoaded() && !isUndoingOrRedoing()) {
-		setSourceProperty(sourceProperty().convertToContainerClass(subject().dataClass()));
-	}
-	GenericPropertyModifier::propertyChanged(field);
+    // Whenever the selected property class of this modifier is changed, update the source property reference accordingly.
+    if(field == PROPERTY_FIELD(GenericPropertyModifier::subject) && !isBeingLoaded() && !isUndoingOrRedoing()) {
+        setSourceProperty(sourceProperty().convertToContainerClass(subject().dataClass()));
+    }
+    GenericPropertyModifier::propertyChanged(field);
 }
 
 /******************************************************************************
@@ -96,65 +96,65 @@ void ColorByTypeModifier::propertyChanged(const PropertyFieldDescriptor* field)
 void ColorByTypeModifier::evaluateSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state)
 {
 #ifdef OVITO_BUILD_BASIC
-	throw Exception(tr("%1: This program feature is only available in OVITO Pro. Please visit our website www.ovito.org for more information.").arg(objectTitle()));
+    throw Exception(tr("%1: This program feature is only available in OVITO Pro. Please visit our website www.ovito.org for more information.").arg(objectTitle()));
 #else
-	if(!subject())
-		throw Exception(tr("No input element type selected."));
-	if(!sourceProperty())
-		throw Exception(tr("No input property selected."));
+    if(!subject())
+        throw Exception(tr("No input element type selected."));
+    if(!sourceProperty())
+        throw Exception(tr("No input property selected."));
 
-	// Check if the source property is the right kind of property.
-	if(sourceProperty().containerClass() != subject().dataClass())
-		throw Exception(tr("Modifier was set to operate on '%1', but the selected input is a '%2' property.")
-			.arg(subject().dataClass()->pythonName()).arg(sourceProperty().containerClass()->propertyClassDisplayName()));
+    // Check if the source property is the right kind of property.
+    if(sourceProperty().containerClass() != subject().dataClass())
+        throw Exception(tr("Modifier was set to operate on '%1', but the selected input is a '%2' property.")
+            .arg(subject().dataClass()->pythonName()).arg(sourceProperty().containerClass()->propertyClassDisplayName()));
 
-	DataObjectPath objectPath = state.expectMutableObject(subject());
-	PropertyContainer* container = static_object_cast<PropertyContainer>(objectPath.back());
-	container->verifyIntegrity();
+    DataObjectPath objectPath = state.expectMutableObject(subject());
+    PropertyContainer* container = static_object_cast<PropertyContainer>(objectPath.back());
+    container->verifyIntegrity();
 
-	// Get the input property.
-	const PropertyObject* typePropertyObject = sourceProperty().findInContainer(container);
-	if(!typePropertyObject)
-		throw Exception(tr("The selected input property '%1' is not present.").arg(sourceProperty().name()));
-	if(typePropertyObject->componentCount() != 1)
-		throw Exception(tr("The input property '%1' has the wrong number of components. Must be a scalar property.").arg(typePropertyObject->name()));
-	if(typePropertyObject->dataType() != PropertyObject::Int)
-		throw Exception(tr("The input property '%1' has the wrong data type. Must be an integer property.").arg(typePropertyObject->name()));
-	ConstPropertyAccess<int> typeProperty = typePropertyObject;
+    // Get the input property.
+    const PropertyObject* typePropertyObject = sourceProperty().findInContainer(container);
+    if(!typePropertyObject)
+        throw Exception(tr("The selected input property '%1' is not present.").arg(sourceProperty().name()));
+    if(typePropertyObject->componentCount() != 1)
+        throw Exception(tr("The input property '%1' has the wrong number of components. Must be a scalar property.").arg(typePropertyObject->name()));
+    if(typePropertyObject->dataType() != PropertyObject::Int)
+        throw Exception(tr("The input property '%1' has the wrong data type. Must be an integer property.").arg(typePropertyObject->name()));
+    ConstPropertyAccess<int> typeProperty = typePropertyObject;
 
-	// Get the selection property if enabled by the user.
-	ConstPropertyPtr selectionProperty;
-	if(colorOnlySelected() && container->getOOMetaClass().isValidStandardPropertyId(PropertyObject::GenericSelectionProperty)) {
-		if(const PropertyObject* selPropertyObj = container->getProperty(PropertyObject::GenericSelectionProperty)) {
-			selectionProperty = selPropertyObj;
+    // Get the selection property if enabled by the user.
+    ConstPropertyPtr selectionProperty;
+    if(colorOnlySelected() && container->getOOMetaClass().isValidStandardPropertyId(PropertyObject::GenericSelectionProperty)) {
+        if(const PropertyObject* selPropertyObj = container->getProperty(PropertyObject::GenericSelectionProperty)) {
+            selectionProperty = selPropertyObj;
 
-			// Clear selection if requested.
-			if(clearSelection())
-				container->removeProperty(selPropertyObj);
-		}
-	}
+            // Clear selection if requested.
+            if(clearSelection())
+                container->removeProperty(selPropertyObj);
+        }
+    }
 
-	// Create the color output property.
-	PropertyAccess<Color> colorProperty = container->createProperty(PropertyObject::GenericColorProperty, (bool)selectionProperty ? DataBuffer::InitializeMemory : DataBuffer::NoFlags, objectPath);
+    // Create the color output property.
+    PropertyAccess<Color> colorProperty = container->createProperty(PropertyObject::GenericColorProperty, (bool)selectionProperty ? DataBuffer::InitializeMemory : DataBuffer::NoFlags, objectPath);
 
-	// Access selection array.
-	ConstPropertyAccessAndRef<int> selection(std::move(selectionProperty));
+    // Access selection array.
+    ConstPropertyAccessAndRef<int> selection(std::move(selectionProperty));
 
-	// Create color lookup table.
-	const std::map<int,Color> colorMap = typePropertyObject->typeColorMap();
+    // Create color lookup table.
+    const std::map<int,Color> colorMap = typePropertyObject->typeColorMap();
 
-	// Fill color property.
-	size_t count = colorProperty.size();
-	for(size_t i = 0; i < count; i++) {
-		if(selection && !selection[i])
-			continue;
+    // Fill color property.
+    size_t count = colorProperty.size();
+    for(size_t i = 0; i < count; i++) {
+        if(selection && !selection[i])
+            continue;
 
-		auto c = colorMap.find(typeProperty[i]);
-		if(c == colorMap.end())
-			colorProperty[i] = Color(1,1,1);
-		else
-			colorProperty[i] = c->second;
-	}
+        auto c = colorMap.find(typeProperty[i]);
+        if(c == colorMap.end())
+            colorProperty[i] = Color(1,1,1);
+        else
+            colorProperty[i] = c->second;
+    }
 #endif
 }
 
@@ -166,24 +166,24 @@ void ColorByTypeModifier::evaluateSynchronous(const ModifierEvaluationRequest& r
 ******************************************************************************/
 QVariantList ColorByTypeModifier::getElementTypesFromInputState(ModifierApplication* modApp) const
 {
-	QVariantList list;
-	if(modApp && subject() && !sourceProperty().isNull() && sourceProperty().containerClass() == subject().dataClass()) {
-		// Populate types list based on the selected input property.
-		const PipelineFlowState& state = modApp->evaluateInputSynchronous(dataset()->animationSettings()->time());
-		if(const PropertyContainer* container = state.getLeafObject(subject())) {
-			if(const PropertyObject* inputProperty = sourceProperty().findInContainer(container)) {
-				for(const ElementType* type : inputProperty->elementTypes()) {
-					if(!type) continue;
-					list.push_back(QVariantMap({
-						{"id", type->numericId()}, 
-						{"name", type->nameOrNumericId()}, 
-						{"color", (QColor)type->color()}}));
-				}
-			}
-		}
-	}
-	return list;
+    QVariantList list;
+    if(modApp && subject() && !sourceProperty().isNull() && sourceProperty().containerClass() == subject().dataClass()) {
+        // Populate types list based on the selected input property.
+        const PipelineFlowState& state = modApp->evaluateInputSynchronous(dataset()->animationSettings()->time());
+        if(const PropertyContainer* container = state.getLeafObject(subject())) {
+            if(const PropertyObject* inputProperty = sourceProperty().findInContainer(container)) {
+                for(const ElementType* type : inputProperty->elementTypes()) {
+                    if(!type) continue;
+                    list.push_back(QVariantMap({
+                        {"id", type->numericId()}, 
+                        {"name", type->nameOrNumericId()}, 
+                        {"color", (QColor)type->color()}}));
+                }
+            }
+        }
+    }
+    return list;
 }
 #endif
 
-}	// End of namespace
+}   // End of namespace

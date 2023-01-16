@@ -52,16 +52,16 @@ ActiveObject::ActiveObject(ObjectCreationParams params) : RefTarget(params), _is
 void ActiveObject::propertyChanged(const PropertyFieldDescriptor* field)
 {
     // If the object is disabled, clear its status.
-	if(field == PROPERTY_FIELD(isEnabled) && !isEnabled()) {
-		setStatus(PipelineStatus::Success);
-	}
+    if(field == PROPERTY_FIELD(isEnabled) && !isEnabled()) {
+        setStatus(PipelineStatus::Success);
+    }
 
     // Whenever the object's status changes, update UI with some delay.
-	if(field == PROPERTY_FIELD(status)) {
-		if(!_statusTimer.isActive()) {
-			_statusTimer.start(50, Qt::CoarseTimer, this);
-		}
-	}
+    if(field == PROPERTY_FIELD(status)) {
+        if(!_statusTimer.isActive()) {
+            _statusTimer.start(50, Qt::CoarseTimer, this);
+        }
+    }
 
     RefTarget::propertyChanged(field);
 }
@@ -72,11 +72,11 @@ void ActiveObject::propertyChanged(const PropertyFieldDescriptor* field)
 ******************************************************************************/
 void ActiveObject::notifyDependentsImpl(const ReferenceEvent& event)
 {
-	if(event.type() == ReferenceEvent::ObjectStatusChanged) {
-		// Inform the QML GUI that the object's status has changed.
-		Q_EMIT objectStatusChanged();
-	}
-	RefTarget::notifyDependentsImpl(event);
+    if(event.type() == ReferenceEvent::ObjectStatusChanged) {
+        // Inform the QML GUI that the object's status has changed.
+        Q_EMIT objectStatusChanged();
+    }
+    RefTarget::notifyDependentsImpl(event);
 }
 #endif
 
@@ -86,12 +86,12 @@ void ActiveObject::notifyDependentsImpl(const ReferenceEvent& event)
 ******************************************************************************/
 void ActiveObject::incrementNumberOfActiveTasks()
 {
-	OVITO_ASSERT(QThread::currentThread() == this->thread());
-	if(_numberOfActiveTasks++ == 0) {
-		OVITO_ASSERT(_isInActivateState == false);
-		// Indicate activity status in the UI with a 100 ms delay to prevent excessive updates in case of short-running tasks.
-		_activityTimer.start(100, Qt::CoarseTimer, this);
-	}
+    OVITO_ASSERT(QThread::currentThread() == this->thread());
+    if(_numberOfActiveTasks++ == 0) {
+        OVITO_ASSERT(_isInActivateState == false);
+        // Indicate activity status in the UI with a 100 ms delay to prevent excessive updates in case of short-running tasks.
+        _activityTimer.start(100, Qt::CoarseTimer, this);
+    }
 }
 
 /******************************************************************************
@@ -100,15 +100,15 @@ void ActiveObject::incrementNumberOfActiveTasks()
 ******************************************************************************/
 void ActiveObject::decrementNumberOfActiveTasks()
 {
-	OVITO_ASSERT(QThread::currentThread() == this->thread());
-	OVITO_ASSERT(_numberOfActiveTasks > 0);
-	if(--_numberOfActiveTasks == 0) {
-		_activityTimer.stop();
-		if(_isInActivateState) {
-			_isInActivateState = false;
-			notifyDependents(ReferenceEvent::ObjectStatusChanged);
-		}
-	}
+    OVITO_ASSERT(QThread::currentThread() == this->thread());
+    OVITO_ASSERT(_numberOfActiveTasks > 0);
+    if(--_numberOfActiveTasks == 0) {
+        _activityTimer.stop();
+        if(_isInActivateState) {
+            _isInActivateState = false;
+            notifyDependents(ReferenceEvent::ObjectStatusChanged);
+        }
+    }
 }
 
 /******************************************************************************
@@ -116,12 +116,12 @@ void ActiveObject::decrementNumberOfActiveTasks()
 ******************************************************************************/
 void ActiveObject::registerActiveTask(const TaskPtr& task)
 {
-	OVITO_ASSERT(QThread::currentThread() == this->thread());
-	if(!task->isFinished() && Application::instance()->guiMode()) {
-		incrementNumberOfActiveTasks();
-		// Reset the pending status after the Future is fulfilled.
-		task->finally(*this, std::bind(&ActiveObject::decrementNumberOfActiveTasks, this));
-	}
+    OVITO_ASSERT(QThread::currentThread() == this->thread());
+    if(!task->isFinished() && Application::instance()->guiMode()) {
+        incrementNumberOfActiveTasks();
+        // Reset the pending status after the Future is fulfilled.
+        task->finally(*this, std::bind(&ActiveObject::decrementNumberOfActiveTasks, this));
+    }
 }
 
 /******************************************************************************
@@ -129,20 +129,20 @@ void ActiveObject::registerActiveTask(const TaskPtr& task)
 ******************************************************************************/
 void ActiveObject::timerEvent(QTimerEvent* event)
 {
-	if(event->timerId() == _activityTimer.timerId()) {
-		OVITO_ASSERT(_activityTimer.isActive());
-		OVITO_ASSERT(_numberOfActiveTasks > 0);
-		OVITO_ASSERT(_isInActivateState == false);
-		_activityTimer.stop();
-		_isInActivateState = true;
-		notifyDependents(ReferenceEvent::ObjectStatusChanged);
-	}
-	else if(event->timerId() == _statusTimer.timerId()) {
-		OVITO_ASSERT(_statusTimer.isActive());
-		_statusTimer.stop();
-		notifyDependents(ReferenceEvent::ObjectStatusChanged);
-	}
-	RefTarget::timerEvent(event);
+    if(event->timerId() == _activityTimer.timerId()) {
+        OVITO_ASSERT(_activityTimer.isActive());
+        OVITO_ASSERT(_numberOfActiveTasks > 0);
+        OVITO_ASSERT(_isInActivateState == false);
+        _activityTimer.stop();
+        _isInActivateState = true;
+        notifyDependents(ReferenceEvent::ObjectStatusChanged);
+    }
+    else if(event->timerId() == _statusTimer.timerId()) {
+        OVITO_ASSERT(_statusTimer.isActive());
+        _statusTimer.stop();
+        notifyDependents(ReferenceEvent::ObjectStatusChanged);
+    }
+    RefTarget::timerEvent(event);
 }
 
 /******************************************************************************
@@ -151,7 +151,7 @@ void ActiveObject::timerEvent(QTimerEvent* event)
 ******************************************************************************/
 QVariant ActiveObject::getPipelineEditorShortInfo(Scene* scene) const 
 {
-	return status().shortInfo();
+    return status().shortInfo();
 }
 
-}	// End of namespace
+}   // End of namespace

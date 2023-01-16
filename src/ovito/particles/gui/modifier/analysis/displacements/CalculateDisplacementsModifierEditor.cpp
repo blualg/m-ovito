@@ -42,83 +42,83 @@ SET_OVITO_OBJECT_EDITOR(CalculateDisplacementsModifier, CalculateDisplacementsMo
 ******************************************************************************/
 void CalculateDisplacementsModifierEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 {
-	// Create a rollout.
-	QWidget* rollout = createRollout(tr("Calculate displacements"), rolloutParams, "manual:particles.modifiers.displacement_vectors");
+    // Create a rollout.
+    QWidget* rollout = createRollout(tr("Calculate displacements"), rolloutParams, "manual:particles.modifiers.displacement_vectors");
 
     // Create the rollout contents.
-	QVBoxLayout* layout = new QVBoxLayout(rollout);
-	layout->setContentsMargins(4,4,4,4);
-	layout->setSpacing(4);
+    QVBoxLayout* layout = new QVBoxLayout(rollout);
+    layout->setContentsMargins(4,4,4,4);
+    layout->setSpacing(4);
 
-	QGroupBox* mappingGroupBox = new QGroupBox(tr("Affine mapping of simulation cell"));
-	layout->addWidget(mappingGroupBox);
+    QGroupBox* mappingGroupBox = new QGroupBox(tr("Affine mapping of simulation cell"));
+    layout->addWidget(mappingGroupBox);
 
-	QGridLayout* sublayout = new QGridLayout(mappingGroupBox);
-	sublayout->setContentsMargins(4,4,4,4);
-	sublayout->setSpacing(4);
+    QGridLayout* sublayout = new QGridLayout(mappingGroupBox);
+    sublayout->setContentsMargins(4,4,4,4);
+    sublayout->setSpacing(4);
 
-	IntegerRadioButtonParameterUI* affineMappingUI = new IntegerRadioButtonParameterUI(this, PROPERTY_FIELD(ReferenceConfigurationModifier::affineMapping));
+    IntegerRadioButtonParameterUI* affineMappingUI = new IntegerRadioButtonParameterUI(this, PROPERTY_FIELD(ReferenceConfigurationModifier::affineMapping));
     sublayout->addWidget(affineMappingUI->addRadioButton(ReferenceConfigurationModifier::NO_MAPPING, tr("Off")), 0, 0);
-	sublayout->addWidget(affineMappingUI->addRadioButton(ReferenceConfigurationModifier::TO_REFERENCE_CELL, tr("To reference")), 0, 1);
+    sublayout->addWidget(affineMappingUI->addRadioButton(ReferenceConfigurationModifier::TO_REFERENCE_CELL, tr("To reference")), 0, 1);
     sublayout->addWidget(affineMappingUI->addRadioButton(ReferenceConfigurationModifier::TO_CURRENT_CELL, tr("To current")), 1, 1);
 
-	BooleanParameterUI* useMinimumImageConventionUI = new BooleanParameterUI(this, PROPERTY_FIELD(ReferenceConfigurationModifier::useMinimumImageConvention));
-	sublayout->addWidget(useMinimumImageConventionUI->checkBox(), 2, 0, 1, 2);
+    BooleanParameterUI* useMinimumImageConventionUI = new BooleanParameterUI(this, PROPERTY_FIELD(ReferenceConfigurationModifier::useMinimumImageConvention));
+    sublayout->addWidget(useMinimumImageConventionUI->checkBox(), 2, 0, 1, 2);
 
-	QGroupBox* referenceFrameGroupBox = new QGroupBox(tr("Reference animation frame"));
-	layout->addWidget(referenceFrameGroupBox);
+    QGroupBox* referenceFrameGroupBox = new QGroupBox(tr("Reference animation frame"));
+    layout->addWidget(referenceFrameGroupBox);
 
-	sublayout = new QGridLayout(referenceFrameGroupBox);
-	sublayout->setContentsMargins(4,4,4,4);
-	sublayout->setSpacing(4);
-	sublayout->setColumnStretch(0, 5);
-	sublayout->setColumnStretch(2, 95);
+    sublayout = new QGridLayout(referenceFrameGroupBox);
+    sublayout->setContentsMargins(4,4,4,4);
+    sublayout->setSpacing(4);
+    sublayout->setColumnStretch(0, 5);
+    sublayout->setColumnStretch(2, 95);
 
-	// Add box for selection between absolute and relative reference frames.
-	BooleanRadioButtonParameterUI* useFrameOffsetUI = new BooleanRadioButtonParameterUI(this, PROPERTY_FIELD(ReferenceConfigurationModifier::useReferenceFrameOffset));
-	useFrameOffsetUI->buttonFalse()->setText(tr("Constant reference configuration"));
-	sublayout->addWidget(useFrameOffsetUI->buttonFalse(), 0, 0, 1, 3);
+    // Add box for selection between absolute and relative reference frames.
+    BooleanRadioButtonParameterUI* useFrameOffsetUI = new BooleanRadioButtonParameterUI(this, PROPERTY_FIELD(ReferenceConfigurationModifier::useReferenceFrameOffset));
+    useFrameOffsetUI->buttonFalse()->setText(tr("Constant reference configuration"));
+    sublayout->addWidget(useFrameOffsetUI->buttonFalse(), 0, 0, 1, 3);
 
-	IntegerParameterUI* frameNumberUI = new IntegerParameterUI(this, PROPERTY_FIELD(ReferenceConfigurationModifier::referenceFrameNumber));
-	frameNumberUI->label()->setText(tr("Frame number:"));
-	sublayout->addWidget(frameNumberUI->label(), 1, 1, 1, 1);
-	sublayout->addLayout(frameNumberUI->createFieldLayout(), 1, 2, 1, 1);
-	frameNumberUI->setEnabled(false);
-	connect(useFrameOffsetUI->buttonFalse(), &QRadioButton::toggled, frameNumberUI, &IntegerParameterUI::setEnabled);
+    IntegerParameterUI* frameNumberUI = new IntegerParameterUI(this, PROPERTY_FIELD(ReferenceConfigurationModifier::referenceFrameNumber));
+    frameNumberUI->label()->setText(tr("Frame number:"));
+    sublayout->addWidget(frameNumberUI->label(), 1, 1, 1, 1);
+    sublayout->addLayout(frameNumberUI->createFieldLayout(), 1, 2, 1, 1);
+    frameNumberUI->setEnabled(false);
+    connect(useFrameOffsetUI->buttonFalse(), &QRadioButton::toggled, frameNumberUI, &IntegerParameterUI::setEnabled);
 
-	useFrameOffsetUI->buttonTrue()->setText(tr("Relative to current frame"));
-	sublayout->addWidget(useFrameOffsetUI->buttonTrue(), 2, 0, 1, 3);
-	IntegerParameterUI* frameOffsetUI = new IntegerParameterUI(this, PROPERTY_FIELD(ReferenceConfigurationModifier::referenceFrameOffset));
-	frameOffsetUI->label()->setText(tr("Frame offset:"));
-	sublayout->addWidget(frameOffsetUI->label(), 3, 1, 1, 1);
-	sublayout->addLayout(frameOffsetUI->createFieldLayout(), 3, 2, 1, 1);
-	frameOffsetUI->setEnabled(false);
-	connect(useFrameOffsetUI->buttonTrue(), &QRadioButton::toggled, frameOffsetUI, &IntegerParameterUI::setEnabled);
+    useFrameOffsetUI->buttonTrue()->setText(tr("Relative to current frame"));
+    sublayout->addWidget(useFrameOffsetUI->buttonTrue(), 2, 0, 1, 3);
+    IntegerParameterUI* frameOffsetUI = new IntegerParameterUI(this, PROPERTY_FIELD(ReferenceConfigurationModifier::referenceFrameOffset));
+    frameOffsetUI->label()->setText(tr("Frame offset:"));
+    sublayout->addWidget(frameOffsetUI->label(), 3, 1, 1, 1);
+    sublayout->addLayout(frameOffsetUI->createFieldLayout(), 3, 2, 1, 1);
+    frameOffsetUI->setEnabled(false);
+    connect(useFrameOffsetUI->buttonTrue(), &QRadioButton::toggled, frameOffsetUI, &IntegerParameterUI::setEnabled);
 
-	QGroupBox* referenceSourceGroupBox = new QGroupBox(tr("Reference configuration source"));
-	layout->addWidget(referenceSourceGroupBox);
+    QGroupBox* referenceSourceGroupBox = new QGroupBox(tr("Reference configuration source"));
+    layout->addWidget(referenceSourceGroupBox);
 
-	sublayout = new QGridLayout(referenceSourceGroupBox);
-	sublayout->setContentsMargins(4,4,4,4);
-	sublayout->setSpacing(6);
+    sublayout = new QGridLayout(referenceSourceGroupBox);
+    sublayout->setContentsMargins(4,4,4,4);
+    sublayout->setSpacing(6);
 
-	_sourceButtonGroup = new QButtonGroup(this);
-	connect(_sourceButtonGroup, &QButtonGroup::idClicked, this, &CalculateDisplacementsModifierEditor::onSourceButtonClicked);
-	QRadioButton* upstreamPipelineBtn = new QRadioButton(tr("Upstream pipeline"));
-	QRadioButton* externalFileBtn = new QRadioButton(tr("External file"));
-	_sourceButtonGroup->addButton(upstreamPipelineBtn, 0);
-	_sourceButtonGroup->addButton(externalFileBtn, 1);
-	sublayout->addWidget(upstreamPipelineBtn, 0, 0);
-	sublayout->addWidget(externalFileBtn, 1, 0);
+    _sourceButtonGroup = new QButtonGroup(this);
+    connect(_sourceButtonGroup, &QButtonGroup::idClicked, this, &CalculateDisplacementsModifierEditor::onSourceButtonClicked);
+    QRadioButton* upstreamPipelineBtn = new QRadioButton(tr("Upstream pipeline"));
+    QRadioButton* externalFileBtn = new QRadioButton(tr("External file"));
+    _sourceButtonGroup->addButton(upstreamPipelineBtn, 0);
+    _sourceButtonGroup->addButton(externalFileBtn, 1);
+    sublayout->addWidget(upstreamPipelineBtn, 0, 0);
+    sublayout->addWidget(externalFileBtn, 1, 0);
 
-	// Status label.
-	layout->addSpacing(6);
-	layout->addWidget((new ObjectStatusDisplay(this))->statusWidget());
+    // Status label.
+    layout->addSpacing(6);
+    layout->addWidget((new ObjectStatusDisplay(this))->statusWidget());
 
-	// Open a sub-editor for the reference object.
-	new SubObjectParameterUI(this, PROPERTY_FIELD(CalculateDisplacementsModifier::referenceConfiguration), rolloutParams.after(rollout).setTitle(tr("Reference: %1")));
+    // Open a sub-editor for the reference object.
+    new SubObjectParameterUI(this, PROPERTY_FIELD(CalculateDisplacementsModifier::referenceConfiguration), rolloutParams.after(rollout).setTitle(tr("Reference: %1")));
 
-	connect(this, &PropertiesEditor::contentsChanged, this, &CalculateDisplacementsModifierEditor::onContentsChanged);
+    connect(this, &PropertiesEditor::contentsChanged, this, &CalculateDisplacementsModifierEditor::onContentsChanged);
 }
 
 /******************************************************************************
@@ -126,19 +126,19 @@ void CalculateDisplacementsModifierEditor::createUI(const RolloutInsertionParame
 ******************************************************************************/
 void CalculateDisplacementsModifierEditor::onSourceButtonClicked(int id)
 {
-	CalculateDisplacementsModifier* mod = static_object_cast<CalculateDisplacementsModifier>(editObject());
-	if(!mod) return;
+    CalculateDisplacementsModifier* mod = static_object_cast<CalculateDisplacementsModifier>(editObject());
+    if(!mod) return;
 
-	performTransaction(tr("Set reference source mode"), [mod,id]() {
-		if(id == 1) {
-			// Create a file source object, which can be used for loading
-			// the reference configuration from a separate file.
-			mod->setReferenceConfiguration(OORef<FileSource>::create());
-		}
-		else {
-			mod->setReferenceConfiguration(nullptr);
-		}
-	});
+    performTransaction(tr("Set reference source mode"), [mod,id]() {
+        if(id == 1) {
+            // Create a file source object, which can be used for loading
+            // the reference configuration from a separate file.
+            mod->setReferenceConfiguration(OORef<FileSource>::create());
+        }
+        else {
+            mod->setReferenceConfiguration(nullptr);
+        }
+    });
 }
 
 /******************************************************************************
@@ -146,17 +146,17 @@ void CalculateDisplacementsModifierEditor::onSourceButtonClicked(int id)
 ******************************************************************************/
 void CalculateDisplacementsModifierEditor::onContentsChanged(RefTarget* editObject)
 {
-	CalculateDisplacementsModifier* mod = static_object_cast<CalculateDisplacementsModifier>(editObject);
-	if(mod) {
-		_sourceButtonGroup->button(0)->setEnabled(true);
-		_sourceButtonGroup->button(1)->setEnabled(true);
-		_sourceButtonGroup->button(mod->referenceConfiguration() ? 1 : 0)->setChecked(true);
-	}
-	else {
-		_sourceButtonGroup->button(0)->setEnabled(false);
-		_sourceButtonGroup->button(1)->setEnabled(false);
-	}
+    CalculateDisplacementsModifier* mod = static_object_cast<CalculateDisplacementsModifier>(editObject);
+    if(mod) {
+        _sourceButtonGroup->button(0)->setEnabled(true);
+        _sourceButtonGroup->button(1)->setEnabled(true);
+        _sourceButtonGroup->button(mod->referenceConfiguration() ? 1 : 0)->setChecked(true);
+    }
+    else {
+        _sourceButtonGroup->button(0)->setEnabled(false);
+        _sourceButtonGroup->button(1)->setEnabled(false);
+    }
 }
 
 
-}	// End of namespace
+}   // End of namespace

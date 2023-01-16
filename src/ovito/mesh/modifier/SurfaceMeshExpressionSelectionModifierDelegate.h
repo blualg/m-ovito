@@ -35,31 +35,31 @@ using namespace Ovito::StdMod;
  */
 class SurfaceMeshRegionsExpressionSelectionModifierDelegate : public ExpressionSelectionModifierDelegate
 {
-	/// Give the modifier delegate its own metaclass.
-	class OOMetaClass : public ExpressionSelectionModifierDelegate::OOMetaClass
-	{
-	public:
+    /// Give the modifier delegate its own metaclass.
+    class OOMetaClass : public ExpressionSelectionModifierDelegate::OOMetaClass
+    {
+    public:
 
-		/// Inherit constructor from base class.
-		using ExpressionSelectionModifierDelegate::OOMetaClass::OOMetaClass;
+        /// Inherit constructor from base class.
+        using ExpressionSelectionModifierDelegate::OOMetaClass::OOMetaClass;
 
-		/// Indicates which data objects in the given input data collection the modifier delegate is able to operate on.
-		virtual QVector<DataObjectReference> getApplicableObjects(const DataCollection& input) const override;
+        /// Indicates which data objects in the given input data collection the modifier delegate is able to operate on.
+        virtual QVector<DataObjectReference> getApplicableObjects(const DataCollection& input) const override;
 
-		/// Indicates which class of data objects the modifier delegate is able to operate on.
-		virtual const DataObject::OOMetaClass& getApplicableObjectClass() const override { return SurfaceMeshRegions::OOClass(); }
+        /// Indicates which class of data objects the modifier delegate is able to operate on.
+        virtual const DataObject::OOMetaClass& getApplicableObjectClass() const override { return SurfaceMeshRegions::OOClass(); }
 
-		/// The name by which Python scripts can refer to this modifier delegate.
-		virtual QString pythonDataName() const override { return QStringLiteral("surface_regions"); }
-	};
+        /// The name by which Python scripts can refer to this modifier delegate.
+        virtual QString pythonDataName() const override { return QStringLiteral("surface_regions"); }
+    };
 
-	OVITO_CLASS_META(SurfaceMeshRegionsExpressionSelectionModifierDelegate, OOMetaClass)
-	Q_CLASSINFO("DisplayName", "Mesh Regions");
+    OVITO_CLASS_META(SurfaceMeshRegionsExpressionSelectionModifierDelegate, OOMetaClass)
+    Q_CLASSINFO("DisplayName", "Mesh Regions");
 
 public:
 
-	/// Constructor.
-	Q_INVOKABLE SurfaceMeshRegionsExpressionSelectionModifierDelegate(ObjectCreationParams params) : ExpressionSelectionModifierDelegate(params) {}
+    /// Constructor.
+    Q_INVOKABLE SurfaceMeshRegionsExpressionSelectionModifierDelegate(ObjectCreationParams params) : ExpressionSelectionModifierDelegate(params) {}
 };
 
-}	// End of namespace
+}   // End of namespace

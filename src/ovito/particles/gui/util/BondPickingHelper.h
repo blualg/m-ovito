@@ -36,22 +36,22 @@ class OVITO_PARTICLESGUI_EXPORT BondPickingHelper
 {
 public:
 
-	struct PickResult {
+    struct PickResult {
 
-		/// The index of the picked bond.
-		size_t bondIndex;
+        /// The index of the picked bond.
+        size_t bondIndex;
 
-		/// The scene node that contains the picked bond.
-		OORef<PipelineSceneNode> sceneNode;
-	};
+        /// The scene node that contains the picked bond.
+        OORef<PipelineSceneNode> sceneNode;
+    };
 
-	/// \brief Finds the bond under the mouse cursor.
-	/// \param vpwin The viewport window to perform hit testing in.
-	/// \param clickPoint The position of the mouse cursor in the viewport.
-	/// \param time The animation at which hit testing is performed.
-	/// \param result The output structure that receives information about the picked bond.
-	/// \return \c true if a bond has been picked; \c false otherwise.
-	bool pickBond(ViewportWindowInterface* vpwin, const QPoint& clickPoint, PickResult& result);
+    /// \brief Finds the bond under the mouse cursor.
+    /// \param vpwin The viewport window to perform hit testing in.
+    /// \param clickPoint The position of the mouse cursor in the viewport.
+    /// \param time The animation at which hit testing is performed.
+    /// \param result The output structure that receives information about the picked bond.
+    /// \return \c true if a bond has been picked; \c false otherwise.
+    bool pickBond(ViewportWindowInterface* vpwin, const QPoint& clickPoint, PickResult& result);
 };
 
-}	// End of namespace
+}   // End of namespace

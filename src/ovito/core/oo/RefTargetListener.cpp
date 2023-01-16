@@ -36,10 +36,10 @@ DEFINE_VECTOR_REFERENCE_FIELD(VectorRefTargetListenerBase, targets);
 ******************************************************************************/
 bool RefTargetListenerBase::referenceEvent(RefTarget* source, const ReferenceEvent& event)
 {
-	// Emit Qt signal.
-	Q_EMIT notificationEvent(source, event);
+    // Emit Qt signal.
+    Q_EMIT notificationEvent(source, event);
 
-	return RefMaker::referenceEvent(source, event);
+    return RefMaker::referenceEvent(source, event);
 }
 
 /******************************************************************************
@@ -47,10 +47,10 @@ bool RefTargetListenerBase::referenceEvent(RefTarget* source, const ReferenceEve
 ******************************************************************************/
 bool VectorRefTargetListenerBase::referenceEvent(RefTarget* source, const ReferenceEvent& event)
 {
-	// Emit Qt signal.
-	Q_EMIT notificationEvent(source, event);
+    // Emit Qt signal.
+    Q_EMIT notificationEvent(source, event);
 
-	return RefMaker::referenceEvent(source, event);
+    return RefMaker::referenceEvent(source, event);
 }
 
-}	// End of namespace
+}   // End of namespace

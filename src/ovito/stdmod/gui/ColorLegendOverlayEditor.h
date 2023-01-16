@@ -33,32 +33,32 @@ namespace Ovito::StdMod {
  */
 class ColorLegendOverlayEditor : public PropertiesEditor
 {
-	OVITO_CLASS(ColorLegendOverlayEditor)
+    OVITO_CLASS(ColorLegendOverlayEditor)
 
 public:
 
-	/// Constructor.
-	Q_INVOKABLE ColorLegendOverlayEditor() {}
+    /// Constructor.
+    Q_INVOKABLE ColorLegendOverlayEditor() {}
 
 protected:
 
-	/// Creates the user interface controls for the editor.
-	virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
+    /// Creates the user interface controls for the editor.
+    virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
 
 private Q_SLOTS:
 
-	/// Updates the combobox list showing the available data sources.
-	void updateSourcesList();
+    /// Updates the combobox list showing the available data sources.
+    void updateSourcesList();
 
-	/// Is called when the user selects a new source object for the color legend.
-	void colorSourceSelected();
+    /// Is called when the user selects a new source object for the color legend.
+    void colorSourceSelected();
 
 private:
 
-	PopupUpdateComboBox* _sourcesComboBox;
-	StringParameterUI* _label1PUI;
-	StringParameterUI* _label2PUI;
-	StringParameterUI* _valueFormatStringPUI;
+    PopupUpdateComboBox* _sourcesComboBox;
+    StringParameterUI* _label1PUI;
+    StringParameterUI* _label2PUI;
+    StringParameterUI* _valueFormatStringPUI;
 };
 
-}	// End of namespace
+}   // End of namespace

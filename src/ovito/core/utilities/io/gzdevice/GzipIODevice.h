@@ -45,16 +45,16 @@ struct ZLibState;   // Internal data structure
  */
 class OVITO_CORE_EXPORT GzipIODevice : public QIODevice
 {
-	Q_OBJECT
+    Q_OBJECT
 
 public:
 
     /// The compression formats supported by this class.
-	enum StreamFormat {
-		ZlibFormat,
-		GzipFormat,
-		RawZipFormat
-	};
+    enum StreamFormat {
+        ZlibFormat,
+        GzipFormat,
+        RawZipFormat
+    };
 
     /// Constructor.
     ///
@@ -124,4 +124,4 @@ private:
     std::unique_ptr<unsigned char[]> _buffer;
 };
 
-}	// End of namespace
+}   // End of namespace

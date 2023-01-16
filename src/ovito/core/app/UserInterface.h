@@ -41,201 +41,201 @@ class OVITO_CORE_EXPORT UserInterface
 {
 public:
 
-	/// Constructor.
-	explicit UserInterface(DataSetContainer& datasetContainer, TaskManager& taskManager) : _datasetContainer(datasetContainer), _taskManager(taskManager) {}
+    /// Constructor.
+    explicit UserInterface(DataSetContainer& datasetContainer, TaskManager& taskManager) : _datasetContainer(datasetContainer), _taskManager(taskManager) {}
 
-	/// Destructor.
-	virtual ~UserInterface() {}
+    /// Destructor.
+    virtual ~UserInterface() {}
 
-	/// Returns the container managing the current dataset.
-	DataSetContainer& datasetContainer() const { return _datasetContainer; }
+    /// Returns the container managing the current dataset.
+    DataSetContainer& datasetContainer() const { return _datasetContainer; }
 
-	/// Sets the viewport input manager of the user interface.
-	void setViewportInputManager(ViewportInputManager* manager) { _viewportInputManager = manager; }
+    /// Sets the viewport input manager of the user interface.
+    void setViewportInputManager(ViewportInputManager* manager) { _viewportInputManager = manager; }
 
-	/// Returns the viewport input manager of the user interface.
-	ViewportInputManager* viewportInputManager() const { return _viewportInputManager; }
+    /// Returns the viewport input manager of the user interface.
+    ViewportInputManager* viewportInputManager() const { return _viewportInputManager; }
 
-	/// Returns the manager of asynchronous tasks belonging to this user interface.
-	TaskManager& taskManager() const { return _taskManager; }
+    /// Returns the manager of asynchronous tasks belonging to this user interface.
+    TaskManager& taskManager() const { return _taskManager; }
 
-	/// Returns the manager of ParameterUnit objects.
-	UnitsManager& unitsManager() { return _unitsManager; }
+    /// Returns the manager of ParameterUnit objects.
+    UnitsManager& unitsManager() { return _unitsManager; }
 
-	/// Gives the active viewport the input focus.
-	virtual void setViewportInputFocus() {}
-	
-	/// Displays a message string in the status bar.
-	virtual void showStatusBarMessage(const QString& message, int timeout = 0) {}
+    /// Gives the active viewport the input focus.
+    virtual void setViewportInputFocus() {}
+    
+    /// Displays a message string in the status bar.
+    virtual void showStatusBarMessage(const QString& message, int timeout = 0) {}
 
-	/// Hides any messages currently displayed in the status bar.
-	virtual void clearStatusBarMessage() {}
+    /// Hides any messages currently displayed in the status bar.
+    virtual void clearStatusBarMessage() {}
 
-	/// Displays the error message(s) stored in the Exception object to the user.
-	///
-	/// In the graphical program mode, this method will display a modal message box.
-	/// In console mode, this method just prints the error messages(s) to the console.
-	///
-	/// Note that, unless 'blocking' is true, the reporting happens asynchronously in GUI mode.
-	/// The method returns immediately and the error messaeg is displayed to the user at a later time,
-	/// as soon as control returns to the event loop.
-	virtual void reportError(const Exception& ex, bool blocking = false);
+    /// Displays the error message(s) stored in the Exception object to the user.
+    ///
+    /// In the graphical program mode, this method will display a modal message box.
+    /// In console mode, this method just prints the error messages(s) to the console.
+    ///
+    /// Note that, unless 'blocking' is true, the reporting happens asynchronously in GUI mode.
+    /// The method returns immediately and the error messaeg is displayed to the user at a later time,
+    /// as soon as control returns to the event loop.
+    virtual void reportError(const Exception& ex, bool blocking = false);
 
-	/// Closes the user interface and shuts down the entire application after displaying an error message.
-	virtual void exitWithFatalError(const Exception& ex);
+    /// Closes the user interface and shuts down the entire application after displaying an error message.
+    virtual void exitWithFatalError(const Exception& ex);
 
-	/// Tells the UI to process any pending events in the event queue and return immediately.
-	/// The function can return true to indicate that the running operation should be canceled. 
-	virtual bool processEvents();
+    /// Tells the UI to process any pending events in the event queue and return immediately.
+    /// The function can return true to indicate that the running operation should be canceled. 
+    virtual bool processEvents();
 
-	/// Immediately repaints all viewports that have been flagged for an update.
-	virtual void processViewportUpdateRequests();
+    /// Immediately repaints all viewports that have been flagged for an update.
+    virtual void processViewportUpdateRequests();
 
-	/// Returns the manager of the user interface actions.
-	ActionManager* actionManager() const { return _actionManager; }
+    /// Returns the manager of the user interface actions.
+    ActionManager* actionManager() const { return _actionManager; }
 
-	/// Queries the system's information and graphics capabilities.
-	QString generateSystemReport();
+    /// Queries the system's information and graphics capabilities.
+    QString generateSystemReport();
 
-	/// Creates a frame buffer of the requested size for rendering into and displays it in the user interface.
-	virtual std::shared_ptr<FrameBuffer> createAndShowFrameBuffer(int width, int height, bool showRenderingOperationProgress);
+    /// Creates a frame buffer of the requested size for rendering into and displays it in the user interface.
+    virtual std::shared_ptr<FrameBuffer> createAndShowFrameBuffer(int width, int height, bool showRenderingOperationProgress);
 
-	/// Returns the undo stack, which keeps track of changes made by the user to the current dataset. 
-	/// It may be none if not running as a desktop application.
-	UndoStack* undoStack() const { return _undoStack; }
+    /// Returns the undo stack, which keeps track of changes made by the user to the current dataset. 
+    /// It may be none if not running as a desktop application.
+    UndoStack* undoStack() const { return _undoStack; }
 
-	/// Indicates whether the program session is being closed and all task in progress should be canceled.
-	virtual bool isShuttingDown() const;
+    /// Indicates whether the program session is being closed and all task in progress should be canceled.
+    virtual bool isShuttingDown() const;
 
-	/// Indicates whether the user has activated auto-key mode and controllers should automatically
-	/// generate new animation keys whenever their current value is changed by the user.
-	virtual bool isAutoGenerateAnimationKeysEnabled() const { return false; }
+    /// Indicates whether the user has activated auto-key mode and controllers should automatically
+    /// generate new animation keys whenever their current value is changed by the user.
+    virtual bool isAutoGenerateAnimationKeysEnabled() const { return false; }
 
-	/// Temporarily suspends repainting of the viewports.
-	/// To resume redrawing of viewports call resumeViewportUpdates().
-	/// Normally, you should use the ViewportSuspender helper class to suspend viewport update.
-	/// It has the advantage of being exception-safe.
-	void suspendViewportUpdates() { _viewportSuspendCount++; }
+    /// Temporarily suspends repainting of the viewports.
+    /// To resume redrawing of viewports call resumeViewportUpdates().
+    /// Normally, you should use the ViewportSuspender helper class to suspend viewport update.
+    /// It has the advantage of being exception-safe.
+    void suspendViewportUpdates() { _viewportSuspendCount++; }
 
-	/// Resumes redrawing of the viewports after a call to suspendViewportUpdates().
-	void resumeViewportUpdates();
+    /// Resumes redrawing of the viewports after a call to suspendViewportUpdates().
+    void resumeViewportUpdates();
 
-	/// Returns whether viewport updates are currently suspended.
-	bool areViewportUpdatesSuspended() const { return _viewportSuspendCount > 0; }
+    /// Returns whether viewport updates are currently suspended.
+    bool areViewportUpdatesSuspended() const { return _viewportSuspendCount > 0; }
 
-	/// Suspends updates of the viewports whenever preliminary data pipeline results are available.
-	void suspendPreliminaryViewportUpdates() { _preliminaryViewportUpdatesSuspendCount++; }
+    /// Suspends updates of the viewports whenever preliminary data pipeline results are available.
+    void suspendPreliminaryViewportUpdates() { _preliminaryViewportUpdatesSuspendCount++; }
 
-	/// \brief Resumes updates of the viewports whenever preliminary data pipeline results are available.
-	void resumePreliminaryViewportUpdates() {
-		OVITO_ASSERT_MSG(_preliminaryViewportUpdatesSuspendCount > 0, "UserInterface::resumePreliminaryViewportUpdates()", "resumePreliminaryViewportUpdates() has been called more often than suspendPreliminaryViewportUpdates().");
-		_preliminaryViewportUpdatesSuspendCount--;
-	}
+    /// \brief Resumes updates of the viewports whenever preliminary data pipeline results are available.
+    void resumePreliminaryViewportUpdates() {
+        OVITO_ASSERT_MSG(_preliminaryViewportUpdatesSuspendCount > 0, "UserInterface::resumePreliminaryViewportUpdates()", "resumePreliminaryViewportUpdates() has been called more often than suspendPreliminaryViewportUpdates().");
+        _preliminaryViewportUpdatesSuspendCount--;
+    }
 
-	/// Returns whether viewports should be updated whenever preliminary pipeline results are available.  
-	bool arePreliminaryViewportUpdatesSuspended() const { return _preliminaryViewportUpdatesSuspendCount != 0; }
+    /// Returns whether viewports should be updated whenever preliminary pipeline results are available.  
+    bool arePreliminaryViewportUpdatesSuspended() const { return _preliminaryViewportUpdatesSuspendCount != 0; }
 
-	/// Flags all viewports for redrawing.
-	///
-	/// This function does not lead to an immediate repainting of the viewports; instead it schedules a
-	/// paint event for deferred processing when execution returns to the Qt event loop.
-	///
-	/// To update just a single viewport, Viewport::updateViewport() should be used instead.
-	///
-	/// To redraw all viewports immediately, also call processViewportUpdateRequests().
-	void updateViewports();
+    /// Flags all viewports for redrawing.
+    ///
+    /// This function does not lead to an immediate repainting of the viewports; instead it schedules a
+    /// paint event for deferred processing when execution returns to the Qt event loop.
+    ///
+    /// To update just a single viewport, Viewport::updateViewport() should be used instead.
+    ///
+    /// To redraw all viewports immediately, also call processViewportUpdateRequests().
+    void updateViewports();
 
-	/// Returns whether any of the visible interactive viewports is currently being rendered.
-	bool isRenderingInteractiveViewports() const { return _viewportBeingRendered != nullptr; }
+    /// Returns whether any of the visible interactive viewports is currently being rendered.
+    bool isRenderingInteractiveViewports() const { return _viewportBeingRendered != nullptr; }
 
-	/// Zooms all visible viewports to the extents of the scene when all scene pipelines have been fully evaluated and the extents are known.
-	void zoomToSceneExtentsWhenReady();
+    /// Zooms all visible viewports to the extents of the scene when all scene pipelines have been fully evaluated and the extents are known.
+    void zoomToSceneExtentsWhenReady();
 
-	/// Executes a functor that performs some actions in an interactive context and catches any exceptions thrown during its execution.
-	/// If an exception is thrown by the functor, the error message is displayed to the user and this function returns false.
-	template<typename Function>
-	bool handleExceptions(Function&& func, bool visibleInUserInterface = false) {
-		try {
-			MainThreadOperation operation(ExecutionContext::Type::Interactive, *this, visibleInUserInterface);
-			if constexpr(detail::is_invocable_v<Function, MainThreadOperation&>) {
-				std::forward<Function>(func)(operation);
-			}
-			else {
-				std::forward<Function>(func)();
-			}
-			return !operation.isCanceled();
-		}
-		catch(const Exception& ex) {
-			reportError(ex);
-			return false;
-		}
-	}
+    /// Executes a functor that performs some actions in an interactive context and catches any exceptions thrown during its execution.
+    /// If an exception is thrown by the functor, the error message is displayed to the user and this function returns false.
+    template<typename Function>
+    bool handleExceptions(Function&& func, bool visibleInUserInterface = false) {
+        try {
+            MainThreadOperation operation(ExecutionContext::Type::Interactive, *this, visibleInUserInterface);
+            if constexpr(detail::is_invocable_v<Function, MainThreadOperation&>) {
+                std::forward<Function>(func)(operation);
+            }
+            else {
+                std::forward<Function>(func)();
+            }
+            return !operation.isCanceled();
+        }
+        catch(const Exception& ex) {
+            reportError(ex);
+            return false;
+        }
+    }
 
-	/// Executes a functor provided by the caller that performs undoable actions in an interactive context.
-	/// If an exception is thrown by the functor, the error message is displayed 
-	/// to the user, and this function returns false. 
-	template<typename Function>
-	bool performActions(UndoableTransaction& transaction, Function&& func) {
-		OVITO_ASSERT(transaction.operation());
-		OVITO_ASSERT(&transaction.userInterface() == this);
-		UndoSuspender activateUndo(transaction.operation());
-		return handleExceptions(std::forward<Function>(func));
-	}
+    /// Executes a functor provided by the caller that performs undoable actions in an interactive context.
+    /// If an exception is thrown by the functor, the error message is displayed 
+    /// to the user, and this function returns false. 
+    template<typename Function>
+    bool performActions(UndoableTransaction& transaction, Function&& func) {
+        OVITO_ASSERT(transaction.operation());
+        OVITO_ASSERT(&transaction.userInterface() == this);
+        UndoSuspender activateUndo(transaction.operation());
+        return handleExceptions(std::forward<Function>(func));
+    }
 
-	/// Executes a functor provided by the caller that performs undoable actions in an interactive context.
-	/// If an exception is thrown by the functor, all data changes performed by the functor so far will be undone, the error message is displayed 
-	/// to the user, and this function returns false. If no exception is thrown, all performed actions are committed and this function returns true.
-	template<typename Function>
-	bool performTransaction(const QString& undoOperationName, Function&& func) {
-		UndoableTransaction transaction(*this, undoOperationName);
-		if(performActions(transaction, std::forward<Function>(func))) {
-			transaction.commit();
-			return true;
-		}
-		return false;
-	}
+    /// Executes a functor provided by the caller that performs undoable actions in an interactive context.
+    /// If an exception is thrown by the functor, all data changes performed by the functor so far will be undone, the error message is displayed 
+    /// to the user, and this function returns false. If no exception is thrown, all performed actions are committed and this function returns true.
+    template<typename Function>
+    bool performTransaction(const QString& undoOperationName, Function&& func) {
+        UndoableTransaction transaction(*this, undoOperationName);
+        if(performActions(transaction, std::forward<Function>(func))) {
+            transaction.commit();
+            return true;
+        }
+        return false;
+    }
 
 protected:
 
-	/// Assigns an ActionManager.
-	void setActionManager(ActionManager* manager) { _actionManager = manager; }
+    /// Assigns an ActionManager.
+    void setActionManager(ActionManager* manager) { _actionManager = manager; }
 
-	/// Assigns an UndoStack.
-	void setUndoStack(UndoStack* undoStack) { _undoStack = undoStack; }
+    /// Assigns an UndoStack.
+    void setUndoStack(UndoStack* undoStack) { _undoStack = undoStack; }
 
 private:
 
-	/// Hosts the dataset that is currently being edited in this user interface.
-	DataSetContainer& _datasetContainer;
+    /// Hosts the dataset that is currently being edited in this user interface.
+    DataSetContainer& _datasetContainer;
 
-	/// Viewport input manager of the user interface.
-	ViewportInputManager* _viewportInputManager = nullptr;
+    /// Viewport input manager of the user interface.
+    ViewportInputManager* _viewportInputManager = nullptr;
 
-	/// Actions of the user interface.
-	ActionManager* _actionManager = nullptr;
+    /// Actions of the user interface.
+    ActionManager* _actionManager = nullptr;
 
-	/// Manages the running asynchronous tasks that belong to this user interface.
-	TaskManager& _taskManager;
+    /// Manages the running asynchronous tasks that belong to this user interface.
+    TaskManager& _taskManager;
 
-	/// The undo stack keeping track of changes made by the user to the current dataset.
-	UndoStack* _undoStack = nullptr;
+    /// The undo stack keeping track of changes made by the user to the current dataset.
+    UndoStack* _undoStack = nullptr;
 
-	/// The manager of ParameterUnit objects.
-	UnitsManager _unitsManager;
+    /// The manager of ParameterUnit objects.
+    UnitsManager _unitsManager;
 
-	/// This counter tracks temporary suspension of viewport updates.
-	int _viewportSuspendCount = 0;
+    /// This counter tracks temporary suspension of viewport updates.
+    int _viewportSuspendCount = 0;
 
-	/// Indicates that the viewports have been invalidated while updates were suspended.
-	bool _viewportsNeedUpdate = false;
+    /// Indicates that the viewports have been invalidated while updates were suspended.
+    bool _viewportsNeedUpdate = false;
 
-	/// Counts the number of times preliminary viewport updates have been suspended.
-	int _preliminaryViewportUpdatesSuspendCount = 0;
+    /// Counts the number of times preliminary viewport updates have been suspended.
+    int _preliminaryViewportUpdatesSuspendCount = 0;
 
-	/// The interactive viewport currently being rendered.
-	Viewport* _viewportBeingRendered = nullptr;
+    /// The interactive viewport currently being rendered.
+    Viewport* _viewportBeingRendered = nullptr;
 
-	friend class Viewport;
+    friend class Viewport;
 };
 
 /**
@@ -248,14 +248,14 @@ private:
 class OVITO_CORE_EXPORT ViewportSuspender 
 {
 public:
-	ViewportSuspender(UserInterface& userInterface = ExecutionContext::current().ui()) noexcept : _ui(userInterface) {
-		userInterface.suspendViewportUpdates();
-	}
-	~ViewportSuspender() {
-		_ui.resumeViewportUpdates();
-	}
+    ViewportSuspender(UserInterface& userInterface = ExecutionContext::current().ui()) noexcept : _ui(userInterface) {
+        userInterface.suspendViewportUpdates();
+    }
+    ~ViewportSuspender() {
+        _ui.resumeViewportUpdates();
+    }
 private:
-	UserInterface& _ui;
+    UserInterface& _ui;
 };
 
 /**
@@ -265,20 +265,20 @@ class OVITO_CORE_EXPORT PreliminaryViewportUpdatesSuspender
 {
 public:
 
-	/// Suspends the automatic generation of animation keys by calling UserInterface::suspendPreliminaryViewportUpdates().
-	/// \param animSettings The animation settings object.
-	PreliminaryViewportUpdatesSuspender(UserInterface& userInterface) : _userInterface(userInterface) {
-		userInterface.suspendPreliminaryViewportUpdates();
-	}
+    /// Suspends the automatic generation of animation keys by calling UserInterface::suspendPreliminaryViewportUpdates().
+    /// \param animSettings The animation settings object.
+    PreliminaryViewportUpdatesSuspender(UserInterface& userInterface) : _userInterface(userInterface) {
+        userInterface.suspendPreliminaryViewportUpdates();
+    }
 
-	/// Resumes the automatic generation of animation keys by calling UserInterface::resumePreliminaryViewportUpdates().
-	~PreliminaryViewportUpdatesSuspender() {
-		_userInterface.resumePreliminaryViewportUpdates();
-	}
+    /// Resumes the automatic generation of animation keys by calling UserInterface::resumePreliminaryViewportUpdates().
+    ~PreliminaryViewportUpdatesSuspender() {
+        _userInterface.resumePreliminaryViewportUpdates();
+    }
 
 private:
 
-	UserInterface& _userInterface;
+    UserInterface& _userInterface;
 };
 
-}	// End of namespace
+}   // End of namespace

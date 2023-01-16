@@ -31,19 +31,19 @@ namespace Ovito {
 ******************************************************************************/
 ViewportModeButton::ViewportModeButton(ViewportModeAction* action, QWidget* parent) : QPushButton(action->icon(), action->text(), parent)
 {
-	setCheckable(true);
-	setChecked(action->isChecked());
-	setToolTip(action->toolTip());
+    setCheckable(true);
+    setChecked(action->isChecked());
+    setToolTip(action->toolTip());
 
 #ifndef Q_OS_MACOS
-	if(action->highlightColor().isValid())
-		setStyleSheet("QPushButton:checked { background-color: " + action->highlightColor().name() + " }");
-	else
-		setStyleSheet("QPushButton:checked { background-color: moccasin; }");
+    if(action->highlightColor().isValid())
+        setStyleSheet("QPushButton:checked { background-color: " + action->highlightColor().name() + " }");
+    else
+        setStyleSheet("QPushButton:checked { background-color: moccasin; }");
 #endif
 
-	connect(action, &ViewportModeAction::toggled, this, &QPushButton::setChecked);
-	connect(this, &QPushButton::clicked, action, &ViewportModeAction::trigger);
+    connect(action, &ViewportModeAction::toggled, this, &QPushButton::setChecked);
+    connect(this, &QPushButton::clicked, action, &ViewportModeAction::trigger);
 }
 
-}	// End of namespace
+}   // End of namespace

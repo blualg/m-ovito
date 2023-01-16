@@ -66,28 +66,28 @@ SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(SliceModifier, widthController, WorldParame
 * Constructs the modifier object.
 ******************************************************************************/
 SliceModifier::SliceModifier(ObjectCreationParams params) : MultiDelegatingModifier(params),
-	_createSelection(false),
-	_inverse(false),
-	_applyToSelection(false),
-	_enablePlaneVisualization(false),
-	_reducedCoordinates(false)
+    _createSelection(false),
+    _inverse(false),
+    _applyToSelection(false),
+    _enablePlaneVisualization(false),
+    _reducedCoordinates(false)
 {
-	if(params.createSubObjects()) {
-		setNormalController(ControllerManager::createVector3Controller());
-		setDistanceController(ControllerManager::createFloatController());
-		setWidthController(ControllerManager::createFloatController());
-		if(normalController()) 
-			normalController()->setVector3Value(AnimationTime(0), Vector3(1,0,0));
+    if(params.createSubObjects()) {
+        setNormalController(ControllerManager::createVector3Controller());
+        setDistanceController(ControllerManager::createFloatController());
+        setWidthController(ControllerManager::createFloatController());
+        if(normalController()) 
+            normalController()->setVector3Value(AnimationTime(0), Vector3(1,0,0));
 
-		// Generate the list of delegate objects.
-		createModifierDelegates(SliceModifierDelegate::OOClass(), params);
+        // Generate the list of delegate objects.
+        createModifierDelegates(SliceModifierDelegate::OOClass(), params);
 
-		// Create the vis element for the plane.
-		setPlaneVis(OORef<TriMeshVis>::create(params));
-		planeVis()->setTitle(tr("Plane"));
-		planeVis()->setHighlightEdges(true);
-		planeVis()->setTransparency(0.5);
-	}
+        // Create the vis element for the plane.
+        setPlaneVis(OORef<TriMeshVis>::create(params));
+        planeVis()->setTitle(tr("Plane"));
+        planeVis()->setHighlightEdges(true);
+        planeVis()->setTransparency(0.5);
+    }
 }
 
 /******************************************************************************
@@ -95,12 +95,12 @@ SliceModifier::SliceModifier(ObjectCreationParams params) : MultiDelegatingModif
 ******************************************************************************/
 bool SliceModifier::referenceEvent(RefTarget* source, const ReferenceEvent& event)
 {
-	if(event.type() == ReferenceEvent::TargetChanged && (source == distanceController() || source == normalController())) {
-		// Changes of some modifier parameters affect the result of SliceModifier::getPipelineEditorShortInfo().
-		notifyDependents(ReferenceEvent::ObjectStatusChanged);
-	}
+    if(event.type() == ReferenceEvent::TargetChanged && (source == distanceController() || source == normalController())) {
+        // Changes of some modifier parameters affect the result of SliceModifier::getPipelineEditorShortInfo().
+        notifyDependents(ReferenceEvent::ObjectStatusChanged);
+    }
 
-	return MultiDelegatingModifier::referenceEvent(source, event);
+    return MultiDelegatingModifier::referenceEvent(source, event);
 }
 
 /******************************************************************************
@@ -108,11 +108,11 @@ bool SliceModifier::referenceEvent(RefTarget* source, const ReferenceEvent& even
 ******************************************************************************/
 TimeInterval SliceModifier::validityInterval(const ModifierEvaluationRequest& request) const
 {
-	TimeInterval iv = MultiDelegatingModifier::validityInterval(request);
-	if(normalController()) iv.intersect(normalController()->validityInterval(request.time()));
-	if(distanceController()) iv.intersect(distanceController()->validityInterval(request.time()));
-	if(widthController()) iv.intersect(widthController()->validityInterval(request.time()));
-	return iv;
+    TimeInterval iv = MultiDelegatingModifier::validityInterval(request);
+    if(normalController()) iv.intersect(normalController()->validityInterval(request.time()));
+    if(distanceController()) iv.intersect(distanceController()->validityInterval(request.time()));
+    if(widthController()) iv.intersect(widthController()->validityInterval(request.time()));
+    return iv;
 }
 
 /******************************************************************************
@@ -120,38 +120,38 @@ TimeInterval SliceModifier::validityInterval(const ModifierEvaluationRequest& re
 ******************************************************************************/
 std::tuple<Plane3, FloatType> SliceModifier::slicingPlane(AnimationTime time, TimeInterval& validityInterval, const PipelineFlowState& state)
 {
-	Plane3 plane;
+    Plane3 plane;
 
-	if(normalController())
-		normalController()->getVector3Value(time, plane.normal, validityInterval);
+    if(normalController())
+        normalController()->getVector3Value(time, plane.normal, validityInterval);
 
-	if(plane.normal == Vector3::Zero())
-		plane.normal = Vector3(0,0,1);
+    if(plane.normal == Vector3::Zero())
+        plane.normal = Vector3(0,0,1);
 
-	if(distanceController())
-		plane.dist = distanceController()->getFloatValue(time, validityInterval);
+    if(distanceController())
+        plane.dist = distanceController()->getFloatValue(time, validityInterval);
 
-	if(inverse())
-		plane = -plane;
+    if(inverse())
+        plane = -plane;
 
-	if(reducedCoordinates()) {
-		if(const SimulationCellObject* cell = state.getObject<SimulationCellObject>()) {
-			plane.normal /= plane.normal.squaredLength();
-			plane = cell->cellMatrix() * plane;
-		}
-		else {
-			throw Exception(tr("Slicing plane was specified in reduced cell coordinates but there is no simulation cell."));
-		}
-	}
-	else {
-		plane.normal.normalize();
-	}
+    if(reducedCoordinates()) {
+        if(const SimulationCellObject* cell = state.getObject<SimulationCellObject>()) {
+            plane.normal /= plane.normal.squaredLength();
+            plane = cell->cellMatrix() * plane;
+        }
+        else {
+            throw Exception(tr("Slicing plane was specified in reduced cell coordinates but there is no simulation cell."));
+        }
+    }
+    else {
+        plane.normal.normalize();
+    }
 
-	FloatType slabWidth = 0;
-	if(widthController())
-		slabWidth = widthController()->getFloatValue(time, validityInterval);
+    FloatType slabWidth = 0;
+    if(widthController())
+        slabWidth = widthController()->getFloatValue(time, validityInterval);
 
-	return std::make_tuple(plane, slabWidth);
+    return std::make_tuple(plane, slabWidth);
 }
 
 /******************************************************************************
@@ -159,10 +159,10 @@ std::tuple<Plane3, FloatType> SliceModifier::slicingPlane(AnimationTime time, Ti
 ******************************************************************************/
 void SliceModifier::renderModifierVisual(const ModifierEvaluationRequest& request, PipelineSceneNode* contextNode, SceneRenderer* renderer, bool renderOverlay)
 {
-	if(!renderOverlay && isObjectBeingEdited() && renderer->isInteractive() && !renderer->isPicking()) {
-		const PipelineFlowState& state = request.modApp()->evaluateInputSynchronous(request);
-		renderVisual(request.time(), contextNode, renderer, state);
-	}
+    if(!renderOverlay && isObjectBeingEdited() && renderer->isInteractive() && !renderer->isPicking()) {
+        const PipelineFlowState& state = request.modApp()->evaluateInputSynchronous(request);
+        renderVisual(request.time(), contextNode, renderer, state);
+    }
 }
 
 /******************************************************************************
@@ -170,29 +170,29 @@ void SliceModifier::renderModifierVisual(const ModifierEvaluationRequest& reques
 ******************************************************************************/
 void SliceModifier::renderVisual(AnimationTime time, PipelineSceneNode* contextNode, SceneRenderer* renderer, const PipelineFlowState& state)
 {
-	TimeInterval interval;
+    TimeInterval interval;
 
-	Box3 bb = contextNode->localBoundingBox(time, interval);
-	if(bb.isEmpty())
-		return;
+    Box3 bb = contextNode->localBoundingBox(time, interval);
+    if(bb.isEmpty())
+        return;
 
-	// Obtain modifier parameter values.
-	Plane3 plane;
-	FloatType slabWidth;
-	std::tie(plane, slabWidth) = slicingPlane(time, interval, state);
-	if(plane.normal.isZero())
-		return;
+    // Obtain modifier parameter values.
+    Plane3 plane;
+    FloatType slabWidth;
+    std::tie(plane, slabWidth) = slicingPlane(time, interval, state);
+    if(plane.normal.isZero())
+        return;
 
-	ColorA color(0.8, 0.3, 0.3);
-	if(slabWidth <= 0) {
-		renderPlane(renderer, plane, bb, color);
-	}
-	else {
-		plane.dist += slabWidth / 2;
-		renderPlane(renderer, plane, bb, color);
-		plane.dist -= slabWidth;
-		renderPlane(renderer, plane, bb, color);
-	}
+    ColorA color(0.8, 0.3, 0.3);
+    if(slabWidth <= 0) {
+        renderPlane(renderer, plane, bb, color);
+    }
+    else {
+        plane.dist += slabWidth / 2;
+        renderPlane(renderer, plane, bb, color);
+        plane.dist -= slabWidth;
+        renderPlane(renderer, plane, bb, color);
+    }
 }
 
 /******************************************************************************
@@ -200,49 +200,49 @@ void SliceModifier::renderVisual(AnimationTime time, PipelineSceneNode* contextN
 ******************************************************************************/
 void SliceModifier::renderPlane(SceneRenderer* renderer, const Plane3& plane, const Box3& bb, const ColorA& color) const
 {
-	// Compute intersection lines of slicing plane and bounding box.
-	Point3 corners[8];
-	for(size_t i = 0; i < 8; i++)
-		corners[i] = bb[i];
+    // Compute intersection lines of slicing plane and bounding box.
+    Point3 corners[8];
+    for(size_t i = 0; i < 8; i++)
+        corners[i] = bb[i];
 
-	std::vector<Point3> vertices;
-	vertices.reserve(8);
-	planeQuadIntersection(corners, {{0, 1, 5, 4}}, plane, vertices);
-	planeQuadIntersection(corners, {{1, 3, 7, 5}}, plane, vertices);
-	planeQuadIntersection(corners, {{3, 2, 6, 7}}, plane, vertices);
-	planeQuadIntersection(corners, {{2, 0, 4, 6}}, plane, vertices);
-	planeQuadIntersection(corners, {{4, 5, 7, 6}}, plane, vertices);
-	planeQuadIntersection(corners, {{0, 2, 3, 1}}, plane, vertices);
+    std::vector<Point3> vertices;
+    vertices.reserve(8);
+    planeQuadIntersection(corners, {{0, 1, 5, 4}}, plane, vertices);
+    planeQuadIntersection(corners, {{1, 3, 7, 5}}, plane, vertices);
+    planeQuadIntersection(corners, {{3, 2, 6, 7}}, plane, vertices);
+    planeQuadIntersection(corners, {{2, 0, 4, 6}}, plane, vertices);
+    planeQuadIntersection(corners, {{4, 5, 7, 6}}, plane, vertices);
+    planeQuadIntersection(corners, {{0, 2, 3, 1}}, plane, vertices);
 
-	// If there is not intersection with the simulation box then
-	// project the simulation box onto the plane.
-	if(vertices.empty()) {
-		const static int edges[12][2] = {
-				{0,1},{1,3},{3,2},{2,0},
-				{4,5},{5,7},{7,6},{6,4},
-				{0,4},{1,5},{3,7},{2,6}
-		};
-		vertices.reserve(24);
-		for(int edge = 0; edge < 12; edge++) {
-			vertices.push_back(plane.projectPoint(corners[edges[edge][0]]));
-			vertices.push_back(plane.projectPoint(corners[edges[edge][1]]));
-		}
-	}
+    // If there is not intersection with the simulation box then
+    // project the simulation box onto the plane.
+    if(vertices.empty()) {
+        const static int edges[12][2] = {
+                {0,1},{1,3},{3,2},{2,0},
+                {4,5},{5,7},{7,6},{6,4},
+                {0,4},{1,5},{3,7},{2,6}
+        };
+        vertices.reserve(24);
+        for(int edge = 0; edge < 12; edge++) {
+            vertices.push_back(plane.projectPoint(corners[edges[edge][0]]));
+            vertices.push_back(plane.projectPoint(corners[edges[edge][1]]));
+        }
+    }
 
-	// Render plane-box intersection lines.
-	if(renderer->isBoundingBoxPass()) {
-		Box3 vertexBoundingBox;
-		vertexBoundingBox.addPoints(vertices);
-		renderer->addToLocalBoundingBox(vertexBoundingBox);
-	}
-	else {
-		DataBufferAccessAndRef<Point3> positions = DataBufferPtr::create(vertices.size(), DataBuffer::Float, 3);
-		boost::range::copy(vertices, positions.begin());
-		LinePrimitive buffer;
-		buffer.setPositions(positions.take());
-		buffer.setUniformColor(color);
-		renderer->renderLines(buffer);
-	}
+    // Render plane-box intersection lines.
+    if(renderer->isBoundingBoxPass()) {
+        Box3 vertexBoundingBox;
+        vertexBoundingBox.addPoints(vertices);
+        renderer->addToLocalBoundingBox(vertexBoundingBox);
+    }
+    else {
+        DataBufferAccessAndRef<Point3> positions = DataBufferPtr::create(vertices.size(), DataBuffer::Float, 3);
+        boost::range::copy(vertices, positions.begin());
+        LinePrimitive buffer;
+        buffer.setPositions(positions.take());
+        buffer.setUniformColor(color);
+        renderer->renderLines(buffer);
+    }
 }
 
 /******************************************************************************
@@ -250,25 +250,25 @@ void SliceModifier::renderPlane(SceneRenderer* renderer, const Plane3& plane, co
 ******************************************************************************/
 void SliceModifier::planeQuadIntersection(const Point3 corners[8], const std::array<int,4>& quadVerts, const Plane3& plane, std::vector<Point3>& vertices) const
 {
-	Point3 p1;
-	bool hasP1 = false;
-	for(int i = 0; i < 4; i++) {
-		Ray3 edge(corners[quadVerts[i]], corners[quadVerts[(i+1)%4]]);
-		FloatType t = plane.intersectionT(edge, FLOATTYPE_EPSILON);
-		if(t < 0 || t > 1) continue;
-		if(!hasP1) {
-			p1 = edge.point(t);
-			hasP1 = true;
-		}
-		else {
-			Point3 p2 = edge.point(t);
-			if(!p2.equals(p1)) {
-				vertices.push_back(p1);
-				vertices.push_back(p2);
-				return;
-			}
-		}
-	}
+    Point3 p1;
+    bool hasP1 = false;
+    for(int i = 0; i < 4; i++) {
+        Ray3 edge(corners[quadVerts[i]], corners[quadVerts[(i+1)%4]]);
+        FloatType t = plane.intersectionT(edge, FLOATTYPE_EPSILON);
+        if(t < 0 || t > 1) continue;
+        if(!hasP1) {
+            p1 = edge.point(t);
+            hasP1 = true;
+        }
+        else {
+            Point3 p2 = edge.point(t);
+            if(!p2.equals(p1)) {
+                vertices.push_back(p1);
+                vertices.push_back(p2);
+                return;
+            }
+        }
+    }
 }
 
 /******************************************************************************
@@ -277,19 +277,19 @@ void SliceModifier::planeQuadIntersection(const Point3 corners[8], const std::ar
 ******************************************************************************/
 void SliceModifier::initializeModifier(const ModifierInitializationRequest& request)
 {
-	MultiDelegatingModifier::initializeModifier(request);
+    MultiDelegatingModifier::initializeModifier(request);
 
-	// Get the input simulation cell to initially place the cutting plane in
-	// the center of the cell.
-	const PipelineFlowState& input = request.modApp()->evaluateInputSynchronous(request);
-	if(const SimulationCellObject* cell = input.getObject<SimulationCellObject>()) {
-		if(distanceController() && distanceController()->getFloatValue(AnimationTime(0)) == 0) {
-			Point3 centerPoint = cell->cellMatrix() * Point3(0.5, 0.5, 0.5);
-			FloatType centerDistance = normal().dot(centerPoint - Point3::Origin());
-			if(std::abs(centerDistance) > FLOATTYPE_EPSILON && distanceController())
-				distanceController()->setFloatValue(AnimationTime(0), centerDistance);
-		}
-	}
+    // Get the input simulation cell to initially place the cutting plane in
+    // the center of the cell.
+    const PipelineFlowState& input = request.modApp()->evaluateInputSynchronous(request);
+    if(const SimulationCellObject* cell = input.getObject<SimulationCellObject>()) {
+        if(distanceController() && distanceController()->getFloatValue(AnimationTime(0)) == 0) {
+            Point3 centerPoint = cell->cellMatrix() * Point3(0.5, 0.5, 0.5);
+            FloatType centerDistance = normal().dot(centerPoint - Point3::Origin());
+            if(std::abs(centerDistance) > FLOATTYPE_EPSILON && distanceController())
+                distanceController()->setFloatValue(AnimationTime(0), centerDistance);
+        }
+    }
 }
 
 /******************************************************************************
@@ -297,71 +297,71 @@ void SliceModifier::initializeModifier(const ModifierInitializationRequest& requ
 ******************************************************************************/
 void SliceModifier::evaluateSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state)
 {
-	MultiDelegatingModifier::evaluateSynchronous(request, state);
+    MultiDelegatingModifier::evaluateSynchronous(request, state);
 
-	if(enablePlaneVisualization()) {
+    if(enablePlaneVisualization()) {
 
-		Plane3 plane;
-		FloatType slabWidth;
-		TimeInterval interval;
-		std::tie(plane, slabWidth) = slicingPlane(request.time(), interval, state);
-		if(plane.normal.isZero())
-			return;
+        Plane3 plane;
+        FloatType slabWidth;
+        TimeInterval interval;
+        std::tie(plane, slabWidth) = slicingPlane(request.time(), interval, state);
+        if(plane.normal.isZero())
+            return;
 
-		// Compute intersection polygon of slicing plane with simulation cell.
-		const SimulationCellObject* cellObj = state.expectObject<SimulationCellObject>();
-		const AffineTransformation& cellMatrix = cellObj->cellMatrix();
+        // Compute intersection polygon of slicing plane with simulation cell.
+        const SimulationCellObject* cellObj = state.expectObject<SimulationCellObject>();
+        const AffineTransformation& cellMatrix = cellObj->cellMatrix();
 
-		// Create an output mesh for visualizing the cutting plane.
-		TriMeshObject* mesh = state.createObjectWithVis<TriMeshObject>(QStringLiteral("plane"), request.modApp(), planeVis());
+        // Create an output mesh for visualizing the cutting plane.
+        TriMeshObject* mesh = state.createObjectWithVis<TriMeshObject>(QStringLiteral("plane"), request.modApp(), planeVis());
 
-		// Compute intersection lines of slicing plane and simulation cell.
-		auto createIntersectionPolygon = [&](const Plane3& plane) {
-			QVector<Point3> vertices;
-			auto planeEdgeIntersection = [&](const Vector3& b, const Vector3& d) {
-				Ray3 edge(Point3::Origin() + b, d);
-				FloatType t = plane.intersectionT(edge, FLOATTYPE_EPSILON);
-				if(t >= -FLOATTYPE_EPSILON && t <= 1 + FLOATTYPE_EPSILON)
-					vertices.push_back(edge.point(t));
-			};
-			planeEdgeIntersection(cellMatrix.translation(), cellMatrix.column(0));
-			planeEdgeIntersection(cellMatrix.translation(), cellMatrix.column(1));
-			planeEdgeIntersection(cellMatrix.translation(), cellMatrix.column(2));
-			planeEdgeIntersection(cellMatrix.translation() + cellMatrix.column(0), cellMatrix.column(1));
-			planeEdgeIntersection(cellMatrix.translation() + cellMatrix.column(0), cellMatrix.column(2));
-			planeEdgeIntersection(cellMatrix.translation() + cellMatrix.column(1), cellMatrix.column(0));
-			planeEdgeIntersection(cellMatrix.translation() + cellMatrix.column(1), cellMatrix.column(2));
-			planeEdgeIntersection(cellMatrix.translation() + cellMatrix.column(2), cellMatrix.column(0));
-			planeEdgeIntersection(cellMatrix.translation() + cellMatrix.column(2), cellMatrix.column(1));
-			planeEdgeIntersection(cellMatrix.translation() + cellMatrix.column(0) + cellMatrix.column(1), cellMatrix.column(2));
-			planeEdgeIntersection(cellMatrix.translation() + cellMatrix.column(1) + cellMatrix.column(2), cellMatrix.column(0));
-			planeEdgeIntersection(cellMatrix.translation() + cellMatrix.column(2) + cellMatrix.column(0), cellMatrix.column(1));
-			if(vertices.size() < 3) return;
-			vertices.erase(std::remove_if(vertices.begin() + 1, vertices.end(), 
-				[p = vertices.front()](const Point3& p2) { return p2.equals(p); }), vertices.end());
-			if(vertices.size() < 3) return;
-			std::sort(vertices.begin() + 1, vertices.end(), [&](const Point3& a, const Point3& b) {
-				return (a - vertices.front()).cross(b - vertices.front()).dot(plane.normal) < 0;
-			});
-			int baseVertexCount = mesh->vertexCount();
-			mesh->setVertexCount(baseVertexCount + vertices.size());
-			std::copy(vertices.begin(), vertices.end(), mesh->vertices().begin() + baseVertexCount);
-			for(int f = 2; f < vertices.size(); f++) {
-				TriMeshFace& face = mesh->addFace();
-				face.setVertices(baseVertexCount, baseVertexCount+f-1, baseVertexCount+f);
-				face.setEdgeVisibility(f == 2, true, f == vertices.size()-1);
-			}
-		};
-		if(slabWidth <= 0) {
-			createIntersectionPolygon(plane);
-		}
-		else {
-			plane.dist += slabWidth / 2;
-			createIntersectionPolygon(plane);
-			plane.dist -= slabWidth;
-			createIntersectionPolygon(plane);
-		}
-	}
+        // Compute intersection lines of slicing plane and simulation cell.
+        auto createIntersectionPolygon = [&](const Plane3& plane) {
+            QVector<Point3> vertices;
+            auto planeEdgeIntersection = [&](const Vector3& b, const Vector3& d) {
+                Ray3 edge(Point3::Origin() + b, d);
+                FloatType t = plane.intersectionT(edge, FLOATTYPE_EPSILON);
+                if(t >= -FLOATTYPE_EPSILON && t <= 1 + FLOATTYPE_EPSILON)
+                    vertices.push_back(edge.point(t));
+            };
+            planeEdgeIntersection(cellMatrix.translation(), cellMatrix.column(0));
+            planeEdgeIntersection(cellMatrix.translation(), cellMatrix.column(1));
+            planeEdgeIntersection(cellMatrix.translation(), cellMatrix.column(2));
+            planeEdgeIntersection(cellMatrix.translation() + cellMatrix.column(0), cellMatrix.column(1));
+            planeEdgeIntersection(cellMatrix.translation() + cellMatrix.column(0), cellMatrix.column(2));
+            planeEdgeIntersection(cellMatrix.translation() + cellMatrix.column(1), cellMatrix.column(0));
+            planeEdgeIntersection(cellMatrix.translation() + cellMatrix.column(1), cellMatrix.column(2));
+            planeEdgeIntersection(cellMatrix.translation() + cellMatrix.column(2), cellMatrix.column(0));
+            planeEdgeIntersection(cellMatrix.translation() + cellMatrix.column(2), cellMatrix.column(1));
+            planeEdgeIntersection(cellMatrix.translation() + cellMatrix.column(0) + cellMatrix.column(1), cellMatrix.column(2));
+            planeEdgeIntersection(cellMatrix.translation() + cellMatrix.column(1) + cellMatrix.column(2), cellMatrix.column(0));
+            planeEdgeIntersection(cellMatrix.translation() + cellMatrix.column(2) + cellMatrix.column(0), cellMatrix.column(1));
+            if(vertices.size() < 3) return;
+            vertices.erase(std::remove_if(vertices.begin() + 1, vertices.end(), 
+                [p = vertices.front()](const Point3& p2) { return p2.equals(p); }), vertices.end());
+            if(vertices.size() < 3) return;
+            std::sort(vertices.begin() + 1, vertices.end(), [&](const Point3& a, const Point3& b) {
+                return (a - vertices.front()).cross(b - vertices.front()).dot(plane.normal) < 0;
+            });
+            int baseVertexCount = mesh->vertexCount();
+            mesh->setVertexCount(baseVertexCount + vertices.size());
+            std::copy(vertices.begin(), vertices.end(), mesh->vertices().begin() + baseVertexCount);
+            for(int f = 2; f < vertices.size(); f++) {
+                TriMeshFace& face = mesh->addFace();
+                face.setVertices(baseVertexCount, baseVertexCount+f-1, baseVertexCount+f);
+                face.setEdgeVisibility(f == 2, true, f == vertices.size()-1);
+            }
+        };
+        if(slabWidth <= 0) {
+            createIntersectionPolygon(plane);
+        }
+        else {
+            plane.dist += slabWidth / 2;
+            createIntersectionPolygon(plane);
+            plane.dist -= slabWidth;
+            createIntersectionPolygon(plane);
+        }
+    }
 }
 
 /******************************************************************************
@@ -369,27 +369,27 @@ void SliceModifier::evaluateSynchronous(const ModifierEvaluationRequest& request
 ******************************************************************************/
 void SliceModifier::centerPlaneInSimulationCell(ModifierApplication* modApp, AnimationTime time)
 {
-	if(!modApp) return;
+    if(!modApp) return;
 
-	// Get the simulation cell from the input object to center the slicing plane in
-	// the center of the simulation cell.
-	const PipelineFlowState& input = modApp->evaluateSynchronous(PipelineEvaluationRequest(time));
-	if(const SimulationCellObject* cell = input.getObject<SimulationCellObject>()) {
+    // Get the simulation cell from the input object to center the slicing plane in
+    // the center of the simulation cell.
+    const PipelineFlowState& input = modApp->evaluateSynchronous(PipelineEvaluationRequest(time));
+    if(const SimulationCellObject* cell = input.getObject<SimulationCellObject>()) {
 
-		FloatType centerDistance;
-		if(!reducedCoordinates()) {
-			Point3 centerPoint = cell->cellMatrix() * Point3(0.5, 0.5, 0.5);
-			centerDistance = normal().safelyNormalized().dot(centerPoint - Point3::Origin());
-		}
-		else {
-			if(!normal().isZero())
-				centerDistance = normal().dot(Vector3(0.5, 0.5, 0.5));
-			else
-				centerDistance = distance();
-		}
+        FloatType centerDistance;
+        if(!reducedCoordinates()) {
+            Point3 centerPoint = cell->cellMatrix() * Point3(0.5, 0.5, 0.5);
+            centerDistance = normal().safelyNormalized().dot(centerPoint - Point3::Origin());
+        }
+        else {
+            if(!normal().isZero())
+                centerDistance = normal().dot(Vector3(0.5, 0.5, 0.5));
+            else
+                centerDistance = distance();
+        }
 
-		setDistance(centerDistance);
-	}
+        setDistance(centerDistance);
+    }
 }
 
 /******************************************************************************
@@ -398,8 +398,8 @@ void SliceModifier::centerPlaneInSimulationCell(ModifierApplication* modApp, Ani
 ******************************************************************************/
 QVariant SliceModifier::getPipelineEditorShortInfo(Scene* scene, ModifierApplication* modApp) const
 { 
-	Vector3 normal = this->normal();
-	return tr("(%1 %2 %3), %4").arg(normal.x(), 0, 'g', 1).arg(normal.y(), 0, 'g', 1).arg(normal.z(), 0, 'g', 1).arg(distance(), 0, 'g', 6); 
+    Vector3 normal = this->normal();
+    return tr("(%1 %2 %3), %4").arg(normal.x(), 0, 'g', 1).arg(normal.y(), 0, 'g', 1).arg(normal.z(), 0, 'g', 1).arg(distance(), 0, 'g', 6); 
 }
 
-}	// End of namespace
+}   // End of namespace

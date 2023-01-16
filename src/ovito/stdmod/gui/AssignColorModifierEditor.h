@@ -33,17 +33,17 @@ namespace Ovito::StdMod {
  */
 class AssignColorModifierEditor : public PropertiesEditor
 {
-	OVITO_CLASS(AssignColorModifierEditor)
+    OVITO_CLASS(AssignColorModifierEditor)
 
 public:
 
-	/// Default constructor.
-	Q_INVOKABLE AssignColorModifierEditor() {}
+    /// Default constructor.
+    Q_INVOKABLE AssignColorModifierEditor() {}
 
 protected:
 
-	/// Creates the user interface controls for the editor.
-	virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
+    /// Creates the user interface controls for the editor.
+    virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
 };
 
-}	// End of namespace
+}   // End of namespace

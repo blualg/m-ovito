@@ -32,76 +32,76 @@ namespace Ovito {
  */
 class ClonePipelineDialog : public QDialog
 {
-	Q_OBJECT
+    Q_OBJECT
 
 public:
 
-	enum CloneMode {
-		Copy,
-		Join,
-		Share,
-		Skip
-	};
+    enum CloneMode {
+        Copy,
+        Join,
+        Share,
+        Skip
+    };
 
-	/// Constructor.
-	ClonePipelineDialog(MainWindow& mainWindow, PipelineSceneNode* node, QWidget* parentWindow = nullptr);
+    /// Constructor.
+    ClonePipelineDialog(MainWindow& mainWindow, PipelineSceneNode* node, QWidget* parentWindow = nullptr);
 
 private Q_SLOTS:
 
-	/// Is called when the user has pressed the 'Ok' button.
-	void onAccept();
+    /// Is called when the user has pressed the 'Ok' button.
+    void onAccept();
 
-	/// Updates the display of the pipeline layout.
-	void updateGraphicsScene();
+    /// Updates the display of the pipeline layout.
+    void updateGraphicsScene();
 
 private:
 
-	/// Builds the initial Qt graphics scene to visualize the pipeline layout.
-	void initializeGraphicsScene();
+    /// Builds the initial Qt graphics scene to visualize the pipeline layout.
+    void initializeGraphicsScene();
 
-	/// Data structure that is created for every pipeline object.
-	struct PipelineItemStruct {
-		QString title;
-		std::vector<OORef<PipelineObject>> pipelineObjects;
-		std::vector<ModifierApplication*> modApps;
-		QGraphicsItem* connector1;
-		QGraphicsItem* connector2;
-		QGraphicsItem* connector3;
-		QGraphicsItem* modAppItem1;
-		QGraphicsItem* modAppItem2;
-		QGraphicsItem* modAppItem3;
-		QGraphicsItem* objItem1;
-		QGraphicsItem* objItem2;
-		QGraphicsItem* objItem3;
-		QActionGroup* actionGroup;
-		CloneMode cloneMode() const { return (CloneMode)actionGroup->checkedAction()->data().toInt(); }
-		void setCloneMode(CloneMode mode) { return actionGroup->actions()[mode]->setChecked(true); }
-		bool isModifier() const { return !modApps.empty(); }
-	};
+    /// Data structure that is created for every pipeline object.
+    struct PipelineItemStruct {
+        QString title;
+        std::vector<OORef<PipelineObject>> pipelineObjects;
+        std::vector<ModifierApplication*> modApps;
+        QGraphicsItem* connector1;
+        QGraphicsItem* connector2;
+        QGraphicsItem* connector3;
+        QGraphicsItem* modAppItem1;
+        QGraphicsItem* modAppItem2;
+        QGraphicsItem* modAppItem3;
+        QGraphicsItem* objItem1;
+        QGraphicsItem* objItem2;
+        QGraphicsItem* objItem3;
+        QActionGroup* actionGroup;
+        CloneMode cloneMode() const { return (CloneMode)actionGroup->checkedAction()->data().toInt(); }
+        void setCloneMode(CloneMode mode) { return actionGroup->actions()[mode]->setChecked(true); }
+        bool isModifier() const { return !modApps.empty(); }
+    };
 
-	/// The parent window.
-	MainWindow& _mainWindow; 
+    /// The parent window.
+    MainWindow& _mainWindow; 
 
-	/// The graphics scene for the pipeline layout.
-	QGraphicsScene _pipelineScene;
+    /// The graphics scene for the pipeline layout.
+    QGraphicsScene _pipelineScene;
 
-	/// Widget that displays the current pipeline layout.
-	QGraphicsView* _pipelineView;
+    /// Widget that displays the current pipeline layout.
+    QGraphicsView* _pipelineView;
 
-	/// The original scene node to be cloned.
-	OORef<PipelineSceneNode> _originalNode;
+    /// The original scene node to be cloned.
+    OORef<PipelineSceneNode> _originalNode;
 
-	/// One structure for each pipeline object.
-	std::vector<PipelineItemStruct> _pipelineItems;
+    /// One structure for each pipeline object.
+    std::vector<PipelineItemStruct> _pipelineItems;
 
-	/// Distance between the two pipelines.
-	qreal _pipelineSeparation;
+    /// Distance between the two pipelines.
+    qreal _pipelineSeparation;
 
-	QGraphicsItem* _joinLine;
+    QGraphicsItem* _joinLine;
 
-	QActionGroup* _displacementDirectionGroup;
-	QLineEdit* _originalNameEdit;
-	QLineEdit* _cloneNameEdit;
+    QActionGroup* _displacementDirectionGroup;
+    QLineEdit* _originalNameEdit;
+    QLineEdit* _cloneNameEdit;
 };
 
-}	// End of namespace
+}   // End of namespace

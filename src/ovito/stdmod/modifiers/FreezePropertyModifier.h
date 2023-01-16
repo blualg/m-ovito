@@ -36,50 +36,50 @@ namespace Ovito::StdMod {
  */
 class OVITO_STDMOD_EXPORT FreezePropertyModifier : public GenericPropertyModifier
 {
-	OVITO_CLASS(FreezePropertyModifier)
-	Q_CLASSINFO("DisplayName", "Freeze property");
-	Q_CLASSINFO("Description", "Copy the values of a varying property from one trajectory frame to all others.");
+    OVITO_CLASS(FreezePropertyModifier)
+    Q_CLASSINFO("DisplayName", "Freeze property");
+    Q_CLASSINFO("Description", "Copy the values of a varying property from one trajectory frame to all others.");
 #ifndef OVITO_QML_GUI
-	Q_CLASSINFO("ModifierCategory", "Modification");
+    Q_CLASSINFO("ModifierCategory", "Modification");
 #else
-	Q_CLASSINFO("ModifierCategory", "-");
+    Q_CLASSINFO("ModifierCategory", "-");
 #endif
 
 public:
 
-	/// Constructor.
-	Q_INVOKABLE FreezePropertyModifier(ObjectCreationParams params);
+    /// Constructor.
+    Q_INVOKABLE FreezePropertyModifier(ObjectCreationParams params);
 
-	/// This method is called by the system after the modifier has been inserted into a data pipeline.
-	virtual void initializeModifier(const ModifierInitializationRequest& request) override;
+    /// This method is called by the system after the modifier has been inserted into a data pipeline.
+    virtual void initializeModifier(const ModifierInitializationRequest& request) override;
 
-	/// Modifies the input data.
-	virtual Future<PipelineFlowState> evaluate(const ModifierEvaluationRequest& request, const PipelineFlowState& input) override;
+    /// Modifies the input data.
+    virtual Future<PipelineFlowState> evaluate(const ModifierEvaluationRequest& request, const PipelineFlowState& input) override;
 
-	/// Modifies the input data synchronously.
-	virtual void evaluateSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
+    /// Modifies the input data synchronously.
+    virtual void evaluateSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
 
-	/// Returns a short piece information (typically a string or color) to be displayed next to the modifier's title in the pipeline editor list.
-	virtual QVariant getPipelineEditorShortInfo(Scene* scene, ModifierApplication* modApp) const override { return sourceProperty().name(); }
+    /// Returns a short piece information (typically a string or color) to be displayed next to the modifier's title in the pipeline editor list.
+    virtual QVariant getPipelineEditorShortInfo(Scene* scene, ModifierApplication* modApp) const override { return sourceProperty().name(); }
 
 protected:
 
-	/// Is called when the value of a property of this object has changed.
-	virtual void propertyChanged(const PropertyFieldDescriptor* field) override;
+    /// Is called when the value of a property of this object has changed.
+    virtual void propertyChanged(const PropertyFieldDescriptor* field) override;
 
-	/// This method is called once for this object after it has been completely loaded from a stream.
-	virtual void loadFromStreamComplete(ObjectLoadStream& stream) override;
+    /// This method is called once for this object after it has been completely loaded from a stream.
+    virtual void loadFromStreamComplete(ObjectLoadStream& stream) override;
 
 private:
 
-	/// The particle property that is preserved by this modifier.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD(PropertyReference, sourceProperty, setSourceProperty);
+    /// The particle property that is preserved by this modifier.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(PropertyReference, sourceProperty, setSourceProperty);
 
-	/// The particle property to which the stored values should be written
-	DECLARE_MODIFIABLE_PROPERTY_FIELD(PropertyReference, destinationProperty, setDestinationProperty);
+    /// The particle property to which the stored values should be written
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(PropertyReference, destinationProperty, setDestinationProperty);
 
-	/// Animation frame at which the frozen property is taken.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD(int, freezeTime, setFreezeTime);
+    /// Animation frame at which the frozen property is taken.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(int, freezeTime, setFreezeTime);
 };
 
 /**
@@ -87,46 +87,46 @@ private:
  */
 class OVITO_STDMOD_EXPORT FreezePropertyModifierApplication : public ModifierApplication
 {
-	OVITO_CLASS(FreezePropertyModifierApplication)
+    OVITO_CLASS(FreezePropertyModifierApplication)
 
 public:
 
-	/// Constructor.
-	Q_INVOKABLE FreezePropertyModifierApplication(ObjectCreationParams params) : ModifierApplication(params) {}
+    /// Constructor.
+    Q_INVOKABLE FreezePropertyModifierApplication(ObjectCreationParams params) : ModifierApplication(params) {}
 
-	/// Makes a copy of the given source property and, optionally, of the provided
-	/// element identifier list, which will allow to restore the saved property
-	/// values even if the order of particles changes.
-	void updateStoredData(const PropertyObject* property, const PropertyObject* identifiers, TimeInterval validityInterval);
+    /// Makes a copy of the given source property and, optionally, of the provided
+    /// element identifier list, which will allow to restore the saved property
+    /// values even if the order of particles changes.
+    void updateStoredData(const PropertyObject* property, const PropertyObject* identifiers, TimeInterval validityInterval);
 
-	/// Returns true if the frozen state for given animation time is already stored.
-	bool hasFrozenState(AnimationTime time) const { return _validityInterval.contains(time); }
+    /// Returns true if the frozen state for given animation time is already stored.
+    bool hasFrozenState(AnimationTime time) const { return _validityInterval.contains(time); }
 
-	/// Clears the stored state.
-	void invalidateFrozenState() {
-		setProperty(nullptr);
-		setIdentifiers(nullptr);
-		_validityInterval.setEmpty();
-	}
+    /// Clears the stored state.
+    void invalidateFrozenState() {
+        setProperty(nullptr);
+        setIdentifiers(nullptr);
+        _validityInterval.setEmpty();
+    }
 
 protected:
 
-	/// Is called when a RefTarget referenced by this object has generated an event.
-	virtual bool referenceEvent(RefTarget* source, const ReferenceEvent& event) override;
+    /// Is called when a RefTarget referenced by this object has generated an event.
+    virtual bool referenceEvent(RefTarget* source, const ReferenceEvent& event) override;
 
 private:
 
-	/// The stored copy of the property.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(DataOORef<const PropertyObject>, property, setProperty, PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_NO_CHANGE_MESSAGE | PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_NO_SUB_ANIM | PROPERTY_FIELD_DONT_SAVE_RECOMPUTABLE_DATA);
+    /// The stored copy of the property.
+    DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(DataOORef<const PropertyObject>, property, setProperty, PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_NO_CHANGE_MESSAGE | PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_NO_SUB_ANIM | PROPERTY_FIELD_DONT_SAVE_RECOMPUTABLE_DATA);
 
-	/// A copy of the element identifiers, taken at the time when the property values were saved.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(DataOORef<const PropertyObject>, identifiers, setIdentifiers, PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_NO_CHANGE_MESSAGE | PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_NO_SUB_ANIM | PROPERTY_FIELD_DONT_SAVE_RECOMPUTABLE_DATA);
+    /// A copy of the element identifiers, taken at the time when the property values were saved.
+    DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(DataOORef<const PropertyObject>, identifiers, setIdentifiers, PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_NO_CHANGE_MESSAGE | PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_NO_SUB_ANIM | PROPERTY_FIELD_DONT_SAVE_RECOMPUTABLE_DATA);
 
-	/// The cached visalization elements that are attached to the output property.
-	DECLARE_MODIFIABLE_VECTOR_REFERENCE_FIELD_FLAGS(OORef<DataVis>, cachedVisElements, setCachedVisElements, PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_NO_CHANGE_MESSAGE | PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_NO_SUB_ANIM | PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES);
+    /// The cached visalization elements that are attached to the output property.
+    DECLARE_MODIFIABLE_VECTOR_REFERENCE_FIELD_FLAGS(OORef<DataVis>, cachedVisElements, setCachedVisElements, PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_NO_CHANGE_MESSAGE | PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_NO_SUB_ANIM | PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES);
 
-	/// The validity interval of the frozen property.
-	TimeInterval _validityInterval;
+    /// The validity interval of the frozen property.
+    TimeInterval _validityInterval;
 };
 
-}	// End of namespace
+}   // End of namespace

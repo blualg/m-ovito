@@ -70,8 +70,8 @@ public:
         return *this;
     }
 
-	/// Releases the data object from the accessor and returns it to the caller.
-	Reference<const DataObjectClass> take() noexcept {
+    /// Releases the data object from the accessor and returns it to the caller.
+    Reference<const DataObjectClass> take() noexcept {
         _mutableObject = nullptr;
         return std::move(_constObject);
     }
@@ -101,23 +101,23 @@ public:
     /// Returns a reference to the immutable data object. 
     inline const DataObjectClass& operator*() const noexcept {
         OVITO_ASSERT(_constObject);
-    	return *_constObject;
+        return *_constObject;
     }
 
     /// Returns a pointer to the immutable data object.
     inline const DataObjectClass* operator->() const noexcept {
-    	OVITO_ASSERT(_constObject);
-    	return _constObject;
+        OVITO_ASSERT(_constObject);
+        return _constObject;
     }
 
     /// Returns a pointer to the immutable data object.
     inline operator const DataObjectClass*() const noexcept {
-    	return _constObject;
+        return _constObject;
     }
 
     /// Swaps to two instance of this class.
     inline void swap(DataObjectAccess& rhs) noexcept {
-    	_constObject.swap(rhs._constObject);
+        _constObject.swap(rhs._constObject);
         std::swap(_mutableObject, rhs._mutableObject);
     }
 
@@ -133,4 +133,4 @@ private:
     DataObjectClass* _mutableObject = nullptr;
 };
 
-}	// End of namespace
+}   // End of namespace

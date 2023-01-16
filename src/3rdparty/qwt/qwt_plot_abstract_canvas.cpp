@@ -921,16 +921,16 @@ void QwtPlotAbstractGLCanvas::setPaintAttribute( PaintAttribute attribute, bool 
         return;
 
     if ( on )
-	{
+    {
         d_data->paintAttributes |= attribute;
-	}
+    }
     else
-	{
+    {
         d_data->paintAttributes &= ~attribute;
 
-    	if ( attribute == BackingStore )
-        	clearBackingStore();
-	}
+        if ( attribute == BackingStore )
+            clearBackingStore();
+    }
 }
 
 /*!

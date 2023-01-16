@@ -53,239 +53,239 @@ class ColorT : public std::array<T, 3>
 {
 public:
 
-	/// Default constructs a color without initializing its components.
-	/// The color components will therefore have an undefined value!
-	ColorT() {}
+    /// Default constructs a color without initializing its components.
+    /// The color components will therefore have an undefined value!
+    ColorT() {}
 
-	/// Initializes the color with the given red, green and blue values (in the range 0 to 1).
-	Q_DECL_CONSTEXPR ColorT(T red, T green, T blue)
+    /// Initializes the color with the given red, green and blue values (in the range 0 to 1).
+    Q_DECL_CONSTEXPR ColorT(T red, T green, T blue)
 #if !defined(Q_CC_MSVC) && !defined(ONLY_FOR_DOXYGEN) // The MSVC compiler and the Doxygen parser do not like C++11 array aggregate initializers.
-		: std::array<T, 3>{{red, green, blue}} {}
+        : std::array<T, 3>{{red, green, blue}} {}
 #else
-		{ this->r() = red; this->g() = green; this->b() = blue; }
+        { this->r() = red; this->g() = green; this->b() = blue; }
 #endif
 
-	/// Converts a 3-vector to a color.
-	/// The X, Y and Z vector components are used to initialize the red, green and blue components respectively.
-	Q_DECL_CONSTEXPR ColorT(const Vector_3<T>& v)
+    /// Converts a 3-vector to a color.
+    /// The X, Y and Z vector components are used to initialize the red, green and blue components respectively.
+    Q_DECL_CONSTEXPR ColorT(const Vector_3<T>& v)
 #if !defined(Q_CC_MSVC) && !defined(ONLY_FOR_DOXYGEN) // The MSVC compiler and the Doxygen parser do not like C++11 array aggregate initializers.
-		: std::array<T, 3>{{v.x(), v.y(), v.z()}} {}
+        : std::array<T, 3>{{v.x(), v.y(), v.z()}} {}
 #else
-		{ this->r() = v.x(); this->g() = v.y(); this->b() = v.z(); }
+        { this->r() = v.x(); this->g() = v.y(); this->b() = v.z(); }
 #endif
 
-	/// Initializes the color from an array with three values.
-	Q_DECL_CONSTEXPR explicit ColorT(const std::array<T, 3>& c) : std::array<T, 3>(c) {}
+    /// Initializes the color from an array with three values.
+    Q_DECL_CONSTEXPR explicit ColorT(const std::array<T, 3>& c) : std::array<T, 3>(c) {}
 
-	/// Conversion constructor from a Qt color.
-	Q_DECL_CONSTEXPR ColorT(const QColor& c)
+    /// Conversion constructor from a Qt color.
+    Q_DECL_CONSTEXPR ColorT(const QColor& c)
 #if !defined(Q_CC_MSVC) && !defined(ONLY_FOR_DOXYGEN) // The MSVC compiler and the Doxygen parser do not like C++11 array aggregate initializers.
-		: std::array<T, 3>{{T(c.redF()), T(c.greenF()), T(c.blueF())}} {}
+        : std::array<T, 3>{{T(c.redF()), T(c.greenF()), T(c.blueF())}} {}
 #else
-		{ this->r() = T(c.redF()); this->g() = T(c.greenF()); this->b() = T(c.blueF()); }
+        { this->r() = T(c.redF()); this->g() = T(c.greenF()); this->b() = T(c.blueF()); }
 #endif
 
-	/// Conversion constructor from a Qt color.
-	Q_DECL_CONSTEXPR ColorT(const QVector3D& v)
+    /// Conversion constructor from a Qt color.
+    Q_DECL_CONSTEXPR ColorT(const QVector3D& v)
 #if !defined(Q_CC_MSVC) && !defined(ONLY_FOR_DOXYGEN) // The MSVC compiler and the Doxygen parser do not like C++11 array aggregate initializers.
-		: std::array<T, 3>{{T(v.x()), T(v.y()), T(v.z())}} {}
+        : std::array<T, 3>{{T(v.x()), T(v.y()), T(v.z())}} {}
 #else
-		{ this->r() = T(v.x()); this->g() = T(v.y()); this->b() = T(v.z()); }
+        { this->r() = T(v.x()); this->g() = T(v.y()); this->b() = T(v.z()); }
 #endif
 
-	/// Casts the color to another component type \a U.
-	template<typename U>
-	Q_DECL_CONSTEXPR ColorT<U> toDataType() const { return ColorT<U>(static_cast<U>(r()), static_cast<U>(g()), static_cast<U>(b())); }
+    /// Casts the color to another component type \a U.
+    template<typename U>
+    Q_DECL_CONSTEXPR ColorT<U> toDataType() const { return ColorT<U>(static_cast<U>(r()), static_cast<U>(g()), static_cast<U>(b())); }
 
-	/// Sets all components of the color to zero.
-	void setBlack() { r() = g() = b() = T(0); }
+    /// Sets all components of the color to zero.
+    void setBlack() { r() = g() = b() = T(0); }
 
-	/// Sets all components of the color to one.
-	void setWhite() { r() = g() = b() = T(1); }
+    /// Sets all components of the color to one.
+    void setWhite() { r() = g() = b() = T(1); }
 
-	/// Conversion operator to a Qt color.
-	/// All components of the returned Qt color are clamped to the [0,1] range.
-	operator QColor() const {
-		return QColor::fromRgbF(
-				qMin(qMax(r(), T(0)), T(1)),
-				qMin(qMax(g(), T(0)), T(1)),
-				qMin(qMax(b(), T(0)), T(1)));
-	}
+    /// Conversion operator to a Qt color.
+    /// All components of the returned Qt color are clamped to the [0,1] range.
+    operator QColor() const {
+        return QColor::fromRgbF(
+                qMin(qMax(r(), T(0)), T(1)),
+                qMin(qMax(g(), T(0)), T(1)),
+                qMin(qMax(b(), T(0)), T(1)));
+    }
 
-	/// Converts the RGB color to a 3-vector with XYZ components.
-	Q_DECL_CONSTEXPR operator const Vector_3<T>&() const {
-		return reinterpret_cast<const Vector_3<T>&>(*this);
-	}
+    /// Converts the RGB color to a 3-vector with XYZ components.
+    Q_DECL_CONSTEXPR operator const Vector_3<T>&() const {
+        return reinterpret_cast<const Vector_3<T>&>(*this);
+    }
 
-	/// Conversion operator to a Qt vector.
-	Q_DECL_CONSTEXPR explicit operator QVector3D() const { return QVector3D(r(), g(), b()); }
+    /// Conversion operator to a Qt vector.
+    Q_DECL_CONSTEXPR explicit operator QVector3D() const { return QVector3D(r(), g(), b()); }
 
-	//////////////////////////// Component access //////////////////////////
+    //////////////////////////// Component access //////////////////////////
 
-	/// Returns the value of the red component of this color.
-	Q_DECL_CONSTEXPR T r() const { return (*this)[0]; }
+    /// Returns the value of the red component of this color.
+    Q_DECL_CONSTEXPR T r() const { return (*this)[0]; }
 
-	/// Returns the value of the green component of this color.
-	Q_DECL_CONSTEXPR T g() const { return (*this)[1]; }
+    /// Returns the value of the green component of this color.
+    Q_DECL_CONSTEXPR T g() const { return (*this)[1]; }
 
-	/// Returns the value of the blue component of this color.
-	Q_DECL_CONSTEXPR T b() const { return (*this)[2]; }
+    /// Returns the value of the blue component of this color.
+    Q_DECL_CONSTEXPR T b() const { return (*this)[2]; }
 
-	/// Returns a reference to the red component of this color.
-	T& r() { return (*this)[0]; }
+    /// Returns a reference to the red component of this color.
+    T& r() { return (*this)[0]; }
 
-	/// Returns a reference to the green component of this color.
-	T& g() { return (*this)[1]; }
+    /// Returns a reference to the green component of this color.
+    T& g() { return (*this)[1]; }
 
-	/// Returns a reference to the blue component of this color.
-	T& b() { return (*this)[2]; }
+    /// Returns a reference to the blue component of this color.
+    T& b() { return (*this)[2]; }
 
-	////////////////////////////////// Comparison ////////////////////////////////
+    ////////////////////////////////// Comparison ////////////////////////////////
 
-	/// Compares this color with another color for equality.
-	/// \param c The other color.
-	/// \return \c true if all three color components are exactly equal; \c false otherwise.
-	Q_DECL_CONSTEXPR bool operator==(const ColorT& c) const { return (r() == c.r() && g() == c.g() && b() == c.b()); }
+    /// Compares this color with another color for equality.
+    /// \param c The other color.
+    /// \return \c true if all three color components are exactly equal; \c false otherwise.
+    Q_DECL_CONSTEXPR bool operator==(const ColorT& c) const { return (r() == c.r() && g() == c.g() && b() == c.b()); }
 
-	/// \brief Compares this color with another color for inequality.
-	/// \param c The second color.
-	/// \return \c true if any of the color components are not equal; \c false otherwise.
-	Q_DECL_CONSTEXPR bool operator!=(const ColorT& c) const { return (r() != c.r() || g() != c.g() || b() != c.b()); }
+    /// \brief Compares this color with another color for inequality.
+    /// \param c The second color.
+    /// \return \c true if any of the color components are not equal; \c false otherwise.
+    Q_DECL_CONSTEXPR bool operator!=(const ColorT& c) const { return (r() != c.r() || g() != c.g() || b() != c.b()); }
 
-	/// \brief Tests if two color are equal within a given tolerance.
-	/// \param c The color to compare with this color.
-	/// \param tolerance A non-negative threshold for the equality test. The two color are considered equal if
-	///        the differences in the three color components are all less than this tolerance value.
-	/// \return \c true if this color  is equal to \a c within the given tolerance; \c false otherwise.
-	Q_DECL_CONSTEXPR bool equals(const ColorT& c, T tolerance = T(FLOATTYPE_EPSILON)) const {
-		return std::abs(c.r() - r()) <= tolerance && std::abs(c.g() - g()) <= tolerance && std::abs(c.b() - b()) <= tolerance;
-	}
+    /// \brief Tests if two color are equal within a given tolerance.
+    /// \param c The color to compare with this color.
+    /// \param tolerance A non-negative threshold for the equality test. The two color are considered equal if
+    ///        the differences in the three color components are all less than this tolerance value.
+    /// \return \c true if this color  is equal to \a c within the given tolerance; \c false otherwise.
+    Q_DECL_CONSTEXPR bool equals(const ColorT& c, T tolerance = T(FLOATTYPE_EPSILON)) const {
+        return std::abs(c.r() - r()) <= tolerance && std::abs(c.g() - g()) <= tolerance && std::abs(c.b() - b()) <= tolerance;
+    }
 
-	/// Adds another color to this color in a component-wise manner.
-	ColorT& operator+=(const ColorT& c) { r() += c.r(); g() += c.g(); b() += c.b(); return *this; }
+    /// Adds another color to this color in a component-wise manner.
+    ColorT& operator+=(const ColorT& c) { r() += c.r(); g() += c.g(); b() += c.b(); return *this; }
 
-	/// Multiplies the components of another color with the components of this color.
-	ColorT& operator*=(const ColorT& c) { r() *= c.r(); g() *= c.g(); b() *= c.b(); return *this; }
+    /// Multiplies the components of another color with the components of this color.
+    ColorT& operator*=(const ColorT& c) { r() *= c.r(); g() *= c.g(); b() *= c.b(); return *this; }
 
-	/// Assigns the XYZ components of the given vector to a RGB components of this color.
-	ColorT& operator=(const Vector_3<T>& v) { r() = v.x(); g() = v.y(); b() = v.z(); return *this; }
+    /// Assigns the XYZ components of the given vector to a RGB components of this color.
+    ColorT& operator=(const Vector_3<T>& v) { r() = v.x(); g() = v.y(); b() = v.z(); return *this; }
 
-	/// Ensures that none of the color components is greater than 1.
-	/// Any component greater than 1 is changed to 1.
-	/// \sa clampMin(), clampMinMax()
-	void clampMax() { if(r() > T(1)) r() = T(1); if(g() > T(1)) g() = T(1); if(b() > T(1)) b() = T(1); }
+    /// Ensures that none of the color components is greater than 1.
+    /// Any component greater than 1 is changed to 1.
+    /// \sa clampMin(), clampMinMax()
+    void clampMax() { if(r() > T(1)) r() = T(1); if(g() > T(1)) g() = T(1); if(b() > T(1)) b() = T(1); }
 
-	/// Ensures that none of the color components is less than 0.
-	/// Any color component less than 0 is set to 0.
-	/// \sa clampMax(), clampMinMax()
-	void clampMin() { if(r() < T(0)) r() = T(0); if(g() < T(0)) g() = T(0); if(b() < T(0)) b() = T(0); }
+    /// Ensures that none of the color components is less than 0.
+    /// Any color component less than 0 is set to 0.
+    /// \sa clampMax(), clampMinMax()
+    void clampMin() { if(r() < T(0)) r() = T(0); if(g() < T(0)) g() = T(0); if(b() < T(0)) b() = T(0); }
 
-	/// Ensures that all color components between 0 and 1.
-	/// \sa clampMin(), clampMax()
-	void clampMinMax() {
-		for(typename std::array<T, 3>::size_type i = 0; i < std::array<T, 3>::size(); i++) {
-			if((*this)[i] > T(1)) (*this)[i] = T(1);
-			else if((*this)[i] < T(0)) (*this)[i] = T(0);
-		}
-	}
+    /// Ensures that all color components between 0 and 1.
+    /// \sa clampMin(), clampMax()
+    void clampMinMax() {
+        for(typename std::array<T, 3>::size_type i = 0; i < std::array<T, 3>::size(); i++) {
+            if((*this)[i] > T(1)) (*this)[i] = T(1);
+            else if((*this)[i] < T(0)) (*this)[i] = T(0);
+        }
+    }
 
-	/// \brief Creates a RGB color from a hue-saturation-value representation.
-	/// \param hue The hue value between 0 and 1.
-	/// \param saturation The saturation value between 0 and 1.
-	/// \param value The value of the color between 0 and 1.
-	/// \return The RGB representation of the color.
-	static ColorT fromHSV(T hue, T saturation, T value) {
-		if(saturation == 0) {
-			return ColorT(value, value, value);
-		}
-		else {
-			T f, p, q, t;
-			int i;
-			if(hue >= 1.0 || hue < T(0)) hue = T(0);
-			hue *= T(6);
-			i = (int)floor(hue);
-			f = hue - (T)i;
-			p = value * (T(1) - saturation);
-			q = value * (T(1) - (saturation * f));
-			t = value * (T(1) - (saturation * (T(1) - f)));
-			switch(i) {
-				case 0: return ColorT(value, t, p);
-				case 1: return ColorT(q, value, p);
-				case 2: return ColorT(p, value, t);
-				case 3: return ColorT(p, q, value);
-				case 4: return ColorT(t, p, value);
-				case 5: return ColorT(value, p, q);
-				default:
-					return ColorT(value, value, value);
-			}
-		}
-	}
+    /// \brief Creates a RGB color from a hue-saturation-value representation.
+    /// \param hue The hue value between 0 and 1.
+    /// \param saturation The saturation value between 0 and 1.
+    /// \param value The value of the color between 0 and 1.
+    /// \return The RGB representation of the color.
+    static ColorT fromHSV(T hue, T saturation, T value) {
+        if(saturation == 0) {
+            return ColorT(value, value, value);
+        }
+        else {
+            T f, p, q, t;
+            int i;
+            if(hue >= 1.0 || hue < T(0)) hue = T(0);
+            hue *= T(6);
+            i = (int)floor(hue);
+            f = hue - (T)i;
+            p = value * (T(1) - saturation);
+            q = value * (T(1) - (saturation * f));
+            t = value * (T(1) - (saturation * (T(1) - f)));
+            switch(i) {
+                case 0: return ColorT(value, t, p);
+                case 1: return ColorT(q, value, p);
+                case 2: return ColorT(p, value, t);
+                case 3: return ColorT(p, q, value);
+                case 4: return ColorT(t, p, value);
+                case 5: return ColorT(value, p, q);
+                default:
+                    return ColorT(value, value, value);
+            }
+        }
+    }
 
-	/// Produces a string representation of the color.
-	QString toString() const { return QString("(%1 %2 %3)").arg(r()).arg(g()).arg(b()); }
+    /// Produces a string representation of the color.
+    QString toString() const { return QString("(%1 %2 %3)").arg(r()).arg(g()).arg(b()); }
 };
 
 /// Multiplies the three components of a color \a c with a scalar value \a s.
 /// \relates ColorT
 template<typename T>
 Q_DECL_CONSTEXPR inline ColorT<T> operator*(float s, const ColorT<T>& c) {
-	return ColorT<T>(c.r()*(T)s, c.g()*(T)s, c.b()*(T)s);
+    return ColorT<T>(c.r()*(T)s, c.g()*(T)s, c.b()*(T)s);
 }
 
 /// Multiplies the three components of a color \a c with a scalar value \a s.
 /// \relates ColorT
 template<typename T>
 Q_DECL_CONSTEXPR inline ColorT<T> operator*(double s, const ColorT<T>& c) {
-	return ColorT<T>(c.r()*(T)s, c.g()*(T)s, c.b()*(T)s);
+    return ColorT<T>(c.r()*(T)s, c.g()*(T)s, c.b()*(T)s);
 }
 
 /// Multiplies the three components of a color \a c with a scalar value \a s.
 /// \relates ColorT
 template<typename T>
 Q_DECL_CONSTEXPR inline ColorT<T> operator*(int s, const ColorT<T>& c) {
-	return ColorT<T>(c.r()*s, c.g()*s, c.b()*s);
+    return ColorT<T>(c.r()*s, c.g()*s, c.b()*s);
 }
 
 /// Multiplies the three components of a color \a c with a scalar value \a s.
 /// \relates ColorT
 template<typename T>
 Q_DECL_CONSTEXPR inline ColorT<T> operator*(const ColorT<T>& c, float s) {
-	return ColorT<T>(c.r()*(T)s, c.g()*(T)s, c.b()*(T)s);
+    return ColorT<T>(c.r()*(T)s, c.g()*(T)s, c.b()*(T)s);
 }
 
 /// Multiplies the three components of a color \a c with a scalar value \a s.
 /// \relates ColorT
 template<typename T>
 Q_DECL_CONSTEXPR inline ColorT<T> operator*(const ColorT<T>& c, double s) {
-	return ColorT<T>(c.r()*(T)s, c.g()*(T)s, c.b()*(T)s);
+    return ColorT<T>(c.r()*(T)s, c.g()*(T)s, c.b()*(T)s);
 }
 
 /// Multiplies the three components of a color \a c with a scalar value \a s.
 /// \relates ColorT
 template<typename T>
 Q_DECL_CONSTEXPR inline ColorT<T> operator*(const ColorT<T>& c, int s) {
-	return ColorT<T>(c.r()*s, c.g()*s, c.b()*s);
+    return ColorT<T>(c.r()*s, c.g()*s, c.b()*s);
 }
 
 /// Computes the component-wise sum of two colors \a c1 and \a c2.
 /// \relates ColorT
 template<typename T>
 Q_DECL_CONSTEXPR inline ColorT<T> operator+(const ColorT<T>& c1, const ColorT<T>& c2) {
-	return { c1.r()+c2.r(), c1.g()+c2.g(), c1.b()+c2.b() };
+    return { c1.r()+c2.r(), c1.g()+c2.g(), c1.b()+c2.b() };
 }
 
 /// Computes the component-wise product of two colors \a c1 and \a c2.
 /// \relates ColorT
 template<typename T>
 Q_DECL_CONSTEXPR inline ColorT<T> operator*(const ColorT<T>& c1, const ColorT<T>& c2) {
-	return { c1.r()*c2.r(), c1.g()*c2.g(), c1.b()*c2.b() };
+    return { c1.r()*c2.r(), c1.g()*c2.g(), c1.b()*c2.b() };
 }
 
 /// Prints a color to a text output stream.
 /// \relates ColorT
 template<typename T>
 inline std::ostream& operator<<(std::ostream &os, const ColorT<T>& c) {
-	return os << c.r() << ' ' << c.g()  << ' ' << c.b();
+    return os << c.r() << ' ' << c.g()  << ' ' << c.b();
 }
 
 /// Prints a color to a Qt debug stream.
@@ -300,28 +300,28 @@ inline QDebug operator<<(QDebug dbg, const ColorT<T>& c) {
 /// \relates ColorT
 template<typename T>
 inline SaveStream& operator<<(SaveStream& stream, const ColorT<T>& c) {
-	return stream << c.r() << c.g() << c.b();
+    return stream << c.r() << c.g() << c.b();
 }
 
 /// Reads a color from a binary file stream.
 /// \relates ColorT
 template<typename T>
 inline LoadStream& operator>>(LoadStream& stream, ColorT<T>& c) {
-	return stream >> c.r() >> c.g() >> c.b();
+    return stream >> c.r() >> c.g() >> c.b();
 }
 
 /// Writes a color to a Qt data stream.
 /// \relates ColorT
 template<typename T>
 inline QDataStream& operator<<(QDataStream& stream, const ColorT<T>& c) {
-	return stream << c.r() << c.g() << c.b();
+    return stream << c.r() << c.g() << c.b();
 }
 
 /// Reads a color from a Qt data stream.
 /// \relates ColorT
 template<typename T>
 inline QDataStream& operator>>(QDataStream& stream, ColorT<T>& c) {
-	return stream >> c.r() >> c.g() >> c.b();
+    return stream >> c.r() >> c.g() >> c.b();
 }
 
 /**
@@ -343,221 +343,221 @@ class ColorAT : public std::array<T, 4>
 {
 public:
 
-	/// Default constructs a color without initializing its components.
-	/// The components will therefore have an undefined value!
-	ColorAT() {}
+    /// Default constructs a color without initializing its components.
+    /// The components will therefore have an undefined value!
+    ColorAT() {}
 
-	/// Initializes the color with the given red, green, blue, and alpha value.
+    /// Initializes the color with the given red, green, blue, and alpha value.
 #if !defined(Q_CC_MSVC) && !defined(ONLY_FOR_DOXYGEN) // The MSVC compiler and the Doxygen parser do not like C++11 array aggregate initializers.
-	Q_DECL_CONSTEXPR ColorAT(T red, T green, T blue, T alpha = T(1))
-		: std::array<T, 4>{{red, green, blue, alpha}} {}
+    Q_DECL_CONSTEXPR ColorAT(T red, T green, T blue, T alpha = T(1))
+        : std::array<T, 4>{{red, green, blue, alpha}} {}
 #else
-	ColorAT(T red, T green, T blue, T alpha = T(1))
-		{ this->r() = red; this->g() = green; this->b() = blue; this->a() = alpha; }
+    ColorAT(T red, T green, T blue, T alpha = T(1))
+        { this->r() = red; this->g() = green; this->b() = blue; this->a() = alpha; }
 #endif
 
-	/// Converts a 4-vector to a color. The X, Y, Z, and W vector components are used to initialize the red, green, blue, and alpha components respectively.
-	Q_DECL_CONSTEXPR explicit ColorAT(const Vector_4<T>& v) : std::array<T, 4>(v) {}
+    /// Converts a 4-vector to a color. The X, Y, Z, and W vector components are used to initialize the red, green, blue, and alpha components respectively.
+    Q_DECL_CONSTEXPR explicit ColorAT(const Vector_4<T>& v) : std::array<T, 4>(v) {}
 
-	/// Conversion constructor from a Qt color value.
+    /// Conversion constructor from a Qt color value.
 #if !defined(Q_CC_MSVC) && !defined(ONLY_FOR_DOXYGEN) // The MSVC compiler and the Doxygen parser do not like C++11 array aggregate initializers.
-	Q_DECL_CONSTEXPR ColorAT(const QColor& c)
-		: std::array<T, 4>{{T(c.redF()), T(c.greenF()), T(c.blueF()), T(c.alphaF())}} {}
+    Q_DECL_CONSTEXPR ColorAT(const QColor& c)
+        : std::array<T, 4>{{T(c.redF()), T(c.greenF()), T(c.blueF()), T(c.alphaF())}} {}
 #else
-	ColorAT(const QColor& c)
-		{ this->r() = T(c.redF()); this->g() = T(c.greenF()); this->b() = T(c.blueF()); this->a() = T(c.alphaF()); }
+    ColorAT(const QColor& c)
+        { this->r() = T(c.redF()); this->g() = T(c.greenF()); this->b() = T(c.blueF()); this->a() = T(c.alphaF()); }
 #endif
 
-	/// Converts a color without alpha component to a color with alpha component set to 1.0.
+    /// Converts a color without alpha component to a color with alpha component set to 1.0.
 #if !defined(Q_CC_MSVC) && !defined(ONLY_FOR_DOXYGEN) // The MSVC compiler and the Doxygen parser do not like C++11 array aggregate initializers.
-	Q_DECL_CONSTEXPR ColorAT(const ColorT<T>& c)
-		: std::array<T, 4>{{c.r(), c.g(), c.b(), T(1)}} {}
+    Q_DECL_CONSTEXPR ColorAT(const ColorT<T>& c)
+        : std::array<T, 4>{{c.r(), c.g(), c.b(), T(1)}} {}
 #else
-	ColorAT(const ColorT<T>& c)
-		{ this->r() = c.r(); this->g() = c.g(); this->b() = c.b(); this->a() = T(1); }
+    ColorAT(const ColorT<T>& c)
+        { this->r() = c.r(); this->g() = c.g(); this->b() = c.b(); this->a() = T(1); }
 #endif
 
-	/// Converts a color without alpha component to a color with given alpha component.
+    /// Converts a color without alpha component to a color with given alpha component.
 #if !defined(Q_CC_MSVC) && !defined(ONLY_FOR_DOXYGEN) // The MSVC compiler and the Doxygen parser do not like C++11 array aggregate initializers.
-	Q_DECL_CONSTEXPR ColorAT(const ColorT<T>& c, T alpha)
-		: std::array<T, 4>{{c.r(), c.g(), c.b(), alpha}} {}
+    Q_DECL_CONSTEXPR ColorAT(const ColorT<T>& c, T alpha)
+        : std::array<T, 4>{{c.r(), c.g(), c.b(), alpha}} {}
 #else
-	ColorAT(const ColorT<T>& c, T alpha)
-		{ this->r() = c.r(); this->g() = c.g(); this->b() = c.b(); this->a() = alpha; }
+    ColorAT(const ColorT<T>& c, T alpha)
+        { this->r() = c.r(); this->g() = c.g(); this->b() = c.b(); this->a() = alpha; }
 #endif
 
-	/// Initializes the color components from an array of four values.
-	Q_DECL_CONSTEXPR explicit ColorAT(const std::array<T, 4>& c) : std::array<T, 4>(c) {}
+    /// Initializes the color components from an array of four values.
+    Q_DECL_CONSTEXPR explicit ColorAT(const std::array<T, 4>& c) : std::array<T, 4>(c) {}
 
-	/// Casts the color to another component type \a U.
-	template<typename U>
-	Q_DECL_CONSTEXPR ColorAT<U> toDataType() const { return ColorAT<U>(static_cast<U>(r()), static_cast<U>(g()), static_cast<U>(b()), static_cast<U>(a())); }
+    /// Casts the color to another component type \a U.
+    template<typename U>
+    Q_DECL_CONSTEXPR ColorAT<U> toDataType() const { return ColorAT<U>(static_cast<U>(r()), static_cast<U>(g()), static_cast<U>(b()), static_cast<U>(a())); }
 
-	/// Sets the red, green, and blue components to zero and alpha to one.
-	void setBlack() { r() = g() = b() = T(0); a() = T(1); }
+    /// Sets the red, green, and blue components to zero and alpha to one.
+    void setBlack() { r() = g() = b() = T(0); a() = T(1); }
 
-	/// Sets all color components to one.
-	void setWhite() { r() = g() = b() = a() = T(1); }
+    /// Sets all color components to one.
+    void setWhite() { r() = g() = b() = a() = T(1); }
 
-	/// Converts this RGBA color to a XYZW vector.
-	explicit Q_DECL_CONSTEXPR operator const Vector_4<T>&() const { return reinterpret_cast<const Vector_4<T>&>(*this); }
+    /// Converts this RGBA color to a XYZW vector.
+    explicit Q_DECL_CONSTEXPR operator const Vector_4<T>&() const { return reinterpret_cast<const Vector_4<T>&>(*this); }
 
-	/// Conversion operator to a Qt color.
-	/// All components of the returned Qt color are clamped to the [0,1] range.
-	operator QColor() const {
-		return QColor::fromRgbF(
-				qMin(qMax(r(), T(0)), T(1)),
-				qMin(qMax(g(), T(0)), T(1)),
-				qMin(qMax(b(), T(0)), T(1)),
-				qMin(qMax(a(), T(0)), T(1)));
-	}
+    /// Conversion operator to a Qt color.
+    /// All components of the returned Qt color are clamped to the [0,1] range.
+    operator QColor() const {
+        return QColor::fromRgbF(
+                qMin(qMax(r(), T(0)), T(1)),
+                qMin(qMax(g(), T(0)), T(1)),
+                qMin(qMax(b(), T(0)), T(1)),
+                qMin(qMax(a(), T(0)), T(1)));
+    }
 
-	//////////////////////////// Component access //////////////////////////
+    //////////////////////////// Component access //////////////////////////
 
-	/// Returns the value of the red component of this color.
-	Q_DECL_CONSTEXPR T r() const { return (*this)[0]; }
+    /// Returns the value of the red component of this color.
+    Q_DECL_CONSTEXPR T r() const { return (*this)[0]; }
 
-	/// Returns the value of the green component of this color.
-	Q_DECL_CONSTEXPR T g() const { return (*this)[1]; }
+    /// Returns the value of the green component of this color.
+    Q_DECL_CONSTEXPR T g() const { return (*this)[1]; }
 
-	/// Returns the value of the blue component of this color.
-	Q_DECL_CONSTEXPR T b() const { return (*this)[2]; }
+    /// Returns the value of the blue component of this color.
+    Q_DECL_CONSTEXPR T b() const { return (*this)[2]; }
 
-	/// Returns the value of the alpha component of this color.
-	Q_DECL_CONSTEXPR T a() const { return (*this)[3]; }
+    /// Returns the value of the alpha component of this color.
+    Q_DECL_CONSTEXPR T a() const { return (*this)[3]; }
 
-	/// Returns a reference to the red component of this color.
-	T& r() { return (*this)[0]; }
+    /// Returns a reference to the red component of this color.
+    T& r() { return (*this)[0]; }
 
-	/// Returns a reference to the green component of this color.
-	T& g() { return (*this)[1]; }
+    /// Returns a reference to the green component of this color.
+    T& g() { return (*this)[1]; }
 
-	/// Returns a reference to the blue component of this color.
-	T& b() { return (*this)[2]; }
+    /// Returns a reference to the blue component of this color.
+    T& b() { return (*this)[2]; }
 
-	/// Returns a reference to the alpha component of this color.
-	T& a() { return (*this)[3]; }
+    /// Returns a reference to the alpha component of this color.
+    T& a() { return (*this)[3]; }
 
-	/// Returns the value of the red, green and blue components of this color.
-	const ColorT<T>& rgb() const { return reinterpret_cast<const ColorT<T>&>(*this); }
+    /// Returns the value of the red, green and blue components of this color.
+    const ColorT<T>& rgb() const { return reinterpret_cast<const ColorT<T>&>(*this); }
 
-	/// Returns a reference to the red, green and blue components of this color.
-	ColorT<T>& rgb() { return reinterpret_cast<ColorT<T>&>(*this); }
+    /// Returns a reference to the red, green and blue components of this color.
+    ColorT<T>& rgb() { return reinterpret_cast<ColorT<T>&>(*this); }
 
-	////////////////////////////////// Comparison ////////////////////////////////
+    ////////////////////////////////// Comparison ////////////////////////////////
 
-	/// Compares this color with another color for equality.
-	/// \param c The other color.
-	/// \return \c true if all four color components are exactly equal; \c false otherwise.
-	Q_DECL_CONSTEXPR bool operator==(const ColorAT& c) const { return (r() == c.r() && g() == c.g() && b() == c.b() && a() == c.a()); }
+    /// Compares this color with another color for equality.
+    /// \param c The other color.
+    /// \return \c true if all four color components are exactly equal; \c false otherwise.
+    Q_DECL_CONSTEXPR bool operator==(const ColorAT& c) const { return (r() == c.r() && g() == c.g() && b() == c.b() && a() == c.a()); }
 
-	/// \brief Compares this color with another color for inequality.
-	/// \param c The second color.
-	/// \return \c true if any of the color components are not equal; \c false otherwise.
-	Q_DECL_CONSTEXPR bool operator!=(const ColorAT& c) const { return (r() != c.r() || g() != c.g() || b() != c.b() || a() != c.a()); }
+    /// \brief Compares this color with another color for inequality.
+    /// \param c The second color.
+    /// \return \c true if any of the color components are not equal; \c false otherwise.
+    Q_DECL_CONSTEXPR bool operator!=(const ColorAT& c) const { return (r() != c.r() || g() != c.g() || b() != c.b() || a() != c.a()); }
 
-	/// \brief Tests if two color are equal within a given tolerance.
-	/// \param c The color to compare with this color.
-	/// \param tolerance A non-negative threshold for the equality test. The two color are considered equal if
-	///        the differences in the four color components are all less than this tolerance value.
-	/// \return \c true if this color  is equal to \a c within the given tolerance; \c false otherwise.
-	Q_DECL_CONSTEXPR bool equals(const ColorAT& c, T tolerance = T(FLOATTYPE_EPSILON)) const {
-		return std::abs(c.r() - r()) <= tolerance && std::abs(c.g() - g()) <= tolerance && std::abs(c.b() - b()) <= tolerance && std::abs(c.a() - a()) <= tolerance;
-	}
+    /// \brief Tests if two color are equal within a given tolerance.
+    /// \param c The color to compare with this color.
+    /// \param tolerance A non-negative threshold for the equality test. The two color are considered equal if
+    ///        the differences in the four color components are all less than this tolerance value.
+    /// \return \c true if this color  is equal to \a c within the given tolerance; \c false otherwise.
+    Q_DECL_CONSTEXPR bool equals(const ColorAT& c, T tolerance = T(FLOATTYPE_EPSILON)) const {
+        return std::abs(c.r() - r()) <= tolerance && std::abs(c.g() - g()) <= tolerance && std::abs(c.b() - b()) <= tolerance && std::abs(c.a() - a()) <= tolerance;
+    }
 
-	/// Adds the components of another color to this color.
-	ColorAT& operator+=(const ColorAT& c) { r() += c.r(); g() += c.g(); b() += c.b(); a() += c.a(); return *this; }
+    /// Adds the components of another color to this color.
+    ColorAT& operator+=(const ColorAT& c) { r() += c.r(); g() += c.g(); b() += c.b(); a() += c.a(); return *this; }
 
-	/// Multiplies the components of another color with the components of this color.
-	ColorAT& operator*=(const ColorAT& c) { r() *= c.r(); g() *= c.g(); b() *= c.b(); a() *= c.a(); return *this; }
+    /// Multiplies the components of another color with the components of this color.
+    ColorAT& operator*=(const ColorAT& c) { r() *= c.r(); g() *= c.g(); b() *= c.b(); a() *= c.a(); return *this; }
 
-	/// Converts a vector to a color assigns it to this object.
-	ColorAT& operator=(const Vector_4<T>& v) { r() = v.x(); g() = v.y(); b() = v.z(); a() = v.w(); return *this; }
+    /// Converts a vector to a color assigns it to this object.
+    ColorAT& operator=(const Vector_4<T>& v) { r() = v.x(); g() = v.y(); b() = v.z(); a() = v.w(); return *this; }
 
-	/// Ensures that none of the color components is greater than 1.
-	/// Any component greater than 1 is changed to 1.
-	/// \sa clampMin(), clampMinMax()
-	void clampMax() { if(r() > T(1)) r() = T(1); if(g() > T(1)) g() = T(1); if(b() > T(1)) b() = T(1); if(a() > T(1)) a() = T(1); }
+    /// Ensures that none of the color components is greater than 1.
+    /// Any component greater than 1 is changed to 1.
+    /// \sa clampMin(), clampMinMax()
+    void clampMax() { if(r() > T(1)) r() = T(1); if(g() > T(1)) g() = T(1); if(b() > T(1)) b() = T(1); if(a() > T(1)) a() = T(1); }
 
-	/// Ensures that none of the color components is less than 0.
-	/// Any color component less than 0 is set to 0.
-	/// \sa clampMax(), clampMinMax()
-	void clampMin() { if(r() < T(0)) r() = T(0); if(g() < T(0)) g() = T(0); if(b() < T(0)) b() = T(0); if(a() < T(0)) a() = T(0); }
+    /// Ensures that none of the color components is less than 0.
+    /// Any color component less than 0 is set to 0.
+    /// \sa clampMax(), clampMinMax()
+    void clampMin() { if(r() < T(0)) r() = T(0); if(g() < T(0)) g() = T(0); if(b() < T(0)) b() = T(0); if(a() < T(0)) a() = T(0); }
 
-	/// Ensures that all color components between 0 and 1.
-	/// \sa clampMin(), clampMax()
-	void clampMinMax() {
-		for(typename std::array<T, 4>::size_type i = 0; i < std::array<T, 4>::size(); i++) {
-			if((*this)[i] > T(1)) (*this)[i] = T(1);
-			else if((*this)[i] < T(0)) (*this)[i] = T(0);
-		}
-	}
+    /// Ensures that all color components between 0 and 1.
+    /// \sa clampMin(), clampMax()
+    void clampMinMax() {
+        for(typename std::array<T, 4>::size_type i = 0; i < std::array<T, 4>::size(); i++) {
+            if((*this)[i] > T(1)) (*this)[i] = T(1);
+            else if((*this)[i] < T(0)) (*this)[i] = T(0);
+        }
+    }
 
-	/// Produces a string representation of the color.
-	QString toString() const { return QString("(%1 %2 %3 %4)").arg(r()).arg(g()).arg(b()).arg(a()); }
+    /// Produces a string representation of the color.
+    QString toString() const { return QString("(%1 %2 %3 %4)").arg(r()).arg(g()).arg(b()).arg(a()); }
 };
 
 /// Multiplies the four components of the color \a c with a scalar value \a s.
 /// \relates ColorAT
 template<typename T>
 Q_DECL_CONSTEXPR inline ColorAT<T> operator*(float s, const ColorAT<T>& c) {
-	return ColorAT<T>(c.r()*(T)s, c.g()*(T)s, c.b()*(T)s, c.a()*(T)s);
+    return ColorAT<T>(c.r()*(T)s, c.g()*(T)s, c.b()*(T)s, c.a()*(T)s);
 }
 
 /// Multiplies the four components of the color \a c with a scalar value \a s.
 /// \relates ColorAT
 template<typename T>
 Q_DECL_CONSTEXPR inline ColorAT<T> operator*(double s, const ColorAT<T>& c) {
-	return ColorAT<T>(c.r()*(T)s, c.g()*(T)s, c.b()*(T)s, c.a()*(T)s);
+    return ColorAT<T>(c.r()*(T)s, c.g()*(T)s, c.b()*(T)s, c.a()*(T)s);
 }
 
 /// Multiplies the four components of the color \a c with a scalar value \a s.
 /// \relates ColorAT
 template<typename T>
 Q_DECL_CONSTEXPR inline ColorAT<T> operator*(int s, const ColorAT<T>& c) {
-	return ColorAT<T>(c.r()*s, c.g()*s, c.b()*s, c.a()*s);
+    return ColorAT<T>(c.r()*s, c.g()*s, c.b()*s, c.a()*s);
 }
 
 /// Multiplies the four components of the color \a c with a scalar value \a s.
 /// \relates ColorAT
 template<typename T>
 Q_DECL_CONSTEXPR inline ColorAT<T> operator*(const ColorAT<T>& c, float s) {
-	return ColorAT<T>(c.r()*(T)s, c.g()*(T)s, c.b()*(T)s, c.a()*(T)s);
+    return ColorAT<T>(c.r()*(T)s, c.g()*(T)s, c.b()*(T)s, c.a()*(T)s);
 }
 
 /// Multiplies the four components of the color \a c with a scalar value \a s.
 /// \relates ColorAT
 template<typename T>
 Q_DECL_CONSTEXPR inline ColorAT<T> operator*(const ColorAT<T>& c, double s) {
-	return ColorAT<T>(c.r()*(T)s, c.g()*(T)s, c.b()*(T)s, c.a()*(T)s);
+    return ColorAT<T>(c.r()*(T)s, c.g()*(T)s, c.b()*(T)s, c.a()*(T)s);
 }
 
 /// Multiplies the four components of the color \a c with a scalar value \a s.
 /// \relates ColorAT
 template<typename T>
 Q_DECL_CONSTEXPR inline ColorAT<T> operator*(const ColorAT<T>& c, int s) {
-	return ColorAT<T>(c.r()*s, c.g()*s, c.b()*s, c.a()*s);
+    return ColorAT<T>(c.r()*s, c.g()*s, c.b()*s, c.a()*s);
 }
 
 /// Computes the component-wise sum of two colors.
 /// \relates ColorAT
 template<typename T>
 Q_DECL_CONSTEXPR inline ColorAT<T> operator+(const ColorAT<T>& c1, const ColorAT<T>& c2) {
-	return { c1.r()+c2.r(), c1.g()+c2.g(), c1.b()+c2.b(), c1.a()+c2.a() };
+    return { c1.r()+c2.r(), c1.g()+c2.g(), c1.b()+c2.b(), c1.a()+c2.a() };
 }
 
 /// Computes the component-wise product of two colors.
 /// \relates ColorAT
 template<typename T>
 Q_DECL_CONSTEXPR inline ColorAT<T> operator*(const ColorAT<T>& c1, const ColorAT<T>& c2) {
-	return { c1.r()*c2.r(), c1.g()*c2.g(), c1.b()*c2.b(), c1.a()*c2.a() };
+    return { c1.r()*c2.r(), c1.g()*c2.g(), c1.b()*c2.b(), c1.a()*c2.a() };
 }
 
 /// Prints a color to a text output stream.
 /// \relates ColorAT
 template<typename T>
 inline std::ostream& operator<<(std::ostream &os, const ColorAT<T>& c) {
-	return os << c.r() << ' ' << c.g()  << ' ' << c.b() << ' ' << c.a();
+    return os << c.r() << ' ' << c.g()  << ' ' << c.b() << ' ' << c.a();
 }
 
 /// Prints a color to a Qt debug stream.
@@ -572,28 +572,28 @@ inline QDebug operator<<(QDebug dbg, const ColorAT<T>& c) {
 /// \relates ColorAT
 template<typename T>
 inline SaveStream& operator<<(SaveStream& stream, const ColorAT<T>& c) {
-	return stream << c.r() << c.g() << c.b() << c.a();
+    return stream << c.r() << c.g() << c.b() << c.a();
 }
 
 /// Reads a color from a binary input stream.
 /// \relates ColorAT
 template<typename T>
 inline LoadStream& operator>>(LoadStream& stream, ColorAT<T>& c) {
-	return stream >> c.r() >> c.g() >> c.b() >> c.a();
+    return stream >> c.r() >> c.g() >> c.b() >> c.a();
 }
 
 /// Writes a color to a Qt data stream.
 /// \relates ColorAT
 template<typename T>
 inline QDataStream& operator<<(QDataStream& stream, const ColorAT<T>& c) {
-	return stream << c.r() << c.g() << c.b() << c.a();
+    return stream << c.r() << c.g() << c.b() << c.a();
 }
 
 /// Reads a color from a Qt data stream.
 /// \relates ColorAT
 template<typename T>
 inline QDataStream& operator>>(QDataStream& stream, ColorAT<T>& c) {
-	return stream >> c.r() >> c.g() >> c.b() >> c.a();
+    return stream >> c.r() >> c.g() >> c.b() >> c.a();
 }
 
 /**
@@ -608,7 +608,7 @@ using Color = ColorT<FloatType>;
  */
 using ColorA = ColorAT<FloatType>;
 
-}	// End of namespace
+}   // End of namespace
 
 Q_DECLARE_METATYPE(Ovito::Color);
 Q_DECLARE_METATYPE(Ovito::ColorA);

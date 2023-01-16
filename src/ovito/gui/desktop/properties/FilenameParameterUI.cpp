@@ -31,22 +31,22 @@ IMPLEMENT_OVITO_CLASS(FilenameParameterUI);
 * Constructor for a Qt property.
 ******************************************************************************/
 FilenameParameterUI::FilenameParameterUI(PropertiesEditor* parentEditor, const char* propertyName) :
-	PropertyParameterUI(parentEditor, propertyName)
+    PropertyParameterUI(parentEditor, propertyName)
 {
-	// Create UI widget.
-	_selectorButton = new QPushButton(QStringLiteral(" "));
-	connect(_selectorButton.data(), &QPushButton::clicked, this, &FilenameParameterUI::showSelectionDialog);
+    // Create UI widget.
+    _selectorButton = new QPushButton(QStringLiteral(" "));
+    connect(_selectorButton.data(), &QPushButton::clicked, this, &FilenameParameterUI::showSelectionDialog);
 }
 
 /******************************************************************************
 * Constructor for a PropertyField property.
 ******************************************************************************/
 FilenameParameterUI::FilenameParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField) :
-	PropertyParameterUI(parentEditor, propField)
+    PropertyParameterUI(parentEditor, propField)
 {
-	// Create UI widget.
-	_selectorButton = new QPushButton(QStringLiteral(" "));
-	connect(_selectorButton.data(), &QPushButton::clicked, this, &FilenameParameterUI::showSelectionDialog);
+    // Create UI widget.
+    _selectorButton = new QPushButton(QStringLiteral(" "));
+    connect(_selectorButton.data(), &QPushButton::clicked, this, &FilenameParameterUI::showSelectionDialog);
 }
 
 /******************************************************************************
@@ -54,8 +54,8 @@ FilenameParameterUI::FilenameParameterUI(PropertiesEditor* parentEditor, const P
 ******************************************************************************/
 FilenameParameterUI::~FilenameParameterUI()
 {
-	// Release GUI controls.
-	delete selectorWidget();
+    // Release GUI controls.
+    delete selectorWidget();
 }
 
 /******************************************************************************
@@ -64,10 +64,10 @@ FilenameParameterUI::~FilenameParameterUI()
 ******************************************************************************/
 void FilenameParameterUI::resetUI()
 {
-	PropertyParameterUI::resetUI();
+    PropertyParameterUI::resetUI();
 
-	if(selectorWidget())
-		selectorWidget()->setEnabled(editObject() && isEnabled());
+    if(selectorWidget())
+        selectorWidget()->setEnabled(editObject() && isEnabled());
 }
 
 /******************************************************************************
@@ -76,30 +76,30 @@ void FilenameParameterUI::resetUI()
 ******************************************************************************/
 void FilenameParameterUI::updateUI()
 {
-	PropertyParameterUI::updateUI();
+    PropertyParameterUI::updateUI();
 
-	if(selectorWidget() && editObject()) {
-		QVariant val;
-		if(propertyName()) {
-			val = editObject()->property(propertyName());
-			OVITO_ASSERT_MSG(val.isValid() && val.canConvert<QString>(), "FilenameParameterUI::updateUI()", qPrintable(QString("The object class %1 does not define a property with the name %2 that can be cast to string type.").arg(editObject()->metaObject()->className(), QString(propertyName()))));
-			if(!val.isValid() || !val.canConvert<QString>()) {
-				throw Exception(tr("The object class %1 does not define a property with the name %2 that can be cast to string type.").arg(editObject()->metaObject()->className(), QString(propertyName())));
-			}
-		}
-		else if(propertyField()) {
-			val = editObject()->getPropertyFieldValue(propertyField());
-			OVITO_ASSERT(val.isValid());
-		}
+    if(selectorWidget() && editObject()) {
+        QVariant val;
+        if(propertyName()) {
+            val = editObject()->property(propertyName());
+            OVITO_ASSERT_MSG(val.isValid() && val.canConvert<QString>(), "FilenameParameterUI::updateUI()", qPrintable(QString("The object class %1 does not define a property with the name %2 that can be cast to string type.").arg(editObject()->metaObject()->className(), QString(propertyName()))));
+            if(!val.isValid() || !val.canConvert<QString>()) {
+                throw Exception(tr("The object class %1 does not define a property with the name %2 that can be cast to string type.").arg(editObject()->metaObject()->className(), QString(propertyName())));
+            }
+        }
+        else if(propertyField()) {
+            val = editObject()->getPropertyFieldValue(propertyField());
+            OVITO_ASSERT(val.isValid());
+        }
 
-		QString filename = val.toString();
-		if(filename.isEmpty() == false) {
-			selectorWidget()->setText(QFileInfo(filename).fileName());
-		}
-		else {
-			selectorWidget()->setText(tr("[Choose File...]"));
-		}
-	}
+        QString filename = val.toString();
+        if(filename.isEmpty() == false) {
+            selectorWidget()->setText(QFileInfo(filename).fileName());
+        }
+        else {
+            selectorWidget()->setText(tr("[Choose File...]"));
+        }
+    }
 }
 
 /******************************************************************************
@@ -107,10 +107,10 @@ void FilenameParameterUI::updateUI()
 ******************************************************************************/
 void FilenameParameterUI::setEnabled(bool enabled)
 {
-	if(enabled == isEnabled()) return;
-	PropertyParameterUI::setEnabled(enabled);
-	if(selectorWidget()) 
-		selectorWidget()->setEnabled(editObject() && isEnabled());
+    if(enabled == isEnabled()) return;
+    PropertyParameterUI::setEnabled(enabled);
+    if(selectorWidget()) 
+        selectorWidget()->setEnabled(editObject() && isEnabled());
 }
 
-}	// End of namespace
+}   // End of namespace

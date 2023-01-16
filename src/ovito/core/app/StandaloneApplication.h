@@ -34,65 +34,65 @@ namespace Ovito {
  */
 class OVITO_CORE_EXPORT StandaloneApplication : public Application
 {
-	Q_OBJECT
+    Q_OBJECT
 
 public:
 
-	/// \brief Returns the one and only instance of this class.
-	static StandaloneApplication* instance() {
-		return qobject_cast<StandaloneApplication*>(Application::instance());
-	}
+    /// \brief Returns the one and only instance of this class.
+    static StandaloneApplication* instance() {
+        return qobject_cast<StandaloneApplication*>(Application::instance());
+    }
 
-	/// Inherit constructor from base class.
-	using Application::Application;
+    /// Inherit constructor from base class.
+    using Application::Application;
 
-	/// \brief Initializes the application.
-	/// \param argc The number of command line arguments.
-	/// \param argv The command line arguments.
-	/// \return \c true if the application was initialized successfully;
-	///         \c false if an error occurred and the program should be terminated.
-	///
-	/// This is called on program startup.
-	bool initialize(int& argc, char** argv);
+    /// \brief Initializes the application.
+    /// \param argc The number of command line arguments.
+    /// \param argv The command line arguments.
+    /// \return \c true if the application was initialized successfully;
+    ///         \c false if an error occurred and the program should be terminated.
+    ///
+    /// This is called on program startup.
+    bool initialize(int& argc, char** argv);
 
-	/// \brief Enters the main event loop.
-	/// \return The program exit code.
-	///
-	/// If the application has been started in console mode then this method does nothing.
-	int runApplication();
+    /// \brief Enters the main event loop.
+    /// \return The program exit code.
+    ///
+    /// If the application has been started in console mode then this method does nothing.
+    int runApplication();
 
-	/// This is called from main() before the application exits.
-	void shutdown();
+    /// This is called from main() before the application exits.
+    void shutdown();
 
-	/// \brief Returns the command line options passed to the program.
-	const QCommandLineParser& cmdLineParser() const { return _cmdLineParser; }
+    /// \brief Returns the command line options passed to the program.
+    const QCommandLineParser& cmdLineParser() const { return _cmdLineParser; }
 
-	/// Returns the list of application services created at application startup.
-	const std::vector<OORef<ApplicationService>>& applicationServices() const { return _applicationServices; }
+    /// Returns the list of application services created at application startup.
+    const std::vector<OORef<ApplicationService>>& applicationServices() const { return _applicationServices; }
 
 protected Q_SLOTS:
 
-	/// Is called at program startup once the event loop is running.
-	virtual void postStartupInitialization();
+    /// Is called at program startup once the event loop is running.
+    virtual void postStartupInitialization();
 
 protected:
 
-	/// Defines the program's command line parameters.
-	virtual void registerCommandLineParameters(QCommandLineParser& parser);
+    /// Defines the program's command line parameters.
+    virtual void registerCommandLineParameters(QCommandLineParser& parser);
 
-	/// Interprets the command line parameters provided to the application.
-	virtual bool processCommandLineParameters();
+    /// Interprets the command line parameters provided to the application.
+    virtual bool processCommandLineParameters();
 
-	/// Prepares application at startup.
-	virtual MainThreadOperation startupApplication() = 0;
+    /// Prepares application at startup.
+    virtual MainThreadOperation startupApplication() = 0;
 
 protected:
 
-	/// The parser for the command line options passed to the program.
-	QCommandLineParser _cmdLineParser;
+    /// The parser for the command line options passed to the program.
+    QCommandLineParser _cmdLineParser;
 
-	/// The service objects created at application startup.
-	std::vector<OORef<ApplicationService>> _applicationServices;
+    /// The service objects created at application startup.
+    std::vector<OORef<ApplicationService>> _applicationServices;
 };
 
-}	// End of namespace
+}   // End of namespace

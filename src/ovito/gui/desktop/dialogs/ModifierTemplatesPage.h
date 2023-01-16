@@ -34,46 +34,46 @@ namespace Ovito {
  */
 class OVITO_GUI_EXPORT ModifierTemplatesPage : public ApplicationSettingsDialogPage
 {
-	OVITO_CLASS(ModifierTemplatesPage)
+    OVITO_CLASS(ModifierTemplatesPage)
 
 public:
 
-	/// Default constructor.
-	Q_INVOKABLE ModifierTemplatesPage() = default;
+    /// Default constructor.
+    Q_INVOKABLE ModifierTemplatesPage() = default;
 
-	/// \brief Creates the widget.
-	virtual void insertSettingsDialogPage(QTabWidget* tabWidget) override;
+    /// \brief Creates the widget.
+    virtual void insertSettingsDialogPage(QTabWidget* tabWidget) override;
 
-	/// \brief Lets the settings page to save all values entered by the user.
-	virtual void saveValues(QTabWidget* tabWidget) override;
+    /// \brief Lets the settings page to save all values entered by the user.
+    virtual void saveValues(QTabWidget* tabWidget) override;
 
-	/// \brief Lets the settings page restore the original values of changed settings when the user presses the Cancel button.
-	virtual void restoreValues(QTabWidget* tabWidget) override;
+    /// \brief Lets the settings page restore the original values of changed settings when the user presses the Cancel button.
+    virtual void restoreValues(QTabWidget* tabWidget) override;
 
-	/// \brief Returns an integer value that is used to sort the dialog pages in ascending order.
-	virtual int pageSortingKey() const override { return 3; }
+    /// \brief Returns an integer value that is used to sort the dialog pages in ascending order.
+    virtual int pageSortingKey() const override { return 3; }
 
 private Q_SLOTS:
 
-	/// Is invoked when the user presses the "Create template" button.
-	void onCreateTemplate();
+    /// Is invoked when the user presses the "Create template" button.
+    void onCreateTemplate();
 
-	/// Is invoked when the user presses the "Delete template" button.
-	void onDeleteTemplate();
+    /// Is invoked when the user presses the "Delete template" button.
+    void onDeleteTemplate();
 
-	/// Is invoked when the user presses the "Rename template" button.
-	void onRenameTemplate();
+    /// Is invoked when the user presses the "Rename template" button.
+    void onRenameTemplate();
 
-	/// Is invoked when the user presses the "Export templates" button.
-	void onExportTemplates();
+    /// Is invoked when the user presses the "Export templates" button.
+    void onExportTemplates();
 
-	/// Is invoked when the user presses the "Import templates" button.
-	void onImportTemplates();
+    /// Is invoked when the user presses the "Import templates" button.
+    void onImportTemplates();
 
 private:
 
-	QListView* _listWidget;
-	bool _dirtyFlag = false;
+    QListView* _listWidget;
+    bool _dirtyFlag = false;
 };
 
-}	// End of namespace
+}   // End of namespace

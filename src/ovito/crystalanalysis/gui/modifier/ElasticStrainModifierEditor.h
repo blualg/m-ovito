@@ -33,26 +33,26 @@ namespace Ovito::CrystalAnalysis {
  */
 class ElasticStrainModifierEditor : public PropertiesEditor
 {
-	OVITO_CLASS(ElasticStrainModifierEditor)
+    OVITO_CLASS(ElasticStrainModifierEditor)
 
 public:
 
-	/// Default constructor.
-	Q_INVOKABLE ElasticStrainModifierEditor() {}
+    /// Default constructor.
+    Q_INVOKABLE ElasticStrainModifierEditor() {}
 
 protected:
 
-	/// Creates the user interface controls for the editor.
-	virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
+    /// Creates the user interface controls for the editor.
+    virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
 
 private Q_SLOTS:
 
-	/// Is called each time the parameters of the modifier have changed.
-	void modifierChanged(RefTarget* editObject);
+    /// Is called each time the parameters of the modifier have changed.
+    void modifierChanged(RefTarget* editObject);
 
 private:
 
-	FloatParameterUI* _caRatioUI;
+    FloatParameterUI* _caRatioUI;
 };
 
-}	// End of namespace
+}   // End of namespace

@@ -30,12 +30,12 @@ namespace Ovito {
 ******************************************************************************/
 SaveStream& operator<<(SaveStream& stream, const PipelineStatus& s)
 {
-	stream.beginChunk(0x03);
-	stream << s._type;
-	stream << s._text;
-	stream << s._shortInfo;
-	stream.endChunk();
-	return stream;
+    stream.beginChunk(0x03);
+    stream << s._type;
+    stream << s._text;
+    stream << s._shortInfo;
+    stream.endChunk();
+    return stream;
 }
 
 /******************************************************************************
@@ -43,15 +43,15 @@ SaveStream& operator<<(SaveStream& stream, const PipelineStatus& s)
 ******************************************************************************/
 LoadStream& operator>>(LoadStream& stream, PipelineStatus& s)
 {
-	quint32 version = stream.expectChunkRange(0x0, 0x03);
-	stream >> s._type;
-	stream >> s._text;
-	if(version <= 0x01)
-		stream >> s._text;
-	else if(version >= 0x03)
-		stream >> s._shortInfo;
-	stream.closeChunk();
-	return stream;
+    quint32 version = stream.expectChunkRange(0x0, 0x03);
+    stream >> s._type;
+    stream >> s._text;
+    if(version <= 0x01)
+        stream >> s._text;
+    else if(version >= 0x03)
+        stream >> s._shortInfo;
+    stream.closeChunk();
+    return stream;
 }
 
 /******************************************************************************
@@ -59,16 +59,16 @@ LoadStream& operator>>(LoadStream& stream, PipelineStatus& s)
 ******************************************************************************/
 QDebug operator<<(QDebug debug, const PipelineStatus& s)
 {
-	switch(s.type()) {
-	case PipelineStatus::Success: debug << "Success"; break;
-	case PipelineStatus::Warning: debug << "Warning"; break;
-	case PipelineStatus::Error: debug << "Error"; break;
-	}
-	if(s.text().isEmpty() == false)
-		debug << s.text();
-	if(s.shortInfo().isValid())
-		debug << s.shortInfo();
-	return debug;
+    switch(s.type()) {
+    case PipelineStatus::Success: debug << "Success"; break;
+    case PipelineStatus::Warning: debug << "Warning"; break;
+    case PipelineStatus::Error: debug << "Error"; break;
+    }
+    if(s.text().isEmpty() == false)
+        debug << s.text();
+    if(s.shortInfo().isValid())
+        debug << s.shortInfo();
+    return debug;
 }
 
-}	// End of namespace
+}   // End of namespace

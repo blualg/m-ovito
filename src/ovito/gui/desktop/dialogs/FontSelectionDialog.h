@@ -32,20 +32,20 @@ namespace Ovito {
  */
 class OVITO_GUI_EXPORT FontSelectionDialog : public QDialog
 {
-	Q_OBJECT
+    Q_OBJECT
 
 public:
 
-	/// Constructor.
-	FontSelectionDialog(QWidget* parentWindow = nullptr);
+    /// Constructor.
+    FontSelectionDialog(QWidget* parentWindow = nullptr);
 
-	/// Shows a dialog that lets the pick a font.
-	static QFont getFont(bool* ok, QFont currentFont, QWidget* parentWindow);
+    /// Shows a dialog that lets the pick a font.
+    static QFont getFont(bool* ok, QFont currentFont, QWidget* parentWindow);
 
 private:
 
 };
 
-}	// End of namespace
+}   // End of namespace
 
 

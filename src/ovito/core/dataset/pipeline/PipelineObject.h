@@ -33,51 +33,51 @@ namespace Ovito {
  */
 class OVITO_CORE_EXPORT PipelineObject : public ActiveObject
 {
-	OVITO_CLASS(PipelineObject)
+    OVITO_CLASS(PipelineObject)
 
 public:
 
-	/// \brief Constructor.
-	using ActiveObject::ActiveObject;
+    /// \brief Constructor.
+    using ActiveObject::ActiveObject;
 
-	/// \brief Determines the time interval over which a computed pipeline state will remain valid.
-	virtual TimeInterval validityInterval(const PipelineEvaluationRequest& request) const { return TimeInterval::infinite(); }
+    /// \brief Determines the time interval over which a computed pipeline state will remain valid.
+    virtual TimeInterval validityInterval(const PipelineEvaluationRequest& request) const { return TimeInterval::infinite(); }
 
-	/// \brief Asks the pipeline stage to compute the results.
-	virtual SharedFuture<PipelineFlowState> evaluate(const PipelineEvaluationRequest& request) = 0;
+    /// \brief Asks the pipeline stage to compute the results.
+    virtual SharedFuture<PipelineFlowState> evaluate(const PipelineEvaluationRequest& request) = 0;
 
-	/// \brief Asks the pipeline stage to compute the results for several animation times in a row.
-	Future<std::vector<PipelineFlowState>> evaluateMultiple(const PipelineEvaluationRequest& request, std::vector<AnimationTime> times);
+    /// \brief Asks the pipeline stage to compute the results for several animation times in a row.
+    Future<std::vector<PipelineFlowState>> evaluateMultiple(const PipelineEvaluationRequest& request, std::vector<AnimationTime> times);
 
-	/// \brief Asks the pipeline stage to compute the preliminary results in a synchronous fashion.
-	virtual PipelineFlowState evaluateSynchronous(const PipelineEvaluationRequest& request);
+    /// \brief Asks the pipeline stage to compute the preliminary results in a synchronous fashion.
+    virtual PipelineFlowState evaluateSynchronous(const PipelineEvaluationRequest& request);
 
-	/// \brief Returns a list of pipeline nodes that have this object in their pipeline.
-	/// \param onlyScenePipelines If true, pipelines which are currently not part of the scene are ignored.
-	QSet<PipelineSceneNode*> pipelines(bool onlyScenePipelines) const;
+    /// \brief Returns a list of pipeline nodes that have this object in their pipeline.
+    /// \param onlyScenePipelines If true, pipelines which are currently not part of the scene are ignored.
+    QSet<PipelineSceneNode*> pipelines(bool onlyScenePipelines) const;
 
-	/// \brief Determines whether the data pipeline branches above this pipeline object,
-	///        i.e. whether this pipeline object has multiple dependents, all using this pipeline
-	///        object as input.
-	///
-	/// \param onlyScenePipelines If true, branches to pipelines which are currently not part of the scene are ignored.
-	bool isPipelineBranch(bool onlyScenePipelines) const;
+    /// \brief Determines whether the data pipeline branches above this pipeline object,
+    ///        i.e. whether this pipeline object has multiple dependents, all using this pipeline
+    ///        object as input.
+    ///
+    /// \param onlyScenePipelines If true, branches to pipelines which are currently not part of the scene are ignored.
+    bool isPipelineBranch(bool onlyScenePipelines) const;
 
-	/// \brief Returns the number of animation frames this pipeline object can provide.
-	virtual int numberOfSourceFrames() const { return 1; }
+    /// \brief Returns the number of animation frames this pipeline object can provide.
+    virtual int numberOfSourceFrames() const { return 1; }
 
-	/// \brief Given an animation time, computes the source frame to show.
-	virtual int animationTimeToSourceFrame(AnimationTime time) const;
+    /// \brief Given an animation time, computes the source frame to show.
+    virtual int animationTimeToSourceFrame(AnimationTime time) const;
 
-	/// \brief Given a source frame index, returns the animation time at which it is shown.
-	virtual AnimationTime sourceFrameToAnimationTime(int frame) const;
+    /// \brief Given a source frame index, returns the animation time at which it is shown.
+    virtual AnimationTime sourceFrameToAnimationTime(int frame) const;
 
-	/// \brief Returns the human-readable labels associated with the animation frames (e.g. the simulation timestep numbers).
-	virtual QMap<int, QString> animationFrameLabels() const { return {}; }
+    /// \brief Returns the human-readable labels associated with the animation frames (e.g. the simulation timestep numbers).
+    virtual QMap<int, QString> animationFrameLabels() const { return {}; }
 
-	/// Returns the data collection that is managed by this object (if it is a data source).
-	/// The returned data collection will be displayed under the data source in the pipeline editor.
-	virtual const DataCollection* getSourceDataCollection() const { return nullptr; }
+    /// Returns the data collection that is managed by this object (if it is a data source).
+    /// The returned data collection will be displayed under the data source in the pipeline editor.
+    virtual const DataCollection* getSourceDataCollection() const { return nullptr; }
 };
 
-}	// End of namespace
+}   // End of namespace

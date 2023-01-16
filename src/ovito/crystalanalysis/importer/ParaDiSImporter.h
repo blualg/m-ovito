@@ -33,58 +33,58 @@ namespace Ovito::CrystalAnalysis {
  */
 class OVITO_CRYSTALANALYSIS_EXPORT ParaDiSImporter : public ParticleImporter
 {
-	/// Defines a metaclass specialization for this importer type.
-	class OOMetaClass : public ParticleImporter::OOMetaClass
-	{
-	public:
-		/// Inherit standard constructor from base meta class.
-		using ParticleImporter::OOMetaClass::OOMetaClass;
+    /// Defines a metaclass specialization for this importer type.
+    class OOMetaClass : public ParticleImporter::OOMetaClass
+    {
+    public:
+        /// Inherit standard constructor from base meta class.
+        using ParticleImporter::OOMetaClass::OOMetaClass;
 
-		/// Returns the list of file formats that can be read by this importer class.
-		virtual Ovito::span<const SupportedFormat> supportedFormats() const override {
-			static const SupportedFormat formats[] = {{ QStringLiteral("*"), tr("ParaDiS Data Files") }};
-			return formats;
-		}
+        /// Returns the list of file formats that can be read by this importer class.
+        virtual Ovito::span<const SupportedFormat> supportedFormats() const override {
+            static const SupportedFormat formats[] = {{ QStringLiteral("*"), tr("ParaDiS Data Files") }};
+            return formats;
+        }
 
-		/// Checks if the given file has format that can be read by this importer.
-		virtual bool checkFileFormat(const FileHandle& file) const override;
-	};
+        /// Checks if the given file has format that can be read by this importer.
+        virtual bool checkFileFormat(const FileHandle& file) const override;
+    };
 
-	OVITO_CLASS_META(ParaDiSImporter, OOMetaClass)
+    OVITO_CLASS_META(ParaDiSImporter, OOMetaClass)
 
 public:
 
-	/// \brief Constructs a new instance of this class.
-	Q_INVOKABLE ParaDiSImporter(ObjectCreationParams params) : ParticleImporter(params) {}
+    /// \brief Constructs a new instance of this class.
+    Q_INVOKABLE ParaDiSImporter(ObjectCreationParams params) : ParticleImporter(params) {}
 
-	/// Returns the title of this object.
-	virtual QString objectTitle() const override { return tr("ParaDiS"); }
+    /// Returns the title of this object.
+    virtual QString objectTitle() const override { return tr("ParaDiS"); }
 
-	/// Creates an asynchronous loader object that loads the data for the given frame from the external file.
-	virtual FileSourceImporter::FrameLoaderPtr createFrameLoader(const LoadOperationRequest& request) override {
-		return std::make_shared<FrameLoader>(request);
-	}
+    /// Creates an asynchronous loader object that loads the data for the given frame from the external file.
+    virtual FileSourceImporter::FrameLoaderPtr createFrameLoader(const LoadOperationRequest& request) override {
+        return std::make_shared<FrameLoader>(request);
+    }
 
 protected:
 
-	/// The format-specific task object that is responsible for reading an input file in a worker thread.
-	class FrameLoader : public ParticleImporter::FrameLoader
-	{
-	public:
+    /// The format-specific task object that is responsible for reading an input file in a worker thread.
+    class FrameLoader : public ParticleImporter::FrameLoader
+    {
+    public:
 
-		/// Inherit constructor from base class.
-		using ParticleImporter::FrameLoader::FrameLoader;
+        /// Inherit constructor from base class.
+        using ParticleImporter::FrameLoader::FrameLoader;
 
-	protected:
+    protected:
 
-		/// Reads the frame data from the external file.
-		virtual void loadFile() override;
+        /// Reads the frame data from the external file.
+        virtual void loadFile() override;
 
     private:
 
         /// Parses a control parameter from the ParaDiS file.
         static std::pair<QString, QVariant> parseControlParameter(CompressedTextReader& stream);
-	};
+    };
 };
 
-}	// End of namespace
+}   // End of namespace

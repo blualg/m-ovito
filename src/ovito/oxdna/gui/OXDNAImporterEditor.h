@@ -34,30 +34,30 @@ namespace Ovito::Particles {
  */
 class OXDNAImporterEditor : public FileImporterEditor
 {
-	OVITO_CLASS(OXDNAImporterEditor)
+    OVITO_CLASS(OXDNAImporterEditor)
 
 public:
 
-	/// Constructor.
-	Q_INVOKABLE OXDNAImporterEditor() {}
+    /// Constructor.
+    Q_INVOKABLE OXDNAImporterEditor() {}
 
 protected:
 
-	/// Creates the user interface controls for the editor.
-	virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
+    /// Creates the user interface controls for the editor.
+    virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
 
 private Q_SLOTS:
 
-	/// Is called by the system when the importer changes.
+    /// Is called by the system when the importer changes.
     void importerChanged(RefTarget* editObject);
 
-	/// Lets the user choose a oxDNA topology file.
-	void onChooseTopologyFile();
+    /// Lets the user choose a oxDNA topology file.
+    void onChooseTopologyFile();
 
 private:
-	
-	QLineEdit* _topologyFileField;
-	QPushButton* _pickTopologyFileBtn;
+    
+    QLineEdit* _topologyFileField;
+    QPushButton* _pickTopologyFileBtn;
 };
 
-}	// End of namespace
+}   // End of namespace

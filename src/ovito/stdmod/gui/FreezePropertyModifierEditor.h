@@ -33,22 +33,22 @@ namespace Ovito::StdMod {
  */
 class FreezePropertyModifierEditor : public PropertiesEditor
 {
-	OVITO_CLASS(FreezePropertyModifierEditor)
+    OVITO_CLASS(FreezePropertyModifierEditor)
 
 public:
 
-	/// Default constructor
-	Q_INVOKABLE FreezePropertyModifierEditor() = default;
+    /// Default constructor
+    Q_INVOKABLE FreezePropertyModifierEditor() = default;
 
 protected:
 
-	/// Creates the user interface controls for the editor.
-	virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
+    /// Creates the user interface controls for the editor.
+    virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
 
 private Q_SLOTS:
 
-	/// Is called when the user has selected a different source property.
-	void onSourcePropertyChanged();
+    /// Is called when the user has selected a different source property.
+    void onSourcePropertyChanged();
 };
 
-}	// End of namespace
+}   // End of namespace

@@ -33,9 +33,9 @@ DEFINE_REFERENCE_FIELD(OverlayListItem, overlay);
 * Constructor.
 ******************************************************************************/
 OverlayListItem::OverlayListItem(ViewportOverlay* overlay, OverlayItemType itemType) :
-	_itemType(itemType)
+    _itemType(itemType)
 {
-	_overlay.set(this, PROPERTY_FIELD(overlay), overlay);
+    _overlay.set(this, PROPERTY_FIELD(overlay), overlay);
 }
 
 /******************************************************************************
@@ -44,12 +44,12 @@ OverlayListItem::OverlayListItem(ViewportOverlay* overlay, OverlayItemType itemT
 ******************************************************************************/
 bool OverlayListItem::referenceEvent(RefTarget* source, const ReferenceEvent& event)
 {
-	/// Update item if it has been enabled/disabled, its status has changed, or its title has changed.
-	if(event.type() == ReferenceEvent::TargetEnabledOrDisabled || event.type() == ReferenceEvent::ObjectStatusChanged || event.type() == ReferenceEvent::TitleChanged) {
-		Q_EMIT itemChanged(this);
-	}
+    /// Update item if it has been enabled/disabled, its status has changed, or its title has changed.
+    if(event.type() == ReferenceEvent::TargetEnabledOrDisabled || event.type() == ReferenceEvent::ObjectStatusChanged || event.type() == ReferenceEvent::TitleChanged) {
+        Q_EMIT itemChanged(this);
+    }
 
-	return RefMaker::referenceEvent(source, event);
+    return RefMaker::referenceEvent(source, event);
 }
 
 /******************************************************************************
@@ -57,13 +57,13 @@ bool OverlayListItem::referenceEvent(RefTarget* source, const ReferenceEvent& ev
 ******************************************************************************/
 const PipelineStatus& OverlayListItem::status() const
 {
-	if(overlay()) {
-		return overlay()->status();
-	}
-	else {
-		static const PipelineStatus defaultStatus;
-		return defaultStatus;
-	}
+    if(overlay()) {
+        return overlay()->status();
+    }
+    else {
+        static const PipelineStatus defaultStatus;
+        return defaultStatus;
+    }
 }
 
 /******************************************************************************
@@ -71,14 +71,14 @@ const PipelineStatus& OverlayListItem::status() const
 ******************************************************************************/
 QString OverlayListItem::title(Viewport* selectedViewport) const
 {
-	OVITO_ASSERT(selectedViewport);
-	switch(_itemType) {
-	case Layer:  
-		return overlay() ? overlay()->objectTitle() : QString();
-	case ViewportHeader: return tr("Active viewport: %1").arg(selectedViewport->viewportTitle());
-	case SceneLayer: return tr("3D scene layer");
-	default: return {};
-	}
+    OVITO_ASSERT(selectedViewport);
+    switch(_itemType) {
+    case Layer:  
+        return overlay() ? overlay()->objectTitle() : QString();
+    case ViewportHeader: return tr("Active viewport: %1").arg(selectedViewport->viewportTitle());
+    case SceneLayer: return tr("3D scene layer");
+    default: return {};
+    }
 }
 
 /******************************************************************************
@@ -86,13 +86,13 @@ QString OverlayListItem::title(Viewport* selectedViewport) const
 ******************************************************************************/
 QVariant OverlayListItem::shortInfo(Viewport* selectedViewport) const
 {
-	OVITO_ASSERT(ExecutionContext::current().isValid());
-	if(overlay()) {
-		if(Scene* scene = selectedViewport->scene()) {
-			return overlay()->getPipelineEditorShortInfo(scene);
-		}
-	}
-	return {};
+    OVITO_ASSERT(ExecutionContext::current().isValid());
+    if(overlay()) {
+        if(Scene* scene = selectedViewport->scene()) {
+            return overlay()->getPipelineEditorShortInfo(scene);
+        }
+    }
+    return {};
 }
 
-}	// End of namespace
+}   // End of namespace

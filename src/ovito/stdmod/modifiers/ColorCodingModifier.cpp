@@ -58,48 +58,48 @@ SET_PROPERTY_FIELD_LABEL(ColorCodingModifier, sourceProperty, "Source property")
 * Constructs the modifier object.
 ******************************************************************************/
 ColorCodingModifier::ColorCodingModifier(ObjectCreationParams params) : DelegatingModifier(params),
-	_colorOnlySelected(false),
-	_keepSelection(true),
-	_autoAdjustRange(false)
+    _colorOnlySelected(false),
+    _keepSelection(true),
+    _autoAdjustRange(false)
 {
-	if(params.createSubObjects()) {
-		setColorGradient(OORef<ColorCodingHSVGradient>::create());
-		setStartValueController(ControllerManager::createFloatController());
-		setEndValueController(ControllerManager::createFloatController());
+    if(params.createSubObjects()) {
+        setColorGradient(OORef<ColorCodingHSVGradient>::create());
+        setStartValueController(ControllerManager::createFloatController());
+        setEndValueController(ControllerManager::createFloatController());
 
-		// Let this modifier act on particles by default.
-		createDefaultModifierDelegate(ColorCodingModifierDelegate::OOClass(), QStringLiteral("ParticlesColorCodingModifierDelegate"), params);
-	}
+        // Let this modifier act on particles by default.
+        createDefaultModifierDelegate(ColorCodingModifierDelegate::OOClass(), QStringLiteral("ParticlesColorCodingModifierDelegate"), params);
+    }
 
-	// When the modifier is created by a Python script, enable automatic range adjustment.
-	if(params.loadUserDefaults() == false) {
-		setAutoAdjustRange(true);
-	}
-	else {
+    // When the modifier is created by a Python script, enable automatic range adjustment.
+    if(params.loadUserDefaults() == false) {
+        setAutoAdjustRange(true);
+    }
+    else {
 #ifndef OVITO_DISABLE_QSETTINGS
-		if(params.createSubObjects()) {
-			// Load the default gradient type set by the user.
-			QSettings settings;
-			settings.beginGroup(ColorCodingModifier::OOClass().plugin()->pluginId());
-			settings.beginGroup(ColorCodingModifier::OOClass().name());
-			QString typeString = settings.value(PROPERTY_FIELD(colorGradient)->identifier()).toString();
-			if(!typeString.isEmpty()) {
-				try {
-					OvitoClassPtr gradientType = OvitoClass::decodeFromString(typeString);
-					if(!colorGradient() || colorGradient()->getOOClass() != *gradientType) {
-						OORef<ColorCodingGradient> gradient = dynamic_object_cast<ColorCodingGradient>(gradientType->createInstance(params));
-						if(gradient) setColorGradient(gradient);
-					}
-				}
-				catch(...) {}
-			}
-		}
-	#endif
+        if(params.createSubObjects()) {
+            // Load the default gradient type set by the user.
+            QSettings settings;
+            settings.beginGroup(ColorCodingModifier::OOClass().plugin()->pluginId());
+            settings.beginGroup(ColorCodingModifier::OOClass().name());
+            QString typeString = settings.value(PROPERTY_FIELD(colorGradient)->identifier()).toString();
+            if(!typeString.isEmpty()) {
+                try {
+                    OvitoClassPtr gradientType = OvitoClass::decodeFromString(typeString);
+                    if(!colorGradient() || colorGradient()->getOOClass() != *gradientType) {
+                        OORef<ColorCodingGradient> gradient = dynamic_object_cast<ColorCodingGradient>(gradientType->createInstance(params));
+                        if(gradient) setColorGradient(gradient);
+                    }
+                }
+                catch(...) {}
+            }
+        }
+    #endif
 
-		// In the GUI environment, we let the modifier clear the selection by default
-		// in order to make the newly assigned colors visible.
-		setKeepSelection(false);
-	}
+        // In the GUI environment, we let the modifier clear the selection by default
+        // in order to make the newly assigned colors visible.
+        setKeepSelection(false);
+    }
 }
 
 /******************************************************************************
@@ -107,12 +107,12 @@ ColorCodingModifier::ColorCodingModifier(ObjectCreationParams params) : Delegati
 ******************************************************************************/
 TimeInterval ColorCodingModifier::validityInterval(const ModifierEvaluationRequest& request) const
 {
-	TimeInterval iv = DelegatingModifier::validityInterval(request);
-	if(!autoAdjustRange()) {
-		if(startValueController()) iv.intersect(startValueController()->validityInterval(request.time()));
-		if(endValueController()) iv.intersect(endValueController()->validityInterval(request.time()));
-	}
-	return iv;
+    TimeInterval iv = DelegatingModifier::validityInterval(request);
+    if(!autoAdjustRange()) {
+        if(startValueController()) iv.intersect(startValueController()->validityInterval(request.time()));
+        if(endValueController()) iv.intersect(endValueController()->validityInterval(request.time()));
+    }
+    return iv;
 }
 
 /******************************************************************************
@@ -120,12 +120,12 @@ TimeInterval ColorCodingModifier::validityInterval(const ModifierEvaluationReque
 ******************************************************************************/
 void ColorCodingModifier::propertyChanged(const PropertyFieldDescriptor* field)
 {
-	if(field == PROPERTY_FIELD(ColorCodingModifier::sourceProperty) && !isBeingLoaded()) {
-		// Changes of some the modifier's parameters affect the result of ColorCodingModifier::getPipelineEditorShortInfo().
-		notifyDependents(ReferenceEvent::ObjectStatusChanged);
-	}
+    if(field == PROPERTY_FIELD(ColorCodingModifier::sourceProperty) && !isBeingLoaded()) {
+        // Changes of some the modifier's parameters affect the result of ColorCodingModifier::getPipelineEditorShortInfo().
+        notifyDependents(ReferenceEvent::ObjectStatusChanged);
+    }
 
-	DelegatingModifier::propertyChanged(field);
+    DelegatingModifier::propertyChanged(field);
 }
 
 /******************************************************************************
@@ -134,23 +134,23 @@ void ColorCodingModifier::propertyChanged(const PropertyFieldDescriptor* field)
 ******************************************************************************/
 void ColorCodingModifier::initializeModifier(const ModifierInitializationRequest& request)
 {
-	DelegatingModifier::initializeModifier(request);
+    DelegatingModifier::initializeModifier(request);
 
-	// When the modifier is inserted, automatically select the most recently added property from the input.
-	if(sourceProperty().isNull() && delegate() && ExecutionContext::isInteractive()) {
-		const PipelineFlowState& input = request.modApp()->evaluateInputSynchronous(request);
-		if(const PropertyContainer* container = input.getLeafObject(delegate()->inputContainerRef())) {
-			PropertyReference bestProperty;
-			for(const PropertyObject* property : container->properties()) {
-				bestProperty = PropertyReference(delegate()->inputContainerClass(), property, (property->componentCount() > 1) ? 0 : -1);
-			}
-			if(!bestProperty.isNull())
-				setSourceProperty(bestProperty);
-		}
+    // When the modifier is inserted, automatically select the most recently added property from the input.
+    if(sourceProperty().isNull() && delegate() && ExecutionContext::isInteractive()) {
+        const PipelineFlowState& input = request.modApp()->evaluateInputSynchronous(request);
+        if(const PropertyContainer* container = input.getLeafObject(delegate()->inputContainerRef())) {
+            PropertyReference bestProperty;
+            for(const PropertyObject* property : container->properties()) {
+                bestProperty = PropertyReference(delegate()->inputContainerClass(), property, (property->componentCount() > 1) ? 0 : -1);
+            }
+            if(!bestProperty.isNull())
+                setSourceProperty(bestProperty);
+        }
 
-		// Automatically adjust value range to input.
-		adjustRange(request.time());
-	}
+        // Automatically adjust value range to input.
+        adjustRange(request.time());
+    }
 }
 
 /******************************************************************************
@@ -158,11 +158,11 @@ void ColorCodingModifier::initializeModifier(const ModifierInitializationRequest
 ******************************************************************************/
 void ColorCodingModifier::referenceReplaced(const PropertyFieldDescriptor* field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex)
 {
-	// Whenever the delegate of this modifier is being replaced, update the source property reference.
-	if(field == PROPERTY_FIELD(DelegatingModifier::delegate) && !isBeingLoaded() && !isAboutToBeDeleted() && !isUndoingOrRedoing()) {
-		setSourceProperty(sourceProperty().convertToContainerClass(delegate() ? delegate()->inputContainerClass() : nullptr));
-	}
-	DelegatingModifier::referenceReplaced(field, oldTarget, newTarget, listIndex);
+    // Whenever the delegate of this modifier is being replaced, update the source property reference.
+    if(field == PROPERTY_FIELD(DelegatingModifier::delegate) && !isBeingLoaded() && !isAboutToBeDeleted() && !isUndoingOrRedoing()) {
+        setSourceProperty(sourceProperty().convertToContainerClass(delegate() ? delegate()->inputContainerClass() : nullptr));
+    }
+    DelegatingModifier::referenceReplaced(field, oldTarget, newTarget, listIndex);
 }
 
 /******************************************************************************
@@ -170,46 +170,46 @@ void ColorCodingModifier::referenceReplaced(const PropertyFieldDescriptor* field
 ******************************************************************************/
 bool ColorCodingModifier::determinePropertyValueRange(const PipelineFlowState& state, FloatType& min, FloatType& max) const
 {
-	if(!delegate())
-		return false;
+    if(!delegate())
+        return false;
 
-	// Look up the selected property container. 
-	ConstDataObjectPath objectPath = state.getObject(delegate()->inputContainerRef());
-	if(objectPath.empty())
-		return false;
-	const PropertyContainer* container = static_object_cast<PropertyContainer>(objectPath.back());
+    // Look up the selected property container. 
+    ConstDataObjectPath objectPath = state.getObject(delegate()->inputContainerRef());
+    if(objectPath.empty())
+        return false;
+    const PropertyContainer* container = static_object_cast<PropertyContainer>(objectPath.back());
 
-	// Look up the selected property.
-	const PropertyObject* property = sourceProperty().findInContainer(container);
-	if(!property)
-		return false;
+    // Look up the selected property.
+    const PropertyObject* property = sourceProperty().findInContainer(container);
+    if(!property)
+        return false;
 
-	// Verify input property.
-	if(sourceProperty().vectorComponent() >= (int)property->componentCount())
-		return false;
-	if(property->size() == 0)
-		return false;
-	int vecComponent = std::max(0, sourceProperty().vectorComponent());
+    // Verify input property.
+    if(sourceProperty().vectorComponent() >= (int)property->componentCount())
+        return false;
+    if(property->size() == 0)
+        return false;
+    int vecComponent = std::max(0, sourceProperty().vectorComponent());
 
-	// Iterate over the property array to find the lowest/highest value.
-	FloatType maxValue = std::numeric_limits<FloatType>::lowest();
-	FloatType minValue = std::numeric_limits<FloatType>::max();
-	property->forEach(vecComponent, [&](size_t i, auto v) {
-			if(v > maxValue) maxValue = v;
-			if(v < minValue) minValue = v;
-		});
-	if(minValue == std::numeric_limits<FloatType>::max())
-		return false;
+    // Iterate over the property array to find the lowest/highest value.
+    FloatType maxValue = std::numeric_limits<FloatType>::lowest();
+    FloatType minValue = std::numeric_limits<FloatType>::max();
+    property->forEach(vecComponent, [&](size_t i, auto v) {
+            if(v > maxValue) maxValue = v;
+            if(v < minValue) minValue = v;
+        });
+    if(minValue == std::numeric_limits<FloatType>::max())
+        return false;
 
-	// Clamp to finite range.
-	if(!std::isfinite(minValue)) minValue = std::numeric_limits<FloatType>::lowest();
-	if(!std::isfinite(maxValue)) maxValue = std::numeric_limits<FloatType>::max();
+    // Clamp to finite range.
+    if(!std::isfinite(minValue)) minValue = std::numeric_limits<FloatType>::lowest();
+    if(!std::isfinite(maxValue)) maxValue = std::numeric_limits<FloatType>::max();
 
-	// Determine global min/max values over all animation frames.
-	if(minValue < min) min = minValue;
-	if(maxValue > max) max = maxValue;
+    // Determine global min/max values over all animation frames.
+    if(minValue < min) min = minValue;
+    if(maxValue > max) max = maxValue;
 
-	return true;
+    return true;
 }
 
 /******************************************************************************
@@ -218,28 +218,28 @@ bool ColorCodingModifier::determinePropertyValueRange(const PipelineFlowState& s
 ******************************************************************************/
 bool ColorCodingModifier::adjustRange(AnimationTime time)
 {
-	FloatType minValue = std::numeric_limits<FloatType>::max();
-	FloatType maxValue = std::numeric_limits<FloatType>::lowest();
+    FloatType minValue = std::numeric_limits<FloatType>::max();
+    FloatType maxValue = std::numeric_limits<FloatType>::lowest();
 
-	// Loop over all input data.
-	bool success = false;
-	PipelineEvaluationRequest request(time);
-	for(ModifierApplication* modApp : modifierApplications()) {
-		const PipelineFlowState& inputState = modApp->evaluateInputSynchronous(request);
+    // Loop over all input data.
+    bool success = false;
+    PipelineEvaluationRequest request(time);
+    for(ModifierApplication* modApp : modifierApplications()) {
+        const PipelineFlowState& inputState = modApp->evaluateInputSynchronous(request);
 
-		// Determine the minimum and maximum values of the selected property.
-		success |= determinePropertyValueRange(inputState, minValue, maxValue);
-	}
-	if(!success)
-		return false;
+        // Determine the minimum and maximum values of the selected property.
+        success |= determinePropertyValueRange(inputState, minValue, maxValue);
+    }
+    if(!success)
+        return false;
 
-	// Adjust range of color coding.
-	if(startValueController())
-		startValueController()->setFloatValue(time, minValue);
-	if(endValueController())
-		endValueController()->setFloatValue(time, maxValue);
+    // Adjust range of color coding.
+    if(startValueController())
+        startValueController()->setFloatValue(time, minValue);
+    if(endValueController())
+        endValueController()->setFloatValue(time, maxValue);
 
-	return true;
+    return true;
 }
 
 /******************************************************************************
@@ -248,39 +248,39 @@ bool ColorCodingModifier::adjustRange(AnimationTime time)
 ******************************************************************************/
 bool ColorCodingModifier::adjustRangeGlobal(MainThreadOperation& operation, int startFrame, int endFrame)
 {
-	operation.setProgressMaximum(endFrame - startFrame + 1);
+    operation.setProgressMaximum(endFrame - startFrame + 1);
 
-	FloatType minValue = std::numeric_limits<FloatType>::max();
-	FloatType maxValue = std::numeric_limits<FloatType>::lowest();
+    FloatType minValue = std::numeric_limits<FloatType>::max();
+    FloatType maxValue = std::numeric_limits<FloatType>::lowest();
 
-	// Loop over all animation frames, evaluate data pipeline, and determine
-	// minimum and maximum values.
-	for(int frame = startFrame; frame <= endFrame && !operation.isCanceled(); frame++) {
-		operation.setProgressText(tr("Analyzing frame %1").arg(frame));
+    // Loop over all animation frames, evaluate data pipeline, and determine
+    // minimum and maximum values.
+    for(int frame = startFrame; frame <= endFrame && !operation.isCanceled(); frame++) {
+        operation.setProgressText(tr("Analyzing frame %1").arg(frame));
 
-		for(ModifierApplication* modApp : modifierApplications()) {
+        for(ModifierApplication* modApp : modifierApplications()) {
 
-			// Evaluate data pipeline up to this color coding modifier.
-			SharedFuture<PipelineFlowState> stateFuture = modApp->evaluateInput(PipelineEvaluationRequest(AnimationTime::fromFrame(frame)));
-			if(!stateFuture.waitForFinished())
-				break;
+            // Evaluate data pipeline up to this color coding modifier.
+            SharedFuture<PipelineFlowState> stateFuture = modApp->evaluateInput(PipelineEvaluationRequest(AnimationTime::fromFrame(frame)));
+            if(!stateFuture.waitForFinished())
+                break;
 
-			// Determine min/max value of the selected property.
-			determinePropertyValueRange(stateFuture.result(), minValue, maxValue);
-		}
-		operation.incrementProgressValue(1);
-	}
+            // Determine min/max value of the selected property.
+            determinePropertyValueRange(stateFuture.result(), minValue, maxValue);
+        }
+        operation.incrementProgressValue(1);
+    }
 
-	if(!operation.isCanceled()) {
-		// Adjust range of color coding to the min/max values.
-		if(minValue != std::numeric_limits<FloatType>::max())
-			setStartValue(minValue);
-		if(maxValue != std::numeric_limits<FloatType>::lowest())
-			setEndValue(maxValue);
+    if(!operation.isCanceled()) {
+        // Adjust range of color coding to the min/max values.
+        if(minValue != std::numeric_limits<FloatType>::max())
+            setStartValue(minValue);
+        if(maxValue != std::numeric_limits<FloatType>::lowest())
+            setEndValue(maxValue);
 
-		return true;
-	}
-	return false;
+        return true;
+    }
+    return false;
 }
 
 /******************************************************************************
@@ -288,10 +288,10 @@ bool ColorCodingModifier::adjustRangeGlobal(MainThreadOperation& operation, int 
 ******************************************************************************/
 void ColorCodingModifier::reverseRange()
 {
-	// Swap controllers for start and end value.
-	OORef<Controller> oldStartValue = startValueController();
-	setStartValueController(endValueController());
-	setEndValueController(std::move(oldStartValue));
+    // Swap controllers for start and end value.
+    OORef<Controller> oldStartValue = startValueController();
+    setStartValueController(endValueController());
+    setEndValueController(std::move(oldStartValue));
 }
 
 #ifdef OVITO_QML_GUI
@@ -300,7 +300,7 @@ void ColorCodingModifier::reverseRange()
 ******************************************************************************/
 QString ColorCodingModifier::colorGradientType() const 
 {
-	return colorGradient() ? colorGradient()->getOOClass().name() : QString();
+    return colorGradient() ? colorGradient()->getOOClass().name() : QString();
 }
 
 /******************************************************************************
@@ -308,22 +308,22 @@ QString ColorCodingModifier::colorGradientType() const
 ******************************************************************************/
 void ColorCodingModifier::setColorGradientType(const QString& typeName) 
 {
-	OvitoClassPtr descriptor = PluginManager::instance().findClass(QString(), typeName);
-	if(!descriptor) {
-		qWarning() << "setColorGradientType: Color gradient class" << typeName << "does not exist.";
-		return;
-	}
-	OORef<ColorCodingGradient> gradient = static_object_cast<ColorCodingGradient>(descriptor->createInstance());
-	if(gradient) {
-		setColorGradient(std::move(gradient));
+    OvitoClassPtr descriptor = PluginManager::instance().findClass(QString(), typeName);
+    if(!descriptor) {
+        qWarning() << "setColorGradientType: Color gradient class" << typeName << "does not exist.";
+        return;
+    }
+    OORef<ColorCodingGradient> gradient = static_object_cast<ColorCodingGradient>(descriptor->createInstance());
+    if(gradient) {
+        setColorGradient(std::move(gradient));
 #ifndef OVITO_DISABLE_QSETTINGS
-		QSettings settings;
-		settings.beginGroup(ColorCodingModifier::OOClass().plugin()->pluginId());
-		settings.beginGroup(ColorCodingModifier::OOClass().name());
-		settings.setValue(PROPERTY_FIELD(ColorCodingModifier::colorGradient).identifier(),
-				QVariant::fromValue(OvitoClass::encodeAsString(descriptor)));
+        QSettings settings;
+        settings.beginGroup(ColorCodingModifier::OOClass().plugin()->pluginId());
+        settings.beginGroup(ColorCodingModifier::OOClass().name());
+        settings.setValue(PROPERTY_FIELD(ColorCodingModifier::colorGradient).identifier(),
+                QVariant::fromValue(OvitoClass::encodeAsString(descriptor)));
 #endif
-	}
+    }
 }
 #endif
 
@@ -332,101 +332,101 @@ void ColorCodingModifier::setColorGradientType(const QString& typeName)
 ******************************************************************************/
 PipelineStatus ColorCodingModifierDelegate::apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const PipelineFlowState& inputState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs)
 {
-	const ColorCodingModifier* mod = static_object_cast<ColorCodingModifier>(request.modifier());
+    const ColorCodingModifier* mod = static_object_cast<ColorCodingModifier>(request.modifier());
 
-	if(!mod->colorGradient())
-		throw Exception(tr("No color gradient has been selected."));
+    if(!mod->colorGradient())
+        throw Exception(tr("No color gradient has been selected."));
 
-	// Get the source property.
-	const PropertyReference& sourceProperty = mod->sourceProperty();
-	int vecComponent;
-	if(sourceProperty.isNull())
-		throw Exception(tr("No source property was set as input for color coding."));
+    // Get the source property.
+    const PropertyReference& sourceProperty = mod->sourceProperty();
+    int vecComponent;
+    if(sourceProperty.isNull())
+        throw Exception(tr("No source property was set as input for color coding."));
 
-	// Look up the selected property container. Make sure we can safely modify it.
-	DataObjectPath objectPath = state.expectMutableObject(inputContainerRef());
-	PropertyContainer* container = static_object_cast<PropertyContainer>(objectPath.back());
+    // Look up the selected property container. Make sure we can safely modify it.
+    DataObjectPath objectPath = state.expectMutableObject(inputContainerRef());
+    PropertyContainer* container = static_object_cast<PropertyContainer>(objectPath.back());
 
-	// Check if the source property is the right kind of property.
-	if(sourceProperty.containerClass() != &container->getOOMetaClass())
-		throw Exception(tr("Color coding modifier was set to operate on '%1', but the selected input is a '%2' property.")
-			.arg(getOOMetaClass().pythonDataName()).arg(sourceProperty.containerClass()->propertyClassDisplayName()));
+    // Check if the source property is the right kind of property.
+    if(sourceProperty.containerClass() != &container->getOOMetaClass())
+        throw Exception(tr("Color coding modifier was set to operate on '%1', but the selected input is a '%2' property.")
+            .arg(getOOMetaClass().pythonDataName()).arg(sourceProperty.containerClass()->propertyClassDisplayName()));
 
-	// Make sure input data structure is ok.
-	container->verifyIntegrity();
+    // Make sure input data structure is ok.
+    container->verifyIntegrity();
 
-	ConstPropertyPtr property = sourceProperty.findInContainer(container);
-	if(!property)
-		throw Exception(tr("The property with the name '%1' does not exist.").arg(sourceProperty.name()));
-	if(sourceProperty.vectorComponent() >= (int)property->componentCount())
-		throw Exception(tr("The vector component is out of range. The property '%1' has only %2 values per data element.").arg(sourceProperty.name()).arg(property->componentCount()));
-	vecComponent = std::max(0, sourceProperty.vectorComponent());
+    ConstPropertyPtr property = sourceProperty.findInContainer(container);
+    if(!property)
+        throw Exception(tr("The property with the name '%1' does not exist.").arg(sourceProperty.name()));
+    if(sourceProperty.vectorComponent() >= (int)property->componentCount())
+        throw Exception(tr("The vector component is out of range. The property '%1' has only %2 values per data element.").arg(sourceProperty.name()).arg(property->componentCount()));
+    vecComponent = std::max(0, sourceProperty.vectorComponent());
 
-	// Get the selection property if enabled by the user.
-	ConstPropertyPtr selectionProperty;
-	if(mod->colorOnlySelected() && container->getOOMetaClass().isValidStandardPropertyId(PropertyObject::GenericSelectionProperty)) {
-		if(const PropertyObject* selPropertyObj = container->getProperty(PropertyObject::GenericSelectionProperty)) {
-			selectionProperty = selPropertyObj;
+    // Get the selection property if enabled by the user.
+    ConstPropertyPtr selectionProperty;
+    if(mod->colorOnlySelected() && container->getOOMetaClass().isValidStandardPropertyId(PropertyObject::GenericSelectionProperty)) {
+        if(const PropertyObject* selPropertyObj = container->getProperty(PropertyObject::GenericSelectionProperty)) {
+            selectionProperty = selPropertyObj;
 
-			// Clear selection if requested.
-			if(!mod->keepSelection()) {
-				container->removeProperty(selPropertyObj);
-			}
-		}
-	}
+            // Clear selection if requested.
+            if(!mod->keepSelection()) {
+                container->removeProperty(selPropertyObj);
+            }
+        }
+    }
 
-	// Get modifier's parameter values.
-	FloatType startValue = 0, endValue = 0;
+    // Get modifier's parameter values.
+    FloatType startValue = 0, endValue = 0;
 
-	if(mod->autoAdjustRange()) {
-		FloatType minValue = std::numeric_limits<FloatType>::max();
-		FloatType maxValue = std::numeric_limits<FloatType>::lowest();
-		if(mod->determinePropertyValueRange(state, minValue, maxValue)) {
-			startValue = minValue;
-			endValue = maxValue;
-			state.setAttribute(QStringLiteral("ColorCoding.RangeMin"), minValue, request.modApp());
-			state.setAttribute(QStringLiteral("ColorCoding.RangeMax"), maxValue, request.modApp());
-		}
-	}
-	else {
-		if(mod->startValueController()) startValue = mod->startValueController()->getFloatValue(request.time(), state.mutableStateValidity());
-		if(mod->endValueController()) endValue = mod->endValueController()->getFloatValue(request.time(), state.mutableStateValidity());
-	}
+    if(mod->autoAdjustRange()) {
+        FloatType minValue = std::numeric_limits<FloatType>::max();
+        FloatType maxValue = std::numeric_limits<FloatType>::lowest();
+        if(mod->determinePropertyValueRange(state, minValue, maxValue)) {
+            startValue = minValue;
+            endValue = maxValue;
+            state.setAttribute(QStringLiteral("ColorCoding.RangeMin"), minValue, request.modApp());
+            state.setAttribute(QStringLiteral("ColorCoding.RangeMax"), maxValue, request.modApp());
+        }
+    }
+    else {
+        if(mod->startValueController()) startValue = mod->startValueController()->getFloatValue(request.time(), state.mutableStateValidity());
+        if(mod->endValueController()) endValue = mod->endValueController()->getFloatValue(request.time(), state.mutableStateValidity());
+    }
 
-	// Clamp to finite range.
-	if(!std::isfinite(startValue)) startValue = std::numeric_limits<FloatType>::lowest();
-	if(!std::isfinite(endValue)) endValue = std::numeric_limits<FloatType>::max();
+    // Clamp to finite range.
+    if(!std::isfinite(startValue)) startValue = std::numeric_limits<FloatType>::lowest();
+    if(!std::isfinite(endValue)) endValue = std::numeric_limits<FloatType>::max();
 
-	// Create the color output property.
+    // Create the color output property.
     PropertyAccess<Color> colorProperty = container->createProperty(outputColorPropertyId(), (bool)selectionProperty ? DataBuffer::InitializeMemory : DataBuffer::NoFlags, objectPath);
 
-	ConstPropertyAccessAndRef<int> selection(std::move(selectionProperty));
-	bool result = property->forEach(vecComponent, [&](size_t i, auto v) {
-		if(selection && !selection[i])
-			return;
+    ConstPropertyAccessAndRef<int> selection(std::move(selectionProperty));
+    bool result = property->forEach(vecComponent, [&](size_t i, auto v) {
+        if(selection && !selection[i])
+            return;
 
-		// Compute linear interpolation.
-		FloatType t;
-		if(startValue == endValue) {
-			if(v == startValue) t = FloatType(0.5);
-			else if(v > startValue) t = 1;
-			else t = 0;
-		}
-		else t = (v - startValue) / (endValue - startValue);
+        // Compute linear interpolation.
+        FloatType t;
+        if(startValue == endValue) {
+            if(v == startValue) t = FloatType(0.5);
+            else if(v > startValue) t = 1;
+            else t = 0;
+        }
+        else t = (v - startValue) / (endValue - startValue);
 
-		// Clamp values.
-		if(std::isnan(t)) t = 0;
-		else if(t == std::numeric_limits<FloatType>::infinity()) t = 1;
-		else if(t == -std::numeric_limits<FloatType>::infinity()) t = 0;
-		else if(t < 0) t = 0;
-		else if(t > 1) t = 1;
+        // Clamp values.
+        if(std::isnan(t)) t = 0;
+        else if(t == std::numeric_limits<FloatType>::infinity()) t = 1;
+        else if(t == -std::numeric_limits<FloatType>::infinity()) t = 0;
+        else if(t < 0) t = 0;
+        else if(t > 1) t = 1;
 
-		colorProperty[i] = mod->colorGradient()->valueToColor(t);
-	});
-	if(!result)
-		throw Exception(tr("The property '%1' has an invalid or non-numeric data type.").arg(property->name()));
+        colorProperty[i] = mod->colorGradient()->valueToColor(t);
+    });
+    if(!result)
+        throw Exception(tr("The property '%1' has an invalid or non-numeric data type.").arg(property->name()));
 
-	return PipelineStatus::Success;
+    return PipelineStatus::Success;
 }
 
-}	// End of namespace
+}   // End of namespace

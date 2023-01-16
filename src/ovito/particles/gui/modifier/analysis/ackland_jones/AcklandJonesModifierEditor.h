@@ -33,19 +33,19 @@ namespace Ovito::Particles {
  */
 class AcklandJonesModifierEditor : public PropertiesEditor
 {
-	OVITO_CLASS(AcklandJonesModifierEditor)
+    OVITO_CLASS(AcklandJonesModifierEditor)
 
 public:
 
-	/// Default constructor.
-	Q_INVOKABLE AcklandJonesModifierEditor() {}
+    /// Default constructor.
+    Q_INVOKABLE AcklandJonesModifierEditor() {}
 
 protected:
 
-	/// Creates the user interface controls for the editor.
-	virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
+    /// Creates the user interface controls for the editor.
+    virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
 };
 
-}	// End of namespace
+}   // End of namespace
 
 

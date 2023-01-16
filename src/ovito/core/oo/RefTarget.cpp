@@ -37,11 +37,11 @@ IMPLEMENT_OVITO_CLASS(RefTarget);
 ******************************************************************************/
 RefTarget::RefTarget(ObjectCreationParams params) 
 {
-	// A Qt application object must exist.
-	OVITO_ASSERT_MSG(QCoreApplication::instance() != nullptr, "RefTarget::RefTarget()", "Creating an instance of a RefTarget-derived class is only allowed while a Qt application object exists.");
+    // A Qt application object must exist.
+    OVITO_ASSERT_MSG(QCoreApplication::instance() != nullptr, "RefTarget::RefTarget()", "Creating an instance of a RefTarget-derived class is only allowed while a Qt application object exists.");
 
-	// Ovito objects always live in the main thread.
-	moveToThread(QCoreApplication::instance()->thread());
+    // Ovito objects always live in the main thread.
+    moveToThread(QCoreApplication::instance()->thread());
 }
 
 #ifdef OVITO_DEBUG
@@ -50,9 +50,9 @@ RefTarget::RefTarget(ObjectCreationParams params)
 ******************************************************************************/
 RefTarget::~RefTarget() 
 {
-	// Make sure there are no more dependents left.
-	static const QMetaMethod objectEventSignal = QMetaMethod::fromSignal(&RefTarget::objectEvent);
-	OVITO_ASSERT_MSG(!isSignalConnected(objectEventSignal), "RefTarget destructor", "RefTarget object has not been correctly deleted. It still has dependents left.");
+    // Make sure there are no more dependents left.
+    static const QMetaMethod objectEventSignal = QMetaMethod::fromSignal(&RefTarget::objectEvent);
+    OVITO_ASSERT_MSG(!isSignalConnected(objectEventSignal), "RefTarget destructor", "RefTarget object has not been correctly deleted. It still has dependents left.");
 }
 #endif
 
@@ -62,18 +62,18 @@ RefTarget::~RefTarget()
 ******************************************************************************/
 void RefTarget::aboutToBeDeleted()
 {
-	OVITO_CHECK_OBJECT_POINTER(this);
-	OVITO_ASSERT(this->__isObjectAlive());
-	OVITO_ASSERT_MSG(!QCoreApplication::instance() || QThread::currentThread() == QCoreApplication::instance()->thread(), "RefTarget::aboutToBeDeleted()", "This function may only be called from the main thread.");
+    OVITO_CHECK_OBJECT_POINTER(this);
+    OVITO_ASSERT(this->__isObjectAlive());
+    OVITO_ASSERT_MSG(!QCoreApplication::instance() || QThread::currentThread() == QCoreApplication::instance()->thread(), "RefTarget::aboutToBeDeleted()", "This function may only be called from the main thread.");
 
-	// Make sure undo recording is not active while deleting the object from memory.
-	UndoSuspender noUndo;
+    // Make sure undo recording is not active while deleting the object from memory.
+    UndoSuspender noUndo;
 
-	// This will remove all references to this target object.
-	notifyDependents(ReferenceEvent::TargetDeleted);
+    // This will remove all references to this target object.
+    notifyDependents(ReferenceEvent::TargetDeleted);
 
-	// Delete object from memory.
-	RefMaker::aboutToBeDeleted();
+    // Delete object from memory.
+    RefMaker::aboutToBeDeleted();
 }
 
 /******************************************************************************
@@ -81,14 +81,14 @@ void RefTarget::aboutToBeDeleted()
 ******************************************************************************/
 void RefTarget::deleteReferenceObject()
 {
-	OVITO_CHECK_OBJECT_POINTER(this);
+    OVITO_CHECK_OBJECT_POINTER(this);
 
-	// This will remove all references to this target object.
-	notifyDependents(ReferenceEvent::TargetDeleted);
+    // This will remove all references to this target object.
+    notifyDependents(ReferenceEvent::TargetDeleted);
 
-	// At this point, the object might have been deleted from memory if its
-	// reference counter has reached zero. If undo recording was enabled, however,
-	// the undo record still holds a reference to this object and it will still be alive.
+    // At this point, the object might have been deleted from memory if its
+    // reference counter has reached zero. If undo recording was enabled, however,
+    // the undo record still holds a reference to this object and it will still be alive.
 }
 
 /******************************************************************************
@@ -96,31 +96,31 @@ void RefTarget::deleteReferenceObject()
 ******************************************************************************/
 void RefTarget::notifyDependentsImpl(const ReferenceEvent& event)
 {
-	OVITO_CHECK_OBJECT_POINTER(this);
+    OVITO_CHECK_OBJECT_POINTER(this);
 
-	// If reference count is zero, then there cannot be any dependents.
-	if(objectReferenceCount() == 0) {
+    // If reference count is zero, then there cannot be any dependents.
+    if(objectReferenceCount() == 0) {
 #ifdef OVITO_DEBUG
-		// Verify there are no dependents.
-		static const QMetaMethod objectEventSignal = QMetaMethod::fromSignal(&RefTarget::objectEvent);
-		OVITO_ASSERT(!isSignalConnected(objectEventSignal));
+        // Verify there are no dependents.
+        static const QMetaMethod objectEventSignal = QMetaMethod::fromSignal(&RefTarget::objectEvent);
+        OVITO_ASSERT(!isSignalConnected(objectEventSignal));
 #endif
-		return;
-	}
+        return;
+    }
 
-	// Prevent this object from being deleted while emitting the event signal.
-	OORef<RefTarget> this_(this);
+    // Prevent this object from being deleted while emitting the event signal.
+    OORef<RefTarget> this_(this);
 
 #ifdef OVITO_QML_GUI
-	// Emit Qt signals for certain events.
-	if(event.type() == ReferenceEvent::TitleChanged)
-		Q_EMIT objectTitleChanged();
+    // Emit Qt signals for certain events.
+    if(event.type() == ReferenceEvent::TitleChanged)
+        Q_EMIT objectTitleChanged();
 #endif
 
-	// Send the signal to the registered dependents.
-	Q_EMIT objectEvent(this, event);
+    // Send the signal to the registered dependents.
+    Q_EMIT objectEvent(this, event);
 
-	OVITO_CHECK_OBJECT_POINTER(this);
+    OVITO_CHECK_OBJECT_POINTER(this);
 }
 
 /******************************************************************************
@@ -130,14 +130,14 @@ void RefTarget::notifyDependentsImpl(const ReferenceEvent& event)
 ******************************************************************************/
 bool RefTarget::handleReferenceEvent(RefTarget* source, const ReferenceEvent& event)
 {
-	// Let this object process the message.
-	if(!RefMaker::handleReferenceEvent(source, event))
-		return false;
+    // Let this object process the message.
+    if(!RefMaker::handleReferenceEvent(source, event))
+        return false;
 
-	// Pass event on to dependents of this RefTarget if our handleReferenceEvent() method has requested it.
-	notifyDependentsImpl(event);
+    // Pass event on to dependents of this RefTarget if our handleReferenceEvent() method has requested it.
+    notifyDependentsImpl(event);
 
-	return true;
+    return true;
 }
 
 /******************************************************************************
@@ -145,11 +145,11 @@ bool RefTarget::handleReferenceEvent(RefTarget* source, const ReferenceEvent& ev
 ******************************************************************************/
 bool RefTarget::isReferencedBy(const RefMaker* obj, bool onlyStrongReferences) const
 {
-	if(this == obj) 
-		return true;
-	CheckIsReferencedByEvent event(const_cast<RefTarget*>(this), obj, onlyStrongReferences);
-	const_cast<RefTarget*>(this)->notifyDependentsImpl(event);
-	return event.isReferenced();
+    if(this == obj) 
+        return true;
+    CheckIsReferencedByEvent event(const_cast<RefTarget*>(this), obj, onlyStrongReferences);
+    const_cast<RefTarget*>(this)->notifyDependentsImpl(event);
+    return event.isReferenced();
 }
 
 /******************************************************************************
@@ -162,65 +162,65 @@ bool RefTarget::isReferencedBy(const RefMaker* obj, bool onlyStrongReferences) c
 ******************************************************************************/
 OORef<RefTarget> RefTarget::clone(bool deepCopy, CloneHelper& cloneHelper) const
 {
-	// Create a new instance of the object's class.
-	// Note: Calling low-level method createInstanceImpl() instead of createInstanceImpl() here to avoid initialization of
-	// object parameters to default values. Default initialization is not needed when cloning an object.
-	OORef<RefTarget> clone = static_object_cast<RefTarget>(getOOClass().createInstanceImpl(ObjectCreationParams(ObjectCreationParams::DontCreateSubObjects)));
-	OVITO_ASSERT(clone);
-	OVITO_ASSERT(clone->getOOClass().isDerivedFrom(getOOClass()));
-	if(!clone || !clone->getOOClass().isDerivedFrom(getOOClass()))
-		throw Exception(tr("Failed to create clone instance of class %1.").arg(getOOClass().name()));
+    // Create a new instance of the object's class.
+    // Note: Calling low-level method createInstanceImpl() instead of createInstanceImpl() here to avoid initialization of
+    // object parameters to default values. Default initialization is not needed when cloning an object.
+    OORef<RefTarget> clone = static_object_cast<RefTarget>(getOOClass().createInstanceImpl(ObjectCreationParams(ObjectCreationParams::DontCreateSubObjects)));
+    OVITO_ASSERT(clone);
+    OVITO_ASSERT(clone->getOOClass().isDerivedFrom(getOOClass()));
+    if(!clone || !clone->getOOClass().isDerivedFrom(getOOClass()))
+        throw Exception(tr("Failed to create clone instance of class %1.").arg(getOOClass().name()));
 
-	// Clone properties and referenced objects.
-	for(const PropertyFieldDescriptor* field : getOOMetaClass().propertyFields()) {
-		if(field->isReferenceField()) {
-			if(!field->isVector()) {
-				OVITO_ASSERT(field->_singleReferenceReadFunc != nullptr);
-				OVITO_ASSERT(field->_singleReferenceWriteFuncRef != nullptr);
-				const RefTarget* originalTarget = field->_singleReferenceReadFunc(this);
-				// Clone reference target.
-				OORef<RefTarget> clonedReference;
-				if(field->flags().testFlag(PROPERTY_FIELD_NEVER_CLONE_TARGET))
-					clonedReference = originalTarget;
-				else if(field->flags().testFlag(PROPERTY_FIELD_ALWAYS_CLONE))
-					clonedReference = cloneHelper.cloneObject(originalTarget, deepCopy);
-				else if(field->flags().testFlag(PROPERTY_FIELD_ALWAYS_DEEP_COPY))
-					clonedReference = cloneHelper.cloneObject(originalTarget, true);
-				else
-					clonedReference = cloneHelper.copyReference(originalTarget, deepCopy);
-				// Store in reference field of destination object.
-				field->_singleReferenceWriteFuncRef(clone, std::move(clonedReference));
-			}
-			else {
-				// Remove any preexisting references from the field of the cloned object.
-				clone->clearReferenceField(field);
+    // Clone properties and referenced objects.
+    for(const PropertyFieldDescriptor* field : getOOMetaClass().propertyFields()) {
+        if(field->isReferenceField()) {
+            if(!field->isVector()) {
+                OVITO_ASSERT(field->_singleReferenceReadFunc != nullptr);
+                OVITO_ASSERT(field->_singleReferenceWriteFuncRef != nullptr);
+                const RefTarget* originalTarget = field->_singleReferenceReadFunc(this);
+                // Clone reference target.
+                OORef<RefTarget> clonedReference;
+                if(field->flags().testFlag(PROPERTY_FIELD_NEVER_CLONE_TARGET))
+                    clonedReference = originalTarget;
+                else if(field->flags().testFlag(PROPERTY_FIELD_ALWAYS_CLONE))
+                    clonedReference = cloneHelper.cloneObject(originalTarget, deepCopy);
+                else if(field->flags().testFlag(PROPERTY_FIELD_ALWAYS_DEEP_COPY))
+                    clonedReference = cloneHelper.cloneObject(originalTarget, true);
+                else
+                    clonedReference = cloneHelper.copyReference(originalTarget, deepCopy);
+                // Store in reference field of destination object.
+                field->_singleReferenceWriteFuncRef(clone, std::move(clonedReference));
+            }
+            else {
+                // Remove any preexisting references from the field of the cloned object.
+                clone->clearReferenceField(field);
 
-				// Clone all reference targets in the source vector.
-				int count = getVectorReferenceFieldSize(field);
-				for(int i = 0; i < count; i++) {
-					const RefTarget* originalTarget = getVectorReferenceFieldTarget(field, i);
-					OORef<RefTarget> clonedReference;
-					// Clone reference target.
-					if(field->flags().testFlag(PROPERTY_FIELD_NEVER_CLONE_TARGET))
-						clonedReference = originalTarget;
-					else if(field->flags().testFlag(PROPERTY_FIELD_ALWAYS_CLONE))
-						clonedReference = cloneHelper.cloneObject(originalTarget, deepCopy);
-					else if(field->flags().testFlag(PROPERTY_FIELD_ALWAYS_DEEP_COPY))
-						clonedReference = cloneHelper.cloneObject(originalTarget, true);
-					else
-						clonedReference = cloneHelper.copyReference(originalTarget, deepCopy);
-					// Store in reference field of destination object.
-					field->_vectorReferenceInsertFunc(clone, i, std::move(clonedReference));
-				}
-			}
-		}
-		else {
-			// Just copy stored value for property fields.
-			clone->copyPropertyFieldValue(field, *this);
-		}
-	}
+                // Clone all reference targets in the source vector.
+                int count = getVectorReferenceFieldSize(field);
+                for(int i = 0; i < count; i++) {
+                    const RefTarget* originalTarget = getVectorReferenceFieldTarget(field, i);
+                    OORef<RefTarget> clonedReference;
+                    // Clone reference target.
+                    if(field->flags().testFlag(PROPERTY_FIELD_NEVER_CLONE_TARGET))
+                        clonedReference = originalTarget;
+                    else if(field->flags().testFlag(PROPERTY_FIELD_ALWAYS_CLONE))
+                        clonedReference = cloneHelper.cloneObject(originalTarget, deepCopy);
+                    else if(field->flags().testFlag(PROPERTY_FIELD_ALWAYS_DEEP_COPY))
+                        clonedReference = cloneHelper.cloneObject(originalTarget, true);
+                    else
+                        clonedReference = cloneHelper.copyReference(originalTarget, deepCopy);
+                    // Store in reference field of destination object.
+                    field->_vectorReferenceInsertFunc(clone, i, std::move(clonedReference));
+                }
+            }
+        }
+        else {
+            // Just copy stored value for property fields.
+            clone->copyPropertyFieldValue(field, *this);
+        }
+    }
 
-	return clone;
+    return clone;
 }
 
 /******************************************************************************
@@ -228,7 +228,7 @@ OORef<RefTarget> RefTarget::clone(bool deepCopy, CloneHelper& cloneHelper) const
 ******************************************************************************/
 QString RefTarget::objectTitle() const
 {
-	return getOOClass().displayName();
+    return getOOClass().displayName();
 }
 
 /******************************************************************************
@@ -236,9 +236,9 @@ QString RefTarget::objectTitle() const
 ******************************************************************************/
 void RefTarget::setObjectEditingFlag()
 {
-	// Increment counter.
-	QVariant oldValue = property("OVITO_OBJECT_EDIT_COUNTER");
-	setProperty("OVITO_OBJECT_EDIT_COUNTER", oldValue.toInt() + 1);
+    // Increment counter.
+    QVariant oldValue = property("OVITO_OBJECT_EDIT_COUNTER");
+    setProperty("OVITO_OBJECT_EDIT_COUNTER", oldValue.toInt() + 1);
 }
 
 /******************************************************************************
@@ -246,13 +246,13 @@ void RefTarget::setObjectEditingFlag()
 ******************************************************************************/
 void RefTarget::unsetObjectEditingFlag()
 {
-	// Decrement counter.
-	QVariant oldValue = property("OVITO_OBJECT_EDIT_COUNTER");
-	OVITO_ASSERT(oldValue.toInt() > 0);
-	if(oldValue.toInt() == 1)
-		setProperty("OVITO_OBJECT_EDIT_COUNTER", QVariant());
-	else
-		setProperty("OVITO_OBJECT_EDIT_COUNTER", oldValue.toInt() - 1);
+    // Decrement counter.
+    QVariant oldValue = property("OVITO_OBJECT_EDIT_COUNTER");
+    OVITO_ASSERT(oldValue.toInt() > 0);
+    if(oldValue.toInt() == 1)
+        setProperty("OVITO_OBJECT_EDIT_COUNTER", QVariant());
+    else
+        setProperty("OVITO_OBJECT_EDIT_COUNTER", oldValue.toInt() - 1);
 }
 
 /******************************************************************************
@@ -260,7 +260,7 @@ void RefTarget::unsetObjectEditingFlag()
 ******************************************************************************/
 bool RefTarget::isObjectBeingEdited() const
 {
-	return (property("OVITO_OBJECT_EDIT_COUNTER").toInt() != 0);
+    return (property("OVITO_OBJECT_EDIT_COUNTER").toInt() != 0);
 }
 
-}	// End of namespace
+}   // End of namespace

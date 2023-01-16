@@ -40,17 +40,17 @@ IMPLEMENT_OVITO_CLASS(CAImporter);
 ******************************************************************************/
 bool CAImporter::OOMetaClass::checkFileFormat(const FileHandle& file) const
 {
-	// Open input file.
-	CompressedTextReader stream(file);
+    // Open input file.
+    CompressedTextReader stream(file);
 
-	// Read first line.
-	stream.readLine(20);
+    // Read first line.
+    stream.readLine(20);
 
-	// Files start with the string "CA_FILE_VERSION ".
-	if(stream.lineStartsWith("CA_FILE_VERSION "))
-		return true;
+    // Files start with the string "CA_FILE_VERSION ".
+    if(stream.lineStartsWith("CA_FILE_VERSION "))
+        return true;
 
-	return false;
+    return false;
 }
 
 /******************************************************************************
@@ -58,39 +58,39 @@ bool CAImporter::OOMetaClass::checkFileFormat(const FileHandle& file) const
 ******************************************************************************/
 void CAImporter::FrameFinder::discoverFramesInFile(QVector<FileSourceImporter::Frame>& frames)
 {
-	CompressedTextReader stream(fileHandle());
-	setProgressText(tr("Scanning CA file %1").arg(stream.filename()));
-	setProgressMaximum(stream.underlyingSize());
+    CompressedTextReader stream(fileHandle());
+    setProgressText(tr("Scanning CA file %1").arg(stream.filename()));
+    setProgressMaximum(stream.underlyingSize());
 
-	Frame frame(fileHandle());
-	QString filename = fileHandle().sourceUrl().fileName();
-	int frameNumber = 0;
+    Frame frame(fileHandle());
+    QString filename = fileHandle().sourceUrl().fileName();
+    int frameNumber = 0;
 
-	while(!stream.eof() && !isCanceled()) {
+    while(!stream.eof() && !isCanceled()) {
 
-		if(frameNumber == 0) {
-			frame.byteOffset = stream.byteOffset();
-			stream.readLine();
-		}
+        if(frameNumber == 0) {
+            frame.byteOffset = stream.byteOffset();
+            stream.readLine();
+        }
 
-		if(stream.line()[0] == '\0') break;
-		if(!stream.lineStartsWith("CA_FILE_VERSION "))
-			throw Exception(tr("Failed to parse file. This is not a proper file written by the Crystal Analysis Tool or OVITO."));
+        if(stream.line()[0] == '\0') break;
+        if(!stream.lineStartsWith("CA_FILE_VERSION "))
+            throw Exception(tr("Failed to parse file. This is not a proper file written by the Crystal Analysis Tool or OVITO."));
 
-		// Create a new record for the frame.
-		frame.lineNumber = stream.lineNumber();
-		frame.label = QString("%1 (Frame %2)").arg(filename).arg(frameNumber++);
-		frames.push_back(frame);
+        // Create a new record for the frame.
+        frame.lineNumber = stream.lineNumber();
+        frame.label = QString("%1 (Frame %2)").arg(filename).arg(frameNumber++);
+        frames.push_back(frame);
 
-		// Seek to end of frame record.
-		while(!stream.eof()) {
-			frame.byteOffset = stream.byteOffset();
-			stream.readLineTrimLeft();
-			if(stream.lineStartsWith("CA_FILE_VERSION ")) break;
-			if((stream.lineNumber() % 4096) == 0)
-				setProgressValue(stream.underlyingByteOffset());
-		}
-	}
+        // Seek to end of frame record.
+        while(!stream.eof()) {
+            frame.byteOffset = stream.byteOffset();
+            stream.readLineTrimLeft();
+            if(stream.lineStartsWith("CA_FILE_VERSION ")) break;
+            if((stream.lineNumber() % 4096) == 0)
+                setProgressValue(stream.underlyingByteOffset());
+        }
+    }
 }
 
 /******************************************************************************
@@ -98,496 +98,496 @@ void CAImporter::FrameFinder::discoverFramesInFile(QVector<FileSourceImporter::F
 ******************************************************************************/
 void CAImporter::FrameLoader::loadFile()
 {
-	// Open file for reading.
-	CompressedTextReader stream(fileHandle());
-	setProgressText(tr("Reading CA file %1").arg(fileHandle().toString()));
+    // Open file for reading.
+    CompressedTextReader stream(fileHandle());
+    setProgressText(tr("Reading CA file %1").arg(fileHandle().toString()));
 
-	// Read file header.
-	stream.readLine();
-	if(!stream.lineStartsWith("CA_FILE_VERSION "))
-		throw Exception(tr("Failed to parse file. This is not a proper CA file written by OVITO or the Crystal Analysis Tool."));
-	int fileFormatVersion = 0;
-	if(sscanf(stream.line(), "CA_FILE_VERSION %i", &fileFormatVersion) != 1)
-		throw Exception(tr("Failed to parse file. This is not a proper CA file written by OVITO or the Crystal Analysis Tool."));
-	if(fileFormatVersion != 4 && fileFormatVersion != 5 && fileFormatVersion != 6 && fileFormatVersion != 7)
-		throw Exception(tr("Failed to parse file. This CA file format version is not supported: %1").arg(fileFormatVersion));
-	stream.readLine();
-	if(!stream.lineStartsWith("CA_LIB_VERSION"))
-		throw Exception(tr("Failed to parse file. This is not a proper CA file written by OVITO or the Crystal Analysis Tool."));
+    // Read file header.
+    stream.readLine();
+    if(!stream.lineStartsWith("CA_FILE_VERSION "))
+        throw Exception(tr("Failed to parse file. This is not a proper CA file written by OVITO or the Crystal Analysis Tool."));
+    int fileFormatVersion = 0;
+    if(sscanf(stream.line(), "CA_FILE_VERSION %i", &fileFormatVersion) != 1)
+        throw Exception(tr("Failed to parse file. This is not a proper CA file written by OVITO or the Crystal Analysis Tool."));
+    if(fileFormatVersion != 4 && fileFormatVersion != 5 && fileFormatVersion != 6 && fileFormatVersion != 7)
+        throw Exception(tr("Failed to parse file. This CA file format version is not supported: %1").arg(fileFormatVersion));
+    stream.readLine();
+    if(!stream.lineStartsWith("CA_LIB_VERSION"))
+        throw Exception(tr("Failed to parse file. This is not a proper CA file written by OVITO or the Crystal Analysis Tool."));
 
-	struct BurgersVectorFamilyInfo {
-		int id = 0;
-		QString name;
-		Vector3 burgersVector = Vector3::Zero();
-		Color color = Color(1,1,1);
-	};
+    struct BurgersVectorFamilyInfo {
+        int id = 0;
+        QString name;
+        Vector3 burgersVector = Vector3::Zero();
+        Color color = Color(1,1,1);
+    };
 
-	struct PatternInfo {
-		int id = 0;
-		MicrostructurePhase::Dimensionality type = MicrostructurePhase::Dimensionality::Volumetric;
-		MicrostructurePhase::CrystalSymmetryClass symmetryType = MicrostructurePhase::CrystalSymmetryClass::CubicSymmetry;
-		QString shortName;
-		QString longName;
-		Color color = Color(1,1,1);
-		QVector<BurgersVectorFamilyInfo> burgersVectorFamilies;
-	};
+    struct PatternInfo {
+        int id = 0;
+        MicrostructurePhase::Dimensionality type = MicrostructurePhase::Dimensionality::Volumetric;
+        MicrostructurePhase::CrystalSymmetryClass symmetryType = MicrostructurePhase::CrystalSymmetryClass::CubicSymmetry;
+        QString shortName;
+        QString longName;
+        Color color = Color(1,1,1);
+        QVector<BurgersVectorFamilyInfo> burgersVectorFamilies;
+    };
 
-	QString caFilename;
-	QString atomsFilename;
-	AffineTransformation cell = AffineTransformation::Zero();
-	int pbcFlags[3] = {1,1,1};
-	int numClusters = 0;
-	int numClusterTransitions = 0;
-	int numDislocationSegments = 0;
-	SurfaceMeshAccess defectSurface;
-	ClusterGraphPtr clusterGraph = std::make_shared<ClusterGraph>();
-	std::shared_ptr<DislocationNetwork> dislocations;
-	QVector<PatternInfo> patterns;
+    QString caFilename;
+    QString atomsFilename;
+    AffineTransformation cell = AffineTransformation::Zero();
+    int pbcFlags[3] = {1,1,1};
+    int numClusters = 0;
+    int numClusterTransitions = 0;
+    int numDislocationSegments = 0;
+    SurfaceMeshAccess defectSurface;
+    ClusterGraphPtr clusterGraph = std::make_shared<ClusterGraph>();
+    std::shared_ptr<DislocationNetwork> dislocations;
+    QVector<PatternInfo> patterns;
 
-	while(!stream.eof()) {
-		stream.readLineTrimLeft();
+    while(!stream.eof()) {
+        stream.readLineTrimLeft();
 
-		// Read file path information.
-		if(stream.lineStartsWith("OUTPUT_PATH ")) {
-			caFilename = stream.lineString().mid(12).trimmed();
-		}
-		else if(stream.lineStartsWith("ATOMS_PATH ")) {
-			atomsFilename = stream.lineString().mid(11).trimmed();
-		}
-		else if(stream.lineStartsWith("STRUCTURE_PATTERNS ") || stream.lineStartsWith("STRUCTURE_TYPES ")) {
-			// Read pattern catalog.
-			int numPatterns;
-			if(sscanf(stream.line(), "%*s %i", &numPatterns) != 1 || numPatterns <= 0)
-				throw Exception(tr("Failed to parse file. Invalid number of structure types in line %1.").arg(stream.lineNumber()));
-			std::vector<int> patternId2Index;
-			for(int index = 0; index < numPatterns; index++) {
-				PatternInfo pattern;
-				if(fileFormatVersion <= 4) {
-					if(sscanf(stream.readLine(), "PATTERN ID %i", &pattern.id) != 1)
-						throw Exception(tr("Failed to parse file. Invalid pattern ID in line %1.").arg(stream.lineNumber()));
-				}
-				else {
-					if(sscanf(stream.readLine(), "STRUCTURE_TYPE %i", &pattern.id) != 1)
-						throw Exception(tr("Failed to parse file. Invalid structure type ID in line %1.").arg(stream.lineNumber()));
-				}
-				if((int)patternId2Index.size() <= pattern.id)
-					patternId2Index.resize(pattern.id+1);
-				patternId2Index[pattern.id] = index;
-				while(!stream.eof()) {
-					stream.readLineTrimLeft();
-					if(stream.lineStartsWith("NAME ")) {
-						pattern.shortName = stream.lineString().mid(5).trimmed();
-					}
-					else if(stream.lineStartsWith("FULL_NAME ")) {
-						pattern.longName = stream.lineString().mid(9).trimmed();
-					}
-					else if(stream.lineStartsWith("TYPE ")) {
-						QString patternTypeString = stream.lineString().mid(5).trimmed();
-						if(patternTypeString == QStringLiteral("LATTICE")) pattern.type = MicrostructurePhase::Dimensionality::Volumetric;
-						else if(patternTypeString == QStringLiteral("INTERFACE")) pattern.type = MicrostructurePhase::Dimensionality::Planar;
-						else if(patternTypeString == QStringLiteral("POINTDEFECT")) pattern.type = MicrostructurePhase::Dimensionality::Pointlike;
-						else throw Exception(tr("Failed to parse file. Invalid pattern type in line %1: %2").arg(stream.lineNumber()).arg(patternTypeString));
-					}
-					else if(stream.lineStartsWith("COLOR ")) {
-						if(sscanf(stream.line(), "COLOR " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING, &pattern.color.r(), &pattern.color.g(), &pattern.color.b()) != 3)
-							throw Exception(tr("Failed to parse file. Invalid pattern color in line %1.").arg(stream.lineNumber()));
-					}
-					else if(stream.lineStartsWith("BURGERS_VECTOR_FAMILIES ")) {
-						int numFamilies;
-						if(sscanf(stream.line(), "BURGERS_VECTOR_FAMILIES %i", &numFamilies) != 1 || numFamilies < 0)
-							throw Exception(tr("Failed to parse file. Invalid number of Burgers vectors families in line %1.").arg(stream.lineNumber()));
-						for(int familyIndex = 0; familyIndex < numFamilies; familyIndex++) {
-							BurgersVectorFamilyInfo family;
-							if(sscanf(stream.readLine(), "BURGERS_VECTOR_FAMILY ID %i", &family.id) != 1)
-								throw Exception(tr("Failed to parse file. Invalid Burgers vector family ID in line %1.").arg(stream.lineNumber()));
-							stream.readLine();
-							family.name = stream.lineString().trimmed();
-							if(sscanf(stream.readLine(), FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING, &family.burgersVector.x(), &family.burgersVector.y(), &family.burgersVector.z()) != 3)
-								throw Exception(tr("Failed to parse file. Invalid Burgers vector in line %1.").arg(stream.lineNumber()));
-							if(sscanf(stream.readLine(), FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING, &family.color.r(), &family.color.g(), &family.color.b()) != 3)
-								throw Exception(tr("Failed to parse file. Invalid color in line %1.").arg(stream.lineNumber()));
-							pattern.burgersVectorFamilies.push_back(std::move(family));
-						}
-					}
-					else if(stream.lineStartsWith("END_PATTERN") || stream.lineStartsWith("END_STRUCTURE_TYPE"))
-						break;
-				}
-				if(pattern.longName.isEmpty())
-					pattern.longName = pattern.shortName;
-				patterns.push_back(std::move(pattern));
-			}
-		}
-		else if(stream.lineStartsWith("SIMULATION_CELL_ORIGIN ")) {
-			// Read simulation cell geometry.
-			if(sscanf(stream.line(), "SIMULATION_CELL_ORIGIN " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING, &cell(0,3), &cell(1,3), &cell(2,3)) != 3)
-				throw Exception(tr("Failed to parse file. Invalid cell origin in line %1.").arg(stream.lineNumber()));
-		}
-		else if(stream.lineStartsWith("SIMULATION_CELL ")) {
-			if(sscanf(stream.line(), "SIMULATION_CELL " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING
-					" " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING
-					" " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING,
-					&cell(0,0), &cell(0,1), &cell(0,2), &cell(1,0), &cell(1,1), &cell(1,2), &cell(2,0), &cell(2,1), &cell(2,2)) != 9)
-				throw Exception(tr("Failed to parse file. Invalid cell vectors in line %1.").arg(stream.lineNumber()));
-		}
-		else if(stream.lineStartsWith("SIMULATION_CELL_MATRIX")) {
-			for(size_t row = 0; row < 3; row++) {
-				if(sscanf(stream.readLine(), FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING,
-						&cell(row,0), &cell(row,1), &cell(row,2)) != 3)
-					throw Exception(tr("Failed to parse file. Invalid cell matrix in line %1.").arg(stream.lineNumber()));
-			}
-		}
-		else if(stream.lineStartsWith("PBC_FLAGS ")) {
-			if(sscanf(stream.line(), "PBC_FLAGS %i %i %i", &pbcFlags[0], &pbcFlags[1], &pbcFlags[2]) != 3)
-				throw Exception(tr("Failed to parse file. Invalid PBC flags in line %1.").arg(stream.lineNumber()));
-		}
-		else if(stream.lineStartsWith("CLUSTERS ")) {
-			// Read cluster list.
-			if(sscanf(stream.line(), "CLUSTERS %i", &numClusters) != 1)
-				throw Exception(tr("Failed to parse file. Invalid number of clusters in line %1.").arg(stream.lineNumber()));
-			setProgressText(tr("Reading clusters"));
-			setProgressMaximum(numClusters);
-			for(int index = 0; index < numClusters; index++) {
-				if(!setProgressValueIntermittent(index))
-					return;
-				if(fileFormatVersion <= 4) {
-					int patternId = 0, clusterId = 0, clusterProc = 0;
-					stream.readLine();
-					if(sscanf(stream.readLine(), "%i %i", &clusterId, &clusterProc) != 2)
-						throw Exception(tr("Failed to parse file. Invalid cluster ID in line %1.").arg(stream.lineNumber()));
-					if(sscanf(stream.readLine(), "%i", &patternId) != 1)
-						throw Exception(tr("Failed to parse file. Invalid cluster pattern index in line %1.").arg(stream.lineNumber()));
-					Cluster* cluster = clusterGraph->createCluster(patternId);
-					OVITO_ASSERT(cluster->structure != 0);
-					if(sscanf(stream.readLine(), "%i", &cluster->atomCount) != 1)
-						throw Exception(tr("Failed to parse file. Invalid cluster atom count in line %1.").arg(stream.lineNumber()));
-					if(sscanf(stream.readLine(), FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING, &cluster->centerOfMass.x(), &cluster->centerOfMass.y(), &cluster->centerOfMass.z()) != 3)
-						throw Exception(tr("Failed to parse file. Invalid cluster center of mass in line %1.").arg(stream.lineNumber()));
-					if(sscanf(stream.readLine(), FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING
-							" " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING
-							" " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING,
-							&cluster->orientation(0,0), &cluster->orientation(0,1), &cluster->orientation(0,2),
-							&cluster->orientation(1,0), &cluster->orientation(1,1), &cluster->orientation(1,2),
-							&cluster->orientation(2,0), &cluster->orientation(2,1), &cluster->orientation(2,2)) != 9)
-						throw Exception(tr("Failed to parse file. Invalid cluster orientation matrix in line %1.").arg(stream.lineNumber()));
-				}
-				else {
-					int patternId = 0, clusterId = 0, atomCount = 0;
-					Point3 centerOfMass = Point3::Origin();
-					Matrix3 orientation = Matrix3::Identity();
-					Color color(1,1,1);
-					while(!stream.eof()) {
-						stream.readLineTrimLeft();
-						if(stream.lineStartsWith("CLUSTER ")) {
-							if(sscanf(stream.line(), "CLUSTER %i", &clusterId) != 1)
-								throw Exception(tr("Failed to parse file. Invalid cluster ID in line %1.").arg(stream.lineNumber()));
-						}
-						else if(stream.lineStartsWith("CLUSTER_STRUCTURE ")) {
-							if(sscanf(stream.line(), "CLUSTER_STRUCTURE %i", &patternId) != 1)
-								throw Exception(tr("Failed to parse file. Invalid cluster structure type in line %1.").arg(stream.lineNumber()));
-						}
-						else if(stream.lineStartsWith("CLUSTER_SIZE ")) {
-							if(sscanf(stream.line(), "CLUSTER_SIZE %i", &atomCount) != 1)
-								throw Exception(tr("Failed to parse file. Invalid cluster size in line %1.").arg(stream.lineNumber()));
-						}
-						else if(stream.lineStartsWith("CLUSTER_CENTER_OF_MASS ")) {
-							if(sscanf(stream.line(), "CLUSTER_CENTER_OF_MASS " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING, &centerOfMass.x(), &centerOfMass.y(), &centerOfMass.z()) != 3)
-								throw Exception(tr("Failed to parse file. Invalid cluster center in line %1.").arg(stream.lineNumber()));
-						}
-						else if(stream.lineStartsWith("CLUSTER_COLOR ")) {
-							if(sscanf(stream.line(), "CLUSTER_COLOR " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING, &color.r(), &color.g(), &color.b()) != 3)
-								throw Exception(tr("Failed to parse file. Invalid cluster color in line %1.").arg(stream.lineNumber()));
-						}
-						else if(stream.lineStartsWith("CLUSTER_ORIENTATION")) {
-							for(size_t row = 0; row < 3; row++) {
-								if(sscanf(stream.readLine(), FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING,
-										&orientation(row,0), &orientation(row,1), &orientation(row,2)) != 3)
-									throw Exception(tr("Failed to parse file. Invalid cluster orientation matrix in line %1.").arg(stream.lineNumber()));
-							}
-						}
-						else if(stream.lineStartsWith("END_CLUSTER"))
-							break;
-					}
-					Cluster* cluster = clusterGraph->createCluster(patternId);
-					if(cluster->id != clusterId)
-						throw Exception(tr("Failed to parse file. Invalid cluster id: %1.").arg(clusterId));
-					cluster->atomCount = atomCount;
-					cluster->centerOfMass = centerOfMass;
-					cluster->orientation = orientation;
-					cluster->color = color;
-				}
-			}
-		}
-		else if(stream.lineStartsWith("CLUSTER_TRANSITIONS ")) {
-			// Read cluster transition list.
-			if(sscanf(stream.line(), "CLUSTER_TRANSITIONS %i", &numClusterTransitions) != 1)
-				throw Exception(tr("Failed to parse file. Invalid number of cluster transitions in line %1.").arg(stream.lineNumber()));
-			setProgressText(tr("Reading cluster transitions"));
-			setProgressMaximum(numClusterTransitions);
-			for(int index = 0; index < numClusterTransitions; index++) {
-				if(!setProgressValueIntermittent(index))
-					return;
-				int clusterIndex1, clusterIndex2;
-				if(sscanf(stream.readLine(), "TRANSITION %i %i", &clusterIndex1, &clusterIndex2) != 2 || clusterIndex1 >= numClusters || clusterIndex2 >= numClusters) {
-					throw Exception(tr("Failed to parse file. Invalid cluster transition in line %1.").arg(stream.lineNumber()));
-				}
-				Matrix3 tm;
-				if(sscanf(stream.readLine(), FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING
-						" " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING
-						" " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING,
-						&tm(0,0), &tm(0,1), &tm(0,2),
-						&tm(1,0), &tm(1,1), &tm(1,2),
-						&tm(2,0), &tm(2,1), &tm(2,2)) != 9)
-					throw Exception(tr("Failed to parse file. Invalid cluster transition matrix in line %1.").arg(stream.lineNumber()));
-				clusterGraph->createClusterTransition(clusterGraph->clusters()[clusterIndex1+1], clusterGraph->clusters()[clusterIndex2+1], tm);
-			}
-		}
-		else if(stream.lineStartsWith("DISLOCATIONS ")) {
-			// Read dislocations list.
-			if(sscanf(stream.line(), "DISLOCATIONS %i", &numDislocationSegments) != 1)
-				throw Exception(tr("Failed to parse file. Invalid number of dislocation segments in line %1.").arg(stream.lineNumber()));
-			setProgressText(tr("Reading dislocations"));
-			setProgressMaximum(numDislocationSegments);
-			dislocations = std::make_shared<DislocationNetwork>(clusterGraph);
-			for(int index = 0; index < numDislocationSegments; index++) {
-				if(!setProgressValueIntermittent(index))
-					return;
-				int segmentId;
-				if(sscanf(stream.readLine(), "%i", &segmentId) != 1)
-					throw Exception(tr("Failed to parse file. Invalid segment ID in line %1.").arg(stream.lineNumber()));
+        // Read file path information.
+        if(stream.lineStartsWith("OUTPUT_PATH ")) {
+            caFilename = stream.lineString().mid(12).trimmed();
+        }
+        else if(stream.lineStartsWith("ATOMS_PATH ")) {
+            atomsFilename = stream.lineString().mid(11).trimmed();
+        }
+        else if(stream.lineStartsWith("STRUCTURE_PATTERNS ") || stream.lineStartsWith("STRUCTURE_TYPES ")) {
+            // Read pattern catalog.
+            int numPatterns;
+            if(sscanf(stream.line(), "%*s %i", &numPatterns) != 1 || numPatterns <= 0)
+                throw Exception(tr("Failed to parse file. Invalid number of structure types in line %1.").arg(stream.lineNumber()));
+            std::vector<int> patternId2Index;
+            for(int index = 0; index < numPatterns; index++) {
+                PatternInfo pattern;
+                if(fileFormatVersion <= 4) {
+                    if(sscanf(stream.readLine(), "PATTERN ID %i", &pattern.id) != 1)
+                        throw Exception(tr("Failed to parse file. Invalid pattern ID in line %1.").arg(stream.lineNumber()));
+                }
+                else {
+                    if(sscanf(stream.readLine(), "STRUCTURE_TYPE %i", &pattern.id) != 1)
+                        throw Exception(tr("Failed to parse file. Invalid structure type ID in line %1.").arg(stream.lineNumber()));
+                }
+                if((int)patternId2Index.size() <= pattern.id)
+                    patternId2Index.resize(pattern.id+1);
+                patternId2Index[pattern.id] = index;
+                while(!stream.eof()) {
+                    stream.readLineTrimLeft();
+                    if(stream.lineStartsWith("NAME ")) {
+                        pattern.shortName = stream.lineString().mid(5).trimmed();
+                    }
+                    else if(stream.lineStartsWith("FULL_NAME ")) {
+                        pattern.longName = stream.lineString().mid(9).trimmed();
+                    }
+                    else if(stream.lineStartsWith("TYPE ")) {
+                        QString patternTypeString = stream.lineString().mid(5).trimmed();
+                        if(patternTypeString == QStringLiteral("LATTICE")) pattern.type = MicrostructurePhase::Dimensionality::Volumetric;
+                        else if(patternTypeString == QStringLiteral("INTERFACE")) pattern.type = MicrostructurePhase::Dimensionality::Planar;
+                        else if(patternTypeString == QStringLiteral("POINTDEFECT")) pattern.type = MicrostructurePhase::Dimensionality::Pointlike;
+                        else throw Exception(tr("Failed to parse file. Invalid pattern type in line %1: %2").arg(stream.lineNumber()).arg(patternTypeString));
+                    }
+                    else if(stream.lineStartsWith("COLOR ")) {
+                        if(sscanf(stream.line(), "COLOR " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING, &pattern.color.r(), &pattern.color.g(), &pattern.color.b()) != 3)
+                            throw Exception(tr("Failed to parse file. Invalid pattern color in line %1.").arg(stream.lineNumber()));
+                    }
+                    else if(stream.lineStartsWith("BURGERS_VECTOR_FAMILIES ")) {
+                        int numFamilies;
+                        if(sscanf(stream.line(), "BURGERS_VECTOR_FAMILIES %i", &numFamilies) != 1 || numFamilies < 0)
+                            throw Exception(tr("Failed to parse file. Invalid number of Burgers vectors families in line %1.").arg(stream.lineNumber()));
+                        for(int familyIndex = 0; familyIndex < numFamilies; familyIndex++) {
+                            BurgersVectorFamilyInfo family;
+                            if(sscanf(stream.readLine(), "BURGERS_VECTOR_FAMILY ID %i", &family.id) != 1)
+                                throw Exception(tr("Failed to parse file. Invalid Burgers vector family ID in line %1.").arg(stream.lineNumber()));
+                            stream.readLine();
+                            family.name = stream.lineString().trimmed();
+                            if(sscanf(stream.readLine(), FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING, &family.burgersVector.x(), &family.burgersVector.y(), &family.burgersVector.z()) != 3)
+                                throw Exception(tr("Failed to parse file. Invalid Burgers vector in line %1.").arg(stream.lineNumber()));
+                            if(sscanf(stream.readLine(), FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING, &family.color.r(), &family.color.g(), &family.color.b()) != 3)
+                                throw Exception(tr("Failed to parse file. Invalid color in line %1.").arg(stream.lineNumber()));
+                            pattern.burgersVectorFamilies.push_back(std::move(family));
+                        }
+                    }
+                    else if(stream.lineStartsWith("END_PATTERN") || stream.lineStartsWith("END_STRUCTURE_TYPE"))
+                        break;
+                }
+                if(pattern.longName.isEmpty())
+                    pattern.longName = pattern.shortName;
+                patterns.push_back(std::move(pattern));
+            }
+        }
+        else if(stream.lineStartsWith("SIMULATION_CELL_ORIGIN ")) {
+            // Read simulation cell geometry.
+            if(sscanf(stream.line(), "SIMULATION_CELL_ORIGIN " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING, &cell(0,3), &cell(1,3), &cell(2,3)) != 3)
+                throw Exception(tr("Failed to parse file. Invalid cell origin in line %1.").arg(stream.lineNumber()));
+        }
+        else if(stream.lineStartsWith("SIMULATION_CELL ")) {
+            if(sscanf(stream.line(), "SIMULATION_CELL " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING
+                    " " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING
+                    " " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING,
+                    &cell(0,0), &cell(0,1), &cell(0,2), &cell(1,0), &cell(1,1), &cell(1,2), &cell(2,0), &cell(2,1), &cell(2,2)) != 9)
+                throw Exception(tr("Failed to parse file. Invalid cell vectors in line %1.").arg(stream.lineNumber()));
+        }
+        else if(stream.lineStartsWith("SIMULATION_CELL_MATRIX")) {
+            for(size_t row = 0; row < 3; row++) {
+                if(sscanf(stream.readLine(), FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING,
+                        &cell(row,0), &cell(row,1), &cell(row,2)) != 3)
+                    throw Exception(tr("Failed to parse file. Invalid cell matrix in line %1.").arg(stream.lineNumber()));
+            }
+        }
+        else if(stream.lineStartsWith("PBC_FLAGS ")) {
+            if(sscanf(stream.line(), "PBC_FLAGS %i %i %i", &pbcFlags[0], &pbcFlags[1], &pbcFlags[2]) != 3)
+                throw Exception(tr("Failed to parse file. Invalid PBC flags in line %1.").arg(stream.lineNumber()));
+        }
+        else if(stream.lineStartsWith("CLUSTERS ")) {
+            // Read cluster list.
+            if(sscanf(stream.line(), "CLUSTERS %i", &numClusters) != 1)
+                throw Exception(tr("Failed to parse file. Invalid number of clusters in line %1.").arg(stream.lineNumber()));
+            setProgressText(tr("Reading clusters"));
+            setProgressMaximum(numClusters);
+            for(int index = 0; index < numClusters; index++) {
+                if(!setProgressValueIntermittent(index))
+                    return;
+                if(fileFormatVersion <= 4) {
+                    int patternId = 0, clusterId = 0, clusterProc = 0;
+                    stream.readLine();
+                    if(sscanf(stream.readLine(), "%i %i", &clusterId, &clusterProc) != 2)
+                        throw Exception(tr("Failed to parse file. Invalid cluster ID in line %1.").arg(stream.lineNumber()));
+                    if(sscanf(stream.readLine(), "%i", &patternId) != 1)
+                        throw Exception(tr("Failed to parse file. Invalid cluster pattern index in line %1.").arg(stream.lineNumber()));
+                    Cluster* cluster = clusterGraph->createCluster(patternId);
+                    OVITO_ASSERT(cluster->structure != 0);
+                    if(sscanf(stream.readLine(), "%i", &cluster->atomCount) != 1)
+                        throw Exception(tr("Failed to parse file. Invalid cluster atom count in line %1.").arg(stream.lineNumber()));
+                    if(sscanf(stream.readLine(), FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING, &cluster->centerOfMass.x(), &cluster->centerOfMass.y(), &cluster->centerOfMass.z()) != 3)
+                        throw Exception(tr("Failed to parse file. Invalid cluster center of mass in line %1.").arg(stream.lineNumber()));
+                    if(sscanf(stream.readLine(), FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING
+                            " " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING
+                            " " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING,
+                            &cluster->orientation(0,0), &cluster->orientation(0,1), &cluster->orientation(0,2),
+                            &cluster->orientation(1,0), &cluster->orientation(1,1), &cluster->orientation(1,2),
+                            &cluster->orientation(2,0), &cluster->orientation(2,1), &cluster->orientation(2,2)) != 9)
+                        throw Exception(tr("Failed to parse file. Invalid cluster orientation matrix in line %1.").arg(stream.lineNumber()));
+                }
+                else {
+                    int patternId = 0, clusterId = 0, atomCount = 0;
+                    Point3 centerOfMass = Point3::Origin();
+                    Matrix3 orientation = Matrix3::Identity();
+                    Color color(1,1,1);
+                    while(!stream.eof()) {
+                        stream.readLineTrimLeft();
+                        if(stream.lineStartsWith("CLUSTER ")) {
+                            if(sscanf(stream.line(), "CLUSTER %i", &clusterId) != 1)
+                                throw Exception(tr("Failed to parse file. Invalid cluster ID in line %1.").arg(stream.lineNumber()));
+                        }
+                        else if(stream.lineStartsWith("CLUSTER_STRUCTURE ")) {
+                            if(sscanf(stream.line(), "CLUSTER_STRUCTURE %i", &patternId) != 1)
+                                throw Exception(tr("Failed to parse file. Invalid cluster structure type in line %1.").arg(stream.lineNumber()));
+                        }
+                        else if(stream.lineStartsWith("CLUSTER_SIZE ")) {
+                            if(sscanf(stream.line(), "CLUSTER_SIZE %i", &atomCount) != 1)
+                                throw Exception(tr("Failed to parse file. Invalid cluster size in line %1.").arg(stream.lineNumber()));
+                        }
+                        else if(stream.lineStartsWith("CLUSTER_CENTER_OF_MASS ")) {
+                            if(sscanf(stream.line(), "CLUSTER_CENTER_OF_MASS " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING, &centerOfMass.x(), &centerOfMass.y(), &centerOfMass.z()) != 3)
+                                throw Exception(tr("Failed to parse file. Invalid cluster center in line %1.").arg(stream.lineNumber()));
+                        }
+                        else if(stream.lineStartsWith("CLUSTER_COLOR ")) {
+                            if(sscanf(stream.line(), "CLUSTER_COLOR " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING, &color.r(), &color.g(), &color.b()) != 3)
+                                throw Exception(tr("Failed to parse file. Invalid cluster color in line %1.").arg(stream.lineNumber()));
+                        }
+                        else if(stream.lineStartsWith("CLUSTER_ORIENTATION")) {
+                            for(size_t row = 0; row < 3; row++) {
+                                if(sscanf(stream.readLine(), FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING,
+                                        &orientation(row,0), &orientation(row,1), &orientation(row,2)) != 3)
+                                    throw Exception(tr("Failed to parse file. Invalid cluster orientation matrix in line %1.").arg(stream.lineNumber()));
+                            }
+                        }
+                        else if(stream.lineStartsWith("END_CLUSTER"))
+                            break;
+                    }
+                    Cluster* cluster = clusterGraph->createCluster(patternId);
+                    if(cluster->id != clusterId)
+                        throw Exception(tr("Failed to parse file. Invalid cluster id: %1.").arg(clusterId));
+                    cluster->atomCount = atomCount;
+                    cluster->centerOfMass = centerOfMass;
+                    cluster->orientation = orientation;
+                    cluster->color = color;
+                }
+            }
+        }
+        else if(stream.lineStartsWith("CLUSTER_TRANSITIONS ")) {
+            // Read cluster transition list.
+            if(sscanf(stream.line(), "CLUSTER_TRANSITIONS %i", &numClusterTransitions) != 1)
+                throw Exception(tr("Failed to parse file. Invalid number of cluster transitions in line %1.").arg(stream.lineNumber()));
+            setProgressText(tr("Reading cluster transitions"));
+            setProgressMaximum(numClusterTransitions);
+            for(int index = 0; index < numClusterTransitions; index++) {
+                if(!setProgressValueIntermittent(index))
+                    return;
+                int clusterIndex1, clusterIndex2;
+                if(sscanf(stream.readLine(), "TRANSITION %i %i", &clusterIndex1, &clusterIndex2) != 2 || clusterIndex1 >= numClusters || clusterIndex2 >= numClusters) {
+                    throw Exception(tr("Failed to parse file. Invalid cluster transition in line %1.").arg(stream.lineNumber()));
+                }
+                Matrix3 tm;
+                if(sscanf(stream.readLine(), FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING
+                        " " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING
+                        " " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING,
+                        &tm(0,0), &tm(0,1), &tm(0,2),
+                        &tm(1,0), &tm(1,1), &tm(1,2),
+                        &tm(2,0), &tm(2,1), &tm(2,2)) != 9)
+                    throw Exception(tr("Failed to parse file. Invalid cluster transition matrix in line %1.").arg(stream.lineNumber()));
+                clusterGraph->createClusterTransition(clusterGraph->clusters()[clusterIndex1+1], clusterGraph->clusters()[clusterIndex2+1], tm);
+            }
+        }
+        else if(stream.lineStartsWith("DISLOCATIONS ")) {
+            // Read dislocations list.
+            if(sscanf(stream.line(), "DISLOCATIONS %i", &numDislocationSegments) != 1)
+                throw Exception(tr("Failed to parse file. Invalid number of dislocation segments in line %1.").arg(stream.lineNumber()));
+            setProgressText(tr("Reading dislocations"));
+            setProgressMaximum(numDislocationSegments);
+            dislocations = std::make_shared<DislocationNetwork>(clusterGraph);
+            for(int index = 0; index < numDislocationSegments; index++) {
+                if(!setProgressValueIntermittent(index))
+                    return;
+                int segmentId;
+                if(sscanf(stream.readLine(), "%i", &segmentId) != 1)
+                    throw Exception(tr("Failed to parse file. Invalid segment ID in line %1.").arg(stream.lineNumber()));
 
-				Vector3 burgersVector;
-				if(sscanf(stream.readLine(), FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING, &burgersVector.x(), &burgersVector.y(), &burgersVector.z()) != 3)
-					throw Exception(tr("Failed to parse file. Invalid Burgers vector in line %1.").arg(stream.lineNumber()));
+                Vector3 burgersVector;
+                if(sscanf(stream.readLine(), FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING, &burgersVector.x(), &burgersVector.y(), &burgersVector.z()) != 3)
+                    throw Exception(tr("Failed to parse file. Invalid Burgers vector in line %1.").arg(stream.lineNumber()));
 
-				Cluster* cluster = nullptr;
-				if(fileFormatVersion <= 4) {
-					int clusterIndex;
-					if(sscanf(stream.readLine(), "%i", &clusterIndex) != 1 || clusterIndex < 0 || clusterIndex >= numClusters)
-						throw Exception(tr("Failed to parse file. Invalid cluster index in line %1.").arg(stream.lineNumber()));
-					cluster = clusterGraph->clusters()[clusterIndex+1];
-				}
-				else {
-					int clusterId;
-					if(sscanf(stream.readLine(), "%i", &clusterId) != 1 || clusterId <= 0)
-						throw Exception(tr("Failed to parse file. Invalid cluster ID in line %1.").arg(stream.lineNumber()));
-					cluster = clusterGraph->findCluster(clusterId);
-				}
-				if(!cluster)
-					throw Exception(tr("Failed to parse file. Invalid cluster reference in line %1.").arg(stream.lineNumber()));
+                Cluster* cluster = nullptr;
+                if(fileFormatVersion <= 4) {
+                    int clusterIndex;
+                    if(sscanf(stream.readLine(), "%i", &clusterIndex) != 1 || clusterIndex < 0 || clusterIndex >= numClusters)
+                        throw Exception(tr("Failed to parse file. Invalid cluster index in line %1.").arg(stream.lineNumber()));
+                    cluster = clusterGraph->clusters()[clusterIndex+1];
+                }
+                else {
+                    int clusterId;
+                    if(sscanf(stream.readLine(), "%i", &clusterId) != 1 || clusterId <= 0)
+                        throw Exception(tr("Failed to parse file. Invalid cluster ID in line %1.").arg(stream.lineNumber()));
+                    cluster = clusterGraph->findCluster(clusterId);
+                }
+                if(!cluster)
+                    throw Exception(tr("Failed to parse file. Invalid cluster reference in line %1.").arg(stream.lineNumber()));
 
-				DislocationSegment* segment = dislocations->createSegment(ClusterVector(burgersVector, cluster));
+                DislocationSegment* segment = dislocations->createSegment(ClusterVector(burgersVector, cluster));
 
-				// Read polyline.
-				int numPoints;
-				if(sscanf(stream.readLine(), "%i", &numPoints) != 1 || numPoints <= 1)
-					throw Exception(tr("Failed to parse file. Invalid segment number of points in line %1.").arg(stream.lineNumber()));
-				segment->line.resize(numPoints);
-				for(Point3& p : segment->line) {
-					if(fileFormatVersion <= 4) {
-						if(sscanf(stream.readLine(), FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING, &p.x(), &p.y(), &p.z()) != 3)
-							throw Exception(tr("Failed to parse file. Invalid point in line %1.").arg(stream.lineNumber()));
-					}
-					else {
-						int coreSize = 0;
-						if(sscanf(stream.readLine(), FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING " %i", &p.x(), &p.y(), &p.z(), &coreSize) < 3)
-							throw Exception(tr("Failed to parse file. Invalid point in line %1.").arg(stream.lineNumber()));
-						if(coreSize > 0)
-							segment->coreSize.push_back(coreSize);
-					}
-				}
+                // Read polyline.
+                int numPoints;
+                if(sscanf(stream.readLine(), "%i", &numPoints) != 1 || numPoints <= 1)
+                    throw Exception(tr("Failed to parse file. Invalid segment number of points in line %1.").arg(stream.lineNumber()));
+                segment->line.resize(numPoints);
+                for(Point3& p : segment->line) {
+                    if(fileFormatVersion <= 4) {
+                        if(sscanf(stream.readLine(), FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING, &p.x(), &p.y(), &p.z()) != 3)
+                            throw Exception(tr("Failed to parse file. Invalid point in line %1.").arg(stream.lineNumber()));
+                    }
+                    else {
+                        int coreSize = 0;
+                        if(sscanf(stream.readLine(), FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING " %i", &p.x(), &p.y(), &p.z(), &coreSize) < 3)
+                            throw Exception(tr("Failed to parse file. Invalid point in line %1.").arg(stream.lineNumber()));
+                        if(coreSize > 0)
+                            segment->coreSize.push_back(coreSize);
+                    }
+                }
 
-				if(fileFormatVersion <= 4) {
-					// Read dislocation core size.
-					segment->coreSize.resize(numPoints);
-					for(int& coreSize : segment->coreSize) {
-						if(sscanf(stream.readLine(), "%i", &coreSize) != 1)
-							throw Exception(tr("Failed to parse file. Invalid core size in line %1.").arg(stream.lineNumber()));
-					}
-				}
-			}
-		}
-		else if(stream.lineStartsWith("DISLOCATION_JUNCTIONS") && dislocations) {
-			// Read dislocation junctions.
-			for(int index = 0; index < numDislocationSegments; index++) {
-				DislocationSegment* segment = dislocations->segments()[index];
-				for(int nodeIndex = 0; nodeIndex < 2; nodeIndex++) {
-					int isForward, otherSegmentId;
-					if(sscanf(stream.readLine(), "%i %i", &isForward, &otherSegmentId) != 2 || otherSegmentId < 0 || otherSegmentId >= numDislocationSegments)
-						throw Exception(tr("Failed to parse file. Invalid dislocation junction record in line %1.").arg(stream.lineNumber()));
-					segment->nodes[nodeIndex]->junctionRing = dislocations->segments()[otherSegmentId]->nodes[isForward ? 0 : 1];
-				}
-			}
-		}
-		else if(stream.lineStartsWith("DEFECT_MESH_VERTICES ")) {
+                if(fileFormatVersion <= 4) {
+                    // Read dislocation core size.
+                    segment->coreSize.resize(numPoints);
+                    for(int& coreSize : segment->coreSize) {
+                        if(sscanf(stream.readLine(), "%i", &coreSize) != 1)
+                            throw Exception(tr("Failed to parse file. Invalid core size in line %1.").arg(stream.lineNumber()));
+                    }
+                }
+            }
+        }
+        else if(stream.lineStartsWith("DISLOCATION_JUNCTIONS") && dislocations) {
+            // Read dislocation junctions.
+            for(int index = 0; index < numDislocationSegments; index++) {
+                DislocationSegment* segment = dislocations->segments()[index];
+                for(int nodeIndex = 0; nodeIndex < 2; nodeIndex++) {
+                    int isForward, otherSegmentId;
+                    if(sscanf(stream.readLine(), "%i %i", &isForward, &otherSegmentId) != 2 || otherSegmentId < 0 || otherSegmentId >= numDislocationSegments)
+                        throw Exception(tr("Failed to parse file. Invalid dislocation junction record in line %1.").arg(stream.lineNumber()));
+                    segment->nodes[nodeIndex]->junctionRing = dislocations->segments()[otherSegmentId]->nodes[isForward ? 0 : 1];
+                }
+            }
+        }
+        else if(stream.lineStartsWith("DEFECT_MESH_VERTICES ")) {
 
-			// Create surface mesh.
-			SurfaceMesh* defectSurfaceObj = state().getMutableLeafObject<SurfaceMesh>(SurfaceMesh::OOClass(), QStringLiteral("dxa-defect-mesh"));
-			if(!defectSurfaceObj) {
-				defectSurfaceObj = state().createObject<SurfaceMesh>(dataSource(), tr("Defect mesh"));
-				defectSurfaceObj->setIdentifier(QStringLiteral("dxa-defect-mesh"));
-				SurfaceMeshVis* vis = defectSurfaceObj->visElement<SurfaceMeshVis>();
-				vis->setShowCap(true);
-				vis->setSmoothShading(true);
-				vis->setReverseOrientation(true);
-				vis->setCapTransparency(0.5);
-				vis->setObjectTitle(tr("Defect mesh"));
-				vis->freezeInitialParameterValues({SHADOW_PROPERTY_FIELD(SurfaceMeshVis::showCap), SHADOW_PROPERTY_FIELD(SurfaceMeshVis::smoothShading), SHADOW_PROPERTY_FIELD(SurfaceMeshVis::reverseOrientation)});
-			}
-			defectSurface.reset(defectSurfaceObj);
-			defectSurface.clearMesh();
-			// Read defect mesh vertices.
-			int numDefectMeshVertices;
-			if(sscanf(stream.line(), "DEFECT_MESH_VERTICES %i", &numDefectMeshVertices) != 1 || numDefectMeshVertices < 0)
-				throw Exception(tr("Failed to parse file. Invalid number of defect mesh vertices in line %1.").arg(stream.lineNumber()));
-			setProgressText(tr("Reading defect surface"));
-			setProgressMaximum(numDefectMeshVertices);
-			for(int index = 0; index < numDefectMeshVertices; index++) {
-				if(!setProgressValueIntermittent(index)) return;
-				Point3 p;
-				if(sscanf(stream.readLine(), FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING, &p.x(), &p.y(), &p.z()) != 3)
-					throw Exception(tr("Failed to parse file. Invalid point in line %1.").arg(stream.lineNumber()));
-				defectSurface.createVertex(p);
-			}
-		}
-		else if(stream.lineStartsWith("DEFECT_MESH_FACETS ") && defectSurface) {
-			// Read defect mesh facets.
-			int numDefectMeshFacets;
-			if(sscanf(stream.line(), "DEFECT_MESH_FACETS %i", &numDefectMeshFacets) != 1 || numDefectMeshFacets < 0)
-				throw Exception(tr("Failed to parse file. Invalid number of defect mesh facets in line %1.").arg(stream.lineNumber()));
-			setProgressMaximum(numDefectMeshFacets * 2);
-			for(int index = 0; index < numDefectMeshFacets; index++) {
-				if(!setProgressValueIntermittent(index))
-					return;
-				int v[3];
-				if(sscanf(stream.readLine(), "%i %i %i", &v[0], &v[1], &v[2]) != 3
-					 	|| v[0] < 0 || v[0] >= defectSurface.vertexCount()
-					  	|| v[1] < 0 || v[1] >= defectSurface.vertexCount()
-					   	|| v[2] < 0 || v[2] >= defectSurface.vertexCount())
-					throw Exception(tr("Failed to parse file. Invalid triangle facet in line %1.").arg(stream.lineNumber()));
-				defectSurface.createFace({v[0], v[1], v[2]});
-			}
+            // Create surface mesh.
+            SurfaceMesh* defectSurfaceObj = state().getMutableLeafObject<SurfaceMesh>(SurfaceMesh::OOClass(), QStringLiteral("dxa-defect-mesh"));
+            if(!defectSurfaceObj) {
+                defectSurfaceObj = state().createObject<SurfaceMesh>(dataSource(), tr("Defect mesh"));
+                defectSurfaceObj->setIdentifier(QStringLiteral("dxa-defect-mesh"));
+                SurfaceMeshVis* vis = defectSurfaceObj->visElement<SurfaceMeshVis>();
+                vis->setShowCap(true);
+                vis->setSmoothShading(true);
+                vis->setReverseOrientation(true);
+                vis->setCapTransparency(0.5);
+                vis->setObjectTitle(tr("Defect mesh"));
+                vis->freezeInitialParameterValues({SHADOW_PROPERTY_FIELD(SurfaceMeshVis::showCap), SHADOW_PROPERTY_FIELD(SurfaceMeshVis::smoothShading), SHADOW_PROPERTY_FIELD(SurfaceMeshVis::reverseOrientation)});
+            }
+            defectSurface.reset(defectSurfaceObj);
+            defectSurface.clearMesh();
+            // Read defect mesh vertices.
+            int numDefectMeshVertices;
+            if(sscanf(stream.line(), "DEFECT_MESH_VERTICES %i", &numDefectMeshVertices) != 1 || numDefectMeshVertices < 0)
+                throw Exception(tr("Failed to parse file. Invalid number of defect mesh vertices in line %1.").arg(stream.lineNumber()));
+            setProgressText(tr("Reading defect surface"));
+            setProgressMaximum(numDefectMeshVertices);
+            for(int index = 0; index < numDefectMeshVertices; index++) {
+                if(!setProgressValueIntermittent(index)) return;
+                Point3 p;
+                if(sscanf(stream.readLine(), FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING, &p.x(), &p.y(), &p.z()) != 3)
+                    throw Exception(tr("Failed to parse file. Invalid point in line %1.").arg(stream.lineNumber()));
+                defectSurface.createVertex(p);
+            }
+        }
+        else if(stream.lineStartsWith("DEFECT_MESH_FACETS ") && defectSurface) {
+            // Read defect mesh facets.
+            int numDefectMeshFacets;
+            if(sscanf(stream.line(), "DEFECT_MESH_FACETS %i", &numDefectMeshFacets) != 1 || numDefectMeshFacets < 0)
+                throw Exception(tr("Failed to parse file. Invalid number of defect mesh facets in line %1.").arg(stream.lineNumber()));
+            setProgressMaximum(numDefectMeshFacets * 2);
+            for(int index = 0; index < numDefectMeshFacets; index++) {
+                if(!setProgressValueIntermittent(index))
+                    return;
+                int v[3];
+                if(sscanf(stream.readLine(), "%i %i %i", &v[0], &v[1], &v[2]) != 3
+                        || v[0] < 0 || v[0] >= defectSurface.vertexCount()
+                        || v[1] < 0 || v[1] >= defectSurface.vertexCount()
+                        || v[2] < 0 || v[2] >= defectSurface.vertexCount())
+                    throw Exception(tr("Failed to parse file. Invalid triangle facet in line %1.").arg(stream.lineNumber()));
+                defectSurface.createFace({v[0], v[1], v[2]});
+            }
 
-			// Read facet adjacency information.
-			for(int index = 0; index < numDefectMeshFacets; index++) {
-				if(!setProgressValueIntermittent(index + numDefectMeshFacets))
-					return;
-				int v[3];
-				if(sscanf(stream.readLine(), "%i %i %i", &v[0], &v[1], &v[2]) != 3)
-					throw Exception(tr("Failed to parse file. Invalid triangle adjacency info in line %1.").arg(stream.lineNumber()));
-				SurfaceMesh::edge_index edge = defectSurface.firstFaceEdge(index);
-				for(int i = 0; i < 3; i++, edge = defectSurface.nextFaceEdge(edge)) {
-					if(defectSurface.hasOppositeEdge(edge)) continue;
-					SurfaceMesh::edge_index oppositeEdge = defectSurface.findEdge(v[i], defectSurface.vertex2(edge), defectSurface.vertex1(edge));
-					if(oppositeEdge == SurfaceMeshAccess::InvalidIndex)
-						throw Exception(tr("Failed to parse file. Invalid triangle adjacency info in line %1.").arg(stream.lineNumber()));
-					defectSurface.linkOppositeEdges(edge, oppositeEdge);
-				}
-			}
-		}
-		else if(stream.lineStartsWith("METADATA SIMULATION_TIMESTEP ")) {
-			int timestep;
-			if(sscanf(stream.line(), "METADATA SIMULATION_TIMESTEP %i", &timestep) != 1)
-				throw Exception(tr("CA file parsing error. Invalid timestep number (line %1):\n%2").arg(stream.lineNumber()).arg(stream.lineString()));
-			state().setAttribute(QStringLiteral("Timestep"), QVariant::fromValue(timestep), dataSource());
-		}
-		else if(stream.lineStartsWith("METADATA ")) {
-			// Ignore. This is for future use.
-		}
-		else if(stream.lineStartsWith("CA_FILE_VERSION ")) {
-			// Beginning of next frame.
-			signalAdditionalFrames();
-			break;
-		}
-		else if(stream.line()[0] != '\0') {
-			throw Exception(tr("Failed to parse file. Invalid keyword in line %1: %2").arg(stream.lineNumber()).arg(stream.lineString()));
-		}
-	}
+            // Read facet adjacency information.
+            for(int index = 0; index < numDefectMeshFacets; index++) {
+                if(!setProgressValueIntermittent(index + numDefectMeshFacets))
+                    return;
+                int v[3];
+                if(sscanf(stream.readLine(), "%i %i %i", &v[0], &v[1], &v[2]) != 3)
+                    throw Exception(tr("Failed to parse file. Invalid triangle adjacency info in line %1.").arg(stream.lineNumber()));
+                SurfaceMesh::edge_index edge = defectSurface.firstFaceEdge(index);
+                for(int i = 0; i < 3; i++, edge = defectSurface.nextFaceEdge(edge)) {
+                    if(defectSurface.hasOppositeEdge(edge)) continue;
+                    SurfaceMesh::edge_index oppositeEdge = defectSurface.findEdge(v[i], defectSurface.vertex2(edge), defectSurface.vertex1(edge));
+                    if(oppositeEdge == SurfaceMeshAccess::InvalidIndex)
+                        throw Exception(tr("Failed to parse file. Invalid triangle adjacency info in line %1.").arg(stream.lineNumber()));
+                    defectSurface.linkOppositeEdges(edge, oppositeEdge);
+                }
+            }
+        }
+        else if(stream.lineStartsWith("METADATA SIMULATION_TIMESTEP ")) {
+            int timestep;
+            if(sscanf(stream.line(), "METADATA SIMULATION_TIMESTEP %i", &timestep) != 1)
+                throw Exception(tr("CA file parsing error. Invalid timestep number (line %1):\n%2").arg(stream.lineNumber()).arg(stream.lineString()));
+            state().setAttribute(QStringLiteral("Timestep"), QVariant::fromValue(timestep), dataSource());
+        }
+        else if(stream.lineStartsWith("METADATA ")) {
+            // Ignore. This is for future use.
+        }
+        else if(stream.lineStartsWith("CA_FILE_VERSION ")) {
+            // Beginning of next frame.
+            signalAdditionalFrames();
+            break;
+        }
+        else if(stream.line()[0] != '\0') {
+            throw Exception(tr("Failed to parse file. Invalid keyword in line %1: %2").arg(stream.lineNumber()).arg(stream.lineString()));
+        }
+    }
 
-	simulationCell()->setCellMatrix(cell);
-	simulationCell()->setPbcFlags(pbcFlags[0], pbcFlags[1], pbcFlags[2]);
-	if(defectSurface)
-		defectSurface.setDomain(simulationCell());
+    simulationCell()->setCellMatrix(cell);
+    simulationCell()->setPbcFlags(pbcFlags[0], pbcFlags[1], pbcFlags[2]);
+    if(defectSurface)
+        defectSurface.setDomain(simulationCell());
 
-	std::vector<size_t> structureCounts;
-	if(clusterGraph) {
-		
-		// Count how many atoms of each structure type exist by summing the cluster atom counts.
-		for(const Cluster* cluster : clusterGraph->clusters()) {
-			if(cluster->structure < 0) continue;
-			if(cluster->structure >= structureCounts.size())
-				structureCounts.resize(cluster->structure + 1, 0);
-			structureCounts[cluster->structure] += cluster->atomCount;
-		}
-	
-		// Insert cluster graph.
-		ClusterGraphObject* clusterGraphObj;
-		if(const ClusterGraphObject* existingClusterGraphObj = state().getObject<ClusterGraphObject>()) {
-			clusterGraphObj = state().makeMutable(existingClusterGraphObj);
-		}
-		else {
-			clusterGraphObj = state().createObject<ClusterGraphObject>(dataSource());
-		}
-		clusterGraphObj->setStorage(std::move(clusterGraph));
-	}
+    std::vector<size_t> structureCounts;
+    if(clusterGraph) {
+        
+        // Count how many atoms of each structure type exist by summing the cluster atom counts.
+        for(const Cluster* cluster : clusterGraph->clusters()) {
+            if(cluster->structure < 0) continue;
+            if(cluster->structure >= structureCounts.size())
+                structureCounts.resize(cluster->structure + 1, 0);
+            structureCounts[cluster->structure] += cluster->atomCount;
+        }
+    
+        // Insert cluster graph.
+        ClusterGraphObject* clusterGraphObj;
+        if(const ClusterGraphObject* existingClusterGraphObj = state().getObject<ClusterGraphObject>()) {
+            clusterGraphObj = state().makeMutable(existingClusterGraphObj);
+        }
+        else {
+            clusterGraphObj = state().createObject<ClusterGraphObject>(dataSource());
+        }
+        clusterGraphObj->setStorage(std::move(clusterGraph));
+    }
 
-	// Insert dislocations.
-	if(dislocations) {
-		DislocationNetworkObject* dislocationNetwork;
-		if(const DislocationNetworkObject* existingDislocationsObj = state().getObject<DislocationNetworkObject>()) {
-			dislocationNetwork = state().makeMutable(existingDislocationsObj);
-		}
-		else {
-			dislocationNetwork = state().createObject<DislocationNetworkObject>(dataSource());
-		}
-		dislocationNetwork->setDomain(simulationCell());
-		dislocationNetwork->setStorage(dislocations);
+    // Insert dislocations.
+    if(dislocations) {
+        DislocationNetworkObject* dislocationNetwork;
+        if(const DislocationNetworkObject* existingDislocationsObj = state().getObject<DislocationNetworkObject>()) {
+            dislocationNetwork = state().makeMutable(existingDislocationsObj);
+        }
+        else {
+            dislocationNetwork = state().createObject<DislocationNetworkObject>(dataSource());
+        }
+        dislocationNetwork->setDomain(simulationCell());
+        dislocationNetwork->setStorage(dislocations);
 
-		// Update structure catalog.
-		for(int i = 0; i < patterns.size(); i++) {
-			if(dislocationNetwork->structureByName(patterns[i].longName))
-				continue;
+        // Update structure catalog.
+        for(int i = 0; i < patterns.size(); i++) {
+            if(dislocationNetwork->structureByName(patterns[i].longName))
+                continue;
 
-			DataOORef<MicrostructurePhase> pattern = DataOORef<MicrostructurePhase>::create();
-			pattern->setColor(patterns[i].color);
-			pattern->setShortName(patterns[i].shortName);
-			pattern->setLongName(patterns[i].longName);
-			pattern->setDimensionality(patterns[i].type);
-			pattern->setNumericId(patterns[i].id);
-			pattern->setCrystalSymmetryClass(patterns[i].symmetryType);
-			pattern->freezeInitialParameterValues({SHADOW_PROPERTY_FIELD(ElementType::name), SHADOW_PROPERTY_FIELD(ElementType::color), SHADOW_PROPERTY_FIELD(MicrostructurePhase::shortName), SHADOW_PROPERTY_FIELD(MicrostructurePhase::dimensionality), SHADOW_PROPERTY_FIELD(MicrostructurePhase::crystalSymmetryClass)});
-			dislocationNetwork->addCrystalStructure(pattern);
+            DataOORef<MicrostructurePhase> pattern = DataOORef<MicrostructurePhase>::create();
+            pattern->setColor(patterns[i].color);
+            pattern->setShortName(patterns[i].shortName);
+            pattern->setLongName(patterns[i].longName);
+            pattern->setDimensionality(patterns[i].type);
+            pattern->setNumericId(patterns[i].id);
+            pattern->setCrystalSymmetryClass(patterns[i].symmetryType);
+            pattern->freezeInitialParameterValues({SHADOW_PROPERTY_FIELD(ElementType::name), SHADOW_PROPERTY_FIELD(ElementType::color), SHADOW_PROPERTY_FIELD(MicrostructurePhase::shortName), SHADOW_PROPERTY_FIELD(MicrostructurePhase::dimensionality), SHADOW_PROPERTY_FIELD(MicrostructurePhase::crystalSymmetryClass)});
+            dislocationNetwork->addCrystalStructure(pattern);
 
-			// Add Burgers vector families.
-			for(int j = 0; j < patterns[i].burgersVectorFamilies.size(); j++) {
-				DataOORef<BurgersVectorFamily> family = DataOORef<BurgersVectorFamily>::create();
-				family->setNumericId(patterns[i].burgersVectorFamilies[j].id);
-				family->setColor(patterns[i].burgersVectorFamilies[j].color);
-				family->setName(patterns[i].burgersVectorFamilies[j].name);
-				family->setBurgersVector(patterns[i].burgersVectorFamilies[j].burgersVector);
-				family->freezeInitialParameterValues({SHADOW_PROPERTY_FIELD(ElementType::name), SHADOW_PROPERTY_FIELD(ElementType::color), SHADOW_PROPERTY_FIELD(BurgersVectorFamily::burgersVector)});
-				pattern->addBurgersVectorFamily(family);
-			}
+            // Add Burgers vector families.
+            for(int j = 0; j < patterns[i].burgersVectorFamilies.size(); j++) {
+                DataOORef<BurgersVectorFamily> family = DataOORef<BurgersVectorFamily>::create();
+                family->setNumericId(patterns[i].burgersVectorFamilies[j].id);
+                family->setColor(patterns[i].burgersVectorFamilies[j].color);
+                family->setName(patterns[i].burgersVectorFamilies[j].name);
+                family->setBurgersVector(patterns[i].burgersVectorFamilies[j].burgersVector);
+                family->freezeInitialParameterValues({SHADOW_PROPERTY_FIELD(ElementType::name), SHADOW_PROPERTY_FIELD(ElementType::color), SHADOW_PROPERTY_FIELD(BurgersVectorFamily::burgersVector)});
+                pattern->addBurgersVectorFamily(family);
+            }
 
-			// Make sure there always is a default family.
-			if(pattern->burgersVectorFamilies().empty())
-				pattern->addBurgersVectorFamily(DataOORef<BurgersVectorFamily>::create());
-		}
+            // Make sure there always is a default family.
+            if(pattern->burgersVectorFamilies().empty())
+                pattern->addBurgersVectorFamily(DataOORef<BurgersVectorFamily>::create());
+        }
 
-		// Determine the main crystal structure of the system, which has the most atoms.
-		const MicrostructurePhase* mainStructure = nullptr;
-		if(!structureCounts.empty()) {
-			int maxStructure = std::distance(structureCounts.begin(), std::max_element(structureCounts.begin(), structureCounts.end()));
-			mainStructure = dislocationNetwork->structureById(maxStructure);
-		}
+        // Determine the main crystal structure of the system, which has the most atoms.
+        const MicrostructurePhase* mainStructure = nullptr;
+        if(!structureCounts.empty()) {
+            int maxStructure = std::distance(structureCounts.begin(), std::max_element(structureCounts.begin(), structureCounts.end()));
+            mainStructure = dislocationNetwork->structureById(maxStructure);
+        }
 
-		// Compute dislocation line statistics.
-		DislocationAnalysisEngine::generateDislocationStatistics(dataSource(), state(), dislocationNetwork, true, mainStructure);
-	}
+        // Compute dislocation line statistics.
+        DislocationAnalysisEngine::generateDislocationStatistics(dataSource(), state(), dislocationNetwork, true, mainStructure);
+    }
 
-	state().setStatus(tr("Number of dislocations: %1").arg(numDislocationSegments));
-	
-	// Call base implementation to finalize the loaded data.
-	ParticleImporter::FrameLoader::loadFile();
+    state().setStatus(tr("Number of dislocations: %1").arg(numDislocationSegments));
+    
+    // Call base implementation to finalize the loaded data.
+    ParticleImporter::FrameLoader::loadFile();
 }
 
-}	// End of namespace
+}   // End of namespace

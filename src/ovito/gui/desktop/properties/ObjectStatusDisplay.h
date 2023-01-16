@@ -34,38 +34,38 @@ namespace Ovito {
  */
 class OVITO_GUI_EXPORT ObjectStatusDisplay : public ParameterUI
 {
-	OVITO_CLASS(ObjectStatusDisplay)
+    OVITO_CLASS(ObjectStatusDisplay)
 
 public:
 
-	/// Constructor.
-	explicit ObjectStatusDisplay(PropertiesEditor* parentEditor);
+    /// Constructor.
+    explicit ObjectStatusDisplay(PropertiesEditor* parentEditor);
 
-	/// Destructor.
-	virtual ~ObjectStatusDisplay();
+    /// Destructor.
+    virtual ~ObjectStatusDisplay();
 
-	/// Returns the UI widget managed by this ParameterUI.
-	StatusWidget* statusWidget() const;
+    /// Returns the UI widget managed by this ParameterUI.
+    StatusWidget* statusWidget() const;
 
-	/// This method is called when a new editable object has been assigned to the properties owner this
-	/// parameter UI belongs to.
-	virtual void resetUI() override;
+    /// This method is called when a new editable object has been assigned to the properties owner this
+    /// parameter UI belongs to.
+    virtual void resetUI() override;
 
-	/// Sets the enabled state of the UI.
-	virtual void setEnabled(bool enabled) override;
+    /// Sets the enabled state of the UI.
+    virtual void setEnabled(bool enabled) override;
 
 protected:
 
-	/// This method is called when a reference target changes.
-	virtual bool referenceEvent(RefTarget* source, const ReferenceEvent& event) override;
+    /// This method is called when a reference target changes.
+    virtual bool referenceEvent(RefTarget* source, const ReferenceEvent& event) override;
 
 private:
 
-	/// The UI widget component.
-	QPointer<StatusWidget> _widget;
+    /// The UI widget component.
+    QPointer<StatusWidget> _widget;
 
-	/// The object whose status is being displayed.
-	DECLARE_REFERENCE_FIELD_FLAGS(ActiveObject*, activeObject, PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_WEAK_REF | PROPERTY_FIELD_NO_CHANGE_MESSAGE);
+    /// The object whose status is being displayed.
+    DECLARE_REFERENCE_FIELD_FLAGS(ActiveObject*, activeObject, PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_WEAK_REF | PROPERTY_FIELD_NO_CHANGE_MESSAGE);
 };
 
-}	// End of namespace
+}   // End of namespace

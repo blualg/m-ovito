@@ -60,14 +60,14 @@ PipelineFlowState StaticSource::evaluateSynchronous(const PipelineEvaluationRequ
 ******************************************************************************/
 bool StaticSource::referenceEvent(RefTarget* source, const ReferenceEvent& event)
 {
-	if(event.type() == ReferenceEvent::TargetChanged && source == dataCollection()) {
-		if(!event.sender()->isBeingLoaded()) {
-			// Inform the pipeline that we have a new preliminary input state.
-			notifyDependents(ReferenceEvent::PreliminaryStateAvailable);
-		}
-	}
+    if(event.type() == ReferenceEvent::TargetChanged && source == dataCollection()) {
+        if(!event.sender()->isBeingLoaded()) {
+            // Inform the pipeline that we have a new preliminary input state.
+            notifyDependents(ReferenceEvent::PreliminaryStateAvailable);
+        }
+    }
 
-	return PipelineObject::referenceEvent(source, event);
+    return PipelineObject::referenceEvent(source, event);
 }
 
-}	// End of namespace
+}   // End of namespace

@@ -33,33 +33,33 @@ namespace Ovito::Particles {
  */
 class OVITO_PARTICLES_EXPORT IMDExporter : public FileColumnParticleExporter
 {
-	/// Defines a metaclass specialization for this exporter type.
-	class OOMetaClass : public FileColumnParticleExporter::OOMetaClass
-	{
-	public:
-		/// Inherit standard constructor from base meta class.
-		using FileColumnParticleExporter::OOMetaClass::OOMetaClass;
+    /// Defines a metaclass specialization for this exporter type.
+    class OOMetaClass : public FileColumnParticleExporter::OOMetaClass
+    {
+    public:
+        /// Inherit standard constructor from base meta class.
+        using FileColumnParticleExporter::OOMetaClass::OOMetaClass;
 
-		/// Returns the file filter that specifies the extension of files written by this service.
-		virtual QString fileFilter() const override { return QStringLiteral("*"); }
+        /// Returns the file filter that specifies the extension of files written by this service.
+        virtual QString fileFilter() const override { return QStringLiteral("*"); }
 
-		/// Returns the filter description that is displayed in the drop-down box of the file dialog.
-		virtual QString fileFilterDescription() const override { return tr("IMD File"); }
-	};
+        /// Returns the filter description that is displayed in the drop-down box of the file dialog.
+        virtual QString fileFilterDescription() const override { return tr("IMD File"); }
+    };
 
-	OVITO_CLASS_META(IMDExporter, OOMetaClass)
+    OVITO_CLASS_META(IMDExporter, OOMetaClass)
 
 public:
 
-	/// \brief Constructs a new instance of this class.
-	Q_INVOKABLE IMDExporter(ObjectCreationParams params) : FileColumnParticleExporter(params) {}
+    /// \brief Constructs a new instance of this class.
+    Q_INVOKABLE IMDExporter(ObjectCreationParams params) : FileColumnParticleExporter(params) {}
 
 protected:
 
-	/// \brief Writes the particles of one animation frame to the current output file.
-	virtual bool exportData(const PipelineFlowState& state, int frameNumber, const QString& filePath, MainThreadOperation& operation) override;
+    /// \brief Writes the particles of one animation frame to the current output file.
+    virtual bool exportData(const PipelineFlowState& state, int frameNumber, const QString& filePath, MainThreadOperation& operation) override;
 };
 
-}	// End of namespace
+}   // End of namespace
 
 

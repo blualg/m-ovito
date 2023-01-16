@@ -141,15 +141,15 @@ public:
         finishLocked(locker);
     }
 
-	/// Runs the given continuation function once this task has reached either the 'finished' or the 'canceled' state.
-	/// Note that the continuation function will always be executed, even if this task was canceled or set to an error state.
+    /// Runs the given continuation function once this task has reached either the 'finished' or the 'canceled' state.
+    /// Note that the continuation function will always be executed, even if this task was canceled or set to an error state.
     template<typename Executor, typename Function>
     void finally(Executor&& executor, Function&& f) {
         addContinuation(std::forward<Executor>(executor), detail::bind_front(std::forward<Function>(f), std::ref(*this)));
     }
 
-	/// Runs the given continuation function once this task has reached either the 'finished' or the 'canceled' state.
-	/// Note that the continuation function will always be executed, even if this task was canceled or set to an error state.
+    /// Runs the given continuation function once this task has reached either the 'finished' or the 'canceled' state.
+    /// Note that the continuation function will always be executed, even if this task was canceled or set to an error state.
     template<typename Function>
     void finally(Function&& f) { 
         addContinuation(detail::InlineExecutor{}, detail::bind_front(std::forward<Function>(f), std::ref(*this))); 
@@ -201,18 +201,18 @@ public:
     /// \brief Returns a copy of the internal exception store, which contains an exception object in case the task has failed.
     std::exception_ptr copyExceptionStore() const { return std::exception_ptr{exceptionStore()}; }
 
-	/// \brief Suspends execution until the given task has reached the 'finished' state. 
-	///        If the awaited task gets canceled while waiting, the task waiting for it gets canceled too.
+    /// \brief Suspends execution until the given task has reached the 'finished' state. 
+    ///        If the awaited task gets canceled while waiting, the task waiting for it gets canceled too.
     /// \param task The task to wait for.
     /// \return false if either \a task or this operation have been canceled.
-	[[nodiscard]] static bool waitFor(detail::TaskReference awaitedTask);
+    [[nodiscard]] static bool waitFor(detail::TaskReference awaitedTask);
 
 protected:
 
     /// Assigns a tuple of values to the internal results storage of the task.
     template<typename tuple_type, typename... R>
     void setResults(std::tuple<R...>&& value) {
-		static_assert(std::tuple_size_v<tuple_type> == std::tuple_size_v<std::tuple<R...>>, "Must assign a compatible tuple");
+        static_assert(std::tuple_size_v<tuple_type> == std::tuple_size_v<std::tuple<R...>>, "Must assign a compatible tuple");
 #ifdef OVITO_DEBUG
         OVITO_ASSERT(_hasResultsStored.exchange(true) == false);
 #endif
@@ -223,16 +223,16 @@ protected:
     }
 
     /// Assigns a single value to the internal results storage of the task.
-	template<typename tuple_type, typename value_type>
-	void setResults(value_type&& result) {
-		setResults<tuple_type>(std::forward_as_tuple(std::forward<value_type>(result)));
-	}
+    template<typename tuple_type, typename value_type>
+    void setResults(value_type&& result) {
+        setResults<tuple_type>(std::forward_as_tuple(std::forward<value_type>(result)));
+    }
 
     /// Assigns a void value to the internal results storage of the task.
-	template<typename tuple_type>
-	void setResults() {
-		setResults<tuple_type>(std::tuple<>{});
-	}
+    template<typename tuple_type>
+    void setResults() {
+        setResults<tuple_type>(std::tuple<>{});
+    }
 
     /// Adds a callback to this task's list, which will get notified during state changes.
     void addCallback(detail::TaskCallbackBase* cb, bool replayStateChanges) noexcept;
@@ -379,4 +379,4 @@ private:
 };
 
 
-}	// End of namespace
+}   // End of namespace

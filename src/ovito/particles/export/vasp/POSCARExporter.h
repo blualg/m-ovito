@@ -33,36 +33,36 @@ namespace Ovito::Particles {
  */
 class OVITO_PARTICLES_EXPORT POSCARExporter : public ParticleExporter
 {
-	/// Defines a metaclass specialization for this exporter type.
-	class OOMetaClass : public ParticleExporter::OOMetaClass
-	{
-	public:
-		/// Inherit standard constructor from base meta class.
-		using ParticleExporter::OOMetaClass::OOMetaClass;
+    /// Defines a metaclass specialization for this exporter type.
+    class OOMetaClass : public ParticleExporter::OOMetaClass
+    {
+    public:
+        /// Inherit standard constructor from base meta class.
+        using ParticleExporter::OOMetaClass::OOMetaClass;
 
-		/// Returns the file filter that specifies the extension of files written by this service.
-		virtual QString fileFilter() const override { return QStringLiteral("*"); }
+        /// Returns the file filter that specifies the extension of files written by this service.
+        virtual QString fileFilter() const override { return QStringLiteral("*"); }
 
-		/// Returns the filter description that is displayed in the drop-down box of the file dialog.
-		virtual QString fileFilterDescription() const override { return tr("POSCAR File"); }
-	};
+        /// Returns the filter description that is displayed in the drop-down box of the file dialog.
+        virtual QString fileFilterDescription() const override { return tr("POSCAR File"); }
+    };
 
-	OVITO_CLASS_META(POSCARExporter, OOMetaClass)
+    OVITO_CLASS_META(POSCARExporter, OOMetaClass)
 
 public:
 
-	/// \brief Constructs a new instance of this class.
-	Q_INVOKABLE POSCARExporter(ObjectCreationParams params) : ParticleExporter(params) {}
+    /// \brief Constructs a new instance of this class.
+    Q_INVOKABLE POSCARExporter(ObjectCreationParams params) : ParticleExporter(params) {}
 
 protected:
 
-	/// \brief Writes the particles of one animation frame to the current output file.
-	virtual bool exportData(const PipelineFlowState& state, int frameNumber, const QString& filePath, MainThreadOperation& operation) override;
+    /// \brief Writes the particles of one animation frame to the current output file.
+    virtual bool exportData(const PipelineFlowState& state, int frameNumber, const QString& filePath, MainThreadOperation& operation) override;
 
 private:
 
-	/// Controls whether atomic coordinates are written in reduced form to the POSCAR file.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, writeReducedCoordinates, setWriteReducedCoordinates, PROPERTY_FIELD_MEMORIZE);
+    /// Controls whether atomic coordinates are written in reduced form to the POSCAR file.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, writeReducedCoordinates, setWriteReducedCoordinates, PROPERTY_FIELD_MEMORIZE);
 };
 
-}	// End of namespace
+}   // End of namespace

@@ -32,137 +32,137 @@
 
 namespace Ovito::Particles {
 
-class GSDFile;	// Defined in GSDFile.h
+class GSDFile;  // Defined in GSDFile.h
 
 /**
  * \brief File parser for GSD (General Simulation Data) files written by the HOOMD simulation code.
  */
 class OVITO_PARTICLES_EXPORT GSDImporter : public ParticleImporter
 {
-	/// Defines a metaclass specialization for this importer type.
-	class OOMetaClass : public ParticleImporter::OOMetaClass
-	{
-	public:
-		/// Inherit standard constructor from base meta class.
-		using ParticleImporter::OOMetaClass::OOMetaClass;
+    /// Defines a metaclass specialization for this importer type.
+    class OOMetaClass : public ParticleImporter::OOMetaClass
+    {
+    public:
+        /// Inherit standard constructor from base meta class.
+        using ParticleImporter::OOMetaClass::OOMetaClass;
 
-		/// Returns the list of file formats that can be read by this importer class.
-		virtual Ovito::span<const SupportedFormat> supportedFormats() const override {
-			static const SupportedFormat formats[] = {{ QStringLiteral("*"), tr("GSD/HOOMD Files") }};
-			return formats;
-		}
+        /// Returns the list of file formats that can be read by this importer class.
+        virtual Ovito::span<const SupportedFormat> supportedFormats() const override {
+            static const SupportedFormat formats[] = {{ QStringLiteral("*"), tr("GSD/HOOMD Files") }};
+            return formats;
+        }
 
-		/// Checks if the given file has format that can be read by this importer.
-		virtual bool checkFileFormat(const FileHandle& file) const override;
-	};
+        /// Checks if the given file has format that can be read by this importer.
+        virtual bool checkFileFormat(const FileHandle& file) const override;
+    };
 
-	OVITO_CLASS_META(GSDImporter, OOMetaClass)
+    OVITO_CLASS_META(GSDImporter, OOMetaClass)
 
 public:
 
-	/// \brief Constructs a new instance of this class.
-	Q_INVOKABLE GSDImporter(ObjectCreationParams params) : ParticleImporter(params), _roundingResolution(4) {
-		setMultiTimestepFile(true);
-	}
+    /// \brief Constructs a new instance of this class.
+    Q_INVOKABLE GSDImporter(ObjectCreationParams params) : ParticleImporter(params), _roundingResolution(4) {
+        setMultiTimestepFile(true);
+    }
 
-	/// Returns the title of this object.
-	virtual QString objectTitle() const override { return tr("GSD"); }
+    /// Returns the title of this object.
+    virtual QString objectTitle() const override { return tr("GSD"); }
 
-	/// Creates an asynchronous loader object that loads the data for the given frame from the external file.
-	virtual FileSourceImporter::FrameLoaderPtr createFrameLoader(const LoadOperationRequest& request) override {
-		return std::make_shared<FrameLoader>(request, this, std::max(roundingResolution(), 1));
-	}
+    /// Creates an asynchronous loader object that loads the data for the given frame from the external file.
+    virtual FileSourceImporter::FrameLoaderPtr createFrameLoader(const LoadOperationRequest& request) override {
+        return std::make_shared<FrameLoader>(request, this, std::max(roundingResolution(), 1));
+    }
 
-	/// Creates an asynchronous frame discovery object that scans the input file for contained animation frames.
-	virtual std::shared_ptr<FileSourceImporter::FrameFinder> createFrameFinder(const FileHandle& file) override {
-		return std::make_shared<FrameFinder>(file);
-	}
+    /// Creates an asynchronous frame discovery object that scans the input file for contained animation frames.
+    virtual std::shared_ptr<FileSourceImporter::FrameFinder> createFrameFinder(const FileHandle& file) override {
+        return std::make_shared<FrameFinder>(file);
+    }
 
-	/// Stores the particle shape geometry generated from a JSON string in the internal cache.
-	void storeParticleShapeInCache(const QByteArray& jsonString, const DataOORef<const TriMeshObject>& mesh);
+    /// Stores the particle shape geometry generated from a JSON string in the internal cache.
+    void storeParticleShapeInCache(const QByteArray& jsonString, const DataOORef<const TriMeshObject>& mesh);
 
-	/// Looks up a particle shape geometry in the internal cache that was previously
-	/// generated from a JSON string.
-	DataOORef<const TriMeshObject> lookupParticleShapeInCache(const QByteArray& jsonString) const;
+    /// Looks up a particle shape geometry in the internal cache that was previously
+    /// generated from a JSON string.
+    DataOORef<const TriMeshObject> lookupParticleShapeInCache(const QByteArray& jsonString) const;
 
 protected:
 
-	/// \brief Is called when the value of a property of this object has changed.
-	virtual void propertyChanged(const PropertyFieldDescriptor* field) override;
+    /// \brief Is called when the value of a property of this object has changed.
+    virtual void propertyChanged(const PropertyFieldDescriptor* field) override;
 
 private:
 
-	/// A lookup map that holds geometries that have been generated from JSON strings.
-	QHash<QByteArray, DataOORef<const TriMeshObject>> _particleShapeCache;
+    /// A lookup map that holds geometries that have been generated from JSON strings.
+    QHash<QByteArray, DataOORef<const TriMeshObject>> _particleShapeCache;
 
-	/// Synchronization object for multi-threaded access to the particle shape cache.
-	mutable QReadWriteLock _cacheSynchronization;
+    /// Synchronization object for multi-threaded access to the particle shape cache.
+    mutable QReadWriteLock _cacheSynchronization;
 
-	/// Controls the tessellation resolution for rounded corners and edges.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(int, roundingResolution, setRoundingResolution, PROPERTY_FIELD_MEMORIZE);
+    /// Controls the tessellation resolution for rounded corners and edges.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(int, roundingResolution, setRoundingResolution, PROPERTY_FIELD_MEMORIZE);
 
 private:
 
-	/// The format-specific task object that is responsible for reading an input file in the background.
-	class FrameLoader : public ParticleImporter::FrameLoader
-	{
-	public:
+    /// The format-specific task object that is responsible for reading an input file in the background.
+    class FrameLoader : public ParticleImporter::FrameLoader
+    {
+    public:
 
-		/// Constructor.
-		FrameLoader(const LoadOperationRequest& request, GSDImporter* importer, int roundingResolution)
-			: ParticleImporter::FrameLoader(request), _importer(importer), _roundingResolution(roundingResolution) {}
+        /// Constructor.
+        FrameLoader(const LoadOperationRequest& request, GSDImporter* importer, int roundingResolution)
+            : ParticleImporter::FrameLoader(request), _importer(importer), _roundingResolution(roundingResolution) {}
 
-	protected:
+    protected:
 
-		/// Reads the frame data from the external file.
-		virtual void loadFile() override;
+        /// Reads the frame data from the external file.
+        virtual void loadFile() override;
 
-		/// Reads the values of a particle or bond property from the GSD file.
-		PropertyObject* readOptionalProperty(GSDFile& gsd, const char* chunkName, uint64_t frameNumber, int propertyType, PropertyContainer* container, const void* defaultValue, size_t defaultValueSize);
+        /// Reads the values of a particle or bond property from the GSD file.
+        PropertyObject* readOptionalProperty(GSDFile& gsd, const char* chunkName, uint64_t frameNumber, int propertyType, PropertyContainer* container, const void* defaultValue, size_t defaultValueSize);
 
-		/// Parse the JSON string containing a particle shape definition.
-		void parseParticleShape(int typeId, const QByteArray& shapeSpecString);
+        /// Parse the JSON string containing a particle shape definition.
+        void parseParticleShape(int typeId, const QByteArray& shapeSpecString);
 
-		/// Parsing routine for 'Sphere' particle shape definitions.
-		void parseSphereShape(int typeId, QJsonObject definition);
+        /// Parsing routine for 'Sphere' particle shape definitions.
+        void parseSphereShape(int typeId, QJsonObject definition);
 
-		/// Parsing routine for 'Ellipsoid' particle shape definitions.
-		void parseEllipsoidShape(int typeId, QJsonObject definition);
+        /// Parsing routine for 'Ellipsoid' particle shape definitions.
+        void parseEllipsoidShape(int typeId, QJsonObject definition);
 
-		/// Parsing routine for 'Polygon' particle shape definitions.
-		void parsePolygonShape(int typeId, QJsonObject definition, const QByteArray& shapeSpecString);
+        /// Parsing routine for 'Polygon' particle shape definitions.
+        void parsePolygonShape(int typeId, QJsonObject definition, const QByteArray& shapeSpecString);
 
-		/// Parsing routine for 'ConvexPolyhedron' particle shape definitions.
-		void parseConvexPolyhedronShape(int typeId, QJsonObject definition, const QByteArray& shapeSpecString);
+        /// Parsing routine for 'ConvexPolyhedron' particle shape definitions.
+        void parseConvexPolyhedronShape(int typeId, QJsonObject definition, const QByteArray& shapeSpecString);
 
-		/// Parsing routine for 'Mesh' particle shape definitions.
-		void parseMeshShape(int typeId, QJsonObject definition, const QByteArray& shapeSpecString);
+        /// Parsing routine for 'Mesh' particle shape definitions.
+        void parseMeshShape(int typeId, QJsonObject definition, const QByteArray& shapeSpecString);
 
-		/// Parsing routine for 'SphereUnion' particle shape definitions.
-		void parseSphereUnionShape(int typeId, QJsonObject definition, const QByteArray& shapeSpecString);
+        /// Parsing routine for 'SphereUnion' particle shape definitions.
+        void parseSphereUnionShape(int typeId, QJsonObject definition, const QByteArray& shapeSpecString);
 
-		/// Assigns a mesh-based shape to a particle type.
-		void setParticleTypeShape(int typeId, DataOORef<const TriMeshObject> shapeMesh);
+        /// Assigns a mesh-based shape to a particle type.
+        void setParticleTypeShape(int typeId, DataOORef<const TriMeshObject> shapeMesh);
 
-	private:
+    private:
 
-		OORef<GSDImporter> _importer;
-		int _roundingResolution;
-	};
+        OORef<GSDImporter> _importer;
+        int _roundingResolution;
+    };
 
-	/// The format-specific task object that is responsible for scanning the input file for animation frames.
-	class FrameFinder : public FileSourceImporter::FrameFinder
-	{
-	public:
+    /// The format-specific task object that is responsible for scanning the input file for animation frames.
+    class FrameFinder : public FileSourceImporter::FrameFinder
+    {
+    public:
 
-		/// Inherit constructor from base class.
-		using FileSourceImporter::FrameFinder::FrameFinder;
+        /// Inherit constructor from base class.
+        using FileSourceImporter::FrameFinder::FrameFinder;
 
-	protected:
+    protected:
 
-		/// Scans the data file and builds a list of source frames.
-		virtual void discoverFramesInFile(QVector<FileSourceImporter::Frame>& frames) override;
-	};
+        /// Scans the data file and builds a list of source frames.
+        virtual void discoverFramesInFile(QVector<FileSourceImporter::Frame>& frames) override;
+    };
 };
 
-}	// End of namespace
+}   // End of namespace

@@ -42,47 +42,47 @@ class DeferredMethodInvocation
 {
 public:
 
-	void operator()(ObjectClass* obj) {
-		// Unless another call is already underway, post an event to the event queue
-		// to invoke the user function.
-		if(!_event) {
-			_event = new Event(this, obj);
-			if(!delay_msec) {
-				QCoreApplication::postEvent(obj, _event);
-			}
-			else {
-				QTimer::singleShot(delay_msec, obj, [this]() {
-					OVITO_ASSERT(_event != nullptr && _event->owner == this);
-					QCoreApplication::postEvent(_event->object, _event);
-				});
-			}
-		}
-	}
+    void operator()(ObjectClass* obj) {
+        // Unless another call is already underway, post an event to the event queue
+        // to invoke the user function.
+        if(!_event) {
+            _event = new Event(this, obj);
+            if(!delay_msec) {
+                QCoreApplication::postEvent(obj, _event);
+            }
+            else {
+                QTimer::singleShot(delay_msec, obj, [this]() {
+                    OVITO_ASSERT(_event != nullptr && _event->owner == this);
+                    QCoreApplication::postEvent(_event->object, _event);
+                });
+            }
+        }
+    }
 
-	~DeferredMethodInvocation() {
-		if(_event) _event->owner = nullptr;
-	}
+    ~DeferredMethodInvocation() {
+        if(_event) _event->owner = nullptr;
+    }
 
 
 private:
 
-	// A custom event class that can be put into the application's event queue.
-	// It calls the user function from its destructor after the event has been
-	// fetched from the queue.
-	struct Event : public QEvent {
-		DeferredMethodInvocation* owner;
-		ObjectClass* object;
-		Event(DeferredMethodInvocation* owner, ObjectClass* object) : QEvent(QEvent::None), owner(owner), object(object) {}
-		~Event() {
-			if(owner) {
-				OVITO_ASSERT(owner->_event == this);
-				owner->_event = nullptr;
-				(object->*method)();
-			}
-		}
-	};
+    // A custom event class that can be put into the application's event queue.
+    // It calls the user function from its destructor after the event has been
+    // fetched from the queue.
+    struct Event : public QEvent {
+        DeferredMethodInvocation* owner;
+        ObjectClass* object;
+        Event(DeferredMethodInvocation* owner, ObjectClass* object) : QEvent(QEvent::None), owner(owner), object(object) {}
+        ~Event() {
+            if(owner) {
+                OVITO_ASSERT(owner->_event == this);
+                owner->_event = nullptr;
+                (object->*method)();
+            }
+        }
+    };
 
-	Event* _event = nullptr;
+    Event* _event = nullptr;
 };
 
-}	// End of namespace
+}   // End of namespace

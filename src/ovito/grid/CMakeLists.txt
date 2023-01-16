@@ -24,38 +24,38 @@
 FIND_PACKAGE(Qt6 ${OVITO_MINIMUM_REQUIRED_QT_VERSION} COMPONENTS Xml REQUIRED)
 
 SET(SourceFiles
-	objects/VoxelGrid.cpp
-	objects/VoxelGridVis.cpp
-	modifier/CreateIsosurfaceModifier.cpp
-	modifier/MarchingCubes.cpp
-	io/VTKVoxelGridExporter.cpp
-	io/ParaViewVTIGridImporter.cpp
-	io/ParaViewVTSGridImporter.cpp
-	io/LAMMPSGridDumpImporter.cpp
+    objects/VoxelGrid.cpp
+    objects/VoxelGridVis.cpp
+    modifier/CreateIsosurfaceModifier.cpp
+    modifier/MarchingCubes.cpp
+    io/VTKVoxelGridExporter.cpp
+    io/ParaViewVTIGridImporter.cpp
+    io/ParaViewVTSGridImporter.cpp
+    io/LAMMPSGridDumpImporter.cpp
 )
 
 IF(OVITO_BUILD_PLUGIN_STDMOD)
-	LIST(APPEND SourceFiles
-		modifier/VoxelGridReplicateModifierDelegate.cpp
-		modifier/VoxelGridAffineTransformationModifierDelegate.cpp
-		modifier/VoxelGridColorCodingModifierDelegate.cpp
-		modifier/VoxelGridComputePropertyModifierDelegate.cpp
-		modifier/VoxelGridSliceModifierDelegate.cpp
-	)
+    LIST(APPEND SourceFiles
+        modifier/VoxelGridReplicateModifierDelegate.cpp
+        modifier/VoxelGridAffineTransformationModifierDelegate.cpp
+        modifier/VoxelGridColorCodingModifierDelegate.cpp
+        modifier/VoxelGridComputePropertyModifierDelegate.cpp
+        modifier/VoxelGridSliceModifierDelegate.cpp
+    )
 ENDIF()
 
 # Define the plugin module.
 OVITO_STANDARD_PLUGIN(Grid
-	SOURCES ${SourceFiles}
-	PLUGIN_DEPENDENCIES Mesh StdObj
-	OPTIONAL_PLUGIN_DEPENDENCIES StdMod
-	PRECOMPILED_HEADERS Grid.h
-	LIB_DEPENDENCIES Qt6::Xml
+    SOURCES ${SourceFiles}
+    PLUGIN_DEPENDENCIES Mesh StdObj
+    OPTIONAL_PLUGIN_DEPENDENCIES StdMod
+    PRECOMPILED_HEADERS Grid.h
+    LIB_DEPENDENCIES Qt6::Xml
 )
 
 # Build corresponding GUI plugin.
 IF(OVITO_BUILD_APP AND NOT OVITO_QML_GUI)
-	ADD_SUBDIRECTORY(gui)
+    ADD_SUBDIRECTORY(gui)
 ENDIF()
 
 # Propagate list of plugins to parent scope.

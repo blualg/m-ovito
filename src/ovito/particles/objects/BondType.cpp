@@ -44,19 +44,19 @@ BondType::BondType(ObjectCreationParams params) : ElementType(params), _radius(0
 ******************************************************************************/
 void BondType::updateEditableProxies(PipelineFlowState& state, ConstDataObjectPath& dataPath) const
 {
-	ElementType::updateEditableProxies(state, dataPath);
+    ElementType::updateEditableProxies(state, dataPath);
 
-	// Note: 'this' may no longer exist at this point, because the base method implementationmay
-	// have already replaced it with a mutable copy.
-	const BondType* self = static_object_cast<BondType>(dataPath.back());
+    // Note: 'this' may no longer exist at this point, because the base method implementationmay
+    // have already replaced it with a mutable copy.
+    const BondType* self = static_object_cast<BondType>(dataPath.back());
 
-	if(const BondType* proxy = static_object_cast<BondType>(self->editableProxy())) {
-		if(proxy->radius() != self->radius()) {
-			// Make this data object mutable first.
-			BondType* mutableSelf = static_object_cast<BondType>(state.makeMutableInplace(dataPath));
-			mutableSelf->setRadius(proxy->radius());
-		}
-	}
+    if(const BondType* proxy = static_object_cast<BondType>(self->editableProxy())) {
+        if(proxy->radius() != self->radius()) {
+            // Make this data object mutable first.
+            BondType* mutableSelf = static_object_cast<BondType>(state.makeMutableInplace(dataPath));
+            mutableSelf->setRadius(proxy->radius());
+        }
+    }
 }
 
-}	// End of namespace
+}   // End of namespace

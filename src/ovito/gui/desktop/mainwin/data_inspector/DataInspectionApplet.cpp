@@ -71,7 +71,7 @@ const PipelineFlowState& DataInspectionApplet::currentState() const
 ******************************************************************************/
 bool DataInspectionApplet::appliesTo(const DataCollection& data)
 {
-	return data.containsObjectRecursive(_dataObjectClass);
+    return data.containsObjectRecursive(_dataObjectClass);
 }
 
 /******************************************************************************
@@ -173,10 +173,10 @@ void DataInspectionApplet::updateDisplay()
 ******************************************************************************/
 void DataInspectionApplet::updateDataObjectList()
 {
-	// Build list of all data objects of the supported type in the current data collection.
-	std::vector<ConstDataObjectPath> objectPaths;
-	if(currentState())
-		objectPaths = getDataObjectPaths();
+    // Build list of all data objects of the supported type in the current data collection.
+    std::vector<ConstDataObjectPath> objectPaths;
+    if(currentState())
+        objectPaths = getDataObjectPaths();
 
     int currentRow = 0;
     if(_objectSelectionWidget) {
@@ -219,7 +219,7 @@ void DataInspectionApplet::updateDataObjectList()
         currentRow = _objectSelectionWidget->currentRow();
     }
 
-	// Inform others about the currently selected object.
+    // Inform others about the currently selected object.
     if(currentRow >= 0 && currentRow < objectPaths.size()) {
         _selectedDataObjectPath = std::move(objectPaths[currentRow]);
         _selectedDataObjectPathString = _selectedDataObjectPath.toString();
@@ -241,20 +241,20 @@ bool DataInspectionApplet::selectDataObject(PipelineObject* dataSource, const QS
     if(!_objectSelectionWidget)
         return false;
 
-	// Check the items in the data object list.
-	for(int i = 0; i < _objectSelectionWidget->count(); i++) {
-		QListWidgetItem* item = _objectSelectionWidget->item(i);
-		const ConstDataObjectPath& objectPath = item->data(Qt::UserRole).value<ConstDataObjectPath>();
-		if(!objectPath.empty()) {
-			if(objectPath.back()->dataSource() == dataSource) {
-				if(objectIdentifierHint.isEmpty() || objectPath.back()->identifier() == objectIdentifierHint || objectPath.back()->identifier().startsWith(objectIdentifierHint + QChar('.'))) {
-					_objectSelectionWidget->setCurrentRow(i);
-					return true;
-				}
-			}
-		}
-	}
-	return false;
+    // Check the items in the data object list.
+    for(int i = 0; i < _objectSelectionWidget->count(); i++) {
+        QListWidgetItem* item = _objectSelectionWidget->item(i);
+        const ConstDataObjectPath& objectPath = item->data(Qt::UserRole).value<ConstDataObjectPath>();
+        if(!objectPath.empty()) {
+            if(objectPath.back()->dataSource() == dataSource) {
+                if(objectIdentifierHint.isEmpty() || objectPath.back()->identifier() == objectIdentifierHint || objectPath.back()->identifier().startsWith(objectIdentifierHint + QChar('.'))) {
+                    _objectSelectionWidget->setCurrentRow(i);
+                    return true;
+                }
+            }
+        }
+    }
+    return false;
 }
 
 /******************************************************************************
@@ -304,4 +304,4 @@ void DataInspectionApplet::TableView::keyPressEvent(QKeyEvent* event)
     }
 }
 
-}	// End of namespace
+}   // End of namespace

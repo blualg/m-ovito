@@ -4,7 +4,7 @@ INCLUDE(CMakeParseArguments)
 
 # Find Qt5 libraries.
 FOREACH(component IN ITEMS Core Gui Widgets OpenGL Concurrent Network PrintSupport)
-	FIND_PACKAGE(Qt5${component} REQUIRED)
+    FIND_PACKAGE(Qt5${component} REQUIRED)
 ENDFOREACH()
 
 # Tell CMake to run Qt moc whenever necessary.
@@ -16,26 +16,26 @@ FUNCTION(OVITO_PLUGIN plugin_name)
     SET(multiValueArgs SOURCES PLUGIN_DEPENDENCIES)
     CMAKE_PARSE_ARGUMENTS(OVITO_PLUGIN "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
-	# Create the library target for the plugin.
-	ADD_LIBRARY(${plugin_name} SHARED ${OVITO_PLUGIN_SOURCES})
+    # Create the library target for the plugin.
+    ADD_LIBRARY(${plugin_name} SHARED ${OVITO_PLUGIN_SOURCES})
 
-	# Link to OVITO's core library.
-	TARGET_LINK_LIBRARIES(${plugin_name} PUBLIC Ovito::Core)
+    # Link to OVITO's core library.
+    TARGET_LINK_LIBRARIES(${plugin_name} PUBLIC Ovito::Core)
 
-	# Link Qt5.
-	TARGET_LINK_LIBRARIES(${plugin_name} PUBLIC Qt6::Core Qt6::Gui Qt6::Widgets Qt6::Concurrent)
+    # Link Qt5.
+    TARGET_LINK_LIBRARIES(${plugin_name} PUBLIC Qt6::Core Qt6::Gui Qt6::Widgets Qt6::Concurrent)
 
-	# Link to plugin dependencies.
-	FOREACH(name ${OVITO_PLUGIN_PLUGIN_DEPENDENCIES})
-    	TARGET_LINK_LIBRARIES(${plugin_name} PUBLIC Ovito::${name})
-	ENDFOREACH()
+    # Link to plugin dependencies.
+    FOREACH(name ${OVITO_PLUGIN_PLUGIN_DEPENDENCIES})
+        TARGET_LINK_LIBRARIES(${plugin_name} PUBLIC Ovito::${name})
+    ENDFOREACH()
 
     # Enable C++11 language standard.
     SET_TARGET_PROPERTIES(${plugin_name} PROPERTIES COMPILE_OPTIONS "$<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-std=c++11>")
 
-	# Set prefix and suffix of library name.
-	# This is needed so that the Python interpreter can load OVITO plugins as modules.
-	SET_TARGET_PROPERTIES(${plugin_name} PROPERTIES PREFIX "" SUFFIX "@OVITO_PLUGIN_LIBRARY_SUFFIX@")
+    # Set prefix and suffix of library name.
+    # This is needed so that the Python interpreter can load OVITO plugins as modules.
+    SET_TARGET_PROPERTIES(${plugin_name} PROPERTIES PREFIX "" SUFFIX "@OVITO_PLUGIN_LIBRARY_SUFFIX@")
 
     # Place compiled plugin module in the right directory.
     SET_TARGET_PROPERTIES(${plugin_name} PROPERTIES LIBRARY_OUTPUT_DIRECTORY "@OVITO_PLUGINS_DIRECTORY@")
@@ -46,18 +46,18 @@ FUNCTION(OVITO_PLUGIN plugin_name)
     # The build tree target should have rpath of install tree target.
     SET_TARGET_PROPERTIES(${plugin_name} PROPERTIES BUILD_WITH_INSTALL_RPATH TRUE)
 
-	# On macOS, the build tree target should use install_name of install tree target.
-	SET_TARGET_PROPERTIES(${plugin_name} PROPERTIES BUILD_WITH_INSTALL_NAME_DIR TRUE)
+    # On macOS, the build tree target should use install_name of install tree target.
+    SET_TARGET_PROPERTIES(${plugin_name} PROPERTIES BUILD_WITH_INSTALL_NAME_DIR TRUE)
 
     # Auto-generate plugin manifest.
-	SET(PLUGIN_MANIFEST "@OVITO_PLUGINS_DIRECTORY@/${plugin_name}.json")
-	FILE(WRITE "${PLUGIN_MANIFEST}" "{\n  \"plugin-id\" : \"${plugin_name}\",\n")
-	FILE(APPEND "${PLUGIN_MANIFEST}" "  \"dependencies\" : [ ")
-	FOREACH(name ${OVITO_PLUGIN_PLUGIN_DEPENDENCIES})
-		FILE(APPEND "${PLUGIN_MANIFEST}" "${delimiter}\"${name}\"")
-		SET(delimiter ", ")
-	ENDFOREACH()
-	FILE(APPEND "${PLUGIN_MANIFEST}" " ],\n")
-	FILE(APPEND "${PLUGIN_MANIFEST}" "  \"native-library\" : \"${plugin_name}\"\n}\n")
-		
+    SET(PLUGIN_MANIFEST "@OVITO_PLUGINS_DIRECTORY@/${plugin_name}.json")
+    FILE(WRITE "${PLUGIN_MANIFEST}" "{\n  \"plugin-id\" : \"${plugin_name}\",\n")
+    FILE(APPEND "${PLUGIN_MANIFEST}" "  \"dependencies\" : [ ")
+    FOREACH(name ${OVITO_PLUGIN_PLUGIN_DEPENDENCIES})
+        FILE(APPEND "${PLUGIN_MANIFEST}" "${delimiter}\"${name}\"")
+        SET(delimiter ", ")
+    ENDFOREACH()
+    FILE(APPEND "${PLUGIN_MANIFEST}" " ],\n")
+    FILE(APPEND "${PLUGIN_MANIFEST}" "  \"native-library\" : \"${plugin_name}\"\n}\n")
+        
 ENDFUNCTION()

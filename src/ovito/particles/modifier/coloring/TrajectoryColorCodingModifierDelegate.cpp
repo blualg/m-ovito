@@ -34,9 +34,9 @@ IMPLEMENT_OVITO_CLASS(TrajectoryColorCodingModifierDelegate);
 ******************************************************************************/
 QVector<DataObjectReference> TrajectoryColorCodingModifierDelegate::OOMetaClass::getApplicableObjects(const DataCollection& input) const
 {
-	if(input.containsObject<TrajectoryObject>())
-		return { DataObjectReference(&TrajectoryObject::OOClass()) };
-	return {};
+    if(input.containsObject<TrajectoryObject>())
+        return { DataObjectReference(&TrajectoryObject::OOClass()) };
+    return {};
 }
 
-}	// End of namespace
+}   // End of namespace

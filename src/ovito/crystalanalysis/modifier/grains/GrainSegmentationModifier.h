@@ -37,72 +37,72 @@ class GrainSegmentationEngine;  // defined in GrainSegmentationEngine.h
  */
 class OVITO_CRYSTALANALYSIS_EXPORT GrainSegmentationModifier : public AsynchronousModifier
 {
-	/// Give this modifier class its own metaclass.
-	class OVITO_CRYSTALANALYSIS_EXPORT GrainSegmentationModifierClass : public AsynchronousModifier::OOMetaClass
-	{
-	public:
+    /// Give this modifier class its own metaclass.
+    class OVITO_CRYSTALANALYSIS_EXPORT GrainSegmentationModifierClass : public AsynchronousModifier::OOMetaClass
+    {
+    public:
 
-		/// Inherit constructor from base metaclass.
-		using AsynchronousModifier::OOMetaClass::OOMetaClass;
+        /// Inherit constructor from base metaclass.
+        using AsynchronousModifier::OOMetaClass::OOMetaClass;
 
-		/// Asks the metaclass whether the modifier can be applied to the given input data.
-		virtual bool isApplicableTo(const DataCollection& input) const override;
-	};
+        /// Asks the metaclass whether the modifier can be applied to the given input data.
+        virtual bool isApplicableTo(const DataCollection& input) const override;
+    };
 
-	OVITO_CLASS_META(GrainSegmentationModifier, GrainSegmentationModifierClass)
+    OVITO_CLASS_META(GrainSegmentationModifier, GrainSegmentationModifierClass)
 
-	Q_CLASSINFO("DisplayName", "Grain segmentation (experimental)");
+    Q_CLASSINFO("DisplayName", "Grain segmentation (experimental)");
 #ifndef OVITO_QML_GUI
-	Q_CLASSINFO("ModifierCategory", "Analysis");
+    Q_CLASSINFO("ModifierCategory", "Analysis");
 #else
-	Q_CLASSINFO("ModifierCategory", "-");
+    Q_CLASSINFO("ModifierCategory", "-");
 #endif
 
 public:
 
-	enum MergeAlgorithm {
-		GraphClusteringAutomatic,	///< Use graph clustering algorithm to build merge sequence and choose threshold adaptively.
-		GraphClusteringManual,		///< Use graph clustering algorithm to build merge sequence and let user choose merge threshold.
-		MinimumSpanningTree,		///< Use minimum spanning tree algorithm to build merge sequence.
-	};
-	Q_ENUM(MergeAlgorithm);
+    enum MergeAlgorithm {
+        GraphClusteringAutomatic,   ///< Use graph clustering algorithm to build merge sequence and choose threshold adaptively.
+        GraphClusteringManual,      ///< Use graph clustering algorithm to build merge sequence and let user choose merge threshold.
+        MinimumSpanningTree,        ///< Use minimum spanning tree algorithm to build merge sequence.
+    };
+    Q_ENUM(MergeAlgorithm);
 
-	/// Constructor.
-	Q_INVOKABLE GrainSegmentationModifier(ObjectCreationParams params);
-	
+    /// Constructor.
+    Q_INVOKABLE GrainSegmentationModifier(ObjectCreationParams params);
+    
 protected:
 
-	/// Is called when the value of a property of this object has changed.
-	virtual void propertyChanged(const PropertyFieldDescriptor* field) override;
+    /// Is called when the value of a property of this object has changed.
+    virtual void propertyChanged(const PropertyFieldDescriptor* field) override;
 
-	/// Creates a computation engine that will compute the modifier's results.
-	virtual Future<EnginePtr> createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input) override;
+    /// Creates a computation engine that will compute the modifier's results.
+    virtual Future<EnginePtr> createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input) override;
 
 private:
 
-	/// The merging algorithm to use.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD(MergeAlgorithm, mergeAlgorithm, setMergeAlgorithm);
+    /// The merging algorithm to use.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(MergeAlgorithm, mergeAlgorithm, setMergeAlgorithm);
 
-	/// Controls whether to handle coherent crystal interfaces.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, handleCoherentInterfaces, setHandleCoherentInterfaces);
+    /// Controls whether to handle coherent crystal interfaces.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, handleCoherentInterfaces, setHandleCoherentInterfaces);
 
-	/// Controls the amount of noise allowed inside a grain.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD(FloatType, mergingThreshold, setMergingThreshold);
+    /// Controls the amount of noise allowed inside a grain.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(FloatType, mergingThreshold, setMergingThreshold);
 
-	/// The minimum number of crystalline atoms per grain.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD(int, minGrainAtomCount, setMinGrainAtomCount);
+    /// The minimum number of crystalline atoms per grain.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(int, minGrainAtomCount, setMinGrainAtomCount);
 
-	/// Controls whether to adopt orphan atoms
-	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, orphanAdoption, setOrphanAdoption, PROPERTY_FIELD_MEMORIZE);
+    /// Controls whether to adopt orphan atoms
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, orphanAdoption, setOrphanAdoption, PROPERTY_FIELD_MEMORIZE);
 
-	/// The visual element for rendering the bonds created by the modifier.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<BondsVis>, bondsVis, setBondsVis, PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES | PROPERTY_FIELD_MEMORIZE);
+    /// The visual element for rendering the bonds created by the modifier.
+    DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<BondsVis>, bondsVis, setBondsVis, PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES | PROPERTY_FIELD_MEMORIZE);
 
-	/// Controls the output of bonds by the modifier.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, outputBonds, setOutputBonds);
+    /// Controls the output of bonds by the modifier.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, outputBonds, setOutputBonds);
 
-	/// Controls the coloring of particles by the modifier.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, colorParticlesByGrain, setColorParticlesByGrain, PROPERTY_FIELD_MEMORIZE);
+    /// Controls the coloring of particles by the modifier.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, colorParticlesByGrain, setColorParticlesByGrain, PROPERTY_FIELD_MEMORIZE);
 };
 
-}	// End of namespace
+}   // End of namespace

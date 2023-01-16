@@ -38,65 +38,65 @@ IMPLEMENT_OVITO_CLASS(GeneralSettingsPage);
 ******************************************************************************/
 void GeneralSettingsPage::insertSettingsDialogPage(QTabWidget* tabWidget)
 {
-	QWidget* page = new QWidget();
-	tabWidget->addTab(page, tr("General"));
-	QVBoxLayout* layout1 = new QVBoxLayout(page);
+    QWidget* page = new QWidget();
+    tabWidget->addTab(page, tr("General"));
+    QVBoxLayout* layout1 = new QVBoxLayout(page);
 
-	QSettings settings;
+    QSettings settings;
 
-	// Group "User interface options":
-	QGroupBox* uiGroupBox = new QGroupBox(tr("User interface options"), page);
-	layout1->addWidget(uiGroupBox);
-	QGridLayout* layout2 = new QGridLayout(uiGroupBox);
+    // Group "User interface options":
+    QGroupBox* uiGroupBox = new QGroupBox(tr("User interface options"), page);
+    layout1->addWidget(uiGroupBox);
+    QGridLayout* layout2 = new QGridLayout(uiGroupBox);
 
-	_keepDirHistory = new QCheckBox(tr("Use seperate working directories for data import/export and session states"));
-	_keepDirHistory->setToolTip(tr(
-			"<p>Maintain individual working directories for different types of file I/O operations.</p>"));
-	layout2->addWidget(_keepDirHistory, 0, 0);
-	_keepDirHistory->setChecked(HistoryFileDialog::keepWorkingDirectoryHistoryEnabled());
+    _keepDirHistory = new QCheckBox(tr("Use seperate working directories for data import/export and session states"));
+    _keepDirHistory->setToolTip(tr(
+            "<p>Maintain individual working directories for different types of file I/O operations.</p>"));
+    layout2->addWidget(_keepDirHistory, 0, 0);
+    _keepDirHistory->setChecked(HistoryFileDialog::keepWorkingDirectoryHistoryEnabled());
 
-	_sortModifiersByCategory = new QCheckBox(tr("Sort list of available modifiers by category"));
-	_sortModifiersByCategory->setToolTip(tr("<p>Show a categorized list of available modifiers in the command panel.</p>"));
-	layout2->addWidget(_sortModifiersByCategory, 1, 0);
-	_sortModifiersByCategory->setChecked(ModifierListModel::useCategoriesGlobal());
+    _sortModifiersByCategory = new QCheckBox(tr("Sort list of available modifiers by category"));
+    _sortModifiersByCategory->setToolTip(tr("<p>Show a categorized list of available modifiers in the command panel.</p>"));
+    layout2->addWidget(_sortModifiersByCategory, 1, 0);
+    _sortModifiersByCategory->setChecked(ModifierListModel::useCategoriesGlobal());
 
-	// Group "Data import":
-	QGroupBox* importGroupBox = new QGroupBox(tr("Data import options"), page);
-	layout1->addWidget(importGroupBox);
-	layout2 = new QGridLayout(importGroupBox);
-	layout2->setColumnStretch(1, 1);
+    // Group "Data import":
+    QGroupBox* importGroupBox = new QGroupBox(tr("Data import options"), page);
+    layout1->addWidget(importGroupBox);
+    layout2 = new QGridLayout(importGroupBox);
+    layout2->setColumnStretch(1, 1);
 
-	layout2->addWidget(new QLabel(tr("Import multiple files of the same type:")), 0, 0);
-	_importMultipleFilesBehavior = new QButtonGroup(this);
-	QRadioButton* asTrajectoryBtn = new QRadioButton(tr("As trajectory (default)"));
-	QRadioButton* asSeparateObjectsBtn = new QRadioButton(tr("As separate objects"));
-	_importMultipleFilesBehavior->addButton(asTrajectoryBtn, FileImporter::ImportAsTrajectory);
-	_importMultipleFilesBehavior->addButton(asSeparateObjectsBtn, FileImporter::ImportAsSeparateObjects);
-	_importMultipleFilesBehavior->button(ImportFileDialog::multiFileImportMode())->setChecked(true);
-	layout2->addWidget(asTrajectoryBtn, 0, 1);
-	layout2->addWidget(asSeparateObjectsBtn, 1, 1);
+    layout2->addWidget(new QLabel(tr("Import multiple files of the same type:")), 0, 0);
+    _importMultipleFilesBehavior = new QButtonGroup(this);
+    QRadioButton* asTrajectoryBtn = new QRadioButton(tr("As trajectory (default)"));
+    QRadioButton* asSeparateObjectsBtn = new QRadioButton(tr("As separate objects"));
+    _importMultipleFilesBehavior->addButton(asTrajectoryBtn, FileImporter::ImportAsTrajectory);
+    _importMultipleFilesBehavior->addButton(asSeparateObjectsBtn, FileImporter::ImportAsSeparateObjects);
+    _importMultipleFilesBehavior->button(ImportFileDialog::multiFileImportMode())->setChecked(true);
+    layout2->addWidget(asTrajectoryBtn, 0, 1);
+    layout2->addWidget(asSeparateObjectsBtn, 1, 1);
 #ifndef OVITO_BUILD_PROFESSIONAL
-	asTrajectoryBtn->setEnabled(false);
-	asSeparateObjectsBtn->setEnabled(false);
-	asSeparateObjectsBtn->setText(asSeparateObjectsBtn->text() + tr(" (requires OVITO Pro)"));
+    asTrajectoryBtn->setEnabled(false);
+    asSeparateObjectsBtn->setEnabled(false);
+    asSeparateObjectsBtn->setText(asSeparateObjectsBtn->text() + tr(" (requires OVITO Pro)"));
 #endif
 
-	// Group "Program updates":
+    // Group "Program updates":
 #if !defined(OVITO_BUILD_APPSTORE_VERSION)
-	QGroupBox* updateGroupBox = new QGroupBox(tr("Program updates"), page);
-	layout1->addWidget(updateGroupBox);
-	layout2 = new QGridLayout(updateGroupBox);
+    QGroupBox* updateGroupBox = new QGroupBox(tr("Program updates"), page);
+    layout1->addWidget(updateGroupBox);
+    layout2 = new QGridLayout(updateGroupBox);
 
-	_enableUpdateChecks = new QCheckBox(tr("Periodically check ovito.org website for program updates (and display notice when available)"), updateGroupBox);
-	_enableUpdateChecks->setToolTip(tr(
-			"<p>The news page is fetched from <i>www.ovito.org</i> on each program startup. "
-			"It displays information about new program releases as soon as they become available.</p>"));
-	layout2->addWidget(_enableUpdateChecks, 0, 0);
+    _enableUpdateChecks = new QCheckBox(tr("Periodically check ovito.org website for program updates (and display notice when available)"), updateGroupBox);
+    _enableUpdateChecks->setToolTip(tr(
+            "<p>The news page is fetched from <i>www.ovito.org</i> on each program startup. "
+            "It displays information about new program releases as soon as they become available.</p>"));
+    layout2->addWidget(_enableUpdateChecks, 0, 0);
 
-	_enableUpdateChecks->setChecked(settings.value("updates/check_for_updates", true).toBool());
+    _enableUpdateChecks->setChecked(settings.value("updates/check_for_updates", true).toBool());
 #endif
 
-	layout1->addStretch();
+    layout1->addStretch();
 }
 
 /******************************************************************************
@@ -104,16 +104,16 @@ void GeneralSettingsPage::insertSettingsDialogPage(QTabWidget* tabWidget)
 ******************************************************************************/
 void GeneralSettingsPage::saveValues(QTabWidget* tabWidget)
 {
-	HistoryFileDialog::setKeepWorkingDirectoryHistoryEnabled(_keepDirHistory->isChecked());
-	ModifierListModel::setUseCategoriesGlobal(_sortModifiersByCategory->isChecked());
+    HistoryFileDialog::setKeepWorkingDirectoryHistoryEnabled(_keepDirHistory->isChecked());
+    ModifierListModel::setUseCategoriesGlobal(_sortModifiersByCategory->isChecked());
 #ifdef OVITO_BUILD_PROFESSIONAL
-	ImportFileDialog::setMultiFileImportMode(static_cast<FileImporter::MultiFileImportMode>(_importMultipleFilesBehavior->checkedId()));
+    ImportFileDialog::setMultiFileImportMode(static_cast<FileImporter::MultiFileImportMode>(_importMultipleFilesBehavior->checkedId()));
 #endif
 
 #if !defined(OVITO_BUILD_APPSTORE_VERSION)
-	QSettings settings;
-	settings.setValue("updates/check_for_updates", _enableUpdateChecks->isChecked());
+    QSettings settings;
+    settings.setValue("updates/check_for_updates", _enableUpdateChecks->isChecked());
 #endif
 }
 
-}	// End of namespace
+}   // End of namespace

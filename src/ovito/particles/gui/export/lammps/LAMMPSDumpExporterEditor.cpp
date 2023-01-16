@@ -35,20 +35,20 @@ SET_OVITO_OBJECT_EDITOR(LAMMPSDumpExporter, LAMMPSDumpExporterEditor);
 ******************************************************************************/
 void LAMMPSDumpExporterEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 {
-	// Create a rollout.
-	QWidget* rollout = createRollout(tr("LAMMPS Dump File"), rolloutParams);
+    // Create a rollout.
+    QWidget* rollout = createRollout(tr("LAMMPS Dump File"), rolloutParams);
 
     // Create the rollout contents.
-	QGridLayout* layout = new QGridLayout(rollout);
-	layout->setContentsMargins(4,4,4,4);
-	layout->setSpacing(4);
-	layout->setColumnStretch(2,1);
+    QGridLayout* layout = new QGridLayout(rollout);
+    layout->setContentsMargins(4,4,4,4);
+    layout->setSpacing(4);
+    layout->setColumnStretch(2,1);
 
-	IntegerParameterUI* precisionUI = new IntegerParameterUI(this, PROPERTY_FIELD(FileExporter::floatOutputPrecision));
-	layout->addWidget(precisionUI->label(), 0, 0);
-	layout->addLayout(precisionUI->createFieldLayout(), 0, 1);
+    IntegerParameterUI* precisionUI = new IntegerParameterUI(this, PROPERTY_FIELD(FileExporter::floatOutputPrecision));
+    layout->addWidget(precisionUI->label(), 0, 0);
+    layout->addLayout(precisionUI->createFieldLayout(), 0, 1);
 
-	FileColumnParticleExporterEditor::createUI(rolloutParams.before(rollout));
+    FileColumnParticleExporterEditor::createUI(rolloutParams.before(rollout));
 }
 
-}	// End of namespace
+}   // End of namespace

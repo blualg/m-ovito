@@ -37,71 +37,71 @@ SET_OVITO_OBJECT_EDITOR(InteractiveMolecularDynamicsModifier, InteractiveMolecul
 ******************************************************************************/
 void InteractiveMolecularDynamicsModifierEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 {
-	QWidget* rollout = createRollout(tr("Interactive molecular dynamics (IMD)"), rolloutParams, "manual:particles.modifiers.interactive_molecular_dynamics");
+    QWidget* rollout = createRollout(tr("Interactive molecular dynamics (IMD)"), rolloutParams, "manual:particles.modifiers.interactive_molecular_dynamics");
 
     // Create the rollout contents.
-	QGridLayout* layout = new QGridLayout(rollout);
-	layout->setContentsMargins(4,4,4,4);
-	layout->setSpacing(4);
-	layout->setColumnStretch(1, 1);
+    QGridLayout* layout = new QGridLayout(rollout);
+    layout->setContentsMargins(4,4,4,4);
+    layout->setSpacing(4);
+    layout->setColumnStretch(1, 1);
 
-	QGridLayout* sublayout = new QGridLayout();
-	sublayout->setContentsMargins(0,0,0,0);
-	sublayout->setHorizontalSpacing(4);
-	sublayout->setVerticalSpacing(2);
-	sublayout->setColumnStretch(0, 3);
-	sublayout->setColumnStretch(1, 1);
-	layout->addLayout(sublayout, 0, 0, 1, 2);
+    QGridLayout* sublayout = new QGridLayout();
+    sublayout->setContentsMargins(0,0,0,0);
+    sublayout->setHorizontalSpacing(4);
+    sublayout->setVerticalSpacing(2);
+    sublayout->setColumnStretch(0, 3);
+    sublayout->setColumnStretch(1, 1);
+    layout->addLayout(sublayout, 0, 0, 1, 2);
 
-	// Server hostname.
-	_serverHostnameUI = new StringParameterUI(this, PROPERTY_FIELD(InteractiveMolecularDynamicsModifier::hostName));
-	sublayout->addWidget(new QLabel(tr("IMD Server:")), 0, 0);
-	sublayout->addWidget(_serverHostnameUI->textBox(), 1, 0);
+    // Server hostname.
+    _serverHostnameUI = new StringParameterUI(this, PROPERTY_FIELD(InteractiveMolecularDynamicsModifier::hostName));
+    sublayout->addWidget(new QLabel(tr("IMD Server:")), 0, 0);
+    sublayout->addWidget(_serverHostnameUI->textBox(), 1, 0);
 
-	// Server port.
-	_serverPortUI = new IntegerParameterUI(this, PROPERTY_FIELD(InteractiveMolecularDynamicsModifier::port));
-	sublayout->addWidget(_serverPortUI->label(), 0, 1);
-	sublayout->addLayout(_serverPortUI->createFieldLayout(), 1, 1);
+    // Server port.
+    _serverPortUI = new IntegerParameterUI(this, PROPERTY_FIELD(InteractiveMolecularDynamicsModifier::port));
+    sublayout->addWidget(_serverPortUI->label(), 0, 1);
+    sublayout->addLayout(_serverPortUI->createFieldLayout(), 1, 1);
 
-	// Connect button.
-	_connectButton = new QPushButton();
-	_connectButton->setEnabled(false);
-	layout->addWidget(_connectButton, 1, 0, 1, 2);
+    // Connect button.
+    _connectButton = new QPushButton();
+    _connectButton->setEnabled(false);
+    layout->addWidget(_connectButton, 1, 0, 1, 2);
 
-	// Transmission interval.
-	layout->setRowMinimumHeight(2, 10);
-	IntegerParameterUI* transmissionIntervalUI = new IntegerParameterUI(this, PROPERTY_FIELD(InteractiveMolecularDynamicsModifier::transmissionInterval));
-	layout->addWidget(transmissionIntervalUI->label(), 3, 0);
-	layout->addLayout(transmissionIntervalUI->createFieldLayout(), 3, 1);
+    // Transmission interval.
+    layout->setRowMinimumHeight(2, 10);
+    IntegerParameterUI* transmissionIntervalUI = new IntegerParameterUI(this, PROPERTY_FIELD(InteractiveMolecularDynamicsModifier::transmissionInterval));
+    layout->addWidget(transmissionIntervalUI->label(), 3, 0);
+    layout->addLayout(transmissionIntervalUI->createFieldLayout(), 3, 1);
 
-	// Status label.
-	layout->setRowMinimumHeight(4, 10);
-	layout->addWidget((new ObjectStatusDisplay(this))->statusWidget(), 5, 0, 1, 2);
+    // Status label.
+    layout->setRowMinimumHeight(4, 10);
+    layout->addWidget((new ObjectStatusDisplay(this))->statusWidget(), 5, 0, 1, 2);
 
-	// Handle connect button.
-	connect(_connectButton, &QPushButton::clicked, this, [&]() {
-		InteractiveMolecularDynamicsModifier* modifier = static_object_cast<InteractiveMolecularDynamicsModifier>(editObject());
-		if(!modifier) return;
+    // Handle connect button.
+    connect(_connectButton, &QPushButton::clicked, this, [&]() {
+        InteractiveMolecularDynamicsModifier* modifier = static_object_cast<InteractiveMolecularDynamicsModifier>(editObject());
+        if(!modifier) return;
 
-		if(modifier->socket().state() == QAbstractSocket::UnconnectedState)
-			modifier->connectToServer(mainWindow());
-		else
-			modifier->disconnectFromServer();
-	});
+        if(modifier->socket().state() == QAbstractSocket::UnconnectedState)
+            modifier->connectToServer(mainWindow());
+        else
+            modifier->disconnectFromServer();
+    });
 
-	// Whenever a new modifier gets loaded into the editor:
-	connect(this, &PropertiesEditor::contentsReplaced, this, [this, con = QMetaObject::Connection()](RefTarget* editObject) mutable {
-		disconnect(con);
+    // Whenever a new modifier gets loaded into the editor:
+    connect(this, &PropertiesEditor::contentsReplaced, this, [this, con = QMetaObject::Connection()](RefTarget* editObject) mutable {
+        disconnect(con);
 
-		// Update displayed information.
-		connectionStateChanged();
+        // Update displayed information.
+        connectionStateChanged();
 
-		// Update UI when IMD server connection changes.
-		con = editObject ? connect(&static_object_cast<InteractiveMolecularDynamicsModifier>(editObject)->socket(), &QAbstractSocket::stateChanged, this, &InteractiveMolecularDynamicsModifierEditor::connectionStateChanged) : QMetaObject::Connection();
-	});
+        // Update UI when IMD server connection changes.
+        con = editObject ? connect(&static_object_cast<InteractiveMolecularDynamicsModifier>(editObject)->socket(), &QAbstractSocket::stateChanged, this, &InteractiveMolecularDynamicsModifierEditor::connectionStateChanged) : QMetaObject::Connection();
+    });
 
-	// Handle parameter change.
-	connect(this, &PropertiesEditor::contentsChanged, this, &InteractiveMolecularDynamicsModifierEditor::connectionStateChanged);
+    // Handle parameter change.
+    connect(this, &PropertiesEditor::contentsChanged, this, &InteractiveMolecularDynamicsModifierEditor::connectionStateChanged);
 }
 
 /******************************************************************************
@@ -109,13 +109,13 @@ void InteractiveMolecularDynamicsModifierEditor::createUI(const RolloutInsertion
 ******************************************************************************/
 void InteractiveMolecularDynamicsModifierEditor::connectionStateChanged()
 {
-	InteractiveMolecularDynamicsModifier* modifier = static_object_cast<InteractiveMolecularDynamicsModifier>(editObject());
+    InteractiveMolecularDynamicsModifier* modifier = static_object_cast<InteractiveMolecularDynamicsModifier>(editObject());
 
-	_connectButton->setEnabled(modifier && (modifier->socket().state() != QAbstractSocket::UnconnectedState || !modifier->hostName().trimmed().isEmpty()));
-	_connectButton->setText(!modifier || modifier->socket().state() == QAbstractSocket::UnconnectedState ?
-		tr("Connect") : tr("Disconnect"));
-	_serverHostnameUI->setEnabled(modifier && modifier->socket().state() == QAbstractSocket::UnconnectedState);
-	_serverPortUI->setEnabled(modifier && modifier->socket().state() == QAbstractSocket::UnconnectedState);
+    _connectButton->setEnabled(modifier && (modifier->socket().state() != QAbstractSocket::UnconnectedState || !modifier->hostName().trimmed().isEmpty()));
+    _connectButton->setText(!modifier || modifier->socket().state() == QAbstractSocket::UnconnectedState ?
+        tr("Connect") : tr("Disconnect"));
+    _serverHostnameUI->setEnabled(modifier && modifier->socket().state() == QAbstractSocket::UnconnectedState);
+    _serverPortUI->setEnabled(modifier && modifier->socket().state() == QAbstractSocket::UnconnectedState);
 }
 
-}	// End of namespace
+}   // End of namespace

@@ -39,8 +39,8 @@ DEFINE_REFERENCE_FIELD(PropertiesEditor, editObject);
 ******************************************************************************/
 PropertiesEditor::Registry& PropertiesEditor::registry()
 {
-	static Registry singleton;
-	return singleton;
+    static Registry singleton;
+    return singleton;
 }
 
 /******************************************************************************
@@ -48,23 +48,23 @@ PropertiesEditor::Registry& PropertiesEditor::registry()
 ******************************************************************************/
 OORef<PropertiesEditor> PropertiesEditor::create(MainWindow& mainWindow, RefTarget* obj)
 {
-	OVITO_CHECK_POINTER(obj);
-	try {
-		// Look if an editor class has been registered for this RefTarget class and one of its super classes.
-		for(OvitoClassPtr clazz = &obj->getOOClass(); clazz != nullptr; clazz = clazz->superClass()) {
-			OvitoClassPtr editorClass = registry().getEditorClass(clazz);
-			if(editorClass) {
-				if(!editorClass->isDerivedFrom(PropertiesEditor::OOClass()))
-					throw Exception(tr("The editor class %1 assigned to the RefTarget-derived class %2 is not derived from PropertiesEditor.").arg(editorClass->name(), clazz->name()));
-				return dynamic_object_cast<PropertiesEditor>(editorClass->createInstance());
-			}
-		}
-	}
-	catch(Exception& ex) {
-		ex.prependGeneralMessage(tr("Failed to create editor component for the '%1' object.").arg(obj->objectTitle()));
-		mainWindow.reportError(ex);
-	}
-	return nullptr;
+    OVITO_CHECK_POINTER(obj);
+    try {
+        // Look if an editor class has been registered for this RefTarget class and one of its super classes.
+        for(OvitoClassPtr clazz = &obj->getOOClass(); clazz != nullptr; clazz = clazz->superClass()) {
+            OvitoClassPtr editorClass = registry().getEditorClass(clazz);
+            if(editorClass) {
+                if(!editorClass->isDerivedFrom(PropertiesEditor::OOClass()))
+                    throw Exception(tr("The editor class %1 assigned to the RefTarget-derived class %2 is not derived from PropertiesEditor.").arg(editorClass->name(), clazz->name()));
+                return dynamic_object_cast<PropertiesEditor>(editorClass->createInstance());
+            }
+        }
+    }
+    catch(Exception& ex) {
+        ex.prependGeneralMessage(tr("Failed to create editor component for the '%1' object.").arg(obj->objectTitle()));
+        mainWindow.reportError(ex);
+    }
+    return nullptr;
 }
 
 /******************************************************************************
@@ -72,19 +72,19 @@ OORef<PropertiesEditor> PropertiesEditor::create(MainWindow& mainWindow, RefTarg
 ******************************************************************************/
 void PropertiesEditor::initialize(PropertiesPanel* container, const RolloutInsertionParameters& rolloutParams, PropertiesEditor* parentEditor)
 {
-	OVITO_CHECK_POINTER(container);
-	OVITO_ASSERT_MSG(_container == nullptr, "PropertiesEditor::initialize()", "Editor can only be initialized once.");
-	OVITO_ASSERT_MSG(_parentEditor == nullptr, "PropertiesEditor::initialize()", "Editor can only be initialized once.");
-	_container = container;
-	_mainWindow = &container->mainWindow();
-	_parentEditor = parentEditor;
-	// Forward signals emitted by the parent editor.
-	if(parentEditor) {
-		connect(parentEditor, &PropertiesEditor::pipelineOutputChanged, this, &PropertiesEditor::pipelineOutputChanged);
-		connect(parentEditor, &PropertiesEditor::pipelineInputChanged, this, &PropertiesEditor::pipelineInputChanged);
-	}
-	createUI(rolloutParams);
-	Q_EMIT contentsReplaced(nullptr);
+    OVITO_CHECK_POINTER(container);
+    OVITO_ASSERT_MSG(_container == nullptr, "PropertiesEditor::initialize()", "Editor can only be initialized once.");
+    OVITO_ASSERT_MSG(_parentEditor == nullptr, "PropertiesEditor::initialize()", "Editor can only be initialized once.");
+    _container = container;
+    _mainWindow = &container->mainWindow();
+    _parentEditor = parentEditor;
+    // Forward signals emitted by the parent editor.
+    if(parentEditor) {
+        connect(parentEditor, &PropertiesEditor::pipelineOutputChanged, this, &PropertiesEditor::pipelineOutputChanged);
+        connect(parentEditor, &PropertiesEditor::pipelineInputChanged, this, &PropertiesEditor::pipelineInputChanged);
+    }
+    createUI(rolloutParams);
+    Q_EMIT contentsReplaced(nullptr);
 }
 
 /******************************************************************************
@@ -92,10 +92,10 @@ void PropertiesEditor::initialize(PropertiesPanel* container, const RolloutInser
 ******************************************************************************/
 void PropertiesEditor::setEditObject(RefTarget* newObject) 
 {
-	OVITO_ASSERT_MSG(!editObject() || !newObject || newObject->getOOClass().isDerivedFrom(editObject()->getOOClass()),
-			"PropertiesEditor::setEditObject()", "This properties editor was not made for this object class.");
+    OVITO_ASSERT_MSG(!editObject() || !newObject || newObject->getOOClass().isDerivedFrom(editObject()->getOOClass()),
+            "PropertiesEditor::setEditObject()", "This properties editor was not made for this object class.");
 
-	_editObject.set(this, PROPERTY_FIELD(editObject), newObject);
+    _editObject.set(this, PROPERTY_FIELD(editObject), newObject);
 }
 
 /******************************************************************************
@@ -105,46 +105,46 @@ void PropertiesEditor::setEditObject(RefTarget* newObject)
 ******************************************************************************/
 QWidget* PropertiesEditor::createRollout(const QString& title, const RolloutInsertionParameters& params, const char* helpPage)
 {
-	OVITO_ASSERT_MSG(container(), "PropertiesEditor::createRollout()", "Editor has not been properly initialized.");
-	QWidget* panel;
-	if(params.container() == nullptr || !params.container()->layout() || params.container()->layout()->count() != 0) {
-		panel = new QWidget();
-		_rollouts.add(panel);
+    OVITO_ASSERT_MSG(container(), "PropertiesEditor::createRollout()", "Editor has not been properly initialized.");
+    QWidget* panel;
+    if(params.container() == nullptr || !params.container()->layout() || params.container()->layout()->count() != 0) {
+        panel = new QWidget();
+        _rollouts.add(panel);
 
-		// Create a new rollout in the rollout container.
-		Rollout* rollout = container()->addRollout(panel, QString(), params, helpPage);
+        // Create a new rollout in the rollout container.
+        Rollout* rollout = container()->addRollout(panel, QString(), params, helpPage);
 
-		// Helper function which updates the title of the rollout.
-		auto updateRolloutTitle = [prefixTitle = params.title(), fixedTitle = title, rollout](RefTarget* target) {
-			if(!rollout) return;
-			QString effectiveTitle = fixedTitle;
+        // Helper function which updates the title of the rollout.
+        auto updateRolloutTitle = [prefixTitle = params.title(), fixedTitle = title, rollout](RefTarget* target) {
+            if(!rollout) return;
+            QString effectiveTitle = fixedTitle;
 
-			// If no fixed title has been specified, use the title of the current object being edited.
-			if(effectiveTitle.isEmpty() && target) 
-				effectiveTitle = target->objectTitle();
+            // If no fixed title has been specified, use the title of the current object being edited.
+            if(effectiveTitle.isEmpty() && target) 
+                effectiveTitle = target->objectTitle();
 
-			// Let the rollout insertion parameters control the rollout title prefix.
-			if(!prefixTitle.isEmpty()) {
-				if(prefixTitle.contains(QStringLiteral("%1")))
-					effectiveTitle = prefixTitle.arg(effectiveTitle);
-				else
-					effectiveTitle = prefixTitle;
-			}
-			rollout->setTitle(std::move(effectiveTitle));
-		};
-		updateRolloutTitle(editObject());
+            // Let the rollout insertion parameters control the rollout title prefix.
+            if(!prefixTitle.isEmpty()) {
+                if(prefixTitle.contains(QStringLiteral("%1")))
+                    effectiveTitle = prefixTitle.arg(effectiveTitle);
+                else
+                    effectiveTitle = prefixTitle;
+            }
+            rollout->setTitle(std::move(effectiveTitle));
+        };
+        updateRolloutTitle(editObject());
 
-		// Automatically update rollout title each time a new object is loaded into the editor.
-		connect(this, &PropertiesEditor::contentsReplaced, rollout, std::move(updateRolloutTitle));
-	}
-	else {
-		panel = new QWidget(params.container());
-		_rollouts.add(panel);
+        // Automatically update rollout title each time a new object is loaded into the editor.
+        connect(this, &PropertiesEditor::contentsReplaced, rollout, std::move(updateRolloutTitle));
+    }
+    else {
+        panel = new QWidget(params.container());
+        _rollouts.add(panel);
 
-		// Instead of creating a new rollout for the widget, insert widget into a prescribed parent widget.
-		params.container()->layout()->addWidget(panel);
-	}
-	return panel;
+        // Instead of creating a new rollout for the widget, insert widget into a prescribed parent widget.
+        params.container()->layout()->addWidget(panel);
+    }
+    return panel;
 }
 
 /******************************************************************************
@@ -152,7 +152,7 @@ QWidget* PropertiesEditor::createRollout(const QString& title, const RolloutInse
 ******************************************************************************/
 QWidget* PropertiesEditor::parentWindow() const 
 { 
-	return parentEditor() ? parentEditor()->parentWindow() : container()->window(); 
+    return parentEditor() ? parentEditor()->parentWindow() : container()->window(); 
 }
 
 /******************************************************************************
@@ -160,12 +160,12 @@ QWidget* PropertiesEditor::parentWindow() const
 ******************************************************************************/
 void PropertiesEditor::disableRollout(QWidget* rolloutWidget, const QString& noticeText)
 {
-	rolloutWidget->setEnabled(false);
-	if(Rollout* rollout = container()->findRolloutFromWidget(rolloutWidget)) {
-		rollout->setNotice(noticeText);
-		// Force a re-layout of the rollouts.
-		QTimer::singleShot(100, container(), &RolloutContainer::updateRollouts);	
-	}
+    rolloutWidget->setEnabled(false);
+    if(Rollout* rollout = container()->findRolloutFromWidget(rolloutWidget)) {
+        rollout->setNotice(noticeText);
+        // Force a re-layout of the rollouts.
+        QTimer::singleShot(100, container(), &RolloutContainer::updateRollouts);    
+    }
 }
 
 /******************************************************************************
@@ -173,18 +173,18 @@ void PropertiesEditor::disableRollout(QWidget* rolloutWidget, const QString& not
 ******************************************************************************/
 bool PropertiesEditor::referenceEvent(RefTarget* source, const ReferenceEvent& event)
 {
-	if(source == editObject()) {
-		if(event.type() == ReferenceEvent::TargetChanged) {
-			Q_EMIT contentsChanged(source);
-		}
-		else if(event.type() == ReferenceEvent::PipelineCacheUpdated) {
-			emitPipelineOutputChangedSignal(this);
-		}
-		else if(event.type() == ReferenceEvent::PipelineInputChanged) {
-			emitPipelineInputChangedSignal(this);
-		}
-	}
-	return RefMaker::referenceEvent(source, event);
+    if(source == editObject()) {
+        if(event.type() == ReferenceEvent::TargetChanged) {
+            Q_EMIT contentsChanged(source);
+        }
+        else if(event.type() == ReferenceEvent::PipelineCacheUpdated) {
+            emitPipelineOutputChangedSignal(this);
+        }
+        else if(event.type() == ReferenceEvent::PipelineInputChanged) {
+            emitPipelineInputChangedSignal(this);
+        }
+    }
+    return RefMaker::referenceEvent(source, event);
 }
 
 /******************************************************************************
@@ -192,15 +192,15 @@ bool PropertiesEditor::referenceEvent(RefTarget* source, const ReferenceEvent& e
 ******************************************************************************/
 void PropertiesEditor::referenceReplaced(const PropertyFieldDescriptor* field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex)
 {
-	if(field == PROPERTY_FIELD(editObject)) {
-		if(oldTarget) oldTarget->unsetObjectEditingFlag();
-		if(newTarget) newTarget->setObjectEditingFlag();
-		Q_EMIT contentsReplaced(editObject());
-		Q_EMIT contentsChanged(editObject());
-		emitPipelineInputChangedSignal(this);
-		emitPipelineOutputChangedSignal(this);
-	}
-	RefMaker::referenceReplaced(field, oldTarget, newTarget, listIndex);
+    if(field == PROPERTY_FIELD(editObject)) {
+        if(oldTarget) oldTarget->unsetObjectEditingFlag();
+        if(newTarget) newTarget->setObjectEditingFlag();
+        Q_EMIT contentsReplaced(editObject());
+        Q_EMIT contentsChanged(editObject());
+        emitPipelineInputChangedSignal(this);
+        emitPipelineOutputChangedSignal(this);
+    }
+    RefMaker::referenceReplaced(field, oldTarget, newTarget, listIndex);
 }
 
 /******************************************************************************
@@ -208,8 +208,8 @@ void PropertiesEditor::referenceReplaced(const PropertyFieldDescriptor* field, R
 ******************************************************************************/
 void PropertiesEditor::changePropertyFieldValue(const PropertyFieldDescriptor* field, const QVariant& newValue)
 {
-	if(editObject())
-		editObject()->setPropertyFieldValue(field, newValue);
+    if(editObject())
+        editObject()->setPropertyFieldValue(field, newValue);
 }
 
 /******************************************************************************
@@ -217,39 +217,39 @@ void PropertiesEditor::changePropertyFieldValue(const PropertyFieldDescriptor* f
 ******************************************************************************/
 PipelineFlowState PropertiesEditor::getPipelineInput() const
 {
-	// When editing a modifier, request pipeline input state from the modifier application being edited in the parent editor.
-	if(ModifierApplication* modApp = dynamic_object_cast<ModifierApplication>(editObject())) {
-		if(std::optional<AnimationTime> time = currentAnimationTime()) {
-			PipelineFlowState state;
-			handleExceptions([&] {
-				state = modApp->evaluateInputSynchronous(PipelineEvaluationRequest(*time));
-			});
-			return state;
-		}
-	}
+    // When editing a modifier, request pipeline input state from the modifier application being edited in the parent editor.
+    if(ModifierApplication* modApp = dynamic_object_cast<ModifierApplication>(editObject())) {
+        if(std::optional<AnimationTime> time = currentAnimationTime()) {
+            PipelineFlowState state;
+            handleExceptions([&] {
+                state = modApp->evaluateInputSynchronous(PipelineEvaluationRequest(*time));
+            });
+            return state;
+        }
+    }
 
-	// When editing a DataVis element, request pipeline state from the selected scene node.
-	if(DataVis* vis = dynamic_object_cast<DataVis>(editObject())) {
-		if(SelectionSet* selection = mainWindow().datasetContainer().activeSelectionSet()) {
-			if(PipelineSceneNode* pipelineNode = dynamic_object_cast<PipelineSceneNode>(selection->firstNode())) {
-				if(std::optional<AnimationTime> time = currentAnimationTime()) {
-					OVITO_ASSERT(vis->pipelines(true).contains(pipelineNode));
-					OVITO_ASSERT(pipelineNode->visElements().contains(vis));
-					PipelineFlowState state;
-					handleExceptions([&] {
-						state = pipelineNode->evaluatePipelineSynchronous(*time, false);
-					});
-					return state;
-				}
-			}
-		}
-	}
+    // When editing a DataVis element, request pipeline state from the selected scene node.
+    if(DataVis* vis = dynamic_object_cast<DataVis>(editObject())) {
+        if(SelectionSet* selection = mainWindow().datasetContainer().activeSelectionSet()) {
+            if(PipelineSceneNode* pipelineNode = dynamic_object_cast<PipelineSceneNode>(selection->firstNode())) {
+                if(std::optional<AnimationTime> time = currentAnimationTime()) {
+                    OVITO_ASSERT(vis->pipelines(true).contains(pipelineNode));
+                    OVITO_ASSERT(pipelineNode->visElements().contains(vis));
+                    PipelineFlowState state;
+                    handleExceptions([&] {
+                        state = pipelineNode->evaluatePipelineSynchronous(*time, false);
+                    });
+                    return state;
+                }
+            }
+        }
+    }
 
-	// Sub-editors inherit the information from their parent editor.
-	if(parentEditor())
-		return parentEditor()->getPipelineInput();
-	
-	return {};
+    // Sub-editors inherit the information from their parent editor.
+    if(parentEditor())
+        return parentEditor()->getPipelineInput();
+    
+    return {};
 }
 
 /******************************************************************************
@@ -257,36 +257,36 @@ PipelineFlowState PropertiesEditor::getPipelineInput() const
 ******************************************************************************/
 std::vector<PipelineFlowState> PropertiesEditor::getPipelineInputs() const
 {
-	std::vector<PipelineFlowState> inputStates;
+    std::vector<PipelineFlowState> inputStates;
 
-	// Sub-editors inherit the information from their parent editor.
-	if(parentEditor())
-		inputStates = parentEditor()->getPipelineInputs();
+    // Sub-editors inherit the information from their parent editor.
+    if(parentEditor())
+        inputStates = parentEditor()->getPipelineInputs();
 
-	// When editing a modifier, get the pipeline state from the modifier applications.
-	if(Modifier* modifier = dynamic_object_cast<Modifier>(editObject())) {
-		if(std::optional<AnimationTime> time = currentAnimationTime()) {
-			PipelineEvaluationRequest request(*time);
-			for(ModifierApplication* modApp : modifier->modifierApplications()) {
-				handleExceptions([&] {
-					inputStates.push_back(modApp->evaluateInputSynchronous(request));
-				});
-			}
-		}
-	}
+    // When editing a modifier, get the pipeline state from the modifier applications.
+    if(Modifier* modifier = dynamic_object_cast<Modifier>(editObject())) {
+        if(std::optional<AnimationTime> time = currentAnimationTime()) {
+            PipelineEvaluationRequest request(*time);
+            for(ModifierApplication* modApp : modifier->modifierApplications()) {
+                handleExceptions([&] {
+                    inputStates.push_back(modApp->evaluateInputSynchronous(request));
+                });
+            }
+        }
+    }
 
-	// When editing a DataVis element, get the pipeline state from the scene nodes.
-	if(DataVis* vis = dynamic_object_cast<DataVis>(editObject())) {
-		if(std::optional<AnimationTime> time = currentAnimationTime()) {
-			for(PipelineSceneNode* pipeline : vis->pipelines(true)) {
-				handleExceptions([&] {
-					inputStates.push_back(pipeline->evaluatePipelineSynchronous(*time, false));
-				});
-			}
-		}
-	}
-	
-	return inputStates;
+    // When editing a DataVis element, get the pipeline state from the scene nodes.
+    if(DataVis* vis = dynamic_object_cast<DataVis>(editObject())) {
+        if(std::optional<AnimationTime> time = currentAnimationTime()) {
+            for(PipelineSceneNode* pipeline : vis->pipelines(true)) {
+                handleExceptions([&] {
+                    inputStates.push_back(pipeline->evaluatePipelineSynchronous(*time, false));
+                });
+            }
+        }
+    }
+    
+    return inputStates;
 }
 
 /******************************************************************************
@@ -294,20 +294,20 @@ std::vector<PipelineFlowState> PropertiesEditor::getPipelineInputs() const
 ******************************************************************************/
 PipelineFlowState PropertiesEditor::getPipelineOutput() const
 {
-	if(Modifier* modifier = dynamic_object_cast<Modifier>(editObject())) {
-		// If it's a modifier being edited, request output from the parent editor, which hosts the ModifierApplication.
-		if(parentEditor())
-			return parentEditor()->getPipelineOutput();
-	}
-	else if(ModifierApplication* modApp = dynamic_object_cast<ModifierApplication>(editObject())) {
-		// Request pipeline output state from the modifier application.
-		PipelineFlowState state;
-		handleExceptions([&] {
-			state = modApp->evaluateSynchronous(PipelineEvaluationRequest(currentAnimationTime()));
-		});
-		return state;
-	}
-	return {};
+    if(Modifier* modifier = dynamic_object_cast<Modifier>(editObject())) {
+        // If it's a modifier being edited, request output from the parent editor, which hosts the ModifierApplication.
+        if(parentEditor())
+            return parentEditor()->getPipelineOutput();
+    }
+    else if(ModifierApplication* modApp = dynamic_object_cast<ModifierApplication>(editObject())) {
+        // Request pipeline output state from the modifier application.
+        PipelineFlowState state;
+        handleExceptions([&] {
+            state = modApp->evaluateSynchronous(PipelineEvaluationRequest(currentAnimationTime()));
+        });
+        return state;
+    }
+    return {};
 }
 
 /******************************************************************************
@@ -315,12 +315,12 @@ PipelineFlowState PropertiesEditor::getPipelineOutput() const
 ******************************************************************************/
 ModifierApplication* PropertiesEditor::modifierApplication() const
 {
-	if(ModifierApplication* modApp = dynamic_object_cast<ModifierApplication>(editObject()))
-		return modApp;
-	else if(parentEditor())
-		return parentEditor()->modifierApplication();
-	else
-		return nullptr;
+    if(ModifierApplication* modApp = dynamic_object_cast<ModifierApplication>(editObject()))
+        return modApp;
+    else if(parentEditor())
+        return parentEditor()->modifierApplication();
+    else
+        return nullptr;
 }
 
 /******************************************************************************
@@ -328,12 +328,12 @@ ModifierApplication* PropertiesEditor::modifierApplication() const
 ******************************************************************************/
 QVector<ModifierApplication*> PropertiesEditor::modifierApplications() const
 {
-	if(Modifier* modifier = dynamic_object_cast<Modifier>(editObject()))
-		return modifier->modifierApplications();
-	else if(parentEditor())
-		return parentEditor()->modifierApplications();
-	else
-		return {};
+    if(Modifier* modifier = dynamic_object_cast<Modifier>(editObject()))
+        return modifier->modifierApplications();
+    else if(parentEditor())
+        return parentEditor()->modifierApplications();
+    else
+        return {};
 }
 
 /******************************************************************************
@@ -342,28 +342,28 @@ QVector<ModifierApplication*> PropertiesEditor::modifierApplications() const
 ******************************************************************************/
 ConstDataObjectRefPath PropertiesEditor::getVisDataObjectPath() const
 {
-	if(DataVis* vis = dynamic_object_cast<DataVis>(editObject())) {
-		// We'll now try to find the DataObject this DataVis element is associated with.
-		// Let's start looking in the output data collection of the currently selected pipeline scene node.
-		if(SelectionSet* selection = mainWindow().datasetContainer().activeSelectionSet()) {
-			if(PipelineSceneNode* pipelineNode = dynamic_object_cast<PipelineSceneNode>(selection->firstNode())) {
-				std::vector<ConstDataObjectPath> dataObjectPaths;
-				handleExceptions([&] {
-					const PipelineFlowState& state = pipelineNode->evaluatePipelineSynchronous(currentAnimationTime(), false);
-					dataObjectPaths = pipelineNode->getDataObjectsForVisElement(state, vis);
-				});
-				if(!dataObjectPaths.empty()) {
-					// Return just the first path from the list.
-					return ConstDataObjectRefPath(dataObjectPaths.front().begin(), dataObjectPaths.front().end());
-				}
-			}
-		}
-		return {};
-	}
-	else if(parentEditor())
-		return parentEditor()->getVisDataObjectPath();
-	else
-		return {};
+    if(DataVis* vis = dynamic_object_cast<DataVis>(editObject())) {
+        // We'll now try to find the DataObject this DataVis element is associated with.
+        // Let's start looking in the output data collection of the currently selected pipeline scene node.
+        if(SelectionSet* selection = mainWindow().datasetContainer().activeSelectionSet()) {
+            if(PipelineSceneNode* pipelineNode = dynamic_object_cast<PipelineSceneNode>(selection->firstNode())) {
+                std::vector<ConstDataObjectPath> dataObjectPaths;
+                handleExceptions([&] {
+                    const PipelineFlowState& state = pipelineNode->evaluatePipelineSynchronous(currentAnimationTime(), false);
+                    dataObjectPaths = pipelineNode->getDataObjectsForVisElement(state, vis);
+                });
+                if(!dataObjectPaths.empty()) {
+                    // Return just the first path from the list.
+                    return ConstDataObjectRefPath(dataObjectPaths.front().begin(), dataObjectPaths.front().end());
+                }
+            }
+        }
+        return {};
+    }
+    else if(parentEditor())
+        return parentEditor()->getVisDataObjectPath();
+    else
+        return {};
 }
 
 /******************************************************************************
@@ -372,9 +372,9 @@ ConstDataObjectRefPath PropertiesEditor::getVisDataObjectPath() const
 ******************************************************************************/
 ConstDataObjectRef PropertiesEditor::getVisDataObject() const
 {
-	if(ConstDataObjectRefPath path = getVisDataObjectPath(); !path.empty())
-		return std::move(path.back());
-	return {};
+    if(ConstDataObjectRefPath path = getVisDataObjectPath(); !path.empty())
+        return std::move(path.back());
+    return {};
 }
 
 /******************************************************************************
@@ -382,9 +382,9 @@ ConstDataObjectRef PropertiesEditor::getVisDataObject() const
 ******************************************************************************/
 AnimationTime PropertiesEditor::currentAnimationTime() const
 {
-	if(AnimationSettings* anim = mainWindow().datasetContainer().activeAnimationSettings())
-		return anim->currentTime();
-	return AnimationTime(0);
+    if(AnimationSettings* anim = mainWindow().datasetContainer().activeAnimationSettings())
+        return anim->currentTime();
+    return AnimationTime(0);
 }
 
 /******************************************************************************
@@ -392,7 +392,7 @@ AnimationTime PropertiesEditor::currentAnimationTime() const
 ******************************************************************************/
 Viewport* PropertiesEditor::activeViewport() const
 {
-	return mainWindow().datasetContainer().activeViewport();
+    return mainWindow().datasetContainer().activeViewport();
 }
 
-}	// End of namespace
+}   // End of namespace

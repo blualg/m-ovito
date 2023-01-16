@@ -27,33 +27,33 @@
 
 namespace Ovito {
 
-class OverlayListModel;	// Defined in OverlayListModel.h
+class OverlayListModel; // Defined in OverlayListModel.h
 
 class OVITO_GUIBASE_EXPORT OverlayAction : public QAction
 {
-	Q_OBJECT
+    Q_OBJECT
 
 public:
 
-	/// Constructs an action for a built-in layer class.
-	static OverlayAction* createForClass(OvitoClassPtr clazz);
+    /// Constructs an action for a built-in layer class.
+    static OverlayAction* createForClass(OvitoClassPtr clazz);
 
-	/// Constructs an action for a Python overlay script.
-	static OverlayAction* createForScript(const QString& fileName, const QDir& directory);
+    /// Constructs an action for a Python overlay script.
+    static OverlayAction* createForScript(const QString& fileName, const QDir& directory);
 
-	/// Returns the overlay class descriptor if this action represents a built-in overlay type. 
-	OvitoClassPtr layerClass() const { return _layerClass; }
+    /// Returns the overlay class descriptor if this action represents a built-in overlay type. 
+    OvitoClassPtr layerClass() const { return _layerClass; }
 
-	/// The absolute path of the modifier script if this action represents a Python-based modifier function.
-	const QString& scriptPath() const { return _scriptPath; }
+    /// The absolute path of the modifier script if this action represents a Python-based modifier function.
+    const QString& scriptPath() const { return _scriptPath; }
 
 private:
 
-	/// The Ovito class descriptor of the viewport layer subclass. 
-	OvitoClassPtr _layerClass = nullptr;
+    /// The Ovito class descriptor of the viewport layer subclass. 
+    OvitoClassPtr _layerClass = nullptr;
 
-	/// The path to the overlay script on disk.
-	QString _scriptPath;
+    /// The path to the overlay script on disk.
+    QString _scriptPath;
 };
 
 /**
@@ -61,46 +61,46 @@ private:
  */
 class OVITO_GUIBASE_EXPORT OverlayTypesModel : public QAbstractListModel
 {
-	Q_OBJECT
+    Q_OBJECT
 
 public:
 
-	/// Constructor.
-	OverlayTypesModel(QObject* parent, UserInterface& userInterface, OverlayListModel* overlayListModel);
+    /// Constructor.
+    OverlayTypesModel(QObject* parent, UserInterface& userInterface, OverlayListModel* overlayListModel);
 
-	/// Returns the number of rows in the model.
-	virtual int rowCount(const QModelIndex& parent) const override;
+    /// Returns the number of rows in the model.
+    virtual int rowCount(const QModelIndex& parent) const override;
 
-	/// Returns the data associated with a list item.
-	virtual QVariant data(const QModelIndex& index, int role) const override;
+    /// Returns the data associated with a list item.
+    virtual QVariant data(const QModelIndex& index, int role) const override;
 
-	/// Returns the flags for an item.
-	virtual Qt::ItemFlags flags(const QModelIndex& index) const override;
+    /// Returns the flags for an item.
+    virtual Qt::ItemFlags flags(const QModelIndex& index) const override;
 
-	/// Returns the action that belongs to the given model index.
-	OverlayAction* actionFromIndex(int index) const;
+    /// Returns the action that belongs to the given model index.
+    OverlayAction* actionFromIndex(int index) const;
 
-	/// Returns the action that belongs to the given model index.
-	OverlayAction* actionFromIndex(const QModelIndex& index) const { return actionFromIndex(index.row()); }
+    /// Returns the action that belongs to the given model index.
+    OverlayAction* actionFromIndex(const QModelIndex& index) const { return actionFromIndex(index.row()); }
 
 private Q_SLOTS:
 
-	/// Signal handler that inserts the selected viewport layer into the active viewport.
-	void insertViewportLayer();
+    /// Signal handler that inserts the selected viewport layer into the active viewport.
+    void insertViewportLayer();
 
 private:
 
-	/// The list of viewport layer actions.
-	std::vector<OverlayAction*> _actions;
+    /// The list of viewport layer actions.
+    std::vector<OverlayAction*> _actions;
 
-	/// The abstract user interface.
-	UserInterface& _userInterface;
+    /// The abstract user interface.
+    UserInterface& _userInterface;
 
-	/// The model representing the viewport layers of the active viewport.
-	OverlayListModel* _overlayListModel;
+    /// The model representing the viewport layers of the active viewport.
+    OverlayListModel* _overlayListModel;
 
-	/// The list of directories searched for user-defined viewport layer scripts.
-	QVector<QDir> _layerScriptDirectories;
+    /// The list of directories searched for user-defined viewport layer scripts.
+    QVector<QDir> _layerScriptDirectories;
 };
 
-}	// End of namespace
+}   // End of namespace

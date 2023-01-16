@@ -36,47 +36,47 @@ namespace Ovito::Particles {
  */
 class OVITO_PARTICLES_EXPORT ParaViewVTPBondsImporter : public ParticleImporter
 {
-	/// Defines a metaclass specialization for this importer type.
-	class OOMetaClass : public ParticleImporter::OOMetaClass
-	{
-	public:
-		/// Inherit standard constructor from base meta class.
-		using ParticleImporter::OOMetaClass::OOMetaClass;
+    /// Defines a metaclass specialization for this importer type.
+    class OOMetaClass : public ParticleImporter::OOMetaClass
+    {
+    public:
+        /// Inherit standard constructor from base meta class.
+        using ParticleImporter::OOMetaClass::OOMetaClass;
 
-		/// Checks if the given file has format that can be read by this importer.
-		virtual bool checkFileFormat(const FileHandle& file) const override;
-	};
+        /// Checks if the given file has format that can be read by this importer.
+        virtual bool checkFileFormat(const FileHandle& file) const override;
+    };
 
-	OVITO_CLASS_META(ParaViewVTPBondsImporter, OOMetaClass)
+    OVITO_CLASS_META(ParaViewVTPBondsImporter, OOMetaClass)
 
 public:
 
-	/// \brief Constructor.
-	Q_INVOKABLE ParaViewVTPBondsImporter(ObjectCreationParams params) : ParticleImporter(params) {}
+    /// \brief Constructor.
+    Q_INVOKABLE ParaViewVTPBondsImporter(ObjectCreationParams params) : ParticleImporter(params) {}
 
-	/// Creates an asynchronous loader object that loads the data for the given frame from the external file.
-	virtual FileSourceImporter::FrameLoaderPtr createFrameLoader(const LoadOperationRequest& request) override {
-		return std::make_shared<FrameLoader>(request);
-	}
+    /// Creates an asynchronous loader object that loads the data for the given frame from the external file.
+    virtual FileSourceImporter::FrameLoaderPtr createFrameLoader(const LoadOperationRequest& request) override {
+        return std::make_shared<FrameLoader>(request);
+    }
 
 private:
 
-	/// The format-specific task object that is responsible for reading an input file in a separate thread.
-	class FrameLoader : public ParticleImporter::FrameLoader
-	{
-	public:
+    /// The format-specific task object that is responsible for reading an input file in a separate thread.
+    class FrameLoader : public ParticleImporter::FrameLoader
+    {
+    public:
 
-		/// Constructor.
-		using ParticleImporter::FrameLoader::FrameLoader;
+        /// Constructor.
+        using ParticleImporter::FrameLoader::FrameLoader;
 
-	protected:
+    protected:
 
-		/// Reads the frame data from the external file.
-		virtual void loadFile() override;
+        /// Reads the frame data from the external file.
+        virtual void loadFile() override;
 
-		/// Creates the right kind of OVITO property object that will receive the data read from a <DataArray> element.
-		PropertyObject* createBondPropertyForDataArray(QXmlStreamReader& xml, int& vectorComponent, bool preserveExistingData);
-	};
+        /// Creates the right kind of OVITO property object that will receive the data read from a <DataArray> element.
+        PropertyObject* createBondPropertyForDataArray(QXmlStreamReader& xml, int& vectorComponent, bool preserveExistingData);
+    };
 };
 
 
@@ -85,15 +85,15 @@ private:
  */
 class OVITO_PARTICLES_EXPORT BondsParaViewVTMFileFilter : public ParaViewVTMFileFilter
 {
-	OVITO_CLASS(BondsParaViewVTMFileFilter)
+    OVITO_CLASS(BondsParaViewVTMFileFilter)
 
 public:
 
-	/// Constructor.
-	Q_INVOKABLE BondsParaViewVTMFileFilter() = default;
+    /// Constructor.
+    Q_INVOKABLE BondsParaViewVTMFileFilter() = default;
 
-	/// \brief Is called after all datasets referenced in a multi-block VTM file have been loaded.
-	virtual void postprocessDatasets(FileSourceImporter::LoadOperationRequest& request) override;
+    /// \brief Is called after all datasets referenced in a multi-block VTM file have been loaded.
+    virtual void postprocessDatasets(FileSourceImporter::LoadOperationRequest& request) override;
 };
 
-}	// End of namespace
+}   // End of namespace

@@ -36,7 +36,7 @@ DataCollection* PipelineFlowState::mutableData()
     OVITO_ASSERT(_data);
     if(_data && !_data->isSafeToModify()) {
         _data = CloneHelper().cloneObject(_data.get(), false);
-		OVITO_ASSERT(_data->isSafeToModify());
+        OVITO_ASSERT(_data->isSafeToModify());
     }
     return const_cast<DataCollection*>(_data.get());
 }
@@ -51,10 +51,10 @@ DataObject* PipelineFlowState::makeMutableInplace(ConstDataObjectPath& path)
     OVITO_ASSERT(path.front() == data());
     DataObject* parent = mutableData();
     path.front() = parent;
-	for(auto obj = std::next(path.begin()); obj != path.end(); ++obj) {
+    for(auto obj = std::next(path.begin()); obj != path.end(); ++obj) {
         *obj = parent = parent->makeMutable(*obj);
-	}
+    }
     return parent;
 }
 
-}	// End of namespace
+}   // End of namespace

@@ -33,43 +33,43 @@ namespace Ovito {
 ******************************************************************************/
 class OVITO_GUI_EXPORT IntegerParameterUI : public NumericalParameterUI
 {
-	OVITO_CLASS(IntegerParameterUI)
+    OVITO_CLASS(IntegerParameterUI)
 
 public:
 
-	/// Constructor for a Qt property.
-	IntegerParameterUI(PropertiesEditor* parentEditor, const char* propertyName, const QString& labelText = QString(), const QMetaObject* parameterUnitType = nullptr);
+    /// Constructor for a Qt property.
+    IntegerParameterUI(PropertiesEditor* parentEditor, const char* propertyName, const QString& labelText = QString(), const QMetaObject* parameterUnitType = nullptr);
 
-	/// Constructor for a PropertyField property.
-	IntegerParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField);
+    /// Constructor for a PropertyField property.
+    IntegerParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField);
 
-	/// Gets the minimum value to be entered.
-	/// This value is in native controller units.
-	int minValue() const;
+    /// Gets the minimum value to be entered.
+    /// This value is in native controller units.
+    int minValue() const;
 
-	/// Sets the minimum value to be entered.
-	/// This value must be specified in native controller units.
-	void setMinValue(int minValue);
+    /// Sets the minimum value to be entered.
+    /// This value must be specified in native controller units.
+    void setMinValue(int minValue);
 
-	/// Gets the maximum value to be entered.
-	/// This value is in native controller units.
-	int maxValue() const;
+    /// Gets the maximum value to be entered.
+    /// This value is in native controller units.
+    int maxValue() const;
 
-	/// Sets the maximum value to be entered.
-	/// This value must be specified in native controller units.
-	void setMaxValue(int maxValue);
+    /// Sets the maximum value to be entered.
+    /// This value must be specified in native controller units.
+    void setMaxValue(int maxValue);
 
-	/// This method updates the displayed value of the parameter UI.
-	virtual void updateUI() override;
+    /// This method updates the displayed value of the parameter UI.
+    virtual void updateUI() override;
 
-	/// Takes the value entered by the user and stores it in the property field
-	/// this property UI is bound to.
-	virtual void updatePropertyValue() override;
+    /// Takes the value entered by the user and stores it in the property field
+    /// this property UI is bound to.
+    virtual void updatePropertyValue() override;
 
 public:
 
-	Q_PROPERTY(int minValue READ minValue WRITE setMinValue)
-	Q_PROPERTY(int maxValue READ maxValue WRITE setMaxValue)
+    Q_PROPERTY(int minValue READ minValue WRITE setMinValue)
+    Q_PROPERTY(int maxValue READ maxValue WRITE setMaxValue)
 };
 
-}	// End of namespace
+}   // End of namespace

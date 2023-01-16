@@ -36,33 +36,33 @@ namespace Ovito::StdMod {
  */
 class ScatterPlotModifierEditor : public PropertiesEditor
 {
-	OVITO_CLASS(ScatterPlotModifierEditor)
+    OVITO_CLASS(ScatterPlotModifierEditor)
 
 public:
 
-	/// Default constructor.
-	Q_INVOKABLE ScatterPlotModifierEditor() {}
+    /// Default constructor.
+    Q_INVOKABLE ScatterPlotModifierEditor() {}
 
 protected:
 
-	/// Creates the user interface controls for the editor.
-	virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
+    /// Creates the user interface controls for the editor.
+    virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
 
 protected Q_SLOTS:
 
-	/// Replots the scatter plot.
-	void plotScatterPlot();
+    /// Replots the scatter plot.
+    void plotScatterPlot();
 
 private:
 
-	/// The graph widget to display the plot.
-	DataTablePlotWidget* _plotWidget;
+    /// The graph widget to display the plot.
+    DataTablePlotWidget* _plotWidget;
 
-	/// Marks the range of selected points in the X direction.
-	QwtPlotZoneItem* _selectionRangeIndicatorX;
+    /// Marks the range of selected points in the X direction.
+    QwtPlotZoneItem* _selectionRangeIndicatorX;
 
-	/// Marks the range of selected points in the Y direction.
-	QwtPlotZoneItem* _selectionRangeIndicatorY;
+    /// Marks the range of selected points in the Y direction.
+    QwtPlotZoneItem* _selectionRangeIndicatorY;
 };
 
-}	// End of namespace
+}   // End of namespace

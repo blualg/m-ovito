@@ -33,17 +33,17 @@ namespace Ovito::Particles {
  */
 class ExpandSelectionModifierEditor : public PropertiesEditor
 {
-	OVITO_CLASS(ExpandSelectionModifierEditor)
+    OVITO_CLASS(ExpandSelectionModifierEditor)
 
 public:
 
-	/// Default constructor.
-	Q_INVOKABLE ExpandSelectionModifierEditor() {}
+    /// Default constructor.
+    Q_INVOKABLE ExpandSelectionModifierEditor() {}
 
 protected:
 
-	/// Creates the user interface controls for the editor.
-	virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
+    /// Creates the user interface controls for the editor.
+    virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
 };
 
-}	// End of namespace
+}   // End of namespace

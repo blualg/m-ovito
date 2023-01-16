@@ -32,18 +32,18 @@ IMPLEMENT_OVITO_CLASS(VariantComboBoxParameterUI);
 * Constructor for a Qt property.
 ******************************************************************************/
 VariantComboBoxParameterUI::VariantComboBoxParameterUI(PropertiesEditor* parentEditor, const char* propertyName) :
-	PropertyParameterUI(parentEditor, propertyName), _comboBox(new QComboBox())
+    PropertyParameterUI(parentEditor, propertyName), _comboBox(new QComboBox())
 {
-	connect(comboBox(), qOverload<int>(&QComboBox::activated), this, &VariantComboBoxParameterUI::updatePropertyValue);
+    connect(comboBox(), qOverload<int>(&QComboBox::activated), this, &VariantComboBoxParameterUI::updatePropertyValue);
 }
 
 /******************************************************************************
 * Constructor for a PropertyField property.
 ******************************************************************************/
 VariantComboBoxParameterUI::VariantComboBoxParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField) :
-	PropertyParameterUI(parentEditor, propField), _comboBox(new QComboBox())
+    PropertyParameterUI(parentEditor, propField), _comboBox(new QComboBox())
 {
-	connect(comboBox(), qOverload<int>(&QComboBox::activated), this, &VariantComboBoxParameterUI::updatePropertyValue);
+    connect(comboBox(), qOverload<int>(&QComboBox::activated), this, &VariantComboBoxParameterUI::updatePropertyValue);
 }
 
 /******************************************************************************
@@ -51,8 +51,8 @@ VariantComboBoxParameterUI::VariantComboBoxParameterUI(PropertiesEditor* parentE
 ******************************************************************************/
 VariantComboBoxParameterUI::~VariantComboBoxParameterUI()
 {
-	// Release GUI controls.
-	delete comboBox();
+    // Release GUI controls.
+    delete comboBox();
 }
 
 /******************************************************************************
@@ -61,10 +61,10 @@ VariantComboBoxParameterUI::~VariantComboBoxParameterUI()
 ******************************************************************************/
 void VariantComboBoxParameterUI::resetUI()
 {
-	PropertyParameterUI::resetUI();
+    PropertyParameterUI::resetUI();
 
-	if(comboBox())
-		comboBox()->setEnabled(editObject() != NULL && isEnabled());
+    if(comboBox())
+        comboBox()->setEnabled(editObject() != NULL && isEnabled());
 }
 
 /******************************************************************************
@@ -73,10 +73,10 @@ void VariantComboBoxParameterUI::resetUI()
 ******************************************************************************/
 void VariantComboBoxParameterUI::updateUI()
 {
-	PropertyParameterUI::updateUI();
+    PropertyParameterUI::updateUI();
 
-	if(comboBox() && editObject()) {
-		QVariant val;
+    if(comboBox() && editObject()) {
+        QVariant val;
         if(isQtPropertyUI()) {
             val = editObject()->property(propertyName());
             if(!val.isValid()) {
@@ -92,7 +92,7 @@ void VariantComboBoxParameterUI::updateUI()
         comboBox()->setCurrentIndex(comboBox()->findData(val));
         if(comboBox()->isEditable())
             comboBox()->setEditText(val.toString());
-	}
+    }
 }
 
 /******************************************************************************
@@ -100,9 +100,9 @@ void VariantComboBoxParameterUI::updateUI()
 ******************************************************************************/
 void VariantComboBoxParameterUI::setEnabled(bool enabled)
 {
-	if(enabled == isEnabled()) return;
-	PropertyParameterUI::setEnabled(enabled);
-	if(comboBox()) comboBox()->setEnabled(editObject() != NULL && isEnabled());
+    if(enabled == isEnabled()) return;
+    PropertyParameterUI::setEnabled(enabled);
+    if(comboBox()) comboBox()->setEnabled(editObject() != NULL && isEnabled());
 }
 
 /******************************************************************************
@@ -111,13 +111,13 @@ void VariantComboBoxParameterUI::setEnabled(bool enabled)
 ******************************************************************************/
 void VariantComboBoxParameterUI::updatePropertyValue()
 {
-	if(comboBox() && editObject() && comboBox()->currentIndex() >= 0) {
-		performTransaction(tr("Change parameter"), [this]() {
-			QVariant newValue;
-			if(comboBox()->isEditable())
-				newValue = comboBox()->currentText();
-			else
-				newValue = comboBox()->itemData(comboBox()->currentIndex());
+    if(comboBox() && editObject() && comboBox()->currentIndex() >= 0) {
+        performTransaction(tr("Change parameter"), [this]() {
+            QVariant newValue;
+            if(comboBox()->isEditable())
+                newValue = comboBox()->currentText();
+            else
+                newValue = comboBox()->itemData(comboBox()->currentIndex());
 
             if(isQtPropertyUI()) {
                 if(!editObject()->setProperty(propertyName(), newValue)) {
@@ -128,9 +128,9 @@ void VariantComboBoxParameterUI::updatePropertyValue()
                 editor()->changePropertyFieldValue(propertyField(), newValue);
             }
 
-			Q_EMIT valueEntered();
-		});
-	}
+            Q_EMIT valueEntered();
+        });
+    }
 }
 
-}	// End of namespace
+}   // End of namespace

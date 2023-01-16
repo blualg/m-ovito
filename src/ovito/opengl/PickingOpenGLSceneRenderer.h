@@ -33,38 +33,38 @@ namespace Ovito {
  */
 class OVITO_OPENGLRENDERER_EXPORT PickingOpenGLSceneRenderer : public OffscreenInteractiveOpenGLSceneRenderer
 {
-	OVITO_CLASS(PickingOpenGLSceneRenderer)
+    OVITO_CLASS(PickingOpenGLSceneRenderer)
 
 public:
 
-	/// Constructor.
-	PickingOpenGLSceneRenderer(ObjectCreationParams params);
+    /// Constructor.
+    PickingOpenGLSceneRenderer(ObjectCreationParams params);
 
-	/// Renders the current animation frame.
-	virtual bool renderFrame(const QRect& viewportRect, MainThreadOperation& operation) override;
+    /// Renders the current animation frame.
+    virtual bool renderFrame(const QRect& viewportRect, MainThreadOperation& operation) override;
 
-	/// Returns the object record and the sub-object ID for the object at the given pixel coordinates.
-	std::tuple<const ObjectPickingRecord*, quint32> objectAtLocation(const QPoint& pos) const;
+    /// Returns the object record and the sub-object ID for the object at the given pixel coordinates.
+    std::tuple<const ObjectPickingRecord*, quint32> objectAtLocation(const QPoint& pos) const;
 
-	/// Returns the world space position corresponding to the given screen position.
-	Point3 worldPositionFromLocation(const QPoint& pos) const;
+    /// Returns the world space position corresponding to the given screen position.
+    Point3 worldPositionFromLocation(const QPoint& pos) const;
 
-	/// Returns true if the picking buffer needs to be regenerated; returns false if the picking buffer still contains valid data.
-	bool isRefreshRequired() const { return framebufferImage().isNull(); }
+    /// Returns true if the picking buffer needs to be regenerated; returns false if the picking buffer still contains valid data.
+    bool isRefreshRequired() const { return framebufferImage().isNull(); }
 
-	/// Resets the picking buffer and clears the stored object records.
-	virtual void resetPickingBuffer() override;
+    /// Resets the picking buffer and clears the stored object records.
+    virtual void resetPickingBuffer() override;
 
-	/// Returns the Z-value at the given window position.
-	FloatType depthAtPixel(const QPoint& pos) const;
+    /// Returns the Z-value at the given window position.
+    FloatType depthAtPixel(const QPoint& pos) const;
 
 private:
 
-	/// The depth buffer data.
-	std::unique_ptr<quint8[]> _depthBuffer;
+    /// The depth buffer data.
+    std::unique_ptr<quint8[]> _depthBuffer;
 
-	/// The number of depth buffer bits per pixel.
-	int _depthBufferBits;
+    /// The number of depth buffer bits per pixel.
+    int _depthBufferBits;
 };
 
-}	// End of namespace
+}   // End of namespace

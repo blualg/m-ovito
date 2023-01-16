@@ -32,12 +32,12 @@ ADD_SUBDIRECTORY(ovito)
 
 # This allows external CMake projects to inject their customization code into the OVITO project:
 IF(OVITO_CMAKE_FILE_INJECTION_PLUGINS)
-	INCLUDE("${OVITO_CMAKE_FILE_INJECTION_PLUGINS}")
+    INCLUDE("${OVITO_CMAKE_FILE_INJECTION_PLUGINS}")
 ENDIF()
 
 # Build the main application executable 'ovito'.
 IF(OVITO_BUILD_APP)
-	ADD_SUBDIRECTORY(ovito_exe)
+    ADD_SUBDIRECTORY(ovito_exe)
 ENDIF()
 
 # Propagate list of plugins to parent scope.

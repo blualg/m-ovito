@@ -49,17 +49,17 @@ ViewportConfiguration::ViewportConfiguration(ObjectCreationParams params) : RefT
 ******************************************************************************/
 void ViewportConfiguration::referenceReplaced(const PropertyFieldDescriptor* field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex)
 {
-	if(field == PROPERTY_FIELD(activeViewport)) {
-		Q_EMIT activeViewportChanged(activeViewport());
-	}
-	else if(field == PROPERTY_FIELD(maximizedViewport)) {
-		Q_EMIT maximizedViewportChanged(maximizedViewport());
-	}
-	else if(field == PROPERTY_FIELD(layoutRootCell)) {
-		if(!isBeingLoaded() && !isAboutToBeDeleted())
-			updateListOfViewports();
-	}
-	RefTarget::referenceReplaced(field, oldTarget, newTarget, listIndex);
+    if(field == PROPERTY_FIELD(activeViewport)) {
+        Q_EMIT activeViewportChanged(activeViewport());
+    }
+    else if(field == PROPERTY_FIELD(maximizedViewport)) {
+        Q_EMIT maximizedViewportChanged(maximizedViewport());
+    }
+    else if(field == PROPERTY_FIELD(layoutRootCell)) {
+        if(!isBeingLoaded() && !isAboutToBeDeleted())
+            updateListOfViewports();
+    }
+    RefTarget::referenceReplaced(field, oldTarget, newTarget, listIndex);
 }
 
 /******************************************************************************
@@ -67,13 +67,13 @@ void ViewportConfiguration::referenceReplaced(const PropertyFieldDescriptor* fie
 ******************************************************************************/
 bool ViewportConfiguration::referenceEvent(RefTarget* source, const ReferenceEvent& event)
 {
-	if(event.type() == ReferenceEvent::TargetChanged) {
-		if(source == layoutRootCell() && !isBeingLoaded() && !isAboutToBeDeleted()) {
-			updateListOfViewports();
-			Q_EMIT viewportLayoutChanged();
-		}
-	}
-	return RefTarget::referenceEvent(source, event);
+    if(event.type() == ReferenceEvent::TargetChanged) {
+        if(source == layoutRootCell() && !isBeingLoaded() && !isAboutToBeDeleted()) {
+            updateListOfViewports();
+            Q_EMIT viewportLayoutChanged();
+        }
+    }
+    return RefTarget::referenceEvent(source, event);
 }
 
 /******************************************************************************
@@ -81,8 +81,8 @@ bool ViewportConfiguration::referenceEvent(RefTarget* source, const ReferenceEve
 ******************************************************************************/
 void ViewportConfiguration::zoomToSelectionExtents() 
 {
-	for(Viewport* vp : viewports())
-		vp->zoomToSelectionExtents();
+    for(Viewport* vp : viewports())
+        vp->zoomToSelectionExtents();
 }
 
 /******************************************************************************
@@ -90,8 +90,8 @@ void ViewportConfiguration::zoomToSelectionExtents()
 ******************************************************************************/
 void ViewportConfiguration::zoomToSceneExtents() 
 {
-	for(Viewport* vp : viewports())
-		vp->zoomToSceneExtents();
+    for(Viewport* vp : viewports())
+        vp->zoomToSceneExtents();
 }
 
 /******************************************************************************
@@ -100,8 +100,8 @@ void ViewportConfiguration::zoomToSceneExtents()
 ******************************************************************************/
 void ViewportConfiguration::zoomToSceneExtentsWhenReady()
 {
-	for(Viewport* vp : viewports()) 
-		vp->zoomToSceneExtentsWhenReady();
+    for(Viewport* vp : viewports()) 
+        vp->zoomToSceneExtentsWhenReady();
 }
 
 /******************************************************************************
@@ -109,12 +109,12 @@ void ViewportConfiguration::zoomToSceneExtentsWhenReady()
 ******************************************************************************/
 static void gatherViewportsFromLayout(const ViewportLayoutCell* cell, std::vector<Viewport*>& viewportList) 
 {
-	if(cell) {
-		if(cell->viewport())
-			viewportList.push_back(cell->viewport());
-		for(const ViewportLayoutCell* child : cell->children())
-			gatherViewportsFromLayout(child, viewportList);
-	}
+    if(cell) {
+        if(cell->viewport())
+            viewportList.push_back(cell->viewport());
+        for(const ViewportLayoutCell* child : cell->children())
+            gatherViewportsFromLayout(child, viewportList);
+    }
 }
 
 /******************************************************************************
@@ -122,9 +122,9 @@ static void gatherViewportsFromLayout(const ViewportLayoutCell* cell, std::vecto
 ******************************************************************************/
 void ViewportConfiguration::updateListOfViewports()
 {
-	std::vector<Viewport*> viewportList;
-	gatherViewportsFromLayout(layoutRootCell(), viewportList);
-	_viewports.setTargets(this, PROPERTY_FIELD(viewports), std::move(viewportList));
+    std::vector<Viewport*> viewportList;
+    gatherViewportsFromLayout(layoutRootCell(), viewportList);
+    _viewports.setTargets(this, PROPERTY_FIELD(viewports), std::move(viewportList));
 }
 
 /******************************************************************************
@@ -133,31 +133,31 @@ void ViewportConfiguration::updateListOfViewports()
 ******************************************************************************/
 void ViewportConfiguration::loadFromStreamComplete(ObjectLoadStream& stream)
 {
-	RefTarget::loadFromStreamComplete(stream);
+    RefTarget::loadFromStreamComplete(stream);
 
-	// For backward compatibility with OVITO 3.5.4:
-	// Create a standard viewport layout for the linear list of viewports loaded from the old session state.
-	if(!layoutRootCell()) {
-		OVITO_ASSERT(viewports().size() == 4);
+    // For backward compatibility with OVITO 3.5.4:
+    // Create a standard viewport layout for the linear list of viewports loaded from the old session state.
+    if(!layoutRootCell()) {
+        OVITO_ASSERT(viewports().size() == 4);
 
-		OORef<ViewportLayoutCell> rootCell = OORef<ViewportLayoutCell>::create();
-		rootCell->setSplitDirection(ViewportLayoutCell::Horizontal);
-		rootCell->addChild(OORef<ViewportLayoutCell>::create());
-		rootCell->addChild(OORef<ViewportLayoutCell>::create());
+        OORef<ViewportLayoutCell> rootCell = OORef<ViewportLayoutCell>::create();
+        rootCell->setSplitDirection(ViewportLayoutCell::Horizontal);
+        rootCell->addChild(OORef<ViewportLayoutCell>::create());
+        rootCell->addChild(OORef<ViewportLayoutCell>::create());
 
-		rootCell->children()[0]->setSplitDirection(ViewportLayoutCell::Vertical);
-		rootCell->children()[0]->addChild(OORef<ViewportLayoutCell>::create());
-		rootCell->children()[0]->addChild(OORef<ViewportLayoutCell>::create());
-		rootCell->children()[0]->children()[0]->setViewport(viewports().size() > 0 ? viewports()[0] : nullptr); // Upper left
-		rootCell->children()[0]->children()[1]->setViewport(viewports().size() > 2 ? viewports()[2] : nullptr); // Lower left
+        rootCell->children()[0]->setSplitDirection(ViewportLayoutCell::Vertical);
+        rootCell->children()[0]->addChild(OORef<ViewportLayoutCell>::create());
+        rootCell->children()[0]->addChild(OORef<ViewportLayoutCell>::create());
+        rootCell->children()[0]->children()[0]->setViewport(viewports().size() > 0 ? viewports()[0] : nullptr); // Upper left
+        rootCell->children()[0]->children()[1]->setViewport(viewports().size() > 2 ? viewports()[2] : nullptr); // Lower left
 
-		rootCell->children()[1]->setSplitDirection(ViewportLayoutCell::Vertical);
-		rootCell->children()[1]->addChild(OORef<ViewportLayoutCell>::create());
-		rootCell->children()[1]->addChild(OORef<ViewportLayoutCell>::create());
-		rootCell->children()[1]->children()[0]->setViewport(viewports().size() > 1 ? viewports()[1] : nullptr); // Upper right
-		rootCell->children()[1]->children()[1]->setViewport(viewports().size() > 3 ? viewports()[3] : nullptr); // Lower right
-		setLayoutRootCell(std::move(rootCell));
-	}
+        rootCell->children()[1]->setSplitDirection(ViewportLayoutCell::Vertical);
+        rootCell->children()[1]->addChild(OORef<ViewportLayoutCell>::create());
+        rootCell->children()[1]->addChild(OORef<ViewportLayoutCell>::create());
+        rootCell->children()[1]->children()[0]->setViewport(viewports().size() > 1 ? viewports()[1] : nullptr); // Upper right
+        rootCell->children()[1]->children()[1]->setViewport(viewports().size() > 3 ? viewports()[3] : nullptr); // Lower right
+        setLayoutRootCell(std::move(rootCell));
+    }
 }
 
-}	// End of namespace
+}   // End of namespace

@@ -45,12 +45,12 @@ SET_PROPERTY_FIELD_UNITS(PRSTransformationController, scalingController, Percent
 ******************************************************************************/
 PRSTransformationController::PRSTransformationController(ObjectCreationParams params) : Controller(params)
 {
-	if(params.createSubObjects()) {
-		// Create sub-controllers.
-		setPositionController(ControllerManager::createPositionController());
-		setRotationController(ControllerManager::createRotationController());
-		setScalingController(ControllerManager::createScalingController());
-	}
+    if(params.createSubObjects()) {
+        // Create sub-controllers.
+        setPositionController(ControllerManager::createPositionController());
+        setRotationController(ControllerManager::createRotationController());
+        setScalingController(ControllerManager::createScalingController());
+    }
 }
 
 /******************************************************************************
@@ -58,9 +58,9 @@ PRSTransformationController::PRSTransformationController(ObjectCreationParams pa
 ******************************************************************************/
 void PRSTransformationController::applyTransformation(AnimationTime time, AffineTransformation& result, TimeInterval& validityInterval)
 {
-	positionController()->applyTranslation(time, result, validityInterval);
-	rotationController()->applyRotation(time, result, validityInterval);
-	scalingController()->applyScaling(time, result, validityInterval);
+    positionController()->applyTranslation(time, result, validityInterval);
+    rotationController()->applyRotation(time, result, validityInterval);
+    scalingController()->applyScaling(time, result, validityInterval);
 }
 
 /******************************************************************************
@@ -68,10 +68,10 @@ void PRSTransformationController::applyTransformation(AnimationTime time, Affine
 ******************************************************************************/
 void PRSTransformationController::setTransformationValue(AnimationTime time, const AffineTransformation& newValue, bool isAbsolute)
 {
-	AffineDecomposition decomp(newValue);
-	positionController()->setPositionValue(time, decomp.translation, isAbsolute);
-	rotationController()->setRotationValue(time, Rotation(decomp.rotation), isAbsolute);
-	scalingController()->setScalingValue(time, decomp.scaling, isAbsolute);
+    AffineDecomposition decomp(newValue);
+    positionController()->setPositionValue(time, decomp.translation, isAbsolute);
+    rotationController()->setRotationValue(time, Rotation(decomp.rotation), isAbsolute);
+    scalingController()->setScalingValue(time, decomp.scaling, isAbsolute);
 }
 
 /******************************************************************************
@@ -79,9 +79,9 @@ void PRSTransformationController::setTransformationValue(AnimationTime time, con
 ******************************************************************************/
 void PRSTransformationController::changeParent(AnimationTime time, const AffineTransformation& oldParentTM, const AffineTransformation& newParentTM, SceneNode* contextNode)
 {
-	positionController()->changeParent(time, oldParentTM, newParentTM, contextNode);
-	rotationController()->changeParent(time, oldParentTM, newParentTM, contextNode);
-	scalingController()->changeParent(time, oldParentTM, newParentTM, contextNode);
+    positionController()->changeParent(time, oldParentTM, newParentTM, contextNode);
+    rotationController()->changeParent(time, oldParentTM, newParentTM, contextNode);
+    scalingController()->changeParent(time, oldParentTM, newParentTM, contextNode);
 }
 
 /******************************************************************************
@@ -90,11 +90,11 @@ void PRSTransformationController::changeParent(AnimationTime time, const AffineT
 ******************************************************************************/
 TimeInterval PRSTransformationController::validityInterval(AnimationTime time)
 {
-	TimeInterval iv = TimeInterval::infinite();
-	iv.intersect(positionController()->validityInterval(time));
-	iv.intersect(rotationController()->validityInterval(time));
-	iv.intersect(scalingController()->validityInterval(time));
-	return iv;
+    TimeInterval iv = TimeInterval::infinite();
+    iv.intersect(positionController()->validityInterval(time));
+    iv.intersect(rotationController()->validityInterval(time));
+    iv.intersect(scalingController()->validityInterval(time));
+    return iv;
 }
 
-}	// End of namespace
+}   // End of namespace

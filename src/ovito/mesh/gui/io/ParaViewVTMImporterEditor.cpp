@@ -35,17 +35,17 @@ SET_OVITO_OBJECT_EDITOR(ParaViewVTMImporter, ParaViewVTMImporterEditor);
 ******************************************************************************/
 void ParaViewVTMImporterEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 {
-	// Create a rollout.
-	QWidget* rollout = createRollout(tr("VTM file reader"), rolloutParams);
+    // Create a rollout.
+    QWidget* rollout = createRollout(tr("VTM file reader"), rolloutParams);
 
     // Create the rollout contents.
-	QVBoxLayout* layout = new QVBoxLayout(rollout);
-	layout->setContentsMargins(4,4,4,4);
-	layout->setSpacing(4);
+    QVBoxLayout* layout = new QVBoxLayout(rollout);
+    layout->setContentsMargins(4,4,4,4);
+    layout->setSpacing(4);
 
-	// Unite meshes.
-	BooleanParameterUI* uniteMeshesUI = new BooleanParameterUI(this, PROPERTY_FIELD(ParaViewVTMImporter::uniteMeshes));
-	layout->addWidget(uniteMeshesUI->checkBox());
+    // Unite meshes.
+    BooleanParameterUI* uniteMeshesUI = new BooleanParameterUI(this, PROPERTY_FIELD(ParaViewVTMImporter::uniteMeshes));
+    layout->addWidget(uniteMeshesUI->checkBox());
 }
 
-}	// End of namespace
+}   // End of namespace

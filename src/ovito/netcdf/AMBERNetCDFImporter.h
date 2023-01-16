@@ -35,140 +35,140 @@ namespace Ovito::Particles {
  */
 class OVITO_NETCDFPLUGIN_EXPORT AMBERNetCDFImporter : public ParticleImporter
 {
-	/// Defines a metaclass specialization for this importer type.
-	class OOMetaClass : public ParticleImporter::OOMetaClass
-	{
-	public:
-		/// Inherit standard constructor from base meta class.
-		using ParticleImporter::OOMetaClass::OOMetaClass;
+    /// Defines a metaclass specialization for this importer type.
+    class OOMetaClass : public ParticleImporter::OOMetaClass
+    {
+    public:
+        /// Inherit standard constructor from base meta class.
+        using ParticleImporter::OOMetaClass::OOMetaClass;
 
-		/// Returns the list of file formats that can be read by this importer class.
-		virtual Ovito::span<const SupportedFormat> supportedFormats() const override {
-			static const SupportedFormat formats[] = {{ QStringLiteral("*"), tr("NetCDF/AMBER Files") }};
-			return formats;
-		}
+        /// Returns the list of file formats that can be read by this importer class.
+        virtual Ovito::span<const SupportedFormat> supportedFormats() const override {
+            static const SupportedFormat formats[] = {{ QStringLiteral("*"), tr("NetCDF/AMBER Files") }};
+            return formats;
+        }
 
-		/// Checks if the given file has format that can be read by this importer.
-		virtual bool checkFileFormat(const FileHandle& file) const override;
-	};
+        /// Checks if the given file has format that can be read by this importer.
+        virtual bool checkFileFormat(const FileHandle& file) const override;
+    };
 
-	OVITO_CLASS_META(AMBERNetCDFImporter, OOMetaClass)
+    OVITO_CLASS_META(AMBERNetCDFImporter, OOMetaClass)
 
 public:
 
-	/// \brief Constructs a new instance of this class.
-	Q_INVOKABLE AMBERNetCDFImporter(ObjectCreationParams params) : ParticleImporter(params), _useCustomColumnMapping(false) {
-		setMultiTimestepFile(true);
-	}
+    /// \brief Constructs a new instance of this class.
+    Q_INVOKABLE AMBERNetCDFImporter(ObjectCreationParams params) : ParticleImporter(params), _useCustomColumnMapping(false) {
+        setMultiTimestepFile(true);
+    }
 
-	/// Returns the title of this object.
-	virtual QString objectTitle() const override { return tr("NetCDF"); }
+    /// Returns the title of this object.
+    virtual QString objectTitle() const override { return tr("NetCDF"); }
 
-	/// Creates an asynchronous loader object that loads the data for the given frame from the external file.
-	virtual FileSourceImporter::FrameLoaderPtr createFrameLoader(const LoadOperationRequest& request) override {
-		return std::make_shared<FrameLoader>(request, sortParticles(), useCustomColumnMapping(), customColumnMapping());
-	}
+    /// Creates an asynchronous loader object that loads the data for the given frame from the external file.
+    virtual FileSourceImporter::FrameLoaderPtr createFrameLoader(const LoadOperationRequest& request) override {
+        return std::make_shared<FrameLoader>(request, sortParticles(), useCustomColumnMapping(), customColumnMapping());
+    }
 
-	/// Creates an asynchronous frame discovery object that scans the input file for contained animation frames.
-	virtual std::shared_ptr<FileSourceImporter::FrameFinder> createFrameFinder(const FileHandle& file) override {
-		return std::make_shared<FrameFinder>(file);
-	}
+    /// Creates an asynchronous frame discovery object that scans the input file for contained animation frames.
+    virtual std::shared_ptr<FileSourceImporter::FrameFinder> createFrameFinder(const FileHandle& file) override {
+        return std::make_shared<FrameFinder>(file);
+    }
 
-	/// Inspects the header of the given file and returns the number of file columns.
-	Future<ParticleInputColumnMapping> inspectFileHeader(const Frame& frame);
+    /// Inspects the header of the given file and returns the number of file columns.
+    Future<ParticleInputColumnMapping> inspectFileHeader(const Frame& frame);
 
 private:
 
-	class NetCDFFile 
-	{
-	public:
+    class NetCDFFile 
+    {
+    public:
 
-		/// Destructor.
-		~NetCDFFile() { close(); }
-		
-		/// Open NetCDF file for reading.
-		QString open(const QString& filename);
+        /// Destructor.
+        ~NetCDFFile() { close(); }
+        
+        /// Open NetCDF file for reading.
+        QString open(const QString& filename);
 
-		/// Close the current NetCDF file.
-		void close();
+        /// Close the current NetCDF file.
+        void close();
 
-		/// Scans the NetCDF file and determines the set of particle properties it contains.
-		ParticleInputColumnMapping detectColumnMapping(size_t movieFrame = 0);
+        /// Scans the NetCDF file and determines the set of particle properties it contains.
+        ParticleInputColumnMapping detectColumnMapping(size_t movieFrame = 0);
 
         /// Map dimensions from NetCDF file to internal representation.
         bool detectDims(int movieFrame, int particleCount, int nDims, int *dimIds, int& nDimsDetected, size_t& componentCount, size_t& particleCountDim, size_t *startp, size_t *countp);
 
-		bool _ncIsOpen = false;
-		int _ncid = -1;
-		int _root_ncid = -1;
-		int _frame_dim, _atom_dim, _spatial_dim, _sph_dim, _dem_dim;
-		int _cell_origin_var, _cell_lengths_var, _cell_angles_var;
-		int _shear_dx_var;	
-		int _coordinatesVar = -1;
-	};
+        bool _ncIsOpen = false;
+        int _ncid = -1;
+        int _root_ncid = -1;
+        int _frame_dim, _atom_dim, _spatial_dim, _sph_dim, _dem_dim;
+        int _cell_origin_var, _cell_lengths_var, _cell_angles_var;
+        int _shear_dx_var;  
+        int _coordinatesVar = -1;
+    };
 
-	/// The format-specific task object that is responsible for reading an input file in a separate thread.
-	class FrameLoader : public ParticleImporter::FrameLoader
-	{
-	public:
+    /// The format-specific task object that is responsible for reading an input file in a separate thread.
+    class FrameLoader : public ParticleImporter::FrameLoader
+    {
+    public:
 
-		/// Constructor.
-		FrameLoader(const LoadOperationRequest& request,
-				bool sortParticles,
-				bool useCustomColumnMapping, const ParticleInputColumnMapping& customColumnMapping)
-			: ParticleImporter::FrameLoader(request), 
-			_sortParticles(sortParticles), 
-			_useCustomColumnMapping(useCustomColumnMapping), 
-			_customColumnMapping(customColumnMapping) {}
+        /// Constructor.
+        FrameLoader(const LoadOperationRequest& request,
+                bool sortParticles,
+                bool useCustomColumnMapping, const ParticleInputColumnMapping& customColumnMapping)
+            : ParticleImporter::FrameLoader(request), 
+            _sortParticles(sortParticles), 
+            _useCustomColumnMapping(useCustomColumnMapping), 
+            _customColumnMapping(customColumnMapping) {}
 
-		/// Returns the file column mapping used to load the file.
-		const ParticleInputColumnMapping& columnMapping() const { return _customColumnMapping; }
+        /// Returns the file column mapping used to load the file.
+        const ParticleInputColumnMapping& columnMapping() const { return _customColumnMapping; }
 
-	protected:
+    protected:
 
-		/// Reads the frame data from the external file.
-		virtual void loadFile() override;
+        /// Reads the frame data from the external file.
+        virtual void loadFile() override;
 
-	private:
+    private:
 
-		bool _sortParticles;
-		bool _useCustomColumnMapping;
-		ParticleInputColumnMapping _customColumnMapping;
-	};
+        bool _sortParticles;
+        bool _useCustomColumnMapping;
+        ParticleInputColumnMapping _customColumnMapping;
+    };
 
-	/// The format-specific task object that is responsible for scanning the input file for animation frames.
-	class FrameFinder : public FileSourceImporter::FrameFinder
-	{
-	public:
+    /// The format-specific task object that is responsible for scanning the input file for animation frames.
+    class FrameFinder : public FileSourceImporter::FrameFinder
+    {
+    public:
 
-		/// Inherit constructor from base class.
-		using FileSourceImporter::FrameFinder::FrameFinder;
+        /// Inherit constructor from base class.
+        using FileSourceImporter::FrameFinder::FrameFinder;
 
-	protected:
+    protected:
 
-		/// Scans the data file and builds a list of source frames.
-		virtual void discoverFramesInFile(QVector<FileSourceImporter::Frame>& frames) override;
-	};
+        /// Scans the data file and builds a list of source frames.
+        virtual void discoverFramesInFile(QVector<FileSourceImporter::Frame>& frames) override;
+    };
 
 protected:
 
-	/// \brief Saves the class' contents to the given stream.
-	virtual void saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData) const override;
+    /// \brief Saves the class' contents to the given stream.
+    virtual void saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData) const override;
 
-	/// \brief Loads the class' contents from the given stream.
-	virtual void loadFromStream(ObjectLoadStream& stream) override;
+    /// \brief Loads the class' contents from the given stream.
+    virtual void loadFromStream(ObjectLoadStream& stream) override;
 
-	/// \brief Guesses the mapping of an input file field to one of OVITO's internal particle properties.
-	static InputColumnInfo mapVariableToColumn(const QString& name, int dataType, size_t componentCount);
+    /// \brief Guesses the mapping of an input file field to one of OVITO's internal particle properties.
+    static InputColumnInfo mapVariableToColumn(const QString& name, int dataType, size_t componentCount);
 
 private:
 
-	/// Controls whether the mapping between input file columns and particle
-	/// properties is done automatically or by the user.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, useCustomColumnMapping, setUseCustomColumnMapping);
+    /// Controls whether the mapping between input file columns and particle
+    /// properties is done automatically or by the user.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, useCustomColumnMapping, setUseCustomColumnMapping);
 
-	/// The user-defined mapping of input file columns to OVITO's particle properties.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD(ParticleInputColumnMapping, customColumnMapping, setCustomColumnMapping);
+    /// The user-defined mapping of input file columns to OVITO's particle properties.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(ParticleInputColumnMapping, customColumnMapping, setCustomColumnMapping);
 };
 
-}	// End of namespace
+}   // End of namespace

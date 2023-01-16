@@ -36,19 +36,19 @@ SET_OVITO_OBJECT_EDITOR(LoadTrajectoryModifier, LoadTrajectoryModifierEditor);
 ******************************************************************************/
 void LoadTrajectoryModifierEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 {
-	// Create a rollout.
-	QWidget* rollout = createRollout(tr("Load Trajectory"), rolloutParams, "manual:particles.modifiers.load_trajectory");
+    // Create a rollout.
+    QWidget* rollout = createRollout(tr("Load Trajectory"), rolloutParams, "manual:particles.modifiers.load_trajectory");
 
     // Create the rollout contents.
-	QVBoxLayout* layout = new QVBoxLayout(rollout);
-	layout->setContentsMargins(4,4,4,4);
-	layout->setSpacing(4);
+    QVBoxLayout* layout = new QVBoxLayout(rollout);
+    layout->setContentsMargins(4,4,4,4);
+    layout->setSpacing(4);
 
-	// Status label.
-	layout->addWidget((new ObjectStatusDisplay(this))->statusWidget());
+    // Status label.
+    layout->addWidget((new ObjectStatusDisplay(this))->statusWidget());
 
-	// Open a sub-editor for the source object.
-	new SubObjectParameterUI(this, PROPERTY_FIELD(LoadTrajectoryModifier::trajectorySource), RolloutInsertionParameters().setTitle(tr("Trajectory Source: %1")));
+    // Open a sub-editor for the source object.
+    new SubObjectParameterUI(this, PROPERTY_FIELD(LoadTrajectoryModifier::trajectorySource), RolloutInsertionParameters().setTitle(tr("Trajectory Source: %1")));
 }
 
-}	// End of namespace
+}   // End of namespace

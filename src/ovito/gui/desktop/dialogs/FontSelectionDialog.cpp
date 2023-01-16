@@ -30,11 +30,11 @@ namespace Ovito {
 * The constructor of the dialog.
 ******************************************************************************/
 FontSelectionDialog::FontSelectionDialog(QWidget* parent) :
-	QDialog(parent)
+    QDialog(parent)
 {
-	setWindowTitle(tr("Select font"));
+    setWindowTitle(tr("Select font"));
 
-	QVBoxLayout* mainLayout = new QVBoxLayout(this);
+    QVBoxLayout* mainLayout = new QVBoxLayout(this);
 }
 
 /******************************************************************************
@@ -42,7 +42,7 @@ FontSelectionDialog::FontSelectionDialog(QWidget* parent) :
 ******************************************************************************/
 QFont FontSelectionDialog::getFont(bool* ok, QFont currentFont, QWidget* parentWindow)
 {
-	return QFontDialog::getFont(ok, currentFont, parentWindow);
+    return QFontDialog::getFont(ok, currentFont, parentWindow);
 }
 
-}	// End of namespace
+}   // End of namespace

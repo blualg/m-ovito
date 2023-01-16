@@ -36,12 +36,12 @@ IMPLEMENT_OVITO_CLASS(SurfaceMeshRegionsAssignColorModifierDelegate);
 ******************************************************************************/
 QVector<DataObjectReference> SurfaceMeshVerticesAssignColorModifierDelegate::OOMetaClass::getApplicableObjects(const DataCollection& input) const
 {
-	// Gather list of all surface mesh vertices in the input data collection.
-	QVector<DataObjectReference> objects;
-	for(const ConstDataObjectPath& path : input.getObjectsRecursive(SurfaceMeshVertices::OOClass())) {
-		objects.push_back(path);
-	}
-	return objects;
+    // Gather list of all surface mesh vertices in the input data collection.
+    QVector<DataObjectReference> objects;
+    for(const ConstDataObjectPath& path : input.getObjectsRecursive(SurfaceMeshVertices::OOClass())) {
+        objects.push_back(path);
+    }
+    return objects;
 }
 
 /******************************************************************************
@@ -50,12 +50,12 @@ QVector<DataObjectReference> SurfaceMeshVerticesAssignColorModifierDelegate::OOM
 ******************************************************************************/
 QVector<DataObjectReference> SurfaceMeshFacesAssignColorModifierDelegate::OOMetaClass::getApplicableObjects(const DataCollection& input) const
 {
-	// Gather list of all surface mesh faces in the input data collection.
-	QVector<DataObjectReference> objects;
-	for(const ConstDataObjectPath& path : input.getObjectsRecursive(SurfaceMeshFaces::OOClass())) {
-		objects.push_back(path);
-	}
-	return objects;
+    // Gather list of all surface mesh faces in the input data collection.
+    QVector<DataObjectReference> objects;
+    for(const ConstDataObjectPath& path : input.getObjectsRecursive(SurfaceMeshFaces::OOClass())) {
+        objects.push_back(path);
+    }
+    return objects;
 }
 
 /******************************************************************************
@@ -64,12 +64,12 @@ QVector<DataObjectReference> SurfaceMeshFacesAssignColorModifierDelegate::OOMeta
 ******************************************************************************/
 QVector<DataObjectReference> SurfaceMeshRegionsAssignColorModifierDelegate::OOMetaClass::getApplicableObjects(const DataCollection& input) const
 {
-	// Gather list of all surface mesh regions in the input data collection.
-	QVector<DataObjectReference> objects;
-	for(const ConstDataObjectPath& path : input.getObjectsRecursive(SurfaceMeshRegions::OOClass())) {
-		objects.push_back(path);
-	}
-	return objects;
+    // Gather list of all surface mesh regions in the input data collection.
+    QVector<DataObjectReference> objects;
+    for(const ConstDataObjectPath& path : input.getObjectsRecursive(SurfaceMeshRegions::OOClass())) {
+        objects.push_back(path);
+    }
+    return objects;
 }
 
-}	// End of namespace
+}   // End of namespace

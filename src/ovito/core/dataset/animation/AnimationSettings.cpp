@@ -43,14 +43,14 @@ SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(AnimationSettings, playbackEveryNthFrame, I
 * Constructor.
 ******************************************************************************/
 AnimationSettings::AnimationSettings(ObjectCreationParams params) : RefTarget(params),
-		_framesPerSecond(10),
-		_playbackSpeed(1),
-		_firstFrame(0),
-		_lastFrame(0),
-		_currentFrame(0),
-		_loopPlayback(true),
-		_playbackEveryNthFrame(1),
-		_autoAdjustInterval(true)
+        _framesPerSecond(10),
+        _playbackSpeed(1),
+        _firstFrame(0),
+        _lastFrame(0),
+        _currentFrame(0),
+        _loopPlayback(true),
+        _playbackEveryNthFrame(1),
+        _autoAdjustInterval(true)
 {
 }
 
@@ -59,16 +59,16 @@ AnimationSettings::AnimationSettings(ObjectCreationParams params) : RefTarget(pa
 ******************************************************************************/
 void AnimationSettings::propertyChanged(const PropertyFieldDescriptor* field)
 {
-	if(field == PROPERTY_FIELD(currentFrame))
-		Q_EMIT currentFrameChanged(currentFrame());
-	else if(field == PROPERTY_FIELD(firstFrame) || field == PROPERTY_FIELD(lastFrame))
-		Q_EMIT intervalChanged(firstFrame(), lastFrame());
-	else if(field == PROPERTY_FIELD(framesPerSecond))
-		Q_EMIT speedChanged();
-	else if(field == PROPERTY_FIELD(autoAdjustInterval) && autoAdjustInterval() && !isBeingLoaded())
-		adjustAnimationInterval();
+    if(field == PROPERTY_FIELD(currentFrame))
+        Q_EMIT currentFrameChanged(currentFrame());
+    else if(field == PROPERTY_FIELD(firstFrame) || field == PROPERTY_FIELD(lastFrame))
+        Q_EMIT intervalChanged(firstFrame(), lastFrame());
+    else if(field == PROPERTY_FIELD(framesPerSecond))
+        Q_EMIT speedChanged();
+    else if(field == PROPERTY_FIELD(autoAdjustInterval) && autoAdjustInterval() && !isBeingLoaded())
+        adjustAnimationInterval();
 
-	RefTarget::propertyChanged(field);
+    RefTarget::propertyChanged(field);
 }
 
 /******************************************************************************
@@ -76,10 +76,10 @@ void AnimationSettings::propertyChanged(const PropertyFieldDescriptor* field)
 ******************************************************************************/
 void AnimationSettings::saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData) const
 {
-	RefTarget::saveToStream(stream, excludeRecomputableData);
-	stream.beginChunk(0x01);
-	stream << _namedFrames;
-	stream.endChunk();
+    RefTarget::saveToStream(stream, excludeRecomputableData);
+    stream.beginChunk(0x01);
+    stream << _namedFrames;
+    stream.endChunk();
 }
 
 /******************************************************************************
@@ -87,10 +87,10 @@ void AnimationSettings::saveToStream(ObjectSaveStream& stream, bool excludeRecom
 ******************************************************************************/
 void AnimationSettings::loadFromStream(ObjectLoadStream& stream)
 {
-	RefTarget::loadFromStream(stream);
-	stream.expectChunk(0x01);
-	stream >> _namedFrames;
-	stream.closeChunk();
+    RefTarget::loadFromStream(stream);
+    stream.expectChunk(0x01);
+    stream >> _namedFrames;
+    stream.closeChunk();
 }
 
 /******************************************************************************
@@ -98,13 +98,13 @@ void AnimationSettings::loadFromStream(ObjectLoadStream& stream)
 ******************************************************************************/
 OORef<RefTarget> AnimationSettings::clone(bool deepCopy, CloneHelper& cloneHelper) const
 {
-	// Let the base class create an instance of this class.
-	OORef<AnimationSettings> clone = static_object_cast<AnimationSettings>(RefTarget::clone(deepCopy, cloneHelper));
+    // Let the base class create an instance of this class.
+    OORef<AnimationSettings> clone = static_object_cast<AnimationSettings>(RefTarget::clone(deepCopy, cloneHelper));
 
-	// Copy internal data.
-	clone->_namedFrames = this->_namedFrames;
+    // Copy internal data.
+    clone->_namedFrames = this->_namedFrames;
 
-	return clone;
+    return clone;
 }
 
 /******************************************************************************
@@ -112,7 +112,7 @@ OORef<RefTarget> AnimationSettings::clone(bool deepCopy, CloneHelper& cloneHelpe
 ******************************************************************************/
 QString AnimationSettings::timeToString(AnimationTime time)
 {
-	return QString::number(time.frame());
+    return QString::number(time.frame());
 }
 
 /******************************************************************************
@@ -121,11 +121,11 @@ QString AnimationSettings::timeToString(AnimationTime time)
 ******************************************************************************/
 AnimationTime AnimationSettings::stringToTime(const QString& stringValue)
 {
-	bool ok;
-	int frame = stringValue.toInt(&ok);
-	if(!ok)
-		throw Exception(tr("Invalid frame number format: %1").arg(stringValue));
-	return AnimationTime::fromFrame(frame);
+    bool ok;
+    int frame = stringValue.toInt(&ok);
+    if(!ok)
+        throw Exception(tr("Invalid frame number format: %1").arg(stringValue));
+    return AnimationTime::fromFrame(frame);
 }
 
 /******************************************************************************
@@ -133,7 +133,7 @@ AnimationTime AnimationSettings::stringToTime(const QString& stringValue)
 ******************************************************************************/
 void AnimationSettings::jumpToAnimationStart()
 {
-	setCurrentFrame(firstFrame());
+    setCurrentFrame(firstFrame());
 }
 
 /******************************************************************************
@@ -141,7 +141,7 @@ void AnimationSettings::jumpToAnimationStart()
 ******************************************************************************/
 void AnimationSettings::jumpToAnimationEnd()
 {
-	setCurrentFrame(lastFrame());
+    setCurrentFrame(lastFrame());
 }
 
 /******************************************************************************
@@ -149,7 +149,7 @@ void AnimationSettings::jumpToAnimationEnd()
 ******************************************************************************/
 void AnimationSettings::jumpToPreviousFrame()
 {
-	setCurrentFrame(std::max(currentFrame() - 1, firstFrame()));
+    setCurrentFrame(std::max(currentFrame() - 1, firstFrame()));
 }
 
 /******************************************************************************
@@ -157,7 +157,7 @@ void AnimationSettings::jumpToPreviousFrame()
 ******************************************************************************/
 void AnimationSettings::jumpToNextFrame()
 {
-	setCurrentFrame(std::min(currentFrame() + 1, lastFrame()));
+    setCurrentFrame(std::min(currentFrame() + 1, lastFrame()));
 }
 
 /******************************************************************************
@@ -167,17 +167,17 @@ void AnimationSettings::jumpToNextFrame()
 ******************************************************************************/
 RefMakerClass::SerializedClassInfo::PropertyFieldInfo::CustomDeserializationFunctionPtr AnimationSettings::OOMetaClass::overrideFieldDeserialization(const SerializedClassInfo::PropertyFieldInfo& field) const
 {
-	// For backward compaibility with OVITO 3.7:
+    // For backward compaibility with OVITO 3.7:
 
     // The AnimationSettings classes used to store the animation interval in a single property field.
     if(field.definingClass == &AnimationSettings::OOClass() && field.identifier == "animationInterval") {
         return [](const SerializedClassInfo::PropertyFieldInfo& field, ObjectLoadStream& stream, RefMaker& owner) {
-			stream.expectChunk(0x04);
-			int intervalStart, intervalEnd;
-			stream >> intervalStart >> intervalEnd;
-			int ticksPerFrame = (int)std::round(4800.0f / static_cast<AnimationSettings&>(owner).framesPerSecond());
-			static_cast<AnimationSettings&>(owner).setFirstFrame(intervalStart / ticksPerFrame);
-			static_cast<AnimationSettings&>(owner).setLastFrame(intervalEnd / ticksPerFrame);
+            stream.expectChunk(0x04);
+            int intervalStart, intervalEnd;
+            stream >> intervalStart >> intervalEnd;
+            int ticksPerFrame = (int)std::round(4800.0f / static_cast<AnimationSettings&>(owner).framesPerSecond());
+            static_cast<AnimationSettings&>(owner).setFirstFrame(intervalStart / ticksPerFrame);
+            static_cast<AnimationSettings&>(owner).setLastFrame(intervalEnd / ticksPerFrame);
             stream.closeChunk();
         };
     }
@@ -185,11 +185,11 @@ RefMakerClass::SerializedClassInfo::PropertyFieldInfo::CustomDeserializationFunc
     // The AnimationSettings classes used to store the current animation time in the field 'time'. Now it is in 'currentFrame'.
     if(field.definingClass == &AnimationSettings::OOClass() && field.identifier == "time") {
         return [](const SerializedClassInfo::PropertyFieldInfo& field, ObjectLoadStream& stream, RefMaker& owner) {
-			stream.expectChunk(0x04);
-			int time; // Legacy TimePoint data type
-			stream >> time;
-			int ticksPerFrame = (int)std::round(4800.0f / static_cast<AnimationSettings&>(owner).framesPerSecond());
-			static_cast<AnimationSettings&>(owner).setCurrentFrame(time / ticksPerFrame);
+            stream.expectChunk(0x04);
+            int time; // Legacy TimePoint data type
+            stream >> time;
+            int ticksPerFrame = (int)std::round(4800.0f / static_cast<AnimationSettings&>(owner).framesPerSecond());
+            static_cast<AnimationSettings&>(owner).setCurrentFrame(time / ticksPerFrame);
             stream.closeChunk();
         };
     }
@@ -197,10 +197,10 @@ RefMakerClass::SerializedClassInfo::PropertyFieldInfo::CustomDeserializationFunc
     // The AnimationSettings classes used to store the frame rate in the field 'ticksPerFrame'. Now it is in 'framesPerSecond'.
     if(field.definingClass == &AnimationSettings::OOClass() && field.identifier == "ticksPerFrame") {
         return [](const SerializedClassInfo::PropertyFieldInfo& field, ObjectLoadStream& stream, RefMaker& owner) {
-			stream.expectChunk(0x04);
-			int ticksPerFrame;
-			stream >> ticksPerFrame;
-			static_cast<AnimationSettings&>(owner).setFramesPerSecond(4800.0f / ticksPerFrame);
+            stream.expectChunk(0x04);
+            int ticksPerFrame;
+            stream >> ticksPerFrame;
+            static_cast<AnimationSettings&>(owner).setFramesPerSecond(4800.0f / ticksPerFrame);
             stream.closeChunk();
         };
     }
@@ -214,47 +214,47 @@ RefMakerClass::SerializedClassInfo::PropertyFieldInfo::CustomDeserializationFunc
 ******************************************************************************/
 void AnimationSettings::adjustAnimationInterval()
 {
-	OVITO_ASSERT(ExecutionContext::current().isValid());
-	
-	int firstFrame = std::numeric_limits<int>::max();
-	int lastFrame = std::numeric_limits<int>::lowest();
-	_namedFrames.clear();
+    OVITO_ASSERT(ExecutionContext::current().isValid());
+    
+    int firstFrame = std::numeric_limits<int>::max();
+    int lastFrame = std::numeric_limits<int>::lowest();
+    _namedFrames.clear();
 
-	// Visit all scenes that reference this animation settings object.
-	visitDependents([&](RefMaker* dependent) {
-		if(Scene* scene = dynamic_object_cast<Scene>(dependent)) {
-			scene->visitObjectNodes([&](PipelineSceneNode* node) {
-				if(node->dataProvider()) {
-					int nframes = node->dataProvider()->numberOfSourceFrames();
-					if(nframes > 0) {
+    // Visit all scenes that reference this animation settings object.
+    visitDependents([&](RefMaker* dependent) {
+        if(Scene* scene = dynamic_object_cast<Scene>(dependent)) {
+            scene->visitObjectNodes([&](PipelineSceneNode* node) {
+                if(node->dataProvider()) {
+                    int nframes = node->dataProvider()->numberOfSourceFrames();
+                    if(nframes > 0) {
 
-						// Final animation interval should encompass the local intervals
-						// of all animated objects in the scene.
-						int start = node->dataProvider()->sourceFrameToAnimationTime(0).frame();
-						if(start < firstFrame) firstFrame = start;
-						int end = (node->dataProvider()->sourceFrameToAnimationTime(nframes) - 1).frame();
-						if(end > lastFrame) lastFrame = end;
+                        // Final animation interval should encompass the local intervals
+                        // of all animated objects in the scene.
+                        int start = node->dataProvider()->sourceFrameToAnimationTime(0).frame();
+                        if(start < firstFrame) firstFrame = start;
+                        int end = (node->dataProvider()->sourceFrameToAnimationTime(nframes) - 1).frame();
+                        if(end > lastFrame) lastFrame = end;
 
-						// Save the list of the named animation frames.
-						// Merge with other list(s) from other scene objects if there are any.
-						if(_namedFrames.empty())
-							_namedFrames = node->dataProvider()->animationFrameLabels();
-						else {
-							auto additionalLabels = node->dataProvider()->animationFrameLabels();
-							if(!additionalLabels.empty())
-								_namedFrames.insert(additionalLabels);
-						}
-					}
-				}
-				return true;
-			});
-		}
-	});
-	if(firstFrame > lastFrame)
-		firstFrame = lastFrame = 0;
-	setFirstFrame(firstFrame);
-	setLastFrame(lastFrame);
-	setCurrentFrame(qBound(firstFrame, currentFrame(), lastFrame));
+                        // Save the list of the named animation frames.
+                        // Merge with other list(s) from other scene objects if there are any.
+                        if(_namedFrames.empty())
+                            _namedFrames = node->dataProvider()->animationFrameLabels();
+                        else {
+                            auto additionalLabels = node->dataProvider()->animationFrameLabels();
+                            if(!additionalLabels.empty())
+                                _namedFrames.insert(additionalLabels);
+                        }
+                    }
+                }
+                return true;
+            });
+        }
+    });
+    if(firstFrame > lastFrame)
+        firstFrame = lastFrame = 0;
+    setFirstFrame(firstFrame);
+    setLastFrame(lastFrame);
+    setCurrentFrame(qBound(firstFrame, currentFrame(), lastFrame));
 }
 
-}	// End of namespace
+}   // End of namespace

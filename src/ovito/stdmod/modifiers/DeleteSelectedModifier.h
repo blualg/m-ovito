@@ -33,12 +33,12 @@ namespace Ovito::StdMod {
  */
 class OVITO_STDMOD_EXPORT DeleteSelectedModifierDelegate : public ModifierDelegate
 {
-	OVITO_CLASS(DeleteSelectedModifierDelegate)
+    OVITO_CLASS(DeleteSelectedModifierDelegate)
 
 protected:
 
-	/// Abstract class constructor.
-	using ModifierDelegate::ModifierDelegate;
+    /// Abstract class constructor.
+    using ModifierDelegate::ModifierDelegate;
 };
 
 /**
@@ -46,32 +46,32 @@ protected:
  */
 class OVITO_STDMOD_EXPORT DeleteSelectedModifier : public MultiDelegatingModifier
 {
-	/// Give this modifier class its own metaclass.
-	class DeleteSelectedModifierClass : public MultiDelegatingModifier::OOMetaClass
-	{
-	public:
+    /// Give this modifier class its own metaclass.
+    class DeleteSelectedModifierClass : public MultiDelegatingModifier::OOMetaClass
+    {
+    public:
 
-		/// Inherit constructor from base class.
-		using MultiDelegatingModifier::OOMetaClass::OOMetaClass;
+        /// Inherit constructor from base class.
+        using MultiDelegatingModifier::OOMetaClass::OOMetaClass;
 
-		/// Return the metaclass of delegates for this modifier type.
-		virtual const ModifierDelegate::OOMetaClass& delegateMetaclass() const override { return DeleteSelectedModifierDelegate::OOClass(); }
-	};
+        /// Return the metaclass of delegates for this modifier type.
+        virtual const ModifierDelegate::OOMetaClass& delegateMetaclass() const override { return DeleteSelectedModifierDelegate::OOClass(); }
+    };
 
-	OVITO_CLASS_META(DeleteSelectedModifier, DeleteSelectedModifierClass)
-	Q_CLASSINFO("DisplayName", "Delete selected");
-	Q_CLASSINFO("Description", "Remove all currently selected elements.");
-	Q_CLASSINFO("ModifierCategory", "Modification");
+    OVITO_CLASS_META(DeleteSelectedModifier, DeleteSelectedModifierClass)
+    Q_CLASSINFO("DisplayName", "Delete selected");
+    Q_CLASSINFO("Description", "Remove all currently selected elements.");
+    Q_CLASSINFO("ModifierCategory", "Modification");
 
 public:
 
-	/// \brief Constructs a new instance of this class.
-	Q_INVOKABLE DeleteSelectedModifier(ObjectCreationParams params) : MultiDelegatingModifier(params) {
-		if(params.createSubObjects()) {
-			// Generate the list of delegate objects.
-			createModifierDelegates(DeleteSelectedModifierDelegate::OOClass(), params);
-		}
-	}
+    /// \brief Constructs a new instance of this class.
+    Q_INVOKABLE DeleteSelectedModifier(ObjectCreationParams params) : MultiDelegatingModifier(params) {
+        if(params.createSubObjects()) {
+            // Generate the list of delegate objects.
+            createModifierDelegates(DeleteSelectedModifierDelegate::OOClass(), params);
+        }
+    }
 };
 
-}	// End of namespace
+}   // End of namespace

@@ -33,34 +33,34 @@ namespace Ovito {
  */
 class OVITO_CORE_EXPORT AttributeDataObject : public DataObject
 {
-	OVITO_CLASS(AttributeDataObject)
-	Q_CLASSINFO("DisplayName", "Attribute");
+    OVITO_CLASS(AttributeDataObject)
+    Q_CLASSINFO("DisplayName", "Attribute");
 
 public:
 
-	/// Constructor.
-	Q_INVOKABLE AttributeDataObject(ObjectCreationParams params, QVariant value = {})
-		: DataObject(params), _value(std::move(value)) {}
+    /// Constructor.
+    Q_INVOKABLE AttributeDataObject(ObjectCreationParams params, QVariant value = {})
+        : DataObject(params), _value(std::move(value)) {}
 
-	/// Returns the display title of this object.
-	virtual QString objectTitle() const override {
-		if(!identifier().isEmpty()) 
-			return identifier();
-		return DataObject::objectTitle();
-	}
+    /// Returns the display title of this object.
+    virtual QString objectTitle() const override {
+        if(!identifier().isEmpty()) 
+            return identifier();
+        return DataObject::objectTitle();
+    }
 
 protected:
 
-	/// Saves the class' contents to the given stream.
-	virtual void saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData) const override;
+    /// Saves the class' contents to the given stream.
+    virtual void saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData) const override;
 
-	/// Loads the class' contents from the given stream.
-	virtual void loadFromStream(ObjectLoadStream& stream) override;
+    /// Loads the class' contents from the given stream.
+    virtual void loadFromStream(ObjectLoadStream& stream) override;
 
 private:
 
-	/// The stored attribute value.
-	DECLARE_RUNTIME_PROPERTY_FIELD(QVariant, value, setValue);
+    /// The stored attribute value.
+    DECLARE_RUNTIME_PROPERTY_FIELD(QVariant, value, setValue);
 };
 
-}	// End of namespace
+}   // End of namespace

@@ -37,14 +37,14 @@ namespace Ovito {
 ******************************************************************************/
 void SelectionMode::mousePressEvent(ViewportWindowInterface* vpwin, QMouseEvent* event)
 {
-	if(event->button() == Qt::LeftButton) {
-		_viewport = vpwin->viewport();
-		_clickPoint = getMousePosition(event);
-	}
-	else if(event->button() == Qt::RightButton) {
-		_viewport = nullptr;
-	}
-	ViewportInputMode::mousePressEvent(vpwin, event);
+    if(event->button() == Qt::LeftButton) {
+        _viewport = vpwin->viewport();
+        _clickPoint = getMousePosition(event);
+    }
+    else if(event->button() == Qt::RightButton) {
+        _viewport = nullptr;
+    }
+    ViewportInputMode::mousePressEvent(vpwin, event);
 }
 
 /******************************************************************************
@@ -52,17 +52,17 @@ void SelectionMode::mousePressEvent(ViewportWindowInterface* vpwin, QMouseEvent*
 ******************************************************************************/
 void SelectionMode::mouseReleaseEvent(ViewportWindowInterface* vpwin, QMouseEvent* event)
 {
-	if(_viewport != nullptr) {
-		// Select object under mouse cursor.
-		ViewportPickResult pickResult = vpwin->pick(_clickPoint);
-		if(pickResult.isValid() && _viewport->scene()) {
-			inputManager()->userInterface().performTransaction(tr("Select"), [&] {
-				_viewport->scene()->selection()->setNode(pickResult.pipelineNode());
-			});
-		}
-		_viewport = nullptr;
-	}
-	ViewportInputMode::mouseReleaseEvent(vpwin, event);
+    if(_viewport != nullptr) {
+        // Select object under mouse cursor.
+        ViewportPickResult pickResult = vpwin->pick(_clickPoint);
+        if(pickResult.isValid() && _viewport->scene()) {
+            inputManager()->userInterface().performTransaction(tr("Select"), [&] {
+                _viewport->scene()->selection()->setNode(pickResult.pipelineNode());
+            });
+        }
+        _viewport = nullptr;
+    }
+    ViewportInputMode::mouseReleaseEvent(vpwin, event);
 }
 
 /******************************************************************************
@@ -71,9 +71,9 @@ void SelectionMode::mouseReleaseEvent(ViewportWindowInterface* vpwin, QMouseEven
 ******************************************************************************/
 void SelectionMode::deactivated(bool temporary)
 {
-	inputManager()->userInterface().clearStatusBarMessage();
-	_viewport = nullptr;
-	ViewportInputMode::deactivated(temporary);
+    inputManager()->userInterface().clearStatusBarMessage();
+    _viewport = nullptr;
+    ViewportInputMode::deactivated(temporary);
 }
 
 /******************************************************************************
@@ -81,27 +81,27 @@ void SelectionMode::deactivated(bool temporary)
 ******************************************************************************/
 void SelectionMode::mouseMoveEvent(ViewportWindowInterface* vpwin, QMouseEvent* event)
 {
-	// Suppress object picking while animation playback is active, because the offscreen rendering slows down the playback.
-	bool isPlaybackActive = vpwin->userInterface().datasetContainer().isPlaybackActive();
+    // Suppress object picking while animation playback is active, because the offscreen rendering slows down the playback.
+    bool isPlaybackActive = vpwin->userInterface().datasetContainer().isPlaybackActive();
 
-	// Perform object picking under the mouse cursor.
-	ViewportPickResult pickResult = !isPlaybackActive ? vpwin->pick(getMousePosition(event)) : ViewportPickResult{};
+    // Perform object picking under the mouse cursor.
+    ViewportPickResult pickResult = !isPlaybackActive ? vpwin->pick(getMousePosition(event)) : ViewportPickResult{};
 
-	// Change mouse cursor while hovering over an object.
-	setCursor(pickResult.isValid() ? selectionCursor() : QCursor());
+    // Change mouse cursor while hovering over an object.
+    setCursor(pickResult.isValid() ? selectionCursor() : QCursor());
 
-	// Display a description of the object under the mouse cursor in the status bar and/or in a tooltip window.
-	if(pickResult.isValid() && pickResult.pickInfo()) {
-		QString infoText = pickResult.pickInfo()->infoString(pickResult.pipelineNode(), pickResult.subobjectId());
-		inputManager()->userInterface().showStatusBarMessage(infoText);
-		vpwin->showToolTip(infoText, getMousePosition(event));
-	}
-	else {
-		inputManager()->userInterface().clearStatusBarMessage();
-		vpwin->hideToolTip();
-	}
+    // Display a description of the object under the mouse cursor in the status bar and/or in a tooltip window.
+    if(pickResult.isValid() && pickResult.pickInfo()) {
+        QString infoText = pickResult.pickInfo()->infoString(pickResult.pipelineNode(), pickResult.subobjectId());
+        inputManager()->userInterface().showStatusBarMessage(infoText);
+        vpwin->showToolTip(infoText, getMousePosition(event));
+    }
+    else {
+        inputManager()->userInterface().clearStatusBarMessage();
+        vpwin->hideToolTip();
+    }
 
-	ViewportInputMode::mouseMoveEvent(vpwin, event);
+    ViewportInputMode::mouseMoveEvent(vpwin, event);
 }
 
-}	// End of namespace
+}   // End of namespace

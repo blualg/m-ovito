@@ -35,16 +35,16 @@ SET_OVITO_OBJECT_EDITOR(POSCARExporter, POSCARExporterEditor);
 ******************************************************************************/
 void POSCARExporterEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 {
-	// Create a rollout.
-	QWidget* rollout = createRollout(tr("POSCAR format"), rolloutParams);
+    // Create a rollout.
+    QWidget* rollout = createRollout(tr("POSCAR format"), rolloutParams);
 
     // Create the rollout contents.
-	QHBoxLayout* layout = new QHBoxLayout(rollout);
-	layout->setContentsMargins(6,6,6,6);
-	layout->setSpacing(4);
+    QHBoxLayout* layout = new QHBoxLayout(rollout);
+    layout->setContentsMargins(6,6,6,6);
+    layout->setSpacing(4);
 
-	BooleanParameterUI* reducedCoordsUI = new BooleanParameterUI(this, PROPERTY_FIELD(POSCARExporter::writeReducedCoordinates));
-	layout->addWidget(reducedCoordsUI->checkBox());
+    BooleanParameterUI* reducedCoordsUI = new BooleanParameterUI(this, PROPERTY_FIELD(POSCARExporter::writeReducedCoordinates));
+    layout->addWidget(reducedCoordsUI->checkBox());
 }
 
-}	// End of namespace
+}   // End of namespace

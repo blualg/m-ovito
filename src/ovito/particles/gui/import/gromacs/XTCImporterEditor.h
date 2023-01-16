@@ -33,17 +33,17 @@ namespace Ovito::Particles {
  */
 class XTCImporterEditor : public FileImporterEditor
 {
-	OVITO_CLASS(XTCImporterEditor)
+    OVITO_CLASS(XTCImporterEditor)
 
 public:
 
-	/// Constructor.
-	Q_INVOKABLE XTCImporterEditor() {}
+    /// Constructor.
+    Q_INVOKABLE XTCImporterEditor() {}
 
 protected:
 
-	/// Creates the user interface controls for the editor.
-	virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
+    /// Creates the user interface controls for the editor.
+    virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
 };
 
-}	// End of namespace
+}   // End of namespace

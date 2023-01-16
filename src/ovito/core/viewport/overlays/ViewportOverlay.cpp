@@ -42,24 +42,24 @@ ViewportOverlay::ViewportOverlay(ObjectCreationParams params) : ActiveObject(par
 ******************************************************************************/
 void ViewportOverlay::checkAlignmentParameterValue(int alignment) const
 {
-	int horizontalAlignment = alignment & (Qt::AlignLeft | Qt::AlignRight | Qt::AlignHCenter);
-	int verticalAlignment = alignment & (Qt::AlignTop | Qt::AlignBottom | Qt::AlignVCenter);
+    int horizontalAlignment = alignment & (Qt::AlignLeft | Qt::AlignRight | Qt::AlignHCenter);
+    int verticalAlignment = alignment & (Qt::AlignTop | Qt::AlignBottom | Qt::AlignVCenter);
 
-	if(horizontalAlignment == 0)
-		throw Exception(tr("No horizontal alignment flag was specified for the %1. Please check the value you provided for the alignment parameter. It must be a combination of exactly one horizontal and one vertical alignment flag.")
+    if(horizontalAlignment == 0)
+        throw Exception(tr("No horizontal alignment flag was specified for the %1. Please check the value you provided for the alignment parameter. It must be a combination of exactly one horizontal and one vertical alignment flag.")
             .arg(getOOMetaClass().name()));
 
-	if(horizontalAlignment != Qt::AlignLeft && horizontalAlignment != Qt::AlignRight && horizontalAlignment != Qt::AlignHCenter)
-		throw Exception(tr("More than one horizontal alignment flag was specified for the %1. Please check the value you provided for the alignment parameter. It must be a combination of exactly one horizontal and one vertical alignment flag.")
+    if(horizontalAlignment != Qt::AlignLeft && horizontalAlignment != Qt::AlignRight && horizontalAlignment != Qt::AlignHCenter)
+        throw Exception(tr("More than one horizontal alignment flag was specified for the %1. Please check the value you provided for the alignment parameter. It must be a combination of exactly one horizontal and one vertical alignment flag.")
             .arg(getOOMetaClass().name()));
 
-	if(verticalAlignment == 0)
-		throw Exception(tr("No vertical alignment flag was specified for the %1. Please check the value you provided for the alignment parameter. It must be a combination of exactly one horizontal and one vertical alignment flag.")
+    if(verticalAlignment == 0)
+        throw Exception(tr("No vertical alignment flag was specified for the %1. Please check the value you provided for the alignment parameter. It must be a combination of exactly one horizontal and one vertical alignment flag.")
             .arg(getOOMetaClass().name()));
 
-	if(verticalAlignment != Qt::AlignTop && verticalAlignment != Qt::AlignBottom && verticalAlignment != Qt::AlignVCenter)
-		throw Exception(tr("More than one vertical alignment flag was specified for the %1. Please check the value you provided for the alignment parameter. It must be a combination of exactly one horizontal and one vertical alignment flag.")
+    if(verticalAlignment != Qt::AlignTop && verticalAlignment != Qt::AlignBottom && verticalAlignment != Qt::AlignVCenter)
+        throw Exception(tr("More than one vertical alignment flag was specified for the %1. Please check the value you provided for the alignment parameter. It must be a combination of exactly one horizontal and one vertical alignment flag.")
             .arg(getOOMetaClass().name()));
 }
 
-}	// End of namespace
+}   // End of namespace

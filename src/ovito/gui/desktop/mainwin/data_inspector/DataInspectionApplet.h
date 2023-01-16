@@ -35,102 +35,102 @@ namespace Ovito {
  */
 class OVITO_GUI_EXPORT DataInspectionApplet : public OvitoObject
 {
-	OVITO_CLASS(DataInspectionApplet)
+    OVITO_CLASS(DataInspectionApplet)
 
 public:
 
-	/// Returns the key value for this applet that is used for ordering the applet tabs.
-	virtual int orderingKey() const { return std::numeric_limits<int>::max(); }
+    /// Returns the key value for this applet that is used for ordering the applet tabs.
+    virtual int orderingKey() const { return std::numeric_limits<int>::max(); }
 
-	/// Determines whether the given pipeline data contains data that can be displayed by this applet.
-	virtual bool appliesTo(const DataCollection& data);
+    /// Determines whether the given pipeline data contains data that can be displayed by this applet.
+    virtual bool appliesTo(const DataCollection& data);
 
-	/// Determines the list of data objects that are displayed by the applet.
-	virtual std::vector<ConstDataObjectPath> getDataObjectPaths() {
-		return currentState().getObjectsRecursive(_dataObjectClass); 
-	}
+    /// Determines the list of data objects that are displayed by the applet.
+    virtual std::vector<ConstDataObjectPath> getDataObjectPaths() {
+        return currentState().getObjectsRecursive(_dataObjectClass); 
+    }
 
-	/// Returns the main window this applet is embedded in.
-	MainWindow& mainWindow() const;
+    /// Returns the main window this applet is embedded in.
+    MainWindow& mainWindow() const;
 
-	/// Lets the applet create the UI widget that is to be placed into the data inspector panel.
-	virtual QWidget* createWidget() = 0;
+    /// Lets the applet create the UI widget that is to be placed into the data inspector panel.
+    virtual QWidget* createWidget() = 0;
 
-	/// Creates and returns the list widget displaying the list of data object objects.
-	QListWidget* objectSelectionWidget();
+    /// Creates and returns the list widget displaying the list of data object objects.
+    QListWidget* objectSelectionWidget();
 
-	/// Makes the applet update its data display.
-	virtual void updateDisplay();
+    /// Makes the applet update its data display.
+    virtual void updateDisplay();
 
-	/// This is called when the applet is no longer visible.
-	virtual void deactivate() {}
+    /// This is called when the applet is no longer visible.
+    virtual void deactivate() {}
 
-	/// Selects a specific data object in this applet.
-	virtual bool selectDataObject(PipelineObject* dataSource, const QString& objectIdentifierHint, const QVariant& modeHint);
+    /// Selects a specific data object in this applet.
+    virtual bool selectDataObject(PipelineObject* dataSource, const QString& objectIdentifierHint, const QVariant& modeHint);
 
-	/// Returns the currently selected data pipeline in the scene.
-	PipelineSceneNode* currentPipeline() const;
+    /// Returns the currently selected data pipeline in the scene.
+    PipelineSceneNode* currentPipeline() const;
 
-	/// Returns the current output of the data pipeline displayed in the applet.
-	const PipelineFlowState& currentState() const;
+    /// Returns the current output of the data pipeline displayed in the applet.
+    const PipelineFlowState& currentState() const;
 
-	/// Returns the data object that is currently selected.
-	const DataObject* selectedDataObject() const { return _selectedDataObject; }
+    /// Returns the data object that is currently selected.
+    const DataObject* selectedDataObject() const { return _selectedDataObject; }
 
-	/// Returns the data collection path of the currently selected data object.
-	const ConstDataObjectPath& selectedDataObjectPath() const { return _selectedDataObjectPath; }
+    /// Returns the data collection path of the currently selected data object.
+    const ConstDataObjectPath& selectedDataObjectPath() const { return _selectedDataObjectPath; }
 
-	/// Returns the panel hosting this applet.
-	DataInspectorPanel* inspectorPanel() const;
+    /// Returns the panel hosting this applet.
+    DataInspectorPanel* inspectorPanel() const;
 
 protected:
 
-	/// Constructor.
-	DataInspectionApplet(const DataObject::OOMetaClass& dataObjectClass) : _dataObjectClass(dataObjectClass) {}
+    /// Constructor.
+    DataInspectionApplet(const DataObject::OOMetaClass& dataObjectClass) : _dataObjectClass(dataObjectClass) {}
 
-	/// Updates the list of data objects displayed in the inspector.
-	void updateDataObjectList();
+    /// Updates the list of data objects displayed in the inspector.
+    void updateDataObjectList();
 
 Q_SIGNALS:
 
-	/// This signal is emitted when the user selects a different data object in the list.
-	void currentObjectChanged(const DataObject* dataObject);
+    /// This signal is emitted when the user selects a different data object in the list.
+    void currentObjectChanged(const DataObject* dataObject);
 
 public:
 
-	/// A specialized QTableView widget, which allows copying the selected contents of the
-	/// table to the clipboard.
-	class OVITO_GUI_EXPORT TableView : public QTableView
-	{
-	public:
+    /// A specialized QTableView widget, which allows copying the selected contents of the
+    /// table to the clipboard.
+    class OVITO_GUI_EXPORT TableView : public QTableView
+    {
+    public:
 
-		/// Constructor.
-		TableView(QWidget* parent = nullptr) : QTableView(parent) {
-			setWordWrap(false);
-		}
+        /// Constructor.
+        TableView(QWidget* parent = nullptr) : QTableView(parent) {
+            setWordWrap(false);
+        }
 
-	protected:
+    protected:
 
-		/// Handles key press events for this widget.
-		virtual void keyPressEvent(QKeyEvent* event) override;
-	};
+        /// Handles key press events for this widget.
+        virtual void keyPressEvent(QKeyEvent* event) override;
+    };
 
 private:
 
-	/// The type of data objects displayed by this applet.
-	const DataObject::OOMetaClass& _dataObjectClass;
+    /// The type of data objects displayed by this applet.
+    const DataObject::OOMetaClass& _dataObjectClass;
 
-	/// The widget for selecting the current data object.
-	QListWidget* _objectSelectionWidget = nullptr;
+    /// The widget for selecting the current data object.
+    QListWidget* _objectSelectionWidget = nullptr;
 
-	/// The path of the currently selected data object.
-	ConstDataObjectPath _selectedDataObjectPath;
+    /// The path of the currently selected data object.
+    ConstDataObjectPath _selectedDataObjectPath;
 
-	/// The identifier path of the currently selected data object.
-	QString _selectedDataObjectPathString;
+    /// The identifier path of the currently selected data object.
+    QString _selectedDataObjectPathString;
 
-	/// Pointer to the currently selected data object.
-	const DataObject* _selectedDataObject = nullptr;
+    /// Pointer to the currently selected data object.
+    const DataObject* _selectedDataObject = nullptr;
 };
 
-}	// End of namespace
+}   // End of namespace

@@ -36,9 +36,9 @@ const OvitoClass OvitoObject::__OOClass_instance{QStringLiteral("OvitoObject"), 
 ******************************************************************************/
 OvitoObject::~OvitoObject()
 {
-	OVITO_CHECK_OBJECT_POINTER(this);
-	OVITO_ASSERT_MSG(objectReferenceCount() == 0, "~OvitoObject()", "Destroying an object whose reference counter is non-zero.");
-	_magicAliveCode = 0xFEDCBA87;
+    OVITO_CHECK_OBJECT_POINTER(this);
+    OVITO_ASSERT_MSG(objectReferenceCount() == 0, "~OvitoObject()", "Destroying an object whose reference counter is non-zero.");
+    _magicAliveCode = 0xFEDCBA87;
 }
 #endif
 
@@ -48,27 +48,27 @@ OvitoObject::~OvitoObject()
 ******************************************************************************/
 void OvitoObject::deleteObjectInternal() noexcept 
 {
-	OVITO_CHECK_OBJECT_POINTER(this);
-	OVITO_ASSERT_MSG(_referenceCount.loadAcquire() == 0, "OvitoObject::deleteObjectInternal()", "Object is still referenced while being deleted.");
+    OVITO_CHECK_OBJECT_POINTER(this);
+    OVITO_ASSERT_MSG(_referenceCount.loadAcquire() == 0, "OvitoObject::deleteObjectInternal()", "Object is still referenced while being deleted.");
 
-	// Delete the object in the main thread only.
-	if(QThread::currentThread() != this->thread()) {
-		QMetaObject::invokeMethod(this, "deleteObjectInternal", Qt::QueuedConnection);
-		return;
-	}
+    // Delete the object in the main thread only.
+    if(QThread::currentThread() != this->thread()) {
+        QMetaObject::invokeMethod(this, "deleteObjectInternal", Qt::QueuedConnection);
+        return;
+    }
 
-	// Set the reference counter to a positive value to prevent the object
-	// from being deleted a second time during the call to aboutToBeDeleted().
-	_referenceCount.storeRelease(INVALID_REFERENCE_COUNT);
-	aboutToBeDeleted();
+    // Set the reference counter to a positive value to prevent the object
+    // from being deleted a second time during the call to aboutToBeDeleted().
+    _referenceCount.storeRelease(INVALID_REFERENCE_COUNT);
+    aboutToBeDeleted();
 
-	// After returning from aboutToBeDeleted(), the reference count should be back at the
-	// original value (no new references).
-	OVITO_ASSERT(_referenceCount.loadAcquire() == INVALID_REFERENCE_COUNT);
-	_referenceCount.storeRelease(0);
+    // After returning from aboutToBeDeleted(), the reference count should be back at the
+    // original value (no new references).
+    OVITO_ASSERT(_referenceCount.loadAcquire() == INVALID_REFERENCE_COUNT);
+    _referenceCount.storeRelease(0);
 
-	// Delete the object itself.
-	delete this;
+    // Delete the object itself.
+    delete this;
 }
 
 /******************************************************************************
@@ -76,7 +76,7 @@ void OvitoObject::deleteObjectInternal() noexcept
 ******************************************************************************/
 bool OvitoObject::isBeingLoaded() const
 {
-	return (qobject_cast<ObjectLoadStream*>(parent()) != nullptr);
+    return (qobject_cast<ObjectLoadStream*>(parent()) != nullptr);
 }
 
-}	// End of namespace
+}   // End of namespace

@@ -35,64 +35,64 @@ IMPLEMENT_OVITO_CLASS(SurfaceMeshAffineTransformationModifierDelegate);
 ******************************************************************************/
 PipelineStatus SurfaceMeshAffineTransformationModifierDelegate::apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const PipelineFlowState& inputState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs)
 {
-	AffineTransformationModifier* mod = static_object_cast<AffineTransformationModifier>(request.modifier());
+    AffineTransformationModifier* mod = static_object_cast<AffineTransformationModifier>(request.modifier());
 
-	for(const DataObject* obj : state.data()->objects()) {
-		// Process SurfaceMesh objects.
-		if(const SurfaceMesh* existingSurface = dynamic_object_cast<SurfaceMesh>(obj)) {
-			const AffineTransformation tm = mod->effectiveAffineTransformation(inputState);
-			
-			// Make sure the input mesh data structure is valid. 
-			existingSurface->verifyMeshIntegrity();
-			// Create a copy of the SurfaceMesh.
-			SurfaceMesh* newSurface = state.makeMutable(existingSurface);
-			// Create a copy of the vertices sub-object (no need to copy the topology when only moving vertices).
-			SurfaceMeshVertices* newVertices = newSurface->makeVerticesMutable();
-			// Create a copy of the vertex coordinates array.
-			PropertyAccess<Point3> positionProperty = newVertices->expectMutableProperty(SurfaceMeshVertices::PositionProperty);
+    for(const DataObject* obj : state.data()->objects()) {
+        // Process SurfaceMesh objects.
+        if(const SurfaceMesh* existingSurface = dynamic_object_cast<SurfaceMesh>(obj)) {
+            const AffineTransformation tm = mod->effectiveAffineTransformation(inputState);
+            
+            // Make sure the input mesh data structure is valid. 
+            existingSurface->verifyMeshIntegrity();
+            // Create a copy of the SurfaceMesh.
+            SurfaceMesh* newSurface = state.makeMutable(existingSurface);
+            // Create a copy of the vertices sub-object (no need to copy the topology when only moving vertices).
+            SurfaceMeshVertices* newVertices = newSurface->makeVerticesMutable();
+            // Create a copy of the vertex coordinates array.
+            PropertyAccess<Point3> positionProperty = newVertices->expectMutableProperty(SurfaceMeshVertices::PositionProperty);
 
-			if(!mod->selectionOnly()) {
-				// Apply transformation to the vertex coordinates.
-				for(Point3& p : positionProperty)
-					p = tm * p;
-			}
-			else {
-				if(ConstPropertyAccess<int> selectionProperty = newVertices->getProperty(SurfaceMeshVertices::SelectionProperty)) {
-					// Apply transformation only to the selected vertices.
-					const int* s = selectionProperty.cbegin();
-					for(Point3& p : positionProperty) {
-						if(*s++)
-							p = tm * p;
-					}
-				}
-			}
+            if(!mod->selectionOnly()) {
+                // Apply transformation to the vertex coordinates.
+                for(Point3& p : positionProperty)
+                    p = tm * p;
+            }
+            else {
+                if(ConstPropertyAccess<int> selectionProperty = newVertices->getProperty(SurfaceMeshVertices::SelectionProperty)) {
+                    // Apply transformation only to the selected vertices.
+                    const int* s = selectionProperty.cbegin();
+                    for(Point3& p : positionProperty) {
+                        if(*s++)
+                            p = tm * p;
+                    }
+                }
+            }
 
-			// Apply transformation to the cutting planes attached to the surface mesh.
-			QVector<Plane3> cuttingPlanes = newSurface->cuttingPlanes();
-			for(Plane3& plane : cuttingPlanes)
-				plane = tm * plane;
-			newSurface->setCuttingPlanes(std::move(cuttingPlanes));
-		}
-		// Process TriangleMesh objects.
-		else if(const TriMeshObject* existingMeshObj = dynamic_object_cast<TriMeshObject>(obj)) {
-			const AffineTransformation tm = mod->effectiveAffineTransformation(inputState);
+            // Apply transformation to the cutting planes attached to the surface mesh.
+            QVector<Plane3> cuttingPlanes = newSurface->cuttingPlanes();
+            for(Plane3& plane : cuttingPlanes)
+                plane = tm * plane;
+            newSurface->setCuttingPlanes(std::move(cuttingPlanes));
+        }
+        // Process TriangleMesh objects.
+        else if(const TriMeshObject* existingMeshObj = dynamic_object_cast<TriMeshObject>(obj)) {
+            const AffineTransformation tm = mod->effectiveAffineTransformation(inputState);
 
-			// Create a copy of the TriMeshObject.
-			TriMeshObject* newMeshObj = state.makeMutable(existingMeshObj);
+            // Create a copy of the TriMeshObject.
+            TriMeshObject* newMeshObj = state.makeMutable(existingMeshObj);
 
-			// Apply transformation to the vertices coordinates.
-			for(Point3& p : newMeshObj->vertices())
-				p = tm * p;
-			newMeshObj->invalidateVertices();
-			// Apply transformation to the normal vectors.
-			if(newMeshObj->hasNormals()) {
-				for(Vector3& n : newMeshObj->normals())
-					n = tm * n;
-			}
-		}
-	}
+            // Apply transformation to the vertices coordinates.
+            for(Point3& p : newMeshObj->vertices())
+                p = tm * p;
+            newMeshObj->invalidateVertices();
+            // Apply transformation to the normal vectors.
+            if(newMeshObj->hasNormals()) {
+                for(Vector3& n : newMeshObj->normals())
+                    n = tm * n;
+            }
+        }
+    }
 
-	return PipelineStatus::Success;
+    return PipelineStatus::Success;
 }
 
-}	// End of namespace
+}   // End of namespace

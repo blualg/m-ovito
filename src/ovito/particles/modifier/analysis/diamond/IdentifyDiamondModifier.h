@@ -33,58 +33,58 @@ namespace Ovito::Particles {
  */
 class OVITO_PARTICLES_EXPORT IdentifyDiamondModifier : public StructureIdentificationModifier
 {
-	OVITO_CLASS(IdentifyDiamondModifier)
+    OVITO_CLASS(IdentifyDiamondModifier)
 
-	Q_CLASSINFO("DisplayName", "Identify diamond structure");
-	Q_CLASSINFO("Description", "Identify particles arranged in cubic and hexagonal diamond structures.");
+    Q_CLASSINFO("DisplayName", "Identify diamond structure");
+    Q_CLASSINFO("Description", "Identify particles arranged in cubic and hexagonal diamond structures.");
 #ifndef OVITO_QML_GUI
-	Q_CLASSINFO("ModifierCategory", "Structure identification");
+    Q_CLASSINFO("ModifierCategory", "Structure identification");
 #else
-	Q_CLASSINFO("ModifierCategory", "-");
+    Q_CLASSINFO("ModifierCategory", "-");
 #endif
 
 public:
 
-	/// The structure types recognized by the modifier.
-	enum StructureType {
-		OTHER = 0,					//< Unidentified structure
-		CUBIC_DIAMOND,				//< Cubic diamond structure
-		CUBIC_DIAMOND_FIRST_NEIGH,	//< First neighbor of a cubic diamond atom
-		CUBIC_DIAMOND_SECOND_NEIGH,	//< Second neighbor of a cubic diamond atom
-		HEX_DIAMOND,				//< Hexagonal diamond structure
-		HEX_DIAMOND_FIRST_NEIGH,	//< First neighbor of a hexagonal diamond atom
-		HEX_DIAMOND_SECOND_NEIGH,	//< Second neighbor of a hexagonal diamond atom
+    /// The structure types recognized by the modifier.
+    enum StructureType {
+        OTHER = 0,                  //< Unidentified structure
+        CUBIC_DIAMOND,              //< Cubic diamond structure
+        CUBIC_DIAMOND_FIRST_NEIGH,  //< First neighbor of a cubic diamond atom
+        CUBIC_DIAMOND_SECOND_NEIGH, //< Second neighbor of a cubic diamond atom
+        HEX_DIAMOND,                //< Hexagonal diamond structure
+        HEX_DIAMOND_FIRST_NEIGH,    //< First neighbor of a hexagonal diamond atom
+        HEX_DIAMOND_SECOND_NEIGH,   //< Second neighbor of a hexagonal diamond atom
 
-		NUM_STRUCTURE_TYPES 	//< This just counts the number of defined structure types.
-	};
-	Q_ENUM(StructureType);
+        NUM_STRUCTURE_TYPES     //< This just counts the number of defined structure types.
+    };
+    Q_ENUM(StructureType);
 
 public:
 
-	/// Constructor.
-	Q_INVOKABLE IdentifyDiamondModifier(ObjectCreationParams params);
-	
+    /// Constructor.
+    Q_INVOKABLE IdentifyDiamondModifier(ObjectCreationParams params);
+    
 protected:
 
-	/// Creates a computation engine that will compute the modifier's results.
-	virtual Future<EnginePtr> createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input) override;
+    /// Creates a computation engine that will compute the modifier's results.
+    virtual Future<EnginePtr> createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input) override;
 
 private:
 
-	/// Analysis engine that performs the structure identification
-	class DiamondIdentificationEngine : public StructureIdentificationEngine
-	{
-	public:
+    /// Analysis engine that performs the structure identification
+    class DiamondIdentificationEngine : public StructureIdentificationEngine
+    {
+    public:
 
-		/// Constructor.
-		using StructureIdentificationEngine::StructureIdentificationEngine;
+        /// Constructor.
+        using StructureIdentificationEngine::StructureIdentificationEngine;
 
-		/// Computes the modifier's results.
-		virtual void perform() override;
+        /// Computes the modifier's results.
+        virtual void perform() override;
 
-		/// Injects the computed results into the data pipeline.
-		virtual void applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
-	};
+        /// Injects the computed results into the data pipeline.
+        virtual void applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
+    };
 };
 
-}	// End of namespace
+}   // End of namespace

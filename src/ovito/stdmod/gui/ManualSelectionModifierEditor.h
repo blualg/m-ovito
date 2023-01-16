@@ -35,37 +35,37 @@ namespace Ovito::StdMod {
  */
 class ManualSelectionModifierEditor : public PropertiesEditor
 {
-	OVITO_CLASS(ManualSelectionModifierEditor)
+    OVITO_CLASS(ManualSelectionModifierEditor)
 
 public:
 
-	/// Default constructor
-	Q_INVOKABLE ManualSelectionModifierEditor() {}
+    /// Default constructor
+    Q_INVOKABLE ManualSelectionModifierEditor() {}
 
-	/// This is called when the user has selected an element in the viewports.
-	void onElementPicked(const ViewportPickResult& pickResult, size_t elementIndex, const ConstDataObjectPath& pickedObjectPath);
+    /// This is called when the user has selected an element in the viewports.
+    void onElementPicked(const ViewportPickResult& pickResult, size_t elementIndex, const ConstDataObjectPath& pickedObjectPath);
 
-	/// This is called when the user has drawn a selection fence around elements.
-	void onFence(const QVector<Point2>& fence, Viewport* viewport, ElementSelectionSet::SelectionMode mode);
+    /// This is called when the user has drawn a selection fence around elements.
+    void onFence(const QVector<Point2>& fence, Viewport* viewport, ElementSelectionSet::SelectionMode mode);
 
 protected:
 
-	/// Creates the user interface controls for the editor.
-	virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
+    /// Creates the user interface controls for the editor.
+    virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
 
 protected Q_SLOTS:
 
-	/// Adopts the selection state from the modifier's input.
-	void resetSelection();
+    /// Adopts the selection state from the modifier's input.
+    void resetSelection();
 
-	/// Selects all particles
-	void selectAll();
+    /// Selects all particles
+    void selectAll();
 
-	/// Clears the selection.
-	void clearSelection();
+    /// Clears the selection.
+    void clearSelection();
 
-	/// Inverts the selection.
-	void invertSelection();
+    /// Inverts the selection.
+    void invertSelection();
 };
 
-}	// End of namespace
+}   // End of namespace

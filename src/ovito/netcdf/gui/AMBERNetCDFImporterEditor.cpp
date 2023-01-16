@@ -60,34 +60,34 @@ SET_OVITO_OBJECT_EDITOR(AMBERNetCDFImporter, AMBERNetCDFImporterEditor);
  *****************************************************************************/
 bool AMBERNetCDFImporterEditor::showEditColumnMappingDialog(AMBERNetCDFImporter* importer, const FileSourceImporter::Frame& frame)
 {
-	Future<ParticleInputColumnMapping> inspectFuture = importer->inspectFileHeader(frame);
+    Future<ParticleInputColumnMapping> inspectFuture = importer->inspectFileHeader(frame);
 
-	{
-		// Block UI until reading is done.
-		ProgressDialog progressDialog(parentWindow(), inspectFuture, tr("Inspecting file header"));
-		if(!inspectFuture.waitForFinished())
-			return false;
-	}
+    {
+        // Block UI until reading is done.
+        ProgressDialog progressDialog(parentWindow(), inspectFuture, tr("Inspecting file header"));
+        if(!inspectFuture.waitForFinished())
+            return false;
+    }
 
-	ParticleInputColumnMapping mapping = inspectFuture.result();
+    ParticleInputColumnMapping mapping = inspectFuture.result();
 
-	if(!importer->customColumnMapping().empty()) {
-		ParticleInputColumnMapping customMapping = importer->customColumnMapping();
-		customMapping.resize(mapping.size());
-		for(size_t i = 0; i < customMapping.size(); i++)
-			customMapping[i].columnName = mapping[i].columnName;
-		mapping = customMapping;
-	}
+    if(!importer->customColumnMapping().empty()) {
+        ParticleInputColumnMapping customMapping = importer->customColumnMapping();
+        customMapping.resize(mapping.size());
+        for(size_t i = 0; i < customMapping.size(); i++)
+            customMapping[i].columnName = mapping[i].columnName;
+        mapping = customMapping;
+    }
 
-	InputColumnMappingDialog dialog(mainWindow(), mapping, parentWindow());
-	if(dialog.exec() == QDialog::Accepted) {
-		importer->setCustomColumnMapping(dialog.mapping());
-		importer->setUseCustomColumnMapping(true);
-		return true;
-	}
-	else {
-		return false;
-	}
+    InputColumnMappingDialog dialog(mainWindow(), mapping, parentWindow());
+    if(dialog.exec() == QDialog::Accepted) {
+        importer->setCustomColumnMapping(dialog.mapping());
+        importer->setUseCustomColumnMapping(true);
+        return true;
+    }
+    else {
+        return false;
+    }
 }
 
 /******************************************************************************
@@ -95,41 +95,41 @@ bool AMBERNetCDFImporterEditor::showEditColumnMappingDialog(AMBERNetCDFImporter*
 ******************************************************************************/
 void AMBERNetCDFImporterEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 {
-	// Create a rollout.
-	QWidget* rollout = createRollout(tr("NetCDF file"), rolloutParams);
+    // Create a rollout.
+    QWidget* rollout = createRollout(tr("NetCDF file"), rolloutParams);
 
     // Create the rollout contents.
-	QVBoxLayout* layout = new QVBoxLayout(rollout);
-	layout->setContentsMargins(4,4,4,4);
-	layout->setSpacing(4);
+    QVBoxLayout* layout = new QVBoxLayout(rollout);
+    layout->setContentsMargins(4,4,4,4);
+    layout->setSpacing(4);
 
-	QGroupBox* optionsBox = new QGroupBox(tr("Options"), rollout);
-	QVBoxLayout* sublayout = new QVBoxLayout(optionsBox);
-	sublayout->setContentsMargins(4,4,4,4);
-	layout->addWidget(optionsBox);
+    QGroupBox* optionsBox = new QGroupBox(tr("Options"), rollout);
+    QVBoxLayout* sublayout = new QVBoxLayout(optionsBox);
+    sublayout->setContentsMargins(4,4,4,4);
+    layout->addWidget(optionsBox);
 
-	// Sort particles
-	BooleanParameterUI* sortParticlesUI = new BooleanParameterUI(this, PROPERTY_FIELD(ParticleImporter::sortParticles));
-	sublayout->addWidget(sortParticlesUI->checkBox());
+    // Sort particles
+    BooleanParameterUI* sortParticlesUI = new BooleanParameterUI(this, PROPERTY_FIELD(ParticleImporter::sortParticles));
+    sublayout->addWidget(sortParticlesUI->checkBox());
 
-	QGroupBox* columnMappingBox = new QGroupBox(tr("File columns"), rollout);
-	sublayout = new QVBoxLayout(columnMappingBox);
-	sublayout->setContentsMargins(4,4,4,4);
-	layout->addWidget(columnMappingBox);
+    QGroupBox* columnMappingBox = new QGroupBox(tr("File columns"), rollout);
+    sublayout = new QVBoxLayout(columnMappingBox);
+    sublayout->setContentsMargins(4,4,4,4);
+    layout->addWidget(columnMappingBox);
 
-	BooleanRadioButtonParameterUI* useCustomMappingUI = new BooleanRadioButtonParameterUI(this, PROPERTY_FIELD(AMBERNetCDFImporter::useCustomColumnMapping));
-	useCustomMappingUI->buttonFalse()->setText(tr("Automatic mapping"));
-	sublayout->addWidget(useCustomMappingUI->buttonFalse());
-	useCustomMappingUI->buttonTrue()->setText(tr("User-defined mapping to particle properties"));
-	sublayout->addWidget(useCustomMappingUI->buttonTrue());
-	connect(useCustomMappingUI->buttonFalse(), &QRadioButton::clicked, this, [this]() {
-		if(AMBERNetCDFImporter* importer = static_object_cast<AMBERNetCDFImporter>(editObject()))
-			importer->requestReload();
-	}, Qt::QueuedConnection);
+    BooleanRadioButtonParameterUI* useCustomMappingUI = new BooleanRadioButtonParameterUI(this, PROPERTY_FIELD(AMBERNetCDFImporter::useCustomColumnMapping));
+    useCustomMappingUI->buttonFalse()->setText(tr("Automatic mapping"));
+    sublayout->addWidget(useCustomMappingUI->buttonFalse());
+    useCustomMappingUI->buttonTrue()->setText(tr("User-defined mapping to particle properties"));
+    sublayout->addWidget(useCustomMappingUI->buttonTrue());
+    connect(useCustomMappingUI->buttonFalse(), &QRadioButton::clicked, this, [this]() {
+        if(AMBERNetCDFImporter* importer = static_object_cast<AMBERNetCDFImporter>(editObject()))
+            importer->requestReload();
+    }, Qt::QueuedConnection);
 
-	QPushButton* editMappingButton = new QPushButton(tr("Edit column mapping..."));
-	sublayout->addWidget(editMappingButton);
-	connect(editMappingButton, &QPushButton::clicked, this, &AMBERNetCDFImporterEditor::onEditColumnMapping);
+    QPushButton* editMappingButton = new QPushButton(tr("Edit column mapping..."));
+    sublayout->addWidget(editMappingButton);
+    connect(editMappingButton, &QPushButton::clicked, this, &AMBERNetCDFImporterEditor::onEditColumnMapping);
 }
 
 /******************************************************************************
@@ -137,21 +137,21 @@ void AMBERNetCDFImporterEditor::createUI(const RolloutInsertionParameters& rollo
 ******************************************************************************/
 void AMBERNetCDFImporterEditor::onEditColumnMapping()
 {
-	if(AMBERNetCDFImporter* importer = static_object_cast<AMBERNetCDFImporter>(editObject())) {
-		performTransaction(tr("Change file column mapping"), [this, importer]() {
+    if(AMBERNetCDFImporter* importer = static_object_cast<AMBERNetCDFImporter>(editObject())) {
+        performTransaction(tr("Change file column mapping"), [this, importer]() {
 
-			// Determine the currently loaded data file of the FileSource.
-			FileSource* fileSource = importer->fileSource();
-			if(!fileSource || fileSource->frames().empty()) 
-				return;
-			int frameIndex = qBound(0, fileSource->dataCollectionFrame(), fileSource->frames().size()-1);
+            // Determine the currently loaded data file of the FileSource.
+            FileSource* fileSource = importer->fileSource();
+            if(!fileSource || fileSource->frames().empty()) 
+                return;
+            int frameIndex = qBound(0, fileSource->dataCollectionFrame(), fileSource->frames().size()-1);
 
-			// Show the dialog box, which lets the user modify the file column mapping.
-			if(showEditColumnMappingDialog(importer, fileSource->frames()[frameIndex])) {
-				importer->requestReload();
-			}
-		});
-	}
+            // Show the dialog box, which lets the user modify the file column mapping.
+            if(showEditColumnMappingDialog(importer, fileSource->frames()[frameIndex])) {
+                importer->requestReload();
+            }
+        });
+    }
 }
 
-}	// End of namespace
+}   // End of namespace

@@ -35,93 +35,93 @@ namespace Ovito::Particles {
  */
 class OVITO_PARTICLES_EXPORT LAMMPSDumpLocalImporter : public ParticleImporter
 {
-	/// Defines a metaclass specialization for this importer type.
-	class OOMetaClass : public ParticleImporter::OOMetaClass
-	{
-	public:
-		/// Inherit standard constructor from base meta class.
-		using ParticleImporter::OOMetaClass::OOMetaClass;
+    /// Defines a metaclass specialization for this importer type.
+    class OOMetaClass : public ParticleImporter::OOMetaClass
+    {
+    public:
+        /// Inherit standard constructor from base meta class.
+        using ParticleImporter::OOMetaClass::OOMetaClass;
 
-		/// Returns the list of file formats that can be read by this importer class.
-		virtual Ovito::span<const SupportedFormat> supportedFormats() const override {
-			static const SupportedFormat formats[] = {{ QStringLiteral("*"), tr("LAMMPS Dump Local Files") }};
-			return formats;
-		}
+        /// Returns the list of file formats that can be read by this importer class.
+        virtual Ovito::span<const SupportedFormat> supportedFormats() const override {
+            static const SupportedFormat formats[] = {{ QStringLiteral("*"), tr("LAMMPS Dump Local Files") }};
+            return formats;
+        }
 
-		/// Checks if the given file has format that can be read by this importer.
-		virtual bool checkFileFormat(const FileHandle& file) const override;
-	};
+        /// Checks if the given file has format that can be read by this importer.
+        virtual bool checkFileFormat(const FileHandle& file) const override;
+    };
 
-	OVITO_CLASS_META(LAMMPSDumpLocalImporter, OOMetaClass)
+    OVITO_CLASS_META(LAMMPSDumpLocalImporter, OOMetaClass)
 
 public:
 
-	/// \brief Constructs a new instance of this class.
-	Q_INVOKABLE LAMMPSDumpLocalImporter(ObjectCreationParams params) : ParticleImporter(params) {}
+    /// \brief Constructs a new instance of this class.
+    Q_INVOKABLE LAMMPSDumpLocalImporter(ObjectCreationParams params) : ParticleImporter(params) {}
 
-	/// Returns the title of this object.
-	virtual QString objectTitle() const override { return tr("LAMMPS Dump Local"); }
+    /// Returns the title of this object.
+    virtual QString objectTitle() const override { return tr("LAMMPS Dump Local"); }
 
-	/// Indicates whether this file importer type loads particle trajectories.
-	virtual bool isTrajectoryFormat() const override { return true; } 
+    /// Indicates whether this file importer type loads particle trajectories.
+    virtual bool isTrajectoryFormat() const override { return true; } 
 
-	/// Creates an asynchronous loader object that loads the data for the given frame from the external file.
-	virtual FileSourceImporter::FrameLoaderPtr createFrameLoader(const LoadOperationRequest& request) override {
-		activateCLocale();
-		return std::make_shared<FrameLoader>(request, columnMapping());
-	}
+    /// Creates an asynchronous loader object that loads the data for the given frame from the external file.
+    virtual FileSourceImporter::FrameLoaderPtr createFrameLoader(const LoadOperationRequest& request) override {
+        activateCLocale();
+        return std::make_shared<FrameLoader>(request, columnMapping());
+    }
 
-	/// Creates an asynchronous frame discovery object that scans the input file for contained animation frames.
-	virtual std::shared_ptr<FileSourceImporter::FrameFinder> createFrameFinder(const FileHandle& file) override {
-		activateCLocale();
-		return std::make_shared<FrameFinder>(file);
-	}
+    /// Creates an asynchronous frame discovery object that scans the input file for contained animation frames.
+    virtual std::shared_ptr<FileSourceImporter::FrameFinder> createFrameFinder(const FileHandle& file) override {
+        activateCLocale();
+        return std::make_shared<FrameFinder>(file);
+    }
 
-	/// Inspects the header of the given file and returns the number of file columns.
-	Future<BondInputColumnMapping> inspectFileHeader(const Frame& frame);
-
-private:
-
-	/// The format-specific task object that is responsible for reading an input file in the background.
-	class FrameLoader : public ParticleImporter::FrameLoader
-	{
-	public:
-
-		/// Constructor.
-		FrameLoader(const LoadOperationRequest& request, const BondInputColumnMapping& columnMapping)
-			: ParticleImporter::FrameLoader(request), _columnMapping(columnMapping) {}
-
-		/// Returns the file column mapping used to load the file.
-		const BondInputColumnMapping& columnMapping() const { return _columnMapping; }
-
-	protected:
-
-		/// Reads the frame data from the external file.
-		virtual void loadFile() override;
-
-	private:
-
-		BondInputColumnMapping _columnMapping;
-	};
-
-	/// The format-specific task object that is responsible for scanning the input file for animation frames.
-	class FrameFinder : public FileSourceImporter::FrameFinder
-	{
-	public:
-
-		/// Inherit constructor from base class.
-		using FileSourceImporter::FrameFinder::FrameFinder;
-
-	protected:
-
-		/// Scans the data file and builds a list of source frames.
-		virtual void discoverFramesInFile(QVector<FileSourceImporter::Frame>& frames) override;
-	};
+    /// Inspects the header of the given file and returns the number of file columns.
+    Future<BondInputColumnMapping> inspectFileHeader(const Frame& frame);
 
 private:
 
-	/// The user-defined mapping of input file columns to OVITO's bond properties.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD(BondInputColumnMapping, columnMapping, setColumnMapping);
+    /// The format-specific task object that is responsible for reading an input file in the background.
+    class FrameLoader : public ParticleImporter::FrameLoader
+    {
+    public:
+
+        /// Constructor.
+        FrameLoader(const LoadOperationRequest& request, const BondInputColumnMapping& columnMapping)
+            : ParticleImporter::FrameLoader(request), _columnMapping(columnMapping) {}
+
+        /// Returns the file column mapping used to load the file.
+        const BondInputColumnMapping& columnMapping() const { return _columnMapping; }
+
+    protected:
+
+        /// Reads the frame data from the external file.
+        virtual void loadFile() override;
+
+    private:
+
+        BondInputColumnMapping _columnMapping;
+    };
+
+    /// The format-specific task object that is responsible for scanning the input file for animation frames.
+    class FrameFinder : public FileSourceImporter::FrameFinder
+    {
+    public:
+
+        /// Inherit constructor from base class.
+        using FileSourceImporter::FrameFinder::FrameFinder;
+
+    protected:
+
+        /// Scans the data file and builds a list of source frames.
+        virtual void discoverFramesInFile(QVector<FileSourceImporter::Frame>& frames) override;
+    };
+
+private:
+
+    /// The user-defined mapping of input file columns to OVITO's bond properties.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(BondInputColumnMapping, columnMapping, setColumnMapping);
 };
 
-}	// End of namespace
+}   // End of namespace

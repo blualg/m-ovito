@@ -34,139 +34,139 @@ namespace Ovito {
 * The constructor of the animation settings dialog.
 ******************************************************************************/
 AnimationSettingsDialog::AnimationSettingsDialog(MainWindow& mainWindow, QWidget* parent) :
-		QDialog(parent), 
-		UndoableTransaction(mainWindow, tr("Change animation settings")),
-		_mainWindow(mainWindow),
-		_animSettings(mainWindow.datasetContainer().activeAnimationSettings())
+        QDialog(parent), 
+        UndoableTransaction(mainWindow, tr("Change animation settings")),
+        _mainWindow(mainWindow),
+        _animSettings(mainWindow.datasetContainer().activeAnimationSettings())
 {
-	setWindowTitle(tr("Animation Settings"));
+    setWindowTitle(tr("Animation Settings"));
 
-	QVBoxLayout* layout1 = new QVBoxLayout(this);
+    QVBoxLayout* layout1 = new QVBoxLayout(this);
 
-	QGroupBox* animationBox = new QGroupBox(tr("Animation"));
-	layout1->addWidget(animationBox);
+    QGroupBox* animationBox = new QGroupBox(tr("Animation"));
+    layout1->addWidget(animationBox);
 
-	QGridLayout* contentLayout = new QGridLayout(animationBox);
-	contentLayout->setHorizontalSpacing(0);
-	contentLayout->setVerticalSpacing(2);
-	contentLayout->setColumnStretch(1, 1);
+    QGridLayout* contentLayout = new QGridLayout(animationBox);
+    contentLayout->setHorizontalSpacing(0);
+    contentLayout->setVerticalSpacing(2);
+    contentLayout->setColumnStretch(1, 1);
 
-	contentLayout->addWidget(new QLabel(tr("Frames per second:"), this), 0, 0);
-	fpsBox = new QComboBox(this);
-	QLocale locale;
-	fpsBox->addItem(locale.toString(0.1), 0.1f);
-	fpsBox->addItem(locale.toString(0.2), 0.2f);
-	fpsBox->addItem(locale.toString(0.5), 0.5f);
-	fpsBox->addItem(locale.toString(1), 1.0f);
-	fpsBox->addItem(locale.toString(2), 2.0f);
-	fpsBox->addItem(locale.toString(4), 4.0f);
-	fpsBox->addItem(locale.toString(5), 5.0f);
-	fpsBox->addItem(locale.toString(8), 8.0f);
-	fpsBox->addItem(locale.toString(10), 10.0f);
-	fpsBox->addItem(locale.toString(12), 12.0f);
-	fpsBox->addItem(locale.toString(15), 15.0f);
-	fpsBox->addItem(locale.toString(16), 16.0f);
-	fpsBox->addItem(locale.toString(20), 20.0f);
-	fpsBox->addItem(locale.toString(24), 24.0f);
-	fpsBox->addItem(locale.toString(25), 25.0f);
-	fpsBox->addItem(locale.toString(30), 30.0f);
-	fpsBox->addItem(locale.toString(32), 32.0f);
-	fpsBox->addItem(locale.toString(40), 40.0f);
-	fpsBox->addItem(locale.toString(50), 50.0f);
-	fpsBox->addItem(locale.toString(60), 60.0f);
-	contentLayout->addWidget(fpsBox, 0, 1, 1, 2);
-	connect(fpsBox, qOverload<int>(&QComboBox::activated), this, &AnimationSettingsDialog::onFramesPerSecondChanged);
+    contentLayout->addWidget(new QLabel(tr("Frames per second:"), this), 0, 0);
+    fpsBox = new QComboBox(this);
+    QLocale locale;
+    fpsBox->addItem(locale.toString(0.1), 0.1f);
+    fpsBox->addItem(locale.toString(0.2), 0.2f);
+    fpsBox->addItem(locale.toString(0.5), 0.5f);
+    fpsBox->addItem(locale.toString(1), 1.0f);
+    fpsBox->addItem(locale.toString(2), 2.0f);
+    fpsBox->addItem(locale.toString(4), 4.0f);
+    fpsBox->addItem(locale.toString(5), 5.0f);
+    fpsBox->addItem(locale.toString(8), 8.0f);
+    fpsBox->addItem(locale.toString(10), 10.0f);
+    fpsBox->addItem(locale.toString(12), 12.0f);
+    fpsBox->addItem(locale.toString(15), 15.0f);
+    fpsBox->addItem(locale.toString(16), 16.0f);
+    fpsBox->addItem(locale.toString(20), 20.0f);
+    fpsBox->addItem(locale.toString(24), 24.0f);
+    fpsBox->addItem(locale.toString(25), 25.0f);
+    fpsBox->addItem(locale.toString(30), 30.0f);
+    fpsBox->addItem(locale.toString(32), 32.0f);
+    fpsBox->addItem(locale.toString(40), 40.0f);
+    fpsBox->addItem(locale.toString(50), 50.0f);
+    fpsBox->addItem(locale.toString(60), 60.0f);
+    contentLayout->addWidget(fpsBox, 0, 1, 1, 2);
+    connect(fpsBox, qOverload<int>(&QComboBox::activated), this, &AnimationSettingsDialog::onFramesPerSecondChanged);
 
-	QGroupBox* interactiveBox = new QGroupBox(tr("Playback in interactive viewports"));
-	layout1->addWidget(interactiveBox);
+    QGroupBox* interactiveBox = new QGroupBox(tr("Playback in interactive viewports"));
+    layout1->addWidget(interactiveBox);
 
-	contentLayout = new QGridLayout(interactiveBox);
-	contentLayout->setHorizontalSpacing(0);
-	contentLayout->setVerticalSpacing(4);
-	contentLayout->setColumnMinimumWidth(1, 12);
-	contentLayout->setColumnStretch(2, 1);
+    contentLayout = new QGridLayout(interactiveBox);
+    contentLayout->setHorizontalSpacing(0);
+    contentLayout->setVerticalSpacing(4);
+    contentLayout->setColumnMinimumWidth(1, 12);
+    contentLayout->setColumnStretch(2, 1);
 
-	contentLayout->addWidget(new QLabel(tr("Playback speed:"), this), 0, 0);
-	playbackSpeedBox = new QComboBox(this);
-	playbackSpeedBox->addItem(tr("x 1/40"), -40);
-	playbackSpeedBox->addItem(tr("x 1/20"), -20);
-	playbackSpeedBox->addItem(tr("x 1/10"), -10);
-	playbackSpeedBox->addItem(tr("x 1/5"), -5);
-	playbackSpeedBox->addItem(tr("x 1/2"), -2);
-	playbackSpeedBox->addItem(tr("x 1 (realtime)"), 1);
-	playbackSpeedBox->addItem(tr("x 2"), 2);
-	playbackSpeedBox->addItem(tr("x 5"), 5);
-	playbackSpeedBox->addItem(tr("x 10"), 10);
-	playbackSpeedBox->addItem(tr("x 20"), 20);
-	contentLayout->addWidget(playbackSpeedBox, 0, 2, 1, 2);
-	connect(playbackSpeedBox, qOverload<int>(&QComboBox::activated), this, &AnimationSettingsDialog::onPlaybackSpeedChanged);
+    contentLayout->addWidget(new QLabel(tr("Playback speed:"), this), 0, 0);
+    playbackSpeedBox = new QComboBox(this);
+    playbackSpeedBox->addItem(tr("x 1/40"), -40);
+    playbackSpeedBox->addItem(tr("x 1/20"), -20);
+    playbackSpeedBox->addItem(tr("x 1/10"), -10);
+    playbackSpeedBox->addItem(tr("x 1/5"), -5);
+    playbackSpeedBox->addItem(tr("x 1/2"), -2);
+    playbackSpeedBox->addItem(tr("x 1 (realtime)"), 1);
+    playbackSpeedBox->addItem(tr("x 2"), 2);
+    playbackSpeedBox->addItem(tr("x 5"), 5);
+    playbackSpeedBox->addItem(tr("x 10"), 10);
+    playbackSpeedBox->addItem(tr("x 20"), 20);
+    contentLayout->addWidget(playbackSpeedBox, 0, 2, 1, 2);
+    connect(playbackSpeedBox, qOverload<int>(&QComboBox::activated), this, &AnimationSettingsDialog::onPlaybackSpeedChanged);
 
-	contentLayout->addWidget(new QLabel(tr("Every Nth frame:"), this), 1, 0);
-	QLineEdit* everyNthFrameBox = new QLineEdit(this);
-	contentLayout->addWidget(everyNthFrameBox, 1, 2);
-	everyNthFrameSpinner = new SpinnerWidget(this);
-	everyNthFrameSpinner->setUnit(mainWindow.unitsManager().integerIdentityUnit());
-	everyNthFrameSpinner->setTextBox(everyNthFrameBox);
-	everyNthFrameSpinner->setMinValue(1);
-	contentLayout->addWidget(everyNthFrameSpinner, 1, 3);
-	connect(everyNthFrameSpinner, &SpinnerWidget::spinnerValueChanged, this, [this]() {
-		_mainWindow.performActions(*this, [&] {
-			_animSettings->setPlaybackEveryNthFrame(everyNthFrameSpinner->intValue());
-		});
-	});
+    contentLayout->addWidget(new QLabel(tr("Every Nth frame:"), this), 1, 0);
+    QLineEdit* everyNthFrameBox = new QLineEdit(this);
+    contentLayout->addWidget(everyNthFrameBox, 1, 2);
+    everyNthFrameSpinner = new SpinnerWidget(this);
+    everyNthFrameSpinner->setUnit(mainWindow.unitsManager().integerIdentityUnit());
+    everyNthFrameSpinner->setTextBox(everyNthFrameBox);
+    everyNthFrameSpinner->setMinValue(1);
+    contentLayout->addWidget(everyNthFrameSpinner, 1, 3);
+    connect(everyNthFrameSpinner, &SpinnerWidget::spinnerValueChanged, this, [this]() {
+        _mainWindow.performActions(*this, [&] {
+            _animSettings->setPlaybackEveryNthFrame(everyNthFrameSpinner->intValue());
+        });
+    });
 
-	loopPlaybackBox = new QCheckBox(tr("Loop playback"));
-	contentLayout->addWidget(loopPlaybackBox, 2, 2, 1, 2);
-	connect(loopPlaybackBox, &QCheckBox::clicked, this, [this](bool checked) {
-		loopPlaybackModified = _mainWindow.performActions(*this, [&] {
-			_animSettings->setLoopPlayback(checked);
-		});
-	});
+    loopPlaybackBox = new QCheckBox(tr("Loop playback"));
+    contentLayout->addWidget(loopPlaybackBox, 2, 2, 1, 2);
+    connect(loopPlaybackBox, &QCheckBox::clicked, this, [this](bool checked) {
+        loopPlaybackModified = _mainWindow.performActions(*this, [&] {
+            _animSettings->setLoopPlayback(checked);
+        });
+    });
 
-	animIntervalBox = new QGroupBox(tr("Custom animation interval"));
-	animIntervalBox->setCheckable(true);
-	layout1->addWidget(animIntervalBox);
+    animIntervalBox = new QGroupBox(tr("Custom animation interval"));
+    animIntervalBox->setCheckable(true);
+    layout1->addWidget(animIntervalBox);
 
-	contentLayout = new QGridLayout(animIntervalBox);
-	contentLayout->setHorizontalSpacing(0);
-	contentLayout->setVerticalSpacing(2);
-	contentLayout->setColumnStretch(1, 1);
+    contentLayout = new QGridLayout(animIntervalBox);
+    contentLayout->setHorizontalSpacing(0);
+    contentLayout->setVerticalSpacing(2);
+    contentLayout->setColumnStretch(1, 1);
 
-	contentLayout->addWidget(new QLabel(tr("Start frame:"), this), 0, 0);
-	QLineEdit* animStartBox = new QLineEdit(this);
-	contentLayout->addWidget(animStartBox, 0, 1);
-	animStartSpinner = new SpinnerWidget(this);
-	animStartSpinner->setUnit(mainWindow.unitsManager().integerIdentityUnit());
-	animStartSpinner->setTextBox(animStartBox);
-	contentLayout->addWidget(animStartSpinner, 0, 2);
-	connect(animStartSpinner, &SpinnerWidget::spinnerValueChanged, this, &AnimationSettingsDialog::onAnimationIntervalChanged);
+    contentLayout->addWidget(new QLabel(tr("Start frame:"), this), 0, 0);
+    QLineEdit* animStartBox = new QLineEdit(this);
+    contentLayout->addWidget(animStartBox, 0, 1);
+    animStartSpinner = new SpinnerWidget(this);
+    animStartSpinner->setUnit(mainWindow.unitsManager().integerIdentityUnit());
+    animStartSpinner->setTextBox(animStartBox);
+    contentLayout->addWidget(animStartSpinner, 0, 2);
+    connect(animStartSpinner, &SpinnerWidget::spinnerValueChanged, this, &AnimationSettingsDialog::onAnimationIntervalChanged);
 
-	contentLayout->addWidget(new QLabel(tr("End frame:"), this), 1, 0);
-	QLineEdit* animEndBox = new QLineEdit(this);
-	contentLayout->addWidget(animEndBox, 1, 1);
-	animEndSpinner = new SpinnerWidget(this);
-	animEndSpinner->setUnit(mainWindow.unitsManager().integerIdentityUnit());
-	animEndSpinner->setTextBox(animEndBox);
-	contentLayout->addWidget(animEndSpinner, 1, 2);
-	connect(animEndSpinner, &SpinnerWidget::spinnerValueChanged, this, &AnimationSettingsDialog::onAnimationIntervalChanged);
+    contentLayout->addWidget(new QLabel(tr("End frame:"), this), 1, 0);
+    QLineEdit* animEndBox = new QLineEdit(this);
+    contentLayout->addWidget(animEndBox, 1, 1);
+    animEndSpinner = new SpinnerWidget(this);
+    animEndSpinner->setUnit(mainWindow.unitsManager().integerIdentityUnit());
+    animEndSpinner->setTextBox(animEndBox);
+    contentLayout->addWidget(animEndSpinner, 1, 2);
+    connect(animEndSpinner, &SpinnerWidget::spinnerValueChanged, this, &AnimationSettingsDialog::onAnimationIntervalChanged);
 
-	connect(animIntervalBox, &QGroupBox::clicked, this, [this](bool checked) {
-		_mainWindow.performActions(*this, [&] {
-			_animSettings->setAutoAdjustInterval(!checked);
-			updateUI();
-		});
-	});
+    connect(animIntervalBox, &QGroupBox::clicked, this, [this](bool checked) {
+        _mainWindow.performActions(*this, [&] {
+            _animSettings->setAutoAdjustInterval(!checked);
+            updateUI();
+        });
+    });
 
-	QDialogButtonBox* buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel | QDialogButtonBox::Help, Qt::Horizontal, this);
-	connect(buttonBox, &QDialogButtonBox::accepted, this, &AnimationSettingsDialog::onOk);
-	connect(buttonBox, &QDialogButtonBox::rejected, this, &AnimationSettingsDialog::reject);
+    QDialogButtonBox* buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel | QDialogButtonBox::Help, Qt::Horizontal, this);
+    connect(buttonBox, &QDialogButtonBox::accepted, this, &AnimationSettingsDialog::onOk);
+    connect(buttonBox, &QDialogButtonBox::rejected, this, &AnimationSettingsDialog::reject);
 
-	// Implement Help button.
-	connect(buttonBox, &QDialogButtonBox::helpRequested, &mainWindow, [&mainWindow]() {
-		mainWindow.actionManager()->openHelpTopic(QStringLiteral("manual:animation.animation_settings_dialog"));
-	});
+    // Implement Help button.
+    connect(buttonBox, &QDialogButtonBox::helpRequested, &mainWindow, [&mainWindow]() {
+        mainWindow.actionManager()->openHelpTopic(QStringLiteral("manual:animation.animation_settings_dialog"));
+    });
 
-	layout1->addWidget(buttonBox);
+    layout1->addWidget(buttonBox);
     updateUI();
 }
 
@@ -175,17 +175,17 @@ AnimationSettingsDialog::AnimationSettingsDialog(MainWindow& mainWindow, QWidget
 ******************************************************************************/
 void AnimationSettingsDialog::onOk()
 {
-	setFocus(); // Remove focus from child widgets to commit newly entered values in text widgets etc.
+    setFocus(); // Remove focus from child widgets to commit newly entered values in text widgets etc.
 
-	if(framesPerSecondModified)
-		PROPERTY_FIELD(AnimationSettings::framesPerSecond)->memorizeDefaultValue(_animSettings);
-	if(playbackSpeedModified)
-		PROPERTY_FIELD(AnimationSettings::playbackSpeed)->memorizeDefaultValue(_animSettings);
-	if(loopPlaybackModified)
-		PROPERTY_FIELD(AnimationSettings::loopPlayback)->memorizeDefaultValue(_animSettings);
+    if(framesPerSecondModified)
+        PROPERTY_FIELD(AnimationSettings::framesPerSecond)->memorizeDefaultValue(_animSettings);
+    if(playbackSpeedModified)
+        PROPERTY_FIELD(AnimationSettings::playbackSpeed)->memorizeDefaultValue(_animSettings);
+    if(loopPlaybackModified)
+        PROPERTY_FIELD(AnimationSettings::loopPlayback)->memorizeDefaultValue(_animSettings);
 
-	commit();
-	accept();
+    commit();
+    accept();
 }
 
 /******************************************************************************
@@ -193,15 +193,15 @@ void AnimationSettingsDialog::onOk()
 ******************************************************************************/
 void AnimationSettingsDialog::updateUI()
 {
-	fpsBox->setCurrentIndex(fpsBox->findData(_animSettings->framesPerSecond()));
-	playbackSpeedBox->setCurrentIndex(playbackSpeedBox->findData(_animSettings->playbackSpeed()));
-	animStartSpinner->setIntValue(_animSettings->firstFrame());
-	animEndSpinner->setIntValue(_animSettings->lastFrame());
-	loopPlaybackBox->setChecked(_animSettings->loopPlayback());
-	animIntervalBox->setChecked(!_animSettings->autoAdjustInterval());
-	animStartSpinner->setEnabled(!_animSettings->autoAdjustInterval());
-	animEndSpinner->setEnabled(!_animSettings->autoAdjustInterval());
-	everyNthFrameSpinner->setIntValue(_animSettings->playbackEveryNthFrame());
+    fpsBox->setCurrentIndex(fpsBox->findData(_animSettings->framesPerSecond()));
+    playbackSpeedBox->setCurrentIndex(playbackSpeedBox->findData(_animSettings->playbackSpeed()));
+    animStartSpinner->setIntValue(_animSettings->firstFrame());
+    animEndSpinner->setIntValue(_animSettings->lastFrame());
+    loopPlaybackBox->setChecked(_animSettings->loopPlayback());
+    animIntervalBox->setChecked(!_animSettings->autoAdjustInterval());
+    animStartSpinner->setEnabled(!_animSettings->autoAdjustInterval());
+    animEndSpinner->setEnabled(!_animSettings->autoAdjustInterval());
+    everyNthFrameSpinner->setIntValue(_animSettings->playbackEveryNthFrame());
 }
 
 /******************************************************************************
@@ -209,15 +209,15 @@ void AnimationSettingsDialog::updateUI()
 ******************************************************************************/
 void AnimationSettingsDialog::onFramesPerSecondChanged(int index)
 {
-	float newFramesPerSecond = fpsBox->itemData(index).toFloat();
-	OVITO_ASSERT(newFramesPerSecond != 0.0f);
+    float newFramesPerSecond = fpsBox->itemData(index).toFloat();
+    OVITO_ASSERT(newFramesPerSecond != 0.0f);
 
-	framesPerSecondModified = _mainWindow.performActions(*this, [&] {
-		_animSettings->setFramesPerSecond(newFramesPerSecond);
-	});
+    framesPerSecondModified = _mainWindow.performActions(*this, [&] {
+        _animSettings->setFramesPerSecond(newFramesPerSecond);
+    });
 
-	// Update dialog controls to reflect new values.
-	updateUI();
+    // Update dialog controls to reflect new values.
+    updateUI();
 }
 
 /******************************************************************************
@@ -225,16 +225,16 @@ void AnimationSettingsDialog::onFramesPerSecondChanged(int index)
 ******************************************************************************/
 void AnimationSettingsDialog::onPlaybackSpeedChanged(int index)
 {
-	int newPlaybackSpeed = playbackSpeedBox->itemData(index).toInt();
-	OVITO_ASSERT(newPlaybackSpeed != 0);
+    int newPlaybackSpeed = playbackSpeedBox->itemData(index).toInt();
+    OVITO_ASSERT(newPlaybackSpeed != 0);
 
-	// Change the animation speed.
-	playbackSpeedModified = _mainWindow.performActions(*this, [&] {
-		_animSettings->setPlaybackSpeed(newPlaybackSpeed);
-	});
+    // Change the animation speed.
+    playbackSpeedModified = _mainWindow.performActions(*this, [&] {
+        _animSettings->setPlaybackSpeed(newPlaybackSpeed);
+    });
 
-	// Update dialog controls to reflect new values.
-	updateUI();
+    // Update dialog controls to reflect new values.
+    updateUI();
 }
 
 /******************************************************************************
@@ -242,19 +242,19 @@ void AnimationSettingsDialog::onPlaybackSpeedChanged(int index)
 ******************************************************************************/
 void AnimationSettingsDialog::onAnimationIntervalChanged()
 {
-	int firstFrame = animStartSpinner->intValue();
-	int lastFrame = animEndSpinner->intValue();
-	if(lastFrame < firstFrame)
-		lastFrame = firstFrame;
+    int firstFrame = animStartSpinner->intValue();
+    int lastFrame = animEndSpinner->intValue();
+    if(lastFrame < firstFrame)
+        lastFrame = firstFrame;
 
-	_mainWindow.performActions(*this, [&] {
-		_animSettings->setFirstFrame(firstFrame);
-		_animSettings->setLastFrame(lastFrame);
-		_animSettings->setCurrentFrame(qBound(firstFrame, _animSettings->currentFrame(), lastFrame));
-	});
+    _mainWindow.performActions(*this, [&] {
+        _animSettings->setFirstFrame(firstFrame);
+        _animSettings->setLastFrame(lastFrame);
+        _animSettings->setCurrentFrame(qBound(firstFrame, _animSettings->currentFrame(), lastFrame));
+    });
 
-	// Update dialog controls to reflect new values.
-	updateUI();
+    // Update dialog controls to reflect new values.
+    updateUI();
 }
 
-}	// End of namespace
+}   // End of namespace

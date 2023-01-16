@@ -43,39 +43,39 @@ class OVITO_CORE_EXPORT UndoableOperation
 {
 public:
 
-	/// \brief Default constructor.
-	UndoableOperation() = default;
+    /// \brief Default constructor.
+    UndoableOperation() = default;
 
-	/// \brief A virtual destructor.
-	///
-	/// The default implementation does nothing.
-	virtual ~UndoableOperation() = default;
+    /// \brief A virtual destructor.
+    ///
+    /// The default implementation does nothing.
+    virtual ~UndoableOperation() = default;
 
-	/// \brief Provides a localized, human readable description of this operation.
-	/// \return A localized string that describes the operation. It is shown in the
-	///         edit menu of the application.
-	///
-	/// The default implementation returns a default string, but it should be overridden
-	/// by all sub-classes.
-	virtual QString displayName() const { return QStringLiteral("Undoable operation"); }
+    /// \brief Provides a localized, human readable description of this operation.
+    /// \return A localized string that describes the operation. It is shown in the
+    ///         edit menu of the application.
+    ///
+    /// The default implementation returns a default string, but it should be overridden
+    /// by all sub-classes.
+    virtual QString displayName() const { return QStringLiteral("Undoable operation"); }
 
-	/// \brief Undoes the operation encapsulated by this object.
-	///
-	/// This method is called by the UndoStack to undo the operation.
-	virtual void undo() = 0;
+    /// \brief Undoes the operation encapsulated by this object.
+    ///
+    /// This method is called by the UndoStack to undo the operation.
+    virtual void undo() = 0;
 
-	/// \brief Re-apply the change, assuming that it had been undone before.
-	///
-	/// This method is called by the UndoStack to re-do the operation.
-	/// The default implementation calls undo(). That means, undo() must be implemented such
-	/// that it works both ways.
-	virtual void redo() { undo(); }
+    /// \brief Re-apply the change, assuming that it had been undone before.
+    ///
+    /// This method is called by the UndoStack to re-do the operation.
+    /// The default implementation calls undo(). That means, undo() must be implemented such
+    /// that it works both ways.
+    virtual void redo() { undo(); }
 
-	/// Undoable operation records are not copyable or movable.
-	UndoableOperation(const UndoableOperation& other) = delete;
-	UndoableOperation(UndoableOperation&& other) = delete;
-	UndoableOperation& operator=(const UndoableOperation& other) = delete;
-	UndoableOperation& operator=(UndoableOperation&& other) = delete;
+    /// Undoable operation records are not copyable or movable.
+    UndoableOperation(const UndoableOperation& other) = delete;
+    UndoableOperation(UndoableOperation&& other) = delete;
+    UndoableOperation& operator=(const UndoableOperation& other) = delete;
+    UndoableOperation& operator=(UndoableOperation&& other) = delete;
 };
 
 /**
@@ -85,69 +85,69 @@ class OVITO_CORE_EXPORT CompoundOperation final : public UndoableOperation
 {
 public:
 
-	/// Returns the currently active compound operation (either while recording operations or while undoing/redoing an operation).
-	static CompoundOperation*& current();
+    /// Returns the currently active compound operation (either while recording operations or while undoing/redoing an operation).
+    static CompoundOperation*& current();
 
-	/// Indicates whether undo recording is currently active.
-	static bool isUndoRecording();
+    /// Indicates whether undo recording is currently active.
+    static bool isUndoRecording();
 
-	/// Indicates whether previously recorded operations are currently being undo or redone.
-	static bool isUndoingOrRedoing();
+    /// Indicates whether previously recorded operations are currently being undo or redone.
+    static bool isUndoingOrRedoing();
 
 public:
 
-	/// \brief Creates an empty compound operation with the given display name.
-	/// \param name The localized and human-readable display name for this compound operation.
-	explicit CompoundOperation(const QString& name) : _displayName(name) {}
+    /// \brief Creates an empty compound operation with the given display name.
+    /// \param name The localized and human-readable display name for this compound operation.
+    explicit CompoundOperation(const QString& name) : _displayName(name) {}
 
-	/// \brief Provides a localized, human readable description of this operation.
-	/// \return A localized string that describes the operation. It is shown in the
-	///         edit menu of the application.
-	virtual QString displayName() const override { return _displayName; }
+    /// \brief Provides a localized, human readable description of this operation.
+    /// \return A localized string that describes the operation. It is shown in the
+    ///         edit menu of the application.
+    virtual QString displayName() const override { return _displayName; }
 
-	/// \brief Sets this operation's display name to a new string.
-	/// \param newName The localized and human-readable display name for this compound operation.
-	/// \sa displayName()
-	void setDisplayName(const QString& newName) { _displayName = newName; }
+    /// \brief Sets this operation's display name to a new string.
+    /// \param newName The localized and human-readable display name for this compound operation.
+    /// \sa displayName()
+    void setDisplayName(const QString& newName) { _displayName = newName; }
 
-	/// Undo the operations that were made.
-	virtual void undo() override;
+    /// Undo the operations that were made.
+    virtual void undo() override;
 
-	/// Re-apply the changes after they have been undone before.
-	virtual void redo() override;
+    /// Re-apply the changes after they have been undone before.
+    virtual void redo() override;
 
-	/// \brief Adds a sub-record to this compound operation.
-	/// \param operation An instance of a UndoableOperation derived class that encapsulates
-	///                  the operation. The CompoundOperation becomes the owner of
-	///                  this object and is responsible for its deletion.
-	void addOperation(std::unique_ptr<UndoableOperation> operation) { _subOperations.push_back(std::move(operation)); }
+    /// \brief Adds a sub-record to this compound operation.
+    /// \param operation An instance of a UndoableOperation derived class that encapsulates
+    ///                  the operation. The CompoundOperation becomes the owner of
+    ///                  this object and is responsible for its deletion.
+    void addOperation(std::unique_ptr<UndoableOperation> operation) { _subOperations.push_back(std::move(operation)); }
 
-	/// \brief Indicates whether this UndoableOperation is significant or can be ignored.
-	/// \return \c true if the CompoundOperation contains at least one sub-operation; \c false it is empty.
-	bool isSignificant() const { return _subOperations.empty() == false; }
+    /// \brief Indicates whether this UndoableOperation is significant or can be ignored.
+    /// \return \c true if the CompoundOperation contains at least one sub-operation; \c false it is empty.
+    bool isSignificant() const { return _subOperations.empty() == false; }
 
-	/// \brief Removes all sub-operations from this compound operation.
-	void clear() { _subOperations.clear(); }
+    /// \brief Removes all sub-operations from this compound operation.
+    void clear() { _subOperations.clear(); }
 
-	/// \brief Undo all operations up to the given position and the remove those operations from the container.
-	void revertTo(int position);
+    /// \brief Undo all operations up to the given position and the remove those operations from the container.
+    void revertTo(int position);
 
-	/// \brief Returns the number of operations recorded in this container.
-	int count() const { return (int)_subOperations.size(); }
+    /// \brief Returns the number of operations recorded in this container.
+    int count() const { return (int)_subOperations.size(); }
 
-	/// For debugging purposes only.
-	void debugPrint(int level);
+    /// For debugging purposes only.
+    void debugPrint(int level);
 
 private:
 
-	/// List of contained operations.
-	std::vector<std::unique_ptr<UndoableOperation>> _subOperations;
+    /// List of contained operations.
+    std::vector<std::unique_ptr<UndoableOperation>> _subOperations;
 
-	/// Stores the display name of this compound passed to the constructor.
-	QString _displayName;
+    /// Stores the display name of this compound passed to the constructor.
+    QString _displayName;
 
-	/// Indicates if the operations in this container are currently being undone or redone.
-	bool _isUndoingOrRedoing = false;
+    /// Indicates if the operations in this container are currently being undone or redone.
+    bool _isUndoingOrRedoing = false;
 };
 
 /**
@@ -159,16 +159,16 @@ class OVITO_CORE_EXPORT UndoSuspender
 {
 public:
 
-	/// Constructor. 
-	explicit UndoSuspender(CompoundOperation* operation = nullptr) noexcept 
-		: _previous(std::exchange(CompoundOperation::current(), operation)) {}
+    /// Constructor. 
+    explicit UndoSuspender(CompoundOperation* operation = nullptr) noexcept 
+        : _previous(std::exchange(CompoundOperation::current(), operation)) {}
 
-	/// Destructor.
-	~UndoSuspender() noexcept { CompoundOperation::current() = _previous; }
+    /// Destructor.
+    ~UndoSuspender() noexcept { CompoundOperation::current() = _previous; }
 
 private:
 
-	CompoundOperation* _previous;
+    CompoundOperation* _previous;
 };
 
-}	// End of namespace
+}   // End of namespace

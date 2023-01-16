@@ -32,10 +32,10 @@ IMPLEMENT_OVITO_CLASS(CustomParameterUI);
 * Constructor for a Qt property.
 ******************************************************************************/
 CustomParameterUI::CustomParameterUI(PropertiesEditor* parentEditor, const char* propertyName, QWidget* widget,
-		const std::function<void(const QVariant&)>& updateWidgetFunction,
-		const std::function<QVariant()>& updatePropertyFunction,
-		const std::function<void(RefTarget*)>& resetUIFunction) :
-	PropertyParameterUI(parentEditor, propertyName), _widget(widget), _updateWidgetFunction(updateWidgetFunction), _updatePropertyFunction(updatePropertyFunction), _resetUIFunction(resetUIFunction)
+        const std::function<void(const QVariant&)>& updateWidgetFunction,
+        const std::function<QVariant()>& updatePropertyFunction,
+        const std::function<void(RefTarget*)>& resetUIFunction) :
+    PropertyParameterUI(parentEditor, propertyName), _widget(widget), _updateWidgetFunction(updateWidgetFunction), _updatePropertyFunction(updatePropertyFunction), _resetUIFunction(resetUIFunction)
 {
 }
 
@@ -43,10 +43,10 @@ CustomParameterUI::CustomParameterUI(PropertiesEditor* parentEditor, const char*
 * Constructor for a PropertyField property.
 ******************************************************************************/
 CustomParameterUI::CustomParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField, QWidget* widget,
-		const std::function<void(const QVariant&)>& updateWidgetFunction,
-		const std::function<QVariant()>& updatePropertyFunction,
-		const std::function<void(RefTarget*)>& resetUIFunction) :
-	PropertyParameterUI(parentEditor, propField), _widget(widget), _updateWidgetFunction(updateWidgetFunction), _updatePropertyFunction(updatePropertyFunction), _resetUIFunction(resetUIFunction)
+        const std::function<void(const QVariant&)>& updateWidgetFunction,
+        const std::function<QVariant()>& updatePropertyFunction,
+        const std::function<void(RefTarget*)>& resetUIFunction) :
+    PropertyParameterUI(parentEditor, propField), _widget(widget), _updateWidgetFunction(updateWidgetFunction), _updatePropertyFunction(updatePropertyFunction), _resetUIFunction(resetUIFunction)
 {
 }
 
@@ -55,8 +55,8 @@ CustomParameterUI::CustomParameterUI(PropertiesEditor* parentEditor, const Prope
 ******************************************************************************/
 CustomParameterUI::~CustomParameterUI()
 {
-	// Release widget.
-	delete widget();
+    // Release widget.
+    delete widget();
 }
 
 /******************************************************************************
@@ -65,13 +65,13 @@ CustomParameterUI::~CustomParameterUI()
 ******************************************************************************/
 void CustomParameterUI::resetUI()
 {
-	if(widget()) {
-		widget()->setEnabled(editObject() != NULL && isEnabled());
-		if(_resetUIFunction)
-			_resetUIFunction(editObject());
-	}
+    if(widget()) {
+        widget()->setEnabled(editObject() != NULL && isEnabled());
+        if(_resetUIFunction)
+            _resetUIFunction(editObject());
+    }
 
-	PropertyParameterUI::resetUI();
+    PropertyParameterUI::resetUI();
 }
 
 /******************************************************************************
@@ -80,23 +80,23 @@ void CustomParameterUI::resetUI()
 ******************************************************************************/
 void CustomParameterUI::updateUI()
 {
-	PropertyParameterUI::updateUI();
+    PropertyParameterUI::updateUI();
 
-	if(widget() && editObject()) {
-		QVariant val;
-		if(isQtPropertyUI()) {
-			val = editObject()->property(propertyName());
-			if(!val.isValid())
-				throw Exception(tr("The object class %1 does not define a property with the name %2.").arg(editObject()->metaObject()->className(), QString(propertyName())));
-		}
-		else if(isPropertyFieldUI()) {
-			val = editObject()->getPropertyFieldValue(propertyField());
-			OVITO_ASSERT_MSG(val.isValid(), "CustomParameterUI::updateUI()", qPrintable(QString("The object class %1 does not define a property with the name %2.").arg(editObject()->metaObject()->className(), QString(propertyName()))));
-		}
-		else return;
+    if(widget() && editObject()) {
+        QVariant val;
+        if(isQtPropertyUI()) {
+            val = editObject()->property(propertyName());
+            if(!val.isValid())
+                throw Exception(tr("The object class %1 does not define a property with the name %2.").arg(editObject()->metaObject()->className(), QString(propertyName())));
+        }
+        else if(isPropertyFieldUI()) {
+            val = editObject()->getPropertyFieldValue(propertyField());
+            OVITO_ASSERT_MSG(val.isValid(), "CustomParameterUI::updateUI()", qPrintable(QString("The object class %1 does not define a property with the name %2.").arg(editObject()->metaObject()->className(), QString(propertyName()))));
+        }
+        else return;
 
-		_updateWidgetFunction(val);
-	}
+        _updateWidgetFunction(val);
+    }
 }
 
 /******************************************************************************
@@ -104,10 +104,10 @@ void CustomParameterUI::updateUI()
 ******************************************************************************/
 void CustomParameterUI::setEnabled(bool enabled)
 {
-	if(enabled == isEnabled()) return;
-	PropertyParameterUI::setEnabled(enabled);
-	if(widget()) 
-		widget()->setEnabled(editObject() != NULL && isEnabled());
+    if(enabled == isEnabled()) return;
+    PropertyParameterUI::setEnabled(enabled);
+    if(widget()) 
+        widget()->setEnabled(editObject() != NULL && isEnabled());
 }
 
 /******************************************************************************
@@ -116,9 +116,9 @@ void CustomParameterUI::setEnabled(bool enabled)
 ******************************************************************************/
 void CustomParameterUI::updatePropertyValue()
 {
-	if(widget() && editObject()) {
-		performTransaction(tr("Change parameter"), [this]() {
-			QVariant newValue = _updatePropertyFunction();
+    if(widget() && editObject()) {
+        performTransaction(tr("Change parameter"), [this]() {
+            QVariant newValue = _updatePropertyFunction();
 
             if(isQtPropertyUI()) {
                 if(!editObject()->setProperty(propertyName(), newValue)) {
@@ -129,9 +129,9 @@ void CustomParameterUI::updatePropertyValue()
                 editor()->changePropertyFieldValue(propertyField(), newValue);
             }
 
-			Q_EMIT valueEntered();
-		});
-	}
+            Q_EMIT valueEntered();
+        });
+    }
 }
 
-}	// End of namespace
+}   // End of namespace

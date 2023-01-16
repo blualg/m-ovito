@@ -25,7 +25,7 @@
 #include "PluginManager.h"
 
 #ifndef OVITO_BUILD_MONOLITHIC
-	#include <QLibrary>
+    #include <QLibrary>
 #endif
 
 namespace Ovito {
@@ -38,7 +38,7 @@ PluginManager* PluginManager::_instance = nullptr;
 ******************************************************************************/
 PluginManager::PluginManager()
 {
-	OVITO_ASSERT_MSG(!_instance, "PluginManager constructor", "Multiple instances of this singleton class have been created.");
+    OVITO_ASSERT_MSG(!_instance, "PluginManager constructor", "Multiple instances of this singleton class have been created.");
 }
 
 /******************************************************************************
@@ -46,10 +46,10 @@ PluginManager::PluginManager()
 ******************************************************************************/
 PluginManager::~PluginManager()
 {
-	// Unload plugins in reverse order.
-	for(int i = plugins().size() - 1; i >= 0; --i) {
-		delete plugins()[i];
-	}
+    // Unload plugins in reverse order.
+    for(int i = plugins().size() - 1; i >= 0; --i) {
+        delete plugins()[i];
+    }
 }
 
 /******************************************************************************
@@ -58,11 +58,11 @@ PluginManager::~PluginManager()
 ******************************************************************************/
 Plugin* PluginManager::plugin(const QString& pluginId)
 {
-	for(Plugin* plugin : plugins()) {
-		if(plugin->pluginId() == pluginId)
-			return plugin;
-	}
-	return nullptr;
+    for(Plugin* plugin : plugins()) {
+        if(plugin->pluginId() == pluginId)
+            return plugin;
+    }
+    return nullptr;
 }
 
 /******************************************************************************
@@ -70,16 +70,16 @@ Plugin* PluginManager::plugin(const QString& pluginId)
 ******************************************************************************/
 void PluginManager::registerPlugin(Plugin* plugin)
 {
-	OVITO_CHECK_POINTER(plugin);
+    OVITO_CHECK_POINTER(plugin);
 
-	// Make sure the plugin's ID is unique.
-	if(this->plugin(plugin->pluginId())) {
-		QString id = plugin->pluginId();
-		delete plugin;
-		throw Exception(tr("Non-unique plugin identifier detected: %1").arg(id));
-	}
+    // Make sure the plugin's ID is unique.
+    if(this->plugin(plugin->pluginId())) {
+        QString id = plugin->pluginId();
+        delete plugin;
+        throw Exception(tr("Non-unique plugin identifier detected: %1").arg(id));
+    }
 
-	_plugins.push_back(plugin);
+    _plugins.push_back(plugin);
 }
 
 /******************************************************************************
@@ -87,11 +87,11 @@ void PluginManager::registerPlugin(Plugin* plugin)
 ******************************************************************************/
 QList<QDir> PluginManager::pluginDirs()
 {
-	// Resolve path to Ovito's plugin directory, which is specified at compile time relative to the executable path. 
-	// See ovito/core/CMakeLists.txt for details.
-	QDir prefixDir(QCoreApplication::applicationDirPath());
-	QString pluginsPath = prefixDir.absolutePath() + QChar('/') + QStringLiteral(OVITO_PLUGINS_RELATIVE_PATH);
-	return { QDir(pluginsPath) };
+    // Resolve path to Ovito's plugin directory, which is specified at compile time relative to the executable path. 
+    // See ovito/core/CMakeLists.txt for details.
+    QDir prefixDir(QCoreApplication::applicationDirPath());
+    QString pluginsPath = prefixDir.absolutePath() + QChar('/') + QStringLiteral(OVITO_PLUGINS_RELATIVE_PATH);
+    return { QDir(pluginsPath) };
 }
 
 /******************************************************************************
@@ -100,15 +100,15 @@ QList<QDir> PluginManager::pluginDirs()
 QString PluginManager::pythonDir()
 {
 #ifndef OVITO_BUILD_CONDA
-	// Resolve path to Ovito's Python layer files, which is specified at compile time relative to the executable path. 
-	// See ovito/core/CMakeLists.txt for details.
-	QDir prefixDir(QCoreApplication::applicationDirPath());
-	return QDir(prefixDir.filePath(QStringLiteral(OVITO_PYTHON_LAYER_PATH))).absolutePath();
+    // Resolve path to Ovito's Python layer files, which is specified at compile time relative to the executable path. 
+    // See ovito/core/CMakeLists.txt for details.
+    QDir prefixDir(QCoreApplication::applicationDirPath());
+    return QDir(prefixDir.filePath(QStringLiteral(OVITO_PYTHON_LAYER_PATH))).absolutePath();
 #else
-	// Resolve path to Ovito's Python layer files, which is specified at compile time relative to the Conda prefix path.
-	// See ovito/core/CMakeLists.txt for details.
-	QDir prefixDir(QDir::fromNativeSeparators(qEnvironmentVariable("CONDA_PREFIX")));
-	return QDir(prefixDir.filePath(QStringLiteral(OVITO_PYTHON_LAYER_PATH))).absolutePath();
+    // Resolve path to Ovito's Python layer files, which is specified at compile time relative to the Conda prefix path.
+    // See ovito/core/CMakeLists.txt for details.
+    QDir prefixDir(QDir::fromNativeSeparators(qEnvironmentVariable("CONDA_PREFIX")));
+    return QDir(prefixDir.filePath(QStringLiteral(OVITO_PYTHON_LAYER_PATH))).absolutePath();
 #endif
 }
 
@@ -121,43 +121,43 @@ void PluginManager::loadAllPlugins()
 #ifndef OVITO_BUILD_MONOLITHIC
 
 #ifdef Q_OS_WIN
-	// Extend enviroment variable PATH so that the plugin DLLs are automatically found, because
-	// there typically are inter-dependencies between them.
-	QByteArray path = qgetenv("PATH");
-	for(QDir pluginDir : pluginDirs()) {
-		path = QDir::toNativeSeparators(pluginDir.absolutePath()).toUtf8() + ";" + path;
-	}
-	qputenv("PATH", path);
+    // Extend enviroment variable PATH so that the plugin DLLs are automatically found, because
+    // there typically are inter-dependencies between them.
+    QByteArray path = qgetenv("PATH");
+    for(QDir pluginDir : pluginDirs()) {
+        path = QDir::toNativeSeparators(pluginDir.absolutePath()).toUtf8() + ";" + path;
+    }
+    qputenv("PATH", path);
 #endif
 
-	// Scan the plugin directories for installed plugins.
-	// This only done in standalone mode.
-	// When OVITO is being used from an external Python interpreter,
-	// then plugins are loaded via explicit import statements.
-	for(QDir pluginDir : pluginDirs()) {
-		if(!pluginDir.exists())
-			throw Exception(tr("Failed to scan the plugin directory. Path %1 does not exist.").arg(pluginDir.path()));
+    // Scan the plugin directories for installed plugins.
+    // This only done in standalone mode.
+    // When OVITO is being used from an external Python interpreter,
+    // then plugins are loaded via explicit import statements.
+    for(QDir pluginDir : pluginDirs()) {
+        if(!pluginDir.exists())
+            throw Exception(tr("Failed to scan the plugin directory. Path %1 does not exist.").arg(pluginDir.path()));
 
-		// List all plugin files.
+        // List all plugin files.
 #ifndef Q_OS_WIN
-		pluginDir.setNameFilters(QStringList() << "*.so");
+        pluginDir.setNameFilters(QStringList() << "*.so");
 #else
-		pluginDir.setNameFilters(QStringList() << "*.ovito.dll");
+        pluginDir.setNameFilters(QStringList() << "*.ovito.dll");
 #endif
 
-		pluginDir.setFilter(QDir::Files);
-		for(const QString& file : pluginDir.entryList()) {
-			QString filePath = pluginDir.absoluteFilePath(file);
-			QLibrary* library = new QLibrary(filePath, this);
-			library->setLoadHints(QLibrary::ExportExternalSymbolsHint);
-			if(!library->load()) {
-				Application::instance()->reportError(QStringLiteral("Failed to load native plugin library.\nLibrary file: %1\nError: %2").arg(filePath, library->errorString()));
-			}
-		}
-	}
+        pluginDir.setFilter(QDir::Files);
+        for(const QString& file : pluginDir.entryList()) {
+            QString filePath = pluginDir.absoluteFilePath(file);
+            QLibrary* library = new QLibrary(filePath, this);
+            library->setLoadHints(QLibrary::ExportExternalSymbolsHint);
+            if(!library->load()) {
+                Application::instance()->reportError(QStringLiteral("Failed to load native plugin library.\nLibrary file: %1\nError: %2").arg(filePath, library->errorString()));
+            }
+        }
+    }
 #endif
 
-	registerLoadedPluginClasses();
+    registerLoadedPluginClasses();
 }
 
 /******************************************************************************
@@ -165,26 +165,26 @@ void PluginManager::loadAllPlugins()
 ******************************************************************************/
 void PluginManager::registerLoadedPluginClasses()
 {
-	for(OvitoClass* clazz = OvitoClass::_firstMetaClass; clazz != _lastRegisteredClass; clazz = clazz->_nextMetaclass) {
-		clazz->initialize();
-		OVITO_ASSERT(clazz->pluginId() != nullptr);
-		
-		Plugin* classPlugin = nullptr;
-		for(Plugin* plugin : plugins()) {
-			if(plugin->pluginId() == clazz->pluginId()) {
-				classPlugin = plugin;
-				break;
-			}
-		}
-		if(!classPlugin) {
-			classPlugin = new Plugin(clazz->pluginId());
-			registerPlugin(classPlugin);
-		}
-		OVITO_ASSERT(clazz->plugin() == nullptr);
-		clazz->_plugin = classPlugin;
-		classPlugin->registerClass(clazz);
-	}
-	_lastRegisteredClass = OvitoClass::_firstMetaClass;
+    for(OvitoClass* clazz = OvitoClass::_firstMetaClass; clazz != _lastRegisteredClass; clazz = clazz->_nextMetaclass) {
+        clazz->initialize();
+        OVITO_ASSERT(clazz->pluginId() != nullptr);
+        
+        Plugin* classPlugin = nullptr;
+        for(Plugin* plugin : plugins()) {
+            if(plugin->pluginId() == clazz->pluginId()) {
+                classPlugin = plugin;
+                break;
+            }
+        }
+        if(!classPlugin) {
+            classPlugin = new Plugin(clazz->pluginId());
+            registerPlugin(classPlugin);
+        }
+        OVITO_ASSERT(clazz->plugin() == nullptr);
+        clazz->_plugin = classPlugin;
+        classPlugin->registerClass(clazz);
+    }
+    _lastRegisteredClass = OvitoClass::_firstMetaClass;
 }
 
 /******************************************************************************
@@ -192,16 +192,16 @@ void PluginManager::registerLoadedPluginClasses()
 ******************************************************************************/
 OvitoClassPtr PluginManager::findClass(const QString& pluginId, const QString& className)
 {
-	if(pluginId.isEmpty()) {
-		for(Plugin* p : plugins()) {
-			if(OvitoClassPtr clazz = p->findClass(className))
-				return clazz;
-		}
-	}
-	else if(Plugin* p = plugin(pluginId)) {
-		return p->findClass(className);
-	}
-	return nullptr;
+    if(pluginId.isEmpty()) {
+        for(Plugin* p : plugins()) {
+            if(OvitoClassPtr clazz = p->findClass(className))
+                return clazz;
+        }
+    }
+    else if(Plugin* p = plugin(pluginId)) {
+        return p->findClass(className);
+    }
+    return nullptr;
 }
 
 /******************************************************************************
@@ -209,18 +209,18 @@ OvitoClassPtr PluginManager::findClass(const QString& pluginId, const QString& c
 ******************************************************************************/
 QVector<OvitoClassPtr> PluginManager::listClasses(const OvitoClass& superClass, bool skipAbstract)
 {
-	QVector<OvitoClassPtr> result;
+    QVector<OvitoClassPtr> result;
 
-	for(Plugin* plugin : plugins()) {
-		for(OvitoClassPtr clazz : plugin->classes()) {
-			if(!skipAbstract || !clazz->isAbstract()) {
-				if(clazz->isDerivedFrom(superClass))
-					result.push_back(clazz);
-			}
-		}
-	}
+    for(Plugin* plugin : plugins()) {
+        for(OvitoClassPtr clazz : plugin->classes()) {
+            if(!skipAbstract || !clazz->isAbstract()) {
+                if(clazz->isDerivedFrom(superClass))
+                    result.push_back(clazz);
+            }
+        }
+    }
 
-	return result;
+    return result;
 }
 
-}	// End of namespace
+}   // End of namespace

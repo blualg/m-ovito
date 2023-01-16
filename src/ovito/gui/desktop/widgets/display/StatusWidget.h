@@ -33,41 +33,41 @@ namespace Ovito {
  */
 class OVITO_GUI_EXPORT StatusWidget : public QScrollArea
 {
-	Q_OBJECT
+    Q_OBJECT
 
 public:
 
-	/// \brief Constructs the widget.
-	/// \param parent The parent widget for the new widget.
-	StatusWidget(QWidget* parent = nullptr);
+    /// \brief Constructs the widget.
+    /// \param parent The parent widget for the new widget.
+    StatusWidget(QWidget* parent = nullptr);
 
-	/// Returns the current status displayed by the widget.
-	const PipelineStatus& status() const { return _status; }
+    /// Returns the current status displayed by the widget.
+    const PipelineStatus& status() const { return _status; }
 
-	/// Sets the status to be displayed by the widget.
-	void setStatus(const PipelineStatus& status);
+    /// Sets the status to be displayed by the widget.
+    void setStatus(const PipelineStatus& status);
 
-	/// Resets the widget to not display any status.
-	void clearStatus() {
-		setStatus(PipelineStatus());
-	}
+    /// Resets the widget to not display any status.
+    void clearStatus() {
+        setStatus(PipelineStatus());
+    }
 
-	/// Returns the minimum size of the widget.
-	virtual QSize minimumSizeHint() const override;
+    /// Returns the minimum size of the widget.
+    virtual QSize minimumSizeHint() const override;
 
-	/// Returns the preferred size of the widget.
-	virtual QSize sizeHint() const override;
+    /// Returns the preferred size of the widget.
+    virtual QSize sizeHint() const override;
 
 private:
 
-	/// The current status displayed by the widget.
-	PipelineStatus _status;
+    /// The current status displayed by the widget.
+    PipelineStatus _status;
 
-	/// The internal text label.
-	QLabel* _textLabel;
+    /// The internal text label.
+    QLabel* _textLabel;
 
-	/// The internal icon label.
-	QLabel* _iconLabel;
+    /// The internal icon label.
+    QLabel* _iconLabel;
 };
 
-}	// End of namespace
+}   // End of namespace

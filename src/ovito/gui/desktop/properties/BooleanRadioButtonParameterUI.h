@@ -34,54 +34,54 @@ namespace Ovito {
 ******************************************************************************/
 class OVITO_GUI_EXPORT BooleanRadioButtonParameterUI : public PropertyParameterUI
 {
-	OVITO_CLASS(BooleanRadioButtonParameterUI)
+    OVITO_CLASS(BooleanRadioButtonParameterUI)
 
 public:
 
-	/// Constructor for a Qt property.
-	BooleanRadioButtonParameterUI(PropertiesEditor* parentEditor, const char* propertyName);
+    /// Constructor for a Qt property.
+    BooleanRadioButtonParameterUI(PropertiesEditor* parentEditor, const char* propertyName);
 
-	/// Constructor for a PropertyField property.
-	BooleanRadioButtonParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField);
+    /// Constructor for a PropertyField property.
+    BooleanRadioButtonParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField);
 
-	/// Destructor.
-	virtual ~BooleanRadioButtonParameterUI();
+    /// Destructor.
+    virtual ~BooleanRadioButtonParameterUI();
 
-	/// This returns the radio button group managed by this ParameterUI.
-	QButtonGroup* buttonGroup() const { return _buttonGroup; }
+    /// This returns the radio button group managed by this ParameterUI.
+    QButtonGroup* buttonGroup() const { return _buttonGroup; }
 
-	/// This returns the radio button for the "False" state.
-	QRadioButton* buttonFalse() const { return buttonGroup() ? (QRadioButton*)buttonGroup()->button(0) : nullptr; }
+    /// This returns the radio button for the "False" state.
+    QRadioButton* buttonFalse() const { return buttonGroup() ? (QRadioButton*)buttonGroup()->button(0) : nullptr; }
 
-	/// This returns the radio button for the "True" state.
-	QRadioButton* buttonTrue() const { return buttonGroup() ? (QRadioButton*)buttonGroup()->button(1) : nullptr; }
+    /// This returns the radio button for the "True" state.
+    QRadioButton* buttonTrue() const { return buttonGroup() ? (QRadioButton*)buttonGroup()->button(1) : nullptr; }
 
-	/// This method is called when a new editable object has been assigned to the properties owner this
-	/// parameter UI belongs to.
-	virtual void resetUI() override;
+    /// This method is called when a new editable object has been assigned to the properties owner this
+    /// parameter UI belongs to.
+    virtual void resetUI() override;
 
-	/// This method updates the displayed value of the property UI.
-	virtual void updateUI() override;
+    /// This method updates the displayed value of the property UI.
+    virtual void updateUI() override;
 
-	/// Sets the enabled state of the UI.
-	virtual void setEnabled(bool enabled) override;
+    /// Sets the enabled state of the UI.
+    virtual void setEnabled(bool enabled) override;
 
 public:
 
-	Q_PROPERTY(QButtonGroup buttonGroup READ buttonGroup)
+    Q_PROPERTY(QButtonGroup buttonGroup READ buttonGroup)
 
 public Q_SLOTS:
 
-	/// Takes the value entered by the user and stores it in the property field
-	/// this property UI is bound to.
-	void updatePropertyValue();
+    /// Takes the value entered by the user and stores it in the property field
+    /// this property UI is bound to.
+    void updatePropertyValue();
 
 protected:
 
-	/// The radio button group.
-	QPointer<QButtonGroup> _buttonGroup;
+    /// The radio button group.
+    QPointer<QButtonGroup> _buttonGroup;
 };
 
-}	// End of namespace
+}   // End of namespace
 
 

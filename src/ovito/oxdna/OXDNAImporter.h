@@ -38,87 +38,87 @@ namespace Ovito::Particles {
  */
 class OVITO_OXDNA_EXPORT OXDNAImporter : public ParticleImporter
 {
-	/// Defines a metaclass specialization for this importer type.
-	class OOMetaClass : public ParticleImporter::OOMetaClass
-	{
-	public:
-		/// Inherit standard constructor from base meta class.
-		using ParticleImporter::OOMetaClass::OOMetaClass;
+    /// Defines a metaclass specialization for this importer type.
+    class OOMetaClass : public ParticleImporter::OOMetaClass
+    {
+    public:
+        /// Inherit standard constructor from base meta class.
+        using ParticleImporter::OOMetaClass::OOMetaClass;
 
-		/// Returns the list of file formats that can be read by this importer class.
-		virtual Ovito::span<const SupportedFormat> supportedFormats() const override {
-			static const SupportedFormat formats[] = {{ QStringLiteral("*"), tr("oxDNA Configuration Files") }};
-			return formats;
-		}
+        /// Returns the list of file formats that can be read by this importer class.
+        virtual Ovito::span<const SupportedFormat> supportedFormats() const override {
+            static const SupportedFormat formats[] = {{ QStringLiteral("*"), tr("oxDNA Configuration Files") }};
+            return formats;
+        }
 
-		/// Checks if the given file has format that can be read by this importer.
-		virtual bool checkFileFormat(const FileHandle& file) const override;
-	};
+        /// Checks if the given file has format that can be read by this importer.
+        virtual bool checkFileFormat(const FileHandle& file) const override;
+    };
 
-	OVITO_CLASS_META(OXDNAImporter, OOMetaClass)
+    OVITO_CLASS_META(OXDNAImporter, OOMetaClass)
 
 public:
 
-	/// \brief Constructor.
-	Q_INVOKABLE OXDNAImporter(ObjectCreationParams params) : ParticleImporter(params) {}
+    /// \brief Constructor.
+    Q_INVOKABLE OXDNAImporter(ObjectCreationParams params) : ParticleImporter(params) {}
 
-	/// Returns the title of this object.
-	virtual QString objectTitle() const override { return tr("oxDNA"); }
+    /// Returns the title of this object.
+    virtual QString objectTitle() const override { return tr("oxDNA"); }
 
-	/// Creates an asynchronous loader object that loads the data for the given frame from the external file.
-	virtual FileSourceImporter::FrameLoaderPtr createFrameLoader(const LoadOperationRequest& request) override {
-		activateCLocale();
-		return std::make_shared<FrameLoader>(request, topologyFileUrl());
-	}
+    /// Creates an asynchronous loader object that loads the data for the given frame from the external file.
+    virtual FileSourceImporter::FrameLoaderPtr createFrameLoader(const LoadOperationRequest& request) override {
+        activateCLocale();
+        return std::make_shared<FrameLoader>(request, topologyFileUrl());
+    }
 
-	/// Creates an asynchronous frame discovery object that scans the input file for contained animation frames.
-	virtual std::shared_ptr<FileSourceImporter::FrameFinder> createFrameFinder(const FileHandle& file) override {
-		activateCLocale();
-		return std::make_shared<FrameFinder>(file);
-	}
-
-private:
-
-	/// The format-specific task object that is responsible for reading an input file in a separate thread.
-	class FrameLoader : public ParticleImporter::FrameLoader
-	{
-	public:
-
-		/// Constructor.
-		FrameLoader(const LoadOperationRequest& request, const QUrl& userSpecifiedTopologyUrl) :
-			ParticleImporter::FrameLoader(request), 
-			_userSpecifiedTopologyUrl(userSpecifiedTopologyUrl) {}
-
-	protected:
-
-		/// Reads the frame data from the external file.
-		virtual void loadFile() override;
-
-		/// URL of the topology file if explicitly specified by the user.
-		QUrl _userSpecifiedTopologyUrl;
-	};
-
-	/// The format-specific task object that is responsible for scanning the input file for animation frames.
-	class FrameFinder : public FileSourceImporter::FrameFinder
-	{
-	public:
-
-		/// Inherit constructor from base class.
-		using FileSourceImporter::FrameFinder::FrameFinder;
-
-	protected:
-
-		/// Scans the data file and builds a list of source frames.
-		virtual void discoverFramesInFile(QVector<FileSourceImporter::Frame>& frames) override;
-	};
+    /// Creates an asynchronous frame discovery object that scans the input file for contained animation frames.
+    virtual std::shared_ptr<FileSourceImporter::FrameFinder> createFrameFinder(const FileHandle& file) override {
+        activateCLocale();
+        return std::make_shared<FrameFinder>(file);
+    }
 
 private:
 
-	/// oxDNA files come in pairs: a topology file and a configuration file. 
-	/// The configuration file is the primary file passed to the file importer by the system.
-	/// This extra field stores the URL of the oxDNA topology file belonging to the configuration file
-	/// if explicitly specified by the user.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD(QUrl, topologyFileUrl, setTopologyFileUrl);
+    /// The format-specific task object that is responsible for reading an input file in a separate thread.
+    class FrameLoader : public ParticleImporter::FrameLoader
+    {
+    public:
+
+        /// Constructor.
+        FrameLoader(const LoadOperationRequest& request, const QUrl& userSpecifiedTopologyUrl) :
+            ParticleImporter::FrameLoader(request), 
+            _userSpecifiedTopologyUrl(userSpecifiedTopologyUrl) {}
+
+    protected:
+
+        /// Reads the frame data from the external file.
+        virtual void loadFile() override;
+
+        /// URL of the topology file if explicitly specified by the user.
+        QUrl _userSpecifiedTopologyUrl;
+    };
+
+    /// The format-specific task object that is responsible for scanning the input file for animation frames.
+    class FrameFinder : public FileSourceImporter::FrameFinder
+    {
+    public:
+
+        /// Inherit constructor from base class.
+        using FileSourceImporter::FrameFinder::FrameFinder;
+
+    protected:
+
+        /// Scans the data file and builds a list of source frames.
+        virtual void discoverFramesInFile(QVector<FileSourceImporter::Frame>& frames) override;
+    };
+
+private:
+
+    /// oxDNA files come in pairs: a topology file and a configuration file. 
+    /// The configuration file is the primary file passed to the file importer by the system.
+    /// This extra field stores the URL of the oxDNA topology file belonging to the configuration file
+    /// if explicitly specified by the user.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(QUrl, topologyFileUrl, setTopologyFileUrl);
 };
 
-}	// End of namespace
+}   // End of namespace

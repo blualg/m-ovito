@@ -36,49 +36,49 @@ namespace Ovito::CrystalAnalysis {
  */
 class OVITO_CRYSTALANALYSIS_EXPORT SlipSurfaceVis : public SurfaceMeshVis
 {
-	OVITO_CLASS(SlipSurfaceVis)
+    OVITO_CLASS(SlipSurfaceVis)
 
-	Q_CLASSINFO("DisplayName", "Slip surfaces");
+    Q_CLASSINFO("DisplayName", "Slip surfaces");
 
 public:
 
-	/// Constructor.
-	Q_INVOKABLE SlipSurfaceVis(ObjectCreationParams params);
+    /// Constructor.
+    Q_INVOKABLE SlipSurfaceVis(ObjectCreationParams params);
 
 protected:
 
-	/// Computation engine that builds the render mesh.
-	class PrepareMeshEngine : public SurfaceMeshVis::PrepareSurfaceEngine
-	{
-	public:
+    /// Computation engine that builds the render mesh.
+    class PrepareMeshEngine : public SurfaceMeshVis::PrepareSurfaceEngine
+    {
+    public:
 
-		/// Constructor.
-		PrepareMeshEngine(const SurfaceMesh* microstructure, bool smoothShading);
+        /// Constructor.
+        PrepareMeshEngine(const SurfaceMesh* microstructure, bool smoothShading);
 
-	protected:
+    protected:
 
-		/// Determines the set of visible mesh faces,
-		virtual void determineVisibleFaces() override;
+        /// Determines the set of visible mesh faces,
+        virtual void determineVisibleFaces() override;
 
-		/// Assigns colors to invidual mesh faces.
-		virtual void determineFaceColors() override;
+        /// Assigns colors to invidual mesh faces.
+        virtual void determineFaceColors() override;
 
-	private:
+    private:
 
-		/// The input microstructure data.
-		MicrostructureAccess _microstructure;
+        /// The input microstructure data.
+        MicrostructureAccess _microstructure;
 
-		/// Mapping of microstructure phases to standard crystal types.
-		std::map<int,ParticleType::PredefinedStructureType> _phaseStructureTypes;
-	};
+        /// Mapping of microstructure phases to standard crystal types.
+        std::map<int,ParticleType::PredefinedStructureType> _phaseStructureTypes;
+    };
 
-	/// Creates the asynchronous task that builds the non-peridic representation of the input surface mesh.
-	virtual std::shared_ptr<PrepareSurfaceEngine> createSurfaceEngine(const SurfaceMesh* mesh) const override {
-		return std::make_shared<PrepareMeshEngine>(mesh, smoothShading());
-	}
+    /// Creates the asynchronous task that builds the non-peridic representation of the input surface mesh.
+    virtual std::shared_ptr<PrepareSurfaceEngine> createSurfaceEngine(const SurfaceMesh* mesh) const override {
+        return std::make_shared<PrepareMeshEngine>(mesh, smoothShading());
+    }
 
-	/// Create the viewport picking record for the surface mesh object.
-	virtual OORef<ObjectPickInfo> createPickInfo(const SurfaceMesh* mesh, const RenderableSurfaceMesh* renderableMesh) const override;
+    /// Create the viewport picking record for the surface mesh object.
+    virtual OORef<ObjectPickInfo> createPickInfo(const SurfaceMesh* mesh, const RenderableSurfaceMesh* renderableMesh) const override;
 };
 
 /**
@@ -87,45 +87,45 @@ protected:
  */
 class OVITO_CRYSTALANALYSIS_EXPORT SlipSurfacePickInfo : public ObjectPickInfo
 {
-	OVITO_CLASS(SlipSurfacePickInfo)
+    OVITO_CLASS(SlipSurfacePickInfo)
 
 public:
 
-	/// Constructor.
-	SlipSurfacePickInfo(const SlipSurfaceVis* visElement, const SurfaceMesh* surfaceMesh, const RenderableSurfaceMesh* renderableMesh) :
-		_visElement(visElement), _surfaceMesh(surfaceMesh), _renderableMesh(renderableMesh) {}
+    /// Constructor.
+    SlipSurfacePickInfo(const SlipSurfaceVis* visElement, const SurfaceMesh* surfaceMesh, const RenderableSurfaceMesh* renderableMesh) :
+        _visElement(visElement), _surfaceMesh(surfaceMesh), _renderableMesh(renderableMesh) {}
 
-	/// The data object containing the slip surfaces.
-	const SurfaceMesh* surfaceMesh() const { return _surfaceMesh; }
+    /// The data object containing the slip surfaces.
+    const SurfaceMesh* surfaceMesh() const { return _surfaceMesh; }
 
-	/// The renderable surface mesh for the slip surfaces.
-	const RenderableSurfaceMesh* renderableMesh() const { OVITO_ASSERT(_renderableMesh); return _renderableMesh; }
+    /// The renderable surface mesh for the slip surfaces.
+    const RenderableSurfaceMesh* renderableMesh() const { OVITO_ASSERT(_renderableMesh); return _renderableMesh; }
 
-	/// Returns the vis element that rendered the slip surfaces.
-	const SlipSurfaceVis* visElement() const { return _visElement; }
+    /// Returns the vis element that rendered the slip surfaces.
+    const SlipSurfaceVis* visElement() const { return _visElement; }
 
-	/// \brief Given an sub-object ID returned by the Viewport::pick() method, looks up the
-	/// corresponding slip surface facet.
-	int slipFacetIndexFromSubObjectID(quint32 subobjID) const {
-		if(subobjID < renderableMesh()->originalFaceMap().size())
-			return renderableMesh()->originalFaceMap()[subobjID];
-		else
-			return -1;
-	}
+    /// \brief Given an sub-object ID returned by the Viewport::pick() method, looks up the
+    /// corresponding slip surface facet.
+    int slipFacetIndexFromSubObjectID(quint32 subobjID) const {
+        if(subobjID < renderableMesh()->originalFaceMap().size())
+            return renderableMesh()->originalFaceMap()[subobjID];
+        else
+            return -1;
+    }
 
-	/// Returns a human-readable string describing the picked object, which will be displayed in the status bar by OVITO.
-	virtual QString infoString(PipelineSceneNode* objectNode, quint32 subobjectId) override;
+    /// Returns a human-readable string describing the picked object, which will be displayed in the status bar by OVITO.
+    virtual QString infoString(PipelineSceneNode* objectNode, quint32 subobjectId) override;
 
 private:
 
-	/// The data object containing the slip surfaces.
-	DataOORef<const SurfaceMesh> _surfaceMesh;
+    /// The data object containing the slip surfaces.
+    DataOORef<const SurfaceMesh> _surfaceMesh;
 
-	/// The renderable surface mesh for the slip surfaces.
-	DataOORef<const RenderableSurfaceMesh> _renderableMesh;
+    /// The renderable surface mesh for the slip surfaces.
+    DataOORef<const RenderableSurfaceMesh> _renderableMesh;
 
-	/// The vis element that rendered the slip surfaces.
-	OORef<SlipSurfaceVis> _visElement;
+    /// The vis element that rendered the slip surfaces.
+    OORef<SlipSurfaceVis> _visElement;
 };
 
-}	// End of namespace
+}   // End of namespace

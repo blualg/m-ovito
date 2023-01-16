@@ -33,54 +33,54 @@ namespace Ovito {
 ******************************************************************************/
 class OVITO_GUI_EXPORT BooleanParameterUI : public PropertyParameterUI
 {
-	OVITO_CLASS(BooleanParameterUI)
+    OVITO_CLASS(BooleanParameterUI)
 
 public:
 
-	/// Constructor for a Qt property.
-	BooleanParameterUI(PropertiesEditor* parentEditor, const char* propertyName, const QString& checkBoxLabel);
+    /// Constructor for a Qt property.
+    BooleanParameterUI(PropertiesEditor* parentEditor, const char* propertyName, const QString& checkBoxLabel);
 
-	/// Constructor for a PropertyField property.
-	BooleanParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField);
+    /// Constructor for a PropertyField property.
+    BooleanParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField);
 
-	/// Destructor.
-	virtual ~BooleanParameterUI();
+    /// Destructor.
+    virtual ~BooleanParameterUI();
 
-	/// This returns the checkbox managed by this parameter UI.
-	QCheckBox* checkBox() const { return _checkBox; }
+    /// This returns the checkbox managed by this parameter UI.
+    QCheckBox* checkBox() const { return _checkBox; }
 
-	/// This method is called when a new editable object has been assigned to the properties owner this
-	/// parameter UI belongs to.
-	virtual void resetUI() override;
+    /// This method is called when a new editable object has been assigned to the properties owner this
+    /// parameter UI belongs to.
+    virtual void resetUI() override;
 
-	/// This method updates the displayed value of the property UI.
-	virtual void updateUI() override;
+    /// This method updates the displayed value of the property UI.
+    virtual void updateUI() override;
 
-	/// Sets the enabled state of the UI.
-	virtual void setEnabled(bool enabled) override;
+    /// Sets the enabled state of the UI.
+    virtual void setEnabled(bool enabled) override;
 
-	/// Sets the tooltip text for the check box.
-	void setToolTip(const QString& text) const { if(checkBox()) checkBox()->setToolTip(text); }
+    /// Sets the tooltip text for the check box.
+    void setToolTip(const QString& text) const { if(checkBox()) checkBox()->setToolTip(text); }
 
-	/// Sets the What's This helper text for the check box.
-	void setWhatsThis(const QString& text) const { if(checkBox()) checkBox()->setWhatsThis(text); }
+    /// Sets the What's This helper text for the check box.
+    void setWhatsThis(const QString& text) const { if(checkBox()) checkBox()->setWhatsThis(text); }
 
 public:
 
-	Q_PROPERTY(QCheckBox checkBox READ checkBox)
+    Q_PROPERTY(QCheckBox checkBox READ checkBox)
 
 public Q_SLOTS:
 
-	/// Takes the value entered by the user and stores it in the property field
-	/// this property UI is bound to.
-	void updatePropertyValue();
+    /// Takes the value entered by the user and stores it in the property field
+    /// this property UI is bound to.
+    void updatePropertyValue();
 
 protected:
 
-	/// The check box of the UI component.
-	QPointer<QCheckBox> _checkBox;
+    /// The check box of the UI component.
+    QPointer<QCheckBox> _checkBox;
 };
 
-}	// End of namespace
+}   // End of namespace
 
 

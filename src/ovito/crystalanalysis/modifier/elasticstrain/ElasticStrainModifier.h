@@ -34,44 +34,44 @@ namespace Ovito::CrystalAnalysis {
  */
 class OVITO_CRYSTALANALYSIS_EXPORT ElasticStrainModifier : public StructureIdentificationModifier
 {
-	OVITO_CLASS(ElasticStrainModifier)
+    OVITO_CLASS(ElasticStrainModifier)
 
-	Q_CLASSINFO("DisplayName", "Elastic strain calculation");
+    Q_CLASSINFO("DisplayName", "Elastic strain calculation");
 #ifndef OVITO_QML_GUI
-	Q_CLASSINFO("ModifierCategory", "Analysis");
+    Q_CLASSINFO("ModifierCategory", "Analysis");
 #else
-	Q_CLASSINFO("ModifierCategory", "-");
+    Q_CLASSINFO("ModifierCategory", "-");
 #endif
 
 public:
 
-	/// Constructor.
-	Q_INVOKABLE ElasticStrainModifier(ObjectCreationParams params);
-	
+    /// Constructor.
+    Q_INVOKABLE ElasticStrainModifier(ObjectCreationParams params);
+    
 protected:
 
-	/// Creates a computation engine that will compute the modifier's results.
-	virtual Future<EnginePtr> createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input) override;
+    /// Creates a computation engine that will compute the modifier's results.
+    virtual Future<EnginePtr> createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input) override;
 
 private:
 
-	/// The type of crystal to be analyzed.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(StructureAnalysis::LatticeStructureType, inputCrystalStructure, setInputCrystalStructure, PROPERTY_FIELD_MEMORIZE);
+    /// The type of crystal to be analyzed.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(StructureAnalysis::LatticeStructureType, inputCrystalStructure, setInputCrystalStructure, PROPERTY_FIELD_MEMORIZE);
 
-	/// Controls whether atomic deformation gradient tensors should be computed and stored.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, calculateDeformationGradients, setCalculateDeformationGradients, PROPERTY_FIELD_MEMORIZE);
+    /// Controls whether atomic deformation gradient tensors should be computed and stored.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, calculateDeformationGradients, setCalculateDeformationGradients, PROPERTY_FIELD_MEMORIZE);
 
-	/// Controls whether atomic strain tensors should be computed and stored.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, calculateStrainTensors, setCalculateStrainTensors, PROPERTY_FIELD_MEMORIZE);
+    /// Controls whether atomic strain tensors should be computed and stored.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, calculateStrainTensors, setCalculateStrainTensors, PROPERTY_FIELD_MEMORIZE);
 
-	/// Controls whether the calculated strain tensors should be pushed forward to the spatial reference frame.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, pushStrainTensorsForward, setPushStrainTensorsForward, PROPERTY_FIELD_MEMORIZE);
+    /// Controls whether the calculated strain tensors should be pushed forward to the spatial reference frame.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, pushStrainTensorsForward, setPushStrainTensorsForward, PROPERTY_FIELD_MEMORIZE);
 
-	/// The lattice parameter of ideal crystal.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType, latticeConstant, setLatticeConstant, PROPERTY_FIELD_MEMORIZE);
+    /// The lattice parameter of ideal crystal.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType, latticeConstant, setLatticeConstant, PROPERTY_FIELD_MEMORIZE);
 
-	/// The c/a ratio of the ideal crystal.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType, axialRatio, setAxialRatio, PROPERTY_FIELD_MEMORIZE);
+    /// The c/a ratio of the ideal crystal.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType, axialRatio, setAxialRatio, PROPERTY_FIELD_MEMORIZE);
 };
 
-}	// End of namespace
+}   // End of namespace

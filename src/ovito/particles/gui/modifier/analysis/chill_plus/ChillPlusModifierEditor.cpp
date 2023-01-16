@@ -39,39 +39,39 @@ SET_OVITO_OBJECT_EDITOR(ChillPlusModifier, ChillPlusModifierEditor);
 ******************************************************************************/
 void ChillPlusModifierEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 {
-	// Create a rollout.
-	QWidget* rollout = createRollout(tr("Chill+"), rolloutParams, "manual:particles.modifiers.chill_plus");
+    // Create a rollout.
+    QWidget* rollout = createRollout(tr("Chill+"), rolloutParams, "manual:particles.modifiers.chill_plus");
 
     // Create the rollout contents.
-	QVBoxLayout* layout1 = new QVBoxLayout(rollout);
-	layout1->setContentsMargins(4,4,4,4);
-	layout1->setSpacing(4);
+    QVBoxLayout* layout1 = new QVBoxLayout(rollout);
+    layout1->setContentsMargins(4,4,4,4);
+    layout1->setSpacing(4);
 
     QGridLayout* gridlayout = new QGridLayout();
 
     // Cutoff
     FloatParameterUI* cutoffRadiusPUI = new FloatParameterUI(this, PROPERTY_FIELD(ChillPlusModifier::cutoff));
     gridlayout->addWidget(cutoffRadiusPUI->label(), 0, 0);
-	gridlayout->addLayout(cutoffRadiusPUI->createFieldLayout(), 0, 1);
+    gridlayout->addLayout(cutoffRadiusPUI->createFieldLayout(), 0, 1);
     layout1->addLayout(gridlayout);
 
-	// Use only selected particles.
-	BooleanParameterUI* onlySelectedParticlesUI = new BooleanParameterUI(this, PROPERTY_FIELD(StructureIdentificationModifier::onlySelectedParticles));
-	layout1->addWidget(onlySelectedParticlesUI->checkBox());
+    // Use only selected particles.
+    BooleanParameterUI* onlySelectedParticlesUI = new BooleanParameterUI(this, PROPERTY_FIELD(StructureIdentificationModifier::onlySelectedParticles));
+    layout1->addWidget(onlySelectedParticlesUI->checkBox());
 
-	// Color by type
-	BooleanParameterUI* colorByTypeUI = new BooleanParameterUI(this, PROPERTY_FIELD(StructureIdentificationModifier::colorByType));
-	layout1->addWidget(colorByTypeUI->checkBox());
+    // Color by type
+    BooleanParameterUI* colorByTypeUI = new BooleanParameterUI(this, PROPERTY_FIELD(StructureIdentificationModifier::colorByType));
+    layout1->addWidget(colorByTypeUI->checkBox());
 
-	// Status label.
-	layout1->addSpacing(10);
-	layout1->addWidget((new ObjectStatusDisplay(this))->statusWidget());
+    // Status label.
+    layout1->addSpacing(10);
+    layout1->addWidget((new ObjectStatusDisplay(this))->statusWidget());
 
-	StructureListParameterUI* structureTypesPUI = new StructureListParameterUI(this, true);
-	layout1->addSpacing(10);
-	layout1->addWidget(new QLabel(tr("Structure types:")));
-	layout1->addWidget(structureTypesPUI->tableWidget());
-	layout1->addWidget(structureTypesPUI->createNotesLabel());
+    StructureListParameterUI* structureTypesPUI = new StructureListParameterUI(this, true);
+    layout1->addSpacing(10);
+    layout1->addWidget(new QLabel(tr("Structure types:")));
+    layout1->addWidget(structureTypesPUI->tableWidget());
+    layout1->addWidget(structureTypesPUI->createNotesLabel());
 }
 
-}	// End of namespace
+}   // End of namespace

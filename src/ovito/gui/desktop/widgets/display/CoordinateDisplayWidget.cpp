@@ -33,64 +33,64 @@ namespace Ovito {
 ******************************************************************************/
 CoordinateDisplayWidget::CoordinateDisplayWidget(MainWindow& mainWindow, QWidget* parent) : QFrame(parent), _mainWindow(mainWindow)
 {
-	QHBoxLayout* layout = new QHBoxLayout(this);
-	layout->setContentsMargins(2,0,2,0);
-	layout->setSpacing(0);
-	setEnabled(false);
-	hide();
+    QHBoxLayout* layout = new QHBoxLayout(this);
+    layout->setContentsMargins(2,0,2,0);
+    layout->setSpacing(0);
+    setEnabled(false);
+    hide();
 
-	QLabel* xlabel = new QLabel(tr("X:"), this);
-	QLabel* ylabel = new QLabel(tr("Y:"), this);
-	QLabel* zlabel = new QLabel(tr("Z:"), this);
+    QLabel* xlabel = new QLabel(tr("X:"), this);
+    QLabel* ylabel = new QLabel(tr("Y:"), this);
+    QLabel* zlabel = new QLabel(tr("Z:"), this);
 
-	class ShortLineEdit : public QLineEdit {
-	public:
-		ShortLineEdit(QWidget* parent) : QLineEdit(parent) {}
-		virtual QSize sizeHint() const override { return QSize(70, QLineEdit::sizeHint().height()); }
-	};
+    class ShortLineEdit : public QLineEdit {
+    public:
+        ShortLineEdit(QWidget* parent) : QLineEdit(parent) {}
+        virtual QSize sizeHint() const override { return QSize(70, QLineEdit::sizeHint().height()); }
+    };
 
-	QLineEdit* xedit = new ShortLineEdit(this);
-	QLineEdit* yedit = new ShortLineEdit(this);
-	QLineEdit* zedit = new ShortLineEdit(this);
+    QLineEdit* xedit = new ShortLineEdit(this);
+    QLineEdit* yedit = new ShortLineEdit(this);
+    QLineEdit* zedit = new ShortLineEdit(this);
 
-	_spinners[0] = new SpinnerWidget(this, xedit);
-	_spinners[1] = new SpinnerWidget(this, yedit);
-	_spinners[2] = new SpinnerWidget(this, zedit);
+    _spinners[0] = new SpinnerWidget(this, xedit);
+    _spinners[1] = new SpinnerWidget(this, yedit);
+    _spinners[2] = new SpinnerWidget(this, zedit);
 
-	layout->addWidget(xlabel);
-	layout->addWidget(xedit, 1);
-	layout->addWidget(_spinners[0]);
-	layout->addSpacing(6);
-	layout->addWidget(ylabel);
-	layout->addWidget(yedit, 1);
-	layout->addWidget(_spinners[1]);
-	layout->addSpacing(6);
-	layout->addWidget(zlabel);
-	layout->addWidget(zedit, 1);
-	layout->addWidget(_spinners[2]);
+    layout->addWidget(xlabel);
+    layout->addWidget(xedit, 1);
+    layout->addWidget(_spinners[0]);
+    layout->addSpacing(6);
+    layout->addWidget(ylabel);
+    layout->addWidget(yedit, 1);
+    layout->addWidget(_spinners[1]);
+    layout->addSpacing(6);
+    layout->addWidget(zlabel);
+    layout->addWidget(zedit, 1);
+    layout->addWidget(_spinners[2]);
 
-	connect(_spinners[0], &SpinnerWidget::spinnerValueChanged, this, &CoordinateDisplayWidget::onSpinnerValueChanged);
-	connect(_spinners[1], &SpinnerWidget::spinnerValueChanged, this, &CoordinateDisplayWidget::onSpinnerValueChanged);
-	connect(_spinners[2], &SpinnerWidget::spinnerValueChanged, this, &CoordinateDisplayWidget::onSpinnerValueChanged);
-	connect(_spinners[0], &SpinnerWidget::spinnerDragStart, this, &CoordinateDisplayWidget::onSpinnerDragStart);
-	connect(_spinners[1], &SpinnerWidget::spinnerDragStart, this, &CoordinateDisplayWidget::onSpinnerDragStart);
-	connect(_spinners[2], &SpinnerWidget::spinnerDragStart, this, &CoordinateDisplayWidget::onSpinnerDragStart);
-	connect(_spinners[0], &SpinnerWidget::spinnerDragStop, this, &CoordinateDisplayWidget::onSpinnerDragStop);
-	connect(_spinners[1], &SpinnerWidget::spinnerDragStop, this, &CoordinateDisplayWidget::onSpinnerDragStop);
-	connect(_spinners[2], &SpinnerWidget::spinnerDragStop, this, &CoordinateDisplayWidget::onSpinnerDragStop);
-	connect(_spinners[0], &SpinnerWidget::spinnerDragAbort, this, &CoordinateDisplayWidget::onSpinnerDragAbort);
-	connect(_spinners[1], &SpinnerWidget::spinnerDragAbort, this, &CoordinateDisplayWidget::onSpinnerDragAbort);
-	connect(_spinners[2], &SpinnerWidget::spinnerDragAbort, this, &CoordinateDisplayWidget::onSpinnerDragAbort);
+    connect(_spinners[0], &SpinnerWidget::spinnerValueChanged, this, &CoordinateDisplayWidget::onSpinnerValueChanged);
+    connect(_spinners[1], &SpinnerWidget::spinnerValueChanged, this, &CoordinateDisplayWidget::onSpinnerValueChanged);
+    connect(_spinners[2], &SpinnerWidget::spinnerValueChanged, this, &CoordinateDisplayWidget::onSpinnerValueChanged);
+    connect(_spinners[0], &SpinnerWidget::spinnerDragStart, this, &CoordinateDisplayWidget::onSpinnerDragStart);
+    connect(_spinners[1], &SpinnerWidget::spinnerDragStart, this, &CoordinateDisplayWidget::onSpinnerDragStart);
+    connect(_spinners[2], &SpinnerWidget::spinnerDragStart, this, &CoordinateDisplayWidget::onSpinnerDragStart);
+    connect(_spinners[0], &SpinnerWidget::spinnerDragStop, this, &CoordinateDisplayWidget::onSpinnerDragStop);
+    connect(_spinners[1], &SpinnerWidget::spinnerDragStop, this, &CoordinateDisplayWidget::onSpinnerDragStop);
+    connect(_spinners[2], &SpinnerWidget::spinnerDragStop, this, &CoordinateDisplayWidget::onSpinnerDragStop);
+    connect(_spinners[0], &SpinnerWidget::spinnerDragAbort, this, &CoordinateDisplayWidget::onSpinnerDragAbort);
+    connect(_spinners[1], &SpinnerWidget::spinnerDragAbort, this, &CoordinateDisplayWidget::onSpinnerDragAbort);
+    connect(_spinners[2], &SpinnerWidget::spinnerDragAbort, this, &CoordinateDisplayWidget::onSpinnerDragAbort);
 
-	QToolButton* animateButton = new QToolButton(this);
-	animateButton->setText(tr("A"));
-	animateButton->setFocusPolicy(Qt::NoFocus);
-	animateButton->setAutoRaise(true);
-	animateButton->setToolButtonStyle(Qt::ToolButtonTextOnly);
-	animateButton->setToolTip(tr("Animate transformation..."));
-	layout->addSpacing(6);
-	layout->addWidget(animateButton);
-	connect(animateButton, &QAbstractButton::clicked, this, &CoordinateDisplayWidget::animatePressed);
+    QToolButton* animateButton = new QToolButton(this);
+    animateButton->setText(tr("A"));
+    animateButton->setFocusPolicy(Qt::NoFocus);
+    animateButton->setAutoRaise(true);
+    animateButton->setToolButtonStyle(Qt::ToolButtonTextOnly);
+    animateButton->setToolTip(tr("Animate transformation..."));
+    layout->addSpacing(6);
+    layout->addWidget(animateButton);
+    connect(animateButton, &QAbstractButton::clicked, this, &CoordinateDisplayWidget::animatePressed);
 }
 
 /******************************************************************************
@@ -98,9 +98,9 @@ CoordinateDisplayWidget::CoordinateDisplayWidget(MainWindow& mainWindow, QWidget
 ******************************************************************************/
 void CoordinateDisplayWidget::activate(const QString& undoOperationName)
 {
-	setEnabled(true);
-	_undoOperationName = undoOperationName;
-	show();
+    setEnabled(true);
+    _undoOperationName = undoOperationName;
+    show();
 }
 
 /******************************************************************************
@@ -108,13 +108,13 @@ void CoordinateDisplayWidget::activate(const QString& undoOperationName)
 ******************************************************************************/
 void CoordinateDisplayWidget::deactivate()
 {
-	if(isEnabled()) {
-		setEnabled(false);
-		hide();
-		_spinners[0]->setFloatValue(0);
-		_spinners[1]->setFloatValue(0);
-		_spinners[2]->setFloatValue(0);
-	}
+    if(isEnabled()) {
+        setEnabled(false);
+        hide();
+        _spinners[0]->setFloatValue(0);
+        _spinners[1]->setFloatValue(0);
+        _spinners[2]->setFloatValue(0);
+    }
 }
 
 /******************************************************************************
@@ -122,22 +122,22 @@ void CoordinateDisplayWidget::deactivate()
 ******************************************************************************/
 void CoordinateDisplayWidget::onSpinnerValueChanged()
 {
-	int component;
-	if(sender() == _spinners[0]) component = 0;
-	else if(sender() == _spinners[1]) component = 1;
-	else if(sender() == _spinners[2]) component = 2;
-	else return;
-	if(!_undoTransaction.operation()) {
-		_mainWindow.performTransaction(_undoOperationName, [&] {
-			Q_EMIT valueEntered(component, _spinners[component]->floatValue());
-		});
-	}
-	else {
-		_undoTransaction.revert();
-		_undoTransaction.userInterface().performActions(_undoTransaction, [&] {
-			Q_EMIT valueEntered(component, _spinners[component]->floatValue());
-		});
-	}
+    int component;
+    if(sender() == _spinners[0]) component = 0;
+    else if(sender() == _spinners[1]) component = 1;
+    else if(sender() == _spinners[2]) component = 2;
+    else return;
+    if(!_undoTransaction.operation()) {
+        _mainWindow.performTransaction(_undoOperationName, [&] {
+            Q_EMIT valueEntered(component, _spinners[component]->floatValue());
+        });
+    }
+    else {
+        _undoTransaction.revert();
+        _undoTransaction.userInterface().performActions(_undoTransaction, [&] {
+            Q_EMIT valueEntered(component, _spinners[component]->floatValue());
+        });
+    }
 }
 
 /******************************************************************************
@@ -145,7 +145,7 @@ void CoordinateDisplayWidget::onSpinnerValueChanged()
 ******************************************************************************/
 void CoordinateDisplayWidget::onSpinnerDragStart()
 {
-	_undoTransaction.begin(_mainWindow, _undoOperationName);
+    _undoTransaction.begin(_mainWindow, _undoOperationName);
 }
 
 /******************************************************************************
@@ -153,7 +153,7 @@ void CoordinateDisplayWidget::onSpinnerDragStart()
 ******************************************************************************/
 void CoordinateDisplayWidget::onSpinnerDragStop()
 {
-	_undoTransaction.commit();
+    _undoTransaction.commit();
 }
 
 /******************************************************************************
@@ -161,7 +161,7 @@ void CoordinateDisplayWidget::onSpinnerDragStop()
 ******************************************************************************/
 void CoordinateDisplayWidget::onSpinnerDragAbort()
 {
-	_undoTransaction.cancel();
+    _undoTransaction.cancel();
 }
 
-}	// End of namespace
+}   // End of namespace

@@ -32,4 +32,4 @@ IMPLEMENT_OVITO_CLASS(LinearPositionController);
 IMPLEMENT_OVITO_CLASS(LinearRotationController);
 IMPLEMENT_OVITO_CLASS(LinearScalingController);
 
-}	// End of namespace
+}   // End of namespace

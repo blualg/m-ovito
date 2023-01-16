@@ -34,51 +34,51 @@ namespace Ovito::StdMod {
  */
 class OVITO_STDMOD_EXPORT SelectTypeModifier : public GenericPropertyModifier
 {
-	OVITO_CLASS(SelectTypeModifier)
+    OVITO_CLASS(SelectTypeModifier)
 
-	Q_CLASSINFO("DisplayName", "Select type");
-	Q_CLASSINFO("Description", "Select particles based on chemical species, or bonds based on bond type.");
-	Q_CLASSINFO("ModifierCategory", "Selection");
+    Q_CLASSINFO("DisplayName", "Select type");
+    Q_CLASSINFO("Description", "Select particles based on chemical species, or bonds based on bond type.");
+    Q_CLASSINFO("ModifierCategory", "Selection");
 
 public:
 
-	/// Constructor.
-	Q_INVOKABLE SelectTypeModifier(ObjectCreationParams params);
+    /// Constructor.
+    Q_INVOKABLE SelectTypeModifier(ObjectCreationParams params);
 
-	/// This method is called by the system after the modifier has been inserted into a data pipeline.
-	virtual void initializeModifier(const ModifierInitializationRequest& request) override;
+    /// This method is called by the system after the modifier has been inserted into a data pipeline.
+    virtual void initializeModifier(const ModifierInitializationRequest& request) override;
 
-	/// Modifies the input data synchronously.
-	virtual void evaluateSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
+    /// Modifies the input data synchronously.
+    virtual void evaluateSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
 
 #ifdef OVITO_QML_GUI
-	/// This helper method is called by the QML GUI (SelectTypeModifier.qml) to extract the list of element types
-	/// from the input pipeline output state. 
-	Q_INVOKABLE QVariantList getElementTypesFromInputState(ModifierApplication* modApp) const;
+    /// This helper method is called by the QML GUI (SelectTypeModifier.qml) to extract the list of element types
+    /// from the input pipeline output state. 
+    Q_INVOKABLE QVariantList getElementTypesFromInputState(ModifierApplication* modApp) const;
 
-	/// Toggles the selection state for the given element types.
-	/// This helper method is called by the QML GUI (SelectTypeModifier.qml) to make changes to the modifier.
-	Q_INVOKABLE void setElementTypeSelectionState(int elementTypeId, const QString& elementTypeName, bool selectionState);
+    /// Toggles the selection state for the given element types.
+    /// This helper method is called by the QML GUI (SelectTypeModifier.qml) to make changes to the modifier.
+    Q_INVOKABLE void setElementTypeSelectionState(int elementTypeId, const QString& elementTypeName, bool selectionState);
 #endif
 
-	/// Returns a short piece information (typically a string or color) to be displayed next to the modifier's title in the pipeline editor list.
-	virtual QVariant getPipelineEditorShortInfo(Scene* scene, ModifierApplication* modApp) const override;
+    /// Returns a short piece information (typically a string or color) to be displayed next to the modifier's title in the pipeline editor list.
+    virtual QVariant getPipelineEditorShortInfo(Scene* scene, ModifierApplication* modApp) const override;
 
 protected:
 
-	/// Is called when the value of a property of this object has changed.
-	virtual void propertyChanged(const PropertyFieldDescriptor* field) override;
+    /// Is called when the value of a property of this object has changed.
+    virtual void propertyChanged(const PropertyFieldDescriptor* field) override;
 
 private:
 
-	/// The input type property that is used as data source for the selection.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD(PropertyReference, sourceProperty, setSourceProperty);
+    /// The input type property that is used as data source for the selection.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(PropertyReference, sourceProperty, setSourceProperty);
 
-	/// The numeric IDs of the types to select.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD(QSet<int>, selectedTypeIDs, setSelectedTypeIDs);
+    /// The numeric IDs of the types to select.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(QSet<int>, selectedTypeIDs, setSelectedTypeIDs);
 
-	/// The names of the types to select.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD(QSet<QString>, selectedTypeNames, setSelectedTypeNames);
+    /// The names of the types to select.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(QSet<QString>, selectedTypeNames, setSelectedTypeNames);
 };
 
-}	// End of namespace
+}   // End of namespace

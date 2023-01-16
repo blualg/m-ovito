@@ -22,28 +22,28 @@
 
 # Define the GUI module, which provides the user interface for the parent module.
 OVITO_STANDARD_PLUGIN(StdModGui
-	SOURCES
-		SliceModifierEditor.cpp
-		AffineTransformationModifierEditor.cpp
-		ClearSelectionModifierEditor.cpp
-		InvertSelectionModifierEditor.cpp
-		ColorCodingModifierEditor.cpp
-		AssignColorModifierEditor.cpp
-		DeleteSelectedModifierEditor.cpp
-		SelectTypeModifierEditor.cpp
-		HistogramModifierEditor.cpp
-		ScatterPlotModifierEditor.cpp
-		ReplicateModifierEditor.cpp
-		ColorLegendOverlayEditor.cpp
-		ExpressionSelectionModifierEditor.cpp
-		FreezePropertyModifierEditor.cpp
-		ManualSelectionModifierEditor.cpp
-		ComputePropertyModifierEditor.cpp
-		CombineDatasetsModifierEditor.cpp
-		ColorByTypeModifierEditor.cpp
-	PLUGIN_DEPENDENCIES StdMod StdObjGui
-	PRIVATE_LIB_DEPENDENCIES Qwt
-	PRECOMPILED_HEADERS StdModGui.h
-	GUI_PLUGIN
-	HAS_NO_EXPORTS
+    SOURCES
+        SliceModifierEditor.cpp
+        AffineTransformationModifierEditor.cpp
+        ClearSelectionModifierEditor.cpp
+        InvertSelectionModifierEditor.cpp
+        ColorCodingModifierEditor.cpp
+        AssignColorModifierEditor.cpp
+        DeleteSelectedModifierEditor.cpp
+        SelectTypeModifierEditor.cpp
+        HistogramModifierEditor.cpp
+        ScatterPlotModifierEditor.cpp
+        ReplicateModifierEditor.cpp
+        ColorLegendOverlayEditor.cpp
+        ExpressionSelectionModifierEditor.cpp
+        FreezePropertyModifierEditor.cpp
+        ManualSelectionModifierEditor.cpp
+        ComputePropertyModifierEditor.cpp
+        CombineDatasetsModifierEditor.cpp
+        ColorByTypeModifierEditor.cpp
+    PLUGIN_DEPENDENCIES StdMod StdObjGui
+    PRIVATE_LIB_DEPENDENCIES Qwt
+    PRECOMPILED_HEADERS StdModGui.h
+    GUI_PLUGIN
+    HAS_NO_EXPORTS
 )

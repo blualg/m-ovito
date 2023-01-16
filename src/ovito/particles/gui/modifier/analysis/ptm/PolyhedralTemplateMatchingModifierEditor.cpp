@@ -42,85 +42,85 @@ SET_OVITO_OBJECT_EDITOR(PolyhedralTemplateMatchingModifier, PolyhedralTemplateMa
 ******************************************************************************/
 void PolyhedralTemplateMatchingModifierEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 {
-	// Create a rollout.
-	QWidget* rollout = createRollout(tr("Polyhedral template matching"), rolloutParams, "manual:particles.modifiers.polyhedral_template_matching");
+    // Create a rollout.
+    QWidget* rollout = createRollout(tr("Polyhedral template matching"), rolloutParams, "manual:particles.modifiers.polyhedral_template_matching");
 
-	// Create the rollout contents.
-	QVBoxLayout* layout1 = new QVBoxLayout(rollout);
-	layout1->setContentsMargins(4,4,4,4);
-	layout1->setSpacing(6);
+    // Create the rollout contents.
+    QVBoxLayout* layout1 = new QVBoxLayout(rollout);
+    layout1->setContentsMargins(4,4,4,4);
+    layout1->setSpacing(6);
 
-	QGroupBox* paramsBox = new QGroupBox(tr("Parameters"), rollout);
-	QGridLayout* gridlayout = new QGridLayout(paramsBox);
-	gridlayout->setContentsMargins(4,4,4,4);
-	gridlayout->setColumnStretch(1, 1);
-	layout1->addWidget(paramsBox);
+    QGroupBox* paramsBox = new QGroupBox(tr("Parameters"), rollout);
+    QGridLayout* gridlayout = new QGridLayout(paramsBox);
+    gridlayout->setContentsMargins(4,4,4,4);
+    gridlayout->setColumnStretch(1, 1);
+    layout1->addWidget(paramsBox);
 
-	// RMSD cutoff parameter.
-	FloatParameterUI* rmsdCutoffPUI = new FloatParameterUI(this, PROPERTY_FIELD(PolyhedralTemplateMatchingModifier::rmsdCutoff));
-	gridlayout->addWidget(rmsdCutoffPUI->label(), 0, 0);
-	gridlayout->addLayout(rmsdCutoffPUI->createFieldLayout(), 0, 1);
+    // RMSD cutoff parameter.
+    FloatParameterUI* rmsdCutoffPUI = new FloatParameterUI(this, PROPERTY_FIELD(PolyhedralTemplateMatchingModifier::rmsdCutoff));
+    gridlayout->addWidget(rmsdCutoffPUI->label(), 0, 0);
+    gridlayout->addLayout(rmsdCutoffPUI->createFieldLayout(), 0, 1);
 
-	// Use only selected particles.
-	BooleanParameterUI* onlySelectedParticlesUI = new BooleanParameterUI(this, PROPERTY_FIELD(StructureIdentificationModifier::onlySelectedParticles));
-	gridlayout->addWidget(onlySelectedParticlesUI->checkBox(), 1, 0, 1, 2);
+    // Use only selected particles.
+    BooleanParameterUI* onlySelectedParticlesUI = new BooleanParameterUI(this, PROPERTY_FIELD(StructureIdentificationModifier::onlySelectedParticles));
+    gridlayout->addWidget(onlySelectedParticlesUI->checkBox(), 1, 0, 1, 2);
 
-	QGroupBox* outputBox = new QGroupBox(tr("Output"), rollout);
-	QGridLayout* sublayout = new QGridLayout(outputBox);
-	sublayout->setContentsMargins(4,4,4,4);
-	sublayout->setColumnStretch(1, 1);
-	sublayout->setColumnMinimumWidth(0, 12);
-	layout1->addWidget(outputBox);
+    QGroupBox* outputBox = new QGroupBox(tr("Output"), rollout);
+    QGridLayout* sublayout = new QGridLayout(outputBox);
+    sublayout->setContentsMargins(4,4,4,4);
+    sublayout->setColumnStretch(1, 1);
+    sublayout->setColumnMinimumWidth(0, 12);
+    layout1->addWidget(outputBox);
 
-	// Output controls.
-	BooleanParameterUI* outputRmsdUI = new BooleanParameterUI(this, PROPERTY_FIELD(PolyhedralTemplateMatchingModifier::outputRmsd));
-	sublayout->addWidget(outputRmsdUI->checkBox(), 0, 0, 1, 2);
-	outputRmsdUI->checkBox()->setText(tr("RMSD values"));
-	BooleanParameterUI* outputInteratomicDistanceUI = new BooleanParameterUI(this, PROPERTY_FIELD(PolyhedralTemplateMatchingModifier::outputInteratomicDistance));
-	sublayout->addWidget(outputInteratomicDistanceUI->checkBox(), 1, 0, 1, 2);
-	outputInteratomicDistanceUI->checkBox()->setText(tr("Interatomic distances"));
+    // Output controls.
+    BooleanParameterUI* outputRmsdUI = new BooleanParameterUI(this, PROPERTY_FIELD(PolyhedralTemplateMatchingModifier::outputRmsd));
+    sublayout->addWidget(outputRmsdUI->checkBox(), 0, 0, 1, 2);
+    outputRmsdUI->checkBox()->setText(tr("RMSD values"));
+    BooleanParameterUI* outputInteratomicDistanceUI = new BooleanParameterUI(this, PROPERTY_FIELD(PolyhedralTemplateMatchingModifier::outputInteratomicDistance));
+    sublayout->addWidget(outputInteratomicDistanceUI->checkBox(), 1, 0, 1, 2);
+    outputInteratomicDistanceUI->checkBox()->setText(tr("Interatomic distances"));
 
-	BooleanParameterUI* outputOrderingTypesUI = new BooleanParameterUI(this, PROPERTY_FIELD(PolyhedralTemplateMatchingModifier::outputOrderingTypes));
-	sublayout->addWidget(outputOrderingTypesUI->checkBox(), 2, 0, 1, 2);
-	outputOrderingTypesUI->checkBox()->setText(tr("Chemical ordering types"));
+    BooleanParameterUI* outputOrderingTypesUI = new BooleanParameterUI(this, PROPERTY_FIELD(PolyhedralTemplateMatchingModifier::outputOrderingTypes));
+    sublayout->addWidget(outputOrderingTypesUI->checkBox(), 2, 0, 1, 2);
+    outputOrderingTypesUI->checkBox()->setText(tr("Chemical ordering types"));
 
-	BooleanParameterUI* outputDeformationGradientUI = new BooleanParameterUI(this, PROPERTY_FIELD(PolyhedralTemplateMatchingModifier::outputDeformationGradient));
-	sublayout->addWidget(outputDeformationGradientUI->checkBox(), 3, 0, 1, 2);
-	outputDeformationGradientUI->checkBox()->setText(tr("Elastic deformation gradients"));
+    BooleanParameterUI* outputDeformationGradientUI = new BooleanParameterUI(this, PROPERTY_FIELD(PolyhedralTemplateMatchingModifier::outputDeformationGradient));
+    sublayout->addWidget(outputDeformationGradientUI->checkBox(), 3, 0, 1, 2);
+    outputDeformationGradientUI->checkBox()->setText(tr("Elastic deformation gradients"));
 
-	// Lattice orientations
-	BooleanParameterUI* outputOrientationUI = new BooleanParameterUI(this, PROPERTY_FIELD(PolyhedralTemplateMatchingModifier::outputOrientation));
-	sublayout->addWidget(outputOrientationUI->checkBox(), 4, 0, 1, 2);
-	outputOrientationUI->checkBox()->setText(tr("Lattice orientations"));
+    // Lattice orientations
+    BooleanParameterUI* outputOrientationUI = new BooleanParameterUI(this, PROPERTY_FIELD(PolyhedralTemplateMatchingModifier::outputOrientation));
+    sublayout->addWidget(outputOrientationUI->checkBox(), 4, 0, 1, 2);
+    outputOrientationUI->checkBox()->setText(tr("Lattice orientations"));
 
-	// Color by type
-	BooleanParameterUI* colorByTypeUI = new BooleanParameterUI(this, PROPERTY_FIELD(StructureIdentificationModifier::colorByType));
-	sublayout->addWidget(colorByTypeUI->checkBox(), 5, 0, 1, 2);
+    // Color by type
+    BooleanParameterUI* colorByTypeUI = new BooleanParameterUI(this, PROPERTY_FIELD(StructureIdentificationModifier::colorByType));
+    sublayout->addWidget(colorByTypeUI->checkBox(), 5, 0, 1, 2);
 
-	StructureListParameterUI* structureTypesPUI = new StructureListParameterUI(this, true);
-	layout1->addSpacing(10);
-	layout1->addWidget(structureTypesPUI->tableWidget());
-	layout1->addWidget(structureTypesPUI->createNotesLabel());
+    StructureListParameterUI* structureTypesPUI = new StructureListParameterUI(this, true);
+    layout1->addSpacing(10);
+    layout1->addWidget(structureTypesPUI->tableWidget());
+    layout1->addWidget(structureTypesPUI->createNotesLabel());
 
-	// Create plot widget for RMSD distribution.
-	_rmsdPlotWidget = new DataTablePlotWidget();
-	_rmsdPlotWidget->setMinimumHeight(200);
-	_rmsdPlotWidget->setMaximumHeight(200);
-	_rmsdRangeIndicator = new QwtPlotZoneItem();
-	_rmsdRangeIndicator->setOrientation(Qt::Vertical);
-	_rmsdRangeIndicator->setZ(1);
-	_rmsdRangeIndicator->attach(_rmsdPlotWidget);
-	_rmsdRangeIndicator->hide();
-	layout1->addSpacing(10);
-	layout1->addWidget(_rmsdPlotWidget);
-	connect(this, &PolyhedralTemplateMatchingModifierEditor::contentsReplaced, this, &PolyhedralTemplateMatchingModifierEditor::plotHistogram);
+    // Create plot widget for RMSD distribution.
+    _rmsdPlotWidget = new DataTablePlotWidget();
+    _rmsdPlotWidget->setMinimumHeight(200);
+    _rmsdPlotWidget->setMaximumHeight(200);
+    _rmsdRangeIndicator = new QwtPlotZoneItem();
+    _rmsdRangeIndicator->setOrientation(Qt::Vertical);
+    _rmsdRangeIndicator->setZ(1);
+    _rmsdRangeIndicator->attach(_rmsdPlotWidget);
+    _rmsdRangeIndicator->hide();
+    layout1->addSpacing(10);
+    layout1->addWidget(_rmsdPlotWidget);
+    connect(this, &PolyhedralTemplateMatchingModifierEditor::contentsReplaced, this, &PolyhedralTemplateMatchingModifierEditor::plotHistogram);
 
-	// Update data plot whenever the modifier has calculated new results.
-	connect(this, &PropertiesEditor::pipelineOutputChanged, this, &PolyhedralTemplateMatchingModifierEditor::plotHistogram);
+    // Update data plot whenever the modifier has calculated new results.
+    connect(this, &PropertiesEditor::pipelineOutputChanged, this, &PolyhedralTemplateMatchingModifierEditor::plotHistogram);
 
-	// Status label.
-	layout1->addSpacing(10);
-	layout1->addWidget((new ObjectStatusDisplay(this))->statusWidget());
+    // Status label.
+    layout1->addSpacing(10);
+    layout1->addWidget((new ObjectStatusDisplay(this))->statusWidget());
 }
 
 /******************************************************************************
@@ -128,23 +128,23 @@ void PolyhedralTemplateMatchingModifierEditor::createUI(const RolloutInsertionPa
 ******************************************************************************/
 void PolyhedralTemplateMatchingModifierEditor::plotHistogram()
 {
-	PolyhedralTemplateMatchingModifier* modifier = static_object_cast<PolyhedralTemplateMatchingModifier>(editObject());
-	if(modifier && modifier->rmsdCutoff() > 0) {
-		_rmsdRangeIndicator->setInterval(0, modifier->rmsdCutoff());
-		_rmsdRangeIndicator->show();
-	}
-	else {
-		_rmsdRangeIndicator->hide();
-	}
+    PolyhedralTemplateMatchingModifier* modifier = static_object_cast<PolyhedralTemplateMatchingModifier>(editObject());
+    if(modifier && modifier->rmsdCutoff() > 0) {
+        _rmsdRangeIndicator->setInterval(0, modifier->rmsdCutoff());
+        _rmsdRangeIndicator->show();
+    }
+    else {
+        _rmsdRangeIndicator->hide();
+    }
 
-	// Request the modifier's pipeline output.
-	if(const PipelineFlowState& state = getPipelineOutput()) {
-		// Look up the data table in the modifier's pipeline output.
-		_rmsdPlotWidget->setTable(state.getObjectBy<DataTable>(modifierApplication(), QStringLiteral("ptm-rmsd")));
-	}
-	else {
-		_rmsdPlotWidget->reset();
-	}
+    // Request the modifier's pipeline output.
+    if(const PipelineFlowState& state = getPipelineOutput()) {
+        // Look up the data table in the modifier's pipeline output.
+        _rmsdPlotWidget->setTable(state.getObjectBy<DataTable>(modifierApplication(), QStringLiteral("ptm-rmsd")));
+    }
+    else {
+        _rmsdPlotWidget->reset();
+    }
 }
 
-}	// End of namespace
+}   // End of namespace

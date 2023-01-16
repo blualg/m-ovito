@@ -34,25 +34,25 @@ namespace Ovito::Particles {
  */
 class LAMMPSTextDumpImporterEditor : public FileImporterEditor
 {
-	OVITO_CLASS(LAMMPSTextDumpImporterEditor)
+    OVITO_CLASS(LAMMPSTextDumpImporterEditor)
 
 public:
 
-	/// Constructor.
-	Q_INVOKABLE LAMMPSTextDumpImporterEditor() {}
+    /// Constructor.
+    Q_INVOKABLE LAMMPSTextDumpImporterEditor() {}
 
 protected:
 
-	/// Creates the user interface controls for the editor.
-	virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
+    /// Creates the user interface controls for the editor.
+    virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
 
-	/// Displays a dialog box that allows the user to edit the custom file column to particle property mapping.
-	bool showEditColumnMappingDialog(LAMMPSTextDumpImporter* importer, const FileSourceImporter::Frame& frame);
+    /// Displays a dialog box that allows the user to edit the custom file column to particle property mapping.
+    bool showEditColumnMappingDialog(LAMMPSTextDumpImporter* importer, const FileSourceImporter::Frame& frame);
 
 protected Q_SLOTS:
 
-	/// Is called when the user pressed the "Edit column mapping" button.
-	void onEditColumnMapping();
+    /// Is called when the user pressed the "Edit column mapping" button.
+    void onEditColumnMapping();
 };
 
-}	// End of namespace
+}   // End of namespace

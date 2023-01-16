@@ -162,4 +162,4 @@ void MicrostructureAccess::makeContinuousDislocationLines()
     }
 }
 
-}	// End of namespace
+}   // End of namespace

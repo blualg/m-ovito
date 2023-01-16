@@ -34,28 +34,28 @@ namespace Ovito::Particles {
  */
 class XYZImporterEditor : public FileImporterEditor
 {
-	OVITO_CLASS(XYZImporterEditor)
+    OVITO_CLASS(XYZImporterEditor)
 
 public:
 
-	/// Constructor.
-	Q_INVOKABLE XYZImporterEditor() {}
+    /// Constructor.
+    Q_INVOKABLE XYZImporterEditor() {}
 
-	/// This is called by the system when the user has selected a new file to import.
-	virtual bool inspectNewFile(FileImporter* importer, const QUrl& sourceFile, MainWindow& mainWindow) override;
+    /// This is called by the system when the user has selected a new file to import.
+    virtual bool inspectNewFile(FileImporter* importer, const QUrl& sourceFile, MainWindow& mainWindow) override;
 
-	/// Displays a dialog box that allows the user to edit the custom file column to particle property mapping.
-	bool showEditColumnMappingDialog(XYZImporter* importer, const FileSourceImporter::Frame& frame);
+    /// Displays a dialog box that allows the user to edit the custom file column to particle property mapping.
+    bool showEditColumnMappingDialog(XYZImporter* importer, const FileSourceImporter::Frame& frame);
 
 protected:
 
-	/// Creates the user interface controls for the editor.
-	virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
+    /// Creates the user interface controls for the editor.
+    virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
 
 protected Q_SLOTS:
 
-	/// Is called when the user pressed the "Edit column mapping" button.
-	void onEditColumnMapping();
+    /// Is called when the user pressed the "Edit column mapping" button.
+    void onEditColumnMapping();
 };
 
-}	// End of namespace
+}   // End of namespace

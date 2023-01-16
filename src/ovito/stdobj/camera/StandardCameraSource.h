@@ -35,61 +35,61 @@ namespace Ovito::StdObj {
  */
 class OVITO_STDOBJ_EXPORT StandardCameraSource : public PipelineObject
 {
-	OVITO_CLASS(StandardCameraSource)
-	Q_CLASSINFO("DisplayName", "Camera");
+    OVITO_CLASS(StandardCameraSource)
+    Q_CLASSINFO("DisplayName", "Camera");
 
-	Q_PROPERTY(bool isTargetCamera READ isTargetCamera WRITE setIsTargetCamera);
-	Q_PROPERTY(bool isPerspective READ isPerspective WRITE setIsPerspective);
-	Q_PROPERTY(FloatType zoom READ zoom WRITE setZoom);
-	Q_PROPERTY(FloatType fov READ fov WRITE setFov);
+    Q_PROPERTY(bool isTargetCamera READ isTargetCamera WRITE setIsTargetCamera);
+    Q_PROPERTY(bool isPerspective READ isPerspective WRITE setIsPerspective);
+    Q_PROPERTY(FloatType zoom READ zoom WRITE setZoom);
+    Q_PROPERTY(FloatType fov READ fov WRITE setFov);
 
 public:
 
-	/// Constructor.
-	Q_INVOKABLE StandardCameraSource(ObjectCreationParams params);
-	
-	/// Determines the time interval over which a computed pipeline state will remain valid.
-	virtual TimeInterval validityInterval(const PipelineEvaluationRequest& request) const override;
+    /// Constructor.
+    Q_INVOKABLE StandardCameraSource(ObjectCreationParams params);
+    
+    /// Determines the time interval over which a computed pipeline state will remain valid.
+    virtual TimeInterval validityInterval(const PipelineEvaluationRequest& request) const override;
 
-	/// Asks the pipeline stage to compute the results.
-	virtual SharedFuture<PipelineFlowState> evaluate(const PipelineEvaluationRequest& request) override {
-		return evaluateSynchronous(request);
-	}
+    /// Asks the pipeline stage to compute the results.
+    virtual SharedFuture<PipelineFlowState> evaluate(const PipelineEvaluationRequest& request) override {
+        return evaluateSynchronous(request);
+    }
 
-	/// Asks the pipeline stage to compute the preliminary results in a synchronous fashion.
-	virtual PipelineFlowState evaluateSynchronous(const PipelineEvaluationRequest& request) override;
-	
-	/// Returns whether this camera is a target camera directed at a target object.
-	bool isTargetCamera() const;
+    /// Asks the pipeline stage to compute the preliminary results in a synchronous fashion.
+    virtual PipelineFlowState evaluateSynchronous(const PipelineEvaluationRequest& request) override;
+    
+    /// Returns whether this camera is a target camera directed at a target object.
+    bool isTargetCamera() const;
 
-	/// Changes the type of the camera to a target camera or a free camera.
-	void setIsTargetCamera(bool enable);
+    /// Changes the type of the camera to a target camera or a free camera.
+    void setIsTargetCamera(bool enable);
 
-	/// For a target camera, queries the distance between the camera and its target.
-	FloatType targetDistance(AnimationTime time) const;
+    /// For a target camera, queries the distance between the camera and its target.
+    FloatType targetDistance(AnimationTime time) const;
 
-	/// Returns the current orthogonal field of view.
-	FloatType zoom() const;
+    /// Returns the current orthogonal field of view.
+    FloatType zoom() const;
 
-	/// Sets the field of view of a parallel projection camera.
-	void setZoom(FloatType newFOV);
+    /// Sets the field of view of a parallel projection camera.
+    void setZoom(FloatType newFOV);
 
-	/// Returns the current perspective field of view angle.
-	FloatType fov() const;
+    /// Returns the current perspective field of view angle.
+    FloatType fov() const;
 
-	/// Sets the field of view angle of a perspective projection camera.
-	void setFov(FloatType newFOV);
+    /// Sets the field of view angle of a perspective projection camera.
+    void setFov(FloatType newFOV);
 
 private:
 
-	/// Determines if this camera uses a perspective projection.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, isPerspective, setIsPerspective);
+    /// Determines if this camera uses a perspective projection.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, isPerspective, setIsPerspective);
 
-	/// This controller stores the field of view of the camera if it uses a perspective projection.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD(OORef<Controller>, fovController, setFovController);
+    /// This controller stores the field of view of the camera if it uses a perspective projection.
+    DECLARE_MODIFIABLE_REFERENCE_FIELD(OORef<Controller>, fovController, setFovController);
 
-	/// This controller stores the field of view of the camera if it uses an orthogonal projection.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD(OORef<Controller>, zoomController, setZoomController);
+    /// This controller stores the field of view of the camera if it uses an orthogonal projection.
+    DECLARE_MODIFIABLE_REFERENCE_FIELD(OORef<Controller>, zoomController, setZoomController);
 };
 
-}	// End of namespace
+}   // End of namespace

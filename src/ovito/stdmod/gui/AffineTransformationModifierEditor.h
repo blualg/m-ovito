@@ -33,48 +33,48 @@ namespace Ovito::StdMod {
  */
 class AffineTransformationModifierEditor : public PropertiesEditor
 {
-	OVITO_CLASS(AffineTransformationModifierEditor)
+    OVITO_CLASS(AffineTransformationModifierEditor)
 
 public:
 
-	/// Default constructor.
-	Q_INVOKABLE AffineTransformationModifierEditor() {}
+    /// Default constructor.
+    Q_INVOKABLE AffineTransformationModifierEditor() {}
 
 protected:
 
-	/// Creates the user interface controls for the editor.
-	virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
+    /// Creates the user interface controls for the editor.
+    virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
 
 private Q_SLOTS:
 
-	/// Is called when the spinner value has changed.
-	void onSpinnerValueChanged();
+    /// Is called when the spinner value has changed.
+    void onSpinnerValueChanged();
 
-	/// Is called when the user begins dragging the spinner interactively.
-	void onSpinnerDragStart();
+    /// Is called when the user begins dragging the spinner interactively.
+    void onSpinnerDragStart();
 
-	/// Is called when the user stops dragging the spinner interactively.
-	void onSpinnerDragStop();
+    /// Is called when the user stops dragging the spinner interactively.
+    void onSpinnerDragStop();
 
-	/// Is called when the user aborts dragging the spinner interactively.
-	void onSpinnerDragAbort();
+    /// Is called when the user aborts dragging the spinner interactively.
+    void onSpinnerDragAbort();
 
-	/// This method updates the displayed matrix values.
-	void updateUI();
+    /// This method updates the displayed matrix values.
+    void updateUI();
 
-	/// Is called when the user switches between Cartesian and reduced cell coordinates for the translation vector.
-	void onReducedCoordinatesOptionChanged();
+    /// Is called when the user switches between Cartesian and reduced cell coordinates for the translation vector.
+    void onReducedCoordinatesOptionChanged();
 
-	/// Is called when the user presses the 'Enter rotation' button.
-	void onEnterRotation();
+    /// Is called when the user presses the 'Enter rotation' button.
+    void onEnterRotation();
 
 private:
 
-	/// Takes the value entered by the user and stores it in transformation controller.
-	void updateParameterValue();
+    /// Takes the value entered by the user and stores it in transformation controller.
+    void updateParameterValue();
 
-	SpinnerWidget* elementSpinners[3][4];
-	UndoableTransaction _undoTransaction;
+    SpinnerWidget* elementSpinners[3][4];
+    UndoableTransaction _undoTransaction;
 };
 
-}	// End of namespace
+}   // End of namespace

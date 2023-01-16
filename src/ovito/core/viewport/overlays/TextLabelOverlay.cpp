@@ -62,15 +62,15 @@ SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(TextLabelOverlay, fontSize, FloatParameterU
 * Constructor.
 ******************************************************************************/
 TextLabelOverlay::TextLabelOverlay(ObjectCreationParams params) : ViewportOverlay(params),
-		_alignment(Qt::AlignLeft | Qt::AlignTop),
-		_offsetX(0), 
-		_offsetY(0),
-		_fontSize(0.02),
-		_labelText(tr("Text label")),
-		_textColor(0,0,0.5),
-		_outlineColor(1,1,1),
-		_outlineEnabled(false),
-		_valueFormatString("%.6g")
+        _alignment(Qt::AlignLeft | Qt::AlignTop),
+        _offsetX(0), 
+        _offsetY(0),
+        _fontSize(0.02),
+        _labelText(tr("Text label")),
+        _textColor(0,0,0.5),
+        _outlineColor(1,1,1),
+        _outlineEnabled(false),
+        _valueFormatString("%.6g")
 {
 }
 
@@ -79,9 +79,9 @@ TextLabelOverlay::TextLabelOverlay(ObjectCreationParams params) : ViewportOverla
 ******************************************************************************/
 void TextLabelOverlay::initializeOverlay(Viewport* viewport)
 {
-	// Automatically connect to the currently selected pipeline.
-	if(!sourceNode() && viewport->scene())
-		setSourceNode(dynamic_object_cast<PipelineSceneNode>(viewport->scene()->selection()->firstNode()));
+    // Automatically connect to the currently selected pipeline.
+    if(!sourceNode() && viewport->scene())
+        setSourceNode(dynamic_object_cast<PipelineSceneNode>(viewport->scene()->selection()->firstNode()));
 }
 
 /******************************************************************************
@@ -89,17 +89,17 @@ void TextLabelOverlay::initializeOverlay(Viewport* viewport)
 ******************************************************************************/
 void TextLabelOverlay::propertyChanged(const PropertyFieldDescriptor* field)
 {
-	if(field == PROPERTY_FIELD(alignment) && !isBeingLoaded() && !isAboutToBeDeleted() && !isUndoingOrRedoing() && ExecutionContext::isInteractive()) {
-		// Automatically reset offset to zero when user changes the alignment of the overlay in the viewport.
-		setOffsetX(0);
-		setOffsetY(0);
-	}
-	else if(field == PROPERTY_FIELD(TextLabelOverlay::labelText) && !isBeingLoaded()) {
-		// Changes of some the overlay's parameters affect the result of TextLabelOverlay::getPipelineEditorShortInfo().
-		notifyDependents(ReferenceEvent::ObjectStatusChanged);
-	}
+    if(field == PROPERTY_FIELD(alignment) && !isBeingLoaded() && !isAboutToBeDeleted() && !isUndoingOrRedoing() && ExecutionContext::isInteractive()) {
+        // Automatically reset offset to zero when user changes the alignment of the overlay in the viewport.
+        setOffsetX(0);
+        setOffsetY(0);
+    }
+    else if(field == PROPERTY_FIELD(TextLabelOverlay::labelText) && !isBeingLoaded()) {
+        // Changes of some the overlay's parameters affect the result of TextLabelOverlay::getPipelineEditorShortInfo().
+        notifyDependents(ReferenceEvent::ObjectStatusChanged);
+    }
 
-	ViewportOverlay::propertyChanged(field);
+    ViewportOverlay::propertyChanged(field);
 }
 
 /******************************************************************************
@@ -108,32 +108,32 @@ void TextLabelOverlay::propertyChanged(const PropertyFieldDescriptor* field)
 ******************************************************************************/
 QVariant TextLabelOverlay::getPipelineEditorShortInfo(Scene* scene) const
 {
-	return labelText();
+    return labelText();
 }
 
 /******************************************************************************
 * Lets the overlay paint its contents into the framebuffer.
 ******************************************************************************/
 void TextLabelOverlay::render(SceneRenderer* renderer, const QRect& logicalViewportRect, const QRect& physicalViewportRect, MainThreadOperation& operation)
-{	
-	if(renderer->isInteractive()) {
-		const PipelineFlowState& flowState = sourceNode() ? sourceNode()->evaluatePipelineSynchronous(renderer->time(), true) : PipelineFlowState();
-		renderImplementation(renderer, physicalViewportRect, flowState);
-	}
-	else {
-		// Check alignment parameter.
-		checkAlignmentParameterValue(alignment());
+{   
+    if(renderer->isInteractive()) {
+        const PipelineFlowState& flowState = sourceNode() ? sourceNode()->evaluatePipelineSynchronous(renderer->time(), true) : PipelineFlowState();
+        renderImplementation(renderer, physicalViewportRect, flowState);
+    }
+    else {
+        // Check alignment parameter.
+        checkAlignmentParameterValue(alignment());
 
-		if(sourceNode()) {
-			PipelineEvaluationFuture pipelineEvaluation = sourceNode()->evaluatePipeline(PipelineEvaluationRequest(renderer->time()));
-			if(!pipelineEvaluation.waitForFinished())
-				return;
-			renderImplementation(renderer, physicalViewportRect, pipelineEvaluation.result());
-		}
-		else {
-			renderImplementation(renderer, physicalViewportRect, {});
-		}
-	}
+        if(sourceNode()) {
+            PipelineEvaluationFuture pipelineEvaluation = sourceNode()->evaluatePipeline(PipelineEvaluationRequest(renderer->time()));
+            if(!pipelineEvaluation.waitForFinished())
+                return;
+            renderImplementation(renderer, physicalViewportRect, pipelineEvaluation.result());
+        }
+        else {
+            renderImplementation(renderer, physicalViewportRect, {});
+        }
+    }
 }
 
 /******************************************************************************
@@ -141,69 +141,69 @@ void TextLabelOverlay::render(SceneRenderer* renderer, const QRect& logicalViewp
 ******************************************************************************/
 void TextLabelOverlay::renderImplementation(SceneRenderer* renderer, const QRect& viewportRect, const PipelineFlowState& flowState)
 {
-	// Resolve the label text.
-	QString textString = labelText();
+    // Resolve the label text.
+    QString textString = labelText();
 
-	// Resolve global attributes referenced by placeholders in the text string.
-	if(flowState && textString.contains('[')) {
-		const QVariantMap& attributes = flowState.buildAttributesMap();
+    // Resolve global attributes referenced by placeholders in the text string.
+    if(flowState && textString.contains('[')) {
+        const QVariantMap& attributes = flowState.buildAttributesMap();
 
-		// Prepare the floating-point format string.
-		QByteArray format = valueFormatString().toUtf8();
-		if(format.isEmpty() || format.contains("%s")) format = QByteArrayLiteral("###");
+        // Prepare the floating-point format string.
+        QByteArray format = valueFormatString().toUtf8();
+        if(format.isEmpty() || format.contains("%s")) format = QByteArrayLiteral("###");
 
-		for(auto a = attributes.cbegin(); a != attributes.cend(); ++a) {
+        for(auto a = attributes.cbegin(); a != attributes.cend(); ++a) {
 
-			QString valueString;
-			if(a.value().typeId() == QMetaType::Double || a.value().typeId() == QMetaType::Float) {
-				valueString = QString::asprintf(format.constData(), a.value().toDouble());
-			}
-			else {
-				valueString = a.value().toString();
-			}
+            QString valueString;
+            if(a.value().typeId() == QMetaType::Double || a.value().typeId() == QMetaType::Float) {
+                valueString = QString::asprintf(format.constData(), a.value().toDouble());
+            }
+            else {
+                valueString = a.value().toString();
+            }
 
-			textString.replace(QStringLiteral("[") + a.key() + QStringLiteral("]"), valueString);
-		}
-	}
-	if(textString.isEmpty())
-		return;
+            textString.replace(QStringLiteral("[") + a.key() + QStringLiteral("]"), valueString);
+        }
+    }
+    if(textString.isEmpty())
+        return;
 
-	// Prepare the text rendering primitive.
-	TextPrimitive textPrimitive;
-	textPrimitive.setColor(textColor());
-	if(outlineEnabled()) textPrimitive.setOutlineColor(outlineColor());
-	textPrimitive.setAlignment(alignment());
-	textPrimitive.setText(std::move(textString));
-	textPrimitive.setTextFormat(Qt::AutoText);
+    // Prepare the text rendering primitive.
+    TextPrimitive textPrimitive;
+    textPrimitive.setColor(textColor());
+    if(outlineEnabled()) textPrimitive.setOutlineColor(outlineColor());
+    textPrimitive.setAlignment(alignment());
+    textPrimitive.setText(std::move(textString));
+    textPrimitive.setTextFormat(Qt::AutoText);
 
-	// Resolve the font used by the label.
-	FloatType fontSize = this->fontSize() * viewportRect.height();
-	if(fontSize <= 0) return;
-	QFont font = this->font();
-	font.setPointSizeF(fontSize / renderer->devicePixelRatio()); // Font size if always in logical coordinates.
-	textPrimitive.setFont(std::move(font));
+    // Resolve the font used by the label.
+    FloatType fontSize = this->fontSize() * viewportRect.height();
+    if(fontSize <= 0) return;
+    QFont font = this->font();
+    font.setPointSizeF(fontSize / renderer->devicePixelRatio()); // Font size if always in logical coordinates.
+    textPrimitive.setFont(std::move(font));
 
-	// Add an inset to the framebuffer rect.
-	int margins = (int)fontSize;
-	QRectF marginRect = viewportRect.marginsRemoved(QMargins(margins, margins, margins, margins));
+    // Add an inset to the framebuffer rect.
+    int margins = (int)fontSize;
+    QRectF marginRect = viewportRect.marginsRemoved(QMargins(margins, margins, margins, margins));
 
-	// Determine alignment of the text box in the framebuffer rect.
-	Point2 pos;
+    // Determine alignment of the text box in the framebuffer rect.
+    Point2 pos;
 
-	if(alignment() & Qt::AlignRight) pos.x() = marginRect.left() + marginRect.width();	
-	else if(alignment() & Qt::AlignHCenter) pos.x() = marginRect.left() + marginRect.width() / 2.0;
-	else pos.x() = marginRect.left();
+    if(alignment() & Qt::AlignRight) pos.x() = marginRect.left() + marginRect.width();  
+    else if(alignment() & Qt::AlignHCenter) pos.x() = marginRect.left() + marginRect.width() / 2.0;
+    else pos.x() = marginRect.left();
 
-	if(alignment() & Qt::AlignBottom) pos.y() = marginRect.top() + marginRect.height();	
-	else if(alignment() & Qt::AlignVCenter) pos.y() = marginRect.top() + marginRect.height() / 2.0;
-	else pos.y() = marginRect.top();
+    if(alignment() & Qt::AlignBottom) pos.y() = marginRect.top() + marginRect.height(); 
+    else if(alignment() & Qt::AlignVCenter) pos.y() = marginRect.top() + marginRect.height() / 2.0;
+    else pos.y() = marginRect.top();
 
-	// Compute final positions.
-	textPrimitive.setPositionWindow(pos + Vector2(offsetX() * viewportRect.width(), -offsetY() * viewportRect.height()));
+    // Compute final positions.
+    textPrimitive.setPositionWindow(pos + Vector2(offsetX() * viewportRect.width(), -offsetY() * viewportRect.height()));
 
-	// Paint the image into the output framebuffer.
-	renderer->setDepthTestEnabled(false);
-	renderer->renderText(textPrimitive);
+    // Paint the image into the output framebuffer.
+    renderer->setDepthTestEnabled(false);
+    renderer->renderText(textPrimitive);
 }
 
-}	// End of namespace
+}   // End of namespace

@@ -35,50 +35,50 @@ IMPLEMENT_OVITO_CLASS(ApplicationSettingsDialogPage);
 ******************************************************************************/
 ApplicationSettingsDialog::ApplicationSettingsDialog(MainWindow& mainWindow, OvitoClassPtr startPage) : QDialog(&mainWindow), _mainWindow(mainWindow)
 {
-	setWindowTitle(tr("Application Settings"));
+    setWindowTitle(tr("Application Settings"));
 
-	QVBoxLayout* layout1 = new QVBoxLayout(this);
+    QVBoxLayout* layout1 = new QVBoxLayout(this);
 
-	// Create dialog contents.
-	_tabWidget = new QTabWidget(this);
-	layout1->addWidget(_tabWidget);
+    // Create dialog contents.
+    _tabWidget = new QTabWidget(this);
+    layout1->addWidget(_tabWidget);
 
-	// Instantiate all ApplicationSettingsDialogPage derived classes.
-	for(OvitoClassPtr clazz : PluginManager::instance().listClasses(ApplicationSettingsDialogPage::OOClass())) {
-		try {
-			OORef<ApplicationSettingsDialogPage> page = static_object_cast<ApplicationSettingsDialogPage>(clazz->createInstance());
-			page->_settingsDialog = this;
-			_pages.push_back(std::move(page));
-		}
-		catch(const Exception& ex) {
-			mainWindow.reportError(ex);
-		}
-	}
+    // Instantiate all ApplicationSettingsDialogPage derived classes.
+    for(OvitoClassPtr clazz : PluginManager::instance().listClasses(ApplicationSettingsDialogPage::OOClass())) {
+        try {
+            OORef<ApplicationSettingsDialogPage> page = static_object_cast<ApplicationSettingsDialogPage>(clazz->createInstance());
+            page->_settingsDialog = this;
+            _pages.push_back(std::move(page));
+        }
+        catch(const Exception& ex) {
+            mainWindow.reportError(ex);
+        }
+    }
 
-	// Sort pages.
-	std::sort(_pages.begin(), _pages.end(), [](const auto& page1, const auto& page2) { return page1->pageSortingKey() < page2->pageSortingKey(); });
+    // Sort pages.
+    std::sort(_pages.begin(), _pages.end(), [](const auto& page1, const auto& page2) { return page1->pageSortingKey() < page2->pageSortingKey(); });
 
-	// Show pages in dialog.
-	int defaultPage = 0;
-	for(const auto& page : _pages) {
-		if(startPage && startPage->isMember(page)) defaultPage = _tabWidget->count();
-		page->insertSettingsDialogPage(_tabWidget);
-	}
-	_tabWidget->setCurrentIndex(defaultPage);
+    // Show pages in dialog.
+    int defaultPage = 0;
+    for(const auto& page : _pages) {
+        if(startPage && startPage->isMember(page)) defaultPage = _tabWidget->count();
+        page->insertSettingsDialogPage(_tabWidget);
+    }
+    _tabWidget->setCurrentIndex(defaultPage);
 
-	// Add a label that displays the location of the application settings store on the computer.
-	QLabel* configLocationLabel = new QLabel();
-	configLocationLabel->setText(tr("<p style=\"font-size: small; color: #686868;\">Program settings are stored in %1</p>").arg(QSettings().fileName()));
-	configLocationLabel->setTextInteractionFlags(Qt::TextSelectableByMouse);
-	layout1->addWidget(configLocationLabel);
+    // Add a label that displays the location of the application settings store on the computer.
+    QLabel* configLocationLabel = new QLabel();
+    configLocationLabel->setText(tr("<p style=\"font-size: small; color: #686868;\">Program settings are stored in %1</p>").arg(QSettings().fileName()));
+    configLocationLabel->setTextInteractionFlags(Qt::TextSelectableByMouse);
+    layout1->addWidget(configLocationLabel);
 
-	// Ok and Cancel buttons
-	QDialogButtonBox* buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel | QDialogButtonBox::Help, Qt::Horizontal, this);
-	connect(buttonBox, &QDialogButtonBox::accepted, this, &ApplicationSettingsDialog::onOk);
-	connect(buttonBox, &QDialogButtonBox::rejected, this, &ApplicationSettingsDialog::reject);
-	connect(buttonBox, &QDialogButtonBox::helpRequested, this, &ApplicationSettingsDialog::onHelp);
-	connect(this, &QDialog::rejected, this, &ApplicationSettingsDialog::onCancel);
-	layout1->addWidget(buttonBox);
+    // Ok and Cancel buttons
+    QDialogButtonBox* buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel | QDialogButtonBox::Help, Qt::Horizontal, this);
+    connect(buttonBox, &QDialogButtonBox::accepted, this, &ApplicationSettingsDialog::onOk);
+    connect(buttonBox, &QDialogButtonBox::rejected, this, &ApplicationSettingsDialog::reject);
+    connect(buttonBox, &QDialogButtonBox::helpRequested, this, &ApplicationSettingsDialog::onHelp);
+    connect(this, &QDialog::rejected, this, &ApplicationSettingsDialog::onCancel);
+    layout1->addWidget(buttonBox);
 }
 
 /******************************************************************************
@@ -87,27 +87,27 @@ ApplicationSettingsDialog::ApplicationSettingsDialog(MainWindow& mainWindow, Ovi
 ******************************************************************************/
 void ApplicationSettingsDialog::onOk()
 {
-	try {
-		setFocus(); // Remove focus from child widgets to commit newly entered values in text widgets etc.
+    try {
+        setFocus(); // Remove focus from child widgets to commit newly entered values in text widgets etc.
 
-		// Let all pages validate the changes the user made to the settings.
-		for(const OORef<ApplicationSettingsDialogPage>& page : _pages) {
-			if(!page->validateValues(_tabWidget)) {
-				return;
-			}
-		}
+        // Let all pages validate the changes the user made to the settings.
+        for(const OORef<ApplicationSettingsDialogPage>& page : _pages) {
+            if(!page->validateValues(_tabWidget)) {
+                return;
+            }
+        }
 
-		// Let all pages save their settings.
-		for(const OORef<ApplicationSettingsDialogPage>& page : _pages) {
-			page->saveValues(_tabWidget);
-		}
+        // Let all pages save their settings.
+        for(const OORef<ApplicationSettingsDialogPage>& page : _pages) {
+            page->saveValues(_tabWidget);
+        }
 
-		// Close dialog box.
-		accept();
-	}
-	catch(const Exception& ex) {
-		mainWindow().reportError(ex, this);
-	}
+        // Close dialog box.
+        accept();
+    }
+    catch(const Exception& ex) {
+        mainWindow().reportError(ex, this);
+    }
 }
 
 /******************************************************************************
@@ -115,16 +115,16 @@ void ApplicationSettingsDialog::onOk()
 ******************************************************************************/
 void ApplicationSettingsDialog::onCancel()
 {
-	try {
-		setFocus(); // Remove focus from child widgets to commit newly entered values in text widgets etc.
-		
-		// Let all pages restore their settings to the old values.
-		for(const OORef<ApplicationSettingsDialogPage>& page : _pages)
-			page->restoreValues(_tabWidget);
-	}
-	catch(const Exception& ex) {
-		mainWindow().reportError(ex, this);
-	}
+    try {
+        setFocus(); // Remove focus from child widgets to commit newly entered values in text widgets etc.
+        
+        // Let all pages restore their settings to the old values.
+        for(const OORef<ApplicationSettingsDialogPage>& page : _pages)
+            page->restoreValues(_tabWidget);
+    }
+    catch(const Exception& ex) {
+        mainWindow().reportError(ex, this);
+    }
 }
 
 /******************************************************************************
@@ -132,7 +132,7 @@ void ApplicationSettingsDialog::onCancel()
 ******************************************************************************/
 void ApplicationSettingsDialog::onHelp()
 {
-	mainWindow().actionManager()->openHelpTopic(QStringLiteral("manual:application_settings"));
+    mainWindow().actionManager()->openHelpTopic(QStringLiteral("manual:application_settings"));
 }
 
 /******************************************************************************
@@ -140,7 +140,7 @@ void ApplicationSettingsDialog::onHelp()
 ******************************************************************************/
 MainWindow& ApplicationSettingsDialogPage::mainWindow() const
 {
-	return settingsDialog()->mainWindow();
+    return settingsDialog()->mainWindow();
 }
 
-}	// End of namespace
+}   // End of namespace

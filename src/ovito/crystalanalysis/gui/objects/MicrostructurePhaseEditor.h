@@ -33,26 +33,26 @@ namespace Ovito::CrystalAnalysis {
  */
 class MicrostructurePhaseEditor : public PropertiesEditor
 {
-	OVITO_CLASS(MicrostructurePhaseEditor)
+    OVITO_CLASS(MicrostructurePhaseEditor)
 
 public:
 
-	/// Default constructor.
-	Q_INVOKABLE MicrostructurePhaseEditor() {}
+    /// Default constructor.
+    Q_INVOKABLE MicrostructurePhaseEditor() {}
 
 protected:
 
-	/// Creates the user interface controls for the editor.
-	virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
+    /// Creates the user interface controls for the editor.
+    virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
 
 protected Q_SLOTS:
 
-	/// Is called when the user has double-clicked on one of the entries in the list widget.
-	void onDoubleClickBurgersFamily(const QModelIndex& index);
+    /// Is called when the user has double-clicked on one of the entries in the list widget.
+    void onDoubleClickBurgersFamily(const QModelIndex& index);
 
 private:
 
-	RefTargetListParameterUI* familiesListUI;
+    RefTargetListParameterUI* familiesListUI;
 };
 
-}	// End of namespace
+}   // End of namespace

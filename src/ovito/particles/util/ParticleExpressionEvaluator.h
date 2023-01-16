@@ -39,15 +39,15 @@ class OVITO_PARTICLES_EXPORT ParticleExpressionEvaluator : public PropertyExpres
 {
 public:
 
-	/// Constructor.
-	ParticleExpressionEvaluator() {
-		setIndexVarName("ParticleIndex");
-	}
+    /// Constructor.
+    ParticleExpressionEvaluator() {
+        setIndexVarName("ParticleIndex");
+    }
 
 protected:
 
-	/// Initializes the list of input variables from the given input state.
-	virtual void createInputVariables(const std::vector<ConstPropertyPtr>& inputProperties, const SimulationCellObject* simCell, const QVariantMap& attributes, int animationFrame) override;
+    /// Initializes the list of input variables from the given input state.
+    virtual void createInputVariables(const std::vector<ConstPropertyPtr>& inputProperties, const SimulationCellObject* simCell, const QVariantMap& attributes, int animationFrame) override;
 };
 
 /**
@@ -57,26 +57,26 @@ class OVITO_PARTICLES_EXPORT BondExpressionEvaluator : public PropertyExpression
 {
 public:
 
-	/// Constructor.
-	BondExpressionEvaluator() {
-		setIndexVarName("BondIndex");
-	}
+    /// Constructor.
+    BondExpressionEvaluator() {
+        setIndexVarName("BondIndex");
+    }
 
-	/// Specifies the expressions to be evaluated for each bond and creates the input variables.
-	void initialize(const QStringList& expressions, const PipelineFlowState& state, const ConstDataObjectPath& containerPath, int animationFrame) override;
+    /// Specifies the expressions to be evaluated for each bond and creates the input variables.
+    void initialize(const QStringList& expressions, const PipelineFlowState& state, const ConstDataObjectPath& containerPath, int animationFrame) override;
 
-	/// Returns a human-readable text listing the input variables.
-	virtual QString inputVariableTable() const override;
+    /// Returns a human-readable text listing the input variables.
+    virtual QString inputVariableTable() const override;
 
 protected:
 
-	/// Updates the stored value of variables that depends on the current element index.
-	virtual void updateVariables(Worker& worker, size_t elementIndex) override;
+    /// Updates the stored value of variables that depends on the current element index.
+    virtual void updateVariables(Worker& worker, size_t elementIndex) override;
 
 private:
 
-	/// Holds a reference to the bond topology property.
-	ConstDataBufferAccessAndRef<ParticleIndexPair> _topologyArray;
+    /// Holds a reference to the bond topology property.
+    ConstDataBufferAccessAndRef<ParticleIndexPair> _topologyArray;
 };
 
-}	// End of namespace
+}   // End of namespace

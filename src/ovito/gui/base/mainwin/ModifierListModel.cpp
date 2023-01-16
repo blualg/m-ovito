@@ -39,29 +39,29 @@ QVector<ModifierListModel*> ModifierListModel::_allModels;
 ******************************************************************************/
 ModifierAction* ModifierAction::createForClass(ModifierClassPtr clazz)
 {
-	ModifierAction* action = new ModifierAction();
-	action->_modifierClass = clazz;
-	action->_category = clazz->modifierCategory();
+    ModifierAction* action = new ModifierAction();
+    action->_modifierClass = clazz;
+    action->_category = clazz->modifierCategory();
 
-	// Generate a unique identifier for the action:
-	action->setObjectName(QStringLiteral("InsertModifier.%1.%2").arg(clazz->pluginId(), clazz->name()));
+    // Generate a unique identifier for the action:
+    action->setObjectName(QStringLiteral("InsertModifier.%1.%2").arg(clazz->pluginId(), clazz->name()));
 
-	// Set the action's UI display name.
-	action->setText(clazz->displayName());
+    // Set the action's UI display name.
+    action->setText(clazz->displayName());
 
-	// Give the modifier a status bar text.
-	QString description = clazz->descriptionString();
-	action->setStatusTip(!description.isEmpty() ? std::move(description) : tr("Insert this modifier into the data pipeline."));
+    // Give the modifier a status bar text.
+    QString description = clazz->descriptionString();
+    action->setStatusTip(!description.isEmpty() ? std::move(description) : tr("Insert this modifier into the data pipeline."));
 
-	// Give the action an icon.
-	static QIcon icon = QIcon::fromTheme("modify_modifier_action_icon");
-	action->setIcon(icon);
+    // Give the action an icon.
+    static QIcon icon = QIcon::fromTheme("modify_modifier_action_icon");
+    action->setIcon(icon);
 
-	// Modifiers without a category are moved into the "Other" category.
-	if(action->_category.isEmpty())
-		action->_category = tr("Other");
-	
-	return action;
+    // Modifiers without a category are moved into the "Other" category.
+    if(action->_category.isEmpty())
+        action->_category = tr("Other");
+    
+    return action;
 }
 
 /******************************************************************************
@@ -69,23 +69,23 @@ ModifierAction* ModifierAction::createForClass(ModifierClassPtr clazz)
 ******************************************************************************/
 ModifierAction* ModifierAction::createForTemplate(const QString& templateName)
 {
-	ModifierAction* action = new ModifierAction();
-	action->_templateName = templateName;
+    ModifierAction* action = new ModifierAction();
+    action->_templateName = templateName;
 
-	// Generate a unique identifier for the action:
-	action->setObjectName(QStringLiteral("InsertModifierTemplate.%1").arg(templateName));
+    // Generate a unique identifier for the action:
+    action->setObjectName(QStringLiteral("InsertModifierTemplate.%1").arg(templateName));
 
-	// Set the action's UI display name.
-	action->setText(templateName);
+    // Set the action's UI display name.
+    action->setText(templateName);
 
-	// Give the modifier a status bar text.
-	action->setStatusTip(tr("Insert this modifier template into the data pipeline."));
+    // Give the modifier a status bar text.
+    action->setStatusTip(tr("Insert this modifier template into the data pipeline."));
 
-	// Give the action an icon.
-	static QIcon icon = QIcon::fromTheme("modify_modifier_action_icon");
-	action->setIcon(icon);
-	
-	return action;
+    // Give the action an icon.
+    static QIcon icon = QIcon::fromTheme("modify_modifier_action_icon");
+    action->setIcon(icon);
+    
+    return action;
 }
 
 /******************************************************************************
@@ -93,23 +93,23 @@ ModifierAction* ModifierAction::createForTemplate(const QString& templateName)
 ******************************************************************************/
 ModifierAction* ModifierAction::createForScript(const QString& fileName, const QDir& directory)
 {
-	ModifierAction* action = new ModifierAction();
-	action->_scriptPath = directory.filePath(fileName);
+    ModifierAction* action = new ModifierAction();
+    action->_scriptPath = directory.filePath(fileName);
 
-	// Generate a unique identifier for the action:
-	action->setObjectName(QStringLiteral("InsertModifierScript.%1").arg(action->_scriptPath));
+    // Generate a unique identifier for the action:
+    action->setObjectName(QStringLiteral("InsertModifierScript.%1").arg(action->_scriptPath));
 
-	// Set the action's UI display name. Chop off ".py" extension of filename.
-	action->setText(fileName.chopped(3));
+    // Set the action's UI display name. Chop off ".py" extension of filename.
+    action->setText(fileName.chopped(3));
 
-	// Give the modifier a status bar text.
-	action->setStatusTip(tr("Insert this Python modifier into the data pipeline."));
+    // Give the modifier a status bar text.
+    action->setStatusTip(tr("Insert this Python modifier into the data pipeline."));
 
-	// Give the action an icon.
-	static QIcon icon = QIcon::fromTheme("modify_modifier_action_icon");
-	action->setIcon(icon);
-	
-	return action;
+    // Give the action an icon.
+    static QIcon icon = QIcon::fromTheme("modify_modifier_action_icon");
+    action->setIcon(icon);
+    
+    return action;
 }
 
 /******************************************************************************
@@ -117,12 +117,12 @@ ModifierAction* ModifierAction::createForScript(const QString& fileName, const Q
 ******************************************************************************/
 bool ModifierAction::updateState(const PipelineFlowState& input)
 {
-	bool enable = input.data() && (!modifierClass() || modifierClass()->isApplicableTo(*input.data()));
-	if(isEnabled() != enable) {
-		setEnabled(enable);
-		return true;
-	}
-	return false;
+    bool enable = input.data() && (!modifierClass() || modifierClass()->isApplicableTo(*input.data()));
+    if(isEnabled() != enable) {
+        setEnabled(enable);
+        return true;
+    }
+    return false;
 }
 
 /******************************************************************************
@@ -130,143 +130,143 @@ bool ModifierAction::updateState(const PipelineFlowState& input)
 ******************************************************************************/
 ModifierListModel::ModifierListModel(QObject* parent, UserInterface& userInterface, PipelineListModel* pipelineListModel) : QAbstractListModel(parent), _userInterface(userInterface), _pipelineListModel(pipelineListModel)
 {
-	OVITO_ASSERT(userInterface.actionManager());
+    OVITO_ASSERT(userInterface.actionManager());
 
-	// Register this instance.
-	_allModels.push_back(this);
+    // Register this instance.
+    _allModels.push_back(this);
 
-	// Update the state of this model's actions whenever the ActionManager requests it.
-	connect(userInterface.actionManager(), &ActionManager::actionUpdateRequested, this, &ModifierListModel::updateActionState);
+    // Update the state of this model's actions whenever the ActionManager requests it.
+    connect(userInterface.actionManager(), &ActionManager::actionUpdateRequested, this, &ModifierListModel::updateActionState);
 
-	// Initialize UI colors.
-	updateColorPalette(QGuiApplication::palette());
+    // Initialize UI colors.
+    updateColorPalette(QGuiApplication::palette());
 QT_WARNING_PUSH
 QT_WARNING_DISABLE_DEPRECATED
-	connect(qGuiApp, &QGuiApplication::paletteChanged, this, &ModifierListModel::updateColorPalette);
+    connect(qGuiApp, &QGuiApplication::paletteChanged, this, &ModifierListModel::updateColorPalette);
 QT_WARNING_POP
 
-	// Enumerate all built-in modifier classes.
-	for(ModifierClassPtr clazz : PluginManager::instance().metaclassMembers<Modifier>()) {
+    // Enumerate all built-in modifier classes.
+    for(ModifierClassPtr clazz : PluginManager::instance().metaclassMembers<Modifier>()) {
 
-		// Skip modifiers that want to be hidden from the user.
-		// Do not add it to the list of available modifiers.
-		if(clazz->modifierCategory() == QStringLiteral("-"))
-			continue;
+        // Skip modifiers that want to be hidden from the user.
+        // Do not add it to the list of available modifiers.
+        if(clazz->modifierCategory() == QStringLiteral("-"))
+            continue;
 
-		// Create action for the modifier class.
-		ModifierAction* action = ModifierAction::createForClass(clazz);
-		_allActions.push_back(action);
+        // Create action for the modifier class.
+        ModifierAction* action = ModifierAction::createForClass(clazz);
+        _allActions.push_back(action);
 
-		// Register it with the global ActionManager.
-		userInterface.actionManager()->addAction(action);
-		OVITO_ASSERT(action->parent() == userInterface.actionManager());
+        // Register it with the global ActionManager.
+        userInterface.actionManager()->addAction(action);
+        OVITO_ASSERT(action->parent() == userInterface.actionManager());
 
-		// Handle the insertion action.
-		connect(action, &QAction::triggered, this, &ModifierListModel::insertModifier);
-	}
+        // Handle the insertion action.
+        connect(action, &QAction::triggered, this, &ModifierListModel::insertModifier);
+    }
 
-	// Order actions list by category name.
-	std::sort(_allActions.begin(), _allActions.end(), [](ModifierAction* a, ModifierAction* b) { return QString::localeAwareCompare(a->category(), b->category()) < 0; });
+    // Order actions list by category name.
+    std::sort(_allActions.begin(), _allActions.end(), [](ModifierAction* a, ModifierAction* b) { return QString::localeAwareCompare(a->category(), b->category()) < 0; });
 
-	// Sort actions into categories.
-	for(ModifierAction* action : _allActions) {
-		if(_categoryNames.empty() || _categoryNames.back() != action->category()) {
-			_categoryNames.push_back(action->category());
-			_actionsPerCategory.emplace_back();
-		}
-		_actionsPerCategory.back().push_back(action);
-	}
+    // Sort actions into categories.
+    for(ModifierAction* action : _allActions) {
+        if(_categoryNames.empty() || _categoryNames.back() != action->category()) {
+            _categoryNames.push_back(action->category());
+            _actionsPerCategory.emplace_back();
+        }
+        _actionsPerCategory.back().push_back(action);
+    }
 
-	// Sort actions by name within each category.
-	for(std::vector<ModifierAction*>& actions : _actionsPerCategory)
-		std::sort(actions.begin(), actions.end(), [](ModifierAction* a, ModifierAction* b) { return QString::localeAwareCompare(a->text(), b->text()) < 0; });
+    // Sort actions by name within each category.
+    for(std::vector<ModifierAction*>& actions : _actionsPerCategory)
+        std::sort(actions.begin(), actions.end(), [](ModifierAction* a, ModifierAction* b) { return QString::localeAwareCompare(a->text(), b->text()) < 0; });
 
-	// Sort complete list of actions by name.
-	std::sort(_allActions.begin(), _allActions.end(), [](const ModifierAction* a, const ModifierAction* b) { return a->text().compare(b->text(), Qt::CaseInsensitive) < 0; });
+    // Sort complete list of actions by name.
+    std::sort(_allActions.begin(), _allActions.end(), [](const ModifierAction* a, const ModifierAction* b) { return a->text().compare(b->text(), Qt::CaseInsensitive) < 0; });
 
-	// Create category for modifier templates.
-	_categoryNames.push_back(tr("Modifier templates"));
-	_actionsPerCategory.emplace_back();
-	for(const QString& templateName : ModifierTemplates::get()->templateList()) {
-		// Create action for the modifier template.
-		ModifierAction* action = ModifierAction::createForTemplate(templateName);
-		_actionsPerCategory.back().push_back(action);
+    // Create category for modifier templates.
+    _categoryNames.push_back(tr("Modifier templates"));
+    _actionsPerCategory.emplace_back();
+    for(const QString& templateName : ModifierTemplates::get()->templateList()) {
+        // Create action for the modifier template.
+        ModifierAction* action = ModifierAction::createForTemplate(templateName);
+        _actionsPerCategory.back().push_back(action);
 
-		// Register it with the global ActionManager.
-		userInterface.actionManager()->addAction(action);
-		OVITO_ASSERT(action->parent() == userInterface.actionManager());
+        // Register it with the global ActionManager.
+        userInterface.actionManager()->addAction(action);
+        OVITO_ASSERT(action->parent() == userInterface.actionManager());
 
-		// Handle the action.
-		connect(action, &QAction::triggered, this, &ModifierListModel::insertModifier);
+        // Handle the action.
+        connect(action, &QAction::triggered, this, &ModifierListModel::insertModifier);
 
-		// Insert action into complete list, which is alphabetically sorted by name.
-		auto insertionIter = std::lower_bound(_allActions.begin(), _allActions.end(), action, [](const ModifierAction* a, const ModifierAction* b) { return a->text().compare(b->text(), Qt::CaseInsensitive) < 0; });
-		_allActions.insert(insertionIter, action);
-	}
+        // Insert action into complete list, which is alphabetically sorted by name.
+        auto insertionIter = std::lower_bound(_allActions.begin(), _allActions.end(), action, [](const ModifierAction* a, const ModifierAction* b) { return a->text().compare(b->text(), Qt::CaseInsensitive) < 0; });
+        _allActions.insert(insertionIter, action);
+    }
 
-	// Listen for changes to the underlying modifier template list.
-	connect(ModifierTemplates::get(), &QAbstractItemModel::rowsInserted, this, &ModifierListModel::refreshModifierTemplates);
-	connect(ModifierTemplates::get(), &QAbstractItemModel::rowsRemoved, this, &ModifierListModel::refreshModifierTemplates);
-	connect(ModifierTemplates::get(), &QAbstractItemModel::modelReset, this, &ModifierListModel::refreshModifierTemplates);
-	connect(ModifierTemplates::get(), &QAbstractItemModel::dataChanged, this, &ModifierListModel::refreshModifierTemplates);
+    // Listen for changes to the underlying modifier template list.
+    connect(ModifierTemplates::get(), &QAbstractItemModel::rowsInserted, this, &ModifierListModel::refreshModifierTemplates);
+    connect(ModifierTemplates::get(), &QAbstractItemModel::rowsRemoved, this, &ModifierListModel::refreshModifierTemplates);
+    connect(ModifierTemplates::get(), &QAbstractItemModel::modelReset, this, &ModifierListModel::refreshModifierTemplates);
+    connect(ModifierTemplates::get(), &QAbstractItemModel::dataChanged, this, &ModifierListModel::refreshModifierTemplates);
 
-	// Add the built-in extension script directory.
-	_modifierScriptDirectories.push_back(PluginManager::instance().pythonDir() + QStringLiteral("/ovito/_extensions/scripts/modifiers"));
+    // Add the built-in extension script directory.
+    _modifierScriptDirectories.push_back(PluginManager::instance().pythonDir() + QStringLiteral("/ovito/_extensions/scripts/modifiers"));
 
-	// Add the script directories in the user's home directory.
-	for(const QString& configLocation : QStandardPaths::standardLocations(QStandardPaths::GenericConfigLocation))
-		_modifierScriptDirectories.push_back(configLocation + QStringLiteral("/Ovito/scripts/modifiers"));
+    // Add the script directories in the user's home directory.
+    for(const QString& configLocation : QStandardPaths::standardLocations(QStandardPaths::GenericConfigLocation))
+        _modifierScriptDirectories.push_back(configLocation + QStringLiteral("/Ovito/scripts/modifiers"));
 #ifdef Q_OS_MACOS
-	// For backward compatibility with OVITO 3.7.0:
-	_modifierScriptDirectories.push_back(QDir::homePath() + QStringLiteral("/.config/Ovito/scripts/modifiers"));
+    // For backward compatibility with OVITO 3.7.0:
+    _modifierScriptDirectories.push_back(QDir::homePath() + QStringLiteral("/.config/Ovito/scripts/modifiers"));
 #endif
 
-	// Make sure our list doesn't contain the same directory twice.
-	std::sort(_modifierScriptDirectories.begin(), _modifierScriptDirectories.end());
-	_modifierScriptDirectories.erase(std::unique(_modifierScriptDirectories.begin(), _modifierScriptDirectories.end()), _modifierScriptDirectories.end());
+    // Make sure our list doesn't contain the same directory twice.
+    std::sort(_modifierScriptDirectories.begin(), _modifierScriptDirectories.end());
+    _modifierScriptDirectories.erase(std::unique(_modifierScriptDirectories.begin(), _modifierScriptDirectories.end()), _modifierScriptDirectories.end());
 
-	// Create category for script modifiers.
+    // Create category for script modifiers.
 #ifndef OVITO_BUILD_BASIC
-	_categoryNames.push_back(tr("Python modifiers"));
+    _categoryNames.push_back(tr("Python modifiers"));
 #else
-	_categoryNames.push_back(tr("Python modifiers (Pro)"));
+    _categoryNames.push_back(tr("Python modifiers (Pro)"));
 #endif
-	_actionsPerCategory.emplace_back();
+    _actionsPerCategory.emplace_back();
 
-	// Load user-defined Python script modifiers.
-	const QStringList nameFilters(QStringLiteral("*.py"));
-	for(const QDir& scriptsDirectory : _modifierScriptDirectories) {
-		QStringList scriptFiles = scriptsDirectory.entryList(nameFilters, QDir::Files, QDir::Name);
-		for(const QString& fileName : scriptFiles) {
-			// Filter out __init__.py.
-			if(fileName == QStringLiteral("__init__.py"))
-				continue;
+    // Load user-defined Python script modifiers.
+    const QStringList nameFilters(QStringLiteral("*.py"));
+    for(const QDir& scriptsDirectory : _modifierScriptDirectories) {
+        QStringList scriptFiles = scriptsDirectory.entryList(nameFilters, QDir::Files, QDir::Name);
+        for(const QString& fileName : scriptFiles) {
+            // Filter out __init__.py.
+            if(fileName == QStringLiteral("__init__.py"))
+                continue;
 
-			// Create an action for the modifier script.
-			ModifierAction* action = ModifierAction::createForScript(fileName, scriptsDirectory);
-			_actionsPerCategory.back().push_back(action);
+            // Create an action for the modifier script.
+            ModifierAction* action = ModifierAction::createForScript(fileName, scriptsDirectory);
+            _actionsPerCategory.back().push_back(action);
 
-			// Register it with the global ActionManager.
-			userInterface.actionManager()->addAction(action);
-			OVITO_ASSERT(action->parent() == userInterface.actionManager());
+            // Register it with the global ActionManager.
+            userInterface.actionManager()->addAction(action);
+            OVITO_ASSERT(action->parent() == userInterface.actionManager());
 
-			// Handle the action.
-			connect(action, &QAction::triggered, this, &ModifierListModel::insertModifier);
+            // Handle the action.
+            connect(action, &QAction::triggered, this, &ModifierListModel::insertModifier);
 
-			// Insert action into complete list, which is alphabetically sorted by name.
-			auto insertionIter = std::lower_bound(_allActions.begin(), _allActions.end(), action, [](const ModifierAction* a, const ModifierAction* b) { return a->text().compare(b->text(), Qt::CaseInsensitive) < 0; });
-			_allActions.insert(insertionIter, action);
-		}
-	}
+            // Insert action into complete list, which is alphabetically sorted by name.
+            auto insertionIter = std::lower_bound(_allActions.begin(), _allActions.end(), action, [](const ModifierAction* a, const ModifierAction* b) { return a->text().compare(b->text(), Qt::CaseInsensitive) < 0; });
+            _allActions.insert(insertionIter, action);
+        }
+    }
 
-	// Define font, colors, etc.
-	_categoryFont = QGuiApplication::font();
-	_categoryFont.setBold(true);
+    // Define font, colors, etc.
+    _categoryFont = QGuiApplication::font();
+    _categoryFont.setBold(true);
 #ifndef Q_OS_WIN
-	if(_categoryFont.pixelSize() < 0)
-		_categoryFont.setPointSize(_categoryFont.pointSize() * 4 / 5);
-	else
-		_categoryFont.setPixelSize(_categoryFont.pixelSize() * 4 / 5);
+    if(_categoryFont.pixelSize() < 0)
+        _categoryFont.setPointSize(_categoryFont.pointSize() * 4 / 5);
+    else
+        _categoryFont.setPixelSize(_categoryFont.pixelSize() * 4 / 5);
 #endif
 }
 
@@ -275,13 +275,13 @@ QT_WARNING_POP
 ******************************************************************************/
 void ModifierListModel::updateColorPalette(const QPalette& palette)
 {
-	bool darkTheme = palette.color(QPalette::Active, QPalette::Window).lightness() < 100;
+    bool darkTheme = palette.color(QPalette::Active, QPalette::Window).lightness() < 100;
 #ifndef Q_OS_LINUX
-	_categoryBackgroundBrush = darkTheme ? palette.mid() : QBrush{Qt::lightGray, Qt::Dense4Pattern};
+    _categoryBackgroundBrush = darkTheme ? palette.mid() : QBrush{Qt::lightGray, Qt::Dense4Pattern};
 #else
-	_categoryBackgroundBrush = darkTheme ? palette.window() : QBrush{Qt::lightGray, Qt::Dense4Pattern};
+    _categoryBackgroundBrush = darkTheme ? palette.window() : QBrush{Qt::lightGray, Qt::Dense4Pattern};
 #endif
-	_categoryForegroundBrush = QBrush(darkTheme ? QColor(Qt::blue).lighter() : QColor(Qt::blue));
+    _categoryForegroundBrush = QBrush(darkTheme ? QColor(Qt::blue).lighter() : QColor(Qt::blue));
 }
 
 /******************************************************************************
@@ -289,26 +289,26 @@ void ModifierListModel::updateColorPalette(const QPalette& palette)
 ******************************************************************************/
 ModifierAction* ModifierListModel::actionFromIndex(int index) const
 {
-	if(index == 0) return nullptr; // Index 0 is the "Add modification..." item.
-	index--;
+    if(index == 0) return nullptr; // Index 0 is the "Add modification..." item.
+    index--;
 
-	if(_useCategories) {
-		for(const auto& categoryActions : _actionsPerCategory) {
-			if(!categoryActions.empty()) {
-				if(index == 0) return nullptr;
-				index--;
-				if(index < categoryActions.size())
-					return categoryActions[index];
-				index -= categoryActions.size();
-			}
-		}
-	}
-	else {
-		if(index < _allActions.size())
-			return _allActions[index];
-	}
+    if(_useCategories) {
+        for(const auto& categoryActions : _actionsPerCategory) {
+            if(!categoryActions.empty()) {
+                if(index == 0) return nullptr;
+                index--;
+                if(index < categoryActions.size())
+                    return categoryActions[index];
+                index -= categoryActions.size();
+            }
+        }
+    }
+    else {
+        if(index < _allActions.size())
+            return _allActions[index];
+    }
 
-	return nullptr;
+    return nullptr;
 }
 
 /******************************************************************************
@@ -316,21 +316,21 @@ ModifierAction* ModifierListModel::actionFromIndex(int index) const
 ******************************************************************************/
 int ModifierListModel::categoryIndexFromListIndex(int index) const
 {
-	if(index == 0) return -1;
-	index--;
+    if(index == 0) return -1;
+    index--;
 
-	if(_useCategories) {
-		int categoryIndex = 0;
-		for(const auto& categoryActions : _actionsPerCategory) {
-			if(index == 0)
-				return categoryIndex;
-			if(!categoryActions.empty())
-				index -= categoryActions.size() + 1;
-			categoryIndex++;
-		}
-	}
+    if(_useCategories) {
+        int categoryIndex = 0;
+        for(const auto& categoryActions : _actionsPerCategory) {
+            if(index == 0)
+                return categoryIndex;
+            if(!categoryActions.empty())
+                index -= categoryActions.size() + 1;
+            categoryIndex++;
+        }
+    }
 
-	return -1;
+    return -1;
 }
 
 /******************************************************************************
@@ -338,19 +338,19 @@ int ModifierListModel::categoryIndexFromListIndex(int index) const
 ******************************************************************************/
 int ModifierListModel::listIndexFromCategoryIndex(int categoryIndex) const
 {
-	if(_useCategories) {
-		int index = 1;
-		for(const auto& categoryActions : _actionsPerCategory) {
-			if(categoryIndex == 0)
-				return index;
-			if(!categoryActions.empty())
-				index += categoryActions.size() + 1;
-			categoryIndex--;
-		}
-	}
+    if(_useCategories) {
+        int index = 1;
+        for(const auto& categoryActions : _actionsPerCategory) {
+            if(categoryIndex == 0)
+                return index;
+            if(!categoryActions.empty())
+                index += categoryActions.size() + 1;
+            categoryIndex--;
+        }
+    }
 
-	OVITO_ASSERT(false);
-	return -1;
+    OVITO_ASSERT(false);
+    return -1;
 }
 
 /******************************************************************************
@@ -358,18 +358,18 @@ int ModifierListModel::listIndexFromCategoryIndex(int categoryIndex) const
 ******************************************************************************/
 int ModifierListModel::rowCount(const QModelIndex& parent) const 
 {
-	int sum = 1; // First entry is the "Add modification..." item.
+    int sum = 1; // First entry is the "Add modification..." item.
 
-	if(_useCategories) {
-		for(const auto& categoryActions : _actionsPerCategory)
-			if(!categoryActions.empty())
-				sum += categoryActions.size() + 1; 	// Take into account category header.
-	}
-	else {
-		sum += _allActions.size();
-	}
+    if(_useCategories) {
+        for(const auto& categoryActions : _actionsPerCategory)
+            if(!categoryActions.empty())
+                sum += categoryActions.size() + 1;  // Take into account category header.
+    }
+    else {
+        sum += _allActions.size();
+    }
 
-	return sum;
+    return sum;
 }
 
 /******************************************************************************
@@ -377,11 +377,11 @@ int ModifierListModel::rowCount(const QModelIndex& parent) const
 ******************************************************************************/
 QHash<int, QByteArray> ModifierListModel::roleNames() const
 {
-	return { 
-		{ Qt::DisplayRole, "title" },
-		{ Qt::UserRole, "isheader" },
-		{ Qt::FontRole, "font" }
-	};
+    return { 
+        { Qt::DisplayRole, "title" },
+        { Qt::UserRole, "isheader" },
+        { Qt::FontRole, "font" }
+    };
 }
 
 /******************************************************************************
@@ -389,41 +389,41 @@ QHash<int, QByteArray> ModifierListModel::roleNames() const
 ******************************************************************************/
 QVariant ModifierListModel::data(const QModelIndex& index, int role) const
 {
-	if(role == Qt::DisplayRole) {
-		if(ModifierAction* action = actionFromIndex(index)) {
-			return action->text();
-		}
-		else {
-			int categoryIndex = categoryIndexFromListIndex(index.row());
-			if(categoryIndex < 0)
-				return tr("Add modification...");
-			else
-				return _categoryNames[categoryIndex];
-		}
-	}
-	else if(role == Qt::UserRole) {
-		if(categoryIndexFromListIndex(index.row()) >= 0)
-			return true;
-		else
-			return false;
-	}
-	else if(role == Qt::FontRole) {
-		if(categoryIndexFromListIndex(index.row()) >= 0)
-			return _categoryFont;
-	}
-	else if(role == Qt::ForegroundRole) {
-		if(categoryIndexFromListIndex(index.row()) >= 0)
-			return _categoryForegroundBrush;
-	}
-	else if(role == Qt::BackgroundRole) {
-		if(categoryIndexFromListIndex(index.row()) >= 0)
-			return _categoryBackgroundBrush;
-	}
-	else if(role == Qt::TextAlignmentRole) {
-		if(categoryIndexFromListIndex(index.row()) >= 0)
-			return Qt::AlignCenter;
-	}
-	return {};
+    if(role == Qt::DisplayRole) {
+        if(ModifierAction* action = actionFromIndex(index)) {
+            return action->text();
+        }
+        else {
+            int categoryIndex = categoryIndexFromListIndex(index.row());
+            if(categoryIndex < 0)
+                return tr("Add modification...");
+            else
+                return _categoryNames[categoryIndex];
+        }
+    }
+    else if(role == Qt::UserRole) {
+        if(categoryIndexFromListIndex(index.row()) >= 0)
+            return true;
+        else
+            return false;
+    }
+    else if(role == Qt::FontRole) {
+        if(categoryIndexFromListIndex(index.row()) >= 0)
+            return _categoryFont;
+    }
+    else if(role == Qt::ForegroundRole) {
+        if(categoryIndexFromListIndex(index.row()) >= 0)
+            return _categoryForegroundBrush;
+    }
+    else if(role == Qt::BackgroundRole) {
+        if(categoryIndexFromListIndex(index.row()) >= 0)
+            return _categoryBackgroundBrush;
+    }
+    else if(role == Qt::TextAlignmentRole) {
+        if(categoryIndexFromListIndex(index.row()) >= 0)
+            return Qt::AlignCenter;
+    }
+    return {};
 }
 
 /******************************************************************************
@@ -431,12 +431,12 @@ QVariant ModifierListModel::data(const QModelIndex& index, int role) const
 ******************************************************************************/
 Qt::ItemFlags ModifierListModel::flags(const QModelIndex& index) const
 {
-	if(categoryIndexFromListIndex(index.row()) >= 0)
-		return Qt::ItemIsEnabled;
-	else if(ModifierAction* action = actionFromIndex(index))
-		return action->isEnabled() ? (Qt::ItemIsEnabled | Qt::ItemIsSelectable) : Qt::NoItemFlags;
+    if(categoryIndexFromListIndex(index.row()) >= 0)
+        return Qt::ItemIsEnabled;
+    else if(ModifierAction* action = actionFromIndex(index))
+        return action->isEnabled() ? (Qt::ItemIsEnabled | Qt::ItemIsSelectable) : Qt::NoItemFlags;
 
-	return QAbstractListModel::flags(index);
+    return QAbstractListModel::flags(index);
 }
 
 /******************************************************************************
@@ -444,56 +444,56 @@ Qt::ItemFlags ModifierListModel::flags(const QModelIndex& index) const
 ******************************************************************************/
 void ModifierListModel::insertModifier()
 {
-	// Get the action that emitted the signal.
-	ModifierAction* action = qobject_cast<ModifierAction*>(sender());
-	OVITO_ASSERT(action);
+    // Get the action that emitted the signal.
+    ModifierAction* action = qobject_cast<ModifierAction*>(sender());
+    OVITO_ASSERT(action);
 
-	// Instantiate the new modifier(s) and insert them into the pipeline.
-	_userInterface.performTransaction(tr("Insert modifier"), [&]() {
+    // Instantiate the new modifier(s) and insert them into the pipeline.
+    _userInterface.performTransaction(tr("Insert modifier"), [&]() {
 
-		if(action->modifierClass()) {
-			// Create an instance of the modifier.
-			OORef<Modifier> modifier = static_object_cast<Modifier>(action->modifierClass()->createInstance());
-			// Insert modifier into the data pipeline.
-			_pipelineListModel->applyModifiers({modifier});
-		}
-		else if(!action->templateName().isEmpty()) {
-			// Load modifier template from the store.
-			QVector<OORef<Modifier>> modifierSet = ModifierTemplates::get()->instantiateTemplate(action->templateName());
-			// Put the modifiers into a group if the template consists of two or more modifiers.
-			OORef<ModifierGroup> modifierGroup;
-			if(modifierSet.size() >= 2) {
-				modifierGroup = OORef<ModifierGroup>::create();
-				modifierGroup->setCollapsed(true);
-				modifierGroup->setTitle(action->templateName());
-			}
-			// Insert modifier(s) into the data pipeline.
-			_pipelineListModel->applyModifiers(modifierSet, modifierGroup);
-		}
-		else if(!action->scriptPath().isEmpty()) {
-			// Get the PythonScriptModifier modifier class.
-			if(OvitoClassPtr clazz = PluginManager::instance().findClass({}, QStringLiteral("PythonScriptModifier"))) {
-				if(!clazz->isAbstract() && clazz->isDerivedFrom(Modifier::OOClass())) {
-					const Modifier::OOMetaClass* modifierClass = static_cast<const Modifier::OOMetaClass*>(clazz);
+        if(action->modifierClass()) {
+            // Create an instance of the modifier.
+            OORef<Modifier> modifier = static_object_cast<Modifier>(action->modifierClass()->createInstance());
+            // Insert modifier into the data pipeline.
+            _pipelineListModel->applyModifiers({modifier});
+        }
+        else if(!action->templateName().isEmpty()) {
+            // Load modifier template from the store.
+            QVector<OORef<Modifier>> modifierSet = ModifierTemplates::get()->instantiateTemplate(action->templateName());
+            // Put the modifiers into a group if the template consists of two or more modifiers.
+            OORef<ModifierGroup> modifierGroup;
+            if(modifierSet.size() >= 2) {
+                modifierGroup = OORef<ModifierGroup>::create();
+                modifierGroup->setCollapsed(true);
+                modifierGroup->setTitle(action->templateName());
+            }
+            // Insert modifier(s) into the data pipeline.
+            _pipelineListModel->applyModifiers(modifierSet, modifierGroup);
+        }
+        else if(!action->scriptPath().isEmpty()) {
+            // Get the PythonScriptModifier modifier class.
+            if(OvitoClassPtr clazz = PluginManager::instance().findClass({}, QStringLiteral("PythonScriptModifier"))) {
+                if(!clazz->isAbstract() && clazz->isDerivedFrom(Modifier::OOClass())) {
+                    const Modifier::OOMetaClass* modifierClass = static_cast<const Modifier::OOMetaClass*>(clazz);
 
-					// Instantiate the PythonScriptModifier class.
-					OORef<Modifier> modifier = static_object_cast<Modifier>(modifierClass->createInstance());
-					OVITO_CHECK_OBJECT_POINTER(modifier);
-					{
-						UndoSuspender noUndo;
-						modifier->setTitle(action->text());
+                    // Instantiate the PythonScriptModifier class.
+                    OORef<Modifier> modifier = static_object_cast<Modifier>(modifierClass->createInstance());
+                    OVITO_CHECK_OBJECT_POINTER(modifier);
+                    {
+                        UndoSuspender noUndo;
+                        modifier->setTitle(action->text());
 
-						// Load the script code from the template file.
-						bool callSuccessful = QMetaObject::invokeMethod(modifier, "loadCodeTemplate", Qt::DirectConnection, Q_ARG(const QString&, action->scriptPath()));
-						OVITO_ASSERT(callSuccessful);
-					}
+                        // Load the script code from the template file.
+                        bool callSuccessful = QMetaObject::invokeMethod(modifier, "loadCodeTemplate", Qt::DirectConnection, Q_ARG(const QString&, action->scriptPath()));
+                        OVITO_ASSERT(callSuccessful);
+                    }
 
-					// Insert modifier(s) into the data pipeline.
-					_pipelineListModel->applyModifiers({modifier});
-				}
-			}
-		}
-	});
+                    // Insert modifier(s) into the data pipeline.
+                    _pipelineListModel->applyModifiers({modifier});
+                }
+            }
+        }
+    });
 }
 
 /******************************************************************************
@@ -501,8 +501,8 @@ void ModifierListModel::insertModifier()
 ******************************************************************************/
 void ModifierListModel::insertModifierByIndex(int index)
 {
-	if(QAction* action = actionFromIndex(index))
-		action->trigger();
+    if(QAction* action = actionFromIndex(index))
+        action->trigger();
 }
 
 /******************************************************************************
@@ -510,62 +510,62 @@ void ModifierListModel::insertModifierByIndex(int index)
 ******************************************************************************/
 void ModifierListModel::refreshModifierTemplates()
 {
-	std::vector<ModifierAction*>& templateActions = _actionsPerCategory[modifierTemplatesCategory()];
+    std::vector<ModifierAction*>& templateActions = _actionsPerCategory[modifierTemplatesCategory()];
 
-	// Discard old list of actions.
-	if(!templateActions.empty()) {
-		if(_useCategories) {
-			int startIndex = listIndexFromCategoryIndex(modifierTemplatesCategory());
-			beginRemoveRows(QModelIndex(), startIndex, startIndex + templateActions.size());
-		}
-		for(ModifierAction* action : templateActions) {
-			auto iter = std::find(_allActions.begin(), _allActions.end(), action);
-			OVITO_ASSERT(iter != _allActions.end());
-			int deleteIndex = 1 + std::distance(_allActions.begin(), iter);
-			if(!_useCategories)
-				beginRemoveRows(QModelIndex(), deleteIndex, deleteIndex);
-			_allActions.erase(iter);
-			if(!_useCategories)
-				endRemoveRows();
-			_userInterface.actionManager()->deleteAction(action);
-		}
-		templateActions.clear();
-		if(_useCategories)
-			endRemoveRows();
-	}
+    // Discard old list of actions.
+    if(!templateActions.empty()) {
+        if(_useCategories) {
+            int startIndex = listIndexFromCategoryIndex(modifierTemplatesCategory());
+            beginRemoveRows(QModelIndex(), startIndex, startIndex + templateActions.size());
+        }
+        for(ModifierAction* action : templateActions) {
+            auto iter = std::find(_allActions.begin(), _allActions.end(), action);
+            OVITO_ASSERT(iter != _allActions.end());
+            int deleteIndex = 1 + std::distance(_allActions.begin(), iter);
+            if(!_useCategories)
+                beginRemoveRows(QModelIndex(), deleteIndex, deleteIndex);
+            _allActions.erase(iter);
+            if(!_useCategories)
+                endRemoveRows();
+            _userInterface.actionManager()->deleteAction(action);
+        }
+        templateActions.clear();
+        if(_useCategories)
+            endRemoveRows();
+    }
 
-	// Create new actions for the modifier templates.
-	int count = ModifierTemplates::get()->templateList().size();
-	if(count != 0) {
-		if(_useCategories) {
-			int startIndex = listIndexFromCategoryIndex(modifierTemplatesCategory());
-			beginInsertRows(QModelIndex(), startIndex, startIndex + count);
-		}
-		for(const QString& templateName : ModifierTemplates::get()->templateList()) {
-			// Create action for the modifier template.
-			ModifierAction* action = ModifierAction::createForTemplate(templateName);
-			templateActions.push_back(action);
+    // Create new actions for the modifier templates.
+    int count = ModifierTemplates::get()->templateList().size();
+    if(count != 0) {
+        if(_useCategories) {
+            int startIndex = listIndexFromCategoryIndex(modifierTemplatesCategory());
+            beginInsertRows(QModelIndex(), startIndex, startIndex + count);
+        }
+        for(const QString& templateName : ModifierTemplates::get()->templateList()) {
+            // Create action for the modifier template.
+            ModifierAction* action = ModifierAction::createForTemplate(templateName);
+            templateActions.push_back(action);
 
-			// Register it with the ActionManager.
-			_userInterface.actionManager()->addAction(action);
-			OVITO_ASSERT(action->parent() == _userInterface.actionManager());
+            // Register it with the ActionManager.
+            _userInterface.actionManager()->addAction(action);
+            OVITO_ASSERT(action->parent() == _userInterface.actionManager());
 
-			// Handle the action.
-			connect(action, &QAction::triggered, this, &ModifierListModel::insertModifier);
+            // Handle the action.
+            connect(action, &QAction::triggered, this, &ModifierListModel::insertModifier);
 
-			// Insert action into complete, alphabetically sorted list.
-			auto insertionIter = std::lower_bound(_allActions.begin(), _allActions.end(), action, [](const ModifierAction* a, const ModifierAction* b) { return a->text().compare(b->text(), Qt::CaseInsensitive) < 0; });
-			if(!_useCategories) {
-				int insertionIndex = std::distance(_allActions.begin(), insertionIter);
-				beginInsertRows(QModelIndex(), insertionIndex, insertionIndex);
-			}
-			_allActions.insert(insertionIter, action);
-			if(!_useCategories)
-				endInsertRows();
-		}
-		if(_useCategories)
-			endInsertRows();
-	}
+            // Insert action into complete, alphabetically sorted list.
+            auto insertionIter = std::lower_bound(_allActions.begin(), _allActions.end(), action, [](const ModifierAction* a, const ModifierAction* b) { return a->text().compare(b->text(), Qt::CaseInsensitive) < 0; });
+            if(!_useCategories) {
+                int insertionIndex = std::distance(_allActions.begin(), insertionIter);
+                beginInsertRows(QModelIndex(), insertionIndex, insertionIndex);
+            }
+            _allActions.insert(insertionIter, action);
+            if(!_useCategories)
+                endInsertRows();
+        }
+        if(_useCategories)
+            endInsertRows();
+    }
 }
 
 /******************************************************************************
@@ -573,50 +573,50 @@ void ModifierListModel::refreshModifierTemplates()
 ******************************************************************************/
 void ModifierListModel::updateActionState()
 {
-	// Retrieve the input pipeline state, which a newly inserted modifier would be applied to.
-	// This is used to determine which modifiers are applicable.
-	PipelineFlowState inputState;
+    // Retrieve the input pipeline state, which a newly inserted modifier would be applied to.
+    // This is used to determine which modifiers are applicable.
+    PipelineFlowState inputState;
 
-	// Get the selected item in the pipeline editor.
-	PipelineListItem* currentItem = _pipelineListModel->selectedItem();
-	while(currentItem && currentItem->parent()) {
-		currentItem = currentItem->parent();
-	}
+    // Get the selected item in the pipeline editor.
+    PipelineListItem* currentItem = _pipelineListModel->selectedItem();
+    while(currentItem && currentItem->parent()) {
+        currentItem = currentItem->parent();
+    }
 
-	// Evaluate pipeline at the selected stage.
-	if(currentItem) {
-		if(AnimationSettings* anim = _userInterface.datasetContainer().activeAnimationSettings()) {
-			_userInterface.handleExceptions([&] {
-				if(PipelineObject* pipelineObject = dynamic_object_cast<PipelineObject>(currentItem->object())) {
-					inputState = pipelineObject->evaluateSynchronous(PipelineEvaluationRequest(anim));
-				}
-				else if(PipelineSceneNode* pipeline = _pipelineListModel->selectedPipeline()) {
-					inputState = pipeline->evaluatePipelineSynchronous(anim->currentTime(), false);
-				}
-			});
-		}
-	}
+    // Evaluate pipeline at the selected stage.
+    if(currentItem) {
+        if(AnimationSettings* anim = _userInterface.datasetContainer().activeAnimationSettings()) {
+            _userInterface.handleExceptions([&] {
+                if(PipelineObject* pipelineObject = dynamic_object_cast<PipelineObject>(currentItem->object())) {
+                    inputState = pipelineObject->evaluateSynchronous(PipelineEvaluationRequest(anim));
+                }
+                else if(PipelineSceneNode* pipeline = _pipelineListModel->selectedPipeline()) {
+                    inputState = pipeline->evaluatePipelineSynchronous(anim->currentTime(), false);
+                }
+            });
+        }
+    }
 
-	// Update the actions.
-	int row = 1;
-	if(_useCategories) {
-		for(const auto& categoryActions : _actionsPerCategory) {
-			if(!categoryActions.empty()) 
-				row++;
-			for(ModifierAction* action : categoryActions) {
-				if(action->updateState(inputState))
-					Q_EMIT dataChanged(index(row), index(row));
-				row++;
-			}
-		}
-	}
-	else {
-		for(ModifierAction* action : _allActions) {
-			if(action->updateState(inputState))
-				Q_EMIT dataChanged(index(row), index(row));
-			row++;
-		}
-	}
+    // Update the actions.
+    int row = 1;
+    if(_useCategories) {
+        for(const auto& categoryActions : _actionsPerCategory) {
+            if(!categoryActions.empty()) 
+                row++;
+            for(ModifierAction* action : categoryActions) {
+                if(action->updateState(inputState))
+                    Q_EMIT dataChanged(index(row), index(row));
+                row++;
+            }
+        }
+    }
+    else {
+        for(ModifierAction* action : _allActions) {
+            if(action->updateState(inputState))
+                Q_EMIT dataChanged(index(row), index(row));
+            row++;
+        }
+    }
 }
 
 /******************************************************************************
@@ -624,11 +624,11 @@ void ModifierListModel::updateActionState()
 ******************************************************************************/
 void ModifierListModel::setUseCategories(bool on)
 {
-	if(on != _useCategories) {
-		beginResetModel();
-		_useCategories = on;
-		endResetModel();
-	}
+    if(on != _useCategories) {
+        beginResetModel();
+        _useCategories = on;
+        endResetModel();
+    }
 }
 
 /******************************************************************************
@@ -637,10 +637,10 @@ void ModifierListModel::setUseCategories(bool on)
 bool ModifierListModel::useCategoriesGlobal()
 {
 #ifndef OVITO_DISABLE_QSETTINGS
-	QSettings settings;
-	return settings.value("modifiers/sort_by_category", true).toBool();
+    QSettings settings;
+    return settings.value("modifiers/sort_by_category", true).toBool();
 #else
-	return true;
+    return true;
 #endif
 }
 
@@ -650,14 +650,14 @@ bool ModifierListModel::useCategoriesGlobal()
 void ModifierListModel::setUseCategoriesGlobal(bool on)
 {
 #ifndef OVITO_DISABLE_QSETTINGS
-	if(on != useCategoriesGlobal()) {		
-		QSettings settings;
-		settings.setValue("modifiers/sort_by_category", on);
-	}
+    if(on != useCategoriesGlobal()) {       
+        QSettings settings;
+        settings.setValue("modifiers/sort_by_category", on);
+    }
 
-	for(ModifierListModel* model : _allModels)
-		model->setUseCategories(on);
+    for(ModifierListModel* model : _allModels)
+        model->setUseCategories(on);
 #endif
 }
 
-}	// End of namespace
+}   // End of namespace

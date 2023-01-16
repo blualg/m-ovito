@@ -64,21 +64,21 @@ SET_PROPERTY_FIELD_LABEL(ScatterPlotModifier, yAxisProperty, "Y-axis property");
 * Constructs the modifier object.
 ******************************************************************************/
 ScatterPlotModifier::ScatterPlotModifier(ObjectCreationParams params) : GenericPropertyModifier(params),
-	_selectXAxisInRange(false),
-	_selectionXAxisRangeStart(0),
-	_selectionXAxisRangeEnd(1),
-	_selectYAxisInRange(false),
-	_selectionYAxisRangeStart(0),
-	_selectionYAxisRangeEnd(1),
-	_fixXAxisRange(false),
-	_xAxisRangeStart(0),
-	_xAxisRangeEnd(0),
-	_fixYAxisRange(false),
-	_yAxisRangeStart(0),
-	_yAxisRangeEnd(0)
+    _selectXAxisInRange(false),
+    _selectionXAxisRangeStart(0),
+    _selectionXAxisRangeEnd(1),
+    _selectYAxisInRange(false),
+    _selectionYAxisRangeStart(0),
+    _selectionYAxisRangeEnd(1),
+    _fixXAxisRange(false),
+    _xAxisRangeStart(0),
+    _xAxisRangeEnd(0),
+    _fixYAxisRange(false),
+    _yAxisRangeStart(0),
+    _yAxisRangeEnd(0)
 {
-	// Operate on particle properties by default.
-	setDefaultSubject(QStringLiteral("Particles"), QStringLiteral("ParticlesObject"));
+    // Operate on particle properties by default.
+    setDefaultSubject(QStringLiteral("Particles"), QStringLiteral("ParticlesObject"));
 }
 
 /******************************************************************************
@@ -87,24 +87,24 @@ ScatterPlotModifier::ScatterPlotModifier(ObjectCreationParams params) : GenericP
 ******************************************************************************/
 void ScatterPlotModifier::initializeModifier(const ModifierInitializationRequest& request)
 {
-	GenericPropertyModifier::initializeModifier(request);
+    GenericPropertyModifier::initializeModifier(request);
 
-	// Use the first available property from the input state as data source when the modifier is newly created.
-	if((xAxisProperty().isNull() || yAxisProperty().isNull()) && subject() && ExecutionContext::isInteractive()) {
-		const PipelineFlowState& input = request.modApp()->evaluateInputSynchronous(request);
-		if(const PropertyContainer* container = input.getLeafObject(subject())) {
-			PropertyReference bestProperty;
-			for(const PropertyObject* property : container->properties()) {
-				bestProperty = PropertyReference(subject().dataClass(), property, (property->componentCount() > 1) ? 0 : -1);
-			}
-			if(xAxisProperty().isNull() && !bestProperty.isNull()) {
-				setXAxisProperty(bestProperty);
-			}
-			if(yAxisProperty().isNull() && !bestProperty.isNull()) {
-				setYAxisProperty(bestProperty);
-			}
-		}
-	}
+    // Use the first available property from the input state as data source when the modifier is newly created.
+    if((xAxisProperty().isNull() || yAxisProperty().isNull()) && subject() && ExecutionContext::isInteractive()) {
+        const PipelineFlowState& input = request.modApp()->evaluateInputSynchronous(request);
+        if(const PropertyContainer* container = input.getLeafObject(subject())) {
+            PropertyReference bestProperty;
+            for(const PropertyObject* property : container->properties()) {
+                bestProperty = PropertyReference(subject().dataClass(), property, (property->componentCount() > 1) ? 0 : -1);
+            }
+            if(xAxisProperty().isNull() && !bestProperty.isNull()) {
+                setXAxisProperty(bestProperty);
+            }
+            if(yAxisProperty().isNull() && !bestProperty.isNull()) {
+                setYAxisProperty(bestProperty);
+            }
+        }
+    }
 }
 
 /******************************************************************************
@@ -112,17 +112,17 @@ void ScatterPlotModifier::initializeModifier(const ModifierInitializationRequest
 ******************************************************************************/
 void ScatterPlotModifier::propertyChanged(const PropertyFieldDescriptor* field)
 {
-	if(field == PROPERTY_FIELD(GenericPropertyModifier::subject) && !isBeingLoaded() && !isUndoingOrRedoing()) {
-		// Whenever the selected property class of this modifier is changed, update the source property references.
-		setXAxisProperty(xAxisProperty().convertToContainerClass(subject().dataClass()));
-		setYAxisProperty(yAxisProperty().convertToContainerClass(subject().dataClass()));
-	}
-	else if((field == PROPERTY_FIELD(ScatterPlotModifier::xAxisProperty) || field == PROPERTY_FIELD(ScatterPlotModifier::yAxisProperty)) && !isBeingLoaded()) {
-		// Changes of some the modifier's parameters affect the result of ScatterPlotModifier::getPipelineEditorShortInfo().
-		notifyDependents(ReferenceEvent::ObjectStatusChanged);
-	}
+    if(field == PROPERTY_FIELD(GenericPropertyModifier::subject) && !isBeingLoaded() && !isUndoingOrRedoing()) {
+        // Whenever the selected property class of this modifier is changed, update the source property references.
+        setXAxisProperty(xAxisProperty().convertToContainerClass(subject().dataClass()));
+        setYAxisProperty(yAxisProperty().convertToContainerClass(subject().dataClass()));
+    }
+    else if((field == PROPERTY_FIELD(ScatterPlotModifier::xAxisProperty) || field == PROPERTY_FIELD(ScatterPlotModifier::yAxisProperty)) && !isBeingLoaded()) {
+        // Changes of some the modifier's parameters affect the result of ScatterPlotModifier::getPipelineEditorShortInfo().
+        notifyDependents(ReferenceEvent::ObjectStatusChanged);
+    }
 
-	GenericPropertyModifier::propertyChanged(field);
+    GenericPropertyModifier::propertyChanged(field);
 }
 
 /******************************************************************************
@@ -130,116 +130,116 @@ void ScatterPlotModifier::propertyChanged(const PropertyFieldDescriptor* field)
 ******************************************************************************/
 void ScatterPlotModifier::evaluateSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state)
 {
-	if(!subject())
-		throw Exception(tr("No data element type set."));
-	if(xAxisProperty().isNull())
-		throw Exception(tr("No input property for x-axis selected."));
-	if(yAxisProperty().isNull())
-		throw Exception(tr("No input property for y-axis selected."));
+    if(!subject())
+        throw Exception(tr("No data element type set."));
+    if(xAxisProperty().isNull())
+        throw Exception(tr("No input property for x-axis selected."));
+    if(yAxisProperty().isNull())
+        throw Exception(tr("No input property for y-axis selected."));
 
-	// Check if the source property is the right kind of property.
-	if(xAxisProperty().containerClass() != subject().dataClass())
-		throw Exception(tr("Modifier was set to operate on '%1', but the selected input is a '%2' property.")
-			.arg(subject().dataClass()->pythonName()).arg(xAxisProperty().containerClass()->propertyClassDisplayName()));
+    // Check if the source property is the right kind of property.
+    if(xAxisProperty().containerClass() != subject().dataClass())
+        throw Exception(tr("Modifier was set to operate on '%1', but the selected input is a '%2' property.")
+            .arg(subject().dataClass()->pythonName()).arg(xAxisProperty().containerClass()->propertyClassDisplayName()));
 
-	// Check if the source property is the right kind of property.
-	if(yAxisProperty().containerClass() != subject().dataClass())
-		throw Exception(tr("Modifier was set to operate on '%1', but the selected input is a '%2' property.")
-			.arg(subject().dataClass()->pythonName()).arg(yAxisProperty().containerClass()->propertyClassDisplayName()));
+    // Check if the source property is the right kind of property.
+    if(yAxisProperty().containerClass() != subject().dataClass())
+        throw Exception(tr("Modifier was set to operate on '%1', but the selected input is a '%2' property.")
+            .arg(subject().dataClass()->pythonName()).arg(yAxisProperty().containerClass()->propertyClassDisplayName()));
 
-	// Look up the property container object.
-	const PropertyContainer* container = state.expectLeafObject(subject());
-	container->verifyIntegrity();
+    // Look up the property container object.
+    const PropertyContainer* container = state.expectLeafObject(subject());
+    container->verifyIntegrity();
 
-	// Get the input properties.
-	const PropertyObject* xProperty = xAxisProperty().findInContainer(container);
-	if(!xProperty)
-		throw Exception(tr("The selected input property '%1' is not present.").arg(xAxisProperty().name()));
-	const PropertyObject* yProperty = yAxisProperty().findInContainer(container);
-	if(!yProperty)
-		throw Exception(tr("The selected input property '%1' is not present.").arg(yAxisProperty().name()));
+    // Get the input properties.
+    const PropertyObject* xProperty = xAxisProperty().findInContainer(container);
+    if(!xProperty)
+        throw Exception(tr("The selected input property '%1' is not present.").arg(xAxisProperty().name()));
+    const PropertyObject* yProperty = yAxisProperty().findInContainer(container);
+    if(!yProperty)
+        throw Exception(tr("The selected input property '%1' is not present.").arg(yAxisProperty().name()));
 
-	size_t xVecComponent = std::max(0, xAxisProperty().vectorComponent());
-	size_t xVecComponentCount = xProperty->componentCount();
-	size_t yVecComponent = std::max(0, yAxisProperty().vectorComponent());
-	size_t yVecComponentCount = yProperty->componentCount();
-	if(xVecComponent >= xProperty->componentCount())
-		throw Exception(tr("The selected vector component is out of range. The property '%1' has only %2 components per element.").arg(xProperty->name()).arg(xProperty->componentCount()));
-	if(yVecComponent >= yProperty->componentCount())
-		throw Exception(tr("The selected vector component is out of range. The property '%1' has only %2 components per element.").arg(yProperty->name()).arg(yProperty->componentCount()));
+    size_t xVecComponent = std::max(0, xAxisProperty().vectorComponent());
+    size_t xVecComponentCount = xProperty->componentCount();
+    size_t yVecComponent = std::max(0, yAxisProperty().vectorComponent());
+    size_t yVecComponentCount = yProperty->componentCount();
+    if(xVecComponent >= xProperty->componentCount())
+        throw Exception(tr("The selected vector component is out of range. The property '%1' has only %2 components per element.").arg(xProperty->name()).arg(xProperty->componentCount()));
+    if(yVecComponent >= yProperty->componentCount())
+        throw Exception(tr("The selected vector component is out of range. The property '%1' has only %2 components per element.").arg(yProperty->name()).arg(yProperty->componentCount()));
 
-	// Get selection ranges.
-	FloatType selectionXAxisRangeStart = this->selectionXAxisRangeStart();
-	FloatType selectionXAxisRangeEnd = this->selectionXAxisRangeEnd();
-	FloatType selectionYAxisRangeStart = this->selectionYAxisRangeStart();
-	FloatType selectionYAxisRangeEnd = this->selectionYAxisRangeEnd();
-	if(selectionXAxisRangeStart > selectionXAxisRangeEnd)
-		std::swap(selectionXAxisRangeStart, selectionXAxisRangeEnd);
-	if(selectionYAxisRangeStart > selectionYAxisRangeEnd)
-		std::swap(selectionYAxisRangeStart, selectionYAxisRangeEnd);
+    // Get selection ranges.
+    FloatType selectionXAxisRangeStart = this->selectionXAxisRangeStart();
+    FloatType selectionXAxisRangeEnd = this->selectionXAxisRangeEnd();
+    FloatType selectionYAxisRangeStart = this->selectionYAxisRangeStart();
+    FloatType selectionYAxisRangeEnd = this->selectionYAxisRangeEnd();
+    if(selectionXAxisRangeStart > selectionXAxisRangeEnd)
+        std::swap(selectionXAxisRangeStart, selectionXAxisRangeEnd);
+    if(selectionYAxisRangeStart > selectionYAxisRangeEnd)
+        std::swap(selectionYAxisRangeStart, selectionYAxisRangeEnd);
 
-	// Create output selection.
-	PropertyAccess<int> outputSelection;
-	size_t numSelected = 0;
-	if((selectXAxisInRange() || selectYAxisInRange()) && container->getOOMetaClass().isValidStandardPropertyId(PropertyObject::GenericSelectionProperty)) {
-		// First make sure we can safely modify the property container.
-		PropertyContainer* mutableContainer = state.expectMutableLeafObject(subject());
-		// Add the selection property to the output container.
-		outputSelection = mutableContainer->createProperty(PropertyObject::GenericSelectionProperty);
-		boost::fill(outputSelection, 1);
-		numSelected = outputSelection.size();
-	}
+    // Create output selection.
+    PropertyAccess<int> outputSelection;
+    size_t numSelected = 0;
+    if((selectXAxisInRange() || selectYAxisInRange()) && container->getOOMetaClass().isValidStandardPropertyId(PropertyObject::GenericSelectionProperty)) {
+        // First make sure we can safely modify the property container.
+        PropertyContainer* mutableContainer = state.expectMutableLeafObject(subject());
+        // Add the selection property to the output container.
+        outputSelection = mutableContainer->createProperty(PropertyObject::GenericSelectionProperty);
+        boost::fill(outputSelection, 1);
+        numSelected = outputSelection.size();
+    }
 
-	// Create output arrays.
-	PropertyAccessAndRef<FloatType> out_x = DataTable::OOClass().createUserProperty(container->elementCount(), PropertyObject::Float, 1, xAxisProperty().nameWithComponent());
-	PropertyAccessAndRef<FloatType> out_y = DataTable::OOClass().createUserProperty(container->elementCount(), PropertyObject::Float, 1, yAxisProperty().nameWithComponent());
+    // Create output arrays.
+    PropertyAccessAndRef<FloatType> out_x = DataTable::OOClass().createUserProperty(container->elementCount(), PropertyObject::Float, 1, xAxisProperty().nameWithComponent());
+    PropertyAccessAndRef<FloatType> out_y = DataTable::OOClass().createUserProperty(container->elementCount(), PropertyObject::Float, 1, yAxisProperty().nameWithComponent());
 
-	// Collect X coordinates.
-	if(!xProperty->copyTo(out_x.begin(), xVecComponent))
-		throw Exception(tr("Failed to extract coordinate values from input property for x-axis."));
+    // Collect X coordinates.
+    if(!xProperty->copyTo(out_x.begin(), xVecComponent))
+        throw Exception(tr("Failed to extract coordinate values from input property for x-axis."));
 
-	// Collect Y coordinates.
-	if(!yProperty->copyTo(out_y.begin(), yVecComponent))
-		throw Exception(tr("Failed to extract coordinate values from input property for y-axis."));
+    // Collect Y coordinates.
+    if(!yProperty->copyTo(out_y.begin(), yVecComponent))
+        throw Exception(tr("Failed to extract coordinate values from input property for y-axis."));
 
-	if(outputSelection && selectXAxisInRange()) {
-		int* s = outputSelection.begin();
-		for(FloatType x : out_x) {
-			if(x < selectionXAxisRangeStart || x > selectionXAxisRangeEnd) {
-				*s = 0;
-				numSelected--;
-			}
-			++s;
-		}
-	}
+    if(outputSelection && selectXAxisInRange()) {
+        int* s = outputSelection.begin();
+        for(FloatType x : out_x) {
+            if(x < selectionXAxisRangeStart || x > selectionXAxisRangeEnd) {
+                *s = 0;
+                numSelected--;
+            }
+            ++s;
+        }
+    }
 
-	if(outputSelection && selectYAxisInRange()) {
-		int* s = outputSelection.begin();
-		for(FloatType y : out_y) {
-			if(y < selectionYAxisRangeStart || y > selectionYAxisRangeEnd) {
-				if(*s) {
-					*s = 0;
-					numSelected--;
-				}
-			}
-			++s;
-		}
-	}
+    if(outputSelection && selectYAxisInRange()) {
+        int* s = outputSelection.begin();
+        for(FloatType y : out_y) {
+            if(y < selectionYAxisRangeStart || y > selectionYAxisRangeEnd) {
+                if(*s) {
+                    *s = 0;
+                    numSelected--;
+                }
+            }
+            ++s;
+        }
+    }
 
-	// Output a data table object with the scatter points.
-	DataTable* table = state.createObject<DataTable>(QStringLiteral("scatter"), request.modApp(),
-		DataTable::Scatter, tr("%1 vs. %2").arg(yAxisProperty().nameWithComponent()).arg(xAxisProperty().nameWithComponent()),
-		out_y.take(), out_x.take());
-	OVITO_ASSERT(table == state.getObjectBy<DataTable>(request.modApp(), QStringLiteral("scatter")));
+    // Output a data table object with the scatter points.
+    DataTable* table = state.createObject<DataTable>(QStringLiteral("scatter"), request.modApp(),
+        DataTable::Scatter, tr("%1 vs. %2").arg(yAxisProperty().nameWithComponent()).arg(xAxisProperty().nameWithComponent()),
+        out_y.take(), out_x.take());
+    OVITO_ASSERT(table == state.getObjectBy<DataTable>(request.modApp(), QStringLiteral("scatter")));
 
-	QString statusMessage;
-	if(outputSelection) {
-		statusMessage = tr("%1 %2 selected (%3%)").arg(numSelected)
-				.arg(container->getOOMetaClass().elementDescriptionName())
-				.arg((FloatType)numSelected * 100 / std::max((size_t)1,outputSelection.size()), 0, 'f', 1);
-	}
+    QString statusMessage;
+    if(outputSelection) {
+        statusMessage = tr("%1 %2 selected (%3%)").arg(numSelected)
+                .arg(container->getOOMetaClass().elementDescriptionName())
+                .arg((FloatType)numSelected * 100 / std::max((size_t)1,outputSelection.size()), 0, 'f', 1);
+    }
 
-	state.setStatus(PipelineStatus(std::move(statusMessage)));
+    state.setStatus(PipelineStatus(std::move(statusMessage)));
 }
 
-}	// End of namespace
+}   // End of namespace

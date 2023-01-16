@@ -225,4 +225,4 @@ void StatusBar::resizeEvent(QResizeEvent* event)
     QLabel::resizeEvent(event);
 }
 
-}	// End of namespace
+}   // End of namespace

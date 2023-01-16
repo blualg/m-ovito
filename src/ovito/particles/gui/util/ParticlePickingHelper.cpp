@@ -37,39 +37,39 @@ namespace Ovito::Particles {
 ******************************************************************************/
 bool ParticlePickingHelper::pickParticle(ViewportWindowInterface* vpwin, const QPoint& clickPoint, PickResult& result)
 {
-	ViewportPickResult vpPickResult = vpwin->pick(clickPoint);
-	// Check if user has clicked on something.
-	if(vpPickResult.isValid()) {
+    ViewportPickResult vpPickResult = vpwin->pick(clickPoint);
+    // Check if user has clicked on something.
+    if(vpPickResult.isValid()) {
 
-		// Check if that was a particle.
-		ParticlePickInfo* pickInfo = dynamic_object_cast<ParticlePickInfo>(vpPickResult.pickInfo());
-		if(pickInfo) {
-			const ParticlesObject* particles = pickInfo->particles();
-			ConstPropertyAccess<Point3> posProperty = particles->expectProperty(ParticlesObject::PositionProperty);
-			size_t particleIndex = pickInfo->particleIndexFromSubObjectID(vpPickResult.subobjectId());
-			if(posProperty && particleIndex < posProperty.size()) {
-				// Save reference to the selected particle.
-				TimeInterval iv;
-				AnimationTime time = vpwin->viewport()->scene()->animationSettings()->currentTime();
-				result.objNode = vpPickResult.pipelineNode();
-				result.particleIndex = particleIndex;
-				result.localPos = posProperty[result.particleIndex];
-				result.worldPos = result.objNode->getWorldTransform(time, iv) * result.localPos;
+        // Check if that was a particle.
+        ParticlePickInfo* pickInfo = dynamic_object_cast<ParticlePickInfo>(vpPickResult.pickInfo());
+        if(pickInfo) {
+            const ParticlesObject* particles = pickInfo->particles();
+            ConstPropertyAccess<Point3> posProperty = particles->expectProperty(ParticlesObject::PositionProperty);
+            size_t particleIndex = pickInfo->particleIndexFromSubObjectID(vpPickResult.subobjectId());
+            if(posProperty && particleIndex < posProperty.size()) {
+                // Save reference to the selected particle.
+                TimeInterval iv;
+                AnimationTime time = vpwin->viewport()->scene()->animationSettings()->currentTime();
+                result.objNode = vpPickResult.pipelineNode();
+                result.particleIndex = particleIndex;
+                result.localPos = posProperty[result.particleIndex];
+                result.worldPos = result.objNode->getWorldTransform(time, iv) * result.localPos;
 
-				// Determine particle ID.
-				ConstPropertyAccess<qlonglong> identifierProperty = particles->getProperty(ParticlesObject::IdentifierProperty);
-				if(identifierProperty && result.particleIndex < identifierProperty.size()) {
-					result.particleId = identifierProperty[result.particleIndex];
-				}
-				else result.particleId = -1;
+                // Determine particle ID.
+                ConstPropertyAccess<qlonglong> identifierProperty = particles->getProperty(ParticlesObject::IdentifierProperty);
+                if(identifierProperty && result.particleIndex < identifierProperty.size()) {
+                    result.particleId = identifierProperty[result.particleIndex];
+                }
+                else result.particleId = -1;
 
-				return true;
-			}
-		}
-	}
+                return true;
+            }
+        }
+    }
 
-	result.objNode = nullptr;
-	return false;
+    result.objNode = nullptr;
+    return false;
 }
 
 /******************************************************************************
@@ -77,40 +77,40 @@ bool ParticlePickingHelper::pickParticle(ViewportWindowInterface* vpwin, const Q
 ******************************************************************************/
 void ParticlePickingHelper::renderSelectionMarker(Viewport* vp, SceneRenderer* renderer, const PickResult& pickRecord)
 {
-	if(!pickRecord.objNode)
-		return;
+    if(!pickRecord.objNode)
+        return;
 
-	if(!renderer->isInteractive() || renderer->isPicking())
-		return;
+    if(!renderer->isInteractive() || renderer->isPicking())
+        return;
 
-	const PipelineFlowState& flowState = pickRecord.objNode->evaluatePipelineSynchronous(renderer->time(), true);
-	const ParticlesObject* particles = flowState.getObject<ParticlesObject>();
-	if(!particles) return;
+    const PipelineFlowState& flowState = pickRecord.objNode->evaluatePipelineSynchronous(renderer->time(), true);
+    const ParticlesObject* particles = flowState.getObject<ParticlesObject>();
+    if(!particles) return;
 
-	// If particle selection is based on ID, find particle with the given ID.
-	size_t particleIndex = pickRecord.particleIndex;
-	if(pickRecord.particleId >= 0) {
-		if(ConstPropertyAccess<qlonglong> identifierProperty = particles->getProperty(ParticlesObject::IdentifierProperty)) {
-			if(particleIndex >= identifierProperty.size() || identifierProperty[particleIndex] != pickRecord.particleId) {
-				auto iter = boost::find(identifierProperty, pickRecord.particleId);
-				if(iter == identifierProperty.cend()) return;
-				particleIndex = (iter - identifierProperty.cbegin());
-			}
-		}
-	}
+    // If particle selection is based on ID, find particle with the given ID.
+    size_t particleIndex = pickRecord.particleIndex;
+    if(pickRecord.particleId >= 0) {
+        if(ConstPropertyAccess<qlonglong> identifierProperty = particles->getProperty(ParticlesObject::IdentifierProperty)) {
+            if(particleIndex >= identifierProperty.size() || identifierProperty[particleIndex] != pickRecord.particleId) {
+                auto iter = boost::find(identifierProperty, pickRecord.particleId);
+                if(iter == identifierProperty.cend()) return;
+                particleIndex = (iter - identifierProperty.cbegin());
+            }
+        }
+    }
 
-	// Get the particle vis element, which is attached to the position property object.
-	ParticlesVis* particleVis = particles->visElement<ParticlesVis>();
-	if(!particleVis)
-		return;
+    // Get the particle vis element, which is attached to the position property object.
+    ParticlesVis* particleVis = particles->visElement<ParticlesVis>();
+    if(!particleVis)
+        return;
 
-	// Set up transformation.
-	TimeInterval iv;
-	const AffineTransformation& nodeTM = pickRecord.objNode->getWorldTransform(renderer->time(), iv);
-	renderer->setWorldTransform(nodeTM);
+    // Set up transformation.
+    TimeInterval iv;
+    const AffineTransformation& nodeTM = pickRecord.objNode->getWorldTransform(renderer->time(), iv);
+    renderer->setWorldTransform(nodeTM);
 
-	// Render highlight marker.
-	particleVis->highlightParticle(particleIndex, particles, renderer);
+    // Render highlight marker.
+    particleVis->highlightParticle(particleIndex, particles, renderer);
 }
 
-}	// End of namespace
+}   // End of namespace

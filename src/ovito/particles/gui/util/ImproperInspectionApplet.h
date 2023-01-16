@@ -35,19 +35,19 @@ namespace Ovito::Particles {
  */
 class ImproperInspectionApplet : public PropertyInspectionApplet
 {
-	OVITO_CLASS(ImproperInspectionApplet)
-	Q_CLASSINFO("DisplayName", "Impropers");
+    OVITO_CLASS(ImproperInspectionApplet)
+    Q_CLASSINFO("DisplayName", "Impropers");
 
 public:
 
-	/// Constructor.
-	Q_INVOKABLE ImproperInspectionApplet() : PropertyInspectionApplet(ImpropersObject::OOClass()) {}
+    /// Constructor.
+    Q_INVOKABLE ImproperInspectionApplet() : PropertyInspectionApplet(ImpropersObject::OOClass()) {}
 
-	/// Returns the key value for this applet that is used for ordering the applet tabs.
-	virtual int orderingKey() const override { return 17; }
+    /// Returns the key value for this applet that is used for ordering the applet tabs.
+    virtual int orderingKey() const override { return 17; }
 
-	/// Lets the applet create the UI widget that is to be placed into the data inspector panel.
-	virtual QWidget* createWidget() override;
+    /// Lets the applet create the UI widget that is to be placed into the data inspector panel.
+    virtual QWidget* createWidget() override;
 };
 
-}	// End of namespace
+}   // End of namespace

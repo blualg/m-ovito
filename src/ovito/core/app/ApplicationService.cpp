@@ -27,4 +27,4 @@ namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(ApplicationService);
 
-}	// End of namespace
+}   // End of namespace

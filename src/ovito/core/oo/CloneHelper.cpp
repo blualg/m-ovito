@@ -38,31 +38,31 @@ namespace Ovito {
 ******************************************************************************/
 RefTarget* CloneHelper::cloneObjectImpl(const RefTarget* obj, bool deepCopy)
 {
-	OVITO_ASSERT(ExecutionContext::current().isValid());
+    OVITO_ASSERT(ExecutionContext::current().isValid());
 
-	if(obj == nullptr) 
-		return nullptr;
+    if(obj == nullptr) 
+        return nullptr;
 
-	OVITO_CHECK_OBJECT_POINTER(obj);
+    OVITO_CHECK_OBJECT_POINTER(obj);
 
-	if(RefTarget* clone = lookupCloneOf(obj))
-		return clone;
+    if(RefTarget* clone = lookupCloneOf(obj))
+        return clone;
 
-	// Never generate undo records for a cloning operation.
-	UndoSuspender noUndo;
+    // Never generate undo records for a cloning operation.
+    UndoSuspender noUndo;
 
-	OORef<RefTarget> copy = obj->clone(deepCopy, *this);
-	if(!copy)
-		throw Exception(QString("Object of class %1 cannot be cloned. It does not implement the clone() method.").arg(obj->getOOClass().name()));
+    OORef<RefTarget> copy = obj->clone(deepCopy, *this);
+    if(!copy)
+        throw Exception(QString("Object of class %1 cannot be cloned. It does not implement the clone() method.").arg(obj->getOOClass().name()));
 
-	OVITO_ASSERT_MSG(copy->getOOClass().isDerivedFrom(obj->getOOClass()), "CloneHelper::cloneObject", qPrintable(QString("The clone method of class %1 did not return a compatible class instance.").arg(obj->getOOClass().name())));
+    OVITO_ASSERT_MSG(copy->getOOClass().isDerivedFrom(obj->getOOClass()), "CloneHelper::cloneObject", qPrintable(QString("The clone method of class %1 did not return a compatible class instance.").arg(obj->getOOClass().name())));
 
 #if QT_VERSION >= QT_VERSION_CHECK(6, 3, 0)
-	_cloneTable.emplace_back(obj, std::move(copy));
+    _cloneTable.emplace_back(obj, std::move(copy));
 #else
-	_cloneTable.push_back(std::make_pair(obj, std::move(copy)));
+    _cloneTable.push_back(std::make_pair(obj, std::move(copy)));
 #endif
-	return _cloneTable.back().second;
+    return _cloneTable.back().second;
 }
 
-}	// End of namespace
+}   // End of namespace

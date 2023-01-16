@@ -40,49 +40,49 @@ namespace Ovito::Particles {
  */
 class OVITO_PARTICLES_EXPORT VectorVis : public DataVis
 {
-	OVITO_CLASS(VectorVis)
-	Q_CLASSINFO("DisplayName", "Vectors");
+    OVITO_CLASS(VectorVis)
+    Q_CLASSINFO("DisplayName", "Vectors");
 
 public:
 
-	/// The shading modes supported by the vector vis element.
-	enum ShadingMode {
-		NormalShading = CylinderPrimitive::ShadingMode::NormalShading,
-		FlatShading = CylinderPrimitive::ShadingMode::FlatShading
-	};
-	Q_ENUM(ShadingMode);
+    /// The shading modes supported by the vector vis element.
+    enum ShadingMode {
+        NormalShading = CylinderPrimitive::ShadingMode::NormalShading,
+        FlatShading = CylinderPrimitive::ShadingMode::FlatShading
+    };
+    Q_ENUM(ShadingMode);
 
-	/// The position mode for the arrows.
-	enum ArrowPosition {
-		Base,
-		Center,
-		Head
-	};
-	Q_ENUM(ArrowPosition);
+    /// The position mode for the arrows.
+    enum ArrowPosition {
+        Base,
+        Center,
+        Head
+    };
+    Q_ENUM(ArrowPosition);
 
-	/// The coloring modes supported by the vis element.
-	enum ColoringMode {
-		UniformColoring,
-		PseudoColoring,
-	};
-	Q_ENUM(ColoringMode);	
+    /// The coloring modes supported by the vis element.
+    enum ColoringMode {
+        UniformColoring,
+        PseudoColoring,
+    };
+    Q_ENUM(ColoringMode);   
 
 public:
 
-	/// \brief Constructor.
-	Q_INVOKABLE VectorVis(ObjectCreationParams params);
+    /// \brief Constructor.
+    Q_INVOKABLE VectorVis(ObjectCreationParams params);
 
-	/// \brief Lets the visualization element render the data object.
-	virtual PipelineStatus render(AnimationTime time, const ConstDataObjectPath& path, const PipelineFlowState& flowState, SceneRenderer* renderer, const PipelineSceneNode* contextNode) override;
+    /// \brief Lets the visualization element render the data object.
+    virtual PipelineStatus render(AnimationTime time, const ConstDataObjectPath& path, const PipelineFlowState& flowState, SceneRenderer* renderer, const PipelineSceneNode* contextNode) override;
 
-	/// \brief Computes the bounding box of the object.
-	virtual Box3 boundingBox(AnimationTime time, const ConstDataObjectPath& path, const PipelineSceneNode* contextNode, const PipelineFlowState& flowState, MixedKeyCache& visCache, TimeInterval& validityInterval) override;
+    /// \brief Computes the bounding box of the object.
+    virtual Box3 boundingBox(AnimationTime time, const ConstDataObjectPath& path, const PipelineSceneNode* contextNode, const PipelineFlowState& flowState, MixedKeyCache& visCache, TimeInterval& validityInterval) override;
 
-	/// Returns the transparency parameter.
-	FloatType transparency() const { return transparencyController()->getFloatValue(AnimationTime(0)); }
+    /// Returns the transparency parameter.
+    FloatType transparency() const { return transparencyController()->getFloatValue(AnimationTime(0)); }
 
-	/// Sets the transparency parameter.
-	void setTransparency(FloatType t) { transparencyController()->setFloatValue(AnimationTime(0), t); }
+    /// Sets the transparency parameter.
+    void setTransparency(FloatType t) { transparencyController()->setFloatValue(AnimationTime(0), t); }
 
 public:
 
@@ -90,49 +90,49 @@ public:
 
 protected:
 
-	/// Computes the bounding box of the arrows.
-	Box3 arrowBoundingBox(const DataBuffer* vectorProperty, const DataBuffer* basePositions) const;
+    /// Computes the bounding box of the arrows.
+    Box3 arrowBoundingBox(const DataBuffer* vectorProperty, const DataBuffer* basePositions) const;
 
-	/// This method is called once for this object after it has been completely loaded from a stream.
-	virtual void loadFromStreamComplete(ObjectLoadStream& stream) override;
+    /// This method is called once for this object after it has been completely loaded from a stream.
+    virtual void loadFromStreamComplete(ObjectLoadStream& stream) override;
 
 protected:
 
-	/// Reverses of the arrow pointing direction.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, reverseArrowDirection, setReverseArrowDirection);
-	DECLARE_SHADOW_PROPERTY_FIELD(reverseArrowDirection);
+    /// Reverses of the arrow pointing direction.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, reverseArrowDirection, setReverseArrowDirection);
+    DECLARE_SHADOW_PROPERTY_FIELD(reverseArrowDirection);
 
-	/// Controls how the arrows are positioned relative to the base points.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(ArrowPosition, arrowPosition, setArrowPosition, PROPERTY_FIELD_MEMORIZE);
-	DECLARE_SHADOW_PROPERTY_FIELD(arrowPosition);
+    /// Controls how the arrows are positioned relative to the base points.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(ArrowPosition, arrowPosition, setArrowPosition, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_SHADOW_PROPERTY_FIELD(arrowPosition);
 
-	/// The uniform display color of the arrows.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(Color, arrowColor, setArrowColor, PROPERTY_FIELD_MEMORIZE);
-	DECLARE_SHADOW_PROPERTY_FIELD(arrowColor);
+    /// The uniform display color of the arrows.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(Color, arrowColor, setArrowColor, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_SHADOW_PROPERTY_FIELD(arrowColor);
 
-	/// The width of the arrows in world units.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType, arrowWidth, setArrowWidth, PROPERTY_FIELD_MEMORIZE);
-	DECLARE_SHADOW_PROPERTY_FIELD(arrowWidth);
+    /// The width of the arrows in world units.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType, arrowWidth, setArrowWidth, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_SHADOW_PROPERTY_FIELD(arrowWidth);
 
-	/// The scaling factor applied to the vectors.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType, scalingFactor, setScalingFactor, PROPERTY_FIELD_MEMORIZE);
-	DECLARE_SHADOW_PROPERTY_FIELD(scalingFactor);
+    /// The scaling factor applied to the vectors.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType, scalingFactor, setScalingFactor, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_SHADOW_PROPERTY_FIELD(scalingFactor);
 
-	/// The shading mode for arrows.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(VectorVis::ShadingMode, shadingMode, setShadingMode, PROPERTY_FIELD_MEMORIZE);
-	DECLARE_SHADOW_PROPERTY_FIELD(shadingMode);
+    /// The shading mode for arrows.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(VectorVis::ShadingMode, shadingMode, setShadingMode, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_SHADOW_PROPERTY_FIELD(shadingMode);
 
-	/// The transparency value of the arrows.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD(OORef<Controller>, transparencyController, setTransparencyController);
+    /// The transparency value of the arrows.
+    DECLARE_MODIFIABLE_REFERENCE_FIELD(OORef<Controller>, transparencyController, setTransparencyController);
 
-	/// Displacement offset to be applied to all arrows.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD(Vector3, offset, setOffset);
+    /// Displacement offset to be applied to all arrows.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(Vector3, offset, setOffset);
 
-	/// Determines how the arrows are colored.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD(VectorVis::ColoringMode, coloringMode, setColoringMode);
+    /// Determines how the arrows are colored.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(VectorVis::ColoringMode, coloringMode, setColoringMode);
 
-	/// Transfer function for pseudo-color visualization of an auxiliary property.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD(OORef<PropertyColorMapping>, colorMapping, setColorMapping);
+    /// Transfer function for pseudo-color visualization of an auxiliary property.
+    DECLARE_MODIFIABLE_REFERENCE_FIELD(OORef<PropertyColorMapping>, colorMapping, setColorMapping);
 };
 
 /**
@@ -141,31 +141,31 @@ protected:
  */
 class OVITO_PARTICLES_EXPORT VectorPickInfo : public ObjectPickInfo
 {
-	OVITO_CLASS(VectorPickInfo)
+    OVITO_CLASS(VectorPickInfo)
 
 public:
 
-	/// Constructor.
-	VectorPickInfo(VectorVis* visElement, const ConstDataObjectPath& dataPath) :
-		_visElement(visElement), _dataPath(dataPath.begin(), dataPath.end()) {}
+    /// Constructor.
+    VectorPickInfo(VectorVis* visElement, const ConstDataObjectPath& dataPath) :
+        _visElement(visElement), _dataPath(dataPath.begin(), dataPath.end()) {}
 
-	/// Returns the data collection path to the vector property.
-	const ConstDataObjectRefPath& dataPath() const { return _dataPath; }
+    /// Returns the data collection path to the vector property.
+    const ConstDataObjectRefPath& dataPath() const { return _dataPath; }
 
-	/// Returns a human-readable string describing the picked object, which will be displayed in the status bar by OVITO.
-	virtual QString infoString(PipelineSceneNode* objectNode, quint32 subobjectId) override;
+    /// Returns a human-readable string describing the picked object, which will be displayed in the status bar by OVITO.
+    virtual QString infoString(PipelineSceneNode* objectNode, quint32 subobjectId) override;
 
-	/// Given an sub-object ID returned by the Viewport::pick() method, looks up the
-	/// corresponding data element index.
-	size_t elementIndexFromSubObjectID(quint32 subobjID) const;
+    /// Given an sub-object ID returned by the Viewport::pick() method, looks up the
+    /// corresponding data element index.
+    size_t elementIndexFromSubObjectID(quint32 subobjID) const;
 
 private:
 
-	/// The vis element that rendered the arrows.
-	OORef<VectorVis> _visElement;
+    /// The vis element that rendered the arrows.
+    OORef<VectorVis> _visElement;
 
-	/// The data collection path to the vector property.
-	ConstDataObjectRefPath _dataPath;
+    /// The data collection path to the vector property.
+    ConstDataObjectRefPath _dataPath;
 };
 
-}	// End of namespace
+}   // End of namespace

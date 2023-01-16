@@ -40,7 +40,7 @@ IMPLEMENT_OVITO_CLASS(GlobalAttributesInspectionApplet);
 ******************************************************************************/
 bool GlobalAttributesInspectionApplet::appliesTo(const DataCollection& data)
 {
-	return data.containsObject<AttributeDataObject>();
+    return data.containsObject<AttributeDataObject>();
 }
 
 /******************************************************************************
@@ -49,31 +49,31 @@ bool GlobalAttributesInspectionApplet::appliesTo(const DataCollection& data)
 ******************************************************************************/
 QWidget* GlobalAttributesInspectionApplet::createWidget()
 {
-	QWidget* panel = new QWidget();
-	QHBoxLayout* layout = new QHBoxLayout(panel);
-	layout->setContentsMargins(0,0,0,0);
-	layout->setSpacing(0);
+    QWidget* panel = new QWidget();
+    QHBoxLayout* layout = new QHBoxLayout(panel);
+    layout->setContentsMargins(0,0,0,0);
+    layout->setSpacing(0);
 
-	QToolBar* toolbar = new QToolBar();
-	toolbar->setOrientation(Qt::Vertical);
-	toolbar->setToolButtonStyle(Qt::ToolButtonIconOnly);
-	toolbar->setIconSize(QSize(22,22));
+    QToolBar* toolbar = new QToolBar();
+    toolbar->setOrientation(Qt::Vertical);
+    toolbar->setToolButtonStyle(Qt::ToolButtonIconOnly);
+    toolbar->setIconSize(QSize(22,22));
 
-	QAction* exportToFileAction = new QAction(QIcon::fromTheme("file_save_as"), tr("Export attributes to text file"), this);
-	connect(exportToFileAction, &QAction::triggered, this, &GlobalAttributesInspectionApplet::exportToFile);
-	toolbar->addAction(exportToFileAction);
+    QAction* exportToFileAction = new QAction(QIcon::fromTheme("file_save_as"), tr("Export attributes to text file"), this);
+    connect(exportToFileAction, &QAction::triggered, this, &GlobalAttributesInspectionApplet::exportToFile);
+    toolbar->addAction(exportToFileAction);
 
-	_tableView = new TableView();
-	_tableModel = new AttributeTableModel(_tableView);
-	_tableView->setModel(_tableModel);
-	_tableView->verticalHeader()->hide();
-	_tableView->horizontalHeader()->resizeSection(0, 180);
-	_tableView->horizontalHeader()->setStretchLastSection(true);
+    _tableView = new TableView();
+    _tableModel = new AttributeTableModel(_tableView);
+    _tableView->setModel(_tableModel);
+    _tableView->verticalHeader()->hide();
+    _tableView->horizontalHeader()->resizeSection(0, 180);
+    _tableView->horizontalHeader()->setStretchLastSection(true);
 
-	layout->addWidget(_tableView, 1);
-	layout->addWidget(toolbar, 0);
+    layout->addWidget(_tableView, 1);
+    layout->addWidget(toolbar, 0);
 
-	return panel;
+    return panel;
 }
 
 /******************************************************************************
@@ -81,8 +81,8 @@ QWidget* GlobalAttributesInspectionApplet::createWidget()
 ******************************************************************************/
 void GlobalAttributesInspectionApplet::updateDisplay()
 {
-	DataInspectionApplet::updateDisplay();
-	_tableModel->setContents(currentState().data());
+    DataInspectionApplet::updateDisplay();
+    _tableModel->setContents(currentState().data());
 }
 
 /******************************************************************************
@@ -90,20 +90,20 @@ void GlobalAttributesInspectionApplet::updateDisplay()
 ******************************************************************************/
 bool GlobalAttributesInspectionApplet::selectDataObject(PipelineObject* dataSource, const QString& objectIdentifierHint, const QVariant& modeHint)
 {
-	for(size_t i = 0; i < _tableModel->attributes().size(); i++) {
-		const auto& attr = _tableModel->attributes()[i];
-		if(attr->dataSource() == dataSource) {
-			if(objectIdentifierHint.isEmpty() || attr->identifier().startsWith(objectIdentifierHint)) {
-				// Note: Defer selecting the table row to a somewhat later time, because QTableView only accepts
-				// selection calls when it's visible and after the parent widget has been enabled.
-				QTimer::singleShot(0, this, [this,i]() {
-					_tableView->selectRow(i);
-				});
-				return true;
-			}
-		}
-	}
-	return false;
+    for(size_t i = 0; i < _tableModel->attributes().size(); i++) {
+        const auto& attr = _tableModel->attributes()[i];
+        if(attr->dataSource() == dataSource) {
+            if(objectIdentifierHint.isEmpty() || attr->identifier().startsWith(objectIdentifierHint)) {
+                // Note: Defer selecting the table row to a somewhat later time, because QTableView only accepts
+                // selection calls when it's visible and after the parent widget has been enabled.
+                QTimer::singleShot(0, this, [this,i]() {
+                    _tableView->selectRow(i);
+                });
+                return true;
+            }
+        }
+    }
+    return false;
 }
 
 /******************************************************************************
@@ -111,57 +111,57 @@ bool GlobalAttributesInspectionApplet::selectDataObject(PipelineObject* dataSour
 ******************************************************************************/
 void GlobalAttributesInspectionApplet::exportToFile()
 {
-	if(!currentPipeline())
-		return;
+    if(!currentPipeline())
+        return;
 
-	// Let the user select a destination file.
-	HistoryFileDialog dialog("export", &mainWindow(), tr("Export Attributes"));
-	QString filterString = QStringLiteral("%1 (%2)").arg(AttributeFileExporter::OOClass().fileFilterDescription(), AttributeFileExporter::OOClass().fileFilter());
-	dialog.setNameFilter(filterString);
-	dialog.setOption(QFileDialog::DontUseNativeDialog);
-	dialog.setAcceptMode(QFileDialog::AcceptSave);
-	dialog.setFileMode(QFileDialog::AnyFile);
+    // Let the user select a destination file.
+    HistoryFileDialog dialog("export", &mainWindow(), tr("Export Attributes"));
+    QString filterString = QStringLiteral("%1 (%2)").arg(AttributeFileExporter::OOClass().fileFilterDescription(), AttributeFileExporter::OOClass().fileFilter());
+    dialog.setNameFilter(filterString);
+    dialog.setOption(QFileDialog::DontUseNativeDialog);
+    dialog.setAcceptMode(QFileDialog::AcceptSave);
+    dialog.setFileMode(QFileDialog::AnyFile);
 
-	// Go to the last directory used.
-	QSettings settings;
-	settings.beginGroup("file/export");
-	QString lastExportDirectory = settings.value("last_export_dir").toString();
-	if(!lastExportDirectory.isEmpty())
-		dialog.setDirectory(lastExportDirectory);
+    // Go to the last directory used.
+    QSettings settings;
+    settings.beginGroup("file/export");
+    QString lastExportDirectory = settings.value("last_export_dir").toString();
+    if(!lastExportDirectory.isEmpty())
+        dialog.setDirectory(lastExportDirectory);
 
-	if(!dialog.exec() || dialog.selectedFiles().empty())
-		return;
-	QString exportFile = dialog.selectedFiles().front();
+    if(!dialog.exec() || dialog.selectedFiles().empty())
+        return;
+    QString exportFile = dialog.selectedFiles().front();
 
-	// Remember directory for the next time...
-	settings.setValue("last_export_dir", dialog.directory().absolutePath());
+    // Remember directory for the next time...
+    settings.setValue("last_export_dir", dialog.directory().absolutePath());
 
-	// Export to selected file.
-	mainWindow().handleExceptions([&] {
-		// Create exporter service.
-		OORef<AttributeFileExporter> exporter = OORef<AttributeFileExporter>::create();
+    // Export to selected file.
+    mainWindow().handleExceptions([&] {
+        // Create exporter service.
+        OORef<AttributeFileExporter> exporter = OORef<AttributeFileExporter>::create();
 
-		// Pass output filename to exporter.
-		exporter->setOutputFilename(exportFile);
+        // Pass output filename to exporter.
+        exporter->setOutputFilename(exportFile);
 
-		// Set scene node to be exported.
-		exporter->setNodeToExport(currentPipeline());
+        // Set scene node to be exported.
+        exporter->setNodeToExport(currentPipeline());
 
-		// If the exporter supports it, automatically choose the data object(s) to be exported.
-		exporter->selectDefaultExportableData(mainWindow().datasetContainer().currentSet(), currentPipeline()->scene());
-		OVITO_ASSERT(exporter->sceneToExport());
+        // If the exporter supports it, automatically choose the data object(s) to be exported.
+        exporter->selectDefaultExportableData(mainWindow().datasetContainer().currentSet(), currentPipeline()->scene());
+        OVITO_ASSERT(exporter->sceneToExport());
 
-		// Let the user adjust the export settings.
-		FileExporterSettingsDialog settingsDialog(mainWindow(), *exporter->sceneToExport(), exporter, &mainWindow());
-		if(settingsDialog.exec() != QDialog::Accepted)
-			return;
+        // Let the user adjust the export settings.
+        FileExporterSettingsDialog settingsDialog(mainWindow(), *exporter->sceneToExport(), exporter, &mainWindow());
+        if(settingsDialog.exec() != QDialog::Accepted)
+            return;
 
-		// Show progress dialog.
-		ProgressDialog progressDialog(&mainWindow(), tr("File export"));
+        // Show progress dialog.
+        ProgressDialog progressDialog(&mainWindow(), tr("File export"));
 
-		// Let the exporter do its job.
-		exporter->doExport(MainThreadOperation(true));
-	});
+        // Let the exporter do its job.
+        exporter->doExport(MainThreadOperation(true));
+    });
 }
 
-}	// End of namespace
+}   // End of namespace

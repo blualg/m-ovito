@@ -35,32 +35,32 @@ using namespace Ovito::StdMod;
  */
 class VoxelGridReplicateModifierDelegate : public ReplicateModifierDelegate
 {
-	/// Give the modifier delegate its own metaclass.
-	class OOMetaClass : public ReplicateModifierDelegate::OOMetaClass
-	{
-	public:
+    /// Give the modifier delegate its own metaclass.
+    class OOMetaClass : public ReplicateModifierDelegate::OOMetaClass
+    {
+    public:
 
-		/// Inherit constructor from base class.
-		using ReplicateModifierDelegate::OOMetaClass::OOMetaClass;
+        /// Inherit constructor from base class.
+        using ReplicateModifierDelegate::OOMetaClass::OOMetaClass;
 
-		/// Indicates which data objects in the given input data collection the modifier delegate is able to operate on.
-		virtual QVector<DataObjectReference> getApplicableObjects(const DataCollection& input) const override;
+        /// Indicates which data objects in the given input data collection the modifier delegate is able to operate on.
+        virtual QVector<DataObjectReference> getApplicableObjects(const DataCollection& input) const override;
 
-		/// The name by which Python scripts can refer to this modifier delegate.
-		virtual QString pythonDataName() const override { return QStringLiteral("voxels"); }
-	};
+        /// The name by which Python scripts can refer to this modifier delegate.
+        virtual QString pythonDataName() const override { return QStringLiteral("voxels"); }
+    };
 
-	OVITO_CLASS_META(VoxelGridReplicateModifierDelegate, OOMetaClass)
+    OVITO_CLASS_META(VoxelGridReplicateModifierDelegate, OOMetaClass)
 
-	Q_CLASSINFO("DisplayName", "Voxel grids");
+    Q_CLASSINFO("DisplayName", "Voxel grids");
 
 public:
 
-	/// Constructor.
-	Q_INVOKABLE VoxelGridReplicateModifierDelegate(ObjectCreationParams params) : ReplicateModifierDelegate(params) {}
+    /// Constructor.
+    Q_INVOKABLE VoxelGridReplicateModifierDelegate(ObjectCreationParams params) : ReplicateModifierDelegate(params) {}
 
-	/// Applies the modifier operation to the data in a pipeline flow state.
-	virtual PipelineStatus apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const PipelineFlowState& inputState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs) override;
+    /// Applies the modifier operation to the data in a pipeline flow state.
+    virtual PipelineStatus apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const PipelineFlowState& inputState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs) override;
 };
 
-}	// End of namespace
+}   // End of namespace

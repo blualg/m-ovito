@@ -37,122 +37,122 @@ IMPLEMENT_OVITO_CLASS(FileSourcePlaybackRateEditor);
 ******************************************************************************/
 void FileSourcePlaybackRateEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 {
-	// Create another rollout for animation control.
-	QWidget* rollout = createRollout(tr("Animation"), rolloutParams, "manual:scene_objects.file_source.configure_playback");
+    // Create another rollout for animation control.
+    QWidget* rollout = createRollout(tr("Animation"), rolloutParams, "manual:scene_objects.file_source.configure_playback");
 
-	// Create the rollout contents.
-	QVBoxLayout* layout = new QVBoxLayout(rollout);
-	layout->setContentsMargins(4,4,4,4);
-	layout->setSpacing(8);
+    // Create the rollout contents.
+    QVBoxLayout* layout = new QVBoxLayout(rollout);
+    layout->setContentsMargins(4,4,4,4);
+    layout->setSpacing(8);
 
-	_trajectoryModeBtn = new QRadioButton(tr("Animated trajectory:"));
-	layout->addWidget(_trajectoryModeBtn);
+    _trajectoryModeBtn = new QRadioButton(tr("Animated trajectory:"));
+    layout->addWidget(_trajectoryModeBtn);
 
-	QGridLayout* sublayout = new QGridLayout();
-	sublayout->setContentsMargins(40,0,0,0);
-	sublayout->setSpacing(4);
-	sublayout->setColumnStretch(2, 1);
-	layout->addLayout(sublayout);
+    QGridLayout* sublayout = new QGridLayout();
+    sublayout->setContentsMargins(40,0,0,0);
+    sublayout->setSpacing(4);
+    sublayout->setColumnStretch(2, 1);
+    layout->addLayout(sublayout);
 
-	sublayout->addWidget(new QLabel(tr("Show")), 0, 0, Qt::AlignRight);
-	IntegerParameterUI* playbackSpeedNumeratorUI = new IntegerParameterUI(this, PROPERTY_FIELD(FileSource::playbackSpeedNumerator));
-	playbackSpeedNumeratorUI->setEnabled(false);
-	sublayout->addLayout(playbackSpeedNumeratorUI->createFieldLayout(), 0, 1);
-	sublayout->addWidget(new QLabel(tr("trajectory frame(s)")), 0, 2);
-	sublayout->addWidget(new QLabel(tr("per")), 1, 0, Qt::AlignRight);
-	IntegerParameterUI* playbackSpeedDenominatorUI = new IntegerParameterUI(this, PROPERTY_FIELD(FileSource::playbackSpeedDenominator));
-	playbackSpeedDenominatorUI->setEnabled(false);
-	sublayout->addLayout(playbackSpeedDenominatorUI->createFieldLayout(), 1, 1);
-	sublayout->addWidget(new QLabel(tr("animation frame(s)")), 1, 2);
-	sublayout->addWidget(new QLabel(tr("starting at animation frame")), 2, 0, Qt::AlignRight);
-	IntegerParameterUI* playbackStartUI = new IntegerParameterUI(this, PROPERTY_FIELD(FileSource::playbackStartTime));
-	playbackStartUI->setEnabled(false);
-	sublayout->addLayout(playbackStartUI->createFieldLayout(), 2, 1);
+    sublayout->addWidget(new QLabel(tr("Show")), 0, 0, Qt::AlignRight);
+    IntegerParameterUI* playbackSpeedNumeratorUI = new IntegerParameterUI(this, PROPERTY_FIELD(FileSource::playbackSpeedNumerator));
+    playbackSpeedNumeratorUI->setEnabled(false);
+    sublayout->addLayout(playbackSpeedNumeratorUI->createFieldLayout(), 0, 1);
+    sublayout->addWidget(new QLabel(tr("trajectory frame(s)")), 0, 2);
+    sublayout->addWidget(new QLabel(tr("per")), 1, 0, Qt::AlignRight);
+    IntegerParameterUI* playbackSpeedDenominatorUI = new IntegerParameterUI(this, PROPERTY_FIELD(FileSource::playbackSpeedDenominator));
+    playbackSpeedDenominatorUI->setEnabled(false);
+    sublayout->addLayout(playbackSpeedDenominatorUI->createFieldLayout(), 1, 1);
+    sublayout->addWidget(new QLabel(tr("animation frame(s)")), 1, 2);
+    sublayout->addWidget(new QLabel(tr("starting at animation frame")), 2, 0, Qt::AlignRight);
+    IntegerParameterUI* playbackStartUI = new IntegerParameterUI(this, PROPERTY_FIELD(FileSource::playbackStartTime));
+    playbackStartUI->setEnabled(false);
+    sublayout->addLayout(playbackStartUI->createFieldLayout(), 2, 1);
 
-	sublayout->setRowMinimumHeight(3, 10);
-	sublayout->addWidget(new QLabel(tr("Input trajectory length:")), 4, 0, Qt::AlignRight);
-	_numTrajectoryFramesDisplay = new QLabel();
-	sublayout->addWidget(_numTrajectoryFramesDisplay, 4, 1);
-	sublayout->addWidget(new QLabel(tr("Animation length:")), 5, 0, Qt::AlignRight);
-	_numAnimationFramesDisplay = new QLabel();
-	sublayout->addWidget(_numAnimationFramesDisplay, 5, 1);
+    sublayout->setRowMinimumHeight(3, 10);
+    sublayout->addWidget(new QLabel(tr("Input trajectory length:")), 4, 0, Qt::AlignRight);
+    _numTrajectoryFramesDisplay = new QLabel();
+    sublayout->addWidget(_numTrajectoryFramesDisplay, 4, 1);
+    sublayout->addWidget(new QLabel(tr("Animation length:")), 5, 0, Qt::AlignRight);
+    _numAnimationFramesDisplay = new QLabel();
+    sublayout->addWidget(_numAnimationFramesDisplay, 5, 1);
 
-	QPushButton* animSettingsBtn = new QPushButton(tr("Animation settings..."));
-	sublayout->addWidget(animSettingsBtn, 5, 2);
-	connect(animSettingsBtn, &QPushButton::clicked, this, [this]() {
-		if(editObject()) {
-			AnimationSettingsDialog(mainWindow(), container()->window()).exec();
-			updateInformation();
-		}
-	});
+    QPushButton* animSettingsBtn = new QPushButton(tr("Animation settings..."));
+    sublayout->addWidget(animSettingsBtn, 5, 2);
+    connect(animSettingsBtn, &QPushButton::clicked, this, [this]() {
+        if(editObject()) {
+            AnimationSettingsDialog(mainWindow(), container()->window()).exec();
+            updateInformation();
+        }
+    });
 
-	connect(_trajectoryModeBtn, &QRadioButton::toggled, playbackSpeedNumeratorUI, &IntegerParameterUI::setEnabled);
-	connect(_trajectoryModeBtn, &QRadioButton::toggled, playbackSpeedDenominatorUI, &IntegerParameterUI::setEnabled);
-	connect(_trajectoryModeBtn, &QRadioButton::toggled, playbackStartUI, &IntegerParameterUI::setEnabled);
-	connect(_trajectoryModeBtn, &QRadioButton::clicked, this, [&](bool checked) {
-		if(checked)
-			performTransaction(tr("Change trajectory playback"), [&]() {
-				if(FileSource* fileSource = static_object_cast<FileSource>(editObject()))
-					fileSource->setRestrictToFrame(-1);
-			});
-	});
+    connect(_trajectoryModeBtn, &QRadioButton::toggled, playbackSpeedNumeratorUI, &IntegerParameterUI::setEnabled);
+    connect(_trajectoryModeBtn, &QRadioButton::toggled, playbackSpeedDenominatorUI, &IntegerParameterUI::setEnabled);
+    connect(_trajectoryModeBtn, &QRadioButton::toggled, playbackStartUI, &IntegerParameterUI::setEnabled);
+    connect(_trajectoryModeBtn, &QRadioButton::clicked, this, [&](bool checked) {
+        if(checked)
+            performTransaction(tr("Change trajectory playback"), [&]() {
+                if(FileSource* fileSource = static_object_cast<FileSource>(editObject()))
+                    fileSource->setRestrictToFrame(-1);
+            });
+    });
 
-	_staticFrameModeBtn = new QRadioButton(tr("Extract a static frame:"));
-	layout->addSpacing(12);
-	layout->addWidget(_staticFrameModeBtn);
+    _staticFrameModeBtn = new QRadioButton(tr("Extract a static frame:"));
+    layout->addSpacing(12);
+    layout->addWidget(_staticFrameModeBtn);
 
-	sublayout = new QGridLayout();
-	sublayout->setContentsMargins(40,0,0,0);
-	sublayout->setSpacing(4);
-	sublayout->setColumnStretch(1, 1);
-	layout->addLayout(sublayout);
+    sublayout = new QGridLayout();
+    sublayout->setContentsMargins(40,0,0,0);
+    sublayout->setSpacing(4);
+    sublayout->setColumnStretch(1, 1);
+    layout->addLayout(sublayout);
 
-	_staticFrameNumberUI = new IntegerParameterUI(this, PROPERTY_FIELD(FileSource::restrictToFrame));
-	_staticFrameNumberUI->setEnabled(false);
-	sublayout->addLayout(_staticFrameNumberUI->createFieldLayout(), 0, 0);
-	_framesListBox = new QComboBox();
-	_framesListBox->setEditable(false);
-	_framesListBox->setEnabled(false);
-	sublayout->addWidget(_framesListBox, 0, 1);
-	// To improve performance of drop-down list display:
-	_framesListBox->setSizeAdjustPolicy(QComboBox::AdjustToMinimumContentsLengthWithIcon);
-	static_cast<QListView*>(_framesListBox->view())->setUniformItemSizes(true);
-	static_cast<QListView*>(_framesListBox->view())->setLayoutMode(QListView::Batched);
-	_framesListModel = new QStringListModel(this);
-	_framesListBox->setModel(_framesListModel);
-	connect(_framesListBox, qOverload<int>(&QComboBox::activated), this, [&](int index) {
-		performTransaction(tr("Change trajectory playback"), [&]() {
-			if(FileSource* fileSource = static_object_cast<FileSource>(editObject()))
-				fileSource->setRestrictToFrame(index);
-		});
-	});
+    _staticFrameNumberUI = new IntegerParameterUI(this, PROPERTY_FIELD(FileSource::restrictToFrame));
+    _staticFrameNumberUI->setEnabled(false);
+    sublayout->addLayout(_staticFrameNumberUI->createFieldLayout(), 0, 0);
+    _framesListBox = new QComboBox();
+    _framesListBox->setEditable(false);
+    _framesListBox->setEnabled(false);
+    sublayout->addWidget(_framesListBox, 0, 1);
+    // To improve performance of drop-down list display:
+    _framesListBox->setSizeAdjustPolicy(QComboBox::AdjustToMinimumContentsLengthWithIcon);
+    static_cast<QListView*>(_framesListBox->view())->setUniformItemSizes(true);
+    static_cast<QListView*>(_framesListBox->view())->setLayoutMode(QListView::Batched);
+    _framesListModel = new QStringListModel(this);
+    _framesListBox->setModel(_framesListModel);
+    connect(_framesListBox, qOverload<int>(&QComboBox::activated), this, [&](int index) {
+        performTransaction(tr("Change trajectory playback"), [&]() {
+            if(FileSource* fileSource = static_object_cast<FileSource>(editObject()))
+                fileSource->setRestrictToFrame(index);
+        });
+    });
 
-	connect(_staticFrameModeBtn, &QRadioButton::toggled, _framesListBox, &QComboBox::setEnabled);
-	connect(_staticFrameModeBtn, &QRadioButton::toggled, _staticFrameNumberUI, &IntegerParameterUI::setEnabled);
-	connect(_staticFrameModeBtn, &QRadioButton::clicked, this, [&](bool checked) {
-		if(checked)
-			performTransaction(tr("Change trajectory playback"), [&]() {
-				if(FileSource* fileSource = static_object_cast<FileSource>(editObject()))
-					fileSource->setRestrictToFrame(fileSource->dataCollectionFrame());
-			});
-	});
+    connect(_staticFrameModeBtn, &QRadioButton::toggled, _framesListBox, &QComboBox::setEnabled);
+    connect(_staticFrameModeBtn, &QRadioButton::toggled, _staticFrameNumberUI, &IntegerParameterUI::setEnabled);
+    connect(_staticFrameModeBtn, &QRadioButton::clicked, this, [&](bool checked) {
+        if(checked)
+            performTransaction(tr("Change trajectory playback"), [&]() {
+                if(FileSource* fileSource = static_object_cast<FileSource>(editObject()))
+                    fileSource->setRestrictToFrame(fileSource->dataCollectionFrame());
+            });
+    });
 
-	// Whenever a new FileSource gets loaded into the editor:
-	connect(this, &PropertiesEditor::contentsReplaced, this, [this, con1 = QMetaObject::Connection()](RefTarget* editObject) mutable {
-		disconnect(con1);
+    // Whenever a new FileSource gets loaded into the editor:
+    connect(this, &PropertiesEditor::contentsReplaced, this, [this, con1 = QMetaObject::Connection()](RefTarget* editObject) mutable {
+        disconnect(con1);
 
-		// Update displayed information.
-		updateFramesList();
-		updateInformation();
+        // Update displayed information.
+        updateFramesList();
+        updateInformation();
 
-		// Update the frames list displayed in the UI whenever it changes.
-		con1 = editObject ? connect(static_object_cast<FileSource>(editObject), &FileSource::framesListChanged, this, &FileSourcePlaybackRateEditor::updateFramesList) : QMetaObject::Connection();
-	});
+        // Update the frames list displayed in the UI whenever it changes.
+        con1 = editObject ? connect(static_object_cast<FileSource>(editObject), &FileSource::framesListChanged, this, &FileSourcePlaybackRateEditor::updateFramesList) : QMetaObject::Connection();
+    });
 
-	// Update the information display when animation interval changes.
-	connect(&mainWindow().datasetContainer(), &DataSetContainer::animationIntervalChanged, this, &FileSourcePlaybackRateEditor::updateInformation);
+    // Update the information display when animation interval changes.
+    connect(&mainWindow().datasetContainer(), &DataSetContainer::animationIntervalChanged, this, &FileSourcePlaybackRateEditor::updateInformation);
 
-	connect(this, &PropertiesEditor::contentsChanged, this, &FileSourcePlaybackRateEditor::updateInformation);
+    connect(this, &PropertiesEditor::contentsChanged, this, &FileSourcePlaybackRateEditor::updateInformation);
 }
 
 /******************************************************************************
@@ -160,25 +160,25 @@ void FileSourcePlaybackRateEditor::createUI(const RolloutInsertionParameters& ro
 ******************************************************************************/
 void FileSourcePlaybackRateEditor::updateInformation()
 {
-	FileSource* fileSource = static_object_cast<FileSource>(editObject());
-	AnimationSettings* animationSettings = mainWindow().datasetContainer().activeAnimationSettings();
-	if(!fileSource || !animationSettings) return; 
+    FileSource* fileSource = static_object_cast<FileSource>(editObject());
+    AnimationSettings* animationSettings = mainWindow().datasetContainer().activeAnimationSettings();
+    if(!fileSource || !animationSettings) return; 
 
-	_numTrajectoryFramesDisplay->setText(tr("%n frame(s)", nullptr, fileSource->frames().size()));
+    _numTrajectoryFramesDisplay->setText(tr("%n frame(s)", nullptr, fileSource->frames().size()));
 
-	_numAnimationFramesDisplay->setText(tr("%n frame(s)", nullptr, animationSettings->numberOfFrames()) + 
-		(!animationSettings->autoAdjustInterval() ? tr(" (fixed)") : QString()));
+    _numAnimationFramesDisplay->setText(tr("%n frame(s)", nullptr, animationSettings->numberOfFrames()) + 
+        (!animationSettings->autoAdjustInterval() ? tr(" (fixed)") : QString()));
 
-	if(fileSource->restrictToFrame() < 0) {
-		_staticFrameModeBtn->setChecked(false);
-		_trajectoryModeBtn->setChecked(true);
-		_framesListBox->setCurrentIndex(fileSource->dataCollectionFrame());
-	}
-	else {
-		_trajectoryModeBtn->setChecked(false);
-		_staticFrameModeBtn->setChecked(true);
-		_framesListBox->setCurrentIndex(fileSource->restrictToFrame());
-	}
+    if(fileSource->restrictToFrame() < 0) {
+        _staticFrameModeBtn->setChecked(false);
+        _trajectoryModeBtn->setChecked(true);
+        _framesListBox->setCurrentIndex(fileSource->dataCollectionFrame());
+    }
+    else {
+        _trajectoryModeBtn->setChecked(false);
+        _staticFrameModeBtn->setChecked(true);
+        _framesListBox->setCurrentIndex(fileSource->restrictToFrame());
+    }
 }
 
 /******************************************************************************
@@ -186,20 +186,20 @@ void FileSourcePlaybackRateEditor::updateInformation()
 ******************************************************************************/
 void FileSourcePlaybackRateEditor::updateFramesList()
 {
-	FileSource* fileSource = static_object_cast<FileSource>(editObject());
-	if(!fileSource) return;
+    FileSource* fileSource = static_object_cast<FileSource>(editObject());
+    if(!fileSource) return;
 
-	QStringList stringList;
-	stringList.reserve(fileSource->frames().size());
-	for(const FileSourceImporter::Frame& frame : fileSource->frames())
-		stringList.push_back(frame.label);
-	_framesListModel->setStringList(std::move(stringList));
-	if(fileSource->restrictToFrame() >= 0)
-		_framesListBox->setCurrentIndex(fileSource->restrictToFrame());
-	else
-		_framesListBox->setCurrentIndex(fileSource->dataCollectionFrame());
-	_staticFrameNumberUI->spinner()->setMinValue(0);
-	_staticFrameNumberUI->spinner()->setMaxValue(fileSource->frames().size() - 1);
+    QStringList stringList;
+    stringList.reserve(fileSource->frames().size());
+    for(const FileSourceImporter::Frame& frame : fileSource->frames())
+        stringList.push_back(frame.label);
+    _framesListModel->setStringList(std::move(stringList));
+    if(fileSource->restrictToFrame() >= 0)
+        _framesListBox->setCurrentIndex(fileSource->restrictToFrame());
+    else
+        _framesListBox->setCurrentIndex(fileSource->dataCollectionFrame());
+    _staticFrameNumberUI->spinner()->setMinValue(0);
+    _staticFrameNumberUI->spinner()->setMaxValue(fileSource->frames().size() - 1);
 }
 
-}	// End of namespace
+}   // End of namespace

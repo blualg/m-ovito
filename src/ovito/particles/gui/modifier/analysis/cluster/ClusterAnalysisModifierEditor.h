@@ -33,17 +33,17 @@ namespace Ovito::Particles {
  */
 class ClusterAnalysisModifierEditor : public PropertiesEditor
 {
-	OVITO_CLASS(ClusterAnalysisModifierEditor)
+    OVITO_CLASS(ClusterAnalysisModifierEditor)
 
 public:
 
-	/// Default constructor.
-	Q_INVOKABLE ClusterAnalysisModifierEditor() {}
+    /// Default constructor.
+    Q_INVOKABLE ClusterAnalysisModifierEditor() {}
 
 protected:
 
-	/// Creates the user interface controls for the editor.
-	virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
+    /// Creates the user interface controls for the editor.
+    virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
 };
 
-}	// End of namespace
+}   // End of namespace

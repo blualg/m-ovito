@@ -21,24 +21,24 @@
 #######################################################################################
 
 IF(NOT TARGET NetCDFIntegration)
-	MESSAGE(FATAL_ERROR 
-		"The NetCDF file reader/writer plugin cannot be built without the HDF5 and NetCDF libraries. "
-		"Please disable the plugin by setting OVITO_BUILD_PLUGIN_NETCDFPLUGIN to OFF, "
-		"or make sure the required HDF5 and NetCDF libraries are found by the CMake script.")
+    MESSAGE(FATAL_ERROR 
+        "The NetCDF file reader/writer plugin cannot be built without the HDF5 and NetCDF libraries. "
+        "Please disable the plugin by setting OVITO_BUILD_PLUGIN_NETCDFPLUGIN to OFF, "
+        "or make sure the required HDF5 and NetCDF libraries are found by the CMake script.")
 ENDIF()
 
 # Define the plugin module.
 OVITO_STANDARD_PLUGIN(NetCDFPlugin
-	SOURCES
-		AMBERNetCDFImporter.cpp
-		AMBERNetCDFExporter.cpp
-	PLUGIN_DEPENDENCIES Particles
-	PRIVATE_LIB_DEPENDENCIES NetCDFIntegration
+    SOURCES
+        AMBERNetCDFImporter.cpp
+        AMBERNetCDFExporter.cpp
+    PLUGIN_DEPENDENCIES Particles
+    PRIVATE_LIB_DEPENDENCIES NetCDFIntegration
 )
 
 # Build corresponding GUI plugin.
 IF(OVITO_BUILD_APP AND NOT OVITO_QML_GUI)
-	ADD_SUBDIRECTORY(gui)
+    ADD_SUBDIRECTORY(gui)
 ENDIF()
 
 # Propagate list of plugins to parent scope.

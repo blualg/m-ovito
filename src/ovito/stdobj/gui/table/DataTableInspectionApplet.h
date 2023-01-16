@@ -35,51 +35,51 @@ namespace Ovito::StdObj {
  */
 class OVITO_STDOBJGUI_EXPORT DataTableInspectionApplet : public PropertyInspectionApplet
 {
-	OVITO_CLASS(DataTableInspectionApplet)
-	Q_CLASSINFO("DisplayName", "Data Tables");
+    OVITO_CLASS(DataTableInspectionApplet)
+    Q_CLASSINFO("DisplayName", "Data Tables");
 
 public:
 
-	/// Constructor.
-	Q_INVOKABLE DataTableInspectionApplet() : PropertyInspectionApplet(DataTable::OOClass()) {}
+    /// Constructor.
+    Q_INVOKABLE DataTableInspectionApplet() : PropertyInspectionApplet(DataTable::OOClass()) {}
 
-	/// Returns the key value for this applet that is used for ordering the applet tabs.
-	virtual int orderingKey() const override { return 200; }
+    /// Returns the key value for this applet that is used for ordering the applet tabs.
+    virtual int orderingKey() const override { return 200; }
 
-	/// Lets the applet create the UI widget that is to be placed into the data inspector panel.
-	virtual QWidget* createWidget() override;
+    /// Lets the applet create the UI widget that is to be placed into the data inspector panel.
+    virtual QWidget* createWidget() override;
 
-	/// Returns the plotting widget.
-	DataTablePlotWidget* plotWidget() const { return _plotWidget; }
+    /// Returns the plotting widget.
+    DataTablePlotWidget* plotWidget() const { return _plotWidget; }
 
-	/// Selects a specific data object in this applet.
-	virtual bool selectDataObject(PipelineObject* dataSource, const QString& objectIdentifierHint, const QVariant& modeHint) override;
+    /// Selects a specific data object in this applet.
+    virtual bool selectDataObject(PipelineObject* dataSource, const QString& objectIdentifierHint, const QVariant& modeHint) override;
 
-	/// Determines whether the given property represents a color.
-	virtual bool isColorProperty(const PropertyObject* property) const override {
-		return property->dataType() == PropertyObject::Float && property->componentCount() == 3 && property->name().contains(QStringLiteral("Color"));
-	}
+    /// Determines whether the given property represents a color.
+    virtual bool isColorProperty(const PropertyObject* property) const override {
+        return property->dataType() == PropertyObject::Float && property->componentCount() == 3 && property->name().contains(QStringLiteral("Color"));
+    }
 
-	/// Creates an optional ad-hoc property that serves as header column for the table.
-	virtual ConstPropertyPtr createHeaderColumnProperty(const PropertyContainer* container) override;
+    /// Creates an optional ad-hoc property that serves as header column for the table.
+    virtual ConstPropertyPtr createHeaderColumnProperty(const PropertyContainer* container) override;
 
 private Q_SLOTS:
 
-	/// Is called when the user selects a different container object from the list.
-	void onCurrentContainerChanged(const DataObject* dataObject);
+    /// Is called when the user selects a different container object from the list.
+    void onCurrentContainerChanged(const DataObject* dataObject);
 
-	/// Action handler.
-	void exportDataToFile();
+    /// Action handler.
+    void exportDataToFile();
 
 private:
 
-	/// The plotting widget.
-	DataTablePlotWidget* _plotWidget;
+    /// The plotting widget.
+    DataTablePlotWidget* _plotWidget;
 
-	QStackedWidget* _stackedWidget;
-	QAction* _switchToPlotAction;
-	QAction* _switchToTableAction;
-	QAction* _exportTableToFileAction;
+    QStackedWidget* _stackedWidget;
+    QAction* _switchToPlotAction;
+    QAction* _switchToTableAction;
+    QAction* _exportTableToFileAction;
 };
 
-}	// End of namespace
+}   // End of namespace

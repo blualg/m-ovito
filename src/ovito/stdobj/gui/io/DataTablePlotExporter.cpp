@@ -43,9 +43,9 @@ SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(DataTablePlotExporter, plotDPI, IntegerPara
 * Constructs a new instance of the class.
 ******************************************************************************/
 DataTablePlotExporter::DataTablePlotExporter(ObjectCreationParams params) : FileExporter(params),
-	_plotWidth(150),
-	_plotHeight(100),
-	_plotDPI(200)
+    _plotWidth(150),
+    _plotHeight(100),
+    _plotDPI(200)
 {
 }
 
@@ -54,8 +54,8 @@ DataTablePlotExporter::DataTablePlotExporter(ObjectCreationParams params) : File
  *****************************************************************************/
 void DataTablePlotExporter::openOutputFile(const QString& filePath, int numberOfFrames)
 {
-	OVITO_ASSERT(!_outputFile.isOpen());
-	_outputFile.setFileName(filePath);
+    OVITO_ASSERT(!_outputFile.isOpen());
+    _outputFile.setFileName(filePath);
 }
 
 /******************************************************************************
@@ -63,8 +63,8 @@ void DataTablePlotExporter::openOutputFile(const QString& filePath, int numberOf
  *****************************************************************************/
 void DataTablePlotExporter::closeOutputFile(bool exportCompleted)
 {
-	if(!exportCompleted)
-		_outputFile.remove();
+    if(!exportCompleted)
+        _outputFile.remove();
 }
 
 /******************************************************************************
@@ -72,33 +72,33 @@ void DataTablePlotExporter::closeOutputFile(bool exportCompleted)
  *****************************************************************************/
 bool DataTablePlotExporter::exportFrame(int frameNumber, const QString& filePath, MainThreadOperation& operation)
 {
-	// Evaluate pipeline.
-	const PipelineFlowState& state = getPipelineDataToBeExported(frameNumber);
-	if(!state)
-		return false;
+    // Evaluate pipeline.
+    const PipelineFlowState& state = getPipelineDataToBeExported(frameNumber);
+    if(!state)
+        return false;
 
-	// Look up the DataTable to be exported in the pipeline state.
-	DataObjectReference objectRef(&DataTable::OOClass(), dataObjectToExport().dataPath());
-	const DataTable* table = static_object_cast<DataTable>(state.getLeafObject(objectRef));
-	if(!table) {
-		throw Exception(tr("The pipeline output does not contain the data table to be exported (animation frame: %1; object key: %2). Available data tables: (%3)")
-			.arg(frameNumber).arg(objectRef.dataPath()).arg(getAvailableDataObjectList(state, DataTable::OOClass())));
-	}
-	table->verifyIntegrity();
+    // Look up the DataTable to be exported in the pipeline state.
+    DataObjectReference objectRef(&DataTable::OOClass(), dataObjectToExport().dataPath());
+    const DataTable* table = static_object_cast<DataTable>(state.getLeafObject(objectRef));
+    if(!table) {
+        throw Exception(tr("The pipeline output does not contain the data table to be exported (animation frame: %1; object key: %2). Available data tables: (%3)")
+            .arg(frameNumber).arg(objectRef.dataPath()).arg(getAvailableDataObjectList(state, DataTable::OOClass())));
+    }
+    table->verifyIntegrity();
 
-	operation.setProgressText(tr("Writing file %1").arg(filePath));
+    operation.setProgressText(tr("Writing file %1").arg(filePath));
 
-	DataTablePlotWidget plotWidget;
-	plotWidget.setTable(table);
-	plotWidget.axisScaleDraw(QwtPlot::yLeft)->setPenWidthF(1);
-	plotWidget.axisScaleDraw(QwtPlot::xBottom)->setPenWidthF(1);
-	QwtPlotRenderer plotRenderer;
-	plotRenderer.setDiscardFlag(QwtPlotRenderer::DiscardFlag::DiscardBackground);
-	plotRenderer.setDiscardFlag(QwtPlotRenderer::DiscardFlag::DiscardCanvasBackground);
-	plotRenderer.setDiscardFlag(QwtPlotRenderer::DiscardFlag::DiscardCanvasFrame);
-	plotRenderer.renderDocument(&plotWidget, outputFile().fileName(), QSizeF(plotWidth(), plotHeight()), plotDPI());
+    DataTablePlotWidget plotWidget;
+    plotWidget.setTable(table);
+    plotWidget.axisScaleDraw(QwtPlot::yLeft)->setPenWidthF(1);
+    plotWidget.axisScaleDraw(QwtPlot::xBottom)->setPenWidthF(1);
+    QwtPlotRenderer plotRenderer;
+    plotRenderer.setDiscardFlag(QwtPlotRenderer::DiscardFlag::DiscardBackground);
+    plotRenderer.setDiscardFlag(QwtPlotRenderer::DiscardFlag::DiscardCanvasBackground);
+    plotRenderer.setDiscardFlag(QwtPlotRenderer::DiscardFlag::DiscardCanvasFrame);
+    plotRenderer.renderDocument(&plotWidget, outputFile().fileName(), QSizeF(plotWidth(), plotHeight()), plotDPI());
 
-	return !operation.isCanceled();
+    return !operation.isCanceled();
 }
 
-}	// End of namespace
+}   // End of namespace

@@ -40,7 +40,7 @@ SET_PROPERTY_FIELD_LABEL(DataCollection, objects, "Data objects");
 ******************************************************************************/
 bool DataCollection::contains(const DataObject* obj) const
 {
-	return objects().contains(const_cast<DataObject*>(obj));
+    return objects().contains(const_cast<DataObject*>(obj));
 }
 
 /******************************************************************************
@@ -48,9 +48,9 @@ bool DataCollection::contains(const DataObject* obj) const
 ******************************************************************************/
 void DataCollection::addObject(const DataObject* obj)
 {
-	OVITO_CHECK_OBJECT_POINTER(obj);
-	OVITO_ASSERT_MSG(!contains(obj), "DataCollection::addObject", "Cannot add the same data object more than once.");
-	_objects.push_back(this, PROPERTY_FIELD(objects), obj);
+    OVITO_CHECK_OBJECT_POINTER(obj);
+    OVITO_ASSERT_MSG(!contains(obj), "DataCollection::addObject", "Cannot add the same data object more than once.");
+    _objects.push_back(this, PROPERTY_FIELD(objects), obj);
 }
 
 /******************************************************************************
@@ -58,14 +58,14 @@ void DataCollection::addObject(const DataObject* obj)
 ******************************************************************************/
 void DataCollection::insertObject(int index, const DataObject* obj)
 {
-	OVITO_CHECK_OBJECT_POINTER(obj);
+    OVITO_CHECK_OBJECT_POINTER(obj);
 
-	// Undo recording should never be active during pipeline evaluation.
-	OVITO_ASSERT(!isUndoRecording());
+    // Undo recording should never be active during pipeline evaluation.
+    OVITO_ASSERT(!isUndoRecording());
 
-	OVITO_ASSERT_MSG(!contains(obj), "DataCollection::insertObject", "Cannot insert the same data object more than once.");
-	OVITO_ASSERT(index >= 0 && index <= objects().size());
-	_objects.insert(this, PROPERTY_FIELD(objects), index, obj);
+    OVITO_ASSERT_MSG(!contains(obj), "DataCollection::insertObject", "Cannot insert the same data object more than once.");
+    OVITO_ASSERT(index >= 0 && index <= objects().size());
+    _objects.insert(this, PROPERTY_FIELD(objects), index, obj);
 }
 
 /******************************************************************************
@@ -73,8 +73,8 @@ void DataCollection::insertObject(int index, const DataObject* obj)
 ******************************************************************************/
 void DataCollection::removeObjectByIndex(int index)
 {
-	OVITO_ASSERT(index >= 0 && index < objects().size());
-	_objects.remove(this, PROPERTY_FIELD(objects), index);
+    OVITO_ASSERT(index >= 0 && index < objects().size());
+    _objects.remove(this, PROPERTY_FIELD(objects), index);
 }
 
 /******************************************************************************
@@ -82,16 +82,16 @@ void DataCollection::removeObjectByIndex(int index)
 ******************************************************************************/
 bool DataCollection::replaceObject(const DataObject* oldObj, const DataObject* newObj)
 {
-	OVITO_CHECK_OBJECT_POINTER(oldObj);
-	if(!contains(oldObj)) {
-		OVITO_ASSERT_MSG(false, "DataCollection::replaceObject", "Old data object not found.");
-		return false;
-	}
-	if(newObj)
-		replaceReferencesTo(oldObj, newObj);
-	else
-		clearReferencesTo(oldObj);
-	return true;
+    OVITO_CHECK_OBJECT_POINTER(oldObj);
+    if(!contains(oldObj)) {
+        OVITO_ASSERT_MSG(false, "DataCollection::replaceObject", "Old data object not found.");
+        return false;
+    }
+    if(newObj)
+        replaceReferencesTo(oldObj, newObj);
+    else
+        clearReferencesTo(oldObj);
+    return true;
 }
 
 /******************************************************************************
@@ -100,11 +100,11 @@ bool DataCollection::replaceObject(const DataObject* oldObj, const DataObject* n
 ******************************************************************************/
 const DataObject* DataCollection::getObject(const DataObject::OOMetaClass& objectClass) const
 {
-	for(const DataObject* obj : objects()) {
-		if(objectClass.isMember(obj))
-			return obj;
-	}
-	return nullptr;
+    for(const DataObject* obj : objects()) {
+        if(objectClass.isMember(obj))
+            return obj;
+    }
+    return nullptr;
 }
 
 /******************************************************************************
@@ -113,12 +113,12 @@ const DataObject* DataCollection::getObject(const DataObject::OOMetaClass& objec
 ******************************************************************************/
 std::vector<const DataObject*> DataCollection::getObjects(const DataObject::OOMetaClass& objectClass) const
 {
-	std::vector<const DataObject*> list;
-	for(const DataObject* obj : objects()) {
-		if(objectClass.isMember(obj))
-			list.push_back(obj);
-	}
-	return list;
+    std::vector<const DataObject*> list;
+    for(const DataObject* obj : objects()) {
+        if(objectClass.isMember(obj))
+            list.push_back(obj);
+    }
+    return list;
 }
 
 /******************************************************************************
@@ -126,16 +126,16 @@ std::vector<const DataObject*> DataCollection::getObjects(const DataObject::OOMe
 ******************************************************************************/
 const DataObject* DataCollection::expectObject(const DataObject::OOMetaClass& objectClass) const
 {
-	if(const DataObject* obj = getObject(objectClass))
-		return obj;
-	else {
-		if(ExecutionContext::isInteractive()) {
-			throw Exception(tr("The dataset does not contain an object of type: %1").arg(objectClass.displayName()));
-		}
-		else {
-			throw Exception(tr("The input data collection contains no %1 data object.").arg(objectClass.displayName()));
-		}
-	}
+    if(const DataObject* obj = getObject(objectClass))
+        return obj;
+    else {
+        if(ExecutionContext::isInteractive()) {
+            throw Exception(tr("The dataset does not contain an object of type: %1").arg(objectClass.displayName()));
+        }
+        else {
+            throw Exception(tr("The input data collection contains no %1 data object.").arg(objectClass.displayName()));
+        }
+    }
 }
 
 /******************************************************************************
@@ -144,22 +144,22 @@ const DataObject* DataCollection::expectObject(const DataObject::OOMetaClass& ob
 ******************************************************************************/
 const DataObject* DataCollection::expectLeafObject(const DataObject::OOMetaClass& objectClass, const QString& pathString) const
 {
-	const DataObject* obj = getLeafObject(objectClass, pathString);
-	if(!obj) {
-		if(ExecutionContext::isInteractive()) {
-			if(pathString.isEmpty())
-				throw Exception(tr("The dataset does not contain an object of type: %1").arg(objectClass.displayName()));
-			else
-				throw Exception(tr("The dataset does not contain an object named '%2' of type '%1'.").arg(objectClass.displayName()).arg(pathString));
-		}
-		else {
-			if(pathString.isEmpty())
-				throw Exception(tr("No '%1' data object in data collection.").arg(objectClass.displayName()));
-			else
-				throw Exception(tr("No '%1' data object named '%2' in data collection.").arg(objectClass.displayName()).arg(pathString));
-		}
-	}
-	return obj;
+    const DataObject* obj = getLeafObject(objectClass, pathString);
+    if(!obj) {
+        if(ExecutionContext::isInteractive()) {
+            if(pathString.isEmpty())
+                throw Exception(tr("The dataset does not contain an object of type: %1").arg(objectClass.displayName()));
+            else
+                throw Exception(tr("The dataset does not contain an object named '%2' of type '%1'.").arg(objectClass.displayName()).arg(pathString));
+        }
+        else {
+            if(pathString.isEmpty())
+                throw Exception(tr("No '%1' data object in data collection.").arg(objectClass.displayName()));
+            else
+                throw Exception(tr("No '%1' data object named '%2' in data collection.").arg(objectClass.displayName()).arg(pathString));
+        }
+    }
+    return obj;
 }
 
 /******************************************************************************
@@ -167,17 +167,17 @@ const DataObject* DataCollection::expectLeafObject(const DataObject::OOMetaClass
 ******************************************************************************/
 DataObject* DataCollection::makeMutable(const DataObject* obj, bool deepCopy)
 {
-	OVITO_CHECK_OBJECT_POINTER(obj);
-	OVITO_ASSERT(contains(obj));
-	if(!obj->isSafeToModify()) {
-		OORef<DataObject> clone = CloneHelper().cloneObject(obj, deepCopy);
-		DataObject* clonedObj = clone.get();
-		if(replaceObject(obj, std::move(clone))) {
-			OVITO_ASSERT(clonedObj->isSafeToModify());
-			return clonedObj;
-		}
-	}
-	return const_cast<DataObject*>(obj);
+    OVITO_CHECK_OBJECT_POINTER(obj);
+    OVITO_ASSERT(contains(obj));
+    if(!obj->isSafeToModify()) {
+        OORef<DataObject> clone = CloneHelper().cloneObject(obj, deepCopy);
+        DataObject* clonedObj = clone.get();
+        if(replaceObject(obj, std::move(clone))) {
+            OVITO_ASSERT(clonedObj->isSafeToModify());
+            return clonedObj;
+        }
+    }
+    return const_cast<DataObject*>(obj);
 }
 
 /******************************************************************************
@@ -185,19 +185,19 @@ DataObject* DataCollection::makeMutable(const DataObject* obj, bool deepCopy)
 ******************************************************************************/
 DataObjectPath DataCollection::makeMutable(const ConstDataObjectPath& path)
 {
-	DataObjectPath result;
-	DataObject* parent = this;
-	for(const DataObject* obj : path) {
-		if(obj == this) {
-			OVITO_ASSERT(path.front() == this);
-			result.push_back(this);
-		}
-		else {
-			result.push_back(parent->makeMutable(obj));
-		}
-		parent = result.back();
-	}
-	return result;
+    DataObjectPath result;
+    DataObject* parent = this;
+    for(const DataObject* obj : path) {
+        if(obj == this) {
+            OVITO_ASSERT(path.front() == this);
+            result.push_back(this);
+        }
+        else {
+            result.push_back(parent->makeMutable(obj));
+        }
+        parent = result.back();
+    }
+    return result;
 }
 
 /******************************************************************************
@@ -205,19 +205,19 @@ DataObjectPath DataCollection::makeMutable(const ConstDataObjectPath& path)
 ******************************************************************************/
 DataObjectPath DataCollection::makeMutable(const ConstDataObjectPath& path, CloneHelper& cloneHelper)
 {
-	DataObjectPath result;
-	DataObject* parent = this;
-	for(const DataObject* obj : path) {
-		if(obj == this) {
-			OVITO_ASSERT(path.front() == this);
-			result.push_back(this);
-		}
-		else {
-			result.push_back(parent->makeMutable(obj, cloneHelper));
-		}
-		parent = result.back();
-	}
-	return result;
+    DataObjectPath result;
+    DataObject* parent = this;
+    for(const DataObject* obj : path) {
+        if(obj == this) {
+            OVITO_ASSERT(path.front() == this);
+            result.push_back(this);
+        }
+        else {
+            result.push_back(parent->makeMutable(obj, cloneHelper));
+        }
+        parent = result.back();
+    }
+    return result;
 }
 
 /******************************************************************************
@@ -226,18 +226,18 @@ DataObjectPath DataCollection::makeMutable(const ConstDataObjectPath& path, Clon
 ******************************************************************************/
 const DataObject* DataCollection::getObjectBy(const DataObject::OOMetaClass& objectClass, const PipelineObject* dataSource, const QString& identifier) const
 {
-	OVITO_ASSERT(!identifier.isEmpty());
-	if(!dataSource) return nullptr;
+    OVITO_ASSERT(!identifier.isEmpty());
+    if(!dataSource) return nullptr;
 
-	// Look for the data object with the given ID, or with the given ID followed
-	// an enumeration index that was appended by generateUniqueIdentifier().
-	for(const DataObject* obj : objects()) {
-		if(objectClass.isMember(obj) && obj->dataSource() == dataSource) {
-			if(obj->identifier() == identifier || obj->identifier().startsWith(identifier + QChar('.')))
-				return obj;
-		}
-	}
-	return nullptr;
+    // Look for the data object with the given ID, or with the given ID followed
+    // an enumeration index that was appended by generateUniqueIdentifier().
+    for(const DataObject* obj : objects()) {
+        if(objectClass.isMember(obj) && obj->dataSource() == dataSource) {
+            if(obj->identifier() == identifier || obj->identifier().startsWith(identifier + QChar('.')))
+                return obj;
+        }
+    }
+    return nullptr;
 }
 
 /******************************************************************************
@@ -245,13 +245,13 @@ const DataObject* DataCollection::getObjectBy(const DataObject::OOMetaClass& obj
 ******************************************************************************/
 bool DataCollection::containsObjectRecursiveImpl(const DataObject* dataObj, const DataObject::OOMetaClass& objectClass)
 {
-	if(objectClass.isMember(dataObj))
-		return true;
+    if(objectClass.isMember(dataObj))
+        return true;
 
-	// Recursively visit the sub-objects of the object.
-	return dataObj->visitSubObjects([&objectClass](const DataObject* subObject) {
-		return containsObjectRecursiveImpl(subObject, objectClass);
-	});
+    // Recursively visit the sub-objects of the object.
+    return dataObj->visitSubObjects([&objectClass](const DataObject* subObject) {
+        return containsObjectRecursiveImpl(subObject, objectClass);
+    });
 }
 
 /******************************************************************************
@@ -259,16 +259,16 @@ bool DataCollection::containsObjectRecursiveImpl(const DataObject* dataObj, cons
 ******************************************************************************/
 void DataCollection::getObjectsRecursiveImpl(ConstDataObjectPath& path, const DataObject::OOMetaClass& objectClass, std::vector<ConstDataObjectPath>& results)
 {
-	if(objectClass.isMember(path.back()))
-		results.push_back(path);
+    if(objectClass.isMember(path.back()))
+        results.push_back(path);
 
-	// Recursively visit the sub-objects of the object.
-	path.back()->visitSubObjects([&](const DataObject* subObject) {
-		path.push_back(subObject);
-		getObjectsRecursiveImpl(path, objectClass, results);
-		path.pop_back();
-		return false;
-	});
+    // Recursively visit the sub-objects of the object.
+    path.back()->visitSubObjects([&](const DataObject* subObject) {
+        path.push_back(subObject);
+        getObjectsRecursiveImpl(path, objectClass, results);
+        path.pop_back();
+        return false;
+    });
 }
 
 /******************************************************************************
@@ -276,23 +276,23 @@ void DataCollection::getObjectsRecursiveImpl(ConstDataObjectPath& path, const Da
 ******************************************************************************/
 ConstDataObjectPath DataCollection::getObject(const DataObject::OOMetaClass& objectClass, const QString& pathString) const
 {
-	ConstDataObjectPath result;
-	if(!pathString.isEmpty()) {
-		// Perform a recursive path lookup of the requested object.
-		for(const DataObject* obj : objects()) {
-			result.push_back(obj);
-			if(getObjectImpl(objectClass, pathString, result))
-				break;
-			result.pop_back();
-		}
-	}
-	else {
-		// Without any path, perform a recursive search for the first object of the given type.
-		std::vector<ConstDataObjectPath> paths = getObjectsRecursive(objectClass);
-		if(!paths.empty())
-			result = paths.front();
-	}
-	return result;
+    ConstDataObjectPath result;
+    if(!pathString.isEmpty()) {
+        // Perform a recursive path lookup of the requested object.
+        for(const DataObject* obj : objects()) {
+            result.push_back(obj);
+            if(getObjectImpl(objectClass, pathString, result))
+                break;
+            result.pop_back();
+        }
+    }
+    else {
+        // Without any path, perform a recursive search for the first object of the given type.
+        std::vector<ConstDataObjectPath> paths = getObjectsRecursive(objectClass);
+        if(!paths.empty())
+            result = paths.front();
+    }
+    return result;
 }
 
 /******************************************************************************
@@ -301,22 +301,22 @@ ConstDataObjectPath DataCollection::getObject(const DataObject::OOMetaClass& obj
 ******************************************************************************/
 ConstDataObjectPath DataCollection::expectObject(const DataObject::OOMetaClass& objectClass, const QString& pathString) const
 {
-	ConstDataObjectPath path = getObject(objectClass, pathString);
-	if(path.empty()) {
-		if(ExecutionContext::isInteractive()) {
-			if(pathString.isEmpty())
-				throw Exception(tr("The dataset does not contain an object of type: %1").arg(objectClass.displayName()));
-			else
-				throw Exception(tr("The dataset does not contain an object named '%2' of type '%1'.").arg(objectClass.displayName()).arg(pathString));
-		}
-		else {
-			if(pathString.isEmpty())
-				throw Exception(tr("No '%1' data object in data collection.").arg(objectClass.displayName()));
-			else
-				throw Exception(tr("No '%1' data object named '%2' in data collection.").arg(objectClass.displayName()).arg(pathString));
-		}
-	}
-	return path;
+    ConstDataObjectPath path = getObject(objectClass, pathString);
+    if(path.empty()) {
+        if(ExecutionContext::isInteractive()) {
+            if(pathString.isEmpty())
+                throw Exception(tr("The dataset does not contain an object of type: %1").arg(objectClass.displayName()));
+            else
+                throw Exception(tr("The dataset does not contain an object named '%2' of type '%1'.").arg(objectClass.displayName()).arg(pathString));
+        }
+        else {
+            if(pathString.isEmpty())
+                throw Exception(tr("No '%1' data object in data collection.").arg(objectClass.displayName()));
+            else
+                throw Exception(tr("No '%1' data object named '%2' in data collection.").arg(objectClass.displayName()).arg(pathString));
+        }
+    }
+    return path;
 }
 
 /******************************************************************************
@@ -325,22 +325,22 @@ ConstDataObjectPath DataCollection::expectObject(const DataObject::OOMetaClass& 
 ******************************************************************************/
 DataObjectPath DataCollection::expectMutableObject(const DataObject::OOMetaClass& objectClass, const QString& pathString)
 {
-	DataObjectPath path = getMutableObject(objectClass, pathString);
-	if(path.empty()) {
-		if(ExecutionContext::isInteractive()) {
-			if(pathString.isEmpty())
-				throw Exception(tr("The dataset does not contain an object of type: %1").arg(objectClass.displayName()));
-			else
-				throw Exception(tr("The dataset does not contain an object named '%2' of type '%1'.").arg(objectClass.displayName()).arg(pathString));
-		}
-		else {
-			if(pathString.isEmpty())
-				throw Exception(tr("No '%1' data object in data collection.").arg(objectClass.displayName()));
-			else
-				throw Exception(tr("No '%1' data object named '%2' in data collection.").arg(objectClass.displayName()).arg(pathString));
-		}
-	}
-	return path;
+    DataObjectPath path = getMutableObject(objectClass, pathString);
+    if(path.empty()) {
+        if(ExecutionContext::isInteractive()) {
+            if(pathString.isEmpty())
+                throw Exception(tr("The dataset does not contain an object of type: %1").arg(objectClass.displayName()));
+            else
+                throw Exception(tr("The dataset does not contain an object named '%2' of type '%1'.").arg(objectClass.displayName()).arg(pathString));
+        }
+        else {
+            if(pathString.isEmpty())
+                throw Exception(tr("No '%1' data object in data collection.").arg(objectClass.displayName()));
+            else
+                throw Exception(tr("No '%1' data object named '%2' in data collection.").arg(objectClass.displayName()).arg(pathString));
+        }
+    }
+    return path;
 }
 
 /******************************************************************************
@@ -349,9 +349,9 @@ DataObjectPath DataCollection::expectMutableObject(const DataObject::OOMetaClass
 ******************************************************************************/
 DataObject* DataCollection::expectMutableLeafObject(const DataObject::OOMetaClass& objectClass, const QString& pathString)
 {
-	DataObjectPath path = expectMutableObject(objectClass, pathString);
-	OVITO_ASSERT(!path.empty());
-	return path.back();
+    DataObjectPath path = expectMutableObject(objectClass, pathString);
+    OVITO_ASSERT(!path.empty());
+    return path.back();
 }
 
 /******************************************************************************
@@ -359,43 +359,43 @@ DataObject* DataCollection::expectMutableLeafObject(const DataObject::OOMetaClas
 ******************************************************************************/
 bool DataCollection::getObjectImpl(const DataObject::OOMetaClass& objectClass, QStringView pathString, ConstDataObjectPath& path)
 {
-	const DataObject* object = path.back();
-	if(pathString.isEmpty()) {
-		if(objectClass.isMember(object)) return true;
-		if(!object->identifier().isEmpty()) return false;
-		return object->visitSubObjects([&](const DataObject* subObject) {
-			path.push_back(subObject);
-			if(getObjectImpl(objectClass, pathString, path))
-				return true;
-			path.pop_back();
-			return false;
-		});
-	}
-	else {
-		qsizetype separatorPos = pathString.indexOf(QChar('/'));
-		if(separatorPos == -1) {
-			if(object->identifier() != pathString) return false;
-			if(objectClass.isMember(object)) return true;
-			return object->visitSubObjects([&](const DataObject* subObject) {
-				path.push_back(subObject);
-				if(getObjectImpl(objectClass, {}, path))
-					return true;
-				path.pop_back();
-				return false;
-			});
-		}
-		else if(object->identifier() == pathString.left(separatorPos)) {
-			QStringView subPath = pathString.mid(separatorPos + 1);
-			return object->visitSubObjects([&](const DataObject* subObject) {
-				path.push_back(subObject);
-				if(getObjectImpl(objectClass, subPath, path))
-					return true;
-				path.pop_back();
-				return false;
-			});
-		}
-		else return false;
-	}
+    const DataObject* object = path.back();
+    if(pathString.isEmpty()) {
+        if(objectClass.isMember(object)) return true;
+        if(!object->identifier().isEmpty()) return false;
+        return object->visitSubObjects([&](const DataObject* subObject) {
+            path.push_back(subObject);
+            if(getObjectImpl(objectClass, pathString, path))
+                return true;
+            path.pop_back();
+            return false;
+        });
+    }
+    else {
+        qsizetype separatorPos = pathString.indexOf(QChar('/'));
+        if(separatorPos == -1) {
+            if(object->identifier() != pathString) return false;
+            if(objectClass.isMember(object)) return true;
+            return object->visitSubObjects([&](const DataObject* subObject) {
+                path.push_back(subObject);
+                if(getObjectImpl(objectClass, {}, path))
+                    return true;
+                path.pop_back();
+                return false;
+            });
+        }
+        else if(object->identifier() == pathString.left(separatorPos)) {
+            QStringView subPath = pathString.mid(separatorPos + 1);
+            return object->visitSubObjects([&](const DataObject* subObject) {
+                path.push_back(subObject);
+                if(getObjectImpl(objectClass, subPath, path))
+                    return true;
+                path.pop_back();
+                return false;
+            });
+        }
+        else return false;
+    }
 }
 
 /******************************************************************************
@@ -403,21 +403,21 @@ bool DataCollection::getObjectImpl(const DataObject::OOMetaClass& objectClass, Q
 ******************************************************************************/
 const DataObject* DataCollection::getLeafObject(const DataObject::OOMetaClass& objectClass, const QString& pathString) const
 {
-	if(!pathString.isEmpty()) {
-		for(const DataObject* obj : objects()) {
-			if(const DataObject* result = getLeafObjectImpl(objectClass, pathString, obj))
-				return result;
-		}
-		return nullptr;
-	}
-	else {
-		// Without any path, perform a recursive search for the first object of the given type.
-		std::vector<ConstDataObjectPath> paths = getObjectsRecursive(objectClass);
-		if(!paths.empty())
-			return paths.front().back();
-		else
-			return {};
-	}
+    if(!pathString.isEmpty()) {
+        for(const DataObject* obj : objects()) {
+            if(const DataObject* result = getLeafObjectImpl(objectClass, pathString, obj))
+                return result;
+        }
+        return nullptr;
+    }
+    else {
+        // Without any path, perform a recursive search for the first object of the given type.
+        std::vector<ConstDataObjectPath> paths = getObjectsRecursive(objectClass);
+        if(!paths.empty())
+            return paths.front().back();
+        else
+            return {};
+    }
 }
 
 /******************************************************************************
@@ -425,33 +425,33 @@ const DataObject* DataCollection::getLeafObject(const DataObject::OOMetaClass& o
 ******************************************************************************/
 const DataObject* DataCollection::getLeafObjectImpl(const DataObject::OOMetaClass& objectClass, QStringView pathString, const DataObject* parent)
 {
-	if(pathString.isEmpty()) {
-		if(objectClass.isMember(parent)) return parent;
-		if(!parent->identifier().isEmpty()) return nullptr;
-		const DataObject* result = nullptr;
-		parent->visitSubObjects([&](const DataObject* subObject) {
-			result = getLeafObjectImpl(objectClass, pathString, subObject);
-			return result != nullptr;
-		});
-		return result;
-	}
-	else {
-		qsizetype separatorPos = pathString.indexOf(QChar('/'));
-		if(separatorPos == -1) {
-			if(objectClass.isMember(parent) && parent->identifier() == pathString)
-				return parent;
-		}
-		else if(parent->identifier() == pathString.left(separatorPos)) {
-			QStringView subPath = pathString.mid(separatorPos + 1);
-			const DataObject* result = nullptr;
-			parent->visitSubObjects([&](const DataObject* subObject) {
-				result = getLeafObjectImpl(objectClass, subPath, subObject);
-				return result != nullptr;
-			});
-			return result;
-		}
-		return nullptr;
-	}
+    if(pathString.isEmpty()) {
+        if(objectClass.isMember(parent)) return parent;
+        if(!parent->identifier().isEmpty()) return nullptr;
+        const DataObject* result = nullptr;
+        parent->visitSubObjects([&](const DataObject* subObject) {
+            result = getLeafObjectImpl(objectClass, pathString, subObject);
+            return result != nullptr;
+        });
+        return result;
+    }
+    else {
+        qsizetype separatorPos = pathString.indexOf(QChar('/'));
+        if(separatorPos == -1) {
+            if(objectClass.isMember(parent) && parent->identifier() == pathString)
+                return parent;
+        }
+        else if(parent->identifier() == pathString.left(separatorPos)) {
+            QStringView subPath = pathString.mid(separatorPos + 1);
+            const DataObject* result = nullptr;
+            parent->visitSubObjects([&](const DataObject* subObject) {
+                result = getLeafObjectImpl(objectClass, subPath, subObject);
+                return result != nullptr;
+            });
+            return result;
+        }
+        return nullptr;
+    }
 }
 
 /******************************************************************************
@@ -461,19 +461,19 @@ const DataObject* DataCollection::getLeafObjectImpl(const DataObject::OOMetaClas
 ******************************************************************************/
 DataObjectPath DataCollection::getMutableObject(const DataObject::OOMetaClass& objectClass, const QString& pathString)
 {
-	// First, determine the full path to the object we are searching for.
-	const ConstDataObjectPath path = getObject(objectClass, pathString);
-	DataObjectPath resultPath;
+    // First, determine the full path to the object we are searching for.
+    const ConstDataObjectPath path = getObject(objectClass, pathString);
+    DataObjectPath resultPath;
 
-	// If found, clone the object as well as all parents up the hierarchy.
-	if(!path.empty()) {
-		resultPath.resize(path.size());
-		resultPath.front() = makeMutable(path.front());
-		for(int index = 1; index < path.size(); index++) {
-			resultPath[index] = resultPath[index - 1]->makeMutable(path[index]);
-		}
-	}
-	return resultPath;
+    // If found, clone the object as well as all parents up the hierarchy.
+    if(!path.empty()) {
+        resultPath.resize(path.size());
+        resultPath.front() = makeMutable(path.front());
+        for(int index = 1; index < path.size(); index++) {
+            resultPath[index] = resultPath[index - 1]->makeMutable(path[index]);
+        }
+    }
+    return resultPath;
 }
 
 /******************************************************************************
@@ -483,8 +483,8 @@ DataObjectPath DataCollection::getMutableObject(const DataObject::OOMetaClass& o
 ******************************************************************************/
 DataObject* DataCollection::getMutableLeafObject(const DataObject::OOMetaClass& objectClass, const QString& pathString)
 {
-	DataObjectPath path = getMutableObject(objectClass, pathString);
-	return path.empty() ? nullptr : path.back();
+    DataObjectPath path = getMutableObject(objectClass, pathString);
+    return path.empty() ? nullptr : path.back();
 }
 
 /******************************************************************************
@@ -492,24 +492,24 @@ DataObject* DataCollection::getMutableLeafObject(const DataObject::OOMetaClass& 
 ******************************************************************************/
 QVariantMap DataCollection::buildAttributesMap() const
 {
-	QVariantMap attributes;
-	for(const DataObject* obj : objects()) {
-		if(const AttributeDataObject* attribute = dynamic_object_cast<AttributeDataObject>(obj)) {
-			if(!attributes.contains(attribute->identifier())) {
-				attributes.insert(attribute->identifier(), attribute->value());
-			}
-			else {
-				for(int counter = 2; ; counter++) {
-					QString uniqueName = attribute->identifier() + QChar('.') + QString::number(counter);
-					if(!attributes.contains(uniqueName)) {
-						attributes.insert(uniqueName, attribute->value());
-						break;
-					}
-				}
-			}
-		}
-	}
-	return attributes;
+    QVariantMap attributes;
+    for(const DataObject* obj : objects()) {
+        if(const AttributeDataObject* attribute = dynamic_object_cast<AttributeDataObject>(obj)) {
+            if(!attributes.contains(attribute->identifier())) {
+                attributes.insert(attribute->identifier(), attribute->value());
+            }
+            else {
+                for(int counter = 2; ; counter++) {
+                    QString uniqueName = attribute->identifier() + QChar('.') + QString::number(counter);
+                    if(!attributes.contains(uniqueName)) {
+                        attributes.insert(uniqueName, attribute->value());
+                        break;
+                    }
+                }
+            }
+        }
+    }
+    return attributes;
 }
 
 /******************************************************************************
@@ -518,13 +518,13 @@ QVariantMap DataCollection::buildAttributesMap() const
 ******************************************************************************/
 QVariant DataCollection::getAttributeValue(const QString& attrName, const QVariant& defaultValue) const
 {
-	for(const DataObject* obj : objects()) {
-		if(const AttributeDataObject* attribute = dynamic_object_cast<AttributeDataObject>(obj)) {
-			if(attribute->identifier() == attrName)
-				return attribute->value();
-		}
-	}
-	return defaultValue;
+    for(const DataObject* obj : objects()) {
+        if(const AttributeDataObject* attribute = dynamic_object_cast<AttributeDataObject>(obj)) {
+            if(attribute->identifier() == attrName)
+                return attribute->value();
+        }
+    }
+    return defaultValue;
 }
 
 /******************************************************************************
@@ -533,10 +533,10 @@ QVariant DataCollection::getAttributeValue(const QString& attrName, const QVaria
 ******************************************************************************/
 QVariant DataCollection::getAttributeValue(const PipelineObject* dataSource, const QString& attrBaseName, const QVariant& defaultValue) const
 {
-	if(const AttributeDataObject* attribute = getObjectBy<AttributeDataObject>(dataSource, attrBaseName))
-		return attribute->value();
-	else
-		return defaultValue;
+    if(const AttributeDataObject* attribute = getObjectBy<AttributeDataObject>(dataSource, attrBaseName))
+        return attribute->value();
+    else
+        return defaultValue;
 }
 
 /******************************************************************************
@@ -544,7 +544,7 @@ QVariant DataCollection::getAttributeValue(const PipelineObject* dataSource, con
 ******************************************************************************/
 AttributeDataObject* DataCollection::addAttribute(const QString& key, QVariant value, const PipelineObject* dataSource)
 {
-	return createObject<AttributeDataObject>(key, dataSource, std::move(value));
+    return createObject<AttributeDataObject>(key, dataSource, std::move(value));
 }
 
 /******************************************************************************
@@ -553,17 +553,17 @@ AttributeDataObject* DataCollection::addAttribute(const QString& key, QVariant v
 ******************************************************************************/
 AttributeDataObject* DataCollection::setAttribute(const QString& key, QVariant value, const PipelineObject* dataSource)
 {
-	for(const DataObject* obj : objects()) {
-		if(const AttributeDataObject* attribute = dynamic_object_cast<AttributeDataObject>(obj)) {
-			if(attribute->identifier() == key) {
-				AttributeDataObject* newAttribute = makeMutable(attribute);
-				newAttribute->setValue(std::move(value));
-				newAttribute->setDataSource(const_cast<PipelineObject*>(dataSource));
-				return newAttribute;
-			}
-		}
-	}
-	return createObject<AttributeDataObject>(key, dataSource, std::move(value));
+    for(const DataObject* obj : objects()) {
+        if(const AttributeDataObject* attribute = dynamic_object_cast<AttributeDataObject>(obj)) {
+            if(attribute->identifier() == key) {
+                AttributeDataObject* newAttribute = makeMutable(attribute);
+                newAttribute->setValue(std::move(value));
+                newAttribute->setDataSource(const_cast<PipelineObject*>(dataSource));
+                return newAttribute;
+            }
+        }
+    }
+    return createObject<AttributeDataObject>(key, dataSource, std::move(value));
 }
 
 /******************************************************************************
@@ -573,31 +573,31 @@ AttributeDataObject* DataCollection::setAttribute(const QString& key, QVariant v
 ******************************************************************************/
 QString DataCollection::generateUniqueIdentifier(const QString& baseName, const OvitoClass& dataObjectClass) const
 {
-	// This helper function checks if the given id is already used by another data object of the
-	// given type in the this data collection.
-	auto doesExist = [this,&dataObjectClass](const QString& id) {
-		for(const DataObject* obj : objects()) {
-			if(dataObjectClass.isMember(obj)) {
-				if(obj->identifier() == id)
-					return true;
-			}
-		}
-		return false;
-	};
+    // This helper function checks if the given id is already used by another data object of the
+    // given type in the this data collection.
+    auto doesExist = [this,&dataObjectClass](const QString& id) {
+        for(const DataObject* obj : objects()) {
+            if(dataObjectClass.isMember(obj)) {
+                if(obj->identifier() == id)
+                    return true;
+            }
+        }
+        return false;
+    };
 
-	if(!doesExist(baseName)) {
-		return baseName;
-	}
-	else {
-		// Append consecutive indices to the base ID name.
-		for(int i = 2; ; i++) {
-			QString uniqueId = baseName + QChar('.') + QString::number(i);
-			if(!doesExist(uniqueId)) {
-				return uniqueId;
-			}
-		}
-	}
-	OVITO_ASSERT(false);
+    if(!doesExist(baseName)) {
+        return baseName;
+    }
+    else {
+        // Append consecutive indices to the base ID name.
+        for(int i = 2; ; i++) {
+            QString uniqueId = baseName + QChar('.') + QString::number(i);
+            if(!doesExist(uniqueId)) {
+                return uniqueId;
+            }
+        }
+    }
+    OVITO_ASSERT(false);
 }
 
 /******************************************************************************
@@ -606,7 +606,7 @@ QString DataCollection::generateUniqueIdentifier(const QString& baseName, const 
 ******************************************************************************/
 int DataCollection::sourceFrame() const
 {
-	return getAttributeValue(QStringLiteral("SourceFrame"), -1).toInt();
+    return getAttributeValue(QStringLiteral("SourceFrame"), -1).toInt();
 }
 
-}	// End of namespace
+}   // End of namespace

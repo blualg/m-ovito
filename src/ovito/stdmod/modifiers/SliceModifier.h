@@ -35,12 +35,12 @@ namespace Ovito::StdMod {
  */
 class OVITO_STDMOD_EXPORT SliceModifierDelegate : public ModifierDelegate
 {
-	OVITO_CLASS(SliceModifierDelegate)
+    OVITO_CLASS(SliceModifierDelegate)
 
 protected:
 
-	/// Abstract class constructor.
-	using ModifierDelegate::ModifierDelegate;
+    /// Abstract class constructor.
+    using ModifierDelegate::ModifierDelegate;
 };
 
 /**
@@ -48,112 +48,112 @@ protected:
  */
 class OVITO_STDMOD_EXPORT SliceModifier : public MultiDelegatingModifier
 {
-	/// Give this modifier class its own metaclass.
-	class SliceModifierClass : public MultiDelegatingModifier::OOMetaClass
-	{
-	public:
+    /// Give this modifier class its own metaclass.
+    class SliceModifierClass : public MultiDelegatingModifier::OOMetaClass
+    {
+    public:
 
-		/// Inherit constructor from base class.
-		using MultiDelegatingModifier::OOMetaClass::OOMetaClass;
+        /// Inherit constructor from base class.
+        using MultiDelegatingModifier::OOMetaClass::OOMetaClass;
 
-		/// Return the metaclass of delegates for this modifier type.
-		virtual const ModifierDelegate::OOMetaClass& delegateMetaclass() const override { return SliceModifierDelegate::OOClass(); }
-	};
+        /// Return the metaclass of delegates for this modifier type.
+        virtual const ModifierDelegate::OOMetaClass& delegateMetaclass() const override { return SliceModifierDelegate::OOClass(); }
+    };
 
-	OVITO_CLASS_META(SliceModifier, SliceModifierClass)
+    OVITO_CLASS_META(SliceModifier, SliceModifierClass)
 
-	Q_CLASSINFO("DisplayName", "Slice");
-	Q_CLASSINFO("Description", "Cut away some part of the dataset using a 3d plane.");
-	Q_CLASSINFO("ModifierCategory", "Modification");
+    Q_CLASSINFO("DisplayName", "Slice");
+    Q_CLASSINFO("Description", "Cut away some part of the dataset using a 3d plane.");
+    Q_CLASSINFO("ModifierCategory", "Modification");
 
 public:
 
-	/// Constructor.
-	Q_INVOKABLE SliceModifier(ObjectCreationParams params);
+    /// Constructor.
+    Q_INVOKABLE SliceModifier(ObjectCreationParams params);
 
-	/// Determines the time interval over which a computed pipeline state will remain valid.
-	virtual TimeInterval validityInterval(const ModifierEvaluationRequest& request) const override;
+    /// Determines the time interval over which a computed pipeline state will remain valid.
+    virtual TimeInterval validityInterval(const ModifierEvaluationRequest& request) const override;
 
-	/// Lets the modifier render itself into the viewport.
-	virtual void renderModifierVisual(const ModifierEvaluationRequest& request, PipelineSceneNode* contextNode, SceneRenderer* renderer, bool renderOverlay) override;
+    /// Lets the modifier render itself into the viewport.
+    virtual void renderModifierVisual(const ModifierEvaluationRequest& request, PipelineSceneNode* contextNode, SceneRenderer* renderer, bool renderOverlay) override;
 
-	/// Modifies the input data synchronously.
-	virtual void evaluateSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
+    /// Modifies the input data synchronously.
+    virtual void evaluateSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
 
-	// Property access functions:
+    // Property access functions:
 
-	/// Returns the signed distance of the cutting plane from the origin.
-	FloatType distance() const { return distanceController() ? distanceController()->getFloatValue(AnimationTime(0)) : 0; }
+    /// Returns the signed distance of the cutting plane from the origin.
+    FloatType distance() const { return distanceController() ? distanceController()->getFloatValue(AnimationTime(0)) : 0; }
 
-	/// Sets the plane's distance from the origin.
-	void setDistance(FloatType newDistance) { if(distanceController()) distanceController()->setFloatValue(AnimationTime(0), newDistance); }
+    /// Sets the plane's distance from the origin.
+    void setDistance(FloatType newDistance) { if(distanceController()) distanceController()->setFloatValue(AnimationTime(0), newDistance); }
 
-	/// Returns the plane's normal vector.
-	Vector3 normal() const { return normalController() ? normalController()->getVector3Value(AnimationTime(0)) : Vector3(0,0,1); }
+    /// Returns the plane's normal vector.
+    Vector3 normal() const { return normalController() ? normalController()->getVector3Value(AnimationTime(0)) : Vector3(0,0,1); }
 
-	/// Sets the plane's normal vector.
-	void setNormal(const Vector3& newNormal) { if(normalController()) normalController()->setVector3Value(AnimationTime(0), newNormal); }
+    /// Sets the plane's normal vector.
+    void setNormal(const Vector3& newNormal) { if(normalController()) normalController()->setVector3Value(AnimationTime(0), newNormal); }
 
-	/// Returns the width of the slab produced by the modifier.
-	FloatType slabWidth() const { return widthController() ? widthController()->getFloatValue(AnimationTime(0)) : 0; }
+    /// Returns the width of the slab produced by the modifier.
+    FloatType slabWidth() const { return widthController() ? widthController()->getFloatValue(AnimationTime(0)) : 0; }
 
-	/// Sets the width of the slab produced by the modifier.
-	void setSlabWidth(FloatType newWidth) { if(widthController()) widthController()->setFloatValue(AnimationTime(0), newWidth); }
+    /// Sets the width of the slab produced by the modifier.
+    void setSlabWidth(FloatType newWidth) { if(widthController()) widthController()->setFloatValue(AnimationTime(0), newWidth); }
 
-	/// Returns the slicing plane and the slab width.
-	std::tuple<Plane3, FloatType> slicingPlane(AnimationTime time, TimeInterval& validityInterval, const PipelineFlowState& state);
+    /// Returns the slicing plane and the slab width.
+    std::tuple<Plane3, FloatType> slicingPlane(AnimationTime time, TimeInterval& validityInterval, const PipelineFlowState& state);
 
-	/// Moves the plane along its current normal vector to position in the center of the simulation cell. 
-	void centerPlaneInSimulationCell(ModifierApplication* modApp, AnimationTime time);
+    /// Moves the plane along its current normal vector to position in the center of the simulation cell. 
+    void centerPlaneInSimulationCell(ModifierApplication* modApp, AnimationTime time);
 
-	/// Returns a short piece information (typically a string or color) to be displayed next to the modifier's title in the pipeline editor list.
-	virtual QVariant getPipelineEditorShortInfo(Scene* scene, ModifierApplication* modApp) const override;
+    /// Returns a short piece information (typically a string or color) to be displayed next to the modifier's title in the pipeline editor list.
+    virtual QVariant getPipelineEditorShortInfo(Scene* scene, ModifierApplication* modApp) const override;
 
 protected:
 
-	/// This method is called by the system when the modifier has been inserted into a data pipeline.
-	virtual void initializeModifier(const ModifierInitializationRequest& request) override;
+    /// This method is called by the system when the modifier has been inserted into a data pipeline.
+    virtual void initializeModifier(const ModifierInitializationRequest& request) override;
 
-	/// Is called when a RefTarget referenced by this object has generated an event.
-	virtual bool referenceEvent(RefTarget* source, const ReferenceEvent& event) override;
+    /// Is called when a RefTarget referenced by this object has generated an event.
+    virtual bool referenceEvent(RefTarget* source, const ReferenceEvent& event) override;
 
-	/// Renders the modifier's visual representation and computes its bounding box.
-	void renderVisual(AnimationTime time, PipelineSceneNode* contextNode, SceneRenderer* renderer, const PipelineFlowState& state);
+    /// Renders the modifier's visual representation and computes its bounding box.
+    void renderVisual(AnimationTime time, PipelineSceneNode* contextNode, SceneRenderer* renderer, const PipelineFlowState& state);
 
-	/// Renders the plane in the viewport.
-	void renderPlane(SceneRenderer* renderer, const Plane3& plane, const Box3& box, const ColorA& color) const;
+    /// Renders the plane in the viewport.
+    void renderPlane(SceneRenderer* renderer, const Plane3& plane, const Box3& box, const ColorA& color) const;
 
-	/// Computes the intersection lines of a plane and a quad.
-	void planeQuadIntersection(const Point3 corners[8], const std::array<int,4>& quadVerts, const Plane3& plane, std::vector<Point3>& vertices) const;
+    /// Computes the intersection lines of a plane and a quad.
+    void planeQuadIntersection(const Point3 corners[8], const std::array<int,4>& quadVerts, const Plane3& plane, std::vector<Point3>& vertices) const;
 
 private:
 
-	/// This controller stores the normal of the slicing plane.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD(OORef<Controller>, normalController, setNormalController);
+    /// This controller stores the normal of the slicing plane.
+    DECLARE_MODIFIABLE_REFERENCE_FIELD(OORef<Controller>, normalController, setNormalController);
 
-	/// This controller stores the distance of the slicing plane from the origin.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD(OORef<Controller>, distanceController, setDistanceController);
+    /// This controller stores the distance of the slicing plane from the origin.
+    DECLARE_MODIFIABLE_REFERENCE_FIELD(OORef<Controller>, distanceController, setDistanceController);
 
-	/// Controls the slab width.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD(OORef<Controller>, widthController, setWidthController);
+    /// Controls the slab width.
+    DECLARE_MODIFIABLE_REFERENCE_FIELD(OORef<Controller>, widthController, setWidthController);
 
-	/// Controls whether the data elements should only be selected instead of being deleted.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, createSelection, setCreateSelection);
+    /// Controls whether the data elements should only be selected instead of being deleted.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, createSelection, setCreateSelection);
 
-	/// Controls whether the plane's orientation should be reversed.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, inverse, setInverse);
+    /// Controls whether the plane's orientation should be reversed.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, inverse, setInverse);
 
-	/// Controls whether the modifier should only be applied to the currently selected data elements.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, applyToSelection, setApplyToSelection);
+    /// Controls whether the modifier should only be applied to the currently selected data elements.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, applyToSelection, setApplyToSelection);
 
-	/// Enables the visualization of the cutting plane.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, enablePlaneVisualization, setEnablePlaneVisualization);
+    /// Enables the visualization of the cutting plane.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, enablePlaneVisualization, setEnablePlaneVisualization);
 
-	/// Controls whether the plane is specified in reduced cell coordinates (Miller indices).
-	DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, reducedCoordinates, setReducedCoordinates);
+    /// Controls whether the plane is specified in reduced cell coordinates (Miller indices).
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, reducedCoordinates, setReducedCoordinates);
 
-	/// The vis element for plane.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<TriMeshVis>, planeVis, setPlaneVis, PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES | PROPERTY_FIELD_MEMORIZE);
+    /// The vis element for plane.
+    DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<TriMeshVis>, planeVis, setPlaneVis, PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES | PROPERTY_FIELD_MEMORIZE);
 };
 
-}	// End of namespace
+}   // End of namespace

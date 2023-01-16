@@ -23,7 +23,7 @@
 #include <ovito/gui/desktop/GUI.h>
 #include "HistoryFileDialog.h"
 
-#define MAX_DIRECTORY_HISTORY_SIZE	1
+#define MAX_DIRECTORY_HISTORY_SIZE  1
 
 namespace Ovito {
 
@@ -31,30 +31,30 @@ namespace Ovito {
 * Constructs the dialog window.
 ******************************************************************************/
 HistoryFileDialog::HistoryFileDialog(const QString& dialogClass, QWidget* parent, const QString& caption, const QString& directory, const QString& filter) :
-	QFileDialog(parent, caption, directory, filter), _dialogClass(dialogClass)
+    QFileDialog(parent, caption, directory, filter), _dialogClass(dialogClass)
 {
-	connect(this, &QFileDialog::fileSelected, this, &HistoryFileDialog::onFileSelected);
-	connect(this, &QFileDialog::filesSelected, this, [&](const QStringList& selected) {
-		if(!selected.empty()) onFileSelected(selected.front());
-	});
+    connect(this, &QFileDialog::fileSelected, this, &HistoryFileDialog::onFileSelected);
+    connect(this, &QFileDialog::filesSelected, this, [&](const QStringList& selected) {
+        if(!selected.empty()) onFileSelected(selected.front());
+    });
 
-	// The user can request the Qt file dialog instead of the native dialog by settings the corresponding
-	// option in the application settings.
-	// The native dialogs of some platforms don't provide the directory history function but may be faster
-	// than the Qt implementation.
-	QSettings settings;
-	if(settings.value("file/use_qt_dialog", false).toBool())
-		setOption(QFileDialog::DontUseNativeDialog);
+    // The user can request the Qt file dialog instead of the native dialog by settings the corresponding
+    // option in the application settings.
+    // The native dialogs of some platforms don't provide the directory history function but may be faster
+    // than the Qt implementation.
+    QSettings settings;
+    if(settings.value("file/use_qt_dialog", false).toBool())
+        setOption(QFileDialog::DontUseNativeDialog);
 
-	if(keepWorkingDirectoryHistoryEnabled()) {
-		QStringList history = loadDirHistory();
-		if(history.isEmpty() == false) {
-			if(directory.isEmpty()) {
-				setDirectory(history.front());
-			}
-			setHistory(history);
-		}
-	}
+    if(keepWorkingDirectoryHistoryEnabled()) {
+        QStringList history = loadDirHistory();
+        if(history.isEmpty() == false) {
+            if(directory.isEmpty()) {
+                setDirectory(history.front());
+            }
+            setHistory(history);
+        }
+    }
 }
 
 /******************************************************************************
@@ -62,22 +62,22 @@ HistoryFileDialog::HistoryFileDialog(const QString& dialogClass, QWidget* parent
 ******************************************************************************/
 void HistoryFileDialog::onFileSelected(const QString& file)
 {
-	if(file.isEmpty()) 
-		return;
+    if(file.isEmpty()) 
+        return;
 
-	if(keepWorkingDirectoryHistoryEnabled()) {
-		QString currentDir = QFileInfo(file).absolutePath();
-		QStringList history = loadDirHistory();
-		int index = history.indexOf(currentDir);
-		if(index >= 0)
-			history.move(index, 0);
-		else {
-			history.push_front(currentDir);
-			if(history.size() > MAX_DIRECTORY_HISTORY_SIZE)
-				history.erase(history.begin() + MAX_DIRECTORY_HISTORY_SIZE, history.end());
-		}
-		saveDirHistory(history);
-	}
+    if(keepWorkingDirectoryHistoryEnabled()) {
+        QString currentDir = QFileInfo(file).absolutePath();
+        QStringList history = loadDirHistory();
+        int index = history.indexOf(currentDir);
+        if(index >= 0)
+            history.move(index, 0);
+        else {
+            history.push_front(currentDir);
+            if(history.size() > MAX_DIRECTORY_HISTORY_SIZE)
+                history.erase(history.begin() + MAX_DIRECTORY_HISTORY_SIZE, history.end());
+        }
+        saveDirHistory(history);
+    }
 }
 
 /******************************************************************************
@@ -85,9 +85,9 @@ void HistoryFileDialog::onFileSelected(const QString& file)
 ******************************************************************************/
 QStringList HistoryFileDialog::loadDirHistory() const
 {
-	QSettings settings;
-	settings.beginGroup("filedialog/" + _dialogClass);
-	return settings.value("history").toStringList();
+    QSettings settings;
+    settings.beginGroup("filedialog/" + _dialogClass);
+    return settings.value("history").toStringList();
 }
 
 /******************************************************************************
@@ -95,9 +95,9 @@ QStringList HistoryFileDialog::loadDirHistory() const
 ******************************************************************************/
 void HistoryFileDialog::saveDirHistory(const QStringList& list) const
 {
-	QSettings settings;
-	settings.beginGroup("filedialog/" + _dialogClass);
-	settings.setValue("history", QVariant::fromValue(list));
+    QSettings settings;
+    settings.beginGroup("filedialog/" + _dialogClass);
+    settings.setValue("history", QVariant::fromValue(list));
 }
 
-}	// End of namespace
+}   // End of namespace

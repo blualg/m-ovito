@@ -26,11 +26,11 @@ CMAKE_POLICY(VERSION 3.12.0)
 
 # Choose CMake policies.
 IF(NOT CMAKE_VERSION VERSION_LESS "3.17")
-	CMAKE_POLICY(SET CMP0100 NEW)   # Let AUTOMOC and AUTOUIC process .hh files.
-	CMAKE_POLICY(SET CMP0099 NEW)   # Link properties are transitive over private dependency on static libraries.
+    CMAKE_POLICY(SET CMP0100 NEW)   # Let AUTOMOC and AUTOUIC process .hh files.
+    CMAKE_POLICY(SET CMP0099 NEW)   # Link properties are transitive over private dependency on static libraries.
 ENDIF()
 IF(NOT CMAKE_VERSION VERSION_LESS "3.13")
-	CMAKE_POLICY(SET CMP0079 NEW)   # Allows use of target_link_libraries() with targets defined in other directories.
+    CMAKE_POLICY(SET CMP0079 NEW)   # Allows use of target_link_libraries() with targets defined in other directories.
 ENDIF()
 
 PROJECT(Ovito)
@@ -40,7 +40,7 @@ PROJECT(Ovito)
 INCLUDE(CMakeToolsHelpers OPTIONAL)
 
 IF(EMSCRIPTEN)
-	INCLUDE(cmake/wasm.cmake)
+    INCLUDE(cmake/wasm.cmake)
 ENDIF()
 
 SET(OVITO_SOURCE_BASE_DIR "${CMAKE_CURRENT_LIST_DIR}")
@@ -102,37 +102,37 @@ SET(CMAKE_VISIBILITY_INLINES_HIDDEN ON)
 
 # Enable link time optimization (LTO)
 IF(WIN32 OR APPLE) # On Linux, LTO currently breaks the executable due to missing symbols at runtime.
-	IF(${CMAKE_BUILD_TYPE} MATCHES Release)
-		INCLUDE(CheckIPOSupported)
-		check_ipo_supported(RESULT result OUTPUT output)
-		IF(result)
-			MESSAGE(STATUS "Using link-time optimization (LTO)")
-			SET(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
-		ENDIF()
-	ENDIF()
+    IF(${CMAKE_BUILD_TYPE} MATCHES Release)
+        INCLUDE(CheckIPOSupported)
+        check_ipo_supported(RESULT result OUTPUT output)
+        IF(result)
+            MESSAGE(STATUS "Using link-time optimization (LTO)")
+            SET(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
+        ENDIF()
+    ENDIF()
 ENDIF()
 
 IF(CYGWIN AND CMAKE_COMPILER_IS_GNUCXX)
-	# Linking fails without -O3
-	SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3")
+    # Linking fails without -O3
+    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3")
 ENDIF()
 
 IF(APPLE)
-	SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++ -Wno-invalid-offsetof")
+    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++ -Wno-invalid-offsetof")
 ENDIF()
 
 # Enable build with AddressSanitizer support if requested.
 IF(OVITO_USE_ADDRESS_SANITIZER)
-	IF(MSVC)
-		SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /fsanitize=address")
-		SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /fsanitize=address")
-	ELSE()
-		SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address")
-		SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=address")
-		SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fsanitize=address")
-		SET(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -fsanitize=address")
-		SET(CMAKE_STATIC_LINKER_FLAGS "${CMAKE_STATIC_LINKER_FLAGS} -fsanitize=address")
-	ENDIF()
+    IF(MSVC)
+        SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /fsanitize=address")
+        SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /fsanitize=address")
+    ELSE()
+        SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address")
+        SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=address")
+        SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fsanitize=address")
+        SET(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -fsanitize=address")
+        SET(CMAKE_STATIC_LINKER_FLAGS "${CMAKE_STATIC_LINKER_FLAGS} -fsanitize=address")
+    ENDIF()
 ENDIF()
 
 # Set the name of the macOS application bundle to generate.
@@ -140,153 +140,153 @@ SET(MACOSX_BUNDLE_NAME "Ovito")
 SET(MACOSX_BUNDLE_BUNDLE_NAME "${MACOSX_BUNDLE_NAME}")
 
 IF(NOT OVITO_BUILD_PYPI)
-	IF(UNIX AND NOT APPLE)
-		# The directory where the main executable goes to.
-		SET(OVITO_RELATIVE_BINARY_DIRECTORY "bin")
-		# The directory where the main libraries go to.
-		SET(OVITO_RELATIVE_LIBRARY_DIRECTORY "lib/ovito")
-		# The directory where the third-party libraries go to.
-		SET(OVITO_RELATIVE_3RDPARTY_LIBRARY_DIRECTORY "lib/ovito")
-		# The directory where the auxiliary files go to.
-		SET(OVITO_RELATIVE_SHARE_DIRECTORY "share/ovito")
-		# The directory where the compiled plugins go to.
-		SET(OVITO_RELATIVE_PLUGINS_DIRECTORY "${OVITO_RELATIVE_LIBRARY_DIRECTORY}/plugins")
-		# The directory where the Python source modules go to.
-		IF(NOT OVITO_BUILD_CONDA)
-			SET(OVITO_RELATIVE_PYTHON_DIRECTORY "${OVITO_RELATIVE_PLUGINS_DIRECTORY}/python")
-		ELSE()
-			# For Conda package builds:
-			SET(OVITO_RELATIVE_PYTHON_DIRECTORY "$ENV{SP_DIR}")
-		ENDIF()
-	ELSEIF(APPLE)
-		IF(NOT OVITO_BUILD_CONDA)
-			# The directory where the main executable goes to.
-			SET(OVITO_RELATIVE_BINARY_DIRECTORY "${MACOSX_BUNDLE_NAME}.app/Contents/MacOS")
-			# The directory where the main libraries of Ovito go to.
-			SET(OVITO_RELATIVE_LIBRARY_DIRECTORY "${MACOSX_BUNDLE_NAME}.app/Contents/MacOS")
-			# The directory where the third-party libraries go to.
-			SET(OVITO_RELATIVE_3RDPARTY_LIBRARY_DIRECTORY "${MACOSX_BUNDLE_NAME}.app/Contents/Frameworks")
-			# The directory where the auxiliary files go to.
-			SET(OVITO_RELATIVE_SHARE_DIRECTORY "${MACOSX_BUNDLE_NAME}.app/Contents/Resources")
-			# The directory where the compiled plugins go to.
-			SET(OVITO_RELATIVE_PLUGINS_DIRECTORY "${MACOSX_BUNDLE_NAME}.app/Contents/PlugIns")
-			# The directory where the Python source modules go to.
-			SET(OVITO_RELATIVE_PYTHON_DIRECTORY "${MACOSX_BUNDLE_NAME}.app/Contents/Resources/python")
-		ELSE()
-			# For Conda package builds:
+    IF(UNIX AND NOT APPLE)
+        # The directory where the main executable goes to.
+        SET(OVITO_RELATIVE_BINARY_DIRECTORY "bin")
+        # The directory where the main libraries go to.
+        SET(OVITO_RELATIVE_LIBRARY_DIRECTORY "lib/ovito")
+        # The directory where the third-party libraries go to.
+        SET(OVITO_RELATIVE_3RDPARTY_LIBRARY_DIRECTORY "lib/ovito")
+        # The directory where the auxiliary files go to.
+        SET(OVITO_RELATIVE_SHARE_DIRECTORY "share/ovito")
+        # The directory where the compiled plugins go to.
+        SET(OVITO_RELATIVE_PLUGINS_DIRECTORY "${OVITO_RELATIVE_LIBRARY_DIRECTORY}/plugins")
+        # The directory where the Python source modules go to.
+        IF(NOT OVITO_BUILD_CONDA)
+            SET(OVITO_RELATIVE_PYTHON_DIRECTORY "${OVITO_RELATIVE_PLUGINS_DIRECTORY}/python")
+        ELSE()
+            # For Conda package builds:
+            SET(OVITO_RELATIVE_PYTHON_DIRECTORY "$ENV{SP_DIR}")
+        ENDIF()
+    ELSEIF(APPLE)
+        IF(NOT OVITO_BUILD_CONDA)
+            # The directory where the main executable goes to.
+            SET(OVITO_RELATIVE_BINARY_DIRECTORY "${MACOSX_BUNDLE_NAME}.app/Contents/MacOS")
+            # The directory where the main libraries of Ovito go to.
+            SET(OVITO_RELATIVE_LIBRARY_DIRECTORY "${MACOSX_BUNDLE_NAME}.app/Contents/MacOS")
+            # The directory where the third-party libraries go to.
+            SET(OVITO_RELATIVE_3RDPARTY_LIBRARY_DIRECTORY "${MACOSX_BUNDLE_NAME}.app/Contents/Frameworks")
+            # The directory where the auxiliary files go to.
+            SET(OVITO_RELATIVE_SHARE_DIRECTORY "${MACOSX_BUNDLE_NAME}.app/Contents/Resources")
+            # The directory where the compiled plugins go to.
+            SET(OVITO_RELATIVE_PLUGINS_DIRECTORY "${MACOSX_BUNDLE_NAME}.app/Contents/PlugIns")
+            # The directory where the Python source modules go to.
+            SET(OVITO_RELATIVE_PYTHON_DIRECTORY "${MACOSX_BUNDLE_NAME}.app/Contents/Resources/python")
+        ELSE()
+            # For Conda package builds:
 
-			# The directory where the main executable goes to.
-			SET(OVITO_RELATIVE_BINARY_DIRECTORY "bin")
-			# The directory where the main libraries go to.
-			SET(OVITO_RELATIVE_LIBRARY_DIRECTORY "lib/ovito")
-			# The directory where the third-party libraries go to.
-			SET(OVITO_RELATIVE_3RDPARTY_LIBRARY_DIRECTORY "${OVITO_RELATIVE_LIBRARY_DIRECTORY}")
-			# The directory where the auxiliary files go to.
-			SET(OVITO_RELATIVE_SHARE_DIRECTORY "share/ovito")
-			# The directory where the compiled plugins go to.
-			SET(OVITO_RELATIVE_PLUGINS_DIRECTORY "${OVITO_RELATIVE_LIBRARY_DIRECTORY}/plugins")
-			# The directory where the Python source modules go to.
-			SET(OVITO_RELATIVE_PYTHON_DIRECTORY "$ENV{SP_DIR}")
-		ENDIF()	
-	ELSEIF(WIN32)
-		IF(NOT OVITO_BUILD_CONDA)
-			# The directory where the main executable goes to.
-			SET(OVITO_RELATIVE_BINARY_DIRECTORY ".")
-			# The directory where the main libraries go to.
-			SET(OVITO_RELATIVE_LIBRARY_DIRECTORY ".")
-			# The directory where the third-party libraries go to.
-			SET(OVITO_RELATIVE_3RDPARTY_LIBRARY_DIRECTORY ".")
-			# The directory where the auxiliary files go to.
-			SET(OVITO_RELATIVE_SHARE_DIRECTORY ".")
-			# The directory where the compiled plugins go to.
-			SET(OVITO_RELATIVE_PLUGINS_DIRECTORY "${OVITO_RELATIVE_LIBRARY_DIRECTORY}")
-			# The directory where the Python source modules go to.
-			SET(OVITO_RELATIVE_PYTHON_DIRECTORY "./plugins/python")
-		ELSE()
-			# For Conda package builds:
+            # The directory where the main executable goes to.
+            SET(OVITO_RELATIVE_BINARY_DIRECTORY "bin")
+            # The directory where the main libraries go to.
+            SET(OVITO_RELATIVE_LIBRARY_DIRECTORY "lib/ovito")
+            # The directory where the third-party libraries go to.
+            SET(OVITO_RELATIVE_3RDPARTY_LIBRARY_DIRECTORY "${OVITO_RELATIVE_LIBRARY_DIRECTORY}")
+            # The directory where the auxiliary files go to.
+            SET(OVITO_RELATIVE_SHARE_DIRECTORY "share/ovito")
+            # The directory where the compiled plugins go to.
+            SET(OVITO_RELATIVE_PLUGINS_DIRECTORY "${OVITO_RELATIVE_LIBRARY_DIRECTORY}/plugins")
+            # The directory where the Python source modules go to.
+            SET(OVITO_RELATIVE_PYTHON_DIRECTORY "$ENV{SP_DIR}")
+        ENDIF() 
+    ELSEIF(WIN32)
+        IF(NOT OVITO_BUILD_CONDA)
+            # The directory where the main executable goes to.
+            SET(OVITO_RELATIVE_BINARY_DIRECTORY ".")
+            # The directory where the main libraries go to.
+            SET(OVITO_RELATIVE_LIBRARY_DIRECTORY ".")
+            # The directory where the third-party libraries go to.
+            SET(OVITO_RELATIVE_3RDPARTY_LIBRARY_DIRECTORY ".")
+            # The directory where the auxiliary files go to.
+            SET(OVITO_RELATIVE_SHARE_DIRECTORY ".")
+            # The directory where the compiled plugins go to.
+            SET(OVITO_RELATIVE_PLUGINS_DIRECTORY "${OVITO_RELATIVE_LIBRARY_DIRECTORY}")
+            # The directory where the Python source modules go to.
+            SET(OVITO_RELATIVE_PYTHON_DIRECTORY "./plugins/python")
+        ELSE()
+            # For Conda package builds:
 
-			# The directory where the main executable goes to.
-			SET(OVITO_RELATIVE_BINARY_DIRECTORY "bin")
-			# The directory where the main libraries go to.
-			SET(OVITO_RELATIVE_LIBRARY_DIRECTORY "bin")
-			# The directory where the third-party libraries go to.
-			SET(OVITO_RELATIVE_3RDPARTY_LIBRARY_DIRECTORY "${OVITO_RELATIVE_LIBRARY_DIRECTORY}")
-			# The directory where the auxiliary files go to.
-			SET(OVITO_RELATIVE_SHARE_DIRECTORY "share/ovito")
-			# The directory where the compiled plugins go to.
-			SET(OVITO_RELATIVE_PLUGINS_DIRECTORY "${OVITO_RELATIVE_LIBRARY_DIRECTORY}")
-			# The directory where the Python source modules go to.
-			FILE(TO_CMAKE_PATH "$ENV{SP_DIR}" OVITO_RELATIVE_PYTHON_DIRECTORY)
-		ENDIF()
-	ENDIF()
+            # The directory where the main executable goes to.
+            SET(OVITO_RELATIVE_BINARY_DIRECTORY "bin")
+            # The directory where the main libraries go to.
+            SET(OVITO_RELATIVE_LIBRARY_DIRECTORY "bin")
+            # The directory where the third-party libraries go to.
+            SET(OVITO_RELATIVE_3RDPARTY_LIBRARY_DIRECTORY "${OVITO_RELATIVE_LIBRARY_DIRECTORY}")
+            # The directory where the auxiliary files go to.
+            SET(OVITO_RELATIVE_SHARE_DIRECTORY "share/ovito")
+            # The directory where the compiled plugins go to.
+            SET(OVITO_RELATIVE_PLUGINS_DIRECTORY "${OVITO_RELATIVE_LIBRARY_DIRECTORY}")
+            # The directory where the Python source modules go to.
+            FILE(TO_CMAKE_PATH "$ENV{SP_DIR}" OVITO_RELATIVE_PYTHON_DIRECTORY)
+        ENDIF()
+    ENDIF()
 ELSE()
-	# For PyPI wheel builds:
+    # For PyPI wheel builds:
 
-	# The directory where the main executable goes to.
-	SET(OVITO_RELATIVE_BINARY_DIRECTORY "ovito")
-	# The directory where the main libraries go to.
-	SET(OVITO_RELATIVE_LIBRARY_DIRECTORY "ovito/plugins")
-	# The directory where the third-party libraries go to.
-	SET(OVITO_RELATIVE_3RDPARTY_LIBRARY_DIRECTORY "${OVITO_RELATIVE_LIBRARY_DIRECTORY}")
-	# The directory where the auxiliary files go to.
-	SET(OVITO_RELATIVE_SHARE_DIRECTORY "ovito")
-	# The directory where the compiled plugins go to.
-	SET(OVITO_RELATIVE_PLUGINS_DIRECTORY "${OVITO_RELATIVE_LIBRARY_DIRECTORY}")
-	# The directory where the Python source modules go to.
-	SET(OVITO_RELATIVE_PYTHON_DIRECTORY ".")
+    # The directory where the main executable goes to.
+    SET(OVITO_RELATIVE_BINARY_DIRECTORY "ovito")
+    # The directory where the main libraries go to.
+    SET(OVITO_RELATIVE_LIBRARY_DIRECTORY "ovito/plugins")
+    # The directory where the third-party libraries go to.
+    SET(OVITO_RELATIVE_3RDPARTY_LIBRARY_DIRECTORY "${OVITO_RELATIVE_LIBRARY_DIRECTORY}")
+    # The directory where the auxiliary files go to.
+    SET(OVITO_RELATIVE_SHARE_DIRECTORY "ovito")
+    # The directory where the compiled plugins go to.
+    SET(OVITO_RELATIVE_PLUGINS_DIRECTORY "${OVITO_RELATIVE_LIBRARY_DIRECTORY}")
+    # The directory where the Python source modules go to.
+    SET(OVITO_RELATIVE_PYTHON_DIRECTORY ".")
 ENDIF()
 
 # The directory where the main executable goes to.
 IF(NOT IS_ABSOLUTE "${OVITO_RELATIVE_BINARY_DIRECTORY}")
-	SET(OVITO_BINARY_DIRECTORY "${Ovito_BINARY_DIR}/${OVITO_RELATIVE_BINARY_DIRECTORY}")
+    SET(OVITO_BINARY_DIRECTORY "${Ovito_BINARY_DIR}/${OVITO_RELATIVE_BINARY_DIRECTORY}")
 ELSE()
-	SET(OVITO_BINARY_DIRECTORY "${OVITO_RELATIVE_BINARY_DIRECTORY}")
+    SET(OVITO_BINARY_DIRECTORY "${OVITO_RELATIVE_BINARY_DIRECTORY}")
 ENDIF()
 # The directory where the main libraries go to.
 IF(NOT IS_ABSOLUTE "${OVITO_RELATIVE_LIBRARY_DIRECTORY}")
-	SET(OVITO_LIBRARY_DIRECTORY "${Ovito_BINARY_DIR}/${OVITO_RELATIVE_LIBRARY_DIRECTORY}")
+    SET(OVITO_LIBRARY_DIRECTORY "${Ovito_BINARY_DIR}/${OVITO_RELATIVE_LIBRARY_DIRECTORY}")
 ELSE()
-	SET(OVITO_LIBRARY_DIRECTORY "${OVITO_RELATIVE_LIBRARY_DIRECTORY}")
+    SET(OVITO_LIBRARY_DIRECTORY "${OVITO_RELATIVE_LIBRARY_DIRECTORY}")
 ENDIF()
 # The directory where the compiled plugins go to.
 IF(NOT IS_ABSOLUTE "${OVITO_RELATIVE_PLUGINS_DIRECTORY}")
-	SET(OVITO_PLUGINS_DIRECTORY "${Ovito_BINARY_DIR}/${OVITO_RELATIVE_PLUGINS_DIRECTORY}")
+    SET(OVITO_PLUGINS_DIRECTORY "${Ovito_BINARY_DIR}/${OVITO_RELATIVE_PLUGINS_DIRECTORY}")
 ELSE()
-	SET(OVITO_PLUGINS_DIRECTORY "${OVITO_RELATIVE_PLUGINS_DIRECTORY}")
+    SET(OVITO_PLUGINS_DIRECTORY "${OVITO_RELATIVE_PLUGINS_DIRECTORY}")
 ENDIF()
 # The directory where the Python source files go to.
 IF(NOT IS_ABSOLUTE "${OVITO_RELATIVE_PYTHON_DIRECTORY}")
-	SET(OVITO_PYTHON_DIRECTORY "${Ovito_BINARY_DIR}/${OVITO_RELATIVE_PYTHON_DIRECTORY}")
+    SET(OVITO_PYTHON_DIRECTORY "${Ovito_BINARY_DIR}/${OVITO_RELATIVE_PYTHON_DIRECTORY}")
 ELSE()
-	SET(OVITO_PYTHON_DIRECTORY "${OVITO_RELATIVE_PYTHON_DIRECTORY}")
+    SET(OVITO_PYTHON_DIRECTORY "${OVITO_RELATIVE_PYTHON_DIRECTORY}")
 ENDIF()
 # The directory where the auxiliary files go to.
 IF(NOT IS_ABSOLUTE "${OVITO_RELATIVE_SHARE_DIRECTORY}")
-	SET(OVITO_SHARE_DIRECTORY "${Ovito_BINARY_DIR}/${OVITO_RELATIVE_SHARE_DIRECTORY}")
+    SET(OVITO_SHARE_DIRECTORY "${Ovito_BINARY_DIR}/${OVITO_RELATIVE_SHARE_DIRECTORY}")
 ELSE()
-	SET(OVITO_SHARE_DIRECTORY "${OVITO_RELATIVE_SHARE_DIRECTORY}")
+    SET(OVITO_SHARE_DIRECTORY "${OVITO_RELATIVE_SHARE_DIRECTORY}")
 ENDIF()
 
 IF(APPLE OR WIN32 OR NOT OVITO_REDISTRIBUTABLE_PACKAGE)
-	# Add the automatically determined parts of the RPATH,
-	# which point to directories outside the build tree to the install RPATH.
-	SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+    # Add the automatically determined parts of the RPATH,
+    # which point to directories outside the build tree to the install RPATH.
+    SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 ENDIF()
 
 # Select linkage type (shared or static) for plugin libraries.
 IF(OVITO_BUILD_MONOLITHIC)
-	SET(BUILD_SHARED_LIBS OFF)
-	SET(OVITO_PLUGIN_LIBRARY_SUFFIX "${CMAKE_STATIC_LIBRARY_SUFFIX}")
+    SET(BUILD_SHARED_LIBS OFF)
+    SET(OVITO_PLUGIN_LIBRARY_SUFFIX "${CMAKE_STATIC_LIBRARY_SUFFIX}")
 ELSE()
-	SET(BUILD_SHARED_LIBS ON)
-	# Define name suffix used for generating plugin libraries.
-	IF(APPLE)
-		# On macOS, we use the .so extension instead of the standard .dylib to be compatible
-		# with the Python interpreter, which only finds modules having a .so suffix.
-		SET(OVITO_PLUGIN_LIBRARY_SUFFIX ".so")
-	ELSE()
-		SET(OVITO_PLUGIN_LIBRARY_SUFFIX "${CMAKE_SHARED_LIBRARY_SUFFIX}")
-	ENDIF()
+    SET(BUILD_SHARED_LIBS ON)
+    # Define name suffix used for generating plugin libraries.
+    IF(APPLE)
+        # On macOS, we use the .so extension instead of the standard .dylib to be compatible
+        # with the Python interpreter, which only finds modules having a .so suffix.
+        SET(OVITO_PLUGIN_LIBRARY_SUFFIX ".so")
+    ELSE()
+        SET(OVITO_PLUGIN_LIBRARY_SUFFIX "${CMAKE_SHARED_LIBRARY_SUFFIX}")
+    ENDIF()
 ENDIF()
 
 # Helper functions for finding and deploying third-party prerequisites.
@@ -294,8 +294,8 @@ INCLUDE(cmake/Prerequisites.cmake)
 
 # Determine the command for running the clang-tidy tool.
 IF(OVITO_RUN_CLANG_TIDY)
-	FIND_PROGRAM(CLANG_TIDY_EXE NAMES "clang-tidy" DOC "Path to clang-tidy executable")
-	SET(OVITO_CLANG_TIDY_CMD "${CLANG_TIDY_EXE}") # List of checks will be read from the .clang-tidy file.
+    FIND_PROGRAM(CLANG_TIDY_EXE NAMES "clang-tidy" DOC "Path to clang-tidy executable")
+    SET(OVITO_CLANG_TIDY_CMD "${CLANG_TIDY_EXE}") # List of checks will be read from the .clang-tidy file.
 ENDIF()
 
 # Generate the build targets that are part of Ovito.
@@ -303,7 +303,7 @@ ADD_SUBDIRECTORY(src)
 
 # This allows external CMake projects to inject their customization code into the CMake project:
 IF(OVITO_CMAKE_FILE_INJECTION_PROJECT)
-	INCLUDE("${OVITO_CMAKE_FILE_INJECTION_PROJECT}")
+    INCLUDE("${OVITO_CMAKE_FILE_INJECTION_PROJECT}")
 ENDIF()
 
 # Generate the user manual.

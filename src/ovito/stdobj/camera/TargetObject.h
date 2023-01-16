@@ -35,13 +35,13 @@ namespace Ovito::StdObj {
  */
 class OVITO_STDOBJ_EXPORT TargetObject : public DataObject
 {
-	OVITO_CLASS(TargetObject)
-	Q_CLASSINFO("DisplayName", "Target");
+    OVITO_CLASS(TargetObject)
+    Q_CLASSINFO("DisplayName", "Target");
 
 public:
 
-	/// Constructor.
-	Q_INVOKABLE TargetObject(ObjectCreationParams params);
+    /// Constructor.
+    Q_INVOKABLE TargetObject(ObjectCreationParams params);
 };
 
 /**
@@ -49,19 +49,19 @@ public:
  */
 class OVITO_STDOBJ_EXPORT TargetVis : public DataVis
 {
-	OVITO_CLASS(TargetVis)
-	Q_CLASSINFO("DisplayName", "Target icon");
+    OVITO_CLASS(TargetVis)
+    Q_CLASSINFO("DisplayName", "Target icon");
 
 public:
 
-	/// \brief Constructor.
-	Q_INVOKABLE TargetVis(ObjectCreationParams params) : DataVis(params) {}
+    /// \brief Constructor.
+    Q_INVOKABLE TargetVis(ObjectCreationParams params) : DataVis(params) {}
 
-	/// \brief Lets the vis element render a data object.
-	virtual PipelineStatus render(AnimationTime time, const ConstDataObjectPath& path, const PipelineFlowState& flowState, SceneRenderer* renderer, const PipelineSceneNode* contextNode) override;
+    /// \brief Lets the vis element render a data object.
+    virtual PipelineStatus render(AnimationTime time, const ConstDataObjectPath& path, const PipelineFlowState& flowState, SceneRenderer* renderer, const PipelineSceneNode* contextNode) override;
 
-	/// \brief Computes the bounding box of the object.
-	virtual Box3 boundingBox(AnimationTime time, const ConstDataObjectPath& path, const PipelineSceneNode* contextNode, const PipelineFlowState& flowState, MixedKeyCache& visCache, TimeInterval& validityInterval) override;
+    /// \brief Computes the bounding box of the object.
+    virtual Box3 boundingBox(AnimationTime time, const ConstDataObjectPath& path, const PipelineSceneNode* contextNode, const PipelineFlowState& flowState, MixedKeyCache& visCache, TimeInterval& validityInterval) override;
 };
 
-}	// End of namespace
+}   // End of namespace

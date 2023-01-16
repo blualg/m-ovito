@@ -37,75 +37,75 @@ namespace Ovito {
  */
 class OVITO_CORE_EXPORT TextLabelOverlay : public ViewportOverlay
 {
-	OVITO_CLASS(TextLabelOverlay)
-	Q_CLASSINFO("DisplayName", "Text label")
+    OVITO_CLASS(TextLabelOverlay)
+    Q_CLASSINFO("DisplayName", "Text label")
 
-	Q_PROPERTY(Ovito::PipelineSceneNode* sourceNode READ sourceNode WRITE setSourceNode)
+    Q_PROPERTY(Ovito::PipelineSceneNode* sourceNode READ sourceNode WRITE setSourceNode)
 
 public:
 
-	/// Constructor.
-	Q_INVOKABLE TextLabelOverlay(ObjectCreationParams params);
+    /// Constructor.
+    Q_INVOKABLE TextLabelOverlay(ObjectCreationParams params);
 
-	/// Is called when the overlay is being newly attached to a viewport. 
-	virtual void initializeOverlay(Viewport* viewport) override;
+    /// Is called when the overlay is being newly attached to a viewport. 
+    virtual void initializeOverlay(Viewport* viewport) override;
 
-	/// Lets the overlay paint its contents into the framebuffer.
-	virtual void render(SceneRenderer* renderer, const QRect& logicalViewportRect, const QRect& physicalViewportRect, MainThreadOperation& operation) override;
+    /// Lets the overlay paint its contents into the framebuffer.
+    virtual void render(SceneRenderer* renderer, const QRect& logicalViewportRect, const QRect& physicalViewportRect, MainThreadOperation& operation) override;
 
-	/// Moves the position of the overlay in the viewport by the given amount,
-	/// which is specified as a fraction of the viewport render size.
-	virtual void moveLayerInViewport(const Vector2& delta) override {
-		auto roundPercent = [](FloatType f) { return std::round(f * 1e4) / 1e4; };
-		setOffsetX(roundPercent(offsetX() + delta.x()));
-		setOffsetY(roundPercent(offsetY() + delta.y()));
-	}
+    /// Moves the position of the overlay in the viewport by the given amount,
+    /// which is specified as a fraction of the viewport render size.
+    virtual void moveLayerInViewport(const Vector2& delta) override {
+        auto roundPercent = [](FloatType f) { return std::round(f * 1e4) / 1e4; };
+        setOffsetX(roundPercent(offsetX() + delta.x()));
+        setOffsetY(roundPercent(offsetY() + delta.y()));
+    }
 
-	/// Returns a short piece information (typically a string or color) to be displayed next to the object's title in the pipeline editor.
-	virtual QVariant getPipelineEditorShortInfo(Scene* scene) const override;
+    /// Returns a short piece information (typically a string or color) to be displayed next to the object's title in the pipeline editor.
+    virtual QVariant getPipelineEditorShortInfo(Scene* scene) const override;
 
 protected:
 
-	/// Is called when the value of a property of this object has changed.
-	virtual void propertyChanged(const PropertyFieldDescriptor* field) override;
+    /// Is called when the value of a property of this object has changed.
+    virtual void propertyChanged(const PropertyFieldDescriptor* field) override;
 
 private:
 
-	/// This method paints the overlay contents onto the given canvas.
-	void renderImplementation(SceneRenderer* renderer, const QRect& targetRect, const PipelineFlowState& flowState);
+    /// This method paints the overlay contents onto the given canvas.
+    void renderImplementation(SceneRenderer* renderer, const QRect& targetRect, const PipelineFlowState& flowState);
 
-	/// The corner of the viewport where the label is shown in.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(int, alignment, setAlignment, PROPERTY_FIELD_MEMORIZE);
+    /// The corner of the viewport where the label is shown in.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(int, alignment, setAlignment, PROPERTY_FIELD_MEMORIZE);
 
-	/// Controls the horizontal offset of label position.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType, offsetX, setOffsetX, PROPERTY_FIELD_MEMORIZE);
+    /// Controls the horizontal offset of label position.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType, offsetX, setOffsetX, PROPERTY_FIELD_MEMORIZE);
 
-	/// Controls the vertical offset of label position.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType, offsetY, setOffsetY, PROPERTY_FIELD_MEMORIZE);
+    /// Controls the vertical offset of label position.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType, offsetY, setOffsetY, PROPERTY_FIELD_MEMORIZE);
 
-	/// Controls the label font.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(QFont, font, setFont, PROPERTY_FIELD_MEMORIZE);
+    /// Controls the label font.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(QFont, font, setFont, PROPERTY_FIELD_MEMORIZE);
 
-	/// Controls the label font size.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType, fontSize, setFontSize, PROPERTY_FIELD_MEMORIZE);
+    /// Controls the label font size.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType, fontSize, setFontSize, PROPERTY_FIELD_MEMORIZE);
 
-	/// The label's text.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD(QString, labelText, setLabelText);
+    /// The label's text.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(QString, labelText, setLabelText);
 
-	/// The display color of the label.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(Color, textColor, setTextColor, PROPERTY_FIELD_MEMORIZE);
+    /// The display color of the label.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(Color, textColor, setTextColor, PROPERTY_FIELD_MEMORIZE);
 
-	/// The text outline color.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(Color, outlineColor, setOutlineColor, PROPERTY_FIELD_MEMORIZE);
+    /// The text outline color.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(Color, outlineColor, setOutlineColor, PROPERTY_FIELD_MEMORIZE);
 
-	/// Controls the outlining of the font.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, outlineEnabled, setOutlineEnabled, PROPERTY_FIELD_MEMORIZE);
+    /// Controls the outlining of the font.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, outlineEnabled, setOutlineEnabled, PROPERTY_FIELD_MEMORIZE);
 
-	/// The PipelineSceneNode providing global attributes that can be reference in the text.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(PipelineSceneNode*, sourceNode, setSourceNode, PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_WEAK_REF | PROPERTY_FIELD_NO_SUB_ANIM | PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES);
+    /// The PipelineSceneNode providing global attributes that can be reference in the text.
+    DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(PipelineSceneNode*, sourceNode, setSourceNode, PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_WEAK_REF | PROPERTY_FIELD_NO_SUB_ANIM | PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES);
 
-	/// Controls the formatting of floating-point variable values referenced in the text string.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD(QString, valueFormatString, setValueFormatString);
+    /// Controls the formatting of floating-point variable values referenced in the text string.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(QString, valueFormatString, setValueFormatString);
 };
 
-}	// End of namespace
+}   // End of namespace

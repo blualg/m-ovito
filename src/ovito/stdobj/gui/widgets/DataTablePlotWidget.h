@@ -46,119 +46,119 @@ namespace Ovito::StdObj {
  */
 class OVITO_STDOBJGUI_EXPORT DataTablePlotWidget : public QwtPlot
 {
-	Q_OBJECT
+    Q_OBJECT
 
 public:
 
-	/// Constructor.
-	DataTablePlotWidget(QWidget* parent = nullptr);
+    /// Constructor.
+    DataTablePlotWidget(QWidget* parent = nullptr);
 
-	/// Returns the data table object currently being plotted.
-	const DataOORef<const DataTable>& table() const { return _table; }
+    /// Returns the data table object currently being plotted.
+    const DataOORef<const DataTable>& table() const { return _table; }
 
-	/// Sets the data table to be plotted.
-	void setTable(const DataTable* table);
+    /// Sets the data table to be plotted.
+    void setTable(const DataTable* table);
 
-	/// Returns whether the plot widget accepts and handles mouse navigation input.
-	bool mouseNavigationEnabled() const { return _mouseNavigationEnabled; }
+    /// Returns whether the plot widget accepts and handles mouse navigation input.
+    bool mouseNavigationEnabled() const { return _mouseNavigationEnabled; }
 
-	/// Controls whether the plot widget accepts and handles mouse navigation input.
-	void setMouseNavigationEnabled(bool on) { 
-		_mouseNavigationEnabled = on; 
-	}
+    /// Controls whether the plot widget accepts and handles mouse navigation input.
+    void setMouseNavigationEnabled(bool on) { 
+        _mouseNavigationEnabled = on; 
+    }
 
-	/// Resets the plot.
-	void reset() {
-		if(_table) {
-			_table.reset();
-			updateDataPlot();
-		}
-	}
+    /// Resets the plot.
+    void reset() {
+        if(_table) {
+            _table.reset();
+            updateDataPlot();
+        }
+    }
 
-	void setAxisAutoScale(int axisId, bool on = true) {
-	    if(axisValid(axisId)) {
-			_axisAutoscaleEnabled[axisId] = on;
-			QwtPlot::setAxisAutoScale(axisId, on);
-		}
-	}
+    void setAxisAutoScale(int axisId, bool on = true) {
+        if(axisValid(axisId)) {
+            _axisAutoscaleEnabled[axisId] = on;
+            QwtPlot::setAxisAutoScale(axisId, on);
+        }
+    }
 
     void setAxisScale(int axisId, double min, double max, double stepSize = 0) {
-	    if(axisValid(axisId)) {
-			_axisAutoscaleEnabled[axisId] = false;
-			QwtPlot::setAxisScale(axisId, min, max, stepSize);
-		}
-	}
+        if(axisValid(axisId)) {
+            _axisAutoscaleEnabled[axisId] = false;
+            QwtPlot::setAxisScale(axisId, min, max, stepSize);
+        }
+    }
 
 private Q_SLOTS:
 
-	/// Regenerates the plot.
-	/// This function is called whenever a new data table has been loaded into widget or if the current table data changes.
-	void updateDataPlot();
+    /// Regenerates the plot.
+    /// This function is called whenever a new data table has been loaded into widget or if the current table data changes.
+    void updateDataPlot();
 
 private:
 
-	/// A custom scale draw implementation for drawing the axis labels of a bar chart.
-	class BarChartScaleDraw : public QwtScaleDraw
-	{
-	public:
+    /// A custom scale draw implementation for drawing the axis labels of a bar chart.
+    class BarChartScaleDraw : public QwtScaleDraw
+    {
+    public:
 
-		/// Constructor.
-		using QwtScaleDraw::QwtScaleDraw;
+        /// Constructor.
+        using QwtScaleDraw::QwtScaleDraw;
 
-		/// Sets the texts of the labels.
-		void setLabels(QStringList labels) {
-			_labels = std::move(labels);
-			invalidateCache();
-		}
+        /// Sets the texts of the labels.
+        void setLabels(QStringList labels) {
+            _labels = std::move(labels);
+            invalidateCache();
+        }
 
-		/// Returns the label text for the given axis position.
-		virtual QwtText label(double value) const override {
-			QwtText lbl;
-			int index = qRound(value);
-			if(index >= 0 && index < _labels.size() && std::abs(value - (double)index) < 1e-1)
-				lbl = _labels[index];
-			return lbl;
-		}
+        /// Returns the label text for the given axis position.
+        virtual QwtText label(double value) const override {
+            QwtText lbl;
+            int index = qRound(value);
+            if(index >= 0 && index < _labels.size() && std::abs(value - (double)index) < 1e-1)
+                lbl = _labels[index];
+            return lbl;
+        }
 
-	private:
+    private:
 
-		QStringList _labels;
-	};
+        QStringList _labels;
+    };
 
 private:
 
-	/// Reference to the current data table shown in the plot widget.
-	DataOORef<const DataTable> _table;
+    /// Reference to the current data table shown in the plot widget.
+    DataOORef<const DataTable> _table;
 
-	/// The plot item(s) for standard line charts.
+    /// The plot item(s) for standard line charts.
     std::vector<QwtPlotCurve*> _curves;
 
-	/// The plot item(s) for scatter plots.
+    /// The plot item(s) for scatter plots.
     std::vector<QwtPlotSpectroCurve*> _spectroCurves;
 
-	/// The plot item for bar charts.
-	QwtPlotBarChart* _barChart = nullptr;
+    /// The plot item for bar charts.
+    QwtPlotBarChart* _barChart = nullptr;
 
-	/// The scale draw used when plotting a bar chart.
-	BarChartScaleDraw* _barChartScaleDraw = nullptr;
+    /// The scale draw used when plotting a bar chart.
+    BarChartScaleDraw* _barChartScaleDraw = nullptr;
 
-	/// The plot legend.
-	QwtPlotLegendItem* _legend = nullptr;
+    /// The plot legend.
+    QwtPlotLegendItem* _legend = nullptr;
 
-	/// Controls whether the plot widget accepts and handles mouse navigation input.
-	bool _mouseNavigationEnabled = true;
+    /// Controls whether the plot widget accepts and handles mouse navigation input.
+    bool _mouseNavigationEnabled = true;
 
-	/// Zoom interaction handler.
-	QwtPlotZoomer* _zoomer = nullptr;
+    /// Zoom interaction handler.
+    QwtPlotZoomer* _zoomer = nullptr;
 
-	/// Magnification interaction handler.
-	QwtPlotMagnifier* _magnifier = nullptr;
+    /// Magnification interaction handler.
+    QwtPlotMagnifier* _magnifier = nullptr;
 
-	/// Panning interaction handler.
-	QwtPlotPanner* _panner = nullptr;
+    /// Panning interaction handler.
+    QwtPlotPanner* _panner = nullptr;
 
-	/// Flags controlling the automatic range of plot axes.
-	std::array<bool, QwtPlot::axisCnt> _axisAutoscaleEnabled{{true, true, true, true}};
+    /// Flags controlling the automatic range of plot axes.
+    std::array<bool, QwtPlot::axisCnt> _axisAutoscaleEnabled{{true, true, true, true}};
 };
 
-}	// End of namespace
+}   // End of namespace

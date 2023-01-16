@@ -31,9 +31,9 @@
 #include <ovito/particles/Particles.h>
 
 namespace Ovito {
-	namespace Particles {
-		class ParticlePropertyComboBox;
-	}
+    namespace Particles {
+        class ParticlePropertyComboBox;
+    }
 }
 
 #endif

@@ -36,53 +36,53 @@ class OVITO_CORE_EXPORT AsynchronousDelegatingModifier : public AsynchronousModi
 {
 public:
 
-	/// The abstract base class of delegates used by this modifier type.
-	using DelegateBaseType = ModifierDelegate;
+    /// The abstract base class of delegates used by this modifier type.
+    using DelegateBaseType = ModifierDelegate;
 
-	/// Give this modifier class its own metaclass.
-	class OVITO_CORE_EXPORT DelegatingModifierClass : public ModifierClass
-	{
-	public:
+    /// Give this modifier class its own metaclass.
+    class OVITO_CORE_EXPORT DelegatingModifierClass : public ModifierClass
+    {
+    public:
 
-		/// Inherit constructor from base class.
-		using ModifierClass::ModifierClass;
+        /// Inherit constructor from base class.
+        using ModifierClass::ModifierClass;
 
-		/// Asks the metaclass whether the modifier can be applied to the given input data.
-		virtual bool isApplicableTo(const DataCollection& input) const override;
+        /// Asks the metaclass whether the modifier can be applied to the given input data.
+        virtual bool isApplicableTo(const DataCollection& input) const override;
 
-		/// Return the metaclass of delegates for this modifier type.
-		virtual const ModifierDelegate::OOMetaClass& delegateMetaclass() const {
-			OVITO_ASSERT_MSG(false, "AsynchronousDelegatingModifier::OOMetaClass::delegateMetaclass()",
-				qPrintable(QStringLiteral("Delegating modifier class %1 does not define a corresponding delegate metaclass. "
-				"You must override the delegateMetaclass() method in the modifier's metaclass.").arg(name())));
-			return DelegateBaseType::OOClass();
-		}
-	};
+        /// Return the metaclass of delegates for this modifier type.
+        virtual const ModifierDelegate::OOMetaClass& delegateMetaclass() const {
+            OVITO_ASSERT_MSG(false, "AsynchronousDelegatingModifier::OOMetaClass::delegateMetaclass()",
+                qPrintable(QStringLiteral("Delegating modifier class %1 does not define a corresponding delegate metaclass. "
+                "You must override the delegateMetaclass() method in the modifier's metaclass.").arg(name())));
+            return DelegateBaseType::OOClass();
+        }
+    };
 
-	OVITO_CLASS_META(AsynchronousDelegatingModifier, DelegatingModifierClass)
+    OVITO_CLASS_META(AsynchronousDelegatingModifier, DelegatingModifierClass)
 
 #ifdef OVITO_QML_GUI
-	Q_PROPERTY(Ovito::ModifierDelegate* delegate READ delegate WRITE setDelegate NOTIFY referenceReplacedSignal)
+    Q_PROPERTY(Ovito::ModifierDelegate* delegate READ delegate WRITE setDelegate NOTIFY referenceReplacedSignal)
 #endif
 
 public:
 
-	/// Constructor.
-	using AsynchronousModifier::AsynchronousModifier;
+    /// Constructor.
+    using AsynchronousModifier::AsynchronousModifier;
 
-	/// \brief Determines the time interval over which a computed pipeline state will remain valid.
-	virtual TimeInterval validityInterval(const ModifierEvaluationRequest& request) const override;
-
-protected:
-
-	/// Creates a default delegate for this modifier.
-	/// This should be called from the modifier's constructor.
-	void createDefaultModifierDelegate(const OvitoClass& delegateType, const QString& defaultDelegateTypeName, ObjectCreationParams params);
+    /// \brief Determines the time interval over which a computed pipeline state will remain valid.
+    virtual TimeInterval validityInterval(const ModifierEvaluationRequest& request) const override;
 
 protected:
 
-	/// The modifier's delegate.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<ModifierDelegate>, delegate, setDelegate, PROPERTY_FIELD_ALWAYS_CLONE | PROPERTY_FIELD_MEMORIZE);
+    /// Creates a default delegate for this modifier.
+    /// This should be called from the modifier's constructor.
+    void createDefaultModifierDelegate(const OvitoClass& delegateType, const QString& defaultDelegateTypeName, ObjectCreationParams params);
+
+protected:
+
+    /// The modifier's delegate.
+    DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<ModifierDelegate>, delegate, setDelegate, PROPERTY_FIELD_ALWAYS_CLONE | PROPERTY_FIELD_MEMORIZE);
 };
 
-}	// End of namespace
+}   // End of namespace

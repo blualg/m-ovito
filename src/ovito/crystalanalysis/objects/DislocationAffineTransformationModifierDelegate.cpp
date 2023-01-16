@@ -37,9 +37,9 @@ IMPLEMENT_OVITO_CLASS(DislocationAffineTransformationModifierDelegate);
 ******************************************************************************/
 QVector<DataObjectReference> DislocationAffineTransformationModifierDelegate::OOMetaClass::getApplicableObjects(const DataCollection& input) const
 {
-	if(input.containsObject<DislocationNetworkObject>())
-		return { DataObjectReference(&DislocationNetworkObject::OOClass()) };
-	return {};
+    if(input.containsObject<DislocationNetworkObject>())
+        return { DataObjectReference(&DislocationNetworkObject::OOClass()) };
+    return {};
 }
 
 /******************************************************************************
@@ -47,32 +47,32 @@ QVector<DataObjectReference> DislocationAffineTransformationModifierDelegate::OO
 ******************************************************************************/
 PipelineStatus DislocationAffineTransformationModifierDelegate::apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const PipelineFlowState& inputState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs)
 {
-	AffineTransformationModifier* mod = static_object_cast<AffineTransformationModifier>(request.modifier());
+    AffineTransformationModifier* mod = static_object_cast<AffineTransformationModifier>(request.modifier());
 
-	if(mod->selectionOnly())
-		return PipelineStatus::Success;
+    if(mod->selectionOnly())
+        return PipelineStatus::Success;
 
-	for(const DataObject* obj : state.data()->objects()) {
-		if(const DislocationNetworkObject* inputDislocations = dynamic_object_cast<DislocationNetworkObject>(obj)) {
-			const AffineTransformation tm = mod->effectiveAffineTransformation(inputState);
-			DislocationNetworkObject* outputDislocations = state.makeMutable(inputDislocations);
+    for(const DataObject* obj : state.data()->objects()) {
+        if(const DislocationNetworkObject* inputDislocations = dynamic_object_cast<DislocationNetworkObject>(obj)) {
+            const AffineTransformation tm = mod->effectiveAffineTransformation(inputState);
+            DislocationNetworkObject* outputDislocations = state.makeMutable(inputDislocations);
 
-			// Apply transformation to the vertices of the dislocation lines.
-			for(DislocationSegment* segment : outputDislocations->modifiableSegments()) {
-				for(Point3& vertex : segment->line) {
-					vertex = tm * vertex;
-				}
-			}
+            // Apply transformation to the vertices of the dislocation lines.
+            for(DislocationSegment* segment : outputDislocations->modifiableSegments()) {
+                for(Point3& vertex : segment->line) {
+                    vertex = tm * vertex;
+                }
+            }
 
-			// Apply transformation to the cutting planes attached to the dislocation network.
-			QVector<Plane3> cuttingPlanes = outputDislocations->cuttingPlanes();
-			for(Plane3& plane : cuttingPlanes)
-				plane = tm * plane;
-			outputDislocations->setCuttingPlanes(std::move(cuttingPlanes));
-		}
-	}
+            // Apply transformation to the cutting planes attached to the dislocation network.
+            QVector<Plane3> cuttingPlanes = outputDislocations->cuttingPlanes();
+            for(Plane3& plane : cuttingPlanes)
+                plane = tm * plane;
+            outputDislocations->setCuttingPlanes(std::move(cuttingPlanes));
+        }
+    }
 
-	return PipelineStatus::Success;
+    return PipelineStatus::Success;
 }
 
-}	// End of namespace
+}   // End of namespace

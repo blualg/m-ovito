@@ -34,7 +34,7 @@ IMPLEMENT_OVITO_CLASS(IntegerParameterUI);
 * Constructor for a Qt property.
 ******************************************************************************/
 IntegerParameterUI::IntegerParameterUI(PropertiesEditor* parentEditor, const char* propertyName, const QString& labelText, const QMetaObject* parameterUnitType) :
-	NumericalParameterUI(parentEditor, propertyName, parameterUnitType ? parameterUnitType : &IntegerParameterUnit::staticMetaObject, labelText)
+    NumericalParameterUI(parentEditor, propertyName, parameterUnitType ? parameterUnitType : &IntegerParameterUnit::staticMetaObject, labelText)
 {
 }
 
@@ -42,7 +42,7 @@ IntegerParameterUI::IntegerParameterUI(PropertiesEditor* parentEditor, const cha
 * Constructor for a PropertyField property.
 ******************************************************************************/
 IntegerParameterUI::IntegerParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField) :
-		NumericalParameterUI(parentEditor, propField, &IntegerParameterUnit::staticMetaObject)
+        NumericalParameterUI(parentEditor, propField, &IntegerParameterUnit::staticMetaObject)
 {
 }
 
@@ -52,21 +52,21 @@ IntegerParameterUI::IntegerParameterUI(PropertiesEditor* parentEditor, const Pro
 ******************************************************************************/
 void IntegerParameterUI::updatePropertyValue()
 {
-	if(editObject() && spinner()) {
-		if(isReferenceFieldUI()) {
-			if(Controller* ctrl = dynamic_object_cast<Controller>(parameterObject()))
-				ctrl->setIntValue(currentAnimationTime().value_or(AnimationTime(0)), spinner()->intValue());
-		}
-		else if(isQtPropertyUI()) {
-			if(!editObject()->setProperty(propertyName(), spinner()->intValue())) {
-				OVITO_ASSERT_MSG(false, "IntegerParameterUI::updatePropertyValue()", qPrintable(QString("The value of property %1 of object class %2 could not be set.").arg(QString(propertyName()), editObject()->metaObject()->className())));
-			}
-		}
-		else if(isPropertyFieldUI()) {
-			editor()->changePropertyFieldValue(propertyField(), spinner()->intValue());
-		}
-		Q_EMIT valueEntered();
-	}
+    if(editObject() && spinner()) {
+        if(isReferenceFieldUI()) {
+            if(Controller* ctrl = dynamic_object_cast<Controller>(parameterObject()))
+                ctrl->setIntValue(currentAnimationTime().value_or(AnimationTime(0)), spinner()->intValue());
+        }
+        else if(isQtPropertyUI()) {
+            if(!editObject()->setProperty(propertyName(), spinner()->intValue())) {
+                OVITO_ASSERT_MSG(false, "IntegerParameterUI::updatePropertyValue()", qPrintable(QString("The value of property %1 of object class %2 could not be set.").arg(QString(propertyName()), editObject()->metaObject()->className())));
+            }
+        }
+        else if(isPropertyFieldUI()) {
+            editor()->changePropertyFieldValue(propertyField(), spinner()->intValue());
+        }
+        Q_EMIT valueEntered();
+    }
 }
 
 /******************************************************************************
@@ -74,30 +74,30 @@ void IntegerParameterUI::updatePropertyValue()
 ******************************************************************************/
 void IntegerParameterUI::updateUI()
 {
-	if(editObject() && spinner() && !spinner()->isDragging()) {
-		handleExceptions([&] {
-			if(isReferenceFieldUI()) {
-				if(Controller* ctrl = dynamic_object_cast<Controller>(parameterObject())) {
-					spinner()->setIntValue(ctrl->getIntValue(currentAnimationTime().value_or(AnimationTime(0))));
-				}
-			}
-			else {
-				QVariant val(0);
-				if(isQtPropertyUI()) {
-					val = editObject()->property(propertyName());
-					OVITO_ASSERT_MSG(val.isValid() && val.canConvert<int>(), "IntegerParameterUI::updateUI()", qPrintable(QString("The object class %1 does not define a property with the name %2 that can be cast to integer type.").arg(editObject()->metaObject()->className(), QString(propertyName()))));
-					if(!val.isValid() || !val.canConvert<int>()) {
-						throw Exception(tr("The object class %1 does not define a property with the name %2 that can be cast to integer type.").arg(editObject()->metaObject()->className(), QString(propertyName())));
-					}
-				}
-				else if(isPropertyFieldUI()) {
-					val = editObject()->getPropertyFieldValue(propertyField());
-					OVITO_ASSERT(val.isValid());
-				}
-				spinner()->setIntValue(val.toInt());
-			}
-		});
-	}
+    if(editObject() && spinner() && !spinner()->isDragging()) {
+        handleExceptions([&] {
+            if(isReferenceFieldUI()) {
+                if(Controller* ctrl = dynamic_object_cast<Controller>(parameterObject())) {
+                    spinner()->setIntValue(ctrl->getIntValue(currentAnimationTime().value_or(AnimationTime(0))));
+                }
+            }
+            else {
+                QVariant val(0);
+                if(isQtPropertyUI()) {
+                    val = editObject()->property(propertyName());
+                    OVITO_ASSERT_MSG(val.isValid() && val.canConvert<int>(), "IntegerParameterUI::updateUI()", qPrintable(QString("The object class %1 does not define a property with the name %2 that can be cast to integer type.").arg(editObject()->metaObject()->className(), QString(propertyName()))));
+                    if(!val.isValid() || !val.canConvert<int>()) {
+                        throw Exception(tr("The object class %1 does not define a property with the name %2 that can be cast to integer type.").arg(editObject()->metaObject()->className(), QString(propertyName())));
+                    }
+                }
+                else if(isPropertyFieldUI()) {
+                    val = editObject()->getPropertyFieldValue(propertyField());
+                    OVITO_ASSERT(val.isValid());
+                }
+                spinner()->setIntValue(val.toInt());
+            }
+        });
+    }
 }
 
 /******************************************************************************
@@ -106,7 +106,7 @@ void IntegerParameterUI::updateUI()
 ******************************************************************************/
 int IntegerParameterUI::minValue() const
 {
-	return (spinner() ? (int)spinner()->minValue() : std::numeric_limits<int>::lowest());
+    return (spinner() ? (int)spinner()->minValue() : std::numeric_limits<int>::lowest());
 }
 
 /******************************************************************************
@@ -115,7 +115,7 @@ int IntegerParameterUI::minValue() const
 ******************************************************************************/
 void IntegerParameterUI::setMinValue(int minValue)
 {
-	if(spinner()) spinner()->setMinValue(minValue);
+    if(spinner()) spinner()->setMinValue(minValue);
 }
 
 /******************************************************************************
@@ -124,7 +124,7 @@ void IntegerParameterUI::setMinValue(int minValue)
 ******************************************************************************/
 int IntegerParameterUI::maxValue() const
 {
-	return (spinner() ? (int)spinner()->maxValue() : std::numeric_limits<int>::max());
+    return (spinner() ? (int)spinner()->maxValue() : std::numeric_limits<int>::max());
 }
 
 /******************************************************************************
@@ -133,7 +133,7 @@ int IntegerParameterUI::maxValue() const
 ******************************************************************************/
 void IntegerParameterUI::setMaxValue(int maxValue)
 {
-	if(spinner()) spinner()->setMaxValue(maxValue);
+    if(spinner()) spinner()->setMaxValue(maxValue);
 }
 
-}	// End of namespace
+}   // End of namespace

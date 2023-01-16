@@ -38,64 +38,64 @@ SET_OVITO_OBJECT_EDITOR(ExpandSelectionModifier, ExpandSelectionModifierEditor);
 ******************************************************************************/
 void ExpandSelectionModifierEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 {
-	// Create a rollout.
-	QWidget* rollout = createRollout(tr("Expand selection"), rolloutParams, "manual:particles.modifiers.expand_selection");
+    // Create a rollout.
+    QWidget* rollout = createRollout(tr("Expand selection"), rolloutParams, "manual:particles.modifiers.expand_selection");
 
     // Create the rollout contents.
-	QVBoxLayout* layout = new QVBoxLayout(rollout);
-	layout->setContentsMargins(4,4,4,4);
-	layout->setSpacing(6);
+    QVBoxLayout* layout = new QVBoxLayout(rollout);
+    layout->setContentsMargins(4,4,4,4);
+    layout->setSpacing(6);
 
-	QLabel* label = new QLabel(tr("Expand current selection to include particles that are..."));
-	label->setWordWrap(true);
-	layout->addWidget(label);
+    QLabel* label = new QLabel(tr("Expand current selection to include particles that are..."));
+    label->setWordWrap(true);
+    layout->addWidget(label);
 
-	IntegerRadioButtonParameterUI* modePUI = new IntegerRadioButtonParameterUI(this, PROPERTY_FIELD(ExpandSelectionModifier::mode));
-	QRadioButton* cutoffModeBtn = modePUI->addRadioButton(ExpandSelectionModifier::CutoffRange, tr("... within the range:"));
-	layout->addSpacing(10);
-	layout->addWidget(cutoffModeBtn);
+    IntegerRadioButtonParameterUI* modePUI = new IntegerRadioButtonParameterUI(this, PROPERTY_FIELD(ExpandSelectionModifier::mode));
+    QRadioButton* cutoffModeBtn = modePUI->addRadioButton(ExpandSelectionModifier::CutoffRange, tr("... within the range:"));
+    layout->addSpacing(10);
+    layout->addWidget(cutoffModeBtn);
 
-	// Cutoff parameter.
-	FloatParameterUI* cutoffRadiusPUI = new FloatParameterUI(this, PROPERTY_FIELD(ExpandSelectionModifier::cutoffRange));
-	QHBoxLayout* sublayout = new QHBoxLayout();
-	sublayout->setContentsMargins(0,0,0,0);
-	sublayout->addSpacing(20);
-	sublayout->addWidget(cutoffRadiusPUI->label());
-	sublayout->addLayout(cutoffRadiusPUI->createFieldLayout(), 1);
-	layout->addLayout(sublayout);
-	cutoffRadiusPUI->setEnabled(false);
-	connect(cutoffModeBtn, &QRadioButton::toggled, cutoffRadiusPUI, &FloatParameterUI::setEnabled);
+    // Cutoff parameter.
+    FloatParameterUI* cutoffRadiusPUI = new FloatParameterUI(this, PROPERTY_FIELD(ExpandSelectionModifier::cutoffRange));
+    QHBoxLayout* sublayout = new QHBoxLayout();
+    sublayout->setContentsMargins(0,0,0,0);
+    sublayout->addSpacing(20);
+    sublayout->addWidget(cutoffRadiusPUI->label());
+    sublayout->addLayout(cutoffRadiusPUI->createFieldLayout(), 1);
+    layout->addLayout(sublayout);
+    cutoffRadiusPUI->setEnabled(false);
+    connect(cutoffModeBtn, &QRadioButton::toggled, cutoffRadiusPUI, &FloatParameterUI::setEnabled);
 
-	QRadioButton* nearestNeighborsModeBtn = modePUI->addRadioButton(ExpandSelectionModifier::NearestNeighbors, tr("... among the N nearest neighbors:"));
-	layout->addSpacing(10);
-	layout->addWidget(nearestNeighborsModeBtn);
+    QRadioButton* nearestNeighborsModeBtn = modePUI->addRadioButton(ExpandSelectionModifier::NearestNeighbors, tr("... among the N nearest neighbors:"));
+    layout->addSpacing(10);
+    layout->addWidget(nearestNeighborsModeBtn);
 
-	// Number of nearest neighbors.
-	IntegerParameterUI* numNearestNeighborsPUI = new IntegerParameterUI(this, PROPERTY_FIELD(ExpandSelectionModifier::numNearestNeighbors));
-	sublayout = new QHBoxLayout();
-	sublayout->setContentsMargins(0,0,0,0);
-	sublayout->addSpacing(20);
-	sublayout->addWidget(numNearestNeighborsPUI->label());
-	sublayout->addLayout(numNearestNeighborsPUI->createFieldLayout(), 1);
-	layout->addLayout(sublayout);
-	numNearestNeighborsPUI->setEnabled(false);
-	connect(nearestNeighborsModeBtn, &QRadioButton::toggled, numNearestNeighborsPUI, &FloatParameterUI::setEnabled);
+    // Number of nearest neighbors.
+    IntegerParameterUI* numNearestNeighborsPUI = new IntegerParameterUI(this, PROPERTY_FIELD(ExpandSelectionModifier::numNearestNeighbors));
+    sublayout = new QHBoxLayout();
+    sublayout->setContentsMargins(0,0,0,0);
+    sublayout->addSpacing(20);
+    sublayout->addWidget(numNearestNeighborsPUI->label());
+    sublayout->addLayout(numNearestNeighborsPUI->createFieldLayout(), 1);
+    layout->addLayout(sublayout);
+    numNearestNeighborsPUI->setEnabled(false);
+    connect(nearestNeighborsModeBtn, &QRadioButton::toggled, numNearestNeighborsPUI, &FloatParameterUI::setEnabled);
 
-	QRadioButton* bondModeBtn = modePUI->addRadioButton(ExpandSelectionModifier::BondedNeighbors, tr("... bonded to a selected particle."));
-	layout->addSpacing(10);
-	layout->addWidget(bondModeBtn);
+    QRadioButton* bondModeBtn = modePUI->addRadioButton(ExpandSelectionModifier::BondedNeighbors, tr("... bonded to a selected particle."));
+    layout->addSpacing(10);
+    layout->addWidget(bondModeBtn);
 
-	layout->addSpacing(10);
-	IntegerParameterUI* numIterationsPUI = new IntegerParameterUI(this, PROPERTY_FIELD(ExpandSelectionModifier::numberOfIterations));
-	sublayout = new QHBoxLayout();
-	sublayout->setContentsMargins(0,0,0,0);
-	sublayout->addWidget(numIterationsPUI->label());
-	sublayout->addLayout(numIterationsPUI->createFieldLayout(), 1);
-	layout->addLayout(sublayout);
+    layout->addSpacing(10);
+    IntegerParameterUI* numIterationsPUI = new IntegerParameterUI(this, PROPERTY_FIELD(ExpandSelectionModifier::numberOfIterations));
+    sublayout = new QHBoxLayout();
+    sublayout->setContentsMargins(0,0,0,0);
+    sublayout->addWidget(numIterationsPUI->label());
+    sublayout->addLayout(numIterationsPUI->createFieldLayout(), 1);
+    layout->addLayout(sublayout);
 
-	// Status label.
-	layout->addSpacing(10);
-	layout->addWidget((new ObjectStatusDisplay(this))->statusWidget());
+    // Status label.
+    layout->addSpacing(10);
+    layout->addWidget((new ObjectStatusDisplay(this))->statusWidget());
 }
 
-}	// End of namespace
+}   // End of namespace

@@ -34,27 +34,27 @@ namespace Ovito {
 ******************************************************************************/
 class OVITO_GUI_EXPORT Vector3ParameterUI : public FloatParameterUI
 {
-	OVITO_CLASS(Vector3ParameterUI)
+    OVITO_CLASS(Vector3ParameterUI)
 
 public:
 
-	/// Constructor for a Qt property.
-	Vector3ParameterUI(PropertiesEditor* parentEditor, const char* propertyName, size_t vectorComponent, const QString& labelText = QString(), const QMetaObject* parameterUnitType = nullptr);
+    /// Constructor for a Qt property.
+    Vector3ParameterUI(PropertiesEditor* parentEditor, const char* propertyName, size_t vectorComponent, const QString& labelText = QString(), const QMetaObject* parameterUnitType = nullptr);
 
-	/// Constructor for a PropertyField or ReferenceField property.
-	Vector3ParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField, size_t vectorComponent);
+    /// Constructor for a PropertyField or ReferenceField property.
+    Vector3ParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField, size_t vectorComponent);
 
-	/// This method updates the displayed value of the parameter UI.
-	virtual void updateUI() override;
+    /// This method updates the displayed value of the parameter UI.
+    virtual void updateUI() override;
 
-	/// Takes the value entered by the user and stores it in the property field
-	/// this property UI is bound to.
-	virtual void updatePropertyValue() override;
+    /// Takes the value entered by the user and stores it in the property field
+    /// this property UI is bound to.
+    virtual void updatePropertyValue() override;
 
 private:
 
-	/// The vector component to control (0 - 2).
-	size_t _component;
+    /// The vector component to control (0 - 2).
+    size_t _component;
 };
 
-}	// End of namespace
+}   // End of namespace

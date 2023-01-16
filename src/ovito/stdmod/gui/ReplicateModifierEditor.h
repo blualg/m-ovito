@@ -33,17 +33,17 @@ namespace Ovito::StdMod {
  */
 class ReplicateModifierEditor : public PropertiesEditor
 {
-	OVITO_CLASS(ReplicateModifierEditor)
+    OVITO_CLASS(ReplicateModifierEditor)
 
 public:
 
-	/// Default constructor.
-	Q_INVOKABLE ReplicateModifierEditor() {}
+    /// Default constructor.
+    Q_INVOKABLE ReplicateModifierEditor() {}
 
 protected:
 
-	/// Creates the user interface controls for the editor.
-	virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
+    /// Creates the user interface controls for the editor.
+    virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
 };
 
-}	// End of namespace
+}   // End of namespace

@@ -38,9 +38,9 @@ IMPLEMENT_OVITO_CLASS(BondsColorCodingModifierDelegate);
 ******************************************************************************/
 QVector<DataObjectReference> ParticlesColorCodingModifierDelegate::OOMetaClass::getApplicableObjects(const DataCollection& input) const
 {
-	if(input.containsObject<ParticlesObject>())
-		return { DataObjectReference(&ParticlesObject::OOClass()) };
-	return {};
+    if(input.containsObject<ParticlesObject>())
+        return { DataObjectReference(&ParticlesObject::OOClass()) };
+    return {};
 }
 
 /******************************************************************************
@@ -55,7 +55,7 @@ QVector<DataObjectReference> ParticleVectorsColorCodingModifierDelegate::OOMetaC
                 return { DataObjectReference(&ParticlesObject::OOClass()) };
         }
     }
-	return {};
+    return {};
 }
 
 /******************************************************************************
@@ -66,9 +66,9 @@ QVector<DataObjectReference> BondsColorCodingModifierDelegate::OOMetaClass::getA
 {
     if(const ParticlesObject* particles = input.getObject<ParticlesObject>()) {
         if(particles->bonds())
-       		return { DataObjectReference(&ParticlesObject::OOClass()) };
+            return { DataObjectReference(&ParticlesObject::OOClass()) };
     }
     return {};
 }
 
-}	// End of namespace
+}   // End of namespace

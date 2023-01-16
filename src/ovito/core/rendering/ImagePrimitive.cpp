@@ -31,11 +31,11 @@ namespace Ovito {
 ******************************************************************************/
 void ImagePrimitive::setRectViewport(const SceneRenderer* renderer, const Box2& rect)
 { 
-	OVITO_ASSERT(!rect.isEmpty());
-	QSize windowSize = renderer->viewportRect().size();
-	Point2 minc((rect.minc.x() + 1.0) * windowSize.width() / 2.0, (-rect.maxc.y() + 1.0) * windowSize.height() / 2.0);
-	Point2 maxc((rect.maxc.x() + 1.0) * windowSize.width() / 2.0, (-rect.minc.y() + 1.0) * windowSize.height() / 2.0);
-	setRectWindow(Box2(minc, maxc));
+    OVITO_ASSERT(!rect.isEmpty());
+    QSize windowSize = renderer->viewportRect().size();
+    Point2 minc((rect.minc.x() + 1.0) * windowSize.width() / 2.0, (-rect.maxc.y() + 1.0) * windowSize.height() / 2.0);
+    Point2 maxc((rect.maxc.x() + 1.0) * windowSize.width() / 2.0, (-rect.minc.y() + 1.0) * windowSize.height() / 2.0);
+    setRectWindow(Box2(minc, maxc));
 }
 
-}	// End of namespace
+}   // End of namespace

@@ -34,40 +34,40 @@ namespace Ovito {
  */
 class OVITO_CORE_EXPORT AsynchronousModifierApplication : public ModifierApplication
 {
-	OVITO_CLASS(AsynchronousModifierApplication)
+    OVITO_CLASS(AsynchronousModifierApplication)
 
 public:
 
-	/// \brief Constructs a modifier application.
-	Q_INVOKABLE AsynchronousModifierApplication(ObjectCreationParams params) : ModifierApplication(params) {}
+    /// \brief Constructs a modifier application.
+    Q_INVOKABLE AsynchronousModifierApplication(ObjectCreationParams params) : ModifierApplication(params) {}
 
-	/// Returns the sequence of compute engines from a recent successfully completed modifier evaluation which are still valid.
-	const std::vector<AsynchronousModifier::EnginePtr>& validStages() const { return _validStages; }
+    /// Returns the sequence of compute engines from a recent successfully completed modifier evaluation which are still valid.
+    const std::vector<AsynchronousModifier::EnginePtr>& validStages() const { return _validStages; }
 
-	/// Stores the sequence of compute engines from a recent successfully completed modifier evaluation.
-	void setValidStages(std::vector<AsynchronousModifier::EnginePtr> validStages) { _validStages = std::move(validStages); }
+    /// Stores the sequence of compute engines from a recent successfully completed modifier evaluation.
+    void setValidStages(std::vector<AsynchronousModifier::EnginePtr> validStages) { _validStages = std::move(validStages); }
 
-	/// Returns a compute engine containing the results of a fully completed algorithm, which may be outdated.
-	const AsynchronousModifier::EnginePtr& completedEngine() const { return _completedEngine; }
+    /// Returns a compute engine containing the results of a fully completed algorithm, which may be outdated.
+    const AsynchronousModifier::EnginePtr& completedEngine() const { return _completedEngine; }
 
-	/// Stores the compute engine containing the results of a fully completed algorithm.
-	void setCompletedEngine(AsynchronousModifier::EnginePtr eng) { _completedEngine = std::move(eng); }
+    /// Stores the compute engine containing the results of a fully completed algorithm.
+    void setCompletedEngine(AsynchronousModifier::EnginePtr eng) { _completedEngine = std::move(eng); }
 
 protected:
 
-	/// \brief Is called when a RefTarget referenced by this object has generated an event.
-	virtual bool referenceEvent(RefTarget* source, const ReferenceEvent& event) override;
+    /// \brief Is called when a RefTarget referenced by this object has generated an event.
+    virtual bool referenceEvent(RefTarget* source, const ReferenceEvent& event) override;
 
-	/// Is called when the value of a reference field of this object changes.
-	virtual void referenceReplaced(const PropertyFieldDescriptor* field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex) override;
+    /// Is called when the value of a reference field of this object changes.
+    virtual void referenceReplaced(const PropertyFieldDescriptor* field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex) override;
 
 private:
 
-	/// The sequence of compute engines from a recent successfully completed modifier evaluation which are still valid.
-	std::vector<AsynchronousModifier::EnginePtr> _validStages;
+    /// The sequence of compute engines from a recent successfully completed modifier evaluation which are still valid.
+    std::vector<AsynchronousModifier::EnginePtr> _validStages;
 
-	/// A compute engine containing the results of a fully completed algorithm, which may be outdated.
-	AsynchronousModifier::EnginePtr _completedEngine;
+    /// A compute engine containing the results of a fully completed algorithm, which may be outdated.
+    AsynchronousModifier::EnginePtr _completedEngine;
 };
 
-}	// End of namespace
+}   // End of namespace

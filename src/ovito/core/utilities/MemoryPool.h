@@ -47,85 +47,85 @@ class MemoryPool
 {
 public:
 
-	/// Constructs a new memory pool.
-	/// \param pageSize Controls the number of objects per memory page allocated by this pool.
-	MemoryPool(size_t pageSize = 1024) : _lastPageNumber(pageSize), _pageSize(pageSize) {}
+    /// Constructs a new memory pool.
+    /// \param pageSize Controls the number of objects per memory page allocated by this pool.
+    MemoryPool(size_t pageSize = 1024) : _lastPageNumber(pageSize), _pageSize(pageSize) {}
 
-	/// Releases the memory reserved by this pool and destroys all allocated object instances.
-	~MemoryPool() { clear(); }
+    /// Releases the memory reserved by this pool and destroys all allocated object instances.
+    ~MemoryPool() { clear(); }
 
-	/// Memory pools cannot be copied.
-	MemoryPool(const MemoryPool& other) = delete;
+    /// Memory pools cannot be copied.
+    MemoryPool(const MemoryPool& other) = delete;
 
-	/// Memory pools cannot be copy assigned.
-	MemoryPool& operator=(const MemoryPool& other) = delete;
+    /// Memory pools cannot be copy assigned.
+    MemoryPool& operator=(const MemoryPool& other) = delete;
 
-	/// Allocates, constructs, and returns a new object instance.
-	/// Any arguments passed to this method are forwarded to the class constructor.
-	template<class... Args>
-	inline T* construct(Args&&... args) {
-		T* p = malloc();
-		std::allocator_traits<std::allocator<T>>::construct(_alloc, p, std::forward<Args>(args)...);
-		return p;
-	}
+    /// Allocates, constructs, and returns a new object instance.
+    /// Any arguments passed to this method are forwarded to the class constructor.
+    template<class... Args>
+    inline T* construct(Args&&... args) {
+        T* p = malloc();
+        std::allocator_traits<std::allocator<T>>::construct(_alloc, p, std::forward<Args>(args)...);
+        return p;
+    }
 
-	/// Destroys all object instances belonging to the memory pool
-	/// and releases the memory pages allocated by the pool.
-	inline void clear(bool keepPageReserved = false) {
-		for(auto i = _pages.cbegin(); i != _pages.cend(); ++i) {
-			T* p = *i;
-			T* pend = p + _pageSize;
-			if(i+1 == _pages.end())
-				pend = p + _lastPageNumber;
-			for(; p != pend; ++p)
-				std::allocator_traits<std::allocator<T>>::destroy(_alloc, p);
-			if(!keepPageReserved || i != _pages.cbegin()) {
-				_alloc.deallocate(*i, _pageSize);
-			}
-		}
-		if(!keepPageReserved) {
-			_pages.clear();
-			_lastPageNumber = _pageSize;
-		}
-		else if(!_pages.empty()) {
-			_pages.resize(1);
-			_lastPageNumber = 0;
-		}
-	}
+    /// Destroys all object instances belonging to the memory pool
+    /// and releases the memory pages allocated by the pool.
+    inline void clear(bool keepPageReserved = false) {
+        for(auto i = _pages.cbegin(); i != _pages.cend(); ++i) {
+            T* p = *i;
+            T* pend = p + _pageSize;
+            if(i+1 == _pages.end())
+                pend = p + _lastPageNumber;
+            for(; p != pend; ++p)
+                std::allocator_traits<std::allocator<T>>::destroy(_alloc, p);
+            if(!keepPageReserved || i != _pages.cbegin()) {
+                _alloc.deallocate(*i, _pageSize);
+            }
+        }
+        if(!keepPageReserved) {
+            _pages.clear();
+            _lastPageNumber = _pageSize;
+        }
+        else if(!_pages.empty()) {
+            _pages.resize(1);
+            _lastPageNumber = 0;
+        }
+    }
 
-	/// Returns the number of bytes currently reserved by this memory pool.
-	size_t memoryUsage() const {
-		return _pages.size() * _pageSize * sizeof(T);
-	}
+    /// Returns the number of bytes currently reserved by this memory pool.
+    size_t memoryUsage() const {
+        return _pages.size() * _pageSize * sizeof(T);
+    }
 
-	/// Swaps this memory pool with another pool instance.
-	void swap(MemoryPool<T>& other) {
-		_pages.swap(other._pages);
-		std::swap(_lastPageNumber, other._lastPageNumber);
-		std::swap(_pageSize, other._pageSize);
-		std::swap(_alloc, other._alloc);
-	}
+    /// Swaps this memory pool with another pool instance.
+    void swap(MemoryPool<T>& other) {
+        _pages.swap(other._pages);
+        std::swap(_lastPageNumber, other._lastPageNumber);
+        std::swap(_pageSize, other._pageSize);
+        std::swap(_alloc, other._alloc);
+    }
 
 private:
 
-	/// Allocates memory for a new object instance.
-	T* malloc() {
-		T* p;
-		if(_lastPageNumber == _pageSize) {
-			_pages.push_back(p = _alloc.allocate(_pageSize));
-			_lastPageNumber = 1;
-		}
-		else {
-			p = _pages.back() + _lastPageNumber;
-			_lastPageNumber++;
-		}
-		return p;
-	}
+    /// Allocates memory for a new object instance.
+    T* malloc() {
+        T* p;
+        if(_lastPageNumber == _pageSize) {
+            _pages.push_back(p = _alloc.allocate(_pageSize));
+            _lastPageNumber = 1;
+        }
+        else {
+            p = _pages.back() + _lastPageNumber;
+            _lastPageNumber++;
+        }
+        return p;
+    }
 
-	std::vector<T*> _pages;
-	size_t _lastPageNumber;
-	size_t _pageSize;
-	std::allocator<T> _alloc;
+    std::vector<T*> _pages;
+    size_t _lastPageNumber;
+    size_t _pageSize;
+    std::allocator<T> _alloc;
 };
 
-}	// End of namespace
+}   // End of namespace

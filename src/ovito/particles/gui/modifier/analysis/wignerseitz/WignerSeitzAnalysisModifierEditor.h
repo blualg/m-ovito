@@ -33,27 +33,27 @@ namespace Ovito::Particles {
  */
 class WignerSeitzAnalysisModifierEditor : public PropertiesEditor
 {
-	OVITO_CLASS(WignerSeitzAnalysisModifierEditor)
+    OVITO_CLASS(WignerSeitzAnalysisModifierEditor)
 
 public:
 
-	/// Default constructor.
-	Q_INVOKABLE WignerSeitzAnalysisModifierEditor() {}
+    /// Default constructor.
+    Q_INVOKABLE WignerSeitzAnalysisModifierEditor() {}
 
 private Q_SLOTS:
 
-	/// Is called when the object being edited changes.
-	void onContentsChanged(RefTarget* editObject);
+    /// Is called when the object being edited changes.
+    void onContentsChanged(RefTarget* editObject);
 
-	/// Is called when the user clicks one of the source mode buttons.
-	void onSourceButtonClicked(int id);
+    /// Is called when the user clicks one of the source mode buttons.
+    void onSourceButtonClicked(int id);
 
 protected:
 
-	/// Creates the user interface controls for the editor.
-	virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
+    /// Creates the user interface controls for the editor.
+    virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
 
-	QButtonGroup* _sourceButtonGroup;
+    QButtonGroup* _sourceButtonGroup;
 };
 
-}	// End of namespace
+}   // End of namespace

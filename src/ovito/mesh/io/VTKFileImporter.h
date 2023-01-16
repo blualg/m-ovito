@@ -34,60 +34,60 @@ namespace Ovito::Mesh {
  */
 class OVITO_MESH_EXPORT VTKFileImporter : public FileSourceImporter
 {
-	/// Defines a metaclass specialization for this importer type.
-	class OOMetaClass : public FileSourceImporter::OOMetaClass
-	{
-	public:
-		/// Inherit standard constructor from base meta class.
-		using FileSourceImporter::OOMetaClass::OOMetaClass;
+    /// Defines a metaclass specialization for this importer type.
+    class OOMetaClass : public FileSourceImporter::OOMetaClass
+    {
+    public:
+        /// Inherit standard constructor from base meta class.
+        using FileSourceImporter::OOMetaClass::OOMetaClass;
 
-		/// Returns the list of file formats that can be read by this importer class.
-		virtual Ovito::span<const SupportedFormat> supportedFormats() const override {
-			static const SupportedFormat formats[] = {{ QStringLiteral("*.vtk"), tr("VTK Legacy Files") }};
-			return formats;
-		}
+        /// Returns the list of file formats that can be read by this importer class.
+        virtual Ovito::span<const SupportedFormat> supportedFormats() const override {
+            static const SupportedFormat formats[] = {{ QStringLiteral("*.vtk"), tr("VTK Legacy Files") }};
+            return formats;
+        }
 
-		/// Checks if the given file has format that can be read by this importer.
-		virtual bool checkFileFormat(const FileHandle& file) const override;
+        /// Checks if the given file has format that can be read by this importer.
+        virtual bool checkFileFormat(const FileHandle& file) const override;
 
-		/// Returns whether this importer class supports importing data of the given type.
-		virtual bool importsDataType(const DataObject::OOMetaClass& dataObjectType) const override;
-	};
+        /// Returns whether this importer class supports importing data of the given type.
+        virtual bool importsDataType(const DataObject::OOMetaClass& dataObjectType) const override;
+    };
 
-	OVITO_CLASS_META(VTKFileImporter, OOMetaClass)
+    OVITO_CLASS_META(VTKFileImporter, OOMetaClass)
 
 public:
 
-	/// \brief Constructs a new instance of this class.
-	Q_INVOKABLE VTKFileImporter(ObjectCreationParams params) : FileSourceImporter(params) {}
+    /// \brief Constructs a new instance of this class.
+    Q_INVOKABLE VTKFileImporter(ObjectCreationParams params) : FileSourceImporter(params) {}
 
-	/// Returns the title of this object.
-	virtual QString objectTitle() const override { return tr("VTK"); }
+    /// Returns the title of this object.
+    virtual QString objectTitle() const override { return tr("VTK"); }
 
-	/// Creates an asynchronous loader object that loads the data for the given frame from the external file.
-	virtual FileSourceImporter::FrameLoaderPtr createFrameLoader(const LoadOperationRequest& request) override {
-		activateCLocale();
-		return std::make_shared<FrameLoader>(request);
-	}
+    /// Creates an asynchronous loader object that loads the data for the given frame from the external file.
+    virtual FileSourceImporter::FrameLoaderPtr createFrameLoader(const LoadOperationRequest& request) override {
+        activateCLocale();
+        return std::make_shared<FrameLoader>(request);
+    }
 
 protected:
 
-	/// The format-specific task object that is responsible for reading an input file in the background.
-	class FrameLoader : public FileSourceImporter::FrameLoader
-	{
-	public:
+    /// The format-specific task object that is responsible for reading an input file in the background.
+    class FrameLoader : public FileSourceImporter::FrameLoader
+    {
+    public:
 
-		/// Inherit constructor from base class.
-		using FileSourceImporter::FrameLoader::FrameLoader;
+        /// Inherit constructor from base class.
+        using FileSourceImporter::FrameLoader::FrameLoader;
 
-	protected:
+    protected:
 
-		/// Reads the frame data from the external file.
-		virtual void loadFile() override;
+        /// Reads the frame data from the external file.
+        virtual void loadFile() override;
 
-		/// Reads from the input stream and throws an exception if the given keyword is not present.
-		static void expectKeyword(CompressedTextReader& stream, const char* keyword);
-	};
+        /// Reads from the input stream and throws an exception if the given keyword is not present.
+        static void expectKeyword(CompressedTextReader& stream, const char* keyword);
+    };
 };
 
-}	// End of namespace
+}   // End of namespace

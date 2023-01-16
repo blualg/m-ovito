@@ -34,84 +34,84 @@ namespace Ovito {
  */
 class OVITO_CORE_EXPORT LinePrimitive final
 {
-	Q_GADGET
+    Q_GADGET
 
 public:
 
-	/// \brief Sets the coordinates of the line vertices.
-	void setPositions(ConstDataBufferPtr coordinates) {
-		OVITO_ASSERT(coordinates);
-		OVITO_ASSERT(coordinates->dataType() == DataBuffer::Float && coordinates->componentCount() == 3);
-		_positions = std::move(coordinates);
-	}
+    /// \brief Sets the coordinates of the line vertices.
+    void setPositions(ConstDataBufferPtr coordinates) {
+        OVITO_ASSERT(coordinates);
+        OVITO_ASSERT(coordinates->dataType() == DataBuffer::Float && coordinates->componentCount() == 3);
+        _positions = std::move(coordinates);
+    }
 
-	/// \brief Sets the coordinates of the line vertices.
-	template<typename InputIterator>
-	void makePositions(InputIterator begin, InputIterator end) {
-		size_t count = std::distance(begin, end);
-		DataBufferAccessAndRef<Point3> buffer = DataBufferPtr::create(count, DataBuffer::Float, 3);
-		std::copy(std::move(begin), std::move(end), buffer.begin());
-		setPositions(buffer.take());
-	}
+    /// \brief Sets the coordinates of the line vertices.
+    template<typename InputIterator>
+    void makePositions(InputIterator begin, InputIterator end) {
+        size_t count = std::distance(begin, end);
+        DataBufferAccessAndRef<Point3> buffer = DataBufferPtr::create(count, DataBuffer::Float, 3);
+        std::copy(std::move(begin), std::move(end), buffer.begin());
+        setPositions(buffer.take());
+    }
 
-	/// \brief Sets the coordinates of the line vertices.
-	template<typename Range>
-	void makePositions(const Range& range) {
-		makePositions(std::begin(range), std::end(range));
-	}
+    /// \brief Sets the coordinates of the line vertices.
+    template<typename Range>
+    void makePositions(const Range& range) {
+        makePositions(std::begin(range), std::end(range));
+    }
 
-	/// Returns the buffer storing the vertex positions.
-	const ConstDataBufferPtr& positions() const { return _positions; }
+    /// Returns the buffer storing the vertex positions.
+    const ConstDataBufferPtr& positions() const { return _positions; }
 
-	/// \brief Sets the colors of the vertices.
-	void setColors(ConstDataBufferPtr colors) {
-		OVITO_ASSERT(!colors || colors->dataType() == DataBuffer::Float && colors->componentCount() == 4);
-		_colors = std::move(colors);
-	}
+    /// \brief Sets the colors of the vertices.
+    void setColors(ConstDataBufferPtr colors) {
+        OVITO_ASSERT(!colors || colors->dataType() == DataBuffer::Float && colors->componentCount() == 4);
+        _colors = std::move(colors);
+    }
 
-	/// \brief Sets the colors of the vertices.
-	template<typename InputIterator>
-	void makeColors(InputIterator begin, InputIterator end) {
-		size_t count = std::distance(begin, end);
-		DataBufferAccessAndRef<ColorA> buffer = DataBufferPtr::create(count, DataBuffer::Float, 4);
-		std::copy(std::move(begin), std::move(end), buffer.begin());
-		setColors(buffer.take());
-	}
+    /// \brief Sets the colors of the vertices.
+    template<typename InputIterator>
+    void makeColors(InputIterator begin, InputIterator end) {
+        size_t count = std::distance(begin, end);
+        DataBufferAccessAndRef<ColorA> buffer = DataBufferPtr::create(count, DataBuffer::Float, 4);
+        std::copy(std::move(begin), std::move(end), buffer.begin());
+        setColors(buffer.take());
+    }
 
-	/// \brief Sets the colors of the vertices.
-	template<typename Range>
-	void makeColors(const Range& range) {
-		makeColors(std::begin(range), std::end(range));
-	}
+    /// \brief Sets the colors of the vertices.
+    template<typename Range>
+    void makeColors(const Range& range) {
+        makeColors(std::begin(range), std::end(range));
+    }
 
-	/// Returns the buffer storing the per-vertex colors.
-	const ConstDataBufferPtr& colors() const { return _colors; }
+    /// Returns the buffer storing the per-vertex colors.
+    const ConstDataBufferPtr& colors() const { return _colors; }
 
-	/// \brief Sets the color of all vertices to the given value.
-	void setUniformColor(const ColorA& color) { _uniformColor = color; }
+    /// \brief Sets the color of all vertices to the given value.
+    void setUniformColor(const ColorA& color) { _uniformColor = color; }
 
-	/// \brief Returns the uniform color of all vertices.
-	const ColorA& uniformColor() const { return _uniformColor; }
+    /// \brief Returns the uniform color of all vertices.
+    const ColorA& uniformColor() const { return _uniformColor; }
 
-	/// \brief Returns the line width in pixels.
-	FloatType lineWidth() const { return _lineWidth; }
+    /// \brief Returns the line width in pixels.
+    FloatType lineWidth() const { return _lineWidth; }
 
-	/// \brief Sets the line width in pixels.
-	void setLineWidth(FloatType width) { _lineWidth = width; }
+    /// \brief Sets the line width in pixels.
+    void setLineWidth(FloatType width) { _lineWidth = width; }
 
 private:
 
-	/// The uniform line color.
-	ColorA _uniformColor{1,1,1,1};
+    /// The uniform line color.
+    ColorA _uniformColor{1,1,1,1};
 
-	/// The line width in pixels.
-	FloatType _lineWidth = 0.0;
+    /// The line width in pixels.
+    FloatType _lineWidth = 0.0;
 
-	/// The buffer storing the vertex positions.
-	ConstDataBufferPtr _positions; // Array of Point3
+    /// The buffer storing the vertex positions.
+    ConstDataBufferPtr _positions; // Array of Point3
 
-	/// The buffer storing the vertex colors.
-	ConstDataBufferPtr _colors; // Array of ColorA
+    /// The buffer storing the vertex colors.
+    ConstDataBufferPtr _colors; // Array of ColorA
 };
 
-}	// End of namespace
+}   // End of namespace

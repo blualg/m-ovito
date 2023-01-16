@@ -31,41 +31,41 @@ namespace Ovito {
 ******************************************************************************/
 void MouseGrabWorkaround::setActive(bool active, QQuickItem* activeItem)
 {
-	if(_isActive == active)
-		return;
-	_isActive = active;
+    if(_isActive == active)
+        return;
+    _isActive = active;
 #ifdef Q_OS_WASM
-	if(active) {
-		OVITO_ASSERT(_savedState.empty());
-		if(_container) {
-//			qDebug() << "Activating mouse grabber for container" << _container << "and active item" << activeItem;
-			disableMouseEventHandling(_container, activeItem);
-		}
-	}
-	else {
-		for(const auto& state : _savedState) {
-			if(QQuickItem* item = state.first.data()) {
-				item->setAcceptedMouseButtons(state.second);
-			}
-		}
-		_savedState.clear();
-	}
+    if(active) {
+        OVITO_ASSERT(_savedState.empty());
+        if(_container) {
+//          qDebug() << "Activating mouse grabber for container" << _container << "and active item" << activeItem;
+            disableMouseEventHandling(_container, activeItem);
+        }
+    }
+    else {
+        for(const auto& state : _savedState) {
+            if(QQuickItem* item = state.first.data()) {
+                item->setAcceptedMouseButtons(state.second);
+            }
+        }
+        _savedState.clear();
+    }
 #endif
 }
 
 void MouseGrabWorkaround::disableMouseEventHandling(QQuickItem* item, QQuickItem* activeItem)
 {
-	for(QQuickItem* childItem : item->childItems()) {
-		if(childItem == activeItem) {
-			continue;
-		}
-		if(childItem->acceptedMouseButtons() != Qt::NoButton) {
-//			qDebug() << "Overriding mouse state of item" << childItem << childItem->acceptedMouseButtons();
-			_savedState.emplace_back(childItem, childItem->acceptedMouseButtons());
-			childItem->setAcceptedMouseButtons(Qt::NoButton);
-		}
-		disableMouseEventHandling(childItem, activeItem);
-	}
+    for(QQuickItem* childItem : item->childItems()) {
+        if(childItem == activeItem) {
+            continue;
+        }
+        if(childItem->acceptedMouseButtons() != Qt::NoButton) {
+//          qDebug() << "Overriding mouse state of item" << childItem << childItem->acceptedMouseButtons();
+            _savedState.emplace_back(childItem, childItem->acceptedMouseButtons());
+            childItem->setAcceptedMouseButtons(Qt::NoButton);
+        }
+        disableMouseEventHandling(childItem, activeItem);
+    }
 }
 
-}	// End of namespace
+}   // End of namespace

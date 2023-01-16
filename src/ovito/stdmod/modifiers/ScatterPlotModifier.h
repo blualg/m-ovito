@@ -35,83 +35,83 @@ namespace Ovito::StdMod {
  */
 class OVITO_STDMOD_EXPORT ScatterPlotModifier : public GenericPropertyModifier
 {
-	OVITO_CLASS(ScatterPlotModifier)
-	Q_CLASSINFO("DisplayName", "Scatter plot");
-	Q_CLASSINFO("Description", "Generate a scatter plot from the values of two properties.");
+    OVITO_CLASS(ScatterPlotModifier)
+    Q_CLASSINFO("DisplayName", "Scatter plot");
+    Q_CLASSINFO("Description", "Generate a scatter plot from the values of two properties.");
 #ifndef OVITO_QML_GUI
-	Q_CLASSINFO("ModifierCategory", "Analysis");
+    Q_CLASSINFO("ModifierCategory", "Analysis");
 #else
-	Q_CLASSINFO("ModifierCategory", "-");
+    Q_CLASSINFO("ModifierCategory", "-");
 #endif
 
 public:
 
-	/// Constructor.
-	Q_INVOKABLE ScatterPlotModifier(ObjectCreationParams params);
+    /// Constructor.
+    Q_INVOKABLE ScatterPlotModifier(ObjectCreationParams params);
 
-	/// This method is called by the system after the modifier has been inserted into a data pipeline.
-	virtual void initializeModifier(const ModifierInitializationRequest& request) override;
+    /// This method is called by the system after the modifier has been inserted into a data pipeline.
+    virtual void initializeModifier(const ModifierInitializationRequest& request) override;
 
-	/// Modifies the input data synchronously.
-	virtual void evaluateSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
+    /// Modifies the input data synchronously.
+    virtual void evaluateSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
 
-	/// Set start and end value of the x-axis.
-	void setXAxisRange(FloatType start, FloatType end) { setXAxisRangeStart(start); setXAxisRangeEnd(end); }
+    /// Set start and end value of the x-axis.
+    void setXAxisRange(FloatType start, FloatType end) { setXAxisRangeStart(start); setXAxisRangeEnd(end); }
 
-	/// Set start and end value of the y-axis.
-	void setYAxisRange(FloatType start, FloatType end) { setYAxisRangeStart(start); setYAxisRangeEnd(end); }
+    /// Set start and end value of the y-axis.
+    void setYAxisRange(FloatType start, FloatType end) { setYAxisRangeStart(start); setYAxisRangeEnd(end); }
 
-	/// Returns a short piece information (typically a string or color) to be displayed next to the modifier's title in the pipeline editor list.
-	virtual QVariant getPipelineEditorShortInfo(Scene* scene, ModifierApplication* modApp) const override { return tr("%1 vs. %2").arg(yAxisProperty().nameWithComponent()).arg(xAxisProperty().nameWithComponent()); }
+    /// Returns a short piece information (typically a string or color) to be displayed next to the modifier's title in the pipeline editor list.
+    virtual QVariant getPipelineEditorShortInfo(Scene* scene, ModifierApplication* modApp) const override { return tr("%1 vs. %2").arg(yAxisProperty().nameWithComponent()).arg(xAxisProperty().nameWithComponent()); }
 
 protected:
 
-	/// Is called when the value of a property of this object has changed.
-	virtual void propertyChanged(const PropertyFieldDescriptor* field) override;
+    /// Is called when the value of a property of this object has changed.
+    virtual void propertyChanged(const PropertyFieldDescriptor* field) override;
 
 private:
 
-	/// The property that is used as source for the x-axis.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD(PropertyReference, xAxisProperty, setXAxisProperty);
+    /// The property that is used as source for the x-axis.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(PropertyReference, xAxisProperty, setXAxisProperty);
 
-	/// The property that is used as source for the y-axis.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD(PropertyReference, yAxisProperty, setYAxisProperty);
+    /// The property that is used as source for the y-axis.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(PropertyReference, yAxisProperty, setYAxisProperty);
 
-	/// Controls the whether elements within the specified range should be selected (x-axis).
-	DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, selectXAxisInRange, setSelectXAxisInRange);
+    /// Controls the whether elements within the specified range should be selected (x-axis).
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, selectXAxisInRange, setSelectXAxisInRange);
 
-	/// Controls the start value of the selection interval (x-axis).
-	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType, selectionXAxisRangeStart, setSelectionXAxisRangeStart, PROPERTY_FIELD_MEMORIZE);
+    /// Controls the start value of the selection interval (x-axis).
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType, selectionXAxisRangeStart, setSelectionXAxisRangeStart, PROPERTY_FIELD_MEMORIZE);
 
-	/// Controls the end value of the selection interval (x-axis).
-	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType, selectionXAxisRangeEnd, setSelectionXAxisRangeEnd, PROPERTY_FIELD_MEMORIZE);
+    /// Controls the end value of the selection interval (x-axis).
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType, selectionXAxisRangeEnd, setSelectionXAxisRangeEnd, PROPERTY_FIELD_MEMORIZE);
 
-	/// Controls the whether elements within the specified range should be selected (y-axis).
-	DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, selectYAxisInRange, setSelectYAxisInRange);
+    /// Controls the whether elements within the specified range should be selected (y-axis).
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, selectYAxisInRange, setSelectYAxisInRange);
 
-	/// Controls the start value of the selection interval (y-axis).
-	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType, selectionYAxisRangeStart, setSelectionYAxisRangeStart, PROPERTY_FIELD_MEMORIZE);
+    /// Controls the start value of the selection interval (y-axis).
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType, selectionYAxisRangeStart, setSelectionYAxisRangeStart, PROPERTY_FIELD_MEMORIZE);
 
-	/// Controls the end value of the selection interval (y-axis).
-	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType, selectionYAxisRangeEnd, setSelectionYAxisRangeEnd, PROPERTY_FIELD_MEMORIZE);
+    /// Controls the end value of the selection interval (y-axis).
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType, selectionYAxisRangeEnd, setSelectionYAxisRangeEnd, PROPERTY_FIELD_MEMORIZE);
 
-	/// Controls the whether the range of the x-axis of the scatter plot should be fixed.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, fixXAxisRange, setFixXAxisRange);
+    /// Controls the whether the range of the x-axis of the scatter plot should be fixed.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, fixXAxisRange, setFixXAxisRange);
 
-	/// Controls the start value of the x-axis.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType, xAxisRangeStart, setXAxisRangeStart, PROPERTY_FIELD_MEMORIZE);
+    /// Controls the start value of the x-axis.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType, xAxisRangeStart, setXAxisRangeStart, PROPERTY_FIELD_MEMORIZE);
 
-	/// Controls the end value of the x-axis.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType, xAxisRangeEnd, setXAxisRangeEnd, PROPERTY_FIELD_MEMORIZE);
+    /// Controls the end value of the x-axis.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType, xAxisRangeEnd, setXAxisRangeEnd, PROPERTY_FIELD_MEMORIZE);
 
-	/// Controls the whether the range of the y-axis of the scatter plot should be fixed.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, fixYAxisRange, setFixYAxisRange);
+    /// Controls the whether the range of the y-axis of the scatter plot should be fixed.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, fixYAxisRange, setFixYAxisRange);
 
-	/// Controls the start value of the y-axis.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType, yAxisRangeStart, setYAxisRangeStart, PROPERTY_FIELD_MEMORIZE);
+    /// Controls the start value of the y-axis.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType, yAxisRangeStart, setYAxisRangeStart, PROPERTY_FIELD_MEMORIZE);
 
-	/// Controls the end value of the y-axis.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType, yAxisRangeEnd, setYAxisRangeEnd, PROPERTY_FIELD_MEMORIZE);
+    /// Controls the end value of the y-axis.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType, yAxisRangeEnd, setYAxisRangeEnd, PROPERTY_FIELD_MEMORIZE);
 };
 
-}	// End of namespace
+}   // End of namespace

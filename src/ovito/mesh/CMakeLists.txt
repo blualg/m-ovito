@@ -24,61 +24,61 @@
 FIND_PACKAGE(Qt6 ${OVITO_MINIMUM_REQUIRED_QT_VERSION} COMPONENTS Xml REQUIRED)
 
 SET(SourceFiles
-	surface/SurfaceMesh.cpp
-	surface/SurfaceMeshAccess.cpp
-	surface/RenderableSurfaceMesh.cpp
-	surface/SurfaceMeshVis.cpp
-	surface/SurfaceMeshTopology.cpp
-	surface/SurfaceMeshVertices.cpp
-	surface/SurfaceMeshFaces.cpp
-	surface/SurfaceMeshRegions.cpp
-	io/VTKFileImporter.cpp
-	io/VTKTriangleMeshExporter.cpp
-	io/ParaViewVTPMeshImporter.cpp
-	io/ParaViewVTRSimulationCellImporter.cpp
-	io/ParaViewVTUSimulationCellImporter.cpp
-	io/ParaViewVTMImporter.cpp
-	io/ParaViewPVDImporter.cpp
-	io/WavefrontOBJImporter.cpp
-	io/STLImporter.cpp
+    surface/SurfaceMesh.cpp
+    surface/SurfaceMeshAccess.cpp
+    surface/RenderableSurfaceMesh.cpp
+    surface/SurfaceMeshVis.cpp
+    surface/SurfaceMeshTopology.cpp
+    surface/SurfaceMeshVertices.cpp
+    surface/SurfaceMeshFaces.cpp
+    surface/SurfaceMeshRegions.cpp
+    io/VTKFileImporter.cpp
+    io/VTKTriangleMeshExporter.cpp
+    io/ParaViewVTPMeshImporter.cpp
+    io/ParaViewVTRSimulationCellImporter.cpp
+    io/ParaViewVTUSimulationCellImporter.cpp
+    io/ParaViewVTMImporter.cpp
+    io/ParaViewPVDImporter.cpp
+    io/WavefrontOBJImporter.cpp
+    io/STLImporter.cpp
 )
 
 # List of source files of the GLU library used for polygon tessellation.
 SET(GLUSourceFiles
-	util/polytess/dict.c
-	util/polytess/geom.c
-	util/polytess/memalloc.c
-	util/polytess/mesh.c
-	util/polytess/normal.c
-	util/polytess/priorityq.c
-	util/polytess/render.c
-	util/polytess/sweep.c
-	util/polytess/tess.c
-	util/polytess/tessmono.c
+    util/polytess/dict.c
+    util/polytess/geom.c
+    util/polytess/memalloc.c
+    util/polytess/mesh.c
+    util/polytess/normal.c
+    util/polytess/priorityq.c
+    util/polytess/render.c
+    util/polytess/sweep.c
+    util/polytess/tess.c
+    util/polytess/tessmono.c
 )
 
 # Define the plugin module.
 OVITO_STANDARD_PLUGIN(Mesh
-	SOURCES
-		${SourceFiles}
-		${GLUSourceFiles}
-	PLUGIN_DEPENDENCIES StdObj
-	PRECOMPILED_HEADERS Mesh.h
-	LIB_DEPENDENCIES Qt6::Xml
+    SOURCES
+        ${SourceFiles}
+        ${GLUSourceFiles}
+    PLUGIN_DEPENDENCIES StdObj
+    PRECOMPILED_HEADERS Mesh.h
+    LIB_DEPENDENCIES Qt6::Xml
 )
 
 # Polytess code does not support unity build. Need to turn it off.
 FOREACH(file ${GLUSourceFiles})
-	SET_SOURCE_FILES_PROPERTIES(${file} PROPERTIES SKIP_UNITY_BUILD_INCLUSION ON)
+    SET_SOURCE_FILES_PROPERTIES(${file} PROPERTIES SKIP_UNITY_BUILD_INCLUSION ON)
 ENDFOREACH()
 
 # Build corresponding GUI plugin.
 IF(OVITO_BUILD_APP)
-	IF(NOT OVITO_QML_GUI)
-		ADD_SUBDIRECTORY(gui)
-	ELSE()
-		ADD_SUBDIRECTORY(guiqml)
-	ENDIF()
+    IF(NOT OVITO_QML_GUI)
+        ADD_SUBDIRECTORY(gui)
+    ELSE()
+        ADD_SUBDIRECTORY(guiqml)
+    ENDIF()
 ENDIF()
 
 # Propagate list of plugins to parent scope.

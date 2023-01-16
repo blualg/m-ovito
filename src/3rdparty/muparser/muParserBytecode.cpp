@@ -306,7 +306,7 @@ namespace mu
               }
               break;
         default: // Do nothing.
-        	break;
+            break;
               
         } // switch a_Oprt
       }
@@ -516,23 +516,23 @@ namespace mu
                     break;
 
       case cmVAR:   mu::console() << _T("VAR \t");
-	                  mu::console() << _T("[ADDR: 0x") << std::hex << m_vRPN[i].Val.ptr << _T("]\n"); 
+                      mu::console() << _T("[ADDR: 0x") << std::hex << m_vRPN[i].Val.ptr << _T("]\n"); 
                     break;
 
       case cmVARPOW2: mu::console() << _T("VARPOW2 \t");
-	                    mu::console() << _T("[ADDR: 0x") << std::hex << m_vRPN[i].Val.ptr << _T("]\n"); 
+                        mu::console() << _T("[ADDR: 0x") << std::hex << m_vRPN[i].Val.ptr << _T("]\n"); 
                       break;
 
       case cmVARPOW3: mu::console() << _T("VARPOW3 \t");
-	                    mu::console() << _T("[ADDR: 0x") << std::hex << m_vRPN[i].Val.ptr << _T("]\n"); 
+                        mu::console() << _T("[ADDR: 0x") << std::hex << m_vRPN[i].Val.ptr << _T("]\n"); 
                       break;
 
       case cmVARPOW4: mu::console() << _T("VARPOW4 \t");
-	                    mu::console() << _T("[ADDR: 0x") << std::hex << m_vRPN[i].Val.ptr << _T("]\n"); 
+                        mu::console() << _T("[ADDR: 0x") << std::hex << m_vRPN[i].Val.ptr << _T("]\n"); 
                       break;
 
       case cmVARMUL:  mu::console() << _T("VARMUL \t");
-	                    mu::console() << _T("[ADDR: 0x") << std::hex << m_vRPN[i].Val.ptr << _T("]"); 
+                        mu::console() << _T("[ADDR: 0x") << std::hex << m_vRPN[i].Val.ptr << _T("]"); 
                       mu::console() << _T(" * [") << m_vRPN[i].Val.data << _T("]");
                       mu::console() << _T(" + [") << m_vRPN[i].Val.data2 << _T("]\n");
                       break;

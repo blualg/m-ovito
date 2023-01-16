@@ -33,17 +33,17 @@ namespace Ovito {
  */
 class CoordinateTripodOverlayEditor : public PropertiesEditor
 {
-	OVITO_CLASS(CoordinateTripodOverlayEditor)
+    OVITO_CLASS(CoordinateTripodOverlayEditor)
 
 public:
 
-	/// Constructor.
-	Q_INVOKABLE CoordinateTripodOverlayEditor() {}
+    /// Constructor.
+    Q_INVOKABLE CoordinateTripodOverlayEditor() {}
 
 protected:
 
-	/// Creates the user interface controls for the editor.
-	virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
+    /// Creates the user interface controls for the editor.
+    virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
 };
 
-}	// End of namespace
+}   // End of namespace

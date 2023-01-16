@@ -44,16 +44,16 @@ SET_PROPERTY_FIELD_LABEL(AssignColorModifier, keepSelection, "Keep selection");
 * Constructs the modifier object.
 ******************************************************************************/
 AssignColorModifier::AssignColorModifier(ObjectCreationParams params) : DelegatingModifier(params),
-	// In the graphical environment, we clear the selection by default to make the assigned colors visible.
-	_keepSelection(!params.loadUserDefaults())
+    // In the graphical environment, we clear the selection by default to make the assigned colors visible.
+    _keepSelection(!params.loadUserDefaults())
 {
-	if(params.createSubObjects()) {
-		setColorController(ControllerManager::createColorController());
-		colorController()->setColorValue(AnimationTime(0), Color(0.3f, 0.3f, 1.0f));
+    if(params.createSubObjects()) {
+        setColorController(ControllerManager::createColorController());
+        colorController()->setColorValue(AnimationTime(0), Color(0.3f, 0.3f, 1.0f));
 
-		// Let this modifier operate on particles by default.
-		createDefaultModifierDelegate(AssignColorModifierDelegate::OOClass(), QStringLiteral("ParticlesAssignColorModifierDelegate"), params);
-	}
+        // Let this modifier operate on particles by default.
+        createDefaultModifierDelegate(AssignColorModifierDelegate::OOClass(), QStringLiteral("ParticlesAssignColorModifierDelegate"), params);
+    }
 }
 
 /******************************************************************************
@@ -61,10 +61,10 @@ AssignColorModifier::AssignColorModifier(ObjectCreationParams params) : Delegati
 ******************************************************************************/
 TimeInterval AssignColorModifier::validityInterval(const ModifierEvaluationRequest& request) const
 {
-	TimeInterval iv = DelegatingModifier::validityInterval(request);
-	if(colorController()) 
-		iv.intersect(colorController()->validityInterval(request.time()));
-	return iv;
+    TimeInterval iv = DelegatingModifier::validityInterval(request);
+    if(colorController()) 
+        iv.intersect(colorController()->validityInterval(request.time()));
+    return iv;
 }
 
 /******************************************************************************
@@ -72,12 +72,12 @@ TimeInterval AssignColorModifier::validityInterval(const ModifierEvaluationReque
 ******************************************************************************/
 bool AssignColorModifier::referenceEvent(RefTarget* source, const ReferenceEvent& event)
 {
-	if(event.type() == ReferenceEvent::TargetChanged && source == colorController()) {
-		// Changes of some the modifier's parameters affect the result of AssignColorModifier::getPipelineEditorShortInfo().
-		notifyDependents(ReferenceEvent::ObjectStatusChanged);
-	}
+    if(event.type() == ReferenceEvent::TargetChanged && source == colorController()) {
+        // Changes of some the modifier's parameters affect the result of AssignColorModifier::getPipelineEditorShortInfo().
+        notifyDependents(ReferenceEvent::ObjectStatusChanged);
+    }
 
-	return DelegatingModifier::referenceEvent(source, event);
+    return DelegatingModifier::referenceEvent(source, event);
 }
 
 /******************************************************************************
@@ -85,36 +85,36 @@ bool AssignColorModifier::referenceEvent(RefTarget* source, const ReferenceEvent
 ******************************************************************************/
 PipelineStatus AssignColorModifierDelegate::apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const PipelineFlowState& inputState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs)
 {
-	const AssignColorModifier* mod = static_object_cast<AssignColorModifier>(request.modifier());
-	if(!mod->colorController())
-		return PipelineStatus::Success;
+    const AssignColorModifier* mod = static_object_cast<AssignColorModifier>(request.modifier());
+    if(!mod->colorController())
+        return PipelineStatus::Success;
 
-	// Look up the property container object and make sure we can safely modify it.
-   	DataObjectPath objectPath = state.expectMutableObject(inputContainerRef());
-	PropertyContainer* container = static_object_cast<PropertyContainer>(objectPath.back());
+    // Look up the property container object and make sure we can safely modify it.
+    DataObjectPath objectPath = state.expectMutableObject(inputContainerRef());
+    PropertyContainer* container = static_object_cast<PropertyContainer>(objectPath.back());
 
-	// Get the input selection property.
-	ConstPropertyPtr selProperty;
-	if(container->getOOMetaClass().isValidStandardPropertyId(PropertyObject::GenericSelectionProperty)) {
-		if(const PropertyObject* selPropertyObj = container->getProperty(PropertyObject::GenericSelectionProperty)) {
-			selProperty = selPropertyObj;
+    // Get the input selection property.
+    ConstPropertyPtr selProperty;
+    if(container->getOOMetaClass().isValidStandardPropertyId(PropertyObject::GenericSelectionProperty)) {
+        if(const PropertyObject* selPropertyObj = container->getProperty(PropertyObject::GenericSelectionProperty)) {
+            selProperty = selPropertyObj;
 
-			// Clear selection if requested.
-			if(!mod->keepSelection())
-				container->removeProperty(selPropertyObj);
-		}
-	}
+            // Clear selection if requested.
+            if(!mod->keepSelection())
+                container->removeProperty(selPropertyObj);
+        }
+    }
 
-	// Get modifier's color parameter value.
-	Color color;
-	mod->colorController()->getColorValue(request.time(), color, state.mutableStateValidity());
+    // Get modifier's color parameter value.
+    Color color;
+    mod->colorController()->getColorValue(request.time(), color, state.mutableStateValidity());
 
-	// Create the color output property.
+    // Create the color output property.
     PropertyObject* colorProperty = container->createProperty(outputColorPropertyId(), (bool)selProperty ? DataBuffer::InitializeMemory : DataBuffer::NoFlags, objectPath);
-	// Assign color to selected elements (or all elements if there is no selection).
-	colorProperty->fillSelected(color, selProperty.get());
+    // Assign color to selected elements (or all elements if there is no selection).
+    colorProperty->fillSelected(color, selProperty.get());
 
-	return PipelineStatus::Success;
+    return PipelineStatus::Success;
 }
 
-}	// End of namespace
+}   // End of namespace

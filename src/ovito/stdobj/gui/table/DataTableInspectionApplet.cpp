@@ -40,59 +40,59 @@ IMPLEMENT_OVITO_CLASS(DataTableInspectionApplet);
 ******************************************************************************/
 QWidget* DataTableInspectionApplet::createWidget()
 {
-	createBaseWidgets();
+    createBaseWidgets();
 
-	QSplitter* splitter = new QSplitter();
-	splitter->addWidget(objectSelectionWidget());
+    QSplitter* splitter = new QSplitter();
+    splitter->addWidget(objectSelectionWidget());
 
-	QWidget* rightContainer = new QWidget();
-	splitter->addWidget(rightContainer);
-	splitter->setStretchFactor(0, 1);
-	splitter->setStretchFactor(1, 3);
+    QWidget* rightContainer = new QWidget();
+    splitter->addWidget(rightContainer);
+    splitter->setStretchFactor(0, 1);
+    splitter->setStretchFactor(1, 3);
 
-	QHBoxLayout* rightLayout = new QHBoxLayout(rightContainer);
-	rightLayout->setContentsMargins(0,0,0,0);
-	rightLayout->setSpacing(0);
+    QHBoxLayout* rightLayout = new QHBoxLayout(rightContainer);
+    rightLayout->setContentsMargins(0,0,0,0);
+    rightLayout->setSpacing(0);
 
-	QToolBar* toolbar = new QToolBar();
-	toolbar->setOrientation(Qt::Vertical);
-	toolbar->setToolButtonStyle(Qt::ToolButtonIconOnly);
-	toolbar->setIconSize(QSize(22,22));
+    QToolBar* toolbar = new QToolBar();
+    toolbar->setOrientation(Qt::Vertical);
+    toolbar->setToolButtonStyle(Qt::ToolButtonIconOnly);
+    toolbar->setIconSize(QSize(22,22));
 
-	QActionGroup* plotTypeActionGroup = new QActionGroup(this);
-	_switchToPlotAction = plotTypeActionGroup->addAction(QIcon::fromTheme("inspector_view_chart"), tr("Chart view"));
-	_switchToTableAction = plotTypeActionGroup->addAction(QIcon::fromTheme("inspector_view_table"), tr("Table view"));
-	toolbar->addAction(_switchToPlotAction);
-	toolbar->addAction(_switchToTableAction);
-	_switchToPlotAction->setCheckable(true);
-	_switchToTableAction->setCheckable(true);
-	_switchToPlotAction->setChecked(true);
-	toolbar->addSeparator();
+    QActionGroup* plotTypeActionGroup = new QActionGroup(this);
+    _switchToPlotAction = plotTypeActionGroup->addAction(QIcon::fromTheme("inspector_view_chart"), tr("Chart view"));
+    _switchToTableAction = plotTypeActionGroup->addAction(QIcon::fromTheme("inspector_view_table"), tr("Table view"));
+    toolbar->addAction(_switchToPlotAction);
+    toolbar->addAction(_switchToTableAction);
+    _switchToPlotAction->setCheckable(true);
+    _switchToTableAction->setCheckable(true);
+    _switchToPlotAction->setChecked(true);
+    toolbar->addSeparator();
 
-	_exportTableToFileAction = new QAction(QIcon::fromTheme("file_save_as"), tr("Export data plot"), this);
-	connect(_exportTableToFileAction, &QAction::triggered, this, &DataTableInspectionApplet::exportDataToFile);
-	toolbar->addAction(_exportTableToFileAction);
+    _exportTableToFileAction = new QAction(QIcon::fromTheme("file_save_as"), tr("Export data plot"), this);
+    connect(_exportTableToFileAction, &QAction::triggered, this, &DataTableInspectionApplet::exportDataToFile);
+    toolbar->addAction(_exportTableToFileAction);
 
-	_stackedWidget = new QStackedWidget();
-	rightLayout->addWidget(_stackedWidget, 1);
-	rightLayout->addWidget(toolbar, 0);
+    _stackedWidget = new QStackedWidget();
+    rightLayout->addWidget(_stackedWidget, 1);
+    rightLayout->addWidget(toolbar, 0);
 
-	connect(_switchToPlotAction, &QAction::triggered, this, [this]() {
-		_stackedWidget->setCurrentIndex(0);
-		_exportTableToFileAction->setToolTip(tr("Export data plot"));
-	});
-	connect(_switchToTableAction, &QAction::triggered, this, [this]() {
-		_stackedWidget->setCurrentIndex(1);
-		_exportTableToFileAction->setToolTip(tr("Export data to text file"));
-	});
+    connect(_switchToPlotAction, &QAction::triggered, this, [this]() {
+        _stackedWidget->setCurrentIndex(0);
+        _exportTableToFileAction->setToolTip(tr("Export data plot"));
+    });
+    connect(_switchToTableAction, &QAction::triggered, this, [this]() {
+        _stackedWidget->setCurrentIndex(1);
+        _exportTableToFileAction->setToolTip(tr("Export data to text file"));
+    });
 
-	_plotWidget = new DataTablePlotWidget();
-	_stackedWidget->addWidget(_plotWidget);
-	_stackedWidget->addWidget(tableView());
+    _plotWidget = new DataTablePlotWidget();
+    _stackedWidget->addWidget(_plotWidget);
+    _stackedWidget->addWidget(tableView());
 
-	connect(this, &DataInspectionApplet::currentObjectChanged, this, &DataTableInspectionApplet::onCurrentContainerChanged);
+    connect(this, &DataInspectionApplet::currentObjectChanged, this, &DataTableInspectionApplet::onCurrentContainerChanged);
 
-	return splitter;
+    return splitter;
 }
 
 /******************************************************************************
@@ -100,10 +100,10 @@ QWidget* DataTableInspectionApplet::createWidget()
 ******************************************************************************/
 ConstPropertyPtr DataTableInspectionApplet::createHeaderColumnProperty(const PropertyContainer* container)
 {
-	const DataTable* table = static_object_cast<DataTable>(container);
-	if(!table->x())
-		return table->getXValues();
-	return {};
+    const DataTable* table = static_object_cast<DataTable>(container);
+    if(!table->x())
+        return table->getXValues();
+    return {};
 }
 
 /******************************************************************************
@@ -111,11 +111,11 @@ ConstPropertyPtr DataTableInspectionApplet::createHeaderColumnProperty(const Pro
 ******************************************************************************/
 void DataTableInspectionApplet::onCurrentContainerChanged(const DataObject* dataObject)
 {
-	// Update the displayed plot.
-	plotWidget()->setTable(static_object_cast<DataTable>(dataObject));
+    // Update the displayed plot.
+    plotWidget()->setTable(static_object_cast<DataTable>(dataObject));
 
-	// Update actions.
-	_exportTableToFileAction->setEnabled(plotWidget()->table() != nullptr);
+    // Update actions.
+    _exportTableToFileAction->setEnabled(plotWidget()->table() != nullptr);
 }
 
 /******************************************************************************
@@ -123,21 +123,21 @@ void DataTableInspectionApplet::onCurrentContainerChanged(const DataObject* data
 ******************************************************************************/
 bool DataTableInspectionApplet::selectDataObject(PipelineObject* dataSource, const QString& objectIdentifierHint, const QVariant& modeHint)
 {
-	// Let the base class switch to the right data table object. 
-	bool result = PropertyInspectionApplet::selectDataObject(dataSource, objectIdentifierHint, modeHint);
-	
-	if(result) {
-		// The mode hint is used to switch between plot and table view.
-		int mode = modeHint.toInt();
-		if(mode == 0) {
-			_switchToPlotAction->trigger(); // Plot view
-		}
-		else {
-			_switchToTableAction->trigger(); // Table view
-		}
-	}
+    // Let the base class switch to the right data table object. 
+    bool result = PropertyInspectionApplet::selectDataObject(dataSource, objectIdentifierHint, modeHint);
+    
+    if(result) {
+        // The mode hint is used to switch between plot and table view.
+        int mode = modeHint.toInt();
+        if(mode == 0) {
+            _switchToPlotAction->trigger(); // Plot view
+        }
+        else {
+            _switchToTableAction->trigger(); // Table view
+        }
+    }
 
-	return result;
+    return result;
 }
 
 /******************************************************************************
@@ -145,68 +145,68 @@ bool DataTableInspectionApplet::selectDataObject(PipelineObject* dataSource, con
 ******************************************************************************/
 void DataTableInspectionApplet::exportDataToFile()
 {
-	const DataTable* table = plotWidget()->table();
-	if(!table)
-		return;
+    const DataTable* table = plotWidget()->table();
+    if(!table)
+        return;
 
-	// Let the user select a destination file.
-	HistoryFileDialog dialog("export", &mainWindow(), tr("Export Data Table"));
-	QString filterString;
-	if(_stackedWidget->currentIndex() == 0)
-		filterString = QStringLiteral("%1 (%2)").arg(DataTablePlotExporter::OOClass().fileFilterDescription(), DataTablePlotExporter::OOClass().fileFilter());
-	else
-		filterString = QStringLiteral("%1 (%2)").arg(DataTableExporter::OOClass().fileFilterDescription(), DataTableExporter::OOClass().fileFilter());
-	dialog.setNameFilter(filterString);
-	dialog.setOption(QFileDialog::DontUseNativeDialog);
-	dialog.setAcceptMode(QFileDialog::AcceptSave);
-	dialog.setFileMode(QFileDialog::AnyFile);
+    // Let the user select a destination file.
+    HistoryFileDialog dialog("export", &mainWindow(), tr("Export Data Table"));
+    QString filterString;
+    if(_stackedWidget->currentIndex() == 0)
+        filterString = QStringLiteral("%1 (%2)").arg(DataTablePlotExporter::OOClass().fileFilterDescription(), DataTablePlotExporter::OOClass().fileFilter());
+    else
+        filterString = QStringLiteral("%1 (%2)").arg(DataTableExporter::OOClass().fileFilterDescription(), DataTableExporter::OOClass().fileFilter());
+    dialog.setNameFilter(filterString);
+    dialog.setOption(QFileDialog::DontUseNativeDialog);
+    dialog.setAcceptMode(QFileDialog::AcceptSave);
+    dialog.setFileMode(QFileDialog::AnyFile);
 
-	// Go to the last directory used.
-	QSettings settings;
-	settings.beginGroup("file/export");
-	QString lastExportDirectory = settings.value("last_export_dir").toString();
-	if(!lastExportDirectory.isEmpty())
-		dialog.setDirectory(lastExportDirectory);
+    // Go to the last directory used.
+    QSettings settings;
+    settings.beginGroup("file/export");
+    QString lastExportDirectory = settings.value("last_export_dir").toString();
+    if(!lastExportDirectory.isEmpty())
+        dialog.setDirectory(lastExportDirectory);
 
-	if(!dialog.exec() || dialog.selectedFiles().empty())
-		return;
-	QString exportFile = dialog.selectedFiles().front();
+    if(!dialog.exec() || dialog.selectedFiles().empty())
+        return;
+    QString exportFile = dialog.selectedFiles().front();
 
-	// Remember directory for the next time...
-	settings.setValue("last_export_dir", dialog.directory().absolutePath());
+    // Remember directory for the next time...
+    settings.setValue("last_export_dir", dialog.directory().absolutePath());
 
-	// Export to selected file.
-	mainWindow().handleExceptions([&] {
-		// Create exporter service.
-		OORef<FileExporter> exporter;
-		if(_stackedWidget->currentIndex() == 0)
-			exporter = OORef<DataTablePlotExporter>::create();
-		else
-			exporter = OORef<DataTableExporter>::create();
+    // Export to selected file.
+    mainWindow().handleExceptions([&] {
+        // Create exporter service.
+        OORef<FileExporter> exporter;
+        if(_stackedWidget->currentIndex() == 0)
+            exporter = OORef<DataTablePlotExporter>::create();
+        else
+            exporter = OORef<DataTableExporter>::create();
 
-		// Pass output filename to exporter.
-		exporter->setOutputFilename(exportFile);
+        // Pass output filename to exporter.
+        exporter->setOutputFilename(exportFile);
 
-		// Set scene node to be exported.
-		exporter->setNodeToExport(currentPipeline());
+        // Set scene node to be exported.
+        exporter->setNodeToExport(currentPipeline());
 
-		// If the exporter supports it, automatically choose the data object(s) to be exported.
-		exporter->selectDefaultExportableData(mainWindow().datasetContainer().currentSet(), currentPipeline()->scene());
+        // If the exporter supports it, automatically choose the data object(s) to be exported.
+        exporter->selectDefaultExportableData(mainWindow().datasetContainer().currentSet(), currentPipeline()->scene());
 
-		// Set data table to be exported.
-		exporter->setDataObjectToExport(DataObjectReference(&DataTable::OOClass(), table->identifier(), table->title()));
+        // Set data table to be exported.
+        exporter->setDataObjectToExport(DataObjectReference(&DataTable::OOClass(), table->identifier(), table->title()));
 
-		// Let the user adjust the export settings.
-		FileExporterSettingsDialog settingsDialog(mainWindow(), *exporter->sceneToExport(), exporter, &mainWindow());
-		if(settingsDialog.exec() != QDialog::Accepted)
-			return;
+        // Let the user adjust the export settings.
+        FileExporterSettingsDialog settingsDialog(mainWindow(), *exporter->sceneToExport(), exporter, &mainWindow());
+        if(settingsDialog.exec() != QDialog::Accepted)
+            return;
 
-		// Show progress dialog.
-		ProgressDialog progressDialog(&mainWindow(), tr("File export"));
+        // Show progress dialog.
+        ProgressDialog progressDialog(&mainWindow(), tr("File export"));
 
-		// Let the exporter do its job.
-		exporter->doExport(MainThreadOperation(true));
-	});
+        // Let the exporter do its job.
+        exporter->doExport(MainThreadOperation(true));
+    });
 }
 
-}	// End of namespace
+}   // End of namespace

@@ -33,7 +33,7 @@ DEFINE_REFERENCE_FIELD(ObjectStatusDisplay, activeObject);
 ******************************************************************************/
 ObjectStatusDisplay::ObjectStatusDisplay(PropertiesEditor* parentEditor) : ParameterUI(parentEditor)
 {
-	_widget = new StatusWidget();
+    _widget = new StatusWidget();
 }
 
 /******************************************************************************
@@ -41,11 +41,11 @@ ObjectStatusDisplay::ObjectStatusDisplay(PropertiesEditor* parentEditor) : Param
 ******************************************************************************/
 ObjectStatusDisplay::~ObjectStatusDisplay()
 {
-	// Release GUI widget.
-	delete statusWidget();
+    // Release GUI widget.
+    delete statusWidget();
 
-	// Reset reference fields.
-	clearAllReferences();
+    // Reset reference fields.
+    clearAllReferences();
 }
 
 /******************************************************************************
@@ -53,7 +53,7 @@ ObjectStatusDisplay::~ObjectStatusDisplay()
 ******************************************************************************/
 StatusWidget* ObjectStatusDisplay::statusWidget() const 
 { 
-	return _widget; 
+    return _widget; 
 }
 
 /******************************************************************************
@@ -62,31 +62,31 @@ StatusWidget* ObjectStatusDisplay::statusWidget() const
 ******************************************************************************/
 void ObjectStatusDisplay::resetUI()
 {
-	ParameterUI::resetUI();
+    ParameterUI::resetUI();
 
-	// Determine the active object. Consider all nested editors.
-	ActiveObject* activeObject = dynamic_object_cast<ActiveObject>(editObject());
-	if(!activeObject) {
-		PropertiesEditor* editor = this->editor()->parentEditor();
-		while(editor) {
-			activeObject = dynamic_object_cast<ActiveObject>(editor->editObject());
-			if(activeObject)
-				break;
-			editor = editor->parentEditor();
-		}
-	}
-	_activeObject.set(this, PROPERTY_FIELD(activeObject), activeObject);
+    // Determine the active object. Consider all nested editors.
+    ActiveObject* activeObject = dynamic_object_cast<ActiveObject>(editObject());
+    if(!activeObject) {
+        PropertiesEditor* editor = this->editor()->parentEditor();
+        while(editor) {
+            activeObject = dynamic_object_cast<ActiveObject>(editor->editObject());
+            if(activeObject)
+                break;
+            editor = editor->parentEditor();
+        }
+    }
+    _activeObject.set(this, PROPERTY_FIELD(activeObject), activeObject);
 
-	if(statusWidget()) {
-		if(activeObject) {
-			statusWidget()->setEnabled(isEnabled());
-			statusWidget()->setStatus(activeObject->status());
-		}
-		else {
-			statusWidget()->clearStatus();
-			statusWidget()->setEnabled(false);
-		}
-	}
+    if(statusWidget()) {
+        if(activeObject) {
+            statusWidget()->setEnabled(isEnabled());
+            statusWidget()->setStatus(activeObject->status());
+        }
+        else {
+            statusWidget()->clearStatus();
+            statusWidget()->setEnabled(false);
+        }
+    }
 }
 
 /******************************************************************************
@@ -94,11 +94,11 @@ void ObjectStatusDisplay::resetUI()
 ******************************************************************************/
 void ObjectStatusDisplay::setEnabled(bool enabled)
 {
-	if(enabled == isEnabled()) 
-		return;
-	ParameterUI::setEnabled(enabled);
-	if(statusWidget())
-		statusWidget()->setEnabled(editObject() && isEnabled());
+    if(enabled == isEnabled()) 
+        return;
+    ParameterUI::setEnabled(enabled);
+    if(statusWidget())
+        statusWidget()->setEnabled(editObject() && isEnabled());
 }
 
 /******************************************************************************
@@ -106,11 +106,11 @@ void ObjectStatusDisplay::setEnabled(bool enabled)
 ******************************************************************************/
 bool ObjectStatusDisplay::referenceEvent(RefTarget* source, const ReferenceEvent& event)
 {
-	if(source == activeObject() && event.type() == ReferenceEvent::ObjectStatusChanged) {
-		if(statusWidget())
-			statusWidget()->setStatus(activeObject()->status());
-	}
-	return ParameterUI::referenceEvent(source, event);
+    if(source == activeObject() && event.type() == ReferenceEvent::ObjectStatusChanged) {
+        if(statusWidget())
+            statusWidget()->setStatus(activeObject()->status());
+    }
+    return ParameterUI::referenceEvent(source, event);
 }
 
-}	// End of namespace
+}   // End of namespace

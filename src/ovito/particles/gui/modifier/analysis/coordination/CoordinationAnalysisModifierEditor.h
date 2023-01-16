@@ -34,27 +34,27 @@ namespace Ovito::Particles {
  */
 class CoordinationAnalysisModifierEditor : public PropertiesEditor
 {
-	OVITO_CLASS(CoordinationAnalysisModifierEditor)
+    OVITO_CLASS(CoordinationAnalysisModifierEditor)
 
 public:
 
-	/// Default constructor.
-	Q_INVOKABLE CoordinationAnalysisModifierEditor() {}
+    /// Default constructor.
+    Q_INVOKABLE CoordinationAnalysisModifierEditor() {}
 
 protected:
 
-	/// Creates the user interface controls for the editor.
-	virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
+    /// Creates the user interface controls for the editor.
+    virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
 
 protected Q_SLOTS:
 
-	/// Replots the RDF computed by the modifier.
-	void plotRDF();
+    /// Replots the RDF computed by the modifier.
+    void plotRDF();
 
 private:
 
-	/// The plotting widget for displaying the computed RDFs.
-	DataTablePlotWidget* _rdfPlot;
+    /// The plotting widget for displaying the computed RDFs.
+    DataTablePlotWidget* _rdfPlot;
 };
 
-}	// End of namespace
+}   // End of namespace

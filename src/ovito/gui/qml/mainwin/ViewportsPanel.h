@@ -34,64 +34,64 @@ namespace Ovito {
  */
 class ViewportsPanel : public QQuickItem
 {
-	Q_OBJECT
-	QML_ELEMENT
+    Q_OBJECT
+    QML_ELEMENT
 
-	Q_PROPERTY(Ovito::ViewportConfiguration* viewportConfiguration READ viewportConfiguration NOTIFY viewportConfigurationReplaced)
+    Q_PROPERTY(Ovito::ViewportConfiguration* viewportConfiguration READ viewportConfiguration NOTIFY viewportConfigurationReplaced)
 
 public:
 
-	/// Constructor.
-	ViewportsPanel();
+    /// Constructor.
+    ViewportsPanel();
 
-	/// Returns the main window this panel is part of.
-	MainWindow* mainWindow() const {
-		return static_cast<MainWindow*>(parentItem()); 
-	}
+    /// Returns the main window this panel is part of.
+    MainWindow* mainWindow() const {
+        return static_cast<MainWindow*>(parentItem()); 
+    }
 
-	/// Arranges the viewport windows within the container.
-	void layoutViewports();
+    /// Arranges the viewport windows within the container.
+    void layoutViewports();
 
-	/// Returns the current viewport configuration object.
-	ViewportConfiguration* viewportConfiguration() const { return _viewportConfig; }
+    /// Returns the current viewport configuration object.
+    ViewportConfiguration* viewportConfiguration() const { return _viewportConfig; }
 
 Q_SIGNALS:
 
-	/// This signal is emitted whenever a new ViewportConfiguration became active.
-	void viewportConfigurationReplaced(ViewportConfiguration* configuration);
+    /// This signal is emitted whenever a new ViewportConfiguration became active.
+    void viewportConfigurationReplaced(ViewportConfiguration* configuration);
 
 protected:
 
-	/// Handles resize events for the item.
-	virtual void geometryChange(const QRectF& newGeometry, const QRectF& oldGeometry) override;
+    /// Handles resize events for the item.
+    virtual void geometryChange(const QRectF& newGeometry, const QRectF& oldGeometry) override;
 
 private Q_SLOTS:
 
-	/// This is called when a new viewport configuration has been loaded.
-	void onViewportConfigurationReplaced(ViewportConfiguration* newViewportConfiguration);
+    /// This is called when a new viewport configuration has been loaded.
+    void onViewportConfigurationReplaced(ViewportConfiguration* newViewportConfiguration);
 
-	/// This is called when new animation settings have been loaded.
-	void onAnimationSettingsReplaced(AnimationSettings* newAnimationSettings);
+    /// This is called when new animation settings have been loaded.
+    void onAnimationSettingsReplaced(AnimationSettings* newAnimationSettings);
 
-	/// This is called when the current viewport input mode has changed.
-	void onInputModeChanged(ViewportInputMode* oldMode, ViewportInputMode* newMode);
+    /// This is called when the current viewport input mode has changed.
+    void onInputModeChanged(ViewportInputMode* oldMode, ViewportInputMode* newMode);
 
-	/// This is called when the mouse cursor of the active input mode has changed.
-	void viewportModeCursorChanged(const QCursor& cursor);
+    /// This is called when the mouse cursor of the active input mode has changed.
+    void viewportModeCursorChanged(const QCursor& cursor);
 
-	/// Repaints all viewport windows.
-	void updateViewportWindows();
+    /// Repaints all viewport windows.
+    void updateViewportWindows();
 
 private:
 
-	QMetaObject::Connection _activeViewportChangedConnection;
-	QMetaObject::Connection _maximizedViewportChangedConnection;
-	QMetaObject::Connection _timeChangeCompleteConnection;
-	QMetaObject::Connection _activeModeCursorChangedConnection;
+    QMetaObject::Connection _activeViewportChangedConnection;
+    QMetaObject::Connection _maximizedViewportChangedConnection;
+    QMetaObject::Connection _timeChangeCompleteConnection;
+    QMetaObject::Connection _activeModeCursorChangedConnection;
 
-	QQmlComponent* _viewportComponent = nullptr;
-	OORef<ViewportConfiguration> _viewportConfig;
-	OORef<AnimationSettings> _animSettings;
+    QQmlComponent* _viewportComponent = nullptr;
+    OORef<ViewportConfiguration> _viewportConfig;
+    OORef<AnimationSettings> _animSettings;
 };
 
-}	// End of namespace
+}   // End of namespace

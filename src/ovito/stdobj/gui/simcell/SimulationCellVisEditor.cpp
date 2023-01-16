@@ -37,28 +37,28 @@ SET_OVITO_OBJECT_EDITOR(SimulationCellVis, SimulationCellVisEditor);
 ******************************************************************************/
 void SimulationCellVisEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 {
-	// Create a rollout.
-	QWidget* rollout = createRollout(QString(), rolloutParams, "manual:visual_elements.simulation_cell");
+    // Create a rollout.
+    QWidget* rollout = createRollout(QString(), rolloutParams, "manual:visual_elements.simulation_cell");
 
     // Create the rollout contents.
-	QGridLayout* layout = new QGridLayout(rollout);
-	layout->setContentsMargins(4,4,4,4);
-	layout->setSpacing(4);
-	layout->setColumnStretch(1, 1);
+    QGridLayout* layout = new QGridLayout(rollout);
+    layout->setContentsMargins(4,4,4,4);
+    layout->setSpacing(4);
+    layout->setColumnStretch(1, 1);
 
-	// Render cell
-	BooleanParameterUI* renderCellUI = new BooleanParameterUI(this, PROPERTY_FIELD(SimulationCellVis::renderCellEnabled));
-	layout->addWidget(renderCellUI->checkBox(), 0, 0, 1, 2);
+    // Render cell
+    BooleanParameterUI* renderCellUI = new BooleanParameterUI(this, PROPERTY_FIELD(SimulationCellVis::renderCellEnabled));
+    layout->addWidget(renderCellUI->checkBox(), 0, 0, 1, 2);
 
-	// Line width
-	FloatParameterUI* lineWidthUI = new FloatParameterUI(this, PROPERTY_FIELD(SimulationCellVis::cellLineWidth));
-	layout->addWidget(lineWidthUI->label(), 1, 0);
-	layout->addLayout(lineWidthUI->createFieldLayout(), 1, 1);
+    // Line width
+    FloatParameterUI* lineWidthUI = new FloatParameterUI(this, PROPERTY_FIELD(SimulationCellVis::cellLineWidth));
+    layout->addWidget(lineWidthUI->label(), 1, 0);
+    layout->addLayout(lineWidthUI->createFieldLayout(), 1, 1);
 
-	// Line color
-	ColorParameterUI* lineColorUI = new ColorParameterUI(this, PROPERTY_FIELD(SimulationCellVis::cellColor));
-	layout->addWidget(lineColorUI->label(), 2, 0);
-	layout->addWidget(lineColorUI->colorPicker(), 2, 1);
+    // Line color
+    ColorParameterUI* lineColorUI = new ColorParameterUI(this, PROPERTY_FIELD(SimulationCellVis::cellColor));
+    layout->addWidget(lineColorUI->label(), 2, 0);
+    layout->addWidget(lineColorUI->colorPicker(), 2, 1);
 }
 
-}	// End of namespace
+}   // End of namespace

@@ -34,51 +34,51 @@ namespace Ovito {
  */
 class AdjustViewDialog : public QDockWidget
 {
-	Q_OBJECT
+    Q_OBJECT
 
 public:
 
-	/// Constructor.
-	AdjustViewDialog(MainWindow& mainWindow, Viewport* viewport, QWidget* parentWindow);
+    /// Constructor.
+    AdjustViewDialog(MainWindow& mainWindow, Viewport* viewport, QWidget* parentWindow);
 
 private Q_SLOTS:
 
-	/// Event handler for the Cancel button.
-	void onCancel();
+    /// Event handler for the Cancel button.
+    void onCancel();
 
-	/// Is called when the user has changed the camera settings.
-	void onAdjustCamera();
+    /// Is called when the user has changed the camera settings.
+    void onAdjustCamera();
 
-	/// Updates the values displayed in the dialog.
-	void updateGUI();
+    /// Updates the values displayed in the dialog.
+    void updateGUI();
 
 private:
 
-	MainWindow& _mainWindow;
-	bool _isUpdatingGUI = false;
+    MainWindow& _mainWindow;
+    bool _isUpdatingGUI = false;
 
-	QRadioButton* _camPerspective;
-	QRadioButton* _camParallel;
+    QRadioButton* _camPerspective;
+    QRadioButton* _camParallel;
 
-	SpinnerWidget* _camPosXSpinner;
-	SpinnerWidget* _camPosYSpinner;
-	SpinnerWidget* _camPosZSpinner;
+    SpinnerWidget* _camPosXSpinner;
+    SpinnerWidget* _camPosYSpinner;
+    SpinnerWidget* _camPosZSpinner;
 
-	SpinnerWidget* _camDirXSpinner;
-	SpinnerWidget* _camDirYSpinner;
-	SpinnerWidget* _camDirZSpinner;
+    SpinnerWidget* _camDirXSpinner;
+    SpinnerWidget* _camDirYSpinner;
+    SpinnerWidget* _camDirZSpinner;
 
-	SpinnerWidget* _upDirXSpinner;
-	SpinnerWidget* _upDirYSpinner;
-	SpinnerWidget* _upDirZSpinner;
+    SpinnerWidget* _upDirXSpinner;
+    SpinnerWidget* _upDirYSpinner;
+    SpinnerWidget* _upDirZSpinner;
 
-	SpinnerWidget* _camFOVAngleSpinner;
-	SpinnerWidget* _camFOVSpinner;
+    SpinnerWidget* _camFOVAngleSpinner;
+    SpinnerWidget* _camFOVSpinner;
 
-	RefTargetListener<Viewport> _viewportListener;
-	Viewport::ViewType _oldViewType;
-	AffineTransformation _oldCameraTM;
-	FloatType _oldFOV;
+    RefTargetListener<Viewport> _viewportListener;
+    Viewport::ViewType _oldViewType;
+    AffineTransformation _oldCameraTM;
+    FloatType _oldFOV;
 };
 
-}	// End of namespace
+}   // End of namespace

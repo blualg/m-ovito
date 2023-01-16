@@ -46,19 +46,19 @@ DEFINE_VECTOR_REFERENCE_FIELD(MultiDelegatingModifier, delegates);
 ******************************************************************************/
 Modifier* ModifierDelegate::modifier() const
 {
-	Modifier* result = nullptr;
-	visitDependents([&](RefMaker* dependent) {
-		if(DelegatingModifier* modifier = dynamic_object_cast<DelegatingModifier>(dependent)) {
-			if(modifier->delegate() == this) result = modifier;
-		}
-		else if(MultiDelegatingModifier* modifier = dynamic_object_cast<MultiDelegatingModifier>(dependent)) {
-			if(modifier->delegates().contains(const_cast<ModifierDelegate*>(this))) result = modifier;
-		}
-		else if(AsynchronousDelegatingModifier* modifier = dynamic_object_cast<AsynchronousDelegatingModifier>(dependent)) {
-			if(modifier->delegate() == this) result = modifier;
-		}
-	});
-	return result;
+    Modifier* result = nullptr;
+    visitDependents([&](RefMaker* dependent) {
+        if(DelegatingModifier* modifier = dynamic_object_cast<DelegatingModifier>(dependent)) {
+            if(modifier->delegate() == this) result = modifier;
+        }
+        else if(MultiDelegatingModifier* modifier = dynamic_object_cast<MultiDelegatingModifier>(dependent)) {
+            if(modifier->delegates().contains(const_cast<ModifierDelegate*>(this))) result = modifier;
+        }
+        else if(AsynchronousDelegatingModifier* modifier = dynamic_object_cast<AsynchronousDelegatingModifier>(dependent)) {
+            if(modifier->delegate() == this) result = modifier;
+        }
+    });
+    return result;
 }
 
 #ifdef OVITO_QML_GUI
@@ -67,11 +67,11 @@ Modifier* ModifierDelegate::modifier() const
 ******************************************************************************/
 bool ModifierDelegate::canOperateOnInput(ModifierApplication* modApp) const 
 {
-	if(modApp) {
-		const PipelineFlowState& input = modApp->evaluateInputSynchronous(dataset()->animationSettings()->time());
-		return !getOOMetaClass().getApplicableObjects(input).empty();
-	}
-	return false;
+    if(modApp) {
+        const PipelineFlowState& input = modApp->evaluateInputSynchronous(dataset()->animationSettings()->time());
+        return !getOOMetaClass().getApplicableObjects(input).empty();
+    }
+    return false;
 }
 #endif
 
@@ -80,12 +80,12 @@ bool ModifierDelegate::canOperateOnInput(ModifierApplication* modApp) const
 ******************************************************************************/
 TimeInterval DelegatingModifier::validityInterval(const ModifierEvaluationRequest& request) const
 {
-	TimeInterval iv = Modifier::validityInterval(request);
+    TimeInterval iv = Modifier::validityInterval(request);
 
-	if(delegate() && delegate()->isEnabled())
-		iv.intersect(delegate()->validityInterval(request));
+    if(delegate() && delegate()->isEnabled())
+        iv.intersect(delegate()->validityInterval(request));
 
-	return iv;
+    return iv;
 }
 
 /******************************************************************************
@@ -93,17 +93,17 @@ TimeInterval DelegatingModifier::validityInterval(const ModifierEvaluationReques
 ******************************************************************************/
 void DelegatingModifier::createDefaultModifierDelegate(const OvitoClass& delegateType, const QString& defaultDelegateTypeName, ObjectCreationParams params)
 {
-	OVITO_ASSERT(delegateType.isDerivedFrom(ModifierDelegate::OOClass()));
+    OVITO_ASSERT(delegateType.isDerivedFrom(ModifierDelegate::OOClass()));
 
-	// Find the delegate type that corresponds to the given name string.
-	for(OvitoClassPtr clazz : PluginManager::instance().listClasses(delegateType)) {
-		if(clazz->name() == defaultDelegateTypeName) {
-			OORef<ModifierDelegate> delegate = static_object_cast<ModifierDelegate>(clazz->createInstance(params));
-			setDelegate(delegate);
-			break;
-		}
-	}
-	OVITO_ASSERT_MSG(delegate(), "DelegatingModifier::createDefaultModifierDelegate", qPrintable(QStringLiteral("There is no delegate class named '%1' inheriting from %2.").arg(defaultDelegateTypeName).arg(delegateType.name())));
+    // Find the delegate type that corresponds to the given name string.
+    for(OvitoClassPtr clazz : PluginManager::instance().listClasses(delegateType)) {
+        if(clazz->name() == defaultDelegateTypeName) {
+            OORef<ModifierDelegate> delegate = static_object_cast<ModifierDelegate>(clazz->createInstance(params));
+            setDelegate(delegate);
+            break;
+        }
+    }
+    OVITO_ASSERT_MSG(delegate(), "DelegatingModifier::createDefaultModifierDelegate", qPrintable(QStringLiteral("There is no delegate class named '%1' inheriting from %2.").arg(defaultDelegateTypeName).arg(delegateType.name())));
 }
 
 /******************************************************************************
@@ -111,14 +111,14 @@ void DelegatingModifier::createDefaultModifierDelegate(const OvitoClass& delegat
 ******************************************************************************/
 bool DelegatingModifier::OOMetaClass::isApplicableTo(const DataCollection& input) const
 {
-	if(!ModifierClass::isApplicableTo(input)) return false;
+    if(!ModifierClass::isApplicableTo(input)) return false;
 
-	// Check if there is any modifier delegate that could handle the input data.
-	for(const ModifierDelegate::OOMetaClass* clazz : PluginManager::instance().metaclassMembers<ModifierDelegate>(delegateMetaclass())) {
-		if(clazz->getApplicableObjects(input).empty() == false)
-			return true;
-	}
-	return false;
+    // Check if there is any modifier delegate that could handle the input data.
+    for(const ModifierDelegate::OOMetaClass* clazz : PluginManager::instance().metaclassMembers<ModifierDelegate>(delegateMetaclass())) {
+        if(clazz->getApplicableObjects(input).empty() == false)
+            return true;
+    }
+    return false;
 }
 
 /******************************************************************************
@@ -126,8 +126,8 @@ bool DelegatingModifier::OOMetaClass::isApplicableTo(const DataCollection& input
 ******************************************************************************/
 void DelegatingModifier::evaluateSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state)
 {
-	// Apply the modifier delegate to the input data.
-	applyDelegate(request, state);
+    // Apply the modifier delegate to the input data.
+    applyDelegate(request, state);
 }
 
 /******************************************************************************
@@ -135,33 +135,33 @@ void DelegatingModifier::evaluateSynchronous(const ModifierEvaluationRequest& re
 ******************************************************************************/
 void DelegatingModifier::applyDelegate(const ModifierEvaluationRequest& request, PipelineFlowState& state, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs)
 {
-	OVITO_ASSERT(!isUndoRecording());
-	OVITO_ASSERT(request.modApp()->modifier() == this);
+    OVITO_ASSERT(!isUndoRecording());
+    OVITO_ASSERT(request.modApp()->modifier() == this);
 
-	if(!delegate() || !delegate()->isEnabled())
-		return;
+    if(!delegate() || !delegate()->isEnabled())
+        return;
 
-	// Skip function if not applicable.
-	if(delegate()->getOOMetaClass().getApplicableObjects(state).empty())
-		throw Exception(tr("The modifier's pipeline input does not contain the expected kind of data."));
+    // Skip function if not applicable.
+    if(delegate()->getOOMetaClass().getApplicableObjects(state).empty())
+        throw Exception(tr("The modifier's pipeline input does not contain the expected kind of data."));
 
-	// Call the delegate function.
-	PipelineStatus delegateStatus = delegate()->apply(request, state, state, additionalInputs);
+    // Call the delegate function.
+    PipelineStatus delegateStatus = delegate()->apply(request, state, state, additionalInputs);
 
-	// Append status text and code returned by the delegate function to the status returned to our caller.
-	PipelineStatus status = state.status();
-	if(status.type() == PipelineStatus::Success || delegateStatus.type() == PipelineStatus::Error)
-		status.setType(delegateStatus.type());
-	if(!delegateStatus.text().isEmpty()) {
-		if(!status.text().isEmpty())
-			status.setText(status.text() + QStringLiteral("\n") + delegateStatus.text());
-		else
-			status.setText(delegateStatus.text());
-	}
-	if(delegateStatus.shortInfo().isValid()) {
-		status.setShortInfo(delegateStatus.shortInfo());
-	}
-	state.setStatus(std::move(status));
+    // Append status text and code returned by the delegate function to the status returned to our caller.
+    PipelineStatus status = state.status();
+    if(status.type() == PipelineStatus::Success || delegateStatus.type() == PipelineStatus::Error)
+        status.setType(delegateStatus.type());
+    if(!delegateStatus.text().isEmpty()) {
+        if(!status.text().isEmpty())
+            status.setText(status.text() + QStringLiteral("\n") + delegateStatus.text());
+        else
+            status.setText(delegateStatus.text());
+    }
+    if(delegateStatus.shortInfo().isValid()) {
+        status.setShortInfo(delegateStatus.shortInfo());
+    }
+    state.setStatus(std::move(status));
 }
 
 /******************************************************************************
@@ -169,15 +169,15 @@ void DelegatingModifier::applyDelegate(const ModifierEvaluationRequest& request,
 ******************************************************************************/
 TimeInterval MultiDelegatingModifier::validityInterval(const ModifierEvaluationRequest& request) const
 {
-	TimeInterval iv = Modifier::validityInterval(request);
+    TimeInterval iv = Modifier::validityInterval(request);
 
-	for(const ModifierDelegate* delegate : delegates()) {
-		if(delegate && delegate->isEnabled()) {
-			iv.intersect(delegate->validityInterval(request));
-		}
-	}
+    for(const ModifierDelegate* delegate : delegates()) {
+        if(delegate && delegate->isEnabled()) {
+            iv.intersect(delegate->validityInterval(request));
+        }
+    }
 
-	return iv;
+    return iv;
 }
 
 /******************************************************************************
@@ -185,14 +185,14 @@ TimeInterval MultiDelegatingModifier::validityInterval(const ModifierEvaluationR
 ******************************************************************************/
 void MultiDelegatingModifier::createModifierDelegates(const OvitoClass& delegateType, ObjectCreationParams params)
 {
-	OVITO_ASSERT(delegateType.isDerivedFrom(ModifierDelegate::OOClass()));
+    OVITO_ASSERT(delegateType.isDerivedFrom(ModifierDelegate::OOClass()));
 
-	// Generate the list of delegate objects.
-	if(delegates().empty()) {
-		for(OvitoClassPtr clazz : PluginManager::instance().listClasses(delegateType)) {
-			_delegates.push_back(this, PROPERTY_FIELD(delegates), static_object_cast<ModifierDelegate>(clazz->createInstance(params)));
-		}
-	}
+    // Generate the list of delegate objects.
+    if(delegates().empty()) {
+        for(OvitoClassPtr clazz : PluginManager::instance().listClasses(delegateType)) {
+            _delegates.push_back(this, PROPERTY_FIELD(delegates), static_object_cast<ModifierDelegate>(clazz->createInstance(params)));
+        }
+    }
 }
 
 /******************************************************************************
@@ -200,14 +200,14 @@ void MultiDelegatingModifier::createModifierDelegates(const OvitoClass& delegate
 ******************************************************************************/
 bool MultiDelegatingModifier::OOMetaClass::isApplicableTo(const DataCollection& input) const
 {
-	if(!ModifierClass::isApplicableTo(input)) return false;
+    if(!ModifierClass::isApplicableTo(input)) return false;
 
-	// Check if there is any modifier delegate that could handle the input data.
-	for(const ModifierDelegate::OOMetaClass* clazz : PluginManager::instance().metaclassMembers<ModifierDelegate>(delegateMetaclass())) {
-		if(clazz->getApplicableObjects(input).empty() == false)
-			return true;
-	}
-	return false;
+    // Check if there is any modifier delegate that could handle the input data.
+    for(const ModifierDelegate::OOMetaClass* clazz : PluginManager::instance().metaclassMembers<ModifierDelegate>(delegateMetaclass())) {
+        if(clazz->getApplicableObjects(input).empty() == false)
+            return true;
+    }
+    return false;
 }
 
 /******************************************************************************
@@ -215,8 +215,8 @@ bool MultiDelegatingModifier::OOMetaClass::isApplicableTo(const DataCollection& 
 ******************************************************************************/
 void MultiDelegatingModifier::evaluateSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state)
 {
-	// Apply all enabled modifier delegates to the input data.
-	applyDelegates(request, state);
+    // Apply all enabled modifier delegates to the input data.
+    applyDelegates(request, state);
 }
 
 /******************************************************************************
@@ -224,33 +224,33 @@ void MultiDelegatingModifier::evaluateSynchronous(const ModifierEvaluationReques
 ******************************************************************************/
 void MultiDelegatingModifier::applyDelegates(const ModifierEvaluationRequest& request, PipelineFlowState& state, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs)
 {
-	OVITO_ASSERT(!isUndoRecording());
-	OVITO_ASSERT(request.modApp()->modifier() == this);
+    OVITO_ASSERT(!isUndoRecording());
+    OVITO_ASSERT(request.modApp()->modifier() == this);
 
-	// Make a shallow copy of the input pipeline state.
-	PipelineFlowState inputState = state;
+    // Make a shallow copy of the input pipeline state.
+    PipelineFlowState inputState = state;
 
-	for(ModifierDelegate* delegate : delegates()) {
+    for(ModifierDelegate* delegate : delegates()) {
 
-		// Skip function if not applicable.
-		if(!state.data() || !delegate || !delegate->isEnabled() || delegate->getOOMetaClass().getApplicableObjects(*state.data()).empty())
-			continue;
+        // Skip function if not applicable.
+        if(!state.data() || !delegate || !delegate->isEnabled() || delegate->getOOMetaClass().getApplicableObjects(*state.data()).empty())
+            continue;
 
-		// Call the delegate function.
-		PipelineStatus delegateStatus = delegate->apply(request, state, inputState, additionalInputs);
+        // Call the delegate function.
+        PipelineStatus delegateStatus = delegate->apply(request, state, inputState, additionalInputs);
 
-		// Append status text and code returned by the delegate function to the status returned to our caller.
-		PipelineStatus status = state.status();
-		if(status.type() == PipelineStatus::Success || delegateStatus.type() == PipelineStatus::Error)
-			status.setType(delegateStatus.type());
-		if(!delegateStatus.text().isEmpty()) {
-			if(!status.text().isEmpty())
-				status.setText(status.text() + QStringLiteral("\n") + delegateStatus.text());
-			else
-				status.setText(delegateStatus.text());
-		}
-		state.setStatus(std::move(status));
-	}
+        // Append status text and code returned by the delegate function to the status returned to our caller.
+        PipelineStatus status = state.status();
+        if(status.type() == PipelineStatus::Success || delegateStatus.type() == PipelineStatus::Error)
+            status.setType(delegateStatus.type());
+        if(!delegateStatus.text().isEmpty()) {
+            if(!status.text().isEmpty())
+                status.setText(status.text() + QStringLiteral("\n") + delegateStatus.text());
+            else
+                status.setText(delegateStatus.text());
+        }
+        state.setStatus(std::move(status));
+    }
 }
 
-}	// End of namespace
+}   // End of namespace

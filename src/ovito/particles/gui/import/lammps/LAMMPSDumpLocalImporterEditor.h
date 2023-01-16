@@ -34,28 +34,28 @@ namespace Ovito::Particles {
  */
 class LAMMPSDumpLocalImporterEditor : public FileImporterEditor
 {
-	OVITO_CLASS(LAMMPSDumpLocalImporterEditor)
+    OVITO_CLASS(LAMMPSDumpLocalImporterEditor)
 
 public:
 
-	/// Constructor.
-	Q_INVOKABLE LAMMPSDumpLocalImporterEditor() {}
+    /// Constructor.
+    Q_INVOKABLE LAMMPSDumpLocalImporterEditor() {}
 
-	/// This is called by the system when the user has selected a new file to import.
-	virtual bool inspectNewFile(FileImporter* importer, const QUrl& sourceFile, MainWindow& mainWindow) override;
+    /// This is called by the system when the user has selected a new file to import.
+    virtual bool inspectNewFile(FileImporter* importer, const QUrl& sourceFile, MainWindow& mainWindow) override;
 
 protected:
 
-	/// Displays a dialog box that allows the user to edit the file column to property mapping.
-	bool showEditColumnMappingDialog(LAMMPSDumpLocalImporter* importer, const FileSourceImporter::Frame& frame);
+    /// Displays a dialog box that allows the user to edit the file column to property mapping.
+    bool showEditColumnMappingDialog(LAMMPSDumpLocalImporter* importer, const FileSourceImporter::Frame& frame);
 
-	/// Creates the user interface controls for the editor.
-	virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
+    /// Creates the user interface controls for the editor.
+    virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
 
 protected Q_SLOTS:
 
-	/// Is called when the user pressed the "Edit column mapping" button.
-	void onEditColumnMapping();
+    /// Is called when the user pressed the "Edit column mapping" button.
+    void onEditColumnMapping();
 };
 
-}	// End of namespace
+}   // End of namespace

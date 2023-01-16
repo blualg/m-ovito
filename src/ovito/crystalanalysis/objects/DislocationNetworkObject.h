@@ -36,58 +36,58 @@ namespace Ovito::CrystalAnalysis {
  */
 class OVITO_CRYSTALANALYSIS_EXPORT DislocationNetworkObject : public PeriodicDomainDataObject
 {
-	OVITO_CLASS(DislocationNetworkObject)
-	Q_CLASSINFO("DisplayName", "Dislocations");
+    OVITO_CLASS(DislocationNetworkObject)
+    Q_CLASSINFO("DisplayName", "Dislocations");
 
 public:
 
-	/// \brief Constructor.
-	Q_INVOKABLE DislocationNetworkObject(ObjectCreationParams params);
+    /// \brief Constructor.
+    Q_INVOKABLE DislocationNetworkObject(ObjectCreationParams params);
 
-	/// Returns the data encapsulated by this object after making sure it is not shared with other owners.
-	const std::shared_ptr<DislocationNetwork>& modifiableStorage();
+    /// Returns the data encapsulated by this object after making sure it is not shared with other owners.
+    const std::shared_ptr<DislocationNetwork>& modifiableStorage();
 
-	/// Returns the list of dislocation segments.
-	const std::vector<DislocationSegment*>& segments() const { return storage()->segments(); }
+    /// Returns the list of dislocation segments.
+    const std::vector<DislocationSegment*>& segments() const { return storage()->segments(); }
 
-	/// Returns the list of dislocation segments.
-	const std::vector<DislocationSegment*>& modifiableSegments() { return modifiableStorage()->segments(); }
+    /// Returns the list of dislocation segments.
+    const std::vector<DislocationSegment*>& modifiableSegments() { return modifiableStorage()->segments(); }
 
-	/// Adds a new crystal structures to the list.
-	void addCrystalStructure(const MicrostructurePhase* structure) { _crystalStructures.push_back(this, PROPERTY_FIELD(crystalStructures), structure); }
+    /// Adds a new crystal structures to the list.
+    void addCrystalStructure(const MicrostructurePhase* structure) { _crystalStructures.push_back(this, PROPERTY_FIELD(crystalStructures), structure); }
 
-	/// Removes a crystal structure.
-	void removeCrystalStructure(int index) { _crystalStructures.remove(this, PROPERTY_FIELD(crystalStructures), index); }
+    /// Removes a crystal structure.
+    void removeCrystalStructure(int index) { _crystalStructures.remove(this, PROPERTY_FIELD(crystalStructures), index); }
 
-	/// Returns the crystal structure with the given ID, or null if no such structure exists.
-	const MicrostructurePhase* structureById(int id) const {
-		for(const MicrostructurePhase* stype : crystalStructures())
-			if(stype->numericId() == id)
-				return stype;
-		return nullptr;
-	}
+    /// Returns the crystal structure with the given ID, or null if no such structure exists.
+    const MicrostructurePhase* structureById(int id) const {
+        for(const MicrostructurePhase* stype : crystalStructures())
+            if(stype->numericId() == id)
+                return stype;
+        return nullptr;
+    }
 
-	/// Returns the crystal structure with the given name, or null if no such structure exists.
-	const MicrostructurePhase* structureByName(const QString& name) const {
-		for(const MicrostructurePhase* stype : crystalStructures())
-			if(stype->name() == name)
-				return stype;
-		return nullptr;
-	}
+    /// Returns the crystal structure with the given name, or null if no such structure exists.
+    const MicrostructurePhase* structureByName(const QString& name) const {
+        for(const MicrostructurePhase* stype : crystalStructures())
+            if(stype->name() == name)
+                return stype;
+        return nullptr;
+    }
 
-	/// Returns whether this data object wants to be shown in the pipeline editor under the data source section.
-	virtual bool showInPipelineEditor() const override { return true; }
+    /// Returns whether this data object wants to be shown in the pipeline editor under the data source section.
+    virtual bool showInPipelineEditor() const override { return true; }
 
-	/// Creates an editable proxy object for this DataObject and synchronizes its parameters.
-	virtual void updateEditableProxies(PipelineFlowState& state, ConstDataObjectPath& dataPath) const override;
+    /// Creates an editable proxy object for this DataObject and synchronizes its parameters.
+    virtual void updateEditableProxies(PipelineFlowState& state, ConstDataObjectPath& dataPath) const override;
 
 private:
 
-	/// The internal data.
-	DECLARE_RUNTIME_PROPERTY_FIELD(std::shared_ptr<DislocationNetwork>, storage, setStorage);
+    /// The internal data.
+    DECLARE_RUNTIME_PROPERTY_FIELD(std::shared_ptr<DislocationNetwork>, storage, setStorage);
 
-	/// List of crystal structures.
-	DECLARE_MODIFIABLE_VECTOR_REFERENCE_FIELD(DataOORef<const MicrostructurePhase>, crystalStructures, setCrystalStructures);
+    /// List of crystal structures.
+    DECLARE_MODIFIABLE_VECTOR_REFERENCE_FIELD(DataOORef<const MicrostructurePhase>, crystalStructures, setCrystalStructures);
 };
 
-}	// End of namespace
+}   // End of namespace

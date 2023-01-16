@@ -36,32 +36,32 @@ using namespace Ovito::StdMod;
  */
 class OVITO_GRID_EXPORT VoxelGridComputePropertyModifierDelegate : public ComputePropertyModifierDelegate
 {
-	/// Give the modifier delegate its own metaclass.
-	class OOMetaClass : public ComputePropertyModifierDelegate::OOMetaClass
-	{
-	public:
+    /// Give the modifier delegate its own metaclass.
+    class OOMetaClass : public ComputePropertyModifierDelegate::OOMetaClass
+    {
+    public:
 
-		/// Inherit constructor from base class.
-		using ComputePropertyModifierDelegate::OOMetaClass::OOMetaClass;
+        /// Inherit constructor from base class.
+        using ComputePropertyModifierDelegate::OOMetaClass::OOMetaClass;
 
-		/// Indicates which data objects in the given input data collection the modifier delegate is able to operate on.
-		virtual QVector<DataObjectReference> getApplicableObjects(const DataCollection& input) const override;
+        /// Indicates which data objects in the given input data collection the modifier delegate is able to operate on.
+        virtual QVector<DataObjectReference> getApplicableObjects(const DataCollection& input) const override;
 
-		/// Indicates which class of data objects the modifier delegate is able to operate on.
-		virtual const DataObject::OOMetaClass& getApplicableObjectClass() const override { return VoxelGrid::OOClass(); }
+        /// Indicates which class of data objects the modifier delegate is able to operate on.
+        virtual const DataObject::OOMetaClass& getApplicableObjectClass() const override { return VoxelGrid::OOClass(); }
 
-		/// The name by which Python scripts can refer to this modifier delegate.
-		virtual QString pythonDataName() const override { return QStringLiteral("voxels"); }
-	};
+        /// The name by which Python scripts can refer to this modifier delegate.
+        virtual QString pythonDataName() const override { return QStringLiteral("voxels"); }
+    };
 
-	OVITO_CLASS_META(VoxelGridComputePropertyModifierDelegate, OOMetaClass)
+    OVITO_CLASS_META(VoxelGridComputePropertyModifierDelegate, OOMetaClass)
 
-	Q_CLASSINFO("DisplayName", "Voxel grids");
+    Q_CLASSINFO("DisplayName", "Voxel grids");
 
 public:
 
-	/// Constructor.
-	Q_INVOKABLE VoxelGridComputePropertyModifierDelegate(ObjectCreationParams params) : ComputePropertyModifierDelegate(params) {}
+    /// Constructor.
+    Q_INVOKABLE VoxelGridComputePropertyModifierDelegate(ObjectCreationParams params) : ComputePropertyModifierDelegate(params) {}
 };
 
-}	// End of namespace
+}   // End of namespace

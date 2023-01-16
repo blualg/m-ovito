@@ -59,21 +59,21 @@ int __gl_computeInterior( GLUtesselator *tess );
  */
 
 struct ActiveRegion {
-  GLUhalfEdge	*eUp;		/* upper edge, directed right to left */
-  DictNode	*nodeUp;	/* dictionary node corresponding to eUp */
-  int		windingNumber;	/* used to determine which regions are
+  GLUhalfEdge   *eUp;       /* upper edge, directed right to left */
+  DictNode  *nodeUp;    /* dictionary node corresponding to eUp */
+  int       windingNumber;  /* used to determine which regions are
                                  * inside the polygon */
-  tessbool	inside;		/* is this region inside the polygon? */
-  tessbool	sentinel;	/* marks fake edges at t = +/-infinity */
-  tessbool	dirty;		/* marks regions where the upper or lower
+  tessbool  inside;     /* is this region inside the polygon? */
+  tessbool  sentinel;   /* marks fake edges at t = +/-infinity */
+  tessbool  dirty;      /* marks regions where the upper or lower
                                  * edge has changed, but we haven't checked
                                  * whether they intersect yet */
-  tessbool	fixUpperEdge;	/* marks temporary edges introduced when
+  tessbool  fixUpperEdge;   /* marks temporary edges introduced when
                                  * we process a "right vertex" (one without
                                  * any edges leaving to the right) */
 };
 
-#define RegionBelow(r)	((ActiveRegion *) dictKey(dictPred((r)->nodeUp)))
-#define RegionAbove(r)	((ActiveRegion *) dictKey(dictSucc((r)->nodeUp)))
+#define RegionBelow(r)  ((ActiveRegion *) dictKey(dictPred((r)->nodeUp)))
+#define RegionAbove(r)  ((ActiveRegion *) dictKey(dictSucc((r)->nodeUp)))
 
 #endif

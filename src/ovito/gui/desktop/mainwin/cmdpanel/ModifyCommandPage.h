@@ -32,78 +32,78 @@
 
 namespace Ovito {
 
-class PipelineListModel;	// defined in PipelineListModel.h
-class PipelineListItem;		// defined in PipelineListItem.h
+class PipelineListModel;    // defined in PipelineListModel.h
+class PipelineListItem;     // defined in PipelineListItem.h
 
 /**
  * The command panel tab lets the user modify the selected object.
  */
 class OVITO_GUI_EXPORT ModifyCommandPage : public QWidget
 {
-	Q_OBJECT
+    Q_OBJECT
 
 public:
 
-	/// Initializes the modify page.
+    /// Initializes the modify page.
     ModifyCommandPage(MainWindow& mainWindow, QWidget* parent);
 
-	/// Returns the object that is currently being edited in the properties panel.
-	RefTarget* editObject() const { return _propertiesPanel->editObject(); }
+    /// Returns the object that is currently being edited in the properties panel.
+    RefTarget* editObject() const { return _propertiesPanel->editObject(); }
 
-	/// Returns the list model that encapsulates the modification pipeline of the selected node(s).
-	PipelineListModel* pipelineListModel() const { return _pipelineListModel; }
+    /// Returns the list model that encapsulates the modification pipeline of the selected node(s).
+    PipelineListModel* pipelineListModel() const { return _pipelineListModel; }
 
-	/// Returns the list model that lists the available modifiers.
-	ModifierListModel* modifierListModel() const { return static_cast<ModifierListModel*>(_modifierSelector->model()); }
+    /// Returns the list model that lists the available modifiers.
+    ModifierListModel* modifierListModel() const { return static_cast<ModifierListModel*>(_modifierSelector->model()); }
 
-	/// Loads the layout of the widgets from the settings store.
-	void restoreLayout();
+    /// Loads the layout of the widgets from the settings store.
+    void restoreLayout();
 
-	/// Saves the layout of the widgets to the settings store.
-	void saveLayout();
+    /// Saves the layout of the widgets to the settings store.
+    void saveLayout();
 
 protected Q_SLOTS:
 
-	/// Is called when a new modification list item has been selected, or if the currently
-	/// selected item has changed.
-	void onSelectedItemChanged();
+    /// Is called when a new modification list item has been selected, or if the currently
+    /// selected item has changed.
+    void onSelectedItemChanged();
 
-	/// This called when the user double clicks on an item in the modifier stack.
-	void onModifierStackDoubleClicked(const QModelIndex& index);
+    /// This called when the user double clicks on an item in the modifier stack.
+    void onModifierStackDoubleClicked(const QModelIndex& index);
 
-	/// Is called by the system when fetching the news web page from the server is completed.
-	void onWebRequestFinished();
-
-private:
-
-	/// Creates the rollout panel that shows information about the application whenever no object is selected.
-	void createAboutPanel();
-
-	/// Displays the given HTML page content in the About pane.
-	void showProgramNotice(const QString& htmlPage);
+    /// Is called by the system when fetching the news web page from the server is completed.
+    void onWebRequestFinished();
 
 private:
 
-	/// The main window hosting this page.
-	MainWindow& _mainWindow;
+    /// Creates the rollout panel that shows information about the application whenever no object is selected.
+    void createAboutPanel();
 
-	/// This list box shows the modifier stack of the selected scene node(s).
-	QListView* _pipelineWidget;
+    /// Displays the given HTML page content in the About pane.
+    void showProgramNotice(const QString& htmlPage);
 
-	/// The Qt model for the data pipeline of the selected node(s).
-	PipelineListModel* _pipelineListModel;
+private:
 
-	/// This widget displays the list of available modifiers and allows the user to insert a modifier into the pipeline.
-	QComboBox* _modifierSelector;
+    /// The main window hosting this page.
+    MainWindow& _mainWindow;
 
-	/// This panel shows the properties of the selected modifier stack entry
-	PropertiesPanel* _propertiesPanel;
+    /// This list box shows the modifier stack of the selected scene node(s).
+    QListView* _pipelineWidget;
 
-	/// The panel displaying information about the application when no object is selected.
-	Rollout* _aboutRollout;
+    /// The Qt model for the data pipeline of the selected node(s).
+    PipelineListModel* _pipelineListModel;
 
-	/// The splitter widget separating the pipeline editor and the properties panel.
-	QSplitter* _splitter;
+    /// This widget displays the list of available modifiers and allows the user to insert a modifier into the pipeline.
+    QComboBox* _modifierSelector;
+
+    /// This panel shows the properties of the selected modifier stack entry
+    PropertiesPanel* _propertiesPanel;
+
+    /// The panel displaying information about the application when no object is selected.
+    Rollout* _aboutRollout;
+
+    /// The splitter widget separating the pipeline editor and the properties panel.
+    QSplitter* _splitter;
 };
 
-}	// End of namespace
+}   // End of namespace

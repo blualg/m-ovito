@@ -33,17 +33,17 @@ namespace Ovito::StdMod {
  */
 class DeleteSelectedModifierEditor : public PropertiesEditor
 {
-	OVITO_CLASS(DeleteSelectedModifierEditor)
+    OVITO_CLASS(DeleteSelectedModifierEditor)
 
 public:
 
-	/// Default constructor.
-	Q_INVOKABLE DeleteSelectedModifierEditor() {}
+    /// Default constructor.
+    Q_INVOKABLE DeleteSelectedModifierEditor() {}
 
 protected:
 
-	/// Creates the user interface controls for the editor.
-	virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
+    /// Creates the user interface controls for the editor.
+    virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
 };
 
-}	// End of namespace
+}   // End of namespace

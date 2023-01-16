@@ -35,50 +35,50 @@ IMPLEMENT_OVITO_CLASS(FHIAimsExporter);
 ******************************************************************************/
 bool FHIAimsExporter::exportData(const PipelineFlowState& state, int frameNumber, const QString& filePath, MainThreadOperation& operation)
 {
-	// Get particle positions and types.
-	const ParticlesObject* particles = state.expectObject<ParticlesObject>();
-	particles->verifyIntegrity();
-	ConstPropertyAccess<Point3> posProperty = particles->expectProperty(ParticlesObject::PositionProperty);
-	const PropertyObject* particleTypeProperty = particles->getProperty(ParticlesObject::TypeProperty);
-	ConstPropertyAccess<int> particleTypeArray(particleTypeProperty);
+    // Get particle positions and types.
+    const ParticlesObject* particles = state.expectObject<ParticlesObject>();
+    particles->verifyIntegrity();
+    ConstPropertyAccess<Point3> posProperty = particles->expectProperty(ParticlesObject::PositionProperty);
+    const PropertyObject* particleTypeProperty = particles->getProperty(ParticlesObject::TypeProperty);
+    ConstPropertyAccess<int> particleTypeArray(particleTypeProperty);
 
-	textStream() << "# FHI-aims file written by " << Application::applicationName() << " " << Application::applicationVersionString() << "\n";
+    textStream() << "# FHI-aims file written by " << Application::applicationName() << " " << Application::applicationVersionString() << "\n";
 
-	// Output simulation cell.
-	Point3 origin = Point3::Origin();
-	const SimulationCellObject* simulationCell = state.getObject<SimulationCellObject>();
-	if(simulationCell) {
-		origin = simulationCell->cellOrigin();
-		if(simulationCell->pbcX() || simulationCell->pbcY() || simulationCell->pbcZ()) {
-			const AffineTransformation& cell = simulationCell->cellMatrix();
-			for(size_t i = 0; i < 3; i++)
-				textStream() << "lattice_vector " << cell(0, i) << ' ' << cell(1, i) << ' ' << cell(2, i) << '\n';
-		}
-	}
+    // Output simulation cell.
+    Point3 origin = Point3::Origin();
+    const SimulationCellObject* simulationCell = state.getObject<SimulationCellObject>();
+    if(simulationCell) {
+        origin = simulationCell->cellOrigin();
+        if(simulationCell->pbcX() || simulationCell->pbcY() || simulationCell->pbcZ()) {
+            const AffineTransformation& cell = simulationCell->cellMatrix();
+            for(size_t i = 0; i < 3; i++)
+                textStream() << "lattice_vector " << cell(0, i) << ' ' << cell(1, i) << ' ' << cell(2, i) << '\n';
+        }
+    }
 
-	// Output atoms.
-	operation.setProgressMaximum(posProperty.size());
-	for(size_t i = 0; i < posProperty.size(); i++) {
-		const Point3& p = posProperty[i];
-		const ElementType* type = particleTypeArray ? particleTypeProperty->elementType(particleTypeArray[i]) : nullptr;
+    // Output atoms.
+    operation.setProgressMaximum(posProperty.size());
+    for(size_t i = 0; i < posProperty.size(); i++) {
+        const Point3& p = posProperty[i];
+        const ElementType* type = particleTypeArray ? particleTypeProperty->elementType(particleTypeArray[i]) : nullptr;
 
-		textStream() << "atom " << (p.x() - origin.x()) << ' ' << (p.y() - origin.y()) << ' ' << (p.z() - origin.z());
-		if(type && !type->name().isEmpty()) {
-			QString s = type->name();
-			textStream() << ' ' << s.replace(QChar(' '), QChar('_')) << '\n';
-		}
-		else if(particleTypeArray) {
-			textStream() << ' ' << particleTypeArray[i] << '\n';
-		}
-		else {
-			textStream() << " 1\n";
-		}
+        textStream() << "atom " << (p.x() - origin.x()) << ' ' << (p.y() - origin.y()) << ' ' << (p.z() - origin.z());
+        if(type && !type->name().isEmpty()) {
+            QString s = type->name();
+            textStream() << ' ' << s.replace(QChar(' '), QChar('_')) << '\n';
+        }
+        else if(particleTypeArray) {
+            textStream() << ' ' << particleTypeArray[i] << '\n';
+        }
+        else {
+            textStream() << " 1\n";
+        }
 
-		if(!operation.setProgressValueIntermittent(i))
-			return false;
-	}
+        if(!operation.setProgressValueIntermittent(i))
+            return false;
+    }
 
-	return !operation.isCanceled();
+    return !operation.isCanceled();
 }
 
-}	// End of namespace
+}   // End of namespace

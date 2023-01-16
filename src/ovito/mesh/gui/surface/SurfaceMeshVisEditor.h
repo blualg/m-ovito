@@ -33,32 +33,32 @@ namespace Ovito::Mesh {
  */
 class SurfaceMeshVisEditor : public PropertiesEditor
 {
-	OVITO_CLASS(SurfaceMeshVisEditor)
+    OVITO_CLASS(SurfaceMeshVisEditor)
 
 public:
 
-	/// Constructor.
-	Q_INVOKABLE SurfaceMeshVisEditor() {}
+    /// Constructor.
+    Q_INVOKABLE SurfaceMeshVisEditor() {}
 
 protected:
 
-	/// Creates the user interface controls for the editor.
-	virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
+    /// Creates the user interface controls for the editor.
+    virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
 
 private Q_SLOTS:
 
-	/// Updates the coloring controls shown in the UI.
-	void updateColoringOptions();
+    /// Updates the coloring controls shown in the UI.
+    void updateColoringOptions();
 
 private:
 
-	IntegerRadioButtonParameterUI* _coloringModeUI;
-	ColorParameterUI* _surfaceColorUI;
-	SubObjectParameterUI* _colorMappingParamUI;
-	BooleanGroupBoxParameterUI* _capGroupUI;
-	BooleanParameterUI* _clipAtDomainBoundariesUI;
+    IntegerRadioButtonParameterUI* _coloringModeUI;
+    ColorParameterUI* _surfaceColorUI;
+    SubObjectParameterUI* _colorMappingParamUI;
+    BooleanGroupBoxParameterUI* _capGroupUI;
+    BooleanParameterUI* _clipAtDomainBoundariesUI;
 };
 
-}	// End of namespace
+}   // End of namespace
 
 

@@ -33,17 +33,17 @@ namespace Ovito::Mesh {
  */
 class ParaViewVTMImporterEditor : public FileImporterEditor
 {
-	OVITO_CLASS(ParaViewVTMImporterEditor)
+    OVITO_CLASS(ParaViewVTMImporterEditor)
 
 public:
 
-	/// Constructor.
-	Q_INVOKABLE ParaViewVTMImporterEditor() {}
+    /// Constructor.
+    Q_INVOKABLE ParaViewVTMImporterEditor() {}
 
 protected:
 
-	/// Creates the user interface controls for the editor.
-	virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
+    /// Creates the user interface controls for the editor.
+    virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
 };
 
-}	// End of namespace
+}   // End of namespace

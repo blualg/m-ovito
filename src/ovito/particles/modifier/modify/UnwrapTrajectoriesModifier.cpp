@@ -43,7 +43,7 @@ SET_MODIFIER_APPLICATION_TYPE(UnwrapTrajectoriesModifier, UnwrapTrajectoriesModi
 ******************************************************************************/
 bool UnwrapTrajectoriesModifier::OOMetaClass::isApplicableTo(const DataCollection& input) const
 {
-	return input.containsObject<ParticlesObject>();
+    return input.containsObject<ParticlesObject>();
 }
 
 /******************************************************************************
@@ -51,26 +51,26 @@ bool UnwrapTrajectoriesModifier::OOMetaClass::isApplicableTo(const DataCollectio
 ******************************************************************************/
 Future<PipelineFlowState> UnwrapTrajectoriesModifier::evaluate(const ModifierEvaluationRequest& request, const PipelineFlowState& input)
 {
-	if(input) {
-		if(UnwrapTrajectoriesModifierApplication* unwrapModApp = dynamic_object_cast<UnwrapTrajectoriesModifierApplication>(request.modApp())) {
+    if(input) {
+        if(UnwrapTrajectoriesModifierApplication* unwrapModApp = dynamic_object_cast<UnwrapTrajectoriesModifierApplication>(request.modApp())) {
 
-			// If the periodic image flags property is present, use it to unwrap particle positions.
-			const ParticlesObject* inputParticles = input.expectObject<ParticlesObject>();
-			if(inputParticles->getProperty(ParticlesObject::PeriodicImageProperty)) {
-				PipelineFlowState output = input;
-				unwrapModApp->unwrapParticleCoordinates(request, output);
-				return output;
-			}
+            // If the periodic image flags property is present, use it to unwrap particle positions.
+            const ParticlesObject* inputParticles = input.expectObject<ParticlesObject>();
+            if(inputParticles->getProperty(ParticlesObject::PeriodicImageProperty)) {
+                PipelineFlowState output = input;
+                unwrapModApp->unwrapParticleCoordinates(request, output);
+                return output;
+            }
 
-			// Without the periodic image flags information, we have to scan the particle trajectories
-			// from beginning to end before making them continuous.
-			return unwrapModApp->detectPeriodicCrossings(request).then(*unwrapModApp, [state = input, request]() mutable {
-				static_object_cast<UnwrapTrajectoriesModifierApplication>(request.modApp())->unwrapParticleCoordinates(request, state);
-				return std::move(state);
-			});
-		}
-	}
-	return input;
+            // Without the periodic image flags information, we have to scan the particle trajectories
+            // from beginning to end before making them continuous.
+            return unwrapModApp->detectPeriodicCrossings(request).then(*unwrapModApp, [state = input, request]() mutable {
+                static_object_cast<UnwrapTrajectoriesModifierApplication>(request.modApp())->unwrapParticleCoordinates(request, state);
+                return std::move(state);
+            });
+        }
+    }
+    return input;
 }
 
 /******************************************************************************
@@ -78,20 +78,20 @@ Future<PipelineFlowState> UnwrapTrajectoriesModifier::evaluate(const ModifierEva
 ******************************************************************************/
 void UnwrapTrajectoriesModifier::evaluateSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state)
 {
-	if(!state) return;
+    if(!state) return;
 
-	// The pipeline system may call evaluateSynchronous() with an outdated trajectory frame, which doesn't match the current
-	// animation time. This would lead to artifacts, because particles might get unwrapped even though they haven't crossed
-	// a periodic cell boundary yet. To avoid this from happening, we try to determine the true animation time of the
-	// current input data collection and use it for looking up the unwrap information.
-	AnimationTime time = request.time();
-	int sourceFrame = state.data()->sourceFrame();
-	if(sourceFrame != -1)
-		time = request.modApp()->sourceFrameToAnimationTime(sourceFrame);
+    // The pipeline system may call evaluateSynchronous() with an outdated trajectory frame, which doesn't match the current
+    // animation time. This would lead to artifacts, because particles might get unwrapped even though they haven't crossed
+    // a periodic cell boundary yet. To avoid this from happening, we try to determine the true animation time of the
+    // current input data collection and use it for looking up the unwrap information.
+    AnimationTime time = request.time();
+    int sourceFrame = state.data()->sourceFrame();
+    if(sourceFrame != -1)
+        time = request.modApp()->sourceFrameToAnimationTime(sourceFrame);
 
-	if(UnwrapTrajectoriesModifierApplication* unwrapModApp = dynamic_object_cast<UnwrapTrajectoriesModifierApplication>(request.modApp())) {
-		unwrapModApp->unwrapParticleCoordinates(request, state);
-	}
+    if(UnwrapTrajectoriesModifierApplication* unwrapModApp = dynamic_object_cast<UnwrapTrajectoriesModifierApplication>(request.modApp())) {
+        unwrapModApp->unwrapParticleCoordinates(request, state);
+    }
 }
 
 /******************************************************************************
@@ -100,33 +100,33 @@ void UnwrapTrajectoriesModifier::evaluateSynchronous(const ModifierEvaluationReq
 ******************************************************************************/
 SharedFuture<> UnwrapTrajectoriesModifierApplication::detectPeriodicCrossings(const ModifierEvaluationRequest& request)
 {
-	if(_unwrapOperation.isValid() == false || _unwrapOperation.isCanceled()) {
+    if(_unwrapOperation.isValid() == false || _unwrapOperation.isCanceled()) {
 
-		// Determine the range of animation frames to be processed.
-		int startFrame = 0;
-		if(unwrappedUpToTime() != AnimationTime::negativeInfinity())
-			startFrame = animationTimeToSourceFrame(unwrappedUpToTime());
-		int endFrame = std::max(numberOfSourceFrames(), startFrame);
-		auto inputFrameRange = boost::irange(startFrame, endFrame);
+        // Determine the range of animation frames to be processed.
+        int startFrame = 0;
+        if(unwrappedUpToTime() != AnimationTime::negativeInfinity())
+            startFrame = animationTimeToSourceFrame(unwrappedUpToTime());
+        int endFrame = std::max(numberOfSourceFrames(), startFrame);
+        auto inputFrameRange = boost::irange(startFrame, endFrame);
 
-		// Iterate over all frames of the input range in sequential order.
-		_unwrapOperation = for_each_sequential(
-			std::move(inputFrameRange), 
-			ObjectExecutor(this, true), // Require deferred execution of each frame
-			// Requests the next frame from the upstream pipeline.
-			[this](int frame) {
-				return evaluateInput(PipelineEvaluationRequest(sourceFrameToAnimationTime(frame)));
-			},
-			// This object processes each frame's data.
-			WorkingData{this});
+        // Iterate over all frames of the input range in sequential order.
+        _unwrapOperation = for_each_sequential(
+            std::move(inputFrameRange), 
+            ObjectExecutor(this, true), // Require deferred execution of each frame
+            // Requests the next frame from the upstream pipeline.
+            [this](int frame) {
+                return evaluateInput(PipelineEvaluationRequest(sourceFrameToAnimationTime(frame)));
+            },
+            // This object processes each frame's data.
+            WorkingData{this});
 
-		// Display progress in the UI.
-		OVITO_ASSERT(_unwrapOperation.task()->isProgressingTask());
-		static_cast<ProgressingTask*>(_unwrapOperation.task().get())->setProgressText(tr("Unwrapping particle trajectories"));
-		ExecutionContext::current().ui().taskManager().registerFuture(_unwrapOperation);
-		registerActiveFuture(_unwrapOperation);
-	}
-	return _unwrapOperation;
+        // Display progress in the UI.
+        OVITO_ASSERT(_unwrapOperation.task()->isProgressingTask());
+        static_cast<ProgressingTask*>(_unwrapOperation.task().get())->setProgressText(tr("Unwrapping particle trajectories"));
+        ExecutionContext::current().ui().taskManager().registerFuture(_unwrapOperation);
+        registerActiveFuture(_unwrapOperation);
+    }
+    return _unwrapOperation;
 }
 
 /******************************************************************************
@@ -135,10 +135,10 @@ SharedFuture<> UnwrapTrajectoriesModifierApplication::detectPeriodicCrossings(co
 ******************************************************************************/
 void UnwrapTrajectoriesModifierApplication::invalidateUnwrapData()
 {
-	_unwrappedUpToTime = AnimationTime::negativeInfinity();
-	_unwrapRecords.clear();
-	_unflipRecords.clear();
-	_unwrapOperation.reset();
+    _unwrappedUpToTime = AnimationTime::negativeInfinity();
+    _unwrapRecords.clear();
+    _unflipRecords.clear();
+    _unwrapOperation.reset();
 }
 
 /******************************************************************************
@@ -146,10 +146,10 @@ void UnwrapTrajectoriesModifierApplication::invalidateUnwrapData()
 ******************************************************************************/
 bool UnwrapTrajectoriesModifierApplication::referenceEvent(RefTarget* source, const ReferenceEvent& event)
 {
-	if(event.type() == ReferenceEvent::TargetChanged && source == input()) {
-		invalidateUnwrapData();
-	}
-	return ModifierApplication::referenceEvent(source, event);
+    if(event.type() == ReferenceEvent::TargetChanged && source == input()) {
+        invalidateUnwrapData();
+    }
+    return ModifierApplication::referenceEvent(source, event);
 }
 
 /******************************************************************************
@@ -157,10 +157,10 @@ bool UnwrapTrajectoriesModifierApplication::referenceEvent(RefTarget* source, co
 ******************************************************************************/
 void UnwrapTrajectoriesModifierApplication::referenceReplaced(const PropertyFieldDescriptor* field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex)
 {
-	if(field == PROPERTY_FIELD(input)) {
-		invalidateUnwrapData();
-	}
-	ModifierApplication::referenceReplaced(field, oldTarget, newTarget, listIndex);
+    if(field == PROPERTY_FIELD(input)) {
+        invalidateUnwrapData();
+    }
+    ModifierApplication::referenceReplaced(field, oldTarget, newTarget, listIndex);
 }
 
 /******************************************************************************
@@ -168,8 +168,8 @@ void UnwrapTrajectoriesModifierApplication::referenceReplaced(const PropertyFiel
 ******************************************************************************/
 void UnwrapTrajectoriesModifierApplication::rescaleTime(const TimeInterval& oldAnimationInterval, const TimeInterval& newAnimationInterval)
 {
-	ModifierApplication::rescaleTime(oldAnimationInterval, newAnimationInterval);
-	invalidateUnwrapData();
+    ModifierApplication::rescaleTime(oldAnimationInterval, newAnimationInterval);
+    invalidateUnwrapData();
 }
 
 /******************************************************************************
@@ -177,134 +177,134 @@ void UnwrapTrajectoriesModifierApplication::rescaleTime(const TimeInterval& oldA
 ******************************************************************************/
 void UnwrapTrajectoriesModifierApplication::unwrapParticleCoordinates(const ModifierEvaluationRequest& request, PipelineFlowState& state)
 {
-	const ParticlesObject* inputParticles = state.expectObject<ParticlesObject>();
-	inputParticles->verifyIntegrity();
+    const ParticlesObject* inputParticles = state.expectObject<ParticlesObject>();
+    inputParticles->verifyIntegrity();
 
-	// If the periodic image flags particle property is present, use it to unwrap particle positions.
-	if(ConstPropertyAccess<Vector3I> particlePeriodicImageProperty = inputParticles->getProperty(ParticlesObject::PeriodicImageProperty)) {
-		// Get current simulation cell.
-		const SimulationCellObject* cell = state.expectObject<SimulationCellObject>();
+    // If the periodic image flags particle property is present, use it to unwrap particle positions.
+    if(ConstPropertyAccess<Vector3I> particlePeriodicImageProperty = inputParticles->getProperty(ParticlesObject::PeriodicImageProperty)) {
+        // Get current simulation cell.
+        const SimulationCellObject* cell = state.expectObject<SimulationCellObject>();
 
-		// Make a modifiable copy of the particles object.
-		ParticlesObject* outputParticles = state.expectMutableObject<ParticlesObject>();
+        // Make a modifiable copy of the particles object.
+        ParticlesObject* outputParticles = state.expectMutableObject<ParticlesObject>();
 
-		// Make a modifiable copy of the particle position property.
-		PropertyAccess<Point3> posProperty = outputParticles->expectMutableProperty(ParticlesObject::PositionProperty);
-		const Vector3I* pbcShift = particlePeriodicImageProperty.cbegin();
-		for(Point3& p : posProperty) {
-			p += cell->cellMatrix() * (*pbcShift++).toDataType<FloatType>();
-		}
+        // Make a modifiable copy of the particle position property.
+        PropertyAccess<Point3> posProperty = outputParticles->expectMutableProperty(ParticlesObject::PositionProperty);
+        const Vector3I* pbcShift = particlePeriodicImageProperty.cbegin();
+        for(Point3& p : posProperty) {
+            p += cell->cellMatrix() * (*pbcShift++).toDataType<FloatType>();
+        }
 
-		// Unwrap bonds by adjusting their PBC shift vectors.
-		if(outputParticles->bonds()) {
-			if(ConstPropertyAccess<ParticleIndexPair> topologyProperty = outputParticles->bonds()->getProperty(BondsObject::TopologyProperty)) {
-				PropertyAccess<Vector3I> periodicImageProperty = outputParticles->makeBondsMutable()->createProperty(BondsObject::PeriodicImageProperty, DataBuffer::InitializeMemory);
-				for(size_t bondIndex = 0; bondIndex < topologyProperty.size(); bondIndex++) {
-					size_t particleIndex1 = topologyProperty[bondIndex][0];
-					size_t particleIndex2 = topologyProperty[bondIndex][1];
-					if(particleIndex1 >= particlePeriodicImageProperty.size() || particleIndex2 >= particlePeriodicImageProperty.size())
-						continue;
-					const Vector3I& particleShift1 = particlePeriodicImageProperty[particleIndex1];
-					const Vector3I& particleShift2 = particlePeriodicImageProperty[particleIndex2];
-					periodicImageProperty[bondIndex] += particleShift1 - particleShift2;
-				}
-			}
-		}
+        // Unwrap bonds by adjusting their PBC shift vectors.
+        if(outputParticles->bonds()) {
+            if(ConstPropertyAccess<ParticleIndexPair> topologyProperty = outputParticles->bonds()->getProperty(BondsObject::TopologyProperty)) {
+                PropertyAccess<Vector3I> periodicImageProperty = outputParticles->makeBondsMutable()->createProperty(BondsObject::PeriodicImageProperty, DataBuffer::InitializeMemory);
+                for(size_t bondIndex = 0; bondIndex < topologyProperty.size(); bondIndex++) {
+                    size_t particleIndex1 = topologyProperty[bondIndex][0];
+                    size_t particleIndex2 = topologyProperty[bondIndex][1];
+                    if(particleIndex1 >= particlePeriodicImageProperty.size() || particleIndex2 >= particlePeriodicImageProperty.size())
+                        continue;
+                    const Vector3I& particleShift1 = particlePeriodicImageProperty[particleIndex1];
+                    const Vector3I& particleShift2 = particlePeriodicImageProperty[particleIndex2];
+                    periodicImageProperty[bondIndex] += particleShift1 - particleShift2;
+                }
+            }
+        }
 
-		// After unwrapping the particles, the PBC image flags are obsolete.
-		// It's time to remove the particle property.
-		outputParticles->removeProperty(outputParticles->getProperty(ParticlesObject::PeriodicImageProperty));
+        // After unwrapping the particles, the PBC image flags are obsolete.
+        // It's time to remove the particle property.
+        outputParticles->removeProperty(outputParticles->getProperty(ParticlesObject::PeriodicImageProperty));
 
-		state.setStatus(tr("Unwrapping particle positions using stored PBC image information."));
+        state.setStatus(tr("Unwrapping particle positions using stored PBC image information."));
 
-		return;
-	}
+        return;
+    }
 
-	// Check if periodic cell boundary crossing have been precomputed or not.
-	if(request.time() > unwrappedUpToTime()) {
-		if(ExecutionContext::isInteractive())
-			state.setStatus(PipelineStatus(PipelineStatus::Warning, tr("Particle crossings of periodic cell boundaries have not been determined yet.")));
-		else
-			throw Exception(tr("Particle crossings of periodic cell boundaries have not been determined yet. Cannot unwrap trajectories. Did you forget to call UnwrapTrajectoriesModifier.update()?"));
-		return;
-	}
+    // Check if periodic cell boundary crossing have been precomputed or not.
+    if(request.time() > unwrappedUpToTime()) {
+        if(ExecutionContext::isInteractive())
+            state.setStatus(PipelineStatus(PipelineStatus::Warning, tr("Particle crossings of periodic cell boundaries have not been determined yet.")));
+        else
+            throw Exception(tr("Particle crossings of periodic cell boundaries have not been determined yet. Cannot unwrap trajectories. Did you forget to call UnwrapTrajectoriesModifier.update()?"));
+        return;
+    }
 
-	// Reverse any cell shear flips made by LAMMPS.
-	if(!unflipRecords().empty() && request.time() >= unflipRecords().front().first) {
-		auto iter = unflipRecords().rbegin();
-		while(iter->first > request.time()) {
-			++iter;
-			OVITO_ASSERT(iter != unflipRecords().rend());
-		}
-		const std::array<int,3>& flipState = iter->second;
-		SimulationCellObject* simCellObj = state.expectMutableObject<SimulationCellObject>();
-		AffineTransformation cell = simCellObj->cellMatrix();
-		cell.column(2) += cell.column(0) * flipState[1] + cell.column(1) * flipState[2];
-		cell.column(1) += cell.column(0) * flipState[0];
-		simCellObj->setCellMatrix(cell);
-	}
+    // Reverse any cell shear flips made by LAMMPS.
+    if(!unflipRecords().empty() && request.time() >= unflipRecords().front().first) {
+        auto iter = unflipRecords().rbegin();
+        while(iter->first > request.time()) {
+            ++iter;
+            OVITO_ASSERT(iter != unflipRecords().rend());
+        }
+        const std::array<int,3>& flipState = iter->second;
+        SimulationCellObject* simCellObj = state.expectMutableObject<SimulationCellObject>();
+        AffineTransformation cell = simCellObj->cellMatrix();
+        cell.column(2) += cell.column(0) * flipState[1] + cell.column(1) * flipState[2];
+        cell.column(1) += cell.column(0) * flipState[0];
+        simCellObj->setCellMatrix(cell);
+    }
 
-	if(unwrapRecords().empty())
-		return;
+    if(unwrapRecords().empty())
+        return;
 
-	// Get current simulation cell.
-	const SimulationCellObject* simCell = state.expectObject<SimulationCellObject>();
+    // Get current simulation cell.
+    const SimulationCellObject* simCell = state.expectObject<SimulationCellObject>();
 
-	// Make a modifiable copy of the particles object.
-	ParticlesObject* outputParticles = state.expectMutableObject<ParticlesObject>();
+    // Make a modifiable copy of the particles object.
+    ParticlesObject* outputParticles = state.expectMutableObject<ParticlesObject>();
 
-	// Make a modifiable copy of the particle position property.
-	PropertyAccess<Point3> posProperty = outputParticles->expectMutableProperty(ParticlesObject::PositionProperty);
+    // Make a modifiable copy of the particle position property.
+    PropertyAccess<Point3> posProperty = outputParticles->expectMutableProperty(ParticlesObject::PositionProperty);
 
-	// Get particle identifiers.
-	ConstPropertyAccess<qlonglong> identifierProperty = outputParticles->getProperty(ParticlesObject::IdentifierProperty);
-	if(identifierProperty && identifierProperty.size() != posProperty.size())
-		identifierProperty.reset();
+    // Get particle identifiers.
+    ConstPropertyAccess<qlonglong> identifierProperty = outputParticles->getProperty(ParticlesObject::IdentifierProperty);
+    if(identifierProperty && identifierProperty.size() != posProperty.size())
+        identifierProperty.reset();
 
-	// Compute unwrapped particle coordinates.
-	qlonglong index = 0;
-	for(Point3& p : posProperty) {
-		auto range = unwrapRecords().equal_range(identifierProperty ? identifierProperty[index] : index);
-		bool shifted = false;
-		Vector3 pbcShift = Vector3::Zero();
-		for(auto iter = range.first; iter != range.second; ++iter) {
-			if(std::get<0>(iter->second) <= request.time()) {
-				pbcShift[std::get<1>(iter->second)] += std::get<2>(iter->second);
-				shifted = true;
-			}
-		}
-		if(shifted) {
-			p += simCell->matrix() * pbcShift;
-		}
-		index++;
-	}
+    // Compute unwrapped particle coordinates.
+    qlonglong index = 0;
+    for(Point3& p : posProperty) {
+        auto range = unwrapRecords().equal_range(identifierProperty ? identifierProperty[index] : index);
+        bool shifted = false;
+        Vector3 pbcShift = Vector3::Zero();
+        for(auto iter = range.first; iter != range.second; ++iter) {
+            if(std::get<0>(iter->second) <= request.time()) {
+                pbcShift[std::get<1>(iter->second)] += std::get<2>(iter->second);
+                shifted = true;
+            }
+        }
+        if(shifted) {
+            p += simCell->matrix() * pbcShift;
+        }
+        index++;
+    }
 
-	// Unwrap bonds by adjusting their PBC shift vectors.
-	if(outputParticles->bonds()) {
-		if(ConstPropertyAccess<ParticleIndexPair> topologyProperty = outputParticles->bonds()->getProperty(BondsObject::TopologyProperty)) {
-			PropertyAccess<Vector3I> periodicImageProperty = outputParticles->makeBondsMutable()->createProperty(BondsObject::PeriodicImageProperty, DataBuffer::InitializeMemory);
-			for(size_t bondIndex = 0; bondIndex < topologyProperty.size(); bondIndex++) {
-				size_t particleIndex1 = topologyProperty[bondIndex][0];
-				size_t particleIndex2 = topologyProperty[bondIndex][1];
-				if(particleIndex1 >= posProperty.size() || particleIndex2 >= posProperty.size())
-					continue;
+    // Unwrap bonds by adjusting their PBC shift vectors.
+    if(outputParticles->bonds()) {
+        if(ConstPropertyAccess<ParticleIndexPair> topologyProperty = outputParticles->bonds()->getProperty(BondsObject::TopologyProperty)) {
+            PropertyAccess<Vector3I> periodicImageProperty = outputParticles->makeBondsMutable()->createProperty(BondsObject::PeriodicImageProperty, DataBuffer::InitializeMemory);
+            for(size_t bondIndex = 0; bondIndex < topologyProperty.size(); bondIndex++) {
+                size_t particleIndex1 = topologyProperty[bondIndex][0];
+                size_t particleIndex2 = topologyProperty[bondIndex][1];
+                if(particleIndex1 >= posProperty.size() || particleIndex2 >= posProperty.size())
+                    continue;
 
-				Vector3I& pbcShift = periodicImageProperty[bondIndex];
-				auto range1 = unwrapRecords().equal_range(identifierProperty ? identifierProperty[particleIndex1] : particleIndex1);
-				auto range2 = unwrapRecords().equal_range(identifierProperty ? identifierProperty[particleIndex2] : particleIndex2);
-				for(auto iter = range1.first; iter != range1.second; ++iter) {
-					if(std::get<0>(iter->second) <= request.time()) {
-						pbcShift[std::get<1>(iter->second)] += std::get<2>(iter->second);
-					}
-				}
-				for(auto iter = range2.first; iter != range2.second; ++iter) {
-					if(std::get<0>(iter->second) <= request.time()) {
-						pbcShift[std::get<1>(iter->second)] -= std::get<2>(iter->second);
-					}
-				}
-			}
-		}
-	}
+                Vector3I& pbcShift = periodicImageProperty[bondIndex];
+                auto range1 = unwrapRecords().equal_range(identifierProperty ? identifierProperty[particleIndex1] : particleIndex1);
+                auto range2 = unwrapRecords().equal_range(identifierProperty ? identifierProperty[particleIndex2] : particleIndex2);
+                for(auto iter = range1.first; iter != range1.second; ++iter) {
+                    if(std::get<0>(iter->second) <= request.time()) {
+                        pbcShift[std::get<1>(iter->second)] += std::get<2>(iter->second);
+                    }
+                }
+                for(auto iter = range2.first; iter != range2.second; ++iter) {
+                    if(std::get<0>(iter->second) <= request.time()) {
+                        pbcShift[std::get<1>(iter->second)] -= std::get<2>(iter->second);
+                    }
+                }
+            }
+        }
+    }
 }
 
 /******************************************************************************
@@ -312,88 +312,88 @@ void UnwrapTrajectoriesModifierApplication::unwrapParticleCoordinates(const Modi
 ******************************************************************************/
 void UnwrapTrajectoriesModifierApplication::WorkingData::operator()(int frame, const PipelineFlowState& state)
 {
-	AnimationTime time = _modApp->sourceFrameToAnimationTime(frame);
+    AnimationTime time = _modApp->sourceFrameToAnimationTime(frame);
 
-	// Get simulation cell geometry and boundary conditions.
-	const SimulationCellObject* cell = state.getObject<SimulationCellObject>();
-	if(!cell)
-		throw Exception(tr("Input data contains no simulation cell information at frame %1.").arg(frame));
-	if(!cell->hasPbcCorrected())
-		throw Exception(tr("No periodic boundary conditions set for the simulation cell."));
-	AffineTransformation reciprocalCellMatrix = cell->inverseMatrix();
+    // Get simulation cell geometry and boundary conditions.
+    const SimulationCellObject* cell = state.getObject<SimulationCellObject>();
+    if(!cell)
+        throw Exception(tr("Input data contains no simulation cell information at frame %1.").arg(frame));
+    if(!cell->hasPbcCorrected())
+        throw Exception(tr("No periodic boundary conditions set for the simulation cell."));
+    AffineTransformation reciprocalCellMatrix = cell->inverseMatrix();
 
-	const ParticlesObject* particles = state.getObject<ParticlesObject>();
-	if(!particles)
-		throw Exception(tr("Input data contains no particles at frame %1.").arg(frame));
-	ConstPropertyAccess<Point3> posProperty = particles->expectProperty(ParticlesObject::PositionProperty);
-	ConstPropertyAccess<qlonglong> identifierProperty = particles->getProperty(ParticlesObject::IdentifierProperty);
-	if(identifierProperty && identifierProperty.size() != posProperty.size())
-		identifierProperty.reset();
+    const ParticlesObject* particles = state.getObject<ParticlesObject>();
+    if(!particles)
+        throw Exception(tr("Input data contains no particles at frame %1.").arg(frame));
+    ConstPropertyAccess<Point3> posProperty = particles->expectProperty(ParticlesObject::PositionProperty);
+    ConstPropertyAccess<qlonglong> identifierProperty = particles->getProperty(ParticlesObject::IdentifierProperty);
+    if(identifierProperty && identifierProperty.size() != posProperty.size())
+        identifierProperty.reset();
 
-	// Special handling of cell flips in LAMMPS, which occur whenever a tilt factor exceeds +/-50%.
-	if(cell->matrix()(1,0) == 0 && cell->matrix()(2,0) == 0 && cell->matrix()(2,1) == 0 && cell->matrix()(0,0) > 0 && cell->matrix()(1,1) > 0) {
-		if(_previousCell) {
-			std::array<int,3> flipState = _currentFlipState;
-			// Detect discontinuities in the three tilt factors of the cell.
-			if(cell->hasPbc(0)) {
-				FloatType xy1 = _previousCell->matrix()(0,1) / _previousCell->matrix()(0,0);
-				FloatType xy2 = cell->matrix()(0,1) / cell->matrix()(0,0);
-				if(int flip_xy = (int)std::round(xy2 - xy1))
-					flipState[0] -= flip_xy;
-				if(!cell->is2D()) {
-					FloatType xz1 = _previousCell->matrix()(0,2) / _previousCell->matrix()(0,0);
-					FloatType xz2 = cell->matrix()(0,2) / cell->matrix()(0,0);
-					if(int flip_xz = (int)std::round(xz2 - xz1))
-						flipState[1] -= flip_xz;
-				}
-			}
-			if(cell->hasPbc(1) && !cell->is2D()) {
-				FloatType yz1 = _previousCell->matrix()(1,2) / _previousCell->matrix()(1,1);
-				FloatType yz2 = cell->matrix()(1,2) / cell->matrix()(1,1);
-				if(int flip_yz = (int)std::round(yz2 - yz1))
-					flipState[2] -= flip_yz;
-			}
-			// Emit a timeline record whever a flipping occurred.
-			if(flipState != _currentFlipState)
-				_modApp->_unflipRecords.emplace_back(time, flipState);
-			_currentFlipState = flipState;
-		}
-		_previousCell = cell;
-		// Unflip current simulation cell.
-		if(_currentFlipState != std::array<int,3>{{0,0,0}}) {
-			AffineTransformation newCellMatrix = cell->matrix();
-			newCellMatrix(0,1) += cell->matrix()(0,0) * _currentFlipState[0];
-			newCellMatrix(0,2) += cell->matrix()(0,0) * _currentFlipState[1];
-			newCellMatrix(1,2) += cell->matrix()(1,1) * _currentFlipState[2];
-			reciprocalCellMatrix = newCellMatrix.inverse();
-		}
-	}
+    // Special handling of cell flips in LAMMPS, which occur whenever a tilt factor exceeds +/-50%.
+    if(cell->matrix()(1,0) == 0 && cell->matrix()(2,0) == 0 && cell->matrix()(2,1) == 0 && cell->matrix()(0,0) > 0 && cell->matrix()(1,1) > 0) {
+        if(_previousCell) {
+            std::array<int,3> flipState = _currentFlipState;
+            // Detect discontinuities in the three tilt factors of the cell.
+            if(cell->hasPbc(0)) {
+                FloatType xy1 = _previousCell->matrix()(0,1) / _previousCell->matrix()(0,0);
+                FloatType xy2 = cell->matrix()(0,1) / cell->matrix()(0,0);
+                if(int flip_xy = (int)std::round(xy2 - xy1))
+                    flipState[0] -= flip_xy;
+                if(!cell->is2D()) {
+                    FloatType xz1 = _previousCell->matrix()(0,2) / _previousCell->matrix()(0,0);
+                    FloatType xz2 = cell->matrix()(0,2) / cell->matrix()(0,0);
+                    if(int flip_xz = (int)std::round(xz2 - xz1))
+                        flipState[1] -= flip_xz;
+                }
+            }
+            if(cell->hasPbc(1) && !cell->is2D()) {
+                FloatType yz1 = _previousCell->matrix()(1,2) / _previousCell->matrix()(1,1);
+                FloatType yz2 = cell->matrix()(1,2) / cell->matrix()(1,1);
+                if(int flip_yz = (int)std::round(yz2 - yz1))
+                    flipState[2] -= flip_yz;
+            }
+            // Emit a timeline record whever a flipping occurred.
+            if(flipState != _currentFlipState)
+                _modApp->_unflipRecords.emplace_back(time, flipState);
+            _currentFlipState = flipState;
+        }
+        _previousCell = cell;
+        // Unflip current simulation cell.
+        if(_currentFlipState != std::array<int,3>{{0,0,0}}) {
+            AffineTransformation newCellMatrix = cell->matrix();
+            newCellMatrix(0,1) += cell->matrix()(0,0) * _currentFlipState[0];
+            newCellMatrix(0,2) += cell->matrix()(0,0) * _currentFlipState[1];
+            newCellMatrix(1,2) += cell->matrix()(1,1) * _currentFlipState[2];
+            reciprocalCellMatrix = newCellMatrix.inverse();
+        }
+    }
 
-	qlonglong index = 0;
-	for(const Point3& p : posProperty) {
-		Point3 rp = reciprocalCellMatrix * p;
-		// Try to insert new position of particle into map.
-		// If an old position already exists, insertion will fail and we can
-		// test whether the particle did cross a periodic cell boundary.
-		auto result = _previousPositions.insert(std::make_pair(identifierProperty ? identifierProperty[index] : index, rp));
-		if(!result.second) {
-			Vector3 delta = result.first->second - rp;
-			for(size_t dim = 0; dim < 3; dim++) {
-				if(cell->hasPbcCorrected(dim)) {
-					int shift = (int)std::round(delta[dim]);
-					if(shift != 0) {
-						// Create a new record when particle has crossed a periodic cell boundary.
-						_modApp->_unwrapRecords.emplace(result.first->first, std::make_tuple(time, (qint8)dim, (qint16)shift));
-					}
-				}
-			}
-			result.first->second = rp;
-		}
-		index++;
-	}
+    qlonglong index = 0;
+    for(const Point3& p : posProperty) {
+        Point3 rp = reciprocalCellMatrix * p;
+        // Try to insert new position of particle into map.
+        // If an old position already exists, insertion will fail and we can
+        // test whether the particle did cross a periodic cell boundary.
+        auto result = _previousPositions.insert(std::make_pair(identifierProperty ? identifierProperty[index] : index, rp));
+        if(!result.second) {
+            Vector3 delta = result.first->second - rp;
+            for(size_t dim = 0; dim < 3; dim++) {
+                if(cell->hasPbcCorrected(dim)) {
+                    int shift = (int)std::round(delta[dim]);
+                    if(shift != 0) {
+                        // Create a new record when particle has crossed a periodic cell boundary.
+                        _modApp->_unwrapRecords.emplace(result.first->first, std::make_tuple(time, (qint8)dim, (qint16)shift));
+                    }
+                }
+            }
+            result.first->second = rp;
+        }
+        index++;
+    }
 
-	_modApp->_unwrappedUpToTime = time;
-	_modApp->setStatus(tr("Processed input trajectory frame %1 of %2.").arg(frame).arg(_modApp->numberOfSourceFrames()));
+    _modApp->_unwrappedUpToTime = time;
+    _modApp->setStatus(tr("Processed input trajectory frame %1 of %2.").arg(frame).arg(_modApp->numberOfSourceFrames()));
 }
 
 /******************************************************************************
@@ -401,27 +401,27 @@ void UnwrapTrajectoriesModifierApplication::WorkingData::operator()(int frame, c
 ******************************************************************************/
 void UnwrapTrajectoriesModifierApplication::saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData) const
 {
-	ModifierApplication::saveToStream(stream, excludeRecomputableData);
-	stream.beginChunk(0x02);
-	stream << unwrappedUpToTime();
-	stream.endChunk();
-	stream.beginChunk(0x02);
-	stream.writeSizeT(unwrapRecords().size());
-	for(const auto& item : unwrapRecords()) {
-		OVITO_STATIC_ASSERT((std::is_same<qlonglong, qint64>::value));
-		stream << item.first;
-		stream << std::get<0>(item.second);
-		stream << std::get<1>(item.second);
-		stream << std::get<2>(item.second);
-	}
-	stream.writeSizeT(unflipRecords().size());
-	for(const auto& item : unflipRecords()) {
-		stream << item.first;
-		stream << std::get<0>(item.second);
-		stream << std::get<1>(item.second);
-		stream << std::get<2>(item.second);
-	}
-	stream.endChunk();
+    ModifierApplication::saveToStream(stream, excludeRecomputableData);
+    stream.beginChunk(0x02);
+    stream << unwrappedUpToTime();
+    stream.endChunk();
+    stream.beginChunk(0x02);
+    stream.writeSizeT(unwrapRecords().size());
+    for(const auto& item : unwrapRecords()) {
+        OVITO_STATIC_ASSERT((std::is_same<qlonglong, qint64>::value));
+        stream << item.first;
+        stream << std::get<0>(item.second);
+        stream << std::get<1>(item.second);
+        stream << std::get<2>(item.second);
+    }
+    stream.writeSizeT(unflipRecords().size());
+    for(const auto& item : unflipRecords()) {
+        stream << item.first;
+        stream << std::get<0>(item.second);
+        stream << std::get<1>(item.second);
+        stream << std::get<2>(item.second);
+    }
+    stream.endChunk();
 }
 
 /******************************************************************************
@@ -429,31 +429,31 @@ void UnwrapTrajectoriesModifierApplication::saveToStream(ObjectSaveStream& strea
 ******************************************************************************/
 void UnwrapTrajectoriesModifierApplication::loadFromStream(ObjectLoadStream& stream)
 {
-	ModifierApplication::loadFromStream(stream);
-	stream.expectChunk(0x02);
-	stream >> _unwrappedUpToTime;
-	stream.closeChunk();
-	int version = stream.expectChunkRange(0x01, 1);
-	size_t numItems = stream.readSizeT();
-	_unwrapRecords.reserve(numItems);
-	for(size_t i = 0; i < numItems; i++) {
-		UnwrapData::key_type particleId;
-		std::tuple_element_t<0, UnwrapData::mapped_type> time;
-		std::tuple_element_t<1, UnwrapData::mapped_type> dim;
-		std::tuple_element_t<2, UnwrapData::mapped_type> direction;
-		stream >> particleId >> time >> dim >> direction;
-		_unwrapRecords.emplace(particleId, std::make_tuple(time, dim, direction));
-	}
-	if(version >= 1) {
-		stream.readSizeT(numItems);
-		_unflipRecords.reserve(numItems);
-		for(size_t i = 0; i < numItems; i++) {
-			UnflipData::value_type item;
-			stream >> item.first >> item.second[0] >> item.second[1] >> item.second[2];
-			_unflipRecords.push_back(item);
-		}
-	}
-	stream.closeChunk();
+    ModifierApplication::loadFromStream(stream);
+    stream.expectChunk(0x02);
+    stream >> _unwrappedUpToTime;
+    stream.closeChunk();
+    int version = stream.expectChunkRange(0x01, 1);
+    size_t numItems = stream.readSizeT();
+    _unwrapRecords.reserve(numItems);
+    for(size_t i = 0; i < numItems; i++) {
+        UnwrapData::key_type particleId;
+        std::tuple_element_t<0, UnwrapData::mapped_type> time;
+        std::tuple_element_t<1, UnwrapData::mapped_type> dim;
+        std::tuple_element_t<2, UnwrapData::mapped_type> direction;
+        stream >> particleId >> time >> dim >> direction;
+        _unwrapRecords.emplace(particleId, std::make_tuple(time, dim, direction));
+    }
+    if(version >= 1) {
+        stream.readSizeT(numItems);
+        _unflipRecords.reserve(numItems);
+        for(size_t i = 0; i < numItems; i++) {
+            UnflipData::value_type item;
+            stream >> item.first >> item.second[0] >> item.second[1] >> item.second[2];
+            _unflipRecords.push_back(item);
+        }
+    }
+    stream.closeChunk();
 }
 
 /******************************************************************************
@@ -462,27 +462,27 @@ void UnwrapTrajectoriesModifierApplication::loadFromStream(ObjectLoadStream& str
 ******************************************************************************/
 void UnwrapTrajectoriesModifierApplication::loadFromStreamComplete(ObjectLoadStream& stream)
 {
-	ModifierApplication::loadFromStreamComplete(stream);
+    ModifierApplication::loadFromStreamComplete(stream);
 
-	// For backward compatibility with OVITO 3.7: 
-	// Convert legacy time values from ticks to frames. This requires access to the AnimationSettings object, which is stored at scene level.
-	if(stream.formatVersion() <= 30008) {
-		QSet<PipelineSceneNode*> pipelines = this->pipelines(true);
-		if(!pipelines.empty()) {
-			if(Scene* scene = (*pipelines.begin())->scene()) {
-				if(scene->animationSettings()) {
-					int ticksPerFrame = (int)std::round(4800.0f / scene->animationSettings()->framesPerSecond());
-					_unwrappedUpToTime = AnimationTime::fromFrame(_unwrappedUpToTime.ticks() / ticksPerFrame);
-					for(auto& record : _unwrapRecords) {
-						std::get<0>(record.second) = AnimationTime::fromFrame(std::get<0>(record.second).ticks() / ticksPerFrame);
-					}
-					for(auto& record : _unflipRecords) {
-						std::get<0>(record) = AnimationTime::fromFrame(std::get<0>(record).ticks() / ticksPerFrame);
-					}
-				}
-			}
-		}
-	}
+    // For backward compatibility with OVITO 3.7: 
+    // Convert legacy time values from ticks to frames. This requires access to the AnimationSettings object, which is stored at scene level.
+    if(stream.formatVersion() <= 30008) {
+        QSet<PipelineSceneNode*> pipelines = this->pipelines(true);
+        if(!pipelines.empty()) {
+            if(Scene* scene = (*pipelines.begin())->scene()) {
+                if(scene->animationSettings()) {
+                    int ticksPerFrame = (int)std::round(4800.0f / scene->animationSettings()->framesPerSecond());
+                    _unwrappedUpToTime = AnimationTime::fromFrame(_unwrappedUpToTime.ticks() / ticksPerFrame);
+                    for(auto& record : _unwrapRecords) {
+                        std::get<0>(record.second) = AnimationTime::fromFrame(std::get<0>(record.second).ticks() / ticksPerFrame);
+                    }
+                    for(auto& record : _unflipRecords) {
+                        std::get<0>(record) = AnimationTime::fromFrame(std::get<0>(record).ticks() / ticksPerFrame);
+                    }
+                }
+            }
+        }
+    }
 }
 
-}	// End of namespace
+}   // End of namespace

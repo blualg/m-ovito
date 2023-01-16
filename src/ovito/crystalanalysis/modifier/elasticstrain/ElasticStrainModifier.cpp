@@ -50,33 +50,33 @@ SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(ElasticStrainModifier, axialRatio, FloatPar
 * Constructs the modifier object.
 ******************************************************************************/
 ElasticStrainModifier::ElasticStrainModifier(ObjectCreationParams params) : StructureIdentificationModifier(params),
-	_inputCrystalStructure(StructureAnalysis::LATTICE_FCC),
-	_calculateDeformationGradients(false),
-	_calculateStrainTensors(true),
-	_latticeConstant(1),
-	_axialRatio(sqrt(8.0/3.0)),
-	_pushStrainTensorsForward(true)
+    _inputCrystalStructure(StructureAnalysis::LATTICE_FCC),
+    _calculateDeformationGradients(false),
+    _calculateStrainTensors(true),
+    _latticeConstant(1),
+    _axialRatio(sqrt(8.0/3.0)),
+    _pushStrainTensorsForward(true)
 {
-	if(params.createSubObjects()) {
-		// Create the structure types.
-		ParticleType::PredefinedStructureType predefTypes[] = {
-				ParticleType::PredefinedStructureType::OTHER,
-				ParticleType::PredefinedStructureType::FCC,
-				ParticleType::PredefinedStructureType::HCP,
-				ParticleType::PredefinedStructureType::BCC,
-				ParticleType::PredefinedStructureType::CUBIC_DIAMOND,
-				ParticleType::PredefinedStructureType::HEX_DIAMOND
-		};
-		OVITO_STATIC_ASSERT(sizeof(predefTypes)/sizeof(predefTypes[0]) == StructureAnalysis::NUM_LATTICE_TYPES);
-		for(int id = 0; id < StructureAnalysis::NUM_LATTICE_TYPES; id++) {
-			DataOORef<MicrostructurePhase> stype = DataOORef<MicrostructurePhase>::create(params);
-			stype->setNumericId(id);
-			stype->setDimensionality(MicrostructurePhase::Dimensionality::Volumetric);
-			stype->setName(ParticleType::getPredefinedStructureTypeName(predefTypes[id]));
-			stype->setColor(ElementType::getDefaultColor(ParticlePropertyReference(ParticlesObject::StructureTypeProperty), stype->name(), id, params.loadUserDefaults()));
-			addStructureType(std::move(stype));
-		}
-	}
+    if(params.createSubObjects()) {
+        // Create the structure types.
+        ParticleType::PredefinedStructureType predefTypes[] = {
+                ParticleType::PredefinedStructureType::OTHER,
+                ParticleType::PredefinedStructureType::FCC,
+                ParticleType::PredefinedStructureType::HCP,
+                ParticleType::PredefinedStructureType::BCC,
+                ParticleType::PredefinedStructureType::CUBIC_DIAMOND,
+                ParticleType::PredefinedStructureType::HEX_DIAMOND
+        };
+        OVITO_STATIC_ASSERT(sizeof(predefTypes)/sizeof(predefTypes[0]) == StructureAnalysis::NUM_LATTICE_TYPES);
+        for(int id = 0; id < StructureAnalysis::NUM_LATTICE_TYPES; id++) {
+            DataOORef<MicrostructurePhase> stype = DataOORef<MicrostructurePhase>::create(params);
+            stype->setNumericId(id);
+            stype->setDimensionality(MicrostructurePhase::Dimensionality::Volumetric);
+            stype->setName(ParticleType::getPredefinedStructureTypeName(predefTypes[id]));
+            stype->setColor(ElementType::getDefaultColor(ParticlePropertyReference(ParticlesObject::StructureTypeProperty), stype->name(), id, params.loadUserDefaults()));
+            addStructureType(std::move(stype));
+        }
+    }
 }
 
 /******************************************************************************
@@ -84,25 +84,25 @@ ElasticStrainModifier::ElasticStrainModifier(ObjectCreationParams params) : Stru
 ******************************************************************************/
 Future<AsynchronousModifier::EnginePtr> ElasticStrainModifier::createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input)
 {
-	// Get modifier inputs.
-	const ParticlesObject* particles = input.expectObject<ParticlesObject>();
-	particles->verifyIntegrity();
-	const PropertyObject* posProperty = particles->expectProperty(ParticlesObject::PositionProperty);
-	const SimulationCellObject* simCell = input.expectObject<SimulationCellObject>();
-	if(simCell->is2D())
-		throw Exception(tr("The elastic strain calculation modifier does not support 2d simulation cells."));
+    // Get modifier inputs.
+    const ParticlesObject* particles = input.expectObject<ParticlesObject>();
+    particles->verifyIntegrity();
+    const PropertyObject* posProperty = particles->expectProperty(ParticlesObject::PositionProperty);
+    const SimulationCellObject* simCell = input.expectObject<SimulationCellObject>();
+    if(simCell->is2D())
+        throw Exception(tr("The elastic strain calculation modifier does not support 2d simulation cells."));
 
-	// Build list of preferred crystal orientations.
-	std::vector<Matrix3> preferredCrystalOrientations;
-	if(inputCrystalStructure() == StructureAnalysis::LATTICE_FCC || inputCrystalStructure() == StructureAnalysis::LATTICE_BCC || inputCrystalStructure() == StructureAnalysis::LATTICE_CUBIC_DIAMOND) {
-		preferredCrystalOrientations.push_back(Matrix3::Identity());
-	}
+    // Build list of preferred crystal orientations.
+    std::vector<Matrix3> preferredCrystalOrientations;
+    if(inputCrystalStructure() == StructureAnalysis::LATTICE_FCC || inputCrystalStructure() == StructureAnalysis::LATTICE_BCC || inputCrystalStructure() == StructureAnalysis::LATTICE_CUBIC_DIAMOND) {
+        preferredCrystalOrientations.push_back(Matrix3::Identity());
+    }
 
-	// Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
-	return std::make_shared<ElasticStrainEngine>(request, particles, posProperty,
-			simCell, inputCrystalStructure(), std::move(preferredCrystalOrientations),
-			calculateDeformationGradients(), calculateStrainTensors(),
-			latticeConstant(), axialRatio(), pushStrainTensorsForward());
+    // Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
+    return std::make_shared<ElasticStrainEngine>(request, particles, posProperty,
+            simCell, inputCrystalStructure(), std::move(preferredCrystalOrientations),
+            calculateDeformationGradients(), calculateStrainTensors(),
+            latticeConstant(), axialRatio(), pushStrainTensorsForward());
 }
 
-}	// End of namespace
+}   // End of namespace

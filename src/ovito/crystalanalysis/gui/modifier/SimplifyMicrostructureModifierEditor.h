@@ -33,17 +33,17 @@ namespace Ovito::CrystalAnalysis {
  */
 class SimplifyMicrostructureModifierEditor : public PropertiesEditor
 {
-	OVITO_CLASS(SimplifyMicrostructureModifierEditor)
+    OVITO_CLASS(SimplifyMicrostructureModifierEditor)
 
 public:
 
-	/// Default constructor.
-	Q_INVOKABLE SimplifyMicrostructureModifierEditor() {}
+    /// Default constructor.
+    Q_INVOKABLE SimplifyMicrostructureModifierEditor() {}
 
 protected:
 
-	/// Creates the user interface controls for the editor.
-	virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
+    /// Creates the user interface controls for the editor.
+    virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
 };
 
-}	// End of namespace
+}   // End of namespace

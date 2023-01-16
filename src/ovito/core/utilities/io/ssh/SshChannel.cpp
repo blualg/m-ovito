@@ -133,16 +133,16 @@ void SshChannel::checkIO()
         }
 
         if(read_available > 0) {
-			auto oldBufferSize = _readBuffer.size();
+            auto oldBufferSize = _readBuffer.size();
             _readBuffer.resize(oldBufferSize + read_available);
             read_size = LibsshWrapper::ssh_channel_read_nonblocking()(channel(), _readBuffer.data() + oldBufferSize, read_available, _isStderr);
             if(read_size < 0) {
                 qWarning() << "ssh_channel_read_nonblocking() returned negative value.";
                 _ioInProgress = false;
-				_readBuffer.resize(oldBufferSize);
+                _readBuffer.resize(oldBufferSize);
                 return;
             }
-			_readBuffer.truncate(oldBufferSize + read_size);
+            _readBuffer.truncate(oldBufferSize + read_size);
 
             if(read_size > 0)
                 emit_ready_read = true;

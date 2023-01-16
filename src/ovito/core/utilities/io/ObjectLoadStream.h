@@ -39,78 +39,78 @@ namespace Ovito {
  */
 class OVITO_CORE_EXPORT ObjectLoadStream : public LoadStream
 {
-	Q_OBJECT
+    Q_OBJECT
 
 public:
 
-	/// \brief Initializes the ObjectLoadStream.
-	/// \param source The Qt data stream from which the data is read. This stream must support random access.
-	/// \throw Exception if the source stream does not support random access, or if an I/O error occurs.
-	explicit ObjectLoadStream(QDataStream& source);
+    /// \brief Initializes the ObjectLoadStream.
+    /// \param source The Qt data stream from which the data is read. This stream must support random access.
+    /// \throw Exception if the source stream does not support random access, or if an I/O error occurs.
+    explicit ObjectLoadStream(QDataStream& source);
 
-	// Calls close() to close the ObjectLoadStream.
-	virtual ~ObjectLoadStream() { ObjectLoadStream::close(); }
+    // Calls close() to close the ObjectLoadStream.
+    virtual ~ObjectLoadStream() { ObjectLoadStream::close(); }
 
-	/// \brief Closes the ObjectLoadStream, but not the underlying QDataStream passed to the constructor.
-	virtual void close();
+    /// \brief Closes the ObjectLoadStream, but not the underlying QDataStream passed to the constructor.
+    virtual void close();
 
-	/// \brief Loads an object from the stream.
-	/// \note The returned object is not initialized yet when the function returns, and should not be accessed.
-	///       The object's contents are loaded when close() is called.
-	template<class T>
-	OORef<T> loadObject() {
-		OORef<OvitoObject> ptr = loadObjectInternal();
-		OVITO_ASSERT(!ptr || ptr->getOOClass().isDerivedFrom(T::OOClass()));
-		if(ptr && !ptr->getOOClass().isDerivedFrom(T::OOClass()))
-			throw Exception(tr("Class hierarchy mismatch in file. The object class '%1' is not derived from '%2'.").arg(ptr->getOOClass().name()).arg(T::OOClass().name()));
-		return static_object_cast<T>(std::move(ptr));
-	}
+    /// \brief Loads an object from the stream.
+    /// \note The returned object is not initialized yet when the function returns, and should not be accessed.
+    ///       The object's contents are loaded when close() is called.
+    template<class T>
+    OORef<T> loadObject() {
+        OORef<OvitoObject> ptr = loadObjectInternal();
+        OVITO_ASSERT(!ptr || ptr->getOOClass().isDerivedFrom(T::OOClass()));
+        if(ptr && !ptr->getOOClass().isDerivedFrom(T::OOClass()))
+            throw Exception(tr("Class hierarchy mismatch in file. The object class '%1' is not derived from '%2'.").arg(ptr->getOOClass().name()).arg(T::OOClass().name()));
+        return static_object_cast<T>(std::move(ptr));
+    }
 
-	/// Sets the dataset to which objects loaded from the stream should be added to.
-	void setDatasetToBePopulated(DataSet* dataset) { _dataset = dataset; }
+    /// Sets the dataset to which objects loaded from the stream should be added to.
+    void setDatasetToBePopulated(DataSet* dataset) { _dataset = dataset; }
 
-	/// Returns the dataset which is being loaded (may be null).
-	DataSet* datasetToBePopulated() const { return _dataset; }
+    /// Returns the dataset which is being loaded (may be null).
+    DataSet* datasetToBePopulated() const { return _dataset; }
 
-	/// Returns the class info for an object currently being deserialized from the stream.
-	/// This method may only be called from within an OvitoObject::loadFromStream() method.
-	const OvitoClass::SerializedClassInfo* getSerializedClassInfo() const {
-		OVITO_ASSERT_MSG(_currentObject, "ObjectLoadStream::getSerializedClassInfo()", "No current object. Function may only called from within loadFromStream().");
-		return _currentObject->classInfo;
-	}
+    /// Returns the class info for an object currently being deserialized from the stream.
+    /// This method may only be called from within an OvitoObject::loadFromStream() method.
+    const OvitoClass::SerializedClassInfo* getSerializedClassInfo() const {
+        OVITO_ASSERT_MSG(_currentObject, "ObjectLoadStream::getSerializedClassInfo()", "No current object. Function may only called from within loadFromStream().");
+        return _currentObject->classInfo;
+    }
 
 private:
 
-	/// Loads an object with runtime type information from the stream.
-	OORef<OvitoObject> loadObjectInternal();
+    /// Loads an object with runtime type information from the stream.
+    OORef<OvitoObject> loadObjectInternal();
 
-	/// Data structure describing a single object instance loaded from the file.
-	struct ObjectRecord {
+    /// Data structure describing a single object instance loaded from the file.
+    struct ObjectRecord {
 
-		/// The object instance created from the serialized data.
-		OORef<OvitoObject> object;
+        /// The object instance created from the serialized data.
+        OORef<OvitoObject> object;
 
-		/// The serialized class information.
-		const OvitoClass::SerializedClassInfo* classInfo;
+        /// The serialized class information.
+        const OvitoClass::SerializedClassInfo* classInfo;
 
-		/// The position at which the object data is stored in the file.
-		qint64 fileOffset;
-	};
+        /// The position at which the object data is stored in the file.
+        qint64 fileOffset;
+    };
 
-	/// The list of classes stored in the file.
-	std::vector<std::unique_ptr<OvitoClass::SerializedClassInfo>> _classes;
+    /// The list of classes stored in the file.
+    std::vector<std::unique_ptr<OvitoClass::SerializedClassInfo>> _classes;
 
-	/// List all the object instances stored in the file.
-	std::vector<ObjectRecord> _objects;
+    /// List all the object instances stored in the file.
+    std::vector<ObjectRecord> _objects;
 
-	/// Objects that need to be loaded.
-	std::vector<quint32> _objectsToLoad;
+    /// Objects that need to be loaded.
+    std::vector<quint32> _objectsToLoad;
 
-	/// The object currently being loaded from the stream.
-	ObjectRecord* _currentObject = nullptr;
+    /// The object currently being loaded from the stream.
+    ObjectRecord* _currentObject = nullptr;
 
-	/// The current dataset being loaded.
-	DataSet* _dataset = nullptr;
+    /// The current dataset being loaded.
+    DataSet* _dataset = nullptr;
 };
 
-}	// End of namespace
+}   // End of namespace

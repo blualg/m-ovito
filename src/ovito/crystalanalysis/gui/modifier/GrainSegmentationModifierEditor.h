@@ -37,36 +37,36 @@ namespace Ovito::CrystalAnalysis {
  */
 class GrainSegmentationModifierEditor : public PropertiesEditor
 {
-	OVITO_CLASS(GrainSegmentationModifierEditor)
+    OVITO_CLASS(GrainSegmentationModifierEditor)
 
 public:
 
-	/// Default constructor.
-	Q_INVOKABLE GrainSegmentationModifierEditor() {}
+    /// Default constructor.
+    Q_INVOKABLE GrainSegmentationModifierEditor() {}
 
 protected Q_SLOTS:
 
-	/// Replots the merge sequence computed by the modifier.
-	void plotMerges();
+    /// Replots the merge sequence computed by the modifier.
+    void plotMerges();
 
 protected:
 
-	/// Creates the user interface controls for the editor.
-	virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
+    /// Creates the user interface controls for the editor.
+    virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
 
 private:
 
-	/// The graph widget to display the merge size scatter plot.
-	DataTablePlotWidget* _mergePlotWidget;
+    /// The graph widget to display the merge size scatter plot.
+    DataTablePlotWidget* _mergePlotWidget;
 
-	/// Marks the merge distance cutoff in the scatter plot.
-	QwtPlotZoneItem* _mergeRangeIndicator;
+    /// Marks the merge distance cutoff in the scatter plot.
+    QwtPlotZoneItem* _mergeRangeIndicator;
 
-	/// The graph widget to display the log-log scatter plot.
-	DataTablePlotWidget* _logPlotWidget;
+    /// The graph widget to display the log-log scatter plot.
+    DataTablePlotWidget* _logPlotWidget;
 
-	/// Marks the merge distance cutoff in the log-log scatter plot.
-	QwtPlotZoneItem* _logRangeIndicator;
+    /// Marks the merge distance cutoff in the log-log scatter plot.
+    QwtPlotZoneItem* _logRangeIndicator;
 };
 
-}	// End of namespace
+}   // End of namespace

@@ -42,7 +42,7 @@ SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(ChillPlusModifier, cutoff, WorldParameterUn
 ChillPlusModifier::ChillPlusModifier(ObjectCreationParams params) : StructureIdentificationModifier(params),
     _cutoff(3.5)
 {
-	if(params.createSubObjects()) {
+    if(params.createSubObjects()) {
         // Create the structure types.
         createStructureType(OTHER, ParticleType::PredefinedStructureType::OTHER, params);
         createStructureType(HEXAGONAL_ICE, ParticleType::PredefinedStructureType::HEXAGONAL_ICE, params);
@@ -61,7 +61,7 @@ Future<AsynchronousModifier::EnginePtr> ChillPlusModifier::createEngine(const Mo
 {
     // Get modifier input.
     const ParticlesObject* particles = input.expectObject<ParticlesObject>();
-	particles->verifyIntegrity();
+    particles->verifyIntegrity();
     const PropertyObject* posProperty = particles->expectProperty(ParticlesObject::PositionProperty);
     const SimulationCellObject* simCell = input.expectObject<SimulationCellObject>();
     if(simCell->is2D())
@@ -86,8 +86,8 @@ void ChillPlusModifier::ChillPlusEngine::perform()
     if(!neighborListBuilder.prepare(cutoff(), positions(), cell(), selection()))
         return;
 
-	PropertyAccess<int> output(structures());
-	ConstPropertyAccess<int> selectionData(selection());
+    PropertyAccess<int> output(structures());
+    ConstPropertyAccess<int> selectionData(selection());
 
     // Find all relevant q_lm
     // create matrix of q_lm
@@ -117,8 +117,8 @@ void ChillPlusModifier::ChillPlusEngine::perform()
         output[index] = determineStructure(neighborListBuilder, index);
     });
 
-	// Release data that is no longer needed.
-	releaseWorkingData();
+    // Release data that is no longer needed.
+    releaseWorkingData();
 }
 
 std::complex<float> ChillPlusModifier::ChillPlusEngine::compute_q_lm(CutoffNeighborFinder& neighFinder, size_t particleIndex, int l, int m)
@@ -211,4 +211,4 @@ std::pair<float, float> ChillPlusModifier::ChillPlusEngine::polar_asimuthal(cons
     return std::pair<float, float>(polar, asimuthal);
 }
 
-}	// End of namespace
+}   // End of namespace

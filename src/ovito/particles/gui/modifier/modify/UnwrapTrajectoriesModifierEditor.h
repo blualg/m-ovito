@@ -33,17 +33,17 @@ namespace Ovito::Particles {
  */
 class UnwrapTrajectoriesModifierEditor : public PropertiesEditor
 {
-	OVITO_CLASS(UnwrapTrajectoriesModifierEditor)
+    OVITO_CLASS(UnwrapTrajectoriesModifierEditor)
 
 public:
 
-	/// Constructor.
-	Q_INVOKABLE UnwrapTrajectoriesModifierEditor() {}
+    /// Constructor.
+    Q_INVOKABLE UnwrapTrajectoriesModifierEditor() {}
 
 protected:
 
-	/// Creates the user interface controls for the editor.
-	virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
+    /// Creates the user interface controls for the editor.
+    virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
 };
 
-}	// End of namespace
+}   // End of namespace

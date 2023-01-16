@@ -30,23 +30,23 @@ namespace Ovito {
 ******************************************************************************/
 StatusWidget::StatusWidget(QWidget* parent) : QScrollArea(parent)
 {
-	QWidget* container = new QWidget();
-	QHBoxLayout* layout = new QHBoxLayout(container);
-	layout->setContentsMargins(0, 0, 0, 0);
-	layout->setSpacing(2);
+    QWidget* container = new QWidget();
+    QHBoxLayout* layout = new QHBoxLayout(container);
+    layout->setContentsMargins(0, 0, 0, 0);
+    layout->setSpacing(2);
 
-	_iconLabel = new QLabel(container);
-	_iconLabel->setAlignment(Qt::AlignTop);
-	layout->addWidget(_iconLabel, 0, Qt::AlignTop);
+    _iconLabel = new QLabel(container);
+    _iconLabel->setAlignment(Qt::AlignTop);
+    layout->addWidget(_iconLabel, 0, Qt::AlignTop);
 
-	_textLabel = new QLabel(container);
-	_textLabel->setAlignment(Qt::AlignTop);
-	_textLabel->setTextInteractionFlags(Qt::TextInteractionFlags(Qt::TextSelectableByMouse | Qt::TextSelectableByKeyboard | Qt::LinksAccessibleByMouse | Qt::LinksAccessibleByKeyboard));
-	_textLabel->setWordWrap(true);
-	layout->addWidget(_textLabel, 1, Qt::AlignTop);
+    _textLabel = new QLabel(container);
+    _textLabel->setAlignment(Qt::AlignTop);
+    _textLabel->setTextInteractionFlags(Qt::TextInteractionFlags(Qt::TextSelectableByMouse | Qt::TextSelectableByKeyboard | Qt::LinksAccessibleByMouse | Qt::LinksAccessibleByKeyboard));
+    _textLabel->setWordWrap(true);
+    layout->addWidget(_textLabel, 1, Qt::AlignTop);
 
-	setWidget(container);
-	setWidgetResizable(true);
+    setWidget(container);
+    setWidgetResizable(true);
 }
 
 /******************************************************************************
@@ -54,19 +54,19 @@ StatusWidget::StatusWidget(QWidget* parent) : QScrollArea(parent)
 ******************************************************************************/
 void StatusWidget::setStatus(const PipelineStatus& status)
 {
-	_status = status;
+    _status = status;
 
-	_textLabel->setText(status.text());
+    _textLabel->setText(status.text());
 
-	const static QPixmap statusWarningIcon(":/guibase/mainwin/status/status_warning.png");
-	const static QPixmap statusErrorIcon(":/guibase/mainwin/status/status_error.png");
+    const static QPixmap statusWarningIcon(":/guibase/mainwin/status/status_warning.png");
+    const static QPixmap statusErrorIcon(":/guibase/mainwin/status/status_error.png");
 
-	if(status.type() == PipelineStatus::Warning)
-		_iconLabel->setPixmap(statusWarningIcon);
-	else if(status.type() == PipelineStatus::Error)
-		_iconLabel->setPixmap(statusErrorIcon);
-	else
-		_iconLabel->clear();
+    if(status.type() == PipelineStatus::Warning)
+        _iconLabel->setPixmap(statusWarningIcon);
+    else if(status.type() == PipelineStatus::Error)
+        _iconLabel->setPixmap(statusErrorIcon);
+    else
+        _iconLabel->clear();
 }
 
 /******************************************************************************
@@ -74,11 +74,11 @@ void StatusWidget::setStatus(const PipelineStatus& status)
 ******************************************************************************/
 QSize StatusWidget::minimumSizeHint() const
 {
-	int widgetHeight = widget()->minimumSizeHint().height();
-	if(widgetHeight < 20) widgetHeight = 40;
-	else if(widgetHeight < 30) widgetHeight *= 2;
-	return QSize(QScrollArea::minimumSizeHint().width(),
-			frameWidth()*2 + widgetHeight);
+    int widgetHeight = widget()->minimumSizeHint().height();
+    if(widgetHeight < 20) widgetHeight = 40;
+    else if(widgetHeight < 30) widgetHeight *= 2;
+    return QSize(QScrollArea::minimumSizeHint().width(),
+            frameWidth()*2 + widgetHeight);
 }
 
 /******************************************************************************
@@ -86,11 +86,11 @@ QSize StatusWidget::minimumSizeHint() const
 ******************************************************************************/
 QSize StatusWidget::sizeHint() const
 {
-	int widgetHeight = widget()->minimumSizeHint().height();
-	if(widgetHeight < 20) widgetHeight = 40;
-	else if(widgetHeight < 30) widgetHeight *= 2;
-	return QSize(QScrollArea::sizeHint().width(),
-			frameWidth()*2 + widgetHeight);
+    int widgetHeight = widget()->minimumSizeHint().height();
+    if(widgetHeight < 20) widgetHeight = 40;
+    else if(widgetHeight < 30) widgetHeight *= 2;
+    return QSize(QScrollArea::sizeHint().width(),
+            frameWidth()*2 + widgetHeight);
 }
 
-}	// End of namespace
+}   // End of namespace

@@ -31,12 +31,12 @@ namespace Ovito {
 class OpenGLDepthTextureBlitter
 {
 public:
-	~OpenGLDepthTextureBlitter() { destroy(); }
-	bool create();
-	bool isCreated() const;
-	void bind();
-	void release();
-	void destroy();
+    ~OpenGLDepthTextureBlitter() { destroy(); }
+    bool create();
+    bool isCreated() const;
+    void bind();
+    void release();
+    void destroy();
     void blit(GLuint texture);
 
 private:
@@ -45,9 +45,9 @@ private:
 
     QOpenGLBuffer vertexBuffer;
     QOpenGLBuffer textureBuffer;
-	std::unique_ptr<QOpenGLShaderProgram> glProgram;
-	GLuint vertexCoordAttribPos = 0;
-	GLuint textureCoordAttribPos = 0;
+    std::unique_ptr<QOpenGLShaderProgram> glProgram;
+    GLuint vertexCoordAttribPos = 0;
+    GLuint textureCoordAttribPos = 0;
 };
 
-}	// End of namespace
+}   // End of namespace

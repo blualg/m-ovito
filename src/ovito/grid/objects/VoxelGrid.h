@@ -36,101 +36,101 @@ namespace Ovito::Grid {
  */
 class OVITO_GRID_EXPORT VoxelGrid : public PropertyContainer
 {
-	/// Define a new property metaclass for voxel property containers.
-	class VoxelGridClass : public PropertyContainerClass
-	{
-	public:
+    /// Define a new property metaclass for voxel property containers.
+    class VoxelGridClass : public PropertyContainerClass
+    {
+    public:
 
-		/// Inherit constructor from base class.
-		using PropertyContainerClass::PropertyContainerClass;
+        /// Inherit constructor from base class.
+        using PropertyContainerClass::PropertyContainerClass;
 
-		/// \brief Create a storage object for standard voxel properties.
-		virtual PropertyPtr createStandardPropertyInternal(size_t elementCount, int type, DataBuffer::InitializationFlags flags, const ConstDataObjectPath& containerPath) const override;
+        /// \brief Create a storage object for standard voxel properties.
+        virtual PropertyPtr createStandardPropertyInternal(size_t elementCount, int type, DataBuffer::InitializationFlags flags, const ConstDataObjectPath& containerPath) const override;
 
-	protected:
+    protected:
 
-		/// Is called by the system after construction of the meta-class instance.
-		virtual void initialize() override;
-	};
+        /// Is called by the system after construction of the meta-class instance.
+        virtual void initialize() override;
+    };
 
-	OVITO_CLASS_META(VoxelGrid, VoxelGridClass);
-	Q_CLASSINFO("DisplayName", "Voxel grid");
-
-public:
-
-	/// \brief The types of uniform grids supported by OVITO.
-	enum GridType {
-		CellData,	///< Data values are associated with the voxel cell centers.
-		PointData,	///< Data values are associated with the grid points (cell corners).
-	};
-	Q_ENUM(GridType);
+    OVITO_CLASS_META(VoxelGrid, VoxelGridClass);
+    Q_CLASSINFO("DisplayName", "Voxel grid");
 
 public:
 
-	/// Data type used to store the number of cells of the voxel grid in each dimension.
-	using GridDimensions = std::array<size_t,3>;
+    /// \brief The types of uniform grids supported by OVITO.
+    enum GridType {
+        CellData,   ///< Data values are associated with the voxel cell centers.
+        PointData,  ///< Data values are associated with the grid points (cell corners).
+    };
+    Q_ENUM(GridType);
 
-	/// \brief The list of predefined voxel grid properties.
-	enum Type {
-		UserProperty = PropertyObject::GenericUserProperty,	//< This is reserved for user-defined properties.
-		ColorProperty = PropertyObject::GenericColorProperty
-	};
+public:
 
-	/// \brief Constructor.
-	Q_INVOKABLE VoxelGrid(ObjectCreationParams params, const QString& title = QString());
+    /// Data type used to store the number of cells of the voxel grid in each dimension.
+    using GridDimensions = std::array<size_t,3>;
 
-	/// Returns the spatial domain this voxel grid is embedded in after making sure it
-	/// can safely be modified.
-	SimulationCellObject* mutableDomain() {
-		return makeMutable(domain());
-	}
+    /// \brief The list of predefined voxel grid properties.
+    enum Type {
+        UserProperty = PropertyObject::GenericUserProperty, //< This is reserved for user-defined properties.
+        ColorProperty = PropertyObject::GenericColorProperty
+    };
 
-	/// Makes sure that all property arrays in this container have a consistent length.
-	/// If this is not the case, the method throws an exception.
-	void verifyIntegrity() const;
+    /// \brief Constructor.
+    Q_INVOKABLE VoxelGrid(ObjectCreationParams params, const QString& title = QString());
 
-	/// Converts logical grid coordinates to a linear array index.
-	size_t voxelIndex(size_t x, size_t y, size_t z) const {
-		OVITO_ASSERT(x >= 0 && x < shape()[0]);
-		OVITO_ASSERT(y >= 0 && y < shape()[1]);
-		OVITO_ASSERT(z >= 0 && z < shape()[2]);
-		return z * (shape()[0] * shape()[1]) + y * shape()[0] + x;
-	}
+    /// Returns the spatial domain this voxel grid is embedded in after making sure it
+    /// can safely be modified.
+    SimulationCellObject* mutableDomain() {
+        return makeMutable(domain());
+    }
 
-	/// Converts a linear array index into logical grid coordinates.
-	std::array<size_t, 3> voxelCoords(size_t index) const {
-		OVITO_ASSERT(index < elementCount());
-		size_t yz = shape()[0] * shape()[1];
-		OVITO_ASSERT(voxelIndex(index % shape()[0], (index / shape()[0]) % shape()[1], index / yz) == index);
-		return { index % shape()[0], (index / shape()[0]) % shape()[1], index / yz };
-	}
+    /// Makes sure that all property arrays in this container have a consistent length.
+    /// If this is not the case, the method throws an exception.
+    void verifyIntegrity() const;
 
-	/// Returns the base point and vector information for visualizing a vector property from this container using a VectorVis element.
-	virtual std::tuple<ConstDataBufferPtr, ConstDataBufferPtr> getVectorVisData(const ConstDataObjectPath& path, const PipelineFlowState& state, MixedKeyCache& visCache) const override;
+    /// Converts logical grid coordinates to a linear array index.
+    size_t voxelIndex(size_t x, size_t y, size_t z) const {
+        OVITO_ASSERT(x >= 0 && x < shape()[0]);
+        OVITO_ASSERT(y >= 0 && y < shape()[1]);
+        OVITO_ASSERT(z >= 0 && z < shape()[2]);
+        return z * (shape()[0] * shape()[1]) + y * shape()[0] + x;
+    }
 
-	/// Generates the info string to be displayed in the OVITO status bar for an element from this container.
-	virtual QString elementInfoString(size_t elementIndex, const ConstDataObjectRefPath& path = {}) const override;
+    /// Converts a linear array index into logical grid coordinates.
+    std::array<size_t, 3> voxelCoords(size_t index) const {
+        OVITO_ASSERT(index < elementCount());
+        size_t yz = shape()[0] * shape()[1];
+        OVITO_ASSERT(voxelIndex(index % shape()[0], (index / shape()[0]) % shape()[1], index / yz) == index);
+        return { index % shape()[0], (index / shape()[0]) % shape()[1], index / yz };
+    }
+
+    /// Returns the base point and vector information for visualizing a vector property from this container using a VectorVis element.
+    virtual std::tuple<ConstDataBufferPtr, ConstDataBufferPtr> getVectorVisData(const ConstDataObjectPath& path, const PipelineFlowState& state, MixedKeyCache& visCache) const override;
+
+    /// Generates the info string to be displayed in the OVITO status bar for an element from this container.
+    virtual QString elementInfoString(size_t elementIndex, const ConstDataObjectRefPath& path = {}) const override;
 
 protected:
 
-	/// Saves the class' contents to the given stream.
-	virtual void saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData) const override;
+    /// Saves the class' contents to the given stream.
+    virtual void saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData) const override;
 
-	/// Loads the class' contents from the given stream.
-	virtual void loadFromStream(ObjectLoadStream& stream) override;
+    /// Loads the class' contents from the given stream.
+    virtual void loadFromStream(ObjectLoadStream& stream) override;
 
 private:
 
-	/// The shape of the grid (i.e. number of voxels in each dimension).
-	DECLARE_RUNTIME_PROPERTY_FIELD(GridDimensions, shape, setShape);
+    /// The shape of the grid (i.e. number of voxels in each dimension).
+    DECLARE_RUNTIME_PROPERTY_FIELD(GridDimensions, shape, setShape);
 
-	/// Determines whether the stored field values are volume- or vertex-based, i.e.,
-	/// whether values are associated with the voxel cells or with the corner points of the grid cells.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD(GridType, gridType, setGridType);
-	DECLARE_SHADOW_PROPERTY_FIELD(gridType);
+    /// Determines whether the stored field values are volume- or vertex-based, i.e.,
+    /// whether values are associated with the voxel cells or with the corner points of the grid cells.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(GridType, gridType, setGridType);
+    DECLARE_SHADOW_PROPERTY_FIELD(gridType);
 
-	/// The domain the object is embedded in.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(DataOORef<const SimulationCellObject>, domain, setDomain, PROPERTY_FIELD_NO_SUB_ANIM);
+    /// The domain the object is embedded in.
+    DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(DataOORef<const SimulationCellObject>, domain, setDomain, PROPERTY_FIELD_NO_SUB_ANIM);
 };
 
 /**
@@ -143,7 +143,7 @@ using VoxelPropertyReference = TypedPropertyReference<VoxelGrid>;
  */
 using VoxelInputColumnMapping = TypedInputColumnMapping<VoxelGrid>;
 
-}	// End of namespace
+}   // End of namespace
 
 Q_DECLARE_METATYPE(Ovito::Grid::VoxelPropertyReference);
 Q_DECLARE_METATYPE(Ovito::Grid::VoxelInputColumnMapping);

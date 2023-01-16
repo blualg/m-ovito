@@ -37,38 +37,38 @@ namespace Ovito {
  */
 class StatusBar : public QLabel
 {
-	Q_OBJECT
+    Q_OBJECT
 
 public:
 
-	/// \brief Constructs a status bar widget.
-	/// \param parent The parent widget for the new widget.
-	StatusBar(QWidget* parent = nullptr);
+    /// \brief Constructs a status bar widget.
+    /// \param parent The parent widget for the new widget.
+    StatusBar(QWidget* parent = nullptr);
 
-	QLabel* overflowWidget() { return _overflowLabel; }
+    QLabel* overflowWidget() { return _overflowLabel; }
 
-	virtual QSize sizeHint() const override;
-	virtual QSize minimumSizeHint() const override { return sizeHint(); }
+    virtual QSize sizeHint() const override;
+    virtual QSize minimumSizeHint() const override { return sizeHint(); }
 
-	QString currentMessage() const { return text(); }
+    QString currentMessage() const { return text(); }
 
 public Q_SLOTS:
 
-	/// Displays the given message for the specified number of milli-seconds
-	void showMessage(const QString& message, int timeout = 0);
+    /// Displays the given message for the specified number of milli-seconds
+    void showMessage(const QString& message, int timeout = 0);
 
-	/// Removes any message being shown.
-	void clearMessage();
+    /// Removes any message being shown.
+    void clearMessage();
 
 protected:
 
-	virtual void resizeEvent(QResizeEvent* event) override;
+    virtual void resizeEvent(QResizeEvent* event) override;
 
 private:
 
-	QTimer* _timer = nullptr;
-	QLabel* _overflowLabel = nullptr;
-	mutable int _preferredHeight = 0;
+    QTimer* _timer = nullptr;
+    QLabel* _overflowLabel = nullptr;
+    mutable int _preferredHeight = 0;
 };
 
-}	// End of namespace
+}   // End of namespace

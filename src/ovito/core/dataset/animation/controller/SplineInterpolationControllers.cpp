@@ -40,4 +40,4 @@ SET_PROPERTY_FIELD_LABEL(PositionSplineAnimationKey, inTangent, "In Tangent");
 SET_PROPERTY_FIELD_LABEL(PositionSplineAnimationKey, outTangent, "Out Tangent");
 IMPLEMENT_OVITO_CLASS(SplinePositionController);
 
-}	// End of namespace
+}   // End of namespace

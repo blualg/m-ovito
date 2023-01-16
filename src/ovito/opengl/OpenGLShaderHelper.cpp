@@ -67,43 +67,43 @@ void OpenGLShaderHelper::load(const QString& id, const QString& vertexShaderFile
     if(unitCubeTriangleStripUniform >= 0) {
         // Const array of vertex positions for the cube triangle strip.
         static constexpr QVector3D cubeVerts[14] = {
-			{ 1,  1,  1},
-			{ 1, -1,  1},
-			{ 1,  1, -1},
-			{ 1, -1, -1},
-			{-1, -1, -1},
-			{ 1, -1,  1},
-			{-1, -1,  1},
-			{ 1,  1,  1},
-			{-1,  1,  1},
-			{ 1,  1, -1},
-			{-1,  1, -1},
-			{-1, -1, -1},
-			{-1,  1,  1},
-			{-1, -1,  1},
-		};
-		OVITO_CHECK_OPENGL(_renderer, _shader->setUniformValueArray(unitCubeTriangleStripUniform, cubeVerts, 14));
+            { 1,  1,  1},
+            { 1, -1,  1},
+            { 1,  1, -1},
+            { 1, -1, -1},
+            {-1, -1, -1},
+            { 1, -1,  1},
+            {-1, -1,  1},
+            { 1,  1,  1},
+            {-1,  1,  1},
+            { 1,  1, -1},
+            {-1,  1, -1},
+            {-1, -1, -1},
+            {-1,  1,  1},
+            {-1, -1,  1},
+        };
+        OVITO_CHECK_OPENGL(_renderer, _shader->setUniformValueArray(unitCubeTriangleStripUniform, cubeVerts, 14));
     }
     int unitBoxTriangleStripUniform = _shader->uniformLocation("unit_box_triangle_strip");
     if(unitBoxTriangleStripUniform >= 0) {
         // Const array of vertex positions for the box triangle strip.
         static constexpr QVector3D boxVerts[14] = {
-			{ 1,  1,  1},
-			{ 1, -1,  1},
-			{ 1,  1,  0},
-			{ 1, -1,  0},
-			{-1, -1,  0},
-			{ 1, -1,  1},
-			{-1, -1,  1},
-			{ 1,  1,  1},
-			{-1,  1,  1},
-			{ 1,  1,  0},
-			{-1,  1,  0},
-			{-1, -1,  0},
-			{-1,  1,  1},
-			{-1, -1,  1},
-		};
-		OVITO_CHECK_OPENGL(_renderer, _shader->setUniformValueArray(unitBoxTriangleStripUniform, boxVerts, 14));
+            { 1,  1,  1},
+            { 1, -1,  1},
+            { 1,  1,  0},
+            { 1, -1,  0},
+            {-1, -1,  0},
+            { 1, -1,  1},
+            {-1, -1,  1},
+            { 1,  1,  1},
+            {-1,  1,  1},
+            { 1,  1,  0},
+            {-1,  1,  0},
+            {-1, -1,  0},
+            {-1,  1,  1},
+            {-1, -1,  1},
+        };
+        OVITO_CHECK_OPENGL(_renderer, _shader->setUniformValueArray(unitBoxTriangleStripUniform, boxVerts, 14));
     }    
     int unitCubeStripNormalsUniform = _shader->uniformLocation("unit_cube_strip_normals");
     if(unitCubeStripNormalsUniform >= 0) {
@@ -124,7 +124,7 @@ void OpenGLShaderHelper::load(const QString& id, const QString& vertexShaderFile
             {-1,  0,  0},
             {-1,  0,  0}
         };
-		OVITO_CHECK_OPENGL(_renderer, _shader->setUniformValueArray(unitCubeStripNormalsUniform, normals, 14));
+        OVITO_CHECK_OPENGL(_renderer, _shader->setUniformValueArray(unitCubeStripNormalsUniform, normals, 14));
     }
     int unitQuadTriangleStripUniform = _shader->uniformLocation("unit_quad_triangle_strip");
     if(unitQuadTriangleStripUniform >= 0) {
@@ -134,8 +134,8 @@ void OpenGLShaderHelper::load(const QString& id, const QString& vertexShaderFile
             { 1, -1},
             {-1,  1},
             { 1,  1}
-		};
-		OVITO_CHECK_OPENGL(_renderer, _shader->setUniformValueArray(unitQuadTriangleStripUniform, quadVerts, 4));
+        };
+        OVITO_CHECK_OPENGL(_renderer, _shader->setUniformValueArray(unitQuadTriangleStripUniform, quadVerts, 4));
     }
 
     // Get current viewport rectangle.
@@ -153,25 +153,25 @@ void OpenGLShaderHelper::load(const QString& id, const QString& vertexShaderFile
 ******************************************************************************/
 QOpenGLBuffer OpenGLShaderHelper::createCachedBufferImpl(GLsizei elementSize, QOpenGLBuffer::Type usage, VertexInputRate inputRate, std::function<void(void*)>&& fillMemoryFunc)
 {
-	// This method must be called from the main thread.
-	OVITO_ASSERT(QThread::currentThread() == QOpenGLContext::currentContext()->thread());
+    // This method must be called from the main thread.
+    OVITO_ASSERT(QThread::currentThread() == QOpenGLContext::currentContext()->thread());
 
-	// Per-element data size must be positive.
-	OVITO_ASSERT(elementSize > 0);
+    // Per-element data size must be positive.
+    OVITO_ASSERT(elementSize > 0);
     // Drawing counts must have been specified.
-	OVITO_ASSERT(verticesPerInstance() > 0);
-	OVITO_ASSERT(instanceCount() > 0);
+    OVITO_ASSERT(verticesPerInstance() > 0);
+    OVITO_ASSERT(instanceCount() > 0);
 
     // Prepare the OpenGL buffer object.
     QOpenGLBuffer bufferObject(usage);
-	bufferObject.setUsagePattern(QOpenGLBuffer::StaticDraw);
-	if(!bufferObject.create())
-		throw SceneRenderer::RendererException(QStringLiteral("Failed to create OpenGL buffer object."));
+    bufferObject.setUsagePattern(QOpenGLBuffer::StaticDraw);
+    if(!bufferObject.create())
+        throw SceneRenderer::RendererException(QStringLiteral("Failed to create OpenGL buffer object."));
 
-	if(!bufferObject.bind()) {
-		qWarning() << "QOpenGLBuffer::bind() failed in function OpenGLShaderHelper::createCachedBufferImpl()";
-		throw Exception(QStringLiteral("Failed to bind OpenGL buffer object."));
-	}
+    if(!bufferObject.bind()) {
+        qWarning() << "QOpenGLBuffer::bind() failed in function OpenGLShaderHelper::createCachedBufferImpl()";
+        throw Exception(QStringLiteral("Failed to bind OpenGL buffer object."));
+    }
 
     GLsizei bufferSize;
     bool exceedsLimits = false;
@@ -185,11 +185,11 @@ QOpenGLBuffer OpenGLShaderHelper::createCachedBufferImpl(GLsizei elementSize, QO
     else if(_renderer->glversion() >= QT_VERSION_CHECK(3, 3, 0)) {
         if(inputRate == PerVertex) {
             exceedsLimits = verticesPerInstance() > (std::numeric_limits<GLsizei>::max() / elementSize);
-        	bufferSize = elementSize * verticesPerInstance();
+            bufferSize = elementSize * verticesPerInstance();
         }
         else {
             exceedsLimits = instanceCount() > (std::numeric_limits<GLsizei>::max() / elementSize);
-        	bufferSize = elementSize * instanceCount();
+            bufferSize = elementSize * instanceCount();
         }
     }
     else {
@@ -198,13 +198,13 @@ QOpenGLBuffer OpenGLShaderHelper::createCachedBufferImpl(GLsizei elementSize, QO
         bufferSize = elementSize * verticesPerInstance() * instanceCount();
     }
 
-	// Check if the requested vertex buffer size exceeds limits.
+    // Check if the requested vertex buffer size exceeds limits.
     if(exceedsLimits)
         throw SceneRenderer::RendererException(QStringLiteral("OpenGL buffer allocation failed, because requested size exceeds limits."));
 
-	// Allocate the buffer memory.
+    // Allocate the buffer memory.
     bufferObject.allocate(bufferSize);
-	
+    
 #ifndef Q_OS_WASM
     // Fill the buffer with data.
     void* p = bufferObject.map(QOpenGLBuffer::WriteOnly);
@@ -245,12 +245,12 @@ QOpenGLBuffer OpenGLShaderHelper::createCachedBufferImpl(GLsizei elementSize, QO
     }
 
 #ifndef Q_OS_WASM
-	bufferObject.unmap();
+    bufferObject.unmap();
 #else
     bufferObject.write(0, stagingBuffer.get(), bufferSize);
 #endif
-	bufferObject.release();
-	OVITO_ASSERT(bufferObject.isCreated());
+    bufferObject.release();
+    OVITO_ASSERT(bufferObject.isCreated());
 
     return bufferObject;
 }
@@ -487,7 +487,7 @@ void OpenGLShaderHelper::setupVertexAndInstanceIDOpenGL2()
     }
 
     // This is needed to compute the special shader variable 'gl_VertexID' correctly when instanced arrays are not supported:
-	if(_renderer->glversion() < QT_VERSION_CHECK(3, 3, 0)) {
+    if(_renderer->glversion() < QT_VERSION_CHECK(3, 3, 0)) {
         setUniformValue("vertices_per_instance", verticesPerInstance());
     }
 }
@@ -581,4 +581,4 @@ void OpenGLShaderHelper::drawArraysOrderedOpenGL2or3(GLenum mode, std::pair<std:
     }
 }
 
-}	// End of namespace
+}   // End of namespace

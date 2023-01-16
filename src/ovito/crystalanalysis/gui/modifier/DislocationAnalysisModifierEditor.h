@@ -36,64 +36,64 @@ namespace Ovito::CrystalAnalysis {
  */
 class DislocationTypeListParameterUI : public RefTargetListParameterUI
 {
-	OVITO_CLASS(DislocationTypeListParameterUI)
+    OVITO_CLASS(DislocationTypeListParameterUI)
 
 public:
 
-	/// Constructor.
-	DislocationTypeListParameterUI(PropertiesEditor* parent);
+    /// Constructor.
+    DislocationTypeListParameterUI(PropertiesEditor* parent);
 
-	/// This method is called when a new editable object has been activated.
-	virtual void resetUI() override {
-		RefTargetListParameterUI::resetUI();
-		// Clear initial selection by default.
-		tableWidget()->selectionModel()->clear();
-	}
+    /// This method is called when a new editable object has been activated.
+    virtual void resetUI() override {
+        RefTargetListParameterUI::resetUI();
+        // Clear initial selection by default.
+        tableWidget()->selectionModel()->clear();
+    }
 
-	/// Obtains the current statistics from the pipeline.
-	void updateDislocationCounts(const PipelineFlowState& state, ModifierApplication* modApp);
+    /// Obtains the current statistics from the pipeline.
+    void updateDislocationCounts(const PipelineFlowState& state, ModifierApplication* modApp);
 
-	/// Sets the object whose property is being displayed in this parameter UI.
-	virtual void setEditObject(RefTarget* newObject) override {
-		DislocationAnalysisModifier* modifier = static_object_cast<DislocationAnalysisModifier>(newObject);
-		RefTargetListParameterUI::setEditObject(modifier ? modifier->structureTypeById(modifier->inputCrystalStructure()) : nullptr);
-	}
+    /// Sets the object whose property is being displayed in this parameter UI.
+    virtual void setEditObject(RefTarget* newObject) override {
+        DislocationAnalysisModifier* modifier = static_object_cast<DislocationAnalysisModifier>(newObject);
+        RefTargetListParameterUI::setEditObject(modifier ? modifier->structureTypeById(modifier->inputCrystalStructure()) : nullptr);
+    }
 
 protected:
 
-	/// Returns a data item from the list data model.
-	virtual QVariant getItemData(RefTarget* target, const QModelIndex& index, int role) override;
+    /// Returns a data item from the list data model.
+    virtual QVariant getItemData(RefTarget* target, const QModelIndex& index, int role) override;
 
-	/// Returns the number of columns for the table view.
-	virtual int tableColumnCount() override { return 4; }
+    /// Returns the number of columns for the table view.
+    virtual int tableColumnCount() override { return 4; }
 
-	/// Returns the header data under the given role for the given RefTarget.
-	virtual QVariant getHorizontalHeaderData(int index, int role) override {
-		if(role == Qt::DisplayRole) {
-			if(index == 0)
-				return QVariant();
-			else if(index == 1)
-				return QVariant::fromValue(tr("Dislocation type"));
-			else if(index == 2)
-				return QVariant::fromValue(tr("Segs"));
-			else
-				return QVariant::fromValue(tr("Length"));
-		}
-		else return RefTargetListParameterUI::getHorizontalHeaderData(index, role);
-	}
+    /// Returns the header data under the given role for the given RefTarget.
+    virtual QVariant getHorizontalHeaderData(int index, int role) override {
+        if(role == Qt::DisplayRole) {
+            if(index == 0)
+                return QVariant();
+            else if(index == 1)
+                return QVariant::fromValue(tr("Dislocation type"));
+            else if(index == 2)
+                return QVariant::fromValue(tr("Segs"));
+            else
+                return QVariant::fromValue(tr("Length"));
+        }
+        else return RefTargetListParameterUI::getHorizontalHeaderData(index, role);
+    }
 
-	/// Do not open sub-editor for selected structure type.
-	virtual void openSubEditor() override {}
+    /// Do not open sub-editor for selected structure type.
+    virtual void openSubEditor() override {}
 
 protected Q_SLOTS:
 
-	/// Is called when the user has double-clicked on one of the dislocation types in the list widget.
-	void onDoubleClickDislocationType(const QModelIndex& index);
+    /// Is called when the user has double-clicked on one of the dislocation types in the list widget.
+    void onDoubleClickDislocationType(const QModelIndex& index);
 
 private:
 
-	OORef<DataTable> _dislocationLengths;
-	OORef<DataTable> _dislocationCounts;
+    OORef<DataTable> _dislocationLengths;
+    OORef<DataTable> _dislocationCounts;
 };
 
 /**
@@ -101,17 +101,17 @@ private:
  */
 class DislocationAnalysisModifierEditor : public PropertiesEditor
 {
-	OVITO_CLASS(DislocationAnalysisModifierEditor)
+    OVITO_CLASS(DislocationAnalysisModifierEditor)
 
 public:
 
-	/// Default constructor.
-	Q_INVOKABLE DislocationAnalysisModifierEditor() {}
+    /// Default constructor.
+    Q_INVOKABLE DislocationAnalysisModifierEditor() {}
 
 protected:
 
-	/// Creates the user interface controls for the editor.
-	virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
+    /// Creates the user interface controls for the editor.
+    virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
 };
 
-}	// End of namespace
+}   // End of namespace

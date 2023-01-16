@@ -34,31 +34,31 @@ namespace Ovito::Particles {
  */
 class OVITO_PARTICLES_EXPORT WrapPeriodicImagesModifier : public Modifier
 {
-	/// Give this modifier class its own metaclass.
-	class WrapPeriodicImagesModifierClass : public ModifierClass
-	{
-	public:
+    /// Give this modifier class its own metaclass.
+    class WrapPeriodicImagesModifierClass : public ModifierClass
+    {
+    public:
 
-		/// Inherit constructor from base class.
-		using ModifierClass::ModifierClass;
+        /// Inherit constructor from base class.
+        using ModifierClass::ModifierClass;
 
-		/// Asks the metaclass whether the modifier can be applied to the given input data.
-		virtual bool isApplicableTo(const DataCollection& input) const override;
-	};
+        /// Asks the metaclass whether the modifier can be applied to the given input data.
+        virtual bool isApplicableTo(const DataCollection& input) const override;
+    };
 
-	OVITO_CLASS_META(WrapPeriodicImagesModifier, WrapPeriodicImagesModifierClass)
+    OVITO_CLASS_META(WrapPeriodicImagesModifier, WrapPeriodicImagesModifierClass)
 
-	Q_CLASSINFO("DisplayName", "Wrap at periodic boundaries");
-	Q_CLASSINFO("Description", "Fold particle coordinates back into the periodic simulation box.");
-	Q_CLASSINFO("ModifierCategory", "Modification");
+    Q_CLASSINFO("DisplayName", "Wrap at periodic boundaries");
+    Q_CLASSINFO("Description", "Fold particle coordinates back into the periodic simulation box.");
+    Q_CLASSINFO("ModifierCategory", "Modification");
 
 public:
 
-	/// \brief Constructs a new instance of this class.
-	Q_INVOKABLE WrapPeriodicImagesModifier(ObjectCreationParams params) : Modifier(params) {}
+    /// \brief Constructs a new instance of this class.
+    Q_INVOKABLE WrapPeriodicImagesModifier(ObjectCreationParams params) : Modifier(params) {}
 
-	/// Modifies the input data synchronously.
-	virtual void evaluateSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
+    /// Modifies the input data synchronously.
+    virtual void evaluateSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
 };
 
-}	// End of namespace
+}   // End of namespace

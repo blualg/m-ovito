@@ -36,30 +36,30 @@ IMPLEMENT_OVITO_CLASS(GridParaViewVTMFileFilter);
 ******************************************************************************/
 bool ParaViewVTSGridImporter::OOMetaClass::checkFileFormat(const FileHandle& file) const
 {
-	// Initialize XML reader and open input file.
-	std::unique_ptr<QIODevice> device = file.createIODevice();
-	if(!device->open(QIODevice::ReadOnly | QIODevice::Text))
-		return false;
-	QXmlStreamReader xml(device.get());
+    // Initialize XML reader and open input file.
+    std::unique_ptr<QIODevice> device = file.createIODevice();
+    if(!device->open(QIODevice::ReadOnly | QIODevice::Text))
+        return false;
+    QXmlStreamReader xml(device.get());
 
-	// Parse XML. First element must be <VTKFile type="StructuredGrid">.
-	if(xml.readNext() != QXmlStreamReader::StartDocument)
-		return false;
-	if(xml.readNext() != QXmlStreamReader::StartElement)
-		return false;
-	if(xml.name().compare(QStringLiteral("VTKFile")) != 0)
-		return false;
-	if(xml.attributes().value("type").compare(QStringLiteral("StructuredGrid")) != 0)
-		return false;
+    // Parse XML. First element must be <VTKFile type="StructuredGrid">.
+    if(xml.readNext() != QXmlStreamReader::StartDocument)
+        return false;
+    if(xml.readNext() != QXmlStreamReader::StartElement)
+        return false;
+    if(xml.name().compare(QStringLiteral("VTKFile")) != 0)
+        return false;
+    if(xml.attributes().value("type").compare(QStringLiteral("StructuredGrid")) != 0)
+        return false;
 
-	// Continue reading until the expected <StructuredGrid> element is reached. 
-	while(xml.readNextStartElement()) {
-		if(xml.name().compare(QStringLiteral("StructuredGrid")) == 0) {
-			return !xml.hasError();
-		}
-	}
+    // Continue reading until the expected <StructuredGrid> element is reached. 
+    while(xml.readNextStartElement()) {
+        if(xml.name().compare(QStringLiteral("StructuredGrid")) == 0) {
+            return !xml.hasError();
+        }
+    }
 
-	return false;
+    return false;
 }
 
 /******************************************************************************
@@ -67,187 +67,187 @@ bool ParaViewVTSGridImporter::OOMetaClass::checkFileFormat(const FileHandle& fil
 ******************************************************************************/
 void ParaViewVTSGridImporter::FrameLoader::loadFile()
 {
-	setProgressText(tr("Reading ParaView VTS StructuredGrid file %1").arg(fileHandle().toString()));
+    setProgressText(tr("Reading ParaView VTS StructuredGrid file %1").arg(fileHandle().toString()));
 
-	// Create the VoxelGrid object.
-	QString gridIdentifier = loadRequest().dataBlockPrefix;
-	VoxelGrid* gridObj = state().getMutableLeafObject<VoxelGrid>(VoxelGrid::OOClass(), gridIdentifier);
-	if(!gridObj) {
-		gridObj = state().createObject<VoxelGrid>(dataSource());
-		gridObj->setIdentifier(gridIdentifier);
-		VoxelGridVis* vis = gridObj->visElement<VoxelGridVis>();
-		if(!gridIdentifier.isEmpty()) {
-			gridObj->setTitle(QStringLiteral("%1: %2").arg(gridObj->objectTitle()).arg(gridIdentifier));
-			gridObj->freezeInitialParameterValues({SHADOW_PROPERTY_FIELD(PropertyContainer::title)});
-			if(vis) {
-				vis->setTitle(QStringLiteral("%1: %2").arg(vis->objectTitle()).arg(gridIdentifier));
-				vis->freezeInitialParameterValues({SHADOW_PROPERTY_FIELD(ActiveObject::title)});
-			}
-		}
-	}
+    // Create the VoxelGrid object.
+    QString gridIdentifier = loadRequest().dataBlockPrefix;
+    VoxelGrid* gridObj = state().getMutableLeafObject<VoxelGrid>(VoxelGrid::OOClass(), gridIdentifier);
+    if(!gridObj) {
+        gridObj = state().createObject<VoxelGrid>(dataSource());
+        gridObj->setIdentifier(gridIdentifier);
+        VoxelGridVis* vis = gridObj->visElement<VoxelGridVis>();
+        if(!gridIdentifier.isEmpty()) {
+            gridObj->setTitle(QStringLiteral("%1: %2").arg(gridObj->objectTitle()).arg(gridIdentifier));
+            gridObj->freezeInitialParameterValues({SHADOW_PROPERTY_FIELD(PropertyContainer::title)});
+            if(vis) {
+                vis->setTitle(QStringLiteral("%1: %2").arg(vis->objectTitle()).arg(gridIdentifier));
+                vis->freezeInitialParameterValues({SHADOW_PROPERTY_FIELD(ActiveObject::title)});
+            }
+        }
+    }
 
-	// Initialize XML reader and open input file.
-	std::unique_ptr<QIODevice> device = fileHandle().createIODevice();
-	if(!device->open(QIODevice::ReadOnly | QIODevice::Text))
-		throw Exception(tr("Failed to open VTS file: %1").arg(device->errorString()));
-	QXmlStreamReader xml(device.get());
+    // Initialize XML reader and open input file.
+    std::unique_ptr<QIODevice> device = fileHandle().createIODevice();
+    if(!device->open(QIODevice::ReadOnly | QIODevice::Text))
+        throw Exception(tr("Failed to open VTS file: %1").arg(device->errorString()));
+    QXmlStreamReader xml(device.get());
 
-	std::vector<PropertyPtr> cellDataArrays;
-	Box_3<qlonglong> wholeExtent;
-	Box_3<qlonglong> pieceExtent;
+    std::vector<PropertyPtr> cellDataArrays;
+    Box_3<qlonglong> wholeExtent;
+    Box_3<qlonglong> pieceExtent;
 
-	// Parse the elements of the XML file.
-	while(xml.readNextStartElement()) {
-		if(isCanceled())
-			return;
+    // Parse the elements of the XML file.
+    while(xml.readNextStartElement()) {
+        if(isCanceled())
+            return;
 
-		if(xml.name().compare(QStringLiteral("VTKFile")) == 0) {
-			if(xml.attributes().value("type").compare(QStringLiteral("StructuredGrid")) != 0)
-				xml.raiseError(tr("VTS file is not of type StructuredGrid."));
-			else if(xml.attributes().value("byte_order").compare(QStringLiteral("LittleEndian")) != 0)
-				xml.raiseError(tr("Byte order must be 'LittleEndian'. Please ask the OVITO developers to extend the capabilities of the file parser."));
-			else if(!xml.attributes().value("compressor").isEmpty())
-				xml.raiseError(tr("Current implementation does not support compressed data arrays. Please ask the OVITO developers to extend the capabilities of the file parser."));
-		}
-		else if(xml.name().compare(QStringLiteral("StructuredGrid")) == 0) {
-			// Parse grid dimensions.
-			auto tokens = splitString(xml.attributes().value("WholeExtent"));
-			if(tokens.size() != 6) {
-				xml.raiseError(tr("Expected 'WholeExtent' attribute (list of length 6)."));
-				break;
-			}
-			wholeExtent.minc.x() = tokens[0].toULongLong();
-			wholeExtent.minc.y() = tokens[2].toULongLong();
-			wholeExtent.minc.z() = tokens[4].toULongLong();
-			wholeExtent.maxc.x() = tokens[1].toULongLong();
-			wholeExtent.maxc.y() = tokens[3].toULongLong();
-			wholeExtent.maxc.z() = tokens[5].toULongLong();
-			VoxelGrid::GridDimensions shape;
-			shape[0] = wholeExtent.size(0);
-			shape[1] = wholeExtent.size(1);
-			shape[2] = wholeExtent.size(2);
-			constexpr size_t maxGridSize = std::numeric_limits<int>::max();
-			if(shape[0] == 0 || shape[0] > maxGridSize || shape[1] == 0 || shape[1] > maxGridSize || shape[2] == 0 || shape[2] > maxGridSize) {
-				xml.raiseError(tr("'WholeExtent' attribute: Invalid grid dimensions."));
-				break;
-			}
-			gridObj->setShape(shape);
-			gridObj->setElementCount(shape[0] * shape[1] * shape[2]);
-			// Continue with parsing the child elements.
-		}
-		else if(xml.name().compare(QStringLiteral("Piece")) == 0) {
-			// Parse piece extents.
-			auto tokens = splitString(xml.attributes().value("Extent"));
-			if(tokens.size() != 6) {
-				xml.raiseError(tr("Expected 'Extent' attribute (list of length 6)."));
-				break;
-			}
-			pieceExtent.minc.x() = tokens[0].toULongLong();
-			pieceExtent.minc.y() = tokens[2].toULongLong();
-			pieceExtent.minc.z() = tokens[4].toULongLong();
-			pieceExtent.maxc.x() = tokens[1].toULongLong();
-			pieceExtent.maxc.y() = tokens[3].toULongLong();
-			pieceExtent.maxc.z() = tokens[5].toULongLong();
-			for(size_t dim = 0; dim < 3; dim++) {
-				if(pieceExtent.minc[dim] < wholeExtent.minc[dim] || pieceExtent.maxc[dim] > wholeExtent.maxc[dim]) {
-					xml.raiseError(tr("Piece extents exceed extents of whole structured grid."));
-					break;
-				}
-			}
+        if(xml.name().compare(QStringLiteral("VTKFile")) == 0) {
+            if(xml.attributes().value("type").compare(QStringLiteral("StructuredGrid")) != 0)
+                xml.raiseError(tr("VTS file is not of type StructuredGrid."));
+            else if(xml.attributes().value("byte_order").compare(QStringLiteral("LittleEndian")) != 0)
+                xml.raiseError(tr("Byte order must be 'LittleEndian'. Please ask the OVITO developers to extend the capabilities of the file parser."));
+            else if(!xml.attributes().value("compressor").isEmpty())
+                xml.raiseError(tr("Current implementation does not support compressed data arrays. Please ask the OVITO developers to extend the capabilities of the file parser."));
+        }
+        else if(xml.name().compare(QStringLiteral("StructuredGrid")) == 0) {
+            // Parse grid dimensions.
+            auto tokens = splitString(xml.attributes().value("WholeExtent"));
+            if(tokens.size() != 6) {
+                xml.raiseError(tr("Expected 'WholeExtent' attribute (list of length 6)."));
+                break;
+            }
+            wholeExtent.minc.x() = tokens[0].toULongLong();
+            wholeExtent.minc.y() = tokens[2].toULongLong();
+            wholeExtent.minc.z() = tokens[4].toULongLong();
+            wholeExtent.maxc.x() = tokens[1].toULongLong();
+            wholeExtent.maxc.y() = tokens[3].toULongLong();
+            wholeExtent.maxc.z() = tokens[5].toULongLong();
+            VoxelGrid::GridDimensions shape;
+            shape[0] = wholeExtent.size(0);
+            shape[1] = wholeExtent.size(1);
+            shape[2] = wholeExtent.size(2);
+            constexpr size_t maxGridSize = std::numeric_limits<int>::max();
+            if(shape[0] == 0 || shape[0] > maxGridSize || shape[1] == 0 || shape[1] > maxGridSize || shape[2] == 0 || shape[2] > maxGridSize) {
+                xml.raiseError(tr("'WholeExtent' attribute: Invalid grid dimensions."));
+                break;
+            }
+            gridObj->setShape(shape);
+            gridObj->setElementCount(shape[0] * shape[1] * shape[2]);
+            // Continue with parsing the child elements.
+        }
+        else if(xml.name().compare(QStringLiteral("Piece")) == 0) {
+            // Parse piece extents.
+            auto tokens = splitString(xml.attributes().value("Extent"));
+            if(tokens.size() != 6) {
+                xml.raiseError(tr("Expected 'Extent' attribute (list of length 6)."));
+                break;
+            }
+            pieceExtent.minc.x() = tokens[0].toULongLong();
+            pieceExtent.minc.y() = tokens[2].toULongLong();
+            pieceExtent.minc.z() = tokens[4].toULongLong();
+            pieceExtent.maxc.x() = tokens[1].toULongLong();
+            pieceExtent.maxc.y() = tokens[3].toULongLong();
+            pieceExtent.maxc.z() = tokens[5].toULongLong();
+            for(size_t dim = 0; dim < 3; dim++) {
+                if(pieceExtent.minc[dim] < wholeExtent.minc[dim] || pieceExtent.maxc[dim] > wholeExtent.maxc[dim]) {
+                    xml.raiseError(tr("Piece extents exceed extents of whole structured grid."));
+                    break;
+                }
+            }
 
-			if(pieceExtent.minc != wholeExtent.minc || pieceExtent.maxc != wholeExtent.maxc) {
-				xml.raiseError(tr("VTS file reader can only handle single-piece datasets. 'Extent' attribute must exactly match 'WholeExtent' of structured grid."));
-				break;
-			}
+            if(pieceExtent.minc != wholeExtent.minc || pieceExtent.maxc != wholeExtent.maxc) {
+                xml.raiseError(tr("VTS file reader can only handle single-piece datasets. 'Extent' attribute must exactly match 'WholeExtent' of structured grid."));
+                break;
+            }
 
-			// Continue with parsing child elements.
-		}
-		else if(xml.name().compare(QStringLiteral("CellData")) == 0) {
-			// Parse <DataArray> child elements.
-			while(xml.readNextStartElement() && !isCanceled()) {
-				if(xml.name().compare(QStringLiteral("DataArray")) == 0) {
+            // Continue with parsing child elements.
+        }
+        else if(xml.name().compare(QStringLiteral("CellData")) == 0) {
+            // Parse <DataArray> child elements.
+            while(xml.readNextStartElement() && !isCanceled()) {
+                if(xml.name().compare(QStringLiteral("DataArray")) == 0) {
 
-					// Use the 'type' attribute to decide which data type to use for the OVITO property array.
-					QString dataTypeName = xml.attributes().value("type").toString();
-					int dataType = DataBuffer::Float;
-					if(dataTypeName == "Float32" || dataTypeName == "Float64") {
-						dataType = DataBuffer::Float;
-					}
-					else if(dataTypeName == "Int32" || dataTypeName == "UInt32") {
-						dataType = DataBuffer::Int;
-					}
-					else if(dataTypeName == "Int64" || dataTypeName == "UInt64") {
-						dataType = DataBuffer::Int64;
-					}
+                    // Use the 'type' attribute to decide which data type to use for the OVITO property array.
+                    QString dataTypeName = xml.attributes().value("type").toString();
+                    int dataType = DataBuffer::Float;
+                    if(dataTypeName == "Float32" || dataTypeName == "Float64") {
+                        dataType = DataBuffer::Float;
+                    }
+                    else if(dataTypeName == "Int32" || dataTypeName == "UInt32") {
+                        dataType = DataBuffer::Int;
+                    }
+                    else if(dataTypeName == "Int64" || dataTypeName == "UInt64") {
+                        dataType = DataBuffer::Int64;
+                    }
 
-					// Parse number of array components.
-					int numComponents = std::max(1, xml.attributes().value("NumberOfComponents").toInt());
+                    // Parse number of array components.
+                    int numComponents = std::max(1, xml.attributes().value("NumberOfComponents").toInt());
 
-					// Parse name of grid property.
-					auto name = xml.attributes().value("Name");
+                    // Parse name of grid property.
+                    auto name = xml.attributes().value("Name");
 
-					// Create voxel grid property that receives the values.
-					PropertyObject* property = gridObj->createProperty(name.toString(), dataType, numComponents);
-					
-					// Parse values from XML file.
-					if(!ParaViewVTPMeshImporter::parseVTKDataArray(property, xml))
-						break;
+                    // Create voxel grid property that receives the values.
+                    PropertyObject* property = gridObj->createProperty(name.toString(), dataType, numComponents);
+                    
+                    // Parse values from XML file.
+                    if(!ParaViewVTPMeshImporter::parseVTKDataArray(property, xml))
+                        break;
 
-					if(xml.tokenType() != QXmlStreamReader::EndElement)
-						xml.skipCurrentElement();
-				}
-				else {
-					xml.raiseError(tr("Unexpected XML element <%1>.").arg(xml.name().toString()));
-				}
-			}
-		}
-		else if(xml.name().compare(QStringLiteral("Points")) == 0) {
-			// Parse child <DataArray> element containing the point coordinates.
-			if(!xml.readNextStartElement())
-				break;
+                    if(xml.tokenType() != QXmlStreamReader::EndElement)
+                        xml.skipCurrentElement();
+                }
+                else {
+                    xml.raiseError(tr("Unexpected XML element <%1>.").arg(xml.name().toString()));
+                }
+            }
+        }
+        else if(xml.name().compare(QStringLiteral("Points")) == 0) {
+            // Parse child <DataArray> element containing the point coordinates.
+            if(!xml.readNextStartElement())
+                break;
 
-			// Load the VTK point coordinates into a Nx3 buffer of floats.
-			size_t numberOfPoints = (pieceExtent.size(0) + 1) * (pieceExtent.size(1) + 1) * (pieceExtent.size(2) + 1);
-			DataBufferPtr buffer = DataBufferPtr::create(numberOfPoints, DataBuffer::Float, 3);
-			if(!ParaViewVTPMeshImporter::parseVTKDataArray(buffer, xml))
-				break;
+            // Load the VTK point coordinates into a Nx3 buffer of floats.
+            size_t numberOfPoints = (pieceExtent.size(0) + 1) * (pieceExtent.size(1) + 1) * (pieceExtent.size(2) + 1);
+            DataBufferPtr buffer = DataBufferPtr::create(numberOfPoints, DataBuffer::Float, 3);
+            if(!ParaViewVTPMeshImporter::parseVTKDataArray(buffer, xml))
+                break;
 
-			// Derive domain geometry from spacing between grid points.
-			ConstDataBufferAccess<Point3> points(buffer);
-			AffineTransformation cellMatrix = AffineTransformation::Zero();
-			cellMatrix.column(0) = (points[1] - points[0]) * (FloatType)wholeExtent.size(0);
-			cellMatrix.column(1) = (points[pieceExtent.size(0) + 1] - points[0]) * (FloatType)wholeExtent.size(1);
-			cellMatrix.column(2) = (points[(pieceExtent.size(0) + 1) * (pieceExtent.size(1) + 1)] - points[0]) * (FloatType)wholeExtent.size(2);
-			cellMatrix.translation() = points[0] - Point3::Origin();
-			simulationCell()->setCellMatrix(cellMatrix);
-			simulationCell()->setPbcFlags(false, false, false);
-			gridObj->setDomain(simulationCell());
+            // Derive domain geometry from spacing between grid points.
+            ConstDataBufferAccess<Point3> points(buffer);
+            AffineTransformation cellMatrix = AffineTransformation::Zero();
+            cellMatrix.column(0) = (points[1] - points[0]) * (FloatType)wholeExtent.size(0);
+            cellMatrix.column(1) = (points[pieceExtent.size(0) + 1] - points[0]) * (FloatType)wholeExtent.size(1);
+            cellMatrix.column(2) = (points[(pieceExtent.size(0) + 1) * (pieceExtent.size(1) + 1)] - points[0]) * (FloatType)wholeExtent.size(2);
+            cellMatrix.translation() = points[0] - Point3::Origin();
+            simulationCell()->setCellMatrix(cellMatrix);
+            simulationCell()->setPbcFlags(false, false, false);
+            gridObj->setDomain(simulationCell());
 
-			xml.skipCurrentElement();
-		}
-		else if(xml.name().compare(QStringLiteral("FieldData")) == 0 || xml.name().compare(QStringLiteral("PointData")) == 0) {
-			// Ignore contents of the <PointData> element.
-			xml.skipCurrentElement();
-		}
-		else {
-			xml.raiseError(tr("Unexpected XML element <%1>.").arg(xml.name().toString()));
-		}
-	}
+            xml.skipCurrentElement();
+        }
+        else if(xml.name().compare(QStringLiteral("FieldData")) == 0 || xml.name().compare(QStringLiteral("PointData")) == 0) {
+            // Ignore contents of the <PointData> element.
+            xml.skipCurrentElement();
+        }
+        else {
+            xml.raiseError(tr("Unexpected XML element <%1>.").arg(xml.name().toString()));
+        }
+    }
 
-	// Handle XML parsing errors.
-	if(xml.hasError()) {
-		throw Exception(tr("VTS file parsing error on line %1, column %2: %3")
-			.arg(xml.lineNumber()).arg(xml.columnNumber()).arg(xml.errorString()));
-	}
+    // Handle XML parsing errors.
+    if(xml.hasError()) {
+        throw Exception(tr("VTS file parsing error on line %1, column %2: %3")
+            .arg(xml.lineNumber()).arg(xml.columnNumber()).arg(xml.errorString()));
+    }
 
-	// Report grid dimensions to the user.
-	state().setStatus(tr("Grid dimensions: %1 x %2 x %3")
-		.arg(gridObj->shape()[0])
-		.arg(gridObj->shape()[1])
-		.arg(gridObj->shape()[2]));
+    // Report grid dimensions to the user.
+    state().setStatus(tr("Grid dimensions: %1 x %2 x %3")
+        .arg(gridObj->shape()[0])
+        .arg(gridObj->shape()[1])
+        .arg(gridObj->shape()[2]));
 
-	// Call base implementation.
-	StandardFrameLoader::loadFile();
+    // Call base implementation.
+    StandardFrameLoader::loadFile();
 }
 
 /******************************************************************************
@@ -255,13 +255,13 @@ void ParaViewVTSGridImporter::FrameLoader::loadFile()
 ******************************************************************************/
 void GridParaViewVTMFileFilter::preprocessDatasets(std::vector<ParaViewVTMBlockInfo>& blockDatasets, FileSourceImporter::LoadOperationRequest& request, const ParaViewVTMImporter& vtmImporter)
 {
-	// Clear existing voxel grid objects by resizing them to zero elements.
-	// This is mainly done to hide the grids in those animation frames in which the VTM file contains no corresponding data blocks.
-	for(const DataObject* grid : request.state.getObjects(VoxelGrid::OOClass())) {
-		VoxelGrid* mutableGrid = static_object_cast<VoxelGrid>(request.state.mutableData()->makeMutable(grid));
-		mutableGrid->setElementCount(0);
-		mutableGrid->setShape({0,0,0});
-	}
+    // Clear existing voxel grid objects by resizing them to zero elements.
+    // This is mainly done to hide the grids in those animation frames in which the VTM file contains no corresponding data blocks.
+    for(const DataObject* grid : request.state.getObjects(VoxelGrid::OOClass())) {
+        VoxelGrid* mutableGrid = static_object_cast<VoxelGrid>(request.state.mutableData()->makeMutable(grid));
+        mutableGrid->setElementCount(0);
+        mutableGrid->setShape({0,0,0});
+    }
 }
 
-}	// End of namespace
+}   // End of namespace

@@ -36,52 +36,52 @@ namespace Ovito {
  */
 class OVITO_CORE_EXPORT KeyframeController : public Controller
 {
-	OVITO_CLASS(KeyframeController)
+    OVITO_CLASS(KeyframeController)
 
 public:
 
-	/// Constructor.
-	using Controller::Controller;
+    /// Constructor.
+    using Controller::Controller;
 
-	/// \brief Returns whether the value of this controller is changing over time.
-	virtual bool isAnimated() const override { return keys().size() >= 2; }
+    /// \brief Returns whether the value of this controller is changing over time.
+    virtual bool isAnimated() const override { return keys().size() >= 2; }
 
-	/// Maps all keys from the old animation interval to the new interval.
-	virtual void rescaleTime(const TimeInterval& oldAnimationInterval, const TimeInterval& newAnimationInterval) override;
+    /// Maps all keys from the old animation interval to the new interval.
+    virtual void rescaleTime(const TimeInterval& oldAnimationInterval, const TimeInterval& newAnimationInterval) override;
 
-	/// Calculates the largest time interval containing the given time during which the controller's value does not change.
-	virtual TimeInterval validityInterval(AnimationTime time) override;
+    /// Calculates the largest time interval containing the given time during which the controller's value does not change.
+    virtual TimeInterval validityInterval(AnimationTime time) override;
 
-	/// Determines whether the animation keys of this controller are sorted with respect to time.
-	bool areKeysSorted() const;
+    /// Determines whether the animation keys of this controller are sorted with respect to time.
+    bool areKeysSorted() const;
 
-	/// Moves the keys in the given set by the given time shift.
-	void moveKeys(const QVector<AnimationKey*> keysToMove, AnimationTime::value_type shift);
+    /// Moves the keys in the given set by the given time shift.
+    void moveKeys(const QVector<AnimationKey*> keysToMove, AnimationTime::value_type shift);
 
-	/// Deletes the given set of keys from the controller.
-	void deleteKeys(const QVector<AnimationKey*> keysToDelete);
+    /// Deletes the given set of keys from the controller.
+    void deleteKeys(const QVector<AnimationKey*> keysToDelete);
 
-	/// Creates am animation key at the given time.
-	/// Returns the index of the key, which may be an existing key.
-	virtual int createKey(AnimationTime time) = 0;
+    /// Creates am animation key at the given time.
+    /// Returns the index of the key, which may be an existing key.
+    virtual int createKey(AnimationTime time) = 0;
 
 protected:
 
-	/// Inserts a new animation key into this controller's list of keys.
-	int insertKey(AnimationKey* key, int insertionPos = -1);
+    /// Inserts a new animation key into this controller's list of keys.
+    int insertKey(AnimationKey* key, int insertionPos = -1);
 
-	/// This updates the keys after their times or values have changed.
-	virtual void updateKeys() {}
+    /// This updates the keys after their times or values have changed.
+    virtual void updateKeys() {}
 
-	/// Changes a key's value.
-	/// This is a wrapper for the protected function TypedAnimationKey::setValue().
-	template<typename KeyType>
-	static void setKeyValueInternal(KeyType* key, const typename KeyType::value_type& newValue) { key->setValue(newValue); }
+    /// Changes a key's value.
+    /// This is a wrapper for the protected function TypedAnimationKey::setValue().
+    template<typename KeyType>
+    static void setKeyValueInternal(KeyType* key, const typename KeyType::value_type& newValue) { key->setValue(newValue); }
 
 private:
 
-	/// Stores the list of animation keys.
-	DECLARE_VECTOR_REFERENCE_FIELD_FLAGS(OORef<AnimationKey>, keys, PROPERTY_FIELD_ALWAYS_CLONE | PROPERTY_FIELD_NO_SUB_ANIM);
+    /// Stores the list of animation keys.
+    DECLARE_VECTOR_REFERENCE_FIELD_FLAGS(OORef<AnimationKey>, keys, PROPERTY_FIELD_ALWAYS_CLONE | PROPERTY_FIELD_NO_SUB_ANIM);
 };
 
 /**
@@ -92,178 +92,178 @@ class KeyframeControllerTemplate : public KeyframeController
 {
 public:
 
-	/// The value type stored by this controller.
-	typedef typename KeyType::value_type value_type;
+    /// The value type stored by this controller.
+    typedef typename KeyType::value_type value_type;
 
-	/// The type used to construct default key values.
-	typedef typename KeyType::nullvalue_type nullvalue_type;
+    /// The type used to construct default key values.
+    typedef typename KeyType::nullvalue_type nullvalue_type;
 
-	/// Constructor.
-	using KeyframeController::KeyframeController;
+    /// Constructor.
+    using KeyframeController::KeyframeController;
 
-	/// Returns the value type of the controller.
-	virtual ControllerType controllerType() const override { return ctrlType; }
+    /// Returns the value type of the controller.
+    virtual ControllerType controllerType() const override { return ctrlType; }
 
-	/// Returns the list of keys of this animation controller.
-	const QVector<KeyType*>& typedKeys() const { return reinterpret_cast<const QVector<KeyType*>&>(keys()); }
+    /// Returns the list of keys of this animation controller.
+    const QVector<KeyType*>& typedKeys() const { return reinterpret_cast<const QVector<KeyType*>&>(keys()); }
 
-	/// Creates am animation key at the given time.
-	/// Returns the index of the key, which may be an existing key.
-	virtual int createKey(AnimationTime time) override {
-		OVITO_ASSERT(areKeysSorted());
-		// Look for existing key.
-		int index;
-		for(index = 0; index < this->keys().size(); index++) {
-			if(this->keys()[index]->time() == time) {
-				return index;
-			}
-			else if(this->keys()[index]->time() > time) {
-				break;
-			}
-		}
-		// Insert a new key.
-		TimeInterval iv;
-		value_type currentValue;
-		getInterpolatedValue(time, currentValue, iv);
-		insertKey(OORef<KeyType>::create(time, currentValue), index);
-		OVITO_ASSERT(areKeysSorted());
-		return index;
-	}
+    /// Creates am animation key at the given time.
+    /// Returns the index of the key, which may be an existing key.
+    virtual int createKey(AnimationTime time) override {
+        OVITO_ASSERT(areKeysSorted());
+        // Look for existing key.
+        int index;
+        for(index = 0; index < this->keys().size(); index++) {
+            if(this->keys()[index]->time() == time) {
+                return index;
+            }
+            else if(this->keys()[index]->time() > time) {
+                break;
+            }
+        }
+        // Insert a new key.
+        TimeInterval iv;
+        value_type currentValue;
+        getInterpolatedValue(time, currentValue, iv);
+        insertKey(OORef<KeyType>::create(time, currentValue), index);
+        OVITO_ASSERT(areKeysSorted());
+        return index;
+    }
 
 protected:
 
-	/// Queries the controller for its value at a certain time.
-	void getInterpolatedValue(AnimationTime time, value_type& result, TimeInterval& validityInterval) const {
-		const QVector<KeyType*>& keys = typedKeys();
-		if(keys.empty()) {
-			result = nullvalue_type();
-			return;
-		}
-		OVITO_ASSERT(areKeysSorted());
+    /// Queries the controller for its value at a certain time.
+    void getInterpolatedValue(AnimationTime time, value_type& result, TimeInterval& validityInterval) const {
+        const QVector<KeyType*>& keys = typedKeys();
+        if(keys.empty()) {
+            result = nullvalue_type();
+            return;
+        }
+        OVITO_ASSERT(areKeysSorted());
 
-		// Handle out of range cases.
-		if(time <= keys.front()->time()) {
-			result = keys.front()->value();
-			if(keys.size() != 1)
-				validityInterval.intersect(TimeInterval(AnimationTime::negativeInfinity(), keys.front()->time()));
-		}
-		else if(time >= keys.back()->time()) {
-			result = keys.back()->value();
-			if(keys.size() != 1)
-				validityInterval.intersect(TimeInterval(keys.back()->time(), AnimationTime::positiveInfinity()));
-		}
-		else {
-			// Intersect validity interval.
-			validityInterval.intersect(TimeInterval(time));
+        // Handle out of range cases.
+        if(time <= keys.front()->time()) {
+            result = keys.front()->value();
+            if(keys.size() != 1)
+                validityInterval.intersect(TimeInterval(AnimationTime::negativeInfinity(), keys.front()->time()));
+        }
+        else if(time >= keys.back()->time()) {
+            result = keys.back()->value();
+            if(keys.size() != 1)
+                validityInterval.intersect(TimeInterval(keys.back()->time(), AnimationTime::positiveInfinity()));
+        }
+        else {
+            // Intersect validity interval.
+            validityInterval.intersect(TimeInterval(time));
 
-			for(auto key = keys.begin() + 1; key != keys.end(); ++key) {
-				if((*key)->time() == time) {
-					// No interpolation necessary.
-					result = (*key)->value();
-					return;
-				}
-				else if((*key)->time() > time) {
-					// Interpolate between two keys.
-					result = KeyInterpolator()(time,
-							(key != (keys.begin() + 1)) ? *(key - 2) : nullptr,
-							*(key - 1),
-							*key,
-							(key != (keys.end() - 1)) ? *(key + 1) : nullptr);
-					return;
-				}
-			}
+            for(auto key = keys.begin() + 1; key != keys.end(); ++key) {
+                if((*key)->time() == time) {
+                    // No interpolation necessary.
+                    result = (*key)->value();
+                    return;
+                }
+                else if((*key)->time() > time) {
+                    // Interpolate between two keys.
+                    result = KeyInterpolator()(time,
+                            (key != (keys.begin() + 1)) ? *(key - 2) : nullptr,
+                            *(key - 1),
+                            *key,
+                            (key != (keys.end() - 1)) ? *(key + 1) : nullptr);
+                    return;
+                }
+            }
 
-			// This should never happen.
-			OVITO_ASSERT_MSG(false, "KeyframeControllerTemplate::getInterpolatedValue", "Invalid controller keys.");
-			result = nullvalue_type();
-		}
-	}
+            // This should never happen.
+            OVITO_ASSERT_MSG(false, "KeyframeControllerTemplate::getInterpolatedValue", "Invalid controller keys.");
+            result = nullvalue_type();
+        }
+    }
 
-	/// Creates a new animation key at the specified time or replaces the value of an existing key.
-	void setKeyValue(AnimationTime time, const value_type& newValue) {
-		const QVector<KeyType*>& keys = typedKeys();
-		int index;
-		for(index = 0; index < keys.size(); index++) {
-			if(keys[index]->time() == time) {
-				setKeyValueInternal(keys[index], newValue);
-				return;
-			}
-			else if(keys[index]->time() > time) {
-				break;
-			}
-		}
-		insertKey(OORef<KeyType>::create(time, newValue), index);
-	}
+    /// Creates a new animation key at the specified time or replaces the value of an existing key.
+    void setKeyValue(AnimationTime time, const value_type& newValue) {
+        const QVector<KeyType*>& keys = typedKeys();
+        int index;
+        for(index = 0; index < keys.size(); index++) {
+            if(keys[index]->time() == time) {
+                setKeyValueInternal(keys[index], newValue);
+                return;
+            }
+            else if(keys[index]->time() > time) {
+                break;
+            }
+        }
+        insertKey(OORef<KeyType>::create(time, newValue), index);
+    }
 
-	/// Sets the controller's value at the specified time.
-	void setAbsoluteValue(AnimationTime time, const value_type& newValue) {
-		if(keys().empty()) {
-			// Create an additional key at time 0 if the controller doesn't have any keys yet.
-			if(time != AnimationTime(0) && ControllerManager::isAutoGenerateAnimationKeysEnabled() && newValue != nullvalue_type()) {
-				insertKey(OORef<KeyType>::create(), 0);
-				insertKey(OORef<KeyType>::create(time, newValue), time > AnimationTime(0) ? 1 : 0);
-			}
-			else {
-				insertKey(OORef<KeyType>::create(AnimationTime(0), newValue), 0);
-			}
-		}
-		else if(!ControllerManager::isAutoGenerateAnimationKeysEnabled()) {
-			if(keys().size() == 1) {
-				setKeyValueInternal(typedKeys().front(), newValue);
-			}
-			else {
-				value_type deltaValue(newValue);
-				value_type oldValue;
-				// Get delta from new absolute value.
-				TimeInterval iv;
-				getInterpolatedValue(time, oldValue, iv);
-				if(newValue == oldValue) return;
-				deltaValue -= oldValue;
-				// Apply delta value to all keys.
-				for(KeyType* key : typedKeys()) {
-					value_type v = key->value();
-					v += deltaValue;
-					setKeyValueInternal(key, v);
-				}
-			}
-		}
-		else {
-			setKeyValue(time, newValue);
-		}
-		updateKeys();
-	}
+    /// Sets the controller's value at the specified time.
+    void setAbsoluteValue(AnimationTime time, const value_type& newValue) {
+        if(keys().empty()) {
+            // Create an additional key at time 0 if the controller doesn't have any keys yet.
+            if(time != AnimationTime(0) && ControllerManager::isAutoGenerateAnimationKeysEnabled() && newValue != nullvalue_type()) {
+                insertKey(OORef<KeyType>::create(), 0);
+                insertKey(OORef<KeyType>::create(time, newValue), time > AnimationTime(0) ? 1 : 0);
+            }
+            else {
+                insertKey(OORef<KeyType>::create(AnimationTime(0), newValue), 0);
+            }
+        }
+        else if(!ControllerManager::isAutoGenerateAnimationKeysEnabled()) {
+            if(keys().size() == 1) {
+                setKeyValueInternal(typedKeys().front(), newValue);
+            }
+            else {
+                value_type deltaValue(newValue);
+                value_type oldValue;
+                // Get delta from new absolute value.
+                TimeInterval iv;
+                getInterpolatedValue(time, oldValue, iv);
+                if(newValue == oldValue) return;
+                deltaValue -= oldValue;
+                // Apply delta value to all keys.
+                for(KeyType* key : typedKeys()) {
+                    value_type v = key->value();
+                    v += deltaValue;
+                    setKeyValueInternal(key, v);
+                }
+            }
+        }
+        else {
+            setKeyValue(time, newValue);
+        }
+        updateKeys();
+    }
 
-	/// Changes the controller's value at the specified time.
-	void setRelativeValue(AnimationTime time, const value_type& deltaValue) {
-		if(deltaValue == nullvalue_type())
-			return;
-		if(keys().empty()) {
-			// Create an additional key at time 0 if the controller doesn't have any keys yet.
-			if(time != AnimationTime(0) && ControllerManager::isAutoGenerateAnimationKeysEnabled()) {
-				insertKey(OORef<KeyType>::create(), 0);
-				insertKey(OORef<KeyType>::create(time, deltaValue), time > AnimationTime(0) ? 1 : 0);
-			}
-			else {
-				insertKey(OORef<KeyType>::create(AnimationTime(0), deltaValue), 0);
-			}
-		}
-		else if(!ControllerManager::isAutoGenerateAnimationKeysEnabled()) {
-			// Apply delta value to all keys.
-			for(KeyType* key : typedKeys()) {
-				value_type v = key->value();
-				v += deltaValue;
-				setKeyValueInternal(key, v);
-			}
-		}
-		else {
-			TimeInterval iv;
-			value_type oldValue;
-			getInterpolatedValue(time, oldValue, iv);
-			oldValue += deltaValue;
-			setKeyValue(time, oldValue);
-		}
-		updateKeys();
-	}
+    /// Changes the controller's value at the specified time.
+    void setRelativeValue(AnimationTime time, const value_type& deltaValue) {
+        if(deltaValue == nullvalue_type())
+            return;
+        if(keys().empty()) {
+            // Create an additional key at time 0 if the controller doesn't have any keys yet.
+            if(time != AnimationTime(0) && ControllerManager::isAutoGenerateAnimationKeysEnabled()) {
+                insertKey(OORef<KeyType>::create(), 0);
+                insertKey(OORef<KeyType>::create(time, deltaValue), time > AnimationTime(0) ? 1 : 0);
+            }
+            else {
+                insertKey(OORef<KeyType>::create(AnimationTime(0), deltaValue), 0);
+            }
+        }
+        else if(!ControllerManager::isAutoGenerateAnimationKeysEnabled()) {
+            // Apply delta value to all keys.
+            for(KeyType* key : typedKeys()) {
+                value_type v = key->value();
+                v += deltaValue;
+                setKeyValueInternal(key, v);
+            }
+        }
+        else {
+            TimeInterval iv;
+            value_type oldValue;
+            getInterpolatedValue(time, oldValue, iv);
+            oldValue += deltaValue;
+            setKeyValue(time, oldValue);
+        }
+        updateKeys();
+    }
 };
 
-}	// End of namespace
+}   // End of namespace

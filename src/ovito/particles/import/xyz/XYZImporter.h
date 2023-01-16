@@ -36,112 +36,112 @@ namespace Ovito::Particles {
  */
 class OVITO_PARTICLES_EXPORT XYZImporter : public ParticleImporter
 {
-	/// Defines a metaclass specialization for this importer type.
-	class OOMetaClass : public ParticleImporter::OOMetaClass
-	{
-	public:
-		/// Inherit standard constructor from base meta class.
-		using ParticleImporter::OOMetaClass::OOMetaClass;
+    /// Defines a metaclass specialization for this importer type.
+    class OOMetaClass : public ParticleImporter::OOMetaClass
+    {
+    public:
+        /// Inherit standard constructor from base meta class.
+        using ParticleImporter::OOMetaClass::OOMetaClass;
 
-		/// Returns the list of file formats that can be read by this importer class.
-		virtual Ovito::span<const SupportedFormat> supportedFormats() const override {
-			static const SupportedFormat formats[] = {{ QStringLiteral("*"), tr("XYZ Files") }};
-			return formats;
-		}
+        /// Returns the list of file formats that can be read by this importer class.
+        virtual Ovito::span<const SupportedFormat> supportedFormats() const override {
+            static const SupportedFormat formats[] = {{ QStringLiteral("*"), tr("XYZ Files") }};
+            return formats;
+        }
 
-		/// Checks if the given file has format that can be read by this importer.
-		virtual bool checkFileFormat(const FileHandle& file) const override;
-	};
+        /// Checks if the given file has format that can be read by this importer.
+        virtual bool checkFileFormat(const FileHandle& file) const override;
+    };
 
-	OVITO_CLASS_META(XYZImporter, OOMetaClass)
+    OVITO_CLASS_META(XYZImporter, OOMetaClass)
 
 public:
 
-	/// \brief Constructs a new instance of this class.
-	Q_INVOKABLE XYZImporter(ObjectCreationParams params) : ParticleImporter(params), _autoRescaleCoordinates(true) {}
+    /// \brief Constructs a new instance of this class.
+    Q_INVOKABLE XYZImporter(ObjectCreationParams params) : ParticleImporter(params), _autoRescaleCoordinates(true) {}
 
-	/// Returns the title of this object.
-	virtual QString objectTitle() const override { return tr("XYZ File"); }
+    /// Returns the title of this object.
+    virtual QString objectTitle() const override { return tr("XYZ File"); }
 
-	/// Indicates whether this file importer type loads particle trajectories.
-	virtual bool isTrajectoryFormat() const override { return true; } 
+    /// Indicates whether this file importer type loads particle trajectories.
+    virtual bool isTrajectoryFormat() const override { return true; } 
 
-	/// Guesses the mapping of input file columns to internal particle properties.
-	static bool mapVariableToProperty(ParticleInputColumnMapping& columnMapping, int column, QString name, int dataType, int vec);
+    /// Guesses the mapping of input file columns to internal particle properties.
+    static bool mapVariableToProperty(ParticleInputColumnMapping& columnMapping, int column, QString name, int dataType, int vec);
 
-	/// Creates an asynchronous loader object that loads the data for the given frame from the external file.
-	virtual FileSourceImporter::FrameLoaderPtr createFrameLoader(const LoadOperationRequest& request) override {
-		activateCLocale();
-		return std::make_shared<FrameLoader>(request, recenterCell(), sortParticles(), columnMapping(), autoRescaleCoordinates());
-	}
+    /// Creates an asynchronous loader object that loads the data for the given frame from the external file.
+    virtual FileSourceImporter::FrameLoaderPtr createFrameLoader(const LoadOperationRequest& request) override {
+        activateCLocale();
+        return std::make_shared<FrameLoader>(request, recenterCell(), sortParticles(), columnMapping(), autoRescaleCoordinates());
+    }
 
-	/// Creates an asynchronous frame discovery object that scans the input file for contained animation frames.
-	virtual std::shared_ptr<FileSourceImporter::FrameFinder> createFrameFinder(const FileHandle& file) override {
-		activateCLocale();
-		return std::make_shared<FrameFinder>(file);
-	}
+    /// Creates an asynchronous frame discovery object that scans the input file for contained animation frames.
+    virtual std::shared_ptr<FileSourceImporter::FrameFinder> createFrameFinder(const FileHandle& file) override {
+        activateCLocale();
+        return std::make_shared<FrameFinder>(file);
+    }
 
-	/// Inspects the header of the given file and returns the number of file columns.
-	Future<ParticleInputColumnMapping> inspectFileHeader(const Frame& frame);
+    /// Inspects the header of the given file and returns the number of file columns.
+    Future<ParticleInputColumnMapping> inspectFileHeader(const Frame& frame);
 
 private:
 
-	/// The format-specific task object that is responsible for reading an input file in the background.
-	class FrameLoader : public ParticleImporter::FrameLoader
-	{
-	public:
+    /// The format-specific task object that is responsible for reading an input file in the background.
+    class FrameLoader : public ParticleImporter::FrameLoader
+    {
+    public:
 
-		/// Normal constructor.
-		FrameLoader(const LoadOperationRequest& request, bool recenterCell, bool sortParticles, const ParticleInputColumnMapping& columnMapping, bool autoRescaleCoordinates)
-		  : ParticleImporter::FrameLoader(request, recenterCell),
-			_sortParticles(sortParticles),
-			_columnMapping(columnMapping),
-			_autoRescaleCoordinates(autoRescaleCoordinates) {}
+        /// Normal constructor.
+        FrameLoader(const LoadOperationRequest& request, bool recenterCell, bool sortParticles, const ParticleInputColumnMapping& columnMapping, bool autoRescaleCoordinates)
+          : ParticleImporter::FrameLoader(request, recenterCell),
+            _sortParticles(sortParticles),
+            _columnMapping(columnMapping),
+            _autoRescaleCoordinates(autoRescaleCoordinates) {}
 
-	protected:
+    protected:
 
-		/// Reads the frame data from the external file.
-		virtual void loadFile() override;
+        /// Reads the frame data from the external file.
+        virtual void loadFile() override;
 
-	private:
+    private:
 
-		bool _sortParticles;
-		bool _autoRescaleCoordinates;
-		ParticleInputColumnMapping _columnMapping;
-	};
+        bool _sortParticles;
+        bool _autoRescaleCoordinates;
+        ParticleInputColumnMapping _columnMapping;
+    };
 
-	/// The format-specific task object that is responsible for scanning the input file for animation frames.
-	class FrameFinder : public FileSourceImporter::FrameFinder
-	{
-	public:
+    /// The format-specific task object that is responsible for scanning the input file for animation frames.
+    class FrameFinder : public FileSourceImporter::FrameFinder
+    {
+    public:
 
-		/// Inherit constructor from base class.
-		using FileSourceImporter::FrameFinder::FrameFinder;
+        /// Inherit constructor from base class.
+        using FileSourceImporter::FrameFinder::FrameFinder;
 
-	protected:
+    protected:
 
-		/// Scans the data file and builds a list of source frames.
-		virtual void discoverFramesInFile(QVector<FileSourceImporter::Frame>& frames) override;
-	};
+        /// Scans the data file and builds a list of source frames.
+        virtual void discoverFramesInFile(QVector<FileSourceImporter::Frame>& frames) override;
+    };
 
 protected:
 
-	/// \brief Saves the class' contents to the given stream.
-	virtual void saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData) const override;
+    /// \brief Saves the class' contents to the given stream.
+    virtual void saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData) const override;
 
-	/// \brief Loads the class' contents from the given stream.
-	virtual void loadFromStream(ObjectLoadStream& stream) override;
+    /// \brief Loads the class' contents from the given stream.
+    virtual void loadFromStream(ObjectLoadStream& stream) override;
 
-	/// Interprets the comment line of an extended XYZ file.
-	static ParticleInputColumnMapping parseExtendedXYZColumnSpecification(const QString& commentLine);
+    /// Interprets the comment line of an extended XYZ file.
+    static ParticleInputColumnMapping parseExtendedXYZColumnSpecification(const QString& commentLine);
 
 private:
 
-	/// The user-defined mapping of input file columns to OVITO's particle properties.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD(ParticleInputColumnMapping, columnMapping, setColumnMapping);
+    /// The user-defined mapping of input file columns to OVITO's particle properties.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(ParticleInputColumnMapping, columnMapping, setColumnMapping);
 
-	/// Controls the automatic detection of reduced atom coordinates in the input file.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, autoRescaleCoordinates, setAutoRescaleCoordinates);
+    /// Controls the automatic detection of reduced atom coordinates in the input file.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, autoRescaleCoordinates, setAutoRescaleCoordinates);
 };
 
-}	// End of namespace
+}   // End of namespace

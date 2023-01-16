@@ -36,67 +36,67 @@ namespace Ovito {
  */
 class OVITO_CORE_EXPORT ParameterUnit : public QObject
 {
-	Q_OBJECT
+    Q_OBJECT
 
 protected:
 
-	/// \brief Constructor.
-	ParameterUnit(QObject* parent) : QObject(parent) {}
+    /// \brief Constructor.
+    ParameterUnit(QObject* parent) : QObject(parent) {}
 
 public:
 
-	/// \brief Converts a value from native units to the units presented to the user.
-	/// \param nativeValue The value in internal units to be converted.
-	/// \return The value as converted to the user units.
-	/// \sa userToNative()
-	Q_INVOKABLE virtual FloatType nativeToUser(FloatType nativeValue) = 0;
+    /// \brief Converts a value from native units to the units presented to the user.
+    /// \param nativeValue The value in internal units to be converted.
+    /// \return The value as converted to the user units.
+    /// \sa userToNative()
+    Q_INVOKABLE virtual FloatType nativeToUser(FloatType nativeValue) = 0;
 
-	/// \brief Converts a value from user units to the native units used internally.
-	/// \param userValue The value to be converted back to internal units.
-	/// \return The converted value.
-	/// \sa nativeToUser()
-	Q_INVOKABLE virtual FloatType userToNative(FloatType userValue) = 0;
+    /// \brief Converts a value from user units to the native units used internally.
+    /// \param userValue The value to be converted back to internal units.
+    /// \return The converted value.
+    /// \sa nativeToUser()
+    Q_INVOKABLE virtual FloatType userToNative(FloatType userValue) = 0;
 
-	/// \brief Converts the given string to a value.
-	/// \param valueString This is a string representation of a value as it might have
-	///                    been produced by formatValue() or entered by the user.
-	/// \return The parsed value in user units.
-	/// \throw Exception when the value could not be parsed.
-	/// \sa formatValue()
-	virtual FloatType parseString(const QString& valueString) = 0;
+    /// \brief Converts the given string to a value.
+    /// \param valueString This is a string representation of a value as it might have
+    ///                    been produced by formatValue() or entered by the user.
+    /// \return The parsed value in user units.
+    /// \throw Exception when the value could not be parsed.
+    /// \sa formatValue()
+    virtual FloatType parseString(const QString& valueString) = 0;
 
-	/// \brief Converts the given string to a numeric value, or returns the input value if string format is invalid.
-	/// \return The parsed value in user units.
-	Q_INVOKABLE FloatType parseString(const QString& valueString, FloatType defaultValue) {
-		try { return parseString(valueString); }
-		catch(const Exception&) { return defaultValue; }
-	}
+    /// \brief Converts the given string to a numeric value, or returns the input value if string format is invalid.
+    /// \return The parsed value in user units.
+    Q_INVOKABLE FloatType parseString(const QString& valueString, FloatType defaultValue) {
+        try { return parseString(valueString); }
+        catch(const Exception&) { return defaultValue; }
+    }
 
-	/// \brief Converts a numeric value to a string.
-	/// \param value The value to be converted. This is in user units.
-	/// \return The string representation of the value. This can be converted back using parseString().
-	/// \sa parseString()
-	Q_INVOKABLE virtual QString formatValue(FloatType value) = 0;
+    /// \brief Converts a numeric value to a string.
+    /// \param value The value to be converted. This is in user units.
+    /// \return The string representation of the value. This can be converted back using parseString().
+    /// \sa parseString()
+    Q_INVOKABLE virtual QString formatValue(FloatType value) = 0;
 
-	/// \brief Returns positive the step size used by spinner widgets for this parameter unit type.
-	/// \param currentValue The current value of the spinner in native units. This can be used to make the step size value dependent.
-	/// \param upDirection Specifies whether the spinner is dragged in the positive or the negative direction.
-	/// \return The numeric step size used by SpinnerWidget for this parameter type. This is in native units.
-	///
-	/// The default implementation just returns 1.
-	Q_INVOKABLE virtual FloatType stepSize(FloatType currentValue, bool upDirection) { return 1; }
+    /// \brief Returns positive the step size used by spinner widgets for this parameter unit type.
+    /// \param currentValue The current value of the spinner in native units. This can be used to make the step size value dependent.
+    /// \param upDirection Specifies whether the spinner is dragged in the positive or the negative direction.
+    /// \return The numeric step size used by SpinnerWidget for this parameter type. This is in native units.
+    ///
+    /// The default implementation just returns 1.
+    Q_INVOKABLE virtual FloatType stepSize(FloatType currentValue, bool upDirection) { return 1; }
 
-	/// \brief Given an arbitrary value, which is potentially invalid, rounds it to the closest valid value.
-	///
-	/// The default implementation does no rounding and simply returns the unmodified value.
-	Q_INVOKABLE virtual FloatType roundValue(FloatType value) { return value; }
+    /// \brief Given an arbitrary value, which is potentially invalid, rounds it to the closest valid value.
+    ///
+    /// The default implementation does no rounding and simply returns the unmodified value.
+    Q_INVOKABLE virtual FloatType roundValue(FloatType value) { return value; }
 
 Q_SIGNALS:
 
-	/// \brief This signal is emitted by the parameter unit when the display
-	///        format or conversion factor has changed and the value to string
-	///        conversion has to be re-done.
-	void formatChanged();
+    /// \brief This signal is emitted by the parameter unit when the display
+    ///        format or conversion factor has changed and the value to string
+    ///        conversion has to be re-done.
+    void formatChanged();
 };
 
 /**
@@ -107,51 +107,51 @@ Q_SIGNALS:
  */
 class OVITO_CORE_EXPORT FloatParameterUnit : public ParameterUnit
 {
-	Q_OBJECT
+    Q_OBJECT
 
 public:
 
-	/// \brief Default constructor.
-	Q_INVOKABLE FloatParameterUnit(QObject* parent) : ParameterUnit(parent) {}
+    /// \brief Default constructor.
+    Q_INVOKABLE FloatParameterUnit(QObject* parent) : ParameterUnit(parent) {}
 
-	/// \brief Converts a value from native units to the units presented to the user.
-	/// \param nativeValue The value in internal units to be converted.
-	/// \return The value as converted to the user units.
-	///
-	/// This implementation just returns the unmodified input value.
-	/// \sa userToNative()
-	virtual FloatType nativeToUser(FloatType nativeValue) override { return nativeValue; }
+    /// \brief Converts a value from native units to the units presented to the user.
+    /// \param nativeValue The value in internal units to be converted.
+    /// \return The value as converted to the user units.
+    ///
+    /// This implementation just returns the unmodified input value.
+    /// \sa userToNative()
+    virtual FloatType nativeToUser(FloatType nativeValue) override { return nativeValue; }
 
-	/// \brief Converts a value from user units to the native units used internally.
-	/// \param userValue The value to be converted back to internal units.
-	/// \return The converted value.
-	///
-	/// This default implementation just returns the unmodified input value.
-	/// \sa nativeToUser()
-	virtual FloatType userToNative(FloatType userValue) override { return userValue; }
+    /// \brief Converts a value from user units to the native units used internally.
+    /// \param userValue The value to be converted back to internal units.
+    /// \return The converted value.
+    ///
+    /// This default implementation just returns the unmodified input value.
+    /// \sa nativeToUser()
+    virtual FloatType userToNative(FloatType userValue) override { return userValue; }
 
-	/// \brief Converts the given string to a value.
-	/// \param valueString This is a string representation of a value as it might have
-	///                    been produced by formatValue() or entered by the user.
-	/// \return The parsed value in user units.
-	/// \throw Exception when the value could not be parsed.
-	/// \sa formatValue()
-	virtual FloatType parseString(const QString& valueString) override;
+    /// \brief Converts the given string to a value.
+    /// \param valueString This is a string representation of a value as it might have
+    ///                    been produced by formatValue() or entered by the user.
+    /// \return The parsed value in user units.
+    /// \throw Exception when the value could not be parsed.
+    /// \sa formatValue()
+    virtual FloatType parseString(const QString& valueString) override;
 
-	/// \brief Converts a numeric value to a string.
-	/// \param value The value to be converted. This is in user units.
-	/// \return The string representation of the value. This can be converted back using parseString().
-	/// \sa parseString()
-	virtual QString formatValue(FloatType value) override;
+    /// \brief Converts a numeric value to a string.
+    /// \param value The value to be converted. This is in user units.
+    /// \return The string representation of the value. This can be converted back using parseString().
+    /// \sa parseString()
+    virtual QString formatValue(FloatType value) override;
 
-	/// \brief Returns the positive step size used by spinner widgets for this parameter unit type.
-	/// \param currentValue The current value of the spinner in native units. This can be used to make the step size value dependent.
-	/// \param upDirection Specifies whether the spinner is dragged in the positive or the negative direction.
-	/// \return The numeric step size used by SpinnerWidget for this parameter type. This is in native units.
-	virtual FloatType stepSize(FloatType currentValue, bool upDirection) override;
+    /// \brief Returns the positive step size used by spinner widgets for this parameter unit type.
+    /// \param currentValue The current value of the spinner in native units. This can be used to make the step size value dependent.
+    /// \param upDirection Specifies whether the spinner is dragged in the positive or the negative direction.
+    /// \return The numeric step size used by SpinnerWidget for this parameter type. This is in native units.
+    virtual FloatType stepSize(FloatType currentValue, bool upDirection) override;
 
-	/// \brief Given an arbitrary value, which is potentially invalid, rounds it to the closest valid value.
-	virtual FloatType roundValue(FloatType value) override;
+    /// \brief Given an arbitrary value, which is potentially invalid, rounds it to the closest valid value.
+    virtual FloatType roundValue(FloatType value) override;
 };
 
 /**
@@ -162,49 +162,49 @@ public:
  */
 class OVITO_CORE_EXPORT IntegerParameterUnit : public ParameterUnit
 {
-	Q_OBJECT
+    Q_OBJECT
 
 public:
 
-	/// \brief Default constructor.
-	Q_INVOKABLE IntegerParameterUnit(QObject* parent) : ParameterUnit(parent) {}
+    /// \brief Default constructor.
+    Q_INVOKABLE IntegerParameterUnit(QObject* parent) : ParameterUnit(parent) {}
 
-	/// \brief Converts a value from native units to the units presented to the user.
-	/// \param nativeValue The value in internal units to be converted.
-	/// \return The value as converted to the user units.
-	///
-	/// This implementation just returns the unmodified input value.
-	/// \sa userToNative()
-	virtual FloatType nativeToUser(FloatType nativeValue) override { return nativeValue; }
+    /// \brief Converts a value from native units to the units presented to the user.
+    /// \param nativeValue The value in internal units to be converted.
+    /// \return The value as converted to the user units.
+    ///
+    /// This implementation just returns the unmodified input value.
+    /// \sa userToNative()
+    virtual FloatType nativeToUser(FloatType nativeValue) override { return nativeValue; }
 
-	/// \brief Converts a value from user units to the native units used internally.
-	/// \param userValue The value to be converted back to internal units.
-	/// \return The converted value.
-	///
-	/// This default implementation just returns the unmodified input value.
-	/// \sa nativeToUser()
-	virtual FloatType userToNative(FloatType userValue) override { return userValue; }
+    /// \brief Converts a value from user units to the native units used internally.
+    /// \param userValue The value to be converted back to internal units.
+    /// \return The converted value.
+    ///
+    /// This default implementation just returns the unmodified input value.
+    /// \sa nativeToUser()
+    virtual FloatType userToNative(FloatType userValue) override { return userValue; }
 
-	/// \brief Converts the given string to a value.
-	/// \param valueString This is a string representation of a value as it might have
-	///                    been produced by formatValue() or entered by the user.
-	/// \return The parsed value in user units.
-	/// \throw Exception when the value could not be parsed.
-	/// \sa formatValue()
-	virtual FloatType parseString(const QString& valueString) override;
+    /// \brief Converts the given string to a value.
+    /// \param valueString This is a string representation of a value as it might have
+    ///                    been produced by formatValue() or entered by the user.
+    /// \return The parsed value in user units.
+    /// \throw Exception when the value could not be parsed.
+    /// \sa formatValue()
+    virtual FloatType parseString(const QString& valueString) override;
 
-	/// \brief Converts a numeric value to a string.
-	/// \param value The value to be converted. This is in user units.
-	/// \return The string representation of the value. This can be converted back using parseString().
-	/// \sa parseString()
-	virtual QString formatValue(FloatType value) override {
-		return QString::number((int)value);
-	}
+    /// \brief Converts a numeric value to a string.
+    /// \param value The value to be converted. This is in user units.
+    /// \return The string representation of the value. This can be converted back using parseString().
+    /// \sa parseString()
+    virtual QString formatValue(FloatType value) override {
+        return QString::number((int)value);
+    }
 
-	/// \brief Given an arbitrary value, which is potentially invalid, rounds it to the closest valid value.
-	virtual FloatType roundValue(FloatType value) override {
-		return std::floor(value + FloatType(0.5));
-	}
+    /// \brief Given an arbitrary value, which is potentially invalid, rounds it to the closest valid value.
+    virtual FloatType roundValue(FloatType value) override {
+        return std::floor(value + FloatType(0.5));
+    }
 };
 
 /*
@@ -212,12 +212,12 @@ public:
  */
 class OVITO_CORE_EXPORT WorldParameterUnit : public FloatParameterUnit
 {
-	Q_OBJECT
+    Q_OBJECT
 
 public:
 
-	/// \brief Default constructor.
-	Q_INVOKABLE WorldParameterUnit(QObject* parent) : FloatParameterUnit(parent) {}
+    /// \brief Default constructor.
+    Q_INVOKABLE WorldParameterUnit(QObject* parent) : FloatParameterUnit(parent) {}
 };
 
 /**
@@ -225,28 +225,28 @@ public:
  */
 class OVITO_CORE_EXPORT AngleParameterUnit : public FloatParameterUnit
 {
-	Q_OBJECT
+    Q_OBJECT
 
 public:
 
-	/// \brief Default constructor.
-	Q_INVOKABLE AngleParameterUnit(QObject* parent) : FloatParameterUnit(parent) {}
+    /// \brief Default constructor.
+    Q_INVOKABLE AngleParameterUnit(QObject* parent) : FloatParameterUnit(parent) {}
 
-	/// \brief Converts a value from native units to the units presented to the user.
-	/// \param nativeValue The value in internal units to be converted.
-	/// \return The value as converted to the user units.
-	///
-	/// This implementation converts from radians to degrees.
-	/// \sa userToNative()
-	virtual FloatType nativeToUser(FloatType nativeValue) override { return nativeValue * (FloatType(180) / FLOATTYPE_PI); }
+    /// \brief Converts a value from native units to the units presented to the user.
+    /// \param nativeValue The value in internal units to be converted.
+    /// \return The value as converted to the user units.
+    ///
+    /// This implementation converts from radians to degrees.
+    /// \sa userToNative()
+    virtual FloatType nativeToUser(FloatType nativeValue) override { return nativeValue * (FloatType(180) / FLOATTYPE_PI); }
 
-	/// \brief Converts a value from user units to the native units used internally.
-	/// \param userValue The value to be converted back to internal units.
-	/// \return The converted value.
-	///
-	/// This default implementation converts from degrees to radians.
-	/// \sa nativeToUser()
-	virtual FloatType userToNative(FloatType userValue) override { return userValue * (FLOATTYPE_PI / FloatType(180)); }
+    /// \brief Converts a value from user units to the native units used internally.
+    /// \param userValue The value to be converted back to internal units.
+    /// \return The converted value.
+    ///
+    /// This default implementation converts from degrees to radians.
+    /// \sa nativeToUser()
+    virtual FloatType userToNative(FloatType userValue) override { return userValue * (FLOATTYPE_PI / FloatType(180)); }
 };
 
 /**
@@ -254,34 +254,34 @@ public:
  */
 class OVITO_CORE_EXPORT PercentParameterUnit : public FloatParameterUnit
 {
-	Q_OBJECT
+    Q_OBJECT
 
 public:
 
-	/// \brief Default constructor.
-	Q_INVOKABLE PercentParameterUnit(QObject* parent) : FloatParameterUnit(parent) {}
+    /// \brief Default constructor.
+    Q_INVOKABLE PercentParameterUnit(QObject* parent) : FloatParameterUnit(parent) {}
 
-	/// \brief Converts a value from native units to the units presented to the user.
-	/// \param nativeValue The value in internal units to be converted.
-	/// \return The value as converted to the user units.
-	///
-	/// This implementation converts from the [0,1] range to the [0,100] percent range.
-	/// \sa userToNative()
-	virtual FloatType nativeToUser(FloatType nativeValue) override { return nativeValue * FloatType(100); }
+    /// \brief Converts a value from native units to the units presented to the user.
+    /// \param nativeValue The value in internal units to be converted.
+    /// \return The value as converted to the user units.
+    ///
+    /// This implementation converts from the [0,1] range to the [0,100] percent range.
+    /// \sa userToNative()
+    virtual FloatType nativeToUser(FloatType nativeValue) override { return nativeValue * FloatType(100); }
 
-	/// \brief Converts a value from user units to the native units used internally.
-	/// \param userValue The value to be converted back to internal units.
-	/// \return The converted value.
-	///
-	/// This default implementation converts from the [0,100] percent range to the [0,1] range.
-	/// \sa nativeToUser()
-	virtual FloatType userToNative(FloatType userValue) override { return userValue / FloatType(100); }
+    /// \brief Converts a value from user units to the native units used internally.
+    /// \param userValue The value to be converted back to internal units.
+    /// \return The converted value.
+    ///
+    /// This default implementation converts from the [0,100] percent range to the [0,1] range.
+    /// \sa nativeToUser()
+    virtual FloatType userToNative(FloatType userValue) override { return userValue / FloatType(100); }
 
-	/// \brief Converts the given string to a value.
-	virtual FloatType parseString(const QString& valueString) override;
+    /// \brief Converts the given string to a value.
+    virtual FloatType parseString(const QString& valueString) override;
 
-	/// \brief Converts a numeric value to a string.
-	virtual QString formatValue(FloatType value) override;
+    /// \brief Converts a numeric value to a string.
+    virtual QString formatValue(FloatType value) override;
 };
 
 /**
@@ -289,35 +289,35 @@ public:
  */
 class OVITO_CORE_EXPORT TimeParameterUnit : public IntegerParameterUnit
 {
-	Q_OBJECT
+    Q_OBJECT
 
 public:
 
-	/// \brief Constructor.
-	Q_INVOKABLE TimeParameterUnit(QObject* parent) : IntegerParameterUnit(parent) {}
+    /// \brief Constructor.
+    Q_INVOKABLE TimeParameterUnit(QObject* parent) : IntegerParameterUnit(parent) {}
 
-	/// \brief Converts the given string to a time value.
-	/// \param valueString This is a string representation of a value as it might have
-	///                    been produced by formatValue() or entered by the user.
-	/// \return The parsed value in TimeTicks.
-	/// \throw Exception when the value could not be parsed.
-	/// \sa formatValue()
-	virtual FloatType parseString(const QString& valueString) override;
+    /// \brief Converts the given string to a time value.
+    /// \param valueString This is a string representation of a value as it might have
+    ///                    been produced by formatValue() or entered by the user.
+    /// \return The parsed value in TimeTicks.
+    /// \throw Exception when the value could not be parsed.
+    /// \sa formatValue()
+    virtual FloatType parseString(const QString& valueString) override;
 
-	/// \brief Converts a time value to a string.
-	/// \param value The time value to be converted. This is in TimeTicks units.
-	/// \return The string representation of the value. This can be converted back using parseString().
-	/// \sa parseString()
-	virtual QString formatValue(FloatType value) override;
+    /// \brief Converts a time value to a string.
+    /// \param value The time value to be converted. This is in TimeTicks units.
+    /// \return The string representation of the value. This can be converted back using parseString().
+    /// \sa parseString()
+    virtual QString formatValue(FloatType value) override;
 
-	/// \brief Returns the (positive) step size used by spinner widgets for this parameter unit type.
-	/// \param currentValue The current value of the spinner. This can be used to make the step size value dependent.
-	/// \param upDirection Specifies whether the spinner is dragged in the positive or the negative direction.
-	/// \return The numeric step size used by SpinnerWidget for this parameter type. This is in TimeTicks units.
-	virtual FloatType stepSize(FloatType currentValue, bool upDirection) override;
+    /// \brief Returns the (positive) step size used by spinner widgets for this parameter unit type.
+    /// \param currentValue The current value of the spinner. This can be used to make the step size value dependent.
+    /// \param upDirection Specifies whether the spinner is dragged in the positive or the negative direction.
+    /// \return The numeric step size used by SpinnerWidget for this parameter type. This is in TimeTicks units.
+    virtual FloatType stepSize(FloatType currentValue, bool upDirection) override;
 
-	/// \brief Given an arbitrary value, which is potentially invalid, rounds it to the closest valid value.
-	virtual FloatType roundValue(FloatType value) override;
+    /// \brief Given an arbitrary value, which is potentially invalid, rounds it to the closest valid value.
+    virtual FloatType roundValue(FloatType value) override;
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -327,61 +327,61 @@ public:
  */
 class OVITO_CORE_EXPORT UnitsManager : public QObject
 {
-	Q_OBJECT
+    Q_OBJECT
 
 public:
 
-	/// Constructor.
-	UnitsManager();
+    /// Constructor.
+    UnitsManager();
 
-	/// \brief Returns the instance of a parameter unit service.
-	/// \param parameterUnitClass Specifies the unit type. This must a ParameterUnit derived class.
-	/// \return The global instance of the requested class. The UnitsManager will always return
-	///         the same instance of a ParameterUnit class.
-	ParameterUnit* getUnit(const QMetaObject* parameterUnitClass);
+    /// \brief Returns the instance of a parameter unit service.
+    /// \param parameterUnitClass Specifies the unit type. This must a ParameterUnit derived class.
+    /// \return The global instance of the requested class. The UnitsManager will always return
+    ///         the same instance of a ParameterUnit class.
+    ParameterUnit* getUnit(const QMetaObject* parameterUnitClass);
 
-	/// \brief Returns the special identity parameter unit that does no unit conversion at all and that
-	///        formats values as floating-point.
-	FloatParameterUnit* floatIdentityUnit() { return _floatIdentityUnit; }
+    /// \brief Returns the special identity parameter unit that does no unit conversion at all and that
+    ///        formats values as floating-point.
+    FloatParameterUnit* floatIdentityUnit() { return _floatIdentityUnit; }
 
-	/// \brief Returns the special identity parameter unit that does no unit conversion at all and that
-	///        formats values as integer.
-	IntegerParameterUnit* integerIdentityUnit() { return _integerIdentityUnit; }
+    /// \brief Returns the special identity parameter unit that does no unit conversion at all and that
+    ///        formats values as integer.
+    IntegerParameterUnit* integerIdentityUnit() { return _integerIdentityUnit; }
 
-	/// \brief Returns the instance of a parameter unit service for time values.
-	TimeParameterUnit* timeUnit() { return _timeUnit; }
+    /// \brief Returns the instance of a parameter unit service for time values.
+    TimeParameterUnit* timeUnit() { return _timeUnit; }
 
-	/// \brief Returns the instance of a parameter unit service for percentage values.
-	PercentParameterUnit* percentUnit() { return _percentUnit; }
+    /// \brief Returns the instance of a parameter unit service for percentage values.
+    PercentParameterUnit* percentUnit() { return _percentUnit; }
 
-	/// \brief Returns the instance of a parameter unit service for angles.
-	AngleParameterUnit* angleUnit() { return _angleUnit; }
+    /// \brief Returns the instance of a parameter unit service for angles.
+    AngleParameterUnit* angleUnit() { return _angleUnit; }
 
-	/// \brief Returns the instance of a parameter unit service for world space distances.
-	WorldParameterUnit* worldUnit() { return _worldUnit; }
+    /// \brief Returns the instance of a parameter unit service for world space distances.
+    WorldParameterUnit* worldUnit() { return _worldUnit; }
 
 private:
 
-	/// The list of unit types.
-	std::map<const QMetaObject*, ParameterUnit*> _units;
+    /// The list of unit types.
+    std::map<const QMetaObject*, ParameterUnit*> _units;
 
-	/// The special float identity unit.
-	FloatParameterUnit* _floatIdentityUnit;
+    /// The special float identity unit.
+    FloatParameterUnit* _floatIdentityUnit;
 
-	/// The special integer identity unit.
-	IntegerParameterUnit* _integerIdentityUnit;
+    /// The special integer identity unit.
+    IntegerParameterUnit* _integerIdentityUnit;
 
-	/// A parameter unit service for time values.
-	TimeParameterUnit* _timeUnit;
+    /// A parameter unit service for time values.
+    TimeParameterUnit* _timeUnit;
 
-	/// A parameter unit service for percentage values.
-	PercentParameterUnit* _percentUnit;
+    /// A parameter unit service for percentage values.
+    PercentParameterUnit* _percentUnit;
 
-	/// A parameter unit service for angles.
-	AngleParameterUnit* _angleUnit;
+    /// A parameter unit service for angles.
+    AngleParameterUnit* _angleUnit;
 
-	/// A parameter unit service for world space distances.
-	WorldParameterUnit* _worldUnit;
+    /// A parameter unit service for world space distances.
+    WorldParameterUnit* _worldUnit;
 };
 
-}	// End of namespace
+}   // End of namespace

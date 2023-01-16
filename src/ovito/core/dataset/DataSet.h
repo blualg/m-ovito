@@ -41,121 +41,121 @@ namespace Ovito {
  */
 class OVITO_CORE_EXPORT DataSet final : public RefTarget
 {
-	/// Give this class its own metaclass.
-	class DataSetClass : public RefTarget::OOMetaClass
-	{
-	public:
+    /// Give this class its own metaclass.
+    class DataSetClass : public RefTarget::OOMetaClass
+    {
+    public:
 
-		/// Inherit constructor from base class.
-		using RefTarget::OOMetaClass::OOMetaClass;
+        /// Inherit constructor from base class.
+        using RefTarget::OOMetaClass::OOMetaClass;
 
-		/// Provides a custom function that takes are of the deserialization of a serialized property field that has been removed from the class. 
-		/// This is needed for backward compatibility with OVITO 3.7.
-		virtual SerializedClassInfo::PropertyFieldInfo::CustomDeserializationFunctionPtr overrideFieldDeserialization(const SerializedClassInfo::PropertyFieldInfo& field) const override;
-	};
+        /// Provides a custom function that takes are of the deserialization of a serialized property field that has been removed from the class. 
+        /// This is needed for backward compatibility with OVITO 3.7.
+        virtual SerializedClassInfo::PropertyFieldInfo::CustomDeserializationFunctionPtr overrideFieldDeserialization(const SerializedClassInfo::PropertyFieldInfo& field) const override;
+    };
 
-	OVITO_CLASS_META(DataSet, DataSetClass)	
+    OVITO_CLASS_META(DataSet, DataSetClass) 
 
 #ifdef OVITO_QML_GUI
-	Q_PROPERTY(Ovito::ViewportConfiguration* viewportConfiguration READ viewportConfig WRITE setViewportConfig NOTIFY viewportConfigReplaced)
+    Q_PROPERTY(Ovito::ViewportConfiguration* viewportConfiguration READ viewportConfig WRITE setViewportConfig NOTIFY viewportConfigReplaced)
 #endif
 
 public:
 
-	/// \brief Constructs an empty dataset.
-	Q_INVOKABLE DataSet(ObjectCreationParams params);
+    /// \brief Constructs an empty dataset.
+    Q_INVOKABLE DataSet(ObjectCreationParams params);
 
-	/// \brief Destructor.
-	virtual ~DataSet();
+    /// \brief Destructor.
+    virtual ~DataSet();
 
-	/// \brief Returns the path where this dataset is stored on disk.
-	/// \return The location where the dataset is stored or will be stored on disk.
-	const QString& filePath() const { return _filePath; }
+    /// \brief Returns the path where this dataset is stored on disk.
+    /// \return The location where the dataset is stored or will be stored on disk.
+    const QString& filePath() const { return _filePath; }
 
-	/// \brief Sets the path where this dataset is stored.
-	/// \param path The new path (should be absolute) where the dataset will be stored.
-	void setFilePath(const QString& path) {
-		if(path != _filePath) {
-			_filePath = path;
-			Q_EMIT filePathChanged(_filePath);
-		}
-	}
+    /// \brief Sets the path where this dataset is stored.
+    /// \param path The new path (should be absolute) where the dataset will be stored.
+    void setFilePath(const QString& path) {
+        if(path != _filePath) {
+            _filePath = path;
+            Q_EMIT filePathChanged(_filePath);
+        }
+    }
 
-	/// \brief Returns the container this dataset belongs to.
-	DataSetContainer* container() const;
+    /// \brief Returns the container this dataset belongs to.
+    DataSetContainer* container() const;
 
-	/// \brief Rescales the animation keys of all controllers in the scene.
-	/// \param oldAnimationInterval The old animation interval, which will be mapped to the new animation interval.
-	/// \param newAnimationInterval The new animation interval.
-	///
-	/// This method calls RefTarget::rescaleTime() for all objects (including animation controllers) in the scene.
-	/// For keyed controllers this will rescale the key times of all keys from the
-	/// old animation interval to the new interval using a linear mapping.
-	///
-	/// Keys that lie outside of the old active animation interval will also be rescaled
-	/// according to a linear extrapolation.
-	///
-	/// \undoable
-	virtual void rescaleTime(const TimeInterval& oldAnimationInterval, const TimeInterval& newAnimationInterval) override;
+    /// \brief Rescales the animation keys of all controllers in the scene.
+    /// \param oldAnimationInterval The old animation interval, which will be mapped to the new animation interval.
+    /// \param newAnimationInterval The new animation interval.
+    ///
+    /// This method calls RefTarget::rescaleTime() for all objects (including animation controllers) in the scene.
+    /// For keyed controllers this will rescale the key times of all keys from the
+    /// old animation interval to the new interval using a linear mapping.
+    ///
+    /// Keys that lie outside of the old active animation interval will also be rescaled
+    /// according to a linear extrapolation.
+    ///
+    /// \undoable
+    virtual void rescaleTime(const TimeInterval& oldAnimationInterval, const TimeInterval& newAnimationInterval) override;
 
-	/// \brief Saves the dataset to a session state file.
-	/// \throw Exception on error.
-	///
-	/// Note that this method does NOT invoke setFilePath().
-	void saveToFile(const QString& filePath) const;
+    /// \brief Saves the dataset to a session state file.
+    /// \throw Exception on error.
+    ///
+    /// Note that this method does NOT invoke setFilePath().
+    void saveToFile(const QString& filePath) const;
 
-	/// \brief Loads the dataset contents from a session state file.
-	/// \throw Exception on error.
-	///
-	/// Note that this method does NOT invoke setFilePath().
-	void loadFromFile(const QString& filePath);
+    /// \brief Loads the dataset contents from a session state file.
+    /// \throw Exception on error.
+    ///
+    /// Note that this method does NOT invoke setFilePath().
+    void loadFromFile(const QString& filePath);
 
 Q_SIGNALS:
 
-	/// \brief This signal is emitted whenever the current viewport configuration of this dataset
-	///        has been replaced by a new one.
-	/// \note This signal is NOT emitted when parameters of the current viewport configuration change.
+    /// \brief This signal is emitted whenever the current viewport configuration of this dataset
+    ///        has been replaced by a new one.
+    /// \note This signal is NOT emitted when parameters of the current viewport configuration change.
     void viewportConfigReplaced(ViewportConfiguration* newViewportConfiguration);
 
-	/// \brief This signal is emitted whenever the current render settings of this dataset
-	///        have been replaced by new ones.
-	/// \note This signal is NOT emitted when parameters of the current render settings object change.
+    /// \brief This signal is emitted whenever the current render settings of this dataset
+    ///        have been replaced by new ones.
+    /// \note This signal is NOT emitted when parameters of the current render settings object change.
     void renderSettingsReplaced(RenderSettings* newRenderSettings);
 
-	/// \brief This signal is emitted whenever the dataset has been saved under a new file name.
+    /// \brief This signal is emitted whenever the dataset has been saved under a new file name.
     void filePathChanged(const QString& filePath);
 
 protected:
 
-	/// Is called when a RefTarget referenced by this object has generated an event.
-	virtual bool referenceEvent(RefTarget* source, const ReferenceEvent& event) override;
+    /// Is called when a RefTarget referenced by this object has generated an event.
+    virtual bool referenceEvent(RefTarget* source, const ReferenceEvent& event) override;
 
-	/// Is called when the value of a reference field of this RefMaker changes.
-	virtual void referenceReplaced(const PropertyFieldDescriptor* field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex) override;
+    /// Is called when the value of a reference field of this RefMaker changes.
+    virtual void referenceReplaced(const PropertyFieldDescriptor* field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex) override;
 
-	/// This method is called once for this object after it has been completely loaded from a stream.
-	virtual void loadFromStreamComplete(ObjectLoadStream& stream) override;
-
-private:
-
-	/// Returns a viewport configuration that is used as template for new scenes.
-	static OORef<ViewportConfiguration> createDefaultViewportConfiguration(ObjectCreationParams params);
+    /// This method is called once for this object after it has been completely loaded from a stream.
+    virtual void loadFromStreamComplete(ObjectLoadStream& stream) override;
 
 private:
 
-	/// The configuration of the interactive viewports in the OVITO desktop application.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<ViewportConfiguration>, viewportConfig, setViewportConfig, PROPERTY_FIELD_NO_CHANGE_MESSAGE | PROPERTY_FIELD_ALWAYS_DEEP_COPY | PROPERTY_FIELD_MEMORIZE);
+    /// Returns a viewport configuration that is used as template for new scenes.
+    static OORef<ViewportConfiguration> createDefaultViewportConfiguration(ObjectCreationParams params);
 
-	/// The settings for rendering an output image of the scene.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<RenderSettings>, renderSettings, setRenderSettings, PROPERTY_FIELD_NO_CHANGE_MESSAGE | PROPERTY_FIELD_ALWAYS_DEEP_COPY | PROPERTY_FIELD_MEMORIZE);
+private:
 
-	/// The file path this DataSet has been saved to.
-	QString _filePath;
+    /// The configuration of the interactive viewports in the OVITO desktop application.
+    DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<ViewportConfiguration>, viewportConfig, setViewportConfig, PROPERTY_FIELD_NO_CHANGE_MESSAGE | PROPERTY_FIELD_ALWAYS_DEEP_COPY | PROPERTY_FIELD_MEMORIZE);
 
-	/// The DataSetContainer which currently hosts this DataSet.
-	QPointer<DataSetContainer> _container;
+    /// The settings for rendering an output image of the scene.
+    DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<RenderSettings>, renderSettings, setRenderSettings, PROPERTY_FIELD_NO_CHANGE_MESSAGE | PROPERTY_FIELD_ALWAYS_DEEP_COPY | PROPERTY_FIELD_MEMORIZE);
 
-	friend class DataSetContainer;
+    /// The file path this DataSet has been saved to.
+    QString _filePath;
+
+    /// The DataSetContainer which currently hosts this DataSet.
+    QPointer<DataSetContainer> _container;
+
+    friend class DataSetContainer;
 };
 
-}	// End of namespace
+}   // End of namespace

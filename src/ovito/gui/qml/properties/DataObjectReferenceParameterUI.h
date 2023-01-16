@@ -35,97 +35,97 @@ namespace Ovito {
  */
 class DataObjectReferenceParameterUI : public ParameterUI
 {
-	Q_OBJECT
-	QML_ELEMENT
-	OVITO_CLASS(DataObjectReferenceParameterUI)
-	
-	Q_PROPERTY(QString dataObjectType READ dataObjectType WRITE setDataObjectType)
-	Q_PROPERTY(QAbstractItemModel* model MEMBER _model CONSTANT)
+    Q_OBJECT
+    QML_ELEMENT
+    OVITO_CLASS(DataObjectReferenceParameterUI)
+    
+    Q_PROPERTY(QString dataObjectType READ dataObjectType WRITE setDataObjectType)
+    Q_PROPERTY(QAbstractItemModel* model MEMBER _model CONSTANT)
 
 public:
 
-	/// Constructor.
-	DataObjectReferenceParameterUI() : _model(new Model(this)) { 
-		connect(this, &ParameterUI::editObjectReplaced, this, &DataObjectReferenceParameterUI::updateDataObjectList);
-	}
+    /// Constructor.
+    DataObjectReferenceParameterUI() : _model(new Model(this)) { 
+        connect(this, &ParameterUI::editObjectReplaced, this, &DataObjectReferenceParameterUI::updateDataObjectList);
+    }
 
-	/// Sets the class of data objects the user can choose from.
-	void setDataObjectType(const QString& typeName);
+    /// Sets the class of data objects the user can choose from.
+    void setDataObjectType(const QString& typeName);
 
-	/// Returns the name of the data object class the user can choose from.
-	QString dataObjectType() const { return _dataObjectType ? _dataObjectType->name() : QString(); }
+    /// Returns the name of the data object class the user can choose from.
+    QString dataObjectType() const { return _dataObjectType ? _dataObjectType->name() : QString(); }
 
-	/// Obtains the current value of the parameter from the C++ object.
-	virtual QVariant getCurrentValue() const override;
+    /// Obtains the current value of the parameter from the C++ object.
+    virtual QVariant getCurrentValue() const override;
 
-	/// Changes the current value of the C++ object parameter.
-	virtual void setCurrentValue(const QVariant& val) override;
+    /// Changes the current value of the C++ object parameter.
+    virtual void setCurrentValue(const QVariant& val) override;
 
-	/// Returns the i-th reference from the list of available input data objects.
-	Q_INVOKABLE QVariant get(int index) const {
-		if(index >= 0 && index < _model->rowCount())
-			return _model->data(_model->index(index, 0), Qt::UserRole);
-		else
-			return {};
-	}
+    /// Returns the i-th reference from the list of available input data objects.
+    Q_INVOKABLE QVariant get(int index) const {
+        if(index >= 0 && index < _model->rowCount())
+            return _model->data(_model->index(index, 0), Qt::UserRole);
+        else
+            return {};
+    }
 
 private:
 
-	class Model : public QAbstractListModel 
-	{
-	public:
+    class Model : public QAbstractListModel 
+    {
+    public:
 
-		/// Constructor that takes a pointer to the owning object.
-		Model(DataObjectReferenceParameterUI* owner) : QAbstractListModel(owner) {}
+        /// Constructor that takes a pointer to the owning object.
+        Model(DataObjectReferenceParameterUI* owner) : QAbstractListModel(owner) {}
 
-		/// Returns the owner of the model.
-		DataObjectReferenceParameterUI* owner() const { return static_cast<DataObjectReferenceParameterUI*>(QObject::parent()); }
+        /// Returns the owner of the model.
+        DataObjectReferenceParameterUI* owner() const { return static_cast<DataObjectReferenceParameterUI*>(QObject::parent()); }
 
-		/// Returns the number of rows in the model.
-		virtual int rowCount(const QModelIndex &parent = QModelIndex()) const override { return std::max((size_t)1, _dataObjects.size()); }
+        /// Returns the number of rows in the model.
+        virtual int rowCount(const QModelIndex &parent = QModelIndex()) const override { return std::max((size_t)1, _dataObjects.size()); }
 
-		/// Returns the data stored under the given role for the item referred to by the index.
-		virtual QVariant data(const QModelIndex &index, int role) const override;
+        /// Returns the data stored under the given role for the item referred to by the index.
+        virtual QVariant data(const QModelIndex &index, int role) const override;
 
-		/// Returns the model's role names.
-		virtual QHash<int, QByteArray> roleNames() const override { 
-			return {
-				{ Qt::DisplayRole, "label" },
-				{ Qt::UserRole, "reference" }
-			}; 
-		}
+        /// Returns the model's role names.
+        virtual QHash<int, QByteArray> roleNames() const override { 
+            return {
+                { Qt::DisplayRole, "label" },
+                { Qt::UserRole, "reference" }
+            }; 
+        }
 
-		/// Returns the list of acceptable data objects in the modifier's pipeline input.
-		const std::vector<DataObjectReference>& dataObjects() const { return _dataObjects; }
+        /// Returns the list of acceptable data objects in the modifier's pipeline input.
+        const std::vector<DataObjectReference>& dataObjects() const { return _dataObjects; }
 
-		/// Updates the entire list model.
-		void resetList(std::vector<DataObjectReference> dataObjects) { 
-			beginResetModel(); 
-			_dataObjects = std::move(dataObjects);
-			endResetModel(); 
-		}
+        /// Updates the entire list model.
+        void resetList(std::vector<DataObjectReference> dataObjects) { 
+            beginResetModel(); 
+            _dataObjects = std::move(dataObjects);
+            endResetModel(); 
+        }
 
-	private:
+    private:
 
-		/// The list of acceptable data objects in the modifier's pipeline input.
-		std::vector<DataObjectReference> _dataObjects;
-	};
+        /// The list of acceptable data objects in the modifier's pipeline input.
+        std::vector<DataObjectReference> _dataObjects;
+    };
 
 private Q_SLOTS:
 
-	/// Rebuilds the list of available input data objects the user can choose from.
-	void updateDataObjectList();
+    /// Rebuilds the list of available input data objects the user can choose from.
+    void updateDataObjectList();
 
 protected:
 
-	/// This method is called when a reference target changes.
-	virtual bool referenceEvent(RefTarget* source, const ReferenceEvent& event) override;
+    /// This method is called when a reference target changes.
+    virtual bool referenceEvent(RefTarget* source, const ReferenceEvent& event) override;
 
-	/// The type of data objects the user can pick.
-	DataObjectClassPtr _dataObjectType = nullptr;
+    /// The type of data objects the user can pick.
+    DataObjectClassPtr _dataObjectType = nullptr;
 
-	/// The list model containing all available input data objects.
-	Model* _model;
+    /// The list model containing all available input data objects.
+    Model* _model;
 };
 
-}	// End of namespace
+}   // End of namespace

@@ -41,54 +41,54 @@ SET_OVITO_OBJECT_EDITOR(CoordinationAnalysisModifier, CoordinationAnalysisModifi
 ******************************************************************************/
 void CoordinationAnalysisModifierEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 {
-	// Create a rollout.
-	QWidget* rollout = createRollout(tr("Coordination analysis"), rolloutParams, "manual:particles.modifiers.coordination_analysis");
+    // Create a rollout.
+    QWidget* rollout = createRollout(tr("Coordination analysis"), rolloutParams, "manual:particles.modifiers.coordination_analysis");
 
     // Create the rollout contents.
-	QVBoxLayout* layout = new QVBoxLayout(rollout);
-	layout->setContentsMargins(4,4,4,4);
-	layout->setSpacing(4);
+    QVBoxLayout* layout = new QVBoxLayout(rollout);
+    layout->setContentsMargins(4,4,4,4);
+    layout->setSpacing(4);
 
-	QGridLayout* gridlayout = new QGridLayout();
-	gridlayout->setContentsMargins(4,4,4,4);
-	gridlayout->setColumnStretch(1, 1);
+    QGridLayout* gridlayout = new QGridLayout();
+    gridlayout->setContentsMargins(4,4,4,4);
+    gridlayout->setColumnStretch(1, 1);
 
-	// Cutoff parameter.
-	FloatParameterUI* cutoffRadiusPUI = new FloatParameterUI(this, PROPERTY_FIELD(CoordinationAnalysisModifier::cutoff));
-	gridlayout->addWidget(cutoffRadiusPUI->label(), 0, 0);
-	gridlayout->addLayout(cutoffRadiusPUI->createFieldLayout(), 0, 1);
+    // Cutoff parameter.
+    FloatParameterUI* cutoffRadiusPUI = new FloatParameterUI(this, PROPERTY_FIELD(CoordinationAnalysisModifier::cutoff));
+    gridlayout->addWidget(cutoffRadiusPUI->label(), 0, 0);
+    gridlayout->addLayout(cutoffRadiusPUI->createFieldLayout(), 0, 1);
 
-	// Number of bins parameter.
-	IntegerParameterUI* numBinsPUI = new IntegerParameterUI(this, PROPERTY_FIELD(CoordinationAnalysisModifier::numberOfBins));
-	gridlayout->addWidget(numBinsPUI->label(), 1, 0);
-	gridlayout->addLayout(numBinsPUI->createFieldLayout(), 1, 1);
-	layout->addLayout(gridlayout);
+    // Number of bins parameter.
+    IntegerParameterUI* numBinsPUI = new IntegerParameterUI(this, PROPERTY_FIELD(CoordinationAnalysisModifier::numberOfBins));
+    gridlayout->addWidget(numBinsPUI->label(), 1, 0);
+    gridlayout->addLayout(numBinsPUI->createFieldLayout(), 1, 1);
+    layout->addLayout(gridlayout);
 
-	// Partial RDFs option.
-	BooleanParameterUI* partialRdfPUI = new BooleanParameterUI(this, PROPERTY_FIELD(CoordinationAnalysisModifier::computePartialRDF));
-	layout->addWidget(partialRdfPUI->checkBox());
+    // Partial RDFs option.
+    BooleanParameterUI* partialRdfPUI = new BooleanParameterUI(this, PROPERTY_FIELD(CoordinationAnalysisModifier::computePartialRDF));
+    layout->addWidget(partialRdfPUI->checkBox());
 
-	// Only selected particles.
-	BooleanParameterUI* onlySelectedPUI = new BooleanParameterUI(this, PROPERTY_FIELD(CoordinationAnalysisModifier::onlySelected));
-	layout->addWidget(onlySelectedPUI->checkBox());
+    // Only selected particles.
+    BooleanParameterUI* onlySelectedPUI = new BooleanParameterUI(this, PROPERTY_FIELD(CoordinationAnalysisModifier::onlySelected));
+    layout->addWidget(onlySelectedPUI->checkBox());
 
-	_rdfPlot = new DataTablePlotWidget();
-	_rdfPlot->setMinimumHeight(200);
-	_rdfPlot->setMaximumHeight(200);
+    _rdfPlot = new DataTablePlotWidget();
+    _rdfPlot->setMinimumHeight(200);
+    _rdfPlot->setMaximumHeight(200);
 
-	layout->addSpacing(12);
-	layout->addWidget(new QLabel(tr("Radial distribution function:")));
-	layout->addWidget(_rdfPlot);
+    layout->addSpacing(12);
+    layout->addWidget(new QLabel(tr("Radial distribution function:")));
+    layout->addWidget(_rdfPlot);
 
-	OpenDataInspectorButton* openDataInspectorBtn = new OpenDataInspectorButton(this, tr("Show in data inspector"));
-	layout->addWidget(openDataInspectorBtn);
+    OpenDataInspectorButton* openDataInspectorBtn = new OpenDataInspectorButton(this, tr("Show in data inspector"));
+    layout->addWidget(openDataInspectorBtn);
 
-	// Status label.
-	layout->addSpacing(6);
-	layout->addWidget((new ObjectStatusDisplay(this))->statusWidget());
+    // Status label.
+    layout->addSpacing(6);
+    layout->addWidget((new ObjectStatusDisplay(this))->statusWidget());
 
-	// Update data plot whenever the modifier has calculated new results.
-	connect(this, &PropertiesEditor::pipelineOutputChanged, this, &CoordinationAnalysisModifierEditor::plotRDF);
+    // Update data plot whenever the modifier has calculated new results.
+    connect(this, &PropertiesEditor::pipelineOutputChanged, this, &CoordinationAnalysisModifierEditor::plotRDF);
 }
 
 /******************************************************************************
@@ -96,27 +96,27 @@ void CoordinationAnalysisModifierEditor::createUI(const RolloutInsertionParamete
 ******************************************************************************/
 void CoordinationAnalysisModifierEditor::plotRDF()
 {
-	// Look up the data table in the modifier's pipeline output.
-	OORef<DataTable> table = getPipelineOutput().getObjectBy<DataTable>(modifierApplication(), QStringLiteral("coordination-rdf"));
+    // Look up the data table in the modifier's pipeline output.
+    OORef<DataTable> table = getPipelineOutput().getObjectBy<DataTable>(modifierApplication(), QStringLiteral("coordination-rdf"));
 
-	// Determine X plotting range.
-	if(table) {
-		ConstPropertyPtr x = table->getXValues();
-		ConstPropertyAccessAndRef<FloatType,false> rdfXArray(x);
-		ConstPropertyAccessAndRef<FloatType,true>  rdfYArray(table->y());
-		double minX = 0;
-		for(size_t i = 0; i < rdfYArray.size(); i++) {
-			for(size_t cmpnt = 0; cmpnt < rdfYArray.componentCount(); cmpnt++) {
-				if(rdfYArray.get(i, cmpnt) != 0) {
-					minX = rdfXArray[i];
-					break;
-				}
-			}
-			if(minX) break;
-		}
-		_rdfPlot->setAxisScale(QwtPlot::xBottom, std::floor(minX * 9.0 / table->intervalEnd()) / 10.0 * table->intervalEnd(), table->intervalEnd());
-	}
-	_rdfPlot->setTable(table);
+    // Determine X plotting range.
+    if(table) {
+        ConstPropertyPtr x = table->getXValues();
+        ConstPropertyAccessAndRef<FloatType,false> rdfXArray(x);
+        ConstPropertyAccessAndRef<FloatType,true>  rdfYArray(table->y());
+        double minX = 0;
+        for(size_t i = 0; i < rdfYArray.size(); i++) {
+            for(size_t cmpnt = 0; cmpnt < rdfYArray.componentCount(); cmpnt++) {
+                if(rdfYArray.get(i, cmpnt) != 0) {
+                    minX = rdfXArray[i];
+                    break;
+                }
+            }
+            if(minX) break;
+        }
+        _rdfPlot->setAxisScale(QwtPlot::xBottom, std::floor(minX * 9.0 / table->intervalEnd()) / 10.0 * table->intervalEnd(), table->intervalEnd());
+    }
+    _rdfPlot->setTable(table);
 }
 
-}	// End of namespace
+}   // End of namespace

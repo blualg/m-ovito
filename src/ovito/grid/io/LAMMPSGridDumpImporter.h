@@ -35,74 +35,74 @@ namespace Ovito::Grid {
  */
 class OVITO_GRID_EXPORT LAMMPSGridDumpImporter : public FileSourceImporter
 {
-	/// Defines a metaclass specialization for this importer type.
-	class OOMetaClass : public FileSourceImporter::OOMetaClass
-	{
-	public:
-		/// Inherit standard constructor from base meta class.
-		using FileSourceImporter::OOMetaClass::OOMetaClass;
+    /// Defines a metaclass specialization for this importer type.
+    class OOMetaClass : public FileSourceImporter::OOMetaClass
+    {
+    public:
+        /// Inherit standard constructor from base meta class.
+        using FileSourceImporter::OOMetaClass::OOMetaClass;
 
-		/// Returns the list of file formats that can be read by this importer class.
-		virtual Ovito::span<const SupportedFormat> supportedFormats() const override {
-			static const SupportedFormat formats[] = {{ QStringLiteral("*"), tr("LAMMPS Grid Dump Files") }};
-			return formats;
-		}
+        /// Returns the list of file formats that can be read by this importer class.
+        virtual Ovito::span<const SupportedFormat> supportedFormats() const override {
+            static const SupportedFormat formats[] = {{ QStringLiteral("*"), tr("LAMMPS Grid Dump Files") }};
+            return formats;
+        }
 
-		/// Checks if the given file has format that can be read by this importer.
-		virtual bool checkFileFormat(const FileHandle& file) const override;
-	};
+        /// Checks if the given file has format that can be read by this importer.
+        virtual bool checkFileFormat(const FileHandle& file) const override;
+    };
 
-	OVITO_CLASS_META(LAMMPSGridDumpImporter, OOMetaClass)
+    OVITO_CLASS_META(LAMMPSGridDumpImporter, OOMetaClass)
 
 public:
 
-	/// \brief Constructs a new instance of this class.
-	Q_INVOKABLE LAMMPSGridDumpImporter(ObjectCreationParams params) : FileSourceImporter(params) {}
+    /// \brief Constructs a new instance of this class.
+    Q_INVOKABLE LAMMPSGridDumpImporter(ObjectCreationParams params) : FileSourceImporter(params) {}
 
-	/// Returns the title of this object.
-	virtual QString objectTitle() const override { return tr("LAMMPS Grid Dump"); }
+    /// Returns the title of this object.
+    virtual QString objectTitle() const override { return tr("LAMMPS Grid Dump"); }
 
-	/// Creates an asynchronous loader object that loads the data for the given frame from the external file.
-	virtual FileSourceImporter::FrameLoaderPtr createFrameLoader(const LoadOperationRequest& request) override {
-		activateCLocale();
-		return std::make_shared<FrameLoader>(request);
-	}
+    /// Creates an asynchronous loader object that loads the data for the given frame from the external file.
+    virtual FileSourceImporter::FrameLoaderPtr createFrameLoader(const LoadOperationRequest& request) override {
+        activateCLocale();
+        return std::make_shared<FrameLoader>(request);
+    }
 
-	/// Creates an asynchronous frame discovery object that scans the input file for contained animation frames.
-	virtual std::shared_ptr<FileSourceImporter::FrameFinder> createFrameFinder(const FileHandle& file) override {
-		activateCLocale();
-		return std::make_shared<FrameFinder>(file);
-	}
+    /// Creates an asynchronous frame discovery object that scans the input file for contained animation frames.
+    virtual std::shared_ptr<FileSourceImporter::FrameFinder> createFrameFinder(const FileHandle& file) override {
+        activateCLocale();
+        return std::make_shared<FrameFinder>(file);
+    }
 
 private:
 
-	/// The format-specific task object that is responsible for reading an input file.
-	class FrameLoader : public StandardFrameLoader
-	{
-	public:
+    /// The format-specific task object that is responsible for reading an input file.
+    class FrameLoader : public StandardFrameLoader
+    {
+    public:
 
-		/// Inherit constructor from base class.
-		using StandardFrameLoader::StandardFrameLoader;
+        /// Inherit constructor from base class.
+        using StandardFrameLoader::StandardFrameLoader;
 
-	protected:
+    protected:
 
-		/// Reads the frame data from the external file.
-		virtual void loadFile() override;
-	};
+        /// Reads the frame data from the external file.
+        virtual void loadFile() override;
+    };
 
-	/// The format-specific task object that is responsible for scanning the input file for animation frames.
-	class FrameFinder : public FileSourceImporter::FrameFinder
-	{
-	public:
+    /// The format-specific task object that is responsible for scanning the input file for animation frames.
+    class FrameFinder : public FileSourceImporter::FrameFinder
+    {
+    public:
 
-		/// Inherit constructor from base class.
-		using FileSourceImporter::FrameFinder::FrameFinder;
+        /// Inherit constructor from base class.
+        using FileSourceImporter::FrameFinder::FrameFinder;
 
-	protected:
+    protected:
 
-		/// Scans the data file and builds a list of source frames.
-		virtual void discoverFramesInFile(QVector<FileSourceImporter::Frame>& frames) override;
-	};
+        /// Scans the data file and builds a list of source frames.
+        virtual void discoverFramesInFile(QVector<FileSourceImporter::Frame>& frames) override;
+    };
 };
 
-}	// End of namespace
+}   // End of namespace

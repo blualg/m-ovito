@@ -33,62 +33,62 @@ namespace Ovito::StdObj {
  */
 class OVITO_STDOBJGUI_EXPORT PropertyContainerParameterUI : public PropertyParameterUI
 {
-	OVITO_CLASS(PropertyContainerParameterUI)
+    OVITO_CLASS(PropertyContainerParameterUI)
 
 public:
 
-	/// Constructor.
-	PropertyContainerParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField);
+    /// Constructor.
+    PropertyContainerParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField);
 
-	/// Destructor.
-	virtual ~PropertyContainerParameterUI();
+    /// Destructor.
+    virtual ~PropertyContainerParameterUI();
 
-	/// This returns the combo box managed by this ParameterUI.
-	QComboBox* comboBox() const { return _comboBox; }
+    /// This returns the combo box managed by this ParameterUI.
+    QComboBox* comboBox() const { return _comboBox; }
 
-	/// Sets the enabled state of the UI.
-	virtual void setEnabled(bool enabled) override;
+    /// Sets the enabled state of the UI.
+    virtual void setEnabled(bool enabled) override;
 
-	/// This method updates the displayed value of the parameter UI.
-	virtual void updateUI() override;
+    /// This method updates the displayed value of the parameter UI.
+    virtual void updateUI() override;
 
-	/// This method is called when a new editable object has been assigned to the properties owner this
-	/// parameter UI belongs to.
-	virtual void resetUI() override;
+    /// This method is called when a new editable object has been assigned to the properties owner this
+    /// parameter UI belongs to.
+    virtual void resetUI() override;
 
-	/// Sets the tooltip text for the combo box widget.
-	void setToolTip(const QString& text) const {
-		if(comboBox()) comboBox()->setToolTip(text);
-	}
+    /// Sets the tooltip text for the combo box widget.
+    void setToolTip(const QString& text) const {
+        if(comboBox()) comboBox()->setToolTip(text);
+    }
 
-	/// Sets the What's This helper text for the combo box.
-	void setWhatsThis(const QString& text) const {
-		if(comboBox()) comboBox()->setWhatsThis(text);
-	}
+    /// Sets the What's This helper text for the combo box.
+    void setWhatsThis(const QString& text) const {
+        if(comboBox()) comboBox()->setWhatsThis(text);
+    }
 
-	/// Installs optional callback function that allows clients to filter the displayed container list.
-	void setContainerFilter(std::function<bool(const PropertyContainer*)> filter) {
-		_containerFilter = std::move(filter);
-		updateUI();
-	}
+    /// Installs optional callback function that allows clients to filter the displayed container list.
+    void setContainerFilter(std::function<bool(const PropertyContainer*)> filter) {
+        _containerFilter = std::move(filter);
+        updateUI();
+    }
 
 public:
 
-	Q_PROPERTY(QComboBox comboBox READ comboBox)
+    Q_PROPERTY(QComboBox comboBox READ comboBox)
 
 public Q_SLOTS:
 
-	/// Takes the value entered by the user and stores it in the property field
-	/// this property UI is bound to.
-	void updatePropertyValue();
+    /// Takes the value entered by the user and stores it in the property field
+    /// this property UI is bound to.
+    void updatePropertyValue();
 
 protected:
 
-	/// The combo box of the UI component.
-	QPointer<QComboBox> _comboBox;
+    /// The combo box of the UI component.
+    QPointer<QComboBox> _comboBox;
 
-	/// An optional callback function that allows clients to filter the displayed container list.
-	std::function<bool(const PropertyContainer*)> _containerFilter;
+    /// An optional callback function that allows clients to filter the displayed container list.
+    std::function<bool(const PropertyContainer*)> _containerFilter;
 };
 
-}	// End of namespace
+}   // End of namespace

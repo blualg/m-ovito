@@ -38,141 +38,141 @@ namespace Ovito::CrystalAnalysis {
  */
 class DislocationInspectionApplet : public DataInspectionApplet
 {
-	OVITO_CLASS(DislocationInspectionApplet)
-	Q_CLASSINFO("DisplayName", "Dislocations");
+    OVITO_CLASS(DislocationInspectionApplet)
+    Q_CLASSINFO("DisplayName", "Dislocations");
 
 public:
 
-	/// Constructor.
-	Q_INVOKABLE DislocationInspectionApplet() : DataInspectionApplet(DislocationNetworkObject::OOClass()) {}
+    /// Constructor.
+    Q_INVOKABLE DislocationInspectionApplet() : DataInspectionApplet(DislocationNetworkObject::OOClass()) {}
 
-	/// Returns the key value for this applet that is used for ordering the applet tabs.
-	virtual int orderingKey() const override { return 50; }
+    /// Returns the key value for this applet that is used for ordering the applet tabs.
+    virtual int orderingKey() const override { return 50; }
 
-	/// Determines whether the given pipeline data contains data that can be displayed by this applet.
-	virtual bool appliesTo(const DataCollection& data) override;
+    /// Determines whether the given pipeline data contains data that can be displayed by this applet.
+    virtual bool appliesTo(const DataCollection& data) override;
 
-	/// Lets the applet create the UI widget that is to be placed into the data inspector panel.
-	virtual QWidget* createWidget() override;
+    /// Lets the applet create the UI widget that is to be placed into the data inspector panel.
+    virtual QWidget* createWidget() override;
 
-	/// Updates the contents displayed in the inspector.
-	virtual void updateDisplay() override;
+    /// Updates the contents displayed in the inspector.
+    virtual void updateDisplay() override;
 
-	/// This is called when the applet is no longer visible.
-	virtual void deactivate() override;
-
-private:
-
-	/// A table model for displaying the dislocation list.
-	class DislocationTableModel : public QAbstractTableModel
-	{
-	public:
-
-		/// Constructor.
-		DislocationTableModel(QObject* parent) : QAbstractTableModel(parent) {}
-
-		/// Returns the number of rows.
-		virtual int rowCount(const QModelIndex& parent = QModelIndex()) const override {
-			if(parent.isValid()) return 0;
-			if(_dislocationObj) return _dislocationObj->segments().size();
-			if(_microstructure && _microstructure->topology()) return _microstructure->topology()->faceCount();
-			return 0;
-		}
-
-		/// Returns the number of columns.
-		virtual int columnCount(const QModelIndex& parent = QModelIndex()) const override {
-			return parent.isValid() ? 0 : 8;
-		}
-
-		/// Returns the data stored under the given 'role' for the item referred to by the 'index'.
-		virtual QVariant data(const QModelIndex& index, int role = Qt::DisplayRole) const override;
-
-		/// Returns the data for the given role and section in the header with the specified orientation.
-		virtual QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const override {
-			if(orientation == Qt::Horizontal && role == Qt::DisplayRole) {
-				switch(section) {
-				case 0: return tr("Id");
-				case 1: return tr("Burgers vector");
-				case 2: return tr("Spatial Burgers vector");
-				case 3: return tr("Length");
-				case 4: return tr("Cluster");
-				case 5: return tr("Crystal structure");
-				case 6: return tr("Head vertex coordinates");
-				case 7: return tr("Tail vertex coordinates");
-				}
-			}
-			return QAbstractTableModel::headerData(section, orientation, role);
-		}
-
-		/// Replaces the contents of this data model.
-		void setContents(const PipelineFlowState& state) {
-			beginResetModel();
-			if(state) {
-				_dislocationObj = state.getObject<DislocationNetworkObject>();
-				_microstructure = state.getObject<Microstructure>();
-			}
-			else {
-				_dislocationObj.reset();
-				_microstructure.reset();
-			}
-			endResetModel();
-		}
-
-	private:
-
-		OORef<DislocationNetworkObject> _dislocationObj;
-		OORef<Microstructure> _microstructure;
-	};
-
-
-	/// Viewport input mode that lets the user pick dislocations.
-	class PickingMode : public ViewportInputMode, ViewportGizmo
-	{
-	public:
-
-		/// Constructor.
-		PickingMode(DislocationInspectionApplet* applet) : ViewportInputMode(applet), _applet(applet) {}
-
-		/// This is called by the system after the input handler has become the active handler.
-		virtual void activated(bool temporaryActivation) override {
-			ViewportInputMode::activated(temporaryActivation);
-			inputManager()->addViewportGizmo(this);
-		}
-
-		/// This is called by the system after the input handler is no longer the active handler.
-		virtual void deactivated(bool temporary) override {
-			inputManager()->removeViewportGizmo(this);
-			ViewportInputMode::deactivated(temporary);
-		}
-
-		/// Handles the mouse up events for a viewport.
-		virtual void mouseReleaseEvent(ViewportWindowInterface* vpwin, QMouseEvent* event) override;
-
-		/// Handles the mouse move event for the given viewport.
-		virtual void mouseMoveEvent(ViewportWindowInterface* vpwin, QMouseEvent* event) override;
-
-		/// Lets the input mode render its overlay content in a viewport.
-		virtual void renderOverlay3D(Viewport* vp, SceneRenderer* renderer) override;
-
-	private:
-
-		/// The owner object.
-		DislocationInspectionApplet* _applet;
-
-		/// Determines the dislocation under the mouse cursor.
-		int pickDislocation(ViewportWindowInterface* vpwin, const QPoint& pos) const;
-	};
+    /// This is called when the applet is no longer visible.
+    virtual void deactivate() override;
 
 private:
 
-	/// The data display widget.
-	QTableView* _tableView = nullptr;
+    /// A table model for displaying the dislocation list.
+    class DislocationTableModel : public QAbstractTableModel
+    {
+    public:
 
-	/// The table model.
-	DislocationTableModel* _tableModel = nullptr;
+        /// Constructor.
+        DislocationTableModel(QObject* parent) : QAbstractTableModel(parent) {}
 
-	/// The viewport input mode for picking dislocations.
-	PickingMode* _pickingMode;
+        /// Returns the number of rows.
+        virtual int rowCount(const QModelIndex& parent = QModelIndex()) const override {
+            if(parent.isValid()) return 0;
+            if(_dislocationObj) return _dislocationObj->segments().size();
+            if(_microstructure && _microstructure->topology()) return _microstructure->topology()->faceCount();
+            return 0;
+        }
+
+        /// Returns the number of columns.
+        virtual int columnCount(const QModelIndex& parent = QModelIndex()) const override {
+            return parent.isValid() ? 0 : 8;
+        }
+
+        /// Returns the data stored under the given 'role' for the item referred to by the 'index'.
+        virtual QVariant data(const QModelIndex& index, int role = Qt::DisplayRole) const override;
+
+        /// Returns the data for the given role and section in the header with the specified orientation.
+        virtual QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const override {
+            if(orientation == Qt::Horizontal && role == Qt::DisplayRole) {
+                switch(section) {
+                case 0: return tr("Id");
+                case 1: return tr("Burgers vector");
+                case 2: return tr("Spatial Burgers vector");
+                case 3: return tr("Length");
+                case 4: return tr("Cluster");
+                case 5: return tr("Crystal structure");
+                case 6: return tr("Head vertex coordinates");
+                case 7: return tr("Tail vertex coordinates");
+                }
+            }
+            return QAbstractTableModel::headerData(section, orientation, role);
+        }
+
+        /// Replaces the contents of this data model.
+        void setContents(const PipelineFlowState& state) {
+            beginResetModel();
+            if(state) {
+                _dislocationObj = state.getObject<DislocationNetworkObject>();
+                _microstructure = state.getObject<Microstructure>();
+            }
+            else {
+                _dislocationObj.reset();
+                _microstructure.reset();
+            }
+            endResetModel();
+        }
+
+    private:
+
+        OORef<DislocationNetworkObject> _dislocationObj;
+        OORef<Microstructure> _microstructure;
+    };
+
+
+    /// Viewport input mode that lets the user pick dislocations.
+    class PickingMode : public ViewportInputMode, ViewportGizmo
+    {
+    public:
+
+        /// Constructor.
+        PickingMode(DislocationInspectionApplet* applet) : ViewportInputMode(applet), _applet(applet) {}
+
+        /// This is called by the system after the input handler has become the active handler.
+        virtual void activated(bool temporaryActivation) override {
+            ViewportInputMode::activated(temporaryActivation);
+            inputManager()->addViewportGizmo(this);
+        }
+
+        /// This is called by the system after the input handler is no longer the active handler.
+        virtual void deactivated(bool temporary) override {
+            inputManager()->removeViewportGizmo(this);
+            ViewportInputMode::deactivated(temporary);
+        }
+
+        /// Handles the mouse up events for a viewport.
+        virtual void mouseReleaseEvent(ViewportWindowInterface* vpwin, QMouseEvent* event) override;
+
+        /// Handles the mouse move event for the given viewport.
+        virtual void mouseMoveEvent(ViewportWindowInterface* vpwin, QMouseEvent* event) override;
+
+        /// Lets the input mode render its overlay content in a viewport.
+        virtual void renderOverlay3D(Viewport* vp, SceneRenderer* renderer) override;
+
+    private:
+
+        /// The owner object.
+        DislocationInspectionApplet* _applet;
+
+        /// Determines the dislocation under the mouse cursor.
+        int pickDislocation(ViewportWindowInterface* vpwin, const QPoint& pos) const;
+    };
+
+private:
+
+    /// The data display widget.
+    QTableView* _tableView = nullptr;
+
+    /// The table model.
+    DislocationTableModel* _tableModel = nullptr;
+
+    /// The viewport input mode for picking dislocations.
+    PickingMode* _pickingMode;
 };
 
-}	// End of namespace
+}   // End of namespace

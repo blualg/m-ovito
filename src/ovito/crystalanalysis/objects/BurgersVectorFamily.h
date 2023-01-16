@@ -33,21 +33,21 @@ namespace Ovito::CrystalAnalysis {
  */
 class OVITO_CRYSTALANALYSIS_EXPORT BurgersVectorFamily : public ElementType
 {
-	OVITO_CLASS(BurgersVectorFamily)
+    OVITO_CLASS(BurgersVectorFamily)
 
 public:
 
-	/// \brief Constructs a new BurgersVectorFamily.
-	Q_INVOKABLE BurgersVectorFamily(ObjectCreationParams params, int id = 0, const QString& name = tr("Other"), const Vector3& burgersVector = Vector3::Zero(), const Color& color = Color(0.9, 0.2, 0.2));
+    /// \brief Constructs a new BurgersVectorFamily.
+    Q_INVOKABLE BurgersVectorFamily(ObjectCreationParams params, int id = 0, const QString& name = tr("Other"), const Vector3& burgersVector = Vector3::Zero(), const Color& color = Color(0.9, 0.2, 0.2));
 
-	/// Checks if the given Burgers vector is a member of this family.
-	bool isMember(const Vector3& v, const MicrostructurePhase* latticeStructure) const;
+    /// Checks if the given Burgers vector is a member of this family.
+    bool isMember(const Vector3& v, const MicrostructurePhase* latticeStructure) const;
 
 private:
 
-	/// This prototype Burgers vector of this family.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD(Vector3, burgersVector, setBurgersVector);
-	DECLARE_SHADOW_PROPERTY_FIELD(burgersVector);
+    /// This prototype Burgers vector of this family.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(Vector3, burgersVector, setBurgersVector);
+    DECLARE_SHADOW_PROPERTY_FIELD(burgersVector);
 };
 
-}	// End of namespace
+}   // End of namespace

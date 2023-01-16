@@ -35,29 +35,29 @@ namespace Ovito {
 ******************************************************************************/
 TaskDisplayWidget::TaskDisplayWidget(MainWindow* mainWindow) : _mainWindow(mainWindow)
 {
-	setVisible(false);
+    setVisible(false);
 
-	QHBoxLayout* progressWidgetLayout = new QHBoxLayout(this);
-	progressWidgetLayout->setContentsMargins(10,0,0,0);
-	progressWidgetLayout->setSpacing(0);
-	_progressTextDisplay = new ElidedTextLabel(Qt::ElideLeft);
-	_progressTextDisplay->setLineWidth(0);
-	_progressTextDisplay->setAlignment(Qt::Alignment(Qt::AlignRight | Qt::AlignVCenter));
-	_progressTextDisplay->setAutoFillBackground(true);
-	_progressTextDisplay->setMargin(2);
-	_progressTextDisplay->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Ignored);
-	progressWidgetLayout->addWidget(_progressTextDisplay);
-	_progressBar = new QProgressBar(this);
-	_progressBar->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
-	progressWidgetLayout->addWidget(_progressBar);
-	progressWidgetLayout->addStrut(_progressTextDisplay->sizeHint().height());
-	setMinimumHeight(_progressTextDisplay->minimumSizeHint().height());
+    QHBoxLayout* progressWidgetLayout = new QHBoxLayout(this);
+    progressWidgetLayout->setContentsMargins(10,0,0,0);
+    progressWidgetLayout->setSpacing(0);
+    _progressTextDisplay = new ElidedTextLabel(Qt::ElideLeft);
+    _progressTextDisplay->setLineWidth(0);
+    _progressTextDisplay->setAlignment(Qt::Alignment(Qt::AlignRight | Qt::AlignVCenter));
+    _progressTextDisplay->setAutoFillBackground(true);
+    _progressTextDisplay->setMargin(2);
+    _progressTextDisplay->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Ignored);
+    progressWidgetLayout->addWidget(_progressTextDisplay);
+    _progressBar = new QProgressBar(this);
+    _progressBar->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
+    progressWidgetLayout->addWidget(_progressBar);
+    progressWidgetLayout->addStrut(_progressTextDisplay->sizeHint().height());
+    setMinimumHeight(_progressTextDisplay->minimumSizeHint().height());
 
-	connect(&mainWindow->taskManager(), &TaskManager::taskStarted, this, &TaskDisplayWidget::taskStarted);
-	connect(&mainWindow->taskManager(), &TaskManager::taskFinished, this, &TaskDisplayWidget::taskFinished);
-	connect(&Application::instance()->taskManager(), &TaskManager::taskStarted, this, &TaskDisplayWidget::taskStarted);
-	connect(&Application::instance()->taskManager(), &TaskManager::taskFinished, this, &TaskDisplayWidget::taskFinished);
-	connect(this, &QObject::destroyed, _progressTextDisplay, &QObject::deleteLater);
+    connect(&mainWindow->taskManager(), &TaskManager::taskStarted, this, &TaskDisplayWidget::taskStarted);
+    connect(&mainWindow->taskManager(), &TaskManager::taskFinished, this, &TaskDisplayWidget::taskFinished);
+    connect(&Application::instance()->taskManager(), &TaskManager::taskStarted, this, &TaskDisplayWidget::taskStarted);
+    connect(&Application::instance()->taskManager(), &TaskManager::taskFinished, this, &TaskDisplayWidget::taskFinished);
+    connect(this, &QObject::destroyed, _progressTextDisplay, &QObject::deleteLater);
 }
 
 /******************************************************************************
@@ -65,7 +65,7 @@ TaskDisplayWidget::TaskDisplayWidget(MainWindow* mainWindow) : _mainWindow(mainW
 ******************************************************************************/
 bool TaskDisplayWidget::anyRunningTasks() const
 {
-	return !_mainWindow->taskManager().runningTasks().empty() || !Application::instance()->taskManager().runningTasks().empty();
+    return !_mainWindow->taskManager().runningTasks().empty() || !Application::instance()->taskManager().runningTasks().empty();
 }
 
 /******************************************************************************
@@ -73,17 +73,17 @@ bool TaskDisplayWidget::anyRunningTasks() const
 ******************************************************************************/
 void TaskDisplayWidget::taskStarted(TaskWatcher* taskWatcher)
 {
-	// Show progress indicator only if the task doesn't finish within 200 milliseconds.
-	if(isHidden()) {
-		if(!_delayTimer.isActive())
-			_delayTimer.start(200, Qt::CoarseTimer, this);
-	}
-	else {
-		updateIndicator();
-	}
+    // Show progress indicator only if the task doesn't finish within 200 milliseconds.
+    if(isHidden()) {
+        if(!_delayTimer.isActive())
+            _delayTimer.start(200, Qt::CoarseTimer, this);
+    }
+    else {
+        updateIndicator();
+    }
 
-	connect(taskWatcher, &TaskWatcher::progressChanged, this, &TaskDisplayWidget::taskProgressChanged);
-	connect(taskWatcher, &TaskWatcher::progressTextChanged, this, &TaskDisplayWidget::taskProgressChanged);
+    connect(taskWatcher, &TaskWatcher::progressChanged, this, &TaskDisplayWidget::taskProgressChanged);
+    connect(taskWatcher, &TaskWatcher::progressTextChanged, this, &TaskDisplayWidget::taskProgressChanged);
 }
 
 /******************************************************************************
@@ -91,7 +91,7 @@ void TaskDisplayWidget::taskStarted(TaskWatcher* taskWatcher)
 ******************************************************************************/
 void TaskDisplayWidget::taskFinished(TaskWatcher* taskWatcher)
 {
-	updateIndicator();
+    updateIndicator();
 }
 
 /******************************************************************************
@@ -99,7 +99,7 @@ void TaskDisplayWidget::taskFinished(TaskWatcher* taskWatcher)
 ******************************************************************************/
 void TaskDisplayWidget::taskProgressChanged()
 {
-	updateIndicator();
+    updateIndicator();
 }
 
 /******************************************************************************
@@ -107,12 +107,12 @@ void TaskDisplayWidget::taskProgressChanged()
 ******************************************************************************/
 void TaskDisplayWidget::timerEvent(QTimerEvent* event)
 {
-	if(event->timerId() == _delayTimer.timerId()) {
-		OVITO_ASSERT(_delayTimer.isActive());
-		_delayTimer.stop();
-		updateIndicator();
-	}
-	QWidget::timerEvent(event);
+    if(event->timerId() == _delayTimer.timerId()) {
+        OVITO_ASSERT(_delayTimer.isActive());
+        _delayTimer.stop();
+        updateIndicator();
+    }
+    QWidget::timerEvent(event);
 }
 
 /******************************************************************************
@@ -120,25 +120,25 @@ void TaskDisplayWidget::timerEvent(QTimerEvent* event)
 ******************************************************************************/
 void TaskDisplayWidget::updateIndicator()
 {
-	if(TaskWatcher* watcher = pickVisibleTask()) {
-		if(!_delayTimer.isActive()) {
-			qlonglong maximum = watcher->progressMaximum();
-			if(maximum < (qlonglong)std::numeric_limits<int>::max()) {
-				_progressBar->setRange(0, (int)maximum);
-				_progressBar->setValue((int)watcher->progressValue());
-			}
-			else {
-				_progressBar->setRange(0, 1000);
-				_progressBar->setValue((int)(watcher->progressValue() * 1000ll / maximum));
-			}
-			_progressTextDisplay->setText(watcher->progressText());
-			show();
-		}
-	}
-	else {
-		_delayTimer.stop();
-		hide();
-	}
+    if(TaskWatcher* watcher = pickVisibleTask()) {
+        if(!_delayTimer.isActive()) {
+            qlonglong maximum = watcher->progressMaximum();
+            if(maximum < (qlonglong)std::numeric_limits<int>::max()) {
+                _progressBar->setRange(0, (int)maximum);
+                _progressBar->setValue((int)watcher->progressValue());
+            }
+            else {
+                _progressBar->setRange(0, 1000);
+                _progressBar->setValue((int)(watcher->progressValue() * 1000ll / maximum));
+            }
+            _progressTextDisplay->setText(watcher->progressText());
+            show();
+        }
+    }
+    else {
+        _delayTimer.stop();
+        hide();
+    }
 }
 
 /******************************************************************************
@@ -146,24 +146,24 @@ void TaskDisplayWidget::updateIndicator()
 ******************************************************************************/
 TaskWatcher* TaskDisplayWidget::pickVisibleTask() const
 {
-	TaskWatcher* selectedTask = nullptr;
-	for(TaskWatcher* watcher : _mainWindow->taskManager().runningTasks()) {
-		if(!watcher->task()->isFinished()) {
-			if(watcher->progressMaximum() != 0)
-				return watcher;
-			else if(watcher->progressText().isEmpty() == false)
-				selectedTask = watcher;
-		}
-	}
-	for(TaskWatcher* watcher : Application::instance()->taskManager().runningTasks()) {
-		if(!watcher->task()->isFinished()) {
-			if(watcher->progressMaximum() != 0)
-				return watcher;
-			else if(watcher->progressText().isEmpty() == false)
-				selectedTask = watcher;
-		}
-	}
-	return selectedTask;
+    TaskWatcher* selectedTask = nullptr;
+    for(TaskWatcher* watcher : _mainWindow->taskManager().runningTasks()) {
+        if(!watcher->task()->isFinished()) {
+            if(watcher->progressMaximum() != 0)
+                return watcher;
+            else if(watcher->progressText().isEmpty() == false)
+                selectedTask = watcher;
+        }
+    }
+    for(TaskWatcher* watcher : Application::instance()->taskManager().runningTasks()) {
+        if(!watcher->task()->isFinished()) {
+            if(watcher->progressMaximum() != 0)
+                return watcher;
+            else if(watcher->progressText().isEmpty() == false)
+                selectedTask = watcher;
+        }
+    }
+    return selectedTask;
 }
 
-}	// End of namespace
+}   // End of namespace

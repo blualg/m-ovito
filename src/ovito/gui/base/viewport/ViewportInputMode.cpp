@@ -37,8 +37,8 @@ namespace Ovito {
 ******************************************************************************/
 ViewportInputMode::~ViewportInputMode()
 {
-	// Mode must not be in use when it gets destroyed.
-	OVITO_ASSERT(!_manager || std::find(_manager->stack().begin(), _manager->stack().end(), this) == _manager->stack().end());
+    // Mode must not be in use when it gets destroyed.
+    OVITO_ASSERT(!_manager || std::find(_manager->stack().begin(), _manager->stack().end(), this) == _manager->stack().end());
 }
 
 /******************************************************************************
@@ -46,8 +46,8 @@ ViewportInputMode::~ViewportInputMode()
 ******************************************************************************/
 void ViewportInputMode::removeMode()
 {
-	if(_manager)
-		_manager->removeInputMode(this);
+    if(_manager)
+        _manager->removeInputMode(this);
 }
 
 /******************************************************************************
@@ -55,7 +55,7 @@ void ViewportInputMode::removeMode()
 ******************************************************************************/
 void ViewportInputMode::activated(bool temporaryActivation)
 {
-	Q_EMIT statusChanged(true);
+    Q_EMIT statusChanged(true);
 }
 
 /******************************************************************************
@@ -63,8 +63,8 @@ void ViewportInputMode::activated(bool temporaryActivation)
 ******************************************************************************/
 void ViewportInputMode::deactivated(bool temporary)
 {
-	inputManager()->removeViewportGizmo(inputManager()->pickOrbitCenterMode());
-	Q_EMIT statusChanged(false);
+    inputManager()->removeViewportGizmo(inputManager()->pickOrbitCenterMode());
+    Q_EMIT statusChanged(false);
 }
 
 /******************************************************************************
@@ -72,8 +72,8 @@ void ViewportInputMode::deactivated(bool temporary)
 ******************************************************************************/
 bool ViewportInputMode::isActive() const
 {
-	if(!_manager) return false;
-	return _manager->activeMode() == this;
+    if(!_manager) return false;
+    return _manager->activeMode() == this;
 }
 
 /******************************************************************************
@@ -81,7 +81,7 @@ bool ViewportInputMode::isActive() const
 ******************************************************************************/
 void ViewportInputMode::activateTemporaryNavigationMode(ViewportInputMode* mode)
 {
-	inputManager()->pushInputMode(mode, true);
+    inputManager()->pushInputMode(mode, true);
 }
 
 /******************************************************************************
@@ -90,8 +90,8 @@ void ViewportInputMode::activateTemporaryNavigationMode(ViewportInputMode* mode)
 ******************************************************************************/
 void ViewportInputMode::setCursor(const QCursor& cursor)
 {
-	_cursor = cursor;
-	Q_EMIT curserChanged(_cursor);
+    _cursor = cursor;
+    Q_EMIT curserChanged(_cursor);
 }
 
 /******************************************************************************
@@ -99,35 +99,35 @@ void ViewportInputMode::setCursor(const QCursor& cursor)
 ******************************************************************************/
 void ViewportInputMode::mousePressEvent(ViewportWindowInterface* vpwin, QMouseEvent* event)
 {
-	_lastMousePressEvent.reset();
-	ViewportInputManager* manager = inputManager();
-	if(event->button() == Qt::RightButton) {
-		if(modeType() != ExclusiveMode) {
-			manager->removeInputMode(this);
-		}
-		else {
-			activateTemporaryNavigationMode(manager->panMode());
-			if(manager->activeMode() == manager->panMode()) {
-				QMouseEvent leftMouseEvent(event->type(), getMousePosition(event), getWindowMousePosition(event), getGlobalMousePosition(event), Qt::LeftButton, Qt::LeftButton, event->modifiers());
-				manager->activeMode()->mousePressEvent(vpwin, &leftMouseEvent);
-			}
-		}
-	}
-	else if(event->button() == Qt::LeftButton) {
-		if(!(event->modifiers() & Qt::ShiftModifier)) {
-			_lastMousePressEvent.reset(new QMouseEvent(event->type(), getMousePosition(event), getWindowMousePosition(event), getGlobalMousePosition(event), event->button(), event->buttons(), event->modifiers()));
-		}
-		else {
-			activateTemporaryNavigationMode(manager->panMode());
-			if(manager->activeMode() == manager->panMode())
-				manager->activeMode()->mousePressEvent(vpwin, event);
-		}
-	}
-	else if(event->button() == Qt::MiddleButton) {
-		activateTemporaryNavigationMode(manager->panMode());
-		if(manager->activeMode() == manager->panMode())
-			manager->activeMode()->mousePressEvent(vpwin, event);
-	}
+    _lastMousePressEvent.reset();
+    ViewportInputManager* manager = inputManager();
+    if(event->button() == Qt::RightButton) {
+        if(modeType() != ExclusiveMode) {
+            manager->removeInputMode(this);
+        }
+        else {
+            activateTemporaryNavigationMode(manager->panMode());
+            if(manager->activeMode() == manager->panMode()) {
+                QMouseEvent leftMouseEvent(event->type(), getMousePosition(event), getWindowMousePosition(event), getGlobalMousePosition(event), Qt::LeftButton, Qt::LeftButton, event->modifiers());
+                manager->activeMode()->mousePressEvent(vpwin, &leftMouseEvent);
+            }
+        }
+    }
+    else if(event->button() == Qt::LeftButton) {
+        if(!(event->modifiers() & Qt::ShiftModifier)) {
+            _lastMousePressEvent.reset(new QMouseEvent(event->type(), getMousePosition(event), getWindowMousePosition(event), getGlobalMousePosition(event), event->button(), event->buttons(), event->modifiers()));
+        }
+        else {
+            activateTemporaryNavigationMode(manager->panMode());
+            if(manager->activeMode() == manager->panMode())
+                manager->activeMode()->mousePressEvent(vpwin, event);
+        }
+    }
+    else if(event->button() == Qt::MiddleButton) {
+        activateTemporaryNavigationMode(manager->panMode());
+        if(manager->activeMode() == manager->panMode())
+            manager->activeMode()->mousePressEvent(vpwin, event);
+    }
 }
 
 /******************************************************************************
@@ -135,7 +135,7 @@ void ViewportInputMode::mousePressEvent(ViewportWindowInterface* vpwin, QMouseEv
 ******************************************************************************/
 void ViewportInputMode::mouseReleaseEvent(ViewportWindowInterface* vpwin, QMouseEvent* event)
 {
-	_lastMousePressEvent.reset();
+    _lastMousePressEvent.reset();
 }
 
 /******************************************************************************
@@ -143,15 +143,15 @@ void ViewportInputMode::mouseReleaseEvent(ViewportWindowInterface* vpwin, QMouse
 ******************************************************************************/
 void ViewportInputMode::mouseMoveEvent(ViewportWindowInterface* vpwin, QMouseEvent* event)
 {
-	if(_lastMousePressEvent && (event->pos() - _lastMousePressEvent->pos()).manhattanLength() > 2) {
-		if(this != inputManager()->orbitMode()) {
-			ViewportInputManager* manager = inputManager();
-			activateTemporaryNavigationMode(inputManager()->orbitMode());
-			if(manager->activeMode() == manager->orbitMode())
-				manager->activeMode()->mousePressEvent(vpwin, _lastMousePressEvent.get());
-		}
-		_lastMousePressEvent.reset();
-	}
+    if(_lastMousePressEvent && (event->pos() - _lastMousePressEvent->pos()).manhattanLength() > 2) {
+        if(this != inputManager()->orbitMode()) {
+            ViewportInputManager* manager = inputManager();
+            activateTemporaryNavigationMode(inputManager()->orbitMode());
+            if(manager->activeMode() == manager->orbitMode())
+                manager->activeMode()->mousePressEvent(vpwin, _lastMousePressEvent.get());
+        }
+        _lastMousePressEvent.reset();
+    }
 }
 
 /******************************************************************************
@@ -159,12 +159,12 @@ void ViewportInputMode::mouseMoveEvent(ViewportWindowInterface* vpwin, QMouseEve
 ******************************************************************************/
 void ViewportInputMode::wheelEvent(ViewportWindowInterface* vpwin, QWheelEvent* event)
 {
-	_lastMousePressEvent.reset();
+    _lastMousePressEvent.reset();
 
-	FloatType delta = event->angleDelta().y();
-	if(event->inverted()) delta = -delta;
-	inputManager()->zoomMode()->zoom(vpwin->viewport(), delta);
-	event->accept();
+    FloatType delta = event->angleDelta().y();
+    if(event->inverted()) delta = -delta;
+    inputManager()->zoomMode()->zoom(vpwin->viewport(), delta);
+    event->accept();
 }
 
 /******************************************************************************
@@ -172,12 +172,12 @@ void ViewportInputMode::wheelEvent(ViewportWindowInterface* vpwin, QWheelEvent* 
 ******************************************************************************/
 void ViewportInputMode::mouseDoubleClickEvent(ViewportWindowInterface* vpwin, QMouseEvent* event)
 {
-	_lastMousePressEvent.reset();
-	if(event->button() == Qt::LeftButton) {
-		inputManager()->pickOrbitCenterMode()->pickOrbitCenter(vpwin, event->pos());
-		inputManager()->addViewportGizmo(inputManager()->pickOrbitCenterMode());
-		event->accept();
-	}
+    _lastMousePressEvent.reset();
+    if(event->button() == Qt::LeftButton) {
+        inputManager()->pickOrbitCenterMode()->pickOrbitCenter(vpwin, event->pos());
+        inputManager()->addViewportGizmo(inputManager()->pickOrbitCenterMode());
+        event->accept();
+    }
 }
 
 /******************************************************************************
@@ -185,7 +185,7 @@ void ViewportInputMode::mouseDoubleClickEvent(ViewportWindowInterface* vpwin, QM
 ******************************************************************************/
 void ViewportInputMode::focusOutEvent(ViewportWindowInterface* vpwin, QFocusEvent* event)
 {
-	_lastMousePressEvent.reset();
+    _lastMousePressEvent.reset();
 }
 
 /******************************************************************************
@@ -193,9 +193,9 @@ void ViewportInputMode::focusOutEvent(ViewportWindowInterface* vpwin, QFocusEven
 ******************************************************************************/
 void ViewportInputMode::requestViewportUpdate()
 {
-	if(isActive()) {
-		inputManager()->userInterface().updateViewports();
-	}
+    if(isActive()) {
+        inputManager()->userInterface().updateViewports();
+    }
 }
 
-}	// End of namespace
+}   // End of namespace

@@ -33,31 +33,31 @@ namespace Ovito::StdObj {
  */
 class ElementTypeEditor : public PropertiesEditor
 {
-	OVITO_CLASS(ElementTypeEditor)
+    OVITO_CLASS(ElementTypeEditor)
 
 public:
 
-	/// Default constructor.
-	Q_INVOKABLE ElementTypeEditor() {}
+    /// Default constructor.
+    Q_INVOKABLE ElementTypeEditor() {}
 
 protected:
 
-	/// Creates the user interface controls for the editor.
-	virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
+    /// Creates the user interface controls for the editor.
+    virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
 
-	/// Is called when the value of a reference field of this RefMaker changes.
-	virtual void referenceReplaced(const PropertyFieldDescriptor* field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex) override;
+    /// Is called when the value of a reference field of this RefMaker changes.
+    virtual void referenceReplaced(const PropertyFieldDescriptor* field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex) override;
 
 private Q_SLOTS:
 
-	/// Saves the current settings as defaults for the element type.
-	void onSaveAsDefault();
+    /// Saves the current settings as defaults for the element type.
+    void onSaveAsDefault();
 
 private:
 
-	QLabel* _numericIdLabel;
-	QPushButton* _setAsDefaultBtn;
-	StringParameterUI* _namePUI;
+    QLabel* _numericIdLabel;
+    QPushButton* _setAsDefaultBtn;
+    StringParameterUI* _namePUI;
 };
 
-}	// End of namespace
+}   // End of namespace

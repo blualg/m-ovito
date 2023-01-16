@@ -36,82 +36,82 @@ namespace Ovito {
  */
 class OVITO_CORE_EXPORT ScenePreparation : public RefMaker
 {
-	OVITO_CLASS(ScenePreparation)
+    OVITO_CLASS(ScenePreparation)
 
 public:
 
-	/// Constructor.
-	explicit ScenePreparation(UserInterface& userInterface, Scene* scene = nullptr);
+    /// Constructor.
+    explicit ScenePreparation(UserInterface& userInterface, Scene* scene = nullptr);
 
-	/// Destructor.
-	virtual ~ScenePreparation();
+    /// Destructor.
+    virtual ~ScenePreparation();
 
-	/// Returns the abstract user interface in which this object operates.
-	UserInterface& userInterface() const { return _userInterface; }
+    /// Returns the abstract user interface in which this object operates.
+    UserInterface& userInterface() const { return _userInterface; }
 
-	/// Returns a future that gets fulfilled once the scene is ready.
-	SharedFuture<> future();
+    /// Returns a future that gets fulfilled once the scene is ready.
+    SharedFuture<> future();
 
 Q_SIGNALS:
 
-	/// Is emitted whenever the scene is being made ready for rendering after it was changed in some way.
-	void scenePreparationStarted();
+    /// Is emitted whenever the scene is being made ready for rendering after it was changed in some way.
+    void scenePreparationStarted();
 
-	/// Is emitted whenever the scene became ready for rendering.
-	void scenePreparationFinished();
+    /// Is emitted whenever the scene became ready for rendering.
+    void scenePreparationFinished();
 
-	/// Is emitted whenever its time to repaint the viewports showing the active scene.
-	void viewportUpdateRequest();
+    /// Is emitted whenever its time to repaint the viewports showing the active scene.
+    void viewportUpdateRequest();
 
 protected:
 
-	/// Is called when a RefTarget referenced by this object has generated an event.
-	virtual bool referenceEvent(RefTarget* source, const ReferenceEvent& event) override;
+    /// Is called when a RefTarget referenced by this object has generated an event.
+    virtual bool referenceEvent(RefTarget* source, const ReferenceEvent& event) override;
 
-	/// Is called when the value of a reference field of this RefMaker changes.
-	virtual void referenceReplaced(const PropertyFieldDescriptor* field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex) override;
+    /// Is called when the value of a reference field of this RefMaker changes.
+    virtual void referenceReplaced(const PropertyFieldDescriptor* field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex) override;
 
-	/// Requests the (re-)evaluation of all data pipelines next time execution returns to the event loop.
-	void restartPreparation();
+    /// Requests the (re-)evaluation of all data pipelines next time execution returns to the event loop.
+    void restartPreparation();
 
 private Q_SLOTS:
 
-	/// Is called when the evaluation of a pipeline in the scene has finished.
-	void pipelineEvaluationFinished();
+    /// Is called when the evaluation of a pipeline in the scene has finished.
+    void pipelineEvaluationFinished();
 
 private:
 
-	/// Requests the (re-)evaluation of all data pipelines in the current scene.
-	Q_INVOKABLE void makeReady(bool forceReevaluation);
+    /// Requests the (re-)evaluation of all data pipelines in the current scene.
+    Q_INVOKABLE void makeReady(bool forceReevaluation);
 
 private:
 
-	/// The scene being prepared.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(Scene*, scene, setScene, PROPERTY_FIELD_WEAK_REF | PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES | PROPERTY_FIELD_NO_CHANGE_MESSAGE);
+    /// The scene being prepared.
+    DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(Scene*, scene, setScene, PROPERTY_FIELD_WEAK_REF | PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES | PROPERTY_FIELD_NO_CHANGE_MESSAGE);
 
-	/// The abstract user interface in which this object operates.
-	UserInterface& _userInterface;
+    /// The abstract user interface in which this object operates.
+    UserInterface& _userInterface;
 
-	/// The animation frame at which the scene was made ready. This is used to detect time changes.
-	int _completedFrame;
+    /// The animation frame at which the scene was made ready. This is used to detect time changes.
+    int _completedFrame;
 
-	/// The scene that was made ready recently. This is used to detect a change of the active scene.
-	Scene* _completedScene;
+    /// The scene that was made ready recently. This is used to detect a change of the active scene.
+    Scene* _completedScene;
 
-	/// The current pipeline evaluation that is in progress.
-	PipelineEvaluationFuture _pipelineEvaluation;
+    /// The current pipeline evaluation that is in progress.
+    PipelineEvaluationFuture _pipelineEvaluation;
 
-	/// To get notified when the evaluation of the current data pipeline finishes.
-	TaskWatcher _pipelineEvaluationWatcher;
+    /// To get notified when the evaluation of the current data pipeline finishes.
+    TaskWatcher _pipelineEvaluationWatcher;
 
-	/// The promise that is fulfilled once the scene is ready.
-	Promise<> _promise;
+    /// The promise that is fulfilled once the scene is ready.
+    Promise<> _promise;
 
-	/// A shared future which reaches the completed state once the scene is ready.
-	SharedFuture<> _future;
+    /// A shared future which reaches the completed state once the scene is ready.
+    SharedFuture<> _future;
 
-	/// Indicates that a restart of the preparation has already been scheduled.
-	bool _isRestartScheduled = false;
+    /// Indicates that a restart of the preparation has already been scheduled.
+    bool _isRestartScheduled = false;
 };
 
-}	// End of namespace
+}   // End of namespace

@@ -34,14 +34,14 @@ namespace Ovito {
 ******************************************************************************/
 void RefMakerClass::initialize()
 {
-	OvitoClass::initialize();
+    OvitoClass::initialize();
 
-	// Collect all property fields of the class hierarchy in one array.
-	for(const RefMakerClass* clazz = this; clazz != &RefMaker::OOClass(); clazz = static_cast<const RefMakerClass*>(clazz->superClass())) {
-		for(const PropertyFieldDescriptor* field = clazz->_firstPropertyField; field != nullptr; field = field->next()) {
-			_propertyFields.push_back(field);
-		}
-	}
+    // Collect all property fields of the class hierarchy in one array.
+    for(const RefMakerClass* clazz = this; clazz != &RefMaker::OOClass(); clazz = static_cast<const RefMakerClass*>(clazz->superClass())) {
+        for(const PropertyFieldDescriptor* field = clazz->_firstPropertyField; field != nullptr; field = field->next()) {
+            _propertyFields.push_back(field);
+        }
+    }
 }
 
 /******************************************************************************
@@ -49,16 +49,16 @@ void RefMakerClass::initialize()
 ******************************************************************************/
 const PropertyFieldDescriptor* RefMakerClass::findPropertyField(const char* identifier, bool searchSuperClasses) const
 {
-	if(!searchSuperClasses) {
-		for(const PropertyFieldDescriptor* field = _firstPropertyField; field; field = field->next())
-			if(qstrcmp(field->identifier(), identifier) == 0) return field;
-	}
-	else {
-		for(const PropertyFieldDescriptor* field : _propertyFields) {
-			if(qstrcmp(field->identifier(), identifier) == 0) return field;
-		}
-	}
-	return nullptr;
+    if(!searchSuperClasses) {
+        for(const PropertyFieldDescriptor* field = _firstPropertyField; field; field = field->next())
+            if(qstrcmp(field->identifier(), identifier) == 0) return field;
+    }
+    else {
+        for(const PropertyFieldDescriptor* field : _propertyFields) {
+            if(qstrcmp(field->identifier(), identifier) == 0) return field;
+        }
+    }
+    return nullptr;
 }
 
 /******************************************************************************
@@ -67,24 +67,24 @@ const PropertyFieldDescriptor* RefMakerClass::findPropertyField(const char* iden
 ******************************************************************************/
 void RefMakerClass::saveClassInfo(SaveStream& stream) const
 {
-	OvitoClass::saveClassInfo(stream);
+    OvitoClass::saveClassInfo(stream);
 
-	// Serialize the list of property fields registered for this RefMaker-derived class.
-	for(const PropertyFieldDescriptor* field : propertyFields()) {
-		stream.beginChunk(0x01);
-		stream << QByteArray::fromRawData(field->identifier(), qstrlen(field->identifier()));
-		OvitoClass::serializeRTTI(stream, field->definingClass());
-		stream << field->flags();
-		stream << field->isReferenceField();
-		if(field->isReferenceField()) {
-			OvitoClass::serializeRTTI(stream, field->targetClass());
-		}
-		stream.endChunk();
-	}
+    // Serialize the list of property fields registered for this RefMaker-derived class.
+    for(const PropertyFieldDescriptor* field : propertyFields()) {
+        stream.beginChunk(0x01);
+        stream << QByteArray::fromRawData(field->identifier(), qstrlen(field->identifier()));
+        OvitoClass::serializeRTTI(stream, field->definingClass());
+        stream << field->flags();
+        stream << field->isReferenceField();
+        if(field->isReferenceField()) {
+            OvitoClass::serializeRTTI(stream, field->targetClass());
+        }
+        stream.endChunk();
+    }
 
-	// Property list terminator:
-	stream.beginChunk(0x0);
-	stream.endChunk();
+    // Property list terminator:
+    stream.beginChunk(0x0);
+    stream.endChunk();
 }
 
 /******************************************************************************
@@ -93,52 +93,52 @@ void RefMakerClass::saveClassInfo(SaveStream& stream) const
 ******************************************************************************/
 void RefMakerClass::loadClassInfo(LoadStream& stream, OvitoClass::SerializedClassInfo* classInfo) const
 {
-	OvitoClass::loadClassInfo(stream, classInfo);
+    OvitoClass::loadClassInfo(stream, classInfo);
 
-	for(;;) {
-		quint32 chunkId = stream.openChunk();
-		if(chunkId == 0x0) {
-			stream.closeChunk();
-			break;	// End of list
-		}
-		if(chunkId != 0x1)
-			throw Exception(RefMaker::tr("File format is invalid. Failed to load property fields of class %1.").arg(classInfo->clazz->name()));
+    for(;;) {
+        quint32 chunkId = stream.openChunk();
+        if(chunkId == 0x0) {
+            stream.closeChunk();
+            break;  // End of list
+        }
+        if(chunkId != 0x1)
+            throw Exception(RefMaker::tr("File format is invalid. Failed to load property fields of class %1.").arg(classInfo->clazz->name()));
 
-		SerializedClassInfo::PropertyFieldInfo fieldInfo;
+        SerializedClassInfo::PropertyFieldInfo fieldInfo;
 
-		// Read serialized property field definition from input stream.
-		stream >> fieldInfo.identifier;
-		OvitoClassPtr definingClass = OvitoClass::deserializeRTTI(stream);
-		OVITO_ASSERT(definingClass->isDerivedFrom(RefMaker::OOClass()));
-		fieldInfo.definingClass = static_cast<const RefMakerClass*>(definingClass);
-		stream >> fieldInfo.flags;
-		stream >> fieldInfo.isReferenceField;
-		fieldInfo.targetClass = fieldInfo.isReferenceField ? OvitoClass::deserializeRTTI(stream) : nullptr;
-		stream.closeChunk();
+        // Read serialized property field definition from input stream.
+        stream >> fieldInfo.identifier;
+        OvitoClassPtr definingClass = OvitoClass::deserializeRTTI(stream);
+        OVITO_ASSERT(definingClass->isDerivedFrom(RefMaker::OOClass()));
+        fieldInfo.definingClass = static_cast<const RefMakerClass*>(definingClass);
+        stream >> fieldInfo.flags;
+        stream >> fieldInfo.isReferenceField;
+        fieldInfo.targetClass = fieldInfo.isReferenceField ? OvitoClass::deserializeRTTI(stream) : nullptr;
+        stream.closeChunk();
 
-		// Give object class the chance to override deserialization behavior for this property field.
-		fieldInfo.customDeserializationFunction = overrideFieldDeserialization(fieldInfo);
-		if(!fieldInfo.customDeserializationFunction) {
+        // Give object class the chance to override deserialization behavior for this property field.
+        fieldInfo.customDeserializationFunction = overrideFieldDeserialization(fieldInfo);
+        if(!fieldInfo.customDeserializationFunction) {
 
-			// Verify consistency of serialized and runtime class hierarchy.
-			if(!classInfo->clazz->isDerivedFrom(*fieldInfo.definingClass)) {
-				qDebug() << "WARNING:" << classInfo->clazz->name() << "is not derived from" << fieldInfo.definingClass->name();
-				throw Exception(RefMaker::tr("The class hierarchy stored in the file differs from the class hierarchy of the program."));
-			}
+            // Verify consistency of serialized and runtime class hierarchy.
+            if(!classInfo->clazz->isDerivedFrom(*fieldInfo.definingClass)) {
+                qDebug() << "WARNING:" << classInfo->clazz->name() << "is not derived from" << fieldInfo.definingClass->name();
+                throw Exception(RefMaker::tr("The class hierarchy stored in the file differs from the class hierarchy of the program."));
+            }
 
-			// Verify consistency  of serialized and runtime property field definition.
-			fieldInfo.field = fieldInfo.definingClass->findPropertyField(fieldInfo.identifier.constData(), true);
-			if(fieldInfo.field) {
-				if(fieldInfo.field->isReferenceField() != fieldInfo.isReferenceField ||
-						fieldInfo.field->isVector() != ((fieldInfo.flags & PROPERTY_FIELD_VECTOR) != 0) ||
-						(fieldInfo.isReferenceField && !fieldInfo.targetClass->isDerivedFrom(*fieldInfo.field->targetClass())))
-					throw Exception(RefMaker::tr("The type of stored property field '%1' in class %2 has changed.").arg(fieldInfo.identifier, fieldInfo.definingClass->name()));
-			}
-		}
+            // Verify consistency  of serialized and runtime property field definition.
+            fieldInfo.field = fieldInfo.definingClass->findPropertyField(fieldInfo.identifier.constData(), true);
+            if(fieldInfo.field) {
+                if(fieldInfo.field->isReferenceField() != fieldInfo.isReferenceField ||
+                        fieldInfo.field->isVector() != ((fieldInfo.flags & PROPERTY_FIELD_VECTOR) != 0) ||
+                        (fieldInfo.isReferenceField && !fieldInfo.targetClass->isDerivedFrom(*fieldInfo.field->targetClass())))
+                    throw Exception(RefMaker::tr("The type of stored property field '%1' in class %2 has changed.").arg(fieldInfo.identifier, fieldInfo.definingClass->name()));
+            }
+        }
 
-		// Add property field to list of fields that will be deserialized for each instance of the object class. 
-		static_cast<RefMakerClass::SerializedClassInfo*>(classInfo)->propertyFields.push_back(std::move(fieldInfo));
-	}
+        // Add property field to list of fields that will be deserialized for each instance of the object class. 
+        static_cast<RefMakerClass::SerializedClassInfo*>(classInfo)->propertyFields.push_back(std::move(fieldInfo));
+    }
 }
 
-}	// End of namespace
+}   // End of namespace

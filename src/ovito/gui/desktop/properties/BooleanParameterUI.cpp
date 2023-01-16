@@ -35,22 +35,22 @@ IMPLEMENT_OVITO_CLASS(BooleanParameterUI);
 * Constructor for a Qt property.
 ******************************************************************************/
 BooleanParameterUI::BooleanParameterUI(PropertiesEditor* parentEditor, const char* propertyName, const QString& checkBoxLabel) :
-	PropertyParameterUI(parentEditor, propertyName)
+    PropertyParameterUI(parentEditor, propertyName)
 {
-	// Create UI widget.
-	_checkBox = new QCheckBox(checkBoxLabel);
-	connect(_checkBox.data(), &QCheckBox::clicked, this, &BooleanParameterUI::updatePropertyValue);
+    // Create UI widget.
+    _checkBox = new QCheckBox(checkBoxLabel);
+    connect(_checkBox.data(), &QCheckBox::clicked, this, &BooleanParameterUI::updatePropertyValue);
 }
 
 /******************************************************************************
 * Constructor for a PropertyField property.
 ******************************************************************************/
 BooleanParameterUI::BooleanParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField) :
-	PropertyParameterUI(parentEditor, propField)
+    PropertyParameterUI(parentEditor, propField)
 {
-	// Create UI widget.
-	_checkBox = new QCheckBox(propField->displayName());
-	connect(_checkBox.data(), &QCheckBox::clicked, this, &BooleanParameterUI::updatePropertyValue);
+    // Create UI widget.
+    _checkBox = new QCheckBox(propField->displayName());
+    connect(_checkBox.data(), &QCheckBox::clicked, this, &BooleanParameterUI::updatePropertyValue);
 }
 
 /******************************************************************************
@@ -58,8 +58,8 @@ BooleanParameterUI::BooleanParameterUI(PropertiesEditor* parentEditor, const Pro
 ******************************************************************************/
 BooleanParameterUI::~BooleanParameterUI()
 {
-	// Release widget.
-	delete checkBox();
+    // Release widget.
+    delete checkBox();
 }
 
 /******************************************************************************
@@ -68,19 +68,19 @@ BooleanParameterUI::~BooleanParameterUI()
 ******************************************************************************/
 void BooleanParameterUI::resetUI()
 {
-	PropertyParameterUI::resetUI();
+    PropertyParameterUI::resetUI();
 
-	if(checkBox()) {
-		if(isReferenceFieldUI())
-			checkBox()->setEnabled(parameterObject() && isEnabled());
-		else
-			checkBox()->setEnabled(editObject() && isEnabled());
-	}
+    if(checkBox()) {
+        if(isReferenceFieldUI())
+            checkBox()->setEnabled(parameterObject() && isEnabled());
+        else
+            checkBox()->setEnabled(editObject() && isEnabled());
+    }
 
-	if(isReferenceFieldUI() && editObject()) {
-		// Update the displayed value when the animation time has changed.
-		connect(&mainWindow().datasetContainer(), &DataSetContainer::currentFrameChanged, this, &BooleanParameterUI::updateUI, Qt::UniqueConnection);
-	}
+    if(isReferenceFieldUI() && editObject()) {
+        // Update the displayed value when the animation time has changed.
+        connect(&mainWindow().datasetContainer(), &DataSetContainer::currentFrameChanged, this, &BooleanParameterUI::updateUI, Qt::UniqueConnection);
+    }
 }
 
 /******************************************************************************
@@ -89,25 +89,25 @@ void BooleanParameterUI::resetUI()
 ******************************************************************************/
 void BooleanParameterUI::updateUI()
 {
-	PropertyParameterUI::updateUI();
+    PropertyParameterUI::updateUI();
 
-	if(checkBox() && editObject()) {
-		if(!isReferenceFieldUI()) {
-			QVariant val(false);
-			if(propertyName()) {
-				val = editObject()->property(propertyName());
-				OVITO_ASSERT_MSG(val.isValid(), "BooleanParameterUI::updateUI()", qPrintable(QString("The object class %1 does not define a property with the name %2 that can be cast to bool type.").arg(editObject()->metaObject()->className(), QString(propertyName()))));
-				if(!val.isValid()) {
-					throw Exception(tr("The object class %1 does not define a property with the name %2 that can be cast to bool type.").arg(editObject()->metaObject()->className(), QString(propertyName())));
-				}
-			}
-			else if(propertyField()) {
-				val = editObject()->getPropertyFieldValue(propertyField());
-				OVITO_ASSERT(val.isValid());
-			}
-			checkBox()->setChecked(val.toBool());
-		}
-	}
+    if(checkBox() && editObject()) {
+        if(!isReferenceFieldUI()) {
+            QVariant val(false);
+            if(propertyName()) {
+                val = editObject()->property(propertyName());
+                OVITO_ASSERT_MSG(val.isValid(), "BooleanParameterUI::updateUI()", qPrintable(QString("The object class %1 does not define a property with the name %2 that can be cast to bool type.").arg(editObject()->metaObject()->className(), QString(propertyName()))));
+                if(!val.isValid()) {
+                    throw Exception(tr("The object class %1 does not define a property with the name %2 that can be cast to bool type.").arg(editObject()->metaObject()->className(), QString(propertyName())));
+                }
+            }
+            else if(propertyField()) {
+                val = editObject()->getPropertyFieldValue(propertyField());
+                OVITO_ASSERT(val.isValid());
+            }
+            checkBox()->setChecked(val.toBool());
+        }
+    }
 }
 
 /******************************************************************************
@@ -115,14 +115,14 @@ void BooleanParameterUI::updateUI()
 ******************************************************************************/
 void BooleanParameterUI::setEnabled(bool enabled)
 {
-	if(enabled == isEnabled()) return;
-	PropertyParameterUI::setEnabled(enabled);
-	if(checkBox()) {
-		if(isReferenceFieldUI())
-			checkBox()->setEnabled(parameterObject() && isEnabled());
-		else
-			checkBox()->setEnabled(editObject() && isEnabled());
-	}
+    if(enabled == isEnabled()) return;
+    PropertyParameterUI::setEnabled(enabled);
+    if(checkBox()) {
+        if(isReferenceFieldUI())
+            checkBox()->setEnabled(parameterObject() && isEnabled());
+        else
+            checkBox()->setEnabled(editObject() && isEnabled());
+    }
 }
 
 /******************************************************************************
@@ -131,19 +131,19 @@ void BooleanParameterUI::setEnabled(bool enabled)
 ******************************************************************************/
 void BooleanParameterUI::updatePropertyValue()
 {
-	if(checkBox() && editObject()) {
-		performTransaction(tr("Change parameter value"), [&]() {
-			if(isQtPropertyUI()) {
-				if(!editObject()->setProperty(propertyName(), checkBox()->isChecked())) {
-					OVITO_ASSERT_MSG(false, "BooleanParameterUI::updatePropertyValue()", qPrintable(QString("The value of property %1 of object class %2 could not be set.").arg(QString(propertyName()), editObject()->metaObject()->className())));
-				}
-			}
-			else if(isPropertyFieldUI()) {
-				editor()->changePropertyFieldValue(propertyField(), checkBox()->isChecked());
-			}
-			Q_EMIT valueEntered();
-		});
-	}
+    if(checkBox() && editObject()) {
+        performTransaction(tr("Change parameter value"), [&]() {
+            if(isQtPropertyUI()) {
+                if(!editObject()->setProperty(propertyName(), checkBox()->isChecked())) {
+                    OVITO_ASSERT_MSG(false, "BooleanParameterUI::updatePropertyValue()", qPrintable(QString("The value of property %1 of object class %2 could not be set.").arg(QString(propertyName()), editObject()->metaObject()->className())));
+                }
+            }
+            else if(isPropertyFieldUI()) {
+                editor()->changePropertyFieldValue(propertyField(), checkBox()->isChecked());
+            }
+            Q_EMIT valueEntered();
+        });
+    }
 }
 
-}	// End of namespace
+}   // End of namespace

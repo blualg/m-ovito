@@ -33,55 +33,55 @@ namespace Ovito {
  */
 class OVITO_OPENGLRENDERER_EXPORT OffscreenInteractiveOpenGLSceneRenderer : public OpenGLSceneRenderer
 {
-	OVITO_CLASS(OffscreenInteractiveOpenGLSceneRenderer)
+    OVITO_CLASS(OffscreenInteractiveOpenGLSceneRenderer)
 
 public:
 
-	/// Constructor.
-	using OpenGLSceneRenderer::OpenGLSceneRenderer;
+    /// Constructor.
+    using OpenGLSceneRenderer::OpenGLSceneRenderer;
 
-	/// This method is called just before renderFrame() is called.
-	virtual void beginFrame(AnimationTime time, Scene* scene, const ViewProjectionParameters& params, Viewport* vp, const QRect& viewportRect, FrameBuffer* frameBuffer) override;
+    /// This method is called just before renderFrame() is called.
+    virtual void beginFrame(AnimationTime time, Scene* scene, const ViewProjectionParameters& params, Viewport* vp, const QRect& viewportRect, FrameBuffer* frameBuffer) override;
 
-	/// Renders the current animation frame.
-	virtual bool renderFrame(const QRect& viewportRect, MainThreadOperation& operation) override;
+    /// Renders the current animation frame.
+    virtual bool renderFrame(const QRect& viewportRect, MainThreadOperation& operation) override;
 
-	/// This method is called after renderFrame() has been called.
-	virtual void endFrame(bool renderingSuccessful, const QRect& viewportRect) override;
+    /// This method is called after renderFrame() has been called.
+    virtual void endFrame(bool renderingSuccessful, const QRect& viewportRect) override;
 
 protected:
 
-	/// Returns the image that was read from the OpenGL framebuffer after rendering.
-	const QImage& framebufferImage() const { return _image; }
+    /// Returns the image that was read from the OpenGL framebuffer after rendering.
+    const QImage& framebufferImage() const { return _image; }
 
-	/// Throws away the stored framebuffer snapshot.
-	void discardFramebufferImage() { _image = QImage(); }
+    /// Throws away the stored framebuffer snapshot.
+    void discardFramebufferImage() { _image = QImage(); }
 
-	/// Returns the OpenGL offscreen framebuffer used on desktop OpenGL platforms.
-	QOpenGLFramebufferObject* framebufferObject() const { return _framebufferObject.get(); }
+    /// Returns the OpenGL offscreen framebuffer used on desktop OpenGL platforms.
+    QOpenGLFramebufferObject* framebufferObject() const { return _framebufferObject.get(); }
 
-	/// Returns the OpenGL texture used as depth buffer (only on OpenGGL ES1 platform).
-	GLuint depthTextureId() const { return _framebufferTexturesGLES[1]; }
-	
+    /// Returns the OpenGL texture used as depth buffer (only on OpenGGL ES1 platform).
+    GLuint depthTextureId() const { return _framebufferTexturesGLES[1]; }
+    
 private:
 
-	/// The OpenGL offscreen framebuffer used on desktop OpenGL platform.
-	std::unique_ptr<QOpenGLFramebufferObject> _framebufferObject;
+    /// The OpenGL offscreen framebuffer used on desktop OpenGL platform.
+    std::unique_ptr<QOpenGLFramebufferObject> _framebufferObject;
 
-	/// The color and depth texture used for the offscreen framebuffer on GLES platforms.
-	GLuint _framebufferTexturesGLES[2] = { 0, 0 };
+    /// The color and depth texture used for the offscreen framebuffer on GLES platforms.
+    GLuint _framebufferTexturesGLES[2] = { 0, 0 };
 
-	/// The OpenGL framebuffer object used for offscreen rendering on GLES platforms.
-	GLuint _framebufferObjectGLES = 0;
+    /// The OpenGL framebuffer object used for offscreen rendering on GLES platforms.
+    GLuint _framebufferObjectGLES = 0;
 
-	/// The image read from the OpenGL framebuffer.
-	QImage _image;
+    /// The image read from the OpenGL framebuffer.
+    QImage _image;
 
-	/// Used to restore previous OpenGL context that was active before rendering.
-	QPointer<QOpenGLContext> _oldContext;
+    /// Used to restore previous OpenGL context that was active before rendering.
+    QPointer<QOpenGLContext> _oldContext;
 
-	/// Used to restore previous OpenGL context that was active before rendering.
-	QSurface* _oldSurface;
+    /// Used to restore previous OpenGL context that was active before rendering.
+    QSurface* _oldSurface;
 };
 
-}	// End of namespace
+}   // End of namespace

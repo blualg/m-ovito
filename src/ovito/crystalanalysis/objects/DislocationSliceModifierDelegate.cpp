@@ -37,9 +37,9 @@ IMPLEMENT_OVITO_CLASS(DislocationSliceModifierDelegate);
 ******************************************************************************/
 QVector<DataObjectReference> DislocationSliceModifierDelegate::OOMetaClass::getApplicableObjects(const DataCollection& input) const
 {
-	if(input.containsObject<DislocationNetworkObject>())
-		return { DataObjectReference(&DislocationNetworkObject::OOClass()) };
-	return {};
+    if(input.containsObject<DislocationNetworkObject>())
+        return { DataObjectReference(&DislocationNetworkObject::OOClass()) };
+    return {};
 }
 
 /******************************************************************************
@@ -47,33 +47,33 @@ QVector<DataObjectReference> DislocationSliceModifierDelegate::OOMetaClass::getA
 ******************************************************************************/
 PipelineStatus DislocationSliceModifierDelegate::apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const PipelineFlowState& inputState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs)
 {
-	SliceModifier* mod = static_object_cast<SliceModifier>(request.modifier());
-	if(mod->createSelection())
-		return PipelineStatus::Success;
+    SliceModifier* mod = static_object_cast<SliceModifier>(request.modifier());
+    if(mod->createSelection())
+        return PipelineStatus::Success;
 
-	// Obtain modifier parameter values.
-	Plane3 plane;
-	FloatType sliceWidth;
-	std::tie(plane, sliceWidth) = mod->slicingPlane(request.time(), state.mutableStateValidity(), state);
+    // Obtain modifier parameter values.
+    Plane3 plane;
+    FloatType sliceWidth;
+    std::tie(plane, sliceWidth) = mod->slicingPlane(request.time(), state.mutableStateValidity(), state);
 
-	for(const DataObject* obj : inputState.data()->objects()) {
-		if(const DislocationNetworkObject* inputDislocations = dynamic_object_cast<DislocationNetworkObject>(obj)) {
-			if(state.data()->contains(obj)) {
-				QVector<Plane3> planes = inputDislocations->cuttingPlanes();
-				if(sliceWidth <= 0) {
-					planes.push_back(plane);
-				}
-				else {
-					planes.push_back(Plane3( plane.normal,  plane.dist + sliceWidth/2));
-					planes.push_back(Plane3(-plane.normal, -plane.dist + sliceWidth/2));
-				}
-				DislocationNetworkObject* outputDislocations = state.makeMutable(inputDislocations);
-				outputDislocations->setCuttingPlanes(std::move(planes));
-			}
-		}
-	}
+    for(const DataObject* obj : inputState.data()->objects()) {
+        if(const DislocationNetworkObject* inputDislocations = dynamic_object_cast<DislocationNetworkObject>(obj)) {
+            if(state.data()->contains(obj)) {
+                QVector<Plane3> planes = inputDislocations->cuttingPlanes();
+                if(sliceWidth <= 0) {
+                    planes.push_back(plane);
+                }
+                else {
+                    planes.push_back(Plane3( plane.normal,  plane.dist + sliceWidth/2));
+                    planes.push_back(Plane3(-plane.normal, -plane.dist + sliceWidth/2));
+                }
+                DislocationNetworkObject* outputDislocations = state.makeMutable(inputDislocations);
+                outputDislocations->setCuttingPlanes(std::move(planes));
+            }
+        }
+    }
 
-	return PipelineStatus::Success;
+    return PipelineStatus::Success;
 }
 
-}	// End of namespace
+}   // End of namespace

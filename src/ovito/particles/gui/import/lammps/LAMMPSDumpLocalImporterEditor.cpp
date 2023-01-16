@@ -41,58 +41,58 @@ SET_OVITO_OBJECT_EDITOR(LAMMPSDumpLocalImporter, LAMMPSDumpLocalImporterEditor);
 ******************************************************************************/
 bool LAMMPSDumpLocalImporterEditor::inspectNewFile(FileImporter* importer, const QUrl& sourceFile, MainWindow& mainWindow)
 {
-	// Retrieve column information of input file.
-	LAMMPSDumpLocalImporter* lammpsImporter = static_object_cast<LAMMPSDumpLocalImporter>(importer);
-	Future<BondInputColumnMapping> inspectFuture = lammpsImporter->inspectFileHeader(FileSourceImporter::Frame(sourceFile));
+    // Retrieve column information of input file.
+    LAMMPSDumpLocalImporter* lammpsImporter = static_object_cast<LAMMPSDumpLocalImporter>(importer);
+    Future<BondInputColumnMapping> inspectFuture = lammpsImporter->inspectFileHeader(FileSourceImporter::Frame(sourceFile));
 
-	{
-		// Block UI until reading is done.
-		ProgressDialog progressDialog(&mainWindow, inspectFuture, tr("Inspecting file header"));
-		if(!inspectFuture.waitForFinished())
-			return false;
-	}
-	
-	InputColumnMapping mapping = inspectFuture.result();
+    {
+        // Block UI until reading is done.
+        ProgressDialog progressDialog(&mainWindow, inspectFuture, tr("Inspecting file header"));
+        if(!inspectFuture.waitForFinished())
+            return false;
+    }
+    
+    InputColumnMapping mapping = inspectFuture.result();
 
-	// If this is a newly created file importer, load old mapping from application settings store.
-	if(lammpsImporter->columnMapping().empty()) {
-		QSettings settings;
-		settings.beginGroup("viz/importer/lammps_dump_local/");
-		if(settings.contains("colmapping")) {
-			try {
-				InputColumnMapping storedMapping;
-				storedMapping.fromByteArray(settings.value("colmapping").toByteArray());
-				std::copy_n(storedMapping.begin(), std::min(storedMapping.size(), mapping.size()), mapping.begin());
-			}
-			catch(Exception& ex) {
-				ex.prependGeneralMessage(tr("Failed to load last used column-to-property mapping from application settings store."));
-				ex.logError();
-			}
-		}
-	}
-	else if(mapping.size() == lammpsImporter->columnMapping().size()) {
-		// If there was a mapping set up for a previously imported file,
-		// and if the newly imported file has no column name information but the same number
-		// of columns, adopt the existing column mapping from previously imported file.
-		if(boost::algorithm::none_of(mapping, [](const auto& column) { return column.isMapped(); })) {
-			boost::range::copy(lammpsImporter->columnMapping(), mapping.begin()); 
-		}
-	}
+    // If this is a newly created file importer, load old mapping from application settings store.
+    if(lammpsImporter->columnMapping().empty()) {
+        QSettings settings;
+        settings.beginGroup("viz/importer/lammps_dump_local/");
+        if(settings.contains("colmapping")) {
+            try {
+                InputColumnMapping storedMapping;
+                storedMapping.fromByteArray(settings.value("colmapping").toByteArray());
+                std::copy_n(storedMapping.begin(), std::min(storedMapping.size(), mapping.size()), mapping.begin());
+            }
+            catch(Exception& ex) {
+                ex.prependGeneralMessage(tr("Failed to load last used column-to-property mapping from application settings store."));
+                ex.logError();
+            }
+        }
+    }
+    else if(mapping.size() == lammpsImporter->columnMapping().size()) {
+        // If there was a mapping set up for a previously imported file,
+        // and if the newly imported file has no column name information but the same number
+        // of columns, adopt the existing column mapping from previously imported file.
+        if(boost::algorithm::none_of(mapping, [](const auto& column) { return column.isMapped(); })) {
+            boost::range::copy(lammpsImporter->columnMapping(), mapping.begin()); 
+        }
+    }
 
-	InputColumnMappingDialog dialog(mainWindow, mapping, &mainWindow);
-	if(dialog.exec() == QDialog::Accepted) {
-		lammpsImporter->setColumnMapping(dialog.mapping());
+    InputColumnMappingDialog dialog(mainWindow, mapping, &mainWindow);
+    if(dialog.exec() == QDialog::Accepted) {
+        lammpsImporter->setColumnMapping(dialog.mapping());
 
-		// Remember the user-defined mapping for the next time.
-		QSettings settings;
-		settings.beginGroup("viz/importer/lammps_dump_local/");
-		settings.setValue("colmapping", dialog.mapping().toByteArray());
-		settings.endGroup();
+        // Remember the user-defined mapping for the next time.
+        QSettings settings;
+        settings.beginGroup("viz/importer/lammps_dump_local/");
+        settings.setValue("colmapping", dialog.mapping().toByteArray());
+        settings.endGroup();
 
-		return true;
-	}
+        return true;
+    }
 
-	return false;
+    return false;
 }
 
 /******************************************************************************
@@ -100,36 +100,36 @@ bool LAMMPSDumpLocalImporterEditor::inspectNewFile(FileImporter* importer, const
  *****************************************************************************/
 bool LAMMPSDumpLocalImporterEditor::showEditColumnMappingDialog(LAMMPSDumpLocalImporter* importer, const FileSourceImporter::Frame& frame)
 {
-	Future<BondInputColumnMapping> inspectFuture = importer->inspectFileHeader(frame);
+    Future<BondInputColumnMapping> inspectFuture = importer->inspectFileHeader(frame);
 
-	{
-		// Block UI until reading is done.
-		ProgressDialog progressDialog(parentWindow(), inspectFuture, tr("Inspecting file header"));
-		if(!inspectFuture.waitForFinished())
-			return false;
-	}
+    {
+        // Block UI until reading is done.
+        ProgressDialog progressDialog(parentWindow(), inspectFuture, tr("Inspecting file header"));
+        if(!inspectFuture.waitForFinished())
+            return false;
+    }
 
-	InputColumnMapping mapping = inspectFuture.result();
+    InputColumnMapping mapping = inspectFuture.result();
 
-	if(!importer->columnMapping().empty()) {
-		InputColumnMapping newMapping = importer->columnMapping();
-		newMapping.resize(mapping.size());
-		for(size_t i = 0; i < newMapping.size(); i++)
-			newMapping[i].columnName = mapping[i].columnName;
-		mapping = std::move(newMapping);
-	}
+    if(!importer->columnMapping().empty()) {
+        InputColumnMapping newMapping = importer->columnMapping();
+        newMapping.resize(mapping.size());
+        for(size_t i = 0; i < newMapping.size(); i++)
+            newMapping[i].columnName = mapping[i].columnName;
+        mapping = std::move(newMapping);
+    }
 
-	InputColumnMappingDialog dialog(mainWindow(), mapping, parentWindow());
-	if(dialog.exec() == QDialog::Accepted) {
-		importer->setColumnMapping(dialog.mapping());
-		// Remember the user-defined mapping for the next time.
-		QSettings settings;
-		settings.beginGroup("viz/importer/lammps_dump_local/");
-		settings.setValue("colmapping", dialog.mapping().toByteArray());
-		settings.endGroup();
-		return true;
-	}
-	return false;
+    InputColumnMappingDialog dialog(mainWindow(), mapping, parentWindow());
+    if(dialog.exec() == QDialog::Accepted) {
+        importer->setColumnMapping(dialog.mapping());
+        // Remember the user-defined mapping for the next time.
+        QSettings settings;
+        settings.beginGroup("viz/importer/lammps_dump_local/");
+        settings.setValue("colmapping", dialog.mapping().toByteArray());
+        settings.endGroup();
+        return true;
+    }
+    return false;
 }
 
 /******************************************************************************
@@ -137,44 +137,44 @@ bool LAMMPSDumpLocalImporterEditor::showEditColumnMappingDialog(LAMMPSDumpLocalI
 ******************************************************************************/
 void LAMMPSDumpLocalImporterEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 {
-	// Create a rollout.
-	QWidget* rollout = createRollout(tr("LAMMPS dump local reader"), rolloutParams, "manual:file_formats.input.lammps_dump_local");
+    // Create a rollout.
+    QWidget* rollout = createRollout(tr("LAMMPS dump local reader"), rolloutParams, "manual:file_formats.input.lammps_dump_local");
 
     // Create the rollout contents.
-	QVBoxLayout* layout = new QVBoxLayout(rollout);
-	layout->setContentsMargins(4,4,4,4);
-	layout->setSpacing(4);
+    QVBoxLayout* layout = new QVBoxLayout(rollout);
+    layout->setContentsMargins(4,4,4,4);
+    layout->setSpacing(4);
 
-	QGroupBox* optionsBox = new QGroupBox(tr("Options"), rollout);
-	QVBoxLayout* sublayout = new QVBoxLayout(optionsBox);
-	sublayout->setContentsMargins(4,4,4,4);
-	layout->addWidget(optionsBox);
+    QGroupBox* optionsBox = new QGroupBox(tr("Options"), rollout);
+    QVBoxLayout* sublayout = new QVBoxLayout(optionsBox);
+    sublayout->setContentsMargins(4,4,4,4);
+    layout->addWidget(optionsBox);
 
-	// Multi-timestep file
-	BooleanParameterUI* multitimestepUI = new BooleanParameterUI(this, PROPERTY_FIELD(FileSourceImporter::isMultiTimestepFile));
-	// The following signal handler updates the parameter UI whenever the isMultiTimestepFile parameter of the current file source importer changes.
-	// It is needed, because target-changed messages are surpressed for this property field and the normal update mechanism for the parameter UI doesn't work.
-	connect(this, &PropertiesEditor::contentsReplaced, this, [con = QMetaObject::Connection(), multitimestepUI = multitimestepUI](RefTarget* editObject) mutable {
+    // Multi-timestep file
+    BooleanParameterUI* multitimestepUI = new BooleanParameterUI(this, PROPERTY_FIELD(FileSourceImporter::isMultiTimestepFile));
+    // The following signal handler updates the parameter UI whenever the isMultiTimestepFile parameter of the current file source importer changes.
+    // It is needed, because target-changed messages are surpressed for this property field and the normal update mechanism for the parameter UI doesn't work.
+    connect(this, &PropertiesEditor::contentsReplaced, this, [con = QMetaObject::Connection(), multitimestepUI = multitimestepUI](RefTarget* editObject) mutable {
 #ifdef _MSC_VER
-	#pragma warning(push)
-	#pragma warning(disable : 4573)
+    #pragma warning(push)
+    #pragma warning(disable : 4573)
 #endif
-		disconnect(con);
-		con = editObject ? connect(static_object_cast<FileSourceImporter>(editObject), &FileSourceImporter::isMultiTimestepFileChanged, multitimestepUI, &ParameterUI::updateUI) : QMetaObject::Connection();
+        disconnect(con);
+        con = editObject ? connect(static_object_cast<FileSourceImporter>(editObject), &FileSourceImporter::isMultiTimestepFileChanged, multitimestepUI, &ParameterUI::updateUI) : QMetaObject::Connection();
 #ifdef _MSC_VER
-	#pragma warning(pop)
+    #pragma warning(pop)
 #endif
-	});
-	sublayout->addWidget(multitimestepUI->checkBox());
+    });
+    sublayout->addWidget(multitimestepUI->checkBox());
 
-	QGroupBox* columnMappingBox = new QGroupBox(tr("File columns"), rollout);
-	sublayout = new QVBoxLayout(columnMappingBox);
-	sublayout->setContentsMargins(4,4,4,4);
-	layout->addWidget(columnMappingBox);
+    QGroupBox* columnMappingBox = new QGroupBox(tr("File columns"), rollout);
+    sublayout = new QVBoxLayout(columnMappingBox);
+    sublayout->setContentsMargins(4,4,4,4);
+    layout->addWidget(columnMappingBox);
 
-	QPushButton* editMappingButton = new QPushButton(tr("Edit column mapping..."));
-	sublayout->addWidget(editMappingButton);
-	connect(editMappingButton, &QPushButton::clicked, this, &LAMMPSDumpLocalImporterEditor::onEditColumnMapping);
+    QPushButton* editMappingButton = new QPushButton(tr("Edit column mapping..."));
+    sublayout->addWidget(editMappingButton);
+    connect(editMappingButton, &QPushButton::clicked, this, &LAMMPSDumpLocalImporterEditor::onEditColumnMapping);
 }
 
 /******************************************************************************
@@ -182,21 +182,21 @@ void LAMMPSDumpLocalImporterEditor::createUI(const RolloutInsertionParameters& r
 ******************************************************************************/
 void LAMMPSDumpLocalImporterEditor::onEditColumnMapping()
 {
-	if(LAMMPSDumpLocalImporter* importer = static_object_cast<LAMMPSDumpLocalImporter>(editObject())) {
-		performTransaction(tr("Change file column mapping"), [this, importer]() {
+    if(LAMMPSDumpLocalImporter* importer = static_object_cast<LAMMPSDumpLocalImporter>(editObject())) {
+        performTransaction(tr("Change file column mapping"), [this, importer]() {
 
-			// Determine the currently loaded data file of the FileSource.
-			FileSource* fileSource = importer->fileSource();
-			if(!fileSource || fileSource->frames().empty()) 
-				return;
-			int frameIndex = qBound(0, fileSource->dataCollectionFrame(), fileSource->frames().size()-1);
+            // Determine the currently loaded data file of the FileSource.
+            FileSource* fileSource = importer->fileSource();
+            if(!fileSource || fileSource->frames().empty()) 
+                return;
+            int frameIndex = qBound(0, fileSource->dataCollectionFrame(), fileSource->frames().size()-1);
 
-			// Show the dialog box, which lets the user modify the file column mapping.
-			if(showEditColumnMappingDialog(importer, fileSource->frames()[frameIndex])) {
-				importer->requestReload();
-			}
-		});
-	}
+            // Show the dialog box, which lets the user modify the file column mapping.
+            if(showEditColumnMappingDialog(importer, fileSource->frames()[frameIndex])) {
+                importer->requestReload();
+            }
+        });
+    }
 }
 
-}	// End of namespace
+}   // End of namespace

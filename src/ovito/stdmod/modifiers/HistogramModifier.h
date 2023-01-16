@@ -35,83 +35,83 @@ namespace Ovito::StdMod {
  */
 class OVITO_STDMOD_EXPORT HistogramModifier : public GenericPropertyModifier
 {
-	OVITO_CLASS(HistogramModifier)
-	Q_CLASSINFO("DisplayName", "Histogram");
-	Q_CLASSINFO("Description", "Compute the histogram or distribution of some quantity.");
+    OVITO_CLASS(HistogramModifier)
+    Q_CLASSINFO("DisplayName", "Histogram");
+    Q_CLASSINFO("Description", "Compute the histogram or distribution of some quantity.");
 #ifndef OVITO_QML_GUI
-	Q_CLASSINFO("ModifierCategory", "Analysis");
+    Q_CLASSINFO("ModifierCategory", "Analysis");
 #else
-	Q_CLASSINFO("ModifierCategory", "-");
+    Q_CLASSINFO("ModifierCategory", "-");
 #endif
 
 public:
 
-	/// Constructor.
-	Q_INVOKABLE HistogramModifier(ObjectCreationParams params);
+    /// Constructor.
+    Q_INVOKABLE HistogramModifier(ObjectCreationParams params);
 
-	/// This method is called by the system after the modifier has been inserted into a data pipeline.
-	virtual void initializeModifier(const ModifierInitializationRequest& request) override;
+    /// This method is called by the system after the modifier has been inserted into a data pipeline.
+    virtual void initializeModifier(const ModifierInitializationRequest& request) override;
 
-	/// Modifies the input data synchronously.
-	virtual void evaluateSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
+    /// Modifies the input data synchronously.
+    virtual void evaluateSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
 
-	/// Set start and end value of the x-axis.
-	void setXAxisRange(FloatType start, FloatType end) {
-		setXAxisRangeStart(start);
-		setXAxisRangeEnd(end);
-	}
+    /// Set start and end value of the x-axis.
+    void setXAxisRange(FloatType start, FloatType end) {
+        setXAxisRangeStart(start);
+        setXAxisRangeEnd(end);
+    }
 
-	/// Set start and end value of the y-axis.
-	void setYAxisRange(FloatType start, FloatType end) {
-		setYAxisRangeStart(start);
-		setYAxisRangeEnd(end);
-	}
+    /// Set start and end value of the y-axis.
+    void setYAxisRange(FloatType start, FloatType end) {
+        setYAxisRangeStart(start);
+        setYAxisRangeEnd(end);
+    }
 
-	/// Returns a short piece information (typically a string or color) to be displayed next to the modifier's title in the pipeline editor list.
-	virtual QVariant getPipelineEditorShortInfo(Scene* scene, ModifierApplication* modApp) const override { return sourceProperty().nameWithComponent(); }
+    /// Returns a short piece information (typically a string or color) to be displayed next to the modifier's title in the pipeline editor list.
+    virtual QVariant getPipelineEditorShortInfo(Scene* scene, ModifierApplication* modApp) const override { return sourceProperty().nameWithComponent(); }
 
 protected:
 
-	/// Is called when the value of a property of this object has changed.
-	virtual void propertyChanged(const PropertyFieldDescriptor* field) override;
+    /// Is called when the value of a property of this object has changed.
+    virtual void propertyChanged(const PropertyFieldDescriptor* field) override;
 
 private:
 
-	/// The property that serves as data source of the histogram.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD(PropertyReference, sourceProperty, setSourceProperty);
+    /// The property that serves as data source of the histogram.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(PropertyReference, sourceProperty, setSourceProperty);
 
-	/// Controls the number of histogram bins.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(int, numberOfBins, setNumberOfBins, PROPERTY_FIELD_MEMORIZE);
+    /// Controls the number of histogram bins.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(int, numberOfBins, setNumberOfBins, PROPERTY_FIELD_MEMORIZE);
 
-	/// Controls the whether elements within the specified range should be selected.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, selectInRange, setSelectInRange);
+    /// Controls the whether elements within the specified range should be selected.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, selectInRange, setSelectInRange);
 
-	/// Controls the start value of the selection interval.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType, selectionRangeStart, setSelectionRangeStart, PROPERTY_FIELD_MEMORIZE);
+    /// Controls the start value of the selection interval.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType, selectionRangeStart, setSelectionRangeStart, PROPERTY_FIELD_MEMORIZE);
 
-	/// Controls the end value of the selection interval.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType, selectionRangeEnd, setSelectionRangeEnd, PROPERTY_FIELD_MEMORIZE);
+    /// Controls the end value of the selection interval.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType, selectionRangeEnd, setSelectionRangeEnd, PROPERTY_FIELD_MEMORIZE);
 
-	/// Controls the whether the range of the x-axis of the histogram should be fixed.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, fixXAxisRange, setFixXAxisRange);
+    /// Controls the whether the range of the x-axis of the histogram should be fixed.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, fixXAxisRange, setFixXAxisRange);
 
-	/// Controls the start value of the x-axis.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType, xAxisRangeStart, setXAxisRangeStart, PROPERTY_FIELD_MEMORIZE);
+    /// Controls the start value of the x-axis.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType, xAxisRangeStart, setXAxisRangeStart, PROPERTY_FIELD_MEMORIZE);
 
-	/// Controls the end value of the x-axis.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType, xAxisRangeEnd, setXAxisRangeEnd, PROPERTY_FIELD_MEMORIZE);
+    /// Controls the end value of the x-axis.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType, xAxisRangeEnd, setXAxisRangeEnd, PROPERTY_FIELD_MEMORIZE);
 
-	/// Controls the whether the range of the y-axis of the histogram should be fixed.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, fixYAxisRange, setFixYAxisRange);
+    /// Controls the whether the range of the y-axis of the histogram should be fixed.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, fixYAxisRange, setFixYAxisRange);
 
-	/// Controls the start value of the y-axis.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType, yAxisRangeStart, setYAxisRangeStart, PROPERTY_FIELD_MEMORIZE);
+    /// Controls the start value of the y-axis.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType, yAxisRangeStart, setYAxisRangeStart, PROPERTY_FIELD_MEMORIZE);
 
-	/// Controls the end value of the y-axis.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType, yAxisRangeEnd, setYAxisRangeEnd, PROPERTY_FIELD_MEMORIZE);
+    /// Controls the end value of the y-axis.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType, yAxisRangeEnd, setYAxisRangeEnd, PROPERTY_FIELD_MEMORIZE);
 
-	/// Controls whether the modifier should take into account only selected elements.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, onlySelectedElements, setOnlySelectedElements);
+    /// Controls whether the modifier should take into account only selected elements.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, onlySelectedElements, setOnlySelectedElements);
 };
 
-}	// End of namespace
+}   // End of namespace

@@ -38,4 +38,4 @@ DEFINE_PROPERTY_FIELD(ConstPositionController, value);
 DEFINE_PROPERTY_FIELD(ConstRotationController, value);
 DEFINE_PROPERTY_FIELD(ConstScalingController, value);
 
-}	// End of namespace
+}   // End of namespace

@@ -36,39 +36,39 @@ namespace Ovito::Grid {
  */
 class CreateIsosurfaceModifierEditor : public PropertiesEditor
 {
-	OVITO_CLASS(CreateIsosurfaceModifierEditor)
+    OVITO_CLASS(CreateIsosurfaceModifierEditor)
 
 public:
 
-	/// Default constructor.
-	Q_INVOKABLE CreateIsosurfaceModifierEditor() {}
+    /// Default constructor.
+    Q_INVOKABLE CreateIsosurfaceModifierEditor() {}
 
 protected:
 
-	/// Creates the user interface controls for the editor.
-	virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
+    /// Creates the user interface controls for the editor.
+    virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
 
 protected Q_SLOTS:
 
-	/// Replots the value histogram computed by the modifier.
-	void plotHistogram();
+    /// Replots the value histogram computed by the modifier.
+    void plotHistogram();
 
-	/// Is called when the user starts or stops picking a location in the plot widget.
-	void onPickerActivated(bool on);
+    /// Is called when the user starts or stops picking a location in the plot widget.
+    void onPickerActivated(bool on);
 
-	/// Is called when the user picks a location in the plot widget.
-	void onPickerPoint(const QPointF& pt);
+    /// Is called when the user picks a location in the plot widget.
+    void onPickerPoint(const QPointF& pt);
 
 private:
 
-	/// The graph widget to display the histogram.
-	StdObj::DataTablePlotWidget* _plotWidget;
+    /// The graph widget to display the histogram.
+    StdObj::DataTablePlotWidget* _plotWidget;
 
-	/// The plot item for indicating the current iso level value.
-	QwtPlotMarker* _isoLevelIndicator;
+    /// The plot item for indicating the current iso level value.
+    QwtPlotMarker* _isoLevelIndicator;
 
-	/// Used to make changes to the iso level reversible.
-	UndoableTransaction _undoTransaction;
+    /// Used to make changes to the iso level reversible.
+    UndoableTransaction _undoTransaction;
 };
 
-}	// End of namespace
+}   // End of namespace

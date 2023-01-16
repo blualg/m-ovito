@@ -33,17 +33,17 @@ namespace Ovito {
  */
 class TriMeshVisEditor : public PropertiesEditor
 {
-	OVITO_CLASS(TriMeshVisEditor)
+    OVITO_CLASS(TriMeshVisEditor)
 
 public:
 
-	/// Constructor.
-	Q_INVOKABLE TriMeshVisEditor() {}
+    /// Constructor.
+    Q_INVOKABLE TriMeshVisEditor() {}
 
 protected:
 
-	/// Creates the user interface controls for the editor.
-	virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
+    /// Creates the user interface controls for the editor.
+    virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
 };
 
-}	// End of namespace
+}   // End of namespace

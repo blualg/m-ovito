@@ -60,30 +60,30 @@ class OVITO_CORE_EXPORT AffineDecomposition
 {
 public:
 
-	/// Translation part.
-	Vector3 translation;
+    /// Translation part.
+    Vector3 translation;
 
-	/// Rotation part.
-	Quaternion rotation;
+    /// Rotation part.
+    Quaternion rotation;
 
-	/// Scaling part.
-	Scaling scaling;
+    /// Scaling part.
+    Scaling scaling;
 
-	/// Sign of determinant (either -1.0 or +1.0).
-	FloatType sign;
+    /// Sign of determinant (either -1.0 or +1.0).
+    FloatType sign;
 
-	/// \brief Constructor that decomposes the given matrix into its affine parts.
-	///
-	/// After the constructor has been called the components of the decomposed
-	/// transformation can be accessed through the #translation, #rotation,
-	/// #scaling and #sign member variables.
-	AffineDecomposition(const AffineTransformation& tm);
+    /// \brief Constructor that decomposes the given matrix into its affine parts.
+    ///
+    /// After the constructor has been called the components of the decomposed
+    /// transformation can be accessed through the #translation, #rotation,
+    /// #scaling and #sign member variables.
+    AffineDecomposition(const AffineTransformation& tm);
 
 private:
 
-	void decomp_affine(Matrix4& A);
+    void decomp_affine(Matrix4& A);
 };
 
-}	// End of namespace
+}   // End of namespace
 
 

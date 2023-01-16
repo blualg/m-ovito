@@ -34,11 +34,11 @@ IMPLEMENT_OVITO_CLASS(FontParameterUI);
 * The constructor.
 ******************************************************************************/
 FontParameterUI::FontParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField)
-	: PropertyParameterUI(parentEditor, propField)
+    : PropertyParameterUI(parentEditor, propField)
 {
-	_label = new QLabel(propField->displayName() + ":");
-	_fontPicker = new QPushButton();
-	connect(_fontPicker.data(), &QPushButton::clicked, this, &FontParameterUI::onButtonClicked);
+    _label = new QLabel(propField->displayName() + ":");
+    _fontPicker = new QPushButton();
+    connect(_fontPicker.data(), &QPushButton::clicked, this, &FontParameterUI::onButtonClicked);
 }
 
 /******************************************************************************
@@ -46,9 +46,9 @@ FontParameterUI::FontParameterUI(PropertiesEditor* parentEditor, const PropertyF
 ******************************************************************************/
 FontParameterUI::~FontParameterUI()
 {
-	// Release GUI controls.
-	delete label();
-	delete fontPicker();
+    // Release GUI controls.
+    delete label();
+    delete fontPicker();
 }
 
 /******************************************************************************
@@ -57,17 +57,17 @@ FontParameterUI::~FontParameterUI()
 ******************************************************************************/
 void FontParameterUI::resetUI()
 {
-	PropertyParameterUI::resetUI();
+    PropertyParameterUI::resetUI();
 
-	if(fontPicker())  {
-		if(editObject() && (!isReferenceFieldUI() || parameterObject())) {
-			fontPicker()->setEnabled(isEnabled());
-		}
-		else {
-			fontPicker()->setEnabled(false);
-			fontPicker()->setText(QString());
-		}
-	}
+    if(fontPicker())  {
+        if(editObject() && (!isReferenceFieldUI() || parameterObject())) {
+            fontPicker()->setEnabled(isEnabled());
+        }
+        else {
+            fontPicker()->setEnabled(false);
+            fontPicker()->setText(QString());
+        }
+    }
 }
 
 /******************************************************************************
@@ -75,16 +75,16 @@ void FontParameterUI::resetUI()
 ******************************************************************************/
 void FontParameterUI::updateUI()
 {
-	if(editObject() && fontPicker()) {
-		if(isPropertyFieldUI()) {
-			QVariant currentValue = editObject()->getPropertyFieldValue(propertyField());
-			OVITO_ASSERT(currentValue.isValid());
-			if(currentValue.canConvert<QFont>())
-				fontPicker()->setText(currentValue.value<QFont>().family());
-			else
-				fontPicker()->setText(QString());
-		}
-	}
+    if(editObject() && fontPicker()) {
+        if(isPropertyFieldUI()) {
+            QVariant currentValue = editObject()->getPropertyFieldValue(propertyField());
+            OVITO_ASSERT(currentValue.isValid());
+            if(currentValue.canConvert<QFont>())
+                fontPicker()->setText(currentValue.value<QFont>().family());
+            else
+                fontPicker()->setText(QString());
+        }
+    }
 }
 
 /******************************************************************************
@@ -92,14 +92,14 @@ void FontParameterUI::updateUI()
 ******************************************************************************/
 void FontParameterUI::setEnabled(bool enabled)
 {
-	if(enabled == isEnabled()) return;
-	PropertyParameterUI::setEnabled(enabled);
-	if(fontPicker()) {
-		if(isReferenceFieldUI())
-			fontPicker()->setEnabled(parameterObject() != NULL && isEnabled());
-		else
-			fontPicker()->setEnabled(editObject() != NULL && isEnabled());
-	}
+    if(enabled == isEnabled()) return;
+    PropertyParameterUI::setEnabled(enabled);
+    if(fontPicker()) {
+        if(isReferenceFieldUI())
+            fontPicker()->setEnabled(parameterObject() != NULL && isEnabled());
+        else
+            fontPicker()->setEnabled(editObject() != NULL && isEnabled());
+    }
 }
 
 /******************************************************************************
@@ -107,21 +107,21 @@ void FontParameterUI::setEnabled(bool enabled)
 ******************************************************************************/
 void FontParameterUI::onButtonClicked()
 {
-	if(fontPicker() && editObject() && isPropertyFieldUI()) {
-		QVariant currentValue = editObject()->getPropertyFieldValue(propertyField());
-		OVITO_ASSERT(currentValue.isValid());
-		QFont currentFont;
-		if(currentValue.canConvert<QFont>())
-			currentFont = currentValue.value<QFont>();
-		bool ok;
-		QFont font = FontSelectionDialog::getFont(&ok, currentFont, fontPicker()->window());
-		if(ok && font != currentFont) {
-			performTransaction(tr("Change font"), [this, &font]() {
-				editor()->changePropertyFieldValue(propertyField(), QVariant::fromValue(font));
-				Q_EMIT valueEntered();
-			});
-		}
-	}
+    if(fontPicker() && editObject() && isPropertyFieldUI()) {
+        QVariant currentValue = editObject()->getPropertyFieldValue(propertyField());
+        OVITO_ASSERT(currentValue.isValid());
+        QFont currentFont;
+        if(currentValue.canConvert<QFont>())
+            currentFont = currentValue.value<QFont>();
+        bool ok;
+        QFont font = FontSelectionDialog::getFont(&ok, currentFont, fontPicker()->window());
+        if(ok && font != currentFont) {
+            performTransaction(tr("Change font"), [this, &font]() {
+                editor()->changePropertyFieldValue(propertyField(), QVariant::fromValue(font));
+                Q_EMIT valueEntered();
+            });
+        }
+    }
 }
 
-}	// End of namespace
+}   // End of namespace

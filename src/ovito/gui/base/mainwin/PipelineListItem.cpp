@@ -35,17 +35,17 @@ DEFINE_REFERENCE_FIELD(PipelineListItem, object);
 * Constructor.
 ******************************************************************************/
 PipelineListItem::PipelineListItem(RefTarget* object, PipelineItemType itemType, PipelineListItem* parent) :
-	_parent(parent), _itemType(itemType)
+    _parent(parent), _itemType(itemType)
 {
-	_object.set(this, PROPERTY_FIELD(object), object);
-	
-	switch(_itemType) {
-	case VisualElementsHeader: _title = tr("Visual elements"); break;
-	case ModificationsHeader: _title = tr("Modifications"); break;
-	case DataSourceHeader: _title = tr("Data source"); break;
-	case PipelineBranch: _title = tr("Pipeline branch"); break;
-	default: updateTitle(); break;
-	}
+    _object.set(this, PROPERTY_FIELD(object), object);
+    
+    switch(_itemType) {
+    case VisualElementsHeader: _title = tr("Visual elements"); break;
+    case ModificationsHeader: _title = tr("Modifications"); break;
+    case DataSourceHeader: _title = tr("Data source"); break;
+    case PipelineBranch: _title = tr("Pipeline branch"); break;
+    default: updateTitle(); break;
+    }
 }
 
 /******************************************************************************
@@ -54,29 +54,29 @@ PipelineListItem::PipelineListItem(RefTarget* object, PipelineItemType itemType,
 ******************************************************************************/
 bool PipelineListItem::referenceEvent(RefTarget* source, const ReferenceEvent& event)
 {
-	// The list must be updated if a modifier has been added or removed
-	// from a PipelineObject, or if a data object has been added/removed from the data source.
-	if((event.type() == ReferenceEvent::ReferenceAdded || event.type() == ReferenceEvent::ReferenceRemoved || event.type() == ReferenceEvent::ReferenceChanged) && dynamic_object_cast<PipelineObject>(object())) {
-		if(event.type() == ReferenceEvent::ReferenceChanged && static_cast<const ReferenceFieldEvent&>(event).field() == PROPERTY_FIELD(ModifierApplication::modifierGroup)) {
-			Q_EMIT itemChanged(this);
-		}
-		Q_EMIT subitemsChanged(this);
-	}
-	// Update item if it has been enabled/disabled, its status has changed, or its title has changed.
-	else if(event.type() == ReferenceEvent::TargetEnabledOrDisabled || event.type() == ReferenceEvent::ObjectStatusChanged || event.type() == ReferenceEvent::TitleChanged) {
-		updateTitle();
-		Q_EMIT itemChanged(this);
-	}
-	// Update item (and the entire list) if a group is being collapsed or uncollapsed.
-	else if(event.type() == ReferenceEvent::TargetChanged && static_cast<const PropertyFieldEvent&>(event).field() == PROPERTY_FIELD(ModifierGroup::isCollapsed)) {
-		Q_EMIT subitemsChanged(this);
-	}
-	else if(event.type() == ReferenceEvent::TargetDeleted) {
-		_itemType = DeletedObject;
-		Q_EMIT subitemsChanged(this);
-	}
+    // The list must be updated if a modifier has been added or removed
+    // from a PipelineObject, or if a data object has been added/removed from the data source.
+    if((event.type() == ReferenceEvent::ReferenceAdded || event.type() == ReferenceEvent::ReferenceRemoved || event.type() == ReferenceEvent::ReferenceChanged) && dynamic_object_cast<PipelineObject>(object())) {
+        if(event.type() == ReferenceEvent::ReferenceChanged && static_cast<const ReferenceFieldEvent&>(event).field() == PROPERTY_FIELD(ModifierApplication::modifierGroup)) {
+            Q_EMIT itemChanged(this);
+        }
+        Q_EMIT subitemsChanged(this);
+    }
+    // Update item if it has been enabled/disabled, its status has changed, or its title has changed.
+    else if(event.type() == ReferenceEvent::TargetEnabledOrDisabled || event.type() == ReferenceEvent::ObjectStatusChanged || event.type() == ReferenceEvent::TitleChanged) {
+        updateTitle();
+        Q_EMIT itemChanged(this);
+    }
+    // Update item (and the entire list) if a group is being collapsed or uncollapsed.
+    else if(event.type() == ReferenceEvent::TargetChanged && static_cast<const PropertyFieldEvent&>(event).field() == PROPERTY_FIELD(ModifierGroup::isCollapsed)) {
+        Q_EMIT subitemsChanged(this);
+    }
+    else if(event.type() == ReferenceEvent::TargetDeleted) {
+        _itemType = DeletedObject;
+        Q_EMIT subitemsChanged(this);
+    }
 
-	return RefMaker::referenceEvent(source, event);
+    return RefMaker::referenceEvent(source, event);
 }
 
 /******************************************************************************
@@ -84,18 +84,18 @@ bool PipelineListItem::referenceEvent(RefTarget* source, const ReferenceEvent& e
 ******************************************************************************/
 void PipelineListItem::updateTitle() 
 {
-	if(object()) {
-		if(_itemType == DataObject) {
+    if(object()) {
+        if(_itemType == DataObject) {
 #ifdef Q_OS_LINUX
-			_title = QStringLiteral("  ⇾ ") + object()->objectTitle();
+            _title = QStringLiteral("  ⇾ ") + object()->objectTitle();
 #else
-			_title = QStringLiteral("    ") + object()->objectTitle();
+            _title = QStringLiteral("    ") + object()->objectTitle();
 #endif
-		}
-		else {
-			_title = object()->objectTitle();
-		}
-	}
+        }
+        else {
+            _title = object()->objectTitle();
+        }
+    }
 }
 
 /******************************************************************************
@@ -103,13 +103,13 @@ void PipelineListItem::updateTitle()
 ******************************************************************************/
 const PipelineStatus& PipelineListItem::status() const
 {
-	if(ActiveObject* activeObject = dynamic_object_cast<ActiveObject>(object())) {
-		return activeObject->status();
-	}
-	else {
-		static const PipelineStatus defaultStatus;
-		return defaultStatus;
-	}
+    if(ActiveObject* activeObject = dynamic_object_cast<ActiveObject>(object())) {
+        return activeObject->status();
+    }
+    else {
+        static const PipelineStatus defaultStatus;
+        return defaultStatus;
+    }
 }
 
 /******************************************************************************
@@ -117,13 +117,13 @@ const PipelineStatus& PipelineListItem::status() const
 ******************************************************************************/
 QVariant PipelineListItem::shortInfo(PipelineSceneNode* selectedPipeline) const
 {
-	OVITO_ASSERT(ExecutionContext::current().isValid());
-	if(ActiveObject* activeObject = dynamic_object_cast<ActiveObject>(object())) {
-		if(Scene* scene = selectedPipeline->scene()) {
-			return activeObject->getPipelineEditorShortInfo(scene);
-		}
-	}
-	return {};
+    OVITO_ASSERT(ExecutionContext::current().isValid());
+    if(ActiveObject* activeObject = dynamic_object_cast<ActiveObject>(object())) {
+        if(Scene* scene = selectedPipeline->scene()) {
+            return activeObject->getPipelineEditorShortInfo(scene);
+        }
+    }
+    return {};
 }
 
 /******************************************************************************
@@ -131,10 +131,10 @@ QVariant PipelineListItem::shortInfo(PipelineSceneNode* selectedPipeline) const
 ******************************************************************************/
 bool PipelineListItem::isObjectActive() const
 {
-	if(ActiveObject* activeObject = dynamic_object_cast<ActiveObject>(object())) {
-		return activeObject->isObjectActive();
-	}
-	return false;
+    if(ActiveObject* activeObject = dynamic_object_cast<ActiveObject>(object())) {
+        return activeObject->isObjectActive();
+    }
+    return false;
 }
 
-}	// End of namespace
+}   // End of namespace

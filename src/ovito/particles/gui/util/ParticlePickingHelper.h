@@ -39,40 +39,40 @@ class OVITO_PARTICLESGUI_EXPORT ParticlePickingHelper
 {
 public:
 
-	struct PickResult {
+    struct PickResult {
 
-		/// The position of the picked particle in local coordinates.
-		Point3 localPos;
+        /// The position of the picked particle in local coordinates.
+        Point3 localPos;
 
-		/// The position of the picked particle in world coordinates.
-		Point3 worldPos;
+        /// The position of the picked particle in world coordinates.
+        Point3 worldPos;
 
-		/// The radius of the picked particle.
-		FloatType radius;
+        /// The radius of the picked particle.
+        FloatType radius;
 
-		/// The index of the picked particle.
-		size_t particleIndex;
+        /// The index of the picked particle.
+        size_t particleIndex;
 
-		/// The identifier of the picked particle.
-		qlonglong particleId;
+        /// The identifier of the picked particle.
+        qlonglong particleId;
 
-		/// The scene node that contains the picked particle.
-		OORef<PipelineSceneNode> objNode;
-	};
+        /// The scene node that contains the picked particle.
+        OORef<PipelineSceneNode> objNode;
+    };
 
-	/// \brief Finds the particle under the mouse cursor.
-	/// \param vpwin The viewport window to perform hit testing in.
-	/// \param clickPoint The position of the mouse cursor in the viewport.
-	/// \param time The animation at which hit testing is performed.
-	/// \param result The output structure that receives information about the picked particle.
-	/// \return \c true if a particle has been picked; \c false otherwise.
-	bool pickParticle(ViewportWindowInterface* vpwin, const QPoint& clickPoint, PickResult& result);
+    /// \brief Finds the particle under the mouse cursor.
+    /// \param vpwin The viewport window to perform hit testing in.
+    /// \param clickPoint The position of the mouse cursor in the viewport.
+    /// \param time The animation at which hit testing is performed.
+    /// \param result The output structure that receives information about the picked particle.
+    /// \return \c true if a particle has been picked; \c false otherwise.
+    bool pickParticle(ViewportWindowInterface* vpwin, const QPoint& clickPoint, PickResult& result);
 
-	/// \brief Renders the particle selection overlay in a viewport.
-	/// \param vp The viewport into which the selection marker should be rendered.
-	/// \param renderer The renderer for the viewport.
-	/// \param pickRecord Specifies the particle for which the selection marker should be rendered.
-	void renderSelectionMarker(Viewport* vp, SceneRenderer* renderer, const PickResult& pickRecord);
+    /// \brief Renders the particle selection overlay in a viewport.
+    /// \param vp The viewport into which the selection marker should be rendered.
+    /// \param renderer The renderer for the viewport.
+    /// \param pickRecord Specifies the particle for which the selection marker should be rendered.
+    void renderSelectionMarker(Viewport* vp, SceneRenderer* renderer, const PickResult& pickRecord);
 };
 
-}	// End of namespace
+}   // End of namespace

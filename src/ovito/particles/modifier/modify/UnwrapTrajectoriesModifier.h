@@ -36,34 +36,34 @@ namespace Ovito::Particles {
  */
 class OVITO_PARTICLES_EXPORT UnwrapTrajectoriesModifier : public Modifier
 {
-	/// Give this modifier class its own metaclass.
-	class UnwrapTrajectoriesModifierClass : public ModifierClass
-	{
-	public:
+    /// Give this modifier class its own metaclass.
+    class UnwrapTrajectoriesModifierClass : public ModifierClass
+    {
+    public:
 
-		/// Inherit constructor from base class.
-		using ModifierClass::ModifierClass;
+        /// Inherit constructor from base class.
+        using ModifierClass::ModifierClass;
 
-		/// Asks the metaclass whether the modifier can be applied to the given input data.
-		virtual bool isApplicableTo(const DataCollection& input) const override;
-	};
+        /// Asks the metaclass whether the modifier can be applied to the given input data.
+        virtual bool isApplicableTo(const DataCollection& input) const override;
+    };
 
-	OVITO_CLASS_META(UnwrapTrajectoriesModifier, UnwrapTrajectoriesModifierClass)
+    OVITO_CLASS_META(UnwrapTrajectoriesModifier, UnwrapTrajectoriesModifierClass)
 
-	Q_CLASSINFO("DisplayName", "Unwrap trajectories");
-	Q_CLASSINFO("Description", "Unwrap particle coordinates at periodic cell boundaries and generate continuous trajectories.");
-	Q_CLASSINFO("ModifierCategory", "Modification");
+    Q_CLASSINFO("DisplayName", "Unwrap trajectories");
+    Q_CLASSINFO("Description", "Unwrap particle coordinates at periodic cell boundaries and generate continuous trajectories.");
+    Q_CLASSINFO("ModifierCategory", "Modification");
 
 public:
 
-	/// Constructs a new instance of this class.
-	Q_INVOKABLE UnwrapTrajectoriesModifier(ObjectCreationParams params) : Modifier(params) {}
+    /// Constructs a new instance of this class.
+    Q_INVOKABLE UnwrapTrajectoriesModifier(ObjectCreationParams params) : Modifier(params) {}
 
-	/// Modifies the input data.
-	virtual Future<PipelineFlowState> evaluate(const ModifierEvaluationRequest& request, const PipelineFlowState& input) override;
+    /// Modifies the input data.
+    virtual Future<PipelineFlowState> evaluate(const ModifierEvaluationRequest& request, const PipelineFlowState& input) override;
 
-	/// Modifies the input data synchronously.
-	virtual void evaluateSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
+    /// Modifies the input data synchronously.
+    virtual void evaluateSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
 };
 
 /**
@@ -71,84 +71,84 @@ public:
  */
 class OVITO_PARTICLES_EXPORT UnwrapTrajectoriesModifierApplication : public ModifierApplication
 {
-	OVITO_CLASS(UnwrapTrajectoriesModifierApplication)
+    OVITO_CLASS(UnwrapTrajectoriesModifierApplication)
 
 public:
 
-	/// Data structure holding the precomputed information that is needed to unwrap the particle trajectories.
-	/// For each crossing of a particle through a periodic cell boundary, the map contains one entry specifying
-	/// the particle's unique ID, the time of the crossing, the spatial dimension and the direction (positive or negative).
-	using UnwrapData = std::unordered_multimap<qlonglong, std::tuple<AnimationTime, qint8, qint16>>;
+    /// Data structure holding the precomputed information that is needed to unwrap the particle trajectories.
+    /// For each crossing of a particle through a periodic cell boundary, the map contains one entry specifying
+    /// the particle's unique ID, the time of the crossing, the spatial dimension and the direction (positive or negative).
+    using UnwrapData = std::unordered_multimap<qlonglong, std::tuple<AnimationTime, qint8, qint16>>;
 
-	/// Data structure holding the precomputed information that is needed to undo flipping of sheared simulation cells in LAMMPS.
-	using UnflipData = std::vector<std::pair<AnimationTime, std::array<int,3>>>;
+    /// Data structure holding the precomputed information that is needed to undo flipping of sheared simulation cells in LAMMPS.
+    using UnflipData = std::vector<std::pair<AnimationTime, std::array<int,3>>>;
 
-	/// Constructor.
-	Q_INVOKABLE UnwrapTrajectoriesModifierApplication(ObjectCreationParams params) : ModifierApplication(params) {}
+    /// Constructor.
+    Q_INVOKABLE UnwrapTrajectoriesModifierApplication(ObjectCreationParams params) : ModifierApplication(params) {}
 
-	/// Indicates the animation time up to which trajectories have already been unwrapped.
-	AnimationTime unwrappedUpToTime() const { return _unwrappedUpToTime; }
+    /// Indicates the animation time up to which trajectories have already been unwrapped.
+    AnimationTime unwrappedUpToTime() const { return _unwrappedUpToTime; }
 
-	/// Returns the list of particle crossings through periodic cell boundaries.
-	const UnwrapData& unwrapRecords() const { return _unwrapRecords; }
+    /// Returns the list of particle crossings through periodic cell boundaries.
+    const UnwrapData& unwrapRecords() const { return _unwrapRecords; }
 
-	/// Returns the list of detected cell flips.
-	const UnflipData& unflipRecords() const { return _unflipRecords; }
+    /// Returns the list of detected cell flips.
+    const UnflipData& unflipRecords() const { return _unflipRecords; }
 
-	/// Processes all frames of the input trajectory to detect periodic crossings of the particles.
-	SharedFuture<> detectPeriodicCrossings(const ModifierEvaluationRequest& request);
+    /// Processes all frames of the input trajectory to detect periodic crossings of the particles.
+    SharedFuture<> detectPeriodicCrossings(const ModifierEvaluationRequest& request);
 
-	/// Unwraps the current particle coordinates.
-	void unwrapParticleCoordinates(const ModifierEvaluationRequest& request, PipelineFlowState& state);
+    /// Unwraps the current particle coordinates.
+    void unwrapParticleCoordinates(const ModifierEvaluationRequest& request, PipelineFlowState& state);
 
-	/// Rescales the times of all animation keys from the old animation interval to the new interval.
-	virtual void rescaleTime(const TimeInterval& oldAnimationInterval, const TimeInterval& newAnimationInterval) override;
+    /// Rescales the times of all animation keys from the old animation interval to the new interval.
+    virtual void rescaleTime(const TimeInterval& oldAnimationInterval, const TimeInterval& newAnimationInterval) override;
 
 protected:
 
-	/// Saves the class' contents to an output stream.
-	virtual void saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData) const override;
+    /// Saves the class' contents to an output stream.
+    virtual void saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData) const override;
 
-	/// Loads the class' contents from an input stream.
-	virtual void loadFromStream(ObjectLoadStream& stream) override;
+    /// Loads the class' contents from an input stream.
+    virtual void loadFromStream(ObjectLoadStream& stream) override;
 
-	/// This method is called once for this object after it has been completely loaded from a stream.
-	virtual void loadFromStreamComplete(ObjectLoadStream& stream) override;
+    /// This method is called once for this object after it has been completely loaded from a stream.
+    virtual void loadFromStreamComplete(ObjectLoadStream& stream) override;
 
-	/// \brief Is called when a RefTarget referenced by this object has generated an event.
-	virtual bool referenceEvent(RefTarget* source, const ReferenceEvent& event) override;
+    /// \brief Is called when a RefTarget referenced by this object has generated an event.
+    virtual bool referenceEvent(RefTarget* source, const ReferenceEvent& event) override;
 
-	/// Is called when the value of a reference field of this object changes.
-	virtual void referenceReplaced(const PropertyFieldDescriptor* field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex) override;
+    /// Is called when the value of a reference field of this object changes.
+    virtual void referenceReplaced(const PropertyFieldDescriptor* field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex) override;
 
-	/// Throws away the precomputed unwrapping information and interrupts
-	/// any computation currently in progress.
-	void invalidateUnwrapData();
+    /// Throws away the precomputed unwrapping information and interrupts
+    /// any computation currently in progress.
+    void invalidateUnwrapData();
 
 private:
 
-	/// The operation that processes all trajectory frames in the background to detect periodic crossings of particles.
-	SharedFuture<> _unwrapOperation;
+    /// The operation that processes all trajectory frames in the background to detect periodic crossings of particles.
+    SharedFuture<> _unwrapOperation;
 
-	/// The animation time up to which trajectories have already been unwrapped so far.
-	AnimationTime _unwrappedUpToTime = AnimationTime::negativeInfinity();
+    /// The animation time up to which trajectories have already been unwrapped so far.
+    AnimationTime _unwrappedUpToTime = AnimationTime::negativeInfinity();
 
-	/// The list of particle crossings through periodic cell boundaries.
-	UnwrapData _unwrapRecords;
+    /// The list of particle crossings through periodic cell boundaries.
+    UnwrapData _unwrapRecords;
 
-	/// The list of detected cell flips.
-	UnflipData _unflipRecords;
+    /// The list of detected cell flips.
+    UnflipData _unflipRecords;
 
-	/// Working state used during processing of the input trajectory.
-	struct WorkingData {
-		UnwrapTrajectoriesModifierApplication* _modApp;
-		std::unordered_map<qlonglong,Point3> _previousPositions;
-		DataOORef<const SimulationCellObject> _previousCell;
-		std::array<int,3> _currentFlipState{{0,0,0}};
+    /// Working state used during processing of the input trajectory.
+    struct WorkingData {
+        UnwrapTrajectoriesModifierApplication* _modApp;
+        std::unordered_map<qlonglong,Point3> _previousPositions;
+        DataOORef<const SimulationCellObject> _previousCell;
+        std::array<int,3> _currentFlipState{{0,0,0}};
 
-		/// Calculates the information that is needed to unwrap particle coordinates.
-		void operator()(int frame, const PipelineFlowState& state);
-	};
+        /// Calculates the information that is needed to unwrap particle coordinates.
+        void operator()(int frame, const PipelineFlowState& state);
+    };
 };
 
-}	// End of namespace
+}   // End of namespace

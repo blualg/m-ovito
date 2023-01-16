@@ -35,24 +35,24 @@ SET_OVITO_OBJECT_EDITOR(NucleotidesVis, NucleotidesVisEditor);
 ******************************************************************************/
 void NucleotidesVisEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 {
-	// Create a rollout.
-	QWidget* rollout = createRollout(tr("Nucleotide display"), rolloutParams);
+    // Create a rollout.
+    QWidget* rollout = createRollout(tr("Nucleotide display"), rolloutParams);
 
     // Create the rollout contents.
-	QGridLayout* layout = new QGridLayout(rollout);
-	layout->setContentsMargins(4,4,4,4);
-	layout->setSpacing(4);
-	layout->setColumnStretch(1, 1);
+    QGridLayout* layout = new QGridLayout(rollout);
+    layout->setContentsMargins(4,4,4,4);
+    layout->setSpacing(4);
+    layout->setColumnStretch(1, 1);
 
-	// Particle radius.
-	FloatParameterUI* radiusUI = new FloatParameterUI(this, PROPERTY_FIELD(ParticlesVis::defaultParticleRadius));
-	layout->addWidget(new QLabel(tr("Backbone centers radius:")), 0, 0);
-	layout->addLayout(radiusUI->createFieldLayout(), 0, 1);
+    // Particle radius.
+    FloatParameterUI* radiusUI = new FloatParameterUI(this, PROPERTY_FIELD(ParticlesVis::defaultParticleRadius));
+    layout->addWidget(new QLabel(tr("Backbone centers radius:")), 0, 0);
+    layout->addLayout(radiusUI->createFieldLayout(), 0, 1);
 
-	// Cylinder radius.
-	FloatParameterUI* cylinderRadiusUI = new FloatParameterUI(this, PROPERTY_FIELD(NucleotidesVis::cylinderRadius));
-	layout->addWidget(cylinderRadiusUI->label(), 1, 0);
-	layout->addLayout(cylinderRadiusUI->createFieldLayout(), 1, 1);
+    // Cylinder radius.
+    FloatParameterUI* cylinderRadiusUI = new FloatParameterUI(this, PROPERTY_FIELD(NucleotidesVis::cylinderRadius));
+    layout->addWidget(cylinderRadiusUI->label(), 1, 0);
+    layout->addLayout(cylinderRadiusUI->createFieldLayout(), 1, 1);
 }
 
-}	// End of namespace
+}   // End of namespace

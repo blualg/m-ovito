@@ -34,37 +34,37 @@ namespace Ovito {
  */
 class OVITO_GUI_EXPORT ViewportSettingsPage : public ApplicationSettingsDialogPage
 {
-	OVITO_CLASS(ViewportSettingsPage)
+    OVITO_CLASS(ViewportSettingsPage)
 
 public:
 
-	/// Default constructor.
-	Q_INVOKABLE ViewportSettingsPage() = default;
+    /// Default constructor.
+    Q_INVOKABLE ViewportSettingsPage() = default;
 
-	/// \brief Creates the widget.
-	virtual void insertSettingsDialogPage(QTabWidget* tabWidget) override;
+    /// \brief Creates the widget.
+    virtual void insertSettingsDialogPage(QTabWidget* tabWidget) override;
 
-	/// \brief Lets the settings page validate the values entered by the user before saving them.
-	virtual bool validateValues(QTabWidget* tabWidget) override;
+    /// \brief Lets the settings page validate the values entered by the user before saving them.
+    virtual bool validateValues(QTabWidget* tabWidget) override;
 
-	/// \brief Lets the settings page to save all values entered by the user.
-	/// \param settingsDialog The settings dialog box.
-	virtual void saveValues(QTabWidget* tabWidget) override;
+    /// \brief Lets the settings page to save all values entered by the user.
+    /// \param settingsDialog The settings dialog box.
+    virtual void saveValues(QTabWidget* tabWidget) override;
 
-	/// \brief Returns an integer value that is used to sort the dialog pages in ascending order.
-	virtual int pageSortingKey() const override { return 2; }
+    /// \brief Returns an integer value that is used to sort the dialog pages in ascending order.
+    virtual int pageSortingKey() const override { return 2; }
 
 private:
 
-	/// The settings object being modified.
-	ViewportSettings _viewportSettings;
+    /// The settings object being modified.
+    ViewportSettings _viewportSettings;
 
-	QButtonGroup* _upDirectionGroup;
-	QCheckBox* _constrainCameraRotationBox;
-	QButtonGroup* _colorScheme;
-	QButtonGroup* _graphicsSystem;
-	QComboBox* _vulkanDevices;
-	QComboBox* _transparencyRenderingMethod;
+    QButtonGroup* _upDirectionGroup;
+    QCheckBox* _constrainCameraRotationBox;
+    QButtonGroup* _colorScheme;
+    QButtonGroup* _graphicsSystem;
+    QComboBox* _vulkanDevices;
+    QComboBox* _transparencyRenderingMethod;
 };
 
-}	// End of namespace
+}   // End of namespace

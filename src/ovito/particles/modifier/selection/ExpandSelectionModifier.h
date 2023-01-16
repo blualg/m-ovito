@@ -38,169 +38,169 @@ namespace Ovito::Particles {
  */
 class OVITO_PARTICLES_EXPORT ExpandSelectionModifier : public AsynchronousModifier
 {
-	/// Give this modifier class its own metaclass.
-	class OOMetaClass : public AsynchronousModifier::OOMetaClass
-	{
-	public:
+    /// Give this modifier class its own metaclass.
+    class OOMetaClass : public AsynchronousModifier::OOMetaClass
+    {
+    public:
 
-		/// Inherit constructor from base metaclass.
-		using AsynchronousModifier::OOMetaClass::OOMetaClass;
+        /// Inherit constructor from base metaclass.
+        using AsynchronousModifier::OOMetaClass::OOMetaClass;
 
-		/// Asks the metaclass whether the modifier can be applied to the given input data.
-		virtual bool isApplicableTo(const DataCollection& input) const override;
-	};
+        /// Asks the metaclass whether the modifier can be applied to the given input data.
+        virtual bool isApplicableTo(const DataCollection& input) const override;
+    };
 
-	OVITO_CLASS_META(ExpandSelectionModifier, OOMetaClass)
+    OVITO_CLASS_META(ExpandSelectionModifier, OOMetaClass)
 
-	Q_CLASSINFO("DisplayName", "Expand selection");
-	Q_CLASSINFO("Description", "Select particles that are neighbors of already selected particles.");
-	Q_CLASSINFO("ModifierCategory", "Selection");
-
-public:
-
-	enum ExpansionMode {
-		BondedNeighbors,	///< Expands the selection to particles that are bonded to an already selected particle.
-		CutoffRange,		///< Expands the selection to particles that within a cutoff range of an already selected particle.
-		NearestNeighbors,	///< Expands the selection to the N nearest particles of already selected particles.
-	};
-	Q_ENUM(ExpansionMode);
-
-	/// Compile-time constant for the maximum number of nearest neighbors that can be taken into account.
-	enum { MAX_NEAREST_NEIGHBORS = 30 };
+    Q_CLASSINFO("DisplayName", "Expand selection");
+    Q_CLASSINFO("Description", "Select particles that are neighbors of already selected particles.");
+    Q_CLASSINFO("ModifierCategory", "Selection");
 
 public:
 
-	/// \brief Constructs a new instance of this class.
-	Q_INVOKABLE ExpandSelectionModifier(ObjectCreationParams params);
+    enum ExpansionMode {
+        BondedNeighbors,    ///< Expands the selection to particles that are bonded to an already selected particle.
+        CutoffRange,        ///< Expands the selection to particles that within a cutoff range of an already selected particle.
+        NearestNeighbors,   ///< Expands the selection to the N nearest particles of already selected particles.
+    };
+    Q_ENUM(ExpansionMode);
+
+    /// Compile-time constant for the maximum number of nearest neighbors that can be taken into account.
+    enum { MAX_NEAREST_NEIGHBORS = 30 };
+
+public:
+
+    /// \brief Constructs a new instance of this class.
+    Q_INVOKABLE ExpandSelectionModifier(ObjectCreationParams params);
 
 protected:
 
-	/// Creates a computation engine that will compute the modifier's results.
-	virtual Future<EnginePtr> createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input) override;
+    /// Creates a computation engine that will compute the modifier's results.
+    virtual Future<EnginePtr> createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input) override;
 
 private:
 
-	/// The modifier's compute engine.
-	class ExpandSelectionEngine : public Engine
-	{
-	public:
+    /// The modifier's compute engine.
+    class ExpandSelectionEngine : public Engine
+    {
+    public:
 
-		/// Constructor.
-		ExpandSelectionEngine(const ModifierEvaluationRequest& request, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCellObject* simCell, ConstPropertyPtr inputSelection, int numIterations) :
-			Engine(request),
-			_numIterations(numIterations),
-			_positions(std::move(positions)),
-			_simCell(simCell),
-			_inputSelection(inputSelection),
-			_outputSelection(inputSelection.makeCopy()),
-			_inputFingerprint(std::move(fingerprint)) {}
+        /// Constructor.
+        ExpandSelectionEngine(const ModifierEvaluationRequest& request, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCellObject* simCell, ConstPropertyPtr inputSelection, int numIterations) :
+            Engine(request),
+            _numIterations(numIterations),
+            _positions(std::move(positions)),
+            _simCell(simCell),
+            _inputSelection(inputSelection),
+            _outputSelection(inputSelection.makeCopy()),
+            _inputFingerprint(std::move(fingerprint)) {}
 
-		/// Computes the modifier's results.
-		virtual void perform() override;
+        /// Computes the modifier's results.
+        virtual void perform() override;
 
-		/// Performs one iteration of the expansion.
-		virtual void expandSelection() = 0;
+        /// Performs one iteration of the expansion.
+        virtual void expandSelection() = 0;
 
-		/// Injects the computed results into the data pipeline.
-		virtual void applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
+        /// Injects the computed results into the data pipeline.
+        virtual void applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
 
-		const PropertyPtr& outputSelection() { return _outputSelection; }
-		
-		void setOutputSelection(PropertyPtr ptr) { _outputSelection = std::move(ptr); }
-		
-		size_t numSelectedParticlesInput() const { return _numSelectedParticlesInput; }
-		
-		size_t numSelectedParticlesOutput() const { return _numSelectedParticlesOutput; }
-		
-		void setNumSelectedParticlesInput(size_t count) { _numSelectedParticlesInput = count; }
+        const PropertyPtr& outputSelection() { return _outputSelection; }
+        
+        void setOutputSelection(PropertyPtr ptr) { _outputSelection = std::move(ptr); }
+        
+        size_t numSelectedParticlesInput() const { return _numSelectedParticlesInput; }
+        
+        size_t numSelectedParticlesOutput() const { return _numSelectedParticlesOutput; }
+        
+        void setNumSelectedParticlesInput(size_t count) { _numSelectedParticlesInput = count; }
 
-		void setNumSelectedParticlesOutput(size_t count) { _numSelectedParticlesOutput = count; }
+        void setNumSelectedParticlesOutput(size_t count) { _numSelectedParticlesOutput = count; }
 
-		const DataOORef<const SimulationCellObject>& simCell() const { return _simCell; }
+        const DataOORef<const SimulationCellObject>& simCell() const { return _simCell; }
 
-		const ConstPropertyPtr& positions() const { return _positions; }
+        const ConstPropertyPtr& positions() const { return _positions; }
 
-		const ConstPropertyPtr& inputSelection() const { return _inputSelection; }
+        const ConstPropertyPtr& inputSelection() const { return _inputSelection; }
 
-	protected:
+    protected:
 
-		const int _numIterations;
-		DataOORef<const SimulationCellObject> _simCell;
-		ConstPropertyPtr _positions;
-		ConstPropertyPtr _inputSelection;
-		PropertyPtr _outputSelection;
-		size_t _numSelectedParticlesInput;
-		size_t _numSelectedParticlesOutput;
-		ParticleOrderingFingerprint _inputFingerprint;
-	};
+        const int _numIterations;
+        DataOORef<const SimulationCellObject> _simCell;
+        ConstPropertyPtr _positions;
+        ConstPropertyPtr _inputSelection;
+        PropertyPtr _outputSelection;
+        size_t _numSelectedParticlesInput;
+        size_t _numSelectedParticlesOutput;
+        ParticleOrderingFingerprint _inputFingerprint;
+    };
 
-	/// Computes the expanded selection by using the nearest neighbor criterion.
-	class ExpandSelectionNearestEngine : public ExpandSelectionEngine
-	{
-	public:
+    /// Computes the expanded selection by using the nearest neighbor criterion.
+    class ExpandSelectionNearestEngine : public ExpandSelectionEngine
+    {
+    public:
 
-		/// Constructor.
-		ExpandSelectionNearestEngine(const ModifierEvaluationRequest& request, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCellObject* simCell, ConstPropertyPtr inputSelection, int numIterations, int numNearestNeighbors) :
-			ExpandSelectionEngine(request, std::move(fingerprint), std::move(positions), simCell, std::move(inputSelection), numIterations),
-			_numNearestNeighbors(numNearestNeighbors) {}
+        /// Constructor.
+        ExpandSelectionNearestEngine(const ModifierEvaluationRequest& request, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCellObject* simCell, ConstPropertyPtr inputSelection, int numIterations, int numNearestNeighbors) :
+            ExpandSelectionEngine(request, std::move(fingerprint), std::move(positions), simCell, std::move(inputSelection), numIterations),
+            _numNearestNeighbors(numNearestNeighbors) {}
 
-		/// Expands the selection by one step.
-		virtual void expandSelection() override;
+        /// Expands the selection by one step.
+        virtual void expandSelection() override;
 
-	private:
+    private:
 
-		const int _numNearestNeighbors;
-	};
+        const int _numNearestNeighbors;
+    };
 
-	/// Computes the expanded selection when using a cutoff range criterion.
-	class ExpandSelectionCutoffEngine : public ExpandSelectionEngine
-	{
-	public:
+    /// Computes the expanded selection when using a cutoff range criterion.
+    class ExpandSelectionCutoffEngine : public ExpandSelectionEngine
+    {
+    public:
 
-		/// Constructor.
-		ExpandSelectionCutoffEngine(const ModifierEvaluationRequest& request, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCellObject* simCell, ConstPropertyPtr inputSelection, int numIterations, FloatType cutoff) :
-			ExpandSelectionEngine(request, std::move(fingerprint), std::move(positions), simCell, std::move(inputSelection), numIterations),
-			_cutoffRange(cutoff) {}
+        /// Constructor.
+        ExpandSelectionCutoffEngine(const ModifierEvaluationRequest& request, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCellObject* simCell, ConstPropertyPtr inputSelection, int numIterations, FloatType cutoff) :
+            ExpandSelectionEngine(request, std::move(fingerprint), std::move(positions), simCell, std::move(inputSelection), numIterations),
+            _cutoffRange(cutoff) {}
 
-		/// Expands the selection by one step.
-		virtual void expandSelection() override;
+        /// Expands the selection by one step.
+        virtual void expandSelection() override;
 
-	private:
+    private:
 
-		const FloatType _cutoffRange;
-	};
+        const FloatType _cutoffRange;
+    };
 
-	/// Computes the expanded selection when using bonds.
-	class ExpandSelectionBondedEngine : public ExpandSelectionEngine
-	{
-	public:
+    /// Computes the expanded selection when using bonds.
+    class ExpandSelectionBondedEngine : public ExpandSelectionEngine
+    {
+    public:
 
-		/// Constructor.
-		ExpandSelectionBondedEngine(const ModifierEvaluationRequest& request, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCellObject* simCell, ConstPropertyPtr inputSelection, int numIterations, ConstPropertyPtr bondTopology) :
-			ExpandSelectionEngine(request, std::move(fingerprint), std::move(positions), simCell, std::move(inputSelection), numIterations),
-			_bondTopology(std::move(bondTopology)) {}
+        /// Constructor.
+        ExpandSelectionBondedEngine(const ModifierEvaluationRequest& request, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCellObject* simCell, ConstPropertyPtr inputSelection, int numIterations, ConstPropertyPtr bondTopology) :
+            ExpandSelectionEngine(request, std::move(fingerprint), std::move(positions), simCell, std::move(inputSelection), numIterations),
+            _bondTopology(std::move(bondTopology)) {}
 
-		/// Expands the selection by one step.
-		virtual void expandSelection() override;
+        /// Expands the selection by one step.
+        virtual void expandSelection() override;
 
-	private:
+    private:
 
-		ConstPropertyPtr _bondTopology;
-	};
+        ConstPropertyPtr _bondTopology;
+    };
 
 private:
 
-	/// The expansion mode.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(ExpansionMode, mode, setMode, PROPERTY_FIELD_MEMORIZE);
+    /// The expansion mode.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(ExpansionMode, mode, setMode, PROPERTY_FIELD_MEMORIZE);
 
-	/// The selection cutoff range.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType, cutoffRange, setCutoffRange, PROPERTY_FIELD_MEMORIZE);
+    /// The selection cutoff range.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType, cutoffRange, setCutoffRange, PROPERTY_FIELD_MEMORIZE);
 
-	/// The number of nearest neighbors to select.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(int, numNearestNeighbors, setNumNearestNeighbors, PROPERTY_FIELD_MEMORIZE);
+    /// The number of nearest neighbors to select.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(int, numNearestNeighbors, setNumNearestNeighbors, PROPERTY_FIELD_MEMORIZE);
 
-	/// The number of expansion steps to perform.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD(int, numberOfIterations, setNumberOfIterations);
+    /// The number of expansion steps to perform.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(int, numberOfIterations, setNumberOfIterations);
 };
 
-}	// End of namespace
+}   // End of namespace

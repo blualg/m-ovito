@@ -42,8 +42,8 @@ SET_PROPERTY_FIELD_LABEL(ManualSelectionModifierApplication, selectionSet, "Elem
 ******************************************************************************/
 ManualSelectionModifier::ManualSelectionModifier(ObjectCreationParams params) : GenericPropertyModifier(params)
 {
-	// Operate on particles by default.
-	setDefaultSubject(QStringLiteral("Particles"), QStringLiteral("ParticlesObject"));
+    // Operate on particles by default.
+    setDefaultSubject(QStringLiteral("Particles"), QStringLiteral("ParticlesObject"));
 }
 
 /******************************************************************************
@@ -52,12 +52,12 @@ ManualSelectionModifier::ManualSelectionModifier(ObjectCreationParams params) : 
 ******************************************************************************/
 void ManualSelectionModifier::initializeModifier(const ModifierInitializationRequest& request)
 {
-	Modifier::initializeModifier(request);
+    Modifier::initializeModifier(request);
 
-	// Take a snapshot of the existing selection state at the time the modifier is created.
-	if(!getSelectionSet(request.modApp(), false)) {
-		resetSelection(request.modApp(), request.modApp()->evaluateInputSynchronous(request));
-	}
+    // Take a snapshot of the existing selection state at the time the modifier is created.
+    if(!getSelectionSet(request.modApp(), false)) {
+        resetSelection(request.modApp(), request.modApp()->evaluateInputSynchronous(request));
+    }
 }
 
 /******************************************************************************
@@ -65,14 +65,14 @@ void ManualSelectionModifier::initializeModifier(const ModifierInitializationReq
 ******************************************************************************/
 void ManualSelectionModifier::propertyChanged(const PropertyFieldDescriptor* field)
 {
-	// Whenever the subject of this modifier is changed, reset the selection.
-	if(field == PROPERTY_FIELD(GenericPropertyModifier::subject) && !isBeingLoaded() && !isUndoingOrRedoing() && ExecutionContext::isInteractive()) {
-		PipelineEvaluationRequest request(ExecutionContext::current().ui().datasetContainer().currentAnimationTime());
-		for(ModifierApplication* modApp : modifierApplications()) {
-			resetSelection(modApp, modApp->evaluateInputSynchronous(request));
-		}
-	}
-	GenericPropertyModifier::propertyChanged(field);
+    // Whenever the subject of this modifier is changed, reset the selection.
+    if(field == PROPERTY_FIELD(GenericPropertyModifier::subject) && !isBeingLoaded() && !isUndoingOrRedoing() && ExecutionContext::isInteractive()) {
+        PipelineEvaluationRequest request(ExecutionContext::current().ui().datasetContainer().currentAnimationTime());
+        for(ModifierApplication* modApp : modifierApplications()) {
+            resetSelection(modApp, modApp->evaluateInputSynchronous(request));
+        }
+    }
+    GenericPropertyModifier::propertyChanged(field);
 }
 
 /******************************************************************************
@@ -80,22 +80,22 @@ void ManualSelectionModifier::propertyChanged(const PropertyFieldDescriptor* fie
 ******************************************************************************/
 void ManualSelectionModifier::evaluateSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state)
 {
-	// Retrieve the selection stored in the modifier application.
-	ElementSelectionSet* selectionSet = getSelectionSet(request.modApp(), false);
-	if(!selectionSet)
-		throw Exception(tr("No stored selection set available. Please reset the selection state."));
+    // Retrieve the selection stored in the modifier application.
+    ElementSelectionSet* selectionSet = getSelectionSet(request.modApp(), false);
+    if(!selectionSet)
+        throw Exception(tr("No stored selection set available. Please reset the selection state."));
 
-	if(subject()) {
-		PropertyContainer* container = state.expectMutableLeafObject(subject());
-		container->verifyIntegrity();
+    if(subject()) {
+        PropertyContainer* container = state.expectMutableLeafObject(subject());
+        container->verifyIntegrity();
 
-		PipelineStatus status = selectionSet->applySelection(
-				container->createProperty(PropertyObject::GenericSelectionProperty),
-				container->getOOMetaClass().isValidStandardPropertyId(PropertyObject::GenericIdentifierProperty) ?
-					container->getProperty(PropertyObject::GenericIdentifierProperty) : nullptr);
+        PipelineStatus status = selectionSet->applySelection(
+                container->createProperty(PropertyObject::GenericSelectionProperty),
+                container->getOOMetaClass().isValidStandardPropertyId(PropertyObject::GenericIdentifierProperty) ?
+                    container->getProperty(PropertyObject::GenericIdentifierProperty) : nullptr);
 
-		state.setStatus(std::move(status));
-	}
+        state.setStatus(std::move(status));
+    }
 }
 
 /******************************************************************************
@@ -104,15 +104,15 @@ void ManualSelectionModifier::evaluateSynchronous(const ModifierEvaluationReques
 ******************************************************************************/
 ElementSelectionSet* ManualSelectionModifier::getSelectionSet(ModifierApplication* modApp, bool createIfNotExist)
 {
-	ManualSelectionModifierApplication* myModApp = dynamic_object_cast<ManualSelectionModifierApplication>(modApp);
-	if(!myModApp)
-		throw Exception(tr("Manual selection modifier is not associated with a ManualSelectionModifierApplication."));
+    ManualSelectionModifierApplication* myModApp = dynamic_object_cast<ManualSelectionModifierApplication>(modApp);
+    if(!myModApp)
+        throw Exception(tr("Manual selection modifier is not associated with a ManualSelectionModifierApplication."));
 
-	ElementSelectionSet* selectionSet = myModApp->selectionSet();
-	if(!selectionSet && createIfNotExist)
-		myModApp->setSelectionSet(selectionSet = OORef<ElementSelectionSet>::create());
+    ElementSelectionSet* selectionSet = myModApp->selectionSet();
+    if(!selectionSet && createIfNotExist)
+        myModApp->setSelectionSet(selectionSet = OORef<ElementSelectionSet>::create());
 
-	return selectionSet;
+    return selectionSet;
 }
 
 /******************************************************************************
@@ -120,10 +120,10 @@ ElementSelectionSet* ManualSelectionModifier::getSelectionSet(ModifierApplicatio
 ******************************************************************************/
 void ManualSelectionModifier::resetSelection(ModifierApplication* modApp, const PipelineFlowState& state)
 {
-	if(subject()) {
-		const PropertyContainer* container = state.expectLeafObject(subject());
-		getSelectionSet(modApp, true)->resetSelection(container);
-	}
+    if(subject()) {
+        const PropertyContainer* container = state.expectLeafObject(subject());
+        getSelectionSet(modApp, true)->resetSelection(container);
+    }
 }
 
 /******************************************************************************
@@ -131,10 +131,10 @@ void ManualSelectionModifier::resetSelection(ModifierApplication* modApp, const 
 ******************************************************************************/
 void ManualSelectionModifier::selectAll(ModifierApplication* modApp, const PipelineFlowState& state)
 {
-	if(subject()) {
-		const PropertyContainer* container = state.expectLeafObject(subject());
-		getSelectionSet(modApp, true)->selectAll(container);
-	}
+    if(subject()) {
+        const PropertyContainer* container = state.expectLeafObject(subject());
+        getSelectionSet(modApp, true)->selectAll(container);
+    }
 }
 
 /******************************************************************************
@@ -142,10 +142,10 @@ void ManualSelectionModifier::selectAll(ModifierApplication* modApp, const Pipel
 ******************************************************************************/
 void ManualSelectionModifier::clearSelection(ModifierApplication* modApp, const PipelineFlowState& state)
 {
-	if(subject()) {
-		const PropertyContainer* container = state.expectLeafObject(subject());
-		getSelectionSet(modApp, true)->clearSelection(container);
-	}
+    if(subject()) {
+        const PropertyContainer* container = state.expectLeafObject(subject());
+        getSelectionSet(modApp, true)->clearSelection(container);
+    }
 }
 
 /******************************************************************************
@@ -153,10 +153,10 @@ void ManualSelectionModifier::clearSelection(ModifierApplication* modApp, const 
 ******************************************************************************/
 void ManualSelectionModifier::invertSelection(ModifierApplication* modApp, const PipelineFlowState& state)
 {
-	if(subject()) {
-		const PropertyContainer* container = state.expectLeafObject(subject());
-		getSelectionSet(modApp, true)->invertSelection(container);
-	}
+    if(subject()) {
+        const PropertyContainer* container = state.expectLeafObject(subject());
+        getSelectionSet(modApp, true)->invertSelection(container);
+    }
 }
 
 /******************************************************************************
@@ -164,13 +164,13 @@ void ManualSelectionModifier::invertSelection(ModifierApplication* modApp, const
 ******************************************************************************/
 void ManualSelectionModifier::toggleElementSelection(ModifierApplication* modApp, const PipelineFlowState& state, size_t elementIndex)
 {
-	ElementSelectionSet* selectionSet = getSelectionSet(modApp, false);
-	if(!selectionSet)
-		throw Exception(tr("No stored selection set available. Please reset the selection state."));
-	if(subject()) {
-		const PropertyContainer* container = state.expectLeafObject(subject());
-		selectionSet->toggleElement(container, elementIndex);
-	}
+    ElementSelectionSet* selectionSet = getSelectionSet(modApp, false);
+    if(!selectionSet)
+        throw Exception(tr("No stored selection set available. Please reset the selection state."));
+    if(subject()) {
+        const PropertyContainer* container = state.expectLeafObject(subject());
+        selectionSet->toggleElement(container, elementIndex);
+    }
 }
 
 /******************************************************************************
@@ -178,10 +178,10 @@ void ManualSelectionModifier::toggleElementSelection(ModifierApplication* modApp
 ******************************************************************************/
 void ManualSelectionModifier::setSelection(ModifierApplication* modApp, const PipelineFlowState& state, const boost::dynamic_bitset<>& selection, ElementSelectionSet::SelectionMode mode)
 {
-	if(subject()) {
-		const PropertyContainer* container = state.expectLeafObject(subject());
-		getSelectionSet(modApp, true)->setSelection(container, selection, mode);
-	}
+    if(subject()) {
+        const PropertyContainer* container = state.expectLeafObject(subject());
+        getSelectionSet(modApp, true)->setSelection(container, selection, mode);
+    }
 }
 
-}	// End of namespace
+}   // End of namespace

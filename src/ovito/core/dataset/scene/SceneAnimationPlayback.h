@@ -34,52 +34,52 @@ namespace Ovito {
  */
 class OVITO_CORE_EXPORT SceneAnimationPlayback : public ScenePreparation
 {
-	OVITO_CLASS(SceneAnimationPlayback)
+    OVITO_CLASS(SceneAnimationPlayback)
 
 public:
 
-	/// Constructor.
-	explicit SceneAnimationPlayback(UserInterface& userInterface);
+    /// Constructor.
+    explicit SceneAnimationPlayback(UserInterface& userInterface);
 
-	/// Returns whether the animation is currently being played back in the viewports.
-	bool isPlaybackActive() const { return _activePlaybackRate != 0; }
+    /// Returns whether the animation is currently being played back in the viewports.
+    bool isPlaybackActive() const { return _activePlaybackRate != 0; }
 
 public Q_SLOTS:
 
-	/// Starts playback of the animation.
-	void startAnimationPlayback(Scene* scene, FloatType playbackRate = FloatType(1));
+    /// Starts playback of the animation.
+    void startAnimationPlayback(Scene* scene, FloatType playbackRate = FloatType(1));
 
-	/// Stops playback of the animation.
-	void stopAnimationPlayback();
+    /// Stops playback of the animation.
+    void stopAnimationPlayback();
 
 Q_SIGNALS:
 
-	/// This signal is emitted when the animation playback is started or stopped.
-	void playbackChanged(bool active);
+    /// This signal is emitted when the animation playback is started or stopped.
+    void playbackChanged(bool active);
 
 private Q_SLOTS:
 
-	/// Starts a timer to show the next animation frame.
-	void scheduleNextAnimationFrame();
+    /// Starts a timer to show the next animation frame.
+    void scheduleNextAnimationFrame();
 
 protected:
 
-	/// Handles timer events for this object.
-	virtual void timerEvent(QTimerEvent* event) override;
+    /// Handles timer events for this object.
+    virtual void timerEvent(QTimerEvent* event) override;
 
 private:
 
-	/// Jumps to the given animation frame, then schedules the next frame as soon as the scene was completely shown.
-	void continuePlaybackAtFrame(int frame);
+    /// Jumps to the given animation frame, then schedules the next frame as soon as the scene was completely shown.
+    void continuePlaybackAtFrame(int frame);
 
-	/// Indicates that the animation is currently being played back in the interactive viewports.
-	FloatType _activePlaybackRate = 0;
+    /// Indicates that the animation is currently being played back in the interactive viewports.
+    FloatType _activePlaybackRate = 0;
 
-	/// Measures how long it took to load, compute, and render the current animation frame.
-	QElapsedTimer _frameRenderingTimer;
+    /// Measures how long it took to load, compute, and render the current animation frame.
+    QElapsedTimer _frameRenderingTimer;
 
-	/// Timer for scheduling the next animation frame.
-	QBasicTimer _nextFrameTimer;
+    /// Timer for scheduling the next animation frame.
+    QBasicTimer _nextFrameTimer;
 };
 
-}	// End of namespace
+}   // End of namespace

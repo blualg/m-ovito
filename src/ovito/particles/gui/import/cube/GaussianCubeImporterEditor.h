@@ -33,17 +33,17 @@ namespace Ovito::Particles {
  */
 class GaussianCubeImporterEditor : public FileImporterEditor
 {
-	OVITO_CLASS(GaussianCubeImporterEditor)
+    OVITO_CLASS(GaussianCubeImporterEditor)
 
 public:
 
-	/// Constructor.
-	Q_INVOKABLE GaussianCubeImporterEditor() {}
+    /// Constructor.
+    Q_INVOKABLE GaussianCubeImporterEditor() {}
 
 protected:
 
-	/// Creates the user interface controls for the editor.
-	virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
+    /// Creates the user interface controls for the editor.
+    virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
 };
 
-}	// End of namespace
+}   // End of namespace

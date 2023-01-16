@@ -36,20 +36,20 @@ class ChangeValueRAII
 {
 public:
 
-	/// Constructor.
-	explicit ChangeValueRAII(T& storage, T&& newValue) : _storage(storage), _oldValue(std::exchange(storage, std::move(newValue))) {}
+    /// Constructor.
+    explicit ChangeValueRAII(T& storage, T&& newValue) : _storage(storage), _oldValue(std::exchange(storage, std::move(newValue))) {}
 
-	/// Destructor.
-	~ChangeValueRAII() { _storage = std::move(_oldValue); }
+    /// Destructor.
+    ~ChangeValueRAII() { _storage = std::move(_oldValue); }
 
-	/// No copying.
-	ChangeValueRAII(const ChangeValueRAII& other) = delete;
-	ChangeValueRAII& operator=(const ChangeValueRAII& other) = delete;
+    /// No copying.
+    ChangeValueRAII(const ChangeValueRAII& other) = delete;
+    ChangeValueRAII& operator=(const ChangeValueRAII& other) = delete;
 
 private:
 
-	T& _storage;
-	T _oldValue;
+    T& _storage;
+    T _oldValue;
 };
 
-}	// End of namespace
+}   // End of namespace

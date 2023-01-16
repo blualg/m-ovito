@@ -34,8 +34,8 @@ IMPLEMENT_OVITO_CLASS(ClearSelectionModifier);
 ******************************************************************************/
 ClearSelectionModifier::ClearSelectionModifier(ObjectCreationParams params) : GenericPropertyModifier(params)
 {
-	// Operate on particles by default.
-	setDefaultSubject(QStringLiteral("Particles"), QStringLiteral("ParticlesObject"));
+    // Operate on particles by default.
+    setDefaultSubject(QStringLiteral("Particles"), QStringLiteral("ParticlesObject"));
 }
 
 /******************************************************************************
@@ -43,12 +43,12 @@ ClearSelectionModifier::ClearSelectionModifier(ObjectCreationParams params) : Ge
 ******************************************************************************/
 void ClearSelectionModifier::evaluateSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state)
 {
-	if(!subject())
-		throw Exception(tr("No input element type selected."));
+    if(!subject())
+        throw Exception(tr("No input element type selected."));
 
-   	PropertyContainer* container = state.expectMutableLeafObject(subject());
-	if(const PropertyObject* selProperty = container->getProperty(PropertyObject::GenericSelectionProperty))
-		container->removeProperty(selProperty);
+    PropertyContainer* container = state.expectMutableLeafObject(subject());
+    if(const PropertyObject* selProperty = container->getProperty(PropertyObject::GenericSelectionProperty))
+        container->removeProperty(selProperty);
 }
 
-}	// End of namespace
+}   // End of namespace

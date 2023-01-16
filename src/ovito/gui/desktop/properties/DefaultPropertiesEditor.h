@@ -33,34 +33,34 @@ namespace Ovito {
  */
 class OVITO_GUI_EXPORT DefaultPropertiesEditor : public PropertiesEditor
 {
-	OVITO_CLASS(DefaultPropertiesEditor)
+    OVITO_CLASS(DefaultPropertiesEditor)
 
 public:
 
-	/// Constructor.
-	Q_INVOKABLE DefaultPropertiesEditor() = default;
+    /// Constructor.
+    Q_INVOKABLE DefaultPropertiesEditor() = default;
 
 protected:
 
-	/// Creates the user interface controls for the editor.
-	virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
+    /// Creates the user interface controls for the editor.
+    virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
 
-	/// This method is called when a reference target changes.
-	virtual bool referenceEvent(RefTarget* source, const ReferenceEvent& event) override;
+    /// This method is called when a reference target changes.
+    virtual bool referenceEvent(RefTarget* source, const ReferenceEvent& event) override;
 
-	/// Is called when the value of a reference field of this RefMaker changes.
-	virtual void referenceReplaced(const PropertyFieldDescriptor* field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex) override;
+    /// Is called when the value of a reference field of this RefMaker changes.
+    virtual void referenceReplaced(const PropertyFieldDescriptor* field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex) override;
 
 private:
 
-	/// Rebuilds the list of sub-editors for the current edit object.
-	void updateSubEditors();
+    /// Rebuilds the list of sub-editors for the current edit object.
+    void updateSubEditors();
 
-	/// The editors for the referenced sub-objects.
-	std::vector<OORef<PropertiesEditor>> _subEditors;
+    /// The editors for the referenced sub-objects.
+    std::vector<OORef<PropertiesEditor>> _subEditors;
 
-	/// Specifies where the sub-editors are opened and whether the sub-editors are opened in a collapsed state.
-	RolloutInsertionParameters _rolloutParams;
+    /// Specifies where the sub-editors are opened and whether the sub-editors are opened in a collapsed state.
+    RolloutInsertionParameters _rolloutParams;
 };
 
-}	// End of namespace
+}   // End of namespace

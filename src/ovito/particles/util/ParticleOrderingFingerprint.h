@@ -39,40 +39,40 @@ class OVITO_PARTICLES_EXPORT ParticleOrderingFingerprint
 {
 public:
 
-	/// Constructor.
-	ParticleOrderingFingerprint(const ParticlesObject* particles) :
-		_particleCount(particles->elementCount()),
-		_particleIdentifiers(particles->getProperty(ParticlesObject::IdentifierProperty)) {}
+    /// Constructor.
+    ParticleOrderingFingerprint(const ParticlesObject* particles) :
+        _particleCount(particles->elementCount()),
+        _particleIdentifiers(particles->getProperty(ParticlesObject::IdentifierProperty)) {}
 
-	/// Returns the number of particles for which this object was constructed.
-	size_t particleCount() const { return _particleCount; }
+    /// Returns the number of particles for which this object was constructed.
+    size_t particleCount() const { return _particleCount; }
 
-	/// Returns true if the particle number and the storage order have changed
-	/// with respect to the state from which this object was constructed.
-	bool hasChanged(const ParticlesObject* particles) const {
-		if(_particleCount != particles->elementCount())
-			return true;
-		if(const PropertyObject* prop = particles->getProperty(ParticlesObject::IdentifierProperty)) {
-			if(!_particleIdentifiers)
-				return true;
-			if(prop != _particleIdentifiers) {
-				if(!prop->equals(*_particleIdentifiers))
-					return true;
-			}
-		}
-		else if(_particleIdentifiers) {
-			return true;
-		}
-		return false;
-	}
+    /// Returns true if the particle number and the storage order have changed
+    /// with respect to the state from which this object was constructed.
+    bool hasChanged(const ParticlesObject* particles) const {
+        if(_particleCount != particles->elementCount())
+            return true;
+        if(const PropertyObject* prop = particles->getProperty(ParticlesObject::IdentifierProperty)) {
+            if(!_particleIdentifiers)
+                return true;
+            if(prop != _particleIdentifiers) {
+                if(!prop->equals(*_particleIdentifiers))
+                    return true;
+            }
+        }
+        else if(_particleIdentifiers) {
+            return true;
+        }
+        return false;
+    }
 
 private:
 
-	/// The total number of particles.
-	size_t _particleCount;
+    /// The total number of particles.
+    size_t _particleCount;
 
-	/// The list of particle IDs (if available).
-	ConstPropertyPtr _particleIdentifiers;
+    /// The list of particle IDs (if available).
+    ConstPropertyPtr _particleIdentifiers;
 };
 
-}	// End of namespace
+}   // End of namespace
