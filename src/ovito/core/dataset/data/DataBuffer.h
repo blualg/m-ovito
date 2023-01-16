@@ -215,21 +215,21 @@ public:
         if(size() == 0) return true;
         if(dataType() == DataBuffer::Int) {
             prepareReadAccess();
-            for(const int* __restrict v = reinterpret_cast<const int*>(cbuffer()) + component, v_end = v + size()*cmpntCount; v != v_end; v += cmpntCount)
+            for(const int* __restrict v = reinterpret_cast<const int*>(cbuffer()) + component, *v_end = v + size()*cmpntCount; v != v_end; v += cmpntCount)
                 *iter++ = *v;
             finishReadAccess();
             return true;
         }
         else if(dataType() == DataBuffer::Int64) {
             prepareReadAccess();
-            for(const qlonglong* __restrict v = reinterpret_cast<const qlonglong*>(cbuffer()) + component, v_end = v + size()*cmpntCount; v != v_end; v += cmpntCount)
+            for(const qlonglong* __restrict v = reinterpret_cast<const qlonglong*>(cbuffer()) + component, *v_end = v + size()*cmpntCount; v != v_end; v += cmpntCount)
                 *iter++ = *v;
             finishReadAccess();
             return true;
         }
         else if(dataType() == DataBuffer::Float) {
             prepareReadAccess();
-            for(const FloatType* __restrict v = reinterpret_cast<const FloatType*>(cbuffer()) + component, v_end = v + size()*cmpntCount; v != v_end; v += cmpntCount)
+            for(const FloatType* __restrict v = reinterpret_cast<const FloatType*>(cbuffer()) + component, *v_end = v + size()*cmpntCount; v != v_end; v += cmpntCount)
                 *iter++ = *v;
             finishReadAccess();
             return true;
