@@ -106,6 +106,8 @@ Optionally, the Cartesian coordinates of the simulation cell origin :math:`\math
 
   Origin="<ox> <oy> <oz>"
 
+Without this field, OVITO places the cell origin at the standard position (0,0,0). 
+
 The periodic boundary conditions in each cell direction may be specified as triplet of Boolean flags (F/T or 0/1), e.g.::
 
   pbc="T T F"

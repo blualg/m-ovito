@@ -47,7 +47,8 @@ public:
 		/// Human-readable description of the file format. Used for the drop-down box of the file selection dialog.
 		QString description;
 
-		/// Internal name of the file format, which is used by the file importer class. May be empty if the importer supports just a single format.
+		/// Internal name of the (sub-)format used by the file importer class. 
+		/// May be left unspecified (empty string) if the importer supports just one file format.
 		QString identifier;
 	};
 
