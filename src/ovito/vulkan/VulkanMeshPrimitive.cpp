@@ -332,14 +332,14 @@ VulkanPipeline& VulkanSceneRenderer::createMeshPrimitivePipeline(VulkanPipeline&
 ******************************************************************************/
 void VulkanSceneRenderer::releaseMeshPrimitivePipelines()
 {
-	_meshPrimitivePipelines.mesh.release(*context());
-	_meshPrimitivePipelines.mesh_picking.release(*context());
-	_meshPrimitivePipelines.mesh_wireframe.release(*context());
-	_meshPrimitivePipelines.mesh_wireframe_instanced.release(*context());
-	_meshPrimitivePipelines.mesh_instanced.release(*context());
-	_meshPrimitivePipelines.mesh_instanced_picking.release(*context());
-	_meshPrimitivePipelines.mesh_instanced_with_colors.release(*context());
-	_meshPrimitivePipelines.mesh_color_mapping.release(*context());
+    _meshPrimitivePipelines.mesh.release(*context());
+    _meshPrimitivePipelines.mesh_picking.release(*context());
+    _meshPrimitivePipelines.mesh_wireframe.release(*context());
+    _meshPrimitivePipelines.mesh_wireframe_instanced.release(*context());
+    _meshPrimitivePipelines.mesh_instanced.release(*context());
+    _meshPrimitivePipelines.mesh_instanced_picking.release(*context());
+    _meshPrimitivePipelines.mesh_instanced_with_colors.release(*context());
+    _meshPrimitivePipelines.mesh_color_mapping.release(*context());
 }
 
 /******************************************************************************
@@ -348,8 +348,8 @@ void VulkanSceneRenderer::releaseMeshPrimitivePipelines()
 void VulkanSceneRenderer::renderMeshImplementation(const MeshPrimitive& primitive)
 {
     // Make sure there is something to be rendered. Otherwise, step out early.
-	if(!primitive.mesh() || primitive.mesh()->faceCount() == 0)
-		return;
+    if(!primitive.mesh() || primitive.mesh()->faceCount() == 0)
+        return;
     if(primitive.useInstancedRendering() && primitive.perInstanceTMs()->size() == 0)
         return;
 
@@ -460,7 +460,7 @@ void VulkanSceneRenderer::renderMeshImplementation(const MeshPrimitive& primitiv
     // Upload vertex buffer to GPU memory.
     VkBuffer meshBuffer = context()->createCachedBuffer(meshCacheKey, mesh.faceCount() * 3 * sizeof(MeshPrimitive::RenderVertex), currentResourceFrame(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, [&](void* buffer) {
         bool highlightSelectedFaces = isInteractive() && !isPicking();
-    	primitive.generateRenderableVertices(reinterpret_cast<MeshPrimitive::RenderVertex*>(buffer), highlightSelectedFaces, renderWithPseudoColorMapping);
+        primitive.generateRenderableVertices(reinterpret_cast<MeshPrimitive::RenderVertex*>(buffer), highlightSelectedFaces, renderWithPseudoColorMapping);
     });
 
     // Bind vertex buffer.
@@ -468,7 +468,7 @@ void VulkanSceneRenderer::renderMeshImplementation(const MeshPrimitive& primitiv
     deviceFunctions()->vkCmdBindVertexBuffers(currentCommandBuffer(), 0, 1, &meshBuffer, &offset);
 
     // Are we rendering with pseudo-colors and a color mapping function.
-	if(renderWithPseudoColorMapping) {
+    if(renderWithPseudoColorMapping) {
         // We pass the min/max range of the color map to the vertex shader in the push constants buffer.
         // But since the push constants buffer is already occupied with two mat4 matrices (128 bytes), we 
         // have to squeeze the values into unused elements of the normal transformation matrix.
@@ -601,9 +601,9 @@ void VulkanSceneRenderer::renderMeshImplementation(const MeshPrimitive& primitiv
 
             // First, compute distance of each instance from the camera along the viewing direction (=camera z-axis).
             std::vector<FloatType> distances(renderInstanceCount);
-			boost::transform(boost::irange<size_t>(0, renderInstanceCount), distances.begin(), [direction, tmArray = ConstDataBufferAccess<AffineTransformation>(primitive.perInstanceTMs())](size_t i) {
-				return direction.dot(tmArray[i].translation());
-			});
+            boost::transform(boost::irange<size_t>(0, renderInstanceCount), distances.begin(), [direction, tmArray = ConstDataBufferAccess<AffineTransformation>(primitive.perInstanceTMs())](size_t i) {
+                return direction.dot(tmArray[i].translation());
+            });
 
             // Create index array with all indices.
             std::vector<uint32_t> sortedIndices(renderInstanceCount);
@@ -719,4 +719,4 @@ void VulkanSceneRenderer::renderMeshWireframeImplementation(const MeshPrimitive&
     deviceFunctions()->vkCmdDraw(currentCommandBuffer(), generateMeshWireframeLines(primitive)->size(), primitive.useInstancedRendering() ? primitive.perInstanceTMs()->size() : 1, 0, 0);
 }
 
-}	// End of namespace
+}   // End of namespace

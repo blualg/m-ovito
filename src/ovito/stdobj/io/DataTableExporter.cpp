@@ -33,11 +33,11 @@ IMPLEMENT_OVITO_CLASS(DataTableExporter);
  *****************************************************************************/
 void DataTableExporter::openOutputFile(const QString& filePath, int numberOfFrames)
 {
-	OVITO_ASSERT(!_outputFile.isOpen());
-	OVITO_ASSERT(!_outputStream);
+    OVITO_ASSERT(!_outputFile.isOpen());
+    OVITO_ASSERT(!_outputStream);
 
-	_outputFile.setFileName(filePath);
-	_outputStream = std::make_unique<CompressedTextWriter>(_outputFile);
+    _outputFile.setFileName(filePath);
+    _outputStream = std::make_unique<CompressedTextWriter>(_outputFile);
 }
 
 /******************************************************************************
@@ -46,12 +46,12 @@ void DataTableExporter::openOutputFile(const QString& filePath, int numberOfFram
  *****************************************************************************/
 void DataTableExporter::closeOutputFile(bool exportCompleted)
 {
-	_outputStream.reset();
-	if(_outputFile.isOpen())
-		_outputFile.close();
+    _outputStream.reset();
+    if(_outputFile.isOpen())
+        _outputFile.close();
 
-	if(!exportCompleted)
-		_outputFile.remove();
+    if(!exportCompleted)
+        _outputFile.remove();
 }
 
 /******************************************************************************
@@ -59,113 +59,113 @@ void DataTableExporter::closeOutputFile(bool exportCompleted)
  *****************************************************************************/
 bool DataTableExporter::exportFrame(int frameNumber, const QString& filePath, MainThreadOperation& operation)
 {
-	// Evaluate pipeline.
-	const PipelineFlowState& state = getPipelineDataToBeExported(frameNumber);
-	if(!state)
-		return false;
+    // Evaluate pipeline.
+    const PipelineFlowState& state = getPipelineDataToBeExported(frameNumber);
+    if(!state)
+        return false;
 
-	// Look up the DataTable to be exported in the pipeline state.
-	DataObjectReference objectRef(&DataTable::OOClass(), dataObjectToExport().dataPath());
-	const DataTable* table = static_object_cast<DataTable>(state.getLeafObject(objectRef));
-	if(!table) {
-		throw Exception(tr("The pipeline output does not contain the data table to be exported (animation frame: %1; object key: %2). Available data tables: (%3)")
-			.arg(frameNumber).arg(objectRef.dataPath()).arg(getAvailableDataObjectList(state, DataTable::OOClass())));
-	}
-	table->verifyIntegrity();
+    // Look up the DataTable to be exported in the pipeline state.
+    DataObjectReference objectRef(&DataTable::OOClass(), dataObjectToExport().dataPath());
+    const DataTable* table = static_object_cast<DataTable>(state.getLeafObject(objectRef));
+    if(!table) {
+        throw Exception(tr("The pipeline output does not contain the data table to be exported (animation frame: %1; object key: %2). Available data tables: (%3)")
+            .arg(frameNumber).arg(objectRef.dataPath()).arg(getAvailableDataObjectList(state, DataTable::OOClass())));
+    }
+    table->verifyIntegrity();
 
-	// Make sure the X property exists in the property container.
-	// If not, create a temporary property for export.
+    // Make sure the X property exists in the property container.
+    // If not, create a temporary property for export.
 
-	operation.setProgressText(tr("Writing file %1").arg(filePath));
+    operation.setProgressText(tr("Writing file %1").arg(filePath));
 
-	ConstPropertyPtr xstorage = table->getXValues();
-	ConstPropertyPtr ystorage = table->y();
-	const PropertyObject* xprop = table->x();
-	const PropertyObject* yprop = table->y();
-	if(!ystorage || !yprop)
-		throw Exception(tr("Data table to be exported contains no valid data columns."));
+    ConstPropertyPtr xstorage = table->getXValues();
+    ConstPropertyPtr ystorage = table->y();
+    const PropertyObject* xprop = table->x();
+    const PropertyObject* yprop = table->y();
+    if(!ystorage || !yprop)
+        throw Exception(tr("Data table to be exported contains no valid data columns."));
 
-	size_t row_count = table->elementCount();
-	int xDataType = xstorage ? xstorage->dataType() : 0;
-	int yDataType = ystorage->dataType();
+    size_t row_count = table->elementCount();
+    int xDataType = xstorage ? xstorage->dataType() : 0;
+    int yDataType = ystorage->dataType();
 
-	ConstPropertyAccess<int, true> xaccessInt(xDataType == PropertyObject::Int ? xstorage : nullptr);
-	ConstPropertyAccess<qlonglong, true> xaccessInt64(xDataType == PropertyObject::Int64 ? xstorage : nullptr);
-	ConstPropertyAccess<FloatType, true> xaccessFloat(xDataType == PropertyObject::Float ? xstorage : nullptr);
+    ConstPropertyAccess<int, true> xaccessInt(xDataType == PropertyObject::Int ? xstorage : nullptr);
+    ConstPropertyAccess<qlonglong, true> xaccessInt64(xDataType == PropertyObject::Int64 ? xstorage : nullptr);
+    ConstPropertyAccess<FloatType, true> xaccessFloat(xDataType == PropertyObject::Float ? xstorage : nullptr);
 
-	if(!table->title().isEmpty())
-		textStream() << "# " << table->title() << " (" << (quint64)row_count << " data points):\n";
-	textStream() << "# ";
-	auto formatColumnName = [](const QString& name) {
-		return name.contains(QChar(' ')) ? (QChar('"') + name + QChar('"')) : name;
-	};
-	textStream() << formatColumnName((!xprop || !table->axisLabelX().isEmpty()) ? table->axisLabelX() : xprop->name());
+    if(!table->title().isEmpty())
+        textStream() << "# " << table->title() << " (" << (quint64)row_count << " data points):\n";
+    textStream() << "# ";
+    auto formatColumnName = [](const QString& name) {
+        return name.contains(QChar(' ')) ? (QChar('"') + name + QChar('"')) : name;
+    };
+    textStream() << formatColumnName((!xprop || !table->axisLabelX().isEmpty()) ? table->axisLabelX() : xprop->name());
 
-	if(ystorage->componentNames().size() == ystorage->componentCount()) {
-		for(size_t col = 0; col < ystorage->componentCount(); col++) {
-			textStream() << " " << formatColumnName(ystorage->componentNames()[col]);
-		}
-	}
-	else {
-		textStream() << " " << formatColumnName(!table->axisLabelY().isEmpty() ? table->axisLabelY() : ystorage->name());
-	}
+    if(ystorage->componentNames().size() == ystorage->componentCount()) {
+        for(size_t col = 0; col < ystorage->componentCount(); col++) {
+            textStream() << " " << formatColumnName(ystorage->componentNames()[col]);
+        }
+    }
+    else {
+        textStream() << " " << formatColumnName(!table->axisLabelY().isEmpty() ? table->axisLabelY() : ystorage->name());
+    }
 
-	// Collect the extra properties that should be written to the file.
-	std::vector<ConstPropertyAccess<void,true>> outputProperties;
-	outputProperties.emplace_back(ystorage);
-	for(const PropertyObject* propObj : table->properties()) {
-		if(propObj == table->x()) continue;
-		if(propObj == table->y()) continue;
-		outputProperties.emplace_back(propObj);
-		if(propObj->componentNames().size() == propObj->componentCount()) {
-			for(size_t col = 0; col < propObj->componentCount(); col++) {
-				textStream() << " " << formatColumnName(QStringLiteral("%1.%2").arg(propObj->name()).arg(propObj->componentNames()[col]));
-			}
-		}
-		else {
-			textStream() << " " << formatColumnName(propObj->name());
-		}
-	}
+    // Collect the extra properties that should be written to the file.
+    std::vector<ConstPropertyAccess<void,true>> outputProperties;
+    outputProperties.emplace_back(ystorage);
+    for(const PropertyObject* propObj : table->properties()) {
+        if(propObj == table->x()) continue;
+        if(propObj == table->y()) continue;
+        outputProperties.emplace_back(propObj);
+        if(propObj->componentNames().size() == propObj->componentCount()) {
+            for(size_t col = 0; col < propObj->componentCount(); col++) {
+                textStream() << " " << formatColumnName(QStringLiteral("%1.%2").arg(propObj->name()).arg(propObj->componentNames()[col]));
+            }
+        }
+        else {
+            textStream() << " " << formatColumnName(propObj->name());
+        }
+    }
 
-	textStream() << "\n";
+    textStream() << "\n";
 
-	for(size_t row = 0; row < row_count; row++) {
-		// Write the X column.
-		if(table->plotMode() == DataTable::BarChart) {
-			const ElementType* type = yprop->elementType(row);
-			if(!type && xprop) type = xprop->elementType(row);
-			if(type) {
-				textStream() << formatColumnName(type->name()) << " ";
-			}
-			else continue;
-		}
-		else {
-			if(xaccessInt)
-				textStream() << xaccessInt.get(row, 0) << " ";
-			else if(xaccessInt64)
-				textStream() << xaccessInt64.get(row, 0) << " ";
-			else if(xaccessFloat)
-				textStream() << xaccessFloat.get(row, 0) << " ";
-			else
-				textStream() << "<?> ";
-		}
-		// Write the Y column(s).
-		for(const ConstPropertyAccess<void,true>& array : outputProperties) {
-			for(size_t col = 0; col < array.componentCount(); col++) {
-				if(array.dataType() == PropertyObject::Int)
-					textStream() << *reinterpret_cast<const int*>(array.cdata(row, col)) << " ";
-				else if(array.dataType() == PropertyObject::Int64)
-					textStream() << *reinterpret_cast<const qlonglong*>(array.cdata(row, col)) << " ";
-				else if(array.dataType() == PropertyObject::Float)
-					textStream() << *reinterpret_cast<const FloatType*>(array.cdata(row, col)) << " ";
-				else
-					textStream() << "<?> ";
-			}
-		}
-		textStream() << "\n";
-	}
+    for(size_t row = 0; row < row_count; row++) {
+        // Write the X column.
+        if(table->plotMode() == DataTable::BarChart) {
+            const ElementType* type = yprop->elementType(row);
+            if(!type && xprop) type = xprop->elementType(row);
+            if(type) {
+                textStream() << formatColumnName(type->name()) << " ";
+            }
+            else continue;
+        }
+        else {
+            if(xaccessInt)
+                textStream() << xaccessInt.get(row, 0) << " ";
+            else if(xaccessInt64)
+                textStream() << xaccessInt64.get(row, 0) << " ";
+            else if(xaccessFloat)
+                textStream() << xaccessFloat.get(row, 0) << " ";
+            else
+                textStream() << "<?> ";
+        }
+        // Write the Y column(s).
+        for(const ConstPropertyAccess<void,true>& array : outputProperties) {
+            for(size_t col = 0; col < array.componentCount(); col++) {
+                if(array.dataType() == PropertyObject::Int)
+                    textStream() << *reinterpret_cast<const int*>(array.cdata(row, col)) << " ";
+                else if(array.dataType() == PropertyObject::Int64)
+                    textStream() << *reinterpret_cast<const qlonglong*>(array.cdata(row, col)) << " ";
+                else if(array.dataType() == PropertyObject::Float)
+                    textStream() << *reinterpret_cast<const FloatType*>(array.cdata(row, col)) << " ";
+                else
+                    textStream() << "<?> ";
+            }
+        }
+        textStream() << "\n";
+    }
 
-	return !operation.isCanceled();
+    return !operation.isCanceled();
 }
 
-}	// End of namespace
+}   // End of namespace

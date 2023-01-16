@@ -35,74 +35,74 @@ namespace Ovito::StdObj {
  */
 class OVITO_STDOBJ_EXPORT ElementType : public DataObject
 {
-	OVITO_CLASS(ElementType)
+    OVITO_CLASS(ElementType)
 
 #ifdef OVITO_QML_GUI
-	Q_PROPERTY(int numericId READ numericId WRITE setNumericId NOTIFY propertyValueChangedSignal)
-	Q_PROPERTY(QString name READ name WRITE setName NOTIFY propertyValueChangedSignal)
-	Q_PROPERTY(QColor color READ color WRITE setColor NOTIFY propertyValueChangedSignal)
-	Q_PROPERTY(bool enabled READ enabled WRITE setEnabled NOTIFY propertyValueChangedSignal)
+    Q_PROPERTY(int numericId READ numericId WRITE setNumericId NOTIFY propertyValueChangedSignal)
+    Q_PROPERTY(QString name READ name WRITE setName NOTIFY propertyValueChangedSignal)
+    Q_PROPERTY(QColor color READ color WRITE setColor NOTIFY propertyValueChangedSignal)
+    Q_PROPERTY(bool enabled READ enabled WRITE setEnabled NOTIFY propertyValueChangedSignal)
 #endif
 
 public:
 
-	/// \brief Constructs a new type.
-	Q_INVOKABLE ElementType(ObjectCreationParams params);
+    /// \brief Constructs a new type.
+    Q_INVOKABLE ElementType(ObjectCreationParams params);
 
-	/// Initializes the element type to default parameter values.
-	virtual void initializeType(const PropertyReference& property, bool loadUserDefaults = ExecutionContext::isInteractive());
+    /// Initializes the element type to default parameter values.
+    virtual void initializeType(const PropertyReference& property, bool loadUserDefaults = ExecutionContext::isInteractive());
 
-	/// Creates an editable proxy object for this DataObject and synchronizes its parameters.
-	virtual void updateEditableProxies(PipelineFlowState& state, ConstDataObjectPath& dataPath) const override;
+    /// Creates an editable proxy object for this DataObject and synchronizes its parameters.
+    virtual void updateEditableProxies(PipelineFlowState& state, ConstDataObjectPath& dataPath) const override;
 
-	/// Returns the name of this type, or a dynamically generated string representing the
-	/// numeric ID if the type has no assigned name.
-	QString nameOrNumericId() const {
-		if(!name().isEmpty())
-			return name();
-		else
-			return generateDefaultTypeName(numericId());
-	}
+    /// Returns the name of this type, or a dynamically generated string representing the
+    /// numeric ID if the type has no assigned name.
+    QString nameOrNumericId() const {
+        if(!name().isEmpty())
+            return name();
+        else
+            return generateDefaultTypeName(numericId());
+    }
 
-	/// Returns an automatically generated name for a type based on its numeric ID.
-	static QString generateDefaultTypeName(int id) {
-		return tr("Type %1").arg(id);
-	}
+    /// Returns an automatically generated name for a type based on its numeric ID.
+    static QString generateDefaultTypeName(int id) {
+        return tr("Type %1").arg(id);
+    }
 
-	/// Returns the title of this object. Same as nameOrNumericId().
-	virtual QString objectTitle() const override { return nameOrNumericId(); }
+    /// Returns the title of this object. Same as nameOrNumericId().
+    virtual QString objectTitle() const override { return nameOrNumericId(); }
 
-	/// Returns the default color for a named element type.
-	static Color getDefaultColor(const PropertyReference& property, const QString& typeName, int numericTypeId, bool loadUserDefaults);
+    /// Returns the default color for a named element type.
+    static Color getDefaultColor(const PropertyReference& property, const QString& typeName, int numericTypeId, bool loadUserDefaults);
 
-	/// Changes the default color for a named element type.
-	static void setDefaultColor(const PropertyReference& property, const QString& typeName, const Color& color);
+    /// Changes the default color for a named element type.
+    static void setDefaultColor(const PropertyReference& property, const QString& typeName, const Color& color);
 
-	/// Returns the QSettings path for storing or accessing the user-defined 
-	/// default values of some ElementType parameter.
-	static QString getElementSettingsKey(const PropertyReference& property, const QString& parameterName, const QString& elementTypeName);
+    /// Returns the QSettings path for storing or accessing the user-defined 
+    /// default values of some ElementType parameter.
+    static QString getElementSettingsKey(const PropertyReference& property, const QString& parameterName, const QString& elementTypeName);
 
 protected:
 
-	/// Stores the unique numeric identifier of the type.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD(int, numericId, setNumericId);
+    /// Stores the unique numeric identifier of the type.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(int, numericId, setNumericId);
 
-	/// The human-readable name assigned to this type.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD(QString, name, setName);
-	DECLARE_SHADOW_PROPERTY_FIELD(name);
+    /// The human-readable name assigned to this type.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(QString, name, setName);
+    DECLARE_SHADOW_PROPERTY_FIELD(name);
 
-	/// Stores the visualization color of the type.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(Color, color, setColor, PROPERTY_FIELD_MEMORIZE);
-	DECLARE_SHADOW_PROPERTY_FIELD(color);
+    /// Stores the visualization color of the type.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(Color, color, setColor, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_SHADOW_PROPERTY_FIELD(color);
 
-	/// Stores whether this type is "enabled" or "disabled".
-	/// This makes only sense in some sorts of types. For example, structure identification modifiers
-	/// use this field to determine which structural types they should look for.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, enabled, setEnabled);
-	DECLARE_SHADOW_PROPERTY_FIELD(enabled);
+    /// Stores whether this type is "enabled" or "disabled".
+    /// This makes only sense in some sorts of types. For example, structure identification modifiers
+    /// use this field to determine which structural types they should look for.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, enabled, setEnabled);
+    DECLARE_SHADOW_PROPERTY_FIELD(enabled);
 
-	/// Stores a reference to the property object this element type belongs to.
-	DECLARE_PROPERTY_FIELD(PropertyReference, ownerProperty);
+    /// Stores a reference to the property object this element type belongs to.
+    DECLARE_PROPERTY_FIELD(PropertyReference, ownerProperty);
 };
 
-}	// End of namespace
+}   // End of namespace

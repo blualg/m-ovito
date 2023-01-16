@@ -22,18 +22,18 @@
 
 # Define the plugin module.
 OVITO_STANDARD_PLUGIN(VoroTop
-	SOURCES
-		VoroTopModifier.cpp
-		Filter.cpp
-	PLUGIN_DEPENDENCIES
-		Particles
-	LIB_DEPENDENCIES
-		VoroPlusPlus
+    SOURCES
+        VoroTopModifier.cpp
+        Filter.cpp
+    PLUGIN_DEPENDENCIES
+        Particles
+    LIB_DEPENDENCIES
+        VoroPlusPlus
 )
 
 # Build corresponding GUI plugin.
 IF(OVITO_BUILD_APP AND NOT OVITO_QML_GUI)
-	ADD_SUBDIRECTORY(gui)
+    ADD_SUBDIRECTORY(gui)
 ENDIF()
 
 # Propagate list of plugins to parent scope.

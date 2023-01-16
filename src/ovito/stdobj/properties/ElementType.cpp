@@ -49,9 +49,9 @@ SET_PROPERTY_FIELD_LABEL(ElementType, ownerProperty, "Property");
 * Constructs a new ElementType.
 ******************************************************************************/
 ElementType::ElementType(ObjectCreationParams params) : DataObject(params),
-	_numericId(0),
-	_color(1,1,1),
-	_enabled(true)
+    _numericId(0),
+    _color(1,1,1),
+    _enabled(true)
 {
 }
 
@@ -60,17 +60,17 @@ ElementType::ElementType(ObjectCreationParams params) : DataObject(params),
 ******************************************************************************/
 void ElementType::initializeType(const PropertyReference& property, bool loadUserDefaults)
 {
-	OVITO_ASSERT(!property.isNull());
+    OVITO_ASSERT(!property.isNull());
 
-	// Remember the kind of typed property this type belongs to.
-	_ownerProperty.set(this, PROPERTY_FIELD(ownerProperty), property);
+    // Remember the kind of typed property this type belongs to.
+    _ownerProperty.set(this, PROPERTY_FIELD(ownerProperty), property);
 
-	// Assign a standard color to this element type.
-	// First load the hardcoded default color and freeze it, then load the user-defined default color.
-	setColor(getDefaultColor(property, nameOrNumericId(), numericId(), false));
-	freezeInitialParameterValues({SHADOW_PROPERTY_FIELD(ElementType::color)});
-	if(loadUserDefaults)
-		setColor(getDefaultColor(property, nameOrNumericId(), numericId(), true));
+    // Assign a standard color to this element type.
+    // First load the hardcoded default color and freeze it, then load the user-defined default color.
+    setColor(getDefaultColor(property, nameOrNumericId(), numericId(), false));
+    freezeInitialParameterValues({SHADOW_PROPERTY_FIELD(ElementType::color)});
+    if(loadUserDefaults)
+        setColor(getDefaultColor(property, nameOrNumericId(), numericId(), true));
 }
 
 /******************************************************************************
@@ -79,14 +79,14 @@ void ElementType::initializeType(const PropertyReference& property, bool loadUse
 ******************************************************************************/
 QString ElementType::getElementSettingsKey(const PropertyReference& property, const QString& parameterName, const QString& elementTypeName)
 {
-	OVITO_ASSERT(!property.isNull());
-	OVITO_ASSERT(!parameterName.isEmpty());
+    OVITO_ASSERT(!property.isNull());
+    OVITO_ASSERT(!parameterName.isEmpty());
 
-	return QStringLiteral("defaults/%1/%2/%3/%4").arg(
-		property.containerClass()->pythonName(),
-		property.name(),
-		parameterName,
-		elementTypeName);
+    return QStringLiteral("defaults/%1/%2/%3/%4").arg(
+        property.containerClass()->pythonName(),
+        property.name(),
+        parameterName,
+        elementTypeName);
 }
 
 /******************************************************************************
@@ -94,48 +94,48 @@ QString ElementType::getElementSettingsKey(const PropertyReference& property, co
 ******************************************************************************/
 Color ElementType::getDefaultColor(const PropertyReference& property, const QString& typeName, int numericTypeId, bool loadUserDefaults)
 {
-	OVITO_ASSERT(!typeName.isEmpty());
+    OVITO_ASSERT(!typeName.isEmpty());
 
-	if(property.isNull()) {
-		return PropertyContainer::OOClass().getElementTypeDefaultColor(property, typeName, numericTypeId, loadUserDefaults);
-	}
+    if(property.isNull()) {
+        return PropertyContainer::OOClass().getElementTypeDefaultColor(property, typeName, numericTypeId, loadUserDefaults);
+    }
 
-	// Interactive execution context means that we are supposed to load the user-defined
-	// settings from the settings store.
-	if(loadUserDefaults) {
+    // Interactive execution context means that we are supposed to load the user-defined
+    // settings from the settings store.
+    if(loadUserDefaults) {
 
 #ifndef OVITO_DISABLE_QSETTINGS
-		// Use the type's name, property type and container class to look up the 
-		// default color saved by the user.
-		QVariant v = QSettings().value(getElementSettingsKey(property, QStringLiteral("color"), typeName));
-		if(v.isValid() && v.typeId() == QMetaType::QColor)
-			return v.value<Color>();
+        // Use the type's name, property type and container class to look up the 
+        // default color saved by the user.
+        QVariant v = QSettings().value(getElementSettingsKey(property, QStringLiteral("color"), typeName));
+        if(v.isValid() && v.typeId() == QMetaType::QColor)
+            return v.value<Color>();
 
-		// The following is for backward compatibility with OVITO 3.3.5, which used to store the 
-		// default colors in a different branch of the settings registry.
-		if(property.containerClass()->name() == QStringLiteral("ParticlesObject")) {
-			// Load particle type colors.
-			QVariant v = QSettings().value(QStringLiteral("particles/defaults/color/%1/%2").arg(property.type()).arg(typeName));
-			if(v.isValid() && v.typeId() == QMetaType::QColor)
-				return v.value<Color>();
-		}
-		else if(property.containerClass()->name() == QStringLiteral("BondsObject")) {
-			// Load bond type colors.
-			QVariant v = QSettings().value(QStringLiteral("bonds/defaults/color/%1/%2").arg(property.type()).arg(typeName));
-			if(v.isValid() && v.typeId() == QMetaType::QColor)
-				return v.value<Color>();
-		}
-		else {
-			// Load generic element type colors.
-			QVariant v = QSettings().value(QStringLiteral("defaults/color/%1/%2").arg(property.type()).arg(typeName));
-			if(v.isValid() && v.typeId() == QMetaType::QColor)
-				return v.value<Color>();
-		}
+        // The following is for backward compatibility with OVITO 3.3.5, which used to store the 
+        // default colors in a different branch of the settings registry.
+        if(property.containerClass()->name() == QStringLiteral("ParticlesObject")) {
+            // Load particle type colors.
+            QVariant v = QSettings().value(QStringLiteral("particles/defaults/color/%1/%2").arg(property.type()).arg(typeName));
+            if(v.isValid() && v.typeId() == QMetaType::QColor)
+                return v.value<Color>();
+        }
+        else if(property.containerClass()->name() == QStringLiteral("BondsObject")) {
+            // Load bond type colors.
+            QVariant v = QSettings().value(QStringLiteral("bonds/defaults/color/%1/%2").arg(property.type()).arg(typeName));
+            if(v.isValid() && v.typeId() == QMetaType::QColor)
+                return v.value<Color>();
+        }
+        else {
+            // Load generic element type colors.
+            QVariant v = QSettings().value(QStringLiteral("defaults/color/%1/%2").arg(property.type()).arg(typeName));
+            if(v.isValid() && v.typeId() == QMetaType::QColor)
+                return v.value<Color>();
+        }
 #endif
-	}
+    }
 
-	// Otherwise fall back to a hard-coded default colors provided by the property container class.
-	return property.containerClass()->getElementTypeDefaultColor(property, typeName, numericTypeId, loadUserDefaults);
+    // Otherwise fall back to a hard-coded default colors provided by the property container class.
+    return property.containerClass()->getElementTypeDefaultColor(property, typeName, numericTypeId, loadUserDefaults);
 }
 
 /******************************************************************************
@@ -144,15 +144,15 @@ Color ElementType::getDefaultColor(const PropertyReference& property, const QStr
 void ElementType::setDefaultColor(const PropertyReference& property, const QString& typeName, const Color& color)
 {
 #ifndef OVITO_DISABLE_QSETTINGS
-	QSettings settings;
-	QString settingsKey = getElementSettingsKey(property, QStringLiteral("color"), typeName);
+    QSettings settings;
+    QString settingsKey = getElementSettingsKey(property, QStringLiteral("color"), typeName);
 
-	if(getDefaultColor(property, typeName, 0, false).equals(color, 1.0/256.0) == false) {
-		settings.setValue(settingsKey, QVariant::fromValue(static_cast<QColor>(color)));
-	}
-	else {
-		settings.remove(settingsKey);
-	}
+    if(getDefaultColor(property, typeName, 0, false).equals(color, 1.0/256.0) == false) {
+        settings.setValue(settingsKey, QVariant::fromValue(static_cast<QColor>(color)));
+    }
+    else {
+        settings.remove(settingsKey);
+    }
 #endif
 }
 
@@ -161,34 +161,34 @@ void ElementType::setDefaultColor(const PropertyReference& property, const QStri
 ******************************************************************************/
 void ElementType::updateEditableProxies(PipelineFlowState& state, ConstDataObjectPath& dataPath) const
 {
-	// Note: 'this' may no longer exist at this point, because the sub-class implementation of the method may
-	// have already replaced it with a mutable copy.
-	const ElementType* self = static_object_cast<ElementType>(dataPath.back());
+    // Note: 'this' may no longer exist at this point, because the sub-class implementation of the method may
+    // have already replaced it with a mutable copy.
+    const ElementType* self = static_object_cast<ElementType>(dataPath.back());
 
-	if(const ElementType* proxy = static_object_cast<ElementType>(self->editableProxy())) {
-		// The numeric ID of a type and some other attributes should never change.
-		OVITO_ASSERT(proxy->numericId() == self->numericId());
+    if(const ElementType* proxy = static_object_cast<ElementType>(self->editableProxy())) {
+        // The numeric ID of a type and some other attributes should never change.
+        OVITO_ASSERT(proxy->numericId() == self->numericId());
 
-		if(proxy->name() != self->name() || proxy->color() != self->color() || proxy->enabled() != self->enabled()) {
-			// Make this data object mutable first.
-			ElementType* mutableSelf = static_object_cast<ElementType>(state.makeMutableInplace(dataPath));
-		
-			mutableSelf->setName(proxy->name());
-			mutableSelf->setColor(proxy->color());
-			mutableSelf->setEnabled(proxy->enabled());
-		}
-	}
-	else {
-		// Create and initialize a new proxy.
-		OORef<ElementType> newProxy = CloneHelper().cloneObject(self, false);
-		OVITO_ASSERT(newProxy->numericId() == self->numericId());
-		OVITO_ASSERT(newProxy->enabled() == self->enabled());
+        if(proxy->name() != self->name() || proxy->color() != self->color() || proxy->enabled() != self->enabled()) {
+            // Make this data object mutable first.
+            ElementType* mutableSelf = static_object_cast<ElementType>(state.makeMutableInplace(dataPath));
+        
+            mutableSelf->setName(proxy->name());
+            mutableSelf->setColor(proxy->color());
+            mutableSelf->setEnabled(proxy->enabled());
+        }
+    }
+    else {
+        // Create and initialize a new proxy.
+        OORef<ElementType> newProxy = CloneHelper().cloneObject(self, false);
+        OVITO_ASSERT(newProxy->numericId() == self->numericId());
+        OVITO_ASSERT(newProxy->enabled() == self->enabled());
 
-		// Make this element type mutable and attach the proxy object to it.
-		state.makeMutableInplace(dataPath)->setEditableProxy(std::move(newProxy));
-	}
+        // Make this element type mutable and attach the proxy object to it.
+        state.makeMutableInplace(dataPath)->setEditableProxy(std::move(newProxy));
+    }
 
-	DataObject::updateEditableProxies(state, dataPath);
+    DataObject::updateEditableProxies(state, dataPath);
 }
 
-}	// End of namespace
+}   // End of namespace

@@ -41,22 +41,22 @@ class OVITO_STDOBJ_EXPORT OutputColumnMapping : public std::vector<PropertyRefer
 {
 public:
 
-	using std::vector<PropertyReference>::size_type;
+    using std::vector<PropertyReference>::size_type;
 
-	/// Inherit constructors from std::vector.
-	using std::vector<PropertyReference>::vector;
+    /// Inherit constructors from std::vector.
+    using std::vector<PropertyReference>::vector;
 
-	/// \brief Saves the mapping to the given stream.
-	void saveToStream(SaveStream& stream) const;
+    /// \brief Saves the mapping to the given stream.
+    void saveToStream(SaveStream& stream) const;
 
-	/// \brief Loads the mapping from the given stream.
-	void loadFromStream(LoadStream& stream);
+    /// \brief Loads the mapping from the given stream.
+    void loadFromStream(LoadStream& stream);
 
-	/// \brief Converts the mapping data into a byte array.
-	QByteArray toByteArray() const;
+    /// \brief Converts the mapping data into a byte array.
+    QByteArray toByteArray() const;
 
-	/// \brief Loads the mapping from a byte array.
-	void fromByteArray(const QByteArray& array);
+    /// \brief Loads the mapping from a byte array.
+    void fromByteArray(const QByteArray& array);
 };
 
 template<class PropertyContainerType>
@@ -64,26 +64,26 @@ class TypedOutputColumnMapping : public std::vector<TypedPropertyReference<Prope
 {
 public:
 
-	/// Inherit constructors from std::vector.
-	using std::vector<TypedPropertyReference<PropertyContainerType>>::vector;
+    /// Inherit constructors from std::vector.
+    using std::vector<TypedPropertyReference<PropertyContainerType>>::vector;
 
-	/// Transparent conversion to an untyped OutputColumnMapping.
-	operator OutputColumnMapping&() { return *reinterpret_cast<OutputColumnMapping*>(this); }
+    /// Transparent conversion to an untyped OutputColumnMapping.
+    operator OutputColumnMapping&() { return *reinterpret_cast<OutputColumnMapping*>(this); }
 
-	/// Transparent conversion to an untyped OutputColumnMapping.
-	operator const OutputColumnMapping&() const { return *reinterpret_cast<const OutputColumnMapping*>(this); }
+    /// Transparent conversion to an untyped OutputColumnMapping.
+    operator const OutputColumnMapping&() const { return *reinterpret_cast<const OutputColumnMapping*>(this); }
 
-	/// \brief Saves the mapping to the given stream.
-	void saveToStream(SaveStream& stream) const { static_cast<const OutputColumnMapping&>(*this).saveToStream(stream); }
+    /// \brief Saves the mapping to the given stream.
+    void saveToStream(SaveStream& stream) const { static_cast<const OutputColumnMapping&>(*this).saveToStream(stream); }
 
-	/// \brief Loads the mapping from the given stream.
-	void loadFromStream(LoadStream& stream) { static_cast<OutputColumnMapping&>(*this).loadFromStream(stream); }
+    /// \brief Loads the mapping from the given stream.
+    void loadFromStream(LoadStream& stream) { static_cast<OutputColumnMapping&>(*this).loadFromStream(stream); }
 
-	/// \brief Converts the mapping data into a byte array.
-	QByteArray toByteArray() const { return static_cast<const OutputColumnMapping&>(*this).toByteArray(); }
+    /// \brief Converts the mapping data into a byte array.
+    QByteArray toByteArray() const { return static_cast<const OutputColumnMapping&>(*this).toByteArray(); }
 
-	/// \brief Loads the mapping from a byte array.
-	void fromByteArray(const QByteArray& array) { static_cast<OutputColumnMapping&>(*this).fromByteArray(array); }
+    /// \brief Loads the mapping from a byte array.
+    void fromByteArray(const QByteArray& array) { static_cast<OutputColumnMapping&>(*this).fromByteArray(array); }
 };
 
 /**
@@ -93,45 +93,45 @@ class OVITO_STDOBJ_EXPORT PropertyOutputWriter : public QObject
 {
 public:
 
-	/// These modes control how the values of typed properties are 
-	/// written to the output file.
-	enum TypedPropertyMode {
-		WriteNumericIds,		///< Write the integer numeric ID of the type.
-		WriteNamesUnmodified,	///< Write the type name as a string.
-		WriteNamesUnderscore,	///< Write the type name as a string, with whitespace replaced with underscores.
-		WriteNamesInQuotes		///< Write the type name as a string, in quotes if the name contains whitespace.
-	};
+    /// These modes control how the values of typed properties are 
+    /// written to the output file.
+    enum TypedPropertyMode {
+        WriteNumericIds,        ///< Write the integer numeric ID of the type.
+        WriteNamesUnmodified,   ///< Write the type name as a string.
+        WriteNamesUnderscore,   ///< Write the type name as a string, with whitespace replaced with underscores.
+        WriteNamesInQuotes      ///< Write the type name as a string, in quotes if the name contains whitespace.
+    };
 
-	/// \brief Initializes the helper object.
-	/// \param mapping The mapping between the properties and the columns in the output file.
-	/// \param sourceContainer The data source container for the properties.
-	/// \throws Exception if the mapping is not valid.
-	///
-	/// This constructor checks that all necessary properties referenced in the OutputColumnMapping
-	/// are present in the source property container.
-	PropertyOutputWriter(const OutputColumnMapping& mapping, const PropertyContainer* sourceContainer, TypedPropertyMode typedPropertyMode);
+    /// \brief Initializes the helper object.
+    /// \param mapping The mapping between the properties and the columns in the output file.
+    /// \param sourceContainer The data source container for the properties.
+    /// \throws Exception if the mapping is not valid.
+    ///
+    /// This constructor checks that all necessary properties referenced in the OutputColumnMapping
+    /// are present in the source property container.
+    PropertyOutputWriter(const OutputColumnMapping& mapping, const PropertyContainer* sourceContainer, TypedPropertyMode typedPropertyMode);
 
-	/// \brief Writes the output line for a single data element to the output stream.
-	/// \param index The index of the data element to write (starting at 0).
-	/// \param stream An output text stream.
-	void writeElement(size_t index, CompressedTextWriter& stream);
+    /// \brief Writes the output line for a single data element to the output stream.
+    /// \param index The index of the data element to write (starting at 0).
+    /// \param stream An output text stream.
+    void writeElement(size_t index, CompressedTextWriter& stream);
 
 private:
 
-	/// Stores the source properties for each column in the output file.
-	/// If an entry is NULL, then the element index will be written to the corresponding column.
-	QVector<const PropertyObject*> _properties;
+    /// Stores the source properties for each column in the output file.
+    /// If an entry is NULL, then the element index will be written to the corresponding column.
+    QVector<const PropertyObject*> _properties;
 
-	/// Stores the source vector component for each output column.
-	QVector<int> _vectorComponents;
+    /// Stores the source vector component for each output column.
+    QVector<int> _vectorComponents;
 
-	/// Stores the memory buffer object for each output property.
-	QVector<ConstPropertyAccess<void,true>> _propertyArrays;
+    /// Stores the memory buffer object for each output property.
+    QVector<ConstPropertyAccess<void,true>> _propertyArrays;
 
-	/// Controls how type names are output.
-	TypedPropertyMode _typedPropertyMode;
+    /// Controls how type names are output.
+    TypedPropertyMode _typedPropertyMode;
 };
 
-}	// End of namespace
+}   // End of namespace
 
 Q_DECLARE_METATYPE(Ovito::StdObj::OutputColumnMapping);

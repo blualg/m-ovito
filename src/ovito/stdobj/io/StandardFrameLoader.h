@@ -36,45 +36,45 @@ class OVITO_STDOBJ_EXPORT StandardFrameLoader : public FileSourceImporter::Frame
 {
 public:
 
-	/// Constructor.
-	using FileSourceImporter::FrameLoader::FrameLoader;
+    /// Constructor.
+    using FileSourceImporter::FrameLoader::FrameLoader;
 
-	/// Returns the simulation cell object, newly creating it first if necessary.
-	SimulationCellObject* simulationCell();
+    /// Returns the simulation cell object, newly creating it first if necessary.
+    SimulationCellObject* simulationCell();
 
-	/// Returns true if the file reader has already loaded a simulation cell definition.
-	bool hasSimulationCell() const { return _simulationCell != nullptr; }
+    /// Returns true if the file reader has already loaded a simulation cell definition.
+    bool hasSimulationCell() const { return _simulationCell != nullptr; }
 
-	/// Indicates that the simulation cell object was newly created by this file reader.
-	bool isSimulationCellNewlyCreated() const { return _isSimulationCellNewlyCreated; }
+    /// Indicates that the simulation cell object was newly created by this file reader.
+    bool isSimulationCellNewlyCreated() const { return _isSimulationCellNewlyCreated; }
 
-	/// Registers a new numeric element type with the given ID and an optional name string.
-	const ElementType* addNumericType(const PropertyContainerClass& containerClass, PropertyObject* typedProperty, int id, const QString& name, OvitoClassPtr elementTypeClass = {}) {
-		return typedProperty->addNumericType(containerClass, id, name, elementTypeClass);
-	}
+    /// Registers a new numeric element type with the given ID and an optional name string.
+    const ElementType* addNumericType(const PropertyContainerClass& containerClass, PropertyObject* typedProperty, int id, const QString& name, OvitoClassPtr elementTypeClass = {}) {
+        return typedProperty->addNumericType(containerClass, id, name, elementTypeClass);
+    }
 
-	/// Registers a new named element type and automatically gives it a unique numeric ID.
-	const ElementType* addNamedType(const PropertyContainerClass& containerClass, PropertyObject* typedProperty, const QString& name, OvitoClassPtr elementTypeClass = {}) {
-		return typedProperty->addNamedType(containerClass, name, elementTypeClass);
-	}
+    /// Registers a new named element type and automatically gives it a unique numeric ID.
+    const ElementType* addNamedType(const PropertyContainerClass& containerClass, PropertyObject* typedProperty, const QString& name, OvitoClassPtr elementTypeClass = {}) {
+        return typedProperty->addNamedType(containerClass, name, elementTypeClass);
+    }
 
-	/// Registers a new named element type and automatically gives it a unique numeric ID.
-	const ElementType* addNamedType(const PropertyContainerClass& containerClass, PropertyObject* typedProperty, const QLatin1String& name, OvitoClassPtr elementTypeClass = {}) {
-		return typedProperty->addNamedType(containerClass, name, elementTypeClass);
-	}
+    /// Registers a new named element type and automatically gives it a unique numeric ID.
+    const ElementType* addNamedType(const PropertyContainerClass& containerClass, PropertyObject* typedProperty, const QLatin1String& name, OvitoClassPtr elementTypeClass = {}) {
+        return typedProperty->addNamedType(containerClass, name, elementTypeClass);
+    }
 
 protected:
 
-	/// Finalizes the particle data loaded by a sub-class.
-	virtual void loadFile() override;
+    /// Finalizes the particle data loaded by a sub-class.
+    virtual void loadFile() override;
 
 private:
 
-	/// The simulation cell object.
-	SimulationCellObject* _simulationCell = nullptr;
+    /// The simulation cell object.
+    SimulationCellObject* _simulationCell = nullptr;
 
-	/// Indicates that the simulation cell object was newly created by this file reader.
-	bool _isSimulationCellNewlyCreated = false;
+    /// Indicates that the simulation cell object was newly created by this file reader.
+    bool _isSimulationCellNewlyCreated = false;
 };
 
-}	// End of namespace
+}   // End of namespace

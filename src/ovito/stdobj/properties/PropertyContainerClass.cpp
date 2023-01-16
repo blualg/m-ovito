@@ -34,13 +34,13 @@ namespace Ovito::StdObj {
 ******************************************************************************/
 void PropertyContainerClass::initialize() 
 {
-	DataObject::OOMetaClass::initialize();
+    DataObject::OOMetaClass::initialize();
 
-	if(this == &PropertyContainer::OOClass()) {
-		// Enable automatic conversion of a PropertyContainerReference to a generic DataObjectReference and vice versa.
-		QMetaType::registerConverter<PropertyContainerReference, DataObjectReference>();
-		QMetaType::registerConverter<DataObjectReference, PropertyContainerReference>();
-	}
+    if(this == &PropertyContainer::OOClass()) {
+        // Enable automatic conversion of a PropertyContainerReference to a generic DataObjectReference and vice versa.
+        QMetaType::registerConverter<PropertyContainerReference, DataObjectReference>();
+        QMetaType::registerConverter<DataObjectReference, PropertyContainerReference>();
+    }
 }
 
 /******************************************************************************
@@ -49,20 +49,20 @@ void PropertyContainerClass::initialize()
 ******************************************************************************/
 void PropertyContainerClass::registerStandardProperty(int typeId, QString name, int dataType, QStringList componentNames, OvitoClassPtr typedPropertyElementClass, QString title)
 {
-	OVITO_ASSERT_MSG(typeId > 0, "PropertyContainerClass::registerStandardProperty", "Invalid standard property type ID");
-	OVITO_ASSERT_MSG(_standardPropertyIds.find(name) == _standardPropertyIds.end(), "PropertyContainerClass::registerStandardProperty", "Duplicate standard property name");
-	OVITO_ASSERT_MSG(_standardPropertyNames.find(typeId) == _standardPropertyNames.end(), "PropertyContainerClass::registerStandardProperty", "Duplicate standard property type ID");
-	OVITO_ASSERT_MSG(dataType == PropertyObject::Int || dataType == PropertyObject::Int64 || dataType == PropertyObject::Float, "PropertyContainerClass::registerStandardProperty", "Invalid standard property data type");
-	OVITO_ASSERT_MSG(!typedPropertyElementClass || typedPropertyElementClass->isDerivedFrom(ElementType::OOClass()), "PropertyContainerClass::registerStandardProperty", "Element type class is not derived from ElementType base");
+    OVITO_ASSERT_MSG(typeId > 0, "PropertyContainerClass::registerStandardProperty", "Invalid standard property type ID");
+    OVITO_ASSERT_MSG(_standardPropertyIds.find(name) == _standardPropertyIds.end(), "PropertyContainerClass::registerStandardProperty", "Duplicate standard property name");
+    OVITO_ASSERT_MSG(_standardPropertyNames.find(typeId) == _standardPropertyNames.end(), "PropertyContainerClass::registerStandardProperty", "Duplicate standard property type ID");
+    OVITO_ASSERT_MSG(dataType == PropertyObject::Int || dataType == PropertyObject::Int64 || dataType == PropertyObject::Float, "PropertyContainerClass::registerStandardProperty", "Invalid standard property data type");
+    OVITO_ASSERT_MSG(!typedPropertyElementClass || typedPropertyElementClass->isDerivedFrom(ElementType::OOClass()), "PropertyContainerClass::registerStandardProperty", "Element type class is not derived from ElementType base");
 
-	if(!name.isEmpty())
-		_standardPropertyIds.insert(name, typeId);
-	_standardPropertyNames.emplace(typeId, std::move(name));
-	_standardPropertyTitles.emplace(typeId, std::move(title));
-	_standardPropertyComponents.emplace(typeId, std::move(componentNames));
-	_standardPropertyDataTypes.emplace(typeId, dataType);
-	if(typedPropertyElementClass)
-		_standardPropertyElementTypes.emplace(typeId, typedPropertyElementClass);
+    if(!name.isEmpty())
+        _standardPropertyIds.insert(name, typeId);
+    _standardPropertyNames.emplace(typeId, std::move(name));
+    _standardPropertyTitles.emplace(typeId, std::move(title));
+    _standardPropertyComponents.emplace(typeId, std::move(componentNames));
+    _standardPropertyDataTypes.emplace(typeId, dataType);
+    if(typedPropertyElementClass)
+        _standardPropertyElementTypes.emplace(typeId, typedPropertyElementClass);
 }
 
 /******************************************************************************
@@ -70,10 +70,10 @@ void PropertyContainerClass::registerStandardProperty(int typeId, QString name, 
 ******************************************************************************/
 PropertyPtr PropertyContainerClass::createStandardProperty(size_t elementCount, int type, DataBuffer::InitializationFlags flags, const ConstDataObjectPath& containerPath) const 
 {
-	PropertyPtr property = createStandardPropertyInternal(elementCount, type, flags, containerPath);
-	if(property && property->type() != 0)
-		property->setTitle(standardPropertyTitle(property->type()));
-	return property;
+    PropertyPtr property = createStandardPropertyInternal(elementCount, type, flags, containerPath);
+    if(property && property->type() != 0)
+        property->setTitle(standardPropertyTitle(property->type()));
+    return property;
 }
 
 /******************************************************************************
@@ -81,19 +81,19 @@ PropertyPtr PropertyContainerClass::createStandardProperty(size_t elementCount, 
 ******************************************************************************/
 Color PropertyContainerClass::getElementTypeDefaultColor(const PropertyReference& property, const QString& typeName, int numericTypeId, bool loadUserDefaults) const
 {
-	// Palette of standard colors initially assigned to new element types:
-	static const Color defaultTypeColors[] = {
-		Color(0.97, 0.97, 0.97),// 0
-		Color(1.0,  0.4,  0.4), // 1
-		Color(0.4,  0.4,  1.0), // 2
-		Color(1.0,  1.0,  0.0), // 3
-		Color(1.0,  0.4,  1.0), // 4
-		Color(0.4,  1.0,  0.2), // 5
-		Color(0.8,  1.0,  0.7), // 6
-		Color(0.7,  0.0,  1.0), // 7
-		Color(0.2,  1.0,  1.0), // 8
-	};
-	return defaultTypeColors[std::abs(numericTypeId) % (sizeof(defaultTypeColors) / sizeof(defaultTypeColors[0]))];
+    // Palette of standard colors initially assigned to new element types:
+    static const Color defaultTypeColors[] = {
+        Color(0.97, 0.97, 0.97),// 0
+        Color(1.0,  0.4,  0.4), // 1
+        Color(0.4,  0.4,  1.0), // 2
+        Color(1.0,  1.0,  0.0), // 3
+        Color(1.0,  0.4,  1.0), // 4
+        Color(0.4,  1.0,  0.2), // 5
+        Color(0.8,  1.0,  0.7), // 6
+        Color(0.7,  0.0,  1.0), // 7
+        Color(0.2,  1.0,  1.0), // 8
+    };
+    return defaultTypeColors[std::abs(numericTypeId) % (sizeof(defaultTypeColors) / sizeof(defaultTypeColors[0]))];
 }
 
-}	// End of namespace
+}   // End of namespace

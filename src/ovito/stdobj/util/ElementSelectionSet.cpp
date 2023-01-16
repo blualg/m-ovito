@@ -36,49 +36,49 @@ DEFINE_PROPERTY_FIELD(ElementSelectionSet, useIdentifiers);
 class ReplaceSelectionOperation : public UndoableOperation
 {
 public:
-	ReplaceSelectionOperation(ElementSelectionSet* owner) :
-		_owner(owner), _selection(owner->_selection), _selectedIdentifiers(owner->_selectedIdentifiers) {}
+    ReplaceSelectionOperation(ElementSelectionSet* owner) :
+        _owner(owner), _selection(owner->_selection), _selectedIdentifiers(owner->_selectedIdentifiers) {}
 
-	virtual void undo() override {
-		_selection.swap(_owner->_selection);
-		_selectedIdentifiers.swap(_owner->_selectedIdentifiers);
-		_owner->notifyTargetChanged();
-	}
+    virtual void undo() override {
+        _selection.swap(_owner->_selection);
+        _selectedIdentifiers.swap(_owner->_selectedIdentifiers);
+        _owner->notifyTargetChanged();
+    }
 
-	virtual QString displayName() const override {
-		return QStringLiteral("Replace selection set");
-	}
+    virtual QString displayName() const override {
+        return QStringLiteral("Replace selection set");
+    }
 
 private:
 
-	OORef<ElementSelectionSet> _owner;
-	boost::dynamic_bitset<> _selection;
-	QSet<qlonglong> _selectedIdentifiers;
+    OORef<ElementSelectionSet> _owner;
+    boost::dynamic_bitset<> _selection;
+    QSet<qlonglong> _selectedIdentifiers;
 };
 
 /* Undo record that can restore selection state of a single element. */
 class ToggleSelectionOperation : public UndoableOperation
 {
 public:
-	ToggleSelectionOperation(ElementSelectionSet* owner, qlonglong id, size_t elementIndex = std::numeric_limits<size_t>::max()) :
-		_owner(owner), _index(elementIndex), _id(id) {}
+    ToggleSelectionOperation(ElementSelectionSet* owner, qlonglong id, size_t elementIndex = std::numeric_limits<size_t>::max()) :
+        _owner(owner), _index(elementIndex), _id(id) {}
 
-	virtual void undo() override {
-		if(_index != std::numeric_limits<size_t>::max())
-			_owner->toggleElementByIndex(_index);
-		else
-			_owner->toggleElementById(_id);
-	}
+    virtual void undo() override {
+        if(_index != std::numeric_limits<size_t>::max())
+            _owner->toggleElementByIndex(_index);
+        else
+            _owner->toggleElementById(_id);
+    }
 
-	virtual QString displayName() const override {
-		return QStringLiteral("Toggle element selection");
-	}
+    virtual QString displayName() const override {
+        return QStringLiteral("Toggle element selection");
+    }
 
 private:
 
-	OORef<ElementSelectionSet> _owner;
-	qlonglong _id;
-	size_t _index;
+    OORef<ElementSelectionSet> _owner;
+    qlonglong _id;
+    size_t _index;
 };
 
 /******************************************************************************
@@ -86,11 +86,11 @@ private:
 ******************************************************************************/
 void ElementSelectionSet::saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData) const
 {
-	RefTarget::saveToStream(stream, excludeRecomputableData);
-	stream.beginChunk(0x02);
-	stream << _selection;
-	stream << _selectedIdentifiers;
-	stream.endChunk();
+    RefTarget::saveToStream(stream, excludeRecomputableData);
+    stream.beginChunk(0x02);
+    stream << _selection;
+    stream << _selectedIdentifiers;
+    stream.endChunk();
 }
 
 /******************************************************************************
@@ -98,11 +98,11 @@ void ElementSelectionSet::saveToStream(ObjectSaveStream& stream, bool excludeRec
 ******************************************************************************/
 void ElementSelectionSet::loadFromStream(ObjectLoadStream& stream)
 {
-	RefTarget::loadFromStream(stream);
-	stream.expectChunk(0x02);
-	stream >> _selection;
-	stream >> _selectedIdentifiers;
-	stream.closeChunk();
+    RefTarget::loadFromStream(stream);
+    stream.expectChunk(0x02);
+    stream >> _selection;
+    stream >> _selectedIdentifiers;
+    stream.closeChunk();
 }
 
 /******************************************************************************
@@ -110,11 +110,11 @@ void ElementSelectionSet::loadFromStream(ObjectLoadStream& stream)
 ******************************************************************************/
 OORef<RefTarget> ElementSelectionSet::clone(bool deepCopy, CloneHelper& cloneHelper) const
 {
-	// Let the base class create an instance of this class.
-	OORef<ElementSelectionSet> clone = static_object_cast<ElementSelectionSet>(RefTarget::clone(deepCopy, cloneHelper));
-	clone->_selection = this->_selection;
-	clone->_selectedIdentifiers = this->_selectedIdentifiers;
-	return clone;
+    // Let the base class create an instance of this class.
+    OORef<ElementSelectionSet> clone = static_object_cast<ElementSelectionSet>(RefTarget::clone(deepCopy, cloneHelper));
+    clone->_selection = this->_selection;
+    clone->_selectedIdentifiers = this->_selectedIdentifiers;
+    return clone;
 }
 
 /******************************************************************************
@@ -122,45 +122,45 @@ OORef<RefTarget> ElementSelectionSet::clone(bool deepCopy, CloneHelper& cloneHel
 ******************************************************************************/
 void ElementSelectionSet::resetSelection(const PropertyContainer* container)
 {
-	OVITO_ASSERT(container != nullptr);
+    OVITO_ASSERT(container != nullptr);
 
-	// Take a snapshot of the current selection state.
-	if(ConstDataBufferAccess<int> selectionProperty = container->getProperty(PropertyObject::GenericSelectionProperty)) {
+    // Take a snapshot of the current selection state.
+    if(ConstDataBufferAccess<int> selectionProperty = container->getProperty(PropertyObject::GenericSelectionProperty)) {
 
-		// Make a backup of the old snapshot so it may be restored.
-		pushIfUndoRecording<ReplaceSelectionOperation>(this);
+        // Make a backup of the old snapshot so it may be restored.
+        pushIfUndoRecording<ReplaceSelectionOperation>(this);
 
-		// Obtain access to the unique identifiers of the data elements (if present).
-		ConstDataBufferAccess<qlonglong> identifierProperty;
-		if(useIdentifiers() && container->getOOMetaClass().isValidStandardPropertyId(PropertyObject::GenericIdentifierProperty))
-			identifierProperty = container->getProperty(PropertyObject::GenericIdentifierProperty);
-		OVITO_ASSERT(!identifierProperty || selectionProperty.size() == identifierProperty.size());
+        // Obtain access to the unique identifiers of the data elements (if present).
+        ConstDataBufferAccess<qlonglong> identifierProperty;
+        if(useIdentifiers() && container->getOOMetaClass().isValidStandardPropertyId(PropertyObject::GenericIdentifierProperty))
+            identifierProperty = container->getProperty(PropertyObject::GenericIdentifierProperty);
+        OVITO_ASSERT(!identifierProperty || selectionProperty.size() == identifierProperty.size());
 
-		if(identifierProperty && selectionProperty.size() == identifierProperty.size()) {
-			_selectedIdentifiers.clear();
-			_selection.clear();
-			auto s = selectionProperty.begin();
-			for(auto id : identifierProperty) {
-				if(*s++)
-					_selectedIdentifiers.insert(id);
-			}
-		}
-		else {
-			// Take a snapshot of the selection state.
-			_selectedIdentifiers.clear();
-			_selection.resize(selectionProperty.size());
-			size_t index = 0;
-			for(auto s : selectionProperty) {
-				_selection.set(index++, s);
-			}
-		}
+        if(identifierProperty && selectionProperty.size() == identifierProperty.size()) {
+            _selectedIdentifiers.clear();
+            _selection.clear();
+            auto s = selectionProperty.begin();
+            for(auto id : identifierProperty) {
+                if(*s++)
+                    _selectedIdentifiers.insert(id);
+            }
+        }
+        else {
+            // Take a snapshot of the selection state.
+            _selectedIdentifiers.clear();
+            _selection.resize(selectionProperty.size());
+            size_t index = 0;
+            for(auto s : selectionProperty) {
+                _selection.set(index++, s);
+            }
+        }
 
-		notifyTargetChanged();
-	}
-	else {
-		// Reset selection snapshot if input doesn't contain a selection state.
-		clearSelection(container);
-	}
+        notifyTargetChanged();
+    }
+    else {
+        // Reset selection snapshot if input doesn't contain a selection state.
+        clearSelection(container);
+    }
 }
 
 /******************************************************************************
@@ -168,21 +168,21 @@ void ElementSelectionSet::resetSelection(const PropertyContainer* container)
 ******************************************************************************/
 void ElementSelectionSet::clearSelection(const PropertyContainer* container)
 {
-	OVITO_ASSERT(container != nullptr);
+    OVITO_ASSERT(container != nullptr);
 
-	// Make a backup of the old selection state so it may be restored.
-	pushIfUndoRecording<ReplaceSelectionOperation>(this);
+    // Make a backup of the old selection state so it may be restored.
+    pushIfUndoRecording<ReplaceSelectionOperation>(this);
 
-	if(useIdentifiers() && container->getOOMetaClass().isValidStandardPropertyId(PropertyObject::GenericIdentifierProperty) && container->getProperty(PropertyObject::GenericIdentifierProperty)) {
-		_selection.clear();
-		_selectedIdentifiers.clear();
-	}
-	else {
-		_selection.reset();
-		_selection.resize(container->elementCount(), false);
-		_selectedIdentifiers.clear();
-	}
-	notifyTargetChanged();
+    if(useIdentifiers() && container->getOOMetaClass().isValidStandardPropertyId(PropertyObject::GenericIdentifierProperty) && container->getProperty(PropertyObject::GenericIdentifierProperty)) {
+        _selection.clear();
+        _selectedIdentifiers.clear();
+    }
+    else {
+        _selection.reset();
+        _selection.resize(container->elementCount(), false);
+        _selectedIdentifiers.clear();
+    }
+    notifyTargetChanged();
 }
 
 /******************************************************************************
@@ -190,53 +190,53 @@ void ElementSelectionSet::clearSelection(const PropertyContainer* container)
 ******************************************************************************/
 void ElementSelectionSet::setSelection(const PropertyContainer* container, const boost::dynamic_bitset<>& selection, SelectionMode mode)
 {
-	// Make a backup of the old snapshot so it may be restored.
-	pushIfUndoRecording<ReplaceSelectionOperation>(this);
+    // Make a backup of the old snapshot so it may be restored.
+    pushIfUndoRecording<ReplaceSelectionOperation>(this);
 
-	// Obtain access to the unique identifiers of the data elements (if present).
-	ConstDataBufferAccess<qlonglong> identifierProperty;
-	if(useIdentifiers() && container->getOOMetaClass().isValidStandardPropertyId(PropertyObject::GenericIdentifierProperty))
-		identifierProperty = container->getProperty(PropertyObject::GenericIdentifierProperty);
-	OVITO_ASSERT(!identifierProperty || selection.size() == identifierProperty.size());
+    // Obtain access to the unique identifiers of the data elements (if present).
+    ConstDataBufferAccess<qlonglong> identifierProperty;
+    if(useIdentifiers() && container->getOOMetaClass().isValidStandardPropertyId(PropertyObject::GenericIdentifierProperty))
+        identifierProperty = container->getProperty(PropertyObject::GenericIdentifierProperty);
+    OVITO_ASSERT(!identifierProperty || selection.size() == identifierProperty.size());
 
-	if(identifierProperty) {
-		_selection.clear();
-		size_t index = 0;
-		if(mode == SelectionReplace) {
-			_selectedIdentifiers.clear();
-			for(auto id : identifierProperty) {
-				if(selection.test(index++))
-					_selectedIdentifiers.insert(id);
-			}
-		}
-		else if(mode == SelectionAdd) {
-			for(auto id : identifierProperty) {
-				if(selection.test(index++))
-					_selectedIdentifiers.insert(id);
-			}
-		}
-		else if(mode == SelectionSubtract) {
-			for(auto id : identifierProperty) {
-				if(selection.test(index++))
-					_selectedIdentifiers.remove(id);
-			}
-		}
-	}
-	else {
-		_selectedIdentifiers.clear();
-		if(mode == SelectionReplace)
-			_selection = selection;
-		else if(mode == SelectionAdd) {
-			_selection.resize(selection.size());
-			_selection |= selection;
-		}
-		else if(mode == SelectionSubtract) {
-			_selection.resize(selection.size());
-			_selection &= ~selection;
-		}
-	}
+    if(identifierProperty) {
+        _selection.clear();
+        size_t index = 0;
+        if(mode == SelectionReplace) {
+            _selectedIdentifiers.clear();
+            for(auto id : identifierProperty) {
+                if(selection.test(index++))
+                    _selectedIdentifiers.insert(id);
+            }
+        }
+        else if(mode == SelectionAdd) {
+            for(auto id : identifierProperty) {
+                if(selection.test(index++))
+                    _selectedIdentifiers.insert(id);
+            }
+        }
+        else if(mode == SelectionSubtract) {
+            for(auto id : identifierProperty) {
+                if(selection.test(index++))
+                    _selectedIdentifiers.remove(id);
+            }
+        }
+    }
+    else {
+        _selectedIdentifiers.clear();
+        if(mode == SelectionReplace)
+            _selection = selection;
+        else if(mode == SelectionAdd) {
+            _selection.resize(selection.size());
+            _selection |= selection;
+        }
+        else if(mode == SelectionSubtract) {
+            _selection.resize(selection.size());
+            _selection &= ~selection;
+        }
+    }
 
-	notifyTargetChanged();
+    notifyTargetChanged();
 }
 
 /******************************************************************************
@@ -244,22 +244,22 @@ void ElementSelectionSet::setSelection(const PropertyContainer* container, const
 ******************************************************************************/
 void ElementSelectionSet::toggleElement(const PropertyContainer* container, size_t elementIndex)
 {
-	if(elementIndex >= container->elementCount())
-		return;
+    if(elementIndex >= container->elementCount())
+        return;
 
-	// Obtain access to the unique identifiers of the data elements (if present).
-	ConstDataBufferAccess<qlonglong> identifierProperty;
-	if(useIdentifiers() && container->getOOMetaClass().isValidStandardPropertyId(PropertyObject::GenericIdentifierProperty))
-		identifierProperty = container->getProperty(PropertyObject::GenericIdentifierProperty);
+    // Obtain access to the unique identifiers of the data elements (if present).
+    ConstDataBufferAccess<qlonglong> identifierProperty;
+    if(useIdentifiers() && container->getOOMetaClass().isValidStandardPropertyId(PropertyObject::GenericIdentifierProperty))
+        identifierProperty = container->getProperty(PropertyObject::GenericIdentifierProperty);
 
-	if(identifierProperty) {
-		_selection.clear();
-		toggleElementById(identifierProperty[elementIndex]);
-	}
-	else if(elementIndex < _selection.size()) {
-		_selectedIdentifiers.clear();
-		toggleElementByIndex(elementIndex);
-	}
+    if(identifierProperty) {
+        _selection.clear();
+        toggleElementById(identifierProperty[elementIndex]);
+    }
+    else if(elementIndex < _selection.size()) {
+        _selectedIdentifiers.clear();
+        toggleElementByIndex(elementIndex);
+    }
 }
 
 /******************************************************************************
@@ -267,16 +267,16 @@ void ElementSelectionSet::toggleElement(const PropertyContainer* container, size
 ******************************************************************************/
 void ElementSelectionSet::toggleElementById(qlonglong elementId)
 {
-	// Make a backup of the old selection state so it may be restored.
-	pushIfUndoRecording<ToggleSelectionOperation>(this, elementId);
+    // Make a backup of the old selection state so it may be restored.
+    pushIfUndoRecording<ToggleSelectionOperation>(this, elementId);
 
-	if(useIdentifiers()) {
-		if(_selectedIdentifiers.contains(elementId))
-			_selectedIdentifiers.remove(elementId);
-		else
-			_selectedIdentifiers.insert(elementId);
-	}
-	notifyTargetChanged();
+    if(useIdentifiers()) {
+        if(_selectedIdentifiers.contains(elementId))
+            _selectedIdentifiers.remove(elementId);
+        else
+            _selectedIdentifiers.insert(elementId);
+    }
+    notifyTargetChanged();
 }
 
 /******************************************************************************
@@ -284,12 +284,12 @@ void ElementSelectionSet::toggleElementById(qlonglong elementId)
 ******************************************************************************/
 void ElementSelectionSet::toggleElementByIndex(size_t elementIndex)
 {
-	// Make a backup of the old selection state so it may be restored.
-	pushIfUndoRecording<ToggleSelectionOperation>(this, -1, elementIndex);
+    // Make a backup of the old selection state so it may be restored.
+    pushIfUndoRecording<ToggleSelectionOperation>(this, -1, elementIndex);
 
-	if(elementIndex < _selection.size())
-		_selection.flip(elementIndex);
-	notifyTargetChanged();
+    if(elementIndex < _selection.size())
+        _selection.flip(elementIndex);
+    notifyTargetChanged();
 }
 
 /******************************************************************************
@@ -297,26 +297,26 @@ void ElementSelectionSet::toggleElementByIndex(size_t elementIndex)
 ******************************************************************************/
 void ElementSelectionSet::selectAll(const PropertyContainer* container)
 {
-	// Make a backup of the old selection state so it may be restored.
-	pushIfUndoRecording<ReplaceSelectionOperation>(this);
+    // Make a backup of the old selection state so it may be restored.
+    pushIfUndoRecording<ReplaceSelectionOperation>(this);
 
-	// Obtain access to the unique identifiers of the data elements (if present).
-	ConstDataBufferAccess<qlonglong> identifierProperty;
-	if(useIdentifiers() && container->getOOMetaClass().isValidStandardPropertyId(PropertyObject::GenericIdentifierProperty))
-		identifierProperty = container->getProperty(PropertyObject::GenericIdentifierProperty);
+    // Obtain access to the unique identifiers of the data elements (if present).
+    ConstDataBufferAccess<qlonglong> identifierProperty;
+    if(useIdentifiers() && container->getOOMetaClass().isValidStandardPropertyId(PropertyObject::GenericIdentifierProperty))
+        identifierProperty = container->getProperty(PropertyObject::GenericIdentifierProperty);
 
-	if(identifierProperty) {
-		_selection.clear();
-		_selectedIdentifiers.clear();
-		for(auto id : identifierProperty)
-			_selectedIdentifiers.insert(id);
-	}
-	else {
-		_selection.set();
-		_selection.resize(container->elementCount(), true);
-		_selectedIdentifiers.clear();
-	}
-	notifyTargetChanged();
+    if(identifierProperty) {
+        _selection.clear();
+        _selectedIdentifiers.clear();
+        for(auto id : identifierProperty)
+            _selectedIdentifiers.insert(id);
+    }
+    else {
+        _selection.set();
+        _selection.resize(container->elementCount(), true);
+        _selectedIdentifiers.clear();
+    }
+    notifyTargetChanged();
 }
 
 /******************************************************************************
@@ -324,27 +324,27 @@ void ElementSelectionSet::selectAll(const PropertyContainer* container)
 ******************************************************************************/
 void ElementSelectionSet::invertSelection(const PropertyContainer* container)
 {
-	// Make a backup of the old selection state so it may be restored.
-	pushIfUndoRecording<ReplaceSelectionOperation>(this);
+    // Make a backup of the old selection state so it may be restored.
+    pushIfUndoRecording<ReplaceSelectionOperation>(this);
 
-	// Obtain access to the unique identifiers of the data elements (if present).
-	ConstDataBufferAccess<qlonglong> identifierProperty;
-	if(useIdentifiers() && container->getOOMetaClass().isValidStandardPropertyId(PropertyObject::GenericIdentifierProperty))
-		identifierProperty = container->getProperty(PropertyObject::GenericIdentifierProperty);
+    // Obtain access to the unique identifiers of the data elements (if present).
+    ConstDataBufferAccess<qlonglong> identifierProperty;
+    if(useIdentifiers() && container->getOOMetaClass().isValidStandardPropertyId(PropertyObject::GenericIdentifierProperty))
+        identifierProperty = container->getProperty(PropertyObject::GenericIdentifierProperty);
 
-	if(identifierProperty) {
-		_selection.clear();
-		for(auto id : identifierProperty) {
-			if(!_selectedIdentifiers.remove(id))
-				_selectedIdentifiers.insert(id);
-		}
-	}
-	else {
-		_selection.resize(container->elementCount(), false);
-		_selection.flip();
-		_selectedIdentifiers.clear();
-	}
-	notifyTargetChanged();
+    if(identifierProperty) {
+        _selection.clear();
+        for(auto id : identifierProperty) {
+            if(!_selectedIdentifiers.remove(id))
+                _selectedIdentifiers.insert(id);
+        }
+    }
+    else {
+        _selection.resize(container->elementCount(), false);
+        _selection.flip();
+        _selectedIdentifiers.clear();
+    }
+    notifyTargetChanged();
 }
 
 
@@ -353,31 +353,31 @@ void ElementSelectionSet::invertSelection(const PropertyContainer* container)
 ******************************************************************************/
 PipelineStatus ElementSelectionSet::applySelection(DataBufferAccess<int> outputSelectionProperty, ConstDataBufferAccess<qlonglong> identifierProperty)
 {
-	size_t nselected = 0;
-	if(!identifierProperty || !useIdentifiers()) {
+    size_t nselected = 0;
+    if(!identifierProperty || !useIdentifiers()) {
 
-		// When not using identifiers, the number of input elements must match.
-		if(outputSelectionProperty.size() != _selection.size())
-			throw Exception(tr("Stored selection state became invalid, because the number of input elements has changed."));
+        // When not using identifiers, the number of input elements must match.
+        if(outputSelectionProperty.size() != _selection.size())
+            throw Exception(tr("Stored selection state became invalid, because the number of input elements has changed."));
 
-		// Restore selection simply by placing the snapshot into the pipeline.
-		size_t index = 0;
-		for(auto& s : outputSelectionProperty) {
-			if((s = _selection.test(index++)))
-				nselected++;
-		}
-	}
-	else if(identifierProperty) {
-		OVITO_ASSERT(outputSelectionProperty.size() == identifierProperty.size());
+        // Restore selection simply by placing the snapshot into the pipeline.
+        size_t index = 0;
+        for(auto& s : outputSelectionProperty) {
+            if((s = _selection.test(index++)))
+                nselected++;
+        }
+    }
+    else if(identifierProperty) {
+        OVITO_ASSERT(outputSelectionProperty.size() == identifierProperty.size());
 
-		auto id = identifierProperty.begin();
-		for(auto& s : outputSelectionProperty) {
-			if((s = _selectedIdentifiers.contains(*id++)))
-				nselected++;
-		}
-	}
+        auto id = identifierProperty.begin();
+        for(auto& s : outputSelectionProperty) {
+            if((s = _selectedIdentifiers.contains(*id++)))
+                nselected++;
+        }
+    }
 
-	return PipelineStatus(PipelineStatus::Success, tr("%1 elements selected").arg(nselected));
+    return PipelineStatus(PipelineStatus::Success, tr("%1 elements selected").arg(nselected));
 }
 
-}	// End of namespace
+}   // End of namespace

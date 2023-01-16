@@ -34,41 +34,41 @@ namespace Ovito {
  */
 class PickingVulkanSceneRenderer : public OffscreenVulkanSceneRenderer
 {
-	OVITO_CLASS(PickingVulkanSceneRenderer)
+    OVITO_CLASS(PickingVulkanSceneRenderer)
 
 public:
 
-	/// Constructor.
-	explicit PickingVulkanSceneRenderer(ObjectCreationParams params, std::shared_ptr<VulkanContext> vulkanDevice, ViewportWindowInterface* window);
+    /// Constructor.
+    explicit PickingVulkanSceneRenderer(ObjectCreationParams params, std::shared_ptr<VulkanContext> vulkanDevice, ViewportWindowInterface* window);
 
-	/// This method is called just before renderFrame() is called.
-	virtual void beginFrame(AnimationTime time, Scene* scene, const ViewProjectionParameters& params, Viewport* vp, const QRect& viewportRect, FrameBuffer* frameBuffer) override;
+    /// This method is called just before renderFrame() is called.
+    virtual void beginFrame(AnimationTime time, Scene* scene, const ViewProjectionParameters& params, Viewport* vp, const QRect& viewportRect, FrameBuffer* frameBuffer) override;
 
-	/// Renders the current animation frame.
-	virtual bool renderFrame(const QRect& viewportRect, MainThreadOperation& operation) override;
+    /// Renders the current animation frame.
+    virtual bool renderFrame(const QRect& viewportRect, MainThreadOperation& operation) override;
 
-	/// This method is called after renderFrame() has been called.
-	virtual void endFrame(bool renderingSuccessful, const QRect& viewportRect) override;
+    /// This method is called after renderFrame() has been called.
+    virtual void endFrame(bool renderingSuccessful, const QRect& viewportRect) override;
 
-	/// Returns the object record and the sub-object ID for the object at the given pixel coordinates.
-	std::tuple<const ObjectPickingRecord*, quint32> objectAtLocation(const QPoint& pos) const;
+    /// Returns the object record and the sub-object ID for the object at the given pixel coordinates.
+    std::tuple<const ObjectPickingRecord*, quint32> objectAtLocation(const QPoint& pos) const;
 
-	/// Returns the world space position corresponding to the given screen position.
-	Point3 worldPositionFromLocation(const QPoint& pos) const;
+    /// Returns the world space position corresponding to the given screen position.
+    Point3 worldPositionFromLocation(const QPoint& pos) const;
 
-	/// Returns true if the picking buffer needs to be regenerated; returns false if the picking buffer still contains valid data.
-	bool isRefreshRequired() const { return _frameBuffer.image().isNull(); }
+    /// Returns true if the picking buffer needs to be regenerated; returns false if the picking buffer still contains valid data.
+    bool isRefreshRequired() const { return _frameBuffer.image().isNull(); }
 
-	/// Resets the picking buffer and clears the stored object records.
-	virtual void resetPickingBuffer() override;
+    /// Resets the picking buffer and clears the stored object records.
+    virtual void resetPickingBuffer() override;
 
 private:
 
-	/// The viewport window that owns this picking renderer.
-	ViewportWindowInterface* _window;
+    /// The viewport window that owns this picking renderer.
+    ViewportWindowInterface* _window;
 
-	/// The frame buffer containing the object information.
-	FrameBuffer _frameBuffer;
+    /// The frame buffer containing the object information.
+    FrameBuffer _frameBuffer;
 };
 
-}	// End of namespace
+}   // End of namespace

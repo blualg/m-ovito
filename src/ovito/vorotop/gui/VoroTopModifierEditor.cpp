@@ -39,52 +39,52 @@ SET_OVITO_OBJECT_EDITOR(VoroTopModifier, VoroTopModifierEditor);
 ******************************************************************************/
 void VoroTopModifierEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 {
-	// Create a rollout.
-	QWidget* rollout = createRollout(tr("VoroTop analysis"), rolloutParams, "manual:particles.modifiers.vorotop_analysis");
+    // Create a rollout.
+    QWidget* rollout = createRollout(tr("VoroTop analysis"), rolloutParams, "manual:particles.modifiers.vorotop_analysis");
 
     // Create the rollout contents.
-	QVBoxLayout* layout = new QVBoxLayout(rollout);
-	layout->setContentsMargins(4,4,4,4);
-	layout->setSpacing(4);
+    QVBoxLayout* layout = new QVBoxLayout(rollout);
+    layout->setContentsMargins(4,4,4,4);
+    layout->setSpacing(4);
 
-	QGridLayout* gridlayout = new QGridLayout();
-	gridlayout->setContentsMargins(4,4,4,4);
-	gridlayout->setSpacing(4);
-	gridlayout->setColumnStretch(1, 1);
-	int row = 0;
+    QGridLayout* gridlayout = new QGridLayout();
+    gridlayout->setContentsMargins(4,4,4,4);
+    gridlayout->setSpacing(4);
+    gridlayout->setColumnStretch(1, 1);
+    int row = 0;
 
-	// Filter filename.
-	gridlayout->addWidget(new QLabel(tr("Filter:")), row++, 0, 1, 2);
-	FilenameParameterUI* fileFileUI = new FilenameParameterUI(this, PROPERTY_FIELD(VoroTopModifier::filterFile));
-	gridlayout->addWidget(fileFileUI->selectorWidget(), row++, 0, 1, 2);
-	connect(fileFileUI, &FilenameParameterUI::showSelectionDialog, this, &VoroTopModifierEditor::onLoadFilter);
+    // Filter filename.
+    gridlayout->addWidget(new QLabel(tr("Filter:")), row++, 0, 1, 2);
+    FilenameParameterUI* fileFileUI = new FilenameParameterUI(this, PROPERTY_FIELD(VoroTopModifier::filterFile));
+    gridlayout->addWidget(fileFileUI->selectorWidget(), row++, 0, 1, 2);
+    connect(fileFileUI, &FilenameParameterUI::showSelectionDialog, this, &VoroTopModifierEditor::onLoadFilter);
 
-	QLabel* label = new QLabel(tr("Filter definition files available from the <a href=\"https://www.vorotop.org/download.html\">VoroTop website</a>."));
-	label->setWordWrap(true);
-	label->setOpenExternalLinks(true);
-	gridlayout->addWidget(label, row++, 0, 1, 2);
+    QLabel* label = new QLabel(tr("Filter definition files available from the <a href=\"https://www.vorotop.org/download.html\">VoroTop website</a>."));
+    label->setWordWrap(true);
+    label->setOpenExternalLinks(true);
+    gridlayout->addWidget(label, row++, 0, 1, 2);
 
-	// Atomic radii.
-	BooleanParameterUI* useRadiiPUI = new BooleanParameterUI(this, PROPERTY_FIELD(VoroTopModifier::useRadii));
-	gridlayout->addWidget(useRadiiPUI->checkBox(), row++, 0, 1, 2);
+    // Atomic radii.
+    BooleanParameterUI* useRadiiPUI = new BooleanParameterUI(this, PROPERTY_FIELD(VoroTopModifier::useRadii));
+    gridlayout->addWidget(useRadiiPUI->checkBox(), row++, 0, 1, 2);
 
-	// Only selected particles.
-	BooleanParameterUI* onlySelectedPUI = new BooleanParameterUI(this, PROPERTY_FIELD(StructureIdentificationModifier::onlySelectedParticles));
-	gridlayout->addWidget(onlySelectedPUI->checkBox(), row++, 0, 1, 2);
+    // Only selected particles.
+    BooleanParameterUI* onlySelectedPUI = new BooleanParameterUI(this, PROPERTY_FIELD(StructureIdentificationModifier::onlySelectedParticles));
+    gridlayout->addWidget(onlySelectedPUI->checkBox(), row++, 0, 1, 2);
 
-	layout->addLayout(gridlayout);
+    layout->addLayout(gridlayout);
 
-	// Status label.
-	layout->addSpacing(6);
-	layout->addWidget((new ObjectStatusDisplay(this))->statusWidget());
+    // Status label.
+    layout->addSpacing(6);
+    layout->addWidget((new ObjectStatusDisplay(this))->statusWidget());
 
-	StructureListParameterUI* structureTypesPUI = new StructureListParameterUI(this, false);
-	layout->addSpacing(10);
-	layout->addWidget(new QLabel(tr("Structure types:")));
-	layout->addWidget(structureTypesPUI->tableWidget());
-	label = new QLabel(tr("<p style=\"font-size: small;\">Double-click to change colors.</p>"));
-	label->setWordWrap(true);
-	layout->addWidget(label);
+    StructureListParameterUI* structureTypesPUI = new StructureListParameterUI(this, false);
+    layout->addSpacing(10);
+    layout->addWidget(new QLabel(tr("Structure types:")));
+    layout->addWidget(structureTypesPUI->tableWidget());
+    label = new QLabel(tr("<p style=\"font-size: small;\">Double-click to change colors.</p>"));
+    label->setWordWrap(true);
+    layout->addWidget(label);
 }
 
 /******************************************************************************
@@ -92,24 +92,24 @@ void VoroTopModifierEditor::createUI(const RolloutInsertionParameters& rolloutPa
 ******************************************************************************/
 void VoroTopModifierEditor::onLoadFilter()
 {
-	VoroTopModifier* mod = static_object_cast<VoroTopModifier>(editObject());
-	if(!mod) return;
+    VoroTopModifier* mod = static_object_cast<VoroTopModifier>(editObject());
+    if(!mod) return;
 
-	performTransaction(tr("Load VoroTop filter"), [this, mod]() {
+    performTransaction(tr("Load VoroTop filter"), [this, mod]() {
 
-		HistoryFileDialog fileDialog(QStringLiteral("vorotop_filter"), container(), tr("Pick VoroTop filter file"),
-			QString(), tr("VoroTop filter definition file (*)"));
-		fileDialog.setFileMode(QFileDialog::ExistingFile);
+        HistoryFileDialog fileDialog(QStringLiteral("vorotop_filter"), container(), tr("Pick VoroTop filter file"),
+            QString(), tr("VoroTop filter definition file (*)"));
+        fileDialog.setFileMode(QFileDialog::ExistingFile);
 
-		if(fileDialog.exec()) {
-			QStringList selectedFiles = fileDialog.selectedFiles();
-			if(!selectedFiles.empty()) {
-				ProgressDialog progressDialog(container(), tr("Loading filter"));
-				mod->loadFilterDefinition(selectedFiles.front());
-			}
-		}
-	});
+        if(fileDialog.exec()) {
+            QStringList selectedFiles = fileDialog.selectedFiles();
+            if(!selectedFiles.empty()) {
+                ProgressDialog progressDialog(container(), tr("Loading filter"));
+                mod->loadFilterDefinition(selectedFiles.front());
+            }
+        }
+    });
 }
 
 
-}	// End of namespace
+}   // End of namespace

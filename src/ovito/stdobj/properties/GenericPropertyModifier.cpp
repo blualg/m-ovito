@@ -35,10 +35,10 @@ DEFINE_PROPERTY_FIELD(GenericPropertyModifier, subject);
 ******************************************************************************/
 void GenericPropertyModifier::setDefaultSubject(const QString& pluginId, const QString& containerClassName)
 {
-	if(OvitoClassPtr containerClass = PluginManager::instance().findClass(pluginId, containerClassName)) {
-		OVITO_ASSERT(containerClass->isDerivedFrom(PropertyContainer::OOClass()));
-		setSubject(static_cast<PropertyContainerClassPtr>(containerClass));
-	}
+    if(OvitoClassPtr containerClass = PluginManager::instance().findClass(pluginId, containerClassName)) {
+        OVITO_ASSERT(containerClass->isDerivedFrom(PropertyContainer::OOClass()));
+        setSubject(static_cast<PropertyContainerClassPtr>(containerClass));
+    }
 }
 
 /******************************************************************************
@@ -46,11 +46,11 @@ void GenericPropertyModifier::setDefaultSubject(const QString& pluginId, const Q
 ******************************************************************************/
 bool GenericPropertyModifier::OOMetaClass::isApplicableTo(const DataCollection& input) const
 {
-	if(!ModifierClass::isApplicableTo(input)) return false;
+    if(!ModifierClass::isApplicableTo(input)) return false;
 
-	// Modifier is applicable if there is at least one property container in the input data.
-	// Subclasses can override this behavior.
-	return input.containsObjectRecursive(PropertyContainer::OOClass());
+    // Modifier is applicable if there is at least one property container in the input data.
+    // Subclasses can override this behavior.
+    return input.containsObjectRecursive(PropertyContainer::OOClass());
 }
 
-}	// End of namespace
+}   // End of namespace

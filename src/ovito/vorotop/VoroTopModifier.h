@@ -29,7 +29,7 @@
 #include "Filter.h"
 
 namespace voro {
-	class voronoicell_neighbor;	// Defined by Voro++
+    class voronoicell_neighbor; // Defined by Voro++
 }
 
 namespace Ovito::VoroTop {
@@ -39,84 +39,84 @@ namespace Ovito::VoroTop {
  */
 class OVITO_VOROTOP_EXPORT VoroTopModifier : public StructureIdentificationModifier
 {
-	OVITO_CLASS(VoroTopModifier)
+    OVITO_CLASS(VoroTopModifier)
 
-	Q_CLASSINFO("DisplayName", "VoroTop analysis");
-	Q_CLASSINFO("Description", "Identify local structures based on Voronoi polyhedron topology.");
+    Q_CLASSINFO("DisplayName", "VoroTop analysis");
+    Q_CLASSINFO("Description", "Identify local structures based on Voronoi polyhedron topology.");
 #ifndef OVITO_QML_GUI
-	Q_CLASSINFO("ModifierCategory", "Structure identification");
+    Q_CLASSINFO("ModifierCategory", "Structure identification");
 #else
-	Q_CLASSINFO("ModifierCategory", "-");
+    Q_CLASSINFO("ModifierCategory", "-");
 #endif
 
 public:
 
-	/// Constructor.
-	Q_INVOKABLE VoroTopModifier(ObjectCreationParams params);
+    /// Constructor.
+    Q_INVOKABLE VoroTopModifier(ObjectCreationParams params);
 
-	/// Loads a new filter definition into the modifier.
-	bool loadFilterDefinition(const QString& filepath);
+    /// Loads a new filter definition into the modifier.
+    bool loadFilterDefinition(const QString& filepath);
 
-	/// Returns the VoroTop filter definition cached from the last analysis run.
-	const std::shared_ptr<Filter>& filter() const { return _filter; }
+    /// Returns the VoroTop filter definition cached from the last analysis run.
+    const std::shared_ptr<Filter>& filter() const { return _filter; }
 
 protected:
 
-	/// Is called when the value of a property of this object has changed.
-	virtual void propertyChanged(const PropertyFieldDescriptor* field) override;
+    /// Is called when the value of a property of this object has changed.
+    virtual void propertyChanged(const PropertyFieldDescriptor* field) override;
 
-	/// Creates a computation engine that will compute the modifier's results.
-	virtual Future<EnginePtr> createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input) override;
-
-private:
-
-	/// Compute engine that performs the actual analysis in a background thread.
-	class VoroTopAnalysisEngine : public StructureIdentificationEngine
-	{
-	public:
-
-		/// Constructor.
-		VoroTopAnalysisEngine(const ModifierEvaluationRequest& request, ParticleOrderingFingerprint fingerprint, const TimeInterval& validityInterval, ConstPropertyPtr positions, ConstPropertyPtr selection,
-							ConstPropertyPtr radii, const SimulationCellObject* simCell, const QString& filterFile, std::shared_ptr<Filter> filter, const OORefVector<ElementType>& structureTypes) :
-			StructureIdentificationEngine(request, std::move(fingerprint), std::move(positions), simCell, structureTypes, std::move(selection)),
-			_filterFile(filterFile),
-			_filter(std::move(filter)),
-			_radii(std::move(radii)) {}
-
-		/// Computes the modifier's results and stores them in this object for later retrieval.
-		virtual void perform() override;
-
-		/// Injects the computed results into the data pipeline.
-		virtual void applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
-
-		/// Processes a single Voronoi cell.
-		int processCell(voro::voronoicell_neighbor& vcell);
-
-		/// Returns the VoroTop filter definition.
-		const std::shared_ptr<Filter>& filter() const { return _filter; }
-
-	private:
-
-		/// The path of the external file containing the filter definition.
-		QString _filterFile;
-
-		/// The VoroTop filter definition.
-		std::shared_ptr<Filter> _filter;
-
-		/// The per-particle radii.
-		ConstPropertyPtr _radii;
-	};
+    /// Creates a computation engine that will compute the modifier's results.
+    virtual Future<EnginePtr> createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input) override;
 
 private:
 
-	/// Controls whether the weighted Voronoi tessellation is computed, which takes into account particle radii.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, useRadii, setUseRadii);
+    /// Compute engine that performs the actual analysis in a background thread.
+    class VoroTopAnalysisEngine : public StructureIdentificationEngine
+    {
+    public:
 
-	/// The external file path of the loaded filter file.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD(QString, filterFile, setFilterFile);
+        /// Constructor.
+        VoroTopAnalysisEngine(const ModifierEvaluationRequest& request, ParticleOrderingFingerprint fingerprint, const TimeInterval& validityInterval, ConstPropertyPtr positions, ConstPropertyPtr selection,
+                            ConstPropertyPtr radii, const SimulationCellObject* simCell, const QString& filterFile, std::shared_ptr<Filter> filter, const OORefVector<ElementType>& structureTypes) :
+            StructureIdentificationEngine(request, std::move(fingerprint), std::move(positions), simCell, structureTypes, std::move(selection)),
+            _filterFile(filterFile),
+            _filter(std::move(filter)),
+            _radii(std::move(radii)) {}
 
-	/// The VoroTop filter definition cached from the last analysis run.
-	std::shared_ptr<Filter> _filter;
+        /// Computes the modifier's results and stores them in this object for later retrieval.
+        virtual void perform() override;
+
+        /// Injects the computed results into the data pipeline.
+        virtual void applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
+
+        /// Processes a single Voronoi cell.
+        int processCell(voro::voronoicell_neighbor& vcell);
+
+        /// Returns the VoroTop filter definition.
+        const std::shared_ptr<Filter>& filter() const { return _filter; }
+
+    private:
+
+        /// The path of the external file containing the filter definition.
+        QString _filterFile;
+
+        /// The VoroTop filter definition.
+        std::shared_ptr<Filter> _filter;
+
+        /// The per-particle radii.
+        ConstPropertyPtr _radii;
+    };
+
+private:
+
+    /// Controls whether the weighted Voronoi tessellation is computed, which takes into account particle radii.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, useRadii, setUseRadii);
+
+    /// The external file path of the loaded filter file.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(QString, filterFile, setFilterFile);
+
+    /// The VoroTop filter definition cached from the last analysis run.
+    std::shared_ptr<Filter> _filter;
 };
 
-}	// End of namespace
+}   // End of namespace

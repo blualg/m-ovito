@@ -31,24 +31,24 @@ namespace Ovito::StdObj {
 ******************************************************************************/
 PropertyReference PropertySelectionComboBox::currentProperty() const
 {
-	if(!isEditable()) {
-		int index = currentIndex();
-		if(index < 0)
-			return PropertyReference();
-		return itemData(index).value<PropertyReference>();
-	}
-	else {
-		QString name = currentText().simplified();
-		if(!name.isEmpty()) {
-			if(int standardTypeId = containerClass()->standardPropertyTypeId(name))
-				return PropertyReference(containerClass(), standardTypeId);
-			else
-				return PropertyReference(containerClass(), name);
-		}
-		else {
-			return PropertyReference();
-		}
-	}
+    if(!isEditable()) {
+        int index = currentIndex();
+        if(index < 0)
+            return PropertyReference();
+        return itemData(index).value<PropertyReference>();
+    }
+    else {
+        QString name = currentText().simplified();
+        if(!name.isEmpty()) {
+            if(int standardTypeId = containerClass()->standardPropertyTypeId(name))
+                return PropertyReference(containerClass(), standardTypeId);
+            else
+                return PropertyReference(containerClass(), name);
+        }
+        else {
+            return PropertyReference();
+        }
+    }
 }
 
 /******************************************************************************
@@ -56,18 +56,18 @@ PropertyReference PropertySelectionComboBox::currentProperty() const
 ******************************************************************************/
 void PropertySelectionComboBox::setCurrentProperty(const PropertyReference& property)
 {
-	for(int index = 0; index < count(); index++) {
-		if(property == itemData(index).value<PropertyReference>()) {
-			setCurrentIndex(index);
-			return;
-		}
-	}
-	if(isEditable() && !property.isNull()) {
-		setCurrentText(property.name());
-	}
-	else {
-		setCurrentIndex(-1);
-	}
+    for(int index = 0; index < count(); index++) {
+        if(property == itemData(index).value<PropertyReference>()) {
+            setCurrentIndex(index);
+            return;
+        }
+    }
+    if(isEditable() && !property.isNull()) {
+        setCurrentText(property.name());
+    }
+    else {
+        setCurrentIndex(-1);
+    }
 }
 
 /******************************************************************************
@@ -75,17 +75,17 @@ void PropertySelectionComboBox::setCurrentProperty(const PropertyReference& prop
 ******************************************************************************/
 void PropertySelectionComboBox::focusOutEvent(QFocusEvent* event)
 {
-	if(isEditable()) {
-		int index = findText(currentText());
-		if(index == -1 && currentText().isEmpty() == false) {
-			addItem(PropertyReference(containerClass(), currentText()));
-			index = count() - 1;
-		}
-		setCurrentIndex(index);
-		Q_EMIT activated(index);
-		Q_EMIT textActivated(currentText());
-	}
-	QComboBox::focusOutEvent(event);
+    if(isEditable()) {
+        int index = findText(currentText());
+        if(index == -1 && currentText().isEmpty() == false) {
+            addItem(PropertyReference(containerClass(), currentText()));
+            index = count() - 1;
+        }
+        setCurrentIndex(index);
+        Q_EMIT activated(index);
+        Q_EMIT textActivated(currentText());
+    }
+    QComboBox::focusOutEvent(event);
 }
 
-}	// End of namespace
+}   // End of namespace

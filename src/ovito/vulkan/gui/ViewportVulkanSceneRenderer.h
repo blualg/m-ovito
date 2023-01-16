@@ -33,12 +33,12 @@ namespace Ovito {
  */
 class ViewportVulkanSceneRenderer : public VulkanSceneRenderer
 {
-	OVITO_CLASS(ViewportVulkanSceneRenderer)
+    OVITO_CLASS(ViewportVulkanSceneRenderer)
 
 public:
 
-	/// Constructor.
-	explicit ViewportVulkanSceneRenderer(ObjectCreationParams params, std::shared_ptr<VulkanContext> vulkanDevice);
+    /// Constructor.
+    explicit ViewportVulkanSceneRenderer(ObjectCreationParams params, std::shared_ptr<VulkanContext> vulkanDevice);
 };
 
-}	// End of namespace
+}   // End of namespace

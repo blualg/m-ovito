@@ -91,11 +91,11 @@ Future<AsynchronousModifier::EnginePtr> VoroTopModifier::createEngine(const Modi
 {
     // Get the current positions.
     const ParticlesObject* particles = input.expectObject<ParticlesObject>();
-	particles->verifyIntegrity();
+    particles->verifyIntegrity();
     const PropertyObject* posProperty = particles->expectProperty(ParticlesObject::PositionProperty);
 
-	// The Voro++ library uses 32-bit integers. It cannot handle more than 2^31 input points.
-	if(particles->elementCount() > std::numeric_limits<int>::max())
+    // The Voro++ library uses 32-bit integers. It cannot handle more than 2^31 input points.
+    if(particles->elementCount() > std::numeric_limits<int>::max())
         throw Exception(tr("VoroTop analysis modifier is limited to a maximum of %1 particles in the current program version.").arg(std::numeric_limits<int>::max()));
 
     // Get simulation cell.
@@ -127,7 +127,7 @@ Future<AsynchronousModifier::EnginePtr> VoroTopModifier::createEngine(const Modi
 ******************************************************************************/
 void VoroTopModifier::VoroTopAnalysisEngine::applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state)
 {
-	StructureIdentificationEngine::applyResults(request, state);
+    StructureIdentificationEngine::applyResults(request, state);
 
     // Cache loaded filter definition for future use.
     static_object_cast<VoroTopModifier>(request.modifier())->_filter = this->filter();
@@ -381,7 +381,7 @@ void VoroTopModifier::VoroTopAnalysisEngine::perform()
     }
 
     if(positions()->size() == 0)
-        return;	// Nothing to do when there are zero particles.
+        return; // Nothing to do when there are zero particles.
 
     setProgressText(tr("Performing VoroTop analysis"));
 
@@ -574,4 +574,4 @@ void VoroTopModifier::propertyChanged(const PropertyFieldDescriptor* field)
         _filter.reset();
 }
 
-}	// End of namespace
+}   // End of namespace

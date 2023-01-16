@@ -36,10 +36,10 @@ OVITO_REGISTER_VIEWPORT_WINDOW_IMPLEMENTATION(VulkanViewportWindow);
 * Constructor.
 ******************************************************************************/
 VulkanViewportWindow::VulkanViewportWindow(Viewport* viewport, UserInterface* userInterface, QWidget* parentWidget) : 
-		BaseViewportWindow(*userInterface, viewport)
+        BaseViewportWindow(*userInterface, viewport)
 {
     // Create the VulkanContext, a wrapper for the Vulkan logical device.
-	// Share the same device with by all viewport windows.
+    // Share the same device with by all viewport windows.
     if(DataSet* dataset = userInterface->datasetContainer().currentSet()) {
         if(ViewportConfiguration* viewportConfig = dataset->viewportConfig()) {
             for(Viewport* vp : viewportConfig->viewports()) {
@@ -60,17 +60,17 @@ VulkanViewportWindow::VulkanViewportWindow(Viewport* viewport, UserInterface* us
 
     // Make this a Vulkan compatible window.
     setSurfaceType(QSurface::VulkanSurface);
-	setVulkanInstance(context()->vulkanInstance());
+    setVulkanInstance(context()->vulkanInstance());
 
-	// Embed the QWindow in a QWidget container.
-	_widget = QWidget::createWindowContainer(this, parentWidget);
+    // Embed the QWindow in a QWidget container.
+    _widget = QWidget::createWindowContainer(this, parentWidget);
 
-	_widget->setMouseTracking(true);
+    _widget->setMouseTracking(true);
     _widget->setFocusPolicy(Qt::StrongFocus);
     _widget->setAcceptDrops(false); // File drop events are handled by the root main window. This makes them propagate up the widget hierarchy.
 
-	// Re-render window whenever requested by the system.
-	connect(&scenePreparation(), &ScenePreparation::viewportUpdateRequest, this, &VulkanViewportWindow::renderLater);
+    // Re-render window whenever requested by the system.
+    connect(&scenePreparation(), &ScenePreparation::viewportUpdateRequest, this, &VulkanViewportWindow::renderLater);
 }
 
 /******************************************************************************
@@ -79,9 +79,9 @@ VulkanViewportWindow::VulkanViewportWindow(Viewport* viewport, UserInterface* us
 void VulkanViewportWindow::renderLater()
 {
     // Request a deferred refresh of the QWindow.
-	_updateRequested = true;
+    _updateRequested = true;
     if(viewport() && !userInterface().areViewportUpdatesSuspended()) {
-    	QWindow::requestUpdate();
+        QWindow::requestUpdate();
     }
 }
 
@@ -91,8 +91,8 @@ void VulkanViewportWindow::renderLater()
 ******************************************************************************/
 void VulkanViewportWindow::processViewportUpdate()
 {
-	if(_updateRequested) {
-		OVITO_ASSERT_MSG(!userInterface().isRenderingInteractiveViewports(), "VulkanViewportWindow::processUpdateRequest()", "Recursive viewport repaint detected.");
+    if(_updateRequested) {
+        OVITO_ASSERT_MSG(!userInterface().isRenderingInteractiveViewports(), "VulkanViewportWindow::processUpdateRequest()", "Recursive viewport repaint detected.");
 
         // Note: All we can do is request a deferred window update. 
         // A QWindow has no way of forcing an immediate repaint.
@@ -105,40 +105,40 @@ void VulkanViewportWindow::processViewportUpdate()
 ******************************************************************************/
 ViewportPickResult VulkanViewportWindow::pick(const QPointF& pos)
 {
-	ViewportPickResult result;
+    ViewportPickResult result;
 
-	// Cannot perform picking while viewport is not visible or currently rendering or when updates are disabled.
-	if(isVisible() && !userInterface().isRenderingInteractiveViewports() && !userInterface().areViewportUpdatesSuspended() && pickingRenderer()) {
-		try {
-			if(pickingRenderer()->isRefreshRequired()) {
-				// A dataset is required for rendering.
-				if(DataSet* dataset = userInterface().datasetContainer().currentSet()) {
+    // Cannot perform picking while viewport is not visible or currently rendering or when updates are disabled.
+    if(isVisible() && !userInterface().isRenderingInteractiveViewports() && !userInterface().areViewportUpdatesSuspended() && pickingRenderer()) {
+        try {
+            if(pickingRenderer()->isRefreshRequired()) {
+                // A dataset is required for rendering.
+                if(DataSet* dataset = userInterface().datasetContainer().currentSet()) {
                     // Let the viewport do the actual rendering work.
                     viewport()->renderInteractive(userInterface(), dataset, pickingRenderer());
                 }
                 else {
-					return result; // Return null result if no dataset is available.
+                    return result; // Return null result if no dataset is available.
                 }
-			}
+            }
 
-			// Query which object is located at the given window position.
-			const QPoint pixelPos = (pos * devicePixelRatio()).toPoint();
-			const SceneRenderer::ObjectPickingRecord* objInfo;
-			quint32 subobjectId;
-			std::tie(objInfo, subobjectId) = pickingRenderer()->objectAtLocation(pixelPos);
-			if(objInfo) {
-				result.setPipelineNode(objInfo->objectNode);
-				result.setPickInfo(objInfo->pickInfo);
-				result.setHitLocation(pickingRenderer()->worldPositionFromLocation(pixelPos));
-				result.setSubobjectId(subobjectId);
-			}
-		}
-		catch(const Exception& ex) {
-			userInterface().reportError(ex);
-		}
-	}
+            // Query which object is located at the given window position.
+            const QPoint pixelPos = (pos * devicePixelRatio()).toPoint();
+            const SceneRenderer::ObjectPickingRecord* objInfo;
+            quint32 subobjectId;
+            std::tie(objInfo, subobjectId) = pickingRenderer()->objectAtLocation(pixelPos);
+            if(objInfo) {
+                result.setPipelineNode(objInfo->objectNode);
+                result.setPickInfo(objInfo->pickInfo);
+                result.setHitLocation(pickingRenderer()->worldPositionFromLocation(pixelPos));
+                result.setSubobjectId(subobjectId);
+            }
+        }
+        catch(const Exception& ex) {
+            userInterface().reportError(ex);
+        }
+    }
 
-	return result;
+    return result;
 }
 
 /******************************************************************************
@@ -319,11 +319,11 @@ void VulkanViewportWindow::init()
     OVITO_ASSERT(!_viewportRenderer);
     OVITO_ASSERT(!_pickingRenderer);
 
-	// Create the interactive viewport renderer. Pass our shared Vulkan device to the renderer.
+    // Create the interactive viewport renderer. Pass our shared Vulkan device to the renderer.
     _viewportRenderer = OORef<ViewportVulkanSceneRenderer>::create(context());
 
-	// Create the object picking renderer.
-	_pickingRenderer = OORef<PickingVulkanSceneRenderer>::create(context(), this);
+    // Create the object picking renderer.
+    _pickingRenderer = OORef<PickingVulkanSceneRenderer>::create(context(), this);
 
     _status = StatusDeviceReady;
 }
@@ -736,8 +736,8 @@ void VulkanViewportWindow::beginFrame()
     const QSize sz = swapChainImageSize();
     renderer()->setFrameBufferSize(sz);
 
-	// A dataset is required for rendering.
-	DataSet* dataset = userInterface().datasetContainer().currentSet();
+    // A dataset is required for rendering.
+    DataSet* dataset = userInterface().datasetContainer().currentSet();
 
     // Use the viewport's background color to clear frame buffer.
     ColorA backgroundColor{0,0,0,1};
@@ -764,14 +764,14 @@ void VulkanViewportWindow::beginFrame()
     rpBeginInfo.pClearValues = clearValues;
     deviceFunctions()->vkCmdBeginRenderPass(currentCommandBuffer(), &rpBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-	// Invalidate picking buffer every time the visible contents of the viewport change.
-	pickingRenderer()->resetPickingBuffer();
+    // Invalidate picking buffer every time the visible contents of the viewport change.
+    pickingRenderer()->resetPickingBuffer();
 
     // Mark the window contents as valid again.
-	_updateRequested = false;
+    _updateRequested = false;
 
-	// Do not re-enter rendering function of the same viewport.
-	if(viewport() && !userInterface().isRenderingInteractiveViewports() && dataset) {
+    // Do not re-enter rendering function of the same viewport.
+    if(viewport() && !userInterface().isRenderingInteractiveViewports() && dataset) {
         if(!userInterface().areViewportUpdatesSuspended()) {
             try {
                 // Let the Viewport class do the actual rendering work.
@@ -928,4 +928,4 @@ void VulkanViewportWindow::reset()
     _status = StatusUninitialized;
 }
 
-}	// End of namespace
+}   // End of namespace

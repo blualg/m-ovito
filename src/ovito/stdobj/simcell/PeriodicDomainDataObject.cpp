@@ -48,8 +48,8 @@ PeriodicDomainDataObject::PeriodicDomainDataObject(ObjectCreationParams params, 
 ******************************************************************************/
 QString PeriodicDomainDataObject::objectTitle() const
 {
-	if(!title().isEmpty()) return title();
-	return DataObject::objectTitle();
+    if(!title().isEmpty()) return title();
+    return DataObject::objectTitle();
 }
 
-}	// End of namespace
+}   // End of namespace

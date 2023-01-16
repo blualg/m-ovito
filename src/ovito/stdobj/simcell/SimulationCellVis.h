@@ -33,42 +33,42 @@ namespace Ovito::StdObj {
  */
 class OVITO_STDOBJ_EXPORT SimulationCellVis : public DataVis
 {
-	OVITO_CLASS(SimulationCellVis)
-	Q_CLASSINFO("DisplayName", "Simulation cell");
+    OVITO_CLASS(SimulationCellVis)
+    Q_CLASSINFO("DisplayName", "Simulation cell");
 
 public:
 
-	/// \brief Constructor.
-	Q_INVOKABLE SimulationCellVis(ObjectCreationParams params);
+    /// \brief Constructor.
+    Q_INVOKABLE SimulationCellVis(ObjectCreationParams params);
 
-	/// \brief Lets the visualization element render the data object.
-	virtual PipelineStatus render(AnimationTime time, const ConstDataObjectPath& path, const PipelineFlowState& flowState, SceneRenderer* renderer, const PipelineSceneNode* contextNode) override;
+    /// \brief Lets the visualization element render the data object.
+    virtual PipelineStatus render(AnimationTime time, const ConstDataObjectPath& path, const PipelineFlowState& flowState, SceneRenderer* renderer, const PipelineSceneNode* contextNode) override;
 
-	/// \brief Computes the bounding box of the object.
-	virtual Box3 boundingBox(AnimationTime time, const ConstDataObjectPath& path, const PipelineSceneNode* contextNode, const PipelineFlowState& flowState, MixedKeyCache& visCache, TimeInterval& validityInterval) override;
+    /// \brief Computes the bounding box of the object.
+    virtual Box3 boundingBox(AnimationTime time, const ConstDataObjectPath& path, const PipelineSceneNode* contextNode, const PipelineFlowState& flowState, MixedKeyCache& visCache, TimeInterval& validityInterval) override;
 
-	/// \brief Indicates whether this object should be surrounded by a selection marker in the viewports when it is selected.
-	virtual bool showSelectionMarker() override { return false; }
-
-protected:
-
-	/// Renders the given simulation using wireframe mode.
-	void renderWireframe(AnimationTime time, const SimulationCellObject* cell, const PipelineFlowState& flowState, SceneRenderer* renderer, const PipelineSceneNode* contextNode);
-
-	/// Renders the given simulation using solid shading mode.
-	void renderSolid(AnimationTime time, const SimulationCellObject* cell, const PipelineFlowState& flowState, SceneRenderer* renderer, const PipelineSceneNode* contextNode);
+    /// \brief Indicates whether this object should be surrounded by a selection marker in the viewports when it is selected.
+    virtual bool showSelectionMarker() override { return false; }
 
 protected:
 
-	/// Controls the line width used to render the simulation cell.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD(FloatType, cellLineWidth, setCellLineWidth);
-	DECLARE_SHADOW_PROPERTY_FIELD(cellLineWidth);
+    /// Renders the given simulation using wireframe mode.
+    void renderWireframe(AnimationTime time, const SimulationCellObject* cell, const PipelineFlowState& flowState, SceneRenderer* renderer, const PipelineSceneNode* contextNode);
 
-	/// Controls whether the simulation cell is visible.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, renderCellEnabled, setRenderCellEnabled);
+    /// Renders the given simulation using solid shading mode.
+    void renderSolid(AnimationTime time, const SimulationCellObject* cell, const PipelineFlowState& flowState, SceneRenderer* renderer, const PipelineSceneNode* contextNode);
 
-	/// Controls the rendering color of the simulation cell.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(Color, cellColor, setCellColor, PROPERTY_FIELD_MEMORIZE);
+protected:
+
+    /// Controls the line width used to render the simulation cell.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(FloatType, cellLineWidth, setCellLineWidth);
+    DECLARE_SHADOW_PROPERTY_FIELD(cellLineWidth);
+
+    /// Controls whether the simulation cell is visible.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, renderCellEnabled, setRenderCellEnabled);
+
+    /// Controls the rendering color of the simulation cell.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(Color, cellColor, setCellColor, PROPERTY_FIELD_MEMORIZE);
 };
 
-}	// End of namespace
+}   // End of namespace

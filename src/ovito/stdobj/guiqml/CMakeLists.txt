@@ -22,11 +22,11 @@
 
 # Define the GUI module, which provides the user interface for the parent module.
 OVITO_STANDARD_PLUGIN(StdObjGui
-	SOURCES
-		resources/stdobjgui.qrc
-		StdObjGuiRegistrationService.cpp
-		PropertyReferenceParameterUI.cpp
-	PLUGIN_DEPENDENCIES 
-		StdObj
-	GUI_PLUGIN
+    SOURCES
+        resources/stdobjgui.qrc
+        StdObjGuiRegistrationService.cpp
+        PropertyReferenceParameterUI.cpp
+    PLUGIN_DEPENDENCIES 
+        StdObj
+    GUI_PLUGIN
 )

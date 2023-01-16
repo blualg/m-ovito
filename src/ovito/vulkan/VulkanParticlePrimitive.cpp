@@ -430,22 +430,22 @@ VulkanPipeline& VulkanSceneRenderer::createParticlePrimitivePipeline(VulkanPipel
 ******************************************************************************/
 void VulkanSceneRenderer::releaseParticlePrimitivePipelines()
 {
-	_particlePrimitivePipelines.cube.release(*context());
-	_particlePrimitivePipelines.cube_picking.release(*context());
-	_particlePrimitivePipelines.sphere.release(*context());
-	_particlePrimitivePipelines.sphere_picking.release(*context());
-	_particlePrimitivePipelines.square.release(*context());
-	_particlePrimitivePipelines.square_picking.release(*context());
-	_particlePrimitivePipelines.circle.release(*context());
-	_particlePrimitivePipelines.circle_picking.release(*context());
-	_particlePrimitivePipelines.imposter.release(*context());
-	_particlePrimitivePipelines.imposter_picking.release(*context());
-	_particlePrimitivePipelines.box.release(*context());
-	_particlePrimitivePipelines.box_picking.release(*context());
-	_particlePrimitivePipelines.ellipsoid.release(*context());
-	_particlePrimitivePipelines.ellipsoid_picking.release(*context());
-	_particlePrimitivePipelines.superquadric.release(*context());
-	_particlePrimitivePipelines.superquadric_picking.release(*context());
+    _particlePrimitivePipelines.cube.release(*context());
+    _particlePrimitivePipelines.cube_picking.release(*context());
+    _particlePrimitivePipelines.sphere.release(*context());
+    _particlePrimitivePipelines.sphere_picking.release(*context());
+    _particlePrimitivePipelines.square.release(*context());
+    _particlePrimitivePipelines.square_picking.release(*context());
+    _particlePrimitivePipelines.circle.release(*context());
+    _particlePrimitivePipelines.circle_picking.release(*context());
+    _particlePrimitivePipelines.imposter.release(*context());
+    _particlePrimitivePipelines.imposter_picking.release(*context());
+    _particlePrimitivePipelines.box.release(*context());
+    _particlePrimitivePipelines.box_picking.release(*context());
+    _particlePrimitivePipelines.ellipsoid.release(*context());
+    _particlePrimitivePipelines.ellipsoid_picking.release(*context());
+    _particlePrimitivePipelines.superquadric.release(*context());
+    _particlePrimitivePipelines.superquadric_picking.release(*context());
 }
 
 /******************************************************************************
@@ -454,9 +454,9 @@ void VulkanSceneRenderer::releaseParticlePrimitivePipelines()
 void VulkanSceneRenderer::renderParticlesImplementation(const ParticlePrimitive& primitive)
 {
     // Make sure there is something to be rendered. Otherwise, step out early.
-	if(!primitive.positions() || primitive.positions()->size() == 0)
-		return;
-	if(primitive.indices() && primitive.indices()->size() == 0)
+    if(!primitive.positions() || primitive.positions()->size() == 0)
+        return;
+    if(primitive.indices() && primitive.indices()->size() == 0)
         return;
 
     // Compute full view-projection matrix including correction for OpenGL/Vulkan convention difference.
@@ -1048,4 +1048,4 @@ void VulkanSceneRenderer::renderParticlesImplementation(const ParticlePrimitive&
     }
 }
 
-}	// End of namespace
+}   // End of namespace

@@ -33,84 +33,84 @@ namespace Ovito::StdObj {
  */
 class OVITO_STDOBJGUI_EXPORT PropertySelectionComboBox : public QComboBox
 {
-	Q_OBJECT
+    Q_OBJECT
 
 public:
 
-	/// \brief Constructor.
-	PropertySelectionComboBox(PropertyContainerClassPtr containerClass = nullptr, QWidget* parent = nullptr) : QComboBox(parent), _containerClass(containerClass) {}
+    /// \brief Constructor.
+    PropertySelectionComboBox(PropertyContainerClassPtr containerClass = nullptr, QWidget* parent = nullptr) : QComboBox(parent), _containerClass(containerClass) {}
 
-	/// \brief Adds a property to the end of the list.
-	/// \param property The property to add.
-	void addItem(const PropertyReference& property, const QString& label = QString(), bool isChildItem = false) {
-		OVITO_ASSERT(property.isNull() || containerClass() == property.containerClass());
-		OVITO_ASSERT(!isChildItem || !isEditable());
-		QComboBox::addItem((isChildItem ? QStringLiteral("  ") : QString()) + (label.isEmpty() ? property.name() : label), QVariant::fromValue(property));
-	}
+    /// \brief Adds a property to the end of the list.
+    /// \param property The property to add.
+    void addItem(const PropertyReference& property, const QString& label = QString(), bool isChildItem = false) {
+        OVITO_ASSERT(property.isNull() || containerClass() == property.containerClass());
+        OVITO_ASSERT(!isChildItem || !isEditable());
+        QComboBox::addItem((isChildItem ? QStringLiteral("  ") : QString()) + (label.isEmpty() ? property.name() : label), QVariant::fromValue(property));
+    }
 
-	/// \brief Adds a property to the end of the list.
-	/// \param property The property to add.
-	void addItem(const PropertyObject* property, int vectorComponent = -1, bool isChildItem = false) {
-		OVITO_ASSERT(property != nullptr);
-		OVITO_ASSERT(containerClass() != nullptr);
-		OVITO_ASSERT(!isChildItem || !isEditable());
-		QString label = (isChildItem ? QStringLiteral("  ") : QString()) + property->nameWithComponent(vectorComponent);
-		if(QComboBox::findText(label) == -1 && (!isChildItem || QComboBox::findText(property->nameWithComponent(vectorComponent)) == -1)) {
-			QComboBox::addItem(label, QVariant::fromValue(PropertyReference(containerClass(), property, vectorComponent)));
-		}
-	}
+    /// \brief Adds a property to the end of the list.
+    /// \param property The property to add.
+    void addItem(const PropertyObject* property, int vectorComponent = -1, bool isChildItem = false) {
+        OVITO_ASSERT(property != nullptr);
+        OVITO_ASSERT(containerClass() != nullptr);
+        OVITO_ASSERT(!isChildItem || !isEditable());
+        QString label = (isChildItem ? QStringLiteral("  ") : QString()) + property->nameWithComponent(vectorComponent);
+        if(QComboBox::findText(label) == -1 && (!isChildItem || QComboBox::findText(property->nameWithComponent(vectorComponent)) == -1)) {
+            QComboBox::addItem(label, QVariant::fromValue(PropertyReference(containerClass(), property, vectorComponent)));
+        }
+    }
 
-	/// \brief Adds multiple properties to the combo box.
-	/// \param list The list of properties to add.
-	void addItems(const QVector<PropertyObject*>& list) {
-		for(PropertyObject* p : list)
-			addItem(p);
-	}
+    /// \brief Adds multiple properties to the combo box.
+    /// \param list The list of properties to add.
+    void addItems(const QVector<PropertyObject*>& list) {
+        for(PropertyObject* p : list)
+            addItem(p);
+    }
 
-	/// \brief Returns the particle property that is currently selected in the
-	///        combo box.
-	/// \return The selected item. The returned reference can be null if
-	///         no item is currently selected.
-	PropertyReference currentProperty() const;
+    /// \brief Returns the particle property that is currently selected in the
+    ///        combo box.
+    /// \return The selected item. The returned reference can be null if
+    ///         no item is currently selected.
+    PropertyReference currentProperty() const;
 
-	/// \brief Sets the selection of the combo box to the given particle property.
-	/// \param property The particle property to be selected.
-	void setCurrentProperty(const PropertyReference& property);
+    /// \brief Sets the selection of the combo box to the given particle property.
+    /// \param property The particle property to be selected.
+    void setCurrentProperty(const PropertyReference& property);
 
-	/// \brief Returns the list index of the given property, or -1 if not found.
-	int propertyIndex(const PropertyReference& property) const {
-		for(int index = 0; index < count(); index++) {
-			if(property == itemData(index).value<PropertyReference>())
-				return index;
-		}
-		return -1;
-	}
+    /// \brief Returns the list index of the given property, or -1 if not found.
+    int propertyIndex(const PropertyReference& property) const {
+        for(int index = 0; index < count(); index++) {
+            if(property == itemData(index).value<PropertyReference>())
+                return index;
+        }
+        return -1;
+    }
 
-	/// \brief Returns the property at the given index.
-	PropertyReference property(int index) const {
-		return itemData(index).value<PropertyReference>();
-	}
+    /// \brief Returns the property at the given index.
+    PropertyReference property(int index) const {
+        return itemData(index).value<PropertyReference>();
+    }
 
-	/// Returns the class of properties that can be selected with this combo box.
-	PropertyContainerClassPtr containerClass() const { return _containerClass; }
+    /// Returns the class of properties that can be selected with this combo box.
+    PropertyContainerClassPtr containerClass() const { return _containerClass; }
 
-	/// Sets the class of properties that can be selected with this combo box.
-	void setContainerClass(PropertyContainerClassPtr containerClass) {
-		if(_containerClass != containerClass) {
-			_containerClass = containerClass;
-			clear();
-		}
-	}
+    /// Sets the class of properties that can be selected with this combo box.
+    void setContainerClass(PropertyContainerClassPtr containerClass) {
+        if(_containerClass != containerClass) {
+            _containerClass = containerClass;
+            clear();
+        }
+    }
 
 protected:
 
-	/// Is called when the widget loses the input focus.
-	virtual void focusOutEvent(QFocusEvent* event) override;
+    /// Is called when the widget loses the input focus.
+    virtual void focusOutEvent(QFocusEvent* event) override;
 
 private:
 
-	/// Specifies the class of properties that can be selected in this combo box.
-	PropertyContainerClassPtr _containerClass;
+    /// Specifies the class of properties that can be selected in this combo box.
+    PropertyContainerClassPtr _containerClass;
 };
 
-}	// End of namespace
+}   // End of namespace

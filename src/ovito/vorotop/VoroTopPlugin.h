@@ -26,7 +26,7 @@
 #include <ovito/particles/Particles.h>
 
 namespace Ovito {
-	namespace VoroTop {
-		using namespace Ovito::Particles;
-	}
+    namespace VoroTop {
+        using namespace Ovito::Particles;
+    }
 }

@@ -269,16 +269,16 @@ VkPipelineLayout VulkanSceneRenderer::createCylinderPrimitivePipeline(VulkanPipe
 ******************************************************************************/
 void VulkanSceneRenderer::releaseCylinderPrimitivePipelines()
 {
-	_cylinderPrimitivePipelines.cylinder.release(*context());
-	_cylinderPrimitivePipelines.cylinder_picking.release(*context());
-	_cylinderPrimitivePipelines.cylinder_flat.release(*context());
-	_cylinderPrimitivePipelines.cylinder_flat_picking.release(*context());
-	_cylinderPrimitivePipelines.arrow_head.release(*context());
-	_cylinderPrimitivePipelines.arrow_head_picking.release(*context());
-	_cylinderPrimitivePipelines.arrow_tail.release(*context());
-	_cylinderPrimitivePipelines.arrow_tail_picking.release(*context());
-	_cylinderPrimitivePipelines.arrow_flat.release(*context());
-	_cylinderPrimitivePipelines.arrow_flat_picking.release(*context());
+    _cylinderPrimitivePipelines.cylinder.release(*context());
+    _cylinderPrimitivePipelines.cylinder_picking.release(*context());
+    _cylinderPrimitivePipelines.cylinder_flat.release(*context());
+    _cylinderPrimitivePipelines.cylinder_flat_picking.release(*context());
+    _cylinderPrimitivePipelines.arrow_head.release(*context());
+    _cylinderPrimitivePipelines.arrow_head_picking.release(*context());
+    _cylinderPrimitivePipelines.arrow_tail.release(*context());
+    _cylinderPrimitivePipelines.arrow_tail_picking.release(*context());
+    _cylinderPrimitivePipelines.arrow_flat.release(*context());
+    _cylinderPrimitivePipelines.arrow_flat_picking.release(*context());
 }
 
 /******************************************************************************
@@ -287,8 +287,8 @@ void VulkanSceneRenderer::releaseCylinderPrimitivePipelines()
 void VulkanSceneRenderer::renderCylindersImplementation(const CylinderPrimitive& primitive)
 {
     // Make sure there is something to be rendered. Otherwise, step out early.
-	if(!primitive.basePositions() || !primitive.headPositions() || primitive.basePositions()->size() == 0)
-		return;
+    if(!primitive.basePositions() || !primitive.headPositions() || primitive.basePositions()->size() == 0)
+        return;
 
     // Compute full view-projection matrix including correction for OpenGL/Vulkan convention difference.
     QMatrix4x4 mvp = clipCorrection() * projParams().projectionMatrix * modelViewTM();
@@ -581,4 +581,4 @@ void VulkanSceneRenderer::renderCylindersImplementation(const CylinderPrimitive&
     }
 }
 
-}	// End of namespace
+}   // End of namespace

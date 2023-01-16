@@ -22,9 +22,9 @@
 
 # Define the GUI module, which provides the user interface for the parent module.
 OVITO_STANDARD_PLUGIN(VoroTopGui
-	SOURCES
-		VoroTopModifierEditor.cpp
-	PLUGIN_DEPENDENCIES VoroTop ParticlesGui
-	GUI_PLUGIN
-	HAS_NO_EXPORTS
+    SOURCES
+        VoroTopModifierEditor.cpp
+    PLUGIN_DEPENDENCIES VoroTop ParticlesGui
+    GUI_PLUGIN
+    HAS_NO_EXPORTS
 )

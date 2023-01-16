@@ -40,15 +40,15 @@ DEFINE_SHADOW_PROPERTY_FIELD(DataTable, plotMode);
 ******************************************************************************/
 void DataTable::OOMetaClass::initialize()
 {
-	PropertyContainerClass::initialize();
+    PropertyContainerClass::initialize();
 
-	// Enable automatic conversion of a DataTablePropertyReference to a generic PropertyReference and vice versa.
-	QMetaType::registerConverter<DataTablePropertyReference, PropertyReference>();
-	QMetaType::registerConverter<PropertyReference, DataTablePropertyReference>();
+    // Enable automatic conversion of a DataTablePropertyReference to a generic PropertyReference and vice versa.
+    QMetaType::registerConverter<DataTablePropertyReference, PropertyReference>();
+    QMetaType::registerConverter<PropertyReference, DataTablePropertyReference>();
 
-	setPropertyClassDisplayName(tr("Data table"));
-	setElementDescriptionName(QStringLiteral("points"));
-	setPythonName(QStringLiteral("table"));
+    setPropertyClassDisplayName(tr("Data table"));
+    setElementDescriptionName(QStringLiteral("points"));
+    setPythonName(QStringLiteral("table"));
 }
 
 /******************************************************************************
@@ -56,21 +56,21 @@ void DataTable::OOMetaClass::initialize()
 ******************************************************************************/
 PropertyPtr DataTable::OOMetaClass::createStandardPropertyInternal(size_t elementCount, int type, DataBuffer::InitializationFlags flags, const ConstDataObjectPath& containerPath) const
 {
-	OVITO_ASSERT_MSG(false, "DataTable::createStandardProperty()", "Invalid standard property type");
-	throw Exception(tr("This is not a valid standard property type for DataTable: %1").arg(type));
+    OVITO_ASSERT_MSG(false, "DataTable::createStandardProperty()", "Invalid standard property type");
+    throw Exception(tr("This is not a valid standard property type for DataTable: %1").arg(type));
 }
 
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
 DataTable::DataTable(ObjectCreationParams params, PlotMode plotMode, const QString& title, ConstPropertyPtr y, ConstPropertyPtr x) : PropertyContainer(params, title),
-	_intervalStart(0),
-	_intervalEnd(0),
-	_plotMode(plotMode)
+    _intervalStart(0),
+    _intervalEnd(0),
+    _plotMode(plotMode)
 {
-	OVITO_ASSERT(!x || !y || x->size() == y->size());
-	setX(std::move(x));
-	setY(std::move(y));
+    OVITO_ASSERT(!x || !y || x->size() == y->size());
+    setX(std::move(x));
+    setY(std::move(y));
 }
 
 /******************************************************************************
@@ -78,10 +78,10 @@ DataTable::DataTable(ObjectCreationParams params, PlotMode plotMode, const QStri
 ******************************************************************************/
 void DataTable::setX(const PropertyObject* property)
 {
-	_x.set(this, PROPERTY_FIELD(x), property);
-	if(property && !properties().contains(const_cast<PropertyObject*>(property))) {
-		addProperty(property);
-	}
+    _x.set(this, PROPERTY_FIELD(x), property);
+    if(property && !properties().contains(const_cast<PropertyObject*>(property))) {
+        addProperty(property);
+    }
 }
 
 /******************************************************************************
@@ -89,10 +89,10 @@ void DataTable::setX(const PropertyObject* property)
 ******************************************************************************/
 void DataTable::setY(const PropertyObject* property)
 {
-	_y.set(this, PROPERTY_FIELD(y), property);
-	if(property && !properties().contains(const_cast<PropertyObject*>(property))) {
-		addProperty(property);
-	}
+    _y.set(this, PROPERTY_FIELD(y), property);
+    if(property && !properties().contains(const_cast<PropertyObject*>(property))) {
+        addProperty(property);
+    }
 }
 
 /******************************************************************************
@@ -102,27 +102,27 @@ void DataTable::setY(const PropertyObject* property)
 ******************************************************************************/
 ConstPropertyPtr DataTable::getXValues() const
 {
-	if(const PropertyObject* xProperty = x()) {
-		return xProperty;
-	}
-	else if(const PropertyObject* yProperty = y()) {
-		if(elementCount() != 0 && (intervalStart() != 0 || intervalEnd() != 0)) {
-			PropertyAccessAndRef<FloatType> xdata = OOClass().createUserProperty(elementCount(), PropertyObject::Float, 1, axisLabelX());
-			FloatType binSize = (intervalEnd() - intervalStart()) / xdata.size();
-			FloatType x = intervalStart() + binSize * FloatType(0.5);
-			for(FloatType& v : xdata) {
-				v = x;
-				x += binSize;
-			}
-			return xdata.take();
-		}
-		else {
-			PropertyAccessAndRef<qlonglong> xdata = OOClass().createUserProperty(elementCount(), PropertyObject::Int64, 1, axisLabelX());
-			std::iota(xdata.begin(), xdata.end(), (size_t)0);
-			return xdata.take();
-		}
-	}
-	return {};
+    if(const PropertyObject* xProperty = x()) {
+        return xProperty;
+    }
+    else if(const PropertyObject* yProperty = y()) {
+        if(elementCount() != 0 && (intervalStart() != 0 || intervalEnd() != 0)) {
+            PropertyAccessAndRef<FloatType> xdata = OOClass().createUserProperty(elementCount(), PropertyObject::Float, 1, axisLabelX());
+            FloatType binSize = (intervalEnd() - intervalStart()) / xdata.size();
+            FloatType x = intervalStart() + binSize * FloatType(0.5);
+            for(FloatType& v : xdata) {
+                v = x;
+                x += binSize;
+            }
+            return xdata.take();
+        }
+        else {
+            PropertyAccessAndRef<qlonglong> xdata = OOClass().createUserProperty(elementCount(), PropertyObject::Int64, 1, axisLabelX());
+            std::iota(xdata.begin(), xdata.end(), (size_t)0);
+            return xdata.take();
+        }
+    }
+    return {};
 }
 
-}	// End of namespace
+}   // End of namespace

@@ -34,96 +34,96 @@ class OVITO_STDOBJ_EXPORT PropertyReference
 {
 public:
 
-	/// \brief Default constructor. Creates a null reference.
-	PropertyReference() = default;
+    /// \brief Default constructor. Creates a null reference.
+    PropertyReference() = default;
 
-	/// \brief Constructs a reference to a standard property.
-	PropertyReference(PropertyContainerClassPtr pclass, int typeId, int vectorComponent = -1);
+    /// \brief Constructs a reference to a standard property.
+    PropertyReference(PropertyContainerClassPtr pclass, int typeId, int vectorComponent = -1);
 
-	/// \brief Constructs a reference to a user-defined property.
-	PropertyReference(PropertyContainerClassPtr pclass, const QString& name, int vectorComponent = -1) : _containerClass(pclass), _name(name), _vectorComponent(vectorComponent) {
-		OVITO_ASSERT(pclass);
-		OVITO_ASSERT(!_name.isEmpty());
-	}
+    /// \brief Constructs a reference to a user-defined property.
+    PropertyReference(PropertyContainerClassPtr pclass, const QString& name, int vectorComponent = -1) : _containerClass(pclass), _name(name), _vectorComponent(vectorComponent) {
+        OVITO_ASSERT(pclass);
+        OVITO_ASSERT(!_name.isEmpty());
+    }
 
-	/// \brief Constructs a reference based on an existing PropertyObject.
-	PropertyReference(PropertyContainerClassPtr pclass, const PropertyObject* property, int vectorComponent = -1);
+    /// \brief Constructs a reference based on an existing PropertyObject.
+    PropertyReference(PropertyContainerClassPtr pclass, const PropertyObject* property, int vectorComponent = -1);
 
-	/// \brief Returns the type of property being referenced.
-	int type() const { return _type; }
+    /// \brief Returns the type of property being referenced.
+    int type() const { return _type; }
 
-	/// \brief Gets the human-readable name of the referenced property.
-	/// \return The property name.
-	const QString& name() const { return _name; }
+    /// \brief Gets the human-readable name of the referenced property.
+    /// \return The property name.
+    const QString& name() const { return _name; }
 
-	/// Return the class of the referenced property.
-	PropertyContainerClassPtr containerClass() const { return _containerClass; }
+    /// Return the class of the referenced property.
+    PropertyContainerClassPtr containerClass() const { return _containerClass; }
 
-	/// Returns the selected component index.
-	int vectorComponent() const { return _vectorComponent; }
+    /// Returns the selected component index.
+    int vectorComponent() const { return _vectorComponent; }
 
-	/// Selects a component index if the property is a vector property.
-	void setVectorComponent(int index) { _vectorComponent = index; }
+    /// Selects a component index if the property is a vector property.
+    void setVectorComponent(int index) { _vectorComponent = index; }
 
-	/// \brief Compares two references for equality.
-	bool operator==(const PropertyReference& other) const {
-		if(containerClass() != other.containerClass()) return false;
-		if(type() != other.type()) return false;
-		if(vectorComponent() != other.vectorComponent()) return false;
-		if(type() != 0) return true;
-		return name() == other.name();
-	}
+    /// \brief Compares two references for equality.
+    bool operator==(const PropertyReference& other) const {
+        if(containerClass() != other.containerClass()) return false;
+        if(type() != other.type()) return false;
+        if(vectorComponent() != other.vectorComponent()) return false;
+        if(type() != 0) return true;
+        return name() == other.name();
+    }
 
-	/// \brief Compares two references for inequality.
-	bool operator!=(const PropertyReference& other) const { return !(*this == other); }
+    /// \brief Compares two references for inequality.
+    bool operator!=(const PropertyReference& other) const { return !(*this == other); }
 
-	/// \brief Strict ordering function.
-	bool operator<(const PropertyReference& other) const {
-		if(containerClass() == other.containerClass()) {
-			if(type() == other.type()) {
-				if(vectorComponent() == other.vectorComponent()) {
-					return name() < other.name();
-				}
-				else return vectorComponent() < other.vectorComponent();
-			}
-			else return type() < other.type();
-		}
-		else return containerClass() < other.containerClass();
-	}
+    /// \brief Strict ordering function.
+    bool operator<(const PropertyReference& other) const {
+        if(containerClass() == other.containerClass()) {
+            if(type() == other.type()) {
+                if(vectorComponent() == other.vectorComponent()) {
+                    return name() < other.name();
+                }
+                else return vectorComponent() < other.vectorComponent();
+            }
+            else return type() < other.type();
+        }
+        else return containerClass() < other.containerClass();
+    }
 
-	/// \brief Returns true if this reference does not point to any property.
-	/// \return true if this is a default-constructed PropertyReference.
-	bool isNull() const { return type() == 0 && name().isEmpty(); }
+    /// \brief Returns true if this reference does not point to any property.
+    /// \return true if this is a default-constructed PropertyReference.
+    bool isNull() const { return type() == 0 && name().isEmpty(); }
 
-	/// \brief Returns whether this reference refers to any property.
-	/// \return false if this is a default-constructed PropertyReference.
-	explicit operator bool() const { return !isNull(); }
+    /// \brief Returns whether this reference refers to any property.
+    /// \return false if this is a default-constructed PropertyReference.
+    explicit operator bool() const { return !isNull(); }
 
-	/// \brief Returns the display name of the referenced property including the optional vector component.
-	QString nameWithComponent() const;
+    /// \brief Returns the display name of the referenced property including the optional vector component.
+    QString nameWithComponent() const;
 
-	/// Finds the referenced property in the given property container object.
-	const PropertyObject* findInContainer(const PropertyContainer* container) const;
+    /// Finds the referenced property in the given property container object.
+    const PropertyObject* findInContainer(const PropertyContainer* container) const;
 
-	/// Returns a new property reference that uses the same name as the current one, but with a different property container class.
-	PropertyReference convertToContainerClass(PropertyContainerClassPtr containerClass) const;
+    /// Returns a new property reference that uses the same name as the current one, but with a different property container class.
+    PropertyReference convertToContainerClass(PropertyContainerClassPtr containerClass) const;
 
 private:
 
-	/// The class of property container.
-	PropertyContainerClassPtr _containerClass = nullptr;
+    /// The class of property container.
+    PropertyContainerClassPtr _containerClass = nullptr;
 
-	/// The type of the property.
-	int _type = 0;
+    /// The type of the property.
+    int _type = 0;
 
-	/// The human-readable name of the property.
-	QString _name;
+    /// The human-readable name of the property.
+    QString _name;
 
-	/// The zero-based component index if the property is a vector property (or zero if not a vector property).
-	int _vectorComponent = -1;
+    /// The zero-based component index if the property is a vector property (or zero if not a vector property).
+    int _vectorComponent = -1;
 
-	friend OVITO_STDOBJ_EXPORT SaveStream& operator<<(SaveStream& stream, const PropertyReference& r);
-	friend OVITO_STDOBJ_EXPORT LoadStream& operator>>(LoadStream& stream, PropertyReference& r);
+    friend OVITO_STDOBJ_EXPORT SaveStream& operator<<(SaveStream& stream, const PropertyReference& r);
+    friend OVITO_STDOBJ_EXPORT LoadStream& operator>>(LoadStream& stream, PropertyReference& r);
 };
 
 /// Writes a PropertyReference to an output stream.
@@ -146,46 +146,46 @@ class TypedPropertyReference : public PropertyReference
 {
 public:
 
-	/// \brief Default constructor. Creates a null reference.
-	TypedPropertyReference() = default;
+    /// \brief Default constructor. Creates a null reference.
+    TypedPropertyReference() = default;
 
-	/// \brief Conversion copy constructor.
-	TypedPropertyReference(const PropertyReference& other) : PropertyReference(other) {}
+    /// \brief Conversion copy constructor.
+    TypedPropertyReference(const PropertyReference& other) : PropertyReference(other) {}
 
-	/// \brief Conversion move constructor.
-	TypedPropertyReference(PropertyReference&& other) : PropertyReference(std::move(other)) {}
+    /// \brief Conversion move constructor.
+    TypedPropertyReference(PropertyReference&& other) : PropertyReference(std::move(other)) {}
 
-	/// \brief Constructs a reference to a standard property.
-	TypedPropertyReference(int typeId, int vectorComponent = -1) : PropertyReference(&PropertyContainerType::OOClass(), typeId, vectorComponent) {}
+    /// \brief Constructs a reference to a standard property.
+    TypedPropertyReference(int typeId, int vectorComponent = -1) : PropertyReference(&PropertyContainerType::OOClass(), typeId, vectorComponent) {}
 
-	/// \brief Constructs a reference to a user-defined property.
-	TypedPropertyReference(const QString& name, int vectorComponent = -1) : PropertyReference(&PropertyContainerType::OOClass(), name, vectorComponent) {}
+    /// \brief Constructs a reference to a user-defined property.
+    TypedPropertyReference(const QString& name, int vectorComponent = -1) : PropertyReference(&PropertyContainerType::OOClass(), name, vectorComponent) {}
 
-	/// \brief Constructs a reference based on an existing PropertyObject.
-	TypedPropertyReference(const PropertyObject* property, int vectorComponent = -1) : PropertyReference(&PropertyContainerType::OOClass(), property, vectorComponent) {}
+    /// \brief Constructs a reference based on an existing PropertyObject.
+    TypedPropertyReference(const PropertyObject* property, int vectorComponent = -1) : PropertyReference(&PropertyContainerType::OOClass(), property, vectorComponent) {}
 
-	/// \brief Compares two references for equality.
-	bool operator==(const TypedPropertyReference& other) const { return PropertyReference::operator==(other); }
+    /// \brief Compares two references for equality.
+    bool operator==(const TypedPropertyReference& other) const { return PropertyReference::operator==(other); }
 
-	/// \brief Compares two references for inequality.
-	bool operator!=(const TypedPropertyReference& other) const { return PropertyReference::operator!=(other); }
+    /// \brief Compares two references for inequality.
+    bool operator!=(const TypedPropertyReference& other) const { return PropertyReference::operator!=(other); }
 
-	/// \brief Strict ordering function.
-	bool operator<(const TypedPropertyReference& other) const { return PropertyReference::operator<(other); }
+    /// \brief Strict ordering function.
+    bool operator<(const TypedPropertyReference& other) const { return PropertyReference::operator<(other); }
 
-	friend SaveStream& operator<<(SaveStream& stream, const TypedPropertyReference& r) {
-		return stream << static_cast<const PropertyReference&>(r);
-	}
+    friend SaveStream& operator<<(SaveStream& stream, const TypedPropertyReference& r) {
+        return stream << static_cast<const PropertyReference&>(r);
+    }
 
-	friend LoadStream& operator>>(LoadStream& stream, TypedPropertyReference& r) {
-		return stream >> static_cast<PropertyReference&>(r);
-	}
+    friend LoadStream& operator>>(LoadStream& stream, TypedPropertyReference& r) {
+        return stream >> static_cast<PropertyReference&>(r);
+    }
 
-	friend QDebug operator<<(QDebug debug, const TypedPropertyReference& r) {
-		return debug << static_cast<const PropertyReference&>(r);
-	}
+    friend QDebug operator<<(QDebug debug, const TypedPropertyReference& r) {
+        return debug << static_cast<const PropertyReference&>(r);
+    }
 };
 
-}	// End of namespace
+}   // End of namespace
 
 Q_DECLARE_METATYPE(Ovito::StdObj::PropertyReference);

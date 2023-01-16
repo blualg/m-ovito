@@ -63,11 +63,11 @@ void VulkanSceneRenderer::initImagePrimitivePipelines()
         0, // vertexAttributeDescriptionCount
         nullptr, 
         VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP, // topology
-		extraDynamicStateCount, // extraDynamicStateCount
-		&extraDynamicState, // pExtraDynamicStates
-		true, // enableAlphaBlending
+        extraDynamicStateCount, // extraDynamicStateCount
+        &extraDynamicState, // pExtraDynamicStates
+        true, // enableAlphaBlending
         1, // setLayoutCount
-		&_imagePrimitivePipelines.descriptorSetLayout
+        &_imagePrimitivePipelines.descriptorSetLayout
     );
 }
 
@@ -76,7 +76,7 @@ void VulkanSceneRenderer::initImagePrimitivePipelines()
 ******************************************************************************/
 void VulkanSceneRenderer::releaseImagePrimitivePipelines()
 {
-	_imagePrimitivePipelines.imageQuad.release(*context());
+    _imagePrimitivePipelines.imageQuad.release(*context());
 
     if(_imagePrimitivePipelines.descriptorSetLayout != VK_NULL_HANDLE) {
         deviceFunctions()->vkDestroyDescriptorSetLayout(logicalDevice(), _imagePrimitivePipelines.descriptorSetLayout, nullptr);
@@ -89,8 +89,8 @@ void VulkanSceneRenderer::releaseImagePrimitivePipelines()
 ******************************************************************************/
 void VulkanSceneRenderer::renderImageImplementation(const ImagePrimitive& primitive)
 {
-	if(primitive.image().isNull() || isPicking() || primitive.windowRect().isEmpty())
-		return;
+    if(primitive.image().isNull() || isPicking() || primitive.windowRect().isEmpty())
+        return;
 
     // Upload the image to the GPU as a texture.
     VkImageView imageView = context()->uploadImage(primitive.image(), currentResourceFrame());
@@ -138,4 +138,4 @@ void VulkanSceneRenderer::renderImageImplementation(const ImagePrimitive& primit
     deviceFunctions()->vkCmdDraw(currentCommandBuffer(), 4, 1, 0, 0);
 }
 
-}	// End of namespace
+}   // End of namespace

@@ -22,11 +22,11 @@
 
 # Define the GUI component of the VulkanRenderer plugin.
 OVITO_STANDARD_PLUGIN(VulkanRendererGui
-	SOURCES
-		VulkanViewportWindow.cpp
-		ViewportVulkanSceneRenderer.cpp
-		PickingVulkanSceneRenderer.cpp
-	PLUGIN_DEPENDENCIES
-		VulkanRenderer
-	GUI_PLUGIN
+    SOURCES
+        VulkanViewportWindow.cpp
+        ViewportVulkanSceneRenderer.cpp
+        PickingVulkanSceneRenderer.cpp
+    PLUGIN_DEPENDENCIES
+        VulkanRenderer
+    GUI_PLUGIN
 )

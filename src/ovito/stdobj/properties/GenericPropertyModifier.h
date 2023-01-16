@@ -35,32 +35,32 @@ namespace Ovito::StdObj {
  */
 class OVITO_STDOBJ_EXPORT GenericPropertyModifier : public Modifier
 {
-	/// Give this modifier class its own metaclass.
-	class OVITO_STDOBJ_EXPORT GenericPropertyModifierClass : public ModifierClass
-	{
-	public:
+    /// Give this modifier class its own metaclass.
+    class OVITO_STDOBJ_EXPORT GenericPropertyModifierClass : public ModifierClass
+    {
+    public:
 
-		/// Inherit constructor from base class.
-		using ModifierClass::ModifierClass;
+        /// Inherit constructor from base class.
+        using ModifierClass::ModifierClass;
 
-		/// Asks the metaclass whether the modifier can be applied to the given input data.
-		virtual bool isApplicableTo(const DataCollection& input) const override;
-	};
+        /// Asks the metaclass whether the modifier can be applied to the given input data.
+        virtual bool isApplicableTo(const DataCollection& input) const override;
+    };
 
-	OVITO_CLASS_META(GenericPropertyModifier, GenericPropertyModifierClass)
+    OVITO_CLASS_META(GenericPropertyModifier, GenericPropertyModifierClass)
 
 protected:
 
-	/// Constructor.
-	using Modifier::Modifier;
+    /// Constructor.
+    using Modifier::Modifier;
 
-	/// Sets the subject property container.
-	void setDefaultSubject(const QString& pluginId, const QString& containerClassName);
+    /// Sets the subject property container.
+    void setDefaultSubject(const QString& pluginId, const QString& containerClassName);
 
 private:
 
-	/// The property container the modifier will operate on.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD(PropertyContainerReference, subject, setSubject);
+    /// The property container the modifier will operate on.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(PropertyContainerReference, subject, setSubject);
 };
 
-}	// End of namespace
+}   // End of namespace

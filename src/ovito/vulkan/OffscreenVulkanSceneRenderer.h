@@ -33,50 +33,50 @@ namespace Ovito {
  */
 class OVITO_VULKANRENDERER_EXPORT OffscreenVulkanSceneRenderer : public VulkanSceneRenderer
 {
-	OVITO_CLASS(OffscreenVulkanSceneRenderer)
+    OVITO_CLASS(OffscreenVulkanSceneRenderer)
 
 public:
 
-	/// Constructor.
-	Q_INVOKABLE OffscreenVulkanSceneRenderer(ObjectCreationParams params, std::shared_ptr<VulkanContext> vulkanDevice = {}, bool grabDepthBuffer = false);
+    /// Constructor.
+    Q_INVOKABLE OffscreenVulkanSceneRenderer(ObjectCreationParams params, std::shared_ptr<VulkanContext> vulkanDevice = {}, bool grabDepthBuffer = false);
 
-	/// Prepares the renderer for rendering one or more frames.
-	virtual bool startRender(const RenderSettings* settings, const QSize& frameBufferSize, MixedKeyCache& visCache) override;
+    /// Prepares the renderer for rendering one or more frames.
+    virtual bool startRender(const RenderSettings* settings, const QSize& frameBufferSize, MixedKeyCache& visCache) override;
 
-	/// This method is called just before renderFrame() is called.
-	virtual void beginFrame(AnimationTime time, Scene* scene, const ViewProjectionParameters& params, Viewport* vp, const QRect& viewportRect, FrameBuffer* frameBuffer) override;
+    /// This method is called just before renderFrame() is called.
+    virtual void beginFrame(AnimationTime time, Scene* scene, const ViewProjectionParameters& params, Viewport* vp, const QRect& viewportRect, FrameBuffer* frameBuffer) override;
 
-	/// Renders the current animation frame.
-	virtual bool renderFrame(const QRect& viewportRect, MainThreadOperation& operation) override;
+    /// Renders the current animation frame.
+    virtual bool renderFrame(const QRect& viewportRect, MainThreadOperation& operation) override;
 
-	/// This method is called after renderFrame() has been called.
-	virtual void endFrame(bool renderingSuccessful, const QRect& viewportRect) override;
+    /// This method is called after renderFrame() has been called.
+    virtual void endFrame(bool renderingSuccessful, const QRect& viewportRect) override;
 
 protected:
 
-	/// Releases all Vulkan resources held by the renderer class.
+    /// Releases all Vulkan resources held by the renderer class.
     virtual void releaseVulkanDeviceResources() override {
-		VulkanSceneRenderer::releaseVulkanDeviceResources();
-		releaseVulkanFramebuffers();
-	}
+        VulkanSceneRenderer::releaseVulkanDeviceResources();
+        releaseVulkanFramebuffers();
+    }
 
-	/// Returns the Z-value at the given position in the depth buffer.
-	/// This method is only used by the PickingVulkanSceneRenderer subclass.
-	FloatType depthAtPixel(const QPoint& pos) const;
-
-private:
-
-	/// Release the Vulkan offscreen framebuffers managed by this renderer.
-	void releaseVulkanFramebuffers();
+    /// Returns the Z-value at the given position in the depth buffer.
+    /// This method is only used by the PickingVulkanSceneRenderer subclass.
+    FloatType depthAtPixel(const QPoint& pos) const;
 
 private:
-	
-	/// The resolution of the rendered output image.
-	QSize _outputSize;
 
-	/// Flag indicating whether we are interested in reading back the depth buffer contents. 
-	/// This is used by the PickingVulkanSceneRenderer subclass.
-	bool _grabDepthBuffer = false;
+    /// Release the Vulkan offscreen framebuffers managed by this renderer.
+    void releaseVulkanFramebuffers();
+
+private:
+    
+    /// The resolution of the rendered output image.
+    QSize _outputSize;
+
+    /// Flag indicating whether we are interested in reading back the depth buffer contents. 
+    /// This is used by the PickingVulkanSceneRenderer subclass.
+    bool _grabDepthBuffer = false;
 
     VkDeviceMemory _colorMem = VK_NULL_HANDLE;
     VkImage _colorImage = VK_NULL_HANDLE;
@@ -86,16 +86,16 @@ private:
     VkImage _dsImage = VK_NULL_HANDLE;
     VkImageView _dsView = VK_NULL_HANDLE;
 
-	VkRenderPass _renderPass = VK_NULL_HANDLE;
-	VkFramebuffer _framebuffer = VK_NULL_HANDLE;
-	VkCommandBuffer _cmdBuf = VK_NULL_HANDLE;
+    VkRenderPass _renderPass = VK_NULL_HANDLE;
+    VkFramebuffer _framebuffer = VK_NULL_HANDLE;
+    VkCommandBuffer _cmdBuf = VK_NULL_HANDLE;
 
-	VkDeviceMemory _frameGrabImageMem = VK_NULL_HANDLE;
-	VkImage _frameGrabImage = VK_NULL_HANDLE;
+    VkDeviceMemory _frameGrabImageMem = VK_NULL_HANDLE;
+    VkImage _frameGrabImage = VK_NULL_HANDLE;
 
-	VkBuffer _depthGrabBuffer = VK_NULL_HANDLE;
-	VmaAllocation _depthGrabBufferAllocation = VK_NULL_HANDLE;
-	int _depthBufferBits = 0;
+    VkBuffer _depthGrabBuffer = VK_NULL_HANDLE;
+    VmaAllocation _depthGrabBufferAllocation = VK_NULL_HANDLE;
+    int _depthBufferBits = 0;
 };
 
-}	// End of namespace
+}   // End of namespace

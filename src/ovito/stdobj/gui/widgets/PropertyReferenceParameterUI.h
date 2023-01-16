@@ -35,118 +35,118 @@ namespace Ovito::StdObj {
  */
 class OVITO_STDOBJGUI_EXPORT PropertyReferenceParameterUI : public PropertyParameterUI
 {
-	OVITO_CLASS(PropertyReferenceParameterUI)
+    OVITO_CLASS(PropertyReferenceParameterUI)
 
-	Q_PROPERTY(QComboBox comboBox READ comboBox)
+    Q_PROPERTY(QComboBox comboBox READ comboBox)
 
 public:
 
     enum PropertyComponentsMode {
-		ShowOnlyComponents,
-		ShowNoComponents,
-		ShowComponentsAndVectorProperties
-	};
+        ShowOnlyComponents,
+        ShowNoComponents,
+        ShowComponentsAndVectorProperties
+    };
     Q_ENUM(PropertyComponentsMode);
 
-	/// Constructor.
-	PropertyReferenceParameterUI(PropertiesEditor* parentEditor, const char* propertyName, PropertyContainerClassPtr containerClass = nullptr, PropertyComponentsMode componentsMode = ShowOnlyComponents, bool inputProperty = true);
+    /// Constructor.
+    PropertyReferenceParameterUI(PropertiesEditor* parentEditor, const char* propertyName, PropertyContainerClassPtr containerClass = nullptr, PropertyComponentsMode componentsMode = ShowOnlyComponents, bool inputProperty = true);
 
-	/// Constructor.
-	PropertyReferenceParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField, PropertyContainerClassPtr containerClass = nullptr, PropertyComponentsMode componentsMode = ShowOnlyComponents, bool inputProperty = true);
+    /// Constructor.
+    PropertyReferenceParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField, PropertyContainerClassPtr containerClass = nullptr, PropertyComponentsMode componentsMode = ShowOnlyComponents, bool inputProperty = true);
 
-	/// Destructor.
-	virtual ~PropertyReferenceParameterUI();
+    /// Destructor.
+    virtual ~PropertyReferenceParameterUI();
 
-	/// This returns the combo box managed by this ParameterUI.
-	QComboBox* comboBox() const { return _comboBox; }
+    /// This returns the combo box managed by this ParameterUI.
+    QComboBox* comboBox() const { return _comboBox; }
 
-	/// This method is called when a new editable object has been assigned to the properties owner this
-	/// parameter UI belongs to.
-	virtual void resetUI() override;
+    /// This method is called when a new editable object has been assigned to the properties owner this
+    /// parameter UI belongs to.
+    virtual void resetUI() override;
 
-	/// This method updates the displayed value of the property UI.
-	virtual void updateUI() override;
+    /// This method updates the displayed value of the property UI.
+    virtual void updateUI() override;
 
-	/// Sets the enabled state of the UI.
-	virtual void setEnabled(bool enabled) override;
+    /// Sets the enabled state of the UI.
+    virtual void setEnabled(bool enabled) override;
 
-	/// Sets the tooltip text for the combo box widget.
-	void setToolTip(const QString& text) const {
-		if(comboBox()) comboBox()->setToolTip(text);
-	}
+    /// Sets the tooltip text for the combo box widget.
+    void setToolTip(const QString& text) const {
+        if(comboBox()) comboBox()->setToolTip(text);
+    }
 
-	/// Sets the What's This helper text for the combo box.
-	void setWhatsThis(const QString& text) const {
-		if(comboBox()) comboBox()->setWhatsThis(text);
-	}
+    /// Sets the What's This helper text for the combo box.
+    void setWhatsThis(const QString& text) const {
+        if(comboBox()) comboBox()->setWhatsThis(text);
+    }
 
-	/// Returns the data object reference to the property container from which the user can select a property.
-	const PropertyContainerReference& containerRef() const { return _containerRef; }
+    /// Returns the data object reference to the property container from which the user can select a property.
+    const PropertyContainerReference& containerRef() const { return _containerRef; }
 
-	/// Sets the reference to the property container from which the user can select a property.
-	void setContainerRef(const PropertyContainerReference& containerRef);
+    /// Sets the reference to the property container from which the user can select a property.
+    void setContainerRef(const PropertyContainerReference& containerRef);
 
-	/// Returns the container from which properties can be selected.
-	const DataOORef<const PropertyContainer>& container() const { return _container; }
+    /// Returns the container from which properties can be selected.
+    const DataOORef<const PropertyContainer>& container() const { return _container; }
 
-	/// Sets the concrete container from which properties can be selected.
-	void setContainer(const PropertyContainer* container);
+    /// Sets the concrete container from which properties can be selected.
+    void setContainer(const PropertyContainer* container);
 
-	/// Installs optional callback function that allows clients to filter the displayed property list.
-	void setPropertyFilter(std::function<bool(const PropertyObject*)> filter) {
-		_propertyFilter = std::move(filter);
-	}
+    /// Installs optional callback function that allows clients to filter the displayed property list.
+    void setPropertyFilter(std::function<bool(const PropertyObject*)> filter) {
+        _propertyFilter = std::move(filter);
+    }
 
-	/// Activates the display of a null entry in the property list, which can be selected by the user.
-	void setNullPropertyItem(const QString& itemText) { _nullPropertyItem = itemText; }
+    /// Activates the display of a null entry in the property list, which can be selected by the user.
+    void setNullPropertyItem(const QString& itemText) { _nullPropertyItem = itemText; }
 
 public Q_SLOTS:
 
-	/// Takes the value entered by the user and stores it in the property field
-	/// this property UI is bound to.
-	void updatePropertyValue();
+    /// Takes the value entered by the user and stores it in the property field
+    /// this property UI is bound to.
+    void updatePropertyValue();
 
 private:
 
-	/// Returns the value currently set for the property field.
-	PropertyReference getPropertyReference();
+    /// Returns the value currently set for the property field.
+    PropertyReference getPropertyReference();
 
-	/// Populates the combox box with items.
-	void addItemsToComboBox(const PipelineFlowState& state);
+    /// Populates the combox box with items.
+    void addItemsToComboBox(const PipelineFlowState& state);
 
-	/// Populates the combox box with items.
-	void addItemsToComboBox(const PropertyContainer* container);
+    /// Populates the combox box with items.
+    void addItemsToComboBox(const PropertyContainer* container);
 
-	/// Returns the type of property container from which the user can choose a property.
-	const PropertyContainerClass* containerClass() const { 
-		if(container()) 
-			return &container()->getOOMetaClass();
-		else
-			return containerRef().dataClass();
-	}
+    /// Returns the type of property container from which the user can choose a property.
+    const PropertyContainerClass* containerClass() const { 
+        if(container()) 
+            return &container()->getOOMetaClass();
+        else
+            return containerRef().dataClass();
+    }
 
 protected:
 
-	/// The combo box of the UI component.
-	QPointer<PropertySelectionComboBox> _comboBox;
+    /// The combo box of the UI component.
+    QPointer<PropertySelectionComboBox> _comboBox;
 
-	/// Controls whether the combo box should display a separate entry for each component of a property.
-	PropertyComponentsMode _componentsMode;
+    /// Controls whether the combo box should display a separate entry for each component of a property.
+    PropertyComponentsMode _componentsMode;
 
-	/// Controls whether the combo box should list input or output properties.
-	bool _isInputProperty;
+    /// Controls whether the combo box should list input or output properties.
+    bool _isInputProperty;
 
-	/// Data object reference to the container from which properties can be selected.
-	PropertyContainerReference _containerRef;
+    /// Data object reference to the container from which properties can be selected.
+    PropertyContainerReference _containerRef;
 
-	/// The container from which properties can be selected.
-	DataOORef<const PropertyContainer> _container;
+    /// The container from which properties can be selected.
+    DataOORef<const PropertyContainer> _container;
 
-	/// An optional callback function that allows clients to filter the displayed property list.
-	std::function<bool(const PropertyObject*)> _propertyFilter;
+    /// An optional callback function that allows clients to filter the displayed property list.
+    std::function<bool(const PropertyObject*)> _propertyFilter;
 
-	/// The UI item text representing the null property in the list.
-	QString _nullPropertyItem;
+    /// The UI item text representing the null property in the list.
+    QString _nullPropertyItem;
 };
 
-}	// End of namespace
+}   // End of namespace

@@ -43,32 +43,32 @@ SET_PROPERTY_FIELD_LABEL(PropertyColorMapping, sourceProperty, "Source property"
 * Constructor.
 ******************************************************************************/
 PropertyColorMapping::PropertyColorMapping(ObjectCreationParams params) : RefTarget(params),
-	_startValue(0.0),
-	_endValue(0.0)
+    _startValue(0.0),
+    _endValue(0.0)
 {
-	if(params.loadUserDefaults()) {
+    if(params.loadUserDefaults()) {
 #ifndef OVITO_DISABLE_QSETTINGS
-		// Load the default gradient type set by the user.
-		QSettings settings;
-		settings.beginGroup(PropertyColorMapping::OOClass().plugin()->pluginId());
-		settings.beginGroup(PropertyColorMapping::OOClass().name());
-		QString typeString = settings.value(PROPERTY_FIELD(colorGradient)->identifier()).toString();
-		if(!typeString.isEmpty()) {
-			try {
-				OvitoClassPtr gradientType = OvitoClass::decodeFromString(typeString);
-				if(!colorGradient() || colorGradient()->getOOClass() != *gradientType) {
-					OORef<ColorCodingGradient> gradient = dynamic_object_cast<ColorCodingGradient>(gradientType->createInstance(params));
-					if(gradient) setColorGradient(std::move(gradient));
-				}
-			}
-			catch(...) {}
-		}
-	#endif
-	}
+        // Load the default gradient type set by the user.
+        QSettings settings;
+        settings.beginGroup(PropertyColorMapping::OOClass().plugin()->pluginId());
+        settings.beginGroup(PropertyColorMapping::OOClass().name());
+        QString typeString = settings.value(PROPERTY_FIELD(colorGradient)->identifier()).toString();
+        if(!typeString.isEmpty()) {
+            try {
+                OvitoClassPtr gradientType = OvitoClass::decodeFromString(typeString);
+                if(!colorGradient() || colorGradient()->getOOClass() != *gradientType) {
+                    OORef<ColorCodingGradient> gradient = dynamic_object_cast<ColorCodingGradient>(gradientType->createInstance(params));
+                    if(gradient) setColorGradient(std::move(gradient));
+                }
+            }
+            catch(...) {}
+        }
+    #endif
+    }
 
-	// Select the rainbow color gradient by default.
-	if(params.createSubObjects())
-		setColorGradient(OORef<ColorCodingHSVGradient>::create(params));
+    // Select the rainbow color gradient by default.
+    if(params.createSubObjects())
+        setColorGradient(OORef<ColorCodingHSVGradient>::create(params));
 }
 
 /******************************************************************************
@@ -76,7 +76,7 @@ PropertyColorMapping::PropertyColorMapping(ObjectCreationParams params) : RefTar
 ******************************************************************************/
 PseudoColorMapping PropertyColorMapping::pseudoColorMapping() const
 {
-	return PseudoColorMapping(startValue(), endValue(), colorGradient());
+    return PseudoColorMapping(startValue(), endValue(), colorGradient());
 }
 
 /******************************************************************************
@@ -84,27 +84,27 @@ PseudoColorMapping PropertyColorMapping::pseudoColorMapping() const
 ******************************************************************************/
 std::optional<std::pair<FloatType, FloatType>> PropertyColorMapping::determineValueRange(const PropertyObject* pseudoColorProperty, int pseudoColorPropertyComponent) const
 {
-	OVITO_ASSERT(pseudoColorProperty);
-	OVITO_ASSERT(pseudoColorPropertyComponent >= 0 && pseudoColorPropertyComponent < pseudoColorProperty->componentCount());
+    OVITO_ASSERT(pseudoColorProperty);
+    OVITO_ASSERT(pseudoColorPropertyComponent >= 0 && pseudoColorPropertyComponent < pseudoColorProperty->componentCount());
 
-	FloatType minValue = std::numeric_limits<FloatType>::max();
-	FloatType maxValue = std::numeric_limits<FloatType>::lowest();
-	
-	// Iterate over the property array to find the lowest/highest value.
-	pseudoColorProperty->forEach(pseudoColorPropertyComponent, [&](size_t i, auto v) {
-			if(v > maxValue) maxValue = v;
-			if(v < minValue) minValue = v;
-		});
+    FloatType minValue = std::numeric_limits<FloatType>::max();
+    FloatType maxValue = std::numeric_limits<FloatType>::lowest();
+    
+    // Iterate over the property array to find the lowest/highest value.
+    pseudoColorProperty->forEach(pseudoColorPropertyComponent, [&](size_t i, auto v) {
+            if(v > maxValue) maxValue = v;
+            if(v < minValue) minValue = v;
+        });
 
-	// Range may be degenerate if input property contains zero elements.
-	if(minValue == std::numeric_limits<FloatType>::max())
-		return {};
+    // Range may be degenerate if input property contains zero elements.
+    if(minValue == std::numeric_limits<FloatType>::max())
+        return {};
 
-	// Clamp to finite range.
-	if(!std::isfinite(minValue)) minValue = std::numeric_limits<FloatType>::lowest();
-	if(!std::isfinite(maxValue)) maxValue = std::numeric_limits<FloatType>::max();
+    // Clamp to finite range.
+    if(!std::isfinite(minValue)) minValue = std::numeric_limits<FloatType>::lowest();
+    if(!std::isfinite(maxValue)) maxValue = std::numeric_limits<FloatType>::max();
 
-	return std::make_pair(minValue, maxValue);
+    return std::make_pair(minValue, maxValue);
 }
 
 /******************************************************************************
@@ -112,9 +112,9 @@ std::optional<std::pair<FloatType, FloatType>> PropertyColorMapping::determineVa
 ******************************************************************************/
 void PropertyColorMapping::reverseRange()
 {
-	FloatType oldStartValue = startValue();
-	setStartValue(endValue());
-	setEndValue(oldStartValue);
+    FloatType oldStartValue = startValue();
+    setStartValue(endValue());
+    setEndValue(oldStartValue);
 }
 
 #ifdef OVITO_QML_GUI
@@ -123,7 +123,7 @@ void PropertyColorMapping::reverseRange()
 ******************************************************************************/
 QString PropertyColorMapping::colorGradientType() const 
 {
-	return colorGradient() ? colorGradient()->getOOClass().name() : QString();
+    return colorGradient() ? colorGradient()->getOOClass().name() : QString();
 }
 
 /******************************************************************************
@@ -131,23 +131,23 @@ QString PropertyColorMapping::colorGradientType() const
 ******************************************************************************/
 void PropertyColorMapping::setColorGradientType(const QString& typeName, ExecutionContext executionContext) 
 {
-	OvitoClassPtr descriptor = PluginManager::instance().findClass(QString(), typeName);
-	if(!descriptor) {
-		qWarning() << "setColorGradientType: Color gradient class" << typeName << "does not exist.";
-		return;
-	}
-	OORef<ColorCodingGradient> gradient = static_object_cast<ColorCodingGradient>(descriptor->createInstance(dataset(), executionContext));
-	if(gradient) {
-		setColorGradient(std::move(gradient));
+    OvitoClassPtr descriptor = PluginManager::instance().findClass(QString(), typeName);
+    if(!descriptor) {
+        qWarning() << "setColorGradientType: Color gradient class" << typeName << "does not exist.";
+        return;
+    }
+    OORef<ColorCodingGradient> gradient = static_object_cast<ColorCodingGradient>(descriptor->createInstance(dataset(), executionContext));
+    if(gradient) {
+        setColorGradient(std::move(gradient));
 #ifndef OVITO_DISABLE_QSETTINGS
-		QSettings settings;
-		settings.beginGroup(PropertyColorMapping::OOClass().plugin()->pluginId());
-		settings.beginGroup(PropertyColorMapping::OOClass().name());
-		settings.setValue(PROPERTY_FIELD(PropertyColorMapping::colorGradient).identifier(),
-				QVariant::fromValue(OvitoClass::encodeAsString(descriptor)));
+        QSettings settings;
+        settings.beginGroup(PropertyColorMapping::OOClass().plugin()->pluginId());
+        settings.beginGroup(PropertyColorMapping::OOClass().name());
+        settings.setValue(PROPERTY_FIELD(PropertyColorMapping::colorGradient).identifier(),
+                QVariant::fromValue(OvitoClass::encodeAsString(descriptor)));
 #endif
-	}
+    }
 }
 #endif
 
-}	// End of namespace
+}   // End of namespace

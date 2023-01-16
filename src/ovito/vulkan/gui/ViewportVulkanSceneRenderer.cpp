@@ -32,10 +32,10 @@ IMPLEMENT_OVITO_CLASS(ViewportVulkanSceneRenderer);
 * Constructor.
 ******************************************************************************/
 ViewportVulkanSceneRenderer::ViewportVulkanSceneRenderer(ObjectCreationParams params, std::shared_ptr<VulkanContext> vulkanDevice) 
-	: VulkanSceneRenderer(params, std::move(vulkanDevice)) 
+    : VulkanSceneRenderer(params, std::move(vulkanDevice)) 
 {
-	// This kind of renderer is used for interactive viewport windows.
-	setInteractive(true);
+    // This kind of renderer is used for interactive viewport windows.
+    setInteractive(true);
 }
 
-}	// End of namespace
+}   // End of namespace

@@ -39,8 +39,8 @@ IMPLEMENT_OVITO_CLASS(VulkanSceneRenderer);
 ******************************************************************************/
 void VulkanSceneRenderer::OOMetaClass::querySystemInformation(QTextStream& stream, UserInterface& userInterface) const
 {
-	if(this == &VulkanSceneRenderer::OOClass()) {
-		stream << "======== Vulkan info =======" << "\n";
+    if(this == &VulkanSceneRenderer::OOClass()) {
+        stream << "======== Vulkan info =======" << "\n";
         try {
             // Look up an existing Vulkan context from one of the interactive viewport windows. 
             // All viewport windows share a single logical Vulkan device.
@@ -105,7 +105,7 @@ void VulkanSceneRenderer::OOMetaClass::querySystemInformation(QTextStream& strea
         catch(const Exception& ex) {
             stream << tr("Error: %1").arg(ex.message()) << "\n";
         }
-	}
+    }
 }
 
 /******************************************************************************
@@ -116,7 +116,7 @@ VulkanSceneRenderer::VulkanSceneRenderer(ObjectCreationParams params, std::share
     _context(std::move(vulkanContext)),
     _concurrentFrameCount(concurrentFrameCount)
 {
-	OVITO_ASSERT(_context);
+    OVITO_ASSERT(_context);
     OVITO_ASSERT(_concurrentFrameCount >= 1);
 
     // Release our own Vulkan resources before the logical device gets destroyed.
@@ -139,7 +139,7 @@ VulkanSceneRenderer::~VulkanSceneRenderer()
 void VulkanSceneRenderer::aboutToBeDeleted()
 {
     // Release any Vulkan resources managed by the renderer.
-	releaseVulkanDeviceResources();
+    releaseVulkanDeviceResources();
 
     SceneRenderer::aboutToBeDeleted();
 }
@@ -161,13 +161,13 @@ void VulkanSceneRenderer::initResources()
 ******************************************************************************/
 void VulkanSceneRenderer::beginFrame(AnimationTime time, Scene* scene, const ViewProjectionParameters& params, Viewport* vp, const QRect& viewportRect, FrameBuffer* frameBuffer)
 {
-	// Convert viewport rect from logical device coordinates to Vulkan framebuffer coordinates.
-	QRect vulkanViewportRect(viewportRect.x() * antialiasingLevel(), viewportRect.y() * antialiasingLevel(), viewportRect.width() * antialiasingLevel(), viewportRect.height() * antialiasingLevel());
+    // Convert viewport rect from logical device coordinates to Vulkan framebuffer coordinates.
+    QRect vulkanViewportRect(viewportRect.x() * antialiasingLevel(), viewportRect.y() * antialiasingLevel(), viewportRect.width() * antialiasingLevel(), viewportRect.height() * antialiasingLevel());
 
-	SceneRenderer::beginFrame(time, scene, params, vp, vulkanViewportRect, frameBuffer);
+    SceneRenderer::beginFrame(time, scene, params, vp, vulkanViewportRect, frameBuffer);
 
-	// This method may only be called from the main thread where the Vulkan device lives.
-	OVITO_ASSERT(QThread::currentThread() == context()->thread());
+    // This method may only be called from the main thread where the Vulkan device lives.
+    OVITO_ASSERT(QThread::currentThread() == context()->thread());
 
     // Make sure our Vulkan objects have been created.
     initResources();
@@ -199,33 +199,33 @@ void VulkanSceneRenderer::beginFrame(AnimationTime time, Scene* scene, const Vie
 ******************************************************************************/
 bool VulkanSceneRenderer::renderFrame(const QRect& viewportRect, MainThreadOperation& operation)
 {
-	// Render the 3D scene objects.
-	if(renderScene()) {
+    // Render the 3D scene objects.
+    if(renderScene()) {
 
-		// Call virtual method to render additional content that is only visible in the interactive viewports.
+        // Call virtual method to render additional content that is only visible in the interactive viewports.
         if(viewport() && isInteractive()) {
-    		renderInteractiveContent();
+            renderInteractiveContent();
         }
 
-		// Render translucent objects in a second pass.
-		for(const auto& [tm, primitive] : _translucentParticles) {
-			setWorldTransform(tm);
-			renderParticlesImplementation(primitive);
-		}
-		_translucentParticles.clear();
-		for(const auto& [tm, primitive] : _translucentCylinders) {
-			setWorldTransform(tm);
-			renderCylindersImplementation(primitive);
-		}
-		_translucentCylinders.clear();
-		for(const auto& [tm, primitive] : _translucentMeshes) {
-			setWorldTransform(tm);
-			renderMeshImplementation(primitive);
-		}
-		_translucentMeshes.clear();
+        // Render translucent objects in a second pass.
+        for(const auto& [tm, primitive] : _translucentParticles) {
+            setWorldTransform(tm);
+            renderParticlesImplementation(primitive);
+        }
+        _translucentParticles.clear();
+        for(const auto& [tm, primitive] : _translucentCylinders) {
+            setWorldTransform(tm);
+            renderCylindersImplementation(primitive);
+        }
+        _translucentCylinders.clear();
+        for(const auto& [tm, primitive] : _translucentMeshes) {
+            setWorldTransform(tm);
+            renderMeshImplementation(primitive);
+        }
+        _translucentMeshes.clear();
     }
 
-	return !operation.isCanceled();
+    return !operation.isCanceled();
 }
 
 /******************************************************************************
@@ -233,11 +233,11 @@ bool VulkanSceneRenderer::renderFrame(const QRect& viewportRect, MainThreadOpera
 ******************************************************************************/
 bool VulkanSceneRenderer::renderOverlays(bool underlays, const QRect& logicalViewportRect, const QRect& physicalViewportRect, MainThreadOperation& operation)
 {
-	// Convert viewport rect from logical device coordinates to OpenGL framebuffer coordinates.
-	QRect vulkanViewportRect(physicalViewportRect.x() * antialiasingLevel(), physicalViewportRect.y() * antialiasingLevel(), physicalViewportRect.width() * antialiasingLevel(), physicalViewportRect.height() * antialiasingLevel());
+    // Convert viewport rect from logical device coordinates to OpenGL framebuffer coordinates.
+    QRect vulkanViewportRect(physicalViewportRect.x() * antialiasingLevel(), physicalViewportRect.y() * antialiasingLevel(), physicalViewportRect.width() * antialiasingLevel(), physicalViewportRect.height() * antialiasingLevel());
 
-	// Delegate rendering work to base class.
-	return SceneRenderer::renderOverlays(underlays, logicalViewportRect, vulkanViewportRect, operation);
+    // Delegate rendering work to base class.
+    return SceneRenderer::renderOverlays(underlays, logicalViewportRect, vulkanViewportRect, operation);
 }
 
 /******************************************************************************
@@ -260,13 +260,13 @@ void VulkanSceneRenderer::setHighlightMode(int pass)
 ******************************************************************************/
 void VulkanSceneRenderer::releaseVulkanDeviceResources()
 {
-	// This method may only be called from the main thread where the Vulkan device lives.
-	OVITO_ASSERT(QThread::currentThread() == context()->thread());
+    // This method may only be called from the main thread where the Vulkan device lives.
+    OVITO_ASSERT(QThread::currentThread() == context()->thread());
 
     if(!_resourcesInitialized)
         return;
 
-	OVITO_ASSERT(deviceFunctions());
+    OVITO_ASSERT(deviceFunctions());
 
     // Destroy the resources of the rendering primitives.
     releaseLinePrimitivePipelines();
@@ -294,7 +294,7 @@ void VulkanSceneRenderer::releaseVulkanDeviceResources()
 void VulkanSceneRenderer::renderLines(const LinePrimitive& primitive)
 {
     OVITO_ASSERT(!isBoundingBoxPass());
-	renderLinesImplementation(primitive);
+    renderLinesImplementation(primitive);
 }
 
 /******************************************************************************
@@ -304,12 +304,12 @@ void VulkanSceneRenderer::renderParticles(const ParticlePrimitive& primitive)
 {
     OVITO_ASSERT(!isBoundingBoxPass());
 
-	// Render primitives now if they are all fully opaque. Otherwise defer rendering to a later time to 
+    // Render primitives now if they are all fully opaque. Otherwise defer rendering to a later time to 
     // draw the semi-transparent objects after everything else has been drawn.
-	if(isPicking() || !primitive.transparencies())
-    	renderParticlesImplementation(primitive);
-	else
-		_translucentParticles.emplace_back(worldTransform(), primitive);
+    if(isPicking() || !primitive.transparencies())
+        renderParticlesImplementation(primitive);
+    else
+        _translucentParticles.emplace_back(worldTransform(), primitive);
 }
 
 /******************************************************************************
@@ -319,12 +319,12 @@ void VulkanSceneRenderer::renderCylinders(const CylinderPrimitive& primitive)
 {
     OVITO_ASSERT(!isBoundingBoxPass());
 
-	// Render primitives now if they are all fully opaque. Otherwise defer rendering to a later time to 
+    // Render primitives now if they are all fully opaque. Otherwise defer rendering to a later time to 
     // draw the semi-transparent objects after everything else has been drawn.
-	if(isPicking() || !primitive.transparencies())
+    if(isPicking() || !primitive.transparencies())
         renderCylindersImplementation(primitive);
-	else
-		_translucentCylinders.emplace_back(worldTransform(), primitive);
+    else
+        _translucentCylinders.emplace_back(worldTransform(), primitive);
 }
 
 /******************************************************************************
@@ -334,12 +334,12 @@ void VulkanSceneRenderer::renderMesh(const MeshPrimitive& primitive)
 {
     OVITO_ASSERT(!isBoundingBoxPass());
 
-	// Render primitives now if they are all fully opaque. Otherwise defer rendering to a later time to 
+    // Render primitives now if they are all fully opaque. Otherwise defer rendering to a later time to 
     // draw the semi-transparent objects after everything else has been drawn.
-	if(isPicking() || primitive.isFullyOpaque())
+    if(isPicking() || primitive.isFullyOpaque())
         renderMeshImplementation(primitive);
-	else
-		_translucentMeshes.emplace_back(worldTransform(), primitive);
+    else
+        _translucentMeshes.emplace_back(worldTransform(), primitive);
 }
 
 /******************************************************************************
@@ -348,7 +348,7 @@ void VulkanSceneRenderer::renderMesh(const MeshPrimitive& primitive)
 void VulkanSceneRenderer::renderImage(const ImagePrimitive& primitive)
 {
     OVITO_ASSERT(!isBoundingBoxPass());
-	renderImageImplementation(primitive);
+    renderImageImplementation(primitive);
 }
 
 /******************************************************************************
@@ -419,7 +419,7 @@ VkDescriptorSetLayout VulkanSceneRenderer::colorMapDescriptorSetLayout()
 VkDescriptorSet VulkanSceneRenderer::getGlobalUniformsDescriptorSet()
 {
     // Update the information in the uniforms data structure.
-	GlobalUniforms uniforms;
+    GlobalUniforms uniforms;
     uniforms.projectionMatrix = (clipCorrection() * projParams().projectionMatrix).toDataType<float>();
     uniforms.inverseProjectionMatrix = (projParams().inverseProjectionMatrix * clipCorrection().inverse()).toDataType<float>();
     uniforms.viewportOrigin = Point_2<float>(0,0);
@@ -464,8 +464,8 @@ VkDescriptorSet VulkanSceneRenderer::uploadColorMap(ColorCodingGradient* gradien
     OVITO_ASSERT(gradient);
     OVITO_ASSERT(logicalDevice());
 
-	// This method must be called from the main thread where the Vulkan device lives.
-	OVITO_ASSERT(QThread::currentThread() == this->thread());
+    // This method must be called from the main thread where the Vulkan device lives.
+    OVITO_ASSERT(QThread::currentThread() == this->thread());
 
     // Sampling resolution of the tabulated color gradient.
     constexpr int resolution = 256;
@@ -498,4 +498,4 @@ VkDescriptorSet VulkanSceneRenderer::uploadColorMap(ColorCodingGradient* gradien
     return descriptorSet.first;
 }
 
-}	// End of namespace
+}   // End of namespace

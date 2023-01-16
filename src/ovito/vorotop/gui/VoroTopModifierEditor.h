@@ -34,22 +34,22 @@ namespace Ovito::VoroTop {
  */
 class VoroTopModifierEditor : public PropertiesEditor
 {
-	OVITO_CLASS(VoroTopModifierEditor)
+    OVITO_CLASS(VoroTopModifierEditor)
 
 public:
 
-	/// Default constructor.
-	Q_INVOKABLE VoroTopModifierEditor() {}
+    /// Default constructor.
+    Q_INVOKABLE VoroTopModifierEditor() {}
 
 protected:
 
-	/// Creates the user interface controls for the editor.
-	virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
+    /// Creates the user interface controls for the editor.
+    virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
 
 private Q_SLOTS:
 
-	/// Is called when the user presses the 'Load filter' button.
-	void onLoadFilter();
+    /// Is called when the user presses the 'Load filter' button.
+    void onLoadFilter();
 };
 
-}	// End of namespace
+}   // End of namespace

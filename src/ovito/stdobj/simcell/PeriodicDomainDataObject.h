@@ -34,43 +34,43 @@ namespace Ovito::StdObj {
  */
 class OVITO_STDOBJ_EXPORT PeriodicDomainDataObject : public DataObject
 {
-	OVITO_CLASS(PeriodicDomainDataObject)
+    OVITO_CLASS(PeriodicDomainDataObject)
 
 public:
 
-	/// Returns the spatial domain this geometry is embedded in after making sure it
-	/// can safely be modified.
-	SimulationCellObject* mutableDomain() {
-		return makeMutable(domain());
-	}
+    /// Returns the spatial domain this geometry is embedded in after making sure it
+    /// can safely be modified.
+    SimulationCellObject* mutableDomain() {
+        return makeMutable(domain());
+    }
 
-	/// Returns the display title of this object.
-	virtual QString objectTitle() const override;
+    /// Returns the display title of this object.
+    virtual QString objectTitle() const override;
 
-	/// Tests whether the given spatial point is culled by the cutting planes set for this object.
-	bool isPointCulled(const Point3& p) const {
-		for(const Plane3& plane : cuttingPlanes()) {
-			if(plane.classifyPoint(p) > 0)
-				return true;
-		}
-		return false;
-	}
+    /// Tests whether the given spatial point is culled by the cutting planes set for this object.
+    bool isPointCulled(const Point3& p) const {
+        for(const Plane3& plane : cuttingPlanes()) {
+            if(plane.classifyPoint(p) > 0)
+                return true;
+        }
+        return false;
+    }
 
 protected:
 
-	/// \brief Constructor.
-	PeriodicDomainDataObject(ObjectCreationParams params, const QString& title = {});
+    /// \brief Constructor.
+    PeriodicDomainDataObject(ObjectCreationParams params, const QString& title = {});
 
 private:
 
-	/// The spatial domain (possibly periodic) this geometry object is embedded in.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(DataOORef<const SimulationCellObject>, domain, setDomain, PROPERTY_FIELD_NO_SUB_ANIM);
+    /// The spatial domain (possibly periodic) this geometry object is embedded in.
+    DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(DataOORef<const SimulationCellObject>, domain, setDomain, PROPERTY_FIELD_NO_SUB_ANIM);
 
-	/// The planar cuts to be applied to geometry after its has been transformed into a non-periodic representation.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD(QVector<Plane3>, cuttingPlanes, setCuttingPlanes);
+    /// The planar cuts to be applied to geometry after its has been transformed into a non-periodic representation.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(QVector<Plane3>, cuttingPlanes, setCuttingPlanes);
 
-	/// The assigned title of the data object, which is displayed in the user interface.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD(QString, title, setTitle);
+    /// The assigned title of the data object, which is displayed in the user interface.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(QString, title, setTitle);
 };
 
-}	// End of namespace
+}   // End of namespace

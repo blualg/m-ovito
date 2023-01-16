@@ -32,12 +32,12 @@ namespace Ovito::StdObj {
  */
 class StdObjGuiRegistrationService : public ApplicationService
 {
-	OVITO_CLASS(StdObjGuiRegistrationService)
+    OVITO_CLASS(StdObjGuiRegistrationService)
 
 public:
 
-	/// Constructor.
-	Q_INVOKABLE StdObjGuiRegistrationService();
+    /// Constructor.
+    Q_INVOKABLE StdObjGuiRegistrationService();
 };
 
-}	// End of namespace
+}   // End of namespace

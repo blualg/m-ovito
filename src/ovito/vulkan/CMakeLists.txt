@@ -25,15 +25,15 @@ FIND_PACKAGE(Vulkan REQUIRED)
 
 function(add_vulkan_shader target shaderfile)
 
-	# Locate glslc shader compiler.
-	# CMake 3.19 and newer define the Vulkan::glslc imported target for the shader compiler.
-	IF(TARGET Vulkan::glslc)
-		SET(glslc_executable "$<TARGET_FILE:Vulkan::glslc>")
-	ELSE()
-		FIND_PROGRAM(glslc_executable
-			NAMES glslc
-			HINTS "$ENV{VULKAN_SDK}/bin")
-	ENDIF()
+    # Locate glslc shader compiler.
+    # CMake 3.19 and newer define the Vulkan::glslc imported target for the shader compiler.
+    IF(TARGET Vulkan::glslc)
+        SET(glslc_executable "$<TARGET_FILE:Vulkan::glslc>")
+    ELSE()
+        FIND_PROGRAM(glslc_executable
+            NAMES glslc
+            HINTS "$ENV{VULKAN_SDK}/bin")
+    ENDIF()
 
     SET(current-shader-path ${CMAKE_CURRENT_SOURCE_DIR}/${shaderfile})
     SET(current-output-path ${CMAKE_CURRENT_SOURCE_DIR}/${shaderfile}.spv)
@@ -43,11 +43,11 @@ function(add_vulkan_shader target shaderfile)
            OUTPUT "${current-output-path}"
            COMMAND "${glslc_executable}" -o "${current-output-path}" "${current-shader-path}"
            DEPENDS "${current-shader-path}"
-		           "${CMAKE_CURRENT_SOURCE_DIR}/resources/picking.glsl"
-		           "${CMAKE_CURRENT_SOURCE_DIR}/resources/shading.glsl"
-		           "${CMAKE_CURRENT_SOURCE_DIR}/resources/global_uniforms.glsl"
+                   "${CMAKE_CURRENT_SOURCE_DIR}/resources/picking.glsl"
+                   "${CMAKE_CURRENT_SOURCE_DIR}/resources/shading.glsl"
+                   "${CMAKE_CURRENT_SOURCE_DIR}/resources/global_uniforms.glsl"
            IMPLICIT_DEPENDS CXX "${current-shader-path}"
-		   COMMENT "Compiling Vulkan shader file ${shaderfile}"
+           COMMENT "Compiling Vulkan shader file ${shaderfile}"
            VERBATIM)
 
     # Make sure our build depends on this output.
@@ -57,18 +57,18 @@ endfunction()
 
 # Define plugin module.
 OVITO_STANDARD_PLUGIN(VulkanRenderer
-	SOURCES
-		VulkanContext.cpp
-		VulkanPipeline.cpp
-		VulkanSceneRenderer.cpp
-		OffscreenVulkanSceneRenderer.cpp
-		VulkanLinePrimitive.cpp
-		VulkanImagePrimitive.cpp
-		VulkanParticlePrimitive.cpp
-		VulkanCylinderPrimitive.cpp
-		VulkanMeshPrimitive.cpp
-		vma/vk_mem_alloc.cpp
-		resources/vulkan.qrc
+    SOURCES
+        VulkanContext.cpp
+        VulkanPipeline.cpp
+        VulkanSceneRenderer.cpp
+        OffscreenVulkanSceneRenderer.cpp
+        VulkanLinePrimitive.cpp
+        VulkanImagePrimitive.cpp
+        VulkanParticlePrimitive.cpp
+        VulkanCylinderPrimitive.cpp
+        VulkanMeshPrimitive.cpp
+        vma/vk_mem_alloc.cpp
+        resources/vulkan.qrc
 )
 
 # Make sure the Vulkan headers are available.
@@ -77,87 +77,87 @@ TARGET_INCLUDE_DIRECTORIES(VulkanRenderer PUBLIC "${Vulkan_INCLUDE_DIRS}")
 
 # Recompile the Vulkan shader source files if the shader compiler is available.
 IF(NOT OVITO_DONT_RECOMPILE_VULKAN_SHADERS AND TARGET Vulkan::glslc)
-	add_vulkan_shader(VulkanRenderer resources/lines/thin_with_colors.frag)
-	add_vulkan_shader(VulkanRenderer resources/lines/thin_with_colors.vert)
-	add_vulkan_shader(VulkanRenderer resources/lines/thin_uniform_color.frag)
-	add_vulkan_shader(VulkanRenderer resources/lines/thin_uniform_color.vert)
-	add_vulkan_shader(VulkanRenderer resources/lines/thin_picking.frag)
-	add_vulkan_shader(VulkanRenderer resources/lines/thin_picking.vert)
-	add_vulkan_shader(VulkanRenderer resources/image/image.frag)
-	add_vulkan_shader(VulkanRenderer resources/image/image.vert)
-	add_vulkan_shader(VulkanRenderer resources/particles/cube/cube.frag)
-	add_vulkan_shader(VulkanRenderer resources/particles/cube/cube.vert)
-	add_vulkan_shader(VulkanRenderer resources/particles/cube/cube_picking.frag)
-	add_vulkan_shader(VulkanRenderer resources/particles/cube/cube_picking.vert)
-	add_vulkan_shader(VulkanRenderer resources/particles/sphere/sphere.frag)
-	add_vulkan_shader(VulkanRenderer resources/particles/sphere/sphere.vert)
-	add_vulkan_shader(VulkanRenderer resources/particles/sphere/sphere_picking.frag)
-	add_vulkan_shader(VulkanRenderer resources/particles/sphere/sphere_picking.vert)
-	add_vulkan_shader(VulkanRenderer resources/particles/square/square.frag)
-	add_vulkan_shader(VulkanRenderer resources/particles/square/square.vert)
-	add_vulkan_shader(VulkanRenderer resources/particles/square/square_picking.frag)
-	add_vulkan_shader(VulkanRenderer resources/particles/square/square_picking.vert)
-	add_vulkan_shader(VulkanRenderer resources/particles/circle/circle.frag)
-	add_vulkan_shader(VulkanRenderer resources/particles/circle/circle.vert)
-	add_vulkan_shader(VulkanRenderer resources/particles/circle/circle_picking.frag)
-	add_vulkan_shader(VulkanRenderer resources/particles/circle/circle_picking.vert)
-	add_vulkan_shader(VulkanRenderer resources/particles/imposter/imposter.frag)
-	add_vulkan_shader(VulkanRenderer resources/particles/imposter/imposter.vert)
-	add_vulkan_shader(VulkanRenderer resources/particles/imposter/imposter_picking.frag)
-	add_vulkan_shader(VulkanRenderer resources/particles/imposter/imposter_picking.vert)
-	add_vulkan_shader(VulkanRenderer resources/particles/box/box.frag)
-	add_vulkan_shader(VulkanRenderer resources/particles/box/box.vert)
-	add_vulkan_shader(VulkanRenderer resources/particles/box/box_picking.frag)
-	add_vulkan_shader(VulkanRenderer resources/particles/box/box_picking.vert)
-	add_vulkan_shader(VulkanRenderer resources/particles/ellipsoid/ellipsoid.frag)
-	add_vulkan_shader(VulkanRenderer resources/particles/ellipsoid/ellipsoid.vert)
-	add_vulkan_shader(VulkanRenderer resources/particles/ellipsoid/ellipsoid_picking.frag)
-	add_vulkan_shader(VulkanRenderer resources/particles/ellipsoid/ellipsoid_picking.vert)
-	add_vulkan_shader(VulkanRenderer resources/particles/superquadric/superquadric.frag)
-	add_vulkan_shader(VulkanRenderer resources/particles/superquadric/superquadric.vert)
-	add_vulkan_shader(VulkanRenderer resources/particles/superquadric/superquadric_picking.frag)
-	add_vulkan_shader(VulkanRenderer resources/particles/superquadric/superquadric_picking.vert)
-	add_vulkan_shader(VulkanRenderer resources/cylinder/cylinder.frag)
-	add_vulkan_shader(VulkanRenderer resources/cylinder/cylinder.vert)
-	add_vulkan_shader(VulkanRenderer resources/cylinder/cylinder_picking.frag)
-	add_vulkan_shader(VulkanRenderer resources/cylinder/cylinder_picking.vert)
-	add_vulkan_shader(VulkanRenderer resources/cylinder/cylinder_flat.frag)
-	add_vulkan_shader(VulkanRenderer resources/cylinder/cylinder_flat.vert)
-	add_vulkan_shader(VulkanRenderer resources/cylinder/cylinder_flat_picking.frag)
-	add_vulkan_shader(VulkanRenderer resources/cylinder/cylinder_flat_picking.vert)
-	add_vulkan_shader(VulkanRenderer resources/cylinder/arrow_head.frag)
-	add_vulkan_shader(VulkanRenderer resources/cylinder/arrow_head.vert)
-	add_vulkan_shader(VulkanRenderer resources/cylinder/arrow_head_picking.frag)
-	add_vulkan_shader(VulkanRenderer resources/cylinder/arrow_head_picking.vert)
-	add_vulkan_shader(VulkanRenderer resources/cylinder/arrow_tail.frag)
-	add_vulkan_shader(VulkanRenderer resources/cylinder/arrow_tail.vert)
-	add_vulkan_shader(VulkanRenderer resources/cylinder/arrow_tail_picking.frag)
-	add_vulkan_shader(VulkanRenderer resources/cylinder/arrow_tail_picking.vert)
-	add_vulkan_shader(VulkanRenderer resources/cylinder/arrow_flat.frag)
-	add_vulkan_shader(VulkanRenderer resources/cylinder/arrow_flat.vert)
-	add_vulkan_shader(VulkanRenderer resources/cylinder/arrow_flat_picking.frag)
-	add_vulkan_shader(VulkanRenderer resources/cylinder/arrow_flat_picking.vert)
-	add_vulkan_shader(VulkanRenderer resources/mesh/mesh.frag)
-	add_vulkan_shader(VulkanRenderer resources/mesh/mesh.vert)
-	add_vulkan_shader(VulkanRenderer resources/mesh/mesh_picking.frag)
-	add_vulkan_shader(VulkanRenderer resources/mesh/mesh_picking.vert)
-	add_vulkan_shader(VulkanRenderer resources/mesh/mesh_wireframe.frag)
-	add_vulkan_shader(VulkanRenderer resources/mesh/mesh_wireframe.vert)
-	add_vulkan_shader(VulkanRenderer resources/mesh/mesh_wireframe_instanced.frag)
-	add_vulkan_shader(VulkanRenderer resources/mesh/mesh_wireframe_instanced.vert)
-	add_vulkan_shader(VulkanRenderer resources/mesh/mesh_instanced.frag)
-	add_vulkan_shader(VulkanRenderer resources/mesh/mesh_instanced.vert)
-	add_vulkan_shader(VulkanRenderer resources/mesh/mesh_instanced_picking.frag)
-	add_vulkan_shader(VulkanRenderer resources/mesh/mesh_instanced_picking.vert)
-	add_vulkan_shader(VulkanRenderer resources/mesh/mesh_instanced_with_colors.frag)
-	add_vulkan_shader(VulkanRenderer resources/mesh/mesh_instanced_with_colors.vert)
-	add_vulkan_shader(VulkanRenderer resources/mesh/mesh_color_mapping.frag)
-	add_vulkan_shader(VulkanRenderer resources/mesh/mesh_color_mapping.vert)
+    add_vulkan_shader(VulkanRenderer resources/lines/thin_with_colors.frag)
+    add_vulkan_shader(VulkanRenderer resources/lines/thin_with_colors.vert)
+    add_vulkan_shader(VulkanRenderer resources/lines/thin_uniform_color.frag)
+    add_vulkan_shader(VulkanRenderer resources/lines/thin_uniform_color.vert)
+    add_vulkan_shader(VulkanRenderer resources/lines/thin_picking.frag)
+    add_vulkan_shader(VulkanRenderer resources/lines/thin_picking.vert)
+    add_vulkan_shader(VulkanRenderer resources/image/image.frag)
+    add_vulkan_shader(VulkanRenderer resources/image/image.vert)
+    add_vulkan_shader(VulkanRenderer resources/particles/cube/cube.frag)
+    add_vulkan_shader(VulkanRenderer resources/particles/cube/cube.vert)
+    add_vulkan_shader(VulkanRenderer resources/particles/cube/cube_picking.frag)
+    add_vulkan_shader(VulkanRenderer resources/particles/cube/cube_picking.vert)
+    add_vulkan_shader(VulkanRenderer resources/particles/sphere/sphere.frag)
+    add_vulkan_shader(VulkanRenderer resources/particles/sphere/sphere.vert)
+    add_vulkan_shader(VulkanRenderer resources/particles/sphere/sphere_picking.frag)
+    add_vulkan_shader(VulkanRenderer resources/particles/sphere/sphere_picking.vert)
+    add_vulkan_shader(VulkanRenderer resources/particles/square/square.frag)
+    add_vulkan_shader(VulkanRenderer resources/particles/square/square.vert)
+    add_vulkan_shader(VulkanRenderer resources/particles/square/square_picking.frag)
+    add_vulkan_shader(VulkanRenderer resources/particles/square/square_picking.vert)
+    add_vulkan_shader(VulkanRenderer resources/particles/circle/circle.frag)
+    add_vulkan_shader(VulkanRenderer resources/particles/circle/circle.vert)
+    add_vulkan_shader(VulkanRenderer resources/particles/circle/circle_picking.frag)
+    add_vulkan_shader(VulkanRenderer resources/particles/circle/circle_picking.vert)
+    add_vulkan_shader(VulkanRenderer resources/particles/imposter/imposter.frag)
+    add_vulkan_shader(VulkanRenderer resources/particles/imposter/imposter.vert)
+    add_vulkan_shader(VulkanRenderer resources/particles/imposter/imposter_picking.frag)
+    add_vulkan_shader(VulkanRenderer resources/particles/imposter/imposter_picking.vert)
+    add_vulkan_shader(VulkanRenderer resources/particles/box/box.frag)
+    add_vulkan_shader(VulkanRenderer resources/particles/box/box.vert)
+    add_vulkan_shader(VulkanRenderer resources/particles/box/box_picking.frag)
+    add_vulkan_shader(VulkanRenderer resources/particles/box/box_picking.vert)
+    add_vulkan_shader(VulkanRenderer resources/particles/ellipsoid/ellipsoid.frag)
+    add_vulkan_shader(VulkanRenderer resources/particles/ellipsoid/ellipsoid.vert)
+    add_vulkan_shader(VulkanRenderer resources/particles/ellipsoid/ellipsoid_picking.frag)
+    add_vulkan_shader(VulkanRenderer resources/particles/ellipsoid/ellipsoid_picking.vert)
+    add_vulkan_shader(VulkanRenderer resources/particles/superquadric/superquadric.frag)
+    add_vulkan_shader(VulkanRenderer resources/particles/superquadric/superquadric.vert)
+    add_vulkan_shader(VulkanRenderer resources/particles/superquadric/superquadric_picking.frag)
+    add_vulkan_shader(VulkanRenderer resources/particles/superquadric/superquadric_picking.vert)
+    add_vulkan_shader(VulkanRenderer resources/cylinder/cylinder.frag)
+    add_vulkan_shader(VulkanRenderer resources/cylinder/cylinder.vert)
+    add_vulkan_shader(VulkanRenderer resources/cylinder/cylinder_picking.frag)
+    add_vulkan_shader(VulkanRenderer resources/cylinder/cylinder_picking.vert)
+    add_vulkan_shader(VulkanRenderer resources/cylinder/cylinder_flat.frag)
+    add_vulkan_shader(VulkanRenderer resources/cylinder/cylinder_flat.vert)
+    add_vulkan_shader(VulkanRenderer resources/cylinder/cylinder_flat_picking.frag)
+    add_vulkan_shader(VulkanRenderer resources/cylinder/cylinder_flat_picking.vert)
+    add_vulkan_shader(VulkanRenderer resources/cylinder/arrow_head.frag)
+    add_vulkan_shader(VulkanRenderer resources/cylinder/arrow_head.vert)
+    add_vulkan_shader(VulkanRenderer resources/cylinder/arrow_head_picking.frag)
+    add_vulkan_shader(VulkanRenderer resources/cylinder/arrow_head_picking.vert)
+    add_vulkan_shader(VulkanRenderer resources/cylinder/arrow_tail.frag)
+    add_vulkan_shader(VulkanRenderer resources/cylinder/arrow_tail.vert)
+    add_vulkan_shader(VulkanRenderer resources/cylinder/arrow_tail_picking.frag)
+    add_vulkan_shader(VulkanRenderer resources/cylinder/arrow_tail_picking.vert)
+    add_vulkan_shader(VulkanRenderer resources/cylinder/arrow_flat.frag)
+    add_vulkan_shader(VulkanRenderer resources/cylinder/arrow_flat.vert)
+    add_vulkan_shader(VulkanRenderer resources/cylinder/arrow_flat_picking.frag)
+    add_vulkan_shader(VulkanRenderer resources/cylinder/arrow_flat_picking.vert)
+    add_vulkan_shader(VulkanRenderer resources/mesh/mesh.frag)
+    add_vulkan_shader(VulkanRenderer resources/mesh/mesh.vert)
+    add_vulkan_shader(VulkanRenderer resources/mesh/mesh_picking.frag)
+    add_vulkan_shader(VulkanRenderer resources/mesh/mesh_picking.vert)
+    add_vulkan_shader(VulkanRenderer resources/mesh/mesh_wireframe.frag)
+    add_vulkan_shader(VulkanRenderer resources/mesh/mesh_wireframe.vert)
+    add_vulkan_shader(VulkanRenderer resources/mesh/mesh_wireframe_instanced.frag)
+    add_vulkan_shader(VulkanRenderer resources/mesh/mesh_wireframe_instanced.vert)
+    add_vulkan_shader(VulkanRenderer resources/mesh/mesh_instanced.frag)
+    add_vulkan_shader(VulkanRenderer resources/mesh/mesh_instanced.vert)
+    add_vulkan_shader(VulkanRenderer resources/mesh/mesh_instanced_picking.frag)
+    add_vulkan_shader(VulkanRenderer resources/mesh/mesh_instanced_picking.vert)
+    add_vulkan_shader(VulkanRenderer resources/mesh/mesh_instanced_with_colors.frag)
+    add_vulkan_shader(VulkanRenderer resources/mesh/mesh_instanced_with_colors.vert)
+    add_vulkan_shader(VulkanRenderer resources/mesh/mesh_color_mapping.frag)
+    add_vulkan_shader(VulkanRenderer resources/mesh/mesh_color_mapping.vert)
 ENDIF()
 
 # Build corresponding GUI plugin.
 IF(OVITO_BUILD_APP AND NOT OVITO_QML_GUI)
-	ADD_SUBDIRECTORY(gui)
+    ADD_SUBDIRECTORY(gui)
 ENDIF()
 
 # Propagate list of plugins to parent scope.
