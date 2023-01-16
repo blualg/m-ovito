@@ -371,8 +371,8 @@ OORef<DataBuffer> DataBuffer::filterCopy(const boost::dynamic_bitset<>& mask) co
     // Optimize filter operation for the most common property types.
     if(dataType() == DataBuffer::Float && stride() == sizeof(FloatType)) {
         // Single float
-        auto __restrict src = reinterpret_cast<const FloatType*>(cbuffer());
-        auto __restrict dst = reinterpret_cast<FloatType*>(copy->buffer());
+        const FloatType* __restrict src = reinterpret_cast<const FloatType*>(cbuffer());
+        FloatType* __restrict dst = reinterpret_cast<FloatType*>(copy->buffer());
         for(size_t i = 0; i < s; ++i, ++src) {
             if(!mask.test(i)) *dst++ = *src;
         }
@@ -380,8 +380,8 @@ OORef<DataBuffer> DataBuffer::filterCopy(const boost::dynamic_bitset<>& mask) co
     }
     else if(dataType() == DataBuffer::Int && stride() == sizeof(int)) {
         // Single integer
-        auto __restrict src = reinterpret_cast<const int*>(cbuffer());
-        auto __restrict dst = reinterpret_cast<int*>(copy->buffer());
+        const int* __restrict src = reinterpret_cast<const int*>(cbuffer());
+        int* __restrict dst = reinterpret_cast<int*>(copy->buffer());
         for(size_t i = 0; i < s; ++i, ++src) {
             if(!mask.test(i)) *dst++ = *src;
         }
@@ -389,8 +389,8 @@ OORef<DataBuffer> DataBuffer::filterCopy(const boost::dynamic_bitset<>& mask) co
     }
     else if(dataType() == DataBuffer::Int64 && stride() == sizeof(qlonglong)) {
         // Single 64-bit integer
-        auto __restrict src = reinterpret_cast<const qlonglong*>(cbuffer());
-        auto __restrict dst = reinterpret_cast<qlonglong*>(copy->buffer());
+        const qlonglong* __restrict src = reinterpret_cast<const qlonglong*>(cbuffer());
+        qlonglong* __restrict dst = reinterpret_cast<qlonglong*>(copy->buffer());
         for(size_t i = 0; i < s; ++i, ++src) {
             if(!mask.test(i)) *dst++ = *src;
         }
@@ -398,8 +398,8 @@ OORef<DataBuffer> DataBuffer::filterCopy(const boost::dynamic_bitset<>& mask) co
     }
     else if(dataType() == DataBuffer::Float && stride() == sizeof(Point3)) {
         // Triple float (may actually be four floats when SSE instructions are enabled).
-        auto __restrict src = reinterpret_cast<const Point3*>(cbuffer());
-        auto __restrict dst = reinterpret_cast<Point3*>(copy->buffer());
+        const Point3* __restrict src = reinterpret_cast<const Point3*>(cbuffer());
+        Point3* __restrict dst = reinterpret_cast<Point3*>(copy->buffer());
         for(size_t i = 0; i < s; ++i, ++src) {
             if(!mask.test(i)) *dst++ = *src;
         }
@@ -407,8 +407,8 @@ OORef<DataBuffer> DataBuffer::filterCopy(const boost::dynamic_bitset<>& mask) co
     }
     else if(dataType() == DataBuffer::Float && stride() == sizeof(Color)) {
         // Triple float
-        auto __restrict src = reinterpret_cast<const Color*>(cbuffer());
-        auto __restrict dst = reinterpret_cast<Color*>(copy->buffer());
+        const Color* __restrict src = reinterpret_cast<const Color*>(cbuffer());
+        Color* __restrict dst = reinterpret_cast<Color*>(copy->buffer());
         for(size_t i = 0; i < s; ++i, ++src) {
             if(!mask.test(i)) *dst++ = *src;
         }
@@ -416,8 +416,8 @@ OORef<DataBuffer> DataBuffer::filterCopy(const boost::dynamic_bitset<>& mask) co
     }
     else if(dataType() == DataBuffer::Int && stride() == sizeof(Point3I)) {
         // Triple int.
-        auto __restrict src = reinterpret_cast<const Point3I*>(cbuffer());
-        auto __restrict dst = reinterpret_cast<Point3I*>(copy->buffer());
+        const Point3I* __restrict src = reinterpret_cast<const Point3I*>(cbuffer());
+        Point3I* __restrict dst = reinterpret_cast<Point3I*>(copy->buffer());
         for(size_t i = 0; i < s; ++i, ++src) {
             if(!mask.test(i)) *dst++ = *src;
         }
@@ -455,8 +455,8 @@ void DataBuffer::mappedCopyFrom(const DataBuffer& source, const std::vector<size
     // Optimize copying operation for the most common property types.
     if(stride() == sizeof(FloatType)) {
         // Single float
-        auto __restrict src = reinterpret_cast<const FloatType*>(source.cbuffer());
-        auto __restrict dst = reinterpret_cast<FloatType*>(buffer());
+        const FloatType* __restrict src = reinterpret_cast<const FloatType*>(source.cbuffer());
+        FloatType* __restrict dst = reinterpret_cast<FloatType*>(buffer());
         for(size_t idx : mapping) {
             OVITO_ASSERT(idx < this->size());
             dst[idx] = *src++;
@@ -464,8 +464,8 @@ void DataBuffer::mappedCopyFrom(const DataBuffer& source, const std::vector<size
     }
     else if(stride() == sizeof(int)) {
         // Single integer
-        auto __restrict src = reinterpret_cast<const int*>(source.cbuffer());
-        auto __restrict dst = reinterpret_cast<int*>(buffer());
+        const int* __restrict src = reinterpret_cast<const int*>(source.cbuffer());
+        int* __restrict dst = reinterpret_cast<int*>(buffer());
         for(size_t idx : mapping) {
             OVITO_ASSERT(idx < this->size());
             dst[idx] = *src++;
@@ -473,8 +473,8 @@ void DataBuffer::mappedCopyFrom(const DataBuffer& source, const std::vector<size
     }
     else if(stride() == sizeof(qlonglong)) {
         // Single 64-bit integer
-        auto __restrict src = reinterpret_cast<const qlonglong*>(source.cbuffer());
-        auto __restrict dst = reinterpret_cast<qlonglong*>(buffer());
+        const qlonglong* __restrict src = reinterpret_cast<const qlonglong*>(source.cbuffer());
+        qlonglong* __restrict dst = reinterpret_cast<qlonglong*>(buffer());
         for(size_t idx : mapping) {
             OVITO_ASSERT(idx < this->size());
             dst[idx] = *src++;
@@ -482,8 +482,8 @@ void DataBuffer::mappedCopyFrom(const DataBuffer& source, const std::vector<size
     }
     else if(stride() == sizeof(Point3)) {
         // Triple float (may actually be four floats when SSE instructions are enabled).
-        auto __restrict src = reinterpret_cast<const Point3*>(source.cbuffer());
-        auto __restrict dst = reinterpret_cast<Point3*>(buffer());
+        const Point3* __restrict src = reinterpret_cast<const Point3*>(source.cbuffer());
+        Point3* __restrict dst = reinterpret_cast<Point3*>(buffer());
         for(size_t idx : mapping) {
             OVITO_ASSERT(idx < this->size());
             dst[idx] = *src++;
@@ -491,8 +491,8 @@ void DataBuffer::mappedCopyFrom(const DataBuffer& source, const std::vector<size
     }
     else if(stride() == sizeof(Color)) {
         // Triple float
-        auto __restrict src = reinterpret_cast<const Color*>(source.cbuffer());
-        auto __restrict dst = reinterpret_cast<Color*>(buffer());
+        const Color* __restrict src = reinterpret_cast<const Color*>(source.cbuffer());
+        Color* __restrict dst = reinterpret_cast<Color*>(buffer());
         for(size_t idx : mapping) {
             OVITO_ASSERT(idx < this->size());
             dst[idx] = *src++;
@@ -500,8 +500,8 @@ void DataBuffer::mappedCopyFrom(const DataBuffer& source, const std::vector<size
     }
     else if(stride() == sizeof(Point3I)) {
         // Triple int
-        auto __restrict src = reinterpret_cast<const Point3I*>(source.cbuffer());
-        auto __restrict dst = reinterpret_cast<Point3I*>(buffer());
+        const Point3I* __restrict src = reinterpret_cast<const Point3I*>(source.cbuffer());
+        Point3I* __restrict dst = reinterpret_cast<Point3I*>(buffer());
         for(size_t idx : mapping) {
             OVITO_ASSERT(idx < this->size());
             dst[idx] = *src++;
@@ -537,8 +537,8 @@ void DataBuffer::mappedCopyTo(DataBuffer& destination, const std::vector<size_t>
     // Optimize copying operation for the most common property types.
     if(stride() == sizeof(FloatType)) {
         // Single float
-        auto __restrict src = reinterpret_cast<const FloatType*>(cbuffer());
-        auto __restrict dst = reinterpret_cast<FloatType*>(destination.buffer());
+        const FloatType* __restrict src = reinterpret_cast<const FloatType*>(cbuffer());
+        FloatType* __restrict dst = reinterpret_cast<FloatType*>(destination.buffer());
         for(size_t idx : mapping) {
             OVITO_ASSERT(idx < size());
             *dst++ = src[idx];
@@ -546,8 +546,8 @@ void DataBuffer::mappedCopyTo(DataBuffer& destination, const std::vector<size_t>
     }
     else if(stride() == sizeof(int)) {
         // Single integer
-        auto __restrict src = reinterpret_cast<const int*>(cbuffer());
-        auto __restrict dst = reinterpret_cast<int*>(destination.buffer());
+        const int* __restrict src = reinterpret_cast<const int*>(cbuffer());
+        int* __restrict dst = reinterpret_cast<int*>(destination.buffer());
         for(size_t idx : mapping) {
             OVITO_ASSERT(idx < size());
             *dst++ = src[idx];
@@ -555,8 +555,8 @@ void DataBuffer::mappedCopyTo(DataBuffer& destination, const std::vector<size_t>
     }
     else if(stride() == sizeof(qlonglong)) {
         // Single 64-bit integer
-        auto __restrict src = reinterpret_cast<const qlonglong*>(cbuffer());
-        auto __restrict dst = reinterpret_cast<qlonglong*>(destination.buffer());
+        const qlonglong* __restrict src = reinterpret_cast<const qlonglong*>(cbuffer());
+        qlonglong* __restrict dst = reinterpret_cast<qlonglong*>(destination.buffer());
         for(size_t idx : mapping) {
             OVITO_ASSERT(idx < size());
             *dst++ = src[idx];
@@ -564,8 +564,8 @@ void DataBuffer::mappedCopyTo(DataBuffer& destination, const std::vector<size_t>
     }
     else if(stride() == sizeof(Point3)) {
         // Triple float (may actually be four floats when SSE instructions are enabled).
-        auto __restrict src = reinterpret_cast<const Point3*>(cbuffer());
-        auto __restrict dst = reinterpret_cast<Point3*>(destination.buffer());
+        const Point3* __restrict src = reinterpret_cast<const Point3*>(cbuffer());
+        Point3* __restrict dst = reinterpret_cast<Point3*>(destination.buffer());
         for(size_t idx : mapping) {
             OVITO_ASSERT(idx < size());
             *dst++ = src[idx];
@@ -573,8 +573,8 @@ void DataBuffer::mappedCopyTo(DataBuffer& destination, const std::vector<size_t>
     }
     else if(stride() == sizeof(Color)) {
         // Triple float
-        auto __restrict src = reinterpret_cast<const Color*>(cbuffer());
-        auto __restrict dst = reinterpret_cast<Color*>(destination.buffer());
+        const Color* __restrict src = reinterpret_cast<const Color*>(cbuffer());
+        Color* __restrict dst = reinterpret_cast<Color*>(destination.buffer());
         for(size_t idx : mapping) {
             OVITO_ASSERT(idx < size());
             *dst++ = src[idx];
@@ -582,8 +582,8 @@ void DataBuffer::mappedCopyTo(DataBuffer& destination, const std::vector<size_t>
     }
     else if(stride() == sizeof(Point3I)) {
         // Triple int
-        auto __restrict src = reinterpret_cast<const Point3I*>(cbuffer());
-        auto __restrict dst = reinterpret_cast<Point3I*>(destination.buffer());
+        const Point3I* __restrict src = reinterpret_cast<const Point3I*>(cbuffer());
+        Point3I* __restrict dst = reinterpret_cast<Point3I*>(destination.buffer());
         for(size_t idx : mapping) {
             OVITO_ASSERT(idx < size());
             *dst++ = src[idx];
