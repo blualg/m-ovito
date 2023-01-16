@@ -139,7 +139,9 @@ public:
     private:
 
         const CutoffNeighborFinder& _builder;
+        const std::array<bool,3> _pbcFlags;
         bool _atEnd = false;
+        const AffineTransformation _cellMatrix;
         Point3 _center, _shiftedCenter;
         size_t _centerIndex = std::numeric_limits<size_t>::max();
         std::vector<Vector3I>::const_iterator _stencilIter;

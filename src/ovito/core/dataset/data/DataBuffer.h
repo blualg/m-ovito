@@ -143,23 +143,24 @@ public:
         finishWriteAccess();
     }
 
-    /// \brief Sets all array elements for which the corresponding entries in the 
+    /// \brief Sets all array elements for which the corresponding entries in the
     ///        selection array are non-zero to the given uniform value.
     template<typename T>
     void fillSelected(const T value, const DataBuffer& selectionProperty) {
+        OVITO_ASSERT(&selectionProperty != this); // Do not allow aliasing.
         prepareWriteAccess();
         selectionProperty.prepareReadAccess();
         OVITO_ASSERT(selectionProperty.size() == this->size());
         OVITO_ASSERT(selectionProperty.dataType() == Int);
         OVITO_ASSERT(selectionProperty.componentCount() == 1);
-        const int* selectionIter = reinterpret_cast<const int*>(selectionProperty.cbuffer());
-        for(T* v = reinterpret_cast<T*>(buffer()), *end = v + this->size(); v != end; ++v)
+        const int* __restrict selectionIter = reinterpret_cast<const int*>(selectionProperty.cbuffer());
+        for(T* __restrict v = reinterpret_cast<T*>(buffer()), *end = v + this->size(); v != end; ++v)
             if(*selectionIter++) *v = value;
         selectionProperty.finishReadAccess();
         finishWriteAccess();
     }
 
-    /// \brief Sets all array elements for which the corresponding entries in the 
+    /// \brief Sets all array elements for which the corresponding entries in the
     ///        selection array are non-zero to the given uniform value.
     template<typename T>
     void fillSelected(const T& value, const DataBuffer* selectionProperty) {
@@ -196,11 +197,11 @@ public:
     /// Reorders the existing elements in this storage array using an index map.
     void reorderElements(const std::vector<size_t>& mapping);
 
-    /// Copies the data elements from the given source array into this array. 
+    /// Copies the data elements from the given source array into this array.
     /// Array size, component count and data type of source and destination must match exactly.
     void copyFrom(const DataBuffer& source);
 
-    /// Copies a range of data elements from the given source array into this array. 
+    /// Copies a range of data elements from the given source array into this array.
     /// Component count and data type of source and destination must be compatible.
     void copyRangeFrom(const DataBuffer& source, size_t sourceIndex, size_t destIndex, size_t count);
 
@@ -209,26 +210,26 @@ public:
     /// are not compatible.
     template<typename Iter>
     bool copyTo(Iter iter, size_t component = 0) const {
-        size_t cmpntCount = componentCount();
+        const size_t cmpntCount = componentCount();
         if(component >= cmpntCount) return false;
         if(size() == 0) return true;
         if(dataType() == DataBuffer::Int) {
             prepareReadAccess();
-            for(auto v = reinterpret_cast<const int*>(cbuffer()) + component, v_end = v + size()*cmpntCount; v != v_end; v += cmpntCount)
+            for(auto __restrict v = reinterpret_cast<const int*>(cbuffer()) + component, v_end = v + size()*cmpntCount; v != v_end; v += cmpntCount)
                 *iter++ = *v;
             finishReadAccess();
             return true;
         }
         else if(dataType() == DataBuffer::Int64) {
             prepareReadAccess();
-            for(auto v = reinterpret_cast<const qlonglong*>(cbuffer()) + component, v_end = v + size()*cmpntCount; v != v_end; v += cmpntCount)
+            for(auto __restrict v = reinterpret_cast<const qlonglong*>(cbuffer()) + component, v_end = v + size()*cmpntCount; v != v_end; v += cmpntCount)
                 *iter++ = *v;
             finishReadAccess();
             return true;
         }
         else if(dataType() == DataBuffer::Float) {
             prepareReadAccess();
-            for(auto v = reinterpret_cast<const FloatType*>(cbuffer()) + component, v_end = v + size()*cmpntCount; v != v_end; v += cmpntCount)
+            for(auto __restrict v = reinterpret_cast<const FloatType*>(cbuffer()) + component, v_end = v + size()*cmpntCount; v != v_end; v += cmpntCount)
                 *iter++ = *v;
             finishReadAccess();
             return true;
@@ -240,10 +241,10 @@ public:
     template<typename F>
     bool forEach(size_t component, F&& func) const {
         size_t cmpntCount = componentCount();
-        if(component >= cmpntCount) 
+        if(component >= cmpntCount)
             return false;
         size_t s = size();
-        if(s == 0) 
+        if(s == 0)
             return true;
         if(dataType() == DataBuffer::Int) {
             prepareReadAccess();
@@ -274,7 +275,7 @@ public:
 
     /// Checks if this buffer|s metadata and the contents exactly match those of another buffer.
     bool equals(const DataBuffer& other) const;
-    
+
     ////////////////////////////// Data access management //////////////////////////////
 
     /// Informs the buffer object that a read accessor is becoming active.
@@ -349,7 +350,7 @@ private:
     std::unique_ptr<uint8_t[]> _data;
 
 #ifdef OVITO_DEBUG
-    /// In debug builds this counter keeps track of how many read or write accessors 
+    /// In debug builds this counter keeps track of how many read or write accessors
     /// are currently referencing this buffer object.
     mutable QAtomicInteger<int> _activeAccessors = 0;
 #endif

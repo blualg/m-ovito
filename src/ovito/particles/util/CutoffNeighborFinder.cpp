@@ -203,14 +203,14 @@ bool CutoffNeighborFinder::prepare(FloatType cutoffRadius, ConstPropertyAccess<P
 
         Point3I binLocation;
         for(size_t k = 0; k < 3; k++) {
-            binLocation[k] = (int)floor(rp[k]);
+            binLocation[k] = (int)std::floor(rp[k]);
             if(simCell->hasPbcCorrected(k)) {
                 if(binLocation[k] < 0 || binLocation[k] >= binDim[k]) {
                     int shift;
                     if(binLocation[k] < 0)
-                        shift = -(binLocation[k]+1)/binDim[k]+1;
+                        shift = -(binLocation[k]+1) / binDim[k]+1;
                     else
-                        shift = -binLocation[k]/binDim[k];
+                        shift = -binLocation[k] / binDim[k];
                     a.pbcShift[k] = shift;
                     a.pos += (FloatType)shift * simCell->matrix().column(k);
                     binLocation[k] = SimulationCellObject::modulo(binLocation[k], binDim[k]);
@@ -238,7 +238,7 @@ bool CutoffNeighborFinder::prepare(FloatType cutoffRadius, ConstPropertyAccess<P
 * Iterator constructor
 ******************************************************************************/
 CutoffNeighborFinder::Query::Query(const CutoffNeighborFinder& finder, size_t particleIndex)
-    : _builder(finder), _centerIndex(particleIndex)
+    : _builder(finder), _centerIndex(particleIndex), _pbcFlags(finder.simCell->pbcFlagsCorrected()), _cellMatrix(finder.simCell->cellMatrix())
 {
     OVITO_ASSERT(particleIndex < _builder.particleCount());
 
@@ -247,9 +247,7 @@ CutoffNeighborFinder::Query::Query(const CutoffNeighborFinder& finder, size_t pa
 
     // Determine the bin the central particle is located in.
     for(size_t k = 0; k < 3; k++) {
-        _centerBin[k] = (int)std::floor(_builder.reciprocalBinCell.prodrow(_center, k));
-        if(_centerBin[k] < 0) _centerBin[k] = 0;
-        else if(_centerBin[k] >= _builder.binDim[k]) _centerBin[k] = _builder.binDim[k] - 1;
+        _centerBin[k] = qBound(0, (int)std::floor(_builder.reciprocalBinCell.prodrow(_center, k)), _builder.binDim[k] - 1);
     }
 
     next();
@@ -259,15 +257,13 @@ CutoffNeighborFinder::Query::Query(const CutoffNeighborFinder& finder, size_t pa
 * Iterator constructor
 ******************************************************************************/
 CutoffNeighborFinder::Query::Query(const CutoffNeighborFinder& finder, const Point3& location)
-    : _builder(finder), _center(finder.simCell->wrapPoint(location))
+    : _builder(finder), _center(finder.simCell->wrapPoint(location)), _pbcFlags(finder.simCell->pbcFlagsCorrected()), _cellMatrix(finder.simCell->cellMatrix())
 {
     _stencilIter = _builder.stencil.begin();
 
     // Determine the bin the central particle is located in.
     for(size_t k = 0; k < 3; k++) {
-        _centerBin[k] = (int)std::floor(_builder.reciprocalBinCell.prodrow(_center, k));
-        if(_centerBin[k] < 0) _centerBin[k] = 0;
-        else if(_centerBin[k] >= _builder.binDim[k]) _centerBin[k] = _builder.binDim[k] - 1;
+        _centerBin[k] = qBound(0, (int)std::floor(_builder.reciprocalBinCell.prodrow(_center, k)), _builder.binDim[k] - 1);
     }
 
     next();
@@ -302,7 +298,7 @@ void CutoffNeighborFinder::Query::next()
             bool skipBin = false;
             for(size_t k = 0; k < 3; k++) {
                 _currentBin[k] = _centerBin[k] + (*_stencilIter)[k];
-                if(!_builder.simCell->hasPbcCorrected(k)) {
+                if(!_pbcFlags[k]) {
                     if(_currentBin[k] < 0 || _currentBin[k] >= _builder.binDim[k]) {
                         skipBin = true;
                         break;
@@ -313,13 +309,13 @@ void CutoffNeighborFinder::Query::next()
                         int s = _currentBin[k] / _builder.binDim[k];
                         _pbcShift[k] = s;
                         _currentBin[k] -= s * _builder.binDim[k];
-                        _shiftedCenter -= _builder.simCell->matrix().column(k) * (FloatType)s;
+                        _shiftedCenter -= _cellMatrix.column(k) * (FloatType)s;
                     }
                     else if(_currentBin[k] < 0) {
                         int s = (_currentBin[k] - _builder.binDim[k] + 1) / _builder.binDim[k];
                         _pbcShift[k] = s;
                         _currentBin[k] -= s * _builder.binDim[k];
-                        _shiftedCenter -= _builder.simCell->matrix().column(k) * (FloatType)s;
+                        _shiftedCenter -= _cellMatrix.column(k) * (FloatType)s;
                     }
                 }
                 OVITO_ASSERT(_currentBin[k] >= 0 && _currentBin[k] < _builder.binDim[k]);
