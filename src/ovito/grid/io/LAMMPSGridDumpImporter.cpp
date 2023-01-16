@@ -210,6 +210,16 @@ void LAMMPSGridDumpImporter::FrameLoader::loadFile()
 						simBox.minc - Point3::Origin()));
 				break;
 			}
+			else if(stream.lineStartsWithToken("ITEM: DIMENSION")) {
+				int dimensionality;
+				if(sscanf(stream.readLine(), "%i", &dimensionality) != 1)
+					throw Exception(tr("LAMMPS grid dump file parsing error. Invalid dimensionality (line %1):\n%2").arg(stream.lineNumber()).arg(stream.lineString()));
+				if(dimensionality == 2)
+					simulationCell()->setIs2D(true);
+				else if(dimensionality == 3)
+					simulationCell()->setIs2D(false);
+				break;
+			}
 			else if(stream.lineStartsWith("ITEM: GRID SIZE")) {
 				// Parse grid size.
 				unsigned long long nx, ny, nz;
