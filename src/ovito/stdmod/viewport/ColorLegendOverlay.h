@@ -44,7 +44,7 @@ public:
     /// \brief Constructor.
     Q_INVOKABLE ColorLegendOverlay(ObjectCreationParams params);
 
-    /// \brief This virtual method gets called when the overlay is being newly attached to a viewport. 
+    /// \brief This virtual method gets called when the overlay is being newly attached to a viewport.
     virtual void initializeOverlay(Viewport* viewport) override;
 
     /// Lets the overlay paint its contents into the framebuffer.
@@ -97,7 +97,7 @@ private:
     DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType, aspectRatio, setAspectRatio, PROPERTY_FIELD_MEMORIZE);
 
     /// Controls the horizontal offset of legend position.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(FloatType, offsetX, setOffsetX)
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(FloatType, offsetX, setOffsetX);
 
     /// Controls the vertical offset of legend position.
     DECLARE_MODIFIABLE_PROPERTY_FIELD(FloatType, offsetY, setOffsetY);

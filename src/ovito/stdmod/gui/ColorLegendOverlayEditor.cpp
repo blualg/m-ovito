@@ -233,7 +233,7 @@ void ColorLegendOverlayEditor::updateSourcesList()
                     // Check if the property is a typed property, i.e. it has one or more ElementType objects attached to it.
                     if(property->isTypedProperty() && dataPath.size() >= 2) {
                         QVariant ref = QVariant::fromValue(PropertyDataObjectReference(dataPath));
-                        
+
                         // Append typed properties at the end of the list.
                         if(_sourcesComboBox->findData(ref) < 0)
                             _sourcesComboBox->addItem(dataPath.toUIString(), std::move(ref));

@@ -98,12 +98,12 @@ ColorLegendOverlay::ColorLegendOverlay(ObjectCreationParams params) : ViewportOv
 }
 
 /******************************************************************************
-* Is called when the overlay is being newly attached to a viewport. 
+* Is called when the overlay is being newly attached to a viewport.
 ******************************************************************************/
 void ColorLegendOverlay::initializeOverlay(Viewport* viewport)
 {
     if(ExecutionContext::isInteractive()) {
-        
+
         // Find a ColorCodingModifier in the scene that we can connect to.
         if(!modifier() && !sourceProperty() && !colorMapping() && viewport->scene()) {
             viewport->scene()->visitObjectNodes([&](PipelineSceneNode* pipeline) {
@@ -123,7 +123,7 @@ void ColorLegendOverlay::initializeOverlay(Viewport* viewport)
             });
         }
 
-        // If there is no ColorCodingModifier in the scene, initialize the overlay to use 
+        // If there is no ColorCodingModifier in the scene, initialize the overlay to use
         // the first available typed property as color source.
         if(!modifier() && !sourceProperty() && !colorMapping() && viewport->scene()) {
             viewport->scene()->visitObjectNodes([&](PipelineSceneNode* pipeline) {
@@ -209,7 +209,7 @@ void ColorLegendOverlay::referenceReplaced(const PropertyFieldDescriptor* field,
 }
 
 /******************************************************************************
-* Returns a short piece information (typically a string or color) to be 
+* Returns a short piece information (typically a string or color) to be
 * displayed next to the modifier's title in the pipeline editor list.
 ******************************************************************************/
 QVariant ColorLegendOverlay::getPipelineEditorShortInfo(Scene* scene) const
@@ -266,7 +266,7 @@ void ColorLegendOverlay::render(SceneRenderer* renderer, const QRect& logicalVie
         });
         if(operation.isCanceled())
             return;
-        
+
         // Verify that the typed property, which has been selected as the source of the color legend, is available.
         if(!typedProperty) {
             // Set warning status to be displayed in the GUI.
@@ -384,7 +384,7 @@ void ColorLegendOverlay::drawContinuousColorMap(SceneRenderer* renderer, const Q
 
     // Look up the image primitive for the color bar in the cache.
     auto& [imagePrimitive, offset] = renderer->visCache().get<std::tuple<ImagePrimitive, QPointF>>(
-        RendererResourceKey<struct ColorBarImageCache, OORef<ColorCodingGradient>, FloatType, int, bool, Color, QSizeF>{ 
+        RendererResourceKey<struct ColorBarImageCache, OORef<ColorCodingGradient>, FloatType, int, bool, Color, QSizeF>{
             mapping.gradient(),
             renderer->devicePixelRatio(),
             orientation(),
@@ -398,7 +398,7 @@ void ColorLegendOverlay::drawContinuousColorMap(SceneRenderer* renderer, const Q
 
         // Allocate the image buffer.
         QSize gradientSize = colorBarRect.size().toSize();
-        int borderWidth = borderEnabled() ? (int)std::ceil(2.0 * renderer->devicePixelRatio()) : 0;     
+        int borderWidth = borderEnabled() ? (int)std::ceil(2.0 * renderer->devicePixelRatio()) : 0;
         QImage textureImage(gradientSize.width() + 2*borderWidth, gradientSize.height() + 2*borderWidth, QImage::Format_ARGB32_Premultiplied);
         if(borderEnabled())
             textureImage.fill((QColor)borderColor());
@@ -545,7 +545,7 @@ void ColorLegendOverlay::drawDiscreteColorMap(SceneRenderer* renderer, const QRe
 
     // Look up the image primitive for the color bar in the cache.
     auto& [imagePrimitive, offset] = renderer->visCache().get<std::tuple<ImagePrimitive, QPointF>>(
-        RendererResourceKey<struct TypeColorsImageCache, std::vector<Color>, FloatType, int, bool, Color, QSizeF>{ 
+        RendererResourceKey<struct TypeColorsImageCache, std::vector<Color>, FloatType, int, bool, Color, QSizeF>{
             typeColors,
             renderer->devicePixelRatio(),
             orientation(),
@@ -559,7 +559,7 @@ void ColorLegendOverlay::drawDiscreteColorMap(SceneRenderer* renderer, const QRe
 
         // Allocate the image buffer.
         QSize gradientSize = colorBarRect.size().toSize();
-        int borderWidth = borderEnabled() ? (int)std::ceil(2.0 * renderer->devicePixelRatio()) : 0;     
+        int borderWidth = borderEnabled() ? (int)std::ceil(2.0 * renderer->devicePixelRatio()) : 0;
         QImage textureImage(gradientSize.width() + 2*borderWidth, gradientSize.height() + 2*borderWidth, QImage::Format_ARGB32_Premultiplied);
         if(borderEnabled())
             textureImage.fill((QColor)borderColor());
@@ -679,7 +679,7 @@ void ColorLegendOverlay::drawDiscreteColorMap(SceneRenderer* renderer, const QRe
     }
 
     for(const ElementType* type : property->elementTypes()) {
-        if(!type || !type->enabled()) 
+        if(!type || !type->enabled())
             continue;
 
         textPrimitive.setText(type->objectTitle());
