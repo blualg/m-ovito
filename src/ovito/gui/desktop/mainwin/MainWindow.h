@@ -80,6 +80,12 @@ public:
     /// Returns the recommended size for this window.
     virtual QSize sizeHint() const override { return QSize(1024,768); }
 
+    /// Restores a previously saved maximized/non-maximized state and shows the window.
+    void restoreMainWindowGeometry();
+
+    /// Saves the maximized/non-maximized state of the window in the settings store.
+    void saveMainWindowGeometry();
+
     /// Loads the layout of the docked widgets from the settings store.
     void restoreLayout();
 
@@ -218,7 +224,7 @@ private:
     bool _autoKeyModeOn = false;
 
     /// Counts the number of times the auto-key animation mode has been suspended.
-    int _animSuspendCount = 0;  
+    int _animSuspendCount = 0;
 
     /// List of errors to be displayed by showErrorMessages().
     std::deque<Exception> _errorList;

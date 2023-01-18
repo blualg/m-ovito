@@ -35,7 +35,7 @@
     #include <QDBusReply>
 #endif
 
-// Registers the embedded Qt resource files embedded in a statically linked executable at application startup. 
+// Registers the embedded Qt resource files embedded in a statically linked executable at application startup.
 // Following the Qt documentation, this needs to be placed outside of any C++ namespace.
 static void registerQtResources()
 {
@@ -50,7 +50,7 @@ namespace Ovito {
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-GuiApplication::GuiApplication() : StandaloneApplication(_fileManager), UserInterface(_globalDatasetContainer, StandaloneApplication::taskManager()), 
+GuiApplication::GuiApplication() : StandaloneApplication(_fileManager), UserInterface(_globalDatasetContainer, StandaloneApplication::taskManager()),
     _fileManager(StandaloneApplication::taskManager()),
     _globalDatasetContainer(StandaloneApplication::taskManager(), *this)
 {
@@ -121,7 +121,7 @@ void GuiApplication::createQtApplication(int& argc, char** argv)
     else {
         // OVITO prefers the "C" locale over the system's default locale.
         QLocale::setDefault(QLocale::c());
-        
+
 #ifndef Q_OS_MACOS
         QGuiApplication::setHighDpiScaleFactorRoundingPolicy(Qt::HighDpiScaleFactorRoundingPolicy::RoundPreferFloor);
 #endif
@@ -247,11 +247,7 @@ MainThreadOperation GuiApplication::startupApplication()
 
         // Show the main window.
         mainWin->setUpdatesEnabled(false);
-#ifndef OVITO_DEBUG
-        mainWin->showMaximized();
-#else
-        mainWin->show();
-#endif
+        mainWin->restoreMainWindowGeometry();
         mainWin->restoreLayout();
         mainWin->setUpdatesEnabled(true);
 
@@ -307,7 +303,7 @@ void GuiApplication::postStartupInitialization()
         }
     }
 
-    // If no .ovito state file was specified on the command line, load 
+    // If no .ovito state file was specified on the command line, load
     // the user's default state from the standard location.
     if(datasetContainer.currentSet() == nullptr && guiMode()) {
         QString defaultsFilePath = QStandardPaths::locate(QStandardPaths::AppDataLocation, QStringLiteral("defaults.ovito"));
@@ -474,7 +470,7 @@ bool GuiApplication::detectDarkTheme() const
             return dbusVariant.variant().toUInt() == 1;  // 0=none, 1=prefer dark, 2=prefer light
         }
     }
-    
+
     QProcess process;
     QByteArray gsettingsOutput;
     if(qgetenv("XDG_CURRENT_DESKTOP") != "XFCE") {
@@ -490,7 +486,7 @@ bool GuiApplication::detectDarkTheme() const
     if(gsettingsOutput.toLower().contains("-dark"))
         return true;
     return false;
-#endif  
+#endif
 }
 
 

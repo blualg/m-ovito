@@ -50,7 +50,7 @@ ViewportsPanel::ViewportsPanel(MainWindow& mainWindow) : _mainWindow(mainWindow)
     // Repaint when auto-key animation mode is toggled.
     connect(mainWindow.actionManager()->getAction(ACTION_AUTO_KEY_MODE_TOGGLE), &QAction::toggled, this, qOverload<>(&ViewportsPanel::update));
 
-    // Prevent the viewports from collpasing and disappearing completely. 
+    // Prevent the viewports from collpasing and disappearing completely.
     setMinimumSize(40, 40);
 
     // Set the background color of the panel.
@@ -65,7 +65,7 @@ ViewportsPanel::ViewportsPanel(MainWindow& mainWindow) : _mainWindow(mainWindow)
 }
 
 /******************************************************************************
-* Factory method which creates a new viewport window widget. Depending on the 
+* Factory method which creates a new viewport window widget. Depending on the
 * user's settings this can be either a OpenGL or a Vulkan window.
 ******************************************************************************/
 BaseViewportWindow* ViewportsPanel::createViewportWindow(Viewport& vp, MainWindow& mainWindow, QWidget* parent)
@@ -85,8 +85,11 @@ BaseViewportWindow* ViewportsPanel::createViewportWindow(Viewport& vp, MainWindo
 
     qRegisterMetaType<UserInterface*>("UserInterfacePtr");
 
-    if(viewportImplementation)
-        return dynamic_cast<BaseViewportWindow*>(viewportImplementation->newInstance(Q_ARG(Viewport*, &vp), Q_ARG(UserInterface*, &mainWindow), Q_ARG(QWidget*, parent)));
+    if(viewportImplementation) {
+        QObject* obj = viewportImplementation->newInstance(Q_ARG(Viewport*, &vp), Q_ARG(UserInterface*, &mainWindow), Q_ARG(QWidget*, parent));
+        OVITO_ASSERT(dynamic_cast<BaseViewportWindow*>(obj));
+        return dynamic_cast<BaseViewportWindow*>(obj);
+    }
 
     return nullptr;
 }
@@ -151,7 +154,7 @@ void ViewportsPanel::onViewportConfigurationReplaced(ViewportConfiguration* newV
     disconnect(_maximizedViewportChangedConnection);
     disconnect(_viewportLayoutChangedConnection);
     _viewportConfig = newViewportConfiguration;
-    
+
     // Create the interactive viewport windows.
     recreateViewportWindows();
 
@@ -287,7 +290,7 @@ void ViewportsPanel::layoutViewports()
     _hoveredSplitter = -1;
     _highlightSplitter = false;
     _highlightSplitterTimer.stop();
-    if(!_viewportConfig) 
+    if(!_viewportConfig)
         return;
 
     // Get the list of all viewports.

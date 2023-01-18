@@ -270,6 +270,39 @@ QDockWidget* MainWindow::createDockPanel(const QString& caption, const QString& 
 }
 
 /******************************************************************************
+* Restores a previously saved maximized/non-maximized state and shows the window.
+******************************************************************************/
+void MainWindow::restoreMainWindowGeometry()
+{
+    QSettings settings;
+    settings.beginGroup("app/mainwindow");
+
+    // TODO: For now we only restore the maximized/normal state of the main window, because
+    // the QWidget::restoreGeometry() method is broken in Qt 6.4.2 under macOS. We'll activate the new code
+    // once we've switched to Qt 6.5, which hopefully fixes the issue.
+#if 1
+    if(settings.value("maximized", true).toBool())
+        showMaximized();
+    else
+        show();
+#else
+    restoreGeometry(settings.value("geometry").toByteArray());
+    show();
+#endif
+}
+
+/******************************************************************************
+* Saves the maximized/non-maximized state of the window in the settings store.
+******************************************************************************/
+void MainWindow::saveMainWindowGeometry()
+{
+    QSettings settings;
+    settings.beginGroup("app/mainwindow");
+    settings.setValue("maximized", isMaximized());
+    settings.setValue("geometry", saveGeometry());
+}
+
+/******************************************************************************
 * Loads the layout of the docked widgets from the settings store.
 ******************************************************************************/
 void MainWindow::restoreLayout()
@@ -438,7 +471,8 @@ void MainWindow::closeEvent(QCloseEvent* event)
         // Stop all running operations.
         taskManager().shutdown();
 
-        // Save window layout.
+        // Save window geometry and layout.
+        saveMainWindowGeometry();
         saveLayout();
 
         // Destroys the window.
@@ -451,12 +485,12 @@ void MainWindow::closeEvent(QCloseEvent* event)
 /******************************************************************************
 * Closes the user interface and shuts down the entire application after displaying an error message.
 ******************************************************************************/
-void MainWindow::exitWithFatalError(const Exception& ex) 
-{ 
+void MainWindow::exitWithFatalError(const Exception& ex)
+{
     suspendViewportUpdates();
     reportError(ex, true);
     QTimer::singleShot(0, this, [this]() {
-        QMainWindow::close(); 
+        QMainWindow::close();
         QCoreApplication::exit(1);
     });
 }
@@ -464,7 +498,7 @@ void MainWindow::exitWithFatalError(const Exception& ex)
 /******************************************************************************
 * Gives the active viewport the input focus.
 ******************************************************************************/
-void MainWindow::setViewportInputFocus() 
+void MainWindow::setViewportInputFocus()
 {
     viewportsPanel()->setFocus(Qt::OtherFocusReason);
 }
@@ -553,7 +587,7 @@ bool MainWindow::openDataInspector(PipelineObject* dataSource, const QString& ob
 /******************************************************************************
 * Displays a message string in the window's status bar.
 ******************************************************************************/
-void MainWindow::showStatusBarMessage(const QString& message, int timeout) 
+void MainWindow::showStatusBarMessage(const QString& message, int timeout)
 {
     _statusBar->showMessage(message, timeout);
 }
@@ -561,7 +595,7 @@ void MainWindow::showStatusBarMessage(const QString& message, int timeout)
 /******************************************************************************
 * Hides any messages currently displayed in the window's status bar.
 ******************************************************************************/
-void MainWindow::clearStatusBarMessage() 
+void MainWindow::clearStatusBarMessage()
 {
     // Conditional call to clearMessage() because clearMessage() always repaints the status bar, even it is not showing any message (as of Qt 6.3.2).
     if(!_statusBar->currentMessage().isEmpty())
@@ -571,7 +605,7 @@ void MainWindow::clearStatusBarMessage()
 /******************************************************************************
 * Creates a frame buffer of the requested size and displays it as a window in the user interface.
 ******************************************************************************/
-std::shared_ptr<FrameBuffer> MainWindow::createAndShowFrameBuffer(int width, int height, bool showRenderingOperationProgress) 
+std::shared_ptr<FrameBuffer> MainWindow::createAndShowFrameBuffer(int width, int height, bool showRenderingOperationProgress)
 {
     // Create the frame buffer window.
     if(!_frameBufferWindow) {
