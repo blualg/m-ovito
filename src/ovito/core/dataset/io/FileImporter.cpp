@@ -68,7 +68,7 @@ OORef<FileImporter> FileImporter::autodetectFileFormat(const FileHandle& file, F
 
     // Cache for the format of files already loaded during the current program session.
     //
-    // Keys:   Local filesystem paths 
+    // Keys:   Local filesystem paths
     // Values: The importer class handling the file and an optional sub-format specifier.
     static std::map<QString, std::pair<const FileImporterClass*, QString>> formatDetectionCache;
 
@@ -108,11 +108,18 @@ OORef<FileImporter> FileImporter::autodetectFileFormat(const FileHandle& file, F
         }
         catch(const Exception&) {
             // Ignore errors that occur during file format detection.
-        }       
+        }
     }
 
+    // The list of all FileImporter implementations, sorted by priority.
+    const static auto installedFileImporterClasses = []() {
+        auto importers = PluginManager::instance().metaclassMembers<FileImporter>();
+        boost::sort(importers, [](const FileImporterClass* a, const FileImporterClass* b) { return a->autodetectionPriority() > b->autodetectionPriority(); });
+        return importers;
+    }();
+
     // Test all installed importer types.
-    for(const FileImporterClass* importerClass : PluginManager::instance().metaclassMembers<FileImporter>()) {
+    for(const FileImporterClass* importerClass : installedFileImporterClasses) {
         try {
             if(std::optional<QString> formatIdentifier = importerClass->determineFileFormat(file)) {
                 // Insert detected format into cache to speed up future requests for the same file.

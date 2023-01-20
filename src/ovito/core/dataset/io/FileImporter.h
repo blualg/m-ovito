@@ -36,7 +36,7 @@ class OVITO_CORE_EXPORT FileImporterClass : public RefTarget::OOMetaClass
 {
 public:
 
-    /** 
+    /**
      * Data structure describing one file format supported by this importer class.
      */
     struct SupportedFormat
@@ -47,7 +47,7 @@ public:
         /// Human-readable description of the file format. Used for the drop-down box of the file selection dialog.
         QString description;
 
-        /// Internal name of the (sub-)format used by the file importer class. 
+        /// Internal name of the (sub-)format used by the file importer class.
         /// May be left unspecified (empty string) if the importer supports just one file format.
         QString identifier;
     };
@@ -83,6 +83,10 @@ public:
     virtual bool importsDataType(const DataObject::OOMetaClass& dataObjectType) const {
         return false;
     }
+
+    /// \brief Returns a numeric value that is used to sort the list of file readers.
+    /// File readers with higher priority get to check a file first during format auto-detection.
+    virtual int autodetectionPriority() const { return 100; }
 };
 
 /**
