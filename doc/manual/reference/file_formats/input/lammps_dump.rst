@@ -1,5 +1,5 @@
 .. _file_formats.input.lammps_dump:
-  
+
 LAMMPS dump file reader
 -----------------------
 
@@ -27,8 +27,8 @@ The reader handles files written by the following LAMMPS dump styles:
 
 In addition to text dump files, *binary* dump files (".bin" suffix) and *gzipped* dump files (".gz" suffix) can be read.
 
-OVITO can process trajectories from a single large dump file or from a sequence of smaller dump files 
-(written by LAMMPS when the output filename contains a "*" wildcard character). 
+OVITO can process trajectories from a single large dump file or from a sequence of smaller dump files
+(written by LAMMPS when the output filename contains a "*" wildcard character).
 It can even concatenate a long trajectory from several dump files, each containing multiple frames.
 
 The current program version does *not* support loading sets of parallel dump files, written by LAMMPS when the output filename contains a "%" wildcard character.
@@ -38,23 +38,23 @@ The current program version does *not* support loading sets of parallel dump fil
 LAMMPS ``dump_modify`` options
 """"""""""""""""""""""""""""""
 
-LAMMPS lets you configure the dump output through its `dump_modify command <https://docs.lammps.org/dump_modify.html>`__. 
+LAMMPS lets you configure the dump output through its `dump_modify command <https://docs.lammps.org/dump_modify.html>`__.
 OVITO provides support for the following dump_modify keywords:
 
-  - The `time` keyword makes LAMMPS write the current elapsed simulation time to the dump file. 
-    In OVITO, the time value of each trajectory frame is made available as a :ref:`global attribute <usage.global_attributes>` named "Time". 
+  - The `time` keyword makes LAMMPS write the current elapsed simulation time to the dump file.
+    In OVITO, the time value of each trajectory frame is made available as a :ref:`global attribute <usage.global_attributes>` named "Time".
     The timestep number, which is always present, is made available as global attribute "Timestep".
 
-  - The `units` keyword makes LAMMPS write two extra lines "ITEM: UNITS" to the dump file header. 
+  - The `units` keyword makes LAMMPS write two extra lines "ITEM: UNITS" to the dump file header.
     OVITO currently ignores this information, since the program has no internal unit system (all quantities are treated as being without units).
 
-  - The `sort` keyword requests LAMMPS to output the list of atoms to the dump file in sorted order (by unique atom ID). 
+  - The `sort` keyword requests LAMMPS to output the list of atoms to the dump file in sorted order (by unique atom ID).
     This option is normally not needed, because OVITO accepts an unsorted list of atoms and can handle trajectories in which the storage
-    order of atoms varies throughout a simulation (which is common in LAMMPS). OVITO maintains the original order in which atoms appear in the dump file. 
-    Unique atom IDs (if present as a separate column in the dump file) are used to identify individual atoms in different trajectory frames. 
-    Nevertheless, if desired, the dump file reader provides a user option requesting OVITO to sort the atoms by ID during data import 
+    order of atoms varies throughout a simulation (which is common in LAMMPS). OVITO maintains the original order in which atoms appear in the dump file.
+    Unique atom IDs (if present as a separate column in the dump file) are used to identify individual atoms in different trajectory frames.
+    Nevertheless, if desired, the dump file reader provides a user option requesting OVITO to sort the atoms by ID during data import
     (``sort_particles=True`` keyword parameter in Python, see below). This option makes the ordering of
-    atoms stable within OVITO even if the `sort` keyword was not used at the time LAMMPS wrote the dump file. 
+    atoms stable within OVITO even if the `sort` keyword was not used at the time LAMMPS wrote the dump file.
 
 .. _file_formats.input.lammps_dump.property_mapping:
 
@@ -69,19 +69,19 @@ For certain dump file columns, the file parser may perform an automatic conversi
 LAMMPS column name         OVITO particle property    Comments
 ========================== ========================== =========================
 x, y, z                    ``Position``
-xu, yu, zu                 ``Position``  
+xu, yu, zu                 ``Position``
 xs, ys, zs                 ``Position``               Automatic conversion from reduced to Cartesian coordinates
 xsu, ysu, zsu              ``Position``               Automatic conversion from reduced to Cartesian coordinates
 id                         ``Particle Identifier``
 vx, vy, vz                 ``Velocity``               Automatic computation of ``Velocity Magnitude`` property
-type                       ``Particle Type``          
+type                       ``Particle Type``
 element                    ``Particle Type``          Named types (may be combined with numeric IDs from `type` column)
 mass                       ``Mass``
 radius                     ``Radius``
 diameter                   ``Radius``                 Automatic division by 2
-mol                        ``Molecule Identifier``    
+mol                        ``Molecule Identifier``
 q                          ``Charge``
-ix, iy, iz                 ``Periodic Image`` 
+ix, iy, iz                 ``Periodic Image``
 fx, fy, fz                 ``Force``
 mux, muy, muz              ``Dipole Orientation``
 mu                         ``Dipole Magnitude``
@@ -109,8 +109,8 @@ Columns having any other name are mapped to a user-defined particle property wit
 Further notes
 """""""""""""
 
-- LAMMPS can perform 2d and 3d simulations (see `dimension <https://docs.lammps.org/dimension.html>`__ command) and OVITO can also treat a system 
-  as either two- or three-dimensional (see :ref:`scene_objects.simulation_cell`). However, the dimensionality of a simulation is not encoded in the 
+- LAMMPS can perform 2d and 3d simulations (see `dimension <https://docs.lammps.org/dimension.html>`__ command) and OVITO can also treat a system
+  as either two- or three-dimensional (see :ref:`scene_objects.simulation_cell`). However, the dimensionality of a simulation is not encoded in the
   dump file. OVITO assumes that the simulation is two-dimensional if the dump file contains no z-coordinates. You can override this after import if necessary.
 
 .. _file_formats.input.lammps_dump.python:
@@ -118,15 +118,15 @@ Further notes
 Python parameters
 """""""""""""""""
 
-The file reader accepts the following optional keyword parameters in a Python call to the :py:func:`~ovito.io.import_file` or :py:meth:`~ovito.pipeline.FileSource.load` functions.
+The file reader accepts the following optional keyword parameters in a call to the :py:func:`~ovito.io.import_file` or :py:meth:`~ovito.pipeline.FileSource.load` Python functions.
 
-.. py:function:: import_file(location, columns = None, sort_particles = False, **kwargs)
+.. py:function:: import_file(location, columns = None, sort_particles = False)
   :noindex:
 
   :param columns: A list of OVITO particle property names, one for each data column in the dump file. Overrides the mapping
                   that otherwise gets set up automatically as described above. List entries may be set to ``None``
                   to skip individual file columns during parsing.
-  :type columns: list[str|None] or None
-  :param sort_particles: Makes the file reader reorder the loaded particles before passing them to the pipeline. 
-                         Sorting is based on the values of the ``Particle Identifier`` property loaded from the dump file. 
+  :type columns: list[str | None] | None
+  :param sort_particles: Makes the file reader reorder the loaded particles before passing them to the pipeline.
+                         Sorting is based on the values of the ``Particle Identifier`` property loaded from the dump file.
   :type sort_particles: bool

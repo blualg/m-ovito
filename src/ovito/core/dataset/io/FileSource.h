@@ -63,7 +63,7 @@ public:
 	bool setSource(std::vector<QUrl> sourceUrls, FileSourceImporter* importer, bool autodetectFileSequences, bool keepExistingDataCollection = false);
 
 	/// \brief This triggers a reload of input data from the external file for the given frame or all frames.
-	/// \param refetchFiles Clears the remote file cache so that file data will be retreived again from the remote location. 
+	/// \param refetchFiles Clears the remote file cache so that file data will be retreived again from the remote location.
 	/// \param frameIndex The index of the input frame to refresh; or -1 to refresh all frames.
 	void reloadFrame(bool refetchFiles, int frameIndex = -1);
 
@@ -73,7 +73,7 @@ public:
 	/// \brief Returns the list of animation frames in the input file(s).
 	const QVector<FileSourceImporter::Frame>& frames() const { return _frames; }
 
-	/// Returns the number of different source files in which the trajectory frames are stored. 
+	/// Returns the number of different source files in which the trajectory frames are stored.
 	int numberOfFiles() const { return _numberOfFiles; }
 
 	/// \brief Returns the number of animation frames this pipeline object can provide.
@@ -137,11 +137,11 @@ private:
 	/// Invalidates cached frames in case they did change.
 	void setListOfFrames(QVector<FileSourceImporter::Frame> frames);
 
-	/// If the file source currently uses a wildcard search pattern, replaces it 
-	/// with a single concrete filename. 
+	/// If the file source currently uses a wildcard search pattern, replaces it
+	/// with a single concrete filename.
 	void removeWildcardFilePattern();
 
-	/// Generates a wildcard file seach pattern unless the file source already uses a pattern. 
+	/// Generates a wildcard file seach pattern unless the file source already uses a pattern.
 	void generateWildcardFilePattern();
 
 private:
@@ -164,16 +164,19 @@ private:
 	/// Controls the automatic generation of a file name pattern in the GUI.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, autoGenerateFilePattern, setAutoGenerateFilePattern, PROPERTY_FIELD_MEMORIZE);
 
-	/// Restricts the timeline to a single static frame of the loaded trajectory. 
+	/// Restricts the timeline to a single static frame of the loaded trajectory.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(int, restrictToFrame, setRestrictToFrame);
 
 	/// The list of trajectory frames.
 	QVector<FileSourceImporter::Frame> _frames;
 
+	/// Indicates whether the list of trajectory frames is up to date.
+	bool _framesValid = false;
+
 	/// The human-readable labels associated with trajectory frames (e.g. the simulation timestep numbers).
 	mutable QMap<int, QString> _frameLabels;
 
-	/// The number of different source files from which the trajectory frames get loaded. 
+	/// The number of different source files from which the trajectory frames get loaded.
 	int _numberOfFiles = 0;
 
 	/// The active future if loading the list of frames is in progress.

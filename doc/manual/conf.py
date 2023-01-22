@@ -103,8 +103,12 @@ rst_prolog = """
 
 .. role:: ovito-pro-tag-role(raw)
    :format: html
-   
+
 .. |ovito-pro| replace:: :ovito-pro-tag-role:`<a class="ovito-pro-tag" href="https://www.ovito.org/about/ovito-pro/" data-tooltip="This program feature is only available in OVITO Pro and not OVITO Basic. Click to learn more." data-tooltip-position="right">pro</a>`
+
+.. |br| raw:: html
+
+  <br/>
 """
 
 # If true, keep warnings as "system message" paragraphs in the built documents.
@@ -232,11 +236,11 @@ try:
         # String specifying the language, as understood by PyEnchant and enchant.
         #spelling_lang='en_US'
 
-        # String specifying a file containing a list of words known to be spelled correctly but that do not appear in the language 
-        # dictionary selected by 'spelling_lang'. The file should contain one word per line. 
+        # String specifying a file containing a list of words known to be spelled correctly but that do not appear in the language
+        # dictionary selected by 'spelling_lang'. The file should contain one word per line.
         #spelling_word_list_filename='spelling_wordlist.txt'
 
-        # Boolean controlling whether suggestions for misspelled words are printed.    
+        # Boolean controlling whether suggestions for misspelled words are printed.
         #spelling_show_suggestions = False
 
         # Boolean controlling whether the contents of the line containing each misspelled word is printed, for more context about the location of each word.
@@ -245,7 +249,7 @@ try:
         # Boolean controlling whether a misspelling is emitted as a sphinx warning or as an info message.
         spelling_warning = True
 
-        # A list of glob-style patterns that should be ignored when checking spelling. They are matched against the 
+        # A list of glob-style patterns that should be ignored when checking spelling. They are matched against the
         # source file names relative to the source directory, using slashes as directory separators on all platforms.
         spelling_exclude_patterns=['licenses/*']
 except:

@@ -57,7 +57,7 @@ SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(FileSource, playbackSpeedDenominator, Integ
 SET_PROPERTY_FIELD_CHANGE_EVENT(FileSource, sourceUrls, ReferenceEvent::TitleChanged);
 
 /******************************************************************************
-* Helper function that counts the number of source files the trajectory frames 
+* Helper function that counts the number of source files the trajectory frames
 * are loaded from.
 ******************************************************************************/
 static int countNumberOfFiles(const QVector<FileSourceImporter::Frame>& frames)
@@ -91,7 +91,7 @@ FileSource::FileSource(ObjectCreationParams params) : BasePipelineSource(params)
 bool FileSource::setSource(std::vector<QUrl> sourceUrls, FileSourceImporter* importer, bool autodetectFileSequences, bool keepExistingDataCollection)
 {
     OVITO_ASSERT(ExecutionContext::current().isValid());
-    
+
     // Make relative file paths absolute.
     for(QUrl& url : sourceUrls) {
         if(url.isLocalFile()) {
@@ -173,6 +173,7 @@ bool FileSource::setSource(std::vector<QUrl> sourceUrls, FileSourceImporter* imp
 
     // Trigger a reload of all frames.
     _frames.clear();
+    _framesValid = false;
     pipelineCache().invalidate();
     notifyTargetChanged();
 
@@ -198,14 +199,14 @@ SharedFuture<QVector<FileSourceImporter::Frame>> FileSource::updateListOfFrames(
     // Update the list of frames.
     SharedFuture<QVector<FileSourceImporter::Frame>> framesFuture = requestFrameList(true);
 
-    // Display any errors during load operation to the user.
+    // Display any errors that occurred during scan operation to the user.
     framesFuture.finally(*this, [](Task& task) {
         try { task.throwPossibleException(); }
         catch(const Exception& ex) { ExecutionContext::current().ui().reportError(ex); }
         catch(...) {}
     });
 
-    // Show progress in the main window status bar.
+    // Show progress of the scan operation in the status bar.
     ExecutionContext::current().ui().taskManager().registerFuture(framesFuture);
 
     return framesFuture;
@@ -247,6 +248,7 @@ void FileSource::setListOfFrames(QVector<FileSourceImporter::Frame> frames)
 
     // Replace our internal list of frames.
     _frames = std::move(frames);
+    _framesValid = true;
     // Reset cached frame label list. It will be rebuilt upon request by the method animationFrameLabels().
     _frameLabels.clear();
 
@@ -295,12 +297,12 @@ void FileSource::setListOfFrames(QVector<FileSourceImporter::Frame> frames)
 /******************************************************************************
 * Returns the number of animation frames this pipeline object can provide.
 ******************************************************************************/
-int FileSource::numberOfSourceFrames() const 
-{ 
+int FileSource::numberOfSourceFrames() const
+{
     if(restrictToFrame() >= 0)
         return 1;
 
-    return _frames.size(); 
+    return _frames.size();
 }
 
 /******************************************************************************
@@ -339,7 +341,8 @@ QMap<int, QString> FileSource::animationFrameLabels() const
     if(_frameLabels.empty() && restrictToFrame() < 0) {
         int frameIndex = 0;
         for(const FileSourceImporter::Frame& frame : _frames) {
-            if(frame.label.isEmpty()) break;
+            if(frame.label.isEmpty())
+                break;
             // Convert local source frame index to global animation frame number.
             _frameLabels.insert(FileSource::sourceFrameToAnimationTime(frameIndex).frame(), frame.label);
             frameIndex++;
@@ -393,6 +396,8 @@ Future<PipelineFlowState> FileSource::evaluateInternal(const PipelineEvaluationR
                     interval.setEnd(sourceFrameToAnimationTime(0) - 1);
                 else if(frame >= sourceFrames.size() && !sourceFrames.empty())
                     interval.setStart(sourceFrameToAnimationTime(sourceFrames.size()));
+                else if(sourceFrames.empty() && _framesValid)
+                    return PipelineFlowState(dataCollection(), PipelineStatus(PipelineStatus::Error, tr("No frames found.")), interval);
                 return PipelineFlowState(dataCollection(), PipelineStatus(PipelineStatus::Error, tr("The file source path is empty or has not been set (no files found).")), interval);
             }
             else if(frame < 0) {
@@ -422,7 +427,7 @@ Future<PipelineFlowState> FileSource::evaluateInternal(const PipelineEvaluationR
                     loadRequest.frame = frameInfo;
                     loadRequest.isNewlyImportedFile = (dataCollection() == nullptr);
                     loadRequest.state.setData(dataCollection()
-                        ? DataOORef<const DataCollection>(dataCollection()) 
+                        ? DataOORef<const DataCollection>(dataCollection())
                         : DataOORef<const DataCollection>::create());
 
                     // Add some standard global attributes to the pipeline state to indicate where it is coming from.
@@ -465,7 +470,7 @@ SharedFuture<QVector<FileSourceImporter::Frame>> FileSource::requestFrameList(bo
     }
 
     // Return the cached frames list if available.
-    if(!_frames.empty() && !forceRescan) {
+    if(_framesValid && !forceRescan) {
         return _frames;
     }
 
@@ -476,7 +481,7 @@ SharedFuture<QVector<FileSourceImporter::Frame>> FileSource::requestFrameList(bo
         // because setListOfFrames() generates a TargetChanged event, which is not allowed during
         // a synchronous call to the pipeline evaulation function.
         .then(ObjectExecutor(this, true), [this](QVector<FileSourceImporter::Frame>&& frameList) {
-            // Store the new list of frames in the FileSource. 
+            // Store the new list of frames in the FileSource.
             setListOfFrames(frameList);
             // Pass the frame list on to the caller.
             return std::move(frameList);
@@ -538,7 +543,7 @@ void FileSource::reloadFrame(bool refetchFiles, int frameIndex)
     TimeInterval unchangedInterval = TimeInterval::empty();
     if(frameIndex > 0 && restrictToFrame() < 0)
         unchangedInterval = TimeInterval(AnimationTime::negativeInfinity(), frameTimeInterval(frameIndex-1).end());
-    
+
     // Throw away cached frame data and notify pipeline that an update is in order.
     pipelineCache().invalidate(unchangedInterval);
     notifyTargetChangedOutsideInterval(unchangedInterval);
@@ -564,6 +569,7 @@ void FileSource::loadFromStream(ObjectLoadStream& stream)
     stream.expectChunk(0x03);
     stream >> _frames;
     stream.closeChunk();
+    _framesValid = !_frames.empty();
 
     // Count the number of source files the trajectory frames are coming from.
     _numberOfFiles = countNumberOfFiles(_frames);
@@ -595,15 +601,15 @@ void FileSource::propertyChanged(const PropertyFieldDescriptor* field)
     if(field == PROPERTY_FIELD(playbackSpeedNumerator) ||
             field == PROPERTY_FIELD(playbackSpeedDenominator) ||
             field == PROPERTY_FIELD(playbackStartTime)) {
-    
+
         // Clear frame label list. It will be regnerated upon request in animationFrameLabels().
-        _frameLabels.clear(); 
+        _frameLabels.clear();
 
         // Invalidate cached frames, because their validity intervals have changed.
         int unchangedFromFrame = std::min(playbackStartTime(), 0);
         int unchangedToFrame = std::max(playbackStartTime(), 0);
         TimeInterval unchangedInterval = (field == PROPERTY_FIELD(playbackStartTime)) ?
-            TimeInterval::empty() : 
+            TimeInterval::empty() :
             TimeInterval(sourceFrameToAnimationTime(playbackStartTime()));
         pipelineCache().invalidate(unchangedInterval);
 
@@ -629,7 +635,7 @@ void FileSource::propertyChanged(const PropertyFieldDescriptor* field)
         Q_EMIT currentFileChanged();
     }
     else if(field == PROPERTY_FIELD(BasePipelineSource::dataCollectionFrame)) {
-        // The active frame is part of the source's UI title.   
+        // The active frame is part of the source's UI title.
         if(numberOfFiles() > 1)
             notifyDependents(ReferenceEvent::TitleChanged);
         Q_EMIT currentFileChanged();
@@ -639,7 +645,7 @@ void FileSource::propertyChanged(const PropertyFieldDescriptor* field)
 
 /******************************************************************************
 * If the file source currently uses a wildcard search pattern, replaces it
-* with a single concrete filename. 
+* with a single concrete filename.
 ******************************************************************************/
 void FileSource::removeWildcardFilePattern()
 {
@@ -657,14 +663,14 @@ void FileSource::removeWildcardFilePattern()
 }
 
 /******************************************************************************
-* Generates a wildcard file seach pattern unless the file source already uses a pattern. 
+* Generates a wildcard file seach pattern unless the file source already uses a pattern.
 ******************************************************************************/
 void FileSource::generateWildcardFilePattern()
 {
     if(sourceUrls().size() == 1) {
         const QUrl& url = sourceUrls().front();
         if(!FileSourceImporter::isWildcardPattern(url)) {
-            
+
             QString filename = url.fileName();
             int startIndex, endIndex;
             for(endIndex = filename.length() - 1; endIndex >= 0; endIndex--)
@@ -682,14 +688,14 @@ void FileSource::generateWildcardFilePattern()
                 OVITO_ASSERT(newUrl.isValid());
 
                 setSource({newUrl}, importer(), true);
-            }   
+            }
         }
     }
 }
 
 /******************************************************************************
 * Returns the name of the file loaded by the file source for the current animation frame.
-* The filename is displayed in the UI panel of the file source. 
+* The filename is displayed in the UI panel of the file source.
 ******************************************************************************/
 QString FileSource::currentFileName() const
 {
@@ -707,7 +713,7 @@ QString FileSource::currentFileName() const
 
 /******************************************************************************
 * Returns the directory path from which the current animation frame was loaded.
-* The path is displayed in the UI panel of the FileSource. 
+* The path is displayed in the UI panel of the FileSource.
 ******************************************************************************/
 QString FileSource::currentDirectoryPath() const
 {
@@ -734,6 +740,7 @@ OORef<RefTarget> FileSource::clone(bool deepCopy, CloneHelper& cloneHelper) cons
     // Let the base class create an instance of this class.
     OORef<FileSource> clone = static_object_cast<FileSource>(BasePipelineSource::clone(deepCopy, cloneHelper));
     clone->_frames = this->_frames;
+    clone->_framesValid = this->_framesValid;
     clone->_frameLabels = this->_frameLabels;
     clone->_numberOfFiles = this->_numberOfFiles;
     return clone;

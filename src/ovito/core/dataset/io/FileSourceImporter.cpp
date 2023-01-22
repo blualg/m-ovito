@@ -224,10 +224,10 @@ OORef<PipelineSceneNode> FileSourceImporter::importFileSet(Scene* scene, std::ve
         for(; iter != sourceUrlsAndImporters.end(); ++iter) {
             if(iter->second->getOOClass() != this->getOOClass())
                 break;
-            sourceUrls.push_back(std::move(iter->first));       
+            sourceUrls.push_back(std::move(iter->first));
         }
     }
-    sourceUrlsAndImporters.erase(sourceUrlsAndImporters.begin(), iter); 
+    sourceUrlsAndImporters.erase(sourceUrlsAndImporters.begin(), iter);
 
     // Set the input file location(s) and importer.
     bool keepExistingDataCollection = true;
@@ -240,7 +240,7 @@ OORef<PipelineSceneNode> FileSourceImporter::importFileSet(Scene* scene, std::ve
         ExecutionContext::current().ui().zoomToSceneExtentsWhenReady();
     }
 
-    // If this importer did not handle all supplied input files, 
+    // If this importer did not handle all supplied input files,
     // continue importing the remaining files.
     if(!sourceUrlsAndImporters.empty()) {
         if(!importFurtherFiles(scene, std::move(sourceUrlsAndImporters), importMode, autodetectFileSequences, multiFileImportMode, pipeline))
@@ -320,7 +320,6 @@ Future<QVector<FileSourceImporter::Frame>> FileSourceImporter::discoverFrames(co
     OVITO_ASSERT(ExecutionContext::current().isValid());
 
     if(shouldScanFileForFrames(sourceUrl)) {
-
         // Check if filename is a wildcard pattern.
         // If yes, find all matching files and scan each one of them.
         if(isWildcardPattern(sourceUrl)) {
@@ -395,7 +394,7 @@ Future<PipelineFlowState> FileSourceImporter::loadFrame(const LoadOperationReque
     // Execute the loader in a background thread.
     Future<PipelineFlowState> future = frameLoader->runAsync(true);
 
-    // If the parser has detects additional frames following the first frame in the 
+    // If the parser has detects additional frames following the first frame in the
     // input file being loaded, automatically turn on scanning of the input file.
     // Only automatically turn scanning on if the file is being newly imported, i.e. if the file source has not loaded a data collection yet.
     if(request.isNewlyImportedFile) {
@@ -421,7 +420,7 @@ Future<PipelineFlowState> FileSourceImporter::loadFrame(const LoadOperationReque
 void FileSourceImporter::FrameFinder::perform()
 {
     QVector<Frame> frameList;
-    try {       
+    try {
         discoverFramesInFile(frameList);
     }
     catch(const Exception&) {
@@ -451,7 +450,6 @@ Future<std::vector<QUrl>> FileSourceImporter::findWildcardMatches(const QUrl& so
 {
     // Determine whether the filename contains a wildcard character.
     if(!isWildcardPattern(sourceUrl)) {
-
         // It's not a wildcard pattern. Register just a single frame.
         return std::vector<QUrl>{ sourceUrl };
     }
@@ -588,7 +586,7 @@ LoadStream& operator>>(LoadStream& stream, FileSourceImporter::Frame& frame)
 }
 
 /******************************************************************************
-* Calls loadFile() and sets the returned frame data as result of the 
+* Calls loadFile() and sets the returned frame data as result of the
 * asynchronous task.
 ******************************************************************************/
 void FileSourceImporter::FrameLoader::perform()
