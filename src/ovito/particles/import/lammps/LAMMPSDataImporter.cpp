@@ -440,7 +440,7 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
                 // Register the type.
                 addNumericType(ImpropersObject::OOClass(), improperTypeProperty, typeId, QLatin1String(nameBegin, nameEnd));
             }
-        }               
+        }
         else if(keyword.startsWith("Masses")) {
             hasTypeMasses = true;
             // Parse atom type masses and also optional atom type names, which some data files list as comments in the Masses section.
@@ -479,6 +479,11 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
                         QStringList words = FileImporter::splitString(QString::fromLocal8Bit(start));
                         if(words.size() == 2)
                             atomTypeName = words[1];
+                    }
+
+                    // If atom type is still without a name, try to infer it from the mass. Do a reverse lookup in the built-in table of elements.
+                    if(atomTypeName.isEmpty() && mass != 0) {
+                        atomTypeName = ParticleType::guessTypeNameFromMass(mass);
                     }
 
                     type = static_object_cast<ParticleType>(addNumericType(ParticlesObject::OOClass(), typeProperty, atomType, atomTypeName));
@@ -546,7 +551,7 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
                 while(*line > 32) line++; // Read non-whitespace characters
                 const char* tokenEnd = line;
 
-                // Try parsing numeric type id. 
+                // Try parsing numeric type id.
                 bool ok = parseInt(tokenBegin, tokenEnd, *bondType);
                 if(!ok) {
                     // Try lookup by type name.
@@ -622,7 +627,7 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
                 while(*line > 32) line++; // Read non-whitespace characters
                 const char* tokenEnd = line;
 
-                // Try parsing numeric type id. 
+                // Try parsing numeric type id.
                 bool ok = parseInt(tokenBegin, tokenEnd, *angleType);
                 if(!ok) {
                     // Try lookup by type name.
@@ -685,7 +690,7 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
                 while(*line > 32) line++; // Read non-whitespace characters
                 const char* tokenEnd = line;
 
-                // Try parsing numeric type id. 
+                // Try parsing numeric type id.
                 bool ok = parseInt(tokenBegin, tokenEnd, *dihedralType);
                 if(!ok) {
                     // Try lookup by type name.
@@ -748,7 +753,7 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
                 while(*line > 32) line++; // Read non-whitespace characters
                 const char* tokenEnd = line;
 
-                // Try parsing numeric type id. 
+                // Try parsing numeric type id.
                 bool ok = parseInt(tokenBegin, tokenEnd, *improperType);
                 if(!ok) {
                     // Try lookup by type name.
@@ -809,7 +814,7 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
                 Vector3& shape = asphericalShapeProperty[atomId];
                 Quaternion& q = orientationProperty[atomId];
                 if(sscanf(line, FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING
-                        " " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING, 
+                        " " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING,
                         &shape.x(), &shape.y(), &shape.z(),
                         &q.w(), &q.x(), &q.y(), &q.z()) != 7)
                     throw Exception(tr("Invalid ellipsoid shape/orientation (line %1): %2").arg(stream.lineNumber()).arg(stream.lineString()));
@@ -928,7 +933,7 @@ void LAMMPSDataImporter::detectAtomStyle(const char* firstLine, const QByteArray
     else {
         // Check if the number of columns present in the data file matches the expected count for the selected atom style.
         ParticleInputColumnMapping columnMapping = createAtomsColumnMapping(info.atomStyle, {}, info.atomDataColumnCount);
-        if(columnMapping.size() == info.atomDataColumnCount) 
+        if(columnMapping.size() == info.atomDataColumnCount)
             return;
     }
     // Invalid or unexpected column count:
@@ -942,7 +947,7 @@ LAMMPSDataImporter::LAMMPSAtomStyle LAMMPSDataImporter::parseAtomStyleHint(const
 {
     for(int i = 1; i < AtomStyle_COUNT; i++) {
         LAMMPSAtomStyle atomStyle = static_cast<LAMMPSAtomStyle>(i);
-        if(atomStyleHint == atomStyleName(atomStyle)) 
+        if(atomStyleHint == atomStyleName(atomStyle))
             return atomStyle;
     }
     return AtomStyle_Unknown;

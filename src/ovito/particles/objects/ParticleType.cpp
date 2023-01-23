@@ -81,14 +81,14 @@ void ParticleType::initializeType(const PropertyReference& property, bool loadUs
     freezeInitialParameterValues({SHADOW_PROPERTY_FIELD(ParticleType::radius)});
     if(loadUserDefaults)
         setRadius(getDefaultParticleRadius(static_cast<ParticlesObject::Type>(property.type()), nameOrNumericId(), numericId(), true, DisplayRadius));
-    
+
     // Load standard van der Waals radius.
     // First load the hardcoded default radius and freeze it, then load the user-defined default radius.
     setVdwRadius(getDefaultParticleRadius(static_cast<ParticlesObject::Type>(property.type()), nameOrNumericId(), numericId(), false, VanDerWaalsRadius));
     freezeInitialParameterValues({SHADOW_PROPERTY_FIELD(ParticleType::vdwRadius)});
     if(loadUserDefaults)
         setVdwRadius(getDefaultParticleRadius(static_cast<ParticlesObject::Type>(property.type()), nameOrNumericId(), numericId(), true, VanDerWaalsRadius));
-    
+
     // Load standard mass.
     // First load the hardcoded default mass and freeze it, then load the user-defined default mass.
     setMass(getDefaultParticleMass(static_cast<ParticlesObject::Type>(property.type()), nameOrNumericId(), numericId(), false));
@@ -114,9 +114,9 @@ void ParticleType::updateEditableProxies(PipelineFlowState& state, ConstDataObje
         if(self->shapeMesh() && self->shapeMesh()->identifier() == QStringLiteral("generated") && proxy->shapeMesh() && proxy->shapeMesh()->identifier() == QStringLiteral("generated")) {
             proxy->setShapeMesh(self->shapeMesh());
         }
-    
+
         // Copy properties changed by the user over to the data object.
-        if(proxy->radius() != self->radius() || proxy->vdwRadius() != self->vdwRadius() || proxy->mass() != self->mass() || proxy->shape() != self->shape() || proxy->shapeMesh() != self->shapeMesh() || proxy->highlightShapeEdges() != self->highlightShapeEdges() 
+        if(proxy->radius() != self->radius() || proxy->vdwRadius() != self->vdwRadius() || proxy->mass() != self->mass() || proxy->shape() != self->shape() || proxy->shapeMesh() != self->shapeMesh() || proxy->highlightShapeEdges() != self->highlightShapeEdges()
                 || proxy->shapeBackfaceCullingEnabled() != self->shapeBackfaceCullingEnabled() || proxy->shapeUseMeshColor() != self->shapeUseMeshColor()) {
             // Make this data object mutable first.
             ParticleType* mutableSelf = static_object_cast<ParticleType>(state.makeMutableInplace(dataPath));
@@ -192,7 +192,7 @@ bool ParticleType::loadShapeMesh(const QUrl& sourceUrl, MainThreadOperation oper
     // Also switch the particle type's visualization shape to mesh-based.
     setShape(ParticlesVis::Mesh);
 
-    // Determine whether the mesh is a closed manifold. 
+    // Determine whether the mesh is a closed manifold.
     // If not, we should turn off back-face culling.
     if(shapeMesh() && !shapeMesh()->isClosed())
         setShapeBackfaceCullingEnabled(false);
@@ -207,9 +207,9 @@ void ParticleType::loadFromStreamComplete(ObjectLoadStream& stream)
 {
     ElementType::loadFromStreamComplete(stream);
 
-    // For backward compatibility with OVITO 3.3.5: 
+    // For backward compatibility with OVITO 3.3.5:
     // The 'shape' parameter field of the ParticleType class does not exist yet in state files written by older program versions.
-    // Automatically switch the type's shape to 'Mesh' if a mesh geometry has been assigned to the type. 
+    // Automatically switch the type's shape to 'Mesh' if a mesh geometry has been assigned to the type.
     if(stream.formatVersion() < 30007) {
         if(shape() == ParticlesVis::ParticleShape::Default && shapeMesh())
             setShape(ParticlesVis::ParticleShape::Mesh);
@@ -219,7 +219,7 @@ void ParticleType::loadFromStreamComplete(ObjectLoadStream& stream)
 // Define default names, colors, and radii for some predefined particle types.
 //
 // Van der Waals radii have been adopted from the VMD software, which adopted them from A. Bondi, J. Phys. Chem., 68, 441 - 452, 1964,
-// except the value for H, which was taken from R.S. Rowland & R. Taylor, J. Phys. Chem., 100, 7384 - 7391, 1996. 
+// except the value for H, which was taken from R.S. Rowland & R. Taylor, J. Phys. Chem., 100, 7384 - 7391, 1996.
 // For radii that are not available in either of these publications use r = 2.0.
 // The radii for ions (Na, K, Cl, Ca, Mg, and Cs) are based on the CHARMM27 Rmin/2 parameters for (SOD, POT, CLA, CAL, MG, CES).
 //
@@ -355,15 +355,15 @@ FloatType ParticleType::getDefaultParticleRadius(ParticlesObject::Type typeClass
     if(loadUserDefaults && typeClass != ParticlesObject::UserProperty) {
 
 #ifndef OVITO_DISABLE_QSETTINGS
-        // Use the type's name, property type and container class to look up the 
+        // Use the type's name, property type and container class to look up the
         // default radius saved by the user.
-        const QString& settingsKey = ElementType::getElementSettingsKey(ParticlePropertyReference(typeClass), 
+        const QString& settingsKey = ElementType::getElementSettingsKey(ParticlePropertyReference(typeClass),
             (radiusVariant == DisplayRadius) ? QStringLiteral("radius") : QStringLiteral("vdw_radius"), particleTypeName);
         QVariant v = QSettings().value(settingsKey);
         if(v.isValid() && v.canConvert<FloatType>())
             return v.value<FloatType>();
 
-        // The following is for backward compatibility with OVITO 3.3.5, which used to store the 
+        // The following is for backward compatibility with OVITO 3.3.5, which used to store the
         // default radii in a different branch of the settings registry.
         if(radiusVariant == DisplayRadius) {
             v = QSettings().value(QStringLiteral("particles/defaults/radius/%1/%2").arg(typeClass).arg(particleTypeName));
@@ -402,9 +402,9 @@ void ParticleType::setDefaultParticleRadius(ParticlesObject::Type typeClass, con
 
 #ifndef OVITO_DISABLE_QSETTINGS
     QSettings settings;
-    const QString& settingsKey = ElementType::getElementSettingsKey(ParticlePropertyReference(typeClass), 
+    const QString& settingsKey = ElementType::getElementSettingsKey(ParticlePropertyReference(typeClass),
         (radiusVariant == DisplayRadius) ? QStringLiteral("radius") : QStringLiteral("vdw_radius"), particleTypeName);
-    
+
     if(std::abs(getDefaultParticleRadius(typeClass, particleTypeName, 0, false, radiusVariant) - radius) > 1e-6)
         settings.setValue(settingsKey, QVariant::fromValue(radius));
     else
@@ -431,6 +431,25 @@ FloatType ParticleType::getDefaultParticleMass(ParticlesObject::Type typeClass, 
     }
 
     return 0;
+}
+
+/******************************************************************************
+* Performs a reverse lookup. Given a mass value, find the corresponding
+* standard particle type name. Currently, this method only considers chemical
+* elements from the hard-coded table, because mass presets cannot be configured by the user.
+******************************************************************************/
+QString ParticleType::guessTypeNameFromMass(FloatType mass)
+{
+    // Maximum allowed deviation from reference mass value:
+    constexpr FloatType tolerance = 5e-3;
+
+    for(const PredefinedChemicalType& predefType : _predefinedParticleTypes) {
+        if(std::abs(predefType.mass - mass) <= tolerance) {
+            return predefType.name;
+        }
+    }
+
+    return {};
 }
 
 }   // End of namespace

@@ -170,6 +170,11 @@ public:
     /// Returns the default mass for a named particle type.
     static FloatType getDefaultParticleMass(ParticlesObject::Type typeClass, const QString& particleTypeName, int particleTypeId, bool loadUserDefaults);
 
+    /// Performs a reverse lookup. Given a mass value, find the corresponding standard particle type name.
+    /// Currently, this method only considers chemical elements from the hard-coded table, because
+    /// mass presets cannot be configured by the user.
+    static QString guessTypeNameFromMass(FloatType mass);
+
 protected:
 
     /// Is called once for this object after it has been completely loaded from a stream.
