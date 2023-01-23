@@ -79,6 +79,9 @@ private Q_SLOTS:
     /// Is called when the evaluation of a pipeline in the scene has finished.
     void pipelineEvaluationFinished();
 
+    /// Is called whenever the SelectionSet changes, i.e., whenever the user selects a different pipeline.
+    void sceneSelectionChanged() { Q_EMIT viewportUpdateRequest(); }
+
 private:
 
     /// Requests the (re-)evaluation of all data pipelines in the current scene.
@@ -112,6 +115,9 @@ private:
 
     /// Indicates that a restart of the preparation has already been scheduled.
     bool _isRestartScheduled = false;
+
+    /// Qt signal/slot connection to the SelectionSet::selectionChanged() signal.
+    QMetaObject::Connection _selectionChangedConnection;
 };
 
 }   // End of namespace

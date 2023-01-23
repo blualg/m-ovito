@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -118,7 +118,7 @@ void ScenePreparation::makeReady(bool forceReevaluation)
     if(userInterface().areViewportUpdatesSuspended())
         return;
 
-    // Hold on to the old evaluation request until a new request has been made 
+    // Hold on to the old evaluation request until a new request has been made
     // to not loose partial results stored in the pipeline caches.
     PipelineEvaluationFuture oldEvaluation = std::move(_pipelineEvaluation);
 
@@ -133,8 +133,8 @@ void ScenePreparation::makeReady(bool forceReevaluation)
 
     // Pipeline evaulation must be done in a valid execution context and with an active task object.
     MainThreadOperation operation(ExecutionContext::Type::Interactive, userInterface(), false);
-    
-    // Go through all pipelines of the scene until we find one 
+
+    // Go through all pipelines of the scene until we find one
     // that is not completely evaulated yet.
     scene()->visitObjectNodes([&](PipelineSceneNode* pipeline) {
         // Request visual elements too.
@@ -170,7 +170,7 @@ void ScenePreparation::makeReady(bool forceReevaluation)
         Q_EMIT viewportUpdateRequest();
     }
     else {
-        // If one of the pipelines is not complete yet, wait until it is. 
+        // If one of the pipelines is not complete yet, wait until it is.
         _pipelineEvaluationWatcher.watch(_pipelineEvaluation.task());
     }
 }
@@ -231,6 +231,11 @@ void ScenePreparation::referenceReplaced(const PropertyFieldDescriptor* field, R
 {
     if(field == PROPERTY_FIELD(scene)) {
         restartPreparation();
+
+        // Set up a signal/slot connection that repaints the viewports whenever the scene selection changes.
+        disconnect(_selectionChangedConnection);
+        if(scene() && scene()->selection())
+            _selectionChangedConnection = connect(scene()->selection(), &SelectionSet::selectionChanged, this, &ScenePreparation::viewportUpdateRequest);
     }
     RefMaker::referenceReplaced(field, oldTarget, newTarget, listIndex);
 }
@@ -238,8 +243,8 @@ void ScenePreparation::referenceReplaced(const PropertyFieldDescriptor* field, R
 /******************************************************************************
 * Requests the (re-)evaluation of all data pipelines next time execution returns to the event loop.
 ******************************************************************************/
-void ScenePreparation::restartPreparation() 
-{ 
+void ScenePreparation::restartPreparation()
+{
     // Reset the promise if it was already in the completed state before.
     if(_promise.isValid() && _promise.isFinished()) {
         _promise.reset();
@@ -253,6 +258,5 @@ void ScenePreparation::restartPreparation()
         QMetaObject::invokeMethod(this, "makeReady", Qt::QueuedConnection, Q_ARG(bool, true));
     }
 }
-
 
 }   // End of namespace
