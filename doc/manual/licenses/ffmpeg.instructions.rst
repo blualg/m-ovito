@@ -9,11 +9,11 @@ In accordance with the requirements of this license, this page provides instruct
 Windows
 """""""
 
-OVITO for Windows includes binaries that have been built from the unmodified sources of ffmpeg 4.2.8.
+OVITO for Windows includes binaries that have been built from the unmodified sources of ffmpeg 5.1.2.
 The following commands have been used to generate them::
 
   # Compiler: Microsoft Visual C++ 2019 (command line tools) + MSYS2 environment
-  # Zlib version: 1.2.13
+  # zlib version: 1.2.13
   ./configure \
     --toolchain=msvc \
     --target-os=win64 \
@@ -27,17 +27,26 @@ The following commands have been used to generate them::
     --enable-zlib \
     --disable-doc \
     --disable-network \
-    --disable-debug
+    --disable-debug \
+    --disable-decoders \
+    --disable-indevs \
+    --disable-postproc \
+    --disable-sdl2 \
+    --disable-libxcb \
+    --disable-libxcb-shm \
+    --disable-libxcb-xfixes \
+    --disable-libxcb-shape \
+    --disable-iconv
   make install
 
 Linux
 """""
 
-OVITO for Linux includes shared libraries that have been built from the unmodified sources of ffmpeg 4.2.1.
+OVITO for Linux includes shared libraries that have been built from the unmodified sources of ffmpeg 5.1.2.
 The following commands have been used to generate them::
 
-  # Build platform: CentOS 6.9
-  # Compiler: GCC 7.1 (CentOS devtoolset-7)
+  # Build platform: CentOS 7
+  # Compiler: GCC 10
   ./configure \
     --enable-pic \
     --enable-shared \
@@ -46,18 +55,22 @@ The following commands have been used to generate them::
     --disable-network \
     --disable-programs \
     --disable-debug \
-    --prefix=$HOME/progs/ffmpeg
+    --disable-decoders \
+    --disable-indevs \
+    --disable-postproc \
+    --disable-sdl2 \
+    --prefix=$HOME/ffmpeg
   make install
 
 macOS
 """""
 
-OVITO for macOS includes shared libraries that have been built from the unmodified sources of ffmpeg 4.2.8.
+OVITO for macOS includes shared libraries that have been built from the unmodified sources of ffmpeg 5.1.2.
 The following commands have been used to generate them::
 
   git clone https://git.ffmpeg.org/ffmpeg.git ffmpeg_source
   cd ffmpeg_source
-  git checkout n4.2.8
+  git checkout n5.1.2
   export MACOSX_DEPLOYMENT_TARGET=10.14
   ./configure \
     --disable-network \
