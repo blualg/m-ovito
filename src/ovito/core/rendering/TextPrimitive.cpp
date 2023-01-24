@@ -52,7 +52,15 @@ QRectF TextPrimitive::queryBounds(const SceneRenderer* renderer, Qt::TextFormat 
         if(textFormatHint != Qt::AutoText) resolvedTextFormat = textFormatHint;
         else resolvedTextFormat = Qt::mightBeRichText(text()) ? Qt::RichText : Qt::PlainText;
     }
+#ifndef Q_OS_WIN
     if(resolvedTextFormat != Qt::RichText) {
+#else
+    // On Windows, our own method for painting the text outline using QPainterPath does not work correctly.
+    // Internal rounding issues in Qt's font engine lead to a mismatch between the outline and the filled text painted by QPainter::drawText().
+    // As a workaround, fall back to the more expensive QTextDocument-based method for rendering the outline, which otherwise is only used for formatted text.
+    bool hasOutline = (outlineColor().a() > 0.0 && outlineWidth() != 0);
+    if(resolvedTextFormat != Qt::RichText && !hasOutline) {
+#endif
         if(!useTightBox()) {
             textBounds = QFontMetricsF(font()).boundingRect(text());
         }
@@ -65,7 +73,10 @@ QRectF TextPrimitive::queryBounds(const SceneRenderer* renderer, Qt::TextFormat 
     else {
         QTextDocument doc;
         doc.setUndoRedoEnabled(false);
-        doc.setHtml(text());
+        if(resolvedTextFormat == Qt::RichText)
+            doc.setHtml(text());
+        else
+            doc.setPlainText(text());
         doc.setDefaultFont(font());
         doc.setDocumentMargin(0);
         QTextOption opt = doc.defaultTextOption();
