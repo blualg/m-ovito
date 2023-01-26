@@ -188,17 +188,17 @@ FileExporterSettingsDialog::FileExporterSettingsDialog(MainWindow& mainWindow, S
         _skipDialog = false;
 
     // Update exporter whenever a new source pipeline has been selected by the user.
-    connect(_sceneNodeBox, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged), this, [this]() {
+    connect(_sceneNodeBox, qOverload<int>(&QComboBox::currentIndexChanged), this, [this]() {
         _mainWindow.handleExceptions([&] {
             _exporter->setNodeToExport(static_object_cast<SceneNode>(_sceneNodeBox->currentData().value<OORef<OvitoObject>>()));
         });
     });
 
     // Update the list of available data objects whenever the user selects a different source pipeline.
-    connect(_sceneNodeBox, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged), this, &FileExporterSettingsDialog::updateDataObjectList);
+    connect(_sceneNodeBox, qOverload<int>(&QComboBox::currentIndexChanged), this, &FileExporterSettingsDialog::updateDataObjectList);
 
     // Update the exporter whenever the user selects a new data object.
-    connect(_dataObjectBox, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged), this, [this]() {
+    connect(_dataObjectBox, qOverload<int>(&QComboBox::currentIndexChanged), this, [this]() {
         _mainWindow.handleExceptions([&] {
             _exporter->setDataObjectToExport(_dataObjectBox->currentData().value<DataObjectReference>());
         });

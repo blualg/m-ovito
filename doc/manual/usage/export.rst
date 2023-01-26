@@ -28,17 +28,19 @@ Make sure to select the "*Table of Values*" export format in the file selection 
 This output format produces a tabular text file with the values of the selected attributes as functions of time.
 You can plot the exported data with any external charting tool.
 
+.. seealso:: :ref:`adding_global_attributes`
+
 .. _usage.export.formats:
 
 Supported output file formats
 -----------------------------
 
-.. list-table:: 
-  :widths: 20 55 25 
+.. list-table::
+  :widths: 20 55 25
   :header-rows: 1
 
-  * - File format 
-    - Description 
+  * - File format
+    - Description
     - Exported data
   * - LAMMPS dump
     - Text-based file format produced and read by the `LAMMPS <https://www.lammps.org/>`__ molecular dynamics code.
@@ -48,10 +50,10 @@ Supported output file formats
     - :ref:`particles <scene_objects.particles>`, :ref:`bonds <scene_objects.bonds>`, angles, dihedrals, impropers
   * - XYZ
     - A simple column-based text format, which is documented `here <http://en.wikipedia.org/wiki/XYZ_file_format>`__.
-      
-      .. 
-        and `here <http://libatoms.github.io/QUIP/io.html#module-ase.io.extxyz>`__. TODO 
-      
+
+      ..
+        and `here <http://libatoms.github.io/QUIP/io.html#module-ase.io.extxyz>`__. TODO
+
     - :ref:`particles <scene_objects.particles>`
   * - POSCAR
     - File format used by the *ab initio* simulation package `VASP <http://www.vasp.at/>`__.

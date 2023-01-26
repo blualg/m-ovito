@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -69,7 +69,7 @@ public:
 
     /// Constructor.
     Q_INVOKABLE ConstructSurfaceModifier(ObjectCreationParams params);
-    
+
     /// Decides whether a preliminary viewport update is performed after the modifier has been
     /// evaluated but before the entire pipeline evaluation is complete.
     /// We suppress such preliminary updates for this modifier, because it produces a surface mesh,
@@ -165,7 +165,7 @@ private:
             _identifyRegions(identifyRegions),
             _totalCellVolume(this->mesh()->domain() ? this->mesh()->domain()->volume3D() : 0.0),
             _surfaceParticleSelection(selectSurfaceParticles ? ParticlesObject::OOClass().createStandardProperty(this->positions()->size(), ParticlesObject::SelectionProperty, DataBuffer::InitializeMemory) : nullptr),
-            _particleRegionIds(mapParticlesToRegions ? ParticlesObject::OOClass().createUserProperty(this->positions()->size(), PropertyObject::Int, 1, tr("Region")) : nullptr) 
+            _particleRegionIds(mapParticlesToRegions ? ParticlesObject::OOClass().createUserProperty(this->positions()->size(), PropertyObject::Int, 1, tr("Region")) : nullptr)
             {}
 
         /// Computes the modifier's results and stores them in this object for later retrieval.
@@ -203,14 +203,20 @@ private:
         /// Number of filled regions that have been identified.
         SurfaceMeshAccess::size_type _filledRegionCount = 0;
 
-        /// Number of empty regions that have been identified.
+        /// Total number of empty regions that have been identified.
         SurfaceMeshAccess::size_type _emptyRegionCount = 0;
+
+        /// Total number of interior empty regions that have been identified.
+        SurfaceMeshAccess::size_type _voidRegionCount = 0;
 
         /// The computed total volume of filled regions.
         double _totalFilledVolume = 0;
 
-        /// The computed total volume of empty regions.
+        /// The computed total volume of all empty regions.
         double _totalEmptyVolume = 0;
+
+        /// The computed total volume of interior empty regions.
+        double _totalVoidVolume = 0;
 
         /// The total volume of the simulation cell.
         double _totalCellVolume = 0;

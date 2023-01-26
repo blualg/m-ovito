@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -142,7 +142,7 @@ Future<AsynchronousModifier::EnginePtr> ConstructSurfaceModifier::createEngine(c
             particleProperties.push_back(property);
         }
     }
-    
+
     // Create an empty surface mesh.
     DataOORef<SurfaceMesh> mesh = DataOORef<SurfaceMesh>::create(ObjectCreationParams::WithoutVisElement, tr("Surface"));
     mesh->setIdentifier(input.generateUniqueIdentifier<SurfaceMesh>(QStringLiteral("surface")));
@@ -153,7 +153,7 @@ Future<AsynchronousModifier::EnginePtr> ConstructSurfaceModifier::createEngine(c
     if(method() == AlphaShape) {
         // Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
         return std::make_shared<AlphaShapeEngine>(
-                request, 
+                request,
                 posProperty,
                 selProperty,
                 std::move(grainProperty),
@@ -169,7 +169,7 @@ Future<AsynchronousModifier::EnginePtr> ConstructSurfaceModifier::createEngine(c
     else {
         // Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
         return std::make_shared<GaussianDensityEngine>(
-                request, 
+                request,
                 posProperty,
                 selProperty,
                 std::move(mesh),
@@ -214,15 +214,20 @@ void ConstructSurfaceModifier::AlphaShapeEngine::perform()
 
     // Generate Delaunay tessellation.
     DelaunayTessellation tessellation;
+
+    // When identifying regions (including empty ones), we need to make sure that the entire simulation cell is covered by
+    // finite Delaunay tetrahedra. In other words, we have to prevent infinite tetrahedra from penetrating into the simulation cekk.
+    // This is accomplished in the DelaunayTessellation class by adding 8 extra input points to the tessellation,
+    // far away from the simulation cell and any real input particles. These 8 points form a convex hull, whose interior gets tessellated.
     bool coverDomainWithFiniteTets = _identifyRegions;
 
     if(!tessellation.generateTessellation(
-            mesh()->domain(), 
-            ConstPropertyAccess<Point3>(positions()).cbegin(), 
-            positions()->size(), 
+            mesh()->domain(),
+            ConstPropertyAccess<Point3>(positions()).cbegin(),
+            positions()->size(),
             ghostLayerSize,
-            coverDomainWithFiniteTets, 
-            selection() ? ConstPropertyAccess<int>(selection()).cbegin() : nullptr, 
+            coverDomainWithFiniteTets,
+            selection() ? ConstPropertyAccess<int>(selection()).cbegin() : nullptr,
             *this))
         return;
     OVITO_ASSERT(tessellation.simCell());
@@ -231,22 +236,25 @@ void ConstructSurfaceModifier::AlphaShapeEngine::perform()
 
     SurfaceMeshAccess mesh(this->mesh());
 
-    // Predefine the filled spatial regions if there is already a particle cluster assignment. 
+    // Predefine the filled spatial regions of the output SurfaceMesh if the input particles are divided into separate grains by e.g. a GrainSegmentationModifier.
     if(_identifyRegions && particleGrains()) {
-        
-        // Determine the maximum cluster ID.
+
+        // Determine the maximum grain ID.
         qlonglong maxGrainId = 0;
         if(particleGrains()->size() != 0) {
-            maxGrainId = qBound((qlonglong)0, 
-                *boost::max_element(ConstPropertyAccess<qlonglong>(particleGrains())), 
+            maxGrainId = qBound((qlonglong)0,
+                *boost::max_element(ConstPropertyAccess<qlonglong>(particleGrains())),
                 static_cast<qlonglong>(std::numeric_limits<SurfaceMeshAccess::region_index>::max() - 1));
         }
 
-        // Create one region in the output mesh for each particle grain.
+        // Create one region in the output mesh for each grain.
         mesh.createRegions(maxGrainId + 1);
     }
 
     // Helper function that determines which spatial region a filled Delaunay cell belongs to.
+    // This is only used if the input particles have previously been divided into grains by a GrainSegmentationModifier.
+    // Otherwise, all tetrahedra are attributed to the null grain initially. Subsequently, they will be
+    // grouped into disconnected sets, which form the regions of the output SurfaceMesh.
     auto tetrahedronRegion = [&,grains = ConstPropertyAccess<qlonglong>(_identifyRegions ? particleGrains() : nullptr)](DelaunayTessellation::CellHandle cell) -> SurfaceMeshAccess::region_index {
         if(grains) {
             // Decide which particle cluster the Delaunay cell belongs to.
@@ -264,6 +272,7 @@ void ConstructSurfaceModifier::AlphaShapeEngine::perform()
     };
 
     // This callback function is called for every surface facet created by the manifold construction helper.
+    // It marks the particles corresponding to the mesh vertices as belonging to the surface.
     PropertyAccess<int> surfaceParticleSelectionArray(surfaceParticleSelection());
     auto prepareMeshFace = [&](SurfaceMeshAccess::face_index face, const std::array<size_t,3>& vertexIndices, const std::array<DelaunayTessellation::VertexHandle,3>& vertexHandles, DelaunayTessellation::CellHandle cell) {
         // Mark the face's corner particles as belonging to the surface.
@@ -276,6 +285,7 @@ void ConstructSurfaceModifier::AlphaShapeEngine::perform()
     };
 
     // This callback function is called for every surface vertex created by the manifold construction helper.
+    // It registers the vertex in the map that associates each mesh vertex with its original input particle.
     std::vector<size_t> vertexToParticleMap;
     auto prepareMeshVertex = [&](SurfaceMeshAccess::vertex_index vertex, size_t particleIndex) {
         OVITO_ASSERT(vertex == vertexToParticleMap.size());
@@ -283,7 +293,7 @@ void ConstructSurfaceModifier::AlphaShapeEngine::perform()
     };
 
     if(!_identifyRegions) {
-        // Predefine the filled spatial region. 
+        // Predefine the filled spatial region.
         // An empty region is not defined, because we are creating only a one-sided surface mesh.
         mesh.createRegion();
         OVITO_ASSERT(mesh.regionCount() == 1);
@@ -316,14 +326,14 @@ void ConstructSurfaceModifier::AlphaShapeEngine::perform()
         // Transfer the region ID information to the output particles.
         if(PropertyAccess<int> regionIds = particleRegionIds()) {
             nextProgressSubStep();
-            setProgressMaximum(regionIds.size()); 
+            setProgressMaximum(regionIds.size());
             size_t numProcessedParticles = 0;
-            // Initially, mark all particles as not assigned to any region (special region ID -1). 
+            // Initially, mark all particles as not assigned to any region (special region ID -1).
             boost::fill(regionIds, -1);
             // Visit each tetrahedral cell and assign its four vertex particles to the region of the cell.
             DelaunayTessellation::CellHandle queryHint = DelaunayTessellation::CellHandle(-1);
             for(DelaunayTessellation::CellIterator cell = tessellation.begin_cells(); cell != tessellation.end_cells(); ++cell) {
-                if(tessellation.isGhostCell(*cell) || !tessellation.isFiniteCell(*cell)) 
+                if(tessellation.isGhostCell(*cell) || !tessellation.isFiniteCell(*cell))
                     continue;
                 queryHint = *cell;
                 if(int regionId = tessellation.getUserField(*cell); regionId >= 0) {
@@ -366,7 +376,7 @@ void ConstructSurfaceModifier::AlphaShapeEngine::perform()
             }
         }
 
-        // Output auxiliary per-region information.
+        // Output "Filled" region property.
         PropertyAccess<int> filledProperty(mesh.createRegionProperty(SurfaceMeshRegions::IsFilledProperty));
         std::fill(filledProperty.begin(), filledProperty.begin() + _filledRegionCount, 1);
         std::fill(filledProperty.begin() + _filledRegionCount, filledProperty.end(), 0);
@@ -423,16 +433,25 @@ void ConstructSurfaceModifier::AlphaShapeEngine::perform()
             surfaceAreaProperty[region] += faceArea;
 
             // Only count surface area of outer surface, which is bordering an empty region.
-            // Don't count area of internal interfaces.
+            // Don't count area of internal interfaces, which have filled regions on either side.
             if(region >= _filledRegionCount)
                 addSurfaceArea(faceArea);
         }
 
         // Compute total volumes.
+        // Total volume of filled regions:
         for(SurfaceMeshAccess::region_index region = 0; region < _filledRegionCount; region++)
             _totalFilledVolume += mesh.regionVolume(region);
-        for(SurfaceMeshAccess::region_index region = _filledRegionCount; region < mesh.regionCount(); region++)
-            _totalEmptyVolume += mesh.regionVolume(region);
+        // Total volume of empty regions (all and only interior voids):
+        ConstPropertyAccess<int> regionPropertyIsExterior = mesh.regionProperty(SurfaceMeshRegions::IsExteriorProperty);
+        for(SurfaceMeshAccess::region_index region = _filledRegionCount; region < mesh.regionCount(); region++) {
+            FloatType vol = mesh.regionVolume(region);
+            _totalEmptyVolume += vol;
+            if(!regionPropertyIsExterior[region]) {
+                _totalVoidVolume += vol;
+                _voidRegionCount++;
+            }
+        }
     }
     else {
         // Compute total surface area by summing up the triangle face areas.
@@ -778,13 +797,17 @@ void ConstructSurfaceModifier::AlphaShapeEngine::applyResults(const ModifierEval
         state.addAttribute(QStringLiteral("ConstructSurfaceMesh.empty_volume"), QVariant::fromValue(_totalEmptyVolume), request.modApp());
         state.addAttribute(QStringLiteral("ConstructSurfaceMesh.empty_fraction"), QVariant::fromValue(_totalCellVolume ? (_totalEmptyVolume / _totalCellVolume) : 0), request.modApp());
         state.addAttribute(QStringLiteral("ConstructSurfaceMesh.empty_region_count"), QVariant::fromValue(_emptyRegionCount), request.modApp());
+        state.addAttribute(QStringLiteral("ConstructSurfaceMesh.void_volume"), QVariant::fromValue(_totalVoidVolume), request.modApp());
+        state.addAttribute(QStringLiteral("ConstructSurfaceMesh.void_region_count"), QVariant::fromValue(_voidRegionCount), request.modApp());
 
-        QString statusString = tr("Surface area: %1\n# filled regions (volume): %2 (%3)\n# empty regions (volume): %4 (%5)")
+        QString statusString = tr("Surface area: %1\n# filled regions (volume): %2 (%3)\n# empty regions (volume): %4 (%5)\n# void regions (volume): %6 (%7)")
                 .arg(surfaceArea())
                 .arg(_filledRegionCount)
                 .arg(_totalFilledVolume)
                 .arg(_emptyRegionCount)
-                .arg(_totalEmptyVolume);
+                .arg(_totalEmptyVolume)
+                .arg(_voidRegionCount)
+                .arg(_totalVoidVolume);
 
         state.setStatus(PipelineStatus(PipelineStatus::Success, std::move(statusString)));
     }

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -63,7 +63,7 @@ public:
 
     /// Returns the number of filled regions that have been identified.
     SurfaceMeshAccess::size_type filledRegionCount() const { return _filledRegionCount; }
-    
+
     /// Returns the number of empty regions that have been identified.
     SurfaceMeshAccess::size_type emptyRegionCount() const { return _emptyRegionCount; }
 
@@ -122,7 +122,7 @@ public:
         return !operation.isCanceled();
     }
 
-    /// Finds disconnected exterior regions and computes their volumes.
+    /// Finds disconnected empty regions and computes their volumes.
     bool formEmptyRegions(ProgressingTask& operation) {
         operation.beginProgressSubStepsWithWeights({1,1});
 
@@ -179,7 +179,7 @@ public:
                         }
                     }
 
-                    // Get mesh face adjacent to the opposite half-edge of the current half-edge. 
+                    // Get mesh face adjacent to the opposite half-edge of the current half-edge.
                     SurfaceMeshAccess::edge_index oppositeEdge = _mesh.oppositeEdge(edge);
                     OVITO_ASSERT(oppositeEdge != SurfaceMeshAccess::InvalidIndex);
                     SurfaceMeshAccess::face_index neighborFace = _mesh.adjacentFace(oppositeEdge);
@@ -207,6 +207,7 @@ public:
         std::vector<size_t> regionParents(_emptyRegionCount);
         std::vector<size_t> regionSizes(_emptyRegionCount);
         std::vector<double> regionVolumes(_emptyRegionCount, 0.0);
+        boost::dynamic_bitset<> regionIsExterior(_emptyRegionCount);
         std::iota(regionParents.begin(), regionParents.end(), (size_t)0);
         std::fill(regionSizes.begin(), regionSizes.end(), 1);
 
@@ -232,11 +233,13 @@ public:
                     regionParents[parentA] = parentB;
                     regionSizes[parentB] += regionSizes[parentA];
                     regionVolumes[parentB] += regionVolumes[parentA];
+                    regionIsExterior[parentB] |= regionIsExterior[parentA];
                 }
                 else {
                     regionParents[parentB] = parentA;
                     regionSizes[parentA] += regionSizes[parentB];
                     regionVolumes[parentA] += regionVolumes[parentB];
+                    regionIsExterior[parentA] |= regionIsExterior[parentB];
                 }
             }
         };
@@ -280,6 +283,7 @@ public:
             cellsToProcess.push_back(cell);
             _tessellation.setUserField(cell, emptyRegion);
             double regionVolume = 0;
+            bool touchesOpenBoundaries = false;
             do {
                 // Take next tetrahedron from the stack.
                 DelaunayTessellation::CellHandle currentCell = cellsToProcess.front();
@@ -292,6 +296,13 @@ public:
 
                 // Compute the overlap of the tetrahedron with the simulation box.
                 FloatType overlapVolume = calculateVolumeOverlap(currentCell, cellCrossesBoundaries);
+
+                // Detect whether the region is an exterior empty region, i.e. it is adjacent to the open boundaries of the simulation cell.
+                touchesOpenBoundaries |=
+                    (cellCrossesBoundaries[0] && !_tessellation.simCell()->pbcX()) ||
+                    (cellCrossesBoundaries[1] && !_tessellation.simCell()->pbcY()) ||
+                    (cellCrossesBoundaries[2] && !_tessellation.simCell()->pbcZ());
+
                 // Stop at cells that are completely outside of the simulation box.
                 if(overlapVolume == 0)
                     continue;
@@ -299,7 +310,7 @@ public:
 
                 // Determine whether the current spatial region is split by a periodic box boundary
                 // that is not crossed by the surface mesh. In this case, we need to merge the two empty
-                // regions that were created separately on either side of the simulation box boundary. 
+                // regions that were created separately on either side of the simulation box boundary.
                 for(size_t dim = 0; dim < 3; dim++) {
                     if(cellCrossesBoundaries[dim] && !surfaceCrossesBoundaries[dim] && simCell->hasPbc(dim)) {
                         if(splitPeriodicRegion == SurfaceMeshAccess::InvalidIndex)
@@ -347,10 +358,17 @@ public:
             while(!cellsToProcess.empty());
 
             // Add the total volume of the visited tetrahedra to the region's volume.
-            regionVolumes[findRegion(emptyRegion - _filledRegionCount)] += regionVolume;
+            auto index = findRegion(emptyRegion - _filledRegionCount);
+            regionVolumes[index] += regionVolume;
+
+            // Mark the region as exterior/interior empty space.
+            regionIsExterior[index] |= touchesOpenBoundaries;
         }
         if(operation.isCanceled())
             return false;
+
+        // Create the "Exterior" region property in the output mesh.
+        PropertyObject* regionPropertyIsExterior = _mesh.createRegionProperty(SurfaceMeshRegions::IsExteriorProperty, DataBuffer::InitializeMemory);
 
         // Remap merged regions to contiguous range.
         std::vector<SurfaceMeshAccess::region_index> regionMapping(_emptyRegionCount);
@@ -359,6 +377,7 @@ public:
             if(findRegion(i) == i) {
                 regionMapping[i] = _emptyRegionCount + _filledRegionCount;
                 _mesh.createRegion(0, regionVolumes[i]);
+                PropertyAccess<int>{regionPropertyIsExterior}[regionMapping[i]] = regionIsExterior[i];
                 _emptyRegionCount++;
             }
         }
@@ -371,9 +390,10 @@ public:
             }
         }
 
-        // Create one space-filling empty region if there is no filled region.
+        // Create a single space-filling empty region if there is no filled region at all.
         if(_emptyRegionCount == 0 && _filledRegionCount == 0) {
             _mesh.createRegion(0, simCell->volume3D());
+            PropertyAccess<int>{regionPropertyIsExterior}[_filledRegionCount] = (!simCell->pbcX() || !simCell->pbcY() || !simCell->pbcZ());
             _emptyRegionCount = 1;
         }
 
@@ -414,7 +434,7 @@ private:
                     int f = 0;
                     for(; f < 4; f++) {
                         DelaunayTessellation::CellHandle adjacentCell = _tessellation.mirrorFacet(cell, f).first;
-                        if(!_tessellation.isFiniteCell(adjacentCell)) 
+                        if(!_tessellation.isFiniteCell(adjacentCell))
                             break;
                         auto adjacentAlphaTestResult = _tessellation.alphaTest(adjacentCell, _alpha);
                         if(adjacentAlphaTestResult && !*adjacentAlphaTestResult)
@@ -679,7 +699,7 @@ private:
             for(int i = 0; i < 4; i++)
                 unwrappedVerts[i] = _tessellation.vertexPosition(_tessellation.cellVertex(cell, i));
 
-            // Check validity of tessellation. 
+            // Check validity of tessellation.
             // Delaunay edges (of filled tetrahedro) should never span more than half of the simulation box in periodic directions.
             Vector3 ad = unwrappedVerts[0] - unwrappedVerts[3];
             Vector3 bd = unwrappedVerts[1] - unwrappedVerts[3];
@@ -923,8 +943,8 @@ private:
 #endif
     }
 
-    /// Computes the volume of the given Delaunay cell that is overlapping with the simulation box.
-    FloatType calculateVolumeOverlap(DelaunayTessellation::CellHandle cell, std::array<bool,3>& outsideDir) 
+    /// Computes the volume of the given Delaunay cell that is (partially) overlapping with the simulation box.
+    FloatType calculateVolumeOverlap(DelaunayTessellation::CellHandle cell, std::array<bool,3>& outsideDir)
     {
         // Gather the positions of the four Delaunay vertices and check if they are all inside the simulation cell domain.
         bool isCompletelyInsideBox = true;
@@ -1107,7 +1127,7 @@ private:
 
     /// Number of filled regions that have been identified.
     SurfaceMeshAccess::size_type _filledRegionCount = 0;
-    
+
     /// Number of empty regions that have been identified.
     SurfaceMeshAccess::size_type _emptyRegionCount = 0;
 

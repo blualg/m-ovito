@@ -98,6 +98,7 @@ pygments_style = 'sphinx'
 #modindex_common_prefix = []
 
 # A string of reStructuredText that will be included at the beginning of every source file that is read.
+# For Angstrom-in-math fix, see https://github.com/spacetelescope/pysynphot/issues/116
 rst_prolog = """
 .. highlight:: console
 
@@ -109,6 +110,11 @@ rst_prolog = """
 .. |br| raw:: html
 
   <br/>
+
+.. only:: html
+
+  :math:`\\renewcommand\\AA{\\text{Å}}`
+
 """
 
 # If true, keep warnings as "system message" paragraphs in the built documents.

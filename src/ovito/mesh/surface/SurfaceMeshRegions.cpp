@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -48,6 +48,7 @@ PropertyPtr SurfaceMeshRegions::OOMetaClass::createStandardPropertyInternal(size
         break;
     case PhaseProperty:
     case IsFilledProperty:
+    case IsExteriorProperty:
         dataType = PropertyObject::Int;
         componentCount = 1;
         break;
@@ -114,6 +115,7 @@ void SurfaceMeshRegions::OOMetaClass::initialize()
     registerStandardProperty(SurfaceAreaProperty, tr("Surface Area"), PropertyObject::Float, emptyList);
     registerStandardProperty(IsFilledProperty, tr("Filled"), PropertyObject::Int, emptyList);
     registerStandardProperty(LatticeCorrespondenceProperty, tr("Lattice Correspondence"), PropertyObject::Float, tensorList);
+    registerStandardProperty(IsExteriorProperty, tr("Exterior"), PropertyObject::Int, emptyList);
 }
 
 /******************************************************************************
