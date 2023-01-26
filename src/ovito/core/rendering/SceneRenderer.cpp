@@ -759,7 +759,6 @@ void SceneRenderer::renderTextDefaultImplementation(const TextPrimitive& primiti
         QImage textureImage(pixelBounds.width(), pixelBounds.height(), preferredImageFormat);
         textureImage.setDevicePixelRatio(devicePixelRatio);
         textureImage.fill((QColor)primitive.backgroundColor());
-//      textureImage.fill(QColor(255,0,0,100));
         {
             QPainter painter(&textureImage);
             painter.setRenderHint(QPainter::Antialiasing);
@@ -771,7 +770,14 @@ void SceneRenderer::renderTextDefaultImplementation(const TextPrimitive& primiti
             textOffset.rx() /= devicePixelRatio;
             textOffset.ry() /= devicePixelRatio;
 
+#ifndef Q_OS_WIN
             if(resolvedTextFormat != Qt::RichText) {
+#else
+            // On Windows, our own method for painting the text outline using QPainterPath does not work correctly.
+            // Internal rounding issues in Qt's font engine lead to a mismatch between the outline and the filled text painted by QPainter::drawText().
+            // As a workaround, fall back to the more expensive QTextDocument-based method for rendering the outline, which otherwise is only used for formatted text.
+            if(resolvedTextFormat != Qt::RichText && outlineWidth == 0) {
+#endif
                 painter.setFont(primitive.font());
 
                 if(outlineWidth != 0) {
@@ -788,7 +794,10 @@ void SceneRenderer::renderTextDefaultImplementation(const TextPrimitive& primiti
                 QTextDocument doc;
                 doc.setUndoRedoEnabled(false);
                 doc.setDefaultFont(primitive.font());
-                doc.setHtml(primitive.text());
+                if(resolvedTextFormat == Qt::RichText)
+                    doc.setHtml(primitive.text());
+                else
+                    doc.setPlainText(primitive.text());
                 // Remove document margin.
                 doc.setDocumentMargin(0);
                 // Specify document alignment.
