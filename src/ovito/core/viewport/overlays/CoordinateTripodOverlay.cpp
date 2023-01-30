@@ -170,7 +170,7 @@ void CoordinateTripodOverlay::render(SceneRenderer* renderer, const QRect& logic
     auto renderSolidJoint = [&]() {
         // Look up the image primitive for the axis arrow in the cache.
         auto& [imagePrimitive, offset] = renderer->visCache().get<std::tuple<ImagePrimitive, QPointF>>(
-            RendererResourceKey<struct SolidJointImageCache, Matrix3, FloatType>{ 
+            RendererResourceKey<struct SolidJointImageCache, Matrix3, FloatType>{
                 renderer->projParams().viewMatrix.linear(),
                 lineWidth
             });
@@ -218,7 +218,7 @@ void CoordinateTripodOverlay::render(SceneRenderer* renderer, const QRect& logic
 
         // Look up the image primitive for the axis arrow in the cache.
         auto& [imagePrimitive, offset, addedMargin] = renderer->visCache().get<std::tuple<ImagePrimitive, QPointF, FloatType>>(
-            RendererResourceKey<struct ArrowAxisImageCache, TripodStyle, Vector3, FloatType, Color>{ 
+            RendererResourceKey<struct ArrowAxisImageCache, TripodStyle, Vector3, FloatType, Color>{
                 tripodStyle(),
                 dir3d,
                 lineWidth,
@@ -274,7 +274,7 @@ void CoordinateTripodOverlay::render(SceneRenderer* renderer, const QRect& logic
             textPrimitive.setUseTightBox(true);
             textPrimitive.setTextFormat(Qt::AutoText);
 
-            QRectF textRect = textPrimitive.queryBounds(renderer);
+            QRectF textRect = textPrimitive.queryLocalBounds(renderer->devicePixelRatio());
             textRect.moveTopLeft(QPointF(-textRect.width() / 2, -textRect.height() / 2));
             textRect.translate(origin + QPointF(dir2d.x(), dir2d.y()));
             if(dir2d.isZero() && orderedAxes.size() >= 2) {

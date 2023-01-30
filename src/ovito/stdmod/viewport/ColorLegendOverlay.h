@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -61,6 +61,11 @@ public:
     /// Returns a short piece information (typically a string or color) to be displayed next to the object's title in the pipeline editor.
     virtual QVariant getPipelineEditorShortInfo(Scene* scene) const override;
 
+Q_SIGNALS:
+
+    /// Signal is emited whenever the automatic label texts got recalculated during rendering.
+    void autoLabelsUpdated();
+
 protected:
 
     /// Is called when the value of a property of this object has changed.
@@ -79,10 +84,20 @@ public:
 private:
 
     /// Draws the color legend for a Color Coding modifier.
-    void drawContinuousColorMap(SceneRenderer* renderer, const QRectF& colorBarRect, FloatType legendSize, const PseudoColorMapping& mapping, const QString& propertyName);
+    void drawContinuousColorMap(SceneRenderer* renderer, const QRectF& colorBarRect, FloatType legendSize, const PseudoColorMapping& mapping);
 
-    /// Draws the color legend for a typed property.
-    void drawDiscreteColorMap(SceneRenderer* renderer, const QRectF& colorBarRect, FloatType legendSize, const PropertyObject* property);
+	/// Draws the color legend for a typed property.
+	void drawDiscreteColorMap(SceneRenderer* renderer, const QRectF& colorBarRect, FloatType legendSize, const PropertyObject* property);
+
+    // Determine the starting value and the tick spacing for a given color bar length and character size
+    [[nodiscard]] std::tuple<FloatType, FloatType> getAutomaticTickPositions(FloatType lowerLimit, FloatType upperLimit,
+                                                                             const FloatType lenColorbar,
+                                                                             const QFontMetricsF& fontMetrics,
+                                                                             const QByteArray& labelFormat,
+                                                                             const int maxIter = 50) const;
+
+    // Determine the starting value for a given tick spacing.
+    [[nodiscard]] static FloatType getUserDefinedTickPositions(FloatType lowerLimit, FloatType upperLimit, const FloatType inter);
 
     /// The corner of the viewport where the color legend is displayed.
     DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(int, alignment, setAlignment, PROPERTY_FIELD_MEMORIZE);
@@ -97,16 +112,19 @@ private:
     DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType, aspectRatio, setAspectRatio, PROPERTY_FIELD_MEMORIZE);
 
     /// Controls the horizontal offset of legend position.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(FloatType, offsetX, setOffsetX);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(FloatType, offsetX, setOffsetX)
 
     /// Controls the vertical offset of legend position.
     DECLARE_MODIFIABLE_PROPERTY_FIELD(FloatType, offsetY, setOffsetY);
 
-    /// Controls the label font.
+    /// Controls the title and label font.
     DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(QFont, font, setFont, PROPERTY_FIELD_MEMORIZE);
 
-    /// Controls the label font size.
+    /// Controls the title font size.
     DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType, fontSize, setFontSize, PROPERTY_FIELD_MEMORIZE);
+
+    /// Controls the relative (as fraction of the title font size) label font size.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType, relLabelFontSize, setRelLabelFontSize, PROPERTY_FIELD_MEMORIZE);
 
     /// The title label.
     DECLARE_MODIFIABLE_PROPERTY_FIELD(QString, title, setTitle);
@@ -118,10 +136,14 @@ private:
     DECLARE_MODIFIABLE_PROPERTY_FIELD(QString, label2, setLabel2);
 
     /// The ColorCodingModifier for which to display the legend.
-    DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<ColorCodingModifier>, modifier, setModifier, PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_NO_SUB_ANIM | PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES);
+    DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<ColorCodingModifier>, modifier, setModifier,
+                                             PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_NO_SUB_ANIM |
+                                                 PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES);
 
     /// The selected PropertyColorMapping for which to display the legend.
-    DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<PropertyColorMapping>, colorMapping, setColorMapping, PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_NO_SUB_ANIM | PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES);
+    DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<PropertyColorMapping>, colorMapping, setColorMapping,
+                                             PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_NO_SUB_ANIM |
+                                                 PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES);
 
     /// Controls the formatting of the value labels in the color legend.
     DECLARE_MODIFIABLE_PROPERTY_FIELD(QString, valueFormatString, setValueFormatString);
@@ -143,6 +165,29 @@ private:
 
     /// The border color.
     DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(Color, borderColor, setBorderColor, PROPERTY_FIELD_MEMORIZE);
+
+    // Toggle tick marks.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, ticksEnabled, setTicksEnabled, PROPERTY_FIELD_MEMORIZE);
+
+    // Controls the manual tick spacing.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(FloatType, tickSpacing, setTickSpacing);
+
+    // Controls the rotation of the title.
+    // For vertical colorbars the title can either be vertical (enabled=true) or horizontal (enabled=false).
+    // This flag has no effect for horizontal colorbars.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, titleRotationEnabled, setTitleRotationEnabled, PROPERTY_FIELD_MEMORIZE);
+
+    // Toggle background.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, backgroundEnabled, setBackgroundEnabled, PROPERTY_FIELD_MEMORIZE);
+
+    // Background color.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(Color, backgroundColor, setBackgroundColor, PROPERTY_FIELD_MEMORIZE);
+
+    /// The automatically chosen texts of the title and numeric labels. These strings are determined during rendering of the overlay and will
+    /// subsequently be displayed in the GUI panel as placeholder texts in the input fields.
+    QString _autoTitleText, _autoLabel1Text, _autoLabel2Text;
+
+    friend class ColorLegendOverlayEditor;
 };
 
 }   // End of namespace

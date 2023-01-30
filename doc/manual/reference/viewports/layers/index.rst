@@ -5,12 +5,12 @@ Viewport layers
 
 .. toctree::
    :hidden:
-   
+
    Color legend <color_legend_layer>
    Coordinate tripod <coordinate_tripod_layer>
    Python script <python_script_layer>
    Text label <text_label_layer>
-  
+
 .. image:: /images/viewport_layers/viewport_overlay_command_panel.*
    :width: 40%
    :align: right
@@ -29,12 +29,12 @@ OVITO activates the render preview mode automatically for the active viewport wh
    :width: 40%
    :align: right
 
-**Available viewport layer types**
+**Available viewport layer types:**
 
 ================================================================ ==================================
 Layer type                                                       Description
 ================================================================ ==================================
-:ref:`Color legend <viewport_layers.color_legend>`               Paints the color map legend for a :ref:`Color coding <particles.modifiers.color_coding>` modifier
+:ref:`Color legend <viewport_layers.color_legend>`               Shows a legend for a :ref:`Color coding <particles.modifiers.color_coding>` modifier or a :ref:`typed property <scene_objects.particle_types>`.
 :ref:`Coordinate tripod <viewport_layers.coordinate_tripod>`     Renders an axes tripod to indicate the view orientation
 :ref:`Python script <viewport_layers.python_script>` |ovito-pro| Calls your own Python script function to draw arbitrary graphics on top of the rendered image
 :ref:`Text label <viewport_layers.text_label>`                   Renders a user-defined text string, which can contain dynamically computed variables

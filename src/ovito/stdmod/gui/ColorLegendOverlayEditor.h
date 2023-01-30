@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -53,12 +53,17 @@ private Q_SLOTS:
     /// Is called when the user selects a new source object for the color legend.
     void colorSourceSelected();
 
+    /// Updates the placeholder texts of the label input fields to reflect the current values.
+    void updateLabelPlaceholderTexts();
+
 private:
 
     PopupUpdateComboBox* _sourcesComboBox;
+    StringParameterUI* _titlePUI;
     StringParameterUI* _label1PUI;
     StringParameterUI* _label2PUI;
     StringParameterUI* _valueFormatStringPUI;
+    BooleanGroupBoxParameterUI* _tickEnabledPUI;
 };
 
 }   // End of namespace
