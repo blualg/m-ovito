@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -21,6 +21,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/stdmod/gui/StdModGui.h>
+#include <ovito/gui/desktop/properties/BooleanGroupBoxParameterUI.h>
 #include <ovito/gui/desktop/properties/BooleanParameterUI.h>
 #include <ovito/gui/desktop/properties/StringParameterUI.h>
 #include <ovito/gui/desktop/properties/ColorParameterUI.h>
@@ -134,6 +135,13 @@ void ColorLegendOverlayEditor::createUI(const RolloutInsertionParameters& rollou
     ColorParameterUI* borderColorPUI = new ColorParameterUI(this, PROPERTY_FIELD(ColorLegendOverlay::borderColor));
     sublayout->addWidget(borderColorPUI->colorPicker(), subrow++, 1);
 
+    BooleanParameterUI* backgroundEnabledPUI = new BooleanParameterUI(this, PROPERTY_FIELD(ColorLegendOverlay::backgroundEnabled));
+    sublayout->addWidget(backgroundEnabledPUI->checkBox(), subrow, 0);
+    backgroundEnabledPUI->checkBox()->setText(tr("Background:"));
+
+    ColorParameterUI* backgroundColorPUI = new ColorParameterUI(this, PROPERTY_FIELD(ColorLegendOverlay::backgroundColor));
+    sublayout->addWidget(backgroundColorPUI->colorPicker(), subrow++, 1);
+
     QGroupBox* labelBox = new QGroupBox(tr("Text labels"));
     parentLayout->addWidget(labelBox);
     sublayout = new QGridLayout(labelBox);
@@ -143,38 +151,76 @@ void ColorLegendOverlayEditor::createUI(const RolloutInsertionParameters& rollou
     sublayout->setColumnStretch(2, 1);
     subrow = 0;
 
-    StringParameterUI* titlePUI = new StringParameterUI(this, PROPERTY_FIELD(ColorLegendOverlay::title));
-    sublayout->addWidget(new QLabel(tr("Custom title:")), subrow, 0);
-    sublayout->addWidget(titlePUI->textBox(), subrow++, 1, 1, 2);
+    _titlePUI = new StringParameterUI(this, PROPERTY_FIELD(ColorLegendOverlay::title));
+    sublayout->addWidget(new QLabel(tr("Title:")), subrow, 0);
+    sublayout->addWidget(_titlePUI->textBox(), subrow++, 1, 1, 2);
+
+    BooleanParameterUI* titleRotationEnabledPUI =
+        new BooleanParameterUI(this, PROPERTY_FIELD(ColorLegendOverlay::titleRotationEnabled));
+    sublayout->addWidget(titleRotationEnabledPUI->checkBox(), subrow++, 1, 1, 2);
+    titleRotationEnabledPUI->checkBox()->setText(tr("Rotate"));
+    titleRotationEnabledPUI->setEnabled([&orientationPUI]() { return orientationPUI->comboBox()->currentIndex() == 0; }());
+    connect(orientationPUI->comboBox(), qOverload<int>(&QComboBox::currentIndexChanged), titleRotationEnabledPUI,
+            [titleRotationEnabledPUI](int index) { titleRotationEnabledPUI->setEnabled(index == 0); });
 
     _label1PUI = new StringParameterUI(this, PROPERTY_FIELD(ColorLegendOverlay::label1));
-    sublayout->addWidget(new QLabel(tr("Custom label 1:")), subrow, 0);
+    sublayout->addWidget(new QLabel(tr("Label 1:")), subrow, 0);
     sublayout->addWidget(_label1PUI->textBox(), subrow++, 1, 1, 2);
 
     _label2PUI = new StringParameterUI(this, PROPERTY_FIELD(ColorLegendOverlay::label2));
-    sublayout->addWidget(new QLabel(tr("Custom label 2:")), subrow, 0);
+    sublayout->addWidget(new QLabel(tr("Label 2:")), subrow, 0);
     sublayout->addWidget(_label2PUI->textBox(), subrow++, 1, 1, 2);
 
     _valueFormatStringPUI = new StringParameterUI(this, PROPERTY_FIELD(ColorLegendOverlay::valueFormatString));
-    sublayout->addWidget(new QLabel(tr("Format string:")), subrow, 0);
+    sublayout->addWidget(new QLabel(tr("Number format:")), subrow, 0);
     sublayout->addWidget(_valueFormatStringPUI->textBox(), subrow++, 1, 1, 2);
 
-    FloatParameterUI* fontSizePUI = new FloatParameterUI(this, PROPERTY_FIELD(ColorLegendOverlay::fontSize));
-    sublayout->addWidget(new QLabel(tr("Text size/color:")), subrow, 0);
+	FloatParameterUI* fontSizePUI = new FloatParameterUI(this, PROPERTY_FIELD(ColorLegendOverlay::fontSize));
+    sublayout->addWidget(new QLabel(tr("Font size/color:")), subrow, 0);
     sublayout->addLayout(fontSizePUI->createFieldLayout(), subrow, 1);
 
     ColorParameterUI* textColorPUI = new ColorParameterUI(this, PROPERTY_FIELD(ColorLegendOverlay::textColor));
-    sublayout->addWidget(textColorPUI->colorPicker(), subrow++, 2);
+	sublayout->addWidget(textColorPUI->colorPicker(), subrow++, 2);
 
     BooleanParameterUI* outlineEnabledPUI = new BooleanParameterUI(this, PROPERTY_FIELD(ColorLegendOverlay::outlineEnabled));
     sublayout->addWidget(outlineEnabledPUI->checkBox(), subrow, 1);
 
-    ColorParameterUI* outlineColorPUI = new ColorParameterUI(this, PROPERTY_FIELD(ColorLegendOverlay::outlineColor));
-    sublayout->addWidget(outlineColorPUI->colorPicker(), subrow++, 2);
+	ColorParameterUI* outlineColorPUI = new ColorParameterUI(this, PROPERTY_FIELD(ColorLegendOverlay::outlineColor));
+	sublayout->addWidget(outlineColorPUI->colorPicker(), subrow++, 2);
+
+    FloatParameterUI* relLabelFontSizePUI = new FloatParameterUI(this, PROPERTY_FIELD(ColorLegendOverlay::relLabelFontSize));
+    sublayout->addWidget(relLabelFontSizePUI->label(), subrow, 0);
+    sublayout->addLayout(relLabelFontSizePUI->createFieldLayout(), subrow++, 1);
 
     FontParameterUI* labelFontPUI = new FontParameterUI(this, PROPERTY_FIELD(ColorLegendOverlay::font));
     sublayout->addWidget(labelFontPUI->label(), subrow, 0);
     sublayout->addWidget(labelFontPUI->fontPicker(), subrow++, 1, 1, 2);
+
+    // Tick Settings
+    _tickEnabledPUI = new BooleanGroupBoxParameterUI(this, PROPERTY_FIELD(ColorLegendOverlay::ticksEnabled));
+    _tickEnabledPUI->groupBox()->setTitle(tr("Tick marks"));
+    parentLayout->addWidget(_tickEnabledPUI->groupBox());
+
+    sublayout = new QGridLayout(_tickEnabledPUI->childContainer());
+    sublayout->setContentsMargins(4, 4, 4, 4);
+    sublayout->setSpacing(4);
+    sublayout->setColumnStretch(1, 1);
+    subrow = 0;
+
+    FloatParameterUI* tickSpacingPUI = new FloatParameterUI(this, PROPERTY_FIELD(ColorLegendOverlay::tickSpacing));
+    sublayout->addWidget(tickSpacingPUI->label(), subrow, 0);
+    sublayout->addLayout(tickSpacingPUI->createFieldLayout(), subrow++, 1);
+    tickSpacingPUI->spinner()->setStandardValue(0.0);
+    tickSpacingPUI->textBox()->setPlaceholderText(tr("‹auto›"));
+
+    // Update the placeholder texts of the title and label input fields whenever
+    // the color legend is repainted and the automatically determined texts are recalculated.
+    connect(this, &PropertiesEditor::contentsReplaced, this, [&, con = QMetaObject::Connection()](RefTarget* editObject) mutable {
+        disconnect(con);
+        if(ColorLegendOverlay* overlay = static_object_cast<ColorLegendOverlay>(editObject))
+            con = connect(overlay, &ColorLegendOverlay::autoLabelsUpdated, this, &ColorLegendOverlayEditor::updateLabelPlaceholderTexts);
+        updateLabelPlaceholderTexts();
+    });
 }
 
 /******************************************************************************
@@ -185,6 +231,7 @@ void ColorLegendOverlayEditor::updateSourcesList()
     _label1PUI->setEnabled(false);
     _label2PUI->setEnabled(false);
     _valueFormatStringPUI->setEnabled(false);
+    _tickEnabledPUI->setEnabled(false);
 
     _sourcesComboBox->clear();
     if(ColorLegendOverlay* overlay = static_object_cast<ColorLegendOverlay>(editObject())) {
@@ -256,6 +303,7 @@ void ColorLegendOverlayEditor::updateSourcesList()
             _label1PUI->setEnabled(true);
             _label2PUI->setEnabled(true);
             _valueFormatStringPUI->setEnabled(true);
+            _tickEnabledPUI->setEnabled(true);
         }
         else if(overlay->colorMapping()) {
             int index = _sourcesComboBox->findData(QVariant::fromValue(overlay->colorMapping()));
@@ -268,6 +316,7 @@ void ColorLegendOverlayEditor::updateSourcesList()
             _label1PUI->setEnabled(true);
             _label2PUI->setEnabled(true);
             _valueFormatStringPUI->setEnabled(true);
+            _tickEnabledPUI->setEnabled(true);
         }
         else if(overlay->sourceProperty()) {
             int index = _sourcesComboBox->findData(QVariant::fromValue(overlay->sourceProperty()));
@@ -313,6 +362,29 @@ void ColorLegendOverlayEditor::colorSourceSelected()
             }
         });
     }
+}
+
+/******************************************************************************
+* Updates the placeholder texts of the label input fields to reflect the current values.
+******************************************************************************/
+void ColorLegendOverlayEditor::updateLabelPlaceholderTexts()
+{
+    QString placeholderTitle;
+    QString placeholderLabel1;
+    QString placeholderLabel2;
+
+    if(ColorLegendOverlay* overlay = static_object_cast<ColorLegendOverlay>(editObject())) {
+        if(!overlay->_autoTitleText.isEmpty())
+            placeholderTitle = QStringLiteral("‹%1›").arg(overlay->_autoTitleText);
+        if(!overlay->_autoLabel1Text.isEmpty())
+            placeholderLabel1 = QStringLiteral("‹%1›").arg(overlay->_autoLabel1Text);
+        if(!overlay->_autoLabel2Text.isEmpty())
+            placeholderLabel2 = QStringLiteral("‹%1›").arg(overlay->_autoLabel2Text);
+    }
+
+    _titlePUI->lineEdit()->setPlaceholderText(placeholderTitle);
+    _label1PUI->lineEdit()->setPlaceholderText(placeholderLabel1);
+    _label2PUI->lineEdit()->setPlaceholderText(placeholderLabel2);
 }
 
 }   // End of namespace

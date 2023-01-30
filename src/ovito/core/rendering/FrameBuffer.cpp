@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -27,11 +27,6 @@
 #ifdef OVITO_VIDEO_OUTPUT_SUPPORT
     #include <ovito/core/utilities/io/video/VideoEncoder.h>
 #endif
-
-#include <QTextDocument>
-#include <QTextFrame> 
-#include <QTextFrameFormat> 
-#include <QAbstractTextDocumentLayout> 
 
 namespace Ovito {
 
@@ -154,135 +149,52 @@ void FrameBuffer::renderImagePrimitive(const ImagePrimitive& primitive, const QR
 }
 
 /******************************************************************************
-* Renders a text primitive directly into the framebuffer.
-******************************************************************************/
+ * Renders a text primitive directly into the framebuffer.
+ ******************************************************************************/
 void FrameBuffer::renderTextPrimitive(const TextPrimitive& primitive, const QRect& viewportRect, bool update)
 {
     if(primitive.text().isEmpty())
         return;
 
-    // Determine whether the text primitive uses rich text formatting or not.
-    Qt::TextFormat resolvedTextFormat = primitive.textFormat();
-    if(resolvedTextFormat == Qt::AutoText)
-        resolvedTextFormat = Qt::mightBeRichText(primitive.text()) ? Qt::RichText : Qt::PlainText;
-
     QPainter painter(&image());
     painter.setRenderHint(QPainter::Antialiasing);
     painter.setRenderHint(QPainter::TextAntialiasing);
-    painter.setFont(primitive.font());
     if(!viewportRect.isNull() && viewportRect != image().rect())
         painter.setClipRect(viewportRect);
 
-    QRectF textBounds;
-#ifndef Q_OS_WIN
-    if(resolvedTextFormat != Qt::RichText) {
-#else
-    // On Windows, our own method for painting the text outline using QPainterPath does not work correctly.
-    // Internal rounding issues in Qt's font engine lead to a mismatch between the outline and the filled text painted by QPainter::drawText().
-    // As a workaround, fall back to the more expensive QTextDocument-based method for rendering the outline, which otherwise is only used for formatted text.
-    bool hasOutline = (primitive.outlineColor().a() > 0.0 && primitive.outlineWidth() != 0);
-    if(resolvedTextFormat != Qt::RichText && !hasOutline) {
-#endif
-        if(!primitive.useTightBox()) {
-            textBounds = QFontMetricsF(primitive.font()).boundingRect(primitive.text());
-        }
-        else {
-            QPainterPath textPath;
-            textPath.addText(0, 0, primitive.font(), primitive.text());
-            textBounds = textPath.boundingRect();
-        }
-    }
-    else {
-        QTextDocument doc;
-        doc.setUndoRedoEnabled(false);
-        if(resolvedTextFormat == Qt::RichText)
-            doc.setHtml(primitive.text());
-        else
-            doc.setPlainText(primitive.text());
-        doc.setDefaultFont(primitive.font());
-        doc.setDocumentMargin(0);
-        QTextOption opt = doc.defaultTextOption();
-        opt.setAlignment(Qt::Alignment(primitive.alignment()));
-        doc.setDefaultTextOption(opt);
-        textBounds = QRectF(QPointF(0,0), doc.size());      
-    }
+    Qt::TextFormat resolvedTextFormat = primitive.resolvedTextFormat();
 
-    QPointF offset(-textBounds.left(), -textBounds.top());
-    if(primitive.alignment() & Qt::AlignLeft) offset.rx() += primitive.position().x();
-    else if(primitive.alignment() & Qt::AlignRight) offset.rx() += primitive.position().x() - textBounds.width();
-    else if(primitive.alignment() & Qt::AlignHCenter) offset.rx() += primitive.position().x() - textBounds.width() / 2.0;
-    
-    if(primitive.alignment() & Qt::AlignTop) offset.ry() += primitive.position().y();
-    else if(primitive.alignment() & Qt::AlignBottom) offset.ry() += primitive.position().y() - textBounds.height();
-    else if(primitive.alignment() & Qt::AlignVCenter) offset.ry() += primitive.position().y() - textBounds.height() / 2.0;
+    // Measure text size in local space (does NOT include alignment/offset/rotation/outline).
+    // Bounds are calculated as if text was drawn at base coordinates (0,0).
+    QRectF textBounds = primitive.queryLocalBounds(1.0, resolvedTextFormat);
 
-    qreal outlineWidth = std::max(0.0, (primitive.outlineColor().a() > 0.0) ? (qreal)primitive.outlineWidth() : 0.0);
+    painter.translate(primitive.position().x(), primitive.position().y());
+    if(primitive.rotation() != 0)
+        painter.rotate(qRadiansToDegrees(primitive.rotation()));
 
-    QRectF updateRect(textBounds.left() + offset.x(), textBounds.top() + offset.y(), textBounds.width(), textBounds.height());
-    if(outlineWidth != 0) {
-        updateRect.adjust(-outlineWidth, -outlineWidth, outlineWidth, outlineWidth);
+    // Start with top-left alignment.
+    QPointF textOffset(-textBounds.left(), -textBounds.top());
+
+    // Apply horizontal alignment.
+    if(primitive.alignment() & Qt::AlignRight)
+        textOffset.rx() += -textBounds.width();
+    else if(primitive.alignment() & Qt::AlignHCenter)
+        textOffset.rx() += -textBounds.width() / 2;
+
+    // Apply vertical alignment.
+    if(primitive.alignment() & Qt::AlignBottom)
+        textOffset.ry() += -textBounds.height();
+    else if(primitive.alignment() & Qt::AlignVCenter)
+        textOffset.ry() += -textBounds.height() / 2;
+
+    painter.translate(textOffset);
+
+    primitive.draw(painter, resolvedTextFormat, textBounds.width());
+
+    if(update) {
+        QRectF boundingBox = primitive.computeBoundingBox(textBounds.size(), 1.0);
+        this->update(boundingBox.toAlignedRect());
     }
-    if(primitive.backgroundColor().a() > 0) {
-        painter.fillRect(updateRect, (QColor)primitive.backgroundColor());
-    }
-
-#ifndef Q_OS_WIN
-    if(resolvedTextFormat != Qt::RichText) {
-#else
-    // On Windows, our own method for painting the text outline using QPainterPath does not work correctly.
-    // Internal rounding issues in Qt's font engine lead to a mismatch between the outline and the filled text painted by QPainter::drawText().
-    // As a workaround, fall back to the more expensive QTextDocument-based method for rendering the outline, which otherwise is only used for formatted text.
-    if(resolvedTextFormat != Qt::RichText && outlineWidth == 0) {
-#endif
-        if(outlineWidth != 0) {
-            QPainterPath textPath;
-            textPath.addText(offset, primitive.font(), primitive.text());
-            painter.setPen(QPen(QBrush(primitive.outlineColor()), outlineWidth));
-            painter.drawPath(textPath);
-        }
-
-        painter.setPen((QColor)primitive.color());
-        painter.drawText(offset, primitive.text());
-    }
-    else {
-        QTextDocument doc;
-        doc.setUndoRedoEnabled(false);
-        doc.setDefaultFont(primitive.font());
-        if(resolvedTextFormat == Qt::RichText)
-            doc.setHtml(primitive.text());
-        else
-            doc.setPlainText(primitive.text());
-        // Remove document margin.
-        doc.setDocumentMargin(0);
-        // Specify document alignment.
-        QTextOption opt = doc.defaultTextOption();
-        opt.setAlignment(Qt::Alignment(primitive.alignment()));
-        doc.setDefaultTextOption(opt);
-        doc.setTextWidth(textBounds.width());
-        // When rendering outlined text is requested, apply the outlined text style to the entire document.
-        if(outlineWidth != 0) {
-            QTextCursor cursor(&doc);
-            cursor.select(QTextCursor::Document);
-            QTextCharFormat charFormat;
-            charFormat.setTextOutline(QPen(QBrush(primitive.outlineColor()), primitive.outlineWidth()));
-            doc.setUndoRedoEnabled(true);
-            cursor.mergeCharFormat(charFormat);
-        }
-        QAbstractTextDocumentLayout::PaintContext ctx;
-        // Specify default text color:
-        ctx.palette.setColor(QPalette::Text, (QColor)primitive.color());
-        painter.translate(offset);
-        doc.documentLayout()->draw(&painter, ctx);
-        // When rendering outlined text, paint the text again on top without the outline 
-        // in order to make the outline only go outward, not inward into the letters.
-        if(outlineWidth != 0) {
-            doc.undo();
-            doc.documentLayout()->draw(&painter, ctx);
-        }       
-    }
-
-    if(update)
-        this->update(updateRect.toAlignedRect());
 }
 
 /******************************************************************************
@@ -291,8 +203,7 @@ void FrameBuffer::renderTextPrimitive(const TextPrimitive& primitive, const QRec
 bool FrameBuffer::autoCrop()
 {
     QImage image = this->image().convertToFormat(QImage::Format_ARGB32);
-    if(image.width() <= 0 || image.height() <= 0) 
-        return false;
+    if(image.width() <= 0 || image.height() <= 0) return false;
 
     auto determineCropRect = [&image](QRgb backgroundColor) -> QRect {
         int x1 = 0, y1 = 0;

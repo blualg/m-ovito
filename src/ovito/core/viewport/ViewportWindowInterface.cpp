@@ -44,7 +44,7 @@ ViewportWindowInterface::Registry& ViewportWindowInterface::registry()
 /******************************************************************************
 * Constructor which associates this window with the given viewport instance.
 ******************************************************************************/
-ViewportWindowInterface::ViewportWindowInterface(UserInterface& userInterface, Viewport* vp) : 
+ViewportWindowInterface::ViewportWindowInterface(UserInterface& userInterface, Viewport* vp) :
     _userInterface(userInterface),
     _viewport(vp),
     _scenePreparation(OORef<ScenePreparation>::create(userInterface, vp->scene()))
@@ -69,10 +69,10 @@ ViewportWindowInterface::~ViewportWindowInterface()
 /******************************************************************************
 * Makes the viewport window delete itself.
 ******************************************************************************/
-void ViewportWindowInterface::destroyViewportWindow() 
-{ 
-    OVITO_ASSERT(_viewport != nullptr); 
-    _viewport->setWindow(nullptr); 
+void ViewportWindowInterface::destroyViewportWindow()
+{
+    OVITO_ASSERT(_viewport != nullptr);
+    _viewport->setWindow(nullptr);
     _viewport = nullptr;
     scenePreparation().setScene(nullptr);
 }
@@ -178,7 +178,7 @@ void ViewportWindowInterface::renderRenderFrame(SceneRenderer* renderer)
     // Fill area around frame rectangle with semi-transparent color.
     ImagePrimitive primitive;
     primitive.setImage(image);
-    
+
     // Render four rectangles, which form the frame.
     primitive.setRectViewport(renderer, Box2({-1,-1}, {frameRect.minc.x(),1}));
     renderer->renderImage(primitive);
@@ -224,10 +224,9 @@ QRectF ViewportWindowInterface::renderViewportTitle(SceneRenderer* renderer, boo
     renderer->renderText(primitive);
 
     // Compute the area covered by the caption text.
-    QRectF textBounds = primitive.queryBounds(renderer);
+    QRectF textBounds = primitive.queryLocalBounds(1.0);
     textBounds.moveTo(QPointF(2,2));
-    textBounds.setWidth(std::max(textBounds.width() / renderer->devicePixelRatio(), 30.0));
-    textBounds.setHeight(textBounds.height() / renderer->devicePixelRatio());
+    textBounds.setWidth(std::max(textBounds.width(), 30.0));
     textBounds.adjust(-2, -2, 2, 2);
     return textBounds;
 }
