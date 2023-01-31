@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -88,7 +88,7 @@ void DataSetContainer::referenceReplaced(const PropertyFieldDescriptor* field, R
         if(currentSet()) {
             Q_EMIT renderSettingsReplaced(currentSet()->renderSettings());
             Q_EMIT filePathChanged(currentSet()->filePath());
-            onViewportConfigReplaced(currentSet()->viewportConfig());           
+            onViewportConfigReplaced(currentSet()->viewportConfig());
         }
         else {
             onViewportConfigReplaced(nullptr);
@@ -204,9 +204,9 @@ DataSet* DataSetContainer::newDataset()
 }
 
 /******************************************************************************
-* Loads the given session state file and makes it the current dataset.
+* Loads the given session state file.
 ******************************************************************************/
-void DataSetContainer::loadDataset(const QString& filename)
+OORef<DataSet> DataSetContainer::loadDataset(const QString& filename)
 {
     // Make path absolute.
     QString absoluteFilepath = QFileInfo(filename).absoluteFilePath();
@@ -226,10 +226,9 @@ void DataSetContainer::loadDataset(const QString& filename)
 
     if(!dataSet)
         throw Exception(tr("Session state file '%1' does not contain a dataset.").arg(absoluteFilepath));
-        
-    OVITO_CHECK_OBJECT_POINTER(dataSet);
+
     dataSet->setFilePath(absoluteFilepath);
-    setCurrentSet(dataSet);
+    return dataSet;
 }
 
 /******************************************************************************

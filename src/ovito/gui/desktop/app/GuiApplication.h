@@ -52,7 +52,7 @@ public:
 
     /// Handler function for exceptions.
     virtual void reportError(const Exception& exception) override;
-    
+
     /// Returns whether the application currently uses a dark UI theme.
     bool usingDarkTheme() const;
 
@@ -86,9 +86,9 @@ private:
 
     /// The global dataset container (only used in command line mode).
     DataSetContainer _globalDatasetContainer;
-    
+
 #ifdef Q_OS_LINUX
-    /// For cahing the results of detectDarkTheme().
+    /// Cached results of detectDarkTheme().
     mutable std::optional<bool> _usingDarkTheme;
 #endif
 };

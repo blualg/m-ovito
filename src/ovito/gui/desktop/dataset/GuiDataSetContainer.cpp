@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -26,6 +26,7 @@
 #include <ovito/core/dataset/animation/AnimationSettings.h>
 #include <ovito/core/dataset/scene/Scene.h>
 #include <ovito/core/dataset/scene/SelectionSet.h>
+#include <ovito/core/dataset/io/FileSource.h>
 #include <ovito/core/viewport/ViewportConfiguration.h>
 #include <ovito/core/rendering/RenderSettings.h>
 #include <ovito/core/utilities/io/ObjectSaveStream.h>
@@ -45,6 +46,82 @@ IMPLEMENT_OVITO_CLASS(GuiDataSetContainer);
 ******************************************************************************/
 GuiDataSetContainer::GuiDataSetContainer(TaskManager& taskManager, MainWindow& mainWindow) : DataSetContainer(taskManager, mainWindow), _mainWindow(mainWindow)
 {
+}
+
+/******************************************************************************
+* Loads the given session state file.
+******************************************************************************/
+OORef<DataSet> GuiDataSetContainer::loadDataset(const QString& filename)
+{
+    // Load dataset from file.
+    OORef<DataSet> dataset = DataSetContainer::loadDataset(filename);
+    if(!dataset)
+        return {};
+
+#ifndef OVITO_BUILD_PROFESSIONAL
+    // Since version 3.8.0, OVITO Basic no longer supports multiple pipelines in the same scene.
+    // Check if the state file contains more than one pipeline and inform user by displaying a dialog window.
+    // Let the user pick one of the pipelines to be loaded and remove all others from the scene.
+    if(ViewportConfiguration* viewportConfig = dataset->viewportConfig()) {
+        if(Viewport* vp = viewportConfig->activeViewport()) {
+            if(Scene* scene = vp->scene()) {
+                std::vector<OORef<PipelineSceneNode>> fileSourcePipelines;
+                QStringList itemsList;
+                scene->visitObjectNodes([&](PipelineSceneNode* pipeline) {
+                    if(dynamic_object_cast<FileSource>(pipeline->pipelineSource())) {
+                        fileSourcePipelines.emplace_back(pipeline);
+                        itemsList.push_back(pipeline->objectTitle());
+                    }
+                    return true;
+                });
+                if(fileSourcePipelines.size() >= 2) {
+                    QDialog dlg(&mainWindow());
+                    dlg.setWindowTitle(tr("Multiple pipelines found"));
+                    QVBoxLayout* mainLayout = new QVBoxLayout(&dlg);
+                    mainLayout->setSpacing(2);
+                    QLabel* label = new QLabel(tr(
+                        "<html><p>The OVITO session file contains %1 pipelines.</p>"
+                        "<p><i>OVITO Pro</i> is required since version 3.8.0 to work with "
+                        "multiple pipelines in the same scene. Please pick one of the pipelines "
+                        "below to load only that pipeline in <i>OVITO Basic</i> now - or open the session "
+                        "file in <i>OVITO Pro</i> to load all pipelines together.</p></html>"
+                    ).arg(fileSourcePipelines.size()));
+                    label->setWordWrap(true);
+                    label->setMinimumWidth(440);
+                    mainLayout->addWidget(label);
+                    mainLayout->addSpacing(6);
+                    mainLayout->addWidget(new QLabel(tr("Available pipelines:")));
+                    QListWidget* listWidget = new QListWidget();
+                    mainLayout->addWidget(listWidget);
+                    listWidget->addItems(itemsList);
+                    listWidget->setCurrentRow(0);
+                    QDialogButtonBox* buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, Qt::Horizontal, &dlg);
+                    connect(buttonBox, &QDialogButtonBox::accepted, &dlg, &QDialog::accept);
+                    connect(buttonBox, &QDialogButtonBox::rejected, &dlg, &QDialog::reject);
+                    connect(listWidget, &QListWidget::itemSelectionChanged, &dlg, [&]() { buttonBox->button(QDialogButtonBox::Ok)->setEnabled(!listWidget->selectedItems().empty()); });
+                    mainLayout->addWidget(buttonBox);
+                    if(dlg.exec() == QDialog::Accepted) {
+                        QList<QListWidgetItem*> selectedItems = listWidget->selectedItems();
+                        if(selectedItems.empty())
+                            return {};
+                        int keepIndex = listWidget->row(selectedItems.front());
+                        scene->selection()->setNode(fileSourcePipelines[keepIndex]);
+                        for(const auto& pipeline : fileSourcePipelines) {
+                            if(pipeline != fileSourcePipelines[keepIndex]) {
+                                pipeline->deleteNode();
+                            }
+                        }
+                    }
+                    else {
+                        return {}; // Abort loading of session state file.
+                    }
+                }
+            }
+        }
+    }
+#endif
+
+    return dataset;
 }
 
 /******************************************************************************
@@ -290,7 +367,7 @@ bool GuiDataSetContainer::importFiles(const std::vector<QUrl>& urls, const FileI
         if(importMode == FileImporter::ResetScene) {
             mainWindow().undoStack()->clear();
             currentSet()->setFilePath(QString());
-        } 
+        }
         return true;
     }
 

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -50,6 +50,9 @@ public:
     /// \return true if the file(s) were successfully imported; false if operation has been canceled by the user.
     /// \throw Exception on error.
     bool importFiles(const std::vector<QUrl>& urls, const FileImporterClass* importerType = nullptr, const QString& importerFormat = {});
+
+    /// Loads the given session state file.
+    virtual OORef<DataSet> loadDataset(const QString& filename) override;
 
     /// \brief Save the current dataset.
     /// \return \c true, if the dataset has been saved; \c false if the operation has been canceled by the user.

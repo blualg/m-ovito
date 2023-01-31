@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -295,7 +295,9 @@ void GuiApplication::postStartupInitialization()
         if(startupFilename.endsWith(".ovito", Qt::CaseInsensitive)) {
             try {
                 // TODO: Create sub-task for this operation.
-                datasetContainer.loadDataset(startupFilename);
+                if(OORef<DataSet> dataset = datasetContainer.loadDataset(startupFilename)) {
+                    datasetContainer.setCurrentSet(std::move(dataset));
+                }
             }
             catch(const Exception& ex) {
                 userInterface.reportError(ex);
@@ -310,8 +312,10 @@ void GuiApplication::postStartupInitialization()
         if(!defaultsFilePath.isEmpty()) {
             try {
                 // TODO: Create sub-task for this operation.
-                datasetContainer.loadDataset(defaultsFilePath);
-                datasetContainer.currentSet()->setFilePath({});
+                if(OORef<DataSet> dataset = datasetContainer.loadDataset(defaultsFilePath)) {
+                    dataset->setFilePath({});
+                    datasetContainer.setCurrentSet(std::move(dataset));
+                }
             }
             catch(Exception& ex) {
                 ex.prependGeneralMessage(tr("An error occured while loading the user's default session state from the file: %1").arg(defaultsFilePath));
@@ -385,7 +389,9 @@ bool GuiApplication::eventFilter(QObject* watched, QEvent* event)
         if(mainWindow) {
             mainWindow->handleExceptions([&] {
                 if(openEvent->file().endsWith(".ovito", Qt::CaseInsensitive)) {
-                    mainWindow->datasetContainer().loadDataset(openEvent->file()); // TODO: Create sub-task for this operation.
+                    if(OORef<DataSet> dataset = mainWindow->datasetContainer().loadDataset(openEvent->file())) { // TODO: Create sub-task for this operation.
+                        mainWindow->datasetContainer().setCurrentSet(std::move(dataset));
+                    }
                 }
                 else {
                     mainWindow->datasetContainer().importFiles({openEvent->url()}); // TODO: Create sub-task for this operation.
@@ -488,6 +494,5 @@ bool GuiApplication::detectDarkTheme() const
     return false;
 #endif
 }
-
 
 }   // End of namespace

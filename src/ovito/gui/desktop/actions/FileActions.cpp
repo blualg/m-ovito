@@ -143,8 +143,10 @@ void WidgetActionManager::on_FileNewWindow_triggered()
         QString defaultsFilePath = QStandardPaths::locate(QStandardPaths::AppDataLocation, QStringLiteral("defaults.ovito"));
         if(!defaultsFilePath.isEmpty()) {
             try {
-                mainWin->datasetContainer().loadDataset(defaultsFilePath);
-                mainWin->datasetContainer().currentSet()->setFilePath({});
+                if(OORef<DataSet> dataset = mainWin->datasetContainer().loadDataset(defaultsFilePath)) {
+                    dataset->setFilePath({});
+                    mainWin->datasetContainer().setCurrentSet(std::move(dataset));
+                }
             }
             catch(Exception& ex) {
                 ex.prependGeneralMessage(tr("An error occured while loading the user's default session state from the file: %1").arg(defaultsFilePath));
@@ -187,7 +189,8 @@ void WidgetActionManager::on_FileOpen_triggered()
         // Remember directory for the next time...
         settings.setValue("last_directory", QFileInfo(filename).absolutePath());
 
-        mainWindow().datasetContainer().loadDataset(filename);
+        if(OORef<DataSet> dataset = mainWindow().datasetContainer().loadDataset(filename))
+            mainWindow().datasetContainer().setCurrentSet(std::move(dataset));
     });
 }
 
@@ -247,8 +250,11 @@ void WidgetActionManager::on_FileImport_triggered()
 
         // If user accidentally tries to import a .ovito session state file, redirect to the corresponding session loading function.
         if(!importerClass && urlsToImport.size() == 1 && urlsToImport.front().fileName().endsWith(QStringLiteral(".ovito"))) {
-            if(mainWindow().datasetContainer().askForSaveChanges())
-                mainWindow().datasetContainer().loadDataset(urlsToImport.front().toLocalFile());
+            if(mainWindow().datasetContainer().askForSaveChanges()) {
+                if(OORef<DataSet> dataset = mainWindow().datasetContainer().loadDataset(urlsToImport.front().toLocalFile())) {
+                    mainWindow().datasetContainer().setCurrentSet(std::move(dataset));
+                }
+            }
             return;
         }
 

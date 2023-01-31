@@ -59,8 +59,8 @@ public:
     /// Creates an empty dataset and makes it the current dataset.
     DataSet* newDataset();
 
-    /// Loads the given session state file and makes it the current dataset.
-    void loadDataset(const QString& filename);
+    /// Loads the given session state file.
+    virtual OORef<DataSet> loadDataset(const QString& filename);
 
     /// Returns the currently active scene.
     Scene* activeScene() const { return _activeScene; }

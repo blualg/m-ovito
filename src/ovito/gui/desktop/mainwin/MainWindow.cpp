@@ -553,7 +553,9 @@ void MainWindow::dropEvent(QDropEvent* event)
             if(url.fileName().endsWith(".ovito", Qt::CaseInsensitive)) {
                 if(url.isLocalFile()) {
                     if(datasetContainer().askForSaveChanges()) {
-                        datasetContainer().loadDataset(url.toLocalFile());
+                        if(OORef<DataSet> dataset = datasetContainer().loadDataset(url.toLocalFile())) {
+                            datasetContainer().setCurrentSet(std::move(dataset));
+                        }
                     }
                     importUrls.clear();
                     return;
