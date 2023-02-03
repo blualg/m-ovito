@@ -46,7 +46,7 @@ bool LAMMPSTextDumpImporter::OOMetaClass::checkFileFormat(const FileHandle& file
     // Read first line.
     stream.readLine(15);
 
-    // Dump files written by LAMMPS start with one of the following keywords: TIMESTEP, UNITS or TIME.  
+    // Dump files written by LAMMPS start with one of the following keywords: TIMESTEP, UNITS or TIME.
     if(!stream.lineStartsWith("ITEM: TIMESTEP") && !stream.lineStartsWith("ITEM: UNITS") && !stream.lineStartsWith("ITEM: TIME"))
         return false;
 
@@ -283,7 +283,7 @@ void LAMMPSTextDumpImporter::FrameLoader::loadFile()
                 // Determine if particle coordinates are given in reduced form and need to be rescaled to absolute form.
                 bool reducedCoordinates = false;
                 if(!fileColumnNames.empty()) {
-                    // If the dump file contains column names, then we can use them to detect 
+                    // If the dump file contains column names, then we can use them to detect
                     // the type of particle coordinates. Reduced coordinates are found in columns
                     // "xs, ys, zs" or "xsu, ysu, zsu".
                     for(int i = 0; i < (int)columnMapping.size() && i < fileColumnNames.size(); i++) {
@@ -292,9 +292,9 @@ void LAMMPSTextDumpImporter::FrameLoader::loadFile()
                                     fileColumnNames[i] == "xs" || fileColumnNames[i] == "xsu" ||
                                     fileColumnNames[i] == "ys" || fileColumnNames[i] == "ysu" ||
                                     fileColumnNames[i] == "zs" || fileColumnNames[i] == "zsu");
-                            // break; Note: Do not stop the loop here, because the 'Position' particle 
-                            // property may be associated with several file columns, and it's the last column that 
-                            // ends up getting imported into OVITO. 
+                            // break; Note: Do not stop the loop here, because the 'Position' particle
+                            // property may be associated with several file columns, and it's the last column that
+                            // ends up getting imported into OVITO.
                         }
                     }
                 }
@@ -337,7 +337,7 @@ void LAMMPSTextDumpImporter::FrameLoader::loadFile()
 
                     // Same for the "c_diameter[1..3]" columns or "shapex/shapey/shapez" columns being mapped to the "Aspherical Shape" property.
                     for(int i = 0; i < (int)columnMapping.size() && i < fileColumnNames.size(); i++) {
-                        if(columnMapping[i].property.type() == ParticlesObject::AsphericalShapeProperty && 
+                        if(columnMapping[i].property.type() == ParticlesObject::AsphericalShapeProperty &&
                             (fileColumnNames[i] == "c_diameter[1]" || fileColumnNames[i] == "c_diameter[2]" || fileColumnNames[i] == "c_diameter[3]" ||
                              fileColumnNames[i] == "shapex" || fileColumnNames[i] == "shapey" || fileColumnNames[i] == "shapez")) {
                             if(PropertyAccess<Vector3> shapeProperty = particles()->getMutableProperty(ParticlesObject::AsphericalShapeProperty)) {
@@ -352,9 +352,11 @@ void LAMMPSTextDumpImporter::FrameLoader::loadFile()
                     }
                 }
 
-                // Detect dimensionality of system. It's a 2D system if no file column has been mapped to the Position.Z particle property.
+                // Detect dimensionality of system. It's a 2D system if no file column has been mapped to the Position.Z particle property (but Position.X/Y are present).
                 if(std::none_of(columnMapping.begin(), columnMapping.end(), [](const InputColumnInfo& column) {
                     return column.property.type() == ParticlesObject::PositionProperty && column.property.vectorComponent() == 2;
+                }) && std::any_of(columnMapping.begin(), columnMapping.end(), [](const InputColumnInfo& column) {
+                    return column.property.type() == ParticlesObject::PositionProperty && column.property.vectorComponent() != 2;
                 })) {
                     simulationCell()->setIs2D(true);
                 }
@@ -512,7 +514,7 @@ Future<ParticleInputColumnMapping> LAMMPSTextDumpImporter::inspectFileHeader(con
     // Retrieve file.
     return Application::instance()->fileManager().fetchUrl(frame.sourceFile)
         .then([](const FileHandle& fileHandle) {
-            
+
             // Start parsing the file up to the specification of the file columns.
             CompressedTextReader stream(fileHandle);
 

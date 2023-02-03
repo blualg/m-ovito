@@ -29,10 +29,10 @@
 namespace Ovito::StdObj {
 
 /******************************************************************************
- * Maps a file column to a standard property unless there is already another 
+ * Maps a file column to a standard property unless there is already another
  * column mapped to the same property.
  *****************************************************************************/
-bool InputColumnMapping::mapStandardColumn(int column, int typeId, int vectorComponent) 
+bool InputColumnMapping::mapStandardColumn(int column, int typeId, int vectorComponent)
 {
     OVITO_ASSERT(column >= 0 && column < this->size());
     OVITO_ASSERT(typeId != PropertyObject::GenericUserProperty);
@@ -50,10 +50,10 @@ bool InputColumnMapping::mapStandardColumn(int column, int typeId, int vectorCom
 }
 
 /******************************************************************************
- * Maps this column to a user-defined property unless there is already another 
+ * Maps this column to a user-defined property unless there is already another
  * column mapped to the same property.
  *****************************************************************************/
-bool InputColumnMapping::mapCustomColumn(int column, const QString& propertyName, int dataType, int vectorComponent) 
+bool InputColumnMapping::mapCustomColumn(int column, const QString& propertyName, int dataType, int vectorComponent)
 {
     OVITO_ASSERT(column >= 0 && column < this->size());
     OVITO_ASSERT(containerClass());
@@ -165,7 +165,7 @@ void InputColumnMapping::validate() const
 {
     OVITO_ASSERT(containerClass());
 
-    // Let the property container class perform custom checks.
+    // Let the property container class perform specific checks.
     containerClass()->validateInputColumnMapping(*this);
 
     // Check for conflicting mappings, i.e. several file columns being mapped to the same particle property.
@@ -246,7 +246,7 @@ InputColumnReader::InputColumnReader(StandardFrameLoader& frameLoader, const Inp
             rec.numericElementTypes = true;
             rec.dataType = rec.property->dataType();
             rec.stride = rec.property->stride();
-            
+
             // Create a property memory accessor, but only one per property if multiple columns are mapped to that property.
             auto sharedTargetProperty = std::find_if(_properties.begin(), _properties.end(), [&](const TargetPropertyRecord& other) { return other.property == property; });
             if(sharedTargetProperty == _properties.end()) {
@@ -368,7 +368,7 @@ void InputColumnReader::assignTypeNamesFromSeparateColumns()
 
                     // Log in type name assigned by the file reader as default value for the element type.
                     // This is needed for the Python code generator to detect manual changes subsequently made by the user.
-                    elementType->freezeInitialParameterValues({SHADOW_PROPERTY_FIELD(ElementType::name)});                  
+                    elementType->freezeInitialParameterValues({SHADOW_PROPERTY_FIELD(ElementType::name)});
                 }
             }
         }

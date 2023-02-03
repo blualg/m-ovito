@@ -43,7 +43,7 @@ class OVITO_PARTICLES_EXPORT ParticlesObject : public PropertyContainer
     class OVITO_PARTICLES_EXPORT OOMetaClass : public PropertyContainerClass
     {
     public:
-    
+
         /// Inherit constructor from base class.
         using PropertyContainerClass::PropertyContainerClass;
 
@@ -65,10 +65,6 @@ class OVITO_PARTICLES_EXPORT ParticlesObject : public PropertyContainer
 
         /// Generates a human-readable string representation of the data object reference.
         virtual QString formatDataObjectPath(const ConstDataObjectPath& path) const override { return this->displayName(); }
-
-        /// This method is called by InputColumnMapping::validate() to let the container class perform custom checks
-        /// on the mapping of the file data columns to internal properties.
-        virtual void validateInputColumnMapping(const InputColumnMapping& mapping) const override;
 
         /// Returns a default color for an ElementType given its numeric type ID.
         virtual Color getElementTypeDefaultColor(const PropertyReference& property, const QString& typeName, int numericTypeId, bool loadUserDefaults) const override;
@@ -136,7 +132,7 @@ public:
 
     /// \brief Constructor.
     Q_INVOKABLE ParticlesObject(ObjectCreationParams params);
-    
+
     /// Deletes the particles for which bits are set in the given bit-mask.
     /// Returns the number of deleted particles.
     virtual size_t deleteElements(const boost::dynamic_bitset<>& mask) override;
@@ -188,7 +184,7 @@ public:
 
     /// Returns the base point and vector information for visualizing a vector property from this container using a VectorVis element.
     virtual std::tuple<ConstDataBufferPtr, ConstDataBufferPtr> getVectorVisData(const ConstDataObjectPath& path, const PipelineFlowState& state, MixedKeyCache& visCache) const override {
-        return { getProperty(PositionProperty), path.lastAs<DataBuffer>() }; 
+        return { getProperty(PositionProperty), path.lastAs<DataBuffer>() };
     }
 
 private:

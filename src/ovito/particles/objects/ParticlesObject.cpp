@@ -33,8 +33,8 @@
 #include "ParticleBondMap.h"
 
 #if QT_FEATURE_static > 0
-    // This no-op helper function is called by the QML/Gui module 
-    // to make sure the Particles plugin and its dependencies 
+    // This no-op helper function is called by the QML/Gui module
+    // to make sure the Particles plugin and its dependencies
     // get linked into the static WASM executable and are not eliminated
     // by the linker.
     void ovito_static_plugin_Particles() {}
@@ -334,7 +334,7 @@ size_t ParticlesObject::deleteElements(const boost::dynamic_bitset<>& mask)
             // Delete the marked impropers.
             mutableImpropers->deleteElements(deletedImpropersMask);
         }
-    }   
+    }
 
     return deleteCount;
 }
@@ -347,7 +347,7 @@ std::vector<size_t> ParticlesObject::sortById()
 {
     std::vector<size_t> invertedPermutation = PropertyContainer::sortById();
 
-    // If the storage order of particles has changed, we need to update other topological 
+    // If the storage order of particles has changed, we need to update other topological
     // structures that refer to the particle indices.
     if(!invertedPermutation.empty()) {
 
@@ -669,7 +669,7 @@ PropertyPtr ParticlesObject::OOMetaClass::createStandardPropertyInternal(size_t 
                         });
                         flags.setFlag(DataBuffer::InitializeMemory, false);
                     }
-                }               
+                }
             }
         }
         else if(type == VectorColorProperty) {
@@ -925,18 +925,6 @@ boost::dynamic_bitset<> ParticlesObject::OOMetaClass::viewportFenceSelection(con
 
     // Give up.
     return PropertyContainerClass::viewportFenceSelection(fence, objectPath, node, projectionTM);
-}
-
-/******************************************************************************
- * This method is called by InputColumnMapping::validate() to let the container 
- * class perform custom checks on the mapping of the file data columns to 
- * internal properties.
- *****************************************************************************/
-void ParticlesObject::OOMetaClass::validateInputColumnMapping(const InputColumnMapping& mapping) const
-{
-    // Make sure that at least the particle positions are read from the input file.
-    if(std::none_of(mapping.begin(), mapping.end(), [](const InputColumnInfo& column) { return column.property.type() == ParticlesObject::PositionProperty; }))
-        throw Exception(ParticlesObject::tr("Invalid file column mapping: At least one file column must be mapped to the '%1' particle property.").arg(standardPropertyName(ParticlesObject::PositionProperty)));
 }
 
 }   // End of namespace

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -204,7 +204,7 @@ Box3 ParticlesVis::particleBoundingBox(ConstPropertyAccess<Point3> positionPrope
 }
 
 /******************************************************************************
-* Returns the typed particle property used to determine the rendering colors 
+* Returns the typed particle property used to determine the rendering colors
 * of particles (if no per-particle colors are defined).
 ******************************************************************************/
 const PropertyObject* ParticlesVis::getParticleTypeColorProperty(const ParticlesObject* particles) const
@@ -277,7 +277,7 @@ ConstPropertyPtr ParticlesVis::particleColors(const ParticlesObject* particles, 
 }
 
 /******************************************************************************
-* Returns the typed particle property used to determine the rendering radii 
+* Returns the typed particle property used to determine the rendering radii
 * of particles (if no per-particle radii are defined).
 ******************************************************************************/
 const PropertyObject* ParticlesVis::getParticleTypeRadiusProperty(const ParticlesObject* particles) const
@@ -300,14 +300,14 @@ ConstPropertyPtr ParticlesVis::particleRadii(const ParticlesObject* particles, b
     if(output) {
         // Check if the radius array contains any zero entries.
         ConstPropertyAccess<FloatType> radiusArray(output);
-        if(boost::find(radiusArray, FloatType(0)) != radiusArray.end()) {   
+        if(boost::find(radiusArray, FloatType(0)) != radiusArray.end()) {
             radiusArray.reset();
 
             // Copy per-type radii to those particles whose "Radius" property value is zero.
             if(const PropertyObject* typeProperty = getParticleTypeRadiusProperty(particles)) {
                 // Build a lookup map for particle type radii.
                 std::map<int,FloatType> radiusMap = ParticleType::typeRadiusMap(typeProperty);
-                // Skip the following loop if all per-type radii are zero. 
+                // Skip the following loop if all per-type radii are zero.
                 if(boost::algorithm::any_of(radiusMap, [](const std::pair<int,FloatType>& it) { return it.second != 0; })) {
                     // Fill radius array.
                     ConstPropertyAccess<int> typeArray(typeProperty);
@@ -486,6 +486,10 @@ PipelineStatus ParticlesVis::render(AnimationTime time, const ConstDataObjectPat
     if(!particles) return {};
     particles->verifyIntegrity();
 
+    // Make sure there the 'Position' property is present.
+    if(!particles->getProperty(ParticlesObject::PositionProperty))
+        throw Exception(tr("Cannot display particles, because the 'Position' property is not present."));
+
     // Make sure we don't exceed the internal limits. Rendering of more than 2 billion particles is not yet supported by OVITO.
     size_t particleCount = particles->elementCount();
     if(particleCount > (size_t)std::numeric_limits<int>::max()) {
@@ -571,10 +575,10 @@ void ParticlesVis::renderMeshBasedParticles(const ParticlesObject* particles, Sc
 
         // This data structure stores temporary per-particle instance data, separated by mesh-based particle type.
         struct MeshTypePerInstanceData {
-            MeshTypePerInstanceData(DataBufferPtr tm, DataBufferPtr colors, DataBufferPtr indices) : 
+            MeshTypePerInstanceData(DataBufferPtr tm, DataBufferPtr colors, DataBufferPtr indices) :
                 particleTMs(std::move(tm)), particleColors(std::move(colors)), particleIndices(std::move(indices)) {}
             DataBufferAccessAndRef<AffineTransformation> particleTMs;   /// AffineTransformation of each particle to be rendered.
-            DataBufferAccessAndRef<ColorA> particleColors;  /// Color of each particle to be rendered.              
+            DataBufferAccessAndRef<ColorA> particleColors;  /// Color of each particle to be rendered.
             DataBufferAccessAndRef<int> particleIndices;    /// Index of each particle to be rendered in the original particles list.
         };
         std::vector<MeshTypePerInstanceData> perInstanceData;
@@ -582,7 +586,7 @@ void ParticlesVis::renderMeshBasedParticles(const ParticlesObject* particles, Sc
         meshVisCache.reserve(shapeMeshParticleTypes.size());
         perInstanceData.reserve(shapeMeshParticleTypes.size());
 
-        // Create one instanced mesh primitive for each mesh-based particle type. 
+        // Create one instanced mesh primitive for each mesh-based particle type.
         for(int typeId : shapeMeshParticleTypes) {
             // Create a new instanced mesh primitive for the particle type.
             const ParticleType* ptype = static_object_cast<ParticleType>(typeProperty->elementType(typeId));
@@ -637,7 +641,7 @@ void ParticlesVis::renderMeshBasedParticles(const ParticlesObject* particles, Sc
             if(meshVisCache[typeIndex].useMeshColors)
                 perInstanceData[typeIndex].particleColors.reset();
             meshVisCache[typeIndex].meshPrimitive.setInstancedRendering(
-                perInstanceData[typeIndex].particleTMs.take(), 
+                perInstanceData[typeIndex].particleTMs.take(),
                 perInstanceData[typeIndex].particleColors.take());
             // Create a picking structure for this set of particles.
             meshVisCache[typeIndex].pickInfo = OORef<ParticlePickInfo>::create(this, particles, perInstanceData[typeIndex].particleIndices.take());
@@ -684,9 +688,9 @@ void ParticlesVis::renderPrimitiveParticles(const ParticlesObject* particles, Sc
 
     // Quit early if all particles have a shape not handled by this method.
     if(uniformShape != ParticleShape::Default) {
-        if(uniformShape != ParticleShape::Sphere && 
-            uniformShape != ParticleShape::Box && 
-            uniformShape != ParticleShape::Circle && 
+        if(uniformShape != ParticleShape::Sphere &&
+            uniformShape != ParticleShape::Box &&
+            uniformShape != ParticleShape::Circle &&
             uniformShape != ParticleShape::Square)
             return;
     }
@@ -745,7 +749,7 @@ void ParticlesVis::renderPrimitiveParticles(const ParticlesObject* particles, Sc
     for(ParticlesVis::ParticleShape shape : {ParticleShape::Sphere, ParticleShape::Box, ParticleShape::Circle, ParticleShape::Square}) {
 
         // Skip this shape if all particles are known to have another shape.
-        if(uniformShape != ParticleShape::Default && uniformShape != shape) 
+        if(uniformShape != ParticleShape::Default && uniformShape != shape)
             continue;
 
         // The lookup key for the cached particle indices for the current shape type:
@@ -876,7 +880,7 @@ void ParticlesVis::renderCylindricParticles(const ParticlesObject* particles, Sc
 
     // Quit early if all particles have a shape not handled by this method.
     if(uniformShape != ParticleShape::Default) {
-        if(uniformShape != ParticleShape::Cylinder && 
+        if(uniformShape != ParticleShape::Cylinder &&
             uniformShape != ParticleShape::Spherocylinder)
             return;
     }
@@ -899,7 +903,7 @@ void ParticlesVis::renderCylindricParticles(const ParticlesObject* particles, Sc
     for(ParticlesVis::ParticleShape shape : {ParticleShape::Cylinder, ParticleShape::Spherocylinder}) {
 
         // Skip this shape if all particles are known to have a different shape.
-        if(uniformShape != ParticleShape::Default && uniformShape != shape) 
+        if(uniformShape != ParticleShape::Default && uniformShape != shape)
             continue;
 
         // The lookup key for the cached rendering primitive:
@@ -984,7 +988,7 @@ void ParticlesVis::renderCylindricParticles(const ParticlesObject* particles, Sc
             // Determine cylinder colors.
             if(!colorBuffer)
                 colorBuffer = particleColors(particles, renderer->isInteractive());
-            
+
             // Determine cylinder radii (only needed if aspherical shape property is not present).
             if(!radiusBuffer && !asphericalShapeProperty)
                 radiusBuffer = particleRadii(particles, false);

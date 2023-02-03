@@ -223,7 +223,7 @@ bool LAMMPSBinaryDumpHeader::parse(QIODevice& input)
                 const char MAGIC_STRING_CUSTOM[] = "DUMPCUSTOM";
                 if(-ntimestep != sizeof(MAGIC_STRING_ATOM)-1 && -ntimestep != sizeof(MAGIC_STRING_CUSTOM)-1)
                     continue;
-                
+
                 // Read magic string.
                 QByteArray magicString = input.read(-ntimestep);
                 if(magicString != MAGIC_STRING_ATOM && magicString != MAGIC_STRING_CUSTOM)
@@ -242,7 +242,7 @@ bool LAMMPSBinaryDumpHeader::parse(QIODevice& input)
                     continue;
                 }
 
-                // Now read actual number of timesteps.         
+                // Now read actual number of timesteps.
                 ntimestep = readBigInt(input);
                 if(ntimestep < 0)
                     continue;
@@ -446,7 +446,7 @@ void LAMMPSBinaryDumpImporter::FrameLoader::loadFile()
     // Determine if particle coordinates are given in reduced form and need to be rescaled to absolute form.
     bool reducedCoordinates = false;
     if(!fileColumnNames.empty()) {
-        // If the dump file contains column names, then we can use them to detect 
+        // If the dump file contains column names, then we can use them to detect
         // the type of particle coordinates. Reduced coordinates are found in columns
         // "xs, ys, zs" or "xsu, ysu, zsu".
         for(int i = 0; i < (int)_columnMapping.size() && i < fileColumnNames.size(); i++) {
@@ -455,9 +455,9 @@ void LAMMPSBinaryDumpImporter::FrameLoader::loadFile()
                         fileColumnNames[i] == "xs" || fileColumnNames[i] == "xsu" ||
                         fileColumnNames[i] == "ys" || fileColumnNames[i] == "ysu" ||
                         fileColumnNames[i] == "zs" || fileColumnNames[i] == "zsu");
-                // break; Note: Do not stop the loop here, because the 'Position' particle 
-                // property may be associated with several file columns, and it's the last column that 
-                // ends up getting imported into OVITO. 
+                // break; Note: Do not stop the loop here, because the 'Position' particle
+                // property may be associated with several file columns, and it's the last column that
+                // ends up getting imported into OVITO.
             }
         }
     }
@@ -516,6 +516,8 @@ void LAMMPSBinaryDumpImporter::FrameLoader::loadFile()
     // Detect dimensionality of system. It's a 2D system if no file column has been mapped to the Position.Z particle property.
     if(std::none_of(_columnMapping.begin(), _columnMapping.end(), [](const InputColumnInfo& column) {
         return column.property.type() == ParticlesObject::PositionProperty && column.property.vectorComponent() == 2;
+    }) && std::any_of(_columnMapping.begin(), _columnMapping.end(), [](const InputColumnInfo& column) {
+        return column.property.type() == ParticlesObject::PositionProperty && column.property.vectorComponent() != 2;
     })) {
         simulationCell()->setIs2D(true);
     }
@@ -527,7 +529,7 @@ void LAMMPSBinaryDumpImporter::FrameLoader::loadFile()
     // Sort particles by ID.
     if(_sortParticles)
         particles()->sortById();
-        
+
     state().setStatus(tr("%1 particles at timestep %2").arg(header.natoms).arg(header.ntimestep));
 
     // Call base implementation to finalize the loaded particle data.
