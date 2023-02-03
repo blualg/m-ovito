@@ -133,6 +133,17 @@ Future<AsynchronousModifier::EnginePtr> ConstructSurfaceModifier::createEngine(c
 
     // Collect the set of particle properties that should be transferred over to the surface mesh vertices.
     std::vector<ConstPropertyPtr> particleProperties;
+
+    // In alpha-shape mode, always transfer an implicitly created 'Particle Index' particle property to the mesh - to
+    // provide a mapping from the generated mesh vertices back the original particles they were created from.
+    if(method() == AlphaShape) {
+        // Generate adhoc particle property array 'Particle Index' and fill it with numbers 0 through N-1.
+        PropertyAccessAndRef<qlonglong> particleIndexProp = ParticlesObject::OOClass().createUserProperty(particles->elementCount(), PropertyObject::Int64, 1, QStringLiteral("Particle Index"));
+        std::iota(particleIndexProp.begin(), particleIndexProp.end(), (qlonglong)0);
+        particleProperties.push_back(particleIndexProp.take());
+    }
+
+    // Collect explicit particle properties to be transferred.
     if(transferParticleProperties()) {
         for(const PropertyObject* property : particles->properties()) {
             // Certain properties should not be transferred to the mesh vertices.
@@ -285,7 +296,7 @@ void ConstructSurfaceModifier::AlphaShapeEngine::perform()
     };
 
     // This callback function is called for every surface vertex created by the manifold construction helper.
-    // It registers the vertex in the map that associates each mesh vertex with its original input particle.
+    // It registers the vertex in the map that associates each mesh vertex with the corresponding input particle index.
     std::vector<size_t> vertexToParticleMap;
     auto prepareMeshVertex = [&](SurfaceMeshAccess::vertex_index vertex, size_t particleIndex) {
         OVITO_ASSERT(vertex == vertexToParticleMap.size());
