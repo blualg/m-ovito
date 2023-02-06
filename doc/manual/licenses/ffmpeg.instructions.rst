@@ -71,7 +71,6 @@ The following commands have been used to generate them::
   git clone https://git.ffmpeg.org/ffmpeg.git ffmpeg_source
   cd ffmpeg_source
   git checkout n5.1.2
-  export MACOSX_DEPLOYMENT_TARGET=10.14
   ./configure \
     --disable-network \
     --disable-programs \

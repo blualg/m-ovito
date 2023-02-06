@@ -45,8 +45,13 @@ The following commands were used to build it::
 macOS
 """""
 
-OVITO for macOS (Apple Silicon, arm64) includes a binary version of libssh 0.10.4 that has been built via `Homebrew <https://brew.sh>`__: ``brew install libssh``
-See the corresponding `formulae <https://formulae.brew.sh/formula/libssh>`__.
+OVITO for amcOS includes a shared library that has been built from the unmodified sources of libssh 0.10.4.
+The following commands were used to build it::
 
-OVITO for macOS (Intel x86_64) includes a binary version of libssh 0.8.9 that has been built via `MacPorts <https://www.macports.org>`__: ``port install -s libssh``
-See the corresponding `Portfile <https://github.com/macports/macports-ports/blob/master/devel/libssh/Portfile>`__.
+  export OPENSSL_ROOT_DIR=...
+  cmake -G Ninja \
+      -DCMAKE_BUILD_TYPE=Release \
+      -DWITH_SERVER=OFF \
+      -DCMAKE_OSX_DEPLOYMENT_TARGET=10.15 \
+      ..
+  cmake --build . --parallel && cmake --install .

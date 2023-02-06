@@ -77,5 +77,4 @@ The following commands have been used to generate them::
 macOS
 """""
 
-OVITO for macOS (Apple Silicon) ships with a standard installation of the Qt 6.4.2 framework distributed by the Qt Company.
-OVITO for macOS (Intel) ships with a standard installation of the Qt 6.2.4 framework distributed by the Qt Company.
+OVITO for macOS ships with a standard installation of the Qt 6.4.2 framework distributed by the Qt Company.
