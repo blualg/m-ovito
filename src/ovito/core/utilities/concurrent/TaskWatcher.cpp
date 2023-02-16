@@ -38,7 +38,7 @@ void TaskWatcher::watch(Task* task, bool pendingAssignment)
         unregisterCallback();
 
     if(_task) {
-        // This is to prevent notifications from the old task still waiting in the event loop 
+        // This is to prevent notifications from the old task still waiting in the event loop
         // to reach the TaskWatcher after the new task has been assigned.
         if(pendingAssignment) {
             _finished = false;

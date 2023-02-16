@@ -96,22 +96,22 @@ public:
         /// The local handle to the input file.
         FileHandle fileHandle;
 
-        /// Holds the data objects loaded from the file. DataCollection contains the data from a previous trajectory frame if any. 
+        /// Holds the data objects loaded from the file. DataCollection contains the data from a previous trajectory frame if any.
         PipelineFlowState state;
 
         /// The FileSource that initiated the load operation.
         QPointer<PipelineObject> dataSource;
 
-        /// If a loaded data collection consists of sub-collections, this string specifies the 
+        /// If a loaded data collection consists of sub-collections, this string specifies the
         /// prefix to be prepended to the identifiers of data objects loaded by the file reader.
         QString dataBlockPrefix;
 
         /// Indicates that the file reader should append the loaded data to existing data objects
-        /// instead of replacing their contents. This is used for loading multi-block datasets  
+        /// instead of replacing their contents. This is used for loading multi-block datasets
         /// consisting of several files.
         bool appendData = false;
 
-        /// Indicates whether the file is being loaded for the first time or a subsequent frame is being loaded. 
+        /// Indicates whether the file is being loaded for the first time or a subsequent frame is being loaded.
         bool isNewlyImportedFile = true;
     };
 
@@ -131,7 +131,7 @@ public:
         /// Returns the local handle to the input data file.
         const FileHandle& fileHandle() const { return loadRequest().fileHandle; }
 
-        /// Returns a reference to the pipeline state that receives the loaded file data. 
+        /// Returns a reference to the pipeline state that receives the loaded file data.
         PipelineFlowState& state() { return _loadRequest.state; }
 
         /// Returns the FileSource that owns the file importer.

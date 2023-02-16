@@ -39,7 +39,7 @@ std::atomic_size_t Task::_globalTaskCounter{0};
 /*******************************************************x***********************
 * Returns the task object that is the active one in the current thread.
 ******************************************************************************/
-Task*& Task::current() noexcept 
+Task*& Task::current() noexcept
 {
     // The active task in the current thread.
     static thread_local Task* _current = nullptr;
@@ -66,8 +66,8 @@ Task::~Task()
     // All registered callbacks should have been unregistered by now.
     OVITO_ASSERT(_callbacks == nullptr);
 
-    // In debug builds we keep track of how many task objects exist to check whether they all get destroyed correctly 
-    // at program termination. 
+    // In debug builds we keep track of how many task objects exist to check whether they all get destroyed correctly
+    // at program termination.
     _globalTaskCounter.fetch_sub(1);
 }
 #endif
@@ -212,7 +212,7 @@ void Task::restart()
 void Task::addCallback(detail::TaskCallbackBase* cb, bool replayStateChanges) noexcept
 {
     OVITO_ASSERT(cb != nullptr);
-    
+
     const MutexLocker locker(&_mutex);
 
     // Insert into linked list of callbacks.
@@ -266,7 +266,7 @@ void Task::removeCallback(detail::TaskCallbackBase* cb) noexcept
 }
 
 /******************************************************************************
-* Blocks execution until another task finishes. 
+* Blocks execution until another task finishes.
 ******************************************************************************/
 bool Task::waitFor(detail::TaskReference awaitedTask)
 {
@@ -300,7 +300,7 @@ bool Task::waitFor(detail::TaskReference awaitedTask)
         }
     }
 
-    // Create shared pointers on the stack to make sure the two task objects don't get 
+    // Create shared pointers on the stack to make sure the two task objects don't get
     // destroyed during or right after the waiting phase and before we access them again below.
     TaskPtr waitingTaskPtr(waitingTask->shared_from_this());
     TaskPtr awaitedTaskPtr(awaitedTask.get());

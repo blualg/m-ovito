@@ -95,7 +95,7 @@ void UnwrapTrajectoriesModifier::evaluateSynchronous(const ModifierEvaluationReq
 }
 
 /******************************************************************************
-* Processes all frames of the input trajectory to detect periodic crossings 
+* Processes all frames of the input trajectory to detect periodic crossings
 * of the particles.
 ******************************************************************************/
 SharedFuture<> UnwrapTrajectoriesModifierApplication::detectPeriodicCrossings(const ModifierEvaluationRequest& request)
@@ -111,7 +111,7 @@ SharedFuture<> UnwrapTrajectoriesModifierApplication::detectPeriodicCrossings(co
 
         // Iterate over all frames of the input range in sequential order.
         _unwrapOperation = for_each_sequential(
-            std::move(inputFrameRange), 
+            std::move(inputFrameRange),
             ObjectExecutor(this, true), // Require deferred execution of each frame
             // Requests the next frame from the upstream pipeline.
             [this](int frame) {
@@ -225,7 +225,7 @@ void UnwrapTrajectoriesModifierApplication::unwrapParticleCoordinates(const Modi
         if(ExecutionContext::isInteractive())
             state.setStatus(PipelineStatus(PipelineStatus::Warning, tr("Particle crossings of periodic cell boundaries have not been determined yet.")));
         else
-            throw Exception(tr("Particle crossings of periodic cell boundaries have not been determined yet. Cannot unwrap trajectories. Did you forget to call UnwrapTrajectoriesModifier.update()?"));
+            throw Exception(tr("Particle crossings of periodic cell boundaries have not been determined yet or the requested trajectory frame is out of range. Cannot unwrap trajectories at this time."));
         return;
     }
 
@@ -464,7 +464,7 @@ void UnwrapTrajectoriesModifierApplication::loadFromStreamComplete(ObjectLoadStr
 {
     ModifierApplication::loadFromStreamComplete(stream);
 
-    // For backward compatibility with OVITO 3.7: 
+    // For backward compatibility with OVITO 3.7:
     // Convert legacy time values from ticks to frames. This requires access to the AnimationSettings object, which is stored at scene level.
     if(stream.formatVersion() <= 30008) {
         QSet<PipelineSceneNode*> pipelines = this->pipelines(true);

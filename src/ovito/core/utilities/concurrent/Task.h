@@ -30,7 +30,7 @@
 
 namespace Ovito {
 
-namespace detail { 
+namespace detail {
     class TaskReference; // Forward declaration
     class TaskCallbackBase;
     template<typename Derived> class TaskCallback;
@@ -59,8 +59,8 @@ public:
     /// Constructor.
     explicit Task(State initialState = NoState, void* resultsStorage = nullptr) noexcept : _state(initialState), _resultsStorage(resultsStorage) {
 #ifdef OVITO_DEBUG
-        // In debug builds we keep track of how many task objects exist to check whether they all get destroyed correctly 
-        // at program termination. 
+        // In debug builds we keep track of how many task objects exist to check whether they all get destroyed correctly
+        // at program termination.
         _globalTaskCounter.fetch_add(1);
 #endif
     }
@@ -145,14 +145,17 @@ public:
     /// Note that the continuation function will always be executed, even if this task was canceled or set to an error state.
     template<typename Executor, typename Function>
     void finally(Executor&& executor, Function&& f) {
-        addContinuation(std::forward<Executor>(executor), detail::bind_front(std::forward<Function>(f), std::ref(*this)));
+        // Must store a shared_ptr to this task in the lambda in order to keep it alive until the user
+        // function gets invoked. That's because it might happen at a much later time if the executor uses deferred scheduling.
+        addContinuation(std::forward<Executor>(executor),
+            [f = std::forward<Function>(f), self = shared_from_this()]() mutable { std::forward<Function>(f)(*self); });
     }
 
     /// Runs the given continuation function once this task has reached either the 'finished' or the 'canceled' state.
     /// Note that the continuation function will always be executed, even if this task was canceled or set to an error state.
     template<typename Function>
-    void finally(Function&& f) { 
-        addContinuation(detail::InlineExecutor{}, detail::bind_front(std::forward<Function>(f), std::ref(*this))); 
+    void finally(Function&& f) {
+        addContinuation(detail::InlineExecutor{}, detail::bind_front(std::forward<Function>(f), std::ref(*this)));
     }
 
     /// Accessor function for the internal results storage.
@@ -201,7 +204,7 @@ public:
     /// \brief Returns a copy of the internal exception store, which contains an exception object in case the task has failed.
     std::exception_ptr copyExceptionStore() const { return std::exception_ptr{exceptionStore()}; }
 
-    /// \brief Suspends execution until the given task has reached the 'finished' state. 
+    /// \brief Suspends execution until the given task has reached the 'finished' state.
     ///        If the awaited task gets canceled while waiting, the task waiting for it gets canceled too.
     /// \param task The task to wait for.
     /// \return false if either \a task or this operation have been canceled.
@@ -240,7 +243,7 @@ protected:
     /// Removes a callback from this task's list, which will no longer get notified about state changes.
     void removeCallback(detail::TaskCallbackBase* cb) noexcept;
 
-    /// Registers a callback function that will be run when this task reaches the 'finished' state. 
+    /// Registers a callback function that will be run when this task reaches the 'finished' state.
     /// If the task is already in one of these states, the continuation function is invoked immediately.
     template<typename Executor, typename Function>
     void addContinuation(Executor&& executor, Function&& f) {
@@ -257,7 +260,7 @@ protected:
         }
     }
 
-    /// Registers a callback function that will be run when this task reaches the 'finished' state. 
+    /// Registers a callback function that will be run when this task reaches the 'finished' state.
     /// Do not call this method if the task is already in the 'finished' state.
     template<typename Function>
     void registerContinuation(Function&& f) {
@@ -290,7 +293,7 @@ protected:
 
     /// Decrements the counter of futures or parent tasks currently waiting for this task to complete.
     /// If this counter reaches zero, the task gets canceled.
-    void decrementDependentsCount() noexcept { 
+    void decrementDependentsCount() noexcept {
         // Automatically cancel this task when there are no one left who depends on it.
         if(!_dependentsCount.deref())
             cancel();
