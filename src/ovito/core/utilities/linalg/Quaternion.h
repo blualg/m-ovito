@@ -167,7 +167,7 @@ public:
 
     /// \brief Returns the inverse (or conjugate) of this rotation.
     /// \return A new quaternion representing the inverse rotation of this quaternion.
-    Q_DECL_CONSTEXPR QuaternionT  inverse() const { return { -x(), -y(), -z(), w() }; }
+    Q_DECL_CONSTEXPR QuaternionT inverse() const { return { -x(), -y(), -z(), w() }; }
 
     ////////////////////////////////// Comparison ////////////////////////////////
 
@@ -207,8 +207,8 @@ public:
     Q_DECL_CONSTEXPR T dot(const QuaternionT& b) const { return x()*b.x() + y()*b.y() + z()*b.z() + w()*b.w(); }
 
     /// \brief Computes norm of quaternion.
-    inline FloatType norm() const {
-        return sqrt(dot(*this));
+    inline T norm() const {
+        return std::sqrt(dot(*this));
     }
 
     /// \brief Normalizes this quaternion to unit length.
@@ -334,7 +334,7 @@ inline QuaternionT<T>::QuaternionT(const Matrix_3<T>& tm, T epsilon)
     // article "Quaternion Calculus and Fast Animation".
     T trace = tm(0,0) + tm(1,1) + tm(2,2);
     if(trace > 0) {
-        T root = sqrt(trace + T(1));
+        T root = std::sqrt(trace + T(1));
         w() = T(0.5) * root;
         root = T(0.5) / root;
         x() = (tm(2,1) - tm(1,2)) * root;
@@ -348,7 +348,7 @@ inline QuaternionT<T>::QuaternionT(const Matrix_3<T>& tm, T epsilon)
         if(tm(2,2) > tm(i,i)) i = 2;
         typename Matrix_3<T>::size_type j = next[i];
         typename Matrix_3<T>::size_type k = next[j];
-        T root = sqrt(tm(i,i) - tm(j,j) - tm(k,k) + T(1));
+        T root = std::sqrt(tm(i,i) - tm(j,j) - tm(k,k) + T(1));
         (*this)[i] = T(0.5) * root;
         root = T(0.5) / root;
         w() = (tm(k,j) - tm(j,k)) * root;
@@ -452,7 +452,6 @@ template<typename T>
 inline std::ostream& operator<<(std::ostream &os, const QuaternionT<T>& q) {
     return os << '[' << q.x() << ' ' << q.y() << ' ' << q.z() << ' ' << q.w() << ']';
 }
-
 
 /// \brief Writes the quaternion to the Qt debug stream.
 /// \relates QuaternionT

@@ -121,7 +121,7 @@ public:
             T trace = tm(0,0) + tm(1,1) + tm(2,2) - T(1);
             T s = _axis.length();
             _axis /= s;
-            _angle = atan2(s, trace);
+            _angle = std::atan2(s, trace);
         }
     }
 
@@ -141,8 +141,8 @@ public:
             else if(q.w() > T(1))
                 _angle = T(0);
             else
-                _angle = acos(q.w()) * T(2);
-            _axis = Vector_3<T>(q.x(), q.y(), q.z()) / (T)sqrt(scaleSquared);
+                _angle = std::acos(q.w()) * T(2);
+            _axis = Vector_3<T>(q.x(), q.y(), q.z()) / std::sqrt(scaleSquared);
             OVITO_ASSERT(std::abs(_axis.squaredLength() - T(1)) <= T(FLOATTYPE_EPSILON));
         }
     }
@@ -163,7 +163,7 @@ public:
             _axis = Vector_3<T>(0,0,1);
         }
         else {
-            _angle = acos(cos);
+            _angle = std::acos(cos);
             _axis = a.cross(b).normalized();
         }
     }
@@ -197,8 +197,8 @@ public:
     /// cannot represent multiple revolutions.
     explicit operator QuaternionT<T>() const {
         T omega = _angle * T(0.5);
-        T s = sin(omega);
-        return QuaternionT<T>(_axis.x() * s, _axis.y() * s, _axis.z() * s, cos(omega)).normalized();
+        T s = std::sin(omega);
+        return QuaternionT<T>(_axis.x() * s, _axis.y() * s, _axis.z() * s, std::cos(omega)).normalized();
     }
 
     /////////////////////////////// Binary operators /////////////////////////////
@@ -281,7 +281,7 @@ public:
         else if(rot1.angle() != T(0)) {
             T fDiff = _rot2.angle() - rot1.angle();
             T fDiffUnit = fDiff/T(2*FLOATTYPE_PI);
-            int extraSpins = (int)floor(fDiffUnit + T(0.5));
+            int extraSpins = (int)std::floor(fDiffUnit + T(0.5));
             if(extraSpins * fDiffUnit * (fDiffUnit - extraSpins) < 0)
                 extraSpins = -extraSpins;
 
@@ -302,7 +302,7 @@ public:
             RotationT result = RotationT(slerpExtraSpins(t, q1, q2, extraSpins));
             if(result.axis().dot(interpolateAxis(t, rot1.axis(), _rot2.axis())) < T(0))
                 result = RotationT(-result.axis(), -result.angle(), false);
-            int nrev = floor((t * _rot2.angle() + (T(1) - t) * rot1.angle() - result.angle())/T(2*FLOATTYPE_PI) + T(0.5));
+            int nrev = std::floor((t * _rot2.angle() + (T(1) - t) * rot1.angle() - result.angle())/T(2*FLOATTYPE_PI) + T(0.5));
             result.addRevolutions(nrev);
             return result;
         }

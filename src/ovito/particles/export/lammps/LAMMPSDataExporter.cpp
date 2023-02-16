@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -104,7 +104,7 @@ bool LAMMPSDataExporter::exportData(const PipelineFlowState& state, int frameNum
         const PropertyObject* property = col.property.findInContainer(particles);
         if(!property) {
             // If the property does not exist, implicitly create it and fill it with default values.
-            if(col.property.type() != ParticlesObject::IdentifierProperty) {                
+            if(col.property.type() != ParticlesObject::IdentifierProperty) {
                 if(col.property.type() == ParticlesObject::RadiusProperty) {
                     particles->createProperty(particles->inputParticleRadii());
                 }
@@ -163,7 +163,7 @@ bool LAMMPSDataExporter::exportData(const PipelineFlowState& state, int frameNum
 
     // Transform triclinic cell to LAMMPS canonical format.
     Vector3 a,b,c;
-    if(simCell.column(0).x() < 0 || simCell.column(0).y() != 0 || simCell.column(0).z() != 0 || 
+    if(simCell.column(0).x() < 0 || simCell.column(0).y() != 0 || simCell.column(0).z() != 0 ||
             simCell.column(1).y() < 0 || simCell.column(1).z() != 0 || simCell.column(2).z() < 0) {
         a.x() = simCell.column(0).length();
         a.y() = a.z() = 0;
@@ -209,7 +209,7 @@ bool LAMMPSDataExporter::exportData(const PipelineFlowState& state, int frameNum
     bool writeDihedrals = dihedralTopologyProperty && (atomStyle() != LAMMPSDataImporter::AtomStyle_Atomic);
     bool writeImpropers = improperTopologyProperty && (atomStyle() != LAMMPSDataImporter::AtomStyle_Atomic);
 
-    textStream() << "# LAMMPS data file written by " << Application::applicationName() << " " << Application::applicationVersionString() << "\n";
+    textStream() << "# LAMMPS data file written by " << Application::applicationName() << " " << Application::applicationVersionString() << "\n\n";
     textStream() << particles->elementCount() << " atoms\n";
     if(writeBonds)
         textStream() << bonds->elementCount() << " bonds\n";
@@ -220,7 +220,7 @@ bool LAMMPSDataExporter::exportData(const PipelineFlowState& state, int frameNum
     if(writeImpropers)
         textStream() << impropers->elementCount() << " impropers\n";
 
-    // Given an OVITO typed property, determines which and how many LAMMPS types are being output. 
+    // Given an OVITO typed property, determines which and how many LAMMPS types are being output.
     auto generateTypeMapping = [&](const PropertyObject* typeProperty) {
         std::vector<const ElementType*> typeList;
         std::map<int, int> typeMapping;
@@ -270,7 +270,7 @@ bool LAMMPSDataExporter::exportData(const PipelineFlowState& state, int frameNum
     auto [atomTypeList, atomTypeMapping] = generateTypeMapping(particleTypeProperty);
     textStream() << atomTypeList.size() << " atom types\n";
 
-    // Substitude the original IDs stored in the 'Particle Type' property array. 
+    // Substitude the original IDs stored in the 'Particle Type' property array.
     if(generateConsecutiveTypeIds() && particleTypeProperty) {
         PropertyAccess<int> typeArray = particles->makeMutable(particleTypeProperty);
         for(int& id : typeArray) {
@@ -308,6 +308,7 @@ bool LAMMPSDataExporter::exportData(const PipelineFlowState& state, int frameNum
             asphericalShapeProperty.reset();
     }
 
+    textStream() << "\n";
     textStream() << xlo << ' ' << xhi << " xlo xhi\n";
     textStream() << ylo << ' ' << yhi << " ylo yhi\n";
     textStream() << zlo << ' ' << zhi << " zlo zhi\n";
@@ -324,7 +325,7 @@ bool LAMMPSDataExporter::exportData(const PipelineFlowState& state, int frameNum
         // They also may not contain any whitespace.
         auto makeLAMMPSTypeLabel = [](QString typeName) {
             for(int i = 0; i < typeName.size(); i++)
-                if(QChar c = typeName.at(i); c.isSpace() || !c.isPrint()) 
+                if(QChar c = typeName.at(i); c.isSpace() || !c.isPrint())
                     typeName[i] = QChar('_');
             if(!typeName.isEmpty() && (typeName.at(0) == QChar('#') || typeName.at(0) == QChar('*') || typeName.at(0).isNumber()))
                 typeName.prepend(QChar('_'));
@@ -336,7 +337,7 @@ bool LAMMPSDataExporter::exportData(const PipelineFlowState& state, int frameNum
                 const ElementType* type = typeList[typeId - 1];
                 textStream() << typeId << " " << makeLAMMPSTypeLabel(type ? type->nameOrNumericId() : ElementType::generateDefaultTypeName(typeId)) << "\n";
             }
-            textStream() << "\n";           
+            textStream() << "\n";
         };
 
         // Write "Atom Type Labels" sections.
@@ -368,7 +369,7 @@ bool LAMMPSDataExporter::exportData(const PipelineFlowState& state, int frameNum
             textStream() << "Improper Type Labels\n\n";
             writeLAMMPSTypeLabels(improperTypeList);
         }
-    } 
+    }
 
     // Write "Masses" section.
     // Exception: User has requested to omit Masses section or LAMMPS atom style is 'sphere'.
@@ -379,7 +380,7 @@ bool LAMMPSDataExporter::exportData(const PipelineFlowState& state, int frameNum
             if(const ParticleType* ptype = dynamic_object_cast<ParticleType>(type))
                 return ptype->mass() != 0;
             return false;
-        }); 
+        });
         if(hasNonzeroMass) {
             textStream() << "Masses\n\n";
             for(int atomType = 1; atomType <= (int)atomTypeList.size(); atomType++) {
@@ -449,7 +450,7 @@ bool LAMMPSDataExporter::exportData(const PipelineFlowState& state, int frameNum
                     OVITO_ASSERT(col.property.findInContainer(particles) == newProperty);
                 }
             }
-        }       
+        }
         textStream() << "\nVelocities\n\n";
         PropertyOutputWriter columnWriter(velocitiesOutputColumnMapping, particles, PropertyOutputWriter::WriteNumericIds);
         for(size_t i = 0; i < atomsCount; i++) {
@@ -610,7 +611,7 @@ bool LAMMPSDataExporter::exportData(const PipelineFlowState& state, int frameNum
 
             if(!operation.setProgressValueIntermittent(currentProgress++))
                 return false;
-        }       
+        }
     }
 
     return !operation.isCanceled();

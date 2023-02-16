@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2017 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -54,6 +54,14 @@ inline bool parseFloatType(const char* s, const char* s_end, float& f)
 /******************************************************************************
  * Helper function that converts a string to a floating-point number.
  *****************************************************************************/
+inline bool parseFloatType(QLatin1StringView s, float& f)
+{
+    return parseFloatType(s.constBegin(), s.constEnd(), f);
+}
+
+/******************************************************************************
+ * Helper function that converts a string to a floating-point number.
+ *****************************************************************************/
 inline bool parseFloatType(const char* s, const char* s_end, double& f)
 {
     const char* s_orig = s; // Make a copy, because parse() modifies its argument.
@@ -68,6 +76,14 @@ inline bool parseFloatType(const char* s, const char* s_end, double& f)
 }
 
 /******************************************************************************
+ * Helper function that converts a string to a floating-point number.
+ *****************************************************************************/
+inline bool parseFloatType(QLatin1StringView s, double& f)
+{
+    return parseFloatType(s.constBegin(), s.constEnd(), f);
+}
+
+/******************************************************************************
  * Helper function that converts a string to an integer number.
  *****************************************************************************/
 inline bool parseInt(const char* s, const char* s_end, int& i)
@@ -76,11 +92,27 @@ inline bool parseInt(const char* s, const char* s_end, int& i)
 }
 
 /******************************************************************************
+ * Helper function that converts a string to an integer number.
+ *****************************************************************************/
+inline bool parseInt(QLatin1StringView s, int& i)
+{
+    return parseInt(s.constBegin(), s.constEnd(), i);
+}
+
+/******************************************************************************
  * Helper function that converts a string to a 64-bit integer number.
  *****************************************************************************/
 inline bool parseInt64(const char* s, const char* s_end, qlonglong& i)
 {
     return boost::spirit::qi::parse(s, s_end, boost::spirit::qi::long_long, i);
+}
+
+/******************************************************************************
+ * Helper function that converts a string to a 64-bit integer number.
+ *****************************************************************************/
+inline bool parseInt64(QLatin1StringView s, qlonglong& i)
+{
+    return parseInt64(s.constBegin(), s.constEnd(), i);
 }
 
 /******************************************************************************
@@ -98,6 +130,14 @@ inline bool parseBool(const char* s, const char* s_end, int& d)
         return true;
     }
     return false;
+}
+
+/******************************************************************************
+ * Helper function that converts a string repr. of a bool ('T' or 'F') to an int
+ *****************************************************************************/
+inline bool parseBool(QLatin1StringView s, int& d)
+{
+    return parseBool(s.constBegin(), s.constEnd(), d);
 }
 
 }   // End of namespace
