@@ -159,7 +159,7 @@ private:
     friend class TriMeshObject;
 };
 
-Q_DECLARE_OPERATORS_FOR_FLAGS(TriMeshFace::MeshFaceFlags);  
+Q_DECLARE_OPERATORS_FOR_FLAGS(TriMeshFace::MeshFaceFlags);
 
 /**
  * \brief A data object represeting a mesh made of vertices and triangles.
@@ -172,7 +172,7 @@ public:
 
     /// Constructor that creates an object with an empty triangle mesh.
     Q_INVOKABLE TriMeshObject(ObjectCreationParams params);
-    
+
     /// \brief Returns the title of this object.
     virtual QString objectTitle() const override { return tr("Triangle mesh"); }
 
@@ -587,10 +587,10 @@ public:
     void loadFromStream(LoadStream& stream);
 
     /// \brief Exports the triangle mesh to a VTK file.
-    void saveToVTK(CompressedTextWriter& stream);
+    void saveToVTK(CompressedTextWriter& stream) const;
 
     /// \brief Exports the triangle mesh to a Wavefront .obj file.
-    void saveToOBJ(CompressedTextWriter& stream);
+    void saveToOBJ(CompressedTextWriter& stream) const;
 
     /************************************* Clipping *************************************/
 
@@ -599,14 +599,14 @@ public:
 
     /************************************* Mesh creation *************************************/
 
-    /// Creates a triangulated unit sphere model by subdividing a icosahedron. 
+    /// Creates a triangulated unit sphere model by subdividing a icosahedron.
     /// The resolution parameter controls the number of subdivision iterations and determines the
-    /// resulting vertices/faces of the mesh. 
+    /// resulting vertices/faces of the mesh.
     void createIcosphere(int resolution);
 
     /************************************* Information *************************************/
 
-    /// Determines whether the mesh forms a closed manifold, i.e. each triangle has three adjacent 
+    /// Determines whether the mesh forms a closed manifold, i.e. each triangle has three adjacent
     /// triangles with correct orientation.
     bool isClosed() const;
 

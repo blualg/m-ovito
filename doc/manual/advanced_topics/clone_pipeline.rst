@@ -8,8 +8,8 @@ Pipeline cloning |ovito-pro|
   :align: right
 
 The :guilabel:`Clone Pipeline` function of OVITO Pro lets you duplicate the current :ref:`data pipeline <usage.modification_pipeline>`
-in order to visualize multiple datasets side by side or to visualize the same dataset in several different ways in one picture. 
-The function can be invoked from the :ref:`pipeline selector <usage.import.multiple_datasets>` widget depicted on the right, 
+in order to visualize multiple datasets side by side or to visualize the same dataset in several different ways in one picture.
+The function can be invoked from the :ref:`pipeline selector <usage.import.multiple_datasets>` widget depicted on the right,
 which is located in OVITO's main toolbar.
 
 The `Clone Pipeline` dialog will be displayed, letting you configure the cloning operation.
@@ -18,11 +18,13 @@ to the settings you have made in the dialog.
 
 After the pipeline has been cloned, both the new copy and the existing data pipeline will be part of the
 current visualization scene and you will now see two objects in the viewports.
-The :ref:`pipeline selector <usage.import.multiple_datasets>` widget in the main toolbar 
+The :ref:`pipeline selector <usage.import.multiple_datasets>` widget in the main toolbar
 indicates which pipeline is the currently selected one and allows you to switch
 between the different pipelines of the scene. The currently selected pipeline is the one shown in the
 :ref:`pipeline editor <usage.modification_pipeline.pipeline_listbox>`.
-You can also click on an object in the interactive viewports in order to select the pipeline associated with that object. 
+You can also click on an object in the interactive viewports in order to select the pipeline associated with that object.
+
+.. _clone_pipeline.how_it_works:
 
 How pipeline cloning works
 """"""""""""""""""""""""""
@@ -73,7 +75,7 @@ Share
 
 Skip
   This option simply leaves a modifier out in the cloned pipeline.
- 
+
 Further options
 """""""""""""""
 
@@ -108,14 +110,14 @@ according to the following schematic picture:
 
 The pipeline's data source and the first modifier (`Cluster analysis`) are reused in the cloned
 pipeline according to the selected mode `Join`. Thus, the two resulting pipelines will share the
-same upstream part. The `Slice` modifier is the first item for which a clone mode other than `Join` is selected. 
+same upstream part. The `Slice` modifier is the first item for which a clone mode other than `Join` is selected.
 Thus, the cloned pipeline branches off before this modifier, which is being skipped in the cloned
 pipeline. Mode `Copy` has been selected for the `Expression selection` modifier.
 Accordingly, an independent copy of this modifier will be created and inserted into the cloned pipeline. This will enable you to
 change the selection expression in the second pipeline and select a different set of particles, for example.
 Finally, the `Assign color` modifier gets shared by both pipelines. That means the selected particles
 in both pipelines will always get assigned the same color.
- 
+
 .. image:: /images/clone_pipeline/cloned_pipeline_editor.png
   :width: 38%
   :align: right
@@ -123,8 +125,8 @@ in both pipelines will always get assigned the same color.
 After the cloning operation has been executed, you will see the newly created pipeline
 in the :ref:`pipeline editor <usage.modification_pipeline.pipeline_listbox>`.
 
-The horizontal line labeled :guilabel:`Pipeline branch` indicates that the part below 
-is shared by the current pipeline and other pipelines in the same scene. 
+The horizontal line labeled :guilabel:`Pipeline branch` indicates that the part below
+is shared by the current pipeline and other pipelines in the same scene.
 Inserting, removing, or changing modifiers below this line is thus going to affect these other pipelines as well.
 
 Some of the items in the pipeline editor are rendered in italic font. With that, OVITO indicates that
@@ -133,21 +135,21 @@ using mode `Share`. It is now part of the original pipeline *and* the cloned pip
 Changing a parameter of this modifier would trigger a recomputation of both pipelines.
 
 Let's say you later realize that sharing the `Assign color` modifier was not the right idea.
-For instance, you may decide to assign different colors to the particles in the two pipelines. 
+For instance, you may decide to assign different colors to the particles in the two pipelines.
 For "un-sharing" the modifier, OVITO provides the function :guilabel:`Make Independent`,
 which is accessible via the item's context menu shown in the screenshot. This function replaces the shared `Assign color` modifier
 with an independent copy in the current pipeline. Subsequently, changing the modifier's parameters will no longer
 implicitly affect other pipelines. You now get the possibility to use different parameter values in different pipelines.
 
 Notice that the :ref:`visual elements <visual_elements>` in the pipeline editor are also displayed using italic font.
-That's because these visual elements are produced by the file data source in the upstream pipeline, i.e. in the branch 
-common to both pipelines. While the underlying simulation data gets implicitly duplicated at pipeline branches (to enable different 
-computational outputs of the two pipelines), the visual elements do not. A single set of visual elements remains responsible 
-for rendering the outputs of the two pipelines. 
+That's because these visual elements are produced by the file data source in the upstream pipeline, i.e. in the branch
+common to both pipelines. While the underlying simulation data gets implicitly duplicated at pipeline branches (to enable different
+computational outputs of the two pipelines), the visual elements do not. A single set of visual elements remains responsible
+for rendering the outputs of the two pipelines.
 
-Because these visual elements are shared objects, changing their parameters or turning them on or off affects the rendering of 
-both datasets produced by the two pipelines. If this is not what you want, again you can use the function :guilabel:`Make Independent` 
-to duplicate the visual elements. Subsequently, you can control the visual appearance of particles and bonds for the 
+Because these visual elements are shared objects, changing their parameters or turning them on or off affects the rendering of
+both datasets produced by the two pipelines. If this is not what you want, again you can use the function :guilabel:`Make Independent`
+to duplicate the visual elements. Subsequently, you can control the visual appearance of particles and bonds for the
 original and the cloned pipeline individually.
 
 .. _clone_pipeline.copy_pipeline_items_dialog:
@@ -163,16 +165,16 @@ Copying modifiers between pipelines
   :width: 35%
   :align: right
 
-Select :guilabel:`Copy to...` from the context menu of a modifier to copy it 
+Select :guilabel:`Copy to...` from the context menu of a modifier to copy it
 from one pipeline to another pipeline in the same scene. OVITO displays a dialog box (see screenshot below),
 which lets you select the destination of the copy operation and the copying mode.
-Turn on the option :guilabel:`Share with source pipeline` to insert a reference to the original 
+Turn on the option :guilabel:`Share with source pipeline` to insert a reference to the original
 modifier into the other pipeline. Subsequently, both pipelines will share the same modifier, and
-changing the modifier's parameters will affect the results of both pipelines. Turn off the option to perform 
+changing the modifier's parameters will affect the results of both pipelines. Turn off the option to perform
 a regular duplication, which produces an independent copy of the original modifier.
 
-The :guilabel:`Copy to...` function may also be used to copy one or more modifiers *within* the same pipeline. 
-This can be useful if you need to perform the same processing steps multiple times as part of a single pipeline (see also 
+The :guilabel:`Copy to...` function may also be used to copy one or more modifiers *within* the same pipeline.
+This can be useful if you need to perform the same processing steps multiple times as part of a single pipeline (see also
 :ref:`modifier_templates` as an alternative approach).
 
 In addition to modifiers, you can also copy the :ref:`file source <scene_objects.file_source>` of the current pipeline

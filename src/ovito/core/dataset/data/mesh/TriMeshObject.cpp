@@ -305,7 +305,7 @@ bool TriMeshObject::intersectRay(const Ray3& ray, FloatType& t, Vector3& normal,
 /******************************************************************************
 * Exports the triangle mesh to a VTK file.
 ******************************************************************************/
-void TriMeshObject::saveToVTK(CompressedTextWriter& stream)
+void TriMeshObject::saveToVTK(CompressedTextWriter& stream) const
 {
     stream << "# vtk DataFile Version 3.0\n";
     stream << "# Triangle mesh\n";
@@ -329,7 +329,7 @@ void TriMeshObject::saveToVTK(CompressedTextWriter& stream)
 /******************************************************************************
 * Exports the triangle mesh to a Wavefront .obj file.
 ******************************************************************************/
-void TriMeshObject::saveToOBJ(CompressedTextWriter& stream)
+void TriMeshObject::saveToOBJ(CompressedTextWriter& stream) const
 {
     stream << "# Wavefront OBJ file written by OVITO\n";
     stream << "# List of geometric vertices:\n";
@@ -431,7 +431,7 @@ void TriMeshObject::clipAtPlane(const Plane3& plane)
                         if(vindices.first > vindices.second) std::swap(vindices.first, vindices.second);
                         auto ve = newVertexMapping.find(vindices);
                         OVITO_ASSERT(ve != newVertexMapping.end());
-                        newface_edge_visibility[vout] = face.edgeVisible(vwrapped); 
+                        newface_edge_visibility[vout] = face.edgeVisible(vwrapped);
                         if(current_classification == -1) {
                             OVITO_ASSERT(vout <= 3);
                             if(hasNormals())
@@ -608,9 +608,9 @@ void TriMeshObject::removeDuplicateVertices(FloatType epsilon)
 }
 
 /******************************************************************************
-* Creates a triangulated unit sphere model by subdividing a icosahedron. 
+* Creates a triangulated unit sphere model by subdividing a icosahedron.
 * The resolution parameter controls the number of subdivision iterations and determines the
-* resulting vertices/faces of the mesh. 
+* resulting vertices/faces of the mesh.
 ******************************************************************************/
 void TriMeshObject::createIcosphere(int resolution)
 {
@@ -655,7 +655,7 @@ void TriMeshObject::createIcosphere(int resolution)
                 Lookup::key_type key(first, second);
                 if(key.first > key.second)
                     std::swap(key.first, key.second);
-                
+
                 auto inserted = lookup.insert({key, vertexCount()});
                 if(inserted.second) {
                     const Vector3& edge0 = vertex(first) - Point3::Origin();
@@ -663,7 +663,7 @@ void TriMeshObject::createIcosphere(int resolution)
                     Point3 point = Point3::Origin() + (edge0 + edge1).normalized();
                     addVertex(point);
                 }
-                
+
                 mid[edge] =  inserted.first->second;
             }
             (*newFace++).setVertices(face.vertex(0), mid[0], mid[2]);
@@ -676,7 +676,7 @@ void TriMeshObject::createIcosphere(int resolution)
 }
 
 /******************************************************************************
-* Determines whether the mesh forms a closed manifold, i.e. each triangle has 
+* Determines whether the mesh forms a closed manifold, i.e. each triangle has
 * three adjacent triangles with correct orientation.
 ******************************************************************************/
 bool TriMeshObject::isClosed() const
