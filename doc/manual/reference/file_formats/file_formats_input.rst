@@ -9,6 +9,7 @@ Input file formats
   input/ase_database
   input/cfg_atomeye
   input/gaussian_cube
+  input/gsd
   input/lammps_data
   input/lammps_dump
   input/lammps_dump_grid
@@ -122,7 +123,7 @@ OVITO can read the following file formats:
     - Binary molecular dynamics format written by the `HOOMD-blue <https://glotzerlab.engin.umich.edu/hoomd-blue/>`__ code.
       See `GSD (General Simulation Data) format <https://gsd.readthedocs.io>`__.
     - :ref:`particles <scene_objects.particles>`, :ref:`bonds <scene_objects.bonds>`, angles, dihedrals, impropers
-    -
+    - :ref:`Details <file_formats.input.gsd>`
 
   * - CASTEP
     - File format used by the `CASTEP <http://www.castep.org>`__ *ab initio* code. OVITO can read the |castep formats|_.
