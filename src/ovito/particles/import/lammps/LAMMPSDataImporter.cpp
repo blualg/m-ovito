@@ -404,7 +404,7 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
                     type = dynamic_object_cast<ParticleType>(typeProperty->elementType(typeName));
                     if(type) {
                         // Parse mass from second token.
-                        if(sscanf(typeName.constEnd(), FLOATTYPE_SCANF_STRING, &mass) == 1) {
+                        if(sscanf(typeName.cend(), FLOATTYPE_SCANF_STRING, &mass) == 1) {
                             atomType = type->numericId();
                         }
                     }
@@ -489,7 +489,7 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
 
                 // Parse bond type. Can be numeric or name string.
                 QLatin1StringView token = parseTypeLabel(line);
-                line = token.constEnd();
+                line = token.cend();
 
                 // Try parsing numeric type id.
                 bool ok = parseInt(token, *bondType);
@@ -563,7 +563,7 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
 
                 // Parse angle type. Can be numeric or name string.
                 QLatin1StringView token = parseTypeLabel(line);
-                line = token.constEnd();
+                line = token.cend();
 
                 // Try parsing numeric type id.
                 bool ok = parseInt(token, *angleType);
@@ -624,7 +624,7 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
 
                 // Parse dihedral type. Can be numeric or name string.
                 QLatin1StringView token = parseTypeLabel(line);
-                line = token.constEnd();
+                line = token.cend();
 
                 // Try parsing numeric type id.
                 bool ok = parseInt(token, *dihedralType);
@@ -685,7 +685,7 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
 
                 // Parse improper type. Can be numeric or name string.
                 QLatin1StringView token = parseTypeLabel(line);
-                line = token.constEnd();
+                line = token.cend();
 
                 // Try parsing numeric type id.
                 bool ok = parseInt(token, *improperType);

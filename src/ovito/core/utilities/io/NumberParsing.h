@@ -56,7 +56,7 @@ inline bool parseFloatType(const char* s, const char* s_end, float& f)
  *****************************************************************************/
 inline bool parseFloatType(QLatin1StringView s, float& f)
 {
-    return parseFloatType(s.constBegin(), s.constEnd(), f);
+    return parseFloatType(s.cbegin(), s.cend(), f);
 }
 
 /******************************************************************************
@@ -80,7 +80,7 @@ inline bool parseFloatType(const char* s, const char* s_end, double& f)
  *****************************************************************************/
 inline bool parseFloatType(QLatin1StringView s, double& f)
 {
-    return parseFloatType(s.constBegin(), s.constEnd(), f);
+    return parseFloatType(s.cbegin(), s.cend(), f);
 }
 
 /******************************************************************************
@@ -96,7 +96,7 @@ inline bool parseInt(const char* s, const char* s_end, int& i)
  *****************************************************************************/
 inline bool parseInt(QLatin1StringView s, int& i)
 {
-    return parseInt(s.constBegin(), s.constEnd(), i);
+    return parseInt(s.cbegin(), s.cend(), i);
 }
 
 /******************************************************************************
@@ -112,7 +112,7 @@ inline bool parseInt64(const char* s, const char* s_end, qlonglong& i)
  *****************************************************************************/
 inline bool parseInt64(QLatin1StringView s, qlonglong& i)
 {
-    return parseInt64(s.constBegin(), s.constEnd(), i);
+    return parseInt64(s.cbegin(), s.cend(), i);
 }
 
 /******************************************************************************
@@ -137,7 +137,7 @@ inline bool parseBool(const char* s, const char* s_end, int& d)
  *****************************************************************************/
 inline bool parseBool(QLatin1StringView s, int& d)
 {
-    return parseBool(s.constBegin(), s.constEnd(), d);
+    return parseBool(s.cbegin(), s.cend(), d);
 }
 
 }   // End of namespace
