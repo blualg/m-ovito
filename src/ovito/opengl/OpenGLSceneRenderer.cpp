@@ -80,7 +80,7 @@ QSet<QByteArray> OpenGLSceneRenderer::_openglExtensions;
 bool OpenGLSceneRenderer::_openGLSupportsGeometryShaders = false;
 
 /******************************************************************************
-* Is called by OVITO to query the class for any information that should be 
+* Is called by OVITO to query the class for any information that should be
 * included in the application's system report.
 ******************************************************************************/
 void OpenGLSceneRenderer::OOMetaClass::querySystemInformation(QTextStream& stream, UserInterface& userInterface) const
@@ -115,11 +115,11 @@ void OpenGLSceneRenderer::OOMetaClass::querySystemInformation(QTextStream& strea
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-OpenGLSceneRenderer::OpenGLSceneRenderer(ObjectCreationParams params) : SceneRenderer(params) 
+OpenGLSceneRenderer::OpenGLSceneRenderer(ObjectCreationParams params) : SceneRenderer(params)
 {
     registerQtResources();
 
-    // Determine which transparency rendering method has been selected by the user in the 
+    // Determine which transparency rendering method has been selected by the user in the
     // application settings dialog.
 #ifndef OVITO_DISABLE_QSETTINGS
     QSettings applicationSettings;
@@ -427,7 +427,7 @@ void OpenGLSceneRenderer::renderTransparentGeometry()
         OVITO_CHECK_OPENGL(this, this->glBindFramebuffer(GL_READ_FRAMEBUFFER, _primaryFramebuffer));
         OVITO_CHECK_OPENGL(this, this->glBlitFramebuffer(0, 0, _oitFramebuffer->width(), _oitFramebuffer->height(), 0, 0, _oitFramebuffer->width(), _oitFramebuffer->height(), GL_DEPTH_BUFFER_BIT, GL_NEAREST));
         OVITO_CHECK_OPENGL(this, this->glBindFramebuffer(GL_READ_FRAMEBUFFER, 0));
-        
+
         // Disable writing to the depth buffer.
         OVITO_CHECK_OPENGL(this, this->glDepthMask(GL_FALSE));
 
@@ -449,7 +449,7 @@ void OpenGLSceneRenderer::renderTransparentGeometry()
         renderCylindersImplementation(primitive);
     }
     _translucentCylinders.clear();
-    
+
     for(const auto& [tm, primitive] : _translucentMeshes) {
         setWorldTransform(tm);
         renderMeshImplementation(primitive);
@@ -462,7 +462,7 @@ void OpenGLSceneRenderer::renderTransparentGeometry()
         // Switch back to the primary rendering buffer.
         OVITO_CHECK_OPENGL(this, this->glBindFramebuffer(GL_FRAMEBUFFER, _primaryFramebuffer));
         constexpr GLenum drawBuffersList[] = { GL_COLOR_ATTACHMENT0 };
-        this->glDrawBuffers(1, drawBuffersList);        
+        this->glDrawBuffers(1, drawBuffersList);
 
         OVITO_ASSERT(this->glIsEnabled(GL_BLEND));
         OVITO_CHECK_OPENGL(this, this->glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE));
@@ -507,7 +507,7 @@ void OpenGLSceneRenderer::makeContextCurrent()
     OVITO_ASSERT(glcontext());
     if(!glcontext()->makeCurrent(_glsurface))
         throw RendererException(tr("Failed to make OpenGL context current."));
-#endif      
+#endif
 }
 
 /******************************************************************************
@@ -708,7 +708,7 @@ void OpenGLSceneRenderer::loadShader(QOpenGLShaderProgram* program, QOpenGLShade
     // Insert GLSL version string at the top.
     // Pick GLSL language version based on current OpenGL version.
     if(!isGLES) {
-        // Inject GLSL version directive into shader source. 
+        // Inject GLSL version directive into shader source.
         if(_glversion >= QT_VERSION_CHECK(3, 3, 0)) {
             shaderSource.append("#version 330\n");
             glslVersion = QT_VERSION_CHECK(3, 3, 0);
@@ -732,7 +732,7 @@ void OpenGLSceneRenderer::loadShader(QOpenGLShaderProgram* program, QOpenGLShade
     }
     else {
         // Using OpenGL ES context.
-        // Inject GLSL version directive into shader source. 
+        // Inject GLSL version directive into shader source.
         if(glformat().majorVersion() >= 3) {
             shaderSource.append("#version 300 es\n");
             glslVersion = QT_VERSION_CHECK(3, 0, 0);
@@ -742,15 +742,15 @@ void OpenGLSceneRenderer::loadShader(QOpenGLShaderProgram* program, QOpenGLShade
             shaderSource.append("precision highp float;\n");
 
             if(shaderType == QOpenGLShader::Fragment) {
-                // OpenGL ES 2.0 has no built-in support for gl_FragDepth. 
+                // OpenGL ES 2.0 has no built-in support for gl_FragDepth.
                 // Need to request EXT_frag_depth extension in such a case.
                 shaderSource.append("#extension GL_EXT_frag_depth : enable\n");
-                // Computation of local normal vectors in fragment shaders requires GLSL 
+                // Computation of local normal vectors in fragment shaders requires GLSL
                 // derivative functions dFdx, dFdy.
                 shaderSource.append("#extension GL_OES_standard_derivatives : enable\n");
             }
 
-            // Provide replacements of some missing GLSL functions in OpenGL ES Shading Language. 
+            // Provide replacements of some missing GLSL functions in OpenGL ES Shading Language.
             shaderSource.append("mat3 transpose(in mat3 tm) {\n");
             shaderSource.append("    vec3 i0 = tm[0];\n");
             shaderSource.append("    vec3 i1 = tm[1];\n");
@@ -799,11 +799,7 @@ void OpenGLSceneRenderer::loadShader(QOpenGLShaderProgram* program, QOpenGLShade
                 else {
                     shaderSource.append("out vec4 fragAccumulation;\n");
                     shaderSource.append("out float fragRevealage;\n");
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
                     if(QOpenGLFunctions_3_0* glfunc30 = QOpenGLVersionFunctionsFactory::get<QOpenGLFunctions_3_0>(glcontext())) {
-#else
-                    if(QOpenGLFunctions_3_0* glfunc30 = glcontext()->versionFunctions<QOpenGLFunctions_3_0>()) {
-#endif              
                         OVITO_CHECK_OPENGL(this, glfunc30->glBindFragDataLocation(program->programId(), 0, "fragAccumulation"));
                         OVITO_CHECK_OPENGL(this, glfunc30->glBindFragDataLocation(program->programId(), 1, "fragRevealage"));
                     }
@@ -872,7 +868,7 @@ void OpenGLSceneRenderer::loadShader(QOpenGLShaderProgram* program, QOpenGLShade
         }
 
         // Old GLSL versions do not provide an inverse() function for mat3 matrices.
-        // Replace calls to the inverse() function with a custom implementation. 
+        // Replace calls to the inverse() function with a custom implementation.
         if(_glversion < QT_VERSION_CHECK(3, 3, 0))
             line.replace("<inverse_mat3>", "inverse_mat3"); //  Emulate inverse(mat3) with own function.
         else
@@ -896,13 +892,13 @@ void OpenGLSceneRenderer::loadShader(QOpenGLShaderProgram* program, QOpenGLShade
 
         // 1-D texture sampler.
         if(_glversion < QT_VERSION_CHECK(3, 0, 0))
-            line.replace("<texture1D>", "texture1D"); 
+            line.replace("<texture1D>", "texture1D");
         else
             line.replace("<texture1D>", "texture");
 
         // 2-D texture sampler.
         if(_glversion < QT_VERSION_CHECK(3, 0, 0))
-            line.replace("<texture2D>", "texture2D"); 
+            line.replace("<texture2D>", "texture2D");
         else
             line.replace("<texture2D>", "texture");
 
@@ -910,7 +906,7 @@ void OpenGLSceneRenderer::loadShader(QOpenGLShaderProgram* program, QOpenGLShade
         if(line.contains("<calculate_view_ray_through_vertex>")) {
             if(_glversion >= QT_VERSION_CHECK(3, 0, 0))
                 line.replace("<calculate_view_ray_through_vertex>", "calculate_view_ray_through_vertex()");
-            else 
+            else
                 return; // Skip view ray calculation in vertex/geometry shader and let the fragement shader do the full calculation for each fragment.
         }
 
@@ -922,7 +918,7 @@ void OpenGLSceneRenderer::loadShader(QOpenGLShaderProgram* program, QOpenGLShade
             }
             else {
                 // Perform full view ray computation in the fragment shader's main function.
-                line.replace("<calculate_view_ray_through_fragment>", 
+                line.replace("<calculate_view_ray_through_fragment>",
                     "vec2 viewport_position = ((gl_FragCoord.xy - viewport_origin) * inverse_viewport_size) - 1.0;\n"
                     "vec4 _near = inverse_projection_matrix * vec4(viewport_position, -1.0, 1.0);\n"
                     "vec4 _far = _near + inverse_projection_matrix[2];\n"
@@ -934,7 +930,7 @@ void OpenGLSceneRenderer::loadShader(QOpenGLShaderProgram* program, QOpenGLShade
         // Flat surface normal calculation in vertex and geometry shaders.
         if(line.contains("<flat_normal.output>")) {
             if(_glversion >= QT_VERSION_CHECK(3, 0, 0)) {
-                line.replace("<flat_normal.output>", "flat_normal_fs"); // Note: "flat_normal_fs" is defined in "flat_normal.vert". 
+                line.replace("<flat_normal.output>", "flat_normal_fs"); // Note: "flat_normal_fs" is defined in "flat_normal.vert".
             }
             else {
                 // Pass view-space coordinates of vertex to fragment shader as texture coordintes.
@@ -946,17 +942,17 @@ void OpenGLSceneRenderer::loadShader(QOpenGLShaderProgram* program, QOpenGLShade
         // Flat surface normal calculation in fragment shaders.
         if(line.contains("<flat_normal.input>")) {
             if(_glversion >= QT_VERSION_CHECK(3, 0, 0)) {
-                line.replace("<flat_normal.input>", "flat_normal_fs"); // Note: "flat_normal_fs" is defined in "flat_normal.frag". 
+                line.replace("<flat_normal.input>", "flat_normal_fs"); // Note: "flat_normal_fs" is defined in "flat_normal.frag".
             }
             else {
                 // Calculate surface normal from cross product of UV tangents.
-                line.replace("<flat_normal.input>", 
+                line.replace("<flat_normal.input>",
                     !isGLES ? "normalize(cross(dFdx(gl_TexCoord[1].xyz), dFdy(gl_TexCoord[1].xyz))"
                         : "normalize(cross(dFdx(tex_coords), dFdy(tex_coords))");
             }
         }
 
-        shaderSource.append(line);  
+        shaderSource.append(line);
     };
 
     // Load actual shader source code.

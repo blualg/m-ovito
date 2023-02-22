@@ -71,9 +71,9 @@
 #include <QColor>
 #include <QGenericMatrix>
 #include <QMatrix4x4>
-#include <QVector2D> 
-#include <QVector3D> 
-#include <QVector4D> 
+#include <QVector2D>
+#include <QVector3D>
+#include <QVector4D>
 #include <QDateTime>
 #include <QThread>
 #include <QMutex>
@@ -81,7 +81,7 @@
 #include <QImage>
 #include <QFont>
 #include <QPainter>
-#include <QPainterPath> 
+#include <QPainterPath>
 #include <QPen>
 #include <QBrush>
 #include <QCommandLineParser>
@@ -109,6 +109,9 @@
 #endif
 #ifndef Q_OS_WASM
     #include <QNetworkAccessManager>
+#endif
+#if QT_VERSION < QT_VERSION_CHECK(6, 4, 0)
+    #define QLatin1StringView QLatin1String
 #endif
 
 /******************************************************************************
