@@ -86,9 +86,6 @@ void PropertyExpressionEvaluator::createInputVariables(const std::vector<ConstPr
 
     // Global attributes
     for(auto entry = attributes.constBegin(); entry != attributes.constEnd(); ++entry) {
-//      if(entry.value().type() == QMetaType::String)
-//          continue;
-
         if(entry.value().canConvert<double>())
             registerGlobalParameter(entry.key(), entry.value().toDouble());
         else if(entry.value().canConvert<long>())
@@ -179,6 +176,9 @@ size_t PropertyExpressionEvaluator::addVariable(ExpressionVariable v)
         v.mangledName.push_back(_validVariableNameChars.find(c) != mu::string_type::npos ? c : '_');
     }
     if(!v.mangledName.empty()) {
+        // Prepend '_' if name starts with number.
+        if(v.mangledName[0] >= '0' && v.mangledName[0] <= '9')
+            v.mangledName.insert(v.mangledName.begin(), '_');
         // Check if mangled name is unique.
         if(std::none_of(_variables.begin(), _variables.end(), [&v](const ExpressionVariable& v2) -> bool { return v2.mangledName == v.mangledName; })) {
             v.isRegistered = true;
