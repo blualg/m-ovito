@@ -90,18 +90,19 @@ void OpenGLSceneRenderer::OOMetaClass::querySystemInformation(QTextStream& strea
 
         stream << "======= OpenGL info =======" << "\n";
         const QSurfaceFormat& format = OpenGLSceneRenderer::openglSurfaceFormat();
-        stream << "Version: " << format.majorVersion() << QStringLiteral(".") << format.minorVersion() << "\n";
-        stream << "Profile: " << (format.profile() == QSurfaceFormat::CoreProfile ? "core" : (format.profile() == QSurfaceFormat::CompatibilityProfile ? "compatibility" : "none")) << "\n";
-        stream << "Alpha: " << format.hasAlpha() << "\n";
         stream << "Vendor: " << OpenGLSceneRenderer::openGLVendor() << "\n";
         stream << "Renderer: " << OpenGLSceneRenderer::openGLRenderer() << "\n";
+        stream << "Version number: " << format.majorVersion() << QStringLiteral(".") << format.minorVersion() << "\n";
         stream << "Version string: " << OpenGLSceneRenderer::openGLVersion() << "\n";
+        stream << "Profile: " << (format.profile() == QSurfaceFormat::CoreProfile ? "core" : (format.profile() == QSurfaceFormat::CompatibilityProfile ? "compatibility" : "none")) << "\n";
         stream << "Swap behavior: " << (format.swapBehavior() == QSurfaceFormat::SingleBuffer ? QStringLiteral("single buffer") : (format.swapBehavior() == QSurfaceFormat::DoubleBuffer ? QStringLiteral("double buffer") : (format.swapBehavior() == QSurfaceFormat::TripleBuffer ? QStringLiteral("triple buffer") : QStringLiteral("other")))) << "\n";
         stream << "Depth buffer size: " << format.depthBufferSize() << "\n";
         stream << "Stencil buffer size: " << format.stencilBufferSize() << "\n";
         stream << "Shading language: " << OpenGLSceneRenderer::openGLSLVersion() << "\n";
         stream << "Deprecated functions: " << (format.testOption(QSurfaceFormat::DeprecatedFunctions) ? "yes" : "no") << "\n";
         stream << "Geometry shader support: " << (OpenGLSceneRenderer::openGLSupportsGeometryShaders() ? "yes" : "no") << "\n";
+        stream << "Alpha: " << format.hasAlpha() << "\n";
+#if 0
         stream << "Supported extensions:\n";
         QStringList extensionList;
         for(const QByteArray& extension : OpenGLSceneRenderer::openglExtensions())
@@ -109,6 +110,7 @@ void OpenGLSceneRenderer::OOMetaClass::querySystemInformation(QTextStream& strea
         extensionList.sort();
         for(const QString& extension : extensionList)
             stream << extension << "\n";
+#endif
     }
 }
 

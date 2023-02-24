@@ -223,7 +223,7 @@ public:
         else if(orientation == Qt::Vertical && role == Qt::DisplayRole) {
             if(section >= 0 && section < keys().size() && _animationSettings) {
                 const AnimationKey* key = keys()[section];
-                return QVariant::fromValue(tr("Time: %1").arg(_animationSettings->timeToString(key->time())));
+                return QVariant::fromValue(tr("Frame: %1").arg(_animationSettings->timeToString(key->time())));
             }
         }
         return QAbstractTableModel::headerData(section, orientation, role);
@@ -311,7 +311,7 @@ AnimationKeyEditorDialog::AnimationKeyEditorDialog(KeyframeController* ctrl, con
 {
     setWindowTitle(tr("Parameter animation: %1").arg(propertyField->displayName()));
     _ctrl.setTarget(ctrl);
-    
+
     // Make sure the controller has at least one animation key.
     if(ctrl->keys().empty()) {
         _mainWindow.performActions(*this, [&] {

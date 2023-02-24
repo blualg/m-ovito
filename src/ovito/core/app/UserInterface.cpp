@@ -33,10 +33,10 @@
 namespace Ovito {
 
 /******************************************************************************
-* Closes the user interface and shuts down the entire application after 
+* Closes the user interface and shuts down the entire application after
 * displaying an error message.
 ******************************************************************************/
-void UserInterface::exitWithFatalError(const Exception& ex) 
+void UserInterface::exitWithFatalError(const Exception& ex)
 {
     reportError(ex, true);
     QCoreApplication::exit(1);
@@ -54,7 +54,7 @@ void UserInterface::reportError(const Exception& ex, bool blocking)
 
 /******************************************************************************
 * Tells the UI to process any pending events in the event queue and return immediately.
-* The function can return true to indicate that the running operation should be canceled. 
+* The function can return true to indicate that the running operation should be canceled.
 ******************************************************************************/
 bool UserInterface::processEvents()
 {
@@ -71,8 +71,8 @@ bool UserInterface::processEvents()
 /******************************************************************************
 * Creates a frame buffer of the requested size and displays it as a window in the user interface.
 ******************************************************************************/
-std::shared_ptr<FrameBuffer> UserInterface::createAndShowFrameBuffer(int width, int height, bool showRenderingOperationProgress) 
-{ 
+std::shared_ptr<FrameBuffer> UserInterface::createAndShowFrameBuffer(int width, int height, bool showRenderingOperationProgress)
+{
     return std::make_shared<FrameBuffer>(width, height);
 }
 
@@ -136,7 +136,7 @@ void UserInterface::resumeViewportUpdates()
 }
 
 /******************************************************************************
-* Zooms all visible viewports to the extents of the scene when all scene 
+* Zooms all visible viewports to the extents of the scene when all scene
 * pipelines have been fully evaluated and the extents are known.
 ******************************************************************************/
 void UserInterface::zoomToSceneExtentsWhenReady()
@@ -175,7 +175,6 @@ QString UserInterface::generateSystemReport()
     stream << "LSB output: " << lsbOutput << "\n";
 #endif
     stream << "Processor architecture: " << QSysInfo::currentCpuArchitecture() << "\n";
-    stream << "Floating-point type: " << (sizeof(FloatType)*8) << "-bit" << "\n";
     stream << "Qt version: " << QT_VERSION_STR << " (" << QSysInfo::buildCpuArchitecture() << ")\n";
 #ifdef OVITO_DISABLE_THREADING
     stream << "Multi-threading: disabled\n";

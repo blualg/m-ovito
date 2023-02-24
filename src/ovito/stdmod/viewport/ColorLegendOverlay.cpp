@@ -320,12 +320,12 @@ void ColorLegendOverlay::render(SceneRenderer* renderer, const QRect& logicalVie
     }
     else {
         // Set warning status to be displayed in the GUI.
-        setStatus(PipelineStatus(PipelineStatus::Warning, tr("No source Color Coding modifier has been selected for this color legend.")));
+        setStatus(PipelineStatus(PipelineStatus::Warning, tr("No data source has been specified for the color legend.")));
 
         // Escalate to an error state if in terminal mode.
         if(Application::instance()->consoleMode()) {
-            throw Exception(tr("You are trying to render a Viewport with a ColorLegendOverlay whose 'modifier' property has "
-                              "not been set to any ColorCodingModifier. Did you forget to assign a source for the color legend?"));
+            throw Exception(tr("You are rendering a Viewport with a ColorLegendOverlay that is not associated with any "
+                              "data source. Did you forget to specify a data source for the color legend?"));
         }
         else {
             // Ignore invalid configuration in GUI mode by not rendering the legend.

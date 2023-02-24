@@ -106,6 +106,8 @@ Future<AsynchronousModifier::EnginePtr> CoordinationAnalysisModifier::createEngi
         }
         if(uniqueTypeIds.empty())
             throw Exception(tr("No particle types have been defined."));
+        if(uniqueTypeIds.size() > 20)
+            throw Exception(tr("Calculation of partial RDFs is only supported for up to 20 particle types for performance reasons. Your system contains %1 types.").arg(uniqueTypeIds.size()));
     }
 
     // Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
@@ -219,7 +221,7 @@ void CoordinationAnalysisModifier::CoordinationAnalysisEngine::perform()
         std::vector<size_t> particleCounts(uniqueTypeIds().size(), 0);
         const int* sel = selectionData ? selectionData.begin() : nullptr;
         for(int t : particleTypeData) {
-            if(sel && !(*sel++)) continue; 
+            if(sel && !(*sel++)) continue;
             size_t typeIndex = uniqueTypeIds().index_of(uniqueTypeIds().find(t));
             if(typeIndex < particleCounts.size())
                 particleCounts[typeIndex]++;
