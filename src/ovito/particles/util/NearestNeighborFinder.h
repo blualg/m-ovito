@@ -57,7 +57,7 @@ class OVITO_PARTICLES_EXPORT NearestNeighborFinder
 {
 private:
 
-    // An internal atom structure.
+    // Internal data structure for each input particle.
     struct NeighborListAtom {
         /// The next atom in the linked list used for binning.
         NeighborListAtom* nextInBin;
@@ -65,25 +65,25 @@ private:
         Point3 pos;
     };
 
-    struct OVITO_PARTICLES_EXPORT TreeNode {
-        /// Constructor for a leaf node.
-        TreeNode() : splitDim(-1), atoms(nullptr), numAtoms(0) {}
+    struct OVITO_PARTICLES_EXPORT TreeNode
+    {
+        /// Constructor.
+        TreeNode() : atoms(nullptr), numAtoms(0) {}
 
         /// Returns true this is a leaf node.
         bool isLeaf() const { return splitDim == -1; }
 
         /// Converts the bounds of this node and all children to absolute coordinates.
-        void convertToAbsoluteCoordinates(const SimulationCellObject& cell) {
-            bounds.minc = cell.reducedToAbsolute(bounds.minc);
-            bounds.maxc = cell.reducedToAbsolute(bounds.maxc);
+        void convertToAbsoluteCoordinates(const AffineTransformation& cellMatrix) {
+            bounds = bounds.transformed(cellMatrix);
             if(!isLeaf()) {
-                children[0]->convertToAbsoluteCoordinates(cell);
-                children[1]->convertToAbsoluteCoordinates(cell);
+                children[0]->convertToAbsoluteCoordinates(cellMatrix);
+                children[1]->convertToAbsoluteCoordinates(cellMatrix);
             }
         }
 
         /// The splitting direction (or -1 if this is a leaf node).
-        int splitDim;
+        int splitDim = -1;
         union {
             struct {
                 /// The two child nodes (if this is not a leaf node).
@@ -104,7 +104,7 @@ private:
 
 public:
 
-    //// Constructor that builds the binary search tree.
+    /// Constructor that builds the binary search tree.
     NearestNeighborFinder(int _numNeighbors = 16) : numNeighbors(_numNeighbors) {
         bucketSize = std::max(_numNeighbors / 2, 8);
     }
@@ -165,7 +165,7 @@ public:
     public:
 
         /// Constructor.
-        Query(const NearestNeighborFinder& finder) : t(finder), queue(finder.numNeighbors) {}
+        Query(const NearestNeighborFinder& finder) : t(finder), queue(finder.numNeighbors), inverseCellMatrix(finder.inverseCellMatrix) {}
 
         /// Builds the sorted list of neighbors around the given particle.
         void findNeighbors(size_t particleIndex) {
@@ -175,11 +175,10 @@ public:
         /// Builds the sorted list of neighbors around the given point.
         void findNeighbors(const Point3& query_point, bool includeSelf) {
             queue.clear();
-            OVITO_ASSERT(t.simCell);
             for(const Vector3& pbcShift : t.pbcImages) {
                 q = query_point - pbcShift;
                 if(!queue.full() || queue.top().distanceSq > t.minimumDistance(t.root, q)) {
-                    qr = t.simCell->absoluteToReduced(q);
+                    qr = inverseCellMatrix * q;
                     visitNode(t.root, includeSelf);
                 }
             }
@@ -226,16 +225,16 @@ public:
         const NearestNeighborFinder& t;
         Point3 q, qr;
         BoundedPriorityQueue<Neighbor, std::less<Neighbor>, MAX_NEIGHBORS_LIMIT> queue;
+        const AffineTransformation inverseCellMatrix;
     };
 
     template<class Visitor>
     void visitNeighbors(const Point3& query_point, Visitor& v, bool includeSelf = false) const {
         FloatType mrs = FLOATTYPE_MAX;
-        OVITO_ASSERT(simCell);
         for(const Vector3& pbcShift : pbcImages) {
             Point3 q = query_point - pbcShift;
             if(mrs > minimumDistance(root, q)) {
-                visitNode(root, q, simCell->absoluteToReduced(q), v, mrs, includeSelf);
+                visitNode(root, q, inverseCellMatrix * q, v, mrs, includeSelf);
             }
         }
     }
@@ -301,8 +300,17 @@ private:
     /// The internal list of atoms.
     std::vector<NeighborListAtom> atoms;
 
-    // Simulation cell.
+    /// Simulation cell.
     DataOORef<const SimulationCellObject> simCell;
+
+    /// Simulation cell matrix.
+    AffineTransformation cellMatrix;
+
+    /// Reciprocal simulation cell matrix.
+    AffineTransformation inverseCellMatrix;
+
+    /// The squared lengths of the simulation cell vectors.
+    FloatType cellVectorLengthsSquared[3];
 
     /// The normal vectors of the three cell planes.
     Vector3 planeNormals[3];

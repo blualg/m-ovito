@@ -56,20 +56,24 @@ public:
                  ConstPropertyPtr orientationsArray,
                  ConstPropertyPtr correspondencesArray);
 
+    /// Returns the number of input particles in the system for which the NearestNeighborFinder was created.
+    using NearestNeighborFinder::particleCount;
+
+    /// Returns the "Structure Type" particle property.
+    const ConstPropertyPtr& structureTypes() const { return _structuresArray; }
+
     /// Stores information about a single neighbor of the central particle.
     struct Neighbor : public NearestNeighborFinder::Neighbor
     {
         Vector3 idealVector;
-#if 0
-        Vector_3<int8_t> scaledVector;
-#endif
+        //Vector_3<int8_t> scaledVector;
         FloatType disorientation;
     };
 
     /// This nested class performs a PTM calculation on a single input particle.
     /// It is thread-safe to use several Kernel objects concurrently, initialized from the same PTMNeighborFinder object.
-    class OVITO_PARTICLES_EXPORT Query 
-    {   
+    class OVITO_PARTICLES_EXPORT Query
+    {
         /// The internal query type for finding the input set of nearest neighbors.
         using NeighborQuery = NearestNeighborFinder::Query<PTMAlgorithm::MAX_INPUT_NEIGHBORS>;
 

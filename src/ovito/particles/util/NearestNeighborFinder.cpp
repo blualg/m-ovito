@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -26,7 +26,7 @@
 
 namespace Ovito::Particles {
 
-#define TREE_DEPTH_LIMIT        17
+#define TREE_DEPTH_LIMIT 17
 
 /******************************************************************************
 * Prepares the neighbor list builder.
@@ -39,10 +39,16 @@ bool NearestNeighborFinder::prepare(ConstPropertyAccess<Point3> posProperty, con
     OVITO_ASSERT(currentTask != nullptr);
 
     simCell = cellData;
+    cellMatrix = simCell->cellMatrix();
 
-    OVITO_ASSERT(!simCell->is2D() || !simCell->matrix().column(2).isZero());
+    OVITO_ASSERT(!simCell->is2D() || !cellMatrix.column(2).isZero());
     if(simCell->volume3D() <= FLOATTYPE_EPSILON || simCell->isDegenerate())
         throw Exception("Simulation cell is degenerate.");
+
+    inverseCellMatrix = simCell->reciprocalCellMatrix();
+    cellVectorLengthsSquared[0] = cellMatrix.column(0).squaredLength();
+    cellVectorLengthsSquared[1] = cellMatrix.column(1).squaredLength();
+    cellVectorLengthsSquared[2] = cellMatrix.column(2).squaredLength();
 
     // Compute normal vectors of simulation cell faces.
     planeNormals[0] = simCell->cellNormalVector(0);
@@ -53,10 +59,11 @@ bool NearestNeighborFinder::prepare(ConstPropertyAccess<Point3> posProperty, con
     OVITO_ASSERT(planeNormals[2] != Vector3::Zero());
 
     // For small simulation cells it cannot hurt much to consider more periodic images.
-    // At the very least, consider one periodic image in each direction though (when cell is orthogonal),
-    // and two periodic images if cell is shared.
+    // At the very least, consider one periodic image in each direction (when cell is orthogonal),
+    // and two periodic images if cell is tilted.
     int nimages = 200 / qBound<size_t>(50, posProperty.size(), 200);
-    if(nimages < 2 && !simCell->isAxisAligned()) nimages = 2;
+    if(nimages < 2 && !simCell->isAxisAligned())
+        nimages = 2;
 
     // Create list of periodic image shift vectors.
     int nx = simCell->hasPbcCorrected(0) ? nimages : 0;
@@ -78,7 +85,7 @@ bool NearestNeighborFinder::prepare(ConstPropertyAccess<Point3> posProperty, con
     Box3 boundingBox(Point3(0,0,0), Point3(1,1,1));
     if(simCell->hasPbcCorrected(0) == false || simCell->hasPbcCorrected(1) == false || simCell->hasPbcCorrected(2) == false) {
         for(const Point3& p : posProperty) {
-            Point3 reducedp = simCell->absoluteToReduced(p);
+            Point3 reducedp = inverseCellMatrix * p;
             if(simCell->hasPbcCorrected(0) == false) {
                 if(reducedp.x() < boundingBox.minc.x()) boundingBox.minc.x() = reducedp.x();
                 else if(reducedp.x() > boundingBox.maxc.x()) boundingBox.maxc.x() = reducedp.x();
@@ -121,7 +128,7 @@ bool NearestNeighborFinder::prepare(ConstPropertyAccess<Point3> posProperty, con
             return false;
         a.pos = *p;
         // Wrap atomic positions back into simulation box.
-        Point3 rp = simCell->absoluteToReduced(a.pos);
+        Point3 rp = inverseCellMatrix * a.pos;
         for(size_t k = 0; k < 3; k++) {
             if(simCell->hasPbcCorrected(k)) {
                 if(FloatType s = std::floor(rp[k])) {
@@ -136,7 +143,7 @@ bool NearestNeighborFinder::prepare(ConstPropertyAccess<Point3> posProperty, con
         ++p;
     }
 
-    root->convertToAbsoluteCoordinates(*simCell);
+    root->convertToAbsoluteCoordinates(cellMatrix);
 
     return true;
 }
@@ -152,7 +159,8 @@ void NearestNeighborFinder::insertParticle(NeighborListAtom* atom, const Point3&
         atom->nextInBin = node->atoms;
         node->atoms = atom;
         node->numAtoms++;
-        if(depth > maxTreeDepth) maxTreeDepth = depth;
+        if(depth > maxTreeDepth)
+            maxTreeDepth = depth;
         // If leaf node becomes too large, split it in the largest dimension.
         if(node->numAtoms > bucketSize && depth < TREE_DEPTH_LIMIT) {
             splitLeafNode(node, determineSplitDirection(node));
@@ -175,7 +183,8 @@ int NearestNeighborFinder::determineSplitDirection(TreeNode* node)
     FloatType dmax = 0.0;
     int dmax_dim = -1;
     for(int dim = 0; dim < 3; dim++) {
-        FloatType d = simCell->matrix().column(dim).squaredLength() * node->bounds.size(dim) * node->bounds.size(dim);
+        FloatType size = node->bounds.size(dim);
+        FloatType d = cellVectorLengthsSquared[dim] * size * size;
         if(d > dmax) {
             dmax = d;
             dmax_dim = dim;
@@ -190,10 +199,11 @@ int NearestNeighborFinder::determineSplitDirection(TreeNode* node)
 ******************************************************************************/
 void NearestNeighborFinder::splitLeafNode(TreeNode* node, int splitDim)
 {
+    // Copy the atoms pointer from the union before it gets overwritten when setting the children.
     NeighborListAtom* atom = node->atoms;
 
     node->splitDim = splitDim;
-    node->splitPos = (node->bounds.minc[splitDim] + node->bounds.maxc[splitDim]) * 0.5;
+    node->splitPos = (node->bounds.minc[splitDim] + node->bounds.maxc[splitDim]) * FloatType(0.5);
 
     // Create child nodes and define their bounding boxes.
     node->children[0] = nodePool.construct();
@@ -202,10 +212,15 @@ void NearestNeighborFinder::splitLeafNode(TreeNode* node, int splitDim)
     node->children[1]->bounds = node->bounds;
     node->children[0]->bounds.maxc[splitDim] = node->children[1]->bounds.minc[splitDim] = node->splitPos;
 
+    FloatType a = inverseCellMatrix(splitDim, 0);
+    FloatType b = inverseCellMatrix(splitDim, 1);
+    FloatType c = inverseCellMatrix(splitDim, 2);
+    FloatType d = inverseCellMatrix(splitDim, 3);
+
     // Redistribute atoms to child nodes.
     while(atom != nullptr) {
         NeighborListAtom* next = atom->nextInBin;
-        FloatType p = simCell->inverseMatrix().prodrow(atom->pos, splitDim);
+        FloatType p = a * atom->pos.x() + b * atom->pos.y() + c * atom->pos.z() + d;
         if(p < node->splitPos) {
             atom->nextInBin = node->children[0]->atoms;
             node->children[0]->atoms = atom;
