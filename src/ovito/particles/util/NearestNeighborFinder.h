@@ -73,9 +73,10 @@ private:
         /// Returns true this is a leaf node.
         bool isLeaf() const { return splitDim == -1; }
 
-        /// Converts the bounds of this node and all children to absolute coordinates.
+        /// Converts the min/max corner vertices of this node and all its children to absolute coordinates.
         void convertToAbsoluteCoordinates(const AffineTransformation& cellMatrix) {
-            bounds = bounds.transformed(cellMatrix);
+            bounds.minc = cellMatrix * bounds.minc;
+            bounds.maxc = cellMatrix * bounds.maxc;
             if(!isLeaf()) {
                 children[0]->convertToAbsoluteCoordinates(cellMatrix);
                 children[1]->convertToAbsoluteCoordinates(cellMatrix);
@@ -146,15 +147,14 @@ public:
         return closestIndex;
     }
 
-    /// Contains information about a single neighbor of the central particle.
+    /// Information associated with each neighbor of the current center particle.
     struct Neighbor
     {
         Vector3 delta;
         FloatType distanceSq;
-        NeighborListAtom* atom;
         size_t index;
 
-        /// Used for ordering.
+        /// For ordering the neighbors by distance.
         bool operator<(const Neighbor& other) const { return distanceSq < other.distanceSq; }
     };
 
@@ -198,8 +198,7 @@ public:
                     n.delta = atom->pos - q;
                     n.distanceSq = n.delta.squaredLength();
                     if(includeSelf || n.distanceSq != 0) {
-                        n.atom = atom;
-                        n.index = atom - &t.atoms.front();
+                        n.index = atom - t.atoms.data();
                         queue.insert(n);
                     }
                 }
@@ -250,7 +249,7 @@ private:
     /// Determines in which direction to split the given leaf node.
     int determineSplitDirection(TreeNode* node);
 
-    /// Computes the minimum distance from the query point to the given bounding box.
+    /// Computes the minimum distance from the query point to the bounding box of the given node.
     FloatType minimumDistance(TreeNode* node, const Point3& query_point) const {
         Vector3 p1 = node->bounds.minc - query_point;
         Vector3 p2 = query_point - node->bounds.maxc;
@@ -272,8 +271,7 @@ private:
                 n.delta = atom->pos - q;
                 n.distanceSq = n.delta.squaredLength();
                 if(includeSelf || n.distanceSq != 0) {
-                    n.atom = atom;
-                    n.index = atom - &atoms.front();
+                    n.index = atom - atoms.data();
                     v(n, mrs);
                 }
             }
