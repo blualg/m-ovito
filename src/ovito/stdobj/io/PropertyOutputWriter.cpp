@@ -92,26 +92,20 @@ PropertyOutputWriter::PropertyOutputWriter(const OutputColumnMapping& mapping, c
                                "The property '%2', which is needed to write file column %1, does not exist or could not be computed.").arg(i+1).arg(pref.name()));
         }
         if(property) {
-            // Generate a meaningful error when user forgets to specify a component when exporting a vector property.
-            if(property->componentCount() > 1 && pref.vectorComponent() < 0) {
-                QString errmsg = tr("The vector property '%1' has %2 components, but you did not specify which component to export in file column %3.").arg(property->name()).arg(property->componentCount()).arg(i+1);
-                if(!property->componentNames().empty() && property->type() != 0) {
-                    errmsg += tr(" Please append a component to the property name:");
-                    for(const QString& cname : property->componentNames())
-                        errmsg += QStringLiteral(" .") + cname;
-                }
-                else {
-                    errmsg += tr(" Please append a component index to the property name:");
-                    for(int cidx = 1; cidx <= property->componentCount(); cidx++)
-                        errmsg += QStringLiteral(" .%1").arg(cidx);
-                }
-                throw Exception(std::move(errmsg));
-            }
             // Error if user specified a vector component that is out of range.
             if((int)property->componentCount() <= std::max(0, pref.vectorComponent()))
                 throw Exception(tr("The output vector component selected for column %1 is out of range. The property '%2' has only %3 component(s).").arg(i+1).arg(pref.name()).arg(property->componentCount()));
             if(property->dataType() == QMetaType::Void)
                 throw Exception(tr("The property '%1' cannot be written to the output file, because it is empty.").arg(pref.name()));
+            // If the user did not specify a specific component for a vector property, generate multiple columns to export all property components.
+            if(property->componentCount() > 1 && pref.vectorComponent() < 0) {
+                for(int component = 0; component < property->componentCount(); component++) {
+                    _properties.push_back(property);
+                    _vectorComponents.push_back(component);
+                    _propertyArrays.push_back(ConstPropertyAccess<void,true>(property));
+                }
+                continue;
+            }
         }
 
         // Build internal list of property objects for fast look up during writing.
