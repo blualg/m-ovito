@@ -45,7 +45,7 @@ bool LAMMPSDumpLocalImporter::OOMetaClass::checkFileFormat(const FileHandle& fil
     // Read first line.
     stream.readLine(15);
 
-    // Dump files written by LAMMPS start with one of the following keywords: TIMESTEP, UNITS or TIME.  
+    // Dump files written by LAMMPS start with one of the following keywords: TIMESTEP, UNITS or TIME.
     if(!stream.lineStartsWith("ITEM: TIMESTEP") && !stream.lineStartsWith("ITEM: UNITS") && !stream.lineStartsWith("ITEM: TIME"))
         return false;
 

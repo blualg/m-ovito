@@ -51,7 +51,7 @@ bool LAMMPSDumpLocalImporterEditor::inspectNewFile(FileImporter* importer, const
         if(!inspectFuture.waitForFinished())
             return false;
     }
-    
+
     InputColumnMapping mapping = inspectFuture.result();
 
     // If this is a newly created file importer, load old mapping from application settings store.
@@ -62,7 +62,12 @@ bool LAMMPSDumpLocalImporterEditor::inspectNewFile(FileImporter* importer, const
             try {
                 InputColumnMapping storedMapping;
                 storedMapping.fromByteArray(settings.value("colmapping").toByteArray());
-                std::copy_n(storedMapping.begin(), std::min(storedMapping.size(), mapping.size()), mapping.begin());
+                for(size_t i = 0; i < std::min(storedMapping.size(), mapping.size()); i++) {
+                    if(mapping[i].columnName == storedMapping[i].columnName) {
+                        mapping[i].property = storedMapping[i].property;
+                        mapping[i].dataType = storedMapping[i].dataType;
+                    }
+                }
             }
             catch(Exception& ex) {
                 ex.prependGeneralMessage(tr("Failed to load last used column-to-property mapping from application settings store."));
@@ -75,7 +80,10 @@ bool LAMMPSDumpLocalImporterEditor::inspectNewFile(FileImporter* importer, const
         // and if the newly imported file has no column name information but the same number
         // of columns, adopt the existing column mapping from previously imported file.
         if(boost::algorithm::none_of(mapping, [](const auto& column) { return column.isMapped(); })) {
-            boost::range::copy(lammpsImporter->columnMapping(), mapping.begin()); 
+            for(size_t i = 0; i < mapping.size(); i++) {
+                mapping[i].property = lammpsImporter->columnMapping()[i].property;
+                mapping[i].dataType = lammpsImporter->columnMapping()[i].dataType;
+            }
         }
     }
 
@@ -187,7 +195,7 @@ void LAMMPSDumpLocalImporterEditor::onEditColumnMapping()
 
             // Determine the currently loaded data file of the FileSource.
             FileSource* fileSource = importer->fileSource();
-            if(!fileSource || fileSource->frames().empty()) 
+            if(!fileSource || fileSource->frames().empty())
                 return;
             int frameIndex = qBound(0, fileSource->dataCollectionFrame(), fileSource->frames().size()-1);
 
