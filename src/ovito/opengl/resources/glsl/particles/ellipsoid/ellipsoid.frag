@@ -38,7 +38,7 @@ void main()
 	vec3 sphere_dir = view_to_sphere_fs * (particle_view_pos_fs - ray_origin);
 
 	// Ray direction in sphere coordinate system.
-	vec3 ray_dir2 = normalize(view_to_sphere_fs * ray_dir);
+	vec3 ray_dir2 = normalize(view_to_sphere_fs * ray_dir_norm);
 
 	// Perform ray-sphere intersection test.
 	float b = dot(ray_dir2, sphere_dir);
