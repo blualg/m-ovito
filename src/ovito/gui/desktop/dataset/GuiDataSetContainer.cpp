@@ -238,7 +238,8 @@ bool GuiDataSetContainer::importFiles(const std::vector<QUrl>& urls, const FileI
 
     // Create a reference to the active scene to keep it alive during this long-running operation.
     OORef<Scene> scene = activeScene();
-    OVITO_ASSERT(scene);
+    if(!scene)
+        throw Exception(tr("Cannot import because there is no active scene."));
 
     std::vector<std::pair<QUrl, OORef<FileImporter>>> urlImporters;
     for(const QUrl& url : urls) {
