@@ -12,7 +12,7 @@ tool in over 9,500 research publications.
 
 OVITO is a desktop application for Windows, Linux, and macOS. The software is being developed, distributed, and supported by `OVITO GmbH <https://www.ovito.org>`__,
 a German startup company founded by the original developer of OVITO, `Dr. Alexander Stukowski <http://scholar.google.com/citations?user=f8Tw3eEAAAAJ>`__,
-and other team members. The ecosystem also includes the :ref:`OVITO Python module <scripting_manual>`, which is available also as a standalone product.
+and other team members. The ecosystem includes the :ref:`OVITO Python module <scripting_manual>`, which is also available as a standalone product.
 
 The `first public release of OVITO <http://stacks.iop.org/0965-0393/18/015012>`__ dates back to 2009, when the software had been created as a byproduct of a Ph.D.
 research project at the Materials Science Department of Technische Universität Darmstadt in Germany. Over many years, OVITO remained an academic open-source project,
