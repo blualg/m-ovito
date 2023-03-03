@@ -31,7 +31,7 @@
 namespace Ovito {
 
 /**
- * \brief Abstract interface for viewport windows, which provide the connection between the 
+ * \brief Abstract interface for viewport windows, which provide the connection between the
  *        non-visual Viewport class and the GUI layer.
  */
 class OVITO_CORE_EXPORT ViewportWindowInterface
@@ -100,7 +100,7 @@ public:
     /// Hides the tooltip window previously shown by showToolTip().
     virtual void hideToolTip() {}
 
-    /// Sets the mouse cursor shape for the window. 
+    /// Sets the mouse cursor shape for the window.
     virtual void setCursor(const QCursor& cursor) {}
 
     /// Returns the current position of the mouse cursor relative to the viewport window.
@@ -109,7 +109,11 @@ public:
 public:
 
     /// Registry for viewport window implementations.
+#if QT_VERSION < QT_VERSION_CHECK(6, 5, 0)
     using Registry = QVarLengthArray<const QMetaObject*, 3>;
+#else
+    using Registry = QVarLengthArray<std::pair<const QMetaObject*, ViewportWindowInterface* (*)(Viewport*, UserInterface*, QWidget*)>, 3>;
+#endif
 
     /// Returns the global registry, which allows enumerating all installed viewport window implementations.
     static Registry& registry();
@@ -150,8 +154,14 @@ private:
 };
 
 /// This macro registers a viewport window implementation in ViewportWindowInterface::registry() at compile time.
-#define OVITO_REGISTER_VIEWPORT_WINDOW_IMPLEMENTATION(WindowClass) \
-    static const int __registration##WindowClass = (Ovito::ViewportWindowInterface::registry().push_back(&WindowClass::staticMetaObject), 0);
-
+#if QT_VERSION < QT_VERSION_CHECK(6, 5, 0)
+    #define OVITO_REGISTER_VIEWPORT_WINDOW_IMPLEMENTATION(WindowClass) \
+        static const int __registration##WindowClass = (Ovito::ViewportWindowInterface::registry().push_back(&WindowClass::staticMetaObject), 0);
+#else
+    #define OVITO_REGISTER_VIEWPORT_WINDOW_IMPLEMENTATION(WindowClass) \
+        static Ovito::ViewportWindowInterface* __construct##WindowClass(Ovito::Viewport* vp, Ovito::UserInterface* ui, QWidget* parent) { return new WindowClass{vp, ui, parent}; } \
+        static const int __registration##WindowClass = (Ovito::ViewportWindowInterface::registry().push_back( \
+                std::make_pair(&WindowClass::staticMetaObject, &__construct##WindowClass)), 0);
+#endif
 
 }   // End of namespace

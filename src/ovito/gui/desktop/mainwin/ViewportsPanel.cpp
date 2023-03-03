@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -72,23 +72,39 @@ BaseViewportWindow* ViewportsPanel::createViewportWindow(Viewport& vp, MainWindo
 {
     // Select the viewport window implementation to use.
     QSettings settings;
+#if QT_VERSION < QT_VERSION_CHECK(6, 5, 0)
     const QMetaObject* viewportImplementation = nullptr;
     for(const QMetaObject* metaType : ViewportWindowInterface::registry()) {
+#else
+    const QMetaObject* viewportImplementation = nullptr;
+    ViewportWindowInterface* (*viewportWindowConstructor)(Viewport*, UserInterface*, QWidget*) = nullptr;
+    for(auto [metaType, constructor] : ViewportWindowInterface::registry()) {
+#endif
         if(qstrcmp(metaType->className(), "Ovito::OpenGLViewportWindow") == 0) {
             viewportImplementation = metaType;
+#if QT_VERSION >= QT_VERSION_CHECK(6, 5, 0)
+            viewportWindowConstructor = constructor;
+#endif
         }
         else if(qstrcmp(metaType->className(), "Ovito::VulkanViewportWindow") == 0 && settings.value("rendering/selected_graphics_api").toString() == "Vulkan") {
             viewportImplementation = metaType;
+#if QT_VERSION >= QT_VERSION_CHECK(6, 5, 0)
+            viewportWindowConstructor = constructor;
+#endif
             break;
         }
     }
 
-    qRegisterMetaType<UserInterface*>("UserInterfacePtr");
-
     if(viewportImplementation) {
+#if QT_VERSION >= QT_VERSION_CHECK(6, 5, 0)
+        ViewportWindowInterface* obj = viewportWindowConstructor(&vp, &mainWindow, parent);
+        return static_cast<BaseViewportWindow*>(obj);
+#else
+        qRegisterMetaType<UserInterface*>("UserInterfacePtr");
         QObject* obj = viewportImplementation->newInstance(Q_ARG(Viewport*, &vp), Q_ARG(UserInterface*, &mainWindow), Q_ARG(QWidget*, parent));
         OVITO_ASSERT(dynamic_cast<BaseViewportWindow*>(obj));
         return dynamic_cast<BaseViewportWindow*>(obj);
+#endif
     }
 
     return nullptr;

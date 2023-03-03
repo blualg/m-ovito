@@ -93,7 +93,7 @@ class OVITO_STDOBJ_EXPORT PropertyOutputWriter : public QObject
 {
 public:
 
-    /// These modes control how the values of typed properties are 
+    /// These modes control how the values of typed properties are
     /// written to the output file.
     enum TypedPropertyMode {
         WriteNumericIds,        ///< Write the integer numeric ID of the type.
@@ -119,7 +119,7 @@ public:
 private:
 
     /// Stores the source properties for each column in the output file.
-    /// If an entry is NULL, then the element index will be written to the corresponding column.
+    /// The special value NULL instead of a PropertyObjects means that the implicit element indices should be output in this file column.
     QVector<const PropertyObject*> _properties;
 
     /// Stores the source vector component for each output column.

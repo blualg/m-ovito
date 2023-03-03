@@ -621,16 +621,8 @@ void ParticlesVis::renderMeshBasedParticles(const ParticlesObject* particles, Sc
             AffineTransformation tm = AffineTransformation::scaling(radii[i]);
             if(positions)
                 tm.translation() = positions[i] - Point3::Origin();
-            if(orientations) {
-                Quaternion quat = orientations[i];
-                // Normalize quaternion.
-                FloatType c = sqrt(quat.dot(quat));
-                if(c <= FLOATTYPE_EPSILON)
-                    quat.setIdentity();
-                else
-                    quat /= c;
-                tm = tm * Matrix3::rotation(quat);
-            }
+            if(orientations)
+                tm = tm * Matrix3::rotation(orientations[i].safelyNormalized());
             perInstanceData[typeIndex].particleTMs.push_back(tm);
             perInstanceData[typeIndex].particleColors.push_back(ColorA(colors[i], transparencies ? qBound(0.0, 1.0 - transparencies[i], 1.0) : 1.0));
             perInstanceData[typeIndex].particleIndices.push_back(i);
@@ -1023,7 +1015,7 @@ void ParticlesVis::renderCylindricParticles(const ParticlesObject* particles, Sc
                 }
                 Vector3 dir = Vector3(0, 0, length);
                 if(orientationArray) {
-                    dir = orientationArray[effectiveParticleIndex] * dir;
+                    dir = orientationArray[effectiveParticleIndex].safelyNormalized() * dir;
                 }
                 Point3 p = center - (dir * FloatType(0.5));
                 cylinderBasePositions[index] = p;
@@ -1217,7 +1209,7 @@ void ParticlesVis::highlightParticle(size_t particleIndex, const ParticlesObject
             Vector3 dir = Vector3(0, 0, length);
             if(orientationProperty) {
                 Quaternion q = ConstPropertyAccess<Quaternion>(orientationProperty)[particleIndex];
-                dir = q * dir;
+                dir = q.safelyNormalized() * dir;
             }
             DataBufferAccessAndRef<Point3> positionBuffer1 = DataBufferPtr::create(1, DataBuffer::Float, 3);
             DataBufferAccessAndRef<Point3> positionBuffer2 = DataBufferPtr::create(1, DataBuffer::Float, 3);

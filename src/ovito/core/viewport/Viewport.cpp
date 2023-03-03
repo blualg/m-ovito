@@ -73,7 +73,7 @@ Viewport::Viewport(ObjectCreationParams params) : RefTarget(params),
 {
     connect(&ViewportSettings::getSettings(), &ViewportSettings::settingsChanged, this, &Viewport::viewportSettingsChanged);
 
-    // Automatically associate the new viewport with the gloabl scene (if there is one).
+    // Automatically associate the new viewport with the global scene (if there is one).
     // This is mainly done for the Python interface, where each viewport created by the user is automatically
     // associated with some scene.
     if(params.createSubObjects() && ExecutionContext::isScripting()) {
@@ -206,7 +206,7 @@ bool Viewport::isPerspectiveProjection() const
 /******************************************************************************
 * Returns the viewing direction of the camera.
 ******************************************************************************/
-Vector3 Viewport::cameraDirection() const 
+Vector3 Viewport::cameraDirection() const
 {
     if(cameraTransformation().column(2) == Vector3::Zero()) return Vector3(0,0,1);
     else return -cameraTransformation().column(2);
@@ -229,7 +229,7 @@ void Viewport::setCameraDirection(const Vector3& newDir)
 /******************************************************************************
 * Returns the position of the camera.
 ******************************************************************************/
-Point3 Viewport::cameraPosition() const 
+Point3 Viewport::cameraPosition() const
 {
     return Point3::Origin() + cameraTransformation().translation();
 }
@@ -356,7 +356,7 @@ void Viewport::zoomToSelectionExtents(FloatType viewportAspectRatio)
 }
 
 /******************************************************************************
-* Zooms to the extents of the scene once the scene is ready. 
+* Zooms to the extents of the scene once the scene is ready.
 * This only works for viewports with an associated window.
 ******************************************************************************/
 void Viewport::zoomToSceneExtentsWhenReady()
@@ -491,7 +491,7 @@ void Viewport::referenceReplaced(const PropertyFieldDescriptor* field, RefTarget
             disconnect(static_object_cast<Scene>(oldTarget), &Scene::cameraOrbitCenterChanged, this, &Viewport::updateViewport);
         if(newTarget)
             connect(static_object_cast<Scene>(newTarget), &Scene::cameraOrbitCenterChanged, this, &Viewport::updateViewport);
-        
+
         Q_EMIT sceneReplaced(scene());
         Q_EMIT viewportChanged();
     }
@@ -712,7 +712,7 @@ void Viewport::renderInteractive(UserInterface& userInterface, DataSet* dataset,
 }
 
 /******************************************************************************
-* Determines this viewport's area in the rendered output image. 
+* Determines this viewport's area in the rendered output image.
 ******************************************************************************/
 QRect Viewport::renderViewportRect(DataSet* dataset) const
 {
@@ -824,7 +824,7 @@ FloatType Viewport::nonScalingSize(const Point3& worldPosition)
 {
     // Get window size in device-independent pixels.
     int height = window() ? window()->viewportWindowDeviceIndependentSize().height() : 0;
-    if(height == 0) 
+    if(height == 0)
         return 1;
 
     constexpr FloatType baseSize = 60;
@@ -965,7 +965,7 @@ Point3 Viewport::orbitCenter()
 }
 
 /******************************************************************************
-* Returns the nested layout cell this viewport's window is currently in (if any). 
+* Returns the nested layout cell this viewport's window is currently in (if any).
 ******************************************************************************/
 ViewportLayoutCell* Viewport::layoutCell() const
 {
@@ -983,9 +983,9 @@ ViewportLayoutCell* Viewport::layoutCell() const
 /******************************************************************************
 * Associates this viewport with a GUI window. This is an internal method.
 ******************************************************************************/
-void Viewport::setWindow(ViewportWindowInterface* window) 
-{ 
-    _window = window; 
+void Viewport::setWindow(ViewportWindowInterface* window)
+{
+    _window = window;
 }
 
 }   // End of namespace

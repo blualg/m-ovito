@@ -226,11 +226,20 @@ public:
         }
     }
 
-    /// \brief Returns a Normalized version of this quaternion.
+    /// \brief Returns a nrmalized version of this quaternion.
     inline QuaternionT normalized() const {
         T c = this->norm();
         OVITO_ASSERT_MSG(c > 0, "Quaternion::normalized", "Cannot normalize the null quaternion.");
         return { x() / c, y() / c, z() / c, w() / c };
+    }
+
+    /// \brief Returns a normalized version of this quaternion - unless its the null quaternion, then it returns the identity quaternion.
+    inline QuaternionT safelyNormalized(T epsilon = T(FLOATTYPE_EPSILON)) const {
+        T c = this->norm();
+        if(c > epsilon)
+            return { x() / c, y() / c, z() / c, w() / c };
+        else
+            return Identity();
     }
 
     ///////////////////////////////// Interpolation //////////////////////////////
