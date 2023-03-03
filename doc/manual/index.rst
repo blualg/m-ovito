@@ -18,6 +18,7 @@ OVITO User Manual
   :includehidden:
 
   introduction
+  new_features
   installation
   usage/index
   tutorials/index
