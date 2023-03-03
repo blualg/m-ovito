@@ -79,8 +79,8 @@ private Q_SLOTS:
     /// Is called when the evaluation of a pipeline in the scene has finished.
     void pipelineEvaluationFinished();
 
-    /// Is called whenever the SelectionSet changes, i.e., whenever the user selects a different pipeline.
-    void sceneSelectionChanged() { Q_EMIT viewportUpdateRequest(); }
+    /// Is called whenever a new RenderSettings object becomes active.
+    void renderSettingsReplaced(RenderSettings* newRenderSettings);
 
 private:
 
@@ -118,6 +118,9 @@ private:
 
     /// Qt signal/slot connection to the SelectionSet::selectionChanged() signal.
     QMetaObject::Connection _selectionChangedConnection;
+
+    // Qt signal/slot connection to the RenderSettings::settingsChanged() signal.
+    QMetaObject::Connection _renderSettingsChangedConnection;
 };
 
 }   // End of namespace

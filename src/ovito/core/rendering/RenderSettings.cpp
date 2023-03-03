@@ -113,6 +113,17 @@ RenderSettings::RenderSettings(ObjectCreationParams params) : RefTarget(params),
 }
 
 /******************************************************************************
+* Sends an event to all dependents of this RefTarget.
+******************************************************************************/
+void RenderSettings::notifyDependentsImpl(const ReferenceEvent& event)
+{
+    if(event.type() == ReferenceEvent::TargetChanged && !isBeingLoaded()) {
+        Q_EMIT settingsChanged();
+    }
+    RefTarget::notifyDependentsImpl(event);
+}
+
+/******************************************************************************
 * Sets the output filename of the rendered image.
 ******************************************************************************/
 void RenderSettings::setImageFilename(const QString& filename)
@@ -124,8 +135,8 @@ void RenderSettings::setImageFilename(const QString& filename)
 }
 
 /******************************************************************************
-* This is the high-level rendering function, which invokes the renderer to 
-* generate one or more output images of the scene. 
+* This is the high-level rendering function, which invokes the renderer to
+* generate one or more output images of the scene.
 ******************************************************************************/
 bool RenderSettings::renderScene(const ViewportConfiguration& viewportConfiguration, FrameBuffer& frameBuffer, MainThreadOperation& operation)
 {
@@ -135,8 +146,8 @@ bool RenderSettings::renderScene(const ViewportConfiguration& viewportConfigurat
         QSizeF borderSize(0,0);
         if(layoutSeperatorsEnabled()) {
             // Convert separator width from pixels to reduced units, which are relative to the framebuffer width/height.
-            borderSize.setWidth( 1.0 / outputImageWidth()  * layoutSeperatorWidth()); 
-            borderSize.setHeight(1.0 / outputImageHeight() * layoutSeperatorWidth()); 
+            borderSize.setWidth( 1.0 / outputImageWidth()  * layoutSeperatorWidth());
+            borderSize.setHeight(1.0 / outputImageHeight() * layoutSeperatorWidth());
         }
         viewportLayout = viewportConfiguration.getViewportRectangles(QRectF(0,0,1,1), borderSize);
     }
@@ -156,18 +167,18 @@ bool RenderSettings::renderScene(const ViewportConfiguration& viewportConfigurat
 }
 
 /******************************************************************************
-* This is the high-level rendering function, which invokes the renderer to 
-* generate one or more output images of the scene. 
+* This is the high-level rendering function, which invokes the renderer to
+* generate one or more output images of the scene.
 ******************************************************************************/
 bool RenderSettings::renderScene(const std::vector<std::pair<Viewport*, QRectF>>& viewportLayout, AnimationSettings* animationSettings, FrameBuffer& frameBuffer, MainThreadOperation& operation)
 {
     // Get the selected scene renderer.
-    // Note: Using ref-counted pointer here, because the renderer may potentially be deleted before the current function returns. 
+    // Note: Using ref-counted pointer here, because the renderer may potentially be deleted before the current function returns.
     OORef<SceneRenderer> renderer = this->renderer();
-    if(!renderer) 
+    if(!renderer)
         throw Exception(tr("No rendering engine has been selected."));
 
-    // Create a ref-counted pointer to ourself to keep the RenderSettings alive even if the application 
+    // Create a ref-counted pointer to ourself to keep the RenderSettings alive even if the application
     // is shutting down while we are still in this function.
     OORef<RenderSettings> self(this);
 
@@ -285,7 +296,7 @@ bool RenderSettings::renderScene(const std::vector<std::pair<Viewport*, QRectF>>
 /******************************************************************************
 * Renders a single frame and saves the output file.
 ******************************************************************************/
-bool RenderSettings::renderFrame(int frameNumber, SceneRenderer& renderer, 
+bool RenderSettings::renderFrame(int frameNumber, SceneRenderer& renderer,
         FrameBuffer& frameBuffer, const std::vector<std::pair<Viewport*, QRectF>>& viewportLayout, VideoEncoder* videoEncoder, MainThreadOperation& operation)
 {
     // Determine output filename for this frame.
@@ -306,7 +317,7 @@ bool RenderSettings::renderFrame(int frameNumber, SceneRenderer& renderer,
         }
     }
 
-    // Compute relative weights of the viewport rectangles for the progress display. 
+    // Compute relative weights of the viewport rectangles for the progress display.
     std::vector<int> progressWeights(viewportLayout.size());
     std::transform(viewportLayout.cbegin(), viewportLayout.cend(), progressWeights.begin(), [&](const auto& r) {
         return r.second.width() * r.second.height() * frameBuffer.width() * frameBuffer.height();

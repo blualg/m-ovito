@@ -21,6 +21,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/core/Core.h>
+#include <ovito/core/dataset/DataSetContainer.h>
 #include <ovito/core/dataset/scene/Scene.h>
 #include <ovito/core/dataset/scene/PipelineSceneNode.h>
 #include <ovito/core/dataset/animation/AnimationSettings.h>
@@ -42,6 +43,10 @@ ScenePreparation::ScenePreparation(UserInterface& userInterface, Scene* scene) :
 
     // Activate the initial scene provided to the constructor.
     setScene(scene);
+
+    // Get notified when a different rendering settings object becomes active.
+    connect(&userInterface.datasetContainer(), &DataSetContainer::renderSettingsReplaced, this, &ScenePreparation::renderSettingsReplaced);
+    renderSettingsReplaced(userInterface.datasetContainer().currentSet() ? userInterface.datasetContainer().currentSet()->renderSettings() : nullptr);
 }
 
 /******************************************************************************
@@ -238,6 +243,20 @@ void ScenePreparation::referenceReplaced(const PropertyFieldDescriptor* field, R
             _selectionChangedConnection = connect(scene()->selection(), &SelectionSet::selectionChanged, this, &ScenePreparation::viewportUpdateRequest);
     }
     RefMaker::referenceReplaced(field, oldTarget, newTarget, listIndex);
+}
+
+/******************************************************************************
+* Is called whenever a new RenderSettings object becomes active.
+******************************************************************************/
+void ScenePreparation::renderSettingsReplaced(RenderSettings* newRenderSettings)
+{
+    disconnect(_renderSettingsChangedConnection);
+    if(newRenderSettings) {
+        // Repaint viewports whenever current render settings object signals a change.
+        _renderSettingsChangedConnection = connect(newRenderSettings, &RenderSettings::settingsChanged, this, &ScenePreparation::viewportUpdateRequest);
+    }
+    // Repaint viewports.
+    Q_EMIT viewportUpdateRequest();
 }
 
 /******************************************************************************

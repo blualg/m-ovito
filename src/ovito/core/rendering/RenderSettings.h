@@ -75,7 +75,7 @@ public:
     void setImageFilename(const QString& filename);
 
     /// \brief This is the high-level rendering function, which invokes the renderer to generate one or more
-    ///        output images of the scene. 
+    ///        output images of the scene.
     /// \param viewportConfiguration The viewport configuration to render.
     /// \param frameBuffer The frame buffer that will receive the rendered image. When rendering an animation
     ///        sequence, the buffer will contain only the last rendered frame when the function returns.
@@ -84,12 +84,22 @@ public:
     bool renderScene(const ViewportConfiguration& viewportConfiguration, FrameBuffer& frameBuffer, MainThreadOperation& operation);
 
     /// \brief This is the high-level rendering function, which invokes the renderer to generate one or more
-    ///        output images of the scene. 
+    ///        output images of the scene.
     /// \param viewportLayout The viewport layout.
-    /// \param frameBuffer The frame buffer that will receive the rendered image. 
+    /// \param frameBuffer The frame buffer that will receive the rendered image.
     /// \return true on success; false if operation has been canceled by the user.
     /// \throw Exception on error.
     bool renderScene(const std::vector<std::pair<Viewport*, QRectF>>& viewportLayout, AnimationSettings* animationSettings, FrameBuffer& frameBuffer, MainThreadOperation& operation);
+
+Q_SIGNALS:
+
+    /// This signal is emitted whenever a parameter of this object changes.
+    void settingsChanged();
+
+protected:
+
+    /// Sends an event to all dependents of this RefTarget.
+    virtual void notifyDependentsImpl(const ReferenceEvent& event) override;
 
 private:
 

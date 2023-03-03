@@ -25,6 +25,17 @@ in Python, which are fully integrated into OVITO's pipeline system and the inter
 Have a look at our completely revised :ref:`introduction to user-defined modifiers <writing_custom_modifiers>`
 and check out the new :ref:`advanced programming interface for user-defined modifiers <writing_custom_modifiers.advanced_interface>`.
 
+.. rubric:: Improved color legends
+
+OVITO can now render tick marks in :ref:`color mapping legends <viewport_layers.color_legend>` to label intermediate values.
+Furthermore, the legend's title may be rotated by 90 degrees:
+
+.. image:: /images/new_features/color_legend_ticks_horizontal.png
+  :width: 34%
+
+.. image:: /images/new_features/color_legend_ticks_vertical.png
+  :width: 12%
+
 .. rubric:: File reader for ASE database files |ovito-pro|
 
 Load atomic structures from database files of the `Atomic Simulation Environment (ASE) <https://wiki.fysik.dtu.dk/ase/>`__ into OVITO.
