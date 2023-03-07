@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -84,10 +84,13 @@ PipelineStatus ExpressionSelectionModifierDelegate::apply(const ModifierEvaluati
     // Save list of available input variables, which will be displayed in the modifier's UI.
     expressionMod->setVariablesInfo(evaluator->inputVariableNames(), evaluator->inputVariableTable());
 
-    // If the user has not yet entered an expression let him know which
-    // data channels can be used in the expression.
-    if(expressionMod->expression().isEmpty())
-        return PipelineStatus(PipelineStatus::Warning, tr("Please enter a Boolean expression."));
+    // If the user has not entered an expression yet, let them know.
+    if(expressionMod->expression().trimmed().isEmpty()) {
+        if(ExecutionContext::isInteractive())
+            return PipelineStatus(PipelineStatus::Warning, tr("Please enter a Boolean expression."));
+        else
+            throw Exception(tr("Modifier has no expression set. Did you forget to specify the selection expression?"));
+    }
 
     // Check if expression contains an assignment ('=' operator).
     // This should be considered a user's mistake, because the user is probably referring the comparison operator '=='.
