@@ -825,7 +825,8 @@ void LAMMPSDataImporter::detectAtomStyle(const char* firstLine, const QByteArray
     // Count number of columns in first data line of the Atoms section.
     QString str = QString::fromLatin1(firstLine);
     commentStart = str.indexOf(QChar('#'));
-    if(commentStart >= 0) str.truncate(commentStart);
+    if(commentStart > 0 && str[commentStart-1].isSpace())
+        str.truncate(commentStart);
     QStringList tokens = FileImporter::splitString(str);
     info.atomDataColumnCount = tokens.size();
 
