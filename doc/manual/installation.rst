@@ -12,7 +12,7 @@ System Requirements
 ===================
 
 OVITO requires a 64-bit operating system and runs on processors with x86-64 or arm64 architecture.
-The graphical user interface of OVITO requires 3D graphics hardware with support for the `OpenGL <https://en.wikipedia.org/wiki/OpenGL>`_ programming interface (OpenGL 2.1 or newer). 
+The graphical user interface of OVITO requires 3D graphics hardware with support for the `OpenGL <https://en.wikipedia.org/wiki/OpenGL>`_ programming interface (OpenGL 2.1 or newer).
 In general, it is recommended that you install the latest graphics driver provided by your hardware vendor before running OVITO as some older drivers may not fully support modern OpenGL specifications, which can lead to compatibility problems.
 
 Operating system compatibility:
@@ -43,23 +43,23 @@ Installation instructions
 
 Running on remote machines
 ==========================
-    
-Note that the OVITO desktop application cannot be run through an SSH connection using X11 forwarding mode, because the software requires direct 
-access to the graphics hardware (OpenGL direct rendering mode). If you simply run :command:`ovito` in an SSH terminal, you will likely get failure messages 
-during program startup or just a black application window. 
-  
+
+Note that the OVITO desktop application cannot be run through an SSH connection using X11 forwarding mode, because the software requires direct
+access to the graphics hardware (OpenGL direct rendering mode). If you simply run :command:`ovito` in an SSH terminal, you will likely get failure messages
+during program startup or just a black application window.
+
 It is possible to run OVITO on a remote machine through an SSH connection using a VirtualGL + VNC setup.
 For further information, please see the `www.virtualgl.org <https://www.virtualgl.org/>`_ website.
 In this mode, OVITO will make use of the graphics hardware of the remote machine, which must be set up to allow running
-applications in a desktop environment. Please contact your local computing center staff to find out whether 
-this kind of remote visualization mode is supported by the HPC cluster(s) you work on. 
+applications in a desktop environment. Please contact your local computing center staff to find out whether
+this kind of remote visualization mode is supported by the HPC cluster(s) you work on.
 
 Python module installation
 ==========================
 
 The **OVITO Pro** program packages ship with an :ref:`integrated Python interpreter <ovitos_interpreter>` (:command:`ovitos`) that gets installed alongside the desktop application,
-allowing you to execute Python scripts written for OVITO. 
-Optionally, you can install the ``ovito`` Python module into an external Python interpreter on your system  (e.g. :program:`Anaconda` or the standard :program:`CPython` interpreter) in case you would like to make use of 
+allowing you to execute Python scripts written for OVITO.
+Optionally, you can install the ``ovito`` Python module into an external Python interpreter on your system  (e.g. :program:`Anaconda` or the standard :program:`CPython` interpreter) in case you would like to make use of
 OVITO's functionality in script-based workflows. Please refer to :ref:`this section <pydoc:use_ovito_with_system_interpreter>` for further setup instructions.
 
 .. _installation.troubleshooting:
@@ -67,8 +67,8 @@ OVITO's functionality in script-based workflows. Please refer to :ref:`this sect
 Troubleshooting
 ===============
 
-If you run into any problems during the installation of OVITO, you can contact the developers through our `online support forum <https://www.ovito.org/forum/>`_. 
-The OVITO team will be happy to help you. The most commonly encountered installation issues on different platforms are addressed here: 
+If you run into any problems during the installation of OVITO, you can contact the developers through our `online support forum <https://www.ovito.org/forum/>`_.
+The OVITO team will be happy to help you. The most commonly encountered installation issues on different platforms are addressed here:
 
   - :ref:`installation.troubleshooting.windows`
   - :ref:`installation.troubleshooting.linux`
@@ -82,14 +82,14 @@ Windows
 Windows 7 no longer supported
   .. error::
 
-    If you try to run OVITO 3.7 or later on a Windows 7 computer, it will fail with the error "*The procedure entry point CreateDXGIFactory2 could not be 
+    If you try to run OVITO 3.7 or later on a Windows 7 computer, it will fail with the error "*The procedure entry point CreateDXGIFactory2 could not be
     located in the dynamic link library dxgi.dll*".
 
   .. admonition:: Solution
-    
-    Modern versions of OVITO are based on the Qt6 cross-platform framework, which `requires Windows 10 or later to run <https://doc.qt.io/qt-6/supported-platforms.html>`__. 
-    Windows 7 has reached its end of life and is no longer supported. Please upgrade your Windows operating system. With some luck, you may be able to run the Anaconda versions of 
-    `OVITO Basic <https://anaconda.org/conda-forge/ovito>`__ or `OVITO Pro <https://www.ovito.org/python-downloads/>`__ on a Windows 7 computer, 
+
+    Modern versions of OVITO are based on the Qt6 cross-platform framework, which `requires Windows 10 or later to run <https://doc.qt.io/qt-6/supported-platforms.html>`__.
+    Windows 7 has reached its end of life and is no longer supported. Please upgrade your Windows operating system. With some luck, you may be able to run the Anaconda versions of
+    `OVITO Basic <https://anaconda.org/conda-forge/ovito>`__ or `OVITO Pro <https://www.ovito.org/python-downloads/>`__ on a Windows 7 computer,
     because these are still built against the old Qt5 framework (as of April 2022).
 
 .. _installation.troubleshooting.linux:
@@ -102,15 +102,15 @@ Missing shared object files or broken links
 
     Starting the desktop application :command:`ovito` or the script interpreter :command:`ovitos` may fail with the following error::
 
-      ./ovito: error while loading shared libraries: libQt5DBus.so.5: 
+      ./ovito: error while loading shared libraries: libQt5DBus.so.5:
               cannot open shared object file: No such file or directory
 
-    This error is typically caused by broken symbolic links in the :file:`lib/ovito/` sub-directory of the OVITO installation after 
-    extracting the installation package for Linux on a Windows computer. 
+    This error is typically caused by broken symbolic links in the :file:`lib/ovito/` sub-directory of the OVITO installation after
+    extracting the installation package for Linux on a Windows computer.
 
   .. admonition:: Solution
-    
-    Reinstall OVITO by extracting the `.tar.xz` archive on the target machine. 
+
+    Reinstall OVITO by extracting the `.tar.xz` archive on the target machine.
     Do *not* transfer the directory tree between different computers after it has been extracted,
     because this can easily break symbolic links between files.
 
@@ -120,12 +120,12 @@ Missing XCB system libraries
     You may see the following error when running :command:`ovito` on a Linux machine::
 
       qt.qpa.plugin: Could not load the Qt platform plugin "xcb" in "" even though it was found.
-      This application failed to start because no Qt platform plugin could be initialized. 
+      This application failed to start because no Qt platform plugin could be initialized.
       Reinstalling the application may fix this problem.
       Available platform plugins are: minimal, offscreen, vnc, xcb.
 
-    In this case OVITO cannot find the required :file:`libxcb-*.so` set of system libraries, which might not be 
-    preinstalled on fresh Linux systems. 
+    In this case OVITO cannot find the required :file:`libxcb-*.so` set of system libraries, which might not be
+    preinstalled on fresh Linux systems.
 
   .. admonition:: Solution
 
@@ -137,7 +137,7 @@ Missing XCB system libraries
       sudo apt-get install libxcb1 libx11-xcb1 libxcb-glx0 libxcb-icccm4 libxcb-image0 libxcb-keysyms1 \
                           libxcb-randr0 libxcb-render-util0 libxcb-render0 libxcb-shape0 libxcb-shm0 \
                           libxcb-sync1 libxcb-xfixes0 libxcb-xinerama0 libxcb-xinput0 libxcb-xkb1
-                    
+
       # On CentOS/RHEL systems:
       sudo yum install libxcb xcb-util-image xcb-util-keysyms xcb-util-renderutil xcb-util-wm
 
@@ -152,15 +152,25 @@ OVITO Pro license activation fails
   .. error::
 
     The activation step could not be completed due to an issue with the local license information store. File path: :file:`$HOME/.config/Ovito/LicenseStore.ini`.
-    Please check if file access permissions are correctly set. OVITO Pro requires read/write access to this filesystem path. 
+    Please check if file access permissions are correctly set. OVITO Pro requires read/write access to this filesystem path.
 
   .. admonition:: Solution
-    
-    OVITO Pro needs to save its licensing information under the path :file:`$HOME/.config/Ovito/`, which is the `canonical storage location <https://specifications.freedesktop.org/basedir-spec/basedir-spec-latest.html>`__ 
-    for configuration data of Linux/Unix applications.
-    On some macOS computers, the :file:`$HOME/.config/` directory may have been marked as write-protected by the system administrator, 
-    which lets the license activation process fail. Please ask your system administrator to make the :file:`$HOME/.config/Ovito/` subdirectory 
-    writable by applications running under your user account.  
 
-    If this is not possible for some reason, you can set the standard environment variable ``XDG_CONFIG_HOME`` to point to some directory other than :file:`$HOME/.config/`.
-    `This will redirect OVITO Pro <https://specifications.freedesktop.org/basedir-spec/latest/ar01s03.html>`__ to store its licensing information in a different location.
+    During license activation, OVITO Pro needs to create the directory :file:`$HOME/.config/Ovito/` to store the downloaded licensing information.
+    The error occurs if creating this directory or storing files in this directory is prevented by insufficient file system permissions.
+
+    In many cases, the parent directory, :file:`$HOME/.config/`, is the actual reason for this problem, because it is owned by the wrong macOS user account.
+    :file:`$HOME/.config/` is the `canonical storage location <https://specifications.freedesktop.org/basedir-spec/basedir-spec-latest.html>`__  for application configuration
+    data on Linux/Unix systems. On macOS, this directory is not created by the system by default, but rather it is created by individual applications
+    such as OVITO when they run for the first time. As a result, the ownership and permissions of this directory can vary depending on how it was created and
+    which system user ran the first process creating it.
+
+    It can happen that :file:`$HOME/.config/` is owned by the system administrator ("root" user), because it was the root user who first ran an application
+    creating the :file:`.config` directory. As a result, your personal user account, which you are using to install OVITO Pro, can't make further modifications to the directory, which
+    lets the license activation fail. To resolve the problem, ask your system administrator to create the :file:`$HOME/.config/Ovito/` subdirectory for you
+    and make it writable by your personal user account -- or follow `these instructions <https://apple.stackexchange.com/a/320686>`__ to correct the ownership
+    of the :file:`$HOME/.config/` parent directory yourself.
+
+    If changing the ownership is not possible for some reason, as a last resort, you can set the standard environment variable ``XDG_CONFIG_HOME`` to point to some existing directory
+    other than :file:`$HOME/.config/`. This redirects OVITO Pro <https://specifications.freedesktop.org/basedir-spec/latest/ar01s03.html>`__ to store its
+    licensing information in a different place, i.e., in a writable filesystem path of your choice.
