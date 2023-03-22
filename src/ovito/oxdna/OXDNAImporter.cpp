@@ -47,18 +47,18 @@ bool OXDNAImporter::OOMetaClass::checkFileFormat(const FileHandle& file) const
 
     // Check for a valid "t = ..." line.
     FloatType t;
-    if(sscanf(stream.readLineTrimLeft(128), "t = " FLOATTYPE_SCANF_STRING, &t) != 1) 
-        return false; 
+    if(sscanf(stream.readLineTrimLeft(128), "t = " FLOATTYPE_SCANF_STRING, &t) != 1)
+        return false;
 
     // Check for a valid "b = ..." line.
     Vector3 b;
-    if(sscanf(stream.readLineTrimLeft(128), "b = " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING, &b.x(), &b.y(), &b.z()) != 3) 
-        return false; 
+    if(sscanf(stream.readLineTrimLeft(128), "b = " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING, &b.x(), &b.y(), &b.z()) != 3)
+        return false;
 
     // Check for a valid "E = ..." line.
     FloatType Etot, U, K;
-    if(sscanf(stream.readLineTrimLeft(128), "E = " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING, &Etot, &U, &K) != 3) 
-        return false; 
+    if(sscanf(stream.readLineTrimLeft(128), "E = " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING, &Etot, &U, &K) != 3)
+        return false;
 
     return true;
 }
@@ -83,18 +83,18 @@ void OXDNAImporter::FrameFinder::discoverFramesInFile(QVector<FileSourceImporter
         // Check for a valid "t = ..." line.
         FloatType t;
         if(frameNumber == 0) stream.readLine();
-        if(sscanf(stream.line(), " t = " FLOATTYPE_SCANF_STRING, &t) != 1) 
-            break; 
+        if(sscanf(stream.line(), " t = " FLOATTYPE_SCANF_STRING, &t) != 1)
+            break;
 
         // Check for a valid "b = ..." line.
         Vector3 b;
-        if(sscanf(stream.readLineTrimLeft(), "b = " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING, &b.x(), &b.y(), &b.z()) != 3) 
-            break; 
+        if(sscanf(stream.readLineTrimLeft(), "b = " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING, &b.x(), &b.y(), &b.z()) != 3)
+            break;
 
         // Check for a valid "E = ..." line.
         FloatType Etot, U, K;
-        if(sscanf(stream.readLineTrimLeft(), "E = " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING, &Etot, &U, &K) != 3) 
-            break; 
+        if(sscanf(stream.readLineTrimLeft(), "E = " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING, &Etot, &U, &K) != 3)
+            break;
 
         // Create a new record for the time step.
         frame.label = tr("%1 (Frame %2)").arg(filename).arg(frameNumber++);
@@ -118,7 +118,7 @@ void OXDNAImporter::FrameFinder::discoverFramesInFile(QVector<FileSourceImporter
 ******************************************************************************/
 void OXDNAImporter::FrameLoader::loadFile()
 {
-    // Locate the topology file. 
+    // Locate the topology file.
     QUrl topoFileUrl = _userSpecifiedTopologyUrl;
     if(!topoFileUrl.isValid()) {
         // If no explicit path for the topology file was specified by the user, try to infer it from the
@@ -195,7 +195,7 @@ void OXDNAImporter::FrameLoader::loadFile()
 
         if(*strandId < 1 || *strandId > numStrands)
             throw Exception(tr("Strand ID %2 in line %1 of oxDNA topology file is out of range.").arg(topoStream.lineNumber()).arg(*strandId));
-    
+
         if(neighbor1 < -1 || neighbor1 >= (qlonglong)numNucleotidesLong)
             throw Exception(tr("3' neighbor %2 in line %1 of oxDNA topology file is out of range.").arg(topoStream.lineNumber()).arg(neighbor1));
 
@@ -224,20 +224,20 @@ void OXDNAImporter::FrameLoader::loadFile()
 
     // Parse the 1st line: "t = T".
     FloatType simulationTime;
-    if(sscanf(stream.readLineTrimLeft(), "t = " FLOATTYPE_SCANF_STRING, &simulationTime) != 1) 
+    if(sscanf(stream.readLineTrimLeft(), "t = " FLOATTYPE_SCANF_STRING, &simulationTime) != 1)
         throw Exception(tr("Invalid header format encountered in line %1 of oxDNA configuration file: %2").arg(stream.lineNumber()).arg(stream.lineString()));
     state().setAttribute(QStringLiteral("Time"), QVariant::fromValue(simulationTime), dataSource());
 
     // Parse the 2nd line: "b = Lx Ly Lz".
     AffineTransformation cellMatrix = AffineTransformation::Identity();
-    if(sscanf(stream.readLineTrimLeft(), "b = " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING, &cellMatrix(0,0), &cellMatrix(1,1), &cellMatrix(2,2)) != 3) 
+    if(sscanf(stream.readLineTrimLeft(), "b = " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING, &cellMatrix(0,0), &cellMatrix(1,1), &cellMatrix(2,2)) != 3)
         throw Exception(tr("Invalid header format encountered in line %1 of oxDNA configuration file: %2").arg(stream.lineNumber()).arg(stream.lineString()));
     cellMatrix.translation() = Vector3(-0.5 * cellMatrix(0,0), -0.5 * cellMatrix(1,1), -0.5 * cellMatrix(2,2));
     simulationCell()->setCellMatrix(cellMatrix);
 
     // Parse the 3rd line: "E = Etot U K".
     FloatType Etot, U, K;
-    if(sscanf(stream.readLineTrimLeft(), "E = " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING, &Etot, &U, &K) != 3) 
+    if(sscanf(stream.readLineTrimLeft(), "E = " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING, &Etot, &U, &K) != 3)
         throw Exception(tr("Invalid header format encountered in line %1 of oxDNA configuration file: %2").arg(stream.lineNumber()).arg(stream.lineString()));
     state().setAttribute(QStringLiteral("Etot"), QVariant::fromValue(Etot), dataSource());
     state().setAttribute(QStringLiteral("U"), QVariant::fromValue(U), dataSource());

@@ -821,6 +821,13 @@ Color ParticlesObject::OOMetaClass::getElementTypeDefaultColor(const PropertyRef
         }
         return Color(1,1,1);
     }
+    else if(property.type() == ParticlesObject::NucleobaseTypeProperty) {
+        // Color scheme adopted from oxdna-viewer:
+        if(typeName == "A") return Color(0.3, 0.3, 1.0);
+        else if(typeName == "C") return Color(0.3, 1.0, 0.3);
+        else if(typeName == "G") return Color(1.0, 1.0, 0.3);
+        else if(typeName == "T") return Color(1.0, 0.3, 0.3);
+    }
 
     return PropertyContainerClass::getElementTypeDefaultColor(property, typeName, numericTypeId, loadUserDefaults);
 }
