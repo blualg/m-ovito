@@ -87,13 +87,10 @@ void FHIAimsLogFileImporter::FrameFinder::discoverFramesInFile(QVector<FileSourc
 ******************************************************************************/
 void FHIAimsLogFileImporter::FrameLoader::loadFile()
 {
-    // Open file for reading.
-    CompressedTextReader stream(fileHandle());
     setProgressText(tr("Reading FHI-aims log file %1").arg(fileHandle().toString()));
 
-    // Jump to byte offset.
-    if(frame().byteOffset != 0)
-        stream.seek(frame().byteOffset, frame().lineNumber);
+    // Open file for reading.
+    CompressedTextReader stream(fileHandle(), frame().byteOffset, frame().lineNumber);
 
     // First pass: determine the cell geometry and number of atoms.
     AffineTransformation cell = AffineTransformation::Identity();

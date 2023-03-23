@@ -168,9 +168,10 @@ void DLPOLYImporter::FrameFinder::discoverFramesInFile(QVector<FileSourceImporte
 ******************************************************************************/
 void DLPOLYImporter::FrameLoader::loadFile()
 {
+    setProgressText(tr("Reading DL_POLY file %1").arg(fileHandle().toString()));
+
     // Open file for reading.
     CompressedTextReader stream(fileHandle());
-    setProgressText(tr("Reading DL_POLY file %1").arg(fileHandle().toString()));
     setProgressMaximum(stream.underlyingSize());
 
     // Read first comment line (record 1).
@@ -191,7 +192,7 @@ void DLPOLYImporter::FrameLoader::loadFile()
     else if(imcon == 6) simulationCell()->setPbcFlags(true, true, false);
     else throw Exception(tr("Invalid boundary condition type in line %1 of DL_POLY file: %2").arg(stream.lineNumber()).arg(stream.lineString()));
 
-    // Jump to byte offset.
+    // Jump to byte offset again.
     if(frame().byteOffset != 0)
         stream.seek(frame().byteOffset, frame().lineNumber);
 
@@ -313,7 +314,7 @@ void DLPOLYImporter::FrameLoader::loadFile()
     // depends on the storage order of particles in the file. We rather want a well-defined particle type ordering, that's
     // why we sort them now.
     typeProperty.buffer()->sortElementTypesByName();
-    
+
     if(identifiers.size() == positions.size()) {
         PropertyAccess<qlonglong> identifierProperty = particles()->createProperty(ParticlesObject::IdentifierProperty);
         boost::copy(identifiers, identifierProperty.begin());

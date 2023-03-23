@@ -135,13 +135,10 @@ void LAMMPSDumpLocalImporter::FrameFinder::discoverFramesInFile(QVector<FileSour
 ******************************************************************************/
 void LAMMPSDumpLocalImporter::FrameLoader::loadFile()
 {
-    // Open file for reading.
-    CompressedTextReader stream(fileHandle());
     setProgressText(tr("Reading LAMMPS dump local file %1").arg(fileHandle().toString()));
 
-    // Jump to byte offset.
-    if(frame().byteOffset != 0)
-        stream.seek(frame().byteOffset, frame().lineNumber);
+    // Open file for reading.
+    CompressedTextReader stream(fileHandle(), frame().byteOffset, frame().lineNumber);
 
     // Hide particles, because this importer loads non-particle data.
     particles()->setVisElement(nullptr);

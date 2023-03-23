@@ -60,13 +60,10 @@ bool VTKFileImporter::OOMetaClass::checkFileFormat(const FileHandle& file) const
 ******************************************************************************/
 void VTKFileImporter::FrameLoader::loadFile()
 {
-    // Open file for reading.
-    CompressedTextReader stream(fileHandle());
     setProgressText(tr("Reading VTK file %1").arg(fileHandle().toString()));
 
-    // Jump to byte offset.
-    if(frame().byteOffset != 0)
-        stream.seek(frame().byteOffset, frame().lineNumber);
+    // Open file for reading.
+    CompressedTextReader stream(fileHandle(), frame().byteOffset, frame().lineNumber);
 
     // Read first line.
     stream.readLine(1024);

@@ -79,7 +79,7 @@ bool STLImporter::OOMetaClass::checkFileFormat(const FileHandle& file) const
     quint32 nfaces = 0;
     device->read(reinterpret_cast<char*>(&nfaces), sizeof(nfaces));
 
-    // Each STL face is 50 bytes. Verify that the file size fits to the number of faces specified in the file header.  
+    // Each STL face is 50 bytes. Verify that the file size fits to the number of faces specified in the file header.
     return (qint64)qFromLittleEndian(nfaces) * 50 == device->size() - device->pos();
 }
 
@@ -99,11 +99,7 @@ void STLImporter::FrameLoader::loadFile()
     mesh->setIdentifier(QStringLiteral("mesh"));
 
     // Open file for reading, assuming it is an ASCII STL file for now.
-    CompressedTextReader stream(fileHandle());
-
-    // Jump to byte offset.
-    if(frame().byteOffset != 0)
-        stream.seek(frame().byteOffset, frame().lineNumber);
+    CompressedTextReader stream(fileHandle(), frame().byteOffset, frame().lineNumber);
 
     // Read first line and check if it begins with the mandatory "solid" keyword.
     stream.readLine(1024);

@@ -51,13 +51,10 @@ bool IMDImporter::OOMetaClass::checkFileFormat(const FileHandle& file) const
 ******************************************************************************/
 void IMDImporter::FrameLoader::loadFile()
 {
-    // Open file for reading.
-    CompressedTextReader stream(fileHandle());
     setProgressText(tr("Reading IMD file %1").arg(fileHandle().toString()));
 
-    // Jump to byte offset.
-    if(frame().byteOffset != 0)
-        stream.seek(frame().byteOffset, frame().lineNumber);
+    // Open file for reading.
+    CompressedTextReader stream(fileHandle(), frame().byteOffset, frame().lineNumber);
 
     // Read first header line.
     stream.readLine();

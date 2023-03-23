@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -50,7 +50,10 @@ public:
     /// Opens the given file for reading.
     /// \param input The file handle the data should be reade from.
     /// \throw Exception if an I/O error has occurred.
-    explicit CompressedTextReader(const FileHandle& input);
+    CompressedTextReader(const FileHandle& input, qint64 byteOffset = 0, int lineNumber = 0);
+
+    /// Destructor.
+    ~CompressedTextReader();
 
     /// Returns the name of the input file (without the path).
     const QString& filename() const { return _filename; }
@@ -138,7 +141,7 @@ public:
     /// Returns the current read position in the (uncompressed) input stream.
     /// \sa underlyingByteOffset(), seek()
     qint64 byteOffset() const {
-        return _byteOffset;
+        return _stream->pos();
     }
 
     /// Jumps to the given byte position in the (uncompressed) input stream.
@@ -147,7 +150,7 @@ public:
     void seek(qint64 pos, int lineNumber = 0) {
         if(!_stream->seek(pos))
             throw Exception(FileManager::tr("Failed to seek to byte offset %1 in file %2: %3").arg(pos).arg(_filename).arg(_stream->errorString()));
-        _byteOffset = pos;
+        OVITO_ASSERT(_stream->pos() == pos);
         if(lineNumber) _lineNumber = lineNumber;
         else if(pos == 0) _lineNumber = 0;
     }
@@ -191,15 +194,12 @@ private:
     /// The current line number.
     int _lineNumber = 0;
 
-    /// The current position in the uncompressed data stream.
-    qint64 _byteOffset = 0;
-
     /// The underlying input device.
     std::unique_ptr<QIODevice> _device;
 
 #ifdef OVITO_ZLIB_SUPPORT
     /// The uncompressing filter stream.
-    GzipIODevice _uncompressor;
+    std::unique_ptr<GzipIODevice> _uncompressor;
 #endif
 
     /// The input stream from which uncompressed data is read.

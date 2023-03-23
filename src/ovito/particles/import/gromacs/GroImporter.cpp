@@ -64,7 +64,7 @@ bool GroImporter::OOMetaClass::checkFileFormat(const FileHandle& file) const
         if(*p == '\n' || *p == '\r')
             foundNewline = true;
     }
-    if(!foundNewline) 
+    if(!foundNewline)
         return false;
 
     // Read a few atom lines to check if the columns have the right format.
@@ -74,7 +74,7 @@ bool GroImporter::OOMetaClass::checkFileFormat(const FileHandle& file) const
         if(sscanf(stream.readLine(), "%5i%5s%5s%5i", &i1, s1, s2, &i2) != 4 || i1 < 1 || i2 < 1 || qstrlen(stream.line()) < 20)
             return false;
 
-        // The following extra check is necessary to avoid mistaking an XDATCAR file, which stores the simulation cell 
+        // The following extra check is necessary to avoid mistaking an XDATCAR file, which stores the simulation cell
         // vectors in lines 3-5, for a GRO file (see test case 'POSCAR/XDATCAR.testcase'):
         if(s1[0] == '.' || s2[0] == '.')
             return false;
@@ -172,13 +172,10 @@ void GroImporter::FrameFinder::discoverFramesInFile(QVector<FileSourceImporter::
 ******************************************************************************/
 void GroImporter::FrameLoader::loadFile()
 {
-    // Open file for reading.
-    CompressedTextReader stream(fileHandle());
     setProgressText(tr("Reading Gromacs file %1").arg(fileHandle().toString()));
 
-    // Jump to byte offset.
-    if(frame().byteOffset != 0)
-        stream.seek(frame().byteOffset, frame().lineNumber);
+    // Open file for reading.
+    CompressedTextReader stream(fileHandle(), frame().byteOffset, frame().lineNumber);
 
     // Read comment line.
     stream.readLine();
@@ -334,12 +331,12 @@ void GroImporter::FrameLoader::loadFile()
         // Store parsed value in property arrays.
         identifierProperty.set(atomIndex, atomNumber);
         typeProperty.set(atomIndex, element.ordinal());
-        atomNameProperty.set(atomIndex, 
+        atomNameProperty.set(atomIndex,
             (residueNameStart != residueNameEnd) ?
             addNamedType(ParticlesObject::OOClass(), atomNameProperty.buffer(), QLatin1String(atomNameStart, atomNameEnd))->numericId()
             : 0);
-        residueTypeProperty.set(atomIndex, 
-            (residueNameStart != residueNameEnd) ? 
+        residueTypeProperty.set(atomIndex,
+            (residueNameStart != residueNameEnd) ?
             addNamedType(ParticlesObject::OOClass(), residueTypeProperty.buffer(), QLatin1String(residueNameStart, residueNameEnd))->numericId()
             : 0);
         residueNumberProperty.set(atomIndex, residueNumber);
@@ -416,7 +413,7 @@ void GroImporter::FrameLoader::loadFile()
 
     // Parse simulation cell definition.
     AffineTransformation cell = AffineTransformation::Identity();
-    if(sscanf(stream.readLine(), 
+    if(sscanf(stream.readLine(),
         FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING " "
         FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING " "
         FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING,

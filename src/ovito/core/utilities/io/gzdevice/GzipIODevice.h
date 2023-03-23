@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2018 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -59,7 +59,7 @@ public:
     /// Constructor.
     ///
     /// The allowed value range for \a compressionLevel is 0 to 9, where 0 means no compression
-    ///and 9 means maximum compression. The default value is 6.
+    /// and 9 means maximum compression. The default value is 6.
     ///
     /// bufferSize specifies the size of the internal buffer used when reading from and writing to the
     /// underlying device. The default value is 65KB. Using a larger value allows for faster compression and
@@ -75,14 +75,19 @@ public:
     /// Returns the compression format being read/written.
     StreamFormat streamFormat() const { return _streamFormat; }
 
-    /// Stream is always sequential.
-    bool isSequential() const override { return true; }
+    /// We support seeking in the file.
+    bool isSequential() const override { return false; }
 
     bool open(OpenMode mode) override;
     void close() override;
     void flush();
     qint64 bytesAvailable() const override;
     bool seek(qint64 pos) override;
+
+#if 0
+    QIODevice* underlyingDevice() const { return _device; }
+    bool replaceUnderlyingDevice(QIODevice* device);
+#endif
 
 protected:
 

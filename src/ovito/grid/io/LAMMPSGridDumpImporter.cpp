@@ -41,7 +41,7 @@ bool LAMMPSGridDumpImporter::OOMetaClass::checkFileFormat(const FileHandle& file
     // Read first line.
     stream.readLine(15);
 
-    // Dump files written by LAMMPS start with one of the following keywords: TIMESTEP, UNITS or TIME.  
+    // Dump files written by LAMMPS start with one of the following keywords: TIMESTEP, UNITS or TIME.
     if(!stream.lineStartsWith("ITEM: TIMESTEP") && !stream.lineStartsWith("ITEM: UNITS") && !stream.lineStartsWith("ITEM: TIME"))
         return false;
 
@@ -131,13 +131,10 @@ void LAMMPSGridDumpImporter::FrameFinder::discoverFramesInFile(QVector<FileSourc
 ******************************************************************************/
 void LAMMPSGridDumpImporter::FrameLoader::loadFile()
 {
-    // Open file for reading.
-    CompressedTextReader stream(fileHandle());
     setProgressText(tr("Reading LAMMPS grid dump file %1").arg(fileHandle().toString()));
 
-    // Jump to byte offset.
-    if(frame().byteOffset != 0)
-        stream.seek(frame().byteOffset, frame().lineNumber);
+    // Open file for reading.
+    CompressedTextReader stream(fileHandle(), frame().byteOffset, frame().lineNumber);
 
     unsigned long long timestep;
     size_t numVoxels = 0;
@@ -232,8 +229,8 @@ void LAMMPSGridDumpImporter::FrameLoader::loadFile()
             }
             else if(stream.lineStartsWith("ITEM: GRID CELLS")) {
 
-                // The unique identifier of the import voxel grid. 
-                // This default identifier may be replaced below by a grid name found in the file. 
+                // The unique identifier of the import voxel grid.
+                // This default identifier may be replaced below by a grid name found in the file.
                 QString gridIdentifier = QStringLiteral("imported");
 
                 // Read the column names list.

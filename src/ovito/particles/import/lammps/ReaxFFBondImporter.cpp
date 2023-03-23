@@ -144,13 +144,10 @@ void ReaxFFBondImporter::FrameFinder::discoverFramesInFile(QVector<FileSourceImp
 ******************************************************************************/
 void ReaxFFBondImporter::FrameLoader::loadFile()
 {
-    // Open file for reading.
-    CompressedTextReader stream(fileHandle());
     setProgressText(tr("Reading ReaxFF bond file %1").arg(fileHandle().toString()));
 
-    // Jump to byte offset.
-    if(frame().byteOffset != 0)
-        stream.seek(frame().byteOffset, frame().lineNumber);
+    // Open file for reading.
+    CompressedTextReader stream(fileHandle(), frame().byteOffset, frame().lineNumber);
 
     // Hide particles, because this importer loads non-particle data.
     particles()->setVisElement(nullptr);
@@ -226,8 +223,8 @@ void ReaxFFBondImporter::FrameLoader::loadFile()
             throw Exception(tr("Invalid atom information in line %1 of ReaxFF bond file.").arg(stream.lineNumber()));
 
         // Remove every other half-bond from the list.
-        reaxBonds.erase(std::remove_if(reaxBonds.begin(), reaxBonds.end(), 
-            [](const ReaxFFBond& bond) { return bond.atoms[0] >= bond.atoms[1]; }), 
+        reaxBonds.erase(std::remove_if(reaxBonds.begin(), reaxBonds.end(),
+            [](const ReaxFFBond& bond) { return bond.atoms[0] >= bond.atoms[1]; }),
             reaxBonds.end());
 
         reaxAtoms.push_back(reaxAtom);

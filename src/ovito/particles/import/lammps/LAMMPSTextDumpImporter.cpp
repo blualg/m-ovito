@@ -136,13 +136,10 @@ void LAMMPSTextDumpImporter::FrameFinder::discoverFramesInFile(QVector<FileSourc
 ******************************************************************************/
 void LAMMPSTextDumpImporter::FrameLoader::loadFile()
 {
-    // Open file for reading.
-    CompressedTextReader stream(fileHandle());
     setProgressText(tr("Reading LAMMPS dump file %1").arg(fileHandle().toString()));
 
-    // Jump to byte offset.
-    if(frame().byteOffset != 0)
-        stream.seek(frame().byteOffset, frame().lineNumber);
+    // Open file for reading.
+    CompressedTextReader stream(fileHandle(), frame().byteOffset, frame().lineNumber);
 
     unsigned long long timestep;
     size_t numParticles = 0;

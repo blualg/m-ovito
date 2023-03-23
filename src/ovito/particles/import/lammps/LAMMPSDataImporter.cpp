@@ -79,14 +79,10 @@ bool LAMMPSDataImporter::OOMetaClass::checkFileFormat(const FileHandle& file) co
 void LAMMPSDataImporter::FrameLoader::loadFile()
 {
     using namespace std;
-
-    // Open file for reading.
-    CompressedTextReader stream(fileHandle());
     setProgressText(tr("Reading LAMMPS data file %1").arg(fileHandle().toString()));
 
-    // Jump to byte offset.
-    if(frame().byteOffset != 0)
-        stream.seek(frame().byteOffset, frame().lineNumber);
+    // Open file for reading.
+    CompressedTextReader stream(fileHandle(), frame().byteOffset, frame().lineNumber);
 
     // Read comment line
     stream.readLine();

@@ -213,14 +213,10 @@ void OXDNAImporter::FrameLoader::loadFile()
     PropertyAccess<ParticleIndexPair> bondTopologyProperty = this->bonds()->createProperty(BondsObject::TopologyProperty);
     boost::copy(bonds, bondTopologyProperty.begin());
 
-    // Open oxDNA configuration file for reading.
-    CompressedTextReader stream(fileHandle());
     nextProgressSubStep();
     setProgressText(tr("Reading oxDNA file %1").arg(fileHandle().toString()));
-
-    // Jump to byte offset.
-    if(frame().byteOffset != 0)
-        stream.seek(frame().byteOffset, frame().lineNumber);
+    // Open oxDNA configuration file for reading.
+    CompressedTextReader stream(fileHandle(), frame().byteOffset, frame().lineNumber);
 
     // Parse the 1st line: "t = T".
     FloatType simulationTime;

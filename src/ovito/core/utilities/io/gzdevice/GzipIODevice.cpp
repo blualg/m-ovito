@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2018 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -135,21 +135,34 @@ bool GzipIODevice::seek(qint64 pos)
     if(isWritable())
         return false;
 
-    OpenMode mode = openMode();
-    close();
-    if(_device->isOpen()) {
-        if(!_device->reset())
-            return false;
-    }
-    if(!open(mode))
-        return false;
+    qint64 offset = pos - this->pos();
 
-    char buffer[0x10000];
-    while(pos > 0) {
-        qint64 s = read(buffer, std::min(pos, (qint64)sizeof(buffer)));
-        if(s <= 0)
+    if(offset < 0) { // Seeking backward? Close and restart file and start decompressing it from the beginning.
+        OpenMode mode = openMode();
+        close();
+        if(_device->isOpen()) {
+            if(!_device->reset())
+                return false;
+        }
+        if(!open(mode))
             return false;
-        pos -= s;
+
+        char buffer[0x10000];
+        while(pos > 0) {
+            qint64 s = read(buffer, std::min(pos, (qint64)sizeof(buffer)));
+            if(s <= 0)
+                return false;
+            pos -= s;
+        }
+    }
+    else { // Seeking forward? Simply read (then discard) bytes starting from the current file position.
+        char buffer[0x10000];
+        while(offset > 0) {
+            qint64 s = read(buffer, std::min(offset, (qint64)sizeof(buffer)));
+            if(s <= 0)
+                return false;
+            offset -= s;
+        }
     }
 
     return true;
@@ -286,6 +299,42 @@ void GzipIODevice::close()
     QIODevice::close();
 }
 
+#if 0
+bool GzipIODevice::replaceUnderlyingDevice(QIODevice* device)
+{
+    // Close the old underlying device if we are managing it.
+    if(_device && _manageDevice)
+        _device->close();
+
+    _device = device;
+    _manageDevice = false;
+
+    // If the underlying device is open, check that is it opened in a compatible mode.
+    if(_device && isOpen()) {
+        OVITO_ASSERT(isReadable() && !isWritable()); // This method is only supported when reading files.
+
+        if(_device->isOpen()) {
+            _manageDevice = false;
+            const OpenMode deviceMode = _device->openMode();
+            if(!_device->isReadable()) {
+                qWarning("GzipIODevice::replaceUnderlyingDevice: underlying device must be opened in ReadOnly mode");
+                return false;
+            }
+        }
+        else {
+            // If the underlying device is closed, open it.
+            _manageDevice = true;
+            if(!_device->open(openMode())) {
+                setErrorString(tr("Error opening underlying device: %1").arg(_device->errorString()));
+                return false;
+            }
+        }
+    }
+
+    return true;
+}
+#endif
+
 /*!
     Flushes the internal buffer.
 
@@ -357,11 +406,11 @@ qint64 GzipIODevice::readData(char* data, qint64 maxSize)
         // Read data if if the input buffer is empty. There could be data in the buffer
         // from a previous readData call.
         if(_zlibStruct->_zlibStream.avail_in == 0) {
-            qint64 bytesAvalible = _device->read(reinterpret_cast<char*>(_buffer.get()), _bufferSize);
+            qint64 bytesAvailable = _device->read(reinterpret_cast<char*>(_buffer.get()), _bufferSize);
             _zlibStruct->_zlibStream.next_in = _buffer.get();
-            _zlibStruct->_zlibStream.avail_in = bytesAvalible;
+            _zlibStruct->_zlibStream.avail_in = bytesAvailable;
 
-            if(bytesAvalible == -1) {
+            if(bytesAvailable == -1) {
                 _state = Error;
                 setErrorString(tr("Error reading data from underlying device: %1").arg(_device->errorString()));
                 return -1;
@@ -369,9 +418,9 @@ qint64 GzipIODevice::readData(char* data, qint64 maxSize)
 
             if(_state != InStream) {
                 // If we are not in a stream and get 0 bytes, we are probably trying to read from an empty device.
-                if(bytesAvalible == 0)
+                if(bytesAvailable == 0)
                     return 0;
-                if(bytesAvalible > 0)
+                if(bytesAvailable > 0)
                     _state = InStream;
             }
         }

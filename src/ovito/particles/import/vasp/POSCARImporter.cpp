@@ -176,13 +176,10 @@ void POSCARImporter::FrameFinder::discoverFramesInFile(QVector<FileSourceImporte
 ******************************************************************************/
 void POSCARImporter::FrameLoader::loadFile()
 {
-    // Open file for reading.
-    CompressedTextReader stream(fileHandle());
     setProgressText(tr("Reading VASP file %1").arg(fileHandle().toString()));
 
-    // Jump to requested animation frame.
-    if(frame().byteOffset != 0)
-        stream.seek(frame().byteOffset, frame().lineNumber);
+    // Open file for reading.
+    CompressedTextReader stream(fileHandle(), frame().byteOffset, frame().lineNumber);
 
     // Read comment line.
     stream.readLine();

@@ -82,14 +82,11 @@ bool WavefrontOBJImporter::OOMetaClass::checkFileFormat(const FileHandle& file) 
 ******************************************************************************/
 void WavefrontOBJImporter::FrameLoader::loadFile()
 {
-    // Open file for reading.
-    CompressedTextReader stream(fileHandle());
     setProgressText(tr("Reading OBJ file %1").arg(fileHandle().toString()));
-    setProgressMaximum(stream.underlyingSize());
 
-    // Jump to byte offset.
-    if(frame().byteOffset != 0)
-        stream.seek(frame().byteOffset, frame().lineNumber);
+    // Open file for reading.
+    CompressedTextReader stream(fileHandle(), frame().byteOffset, frame().lineNumber);
+    setProgressMaximum(stream.underlyingSize());
 
     // Add mesh to the data collection.
     TriMeshObject* mesh = state().getMutableObject<TriMeshObject>();

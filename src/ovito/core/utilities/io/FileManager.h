@@ -38,7 +38,7 @@ namespace Ssh {
 /**
  * \brief A handle to a file manages by the FileManager.
  */
-class OVITO_CORE_EXPORT FileHandle 
+class OVITO_CORE_EXPORT FileHandle
 {
 public:
 
@@ -54,15 +54,15 @@ public:
     /// Returns the URL denoting the source location of the data file.
     const QUrl& sourceUrl() const { return _sourceUrl; }
 
-    /// Returns the path to the file in the local file system (may be empty). 
+    /// Returns the path to the file in the local file system (may be empty).
     const QString& localFilePath() const { return _localFilePath; }
 
     /// Create a QIODevice that permits reading data from the file referred to by this handle.
     std::unique_ptr<QIODevice> createIODevice() const;
 
     /// Returns a human-readable representation of the source location referred to by this file handle.
-    QString toString() const { 
-        return _sourceUrl.toString(QUrl::RemovePassword | QUrl::PreferLocalFile | QUrl::PrettyDecoded); 
+    QString toString() const {
+        return _sourceUrl.toString(QUrl::RemovePassword | QUrl::PreferLocalFile | QUrl::PrettyDecoded);
     }
 
 private:
@@ -70,10 +70,10 @@ private:
     /// The URL denoting the data source.
     QUrl _sourceUrl;
 
-    /// A path to the file in the local file system. 
+    /// A path to the file in the local file system.
     QString _localFilePath;
 
-    /// An buffer with the file's contents.
+    /// A in-memory buffer with the file's contents.
     QByteArray _fileData;
 };
 

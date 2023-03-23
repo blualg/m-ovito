@@ -91,13 +91,10 @@ bool CIFImporter::OOMetaClass::checkFileFormat(const FileHandle& file) const
 ******************************************************************************/
 void CIFImporter::FrameLoader::loadFile()
 {
-    // Open file for reading.
-    CompressedTextReader stream(fileHandle());
     setProgressText(tr("Reading CIF file %1").arg(fileHandle().toString()));
 
-    // Jump to byte offset.
-    if(frame().byteOffset != 0)
-        stream.seek(frame().byteOffset, frame().lineNumber);
+    // Open file for reading.
+    CompressedTextReader stream(fileHandle(), frame().byteOffset, frame().lineNumber);
 
     // Map the whole file into memory for parsing.
     const char* buffer_start;

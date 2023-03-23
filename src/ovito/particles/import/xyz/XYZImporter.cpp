@@ -216,13 +216,10 @@ inline bool parseBool(const char* s, int& d)
 ******************************************************************************/
 void XYZImporter::FrameLoader::loadFile()
 {
-    // Open file for reading.
-    CompressedTextReader stream(fileHandle());
     setProgressText(tr("Reading XYZ file %1").arg(fileHandle().toString()));
 
-    // Jump to byte offset.
-    if(frame().byteOffset != 0)
-        stream.seek(frame().byteOffset, frame().lineNumber);
+    // Open file for reading.
+    CompressedTextReader stream(fileHandle(), frame().byteOffset, frame().lineNumber);
 
     // Parse number of atoms.
     unsigned long long numParticlesLong;
@@ -248,7 +245,7 @@ void XYZImporter::FrameLoader::loadFile()
 
     // Detect .exyz file format written by OpenBabel.
     bool isOpenBabelEXYZ = (std::strstr(commentLine_cstr, "%PBC") != nullptr);
-    
+
     simulationCell()->setPbcFlags(false, false, false);
     Vector3 cellOrigin = Vector3::Zero();
     Vector3 cellVector1 = Vector3::Zero();
@@ -603,7 +600,7 @@ Future<ParticleInputColumnMapping> XYZImporter::inspectFileHeader(const Frame& f
                 if(i == 0)
                     detectedColumnMapping.resize(FileImporter::splitString(stream.lineString()).size());
             }
-            if(!stream.eof()) 
+            if(!stream.eof())
                 fileExcerpt += QStringLiteral("...\n");
 
             detectedColumnMapping.setFileExcerpt(fileExcerpt);

@@ -91,13 +91,10 @@ bool mmCIFImporter::OOMetaClass::checkFileFormat(const FileHandle& file) const
 ******************************************************************************/
 void mmCIFImporter::FrameLoader::loadFile()
 {
-    // Open file for reading.
-    CompressedTextReader stream(fileHandle());
     setProgressText(tr("Reading mmCIF file %1").arg(fileHandle().toString()));
 
-    // Jump to byte offset.
-    if(frame().byteOffset != 0)
-        stream.seek(frame().byteOffset, frame().lineNumber);
+    // Open file for reading.
+    CompressedTextReader stream(fileHandle(), frame().byteOffset, frame().lineNumber);
 
     // Map the whole file into memory for parsing.
     const char* buffer_start;
@@ -125,7 +122,7 @@ void mmCIFImporter::FrameLoader::loadFile()
         structure.merge_chain_parts();
         if(isCanceled()) return;
 
-        // Import metadata fields as global attributes. 
+        // Import metadata fields as global attributes.
         for(const auto& m : structure.info)
             state().setAttribute(QString::fromStdString(m.first), QVariant::fromValue(QString::fromStdString(m.second)), dataSource());
 
@@ -261,7 +258,7 @@ void mmCIFImporter::FrameLoader::loadFile()
         generateBonds();
     else
         setBondCount(0);
-        
+
     // Call base implementation to finalize the loaded particle data.
     ParticleImporter::FrameLoader::loadFile();
 }

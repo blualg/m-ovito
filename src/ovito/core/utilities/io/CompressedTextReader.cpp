@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -26,15 +26,22 @@
 
 namespace Ovito {
 
+static void returnUncompressor(std::unique_ptr<GzipIODevice> uncompressor)
+{
+    // TODO: Implement caching of zlib index information.
+}
+
+static std::unique_ptr<GzipIODevice> acquireUncompressor(QIODevice* device)
+{
+    // TODO: Implement caching of zlib index information.
+    return std::make_unique<GzipIODevice>(device, 6, 0x100000);
+}
+
 /******************************************************************************
 * Opens the given I/O device for reading.
 ******************************************************************************/
-CompressedTextReader::CompressedTextReader(const FileHandle& input) :
-#ifdef OVITO_ZLIB_SUPPORT
-    _device(input.createIODevice()), _uncompressor(_device.get(), 6, 0x100000)
-#else
+CompressedTextReader::CompressedTextReader(const FileHandle& input, qint64 byteOffset, int lineNumber) :
     _device(input.createIODevice())
-#endif
 {
     // Try to find out what the filename is.
     if(!input.sourceUrl().isEmpty())
@@ -46,10 +53,11 @@ CompressedTextReader::CompressedTextReader(const FileHandle& input) :
     if(_filename.endsWith(".gz", Qt::CaseInsensitive)) {
 #ifdef OVITO_ZLIB_SUPPORT
         // Open compressed file for reading.
-        _uncompressor.setStreamFormat(GzipIODevice::GzipFormat);
-        if(!_uncompressor.open(QIODevice::ReadOnly))
-            throw Exception(FileManager::tr("Failed to open input file: %1").arg(_uncompressor.errorString()));
-        _stream = &_uncompressor;
+        _uncompressor = acquireUncompressor(_device.get());
+        _uncompressor->setStreamFormat(GzipIODevice::GzipFormat);
+        if(!_uncompressor->isOpen() && !_uncompressor->open(QIODevice::ReadOnly))
+            throw Exception(FileManager::tr("Failed to open input file: %1").arg(_uncompressor->errorString()));
+        _stream = _uncompressor.get();
 #else
         throw Exception(tr("Cannot open file '%1' for reading. This version of OVITO was built without I/O support for gzip compressed files."));
 #endif
@@ -60,6 +68,18 @@ CompressedTextReader::CompressedTextReader(const FileHandle& input) :
             throw Exception(FileManager::tr("Failed to open input file: %1").arg(_device->errorString()));
         _stream = _device.get();
     }
+
+    if(byteOffset != 0 || lineNumber != 0)
+        seek(byteOffset, lineNumber);
+}
+
+/******************************************************************************
+* Destructor.
+******************************************************************************/
+CompressedTextReader::~CompressedTextReader()
+{
+    if(_uncompressor)
+        returnUncompressor(std::move(_uncompressor));
 }
 
 /******************************************************************************
@@ -99,10 +119,8 @@ const char* CompressedTextReader::readLine(int maxSize)
 
     if(readBytes <= 0)
         _line[0] = '\0';
-    else {
+    else
         _line[readBytes] = '\0';
-        _byteOffset += readBytes;
-    }
 
     return _line.data();
 }
@@ -138,8 +156,7 @@ void CompressedTextReader::munmap()
 ******************************************************************************/
 QByteArray CompressedTextReader::readAll()
 {
-    QByteArray buffer = _stream->readAll();
-    return buffer;
+    return _stream->readAll();
 }
 
 }   // End of namespace

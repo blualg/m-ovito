@@ -31,9 +31,9 @@
 #include <3rdparty/gemmi/pdb.hpp>
 #include <3rdparty/gemmi/remarks.hpp>
 
-namespace gemmi { 
+namespace gemmi {
 template<>
-inline size_t copy_line_from_stream<Ovito::CompressedTextReader&>(char* line, int size, Ovito::CompressedTextReader& stream) 
+inline size_t copy_line_from_stream<Ovito::CompressedTextReader&>(char* line, int size, Ovito::CompressedTextReader& stream)
 {
     using namespace gemmi::pdb_impl;
 
@@ -62,7 +62,7 @@ inline size_t copy_line_from_stream<Ovito::CompressedTextReader&>(char* line, in
             line[len] = '\0';
         }
 
-        // Gemmi expects atom names to start at column index 12. Some files have one extra space at this positions and the 
+        // Gemmi expects atom names to start at column index 12. Some files have one extra space at this positions and the
         // name actually begins at position 13. Make the parser happy by moving the text by one positon to the left.
         // For example, turn " Au " into "Au  ", but preserve " CA " or " HE ".
         if(len >= 16 && size >= 16 && line[12] == ' ' && line[13] >= 'A' && line[13] <= 'Z' && line[14] >= 'a' && line[14] <= 'z' && line[15] == ' ') {
@@ -177,20 +177,17 @@ void PDBImporter::FrameFinder::discoverFramesInFile(QVector<FileSourceImporter::
 ******************************************************************************/
 void PDBImporter::FrameLoader::loadFile()
 {
-    // Open file for reading.
-    CompressedTextReader stream(fileHandle());
     setProgressText(tr("Reading PDB file %1").arg(fileHandle().toString()));
 
-    // Jump to byte offset.
-    if(frame().byteOffset != 0)
-        stream.seek(frame().byteOffset, frame().lineNumber);
+    // Open file for reading.
+    CompressedTextReader stream(fileHandle(), frame().byteOffset, frame().lineNumber);
 
     try {
         // Parse the PDB file's contents.
         gemmi::Structure structure = gemmi::pdb_impl::read_pdb_from_stream(stream, qPrintable(frame().sourceFile.path()), gemmi::PdbReadOptions());
         if(isCanceled()) return;
 
-        // Import PDB metadata fields as global attributes. 
+        // Import PDB metadata fields as global attributes.
         for(const auto& m : structure.info) {
             state().setAttribute(QString::fromStdString(m.first), QVariant::fromValue(QString::fromStdString(m.second)), dataSource());
         }
@@ -380,7 +377,7 @@ void PDBImporter::FrameLoader::loadFile()
     else
         setBondCount(0);
 
-    // If the loaded particles are centered on the coordinate origin but the periodic simulation box corner is positioned at (0,0,0), 
+    // If the loaded particles are centered on the coordinate origin but the periodic simulation box corner is positioned at (0,0,0),
     // then shift the cell to center it on (0,0,0) too, leaving the particle coordinates as is.
     // correctOffcenterCell();
 
