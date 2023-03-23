@@ -22,6 +22,7 @@
 
 #include <ovito/particles/gui/ParticlesGui.h>
 #include <ovito/particles/modifier/analysis/surface/ConstructSurfaceModifier.h>
+#include <ovito/gui/desktop/properties/BooleanGroupBoxParameterUI.h>
 #include <ovito/gui/desktop/properties/IntegerParameterUI.h>
 #include <ovito/gui/desktop/properties/IntegerRadioButtonParameterUI.h>
 #include <ovito/gui/desktop/properties/FloatParameterUI.h>
@@ -60,7 +61,7 @@ void ConstructSurfaceModifierEditor::createUI(const RolloutInsertionParameters& 
     int row = 0;
 
     IntegerRadioButtonParameterUI* methodUI = new IntegerRadioButtonParameterUI(this, PROPERTY_FIELD(ConstructSurfaceModifier::method));
-    QRadioButton* alphaShapeMethodBtn = methodUI->addRadioButton(ConstructSurfaceModifier::AlphaShape, tr("Alpha-shape method (default):"));
+    QRadioButton* alphaShapeMethodBtn = methodUI->addRadioButton(ConstructSurfaceModifier::AlphaShape, tr("Alpha-shape method:"));
     sublayout->addWidget(alphaShapeMethodBtn, row++, 0, 1, 3);
 
     FloatParameterUI* probeSphereRadiusUI = new FloatParameterUI(this, PROPERTY_FIELD(ConstructSurfaceModifier::probeSphereRadius));
@@ -80,35 +81,46 @@ void ConstructSurfaceModifierEditor::createUI(const RolloutInsertionParameters& 
     sublayout->addWidget(selectSurfaceParticlesUI->checkBox(), row++, 1, 1, 2);
     connect(alphaShapeMethodBtn, &QRadioButton::toggled, selectSurfaceParticlesUI, &BooleanParameterUI::setEnabled);
 
-    BooleanParameterUI* identifyRegionsUI = new BooleanParameterUI(this, PROPERTY_FIELD(ConstructSurfaceModifier::identifyRegions));
-    identifyRegionsUI->setEnabled(false);
-    sublayout->addWidget(identifyRegionsUI->checkBox(), row++, 1, 1, 2);
-#ifdef OVITO_BUILD_PROFESSIONAL
-    connect(alphaShapeMethodBtn, &QRadioButton::toggled, identifyRegionsUI, &BooleanParameterUI::setEnabled);
-#else
-    identifyRegionsUI->checkBox()->setText(identifyRegionsUI->checkBox()->text() + tr("\n(Available in OVITO Pro)"));
-#endif
+    //     BooleanParameterUI* alphaShapeIdentifyRegionsUI =
+    //         new BooleanParameterUI(this, PROPERTY_FIELD(ConstructSurfaceModifier::identifyRegions));
+    //     alphaShapeIdentifyRegionsUI->setEnabled(false);
+    //     sublayout->addWidget(alphaShapeIdentifyRegionsUI->checkBox(), row++, 1, 1, 2);
+    // #ifdef OVITO_BUILD_PROFESSIONAL
+    //     connect(alphaShapeMethodBtn, &QRadioButton::toggled, alphaShapeIdentifyRegionsUI, &BooleanParameterUI::setEnabled);
+    // #else
+    //     alphaShapeIdentifyRegionsUI->checkBox()->setText(alphaShapeIdentifyRegionsUI->checkBox()->text() +
+    //                                                      tr("\n(Available in OVITO Pro)"));
+    // #endif
 
-    BooleanParameterUI* mapParticlesToRegionsUI = new BooleanParameterUI(this, PROPERTY_FIELD(ConstructSurfaceModifier::mapParticlesToRegions));
-    mapParticlesToRegionsUI->setEnabled(false);
-    sublayout->addWidget(mapParticlesToRegionsUI->checkBox(), row++, 1, 1, 2);
-#ifdef OVITO_BUILD_PROFESSIONAL
-    auto mapParticlesToRegionsUpdater = [=]() { mapParticlesToRegionsUI->setEnabled(alphaShapeMethodBtn->isChecked() && identifyRegionsUI->checkBox()->isChecked()); };
-    connect(alphaShapeMethodBtn, &QRadioButton::toggled, mapParticlesToRegionsUI, mapParticlesToRegionsUpdater);
-    connect(identifyRegionsUI->checkBox(), &QCheckBox::toggled, mapParticlesToRegionsUI, mapParticlesToRegionsUpdater);
-#else
-    mapParticlesToRegionsUI->checkBox()->setText(mapParticlesToRegionsUI->checkBox()->text() + tr("\n(Available in OVITO Pro)"));
-#endif
+    //     BooleanParameterUI* mapParticlesToRegionsUI =
+    //         new BooleanParameterUI(this, PROPERTY_FIELD(ConstructSurfaceModifier::mapParticlesToRegions));
+    //     mapParticlesToRegionsUI->setEnabled(false);
+    //     sublayout->addWidget(mapParticlesToRegionsUI->checkBox(), row++, 1, 1, 2);
+    // #ifdef OVITO_BUILD_PROFESSIONAL
+    //     auto mapParticlesToRegionsUpdater = [=]() {
+    //         mapParticlesToRegionsUI->setEnabled(alphaShapeMethodBtn->isChecked() &&
+    //                                             alphaShapeIdentifyRegionsUI->checkBox()->isChecked());
+    //     };
+    //     connect(alphaShapeMethodBtn, &QRadioButton::toggled, mapParticlesToRegionsUI, mapParticlesToRegionsUpdater);
+    //     connect(alphaShapeIdentifyRegionsUI->checkBox(), &QCheckBox::toggled, mapParticlesToRegionsUI,
+    //     mapParticlesToRegionsUpdater);
+    // #else
+    //     mapParticlesToRegionsUI->checkBox()->setText(mapParticlesToRegionsUI->checkBox()->text() + tr("\n(Available in OVITO
+    //     Pro)"));
+    // #endif
 
-    OpenDataInspectorButton* showRegionsListBtn = new OpenDataInspectorButton(this, tr("List of identified regions"), QStringLiteral("surface"), 2); // Note: Mode hint "2" is used to switch to the surface mesh regions view.
-    showRegionsListBtn->setEnabled(false);
-    sublayout->addWidget(showRegionsListBtn, row++, 1, 1, 2);
-#ifdef OVITO_BUILD_PROFESSIONAL
-    connect(this, &PropertiesEditor::contentsChanged, this, [this,showRegionsListBtn]() {
-        ConstructSurfaceModifier* modifier = static_object_cast<ConstructSurfaceModifier>(editObject());
-        showRegionsListBtn->setEnabled(modifier && modifier->method() == ConstructSurfaceModifier::AlphaShape && modifier->identifyRegions());
-    });
-#endif
+    //     OpenDataInspectorButton* alphaShapeShowRegionsListBtn =
+    //         new OpenDataInspectorButton(this, tr("List of identified regions"), QStringLiteral("surface"),
+    //                                     2);  // Note: Mode hint "2" is used to switch to the surface mesh regions view.
+    //     alphaShapeShowRegionsListBtn->setEnabled(false);
+    //     sublayout->addWidget(alphaShapeShowRegionsListBtn, row++, 1, 1, 2);
+    // #ifdef OVITO_BUILD_PROFESSIONAL
+    //     connect(this, &PropertiesEditor::contentsChanged, this, [this, alphaShapeShowRegionsListBtn]() {
+    //         ConstructSurfaceModifier* modifier = static_object_cast<ConstructSurfaceModifier>(editObject());
+    //         alphaShapeShowRegionsListBtn->setEnabled(modifier && modifier->method() == ConstructSurfaceModifier::AlphaShape &&
+    //                                                  modifier->identifyRegions());
+    //     });
+    // #endif
 
     QRadioButton* gaussianDensityBtn = methodUI->addRadioButton(ConstructSurfaceModifier::GaussianDensity, tr("Gaussian density method:"));
     sublayout->setRowMinimumHeight(row++, 10);
@@ -132,8 +144,47 @@ void ConstructSurfaceModifierEditor::createUI(const RolloutInsertionParameters& 
     sublayout->addLayout(isoValueUI->createFieldLayout(), row++, 2);
     connect(gaussianDensityBtn, &QRadioButton::toggled, isoValueUI, &FloatParameterUI::setEnabled);
 
+    BooleanGroupBoxParameterUI* regionsSettingsUI =
+        new BooleanGroupBoxParameterUI(this, PROPERTY_FIELD(ConstructSurfaceModifier::identifyRegions));
+#ifdef OVITO_BUILD_PROFESSIONAL
+    regionsSettingsUI->groupBox()->setTitle(tr("Identify volumetric regions"));
+#else
+    regionsSettingsUI->groupBox()->setTitle(tr("Identify volumetric regions (requires OVITO Pro)"));
+    regionsSettingsUI->setEnabled(false);
+#endif
+    layout->addWidget(regionsSettingsUI->groupBox());
+
+    sublayout = new QGridLayout(regionsSettingsUI->childContainer());
+    sublayout->setContentsMargins(4, 4, 4, 4);
+    sublayout->setSpacing(6);
+    sublayout->setColumnStretch(1, 1);
+    row = 0;
+
+    BooleanParameterUI* mapParticlesToRegionsUI =
+        new BooleanParameterUI(this, PROPERTY_FIELD(ConstructSurfaceModifier::mapParticlesToRegions));
+    mapParticlesToRegionsUI->setEnabled(false);
+    sublayout->addWidget(mapParticlesToRegionsUI->checkBox(), row++, 1, 1, 2);
+#ifdef OVITO_BUILD_PROFESSIONAL
+    auto mapParticlesToRegionsUpdater = [=]() { mapParticlesToRegionsUI->setEnabled(alphaShapeMethodBtn->isChecked()); };
+    connect(alphaShapeMethodBtn, &QRadioButton::toggled, mapParticlesToRegionsUI, mapParticlesToRegionsUpdater);
+    connect(gaussianDensityBtn, &QRadioButton::toggled, mapParticlesToRegionsUI, mapParticlesToRegionsUpdater);
+#endif
+
+    OpenDataInspectorButton* ShowRegionsListBtn =
+        new OpenDataInspectorButton(this, tr("List of identified regions"), QStringLiteral("surface"),
+                                    2);  // Note: Mode hint "2" is used to switch to the surface mesh regions view.
+    ShowRegionsListBtn->setEnabled(false);
+    sublayout->addWidget(ShowRegionsListBtn, row++, 1, 1, 2);
+#ifdef OVITO_BUILD_PROFESSIONAL
+    connect(this, &PropertiesEditor::contentsChanged, this, [this, ShowRegionsListBtn]() {
+        ConstructSurfaceModifier* modifier = static_object_cast<ConstructSurfaceModifier>(editObject());
+        ShowRegionsListBtn->setEnabled(modifier && modifier->identifyRegions());
+    });
+#endif
+
     QGroupBox* generalGroupBox = new QGroupBox(tr("Options"));
     layout->addWidget(generalGroupBox);
+    row = 0;
 
     sublayout = new QGridLayout(generalGroupBox);
     sublayout->setContentsMargins(4,4,4,4);
@@ -141,13 +192,13 @@ void ConstructSurfaceModifierEditor::createUI(const RolloutInsertionParameters& 
     sublayout->setColumnStretch(1, 1);
 
     BooleanParameterUI* onlySelectedUI = new BooleanParameterUI(this, PROPERTY_FIELD(ConstructSurfaceModifier::onlySelectedParticles));
-    sublayout->addWidget(onlySelectedUI->checkBox(), 1, 0, 1, 2);
+    sublayout->addWidget(onlySelectedUI->checkBox(), row++, 0, 1, 2);
 
     BooleanParameterUI* transferParticlePropertiesUI = new BooleanParameterUI(this, PROPERTY_FIELD(ConstructSurfaceModifier::transferParticleProperties));
-    sublayout->addWidget(transferParticlePropertiesUI->checkBox(), 2, 0, 1, 2);
+    sublayout->addWidget(transferParticlePropertiesUI->checkBox(), row++, 0, 1, 2);
 
     BooleanParameterUI* computeSurfaceDistanceUI = new BooleanParameterUI(this, PROPERTY_FIELD(ConstructSurfaceModifier::computeSurfaceDistance));
-    sublayout->addWidget(computeSurfaceDistanceUI->checkBox(), 3, 0, 1, 2);
+    sublayout->addWidget(computeSurfaceDistanceUI->checkBox(), row++, 0, 1, 2);
 
     // Status label.
     StatusWidget* statusWidget = (new ObjectStatusDisplay(this))->statusWidget();

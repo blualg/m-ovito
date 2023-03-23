@@ -89,13 +89,27 @@ private:
     public:
 
         /// Constructor.
-        ConstructSurfaceEngineBase(const ModifierEvaluationRequest& request, ConstPropertyPtr positions, ConstPropertyPtr selection, DataOORef<SurfaceMesh> mesh, bool computeSurfaceDistance, std::vector<ConstPropertyPtr> particleProperties) :
-            Engine(request),
-            _positions(positions),
-            _selection(std::move(selection)),
-            _mesh(std::move(mesh)),
-            _particleProperties(std::move(particleProperties)),
-            _surfaceDistances(computeSurfaceDistance ? ParticlesObject::OOClass().createUserProperty(_positions->size(), PropertyObject::Float, 1, tr("Surface Distance")) : nullptr) {}
+        ConstructSurfaceEngineBase(const ModifierEvaluationRequest& request, ConstPropertyPtr positions,
+                                   ConstPropertyPtr selection, DataOORef<SurfaceMesh> mesh, bool identifyRegions,
+                                   bool mapParticlesToRegions, bool computeSurfaceDistance,
+                                   std::vector<ConstPropertyPtr> particleProperties)
+            : Engine(request),
+              _positions(positions),
+              _selection(std::move(selection)),
+              _mesh(std::move(mesh)),
+              _particleProperties(std::move(particleProperties)),
+              _identifyRegions(identifyRegions),
+              _totalCellVolume(mesh->domain()
+                                   ? mesh->domain()->volume3D()
+                                   : 0.0),  // totalCellVolume is initialized before _mesh. Therefore mesh has to be used.
+              _particleRegionIds(mapParticlesToRegions ? ParticlesObject::OOClass().createUserProperty(
+                                                             positions->size(), PropertyObject::Int, 1, tr("Region"))
+                                                       : nullptr),
+              _surfaceDistances(computeSurfaceDistance ? ParticlesObject::OOClass().createUserProperty(
+                                                             positions->size(), PropertyObject::Float, 1, tr("Surface Distance"))
+                                                       : nullptr)
+        {
+        }
 
         /// Returns the computed total surface area.
         FloatType surfaceArea() const { return (FloatType)_totalSurfaceArea; }
@@ -105,6 +119,9 @@ private:
 
         /// Returns the generated surface mesh.
         DataOORef<SurfaceMesh>& mesh() { return _mesh; }
+
+        // Returns the identify regions value
+        bool identifyRegions() const { return _identifyRegions; }
 
         /// Returns the input particle positions.
         const ConstPropertyPtr& positions() const { return _positions; }
@@ -119,6 +136,8 @@ private:
         const PropertyPtr& surfaceDistances() const { return _surfaceDistances; }
 
     protected:
+        /// Injects the computed results into the data pipeline.
+        virtual void applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
 
         /// Releases data that is no longer needed.
         void releaseWorkingData() {
@@ -130,6 +149,45 @@ private:
         /// Compute the distance of each input particle from the constructed surface.
         void computeSurfaceDistances(const SurfaceMeshAccess& mesh);
 
+        // Computes the surface area per mesh region and the total surface area
+        bool computeSurfaceAreaWithRegions(SurfaceMeshAccess& mesh);
+
+        // Computes the total surface of the mesh
+        bool computeSurfaceArea(const SurfaceMeshAccess& mesh);
+
+        // Computes the void, exterior, and total volumes from the per region volume properties.
+        void computeAggregateVolumes(const SurfaceMeshAccess& mesh);
+
+        /// Controls the identification of disconnected spatial regions (filled and empty).
+        const bool _identifyRegions;
+
+        /// Number of filled regions that have been identified.
+        SurfaceMeshAccess::size_type _filledRegionCount = 0;
+
+        /// Total number of empty regions that have been identified.
+        SurfaceMeshAccess::size_type _emptyRegionCount = 0;
+
+        /// Total number of interior empty regions that have been identified.
+        SurfaceMeshAccess::size_type _voidRegionCount = 0;
+
+        /// The computed total surface area.
+        double _totalSurfaceArea = 0;
+
+        /// The computed total volume of filled regions.
+        double _totalFilledVolume = 0;
+
+        /// The computed total volume of all empty regions.
+        double _totalEmptyVolume = 0;
+
+        /// The computed total volume of interior empty regions.
+        double _totalVoidVolume = 0;
+
+        /// The total volume of the simulation cell.
+        double _totalCellVolume = 0;
+
+        /// The assignment of input particles to volumetric regions.
+        PropertyPtr _particleRegionIds;
+
     private:
 
         /// The input particle coordinates.
@@ -140,9 +198,6 @@ private:
 
         /// The generated surface mesh.
         DataOORef<SurfaceMesh> _mesh;
-
-        /// The computed total surface area.
-        double _totalSurfaceArea = 0;
 
         /// The computed distance of each particle from the constructed surface.
         PropertyPtr _surfaceDistances;
@@ -157,16 +212,22 @@ private:
     public:
 
         /// Constructor.
-        AlphaShapeEngine(const ModifierEvaluationRequest& request, ConstPropertyPtr positions, ConstPropertyPtr selection, ConstPropertyPtr particleGrains, DataOORef<SurfaceMesh> mesh, FloatType probeSphereRadius, int smoothingLevel, bool selectSurfaceParticles, bool identifyRegions, bool mapParticlesToRegions, bool computeSurfaceDistance, std::vector<ConstPropertyPtr> particleProperties) :
-            ConstructSurfaceEngineBase(request, std::move(positions), std::move(selection), std::move(mesh), computeSurfaceDistance, std::move(particleProperties)),
-            _particleGrains(std::move(particleGrains)),
-            _probeSphereRadius(probeSphereRadius),
-            _smoothingLevel(smoothingLevel),
-            _identifyRegions(identifyRegions),
-            _totalCellVolume(this->mesh()->domain() ? this->mesh()->domain()->volume3D() : 0.0),
-            _surfaceParticleSelection(selectSurfaceParticles ? ParticlesObject::OOClass().createStandardProperty(this->positions()->size(), ParticlesObject::SelectionProperty, DataBuffer::InitializeMemory) : nullptr),
-            _particleRegionIds(mapParticlesToRegions ? ParticlesObject::OOClass().createUserProperty(this->positions()->size(), PropertyObject::Int, 1, tr("Region")) : nullptr)
-            {}
+        AlphaShapeEngine(const ModifierEvaluationRequest& request, ConstPropertyPtr positions, ConstPropertyPtr selection,
+                         ConstPropertyPtr particleGrains, DataOORef<SurfaceMesh> mesh, FloatType probeSphereRadius,
+                         int smoothingLevel, bool selectSurfaceParticles, bool identifyRegions, bool mapParticlesToRegions,
+                         bool computeSurfaceDistance, std::vector<ConstPropertyPtr> particleProperties)
+            : ConstructSurfaceEngineBase(request, std::move(positions), std::move(selection), std::move(mesh), identifyRegions,
+                                         mapParticlesToRegions, computeSurfaceDistance, std::move(particleProperties)),
+              _particleGrains(std::move(particleGrains)),
+              _probeSphereRadius(probeSphereRadius),
+              _smoothingLevel(smoothingLevel),
+              _surfaceParticleSelection(
+                  selectSurfaceParticles
+                      ? ParticlesObject::OOClass().createStandardProperty(
+                            this->positions()->size(), ParticlesObject::SelectionProperty, DataBuffer::InitializeMemory)
+                      : nullptr)
+        {
+        }
 
         /// Computes the modifier's results and stores them in this object for later retrieval.
         virtual void perform() override;
@@ -194,38 +255,11 @@ private:
         /// The number of iterations of the smoothing algorithm to apply to the surface mesh.
         const int _smoothingLevel;
 
-        /// Controls the identification of disconnected spatial regions (filled and empty).
-        const bool _identifyRegions;
-
         /// The input particle grain property.
         ConstPropertyPtr _particleGrains;
 
-        /// Number of filled regions that have been identified.
-        SurfaceMeshAccess::size_type _filledRegionCount = 0;
-
-        /// Total number of empty regions that have been identified.
-        SurfaceMeshAccess::size_type _emptyRegionCount = 0;
-
-        /// Total number of interior empty regions that have been identified.
-        SurfaceMeshAccess::size_type _voidRegionCount = 0;
-
-        /// The computed total volume of filled regions.
-        double _totalFilledVolume = 0;
-
-        /// The computed total volume of all empty regions.
-        double _totalEmptyVolume = 0;
-
-        /// The computed total volume of interior empty regions.
-        double _totalVoidVolume = 0;
-
-        /// The total volume of the simulation cell.
-        double _totalCellVolume = 0;
-
         /// The selection set of particles located right on the constructed surfaces.
         PropertyPtr _surfaceParticleSelection;
-
-        /// The assignment of input particles to volumetric regions.
-        PropertyPtr _particleRegionIds;
     };
 
     /// Compute engine building the surface mesh using the Gaussian density method.
@@ -234,13 +268,18 @@ private:
     public:
 
         /// Constructor.
-        GaussianDensityEngine(const ModifierEvaluationRequest& request, ConstPropertyPtr positions, ConstPropertyPtr selection, DataOORef<SurfaceMesh> mesh,
-                FloatType radiusFactor, FloatType isoLevel, int gridResolution, bool computeSurfaceDistance, ConstPropertyPtr radii, std::vector<ConstPropertyPtr> particleProperties) :
-            ConstructSurfaceEngineBase(request, std::move(positions), std::move(selection), std::move(mesh), computeSurfaceDistance, std::move(particleProperties)),
-            _radiusFactor(radiusFactor),
-            _isoLevel(isoLevel),
-            _gridResolution(gridResolution),
-            _particleRadii(std::move(radii)) {}
+        GaussianDensityEngine(const ModifierEvaluationRequest& request, ConstPropertyPtr positions, ConstPropertyPtr selection,
+                              DataOORef<SurfaceMesh> mesh, FloatType radiusFactor, FloatType isoLevel, int gridResolution,
+                              bool identifyRegions, bool mapParticlesToRegions, bool computeSurfaceDistance,
+                              ConstPropertyPtr radii, std::vector<ConstPropertyPtr> particleProperties)
+            : ConstructSurfaceEngineBase(request, std::move(positions), std::move(selection), std::move(mesh), identifyRegions,
+                                         mapParticlesToRegions, computeSurfaceDistance, std::move(particleProperties)),
+              _radiusFactor(radiusFactor),
+              _isoLevel(isoLevel),
+              _gridResolution(gridResolution),
+              _particleRadii(std::move(radii))
+        {
+        }
 
         /// Computes the modifier's results and stores them in this object for later retrieval.
         virtual void perform() override;
@@ -281,7 +320,7 @@ private:
     /// Controls whether the modifier should select surface particles (alpha-shape method).
     DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, selectSurfaceParticles, setSelectSurfaceParticles);
 
-    /// Controls whether the algorithm should identify disconnected spatial regions (alpha-shape method).
+    /// Controls whether the algorithm should identify disconnected spatial regions.
     DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, identifyRegions, setIdentifyRegions);
 
     /// Controls whether property values should be copied over from the input particles to the generated surface vertices (alpha-shape method / density field method).
@@ -299,7 +338,7 @@ private:
     /// Controls whether the algorithm should compute the shortest distance of each particle from the constructed surface.
     DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, computeSurfaceDistance, setComputeSurfaceDistance);
 
-    /// Controls whether the alpha-shape algorithm assigns each particle to one of the identified spatial regions.
+    /// Controls whether the algorithm assigns each particle to one of the identified spatial regions.
     DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, mapParticlesToRegions, setMapParticlesToRegions);
 };
 

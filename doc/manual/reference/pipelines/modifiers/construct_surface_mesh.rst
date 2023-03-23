@@ -7,12 +7,12 @@ Construct surface mesh
   :width: 30%
   :align: right
 
-This modifier constructs a manifold made of vertices and faces representing the three-dimensional morphology of a group of particles.
-In other words, it generates a triangulated :ref:`surface mesh <scene_objects.surface_mesh>` describing the outer and inner boundaries of an atomistic
-solid.
+This modifier constructs a surface manifold made of vertices and faces representing the three-dimensional morphology of a group of particles.
+In other words, it generates a geometric :ref:`mesh <scene_objects.surface_mesh>` describing the outer and inner boundaries of an atomistic
+structure.
 
-Such a surface mesh representation is useful not only for visualization purposes but also for quantifying the surface area, solid volume, and porosity of an
-atomistic structure.
+Such a surface mesh representation is useful not only for visualization purposes but also for measuring the surface area, solid volume, and
+porosity of an atomistic structure.
 
 .. figure:: /images/modifiers/construct_surface_example_input.png
   :figwidth: 25%
@@ -29,30 +29,28 @@ atomistic structure.
 Supported surface algorithms
 """"""""""""""""""""""""""""
 
-The modifier offers two alternative methods for constructing the surface mesh: the **alpha-shape method** and the **Gaussian
+The modifier offers two alternative methods for constructing a surface mesh: the **alpha-shape method** and the **Gaussian
 density method**, which will be described in subsequent sections in more detail. Both approaches have specific advantages and limitations
-and should be employed depending on the situation:
+and should be employed :ref:`depending on the type of input model <particles.modifiers.construct_surface_mesh.method_comparison>`:
 
 .. list-table::
   :widths: 50 50
   :header-rows: 1
 
-  * - Alpha-shape method
-    - Gaussian density method
+  * - :ref:`Alpha-shape method <particles.modifiers.construct_surface_mesh.alpha_shape_method>`
+    - :ref:`Gaussian density method <particles.modifiers.construct_surface_mesh.gaussian_density_method>`
 
-  * - * Is based on a Delaunay tessellation of the atomic centers
-      * Surface goes through atomic centers
-      * Volume calculation of solid and cavity regions
-      * Identification of surface and interior atoms
-    - * Is based on an isosurface of the atomic density field coordinates
-      * The size of the atomic spheres is accounted for, approximately
+  * - * Is based on the Delaunay tessellation
+      * Resulting surface goes through atomic centers
+      * Can identify surface atoms
+    - * Is based on an isosurface of the atomic density field
+      * The size of the atomic spheres is accounted for (approximately)
 
-The :ref:`alpha-shape method <particles.modifiers.construct_surface_mesh.alpha_shape_method>` assumes that the particles themselves are point-like, i.e., their radii
-are ignored. Instead the concept of a virtual probe sphere is introduced to define which regions of space are accessible (empty) or inaccessible (solid).
-The interface manifold being constructed by the algorithm separates both regions of space. The algorithm provides the capability to quantify
-filled and empty volumes and to analyze the porosity of a structure. Furthermore, it
-determines which particles are located right on the surface, making it a well-defined criterion to discern
-surface atoms from interior atoms.
+The :ref:`alpha-shape method <particles.modifiers.construct_surface_mesh.alpha_shape_method>` assumes that the particles themselves are all point-like, i.e.,
+their radii are ignored. Instead the concept of a virtual probe sphere is introduced to define which regions of space are accessible and which are not -- without
+the probe sphere touching any of the atomic sites. The interface manifold constructed by the algorithm separates these different regions of space.
+The algorithm provides the capability to :ref:`measure filled and empty region volumes and to analyze the porosity of a structure <particles.modifiers.construct_surface_mesh.regions>`. Furthermore, it
+determines which particles are located exactly on the boundary, making it a well-defined criterion to discern surface atoms from interior bulk atoms in a structure.
 
 The :ref:`second method <particles.modifiers.construct_surface_mesh.gaussian_density_method>` is based on a smeared-out representation of the finite-sized
 particle spheres in terms of *overlapping Gaussian distribution functions* centered at each particle. The resulting density field,
@@ -61,23 +59,26 @@ The constructed surface boundary represents an isosurface of the Gaussian densit
 resulting surface roughly matches the finite diameters of the original particle spheres. This approach thus provides the advantage
 of accounting for the finite extent of the atomic spheres, which can be important in case of small molecules
 that do not form a bulk structure, i.e. where most of the atoms are located at the surface.
+Since OVITO Pro 3.8, this method also provides the capability to :ref:`quantify filled and empty volumes and to identify individual pores in a structure <particles.modifiers.construct_surface_mesh.regions>`, for example.
+
+.. seealso:: :ref:`particles.modifiers.construct_surface_mesh.method_comparison`
 
 General options
 """""""""""""""
 
-This option lets you exclude some parts of the system from the surface construction if needed, for example, all solute atoms
-surrounding a structure of interest.
+This option lets you exclude some parts of the system from the surface construction if needed, for example, all *solute atoms*
+which are not part of the structure of interest.
 
 The total surface area of the constructed manifold is displayed by the modifier in the status area and
 is output as a :ref:`global attribute <usage.global_attributes>` named ``ConstructSurfaceMesh.surface_area``.
-Note that the surface area is always given in units of squared length of the simulation dataset.
+Note that the surface area is always given in units of squared length of the simulation model.
 
-OVITO has the capability to attach local quantities with the surface mesh, which get adopted from nearby particles during the construction process.
+OVITO provides the capability to locally associate quantities with the surface mesh and adopted them from nearby particles during the surface construction process.
 If the option :guilabel:`Transfer particle properties to surface` is turned on, existing attributes of the input particles located at the surface,
 for example their ``Color`` property, will be copied over to the vertices of the constructed
 :ref:`surface mesh <scene_objects.surface_mesh>`. That means the input particle attributes will be available as
 vertex properties of the output mesh, and you can subsequently use the color mapping mode of the :ref:`visual_elements.surface_mesh` visual element to
-visualize the distribution of a quantity of interest across the surface.
+visualize the variation of some quantity of interest across the surface.
 
 .. note::
 
@@ -161,7 +162,7 @@ and small features (e.g. pores) of the geometric shape will be captured by the m
 
   (a) Atomistic model of a carbon nanoparticle with an inset showing the corresponding
   :ref:`pair distribution function <particles.modifiers.coordination_analysis>`.
-  The position of the first peak is used as probe sphere radius (:math:`R_{\alpha}=2.5 \mathrm{\AA}`)
+  The position of the first peak is used as probe sphere radius (:math:`R_{\alpha}=2.5\,\AA`)
   for the alpha-shape construction. (b) The resulting triangulated surface mesh.
   (c) Final surface model after six iterations of the smoothing algorithm were applied.
 
@@ -202,18 +203,42 @@ Smoothing level
   by applying a smoothing and fairing algorithm to remove atomically sharp surface steps.
   This parameter controls how many iterations of the smoothing algorithm are performed.
 
-Identify volumetric regions |ovito-pro|
-  This option lets the modifier identify the individual spatial regions enclosed by the surface manifold (both empty and filled
-  regions). Each region's volume and surface area are computed and stored in the output :ref:`surface mesh <scene_objects.surface_mesh>`.
-  See the following section for details.
+Select particles on the surface
+  This option makes the modifier create a new particle selection that includes all input particles that are located right on the surface mesh.
 
-Map particles to regions |ovito-pro|
-  This option determines for each input particle which spatial region it is located in. The index of the spatial region a particle is attributed to
-  is stored in the ``Region`` output particle property by the modifier. A corresponding region is determined for *every* particle of the input model -
-  even unselected ones if the option :guilabel:`Use only selected input particles` is active. Particles that are part of the surface manifold, i.e.
-  which are adjacent to a filled and to an empty region, are always attributed to the filled region. Note that the assignment of particles to regions
-  happens *before* the surface smoothing step, which slightly displaces the mesh vertices. Thus, particles may end up slightly outside the spatial region
-  they were assigned to.
+.. _particles.modifiers.construct_surface_mesh.gaussian_density_method:
+
+How the Gaussian density method works
+"""""""""""""""""""""""""""""""""""""
+
+.. image:: /images/modifiers/construct_surface_mesh_gaussian_method.jpg
+  :width: 35%
+  :align: right
+
+This approach generate an isosurface of a volumetric density field computed from the superposition of 3d Gaussian functions placed
+at each particle site [`Krone et al., 2012 <https://dx.doi.org/10.2312/PE/EuroVisShort/EuroVisShort2012/067-071>`__].
+The density map generation algorithm accumulates Gaussian densities on a uniformly-spaced 3d lattice within a
+bounding box large enough to contain all particles; sufficient padding at the edges of the volume ensures that the extracted surface does not get clipped off.
+
+The method provides several parameters controlling the morphology and fidelity of the isosurface:
+
+Parameters
+""""""""""
+
+Resolution
+  The number of grid cells along the longest dimension of the system. This determines
+  the grid spacing of the discretized density field and the resolution/smoothness of the resulting
+  surface mesh.
+
+Radius scaling
+  The width of each Gaussian function is controlled by the visible radius of the corresponding particle multiplied by
+  this scaling factor. Thus, the scaling factor allows you to broaden the apparent size of the particles
+  if needed. The standard scaling factor is 100%, which means the unmodified particle radii will be used as
+  standard deviations of the local Gaussian density functions.
+
+Iso value
+  The positive threshold value for constructing the isosurface from the combined density field. This too has an influence
+  on how far away from the particle centers the generated contour surface will be located. The standard value is 0.6.
 
 .. _particles.modifiers.construct_surface_mesh.regions:
 
@@ -266,6 +291,10 @@ Furthermore, the faces of the surface mesh get associated with the two adjacent 
 via their local *face property* ``Region``. You can use the pseudo-color
 mapping option of the :ref:`visual_elements.surface_mesh` visual element to render
 surface parts belonging to different spatial regions with different colors as in the example image above.
+Note, that initially each surface mesh region will have the color corresponding to the region on its inside assigned to it.
+For example, if region ID 1 has the color red, the outside of the surface mesh enclosing region 1 will be rendered in red. Meanwhile,
+the inside of this this mesh will have the color of the surrounding region, e.g., blue. Toggling the ``Flip surface orientation`` setting of the
+surface mesh will flip these colorings. Thereby, rendering the red color of region ID 1 on the side, while the outside of the mesh will get a blue color.
 
 The modifier outputs the following :ref:`global attributes <usage.global_attributes>`:
 
@@ -309,35 +338,51 @@ The modifier outputs the following :ref:`global attributes <usage.global_attribu
   * - ``ConstructSurfaceMesh.void_region_count``
     - Number of disconnected empty regions which have *not* been counted as exterior space.
 
-.. _particles.modifiers.construct_surface_mesh.gaussian_density_method:
+.. rubric:: Map particles to regions
 
-How the Gaussian density method works
-"""""""""""""""""""""""""""""""""""""
+This option lets the modifier determine for each input particle which spatial region it is located in.
+It is only available in the :ref:`alpha-shape method <particles.modifiers.construct_surface_mesh.alpha_shape_method>`.
 
-.. image:: /images/modifiers/construct_surface_mesh_gaussian_method.jpg
-  :width: 35%
-  :align: right
+The assignment of particles to spatial regions is output by the modifier in the form of the ``Region`` particle property, which stores a
+zero-based region index for each particle.
+Note that the modifier will assign *every* particle of the input model to some region -
+including unselected particles if the option :guilabel:`Use only selected input particles` is active. Particles that are located right on a surface manifold,
+i.e. which are adjacent to a filled *and* an empty region, will be attributed to the filled region. Note that the assignment of particles to regions
+happens *before* the surface smoothing step of the alpha-shape algorithm, which slightly displaces the mesh vertices. Thus, particles may end up slightly
+outside the spatial region they belong to.
 
-This approach generate an isosurface of a volumetric density field computed from the superposition of 3-D Gaussian functions placed
-at each particle site [`Krone et al., 2012 <https://dx.doi.org/10.2312/PE/EuroVisShort/EuroVisShort2012/067-071>`__].
-The density map generation algorithm accumulates Gaussian densities on a uniformly-spaced 3-D lattice within a
-bounding box large enough to contain all particles; sufficient padding at the edges of the volume ensures that the extracted surface does not get clipped off.
+.. _particles.modifiers.construct_surface_mesh.method_comparison:
 
-The method provides several parameters controlling the morphology and fidelity of the isosurface:
+Comparison of alpha-shape and Gaussian density methods
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
-Resolution
-  The number of grid cells along the longest dimension of the system. This determines
-  the grid spacing of the discretized density field and the resolution/smoothness of the resulting
-  surface mesh.
+.. image:: /images/modifiers/construct_surface_mesh_spherical_void_sample.png
+  :width: 26%
 
-Radius scaling
-  The width of the Gaussian functions is controlled by the visible radius of each particle multiplied by
-  this scaling factor. Thus, the scaling factor allows you to broaden the apparent size of the particles
-  if needed.
+.. image:: /images/modifiers/construct_surface_mesh_spherical_void_sample_gaussian_density.png
+  :width: 26%
 
-Iso value
-  The threshold value for constructing the isosurface from the density field. This too has an influence
-  on how far away from the particle centers the generated contour surface will be.
+.. image:: /images/modifiers/construct_surface_mesh_spherical_void_sample_alpha_shape.png
+  :width: 26%
+
+The :ref:`alpha-shape algorithm <particles.modifiers.construct_surface_mesh.alpha_shape_method>` and the :ref:`Gaussian density method <particles.modifiers.construct_surface_mesh.gaussian_density_method>`
+lead to comparable surfaces meshes for dense atomic systems. This can be seen in the images above, where a spherical cavity inside a dense block
+of atoms was identified using both methods. Both methods create a roughly spherical surface with its radius governed by the probe sphere radius
+or the iso-value parameter, respectively.
+
+.. image:: /images/modifiers/construct_surface_mesh_molecules_sample.png
+  :width: 26%
+
+.. image:: /images/modifiers/construct_surface_mesh_molecules_sample_gaussian_density.png
+  :width: 26%
+
+.. image:: /images/modifiers/construct_surface_mesh_molecules_sample_alpha_shape.png
+  :width: 26%
+
+For non-dense systems, like the floating molecules shown above, the two methods can lead to substantially different results.
+In this example, the alpha-shape method yields surfaces that are strictly inside the convex hull of each molecule, which is formed by the atomic centers.
+The Gaussian density method, on the other hand, constructs surfaces meshes that extend beyond the atomic centers, because it explicitly takes into account
+the finite size of atoms. Decreasing the iso-value increases the volume taken up by each atom, i.e., it leads to an expansion of the surface.
 
 .. seealso::
 

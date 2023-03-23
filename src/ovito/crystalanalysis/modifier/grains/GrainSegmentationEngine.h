@@ -30,7 +30,7 @@
 #include <ovito/particles/modifier/analysis/ptm/PTMAlgorithm.h>
 #include <ovito/particles/util/ParticleOrderingFingerprint.h>
 #include <ovito/core/dataset/pipeline/AsynchronousModifier.h>
-#include "DisjointSet.h"
+#include <ovito/core/utilities/DisjointSet.h>
 #include "GrainSegmentationModifier.h"
 
 #include <boost/intrusive/rbtree_algorithms.hpp>

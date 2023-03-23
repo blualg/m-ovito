@@ -59,7 +59,7 @@ SET_PROPERTY_FIELD_LABEL(ConstructSurfaceModifier, probeSphereRadius, "Probe sph
 SET_PROPERTY_FIELD_LABEL(ConstructSurfaceModifier, onlySelectedParticles, "Use only selected input particles");
 SET_PROPERTY_FIELD_LABEL(ConstructSurfaceModifier, selectSurfaceParticles, "Select particles on the surface");
 SET_PROPERTY_FIELD_LABEL(ConstructSurfaceModifier, transferParticleProperties, "Transfer particle properties to surface");
-SET_PROPERTY_FIELD_LABEL(ConstructSurfaceModifier, identifyRegions, "Identify volumetric regions (filled/void)");
+SET_PROPERTY_FIELD_LABEL(ConstructSurfaceModifier, identifyRegions, "Identify volumetric regions");
 SET_PROPERTY_FIELD_LABEL(ConstructSurfaceModifier, method, "Construction method");
 SET_PROPERTY_FIELD_LABEL(ConstructSurfaceModifier, gridResolution, "Resolution");
 SET_PROPERTY_FIELD_LABEL(ConstructSurfaceModifier, radiusFactor, "Radius scaling");
@@ -70,6 +70,7 @@ SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(ConstructSurfaceModifier, probeSphereRadius
 SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(ConstructSurfaceModifier, smoothingLevel, IntegerParameterUnit, 0);
 SET_PROPERTY_FIELD_UNITS_AND_RANGE(ConstructSurfaceModifier, gridResolution, IntegerParameterUnit, 2, 600);
 SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(ConstructSurfaceModifier, radiusFactor, PercentParameterUnit, 0);
+SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(ConstructSurfaceModifier, isoValue, FloatParameterUnit, 0);
 
 /******************************************************************************
 * Constructs the modifier object.
@@ -179,17 +180,10 @@ Future<AsynchronousModifier::EnginePtr> ConstructSurfaceModifier::createEngine(c
     }
     else {
         // Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
-        return std::make_shared<GaussianDensityEngine>(
-                request,
-                posProperty,
-                selProperty,
-                std::move(mesh),
-                radiusFactor(),
-                isoValue(),
-                gridResolution(),
-                computeSurfaceDistance(),
-                particles->inputParticleRadii(),
-                std::move(particleProperties));
+        return std::make_shared<GaussianDensityEngine>(request, posProperty, selProperty, std::move(mesh), radiusFactor(),
+                                                       isoValue(), gridResolution(), identifyRegions(),
+                                                       mapParticlesToRegions() && identifyRegions(), computeSurfaceDistance(),
+                                                       particles->inputParticleRadii(), std::move(particleProperties));
     }
 }
 
@@ -348,7 +342,7 @@ void ConstructSurfaceModifier::AlphaShapeEngine::perform()
                     continue;
                 queryHint = *cell;
                 if(int regionId = tessellation.getUserField(*cell); regionId >= 0) {
-                    OVITO_ASSERT(regionId >= 0 && regionId < _filledRegionCount + _emptyRegionCount);
+                    OVITO_ASSERT(regionId >= 0 && regionId <= _filledRegionCount + _emptyRegionCount);
                     for(int v = 0; v < 4; v++) {
                         size_t particleIndex = tessellation.vertexIndex(tessellation.cellVertex(*cell, v));
                         OVITO_ASSERT(particleIndex < regionIds.size() || particleIndex == std::numeric_limits<size_t>::max());
@@ -430,50 +424,11 @@ void ConstructSurfaceModifier::AlphaShapeEngine::perform()
     nextProgressSubStep();
 
     if(_identifyRegions) {
-        // Create the 'Surface area' region property.
-        PropertyAccess<FloatType> surfaceAreaProperty = mesh.createRegionProperty(SurfaceMeshRegions::SurfaceAreaProperty, DataBuffer::InitializeMemory);
-
-        // Compute surface area (total and per region) by summing up the triangle face areas.
-        setProgressMaximum(mesh.faceCount());
-        for(SurfaceMeshAccess::edge_index edge : mesh.firstFaceEdges()) {
-            if(!incrementProgressValue()) return;
-            const Vector3& e1 = mesh.edgeVector(edge);
-            const Vector3& e2 = mesh.edgeVector(mesh.nextFaceEdge(edge));
-            FloatType faceArea = e1.cross(e2).length() / 2;
-            SurfaceMeshAccess::region_index region = mesh.faceRegion(mesh.adjacentFace(edge));
-            surfaceAreaProperty[region] += faceArea;
-
-            // Only count surface area of outer surface, which is bordering an empty region.
-            // Don't count area of internal interfaces, which have filled regions on either side.
-            if(region >= _filledRegionCount)
-                addSurfaceArea(faceArea);
-        }
-
-        // Compute total volumes.
-        // Total volume of filled regions:
-        for(SurfaceMeshAccess::region_index region = 0; region < _filledRegionCount; region++)
-            _totalFilledVolume += mesh.regionVolume(region);
-        // Total volume of empty regions (all and only interior voids):
-        ConstPropertyAccess<int> regionPropertyIsExterior = mesh.regionProperty(SurfaceMeshRegions::IsExteriorProperty);
-        for(SurfaceMeshAccess::region_index region = _filledRegionCount; region < mesh.regionCount(); region++) {
-            FloatType vol = mesh.regionVolume(region);
-            _totalEmptyVolume += vol;
-            if(!regionPropertyIsExterior[region]) {
-                _totalVoidVolume += vol;
-                _voidRegionCount++;
-            }
-        }
+        if(!ConstructSurfaceEngineBase::computeSurfaceAreaWithRegions(mesh)) return;
+        ConstructSurfaceEngineBase::computeAggregateVolumes(mesh);
     }
     else {
-        // Compute total surface area by summing up the triangle face areas.
-        setProgressMaximum(mesh.faceCount());
-        for(SurfaceMeshAccess::edge_index edge : mesh.firstFaceEdges()) {
-            if(!incrementProgressValue()) return;
-            const Vector3& e1 = mesh.edgeVector(edge);
-            const Vector3& e2 = mesh.edgeVector(mesh.nextFaceEdge(edge));
-            FloatType faceArea = e1.cross(e2).length() / 2;
-            addSurfaceArea(faceArea);
-        }
+        if(!ConstructSurfaceEngineBase::computeSurfaceArea(mesh)) return;
     }
 
     if(isCanceled())
@@ -503,6 +458,24 @@ void ConstructSurfaceModifier::GaussianDensityEngine::perform()
         throw Exception(tr("Simulation cell is degenerate."));
 
     if(positions()->size() == 0) {
+        if(_identifyRegions) {
+            SurfaceMeshAccess mesh(this->mesh());
+            mesh.createRegions(1);
+            PropertyAccess<FloatType> volumeProperty{
+                mesh.createRegionProperty(SurfaceMeshRegions::VolumeProperty, DataBuffer::InitializeMemory)};
+            PropertyAccess<int> isExteriorProperty{
+                mesh.createRegionProperty(SurfaceMeshRegions::IsExteriorProperty, DataBuffer::InitializeMemory)};
+            PropertyAccess<int> isFilledProperty{
+                mesh.createRegionProperty(SurfaceMeshRegions::IsFilledProperty, DataBuffer::InitializeMemory)};
+            PropertyAccess<FloatType> surfaceArea{
+                mesh.createRegionProperty(SurfaceMeshRegions::SurfaceAreaProperty, DataBuffer::InitializeMemory)};
+            volumeProperty[0] = mesh.domain()->volume3D();
+            isFilledProperty[0] = 0;
+            isExteriorProperty[0] =
+                !(mesh.domain()->pbcFlags()[0] && mesh.domain()->pbcFlags()[1] && mesh.domain()->pbcFlags()[2]);
+            surfaceArea[0] = 0;
+            mesh.setSpaceFillingRegion(0);
+        }
         // Release data that is no longer needed.
         releaseWorkingData();
         return;
@@ -636,14 +609,24 @@ void ConstructSurfaceModifier::GaussianDensityEngine::perform()
 
     // Construct isosurface of the density field.
     SurfaceMeshAccess mesh(this->mesh());
-    MarchingCubes mc(mesh, gridDims[0], gridDims[1], gridDims[2], false, std::move(getFieldValue));
-    if(!mc.generateIsosurface(_isoLevel, *this))
-        return;
+
+    {  // limit lifetime of mc to free up resources
+        MarchingCubes mc(mesh, gridDims[0], gridDims[1], gridDims[2], false, std::move(getFieldValue), false, false,
+                         identifyRegions());
+        // MarchingCubes mc(mesh, gridDims[0], gridDims[1], gridDims[2], false, std::move(getFieldValue));
+        if(!mc.generateIsosurface(_isoLevel, *this)) return;
+    }
 
     nextProgressSubStep();
 
     // Transform mesh vertices from orthogonal grid space to world space.
     mesh.transformVertices(gridToCartesian);
+    // Transform mesh volumes from orthogonal grid space to world space.
+    FloatType gridToCartesianDeterminant{gridToCartesian.determinant()};
+    for(SurfaceMeshAccess::region_index region{0}; region < mesh.regionCount(); region++) {
+        FloatType volume{mesh.regionVolume(region)};
+        mesh.setRegionVolume(region, volume * gridToCartesianDeterminant);
+    }
     if(isCanceled())
         return;
 
@@ -706,8 +689,7 @@ void ConstructSurfaceModifier::GaussianDensityEngine::perform()
     }
 
     // Flip surface orientation if cell is mirrored.
-    if(gridToCartesian.determinant() < 0)
-        mesh.flipFaces();
+    if(gridToCartesianDeterminant < 0) mesh.flipFaces();
 
     // Restore original mesh domain.
     mesh.setDomain(std::move(originalDomain));
@@ -721,13 +703,12 @@ void ConstructSurfaceModifier::GaussianDensityEngine::perform()
 
     nextProgressSubStep();
 
-    // Compute surface area (only total) by summing up the triangle face areas.
-    for(SurfaceMeshAccess::edge_index edge : mesh.firstFaceEdges()) {
-        if(isCanceled()) return;
-        const Vector3& e1 = mesh.edgeVector(edge);
-        const Vector3& e2 = mesh.edgeVector(mesh.nextFaceEdge(edge));
-        FloatType area = e1.cross(e2).length() / 2;
-        addSurfaceArea(area);
+    if(_identifyRegions) {
+        computeSurfaceAreaWithRegions(mesh);
+        computeAggregateVolumes(mesh);
+    }
+    else {
+        computeSurfaceArea(mesh);
     }
     if(isCanceled())
         return;
@@ -743,6 +724,82 @@ void ConstructSurfaceModifier::GaussianDensityEngine::perform()
     releaseWorkingData();
     particleRadii.reset();
     _particleRadii.reset();
+}
+
+/******************************************************************************
+ * Computes the surface area per mesh region and the total surface area by summing up the triangle face areas.
+ ******************************************************************************/
+bool ConstructSurfaceModifier::ConstructSurfaceEngineBase::computeSurfaceAreaWithRegions(SurfaceMeshAccess& mesh)
+{
+    PropertyAccess<FloatType> surfaceAreaProperty{
+        mesh.createRegionProperty(SurfaceMeshRegions::SurfaceAreaProperty, DataBuffer::InitializeMemory)};
+    ConstPropertyAccess<int> isFilled{mesh.regionProperty(SurfaceMeshRegions::IsFilledProperty)};
+
+    setProgressMaximum(mesh.faceCount());
+    _totalSurfaceArea = 0;
+    for(SurfaceMeshAccess::edge_index edge : mesh.firstFaceEdges()) {
+        if(!incrementProgressValue()) return false;
+        const Vector3& e1 = mesh.edgeVector(edge);
+        const Vector3& e2 = mesh.edgeVector(mesh.nextFaceEdge(edge));
+        FloatType faceArea = 0.5 * e1.cross(e2).length();
+        SurfaceMeshAccess::region_index region = mesh.faceRegion(mesh.adjacentFace(edge));
+        surfaceAreaProperty[region] += faceArea;
+
+        // Only count surface area of outer surface, which is bordering an empty region.
+        // Don't count area of internal interfaces, which have filled regions on either side.
+        if(isFilled[region] == 0) {
+            _totalSurfaceArea += faceArea;
+        };
+    }
+    return true;
+}
+
+/******************************************************************************
+ * Computes the total surface of the mesh by summing up the triangle face areas.
+ ******************************************************************************/
+bool ConstructSurfaceModifier::ConstructSurfaceEngineBase::computeSurfaceArea(const SurfaceMeshAccess& mesh)
+{
+    setProgressMaximum(mesh.faceCount());
+    _totalSurfaceArea = 0;
+    for(SurfaceMeshAccess::edge_index edge : mesh.firstFaceEdges()) {
+        if(!incrementProgressValue()) return false;
+        const Vector3& e1 = mesh.edgeVector(edge);
+        const Vector3& e2 = mesh.edgeVector(mesh.nextFaceEdge(edge));
+        FloatType faceArea = e1.cross(e2).length() / 2;
+        _totalSurfaceArea += faceArea;
+    }
+    return true;
+}
+
+/******************************************************************************
+ * Computes the void, exterior, and total volumes from the per region volume properties.
+ ******************************************************************************/
+void ConstructSurfaceModifier::ConstructSurfaceEngineBase::computeAggregateVolumes(const SurfaceMeshAccess& mesh)
+{
+    _filledRegionCount = 0;
+    _totalFilledVolume = 0;
+    _totalVoidVolume = 0;
+    _voidRegionCount = 0;
+    _emptyRegionCount = 0;
+
+    ConstPropertyAccess<int> isFilled{mesh.regionProperty(SurfaceMeshRegions::IsFilledProperty)};
+    ConstPropertyAccess<int> isExterior{mesh.regionProperty(SurfaceMeshRegions::IsExteriorProperty)};
+    for(SurfaceMeshAccess::region_index region{0}; region < mesh.regionCount(); region++) {
+        FloatType volume{mesh.regionVolume(region)};
+        if(isFilled[region] == 1) {
+            _filledRegionCount += 1;
+            _totalFilledVolume += volume;
+        }
+        else {
+            _totalEmptyVolume += volume;
+            _emptyRegionCount += 1;
+            if(isExterior[region] == 0) {
+                _totalVoidVolume += volume;
+                _voidRegionCount++;
+            }
+        };
+    }
+    _totalCellVolume = _totalFilledVolume + _totalEmptyVolume;
 }
 
 /******************************************************************************
@@ -768,30 +825,19 @@ void ConstructSurfaceModifier::ConstructSurfaceEngineBase::computeSurfaceDistanc
 }
 
 /******************************************************************************
-* Injects the computed results of the engine into the data pipeline.
-******************************************************************************/
-void ConstructSurfaceModifier::AlphaShapeEngine::applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state)
+ * Injects the computed results into the data pipeline.
+ ******************************************************************************/
+void ConstructSurfaceModifier::ConstructSurfaceEngineBase::applyResults(const ModifierEvaluationRequest& request,
+                                                                        PipelineFlowState& state)
 {
-    ConstructSurfaceModifier* modifier = static_object_cast<ConstructSurfaceModifier>(request.modifier());
-
     // Output the constructed surface mesh to the pipeline.
     state.addObjectWithUniqueId<SurfaceMesh>(mesh());
 
-    if(surfaceParticleSelection() || particleRegionIds() || surfaceDistances()) {
+    // Output computed particle distances from surface.
+    if(surfaceDistances()) {
         ParticlesObject* particles = state.expectMutableObject<ParticlesObject>();
         particles->verifyIntegrity();
-
-        // Output selection of surface particles.
-        if(surfaceParticleSelection())
-            particles->createProperty(surfaceParticleSelection());
-
-        // Output particle region IDs.
-        if(particleRegionIds())
-            particles->createProperty(particleRegionIds());
-
-        // Output computed particle distances from surface.
-        if(surfaceDistances())
-            particles->createProperty(surfaceDistances());
+        particles->createProperty(surfaceDistances());
     }
 
     // Output total surface area.
@@ -828,26 +874,34 @@ void ConstructSurfaceModifier::AlphaShapeEngine::applyResults(const ModifierEval
 }
 
 /******************************************************************************
+ * Injects the computed results of the engine into the data pipeline.
+ ******************************************************************************/
+void ConstructSurfaceModifier::AlphaShapeEngine::applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state)
+{
+    ConstructSurfaceModifier* modifier = static_object_cast<ConstructSurfaceModifier>(request.modifier());
+
+    ConstructSurfaceEngineBase::applyResults(request, state);
+
+    if(surfaceParticleSelection() || particleRegionIds()) {
+        ParticlesObject* particles = state.expectMutableObject<ParticlesObject>();
+        particles->verifyIntegrity();
+
+        // Output selection of surface particles.
+        if(surfaceParticleSelection()) particles->createProperty(surfaceParticleSelection());
+
+        // Output particle region IDs.
+        if(particleRegionIds()) particles->createProperty(particleRegionIds());
+    }
+}
+
+/******************************************************************************
 * Injects the computed results of the engine into the data pipeline.
 ******************************************************************************/
 void ConstructSurfaceModifier::GaussianDensityEngine::applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state)
 {
     ConstructSurfaceModifier* modifier = static_object_cast<ConstructSurfaceModifier>(request.modifier());
 
-    // Output the constructed surface mesh to the pipeline.
-    state.addObjectWithUniqueId<SurfaceMesh>(mesh());
-
-    // Output computed particle distances from surface.
-    if(surfaceDistances()) {
-        ParticlesObject* particles = state.expectMutableObject<ParticlesObject>();
-        particles->verifyIntegrity();
-        particles->createProperty(surfaceDistances());
-    }
-
-    // Output total surface area.
-    state.addAttribute(QStringLiteral("ConstructSurfaceMesh.surface_area"), QVariant::fromValue(surfaceArea()), request.modApp());
-
-    state.setStatus(PipelineStatus(PipelineStatus::Success, tr("Surface area: %1").arg(surfaceArea())));
+    ConstructSurfaceEngineBase::applyResults(request, state);
 }
 
 }   // End of namespace

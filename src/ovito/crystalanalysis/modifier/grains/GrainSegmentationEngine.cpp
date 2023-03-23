@@ -29,7 +29,7 @@
 #include <ovito/particles/util/PTMNeighborFinder.h>
 #include "GrainSegmentationEngine.h"
 #include "GrainSegmentationModifier.h"
-#include "DisjointSet.h"
+#include <ovito/core/utilities/DisjointSet.h>
 #include "ThresholdSelection.h"
 
 #include <boost/heap/priority_queue.hpp>

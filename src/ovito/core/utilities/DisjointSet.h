@@ -23,28 +23,29 @@
 
 #pragma once
 
-#include <ovito/crystalanalysis/CrystalAnalysis.h>
+#include <ovito/core/Core.h>
 
-namespace Ovito::CrystalAnalysis {
+namespace Ovito {
 
 class DisjointSet
 {
 public:
-
-    DisjointSet(size_t n) {
+    DisjointSet(size_t n)
+    {
         parents.resize(n);
         sizes.resize(n);
         clear();
     }
 
-    void clear() {
+    void clear()
+    {
         std::iota(parents.begin(), parents.end(), (size_t)0);
         std::fill(sizes.begin(), sizes.end(), 1);
     }
 
     // "Find" part of Union-Find.
-    size_t find(size_t index) {
-
+    size_t find(size_t index)
+    {
         // Find root and make root as parent of i (path compression)
         size_t x = parents[index];
         while(x != parents[x]) {
@@ -57,7 +58,8 @@ public:
     }
 
     // "Union" part of Union-Find.
-    size_t merge(size_t index1, size_t index2) {
+    size_t merge(size_t index1, size_t index2)
+    {
         size_t parentA = find(index1);
         size_t parentB = find(index2);
         if(parentA == parentB) return parentA;
@@ -78,10 +80,8 @@ public:
     size_t nodesize(size_t index) const { return sizes[index]; }
 
 private:
-
     std::vector<size_t> parents;
     std::vector<size_t> sizes;
 };
 
-
-}   // End of namespace
+}  // namespace Ovito
