@@ -1,8 +1,40 @@
 .. _new_features:
 
-==================
-New in version 3.8
-==================
+==========
+What's new
+==========
+
+-------------------------
+Version 3.8.1 (24-Mar-23)
+-------------------------
+
+.. rubric:: Identification of volumetric regions using the Gaussian density method |ovito-pro|
+
+The :ref:`particles.modifiers.construct_surface_mesh` modifier's implementation of the :ref:`Gaussian density method <particles.modifiers.construct_surface_mesh.gaussian_density_method>`
+has been extended to support the :ref:`identification of volumetric regions <particles.modifiers.construct_surface_mesh.regions>`, e.g. pores, cavities, and filled spatial regions.
+Their respective surface areas and volumes are calculated and output by the modifier in tabulated form.
+
+To make this possible, we have developed an extension to the `Marching Cubes algorithm <https://en.wikipedia.org/wiki/Marching_cubes>`__ for isosurface construction, which provides
+the capability to identify disconnected spatial regions separated by the surface mesh and compute their enclosed volumes -- of course with full support for periodic boundary conditions.
+
+.. image:: /images/new_features/surface_mesh_regions_gaussian_density_example.png
+  :width: 25%
+
+.. image:: /images/modifiers/construct_surface_mesh_regions_example_table.jpg
+  :width: 50%
+
+.. rubric:: New efficient Python method for computing neighbor lists |ovito-pro|
+
+OVITO's Python interface now offers the new :py:meth:`CutoffNeighborFinder.find_all() <ovito.data.CutoffNeighborFinder.find_all>` method
+for vectorized computation of neighbor lists for many or all particles at once.
+
+.. rubric:: Further changes:
+
+* LAMMPS data file reader: Accept '#' in type names, which are referenced in data sections of the file
+
+-------------------------
+Version 3.8.0 (03-Mar-23)
+-------------------------
 
 .. rubric:: Develop custom modifiers with extended capabilities |ovito-pro|
 
@@ -125,8 +157,8 @@ when particles get removed from the simulation over time.
 * |ovito-pro| Accept ``os.PathLike`` objects in Python functions :py:func:`~ovito.io.import_file` and :py:func:`~ovito.io.export_file`.
 * |ovito-pro| :py:meth:`PropertyContainer.create_property <ovito.data.PropertyContainer.create_property>`: Accept ``data`` values that are broadcastable to shape of property array.
 
-=================
+-----------------
 Previous versions
-=================
+-----------------
 
 For a list of changes in previous version of OVITO, go to https://www.ovito.org/about/version-history/.
