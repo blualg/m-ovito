@@ -87,6 +87,12 @@ public:
     /// Returns the square of the cutoff radius set via prepare().
     FloatType cutoffRadiusSquared() const { return _cutoffRadiusSquared; }
 
+    /// Returns the simulation cell volume.
+    FloatType simulationCellVolume() const { return (simCell->is2D()) ? simCell->volume2D() : simCell->volume3D(); }
+
+    /// Returns the simulation 2D-ness of the cell.
+    bool simulationCelliIs2D() const { return simCell->is2D();};
+
     /// Returns the number of input particles.
     size_t particleCount() const { return particles.size(); }
 
