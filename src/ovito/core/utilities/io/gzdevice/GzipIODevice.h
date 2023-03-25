@@ -24,10 +24,26 @@
 #pragma once
 
 #include <ovito/core/Core.h>
+#include <zlib.h>
+#include "zran.h"
 
 namespace Ovito {
 
-struct ZLibState;   // Internal data structure
+using ZlibByte = Bytef;
+using ZlibSize = uInt;
+
+struct ZLibState
+{
+    z_stream _zlibStream;
+
+    /// Constructor.
+    ZLibState() {
+        // Use default zlib memory management.
+        _zlibStream.zalloc = Z_NULL;
+        _zlibStream.zfree = Z_NULL;
+        _zlibStream.opaque = Z_NULL;
+    }
+};
 
 /**
  * \brief A QIODevice adapter that can compress/uncompress a stream of data on the fly.
@@ -119,14 +135,18 @@ private:
     /// Writes outputSize bytes from buffer to the inderlying device.
     bool writeBytes(qint64 outputSize);
 
+    /// Indicates that we are currently using the zran functions instead of direct zlib functions.
+    bool usingZran() const { return !(bool)_buffer; }
+
     bool _manageDevice = false;
     int _compressionLevel;
     QIODevice* _device;
     State _state = Closed;
     StreamFormat _streamFormat = ZlibFormat;
-    ZLibState* _zlibStruct;
+    ZLibState _zlibStruct;
+    zran_index _zran;
     qint64 _bufferSize;
-    std::unique_ptr<unsigned char[]> _buffer;
+    std::unique_ptr<ZlibByte[]> _buffer;
 };
 
 }   // End of namespace

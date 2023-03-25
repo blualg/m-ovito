@@ -24,6 +24,10 @@
 #include <ovito/core/utilities/io/FileManager.h>
 #include "CompressedTextReader.h"
 
+#ifdef OVITO_ZLIB_SUPPORT
+    #include <ovito/core/utilities/io/gzdevice/GzipIODevice.h>
+#endif
+
 namespace Ovito {
 
 static void returnUncompressor(std::unique_ptr<GzipIODevice> uncompressor)
@@ -87,6 +91,7 @@ CompressedTextReader::~CompressedTextReader()
 ******************************************************************************/
 const char* CompressedTextReader::readLine(int maxSize)
 {
+    qDebug() << "CompressedTextReader::readLine maxSize=" << maxSize;
     _lineNumber++;
 
     if(_stream->atEnd())
