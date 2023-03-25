@@ -93,7 +93,7 @@ PipelineStatus VoxelGridSliceModifierDelegate::apply(const ModifierEvaluationReq
             if(cell->is2D())
                 continue;
 
-            // The slice plane does NOT exist in a periodic domain. 
+            // The slice plane does NOT exist in a periodic domain.
             // Remove any periodic boundary conditions from the surface mesh domain cell.
             if(cell->hasPbc()) {
                 DataOORef<SimulationCellObject> nonperiodicCell = cell.makeCopy();
@@ -137,7 +137,7 @@ PipelineStatus VoxelGridSliceModifierDelegate::apply(const ModifierEvaluationReq
                     return planeGridSpace.pointDistance(Point3(i,j,k));
                 };
 
-                // Run the marching cubes algorithm to generate the mesh for the cross-section. 
+                // Run the marching cubes algorithm to generate the mesh for the cross-section.
                 MarchingCubes mc(mesh, gridShape[0]*resolution, gridShape[1]*resolution, gridShape[2]*resolution, false, std::move(getFieldValue), true, true);
                 mc.generateIsosurface(0.0, MainThreadOperation(false).progressingTask());
 
@@ -160,11 +160,27 @@ PipelineStatus VoxelGridSliceModifierDelegate::apply(const ModifierEvaluationReq
                 // Determine the mapping of mesh faces to voxel grid cells.
                 OVITO_ASSERT(mesh.faceCount() == meshFaceVoxelCoordinates.size());
                 std::vector<size_t> voxelFaceMapping(meshFaceVoxelCoordinates.size());
+#ifndef Q_CC_MSVC
                 std::transform(meshFaceVoxelCoordinates.cbegin(), meshFaceVoxelCoordinates.cend(), voxelFaceMapping.begin(), [&, shape=voxelGrid->shape()](const auto& coords) {
                     const auto& [x, y, z] = coords;
                     OVITO_ASSERT(x >= 0 && y >= 0 && z >= 0);
                     return std::min((size_t)z / resolution, shape[2]-1) * (shape[0] * shape[1]) + std::min((size_t)y / resolution, shape[1]-1) * shape[0] + std::min((size_t)x / resolution, shape[0]-1);
                 });
+#else // Workaround for MSVC compiler crash ("fatal error C1001: Internal compiler error. 10914(compiler file 'msc1.cpp', line 1603)"):
+                {
+                    auto m = voxelFaceMapping.begin();
+                    const auto shape = voxelGrid->shape();
+                    for(const auto& coords : meshFaceVoxelCoordinates) {
+                        const auto& [x, y, z] = coords;
+                        OVITO_ASSERT(x >= 0 && y >= 0 && z >= 0);
+                        size_t xs = std::min((size_t)x / resolution, shape[0]-1);
+                        size_t ys = std::min((size_t)y / resolution, shape[1]-1);
+                        size_t zs = std::min((size_t)z / resolution, shape[2]-1);
+                        *m++ = zs * (shape[0] * shape[1]) + ys * shape[0] + xs;
+                    }
+                    OVITO_ASSERT(m == voxelFaceMapping.end());
+                }
+#endif
 
                 // Copy field values from voxel grid to surface mesh faces.
                 for(const ConstPropertyPtr& fieldProperty : fieldProperties) {
@@ -191,7 +207,7 @@ PipelineStatus VoxelGridSliceModifierDelegate::apply(const ModifierEvaluationReq
             }
 
             // Form quadrilaterals from pairs of triangles.
-            // This only makes sense when the slicing plane is aligned with the grid cells axes such that only quads result from 
+            // This only makes sense when the slicing plane is aligned with the grid cells axes such that only quads result from
             // the marching cubes algorithm.
             if(std::abs(planeGridSpace.normal.x()) <= FLOATTYPE_MAX || std::abs(planeGridSpace.normal.y()) <= FLOATTYPE_MAX || std::abs(planeGridSpace.normal.z()) <= FLOATTYPE_MAX)
                 mesh.makeQuadrilateralFaces();
