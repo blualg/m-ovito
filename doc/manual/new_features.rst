@@ -5,7 +5,7 @@ What's new
 ==========
 
 -------------------------
-Version 3.8.1 (24-Mar-23)
+Version 3.8.1 (27-Mar-23)
 -------------------------
 
 .. rubric:: Identification of volumetric regions using the Gaussian density method |ovito-pro|

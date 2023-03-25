@@ -36,7 +36,7 @@ ENDIF()
 # Locate the NetCDF library.
 FIND_PACKAGE(NetCDF)
 
-IF((HDF5_FOUND OR OVITO_BUILD_CONDA) AND (TARGET netcdf OR TARGET netCDF::netcdf))
+IF(TARGET netcdf OR TARGET netCDF::netcdf)
 
     # Build library.
     ADD_LIBRARY(NetCDFIntegration NetCDFIntegration.cpp)
