@@ -164,9 +164,11 @@ bool GuiDataSetContainer::fileSaveAs(const QString& filename)
         settings.beginGroup("file/scene");
 
         if(currentSet()->filePath().isEmpty()) {
-            QString defaultPath = settings.value("last_directory").toString();
-            if(!defaultPath.isEmpty())
-                dialog.setDirectory(defaultPath);
+            if(HistoryFileDialog::keepWorkingDirectoryHistoryEnabled()) {
+                QString defaultPath = settings.value("last_directory").toString();
+                if(!defaultPath.isEmpty())
+                    dialog.setDirectory(defaultPath);
+            }
         }
         else {
 #ifndef Q_OS_LINUX
@@ -185,8 +187,10 @@ bool GuiDataSetContainer::fileSaveAs(const QString& filename)
             return false;
         QString newFilename = files.front();
 
-        // Remember directory for the next time...
-        settings.setValue("last_directory", dialog.directory().absolutePath());
+        if(HistoryFileDialog::keepWorkingDirectoryHistoryEnabled()) {
+            // Remember directory for the next time...
+            settings.setValue("last_directory", dialog.directory().absolutePath());
+        }
 
         currentSet()->setFilePath(newFilename);
     }
