@@ -144,10 +144,10 @@ void CoordinationPolyhedraModifier::ComputePolyhedraEngine::perform()
     std::vector<size_t> neighborIndices;
     SurfaceMeshAccess::size_type oldVertexCount = 0;
 
-    // After construction of the mesh, this array will contain for each 
+    // After construction of the mesh, this array will contain for each
     // mesh vertex the index of the particle it was created from.
     std::vector<size_t> vertexToParticleMap;
-    // After construction of the mesh, this array will contain for each 
+    // After construction of the mesh, this array will contain for each
     // mesh region the index of the particle it was created for.
     std::vector<size_t> regionToParticleMap;
     regionToParticleMap.reserve(npoly);
@@ -184,9 +184,10 @@ void CoordinationPolyhedraModifier::ComputePolyhedraEngine::perform()
             // Note: We keep our own copy of the point list so that we can determine the insertion order afterwards.
             mesh.constructConvexHull(neighborPositions);
 
-            // Find each input point among the newly added vertices of the mesh. 
-            // This will help us later to transfer the particle properties to the corresponding mesh vertices. 
-            for(const Point3& vpos : mesh.vertexPositions().advance_begin(oldVertexCount)) {
+            // Find each input point among the newly added vertices of the mesh.
+            // This will help us later to transfer the particle properties to the corresponding mesh vertices.
+            auto vertexRange = mesh.vertexPositions();
+            for(const Point3& vpos : vertexRange.advance_begin(oldVertexCount)) {
                 auto idx = neighborIndices.cbegin();
                 for(const Point3& p : neighborPositions) {
                     OVITO_ASSERT(idx != neighborIndices.cend());
