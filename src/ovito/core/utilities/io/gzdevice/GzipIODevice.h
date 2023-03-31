@@ -50,7 +50,7 @@ public:
     };
 
     /// Minimum distance in bytes between generated seek points in the uncompressed stream.
-    static constexpr qint64 MinimumSeekPointSpacing = 1024 * 1024;
+    static constexpr qint64 MinimumSeekPointSpacing = 4 * 1024 * 1024;
 
     /// Destructor.
     ~GzipIndex() {

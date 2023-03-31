@@ -163,7 +163,7 @@ void ViewportInputMode::wheelEvent(ViewportWindowInterface* vpwin, QWheelEvent* 
 
     FloatType delta = event->angleDelta().y();
     if(event->inverted()) delta = -delta;
-    inputManager()->zoomMode()->zoom(vpwin->viewport(), delta);
+    inputManager()->zoomMode()->zoom(vpwin->viewport(), delta, inputManager()->userInterface());
     event->accept();
 }
 

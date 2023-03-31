@@ -253,7 +253,7 @@ FloatType ZoomMode::sceneSizeFactor(Viewport* vp)
 /******************************************************************************
 * Zooms the viewport in or out.
 ******************************************************************************/
-void ZoomMode::zoom(Viewport* vp, FloatType steps)
+void ZoomMode::zoom(Viewport* vp, FloatType steps, UserInterface& ui)
 {
     if(vp->viewNode() == nullptr || vp->viewType() != Viewport::VIEW_SCENENODE || !vp->scene()) {
         if(vp->isPerspectiveProjection()) {
@@ -264,7 +264,7 @@ void ZoomMode::zoom(Viewport* vp, FloatType steps)
         }
     }
     else {
-        inputManager()->userInterface().performTransaction(tr("Zoom viewport"), [this, steps, vp]() {
+        ui.performTransaction(tr("Zoom viewport"), [this, steps, vp]() {
             if(vp->isPerspectiveProjection()) {
                 FloatType amount = sceneSizeFactor(vp) * steps;
                 TimeInterval iv;

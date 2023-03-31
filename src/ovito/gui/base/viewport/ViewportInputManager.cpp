@@ -32,7 +32,7 @@ namespace Ovito {
 /******************************************************************************
 * Initializes the viewport input manager.
 ******************************************************************************/
-ViewportInputManager::ViewportInputManager(QObject* parent, UserInterface& userInterface) : 
+ViewportInputManager::ViewportInputManager(QObject* parent, UserInterface& userInterface) :
     QObject(parent),
     _datasetContainer(userInterface.datasetContainer()),
     _userInterface(userInterface)

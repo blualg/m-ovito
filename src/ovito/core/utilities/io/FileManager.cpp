@@ -433,7 +433,7 @@ std::shared_ptr<GzipIndex> FileManager::lookupGzipIndex(const QString& filename,
     if(std::shared_ptr<GzipIndex>* index = _gzipIndexCache.object(filename)) {
         return *index;
     }
-    if(createIfNeeded) {
+    if(createIfNeeded && !qEnvironmentVariableIsSet("OVITO_DISABLE_GZIP_INDEXING")) {
         std::shared_ptr<GzipIndex> index = std::make_shared<GzipIndex>();
         _gzipIndexCache.insert(filename, new std::shared_ptr<GzipIndex>(index));
         return index;

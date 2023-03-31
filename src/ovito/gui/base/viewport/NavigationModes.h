@@ -55,7 +55,7 @@ public:
     /// Is called when a viewport looses the input focus.
     virtual void focusOutEvent(ViewportWindowInterface* vpwin, QFocusEvent* event) override;
 
-    /// Applies a step-wise change of the view orientation. 
+    /// Applies a step-wise change of the view orientation.
     void discreteStep(ViewportWindowInterface* vpwin, QPointF delta);
 
 protected:
@@ -184,7 +184,7 @@ public:
     }
 
     /// Zooms the given viewport in or out.
-    void zoom(Viewport* vp, FloatType steps);
+    void zoom(Viewport* vp, FloatType steps, UserInterface& ui);
 
 protected:
 

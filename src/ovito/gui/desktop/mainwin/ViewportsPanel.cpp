@@ -654,39 +654,47 @@ bool ViewportsPanel::onKeyShortcut(QKeyEvent* event)
 
     qreal delta = 1.0;
     if(event->key() == Qt::Key_Left) {
-        if(!(event->modifiers() & Qt::ShiftModifier))
-            _mainWindow.viewportInputManager()->orbitMode()->discreteStep(vp->window(), QPointF(-delta, 0));
-        else
-            _mainWindow.viewportInputManager()->panMode()->discreteStep(vp->window(), QPointF(-delta, 0));
+        _mainWindow.performTransaction(tr("Move camera"), [&] {
+            if(!(event->modifiers() & Qt::ShiftModifier))
+                _mainWindow.viewportInputManager()->orbitMode()->discreteStep(vp->window(), QPointF(-delta, 0));
+            else
+                _mainWindow.viewportInputManager()->panMode()->discreteStep(vp->window(), QPointF(-delta, 0));
+        });
         return true;
     }
     else if(event->key() == Qt::Key_Right) {
-        if(!(event->modifiers() & Qt::ShiftModifier))
-            _mainWindow.viewportInputManager()->orbitMode()->discreteStep(vp->window(), QPointF(delta, 0));
-        else
-            _mainWindow.viewportInputManager()->panMode()->discreteStep(vp->window(), QPointF(delta, 0));
+        _mainWindow.performTransaction(tr("Move camera"), [&] {
+            if(!(event->modifiers() & Qt::ShiftModifier))
+                _mainWindow.viewportInputManager()->orbitMode()->discreteStep(vp->window(), QPointF(delta, 0));
+            else
+                _mainWindow.viewportInputManager()->panMode()->discreteStep(vp->window(), QPointF(delta, 0));
+        });
         return true;
     }
     else if(event->key() == Qt::Key_Up) {
-        if(!(event->modifiers() & Qt::ShiftModifier))
-            _mainWindow.viewportInputManager()->orbitMode()->discreteStep(vp->window(), QPointF(0, -delta));
-        else
-            _mainWindow.viewportInputManager()->panMode()->discreteStep(vp->window(), QPointF(0, -delta));
+        _mainWindow.performTransaction(tr("Move camera"), [&] {
+            if(!(event->modifiers() & Qt::ShiftModifier))
+                _mainWindow.viewportInputManager()->orbitMode()->discreteStep(vp->window(), QPointF(0, -delta));
+            else
+                _mainWindow.viewportInputManager()->panMode()->discreteStep(vp->window(), QPointF(0, -delta));
+        });
         return true;
     }
     else if(event->key() == Qt::Key_Down) {
-        if(!(event->modifiers() & Qt::ShiftModifier))
-            _mainWindow.viewportInputManager()->orbitMode()->discreteStep(vp->window(), QPointF(0, delta));
-        else
-            _mainWindow.viewportInputManager()->panMode()->discreteStep(vp->window(), QPointF(0, delta));
+        _mainWindow.performTransaction(tr("Move camera"), [&] {
+            if(!(event->modifiers() & Qt::ShiftModifier))
+                _mainWindow.viewportInputManager()->orbitMode()->discreteStep(vp->window(), QPointF(0, delta));
+            else
+                _mainWindow.viewportInputManager()->panMode()->discreteStep(vp->window(), QPointF(0, delta));
+        });
         return true;
     }
     else if(event->matches(QKeySequence::ZoomIn)) {
-        _mainWindow.viewportInputManager()->zoomMode()->zoom(vp, 50);
+        _mainWindow.viewportInputManager()->zoomMode()->zoom(vp, 50, _mainWindow);
         return true;
     }
     else if(event->matches(QKeySequence::ZoomOut)) {
-        _mainWindow.viewportInputManager()->zoomMode()->zoom(vp, -50);
+        _mainWindow.viewportInputManager()->zoomMode()->zoom(vp, -50, _mainWindow);
         return true;
     }
     return false;
