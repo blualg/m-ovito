@@ -29,11 +29,17 @@
 
 namespace Ovito {
 
+#ifdef OVITO_SSH_CLIENT
 namespace Ssh {
     // These classes are defined elsewhere:
     class SshConnection;
     struct SshConnectionParameters;
 }
+#endif
+
+#ifdef OVITO_ZLIB_SUPPORT
+class GzipIndex; // defined in GzipIODevice.h
+#endif
 
 /**
  * \brief A handle to a file manages by the FileManager.
@@ -114,6 +120,11 @@ public:
     void releaseSshConnection(Ssh::SshConnection* connection);
 #endif
 
+#ifdef OVITO_ZLIB_SUPPORT
+    /// Returns index data for a gzipped file if it exists in the cache.
+    std::shared_ptr<GzipIndex> lookupGzipIndex(const QString& filename, bool createIfNeeded = false);
+#endif
+
 protected:
 
     /// Returns the mutex used internally to synchronize concurrent access to the data structures of this FileManager.
@@ -177,6 +188,11 @@ private:
 
     /// Cache holding the remote files that have already been downloaded.
     QCache<QUrl, QTemporaryFile> _downloadedFiles{std::numeric_limits<int>::max()};
+
+#ifdef OVITO_ZLIB_SUPPORT
+    /// Caches index data for file seeking/random data access in gzipped files.
+    QCache<QString, std::shared_ptr<GzipIndex>> _gzipIndexCache{4};
+#endif
 
     /// The manager of tasks associated with file I/O.
     TaskManager& _taskManager;

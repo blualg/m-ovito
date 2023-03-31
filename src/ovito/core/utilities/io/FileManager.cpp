@@ -26,6 +26,9 @@
 #ifdef OVITO_SSH_CLIENT
     #include <ovito/core/utilities/io/ssh/SshConnection.h>
 #endif
+#ifdef OVITO_ZLIB_SUPPORT
+    #include <ovito/core/utilities/io/gzdevice/GzipIODevice.h>
+#endif
 #include "FileManager.h"
 #include "RemoteFileJob.h"
 
@@ -38,7 +41,7 @@ using namespace Ovito::Ssh;
 /******************************************************************************
 * Create a QIODevice that permits reading data from the file referred to by this handle.
 ******************************************************************************/
-std::unique_ptr<QIODevice> FileHandle::createIODevice() const 
+std::unique_ptr<QIODevice> FileHandle::createIODevice() const
 {
     if(!localFilePath().isEmpty()) {
         return std::make_unique<QFile>(localFilePath());
@@ -189,8 +192,8 @@ QUrl FileManager::urlFromUserInput(const QString& path)
 {
     if(path.isEmpty())
         return QUrl();
-    else if(path.startsWith(QStringLiteral("sftp://")) 
-            || path.startsWith(QStringLiteral("http://")) 
+    else if(path.startsWith(QStringLiteral("sftp://"))
+            || path.startsWith(QStringLiteral("http://"))
             || path.startsWith(QStringLiteral("https://")))
         return QUrl(path);
     else
@@ -416,6 +419,26 @@ bool FileManager::askUserForKeyPassphrase(const QString& hostname, const QString
     std::cin >> pp;
     passphrase = QString::fromStdString(pp);
     return true;
+}
+#endif
+
+
+#ifdef OVITO_ZLIB_SUPPORT
+/******************************************************************************
+* Returns index data for a gzipped file if it exists in the cache.
+******************************************************************************/
+std::shared_ptr<GzipIndex> FileManager::lookupGzipIndex(const QString& filename, bool createIfNeeded)
+{
+    QMutexLocker lock(&_mutex);
+    if(std::shared_ptr<GzipIndex>* index = _gzipIndexCache.object(filename)) {
+        return *index;
+    }
+    if(createIfNeeded) {
+        std::shared_ptr<GzipIndex> index = std::make_shared<GzipIndex>();
+        _gzipIndexCache.insert(filename, new std::shared_ptr<GzipIndex>(index));
+        return index;
+    }
+    return {};
 }
 #endif
 

@@ -46,7 +46,6 @@ CompressedTextWriter::CompressedTextWriter(QFileDevice& output) :
 #ifdef OVITO_ZLIB_SUPPORT
         // Open file for writing.
         _compressor = std::make_unique<GzipIODevice>(&output);
-        _compressor->setStreamFormat(GzipIODevice::GzipFormat);
         if(!_compressor->open(QIODevice::WriteOnly))
             throw Exception(FileManager::tr("Failed to open output file '%1' for writing: %2").arg(_filename).arg(_compressor->errorString()));
         _stream = _compressor.get();

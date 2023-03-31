@@ -76,6 +76,7 @@ void FHIAimsLogFileImporter::FrameFinder::discoverFramesInFile(QVector<FileSourc
             frame.lineNumber = stream.lineNumber();
             frame.label = tr("%1 (Frame %2)").arg(filename).arg(frameNumber++);
             frames.push_back(frame);
+            stream.recordSeekPoint();
         }
 
         setProgressValueIntermittent(stream.underlyingByteOffset());

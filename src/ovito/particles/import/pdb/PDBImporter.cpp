@@ -159,6 +159,7 @@ void PDBImporter::FrameFinder::discoverFramesInFile(QVector<FileSourceImporter::
             endOnPreviousLine = true;
             frame.byteOffset = stream.byteOffset();
             frame.lineNumber = stream.lineNumber();
+            stream.recordSeekPoint();
         }
         else if(endOnPreviousLine) {
             frames.push_back(frame);

@@ -25,24 +25,86 @@
 
 #include <ovito/core/Core.h>
 #include <zlib.h>
-#include "zran.h"
+#include <boost/container/stable_vector.hpp>
+#include <QReadWriteLock>
 
 namespace Ovito {
 
 using ZlibByte = Bytef;
 using ZlibSize = uInt;
 
-struct ZLibState
+/**
+ * \brief An in-memory index of seek points that is progressively being built while reading a compressed file for the first time.
+ *
+ * Subsequently, the index can be used to allow pseudo random access to arbitrary locations in the compressed data stream.
+ */
+class GzipIndex
 {
-    z_stream _zlibStream;
+public:
 
-    /// Constructor.
-    ZLibState() {
-        // Use default zlib memory management.
-        _zlibStream.zalloc = Z_NULL;
-        _zlibStream.zfree = Z_NULL;
-        _zlibStream.opaque = Z_NULL;
+    struct Entry
+    {
+        qint64 uncompressedOffset;
+        qint64 compressedOffset;
+        z_stream zlibStream;
+    };
+
+    /// Minimum distance in bytes between generated seek points in the uncompressed stream.
+    static constexpr qint64 MinimumSeekPointSpacing = 1024 * 1024;
+
+    /// Destructor.
+    ~GzipIndex() {
+        for(Entry& entry : _entries) {
+            int status = ::inflateEnd(&entry.zlibStream);
+            OVITO_ASSERT(status == Z_OK);
+        }
     }
+
+    qint64 indexRange() const { return _entries.empty() ? 0 : _entries.back().uncompressedOffset; }
+
+    /// Adds an entry to the gzip index.
+    int addEntryConditional(qint64 uncompressedOffset, qint64 compressedOffset, z_stream& zlibStream) {
+        _lock.lockForRead();
+        if(uncompressedOffset < indexRange() + MinimumSeekPointSpacing) {
+            _lock.unlock();
+            return Z_OK;
+        }
+        _lock.unlock();
+        _lock.lockForWrite();
+        if(uncompressedOffset < indexRange() + MinimumSeekPointSpacing) {
+            _lock.unlock();
+            return Z_OK;
+        }
+        Entry& entry = _entries.emplace_back();
+        entry.uncompressedOffset = uncompressedOffset;
+        entry.compressedOffset = compressedOffset - zlibStream.avail_in;
+        int status = ::inflateCopy(&entry.zlibStream, &zlibStream);
+        _lock.unlock();
+        return status;
+    }
+
+    /// Determines the right entry to use for a seek operation.
+    const Entry* lookupEntry(qint64 uncompressedOffset) const {
+        _lock.lockForRead();
+        auto iter = std::upper_bound(_entries.cbegin(), _entries.cend(),
+            uncompressedOffset,
+            [](qint64 offset, const Entry& entry) { return offset < entry.uncompressedOffset; });
+        OVITO_ASSERT(iter == _entries.cend() || uncompressedOffset < iter->uncompressedOffset);
+        OVITO_ASSERT(iter == _entries.cbegin() || uncompressedOffset >= std::prev(iter)->uncompressedOffset);
+        _lock.unlock();
+        if(iter == _entries.cbegin())
+            return nullptr;
+        else
+            return &*std::prev(iter);
+    }
+
+private:
+
+    /// All entries of the index. Must use stable_vector, because z_stream structures cannot be relocated.
+    boost::container::stable_vector<Entry> _entries;
+
+    /// Protecting from concurrent access to the data structure.
+    mutable QReadWriteLock _lock;
 };
 
 /**
@@ -80,7 +142,7 @@ public:
     /// bufferSize specifies the size of the internal buffer used when reading from and writing to the
     /// underlying device. The default value is 65KB. Using a larger value allows for faster compression and
     /// decompression at the expense of memory usage.
-    GzipIODevice(QIODevice* device, int compressionLevel = 6, int bufferSize = 65500);
+    explicit GzipIODevice(QIODevice* device, int bufferSize = 65500, int compressionLevel = 6);
 
     /// Destructor.
     virtual ~GzipIODevice();
@@ -100,10 +162,9 @@ public:
     qint64 bytesAvailable() const override;
     bool seek(qint64 pos) override;
 
-#if 0
-    QIODevice* underlyingDevice() const { return _device; }
-    bool replaceUnderlyingDevice(QIODevice* device);
-#endif
+    /// Makes the device generate an index, which will enable random access to the
+    /// compressed data stream in future load operations.
+    void recordSeekPoint();
 
 protected:
 
@@ -135,18 +196,18 @@ private:
     /// Writes outputSize bytes from buffer to the inderlying device.
     bool writeBytes(qint64 outputSize);
 
-    /// Indicates that we are currently using the zran functions instead of direct zlib functions.
-    bool usingZran() const { return !(bool)_buffer; }
+    /// Looks up the cached index for the current file being uncompressed.
+    void lookupGzipIndex(bool createIfNeeded);
 
     bool _manageDevice = false;
     int _compressionLevel;
     QIODevice* _device;
     State _state = Closed;
-    StreamFormat _streamFormat = ZlibFormat;
-    ZLibState _zlibStruct;
-    zran_index _zran;
+    StreamFormat _streamFormat = GzipFormat;
+    z_stream _zlibStream;
     qint64 _bufferSize;
     std::unique_ptr<ZlibByte[]> _buffer;
+    std::shared_ptr<GzipIndex> _index;
 };
 
 }   // End of namespace

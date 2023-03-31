@@ -89,6 +89,7 @@ void LAMMPSDumpLocalImporter::FrameFinder::discoverFramesInFile(QVector<FileSour
                 frame.lineNumber = lineNumber;
                 frame.label = QString("Timestep %1").arg(timestep);
                 frames.push_back(frame);
+                stream.recordSeekPoint();
                 break;
             }
             else if(stream.lineStartsWithToken("ITEM: TIME")) {

@@ -88,6 +88,7 @@ void CastepMDImporter::FrameFinder::discoverFramesInFile(QVector<FileSourceImpor
         if(stream.lineEndsWith("<-- h")) {
             frame.label = tr("%1 (Frame %2)").arg(filename).arg(frameNumber++);
             frames.push_back(frame);
+            stream.recordSeekPoint();
             // Skip the two other lines of the cell matrix
             stream.readLine();
             stream.readLine();

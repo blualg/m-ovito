@@ -184,7 +184,6 @@ ENDIF()
 IF(ZLIB_FOUND)
     LIST(APPEND SourceFiles
         utilities/io/gzdevice/GzipIODevice.cpp
-        utilities/io/gzdevice/zran.cpp
     )
 ELSE()
     MESSAGE("zlib library not found. OVITO will be built without I/O support for gzip compressed data files.")

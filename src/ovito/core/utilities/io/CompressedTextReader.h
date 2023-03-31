@@ -184,6 +184,9 @@ public:
     /// Reads the entire file contents into memory.
     QByteArray readAll();
 
+    /// Asks the file reader to generate a seek index record at the current stream position, which will enable random access to the compressed data in subsequent load operations.
+    void recordSeekPoint();
+
 private:
 
     /// The name of the input file (if known).

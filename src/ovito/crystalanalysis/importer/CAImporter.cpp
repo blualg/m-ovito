@@ -81,6 +81,7 @@ void CAImporter::FrameFinder::discoverFramesInFile(QVector<FileSourceImporter::F
         frame.lineNumber = stream.lineNumber();
         frame.label = QString("%1 (Frame %2)").arg(filename).arg(frameNumber++);
         frames.push_back(frame);
+        stream.recordSeekPoint();
 
         // Seek to end of frame record.
         while(!stream.eof()) {
@@ -510,7 +511,7 @@ void CAImporter::FrameLoader::loadFile()
 
     std::vector<size_t> structureCounts;
     if(clusterGraph) {
-        
+
         // Count how many atoms of each structure type exist by summing the cluster atom counts.
         for(const Cluster* cluster : clusterGraph->clusters()) {
             if(cluster->structure < 0) continue;
@@ -518,7 +519,7 @@ void CAImporter::FrameLoader::loadFile()
                 structureCounts.resize(cluster->structure + 1, 0);
             structureCounts[cluster->structure] += cluster->atomCount;
         }
-    
+
         // Insert cluster graph.
         ClusterGraphObject* clusterGraphObj;
         if(const ClusterGraphObject* existingClusterGraphObj = state().getObject<ClusterGraphObject>()) {
@@ -585,7 +586,7 @@ void CAImporter::FrameLoader::loadFile()
     }
 
     state().setStatus(tr("Number of dislocations: %1").arg(numDislocationSegments));
-    
+
     // Call base implementation to finalize the loaded data.
     ParticleImporter::FrameLoader::loadFile();
 }

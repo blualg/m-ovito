@@ -131,6 +131,7 @@ void GroImporter::FrameFinder::discoverFramesInFile(QVector<FileSourceImporter::
     while(!stream.eof() && !isCanceled()) {
         frame.byteOffset = stream.byteOffset();
         frame.lineNumber = stream.lineNumber();
+        stream.recordSeekPoint();
 
         // Skip comment line.
         stream.readLine();

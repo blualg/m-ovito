@@ -133,6 +133,7 @@ void ReaxFFBondImporter::FrameFinder::discoverFramesInFile(QVector<FileSourceImp
         }
         else if(inCommentSection) {
             frames.push_back(frame);
+            stream.recordSeekPoint();
             inCommentSection = false;
             setProgressValueIntermittent(stream.underlyingByteOffset());
         }
