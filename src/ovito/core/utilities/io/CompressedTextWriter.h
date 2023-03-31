@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -24,11 +24,12 @@
 
 
 #include <ovito/core/Core.h>
-#ifdef OVITO_ZLIB_SUPPORT
-    #include <ovito/core/utilities/io/gzdevice/GzipIODevice.h>
-#endif
 
 namespace Ovito {
+
+#ifdef OVITO_ZLIB_SUPPORT
+class GzipIODevice; // defined in GzipIODevice.h
+#endif
 
 /**
  * \brief A helper class for writing text-based files that are compressed (gzip format).
@@ -46,6 +47,9 @@ public:
     /// \param output The underlying Qt output device from to data should be written.
     /// \throw Exception if an I/O error has occurred.
     explicit CompressedTextWriter(QFileDevice& output);
+
+    /// Destructor.
+    ~CompressedTextWriter();
 
     /// Returns the name of the output file.
     const QString& filename() const { return _filename; }
@@ -114,7 +118,7 @@ private:
 
 #ifdef OVITO_ZLIB_SUPPORT
     /// The compression filter stream.
-    GzipIODevice _compressor;
+    std::unique_ptr<GzipIODevice> _compressor;
 #endif
 
     /// The output stream.

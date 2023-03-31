@@ -197,7 +197,7 @@ OVITO_STANDARD_PLUGIN(Core
 )
 
 # Disable Qt AUTOMOC processing of the header OvitoClass.h.
-# This is necessary, because the header contains the definition of the OVITO_CLASS macro, which 
+# This is necessary, because the header contains the definition of the OVITO_CLASS macro, which
 # is added to the AUTOMOC_MACRO_NAMES list.
 SET_PROPERTY(SOURCE oo/OvitoClass PROPERTY SKIP_AUTOMOC ON)
 
@@ -247,16 +247,16 @@ IF(MSVC AND OVITO_BUILD_CONDA)
     TARGET_COMPILE_OPTIONS(Core PUBLIC "/wd4996")
 ENDIF()
 
-# Compute the relative path from the OVITO executable to where the plugin libraries get installed. 
+# Compute the relative path from the OVITO executable to where the plugin libraries get installed.
 FILE(RELATIVE_PATH OVITO_PLUGINS_RELATIVE_PATH "${OVITO_BINARY_DIRECTORY}" "${OVITO_PLUGINS_DIRECTORY}")
 TARGET_COMPILE_DEFINITIONS(Core PRIVATE "OVITO_PLUGINS_RELATIVE_PATH=\"${OVITO_PLUGINS_RELATIVE_PATH}\"")
 
 IF(NOT OVITO_BUILD_CONDA)
-    # Compute the relative path from the OVITO executable to where the Python module layer gets installed. 
+    # Compute the relative path from the OVITO executable to where the Python module layer gets installed.
     FILE(RELATIVE_PATH OVITO_PYTHON_LAYER_PATH "${OVITO_BINARY_DIRECTORY}" "${OVITO_PYTHON_DIRECTORY}")
     TARGET_COMPILE_DEFINITIONS(Core PRIVATE "OVITO_PYTHON_LAYER_PATH=\"${OVITO_PYTHON_LAYER_PATH}\"")
 ELSE()
-    # Compute the relative path from the Conda prefix to where the Python module layer gets installed. 
+    # Compute the relative path from the Conda prefix to where the Python module layer gets installed.
     FILE(RELATIVE_PATH OVITO_PYTHON_LAYER_PATH "$ENV{PREFIX}" "$ENV{SP_DIR}")
     TARGET_COMPILE_DEFINITIONS(Core PRIVATE "OVITO_PYTHON_LAYER_PATH=\"${OVITO_PYTHON_LAYER_PATH}\"")
     MESSAGE(STATUS "PREFIX: $ENV{PREFIX}")
@@ -363,7 +363,7 @@ IF(OVITO_BUILD_SSH_CLIENT AND Libssh_FOUND AND NOT EMSCRIPTEN AND NOT OVITO_BUIL
         IF(NOT OPENSSL_ROOT_DIR)
             MESSAGE(FATAL_ERROR "Please specify the location of the OpenSSL library by setting the OPENSSL_ROOT_DIR variable.")
         ENDIF()
-        STRING(REPLACE "\\" "/" _OPENSSL_ROOT_DIR "${OPENSSL_ROOT_DIR}") 
+        STRING(REPLACE "\\" "/" _OPENSSL_ROOT_DIR "${OPENSSL_ROOT_DIR}")
         FILE(GLOB openssl_dlls "${_OPENSSL_ROOT_DIR}/bin/*.dll")
         IF(NOT openssl_dlls)
             MESSAGE(FATAL_ERROR "Could not find any OpenSSL DLLs in \"${_OPENSSL_ROOT_DIR}/bin/\". Please check value of OPENSSL_ROOT_DIR path variable.")

@@ -24,18 +24,11 @@
 #include <ovito/core/utilities/io/FileManager.h>
 #include "CompressedTextReader.h"
 
+#ifdef OVITO_ZLIB_SUPPORT
+    #include <ovito/core/utilities/io/gzdevice/GzipIODevice.h>
+#endif
+
 namespace Ovito {
-
-static void returnUncompressor(std::unique_ptr<GzipIODevice> uncompressor)
-{
-    // TODO: Implement caching of zlib index information.
-}
-
-static std::unique_ptr<GzipIODevice> acquireUncompressor(QIODevice* device)
-{
-    // TODO: Implement caching of zlib index information.
-    return std::make_unique<GzipIODevice>(device, 6, 0x100000);
-}
 
 /******************************************************************************
 * Opens the given I/O device for reading.
@@ -53,8 +46,7 @@ CompressedTextReader::CompressedTextReader(const FileHandle& input, qint64 byteO
     if(_filename.endsWith(".gz", Qt::CaseInsensitive)) {
 #ifdef OVITO_ZLIB_SUPPORT
         // Open compressed file for reading.
-        _uncompressor = acquireUncompressor(_device.get());
-        _uncompressor->setStreamFormat(GzipIODevice::GzipFormat);
+        _uncompressor = std::make_unique<GzipIODevice>(_device.get(), 0x100000);
         if(!_uncompressor->isOpen() && !_uncompressor->open(QIODevice::ReadOnly))
             throw Exception(FileManager::tr("Failed to open input file: %1").arg(_uncompressor->errorString()));
         _stream = _uncompressor.get();
@@ -78,8 +70,6 @@ CompressedTextReader::CompressedTextReader(const FileHandle& input, qint64 byteO
 ******************************************************************************/
 CompressedTextReader::~CompressedTextReader()
 {
-    if(_uncompressor)
-        returnUncompressor(std::move(_uncompressor));
 }
 
 /******************************************************************************
@@ -93,7 +83,7 @@ const char* CompressedTextReader::readLine(int maxSize)
         throw Exception(FileManager::tr("File parsing error. Unexpected end of file after line %1.").arg(_lineNumber));
 
     qint64 readBytes = 0;
-    if(!maxSize) {
+    if(maxSize == 0) {
         if(_line.size() <= 1) {
             _line.resize(1024);
         }
@@ -157,6 +147,19 @@ void CompressedTextReader::munmap()
 QByteArray CompressedTextReader::readAll()
 {
     return _stream->readAll();
+}
+
+/******************************************************************************
+* Asks the file reader to generate a seek index record at the current stream
+* position, which will enable random access to the compressed data in subsequent
+* load operations.
+******************************************************************************/
+void CompressedTextReader::recordSeekPoint()
+{
+#ifdef OVITO_ZLIB_SUPPORT
+    if(_uncompressor)
+        _uncompressor->recordSeekPoint();
+#endif
 }
 
 }   // End of namespace

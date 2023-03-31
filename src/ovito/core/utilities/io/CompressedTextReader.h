@@ -25,11 +25,12 @@
 
 #include <ovito/core/Core.h>
 #include <ovito/core/utilities/io/FileManager.h>
-#ifdef OVITO_ZLIB_SUPPORT
-    #include <ovito/core/utilities/io/gzdevice/GzipIODevice.h>
-#endif
 
 namespace Ovito {
+
+#ifdef OVITO_ZLIB_SUPPORT
+class GzipIODevice; // defined in GzipIODevice.h
+#endif
 
 /**
  * \brief A helper class for reading text-based files, which may be compressed (gzip format).
@@ -182,6 +183,9 @@ public:
 
     /// Reads the entire file contents into memory.
     QByteArray readAll();
+
+    /// Asks the file reader to generate a seek index record at the current stream position, which will enable random access to the compressed data in subsequent load operations.
+    void recordSeekPoint();
 
 private:
 

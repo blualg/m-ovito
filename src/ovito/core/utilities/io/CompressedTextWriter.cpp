@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -27,16 +27,17 @@
 
 #include <boost/spirit/include/karma.hpp>
 
+#ifdef OVITO_ZLIB_SUPPORT
+    #include <ovito/core/utilities/io/gzdevice/GzipIODevice.h>
+#endif
+
 namespace Ovito {
 
 /******************************************************************************
 * Opens the output file for writing.
 ******************************************************************************/
 CompressedTextWriter::CompressedTextWriter(QFileDevice& output) :
-    _device(output) 
-#ifdef OVITO_ZLIB_SUPPORT
-    ,_compressor(&output)
-#endif
+    _device(output)
 {
     _filename = output.fileName();
 
@@ -44,10 +45,10 @@ CompressedTextWriter::CompressedTextWriter(QFileDevice& output) :
     if(_filename.endsWith(".gz", Qt::CaseInsensitive)) {
 #ifdef OVITO_ZLIB_SUPPORT
         // Open file for writing.
-        _compressor.setStreamFormat(GzipIODevice::GzipFormat);
-        if(!_compressor.open(QIODevice::WriteOnly))
-            throw Exception(FileManager::tr("Failed to open output file '%1' for writing: %2").arg(_filename).arg(_compressor.errorString()));
-        _stream = &_compressor;
+        _compressor = std::make_unique<GzipIODevice>(&output);
+        if(!_compressor->open(QIODevice::WriteOnly))
+            throw Exception(FileManager::tr("Failed to open output file '%1' for writing: %2").arg(_filename).arg(_compressor->errorString()));
+        _stream = _compressor.get();
 #else
         throw Exception(tr("Cannot open file '%1' for writing. This version of OVITO was built without I/O support for gzip compressed files.").arg(_filename));
 #endif
@@ -58,6 +59,13 @@ CompressedTextWriter::CompressedTextWriter(QFileDevice& output) :
             throw Exception(FileManager::tr("Failed to open output file '%1' for writing: %2").arg(_filename).arg(output.errorString()));
         _stream = &output;
     }
+}
+
+/******************************************************************************
+* Destructor.
+******************************************************************************/
+CompressedTextWriter::~CompressedTextWriter()
+{
 }
 
 /******************************************************************************

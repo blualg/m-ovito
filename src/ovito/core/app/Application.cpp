@@ -62,15 +62,15 @@ void Application::qtMessageOutput(QtMsgType type, const QMessageLogContext& cont
 /******************************************************************************
 * Handler method for Qt log messages that should be redirected to a file.
 ******************************************************************************/
-static void qtMessageLogFile(QtMsgType type, const QMessageLogContext& context, const QString& msg) 
+static void qtMessageLogFile(QtMsgType type, const QMessageLogContext& context, const QString& msg)
 {
     // Format the message string to be written to the log file.
     QString formattedMsg = qFormatLogMessage(type, context, msg);
 
     // The log file object.
     static QFile logFile(QDir::fromNativeSeparators(qEnvironmentVariable("OVITO_LOG_FILE", QStringLiteral("ovito.log"))));
-    
-    // Synchronize concurrent access to the log file. 
+
+    // Synchronize concurrent access to the log file.
     static QMutex ioMutex;
     QMutexLocker mutexLocker(&ioMutex);
 
@@ -173,7 +173,7 @@ bool Application::initialize()
     // Install custom Qt error message handler to catch fatal errors in debug mode
     // or redirect log output to file instead of the console if requested by the user.
     if(qEnvironmentVariableIsSet("OVITO_LOG_FILE")) {
-        // Install a message handler that writes log output to a text file. 
+        // Install a message handler that writes log output to a text file.
         defaultQtMessageHandler = qInstallMessageHandler(qtMessageLogFile);
         // QDebugStateSaver saver(qInfo());
         qInfo().noquote() << "#" << applicationName() << applicationVersionString() << "started on" << QDateTime::currentDateTime().toString();

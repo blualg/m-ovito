@@ -22,150 +22,70 @@
 
 
 #include <ovito/core/Core.h>
+#include <ovito/core/app/Application.h>
+#include <ovito/core/utilities/io/FileManager.h>
 #include "GzipIODevice.h"
-#include <zlib.h>
 
 namespace Ovito {
 
-using ZlibByte = Bytef;
-using ZlibSize = uInt;
-
-OVITO_STATIC_ASSERT((std::is_same<ZlibByte, unsigned char>::value));
-
-struct ZLibState
-{
-    z_stream _zlibStream;
-
-    /// Constructor.
-    ZLibState() {
-        // Use default zlib memory management.
-        _zlibStream.zalloc = Z_NULL;
-        _zlibStream.zfree = Z_NULL;
-        _zlibStream.opaque = Z_NULL;
-    }
-};
-
-/// Flushes the zlib stream.
-void GzipIODevice::flushZlib(int flushMode)
-{
-    // No input.
-    _zlibStruct->_zlibStream.next_in = nullptr;
-    _zlibStruct->_zlibStream.avail_in = 0;
-    int status;
-    do {
-        _zlibStruct->_zlibStream.next_out = _buffer.get();
-        _zlibStruct->_zlibStream.avail_out = _bufferSize;
-        status = ::deflate(&_zlibStruct->_zlibStream, flushMode);
-        if(status != Z_OK && status != Z_STREAM_END) {
-            _state = Error;
-            setZlibError(tr("Internal zlib error when compressing: "), status);
-            return;
-        }
-
-        ZlibSize outputSize = _bufferSize - _zlibStruct->_zlibStream.avail_out;
-
-        // Try to write data from the buffer to to the underlying device, return on failure.
-        if(!writeBytes(outputSize))
-            return;
-
-        // If the mode is Z_FNISH we must loop until we get Z_STREAM_END,
-        // else we loop as long as zlib is able to fill the output buffer.
-    }
-    while((flushMode == Z_FINISH && status != Z_STREAM_END) || (flushMode != Z_FINISH && _zlibStruct->_zlibStream.avail_out == 0));
-
-    if(flushMode == Z_FINISH)
-        OVITO_ASSERT(status == Z_STREAM_END);
-    else
-        OVITO_ASSERT(status == Z_OK);
-}
-
-// Writes outputSize bytes from buffer to the inderlying device.
-bool GzipIODevice::writeBytes(qint64 outputSize)
-{
-    ZlibSize totalBytesWritten = 0;
-    // Loop until all bytes are written to the underlying device.
-    do {
-        const qint64 bytesWritten = _device->write(reinterpret_cast<char*>(_buffer.get()), outputSize);
-        if(bytesWritten == -1) {
-            setErrorString(tr("Error writing to underlying I/O device: %1").arg(_device->errorString()));
-            return false;
-        }
-        totalBytesWritten += bytesWritten;
-    }
-    while(totalBytesWritten != outputSize);
-
-    // Put up a flag so that the device will be flushed on close.
-    _state = BytesWritten;
-    return true;
-}
-
-// Sets the error string to errorMessage + zlib error string for zlibErrorCode
-void GzipIODevice::setZlibError(const QString& errorMessage, int zlibErrorCode)
-{
-    // Watch out, zlibErrorString may be null.
-    const char* const zlibErrorString = ::zError(zlibErrorCode);
-    QString errorString;
-    if(zlibErrorString)
-        errorString = errorMessage + zlibErrorString;
-    else
-        errorString = tr("%1 - Unknown error (code %2)").arg(errorMessage).arg(zlibErrorCode);
-
-    setErrorString(errorString);
-}
+OVITO_STATIC_ASSERT((std::is_same_v<ZlibByte, unsigned char>));
 
 /// Constructor
-GzipIODevice::GzipIODevice(QIODevice* device, int compressionLevel, int bufferSize) :
+GzipIODevice::GzipIODevice(QIODevice* device, int bufferSize, int compressionLevel) :
     _device(device),
-    _compressionLevel(compressionLevel),
-    _zlibStruct(new ZLibState()),
     _bufferSize(bufferSize),
-    _buffer(std::make_unique<ZlibByte[]>(bufferSize))
+    _compressionLevel(compressionLevel)
 {
+    std::memset(&_zlibStream, 0, sizeof(_zlibStream));
 }
 
 /// Destructor.
 GzipIODevice::~GzipIODevice()
 {
     GzipIODevice::close();
-    delete _zlibStruct;
 }
 
-bool GzipIODevice::seek(qint64 pos)
+/// Looks up the cached index for the current file being uncompressed.
+void GzipIODevice::lookupGzipIndex(bool createIfNeeded)
 {
-    if(isWritable())
-        return false;
+    OVITO_ASSERT(!_index);
 
-    qint64 offset = pos - this->pos();
+    QString filename;
 
-    if(offset < 0) { // Seeking backward? Close and restart file and start decompressing it from the beginning.
-        OpenMode mode = openMode();
-        close();
-        if(_device->isOpen()) {
-            if(!_device->reset())
-                return false;
-        }
-        if(!open(mode))
-            return false;
+    if(QFileDevice* fileDevice = qobject_cast<QFileDevice*>(_device))
+        filename = fileDevice->fileName();
 
-        char buffer[0x10000];
-        while(pos > 0) {
-            qint64 s = read(buffer, std::min(pos, (qint64)sizeof(buffer)));
-            if(s <= 0)
-                return false;
-            pos -= s;
+#if 0
+    else if(QBuffer* bufferDevice = qobject_cast<QBuffer*>(_device)) {
+        QCryptographicHash hash(QCryptographicHash::Md5);
+        hash.addData(bufferDevice->data());
+        filename = QString::fromLatin1(hash.result().toHex());
+    }
+#endif
+
+    if(!filename.isEmpty()) {
+        _index = Application::instance()->fileManager().lookupGzipIndex(filename, createIfNeeded);
+    }
+}
+
+/// Makes the device generate an index, which will enable random access to the
+/// compressed data stream in future load operations.
+void GzipIODevice::recordSeekPoint()
+{
+    if(_state != InStream)
+        return;
+
+    if(!_index)
+        lookupGzipIndex(true);
+
+    // Take a snapshot of the zlib stream from time to time to build the index while reading the file.
+    if(_index) {
+        int status = _index->addEntryConditional(_zlibStream.total_out, _device->pos(), _zlibStream);
+        if(status != Z_OK) {
+            _state = Error;
+            setZlibError(tr("Internal zlib error when decompressing: "), status);
         }
     }
-    else { // Seeking forward? Simply read (then discard) bytes starting from the current file position.
-        char buffer[0x10000];
-        while(offset > 0) {
-            qint64 s = read(buffer, std::min(offset, (qint64)sizeof(buffer)));
-            if(s <= 0)
-                return false;
-            offset -= s;
-        }
-    }
-
-    return true;
 }
 
 /*!
@@ -208,10 +128,8 @@ bool GzipIODevice::open(OpenMode mode)
             qWarning("GzipIODevice::open: underlying device must be open in one of the ReadOnly or WriteOnly modes");
             return false;
         }
-
-    // If the underlying device is closed, open it.
     }
-    else {
+    else { // If the underlying device is closed, open it.
         _manageDevice = true;
         if(!_device->open(mode)) {
             setErrorString(tr("Error opening underlying device: %1").arg(_device->errorString()));
@@ -219,7 +137,8 @@ bool GzipIODevice::open(OpenMode mode)
         }
     }
 
-    // Initialize zlib for deflating or inflating.
+    // Allocate read/write buffer.
+    _buffer = std::make_unique<ZlibByte[]>(_bufferSize);
 
     // The second argument to inflate/deflateInit2 is the windowBits parameter,
     // which also controls what kind of compression stream headers to use.
@@ -242,21 +161,22 @@ bool GzipIODevice::open(OpenMode mode)
     int status;
     if(read) {
         _state = NotReadFirstByte;
-        _zlibStruct->_zlibStream.next_in = nullptr;
-        _zlibStruct->_zlibStream.avail_in = 0;
+        _zlibStream.next_in = nullptr;
+        _zlibStream.avail_in = 0;
         if(streamFormat() == ZlibFormat) {
-            status = ::inflateInit(&_zlibStruct->_zlibStream);
+            status = ::inflateInit(&_zlibStream);
         }
         else {
-            status = ::inflateInit2(&_zlibStruct->_zlibStream, windowBits);
+            status = ::inflateInit2(&_zlibStream, windowBits);
         }
+        lookupGzipIndex(false);
     }
     else {
         _state = NoBytesWritten;
         if(streamFormat() == ZlibFormat)
-            status = ::deflateInit(&_zlibStruct->_zlibStream, _compressionLevel);
+            status = ::deflateInit(&_zlibStream, _compressionLevel);
         else
-            status = ::deflateInit2(&_zlibStruct->_zlibStream, _compressionLevel, Z_DEFLATED, windowBits, 8, Z_DEFAULT_STRATEGY);
+            status = ::deflateInit2(&_zlibStream, _compressionLevel, Z_DEFLATED, windowBits, 8, Z_DEFAULT_STRATEGY);
     }
 
     // Handle error.
@@ -264,6 +184,7 @@ bool GzipIODevice::open(OpenMode mode)
         setZlibError(tr("Internal zlib error: "), status);
         return false;
     }
+
     return QIODevice::open(mode);
 }
 
@@ -276,64 +197,100 @@ void GzipIODevice::close()
     // Flush and close the zlib stream.
     if(openMode() & ReadOnly) {
         _state = NotReadFirstByte;
-        ::inflateEnd(&_zlibStruct->_zlibStream);
+        int status = ::inflateEnd(&_zlibStream);
+        OVITO_ASSERT(status == Z_OK);
     }
     else {
         if(_state == BytesWritten) { // Only flush if we have written anything.
             _state = NoBytesWritten;
             flushZlib(Z_FINISH);
         }
-        ::deflateEnd(&_zlibStruct->_zlibStream);
+        int status = ::deflateEnd(&_zlibStream);
+        OVITO_ASSERT(status == Z_OK);
     }
 
     // Close the underlying device if we are managing it.
     if(_manageDevice)
         _device->close();
 
-    _zlibStruct->_zlibStream.next_in = nullptr;
-    _zlibStruct->_zlibStream.avail_in = 0;
-    _zlibStruct->_zlibStream.next_out = nullptr;
-    _zlibStruct->_zlibStream.avail_out = 0;
+    _zlibStream.next_in = nullptr;
+    _zlibStream.avail_in = 0;
+    _zlibStream.next_out = nullptr;
+    _zlibStream.avail_out = 0;
     _state = Closed;
+    _buffer.reset();
+    _index.reset();
 
     QIODevice::close();
 }
 
-#if 0
-bool GzipIODevice::replaceUnderlyingDevice(QIODevice* device)
+/// Flushes the zlib stream.
+void GzipIODevice::flushZlib(int flushMode)
 {
-    // Close the old underlying device if we are managing it.
-    if(_device && _manageDevice)
-        _device->close();
-
-    _device = device;
-    _manageDevice = false;
-
-    // If the underlying device is open, check that is it opened in a compatible mode.
-    if(_device && isOpen()) {
-        OVITO_ASSERT(isReadable() && !isWritable()); // This method is only supported when reading files.
-
-        if(_device->isOpen()) {
-            _manageDevice = false;
-            const OpenMode deviceMode = _device->openMode();
-            if(!_device->isReadable()) {
-                qWarning("GzipIODevice::replaceUnderlyingDevice: underlying device must be opened in ReadOnly mode");
-                return false;
-            }
+    // No input.
+    _zlibStream.next_in = nullptr;
+    _zlibStream.avail_in = 0;
+    int status;
+    do {
+        _zlibStream.next_out = _buffer.get();
+        _zlibStream.avail_out = _bufferSize;
+        status = ::deflate(&_zlibStream, flushMode);
+        if(status != Z_OK && status != Z_STREAM_END) {
+            _state = Error;
+            setZlibError(tr("Internal zlib error when compressing: "), status);
+            return;
         }
-        else {
-            // If the underlying device is closed, open it.
-            _manageDevice = true;
-            if(!_device->open(openMode())) {
-                setErrorString(tr("Error opening underlying device: %1").arg(_device->errorString()));
-                return false;
-            }
-        }
+
+        ZlibSize outputSize = _bufferSize - _zlibStream.avail_out;
+
+        // Try to write data from the buffer to to the underlying device, return on failure.
+        if(!writeBytes(outputSize))
+            return;
+
+        // If the mode is Z_FNISH we must loop until we get Z_STREAM_END,
+        // else we loop as long as zlib is able to fill the output buffer.
     }
+    while((flushMode == Z_FINISH && status != Z_STREAM_END) || (flushMode != Z_FINISH && _zlibStream.avail_out == 0));
 
+    if(flushMode == Z_FINISH)
+        OVITO_ASSERT(status == Z_STREAM_END);
+    else
+        OVITO_ASSERT(status == Z_OK);
+}
+
+// Writes outputSize bytes from buffer to the inderlying device.
+bool GzipIODevice::writeBytes(qint64 outputSize)
+{
+    ZlibSize totalBytesWritten = 0;
+    // Loop until all bytes are written to the underlying device.
+    do {
+        const qint64 bytesWritten = _device->write(reinterpret_cast<char*>(_buffer.get()), outputSize);
+        if(bytesWritten == -1) {
+            setErrorString(tr("Error writing to underlying I/O device: %1").arg(_device->errorString()));
+            return false;
+        }
+        totalBytesWritten += bytesWritten;
+    }
+    while(totalBytesWritten != outputSize);
+
+    // Put up a flag so that the device will be flushed on close.
+    _state = BytesWritten;
     return true;
 }
-#endif
+
+// Sets the error string to errorMessage + zlib error string for zlibErrorCode
+void GzipIODevice::setZlibError(const QString& errorMessage, int zlibErrorCode)
+{
+    // Watch out, zlibErrorString may be null.
+    const char* const zlibErrorString = ::zError(zlibErrorCode);
+    QString errorString;
+    if(zlibErrorString)
+        errorString = errorMessage + zlibErrorString;
+    else
+        errorString = tr("%1 - Unknown error (code %2)").arg(errorMessage).arg(zlibErrorCode);
+
+    setErrorString(errorString);
+}
 
 /*!
     Flushes the internal buffer.
@@ -397,18 +354,21 @@ qint64 GzipIODevice::readData(char* data, qint64 maxSize)
     if(_state == Error)
         return -1;
 
+    if(maxSize <= 0)
+        return 0;
+
     // We will to try to fill the data buffer
-    _zlibStruct->_zlibStream.next_out = reinterpret_cast<ZlibByte*>(data);
-    _zlibStruct->_zlibStream.avail_out = maxSize;
+    _zlibStream.next_out = reinterpret_cast<ZlibByte*>(data);
+    _zlibStream.avail_out = maxSize;
 
     int status;
     do {
-        // Read data if if the input buffer is empty. There could be data in the buffer
+        // Read data if the input buffer is empty. There could be data in the buffer
         // from a previous readData call.
-        if(_zlibStruct->_zlibStream.avail_in == 0) {
+        if(_zlibStream.avail_in == 0) {
             qint64 bytesAvailable = _device->read(reinterpret_cast<char*>(_buffer.get()), _bufferSize);
-            _zlibStruct->_zlibStream.next_in = _buffer.get();
-            _zlibStruct->_zlibStream.avail_in = bytesAvailable;
+            _zlibStream.next_in = _buffer.get();
+            _zlibStream.avail_in = bytesAvailable;
 
             if(bytesAvailable == -1) {
                 _state = Error;
@@ -426,7 +386,7 @@ qint64 GzipIODevice::readData(char* data, qint64 maxSize)
         }
 
         // Decompress.
-        status = ::inflate(&_zlibStruct->_zlibStream, Z_SYNC_FLUSH);
+        status = ::inflate(&_zlibStream, Z_SYNC_FLUSH);
         switch(status) {
             case Z_NEED_DICT:
             case Z_DATA_ERROR:
@@ -434,25 +394,96 @@ qint64 GzipIODevice::readData(char* data, qint64 maxSize)
                 _state = Error;
                 setZlibError(tr("Internal zlib error when decompressing: "), status);
                 return -1;
-            case Z_BUF_ERROR: // No more input and zlib can not privide more output - Not an error, we can try to read again when we have more input.
+            case Z_BUF_ERROR: // No more input and zlib can not provide more output - Not an error, we can try to read again when we have more input.
                 return 0;
         }
     // Loop until data buffer is full or we reach the end of the input stream.
     }
-    while(_zlibStruct->_zlibStream.avail_out != 0 && status != Z_STREAM_END);
+    while(_zlibStream.avail_out != 0 && status != Z_STREAM_END);
 
     if(status == Z_STREAM_END) {
         _state = EndOfStream;
 
         // Unget any data left in the read buffer.
-        for(int i = _zlibStruct->_zlibStream.avail_in;  i >= 0; --i)
-            _device->ungetChar(*reinterpret_cast<char*>(_zlibStruct->_zlibStream.next_in + i));
+        for(int i = _zlibStream.avail_in;  i >= 0; --i)
+            _device->ungetChar(*reinterpret_cast<char*>(_zlibStream.next_in + i));
     }
 
-    const ZlibSize outputSize = maxSize - _zlibStruct->_zlibStream.avail_out;
-    return outputSize;
+    return maxSize - _zlibStream.avail_out;
 }
 
+bool GzipIODevice::seek(qint64 pos)
+{
+    if(isWritable())
+        return false;
+
+    qint64 offset = pos - this->pos();
+    if(offset == 0)
+        return true;
+
+    if(const GzipIndex::Entry* indexEntry = _index ? _index->lookupEntry(pos) : nullptr) {
+        OVITO_ASSERT(pos >= indexEntry->uncompressedOffset);
+        if(offset < 0 || offset > pos - indexEntry->uncompressedOffset) {
+            // Reposition underlying I/O device.
+            if(!_device->seek(indexEntry->compressedOffset)) {
+                _state = Error;
+                setErrorString(tr("I/O error when seeking in compressed file: %1").arg(_device->errorString()));
+                return false;
+            }
+            // Close old zlib stream.
+            _state = NotReadFirstByte;
+            int status = ::inflateEnd(&_zlibStream);
+            if(status != Z_OK) {
+                _state = Error;
+                setZlibError(tr("Internal zlib error when seeking in compressed file: "), status);
+                return false;
+            }
+            // Restore saved stream.
+            status = ::inflateCopy(&_zlibStream, const_cast<z_stream*>(&indexEntry->zlibStream));
+            if(status != Z_OK) {
+                _state = Error;
+                setZlibError(tr("Internal zlib error when seeking in compressed file: "), status);
+                return false;
+            }
+            _zlibStream.avail_in = 0;
+            _state = InStream;
+            if(!QIODevice::seek(indexEntry->uncompressedOffset))
+                return false;
+
+            offset = pos - indexEntry->uncompressedOffset;
+        }
+    }
+
+    if(offset < 0) { // Seeking backward? Close and restart file and start decompressing it from the beginning.
+        OpenMode mode = openMode();
+        close();
+        if(_device->isOpen()) {
+            if(!_device->reset())
+                return false;
+        }
+        if(!open(mode))
+            return false;
+
+        char buffer[0x10000];
+        while(pos > 0) {
+            qint64 s = read(buffer, std::min(pos, (qint64)sizeof(buffer)));
+            if(s <= 0)
+                return false;
+            pos -= s;
+        }
+    }
+    else { // Seeking forward? Simply read (then discard) bytes starting from the current file position.
+        char buffer[0x10000];
+        while(offset > 0) {
+            qint64 s = read(buffer, std::min(offset, (qint64)sizeof(buffer)));
+            if(s <= 0)
+                return false;
+            offset -= s;
+        }
+    }
+
+    return true;
+}
 
 /*!
     Compresses and writes data to the underlying device.
@@ -461,31 +492,30 @@ qint64 GzipIODevice::writeData(const char* data, qint64 maxSize)
 {
     if(maxSize < 1)
         return 0;
-    _zlibStruct->_zlibStream.next_in = reinterpret_cast<ZlibByte*>(const_cast<char*>(data));
-    _zlibStruct->_zlibStream.avail_in = maxSize;
+    _zlibStream.next_in = reinterpret_cast<ZlibByte*>(const_cast<char*>(data));
+    _zlibStream.avail_in = maxSize;
 
     if(_state == Error)
         return -1;
 
     do {
-        _zlibStruct->_zlibStream.next_out = _buffer.get();
-        _zlibStruct->_zlibStream.avail_out = _bufferSize;
-        const int status = ::deflate(&_zlibStruct->_zlibStream, Z_NO_FLUSH);
+        _zlibStream.next_out = _buffer.get();
+        _zlibStream.avail_out = _bufferSize;
+        const int status = ::deflate(&_zlibStream, Z_NO_FLUSH);
         if(status != Z_OK) {
             _state = Error;
             setZlibError(tr("Internal zlib error when compressing: "), status);
             return -1;
         }
 
-        ZlibSize outputSize = _bufferSize - _zlibStruct->_zlibStream.avail_out;
+        ZlibSize outputSize = _bufferSize - _zlibStream.avail_out;
 
         // Try to write data from the buffer to to the underlying device, return -1 on failure.
         if(!writeBytes(outputSize))
             return -1;
-
     }
-    while(!_zlibStruct->_zlibStream.avail_out); // run until output is not full.
-    OVITO_ASSERT(!_zlibStruct->_zlibStream.avail_in);
+    while(!_zlibStream.avail_out); // run until output is not full.
+    OVITO_ASSERT(!_zlibStream.avail_in);
 
     return maxSize;
 }

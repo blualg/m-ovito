@@ -125,6 +125,7 @@ void DLPOLYImporter::FrameFinder::discoverFramesInFile(QVector<FileSourceImporte
             if(frameIndex != 0) {
                 frame.byteOffset = stream.byteOffset();
                 frame.lineNumber = stream.lineNumber();
+                stream.recordSeekPoint();
                 stream.readLine();
             }
             int nstep;

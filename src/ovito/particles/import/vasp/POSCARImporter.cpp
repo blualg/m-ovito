@@ -110,6 +110,7 @@ void POSCARImporter::FrameFinder::discoverFramesInFile(QVector<FileSourceImporte
         frame.lineNumber = stream.lineNumber();
         frame.parserData = 1;
         frame.label = QString("%1 (Frame %2)").arg(filename).arg(frameNumber++);
+        stream.recordSeekPoint();
 
         // Read comment line
         stream.readLine();
