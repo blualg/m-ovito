@@ -57,7 +57,8 @@ SharedFuture<PipelineFlowState> PipelineCache::evaluatePipeline(const PipelineEv
     OVITO_ASSERT(!QCoreApplication::instance() || QThread::currentThread() == QCoreApplication::instance()->thread());
     OVITO_ASSERT(ExecutionContext::current().isValid());
     OVITO_ASSERT(Task::current());
-    OVITO_ASSERT_MSG(_preparingEvaluation == false, "PipelineCache::evaluatePipeline", "Function is not reentrant.");
+    if(_preparingEvaluation)
+        return Future<PipelineFlowState>::createFailed(CachingPipelineObject::tr("A new pipeline evaluation is not permitted while another pipeline evaluation is already in progress. This error may be the result of an invalid user Python script invoking a function that is not permitted in this context."));
 
     // Update the times for which we should keep computed pipeline outputs.
     if(!_precomputeAllFrames)
@@ -96,10 +97,8 @@ SharedFuture<PipelineFlowState> PipelineCache::evaluatePipeline(const PipelineEv
     SharedFuture<PipelineFlowState> future;
     TimeInterval preliminaryValidityInterval;
 
-#ifdef OVITO_DEBUG
     // This flag is set here to detect unexpected calls to invalidate().
     _preparingEvaluation = true;
-#endif
 
     if(!pipelineObject) {
         // Without a pipeline data source, the results will be an empty data collection.
@@ -215,10 +214,8 @@ SharedFuture<PipelineFlowState> PipelineCache::evaluatePipeline(const PipelineEv
     // Keep a weak reference to the future.
     evaluation->future = future;
 
-#ifdef OVITO_DEBUG
     // From now on, it is okay again to call invalidate().
     _preparingEvaluation = false;
-#endif
 
     // Remove evaluation record from the list of ongoing evaluations once it is finished (successfully or not).
     future.finally(*ownerObject(), [this, evaluation](Task&) noexcept {
@@ -367,7 +364,10 @@ const PipelineFlowState& PipelineCache::evaluatePipelineStageSynchronous(const P
 void PipelineCache::invalidate(TimeInterval keepInterval, bool resetSynchronousCache)
 {
     OVITO_ASSERT(!QCoreApplication::instance() || QThread::currentThread() == QCoreApplication::instance()->thread());
-    OVITO_ASSERT_MSG(_preparingEvaluation == false, "PipelineCache::invalidate", "Cannot invalidate cache while preparing to evaluate the pipeline.");
+    if(_preparingEvaluation) {
+        qWarning() << "Warning: Invalidating the pipeline cache while preparing the evaluation of the pipeline is not allowed. This error may be the result of an invalid user Python script invoking a function that is not permitted in this context.";
+        return;
+    }
 
     // Interrupt frame precomputation, which might be in progress.
     _precomputeFramesOperation.reset();

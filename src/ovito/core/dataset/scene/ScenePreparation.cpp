@@ -140,7 +140,7 @@ void ScenePreparation::makeReady(bool forceReevaluation)
     MainThreadOperation operation(ExecutionContext::Type::Interactive, userInterface(), false);
 
     // Go through all pipelines of the scene until we find one
-    // that is not completely evaulated yet.
+    // that is not completely evaluated yet.
     scene()->visitObjectNodes([&](PipelineSceneNode* pipeline) {
         // Request visual elements too.
         _pipelineEvaluation = pipeline->evaluateRenderingPipeline(request);
@@ -150,9 +150,12 @@ void ScenePreparation::makeReady(bool forceReevaluation)
         }
         else if(!_pipelineEvaluation.isCanceled()) {
             try { _pipelineEvaluation.results(); }
+            catch(const Exception& ex) {
+                qWarning() << "ScenePreparation::makeReady(): Pipeline evaluation raised an exception.";
+                ex.logError();
+            }
             catch(...) {
-                qWarning() << "ScenePreparation::makeReady(): An exception was thrown in a data pipeline. This should never happen.";
-                OVITO_ASSERT(false);
+                qWarning() << "ScenePreparation::makeReady(): Pipeline evaluation raised an exception.";
             }
         }
         _pipelineEvaluation.reset();

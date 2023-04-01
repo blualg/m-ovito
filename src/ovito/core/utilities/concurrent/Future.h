@@ -98,11 +98,11 @@ public:
         task()->finally(std::forward<Function>(f));
     }
 
-    /// \brief Blocks execution until this future is fulfilled. 
+    /// \brief Blocks execution until this future is fulfilled.
     /// \return false if either this future or the task waiting for it have been canceled.
     [[nodiscard]] bool waitForFinished() const& { return Task::waitFor(this->task()); }
 
-    /// \brief Blocks execution until this future is fulfilled. 
+    /// \brief Blocks execution until this future is fulfilled.
     /// \return false if either this future or the task waiting for it have been canceled.
     [[nodiscard]] bool waitForFinished() && { return Task::waitFor(std::move(this->_task)); }
 
@@ -207,6 +207,34 @@ public:
         return Future(std::move(task));
     }
 
+    /// Creates a future that will be fulfilled after the user-supplied function was executed by the given executor.
+    template<typename Executor, typename Function>
+    static Future exec(Executor&& executor, Function&& f) {
+        promise_type promise = promise_type::template create<Task>(false);
+        auto future = promise.future();
+        std::forward<Executor>(executor).execute([promise = std::move(promise), f = std::forward<Function>(f)]() mutable noexcept {
+            if(!promise.isCanceled()) {
+                promise.setStarted();
+                try {
+                    Task::Scope taskScope(promise.task());
+                    if constexpr(!std::is_void_v<detail::invoke_result_t<Function>>) {
+                        promise.setResults(std::invoke(std::forward<Function>(f)));
+                    }
+                    else {
+                        std::invoke(std::forward<Function>(f));
+                        promise.setResults();
+                    }
+                }
+                catch(...) {
+                    promise.captureException();
+                }
+                promise.setFinished();
+            }
+        });
+
+        return future;
+    }
+
     /// Returns the results computed by the associated Promise.
     /// This function may only be called after the Promise was fulfilled (and not canceled).
     tuple_type results() {
@@ -225,7 +253,7 @@ public:
             return std::get<0>(results());
         }
         else {
-            task()->throwPossibleException(); 
+            task()->throwPossibleException();
             reset();
         }
     }
@@ -233,7 +261,7 @@ public:
     /// Returns a new future that, upon the fulfillment of this future, will be fulfilled by running the given continuation function.
     /// The provided continuation function must accept the results of this future or the future itself as an input parameter.
     template<typename Executor, typename Function>
-    detail::continuation_future_type<Function,Future> 
+    detail::continuation_future_type<Function,Future>
     then(Executor&& executor, Function&& f);
 
     /// Overload of the function above using the default inline executor.
@@ -282,7 +310,7 @@ Future<R...>::then(Executor&& executor, Function&& f)
     // Run the following function once the existing task finishes. We'll then invoke the user's continuation function.
     continuationTask->whenTaskFinishes(
             this->takeTaskReference(), // The reference to the existing task is moved from this future into the continuation task.
-            std::forward<Executor>(executor), 
+            std::forward<Executor>(executor),
             [f = std::forward<Function>(f), promise = std::move(promise)]() mutable noexcept {
 
         // Get the task that is about to continue.
