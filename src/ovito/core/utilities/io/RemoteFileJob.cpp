@@ -38,7 +38,9 @@
 
 namespace Ovito {
 
+#ifdef OVITO_SSH_CLIENT
 using namespace Ovito::Ssh;
+#endif
 
 /// List SFTP jobs that are waiting to be executed.
 QQueue<RemoteFileJob*> RemoteFileJob::_queuedJobs;
@@ -425,7 +427,7 @@ void DownloadRemoteFileJob::networkReplyDownloadProgress(qint64 bytesReceived, q
 }
 
 /******************************************************************************
-* Writes the data received from the server so far to the local file. 
+* Writes the data received from the server so far to the local file.
 ******************************************************************************/
 void DownloadRemoteFileJob::storeReceivedData()
 {
