@@ -8,7 +8,7 @@ Binary program packages of OVITO for Linux, Windows, and macOS can be downloaded
 
 .. _installation.requirements:
 
-System Requirements
+System requirements
 ===================
 
 OVITO requires a 64-bit operating system and runs on processors with x86-64 or arm64 architecture.
@@ -54,13 +54,15 @@ In this mode, OVITO will make use of the graphics hardware of the remote machine
 applications in a desktop environment. Please contact your local computing center staff to find out whether
 this kind of remote visualization mode is supported by the HPC cluster(s) you work on.
 
+.. _installation.python:
+
 Python module installation
 ==========================
 
 The **OVITO Pro** program packages ship with an :ref:`integrated Python interpreter <ovitos_interpreter>` (:command:`ovitos`) that gets installed alongside the desktop application,
 allowing you to execute Python scripts written for OVITO.
 Optionally, you can install the ``ovito`` Python module into an external Python interpreter on your system  (e.g. :program:`Anaconda` or the standard :program:`CPython` interpreter) in case you would like to make use of
-OVITO's functionality in script-based workflows. Please refer to :ref:`this section <pydoc:use_ovito_with_system_interpreter>` for further setup instructions.
+OVITO's functionality in script-based workflows. Please refer to :ref:`this section <pydoc:installation>` for further setup instructions.
 
 .. _installation.troubleshooting:
 

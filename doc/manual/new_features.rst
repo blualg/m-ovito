@@ -5,6 +5,15 @@ What's new
 ==========
 
 -------------------------
+Version 3.8.2 (04-Apr-23)
+-------------------------
+
+* Implemented fast access to trajectory frames in compressed (gzipped) files
+* Fix: Segfault when using zoom function in viewport with an attached camera object
+* Fix: Segfault in :ref:`particles.modifiers.coordination_polyhedra` modifier on Linux
+* Fix: Function 'load/save session state' does not follow global working directory
+
+-------------------------
 Version 3.8.1 (27-Mar-23)
 -------------------------
 

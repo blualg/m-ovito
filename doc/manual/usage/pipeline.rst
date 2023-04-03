@@ -1,6 +1,5 @@
+.. _usage.modification_pipeline:
 
-.. _usage.modification_pipeline:        
-  
 Pipeline concept
 ================
 
@@ -11,9 +10,9 @@ The output of this processing pipeline is displayed on the screen by the program
 .. image:: /images/usage/pipeline/pipeline_example.*
    :width: 100%
 
-OVITO offers an extensive set of modifier functions to choose from (see :ref:`reference section <particles.modifiers>`), 
+OVITO offers an extensive set of modifier functions to choose from (see :ref:`reference section <particles.modifiers>`),
 each performing a specific task like selecting, coloring, analyzing, or filtering particle structures.
-By combining these basic building blocks and arranging them in a pipeline sequence, you can visualize or analyze the simulation 
+By combining these basic building blocks and arranging them in a pipeline sequence, you can visualize or analyze the simulation
 dataset in exactly the way you need it.
 
 A key advantage of this approach is that the data pipeline lets you retroactively change, delete or amend the
@@ -26,8 +25,8 @@ your changes. This happens automatically and almost in real-time.
 
 Similar types of "non-destructive" workflow concepts can be found in modern photo editing and 3D modeling programs, for example.
 In OVITO this approach provides you with a great deal of flexibility while designing and exploring new data analysis and
-visualization setups. And the pipeline architecture offers another important advantage: Once you have figured out the right 
-modification steps to solve your specific analysis problem, you can apply the same processing pipeline to any number of other input 
+visualization setups. And the pipeline architecture offers another important advantage: Once you have figured out the right
+modification steps to solve your specific analysis problem, you can apply the same processing pipeline to any number of other input
 datasets and batch-process a whole range of simulation trajectories.
 
 .. _usage.modification_pipeline.pipeline_listbox:
@@ -47,33 +46,33 @@ Visual elements
 
 Modifications
   The current sequence of modifiers that are part of the pipeline
-      
+
 Data source
   The input data for the pipeline (typically an external data file)
-  
+
 Note that, right after importing a new simulation file into OVITO,
 the pipeline contains no modifiers yet and the "Modifications" section won't be visible.
 Selecting an element in the pipeline editor opens a corresponding parameters panel below the editor,
 which allows you to change its parameters.
-  
+
 The drop-down list labeled :guilabel:`Add modification...` at the top of the pipeline editor offers the
 :ref:`available modifiers <particles.modifiers>` that may be applied to the data.
 Picking an entry from that box newly inserts the modifier into the pipeline, right above the currently selected pipeline
 item. Note that the data pipeline is presented in bottom-up order: The leading modifier of the pipeline, acting first on the input data,
 appears at the bottom. The pipeline depicted in the screenshot, for example, would first compute the displacement vectors,
 then assign a color coding to the particles and finally slice the dataset.
- 
+
 You can temporarily disable modifiers in the pipeline by unchecking the box next to them.
 To permanently remove a modifier from the pipeline, use the *Delete Modifier* button found in
-the toolbar on the right. And since the order in which actions are performed sometimes matters, 
+the toolbar on the right. And since the order in which actions are performed sometimes matters,
 you can rearrange the modifiers within the pipeline using drag-and-drop operations or the
 up/down arrow buttons in the toolbar.
 
-.. _usage.modification_pipeline.display: 
+.. _usage.modification_pipeline.display:
 
 Visual elements
 ---------------
- 
+
 The dataset fed into the pipeline is usually a collection of several different
 data fragments, for instance, the particle positions, bond topology, and simulation cell geometry. Modifiers in the pipeline
 may dynamically add further pieces of information to that, e.g. displacement vectors calculated from
@@ -100,11 +99,11 @@ It is important to understand that the selection happens dynamically as a proces
 data pipeline: First, one modifier selects some of the particles and then a subsequent modifier operates on that selected subset.
 Within the pipeline, the selection will stay the same up to the point where another modifier further down the
 pipeline replaces it again.
- 
+
 This system allows you to apply different operations to different groups of particles in a successive fashion. For example,
 you could use a :ref:`particles.modifiers.select_particle_type` modifier to first select particles
 of one chemical or structural type and then apply an :ref:`particles.modifiers.assign_color` modifier
-to give them a particular color. Next, you could insert another instance of the :ref:`particles.modifiers.select_particle_type` modifier to 
+to give them a particular color. Next, you could insert another instance of the :ref:`particles.modifiers.select_particle_type` modifier to
 select another group of particles and subsequently assign them a different color using another :ref:`particles.modifiers.assign_color` modifier instance.
 
 Note that data visualization always happens only for the final results leaving the pipeline. That means in the viewports you will only observe the final
