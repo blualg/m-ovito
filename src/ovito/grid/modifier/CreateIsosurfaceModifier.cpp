@@ -37,17 +37,20 @@ IMPLEMENT_OVITO_CLASS(CreateIsosurfaceModifier);
 DEFINE_PROPERTY_FIELD(CreateIsosurfaceModifier, subject);
 DEFINE_PROPERTY_FIELD(CreateIsosurfaceModifier, sourceProperty);
 DEFINE_PROPERTY_FIELD(CreateIsosurfaceModifier, transferFieldValues);
+DEFINE_PROPERTY_FIELD(CreateIsosurfaceModifier, smoothingLevel);
 DEFINE_REFERENCE_FIELD(CreateIsosurfaceModifier, isolevelController);
 DEFINE_REFERENCE_FIELD(CreateIsosurfaceModifier, surfaceMeshVis);
 SET_PROPERTY_FIELD_LABEL(CreateIsosurfaceModifier, sourceProperty, "Source property");
 SET_PROPERTY_FIELD_LABEL(CreateIsosurfaceModifier, isolevelController, "Isolevel");
 SET_PROPERTY_FIELD_LABEL(CreateIsosurfaceModifier, transferFieldValues, "Transfer field values to surface");
+SET_PROPERTY_FIELD_LABEL(CreateIsosurfaceModifier, smoothingLevel, "Smoothing level");
+SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(CreateIsosurfaceModifier, smoothingLevel, IntegerParameterUnit, 0);
 
 /******************************************************************************
 * Constructs the modifier object.
 ******************************************************************************/
-CreateIsosurfaceModifier::CreateIsosurfaceModifier(ObjectCreationParams params) : AsynchronousModifier(params),
-    _transferFieldValues(false)
+CreateIsosurfaceModifier::CreateIsosurfaceModifier(ObjectCreationParams params)
+    : AsynchronousModifier(params), _smoothingLevel(0), _transferFieldValues(false)
 {
     if(params.createSubObjects()) {
         setIsolevelController(ControllerManager::createFloatController());
@@ -196,8 +199,8 @@ Future<AsynchronousModifier::EnginePtr> CreateIsosurfaceModifier::createEngine(c
     
     // Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
     return std::make_shared<ComputeIsosurfaceEngine>(request, validityInterval, voxelGrid->shape(), voxelGrid->gridType(), property,
-            sourceProperty().vectorComponent(), std::move(mesh), isolevel, std::move(auxiliaryProperties),
-            std::move(histogram));
+                                                     sourceProperty().vectorComponent(), std::move(mesh), isolevel, smoothingLevel(),
+                                                     std::move(auxiliaryProperties), std::move(histogram));
 }
 
 /******************************************************************************
@@ -280,6 +283,7 @@ void CreateIsosurfaceModifier::ComputeIsosurfaceEngine::perform()
         throw Exception(tr("Something went wrong. Isosurface mesh is not closed."));
     if(isCanceled())
         return;
+    if(!mesh.smoothMesh(_smoothingLevel, *this)) return;
     _mesh = mesh.take();
 
     // Determine min-max range of input field values.

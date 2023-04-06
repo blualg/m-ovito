@@ -1275,6 +1275,47 @@ SurfaceMeshAccess::vertex_index MarchingCubes::createCenterVertex(int i, int j, 
     p.y() /= u;
     p.z() /= u;
 
+#if 0
+    // Optimize the position of the central vertex to exactly match the desired isolevel
+    // Requires the https://github.com/tirimatangi/LazyMath headers to work
+    // Currently disabled for overhead as the div
+    auto trilinearFieldInterpolation = [&](const auto& x, auto& fx) {
+        // return a high function value (with gradient pointing towards the [0,1] domain
+        // when any x,y,z is outside the voxel
+        if((x[0] < 0) || (x[1] < 0) || (x[2] < 0) || (x[0] > 1) || (x[1] > 1) || (x[2] > 1)) {
+            fx[0] = (x[0] * x[0] + x[1] * x[1] + x[2] * x[2]) + 1e6;
+        }
+        // return the interpolated value inside the voxel
+        else {
+            FloatType c00 = getFieldValue(i, j, k) * (1 - x[0]) + getFieldValue(i + 1, j, k) * x[0];
+            FloatType c01 = getFieldValue(i, j, k + 1) * (1 - x[0]) + getFieldValue(i + 1, j, k + 1) * x[0];
+            FloatType c10 = getFieldValue(i, j + 1, k) * (1 - x[0]) + getFieldValue(i + 1, j + 1, k) * x[0];
+            FloatType c11 = getFieldValue(i, j + 1, k + 1) * (1 - x[0]) + getFieldValue(i + 1, j + 1, k + 1) * x[0];
+            FloatType c0 = c00 * (1 - x[1]) + c10 * x[1];
+            FloatType c1 = c01 * (1 - x[1]) + c11 * x[1];
+            FloatType c = (c0 * (1 - x[2]) + c1 * x[2]) - _isolevel;
+            fx[0] = c * c;
+        }
+    };
+    // Optimize the position of the v12 vertex to match the isolevel
+    LazyMath::Minimizer<FloatType> minimizer(3, 1);
+    minimizer.function = std::move(trilinearFieldInterpolation);
+    minimizer.optimalityLimit = 0;
+    minimizer.maxIterations = 100;
+    minimizer.initX = {p.x() - i, p.y() - j, p.z() - k};
+    minimizer.run();
+    // if the point found be the minimizer is on one of the edges (edges always contain at least one solution if
+    // its two vertices are on opposite sides of the isolevel) we fall back onto p as solution.
+    // Same if the minimizer did not find a solution
+    FloatType eps = 1e-6;
+    if(!((minimizer.minFx()[0] > eps) || (minimizer.minX()[0] < eps) || (minimizer.minX()[0] > (1 - eps)) || (minimizer.minX()[1] < eps) ||
+         (minimizer.minX()[1] > (1 - eps)) || (minimizer.minX()[2] < eps) || (minimizer.minX()[2] > (1 - eps)))) {
+        p.x() = i + minimizer.minX()[0];
+        p.y() = j + minimizer.minX()[1];
+        p.z() = k + minimizer.minX()[2];
+    }
+#endif
+
     return _outputMesh.createVertex(p);
 }
 
