@@ -18,16 +18,23 @@ This modifier generates an `isosurface <https://en.wikipedia.org/wiki/Isosurface
 The computed isosurface is a :ref:`surface mesh <scene_objects.surface_mesh>` data object and 
 its visual appearance is controlled by the accompanying :ref:`surface mesh <visual_elements.surface_mesh>` visual element.
 
-See the :ref:`list of input file formats <file_formats.input>` supported by OVITO to find out how to import
-voxel grids into the program. You can also apply the isosurface modifier to a dynamically generated voxel grid produced by the
-:ref:`particles.modifiers.bin_and_reduce` modifier.
+See the :ref:`list of supported input file formats <file_formats.input>` to find out how to import
+grid data into the program. OVITO Pro also offers the :ref:`particles.modifiers.bin_and_reduce` modifier,
+which lets you dynamically generate a voxel grid from binned particles.
 
-Note that you can apply this modifier several times in a pipeline to create multiple surfaces at different iso-levels.
+.. tip::
 
-The option :guilabel:`Transfer field values to surface` lets the modifier copy all field quantities defined on the input voxel grid over to the isosurface's mesh vertices.
+  To create multiple surfaces at different iso-levels, you can insert the isosurface modifier several times into a pipeline.
+
+**Transfer field values**
+
+The option :guilabel:`Transfer field values to surface` copies all field quantities defined on the input voxel grid over to the isosurface's mesh vertices.
 This includes any secondary field quantities in addition to the selected primary field quantity for which the isosurface is being constructed, and which is constant and equal to the iso-level value across the
-entire surface. The color mapping mode of the :ref:`visual_elements.surface_mesh` visual element allows you to locally color the isosurface based on a secondary 
-field quantity. The property values at each isosurface output vertex are computed from the input voxel cell values using trilinear interpolation. 
+entire surface. The color mapping mode of the :ref:`visual_elements.surface_mesh` visual element allows you to locally color the isosurface based on some secondary field quantity. The field values at each isosurface output vertex are computed from the input voxel cells using trilinear interpolation. 
+
+**Smoothing option**
+
+The resulting isosurface can optionally be smoothed using a fairing algorithm to even out surface steps resulting from the discrete nature of the voxel grid. The :guilabel:`Smoothing level` parameter controls the number of iterations of the smoothing algorithm to perform. This post-processing procedure slightly displaces the surface mesh vertices to reduce steps and roughness of the isosurface. Mesh smoothing is performed *after* interpolated field values have already been transferred to the surface. Therefore, the surface values reflect the original vertex positions before the smoothing procedure.
 
 .. seealso::
   

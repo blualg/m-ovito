@@ -107,17 +107,23 @@ private:
     public:
 
         /// Constructor.
-        ComputeIsosurfaceEngine(const ModifierEvaluationRequest& request, const TimeInterval& validityInterval, const VoxelGrid::GridDimensions& gridShape, VoxelGrid::GridType gridType, ConstPropertyPtr property, int vectorComponent, DataOORef<SurfaceMesh> mesh, FloatType isolevel, std::vector<ConstPropertyPtr> auxiliaryProperties, DataOORef<DataTable> histogram) :
-            Engine(request, validityInterval),
-            _gridShape(gridShape),
-            _gridType(gridType),
-            _property(std::move(property)),
-            _vectorComponent(std::max(vectorComponent, 0)),
-            _mesh(std::move(mesh)),
-            _isolevel(isolevel),
-            _auxiliaryProperties(std::move(auxiliaryProperties)),
-            _histogram(std::move(histogram)) {}
-            
+        ComputeIsosurfaceEngine(const ModifierEvaluationRequest& request, const TimeInterval& validityInterval,
+                                const VoxelGrid::GridDimensions& gridShape, VoxelGrid::GridType gridType, ConstPropertyPtr property,
+                                int vectorComponent, DataOORef<SurfaceMesh> mesh, FloatType isolevel, int smoothingLevel,
+                                std::vector<ConstPropertyPtr> auxiliaryProperties, DataOORef<DataTable> histogram)
+            : Engine(request, validityInterval),
+              _gridShape(gridShape),
+              _gridType(gridType),
+              _property(std::move(property)),
+              _vectorComponent(std::max(vectorComponent, 0)),
+              _mesh(std::move(mesh)),
+              _isolevel(isolevel),
+              _smoothingLevel(smoothingLevel),
+              _auxiliaryProperties(std::move(auxiliaryProperties)),
+              _histogram(std::move(histogram))
+        {
+        }
+
         /// Computes the modifier's results.
         virtual void perform() override;
 
@@ -134,6 +140,7 @@ private:
 
         const VoxelGrid::GridDimensions _gridShape;
         const FloatType _isolevel;
+        const int _smoothingLevel;
         VoxelGrid::GridType _gridType;
         const int _vectorComponent;
         ConstPropertyPtr _property;
@@ -159,6 +166,9 @@ private:
 
     /// Controls whether auxiliary field values should be copied over from the grid to the generated isosurface vertices.
     DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, transferFieldValues, setTransferFieldValues, PROPERTY_FIELD_MEMORIZE);
+
+    // Controls the amount of smoothing.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(int, smoothingLevel, setSmoothingLevel, PROPERTY_FIELD_MEMORIZE);
 
     /// The vis element for rendering the surface.
     DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<SurfaceMeshVis>, surfaceMeshVis, setSurfaceMeshVis, PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES | PROPERTY_FIELD_MEMORIZE | PROPERTY_FIELD_OPEN_SUBEDITOR);
