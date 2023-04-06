@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -148,6 +148,9 @@ public:
 
     /// Displays an error message to the user that is associated with a particular child window or dialog.
     void reportError(const Exception& exception, QWidget* window);
+
+    /// Opens another main window (in addition to the existing windows) and optionally loads a file in the new window.
+    static void openNewWindow(const QStringList& arguments = {});
 
 protected:
 

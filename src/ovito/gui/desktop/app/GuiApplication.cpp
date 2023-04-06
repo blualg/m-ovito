@@ -282,7 +282,15 @@ MainThreadOperation GuiApplication::startupApplication()
 ******************************************************************************/
 void GuiApplication::postStartupInitialization()
 {
-    UserInterface& userInterface = ExecutionContext::current().ui();
+    GuiApplication::initializeUserInterface(ExecutionContext::current().ui(), cmdLineParser().positionalArguments());
+    StandaloneApplication::postStartupInitialization();
+}
+
+/******************************************************************************
+* Initializes an abstract user interface (e.g. a MainWindow).
+******************************************************************************/
+void GuiApplication::initializeUserInterface(UserInterface& userInterface, const QStringList& arguments)
+{
     DataSetContainer& datasetContainer = userInterface.datasetContainer();
 
     // This is to quit the application's event loop right after we are done executing the startup actions
@@ -290,8 +298,8 @@ void GuiApplication::postStartupInitialization()
     QEventLoopLocker eventLoopLocker;
 
     // Load session state file specified on the command line.
-    if(!cmdLineParser().positionalArguments().empty()) {
-        QString startupFilename = cmdLineParser().positionalArguments().front();
+    if(!arguments.empty()) {
+        QString startupFilename = arguments.front();
         if(startupFilename.endsWith(".ovito", Qt::CaseInsensitive)) {
             try {
                 // TODO: Create sub-task for this operation.
@@ -307,7 +315,7 @@ void GuiApplication::postStartupInitialization()
 
     // If no .ovito state file was specified on the command line, load
     // the user's default state from the standard location.
-    if(datasetContainer.currentSet() == nullptr && guiMode()) {
+    if(datasetContainer.currentSet() == nullptr && Application::instance()->guiMode()) {
         QString defaultsFilePath = QStandardPaths::locate(QStandardPaths::AppDataLocation, QStringLiteral("defaults.ovito"));
         if(!defaultsFilePath.isEmpty()) {
             try {
@@ -330,10 +338,10 @@ void GuiApplication::postStartupInitialization()
     }
 
     // Import data file(s) specified on the command line.
-    if(!cmdLineParser().positionalArguments().empty()) {
+    if(!arguments.empty()) {
         std::vector<QUrl> importUrls;
         int numSessionFiles = 0;
-        for(const QString& importFilename : cmdLineParser().positionalArguments()) {
+        for(const QString& importFilename : arguments) {
             if(importFilename.endsWith(".ovito", Qt::CaseInsensitive))
                 numSessionFiles++;
             else
@@ -342,14 +350,14 @@ void GuiApplication::postStartupInitialization()
         try {
             if(!importUrls.empty()) {
                 if(numSessionFiles)
-                    throw Exception(tr("Detected multiple command line arguments: Cannot open a session state file and a simulation data file at the same time."));
+                    throw Exception(tr("Detected incompatible arguments: Cannot open a session state file and a simulation data file at the same time."));
                 if(GuiDataSetContainer* guiContainer = dynamic_object_cast<GuiDataSetContainer>(&datasetContainer))
                     guiContainer->importFiles(std::move(importUrls)); // TODO: Create sub-task for this operation.
                 else
                     throw Exception(tr("Cannot import data files from the command line when running in console mode."));
             }
             if(numSessionFiles > 1)
-                throw Exception(tr("Detected multiple command line arguments: Cannot open multiple session state files at the same time."));
+                throw Exception(tr("Detected incompatible arguments: Cannot open multiple session state files at the same time."));
         }
         catch(const Exception& ex) {
             userInterface.reportError(ex);
@@ -359,8 +367,6 @@ void GuiApplication::postStartupInitialization()
         if(userInterface.undoStack())
             userInterface.undoStack()->clear();
     }
-
-    StandaloneApplication::postStartupInitialization();
 }
 
 /******************************************************************************
@@ -370,18 +376,14 @@ bool GuiApplication::eventFilter(QObject* watched, QEvent* event)
 {
     if(event->type() == QEvent::FileOpen) {
         QFileOpenEvent* openEvent = static_cast<QFileOpenEvent*>(event);
-        MainWindow* mainWindow = qobject_cast<MainWindow*>(QApplication::activeWindow());
 
-        // If the main window is not the active window, look up it up among the list of all top-level windows
-        // Only use it for opening the imported file if there currently is only a single MainWindow instance.
-        if(!mainWindow) {
-            for(QWidget* widget : QApplication::topLevelWidgets()) {
-                if(MainWindow* mw = qobject_cast<MainWindow*>(widget)) {
-                    if(!mainWindow) mainWindow = mw;
-                    else {
-                        mainWindow = nullptr;
-                        break;
-                    }
+        // Only use an existing main window to load the imported file if there is no existing scene content. Otherwise, open a new window.
+        MainWindow* mainWindow = nullptr;
+        for(QWidget* widget : QApplication::topLevelWidgets()) {
+            if(MainWindow* mw = qobject_cast<MainWindow*>(widget)) {
+                if(!mw->datasetContainer().activeScene() || mw->datasetContainer().activeScene()->children().empty()) {
+                    mainWindow = mw;
+                    break;
                 }
             }
         }
@@ -389,15 +391,24 @@ bool GuiApplication::eventFilter(QObject* watched, QEvent* event)
         if(mainWindow) {
             mainWindow->handleExceptions([&] {
                 if(openEvent->file().endsWith(".ovito", Qt::CaseInsensitive)) {
-                    if(OORef<DataSet> dataset = mainWindow->datasetContainer().loadDataset(openEvent->file())) { // TODO: Create sub-task for this operation.
+                    if(!mainWindow->datasetContainer().askForSaveChanges())
+                        return;
+                    if(OORef<DataSet> dataset = mainWindow->datasetContainer().loadDataset(openEvent->file())) {
                         mainWindow->datasetContainer().setCurrentSet(std::move(dataset));
                     }
                 }
                 else {
-                    mainWindow->datasetContainer().importFiles({openEvent->url()}); // TODO: Create sub-task for this operation.
-                    mainWindow->undoStack()->clear();
+                    mainWindow->datasetContainer().importFiles({openEvent->url()});
                 }
             });
+        }
+        else {
+            try {
+                MainWindow::openNewWindow({openEvent->file()});
+            }
+            catch(const Exception& ex) {
+                reportError(ex);
+            }
         }
     }
     return StandaloneApplication::eventFilter(watched, event);

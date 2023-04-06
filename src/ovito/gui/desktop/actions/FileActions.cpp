@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -114,51 +114,14 @@ void WidgetActionManager::on_HelpSystemInfo_triggered()
 ******************************************************************************/
 void WidgetActionManager::on_FileNewWindow_triggered()
 {
-#if defined(Q_OS_MACOS) && QT_VERSION >= QT_VERSION_CHECK(6, 4, 0)
-    // This is a workaround for a bug in Qt 6.4 on macOS platform. The displayed menu bar does not automatically follow
-    // the main window that is currently active. That's why we simply start up another independent instance of the application.
     mainWindow().handleExceptions([&] {
+
         // Save window geometry and layout to settings store.
         mainWindow().saveMainWindowGeometry();
         mainWindow().saveLayout();
 
-        // Get the path to the ovito executable.
-        QString execPath = QCoreApplication::applicationFilePath();
-
-        // If we are currently running ovitos in graphical mode, start ovito instead.
-        if(execPath.endsWith("ovitos"))
-            execPath.chop(1);
-
-        // Start another instance of the program.
-        if(!QProcess::startDetached(execPath))
-            throw Exception(tr("Failed to start another instance of the program. Executable path: %1").arg(execPath));
+        MainWindow::openNewWindow();
     });
-#else
-    mainWindow().handleExceptions([&] {
-        MainWindow* mainWin = new MainWindow();
-        mainWin->show();
-        mainWin->restoreLayout();
-
-        // Optionally load the user's default state from the standard location.
-        QString defaultsFilePath = QStandardPaths::locate(QStandardPaths::AppDataLocation, QStringLiteral("defaults.ovito"));
-        if(!defaultsFilePath.isEmpty()) {
-            try {
-                if(OORef<DataSet> dataset = mainWin->datasetContainer().loadDataset(defaultsFilePath)) {
-                    dataset->setFilePath({});
-                    mainWin->datasetContainer().setCurrentSet(std::move(dataset));
-                }
-            }
-            catch(Exception& ex) {
-                ex.prependGeneralMessage(tr("An error occured while loading the user's default session state from the file: %1").arg(defaultsFilePath));
-                mainWin->reportError(ex);
-            }
-        }
-
-        if(mainWin->datasetContainer().currentSet() == nullptr) {
-            mainWin->datasetContainer().newDataset();
-        }
-    });
-#endif
 }
 
 /******************************************************************************
