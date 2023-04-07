@@ -22,6 +22,7 @@
 
 #include <ovito/core/Core.h>
 #include <ovito/core/utilities/io/FileManager.h>
+#include <ovito/core/app/Application.h>
 #include "CompressedTextReader.h"
 
 #ifdef OVITO_ZLIB_SUPPORT
@@ -45,8 +46,19 @@ CompressedTextReader::CompressedTextReader(const FileHandle& input, qint64 byteO
     // Check if file is compressed (i.e. filename ends with .gz).
     if(_filename.endsWith(".gz", Qt::CaseInsensitive)) {
 #ifdef OVITO_ZLIB_SUPPORT
+        // When reading consecutive frames from the same compressed trajectory file, try to re-use an existing open file stream.
+        if(byteOffset != 0) {
+            auto [open_uncompressor, open_device] = Application::instance()->fileManager().lookupGzipOpenFile(_device.get());
+            if(open_uncompressor) {
+                _uncompressor = std::move(open_uncompressor);
+                _device = std::move(open_device);
+                _uncompressor->setUnderlyingDevice(_device.get());
+                OVITO_ASSERT(_uncompressor->isOpen());
+            }
+        }
         // Open compressed file for reading.
-        _uncompressor = std::make_unique<GzipIODevice>(_device.get(), 0x100000);
+        if(!_uncompressor)
+            _uncompressor = std::make_unique<GzipIODevice>(_device.get());
         if(!_uncompressor->isOpen() && !_uncompressor->open(QIODevice::ReadOnly))
             throw Exception(FileManager::tr("Failed to open input file: %1").arg(_uncompressor->errorString()));
         _stream = _uncompressor.get();
@@ -56,8 +68,8 @@ CompressedTextReader::CompressedTextReader(const FileHandle& input, qint64 byteO
     }
     else {
         // Open uncompressed file for reading.
-        if(!_device->open(QIODevice::ReadOnly))
-            throw Exception(FileManager::tr("Failed to open input file: %1").arg(_device->errorString()));
+        if(!_device->isOpen() && !_device->open(QIODevice::ReadOnly))
+            throw Exception(FileManager::tr("Failed to open file for reading: %1").arg(_device->errorString()));
         _stream = _device.get();
     }
 
@@ -70,6 +82,14 @@ CompressedTextReader::CompressedTextReader(const FileHandle& input, qint64 byteO
 ******************************************************************************/
 CompressedTextReader::~CompressedTextReader()
 {
+#ifdef OVITO_ZLIB_SUPPORT
+    if(_device) {
+        if(_uncompressor) {
+            _uncompressor->setUnderlyingDevice(nullptr);
+            Application::instance()->fileManager().returnGzipOpenFile(std::move(_uncompressor), std::move(_device));
+        }
+    }
+#endif
 }
 
 /******************************************************************************

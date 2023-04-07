@@ -166,6 +166,8 @@ public:
     /// compressed data stream in future load operations.
     void recordSeekPoint();
 
+    bool setUnderlyingDevice(QIODevice* device);
+
 protected:
 
     qint64 readData(char * data, qint64 maxSize) override;

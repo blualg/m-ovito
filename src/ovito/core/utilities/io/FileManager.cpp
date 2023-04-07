@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -52,6 +52,13 @@ std::unique_ptr<QIODevice> FileHandle::createIODevice() const
         OVITO_ASSERT(buffer->data().constData() == _fileData.constData()); // Rely on a shallow copy of the buffer being created.
         return buffer;
     }
+}
+
+/******************************************************************************
+* Constructor.
+******************************************************************************/
+FileManager::FileManager(TaskManager& taskManager) : _taskManager(taskManager)
+{
 }
 
 /******************************************************************************
@@ -162,7 +169,15 @@ Future<QStringList> FileManager::listDirectoryContents(const QUrl& url)
 void FileManager::removeFromCache(const QUrl& url)
 {
     QMutexLocker lock(&_mutex);
-    _downloadedFiles.remove(normalizeUrl(url));
+    QTemporaryFile* file = _downloadedFiles.take(normalizeUrl(url));
+    if(file) {
+#ifdef OVITO_ZLIB_SUPPORT
+        QString filename = getFilenameFromDevice(file);
+        _gzipOpenFileCache.erase(filename);
+        _gzipIndexCache.remove(filename);
+#endif
+        delete file;
+    }
 }
 
 /******************************************************************************
@@ -422,23 +437,80 @@ bool FileManager::askUserForKeyPassphrase(const QString& hostname, const QString
 }
 #endif
 
+/******************************************************************************
+* Returns the filename (if it's a QFileDevice) or identifier (otherwise) for the
+* given QIODevice, which can be used for cache lookups.
+******************************************************************************/
+QString FileManager::getFilenameFromDevice(QIODevice* device)
+{
+    OVITO_ASSERT(device);
+
+    if(QFileDevice* fileDevice = qobject_cast<QFileDevice*>(device)) {
+        return fileDevice->fileName();
+    }
+
+#if 0
+    else if(QBuffer* bufferDevice = qobject_cast<QBuffer*>(device)) {
+        QCryptographicHash hash(QCryptographicHash::Md5);
+        hash.addData(bufferDevice->data());
+        return QString::fromLatin1(hash.result().toHex());
+    }
+#endif
+
+    return {};
+}
 
 #ifdef OVITO_ZLIB_SUPPORT
 /******************************************************************************
 * Returns index data for a gzipped file if it exists in the cache.
 ******************************************************************************/
-std::shared_ptr<GzipIndex> FileManager::lookupGzipIndex(const QString& filename, bool createIfNeeded)
+std::shared_ptr<GzipIndex> FileManager::lookupGzipIndex(QIODevice* device, bool createIfNeeded)
 {
-    QMutexLocker lock(&_mutex);
-    if(std::shared_ptr<GzipIndex>* index = _gzipIndexCache.object(filename)) {
-        return *index;
-    }
-    if(createIfNeeded && !qEnvironmentVariableIsSet("OVITO_DISABLE_GZIP_INDEXING")) {
-        std::shared_ptr<GzipIndex> index = std::make_shared<GzipIndex>();
-        _gzipIndexCache.insert(filename, new std::shared_ptr<GzipIndex>(index));
-        return index;
+    QString filename = getFilenameFromDevice(device);
+    if(!filename.isEmpty()) {
+        QMutexLocker lock(&_mutex);
+        if(std::shared_ptr<GzipIndex>* index = _gzipIndexCache.object(filename)) {
+            return *index;
+        }
+        if(createIfNeeded && !qEnvironmentVariableIsSet("OVITO_DISABLE_GZIP_INDEXING")) {
+            std::shared_ptr<GzipIndex> index = std::make_shared<GzipIndex>();
+            _gzipIndexCache.insert(filename, new std::shared_ptr<GzipIndex>(index));
+            return index;
+        }
     }
     return {};
+}
+
+/******************************************************************************
+* Looks up a cached file object for the given filename if this gzipped file has
+* been kept open after a previous read operation.
+******************************************************************************/
+std::pair<std::unique_ptr<GzipIODevice>, std::unique_ptr<QIODevice>> FileManager::lookupGzipOpenFile(QIODevice* device)
+{
+    QString filename = getFilenameFromDevice(device);
+    if(!filename.isEmpty()) {
+        QMutexLocker lock(&_mutex);
+        if(auto node = _gzipOpenFileCache.extract(filename)) {
+            OVITO_ASSERT(_gzipOpenFileCache.empty());
+            return std::move(node.mapped());
+        }
+    }
+    return {};
+}
+
+/******************************************************************************
+* Returns an open gzipped file back to the global cache.
+******************************************************************************/
+void FileManager::returnGzipOpenFile(std::unique_ptr<GzipIODevice> uncompressor, std::unique_ptr<QIODevice> underlyingDevice)
+{
+    if(!qEnvironmentVariableIsSet("OVITO_DISABLE_GZIP_INDEXING")) {
+        QString filename = getFilenameFromDevice(underlyingDevice.get());
+        if(!filename.isEmpty()) {
+            QMutexLocker lock(&_mutex);
+            _gzipOpenFileCache.clear();
+            _gzipOpenFileCache.try_emplace(filename, std::move(uncompressor), std::move(underlyingDevice));
+        }
+    }
 }
 #endif
 

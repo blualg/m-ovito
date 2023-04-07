@@ -364,8 +364,8 @@ void PDBImporter::FrameLoader::loadFile()
         throw Exception(tr("PDB file error: %1").arg(e.what()));
     }
 
-    // Check if more frames are following in the trajectory file.
-    if(!stream.eof()) {
+    // Detect if there are more simulation frames following in the file (only when reading the first frame).
+    if(frame().byteOffset == 0 && !stream.eof()) {
         stream.readLine();
         if(!stream.eof()) {
             signalAdditionalFrames();

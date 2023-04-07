@@ -359,8 +359,8 @@ void LAMMPSTextDumpImporter::FrameLoader::loadFile()
                     simulationCell()->setIs2D(true);
                 }
 
-                // Detect if there are more simulation frames following in the file.
-                if(!stream.eof()) {
+                // Detect if there are more simulation frames following in the file (only when reading the first frame).
+                if(frame().byteOffset == 0 && !stream.eof()) {
                     stream.readLine();
                     if(stream.lineStartsWith("ITEM: TIMESTEP") || stream.lineStartsWith("ITEM: TIME"))
                         signalAdditionalFrames();
