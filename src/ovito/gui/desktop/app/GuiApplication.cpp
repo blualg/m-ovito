@@ -282,6 +282,10 @@ MainThreadOperation GuiApplication::startupApplication()
 ******************************************************************************/
 void GuiApplication::postStartupInitialization()
 {
+    // This is to quit the application's event loop right after we are done executing the startup actions
+    // (only when running in console mode). In GUI mode, the main window will keep the event loop going.
+    QEventLoopLocker eventLoopLocker;
+
     GuiApplication::initializeUserInterface(ExecutionContext::current().ui(), cmdLineParser().positionalArguments());
     StandaloneApplication::postStartupInitialization();
 }
@@ -292,10 +296,6 @@ void GuiApplication::postStartupInitialization()
 void GuiApplication::initializeUserInterface(UserInterface& userInterface, const QStringList& arguments)
 {
     DataSetContainer& datasetContainer = userInterface.datasetContainer();
-
-    // This is to quit the application's event loop right after we are done executing the startup actions
-    // (only when running in console mode). In GUI mode, the main window will keep the event loop going.
-    QEventLoopLocker eventLoopLocker;
 
     // Load session state file specified on the command line.
     if(!arguments.empty()) {
