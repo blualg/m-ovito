@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -53,10 +53,7 @@ Future<PipelineFlowState> TransformingDataVis::transformData(const PipelineEvalu
     if(flowState.status().type() != PipelineStatus::Error) {
         flowState.setStatus(PipelineStatus::Success);
     }
-    else if(request.breakOnError()) {
-        // Skip all following vis transformations once an error has occured along the pipeline.
-        return std::move(flowState);
-    }
+    OVITO_ASSERT(!request.throwOnError() || flowState.status().type() != PipelineStatus::Error);
 
     // Make a copy of the input state. We might need it later when an error occurs.
     PipelineFlowState inputData = flowState;
@@ -75,7 +72,7 @@ Future<PipelineFlowState> TransformingDataVis::transformData(const PipelineEvalu
 
     // Post-process the results before returning them to the caller.
     // Turn any exception that was thrown during evaluation into a valid pipeline state with an error code.
-    future = future.then(*this, [this, inputData = std::move(inputData)](Future<PipelineFlowState> future) mutable {
+    future = future.then(*this, [this, inputData = std::move(inputData), throwOnError = request.throwOnError()](Future<PipelineFlowState> future) mutable {
         OVITO_ASSERT(!future.isCanceled());
         try {
             try {
@@ -101,6 +98,8 @@ Future<PipelineFlowState> TransformingDataVis::transformData(const PipelineEvalu
             }
         }
         catch(Exception& ex) {
+            if(throwOnError)
+                throw;
             // If a regular exception was thrown during the data transformation process, adopt it as
             // error state of the pipeline output and the vis element itself (to display it in the GUI).
             setStatus(ex);
@@ -113,6 +112,8 @@ Future<PipelineFlowState> TransformingDataVis::transformData(const PipelineEvalu
             // If an unknown exception type was thrown during the data transformation process (which shouldn't normally happen), set the
             // error state of the pipeline output and the vis element itself (to indicate it in the GUI).
             OVITO_ASSERT_MSG(false, "TransformingDataVis::transformData()", "Caught an unexpected exception type during data transformation.");
+            if(throwOnError)
+                throw;
             PipelineStatus status(PipelineStatus::Error, tr("Unknown exception caught during data object transformation '%1'.").arg(objectTitle()));
             setStatus(status);
             setManualErrorStateControl(true);

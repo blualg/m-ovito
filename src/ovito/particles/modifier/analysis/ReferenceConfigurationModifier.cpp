@@ -83,7 +83,7 @@ TimeInterval ReferenceConfigurationModifier::validityInterval(const ModifierEval
 }
 
 /******************************************************************************
-* Asks the modifier for the set of animation time intervals that should be 
+* Asks the modifier for the set of animation time intervals that should be
 * cached by the upstream pipeline.
 ******************************************************************************/
 void ReferenceConfigurationModifier::inputCachingHints(TimeIntervalUnion& cachingIntervals, ModifierApplication* modApp)
@@ -93,7 +93,7 @@ void ReferenceConfigurationModifier::inputCachingHints(TimeIntervalUnion& cachin
     // Only need to communicate caching hints when reference configuration is provided by the upstream pipeline.
     if(!referenceConfiguration()) {
         if(useReferenceFrameOffset()) {
-            // When using a relative reference configuration, we need to build the corresponding set of shifted time intervals. 
+            // When using a relative reference configuration, we need to build the corresponding set of shifted time intervals.
             TimeIntervalUnion originalIntervals = cachingIntervals;
             for(const TimeInterval& iv : originalIntervals) {
                 int startFrame = modApp->animationTimeToSourceFrame(iv.start());
@@ -111,8 +111,8 @@ void ReferenceConfigurationModifier::inputCachingHints(TimeIntervalUnion& cachin
 }
 
 /******************************************************************************
-* Is called by the ModifierApplication to let the modifier adjust the 
-* time interval of a TargetChanged event received from the upstream pipeline 
+* Is called by the ModifierApplication to let the modifier adjust the
+* time interval of a TargetChanged event received from the upstream pipeline
 * before it is propagated to the downstream pipeline.
 ******************************************************************************/
 void ReferenceConfigurationModifier::restrictInputValidityInterval(TimeInterval& iv) const
@@ -131,7 +131,7 @@ void ReferenceConfigurationModifier::restrictInputValidityInterval(TimeInterval&
 bool ReferenceConfigurationModifier::referenceEvent(RefTarget* source, const ReferenceEvent& event)
 {
     if(event.type() == ReferenceEvent::TargetChanged && source == referenceConfiguration()) {
-        // If the reference configuration state changes in some way, all output frames of the modifier 
+        // If the reference configuration state changes in some way, all output frames of the modifier
         // become invalid --over the entire animation time interval.
         notifyTargetChanged();
         return false;
@@ -140,7 +140,7 @@ bool ReferenceConfigurationModifier::referenceEvent(RefTarget* source, const Ref
 }
 
 /******************************************************************************
-* Creates and initializes a computation engine that will compute the 
+* Creates and initializes a computation engine that will compute the
 * modifier's results.
 ******************************************************************************/
 Future<AsynchronousModifier::EnginePtr> ReferenceConfigurationModifier::createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input)
@@ -171,7 +171,7 @@ Future<AsynchronousModifier::EnginePtr> ReferenceConfigurationModifier::createEn
     if(!referenceConfiguration()) {
         // Convert frame to animation time.
         AnimationTime referenceTime = request.modApp()->sourceFrameToAnimationTime(referenceFrame);
-        
+
         // Set up the pipeline request for obtaining the reference configuration.
         PipelineEvaluationRequest referenceRequest = request;
         referenceRequest.setTime(referenceTime);
@@ -195,7 +195,7 @@ Future<AsynchronousModifier::EnginePtr> ReferenceConfigurationModifier::createEn
 
             // Set up the pipeline request for obtaining the reference configuration.
             PipelineEvaluationRequest referenceRequest(referenceTime);
-            referenceRequest.setBreakOnError(request.breakOnError());
+            referenceRequest.setThrowOnError(request.throwOnError());
 
             // Send the request to the pipeline branch.
             refState = referenceConfiguration()->evaluate(referenceRequest);
@@ -232,7 +232,7 @@ Future<AsynchronousModifier::EnginePtr> ReferenceConfigurationModifier::createEn
 * Constructor.
 ******************************************************************************/
 ReferenceConfigurationModifier::RefConfigEngineBase::RefConfigEngineBase(
-    const ModifierEvaluationRequest& request, 
+    const ModifierEvaluationRequest& request,
     const TimeInterval& validityInterval,
     ConstPropertyPtr positions, const SimulationCellObject* simCell,
     ConstPropertyPtr refPositions, const SimulationCellObject* simCellRef,
@@ -246,7 +246,7 @@ ReferenceConfigurationModifier::RefConfigEngineBase::RefConfigEngineBase(
     _affineMapping(affineMapping),
     _useMinimumImageConvention(useMinimumImageConvention)
 {
-    // Clone the input simulation cells, because we need to slightly adjust for the computation. 
+    // Clone the input simulation cells, because we need to slightly adjust for the computation.
     CloneHelper cloneHelper;
     _simCell = cloneHelper.cloneObject(simCell, false);
     _simCellRef = cloneHelper.cloneObject(simCellRef, false);

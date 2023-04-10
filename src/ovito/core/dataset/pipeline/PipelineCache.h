@@ -83,6 +83,9 @@ private:
     /// Returns a pointer to the pipeline object that owns this cache.
     RefTarget* ownerObject() const { return _ownerObject; }
 
+    /// Starts a new pipeline evaluation.
+    SharedFuture<PipelineFlowState> evaluatePipelineImpl(const PipelineEvaluationRequest& request);
+
     /// Inserts (or may reject) a pipeline state into the cache.
     void insertState(const PipelineFlowState& state);
 
