@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -96,14 +96,7 @@ QString Scene::makeNameUnique(QString baseName) const
 ******************************************************************************/
 bool Scene::referenceEvent(RefTarget* source, const ReferenceEvent& event)
 {
-    if(event.type() == ReferenceEvent::AnimationFramesChanged && !isBeingLoaded()) {
-        // Automatically adjust scene's animation interval to length of loaded source animations.
-        if(animationSettings() && animationSettings()->autoAdjustInterval()) {
-            UndoSuspender noUndo;
-            animationSettings()->adjustAnimationInterval();
-        }
-    }
-    else if(event.type() == ReferenceEvent::RequestGoToAnimationTime) {
+    if(event.type() == ReferenceEvent::RequestGoToAnimationTime) {
         int frame = static_cast<const RequestGoToAnimationTimeEvent&>(event).time().frame();
         if(animationSettings() && frame >= animationSettings()->firstFrame() && frame <= animationSettings()->lastFrame())
             animationSettings()->setCurrentFrame(frame);
@@ -135,6 +128,20 @@ void Scene::propertyChanged(const PropertyFieldDescriptor* field)
         Q_EMIT cameraOrbitCenterChanged();
     }
     SceneNode::propertyChanged(field);
+}
+
+/******************************************************************************
+* Is called whenever one of the child nodes in the tree has generated a AnimationFramesChanged event.
+******************************************************************************/
+void Scene::onAnimationFramesChanged()
+{
+    if(!isBeingLoaded()) {
+        // Automatically adjust scene's animation interval to length of loaded source animations.
+        if(animationSettings() && animationSettings()->autoAdjustInterval()) {
+            UndoSuspender noUndo;
+            animationSettings()->adjustAnimationInterval();
+        }
+    }
 }
 
 }   // End of namespace
