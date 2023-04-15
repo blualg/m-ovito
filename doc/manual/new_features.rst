@@ -5,10 +5,10 @@ What's new
 ==========
 
 -------------------------
-Version 3.8.3 (xx-xxx-xx)
+Version 3.8.3 (16-Apr-23)
 -------------------------
 
-* Further improved performance of sequential frame loading from compressed trajectory files
+* Further improved performance of sequential loading of compressed trajectory files
 * Fixed regression (since v3.8.0): :py:meth:`Viewport.render_anim() <ovito.vis.Viewport.render_anim>` renders only first animation frame
 * |ovito-pro| Python exceptions raised in user-defined modifier functions are now propagated up the call chain to where the pipeline evaluation was triggered
 * |ovito-pro| Included ``bz2`` and `sqlite3` standard modules, which were missing in embedded Python interpreter on Linux

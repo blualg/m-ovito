@@ -616,6 +616,7 @@ void Viewport::renderInteractive(UserInterface& userInterface, DataSet* dataset,
     try {
         OVITO_ASSERT(userInterface._viewportBeingRendered == nullptr);
         userInterface._viewportBeingRendered = this;
+        UndoSuspender noUndo;
 
         // This is the async operation object used when calling rendering functions in the following.
         MainThreadOperation renderOperation(ExecutionContext::Type::Interactive, userInterface, false);
