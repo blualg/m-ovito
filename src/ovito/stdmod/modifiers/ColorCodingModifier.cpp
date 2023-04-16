@@ -173,7 +173,7 @@ bool ColorCodingModifier::determinePropertyValueRange(const PipelineFlowState& s
     if(!delegate())
         return false;
 
-    // Look up the selected property container. 
+    // Look up the selected property container.
     ConstDataObjectPath objectPath = state.getObject(delegate()->inputContainerRef());
     if(objectPath.empty())
         return false;
@@ -298,7 +298,7 @@ void ColorCodingModifier::reverseRange()
 /******************************************************************************
 * Returns the class name of the selected color gradient.
 ******************************************************************************/
-QString ColorCodingModifier::colorGradientType() const 
+QString ColorCodingModifier::colorGradientType() const
 {
     return colorGradient() ? colorGradient()->getOOClass().name() : QString();
 }
@@ -306,7 +306,7 @@ QString ColorCodingModifier::colorGradientType() const
 /******************************************************************************
 * Assigns a new color gradient based on its class name.
 ******************************************************************************/
-void ColorCodingModifier::setColorGradientType(const QString& typeName) 
+void ColorCodingModifier::setColorGradientType(const QString& typeName)
 {
     OvitoClassPtr descriptor = PluginManager::instance().findClass(QString(), typeName);
     if(!descriptor) {
@@ -401,6 +401,22 @@ PipelineStatus ColorCodingModifierDelegate::apply(const ModifierEvaluationReques
     PropertyAccess<Color> colorProperty = container->createProperty(outputColorPropertyId(), (bool)selectionProperty ? DataBuffer::InitializeMemory : DataBuffer::NoFlags, objectPath);
 
     ConstPropertyAccessAndRef<int> selection(std::move(selectionProperty));
+#ifdef OVITO_USE_SYCL
+    using namespace cl::sycl;
+    default_selector device_selector;
+    queue queue(device_selector);
+    qDebug() << "Running SYCL on" << queue.get_device().get_info<info::device::name>();
+    {
+        buffer<marray<FloatType, 3>, 1> color_sycl(reinterpret_cast<marray<FloatType, 3>*>(colorProperty.begin()), range<1>(colorProperty.size()));
+        queue.submit([&](handler& cgh) {
+            auto color_acc = color_sycl.get_access<access::mode::discard_write>(cgh);
+            cgh.parallel_for<class color_mapping>(range<1>{colorProperty.size()}, [=](id<1> it) {
+                qDebug() << "i=" << it[0];
+                color_acc[it[0]] = {1.0, 1.0, 1.0};
+            });
+        });
+    }
+#else
     bool result = property->forEach(vecComponent, [&](size_t i, auto v) {
         if(selection && !selection[i])
             return;
@@ -425,6 +441,7 @@ PipelineStatus ColorCodingModifierDelegate::apply(const ModifierEvaluationReques
     });
     if(!result)
         throw Exception(tr("The property '%1' has an invalid or non-numeric data type.").arg(property->name()));
+#endif
 
     return PipelineStatus::Success;
 }

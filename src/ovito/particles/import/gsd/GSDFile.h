@@ -25,7 +25,7 @@
 
 #include <ovito/particles/Particles.h>
 #include "GSDImporter.h"
-#include "gsd.h"
+#include <gsd/gsd.h>
 
 namespace Ovito::Particles {
 

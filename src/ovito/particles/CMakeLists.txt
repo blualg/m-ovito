@@ -77,7 +77,6 @@ SET(SourceFiles
     import/fhi_aims/FHIAimsImporter.cpp
     import/fhi_aims/FHIAimsLogFileImporter.cpp
     import/gsd/GSDImporter.cpp
-    import/gsd/gsd.c
     import/castep/CastepCellImporter.cpp
     import/castep/CastepMDImporter.cpp
     import/cube/GaussianCubeImporter.cpp
@@ -131,7 +130,7 @@ ENDIF()
 OVITO_STANDARD_PLUGIN(Particles
     SOURCES ${SourceFiles}
     PLUGIN_DEPENDENCIES Mesh Grid StdObj Delaunay
-    PRIVATE_LIB_DEPENDENCIES VoroPlusPlus PolyhedralTemplateMatching MinimumWeightMatchingCentrosymmetry xdrfile
+    PRIVATE_LIB_DEPENDENCIES VoroPlusPlus PolyhedralTemplateMatching MinimumWeightMatchingCentrosymmetry xdrfile gsd
     OPTIONAL_PLUGIN_DEPENDENCIES StdMod
     PRECOMPILED_HEADERS Particles.h
     LIB_DEPENDENCIES Qt6::Xml

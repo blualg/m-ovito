@@ -63,8 +63,9 @@ OPTION(OVITO_DISABLE_THREADING "Disable multi-threading code (meant only for dev
 OPTION(OVITO_USE_GIT_REVISION_NUMBER "Include Git revision information in OVITO version string." "OFF")
 OPTION(OVITO_BUILD_SSH_CLIENT "Build the SSH client for remote file access (requires libssh)." "ON")
 OPTION(OVITO_LIBSSH_RUNTIME_LINKING "Load libssh at runtime" "OFF")
+OPTION(OVITO_USE_SYCL "Enable SYCL build" "OFF")
 
-# Ovito needs Qt>=6.2. 
+# Ovito needs Qt>=6.2.
 SET(OVITO_MINIMUM_REQUIRED_QT_VERSION 6.2)
 FIND_PACKAGE(Qt6 ${OVITO_MINIMUM_REQUIRED_QT_VERSION} COMPONENTS Core REQUIRED)
 
@@ -119,6 +120,14 @@ ENDIF()
 
 IF(APPLE)
     SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++ -Wno-invalid-offsetof")
+ENDIF()
+
+IF(OVITO_USE_SYCL AND NOT OPENSYCL_DEBUG_LEVEL)
+    IF(CMAKE_BUILD_TYPE MATCHES "Debug")
+        SET(OPENSYCL_DEBUG_LEVEL 3 CACHE INTEGER "Choose the debug level, options are: 0 (no debug), 1 (print errors), 2 (also print warnings), 3 (also print general information)" FORCE)
+    ELSE()
+        SET(OPENSYCL_DEBUG_LEVEL 2 CACHE INTEGER "Choose the debug level, options are: 0 (no debug), 1 (print errors), 2 (also print warnings), 3 (also print general information)" FORCE)
+    ENDIF()
 ENDIF()
 
 # Enable build with AddressSanitizer support if requested.
@@ -187,7 +196,7 @@ IF(NOT OVITO_BUILD_PYPI)
             SET(OVITO_RELATIVE_PLUGINS_DIRECTORY "${OVITO_RELATIVE_LIBRARY_DIRECTORY}/plugins")
             # The directory where the Python source modules go to.
             SET(OVITO_RELATIVE_PYTHON_DIRECTORY "$ENV{SP_DIR}")
-        ENDIF() 
+        ENDIF()
     ELSEIF(WIN32)
         IF(NOT OVITO_BUILD_CONDA)
             # The directory where the main executable goes to.
