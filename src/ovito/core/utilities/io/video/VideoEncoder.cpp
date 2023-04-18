@@ -141,7 +141,8 @@ void VideoEncoder::openFile(const QString& filename, int width, int height, floa
     OVITO_ASSERT(std::abs(fpsDen - framesPerSecond * fpsNum) < 1e-6f);
 
     // 8-bit encoded filename.
-    QByteArray encodedFilename = QFile::encodeName(QDir::toNativeSeparators(filename));
+    // Note: FFmpeg always uses UTF-8 encoding - even on Windows platform.
+    QByteArray encodedFilename = filename.toUtf8();
 
     const AVOutputFormat* outputFormat;
     if(format == nullptr) {
