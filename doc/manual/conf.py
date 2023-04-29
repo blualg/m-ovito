@@ -111,10 +111,6 @@ rst_prolog = """
 
   <br/>
 
-.. only:: html
-
-  :math:`\\renewcommand\\AA{\\text{Å}}`
-
 """
 
 # If true, keep warnings as "system message" paragraphs in the built documents.

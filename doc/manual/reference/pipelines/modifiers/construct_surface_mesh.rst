@@ -162,7 +162,7 @@ and small features (e.g. pores) of the geometric shape will be captured by the m
 
   (a) Atomistic model of a carbon nanoparticle with an inset showing the corresponding
   :ref:`pair distribution function <particles.modifiers.coordination_analysis>`.
-  The position of the first peak is used as probe sphere radius (:math:`R_{\alpha}=2.5\,\AA`)
+  The position of the first peak is used as probe sphere radius (:math:`R_{\alpha}=2.5\,\text{Å}`)
   for the alpha-shape construction. (b) The resulting triangulated surface mesh.
   (c) Final surface model after six iterations of the smoothing algorithm were applied.
 
