@@ -1,6 +1,6 @@
 #######################################################################################
 #
-#  Copyright 2022 OVITO GmbH, Germany
+#  Copyright 2023 OVITO GmbH, Germany
 #
 #  This file is part of OVITO (Open Visualization Tool).
 #
@@ -24,8 +24,8 @@
 
 # This is the canonical program version number:
 SET(OVITO_VERSION_MAJOR         "3")
-SET(OVITO_VERSION_MINOR         "8")
-SET(OVITO_VERSION_REVISION      "3")
+SET(OVITO_VERSION_MINOR         "9")
+SET(OVITO_VERSION_REVISION      "0")
 
 # Increment the following version counter every time the .ovito file format
 # changes in a backward-incompatible way.
