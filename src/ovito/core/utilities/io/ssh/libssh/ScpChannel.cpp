@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -28,7 +28,7 @@ namespace Ovito::Ssh {
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-ScpChannel::ScpChannel(SshConnection* connection, const QString& location) :
+ScpChannel::ScpChannel(LibsshConnection* connection, const QString& location) :
     ProcessChannel(connection, QStringLiteral("scp -f \"%1\"").arg(location))
 {
     connect(this, &QIODevice::readyRead, this, &ScpChannel::processData);
@@ -48,16 +48,14 @@ void ScpChannel::processData()
         if(canReadLine()) {
             const QByteArray line = readLine();
             if(line.size() == 0) {
-                setErrorString(tr("Received empty response line from SCP remote process."));
-                Q_EMIT error();
+                setError(tr("Received empty response line from SCP remote process."));
                 return;
             }
 
             if(line[0] == 'C') {
                 qlonglong fs;
                 if(sscanf(line, "C%*d %lld", &fs) != 1 || fs < 0) {
-                    setErrorString(tr("Received invalid C line from SCP remote process: %1").arg(QString::fromLocal8Bit(line)));
-                    Q_EMIT error();
+                    setError(tr("Received invalid C line from SCP remote process: %1").arg(QString::fromLocal8Bit(line)));
                     return;
                 }
                 _fileSize = fs;
@@ -66,22 +64,37 @@ void ScpChannel::processData()
                 // Accept SCP request to start transmission of file data.
                 write("", 1);
                 Q_EMIT receivingFile(_fileSize);
+
+                // Create the destination file.
+                _localFile = std::make_unique<QTemporaryFile>();
+                if(!_localFile->open() || !_localFile->resize(_fileSize)) {
+                    setError(tr("Failed to create temporary file: %1").arg(_localFile->errorString()));
+                    return;
+                }
+
+                // Map the file to memory and write the received data to the memory buffer.
+                if(_fileSize) {
+                    _fileMapping = _localFile->map(0, _fileSize);
+                    if(!_fileMapping) {
+                        setError(tr("Failed to map temporary file to memory: %1").arg(_localFile->errorString()));
+                        return;
+                    }
+                    setDestinationBuffer(reinterpret_cast<char*>(_fileMapping));
+                }
+
                 setState(StateReceivingFile);
             }
             else if(line[0] == 'D' || line[0] == 'E') {
-                setErrorString(tr("Received unexpected D/E line from SCP remote process."));
-                Q_EMIT error();
+                setError(tr("Received unexpected D/E line from SCP remote process."));
             }
             else if(line[0] == 0x01 || line[0] == 0x02) {
                 QString msg = QString::fromLocal8Bit(line.mid(1)).trimmed();
-                setErrorString(tr("SCP error: %1").arg(msg));
-                qDebug() << "Server reported error:" << msg;
-                Q_EMIT error();
+                setError(tr("SCP error: %1").arg(msg));
+                qWarning() << "Server reported error:" << msg;
             }
             else {
                 qWarning() << "Received unknown response line from SCP remote process:" << line;
-                setErrorString(tr("Received unknown response line from SCP remote process."));
-                Q_EMIT error();
+                setError(tr("Received unknown response line from SCP remote process."));
             }
         }
     }
@@ -89,8 +102,8 @@ void ScpChannel::processData()
         qint64 avail = std::min(bytesAvailable(), _fileSize - _bytesReceived);
         qint64 nread = read(_dataBuffer + _bytesReceived, avail);
         if(nread < 0) {
-            qDebug() << "Read a negative number of bytes from remote stream.";
-            Q_EMIT error();
+            qWarning() << "Read a negative number of bytes from remote stream.";
+            setError(errorMessage());
             return;
         }
         _bytesReceived += nread;
@@ -105,24 +118,39 @@ void ScpChannel::processData()
         if(canReadLine()) {
             const QByteArray line = readLine();
             if(line.size() == 0) {
-                setErrorString(tr("Received empty response line from SCP remote process."));
-                Q_EMIT error();
+                setError(tr("Received empty response line from SCP remote process."));
                 return;
             }
 
             if(line[0] == 0x00) {
                 setState(StateConnected);
-                Q_EMIT receivedFileComplete();
+
+                // Close local file and clean up.
+                if(_localFile) {
+                    // Make sure the received data was successfully written to the temporary file.
+                    if(_fileMapping) {
+                        if(!_localFile->unmap(_fileMapping)) {
+                            setError(tr("Failed to write to local file %1: %2").arg(_localFile->fileName()).arg(_localFile->errorString()));
+                            return;
+                        }
+                        _fileMapping = nullptr;
+                    }
+                    if(!_localFile->flush() || _localFile->error() != QFileDevice::NoError) {
+                        setError(tr("Failed to write to local file %1: %2").arg(_localFile->fileName()).arg(_localFile->errorString()));
+                        return;
+                    }
+                    _localFile->close();
+
+                    Q_EMIT receivedFileComplete(&_localFile);
+                }
             }
             else if(line[0] == 0x01) {
                 QString msg = QString::fromLocal8Bit(line.mid(1)).trimmed();
-                setErrorString(tr("SCP error: %1").arg(msg));
-                Q_EMIT error();
+                setError(tr("SCP error: %1").arg(msg));
             }
             else {
                 qWarning() << "Received unexpected response line from SCP remote process:" << line;
-                setErrorString(tr("Received unexpected response line from SCP remote process."));
-                Q_EMIT error();
+                setError(tr("Received unexpected response line from SCP remote process."));
             }
         }
     }

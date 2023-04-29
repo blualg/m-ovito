@@ -96,7 +96,7 @@ void ScenePreparation::makeReady(bool forceReevaluation)
         return;
     }
 
-    // Abort if application is about to shut down.
+    // Abort if application is about to shutdown.
     if(userInterface().isShuttingDown()) {
         _completedScene = nullptr;
         _promise.cancel();
@@ -136,7 +136,7 @@ void ScenePreparation::makeReady(bool forceReevaluation)
     _completedScene = scene();
     PipelineEvaluationRequest request(scene()->animationSettings());
 
-    // Pipeline evaulation must be done in a valid execution context and with an active task object.
+    // Pipeline evaluation must be done in a valid execution context and with an active task object.
     MainThreadOperation operation(ExecutionContext::Type::Interactive, userInterface(), false);
 
     // Go through all pipelines of the scene until we find one

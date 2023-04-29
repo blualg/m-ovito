@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -127,7 +127,7 @@ public:
     void applyModifiers(const QVector<OORef<Modifier>>& modifiers, ModifierGroup* group = nullptr);
 
     /// Sets the item in the modification list that should be selected on the next list update.
-    void setNextObjectToSelect(RefTarget* obj) { 
+    void setNextObjectToSelect(RefTarget* obj) {
         if(ModifierApplication* modApp = dynamic_object_cast<ModifierApplication>(obj)) {
             if(modApp->modifierGroup() && modApp->modifierGroup()->isCollapsed())
                 obj = modApp->modifierGroup();
@@ -163,6 +163,9 @@ public Q_SLOTS:
 
     /// Rebuilds the complete list immediately.
     void refreshList();
+
+    /// Rebuilds the model's list of items immediately.
+    void refreshListNow();
 
     /// Will rebuild the model's list of items after a short delay.
     void refreshListLater();
@@ -263,7 +266,7 @@ private:
     /// List item indices that need to be repainted. A negative entry indicates a refresh of the entire list.
     std::vector<int> _itemsRefreshPending;
 
-    /// The pipeline that was selected last time the list model was refreshed. 
+    /// The pipeline that was selected last time the list model was refreshed.
     QPointer<PipelineSceneNode> _previouslySelectedPipeline;
 
     // Status icons:

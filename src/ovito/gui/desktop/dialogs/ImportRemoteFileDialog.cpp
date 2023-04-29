@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -22,7 +22,10 @@
 
 #include <ovito/gui/desktop/GUI.h>
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
+#include <ovito/gui/base/actions/ActionManager.h>
 #include <ovito/core/utilities/io/FileManager.h>
+#include <ovito/core/utilities/io/ssh/SshConnection.h>
+#include <ovito/core/utilities/io/ssh/openssh/OpensshConnection.h>
 #include <ovito/core/utilities/SortZipped.h>
 #include "ImportRemoteFileDialog.h"
 
@@ -49,7 +52,7 @@ ImportRemoteFileDialog::ImportRemoteFileDialog(MainWindow& mainWindow, const QVe
     _urlEdit->setInsertPolicy(QComboBox::NoInsert);
     _urlEdit->setMinimumContentsLength(40);
     if(_urlEdit->lineEdit())
-        _urlEdit->lineEdit()->setPlaceholderText(tr("sftp://username@hostname/path/file"));
+        _urlEdit->lineEdit()->setPlaceholderText(tr("sftp://user@hostname/path/file"));
 
     // Load list of recently accessed URLs.
     QSettings settings;
@@ -64,8 +67,8 @@ ImportRemoteFileDialog::ImportRemoteFileDialog(MainWindow& mainWindow, const QVe
     clearURLHistoryButton->setToolTip(tr("Clear history"));
     connect(clearURLHistoryButton, &QToolButton::clicked, [this]() {
         if(QMessageBox::question(this, tr("Clear history"),
-                                       tr("Do you really want to clear the history of remote URLs? This cannot be undone."),
-                                       QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes) == QMessageBox::Yes) {
+                                       tr("Do you really want to delete the history of recently used remote URLs? This operation cannot be undone."),
+                                       QMessageBox::Yes | QMessageBox::Cancel, QMessageBox::Yes) == QMessageBox::Yes) {
             QString text = _urlEdit->currentText();
             _urlEdit->clear();
             _urlEdit->setCurrentText(text);
@@ -91,18 +94,67 @@ ImportRemoteFileDialog::ImportRemoteFileDialog(MainWindow& mainWindow, const QVe
     }
     // Sort file formats alphabetically (but leave leading <Auto-detect> item in place).
     Ovito::sort_zipped(
-        Ovito::make_span(fileFilterStrings).subspan(1), 
-        Ovito::make_span( _importerFormats).subspan(1));
+        Ovito::make_span(fileFilterStrings).subspan(1),
+        Ovito::make_span( _importerFormats).subspan(1),
+        [](const QString& a, const QString& b) { return a.compare(b, Qt::CaseInsensitive) < 0; });
 
     _formatSelector = new QComboBox(this);
     _formatSelector->addItems(fileFilterStrings);
     layout1->addWidget(_formatSelector);
     layout1->addSpacing(10);
 
-    QDialogButtonBox* buttonBox = new QDialogButtonBox(QDialogButtonBox::Open | QDialogButtonBox::Cancel, Qt::Horizontal, this);
+    QGroupBox* methodBox = new QGroupBox(tr("SSH connection method:"));
+    QGridLayout* layout3 = new QGridLayout(methodBox);
+    layout3->setContentsMargins(0,0,0,0);
+    layout3->setSpacing(4);
+    layout1->addWidget(methodBox);
+
+    layout3->setColumnStretch(1, 1);
+    _libsshMethod = new QRadioButton(tr("Integrated client"));
+#ifdef OVITO_SSH_CLIENT
+    _libsshMethod->setText(_libsshMethod->text() + tr(" (default)"));
+    _libsshMethod->setChecked(Ssh::SshConnection::getSshImplementation() == Ssh::SshConnection::Libssh);
+#else
+    _libsshMethod->setText(_libsshMethod->text() + tr(" (not available in this OVITO build)"));
+    _libsshMethod->setEnabled(false);
+#endif
+    layout3->addWidget(_libsshMethod, 0, 0, 1, 3);
+    _opensshMethod = new QRadioButton(tr("External OpenSSH:"));
+    _opensshMethod->setChecked(Ssh::SshConnection::getSshImplementation() == Ssh::SshConnection::Openssh);
+    layout3->addWidget(_opensshMethod, 1, 0);
+    _sftpPath = new QLineEdit();
+    _sftpPath->setText(Ssh::OpensshConnection::getSftpPath());
+    _sftpPath->setPlaceholderText(QStringLiteral("sftp"));
+    _sftpPath->setEnabled(_opensshMethod->isChecked());
+    layout3->addWidget(_sftpPath, 1, 1);
+    connect(_opensshMethod, &QRadioButton::toggled, _sftpPath, &QWidget::setEnabled);
+
+    QPushButton* selectExecutablePathButton = new QPushButton("...");
+    connect(selectExecutablePathButton, &QPushButton::clicked, this, [this]() {
+        QString path = QFileDialog::getOpenFileName(this, tr("Select SFTP Executable"), _sftpPath->text().trimmed());
+        if(!path.isEmpty())
+            _sftpPath->setText(path);
+    });
+    selectExecutablePathButton->setEnabled(_opensshMethod->isChecked());
+    selectExecutablePathButton->setToolTip(tr("Pick sftp executable..."));
+    layout3->addWidget(selectExecutablePathButton, 1, 2);
+    connect(_opensshMethod, &QRadioButton::toggled, selectExecutablePathButton, &QWidget::setEnabled);
+
+    layout1->addSpacing(10);
+
+    QDialogButtonBox* buttonBox = new QDialogButtonBox(QDialogButtonBox::Open | QDialogButtonBox::Cancel | QDialogButtonBox::Help, Qt::Horizontal, this);
     connect(buttonBox, &QDialogButtonBox::accepted, this, &ImportRemoteFileDialog::onOk);
     connect(buttonBox, &QDialogButtonBox::rejected, this, &ImportRemoteFileDialog::reject);
+    connect(buttonBox, &QDialogButtonBox::helpRequested, this, &ImportRemoteFileDialog::onHelp);
     layout1->addWidget(buttonBox);
+}
+
+/******************************************************************************
+* This is called when the user presses the help button of the dialog.
+******************************************************************************/
+void ImportRemoteFileDialog::onHelp()
+{
+    _mainWindow.actionManager()->openHelpTopic(QStringLiteral("manual:usage.import.remote"));
 }
 
 /******************************************************************************
@@ -123,6 +175,17 @@ void ImportRemoteFileDialog::onOk()
         QUrl url = QUrl::fromUserInput(_urlEdit->currentText());
         if(!url.isValid())
             throw Exception(tr("The entered URL is invalid."));
+
+        if(_libsshMethod->isChecked()) {
+            Ssh::SshConnection::setSshImplementation(Ssh::SshConnection::Libssh);
+        }
+        else if(_opensshMethod->isChecked()) {
+            QString sftpPath = QDir::fromNativeSeparators(_sftpPath->text().trimmed());
+            if(sftpPath.isEmpty())
+                sftpPath = QStringLiteral("sftp");
+            Ssh::OpensshConnection::setSftpPath(sftpPath);
+            Ssh::SshConnection::setSshImplementation(Ssh::SshConnection::Openssh);
+        }
 
         // Save list of recently accessed URLs.
         QStringList list;

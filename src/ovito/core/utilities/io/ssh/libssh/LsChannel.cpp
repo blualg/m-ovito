@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2018 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -28,7 +28,7 @@ namespace Ovito::Ssh {
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-LsChannel::LsChannel(SshConnection* connection, const QString& location) :
+LsChannel::LsChannel(LibsshConnection* connection, const QString& location) :
     ProcessChannel(connection, QStringLiteral("ls -A -N -U -1 -p --color=never \"%1/\"").arg(location))
 {
     connect(this, &QIODevice::readyRead, this, &LsChannel::processData);
@@ -38,8 +38,7 @@ LsChannel::LsChannel(SshConnection* connection, const QString& location) :
             Q_EMIT receivedDirectoryComplete(_directoryListing);
         }
         else {
-            setErrorString(tr("Failed to produce remote directory listing: 'ls' command returned exit code %1").arg(exitCode));
-            Q_EMIT error();
+            setError(tr("Failed to produce remote directory listing: 'ls' command returned exit code %1").arg(exitCode));
         }
     });
 }
@@ -52,8 +51,10 @@ void LsChannel::processData()
     while(canReadLine()) {
         QByteArray line = readLine();
         line.chop(1);   // Remote end of line character.
-        if(line.size() == 0) continue;
-        if(line.endsWith('/')) continue;    // Skip directory entries.
+        if(line.size() == 0)
+            continue;
+        if(line.endsWith('/'))
+            continue;    // Skip directory entries.
         _directoryListing.push_back(QString::fromLocal8Bit(line));
     }
 }

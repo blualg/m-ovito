@@ -50,9 +50,7 @@ namespace Ovito {
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-GuiApplication::GuiApplication() : StandaloneApplication(_fileManager), UserInterface(_globalDatasetContainer, StandaloneApplication::taskManager()),
-    _fileManager(StandaloneApplication::taskManager()),
-    _globalDatasetContainer(StandaloneApplication::taskManager(), *this)
+GuiApplication::GuiApplication() : StandaloneApplication(_fileManager), _fileManager(StandaloneApplication::taskManager())
 {
     // Register Qt resources.
     ::registerQtResources();
@@ -240,7 +238,8 @@ MainThreadOperation GuiApplication::startupApplication()
         QGuiApplication::setWindowIcon(mainWindowIcon);
 
         // Create the main window.
-        MainWindow* mainWin = new MainWindow();
+        std::shared_ptr<MainWindow> mainWin = std::make_shared<MainWindow>();
+        mainWin->keepAliveUntilShutdown();
 
         // Make the application shutdown as soon as the last main window has been closed.
         QGuiApplication::setQuitOnLastWindowClosed(true);
@@ -251,24 +250,6 @@ MainThreadOperation GuiApplication::startupApplication()
         mainWin->restoreLayout();
         mainWin->setUpdatesEnabled(true);
 
-#ifdef OVITO_EXPIRATION_DATE
-        QDate expirationDate = QDate::fromString(QStringLiteral(OVITO_EXPIRATION_DATE), Qt::ISODate);
-        if(QDate::currentDate() > expirationDate) {
-            QMessageBox msgbox(mainWin);
-            msgbox.setWindowTitle(tr("Expiration - %1").arg(Application::applicationName()));
-            msgbox.setStandardButtons(QMessageBox::Close);
-            msgbox.setText(tr("<p>This is a preview version of %1 with a limited life span, which did expire on %2.</p>"
-                "<p>Please obtain the final program release, which is now available on our website "
-                "<a href=\"https://www.ovito.org/\">www.ovito.org</a>.</p>"
-                "<p>This pre-release build of %1 can no longer be used and will quit now.</p>")
-                    .arg(Application::applicationName())
-                    .arg(expirationDate.toString(Qt::SystemLocaleLongDate)));
-            msgbox.setTextInteractionFlags(Qt::TextBrowserInteraction);
-            msgbox.setIcon(QMessageBox::Critical);
-            msgbox.exec();
-            return nullptr;
-        }
-#endif
         return MainThreadOperation(ExecutionContext::Type::Interactive, *mainWin, false);
     }
     else {
@@ -287,11 +268,12 @@ void GuiApplication::postStartupInitialization()
     QEventLoopLocker eventLoopLocker;
 
     GuiApplication::initializeUserInterface(ExecutionContext::current().ui(), cmdLineParser().positionalArguments());
+
     StandaloneApplication::postStartupInitialization();
 }
 
 /******************************************************************************
-* Initializes an abstract user interface (e.g. a MainWindow).
+* Initializes a new abstract user interface object (e.g. a MainWindow in GUI mode or this application object in console mode).
 ******************************************************************************/
 void GuiApplication::initializeUserInterface(UserInterface& userInterface, const QStringList& arguments)
 {

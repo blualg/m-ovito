@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2018 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -27,46 +27,25 @@
 
 namespace Ovito::Ssh {
 
-class ScpChannel : public ProcessChannel
+class LsChannel : public ProcessChannel
 {
     Q_OBJECT
 
 public:
 
     /// Constructor.
-    explicit ScpChannel(SshConnection* connection, const QString& location);
+    explicit LsChannel(LibsshConnection* connection, const QString& location);
 
-    /// Sets the destination buffer for the received file data.
-    void setDestinationBuffer(char* buffer) {
-        _dataBuffer = buffer;
-        processData();
-    }
+    /// Returns the directory listing received from remote host.
+    const QStringList& directoryListing() const { return _directoryListing; }
 
 Q_SIGNALS:
 
-    /// This signal is generated before transmission of a file begins.
-    void receivingFile(qint64 fileSize);
+    /// This signal is generated before transmission of a directory listing begins.
+    void receivingDirectory();
 
-    /// This signal is generated during data transmission.
-    void receivedData(qint64 totalReceivedBytes);
-
-    /// This signal is generated after a file has been fully transmitted.
-    void receivedFileComplete();
-
-private:
-
-    enum State {
-        StateClosed,
-        StateConnected,
-        StateReceivingFile,
-        StateFileComplete
-    };
-
-    /// Part of the state machine implementation.
-    void setState(State state) { _state = state; }
-
-    /// Returns the current state of the channel.
-    State state() const { return _state; }
+    /// This signal is generated after a directory listing has been fully transmitted.
+    void receivedDirectoryComplete(const QStringList& listing);
 
 private Q_SLOTS:
 
@@ -75,11 +54,7 @@ private Q_SLOTS:
 
 private:
 
-    State _state = StateClosed;
-    char* _dataBuffer = nullptr;
-    qint64 _bytesReceived = 0;
-    qint64 _fileSize = 0;
+    QStringList _directoryListing;
 };
-
 
 } // End of namespace

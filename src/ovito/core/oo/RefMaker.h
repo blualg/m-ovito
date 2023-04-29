@@ -169,14 +169,6 @@ protected:
     /// \undoable
     void clearReferenceField(const PropertyFieldDescriptor* field);
 
-    /// \brief Clears all references held by this RefMarker.
-    ///
-    /// All single reference fields are set to \c NULL and all vector reference
-    /// fields are cleared.
-    ///
-    /// \undoable
-    void clearAllReferences();
-
     /// \brief Saves the class' contents to an output stream.
     /// \param stream The destination stream.
     ///
@@ -219,6 +211,16 @@ protected:
     /// This method is called after the reference counter of this object has reached zero
     /// and before the object is being deleted.
     virtual void aboutToBeDeleted() override;
+
+public Q_SLOTS:
+
+    /// \brief Clears all references held by this RefMarker.
+    ///
+    /// All single reference fields are set to \c NULL and all vector reference
+    /// fields are cleared.
+    ///
+    /// \undoable
+    void clearAllReferences();
 
 private Q_SLOTS:
 
@@ -297,7 +299,7 @@ public:
     /// \brief Initializes a new instance as part of two-phase object initialization.
     ///
     /// This method is automatically called right after creation of a new object instance by the OORef<>::create() function.
-    /// It loads the initial values for property fields with user-defined default settings (those having the PROPERTY_FIELD_MEMORIZE flag set). 
+    /// It loads the initial values for property fields with user-defined default settings (those having the PROPERTY_FIELD_MEMORIZE flag set).
     void initializeParametersToUserDefaults();
 
     /// Creates a snapshot of the object's parameter values that will serve as reference to detect parameter changes made by the user.
@@ -318,7 +320,7 @@ public:
 
     /// \brief Checks whether this object is directly or indirectly referenced by the given RefMaker.
     /// \param obj The RefMaker that might hold a reference to \c this object.
-    /// \param onlyStrongReferences If true, ignores reference fields that have been marked as weak and don't propagate messages. 
+    /// \param onlyStrongReferences If true, ignores reference fields that have been marked as weak and don't propagate messages.
     ///
     /// The RefMaker base implementation always returns \a false since this class is not a RefTarget and can therefore
     /// not be referenced. RefTarget overrides this method with a more meaningful implementation.
@@ -342,7 +344,7 @@ public:
 
     /// Indicates whether a previously recorded action on the undo stack is currently being undone or redone.
     static bool isUndoingOrRedoing() { return CompoundOperation::isUndoingOrRedoing(); }
-    
+
     /// Pushes an operation onto the undo stack if the undo stack is currently recording.
     /// The undo record class specified as a template parameter is instantiated only if the undo stack is recording.
     template<class UndoableOperationClass, class... Args>

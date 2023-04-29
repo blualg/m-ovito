@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -22,20 +22,20 @@
 
 #include <ovito/core/Core.h>
 #include "ProcessChannel.h"
-#include "SshConnection.h"
+#include "LibsshConnection.h"
 
 namespace Ovito::Ssh {
 
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-ProcessChannel::ProcessChannel(SshConnection* connection, QString command) : SshChannel(connection, connection),
+ProcessChannel::ProcessChannel(LibsshConnection* connection, QString command) : SshChannel(connection, connection),
     _command(std::move(command)),
     _stderr(new StderrChannel(this))
 {
-    connect(connection, &SshConnection::error,          this, &ProcessChannel::handleSessionError);
-    connect(connection, &SshConnection::doProcessState, this, &ProcessChannel::processState);
-    connect(connection, &SshConnection::doCleanup,      this, &ProcessChannel::closeChannel);
+    connect(connection, &SshConnection::error, this, &ProcessChannel::handleSessionError);
+    connect(connection, &LibsshConnection::doProcessState, this, &ProcessChannel::processState);
+    connect(connection, &LibsshConnection::doCleanup, this, &ProcessChannel::closeChannel);
 }
 
 /******************************************************************************
@@ -49,7 +49,7 @@ ProcessChannel::~ProcessChannel()
 /******************************************************************************
 * Opens the QIODevice.
 ******************************************************************************/
-bool ProcessChannel::open(OpenMode /*mode*/)
+bool ProcessChannel::open(OpenMode mode)
 {
     openChannel();
     return true;
@@ -122,6 +122,7 @@ void ProcessChannel::closeChannel()
 
         setState(StateClosed, false);
     }
+    this->deleteLater();
 }
 
 /******************************************************************************
@@ -139,8 +140,8 @@ void ProcessChannel::setState(State state, bool processState)
         case StateOpening:                              break;
         case StateExec:                                 break;
         case StateOpen:         Q_EMIT opened();        break;
-        case StateError:        Q_EMIT error();         break;
-        case StateSessionError: Q_EMIT error();         break;
+        case StateError:        Q_EMIT error(errorMessage()); break;
+        case StateSessionError: Q_EMIT error(errorMessage()); break;
         }
     }
 
@@ -193,7 +194,7 @@ void ProcessChannel::processState()
         if(!_channel) {
             _channel = LibsshWrapper::ssh_channel_new()(connection()->_session);
             if(!_channel) {
-                qCritical() << "Failed to create SSH channel.";
+                qWarning() << "Failed to create SSH channel.";
                 setErrorString(tr("Failed to create SSH channel: %1").arg(errorMessage()));
                 setState(StateError, false);
                 // If creating a channel doesn't work anymore, close the entire SSH connection.
@@ -298,7 +299,7 @@ void ProcessChannel::processState()
         return;
     }
 
-    Q_ASSERT_X(false, __func__, "Case was not handled properly");
+    OVITO_ASSERT(false);
 }
 
 /******************************************************************************

@@ -190,7 +190,7 @@ void ViewportsPanel::onViewportConfigurationReplaced(ViewportConfiguration* newV
 void ViewportsPanel::recreateViewportWindows()
 {
     // Delete all existing viewport widgets first.
-    for(QWidget* widget : findChildren<QWidget*>())
+    for(QWidget* widget : findChildren<QWidget*>(Qt::FindDirectChildrenOnly))
         delete widget;
 
     if(_viewportConfig) {

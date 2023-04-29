@@ -242,18 +242,21 @@ void WidgetActionManager::on_FileImport_triggered()
 void WidgetActionManager::on_FileRemoteImport_triggered()
 {
     mainWindow().performTransaction(tr("Import data"), [&] {
-        // Let the user enter the URL of the remote file.
-        ImportRemoteFileDialog dialog(mainWindow(), PluginManager::instance().metaclassMembers<FileImporter>(), &mainWindow(), tr("Load Remote File"));
-        if(dialog.exec() != QDialog::Accepted)
-            return;
+        const auto [importUrls, importerClass, importerFormat] = [&]() -> std::tuple<std::vector<QUrl>, const FileImporterClass*, QString> {
+            // Let the user enter the URL of the remote file.
+            ImportRemoteFileDialog dialog(mainWindow(), PluginManager::instance().metaclassMembers<FileImporter>(), &mainWindow(), tr("Load Remote File"));
+            if(dialog.exec() != QDialog::Accepted)
+                return {{}, nullptr, {}};
 
-        // Selected importer class and sub-format name.
-        const auto& [importerClass, importerFormat] = dialog.selectedFileImporter();
+            // Selected importer class and sub-format name.
+            const auto [importerClass, importerFormat] = dialog.selectedFileImporter();
+            return { { dialog.urlToImport() }, std::move(importerClass), std::move(importerFormat) };
+        }();
 
         // Import URL.
-        mainWindow().datasetContainer().importFiles(
-            { dialog.urlToImport() },
-            importerClass, importerFormat);
+        if(!importUrls.empty()) {
+            mainWindow().datasetContainer().importFiles(std::move(importUrls), importerClass, importerFormat);
+        }
     });
 }
 

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -93,7 +93,10 @@ static void qtMessageLogFile(QtMsgType type, const QMessageLogContext& context, 
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-Application::Application(FileManager& fileManager) : _fileManager(fileManager)
+Application::Application(FileManager& fileManager) :
+    UserInterface(_globalDatasetContainer),
+    _fileManager(fileManager),
+    _globalDatasetContainer(UserInterface::taskManager(), *this)
 {
     // Set global application pointer.
     OVITO_ASSERT(_instance == nullptr); // Only allowed to create one Application class instance.
@@ -117,7 +120,11 @@ Application::Application(FileManager& fileManager) : _fileManager(fileManager)
 ******************************************************************************/
 Application::~Application()
 {
+    OVITO_ASSERT(isShuttingDown()); // Make sure this UserInterface was properly shutdown before being deleted.
     _instance = nullptr;
+#ifdef OVITO_DEBUG
+    UserInterface::_isBeingDestructed = true;
+#endif
 }
 
 /******************************************************************************
@@ -329,5 +336,16 @@ QNetworkAccessManager* Application::networkAccessManager()
     return _networkAccessManager;
 }
 #endif
+
+/******************************************************************************
+* Creates a signal/slot connection which is fired on shutdown.
+******************************************************************************/
+QMetaObject::Connection Application::whenAboutToQuit(const QObject* receiver, const char* method, Qt::ConnectionType type)
+{
+    const QMetaObject* metaObject = receiver->metaObject();
+    int index = metaObject->indexOfMethod(method);
+    OVITO_ASSERT(index >= 0);
+    return QObject::connect(this, QMetaMethod::fromSignal(&Application::aboutToQuit), receiver, metaObject->method(index), type);
+}
 
 }   // End of namespace

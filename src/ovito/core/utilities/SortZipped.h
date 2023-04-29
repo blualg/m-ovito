@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -70,20 +70,22 @@ namespace detail {
         operator zipped_val<KeyRange, ValueRange>() && { return { std::move(*key), std::move(*value) }; }
     };
 
-    template<typename KeyRange, typename ValueRange>
-    struct zip_comparator 
+    template<typename KeyRange, typename ValueRange, class Compare>
+    struct zip_comparator : private std::decay_t<Compare>
     {
-        bool operator()(const zipped_ref<KeyRange, ValueRange>& a, const zipped_val<KeyRange, ValueRange>& b) { return *a.key < b.key; }
-        bool operator()(const zipped_val<KeyRange, ValueRange>& a, const zipped_ref<KeyRange, ValueRange>& b) { return a.key < *b.key; }
-        bool operator()(const zipped_ref<KeyRange, ValueRange>& a, const zipped_ref<KeyRange, ValueRange>& b) { return *a.key < *b.key; }
+        using CompareType = std::decay_t<Compare>;
+        explicit zip_comparator(Compare comp) : CompareType(std::forward<Compare>(comp)) {}
+        bool operator()(const zipped_ref<KeyRange, ValueRange>& a, const zipped_val<KeyRange, ValueRange>& b) const { return CompareType::operator()(*a.key, b.key); }
+        bool operator()(const zipped_val<KeyRange, ValueRange>& a, const zipped_ref<KeyRange, ValueRange>& b) const { return CompareType::operator()(a.key, *b.key); }
+        bool operator()(const zipped_ref<KeyRange, ValueRange>& a, const zipped_ref<KeyRange, ValueRange>& b) const { return CompareType::operator()(*a.key, *b.key); }
     };
 }
 
 /**
  * Utility function that sorts two separate ranges based on the values in the first range (the sort keys).
  */
-template<typename KeyRange, typename ValueRange>
-void sort_zipped(KeyRange&& keys, ValueRange&& values)
+template<typename KeyRange, typename ValueRange, class Compare = std::less<void>>
+void sort_zipped(KeyRange&& keys, ValueRange&& values, Compare comp = Compare{})
 {
     OVITO_ASSERT(std::size(keys) == std::size(values));
 
@@ -91,7 +93,7 @@ void sort_zipped(KeyRange&& keys, ValueRange&& values)
     using zipped_ref = detail::zipped_ref<KeyRange, ValueRange>;
 
     struct sort_it : public boost::iterator_facade<
-            sort_it, // Derived 
+            sort_it, // Derived
             zipped_val, // Value
             std::random_access_iterator_tag, // CategoryOrTraversal
             zipped_ref> // Reference
@@ -132,9 +134,9 @@ void sort_zipped(KeyRange&& keys, ValueRange&& values)
     };
 
     std::sort(
-        sort_it{std::begin(keys), std::begin(values)}, 
+        sort_it{std::begin(keys), std::begin(values)},
         sort_it{std::end(keys), std::end(values)},
-        detail::zip_comparator<KeyRange, ValueRange>{});
+        detail::zip_comparator<KeyRange, ValueRange, Compare>{std::forward<Compare>(comp)});
 }
 
 }   // End of namespace

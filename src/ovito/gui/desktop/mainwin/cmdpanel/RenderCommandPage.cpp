@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -38,9 +38,9 @@ RenderCommandPage::RenderCommandPage(MainWindow& mainWindow, QWidget* parent) : 
     layout->setContentsMargins(2,2,2,2);
 
     // Create the properties panel.
-    propertiesPanel = new PropertiesPanel(mainWindow);
-    propertiesPanel->setFrameStyle(QFrame::NoFrame | QFrame::Plain);
-    layout->addWidget(propertiesPanel, 1);
+    _propertiesPanel = new PropertiesPanel(mainWindow);
+    _propertiesPanel->setFrameStyle(QFrame::NoFrame | QFrame::Plain);
+    layout->addWidget(_propertiesPanel, 1);
 
     connect(&mainWindow.datasetContainer(), &DataSetContainer::dataSetChanged, this, &RenderCommandPage::onDataSetChanged);
 }
@@ -65,7 +65,7 @@ void RenderCommandPage::onDataSetChanged(DataSet* newDataSet)
 ******************************************************************************/
 void RenderCommandPage::onRenderSettingsReplaced(RenderSettings* newRenderSettings)
 {
-    propertiesPanel->setEditObject(newRenderSettings);
+    _propertiesPanel->setEditObject(newRenderSettings);
 }
 
 }   // End of namespace

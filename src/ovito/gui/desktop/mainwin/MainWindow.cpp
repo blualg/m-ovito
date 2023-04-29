@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -49,16 +49,13 @@ namespace Ovito {
 /******************************************************************************
 * The constructor of the main window class.
 ******************************************************************************/
-MainWindow::MainWindow() : UserInterface(_datasetContainer, _taskManager), _datasetContainer(_taskManager, *this)
+MainWindow::MainWindow() : UserInterface(_datasetContainer), _datasetContainer(UserInterface::taskManager(), *this)
 {
     _baseWindowTitle = tr("%1 (Open Visualization Tool)").arg(Application::applicationName());
-#if defined(OVITO_EXPIRATION_DATE)
-    _baseWindowTitle += tr(" - Preview build expiring on %1").arg(QDate::fromString(QStringLiteral(OVITO_EXPIRATION_DATE), Qt::ISODate).toString(Qt::SystemLocaleShortDate));
-#elif defined(OVITO_DEVELOPMENT_BUILD_DATE)
+#if defined(OVITO_DEVELOPMENT_BUILD_DATE)
     _baseWindowTitle += tr(" - Development build %1 created on %2").arg(Application::applicationVersionString()).arg(QStringLiteral(OVITO_DEVELOPMENT_BUILD_DATE));
 #endif
     setWindowTitle(_baseWindowTitle);
-    setAttribute(Qt::WA_DeleteOnClose);
 
     // Set up the layout of docking widgets.
     setCorner(Qt::BottomLeftCorner, Qt::LeftDockWidgetArea);
@@ -251,7 +248,11 @@ MainWindow::MainWindow() : UserInterface(_datasetContainer, _taskManager), _data
 ******************************************************************************/
 MainWindow::~MainWindow()
 {
-    _datasetContainer.setCurrentSet(nullptr);
+    OVITO_ASSERT(isShuttingDown()); // Make sure this UserInterface was properly shutdown before being deleted.
+    OVITO_ASSERT(_datasetContainer.currentSet() == nullptr);
+#ifdef OVITO_DEBUG
+    UserInterface::_isBeingDestructed = true;
+#endif
 }
 
 /******************************************************************************
@@ -458,26 +459,31 @@ void MainWindow::keyPressEvent(QKeyEvent* event)
 ******************************************************************************/
 void MainWindow::closeEvent(QCloseEvent* event)
 {
+    OVITO_ASSERT(!isShuttingDown());
+
     if(!handleExceptions([&] {
-        // Save changes made to the current dataset.
-        if(!datasetContainer().askForSaveChanges()) {
+        // Let the user save changes made to the current dataset.
+        if(isVisible() && !datasetContainer().askForSaveChanges()) {
             event->ignore();
             return;
         }
 
-        // Close the dataset container.
-        datasetContainer().setCurrentSet(nullptr);
+        // Don't allow user to interact with the window anymore.
+        setEnabled(false);
 
-        // Stop all running operations.
-        taskManager().shutdown();
+        // Stop all running tasks in this window and free session objects.
+        shutdown();
 
-        // Save window geometry and layout.
-        saveMainWindowGeometry();
-        saveLayout();
+        // Save window geometry and layout in user settings file.
+        if(isVisible()) {
+            saveMainWindowGeometry();
+            saveLayout();
+        }
 
-        // Destroys the window.
+        // Closes the GUI window (but does not destroy this UserInterface C++ object yet, which is kept alive by a shared_ptr).
         event->accept();
     })) {
+        OVITO_ASSERT(!isShuttingDown());
         event->ignore();
     }
 }
@@ -487,12 +493,32 @@ void MainWindow::closeEvent(QCloseEvent* event)
 ******************************************************************************/
 void MainWindow::exitWithFatalError(const Exception& ex)
 {
+    // Disable all further viewport updates, because they may have beeen the reason for this fatal error.
     suspendViewportUpdates();
+
+    // Display fatal error message to the user.
     reportError(ex, true);
-    QTimer::singleShot(0, this, [this]() {
-        QMainWindow::close();
+
+    // The event loop may not be running yet. Use a timer to execute the following
+    // once we enter the event loop - similar to a queued signal/slot connection.
+    QTimer::singleShot(0, [self = QPointer<MainWindow>(this)]() {
+        if(!self.isNull()) {
+            if(!self->close()) // Ask user if closing the window is ok. If not...
+                self->shutdown(); // ... forcibly close the window anyway.
+        }
         QCoreApplication::exit(1);
     });
+}
+
+/******************************************************************************
+* Creates a signal/slot connection which is fired on shutdown.
+******************************************************************************/
+QMetaObject::Connection MainWindow::whenAboutToQuit(const QObject* receiver, const char* method, Qt::ConnectionType type)
+{
+    const QMetaObject* metaObject = receiver->metaObject();
+    int index = metaObject->indexOfMethod(method);
+    OVITO_ASSERT(index >= 0);
+    return QObject::connect(this, QMetaMethod::fromSignal(&MainWindow::aboutToQuit), receiver, metaObject->method(index), type);
 }
 
 /******************************************************************************
@@ -666,7 +692,7 @@ void MainWindow::reportError(const Exception& exception, QWidget* window)
     if(window && window->isVisible()) {
         // If there currently is floating window being shown (e.g. the FrameBufferWindow),
         // make the error message dialog a child of this floating window to show it in front.
-        for(QMainWindow* floatingChildWindow : window->findChildren<QMainWindow*>()) {
+        for(QMainWindow* floatingChildWindow : window->findChildren<QMainWindow*>(Qt::FindDirectChildrenOnly)) {
             if(floatingChildWindow->isVisible() && floatingChildWindow->isActiveWindow()) {
                 window = floatingChildWindow;
                 break;
@@ -675,7 +701,7 @@ void MainWindow::reportError(const Exception& exception, QWidget* window)
 
         // If there currently is a modal dialog box being shown,
         // make the error message dialog a child of this dialog to prevent a UI dead-lock.
-        for(QDialog* dialog : window->findChildren<QDialog*>()) {
+        for(QDialog* dialog : window->findChildren<QDialog*>(Qt::FindDirectChildrenOnly)) {
             if(dialog->isModal()) {
                 window = dialog;
                 dialog->show();
@@ -734,13 +760,14 @@ void MainWindow::openNewWindow(const QStringList& arguments)
     if(!QProcess::startDetached(execPath, arguments))
         throw Exception(tr("Failed to start another instance of the program. Executable path: %1").arg(execPath));
 #else
-    MainWindow* mainWin = new MainWindow();
+    std::shared_ptr<MainWindow> mainWin = std::make_shared<MainWindow>();
+    mainWin->keepAliveUntilShutdown();
     mainWin->show();
     mainWin->restoreLayout();
     if(!mainWin->handleExceptions([&]() {
         GuiApplication::initializeUserInterface(*mainWin, arguments);
     })) {
-        mainWin->deleteLater();
+        mainWin->shutdown();
     }
 #endif
 }

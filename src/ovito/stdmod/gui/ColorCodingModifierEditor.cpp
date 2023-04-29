@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -33,6 +33,7 @@
 #include <ovito/gui/desktop/utilities/concurrent/ProgressDialog.h>
 #include <ovito/gui/base/viewport/ViewportInputMode.h>
 #include <ovito/core/app/PluginManager.h>
+#include <ovito/core/viewport/ViewportSuspender.h>
 #include <ovito/core/oo/OvitoClass.h>
 #include <ovito/core/dataset/pipeline/ModifierApplication.h>
 #include "ColorCodingModifierEditor.h"

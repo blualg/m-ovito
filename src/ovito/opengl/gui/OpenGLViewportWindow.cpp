@@ -38,7 +38,7 @@ OVITO_REGISTER_VIEWPORT_WINDOW_IMPLEMENTATION(OpenGLViewportWindow);
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-OpenGLViewportWindow::OpenGLViewportWindow(Viewport* vp, UserInterface* userInterface, QWidget* parentWidget) : 
+OpenGLViewportWindow::OpenGLViewportWindow(Viewport* vp, UserInterface* userInterface, QWidget* parentWidget) :
         QOpenGLWidget(parentWidget),
         BaseViewportWindow(*userInterface, vp)
 {
@@ -64,7 +64,7 @@ OpenGLViewportWindow::OpenGLViewportWindow(Viewport* vp, UserInterface* userInte
 /******************************************************************************
 * Destructor.
 ******************************************************************************/
-OpenGLViewportWindow::~OpenGLViewportWindow() 
+OpenGLViewportWindow::~OpenGLViewportWindow()
 {
     releaseResources();
 }
@@ -80,7 +80,7 @@ void OpenGLViewportWindow::initializeGL()
 }
 
 /******************************************************************************
-* Releases the renderer resources held by the viewport's surface and picking renderers. 
+* Releases the renderer resources held by the viewport's surface and picking renderers.
 ******************************************************************************/
 void OpenGLViewportWindow::releaseResources()
 {
@@ -249,7 +249,7 @@ void OpenGLViewportWindow::paintGL()
             }
             return;
         }
-        
+
 #ifdef Q_OS_WIN
         if(OpenGLSceneRenderer::openGLRenderer() == "Intel(R) HD Graphics" || OpenGLSceneRenderer::openGLRenderer() == "Intel(R) HD Graphics 2000" || OpenGLSceneRenderer::openGLRenderer() == "Intel(R) HD Graphics 3000" || OpenGLSceneRenderer::openGLRenderer() == "Intel(R) HD Graphics 4400") {
             // Avoid infinite recursion.

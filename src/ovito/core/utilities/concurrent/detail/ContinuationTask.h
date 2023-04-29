@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -28,6 +28,7 @@
 #include "TaskReference.h"
 #include "TaskCallback.h"
 #include "../ExecutionContext.h"
+#include "../InlineExecutor.h"
 
 namespace Ovito::detail {
 
@@ -137,14 +138,14 @@ public:
                 return;
             }
             OVITO_ASSERT(nextFuture.isValid());
-                
+
             // The new future's task now becomes the one we depend on.
             QMutexLocker locker(&this->taskMutex());
             _awaitedTask = nextFuture.task();
             locker.unlock();
 
             // Get results from the future's task once it completes and use it as the results of this continuation task.
-            nextFuture.task()->addContinuation(detail::InlineExecutor{}, [promise = std::move(promise)]() mutable noexcept {
+            nextFuture.task()->addContinuation(InlineExecutor{}, [promise = std::move(promise)]() mutable noexcept {
                 ContinuationTask* thisTask = static_cast<ContinuationTask*>(promise.task().get());
 
                 // Manage access to the task that represents the continuation.
@@ -184,11 +185,11 @@ private:
         // When this task gets canceled, we should discard the reference to the task we are waiting for in order to cancel it as well.
         this->registerContinuation([this]() noexcept {
             QMutexLocker locker(&this->taskMutex());
-            // Move the dependency on the preceding task out of this object. This may implicitly cancel the 
+            // Move the dependency on the preceding task out of this object. This may implicitly cancel the
             // awaited task when the reference goes out of scope.
             auto awaitedTask = this->takeAwaitedTask();
             // Note: It's critical to first unlock the mutex before releasing the reference to the awaited task.
-            locker.unlock(); 
+            locker.unlock();
         });
     }
 

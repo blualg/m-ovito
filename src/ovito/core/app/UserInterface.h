@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -24,11 +24,8 @@
 
 
 #include <ovito/core/Core.h>
-#include <ovito/core/utilities/concurrent/TaskManager.h>
 #include <ovito/core/utilities/units/UnitsManager.h>
-#include <ovito/core/utilities/Invoke.h>
-#include <ovito/core/app/undo/UndoableOperation.h>
-#include <ovito/core/app/undo/UndoableTransaction.h>
+#include <ovito/core/utilities/concurrent/TaskManager.h>
 
 namespace Ovito {
 
@@ -37,15 +34,15 @@ namespace Ovito {
  *
  * Note that is is possible to open multiple GUI windows per process.
  */
-class OVITO_CORE_EXPORT UserInterface
+class OVITO_CORE_EXPORT UserInterface : public std::enable_shared_from_this<UserInterface>
 {
 public:
 
     /// Constructor.
-    explicit UserInterface(DataSetContainer& datasetContainer, TaskManager& taskManager) : _datasetContainer(datasetContainer), _taskManager(taskManager) {}
+    explicit UserInterface(DataSetContainer& datasetContainer) : _datasetContainer(datasetContainer) {}
 
     /// Destructor.
-    virtual ~UserInterface() {}
+    virtual ~UserInterface() = default;
 
     /// Returns the container managing the current dataset.
     DataSetContainer& datasetContainer() const { return _datasetContainer; }
@@ -57,14 +54,14 @@ public:
     ViewportInputManager* viewportInputManager() const { return _viewportInputManager; }
 
     /// Returns the manager of asynchronous tasks belonging to this user interface.
-    TaskManager& taskManager() const { return _taskManager; }
+    TaskManager& taskManager() { return _taskManager; }
 
     /// Returns the manager of ParameterUnit objects.
     UnitsManager& unitsManager() { return _unitsManager; }
 
     /// Gives the active viewport the input focus.
     virtual void setViewportInputFocus() {}
-    
+
     /// Displays a message string in the status bar.
     virtual void showStatusBarMessage(const QString& message, int timeout = 0) {}
 
@@ -84,8 +81,20 @@ public:
     /// Closes the user interface and shuts down the entire application after displaying an error message.
     virtual void exitWithFatalError(const Exception& ex);
 
+    /// Closes the user interface immediately (without asking user to save changes).
+    void shutdown();
+
+    /// Indicates whether the session is in the process of being closed and all ongoing tasks should be canceled.
+    bool isShuttingDown() const { return _taskManager.isShuttingDown(); }
+
+    /// Call this to keep the UI object alive until shutdown() is called on it.
+    void keepAliveUntilShutdown() { _selfGuard = shared_from_this(); }
+
+    /// Creates a signal/slot connection which is fired on shutdown.
+    virtual QMetaObject::Connection whenAboutToQuit(const QObject* receiver, const char* method, Qt::ConnectionType type = Qt::AutoConnection) = 0;
+
     /// Tells the UI to process any pending events in the event queue and return immediately.
-    /// The function can return true to indicate that the running operation should be canceled. 
+    /// The function can return true to indicate that the running operation should be canceled.
     virtual bool processEvents();
 
     /// Immediately repaints all viewports that have been flagged for an update.
@@ -100,12 +109,9 @@ public:
     /// Creates a frame buffer of the requested size for rendering into and displays it in the user interface.
     virtual std::shared_ptr<FrameBuffer> createAndShowFrameBuffer(int width, int height, bool showRenderingOperationProgress);
 
-    /// Returns the undo stack, which keeps track of changes made by the user to the current dataset. 
+    /// Returns the undo stack, which keeps track of changes made by the user to the current dataset.
     /// It may be none if not running as a desktop application.
     UndoStack* undoStack() const { return _undoStack; }
-
-    /// Indicates whether the program session is being closed and all task in progress should be canceled.
-    virtual bool isShuttingDown() const;
 
     /// Indicates whether the user has activated auto-key mode and controllers should automatically
     /// generate new animation keys whenever their current value is changed by the user.
@@ -132,7 +138,7 @@ public:
         _preliminaryViewportUpdatesSuspendCount--;
     }
 
-    /// Returns whether viewports should be updated whenever preliminary pipeline results are available.  
+    /// Returns whether viewports should be updated whenever preliminary pipeline results are available.
     bool arePreliminaryViewportUpdatesSuspended() const { return _preliminaryViewportUpdatesSuspendCount != 0; }
 
     /// Flags all viewports for redrawing.
@@ -154,46 +160,19 @@ public:
     /// Executes a functor that performs some actions in an interactive context and catches any exceptions thrown during its execution.
     /// If an exception is thrown by the functor, the error message is displayed to the user and this function returns false.
     template<typename Function>
-    bool handleExceptions(Function&& func, bool visibleInUserInterface = false) {
-        try {
-            MainThreadOperation operation(ExecutionContext::Type::Interactive, *this, visibleInUserInterface);
-            if constexpr(detail::is_invocable_v<Function, MainThreadOperation&>) {
-                std::forward<Function>(func)(operation);
-            }
-            else {
-                std::forward<Function>(func)();
-            }
-            return !operation.isCanceled();
-        }
-        catch(const Exception& ex) {
-            reportError(ex);
-            return false;
-        }
-    }
+    bool handleExceptions(Function&& func, bool visibleInUserInterface = false);
 
     /// Executes a functor provided by the caller that performs undoable actions in an interactive context.
-    /// If an exception is thrown by the functor, the error message is displayed 
-    /// to the user, and this function returns false. 
+    /// If an exception is thrown by the functor, the error message is displayed
+    /// to the user, and this function returns false.
     template<typename Function>
-    bool performActions(UndoableTransaction& transaction, Function&& func) {
-        OVITO_ASSERT(transaction.operation());
-        OVITO_ASSERT(&transaction.userInterface() == this);
-        UndoSuspender activateUndo(transaction.operation());
-        return handleExceptions(std::forward<Function>(func));
-    }
+    bool performActions(UndoableTransaction& transaction, Function&& func);
 
     /// Executes a functor provided by the caller that performs undoable actions in an interactive context.
-    /// If an exception is thrown by the functor, all data changes performed by the functor so far will be undone, the error message is displayed 
+    /// If an exception is thrown by the functor, all data changes performed by the functor so far will be undone, the error message is displayed
     /// to the user, and this function returns false. If no exception is thrown, all performed actions are committed and this function returns true.
     template<typename Function>
-    bool performTransaction(const QString& undoOperationName, Function&& func) {
-        UndoableTransaction transaction(*this, undoOperationName);
-        if(performActions(transaction, std::forward<Function>(func))) {
-            transaction.commit();
-            return true;
-        }
-        return false;
-    }
+    bool performTransaction(const QString& undoOperationName, Function&& func);
 
 protected:
 
@@ -202,6 +181,9 @@ protected:
 
     /// Assigns an UndoStack.
     void setUndoStack(UndoStack* undoStack) { _undoStack = undoStack; }
+
+    /// This pure virtual method is called from shutdown().
+    virtual void signalAboutToQuit() = 0;
 
 private:
 
@@ -215,7 +197,7 @@ private:
     ActionManager* _actionManager = nullptr;
 
     /// Manages the running asynchronous tasks that belong to this user interface.
-    TaskManager& _taskManager;
+    TaskManager _taskManager;
 
     /// The undo stack keeping track of changes made by the user to the current dataset.
     UndoStack* _undoStack = nullptr;
@@ -235,50 +217,74 @@ private:
     /// The interactive viewport currently being rendered.
     Viewport* _viewportBeingRendered = nullptr;
 
+    /// This keeps the UI object itself alive until shutdown() is called.
+    std::shared_ptr<UserInterface> _selfGuard;
+
+#ifdef OVITO_DEBUG
+protected:
+    bool _isBeingDestructed = false;
+#endif
+
     friend class Viewport;
 };
 
-/**
- * \brief RAII helper class that suspends viewport redrawing while it exists.
- *
- * Use this to make your code exception-safe.
- * Just create an instance of this class on the stack to suspend viewport updates
- * during the lifetime of the class instance.
- */
-class OVITO_CORE_EXPORT ViewportSuspender 
+}   // End of namespace
+
+#include <ovito/core/app/undo/UndoableOperation.h>
+#include <ovito/core/app/undo/UndoableTransaction.h>
+#include <ovito/core/utilities/concurrent/MainThreadOperation.h>
+#include <ovito/core/utilities/concurrent/ExecutionContext.h>
+
+namespace Ovito {
+
+/// Executes a functor that performs some actions in an interactive context and catches any exceptions thrown during its execution.
+/// If an exception is thrown by the functor, the error message is displayed to the user and this function returns false.
+template<typename Function>
+bool UserInterface::handleExceptions(Function&& func, bool visibleInUserInterface)
 {
-public:
-    ViewportSuspender(UserInterface& userInterface = ExecutionContext::current().ui()) noexcept : _ui(userInterface) {
-        userInterface.suspendViewportUpdates();
+    OVITO_ASSERT(!_isBeingDestructed);
+    MainThreadOperation operation(ExecutionContext::Type::Interactive, *this, visibleInUserInterface); // Note: This creates a temporary std::shared_ptr<UserInterface> to keep the UI alive until function exit.
+    try {
+        if constexpr(detail::is_invocable_v<Function, MainThreadOperation&>) {
+            std::forward<Function>(func)(operation);
+        }
+        else {
+            std::forward<Function>(func)();
+        }
+        return !operation.isCanceled();
     }
-    ~ViewportSuspender() {
-        _ui.resumeViewportUpdates();
+    catch(const Exception& ex) {
+        reportError(ex);
+        return false;
     }
-private:
-    UserInterface& _ui;
-};
+}
 
-/**
- * \brief A helper class that suspends preliminary viewport updates while it exists.
- */
-class OVITO_CORE_EXPORT PreliminaryViewportUpdatesSuspender
+/// Executes a functor provided by the caller that performs undoable actions in an interactive context.
+/// If an exception is thrown by the functor, the error message is displayed
+/// to the user, and this function returns false.
+template<typename Function>
+bool UserInterface::performActions(UndoableTransaction& transaction, Function&& func)
 {
-public:
+    OVITO_ASSERT(!_isBeingDestructed);
+    OVITO_ASSERT(transaction.operation());
+    OVITO_ASSERT(&transaction.userInterface() == this);
+    UndoSuspender activateUndo(transaction.operation());
+    return handleExceptions(std::forward<Function>(func));
+}
 
-    /// Suspends the automatic generation of animation keys by calling UserInterface::suspendPreliminaryViewportUpdates().
-    /// \param animSettings The animation settings object.
-    PreliminaryViewportUpdatesSuspender(UserInterface& userInterface) : _userInterface(userInterface) {
-        userInterface.suspendPreliminaryViewportUpdates();
+/// Executes a functor provided by the caller that performs undoable actions in an interactive context.
+/// If an exception is thrown by the functor, all data changes performed by the functor so far will be undone, the error message is displayed
+/// to the user, and this function returns false. If no exception is thrown, all performed actions are committed and this function returns true.
+template<typename Function>
+bool UserInterface::performTransaction(const QString& undoOperationName, Function&& func)
+{
+    OVITO_ASSERT(!_isBeingDestructed);
+    UndoableTransaction transaction(*this, undoOperationName);
+    if(performActions(transaction, std::forward<Function>(func))) {
+        transaction.commit();
+        return true;
     }
-
-    /// Resumes the automatic generation of animation keys by calling UserInterface::resumePreliminaryViewportUpdates().
-    ~PreliminaryViewportUpdatesSuspender() {
-        _userInterface.resumePreliminaryViewportUpdates();
-    }
-
-private:
-
-    UserInterface& _userInterface;
-};
+    return false;
+}
 
 }   // End of namespace

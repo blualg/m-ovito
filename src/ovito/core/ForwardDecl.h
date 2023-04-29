@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -27,7 +27,7 @@
 
 #pragma once
 
-namespace Ovito 
+namespace Ovito
 {
     class Application;
     class FileHandle;
@@ -48,6 +48,7 @@ namespace Ovito
     template<typename... R> class Promise;
     template<class Tuple> class TaskWithStorage;
     using TaskPtr = std::shared_ptr<Task>;
+    struct InlineExecutor;
     class MainThreadOperation;
     class UserInterface;
     class TriMeshObject;
@@ -81,6 +82,7 @@ namespace Ovito
     class ParameterUnit;
     class UndoStack;
     class UndoableOperation;
+    class UndoableTransaction;
     class SceneNode;
     class DataObject;
     class DataObjectReference;

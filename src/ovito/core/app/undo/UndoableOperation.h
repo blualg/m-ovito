@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -152,15 +152,15 @@ private:
 
 /**
  * \brief A RAII helper class that suspends recording of undoable operations while it exists.
- * 
+ *
  * Create an instance of this class on the stack to temporarily suspend recording of operations.
  */
 class OVITO_CORE_EXPORT UndoSuspender
 {
 public:
 
-    /// Constructor. 
-    explicit UndoSuspender(CompoundOperation* operation = nullptr) noexcept 
+    /// Constructor.
+    explicit UndoSuspender(CompoundOperation* operation = nullptr) noexcept
         : _previous(std::exchange(CompoundOperation::current(), operation)) {}
 
     /// Destructor.

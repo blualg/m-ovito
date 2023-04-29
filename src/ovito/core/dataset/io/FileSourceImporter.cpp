@@ -448,6 +448,8 @@ void FileSourceImporter::FrameFinder::discoverFramesInFile(QVector<FileSourceImp
 ******************************************************************************/
 Future<std::vector<QUrl>> FileSourceImporter::findWildcardMatches(const QUrl& sourceUrl)
 {
+    OVITO_ASSERT(ExecutionContext::current().isValid());
+
     // Determine whether the filename contains a wildcard character.
     if(!isWildcardPattern(sourceUrl)) {
         // It's not a wildcard pattern. Register just a single frame.

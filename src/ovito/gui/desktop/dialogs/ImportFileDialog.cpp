@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -50,8 +50,9 @@ ImportFileDialog::ImportFileDialog(const QVector<const FileImporterClass*>& impo
     }
     // Sort file formats alphabetically (but leave leading <Auto-detect> entry in place).
     Ovito::sort_zipped(
-        Ovito::make_span(fileFilterStrings).subspan(1), 
-        Ovito::make_span( _importerFormats).subspan(1));
+        Ovito::make_span(fileFilterStrings).subspan(1),
+        Ovito::make_span( _importerFormats).subspan(1),
+        [](const QString& a, const QString& b) { return a.compare(b, Qt::CaseInsensitive) < 0; });
 
     setNameFilters(fileFilterStrings);
     selectNameFilter(fileFilterStrings.front());

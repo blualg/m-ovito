@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -25,6 +25,7 @@
 #include <ovito/core/rendering/StandardSceneRenderer.h>
 #include <ovito/core/rendering/FrameBuffer.h>
 #include <ovito/core/utilities/units/UnitsManager.h>
+#include <ovito/core/viewport/ViewportSuspender.h>
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/app/Application.h>
 #include <ovito/core/app/UserInterface.h>

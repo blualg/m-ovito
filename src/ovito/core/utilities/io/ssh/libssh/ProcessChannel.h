@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2018 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -43,7 +43,7 @@ class ProcessChannel : public SshChannel
 public:
 
     /// Constructor.
-    explicit ProcessChannel(SshConnection* connection, QString command);
+    explicit ProcessChannel(LibsshConnection* connection, QString command);
 
     /// Destructor.
     ~ProcessChannel();
@@ -66,12 +66,11 @@ public:
     /// Returns the command executed on the remote host.
     const QString& command() const { return _command; }
 
-
 Q_SIGNALS:
 
     void opened();
     void closed();
-    void error();
+    void error(const QString& errorMessage);
     void finished(int exit_code);
 
 protected:
@@ -82,6 +81,11 @@ protected:
     virtual void timerEvent(QTimerEvent* event) override {
         SshChannel::timerEvent(event);
         processState();
+    }
+
+    void setError(const QString& errorString) {
+        setErrorString(errorString);
+        setState(StateError, false);
     }
 
 private:

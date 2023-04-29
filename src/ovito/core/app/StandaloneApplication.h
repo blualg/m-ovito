@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -46,6 +46,9 @@ public:
     /// Inherit constructor from base class.
     using Application::Application;
 
+    /// Destructor is called just before program exit.
+    virtual ~StandaloneApplication();
+
     /// \brief Initializes the application.
     /// \param argc The number of command line arguments.
     /// \param argv The command line arguments.
@@ -55,14 +58,8 @@ public:
     /// This is called on program startup.
     bool initialize(int& argc, char** argv);
 
-    /// \brief Enters the main event loop.
-    /// \return The program exit code.
-    ///
-    /// If the application has been started in console mode then this method does nothing.
-    int runApplication();
-
-    /// This is called from main() before the application exits.
-    void shutdown();
+    /// This is called from main() just before program exit.
+    void cleanupBeforeExit();
 
     /// \brief Returns the command line options passed to the program.
     const QCommandLineParser& cmdLineParser() const { return _cmdLineParser; }

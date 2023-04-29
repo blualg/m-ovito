@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2018 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -22,14 +22,14 @@
 
 #include <ovito/core/Core.h>
 #include "SshChannel.h"
-#include "SshConnection.h"
+#include "LibsshConnection.h"
 
 namespace Ovito::Ssh {
 
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-SshChannel::SshChannel(SshConnection* connection, QObject* parent, bool isStderr) :
+SshChannel::SshChannel(LibsshConnection* connection, QObject* parent, bool isStderr) :
     QIODevice(parent), _connection(connection), _isStderr(isStderr)
 {
 }
@@ -203,8 +203,10 @@ void SshChannel::sendEof()
 ******************************************************************************/
 QString SshChannel::errorMessage() const
 {
-    if(connection()->_state == SshConnection::StateError) {
-        return connection()->errorMessage();
+    if(connection()->_state == LibsshConnection::StateError) {
+        auto msg = connection()->errorMessages();
+        if(!msg.empty())
+            return msg.front();
     }
     if(!QIODevice::errorString().isEmpty()) {
         return QIODevice::errorString();

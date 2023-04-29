@@ -23,8 +23,10 @@
 #include <ovito/core/Core.h>
 #include <ovito/core/utilities/concurrent/Future.h>
 #include <ovito/core/utilities/concurrent/TaskManager.h>
+#include <ovito/core/utilities/io/ssh/SshConnection.h>
+#include <ovito/core/utilities/io/ssh/openssh/OpensshConnection.h>
 #ifdef OVITO_SSH_CLIENT
-    #include <ovito/core/utilities/io/ssh/SshConnection.h>
+    #include <ovito/core/utilities/io/ssh/libssh/LibsshConnection.h>
 #endif
 #ifdef OVITO_ZLIB_SUPPORT
     #include <ovito/core/utilities/io/gzdevice/GzipIODevice.h>
@@ -34,9 +36,7 @@
 
 namespace Ovito {
 
-#ifdef OVITO_SSH_CLIENT
 using namespace Ovito::Ssh;
-#endif
 
 /******************************************************************************
 * Create a QIODevice that permits reading data from the file referred to by this handle.
@@ -66,13 +66,11 @@ FileManager::FileManager(TaskManager& taskManager) : _taskManager(taskManager)
 ******************************************************************************/
 FileManager::~FileManager()
 {
-#ifdef OVITO_SSH_CLIENT
     for(SshConnection* connection : _unacquiredConnections) {
         disconnect(connection, nullptr, this, nullptr);
         delete connection;
     }
     Q_ASSERT(_acquiredConnections.empty());
-#endif
 }
 
 /******************************************************************************
@@ -80,6 +78,8 @@ FileManager::~FileManager()
 ******************************************************************************/
 SharedFuture<FileHandle> FileManager::fetchUrl(const QUrl& url)
 {
+    OVITO_ASSERT(ExecutionContext::current().isValid());
+
     if(url.isLocalFile()) {
         // Nothing to do to fetch local files. Simply return a finished Future object.
 
@@ -91,10 +91,6 @@ SharedFuture<FileHandle> FileManager::fetchUrl(const QUrl& url)
         return FileHandle(url, std::move(filePath));
     }
     else if(url.scheme() == QStringLiteral("sftp") || url.scheme() == QStringLiteral("http") || url.scheme() == QStringLiteral("https")) {
-#ifndef OVITO_SSH_CLIENT
-        if(url.scheme() == QStringLiteral("sftp"))
-            return Future<FileHandle>::createFailed(Exception(tr("URL scheme not supported. This version of OVITO was built without support for the sftp:// protocol.")));
-#endif
         QUrl normalizedUrl = normalizeUrl(url);
         QMutexLocker lock(&mutex());
 
@@ -130,14 +126,12 @@ SharedFuture<FileHandle> FileManager::fetchUrl(const QUrl& url)
 ******************************************************************************/
 Future<QStringList> FileManager::listDirectoryContents(const QUrl& url)
 {
+    OVITO_ASSERT(ExecutionContext::current().isValid());
+
     if(url.scheme() == QStringLiteral("sftp")) {
-#ifdef OVITO_SSH_CLIENT
         ListRemoteDirectoryJob* job = new ListRemoteDirectoryJob(url);
-        _taskManager.registerPromise(job->promise());
+        ExecutionContext::current().ui().taskManager().registerPromise(job->promise());
         return job->future();
-#else
-        return Future<QStringList>::createFailed(Exception(tr("URL scheme not supported. This version of OVITO was built without support for the sftp:// protocol and can open local files only.")));
-#endif
     }
     else if(url.scheme() == QStringLiteral("http") || url.scheme() == QStringLiteral("https")) {
 #ifndef Q_OS_WASM
@@ -215,7 +209,6 @@ QUrl FileManager::urlFromUserInput(const QString& path)
         return QUrl::fromLocalFile(path);
 }
 
-#ifdef OVITO_SSH_CLIENT
 /******************************************************************************
 * Create a new SSH connection or returns an existing connection having the same parameters.
 ******************************************************************************/
@@ -223,9 +216,12 @@ SshConnection* FileManager::acquireSshConnection(const SshConnectionParameters& 
 {
     OVITO_ASSERT(!QCoreApplication::instance() || QThread::currentThread() == QCoreApplication::instance()->thread());
 
+    // Determine the kind of ssh connection method to use.
+    SshConnection::SshImplementation sshImpl = SshConnection::getSshImplementation();
+
     // Check in-use connections:
     for(SshConnection* connection : _acquiredConnections) {
-        if(connection->connectionParameters() != sshParams)
+        if(connection->connectionParameters() != sshParams || connection->implementation() != sshImpl)
             continue;
 
         _acquiredConnections.append(connection);
@@ -234,7 +230,7 @@ SshConnection* FileManager::acquireSshConnection(const SshConnectionParameters& 
 
     // Check cached open connections:
     for(SshConnection* connection : _unacquiredConnections) {
-        if(!connection->isConnected() || connection->connectionParameters() != sshParams)
+        if(!connection->isConnected() || connection->connectionParameters() != sshParams || connection->implementation() != sshImpl)
             continue;
 
         _unacquiredConnections.removeOne(connection);
@@ -243,16 +239,26 @@ SshConnection* FileManager::acquireSshConnection(const SshConnectionParameters& 
     }
 
     // Create a new connection:
-    SshConnection* const connection = new SshConnection(sshParams);
-    connect(connection, &SshConnection::disconnected, this, &FileManager::cleanupSshConnection);
-    connect(connection, &SshConnection::unknownHost, this, &FileManager::unknownSshServer);
-    connect(connection, &SshConnection::needPassword, this, &FileManager::needSshPassword);
-    connect(connection, &SshConnection::needKbiAnswers, this, &FileManager::needKbiAnswers);
-    connect(connection, &SshConnection::authFailed, this, &FileManager::sshAuthenticationFailed);
-    connect(connection, &SshConnection::needPassphrase, this, &FileManager::needSshPassphrase);
-    _acquiredConnections.append(connection);
-
-    return connection;
+#ifdef OVITO_SSH_CLIENT
+    if(sshImpl == SshConnection::Libssh) {
+        LibsshConnection* connection = new LibsshConnection(sshParams);
+        connect(connection, &SshConnection::disconnected, this, &FileManager::cleanupSshConnection);
+        connect(connection, &LibsshConnection::unknownHost, this, &FileManager::unknownSshServer);
+        connect(connection, &LibsshConnection::needPassword, this, &FileManager::needSshPassword);
+        connect(connection, &LibsshConnection::needKbiAnswers, this, &FileManager::needKbiAnswers);
+        connect(connection, &LibsshConnection::authFailed, this, &FileManager::sshAuthenticationFailed);
+        connect(connection, &LibsshConnection::needPassphrase, this, &FileManager::needSshPassphrase);
+        _acquiredConnections.append(connection);
+        return connection;
+    }
+#endif
+    if(sshImpl == SshConnection::Openssh) {
+        OpensshConnection* connection = new OpensshConnection(sshParams);
+        connect(connection, &SshConnection::disconnected, this, &FileManager::cleanupSshConnection);
+        _acquiredConnections.append(connection);
+        return connection;
+    }
+    return nullptr;
 }
 
 /******************************************************************************
@@ -292,12 +298,13 @@ void FileManager::cleanupSshConnection()
     }
 }
 
+#ifdef OVITO_SSH_CLIENT
 /******************************************************************************
 * Is called whenever a SSH connection to an yet unknown server is being established.
 ******************************************************************************/
 void FileManager::unknownSshServer()
 {
-    SshConnection* connection = qobject_cast<SshConnection*>(sender());
+    LibsshConnection* connection = qobject_cast<LibsshConnection*>(sender());
     if(!connection)
         return;
 
@@ -327,15 +334,15 @@ bool FileManager::detectedUnknownSshServer(const QString& hostname, const QStrin
 ******************************************************************************/
 void FileManager::sshAuthenticationFailed(int auth)
 {
-    SshConnection* connection = qobject_cast<SshConnection*>(sender());
+    LibsshConnection* connection = qobject_cast<LibsshConnection*>(sender());
     if(!connection)
         return;
 
-    SshConnection::AuthMethods supported = connection->supportedAuthMethods();
-    if(auth & SshConnection::UseAuthPassword && supported & SshConnection::AuthMethodPassword) {
+    LibsshConnection::AuthMethods supported = connection->supportedAuthMethods();
+    if(auth & LibsshConnection::UseAuthPassword && supported & LibsshConnection::AuthMethodPassword) {
         connection->usePasswordAuth(true);
     }
-    else if(auth & SshConnection::UseAuthKbi && supported & SshConnection::AuthMethodKbi) {
+    else if(auth & LibsshConnection::UseAuthKbi && supported & LibsshConnection::AuthMethodKbi) {
         connection->useKbiAuth(true);
     }
 }
@@ -345,7 +352,7 @@ void FileManager::sshAuthenticationFailed(int auth)
 ******************************************************************************/
 void FileManager::needSshPassword()
 {
-    SshConnection* connection = qobject_cast<SshConnection*>(sender());
+    LibsshConnection* connection = qobject_cast<LibsshConnection*>(sender());
     if(!connection)
         return;
 
@@ -363,12 +370,12 @@ void FileManager::needSshPassword()
 ******************************************************************************/
 void FileManager::needKbiAnswers()
 {
-    SshConnection* connection = qobject_cast<SshConnection*>(sender());
+    LibsshConnection* connection = qobject_cast<LibsshConnection*>(sender());
     if(!connection)
         return;
 
     QStringList answers;
-    for(const SshConnection::KbiQuestion& question : connection->kbiQuestions()) {
+    for(const LibsshConnection::KbiQuestion& question : connection->kbiQuestions()) {
         QString answer;
         if(askUserForKbiResponse(connection->hostname(), connection->username(), question.instruction, question.question, question.showAnswer, answer)) {
             answers << answer;
@@ -414,7 +421,7 @@ bool FileManager::askUserForKbiResponse(const QString& hostname, const QString& 
 ******************************************************************************/
 void FileManager::needSshPassphrase(const QString& prompt)
 {
-    SshConnection* connection = qobject_cast<SshConnection*>(sender());
+    LibsshConnection* connection = qobject_cast<LibsshConnection*>(sender());
     if(!connection)
         return;
 

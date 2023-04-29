@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2018 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -34,7 +34,7 @@
 
 namespace Ovito::Ssh {
 
-class SshConnection;
+class LibsshConnection;
 
 class SshChannel : public QIODevice
 {
@@ -43,7 +43,7 @@ class SshChannel : public QIODevice
 public:
 
     /// Constructor.
-    explicit SshChannel(SshConnection* connection, QObject* parent, bool isStderr = false);
+    explicit SshChannel(LibsshConnection* connection, QObject* parent, bool isStderr = false);
 
     /// Returns true if the current read and write position is at the end of the device.
     virtual bool atEnd() const override;
@@ -81,7 +81,7 @@ protected:
     virtual void queueCheckIO() = 0;
 
     /// Returns the underlying SSH connection.
-    SshConnection* connection() const { return _connection; }
+    LibsshConnection* connection() const { return _connection; }
 
     /// Returns the libssh channel.
     const ssh_channel& channel() const { return _channel; }
@@ -95,7 +95,7 @@ protected:
     };
 
     /// The underlying SSH connection.
-    SshConnection* _connection;
+    LibsshConnection* _connection;
 
     /// The libssh channel.
     ssh_channel _channel = nullptr;

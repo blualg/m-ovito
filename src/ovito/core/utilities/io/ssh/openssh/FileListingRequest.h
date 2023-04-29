@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2018 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -23,21 +23,20 @@
 #pragma once
 
 #include <ovito/core/Core.h>
-#include "ProcessChannel.h"
+#include "SshRequest.h"
 
 namespace Ovito::Ssh {
 
-class LsChannel : public ProcessChannel
+class OpensshConnection;
+
+class FileListingRequest : public SshRequest
 {
     Q_OBJECT
 
 public:
 
     /// Constructor.
-    explicit LsChannel(SshConnection* connection, const QString& location);
-
-    /// Returns the directory listing received from remote host.
-    const QStringList& directoryListing() const { return _directoryListing; }
+    FileListingRequest(OpensshConnection* connection, const QString& path);
 
 Q_SIGNALS:
 
@@ -47,15 +46,21 @@ Q_SIGNALS:
     /// This signal is generated after a directory listing has been fully transmitted.
     void receivedDirectoryComplete(const QStringList& listing);
 
-private Q_SLOTS:
+protected:
 
-    /// Is called whenever data arrives from the remote process.
-    void processData();
+    /// Starts sending commands to the SFTP server.
+    virtual void start(QIODevice* device) override;
+
+    /// Handles messages from the SFTP program.
+    virtual void handleSftpResponse(QIODevice* device, const QByteArray& line) override;
+
+    /// Handles responses from the SFTP program.
+    virtual bool handleSftpError(const QByteArray& line) override;
 
 private:
 
-    QStringList _directoryListing;
+    const QString _path;
+    QStringList _listing;
 };
-
 
 } // End of namespace

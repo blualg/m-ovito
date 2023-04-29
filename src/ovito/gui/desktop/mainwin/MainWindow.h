@@ -50,7 +50,7 @@ public:
 
 public:
 
-    /// Constructor of the main window class.
+    /// Constructor.
     MainWindow();
 
     /// Destructor.
@@ -149,8 +149,16 @@ public:
     /// Displays an error message to the user that is associated with a particular child window or dialog.
     void reportError(const Exception& exception, QWidget* window);
 
+    /// Creates a signal/slot connection which is fired on shutdown.
+    virtual QMetaObject::Connection whenAboutToQuit(const QObject* receiver, const char* method, Qt::ConnectionType type = Qt::AutoConnection) override;
+
     /// Opens another main window (in addition to the existing windows) and optionally loads a file in the new window.
     static void openNewWindow(const QStringList& arguments = {});
+
+Q_SIGNALS:
+
+    /// This signal is emitted when UserInterface::shutdown() is called.
+    void aboutToQuit();
 
 protected:
 
@@ -168,6 +176,9 @@ protected:
 
     /// Called by the system when the drag is dropped on this window.
     virtual void dropEvent(QDropEvent* event) override;
+
+    /// This virtual method is called from UserInterface::shutdown().
+    virtual void signalAboutToQuit() override { Q_EMIT aboutToQuit(); }
 
 private Q_SLOTS:
 
@@ -198,9 +209,6 @@ private:
 
     /// The command panel.
     CommandPanel* _commandPanel;
-
-    /// Manages the asynchronous tasks running in the context of this window.
-    TaskManager _taskManager;
 
     /// Container that keeps a reference to the current dataset.
     GuiDataSetContainer _datasetContainer;

@@ -18,9 +18,9 @@ or numeric results in rendered images or movies.
 HTML text formatting
 """"""""""""""""""""
 
-You can include HTML markup elements and Cascading Style Sheet (CSS) attributes in the text to format individual words and characters.
+You can include HTML markup elements and Cascading Style Sheet (CSS) attributes in the text to format individual words or characters.
 OVITO supports a subset of the HTML standard, which is `documented here <https://doc.qt.io/qt-6/richtext-html-subset.html>`__.
-The following table gives a few examples of HTML markup elements:
+The following table gives a few examples of HTML markup elements and the rendered output they produce:
 
 .. |underlined| raw:: html
 
@@ -43,8 +43,10 @@ The following table gives a few examples of HTML markup elements:
     - First line |br| Second line
   * - Some :raw-html:`<font color="green"><b>`\ <i>\ :raw-html:`</b></font>`\ italic\ :raw-html:`<font color="green"><b>`\ </i>\ :raw-html:`</b></font>` text
     - Some *italic* text
-  * - Some :raw-html:`<font color="green"><b>`\ <span style="text-decoration: underline">\ :raw-html:`</b></font>`\ underlined\ :raw-html:`<font color="green"><b>`\ </span>\ :raw-html:`</b></font>` text
+  * - Some :raw-html:`<font color="green"><b>`\ <span style=\"text-decoration: underline\">\ :raw-html:`</b></font>`\ underlined\ :raw-html:`<font color="green"><b>`\ </span>\ :raw-html:`</b></font>` text
     - Some |underlined| text
+  * - [1\ :raw-html:`<font color="green"><b>`\ <span style=\"text-decoration: overline\">\ :raw-html:`</b></font>`\ 1\ :raw-html:`<font color="green"><b>`\ </span>\ :raw-html:`</b></font>`\ 2]
+    - :math:`[1\bar{1}2]`
 
 Including computed values in the text
 """""""""""""""""""""""""""""""""""""

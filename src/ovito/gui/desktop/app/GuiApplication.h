@@ -25,17 +25,15 @@
 
 #include <ovito/gui/desktop/GUI.h>
 #include <ovito/gui/desktop/utilities/io/GuiFileManager.h>
-#include <ovito/core/app/UserInterface.h>
 #include <ovito/core/utilities/Exception.h>
 #include <ovito/core/app/StandaloneApplication.h>
-#include <ovito/core/dataset/DataSetContainer.h>
 
 namespace Ovito {
 
 /**
  * \brief The main application with a graphical user interface.
  */
-class OVITO_GUI_EXPORT GuiApplication : public StandaloneApplication, private UserInterface
+class OVITO_GUI_EXPORT GuiApplication : public StandaloneApplication
 {
     Q_OBJECT
 
@@ -83,9 +81,6 @@ private:
 
     /// The global file manager.
     GuiFileManager _fileManager;
-
-    /// The global dataset container (only used in command line mode).
-    DataSetContainer _globalDatasetContainer;
 
 #ifdef Q_OS_LINUX
     /// Cached results of detectDarkTheme().

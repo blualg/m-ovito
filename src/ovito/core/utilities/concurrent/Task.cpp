@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -21,6 +21,8 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/core/Core.h>
+#include <ovito/core/app/UserInterface.h>
+#include <ovito/core/app/Application.h>
 #include "Task.h"
 #include "Future.h"
 #include "AsynchronousTask.h"
@@ -271,6 +273,7 @@ void Task::removeCallback(detail::TaskCallbackBase* cb) noexcept
 bool Task::waitFor(detail::TaskReference awaitedTask)
 {
     OVITO_ASSERT(awaitedTask);
+    OVITO_ASSERT(ExecutionContext::current().isValid());
 
     // The task this function was called from.
     Task* waitingTask = Task::current();
@@ -359,6 +362,10 @@ bool Task::waitFor(detail::TaskReference awaitedTask)
         // In this case, use a local event loop to keep processing application events while waiting.
         OVITO_ASSERT(!QCoreApplication::instance() || QThread::currentThread() == QCoreApplication::instance()->thread());
 
+        // Register the waiting task with the task manager such that it gets canceled in
+        // case the UI is shutting down while we are waiting.
+        ExecutionContext::current().ui().taskManager().addTaskInternal(waitingTaskPtr);
+
         // The local event loop we are going to start.
         QEventLoop eventLoop;
 
@@ -374,8 +381,9 @@ bool Task::waitFor(detail::TaskReference awaitedTask)
 
         // Register a callback function with the awaited task, which makes the event loop quit when the task gets canceled or finishes.
         detail::FunctionTaskCallback awaitedTaskCallback(awaitedTaskPtr.get(), [&eventLoop](int state) {
-            if(state & Task::Finished)
+            if(state & Task::Finished) {
                 QMetaObject::invokeMethod(&eventLoop, &QEventLoop::quit, Qt::QueuedConnection);
+            }
             return true;
         });
 
@@ -390,8 +398,9 @@ bool Task::waitFor(detail::TaskReference awaitedTask)
         QEventLoop* previousEventLoop = activeEventLoop.exchange(&eventLoop, std::memory_order_release);
         auto oldSignalHandler = ::signal(SIGINT, [](int) {
             userInterrupt.storeRelease(1);
-            if(QEventLoop* eventLoop = activeEventLoop.load(std::memory_order_acquire))
+            if(QEventLoop* eventLoop = activeEventLoop.load(std::memory_order_acquire)) {
                 QMetaObject::invokeMethod(eventLoop, &QEventLoop::quit, Qt::QueuedConnection);
+            }
         });
 #endif
 
@@ -429,6 +438,11 @@ bool Task::waitFor(detail::TaskReference awaitedTask)
 
     // Now check if the awaited task has been canceled.
     awaitedTaskLocker.relock();
+
+    // When the event loop was exited because the application is shutting down, cancel
+    // all tasks immediately.
+    if(ExecutionContext::current().ui().isShuttingDown())
+       awaitedTaskPtr->cancelAndFinishLocked(awaitedTaskLocker);
 
     if(awaitedTaskPtr->isCanceled()) {
         // If the awaited task was canceled, cancel the waiting task as well.
