@@ -284,7 +284,7 @@ void GuiApplication::initializeUserInterface(UserInterface& userInterface, const
         QString startupFilename = arguments.front();
         if(startupFilename.endsWith(".ovito", Qt::CaseInsensitive)) {
             try {
-                // TODO: Create sub-task for this operation.
+                MainThreadOperation loadOperation(true);
                 if(OORef<DataSet> dataset = datasetContainer.loadDataset(startupFilename)) {
                     datasetContainer.setCurrentSet(std::move(dataset));
                 }
@@ -301,7 +301,7 @@ void GuiApplication::initializeUserInterface(UserInterface& userInterface, const
         QString defaultsFilePath = QStandardPaths::locate(QStandardPaths::AppDataLocation, QStringLiteral("defaults.ovito"));
         if(!defaultsFilePath.isEmpty()) {
             try {
-                // TODO: Create sub-task for this operation.
+                MainThreadOperation loadOperation(true);
                 if(OORef<DataSet> dataset = datasetContainer.loadDataset(defaultsFilePath)) {
                     dataset->setFilePath({});
                     datasetContainer.setCurrentSet(std::move(dataset));
@@ -333,8 +333,10 @@ void GuiApplication::initializeUserInterface(UserInterface& userInterface, const
             if(!importUrls.empty()) {
                 if(numSessionFiles)
                     throw Exception(tr("Detected incompatible arguments: Cannot open a session state file and a simulation data file at the same time."));
-                if(GuiDataSetContainer* guiContainer = dynamic_object_cast<GuiDataSetContainer>(&datasetContainer))
-                    guiContainer->importFiles(std::move(importUrls)); // TODO: Create sub-task for this operation.
+                if(GuiDataSetContainer* guiContainer = dynamic_object_cast<GuiDataSetContainer>(&datasetContainer)) {
+                    MainThreadOperation importOperation(true);
+                    guiContainer->importFiles(std::move(importUrls));
+                }
                 else
                     throw Exception(tr("Cannot import data files from the command line when running in console mode."));
             }
