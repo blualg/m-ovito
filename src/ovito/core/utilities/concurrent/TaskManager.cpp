@@ -212,7 +212,8 @@ void TaskManager::shutdown()
         // Also switch back to the null task.
         Task::Scope taskScope(nullptr);
 
-        int result = eventLoop.exec();
+        OVITO_ASSERT(!runningTasks().empty());
+        eventLoop.exec();
     }
     OVITO_ASSERT(runningTasks().empty());
 

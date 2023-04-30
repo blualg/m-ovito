@@ -247,6 +247,8 @@ ENDIF()
 
 # Define the OVITO_DEBUG macro in debug builds.
 TARGET_COMPILE_DEFINITIONS(Core PUBLIC "$<$<CONFIG:Debug>:OVITO_DEBUG>")
+# Define QT_NO_DEBUG_OUTPUT in release builds.
+TARGET_COMPILE_DEFINITIONS(Core PUBLIC "$<$<CONFIG:Release>:QT_NO_DEBUG_OUTPUT=1>")
 
 # Turn off Clang compiler warnings regarding undefined instantiation of static variable of class templates.
 IF(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
