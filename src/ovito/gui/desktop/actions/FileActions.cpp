@@ -246,7 +246,7 @@ void WidgetActionManager::on_FileRemoteImport_triggered()
             // Let the user enter the URL of the remote file.
             ImportRemoteFileDialog dialog(mainWindow(), PluginManager::instance().metaclassMembers<FileImporter>(), &mainWindow(), tr("Load Remote File"));
             if(dialog.exec() != QDialog::Accepted)
-                return {{}, nullptr, {}};
+                return {};
 
             // Selected importer class and sub-format name.
             const auto [importerClass, importerFormat] = dialog.selectedFileImporter();
