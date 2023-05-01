@@ -175,7 +175,7 @@ QString Application::applicationName()
 /******************************************************************************
 * This is called on program startup.
 ******************************************************************************/
-bool Application::initialize()
+bool Application::initialize(int& argc, char** argv)
 {
     // Install custom Qt error message handler to catch fatal errors in debug mode
     // or redirect log output to file instead of the console if requested by the user.
@@ -265,6 +265,12 @@ bool Application::initialize()
     // Register Qt resources.
     ::registerQtResources();
 
+    // Initialize Kokkos.
+#ifdef OVITO_USE_KOKKOS
+    qDebug() << "Initializing kokkos";
+    Kokkos::initialize(argc, argv);
+#endif
+
     return true;
 }
 
@@ -309,6 +315,21 @@ void Application::createQtApplication(int& argc, char** argv)
     else {
         new QGuiApplication(argc, argv);
     }
+}
+
+
+/******************************************************************************
+* Is called by UserInterface::shutdown() when application is shutting down.
+******************************************************************************/
+void Application::signalAboutToQuit()
+{
+    Q_EMIT aboutToQuit();
+
+    // Shutdown Kokkos.
+#ifdef OVITO_USE_KOKKOS
+    qDebug() << "Shutting down kokkos";
+    Kokkos::finalize();
+#endif
 }
 
 /******************************************************************************

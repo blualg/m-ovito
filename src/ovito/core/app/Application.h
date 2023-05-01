@@ -50,9 +50,11 @@ public:
     virtual ~Application();
 
     /// \brief Initializes the application.
+    /// \param argc The number of command line arguments.
+    /// \param argv The command line arguments.
     /// \return \c true if the application was initialized successfully;
     ///         \c false if an error occurred and the program should be terminated.
-    bool initialize();
+    bool initialize(int& argc, char** argv);
 
     /// \brief Handler method for Qt error messages.
     ///
@@ -123,8 +125,8 @@ Q_SIGNALS:
 
 protected:
 
-    /// This virtual method is called from UserInterface::shutdown().
-    virtual void signalAboutToQuit() override { Q_EMIT aboutToQuit(); }
+    /// Is called by UserInterface::shutdown() when application is shutting down.
+    virtual void signalAboutToQuit() override;
 
 protected:
 

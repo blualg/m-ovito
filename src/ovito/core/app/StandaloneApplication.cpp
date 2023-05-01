@@ -35,7 +35,7 @@ namespace Ovito {
 ******************************************************************************/
 bool StandaloneApplication::initialize(int& argc, char** argv)
 {
-    if(!Application::initialize())
+    if(!Application::initialize(argc, argv))
         return false;
 
     // Set the application name.
