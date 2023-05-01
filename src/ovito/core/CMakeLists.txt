@@ -355,6 +355,16 @@ IF(ZLIB_FOUND AND NOT EMSCRIPTEN)
     ENDIF()
 ENDIF()
 
+# Workaround for failing Linux conda builds (may become obsolete in the future once the issue in qt6-main has been fixed):
+#   "warning: libEGL.so.1, needed by libQt6Gui.so.6.5.0, not found (try using -rpath or -rpath-link"
+IF(OVITO_BUILD_CONDA AND UNIX AND NOT APPLE)
+    # Find and link against EGL library (optional).
+    FIND_PACKAGE(OpenGL COMPONENTS EGL)
+    IF(TARGET OpenGL::EGL)
+        TARGET_LINK_LIBRARIES(Core PUBLIC OpenGL::EGL)
+    ENDIF()
+ENDIF()
+
 # Deploy the libssh library and its dependencies.
 IF(OVITO_BUILD_SSH_CLIENT AND Libssh_FOUND AND NOT EMSCRIPTEN AND NOT OVITO_BUILD_CONDA)
     IF(WIN32)

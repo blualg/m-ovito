@@ -132,7 +132,8 @@ void DislocImporter::FrameLoader::loadFile()
     int root_ncid = 0;
     try {
         // Open the input file for reading.
-        NCERR(nc_open(qPrintable(filename), NC_NOWRITE, &root_ncid));
+        QByteArray encodedFilename = QFile::encodeName(filename);
+        NCERR(nc_open(encodedFilename.constData(), NC_NOWRITE, &root_ncid));
 
         // Make sure we have the right file convention.
         size_t len;
