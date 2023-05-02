@@ -262,7 +262,7 @@ FUNCTION(deploy_qt_framework_files)
             IF(NOT OVITO_ICU_DEP)
                 MESSAGE(FATAL_ERROR "Could not find shared library libxcb-xinerama.so.0 in system path.")
             ENDIF()
-            OVITO_INSTALL_SHARED_LIB("${OVITO_ICU_DEP}" DESTINATION "./lib")
+            OVITO_INSTALL_SHARED_LIB("${OVITO_ICU_DEP}" DESTINATION ".")
             UNSET(OVITO_ICU_DEP CACHE)
         ENDFOREACH()
 
