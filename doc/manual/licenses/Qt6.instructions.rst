@@ -32,6 +32,7 @@ The following commands have been used to generate them::
       -no-eglfs \
       -no-linuxfb \
       -feature-vulkan -I $VULKAN_SDK/include -L $VULKAN_SDK/lib \
+      -icu \
       -no-feature-qdoc \
       -skip qt5compat \
       -skip qtlottie \
