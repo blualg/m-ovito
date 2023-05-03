@@ -5,6 +5,15 @@ What's new
 ==========
 
 -------------------------
+Version 3.8.4 (03-May-23)
+-------------------------
+
+* Fix: ffmpeg video encoding crashes on Windows if output path contains non-ascii characters
+* Silence console message "Numeric mode unsupported in the posix collation implementation" on Linux by enabling ICU support in Qt build
+* |ovito-pro| Fix: Segfault in PySide6 package initialization on Linux when adding a Python layer to a viewport
+* |ovito-pro| Fix: Interchanged xz/yz simulation box shear components in :py:func:`~ovito.io.lammps.lammps_to_ovito` Python function
+
+-------------------------
 Version 3.8.3 (16-Apr-23)
 -------------------------
 
