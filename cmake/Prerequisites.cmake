@@ -27,7 +27,7 @@
 MACRO(OVITO_INSTALL_SHARED_LIB shared_lib)
 
     # Parse macro arguments.
-    CMAKE_PARSE_ARGUMENTS(ARG 
+    CMAKE_PARSE_ARGUMENTS(ARG
         "OPTIONAL" # options
         "DESTINATION"  # one-value keywords
         "" # multi-value keywords
@@ -46,7 +46,7 @@ MACRO(OVITO_INSTALL_SHARED_LIB shared_lib)
 
     IF(WIN32 OR OVITO_REDISTRIBUTABLE_PACKAGE OR OVITO_BUILD_PYPI)
         # Replace backslashes in the path with regular slashes.
-        STRING(REGEX REPLACE "\\\\" "/" _shared_lib ${shared_lib}) 
+        STRING(REGEX REPLACE "\\\\" "/" _shared_lib ${shared_lib})
         # Make sure the destination directory exists.
         SET(_abs_dest_dir "${Ovito_BINARY_DIR}/${OVITO_RELATIVE_3RDPARTY_LIBRARY_DIRECTORY}/${destination_dir}")
         FILE(MAKE_DIRECTORY "${_abs_dest_dir}")
@@ -54,7 +54,7 @@ MACRO(OVITO_INSTALL_SHARED_LIB shared_lib)
         GET_FILENAME_COMPONENT(shared_lib_ext "${_shared_lib}" EXT)
         STRING(REPLACE ${shared_lib_ext} "" lib_base_name "${_shared_lib}")
 
-        # Find all files/symlinks in the same directory having the same base name. 
+        # Find all files/symlinks in the same directory having the same base name.
         FILE(GLOB lib_versions LIST_DIRECTORIES FALSE "${_shared_lib}" "${lib_base_name}.*${CMAKE_SHARED_LIBRARY_SUFFIX}" "${lib_base_name}${CMAKE_SHARED_LIBRARY_SUFFIX}.*")
         IF(NOT lib_versions)
             IF(${ARG_OPTIONAL})
@@ -96,7 +96,7 @@ MACRO(OVITO_INSTALL_SHARED_LIB shared_lib)
                 IF(WIN32 OR NOT OVITO_BUILD_PYPI)
                     INSTALL(FILES "${lib_file}" DESTINATION "${OVITO_RELATIVE_3RDPARTY_LIBRARY_DIRECTORY}/${destination_dir}/")
                 ELSE()
-                    # Detect if this .so file is a linker script starting with the string "INPUT". 
+                    # Detect if this .so file is a linker script starting with the string "INPUT".
                     # The TBB libraries use this special GNU ld feature instead of regular symbolic links to create aliases of a shared library in the same directory.
                     FILE(READ "${lib_file}" _SO_FILE_HEADER LIMIT 5 HEX)
                     IF("${_SO_FILE_HEADER}" STREQUAL "494e505554") # 494e505554 = "INPUT"
@@ -121,7 +121,7 @@ MACRO(OVITO_INSTALL_SHARED_LIB shared_lib)
     ENDIF()
 ENDMACRO()
 
-# Helper function that recursively gathers a list of libraries and other targets that the given 
+# Helper function that recursively gathers a list of libraries and other targets that the given
 # target depends on directly and indirectly.
 FUNCTION(get_all_target_dependencies OUTPUT_LIST TARGET)
 
@@ -146,7 +146,7 @@ FUNCTION(get_all_target_dependencies OUTPUT_LIST TARGET)
     ELSE()
         GET_TARGET_PROPERTY(LIBS ${TARGET} LINK_LIBRARIES)
     ENDIF()
-    GET_TARGET_PROPERTY(DEPENDENCIES ${TARGET} MANUALLY_ADDED_DEPENDENCIES) 
+    GET_TARGET_PROPERTY(DEPENDENCIES ${TARGET} MANUALLY_ADDED_DEPENDENCIES)
     LIST(APPEND LIBS ${DEPENDENCIES})
     FOREACH(LIB ${LIBS})
         IF(NOT LIB IN_LIST ${OUTPUT_LIST})
@@ -255,7 +255,17 @@ FUNCTION(deploy_qt_framework_files)
         ENDIF()
         OVITO_INSTALL_SHARED_LIB("${OVITO_XINERAMA_DEP}" DESTINATION "./lib")
         UNSET(OVITO_XINERAMA_DEP CACHE)
-        
+
+        # Distribute ICU libraries.
+        FOREACH(iculib libicui18n.so libicuuc.so libicudata.so)
+            FIND_LIBRARY(OVITO_ICU_DEP NAMES ${iculib} ${iculib}.50 PATHS /usr/lib /usr/local/lib /usr/lib/x86_64-linux-gnu /usr/lib64 NO_DEFAULT_PATH)
+            IF(NOT OVITO_ICU_DEP)
+                MESSAGE(FATAL_ERROR "Could not find shared library libxcb-xinerama.so.0 in system path.")
+            ENDIF()
+            OVITO_INSTALL_SHARED_LIB("${OVITO_ICU_DEP}" DESTINATION ".")
+            UNSET(OVITO_ICU_DEP CACHE)
+        ENDFOREACH()
+
     ELSEIF(WIN32 AND NOT OVITO_BUILD_PYPI AND NOT OVITO_BUILD_CONDA)
 
         # On Windows, the third-party library DLLs need to be installed in the OVITO directory.
