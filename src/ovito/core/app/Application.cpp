@@ -121,6 +121,13 @@ Application::Application(FileManager& fileManager) :
 Application::~Application()
 {
     OVITO_ASSERT(isShuttingDown()); // Make sure this UserInterface was properly shutdown before being deleted.
+
+#ifdef OVITO_USE_KOKKOS
+    // Shutdown Kokkos.
+    if(Kokkos::is_initialized())
+        Kokkos::finalize();
+#endif
+
     _instance = nullptr;
 #ifdef OVITO_DEBUG
     UserInterface::_isBeingDestructed = true;
@@ -265,9 +272,8 @@ bool Application::initialize(int& argc, char** argv)
     // Register Qt resources.
     ::registerQtResources();
 
-    // Initialize Kokkos.
 #ifdef OVITO_USE_KOKKOS
-    qDebug() << "Initializing kokkos";
+    // Initialize Kokkos.
     Kokkos::initialize(argc, argv);
 #endif
 
@@ -317,19 +323,12 @@ void Application::createQtApplication(int& argc, char** argv)
     }
 }
 
-
 /******************************************************************************
 * Is called by UserInterface::shutdown() when application is shutting down.
 ******************************************************************************/
 void Application::signalAboutToQuit()
 {
     Q_EMIT aboutToQuit();
-
-    // Shutdown Kokkos.
-#ifdef OVITO_USE_KOKKOS
-    qDebug() << "Shutting down kokkos";
-    Kokkos::finalize();
-#endif
 }
 
 /******************************************************************************
