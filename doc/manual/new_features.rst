@@ -1,39 +1,39 @@
 .. _new_features:
 
-==========
-What's new
-==========
+===============
+Version history
+===============
 
--------------------------
-Version 3.8.4 (03-May-23)
--------------------------
+---------------------------
+Version 3.8.4 (03-May-2023)
+---------------------------
 
 * Fix: ffmpeg video encoding crashes on Windows if output path contains non-ascii characters
 * Silence console message "Numeric mode unsupported in the posix collation implementation" on Linux by enabling ICU support in Qt build
 * |ovito-pro| Fix: Segfault in PySide6 package initialization on Linux when adding a Python layer to a viewport
 * |ovito-pro| Fix: Interchanged xz/yz simulation box shear components in :py:func:`~ovito.io.lammps.lammps_to_ovito` Python function
 
--------------------------
-Version 3.8.3 (16-Apr-23)
--------------------------
+---------------------------
+Version 3.8.3 (16-Apr-2023)
+---------------------------
 
 * Further improved performance of sequential loading of compressed trajectory files
 * Fixed regression (since v3.8.0): :py:meth:`Viewport.render_anim() <ovito.vis.Viewport.render_anim>` renders only first animation frame
 * |ovito-pro| Python exceptions raised in user-defined modifier functions are now propagated up the call chain to where the pipeline evaluation was triggered
 * |ovito-pro| Included ``bz2`` and `sqlite3` standard modules, which were missing in embedded Python interpreter on Linux
 
--------------------------
-Version 3.8.2 (04-Apr-23)
--------------------------
+---------------------------
+Version 3.8.2 (04-Apr-2023)
+---------------------------
 
 * Implemented fast access to trajectory frames in compressed (gzipped) files
 * Fix: Segfault when using zoom function in viewport with an attached camera object
 * Fix: Segfault in :ref:`particles.modifiers.coordination_polyhedra` modifier on Linux
 * Fix: Function 'load/save session state' does not follow global working directory
 
--------------------------
-Version 3.8.1 (27-Mar-23)
--------------------------
+---------------------------
+Version 3.8.1 (27-Mar-2023)
+---------------------------
 
 .. rubric:: Identification of volumetric regions using the Gaussian density method |ovito-pro|
 
@@ -59,9 +59,9 @@ for vectorized computation of neighbor lists for many or all particles at once.
 
 * LAMMPS data file reader: Accept '#' in type names, which are referenced in data sections of the file
 
--------------------------
-Version 3.8.0 (03-Mar-23)
--------------------------
+---------------------------
+Version 3.8.0 (03-Mar-2023)
+---------------------------
 
 .. rubric:: Develop custom modifiers with extended capabilities |ovito-pro|
 
@@ -185,7 +185,7 @@ when particles get removed from the simulation over time.
 * |ovito-pro| :py:meth:`PropertyContainer.create_property <ovito.data.PropertyContainer.create_property>`: Accept ``data`` values that are broadcastable to shape of property array.
 
 ----------------------------
-Release 3.7.12 (16-Dec-2022)
+Version 3.7.12 (16-Dec-2022)
 ----------------------------
 
 * GRO file reader: `Recognize additional chemical symbols SI, FE, BR <https://www.ovito.org/forum/topic/only-first-letter-of-particle-types-read-from-gro-file/>`_.
@@ -196,7 +196,7 @@ Release 3.7.12 (16-Dec-2022)
 * |ovito-pro| Fix: Python method  :py:meth:`ovito.data.SurfaceMesh.locate_point() <ovito.data.SurfaceMesh.locate_point>` can yield wrong results for coarse, one-sided meshes.
 
 ----------------------------
-Release 3.7.11 (29-Oct-2022)
+Version 3.7.11 (29-Oct-2022)
 ----------------------------
 
 * Added user option to application settings dialog for changing the working directory behavior.
@@ -206,7 +206,7 @@ Release 3.7.11 (29-Oct-2022)
 * |ovito-pro| Added flat array option to method ``SurfaceMesh.get_face_vertices()``.
 
 ----------------------------
-Release 3.7.10 (09-Oct-2022)
+Version 3.7.10 (09-Oct-2022)
 ----------------------------
 
 * Optimization of main window UI widgets to improve rapid animation playback at high frame rates.
@@ -220,7 +220,7 @@ Release 3.7.10 (09-Oct-2022)
 * |ovito-pro| Automatic conversion of NumPy array scalars to Python numbers when storing them as OVITO global :py:class:`ovito.data.DataCollection` attributes.
 
 ---------------------------
-Release 3.7.9 (12-Sep-2022)
+Version 3.7.9 (12-Sep-2022)
 ---------------------------
 
 * :ref:`particles.modifiers.voronoi_analysis`: Added calculation of cavity radius.
@@ -238,7 +238,7 @@ Release 3.7.9 (12-Sep-2022)
 * |ovito-pro| Fix: Segfault during Python statement ``del ovito.scene.pipelines[:]``.
 
 ---------------------------
-Release 3.7.8 (29-Jul-2022)
+Version 3.7.8 (29-Jul-2022)
 ---------------------------
 
 * Fix: Program crash when quickly skipping through a trajectory consisting of a series of files loaded via SSH (regression OVITO 3.7.0).
@@ -248,13 +248,13 @@ Release 3.7.8 (29-Jul-2022)
 * |ovito-pro| Work around a memory leak in some OpenGL graphics driver implementations when the :py:meth:`ovito.vis.Viewport.render_image() <ovito.vis.Viewport.render_image>` Python function is called repeatedly.
 
 ---------------------------
-Release 3.7.7 (06-Jul-2022)
+Version 3.7.7 (06-Jul-2022)
 ---------------------------
 
 * Ubuntu 22.04 compatibility - Linux package of OVITO now includes a private copy of OpenSSL 1.1 libraries.
 
 ---------------------------
-Release 3.7.6 (23-Jun-2022)
+Version 3.7.6 (23-Jun-2022)
 ---------------------------
 
 * PDB file reader: Added support for CP2K trajectory format.
@@ -267,7 +267,7 @@ Release 3.7.6 (23-Jun-2022)
 * |ovito-pro| Conda channel now provides additional variants of the ```ovito`` <https://conda.ovito.org>`_ package (built against ``tbb`` v2020 and v2021), which avoids dependency conflicts with certain third-party packages when installing them in the same environment.
 
 ---------------------------
-Release 3.7.5 (28-May-2022)
+Version 3.7.5 (28-May-2022)
 ---------------------------
 
 * Smooth trajectory modifier now supports varying number of particles.
@@ -282,7 +282,7 @@ Release 3.7.5 (28-May-2022)
 * |ovito-pro| Dropped support for Python 3.6, which has reached its end-of-life date.
 
 ---------------------------
-Release 3.7.4 (18-Apr-2022)
+Version 3.7.4 (18-Apr-2022)
 ---------------------------
 
 * :ref:`particles.modifiers.centrosymmetry` modifier: New option '*Use only selected particles*'.
@@ -292,9 +292,9 @@ Release 3.7.4 (18-Apr-2022)
 * |ovito-pro| :ref:`particles.modifiers.construct_surface_mesh` modifer: New option 'Map particles to regions'.
 * |ovito-pro| New Python methods :py:meth:`ovito.data.DataCollection.create_cell() <ovito.data.DataCollection.create_cell>`, :py:meth:`ovito.data.DataCollection.create_particles() <ovito.data.DataCollection.create_particles>`, :py:meth:`ovito.data.Particles.create_bonds() <ovito.data.Particles.create_bonds>`.
 
----------------------------
-Release 3.7.3 (29-Mar-2022)
----------------------------
+-----------------------------
+Version 3.7.3 (29-Mar-2022)
+-----------------------------
 
 * DXA modifier now picks up partitioning established by *Grain Segmentation* modifier in the upstream pipeline, see `discussion in the forum <https://www.ovito.org/forum/topic/how/>`_.
 * Fix: XYZ file column mapping is reset when using "Pick new file" function.
@@ -309,7 +309,7 @@ Release 3.7.3 (29-Mar-2022)
 * |ovito-pro| Fix: :py:meth:`ovito.data.DataTable.xy() <ovito.data.DataTable.xy>` method generates wrong x-coords array if data table interval doesn't start at 0.
 
 ---------------------------
-Release 3.7.2 (03-Mar-2022)
+Version 3.7.2 (03-Mar-2022)
 ---------------------------
 
 * Improved render output window with image zoom function.
@@ -318,7 +318,7 @@ Release 3.7.2 (03-Mar-2022)
 * |ovito-pro| Linux: Fixed sqlite3 Python package included in the embedded Python interpreter of OVITO Pro.
 
 ---------------------------
-Release 3.7.1 (26-Feb-2022)
+Version 3.7.1 (26-Feb-2022)
 ---------------------------
 
 * Fixed regression: Segfault when loading session state file containing a viewport camera object.
@@ -327,7 +327,7 @@ Release 3.7.1 (26-Feb-2022)
 * |ovito-pro| Inform user if insufficient file access permissions let license activation fail.
 
 ---------------------------
-Release 3.7.0 (15-Feb-2022)
+Version 3.7.0 (15-Feb-2022)
 ---------------------------
 
 * Visual element and particle type settings can now be preserved when picking a new input simulation file in the :ref:`scene_objects.file_source` external file panel.
@@ -350,7 +350,7 @@ Release 3.7.0 (15-Feb-2022)
 * Fix: Particles visual element does not use uniform scaling factor when rendering some non-spherical particle shapes.
 
 ---------------------------
-Release 3.6.0 (19-Nov-2021)
+Version 3.6.0 (19-Nov-2021)
 ---------------------------
 
 * :ref:`visual_elements.vectors`, :ref:`visual_elements.surface_mesh`, :ref:`visual_elements.voxel_grid`, :ref:`visual_elements.trajectory_lines` visual elements: Added direct color mapping option as a faster alternative to the :ref:`particles.modifiers.color_coding` modifier.
@@ -378,7 +378,7 @@ Release 3.6.0 (19-Nov-2021)
 * |ovito-pro| Fix: Warning "This plugin does not support createPlatformOpenGLContext!" when running in headless mode on Linux machines.
 
 ---------------------------
-Release 3.5.4 (31-Jul-2021)
+Version 3.5.4 (31-Jul-2021)
 ---------------------------
 
 * LAMMPS data file reader and writer now support all LAMMPS atom styles, including the ``hybrid`` style.
@@ -386,7 +386,7 @@ Release 3.5.4 (31-Jul-2021)
 * |ovito-pro| Fix: Tachyon renderer crashes when triangle mesh contains a degenerate vertex normal.
 
 ---------------------------
-Release 3.5.3 (30-Jun-2021)
+Version 3.5.3 (30-Jun-2021)
 ---------------------------
 
 * Added two :ref:`tutorials` to the documentation.
@@ -397,7 +397,7 @@ Release 3.5.3 (30-Jun-2021)
 * Fix: Neighbor finder facilities do not ignore PBC flag along third dimension in 2D mode.
 
 ---------------------------
-Release 3.5.2 (26-May-2021)
+Version 3.5.2 (26-May-2021)
 ---------------------------
 
 * :ref:`particles.modifiers.affine_transformation` modifier now allows entering the translation vector in reduced cell coordinates.
@@ -406,7 +406,7 @@ Release 3.5.2 (26-May-2021)
 * |ovito-pro| Fix: Invisible simulation cell edges when rendering image with orthographic projection with OSPRay
 
 ---------------------------
-Release 3.5.1 (18-May-2021)
+Version 3.5.1 (18-May-2021)
 ---------------------------
 
 * The :ref:`particles.modifiers.coordination_analysis` modifier has gained an option '*Only selected particles*', which restricts RDF calculation to a subset of particles.
@@ -417,7 +417,7 @@ Release 3.5.1 (18-May-2021)
 * |ovito-pro| Fix: :py:meth:`ovito.data.PropertyContainer.create_property() <ovito.data.PropertyContainer.create_property>` method cannot create user-defined property of data type ``int64``.
 
 ---------------------------
-Release 3.5.0 (02-May-2021)
+Version 3.5.0 (02-May-2021)
 ---------------------------
 
 * Pipeline editor supports drag-and-drop operations, which allow easy rearranging of modifiers with the mouse.
@@ -456,7 +456,7 @@ Release 3.5.0 (02-May-2021)
 * |ovito-pro| Fix: Python viewport layer does not get called with current values of user-defined parameters.
 
 ---------------------------
-Release 3.4.4 (12-Mar-21)
+Version 3.4.4 (12-Mar-2021)
 ---------------------------
 
 * Fix: Number of data columns not correctly detected for XYZ files with 5 atoms or less.
@@ -465,9 +465,9 @@ Release 3.4.4 (12-Mar-21)
 * Fix: CIF file reader not automatically recognizing files written by Open Babel (`issue #204) <https://gitlab.com/stuko/ovito/-/issues/204>`_.
 * |ovito-pro| Fix: OSPRay not rendering arrow glyphs correctly.
 
--------------------------
-Release 3.4.3 (25-Feb-21)
--------------------------
+---------------------------
+Version 3.4.3 (25-Feb-2021)
+---------------------------
 
 * Added text outline option to *Coordinate Tripod* viewport layer.
 * Fixed UI issue: Status bar resizing due to invalid unicode character in text string.
@@ -475,24 +475,24 @@ Release 3.4.3 (25-Feb-21)
 * Improved automatic detection of PDB file format.
 * |ovito-pro| It's now okay to assign a simple string to the :py:class:`ovito.modifiers.ExpressionSelectionModifier` expression field.
 
--------------------------
-Release 3.4.2 (15-Feb-21)
--------------------------
+---------------------------
+Version 3.4.2 (15-Feb-2021)
+---------------------------
 
 * Long text strings displayed in the status bar of OVITO now get broken into two lines in order to show more property values in the available space.
 * Bug fix: Status bar doesn't display latest set of particle properties while positioning the mouse cursor over a particle. This fix corrects a regression introduced with OVITO 3.4.0.
 * Fixed a limitation of the PTM modifier not identifying diamond and graphene structures in small periodic simulation cells.
 
--------------------------
-Release 3.4.1 (03-Feb-21)
--------------------------
+---------------------------
+Version 3.4.1 (03-Feb-2021)
+---------------------------
 
 * Fixed runtime linker error when importing ``ovito`` Python module installed via pip on Linux.
 * |ovito-pro| Spatial binning modifier can now operate on vectorial particle properties.
 
--------------------------
-Release 3.4.0 (28-Jan-21)
--------------------------
+---------------------------
+Version 3.4.0 (28-Jan-2021)
+---------------------------
 
 * Backward incompatible .ovito state file format change: Program sessions saved with OVITO 3.4 or later cannot be opened in previous versions!
 * Extensive redesign of OVITO's internal C++ data object model to make it thread-safe. User experience and Python API remain largely unaffected.
@@ -508,24 +508,24 @@ Release 3.4.0 (28-Jan-21)
 * |ovito-pro| OSPRay and Tachyon renderers can now render polyhedral meshes with highlighted edges (wireframe overlay).
 * |ovito-pro| New Python method :py:meth:`ovito.data.NearestNeighborFinder.find_at() <ovito.data.NearestNeighborFinder.find_at>`.
 
--------------------------
-Release 3.3.5 (12-Dec-20)
--------------------------
+---------------------------
+Version 3.3.5 (12-Dec-2020)
+---------------------------
 
 * Extended the :ref:`particles.modifiers.smooth_trajectory` modifier to interpolate/average all scalar and continuous particle properties.
 * Fixed handling of stacking faults of arbitrary thickness in :ref:`particles.modifiers.grain_segmentation` algorithm.
 * |ovito-pro| Fixed shading issue for ellipsoidal particles in OSPRay renderer.
 * |ovito-pro| Fixed z-clipping issue in OSPRay and Tachyon renderers for viewports with parallel projections.
 
--------------------------
-Release 3.3.4 (27-Nov-20)
--------------------------
+---------------------------
+Version 3.3.4 (27-Nov-2020)
+---------------------------
 
 * Another tweak to the PTM algorithm to fix a regression, which let the PTM modifier fail to correctly identify some BCC atoms.
 
--------------------------
-Release 3.3.3 (23-Nov-20)
--------------------------
+---------------------------
+Version 3.3.3 (23-Nov-2020)
+---------------------------
 
 * :ref:`particles.modifiers.construct_surface_mesh` modifier: New capability to compute distance of each particle from closest point on the surface.
 * Added a user option to :ref:`viewport_layers.text_label`, which allows controlling the output precision and formatting of decimal values.
@@ -534,22 +534,22 @@ Release 3.3.3 (23-Nov-20)
 * |ovito-pro| Fixed visual issue in OSPRay renderer when rendering semi-transparent ellipsoidal particles.
 * |ovito-pro| New code example showing how to :py:class:`ovito.modifiers.CoordinationAnalysisModifier` access partial RDFs computed by ``CoordinationAnalysisModifier``.
 
--------------------------
-Release 3.3.2 (12-Nov-20)
--------------------------
+---------------------------
+Version 3.3.2 (12-Nov-2020)
+---------------------------
 
 * Included shared library ``libxcb-xinerama.so`` in binary package for Linux, which may not be present on some systems by default.
 
--------------------------
-Release 3.3.1 (13-Oct-20)
--------------------------
+---------------------------
+Version 3.3.1 (13-Oct-2020)
+---------------------------
 
 * Grain segmentation modifier: Fixed a bug in the handling of stacking faults.
 * |ovito-pro| Support license option that allows running the GUI on arbitrary nodes of a computing cluster.
 
--------------------------
-Release 3.3.0 (07-Oct-20)
--------------------------
+---------------------------
+Version 3.3.0 (07-Oct-2020)
+---------------------------
 
 * New option in :ref:`application_settings.general`: Sort list of available modifiers by name instead of category.
 * Data plot window now support mouse interaction (zooming/panning), allowing you to take a closer look at the displayed graph.
@@ -569,9 +569,9 @@ Release 3.3.0 (07-Oct-20)
 * |ovito-pro| :ref:`particles.modifiers.bin_and_reduce` modifier: The output ``VoxelGrid`` object now has the identifier ``'binning'`` instead of ``'binning[]'``. Note that this represents a breaking change to existing Python scripts employing the :py:class:`ovito.modifiers.SpatialBinningModifier` class.
 * |ovito-pro| Bug fix: Python code generator includes ``'LAMMPSAtomStyle.'`` prefix in ``import_file()`` calls.
 
--------------------------
-Release 3.2.1 (28-Aug-20)
--------------------------
+---------------------------
+Version 3.2.1 (28-Aug-2020)
+---------------------------
 
 * Load Trajectory modifier: Support trajectory datasets containing more particles than the topology dataset.
 * LAMMPS dump file reader: Support files containing both ``type`` and ``element`` data columns (`issue #193 <https://gitlab.com/stuko/ovito/-/issues/193>`_).
@@ -579,9 +579,9 @@ Release 3.2.1 (28-Aug-20)
 * Upgraded third-party software components: Qt 5.15, Python 3.8.5, NetCDF 4.7.4, Libssh 0.9.4, OSPRay 2.2.0.
 * |ovito-pro| OSPRay: Applied patch to fix a memory leak (`issue #196 <https://gitlab.com/stuko/ovito/-/issues/196>`_).
 
--------------------------
-Release 3.2.0 (10-Aug-20)
--------------------------
+---------------------------
+Version 3.2.0 (10-Aug-2020)
+---------------------------
 
 * Added a file reader for the `PDBx/mmCIF <http://mmcif.wwpdb.org>`_ file format.
 * :ref:`visual_elements.vectors`: Added offset and transparency parameters.
@@ -596,16 +596,16 @@ Release 3.2.0 (10-Aug-20)
 * |ovito-pro| Added the :py:meth:`ovito.data.CutoffNeighborFinder.neighbor_distances() <ovito.data.CutoffNeighborFinder.neighbor_distances>` and :py:meth:`ovito.data.CutoffNeighborFinder.neighbor_vectors() <ovito.data.CutoffNeighborFinder.neighbor_vectors>` Python methods.
 * |ovito-pro| Added the :py:meth:`ovito.vis.Viewport.create_jupyter_widget() <ovito.vis.Viewport.create_jupyter_widget>` method for building simple user interfaces that make use of OVITO's interactive visualization capabilities.
 
--------------------------
-Release 3.1.3 (30-Jul-20)
--------------------------
+---------------------------
+Version 3.1.3 (30-Jul-2020)
+---------------------------
 
 * PTM modifier: Fixed identification of chemically ordered binary structures, which got broken in a recent update
 * PDB file format reader: Support for datasets with more than 9,999 atoms (see `merge request 25 <https://gitlab.com/stuko/ovito/-/merge_requests/25>`_)
 
--------------------------
-Release 3.1.2 (13-Jul-20)
--------------------------
+---------------------------
+Version 3.1.2 (13-Jul-2020)
+---------------------------
 
 * New option for turning off :ref:`scene_objects.file_source` automatic generation of file search patterns
 * New :ref:`scene_objects.file_source` Configure Trajectory Playback dialog, allows controlling the mapping of trajectory frames to animation frames
@@ -613,137 +613,137 @@ Release 3.1.2 (13-Jul-20)
 * Bug fix: Animation rendering process cannot be canceled sometimes
 * |ovito-pro| Added :py:meth:`ovito.data.DislocationNetwork.set_segment() <ovito.data.DislocationNetwork.set_segment>` method for manipulating dislocation line data from Python
 
--------------------------
-Release 3.1.1 (21-Jun-20)
--------------------------
+---------------------------
+Version 3.1.1 (21-Jun-2020)
+---------------------------
 
 * Bug fix: LAMMPS data file reader fails to correctly read '*Masses*' file section with irregularly ordered atom types
 * |ovito-pro| Time averaging modifier: Check that x-values of data points are constant when averaging a data table
 
--------------------------
-Release 3.1.0 (14-Jun-20)
--------------------------
+---------------------------
+Version 3.1.0 (14-Jun-2020)
+---------------------------
 
 * |ovito-pro| New feature: :ref:`python_code_generation`
 * New feature: :ref:`particles.modifiers.grain_segmentation`
 
--------------------------
-Release 3.0.1 (05-Jun-20)
--------------------------
+---------------------------
+Version 3.0.1 (05-Jun-2020)
+---------------------------
 
 * Bug fix: Adjusted internal parameter of :ref:`particles.modifiers.construct_surface_mesh` modifier to avoid sporadic error "Adjacent cell face not found" for periodic systems.
 * Enhancement: LAMMPS dump file reader can now parse "diameter" file column as ``Radius`` particle property, automatically performing division by 2.
 
--------------------------
-Release 3.0.0 (30-May-20)
--------------------------
+---------------------------
+Version 3.0.0 (30-May-2020)
+---------------------------
 
-* dev816 :ref:`particles.modifiers.smooth_trajectory` modifier interpolates particle orientations in addition to particle positions. 
-* dev815 Added capability to :ref:`particles.modifiers.construct_surface_mesh` modifier to identify pores/voids and individually compute their volumes and surface areas. 
-* dev808 Extended the :ref:`rendering.ospray_renderer` with a sky & sun light source. 
-* dev806 Integrated copy protection into OVITO Pro builds. 
-* dev793 Introduced `OVITO_THREAD_COUNT </docs/current/python/introduction/advanced_topics.php#multithreading-settings>`_ environment variable for controlling the number of CPU cores used by OVITO. 
-* dev792 Added old VASP 4.x file format to POSCAR reader (in order to support files written by ASE). 
-* dev791 Added user option to LAMMPS data writer for omitting the "Masses" file section. 
-* dev789 OVITO can now read/write extended topology information from/to LAMMPS data files: angles/dihedrals/impropers. 
-* dev786 Bug fix: Output of Displacements/Atomic Strain/Wigner-Seitz modifiers can be all zeros in relative offset mode (dev679 regression). 
-* dev785 Eliminated bottlenecks in GUI, which slowed down animation playback of long trajectories (>100k frames). 
-* dev781 Correct handling of LAMMPS dump files with dual data columns (`issue #193 <https://gitlab.com/stuko/ovito/-/issues/193>`_). 
-* dev781 Updated OSPRay renderer to version 2.1.0 and integrated OSPRay plugin into Anaconda build of OVITO. 
-* dev781 Bug fix: Color Coding modifier does not list available bond properties. 
-* dev766 Added HTTP protocol support. OVITO can now :ref:`import data files stored on a web server <usage.import.remote>`. 
-* dev765 OVITO is now also available as an Anaconda package on Windows. 
-* dev765 Improvements to the :ref:`Adjust View <viewports.adjust_view_dialog>` dialog, which now allows interacting with the viewports while being open. 
-* dev760 Bug fix: Installing a third-party extension module in *ovitos* fails on macOS due to security restrictions (`issue #191 <https://gitlab.com/stuko/ovito/-/issues/191>`_). 
-* dev760 Bug fix: Checkbox " File contains multiple timesteps" in GUI does not reflect correct state of file reader.
-* dev752 Integrated PM Larsen's scheme of calculating the :ref:`particles.modifiers.centrosymmetry` parameter using minimum-weight matching. 
-* dev750 New ``crop`` option in :py:meth:`ovito.vis.Viewport.render_image() <ovito.vis.Viewport.render_image>` Python function. 
-* dev747 Windows installer is now digitally signed to be compatible with Microsoft Authenticode. 
-* dev747 The embedded Python interpreter ``ovitos`` now ignores ``PYTHONPATH`` environment variable and user package directories (`issue #189 <https://gitlab.com/stuko/ovito/-/issues/189>`_). 
-* dev747 Fixed LAMMPS data file export for simulation cells aligned along negative coordinate axes (`issue #188 <https://gitlab.com/stuko/ovito/-/issues/188>`_). 
-* dev743 New algorithm type in :ref:`particles.modifiers.common_neighbor_analysis`: Interval CNA 
-* dev734 Bug fix: Crash during animation frame change when using DXA modifier. 
-* dev733 New "Denoising filter" option in :ref:`OSPRay renderer <rendering.ospray_renderer>`, which greatly improves the visual quality of rendered images. 
-* dev733 New "Every Nth frame" option in :ref:`animation settings dialog <animation.animation_settings_dialog>`. 
-* dev733 Combined ``bin_count_{xyz}`` parameter fields of :ref:`SpatialBinningModifier <particles.modifiers.bin_and_reduce>` class into single ``bin_count`` field. 
-* dev733 GSD file reader: Added support for the ``SphereUnion`` particle shape specification (see `here <https://gitlab.com/stuko/ovito/-/issues/177>`_). 
-* dev733 Fix of UI bug: Data inspector panel not opening correctly in some situations. 
-* OVITO now available as a `Conda package <https://www.ovito.org/python-downloads/>`_ for Linux and macOS. 
-* dev712 Extended the :py:meth:`ovito.vis.Viewport.zoom_all() <ovito.vis.Viewport.zoom_all>` Python function. 
-* dev687 Fixed broken (since dev679) OVITO program package for Windows, which crashed when inserting modifiers into the pipeline. 
-* dev682 Bug fix: Pipeline stuck in infinite update loop when setting fractional playback rate for trajectory (`issue #181 <https://gitlab.com/stuko/ovito/issues/181>`_) 
-* dev681 Added Python function :py:func:`ovito.enable_logging()`, which lets OVITO print activity information to the terminal during long-running operations. 
-* dev679 New implementation of OVITO's asynchronous task framework and pipeline execution/caching system. 
-* dev679 New modifier: :ref:`particles.modifiers.time_averaging`
-* dev679 New modifier: :ref:`particles.modifiers.smooth_trajectory`
-* dev679 New option to :ref:`data_sources` load all frames of the trajectory into memory. 
-* dev679 Modifiers, viewport layers, and pipelines can now `be given user-defined names <https://www.ovito.org/forum/topic/adding-comments-custom-names-to-modifiers-and-overlay-elements/>`_ in the pipeline editor. 
-* dev679 :py:class:`ovito.data.DataTable` can now be created from Python, e.g. to have custom analysis modifiers that generate data plots. 
-* dev679 Simplified usage of the :ref:`particles.modifiers.unwrap_trajectories` modifier, which now scans the input trajectory automatically in the background. 
-* dev679 `Changed default color scheme for unnamed particle types. <https://gitlab.com/stuko/ovito/issues/179>`_ 
-* dev679 `Updating the trajectory from the external file will automatically jump to the end of the trajectory. <https://gitlab.com/stuko/ovito/issues/178>`_ 
-* dev653 Fixed ImportError in PyPI package on macOS (see `this discussion <https://www.ovito.org/forum/topic/ovito-package-on-python/>`_). 
-* dev652 Support for version 2.0 of the GSD file format (issue `#176 <https://gitlab.com/stuko/ovito/issues/176>`_). 
-* dev650 Fixed regression `#175 <https://gitlab.com/stuko/ovito/issues/175>`_ in Expression Selection modifier, which was sporadically crashing since build dev476. 
-* dev648 Now offering two separate program editions: `OVITO Basic and OVITO Pro <https://www.ovito.org/about/ovito-pro/>`_. 
-* dev644 Added file reader for the `oxDNA <https://dna.physics.ox.ac.uk/index.php/Main_Page>`_ file format and a specialised visual element for nucleotides. 
-* dev636 Removed the POV-Ray rendering engine (POV-Ray scene file export is still available). 
-* dev628 Renamed DataSeries to :py:class:`ovito.data.DataTable` throughout the scripting API, user interface and documentation. 
-* dev626 Enhancements to the :ref:`particles.modifiers.cluster_analysis` modifier: calculation of cluster centers of mass and unwrapping of particle coordinates. 
-* dev622 Python interface: Introduced the :py:class:`ovito.vis.Viewport`::underlays stack. Redesigned the :ref:`viewport_layers` command panel tab.
-* dev612 Voronoi Analysis modifier provides new option to visualise the computed Voronoi cells .
-* dev608 Workaround for video encoding issue resulting in invalid MP4/MOV files for frame rates 2/4/8/16 fps. 
-* dev605 Updated Qt libraries to version 5.12.6. 
-* dev604 The :ref:`particles.modifiers.color_coding` and the :ref:`particles.modifiers.assign_color` modifier can now operate on surface meshes. 
-* dev603 Bug fix: Segfault in Combine Datasets modifier second first dataset contains bonds but first doesn't (`issue #173 <https://gitlab.com/stuko/ovito/issues/173>`_). 
-* dev601 Bug fix: Segfault when accessing a mutable sub-object field (e.g. *Particles.bonds_*) whose value is *None* (`issue #172 <https://gitlab.com/stuko/ovito/issues/172>`_). 
-* dev598 :ref:`particles.modifiers.construct_surface_mesh` modifier: New option to transfer particle properties to generated surface mesh. 
-* dev597 Replaced video encoding component Libav with FFmpeg, bringing high-quality animated GIF rendering. 
-* dev593 Fixed issue that prevented relative paths to external data files in a .ovito state file to get updated when files are moved. 
+* :ref:`particles.modifiers.smooth_trajectory` modifier interpolates particle orientations in addition to particle positions.
+* Added capability to :ref:`particles.modifiers.construct_surface_mesh` modifier to identify pores/voids and individually compute their volumes and surface areas.
+* Extended the :ref:`rendering.ospray_renderer` with a sky & sun light source.
+* Integrated copy protection into OVITO Pro builds.
+* Introduced `OVITO_THREAD_COUNT </docs/current/python/introduction/advanced_topics.php#multithreading-settings>`_ environment variable for controlling the number of CPU cores used by OVITO.
+* Added old VASP 4.x file format to POSCAR reader (in order to support files written by ASE).
+* Added user option to LAMMPS data writer for omitting the "Masses" file section.
+* OVITO can now read/write extended topology information from/to LAMMPS data files: angles/dihedrals/impropers.
+* Bug fix: Output of Displacements/Atomic Strain/Wigner-Seitz modifiers can be all zeros in relative offset mode (dev679 regression).
+* Eliminated bottlenecks in GUI, which slowed down animation playback of long trajectories (>100k frames).
+* Correct handling of LAMMPS dump files with dual data columns (`issue #193 <https://gitlab.com/stuko/ovito/-/issues/193>`_).
+* Updated OSPRay renderer to version 2.1.0 and integrated OSPRay plugin into Anaconda build of OVITO.
+* Bug fix: Color Coding modifier does not list available bond properties.
+* Added HTTP protocol support. OVITO can now :ref:`import data files stored on a web server <usage.import.remote>`.
+* OVITO is now also available as an Anaconda package on Windows.
+* Improvements to the :ref:`Adjust View <viewports.adjust_view_dialog>` dialog, which now allows interacting with the viewports while being open.
+* Bug fix: Installing a third-party extension module in *ovitos* fails on macOS due to security restrictions (`issue #191 <https://gitlab.com/stuko/ovito/-/issues/191>`_).
+* Bug fix: Checkbox " File contains multiple timesteps" in GUI does not reflect correct state of file reader.
+* Integrated PM Larsen's scheme of calculating the :ref:`particles.modifiers.centrosymmetry` parameter using minimum-weight matching.
+* New ``crop`` option in :py:meth:`ovito.vis.Viewport.render_image() <ovito.vis.Viewport.render_image>` Python function.
+* Windows installer is now digitally signed to be compatible with Microsoft Authenticode.
+* The embedded Python interpreter ``ovitos`` now ignores ``PYTHONPATH`` environment variable and user package directories (`issue #189 <https://gitlab.com/stuko/ovito/-/issues/189>`_).
+* Fixed LAMMPS data file export for simulation cells aligned along negative coordinate axes (`issue #188 <https://gitlab.com/stuko/ovito/-/issues/188>`_).
+* New algorithm type in :ref:`particles.modifiers.common_neighbor_analysis`: Interval CNA
+* Bug fix: Crash during animation frame change when using DXA modifier.
+* New "Denoising filter" option in :ref:`OSPRay renderer <rendering.ospray_renderer>`, which greatly improves the visual quality of rendered images.
+* New "Every Nth frame" option in :ref:`animation settings dialog <animation.animation_settings_dialog>`.
+* Combined ``bin_count_{xyz}`` parameter fields of :ref:`SpatialBinningModifier <particles.modifiers.bin_and_reduce>` class into single ``bin_count`` field.
+* GSD file reader: Added support for the ``SphereUnion`` particle shape specification (see `here <https://gitlab.com/stuko/ovito/-/issues/177>`_).
+* Fix of UI bug: Data inspector panel not opening correctly in some situations.
+* OVITO now available as a `Conda package <https://www.ovito.org/python-downloads/>`_ for Linux and macOS.
+* Extended the :py:meth:`ovito.vis.Viewport.zoom_all() <ovito.vis.Viewport.zoom_all>` Python function.
+* Fixed broken (since dev679) OVITO program package for Windows, which crashed when inserting modifiers into the pipeline.
+* Bug fix: Pipeline stuck in infinite update loop when setting fractional playback rate for trajectory (`issue #181 <https://gitlab.com/stuko/ovito/issues/181>`_)
+* Added Python function :py:func:`ovito.enable_logging()`, which lets OVITO print activity information to the terminal during long-running operations.
+* New implementation of OVITO's asynchronous task framework and pipeline execution/caching system.
+* New modifier: :ref:`particles.modifiers.time_averaging`
+* New modifier: :ref:`particles.modifiers.smooth_trajectory`
+* New option to :ref:`data_sources` load all frames of the trajectory into memory.
+* Modifiers, viewport layers, and pipelines can now `be given user-defined names <https://www.ovito.org/forum/topic/adding-comments-custom-names-to-modifiers-and-overlay-elements/>`_ in the pipeline editor.
+* :py:class:`ovito.data.DataTable` can now be created from Python, e.g. to have custom analysis modifiers that generate data plots.
+* Simplified usage of the :ref:`particles.modifiers.unwrap_trajectories` modifier, which now scans the input trajectory automatically in the background.
+* `Changed default color scheme for unnamed particle types. <https://gitlab.com/stuko/ovito/issues/179>`_
+* `Updating the trajectory from the external file will automatically jump to the end of the trajectory. <https://gitlab.com/stuko/ovito/issues/178>`_
+* Fixed ImportError in PyPI package on macOS (see `this discussion <https://www.ovito.org/forum/topic/ovito-package-on-python/>`_).
+* Support for version 2.0 of the GSD file format (issue `#176 <https://gitlab.com/stuko/ovito/issues/176>`_).
+* Fixed regression `#175 <https://gitlab.com/stuko/ovito/issues/175>`_ in Expression Selection modifier, which was sporadically crashing since build dev476.
+* Now offering two separate program editions: `OVITO Basic and OVITO Pro <https://www.ovito.org/about/ovito-pro/>`_.
+* Added file reader for the `oxDNA <https://dna.physics.ox.ac.uk/index.php/Main_Page>`_ file format and a specialised visual element for nucleotides.
+* Removed the POV-Ray rendering engine (POV-Ray scene file export is still available).
+* Renamed DataSeries to :py:class:`ovito.data.DataTable` throughout the scripting API, user interface and documentation.
+* Enhancements to the :ref:`particles.modifiers.cluster_analysis` modifier: calculation of cluster centers of mass and unwrapping of particle coordinates.
+* Python interface: Introduced the :py:class:`ovito.vis.Viewport`::underlays stack. Redesigned the :ref:`viewport_layers` command panel tab.
+* Voronoi Analysis modifier provides new option to visualise the computed Voronoi cells .
+* Workaround for video encoding issue resulting in invalid MP4/MOV files for frame rates 2/4/8/16 fps.
+* Updated Qt libraries to version 5.12.6.
+* The :ref:`particles.modifiers.color_coding` and the :ref:`particles.modifiers.assign_color` modifier can now operate on surface meshes.
+* Bug fix: Segfault in Combine Datasets modifier second first dataset contains bonds but first doesn't (`issue #173 <https://gitlab.com/stuko/ovito/issues/173>`_).
+* Bug fix: Segfault when accessing a mutable sub-object field (e.g. *Particles.bonds_*) whose value is *None* (`issue #172 <https://gitlab.com/stuko/ovito/issues/172>`_).
+* :ref:`particles.modifiers.construct_surface_mesh` modifier: New option to transfer particle properties to generated surface mesh.
+* Replaced video encoding component Libav with FFmpeg, bringing high-quality animated GIF rendering.
+* Fixed issue that prevented relative paths to external data files in a .ovito state file to get updated when files are moved.
 * Standalone Python package with the ``ovito`` module now available at `https://pypi.org/project/ovito/ <https://pypi.org/project/ovito/>`_.
-* dev590 Replaced PyQt5 with PySide2 Python module. 
-* dev581 Fixed loading of multi-frame PDB files. 
-* dev575 XYZ file exporter now includes cell origin in header line if non-zero. 
-* dev561 New 'Use mesh color' option for particle types, which renders particles having a user-defined shape with the original mesh colors. 
-* dev560 Added keyboard shortcut for the *New Program Window* function. 
-* dev558 Added the :py:meth:`SimulationCell.delta_vector() <ovito.data.SimulationCell.delta_vector>` and :py:meth:`Particles.delta_vector() <ovito.data.Particles.delta_vector>` methods for calculating the vector connecting two particles. 
-* dev555 Added the :py:meth:`DataCollection.create_particles() <ovito.data.DataCollection.create_particles>` and :py:meth:`Particles.create_bonds() <ovito.data.Particles.create_bonds>` Python methods for adding new particles and bonds to a system. 
-* dev551 Let the LAMMPS data file parser accept additional spaces between header keywords. 
-* dev542 Included missing Tcl/Tk support files of Python interpreter in the Windows installation package. 
-* dev539 Bug Fix: Affine Transformation modifier does not transform dislocation lines. 
-* dev537 New option in the Slice modifier to visualize the plane in rendered images. 
-* dev533 Added a file writer for the GSD/HOOMD file format. 
-* dev530 Added a visualization element for voxel grids computed by the *Spatial Binning* modifier or imported charge density fields. 
-* dev526 Implemented the `QuickSurf algorithm <http://dx.doi.org/10.2312/PE/EuroVisShort/EuroVisShort2012/067-071>`_ in the *Construct Surface Mesh* modifier as an alternative surface generation algorithm. 
-* dev520 Added a file reader for the CIF format (Crystallographic Information File). 
-* dev519 Extended sections on :ref:`data manipulation <pydoc:data_manipulation_intro>` and :ref:`custom modifiers <pydoc:writing_custom_modifiers>` in the Python documentation. 
-* dev505 GSD file reader reads `particle shape definitions <https://gsd.readthedocs.io/en/stable/shapes.html>`_ (ellipsoids, polygons, convex polyhedra, general 3d meshes). 
-* dev504 Create Bonds modifier remembers if the user explicitly re-enables the display of an unusually large number of bonds. 
-* dev498 GSD file reader supports user-defined per-particle, per-bond and global data chunks. 
-* dev496 Upgraded build environment to Qt release 5.12.5. 
-* dev494 Settings for animation FPS and rendering resolution are retained across program session. 
-* dev493 Added graphics export function for data series plots. 
-* dev492 Display of bonds now takes into account particle radii when calculating the length of half-bond cylinders. 
-* dev491 Documented the :ref:`clone_pipeline` function in the user manual. 
-* dev490 Use Ctrl/Command key modifiers to zoom all viewports to scene extents at once. 
-* dev489 Renamed the '*Correlation function*' modifier to '*Spatial correlation function*' modifier. 
-* dev486 Replaced calls to FFTW library with more lightweight KISS FFT library. 
-* dev485 CASTEP .md file reader: Automatic conversion from Bohr to Angstrom units. 
-* dev485 Reimplemented how animation timeline is adjusted to accommodate loaded trajectories; redesign of the animation settings dialog. 
-* dev481 Bug fix: Memory footprint continuously increases during animation rendering. 
-* dev480 Fixed bug in CASTEP MD file reader not recognizing '<-- hv' lines. 
-* dev475 New axis style option in coordinate tripod viewport overlay. 
-* dev475 Fix for ovitos.exe error "unable to find Qt5Core.dll on PATH" on Windows. 
-* dev475 New file exporter for VTK voxel grid files. Allows to export results of Spatial Binning modifier. 
-* dev475 Set up automatic mapping to particle properties for 4-column XYZ files. 
-* dev469 New 'Constrain Rotation' option in the viewport context menu to turn on/off camera alignment with z-axis. 
-* dev469 Maximized state of active viewport is kept across program sessions. 
-* dev469 Bug fix: 'Save as defaults' function in particle type editor not working for numeric particle types (issue #157) 
+* Replaced PyQt5 with PySide2 Python module.
+* Fixed loading of multi-frame PDB files.
+* XYZ file exporter now includes cell origin in header line if non-zero.
+* New 'Use mesh color' option for particle types, which renders particles having a user-defined shape with the original mesh colors.
+* Added keyboard shortcut for the *New Program Window* function.
+* Added the :py:meth:`SimulationCell.delta_vector() <ovito.data.SimulationCell.delta_vector>` and :py:meth:`Particles.delta_vector() <ovito.data.Particles.delta_vector>` methods for calculating the vector connecting two particles.
+* Added the :py:meth:`DataCollection.create_particles() <ovito.data.DataCollection.create_particles>` and :py:meth:`Particles.create_bonds() <ovito.data.Particles.create_bonds>` Python methods for adding new particles and bonds to a system.
+* Let the LAMMPS data file parser accept additional spaces between header keywords.
+* Included missing Tcl/Tk support files of Python interpreter in the Windows installation package.
+* Bug Fix: Affine Transformation modifier does not transform dislocation lines.
+* New option in the Slice modifier to visualize the plane in rendered images.
+* Added a file writer for the GSD/HOOMD file format.
+* Added a visualization element for voxel grids computed by the *Spatial Binning* modifier or imported charge density fields.
+* Implemented the `QuickSurf algorithm <http://dx.doi.org/10.2312/PE/EuroVisShort/EuroVisShort2012/067-071>`_ in the *Construct Surface Mesh* modifier as an alternative surface generation algorithm.
+* Added a file reader for the CIF format (Crystallographic Information File).
+* Extended sections on :ref:`data manipulation <pydoc:data_manipulation_intro>` and :ref:`custom modifiers <pydoc:writing_custom_modifiers>` in the Python documentation.
+* GSD file reader reads `particle shape definitions <https://gsd.readthedocs.io/en/stable/shapes.html>`_ (ellipsoids, polygons, convex polyhedra, general 3d meshes).
+* Create Bonds modifier remembers if the user explicitly re-enables the display of an unusually large number of bonds.
+* GSD file reader supports user-defined per-particle, per-bond and global data chunks.
+* Upgraded build environment to Qt release 5.12.5.
+* Settings for animation FPS and rendering resolution are retained across program session.
+* Added graphics export function for data series plots.
+* Display of bonds now takes into account particle radii when calculating the length of half-bond cylinders.
+* Documented the :ref:`clone_pipeline` function in the user manual.
+* Use Ctrl/Command key modifiers to zoom all viewports to scene extents at once.
+* Renamed the '*Correlation function*' modifier to '*Spatial correlation function*' modifier.
+* Replaced calls to FFTW library with more lightweight KISS FFT library.
+* CASTEP .md file reader: Automatic conversion from Bohr to Angstrom units.
+* Reimplemented how animation timeline is adjusted to accommodate loaded trajectories; redesign of the animation settings dialog.
+* Bug fix: Memory footprint continuously increases during animation rendering.
+* Fixed bug in CASTEP MD file reader not recognizing '<-- hv' lines.
+* New axis style option in coordinate tripod viewport overlay.
+* Fix for ovitos.exe error "unable to find Qt5Core.dll on PATH" on Windows.
+* New file exporter for VTK voxel grid files. Allows to export results of Spatial Binning modifier.
+* Set up automatic mapping to particle properties for 4-column XYZ files.
+* New 'Constrain Rotation' option in the viewport context menu to turn on/off camera alignment with z-axis.
+* Maximized state of active viewport is kept across program sessions.
+* Bug fix: 'Save as defaults' function in particle type editor not working for numeric particle types (issue #157)
 * Bug fix: export_file() Python function always performs pipeline evaluation at frame 0.
 * Added the Viewport.create_widget() Python method, which allows embedding an OVITO viewport into a PyQt5 GUI.
 * Bug fix: LAMMPS data exporter not writing 'dipole' atom style files correctly.
 * Extended LAMMPS data file reader to support a wider range of atom styles, including 'hybrid'.
-* Extended the GSD file reader to parse the periodic image information, which can be used by the Unwrap Trajectories modifier to unfold particle positions. 
+* Extended the GSD file reader to parse the periodic image information, which can be used by the Unwrap Trajectories modifier to unfold particle positions.
 * Added a file reader for ParaDiS data files containing discrete dislocation lines.
 * The Unwrap Trajectories modifier can now undo the cell flipping performed by LAMMPS to keep the tilt factors within certain limits.
 * New modifier: :ref:`particles.modifiers.chill_plus` for identifying water structures.
@@ -842,9 +842,9 @@ Release 3.0.0 (30-May-20)
 * The Tachyon renderer now obeys the maximum number of parallel threads set by the --nthreads command line option.
 * The *Show Periodic Images* modifier has been renamed to *Replicate* modifier. In addition to particles and bonds it now can replicate surfaces, dislocation lines and voxel data grids too (`issue #39 <https://gitlab.com/stuko/ovito/issues/39>`_).
 
--------------------------
-Release 2.9.0 (27-Jul-17)
--------------------------
+---------------------------
+Version 2.9.0 (27-Jul-2017)
+---------------------------
 
 * Added the --nthreads command line option to **ovitos** as an alternative to -nt (`issue #35 <https://gitlab.com/stuko/ovito/issues/35>`_).
 * Brought back missing *stderr* output from calls to sys.exit() in **ovitos** interpreter.
@@ -879,19 +879,18 @@ Release 2.9.0 (27-Jul-17)
 * Reading multi-frame GSD files that contain static data now works correctly.
 * Bug fix: Program crash during parallel access to NetCDF files. Calls to NetCDF library functions are now serialized, because they are not thread-safe.
 
--------------------------
-Release 2.8.2 (24-Jan-17)
--------------------------
+---------------------------
+Version 2.8.2 (24-Jan-2017)
+---------------------------
 
 * The Histogram modifier can now compute the distribution of bond properties too (e.g. bond lengths).
 * Modifiers now report an out-of-memory condition. Ovito no longer crashes when a memory allocation fails during modifier evaluation.
 * Fixed viewport rendering and other issues for simulation datasets with a very small length scale (~10\ :sup:`-11`\ ).
 * Added Python bindings for particle trajectory line generation and visualization.
 
-
--------------------------
-Release 2.8.1 (17-Dec-16)
--------------------------
+---------------------------
+Version 2.8.1 (17-Dec-2016)
+---------------------------
 
 * Bug fix: Segmentation fault after applying a Color Coding modifier with Viridis color map to particle data containing NaN values.
 * Bug fix: Segmentation fault when closing Scatter Plot editor panel.
@@ -908,9 +907,9 @@ Release 2.8.1 (17-Dec-16)
 * Disabled geometry shaders by default for AMD/ATI hardware on Windows due to compatibility problems reported by some users.
 * Python modifier and Python viewport overlay scripts can now be edited in a separate code editor window.
 
--------------------------
-Release 2.8.0 (23-Nov-16)
--------------------------
+---------------------------
+Version 2.8.0 (23-Nov-2016)
+---------------------------
 
 * Added the POV-Ray rendering backend and the POV-Ray scene file exporter.
 * Fully transparent, invisible particles are no longer sent to the Tachyon renderer to avoid artifacts.
@@ -950,9 +949,9 @@ Release 2.8.0 (23-Nov-16)
 * Regression: OpenGL rendering does not work in console mode on Windows
 * NetCDF reader now accepts files where particle data is stored in a subgroup named 'AMBER'.
 
--------------------------
-Release 2.7.1 (28-Aug-16)
--------------------------
+---------------------------
+Version 2.7.1 (28-Aug-2016)
+---------------------------
 
 * Integrated IPython in Linux and Mac OS builds of OVITO.
 * Small bug fix in Animation Settings dialog: Changing the frame rate made the time slider jump.
@@ -965,9 +964,9 @@ Release 2.7.1 (28-Aug-16)
 * Added the DislocationSegment.spatial_burgers_vector property to the Python interface.
 * Added a confirmation message before resetting the URL history list in the SSH connection dialog.
 
--------------------------
-Release 2.7.0 (25-Jul-16)
--------------------------
+---------------------------
+Version 2.7.0 (25-Jul-2016)
+---------------------------
 
 * Bug fix: Program crashed when entering a non-valid text into a numeric input field.
 * Added OpenGL driver-bug workaround to fix high-quality rendering of particles on Linux/Intel graphics systems.
@@ -997,9 +996,9 @@ Release 2.7.0 (25-Jul-16)
 * The ovito.io.export_file() Python function now gives full control over which animation frames are being exported.
 * Fixed bug in the Coordination Analysis modifier, which prevented the RDF calculation for 2D systems.
 
--------------------------
-Release 2.6.2 (19-Mar-16)
--------------------------
+---------------------------
+Version 2.6.2 (19-Mar-2016)
+---------------------------
 
 * Updated the built-in SSH client to support more encryption methods and improve compatibility with some SSH servers.
 * Small bug fix that solves a (rare) problem with the display of dislocation lines in periodic systems.
@@ -1022,9 +1021,9 @@ Release 2.6.2 (19-Mar-16)
 * Regression: Restricting the Compute Property modifier to selected particles did not work correctly; existing values for unselected particles were always reset to zero.
 * Added the CA file exporter, which allows saving DXA analysis results to disk (and load them again at a later time).
 
--------------------------
-Release 2.6.1 (15-Nov-15)
--------------------------
+---------------------------
+Version 2.6.1 (15-Nov-2015)
+---------------------------
 
 * Arrows can now be centered on particles, e.g. to visualize magnetic moments and other vector properties. Atomic force vectors and dipole vectors read from simulation files can now be directly visualized.
 * The Tachyon renderer now supports transparent backgrounds.
@@ -1033,9 +1032,9 @@ Release 2.6.1 (15-Nov-15)
 * The PDB file parser now accepts lines with up to 83 characters to support files written by Accelrys Discovery Studio.
 * Fixed regression in CA file importer, which is broken in previous release.
 
--------------------------
-Release 2.6.0 (02-Nov-15)
--------------------------
+---------------------------
+Version 2.6.0 (02-Nov-2015)
+---------------------------
 
 * Added the <a+c> dislocation type for HCP crystals to the Dislocation Analysis modifier.
 * Added the Elastic Strain Calculation modifier, which computes the atomic-level elastic strain and deformation gradient tensors in crystalline systems. It can be used to analyze local elastic distortions in a crystal lattice and to determine the local crystal orientation.
@@ -1057,9 +1056,9 @@ Release 2.6.0 (02-Nov-15)
 * Fixed bug in file parser that led to wrong particle type names when loading a multi-frame XYZ file with varying set of named atom types.
 * Bug fixes in Python-ASE interface - Cell matrix is transposed and duplicate properties are handled.
 
--------------------------
-Release 2.5.1 (07-Aug-15)
--------------------------
+---------------------------
+Version 2.5.1 (07-Aug-2015)
+---------------------------
 
 * The LAMMPS data file exporter can now produce files with LAMMPS atom styles other than 'atomic'. It also exports bonds if present.
 * Arbitrary triclinic simulation cells can now be exported to the LAMMPS data file format. They will be automatically transformed to the canonical LAMMPS representation.
@@ -1069,9 +1068,9 @@ Release 2.5.1 (07-Aug-15)
 * Added a file parser for FHI-aims log files, which can contain multiple simulation frames.
 * Added the 'Indicate line direction' option to the dislocation display object.
 
--------------------------
-Release 2.5.0 (25-Jul-15)
--------------------------
+---------------------------
+Version 2.5.0 (25-Jul-2015)
+---------------------------
 
 * Added Python interface for Bin and Reduce modifier.
 * Fixed viewport font issue on Macs with high-dpi display.
@@ -1100,9 +1099,9 @@ Release 2.5.0 (25-Jul-15)
 * Fixed initialization of the *Select Particle Type* modifier.
 * Fixed error when loading a compressed simulation file >2GB.
 
--------------------------
-Release 2.4.4 (29-Mar-15)
--------------------------
+---------------------------
+Version 2.4.4 (29-Mar-2015)
+---------------------------
 
 * Fixed error when rendering a high-resolution video.
 * Surface mesh computed by ConstructSurfaceModifier can now be exported to a VTK file from Python.
@@ -1112,9 +1111,9 @@ Release 2.4.4 (29-Mar-15)
 * The IMD file exporter now lets the user select the particle properties to export (instead of exporting all).
 * The VTK triangle mesh importer now reads per-face color information.
 
--------------------------
-Release 2.4.3 (02-Mar-15)
--------------------------
+---------------------------
+Version 2.4.3 (02-Mar-2015)
+---------------------------
 
 * **Upgraded integrated script interpreter from Python 2.7 to Python 3.4. Please update your scripts to make them compatible with Python 3**.
 * Added rendering support for particles with non-cubic, axis-aligned box shape (via 'Aspherical shape' particle property)
@@ -1133,9 +1132,9 @@ Release 2.4.3 (02-Mar-15)
 * Bug fix: --version command line option causes program to crash.
 * Bug fix: XYZ file column mapping dialog showed the column names from the last loaded extended XYZ file.
 
--------------------------
-Release 2.4.2 (14-Nov-14)
--------------------------
+---------------------------
+Version 2.4.2 (14-Nov-2014)
+---------------------------
 
 * The Color Coding modifier now supports user-defined color maps.
 * Significantly improved performance of cutoff-based neighbor finding and *k*-nearest neighbor search routines. This code optimization speeds up many analysis algorithms in OVITO, in particular for large datasets.
@@ -1145,9 +1144,9 @@ Release 2.4.2 (14-Nov-14)
 * Bug fix: Periodic boundary flags were not correctly updated when loading a new file using the 'Pick new local input file' button.
 * Bug fix: Viewport.render() Python function raised error when called without a RenderSettings object.
 
--------------------------
-Release 2.4.1 (01-Nov-14)
--------------------------
+---------------------------
+Version 2.4.1 (01-Nov-2014)
+---------------------------
 
 * New integrated Python engine, which provides a powerful scripting interface (see scripting documentation). This is going to replace the Javascript engine, which has been deprecated and will be removed in a future program version. Command line options to run old scripts have been renamed to *--jsscript* and *--jsexec*.
 * New Voronoi analysis modifier, which can compute atomic volumes, coordination numbers and Voronoi indices.
@@ -1176,9 +1175,9 @@ Release 2.4.1 (01-Nov-14)
 * Bug fix: Fixed issue in Histogram modifier that occured when the x-range was fixed to an interval smaller than the value range.
 * Bug fix: Atom type ordering is now maintained when importing a sequence of LAMMPS dump files with named atom types.
 
--------------------------
-Release 2.3.3 (22-May-14)
--------------------------
+---------------------------
+Version 2.3.3 (22-May-2014)
+---------------------------
 
 * Added user options to application settings dialog that provide control over certain OpenGL-related settings. This allows working around compatibility problems on some systems.
 * User can now choose between a dark and a light viewport color scheme.
@@ -1187,24 +1186,24 @@ Release 2.3.3 (22-May-14)
 * Added user options that control the automatic fetching of the news page from the web server and the transmission of the installation ID.
 * Fixed bug in camera orbit mode, which was not correctly restricting the camera rotation for some coordinate system orientations.
 
--------------------------
-Release 2.3.2 (07-Apr-14)
--------------------------
+---------------------------
+Version 2.3.2 (07-Apr-2014)
+---------------------------
 
 * Fixed bug in Wigner-Seitz analysis modifier, which could cause a program crash when numbers of atoms in reference and current configuration differ.
 
--------------------------
-Release 2.3.1 (01-Apr-14)
--------------------------
+---------------------------
+Version 2.3.1 (01-Apr-2014)
+---------------------------
 
 * Added saving and loading of presets for file-column-to-property mappings.
 * Added the *--exec* command line option, which allows to directly execute a script command or to pass parameters to a script file.
 * When opening an XYZ file, the column mapping dialog now displays an excerpt from the file's header to help the user figure out the mapping.
 * The Construct Surface Modifier no longer creates cap polygons if the periodic simulation cell contains no particles.
 
--------------------------
-Release 2.3.0 (29-Mar-14)
--------------------------
+---------------------------
+Version 2.3.0 (29-Mar-2014)
+---------------------------
 
 * Added the new scripting interface, which allows to automate tasks.
 * Added the 'Freeze property' modifier, which can prevent a particle property from changing over time.
@@ -1216,18 +1215,18 @@ Release 2.3.0 (29-Mar-14)
 * Fixed bug in CFG file importer, which did not read triclinic simulation cells correctly.
 * Fixed shader compilation error on OpenGL 2.0 systems and some other OpenGL related issues.
 
--------------------------
-Release 2.2.4 (29-Jan-14)
--------------------------
+---------------------------
+Version 2.2.4 (29-Jan-2014)
+---------------------------
 
 * Fixed particle picking issue on computers with Intel graphics.
 * Fixed OpenGL display issues on systems with Intel graphics.
 * Fixed blurred viewport captions.
 * Fixed program crash when changing particle radius/color without having selected a particle type first.
 
--------------------------
-Release 2.2.3 (16-Jan-14)
--------------------------
+---------------------------
+Version 2.2.3 (16-Jan-2014)
+---------------------------
 
 * Fixed the CFG file importer, which can now read CFG files written by newer versions of LAMMPS correctly. Auxiliary file columns are automatically mapped to OVITO's standard particle properties if possible.
 * Modified particle file importers to ensure stable ordering of particle types (using lexicographical ordering when atom types have names, and ID-based ordering otherwise). The ordering of named particle types is now independent of their first occurrence in the input file.
@@ -1235,16 +1234,16 @@ Release 2.2.3 (16-Jan-14)
 * A 64-bit version of the program is now available for Windows.
 * A construction grid can be displayed in the viewports.
 
--------------------------
-Release 2.2.2 (05-Jan-14)
--------------------------
+---------------------------
+Version 2.2.2 (05-Jan-2014)
+---------------------------
 
 * Fixed the following regression: Rendering a video with OVITO 2.2.1 resulted in an empty movie file.
 * Fixed display of the polygon path when using Fence selection (Manual Selection modifier).
 
--------------------------
-Release 2.2.1 (26-Dec-13)
--------------------------
+---------------------------
+Version 2.2.1 (26-Dec-2013)
+---------------------------
 
 * Added a file parser for *binary* LAMMPS dump files.
 * Added a dialog window that displays information about the system's OpenGL graphics driver. This dialog can be accessed via the Help menu.
@@ -1252,9 +1251,9 @@ Release 2.2.1 (26-Dec-13)
 * The OpenGL compatibility profile is now used instead of the core profile on Windows and Linux platforms.
 * Fixed an issue in the Construct Surface Mesh modifier, which sometimes led to a program crash on Windows.
 
--------------------------
-Release 2.2.0 (15-Dec-13)
--------------------------
+---------------------------
+Version 2.2.0 (15-Dec-2013)
+---------------------------
 
 * The Construct Surface Mesh modifier has been added, which builds a polygonal mesh around a particle set.
 * The Cluster Analysis modifier has been added, which decomposes a particle system into clusters.
@@ -1267,9 +1266,9 @@ Release 2.2.0 (15-Dec-13)
 * The manual is now included in every installation package. An internet connection is no longer necessary to access the manual.
 * Fixed the rendering of particle markers.
 
--------------------------
-Release 2.1.0 (15-Nov-13)
--------------------------
+---------------------------
+Version 2.1.0 (15-Nov-2013)
+---------------------------
 
 * The **Manual Selection** modifier has been added, which allows selecting individual particles with the mouse in the viewports. With the "Fence selection" mode, a group of particles can be easily selected by drawing a closed path around it.
 * OVITO is now able to display **particles with cubic and square shape**. This can be useful in visualizing large 2d lattice systems or Ising models.
@@ -1283,9 +1282,9 @@ Release 2.1.0 (15-Nov-13)
 * Fixed saving/loading of the gradient type selected in the Color Coding modifier.
 * Fixed a program deadlock when dragging the time slider with the mouse after loading a file sequence from a remote location.
 
--------------------------
-Release 2.0.3 (22-Oct-13)
--------------------------
+---------------------------
+Version 2.0.3 (22-Oct-2013)
+---------------------------
 
 * Ported Tachyon raytracing renderer from old OVITO 1.1.0 release. This software-based rendering engine allows to produce images with high-quality shading and ambient occlusion lighting.
 * The *Create Bonds* modifier will automatically turn off the display of bonds when (accidentally?) creating a large number of bonds (>1 million), which would make the program freeze for at least several seconds.
@@ -1296,22 +1295,22 @@ Release 2.0.3 (22-Oct-13)
 * Added support for computers with high-resolution (Retina) displays.
 * Fixed bug in the *Affine Transformation* modifier leading to recursive updates.
 
--------------------------
-Release 2.0.2 (30-Sep-13)
--------------------------
+---------------------------
+Version 2.0.2 (30-Sep-2013)
+---------------------------
 
 * Fixed loading of multi-timestep files with names containing a digit.
 * Fixed import of CFG file with atom type information.
 
--------------------------
-Release 2.0.1 (27-Sep-13)
--------------------------
+---------------------------
+Version 2.0.1 (27-Sep-2013)
+---------------------------
 
 * Fixed loading of file sequences based on wildcard pattern on Windows platform.
 * Replaced const arrays in GLSL shaders with uniform variables to support older Intel graphics chips.
 
--------------------------
-Release 2.0.0 (25-Sep-13)
--------------------------
+---------------------------
+Version 2.0.0 (25-Sep-2013)
+---------------------------
 
 * Many changes, almost complete rewrite of OVITO's code base.
