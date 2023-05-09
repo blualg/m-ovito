@@ -49,23 +49,7 @@ GzipIODevice::~GzipIODevice()
 void GzipIODevice::lookupGzipIndex(bool createIfNeeded)
 {
     OVITO_ASSERT(!_index);
-
-    QString filename;
-
-    if(QFileDevice* fileDevice = qobject_cast<QFileDevice*>(_device))
-        filename = fileDevice->fileName();
-
-#if 0
-    else if(QBuffer* bufferDevice = qobject_cast<QBuffer*>(_device)) {
-        QCryptographicHash hash(QCryptographicHash::Md5);
-        hash.addData(bufferDevice->data());
-        filename = QString::fromLatin1(hash.result().toHex());
-    }
-#endif
-
-    if(!filename.isEmpty()) {
-        _index = Application::instance()->fileManager().lookupGzipIndex(filename, createIfNeeded);
-    }
+    _index = Application::instance()->fileManager().lookupGzipIndex(_device, createIfNeeded);
 }
 
 /// Makes the device generate an index, which will enable random access to the
@@ -86,6 +70,12 @@ void GzipIODevice::recordSeekPoint()
             setZlibError(tr("Internal zlib error when decompressing: "), status);
         }
     }
+}
+
+bool GzipIODevice::setUnderlyingDevice(QIODevice* device)
+{
+    _device = device;
+    return true;
 }
 
 /*!
@@ -210,7 +200,7 @@ void GzipIODevice::close()
     }
 
     // Close the underlying device if we are managing it.
-    if(_manageDevice)
+    if(_manageDevice && _device)
         _device->close();
 
     _zlibStream.next_in = nullptr;

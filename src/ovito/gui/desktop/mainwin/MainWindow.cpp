@@ -714,4 +714,35 @@ void MainWindow::showErrorMessages()
     }
 }
 
+/******************************************************************************
+* Opens another main window (in addition to the existing windows) and
+* optionally loads a file in the new window.
+******************************************************************************/
+void MainWindow::openNewWindow(const QStringList& arguments)
+{
+    // This is a workaround for a bug in Qt 6.4 on macOS platform. The displayed menu bar does not automatically follow
+    // the main window that is currently active. That's why we simply start up another independent instance of the application.
+#if defined(Q_OS_MACOS) && QT_VERSION >= QT_VERSION_CHECK(6, 4, 0)
+    // Get the path to the ovito executable.
+    QString execPath = QCoreApplication::applicationFilePath();
+
+    // If we are currently running ovitos in graphical mode, start ovito instead.
+    if(execPath.endsWith("ovitos"))
+        execPath.chop(1);
+
+    // Start another instance of the program.
+    if(!QProcess::startDetached(execPath, arguments))
+        throw Exception(tr("Failed to start another instance of the program. Executable path: %1").arg(execPath));
+#else
+    MainWindow* mainWin = new MainWindow();
+    mainWin->show();
+    mainWin->restoreLayout();
+    if(!mainWin->handleExceptions([&]() {
+        GuiApplication::initializeUserInterface(*mainWin, arguments);
+    })) {
+        mainWin->deleteLater();
+    }
+#endif
+}
+
 }   // End of namespace

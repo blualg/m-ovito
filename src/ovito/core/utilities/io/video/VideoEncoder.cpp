@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -35,7 +35,7 @@ extern "C" {
 #include <libswscale/swscale.h>
 };
 
-namespace Ovito {   
+namespace Ovito {
 
 /// The list of supported video formats.
 QList<VideoEncoder::Format> VideoEncoder::_supportedFormats;
@@ -127,30 +127,34 @@ void VideoEncoder::openFile(const QString& filename, int width, int height, floa
     // invalid and don't play in QuickTime Player on macOS. Thus, we should avoid producing videos with these FPS values.
     // As a workaround, we instead resort to one of the valid playback rates being is an integer multiple of the selected frame rate.
     // We then have to output N identicial copies of each rendered frame to mimic the desired frame rate.
-    
+
     if(framesPerSecond == 2.0f) _frameDuplication = 5; // Change 2 fps to 10 fps.
     else if(framesPerSecond == 4.0f) _frameDuplication = 3; // Change 4 fps to 12 fps.
     else if(framesPerSecond == 8.0f) _frameDuplication = 3; // Change 8 fps to 24 fps.
     else if(framesPerSecond == 16.0f) _frameDuplication = 3; // Change 16 fps to 48 fps.
     else _frameDuplication = 1;
-    framesPerSecond *= _frameDuplication; 
+    framesPerSecond *= _frameDuplication;
 
     // TODO: Support more fps values <1.0. Right now we are limited to 0.1, 0.2, and 0.5 fps.
     int fpsNum = (framesPerSecond < 1.0f) ? 10 : 1;
     int fpsDen = std::max(1, (int)std::round(framesPerSecond * fpsNum));
     OVITO_ASSERT(std::abs(fpsDen - framesPerSecond * fpsNum) < 1e-6f);
 
+    // 8-bit encoded filename.
+    // Note: FFmpeg always uses UTF-8 encoding - even on Windows platform.
+    QByteArray encodedFilename = filename.toUtf8();
+
     const AVOutputFormat* outputFormat;
     if(format == nullptr) {
         // Auto detect the output format from the file name.
-        outputFormat = ::av_guess_format(nullptr, qPrintable(filename), nullptr);
+        outputFormat = ::av_guess_format(nullptr, encodedFilename.constData(), nullptr);
         if(!outputFormat)
             throw Exception(tr("Could not deduce video output format from file extension."));
     }
     else outputFormat = format->avformat;
 
     // Odd image widths lead to artifacts when writing animated GIFs.
-    // Round to nearest integer in case. 
+    // Round to nearest integer in case.
     if(outputFormat->video_codec == AV_CODEC_ID_GIF && width > 1) {
         width &= ~1;
     }
@@ -158,7 +162,7 @@ void VideoEncoder::openFile(const QString& filename, int width, int height, floa
 #if LIBAVFORMAT_VERSION_MAJOR >= 58
     // Allocate the output media context.
     AVFormatContext* formatContext = nullptr;
-    if((errCode = ::avformat_alloc_output_context2(&formatContext, const_cast<AVOutputFormat*>(outputFormat), nullptr, qPrintable(filename))) < 0 || !formatContext)
+    if((errCode = ::avformat_alloc_output_context2(&formatContext, const_cast<AVOutputFormat*>(outputFormat), nullptr, encodedFilename.constData())) < 0 || !formatContext)
         throw Exception(tr("Failed to create video format context: %1").arg(errorMessage(errCode)));
     _formatContext.reset(formatContext, &av_free);
 #else
@@ -168,7 +172,7 @@ void VideoEncoder::openFile(const QString& filename, int width, int height, floa
         throw Exception(tr("Failed to allocate output media context."));
 
     _formatContext->oformat = const_cast<AVOutputFormat*>(outputFormat);
-    qstrncpy(_formatContext->filename, qPrintable(filename), sizeof(_formatContext->filename) - 1);
+    qstrncpy(_formatContext->filename, encodedFilename.constData(), sizeof(_formatContext->filename) - 1);
 #endif
 
     if(outputFormat->video_codec == AV_CODEC_ID_NONE)
@@ -265,7 +269,7 @@ void VideoEncoder::openFile(const QString& filename, int width, int height, floa
 
     // Open output file (if needed).
     if(!(outputFormat->flags & AVFMT_NOFILE)) {
-        if((errCode = ::avio_open(&_formatContext->pb, qPrintable(filename), AVIO_FLAG_WRITE)) < 0)
+        if((errCode = ::avio_open(&_formatContext->pb, encodedFilename.constData(), AVIO_FLAG_WRITE)) < 0)
             throw Exception(tr("Failed to open output video file '%1': %2").arg(filename).arg(errorMessage(errCode)));
     }
 
@@ -273,7 +277,7 @@ void VideoEncoder::openFile(const QString& filename, int width, int height, floa
     if((errCode = ::avformat_write_header(_formatContext.get(), nullptr)) < 0)
         throw Exception(tr("Failed to write video file header: %1").arg(errorMessage(errCode)));
 
-    ::av_dump_format(_formatContext.get(), 0, qPrintable(filename), 1);
+    ::av_dump_format(_formatContext.get(), 0, encodedFilename.constData(), 1);
 
     if(outputFormat->video_codec == AV_CODEC_ID_GIF) {
 
@@ -322,7 +326,7 @@ void VideoEncoder::openFile(const QString& filename, int width, int height, floa
 
         static constexpr char filter_desc[] = "format=pix_fmts=rgb24,split [a][b];[a]palettegen[p];[b][p]paletteuse";
 
-        // GIF has possible output of PAL8. 
+        // GIF has possible output of PAL8.
         if((errCode = ::avfilter_graph_parse_ptr(_filterGraph.get(), filter_desc, &inputs, &outputs, nullptr)) < 0)
             throw Exception(tr("Failed to parse the filter graph (bad string) for animated GIF encoding: %1").arg(errorMessage(errCode)));
 
@@ -380,7 +384,7 @@ void VideoEncoder::closeFile()
                 }
                 ::av_packet_unref(pkt);
                 ::av_frame_unref(filter_frame);
-            } 
+            }
             while(errCode >= 0);
         }
         else {

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -39,6 +39,7 @@ namespace Ssh {
 
 #ifdef OVITO_ZLIB_SUPPORT
 class GzipIndex; // defined in GzipIODevice.h
+class GzipIODevice; // defined in GzipIODevice.h
 #endif
 
 /**
@@ -93,7 +94,7 @@ class OVITO_CORE_EXPORT FileManager : public QObject
 public:
 
     /// Constructor.
-    FileManager(TaskManager& taskManager) : _taskManager(taskManager) {}
+    FileManager(TaskManager& taskManager);
 
     /// Destructor.
     ~FileManager();
@@ -122,7 +123,13 @@ public:
 
 #ifdef OVITO_ZLIB_SUPPORT
     /// Returns index data for a gzipped file if it exists in the cache.
-    std::shared_ptr<GzipIndex> lookupGzipIndex(const QString& filename, bool createIfNeeded = false);
+    std::shared_ptr<GzipIndex> lookupGzipIndex(QIODevice* device, bool createIfNeeded = false);
+
+    /// Looks up a cached file object for the given filename if this gzipped file has been kept open after a previous read operation.
+    std::pair<std::unique_ptr<GzipIODevice>, std::unique_ptr<QIODevice>> lookupGzipOpenFile(QIODevice* device);
+
+    /// Returns an open gzipped file back to the global cache.
+    void returnGzipOpenFile(std::unique_ptr<GzipIODevice> uncompressor, std::unique_ptr<QIODevice> underlyingDevice);
 #endif
 
 protected:
@@ -181,6 +188,10 @@ private:
     /// Is called when a remote file has been fetched.
     void fileFetched(QUrl url, QTemporaryFile* localFile);
 
+    /// Returns the filename (if it's a QFileDevice) or identifier (otherwise) for the given QIODevice,
+    /// which can be used for cache lookups.
+    static QString getFilenameFromDevice(QIODevice* device);
+
 private:
 
     /// The remote files that are currently being fetched.
@@ -190,8 +201,11 @@ private:
     QCache<QUrl, QTemporaryFile> _downloadedFiles{std::numeric_limits<int>::max()};
 
 #ifdef OVITO_ZLIB_SUPPORT
-    /// Caches index data for file seeking/random data access in gzipped files.
+    /// Cached index data for file seeking/random data access in gzipped files.
     QCache<QString, std::shared_ptr<GzipIndex>> _gzipIndexCache{4};
+
+    /// Cached open gzipped files to speed up read access to subsequent frames in trajectory files.
+    std::map<QString, std::pair<std::unique_ptr<GzipIODevice>, std::unique_ptr<QIODevice>>> _gzipOpenFileCache;
 #endif
 
     /// The manager of tasks associated with file I/O.

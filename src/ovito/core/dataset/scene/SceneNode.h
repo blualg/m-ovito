@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -209,7 +209,7 @@ public:
     /// \return \c true if the node has a root node.
     bool isInScene() const { return scene() != nullptr; }
 
-    /// \brief Returns the root node of the scene node tree; or \c nullptr if the node is not currently part of a scene.  
+    /// \brief Returns the root node of the scene node tree; or \c nullptr if the node is not currently part of a scene.
     Scene* scene() const;
 
     /// \brief Returns the title of this object.
@@ -218,7 +218,7 @@ public:
     /// Shows/hides this node in the given viewport, i.e. turns rendering on or off.
     void setPerViewportVisibility(Viewport* vp, bool visible);
 
-    /// Returns whether this scene node (or one of its parents in the node hierarchy) has been hidden 
+    /// Returns whether this scene node (or one of its parents in the node hierarchy) has been hidden
     /// specifically in the given viewport.
     bool isHiddenInViewport(Viewport* vp, bool includeHierarchyParent) const;
 
@@ -253,6 +253,9 @@ protected:
     /// so it will be rebuilt during the next call to worldBoundingBox().
     virtual void invalidateBoundingBox();
 
+    /// Is called whenever one of the child nodes in the tree has generated a AnimationFramesChanged event.
+    virtual void onAnimationFramesChanged();
+
 private:
 
     /// This node's parent node in the hierarchy.
@@ -274,7 +277,7 @@ private:
     /// The child nodes of this node.
     DECLARE_VECTOR_REFERENCE_FIELD_FLAGS(OORef<SceneNode>, children, PROPERTY_FIELD_ALWAYS_CLONE | PROPERTY_FIELD_NO_SUB_ANIM);
 
-    /// Viewports in which this node should NOT be rendered. Can be used to control the visibility in different viewports. 
+    /// Viewports in which this node should NOT be rendered. Can be used to control the visibility in different viewports.
     DECLARE_VECTOR_REFERENCE_FIELD_FLAGS(Viewport*, hiddenInViewports, PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_WEAK_REF | PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES | PROPERTY_FIELD_NO_SUB_ANIM);
 
     /// This node's cached world transformation matrix.

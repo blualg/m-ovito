@@ -47,6 +47,7 @@ SET_OVITO_OBJECT_EDITOR(CreateIsosurfaceModifier, CreateIsosurfaceModifierEditor
 ******************************************************************************/
 void CreateIsosurfaceModifierEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 {
+    int row = 0;
     // Create a rollout.
     QWidget* rollout = createRollout(tr("Create isosurface"), rolloutParams, "manual:particles.modifiers.create_isosurface");
 
@@ -65,12 +66,12 @@ void CreateIsosurfaceModifierEditor::createUI(const RolloutInsertionParameters& 
     pclassUI->setContainerFilter([](const PropertyContainer* container) {
         return VoxelGrid::OOClass().isMember(container);
     });
-    layout2->addWidget(new QLabel(tr("Operate on:")), 0, 0);
-    layout2->addWidget(pclassUI->comboBox(), 0, 1);
+    layout2->addWidget(new QLabel(tr("Operate on:")), row, 0);
+    layout2->addWidget(pclassUI->comboBox(), row++, 1);
 
     PropertyReferenceParameterUI* fieldQuantityUI = new PropertyReferenceParameterUI(this, PROPERTY_FIELD(CreateIsosurfaceModifier::sourceProperty));
-    layout2->addWidget(new QLabel(tr("Field quantity:")), 1, 0);
-    layout2->addWidget(fieldQuantityUI->comboBox(), 1, 1);
+    layout2->addWidget(new QLabel(tr("Field quantity:")), row, 0);
+    layout2->addWidget(fieldQuantityUI->comboBox(), row++, 1);
     connect(this, &PropertiesEditor::contentsChanged, this, [fieldQuantityUI](RefTarget* editObject) {
         if(CreateIsosurfaceModifier* modifier = static_object_cast<CreateIsosurfaceModifier>(editObject)) {
             fieldQuantityUI->setContainerRef(modifier->subject());
@@ -81,12 +82,17 @@ void CreateIsosurfaceModifierEditor::createUI(const RolloutInsertionParameters& 
 
     // Isolevel parameter.
     FloatParameterUI* isolevelPUI = new FloatParameterUI(this, PROPERTY_FIELD(CreateIsosurfaceModifier::isolevelController));
-    layout2->addWidget(isolevelPUI->label(), 2, 0);
-    layout2->addLayout(isolevelPUI->createFieldLayout(), 2, 1);
+    layout2->addWidget(isolevelPUI->label(), row, 0);
+    layout2->addLayout(isolevelPUI->createFieldLayout(), row++, 1);
+
+    // Smoothing level parameter.
+    IntegerParameterUI* smoothingLevelPUI = new IntegerParameterUI(this, PROPERTY_FIELD(CreateIsosurfaceModifier::smoothingLevel));
+    layout2->addWidget(smoothingLevelPUI->label(), row, 0);
+    layout2->addLayout(smoothingLevelPUI->createFieldLayout(), row++, 1);
 
     // Transfer field values.
     BooleanParameterUI* transferFieldValuesUI = new BooleanParameterUI(this, PROPERTY_FIELD(CreateIsosurfaceModifier::transferFieldValues));
-    layout2->addWidget(transferFieldValuesUI->checkBox(), 3, 0, 1, 2);
+    layout2->addWidget(transferFieldValuesUI->checkBox(), row++, 1, 1, 1);
 
     _plotWidget = new StdObj::DataTablePlotWidget();
     _plotWidget->setMinimumHeight(200);
@@ -107,8 +113,9 @@ void CreateIsosurfaceModifierEditor::createUI(const RolloutInsertionParameters& 
     connect(picker, &QwtPicker::activated, this, &CreateIsosurfaceModifierEditor::onPickerActivated);
     connect(this, &PropertiesEditor::contentsReplaced, this, [this]() { onPickerActivated(false); });
 
-    layout2->addWidget(new QLabel(tr("Histogram:")), 4, 0, 1, 2);
-    layout2->addWidget(_plotWidget, 5, 0, 1, 2);
+    layout2->setRowMinimumHeight(row++, 8);
+    layout2->addWidget(new QLabel(tr("Histogram of field values:")), row++, 0, 1, 2);
+    layout2->addWidget(_plotWidget, row++, 0, 1, 2);
 
     // Status label.
     layout1->addSpacing(8);

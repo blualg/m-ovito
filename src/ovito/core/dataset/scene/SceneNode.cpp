@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -143,6 +143,15 @@ void SceneNode::deleteNode()
 }
 
 /******************************************************************************
+* Is called whenever one of the child nodes in the tree has generated a AnimationFramesChanged event.
+******************************************************************************/
+void SceneNode::onAnimationFramesChanged()
+{
+    if(parentNode())
+        parentNode()->onAnimationFramesChanged();
+}
+
+/******************************************************************************
 * Binds this scene node to a target node and creates a look at controller
 * that lets this scene node look at the target. The target will automatically
 * be deleted if this scene node is deleted and vice versa.
@@ -206,8 +215,7 @@ bool SceneNode::referenceEvent(RefTarget* source, const ReferenceEvent& event)
             deleteNode();
     }
     else if(event.type() == ReferenceEvent::AnimationFramesChanged && children().contains(static_cast<SceneNode*>(source))) {
-        // Forward pipeline changed events from the scene pipelines.
-        return true;
+        onAnimationFramesChanged();
     }
     return RefTarget::referenceEvent(source, event);
 }
@@ -236,7 +244,7 @@ void SceneNode::referenceReplaced(const PropertyFieldDescriptor* field, RefTarge
         invalidateBoundingBox();
 
         // The animation length might have changed when an object has been removed from the scene.
-        notifyDependents(ReferenceEvent::AnimationFramesChanged);
+        onAnimationFramesChanged();
     }
     RefTarget::referenceReplaced(field, oldTarget, newTarget, listIndex);
 }
@@ -258,7 +266,7 @@ void SceneNode::referenceInserted(const PropertyFieldDescriptor* field, RefTarge
 
         // The animation length might have changed when an object has been removed from the scene.
         if(!isBeingLoaded())
-            notifyDependents(ReferenceEvent::AnimationFramesChanged);
+            onAnimationFramesChanged();
     }
     RefTarget::referenceInserted(field, newTarget, listIndex);
 }
@@ -279,7 +287,7 @@ void SceneNode::referenceRemoved(const PropertyFieldDescriptor* field, RefTarget
             invalidateBoundingBox();
 
             // The animation length might have changed when an object has been removed from the scene.
-            notifyDependents(ReferenceEvent::AnimationFramesChanged);
+            onAnimationFramesChanged();
         }
     }
     RefTarget::referenceRemoved(field, oldTarget, listIndex);
@@ -361,7 +369,7 @@ Scene* SceneNode::scene() const
 {
     SceneNode* n = const_cast<SceneNode*>(this);
     do {
-        if(n->isRootNode()) 
+        if(n->isRootNode())
             break;
         n = n->parentNode();
     }
@@ -473,7 +481,7 @@ void SceneNode::setPerViewportVisibility(Viewport* vp, bool visible)
 }
 
 /******************************************************************************
-* Returns whether this scene node (or one of its parents in the node hierarchy) has been hidden 
+* Returns whether this scene node (or one of its parents in the node hierarchy) has been hidden
 * specifically in the given viewport.
 ******************************************************************************/
 bool SceneNode::isHiddenInViewport(Viewport* vp, bool includeHierarchyParent) const

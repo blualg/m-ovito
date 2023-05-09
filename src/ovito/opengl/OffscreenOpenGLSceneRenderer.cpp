@@ -40,7 +40,7 @@ static QThreadStorage<std::unique_ptr<QOpenGLContext>> globalOffscreenContext;
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-OffscreenOpenGLSceneRenderer::OffscreenOpenGLSceneRenderer(ObjectCreationParams params) : OpenGLSceneRenderer(params) 
+OffscreenOpenGLSceneRenderer::OffscreenOpenGLSceneRenderer(ObjectCreationParams params) : OpenGLSceneRenderer(params)
 {
     // Create the offscreen surface.
     // This must happen in the main thread.
@@ -48,19 +48,19 @@ OffscreenOpenGLSceneRenderer::OffscreenOpenGLSceneRenderer(ObjectCreationParams 
 
     // Initialize OpenGL in main thread if it hasn't already been initialized.
     // This call is a workaround for an access vialotion that otherwise occurs on Windows
-    // when creating the first OpenGL context from a worker thread when running in headless mode. 
+    // when creating the first OpenGL context from a worker thread when running in headless mode.
     OpenGLSceneRenderer::determineOpenGLInfo();
 }
 
 /******************************************************************************
 * Creates the QOffscreenSurface in the main thread.
 ******************************************************************************/
-void OffscreenOpenGLSceneRenderer::createOffscreenSurface() 
-{ 
+void OffscreenOpenGLSceneRenderer::createOffscreenSurface()
+{
     // Surface creation can only be performed in the main thread.
     OVITO_ASSERT(QThread::currentThread() == qApp->thread());
     OVITO_ASSERT(!_offscreenContext && !_offscreenSurface);
-    
+
     // OpenGL rendering and surface creation requires Qt to run in GUI mode.
     if(Application::instance()->headlessMode()) {
         throw RendererException(tr(
@@ -113,6 +113,33 @@ bool OffscreenOpenGLSceneRenderer::startRender(const RenderSettings* settings, c
     // Make the context current.
     if(!_offscreenContext->makeCurrent(_offscreenSurface))
         throw RendererException(tr("Failed to make OpenGL context current."));
+
+    QSurfaceFormat format = _offscreenContext->format();
+    // OpenGL in a VirtualBox machine Windows guest reports "2.1 Chromium 1.9" as version string, which is
+    // not correctly parsed by Qt. We have to workaround this.
+    if(OpenGLSceneRenderer::openGLVersion().startsWith("2.1 ")) {
+        format.setMajorVersion(2);
+        format.setMinorVersion(1);
+    }
+    if(format.majorVersion() < OVITO_OPENGL_MINIMUM_VERSION_MAJOR || (format.majorVersion() == OVITO_OPENGL_MINIMUM_VERSION_MAJOR && format.minorVersion() < OVITO_OPENGL_MINIMUM_VERSION_MINOR)) {
+        throw RendererException(tr(
+                    "The OpenGL graphics driver installed on this system does not support OpenGL version %6.%7 or newer.\n\n"
+                    "Ovito requires modern graphics hardware and up-to-date graphics drivers to display 3D content. Your current system configuration is not compatible with Ovito.\n\n"
+                    "To avoid this error, please install the newest graphics driver of the hardware vendor or, if necessary, consider replacing your graphics card with a newer model.\n\n"
+                    "The installed OpenGL graphics driver reports the following information:\n\n"
+                    "OpenGL vendor: %1\n"
+                    "OpenGL renderer: %2\n"
+                    "OpenGL version: %3.%4 (%5)\n\n"
+                    "Ovito requires at least OpenGL version %6.%7.")
+                    .arg(QString(OpenGLSceneRenderer::openGLVendor()))
+                    .arg(QString(OpenGLSceneRenderer::openGLRenderer()))
+                    .arg(format.majorVersion())
+                    .arg(format.minorVersion())
+                    .arg(QString(OpenGLSceneRenderer::openGLVersion()))
+                    .arg(OVITO_OPENGL_MINIMUM_VERSION_MAJOR)
+                    .arg(OVITO_OPENGL_MINIMUM_VERSION_MINOR)
+                );
+    }
 
     // Determine internal framebuffer size including supersampling.
     _framebufferSize = QSize(frameBufferSize.width() * antialiasingLevel(), frameBufferSize.height() * antialiasingLevel());

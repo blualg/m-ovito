@@ -157,9 +157,6 @@ private:
 
     /// The specific data object from the pipeline output to be exported.
     DECLARE_MODIFIABLE_PROPERTY_FIELD(DataObjectReference, dataObjectToExport, setDataObjectToExport);
-
-    /// Whether to ignore pipeline errors or not during export.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, ignorePipelineErrors, setIgnorePipelineErrors);
 };
 
 }   // End of namespace

@@ -97,6 +97,9 @@ protected:
     /// Is called when the value of a property of this object has changed.
     virtual void propertyChanged(const PropertyFieldDescriptor* field) override;
 
+    /// Is called whenever one of the child nodes in the tree has generated a AnimationFramesChanged event.
+    virtual void onAnimationFramesChanged() override;
+
 private:
 
     /// The animation timeline of this scene.

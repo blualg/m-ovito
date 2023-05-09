@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -54,7 +54,7 @@ ModifierApplication::Registry& ModifierApplication::registry()
 /******************************************************************************
 * Asks this object to delete itself.
 ******************************************************************************/
-void ModifierApplication::deleteReferenceObject() 
+void ModifierApplication::deleteReferenceObject()
 {
     // Detach the modifier application from its input, modifier and group.
     OORef<Modifier> modifier = this->modifier();
@@ -81,7 +81,7 @@ TimeInterval ModifierApplication::validityInterval(const PipelineEvaluationReque
         iv.intersect(input()->validityInterval(request));
 
     // Let the modifier determine the local validity interval.
-    if(modifierAndGroupEnabled()) 
+    if(modifierAndGroupEnabled())
         iv.intersect(modifier()->validityInterval(ModifierEvaluationRequest(request, this)));
 
     return iv;
@@ -128,7 +128,7 @@ bool ModifierApplication::referenceEvent(RefTarget* source, const ReferenceEvent
         return true;
     }
     else if(event.type() == ReferenceEvent::ObjectStatusChanged && source == modifier()) {
-        // Propagate ObjectStatusChanged events from the modifier to update the pipeline editor UI in case 
+        // Propagate ObjectStatusChanged events from the modifier to update the pipeline editor UI in case
         // the return value of Modifier::getPipelineEditorShortInfo() changes.
         return true;
     }
@@ -218,7 +218,7 @@ void ModifierApplication::referenceReplaced(const PropertyFieldDescriptor* field
         if(newTarget) static_object_cast<ModifierGroup>(newTarget)->registerModApp(this);
 
         if(!isBeingLoaded() && modifier()) {
-            // Whenever the modifier application is moved in or out of a modifier group, 
+            // Whenever the modifier application is moved in or out of a modifier group,
             // its effective enabled/disabled status may change. Emulate a corresponding notification event in this case.
             ModifierGroup* oldGroup = static_object_cast<ModifierGroup>(oldTarget);
             ModifierGroup* newGroup = static_object_cast<ModifierGroup>(newTarget);
@@ -295,7 +295,7 @@ SharedFuture<PipelineFlowState> ModifierApplication::evaluate(const PipelineEval
     // If modifier is disabled, bypass cache and forward results of upstream pipeline.
     if(input() && !modifierAndGroupEnabled())
         return input()->evaluate(request);
-    
+
     // Otherwise, let the base class call our evaluateInternal() method.
     return CachingPipelineObject::evaluate(request);
 }
@@ -318,12 +318,9 @@ Future<PipelineFlowState> ModifierApplication::evaluateInternal(const PipelineEv
 
             // Clear the status of the input unless it is an error.
             if(inputData.status().type() != PipelineStatus::Error) {
-                inputData.setStatus(PipelineStatus());
+                inputData.setStatus(PipelineStatus::Success);
             }
-            else if(modifierRequest.breakOnError()) {
-                // Skip all following modifiers once an error has occured along the pipeline.
-                return inputData;
-            }
+            OVITO_ASSERT(!modifierRequest.throwOnError() || inputData.status().type() != PipelineStatus::Error);
 
             // Without a modifier, this ModifierApplication becomes a no-op.
             // The same is true when the Modifier is disabled or if the input data is invalid.
@@ -343,8 +340,8 @@ Future<PipelineFlowState> ModifierApplication::evaluateInternal(const PipelineEv
 
             // Post-process the modifier results before returning them to the caller.
             // Turn any exception that was thrown during modifier evaluation into a
-            // valid pipeline state with an error code.
-            return future.then(*this, [this, inputData = std::move(inputData)](Future<PipelineFlowState> future) mutable {
+            // valid pipeline state with an error code (unless throwOnError was set).
+            return future.then(*this, [this, inputData = std::move(inputData), throwOnError = modifierRequest.throwOnError()](Future<PipelineFlowState> future) mutable {
                 OVITO_ASSERT(future.isFinished() && !future.isCanceled());
                 try {
                     try {
@@ -368,12 +365,16 @@ Future<PipelineFlowState> ModifierApplication::evaluateInternal(const PipelineEv
                     }
                 }
                 catch(Exception& ex) {
+                    if(throwOnError)
+                        throw;
                     setStatus(PipelineStatus(PipelineStatus::Error, ex.messages().join(QChar('\n'))));
                     ex.prependGeneralMessage(tr("Modifier '%1' reported:").arg(modifier()->objectTitle()));
                     inputData.setStatus(PipelineStatus(PipelineStatus::Error, ex.messages().join(QChar(' '))));
                     return std::move(inputData);
                 }
                 catch(...) {
+                    if(throwOnError)
+                        throw;
                     OVITO_ASSERT_MSG(false, "ModifierApplication::evaluate()", "Caught an unexpected exception type during modifier evaluation.");
                     PipelineStatus status(PipelineStatus::Error, tr("Unknown exception caught during evaluation of modifier '%1'.").arg(modifier()->objectTitle()));
                     setStatus(status);
@@ -392,7 +393,7 @@ PipelineFlowState ModifierApplication::evaluateInternalSynchronous(const Pipelin
     OVITO_ASSERT(!isUndoRecording());
 
     PipelineFlowState state;
-    
+
     if(input()) {
         // First get the preliminary results from the upstream pipeline.
         state = input()->evaluateSynchronous(request);
@@ -405,20 +406,28 @@ PipelineFlowState ModifierApplication::evaluateInternalSynchronous(const Pipelin
                 modifier()->evaluateSynchronous(ModifierEvaluationRequest(request, this), state);
         }
         catch(const Exception& ex) {
-            // Turn exceptions thrown during modifier evaluation into an error pipeline state.
+            if(request.throwOnError())
+                throw;
+            // Turn exceptions thrown during modifier evaluation into an error pipeline state (unless throwOnError is set).
             state.setStatus(PipelineStatus(PipelineStatus::Error, ex.messages().join(QStringLiteral(": "))));
         }
         catch(const std::bad_alloc&) {
-            // Turn exceptions thrown during modifier evaluation into an error pipeline state.
+            if(request.throwOnError())
+                throw Exception(tr("Not enough memory."));
+            // Turn exceptions thrown during modifier evaluation into an error pipeline state (unless throwOnError is set).
             state.setStatus(PipelineStatus(PipelineStatus::Error, tr("Not enough memory.")));
         }
         catch(const std::exception& ex) {
             qWarning() << "WARNING: Modifier" << modifier() << "has thrown a non-standard exception:" << ex.what();
             OVITO_ASSERT(false);
+            if(request.throwOnError())
+                throw;
             state.setStatus(PipelineStatus(PipelineStatus::Error, tr("Exception: %1").arg(QString::fromLatin1(ex.what()))));
         }
         catch(...) {
             OVITO_ASSERT_MSG(false, "ModifierApplication::evaluateSynchronous()", "Caught an unexpected exception type during preliminary modifier evaluation.");
+            if(request.throwOnError())
+                throw;
             // Turn exceptions thrown during modifier evaluation into an error pipeline state.
             state.setStatus(PipelineStatus(PipelineStatus::Error, tr("Unknown exception caught during evaluation of modifier '%1'.").arg(modifier()->objectTitle())));
         }
@@ -433,7 +442,7 @@ PipelineFlowState ModifierApplication::evaluateInternalSynchronous(const Pipelin
 int ModifierApplication::numberOfSourceFrames() const
 {
     OVITO_ASSERT(ExecutionContext::current().isValid());
-    
+
     if(modifierAndGroupEnabled()) {
         OVITO_ASSERT(modifier() != nullptr);
         return modifier()->numberOfOutputFrames(const_cast<ModifierApplication*>(this));
@@ -475,10 +484,10 @@ QMap<int, QString> ModifierApplication::animationFrameLabels() const
 }
 
 /******************************************************************************
-* Returns a short piece information (typically a string or color) to be 
+* Returns a short piece information (typically a string or color) to be
 * displayed next to the object's title in the pipeline editor.
 ******************************************************************************/
-QVariant ModifierApplication::getPipelineEditorShortInfo(Scene* scene) const 
+QVariant ModifierApplication::getPipelineEditorShortInfo(Scene* scene) const
 {
     QVariant info = ActiveObject::getPipelineEditorShortInfo(scene);
     if(!info.isValid() && modifier())

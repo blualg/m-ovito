@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -56,6 +56,9 @@ public:
     /// Returns whether the application currently uses a dark UI theme.
     bool usingDarkTheme() const;
 
+    /// Initializes an abstract user interface (e.g. a MainWindow).
+    static void initializeUserInterface(UserInterface& userInterface, const QStringList& arguments);
+
 protected:
 
     /// Defines the program's command line parameters.
@@ -74,9 +77,6 @@ protected:
     virtual bool eventFilter(QObject* watched, QEvent* event) override;
 
 private:
-
-    /// Initializes the graphical user interface of the application.
-    void initializeGUI();
 
     /// Queries the system to determine whether the desktop currently uses a dark desktop theme.
     bool detectDarkTheme() const;

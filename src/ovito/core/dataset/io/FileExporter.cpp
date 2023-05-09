@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -46,7 +46,6 @@ DEFINE_REFERENCE_FIELD(FileExporter, datasetToExport);
 DEFINE_REFERENCE_FIELD(FileExporter, sceneToExport);
 DEFINE_REFERENCE_FIELD(FileExporter, nodeToExport);
 DEFINE_PROPERTY_FIELD(FileExporter, dataObjectToExport);
-DEFINE_PROPERTY_FIELD(FileExporter, ignorePipelineErrors);
 SET_PROPERTY_FIELD_LABEL(FileExporter, outputFilename, "Output filename");
 SET_PROPERTY_FIELD_LABEL(FileExporter, exportAnimation, "Export animation");
 SET_PROPERTY_FIELD_LABEL(FileExporter, useWildcardFilename, "Use wildcard filename");
@@ -55,7 +54,6 @@ SET_PROPERTY_FIELD_LABEL(FileExporter, startFrame, "Start frame");
 SET_PROPERTY_FIELD_LABEL(FileExporter, endFrame, "End frame");
 SET_PROPERTY_FIELD_LABEL(FileExporter, everyNthFrame, "Every Nth frame");
 SET_PROPERTY_FIELD_LABEL(FileExporter, floatOutputPrecision, "Numeric output precision");
-SET_PROPERTY_FIELD_LABEL(FileExporter, ignorePipelineErrors, "Ignore pipeline errors");
 SET_PROPERTY_FIELD_UNITS_AND_RANGE(FileExporter, floatOutputPrecision, IntegerParameterUnit, 1, std::numeric_limits<FloatType>::max_digits10);
 
 /******************************************************************************
@@ -67,8 +65,7 @@ FileExporter::FileExporter(ObjectCreationParams params) : RefTarget(params),
     _startFrame(0),
     _endFrame(-1),
     _everyNthFrame(1),
-    _floatOutputPrecision(10),
-    _ignorePipelineErrors(params.loadUserDefaults())
+    _floatOutputPrecision(10)
 {
 }
 
@@ -195,25 +192,28 @@ PipelineFlowState FileExporter::getPipelineDataToBeExported(int frame, bool requ
 
     PipelineSceneNode* pipeline = dynamic_object_cast<PipelineSceneNode>(nodeToExport());
     if(!pipeline)
-        throw Exception(tr("The scene object to be exported is not a data pipeline."));
+        throw Exception(tr("The scene node to be exported is not a data pipeline."));
 
-    // Evaluate pipeline.
-    PipelineEvaluationRequest request(AnimationTime::fromFrame(frame));
-    request.setBreakOnError(!ignorePipelineErrors());
-    PipelineEvaluationFuture future = requestRenderState ? pipeline->evaluateRenderingPipeline(request) : pipeline->evaluatePipeline(request);
-    if(!future.waitForFinished())
-        return {};
-    PipelineFlowState state = future.result();
+    try {
+        // Evaluate pipeline.
+        PipelineEvaluationRequest request(AnimationTime::fromFrame(frame));
+        request.setThrowOnError(ExecutionContext::current().isScripting());
+        PipelineEvaluationFuture future = requestRenderState ? pipeline->evaluateRenderingPipeline(request) : pipeline->evaluatePipeline(request);
+        if(!future.waitForFinished())
+            return {};
+        PipelineFlowState state = future.result();
 
-    if(!ignorePipelineErrors() && state.status().type() == PipelineStatus::Error)
-        throw Exception(tr("Export of animation frame %1 failed, because data pipeline evaluation did not succeed. Status message: %2")
-            .arg(frame)
-            .arg(state.status().text()));
+        if(ExecutionContext::current().isScripting() && state.status().type() == PipelineStatus::Error)
+            throw Exception(state.status().text());
 
-    if(!state)
-        throw Exception(tr("The data collection to be exported is empty."));
+        if(!state)
+            throw Exception(tr("The data collection returned by the pipeline is empty."));
 
-    return state;
+        return state;
+    }
+    catch(Exception& ex) {
+        throw ex.prependGeneralMessage(tr("Export of frame %1 failed, because data pipeline evaluation has failed.").arg(frame));
+    }
 }
 
 /******************************************************************************

@@ -5,6 +5,24 @@ What's new
 ==========
 
 -------------------------
+Version 3.8.4 (03-May-23)
+-------------------------
+
+* Fix: ffmpeg video encoding crashes on Windows if output path contains non-ascii characters
+* Silence console message "Numeric mode unsupported in the posix collation implementation" on Linux by enabling ICU support in Qt build
+* |ovito-pro| Fix: Segfault in PySide6 package initialization on Linux when adding a Python layer to a viewport
+* |ovito-pro| Fix: Interchanged xz/yz simulation box shear components in :py:func:`~ovito.io.lammps.lammps_to_ovito` Python function
+
+-------------------------
+Version 3.8.3 (16-Apr-23)
+-------------------------
+
+* Further improved performance of sequential loading of compressed trajectory files
+* Fixed regression (since v3.8.0): :py:meth:`Viewport.render_anim() <ovito.vis.Viewport.render_anim>` renders only first animation frame
+* |ovito-pro| Python exceptions raised in user-defined modifier functions are now propagated up the call chain to where the pipeline evaluation was triggered
+* |ovito-pro| Included ``bz2`` and `sqlite3` standard modules, which were missing in embedded Python interpreter on Linux
+
+-------------------------
 Version 3.8.2 (04-Apr-23)
 -------------------------
 

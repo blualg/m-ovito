@@ -39,8 +39,8 @@ class OVITO_CORE_EXPORT PipelineEvaluationRequest
 public:
 
     /// Constructs a request object for evaluating the pipeline at a certain animation time.
-    PipelineEvaluationRequest(AnimationTime time = AnimationTime::fromFrame(0)) : 
-        _time(time), 
+    PipelineEvaluationRequest(AnimationTime time = AnimationTime::fromFrame(0)) :
+        _time(time),
         _cachingIntervals(time) {}
 
     /// Constructs a request object for evaluating the pipeline at the current animation time.
@@ -55,11 +55,11 @@ public:
     /// Sets a new animation time at which the pipeline should be evaluated.
     void setTime(AnimationTime time) { _time = time; }
 
-    /// Returns whether the pipeline system should stop the evaluation as soon as a first error occurs in one of the modifiers.
-    bool breakOnError() const { return _breakOnError; }
+    /// Indicates whether the pipeline system should abort the evaluation by throwing an exception as soon as a first error occurs in one of the pipeline stages.
+    bool throwOnError() const { return _throwOnError; }
 
-    /// Sets whether the pipeline system should stop the evaluation as soon as a first error occurs in one of the modifiers.
-    void setBreakOnError(bool enable = true) { _breakOnError = enable; }
+    /// Sets whether the pipeline system should abort the evaluation by throwing an exception as soon as a first error occurs in one of the pipeline stages.
+    void setThrowOnError(bool enable = true) { _throwOnError = enable; }
 
     /// Returns the animation time intervals over which the pipeline should pre-cache the state.
     const TimeIntervalUnion& cachingIntervals() const { return _cachingIntervals; }
@@ -72,8 +72,8 @@ private:
     /// The animation time at which the pipeline is being evaluated.
     AnimationTime _time = AnimationTime::fromFrame(0);
 
-    /// Makes the pipeline system stop the evaluation as soon as a first error occurs in one of the modifiers.
-    bool _breakOnError = false;
+    /// Controls whether the pipeline system should abort the evaluation by throwing an exception as soon as a first error occurs in one of the modifiers.
+    bool _throwOnError = false;
 
     /// Indicates to the upstream pipeline stages which animation frames they should keep in the cache.
     TimeIntervalUnion _cachingIntervals;
@@ -83,7 +83,7 @@ private:
  * \brief This helper class manages the evaluation of a PipelineSceneNode.
  */
 class OVITO_CORE_EXPORT PipelineEvaluationFuture : public SharedFuture<PipelineFlowState>
-{   
+{
 public:
 
     /// Default constructor.
@@ -93,7 +93,7 @@ public:
     explicit PipelineEvaluationFuture(const PipelineEvaluationRequest& request) : _request(request) {}
 
     /// Constructs a pipeline evaluation object and initializes it with an existing future.
-    explicit PipelineEvaluationFuture(const PipelineEvaluationRequest& request, SharedFuture<PipelineFlowState>&& future, PipelineSceneNode* pipeline = nullptr) : 
+    explicit PipelineEvaluationFuture(const PipelineEvaluationRequest& request, SharedFuture<PipelineFlowState>&& future, PipelineSceneNode* pipeline = nullptr) :
         SharedFuture<PipelineFlowState>(std::move(future)),
         _request(request),
         _pipeline(pipeline) {}

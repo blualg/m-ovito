@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -90,15 +90,37 @@ SharedFuture<PipelineFlowState> PipelineCache::evaluatePipeline(const PipelineEv
         }
     }
 
-    PipelineSceneNode* pipeline = !pipelineObject ? dynamic_object_cast<PipelineSceneNode>(ownerObject()) : nullptr;
+    // To detect unexpected calls to invalidate() and reentrant function calls.
+    _preparingEvaluation = true;
+    try {
+        SharedFuture<PipelineFlowState> future = evaluatePipelineImpl(request);
+
+        // From now on, it is okay again to call invalidate().
+        _preparingEvaluation = false;
+
+        // Start the process of caching the pipeline results for all animation frames.
+        startFramePrecomputation(request);
+
+        return future;
+    }
+    catch(...) {
+        _preparingEvaluation = false;
+        throw;
+    }
+}
+
+/******************************************************************************
+* Starts a pipeline evaluation.
+******************************************************************************/
+SharedFuture<PipelineFlowState> PipelineCache::evaluatePipelineImpl(const PipelineEvaluationRequest& request)
+{
+    CachingPipelineObject* pipelineObject = dynamic_object_cast<CachingPipelineObject>(ownerObject());
+    PipelineSceneNode* pipeline = !pipelineObject ? static_object_cast<PipelineSceneNode>(ownerObject()) : nullptr;
     OVITO_ASSERT(pipeline != nullptr || pipelineObject != nullptr);
     OVITO_ASSERT(pipeline != nullptr || _includeVisElements == false);
 
     SharedFuture<PipelineFlowState> future;
     TimeInterval preliminaryValidityInterval;
-
-    // This flag is set here to detect unexpected calls to invalidate().
-    _preparingEvaluation = true;
 
     if(!pipelineObject) {
         // Without a pipeline data source, the results will be an empty data collection.
@@ -123,6 +145,8 @@ SharedFuture<PipelineFlowState> PipelineCache::evaluatePipeline(const PipelineEv
             future = pipelineObject->evaluateInternal(request);
         }
         catch(const Exception& ex) {
+            if(request.throwOnError())
+                throw;
             pipelineObject->setStatus(ex);
             future = Future<PipelineFlowState>::createImmediateEmplace(nullptr, pipelineObject->status());
         }
@@ -137,6 +161,8 @@ SharedFuture<PipelineFlowState> PipelineCache::evaluatePipeline(const PipelineEv
     // let the visualization elements operate on the data collection.
     if(_includeVisElements) {
         future = future.then(*ownerObject(), [this, request, pipeline](const PipelineFlowState& state) {
+            if(request.throwOnError() && state.status().type() == PipelineStatus::Error)
+                throw Exception(state.status().text());
             // Give every visualization element the opportunity to apply an asynchronous data transformation.
             Future<PipelineFlowState> stateFuture;
             if(state) {
@@ -152,6 +178,8 @@ SharedFuture<PipelineFlowState> PipelineCache::evaluatePipeline(const PipelineEv
                                 else {
                                     OORef<PipelineSceneNode> pipelineRef{pipeline}; // Used to keep the pipeline object alive.
                                     stateFuture = stateFuture.then(*transformingVis, [request, dataObj, transformingVis, this, pipeline = std::move(pipelineRef)](PipelineFlowState&& state) {
+                                        if(request.throwOnError() && state.status().type() == PipelineStatus::Error)
+                                            throw Exception(state.status().text());
                                         return transformingVis->transformData(request, dataObj, std::move(state), _cachedTransformedDataObjects);
                                     });
                                 }
@@ -166,7 +194,9 @@ SharedFuture<PipelineFlowState> PipelineCache::evaluatePipeline(const PipelineEv
             }
             else {
                 // Cache the transformed data objects created by transforming visualization elements.
-                stateFuture = stateFuture.then(*ownerObject(), [this](PipelineFlowState&& state) {
+                stateFuture = stateFuture.then(*ownerObject(), [this, throwOnError = request.throwOnError()](PipelineFlowState&& state) {
+                    if(throwOnError && state.status().type() == PipelineStatus::Error)
+                        throw Exception(state.status().text());
                     cacheTransformedDataObjects(state);
                     return std::move(state);
                 });
@@ -176,7 +206,10 @@ SharedFuture<PipelineFlowState> PipelineCache::evaluatePipeline(const PipelineEv
     }
 
     // Store evaluation results in this cache.
-    future = future.then(*ownerObject(), [this, pipeline, pipelineObject, evaluation](PipelineFlowState state) {
+    future = future.then(*ownerObject(), [this, pipeline, pipelineObject, evaluation, throwOnError = request.throwOnError()](PipelineFlowState state) {
+
+        if(throwOnError && state.status().type() == PipelineStatus::Error)
+            throw Exception(state.status().text());
 
         // Restrict the validity of the state.
         state.intersectStateValidity(evaluation->validityInterval);
@@ -214,16 +247,10 @@ SharedFuture<PipelineFlowState> PipelineCache::evaluatePipeline(const PipelineEv
     // Keep a weak reference to the future.
     evaluation->future = future;
 
-    // From now on, it is okay again to call invalidate().
-    _preparingEvaluation = false;
-
     // Remove evaluation record from the list of ongoing evaluations once it is finished (successfully or not).
     future.finally(*ownerObject(), [this, evaluation](Task&) noexcept {
         cleanupEvaluation(evaluation);
     });
-
-    // Start the process of caching the pipeline results for all animation frames.
-    startFramePrecomputation(request);
 
     OVITO_ASSERT(future.isValid());
     return future;
