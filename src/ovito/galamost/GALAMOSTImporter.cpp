@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -182,7 +182,7 @@ void GALAMOSTImporter::FrameLoader::loadFile()
                         std::rotate(q.begin(), q.begin() + 1, q.end());
                 }
                 else if(xml.name().compare(QStringLiteral("orientation")) == 0) {
-                    DataOORef<PropertyObject> directions = ParticlesObject::OOClass().createUserProperty(natoms, PropertyObject::Float, 3, QStringLiteral("Direction"));
+                    DataOORef<PropertyObject> directions = ParticlesObject::OOClass().createUserProperty(natoms, DataBuffer::FloatDefault, 3, QStringLiteral("Direction"));
                     parsePropertyData(xml, directions);
                     ConstPropertyAccess<Vector3> directionsAccess(directions);
                     const Vector3* dir = directionsAccess.cbegin();
@@ -312,23 +312,36 @@ PropertyObject* GALAMOSTImporter::FrameLoader::parsePropertyData(QXmlStreamReade
         xml.raiseError(tr("Element count mismatch. Attribute 'num' is %1 but expected %2 data elements.").arg(numElements).arg(property->size()));
         return property;
     }
-    
+
     QString text = xml.readElementText();
     QTextStream stream(&text, QIODevice::ReadOnly | QIODevice::Text);
 
-    if(property->dataType() == PropertyObject::Float) {
-        PropertyAccess<FloatType, true> array(property);
-        for(FloatType& v : array.range())
+    if(property->dataType() == DataBuffer::Float32) {
+        PropertyAccess<float, true> array(property);
+        for(float& v : array.range())
             stream >> v;
     }
-    else if(property->dataType() == PropertyObject::Int) {
-        PropertyAccess<int, true> array(property);
-        for(int& v : array.range())
+    else if(property->dataType() == DataBuffer::Float64) {
+        PropertyAccess<double, true> array(property);
+        for(double& v : array.range())
             stream >> v;
     }
-    else if(property->dataType() == PropertyObject::Int64) {
-        PropertyAccess<qlonglong, true> array(property);
-        for(qlonglong& v : array.range())
+    else if(property->dataType() == DataBuffer::Int8) {
+        PropertyAccess<int8_t, true> array(property);
+        for(int8_t& v : array.range()) {
+            int vi;
+            stream >> vi;
+            v = static_cast<int8_t>(vi);
+        }
+    }
+    else if(property->dataType() == DataBuffer::Int32) {
+        PropertyAccess<int32_t, true> array(property);
+        for(int32_t& v : array.range())
+            stream >> v;
+    }
+    else if(property->dataType() == DataBuffer::Int64) {
+        PropertyAccess<int64_t, true> array(property);
+        for(int64_t& v : array.range())
             stream >> v;
     }
     else OVITO_ASSERT(false);

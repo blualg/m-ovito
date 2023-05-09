@@ -20,38 +20,31 @@
 //
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#include "../../global_uniforms.glsl"
-
-// Inputs:
-in vec4 position;
-in float radius;
-in vec3 color;
-in float transparency;
-in float selection;
-uniform vec4 selection_color;
-uniform vec2 unit_quad_triangle_strip[4];
-
-// Outputs:
-flat out vec4 color_fs;
-out vec2 uv_fs;
-
-void main()
+vec3 rotate_vector(in vec4 quat, in vec3 vec)
 {
-    // The index of the quad corner.
-    int corner = <VertexID>;
+    return vec + 2.0 * cross(cross(vec, quat.xyz) + quat.w * vec, quat.xyz);
+}
 
-    // Transform particle center to view space.
-	vec4 eye_position = modelview_matrix * position;
+mat3 calc_shape_orientation(in vec4 orientation, in vec3 aspherical_shape, in float radius)
+{
+    vec3 axes;
+    if(aspherical_shape != vec3(0.0, 0.0, 0.0)) {
+        axes = aspherical_shape;
+    }
+    else {
+        axes = vec3(radius);
+    }
 
-    // Apply additional scaling due to model-view transformation to particle radius.
-    float scaled_radius = radius * length(modelview_matrix[0]);
+    vec4 quat;
+    float norm = length(orientation);
+    if(norm <= 1e-9)
+        quat = vec4(0.0, 0.0, 0.0, 1.0);
+    else
+        quat = orientation / norm;
 
-	// Project corner vertex.
-    gl_Position = projection_matrix * (eye_position + vec4(unit_quad_triangle_strip[corner] * scaled_radius, 0.0, 0.0));
-
-    // Forward particle color to fragment shader.
-    color_fs = (selection != 0.0) ? selection_color : vec4(color, clamp(1.0 - transparency, 0.0, 1.0));
-
-    // Pass UV quad coordinates to fragment shader.
-    uv_fs = unit_quad_triangle_strip[corner];
+    return mat3(
+        rotate_vector(quat, vec3(axes.x, 0.0, 0.0)),
+        rotate_vector(quat, vec3(0.0, axes.y, 0.0)),
+        rotate_vector(quat, vec3(0.0, 0.0, axes.z))
+    );
 }

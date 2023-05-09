@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -34,7 +34,7 @@ namespace Ovito::Particles {
 /**
  * The data type used for the 'Topology' bond property: two indices into the particles list.
  */
-using ParticleIndexPair = std::array<qlonglong, 2>;
+using ParticleIndexPair = std::array<int64_t, 2>;
 
 /**
  * A helper data structure describing a single bond between two particles.
@@ -132,7 +132,7 @@ public:
 
     /// \brief Constructor.
     Q_INVOKABLE BondsObject(ObjectCreationParams params);
-    
+
     /// Convinience method that returns the bond topology property.
     const PropertyObject* getTopology() const { return getProperty(TopologyProperty); }
 

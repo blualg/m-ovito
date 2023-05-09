@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -64,7 +64,7 @@ PipelineStatus TargetVis::render(AnimationTime time, const ConstDataObjectPath& 
 
         // Initialize geometry of wireframe cube.
         if(!vertexPositions) {
-            const Point3 linePoints[] = {
+            constexpr Point3G linePoints[] = {
                 {-1, -1, -1}, { 1,-1,-1},
                 {-1, -1,  1}, { 1,-1, 1},
                 {-1, -1, -1}, {-1,-1, 1},
@@ -78,7 +78,7 @@ PipelineStatus TargetVis::render(AnimationTime time, const ConstDataObjectPath& 
                 { 1, -1,  1}, { 1, 1, 1},
                 {-1, -1,  1}, {-1, 1, 1}
             };
-            DataBufferAccessAndRef<Point3> vertices = DataBufferPtr::create(sizeof(linePoints) / sizeof(Point3), DataBuffer::Float, 3);
+            DataBufferAccessAndRef<Point3G> vertices = DataBufferPtr::create(sizeof(linePoints) / sizeof(Point3G), DataBuffer::FloatGraphics, 3);
             boost::copy(linePoints, vertices.begin());
             vertexPositions = vertices.take();
         }

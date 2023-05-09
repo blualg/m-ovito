@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -122,7 +122,7 @@ AmbientOcclusionModifier::AmbientOcclusionEngine::AmbientOcclusionEngine(const M
     _particleRadii(std::move(particleRadii)),
     _boundingBox(boundingBox),
     _renderer(std::move(renderer)),
-    _brightness(DataBufferPtr::create(fingerprint.particleCount(), PropertyObject::Float, 1, DataBuffer::InitializeMemory)),
+    _brightness(DataBufferPtr::create(fingerprint.particleCount(), PropertyObject::FloatDefault, 1, DataBuffer::InitializeMemory)),
     _inputFingerprint(std::move(fingerprint))
 {
     OVITO_ASSERT(_particleRadii->size() == _positions->size());
@@ -247,7 +247,7 @@ void AmbientOcclusionModifier::AmbientOcclusionEngine::perform()
         setProgressValue(_samplingCount);
 
         // Normalize brightness values by particle area.
-        ConstPropertyAccess<FloatType> radiusArray(particleRadii());
+        ConstPropertyAccess<GraphicsFloatType> radiusArray(particleRadii());
         DataBufferAccess<FloatType> brightnessValues(brightness());
         auto r = radiusArray.cbegin();
         for(FloatType& b : brightnessValues) {
@@ -256,7 +256,8 @@ void AmbientOcclusionModifier::AmbientOcclusionEngine::perform()
             ++r;
         }
 
-        if(isCanceled()) return;
+        if(isCanceled())
+            return;
 
         // Normalize brightness values by global maximum.
         FloatType maxBrightness = *boost::max_element(brightnessValues);
@@ -287,16 +288,17 @@ void AmbientOcclusionModifier::AmbientOcclusionEngine::applyResults(const Modifi
     OVITO_ASSERT(brightness() && particles->elementCount() == brightness()->size());
 
     // Get effective intensity.
-    FloatType intensity = qBound(FloatType(0), modifier->intensity(), FloatType(1));
-    if(intensity == 0 || particles->elementCount() == 0) return;
+    GraphicsFloatType intensity = qBound(GraphicsFloatType(0), static_cast<GraphicsFloatType>(modifier->intensity()), GraphicsFloatType(1));
+    if(intensity == 0 || particles->elementCount() == 0)
+        return;
 
     // Get output property object.
     ConstDataBufferAccess<FloatType> brightnessValues(brightness());
-    PropertyAccess<Color> colorProperty = particles->createProperty(ParticlesObject::ColorProperty, DataBuffer::InitializeMemory, {particles});
+    PropertyAccess<ColorG> colorProperty = particles->createProperty(ParticlesObject::ColorProperty, DataBuffer::InitializeMemory, {particles});
     const FloatType* b = brightnessValues.cbegin();
-    for(Color& c : colorProperty) {
-        FloatType factor = FloatType(1) - intensity + (*b);
-        if(factor < FloatType(1))
+    for(ColorG& c : colorProperty) {
+        GraphicsFloatType factor = FloatType(1) - intensity + static_cast<GraphicsFloatType>(*b);
+        if(factor < GraphicsFloatType(1))
             c = c * factor;
         ++b;
     }

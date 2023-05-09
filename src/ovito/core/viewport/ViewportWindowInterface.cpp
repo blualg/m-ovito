@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -83,8 +83,8 @@ void ViewportWindowInterface::destroyViewportWindow()
 ******************************************************************************/
 void ViewportWindowInterface::renderOrientationIndicator(SceneRenderer* renderer)
 {
-    const FloatType tripodSize = 80.0;          // device-independent pixels
-    const FloatType tripodArrowSize = 0.17;     // percentage of the above value.
+    constexpr GraphicsFloatType tripodSize = 80.0;          // device-independent pixels
+    constexpr GraphicsFloatType tripodArrowSize = 0.17;     // percentage of the above value.
 
     // Set up projection matrix.
     QSize imageSize = renderer->viewportRect().size();
@@ -106,28 +106,28 @@ void ViewportWindowInterface::renderOrientationIndicator(SceneRenderer* renderer
     // Turn off depth-testing.
     renderer->setDepthTestEnabled(false);
 
-    static const ColorA axisColors[3] = { ColorA(1.0, 0.0, 0.0), ColorA(0.0, 1.0, 0.0), ColorA(0.4, 0.4, 1.0) };
+    static constexpr ColorA axisColors[3] = { ColorA(1.0, 0.0, 0.0), ColorA(0.0, 1.0, 0.0), ColorA(0.4, 0.4, 1.0) };
     static const QString labels[3] = { QStringLiteral("x"), QStringLiteral("y"), QStringLiteral("z") };
 
     // Create line primitive for the coordinate axis arrows.
     if(!_orientationTripodGeometry.colors()) {
-        DataBufferAccessAndRef<ColorA> vertexColors = DataBufferPtr::create(18, DataBuffer::Float, 4);
-        std::fill(vertexColors.begin() + 0,  vertexColors.begin() + 6,  axisColors[0]);
-        std::fill(vertexColors.begin() + 6,  vertexColors.begin() + 12, axisColors[1]);
-        std::fill(vertexColors.begin() + 12, vertexColors.end(),        axisColors[2]);
+        DataBufferAccessAndRef<ColorAG> vertexColors = DataBufferPtr::create(18, DataBuffer::FloatGraphics, 4);
+        std::fill(vertexColors.begin() + 0,  vertexColors.begin() + 6,  axisColors[0].toDataType<GraphicsFloatType>());
+        std::fill(vertexColors.begin() + 6,  vertexColors.begin() + 12, axisColors[1].toDataType<GraphicsFloatType>());
+        std::fill(vertexColors.begin() + 12, vertexColors.end(),        axisColors[2].toDataType<GraphicsFloatType>());
         _orientationTripodGeometry.setColors(vertexColors.take());
     }
 
     // Update geometry of coordinate axis arrows.
-    DataBufferAccessAndRef<Point3> vertices = DataBufferPtr::create(18, DataBuffer::Float, 3);
+    DataBufferAccessAndRef<Point3G> vertices = DataBufferPtr::create(18, DataBuffer::FloatGraphics, 3);
     for(size_t axis = 0, index = 0; axis < 3; axis++) {
-        Vector3 dir = viewport()->projectionParams().viewMatrix.column(axis).normalized();
-        vertices[index++] = Point3::Origin();
-        vertices[index++] = Point3::Origin() + dir;
-        vertices[index++] = Point3::Origin() + dir;
-        vertices[index++] = Point3::Origin() + (dir + tripodArrowSize * Vector3(dir.y() - dir.x(), -dir.x() - dir.y(), dir.z()));
-        vertices[index++] = Point3::Origin() + dir;
-        vertices[index++] = Point3::Origin() + (dir + tripodArrowSize * Vector3(-dir.y() - dir.x(), dir.x() - dir.y(), dir.z()));
+        Vector3G dir = viewport()->projectionParams().viewMatrix.column(axis).normalized().toDataType<GraphicsFloatType>();
+        vertices[index++] = Point3G::Origin();
+        vertices[index++] = Point3G::Origin() + dir;
+        vertices[index++] = Point3G::Origin() + dir;
+        vertices[index++] = Point3G::Origin() + (dir + tripodArrowSize * Vector3G(dir.y() - dir.x(), -dir.x() - dir.y(), dir.z()));
+        vertices[index++] = Point3G::Origin() + dir;
+        vertices[index++] = Point3G::Origin() + (dir + tripodArrowSize * Vector3G(-dir.y() - dir.x(), dir.x() - dir.y(), dir.z()));
     }
     // To avoid unnecessary GPU traffic, keep old data buffer in place if contents haven't changed.
     ConstDataBufferPtr newPositions = vertices.take();

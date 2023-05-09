@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -238,18 +238,18 @@ void ReaxFFBondImporter::FrameLoader::loadFile()
         std::transform(reaxBonds.cbegin(), reaxBonds.cend(), bondParticleIdentifiersProperty.begin(), [](const ReaxFFBond& bond) { return bond.atoms; });
 
         // Create bond property for the bond order.
-        PropertyAccess<FloatType> bondOrderProperty = bonds()->createProperty(QStringLiteral("Bond Order"), PropertyObject::Float);
+        PropertyAccess<FloatType> bondOrderProperty = bonds()->createProperty(QStringLiteral("Bond Order"), PropertyObject::FloatDefault);
         std::transform(reaxBonds.cbegin(), reaxBonds.cend(), bondOrderProperty.begin(), [](const ReaxFFBond& bond) { return bond.bondOrder; });
 
         // Create particle properties.
         setParticleCount(reaxAtoms.size());
-        PropertyAccess<qlonglong> identifierProperty = particles()->createProperty(ParticlesObject::IdentifierProperty);
+        PropertyAccess<int64_t> identifierProperty = particles()->createProperty(ParticlesObject::IdentifierProperty);
         std::transform(reaxAtoms.cbegin(), reaxAtoms.cend(), identifierProperty.begin(), [](const ReaxFFAtom& atom) { return atom.id; });
         PropertyAccess<FloatType> chargeProperty = particles()->createProperty(ParticlesObject::ChargeProperty);
         std::transform(reaxAtoms.cbegin(), reaxAtoms.cend(), chargeProperty.begin(), [](const ReaxFFAtom& atom) { return atom.q; });
-        PropertyAccess<FloatType> atomBondOrderProperty = particles()->createProperty(QStringLiteral("Atom Bond Order"), PropertyObject::Float);
+        PropertyAccess<FloatType> atomBondOrderProperty = particles()->createProperty(QStringLiteral("Atom Bond Order"), PropertyObject::FloatDefault);
         std::transform(reaxAtoms.cbegin(), reaxAtoms.cend(), atomBondOrderProperty.begin(), [](const ReaxFFAtom& atom) { return atom.abo; });
-        PropertyAccess<FloatType> lonePairsProperty = particles()->createProperty(QStringLiteral("Lone Pairs"), PropertyObject::Float);
+        PropertyAccess<FloatType> lonePairsProperty = particles()->createProperty(QStringLiteral("Lone Pairs"), PropertyObject::FloatDefault);
         std::transform(reaxAtoms.cbegin(), reaxAtoms.cend(), lonePairsProperty.begin(), [](const ReaxFFAtom& atom) { return atom.nlp; });
     }
 

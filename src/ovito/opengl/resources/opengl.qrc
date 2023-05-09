@@ -4,6 +4,7 @@
 
 	<file>glsl/global_uniforms.glsl</file>
 	<file>glsl/picking.glsl</file>
+	<file>glsl/shape_orientation.glsl</file>
 	<file>glsl/shading.frag</file>
 	<file>glsl/shading_transparency.frag</file>
 	<file>glsl/view_ray.vert</file>
@@ -145,7 +146,7 @@
 	<file>glsl/lines/thick_line.vert</file>
 	<file>glsl/lines/thick_line_picking.vert</file>
 	<file>glsl/lines/thick_line_uniform_color.vert</file>
-	
+
 	<file>glsl/image/image.vert</file>
 	<file>glsl/image/image.frag</file>
 	<file>glsl/image/oit_compose.vert</file>

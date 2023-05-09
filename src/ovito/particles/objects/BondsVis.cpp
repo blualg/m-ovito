@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -125,9 +125,9 @@ Box3 BondsVis::boundingBox(AnimationTime time, const ConstDataObjectPath& path, 
             }
 
             // Extend box to account for width of bonds.
-            FloatType maxBondWidth = std::max(bondWidth(), FloatType(0));
+            GraphicsFloatType maxBondWidth = std::max(static_cast<GraphicsFloatType>(bondWidth()), GraphicsFloatType(0));
             if(bondWidthProperty && bondWidthProperty->size() != 0) {
-                ConstPropertyAccess<FloatType> widthArray(bondWidthProperty);
+                ConstPropertyAccess<GraphicsFloatType> widthArray(bondWidthProperty);
                 auto minmax = std::minmax_element(widthArray.cbegin(), widthArray.cend());
                 if(*minmax.first <= 0)
                     maxBondWidth = std::max(maxBondWidth, *minmax.second);
@@ -239,16 +239,16 @@ PipelineStatus BondsVis::render(AnimationTime time, const ConstDataObjectPath& p
         if(bondTopologyProperty && positionProperty && bondDiameter > 0) {
 
             // Allocate buffers for the bonds geometry.
-            DataBufferAccessAndRef<Point3> bondPositions1 = DataBufferPtr::create(bondTopologyProperty->size() * 2, DataBuffer::Float, 3);
-            DataBufferAccessAndRef<Point3> bondPositions2 = DataBufferPtr::create(bondTopologyProperty->size() * 2, DataBuffer::Float, 3);
-            DataBufferAccessAndRef<Color> bondColors = DataBufferPtr::create(bondTopologyProperty->size() * 2, DataBuffer::Float, 3);
-            DataBufferAccessAndRef<FloatType> bondTransparencies = transparencyProperty ? DataBufferPtr::create(bondTopologyProperty->size() * 2, DataBuffer::Float) : nullptr;
-            DataBufferAccessAndRef<FloatType> bondWidths = bondWidthProperty ? DataBufferPtr::create(bondTopologyProperty->size() * 2, DataBuffer::Float) : nullptr;
+            DataBufferAccessAndRef<Point3G> bondPositions1 = DataBufferPtr::create(bondTopologyProperty->size() * 2, DataBuffer::FloatGraphics, 3);
+            DataBufferAccessAndRef<Point3G> bondPositions2 = DataBufferPtr::create(bondTopologyProperty->size() * 2, DataBuffer::FloatGraphics, 3);
+            DataBufferAccessAndRef<ColorG> bondColors = DataBufferPtr::create(bondTopologyProperty->size() * 2, DataBuffer::FloatGraphics, 3);
+            DataBufferAccessAndRef<GraphicsFloatType> bondTransparencies = transparencyProperty ? DataBufferPtr::create(bondTopologyProperty->size() * 2, DataBuffer::FloatGraphics) : nullptr;
+            DataBufferAccessAndRef<GraphicsFloatType> bondWidths = bondWidthProperty ? DataBufferPtr::create(bondTopologyProperty->size() * 2, DataBuffer::FloatGraphics) : nullptr;
 
             // Allocate buffers for the nodal vertices.
-            DataBufferAccessAndRef<Color> nodalColors = renderNodalVertices ? DataBufferPtr::create(positionProperty->size(), DataBuffer::Float, 3) : nullptr;
-            DataBufferAccessAndRef<FloatType> nodalTransparencies = (renderNodalVertices && transparencyProperty) ? DataBufferPtr::create(positionProperty->size(), DataBuffer::Float) : nullptr;
-            DataBufferAccessAndRef<int> nodalIndices = renderNodalVertices ? DataBufferPtr::create(0, DataBuffer::Int) : nullptr;
+            DataBufferAccessAndRef<ColorG> nodalColors = renderNodalVertices ? DataBufferPtr::create(positionProperty->size(), DataBuffer::FloatGraphics, 3) : nullptr;
+            DataBufferAccessAndRef<GraphicsFloatType> nodalTransparencies = (renderNodalVertices && transparencyProperty) ? DataBufferPtr::create(positionProperty->size(), DataBuffer::FloatGraphics) : nullptr;
+            DataBufferAccessAndRef<int32_t> nodalIndices = renderNodalVertices ? DataBufferPtr::create(0, DataBuffer::Int32) : nullptr;
             boost::dynamic_bitset<> visitedParticles(renderNodalVertices ? positionProperty->size() : 0);
             OVITO_ASSERT(nodalColors || !nodalTransparencies);
 
@@ -258,23 +258,23 @@ PipelineStatus BondsVis::render(AnimationTime time, const ConstDataObjectPath& p
             const AffineTransformation cell = simulationCell ? simulationCell->cellMatrix() : AffineTransformation::Zero();
 
             // Obtain the radii of the particles.
-            ConstPropertyAccessAndRef<FloatType> particleRadii;
+            ConstPropertyAccessAndRef<GraphicsFloatType> particleRadii;
             if(particleVis)
                 particleRadii = particleVis->particleRadii(particles, false);
             // Make sure the particle radius array has the correct length.
-            if(particleRadii && particleRadii.size() != particleCount) 
+            if(particleRadii && particleRadii.size() != particleCount)
                 particleRadii.reset();
 
             // Determine half-bond colors.
-            std::vector<Color> colors = halfBondColors(particles, renderer->isInteractive(), coloringMode(), false);
+            std::vector<ColorG> colors = halfBondColors(particles, renderer->isInteractive(), coloringMode(), false);
             OVITO_ASSERT(colors.size() == bondPositions1.size());
 
             size_t cylinderIndex = 0;
             auto color = colors.cbegin();
             ConstPropertyAccess<ParticleIndexPair> bonds(bondTopologyProperty);
             ConstPropertyAccess<Vector3I> bondPeriodicImages(bondPeriodicImageProperty);
-            ConstPropertyAccess<FloatType> bondInputTransparency(transparencyProperty);
-            ConstPropertyAccess<FloatType> bondInputWidths(bondWidthProperty);
+            ConstPropertyAccess<GraphicsFloatType> bondInputTransparency(transparencyProperty);
+            ConstPropertyAccess<GraphicsFloatType> bondInputWidths(bondWidthProperty);
             for(size_t bondIndex = 0; bondIndex < bonds.size(); bondIndex++) {
                 size_t particleIndex1 = bonds[bondIndex][0];
                 size_t particleIndex2 = bonds[bondIndex][1];
@@ -289,12 +289,13 @@ PipelineStatus BondsVis::render(AnimationTime time, const ConstDataObjectPath& p
                             }
                         }
                     }
-                    FloatType t = 0.5;
-                    FloatType blen = vec.length() * FloatType(2);
+                    const Vector3G& gvec = vec.toDataType<GraphicsFloatType>();
+                    GraphicsFloatType t = 0.5;
+                    GraphicsFloatType blen = gvec.length() * GraphicsFloatType(2);
                     if(particleRadii && blen != 0) {
                         // This calculation determines the point where to split the bond into the two half-bonds
                         // such that the border appears halfway between the two particles, which may have two different sizes.
-                        t = FloatType(0.5) + std::min(FloatType(0.5), particleRadii[particleIndex1]/blen) - std::min(FloatType(0.5), particleRadii[particleIndex2]/blen);
+                        t = GraphicsFloatType(0.5) + std::min(GraphicsFloatType(0.5), particleRadii[particleIndex1]/blen) - std::min(GraphicsFloatType(0.5), particleRadii[particleIndex2]/blen);
                     }
                     bondColors[cylinderIndex] = *color++;
                     if(nodalColors && !visitedParticles.test(particleIndex1)) {
@@ -305,9 +306,9 @@ PipelineStatus BondsVis::render(AnimationTime time, const ConstDataObjectPath& p
                         nodalIndices.push_back(particleIndex1);
                     }
                     if(bondTransparencies) bondTransparencies[cylinderIndex] = bondInputTransparency[bondIndex];
-                    if(bondWidths) bondWidths[cylinderIndex] = (bondInputWidths[bondIndex] <= 0.0) ? bondDiameter : bondInputWidths[bondIndex];
-                    bondPositions1[cylinderIndex] = positions[particleIndex1];
-                    bondPositions2[cylinderIndex] = positions[particleIndex1] + vec * t;
+                    if(bondWidths) bondWidths[cylinderIndex] = (bondInputWidths[bondIndex] <= GraphicsFloatType(0)) ? bondDiameter : bondInputWidths[bondIndex];
+                    bondPositions1[cylinderIndex] = positions[particleIndex1].toDataType<GraphicsFloatType>();
+                    bondPositions2[cylinderIndex] = bondPositions1[cylinderIndex] + gvec * t;
                     if(isSplitBond)
                         swap(bondPositions1[cylinderIndex], bondPositions2[cylinderIndex]);
                     cylinderIndex++;
@@ -321,9 +322,9 @@ PipelineStatus BondsVis::render(AnimationTime time, const ConstDataObjectPath& p
                         nodalIndices.push_back(particleIndex2);
                     }
                     if(bondTransparencies) bondTransparencies[cylinderIndex] = bondInputTransparency[bondIndex];
-                    if(bondWidths) bondWidths[cylinderIndex] = (bondInputWidths[bondIndex] <= 0.0) ? bondDiameter : bondInputWidths[bondIndex];
-                    bondPositions1[cylinderIndex] = positions[particleIndex2];
-                    bondPositions2[cylinderIndex] = positions[particleIndex2] - vec * (FloatType(1) - t);
+                    if(bondWidths) bondWidths[cylinderIndex] = (bondInputWidths[bondIndex] <= GraphicsFloatType(0)) ? bondDiameter : bondInputWidths[bondIndex];
+                    bondPositions1[cylinderIndex] = positions[particleIndex2].toDataType<GraphicsFloatType>();
+                    bondPositions2[cylinderIndex] = bondPositions1[cylinderIndex] - gvec * (GraphicsFloatType(1) - t);
                     if(isSplitBond)
                         swap(bondPositions1[cylinderIndex], bondPositions2[cylinderIndex]);
                     cylinderIndex++;
@@ -332,14 +333,14 @@ PipelineStatus BondsVis::render(AnimationTime time, const ConstDataObjectPath& p
                     bondColors[cylinderIndex] = *color++;
                     if(bondTransparencies) bondTransparencies[cylinderIndex] = 0;
                     if(bondWidths) bondWidths[cylinderIndex] = 0;
-                    bondPositions1[cylinderIndex] = Point3::Origin();
-                    bondPositions2[cylinderIndex++] = Point3::Origin();
+                    bondPositions1[cylinderIndex] = Point3G::Origin();
+                    bondPositions2[cylinderIndex++] = Point3G::Origin();
 
                     bondColors[cylinderIndex] = *color++;
                     if(bondTransparencies) bondTransparencies[cylinderIndex] = 0;
                     if(bondWidths) bondWidths[cylinderIndex] = 0;
-                    bondPositions1[cylinderIndex] = Point3::Origin();
-                    bondPositions2[cylinderIndex++] = Point3::Origin();
+                    bondPositions1[cylinderIndex] = Point3G::Origin();
+                    bondPositions2[cylinderIndex++] = Point3G::Origin();
                 }
             }
 
@@ -393,7 +394,7 @@ PipelineStatus BondsVis::render(AnimationTime time, const ConstDataObjectPath& p
 * Returns an array with two colors per full bond, because the two half-bonds
 * may have different colors.
 ******************************************************************************/
-std::vector<Color> BondsVis::halfBondColors(const ParticlesObject* particles, bool highlightSelection, ColoringMode coloringMode, bool ignoreBondColorProperty) const
+std::vector<ColorG> BondsVis::halfBondColors(const ParticlesObject* particles, bool highlightSelection, ColoringMode coloringMode, bool ignoreBondColorProperty) const
 {
     OVITO_ASSERT(particles != nullptr);
     particles->verifyIntegrity();
@@ -403,25 +404,25 @@ std::vector<Color> BondsVis::halfBondColors(const ParticlesObject* particles, bo
 
     // Get bond-related properties which determine the bond coloring.
     ConstPropertyAccess<ParticleIndexPair> topologyProperty = bonds->getProperty(BondsObject::TopologyProperty);
-    ConstPropertyAccess<Color> bondColorProperty = !ignoreBondColorProperty ? bonds->getProperty(BondsObject::ColorProperty) : nullptr;
+    ConstPropertyAccess<ColorG> bondColorProperty = !ignoreBondColorProperty ? bonds->getProperty(BondsObject::ColorProperty) : nullptr;
     const PropertyObject* bondTypeProperty = (coloringMode == ByTypeColoring) ? bonds->getProperty(BondsObject::TypeProperty) : nullptr;
-    ConstPropertyAccess<int> bondSelectionProperty = highlightSelection ? bonds->getProperty(BondsObject::SelectionProperty) : nullptr;
+    ConstPropertyAccess<DataBuffer::SelectionDataType> bondSelectionProperty = highlightSelection ? bonds->getProperty(BondsObject::SelectionProperty) : nullptr;
 
     // Get particle-related properties and the vis element.
     const ParticlesVis* particleVis = particles->visElement<ParticlesVis>();
-    ConstPropertyAccess<Color> particleColorProperty;
+    ConstPropertyAccess<ColorG> particleColorProperty;
     const PropertyObject* particleTypeProperty = nullptr;
     if(coloringMode == ParticleBasedColoring && particleVis) {
         particleColorProperty = particles->getProperty(ParticlesObject::ColorProperty);
         particleTypeProperty = particleVis->getParticleTypeColorProperty(particles);
     }
 
-    std::vector<Color> output(bonds->elementCount() * 2);
-    Color defaultColor = bondColor();
+    std::vector<ColorG> output(bonds->elementCount() * 2);
+    const ColorG defaultColor = bondColor().toDataType<GraphicsFloatType>();
     if(bondColorProperty && bondColorProperty.size() * 2 == output.size()) {
         // Take bond colors directly from the color property.
         auto bc = output.begin();
-        for(const Color& c : bondColorProperty) {
+        for(const auto& c : bondColorProperty) {
             *bc++ = c;
             *bc++ = c;
         }
@@ -429,7 +430,7 @@ std::vector<Color> BondsVis::halfBondColors(const ParticlesObject* particles, bo
     else if(coloringMode == ParticleBasedColoring && particleVis) {
         // Derive bond colors from particle colors.
         size_t particleCount = particles->elementCount();
-        ConstPropertyAccessAndRef<Color> particleColors = particleVis->particleColors(particles, false);
+        ConstPropertyAccessAndRef<ColorG> particleColors = particleVis->particleColors(particles, false);
         OVITO_ASSERT(particleColors.size() == particleCount);
         auto bc = output.begin();
         for(const auto& bond : topologyProperty) {
@@ -448,17 +449,17 @@ std::vector<Color> BondsVis::halfBondColors(const ParticlesObject* particles, bo
             // Assign colors based on bond types.
             // Generate a lookup map for bond type colors.
             const std::map<int, Color>& colorMap = bondTypeProperty->typeColorMap();
-            std::array<Color,16> colorArray;
+            std::array<ColorG,16> colorArray;
             // Check if all type IDs are within a small, non-negative range.
             // If yes, we can use an array lookup strategy. Otherwise we have to use a dictionary lookup strategy, which is slower.
             if(boost::algorithm::all_of(colorMap,
                     [&colorArray](const std::map<int, Color>::value_type& i) { return i.first >= 0 && i.first < (int)colorArray.size(); })) {
                 colorArray.fill(defaultColor);
                 for(const auto& entry : colorMap)
-                    colorArray[entry.first] = entry.second;
+                    colorArray[entry.first] = entry.second.toDataType<GraphicsFloatType>();
                 // Fill color array.
-                ConstPropertyAccess<int> bondTypeData(bondTypeProperty);
-                const int* t = bondTypeData.cbegin();
+                ConstPropertyAccess<int32_t> bondTypeData(bondTypeProperty);
+                const int32_t* t = bondTypeData.cbegin();
                 for(auto c = output.begin(); c != output.end(); ++t) {
                     if(*t >= 0 && *t < (int)colorArray.size()) {
                         *c++ = colorArray[*t];
@@ -472,12 +473,12 @@ std::vector<Color> BondsVis::halfBondColors(const ParticlesObject* particles, bo
             }
             else {
                 // Fill color array.
-                ConstPropertyAccess<int> bondTypeData(bondTypeProperty);
-                const int* t = bondTypeData.cbegin();
+                ConstPropertyAccess<int32_t> bondTypeData(bondTypeProperty);
+                const int32_t* t = bondTypeData.cbegin();
                 for(auto c = output.begin(); c != output.end(); ++t) {
                     if(auto it = colorMap.find(*t); it != colorMap.end()) {
-                        *c++ = it->second;
-                        *c++ = it->second;
+                        *c++ = it->second.toDataType<GraphicsFloatType>();
+                        *c++ = it->second.toDataType<GraphicsFloatType>();
                     }
                     else {
                         *c++ = defaultColor;
@@ -494,8 +495,8 @@ std::vector<Color> BondsVis::halfBondColors(const ParticlesObject* particles, bo
 
     // Highlight selected bonds.
     if(bondSelectionProperty && bondSelectionProperty.size() * 2 == output.size()) {
-        const Color selColor = selectionBondColor();
-        const int* t = bondSelectionProperty.cbegin();
+        const ColorG selColor = selectionBondColor();
+        const DataBuffer::SelectionDataType* t = bondSelectionProperty.cbegin();
         for(auto c = output.begin(); c != output.end(); ++t) {
             if(*t) {
                 *c++ = selColor;
@@ -583,12 +584,12 @@ ConstPropertyPtr BondsVis::bondWidths(const BondsObject* bonds) const
     DataObjectAccess<DataOORef, PropertyObject> output = bonds->getProperty(BondsObject::WidthProperty);
     if(output) {
         // Check if the width array contains any zero entries.
-        ConstPropertyAccess<FloatType> widthArray(output);
-        if(boost::find(widthArray, FloatType(0)) != widthArray.end()) {
+        ConstPropertyAccess<GraphicsFloatType> widthArray(output);
+        if(boost::find(widthArray, GraphicsFloatType(0)) != widthArray.end()) {
             widthArray.reset();
 
             // Replace zero entries in the "Width" array with the uniform default width.
-            boost::replace(PropertyAccess<FloatType>(output.makeMutable()), FloatType(0), bondWidth());
+            boost::replace(PropertyAccess<GraphicsFloatType>(output.makeMutable()), GraphicsFloatType(0), static_cast<GraphicsFloatType>(bondWidth()));
         }
     }
     else {
@@ -596,7 +597,7 @@ ConstPropertyPtr BondsVis::bondWidths(const BondsObject* bonds) const
         output.reset(BondsObject::OOClass().createStandardProperty(bonds->elementCount(), BondsObject::WidthProperty));
 
         // Assign the uniform default width to all bonds.
-        output.makeMutable()->fill(bondWidth());
+        output.makeMutable()->fill<GraphicsFloatType>(bondWidth());
     }
 
     return output.take();

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -115,18 +115,20 @@ public:
         if(!chunk) throw Exception(GSDImporter::tr("GSD file I/O error. Chunk %1 does not exist.").arg(chunkName));
         switch(chunk->type) {
             case GSD_TYPE_INT8:
+                return { PropertyObject::Int8, chunk->M };
             case GSD_TYPE_UINT8:
             case GSD_TYPE_INT16:
             case GSD_TYPE_UINT16:
             case GSD_TYPE_INT32:
-                return { PropertyObject::Int, chunk->M };
+                return { PropertyObject::Int32, chunk->M };
             case GSD_TYPE_UINT32: // Note: We map unsigned int32 to the signed int64 in OVITO to avoid overflows.
             case GSD_TYPE_INT64:
             case GSD_TYPE_UINT64:
                 return { PropertyObject::Int64, chunk->M };
             case GSD_TYPE_FLOAT:
+                return { PropertyObject::Float32, chunk->M };
             case GSD_TYPE_DOUBLE:
-                return { PropertyObject::Float, chunk->M };
+                return { PropertyObject::Float64, chunk->M };
             default:
                 throw Exception(GSDImporter::tr("GSD file I/O error. Unknown chunk data type."));
         }
@@ -354,29 +356,30 @@ public:
         if(chunk->M != componentCount)
             throw Exception(GSDImporter::tr("GSD file I/O error: Size of second dimension in chunk '%1' is %2 and does not match expected value %3.").arg(chunkName).arg(chunk->M).arg(componentCount));
         int errCode;
-#ifdef FLOATTYPE_FLOAT
-        if(chunk->type == GSD_TYPE_DOUBLE) {
-            // Convert GSD data from double to float.
-            std::vector<double> doubleBuffer(chunk->N * chunk->M);
-            errCode = ::gsd_read_chunk(&_handle, doubleBuffer.data(), chunk);
-            std::copy(doubleBuffer.begin(), doubleBuffer.end(), reinterpret_cast<float*>(buffer));
+        if constexpr(std::is_same_v<T, float>) {
+            if(chunk->type == GSD_TYPE_DOUBLE) {
+                // Convert GSD data from double to float.
+                std::vector<double> doubleBuffer(chunk->N * chunk->M);
+                errCode = ::gsd_read_chunk(&_handle, doubleBuffer.data(), chunk);
+                std::copy(doubleBuffer.begin(), doubleBuffer.end(), buffer);
+            }
+            else {
+                // No data type conversion needed.
+                errCode = ::gsd_read_chunk(&_handle, buffer, chunk);
+            }
         }
-        else {
-            // No data type conversion needed.
-            errCode = ::gsd_read_chunk(&_handle, buffer, chunk);
+        else if constexpr(std::is_same_v<T, double>) {
+            if(chunk->type == GSD_TYPE_FLOAT) {
+                // Convert GSD data from float to double.
+                std::vector<float> floatBuffer(chunk->N * chunk->M);
+                errCode = ::gsd_read_chunk(&_handle, floatBuffer.data(), chunk);
+                std::copy(floatBuffer.begin(), floatBuffer.end(), buffer);
+            }
+            else {
+                // No data type conversion needed.
+                errCode = ::gsd_read_chunk(&_handle, buffer, chunk);
+            }
         }
-#else
-        if(chunk->type == GSD_TYPE_FLOAT) {
-            // Convert GSD data from float to double.
-            std::vector<float> floatBuffer(chunk->N * chunk->M);
-            errCode = ::gsd_read_chunk(&_handle, floatBuffer.data(), chunk);
-            std::copy(floatBuffer.begin(), floatBuffer.end(), reinterpret_cast<double*>(buffer));
-        }
-        else {
-            // No data type conversion needed.
-            errCode = ::gsd_read_chunk(&_handle, buffer, chunk);
-        }
-#endif
         switch(errCode) {
             case gsd_error::GSD_SUCCESS: break;
             case gsd_error::GSD_ERROR_IO: throw Exception(GSDImporter::tr("GSD file I/O error."));

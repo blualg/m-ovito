@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -57,7 +57,7 @@ bool ParaViewVTPParticleImporter::OOMetaClass::checkFileFormat(const FileHandle&
     if(xml.attributes().value("type").compare(QLatin1String("PolyData")) != 0)
         return false;
 
-    // Continue until we reach the <Piece> element. 
+    // Continue until we reach the <Piece> element.
     while(xml.readNextStartElement()) {
         if(xml.name().compare(QLatin1String("Piece")) == 0) {
             // Number of lines, triangle strips, and polygons must be zero.
@@ -97,7 +97,7 @@ void ParaViewVTPParticleImporter::FrameLoader::loadFile()
     }
 
     // Aspherix stores bonds in a seperate VTK file, which gets loaded alongside with this particles files.
-    // To preserve the bonds loaded by ParaViewVTPBondsImporter, we have to explicitly tell the ParticleImporter base class here 
+    // To preserve the bonds loaded by ParaViewVTPBondsImporter, we have to explicitly tell the ParticleImporter base class here
     // to NOT reset the bonds list (which it would otherwise do, because ParaViewVTPParticleImporter doesn't create any bonds).
     setKeepExistingTopology(true);
 
@@ -153,7 +153,7 @@ void ParaViewVTPParticleImporter::FrameLoader::loadFile()
                         OvitoClassPtr elementTypeClass = ParticlesObject::OOClass().typedPropertyElementClass(property->type());
                         if(!elementTypeClass && property->name() == QStringLiteral("Material Type")) elementTypeClass = &ElementType::OOClass();
                         if(elementTypeClass) {
-                            for(int t : ConstPropertyAccess<int>(property).csubrange(baseParticleIndex, property->size())) {
+                            for(int t : ConstPropertyAccess<int32_t>(property).csubrange(baseParticleIndex, property->size())) {
                                 if(!property->elementType(t)) {
                                     DataOORef<ElementType> elementType = static_object_cast<ElementType>(elementTypeClass->createInstance());
                                     elementType->setNumericId(t);
@@ -195,15 +195,15 @@ void ParaViewVTPParticleImporter::FrameLoader::loadFile()
     // Convert superquadric 'Blockiness' values from the Aspherix simulation to 'Roundness' values used by OVITO particle visualization.
     bool transposeOrientations = false;
     if(PropertyObject* roundnessProperty = particles()->getMutableProperty(ParticlesObject::SuperquadricRoundnessProperty)) {
-        for(Vector2& v : PropertyAccess<Vector2>(roundnessProperty).subrange(baseParticleIndex, roundnessProperty->size())) {
+        for(auto& v : PropertyAccess<Vector_2<GraphicsFloatType>>(roundnessProperty).subrange(baseParticleIndex, roundnessProperty->size())) {
             // Blockiness1: "north-south" blockiness
             // Blockiness2: "east-west" blockiness
             // Roundness.x: "east-west" roundness
             // Roundness.y: "north-south" roundness
             std::swap(v.x(), v.y());
             // Roundness = 2.0 / Blockiness:
-            if(v.x() != 0) v.x() = FloatType(2) / v.x();
-            if(v.y() != 0) v.y() = FloatType(2) / v.y();
+            if(v.x() != 0) v.x() = GraphicsFloatType(2) / v.x();
+            if(v.y() != 0) v.y() = GraphicsFloatType(2) / v.y();
         }
         transposeOrientations = true;
         if(isCanceled())
@@ -212,18 +212,18 @@ void ParaViewVTPParticleImporter::FrameLoader::loadFile()
 
     // Convert 3x3 'Tensor' property into particle orientation.
     if(const PropertyObject* tensorProperty = particles()->getProperty(QStringLiteral("Tensor"))) {
-        if(tensorProperty->dataType() == PropertyObject::Float && tensorProperty->componentCount() == 9) {
-            PropertyAccess<Quaternion> orientations = particles()->createProperty(ParticlesObject::OrientationProperty, preserveExistingData ? DataBuffer::InitializeMemory : DataBuffer::NoFlags);
-            Quaternion* q = orientations.begin() + baseParticleIndex;
-            for(const Matrix3& tensor : ConstPropertyAccess<Matrix3>(tensorProperty).csubrange(baseParticleIndex, tensorProperty->size())) {
-                *q++ = Quaternion(transposeOrientations ? tensor.transposed() : tensor, FloatType(1e-9));
+        if(tensorProperty->dataType() == PropertyObject::FloatGraphics && tensorProperty->componentCount() == 9) {
+            PropertyAccess<QuaternionG> orientations = particles()->createProperty(ParticlesObject::OrientationProperty, preserveExistingData ? DataBuffer::InitializeMemory : DataBuffer::NoFlags);
+            auto* q = orientations.begin() + baseParticleIndex;
+            for(const Matrix_3<GraphicsFloatType>& tensor : ConstPropertyAccess<Matrix_3<GraphicsFloatType>>(tensorProperty).csubrange(baseParticleIndex, tensorProperty->size())) {
+                *q++ = QuaternionG(transposeOrientations ? tensor.transposed() : tensor, GraphicsFloatType(1e-9));
             }
             if(isCanceled())
                 return;
         }
     }
 
-    // Reset "Radius" property of particles with a mesh-based shape to zero to get correct scaling. 
+    // Reset "Radius" property of particles with a mesh-based shape to zero to get correct scaling.
     if(const PropertyObject* typeProperty = particles()->getProperty(ParticlesObject::TypeProperty)) {
         std::vector<int> typesWithMeshShape;
         for(const ElementType* type : typeProperty->elementTypes()) {
@@ -237,11 +237,11 @@ void ParaViewVTPParticleImporter::FrameLoader::loadFile()
                 particles()->removeProperty(radiusProperty);
         }
         else if(!typesWithMeshShape.empty()) {
-            if(PropertyAccess<FloatType> radiusArray = particles()->getMutableProperty(ParticlesObject::RadiusProperty)) {
-                FloatType* radius = radiusArray.begin() + baseParticleIndex;
-                for(int t : ConstPropertyAccess<int>(typeProperty).csubrange(baseParticleIndex, typeProperty->size())) {
+            if(PropertyAccess<GraphicsFloatType> radiusArray = particles()->getMutableProperty(ParticlesObject::RadiusProperty)) {
+                auto* radius = radiusArray.begin() + baseParticleIndex;
+                for(auto t : ConstPropertyAccess<int32_t>(typeProperty).csubrange(baseParticleIndex, typeProperty->size())) {
                     if(std::find(typesWithMeshShape.cbegin(), typesWithMeshShape.cend(), t) != typesWithMeshShape.cend())
-                        *radius = 0.0;
+                        *radius = 0;
                     ++radius;
                 }
             }
@@ -257,7 +257,7 @@ void ParaViewVTPParticleImporter::FrameLoader::loadFile()
 }
 
 /******************************************************************************
-* Creates the right kind of OVITO property object that will receive the data 
+* Creates the right kind of OVITO property object that will receive the data
 * read from a <DataArray> element.
 ******************************************************************************/
 PropertyObject* ParaViewVTPParticleImporter::FrameLoader::createParticlePropertyForDataArray(QXmlStreamReader& xml, int& vectorComponent, bool preserveExistingData)
@@ -276,7 +276,7 @@ PropertyObject* ParaViewVTPParticleImporter::FrameLoader::createParticleProperty
         return particles()->createProperty(ParticlesObject::IdentifierProperty, initFlags);
     }
     else if(name.compare(QLatin1String("type"), Qt::CaseInsensitive) == 0 && numComponents == 1) {
-        PropertyObject* property = particles()->createProperty(QStringLiteral("Material Type"), PropertyObject::Int, 1, initFlags);
+        PropertyObject* property = particles()->createProperty(QStringLiteral("Material Type"), PropertyObject::Int32, 1, initFlags);
         property->setTitle(tr("Material types"));
         return property;
     }
@@ -302,10 +302,10 @@ PropertyObject* ParaViewVTPParticleImporter::FrameLoader::createParticleProperty
         return particles()->createProperty(ParticlesObject::ForceProperty, initFlags);
     }
     else if(name.compare(QLatin1String("density"), Qt::CaseInsensitive) == 0 && numComponents == 1) {
-        return particles()->createProperty(QStringLiteral("Density"), PropertyObject::Float, 1, initFlags);
+        return particles()->createProperty(QStringLiteral("Density"), PropertyObject::FloatDefault, 1, initFlags);
     }
     else if(name.compare(QLatin1String("tensor"), Qt::CaseInsensitive) == 0 && numComponents == 9) {
-        return particles()->createProperty(QStringLiteral("Tensor"), PropertyObject::Float, 9, initFlags);
+        return particles()->createProperty(QStringLiteral("Tensor"), PropertyObject::FloatGraphics, 9, initFlags);
     }
     else if(name.compare(QLatin1String("shapex"), Qt::CaseInsensitive) == 0 && numComponents == 1) {
         vectorComponent = 0;
@@ -328,7 +328,7 @@ PropertyObject* ParaViewVTPParticleImporter::FrameLoader::createParticleProperty
         return particles()->createProperty(ParticlesObject::SuperquadricRoundnessProperty, DataBuffer::InitializeMemory);
     }
     else {
-        return particles()->createProperty(name.toString(), PropertyObject::Float, numComponents, initFlags);
+        return particles()->createProperty(name.toString(), PropertyObject::FloatDefault, numComponents, initFlags);
     }
     return nullptr;
 }
@@ -403,13 +403,13 @@ void ParaViewVTPParticleImporter::FrameLoader::loadParticleShape(ParticleType* p
     particleType->setShapeMesh(meshObj.take());
     particleType->setShape(ParticlesVis::Mesh);
 
-    // Aspherix particle geometries seem not to have a consistent face winding order. 
+    // Aspherix particle geometries seem not to have a consistent face winding order.
     // Need to turn edge highlighting and backface culling off by default.
     particleType->setShapeBackfaceCullingEnabled(false);
     particleType->setHighlightShapeEdges(false);
 
     particleType->freezeInitialParameterValues({
-        SHADOW_PROPERTY_FIELD(ElementType::name), 
+        SHADOW_PROPERTY_FIELD(ElementType::name),
         SHADOW_PROPERTY_FIELD(ParticleType::radius),
         SHADOW_PROPERTY_FIELD(ParticleType::shape),
         SHADOW_PROPERTY_FIELD(ParticleType::highlightShapeEdges),
@@ -432,7 +432,7 @@ void ParticlesParaViewVTMFileFilter::preprocessDatasets(std::vector<ParaViewVTMB
         }
     }
 
-    // The following is specific to VTM files written by the Aspherix code. 
+    // The following is specific to VTM files written by the Aspherix code.
 
     // Remove those datasets from the multi-block structure that represent Aspherix particle shapes (group block "Convex shapes").
     // Keep a list of these removed datasets for later to load them together with the particles dataset.

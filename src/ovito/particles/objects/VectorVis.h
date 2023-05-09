@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -65,7 +65,7 @@ public:
         UniformColoring,
         PseudoColoring,
     };
-    Q_ENUM(ColoringMode);   
+    Q_ENUM(ColoringMode);
 
 public:
 

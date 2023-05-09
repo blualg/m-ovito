@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -133,8 +133,10 @@ public:
 protected:
 
     enum ExpressionVariableType {
-        FLOAT_PROPERTY,
-        INT_PROPERTY,
+        FLOAT32_PROPERTY,
+        FLOAT64_PROPERTY,
+        INT8_PROPERTY,
+        INT32_PROPERTY,
         INT64_PROPERTY,
         DERIVED_PROPERTY,
         ELEMENT_INDEX,
@@ -151,7 +153,7 @@ protected:
         /// The variable's value for the current data element.
         double value;
         /// Pointer into the property storage.
-        const uint8_t* dataPointer;
+        const std::byte* dataPointer;
         /// Data array stride in the property storage.
         size_t stride;
         /// The type of variable.
@@ -253,7 +255,7 @@ protected:
         return QString::fromStdWString(str);
 #else
         return QString::fromStdString(str);
-#endif  
+#endif
     }
 
     /// Helper function for converting a Qt string to a muParser string.
@@ -262,7 +264,7 @@ protected:
         return str.toStdWString();
 #else
         return str.toStdString();
-#endif  
+#endif
     }
 
     /// Registers an input variable if the name does not exist yet.

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -89,7 +89,7 @@ std::optional<std::pair<FloatType, FloatType>> PropertyColorMapping::determineVa
 
     FloatType minValue = std::numeric_limits<FloatType>::max();
     FloatType maxValue = std::numeric_limits<FloatType>::lowest();
-    
+
     // Iterate over the property array to find the lowest/highest value.
     pseudoColorProperty->forEach(pseudoColorPropertyComponent, [&](size_t i, auto v) {
             if(v > maxValue) maxValue = v;
@@ -121,7 +121,7 @@ void PropertyColorMapping::reverseRange()
 /******************************************************************************
 * Returns the class name of the selected color gradient.
 ******************************************************************************/
-QString PropertyColorMapping::colorGradientType() const 
+QString PropertyColorMapping::colorGradientType() const
 {
     return colorGradient() ? colorGradient()->getOOClass().name() : QString();
 }
@@ -129,7 +129,7 @@ QString PropertyColorMapping::colorGradientType() const
 /******************************************************************************
 * Assigns a new color gradient based on its class name.
 ******************************************************************************/
-void PropertyColorMapping::setColorGradientType(const QString& typeName, ExecutionContext executionContext) 
+void PropertyColorMapping::setColorGradientType(const QString& typeName, ExecutionContext executionContext)
 {
     OvitoClassPtr descriptor = PluginManager::instance().findClass(QString(), typeName);
     if(!descriptor) {

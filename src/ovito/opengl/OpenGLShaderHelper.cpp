@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -29,7 +29,7 @@ namespace Ovito {
 /******************************************************************************
 * Loads a shader program.
 ******************************************************************************/
-void OpenGLShaderHelper::load(const QString& id, const QString& vertexShaderFile, const QString& fragmentShaderFile, const QString& geometryShaderFile) 
+void OpenGLShaderHelper::load(const QString& id, const QString& vertexShaderFile, const QString& fragmentShaderFile, const QString& geometryShaderFile)
 {
     if(_shader)
         _shader->release();
@@ -38,9 +38,9 @@ void OpenGLShaderHelper::load(const QString& id, const QString& vertexShaderFile
     QString prefix = QStringLiteral(":/openglrenderer/glsl/");
 
     // Compile the shader program.
-    _shader = _renderer->loadShaderProgram(id, 
-        prefix + vertexShaderFile, 
-        prefix + fragmentShaderFile, 
+    _shader = _renderer->loadShaderProgram(id,
+        prefix + vertexShaderFile,
+        prefix + fragmentShaderFile,
         !geometryShaderFile.isEmpty() ? prefix + geometryShaderFile : QString());
     OVITO_REPORT_OPENGL_ERRORS(_renderer);
 
@@ -104,7 +104,7 @@ void OpenGLShaderHelper::load(const QString& id, const QString& vertexShaderFile
             {-1, -1,  1},
         };
         OVITO_CHECK_OPENGL(_renderer, _shader->setUniformValueArray(unitBoxTriangleStripUniform, boxVerts, 14));
-    }    
+    }
     int unitCubeStripNormalsUniform = _shader->uniformLocation("unit_cube_strip_normals");
     if(unitCubeStripNormalsUniform >= 0) {
         // Const array of normal vectors for the cube triangle strip.
@@ -158,9 +158,15 @@ QOpenGLBuffer OpenGLShaderHelper::createCachedBufferImpl(GLsizei elementSize, QO
 
     // Per-element data size must be positive.
     OVITO_ASSERT(elementSize > 0);
+
     // Drawing counts must have been specified.
     OVITO_ASSERT(verticesPerInstance() > 0);
     OVITO_ASSERT(instanceCount() > 0);
+    OVITO_ASSERT(inputRate != PerIndex || indexCount() > 0);
+    OVITO_ASSERT(inputRate != PerIndex || usage == QOpenGLBuffer::IndexBuffer);
+
+    // Determine effective number of elements.
+    GLsizei elementCount = (inputRate != PerIndex) ? instanceCount() : indexCount();
 
     // Prepare the OpenGL buffer object.
     QOpenGLBuffer bufferObject(usage);
@@ -177,9 +183,9 @@ QOpenGLBuffer OpenGLShaderHelper::createCachedBufferImpl(GLsizei elementSize, QO
     bool exceedsLimits = false;
     // Are we using a geometry shader? If yes, there is just one input vertex per instance.
     if(usingGeometryShader()) {
-        OVITO_ASSERT(inputRate == PerInstance);
-        exceedsLimits = instanceCount() > (std::numeric_limits<GLsizei>::max() / elementSize);
-        bufferSize = elementSize * instanceCount();
+        OVITO_ASSERT(inputRate == PerInstance || inputRate == PerIndex);
+        exceedsLimits = elementCount > (std::numeric_limits<GLsizei>::max() / elementSize);
+        bufferSize = elementSize * elementCount;
     }
     // Does the OpenGL implementation support instanced arrays (requires OpenGL 3.3+)?
     else if(_renderer->glversion() >= QT_VERSION_CHECK(3, 3, 0)) {
@@ -188,14 +194,14 @@ QOpenGLBuffer OpenGLShaderHelper::createCachedBufferImpl(GLsizei elementSize, QO
             bufferSize = elementSize * verticesPerInstance();
         }
         else {
-            exceedsLimits = instanceCount() > (std::numeric_limits<GLsizei>::max() / elementSize);
-            bufferSize = elementSize * instanceCount();
+            exceedsLimits = elementCount > (std::numeric_limits<GLsizei>::max() / elementSize);
+            bufferSize = elementSize * elementCount;
         }
     }
     else {
         // On older GL contexts, we have to emulate instanced arrays by duplicating all vertex data N times.
-        exceedsLimits = instanceCount() > (std::numeric_limits<GLsizei>::max() / elementSize / verticesPerInstance());
-        bufferSize = elementSize * verticesPerInstance() * instanceCount();
+        exceedsLimits = elementCount > (std::numeric_limits<GLsizei>::max() / elementSize / verticesPerInstance());
+        bufferSize = elementSize * verticesPerInstance() * elementCount;
     }
 
     // Check if the requested vertex buffer size exceeds limits.
@@ -204,7 +210,7 @@ QOpenGLBuffer OpenGLShaderHelper::createCachedBufferImpl(GLsizei elementSize, QO
 
     // Allocate the buffer memory.
     bufferObject.allocate(bufferSize);
-    
+
 #ifndef Q_OS_WASM
     // Fill the buffer with data.
     void* p = bufferObject.map(QOpenGLBuffer::WriteOnly);
@@ -212,8 +218,8 @@ QOpenGLBuffer OpenGLShaderHelper::createCachedBufferImpl(GLsizei elementSize, QO
         throw SceneRenderer::RendererException(QStringLiteral("Failed to map memory of newly created OpenGL buffer object of size %1 bytes.").arg(bufferSize));
 #else
     // WebGL 1/OpenGL ES 2.0 does not support mapping a GL buffer to memory.
-    // Need to emulate the map() method by providing a temporary memory buffer on the host. 
-    std::unique_ptr<char[]> stagingBuffer = std::make_unique<char[]>(bufferSize);
+    // Need to emulate the map() method by providing a temporary memory buffer on the host.
+    std::unique_ptr<std::byte[]> stagingBuffer = std::make_unique<std::byte[]>(bufferSize);
     void* p = stagingBuffer.get();
 #endif
 
@@ -223,18 +229,18 @@ QOpenGLBuffer OpenGLShaderHelper::createCachedBufferImpl(GLsizei elementSize, QO
     // On older GL contexts, we have to emulate instanced arrays by duplicating all vertex data N times.
     if(_renderer->glversion() < QT_VERSION_CHECK(3, 3, 0) && !usingGeometryShader()) {
         if(inputRate == PerVertex) {
-            if(instanceCount() > 1) {
+            if(elementCount > 1) {
                 size_t chunkSize = elementSize * verticesPerInstance();
-                for(int i = 1; i < instanceCount(); i++)
-                    std::memcpy(reinterpret_cast<char*>(p) + (i * chunkSize), p, chunkSize);
+                for(int i = 1; i < elementCount; i++)
+                    std::memcpy(reinterpret_cast<std::byte*>(p) + (i * chunkSize), p, chunkSize);
             }
         }
         else {
             if(verticesPerInstance() > 1) {
                 // Note: Doing copies in reverse order to not overwrite input data.
-                for(int j = instanceCount() - 1; j >= 0; j--) {
-                    const char* src = reinterpret_cast<const char*>(p) + (j * elementSize);
-                    char* dst = reinterpret_cast<char*>(p) + (j * elementSize * verticesPerInstance());
+                for(int j = elementCount - 1; j >= 0; j--) {
+                    const std::byte* src = reinterpret_cast<const std::byte*>(p) + (j * elementSize);
+                    std::byte* dst = reinterpret_cast<std::byte*>(p) + (j * elementSize * verticesPerInstance());
                     for(int i = 0; i < verticesPerInstance(); i++, dst += elementSize) {
                         OVITO_ASSERT(dst >= src);
                         std::memcpy(dst, src, elementSize);
@@ -263,40 +269,112 @@ QOpenGLBuffer OpenGLShaderHelper::uploadDataBuffer(const ConstDataBufferPtr& dat
     OVITO_ASSERT(dataBuffer);
 
     // Determine the required buffer size.
-    GLsizei elementSize;
-    if(dataBuffer->dataType() == DataBuffer::Float) {
+    GLsizei elementSize = 0;
+    if(dataBuffer->dataType() == DataBuffer::Float32 || dataBuffer->dataType() == DataBuffer::Float64) {
         if(inputRate == PerVertex) {
-            elementSize = dataBuffer->size() * dataBuffer->componentCount() * sizeof(float) / verticesPerInstance();
+            elementSize = dataBuffer->size() * dataBuffer->componentCount() / verticesPerInstance() * sizeof(float);
             OVITO_ASSERT(elementSize * verticesPerInstance() == dataBuffer->size() * dataBuffer->componentCount() * sizeof(float));
         }
-        else {
-            elementSize = dataBuffer->size() * dataBuffer->componentCount() * sizeof(float) / instanceCount();
+        else if(inputRate == PerInstance) {
+            elementSize = dataBuffer->size() * dataBuffer->componentCount() / instanceCount() * sizeof(float);
             OVITO_ASSERT(elementSize * instanceCount() == dataBuffer->size() * dataBuffer->componentCount() * sizeof(float));
         }
     }
-    else {
+    else if(dataBuffer->dataType() == DataBuffer::Int8) {
+        if(inputRate == PerVertex) {
+            elementSize = dataBuffer->size() * dataBuffer->componentCount() / verticesPerInstance() * sizeof(int8_t);
+            OVITO_ASSERT(elementSize * verticesPerInstance() == dataBuffer->size() * dataBuffer->componentCount() * sizeof(int8_t));
+        }
+        else if(inputRate == PerInstance) {
+            elementSize = dataBuffer->size() * dataBuffer->componentCount() / instanceCount() * sizeof(int8_t);
+            OVITO_ASSERT(elementSize * instanceCount() == dataBuffer->size() * dataBuffer->componentCount() * sizeof(int8_t));
+        }
+    }
+    else if(dataBuffer->dataType() == DataBuffer::Int32) {
+        OVITO_STATIC_ASSERT(sizeof(GLint) == sizeof(int32_t));
+        if(inputRate == PerVertex) {
+            elementSize = dataBuffer->size() * dataBuffer->componentCount() / verticesPerInstance() * sizeof(int32_t);
+            OVITO_ASSERT(elementSize * verticesPerInstance() == dataBuffer->size() * dataBuffer->componentCount() * sizeof(int32_t));
+        }
+        else if(inputRate == PerInstance) {
+            elementSize = dataBuffer->size() * dataBuffer->componentCount() / instanceCount() * sizeof(int32_t);
+            OVITO_ASSERT(elementSize * instanceCount() == dataBuffer->size() * dataBuffer->componentCount() * sizeof(int32_t));
+        }
+        else if(inputRate == PerIndex) {
+            OVITO_ASSERT(dataBuffer->componentCount() == 1);
+            elementSize = dataBuffer->size() * dataBuffer->componentCount() / indexCount() * sizeof(int32_t);
+            OVITO_ASSERT(elementSize * indexCount() == dataBuffer->size() * dataBuffer->componentCount() * sizeof(int32_t));
+        }
+    }
+
+    if(elementSize == 0) {
         OVITO_ASSERT(false);
         throw SceneRenderer::RendererException(QStringLiteral("Cannot create OpenGL buffer object for DataBuffer with data type %1.").arg(dataBuffer->dataType()));
     }
 
-    // Create an OpenGL buffer object and fill it with the data from the OVITO DataBuffer object. 
+    // Create an OpenGL buffer object and fill it with the data from the OVITO DataBuffer object.
     return createCachedBuffer(dataBuffer, elementSize, usage, inputRate, [&](void* p) {
-        if(dataBuffer->dataType() == DataBuffer::Float) {
-            // Convert from FloatType to float data type.
-            ConstDataBufferAccess<FloatType, true> arrayAccess(dataBuffer);
-            size_t srcStride = dataBuffer->componentCount();
+        const auto srcStride = dataBuffer->componentCount();
+        const auto dstStride = dataBuffer->componentCount();
+        if(dataBuffer->dataType() == DataBuffer::Float32) {
             float* dst = static_cast<float*>(p);
-            size_t dstStride = dataBuffer->componentCount();
-            if(dstStride == srcStride && dataBuffer->stride() == sizeof(FloatType) * srcStride) {
+            ConstDataBufferAccess<float, true> arrayAccess(dataBuffer);
+            if(dstStride == srcStride && dataBuffer->stride() == sizeof(float) * srcStride) {
+                // Strides are the same for source and destination. Can do a simple memcpy.
+                std::memcpy(dst, arrayAccess.cbegin(), arrayAccess.size() * dstStride * sizeof(float));
+            }
+            else {
+                // Strides are different for source and destination. Need nested loops for copying.
+                for(const float* src = arrayAccess.cbegin(); src != arrayAccess.cend(); src += srcStride, dst += dstStride) {
+                    for(size_t i = 0; i < srcStride; i++)
+                        dst[i] = src[i];
+                }
+            }
+        }
+        else if(dataBuffer->dataType() == DataBuffer::Float64) {
+            float* dst = static_cast<float*>(p);
+            // Convert from double to float data type.
+            ConstDataBufferAccess<double, true> arrayAccess(dataBuffer);
+            if(dstStride == srcStride && dataBuffer->stride() == sizeof(double) * srcStride) {
                 // Strides are the same for source and destination. Need only a single loop for copying.
-                for(const FloatType* src = arrayAccess.cbegin(); src != arrayAccess.cend(); ++src, ++dst)
+                for(const double* src = arrayAccess.cbegin(); src != arrayAccess.cend(); ++src, ++dst)
                     *dst = static_cast<float>(*src);
             }
             else {
-                // Strides are the different for source and destination. Need nested loops for copying.
-                for(const FloatType* src = arrayAccess.cbegin(); src != arrayAccess.cend(); src += srcStride, dst += dstStride) {
+                // Strides are different for source and destination. Need nested loops for copying.
+                for(const double* src = arrayAccess.cbegin(); src != arrayAccess.cend(); src += srcStride, dst += dstStride) {
                     for(size_t i = 0; i < srcStride; i++)
                         dst[i] = static_cast<float>(src[i]);
+                }
+            }
+        }
+        else if(dataBuffer->dataType() == DataBuffer::Int8) {
+            int8_t* dst = static_cast<int8_t*>(p);
+            ConstDataBufferAccess<int8_t, true> arrayAccess(dataBuffer);
+            if(dstStride == srcStride && dataBuffer->stride() == sizeof(int8_t) * srcStride) {
+                // Strides are the same for source and destination. Can do a simple memcpy.
+                std::memcpy(dst, arrayAccess.cbegin(), arrayAccess.size() * dstStride * sizeof(int8_t));
+            }
+            else {
+                // Strides are different for source and destination. Need nested loops for copying.
+                for(const int8_t* src = arrayAccess.cbegin(); src != arrayAccess.cend(); src += srcStride, dst += dstStride) {
+                    for(size_t i = 0; i < srcStride; i++)
+                        dst[i] = src[i];
+                }
+            }
+        }
+        else if(dataBuffer->dataType() == DataBuffer::Int32) {
+            int32_t* dst = static_cast<int32_t*>(p);
+            ConstDataBufferAccess<int32_t, true> arrayAccess(dataBuffer);
+            if(dstStride == srcStride && dataBuffer->stride() == sizeof(int32_t) * srcStride) {
+                // Strides are the same for source and destination. Can do a simple memcpy.
+                std::memcpy(dst, arrayAccess.cbegin(), arrayAccess.size() * dstStride * sizeof(int32_t));
+            }
+            else {
+                // Strides are different for source and destination. Need nested loops for copying.
+                for(const int32_t* src = arrayAccess.cbegin(); src != arrayAccess.cend(); src += srcStride, dst += dstStride) {
+                    for(size_t i = 0; i < srcStride; i++)
+                        dst[i] = src[i];
                 }
             }
         }
@@ -316,11 +394,10 @@ void OpenGLShaderHelper::bindBuffer(QOpenGLBuffer& buffer, const char* attribute
     bindBuffer(buffer, attrIndex, type, tupleSize, stride, offset, inputRate);
 }
 
-
 /******************************************************************************
 * Binds an OpenGL buffer to a vertex attribute of the shader.
 ******************************************************************************/
-void OpenGLShaderHelper::bindBuffer(QOpenGLBuffer& buffer, int attrIndex, GLenum type, int tupleSize, int stride, int offset, VertexInputRate inputRate) 
+void OpenGLShaderHelper::bindBuffer(QOpenGLBuffer& buffer, int attrIndex, GLenum type, int tupleSize, int stride, int offset, VertexInputRate inputRate)
 {
     OVITO_ASSERT(verticesPerInstance() > 0);
     OVITO_ASSERT(instanceCount() > 0);
@@ -342,6 +419,31 @@ void OpenGLShaderHelper::bindBuffer(QOpenGLBuffer& buffer, int attrIndex, GLenum
 }
 
 /******************************************************************************
+* Disables a vertex attribute of the shader.
+******************************************************************************/
+void OpenGLShaderHelper::unbindBuffer(const char* attributeName)
+{
+    int attrIndex = _shader->attributeLocation(attributeName);
+    if(attrIndex < 0) {
+        qWarning() << "OpenGLShaderHelper::unbindBuffer() failed for shader" << _shader->objectName() << ": attribute with name" << attributeName << "does not exist in shader.";
+        throw SceneRenderer::RendererException(QStringLiteral("Attribute with name %1 does not exist in OpenGL shader program '%2'.").arg(attributeName).arg(_shader->objectName()));
+    }
+    unbindBuffer(attrIndex);
+}
+
+/******************************************************************************
+* Disables a vertex attribute of the shader.
+******************************************************************************/
+void OpenGLShaderHelper::unbindBuffer(int attrIndex)
+{
+    OVITO_ASSERT(verticesPerInstance() > 0);
+    OVITO_ASSERT(instanceCount() > 0);
+    OVITO_ASSERT(attrIndex >= 0);
+    OVITO_REPORT_OPENGL_ERRORS(_renderer);
+    OVITO_CHECK_OPENGL(_renderer, _shader->disableAttributeArray(attrIndex));
+}
+
+/******************************************************************************
 * Issues a regular drawing command.
 ******************************************************************************/
 void OpenGLShaderHelper::drawArrays(GLenum mode)
@@ -350,6 +452,8 @@ void OpenGLShaderHelper::drawArrays(GLenum mode)
 
     // Are we using a geometry shader? If yes, render point primitives only.
     if(usingGeometryShader()) {
+        OVITO_ASSERT(verticesPerInstance() == 1);
+
         // Use native command for non-instanced drawing.
         OVITO_CHECK_OPENGL(_renderer, _renderer->glDrawArrays(GL_POINTS, 0, instanceCount()));
     }
@@ -370,11 +474,55 @@ void OpenGLShaderHelper::drawArrays(GLenum mode)
     }
 }
 
-#ifdef QT_OPENGL_4
+/******************************************************************************
+* Issues a drawing command using indexed rendering.
+******************************************************************************/
+void OpenGLShaderHelper::drawArraysIndexed(GLenum mode, const ConstDataBufferPtr& indices)
+{
+    OVITO_ASSERT(verticesPerInstance() > 0);
+    OVITO_ASSERT(indices);
+    OVITO_ASSERT(indices->dataType() == DataBuffer::Int32 && indices->componentCount() == 1);
+    OVITO_ASSERT(indices->size() != 0);
+    OVITO_STATIC_ASSERT(sizeof(GLuint) == sizeof(int32_t));
+
+    // Remember the number of primitive instances to render.
+    _indexCount = indices->size();
+
+    // Are we using a geometry shader? If yes, render point primitives only.
+    if(usingGeometryShader()) {
+        OVITO_ASSERT(verticesPerInstance() == 1);
+
+        // Upload the indices array.
+        QOpenGLBuffer ibo = uploadDataBuffer(indices, PerIndex, QOpenGLBuffer::IndexBuffer);
+
+        // Bind index buffer.
+        if(!ibo.bind())
+            throw SceneRenderer::RendererException(QStringLiteral("Failed to bind OpenGL index buffer for shader '%1'.").arg(shaderObject().objectName()));
+
+        // Use native command for indexed drawing.
+        OVITO_CHECK_OPENGL(_renderer, _renderer->glDrawElements(GL_POINTS, indices->size(), GL_UNSIGNED_INT, nullptr));
+
+        // Unbind index buffer.
+        ibo.release();
+    }
+    // Does the OpenGL context support instanced arrays (requires OpenGL 3.3+)?
+    else if(_renderer->glversion() >= QT_VERSION_CHECK(3, 3, 0)) {
+        OVITO_ASSERT(false);
+        // Use native command for instanced drawing.
+//        OVITO_CHECK_OPENGL(_renderer, _renderer->glDrawArraysInstanced(mode, 0, verticesPerInstance(), instanceCount()));
+    }
+    else {
+        OVITO_ASSERT(false);
+        // Fall-back implementation if glDrawArraysInstanced() or instanced arrays are not available.
+//        drawArraysOpenGL2(mode, indices);
+    }
+}
+
+#ifndef Q_OS_WASM
 /******************************************************************************
 * Issues a drawing command with an ordering of the instances.
 ******************************************************************************/
-void OpenGLShaderHelper::drawArraysOrderedOpenGL4(GLenum mode, QOpenGLBuffer& indirectBuffer, std::function<std::vector<uint32_t>()>&& computeOrderingFunc) 
+void OpenGLShaderHelper::drawArraysOrderedOpenGL4(GLenum mode, QOpenGLBuffer& indirectBuffer, std::function<std::vector<uint32_t>()>&& computeOrderingFunc)
 {
     // On OpenGL 4.3+ contexts, use glMultiDrawArraysIndirect() to render the instances in a prescribed order.
     OVITO_ASSERT(_renderer->glversion() >= QT_VERSION_CHECK(4, 3, 0));
@@ -442,11 +590,11 @@ void OpenGLShaderHelper::drawArraysOrderedGeometryShader(QOpenGLBuffer& indexBuf
     // Draw point primitives in sorted order.
     OVITO_CHECK_OPENGL(_renderer, _renderer->glDrawElements(GL_POINTS, instanceCount(), GL_UNSIGNED_INT, nullptr));
 
-    indexBuffer.release();    
+    indexBuffer.release();
 }
 
 /******************************************************************************
-* Makes the gl_VertexID and gl_InstanceID special variables available in 
+* Makes the gl_VertexID and gl_InstanceID special variables available in
 * older OpenGL implementations.
 ******************************************************************************/
 void OpenGLShaderHelper::setupVertexAndInstanceIDOpenGL2()
@@ -454,7 +602,7 @@ void OpenGLShaderHelper::setupVertexAndInstanceIDOpenGL2()
     if(_renderer->glversion() < QT_VERSION_CHECK(3, 0, 0)) {
         // In GLSL 1.20, the 'gl_VertexID' and 'gl_InstanceID' special variables are not available.
         // Then we have to emulate them by providing a buffer-backed vertex attribute named 'vertexID' instead.
-        
+
         std::pair<QOpenGLBuffer, GLsizei>& buf = OpenGLResourceManager::instance()->lookup<std::pair<QOpenGLBuffer, GLsizei>>(RendererResourceKey<struct VertexIDCache>{}, _renderer->currentResourceFrame());
 
         if(!buf.first.isCreated() || buf.second < verticesPerInstance() * instanceCount()) {
@@ -472,7 +620,7 @@ void OpenGLShaderHelper::setupVertexAndInstanceIDOpenGL2()
             OVITO_CHECK_OPENGL(_renderer, buf.first.unmap());
 #else
             // WebGL 1/OpenGL ES 2.0 does not support mapping a GL buffer to memory.
-            // Need to emulate the map() method by providing a temporary memory buffer on the host. 
+            // Need to emulate the map() method by providing a temporary memory buffer on the host.
             std::vector<float> stagingBuffer(buf.second);
             std::iota(stagingBuffer.begin(), stagingBuffer.end(), 0);
             OVITO_CHECK_OPENGL(_renderer, buf.first.write(0, stagingBuffer.data(), buf.second * sizeof(float)));
@@ -505,7 +653,7 @@ void OpenGLShaderHelper::drawArraysOpenGL2(GLenum mode)
         OVITO_CHECK_OPENGL(_renderer, _renderer->glDrawArrays(mode, 0, verticesPerInstance()));
     }
     else if(instanceCount() > 1) {
-        // Use glMultiDrawArrays() if available to draw all instanced in one go.
+        // Use glMultiDrawArrays() if available to draw all instances in one go.
         if(_renderer->glMultiDrawArrays) {
             RendererResourceKey<struct IndexArrayCache, GLsizei, GLsizei> indexArrayCacheKey{ instanceCount(), verticesPerInstance() };
             std::pair<std::vector<GLint>, std::vector<GLsizei>>& indexArrays = OpenGLResourceManager::instance()->lookup<std::pair<std::vector<GLint>, std::vector<GLsizei>>>(indexArrayCacheKey, _renderer->currentResourceFrame());
@@ -534,7 +682,7 @@ void OpenGLShaderHelper::drawArraysOpenGL2(GLenum mode)
 /******************************************************************************
 * Issues a drawing command with an ordering of the instances.
 ******************************************************************************/
-void OpenGLShaderHelper::drawArraysOrderedOpenGL2or3(GLenum mode, std::pair<std::vector<GLint>, std::vector<GLsizei>>& indirectBuffers, std::function<std::vector<uint32_t>()>&& computeOrderingFunc) 
+void OpenGLShaderHelper::drawArraysOrderedOpenGL2or3(GLenum mode, std::pair<std::vector<GLint>, std::vector<GLsizei>>& indirectBuffers, std::function<std::vector<uint32_t>()>&& computeOrderingFunc)
 {
     // This method is called for OpenGL versions before 4.3, when the glMultiDrawArraysIndirect() function is not available.
 

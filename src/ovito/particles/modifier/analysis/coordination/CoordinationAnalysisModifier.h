@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -98,7 +98,7 @@ private:
                     }
                 }
             }
-            _rdfY = DataTable::OOClass().createUserProperty(rdfSampleCount, PropertyObject::Float, componentCount, tr("g(r)"), DataBuffer::InitializeMemory, 0, std::move(componentNames));
+            _rdfY = DataTable::OOClass().createUserProperty(rdfSampleCount, PropertyObject::FloatDefault, componentCount, tr("g(r)"), DataBuffer::InitializeMemory, 0, std::move(componentNames));
         }
 
         /// Computes the modifier's results.

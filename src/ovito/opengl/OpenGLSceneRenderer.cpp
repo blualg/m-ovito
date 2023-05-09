@@ -576,7 +576,7 @@ void OpenGLSceneRenderer::renderParticles(const ParticlePrimitive& primitive)
                     }
                 }
                 if(!fullyOpaqueIndices.empty()) {
-                    DataBufferAccessAndRef<int> indexArray = DataBufferPtr::create(fullyOpaqueIndices.size(), DataBuffer::Int);
+                    DataBufferAccessAndRef<int32_t> indexArray = DataBufferPtr::create(fullyOpaqueIndices.size(), DataBuffer::Int32);
                     std::copy(fullyOpaqueIndices.begin(), fullyOpaqueIndices.end(), indexArray.begin());
                     cache.opaqueIndices = indexArray.take();
                 }

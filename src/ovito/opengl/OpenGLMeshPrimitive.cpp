@@ -135,7 +135,7 @@ void OpenGLSceneRenderer::renderMeshImplementation(const MeshPrimitive& primitiv
     shader.bindBuffer(meshBuffer, "position", GL_FLOAT, 3, sizeof(MeshPrimitive::RenderVertex), offsetof(MeshPrimitive::RenderVertex, position), OpenGLShaderHelper::PerVertex);
     if(!isPicking())
         shader.bindBuffer(meshBuffer, "normal",   GL_FLOAT, 3, sizeof(MeshPrimitive::RenderVertex), offsetof(MeshPrimitive::RenderVertex, normal),   OpenGLShaderHelper::PerVertex);
-        
+
     if(!renderWithPseudoColorMapping) {
         if(!isPicking() && (!primitive.useInstancedRendering() || !primitive.perInstanceColors())) {
             // Rendering with true RGBA colors.
@@ -144,7 +144,7 @@ void OpenGLSceneRenderer::renderMeshImplementation(const MeshPrimitive& primitiv
     }
     else {
         OVITO_ASSERT(!isPicking());
-        
+
         // Rendering  with pseudo-colors and a color mapping function.
         shader.bindBuffer(meshBuffer, "pseudocolor", GL_FLOAT, 2, sizeof(MeshPrimitive::RenderVertex), offsetof(MeshPrimitive::RenderVertex, color), OpenGLShaderHelper::PerVertex);
         shader.setUniformValue("opacity", primitive.uniformColor().a());
@@ -186,7 +186,7 @@ void OpenGLSceneRenderer::renderMeshImplementation(const MeshPrimitive& primitiv
     else if(primitive.depthSortingMode() == MeshPrimitive::ConvexShapeMode) {
         OVITO_ASSERT(!orderIndependentTransparency() && !isPicking());
 
-        // Assuming that the input mesh is convex, render semi-transparent triangles in two passes: 
+        // Assuming that the input mesh is convex, render semi-transparent triangles in two passes:
         // First, render triangles facing away from the viewer, then render triangles facing toward the viewer.
         // Each time we pass the entire triangle list to OpenGL and use OpenGL's backface/frontfrace culling
         // option to render the right subset of triangles.
@@ -204,7 +204,7 @@ void OpenGLSceneRenderer::renderMeshImplementation(const MeshPrimitive& primitiv
     else if(!primitive.useInstancedRendering()) {
         OVITO_ASSERT(!orderIndependentTransparency() && !isPicking());
 
-        // Create a buffer for an indexed drawing command to render the triangles in back-to-front order. 
+        // Create a buffer for an indexed drawing command to render the triangles in back-to-front order.
 
         // Viewing direction in object space:
         const Vector3 direction = modelViewTM().inverse().column(2);
@@ -257,13 +257,13 @@ void OpenGLSceneRenderer::renderMeshImplementation(const MeshPrimitive& primitiv
             throw RendererException(QStringLiteral("Failed to bind OpenGL index buffer for shader '%1'.").arg(shader.shaderObject().objectName()));
 
         // Draw triangles in sorted order.
-        OVITO_CHECK_OPENGL(this, glDrawElements(GL_TRIANGLES, mesh.faceCount() * 3, GL_UNSIGNED_INT, nullptr));
+        OVITO_CHECK_OPENGL(this, this->glDrawElements(GL_TRIANGLES, mesh.faceCount() * 3, GL_UNSIGNED_INT, nullptr));
 
         indexBuffer.release();
     }
     else {
         OVITO_ASSERT(!orderIndependentTransparency() && !isPicking());
-        // Render the mesh instances in back-to-front order. 
+        // Render the mesh instances in back-to-front order.
 
         // Viewing direction in object space:
         const Vector3 direction = modelViewTM().inverse().column(2);
@@ -305,7 +305,7 @@ void OpenGLSceneRenderer::renderMeshImplementation(const MeshPrimitive& primitiv
 }
 
 /******************************************************************************
-* Prepares the OpenGL buffer with the per-instance transformation matrices for 
+* Prepares the OpenGL buffer with the per-instance transformation matrices for
 * rendering a set of meshes.
 ******************************************************************************/
 QOpenGLBuffer OpenGLSceneRenderer::getMeshInstanceTMBuffer(const MeshPrimitive& primitive, OpenGLShaderHelper& shader)

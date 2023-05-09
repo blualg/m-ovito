@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -26,12 +26,16 @@
 // Inputs:
 in vec3 position;
 in float radius;
-in vec4 color;
+in vec3 color;
+in float transparency;
+in float selection;
+uniform vec4 selection_color;
 uniform vec3 unit_cube_triangle_strip[14];
 uniform vec3 unit_cube_strip_normals[14];
 
 // Outputs:
 flat out vec4 color_fs;
+
 void main()
 {
     // The index of the cube corner.
@@ -41,7 +45,7 @@ void main()
     gl_Position = modelview_projection_matrix * vec4(position + unit_cube_triangle_strip[corner] * radius, 1.0);
 
     // Forward particle color to fragment shader.
-    color_fs = color;
+    color_fs = (selection != 0.0) ? selection_color : vec4(color, clamp(1.0 - transparency, 0.0, 1.0));
 
     // Transform local vertex normal.
     <flat_normal.output> = vec3(normal_tm * vec4(unit_cube_strip_normals[corner], 0.0));

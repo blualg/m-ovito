@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -200,11 +200,11 @@ void GroImporter::FrameLoader::loadFile()
 
     // Create particle properties.
     PropertyAccess<Point3> posProperty = particles()->createProperty(ParticlesObject::PositionProperty, DataBuffer::InitializeMemory);
-    PropertyAccess<int> typeProperty = particles()->createProperty(ParticlesObject::TypeProperty);
-    PropertyAccess<int> atomNameProperty = particles()->createProperty(QStringLiteral("Atom Name"), PropertyObject::Int);
-    PropertyAccess<int> residueTypeProperty = particles()->createProperty(QStringLiteral("Residue Type"), PropertyObject::Int);
-    PropertyAccess<qlonglong> residueNumberProperty = particles()->createProperty(QStringLiteral("Residue Identifier"), PropertyObject::Int64);
-    PropertyAccess<qlonglong> identifierProperty = particles()->createProperty(ParticlesObject::IdentifierProperty, DataBuffer::InitializeMemory);
+    PropertyAccess<int32_t> typeProperty = particles()->createProperty(ParticlesObject::TypeProperty);
+    PropertyAccess<int32_t> atomNameProperty = particles()->createProperty(QStringLiteral("Atom Name"), PropertyObject::Int32);
+    PropertyAccess<int32_t> residueTypeProperty = particles()->createProperty(QStringLiteral("Residue Type"), PropertyObject::Int32);
+    PropertyAccess<int64_t> residueNumberProperty = particles()->createProperty(QStringLiteral("Residue Identifier"), PropertyObject::Int64);
+    PropertyAccess<int64_t> identifierProperty = particles()->createProperty(ParticlesObject::IdentifierProperty, DataBuffer::InitializeMemory);
     PropertyAccess<Vector3> velocityProperty;
 
     // Give these particle properties new titles, which are displayed in the GUI under the file source.

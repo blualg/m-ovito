@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -115,7 +115,7 @@ void IMDImporter::FrameLoader::loadFile()
                         if(isStandardProperty) break;
                     }
                     if(!isStandardProperty)
-                        columnMapping.mapCustomColumn(columnIndex, token, PropertyObject::Float);
+                        columnMapping.mapCustomColumn(columnIndex, token, PropertyObject::FloatDefault);
                 }
             }
         }

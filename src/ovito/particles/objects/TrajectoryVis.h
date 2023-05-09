@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -53,7 +53,7 @@ public:
         UniformColoring,
         PseudoColoring,
     };
-    Q_ENUM(ColoringMode);   
+    Q_ENUM(ColoringMode);
 
     /// \brief Constructor.
     Q_INVOKABLE TrajectoryVis(ObjectCreationParams params);
@@ -76,7 +76,7 @@ protected:
 private:
 
     /// Clips a trajectory line at the periodic box boundaries.
-    static void clipTrajectoryLine(const Point3& v1, const Point3& v2, const SimulationCellObject* simulationCell, const std::function<void(const Point3&, const Point3&, FloatType, FloatType)>& segmentCallback);
+    static void clipTrajectoryLine(const Point3& v1, const Point3& v2, const SimulationCellObject* simulationCell, const std::function<void(const Point3&, const Point3&, GraphicsFloatType, GraphicsFloatType)>& segmentCallback);
 
     /// Controls the display width of trajectory lines.
     DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType, lineWidth, setLineWidth, PROPERTY_FIELD_MEMORIZE);

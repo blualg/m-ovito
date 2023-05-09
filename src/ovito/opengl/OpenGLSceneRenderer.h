@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -33,7 +33,7 @@
 #include <QOpenGLShaderProgram>
 #include <QOpenGLVertexArrayObject>
 #include <QOpenGLBuffer>
-#include <QOpenGLFramebufferObject> 
+#include <QOpenGLFramebufferObject>
 #include <QOpenGLFramebufferObjectFormat>
 
 namespace Ovito {
@@ -80,7 +80,7 @@ public:
 
     /// Renders the overlays/underlays of the viewport into the framebuffer.
     virtual bool renderOverlays(bool underlays, const QRect& logicalViewportRect, const QRect& physicalViewportRect, MainThreadOperation& operation) override;
-    
+
     /// This method is called after renderFrame() has been called.
     virtual void endFrame(bool renderingSuccessful, const QRect& viewportRect) override;
 
@@ -149,7 +149,7 @@ public:
     quint32 glversion() const { return _glversion; }
 
     /// Indicates whether OpenGL geometry shaders are supported.
-    bool useGeometryShaders() const { return QOpenGLShader::hasOpenGLShaders(QOpenGLShader::Geometry, glcontext()); }
+    bool useGeometryShaders() const { return !_disableGeometryShaders && QOpenGLShader::hasOpenGLShaders(QOpenGLShader::Geometry, glcontext()); }
 
     /// Sets the primary framebuffer to be used by the renderer.
     void setPrimaryFramebuffer(GLuint primaryFramebuffer) { _primaryFramebuffer = primaryFramebuffer; }
@@ -217,7 +217,7 @@ private:
     /// Generates the wireframe line elements for the visible edges of a mesh.
     ConstDataBufferPtr generateMeshWireframeLines(const MeshPrimitive& primitive);
 
-    /// Prepares the OpenGL buffer with the per-instance transformation matrices for 
+    /// Prepares the OpenGL buffer with the per-instance transformation matrices for
     /// rendering a set of meshes.
     QOpenGLBuffer getMeshInstanceTMBuffer(const MeshPrimitive& primitive, OpenGLShaderHelper& shader);
 
@@ -276,6 +276,9 @@ private:
 
     /// Indicates that we are currently rendering the semi-transparent geometry of the scene.
     bool _isTransparencyPass = false;
+
+    /// Indicates whether the use of geometry shaders has been disabled.
+    bool _disableGeometryShaders = (qEnvironmentVariableIntValue("OVITO_DISABLE_GEOMETRY_SHADERS") != 0);
 
     /// The primary framebuffer used by the renderer. The FBO's lifetime is managed by the subclass.
     /// It may be null when rendering to the system framebuffer provided by QOpenGLWidget.

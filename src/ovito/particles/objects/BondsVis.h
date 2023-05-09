@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -59,7 +59,7 @@ public:
         ByTypeColoring,
         ParticleBasedColoring
     };
-    Q_ENUM(ColoringMode);   
+    Q_ENUM(ColoringMode);
 
     /// Constructor.
     Q_INVOKABLE BondsVis(ObjectCreationParams params);
@@ -71,11 +71,11 @@ public:
     virtual Box3 boundingBox(AnimationTime time, const ConstDataObjectPath& path, const PipelineSceneNode* contextNode, const PipelineFlowState& flowState, MixedKeyCache& visCache, TimeInterval& validityInterval) override;
 
     /// Returns the display color used for selected bonds.
-    Color selectionBondColor() const { return Color(1,0,0); }
+    ColorG selectionBondColor() const { return ColorG(1,0,0); }
 
     /// Determines the display colors of half-bonds.
     /// Returns an array with two colors per full bond, because the two half-bonds may have different colors.
-    std::vector<Color> halfBondColors(const ParticlesObject* particles, bool highlightSelection, ColoringMode coloringMode, bool ignoreBondColorProperty) const;
+    std::vector<ColorG> halfBondColors(const ParticlesObject* particles, bool highlightSelection, ColoringMode coloringMode, bool ignoreBondColorProperty) const;
 
     /// Determines the bond widths used for rendering.
     ConstPropertyPtr bondWidths(const BondsObject* bonds) const;

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -106,7 +106,7 @@ QWidget* ParticleInspectionApplet::createWidget()
     connect(inspectorPanel(), &DataInspectorPanel::selectedPipelineChanged, this, [this]() {
         _pickingMode->resetSelection();
     });
-    
+
     connect(_measuringModeAction, &QAction::toggled, _distanceTable, &QWidget::setVisible);
     connect(_measuringModeAction, &QAction::toggled, _angleTable, &QWidget::setVisible);
     connect(_measuringModeAction, &QAction::toggled, this, &ParticleInspectionApplet::updateDistanceTable);
@@ -287,7 +287,7 @@ void ParticleInspectionApplet::PickingMode::renderOverlay3D(Viewport* vp, SceneR
         renderer->setWorldTransform(AffineTransformation::Identity());
 
         // Collect world space coordinates of selected particles.
-        std::array<Point3,4> vertices;
+        std::array<Point3G,4> vertices;
         auto outVertex = vertices.begin();
         for(auto& element : _pickedElements) {
             const PipelineFlowState& flowState = element.objNode->evaluatePipelineSynchronous(renderer->time(), true);
@@ -295,7 +295,7 @@ void ParticleInspectionApplet::PickingMode::renderOverlay3D(Viewport* vp, SceneR
                 // If particle selection is based on ID, find particle with the given ID.
                 size_t particleIndex = element.particleIndex;
                 if(element.particleId >= 0) {
-                    if(ConstPropertyAccess<qlonglong> identifierProperty = particles->getProperty(ParticlesObject::IdentifierProperty)) {
+                    if(ConstPropertyAccess<int64_t> identifierProperty = particles->getProperty(ParticlesObject::IdentifierProperty)) {
                         if(particleIndex >= identifierProperty.size() || identifierProperty[particleIndex] != element.particleId) {
                             auto iter = boost::find(identifierProperty, element.particleId);
                             if(iter == identifierProperty.cend()) continue;
@@ -307,7 +307,7 @@ void ParticleInspectionApplet::PickingMode::renderOverlay3D(Viewport* vp, SceneR
                     if(particleIndex < posProperty.size()) {
                         TimeInterval iv;
                         const AffineTransformation& nodeTM = element.objNode->getWorldTransform(renderer->time(), iv);
-                        *outVertex++ = nodeTM * posProperty[particleIndex];
+                        *outVertex++ = (nodeTM * posProperty[particleIndex]).toDataType<GraphicsFloatType>();
                     }
                 }
             }
@@ -316,8 +316,8 @@ void ParticleInspectionApplet::PickingMode::renderOverlay3D(Viewport* vp, SceneR
         }
 
         // Generate pair-wise line elements.
-        size_t n = std::distance(vertices.begin(), outVertex); 
-        DataBufferAccessAndRef<Point3> lines = DataBufferPtr::create(n * (n - 1), DataBuffer::Float, 3);
+        size_t n = std::distance(vertices.begin(), outVertex);
+        DataBufferAccessAndRef<Point3G> lines = DataBufferPtr::create(n * (n - 1), DataBuffer::FloatGraphics, 3);
         auto iter = lines.begin();
         for(auto v1 = vertices.begin(); v1 != outVertex; ++v1) {
             for(auto v2 = v1 + 1; v2 != outVertex; ++v2) {

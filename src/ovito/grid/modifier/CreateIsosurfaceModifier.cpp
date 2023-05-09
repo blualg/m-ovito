@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -69,7 +69,7 @@ CreateIsosurfaceModifier::CreateIsosurfaceModifier(ObjectCreationParams params)
 TimeInterval CreateIsosurfaceModifier::validityInterval(const ModifierEvaluationRequest& request) const
 {
     TimeInterval iv = AsynchronousModifier::validityInterval(request);
-    if(isolevelController()) 
+    if(isolevelController())
         iv.intersect(isolevelController()->validityInterval(request.time()));
     return iv;
 }
@@ -165,8 +165,8 @@ Future<AsynchronousModifier::EnginePtr> CreateIsosurfaceModifier::createEngine(c
         throw Exception(tr("The selected voxel property with the name '%1' does not exist.").arg(sourceProperty().name()));
     if(sourceProperty().vectorComponent() >= (int)property->componentCount())
         throw Exception(tr("The selected vector component is out of range. The property '%1' contains only %2 values per voxel.").arg(sourceProperty().name()).arg(property->componentCount()));
-    if(property->dataType() != PropertyObject::Float)
-        throw Exception(tr("Wrong data type. Can construct isosurface only for floating-point values."));
+    if(property->dataType() != PropertyObject::FloatDefault)
+        throw Exception(tr("Wrong data type. Can construct isosurface only for standard-precision floating-point values."));
 
     for(size_t dim = 0; dim < 3; dim++)
         if(voxelGrid->shape()[dim] <= 1)
@@ -196,7 +196,7 @@ Future<AsynchronousModifier::EnginePtr> CreateIsosurfaceModifier::createEngine(c
     histogram->setIdentifier(input.generateUniqueIdentifier<DataTable>(QStringLiteral("isosurface-histogram")));
     histogram->setDataSource(request.modApp());
     histogram->setAxisLabelX(sourceProperty().nameWithComponent());
-    
+
     // Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
     return std::make_shared<ComputeIsosurfaceEngine>(request, validityInterval, voxelGrid->shape(), voxelGrid->gridType(), property,
                                                      sourceProperty().vectorComponent(), std::move(mesh), isolevel, smoothingLevel(),
@@ -347,12 +347,12 @@ bool CreateIsosurfaceModifier::transferPropertiesFromGridToMesh(SurfaceMeshAcces
             // Must rename the property to avoid conflict, because user properties may not have a standard property name.
             // Always use floating point data type for vertex property, because field values get blended.
             QString newPropertyName = fieldProperty->name() + tr("_field");
-            vertexProperty = mesh.createVertexProperty(newPropertyName, DataBuffer::Float, fieldProperty->componentCount(), DataBuffer::InitializeMemory, fieldProperty->componentNames());
+            vertexProperty = mesh.createVertexProperty(newPropertyName, DataBuffer::FloatDefault, fieldProperty->componentCount(), DataBuffer::InitializeMemory, fieldProperty->componentNames());
         }
         else {
             // Input property is a user property for mesh vertices.
             // Always use floating point data type for vertex property, because field values get blended.
-            vertexProperty = mesh.createVertexProperty(fieldProperty->name(), DataBuffer::Float, fieldProperty->componentCount(), DataBuffer::InitializeMemory, fieldProperty->componentNames());
+            vertexProperty = mesh.createVertexProperty(fieldProperty->name(), DataBuffer::FloatDefault, fieldProperty->componentCount(), DataBuffer::InitializeMemory, fieldProperty->componentNames());
         }
         propertyMapping.emplace_back(fieldProperty, std::move(vertexProperty));
     }
@@ -366,7 +366,7 @@ bool CreateIsosurfaceModifier::transferPropertiesFromGridToMesh(SurfaceMeshAcces
             FloatType cornerWeights[8];
             OVITO_ASSERT(mesh.firstVertexEdge(vertexIndex) != SurfaceMesh::InvalidIndex);
             Point3 p = mesh.vertexPosition(vertexIndex);
-            if(gridType == VoxelGrid::GridType::PointData) 
+            if(gridType == VoxelGrid::GridType::PointData)
                 p += Vector3(FloatType(0.5));
             Vector3 x0, x1;
             Vector3I x0_vc, x1_vc;

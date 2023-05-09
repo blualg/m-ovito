@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -201,12 +201,16 @@ public:
 
     /// \brief Casts the matrix to a matrix with another data type.
     template<typename U>
-    Q_DECL_CONSTEXPR AffineTransformationT<U> toDataType() const {
+    Q_DECL_CONSTEXPR decltype(auto) toDataType() const {
         return AffineTransformationT<U>(
                 static_cast<U>((*this)(0,0)), static_cast<U>((*this)(0,1)), static_cast<U>((*this)(0,2)), static_cast<U>((*this)(0,3)),
                 static_cast<U>((*this)(1,0)), static_cast<U>((*this)(1,1)), static_cast<U>((*this)(1,2)), static_cast<U>((*this)(1,3)),
                 static_cast<U>((*this)(2,0)), static_cast<U>((*this)(2,1)), static_cast<U>((*this)(2,2)), static_cast<U>((*this)(2,3)));
     }
+
+    // When casting to the same type \a T, this method becomes a no-op.
+    template<>
+    Q_DECL_CONSTEXPR decltype(auto) toDataType<T>() const { return *this; }
 
     /// \brief Returns the number of rows of this matrix.
     static Q_DECL_CONSTEXPR size_type row_count() { return 3; }
@@ -878,12 +882,26 @@ inline QDataStream& operator>>(QDataStream& stream, AffineTransformationT<T>& m)
 }
 
 /**
- * \brief Instantiation of the AffineTransformationT class template with the default floating-point type.
+ * \brief Instantiation of the AffineTransformationT class template with the default floating-point type (double precision).
  * \relates AffineTransformationT
  */
 using AffineTransformation = AffineTransformationT<FloatType>;
 
+/**
+ * \brief Instantiation of the AffineTransformationT class template with the single-precision floating-point type.
+ * \relates AffineTransformationT
+ */
+using AffineTransformationF = AffineTransformationT<float>;
+
+/**
+ * \brief Instantiation of the AffineTransformationT class template with the low-precision floating-point type.
+ * \relates AffineTransformationT
+ */
+using AffineTransformationG = AffineTransformationT<GraphicsFloatType>;
+
 }   // End of namespace
 
 Q_DECLARE_METATYPE(Ovito::AffineTransformation);
+Q_DECLARE_METATYPE(Ovito::AffineTransformationF);
 Q_DECLARE_TYPEINFO(Ovito::AffineTransformation, Q_PRIMITIVE_TYPE);
+Q_DECLARE_TYPEINFO(Ovito::AffineTransformationF, Q_PRIMITIVE_TYPE);

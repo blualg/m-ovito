@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -119,7 +119,11 @@ public:
 
     /// Casts the quaternion to another component type \a U.
     template<typename U>
-    Q_DECL_CONSTEXPR QuaternionT<U> toDataType() const { return QuaternionT<U>(static_cast<U>(x()), static_cast<U>(y()), static_cast<U>(z()), static_cast<U>(w())); }
+    Q_DECL_CONSTEXPR decltype(auto) toDataType() const { return QuaternionT<U>(static_cast<U>(x()), static_cast<U>(y()), static_cast<U>(z()), static_cast<U>(w())); }
+
+    // When casting to the same type \a T, this method becomes a no-op.
+    template<>
+    Q_DECL_CONSTEXPR decltype(auto) toDataType<T>() const { return *this; }
 
     /// \brief Sets the quaternion to the identity quaternion.
     QuaternionT& setIdentity() {
@@ -505,10 +509,22 @@ inline QDataStream& operator>>(QDataStream& stream, QuaternionT<T>& q) {
 }
 
 /**
- * \brief Template class instance of the QuaternionT class used for floating-point quaternions.
+ * \brief Template class instance of the QuaternionT class used for floating-point quaternions (double precision).
  * \relates QuaternionT
  */
 using Quaternion = QuaternionT<FloatType>;
+
+/**
+ * \brief Template class instance of the QuaternionT class used for single-precision floating-point quaternions.
+ * \relates QuaternionT
+ */
+using QuaternionF = QuaternionT<float>;
+
+/**
+ * \brief Instantiation of the QuaternionT class template with the low-precision floating-point type used for graphics data.
+ * \relates QuaternionT
+ */
+using QuaternionG = QuaternionT<GraphicsFloatType>;
 
 }   // End of namespace
 
@@ -517,4 +533,6 @@ template<typename T> struct std::tuple_size<Ovito::QuaternionT<T>> : std::integr
 template<std::size_t I, typename T> struct std::tuple_element<I, Ovito::QuaternionT<T>> { using type = T; };
 
 Q_DECLARE_METATYPE(Ovito::Quaternion);
+Q_DECLARE_METATYPE(Ovito::QuaternionF);
 Q_DECLARE_TYPEINFO(Ovito::Quaternion, Q_PRIMITIVE_TYPE);
+Q_DECLARE_TYPEINFO(Ovito::QuaternionF, Q_PRIMITIVE_TYPE);

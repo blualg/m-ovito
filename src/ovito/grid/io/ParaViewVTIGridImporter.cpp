@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -51,7 +51,7 @@ bool ParaViewVTIGridImporter::OOMetaClass::checkFileFormat(const FileHandle& fil
     if(xml.attributes().value("type").compare(QStringLiteral("ImageData")) != 0)
         return false;
 
-    // Continue reading until the expected <ImageData> element is reached. 
+    // Continue reading until the expected <ImageData> element is reached.
     while(xml.readNextStartElement()) {
         if(xml.name().compare(QStringLiteral("ImageData")) == 0) {
             return !xml.hasError();
@@ -159,7 +159,7 @@ void ParaViewVTIGridImporter::FrameLoader::loadFile()
         else if(xml.name().compare(QStringLiteral("Piece")) == 0) {
             // Parse piece extents.
             // The current file parser implementation can only handle files with a single <Piece> element
-            // spanning the entire grid extents. 
+            // spanning the entire grid extents.
             if(xml.attributes().hasAttribute("Extent")) {
                 auto tokens = splitString(xml.attributes().value("Extent"));
                 if(tokens.size() != 6) {
@@ -222,7 +222,7 @@ void ParaViewVTIGridImporter::FrameLoader::loadFile()
 }
 
 /******************************************************************************
-* Creates the right kind of OVITO property object that will receive the data 
+* Creates the right kind of OVITO property object that will receive the data
 * read from a <DataArray> element.
 ******************************************************************************/
 PropertyObject* ParaViewVTIGridImporter::FrameLoader::createGridPropertyForDataArray(VoxelGrid* gridObj, QXmlStreamReader& xml)
@@ -230,7 +230,7 @@ PropertyObject* ParaViewVTIGridImporter::FrameLoader::createGridPropertyForDataA
     int numComponents = std::max(1, xml.attributes().value("NumberOfComponents").toInt());
     auto name = xml.attributes().value("Name");
 
-    return gridObj->createProperty(name.toString(), PropertyObject::Float, numComponents);
+    return gridObj->createProperty(name.toString(), PropertyObject::FloatDefault, numComponents);
 }
 
 }   // End of namespace

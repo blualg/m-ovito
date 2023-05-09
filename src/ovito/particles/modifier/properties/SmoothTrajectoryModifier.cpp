@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -71,7 +71,7 @@ TimeInterval SmoothTrajectoryModifier::validityInterval(const ModifierEvaluation
 }
 
 /******************************************************************************
-* Asks the modifier for the set of animation time intervals that should be 
+* Asks the modifier for the set of animation time intervals that should be
 * cached by the upstream pipeline.
 ******************************************************************************/
 void SmoothTrajectoryModifier::inputCachingHints(TimeIntervalUnion& cachingIntervals, ModifierApplication* modApp)
@@ -97,8 +97,8 @@ void SmoothTrajectoryModifier::inputCachingHints(TimeIntervalUnion& cachingInter
 }
 
 /******************************************************************************
-* Is called by the ModifierApplication to let the modifier adjust the 
-* time interval of a TargetChanged event received from the upstream pipeline 
+* Is called by the ModifierApplication to let the modifier adjust the
+* time interval of a TargetChanged event received from the upstream pipeline
 * before it is propagated to the downstream pipeline.
 ******************************************************************************/
 void SmoothTrajectoryModifier::restrictInputValidityInterval(TimeInterval& iv) const
@@ -198,7 +198,7 @@ void SmoothTrajectoryModifier::evaluateSynchronous(const ModifierEvaluationReque
         AnimationTime time2 = request.modApp()->sourceFrameToAnimationTime(nextFrame);
 
         // Get the second frame.
-        const PipelineFlowState& state2 = request.modApp()->evaluateInputSynchronous(PipelineEvaluationRequest(time2)); 
+        const PipelineFlowState& state2 = request.modApp()->evaluateInputSynchronous(PipelineEvaluationRequest(time2));
 
         // Perform the actual interpolation calculation.
         interpolateState(state, state2, request, time1, time2);
@@ -250,11 +250,11 @@ void SmoothTrajectoryModifier::interpolateState(PipelineFlowState& state1, const
     particles1->verifyIntegrity();
     particles2->verifyIntegrity();
     ConstPropertyAccess<Point3> posProperty2 = particles2->expectProperty(ParticlesObject::PositionProperty);
-    ConstPropertyAccess<qlonglong> idProperty1 = particles1->getProperty(ParticlesObject::IdentifierProperty);
-    ConstPropertyAccess<qlonglong> idProperty2 = particles2->getProperty(ParticlesObject::IdentifierProperty);
+    ConstPropertyAccess<int64_t> idProperty1 = particles1->getProperty(ParticlesObject::IdentifierProperty);
+    ConstPropertyAccess<int64_t> idProperty2 = particles2->getProperty(ParticlesObject::IdentifierProperty);
     ParticlesObject* outputParticles = state1.makeMutable(particles1);
     PropertyAccess<Point3> outputPositions = outputParticles->createProperty(ParticlesObject::PositionProperty, DataBuffer::InitializeMemory);
-    std::unordered_map<qlonglong, size_t> idmap;
+    std::unordered_map<int64_t, size_t> idmap;
     if(idProperty1 && idProperty2 && !boost::equal(idProperty1, idProperty2)) {
 
         // Build ID-to-index map.
@@ -303,48 +303,70 @@ void SmoothTrajectoryModifier::interpolateState(PipelineFlowState& state1, const
     }
 
     // Interpolate particle orientations.
-    if(ConstPropertyAccess<Quaternion> orientationProperty2 = particles2->getProperty(ParticlesObject::OrientationProperty)) {
-        PropertyAccess<Quaternion> outputOrientations = outputParticles->createProperty(ParticlesObject::OrientationProperty, DataBuffer::InitializeMemory);
+    if(ConstPropertyAccess<QuaternionG> orientationProperty2 = particles2->getProperty(ParticlesObject::OrientationProperty)) {
+        PropertyAccess<QuaternionG> outputOrientations = outputParticles->createProperty(ParticlesObject::OrientationProperty, DataBuffer::InitializeMemory);
         if(idProperty1 && idProperty2 && !boost::equal(idProperty1, idProperty2)) {
             auto id = idProperty1.cbegin();
-            for(Quaternion& q1 : outputOrientations) {
+            for(QuaternionG& q1 : outputOrientations) {
                 auto mapEntry = idmap.find(*id);
                 OVITO_ASSERT(mapEntry != idmap.end());
-                q1 = Quaternion::interpolateSafely(q1, orientationProperty2[mapEntry->second], t);
+                q1 = QuaternionG::interpolateSafely(q1, orientationProperty2[mapEntry->second], static_cast<GraphicsFloatType>(t));
                 ++id;
             }
         }
         else {
-            const Quaternion* q2 = orientationProperty2.cbegin();
-            for(Quaternion& q1 : outputOrientations) {
-                q1 = Quaternion::interpolateSafely(q1, *q2++, t);
+            const QuaternionG* q2 = orientationProperty2.cbegin();
+            for(QuaternionG& q1 : outputOrientations) {
+                q1 = QuaternionG::interpolateSafely(q1, *q2++, static_cast<GraphicsFloatType>(t));
             }
         }
     }
 
     // Interpolate all scalar and continuous particle properties.
     for(const PropertyObject* property1 : particles1->properties()) {
-        if(property1->dataType() == PropertyObject::Float && property1->componentCount() == 1) {
+        if(property1->dataType() == PropertyObject::Float32 && property1->componentCount() == 1) {
             const PropertyObject* property2 = (property1->type() != 0) ? particles2->getProperty(property1->type()) : particles2->getProperty(property1->name());
             if(property2 && property2->dataType() == property1->dataType() && property2->componentCount() == property1->componentCount()) {
-                PropertyAccess<FloatType> data1 = outputParticles->makeMutable(property1);
-                ConstPropertyAccess<FloatType> data2(property2);
+                PropertyAccess<float> data1 = outputParticles->makeMutable(property1);
+                ConstPropertyAccess<float> data2(property2);
                 if(idProperty1 && idProperty2 && !boost::equal(idProperty1, idProperty2)) {
                     auto id = idProperty1.cbegin();
-                    for(FloatType& v1 : data1) {
+                    for(auto& v1 : data1) {
                         auto mapEntry = idmap.find(*id);
                         OVITO_ASSERT(mapEntry != idmap.end());
-                        v1 = v1 * (FloatType(1) - t) + data2[mapEntry->second] * t;
+                        v1 = v1 * (1.0f - t) + data2[mapEntry->second] * t;
                         ++id;
                     }
                 }
                 else {
-                    const FloatType* v2 = data2.cbegin();
-                    for(FloatType& v1 : data1) {
-                        v1 = v1 * (FloatType(1) - t) + *v2++ * t;
+                    const auto* v2 = data2.cbegin();
+                    for(auto& v1 : data1) {
+                        v1 = v1 * (1.0f - t) + *v2++ * t;
                     }
                 }
 
+            }
+        }
+        else if(property1->dataType() == PropertyObject::Float64 && property1->componentCount() == 1) {
+            const PropertyObject* property2 = (property1->type() != 0) ? particles2->getProperty(property1->type()) : particles2->getProperty(property1->name());
+            if(property2 && property2->dataType() == property1->dataType() && property2->componentCount() == property1->componentCount()) {
+                PropertyAccess<double> data1 = outputParticles->makeMutable(property1);
+                ConstPropertyAccess<double> data2(property2);
+                if(idProperty1 && idProperty2 && !boost::equal(idProperty1, idProperty2)) {
+                    auto id = idProperty1.cbegin();
+                    for(auto& v1 : data1) {
+                        auto mapEntry = idmap.find(*id);
+                        OVITO_ASSERT(mapEntry != idmap.end());
+                        v1 = v1 * (1.0 - t) + data2[mapEntry->second] * t;
+                        ++id;
+                    }
+                }
+                else {
+                    const auto* v2 = data2.cbegin();
+                    for(auto& v1 : data1) {
+                        v1 = v1 * (1.0 - t) + *v2++ * t;
+                    }
+                }
             }
         }
     }
@@ -373,7 +395,7 @@ void SmoothTrajectoryModifier::averageState(PipelineFlowState& state1, const std
     const ParticlesObject* particles1 = state1.expectObject<ParticlesObject>();
     particles1->verifyIntegrity();
     ConstPropertyAccessAndRef<Point3> posProperty1 = particles1->expectProperty(ParticlesObject::PositionProperty);
-    ConstPropertyAccess<qlonglong> idProperty1 = particles1->getProperty(ParticlesObject::IdentifierProperty);
+    ConstPropertyAccess<int64_t> idProperty1 = particles1->getProperty(ParticlesObject::IdentifierProperty);
 
     // Create a modifiable copy of the particle coordinates array.
     ParticlesObject* outputParticles = state1.makeMutable(particles1);
@@ -381,15 +403,19 @@ void SmoothTrajectoryModifier::averageState(PipelineFlowState& state1, const std
     boost::fill(outputPositions, Point3::Origin());
 
     // Create output orientations array if smoothing particle orientations.
-    PropertyAccess<Quaternion> outputOrientations = particles1->getProperty(ParticlesObject::OrientationProperty)
+    PropertyAccess<QuaternionG> outputOrientations = particles1->getProperty(ParticlesObject::OrientationProperty)
         ? outputParticles->createProperty(ParticlesObject::OrientationProperty, DataBuffer::InitializeMemory)
         : nullptr;
 
     // Create copies of all scalar continuous particle properties.
-    std::vector<PropertyAccess<FloatType>> outputScalarProperties;
+    std::vector<PropertyAccess<float>> outputScalarProperties32;
+    std::vector<PropertyAccess<double>> outputScalarProperties64;
     for(const PropertyObject* property : particles1->properties()) {
-        if(property->dataType() == PropertyObject::Float && property->componentCount() == 1) {
-            outputScalarProperties.emplace_back(outputParticles->makeMutable(property));
+        if(property->dataType() == PropertyObject::Float32 && property->componentCount() == 1) {
+            outputScalarProperties32.emplace_back(outputParticles->makeMutable(property));
+        }
+        else if(property->dataType() == PropertyObject::Float64 && property->componentCount() == 1) {
+            outputScalarProperties64.emplace_back(outputParticles->makeMutable(property));
         }
     }
 
@@ -416,7 +442,7 @@ void SmoothTrajectoryModifier::averageState(PipelineFlowState& state1, const std
             continue;
         particles2->verifyIntegrity();
         ConstPropertyAccess<Point3> posProperty2 = particles2->expectProperty(ParticlesObject::PositionProperty);
-        ConstPropertyAccess<qlonglong> idProperty2 = particles2->getProperty(ParticlesObject::IdentifierProperty);
+        ConstPropertyAccess<int64_t> idProperty2 = particles2->getProperty(ParticlesObject::IdentifierProperty);
 
         // Sum up cell vectors.
         const SimulationCellObject* cell2 = cell1 ? state2.expectObject<SimulationCellObject>() : nullptr;
@@ -429,7 +455,7 @@ void SmoothTrajectoryModifier::averageState(PipelineFlowState& state1, const std
 
         if(idProperty1 && idProperty2 && !boost::equal(idProperty1, idProperty2)) {
             // Build ID-to-index map.
-            std::unordered_map<qlonglong,size_t> idmap;
+            std::unordered_map<int64_t,size_t> idmap;
             size_t index = 0;
             for(auto id : idProperty2) {
                 if(!idmap.insert(std::make_pair(id,index)).second)
@@ -453,11 +479,11 @@ void SmoothTrajectoryModifier::averageState(PipelineFlowState& state1, const std
 
             // Average particle orientations over time.
             if(outputOrientations) {
-                if(ConstPropertyAccess<Quaternion> orientationProperty2 = particles2->getProperty(ParticlesObject::OrientationProperty)) {
+                if(ConstPropertyAccess<QuaternionG> orientationProperty2 = particles2->getProperty(ParticlesObject::OrientationProperty)) {
                     auto id = idProperty1.cbegin();
-                    for(Quaternion& qout : outputOrientations) {
+                    for(QuaternionG& qout : outputOrientations) {
                         if(auto mapEntry = idmap.find(*id); mapEntry != idmap.end()) {
-                            const Quaternion& q2 = orientationProperty2[mapEntry->second];
+                            const QuaternionG& q2 = orientationProperty2[mapEntry->second];
                             qout.x() += q2.x();
                             qout.y() += q2.y();
                             qout.z() += q2.z();
@@ -469,12 +495,25 @@ void SmoothTrajectoryModifier::averageState(PipelineFlowState& state1, const std
             }
 
             // Average all scalar continuous properties.
-            for(auto& accessor : outputScalarProperties) {
+            for(auto& accessor : outputScalarProperties32) {
                 const PropertyObject* property2 = (accessor.buffer()->type() != 0) ? particles2->getProperty(accessor.buffer()->type()) : particles2->getProperty(accessor.buffer()->name());
                 if(property2 && property2->dataType() == accessor.dataType() && property2->componentCount() == accessor.componentCount()) {
-                    ConstPropertyAccess<FloatType> accessor2(property2);
+                    ConstPropertyAccess<float> accessor2(property2);
                     auto id = idProperty1.cbegin();
-                    for(FloatType& v : accessor) {
+                    for(auto& v : accessor) {
+                        if(auto mapEntry = idmap.find(*id); mapEntry != idmap.end()) {
+                            v += accessor2[mapEntry->second];
+                        }
+                        ++id;
+                    }
+                }
+            }
+            for(auto& accessor : outputScalarProperties64) {
+                const PropertyObject* property2 = (accessor.buffer()->type() != 0) ? particles2->getProperty(accessor.buffer()->type()) : particles2->getProperty(accessor.buffer()->name());
+                if(property2 && property2->dataType() == accessor.dataType() && property2->componentCount() == accessor.componentCount()) {
+                    ConstPropertyAccess<double> accessor2(property2);
+                    auto id = idProperty1.cbegin();
+                    for(auto& v : accessor) {
                         if(auto mapEntry = idmap.find(*id); mapEntry != idmap.end()) {
                             v += accessor2[mapEntry->second];
                         }
@@ -497,9 +536,9 @@ void SmoothTrajectoryModifier::averageState(PipelineFlowState& state1, const std
 
             // Average particle orientations over time.
             if(outputOrientations) {
-                if(ConstPropertyAccess<Quaternion> orientationProperty2 = particles2->getProperty(ParticlesObject::OrientationProperty)) {
-                    const Quaternion* q2 = orientationProperty2.cbegin();
-                    for(Quaternion* qout = outputOrientations.begin(), *qend = qout + std::min(outputOrientations.size(), orientationProperty2.size()); qout != qend; ++qout, ++q2) {
+                if(ConstPropertyAccess<QuaternionG> orientationProperty2 = particles2->getProperty(ParticlesObject::OrientationProperty)) {
+                    const QuaternionG* q2 = orientationProperty2.cbegin();
+                    for(QuaternionG* qout = outputOrientations.begin(), *qend = qout + std::min(outputOrientations.size(), orientationProperty2.size()); qout != qend; ++qout, ++q2) {
                         qout->x() += q2->x();
                         qout->y() += q2->y();
                         qout->z() += q2->z();
@@ -509,12 +548,22 @@ void SmoothTrajectoryModifier::averageState(PipelineFlowState& state1, const std
             }
 
             // Average all scalar continuous properties.
-            for(auto& accessor : outputScalarProperties) {
+            for(auto& accessor : outputScalarProperties32) {
                 const PropertyObject* property2 = (accessor.buffer()->type() != 0) ? particles2->getProperty(accessor.buffer()->type()) : particles2->getProperty(accessor.buffer()->name());
                 if(property2 && property2->dataType() == accessor.dataType() && property2->componentCount() == accessor.componentCount()) {
-                    ConstPropertyAccess<FloatType> accessor2(property2);
-                    const FloatType* v2 = accessor2.cbegin();
-                    for(FloatType* vout = accessor.begin(), *vend = vout + std::min(accessor.size(), accessor2.size()); vout != vend; ++vout, ++v2) {
+                    ConstPropertyAccess<float> accessor2(property2);
+                    const auto* v2 = accessor2.cbegin();
+                    for(auto* vout = accessor.begin(), *vend = vout + std::min(accessor.size(), accessor2.size()); vout != vend; ++vout, ++v2) {
+                        *vout += *v2;
+                    }
+                }
+            }
+            for(auto& accessor : outputScalarProperties64) {
+                const PropertyObject* property2 = (accessor.buffer()->type() != 0) ? particles2->getProperty(accessor.buffer()->type()) : particles2->getProperty(accessor.buffer()->name());
+                if(property2 && property2->dataType() == accessor.dataType() && property2->componentCount() == accessor.componentCount()) {
+                    ConstPropertyAccess<double> accessor2(property2);
+                    const auto* v2 = accessor2.cbegin();
+                    for(auto* vout = accessor.begin(), *vend = vout + std::min(accessor.size(), accessor2.size()); vout != vend; ++vout, ++v2) {
                         *vout += *v2;
                     }
                 }
@@ -534,15 +583,21 @@ void SmoothTrajectoryModifier::averageState(PipelineFlowState& state1, const std
 
     // Normalize orientation quaternions.
     if(outputOrientations) {
-        for(Quaternion& q : outputOrientations) {
+        for(QuaternionG& q : outputOrientations) {
             q.normalizeSafely();
         }
     }
 
     // Calculate means of the auxiliary properties.
-    for(auto& accessor : outputScalarProperties) {
+    for(auto& accessor : outputScalarProperties32) {
         auto psc = particleStateCounts.cbegin();
-        for(FloatType& v : accessor)
+        for(auto& v : accessor)
+            v /= *psc++;
+        OVITO_ASSERT(psc == particleStateCounts.cend());
+    }
+    for(auto& accessor : outputScalarProperties64) {
+        auto psc = particleStateCounts.cbegin();
+        for(auto& v : accessor)
             v /= *psc++;
         OVITO_ASSERT(psc == particleStateCounts.cend());
     }

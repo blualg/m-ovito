@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -151,7 +151,7 @@ void DislocationAnalysisModifierEditor::createUI(const RolloutInsertionParameter
 
     QGridLayout* gridlayout = new QGridLayout(rollout);
     gridlayout->setContentsMargins(4,4,4,4);
-    gridlayout->setSpacing(6);  
+    gridlayout->setSpacing(6);
     gridlayout->setColumnStretch(1, 1);
 
     IntegerParameterUI* defectMeshSmoothingLevelUI = new IntegerParameterUI(this, PROPERTY_FIELD(DislocationAnalysisModifier::defectMeshSmoothingLevel));
@@ -192,13 +192,13 @@ QVariant DislocationTypeListParameterUI::getItemData(RefTarget* target, const QM
             }
             else if(index.column() == 2 && _dislocationCounts) {
                 if(const PropertyObject* yprop = _dislocationCounts->y()) {
-                    if(yprop->size() > family->numericId() && yprop->dataType() == PropertyObject::Int)
-                        return ConstPropertyAccess<int>(yprop)[family->numericId()];
+                    if(yprop->size() > family->numericId() && yprop->dataType() == DataBuffer::Int32)
+                        return ConstPropertyAccess<int32_t>(yprop)[family->numericId()];
                 }
             }
             else if(index.column() == 3 && _dislocationLengths) {
                 if(const PropertyObject* yprop = _dislocationLengths->y()) {
-                    if(yprop->size() > family->numericId() && yprop->dataType() == PropertyObject::Float)
+                    if(yprop->size() > family->numericId() && yprop->dataType() == PropertyObject::FloatDefault)
                         return QString::number(ConstPropertyAccess<FloatType>(yprop)[family->numericId()]);
                 }
             }

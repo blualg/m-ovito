@@ -103,10 +103,10 @@ private:
                                    ? mesh->domain()->volume3D()
                                    : 0.0),  // totalCellVolume is initialized before _mesh. Therefore mesh has to be used.
               _particleRegionIds(mapParticlesToRegions ? ParticlesObject::OOClass().createUserProperty(
-                                                             positions->size(), PropertyObject::Int, 1, tr("Region"))
+                                                             positions->size(), PropertyObject::Int32, 1, tr("Region"))
                                                        : nullptr),
               _surfaceDistances(computeSurfaceDistance ? ParticlesObject::OOClass().createUserProperty(
-                                                             positions->size(), PropertyObject::Float, 1, tr("Surface Distance"))
+                                                             positions->size(), PropertyObject::FloatDefault, 1, tr("Surface Distance"))
                                                        : nullptr)
         {
         }

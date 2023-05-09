@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -42,7 +42,7 @@ SET_PROPERTY_FIELD_CHANGE_EVENT(PropertyContainer, title, ReferenceEvent::TitleC
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-PropertyContainer::PropertyContainer(ObjectCreationParams params, const QString& title) : DataObject(params), 
+PropertyContainer::PropertyContainer(ObjectCreationParams params, const QString& title) : DataObject(params),
     _elementCount(0),
     _title(title)
 {
@@ -179,8 +179,8 @@ PropertyObject* PropertyContainer::createProperty(int typeId, DataBuffer::Initia
         if(flags.testFlag(DataBuffer::InitializeMemory))
             return makeMutable(existingProperty);
 
-        // If no memory initialization is requested, create a new PropertyObject from scratch and just adopt 
-        // the existing ElementType list to save time.  
+        // If no memory initialization is requested, create a new PropertyObject from scratch and just adopt
+        // the existing ElementType list to save time.
         PropertyPtr newProperty = getOOMetaClass().createStandardProperty(elementCount(), typeId, flags, containerPath);
         newProperty->setElementTypes(existingProperty->elementTypes());
         replaceReferencesTo(existingProperty, newProperty);
@@ -226,8 +226,8 @@ PropertyObject* PropertyContainer::createProperty(const QString& name, int dataT
 }
 
 /******************************************************************************
-* Adds a property object to the container, replacing any preexisting property 
-* in the container with the same type. 
+* Adds a property object to the container, replacing any preexisting property
+* in the container with the same type.
 ******************************************************************************/
 const PropertyObject* PropertyContainer::createProperty(const PropertyObject* property)
 {
@@ -274,8 +274,8 @@ const PropertyObject* PropertyContainer::createProperty(const PropertyObject* pr
 
 /******************************************************************************
 * Replaces the property arrays in this property container with a new set of
-* properties. Existing element types of typed properties will be preserved by 
-* the method. 
+* properties. Existing element types of typed properties will be preserved by
+* the method.
 ******************************************************************************/
 void PropertyContainer::setContent(size_t newElementCount, const DataRefVector<PropertyObject>& newProperties)
 {
@@ -326,11 +326,11 @@ std::vector<size_t> PropertyContainer::sortById()
 {
 #ifdef OVITO_DEBUG
     verifyIntegrity();
-#endif  
+#endif
     if(!getOOMetaClass().isValidStandardPropertyId(PropertyObject::GenericIdentifierProperty))
         return {};
     ConstDataBufferAccess<qlonglong> ids = getProperty(PropertyObject::GenericIdentifierProperty);
-    if(!ids) 
+    if(!ids)
         return {};
 
     // Determine new permutation of data elements which sorts them by ascending ID.
@@ -409,7 +409,7 @@ void PropertyContainer::loadFromStreamComplete(ObjectLoadStream& stream)
     DataObject::loadFromStreamComplete(stream);
 
     // For backward compatibility with old OVITO versions.
-    // Make sure size of deserialized property arrays is consistent. 
+    // Make sure size of deserialized property arrays is consistent.
     if(stream.formatVersion() < 30004) {
         for(const PropertyObject* property : properties()) {
             if(property->size() != elementCount()) {
@@ -418,10 +418,10 @@ void PropertyContainer::loadFromStreamComplete(ObjectLoadStream& stream)
         }
     }
 
-    // For backward compatibility with OVITO 3.3.5: 
+    // For backward compatibility with OVITO 3.3.5:
     // The ElementType::ownerProperty parameter field did not exist in older OVITO versions and does not have
-    // a valid value when loaded from a state file. The following code initializes the parameter field to 
-    // a meaningful value. 
+    // a valid value when loaded from a state file. The following code initializes the parameter field to
+    // a meaningful value.
     if(stream.formatVersion() < 30007) {
         for(const PropertyObject* property : properties()) {
             for(const ElementType* type : property->elementTypes()) {
@@ -451,7 +451,7 @@ QString PropertyContainer::elementInfoString(size_t elementIndex, const ConstDat
         str += QStringLiteral("<key>");
         str += property->name().toHtmlEscaped();
         str += QStringLiteral(":</key> <val>");
-        if(property->dataType() == PropertyObject::Int) {
+        if(property->dataType() == PropertyObject::Int32) {
             ConstPropertyAccess<int, true> data(property);
             for(size_t component = 0; component < data.componentCount(); component++) {
                 if(component != 0) str += QStringLiteral(", ");
@@ -471,8 +471,15 @@ QString PropertyContainer::elementInfoString(size_t elementIndex, const ConstDat
                 str += QString::number(data.get(elementIndex, component));
             }
         }
-        else if(property->dataType() == PropertyObject::Float) {
-            ConstPropertyAccess<FloatType, true> data(property);
+        else if(property->dataType() == PropertyObject::Float32) {
+            ConstPropertyAccess<float, true> data(property);
+            for(size_t component = 0; component < property->componentCount(); component++) {
+                if(component != 0) str += QStringLiteral(", ");
+                str += QString::number(data.get(elementIndex, component));
+            }
+        }
+        else if(property->dataType() == PropertyObject::Float64) {
+            ConstPropertyAccess<double, true> data(property);
             for(size_t component = 0; component < property->componentCount(); component++) {
                 if(component != 0) str += QStringLiteral(", ");
                 str += QString::number(data.get(elementIndex, component));

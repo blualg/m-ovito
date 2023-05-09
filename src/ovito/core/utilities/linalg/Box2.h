@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2014 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -94,6 +94,16 @@ public:
         maxc.x() = center.x() + halfEdgeLength;
         maxc.y() = center.y() + halfEdgeLength;
     }
+
+    /// \brief Casts the box to a box with another data type.
+    template<typename U>
+    Q_DECL_CONSTEXPR decltype(auto) toDataType() const {
+        return Box_2<U>(minc.template toDataType<U>(), maxc.template toDataType<U>());
+    }
+
+    // When casting to the same type \a T, this method becomes a no-op.
+    template<>
+    Q_DECL_CONSTEXPR decltype(auto) toDataType<T>() const { return *this; }
 
     ///////////////////////////////// Attributes /////////////////////////////////
 
@@ -299,6 +309,18 @@ inline QDataStream& operator>>(QDataStream& stream, Box_2<T>& b) {
 using Box2 = Box_2<FloatType>;
 
 /**
+ * \brief Instance of the Box_2 class template used for floating-point calculations based on Point2F.
+ * \relates Box_2
+ */
+using Box2F = Box_2<float>;
+
+/**
+ * \brief Instance of the Box_2 class template used for floating-point calculations based on Point2G.
+ * \relates Box_2
+ */
+using Box2G = Box_2<GraphicsFloatType>;
+
+/**
  * \brief Instance of the Box_2 class template used for integer calculations based on Point2I.
  * \relates Box_2
  */
@@ -307,6 +329,8 @@ using Box2I = Box_2<int>;
 }   // End of namespace
 
 Q_DECLARE_METATYPE(Ovito::Box2);
+Q_DECLARE_METATYPE(Ovito::Box2F);
 Q_DECLARE_METATYPE(Ovito::Box2I);
 Q_DECLARE_TYPEINFO(Ovito::Box2, Q_MOVABLE_TYPE);
+Q_DECLARE_TYPEINFO(Ovito::Box2F, Q_MOVABLE_TYPE);
 Q_DECLARE_TYPEINFO(Ovito::Box2I, Q_MOVABLE_TYPE);

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -45,7 +45,8 @@ public:
     /// Enum specifying the rate at which vertex attributes are pulled from buffers.
     enum VertexInputRate {
         PerVertex,      ///< Specifies that vertex attribute addressing is a function of the vertex index.
-        PerInstance     ///< Specifies that vertex attribute addressing is a function of the instance index.
+        PerInstance,    ///< Specifies that vertex attribute addressing is a function of the instance index.
+        PerIndex        ///< Specifies that vertex attribute addressing is a function of the index table.
     };
 
     /// Constructor.
@@ -71,12 +72,12 @@ public:
             _shader->release();
 
             // Restore old context state.
-            if(_disableBlendingWhenDone) 
+            if(_disableBlendingWhenDone)
                 _renderer->glDisable(GL_BLEND);
         }
     }
 
-    /// Temporarily enables alpha blending. 
+    /// Temporarily enables alpha blending.
     void enableBlending() {
         _disableBlendingWhenDone |= !_renderer->glIsEnabled(GL_BLEND);
         OVITO_CHECK_OPENGL(_renderer, _renderer->glEnable(GL_BLEND));
@@ -90,6 +91,12 @@ public:
     /// Binds an OpenGL buffer to a vertex attribute of the shader.
     void bindBuffer(QOpenGLBuffer& buffer, int attrIndex, GLenum type, int tupleSize, int stride, int offset, VertexInputRate inputRate);
 
+    /// Disables a vertex attribute of the shader.
+    void unbindBuffer(const char* attributeName);
+
+    /// Disables a vertex attribute of the shader.
+    void unbindBuffer(int attrIndex);
+
     /// Passes the base object ID to the shader in picking mode.
     void setPickingBaseId(GLint baseId) {
         OVITO_ASSERT(_renderer->isPicking());
@@ -99,6 +106,11 @@ public:
     /// Passes a uniform value to the shader.
     void setUniformValue(const char* name, const ColorA& color) {
         OVITO_CHECK_OPENGL(_renderer, _shader->setUniformValue(name, color.r(), color.g(), color.b(), color.a()));
+    }
+
+    /// Passes a uniform value to the shader.
+    void setUniformValue(const char* name, const Color& color) {
+        OVITO_CHECK_OPENGL(_renderer, _shader->setUniformValue(name, color.r(), color.g(), color.b()));
     }
 
     /// Passes a uniform value to the shader.
@@ -121,6 +133,36 @@ public:
         OVITO_CHECK_OPENGL(_renderer, _shader->setUniformValue(name, value));
     }
 
+    /// Passes a constant vertex attribute to the shader.
+    void setAttributeValue(const char* name, const ColorA& color) {
+        OVITO_CHECK_OPENGL(_renderer, _shader->setAttributeValue(name, color.r(), color.g(), color.b(), color.a()));
+    }
+
+    /// Passes a constant vertex attribute to the shader.
+    void setAttributeValue(const char* name, const Color& color) {
+        OVITO_CHECK_OPENGL(_renderer, _shader->setAttributeValue(name, color.r(), color.g(), color.b()));
+    }
+
+    /// Passes a constant vertex attribute to the shader.
+    void setAttributeValue(const char* name, const Vector2& vec) {
+        OVITO_CHECK_OPENGL(_renderer, _shader->setAttributeValue(name, vec.x(), vec.y()));
+    }
+
+    /// Passes a constant vertex attribute to the shader.
+    void setAttributeValue(const char* name, const Vector3& vec) {
+        OVITO_CHECK_OPENGL(_renderer, _shader->setAttributeValue(name, vec.x(), vec.y(), vec.z()));
+    }
+
+    /// Passes a constant vertex attribute to the shader.
+    void setAttributeValue(const char* name, const Vector4& vec) {
+        OVITO_CHECK_OPENGL(_renderer, _shader->setAttributeValue(name, vec.x(), vec.y(), vec.z(), vec.w()));
+    }
+
+    /// Passes a constant vertex attribute to the shader.
+    void setAttributeValue(const char* name, FloatType v) {
+        OVITO_CHECK_OPENGL(_renderer, _shader->setAttributeValue(name, v));
+    }
+
     /// Indicates whether an OpenGL geometry is being used.
     bool usingGeometryShader() const { return _usingGeometryShader; }
 
@@ -128,15 +170,15 @@ public:
     GLsizei verticesPerInstance() const { return _verticesPerInstance; }
 
     /// Specifies the number of vertices per rendered instance.
-    void setVerticesPerInstance(GLsizei n) { 
+    void setVerticesPerInstance(GLsizei n) {
         OVITO_ASSERT(!usingGeometryShader() || n == 1);
-        _verticesPerInstance = n; 
+        _verticesPerInstance = n;
     }
 
-    /// Returns the number of primitive instances to be rendered.
+    /// Returns the number of primitive instances stored in the vertex buffers.
     GLsizei instanceCount() const { return _instanceCount; }
 
-    /// Specifies the number of primitive instances to be rendered.
+    /// Specifies the number of primitive instances stored in the vertex buffers.
     void setInstanceCount(GLsizei instanceCount) { _instanceCount = instanceCount; }
 
     /// Uploads some data to the Vulkan device as a buffer object and caches it.
@@ -146,7 +188,7 @@ public:
         QOpenGLBuffer* bufferObject;
 
         // Check if this OVITO data buffer has already been created and uploaded to the GPU.
-        // Depending on whether the OpenGL implementation supports instanced arrays, we 
+        // Depending on whether the OpenGL implementation supports instanced arrays, we
         // have to take into account the instancing parameters in the cache look up.
 
         // Does the OpenGL implementation support instanced arrays (requires OpenGL 3.3+) or are we using a geometry shader?
@@ -154,7 +196,7 @@ public:
             bufferObject = &OpenGLResourceManager::instance()->lookup<QOpenGLBuffer>(std::forward<KeyType>(cacheKey), _renderer->currentResourceFrame());
         }
         else {
-            std::tuple<std::decay_t<KeyType>, GLsizei, GLsizei> combinedKey{ std::forward<KeyType>(cacheKey), instanceCount(), verticesPerInstance() };
+            std::tuple<std::decay_t<KeyType>, GLsizei, GLsizei> combinedKey{ std::forward<KeyType>(cacheKey), (inputRate != PerIndex) ? instanceCount() : indexCount(), verticesPerInstance() };
             bufferObject = &OpenGLResourceManager::instance()->lookup<QOpenGLBuffer>(std::move(combinedKey), _renderer->currentResourceFrame());
         }
 
@@ -162,6 +204,7 @@ public:
         if(!bufferObject->isCreated())
             *bufferObject = createCachedBufferImpl(elementSize, usage, inputRate, std::move(fillMemoryFunc));
 
+        OVITO_ASSERT(bufferObject->type() == usage);
         return *bufferObject;
     }
 
@@ -171,12 +214,15 @@ public:
     /// Issues a drawing command.
     void drawArrays(GLenum mode);
 
+    /// Issues a drawing command using indexed rendering.
+    void drawArraysIndexed(GLenum mode, const ConstDataBufferPtr& indices);
+
     /// Issues a drawing command with an ordering of the instances.
     template<typename KeyType>
     void drawArraysOrdered(GLenum mode, KeyType&& cacheKey, std::function<std::vector<uint32_t>()>&& computeOrderingFunc) {
 
         // Ordered drawing is not support by picking shaders, which access the gl_InstanceID special variable.
-        // That's because the 'baseinstance' parameter does not affect the shader-visible value of gl_InstanceID according to the OpenGL specification. 
+        // That's because the 'baseinstance' parameter does not affect the shader-visible value of gl_InstanceID according to the OpenGL specification.
         OVITO_ASSERT(!_renderer->isPicking());
 
         // Are we using a geometry shader? If yes, render point primitives only.
@@ -185,7 +231,7 @@ public:
             RendererResourceKey<struct IndexBufferKey, std::decay_t<KeyType>> indexBufferKey{ std::forward<KeyType>(cacheKey) };
             drawArraysOrderedGeometryShader(OpenGLResourceManager::instance()->lookup<QOpenGLBuffer>(std::move(indexBufferKey), _renderer->currentResourceFrame()), std::move(computeOrderingFunc));
         }
-#ifdef QT_OPENGL_4
+#ifndef Q_OS_WASM
         else if(_renderer->glversion() >= QT_VERSION_CHECK(4, 3, 0) && _renderer->glMultiDrawArraysIndirect != nullptr) {
             // On OpenGL 4.3+ contexts, use glMultiDrawArraysIndirect() to render the instances in a prescribed order.
 
@@ -203,10 +249,13 @@ public:
 
 private:
 
+    /// Returns the number of indexed primitives to be rendered.
+    GLsizei indexCount() const { return _indexCount; }
+
     /// Uploads some data to a new OpenGL buffer object.
     QOpenGLBuffer createCachedBufferImpl(GLsizei elementSize, QOpenGLBuffer::Type usage, VertexInputRate inputRate, std::function<void(void*)>&& fillMemoryFunc);
 
-#ifdef QT_OPENGL_4
+#ifndef Q_OS_WASM
     /// Issues a drawing command with an ordering of the instances.
     void drawArraysOrderedOpenGL4(GLenum mode, QOpenGLBuffer& indirectBuffer, std::function<std::vector<uint32_t>()>&& computeOrderingFunc);
 #endif
@@ -235,11 +284,14 @@ private:
     /// Indicates that alpha blending should be turned off after rendering is done.
     bool _disableBlendingWhenDone = false;
 
-    /// The number of vertices per rendered primitive instance.
+    /// Number of vertices per primitive instance.
     GLsizei _verticesPerInstance = 0;
 
-    /// The number of instances to render.
+    /// Number of primitive instances stored in the vertex buffers.
     GLsizei _instanceCount = 0;
+
+    /// Number of indexed primitives to be rendered.
+    GLsizei _indexCount = 0;
 
     /// Indicates that a OpenGL geometry shader is active.
     bool _usingGeometryShader = false;

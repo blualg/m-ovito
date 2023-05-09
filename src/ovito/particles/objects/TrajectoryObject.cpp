@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -42,9 +42,9 @@ void TrajectoryObject::OOMetaClass::initialize()
     const QStringList emptyList;
     const QStringList xyzList = QStringList() << "X" << "Y" << "Z";
     const QStringList rgbList = QStringList() << "R" << "G" << "B";
-    registerStandardProperty(ColorProperty, tr("Color"), PropertyObject::Float, rgbList);
-    registerStandardProperty(PositionProperty, tr("Position"), PropertyObject::Float, xyzList);
-    registerStandardProperty(SampleTimeProperty, tr("Time"), PropertyObject::Int, emptyList);
+    registerStandardProperty(ColorProperty, tr("Color"), PropertyObject::FloatGraphics, rgbList);
+    registerStandardProperty(PositionProperty, tr("Position"), PropertyObject::FloatDefault, xyzList);
+    registerStandardProperty(SampleTimeProperty, tr("Time"), PropertyObject::Int32, emptyList);
     registerStandardProperty(ParticleIdentifierProperty, tr("Particle Identifier"), PropertyObject::Int64, emptyList);
 }
 
@@ -58,17 +58,17 @@ PropertyPtr TrajectoryObject::OOMetaClass::createStandardPropertyInternal(size_t
 
     switch(type) {
     case PositionProperty:
-        dataType = PropertyObject::Float;
+        dataType = PropertyObject::FloatDefault;
         componentCount = 3;
         OVITO_ASSERT(componentCount * sizeof(FloatType) == sizeof(Point3));
         break;
     case ColorProperty:
-        dataType = PropertyObject::Float;
+        dataType = PropertyObject::FloatGraphics;
         componentCount = 3;
-        OVITO_ASSERT(componentCount * sizeof(FloatType) == sizeof(Color));
+        OVITO_ASSERT(componentCount * sizeof(GraphicsFloatType) == sizeof(ColorG));
         break;
     case SampleTimeProperty:
-        dataType = PropertyObject::Int;
+        dataType = PropertyObject::Int32;
         componentCount = 1;
         break;
     case ParticleIdentifierProperty:
@@ -93,7 +93,7 @@ PropertyPtr TrajectoryObject::OOMetaClass::createStandardPropertyInternal(size_t
         if(type == ColorProperty) {
             if(const TrajectoryObject* trajectory = dynamic_object_cast<TrajectoryObject>(containerPath.back())) {
                 if(TrajectoryVis* trajectoryVis = dynamic_object_cast<TrajectoryVis>(trajectory->visElement())) {
-                    property->fill(trajectoryVis->lineColor());
+                    property->fill<ColorG>(trajectoryVis->lineColor().toDataType<GraphicsFloatType>());
                     flags.setFlag(DataBuffer::InitializeMemory, false);
                 }
             }

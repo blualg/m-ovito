@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -95,7 +95,11 @@ public:
 
     /// Casts the color to another component type \a U.
     template<typename U>
-    Q_DECL_CONSTEXPR ColorT<U> toDataType() const { return ColorT<U>(static_cast<U>(r()), static_cast<U>(g()), static_cast<U>(b())); }
+    Q_DECL_CONSTEXPR decltype(auto) toDataType() const { return ColorT<U>(static_cast<U>(r()), static_cast<U>(g()), static_cast<U>(b())); }
+
+    // When casting to the same type \a T, this method becomes a no-op.
+    template<>
+    Q_DECL_CONSTEXPR decltype(auto) toDataType<T>() const { return *this; }
 
     /// Sets all components of the color to zero.
     void setBlack() { r() = g() = b() = T(0); }
@@ -391,7 +395,11 @@ public:
 
     /// Casts the color to another component type \a U.
     template<typename U>
-    Q_DECL_CONSTEXPR ColorAT<U> toDataType() const { return ColorAT<U>(static_cast<U>(r()), static_cast<U>(g()), static_cast<U>(b()), static_cast<U>(a())); }
+    Q_DECL_CONSTEXPR decltype(auto) toDataType() const { return ColorAT<U>(static_cast<U>(r()), static_cast<U>(g()), static_cast<U>(b()), static_cast<U>(a())); }
+
+    // When casting to the same type \a T, this method becomes a no-op.
+    template<>
+    Q_DECL_CONSTEXPR decltype(auto) toDataType<T>() const { return *this; }
 
     /// Sets the red, green, and blue components to zero and alpha to one.
     void setBlack() { r() = g() = b() = T(0); a() = T(1); }
@@ -597,20 +605,48 @@ inline QDataStream& operator>>(QDataStream& stream, ColorAT<T>& c) {
 }
 
 /**
- * \brief Instantiation of the ColorT class template with the default floating-point type.
+ * \brief Instantiation of the ColorT class template with the default floating-point type (double precision).
  * \relates ColorT
  */
 using Color = ColorT<FloatType>;
 
 /**
- * \brief Instantiation of the ColorAT class template with the default floating-point type.
+ * \brief Instantiation of the ColorT class template with the single-precision floating-point type.
+ * \relates ColorT
+ */
+using ColorF = ColorT<float>;
+
+/**
+ * \brief Instantiation of the ColorT class template with the low-precision floating-point type used for graphics data.
+ * \relates ColorT
+ */
+using ColorG = ColorT<GraphicsFloatType>;
+
+/**
+ * \brief Instantiation of the ColorAT class template with the default floating-point type (double precision).
  * \relates ColorAT
  */
 using ColorA = ColorAT<FloatType>;
 
+/**
+ * \brief Instantiation of the ColorAT class template with the single-precision floating-point type.
+ * \relates ColorAT
+ */
+using ColorAF = ColorAT<float>;
+
+/**
+ * \brief Instantiation of the ColorAT class template with the low-precision floating-point type used for graphics data.
+ * \relates ColorAT
+ */
+using ColorAG = ColorAT<GraphicsFloatType>;
+
 }   // End of namespace
 
 Q_DECLARE_METATYPE(Ovito::Color);
+Q_DECLARE_METATYPE(Ovito::ColorF);
 Q_DECLARE_METATYPE(Ovito::ColorA);
+Q_DECLARE_METATYPE(Ovito::ColorAF);
 Q_DECLARE_TYPEINFO(Ovito::Color, Q_PRIMITIVE_TYPE);
+Q_DECLARE_TYPEINFO(Ovito::ColorF, Q_PRIMITIVE_TYPE);
 Q_DECLARE_TYPEINFO(Ovito::ColorA, Q_PRIMITIVE_TYPE);
+Q_DECLARE_TYPEINFO(Ovito::ColorAF, Q_PRIMITIVE_TYPE);

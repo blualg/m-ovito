@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -31,6 +31,7 @@ in float radius;
 out vec3 position_gs;
 out float radius_gs;
 out vec4 color_gs;
+
 void main()
 {
     // Forward particle position to geometry shader.

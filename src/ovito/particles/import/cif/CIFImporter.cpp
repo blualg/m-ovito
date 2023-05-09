@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -126,7 +126,7 @@ void CIFImporter::FrameLoader::loadFile()
         std::vector<gemmi::SmallStructure::Site> sites = structure.get_all_unit_cell_sites();
         setParticleCount(sites.size());
         PropertyAccess<Point3> posProperty = particles()->createProperty(ParticlesObject::PositionProperty);
-        PropertyAccess<int> typeProperty = particles()->createProperty(ParticlesObject::TypeProperty);
+        PropertyAccess<int32_t> typeProperty = particles()->createProperty(ParticlesObject::TypeProperty);
         Point3* posIter = posProperty.begin();
         int* typeIter = typeProperty.begin();
         bool hasOccupancy = false;
@@ -143,7 +143,7 @@ void CIFImporter::FrameLoader::loadFile()
 
         // Parse the optional site occupancy information.
         if(hasOccupancy) {
-            PropertyAccess<FloatType> occupancyProperty = particles()->createProperty(QStringLiteral("Occupancy"), PropertyObject::Float);
+            PropertyAccess<FloatType> occupancyProperty = particles()->createProperty(QStringLiteral("Occupancy"), PropertyObject::FloatDefault);
             FloatType* occupancyIter = occupancyProperty.begin();
             for(const gemmi::SmallStructure::Site& site : sites) {
                 *occupancyIter++ = site.occ;

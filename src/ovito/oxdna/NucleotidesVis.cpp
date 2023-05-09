@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -41,7 +41,7 @@ SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(NucleotidesVis, cylinderRadius, WorldParame
 ******************************************************************************/
 NucleotidesVis::NucleotidesVis(ObjectCreationParams params) : ParticlesVis(params),
     _cylinderRadius(0.05)
-{   
+{
     setDefaultParticleRadius(0.1);
 }
 
@@ -94,7 +94,7 @@ Box3 NucleotidesVis::boundingBox(AnimationTime time, const ConstDataObjectPath& 
 }
 
 /******************************************************************************
-* Returns the typed particle property used to determine the rendering colors 
+* Returns the typed particle property used to determine the rendering colors
 * of particles (if no per-particle colors are defined).
 ******************************************************************************/
 const PropertyObject* NucleotidesVis::getParticleTypeColorProperty(const ParticlesObject* particles) const
@@ -103,7 +103,7 @@ const PropertyObject* NucleotidesVis::getParticleTypeColorProperty(const Particl
 }
 
 /******************************************************************************
-* Returns the typed particle property used to determine the rendering radii 
+* Returns the typed particle property used to determine the rendering radii
 * of particles (if no per-particle radii are defined).
 ******************************************************************************/
 const PropertyObject* NucleotidesVis::getParticleTypeRadiusProperty(const ParticlesObject* particles) const
@@ -129,22 +129,22 @@ ConstPropertyPtr NucleotidesVis::nucleobaseColors(const ParticlesObject* particl
     // Allocate output color array.
     PropertyPtr output = ParticlesObject::OOClass().createStandardProperty(particles->elementCount(), ParticlesObject::ColorProperty);
 
-    Color defaultColor = defaultParticleColor();
+    ColorG defaultColor = defaultParticleColor().toDataType<GraphicsFloatType>();
     if(const PropertyObject* baseProperty = particles->getProperty(ParticlesObject::NucleobaseTypeProperty)) {
         // Assign colors based on base type.
         // Generate a lookup map for base type colors.
         const std::map<int,Color> colorMap = baseProperty->typeColorMap();
-        std::array<Color,16> colorArray;
+        std::array<ColorG,16> colorArray;
         // Check if all type IDs are within a small, non-negative range.
         // If yes, we can use an array lookup strategy. Otherwise we have to use a dictionary lookup strategy, which is slower.
         if(std::all_of(colorMap.begin(), colorMap.end(), [&colorArray](const auto& i) { return i.first >= 0 && i.first < (int)colorArray.size(); })) {
             colorArray.fill(defaultColor);
             for(const auto& entry : colorMap)
-                colorArray[entry.first] = entry.second;
+                colorArray[entry.first] = entry.second.toDataType<GraphicsFloatType>();
             // Fill color array.
-            ConstPropertyAccess<int> typeArray(baseProperty);
-            const int* t = typeArray.cbegin();
-            for(Color& c : PropertyAccess<Color>(output)) {
+            ConstPropertyAccess<int32_t> typeArray(baseProperty);
+            const auto* t = typeArray.cbegin();
+            for(auto& c : PropertyAccess<ColorG>(output)) {
                 if(*t >= 0 && *t < (int)colorArray.size())
                     c = colorArray[*t];
                 else
@@ -154,12 +154,12 @@ ConstPropertyPtr NucleotidesVis::nucleobaseColors(const ParticlesObject* particl
         }
         else {
             // Fill color array.
-            ConstPropertyAccess<int> typeArray(baseProperty);
-            const int* t = typeArray.cbegin();
-            for(Color& c : PropertyAccess<Color>(output)) {
+            ConstPropertyAccess<int32_t> typeArray(baseProperty);
+            const auto* t = typeArray.cbegin();
+            for(auto& c : PropertyAccess<ColorG>(output)) {
                 auto it = colorMap.find(*t);
                 if(it != colorMap.end())
-                    c = it->second;
+                    c = it->second.toDataType<GraphicsFloatType>();
                 else
                     c = defaultColor;
                 ++t;
@@ -168,12 +168,12 @@ ConstPropertyPtr NucleotidesVis::nucleobaseColors(const ParticlesObject* particl
     }
     else {
         // Assign a uniform color to all base sites.
-        output->fill(defaultColor);
+        output->fill<ColorG>(defaultColor);
     }
 
     // Highlight selected sites.
     if(const PropertyObject* selectionProperty = highlightSelection ? particles->getProperty(ParticlesObject::SelectionProperty) : nullptr)
-        output->fillSelected(selectionParticleColor(), *selectionProperty);
+        output->fillSelected<ColorG>(selectionParticleColor().toDataType<GraphicsFloatType>(), *selectionProperty);
 
     return output;
 }
@@ -221,7 +221,7 @@ PipelineStatus NucleotidesVis::render(AnimationTime time, const ConstDataObjectP
         FloatType,                  // Default particle radius
         FloatType                   // Cylinder radius
     >;
-    
+
     // The data structure stored in the vis cache.
     struct NucleotidesCacheValue {
         ParticlePrimitive backbonePrimitive;
@@ -272,24 +272,24 @@ PipelineStatus NucleotidesVis::render(AnimationTime time, const ConstDataObjectP
             visCache.basePrimitive.setRenderingQuality(ParticlePrimitive::MediumQuality);
 
             // Fill in the position data for the base sites.
-            DataBufferAccessAndRef<Point3> baseSites = DataBufferPtr::create(particles->elementCount(), DataBuffer::Float, 3);
+            DataBufferAccessAndRef<Point3G> baseSites = DataBufferPtr::create(particles->elementCount(), DataBuffer::FloatGraphics, 3);
             ConstPropertyAccess<Point3> positionsArray(positionProperty);
             ConstPropertyAccess<Vector3> nucleotideAxisArray(nucleotideAxisProperty);
             for(size_t i = 0; i < baseSites.size(); i++)
-                baseSites[i] = positionsArray[i] + (0.8 * nucleotideAxisArray[i]);
+                baseSites[i] = (positionsArray[i] + (0.8 * nucleotideAxisArray[i])).toDataType<GraphicsFloatType>();
             visCache.basePrimitive.setPositions(baseSites.take());
 
             // Fill in base color data.
             visCache.basePrimitive.setColors(nucleobaseColors(particles, renderer->isInteractive()));
 
             // Fill in aspherical shape values.
-            DataBufferPtr asphericalShapes = DataBufferPtr::create(particles->elementCount(), DataBuffer::Float, 3);
-            asphericalShapes->fill(cylinderRadius() * Vector3(2.0, 3.0, 1.0));
+            DataBufferPtr asphericalShapes = DataBufferPtr::create(particles->elementCount(), DataBuffer::FloatGraphics, 3);
+            asphericalShapes->fill<Vector3G>(static_cast<GraphicsFloatType>(cylinderRadius()) * Vector3G(2.0f, 3.0f, 1.0f));
             visCache.basePrimitive.setAsphericalShapes(std::move(asphericalShapes));
 
             // Fill in base orientations.
             if(ConstPropertyAccess<Vector3> nucleotideNormalArray = nucleotideNormalProperty) {
-                PropertyAccessAndRef<Quaternion> orientations = ParticlesObject::OOClass().createStandardProperty(particles->elementCount(), ParticlesObject::OrientationProperty);
+                PropertyAccessAndRef<QuaternionG> orientations = ParticlesObject::OOClass().createStandardProperty(particles->elementCount(), ParticlesObject::OrientationProperty);
                 for(size_t i = 0; i < orientations.size(); i++) {
                     if(nucleotideNormalArray[i] != Vector3::Zero() && nucleotideAxisArray[i] != Vector3::Zero()) {
                         // Build an orthonomal basis from the two direction vectors of a nucleotide.
@@ -299,15 +299,15 @@ PipelineStatus NucleotidesVis::render(AnimationTime time, const ConstDataObjectP
                         tm.column(0) = tm.column(1).cross(tm.column(2));
                         if(!tm.column(0).isZero()) {
                             tm.orthonormalize();
-                            orientations[i] = Quaternion(tm);
+                            orientations[i] = Quaternion(tm).toDataType<GraphicsFloatType>();
                         }
-                        else orientations[i] = Quaternion::Identity();
+                        else orientations[i] = QuaternionG::Identity();
                     }
                     else {
-                        orientations[i] = Quaternion::Identity();
+                        orientations[i] = QuaternionG::Identity();
                     }
                 }
-                visCache.basePrimitive.setOrientations(orientations.take());    
+                visCache.basePrimitive.setOrientations(orientations.take());
             }
 
             // Create the rendering primitive for the connections between backbone and base sites.
@@ -315,9 +315,9 @@ PipelineStatus NucleotidesVis::render(AnimationTime time, const ConstDataObjectP
             visCache.connectionPrimitive.setShadingMode(CylinderPrimitive::NormalShading);
             visCache.connectionPrimitive.setUniformWidth(2 * cylinderRadius());
             visCache.connectionPrimitive.setColors(colors);
-            DataBufferAccessAndRef<Point3> headPositions = DataBufferPtr::create(particles->elementCount(), DataBuffer::Float, 3);
+            DataBufferAccessAndRef<Point3G> headPositions = DataBufferPtr::create(particles->elementCount(), DataBuffer::FloatGraphics, 3);
             for(size_t i = 0; i < positionsArray.size(); i++)
-                headPositions[i] = positionsArray[i] + 0.8 * nucleotideAxisArray[i];
+                headPositions[i] = (positionsArray[i] + 0.8 * nucleotideAxisArray[i]).toDataType<GraphicsFloatType>();
             visCache.connectionPrimitive.setPositions(positionProperty, headPositions.take());
         }
         else {
@@ -326,7 +326,7 @@ PipelineStatus NucleotidesVis::render(AnimationTime time, const ConstDataObjectP
         }
 
         // Create pick info record.
-        DataBufferAccessAndRef<int> subobjectToParticleMapping = DataBufferPtr::create(nucleotideAxisProperty ? (particles->elementCount() * 3) : particles->elementCount(), DataBuffer::Int);
+        DataBufferAccessAndRef<int32_t> subobjectToParticleMapping = DataBufferPtr::create(nucleotideAxisProperty ? (particles->elementCount() * 3) : particles->elementCount(), DataBuffer::Int32);
         std::iota(subobjectToParticleMapping.begin(), subobjectToParticleMapping.begin() + particles->elementCount(), 0);
         if(nucleotideAxisProperty) {
             std::iota(subobjectToParticleMapping.begin() +     particles->elementCount(), subobjectToParticleMapping.begin() + 2 * particles->elementCount(), 0);

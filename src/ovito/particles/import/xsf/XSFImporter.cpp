@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -328,7 +328,7 @@ void XSFImporter::FrameLoader::loadFile()
                 voxelGrid->setDomain(std::move(simCell));
             }
 
-            PropertyAccess<FloatType> fieldQuantity = voxelGrid->createProperty(name, PropertyObject::Float);
+            PropertyAccess<FloatType> fieldQuantity = voxelGrid->createProperty(name, DataBuffer::FloatDefault);
             FloatType* data = fieldQuantity.begin();
             setProgressMaximum(fieldQuantity.size());
             const char* s = "";

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -214,7 +214,7 @@ class OVITO_STDOBJ_EXPORT InputColumnReader : public QObject
 public:
 
     /// \brief Initializes the object.
-    /// \param frameLoader The file reader that created this column reader object. 
+    /// \param frameLoader The file reader that created this column reader object.
     /// \param mapping Defines the mapping of columns of the input file
     ///        to the target properties.
     /// \param container The property container where the parsed data will be stored in.
@@ -282,7 +282,7 @@ private:
     /// Mapping of input file columns to target memory.
     std::vector<TargetPropertyRecord> _properties;
 
-    /// Indicates that the element names of at least one typed property are read from 
+    /// Indicates that the element names of at least one typed property are read from
     /// a separate file column.
     bool _readingTypeNamesFromSeparateColumns = false;
 };

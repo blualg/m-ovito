@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -77,8 +77,8 @@ public:
     bool isFullyOpaque() const;
 
     /// Sets the rendering color to be used if the mesh doesn't have per-vertex colors.
-    void setUniformColor(const ColorA& color) { 
-        _uniformColor = color; 
+    void setUniformColor(const ColorA& color) {
+        _uniformColor = color;
         _isMeshFullyOpaque.reset();
     }
 
@@ -89,8 +89,8 @@ public:
     const std::vector<ColorA>& materialColors() const { return _materialColors; }
 
     /// Sets array of materials referenced by the materialIndex() field of the mesh faces.
-    void setMaterialColors(std::vector<ColorA> colors) { 
-        _materialColors = std::move(colors); 
+    void setMaterialColors(std::vector<ColorA> colors) {
+        _materialColors = std::move(colors);
         _isMeshFullyOpaque.reset();
     }
 
@@ -98,8 +98,8 @@ public:
     const PseudoColorMapping& pseudoColorMapping() const { return _pseudoColorMapping; }
 
     /// Sets the mapping from pseudo-color values at the mesh vertices to RGB colors.
-    void setPseudoColorMapping(const PseudoColorMapping& mapping) { 
-        _pseudoColorMapping = mapping; 
+    void setPseudoColorMapping(const PseudoColorMapping& mapping) {
+        _pseudoColorMapping = mapping;
     }
 
     /// Activates rendering of multiple instances of the mesh.
@@ -136,8 +136,8 @@ public:
     /// Returns how a rasterizing renderer should handle semi-transparent meshes.
     DepthSortingMode depthSortingMode() const { return _depthSortingMode; }
 
-    /// Vertex information emitted during rendering of a triangle mesh. 
-    struct RenderVertex 
+    /// Vertex information emitted during rendering of a triangle mesh.
+    struct RenderVertex
     {
         Point_3<float> position;
         Vector_3<float> normal;

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -143,7 +143,7 @@ void OpenGLSceneRenderer::renderThickLinesImplementation(const LinePrimitive& pr
         // Pass picking base ID to shader.
         shader.setPickingBaseId(registerSubObjectIDs(primitive.positions()->size() / 2));
     }
-    
+
     // Compute line width in viewport space.
     shader.setUniformValue("line_thickness", effectiveLineWidth / viewportRect().height());
 

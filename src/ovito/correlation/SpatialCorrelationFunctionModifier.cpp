@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //  Copyright 2017 Lars Pastewka
 //
 //  This file is part of OVITO (Open Visualization Tool).
@@ -223,6 +223,36 @@ std::vector<FloatType> SpatialCorrelationFunctionModifier::CorrelationAnalysisEn
 
     if(!property || property->size() > 0) {
         ConstPropertyAccess<Point3> positionsArray(positions());
+
+        auto helperFunc = [&](auto _) {
+            using T = decltype(_);
+            ConstPropertyAccess<T,true> propertyArray(property);
+            const Point3* pos = positionsArray.cbegin();
+            for(T v : propertyArray.componentRange(vecComponent)) {
+                if(std::numeric_limits<T>::is_integer || !std::isnan(v)) {
+                    Point3 fractionalPos = reciprocalCellMatrix * (*pos);
+                    int binIndexX = int( fractionalPos.x() * nX );
+                    int binIndexY = int( fractionalPos.y() * nY );
+                    int binIndexZ = int( fractionalPos.z() * nZ );
+                    FloatType window = 1;
+                    if(pbc[0]) binIndexX = SimulationCellObject::modulo(binIndexX, nX);
+                    else window *= std::sqrt(FloatType(2./3))*(FloatType(1)-std::cos(2*FLOATTYPE_PI*fractionalPos.x()));
+                    if(pbc[1]) binIndexY = SimulationCellObject::modulo(binIndexY, nY);
+                    else window *= std::sqrt(FloatType(2./3))*(FloatType(1)-std::cos(2*FLOATTYPE_PI*fractionalPos.y()));
+                    if(is2D) binIndexZ = 0;
+                    else if(pbc[2]) binIndexZ = SimulationCellObject::modulo(binIndexZ, nZ);
+                    else window *= std::sqrt(FloatType(2./3))*(FloatType(1)-std::cos(2*FLOATTYPE_PI*fractionalPos.z()));
+                    if(!applyWindow) window = 1;
+                    if(binIndexX >= 0 && binIndexX < nX && binIndexY >= 0 && binIndexY < nY && binIndexZ >= 0 && binIndexZ < nZ) {
+                        // Store in row-major format.
+                        size_t binIndex = binIndexZ+nZ*(binIndexY+nY*binIndexX);
+                        gridData[binIndex] += window * v;
+                    }
+                }
+                ++pos;
+            }
+        };
+
         if(!property) {
             for(const Point3& pos : positionsArray) {
                 Point3 fractionalPos = reciprocalCellMatrix * pos;
@@ -245,82 +275,20 @@ std::vector<FloatType> SpatialCorrelationFunctionModifier::CorrelationAnalysisEn
                 }
             }
         }
-        else if(property->dataType() == PropertyObject::Float) {
-            ConstPropertyAccess<FloatType,true> propertyArray(property);
-            const Point3* pos = positionsArray.cbegin();
-            for(FloatType v : propertyArray.componentRange(vecComponent)) {
-                if(!std::isnan(v)) {
-                    Point3 fractionalPos = reciprocalCellMatrix * (*pos);
-                    int binIndexX = int( fractionalPos.x() * nX );
-                    int binIndexY = int( fractionalPos.y() * nY );
-                    int binIndexZ = int( fractionalPos.z() * nZ );
-                    FloatType window = 1;
-                    if(pbc[0]) binIndexX = SimulationCellObject::modulo(binIndexX, nX);
-                    else window *= std::sqrt(FloatType(2./3))*(FloatType(1)-std::cos(2*FLOATTYPE_PI*fractionalPos.x()));
-                    if(pbc[1]) binIndexY = SimulationCellObject::modulo(binIndexY, nY);
-                    else window *= std::sqrt(FloatType(2./3))*(FloatType(1)-std::cos(2*FLOATTYPE_PI*fractionalPos.y()));
-                    if(is2D) binIndexZ = 0;
-                    else if(pbc[2]) binIndexZ = SimulationCellObject::modulo(binIndexZ, nZ);
-                    else window *= std::sqrt(FloatType(2./3))*(FloatType(1)-std::cos(2*FLOATTYPE_PI*fractionalPos.z()));
-                    if(!applyWindow) window = 1;
-                    if(binIndexX >= 0 && binIndexX < nX && binIndexY >= 0 && binIndexY < nY && binIndexZ >= 0 && binIndexZ < nZ) {
-                        // Store in row-major format.
-                        size_t binIndex = binIndexZ+nZ*(binIndexY+nY*binIndexX);
-                        gridData[binIndex] += window * v;
-                    }
-                }
-                ++pos;
-            }
+        else if(property->dataType() == DataBuffer::Float32) {
+            helperFunc(float{});
         }
-        else if(property->dataType() == PropertyObject::Int) {
-            ConstPropertyAccess<int,true> propertyArray(property);
-            const Point3* pos = positionsArray.cbegin();
-            for(int v : propertyArray.componentRange(vecComponent)) {
-                Point3 fractionalPos = reciprocalCellMatrix * (*pos);
-                int binIndexX = int( fractionalPos.x() * nX );
-                int binIndexY = int( fractionalPos.y() * nY );
-                int binIndexZ = int( fractionalPos.z() * nZ );
-                FloatType window = 1;
-                if(pbc[0]) binIndexX = SimulationCellObject::modulo(binIndexX, nX);
-                else window *= std::sqrt(FloatType(2./3))*(FloatType(1)-std::cos(2*FLOATTYPE_PI*fractionalPos.x()));
-                if(pbc[1]) binIndexY = SimulationCellObject::modulo(binIndexY, nY);
-                else window *= std::sqrt(FloatType(2./3))*(FloatType(1)-std::cos(2*FLOATTYPE_PI*fractionalPos.y()));
-                if(is2D) binIndexZ = 0;
-                else if(pbc[2]) binIndexZ = SimulationCellObject::modulo(binIndexZ, nZ);
-                else window *= std::sqrt(FloatType(2./3))*(FloatType(1)-std::cos(2*FLOATTYPE_PI*fractionalPos.z()));
-                if(!applyWindow) window = 1;
-                if(binIndexX >= 0 && binIndexX < nX && binIndexY >= 0 && binIndexY < nY && binIndexZ >= 0 && binIndexZ < nZ) {
-                    // Store in row-major format.
-                    size_t binIndex = binIndexZ+nZ*(binIndexY+nY*binIndexX);
-                    gridData[binIndex] += window * v;
-                }
-                ++pos;
-            }
+        else if(property->dataType() == DataBuffer::Float64) {
+            helperFunc(double{});
         }
-        else if(property->dataType() == PropertyObject::Int64) {
-            ConstPropertyAccess<qlonglong,true> propertyArray(property);
-            const Point3* pos = positionsArray.cbegin();
-            for(qlonglong v : propertyArray.componentRange(vecComponent)) {
-                Point3 fractionalPos = reciprocalCellMatrix * (*pos);
-                int binIndexX = int( fractionalPos.x() * nX );
-                int binIndexY = int( fractionalPos.y() * nY );
-                int binIndexZ = int( fractionalPos.z() * nZ );
-                FloatType window = 1;
-                if(pbc[0]) binIndexX = SimulationCellObject::modulo(binIndexX, nX);
-                else window *= std::sqrt(FloatType(2./3))*(FloatType(1)-std::cos(2*FLOATTYPE_PI*fractionalPos.x()));
-                if(pbc[1]) binIndexY = SimulationCellObject::modulo(binIndexY, nY);
-                else window *= std::sqrt(FloatType(2./3))*(FloatType(1)-std::cos(2*FLOATTYPE_PI*fractionalPos.y()));
-                if(is2D) binIndexZ = 0;
-                else if(pbc[2]) binIndexZ = SimulationCellObject::modulo(binIndexZ, nZ);
-                else window *= std::sqrt(FloatType(2./3))*(FloatType(1)-std::cos(2*FLOATTYPE_PI*fractionalPos.z()));
-                if(!applyWindow) window = 1;
-                if(binIndexX >= 0 && binIndexX < nX && binIndexY >= 0 && binIndexY < nY && binIndexZ >= 0 && binIndexZ < nZ) {
-                    // Store in row-major format.
-                    size_t binIndex = binIndexZ+nZ*(binIndexY+nY*binIndexX);
-                    gridData[binIndex] += window * v;
-                }
-                ++pos;
-            }
+        else if(property->dataType() == DataBuffer::Int8) {
+            helperFunc(int8_t{});
+        }
+        else if(property->dataType() == DataBuffer::Int32) {
+            helperFunc(int32_t{});
+        }
+        else if(property->dataType() == DataBuffer::Int64) {
+            helperFunc(int64_t{});
         }
     }
     return gridData;
@@ -392,7 +360,7 @@ void SpatialCorrelationFunctionModifier::CorrelationAnalysisEngine::computeFftCo
     int nY = std::max(1, (int)(cellMatrix.column(1).length() / fftGridSpacing()));
     int nZ = !cell()->is2D() ? std::max(1, (int)(cellMatrix.column(2).length() / fftGridSpacing())) : 1;
     size_t ntotal = (size_t)nX * (size_t)nY * (size_t)nZ;
-    // The current version of the KISSFFT library does not support FFT grids with more than 2^31 bins. 
+    // The current version of the KISSFFT library does not support FFT grids with more than 2^31 bins.
     if(ntotal > (size_t)std::numeric_limits<int>::max())
         throw Exception(tr("FFT grid spacing is too fine for this simulation cell volume. The maximum number of FFT grid cells has been exceeded (%1 x %2 x %3 = %4 cells, limit is %5).").arg(nX).arg(nY).arg(nZ).arg(ntotal).arg(std::numeric_limits<int>::max()));
 
@@ -455,7 +423,7 @@ void SpatialCorrelationFunctionModifier::CorrelationAnalysisEngine::computeFftCo
     FloatType cellFaceDistance2 = 1 / std::sqrt(recCell2.x()*recCell2.x() + recCell2.y()*recCell2.y() + recCell2.z()*recCell2.z());
     FloatType cellFaceDistance3 = 1 / std::sqrt(recCell3.x()*recCell3.x() + recCell3.y()*recCell3.y() + recCell3.z()*recCell3.z());
 
-    FloatType minCellFaceDistance = !cell()->is2D() 
+    FloatType minCellFaceDistance = !cell()->is2D()
         ? std::min({cellFaceDistance1, cellFaceDistance2, cellFaceDistance3})
         : std::min({cellFaceDistance1, cellFaceDistance2});
 
@@ -475,7 +443,7 @@ void SpatialCorrelationFunctionModifier::CorrelationAnalysisEngine::computeFftCo
     }
 
     // Averaged reciprocal space correlation function.
-    _reciprocalSpaceCorrelation = DataTable::OOClass().createUserProperty(numberOfWavevectorBins, PropertyObject::Float, 1, tr("C(q)"), DataBuffer::InitializeMemory);
+    _reciprocalSpaceCorrelation = DataTable::OOClass().createUserProperty(numberOfWavevectorBins, PropertyObject::FloatDefault, 1, tr("C(q)"), DataBuffer::InitializeMemory);
     _reciprocalSpaceCorrelationRange = 2 * FLOATTYPE_PI * minReciprocalSpaceVector * numberOfWavevectorBins;
 
     std::vector<int> numberOfValues(numberOfWavevectorBins, 0);
@@ -557,9 +525,9 @@ void SpatialCorrelationFunctionModifier::CorrelationAnalysisEngine::computeFftCo
     FloatType gridSpacing = minCellFaceDistance / (2 * numberOfDistanceBins);
 
     // Radially averaged real space correlation function.
-    _realSpaceCorrelation = DataTable::OOClass().createUserProperty(numberOfDistanceBins, PropertyObject::Float, 1, tr("C(r)"), DataBuffer::InitializeMemory);
+    _realSpaceCorrelation = DataTable::OOClass().createUserProperty(numberOfDistanceBins, DataBuffer::FloatDefault, 1, tr("C(r)"), DataBuffer::InitializeMemory);
     _realSpaceCorrelationRange = minCellFaceDistance / 2;
-    _realSpaceRDF = DataTable::OOClass().createUserProperty(numberOfDistanceBins, PropertyObject::Float, 1, tr("g(r)"), DataBuffer::InitializeMemory);
+    _realSpaceRDF = DataTable::OOClass().createUserProperty(numberOfDistanceBins, DataBuffer::FloatDefault, 1, tr("g(r)"), DataBuffer::InitializeMemory);
 
     numberOfValues = std::vector<int>(numberOfDistanceBins, 0);
     PropertyAccess<FloatType> realSpaceCorrelationData(_realSpaceCorrelation);
@@ -616,64 +584,34 @@ void SpatialCorrelationFunctionModifier::CorrelationAnalysisEngine::computeNeigh
     // Get number of particles.
     size_t particleCount = positions()->size();
 
-    // Get pointers to data.
-    ConstPropertyAccess<FloatType,true> floatData1;
-    ConstPropertyAccess<FloatType,true> floatData2;
-    ConstPropertyAccess<int,true> intData1;
-    ConstPropertyAccess<int,true> intData2;
-    ConstPropertyAccess<qlonglong,true> int64Data1;
-    ConstPropertyAccess<qlonglong,true> int64Data2;
-    if(sourceProperty1()->dataType() == PropertyObject::Float) {
-        floatData1 = sourceProperty1();
-    }
-    else if(sourceProperty1()->dataType() == PropertyObject::Int) {
-        intData1 = sourceProperty1();
-    }
-    else if(sourceProperty1()->dataType() == PropertyObject::Int64) {
-        int64Data1 = sourceProperty1();
-    }
-    if(sourceProperty2()->dataType() == PropertyObject::Float) {
-        floatData2 = sourceProperty2();
-    }
-    else if(sourceProperty2()->dataType() == PropertyObject::Int) {
-        intData2 = sourceProperty2();
-    }
-    else if(sourceProperty2()->dataType() == PropertyObject::Int64) {
-        int64Data2 = sourceProperty2();
-    }
-
     // Allocate neighbor RDF.
-    _neighRDF = DataTable::OOClass().createUserProperty(neighCorrelation()->size(), PropertyObject::Float, 1, tr("Neighbor g(r)"), DataBuffer::InitializeMemory);
+    _neighRDF = DataTable::OOClass().createUserProperty(neighCorrelation()->size(), DataBuffer::FloatDefault, 1, tr("Neighbor g(r)"), DataBuffer::InitializeMemory);
 
     // Prepare the neighbor list.
     CutoffNeighborFinder neighborListBuilder;
     if(!neighborListBuilder.prepare(neighCutoff(), positions(), cell(), {}))
         return;
 
+    // Get pointers to data.
+    ConstPropertyAccess<void,true> dataAccess1 = sourceProperty1();
+    ConstPropertyAccess<void,true> dataAccess2 = sourceProperty2();
+
     // Perform analysis on each particle in parallel.
     size_t vecComponent1 = _vecComponent1;
     size_t vecComponent2 = _vecComponent2;
     setProgressMaximum(particleCount);
     std::mutex mutex;
-    parallelForChunksWithProgress(particleCount, [&,this](size_t startIndex, size_t chunkSize, ProgressingTask& operation) {
+    parallelForChunksWithProgress(particleCount, [&](size_t startIndex, size_t chunkSize, ProgressingTask& operation) {
         FloatType gridSpacing = (neighCutoff() + FLOATTYPE_EPSILON) / neighCorrelation()->size();
         std::vector<FloatType> threadLocalCorrelation(neighCorrelation()->size(), 0);
         std::vector<int> threadLocalRDF(neighCorrelation()->size(), 0);
         size_t endIndex = startIndex + chunkSize;
         for(size_t i = startIndex; i < endIndex; i++) {
-            FloatType data1;
-            if(floatData1) data1 = floatData1.get(i, vecComponent1);
-            else if(intData1) data1 = intData1.get(i, vecComponent1);
-            else if(int64Data1) data1 = int64Data1.get(i, vecComponent1);
-            else data1 = 0;
+            FloatType data1 = dataAccess1.get<FloatType>(i, vecComponent1);
             for(CutoffNeighborFinder::Query neighQuery(neighborListBuilder, i); !neighQuery.atEnd(); neighQuery.next()) {
                 size_t distanceBinIndex = (size_t)(std::sqrt(neighQuery.distanceSquared()) / gridSpacing);
                 distanceBinIndex = std::min(distanceBinIndex, threadLocalCorrelation.size() - 1);
-                FloatType data2;
-                if(floatData2) data2 = floatData2.get(neighQuery.current(), vecComponent2);
-                else if(intData2) data2 = intData2.get(neighQuery.current(), vecComponent2);
-                else if(int64Data2) data2 = int64Data2.get(neighQuery.current(), vecComponent2);
-                else data2 = 0;
+                FloatType data2 = dataAccess2.get<FloatType>(neighQuery.current(), vecComponent2);
                 threadLocalCorrelation[distanceBinIndex] += data1 * data2;
                 threadLocalRDF[distanceBinIndex]++;
             }
@@ -730,30 +668,8 @@ void SpatialCorrelationFunctionModifier::CorrelationAnalysisEngine::computeNeigh
 void SpatialCorrelationFunctionModifier::CorrelationAnalysisEngine::computeLimits()
 {
     // Get pointers to data.
-    ConstPropertyAccess<FloatType,true> floatData1;
-    ConstPropertyAccess<FloatType,true> floatData2;
-    ConstPropertyAccess<int,true> intData1;
-    ConstPropertyAccess<int,true> intData2;
-    ConstPropertyAccess<qlonglong,true> int64Data1;
-    ConstPropertyAccess<qlonglong,true> int64Data2;
-    if(sourceProperty1()->dataType() == PropertyObject::Float) {
-        floatData1 = sourceProperty1();
-    }
-    else if(sourceProperty1()->dataType() == PropertyObject::Int) {
-        intData1 = sourceProperty1();
-    }
-    else if(sourceProperty1()->dataType() == PropertyObject::Int64) {
-        int64Data1 = sourceProperty1();
-    }
-    if(sourceProperty2()->dataType() == PropertyObject::Float) {
-        floatData2 = sourceProperty2();
-    }
-    else if(sourceProperty2()->dataType() == PropertyObject::Int) {
-        intData2 = sourceProperty2();
-    }
-    else if(sourceProperty2()->dataType() == PropertyObject::Int64) {
-        int64Data2 = sourceProperty2();
-    }
+    ConstPropertyAccess<void,true> dataAccess1 = sourceProperty1();
+    ConstPropertyAccess<void,true> dataAccess2 = sourceProperty2();
 
     // Compute mean and covariance values.
     FloatType mean1 = 0;
@@ -763,15 +679,8 @@ void SpatialCorrelationFunctionModifier::CorrelationAnalysisEngine::computeLimit
     FloatType covariance = 0;
     size_t particleCount = sourceProperty1()->size();
     for(size_t particleIndex = 0; particleIndex < particleCount; particleIndex++) {
-        FloatType data1, data2;
-        if(floatData1) data1 = floatData1.get(particleIndex, _vecComponent1);
-        else if(intData1) data1 = intData1.get(particleIndex, _vecComponent1);
-        else if(int64Data1) data1 = int64Data1.get(particleIndex, _vecComponent1);
-        else data1 = 0;
-        if(floatData2) data2 = floatData2.get(particleIndex, _vecComponent2);
-        else if(intData2) data2 = intData2.get(particleIndex, _vecComponent2);
-        else if(int64Data2) data2 = int64Data2.get(particleIndex, _vecComponent2);
-        else data2 = 0;
+        FloatType data1 = dataAccess1.get<FloatType>(particleIndex, _vecComponent1);
+        FloatType data2 = dataAccess2.get<FloatType>(particleIndex, _vecComponent2);
         mean1 += data1;
         mean2 += data2;
         variance1 += data1*data1;

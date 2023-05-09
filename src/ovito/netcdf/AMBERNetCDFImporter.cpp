@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -64,8 +64,8 @@ SET_PROPERTY_FIELD_LABEL(AMBERNetCDFImporter, customColumnMapping, "File column 
 
 // Convert full tensor to Voigt tensor
 template<typename T>
-void fullToVoigt(size_t particleCount, T *full, T *voigt) {
-    for (size_t i = 0; i < particleCount; i++) {
+void fullToVoigt(size_t particleCount, T* full, T* voigt) {
+    for(size_t i = 0; i < particleCount; i++) {
         voigt[6*i] = full[9*i];
         voigt[6*i+1] = full[9*i+4];
         voigt[6*i+2] = full[9*i+8];
@@ -217,7 +217,7 @@ QString AMBERNetCDFImporter::NetCDFFile::open(const QString& filename)
     if (nc_inq_varid(_ncid, "cell_angles", &_cell_angles_var) != NC_NOERR)
         _cell_angles_var = -1;
     if (nc_inq_varid(_ncid, "shear_dx", &_shear_dx_var) != NC_NOERR)
-        _shear_dx_var = -1; 
+        _shear_dx_var = -1;
 
     return title;
 }
@@ -262,14 +262,22 @@ ParticleInputColumnMapping AMBERNetCDFImporter::NetCDFFile::detectColumnMapping(
         // Check if dimensions make sense and we can understand them.
         if(detectDims(movieFrame, 0, nDims, dimIds, nDimsDetected, componentCount, particleCountDim, startp, countp)) {
             // Do we support this data type?
-            if(type == NC_BYTE || type == NC_SHORT || type == NC_INT || type == NC_LONG) {
-                columnMapping.push_back(mapVariableToColumn(name, PropertyObject::Int, componentCount));
+            if(type == NC_BYTE) {
+                columnMapping.push_back(mapVariableToColumn(name, DataBuffer::Int8, componentCount));
+            }
+            else if(type == NC_SHORT || type == NC_INT || type == NC_LONG) {
+                columnMapping.push_back(mapVariableToColumn(name, DataBuffer::Int32, componentCount));
             }
             else if(type == NC_INT64) {
-                columnMapping.push_back(mapVariableToColumn(name, PropertyObject::Int64, componentCount));
+                columnMapping.push_back(mapVariableToColumn(name, DataBuffer::Int64, componentCount));
             }
-            else if(type == NC_FLOAT || type == NC_DOUBLE) {
-                columnMapping.push_back(mapVariableToColumn(name, PropertyObject::Float, componentCount));
+            else if(type == NC_FLOAT) {
+                columnMapping.push_back(mapVariableToColumn(name, DataBuffer::Float32, componentCount));
+                if(qstrcmp(name, "coordinates") == 0 || qstrcmp(name, "unwrapped_coordinates") == 0)
+                    _coordinatesVar = varId;
+            }
+            else if(type == NC_DOUBLE) {
+                columnMapping.push_back(mapVariableToColumn(name, DataBuffer::Float64, componentCount));
                 if(qstrcmp(name, "coordinates") == 0 || qstrcmp(name, "unwrapped_coordinates") == 0)
                     _coordinatesVar = varId;
             }
@@ -498,7 +506,7 @@ void AMBERNetCDFImporter::FrameLoader::loadFile()
         int dataType = column.dataType;
         if(dataType == QMetaType::Void) continue;
 
-        if(dataType != PropertyObject::Int && dataType != PropertyObject::Int64 && dataType != PropertyObject::Float)
+        if(dataType != DataBuffer::Int8 && dataType != DataBuffer::Int32 && dataType != DataBuffer::Int64 && dataType != DataBuffer::Float32 && dataType != DataBuffer::Float64)
             throw Exception(tr("Invalid custom particle property (data type %1) for input file column '%2' of NetCDF file.").arg(dataType).arg(columnName));
 
         // Retrieve NetCDF variable meta-information.
@@ -529,7 +537,7 @@ void AMBERNetCDFImporter::FrameLoader::loadFile()
         if(componentCount != property->componentCount()) {
             // For standard particle properties describing symmetric tensors in Voigt notion, we perform automatic
             // conversion from the 3x3 full tensors stored in the NetCDF file.
-            if(componentCount == 9 && property->componentCount() == 6 && property->dataType() == PropertyObject::Float) {
+            if(componentCount == 9 && property->componentCount() == 6 && (property->dataType() == DataBuffer::Float32 || property->dataType() == DataBuffer::Float64)) {
                 doVoigtConversion = true;
             }
             else {
@@ -538,72 +546,17 @@ void AMBERNetCDFImporter::FrameLoader::loadFile()
             }
         }
 
-        if(property->dataType() == PropertyObject::Int) {
-            // Read integer property data in chunks so that we can report I/O progress.
-            size_t totalCount = countp[particleCountDim];
-            size_t remaining = totalCount;
-            countp[particleCountDim] = 1000000;
-            setProgressMaximum(totalCount / countp[particleCountDim] + 1);
-            OVITO_ASSERT(totalCount <= property->size());
-            PropertyAccess<int,true> propertyArray(property);
-            for(size_t chunk = 0; chunk < totalCount; chunk += countp[particleCountDim], startp[particleCountDim] += countp[particleCountDim]) {
-                countp[particleCountDim] = std::min(countp[particleCountDim], remaining);
-                remaining -= countp[particleCountDim];
-                OVITO_ASSERT(countp[particleCountDim] >= 1);
-                NCERRI( nc_get_vara_int(ncFile._ncid, varId, startp, countp, propertyArray.begin() + chunk * property->componentCount()), tr("(While reading variable '%1'.)").arg(columnName) );
-                if(!incrementProgressValue())
-                    return;
-            }
-            OVITO_ASSERT(remaining == 0);
-            propertyArray.reset();
-
-            // Create particles types if this is the typed property.
-            if(OvitoClassPtr elementTypeClass = ParticlesObject::OOClass().typedPropertyElementClass(property->type())) {
-
-                // Create particle types.
-                for(int ptype : ConstPropertyAccess<int>(property)) {
-                    addNumericType(ParticlesObject::OOClass(), property, ptype, {}, elementTypeClass);
-                }
-
-                // Since we created particle types on the go while reading the particles, the assigned particle type IDs
-                // depend on the storage order of particles in the file. We rather want a well-defined particle type ordering, that's
-                // why we sort them now according to their numeric IDs.
-                property->sortElementTypesById();
-            }
-        }
-        else if(property->dataType() == PropertyObject::Int64) {
-            // Read 64-bit integer property data in chunks so that we can report I/O progress.
-            size_t totalCount = countp[particleCountDim];
-            size_t remaining = totalCount;
-            countp[particleCountDim] = 1000000;
-            setProgressMaximum(totalCount / countp[particleCountDim] + 1);
-            OVITO_ASSERT(totalCount <= property->size());
-            PropertyAccess<qlonglong,true> propertyArray(property);
-            for(size_t chunk = 0; chunk < totalCount; chunk += countp[particleCountDim], startp[particleCountDim] += countp[particleCountDim]) {
-                countp[particleCountDim] = std::min(countp[particleCountDim], remaining);
-                remaining -= countp[particleCountDim];
-                OVITO_ASSERT(countp[particleCountDim] >= 1);
-                NCERRI( nc_get_vara_longlong(ncFile._ncid, varId, startp, countp, propertyArray.begin() + chunk * property->componentCount()), tr("(While reading variable '%1'.)").arg(columnName) );
-                if(!incrementProgressValue())
-                    return;
-            }
-            OVITO_ASSERT(remaining == 0);
-        }
-        else if(property->dataType() == PropertyObject::Float) {
-            PropertyAccess<FloatType,true> propertyArray(property);
+        auto readPropertyData = [&](auto _, auto nc_get_vara) {
+            using T = decltype(_);
+            PropertyAccess<T,true> propertyArray(property);
 
             // Special handling for tensor arrays that need to be converted to Voigt notation.
             if(doVoigtConversion) {
-                auto data = std::make_unique<FloatType[]>(9 * particleCount);
-#ifdef FLOATTYPE_FLOAT
-                NCERRI( nc_get_vara_float(ncFile._ncid, varId, startp, countp, data.get()), tr("(While reading variable '%1'.)").arg(columnName) );
-#else
-                NCERRI( nc_get_vara_double(ncFile._ncid, varId, startp, countp, data.get()), tr("(While reading variable '%1'.)").arg(columnName) );
-#endif
+                auto data = std::make_unique<T[]>(9 * particleCount);
+                NCERRI( nc_get_vara(ncFile._ncid, varId, startp, countp, data.get()), tr("(While reading variable '%1'.)").arg(columnName) );
                 fullToVoigt(particleCount, data.get(), propertyArray.begin());
             }
             else {
-
                 // Read property data in chunks so that we can report I/O progress.
                 size_t totalCount = countp[particleCountDim];
                 size_t remaining = totalCount;
@@ -613,15 +566,48 @@ void AMBERNetCDFImporter::FrameLoader::loadFile()
                     countp[particleCountDim] = std::min(countp[particleCountDim], remaining);
                     remaining -= countp[particleCountDim];
                     OVITO_ASSERT(countp[particleCountDim] >= 1);
-#ifdef FLOATTYPE_FLOAT
-                    NCERRI( nc_get_vara_float(_ncFile.ncid, varId, startp, countp, propertyArray.begin() + chunk * property->componentCount()), tr("(While reading variable '%1'.)").arg(columnName) );
-#else
-                    NCERRI( nc_get_vara_double(ncFile._ncid, varId, startp, countp, propertyArray.begin() + chunk * property->componentCount()), tr("(While reading variable '%1'.)").arg(columnName) );
-#endif
+                    NCERRI( nc_get_vara(ncFile._ncid, varId, startp, countp, propertyArray.begin() + chunk * property->componentCount()), tr("(While reading variable '%1'.)").arg(columnName) );
                     if(!incrementProgressValue())
-                        return;
+                        return false;
                 }
+                OVITO_ASSERT(remaining == 0);
             }
+            return true;
+        };
+
+        if(property->dataType() == DataBuffer::Int8) {
+            if(!readPropertyData(int8_t{0}, nc_get_vara_schar))
+                return;
+        }
+        else if(property->dataType() == DataBuffer::Int32) {
+            if(!readPropertyData(int32_t{0}, nc_get_vara_int))
+                return;
+
+            // Create particles types if this is the typed property.
+            if(OvitoClassPtr elementTypeClass = ParticlesObject::OOClass().typedPropertyElementClass(property->type())) {
+
+                // Create particle types.
+                for(int ptype : ConstPropertyAccess<int32_t>(property)) {
+                    addNumericType(ParticlesObject::OOClass(), property, ptype, {}, elementTypeClass);
+                }
+
+                // Since we created particle types on the go while reading the particles, the assigned particle type IDs
+                // depend on the storage order of particles in the file. We rather want a well-defined particle type ordering, that's
+                // why we sort them now according to their numeric IDs.
+                property->sortElementTypesById();
+            }
+        }
+        else if(property->dataType() == DataBuffer::Int64) {
+            if(!readPropertyData(int64_t{0}, nc_get_vara_longlong))
+                return;
+        }
+        else if(property->dataType() == DataBuffer::Float32) {
+            if(!readPropertyData(float{0}, nc_get_vara_float))
+                return;
+        }
+        else if(property->dataType() == DataBuffer::Float64) {
+            if(!readPropertyData(double{0}, nc_get_vara_double))
+                return;
         }
         else {
             qDebug() << "Warning: Skipping field '" << columnName << "' of NetCDF file because it has an unrecognized data type.";
@@ -734,7 +720,6 @@ Future<ParticleInputColumnMapping> AMBERNetCDFImporter::inspectFileHeader(const 
             return ncFile.detectColumnMapping();
         });
 }
-
 
 /******************************************************************************
  * Saves the class' contents to the given stream.

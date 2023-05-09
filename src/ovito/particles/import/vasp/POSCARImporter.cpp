@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -411,7 +411,7 @@ QString POSCARImporter::FrameLoader::readDensityGrid(CompressedTextReader& strea
     }
 
     if(magnetizationDensityX && magnetizationDensityY && magnetizationDensityZ) {
-        PropertyAccess<FloatType,true> vectorMagnetization = voxelGrid->createProperty(tr("Magnetization density"), PropertyObject::Float, 3, DataBuffer::NoFlags, QStringList() << "X" << "Y" << "Z");
+        PropertyAccess<FloatType,true> vectorMagnetization = voxelGrid->createProperty(tr("Magnetization density"), DataBuffer::FloatDefault, 3, DataBuffer::NoFlags, QStringList() << "X" << "Y" << "Z");
         boost::copy(ConstPropertyAccess<FloatType>(magnetizationDensityX), vectorMagnetization.componentRange(0).begin());
         boost::copy(ConstPropertyAccess<FloatType>(magnetizationDensityY), vectorMagnetization.componentRange(1).begin());
         boost::copy(ConstPropertyAccess<FloatType>(magnetizationDensityZ), vectorMagnetization.componentRange(2).begin());
@@ -426,7 +426,7 @@ QString POSCARImporter::FrameLoader::readDensityGrid(CompressedTextReader& strea
 ******************************************************************************/
 PropertyObject* POSCARImporter::FrameLoader::readFieldQuantity(CompressedTextReader& stream, VoxelGrid* grid, const QString& name)
 {
-    PropertyAccess<FloatType,true> fieldArray = grid->createProperty(name, PropertyObject::Float);
+    PropertyAccess<FloatType,true> fieldArray = grid->createProperty(name, DataBuffer::FloatDefault);
     const char* s = stream.readLine();
     FloatType* data = fieldArray.begin();
     setProgressMaximum(fieldArray.size());

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -62,7 +62,7 @@ public:
 
     /// Constructor.
     Q_INVOKABLE VoronoiAnalysisModifier(ObjectCreationParams params);
-    
+
 protected:
 
     /// Creates a computation engine that will compute the modifier's results.
@@ -90,9 +90,9 @@ private:
             _relativeFaceThreshold(relativeFaceThreshold),
             _computeBonds(computeBonds),
             _coordinationNumbers(ParticlesObject::OOClass().createStandardProperty(fingerprint.particleCount(), ParticlesObject::CoordinationProperty, DataBuffer::InitializeMemory)),
-            _atomicVolumes(ParticlesObject::OOClass().createUserProperty(fingerprint.particleCount(), PropertyObject::Float, 1, QStringLiteral("Atomic Volume"), DataBuffer::InitializeMemory)),
-            _cavityRadii(ParticlesObject::OOClass().createUserProperty(fingerprint.particleCount(), PropertyObject::Float, 1, QStringLiteral("Cavity Radius"), DataBuffer::InitializeMemory)),
-            _maxFaceOrders(computeIndices ? ParticlesObject::OOClass().createUserProperty(fingerprint.particleCount(), PropertyObject::Int, 1, QStringLiteral("Max Face Order"), DataBuffer::InitializeMemory) : nullptr),
+            _atomicVolumes(ParticlesObject::OOClass().createUserProperty(fingerprint.particleCount(), PropertyObject::FloatDefault, 1, QStringLiteral("Atomic Volume"), DataBuffer::InitializeMemory)),
+            _cavityRadii(ParticlesObject::OOClass().createUserProperty(fingerprint.particleCount(), PropertyObject::FloatDefault, 1, QStringLiteral("Cavity Radius"), DataBuffer::InitializeMemory)),
+            _maxFaceOrders(computeIndices ? ParticlesObject::OOClass().createUserProperty(fingerprint.particleCount(), PropertyObject::Int32, 1, QStringLiteral("Max Face Order"), DataBuffer::InitializeMemory) : nullptr),
             _inputFingerprint(std::move(fingerprint)),
             _polyhedraMesh(std::move(polyhedraMesh)) {}
 

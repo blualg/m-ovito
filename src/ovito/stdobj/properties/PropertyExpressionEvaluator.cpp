@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -119,12 +119,16 @@ void PropertyExpressionEvaluator::registerPropertyVariables(const std::vector<Co
         ExpressionVariable v;
 
         // Properties with custom data type are not supported by this modifier.
-        if(property->dataType() == PropertyObject::Int)
-            v.type = INT_PROPERTY;
+        if(property->dataType() == PropertyObject::Int8)
+            v.type = INT8_PROPERTY;
+        else if(property->dataType() == PropertyObject::Int32)
+            v.type = INT32_PROPERTY;
         else if(property->dataType() == PropertyObject::Int64)
             v.type = INT64_PROPERTY;
-        else if(property->dataType() == PropertyObject::Float)
-            v.type = FLOAT_PROPERTY;
+        else if(property->dataType() == PropertyObject::Float32)
+            v.type = FLOAT32_PROPERTY;
+        else if(property->dataType() == PropertyObject::Float64)
+            v.type = FLOAT64_PROPERTY;
         else
             continue;
         v.variableClass = variableClass;
@@ -375,17 +379,25 @@ void PropertyExpressionEvaluator::ExpressionVariable::updateValue(size_t element
         return;
 
     switch(type) {
-    case FLOAT_PROPERTY:
+    case FLOAT32_PROPERTY:
         if(elementIndex < propertyArray.size())
-            value = *reinterpret_cast<const FloatType*>(dataPointer + stride * elementIndex);
+            value = *reinterpret_cast<const float*>(dataPointer + stride * elementIndex);
         break;
-    case INT_PROPERTY:
+    case FLOAT64_PROPERTY:
         if(elementIndex < propertyArray.size())
-            value = *reinterpret_cast<const int*>(dataPointer + stride * elementIndex);
+            value = *reinterpret_cast<const double*>(dataPointer + stride * elementIndex);
+        break;
+    case INT8_PROPERTY:
+        if(elementIndex < propertyArray.size())
+            value = *reinterpret_cast<const int8_t*>(dataPointer + stride * elementIndex);
+        break;
+    case INT32_PROPERTY:
+        if(elementIndex < propertyArray.size())
+            value = *reinterpret_cast<const int32_t*>(dataPointer + stride * elementIndex);
         break;
     case INT64_PROPERTY:
         if(elementIndex < propertyArray.size())
-            value = *reinterpret_cast<const qlonglong*>(dataPointer + stride * elementIndex);
+            value = *reinterpret_cast<const int64_t*>(dataPointer + stride * elementIndex);
         break;
     case ELEMENT_INDEX:
         value = elementIndex;
@@ -407,7 +419,7 @@ QString PropertyExpressionEvaluator::inputVariableTable() const
 {
     QString str(tr("<p>Available input variables:</p><p><b>Properties:</b><ul>"));
     for(const ExpressionVariable& v : _variables) {
-        if((v.type == FLOAT_PROPERTY || v.type == INT_PROPERTY || v.type == INT64_PROPERTY || v.type == ELEMENT_INDEX || v.type == DERIVED_PROPERTY) && v.isRegistered && v.variableClass == 0) {
+        if((v.type == FLOAT32_PROPERTY || v.type == FLOAT64_PROPERTY || v.type == INT8_PROPERTY || v.type == INT32_PROPERTY || v.type == INT64_PROPERTY || v.type == ELEMENT_INDEX || v.type == DERIVED_PROPERTY) && v.isRegistered && v.variableClass == 0) {
             if(v.description.isEmpty())
                 str.append(QStringLiteral("<li>%1</li>").arg(convertMuString(v.mangledName)));
             else

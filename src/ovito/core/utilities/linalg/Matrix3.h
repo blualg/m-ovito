@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -143,12 +143,16 @@ public:
 
     /// \brief Casts the matrix to a matrix with another data type.
     template<typename U>
-    Q_DECL_CONSTEXPR Matrix_3<U> toDataType() const {
+    Q_DECL_CONSTEXPR decltype(auto) toDataType() const {
         return Matrix_3<U>(
                 static_cast<U>((*this)(0,0)), static_cast<U>((*this)(0,1)), static_cast<U>((*this)(0,2)),
                 static_cast<U>((*this)(1,0)), static_cast<U>((*this)(1,1)), static_cast<U>((*this)(1,2)),
                 static_cast<U>((*this)(2,0)), static_cast<U>((*this)(2,1)), static_cast<U>((*this)(2,2)));
     }
+
+    // When casting to the same type \a T, this method becomes a no-op.
+    template<>
+    Q_DECL_CONSTEXPR decltype(auto) toDataType<T>() const { return *this; }
 
     /// \brief Returns the number of rows of this matrix.
     static Q_DECL_CONSTEXPR size_type row_count() { return 3; }
@@ -753,12 +757,20 @@ inline QDataStream& operator>>(QDataStream& stream, Matrix_3<T>& m) {
 }
 
 /**
- * \brief Instantiation of the Matrix_3 class template with the default floating-point type.
+ * \brief Instantiation of the Matrix_3 class template with the default floating-point type (double precision).
  * \relates Matrix_3
  */
 using Matrix3 = Matrix_3<FloatType>;
 
+/**
+ * \brief Instantiation of the Matrix_3 class template with the single-precision floating-point type.
+ * \relates Matrix_3
+ */
+using Matrix3F = Matrix_3<float>;
+
 }   // End of namespace
 
 Q_DECLARE_METATYPE(Ovito::Matrix3);
+Q_DECLARE_METATYPE(Ovito::Matrix3F);
 Q_DECLARE_TYPEINFO(Ovito::Matrix3, Q_PRIMITIVE_TYPE);
+Q_DECLARE_TYPEINFO(Ovito::Matrix3F, Q_PRIMITIVE_TYPE);

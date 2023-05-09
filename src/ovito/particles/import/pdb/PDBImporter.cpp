@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -244,8 +244,8 @@ void PDBImporter::FrameLoader::loadFile()
         setParticleCount(natoms);
         PropertyAccess<Point3> posProperty = particles()->createProperty(ParticlesObject::PositionProperty);
         PropertyAccess<int> typeProperty = particles()->createProperty(ParticlesObject::TypeProperty);
-        PropertyAccess<int> atomNameProperty = particles()->createProperty(QStringLiteral("Atom Name"), PropertyObject::Int);
-        PropertyAccess<int> residueTypeProperty = particles()->createProperty(QStringLiteral("Residue Type"), PropertyObject::Int);
+        PropertyAccess<int> atomNameProperty = particles()->createProperty(QStringLiteral("Atom Name"), DataBuffer::Int32);
+        PropertyAccess<int> residueTypeProperty = particles()->createProperty(QStringLiteral("Residue Type"), DataBuffer::Int32);
 
         // Give these particle properties new titles, which are displayed in the GUI under the file source.
         atomNameProperty.buffer()->setTitle(tr("Atom names"));
@@ -285,7 +285,7 @@ void PDBImporter::FrameLoader::loadFile()
 
         // Parse the optional site occupancy information.
         if(hasOccupancy) {
-            PropertyAccess<FloatType> occupancyProperty = particles()->createProperty(QStringLiteral("Occupancy"), PropertyObject::Float);
+            PropertyAccess<FloatType> occupancyProperty = particles()->createProperty(QStringLiteral("Occupancy"), DataBuffer::FloatDefault);
             FloatType* occupancyIter = occupancyProperty.begin();
             for(const gemmi::Chain& chain : model.chains) {
                 for(const gemmi::Residue& residue : chain.residues) {

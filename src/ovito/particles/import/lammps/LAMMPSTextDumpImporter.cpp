@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -471,7 +471,7 @@ ParticleInputColumnMapping LAMMPSTextDumpImporter::generateAutomaticColumnMappin
         else if(name == "c_shape[3]" || name == "c_diameter[3]" || name == "shapez") columnMapping.mapStandardColumn(i, ParticlesObject::AsphericalShapeProperty, 2);
         else if(name == "selection") columnMapping.mapStandardColumn(i, ParticlesObject::SelectionProperty, 0);
         else {
-            columnMapping.mapCustomColumn(i, name, PropertyObject::Float);
+            columnMapping.mapCustomColumn(i, name, PropertyObject::FloatDefault);
         }
     }
     return columnMapping;

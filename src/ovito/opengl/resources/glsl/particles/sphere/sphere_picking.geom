@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -69,7 +69,7 @@ void main()
         dirs[3] = vec3(-scaling, 0.0, 0.0);
     }
 
-    for(int corner = 0; corner < 4; corner++) 
+    for(int corner = 0; corner < 4; corner++)
     {
         gl_Position = projection_matrix * vec4(view_space_particle_pos + dirs[corner], 1.0);
 

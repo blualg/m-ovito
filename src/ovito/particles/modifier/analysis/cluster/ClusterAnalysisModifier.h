@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -89,10 +89,10 @@ private:
             _sortBySize(sortBySize),
             _unwrapParticleCoordinates(unwrapParticleCoordinates),
             _unwrappedPositions((unwrapParticleCoordinates || computeCentersOfMass || computeRadiusOfGyration) ? positions.makeCopy() : nullptr),
-            _centersOfMass(computeCentersOfMass ? DataTable::OOClass().createUserProperty(0, PropertyObject::Float, 3, QStringLiteral("Center of Mass"), DataBuffer::InitializeMemory, 
+            _centersOfMass(computeCentersOfMass ? DataTable::OOClass().createUserProperty(0, PropertyObject::FloatDefault, 3, QStringLiteral("Center of Mass"), DataBuffer::InitializeMemory,
                 0, QStringList() << QStringLiteral("X") << QStringLiteral("Y") << QStringLiteral("Z")) : nullptr),
-            _radiiOfGyration(computeRadiusOfGyration ? DataTable::OOClass().createUserProperty(0, PropertyObject::Float, 1, QStringLiteral("Radius of Gyration"), DataBuffer::InitializeMemory) : nullptr),
-            _gyrationTensors(computeRadiusOfGyration ? DataTable::OOClass().createUserProperty(0, PropertyObject::Float, 6, QStringLiteral("Gyration Tensor"), DataBuffer::InitializeMemory,
+            _radiiOfGyration(computeRadiusOfGyration ? DataTable::OOClass().createUserProperty(0, PropertyObject::FloatDefault, 1, QStringLiteral("Radius of Gyration"), DataBuffer::InitializeMemory) : nullptr),
+            _gyrationTensors(computeRadiusOfGyration ? DataTable::OOClass().createUserProperty(0, PropertyObject::FloatDefault, 6, QStringLiteral("Gyration Tensor"), DataBuffer::InitializeMemory,
                 0, QStringList() << QStringLiteral("XX") << QStringLiteral("YY") << QStringLiteral("ZZ") << QStringLiteral("XY") << QStringLiteral("XZ") << QStringLiteral("YZ")) : nullptr),
             _selection(std::move(selection)),
             _periodicImageBondProperty(std::move(periodicImageBondProperty)),

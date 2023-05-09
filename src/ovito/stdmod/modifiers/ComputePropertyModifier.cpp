@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -181,7 +181,7 @@ Future<AsynchronousModifier::EnginePtr> ComputePropertyModifier::createEngine(co
             outp = container->getOOMetaClass().createStandardProperty(nelements, outputProperty().type(), onlySelectedElements() ? DataBuffer::InitializeMemory : DataBuffer::NoFlags, objectPath);
         }
         else if(!outputProperty().name().isEmpty() && propertyComponentCount() > 0) {
-            outp = container->getOOMetaClass().createUserProperty(nelements, PropertyObject::Float, propertyComponentCount(), outputProperty().name(), onlySelectedElements() ? DataBuffer::InitializeMemory : DataBuffer::NoFlags);
+            outp = container->getOOMetaClass().createUserProperty(nelements, PropertyObject::FloatDefault, propertyComponentCount(), outputProperty().name(), onlySelectedElements() ? DataBuffer::InitializeMemory : DataBuffer::NoFlags);
         }
         else {
             throw Exception(tr("Output property of compute property modifier has not been specified."));
@@ -249,7 +249,7 @@ std::shared_ptr<ComputePropertyModifierDelegate::PropertyComputeEngine> ComputeP
 {
     // Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
     return std::make_shared<PropertyComputeEngine>(
-            request, 
+            request,
             input.stateValidity(),
             input,
             containerPath,
@@ -345,13 +345,13 @@ QStringList ComputePropertyModifierDelegate::PropertyComputeEngine::inputVariabl
 
 /******************************************************************************
 * This method is called by the system whenever a parameter of the modifier changes.
-* The method can be overridden by subclasses to indicate to the caller whether the engine object should be 
-* discarded or may be kept in the cache, because the computation results are not affected by the changing parameter. 
+* The method can be overridden by subclasses to indicate to the caller whether the engine object should be
+* discarded or may be kept in the cache, because the computation results are not affected by the changing parameter.
 ******************************************************************************/
-bool ComputePropertyModifierDelegate::PropertyComputeEngine::modifierChanged(const PropertyFieldEvent& event) 
+bool ComputePropertyModifierDelegate::PropertyComputeEngine::modifierChanged(const PropertyFieldEvent& event)
 {
     // Do not recompute results if just the 'useMultilineFields' option is toggled by the user.
-    if(event.field() == PROPERTY_FIELD(ComputePropertyModifier::useMultilineFields)) 
+    if(event.field() == PROPERTY_FIELD(ComputePropertyModifier::useMultilineFields))
         return true; // This return value tells the system to hold on to the cached engine object.
 
     return AsynchronousModifier::Engine::modifierChanged(event);

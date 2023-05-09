@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -34,7 +34,7 @@ IMPLEMENT_OVITO_CLASS(CFGImporter);
 
 struct CFGHeader {
 
-    qlonglong numParticles;
+    int64_t numParticles;
     FloatType unitMultiplier;
     Matrix3 H0;
     Matrix3 transform;
@@ -209,7 +209,7 @@ void CFGImporter::FrameLoader::loadFile()
     // Create particle mass and type properties.
     int currentAtomType = 0;
     FloatType currentMass = 0;
-    PropertyAccess<int> typeProperty;
+    PropertyAccess<int32_t> typeProperty;
     PropertyAccess<FloatType> massProperty;
     if(header.isExtendedFormat) {
         typeProperty = particles()->createProperty(ParticlesObject::TypeProperty);
@@ -218,7 +218,7 @@ void CFGImporter::FrameLoader::loadFile()
 
     // Read per-particle data.
     bool isFirstLine = true;
-    for(qlonglong particleIndex = 0; particleIndex < header.numParticles; ) {
+    for(int64_t particleIndex = 0; particleIndex < header.numParticles; ) {
 
         // Update progress indicator.
         if(!setProgressValueIntermittent(particleIndex))
@@ -336,7 +336,7 @@ void CFGImporter::generateAutomaticColumnMapping(ParticleInputColumnMapping& col
         else if(name == "tqz") columnMapping.mapStandardColumn(i, ParticlesObject::TorqueProperty, 2);
         else if(name == "spin") columnMapping.mapStandardColumn(i, ParticlesObject::SpinProperty);
         else {
-            columnMapping.mapCustomColumn(i, columnNames[j], PropertyObject::Float);
+            columnMapping.mapCustomColumn(i, columnNames[j], PropertyObject::FloatDefault);
         }
     }
 }

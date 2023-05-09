@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -139,18 +139,18 @@ void mmCIFImporter::FrameLoader::loadFile()
         // Allocate property arrays for atoms.
         setParticleCount(natoms);
         PropertyAccess<Point3> posProperty = particles()->createProperty(ParticlesObject::PositionProperty);
-        PropertyAccess<int> typeProperty = particles()->createProperty(ParticlesObject::TypeProperty);
-        PropertyAccess<int> atomNameProperty = particles()->createProperty(QStringLiteral("Atom Name"), PropertyObject::Int);
-        PropertyAccess<int> residueTypeProperty = particles()->createProperty(QStringLiteral("Residue Type"), PropertyObject::Int);
+        PropertyAccess<int32_t> typeProperty = particles()->createProperty(ParticlesObject::TypeProperty);
+        PropertyAccess<int32_t> atomNameProperty = particles()->createProperty(QStringLiteral("Atom Name"), PropertyObject::Int32);
+        PropertyAccess<int32_t> residueTypeProperty = particles()->createProperty(QStringLiteral("Residue Type"), PropertyObject::Int32);
 
         // Give these particle properties new titles, which are displayed in the GUI under the file source.
         atomNameProperty.buffer()->setTitle(tr("Atom names"));
         residueTypeProperty.buffer()->setTitle(tr("Residue types"));
 
         Point3* posIter = posProperty.begin();
-        int* typeIter = typeProperty.begin();
-        int* atomNameIter = atomNameProperty.begin();
-        int* residueTypeIter = residueTypeProperty.begin();
+        int32_t* typeIter = typeProperty.begin();
+        int32_t* atomNameIter = atomNameProperty.begin();
+        int32_t* residueTypeIter = residueTypeProperty.begin();
 
         // Transfer atomic data to OVITO data structures.
         bool hasOccupancy = false;
@@ -181,7 +181,7 @@ void mmCIFImporter::FrameLoader::loadFile()
 
         // Parse the optional site occupancy information.
         if(hasOccupancy) {
-            PropertyAccess<FloatType> occupancyProperty = particles()->createProperty(QStringLiteral("Occupancy"), PropertyObject::Float);
+            PropertyAccess<FloatType> occupancyProperty = particles()->createProperty(QStringLiteral("Occupancy"), PropertyObject::FloatDefault);
             FloatType* occupancyIter = occupancyProperty.begin();
             for(const gemmi::Chain& chain : model.chains) {
                 for(const gemmi::Residue& residue : chain.residues) {

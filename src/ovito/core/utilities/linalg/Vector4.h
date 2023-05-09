@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -124,7 +124,11 @@ public:
 
     /// Casts the vector to another component type \a U.
     template<typename U>
-    Q_DECL_CONSTEXPR Vector_4<U> toDataType() const { return Vector_4<U>(static_cast<U>(x()), static_cast<U>(y()), static_cast<U>(z()), static_cast<U>(w())); }
+    Q_DECL_CONSTEXPR decltype(auto) toDataType() const { return Vector_4<U>(static_cast<U>(x()), static_cast<U>(y()), static_cast<U>(z()), static_cast<U>(w())); }
+
+    // When casting to the same type \a T, this method becomes a no-op.
+    template<>
+    Q_DECL_CONSTEXPR decltype(auto) toDataType<T>() const { return *this; }
 
     /////////////////////////////// Unary operators //////////////////////////////
 
@@ -352,10 +356,16 @@ inline QDataStream& operator>>(QDataStream& stream, Vector_4<T>& v) {
 }
 
 /**
- * \brief Instantiation of the Vector_4 class template with the default floating-point type.
+ * \brief Instantiation of the Vector_4 class template with the default floating-point type (double precision).
  * \relates Vector_4
  */
 using Vector4 = Vector_4<FloatType>;
+
+/**
+ * \brief Instantiation of the Vector_4 class template with the single-precision floating-point type.
+ * \relates Vector_4
+ */
+using Vector4F = Vector_4<float>;
 
 /**
  * \brief Instantiation of the Vector_4 class template with the default integer type.
@@ -370,6 +380,8 @@ template<typename T> struct std::tuple_size<Ovito::Vector_4<T>> : std::integral_
 template<std::size_t I, typename T> struct std::tuple_element<I, Ovito::Vector_4<T>> { using type = T; };
 
 Q_DECLARE_METATYPE(Ovito::Vector4);
+Q_DECLARE_METATYPE(Ovito::Vector4F);
 Q_DECLARE_METATYPE(Ovito::Vector4I);
 Q_DECLARE_TYPEINFO(Ovito::Vector4, Q_PRIMITIVE_TYPE);
+Q_DECLARE_TYPEINFO(Ovito::Vector4F, Q_PRIMITIVE_TYPE);
 Q_DECLARE_TYPEINFO(Ovito::Vector4I, Q_PRIMITIVE_TYPE);

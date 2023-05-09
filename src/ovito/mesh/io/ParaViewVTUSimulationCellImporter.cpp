@@ -69,7 +69,7 @@ void ParaViewVTUSimulationCellImporter::FrameLoader::loadFile()
         throw Exception(tr("Failed to open VTU file: %1").arg(device->errorString()));
     QXmlStreamReader xml(device.get());
 
-    size_t numberOfPoints = 0; 
+    size_t numberOfPoints = 0;
 
     // Parse the elements of the XML file.
     while(xml.readNextStartElement()) {
@@ -97,7 +97,7 @@ void ParaViewVTUSimulationCellImporter::FrameLoader::loadFile()
                 break;
 
             // Load the VTK data array into a Nx3 buffer of floats.
-            DataBufferPtr buffer = DataBufferPtr::create(numberOfPoints, DataBuffer::Float, 3);
+            DataBufferPtr buffer = DataBufferPtr::create(numberOfPoints, DataBuffer::FloatDefault, 3);
             if(!ParaViewVTPMeshImporter::parseVTKDataArray(buffer, xml))
                 break;
 

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -46,7 +46,7 @@ PropertyPtr AnglesObject::OOMetaClass::createStandardPropertyInternal(size_t ele
 
     switch(type) {
     case TypeProperty:
-        dataType = PropertyObject::Int;
+        dataType = PropertyObject::Int32;
         componentCount = 1;
         break;
     case TopologyProperty:
@@ -86,7 +86,7 @@ void AnglesObject::OOMetaClass::initialize()
     const QStringList emptyList;
     const QStringList abcList = QStringList() << "A" << "B" << "C";
 
-    registerStandardProperty(TypeProperty, tr("Angle Type"), PropertyObject::Int, emptyList, &ElementType::OOClass(), tr("Angle types"));
+    registerStandardProperty(TypeProperty, tr("Angle Type"), PropertyObject::Int32, emptyList, &ElementType::OOClass(), tr("Angle types"));
     registerStandardProperty(TopologyProperty, tr("Topology"), PropertyObject::Int64, abcList);
 }
 

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -45,6 +45,8 @@ VkPipelineLayout VulkanSceneRenderer::createCylinderPrimitivePipeline(VulkanPipe
     vertexBindingDesc[1].stride = 2 * sizeof(Vector_4<float>);
     vertexBindingDesc[1].inputRate = VK_VERTEX_INPUT_RATE_INSTANCE;
 
+    TODO: Adopt new techniques from OpenGL renderer.
+
     VkVertexInputAttributeDescription vertexAttrDesc[] = {
         VkVertexInputAttributeDescription{ // base:
             0, // location
@@ -82,14 +84,14 @@ VkPipelineLayout VulkanSceneRenderer::createCylinderPrimitivePipeline(VulkanPipe
 
     if(&pipeline == &_cylinderPrimitivePipelines.cylinder)
         pipeline.create(*context(),
-            QStringLiteral("cylinder/cylinder"), 
+            QStringLiteral("cylinder/cylinder"),
             defaultRenderPass(),
             sizeof(Matrix_4<float>) + sizeof(AffineTransformationT<float>), // vertexPushConstantSize
             sizeof(Vector_2<float>), // fragmentPushConstantSize
             2, // vertexBindingDescriptionCount
-            vertexBindingDesc.data(), 
+            vertexBindingDesc.data(),
             5, // vertexAttributeDescriptionCount
-            vertexAttrDesc, 
+            vertexAttrDesc,
             VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP, // topology
             0, // extraDynamicStateCount
             nullptr, // pExtraDynamicStates
@@ -100,14 +102,14 @@ VkPipelineLayout VulkanSceneRenderer::createCylinderPrimitivePipeline(VulkanPipe
 
     if(&pipeline == &_cylinderPrimitivePipelines.cylinder_picking)
         pipeline.create(*context(),
-            QStringLiteral("cylinder/cylinder_picking"), 
+            QStringLiteral("cylinder/cylinder_picking"),
             defaultRenderPass(),
             sizeof(Matrix_4<float>) + sizeof(AffineTransformationT<float>) + sizeof(uint32_t), // vertexPushConstantSize
             0, // fragmentPushConstantSize
             1, // vertexBindingDescriptionCount
-            vertexBindingDesc.data(), 
+            vertexBindingDesc.data(),
             3, // vertexAttributeDescriptionCount
-            vertexAttrDesc, 
+            vertexAttrDesc,
             VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP, // topology
             0, // extraDynamicStateCount
             nullptr, // pExtraDynamicStates
@@ -118,14 +120,14 @@ VkPipelineLayout VulkanSceneRenderer::createCylinderPrimitivePipeline(VulkanPipe
 
     if(&pipeline == &_cylinderPrimitivePipelines.cylinder_flat)
         pipeline.create(*context(),
-            QStringLiteral("cylinder/cylinder_flat"), 
+            QStringLiteral("cylinder/cylinder_flat"),
             defaultRenderPass(),
             sizeof(Matrix_4<float>) + sizeof(Vector_4<float>), // vertexPushConstantSize
             sizeof(Vector_2<float>), // fragmentPushConstantSize
             2, // vertexBindingDescriptionCount
-            vertexBindingDesc.data(), 
+            vertexBindingDesc.data(),
             5, // vertexAttributeDescriptionCount
-            vertexAttrDesc, 
+            vertexAttrDesc,
             VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP, // topology
             0, // extraDynamicStateCount
             nullptr, // pExtraDynamicStates
@@ -136,14 +138,14 @@ VkPipelineLayout VulkanSceneRenderer::createCylinderPrimitivePipeline(VulkanPipe
 
     if(&pipeline == &_cylinderPrimitivePipelines.cylinder_flat_picking)
         pipeline.create(*context(),
-            QStringLiteral("cylinder/cylinder_flat_picking"), 
+            QStringLiteral("cylinder/cylinder_flat_picking"),
             defaultRenderPass(),
             sizeof(Matrix_4<float>) + sizeof(Vector_4<float>) + sizeof(uint32_t), // vertexPushConstantSize
             0, // fragmentPushConstantSize
             1, // vertexBindingDescriptionCount
-            vertexBindingDesc.data(), 
+            vertexBindingDesc.data(),
             3, // vertexAttributeDescriptionCount
-            vertexAttrDesc, 
+            vertexAttrDesc,
             VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP, // topology
             0, // extraDynamicStateCount
             nullptr, // pExtraDynamicStates
@@ -154,14 +156,14 @@ VkPipelineLayout VulkanSceneRenderer::createCylinderPrimitivePipeline(VulkanPipe
 
     if(&pipeline == &_cylinderPrimitivePipelines.arrow_head)
         pipeline.create(*context(),
-            QStringLiteral("cylinder/arrow_head"), 
+            QStringLiteral("cylinder/arrow_head"),
             defaultRenderPass(),
             sizeof(Matrix_4<float>) + sizeof(AffineTransformationT<float>), // vertexPushConstantSize
             0, // fragmentPushConstantSize
             2, // vertexBindingDescriptionCount
-            vertexBindingDesc.data(), 
+            vertexBindingDesc.data(),
             5, // vertexAttributeDescriptionCount
-            vertexAttrDesc, 
+            vertexAttrDesc,
             VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP, // topology
             0, // extraDynamicStateCount
             nullptr, // pExtraDynamicStates
@@ -172,14 +174,14 @@ VkPipelineLayout VulkanSceneRenderer::createCylinderPrimitivePipeline(VulkanPipe
 
     if(&pipeline == &_cylinderPrimitivePipelines.arrow_head_picking)
         pipeline.create(*context(),
-            QStringLiteral("cylinder/arrow_head_picking"), 
+            QStringLiteral("cylinder/arrow_head_picking"),
             defaultRenderPass(),
             sizeof(Matrix_4<float>) + sizeof(AffineTransformationT<float>) + sizeof(uint32_t), // vertexPushConstantSize
             0, // fragmentPushConstantSize
             1, // vertexBindingDescriptionCount
-            vertexBindingDesc.data(), 
+            vertexBindingDesc.data(),
             3, // vertexAttributeDescriptionCount
-            vertexAttrDesc, 
+            vertexAttrDesc,
             VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP, // topology
             0, // extraDynamicStateCount
             nullptr, // pExtraDynamicStates
@@ -190,14 +192,14 @@ VkPipelineLayout VulkanSceneRenderer::createCylinderPrimitivePipeline(VulkanPipe
 
     if(&pipeline == &_cylinderPrimitivePipelines.arrow_tail)
         pipeline.create(*context(),
-            QStringLiteral("cylinder/arrow_tail"), 
+            QStringLiteral("cylinder/arrow_tail"),
             defaultRenderPass(),
             sizeof(Matrix_4<float>) + sizeof(AffineTransformationT<float>), // vertexPushConstantSize
             0, // fragmentPushConstantSize
             2, // vertexBindingDescriptionCount
-            vertexBindingDesc.data(), 
+            vertexBindingDesc.data(),
             5, // vertexAttributeDescriptionCount
-            vertexAttrDesc, 
+            vertexAttrDesc,
             VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP, // topology
             0, // extraDynamicStateCount
             nullptr, // pExtraDynamicStates
@@ -208,14 +210,14 @@ VkPipelineLayout VulkanSceneRenderer::createCylinderPrimitivePipeline(VulkanPipe
 
     if(&pipeline == &_cylinderPrimitivePipelines.arrow_tail_picking)
         pipeline.create(*context(),
-            QStringLiteral("cylinder/arrow_tail_picking"), 
+            QStringLiteral("cylinder/arrow_tail_picking"),
             defaultRenderPass(),
             sizeof(Matrix_4<float>) + sizeof(AffineTransformationT<float>) + sizeof(uint32_t), // vertexPushConstantSize
             0, // fragmentPushConstantSize
             1, // vertexBindingDescriptionCount
-            vertexBindingDesc.data(), 
+            vertexBindingDesc.data(),
             3, // vertexAttributeDescriptionCount
-            vertexAttrDesc, 
+            vertexAttrDesc,
             VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP, // topology
             0, // extraDynamicStateCount
             nullptr, // pExtraDynamicStates
@@ -226,14 +228,14 @@ VkPipelineLayout VulkanSceneRenderer::createCylinderPrimitivePipeline(VulkanPipe
 
     if(&pipeline == &_cylinderPrimitivePipelines.arrow_flat)
         pipeline.create(*context(),
-            QStringLiteral("cylinder/arrow_flat"), 
+            QStringLiteral("cylinder/arrow_flat"),
             defaultRenderPass(),
             sizeof(Matrix_4<float>) + sizeof(Vector_4<float>), // vertexPushConstantSize
             0, // fragmentPushConstantSize
             2, // vertexBindingDescriptionCount
-            vertexBindingDesc.data(), 
+            vertexBindingDesc.data(),
             5, // vertexAttributeDescriptionCount
-            vertexAttrDesc, 
+            vertexAttrDesc,
             VK_PRIMITIVE_TOPOLOGY_TRIANGLE_FAN, // topology
             0, // extraDynamicStateCount
             nullptr, // pExtraDynamicStates
@@ -244,14 +246,14 @@ VkPipelineLayout VulkanSceneRenderer::createCylinderPrimitivePipeline(VulkanPipe
 
     if(&pipeline == &_cylinderPrimitivePipelines.arrow_flat_picking)
         pipeline.create(*context(),
-            QStringLiteral("cylinder/arrow_flat_picking"), 
+            QStringLiteral("cylinder/arrow_flat_picking"),
             defaultRenderPass(),
             sizeof(Matrix_4<float>) + sizeof(Vector_4<float>) + sizeof(uint32_t), // vertexPushConstantSize
             0, // fragmentPushConstantSize
             1, // vertexBindingDescriptionCount
-            vertexBindingDesc.data(), 
+            vertexBindingDesc.data(),
             3, // vertexAttributeDescriptionCount
-            vertexAttrDesc, 
+            vertexAttrDesc,
             VK_PRIMITIVE_TOPOLOGY_TRIANGLE_FAN, // topology
             0, // extraDynamicStateCount
             nullptr, // pExtraDynamicStates
@@ -292,7 +294,7 @@ void VulkanSceneRenderer::renderCylindersImplementation(const CylinderPrimitive&
 
     // Compute full view-projection matrix including correction for OpenGL/Vulkan convention difference.
     QMatrix4x4 mvp = clipCorrection() * projParams().projectionMatrix * modelViewTM();
-    
+
     // The effective number of primitives being rendered:
     uint32_t primitiveCount = primitive.basePositions()->size();
     uint32_t verticesPerPrimitive = 0;
@@ -399,7 +401,7 @@ void VulkanSceneRenderer::renderCylindersImplementation(const CylinderPrimitive&
                 else if(primitive.shape() == CylinderPrimitive::CylinderShape) {
                     Vector_2<float> color_range(0,0);
                     if(renderWithPseudoColorMapping) {
-                        // Rendering  with pseudo-colors and a color mapping function.
+                        // Rendering with pseudo-colors and a color mapping function.
                         // We pass the min/max range of the color map to the fragment shader in the push constants buffer.
                         color_range = Vector_2<float>(primitive.pseudoColorMapping().minValue(), primitive.pseudoColorMapping().maxValue());
                         // Avoid division by zero due to degenerate value interval.
@@ -413,7 +415,7 @@ void VulkanSceneRenderer::renderCylindersImplementation(const CylinderPrimitive&
                 }
             }
             else {
-                // Pass camera viewing direction (parallel) or camera position (perspective) in object space to vertex shader as a push constant.                
+                // Pass camera viewing direction (parallel) or camera position (perspective) in object space to vertex shader as a push constant.
                 Vector_4<float> view_dir_eye_pos;
                 if(projParams().isPerspective)
                     view_dir_eye_pos = Vector_4<float>(modelViewTM().inverse().column(3).toDataType<float>(), 0.0f); // Camera position in object space
@@ -429,7 +431,7 @@ void VulkanSceneRenderer::renderCylindersImplementation(const CylinderPrimitive&
                 else if(primitive.shape() == CylinderPrimitive::CylinderShape) {
                     Vector_2<float> color_range(0,0);
                     if(renderWithPseudoColorMapping) {
-                        // Rendering  with pseudo-colors and a color mapping function.
+                        // Rendering with pseudo-colors and a color mapping function.
                         // We pass the min/max range of the color map to the fragment shader in the push constants buffer.
                         color_range = Vector_2<float>(primitive.pseudoColorMapping().minValue(), primitive.pseudoColorMapping().maxValue());
                         // Avoid division by zero due to degenerate value interval.
@@ -442,7 +444,7 @@ void VulkanSceneRenderer::renderCylindersImplementation(const CylinderPrimitive&
                     deviceFunctions()->vkCmdPushConstants(currentCommandBuffer(), pipelineLayout, VK_SHADER_STAGE_FRAGMENT_BIT, sizeof(Matrix_4<float>) + sizeof(view_dir_eye_pos), sizeof(color_range), color_range.data());
                 }
             }
-            
+
             break;
 
         default:
@@ -493,7 +495,7 @@ void VulkanSceneRenderer::renderCylindersImplementation(const CylinderPrimitive&
     if(!isPicking()) {
 
         // Put colors and transparencies into one combined Vulkan buffer with 8 floats per primitive (two RGBA values).
-        RendererResourceKey<struct VulkanCylinderColorCache, ConstDataBufferPtr, ConstDataBufferPtr, Color, uint32_t> colorCacheKey{ 
+        RendererResourceKey<struct VulkanCylinderColorCache, ConstDataBufferPtr, ConstDataBufferPtr, Color, uint32_t> colorCacheKey{
             primitive.colors(),
             primitive.transparencies(),
             primitive.colors() ? Color(0,0,0) : primitive.uniformColor(),

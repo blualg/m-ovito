@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2014 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -93,6 +93,16 @@ public:
         maxc.y() = center.y() + halfEdgeLength;
         maxc.z() = center.z() + halfEdgeLength;
     }
+
+    /// \brief Casts the box to a box with another data type.
+    template<typename U>
+    Q_DECL_CONSTEXPR decltype(auto) toDataType() const {
+        return Box_3<U>(minc.template toDataType<U>(), maxc.template toDataType<U>());
+    }
+
+    // When casting to the same type \a T, this method becomes a no-op.
+    template<>
+    Q_DECL_CONSTEXPR decltype(auto) toDataType<T>() const { return *this; }
 
     ///////////////////////////////// Attributes /////////////////////////////////
 
@@ -339,12 +349,23 @@ inline QDataStream& operator>>(QDataStream& stream, Box_3<T>& b) {
     return stream >> b.minc >> b.maxc;
 }
 
-
 /**
  * \brief Instance of the Box_3 class template used for floating-point calculations based on Point3.
  * \relates Box_3
  */
 using Box3 = Box_3<FloatType>;
+
+/**
+ * \brief Instance of the Box_3 class template used for floating-point calculations based on Point3F.
+ * \relates Box_3
+ */
+using Box3F = Box_3<float>;
+
+/**
+ * \brief Instance of the Box_3 class template used for floating-point calculations based on Point3G.
+ * \relates Box_3
+ */
+using Box3G = Box_3<GraphicsFloatType>;
 
 /**
  * \brief Instance of the Box_3 class template used for integer calculations based on Point3I.
@@ -355,6 +376,8 @@ using Box3I = Box_3<int>;
 }   // End of namespace
 
 Q_DECLARE_METATYPE(Ovito::Box3);
+Q_DECLARE_METATYPE(Ovito::Box3F);
 Q_DECLARE_METATYPE(Ovito::Box3I);
 Q_DECLARE_TYPEINFO(Ovito::Box3, Q_MOVABLE_TYPE);
+Q_DECLARE_TYPEINFO(Ovito::Box3F, Q_MOVABLE_TYPE);
 Q_DECLARE_TYPEINFO(Ovito::Box3I, Q_MOVABLE_TYPE);

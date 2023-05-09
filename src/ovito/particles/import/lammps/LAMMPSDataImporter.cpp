@@ -1032,7 +1032,7 @@ ParticleInputColumnMapping LAMMPSDataImporter::createAtomsColumnMapping(LAMMPSAt
         columnMapping[5].columnName = "z";
         columnMapping.mapStandardColumn(0, ParticlesObject::IdentifierProperty);
         columnMapping.mapStandardColumn(1, ParticlesObject::TypeProperty);
-        columnMapping.mapCustomColumn(2, QStringLiteral("theta"), PropertyObject::Float);
+        columnMapping.mapCustomColumn(2, QStringLiteral("theta"), DataBuffer::FloatDefault);
         columnMapping.mapStandardColumn(3, ParticlesObject::PositionProperty, 0);
         columnMapping.mapStandardColumn(4, ParticlesObject::PositionProperty, 1);
         columnMapping.mapStandardColumn(5, ParticlesObject::PositionProperty, 2);
@@ -1048,8 +1048,8 @@ ParticleInputColumnMapping LAMMPSDataImporter::createAtomsColumnMapping(LAMMPSAt
         columnMapping[6].columnName = "z";
         columnMapping.mapStandardColumn(0, ParticlesObject::IdentifierProperty);
         columnMapping.mapStandardColumn(1, ParticlesObject::TypeProperty);
-        columnMapping.mapCustomColumn(2, QStringLiteral("edpd_temp"), PropertyObject::Float);
-        columnMapping.mapCustomColumn(3, QStringLiteral("edpd_cv"), PropertyObject::Float);
+        columnMapping.mapCustomColumn(2, QStringLiteral("edpd_temp"), DataBuffer::FloatDefault);
+        columnMapping.mapCustomColumn(3, QStringLiteral("edpd_cv"), DataBuffer::FloatDefault);
         columnMapping.mapStandardColumn(4, ParticlesObject::PositionProperty, 0);
         columnMapping.mapStandardColumn(5, ParticlesObject::PositionProperty, 1);
         columnMapping.mapStandardColumn(6, ParticlesObject::PositionProperty, 2);
@@ -1064,7 +1064,7 @@ ParticleInputColumnMapping LAMMPSDataImporter::createAtomsColumnMapping(LAMMPSAt
         columnMapping[5].columnName = "z";
         columnMapping.mapStandardColumn(0, ParticlesObject::IdentifierProperty);
         columnMapping.mapStandardColumn(1, ParticlesObject::TypeProperty);
-        columnMapping.mapCustomColumn(2, QStringLiteral("rho"), PropertyObject::Float);
+        columnMapping.mapCustomColumn(2, QStringLiteral("rho"), DataBuffer::FloatDefault);
         columnMapping.mapStandardColumn(3, ParticlesObject::PositionProperty, 0);
         columnMapping.mapStandardColumn(4, ParticlesObject::PositionProperty, 1);
         columnMapping.mapStandardColumn(5, ParticlesObject::PositionProperty, 2);
@@ -1083,7 +1083,7 @@ ParticleInputColumnMapping LAMMPSDataImporter::createAtomsColumnMapping(LAMMPSAt
         columnMapping.mapStandardColumn(1, ParticlesObject::TypeProperty);
         columnMapping.mapStandardColumn(2, ParticlesObject::ChargeProperty);
         columnMapping.mapStandardColumn(3, ParticlesObject::SpinProperty);
-        columnMapping.mapCustomColumn(4, QStringLiteral("eradius"), PropertyObject::Float);
+        columnMapping.mapCustomColumn(4, QStringLiteral("eradius"), DataBuffer::FloatDefault);
         columnMapping.mapStandardColumn(5, ParticlesObject::PositionProperty, 0);
         columnMapping.mapStandardColumn(6, ParticlesObject::PositionProperty, 1);
         columnMapping.mapStandardColumn(7, ParticlesObject::PositionProperty, 2);
@@ -1099,8 +1099,8 @@ ParticleInputColumnMapping LAMMPSDataImporter::createAtomsColumnMapping(LAMMPSAt
         columnMapping[6].columnName = "z";
         columnMapping.mapStandardColumn(0, ParticlesObject::IdentifierProperty);
         columnMapping.mapStandardColumn(1, ParticlesObject::TypeProperty);
-        columnMapping.mapCustomColumn(2, QStringLiteral("ellipsoidflag"), PropertyObject::Int);
-        columnMapping.mapCustomColumn(3, QStringLiteral("Density"), PropertyObject::Float);
+        columnMapping.mapCustomColumn(2, QStringLiteral("ellipsoidflag"), DataBuffer::Int32);
+        columnMapping.mapCustomColumn(3, QStringLiteral("Density"), DataBuffer::FloatDefault);
         columnMapping.mapStandardColumn(4, ParticlesObject::PositionProperty, 0);
         columnMapping.mapStandardColumn(5, ParticlesObject::PositionProperty, 1);
         columnMapping.mapStandardColumn(6, ParticlesObject::PositionProperty, 2);
@@ -1135,8 +1135,8 @@ ParticleInputColumnMapping LAMMPSDataImporter::createAtomsColumnMapping(LAMMPSAt
         columnMapping.mapStandardColumn(0, ParticlesObject::IdentifierProperty);
         columnMapping.mapStandardColumn(1, ParticlesObject::MoleculeProperty);
         columnMapping.mapStandardColumn(2, ParticlesObject::TypeProperty);
-        columnMapping.mapCustomColumn(3, QStringLiteral("lineflag"), PropertyObject::Int);
-        columnMapping.mapCustomColumn(4, QStringLiteral("Density"), PropertyObject::Float);
+        columnMapping.mapCustomColumn(3, QStringLiteral("lineflag"), DataBuffer::Int32);
+        columnMapping.mapCustomColumn(4, QStringLiteral("Density"), DataBuffer::FloatDefault);
         columnMapping.mapStandardColumn(5, ParticlesObject::PositionProperty, 0);
         columnMapping.mapStandardColumn(6, ParticlesObject::PositionProperty, 1);
         columnMapping.mapStandardColumn(7, ParticlesObject::PositionProperty, 2);
@@ -1153,9 +1153,9 @@ ParticleInputColumnMapping LAMMPSDataImporter::createAtomsColumnMapping(LAMMPSAt
         columnMapping[7].columnName = "z";
         columnMapping.mapStandardColumn(0, ParticlesObject::IdentifierProperty);
         columnMapping.mapStandardColumn(1, ParticlesObject::TypeProperty);
-        columnMapping.mapCustomColumn(2, QStringLiteral("rho"), PropertyObject::Float);
-        columnMapping.mapCustomColumn(3, QStringLiteral("e"), PropertyObject::Float);
-        columnMapping.mapCustomColumn(4, QStringLiteral("cv"), PropertyObject::Float);
+        columnMapping.mapCustomColumn(2, QStringLiteral("rho"), DataBuffer::FloatDefault);
+        columnMapping.mapCustomColumn(3, QStringLiteral("e"), DataBuffer::FloatDefault);
+        columnMapping.mapCustomColumn(4, QStringLiteral("cv"), DataBuffer::FloatDefault);
         columnMapping.mapStandardColumn(5, ParticlesObject::PositionProperty, 0);
         columnMapping.mapStandardColumn(6, ParticlesObject::PositionProperty, 1);
         columnMapping.mapStandardColumn(7, ParticlesObject::PositionProperty, 2);
@@ -1186,8 +1186,8 @@ ParticleInputColumnMapping LAMMPSDataImporter::createAtomsColumnMapping(LAMMPSAt
         columnMapping[6].columnName = "z";
         columnMapping.mapStandardColumn(0, ParticlesObject::IdentifierProperty);
         columnMapping.mapStandardColumn(1, ParticlesObject::TypeProperty);
-        columnMapping.mapCustomColumn(2, QStringLiteral("Volume"), PropertyObject::Float);
-        columnMapping.mapCustomColumn(3, QStringLiteral("Density"), PropertyObject::Float);
+        columnMapping.mapCustomColumn(2, QStringLiteral("Volume"), DataBuffer::FloatDefault);
+        columnMapping.mapCustomColumn(3, QStringLiteral("Density"), DataBuffer::FloatDefault);
         columnMapping.mapStandardColumn(4, ParticlesObject::PositionProperty, 0);
         columnMapping.mapStandardColumn(5, ParticlesObject::PositionProperty, 1);
         columnMapping.mapStandardColumn(6, ParticlesObject::PositionProperty, 2);
@@ -1209,14 +1209,14 @@ ParticleInputColumnMapping LAMMPSDataImporter::createAtomsColumnMapping(LAMMPSAt
         columnMapping[12].columnName = "z";
         columnMapping.mapStandardColumn(0, ParticlesObject::IdentifierProperty);
         columnMapping.mapStandardColumn(1, ParticlesObject::TypeProperty);
-        columnMapping.mapCustomColumn(2, QStringLiteral("molecule"), PropertyObject::Float);
-        columnMapping.mapCustomColumn(3, QStringLiteral("Volume"), PropertyObject::Float);
+        columnMapping.mapCustomColumn(2, QStringLiteral("molecule"), DataBuffer::FloatDefault);
+        columnMapping.mapCustomColumn(3, QStringLiteral("Volume"), DataBuffer::FloatDefault);
         columnMapping.mapStandardColumn(4, ParticlesObject::MassProperty);
-        columnMapping.mapCustomColumn(5, QStringLiteral("kernelradius"), PropertyObject::Float);
-        columnMapping.mapCustomColumn(6, QStringLiteral("contactradius"), PropertyObject::Float);
-        columnMapping.mapCustomColumn(7, QStringLiteral("x0"), PropertyObject::Float);
-        columnMapping.mapCustomColumn(8, QStringLiteral("y0"), PropertyObject::Float);
-        columnMapping.mapCustomColumn(9, QStringLiteral("z0"), PropertyObject::Float);
+        columnMapping.mapCustomColumn(5, QStringLiteral("kernelradius"), DataBuffer::FloatDefault);
+        columnMapping.mapCustomColumn(6, QStringLiteral("contactradius"), DataBuffer::FloatDefault);
+        columnMapping.mapCustomColumn(7, QStringLiteral("x0"), DataBuffer::FloatDefault);
+        columnMapping.mapCustomColumn(8, QStringLiteral("y0"), DataBuffer::FloatDefault);
+        columnMapping.mapCustomColumn(9, QStringLiteral("z0"), DataBuffer::FloatDefault);
         columnMapping.mapStandardColumn(10, ParticlesObject::PositionProperty, 0);
         columnMapping.mapStandardColumn(11, ParticlesObject::PositionProperty, 1);
         columnMapping.mapStandardColumn(12, ParticlesObject::PositionProperty, 2);
@@ -1233,7 +1233,7 @@ ParticleInputColumnMapping LAMMPSDataImporter::createAtomsColumnMapping(LAMMPSAt
         columnMapping.mapStandardColumn(0, ParticlesObject::IdentifierProperty);
         columnMapping.mapStandardColumn(1, ParticlesObject::TypeProperty);
         columnMapping.mapStandardColumn(2, ParticlesObject::RadiusProperty);
-        columnMapping.mapCustomColumn(3, QStringLiteral("Density"), PropertyObject::Float);
+        columnMapping.mapCustomColumn(3, QStringLiteral("Density"), DataBuffer::FloatDefault);
         columnMapping.mapStandardColumn(4, ParticlesObject::PositionProperty, 0);
         columnMapping.mapStandardColumn(5, ParticlesObject::PositionProperty, 1);
         columnMapping.mapStandardColumn(6, ParticlesObject::PositionProperty, 2);
@@ -1250,8 +1250,8 @@ ParticleInputColumnMapping LAMMPSDataImporter::createAtomsColumnMapping(LAMMPSAt
         columnMapping[7].columnName = "z";
         columnMapping.mapStandardColumn(0, ParticlesObject::IdentifierProperty);
         columnMapping.mapStandardColumn(1, ParticlesObject::MoleculeProperty);
-        columnMapping.mapCustomColumn(2, QStringLiteral("templateindex"), PropertyObject::Int);
-        columnMapping.mapCustomColumn(3, QStringLiteral("templateatom"), PropertyObject::Int64);
+        columnMapping.mapCustomColumn(2, QStringLiteral("templateindex"), DataBuffer::Int32);
+        columnMapping.mapCustomColumn(3, QStringLiteral("templateatom"), DataBuffer::Int64);
         columnMapping.mapStandardColumn(4, ParticlesObject::TypeProperty);
         columnMapping.mapStandardColumn(5, ParticlesObject::PositionProperty, 0);
         columnMapping.mapStandardColumn(6, ParticlesObject::PositionProperty, 1);
@@ -1270,8 +1270,8 @@ ParticleInputColumnMapping LAMMPSDataImporter::createAtomsColumnMapping(LAMMPSAt
         columnMapping.mapStandardColumn(0, ParticlesObject::IdentifierProperty);
         columnMapping.mapStandardColumn(1, ParticlesObject::MoleculeProperty);
         columnMapping.mapStandardColumn(2, ParticlesObject::TypeProperty);
-        columnMapping.mapCustomColumn(3, QStringLiteral("triangleflag"), PropertyObject::Int);
-        columnMapping.mapCustomColumn(4, QStringLiteral("Density"), PropertyObject::Float);
+        columnMapping.mapCustomColumn(3, QStringLiteral("triangleflag"), DataBuffer::Int32);
+        columnMapping.mapCustomColumn(4, QStringLiteral("Density"), DataBuffer::FloatDefault);
         columnMapping.mapStandardColumn(5, ParticlesObject::PositionProperty, 0);
         columnMapping.mapStandardColumn(6, ParticlesObject::PositionProperty, 1);
         columnMapping.mapStandardColumn(7, ParticlesObject::PositionProperty, 2);
@@ -1293,10 +1293,10 @@ ParticleInputColumnMapping LAMMPSDataImporter::createAtomsColumnMapping(LAMMPSAt
         columnMapping.mapStandardColumn(1, ParticlesObject::TypeProperty);
         columnMapping.mapStandardColumn(2, ParticlesObject::ChargeProperty);
         columnMapping.mapStandardColumn(3, ParticlesObject::SpinProperty);
-        columnMapping.mapCustomColumn(4, QStringLiteral("eradius"), PropertyObject::Float);
-        columnMapping.mapCustomColumn(5, QStringLiteral("etag"), PropertyObject::Float);
-        columnMapping.mapCustomColumn(6, QStringLiteral("cs_re"), PropertyObject::Float);
-        columnMapping.mapCustomColumn(7, QStringLiteral("cs_im"), PropertyObject::Float);
+        columnMapping.mapCustomColumn(4, QStringLiteral("eradius"), DataBuffer::FloatDefault);
+        columnMapping.mapCustomColumn(5, QStringLiteral("etag"), DataBuffer::FloatDefault);
+        columnMapping.mapCustomColumn(6, QStringLiteral("cs_re"), DataBuffer::FloatDefault);
+        columnMapping.mapCustomColumn(7, QStringLiteral("cs_im"), DataBuffer::FloatDefault);
         columnMapping.mapStandardColumn(8, ParticlesObject::PositionProperty, 0);
         columnMapping.mapStandardColumn(9, ParticlesObject::PositionProperty, 1);
         columnMapping.mapStandardColumn(10, ParticlesObject::PositionProperty, 2);
@@ -1369,7 +1369,7 @@ ParticleInputColumnMapping LAMMPSDataImporter::createVelocitiesColumnMapping(LAM
     case AtomStyle_Electron:
         columnMapping.resize(5);
         columnMapping[4].columnName = "ervel";
-        columnMapping.mapCustomColumn(4, QStringLiteral("ervel"), PropertyObject::Float);
+        columnMapping.mapCustomColumn(4, QStringLiteral("ervel"), DataBuffer::FloatDefault);
         break;
     case AtomStyle_Ellipsoid:
         columnMapping.resize(7);

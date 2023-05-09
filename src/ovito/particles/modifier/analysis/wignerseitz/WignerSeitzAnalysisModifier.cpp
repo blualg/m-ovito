@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -108,7 +108,7 @@ Future<AsynchronousModifier::EnginePtr> WignerSeitzAnalysisModifier::createEngin
     if(outputCurrentConfig()) {
         if(referenceIdentifierProperty)
             engine->setSiteIdentifiers(ParticlesObject::OOClass().createUserProperty(posProperty->size(), PropertyObject::Int64, 1, tr("Site Identifier")));
-        engine->setSiteTypes(ParticlesObject::OOClass().createUserProperty(posProperty->size(), PropertyObject::Int, 1, tr("Site Type")));
+        engine->setSiteTypes(ParticlesObject::OOClass().createUserProperty(posProperty->size(), PropertyObject::Int32, 1, tr("Site Type")));
         engine->setSiteIndices(ParticlesObject::OOClass().createUserProperty(posProperty->size(), PropertyObject::Int64, 1, tr("Site Index")));
     }
 
@@ -198,7 +198,7 @@ void WignerSeitzAnalysisModifier::WignerSeitzAnalysisEngine::perform()
     // Create output storage.
     setOccupancyNumbers(ParticlesObject::OOClass().createUserProperty(
         siteTypes() ? positions()->size() : refPositions()->size(),
-        PropertyObject::Int, ncomponents, tr("Occupancy")));
+        PropertyObject::Int32, ncomponents, tr("Occupancy")));
     if(ncomponents > 1 && typemin != 1) {
         QStringList componentNames;
         for(int i = typemin; i <= typemax; i++)
@@ -207,19 +207,19 @@ void WignerSeitzAnalysisModifier::WignerSeitzAnalysisEngine::perform()
     }
 
     // Copy data from atomic array to output buffer.
-    PropertyAccess<int,true> occupancyNumbersArray(occupancyNumbers());
+    PropertyAccess<int32_t,true> occupancyNumbersArray(occupancyNumbers());
     if(!siteTypes()) {
         boost::copy(occupancyArray, occupancyNumbersArray.begin());
     }
     else {
         // Map occupancy numbers from sites to atoms.
-        PropertyAccess<int> siteTypesArray(siteTypes());
-        PropertyAccess<qlonglong> siteIndicesArray(siteIndices());
-        PropertyAccess<qlonglong> siteIdentifiersArray(siteIdentifiers());
-        ConstPropertyAccess<int> referenceTypeArray(_referenceTypeProperty);
-        ConstPropertyAccess<qlonglong> referenceIdentifierArray(_referenceIdentifierProperty);
-        int* occ = occupancyNumbersArray.begin();
-        int* st = siteTypesArray.begin();
+        PropertyAccess<int32_t> siteTypesArray(siteTypes());
+        PropertyAccess<int64_t> siteIndicesArray(siteIndices());
+        PropertyAccess<int64_t> siteIdentifiersArray(siteIdentifiers());
+        ConstPropertyAccess<int32_t> referenceTypeArray(_referenceTypeProperty);
+        ConstPropertyAccess<int64_t> referenceIdentifierArray(_referenceIdentifierProperty);
+        int32_t* occ = occupancyNumbersArray.begin();
+        int32_t* st = siteTypesArray.begin();
         auto sidx = siteIndicesArray.begin();
         auto sid = siteIdentifiersArray ? siteIdentifiersArray.begin() : nullptr;
         for(size_t siteIndex : atomsToSites) {
@@ -234,7 +234,7 @@ void WignerSeitzAnalysisModifier::WignerSeitzAnalysisEngine::perform()
 
     // Count defects.
     if(ncomponents == 1) {
-        for(int oc : occupancyArray) {
+        for(int32_t oc : occupancyArray) {
             if(oc == 0) incrementVacancyCount();
             else if(oc > 1) incrementInterstitialCount(oc - 1);
         }
@@ -242,7 +242,7 @@ void WignerSeitzAnalysisModifier::WignerSeitzAnalysisEngine::perform()
     else {
         auto o = occupancyArray.cbegin();
         for(size_t i = 0; i < refPositions()->size(); i++) {
-            int oc = 0;
+            int32_t oc = 0;
             for(int j = 0; j < ncomponents; j++) {
                 oc += *o++;
             }

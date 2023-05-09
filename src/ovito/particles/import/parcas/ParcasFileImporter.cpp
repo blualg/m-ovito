@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -220,7 +220,7 @@ void ParcasFileImporter::FrameLoader::loadFile()
         if(propertyType != ParticlesObject::UserProperty)
             property = particles()->createProperty(propertyType, DataBuffer::InitializeMemory);
         else
-            property = particles()->createProperty(propertyName, PropertyObject::Float, 1, DataBuffer::InitializeMemory);
+            property = particles()->createProperty(propertyName, PropertyObject::FloatDefault, 1, DataBuffer::InitializeMemory);
         extraProperties.emplace_back(property);
     }
 
@@ -237,8 +237,8 @@ void ParcasFileImporter::FrameLoader::loadFile()
 
     // Create the required standard properties.
     PropertyAccess<Point3> posProperty = particles()->createProperty(ParticlesObject::PositionProperty);
-    PropertyAccess<int> typeProperty = particles()->createProperty(ParticlesObject::TypeProperty);
-    PropertyAccess<qlonglong> identifierProperty = particles()->createProperty(ParticlesObject::IdentifierProperty);
+    PropertyAccess<int32_t> typeProperty = particles()->createProperty(ParticlesObject::TypeProperty);
+    PropertyAccess<int64_t> identifierProperty = particles()->createProperty(ParticlesObject::IdentifierProperty);
 
     // Create particle types list.
     std::vector<std::array<char,5>> types(maxtype - mintype + 1);

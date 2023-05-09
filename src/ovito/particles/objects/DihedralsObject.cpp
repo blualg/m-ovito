@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -46,7 +46,7 @@ PropertyPtr DihedralsObject::OOMetaClass::createStandardPropertyInternal(size_t 
 
     switch(type) {
     case TypeProperty:
-        dataType = PropertyObject::Int;
+        dataType = PropertyObject::Int32;
         componentCount = 1;
         break;
     case TopologyProperty:
@@ -86,7 +86,7 @@ void DihedralsObject::OOMetaClass::initialize()
     const QStringList emptyList;
     const QStringList abcdList = QStringList() << "A" << "B" << "C" << "D";
 
-    registerStandardProperty(TypeProperty, tr("Dihedral Type"), PropertyObject::Int, emptyList, &ElementType::OOClass(), tr("Dihedral types"));
+    registerStandardProperty(TypeProperty, tr("Dihedral Type"), PropertyObject::Int32, emptyList, &ElementType::OOClass(), tr("Dihedral types"));
     registerStandardProperty(TopologyProperty, tr("Topology"), PropertyObject::Int64, abcdList);
 }
 

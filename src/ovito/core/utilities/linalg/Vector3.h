@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -125,7 +125,11 @@ public:
 
     /// Casts the vector to another component type \a U.
     template<typename U>
-    Q_DECL_CONSTEXPR Vector_3<U> toDataType() const { return Vector_3<U>(static_cast<U>(x()), static_cast<U>(y()), static_cast<U>(z())); }
+    Q_DECL_CONSTEXPR decltype(auto) toDataType() const { return Vector_3<U>(static_cast<U>(x()), static_cast<U>(y()), static_cast<U>(z())); }
+
+    // When casting to the same type \a T, this method becomes a no-op.
+    template<>
+    Q_DECL_CONSTEXPR decltype(auto) toDataType<T>() const { return *this; }
 
     /////////////////////////////// Unary operators //////////////////////////////
 
@@ -415,16 +419,28 @@ inline QDataStream& operator>>(QDataStream& stream, Vector_3<T>& v) {
 }
 
 /**
- * \brief Instantiation of the Vector_3 class template with the default floating-point type.
+ * \brief Instantiation of the Vector_3 class template with the default floating-point type (double precision).
  * \relates Vector_3
  */
 using Vector3 = Vector_3<FloatType>;
 
 /**
+ * \brief Instantiation of the Vector_3 class template with the single-precision floating-point type.
+ * \relates Vector_3
+ */
+using Vector3F = Vector_3<float>;
+
+/**
+ * \brief Instantiation of the Vector_3 class template with the low-precision floating-point type used for graphics data.
+ * \relates Vector_3
+ */
+using Vector3G = Vector_3<GraphicsFloatType>;
+
+/**
  * \brief Instantiation of the Vector_3 class template with the default integer type.
  * \relates Vector_3
 */
-using Vector3I = Vector_3<int>;
+using Vector3I = Vector_3<int32_t>;
 
 }   // End of namespace
 
@@ -433,6 +449,8 @@ template<typename T> struct std::tuple_size<Ovito::Vector_3<T>> : std::integral_
 template<std::size_t I, typename T> struct std::tuple_element<I, Ovito::Vector_3<T>> { using type = T; };
 
 Q_DECLARE_METATYPE(Ovito::Vector3);
+Q_DECLARE_METATYPE(Ovito::Vector3F);
 Q_DECLARE_METATYPE(Ovito::Vector3I);
 Q_DECLARE_TYPEINFO(Ovito::Vector3, Q_PRIMITIVE_TYPE);
+Q_DECLARE_TYPEINFO(Ovito::Vector3F, Q_PRIMITIVE_TYPE);
 Q_DECLARE_TYPEINFO(Ovito::Vector3I, Q_PRIMITIVE_TYPE);

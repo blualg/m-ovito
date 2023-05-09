@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -128,9 +128,9 @@ void CoordinationAnalysisModifier::CoordinationAnalysisEngine::perform()
         return;
 
     size_t particleCount = positions()->size();
-    PropertyAccess<int> coordinationData(coordinationNumbers());
-    ConstPropertyAccess<int> particleTypeData(particleTypes());
-    ConstPropertyAccess<int> selectionData(selection());
+    PropertyAccess<int32_t> coordinationData(coordinationNumbers());
+    ConstPropertyAccess<int32_t> particleTypeData(particleTypes());
+    ConstPropertyAccess<DataBuffer::SelectionDataType> selectionData(selection());
     setProgressMaximum(particleCount);
 
     // Parallel calculation loop:
@@ -219,9 +219,10 @@ void CoordinationAnalysisModifier::CoordinationAnalysisEngine::perform()
     else {
         // Count particle type occurrences.
         std::vector<size_t> particleCounts(uniqueTypeIds().size(), 0);
-        const int* sel = selectionData ? selectionData.begin() : nullptr;
-        for(int t : particleTypeData) {
-            if(sel && !(*sel++)) continue;
+        const DataBuffer::SelectionDataType* sel = selectionData ? selectionData.begin() : nullptr;
+        for(int32_t t : particleTypeData) {
+            if(sel && !(*sel++))
+                continue;
             size_t typeIndex = uniqueTypeIds().index_of(uniqueTypeIds().find(t));
             if(typeIndex < particleCounts.size())
                 particleCounts[typeIndex]++;

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -56,23 +56,24 @@ public:
     const OORef<ColorCodingGradient>& gradient() const { return _gradient; }
 
     /// Converts a scalar value to an RGB color value.
-    Color valueToColor(FloatType v) const {
+    template<typename T>
+    ColorT<T> valueToColor(T v) const {
         OVITO_ASSERT(isValid());
         OVITO_ASSERT(std::isfinite(v));
         // Handle a degenerate mapping interval.
         if(_maxValue == _minValue) {
-            if(v == _maxValue) return gradient()->valueToColor(FloatType(0.5));
-            else if(v < _maxValue) return gradient()->valueToColor(FloatType(0));
-            else return gradient()->valueToColor(FloatType(1));
+            if(v == static_cast<T>(_maxValue)) return gradient()->valueToColor(T(0.5));
+            else if(v < static_cast<T>(_maxValue)) return gradient()->valueToColor(T(0));
+            else return gradient()->valueToColor(T(1));
         }
         // Compute linear interpolation.
-        FloatType t = (v - _minValue) / (_maxValue - _minValue);
+        T t = (v - static_cast<T>(_minValue)) / static_cast<T>(_maxValue - _minValue);
         // Clamp values.
-        if(std::isnan(t)) t = FloatType(0);
-        else if(t ==  std::numeric_limits<FloatType>::infinity()) t = FloatType(1);
-        else if(t == -std::numeric_limits<FloatType>::infinity()) t = FloatType(0);
-        else if(t < FloatType(0)) t = FloatType(0);
-        else if(t > FloatType(1)) t = FloatType(1);
+        if(std::isnan(t)) t = T(0);
+        else if(t ==  std::numeric_limits<T>::infinity()) t = T(1);
+        else if(t == -std::numeric_limits<T>::infinity()) t = T(0);
+        else if(t < T(0)) t = T(0);
+        else if(t > T(1)) t = T(1);
         return gradient()->valueToColor(t);
     }
 

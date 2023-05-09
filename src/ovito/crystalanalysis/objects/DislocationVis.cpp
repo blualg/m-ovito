@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -317,16 +317,16 @@ PipelineStatus DislocationVis::render(AnimationTime time, const ConstDataObjectP
         // Allocate rendering data buffers.
         std::vector<int> subobjToSegmentMap(lineSegmentCount + cornerCount);
         FloatType lineDiameter = std::max(lineWidth(), FloatType(0));
-        DataBufferAccessAndRef<Point3> cornerPoints = DataBufferPtr::create(cornerCount, DataBuffer::Float, 3);
-        DataBufferAccessAndRef<Color> cornerColors = DataBufferPtr::create(cornerCount, DataBuffer::Float, 3);
-        DataBufferAccessAndRef<Point3> baseSegmentPoints = DataBufferPtr::create(lineSegmentCount, DataBuffer::Float, 3);
-        DataBufferAccessAndRef<Point3> headSegmentPoints = DataBufferPtr::create(lineSegmentCount, DataBuffer::Float, 3);
-        DataBufferAccessAndRef<Color> segmentColors = DataBufferPtr::create(lineSegmentCount, DataBuffer::Float, 3);
+        DataBufferAccessAndRef<Point3G> cornerPoints = DataBufferPtr::create(cornerCount, DataBuffer::FloatGraphics, 3);
+        DataBufferAccessAndRef<ColorG> cornerColors = DataBufferPtr::create(cornerCount, DataBuffer::FloatGraphics, 3);
+        DataBufferAccessAndRef<Point3G> baseSegmentPoints = DataBufferPtr::create(lineSegmentCount, DataBuffer::FloatGraphics, 3);
+        DataBufferAccessAndRef<Point3G> headSegmentPoints = DataBufferPtr::create(lineSegmentCount, DataBuffer::FloatGraphics, 3);
+        DataBufferAccessAndRef<ColorG> segmentColors = DataBufferPtr::create(lineSegmentCount, DataBuffer::FloatGraphics, 3);
 
         // Build list of line segments.
         auto cornerPointsIter = cornerPoints.begin();
         auto cornerColorsIter = cornerColors.begin();
-        Color lineColor;
+        ColorG lineColor;
         Vector3 normalizedBurgersVector;
         Vector3 lastBurgersVector = Vector3::Zero();
         int lastRegion = -1;
@@ -337,7 +337,7 @@ PipelineStatus DislocationVis::render(AnimationTime time, const ConstDataObjectP
             if(lineSegment.burgersVector != lastBurgersVector || lineSegment.region != lastRegion) {
                 lastBurgersVector = lineSegment.burgersVector;
                 lastRegion = lineSegment.region;
-                lineColor = Color(0.8, 0.8, 0.8);
+                lineColor = ColorG(0.8, 0.8, 0.8);
                 const MicrostructurePhase* phase = nullptr;
                 if(dislocationsObj && renderableLines->clusterGraph()) {
                     Cluster* cluster = renderableLines->clusterGraph()->findCluster(lineSegment.region);
@@ -367,15 +367,15 @@ PipelineStatus DislocationVis::render(AnimationTime time, const ConstDataObjectP
                             }
                         }
                         if(family)
-                            lineColor = family->color();
+                            lineColor = family->color().toDataType<GraphicsFloatType>();
                     }
                     else if(lineColoringMode() == ColorByBurgersVector) {
-                        lineColor = MicrostructurePhase::getBurgersVectorColor(phase->name(), lineSegment.burgersVector);
+                        lineColor = MicrostructurePhase::getBurgersVectorColor(phase->name(), lineSegment.burgersVector).toDataType<GraphicsFloatType>();
                     }
                 }
             }
             subobjToSegmentMap[lineSegmentIndex] = lineSegment.dislocationIndex;
-            Color segmentColor = lineColor;
+            ColorG segmentColor = lineColor;
             if(lineColoringMode() == ColorByCharacter) {
                 Vector3 delta = lineSegment.verts[1] - lineSegment.verts[0];
                 FloatType dot = std::abs(delta.dot(normalizedBurgersVector));
@@ -383,29 +383,29 @@ PipelineStatus DislocationVis::render(AnimationTime time, const ConstDataObjectP
                 if(dot > 1) dot = 1;
                 FloatType angle = std::acos(dot) / (FLOATTYPE_PI/2);
                 if(angle <= FloatType(0.5))
-                    segmentColor = Color(1, angle * 2, angle * 2);
+                    segmentColor = ColorG(1, angle * 2, angle * 2);
                 else
-                    segmentColor = Color((FloatType(1)-angle) * 2, (FloatType(1)-angle) * 2, 1);
+                    segmentColor = ColorG((FloatType(1)-angle) * 2, (FloatType(1)-angle) * 2, 1);
             }
             if(dislocationsObj) {
                 if(lastDislocationIndex != lineSegment.dislocationIndex) {
                     lastDislocationIndex = lineSegment.dislocationIndex;
                     const auto& segmentList = dislocationsObj->segments();
-                    lastInputDislocationSegment = (lastDislocationIndex >= 0 && lastDislocationIndex < segmentList.size()) ? 
+                    lastInputDislocationSegment = (lastDislocationIndex >= 0 && lastDislocationIndex < segmentList.size()) ?
                         segmentList[lastDislocationIndex] : nullptr;
                 }
                 if(lastInputDislocationSegment) {
                     if(lastInputDislocationSegment->customColor.r() >= 0 && lastInputDislocationSegment->customColor.g() >= 0 && lastInputDislocationSegment->customColor.b() >= 0) {
-                        segmentColor = lastInputDislocationSegment->customColor;
+                        segmentColor = lastInputDislocationSegment->customColor.toDataType<GraphicsFloatType>();
                     }
                 }
             }
-            baseSegmentPoints[lineSegmentIndex] = lineSegment.verts[0];
-            headSegmentPoints[lineSegmentIndex] = lineSegment.verts[1];
+            baseSegmentPoints[lineSegmentIndex] = lineSegment.verts[0].toDataType<GraphicsFloatType>();
+            headSegmentPoints[lineSegmentIndex] = lineSegment.verts[1].toDataType<GraphicsFloatType>();
             segmentColors[lineSegmentIndex] = segmentColor;
             if(lineSegmentIndex != 0 && lineSegment.verts[0].equals(renderableLines->lineSegments()[lineSegmentIndex-1].verts[1])) {
                 subobjToSegmentMap[(cornerPointsIter - cornerPoints.begin()) + lineSegmentCount] = lineSegment.dislocationIndex;
-                *cornerPointsIter++ = lineSegment.verts[0];
+                *cornerPointsIter++ = lineSegment.verts[0].toDataType<GraphicsFloatType>();
                 *cornerColorsIter++ = segmentColor;
             }
         }
@@ -428,8 +428,8 @@ PipelineStatus DislocationVis::render(AnimationTime time, const ConstDataObjectP
 
         if(dislocationsObj) {
             if(showBurgersVectors()) {
-                DataBufferAccessAndRef<Point3> baseArrowPoints = DataBufferPtr::create(dislocationsObj->segments().size(), DataBuffer::Float, 3);
-                DataBufferAccessAndRef<Point3> headArrowPoints = DataBufferPtr::create(dislocationsObj->segments().size(), DataBuffer::Float, 3);
+                DataBufferAccessAndRef<Point3G> baseArrowPoints = DataBufferPtr::create(dislocationsObj->segments().size(), DataBuffer::FloatGraphics, 3);
+                DataBufferAccessAndRef<Point3G> headArrowPoints = DataBufferPtr::create(dislocationsObj->segments().size(), DataBuffer::FloatGraphics, 3);
                 subobjToSegmentMap.reserve(subobjToSegmentMap.size() + dislocationsObj->segments().size());
                 int arrowIndex = 0;
                 for(const DislocationSegment* segment : dislocationsObj->segments()) {
@@ -439,8 +439,9 @@ PipelineStatus DislocationVis::render(AnimationTime time, const ConstDataObjectP
                     // Check if arrow is clipped away by cutting planes.
                     if(dislocationsObj->isPointCulled(center))
                         dir.setZero(); // Hide arrow by setting length to zero.
-                    baseArrowPoints[arrowIndex] = center;
-                    headArrowPoints[arrowIndex++] = center + dir;
+                    baseArrowPoints[arrowIndex] = center.toDataType<GraphicsFloatType>();
+                    headArrowPoints[arrowIndex] = baseArrowPoints[arrowIndex] + dir.toDataType<GraphicsFloatType>();
+                    arrowIndex++;
                 }
                 // Create rendering primitive for the Burgers vector arrows.
                 primitives.burgersArrows.setShape(CylinderPrimitive::ArrowShape);
@@ -497,14 +498,14 @@ void DislocationVis::renderOverlayMarker(AnimationTime time, const DataObject* d
     const DislocationSegment* segment = dislocationsObj->segments()[segmentIndex];
 
     // Generate the polyline segments to render.
-    DataBufferAccessAndRef<Point3> baseSegmentPoints = DataBufferPtr::create(0, DataBuffer::Float, 3);
-    DataBufferAccessAndRef<Point3> headSegmentPoints = DataBufferPtr::create(0, DataBuffer::Float, 3);
-    DataBufferAccessAndRef<Point3> cornerVertices = DataBufferPtr::create(0, DataBuffer::Float, 3);
+    DataBufferAccessAndRef<Point3G> baseSegmentPoints = DataBufferPtr::create(0, DataBuffer::FloatGraphics, 3);
+    DataBufferAccessAndRef<Point3G> headSegmentPoints = DataBufferPtr::create(0, DataBuffer::FloatGraphics, 3);
+    DataBufferAccessAndRef<Point3G> cornerVertices = DataBufferPtr::create(0, DataBuffer::FloatGraphics, 3);
     clipDislocationLine(segment->line, *cellObject, dislocationsObj->cuttingPlanes(), [&](const Point3& v1, const Point3& v2, bool isInitialSegment) {
-        baseSegmentPoints.push_back(v1);
-        headSegmentPoints.push_back(v2);
+        baseSegmentPoints.push_back(v1.toDataType<GraphicsFloatType>());
+        headSegmentPoints.push_back(v2.toDataType<GraphicsFloatType>());
         if(!isInitialSegment)
-            cornerVertices.push_back(v1);
+            cornerVertices.push_back(v1.toDataType<GraphicsFloatType>());
     });
 
     // Set up transformation.
@@ -516,10 +517,10 @@ void DislocationVis::renderOverlayMarker(AnimationTime time, const DataObject* d
 
     // Compute bounding box if requested.
     if(renderer->isBoundingBoxPass()) {
-        Box3 bb;
+        Box3G bb;
         bb.addPoints(baseSegmentPoints);
         bb.addPoints(headSegmentPoints);
-        renderer->addToLocalBoundingBox(bb.padBox(headRadius));
+        renderer->addToLocalBoundingBox(bb.padBox(headRadius).toDataType<FloatType>());
         return;
     }
 
@@ -544,8 +545,8 @@ void DislocationVis::renderOverlayMarker(AnimationTime time, const DataObject* d
     renderer->renderParticles(cornerBuffer);
 
     if(!segment->line.empty()) {
-        DataBufferAccessAndRef<Point3> wrappedHeadPos = DataBufferPtr::create(1, DataBuffer::Float, 3); 
-        wrappedHeadPos[0] = cellObject->wrapPoint(segment->line.front());
+        DataBufferAccessAndRef<Point3G> wrappedHeadPos = DataBufferPtr::create(1, DataBuffer::FloatGraphics, 3);
+        wrappedHeadPos[0] = cellObject->wrapPoint(segment->line.front()).toDataType<GraphicsFloatType>();
         ParticlePrimitive headBuffer;
         headBuffer.setShadingMode(ParticlePrimitive::FlatShading);
         headBuffer.setRenderingQuality(ParticlePrimitive::HighQuality);

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2014 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -611,12 +611,20 @@ inline QDataStream& operator>>(QDataStream& stream, Matrix_4<T>& m) {
 }
 
 /**
- * \brief Instantiation of the Matrix_4 class template with the default floating-point type.
+ * \brief Instantiation of the Matrix_4 class template with the default floating-point type (double precision).
  * \relates Matrix_4
  */
 using Matrix4 = Matrix_4<FloatType>;
 
+/**
+ * \brief Instantiation of the Matrix_4 class template with the single-precision floating-point type.
+ * \relates Matrix_4
+ */
+using Matrix4F = Matrix_4<float>;
+
 }   // End of namespace
 
 Q_DECLARE_METATYPE(Ovito::Matrix4);
+Q_DECLARE_METATYPE(Ovito::Matrix4F);
 Q_DECLARE_TYPEINFO(Ovito::Matrix4, Q_PRIMITIVE_TYPE);
+Q_DECLARE_TYPEINFO(Ovito::Matrix4F, Q_PRIMITIVE_TYPE);

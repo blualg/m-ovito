@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -228,7 +228,7 @@ public:
 template<typename T>
 inline Plane_3<T> operator*(const AffineTransformationT<T>& tm, const Plane_3<T>& plane) {
     Plane_3<T> p2;
-    Matrix_3<T> inv_tm; 
+    Matrix_3<T> inv_tm;
     if(tm.linear().inverse(inv_tm)) {
         Matrix_3<T> normalTM = inv_tm.transposed();
         p2.normal = (normalTM * plane.normal).safelyNormalized();
@@ -297,12 +297,20 @@ inline QDataStream& operator>>(QDataStream& stream, Plane_3<T>& p) {
 }
 
 /**
- * \brief Instantiation of the Plane_3 class template with the default floating-point type.
+ * \brief Instantiation of the Plane_3 class template with the default floating-point type (double precision).
  * \relates Plane_3
  */
 using Plane3 = Plane_3<FloatType>;
 
+/**
+ * \brief Instantiation of the Plane_3 class template with the single-precision floating-point type.
+ * \relates Plane_3
+ */
+using Plane3F = Plane_3<float>;
+
 }   // End of namespace
 
 Q_DECLARE_METATYPE(Ovito::Plane3);
+Q_DECLARE_METATYPE(Ovito::Plane3F);
 Q_DECLARE_TYPEINFO(Ovito::Plane3, Q_PRIMITIVE_TYPE);
+Q_DECLARE_TYPEINFO(Ovito::Plane3F, Q_PRIMITIVE_TYPE);

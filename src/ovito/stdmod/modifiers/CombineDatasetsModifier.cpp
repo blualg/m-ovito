@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -142,7 +142,7 @@ void CombineDatasetsModifier::combineDatasets(const ModifierEvaluationRequest& r
     // Let the delegates do their job and merge the data objects of the two datasets.
     applyDelegates(request, state, { std::reference_wrapper<const PipelineFlowState>(secondaryState) });
 
-    // Special handling for the simulation cell. If the secondary dataset contains a simulation cell but 
+    // Special handling for the simulation cell. If the secondary dataset contains a simulation cell but
     // the primary doesn't, then copy it over to the primary dataset.
     if(const SimulationCellObject* secondaryCell = secondaryState.getObject<SimulationCellObject>()) {
         const SimulationCellObject* primaryCell = state.getObject<SimulationCellObject>();
@@ -185,7 +185,7 @@ void CombineDatasetsModifierDelegate::mergeElementTypes(PropertyObject* property
     if(!property2) return;
     if(property2->elementTypes().empty()) return;
     if(property1->componentCount() != 1 || property2->componentCount() != 1) return;
-    if(property1->dataType() != PropertyObject::Int || property2->dataType() != PropertyObject::Int) return;
+    if(property1->dataType() != PropertyObject::Int32 || property2->dataType() != PropertyObject::Int32) return;
 
     std::map<int,int> typeMap;
     for(const ElementType* type2 : property2->elementTypes()) {
@@ -220,11 +220,11 @@ void CombineDatasetsModifierDelegate::mergeElementTypes(PropertyObject* property
     }
     // Remap particle property values.
     if(typeMap.empty() == false) {
-        PropertyAccess<int> selectionArray1 = property1;
+        PropertyAccess<int32_t> selectionArray1 = property1;
         auto p = selectionArray1.begin() + (property1->size() - property2->size());
         auto p_end = selectionArray1.end();
         for(; p != p_end; ++p) {
-            if(auto item = typeMap.find(*p); item != typeMap.end()) 
+            if(auto item = typeMap.find(*p); item != typeMap.end())
                 *p = item->second;
         }
     }

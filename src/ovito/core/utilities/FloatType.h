@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2013 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -63,7 +63,7 @@ namespace Ovito {
 /// The constant PI.
 #define FLOATTYPE_PI    Ovito::FloatType(3.14159265358979323846)
 
+/// Low-precisiion floating-point type used for graphics data.
+using GraphicsFloatType = float;
 
 }   // End of namespace
-
-

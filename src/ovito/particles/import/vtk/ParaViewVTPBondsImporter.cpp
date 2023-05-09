@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -53,7 +53,7 @@ bool ParaViewVTPBondsImporter::OOMetaClass::checkFileFormat(const FileHandle& fi
     if(xml.attributes().value("type").compare(QLatin1String("PolyData")) != 0)
         return false;
 
-    // Continue until we reach the <Piece> element. 
+    // Continue until we reach the <Piece> element.
     while(xml.readNextStartElement()) {
         if(xml.name().compare(QLatin1String("Piece")) == 0) {
             // Number of vertices, triangle strips, and polygons must be zero.
@@ -187,7 +187,7 @@ void ParaViewVTPBondsImporter::FrameLoader::loadFile()
     }
     if(isCanceled())
         return;
-    
+
     // Change title of the bonds visual element. But only do it the very first time the bonds object is created.
     if(areBondsNewlyCreated() && bonds()->visElement()) {
         bonds()->visElement()->setTitle(tr("Particle-particle contacts"));
@@ -205,7 +205,7 @@ void ParaViewVTPBondsImporter::FrameLoader::loadFile()
 }
 
 /******************************************************************************
-* Creates the right kind of OVITO property object that will receive the data 
+* Creates the right kind of OVITO property object that will receive the data
 * read from a <DataArray> element.
 ******************************************************************************/
 PropertyObject* ParaViewVTPBondsImporter::FrameLoader::createBondPropertyForDataArray(QXmlStreamReader& xml, int& vectorComponent, bool preserveExistingData)
@@ -223,7 +223,7 @@ PropertyObject* ParaViewVTPBondsImporter::FrameLoader::createBondPropertyForData
         return bonds()->createProperty(BondsObject::ParticleIdentifiersProperty, initFlags);
     }
     else {
-        return bonds()->createProperty(name.toString(), PropertyObject::Float, numComponents, initFlags);
+        return bonds()->createProperty(name.toString(), PropertyObject::FloatDefault, numComponents, initFlags);
     }
     return nullptr;
 }
@@ -240,10 +240,10 @@ void BondsParaViewVTMFileFilter::postprocessDatasets(FileSourceImporter::LoadOpe
     if(const PropertyObject* bondParticleIdentifiers = particles->bonds()->getProperty(BondsObject::ParticleIdentifiersProperty)) {
 
         // Build map from particle identifiers to particle indices.
-        std::map<qlonglong, size_t> idToIndexMap;
-        if(ConstPropertyAccess<qlonglong> particleIdentifierProperty = particles->getProperty(ParticlesObject::IdentifierProperty)) {
+        std::map<int64_t, size_t> idToIndexMap;
+        if(ConstPropertyAccess<int64_t> particleIdentifierProperty = particles->getProperty(ParticlesObject::IdentifierProperty)) {
             size_t index = 0;
-            for(qlonglong id : particleIdentifierProperty) {
+            for(int64_t id : particleIdentifierProperty) {
                 if(idToIndexMap.insert(std::make_pair(id, index++)).second == false)
                     throw Exception(tr("Duplicate particle identifier %1 detected. Please make sure particle identifiers are unique.").arg(id));
             }

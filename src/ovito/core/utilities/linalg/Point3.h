@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -129,7 +129,11 @@ public:
 
     /// Casts the point to another coordinate type \a U.
     template<typename U>
-    Q_DECL_CONSTEXPR Point_3<U> toDataType() const { return Point_3<U>(static_cast<U>(x()), static_cast<U>(y()), static_cast<U>(z())); }
+    Q_DECL_CONSTEXPR decltype(auto) toDataType() const { return Point_3<U>(static_cast<U>(x()), static_cast<U>(y()), static_cast<U>(z())); }
+
+    // When casting to the same type \a T, this method becomes a no-op.
+    template<>
+    Q_DECL_CONSTEXPR decltype(auto) toDataType<T>() const { return *this; }
 
     ///////////////////////////// Assignment operators ///////////////////////////
 
@@ -334,10 +338,22 @@ inline QDataStream& operator>>(QDataStream& stream, Point_3<T>& v) {
 }
 
 /**
- * \brief Instantiation of the Point_3 class template with the default floating-point type.
+ * \brief Instantiation of the Point_3 class template with the default floating-point type (double precision).
  * \relates Point_3
  */
 using Point3 = Point_3<FloatType>;
+
+/**
+ * \brief Instantiation of the Point_3 class template with the single-precision floating-point type.
+ * \relates Point_3
+ */
+using Point3F = Point_3<float>;
+
+/**
+ * \brief Instantiation of the Point_3 class template with the low-precision floating-point type used for graphics data.
+ * \relates Point_3
+ */
+using Point3G = Point_3<GraphicsFloatType>;
 
 /**
  * \brief Instantiation of the Point_3 class template with the default integer type.
@@ -352,6 +368,8 @@ template<typename T> struct std::tuple_size<Ovito::Point_3<T>> : std::integral_c
 template<std::size_t I, typename T> struct std::tuple_element<I, Ovito::Point_3<T>> { using type = T; };
 
 Q_DECLARE_METATYPE(Ovito::Point3);
+Q_DECLARE_METATYPE(Ovito::Point3F);
 Q_DECLARE_METATYPE(Ovito::Point3I);
 Q_DECLARE_TYPEINFO(Ovito::Point3, Q_PRIMITIVE_TYPE);
+Q_DECLARE_TYPEINFO(Ovito::Point3F, Q_PRIMITIVE_TYPE);
 Q_DECLARE_TYPEINFO(Ovito::Point3I, Q_PRIMITIVE_TYPE);

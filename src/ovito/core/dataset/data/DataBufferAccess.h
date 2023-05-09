@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -28,7 +28,7 @@
 
 #include <boost/range/adaptor/strided.hpp>
 
-namespace Ovito { 
+namespace Ovito {
 
 namespace detail {
 
@@ -93,36 +93,36 @@ protected:
 public:
 
     /// Returns the number of elements in the data array.
-    size_t size() const { 
+    size_t size() const {
         OVITO_ASSERT(this->_buffer);
-        return this->_buffer->size(); 
+        return this->_buffer->size();
     }
 
     /// Returns the number of vector components per element.
-    size_t componentCount() const { 
+    size_t componentCount() const {
         OVITO_ASSERT(this->_buffer);
-        return this->_buffer->componentCount(); 
+        return this->_buffer->componentCount();
     }
 
     /// Returns the number of bytes per element.
-    size_t stride() const { 
+    size_t stride() const {
         OVITO_ASSERT(this->_buffer);
-        return this->_buffer->stride(); 
+        return this->_buffer->stride();
     }
 
     /// Returns the number of bytes per vector component.
-    size_t dataTypeSize() const { 
+    size_t dataTypeSize() const {
         OVITO_ASSERT(this->_buffer);
-        return this->_buffer->dataTypeSize(); 
+        return this->_buffer->dataTypeSize();
     }
 
     /// Returns the data type of the property.
-    int dataType() const { 
+    int dataType() const {
         OVITO_ASSERT(this->_buffer);
-        return this->_buffer->dataType(); 
+        return this->_buffer->dataType();
     }
 
-    /// Returns whether this accessor object points to a valid DataBuffer. 
+    /// Returns whether this accessor object points to a valid DataBuffer.
     explicit operator bool() const noexcept {
         return (bool)this->_buffer;
     }
@@ -159,9 +159,9 @@ public:
     using const_iterator = const T*;
 
     /// Returns the number of elements in the data array.
-    size_t size() const { 
+    size_t size() const {
         OVITO_ASSERT(this->_buffer);
-        return this->_endIndex - this->_beginIndex; 
+        return this->_endIndex - this->_beginIndex;
     }
 
     /// Returns the value of the i-th element from the array.
@@ -204,7 +204,7 @@ public:
     }
 
     /// Constructor that inherits the DataBuffer from another access object and takes an index sub-range.
-    ReadOnlyDataBufferSubrangeAccessBase(DataBufferAccessBase<PointerType, Writable>&& other, size_t beginIndex, size_t endIndex) : DataBufferAccessBase<PointerType, Writable>(std::move(other)), 
+    ReadOnlyDataBufferSubrangeAccessBase(DataBufferAccessBase<PointerType, Writable>&& other, size_t beginIndex, size_t endIndex) : DataBufferAccessBase<PointerType, Writable>(std::move(other)),
         _beginIndex(beginIndex), _endIndex(endIndex) {
         OVITO_ASSERT(this->_buffer);
         OVITO_ASSERT(this->_buffer->stride() == sizeof(T));
@@ -340,12 +340,16 @@ public:
     template<typename U>
     U get(size_t i, size_t j) const {
         switch(this->dataType()) {
-        case DataBuffer::Float:
-            return static_cast<U>(*reinterpret_cast<const FloatType*>(this->cdata(j) + i * this->stride()));
-        case DataBuffer::Int:
-            return static_cast<U>(*reinterpret_cast<const int*>(this->cdata(j) + i * this->stride()));
+        case DataBuffer::Float32:
+            return static_cast<U>(*reinterpret_cast<const float*>(this->cdata(j) + i * this->stride()));
+        case DataBuffer::Float64:
+            return static_cast<U>(*reinterpret_cast<const double*>(this->cdata(j) + i * this->stride()));
+        case DataBuffer::Int8:
+            return static_cast<U>(*reinterpret_cast<const int8_t*>(this->cdata(j) + i * this->stride()));
+        case DataBuffer::Int32:
+            return static_cast<U>(*reinterpret_cast<const int32_t*>(this->cdata(j) + i * this->stride()));
         case DataBuffer::Int64:
-            return static_cast<U>(*reinterpret_cast<const qlonglong*>(this->cdata(j) + i * this->stride()));
+            return static_cast<U>(*reinterpret_cast<const int64_t*>(this->cdata(j) + i * this->stride()));
         default:
             OVITO_ASSERT(false);
             throw Exception(QStringLiteral("Data access failed. Data buffer has a non-standard data type."));
@@ -353,13 +357,13 @@ public:
     }
 
     /// Returns a pointer to the raw data of the data array.
-    const uint8_t* cdata(size_t component = 0) const {
+    const std::byte* cdata(size_t component = 0) const {
         OVITO_ASSERT(this->_buffer);
         return this->_buffer->cbuffer() + (component * this->dataTypeSize());
     }
 
     /// Returns a pointer to the raw data of the data array.
-    const uint8_t* cdata(size_t index, size_t component) const {
+    const std::byte* cdata(size_t index, size_t component) const {
         OVITO_ASSERT(this->_buffer);
         OVITO_ASSERT(index < this->size());
         OVITO_ASSERT(component < this->componentCount());
@@ -549,14 +553,20 @@ public:
     void set(size_t i, size_t j, const U& value) {
         OVITO_ASSERT(this->_buffer);
         switch(this->_buffer->dataType()) {
-        case DataBuffer::Float:
-            *reinterpret_cast<FloatType*>(this->data(j) + i * this->stride()) = value;
+        case DataBuffer::Float32:
+            *reinterpret_cast<float*>(this->data(j) + i * this->stride()) = value;
             break;
-        case DataBuffer::Int:
-            *reinterpret_cast<int*>(this->data(j) + i * this->stride()) = value;
+        case DataBuffer::Float64:
+            *reinterpret_cast<double*>(this->data(j) + i * this->stride()) = value;
+            break;
+        case DataBuffer::Int8:
+            *reinterpret_cast<int8_t*>(this->data(j) + i * this->stride()) = value;
+            break;
+        case DataBuffer::Int32:
+            *reinterpret_cast<int32_t*>(this->data(j) + i * this->stride()) = value;
             break;
         case DataBuffer::Int64:
-            *reinterpret_cast<qlonglong*>(this->data(j) + i * this->stride()) = value;
+            *reinterpret_cast<int64_t*>(this->data(j) + i * this->stride()) = value;
             break;
         default:
             OVITO_ASSERT(false);
@@ -565,13 +575,13 @@ public:
     }
 
     /// Returns a pointer to the raw data of the data array.
-    uint8_t* data(size_t component = 0) {
+    std::byte* data(size_t component = 0) {
         OVITO_ASSERT(this->_buffer);
         return this->_buffer->buffer() + (component * this->dataTypeSize());
     }
 
     /// Returns a pointer to the raw data of the data array.
-    uint8_t* data(size_t index, size_t component) {
+    std::byte* data(size_t index, size_t component) {
         OVITO_ASSERT(this->_buffer);
         OVITO_ASSERT(index < this->size());
         OVITO_ASSERT(component < this->componentCount());
@@ -588,9 +598,9 @@ protected:
 
 /**
  * Helper class that provides read access to the data elements of a DataBuffer.
- * 
+ *
  * The TableMode template parameter should be set to true if access to the individual components
- * of a vector data array is desired or if the number of vector components is unknown at compile time. 
+ * of a vector data array is desired or if the number of vector components is unknown at compile time.
  * If TableMode is set to false, the data elements can only be access as a whole and the number of components must
  * be a compile-time constant.
  */
@@ -605,7 +615,7 @@ public:
     ConstDataBufferAccess() = default;
 
     /// Constructs a read-only accessor for the data in a DataBuffer.
-    ConstDataBufferAccess(const DataBufferClass* buffer) 
+    ConstDataBufferAccess(const DataBufferClass* buffer)
         : ParentType(buffer) {}
 
     /// Constructs a read-only accessor for the data in a DataBuffer.
@@ -646,12 +656,12 @@ public:
 
 /**
  * Helper class that provides read/write access to the data elements in a DataBuffer.
- * 
+ *
  * The TableMode template parameter should be set to true if access to the individual components
- * of a vector data array is desired or if the number of vector components of the property is unknown at compile time. 
+ * of a vector data array is desired or if the number of vector components of the property is unknown at compile time.
  * If TableMode is set to false, the data elements can only be access as a whole and the number of components must
  * be a compile-time constant.
- * 
+ *
  * If the DataBufferAccess object is initialized from a DataBuffer pointer, the buffer object's notifyTargetChanged()
  * method will be automatically called when the DataBufferAccess object goes out of scope to inform the system about
  * a modification of the stored property values.
@@ -667,11 +677,11 @@ public:
     DataBufferAccess() = default;
 
     /// Constructs a read/write accessor for the data in a DataBuffer.
-    DataBufferAccess(DataBufferClass* buffer) 
+    DataBufferAccess(DataBufferClass* buffer)
         : ParentType(buffer) {}
 
     /// Constructs a read/write accessor for the data in a DataBuffer.
-    DataBufferAccess(const DataOORef<DataBufferClass>& buffer) 
+    DataBufferAccess(const DataOORef<DataBufferClass>& buffer)
         : ParentType(buffer.get()) {}
 
     /// Forbid copy construction.
@@ -702,7 +712,7 @@ public:
     DataBufferAccessAndRef() = default;
 
     /// Constructs a read/write accessor for the data in a DataBuffer.
-    DataBufferAccessAndRef(DataOORef<DataBufferClass> buffer) 
+    DataBufferAccessAndRef(DataOORef<DataBufferClass> buffer)
         : ParentType(std::move(buffer)) {}
 
     /// Forbid copy construction.

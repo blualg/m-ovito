@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -276,8 +276,8 @@ void OXDNAImporter::FrameLoader::loadFile()
         signalAdditionalFrames();
 
     // Displace particle positions. oxDNA stores center of mass coordinates, but OVITO expects particle coordinates to be backbone sphere centers.
-    PropertyAccess<Point3> centerOfMassPositionsArray = particles()->createProperty(QStringLiteral("Center Of Mass"), PropertyObject::Float, 3, DataBuffer::NoFlags, QStringList() << QStringLiteral("X") << QStringLiteral("Y") << QStringLiteral("Z"));
-    PropertyAccess<Point3> basePositionsArray = particles()->createProperty(QStringLiteral("Base Position"), PropertyObject::Float, 3, DataBuffer::NoFlags, QStringList() << QStringLiteral("X") << QStringLiteral("Y") << QStringLiteral("Z"));
+    PropertyAccess<Point3> centerOfMassPositionsArray = particles()->createProperty(QStringLiteral("Center Of Mass"), DataBuffer::FloatDefault, 3, DataBuffer::NoFlags, QStringList() << QStringLiteral("X") << QStringLiteral("Y") << QStringLiteral("Z"));
+    PropertyAccess<Point3> basePositionsArray = particles()->createProperty(QStringLiteral("Base Position"), DataBuffer::FloatDefault, 3, DataBuffer::NoFlags, QStringList() << QStringLiteral("X") << QStringLiteral("Y") << QStringLiteral("Z"));
     PropertyAccess<Point3> positionsArray = particles()->getMutableProperty(ParticlesObject::PositionProperty);
     ConstPropertyAccess<Vector3> axisVectorArray = particles()->expectProperty(ParticlesObject::NucleotideAxisProperty);
     for(size_t i = 0; i < numNucleotidesLong; i++) {

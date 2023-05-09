@@ -108,11 +108,11 @@ public:
 
     /// Checks if this property storage and its contents exactly match those of another property storage.
     bool equals(const PropertyObject& other) const;
-    
+
     //////////////////////////////// Element types //////////////////////////////
 
-    /// Returns true if this property has some element types attached and the data type is 'int'. 
-    bool isTypedProperty() const { return !elementTypes().empty() && dataType() == DataBuffer::Int && componentCount() == 1; }
+    /// Returns true if this property has some element types attached and the data type is 'int'.
+    bool isTypedProperty() const { return !elementTypes().empty() && dataType() == DataBuffer::Int32 && componentCount() == 1; }
 
     /// Appends an element type to the list of types.
     const ElementType* addElementType(const ElementType* type) {
@@ -203,7 +203,7 @@ public:
     /// Sorts the element types with respect to the numeric identifier.
     void sortElementTypesById();
 
-    /// Sorts the types w.r.t. their name. 
+    /// Sorts the types w.r.t. their name.
     /// This method is used by file parsers that create element types on the
     /// go while the read the data. In such a case, the type ordering
     /// depends on the storage order of data elements in the loaded file, which is not desirable.

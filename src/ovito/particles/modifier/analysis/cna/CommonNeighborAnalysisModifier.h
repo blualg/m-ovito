@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -214,7 +214,7 @@ private:
             CNAEngine(request, std::move(fingerprint), std::move(positions), simCell, structureTypes, std::move(selection)),
             _bondTopology(std::move(bondTopology)),
             _bondPeriodicImages(std::move(bondPeriodicImages)),
-            _cnaIndices(BondsObject::OOClass().createUserProperty(_bondTopology->size(), PropertyObject::Int, 3, tr("CNA Indices"))) {}
+            _cnaIndices(BondsObject::OOClass().createUserProperty(_bondTopology->size(), PropertyObject::Int32, 3, tr("CNA Indices"))) {}
 
         /// Computes the modifier's results.
         virtual void perform() override;

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -56,7 +56,7 @@ protected:
 
         /// Constructor.
         PropertyComputeEngine(
-                const ModifierEvaluationRequest& request, 
+                const ModifierEvaluationRequest& request,
                 const TimeInterval& validityInterval,
                 const PipelineFlowState& input,
                 const ConstDataObjectPath& containerPath,
@@ -71,13 +71,13 @@ protected:
 
         /// Decides whether the computation is sufficiently short to perform
         /// it synchronously within the GUI thread.
-        virtual bool preferSynchronousExecution() override { 
+        virtual bool preferSynchronousExecution() override {
             // It's okay to perform the modifier operation synchronously for small inputs.
-            return outputProperty()->size() * _expressions.size() <= 2000; 
+            return outputProperty()->size() * _expressions.size() <= 2000;
         }
 
         /// Returns the data accessor to the selection flag array.
-        const ConstPropertyAccessAndRef<int>& selectionArray() const { return _selectionArray; }
+        const ConstPropertyAccessAndRef<DataBuffer::SelectionDataType>& selectionArray() const { return _selectionArray; }
 
         /// Returns the list of available input variables.
         virtual QStringList inputVariableNames() const;
@@ -104,10 +104,10 @@ protected:
         virtual bool isTimeDependent() { return _evaluator->isTimeDependent(); }
 
         /// This method is called by the system whenever a parameter of the modifier changes.
-        /// The method can be overridden by subclasses to indicate to the caller whether the engine object should be 
-        /// discarded or may be kept in the cache, because the computation results are not affected by the changing parameter. 
+        /// The method can be overridden by subclasses to indicate to the caller whether the engine object should be
+        /// discarded or may be kept in the cache, because the computation results are not affected by the changing parameter.
         virtual bool modifierChanged(const PropertyFieldEvent& event) override;
-        
+
     protected:
 
         /// Releases data that is no longer needed.
@@ -120,7 +120,7 @@ protected:
 
         const int _frameNumber;
         QStringList _expressions;
-        ConstPropertyAccessAndRef<int> _selectionArray;
+        ConstPropertyAccessAndRef<DataBuffer::SelectionDataType> _selectionArray;
         std::unique_ptr<PropertyExpressionEvaluator> _evaluator;
         const PropertyPtr _outputProperty;
         PropertyAccess<void, true> _outputArray;
@@ -237,7 +237,7 @@ protected:
 
     /// Is called when the value of a property of this object has changed.
     virtual void propertyChanged(const PropertyFieldDescriptor* field) override;
-    
+
     /// Creates a computation engine that will compute the modifier's results.
     virtual Future<EnginePtr> createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input) override;
 

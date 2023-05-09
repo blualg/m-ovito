@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -85,13 +85,13 @@ public:
     ConstPropertyPtr particleRadii(const ParticlesObject* particles, bool includeGlobalScaleFactor) const;
 
     /// Determines the display radius of a single particle.
-    FloatType particleRadius(size_t particleIndex, ConstPropertyAccess<FloatType> radiusProperty, const PropertyObject* typeProperty) const;
+    GraphicsFloatType particleRadius(size_t particleIndex, ConstPropertyAccess<GraphicsFloatType> radiusProperty, const PropertyObject* typeProperty) const;
 
     /// Returns the display color of a single particle.
-    Color particleColor(size_t particleIndex, ConstPropertyAccess<Color> colorProperty, const PropertyObject* typeProperty, ConstPropertyAccess<int> selectionProperty) const;
+    ColorG particleColor(size_t particleIndex, ConstPropertyAccess<ColorG> colorProperty, const PropertyObject* typeProperty, ConstPropertyAccess<DataBuffer::SelectionDataType> selectionProperty) const;
 
     /// Computes the bounding box of the particles.
-    Box3 particleBoundingBox(ConstPropertyAccess<Point3> positionProperty, const PropertyObject* typeProperty, ConstPropertyAccess<FloatType> radiusProperty, ConstPropertyAccess<Vector3> shapeProperty, bool includeParticleRadius) const;
+    Box3 particleBoundingBox(ConstPropertyAccess<Point3> positionProperty, const PropertyObject* typeProperty, ConstPropertyAccess<GraphicsFloatType> radiusProperty, ConstPropertyAccess<Vector3G> shapeProperty, bool includeParticleRadius) const;
 
     /// Render a marker around a particle to highlight it in the viewports.
     void highlightParticle(size_t particleIndex, const ParticlesObject* particles, SceneRenderer* renderer) const;

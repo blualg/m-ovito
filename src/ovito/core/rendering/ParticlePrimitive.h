@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -62,19 +62,19 @@ public:
 
     /// \brief Sets the array of particle indices to render.
     void setIndices(ConstDataBufferPtr indices) {
-        OVITO_ASSERT(!indices || (indices->dataType() == DataBuffer::Int && indices->componentCount() == 1));
+        OVITO_ASSERT(!indices || (indices->dataType() == DataBuffer::Int32 && indices->componentCount() == 1));
         _indices = std::move(indices);
     }
 
     /// \brief Sets the coordinates of the particles.
     void setPositions(ConstDataBufferPtr coordinates) {
-        OVITO_ASSERT(!coordinates || (coordinates->dataType() == DataBuffer::Float && coordinates->componentCount() == 3));
+        OVITO_ASSERT(!coordinates || coordinates->componentCount() == 3);
         _positions = std::move(coordinates);
     }
 
     /// \brief Sets the radii of the particles.
     void setRadii(ConstDataBufferPtr radii) {
-        OVITO_ASSERT(!radii || (radii->dataType() == DataBuffer::Float && radii->componentCount() == 1));
+        OVITO_ASSERT(!radii || radii->componentCount() == 1);
         _radii = std::move(radii);
     }
 
@@ -85,7 +85,7 @@ public:
 
     /// \brief Sets the colors of the particles.
     void setColors(ConstDataBufferPtr colors) {
-        OVITO_ASSERT(!colors || (colors->dataType() == DataBuffer::Float && colors->componentCount() == 3));
+        OVITO_ASSERT(!colors || colors->componentCount() == 3);
         _colors = std::move(colors);
     }
 
@@ -96,7 +96,7 @@ public:
 
     /// \brief Sets the selection flags of the particles.
     void setSelection(ConstDataBufferPtr selection) {
-        OVITO_ASSERT(!selection || (selection->dataType() == DataBuffer::Int && selection->componentCount() == 1));
+        OVITO_ASSERT(!selection || (selection->dataType() == DataBuffer::IntSelection && selection->componentCount() == 1));
         _selection = std::move(selection);
     }
 
@@ -107,25 +107,25 @@ public:
 
     /// \brief Sets the transparency values of the particles.
     void setTransparencies(ConstDataBufferPtr transparencies) {
-        OVITO_ASSERT(!transparencies || (transparencies->dataType() == DataBuffer::Float && transparencies->componentCount() == 1));
+        OVITO_ASSERT(!transparencies || transparencies->componentCount() == 1);
         _transparencies = std::move(transparencies);
     }
 
     /// \brief Sets the aspherical shape of the particles.
     void setAsphericalShapes(ConstDataBufferPtr shapes) {
-        OVITO_ASSERT(!shapes || (shapes->dataType() == DataBuffer::Float && shapes->componentCount() == 3));
-        _asphericalShapes = std::move(shapes);      
+        OVITO_ASSERT(!shapes || shapes->componentCount() == 3);
+        _asphericalShapes = std::move(shapes);
     }
 
     /// \brief Sets the aspherical shape of the particles.
     void setOrientations(ConstDataBufferPtr orientations) {
-        OVITO_ASSERT(!orientations || (orientations->dataType() == DataBuffer::Float && orientations->componentCount() == 4));
-        _orientations = std::move(orientations);        
+        OVITO_ASSERT(!orientations || orientations->componentCount() == 4);
+        _orientations = std::move(orientations);
     }
 
     /// \brief Sets the superquadric roundness values of the particles.
     void setRoundness(ConstDataBufferPtr roundness) {
-        OVITO_ASSERT(!roundness || (roundness->dataType() == DataBuffer::Float && roundness->componentCount() == 2));
+        OVITO_ASSERT(!roundness || roundness->componentCount() == 2);
         _roundness = std::move(roundness);
     }
 
@@ -210,7 +210,7 @@ private:
     ConstDataBufferPtr _selection; // Array of int
 
     /// The internal buffer storing the particle semi-transparency values.
-    ConstDataBufferPtr _transparencies; // Array of FloatType   
+    ConstDataBufferPtr _transparencies; // Array of FloatType
 
     /// The internal buffer storing the shapes of aspherical particles.
     ConstDataBufferPtr _asphericalShapes; // Array of Vector3

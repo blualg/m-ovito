@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -48,17 +48,20 @@ public:
     explicit MarkerPrimitive(MarkerShape shape = DotShape) : _shape(shape) {}
 
     /// \brief Sets the coordinates of the markers.
-    void setPositions(ConstDataBufferPtr coordinates) { 
+    void setPositions(ConstDataBufferPtr coordinates) {
         OVITO_ASSERT(coordinates);
-        OVITO_ASSERT(coordinates->dataType() == DataBuffer::Float && coordinates->componentCount() == 3);
-        _positions = std::move(coordinates); 
+        OVITO_ASSERT(coordinates->componentCount() == 3);
+        _positions = std::move(coordinates);
     }
 
     /// \brief Sets the coordinates of the markers.
     template<typename InputIterator>
     void makePositions(InputIterator begin, InputIterator end) {
+        using PointType = typename std::iterator_traits<InputIterator>::value_type;
+        using ValueType = typename PointType::value_type;
+
         size_t count = std::distance(begin, end);
-        DataBufferAccessAndRef<Point3> buffer = DataBufferPtr::create(count, DataBuffer::Float, 3);
+        DataBufferAccessAndRef<PointType> buffer = DataBufferPtr::create(count, DataBufferPrimitiveType<ValueType>::value, 3);
         std::copy(std::move(begin), std::move(end), buffer.begin());
         setPositions(buffer.take());
     }

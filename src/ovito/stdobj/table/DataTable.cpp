@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -107,7 +107,7 @@ ConstPropertyPtr DataTable::getXValues() const
     }
     else if(const PropertyObject* yProperty = y()) {
         if(elementCount() != 0 && (intervalStart() != 0 || intervalEnd() != 0)) {
-            PropertyAccessAndRef<FloatType> xdata = OOClass().createUserProperty(elementCount(), PropertyObject::Float, 1, axisLabelX());
+            PropertyAccessAndRef<FloatType> xdata = OOClass().createUserProperty(elementCount(), PropertyObject::FloatDefault, 1, axisLabelX());
             FloatType binSize = (intervalEnd() - intervalStart()) / xdata.size();
             FloatType x = intervalStart() + binSize * FloatType(0.5);
             for(FloatType& v : xdata) {
@@ -117,8 +117,8 @@ ConstPropertyPtr DataTable::getXValues() const
             return xdata.take();
         }
         else {
-            PropertyAccessAndRef<qlonglong> xdata = OOClass().createUserProperty(elementCount(), PropertyObject::Int64, 1, axisLabelX());
-            std::iota(xdata.begin(), xdata.end(), (size_t)0);
+            PropertyAccessAndRef<int64_t> xdata = OOClass().createUserProperty(elementCount(), PropertyObject::Int64, 1, axisLabelX());
+            std::iota(xdata.begin(), xdata.end(), (int64_t)0);
             return xdata.take();
         }
     }
