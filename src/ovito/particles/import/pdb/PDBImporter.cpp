@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -307,8 +307,14 @@ void PDBImporter::FrameLoader::loadFile()
         atomNameProperty.reset();
         residueTypeProperty.reset();
 
-        // Parse unit cell.
-        if(structure.cell.is_crystal()) {
+        // Parse unit cell if available.
+        //
+        // Gemmi provides the UnitCell::is_crystal() method to determin whether (periodic) cell information
+        // is available. But it turned out to be too strict. Atomsk writes PDB files containing unity
+        // SCALEn records, which make Gemmi intrept these files as non-periodic. We replace the check
+        // with a simpler criterion.
+        // See https://www.ovito.org/forum/topic/polyhedral-visualazation/#postid-4244.
+        if(structure.cell.a != 1.0 || structure.cell.b != 1.0 || structure.cell.c != 1.0 || structure.cell.alpha != 90.0 || structure.cell.beta != 90.0 || structure.cell.gamma != 90.0) {
 
             // Some PDB files use wrong column widths in the CRYST1 record line. These leads to invalid cell values when parsed by gemmi.
             if(std::isnan(structure.cell.alpha) || std::isnan(structure.cell.beta) || std::isnan(structure.cell.gamma) ||

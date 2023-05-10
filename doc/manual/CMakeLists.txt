@@ -25,6 +25,7 @@
 
 # Controls the generation of the user manual.
 OPTION(OVITO_BUILD_DOCUMENTATION "Build the user manual" "OFF")
+OPTION(OVITO_BUILD_DOCUMENTATION_STRICT "Treat warnings as errors when building the documentation" "ON")
 
 IF(OVITO_BUILD_APP)
     # Create destination directories.
@@ -51,6 +52,12 @@ IF(OVITO_BUILD_APP)
     IF(OVITO_BUILD_PROFESSIONAL)
         SET(OVITO_PYDOC_INTERSPHINX_LOCATION "${OVITO_SHARE_DIRECTORY}/doc/manual/html/python/objects.inv")
     ENDIF()
+    
+    if(OVITO_BUILD_DOCUMENTATION_STRICT) # Turn warnings into errors
+        set(BUILD_DOCUMENTATION_STRICT "-W") 
+    else()
+        set(BUILD_DOCUMENTATION_STRICT "") 
+    endif()
 
     # Build reStructuredText documentation using Sphinx.
     ADD_CUSTOM_TARGET(documentation
@@ -63,7 +70,7 @@ IF(OVITO_BUILD_APP)
             "${OVITO_SHARE_DIRECTORY}/doc/manual/html/"   # Destination directory
             -a -E                                         # Always write all output files. Don’t use a saved environment. 
             -n                                            # Run in nit-picky mode
-            -W                                            # Turn warnings into errors
+             "${BUILD_DOCUMENTATION_STRICT}"               # Turn warnings into errors
             # Additional config settings passed to Sphinx, which are added to the options found in conf.py: 
             -D "version=${OVITO_VERSION_STRING}"
             -D "release=${OVITO_VERSION_STRING}"
