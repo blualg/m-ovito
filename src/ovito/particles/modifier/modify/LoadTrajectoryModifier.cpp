@@ -373,9 +373,11 @@ void LoadTrajectoryModifier::applyTrajectoryState(PipelineFlowState& state, cons
             }
 
             // Compute the PBC shift vectors of the bonds based on current particle positions.
-            if(const SimulationCellObject* simCellObj = state.getObject<SimulationCellObject>()) {
-                if(simCellObj->pbcX() || simCellObj->pbcY() || simCellObj->pbcZ()) {
-                    particles->makeBondsMutable()->generatePeriodicImageProperty(particles, simCellObj);
+            if(!trajectoryBonds->getProperty(BondsObject::PeriodicImageProperty)) {
+                if(const SimulationCellObject* simCellObj = state.getObject<SimulationCellObject>()) {
+                    if(simCellObj->pbcX() || simCellObj->pbcY() || simCellObj->pbcZ()) {
+                        particles->makeBondsMutable()->generatePeriodicImageProperty(particles, simCellObj);
+                    }
                 }
             }
         }
