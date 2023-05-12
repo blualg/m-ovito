@@ -43,7 +43,7 @@ class OVITO_STDMOD_EXPORT SelectTypeModifier : public GenericPropertyModifier
 public:
 
     /// Constructor.
-    Q_INVOKABLE SelectTypeModifier(ObjectCreationParams params);
+    Q_INVOKABLE SelectTypeModifier(ObjectInitializationFlags flags);
 
     /// This method is called by the system after the modifier has been inserted into a data pipeline.
     virtual void initializeModifier(const ModifierInitializationRequest& request) override;
@@ -53,7 +53,7 @@ public:
 
 #ifdef OVITO_QML_GUI
     /// This helper method is called by the QML GUI (SelectTypeModifier.qml) to extract the list of element types
-    /// from the input pipeline output state. 
+    /// from the input pipeline output state.
     Q_INVOKABLE QVariantList getElementTypesFromInputState(ModifierApplication* modApp) const;
 
     /// Toggles the selection state for the given element types.

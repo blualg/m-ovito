@@ -49,7 +49,7 @@ SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(ParticlesVis, radiusScaleFactor, PercentPar
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-ParticlesVis::ParticlesVis(ObjectCreationParams params) : DataVis(params),
+ParticlesVis::ParticlesVis(ObjectInitializationFlags flags) : DataVis(flags),
     _defaultParticleRadius(1.2),
     _radiusScaleFactor(1.0),
     _renderingQuality(ParticlePrimitive::AutoQuality),
@@ -224,7 +224,7 @@ ConstPropertyPtr ParticlesVis::particleColors(const ParticlesObject* particles, 
     DataObjectAccess<DataOORef, PropertyObject> output = particles->getProperty(ParticlesObject::ColorProperty);
     if(!output) {
         // Allocate new output color array.
-        output.reset(ParticlesObject::OOClass().createStandardProperty(particles->elementCount(), ParticlesObject::ColorProperty));
+        output.reset(ParticlesObject::OOClass().createStandardProperty(DataBuffer::Uninitialized, particles->elementCount(), ParticlesObject::ColorProperty));
 
         const Color defaultColor = defaultParticleColor();
         if(const PropertyObject* typeProperty = getParticleTypeColorProperty(particles)) {
@@ -334,7 +334,7 @@ ConstPropertyPtr ParticlesVis::particleRadii(const ParticlesObject* particles, b
     }
     else {
         // Allocate output array.
-        output.reset(ParticlesObject::OOClass().createStandardProperty(particles->elementCount(), ParticlesObject::RadiusProperty));
+        output.reset(ParticlesObject::OOClass().createStandardProperty(DataBuffer::Uninitialized, particles->elementCount(), ParticlesObject::RadiusProperty));
 
         if(const PropertyObject* typeProperty = getParticleTypeRadiusProperty(particles)) {
             OVITO_ASSERT(typeProperty->size() == output->size());
@@ -601,7 +601,7 @@ void ParticlesVis::renderMeshBasedParticles(const ParticlesObject* particles, Sc
             perInstanceData.emplace_back(
                 DataBufferPtr::create(0, DataBuffer::Float, 12),    // <AffineTransformation> (particle orientations)
                 DataBufferPtr::create(0, DataBuffer::Float,  4),    // <ColorA> (particle colors)
-                DataBufferPtr::create(0, DataBuffer::Int)       // <int> (particle indices)
+                DataBufferPtr::create(0, DataBuffer::Int)           // <int> (particle indices)
             );
         }
 

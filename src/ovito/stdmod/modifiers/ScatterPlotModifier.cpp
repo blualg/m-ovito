@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -63,7 +63,7 @@ SET_PROPERTY_FIELD_LABEL(ScatterPlotModifier, yAxisProperty, "Y-axis property");
 /******************************************************************************
 * Constructs the modifier object.
 ******************************************************************************/
-ScatterPlotModifier::ScatterPlotModifier(ObjectCreationParams params) : GenericPropertyModifier(params),
+ScatterPlotModifier::ScatterPlotModifier(ObjectInitializationFlags flags) : GenericPropertyModifier(flags),
     _selectXAxisInRange(false),
     _selectionXAxisRangeStart(0),
     _selectionXAxisRangeEnd(1),
@@ -191,8 +191,8 @@ void ScatterPlotModifier::evaluateSynchronous(const ModifierEvaluationRequest& r
     }
 
     // Create output arrays.
-    PropertyAccessAndRef<FloatType> out_x = DataTable::OOClass().createUserProperty(container->elementCount(), PropertyObject::Float, 1, xAxisProperty().nameWithComponent());
-    PropertyAccessAndRef<FloatType> out_y = DataTable::OOClass().createUserProperty(container->elementCount(), PropertyObject::Float, 1, yAxisProperty().nameWithComponent());
+    PropertyAccessAndRef<FloatType> out_x = DataTable::OOClass().createUserProperty(DataBuffer::Uninitialized, container->elementCount(), PropertyObject::Float, 1, xAxisProperty().nameWithComponent());
+    PropertyAccessAndRef<FloatType> out_y = DataTable::OOClass().createUserProperty(DataBuffer::Uninitialized, container->elementCount(), PropertyObject::Float, 1, yAxisProperty().nameWithComponent());
 
     // Collect X coordinates.
     if(!xProperty->copyTo(out_x.begin(), xVecComponent))

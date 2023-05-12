@@ -69,7 +69,7 @@ void ParaViewVTUSimulationCellImporter::FrameLoader::loadFile()
         throw Exception(tr("Failed to open VTU file: %1").arg(device->errorString()));
     QXmlStreamReader xml(device.get());
 
-    size_t numberOfPoints = 0; 
+    size_t numberOfPoints = 0;
 
     // Parse the elements of the XML file.
     while(xml.readNextStartElement()) {

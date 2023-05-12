@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -40,7 +40,7 @@ RefTarget* CloneHelper::cloneObjectImpl(const RefTarget* obj, bool deepCopy)
 {
     OVITO_ASSERT(ExecutionContext::current().isValid());
 
-    if(obj == nullptr) 
+    if(obj == nullptr)
         return nullptr;
 
     OVITO_CHECK_OBJECT_POINTER(obj);

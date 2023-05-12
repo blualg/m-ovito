@@ -40,7 +40,7 @@ DEFINE_REFERENCE_FIELD(ViewportConfiguration, layoutRootCell);
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-ViewportConfiguration::ViewportConfiguration(ObjectCreationParams params) : RefTarget(params)
+ViewportConfiguration::ViewportConfiguration(ObjectInitializationFlags flags) : RefTarget(flags)
 {
 }
 
@@ -79,7 +79,7 @@ bool ViewportConfiguration::referenceEvent(RefTarget* source, const ReferenceEve
 /******************************************************************************
 * Zooms all viewports to the extents of the currently selected nodes.
 ******************************************************************************/
-void ViewportConfiguration::zoomToSelectionExtents() 
+void ViewportConfiguration::zoomToSelectionExtents()
 {
     for(Viewport* vp : viewports())
         vp->zoomToSelectionExtents();
@@ -88,26 +88,26 @@ void ViewportConfiguration::zoomToSelectionExtents()
 /******************************************************************************
 * Zooms to the extents of the scene.
 ******************************************************************************/
-void ViewportConfiguration::zoomToSceneExtents() 
+void ViewportConfiguration::zoomToSceneExtents()
 {
     for(Viewport* vp : viewports())
         vp->zoomToSceneExtents();
 }
 
 /******************************************************************************
-* Zooms all viewports to the extents of the scene when all scene pipelines 
+* Zooms all viewports to the extents of the scene when all scene pipelines
 * have been fully evaluated and the extents are known.
 ******************************************************************************/
 void ViewportConfiguration::zoomToSceneExtentsWhenReady()
 {
-    for(Viewport* vp : viewports()) 
+    for(Viewport* vp : viewports())
         vp->zoomToSceneExtentsWhenReady();
 }
 
 /******************************************************************************
 * Helper function for recursively gathering all viewports in a layout tree.
 ******************************************************************************/
-static void gatherViewportsFromLayout(const ViewportLayoutCell* cell, std::vector<Viewport*>& viewportList) 
+static void gatherViewportsFromLayout(const ViewportLayoutCell* cell, std::vector<Viewport*>& viewportList)
 {
     if(cell) {
         if(cell->viewport())
@@ -118,7 +118,7 @@ static void gatherViewportsFromLayout(const ViewportLayoutCell* cell, std::vecto
 }
 
 /******************************************************************************
-* Rebuilds the linear list of all viewports that are part of the current viewport layout tree. 
+* Rebuilds the linear list of all viewports that are part of the current viewport layout tree.
 ******************************************************************************/
 void ViewportConfiguration::updateListOfViewports()
 {

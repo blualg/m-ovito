@@ -88,7 +88,7 @@ public:
         if(_createRegions) {
 
             // Create the "Region" face property in the output mesh.
-            _mesh.createFaceProperty(SurfaceMeshFaces::RegionProperty);
+            _mesh.createFaceProperty(DataBuffer::Uninitialized, SurfaceMeshFaces::RegionProperty);
 
             if(!formFilledRegions(operation))
                 return false;
@@ -368,7 +368,7 @@ public:
             return false;
 
         // Create the "Exterior" region property in the output mesh.
-        PropertyObject* regionPropertyIsExterior = _mesh.createRegionProperty(SurfaceMeshRegions::IsExteriorProperty, DataBuffer::InitializeMemory);
+        PropertyObject* regionPropertyIsExterior = _mesh.createRegionProperty(DataBuffer::Initialized, SurfaceMeshRegions::IsExteriorProperty);
 
         // Remap merged regions to contiguous range.
         std::vector<SurfaceMeshAccess::region_index> regionMapping(_emptyRegionCount);
@@ -503,7 +503,7 @@ private:
             return false;
 
         // Create the 'Volume' property for the identified regions.
-        _mesh.createRegionProperty(SurfaceMeshRegions::VolumeProperty, DataBuffer::InitializeMemory);
+        _mesh.createRegionProperty(DataBuffer::Initialized, SurfaceMeshRegions::VolumeProperty);
 
         operation.nextProgressSubStep();
         operation.setProgressMaximum(_tessellation.numberOfTetrahedra());
@@ -1080,7 +1080,7 @@ private:
 
         // Construct convex hull of remaining line segments.
         if(!_convexHullMesh)
-            _convexHullMesh.reset(DataOORef<SurfaceMesh>::create(ObjectCreationParams::WithoutVisElement));
+            _convexHullMesh.reset(DataOORef<SurfaceMesh>::create(ObjectInitializationFlag::DontCreateVisElement));
         else
             _convexHullMesh.clearMesh();
         _convexHullMesh.constructConvexHull(std::vector<Point3>(lineSegments, lineSegments + numPoints));

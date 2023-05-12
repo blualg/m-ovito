@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -40,7 +40,7 @@ SET_PROPERTY_FIELD_LABEL(WignerSeitzAnalysisModifier, outputCurrentConfig, "Outp
 /******************************************************************************
 * Constructs the modifier object.
 ******************************************************************************/
-WignerSeitzAnalysisModifier::WignerSeitzAnalysisModifier(ObjectCreationParams params) : ReferenceConfigurationModifier(params),
+WignerSeitzAnalysisModifier::WignerSeitzAnalysisModifier(ObjectInitializationFlags flags) : ReferenceConfigurationModifier(flags),
     _perTypeOccupancy(false),
     _outputCurrentConfig(false)
 {
@@ -107,9 +107,9 @@ Future<AsynchronousModifier::EnginePtr> WignerSeitzAnalysisModifier::createEngin
     // Create output properties:
     if(outputCurrentConfig()) {
         if(referenceIdentifierProperty)
-            engine->setSiteIdentifiers(ParticlesObject::OOClass().createUserProperty(posProperty->size(), PropertyObject::Int64, 1, tr("Site Identifier")));
-        engine->setSiteTypes(ParticlesObject::OOClass().createUserProperty(posProperty->size(), PropertyObject::Int, 1, tr("Site Type")));
-        engine->setSiteIndices(ParticlesObject::OOClass().createUserProperty(posProperty->size(), PropertyObject::Int64, 1, tr("Site Index")));
+            engine->setSiteIdentifiers(ParticlesObject::OOClass().createUserProperty(DataBuffer::Uninitialized, posProperty->size(), PropertyObject::Int64, 1, tr("Site Identifier")));
+        engine->setSiteTypes(ParticlesObject::OOClass().createUserProperty(DataBuffer::Uninitialized, posProperty->size(), PropertyObject::Int, 1, tr("Site Type")));
+        engine->setSiteIndices(ParticlesObject::OOClass().createUserProperty(DataBuffer::Uninitialized, posProperty->size(), PropertyObject::Int64, 1, tr("Site Index")));
     }
 
     return engine;
@@ -196,7 +196,7 @@ void WignerSeitzAnalysisModifier::WignerSeitzAnalysisEngine::perform()
     if(isCanceled()) return;
 
     // Create output storage.
-    setOccupancyNumbers(ParticlesObject::OOClass().createUserProperty(
+    setOccupancyNumbers(ParticlesObject::OOClass().createUserProperty(DataBuffer::Uninitialized,
         siteTypes() ? positions()->size() : refPositions()->size(),
         PropertyObject::Int, ncomponents, tr("Occupancy")));
     if(ncomponents > 1 && typemin != 1) {

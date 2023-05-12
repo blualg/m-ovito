@@ -212,8 +212,8 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
     setImproperCount(nimpropers);
 
     // Create standard particle properties.
-    particles()->createProperty(ParticlesObject::PositionProperty, DataBuffer::InitializeMemory);
-    PropertyObject* typeProperty = particles()->createProperty(ParticlesObject::TypeProperty, DataBuffer::InitializeMemory);
+    particles()->createProperty(DataBuffer::Initialized, ParticlesObject::PositionProperty);
+    PropertyObject* typeProperty = particles()->createProperty(DataBuffer::Initialized, ParticlesObject::TypeProperty);
 
     // Atom type mass table.
     std::vector<FloatType> massTable(natomtypes, 0.0);
@@ -718,8 +718,8 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
                 throw Exception(tr("Atoms section must precede Ellipsoids section in data file (error in line %1).").arg(stream.lineNumber()));
 
             // Create properties for ellipsoidal particles.
-            PropertyAccess<Vector3> asphericalShapeProperty = particles()->createProperty(ParticlesObject::AsphericalShapeProperty, DataBuffer::InitializeMemory);
-            PropertyAccess<Quaternion> orientationProperty = particles()->createProperty(ParticlesObject::OrientationProperty, DataBuffer::InitializeMemory);
+            PropertyAccess<Vector3> asphericalShapeProperty = particles()->createProperty(DataBuffer::Initialized, ParticlesObject::AsphericalShapeProperty);
+            PropertyAccess<Quaternion> orientationProperty = particles()->createProperty(DataBuffer::Initialized, ParticlesObject::OrientationProperty);
 
             setProgressMaximum(nellipsoids);
             for(size_t i = 0; i < (size_t)nellipsoids; i++) {

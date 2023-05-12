@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -52,7 +52,7 @@ class OVITO_STDMOD_EXPORT ColorByTypeModifier : public GenericPropertyModifier
 public:
 
     /// Constructor.
-    Q_INVOKABLE ColorByTypeModifier(ObjectCreationParams params);
+    Q_INVOKABLE ColorByTypeModifier(ObjectInitializationFlags flags);
 
     /// This method is called by the system after the modifier has been inserted into a data pipeline.
     virtual void initializeModifier(const ModifierInitializationRequest& request) override;
@@ -62,7 +62,7 @@ public:
 
 #ifdef OVITO_QML_GUI
     /// This helper method is called by the QML GUI (ColorByTypeModifier.qml) to extract the list of element types
-    /// from the input pipeline output state. 
+    /// from the input pipeline output state.
     Q_INVOKABLE QVariantList getElementTypesFromInputState(ModifierApplication* modApp) const;
 #endif
 

@@ -40,19 +40,19 @@ class OVITO_PARTICLES_EXPORT ParticleImporter : public FileSourceImporter
 public:
 
     /// \brief Constructs a new instance of this class.
-    ParticleImporter(ObjectCreationParams params) : FileSourceImporter(params), 
+    ParticleImporter(ObjectInitializationFlags flags) : FileSourceImporter(flags),
         _sortParticles(false), _generateBonds(false), _recenterCell(false) {}
 
     /// Indicates whether this file importer type loads particle trajectories.
-    virtual bool isTrajectoryFormat() const { return false; } 
+    virtual bool isTrajectoryFormat() const { return false; }
 
     /// \brief Returns the priority level of this importer, which is used to order multiple files that are imported simultaneously.
     virtual int importerPriority() const override {
-        // When importing multiple files at once, make sure trajectory importers are called after 
-        // non-trajectory (i.e. topology) importers by giving them a lower priority. 
+        // When importing multiple files at once, make sure trajectory importers are called after
+        // non-trajectory (i.e. topology) importers by giving them a lower priority.
         // The topology importer's importFurtherFiles() method will then be called first and can insert a "Load Trajectory" modifier
         // into the pipeline for loading the trajectory data file(s).
-        return isTrajectoryFormat() ? -1 : FileSourceImporter::importerPriority(); 
+        return isTrajectoryFormat() ? -1 : FileSourceImporter::importerPriority();
     }
 
 protected:
@@ -104,7 +104,7 @@ protected:
         /// Generates ad-hoc bonds between atoms based on their van der Waals radii.
         void generateBonds();
 
-        /// If the particles are centered on the coordinate origin but the current simulation cell corner is positioned at (0,0,0), 
+        /// If the particles are centered on the coordinate origin but the current simulation cell corner is positioned at (0,0,0),
         /// the this method centers the cell at (0,0,0), leaving the particle coordinates unchanged.
         void correctOffcenterCell();
 

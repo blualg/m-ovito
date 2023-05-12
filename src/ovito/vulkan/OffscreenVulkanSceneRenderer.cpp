@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -38,7 +38,7 @@ IMPLEMENT_OVITO_CLASS(OffscreenVulkanSceneRenderer);
 static std::shared_ptr<VulkanContext> selectVulkanContext()
 {
     // Use the Vulkan device used for the interactive viewport windows
-    // also for offscreen rendering if available. 
+    // also for offscreen rendering if available.
     if(Viewport* vp = ExecutionContext::current().ui().datasetContainer().activeViewport()) {
         if(ViewportWindowInterface* window = vp->window()) {
             if(VulkanSceneRenderer* renderer = dynamic_object_cast<VulkanSceneRenderer>(window->sceneRenderer())) {
@@ -54,8 +54,8 @@ static std::shared_ptr<VulkanContext> selectVulkanContext()
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-OffscreenVulkanSceneRenderer::OffscreenVulkanSceneRenderer(ObjectCreationParams params, std::shared_ptr<VulkanContext> vulkanContext, bool grabDepthBuffer) 
-    : VulkanSceneRenderer(params, vulkanContext ? std::move(vulkanContext) : selectVulkanContext()), _grabDepthBuffer(grabDepthBuffer) 
+OffscreenVulkanSceneRenderer::OffscreenVulkanSceneRenderer(ObjectInitializationFlags flags, std::shared_ptr<VulkanContext> vulkanContext, bool grabDepthBuffer)
+    : VulkanSceneRenderer(flags, vulkanContext ? std::move(vulkanContext) : selectVulkanContext()), _grabDepthBuffer(grabDepthBuffer)
 {
 }
 
@@ -293,8 +293,8 @@ void OffscreenVulkanSceneRenderer::beginFrame(AnimationTime time, Scene* scene, 
         throw RendererException(tr("Failed to begin Vulkan frame command buffer."));
     }
 
-    // Always render with a fully transparent background. 
-    // Compositing with the viewport layer content will be performed in an OVITO FrameBuffer. 
+    // Always render with a fully transparent background.
+    // Compositing with the viewport layer content will be performed in an OVITO FrameBuffer.
     VkClearColorValue clearColor = {{ 0, 0, 0, 0 }};
     if(!isPicking()) {
         ColorT<float> bgcolor = ColorT<float>(renderSettings().backgroundColorAt(time));
@@ -394,7 +394,7 @@ void OffscreenVulkanSceneRenderer::endFrame(bool renderingSuccessful, const QRec
                                    VK_PIPELINE_STAGE_TRANSFER_BIT,
                                    VK_PIPELINE_STAGE_HOST_BIT,
                                    0, 0, nullptr, 0, nullptr,
-                                   1, &barrier);    
+                                   1, &barrier);
 
     if(_grabDepthBuffer) {
         // After rendering is complete, copy contents of depth buffer image to our host-visible staging buffer.
@@ -465,7 +465,7 @@ void OffscreenVulkanSceneRenderer::endFrame(bool renderingSuccessful, const QRec
             p += layout.rowPitch;
         }
         deviceFunctions()->vkUnmapMemory(logicalDevice(), _frameGrabImageMem);
-        
+
         // Rescale supersampled image.
         QSize originalSize(frameGrabTargetImage.width() / antialiasingLevel(), frameGrabTargetImage.height() / antialiasingLevel());
         QImage scaledImage = frameGrabTargetImage.scaled(originalSize, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
@@ -544,7 +544,7 @@ FloatType OffscreenVulkanSceneRenderer::depthAtPixel(const QPoint& pos) const
 ******************************************************************************/
 void OffscreenVulkanSceneRenderer::releaseVulkanFramebuffers()
 {
-    // Releasing resources requires a valid Vulkan device. 
+    // Releasing resources requires a valid Vulkan device.
     if(!deviceFunctions())
         return;
 

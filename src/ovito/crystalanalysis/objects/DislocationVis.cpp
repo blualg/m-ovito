@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -58,7 +58,7 @@ IMPLEMENT_OVITO_CLASS(DislocationPickInfo);
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-DislocationVis::DislocationVis(ObjectCreationParams params) : TransformingDataVis(params),
+DislocationVis::DislocationVis(ObjectInitializationFlags flags) : TransformingDataVis(flags),
     _lineWidth(1.0),
     _shadingMode(CylinderPrimitive::NormalShading),
     _burgersVectorWidth(0.6),
@@ -164,7 +164,7 @@ Future<PipelineFlowState> DislocationVis::transformDataImpl(const PipelineEvalua
     }
 
     // Create output RenderableDislocationLines object.
-    DataOORef<RenderableDislocationLines> renderableLines = DataOORef<RenderableDislocationLines>::create(ObjectCreationParams::WithoutVisElement, this, dataObject);
+    DataOORef<RenderableDislocationLines> renderableLines = DataOORef<RenderableDislocationLines>::create(ObjectInitializationFlag::DontCreateVisElement, this, dataObject);
     renderableLines->setVisElement(this);
     renderableLines->setLineSegments(std::move(outputSegments));
     renderableLines->setClusterGraph(std::move(clusterGraph));
@@ -391,7 +391,7 @@ PipelineStatus DislocationVis::render(AnimationTime time, const ConstDataObjectP
                 if(lastDislocationIndex != lineSegment.dislocationIndex) {
                     lastDislocationIndex = lineSegment.dislocationIndex;
                     const auto& segmentList = dislocationsObj->segments();
-                    lastInputDislocationSegment = (lastDislocationIndex >= 0 && lastDislocationIndex < segmentList.size()) ? 
+                    lastInputDislocationSegment = (lastDislocationIndex >= 0 && lastDislocationIndex < segmentList.size()) ?
                         segmentList[lastDislocationIndex] : nullptr;
                 }
                 if(lastInputDislocationSegment) {
@@ -544,7 +544,7 @@ void DislocationVis::renderOverlayMarker(AnimationTime time, const DataObject* d
     renderer->renderParticles(cornerBuffer);
 
     if(!segment->line.empty()) {
-        DataBufferAccessAndRef<Point3> wrappedHeadPos = DataBufferPtr::create(1, DataBuffer::Float, 3); 
+        DataBufferAccessAndRef<Point3> wrappedHeadPos = DataBufferPtr::create(1, DataBuffer::Float, 3);
         wrappedHeadPos[0] = cellObject->wrapPoint(segment->line.front());
         ParticlePrimitive headBuffer;
         headBuffer.setShadingMode(ParticlePrimitive::FlatShading);

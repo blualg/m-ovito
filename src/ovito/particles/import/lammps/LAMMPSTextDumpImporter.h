@@ -58,13 +58,13 @@ class OVITO_PARTICLES_EXPORT LAMMPSTextDumpImporter : public ParticleImporter
 public:
 
     /// \brief Constructs a new instance of this class.
-    Q_INVOKABLE LAMMPSTextDumpImporter(ObjectCreationParams params) : ParticleImporter(params), _useCustomColumnMapping(false) {}
+    Q_INVOKABLE LAMMPSTextDumpImporter(ObjectInitializationFlags flags) : ParticleImporter(flags), _useCustomColumnMapping(false) {}
 
     /// Returns the title of this object.
     virtual QString objectTitle() const override { return tr("LAMMPS Dump"); }
 
     /// Indicates whether this file importer type loads particle trajectories.
-    virtual bool isTrajectoryFormat() const override { return true; } 
+    virtual bool isTrajectoryFormat() const override { return true; }
 
     /// Creates an asynchronous loader object that loads the data for the given frame from the external file.
     virtual FileSourceImporter::FrameLoaderPtr createFrameLoader(const LoadOperationRequest& request) override {
@@ -92,8 +92,8 @@ private:
     public:
 
         /// Constructor.
-        FrameLoader(const LoadOperationRequest& request, 
-                bool sortParticles, bool useCustomColumnMapping, 
+        FrameLoader(const LoadOperationRequest& request,
+                bool sortParticles, bool useCustomColumnMapping,
                 const ParticleInputColumnMapping& customColumnMapping)
             : ParticleImporter::FrameLoader(request),
                 _sortParticles(sortParticles),

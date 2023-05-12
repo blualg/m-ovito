@@ -61,7 +61,7 @@ public:
 public:
 
     /// Constructor.
-    Q_INVOKABLE AcklandJonesModifier(ObjectCreationParams params);
+    Q_INVOKABLE AcklandJonesModifier(ObjectInitializationFlags flags);
 
 protected:
 
@@ -85,7 +85,7 @@ private:
         virtual void applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
 
     private:
-    
+
         /// Determines the coordination structure of a single particle using the bond-angle analysis method.
         StructureType determineStructure(NearestNeighborFinder& neighFinder, size_t particleIndex);
     };

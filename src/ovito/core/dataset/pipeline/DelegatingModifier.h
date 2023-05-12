@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -81,7 +81,7 @@ public:
 protected:
 
     /// \brief Constructor.
-    explicit ModifierDelegate(ObjectCreationParams params, const DataObjectReference& inputDataObj = DataObjectReference()) : RefTarget(params), _isEnabled(true), _inputDataObject(inputDataObj) {}
+    explicit ModifierDelegate(ObjectInitializationFlags flags, const DataObjectReference& inputDataObj = DataObjectReference()) : RefTarget(flags), _isEnabled(true), _inputDataObject(inputDataObj) {}
 
 public:
 
@@ -158,7 +158,7 @@ public:
 protected:
 
     /// Creates a default delegate for this modifier.
-    void createDefaultModifierDelegate(const OvitoClass& delegateType, const QString& defaultDelegateTypeName, ObjectCreationParams params);
+    void createDefaultModifierDelegate(const OvitoClass& delegateType, const QString& defaultDelegateTypeName);
 
     /// Lets the modifier's delegate operate on a pipeline flow state.
     void applyDelegate(const ModifierEvaluationRequest& request, PipelineFlowState& state, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs = {});
@@ -215,7 +215,7 @@ public:
 protected:
 
     /// Creates the list of delegate objects for this modifier.
-    void createModifierDelegates(const OvitoClass& delegateType, ObjectCreationParams params);
+    void createModifierDelegates(const OvitoClass& delegateType);
 
     /// Lets the registered modifier delegates operate on a pipeline flow state.
     void applyDelegates(const ModifierEvaluationRequest& request, PipelineFlowState& state, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs = {});

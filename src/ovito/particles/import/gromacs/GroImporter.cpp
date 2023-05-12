@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -199,12 +199,12 @@ void GroImporter::FrameLoader::loadFile()
     setParticleCount(numParticles);
 
     // Create particle properties.
-    PropertyAccess<Point3> posProperty = particles()->createProperty(ParticlesObject::PositionProperty, DataBuffer::InitializeMemory);
+    PropertyAccess<Point3> posProperty = particles()->createProperty(DataBuffer::Initialized, ParticlesObject::PositionProperty);
     PropertyAccess<int> typeProperty = particles()->createProperty(ParticlesObject::TypeProperty);
     PropertyAccess<int> atomNameProperty = particles()->createProperty(QStringLiteral("Atom Name"), PropertyObject::Int);
     PropertyAccess<int> residueTypeProperty = particles()->createProperty(QStringLiteral("Residue Type"), PropertyObject::Int);
     PropertyAccess<qlonglong> residueNumberProperty = particles()->createProperty(QStringLiteral("Residue Identifier"), PropertyObject::Int64);
-    PropertyAccess<qlonglong> identifierProperty = particles()->createProperty(ParticlesObject::IdentifierProperty, DataBuffer::InitializeMemory);
+    PropertyAccess<qlonglong> identifierProperty = particles()->createProperty(DataBuffer::Initialized, ParticlesObject::IdentifierProperty);
     PropertyAccess<Vector3> velocityProperty;
 
     // Give these particle properties new titles, which are displayed in the GUI under the file source.

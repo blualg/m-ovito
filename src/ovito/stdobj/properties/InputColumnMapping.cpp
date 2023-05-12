@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -214,7 +214,7 @@ InputColumnReader::InputColumnReader(StandardFrameLoader& frameLoader, const Inp
             PropertyObject* property;
             if(pref.type() != PropertyObject::GenericUserProperty) {
                 // Create standard property.
-                property = container->createProperty(pref.type(), DataBuffer::InitializeMemory);
+                property = container->createProperty(DataBuffer::Initialized, pref.type());
                 // File reader may want to override the property's name.
                 property->setName(pref.name());
                 // If this is a typed property, determine the kind of ElementType objects to create for it.
@@ -235,7 +235,7 @@ InputColumnReader::InputColumnReader(StandardFrameLoader& frameLoader, const Inp
                 }
 
                 // Create a new user-defined property for the column.
-                property = container->createProperty(pref.name(), dataType, componentCount, DataBuffer::InitializeMemory);
+                property = container->createProperty(DataBuffer::Initialized, pref.name(), dataType, componentCount);
             }
 
             OVITO_ASSERT(vectorComponent < (int)property->componentCount());

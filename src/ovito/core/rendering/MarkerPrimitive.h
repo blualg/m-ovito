@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -48,10 +48,10 @@ public:
     explicit MarkerPrimitive(MarkerShape shape = DotShape) : _shape(shape) {}
 
     /// \brief Sets the coordinates of the markers.
-    void setPositions(ConstDataBufferPtr coordinates) { 
+    void setPositions(ConstDataBufferPtr coordinates) {
         OVITO_ASSERT(coordinates);
         OVITO_ASSERT(coordinates->dataType() == DataBuffer::Float && coordinates->componentCount() == 3);
-        _positions = std::move(coordinates); 
+        _positions = std::move(coordinates);
     }
 
     /// \brief Sets the coordinates of the markers.

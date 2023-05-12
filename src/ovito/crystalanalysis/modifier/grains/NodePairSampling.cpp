@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //  Copyright 2020 Peter Mahler Larsen
 //
 //  This file is part of OVITO (Open Visualization Tool).
@@ -67,7 +67,7 @@ bool GrainSegmentationEngine1::node_pair_sampling_clustering(GrainSegmentationEn
 
                     // Update progress indicator.
                     if((progress++ % 1024) == 0) {
-                        if(!incrementProgressValue(1024)) 
+                        if(!incrementProgressValue(1024))
                             return false;
                     }
                 }

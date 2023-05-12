@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -87,7 +87,7 @@ void PluginManager::registerPlugin(Plugin* plugin)
 ******************************************************************************/
 QList<QDir> PluginManager::pluginDirs()
 {
-    // Resolve path to Ovito's plugin directory, which is specified at compile time relative to the executable path. 
+    // Resolve path to Ovito's plugin directory, which is specified at compile time relative to the executable path.
     // See ovito/core/CMakeLists.txt for details.
     QDir prefixDir(QCoreApplication::applicationDirPath());
     QString pluginsPath = prefixDir.absolutePath() + QChar('/') + QStringLiteral(OVITO_PLUGINS_RELATIVE_PATH);
@@ -100,7 +100,7 @@ QList<QDir> PluginManager::pluginDirs()
 QString PluginManager::pythonDir()
 {
 #ifndef OVITO_BUILD_CONDA
-    // Resolve path to Ovito's Python layer files, which is specified at compile time relative to the executable path. 
+    // Resolve path to Ovito's Python layer files, which is specified at compile time relative to the executable path.
     // See ovito/core/CMakeLists.txt for details.
     QDir prefixDir(QCoreApplication::applicationDirPath());
     return QDir(prefixDir.filePath(QStringLiteral(OVITO_PYTHON_LAYER_PATH))).absolutePath();
@@ -165,10 +165,10 @@ void PluginManager::loadAllPlugins()
 ******************************************************************************/
 void PluginManager::registerLoadedPluginClasses()
 {
-    for(OvitoClass* clazz = OvitoClass::_firstMetaClass; clazz != _lastRegisteredClass; clazz = clazz->_nextMetaclass) {
+    for(OvitoClass* clazz = OvitoClass::_firstNativeMetaClass; clazz != _lastRegisteredClass; clazz = clazz->_nextNativeMetaclass) {
         clazz->initialize();
         OVITO_ASSERT(clazz->pluginId() != nullptr);
-        
+
         Plugin* classPlugin = nullptr;
         for(Plugin* plugin : plugins()) {
             if(plugin->pluginId() == clazz->pluginId()) {
@@ -184,7 +184,7 @@ void PluginManager::registerLoadedPluginClasses()
         clazz->_plugin = classPlugin;
         classPlugin->registerClass(clazz);
     }
-    _lastRegisteredClass = OvitoClass::_firstMetaClass;
+    _lastRegisteredClass = OvitoClass::_firstNativeMetaClass;
 }
 
 /******************************************************************************
@@ -207,13 +207,13 @@ OvitoClassPtr PluginManager::findClass(const QString& pluginId, const QString& c
 /******************************************************************************
 * Returns all installed plugin classes derived from the given type.
 ******************************************************************************/
-QVector<OvitoClassPtr> PluginManager::listClasses(const OvitoClass& superClass, bool skipAbstract)
+QVector<OvitoClassPtr> PluginManager::listClasses(const OvitoClass& superClass, bool onlyInstantiable)
 {
     QVector<OvitoClassPtr> result;
 
     for(Plugin* plugin : plugins()) {
         for(OvitoClassPtr clazz : plugin->classes()) {
-            if(!skipAbstract || !clazz->isAbstract()) {
+            if(!onlyInstantiable || clazz->isInstantiable()) {
                 if(clazz->isDerivedFrom(superClass))
                     result.push_back(clazz);
             }

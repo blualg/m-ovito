@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -41,7 +41,7 @@ class OVITO_CORE_EXPORT TransformedDataObject : public DataObject
 public:
 
     /// Constructor.
-    TransformedDataObject(ObjectCreationParams params, TransformingDataVis* creator = nullptr, const DataObject* sourceData = nullptr) : DataObject(params), 
+    TransformedDataObject(ObjectInitializationFlags flags, TransformingDataVis* creator = nullptr, const DataObject* sourceData = nullptr) : DataObject(flags),
         _sourceDataObject(sourceData), _visElementRevision(creator ? creator->revisionNumber() : 0) {}
 
 private:

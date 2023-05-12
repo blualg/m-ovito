@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -40,11 +40,11 @@ SET_PROPERTY_FIELD_LABEL(DataSet, renderSettings, "Render Settings");
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-DataSet::DataSet(ObjectCreationParams params) : RefTarget(params)
+DataSet::DataSet(ObjectInitializationFlags flags) : RefTarget(flags)
 {
-    if(params.createSubObjects()) {
-        setViewportConfig(createDefaultViewportConfiguration(params));
-        setRenderSettings(OORef<RenderSettings>::create(params));
+    if(!flags.testFlag(ObjectInitializationFlag::DontInitializeObject)) {
+        setViewportConfig(createDefaultViewportConfiguration());
+        setRenderSettings(OORef<RenderSettings>::create(flags));
     }
 }
 
@@ -58,47 +58,47 @@ DataSet::~DataSet()
 /******************************************************************************
 * Returns a viewport configuration that is used as template for new scenes.
 ******************************************************************************/
-OORef<ViewportConfiguration> DataSet::createDefaultViewportConfiguration(ObjectCreationParams params)
+OORef<ViewportConfiguration> DataSet::createDefaultViewportConfiguration()
 {
-    OORef<ViewportConfiguration> viewConfig = OORef<ViewportConfiguration>::create(params);
+    OORef<ViewportConfiguration> viewConfig = OORef<ViewportConfiguration>::create();
 
     if(!StandaloneApplication::instance() || !StandaloneApplication::instance()->cmdLineParser().isSet("noviewports")) {
 
         // Create a scene with animation settings.
-        OORef<Scene> scene = OORef<Scene>::create(params);
+        OORef<Scene> scene = OORef<Scene>::create();
         OVITO_ASSERT(scene->animationSettings());
 
         // Create the 4 standard viewports.
-        OORef<Viewport> topView = OORef<Viewport>::create(params);
+        OORef<Viewport> topView = OORef<Viewport>::create();
         topView->setScene(scene);
         topView->setViewType(Viewport::VIEW_TOP);
 
-        OORef<Viewport> frontView = OORef<Viewport>::create(params);
+        OORef<Viewport> frontView = OORef<Viewport>::create();
         frontView->setScene(scene);
         frontView->setViewType(Viewport::VIEW_FRONT);
 
-        OORef<Viewport> leftView = OORef<Viewport>::create(params);
+        OORef<Viewport> leftView = OORef<Viewport>::create();
         leftView->setScene(scene);
         leftView->setViewType(Viewport::VIEW_LEFT);
 
-        OORef<Viewport> perspectiveView = OORef<Viewport>::create(params);
+        OORef<Viewport> perspectiveView = OORef<Viewport>::create();
         perspectiveView->setScene(scene);
         perspectiveView->setViewType(Viewport::VIEW_PERSPECTIVE);
         perspectiveView->setCameraTransformation(ViewportSettings::getSettings().coordinateSystemOrientation() * AffineTransformation::lookAlong({90, -120, 100}, {-90, 120, -100}, {0,0,1}).inverse());
 
         // Set up the 4-pane layout of the viewports.
-        OORef<ViewportLayoutCell> rootLayoutCell = OORef<ViewportLayoutCell>::create(params);
+        OORef<ViewportLayoutCell> rootLayoutCell = OORef<ViewportLayoutCell>::create();
         rootLayoutCell->setSplitDirection(ViewportLayoutCell::Horizontal);
-        rootLayoutCell->addChild(OORef<ViewportLayoutCell>::create(params));
-        rootLayoutCell->addChild(OORef<ViewportLayoutCell>::create(params));
+        rootLayoutCell->addChild(OORef<ViewportLayoutCell>::create());
+        rootLayoutCell->addChild(OORef<ViewportLayoutCell>::create());
         rootLayoutCell->children()[0]->setSplitDirection(ViewportLayoutCell::Vertical);
-        rootLayoutCell->children()[0]->addChild(OORef<ViewportLayoutCell>::create(params));
-        rootLayoutCell->children()[0]->addChild(OORef<ViewportLayoutCell>::create(params));
+        rootLayoutCell->children()[0]->addChild(OORef<ViewportLayoutCell>::create());
+        rootLayoutCell->children()[0]->addChild(OORef<ViewportLayoutCell>::create());
         rootLayoutCell->children()[0]->children()[0]->setViewport(topView);
         rootLayoutCell->children()[0]->children()[1]->setViewport(leftView);
         rootLayoutCell->children()[1]->setSplitDirection(ViewportLayoutCell::Vertical);
-        rootLayoutCell->children()[1]->addChild(OORef<ViewportLayoutCell>::create(params));
-        rootLayoutCell->children()[1]->addChild(OORef<ViewportLayoutCell>::create(params));
+        rootLayoutCell->children()[1]->addChild(OORef<ViewportLayoutCell>::create());
+        rootLayoutCell->children()[1]->addChild(OORef<ViewportLayoutCell>::create());
         rootLayoutCell->children()[1]->children()[0]->setViewport(frontView);
         rootLayoutCell->children()[1]->children()[1]->setViewport(perspectiveView);
         viewConfig->setLayoutRootCell(std::move(rootLayoutCell));
@@ -219,13 +219,13 @@ void DataSet::loadFromFile(const QString& filePath)
     stream.close();
 
     if(fileStream.error() != QFile::NoError)
-        throw Exception(tr("Failed to load state file '%1'.").arg(absolutePath));       
+        throw Exception(tr("Failed to load state file '%1'.").arg(absolutePath));
     fileStream.close();
 }
 
 /******************************************************************************
-* Provides a custom function that takes are of the deserialization of a 
-* serialized property field that has been removed from the class. 
+* Provides a custom function that takes are of the deserialization of a
+* serialized property field that has been removed from the class.
 * This is needed for file backward compatibility with OVITO 3.7.
 ******************************************************************************/
 RefMakerClass::SerializedClassInfo::PropertyFieldInfo::CustomDeserializationFunctionPtr DataSet::OOMetaClass::overrideFieldDeserialization(const SerializedClassInfo::PropertyFieldInfo& field) const
@@ -234,7 +234,7 @@ RefMakerClass::SerializedClassInfo::PropertyFieldInfo::CustomDeserializationFunc
     if(field.definingClass == &DataSet::OOClass() && (field.identifier == "animationSettings" || field.identifier == "sceneRoot" || field.identifier == "selection")) {
         return [](const SerializedClassInfo::PropertyFieldInfo& field, ObjectLoadStream& stream, RefMaker& owner) {
             // Load the legacy objects from the stream and temporarily store them in a QObject property.
-            // Once the entire DataSet has been loaded, loadFromStreamComplete() will store them in the right place.   
+            // Once the entire DataSet has been loaded, loadFromStreamComplete() will store them in the right place.
             stream.expectChunk(0x02);
             if(field.identifier == "animationSettings")
                 owner.setProperty("_animationSettings", QVariant::fromValue(stream.loadObject<AnimationSettings>()));

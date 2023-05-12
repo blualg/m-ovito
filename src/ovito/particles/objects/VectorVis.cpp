@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -68,7 +68,7 @@ SET_PROPERTY_FIELD_UNITS(VectorVis, offset, WorldParameterUnit);
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-VectorVis::VectorVis(ObjectCreationParams params) : DataVis(params),
+VectorVis::VectorVis(ObjectInitializationFlags flags) : DataVis(flags),
     _reverseArrowDirection(false),
     _arrowPosition(Base),
     _arrowColor(1, 1, 0),
@@ -78,12 +78,12 @@ VectorVis::VectorVis(ObjectCreationParams params) : DataVis(params),
     _offset(Vector3::Zero()),
     _coloringMode(UniformColoring)
 {
-    if(params.createSubObjects()) {
+    if(!flags.testFlag(ObjectInitializationFlag::DontInitializeObject)) {
         // Create animation controller for the transparency parameter.
         setTransparencyController(ControllerManager::createFloatController());
 
         // Create a color mapping object for pseudo-color visualization of an auxiliary property.
-        setColorMapping(OORef<PropertyColorMapping>::create(params));
+        setColorMapping(OORef<PropertyColorMapping>::create(flags));
     }
 }
 
@@ -250,7 +250,7 @@ PipelineStatus VectorVis::render(AnimationTime time, const ConstDataObjectPath& 
     // Determine effective color including alpha value.
     FloatType transparency = 0;
     TimeInterval iv;
-    if(transparencyController()) 
+    if(transparencyController())
         transparency = transparencyController()->getFloatValue(time, iv);
 
     // Lookup the rendering primitive in the vis cache.
@@ -265,7 +265,7 @@ PipelineStatus VectorVis::render(AnimationTime time, const ConstDataObjectPath& 
             reverseArrowDirection(),
             arrowPosition(),
             vectorColorProperty,
-            pseudoColorProperty, 
+            pseudoColorProperty,
             pseudoColorPropertyComponent,
             pseudoColorMapping));
 

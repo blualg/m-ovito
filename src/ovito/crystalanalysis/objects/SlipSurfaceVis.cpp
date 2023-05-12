@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -39,7 +39,7 @@ IMPLEMENT_OVITO_CLASS(SlipSurfacePickInfo);
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-SlipSurfaceVis::SlipSurfaceVis(ObjectCreationParams params) : SurfaceMeshVis(params)
+SlipSurfaceVis::SlipSurfaceVis(ObjectInitializationFlags flags) : SurfaceMeshVis(flags)
 {
     // Do not interpolate facet normals by default.
     setSmoothShading(false);

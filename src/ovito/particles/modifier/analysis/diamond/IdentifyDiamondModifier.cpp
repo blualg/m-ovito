@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -35,17 +35,17 @@ IMPLEMENT_OVITO_CLASS(IdentifyDiamondModifier);
 /******************************************************************************
 * Constructs the modifier object.
 ******************************************************************************/
-IdentifyDiamondModifier::IdentifyDiamondModifier(ObjectCreationParams params) : StructureIdentificationModifier(params)
+IdentifyDiamondModifier::IdentifyDiamondModifier(ObjectInitializationFlags flags) : StructureIdentificationModifier(flags)
 {
-    if(params.createSubObjects()) {
+    if(!flags.testFlag(ObjectInitializationFlag::DontInitializeObject)) {
         // Create the structure types.
-        createStructureType(OTHER, ParticleType::PredefinedStructureType::OTHER, params);
-        createStructureType(CUBIC_DIAMOND, ParticleType::PredefinedStructureType::CUBIC_DIAMOND, params);
-        createStructureType(CUBIC_DIAMOND_FIRST_NEIGH, ParticleType::PredefinedStructureType::CUBIC_DIAMOND_FIRST_NEIGH, params);
-        createStructureType(CUBIC_DIAMOND_SECOND_NEIGH, ParticleType::PredefinedStructureType::CUBIC_DIAMOND_SECOND_NEIGH, params);
-        createStructureType(HEX_DIAMOND, ParticleType::PredefinedStructureType::HEX_DIAMOND, params);
-        createStructureType(HEX_DIAMOND_FIRST_NEIGH, ParticleType::PredefinedStructureType::HEX_DIAMOND_FIRST_NEIGH, params);
-        createStructureType(HEX_DIAMOND_SECOND_NEIGH, ParticleType::PredefinedStructureType::HEX_DIAMOND_SECOND_NEIGH, params);
+        createStructureType(OTHER, ParticleType::PredefinedStructureType::OTHER);
+        createStructureType(CUBIC_DIAMOND, ParticleType::PredefinedStructureType::CUBIC_DIAMOND);
+        createStructureType(CUBIC_DIAMOND_FIRST_NEIGH, ParticleType::PredefinedStructureType::CUBIC_DIAMOND_FIRST_NEIGH);
+        createStructureType(CUBIC_DIAMOND_SECOND_NEIGH, ParticleType::PredefinedStructureType::CUBIC_DIAMOND_SECOND_NEIGH);
+        createStructureType(HEX_DIAMOND, ParticleType::PredefinedStructureType::HEX_DIAMOND);
+        createStructureType(HEX_DIAMOND_FIRST_NEIGH, ParticleType::PredefinedStructureType::HEX_DIAMOND_FIRST_NEIGH);
+        createStructureType(HEX_DIAMOND_SECOND_NEIGH, ParticleType::PredefinedStructureType::HEX_DIAMOND_SECOND_NEIGH);
     }
 }
 
@@ -179,9 +179,9 @@ void IdentifyDiamondModifier::DiamondIdentificationEngine::perform()
             else if(maxChainLength == 2) n422++;
             else return;
         }
-        if(n421 == 12 && typeIdentificationEnabled(CUBIC_DIAMOND)) 
+        if(n421 == 12 && typeIdentificationEnabled(CUBIC_DIAMOND))
             output[index] = CUBIC_DIAMOND;
-        else if(n421 == 6 && n422 == 6 && typeIdentificationEnabled(HEX_DIAMOND)) 
+        else if(n421 == 6 && n422 == 6 && typeIdentificationEnabled(HEX_DIAMOND))
             output[index] = HEX_DIAMOND;
     });
     if(isCanceled()) return;

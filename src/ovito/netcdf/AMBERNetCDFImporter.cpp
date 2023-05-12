@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -217,7 +217,7 @@ QString AMBERNetCDFImporter::NetCDFFile::open(const QString& filename)
     if (nc_inq_varid(_ncid, "cell_angles", &_cell_angles_var) != NC_NOERR)
         _cell_angles_var = -1;
     if (nc_inq_varid(_ncid, "shear_dx", &_shear_dx_var) != NC_NOERR)
-        _shear_dx_var = -1; 
+        _shear_dx_var = -1;
 
     return title;
 }
@@ -516,11 +516,11 @@ void AMBERNetCDFImporter::FrameLoader::loadFile()
         ParticlesObject::Type propertyType = (ParticlesObject::Type)column.property.type();
         if(propertyType != ParticlesObject::UserProperty) {
             // Create standard property.
-            property = particles()->createProperty(propertyType, DataBuffer::InitializeMemory);
+            property = particles()->createProperty(DataBuffer::Initialized, propertyType);
         }
         else {
             // Create a new user-defined property for the column.
-            property = particles()->createProperty(propertyName, dataType, componentCount, DataBuffer::InitializeMemory);
+            property = particles()->createProperty(DataBuffer::Initialized, propertyName, dataType, componentCount);
         }
         loadedProperties.push_back(property);
 

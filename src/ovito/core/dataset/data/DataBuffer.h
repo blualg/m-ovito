@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -56,20 +56,22 @@ public:
 #endif
     };
 
-    enum InitializationFlag {
-        NoFlags = 0,
-        InitializeMemory = (1<<0)
+    enum BufferInitialization {
+        Uninitialized = 0,
+        Initialized = 1
     };
-    Q_DECLARE_FLAGS(InitializationFlags, InitializationFlag);
-    Q_FLAG(InitializationFlags);
 
 public:
 
     /// \brief Creates an empty buffer.
-    Q_INVOKABLE DataBuffer(ObjectCreationParams params) : DataObject(params) {}
+    Q_INVOKABLE explicit DataBuffer(ObjectInitializationFlags flags) : DataObject(flags) {}
 
     /// \brief Constructor that creates and initializes a new buffer array.
-    DataBuffer(ObjectCreationParams params, size_t elementCount, int dataType, size_t componentCount = 1, InitializationFlags flags = NoFlags, QStringList componentNames = QStringList());
+    DataBuffer(ObjectInitializationFlags flags, BufferInitialization init, size_t elementCount, int dataType, size_t componentCount = 1, QStringList componentNames = QStringList());
+
+    /// \brief Constructor that creates a new buffer array.
+    DataBuffer(ObjectInitializationFlags flags, size_t elementCount, int dataType, size_t componentCount = 1, QStringList componentNames = QStringList()) :
+        DataBuffer(flags, BufferInitialization::Uninitialized, elementCount, dataType, componentCount, std::move(componentNames)) {}
 
     /// \brief Returns the number of elements stored in the buffer array.
     size_t size() const { return _numElements; }

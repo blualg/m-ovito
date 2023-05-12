@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -49,7 +49,7 @@ SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(TrajectoryVis, lineWidth, WorldParameterUni
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-TrajectoryVis::TrajectoryVis(ObjectCreationParams params) : DataVis(params),
+TrajectoryVis::TrajectoryVis(ObjectInitializationFlags flags) : DataVis(flags),
     _lineWidth(0.2),
     _lineColor(0.6, 0.6, 0.6),
     _shadingMode(FlatShading),
@@ -57,9 +57,9 @@ TrajectoryVis::TrajectoryVis(ObjectCreationParams params) : DataVis(params),
     _wrappedLines(false),
     _coloringMode(UniformColoring)
 {
-    if(params.createSubObjects()) {
+    if(!flags.testFlag(ObjectInitializationFlag::DontInitializeObject)) {
         // Create a color mapping object for pseudo-color visualization of a trajectory property.
-        setColorMapping(OORef<PropertyColorMapping>::create(params));
+        setColorMapping(OORef<PropertyColorMapping>::create(flags));
     }
 }
 
@@ -179,7 +179,7 @@ PipelineStatus TrajectoryVis::render(AnimationTime time, const ConstDataObjectPa
             shadingMode(),
             endFrame,
             simulationCell,
-            pseudoColorProperty, 
+            pseudoColorProperty,
             pseudoColorPropertyComponent));
 
     // The shading mode for corner spheres.

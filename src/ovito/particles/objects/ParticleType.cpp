@@ -57,7 +57,7 @@ SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(ParticleType, vdwRadius, WorldParameterUnit
 /******************************************************************************
 * Constructs a new particle type.
 ******************************************************************************/
-ParticleType::ParticleType(ObjectCreationParams params) : ElementType(params),
+ParticleType::ParticleType(ObjectInitializationFlags flags) : ElementType(flags),
     _radius(0),
     _vdwRadius(0),
     _shape(ParticlesVis::ParticleShape::Default),

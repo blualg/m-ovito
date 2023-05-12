@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -59,7 +59,7 @@ public:
 public:
 
     /// Standard constructor.
-    Q_INVOKABLE MicrostructurePhase(ObjectCreationParams params);
+    Q_INVOKABLE MicrostructurePhase(ObjectInitializationFlags flags);
 
     /// Returns the lotitleng name of this phase.
     const QString& longName() const { return name(); }

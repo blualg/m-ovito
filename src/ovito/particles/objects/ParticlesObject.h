@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -48,7 +48,7 @@ class OVITO_PARTICLES_EXPORT ParticlesObject : public PropertyContainer
         using PropertyContainerClass::PropertyContainerClass;
 
         /// \brief Create a storage object for standard particle properties.
-        virtual PropertyPtr createStandardPropertyInternal(size_t elementCount, int type, DataBuffer::InitializationFlags flags, const ConstDataObjectPath& containerPath) const override;
+        virtual PropertyPtr createStandardPropertyInternal(DataBuffer::BufferInitialization init, size_t elementCount, int type, const ConstDataObjectPath& containerPath) const override;
 
         /// Indicates whether this kind of property container supports picking of individual elements in the viewports.
         virtual bool supportsViewportPicking() const override { return true; }
@@ -131,7 +131,7 @@ public:
     };
 
     /// \brief Constructor.
-    Q_INVOKABLE ParticlesObject(ObjectCreationParams params);
+    Q_INVOKABLE ParticlesObject(ObjectInitializationFlags flags);
 
     /// Deletes the particles for which bits are set in the given bit-mask.
     /// Returns the number of deleted particles.

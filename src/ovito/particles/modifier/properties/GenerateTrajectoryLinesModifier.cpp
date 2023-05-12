@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -61,7 +61,7 @@ SET_MODIFIER_APPLICATION_TYPE(GenerateTrajectoryLinesModifier, GenerateTrajector
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-GenerateTrajectoryLinesModifier::GenerateTrajectoryLinesModifier(ObjectCreationParams params) : Modifier(params),
+GenerateTrajectoryLinesModifier::GenerateTrajectoryLinesModifier(ObjectInitializationFlags flags) : Modifier(flags),
     _onlySelectedParticles(true),
     _useCustomInterval(false),
     _customIntervalStart(0),
@@ -70,9 +70,9 @@ GenerateTrajectoryLinesModifier::GenerateTrajectoryLinesModifier(ObjectCreationP
     _unwrapTrajectories(true),
     _transferParticleProperties(false)
 {
-    if(params.createSubObjects()) {
+    if(!flags.testFlag(ObjectInitializationFlag::DontInitializeObject)) {
         // Create the vis element for rendering the trajectories created by the modifier.
-        setTrajectoryVis(OORef<TrajectoryVis>::create(params));
+        setTrajectoryVis(OORef<TrajectoryVis>::create(flags));
     }
 }
 
@@ -294,7 +294,7 @@ bool GenerateTrajectoryLinesModifier::generateTrajectories(AnimationTime current
         DataOORef<TrajectoryObject> trajObj = DataOORef<TrajectoryObject>::create();
         {
             UndoSuspender noUndo;
-            
+
             // Copy re-ordered trajectory points.
             trajObj->setElementCount(pointData.size());
             PropertyAccess<Point3> trajPosProperty = trajObj->createProperty(TrajectoryObject::PositionProperty);
@@ -336,11 +336,11 @@ bool GenerateTrajectoryLinesModifier::generateTrajectories(AnimationTime current
                         // Input property name is that of a standard property for trajectory lines.
                         // Must rename the property to avoid naming conflict, because user properties may not have a standard property name.
                         QString newPropertyName = inputProperty->name() + tr("_particles");
-                        samplingProperty = trajObj->createProperty(newPropertyName, inputProperty->dataType(), inputProperty->componentCount(), DataBuffer::NoFlags, inputProperty->componentNames());
+                        samplingProperty = trajObj->createProperty(newPropertyName, inputProperty->dataType(), inputProperty->componentCount(), inputProperty->componentNames());
                     }
                     else {
                         // Input property is a user property for trajectory lines.
-                        samplingProperty = trajObj->createProperty(inputProperty->name(), inputProperty->dataType(), inputProperty->componentCount(), DataBuffer::NoFlags, inputProperty->componentNames());
+                        samplingProperty = trajObj->createProperty(inputProperty->name(), inputProperty->dataType(), inputProperty->componentCount(), inputProperty->componentNames());
                     }
 
                     // Copy property values from temporary sampling buffer to destination trajectory line property.
@@ -410,7 +410,7 @@ void GenerateTrajectoryLinesModifier::loadFromStreamComplete(ObjectLoadStream& s
 {
     Modifier::loadFromStreamComplete(stream);
 
-    // For backward compatibility with OVITO 3.7: 
+    // For backward compatibility with OVITO 3.7:
     // Convert legacy time values from ticks to frames. This requires access to the AnimationSettings object, which is stored in the scene.
     if(stream.formatVersion() <= 30008) {
         if(ModifierApplication* modApp = someModifierApplication()) {

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -62,13 +62,13 @@ StructureAnalysis::StructureAnalysis(ConstPropertyPtr positions, const Simulatio
         LatticeStructureType inputCrystalType, ConstPropertyPtr particleSelection,
         PropertyPtr outputStructures, std::vector<Matrix3> preferredCrystalOrientations,
         bool identifyPlanarDefects) :
-    _positions(positions), 
+    _positions(positions),
     _simCell(simCell),
     _inputCrystalType(inputCrystalType),
     _structureTypes(std::move(outputStructures)),
     _structureTypesArray(_structureTypes),
     _particleSelection(std::move(particleSelection)),
-    _atomClusters(ParticlesObject::OOClass().createStandardProperty(positions->size(), ParticlesObject::ClusterProperty, DataBuffer::InitializeMemory)),
+    _atomClusters(ParticlesObject::OOClass().createStandardProperty(DataBuffer::Initialized, positions->size(), ParticlesObject::ClusterProperty)),
     _atomClustersArray(_atomClusters),
     _atomSymmetryPermutations(positions->size()),
     _clusterGraph(std::make_shared<ClusterGraph>()),

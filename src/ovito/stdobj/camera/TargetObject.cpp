@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -35,10 +35,10 @@ IMPLEMENT_OVITO_CLASS(TargetVis);
 /******************************************************************************
 * Constructs a target object.
 ******************************************************************************/
-TargetObject::TargetObject(ObjectCreationParams params) : DataObject(params)
+TargetObject::TargetObject(ObjectInitializationFlags flags) : DataObject(flags)
 {
-    if(params.createVisElement()) {
-        setVisElement(OORef<TargetVis>::create(params));
+    if(!flags.testAnyFlags(ObjectInitializationFlags(DontInitializeObject) | ObjectInitializationFlags(DontCreateVisElement))) {
+        setVisElement(OORef<TargetVis>::create(flags));
     }
 }
 

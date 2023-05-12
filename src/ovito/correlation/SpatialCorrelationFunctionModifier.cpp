@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //  Copyright 2017 Lars Pastewka
 //
 //  This file is part of OVITO (Open Visualization Tool).
@@ -94,7 +94,7 @@ SET_PROPERTY_FIELD_LABEL(SpatialCorrelationFunctionModifier, reciprocalSpaceYAxi
 /******************************************************************************
 * Constructs the modifier object.
 ******************************************************************************/
-SpatialCorrelationFunctionModifier::SpatialCorrelationFunctionModifier(ObjectCreationParams params) : AsynchronousModifier(params),
+SpatialCorrelationFunctionModifier::SpatialCorrelationFunctionModifier(ObjectInitializationFlags flags) : AsynchronousModifier(flags),
     _averagingDirection(RADIAL),
     _fftGridSpacing(3.0),
     _applyWindow(true),
@@ -392,7 +392,7 @@ void SpatialCorrelationFunctionModifier::CorrelationAnalysisEngine::computeFftCo
     int nY = std::max(1, (int)(cellMatrix.column(1).length() / fftGridSpacing()));
     int nZ = !cell()->is2D() ? std::max(1, (int)(cellMatrix.column(2).length() / fftGridSpacing())) : 1;
     size_t ntotal = (size_t)nX * (size_t)nY * (size_t)nZ;
-    // The current version of the KISSFFT library does not support FFT grids with more than 2^31 bins. 
+    // The current version of the KISSFFT library does not support FFT grids with more than 2^31 bins.
     if(ntotal > (size_t)std::numeric_limits<int>::max())
         throw Exception(tr("FFT grid spacing is too fine for this simulation cell volume. The maximum number of FFT grid cells has been exceeded (%1 x %2 x %3 = %4 cells, limit is %5).").arg(nX).arg(nY).arg(nZ).arg(ntotal).arg(std::numeric_limits<int>::max()));
 
@@ -455,7 +455,7 @@ void SpatialCorrelationFunctionModifier::CorrelationAnalysisEngine::computeFftCo
     FloatType cellFaceDistance2 = 1 / std::sqrt(recCell2.x()*recCell2.x() + recCell2.y()*recCell2.y() + recCell2.z()*recCell2.z());
     FloatType cellFaceDistance3 = 1 / std::sqrt(recCell3.x()*recCell3.x() + recCell3.y()*recCell3.y() + recCell3.z()*recCell3.z());
 
-    FloatType minCellFaceDistance = !cell()->is2D() 
+    FloatType minCellFaceDistance = !cell()->is2D()
         ? std::min({cellFaceDistance1, cellFaceDistance2, cellFaceDistance3})
         : std::min({cellFaceDistance1, cellFaceDistance2});
 
@@ -475,7 +475,7 @@ void SpatialCorrelationFunctionModifier::CorrelationAnalysisEngine::computeFftCo
     }
 
     // Averaged reciprocal space correlation function.
-    _reciprocalSpaceCorrelation = DataTable::OOClass().createUserProperty(numberOfWavevectorBins, PropertyObject::Float, 1, tr("C(q)"), DataBuffer::InitializeMemory);
+    _reciprocalSpaceCorrelation = DataTable::OOClass().createUserProperty(DataBuffer::Initialized, numberOfWavevectorBins, PropertyObject::Float, 1, tr("C(q)"));
     _reciprocalSpaceCorrelationRange = 2 * FLOATTYPE_PI * minReciprocalSpaceVector * numberOfWavevectorBins;
 
     std::vector<int> numberOfValues(numberOfWavevectorBins, 0);
@@ -557,9 +557,9 @@ void SpatialCorrelationFunctionModifier::CorrelationAnalysisEngine::computeFftCo
     FloatType gridSpacing = minCellFaceDistance / (2 * numberOfDistanceBins);
 
     // Radially averaged real space correlation function.
-    _realSpaceCorrelation = DataTable::OOClass().createUserProperty(numberOfDistanceBins, PropertyObject::Float, 1, tr("C(r)"), DataBuffer::InitializeMemory);
+    _realSpaceCorrelation = DataTable::OOClass().createUserProperty(DataBuffer::Initialized, numberOfDistanceBins, PropertyObject::Float, 1, tr("C(r)"));
     _realSpaceCorrelationRange = minCellFaceDistance / 2;
-    _realSpaceRDF = DataTable::OOClass().createUserProperty(numberOfDistanceBins, PropertyObject::Float, 1, tr("g(r)"), DataBuffer::InitializeMemory);
+    _realSpaceRDF = DataTable::OOClass().createUserProperty(DataBuffer::Initialized, numberOfDistanceBins, PropertyObject::Float, 1, tr("g(r)"));
 
     numberOfValues = std::vector<int>(numberOfDistanceBins, 0);
     PropertyAccess<FloatType> realSpaceCorrelationData(_realSpaceCorrelation);
@@ -643,7 +643,7 @@ void SpatialCorrelationFunctionModifier::CorrelationAnalysisEngine::computeNeigh
     }
 
     // Allocate neighbor RDF.
-    _neighRDF = DataTable::OOClass().createUserProperty(neighCorrelation()->size(), PropertyObject::Float, 1, tr("Neighbor g(r)"), DataBuffer::InitializeMemory);
+    _neighRDF = DataTable::OOClass().createUserProperty(DataBuffer::Initialized, neighCorrelation()->size(), PropertyObject::Float, 1, tr("Neighbor g(r)"));
 
     // Prepare the neighbor list.
     CutoffNeighborFinder neighborListBuilder;

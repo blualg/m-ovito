@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -69,7 +69,7 @@ PipelineStatus SurfaceMeshSliceModifierDelegate::apply(const ModifierEvaluationR
                         PropertyAccess<int> vertexSelectionProperty = outputVertices->createProperty(SurfaceMeshVertices::SelectionProperty);
                         size_t numSelectedVertices = 0;
                         boost::transform(vertexPositionProperty, vertexSelectionProperty.begin(), [&](const Point3& pos) {
-                            bool selectionState = 
+                            bool selectionState =
                                 (sliceWidth <= 0) ?
                                     (plane.pointDistance(pos) > 0) :
                                     (invert == (plane.classifyPoint(pos, sliceWidth) == 0));

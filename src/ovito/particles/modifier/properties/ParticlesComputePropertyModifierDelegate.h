@@ -63,7 +63,7 @@ class OVITO_PARTICLES_EXPORT ParticlesComputePropertyModifierDelegate : public C
 public:
 
     /// Constructor.
-    Q_INVOKABLE ParticlesComputePropertyModifierDelegate(ObjectCreationParams params);
+    Q_INVOKABLE ParticlesComputePropertyModifierDelegate(ObjectInitializationFlags flags);
 
     /// \brief Sets the math expression that is used to compute the neighbor-terms of the property function.
     /// \param index The property component for which the expression should be set.
@@ -110,7 +110,7 @@ private:
 
         /// Constructor.
         Engine(
-                const ModifierEvaluationRequest& request, 
+                const ModifierEvaluationRequest& request,
                 const TimeInterval& validityInterval,
                 PropertyPtr outputProperty,
                 const ConstDataObjectPath& containerPath,

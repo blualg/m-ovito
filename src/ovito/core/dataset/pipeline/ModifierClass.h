@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2017 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -50,7 +50,7 @@ public:
         if(qtMetaObject()) {
             int infoIndex = qtMetaObject()->indexOfClassInfo("ModifierCategory");
             if(infoIndex != -1) {
-                return QString::fromLocal8Bit(qtMetaObject()->classInfo(infoIndex).value());
+                return QString::fromUtf8(qtMetaObject()->classInfo(infoIndex).value());
             }
         }
         return {};

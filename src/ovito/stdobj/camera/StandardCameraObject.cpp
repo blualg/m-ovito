@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -49,19 +49,19 @@ IMPLEMENT_OVITO_CLASS(CameraVis);
 /******************************************************************************
 * Constructs a camera object.
 ******************************************************************************/
-StandardCameraObject::StandardCameraObject(ObjectCreationParams params) : AbstractCameraObject(params), 
+StandardCameraObject::StandardCameraObject(ObjectInitializationFlags flags) : AbstractCameraObject(flags),
     _isPerspective(true),
     _fov(FLOATTYPE_PI/4),
     _zoom(200.0)
 {
-    if(params.createVisElement()) {
-        setVisElement(OORef<CameraVis>::create(params));
+    if(!flags.testAnyFlags(ObjectInitializationFlags(DontInitializeObject) | ObjectInitializationFlags(DontCreateVisElement))) {
+        setVisElement(OORef<CameraVis>::create(flags));
     }
 }
 
 /******************************************************************************
-* Provides a custom function that takes are of the deserialization of a 
-* serialized property field that has been removed from the class. 
+* Provides a custom function that takes are of the deserialization of a
+* serialized property field that has been removed from the class.
 * This is needed for file backward compatibility with OVITO 3.3.
 ******************************************************************************/
 RefMakerClass::SerializedClassInfo::PropertyFieldInfo::CustomDeserializationFunctionPtr StandardCameraObject::OOMetaClass::overrideFieldDeserialization(const SerializedClassInfo::PropertyFieldInfo& field) const

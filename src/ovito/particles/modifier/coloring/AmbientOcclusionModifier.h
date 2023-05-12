@@ -78,8 +78,8 @@ public:
         virtual void applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
 
         /// This method is called by the system whenever a parameter of the modifier changes.
-        /// The method can be overridden by subclasses to indicate to the caller whether the engine object should be 
-        /// discarded (false) or may be kept in the cache, because the computation results are not affected by the changing parameter (true). 
+        /// The method can be overridden by subclasses to indicate to the caller whether the engine object should be
+        /// discarded (false) or may be kept in the cache, because the computation results are not affected by the changing parameter (true).
         virtual bool modifierChanged(const PropertyFieldEvent& event) override {
             // Avoid a recomputation if the user changes just the intensity parameter.
             if(event.field() == PROPERTY_FIELD(intensity))
@@ -111,7 +111,7 @@ public:
 public:
 
     /// Constructor.
-    Q_INVOKABLE AmbientOcclusionModifier(ObjectCreationParams params);
+    Q_INVOKABLE AmbientOcclusionModifier(ObjectInitializationFlags flags);
 
 protected:
 

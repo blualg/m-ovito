@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -72,7 +72,7 @@ public:
 public:
 
     /// \brief Constructs a new instance of this class.
-    Q_INVOKABLE ReplicateModifier(ObjectCreationParams params);
+    Q_INVOKABLE ReplicateModifier(ObjectInitializationFlags flags);
 
     /// Modifies the input data synchronously.
     virtual void evaluateSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;

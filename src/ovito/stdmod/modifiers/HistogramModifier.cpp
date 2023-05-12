@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -62,7 +62,7 @@ SET_PROPERTY_FIELD_UNITS_AND_RANGE(HistogramModifier, numberOfBins, IntegerParam
 /******************************************************************************
 * Constructs the modifier object.
 ******************************************************************************/
-HistogramModifier::HistogramModifier(ObjectCreationParams params) : GenericPropertyModifier(params),
+HistogramModifier::HistogramModifier(ObjectInitializationFlags flags) : GenericPropertyModifier(flags),
     _numberOfBins(200),
     _selectInRange(false),
     _selectionRangeStart(0),
@@ -173,7 +173,7 @@ void HistogramModifier::evaluateSynchronous(const ModifierEvaluationRequest& req
     FloatType intervalEnd = xAxisRangeEnd();
 
     // Allocate output data array.
-    PropertyAccessAndRef<qlonglong> histogram = DataTable::OOClass().createUserProperty(std::max(1, numberOfBins()), PropertyObject::Int64, 1, tr("Count"), DataBuffer::InitializeMemory);
+    PropertyAccessAndRef<qlonglong> histogram = DataTable::OOClass().createUserProperty(DataBuffer::Initialized, std::max(1, numberOfBins()), PropertyObject::Int64, 1, tr("Count"));
     qlonglong* histogramData = histogram.begin();
     int histogramSizeMin1 = histogram.size() - 1;
 
@@ -317,7 +317,7 @@ void HistogramModifier::evaluateSynchronous(const ModifierEvaluationRequest& req
 
     // Output a data table with the histogram data.
     DataTable* table = state.createObject<DataTable>(
-        QStringLiteral("histogram[%1]").arg(sourceProperty().nameWithComponent()), 
+        QStringLiteral("histogram[%1]").arg(sourceProperty().nameWithComponent()),
         request.modApp(), DataTable::Histogram, sourceProperty().nameWithComponent(), histogram.take());
     table->setAxisLabelX(sourceProperty().nameWithComponent());
     table->setIntervalStart(intervalStart);

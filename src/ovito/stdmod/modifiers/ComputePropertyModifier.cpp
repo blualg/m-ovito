@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -55,14 +55,14 @@ SET_MODIFIER_APPLICATION_TYPE(ComputePropertyModifier, ComputePropertyModifierAp
 /******************************************************************************
 * Constructs a new instance of this class.
 ******************************************************************************/
-ComputePropertyModifier::ComputePropertyModifier(ObjectCreationParams params) : AsynchronousDelegatingModifier(params),
+ComputePropertyModifier::ComputePropertyModifier(ObjectInitializationFlags flags) : AsynchronousDelegatingModifier(flags),
     _expressions(QStringList("0")),
     _onlySelectedElements(false),
     _useMultilineFields(false)
 {
-    if(params.createSubObjects()) {
+    if(!flags.testFlag(ObjectInitializationFlag::DontInitializeObject)) {
         // Let this modifier act on particles by default.
-        createDefaultModifierDelegate(ComputePropertyModifierDelegate::OOClass(), QStringLiteral("ParticlesComputePropertyModifierDelegate"), params);
+        createDefaultModifierDelegate(ComputePropertyModifierDelegate::OOClass(), QStringLiteral("ParticlesComputePropertyModifierDelegate"));
         // Set default output property.
         if(delegate())
             setOutputProperty(PropertyReference(delegate()->inputContainerClass(), QStringLiteral("My property")));
@@ -178,10 +178,10 @@ Future<AsynchronousModifier::EnginePtr> ComputePropertyModifier::createEngine(co
     else {
         // Allocate new data array.
         if(outputProperty().type() != PropertyObject::GenericUserProperty) {
-            outp = container->getOOMetaClass().createStandardProperty(nelements, outputProperty().type(), onlySelectedElements() ? DataBuffer::InitializeMemory : DataBuffer::NoFlags, objectPath);
+            outp = container->getOOMetaClass().createStandardProperty(onlySelectedElements() ? DataBuffer::Initialized : DataBuffer::Uninitialized, nelements, outputProperty().type(), objectPath);
         }
         else if(!outputProperty().name().isEmpty() && propertyComponentCount() > 0) {
-            outp = container->getOOMetaClass().createUserProperty(nelements, PropertyObject::Float, propertyComponentCount(), outputProperty().name(), onlySelectedElements() ? DataBuffer::InitializeMemory : DataBuffer::NoFlags);
+            outp = container->getOOMetaClass().createUserProperty(onlySelectedElements() ? DataBuffer::Initialized : DataBuffer::Uninitialized, nelements, PropertyObject::Float, propertyComponentCount(), outputProperty().name());
         }
         else {
             throw Exception(tr("Output property of compute property modifier has not been specified."));
@@ -249,7 +249,7 @@ std::shared_ptr<ComputePropertyModifierDelegate::PropertyComputeEngine> ComputeP
 {
     // Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
     return std::make_shared<PropertyComputeEngine>(
-            request, 
+            request,
             input.stateValidity(),
             input,
             containerPath,
@@ -345,13 +345,13 @@ QStringList ComputePropertyModifierDelegate::PropertyComputeEngine::inputVariabl
 
 /******************************************************************************
 * This method is called by the system whenever a parameter of the modifier changes.
-* The method can be overridden by subclasses to indicate to the caller whether the engine object should be 
-* discarded or may be kept in the cache, because the computation results are not affected by the changing parameter. 
+* The method can be overridden by subclasses to indicate to the caller whether the engine object should be
+* discarded or may be kept in the cache, because the computation results are not affected by the changing parameter.
 ******************************************************************************/
-bool ComputePropertyModifierDelegate::PropertyComputeEngine::modifierChanged(const PropertyFieldEvent& event) 
+bool ComputePropertyModifierDelegate::PropertyComputeEngine::modifierChanged(const PropertyFieldEvent& event)
 {
     // Do not recompute results if just the 'useMultilineFields' option is toggled by the user.
-    if(event.field() == PROPERTY_FIELD(ComputePropertyModifier::useMultilineFields)) 
+    if(event.field() == PROPERTY_FIELD(ComputePropertyModifier::useMultilineFields))
         return true; // This return value tells the system to hold on to the cached engine object.
 
     return AsynchronousModifier::Engine::modifierChanged(event);

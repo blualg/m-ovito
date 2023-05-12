@@ -56,7 +56,7 @@ protected:
 
         /// Constructor.
         PropertyComputeEngine(
-                const ModifierEvaluationRequest& request, 
+                const ModifierEvaluationRequest& request,
                 const TimeInterval& validityInterval,
                 const PipelineFlowState& input,
                 const ConstDataObjectPath& containerPath,
@@ -71,9 +71,9 @@ protected:
 
         /// Decides whether the computation is sufficiently short to perform
         /// it synchronously within the GUI thread.
-        virtual bool preferSynchronousExecution() override { 
+        virtual bool preferSynchronousExecution() override {
             // It's okay to perform the modifier operation synchronously for small inputs.
-            return outputProperty()->size() * _expressions.size() <= 2000; 
+            return outputProperty()->size() * _expressions.size() <= 2000;
         }
 
         /// Returns the data accessor to the selection flag array.
@@ -104,10 +104,10 @@ protected:
         virtual bool isTimeDependent() { return _evaluator->isTimeDependent(); }
 
         /// This method is called by the system whenever a parameter of the modifier changes.
-        /// The method can be overridden by subclasses to indicate to the caller whether the engine object should be 
-        /// discarded or may be kept in the cache, because the computation results are not affected by the changing parameter. 
+        /// The method can be overridden by subclasses to indicate to the caller whether the engine object should be
+        /// discarded or may be kept in the cache, because the computation results are not affected by the changing parameter.
         virtual bool modifierChanged(const PropertyFieldEvent& event) override;
-        
+
     protected:
 
         /// Releases data that is no longer needed.
@@ -184,7 +184,7 @@ class OVITO_STDMOD_EXPORT ComputePropertyModifier : public AsynchronousDelegatin
 public:
 
     /// \brief Constructs a new instance of this class.
-    Q_INVOKABLE ComputePropertyModifier(ObjectCreationParams params);
+    Q_INVOKABLE ComputePropertyModifier(ObjectInitializationFlags flags);
 
     /// \brief Returns the current delegate of this ComputePropertyModifier.
     ComputePropertyModifierDelegate* delegate() const { return static_object_cast<ComputePropertyModifierDelegate>(AsynchronousDelegatingModifier::delegate()); }
@@ -237,7 +237,7 @@ protected:
 
     /// Is called when the value of a property of this object has changed.
     virtual void propertyChanged(const PropertyFieldDescriptor* field) override;
-    
+
     /// Creates a computation engine that will compute the modifier's results.
     virtual Future<EnginePtr> createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input) override;
 
@@ -270,7 +270,7 @@ class OVITO_STDMOD_EXPORT ComputePropertyModifierApplication : public Asynchrono
 public:
 
     /// Constructor.
-    Q_INVOKABLE ComputePropertyModifierApplication(ObjectCreationParams params) : AsynchronousModifierApplication(params) {}
+    Q_INVOKABLE ComputePropertyModifierApplication(ObjectInitializationFlags flags) : AsynchronousModifierApplication(flags) {}
 
 private:
 

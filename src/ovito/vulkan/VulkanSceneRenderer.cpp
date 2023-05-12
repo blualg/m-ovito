@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -34,7 +34,7 @@ namespace Ovito {
 IMPLEMENT_OVITO_CLASS(VulkanSceneRenderer);
 
 /******************************************************************************
-* Is called by OVITO to query the class for any information that should be 
+* Is called by OVITO to query the class for any information that should be
 * included in the application's system report.
 ******************************************************************************/
 void VulkanSceneRenderer::OOMetaClass::querySystemInformation(QTextStream& stream, UserInterface& userInterface) const
@@ -42,7 +42,7 @@ void VulkanSceneRenderer::OOMetaClass::querySystemInformation(QTextStream& strea
     if(this == &VulkanSceneRenderer::OOClass()) {
         stream << "======== Vulkan info =======" << "\n";
         try {
-            // Look up an existing Vulkan context from one of the interactive viewport windows. 
+            // Look up an existing Vulkan context from one of the interactive viewport windows.
             // All viewport windows share a single logical Vulkan device.
             std::shared_ptr<VulkanContext> context;
             if(DataSet* dataset = userInterface.datasetContainer().currentSet()) {
@@ -87,7 +87,7 @@ void VulkanSceneRenderer::OOMetaClass::querySystemInformation(QTextStream& strea
             settings.setValue("selected_device", context->physicalDeviceIndex());
 
             if(context->logicalDevice()) {
-                stream << "Active physical device index: [" << context->physicalDeviceIndex() << "]\n"; 
+                stream << "Active physical device index: [" << context->physicalDeviceIndex() << "]\n";
                 stream << "Unified memory architecture: " << context->isUMA() << "\n";
                 stream << "features.wideLines: " << context->supportsWideLines() << "\n";
                 stream << "features.multiDrawIndirect: " << context->supportsMultiDrawIndirect() << "\n";
@@ -100,7 +100,7 @@ void VulkanSceneRenderer::OOMetaClass::querySystemInformation(QTextStream& strea
                 stream << "limits.lineWidthGranularity: " << context->physicalDeviceProperties()->limits.lineWidthGranularity << "\n";
                 stream << "limits.maxDrawIndirectCount: " << context->physicalDeviceProperties()->limits.maxDrawIndirectCount << "\n";
             }
-            else stream << "No active physical device\n"; 
+            else stream << "No active physical device\n";
         }
         catch(const Exception& ex) {
             stream << tr("Error: %1").arg(ex.message()) << "\n";
@@ -111,8 +111,8 @@ void VulkanSceneRenderer::OOMetaClass::querySystemInformation(QTextStream& strea
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-VulkanSceneRenderer::VulkanSceneRenderer(ObjectCreationParams params, std::shared_ptr<VulkanContext> vulkanContext, int concurrentFrameCount) 
-    : SceneRenderer(params), 
+VulkanSceneRenderer::VulkanSceneRenderer(ObjectInitializationFlags flags, std::shared_ptr<VulkanContext> vulkanContext, int concurrentFrameCount)
+    : SceneRenderer(flags),
     _context(std::move(vulkanContext)),
     _concurrentFrameCount(concurrentFrameCount)
 {
@@ -134,7 +134,7 @@ VulkanSceneRenderer::~VulkanSceneRenderer()
 
 /******************************************************************************
 * This method is called after the reference counter of this object has reached zero
-* and before the object is being finally deleted. 
+* and before the object is being finally deleted.
 ******************************************************************************/
 void VulkanSceneRenderer::aboutToBeDeleted()
 {
@@ -304,7 +304,7 @@ void VulkanSceneRenderer::renderParticles(const ParticlePrimitive& primitive)
 {
     OVITO_ASSERT(!isBoundingBoxPass());
 
-    // Render primitives now if they are all fully opaque. Otherwise defer rendering to a later time to 
+    // Render primitives now if they are all fully opaque. Otherwise defer rendering to a later time to
     // draw the semi-transparent objects after everything else has been drawn.
     if(isPicking() || !primitive.transparencies())
         renderParticlesImplementation(primitive);
@@ -319,7 +319,7 @@ void VulkanSceneRenderer::renderCylinders(const CylinderPrimitive& primitive)
 {
     OVITO_ASSERT(!isBoundingBoxPass());
 
-    // Render primitives now if they are all fully opaque. Otherwise defer rendering to a later time to 
+    // Render primitives now if they are all fully opaque. Otherwise defer rendering to a later time to
     // draw the semi-transparent objects after everything else has been drawn.
     if(isPicking() || !primitive.transparencies())
         renderCylindersImplementation(primitive);
@@ -334,7 +334,7 @@ void VulkanSceneRenderer::renderMesh(const MeshPrimitive& primitive)
 {
     OVITO_ASSERT(!isBoundingBoxPass());
 
-    // Render primitives now if they are all fully opaque. Otherwise defer rendering to a later time to 
+    // Render primitives now if they are all fully opaque. Otherwise defer rendering to a later time to
     // draw the semi-transparent objects after everything else has been drawn.
     if(isPicking() || primitive.isFullyOpaque())
         renderMeshImplementation(primitive);
@@ -413,8 +413,8 @@ VkDescriptorSetLayout VulkanSceneRenderer::colorMapDescriptorSetLayout()
 }
 
 /******************************************************************************
-* Returns the Vulkan descriptor set for the global uniforms structure, which 
-* can be bound to a pipeline. 
+* Returns the Vulkan descriptor set for the global uniforms structure, which
+* can be bound to a pipeline.
 ******************************************************************************/
 VkDescriptorSet VulkanSceneRenderer::getGlobalUniformsDescriptorSet()
 {

@@ -43,11 +43,11 @@ IMPLEMENT_OVITO_CLASS(ExpressionSelectionModifierDelegate);
 /******************************************************************************
 * Constructs the modifier object.
 ******************************************************************************/
-ExpressionSelectionModifier::ExpressionSelectionModifier(ObjectCreationParams params) : DelegatingModifier(params)
+ExpressionSelectionModifier::ExpressionSelectionModifier(ObjectInitializationFlags flags) : DelegatingModifier(flags)
 {
-    if(params.createSubObjects()) {
+    if(!flags.testFlag(ObjectInitializationFlag::DontInitializeObject)) {
         // Let this modifier operate on particles by default.
-        createDefaultModifierDelegate(ExpressionSelectionModifierDelegate::OOClass(), QStringLiteral("ParticlesExpressionSelectionModifierDelegate"), params);
+        createDefaultModifierDelegate(ExpressionSelectionModifierDelegate::OOClass(), QStringLiteral("ParticlesExpressionSelectionModifierDelegate"));
     }
 }
 

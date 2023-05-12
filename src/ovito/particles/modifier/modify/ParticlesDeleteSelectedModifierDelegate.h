@@ -57,7 +57,7 @@ class ParticlesDeleteSelectedModifierDelegate : public DeleteSelectedModifierDel
 public:
 
     /// Constructor.
-    Q_INVOKABLE ParticlesDeleteSelectedModifierDelegate(ObjectCreationParams params) : DeleteSelectedModifierDelegate(params) {}
+    Q_INVOKABLE ParticlesDeleteSelectedModifierDelegate(ObjectInitializationFlags flags) : DeleteSelectedModifierDelegate(flags) {}
 
     /// Applies the modifier operation to the data in a pipeline flow state.
     virtual PipelineStatus apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const PipelineFlowState& inputState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs) override;
@@ -90,7 +90,7 @@ class BondsDeleteSelectedModifierDelegate : public DeleteSelectedModifierDelegat
 public:
 
     /// Constructor.
-    Q_INVOKABLE BondsDeleteSelectedModifierDelegate(ObjectCreationParams params) : DeleteSelectedModifierDelegate(params) {}
+    Q_INVOKABLE BondsDeleteSelectedModifierDelegate(ObjectInitializationFlags flags) : DeleteSelectedModifierDelegate(flags) {}
 
     /// Applies the modifier operation to the data in a pipeline flow state.
     virtual PipelineStatus apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const PipelineFlowState& inputState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs) override;

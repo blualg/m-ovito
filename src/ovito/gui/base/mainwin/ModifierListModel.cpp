@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -60,7 +60,7 @@ ModifierAction* ModifierAction::createForClass(ModifierClassPtr clazz)
     // Modifiers without a category are moved into the "Other" category.
     if(action->_category.isEmpty())
         action->_category = tr("Other");
-    
+
     return action;
 }
 
@@ -84,7 +84,7 @@ ModifierAction* ModifierAction::createForTemplate(const QString& templateName)
     // Give the action an icon.
     static QIcon icon = QIcon::fromTheme("modify_modifier_action_icon");
     action->setIcon(icon);
-    
+
     return action;
 }
 
@@ -108,7 +108,7 @@ ModifierAction* ModifierAction::createForScript(const QString& fileName, const Q
     // Give the action an icon.
     static QIcon icon = QIcon::fromTheme("modify_modifier_action_icon");
     action->setIcon(icon);
-    
+
     return action;
 }
 
@@ -233,7 +233,7 @@ QT_WARNING_POP
 #endif
     _actionsPerCategory.emplace_back();
 
-    // Load user-defined Python script modifiers.
+    // Discover user-defined Python script modifiers.
     const QStringList nameFilters(QStringLiteral("*.py"));
     for(const QDir& scriptsDirectory : _modifierScriptDirectories) {
         QStringList scriptFiles = scriptsDirectory.entryList(nameFilters, QDir::Files, QDir::Name);
@@ -250,10 +250,10 @@ QT_WARNING_POP
             userInterface.actionManager()->addAction(action);
             OVITO_ASSERT(action->parent() == userInterface.actionManager());
 
-            // Handle the action.
+            // Handle the action when triggered.
             connect(action, &QAction::triggered, this, &ModifierListModel::insertModifier);
 
-            // Insert action into complete list, which is alphabetically sorted by name.
+            // Insert action into full list, which is alphabetically sorted by name.
             auto insertionIter = std::lower_bound(_allActions.begin(), _allActions.end(), action, [](const ModifierAction* a, const ModifierAction* b) { return a->text().compare(b->text(), Qt::CaseInsensitive) < 0; });
             _allActions.insert(insertionIter, action);
         }
@@ -356,7 +356,7 @@ int ModifierListModel::listIndexFromCategoryIndex(int categoryIndex) const
 /******************************************************************************
 * Returns the number of rows in the model.
 ******************************************************************************/
-int ModifierListModel::rowCount(const QModelIndex& parent) const 
+int ModifierListModel::rowCount(const QModelIndex& parent) const
 {
     int sum = 1; // First entry is the "Add modification..." item.
 
@@ -377,7 +377,7 @@ int ModifierListModel::rowCount(const QModelIndex& parent) const
 ******************************************************************************/
 QHash<int, QByteArray> ModifierListModel::roleNames() const
 {
-    return { 
+    return {
         { Qt::DisplayRole, "title" },
         { Qt::UserRole, "isheader" },
         { Qt::FontRole, "font" }
@@ -471,26 +471,26 @@ void ModifierListModel::insertModifier()
             _pipelineListModel->applyModifiers(modifierSet, modifierGroup);
         }
         else if(!action->scriptPath().isEmpty()) {
-            // Get the PythonScriptModifier modifier class.
+            // Get runtime access to the PythonScriptModifier modifier class, which is located in another C++ module.
             if(OvitoClassPtr clazz = PluginManager::instance().findClass({}, QStringLiteral("PythonScriptModifier"))) {
-                if(!clazz->isAbstract() && clazz->isDerivedFrom(Modifier::OOClass())) {
-                    const Modifier::OOMetaClass* modifierClass = static_cast<const Modifier::OOMetaClass*>(clazz);
+                OVITO_ASSERT(clazz->isDerivedFrom(Modifier::OOClass()));
+                OVITO_ASSERT(clazz->isInstantiable());
+                const Modifier::OOMetaClass* modifierClass = static_cast<const Modifier::OOMetaClass*>(clazz);
 
-                    // Instantiate the PythonScriptModifier class.
-                    OORef<Modifier> modifier = static_object_cast<Modifier>(modifierClass->createInstance());
-                    OVITO_CHECK_OBJECT_POINTER(modifier);
-                    {
-                        UndoSuspender noUndo;
-                        modifier->setTitle(action->text());
+                // Instantiate the PythonScriptModifier class.
+                OORef<Modifier> modifier = static_object_cast<Modifier>(modifierClass->createInstance());
+                OVITO_CHECK_OBJECT_POINTER(modifier);
+                {
+                    UndoSuspender noUndo;
+                    modifier->setTitle(action->text());
 
-                        // Load the script code from the template file.
-                        bool callSuccessful = QMetaObject::invokeMethod(modifier, "loadCodeTemplate", Qt::DirectConnection, Q_ARG(const QString&, action->scriptPath()));
-                        OVITO_ASSERT(callSuccessful);
-                    }
-
-                    // Insert modifier(s) into the data pipeline.
-                    _pipelineListModel->applyModifiers({modifier});
+                    // Load the script code from the template file.
+                    bool callSuccessful = QMetaObject::invokeMethod(modifier, "loadCodeTemplate", Qt::DirectConnection, Q_ARG(const QString&, action->scriptPath()));
+                    OVITO_ASSERT(callSuccessful);
                 }
+
+                // Insert modifier(s) into the data pipeline.
+                _pipelineListModel->applyModifiers({modifier});
             }
         }
     });
@@ -601,7 +601,7 @@ void ModifierListModel::updateActionState()
     int row = 1;
     if(_useCategories) {
         for(const auto& categoryActions : _actionsPerCategory) {
-            if(!categoryActions.empty()) 
+            if(!categoryActions.empty())
                 row++;
             for(ModifierAction* action : categoryActions) {
                 if(action->updateState(inputState))
@@ -650,7 +650,7 @@ bool ModifierListModel::useCategoriesGlobal()
 void ModifierListModel::setUseCategoriesGlobal(bool on)
 {
 #ifndef OVITO_DISABLE_QSETTINGS
-    if(on != useCategoriesGlobal()) {       
+    if(on != useCategoriesGlobal()) {
         QSettings settings;
         settings.setValue("modifiers/sort_by_category", on);
     }

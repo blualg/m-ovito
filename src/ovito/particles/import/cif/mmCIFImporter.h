@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -56,8 +56,8 @@ class OVITO_PARTICLES_EXPORT mmCIFImporter : public ParticleImporter
 public:
 
     /// \brief Constructs a new instance of this class.
-    Q_INVOKABLE mmCIFImporter(ObjectCreationParams params) : ParticleImporter(params) { 
-        setGenerateBonds(true); 
+    Q_INVOKABLE mmCIFImporter(ObjectInitializationFlags flags) : ParticleImporter(flags) {
+        setGenerateBonds(true);
     }
 
     /// Returns the title of this object.

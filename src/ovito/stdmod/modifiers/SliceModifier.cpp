@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -65,25 +65,25 @@ SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(SliceModifier, widthController, WorldParame
 /******************************************************************************
 * Constructs the modifier object.
 ******************************************************************************/
-SliceModifier::SliceModifier(ObjectCreationParams params) : MultiDelegatingModifier(params),
+SliceModifier::SliceModifier(ObjectInitializationFlags flags) : MultiDelegatingModifier(flags),
     _createSelection(false),
     _inverse(false),
     _applyToSelection(false),
     _enablePlaneVisualization(false),
     _reducedCoordinates(false)
 {
-    if(params.createSubObjects()) {
+    if(!flags.testFlag(ObjectInitializationFlag::DontInitializeObject)) {
         setNormalController(ControllerManager::createVector3Controller());
         setDistanceController(ControllerManager::createFloatController());
         setWidthController(ControllerManager::createFloatController());
-        if(normalController()) 
+        if(normalController())
             normalController()->setVector3Value(AnimationTime(0), Vector3(1,0,0));
 
         // Generate the list of delegate objects.
-        createModifierDelegates(SliceModifierDelegate::OOClass(), params);
+        createModifierDelegates(SliceModifierDelegate::OOClass());
 
         // Create the vis element for the plane.
-        setPlaneVis(OORef<TriMeshVis>::create(params));
+        setPlaneVis(OORef<TriMeshVis>::create(flags));
         planeVis()->setTitle(tr("Plane"));
         planeVis()->setHighlightEdges(true);
         planeVis()->setTransparency(0.5);
@@ -337,7 +337,7 @@ void SliceModifier::evaluateSynchronous(const ModifierEvaluationRequest& request
             planeEdgeIntersection(cellMatrix.translation() + cellMatrix.column(1) + cellMatrix.column(2), cellMatrix.column(0));
             planeEdgeIntersection(cellMatrix.translation() + cellMatrix.column(2) + cellMatrix.column(0), cellMatrix.column(1));
             if(vertices.size() < 3) return;
-            vertices.erase(std::remove_if(vertices.begin() + 1, vertices.end(), 
+            vertices.erase(std::remove_if(vertices.begin() + 1, vertices.end(),
                 [p = vertices.front()](const Point3& p2) { return p2.equals(p); }), vertices.end());
             if(vertices.size() < 3) return;
             std::sort(vertices.begin() + 1, vertices.end(), [&](const Point3& a, const Point3& b) {
@@ -365,7 +365,7 @@ void SliceModifier::evaluateSynchronous(const ModifierEvaluationRequest& request
 }
 
 /******************************************************************************
-* Moves the plane along its current normal vector to position in the center of the simulation cell. 
+* Moves the plane along its current normal vector to position in the center of the simulation cell.
 ******************************************************************************/
 void SliceModifier::centerPlaneInSimulationCell(ModifierApplication* modApp, AnimationTime time)
 {
@@ -393,13 +393,13 @@ void SliceModifier::centerPlaneInSimulationCell(ModifierApplication* modApp, Ani
 }
 
 /******************************************************************************
-* Returns a short piece information (typically a string or color) to be 
+* Returns a short piece information (typically a string or color) to be
 * displayed next to the modifier's title in the pipeline editor list.
 ******************************************************************************/
 QVariant SliceModifier::getPipelineEditorShortInfo(Scene* scene, ModifierApplication* modApp) const
-{ 
+{
     Vector3 normal = this->normal();
-    return tr("(%1 %2 %3), %4").arg(normal.x(), 0, 'g', 1).arg(normal.y(), 0, 'g', 1).arg(normal.z(), 0, 'g', 1).arg(distance(), 0, 'g', 6); 
+    return tr("(%1 %2 %3), %4").arg(normal.x(), 0, 'g', 1).arg(normal.y(), 0, 'g', 1).arg(normal.z(), 0, 'g', 1).arg(distance(), 0, 'g', 6);
 }
 
 }   // End of namespace

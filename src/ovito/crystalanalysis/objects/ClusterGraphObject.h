@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2013 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -39,7 +39,7 @@ class OVITO_CRYSTALANALYSIS_EXPORT ClusterGraphObject : public DataObject
 public:
 
     /// \brief Constructor.
-    Q_INVOKABLE ClusterGraphObject(ObjectCreationParams params);
+    Q_INVOKABLE ClusterGraphObject(ObjectInitializationFlags flags);
 
     /// Returns the title of this object.
     virtual QString objectTitle() const override { return tr("Clusters"); }

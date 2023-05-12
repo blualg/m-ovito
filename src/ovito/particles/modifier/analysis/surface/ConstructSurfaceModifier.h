@@ -68,7 +68,7 @@ public:
 public:
 
     /// Constructor.
-    Q_INVOKABLE ConstructSurfaceModifier(ObjectCreationParams params);
+    Q_INVOKABLE ConstructSurfaceModifier(ObjectInitializationFlags flags);
 
     /// Decides whether a preliminary viewport update is performed after the modifier has been
     /// evaluated but before the entire pipeline evaluation is complete.
@@ -102,10 +102,10 @@ private:
               _totalCellVolume(mesh->domain()
                                    ? mesh->domain()->volume3D()
                                    : 0.0),  // totalCellVolume is initialized before _mesh. Therefore mesh has to be used.
-              _particleRegionIds(mapParticlesToRegions ? ParticlesObject::OOClass().createUserProperty(
+              _particleRegionIds(mapParticlesToRegions ? ParticlesObject::OOClass().createUserProperty(DataBuffer::Uninitialized,
                                                              positions->size(), PropertyObject::Int, 1, tr("Region"))
                                                        : nullptr),
-              _surfaceDistances(computeSurfaceDistance ? ParticlesObject::OOClass().createUserProperty(
+              _surfaceDistances(computeSurfaceDistance ? ParticlesObject::OOClass().createUserProperty(DataBuffer::Uninitialized,
                                                              positions->size(), PropertyObject::Float, 1, tr("Surface Distance"))
                                                        : nullptr)
         {
@@ -223,8 +223,8 @@ private:
               _smoothingLevel(smoothingLevel),
               _surfaceParticleSelection(
                   selectSurfaceParticles
-                      ? ParticlesObject::OOClass().createStandardProperty(
-                            this->positions()->size(), ParticlesObject::SelectionProperty, DataBuffer::InitializeMemory)
+                      ? ParticlesObject::OOClass().createStandardProperty(DataBuffer::Initialized,
+                            this->positions()->size(), ParticlesObject::SelectionProperty)
                       : nullptr)
         {
         }

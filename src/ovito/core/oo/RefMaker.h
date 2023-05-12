@@ -302,6 +302,9 @@ public:
     /// It loads the initial values for property fields with user-defined default settings (those having the PROPERTY_FIELD_MEMORIZE flag set).
     void initializeParametersToUserDefaults();
 
+    /// \brief Initializes a new instance and all its children as part of two-phase object initialization.
+    void initializeParametersToUserDefaultsRecursive();
+
     /// Creates a snapshot of the object's parameter values that will serve as reference to detect parameter changes made by the user.
     void freezeInitialParameterValues(std::initializer_list<const PropertyFieldDescriptor*> propertyFields);
 

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -68,11 +68,15 @@ public:
 
 public:
 
-    /// \brief Creates an empty property.
-    Q_INVOKABLE PropertyObject(ObjectCreationParams params);
+    /// \brief Creates an empty property array.
+    Q_INVOKABLE PropertyObject(ObjectInitializationFlags flags);
 
-    /// \brief Constructor that creates and initializes a new property array.
-    PropertyObject(ObjectCreationParams params, size_t elementCount, int dataType, size_t componentCount, const QString& name, DataBuffer::InitializationFlags flags = DataBuffer::NoFlags, int type = 0, QStringList componentNames = QStringList());
+    /// \brief Constructor creating a new property array.
+    PropertyObject(ObjectInitializationFlags flags, BufferInitialization init, size_t elementCount, int dataType, size_t componentCount, const QString& name, int type = 0, QStringList componentNames = QStringList());
+
+    /// \brief Constructor creating a new property array.
+    PropertyObject(ObjectInitializationFlags flags, size_t elementCount, int dataType, size_t componentCount, const QString& name, int type = 0, QStringList componentNames = QStringList()) :
+        PropertyObject(flags, BufferInitialization::Uninitialized, elementCount, dataType, componentCount, name, type, std::move(componentNames)) {}
 
     /// \brief Gets the property's name.
     /// \return The name of property.
@@ -108,10 +112,10 @@ public:
 
     /// Checks if this property storage and its contents exactly match those of another property storage.
     bool equals(const PropertyObject& other) const;
-    
+
     //////////////////////////////// Element types //////////////////////////////
 
-    /// Returns true if this property has some element types attached and the data type is 'int'. 
+    /// Returns true if this property has some element types attached and the data type is 'int'.
     bool isTypedProperty() const { return !elementTypes().empty() && dataType() == DataBuffer::Int && componentCount() == 1; }
 
     /// Appends an element type to the list of types.
@@ -203,7 +207,7 @@ public:
     /// Sorts the element types with respect to the numeric identifier.
     void sortElementTypesById();
 
-    /// Sorts the types w.r.t. their name. 
+    /// Sorts the types w.r.t. their name.
     /// This method is used by file parsers that create element types on the
     /// go while the read the data. In such a case, the type ordering
     /// depends on the storage order of data elements in the loaded file, which is not desirable.

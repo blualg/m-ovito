@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -39,9 +39,9 @@ SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(NucleotidesVis, cylinderRadius, WorldParame
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-NucleotidesVis::NucleotidesVis(ObjectCreationParams params) : ParticlesVis(params),
+NucleotidesVis::NucleotidesVis(ObjectInitializationFlags flags) : ParticlesVis(flags),
     _cylinderRadius(0.05)
-{   
+{
     setDefaultParticleRadius(0.1);
 }
 
@@ -94,7 +94,7 @@ Box3 NucleotidesVis::boundingBox(AnimationTime time, const ConstDataObjectPath& 
 }
 
 /******************************************************************************
-* Returns the typed particle property used to determine the rendering colors 
+* Returns the typed particle property used to determine the rendering colors
 * of particles (if no per-particle colors are defined).
 ******************************************************************************/
 const PropertyObject* NucleotidesVis::getParticleTypeColorProperty(const ParticlesObject* particles) const
@@ -103,7 +103,7 @@ const PropertyObject* NucleotidesVis::getParticleTypeColorProperty(const Particl
 }
 
 /******************************************************************************
-* Returns the typed particle property used to determine the rendering radii 
+* Returns the typed particle property used to determine the rendering radii
 * of particles (if no per-particle radii are defined).
 ******************************************************************************/
 const PropertyObject* NucleotidesVis::getParticleTypeRadiusProperty(const ParticlesObject* particles) const
@@ -127,7 +127,7 @@ ConstPropertyPtr NucleotidesVis::nucleobaseColors(const ParticlesObject* particl
     particles->verifyIntegrity();
 
     // Allocate output color array.
-    PropertyPtr output = ParticlesObject::OOClass().createStandardProperty(particles->elementCount(), ParticlesObject::ColorProperty);
+    PropertyPtr output = ParticlesObject::OOClass().createStandardProperty(DataBuffer::Uninitialized, particles->elementCount(), ParticlesObject::ColorProperty);
 
     Color defaultColor = defaultParticleColor();
     if(const PropertyObject* baseProperty = particles->getProperty(ParticlesObject::NucleobaseTypeProperty)) {
@@ -221,7 +221,7 @@ PipelineStatus NucleotidesVis::render(AnimationTime time, const ConstDataObjectP
         FloatType,                  // Default particle radius
         FloatType                   // Cylinder radius
     >;
-    
+
     // The data structure stored in the vis cache.
     struct NucleotidesCacheValue {
         ParticlePrimitive backbonePrimitive;
@@ -289,7 +289,7 @@ PipelineStatus NucleotidesVis::render(AnimationTime time, const ConstDataObjectP
 
             // Fill in base orientations.
             if(ConstPropertyAccess<Vector3> nucleotideNormalArray = nucleotideNormalProperty) {
-                PropertyAccessAndRef<Quaternion> orientations = ParticlesObject::OOClass().createStandardProperty(particles->elementCount(), ParticlesObject::OrientationProperty);
+                PropertyAccessAndRef<Quaternion> orientations = ParticlesObject::OOClass().createStandardProperty(DataBuffer::Uninitialized, particles->elementCount(), ParticlesObject::OrientationProperty);
                 for(size_t i = 0; i < orientations.size(); i++) {
                     if(nucleotideNormalArray[i] != Vector3::Zero() && nucleotideAxisArray[i] != Vector3::Zero()) {
                         // Build an orthonomal basis from the two direction vectors of a nucleotide.
@@ -307,7 +307,7 @@ PipelineStatus NucleotidesVis::render(AnimationTime time, const ConstDataObjectP
                         orientations[i] = Quaternion::Identity();
                     }
                 }
-                visCache.basePrimitive.setOrientations(orientations.take());    
+                visCache.basePrimitive.setOrientations(orientations.take());
             }
 
             // Create the rendering primitive for the connections between backbone and base sites.

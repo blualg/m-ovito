@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -45,9 +45,9 @@ ElasticStrainEngine::ElasticStrainEngine(
     _inputCrystalStructure(inputCrystalStructure),
     _latticeConstant(latticeConstant),
     _pushStrainTensorsForward(pushStrainTensorsForward),
-    _volumetricStrains(ParticlesObject::OOClass().createUserProperty(positions->size(), PropertyObject::Float, 1, QStringLiteral("Volumetric Strain"))),
-    _strainTensors(calculateStrainTensors ? ParticlesObject::OOClass().createStandardProperty(positions->size(), ParticlesObject::ElasticStrainTensorProperty) : nullptr),
-    _deformationGradients(calculateDeformationGradients ? ParticlesObject::OOClass().createStandardProperty(positions->size(), ParticlesObject::ElasticDeformationGradientProperty) : nullptr)
+    _volumetricStrains(ParticlesObject::OOClass().createUserProperty(DataBuffer::Uninitialized, positions->size(), PropertyObject::Float, 1, QStringLiteral("Volumetric Strain"))),
+    _strainTensors(calculateStrainTensors ? ParticlesObject::OOClass().createStandardProperty(DataBuffer::Uninitialized, positions->size(), ParticlesObject::ElasticStrainTensorProperty) : nullptr),
+    _deformationGradients(calculateDeformationGradients ? ParticlesObject::OOClass().createStandardProperty(DataBuffer::Uninitialized, positions->size(), ParticlesObject::ElasticDeformationGradientProperty) : nullptr)
 {
     setAtomClusters(_structureAnalysis->atomClusters());
     if(inputCrystalStructure == StructureAnalysis::LATTICE_FCC || inputCrystalStructure == StructureAnalysis::LATTICE_BCC || inputCrystalStructure == StructureAnalysis::LATTICE_CUBIC_DIAMOND) {

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -54,7 +54,7 @@ public:
     /// processes it and redraw the window contents.
     virtual void processViewportUpdate() override;
 
-    /// Sets the mouse cursor shape for the window. 
+    /// Sets the mouse cursor shape for the window.
     virtual void setCursor(const QCursor& cursor) override { QWindow::setCursor(cursor); }
 
     /// Returns the current size of the viewport window (in device pixels).
@@ -112,7 +112,7 @@ public:
     VkCommandBuffer currentCommandBuffer() const { return _imageRes[_currentImage].cmdBuf; }
 
     /// Returns a VkFramebuffer for the current swapchain image using the default render pass.
-    VkFramebuffer currentFramebuffer() const { return _imageRes[_currentImage].fb; }    
+    VkFramebuffer currentFramebuffer() const { return _imageRes[_currentImage].fb; }
 
     /// Returns the current sample count as a \c VkSampleCountFlagBits value.
     /// When targeting the default render target, the \c rasterizationSamples field
@@ -122,7 +122,7 @@ public:
     /// Returns the Vulkan logical device handle.
     VkDevice logicalDevice() const { return context()->logicalDevice(); }
 
-    /// Returns the device-specific Vulkan function table. 
+    /// Returns the device-specific Vulkan function table.
     QVulkanDeviceFunctions* deviceFunctions() const { return context()->deviceFunctions(); }
 
     /// Returns the logical Vulkan device used by the window.
@@ -141,7 +141,7 @@ protected:
     /// Handles events sent to the window by the system.
     virtual bool event(QEvent* e) override;
 
-    /// Is called by the window system whenever an area of the window is invalidated, 
+    /// Is called by the window system whenever an area of the window is invalidated,
     /// for example due to the exposure in the windowing system changing
     virtual void exposeEvent(QExposeEvent* event) override;
 
@@ -164,8 +164,8 @@ protected:
     virtual void focusOutEvent(QFocusEvent* event) override { BaseViewportWindow::focusOutEvent(event); }
 
     /// Handles key-press events.
-    virtual void keyPressEvent(QKeyEvent* event) override { 
-        BaseViewportWindow::keyPressEvent(event); 
+    virtual void keyPressEvent(QKeyEvent* event) override {
+        BaseViewportWindow::keyPressEvent(event);
         QWindow::keyPressEvent(event);
     }
 
@@ -179,13 +179,13 @@ private Q_SLOTS:
 
 private:
 
-    /// Initializes the Vulkan objects of the window after it has been exposed for first time.  
+    /// Initializes the Vulkan objects of the window after it has been exposed for first time.
     void init();
 
-    /// Recreates the Vulkan swapchain.  
+    /// Recreates the Vulkan swapchain.
     void recreateSwapChain();
 
-    /// Releases the resources of the Vulkan swapchain.  
+    /// Releases the resources of the Vulkan swapchain.
     void releaseSwapChain();
 
     /// Starts rendering a frame.
@@ -224,7 +224,7 @@ private:
     QVector<VkFormat> _requestedColorFormats;
     VkFormat _colorFormat;
     VkColorSpaceKHR _colorSpace;
-    
+
     PFN_vkCreateSwapchainKHR vkCreateSwapchainKHR = nullptr;
     PFN_vkDestroySwapchainKHR vkDestroySwapchainKHR;
     PFN_vkGetSwapchainImagesKHR vkGetSwapchainImagesKHR;
@@ -232,17 +232,17 @@ private:
     PFN_vkQueuePresentKHR vkQueuePresentKHR;
     PFN_vkGetPhysicalDeviceSurfaceCapabilitiesKHR vkGetPhysicalDeviceSurfaceCapabilitiesKHR = nullptr;
     PFN_vkGetPhysicalDeviceSurfaceFormatsKHR vkGetPhysicalDeviceSurfaceFormatsKHR;
-    
+
     static const int MAX_SWAPCHAIN_BUFFER_COUNT = 3;
     static const int MAX_CONCURRENT_FRAME_COUNT = VulkanContext::MAX_CONCURRENT_FRAME_COUNT;
     static const int MAX_FRAME_LAG = MAX_CONCURRENT_FRAME_COUNT;
-    
+
     VkPresentModeKHR _presentMode = VK_PRESENT_MODE_FIFO_KHR;
-    
+
     int _swapChainBufferCount = 2;
     QSize _swapChainImageSize;
     VkSwapchainKHR _swapChain = VK_NULL_HANDLE;
-    
+
     struct ImageResources {
         VkImage image = VK_NULL_HANDLE;
         VkImageView imageView = VK_NULL_HANDLE;
@@ -255,11 +255,11 @@ private:
         VkImageView msaaImageView = VK_NULL_HANDLE;
         VulkanContext::ResourceFrameHandle resourceFrame = 0;
     } _imageRes[MAX_SWAPCHAIN_BUFFER_COUNT];
-    
+
     VkDeviceMemory _msaaImageMem = VK_NULL_HANDLE;
-    
+
     uint32_t _currentImage;
-    
+
     struct FrameResources {
         VkFence fence = VK_NULL_HANDLE;
         bool fenceWaitable = false;
@@ -269,11 +269,11 @@ private:
         bool imageAcquired = false;
         bool imageSemWaitable = false;
     } _frameRes[MAX_FRAME_LAG];
-    
+
     uint32_t _currentFrame;
-    
+
     VkRenderPass _defaultRenderPass = VK_NULL_HANDLE;
-    
+
     VkDeviceMemory _dsMem = VK_NULL_HANDLE;
     VkImage _dsImage = VK_NULL_HANDLE;
     VkImageView _dsView = VK_NULL_HANDLE;

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -49,7 +49,7 @@ SET_MODIFIER_APPLICATION_TYPE(FreezePropertyModifier, FreezePropertyModifierAppl
 /******************************************************************************
 * Constructs the modifier object.
 ******************************************************************************/
-FreezePropertyModifier::FreezePropertyModifier(ObjectCreationParams params) : GenericPropertyModifier(params),
+FreezePropertyModifier::FreezePropertyModifier(ObjectInitializationFlags flags) : GenericPropertyModifier(flags),
     _freezeTime(0)
 {
     // Operate on particles by default.
@@ -174,16 +174,15 @@ void FreezePropertyModifier::evaluateSynchronous(const ModifierEvaluationRequest
     // Get the property that will be overwritten by the stored one.
     PropertyObject* outputProperty;
     if(destinationProperty().type() != PropertyObject::GenericUserProperty) {
-        outputProperty = container->createProperty(destinationProperty().type(), DataBuffer::InitializeMemory);
+        outputProperty = container->createProperty(DataBuffer::Initialized, destinationProperty().type());
         if(outputProperty->dataType() != myModApp->property()->dataType()
             || outputProperty->componentCount() != myModApp->property()->componentCount()
             || outputProperty->stride() != myModApp->property()->stride())
             throw Exception(tr("Types of source property and output property are not compatible. Cannot restore saved property values."));
     }
     else {
-        outputProperty = container->createProperty(destinationProperty().name(),
-            myModApp->property()->dataType(), myModApp->property()->componentCount(),
-            DataBuffer::InitializeMemory);
+        outputProperty = container->createProperty(DataBuffer::Initialized, destinationProperty().name(),
+            myModApp->property()->dataType(), myModApp->property()->componentCount());
         outputProperty->setComponentNames(myModApp->property()->componentNames());
     }
     OVITO_ASSERT(outputProperty->stride() == myModApp->property()->stride());
@@ -287,7 +286,7 @@ void FreezePropertyModifier::loadFromStreamComplete(ObjectLoadStream& stream)
 {
     GenericPropertyModifier::loadFromStreamComplete(stream);
 
-    // For backward compatibility with OVITO 3.7: 
+    // For backward compatibility with OVITO 3.7:
     // Convert legacy time value from ticks to frames. This requires access to the AnimationSettings object, which is stored in the scene.
     if(stream.formatVersion() <= 30008) {
         if(ModifierApplication* modApp = someModifierApplication()) {

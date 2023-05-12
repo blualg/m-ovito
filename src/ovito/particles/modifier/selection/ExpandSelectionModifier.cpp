@@ -49,7 +49,7 @@ SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(ExpandSelectionModifier, numberOfIterations
 /******************************************************************************
 * Constructs the modifier object.
 ******************************************************************************/
-ExpandSelectionModifier::ExpandSelectionModifier(ObjectCreationParams params) : AsynchronousModifier(params),
+ExpandSelectionModifier::ExpandSelectionModifier(ObjectInitializationFlags flags) : AsynchronousModifier(flags),
     _mode(CutoffRange),
     _cutoffRange(3.2),
     _numNearestNeighbors(1),

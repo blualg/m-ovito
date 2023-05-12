@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -55,14 +55,15 @@ SET_PROPERTY_FIELD_LABEL(ParticlesObject, impropers, "Impropers");
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-ParticlesObject::ParticlesObject(ObjectCreationParams params) : PropertyContainer(params)
+ParticlesObject::ParticlesObject(ObjectInitializationFlags flags) : PropertyContainer(flags)
 {
     // Assign the default data object identifier.
     setIdentifier(OOClass().pythonName());
 
-    // Create and attach a default visualization element for rendering the particles.
-    if(params.createVisElement())
-        setVisElement(OORef<ParticlesVis>::create(params));
+    if(!flags.testAnyFlags(ObjectInitializationFlags(DontInitializeObject) | ObjectInitializationFlags(DontCreateVisElement))) {
+        // Create and attach a default visualization element for rendering the particles.
+        setVisElement(OORef<ParticlesVis>::create(flags));
+    }
 }
 
 /******************************************************************************
@@ -437,8 +438,8 @@ ConstPropertyPtr ParticlesObject::inputParticleColors() const
     }
 
     // Return an array with uniform colors if there is no vis element attached to the particles object.
-    PropertyPtr colors = ParticlesObject::OOClass().createStandardProperty(elementCount(), ParticlesObject::ColorProperty);
-    colors->fill(Color(1,1,1));
+    PropertyPtr colors = ParticlesObject::OOClass().createStandardProperty(DataBuffer::Uninitialized, elementCount(), ParticlesObject::ColorProperty);
+    colors->fill<Color>(Color(1,1,1));
     return colors;
 }
 
@@ -456,7 +457,7 @@ ConstPropertyPtr ParticlesObject::inputBondColors(bool ignoreExistingColorProper
             OVITO_ASSERT(bonds()->elementCount() * 2 == halfBondColors.size());
 
             // Map half-bond colors to full bond colors.
-            PropertyAccessAndRef<Color> colors = BondsObject::OOClass().createStandardProperty(bonds()->elementCount(), BondsObject::ColorProperty);
+            PropertyAccessAndRef<Color> colors = BondsObject::OOClass().createStandardProperty(DataBuffer::Uninitialized, bonds()->elementCount(), BondsObject::ColorProperty);
             auto ci = halfBondColors.cbegin();
             for(Color& co : colors) {
                 co = *ci;
@@ -466,7 +467,7 @@ ConstPropertyPtr ParticlesObject::inputBondColors(bool ignoreExistingColorProper
         }
 
         // If no vis element is available, create an array filled with the default bond color.
-        PropertyPtr colors = BondsObject::OOClass().createStandardProperty(bonds()->elementCount(), BondsObject::ColorProperty);
+        PropertyPtr colors = BondsObject::OOClass().createStandardProperty(DataBuffer::Uninitialized, bonds()->elementCount(), BondsObject::ColorProperty);
         colors->fill<Color>(Color(1,1,1));
         return colors;
     }
@@ -486,7 +487,7 @@ ConstPropertyPtr ParticlesObject::inputParticleRadii() const
     }
 
     // Return uniform default radius for all particles.
-    PropertyPtr buffer = OOClass().createStandardProperty(elementCount(), ParticlesObject::RadiusProperty);
+    PropertyPtr buffer = OOClass().createStandardProperty(DataBuffer::Uninitialized, elementCount(), ParticlesObject::RadiusProperty);
     buffer->fill<FloatType>(1);
     return buffer;
 }
@@ -509,7 +510,7 @@ ConstPropertyPtr ParticlesObject::inputParticleMasses() const
         if(boost::algorithm::any_of(massMap, [](const std::pair<int,FloatType>& it) { return it.second != 0; })) {
 
             // Allocate output array.
-            PropertyAccessAndRef<FloatType> massProperty = ParticlesObject::OOClass().createStandardProperty(elementCount(), ParticlesObject::MassProperty);
+            PropertyAccessAndRef<FloatType> massProperty = ParticlesObject::OOClass().createStandardProperty(DataBuffer::Uninitialized, elementCount(), ParticlesObject::MassProperty);
 
             // Fill output array using lookup table.
             ConstPropertyAccess<int> typeData(typeProperty);
@@ -526,16 +527,16 @@ ConstPropertyPtr ParticlesObject::inputParticleMasses() const
     }
 
     // Return uniform default mass 0 for all particles.
-    return OOClass().createStandardProperty(elementCount(), ParticlesObject::MassProperty, DataBuffer::InitializeMemory);
+    return OOClass().createStandardProperty(DataBuffer::Initialized, elementCount(), ParticlesObject::MassProperty);
 }
 
 /******************************************************************************
 * Creates a storage object for standard particle properties.
 ******************************************************************************/
-PropertyPtr ParticlesObject::OOMetaClass::createStandardPropertyInternal(size_t elementCount, int type, DataBuffer::InitializationFlags flags, const ConstDataObjectPath& containerPath) const
+PropertyPtr ParticlesObject::OOMetaClass::createStandardPropertyInternal(DataBuffer::BufferInitialization init, size_t elementCount, int type, const ConstDataObjectPath& containerPath) const
 {
     // Certain standard properties need to be initialized with default values determined by the visual element attached to the property container.
-    if(flags.testFlag(DataBuffer::InitializeMemory) && !containerPath.empty()) {
+    if(init == DataBuffer::Initialized && !containerPath.empty()) {
         if(type == ColorProperty) {
             if(const ParticlesObject* particles = dynamic_object_cast<ParticlesObject>(containerPath.back())) {
                 OVITO_ASSERT(particles->elementCount() == elementCount);
@@ -652,10 +653,10 @@ PropertyPtr ParticlesObject::OOMetaClass::createStandardPropertyInternal(size_t 
     OVITO_ASSERT(componentCount == standardPropertyComponentCount(type));
 
     // Allocate the storage array.
-    PropertyPtr property = PropertyPtr::create(elementCount, dataType, componentCount, propertyName, flags & ~DataBuffer::InitializeMemory, type, componentNames);
+    PropertyPtr property = PropertyPtr::create(DataBuffer::Uninitialized, elementCount, dataType, componentCount, propertyName, type, componentNames);
 
     // Initialize memory if requested.
-    if(flags.testFlag(DataBuffer::InitializeMemory) && !containerPath.empty()) {
+    if(init == DataBuffer::Initialized && !containerPath.empty()) {
         // Certain standard properties need to be initialized with default values determined by the attached visual elements.
         if(type == MassProperty) {
             if(const ParticlesObject* particles = dynamic_object_cast<ParticlesObject>(containerPath.back())) {
@@ -667,7 +668,7 @@ PropertyPtr ParticlesObject::OOMetaClass::createStandardPropertyInternal(size_t 
                             auto iter = massMap.find(t);
                             return iter != massMap.end() ? iter->second : FloatType(0);
                         });
-                        flags.setFlag(DataBuffer::InitializeMemory, false);
+                        init = DataBuffer::Uninitialized;
                     }
                 }
             }
@@ -677,7 +678,7 @@ PropertyPtr ParticlesObject::OOMetaClass::createStandardPropertyInternal(size_t 
                 for(const PropertyObject* p : particles->properties()) {
                     if(VectorVis* vectorVis = dynamic_object_cast<VectorVis>(p->visElement())) {
                         property->fill(vectorVis->arrowColor());
-                        flags.setFlag(DataBuffer::InitializeMemory, false);
+                        init = DataBuffer::Uninitialized;
                         break;
                     }
                 }
@@ -721,7 +722,7 @@ PropertyPtr ParticlesObject::OOMetaClass::createStandardPropertyInternal(size_t 
         property->addVisElement(std::move(vis));
     }
 
-    if(flags.testFlag(DataBuffer::InitializeMemory)) {
+    if(init == DataBuffer::Initialized) {
         // Default-initialize property values with zeros.
         property->fillZero();
     }

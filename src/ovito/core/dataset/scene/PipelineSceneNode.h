@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -43,7 +43,7 @@ class OVITO_CORE_EXPORT PipelineSceneNode : public SceneNode
 public:
 
     /// \brief Constructs an object node.
-    Q_INVOKABLE PipelineSceneNode(ObjectCreationParams params);
+    Q_INVOKABLE PipelineSceneNode(ObjectInitializationFlags flags);
 
     /// \brief Destructor.
     virtual ~PipelineSceneNode();

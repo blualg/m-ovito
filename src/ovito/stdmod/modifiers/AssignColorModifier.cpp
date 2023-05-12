@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -43,16 +43,16 @@ SET_PROPERTY_FIELD_LABEL(AssignColorModifier, keepSelection, "Keep selection");
 /******************************************************************************
 * Constructs the modifier object.
 ******************************************************************************/
-AssignColorModifier::AssignColorModifier(ObjectCreationParams params) : DelegatingModifier(params),
+AssignColorModifier::AssignColorModifier(ObjectInitializationFlags flags) : DelegatingModifier(flags),
     // In the graphical environment, we clear the selection by default to make the assigned colors visible.
-    _keepSelection(!params.loadUserDefaults())
+    _keepSelection(ExecutionContext::isScripting())
 {
-    if(params.createSubObjects()) {
+    if(!flags.testFlag(ObjectInitializationFlag::DontInitializeObject)) {
         setColorController(ControllerManager::createColorController());
         colorController()->setColorValue(AnimationTime(0), Color(0.3f, 0.3f, 1.0f));
 
         // Let this modifier operate on particles by default.
-        createDefaultModifierDelegate(AssignColorModifierDelegate::OOClass(), QStringLiteral("ParticlesAssignColorModifierDelegate"), params);
+        createDefaultModifierDelegate(AssignColorModifierDelegate::OOClass(), QStringLiteral("ParticlesAssignColorModifierDelegate"));
     }
 }
 
@@ -62,7 +62,7 @@ AssignColorModifier::AssignColorModifier(ObjectCreationParams params) : Delegati
 TimeInterval AssignColorModifier::validityInterval(const ModifierEvaluationRequest& request) const
 {
     TimeInterval iv = DelegatingModifier::validityInterval(request);
-    if(colorController()) 
+    if(colorController())
         iv.intersect(colorController()->validityInterval(request.time()));
     return iv;
 }
@@ -110,7 +110,7 @@ PipelineStatus AssignColorModifierDelegate::apply(const ModifierEvaluationReques
     mod->colorController()->getColorValue(request.time(), color, state.mutableStateValidity());
 
     // Create the color output property.
-    PropertyObject* colorProperty = container->createProperty(outputColorPropertyId(), (bool)selProperty ? DataBuffer::InitializeMemory : DataBuffer::NoFlags, objectPath);
+    PropertyObject* colorProperty = container->createProperty(selProperty ? DataBuffer::Initialized : DataBuffer::Uninitialized, outputColorPropertyId(), objectPath);
     // Assign color to selected elements (or all elements if there is no selection).
     colorProperty->fillSelected(color, selProperty.get());
 

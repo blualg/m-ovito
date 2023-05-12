@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -42,7 +42,7 @@ SET_PROPERTY_FIELD_LABEL(StructureIdentificationModifier, colorByType, "Color pa
 /******************************************************************************
 * Constructs the modifier object.
 ******************************************************************************/
-StructureIdentificationModifier::StructureIdentificationModifier(ObjectCreationParams params) : AsynchronousModifier(params),
+StructureIdentificationModifier::StructureIdentificationModifier(ObjectInitializationFlags flags) : AsynchronousModifier(flags),
     _onlySelectedParticles(false),
     _colorByType(true)
 {
@@ -59,12 +59,12 @@ bool StructureIdentificationModifier::OOMetaClass::isApplicableTo(const DataColl
 /******************************************************************************
 * Create an instance of the ParticleType class to represent a structure type.
 ******************************************************************************/
-ElementType* StructureIdentificationModifier::createStructureType(int id, ParticleType::PredefinedStructureType predefType, ObjectCreationParams params)
+ElementType* StructureIdentificationModifier::createStructureType(int id, ParticleType::PredefinedStructureType predefType)
 {
     DataOORef<ElementType> stype = DataOORef<ElementType>::create();
     stype->setNumericId(id);
     stype->setName(ParticleType::getPredefinedStructureTypeName(predefType));
-    stype->initializeType(ParticlePropertyReference(ParticlesObject::StructureTypeProperty), params.loadUserDefaults());
+    stype->initializeType(ParticlePropertyReference(ParticlesObject::StructureTypeProperty));
     addStructureType(stype);
     return stype;
 }
@@ -99,8 +99,8 @@ StructureIdentificationModifier::StructureIdentificationEngine::StructureIdentif
     _positions(std::move(positions)),
     _simCell(simCell),
     _selection(std::move(selection)),
-    _structures(ParticlesObject::OOClass().createStandardProperty(fingerprint.particleCount(), ParticlesObject::StructureTypeProperty)),
-    _inputFingerprint(std::move(fingerprint)) 
+    _structures(ParticlesObject::OOClass().createStandardProperty(DataBuffer::Uninitialized, fingerprint.particleCount(), ParticlesObject::StructureTypeProperty)),
+    _inputFingerprint(std::move(fingerprint))
 {
     // Create deep copies of the structure elements types, because data objects owned by the modifier should
     // not be passed to the data pipeline.
@@ -132,7 +132,7 @@ void StructureIdentificationModifier::StructureIdentificationEngine::applyResult
 
     // Add output property to the particles.
     particles->createProperty(structureProperty);
-    
+
     if(modifier->colorByType()) {
 
         // Build structure type-to-color map.
@@ -150,7 +150,7 @@ void StructureIdentificationModifier::StructureIdentificationEngine::applyResult
         boost::transform(structureData, colorProperty.begin(), [&](int s) {
             if(s >= 0 && s < structureTypeColors.size())
                 return structureTypeColors[s];
-            else 
+            else
                 return Color(1,1,1);
         });
     }
@@ -169,9 +169,9 @@ void StructureIdentificationModifier::StructureIdentificationEngine::applyResult
     }
 
     // Create the property arrays for the bar chart.
-    PropertyPtr typeCounts = DataTable::OOClass().createUserProperty(maxTypeId + 1, PropertyObject::Int64, 1, tr("Count"));
+    PropertyPtr typeCounts = DataTable::OOClass().createUserProperty(DataBuffer::Uninitialized, maxTypeId + 1, PropertyObject::Int64, 1, tr("Count"));
     boost::copy(_typeCounts, PropertyAccess<qlonglong>(typeCounts).begin());
-    PropertyPtr typeIds = DataTable::OOClass().createUserProperty(maxTypeId + 1, PropertyObject::Int, 1, tr("Structure type"));
+    PropertyPtr typeIds = DataTable::OOClass().createUserProperty(DataBuffer::Uninitialized, maxTypeId + 1, PropertyObject::Int, 1, tr("Structure type"));
     boost::algorithm::iota_n(PropertyAccess<int>(typeIds).begin(), 0, typeIds->size());
 
     // Use the structure types as labels for the output bar chart.
@@ -187,11 +187,11 @@ void StructureIdentificationModifier::StructureIdentificationEngine::applyResult
 #ifdef OVITO_QML_GUI
 /******************************************************************************
 * This helper method is called by the QML GUI (StructureListParameter.qml) to extract the identification counts
-* from the cached pipeline output state after the modifier has been evaluated. 
+* from the cached pipeline output state after the modifier has been evaluated.
 ******************************************************************************/
 QVector<qlonglong> StructureIdentificationModifier::getStructureCountsFromModifierResults(ModifierApplication* modApp) const
 {
-    if(!modApp || !modApp->isEnabled()) 
+    if(!modApp || !modApp->isEnabled())
         return {};
 
     // Get the current data pipeline output generated by the modifier.

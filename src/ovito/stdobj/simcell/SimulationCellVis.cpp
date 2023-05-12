@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -47,7 +47,7 @@ SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(SimulationCellVis, cellLineWidth, WorldPara
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-SimulationCellVis::SimulationCellVis(ObjectCreationParams params) : DataVis(params),
+SimulationCellVis::SimulationCellVis(ObjectInitializationFlags flags) : DataVis(flags),
     _renderCellEnabled(true),
     _cellLineWidth(0.0),
     _cellColor(0, 0, 0)
@@ -159,8 +159,8 @@ void SimulationCellVis::renderWireframe(AnimationTime time, const SimulationCell
 
     const AffineTransformation oldTM = renderer->worldTransform();
     AffineTransformation cellMatrix = cell->cellMatrix();
-    if(cell->is2D()) 
-        cellMatrix(2,3) = 0; // For 2D cells, implicitly set z-coordinate of origin to zero.    
+    if(cell->is2D())
+        cellMatrix(2,3) = 0; // For 2D cells, implicitly set z-coordinate of origin to zero.
     renderer->setWorldTransform(oldTM * cellMatrix);
     renderer->beginPickObject(contextNode);
     renderer->renderLines(linePrimitive);

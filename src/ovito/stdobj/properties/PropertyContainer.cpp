@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -42,7 +42,7 @@ SET_PROPERTY_FIELD_CHANGE_EVENT(PropertyContainer, title, ReferenceEvent::TitleC
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-PropertyContainer::PropertyContainer(ObjectCreationParams params, const QString& title) : DataObject(params), 
+PropertyContainer::PropertyContainer(ObjectInitializationFlags flags, const QString& title) : DataObject(flags),
     _elementCount(0),
     _title(title)
 {
@@ -158,7 +158,7 @@ size_t PropertyContainer::deleteElements(const boost::dynamic_bitset<>& mask)
 * Creates a property and adds it to the container.
 * In case the property already exists, it is made sure that it's safe to modify it.
 ******************************************************************************/
-PropertyObject* PropertyContainer::createProperty(int typeId, DataBuffer::InitializationFlags flags, const ConstDataObjectPath& containerPath)
+PropertyObject* PropertyContainer::createProperty(DataBuffer::BufferInitialization init, int typeId, const ConstDataObjectPath& containerPath)
 {
     OVITO_ASSERT(isSafeToModify());
 
@@ -176,19 +176,19 @@ PropertyObject* PropertyContainer::createProperty(int typeId, DataBuffer::Initia
         OVITO_ASSERT(existingProperty->size() == elementCount());
         if(existingProperty->isSafeToModify())
             return const_cast<PropertyObject*>(existingProperty);
-        if(flags.testFlag(DataBuffer::InitializeMemory))
+        if(init == DataBuffer::Initialized)
             return makeMutable(existingProperty);
 
-        // If no memory initialization is requested, create a new PropertyObject from scratch and just adopt 
-        // the existing ElementType list to save time.  
-        PropertyPtr newProperty = getOOMetaClass().createStandardProperty(elementCount(), typeId, flags, containerPath);
+        // If no memory initialization is requested, create a new PropertyObject from scratch and just adopt
+        // the existing ElementType list to save time.
+        PropertyPtr newProperty = getOOMetaClass().createStandardProperty(DataBuffer::Uninitialized, elementCount(), typeId, containerPath);
         newProperty->setElementTypes(existingProperty->elementTypes());
         replaceReferencesTo(existingProperty, newProperty);
         return newProperty;
     }
     else {
         // Create a new property object.
-        PropertyPtr newProperty = getOOMetaClass().createStandardProperty(elementCount(), typeId, flags, containerPath);
+        PropertyPtr newProperty = getOOMetaClass().createStandardProperty(init, elementCount(), typeId, containerPath);
         addProperty(newProperty);
         return newProperty;
     }
@@ -198,7 +198,7 @@ PropertyObject* PropertyContainer::createProperty(int typeId, DataBuffer::Initia
 * Creates a user-defined property and adds it to the container.
 * In case the property already exists, it is made sure that it's safe to modify it.
 ******************************************************************************/
-PropertyObject* PropertyContainer::createProperty(const QString& name, int dataType, size_t componentCount, DataBuffer::InitializationFlags flags, QStringList componentNames)
+PropertyObject* PropertyContainer::createProperty(DataBuffer::BufferInitialization init, const QString& name, int dataType, size_t componentCount, QStringList componentNames)
 {
     OVITO_ASSERT(isSafeToModify());
 
@@ -219,15 +219,15 @@ PropertyObject* PropertyContainer::createProperty(const QString& name, int dataT
     }
     else {
         // Create a new property object.
-        PropertyPtr newProperty = getOOMetaClass().createUserProperty(elementCount(), dataType, componentCount, name, flags, 0, std::move(componentNames));
+        PropertyPtr newProperty = getOOMetaClass().createUserProperty(init, elementCount(), dataType, componentCount, name, 0, std::move(componentNames));
         addProperty(newProperty);
         return newProperty;
     }
 }
 
 /******************************************************************************
-* Adds a property object to the container, replacing any preexisting property 
-* in the container with the same type. 
+* Adds a property object to the container, replacing any preexisting property
+* in the container with the same type.
 ******************************************************************************/
 const PropertyObject* PropertyContainer::createProperty(const PropertyObject* property)
 {
@@ -274,8 +274,8 @@ const PropertyObject* PropertyContainer::createProperty(const PropertyObject* pr
 
 /******************************************************************************
 * Replaces the property arrays in this property container with a new set of
-* properties. Existing element types of typed properties will be preserved by 
-* the method. 
+* properties. Existing element types of typed properties will be preserved by
+* the method.
 ******************************************************************************/
 void PropertyContainer::setContent(size_t newElementCount, const DataRefVector<PropertyObject>& newProperties)
 {
@@ -326,11 +326,11 @@ std::vector<size_t> PropertyContainer::sortById()
 {
 #ifdef OVITO_DEBUG
     verifyIntegrity();
-#endif  
+#endif
     if(!getOOMetaClass().isValidStandardPropertyId(PropertyObject::GenericIdentifierProperty))
         return {};
     ConstDataBufferAccess<qlonglong> ids = getProperty(PropertyObject::GenericIdentifierProperty);
-    if(!ids) 
+    if(!ids)
         return {};
 
     // Determine new permutation of data elements which sorts them by ascending ID.
@@ -409,7 +409,7 @@ void PropertyContainer::loadFromStreamComplete(ObjectLoadStream& stream)
     DataObject::loadFromStreamComplete(stream);
 
     // For backward compatibility with old OVITO versions.
-    // Make sure size of deserialized property arrays is consistent. 
+    // Make sure size of deserialized property arrays is consistent.
     if(stream.formatVersion() < 30004) {
         for(const PropertyObject* property : properties()) {
             if(property->size() != elementCount()) {
@@ -418,10 +418,10 @@ void PropertyContainer::loadFromStreamComplete(ObjectLoadStream& stream)
         }
     }
 
-    // For backward compatibility with OVITO 3.3.5: 
+    // For backward compatibility with OVITO 3.3.5:
     // The ElementType::ownerProperty parameter field did not exist in older OVITO versions and does not have
-    // a valid value when loaded from a state file. The following code initializes the parameter field to 
-    // a meaningful value. 
+    // a valid value when loaded from a state file. The following code initializes the parameter field to
+    // a meaningful value.
     if(stream.formatVersion() < 30007) {
         for(const PropertyObject* property : properties()) {
             for(const ElementType* type : property->elementTypes()) {

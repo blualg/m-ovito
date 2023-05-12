@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -164,7 +164,7 @@ bool RefMaker::vectorReferenceFieldContains(const PropertyFieldDescriptor* field
 /******************************************************************************
 * This Qt slot receives signals from the target objects referenced by this object.
 ******************************************************************************/
-void RefMaker::receiveObjectEvent(RefTarget* sender, const ReferenceEvent& event) 
+void RefMaker::receiveObjectEvent(RefTarget* sender, const ReferenceEvent& event)
 {
     handleReferenceEvent(sender, event);
 }
@@ -239,19 +239,19 @@ bool RefMaker::referenceEvent(RefTarget* source, const ReferenceEvent& event)
         }
         if(!isSupressedField)
             return true;
-        // Perform counter check and determine if message is comming from a reference field for which message propagation 
+        // Perform counter check and determine if message is comming from a reference field for which message propagation
         // is NOT explicitly disabled.
         for(const PropertyFieldDescriptor* field : getOOMetaClass().propertyFields()) {
             if(!field->isReferenceField()) continue;
             if(!field->isVector()) {
                 if(field->_singleReferenceReadFunc(this) == source) {
-                    if(!field->flags().testFlag(PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES)) 
+                    if(!field->flags().testFlag(PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES))
                         return true;
                 }
             }
             else {
                 if(vectorReferenceFieldContains(field, source)) {
-                    if(!field->flags().testFlag(PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES)) 
+                    if(!field->flags().testFlag(PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES))
                         return true;
                 }
             }
@@ -630,9 +630,9 @@ void RefMaker::walkNode(QSet<RefTarget*>& nodes, const RefMaker* node)
 
 /******************************************************************************
 * Initializes a new instance as part of two-phase object initialization.
-* This method is automatically called right after creation of a new object instance 
-* by the OORef<>::create() function. It loads the initial values for property fields 
-* with user-defined default settings (those having the PROPERTY_FIELD_MEMORIZE flag set). 
+* This method is automatically called right after creation of a new object instance
+* by the OORef<>::create() function. It loads the initial values for property fields
+* with user-defined default settings (those having the PROPERTY_FIELD_MEMORIZE flag set).
 ******************************************************************************/
 void RefMaker::initializeParametersToUserDefaults()
 {
@@ -670,7 +670,32 @@ void RefMaker::initializeParametersToUserDefaults()
 }
 
 /******************************************************************************
-* Creates a snapshot of the object's parameter values that will serve as 
+* Initializes a new instance and all its children as part of two-phase object initialization.
+******************************************************************************/
+void RefMaker::initializeParametersToUserDefaultsRecursive()
+{
+    initializeParametersToUserDefaults();
+
+    // Iterate over all reference fields in the class hierarchy.
+    for(const PropertyFieldDescriptor* field : getOOMetaClass().propertyFields()) {
+        if(field->isReferenceField()) {
+            if(!field->isVector()) {
+                if(RefTarget* target = field->_singleReferenceReadFunc(this))
+                    target->initializeParametersToUserDefaultsRecursive();
+            }
+            else {
+                int count = getVectorReferenceFieldSize(field);
+                for(int i = 0; i < count; i++) {
+                    if(RefTarget* target = getVectorReferenceFieldTarget(field, i))
+                        target->initializeParametersToUserDefaultsRecursive();
+                }
+            }
+        }
+    }
+}
+
+/******************************************************************************
+* Creates a snapshot of the object's parameter values that will serve as
 * reference to detect parameter changes made by the user.
 ******************************************************************************/
 void RefMaker::freezeInitialParameterValues(std::initializer_list<const PropertyFieldDescriptor*> propertyFields)
@@ -686,7 +711,7 @@ void RefMaker::freezeInitialParameterValues(std::initializer_list<const Property
 }
 
 /******************************************************************************
-* Copies the stored reference values of this object's parameters over to the 
+* Copies the stored reference values of this object's parameters over to the
 * given object (which must be of the same type).
 ******************************************************************************/
 void RefMaker::copyInitialParametersToObject(RefMaker* obj) const

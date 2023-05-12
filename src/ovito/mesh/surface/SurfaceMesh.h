@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -53,8 +53,8 @@ public:
     constexpr static size_type InvalidIndex = SurfaceMeshTopology::InvalidIndex;
 
     /// Constructor creating an empty SurfaceMesh object.
-    Q_INVOKABLE SurfaceMesh(ObjectCreationParams params, const QString& title = QString());
-    
+    Q_INVOKABLE SurfaceMesh(ObjectInitializationFlags flags, const QString& title = QString());
+
     /// Makes sure that the data structures of the surface mesh are valid and all vertex and face properties
     /// are consistent with the topology of the mesh. If this is not the case, the method throws an exception.
     void verifyMeshIntegrity() const;

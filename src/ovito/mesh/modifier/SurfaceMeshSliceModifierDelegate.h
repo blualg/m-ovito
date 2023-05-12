@@ -61,7 +61,7 @@ class OVITO_MESHMOD_EXPORT SurfaceMeshSliceModifierDelegate : public SliceModifi
 public:
 
     /// Constructor.
-    Q_INVOKABLE SurfaceMeshSliceModifierDelegate(ObjectCreationParams params) : SliceModifierDelegate(params) {}
+    Q_INVOKABLE SurfaceMeshSliceModifierDelegate(ObjectInitializationFlags flags) : SliceModifierDelegate(flags) {}
 
     /// \brief Applies a slice operation to a data object.
     virtual PipelineStatus apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const PipelineFlowState& inputState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs) override;

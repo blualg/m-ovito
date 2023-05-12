@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -56,7 +56,7 @@ class OVITO_PARTICLES_EXPORT POSCARImporter : public ParticleImporter
 public:
 
     /// \brief Constructs a new instance of this class.
-    Q_INVOKABLE POSCARImporter(ObjectCreationParams params) : ParticleImporter(params) {}
+    Q_INVOKABLE POSCARImporter(ObjectInitializationFlags flags) : ParticleImporter(flags) {}
 
     /// Returns the title of this object.
     virtual QString objectTitle() const override { return tr("POSCAR"); }
@@ -102,7 +102,7 @@ private:
         PropertyObject* readFieldQuantity(CompressedTextReader& stream, VoxelGrid* grid, const QString& name);
 
         /// Controls the generation of ad-hoc bonds during data import.
-        bool _generateBonds;        
+        bool _generateBonds;
     };
 
     /// The format-specific task object that is responsible for scanning the input file for animation frames.

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -74,7 +74,7 @@ bool MarchingCubes::generateIsosurface(FloatType isolevel, ProgressingTask& oper
     if(_identifyRegions) {
         _vertRegions.assign(_size_x * _size_y * _size_z, -1);
         _maxRegionIndex = 0;
-        _outputMesh.createFaceProperty(SurfaceMeshFaces::RegionProperty);
+        _outputMesh.createFaceProperty(DataBuffer::Uninitialized, SurfaceMeshFaces::RegionProperty);
     }
 
     for(int k = 0; k < size_z; k++, operation.incrementProgressValue()) {
@@ -356,11 +356,11 @@ void MarchingCubes::handleSpaceFillingRegion()
     _outputMesh.createRegions(1);
 
     PropertyAccess<FloatType> volumeProperty =
-        _outputMesh.createRegionProperty(SurfaceMeshRegions::VolumeProperty, DataBuffer::InitializeMemory);
+        _outputMesh.createRegionProperty(DataBuffer::Initialized, SurfaceMeshRegions::VolumeProperty);
     PropertyAccess<int> isExteriorProperty =
-        _outputMesh.createRegionProperty(SurfaceMeshRegions::IsExteriorProperty, DataBuffer::InitializeMemory);
+        _outputMesh.createRegionProperty(DataBuffer::Initialized, SurfaceMeshRegions::IsExteriorProperty);
     PropertyAccess<int> isFilledProperty =
-        _outputMesh.createRegionProperty(SurfaceMeshRegions::IsFilledProperty, DataBuffer::InitializeMemory);
+        _outputMesh.createRegionProperty(DataBuffer::Initialized, SurfaceMeshRegions::IsFilledProperty);
 
     volumeProperty[0] = _size_x * _size_y * _size_z;
     isFilledProperty[0] = 1;
@@ -398,11 +398,11 @@ void MarchingCubes::mergeIdentifiedRegions()
     _outputMesh.createRegions(_maxRegionIndex);
 
     PropertyAccess<FloatType> volumeProperty{
-        _outputMesh.createRegionProperty(SurfaceMeshRegions::VolumeProperty, DataBuffer::InitializeMemory)};
+        _outputMesh.createRegionProperty(DataBuffer::Initialized, SurfaceMeshRegions::VolumeProperty)};
     PropertyAccess<int> isExteriorProperty{
-        _outputMesh.createRegionProperty(SurfaceMeshRegions::IsExteriorProperty, DataBuffer::InitializeMemory)};
+        _outputMesh.createRegionProperty(DataBuffer::Initialized, SurfaceMeshRegions::IsExteriorProperty)};
     PropertyAccess<int> isFilledProperty{
-        _outputMesh.createRegionProperty(SurfaceMeshRegions::IsFilledProperty, DataBuffer::InitializeMemory)};
+        _outputMesh.createRegionProperty(DataBuffer::Initialized, SurfaceMeshRegions::IsFilledProperty)};
 
     for(int i{0}; i < _regionVolumes.size(); i++) {
         int newIndex{static_cast<int>(uf.find(i))};

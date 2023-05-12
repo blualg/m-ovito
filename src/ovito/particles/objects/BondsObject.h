@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -84,7 +84,7 @@ class OVITO_PARTICLES_EXPORT BondsObject : public PropertyContainer
         using PropertyContainerClass::PropertyContainerClass;
 
         /// \brief Create a storage object for standard bond properties.
-        virtual PropertyPtr createStandardPropertyInternal(size_t elementCount, int type, DataBuffer::InitializationFlags flags, const ConstDataObjectPath& containerPath) const override;
+        virtual PropertyPtr createStandardPropertyInternal(DataBuffer::BufferInitialization init, size_t elementCount, int type, const ConstDataObjectPath& containerPath) const override;
 
         /// Indicates whether this kind of property container supports picking of individual elements in the viewports.
         virtual bool supportsViewportPicking() const override { return true; }
@@ -131,8 +131,8 @@ public:
     };
 
     /// \brief Constructor.
-    Q_INVOKABLE BondsObject(ObjectCreationParams params);
-    
+    Q_INVOKABLE BondsObject(ObjectInitializationFlags flags);
+
     /// Convinience method that returns the bond topology property.
     const PropertyObject* getTopology() const { return getProperty(TopologyProperty); }
 

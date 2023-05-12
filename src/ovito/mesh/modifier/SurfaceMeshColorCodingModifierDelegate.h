@@ -61,7 +61,7 @@ class OVITO_MESHMOD_EXPORT SurfaceMeshVerticesColorCodingModifierDelegate : publ
 public:
 
     /// Constructor.
-    Q_INVOKABLE SurfaceMeshVerticesColorCodingModifierDelegate(ObjectCreationParams params) : ColorCodingModifierDelegate(params) {}
+    Q_INVOKABLE SurfaceMeshVerticesColorCodingModifierDelegate(ObjectInitializationFlags flags) : ColorCodingModifierDelegate(flags) {}
 
 protected:
 
@@ -99,7 +99,7 @@ class OVITO_MESHMOD_EXPORT SurfaceMeshFacesColorCodingModifierDelegate : public 
 public:
 
     /// Constructor.
-    Q_INVOKABLE SurfaceMeshFacesColorCodingModifierDelegate(ObjectCreationParams params) : ColorCodingModifierDelegate(params) {}
+    Q_INVOKABLE SurfaceMeshFacesColorCodingModifierDelegate(ObjectInitializationFlags flags) : ColorCodingModifierDelegate(flags) {}
 
 protected:
 
@@ -137,7 +137,7 @@ class OVITO_MESHMOD_EXPORT SurfaceMeshRegionsColorCodingModifierDelegate : publi
 public:
 
     /// Constructor.
-    Q_INVOKABLE SurfaceMeshRegionsColorCodingModifierDelegate(ObjectCreationParams params) : ColorCodingModifierDelegate(params) {}
+    Q_INVOKABLE SurfaceMeshRegionsColorCodingModifierDelegate(ObjectInitializationFlags flags) : ColorCodingModifierDelegate(flags) {}
 
 protected:
 

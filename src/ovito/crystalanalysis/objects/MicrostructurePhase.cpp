@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -41,7 +41,7 @@ SET_PROPERTY_FIELD_LABEL(MicrostructurePhase, burgersVectorFamilies, "Burgers ve
 /******************************************************************************
 * Constructs the MicrostructurePhase object.
 ******************************************************************************/
-MicrostructurePhase::MicrostructurePhase(ObjectCreationParams params) : ElementType(params),
+MicrostructurePhase::MicrostructurePhase(ObjectInitializationFlags flags) : ElementType(flags),
     _dimensionality(Dimensionality::None),
     _crystalSymmetryClass(CrystalSymmetryClass::NoSymmetry)
 {

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -206,7 +206,7 @@ void QuantumEspressoImporter::FrameLoader::loadFile()
             setParticleCount(natoms);
             posProperty = particles()->createProperty(ParticlesObject::PositionProperty);
             PropertyAccess<int> typeProperty = particles()->createProperty(ParticlesObject::TypeProperty);
-            PropertyAccess<FloatType> massProperty = particles()->createProperty(ParticlesObject::MassProperty, DataBuffer::InitializeMemory);
+            PropertyAccess<FloatType> massProperty = particles()->createProperty(DataBuffer::Initialized, ParticlesObject::MassProperty);
 
             // Add the registered atom types.
             for(int i = 0; i < ntypes; i++) {

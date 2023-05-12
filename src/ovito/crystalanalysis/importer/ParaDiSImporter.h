@@ -55,7 +55,7 @@ class OVITO_CRYSTALANALYSIS_EXPORT ParaDiSImporter : public ParticleImporter
 public:
 
     /// \brief Constructs a new instance of this class.
-    Q_INVOKABLE ParaDiSImporter(ObjectCreationParams params) : ParticleImporter(params) {}
+    Q_INVOKABLE ParaDiSImporter(ObjectInitializationFlags flags) : ParticleImporter(flags) {}
 
     /// Returns the title of this object.
     virtual QString objectTitle() const override { return tr("ParaDiS"); }

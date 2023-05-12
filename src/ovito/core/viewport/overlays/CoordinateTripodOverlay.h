@@ -49,7 +49,7 @@ public:
 public:
 
     /// \brief Constructor.
-    Q_INVOKABLE CoordinateTripodOverlay(ObjectCreationParams params);
+    Q_INVOKABLE CoordinateTripodOverlay(ObjectInitializationFlags flags);
 
     /// Lets the overlay paint its contents into the framebuffer.
     virtual void render(SceneRenderer* renderer, const QRect& logicalViewportRect, const QRect& physicalViewportRect, MainThreadOperation& operation) override;

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -65,7 +65,7 @@ Modifier* ModifierDelegate::modifier() const
 /******************************************************************************
 * Asks the delegate whether it can operate on  the given input pipeline state.
 ******************************************************************************/
-bool ModifierDelegate::canOperateOnInput(ModifierApplication* modApp) const 
+bool ModifierDelegate::canOperateOnInput(ModifierApplication* modApp) const
 {
     if(modApp) {
         const PipelineFlowState& input = modApp->evaluateInputSynchronous(dataset()->animationSettings()->time());
@@ -91,14 +91,14 @@ TimeInterval DelegatingModifier::validityInterval(const ModifierEvaluationReques
 /******************************************************************************
 * Creates a default delegate for this modifier.
 ******************************************************************************/
-void DelegatingModifier::createDefaultModifierDelegate(const OvitoClass& delegateType, const QString& defaultDelegateTypeName, ObjectCreationParams params)
+void DelegatingModifier::createDefaultModifierDelegate(const OvitoClass& delegateType, const QString& defaultDelegateTypeName)
 {
     OVITO_ASSERT(delegateType.isDerivedFrom(ModifierDelegate::OOClass()));
 
     // Find the delegate type that corresponds to the given name string.
     for(OvitoClassPtr clazz : PluginManager::instance().listClasses(delegateType)) {
         if(clazz->name() == defaultDelegateTypeName) {
-            OORef<ModifierDelegate> delegate = static_object_cast<ModifierDelegate>(clazz->createInstance(params));
+            OORef<ModifierDelegate> delegate = static_object_cast<ModifierDelegate>(clazz->createInstance());
             setDelegate(delegate);
             break;
         }
@@ -183,14 +183,14 @@ TimeInterval MultiDelegatingModifier::validityInterval(const ModifierEvaluationR
 /******************************************************************************
 * Creates the list of delegate objects for this modifier.
 ******************************************************************************/
-void MultiDelegatingModifier::createModifierDelegates(const OvitoClass& delegateType, ObjectCreationParams params)
+void MultiDelegatingModifier::createModifierDelegates(const OvitoClass& delegateType)
 {
     OVITO_ASSERT(delegateType.isDerivedFrom(ModifierDelegate::OOClass()));
 
     // Generate the list of delegate objects.
     if(delegates().empty()) {
         for(OvitoClassPtr clazz : PluginManager::instance().listClasses(delegateType)) {
-            _delegates.push_back(this, PROPERTY_FIELD(delegates), static_object_cast<ModifierDelegate>(clazz->createInstance(params)));
+            _delegates.push_back(this, PROPERTY_FIELD(delegates), static_object_cast<ModifierDelegate>(clazz->createInstance()));
         }
     }
 }

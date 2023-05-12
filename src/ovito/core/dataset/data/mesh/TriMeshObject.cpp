@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -33,10 +33,10 @@ IMPLEMENT_OVITO_CLASS(TriMeshObject);
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-TriMeshObject::TriMeshObject(ObjectCreationParams params) : DataObject(params)
+TriMeshObject::TriMeshObject(ObjectInitializationFlags flags) : DataObject(flags)
 {
-    if(params.createVisElement()) {
-        setVisElement(OORef<TriMeshVis>::create(params));
+    if(!flags.testAnyFlags(ObjectInitializationFlags(DontInitializeObject) | ObjectInitializationFlags(DontCreateVisElement))) {
+        setVisElement(OORef<TriMeshVis>::create(flags));
     }
 }
 
@@ -349,7 +349,7 @@ void TriMeshObject::saveToOBJ(CompressedTextWriter& stream) const
 ******************************************************************************/
 void TriMeshObject::clipAtPlane(const Plane3& plane)
 {
-    TriMeshObject clippedMesh(ObjectCreationParams{ObjectCreationParams::WithoutVisElement});
+    TriMeshObject clippedMesh(ObjectInitializationFlag::DontCreateVisElement);
     clippedMesh.setHasVertexColors(hasVertexColors());
     clippedMesh.setHasVertexPseudoColors(hasVertexPseudoColors());
     clippedMesh.setHasFaceColors(hasFaceColors());

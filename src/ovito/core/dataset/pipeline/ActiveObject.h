@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -30,7 +30,7 @@
 namespace Ovito {
 
 /**
- * \brief Abstract base class for objects perform long-running computations and which 
+ * \brief Abstract base class for objects perform long-running computations and which
  *        can be enabled or disabled.
  */
 class OVITO_CORE_EXPORT ActiveObject : public RefTarget
@@ -44,13 +44,13 @@ class OVITO_CORE_EXPORT ActiveObject : public RefTarget
 protected:
 
     /// \brief Constructor.
-    ActiveObject(ObjectCreationParams params);
+    ActiveObject(ObjectInitializationFlags flags);
 
 public:
 
     /// \brief Returns the title of this object.
     virtual QString objectTitle() const override {
-        if(title().isEmpty()) 
+        if(title().isEmpty())
             return RefTarget::objectTitle();
         else
             return title();
@@ -58,11 +58,11 @@ public:
 
     /// \brief Changes the title of this object.
     /// \undoable
-    void setObjectTitle(const QString& title) { 
-        setTitle(title); 
+    void setObjectTitle(const QString& title) {
+        setTitle(title);
     }
 
-    /// \brief Returns true if at least one computation task associated with this object is currently active. 
+    /// \brief Returns true if at least one computation task associated with this object is currently active.
     bool isObjectActive() const { return _isInActivateState; }
 
     /// \brief Returns a short piece information (typically a string or color) to be displayed next to the object's title in the pipeline editor.
@@ -89,7 +89,7 @@ protected:
     /// Increments the internal task counter and notifies the UI that this object is currently active.
     void incrementNumberOfActiveTasks();
 
-    /// Decrements the internal task counter and, if the counter has reached zero, notifies the 
+    /// Decrements the internal task counter and, if the counter has reached zero, notifies the
     /// UI that this object is no longer active.
     void decrementNumberOfActiveTasks();
 

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -75,13 +75,13 @@ public:
 
     /// Sets whether the DataVis class currently manages its error state and not the scene renderer.
     void setManualErrorStateControl(bool enable) { _manualErrorStateControl = enable; }
-    
+
 private:
 
     /// Indicates that the DataVis class manages its error state and not the scene renderer.
     /// This flag is used by TransformingDataVis class to preserve an error state generated during
-    /// the transformation process. Otherwise, the scene renderer would automatically reset the 
-    /// error state during rendering.  
+    /// the transformation process. Otherwise, the scene renderer would automatically reset the
+    /// error state during rendering.
     bool _manualErrorStateControl = false;
 };
 

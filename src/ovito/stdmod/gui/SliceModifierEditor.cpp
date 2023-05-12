@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -170,8 +170,8 @@ void SliceModifierEditor::updateCoordinateLabels()
     static const QString millerAxesNames[3] = { QStringLiteral("h"), QStringLiteral("k"), QStringLiteral("l") };
 
     for(int i = 0; i < 3; i++) {
-        const QString& axisName = 
-            _reducedCoordinatesPUI->buttonFalse()->isChecked() ? 
+        const QString& axisName =
+            _reducedCoordinatesPUI->buttonFalse()->isChecked() ?
             cartesianAxesNames[i] : millerAxesNames[i];
         _normalPUI[i]->label()->setText(QStringLiteral("<a href=\"%1\">Normal (%2)</a>").arg(i).arg(axisName));
         _normalPUI[i]->label()->setToolTip(tr("Click here to align plane normal with %1 axis").arg(axisName));
@@ -503,7 +503,7 @@ void PickPlanePointsInputMode::renderOverlay3D(Viewport* vp, SceneRenderer* rend
             renderer->renderLines(lines);
         }
         else if(npoints == 3) {
-            DataOORef<TriMeshObject> tri = DataOORef<TriMeshObject>::create(ObjectCreationParams::WithoutVisElement);
+            DataOORef<TriMeshObject> tri = DataOORef<TriMeshObject>::create(ObjectInitializationFlag::DontCreateVisElement);
             tri->setVertexCount(3);
             tri->setVertex(0, _pickedPoints[0]);
             tri->setVertex(1, _pickedPoints[1]);

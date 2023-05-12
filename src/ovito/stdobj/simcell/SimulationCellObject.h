@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -42,13 +42,13 @@ class OVITO_STDOBJ_EXPORT SimulationCellObject : public DataObject
 public:
 
     /// \brief Constructor. Creates an empty simulation cell.
-    Q_INVOKABLE SimulationCellObject(ObjectCreationParams params) : DataObject(params),
+    Q_INVOKABLE SimulationCellObject(ObjectInitializationFlags flags) : DataObject(flags),
         _cellMatrix(AffineTransformation::Zero()),
         _reciprocalSimulationCell(AffineTransformation::Zero()),
         _pbcX(false), _pbcY(false), _pbcZ(false), _is2D(false)
     {
-        if(params.createVisElement())
-            setVisElement(OORef<SimulationCellVis>::create(params));
+        if(!flags.testAnyFlags(ObjectInitializationFlags(DontInitializeObject) | ObjectInitializationFlags(DontCreateVisElement)))
+            setVisElement(OORef<SimulationCellVis>::create(flags));
     }
 
     /// \brief Constructs a cell from three vectors specifying the cell's edges.
@@ -56,24 +56,24 @@ public:
     /// \param a2 The second edge vector.
     /// \param a3 The third edge vector.
     /// \param origin The origin position.
-    SimulationCellObject(ObjectCreationParams params, const Vector3& a1, const Vector3& a2, const Vector3& a3,
+    SimulationCellObject(ObjectInitializationFlags flags, const Vector3& a1, const Vector3& a2, const Vector3& a3,
             const Point3& origin = Point3::Origin(), bool pbcX = false, bool pbcY = false, bool pbcZ = false, bool is2D = false) :
-        DataObject(params),
+        DataObject(flags),
         _cellMatrix(a1, a2, a3, origin - Point3::Origin()),
         _pbcX(pbcX), _pbcY(pbcY), _pbcZ(pbcZ), _is2D(is2D)
     {
-        if(params.createVisElement())
-            setVisElement(OORef<SimulationCellVis>::create(params));
+        if(!flags.testAnyFlags(ObjectInitializationFlags(DontInitializeObject) | ObjectInitializationFlags(DontCreateVisElement)))
+            setVisElement(OORef<SimulationCellVis>::create(flags));
     }
 
     /// \brief Constructs a cell from a matrix that specifies its shape and position in space.
     /// \param cellMatrix The matrix
-    SimulationCellObject(ObjectCreationParams params, const AffineTransformation& cellMatrix, bool pbcX = false, bool pbcY = false, bool pbcZ = false, bool is2D = false) :
-        DataObject(params),
-        _cellMatrix(cellMatrix), _pbcX(pbcX), _pbcY(pbcY), _pbcZ(pbcZ), _is2D(is2D) 
+    SimulationCellObject(ObjectInitializationFlags flags, const AffineTransformation& cellMatrix, bool pbcX = false, bool pbcY = false, bool pbcZ = false, bool is2D = false) :
+        DataObject(flags),
+        _cellMatrix(cellMatrix), _pbcX(pbcX), _pbcY(pbcY), _pbcZ(pbcZ), _is2D(is2D)
     {
-        if(params.createVisElement())
-            setVisElement(OORef<SimulationCellVis>::create(params));
+        if(!flags.testAnyFlags(ObjectInitializationFlags(DontInitializeObject) | ObjectInitializationFlags(DontCreateVisElement)))
+            setVisElement(OORef<SimulationCellVis>::create(flags));
     }
 
     /// \brief Constructs a cell with an axis-aligned box shape.
@@ -81,14 +81,14 @@ public:
     /// \param pbcX Specifies whether periodic boundary conditions are enabled in the X direction.
     /// \param pbcY Specifies whether periodic boundary conditions are enabled in the Y direction.
     /// \param pbcZ Specifies whether periodic boundary conditions are enabled in the Z direction.
-    SimulationCellObject(ObjectCreationParams params, const Box3& box, bool pbcX = false, bool pbcY = false, bool pbcZ = false, bool is2D = false) :
-        DataObject(params),
+    SimulationCellObject(ObjectInitializationFlags flags, const Box3& box, bool pbcX = false, bool pbcY = false, bool pbcZ = false, bool is2D = false) :
+        DataObject(flags),
         _cellMatrix(box.sizeX(), 0, 0, box.minc.x(), 0, box.sizeY(), 0, box.minc.y(), 0, 0, box.sizeZ(), box.minc.z()),
-        _pbcX(pbcX), _pbcY(pbcY), _pbcZ(pbcZ), _is2D(is2D) 
+        _pbcX(pbcX), _pbcY(pbcY), _pbcZ(pbcZ), _is2D(is2D)
     {
         OVITO_ASSERT_MSG(box.sizeX() >= 0 && box.sizeY() >= 0 && box.sizeZ() >= 0, "SimulationCellObject constructor", "The simulation box must have a non-negative volume.");
-        if(params.createVisElement())
-            setVisElement(OORef<SimulationCellVis>::create(params));
+        if(!flags.testAnyFlags(ObjectInitializationFlags(DontInitializeObject) | ObjectInitializationFlags(DontCreateVisElement)))
+            setVisElement(OORef<SimulationCellVis>::create(flags));
     }
 
     /// Returns inverse of the simulation cell matrix.
@@ -125,10 +125,10 @@ public:
     }
 
     /// Sets the PBC flags.
-    void setPbcFlags(bool pbcX, bool pbcY, bool pbcZ) { 
-        setPbcX(pbcX); 
-        setPbcY(pbcY); 
-        setPbcZ(pbcZ); 
+    void setPbcFlags(bool pbcX, bool pbcY, bool pbcZ) {
+        setPbcX(pbcX);
+        setPbcY(pbcY);
+        setPbcZ(pbcZ);
     }
 
     /// \brief Returns the periodic boundary flags in all three spatial directions.
@@ -263,7 +263,7 @@ public:
     static inline FloatType modulo(FloatType k, FloatType n) {
         k = std::fmod(k, n);
         return (k < 0) ? k+n : k;
-    }   
+    }
 
     /// Returns whether this data object wants to be shown in the pipeline editor
     /// under the data source section.

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -47,7 +47,7 @@ SET_PROPERTY_FIELD_UNITS_AND_RANGE(CoordinationAnalysisModifier, numberOfBins, I
 /******************************************************************************
 * Constructs the modifier object.
 ******************************************************************************/
-CoordinationAnalysisModifier::CoordinationAnalysisModifier(ObjectCreationParams params) : AsynchronousModifier(params),
+CoordinationAnalysisModifier::CoordinationAnalysisModifier(ObjectInitializationFlags flags) : AsynchronousModifier(flags),
     _cutoff(3.2),
     _numberOfBins(200),
     _computePartialRDF(false),

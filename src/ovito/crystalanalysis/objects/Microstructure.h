@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -133,7 +133,7 @@ class OVITO_CRYSTALANALYSIS_EXPORT Microstructure : public SurfaceMesh
 public:
 
     /// Constructor.
-    Q_INVOKABLE Microstructure(ObjectCreationParams params);
+    Q_INVOKABLE Microstructure(ObjectInitializationFlags flags);
 
     /// Returns the title of this object.
     virtual QString objectTitle() const override { return tr("Microstructure"); }

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -119,12 +119,12 @@ void DislocationAnalysisEngine::perform()
 
     nextProgressSubStep();
     FloatType ghostLayerSize = FloatType(3.5) * _structureAnalysis->maximumNeighborDistance();
-    if(!_tessellation->generateTessellation(_structureAnalysis->cell(), 
+    if(!_tessellation->generateTessellation(_structureAnalysis->cell(),
             ConstPropertyAccess<Point3>(positions()).cbegin(),
-            _structureAnalysis->atomCount(), 
-            ghostLayerSize, 
+            _structureAnalysis->atomCount(),
+            ghostLayerSize,
             false, // flag coverDomainWithFiniteTets
-            selection() ? ConstPropertyAccess<int>(selection()).cbegin() : nullptr, 
+            selection() ? ConstPropertyAccess<int>(selection()).cbegin() : nullptr,
             *this))
         return;
 
@@ -325,7 +325,7 @@ void DislocationAnalysisEngine::applyResults(const ModifierEvaluationRequest& re
 
     // Compute dislocation line statistics.
     FloatType totalLineLength = generateDislocationStatistics(request.modApp(), state, dislocationsObj, false, dislocationsObj->structureById(modifier->inputCrystalStructure()));
-    size_t totalSegmentCount = dislocationsObj->storage()->segments().size();   
+    size_t totalSegmentCount = dislocationsObj->storage()->segments().size();
 
     if(totalSegmentCount == 0)
         state.setStatus(PipelineStatus(PipelineStatus::Success, DislocationAnalysisModifier::tr("No dislocations found")));
@@ -334,7 +334,7 @@ void DislocationAnalysisEngine::applyResults(const ModifierEvaluationRequest& re
 }
 
 /******************************************************************************
-* Computes statistical information on the identified dislocation lines and 
+* Computes statistical information on the identified dislocation lines and
 * outputs it to the pipeline as data tables and global attributes.
 ******************************************************************************/
 FloatType  DislocationAnalysisEngine::generateDislocationStatistics(const PipelineObject* dataSource, PipelineFlowState& state, DislocationNetworkObject* dislocationsObj, bool replaceDataObjects, const MicrostructurePhase* defaultStructure)
@@ -343,7 +343,7 @@ FloatType  DislocationAnalysisEngine::generateDislocationStatistics(const Pipeli
     std::map<const BurgersVectorFamily*,int> segmentCounts;
     std::map<const BurgersVectorFamily*,const MicrostructurePhase*> dislocationCrystalStructures;
 
-    const BurgersVectorFamily* defaultFamily = nullptr; 
+    const BurgersVectorFamily* defaultFamily = nullptr;
     if(defaultStructure) {
         defaultFamily = defaultStructure->defaultBurgersVectorFamily();
         for(const BurgersVectorFamily* family : defaultStructure->burgersVectorFamilies()) {
@@ -384,10 +384,10 @@ FloatType  DislocationAnalysisEngine::generateDislocationStatistics(const Pipeli
     int maxId = 0;
     for(const auto& entry : dislocationLengths)
         maxId = std::max(maxId, entry.first->numericId());
-    PropertyAccessAndRef<FloatType> dislocationLengthsProperty = DataTable::OOClass().createUserProperty(maxId+1, PropertyObject::Float, 1, DislocationAnalysisModifier::tr("Total line length"), DataBuffer::InitializeMemory);
+    PropertyAccessAndRef<FloatType> dislocationLengthsProperty = DataTable::OOClass().createUserProperty(DataBuffer::Initialized, maxId+1, PropertyObject::Float, 1, DislocationAnalysisModifier::tr("Total line length"));
     for(const auto& entry : dislocationLengths)
         dislocationLengthsProperty[entry.first->numericId()] = entry.second;
-    PropertyAccessAndRef<int> dislocationTypeIds = DataTable::OOClass().createUserProperty(maxId+1, PropertyObject::Int, 1, DislocationAnalysisModifier::tr("Dislocation type"));
+    PropertyAccessAndRef<int> dislocationTypeIds = DataTable::OOClass().createUserProperty(DataBuffer::Uninitialized, maxId+1, PropertyObject::Int, 1, DislocationAnalysisModifier::tr("Dislocation type"));
     boost::algorithm::iota_n(dislocationTypeIds.begin(), 0, dislocationTypeIds.size());
 
     for(const auto& entry : dislocationLengths)
@@ -405,9 +405,9 @@ FloatType  DislocationAnalysisEngine::generateDislocationStatistics(const Pipeli
         lengthTableObj->setX(std::move(x));
         lengthTableObj->setY(std::move(y));
     }
-    
+
     // Output a data table with the dislocation segment counts.
-    PropertyAccessAndRef<int> dislocationCountsProperty = DataTable::OOClass().createUserProperty(maxId+1, PropertyObject::Int, 1, DislocationAnalysisModifier::tr("Dislocation count"), DataBuffer::InitializeMemory);
+    PropertyAccessAndRef<int> dislocationCountsProperty = DataTable::OOClass().createUserProperty(DataBuffer::Initialized, maxId+1, PropertyObject::Int, 1, DislocationAnalysisModifier::tr("Dislocation count"));
     for(const auto& entry : segmentCounts)
         dislocationCountsProperty[entry.first->numericId()] = entry.second;
 

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -59,7 +59,7 @@ public:
 protected:
 
     /// \brief Constructor.
-    PeriodicDomainDataObject(ObjectCreationParams params, const QString& title = {});
+    PeriodicDomainDataObject(ObjectInitializationFlags flags, const QString& title = {});
 
 private:
 

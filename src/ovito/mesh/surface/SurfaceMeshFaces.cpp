@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -31,7 +31,7 @@ IMPLEMENT_OVITO_CLASS(SurfaceMeshFaces);
 /******************************************************************************
 * Creates a storage object for standard face properties.
 ******************************************************************************/
-PropertyPtr SurfaceMeshFaces::OOMetaClass::createStandardPropertyInternal(size_t elementCount, int type, DataBuffer::InitializationFlags flags, const ConstDataObjectPath& containerPath) const
+PropertyPtr SurfaceMeshFaces::OOMetaClass::createStandardPropertyInternal(DataBuffer::BufferInitialization init, size_t elementCount, int type, const ConstDataObjectPath& containerPath) const
 {
     int dataType;
     size_t componentCount;
@@ -63,10 +63,10 @@ PropertyPtr SurfaceMeshFaces::OOMetaClass::createStandardPropertyInternal(size_t
 
     OVITO_ASSERT(componentCount == standardPropertyComponentCount(type));
 
-    PropertyPtr property = PropertyPtr::create(elementCount, dataType, componentCount, propertyName, flags & ~DataBuffer::InitializeMemory, type, componentNames);
+    PropertyPtr property = PropertyPtr::create(DataBuffer::Uninitialized, elementCount, dataType, componentCount, propertyName, type, componentNames);
 
     // Initialize memory if requested.
-    if(flags.testFlag(DataBuffer::InitializeMemory) && containerPath.size() >= 2) {
+    if(init == DataBuffer::Initialized && containerPath.size() >= 2) {
         // Certain standard properties need to be initialized with default values determined by the attached visual elements.
         if(type == ColorProperty) {
             if(const SurfaceMesh* surfaceMesh = dynamic_object_cast<SurfaceMesh>(containerPath[containerPath.size()-2])) {
@@ -74,20 +74,20 @@ PropertyPtr SurfaceMeshFaces::OOMetaClass::createStandardPropertyInternal(size_t
                 ConstPropertyAccess<int> faceRegionProperty = surfaceMesh->faces()->getProperty(SurfaceMeshFaces::RegionProperty);
                 if(regionColorProperty && faceRegionProperty && faceRegionProperty.size() == elementCount) {
                     // Inherit face colors from regions.
-                    boost::transform(faceRegionProperty, PropertyAccess<Color>(property).begin(), 
+                    boost::transform(faceRegionProperty, PropertyAccess<Color>(property).begin(),
                         [&](int region) { return (region >= 0 && region < regionColorProperty.size()) ? regionColorProperty[region] : Color(1,1,1); });
-                    flags.setFlag(DataBuffer::InitializeMemory, false);
+                    init = DataBuffer::Uninitialized;
                 }
                 else if(SurfaceMeshVis* vis = surfaceMesh->visElement<SurfaceMeshVis>()) {
                     // Initialize face colors from uniform color set in SurfaceMeshVis.
                     property->fill(vis->surfaceColor());
-                    flags.setFlag(DataBuffer::InitializeMemory, false);
+                    init = DataBuffer::Uninitialized;
                 }
             }
         }
     }
 
-    if(flags.testFlag(DataBuffer::InitializeMemory)) {
+    if(init == DataBuffer::Initialized) {
         // Default-initialize property values with zeros.
         property->fillZero();
     }
@@ -133,7 +133,7 @@ QString SurfaceMeshFaces::OOMetaClass::formatDataObjectPath(const ConstDataObjec
 }
 
 /******************************************************************************
-* Returns the base point and vector information for visualizing a vector 
+* Returns the base point and vector information for visualizing a vector
 * property from this container using a VectorVis element.
 ******************************************************************************/
 std::tuple<ConstDataBufferPtr, ConstDataBufferPtr> SurfaceMeshFaces::getVectorVisData(const ConstDataObjectPath& path, const PipelineFlowState& state, MixedKeyCache& visCache) const
@@ -179,12 +179,12 @@ std::tuple<ConstDataBufferPtr, ConstDataBufferPtr> SurfaceMeshFaces::getVectorVi
                 }
                 else {
                     centroids[face] = Point3::Origin();
-                    if(filteredVectors) 
+                    if(filteredVectors)
                         filteredVectors[face].setZero();
                 }
             }
             basePositions = centroids.take();
-            if(filteredVectors) 
+            if(filteredVectors)
                 vectorProperty = filteredVectors.take();
         }
         return { basePositions, vectorProperty };

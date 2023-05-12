@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -67,7 +67,7 @@ protected:
     /// This method is called once for this object after it has been completely loaded from a stream.
     virtual void loadFromStreamComplete(ObjectLoadStream& stream) override {
         RefTarget::loadFromStreamComplete(stream);
-        
+
         // Inform dependents that it is now safe to query the controller for its value.
         Q_EMIT controllerLoadingCompleted();
     }
@@ -93,11 +93,11 @@ public:
 
     /// \brief Queries a float controller's value at a certain animation time.
     /// \param[in] time The animation time at which the controller's value should be computed.
-    FloatType getFloatValue(AnimationTime time) { 
+    FloatType getFloatValue(AnimationTime time) {
         TimeInterval iv;
         return getFloatValue(time, iv);
     }
-        
+
     /// \brief Queries an integer controller's value at a certain animation time.
     /// \param[in] time The animation time at which the controller's value should be computed.
     /// \param[in,out] validityInterval This interval is reduced to the period during which the controller's value doesn't change.
@@ -105,7 +105,7 @@ public:
 
     /// \brief Queries an integer controller's value at a certain animation time.
     /// \param[in] time The animation time at which the controller's value should be computed.
-    int getIntValue(AnimationTime time) { 
+    int getIntValue(AnimationTime time) {
         TimeInterval iv;
         return getIntValue(time, iv);
     }
@@ -118,7 +118,7 @@ public:
 
     /// \brief Queries a vector controller's value at a certain animation time.
     /// \param[in] time The animation time at which the controller's value should be computed.
-    Vector3 getVector3Value(AnimationTime time) { 
+    Vector3 getVector3Value(AnimationTime time) {
         TimeInterval iv;
         Vector3 v;
         getVector3Value(time, v, iv);
@@ -142,7 +142,7 @@ public:
 
     /// \brief Queries a Vector3 controller's value at a certain animation time as a color.
     /// \param[in] time The animation time at which the controller's value should be computed.
-    Color getColorValue(AnimationTime time) { 
+    Color getColorValue(AnimationTime time) {
         TimeInterval iv;
         Color c;
         getColorValue(time, c, iv);

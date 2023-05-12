@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2018 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -46,7 +46,7 @@ class OVITO_PARTICLES_EXPORT DLPOLYImporter : public ParticleImporter
             static const SupportedFormat formats[] = {{ QStringLiteral("*"), tr("DL_POLY Files") }};
             return formats;
         }
-        
+
         /// Checks if the given file has format that can be read by this importer.
         virtual bool checkFileFormat(const FileHandle& file) const override;
     };
@@ -56,7 +56,7 @@ class OVITO_PARTICLES_EXPORT DLPOLYImporter : public ParticleImporter
 public:
 
     /// \brief Constructs a new instance of this class.
-    Q_INVOKABLE DLPOLYImporter(ObjectCreationParams params) : ParticleImporter(params) {
+    Q_INVOKABLE DLPOLYImporter(ObjectInitializationFlags flags) : ParticleImporter(flags) {
         setMultiTimestepFile(true);
     }
 
@@ -112,5 +112,3 @@ private:
 };
 
 }   // End of namespace
-
-

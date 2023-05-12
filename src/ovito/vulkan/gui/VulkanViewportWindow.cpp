@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -35,7 +35,7 @@ OVITO_REGISTER_VIEWPORT_WINDOW_IMPLEMENTATION(VulkanViewportWindow);
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-VulkanViewportWindow::VulkanViewportWindow(Viewport* viewport, UserInterface* userInterface, QWidget* parentWidget) : 
+VulkanViewportWindow::VulkanViewportWindow(Viewport* viewport, UserInterface* userInterface, QWidget* parentWidget) :
         BaseViewportWindow(*userInterface, viewport)
 {
     // Create the VulkanContext, a wrapper for the Vulkan logical device.
@@ -94,7 +94,7 @@ void VulkanViewportWindow::processViewportUpdate()
     if(_updateRequested) {
         OVITO_ASSERT_MSG(!userInterface().isRenderingInteractiveViewports(), "VulkanViewportWindow::processUpdateRequest()", "Recursive viewport repaint detected.");
 
-        // Note: All we can do is request a deferred window update. 
+        // Note: All we can do is request a deferred window update.
         // A QWindow has no way of forcing an immediate repaint.
         QWindow::requestUpdate();
     }
@@ -142,7 +142,7 @@ ViewportPickResult VulkanViewportWindow::pick(const QPointF& pos)
 }
 
 /******************************************************************************
-* Is called by the window system whenever an area of the window is invalidated, 
+* Is called by the window system whenever an area of the window is invalidated,
 * for example due to the exposure in the windowing system changing
 ******************************************************************************/
 void VulkanViewportWindow::exposeEvent(QExposeEvent*)
@@ -150,7 +150,7 @@ void VulkanViewportWindow::exposeEvent(QExposeEvent*)
     if(isExposed()) {
         // Create the Vulkan resources when the window is first shown.
         ensureStarted();
-    } 
+    }
     else {
         // Temporarily release Vulkan resources of the window while is not visible.
         releaseSwapChain();
@@ -183,7 +183,6 @@ bool VulkanViewportWindow::event(QEvent* e)
     return QWindow::event(e);
 }
 
-
 /******************************************************************************
 * Keeps trying to initialize the Vulkan window surface.
 ******************************************************************************/
@@ -212,8 +211,8 @@ void VulkanViewportWindow::ensureStarted()
 * To query the actual format after initialization, call colorFormat().
 *
 * This function must be called before the window is made visible.
-* 
-* Reimplementing preInitResources() allows dynamically examining the list of 
+*
+* Reimplementing preInitResources() allows dynamically examining the list of
 * supported formats, should that be desired. There the surface is retrievable via
 * QVulkanInstace::surfaceForWindow(), while this function can still safely be
 * called to affect the later stages of initialization.
@@ -243,7 +242,7 @@ static struct {
 
 /******************************************************************************
 * Initializes the Vulkan objects of the window after it has been exposed for
-* first time.  
+* first time.
 ******************************************************************************/
 void VulkanViewportWindow::init()
 {
@@ -285,7 +284,7 @@ void VulkanViewportWindow::init()
         }
     }
     // Figure out the color format here. Must not wait until recreateSwapChain()
-    // because the renderpass should be available already from initResources (so that apps do not have to defer pipeline creation to initSwapChainResources), 
+    // because the renderpass should be available already from initResources (so that apps do not have to defer pipeline creation to initSwapChainResources),
     // but the renderpass needs the final color format.
     uint32_t formatCount = 0;
     vkGetPhysicalDeviceSurfaceFormatsKHR(context()->physicalDevice(), _surface, &formatCount, nullptr);
@@ -329,7 +328,7 @@ void VulkanViewportWindow::init()
 }
 
 /******************************************************************************
-* Recreates the Vulkan swapchain.  
+* Recreates the Vulkan swapchain.
 ******************************************************************************/
 void VulkanViewportWindow::recreateSwapChain()
 {
@@ -358,7 +357,7 @@ void VulkanViewportWindow::recreateSwapChain()
         Q_ASSERT(bufferSize.height == uint32_t(-1));
         bufferSize.width = _swapChainImageSize.width();
         bufferSize.height = _swapChainImageSize.height();
-    } 
+    }
     else {
         _swapChainImageSize = QSize(bufferSize.width, bufferSize.height);
     }
@@ -420,7 +419,7 @@ void VulkanViewportWindow::recreateSwapChain()
         qWarning("VulkanViewportWindow: Failed to get swapchain images: %d", err);
         return;
     }
-    if(!context()->createVulkanImage(_swapChainImageSize, 
+    if(!context()->createVulkanImage(_swapChainImageSize,
                               context()->depthStencilFormat(),
                               sampleCountFlagBits(),
                               VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT,
@@ -552,7 +551,7 @@ void VulkanViewportWindow::recreateSwapChain()
 }
 
 /******************************************************************************
-* Releases the resources of the Vulkan swapchain.  
+* Releases the resources of the Vulkan swapchain.
 ******************************************************************************/
 void VulkanViewportWindow::releaseSwapChain()
 {
@@ -670,12 +669,12 @@ void VulkanViewportWindow::beginFrame()
             frame.imageSemWaitable = true;
             frame.imageAcquired = true;
             frame.fenceWaitable = true;
-        } 
+        }
         else if(err == VK_ERROR_OUT_OF_DATE_KHR) {
             recreateSwapChain();
             requestUpdate();
             return;
-        } 
+        }
         else {
             if(!context()->checkDeviceLost(err))
                 qWarning("VulkanViewportWindow: Failed to acquire next swapchain image: %d", err);
@@ -683,7 +682,7 @@ void VulkanViewportWindow::beginFrame()
             return;
         }
     }
-    
+
     // Make sure the previous draw for the same image has finished.
     ImageResources& image = _imageRes[_currentImage];
     if(image.cmdFenceWaitable) {
@@ -840,7 +839,7 @@ void VulkanViewportWindow::endFrame()
     if(err == VK_SUCCESS) {
         frame.imageSemWaitable = false;
         image.cmdFenceWaitable = true;
-    } 
+    }
     else {
         if(!context()->checkDeviceLost(err))
             qWarning("VulkanViewportWindow: Failed to submit to graphics queue: %d", err);
@@ -871,7 +870,7 @@ void VulkanViewportWindow::endFrame()
             recreateSwapChain();
             requestUpdate();
             return;
-        } 
+        }
         else if(err != VK_SUBOPTIMAL_KHR) {
             if(!context()->checkDeviceLost(err))
                 qWarning("VulkanViewportWindow: Failed to present: %d", err);

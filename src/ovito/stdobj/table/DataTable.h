@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -43,7 +43,7 @@ class OVITO_STDOBJ_EXPORT DataTable : public PropertyContainer
         using PropertyContainerClass::PropertyContainerClass;
 
         /// Creates a storage object for standard data table properties.
-        virtual PropertyPtr createStandardPropertyInternal(size_t elementCount, int type, DataBuffer::InitializationFlags flags, const ConstDataObjectPath& containerPath) const override;
+        virtual PropertyPtr createStandardPropertyInternal(DataBuffer::BufferInitialization init, size_t elementCount, int type, const ConstDataObjectPath& containerPath) const override;
 
     protected:
 
@@ -66,7 +66,7 @@ public:
     Q_ENUM(PlotMode);
 
     /// Constructor.
-    Q_INVOKABLE DataTable(ObjectCreationParams params, PlotMode plotMode = Line, const QString& title = QString(), ConstPropertyPtr y = {}, ConstPropertyPtr x = {});
+    Q_INVOKABLE DataTable(ObjectInitializationFlags flags, PlotMode plotMode = Line, const QString& title = QString(), ConstPropertyPtr y = {}, ConstPropertyPtr x = {});
 
     /// Assigns a property array as x-coordinates of the data points (for the purpose of plotting).
     void setX(const PropertyObject* property);
@@ -78,7 +78,7 @@ public:
     /// If no explicit x-coordinate data is available, the array is dynamically generated
     /// from the x-axis interval set for this data table.
     ConstPropertyPtr getXValues() const;
-    
+
 private:
 
     /// The lower bound of the x-interval of the histogram if data points have no explicit x-coordinates.

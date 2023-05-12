@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -49,12 +49,12 @@ class OVITO_CORE_EXPORT DataSet final : public RefTarget
         /// Inherit constructor from base class.
         using RefTarget::OOMetaClass::OOMetaClass;
 
-        /// Provides a custom function that takes are of the deserialization of a serialized property field that has been removed from the class. 
+        /// Provides a custom function that takes are of the deserialization of a serialized property field that has been removed from the class.
         /// This is needed for backward compatibility with OVITO 3.7.
         virtual SerializedClassInfo::PropertyFieldInfo::CustomDeserializationFunctionPtr overrideFieldDeserialization(const SerializedClassInfo::PropertyFieldInfo& field) const override;
     };
 
-    OVITO_CLASS_META(DataSet, DataSetClass) 
+    OVITO_CLASS_META(DataSet, DataSetClass)
 
 #ifdef OVITO_QML_GUI
     Q_PROPERTY(Ovito::ViewportConfiguration* viewportConfiguration READ viewportConfig WRITE setViewportConfig NOTIFY viewportConfigReplaced)
@@ -63,7 +63,7 @@ class OVITO_CORE_EXPORT DataSet final : public RefTarget
 public:
 
     /// \brief Constructs an empty dataset.
-    Q_INVOKABLE DataSet(ObjectCreationParams params);
+    Q_INVOKABLE DataSet(ObjectInitializationFlags flags);
 
     /// \brief Destructor.
     virtual ~DataSet();
@@ -139,7 +139,7 @@ protected:
 private:
 
     /// Returns a viewport configuration that is used as template for new scenes.
-    static OORef<ViewportConfiguration> createDefaultViewportConfiguration(ObjectCreationParams params);
+    static OORef<ViewportConfiguration> createDefaultViewportConfiguration();
 
 private:
 

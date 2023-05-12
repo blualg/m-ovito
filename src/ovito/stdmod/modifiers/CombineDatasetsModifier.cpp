@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -42,15 +42,15 @@ IMPLEMENT_OVITO_CLASS(CombineDatasetsModifierDelegate);
 /******************************************************************************
 * Constructs the modifier object.
 ******************************************************************************/
-CombineDatasetsModifier::CombineDatasetsModifier(ObjectCreationParams params) : MultiDelegatingModifier(params)
+CombineDatasetsModifier::CombineDatasetsModifier(ObjectInitializationFlags flags) : MultiDelegatingModifier(flags)
 {
-    if(params.createSubObjects()) {
+    if(!flags.testFlag(ObjectInitializationFlag::DontInitializeObject)) {
         // Generate the list of delegate objects.
-        createModifierDelegates(CombineDatasetsModifierDelegate::OOClass(), params);
+        createModifierDelegates(CombineDatasetsModifierDelegate::OOClass());
 
         // Create the file source object, which will be responsible for loading
         // and caching the data to be merged.
-        setSecondaryDataSource(OORef<FileSource>::create(params));
+        setSecondaryDataSource(OORef<FileSource>::create(flags));
     }
 }
 
@@ -142,7 +142,7 @@ void CombineDatasetsModifier::combineDatasets(const ModifierEvaluationRequest& r
     // Let the delegates do their job and merge the data objects of the two datasets.
     applyDelegates(request, state, { std::reference_wrapper<const PipelineFlowState>(secondaryState) });
 
-    // Special handling for the simulation cell. If the secondary dataset contains a simulation cell but 
+    // Special handling for the simulation cell. If the secondary dataset contains a simulation cell but
     // the primary doesn't, then copy it over to the primary dataset.
     if(const SimulationCellObject* secondaryCell = secondaryState.getObject<SimulationCellObject>()) {
         const SimulationCellObject* primaryCell = state.getObject<SimulationCellObject>();
@@ -224,7 +224,7 @@ void CombineDatasetsModifierDelegate::mergeElementTypes(PropertyObject* property
         auto p = selectionArray1.begin() + (property1->size() - property2->size());
         auto p_end = selectionArray1.end();
         for(; p != p_end; ++p) {
-            if(auto item = typeMap.find(*p); item != typeMap.end()) 
+            if(auto item = typeMap.find(*p); item != typeMap.end())
                 *p = item->second;
         }
     }

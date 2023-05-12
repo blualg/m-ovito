@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -31,7 +31,7 @@
 #include <ovito/core/dataset/pipeline/AsynchronousModifier.h>
 
 /// This comparison operator is required for using QVariant as key-type in a QMap as done by CreateBondsModifier.
-/// The < operator for QVariant, which is part of the key-type, has been removed in Qt 6. Redefining it here is an ugly hack and should be 
+/// The < operator for QVariant, which is part of the key-type, has been removed in Qt 6. Redefining it here is an ugly hack and should be
 /// solved in a different way in the future.
 #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
     inline bool operator<(const QPair<QVariant, QVariant>& key1, const QPair<QVariant, QVariant>& key2)
@@ -113,7 +113,7 @@ private:
                     _isHydrogenType(std::move(isHydrogenType)) {}
 
         /// Decides whether the computation is sufficiently short to perform it synchronously within the GUI thread.
-        virtual bool preferSynchronousExecution() override { 
+        virtual bool preferSynchronousExecution() override {
             // It's okay to perform the modifier operation synchronously for small inputs.
             return _positions->size() < (_cutoffMode == TypeRadiusCutoff ? 400 : 200);
         }
@@ -140,7 +140,7 @@ private:
         const FloatType _minCutoff;
         const FloatType _vdwPrefactor;
         std::vector<std::vector<FloatType>> _pairCutoffsSquared;
-        std::vector<FloatType> _typeVdWRadiusMap;       
+        std::vector<FloatType> _typeVdWRadiusMap;
         std::vector<bool> _isHydrogenType;
         ConstPropertyPtr _positions;
         ConstPropertyPtr _particleTypes;
@@ -156,7 +156,7 @@ private:
 public:
 
     /// Constructor.
-    Q_INVOKABLE CreateBondsModifier(ObjectCreationParams params);
+    Q_INVOKABLE CreateBondsModifier(ObjectInitializationFlags flags);
 
     /// \brief This method is called by the system when the modifier has been inserted into a data pipeline.
     virtual void initializeModifier(const ModifierInitializationRequest& request) override;
@@ -192,7 +192,7 @@ protected:
     /// Creates a computation engine that will compute the modifier's results.
     virtual Future<EnginePtr> createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input) override;
 
-    /// This function is called from AsynchronousModifier::evaluateSynchronous() to apply the results from the last 
+    /// This function is called from AsynchronousModifier::evaluateSynchronous() to apply the results from the last
     /// asycnhronous compute engine during a synchronous pipeline evaluation.
     virtual bool applyCachedResultsSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
 

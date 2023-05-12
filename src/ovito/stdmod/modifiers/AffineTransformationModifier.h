@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -67,7 +67,7 @@ class OVITO_STDMOD_EXPORT SimulationCellAffineTransformationModifierDelegate : p
 public:
 
     /// Constructor.
-    Q_INVOKABLE SimulationCellAffineTransformationModifierDelegate(ObjectCreationParams params) : AffineTransformationModifierDelegate(params) {}
+    Q_INVOKABLE SimulationCellAffineTransformationModifierDelegate(ObjectInitializationFlags flags) : AffineTransformationModifierDelegate(flags) {}
 
     /// Applies the modifier operation to the data in a pipeline flow state.
     virtual PipelineStatus apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const PipelineFlowState& inputState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs) override;
@@ -103,13 +103,13 @@ public:
 public:
 
     /// \brief Constructor.
-    Q_INVOKABLE AffineTransformationModifier(ObjectCreationParams params);
+    Q_INVOKABLE AffineTransformationModifier(ObjectInitializationFlags flags);
 
     /// This method is called by the system after the modifier has been inserted into a data pipeline.
     virtual void initializeModifier(const ModifierInitializationRequest& request) override;
 
     /// Returns the effective affine transformation matrix to be applied to points.
-    /// It depends on the linear matrix, the translation vector, relative/target cell mode, and 
+    /// It depends on the linear matrix, the translation vector, relative/target cell mode, and
     /// whether the translation is specified in terms of reduced cell coordinates.
     /// Thus, the affine transformation may depend on the current simulation cell shape.
     AffineTransformation effectiveAffineTransformation(const PipelineFlowState& state) const;

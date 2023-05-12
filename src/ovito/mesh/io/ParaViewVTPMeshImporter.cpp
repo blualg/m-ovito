@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -52,7 +52,7 @@ bool ParaViewVTPMeshImporter::OOMetaClass::checkFileFormat(const FileHandle& fil
     if(xml.attributes().value("type").compare(QStringLiteral("PolyData")) != 0)
         return false;
 
-    // Continue until we reach the <Piece> element. 
+    // Continue until we reach the <Piece> element.
     while(xml.readNextStartElement()) {
         if(xml.name().compare(QStringLiteral("Piece")) == 0) {
             // Number of triangle strips or polygons must be non-zero.
@@ -259,9 +259,9 @@ void ParaViewVTPMeshImporter::FrameLoader::loadFile()
     if(numberOfPolys == numberOfCells) {
         for(auto& property : cellDataArrays) {
             OVITO_ASSERT(property->size() == numberOfCells);
-            // If it is the first partial dataset we are loading, or if we are loading the mesh in once piece, then 
+            // If it is the first partial dataset we are loading, or if we are loading the mesh in once piece, then
             // the loaded property arrays can simply be added to the mesh faces.
-            // Otherwise, if we are loading subsequent parts of the distributed mesh, 
+            // Otherwise, if we are loading subsequent parts of the distributed mesh,
             // then the loaded property values must be copied into the correct subrange of the existing
             // face properties.
             if(!loadRequest().appendData) {
@@ -270,8 +270,8 @@ void ParaViewVTPMeshImporter::FrameLoader::loadFile()
                 mesh.addFaceProperty(std::move(property));
             }
             else {
-                PropertyObject* existingProperty = property->type() != SurfaceMeshFaces::UserProperty 
-                    ? mesh.mutableFaceProperty(static_cast<SurfaceMeshFaces::Type>(property->type())) 
+                PropertyObject* existingProperty = property->type() != SurfaceMeshFaces::UserProperty
+                    ? mesh.mutableFaceProperty(static_cast<SurfaceMeshFaces::Type>(property->type()))
                     : mesh.mutableFaceProperty(property->name());
                 if(existingProperty && existingProperty->dataType() == property->dataType() && existingProperty->componentCount() == property->componentCount()) {
                     existingProperty->copyRangeFrom(*property, 0, faceBaseIndex, property->size());
@@ -283,9 +283,9 @@ void ParaViewVTPMeshImporter::FrameLoader::loadFile()
     // Add point data arrays to the mesh vertices.
     for(auto& property : pointDataArrays) {
         OVITO_ASSERT(property->size() == numberOfPoints);
-        // If it is the first partial dataset we are loading, or if we are loading the mesh in once piece, then 
+        // If it is the first partial dataset we are loading, or if we are loading the mesh in once piece, then
         // the loaded property arrays can simply be added to the mesh vertices.
-        // Otherwise, if we are loading subsequent parts of the distributed mesh, 
+        // Otherwise, if we are loading subsequent parts of the distributed mesh,
         // then the loaded property values must be copied into the correct subrange of the existing
         // vertex properties.
         if(!loadRequest().appendData) {
@@ -294,8 +294,8 @@ void ParaViewVTPMeshImporter::FrameLoader::loadFile()
             mesh.addVertexProperty(std::move(property));
         }
         else {
-            PropertyObject* existingProperty = property->type() != SurfaceMeshVertices::UserProperty 
-                ? mesh.mutableVertexProperty(static_cast<SurfaceMeshVertices::Type>(property->type())) 
+            PropertyObject* existingProperty = property->type() != SurfaceMeshVertices::UserProperty
+                ? mesh.mutableVertexProperty(static_cast<SurfaceMeshVertices::Type>(property->type()))
                 : mesh.mutableVertexProperty(property->name());
             if(existingProperty && existingProperty->dataType() == property->dataType() && existingProperty->componentCount() == property->componentCount()) {
                 existingProperty->copyRangeFrom(*property, 0, vertexBaseIndex, property->size());
@@ -368,7 +368,7 @@ PropertyPtr ParaViewVTPMeshImporter::FrameLoader::parseDataArray(QXmlStreamReade
     }
 
     // Create destination property. Initially with zero elements, will be resized later when the size of the VTK data array is known.
-    PropertyPtr property = DataOORef<PropertyObject>::create(0, convertToDataType, numComponents, name);
+    PropertyPtr property = DataOORef<PropertyObject>::create(DataBuffer::Uninitialized, 0, convertToDataType, numComponents, name);
 
     // Delegate parsing of payload to sub-routine.
     if(!parseVTKDataArray(property.get(), xml))
@@ -378,7 +378,7 @@ PropertyPtr ParaViewVTPMeshImporter::FrameLoader::parseDataArray(QXmlStreamReade
 }
 
 template<typename F>
-static inline void tokenizeString(const QString& str, F&& f) 
+static inline void tokenizeString(const QString& str, F&& f)
 {
     // Split string at whitespace characters.
     QStringView textView(str);
@@ -390,7 +390,7 @@ static inline void tokenizeString(const QString& str, F&& f)
         while(start != eos && start->isSpace())
             ++start;
         // Find end of current token.
-        auto end = start;           
+        auto end = start;
         while(end != eos && !end->isSpace())
             ++end;
         if(end != start) {
@@ -661,11 +661,11 @@ void MeshParaViewVTMFileFilter::preprocessDatasets(std::vector<ParaViewVTMBlockI
             }
         }
 
-        // Make all mesh data files a part of the same block. This will tell the VTP mesh file reader 
+        // Make all mesh data files a part of the same block. This will tell the VTP mesh file reader
         // to combine all mesh parts into a single SurfaceMesh object.
         int index = 0;
         for(ParaViewVTMBlockInfo& block : blockDatasets) {
-            if((!isLegacyAspherixFormat && block.blockPath.size() == 2 && block.blockPath[0] == QStringLiteral("Meshes") && !block.location.isEmpty()) 
+            if((!isLegacyAspherixFormat && block.blockPath.size() == 2 && block.blockPath[0] == QStringLiteral("Meshes") && !block.location.isEmpty())
                 || (isLegacyAspherixFormat && block.blockPath.size() == 1 && block.blockPath[0] != QStringLiteral("Particles") && !block.location.isEmpty() && block.location.fileName().endsWith(".vtp"))) {
                 block.pieceIndex = index++;
                 block.pieceCount = numMeshFiles;

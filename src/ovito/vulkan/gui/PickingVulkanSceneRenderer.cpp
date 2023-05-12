@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -33,8 +33,8 @@ IMPLEMENT_OVITO_CLASS(PickingVulkanSceneRenderer);
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-PickingVulkanSceneRenderer::PickingVulkanSceneRenderer(ObjectCreationParams params, std::shared_ptr<VulkanContext> vulkanDevice, ViewportWindowInterface* window) 
-    : OffscreenVulkanSceneRenderer(params, std::move(vulkanDevice), true), _window(window) 
+PickingVulkanSceneRenderer::PickingVulkanSceneRenderer(ObjectInitializationFlags flags, std::shared_ptr<VulkanContext> vulkanDevice, ViewportWindowInterface* window)
+    : OffscreenVulkanSceneRenderer(flags, std::move(vulkanDevice), true), _window(window)
 {
     setPicking(true);
     setInteractive(true);
@@ -80,7 +80,7 @@ void PickingVulkanSceneRenderer::endFrame(bool renderingSuccessful, const QRect&
     // Caller should never provide an external frame buffer.
     OVITO_ASSERT(frameBuffer() == &_frameBuffer);
 
-    // Make sure old framebuffer content has been discarded, because we don't want OffscreenVulkanSceneRenderer::endFrame() to blend images. 
+    // Make sure old framebuffer content has been discarded, because we don't want OffscreenVulkanSceneRenderer::endFrame() to blend images.
     OVITO_ASSERT(_frameBuffer.image().isNull());
 
     // Let the base implementation fetch the Vulkan framebuffer contents.

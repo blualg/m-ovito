@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -182,7 +182,7 @@ void GALAMOSTImporter::FrameLoader::loadFile()
                         std::rotate(q.begin(), q.begin() + 1, q.end());
                 }
                 else if(xml.name().compare(QStringLiteral("orientation")) == 0) {
-                    DataOORef<PropertyObject> directions = ParticlesObject::OOClass().createUserProperty(natoms, PropertyObject::Float, 3, QStringLiteral("Direction"));
+                    DataOORef<PropertyObject> directions = ParticlesObject::OOClass().createUserProperty(DataBuffer::Uninitialized, natoms, PropertyObject::Float, 3, QStringLiteral("Direction"));
                     parsePropertyData(xml, directions);
                     ConstPropertyAccess<Vector3> directionsAccess(directions);
                     const Vector3* dir = directionsAccess.cbegin();
@@ -312,7 +312,7 @@ PropertyObject* GALAMOSTImporter::FrameLoader::parsePropertyData(QXmlStreamReade
         xml.raiseError(tr("Element count mismatch. Attribute 'num' is %1 but expected %2 data elements.").arg(numElements).arg(property->size()));
         return property;
     }
-    
+
     QString text = xml.readElementText();
     QTextStream stream(&text, QIODevice::ReadOnly | QIODevice::Text);
 

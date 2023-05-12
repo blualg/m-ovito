@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -63,7 +63,7 @@ class OVITO_PARTICLES_EXPORT InteractiveMolecularDynamicsModifier : public Modif
 public:
 
     /// Constructor.
-    Q_INVOKABLE InteractiveMolecularDynamicsModifier(ObjectCreationParams params);
+    Q_INVOKABLE InteractiveMolecularDynamicsModifier(ObjectInitializationFlags flags);
 
     /// Destructor.
     virtual ~InteractiveMolecularDynamicsModifier();

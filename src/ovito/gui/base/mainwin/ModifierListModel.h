@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -47,7 +47,7 @@ public:
     /// Returns the modifier's category.
     const QString& category() const { return _category; }
 
-    /// Returns the modifier class descriptor if this action represents a built-in modifier. 
+    /// Returns the modifier class descriptor if this action represents a built-in modifier.
     ModifierClassPtr modifierClass() const { return _modifierClass; }
 
     /// The name of the modifier template if this action represents a saved modifier template.
@@ -61,7 +61,7 @@ public:
 
 private:
 
-    /// The Ovito class descriptor of the modifier subclass. 
+    /// The Ovito class descriptor of the modifier subclass.
     ModifierClassPtr _modifierClass = nullptr;
 
     /// The modifier's category.
@@ -100,7 +100,7 @@ public:
 
     /// Returns the model's role names.
     virtual QHash<int, QByteArray> roleNames() const override;
-    
+
     /// Returns the action that belongs to the given model index.
     ModifierAction* actionFromIndex(int index) const;
 

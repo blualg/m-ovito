@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -49,16 +49,16 @@ IMPLEMENT_OVITO_CLASS(ReplicateModifierDelegate);
 /******************************************************************************
 * Constructs the modifier object.
 ******************************************************************************/
-ReplicateModifier::ReplicateModifier(ObjectCreationParams params) : MultiDelegatingModifier(params),
+ReplicateModifier::ReplicateModifier(ObjectInitializationFlags flags) : MultiDelegatingModifier(flags),
     _numImagesX(1),
     _numImagesY(1),
     _numImagesZ(1),
     _adjustBoxSize(true),
     _uniqueIdentifiers(true)
 {
-    if(params.createSubObjects()) {
+    if(!flags.testFlag(ObjectInitializationFlag::DontInitializeObject)) {
         // Generate the list of delegate objects.
-        createModifierDelegates(ReplicateModifierDelegate::OOClass(), params);
+        createModifierDelegates(ReplicateModifierDelegate::OOClass());
     }
 }
 

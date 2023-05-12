@@ -59,7 +59,7 @@ class OVITO_PARTICLES_EXPORT LoadTrajectoryModifier : public Modifier
 public:
 
     /// Constructor.
-    Q_INVOKABLE LoadTrajectoryModifier(ObjectCreationParams params);
+    Q_INVOKABLE LoadTrajectoryModifier(ObjectInitializationFlags flags);
 
     /// Determines the time interval over which a computed pipeline state will remain valid.
     virtual TimeInterval validityInterval(const ModifierEvaluationRequest& request) const override;

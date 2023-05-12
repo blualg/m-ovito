@@ -36,7 +36,7 @@ IMPLEMENT_OVITO_CLASS(GSDExporter);
 /******************************************************************************
  * Constructor.
  *****************************************************************************/
-GSDExporter::GSDExporter(ObjectCreationParams params) : ParticleExporter(params)
+GSDExporter::GSDExporter(ObjectInitializationFlags flags) : ParticleExporter(flags)
 {
 }
 
@@ -182,7 +182,7 @@ bool GSDExporter::exportData(const PipelineFlowState& state, int frameNumber, co
         _gsdFile->writeChunk<int8_t>("particles/types", typeNames.size(), maxStringLength, typeNameBuffer.data());
 
         // Build typeid array.
-        ConstPropertyAccess<int> typeIdsArray(typeIds); 
+        ConstPropertyAccess<int> typeIdsArray(typeIds);
         std::vector<uint32_t> typeIdBuffer(typeIdsArray.size());
         boost::transform(ordering, typeIdBuffer.begin(),
             [&](size_t i) { return typeIdsArray[i]; });
@@ -262,7 +262,7 @@ bool GSDExporter::exportData(const PipelineFlowState& state, int frameNumber, co
         if(bodyProperty.dataType() == PropertyObject::Int && bodyProperty.componentCount() == 1) {
             // Apply particle index mapping:
             std::vector<int> bodyBuffer(bodyProperty.size());
-            boost::transform(ordering, bodyBuffer.begin(), 
+            boost::transform(ordering, bodyBuffer.begin(),
                 [&](size_t i) { return bodyProperty[i]; });
             _gsdFile->writeChunk<int>("particles/body", bodyBuffer.size(), 1, bodyBuffer.data());
             if(operation.isCanceled()) return false;

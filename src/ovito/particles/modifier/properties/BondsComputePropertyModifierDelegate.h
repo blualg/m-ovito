@@ -63,11 +63,11 @@ class OVITO_PARTICLES_EXPORT BondsComputePropertyModifierDelegate : public Compu
 public:
 
     /// Constructor.
-    Q_INVOKABLE BondsComputePropertyModifierDelegate(ObjectCreationParams params) : ComputePropertyModifierDelegate(params) {}
+    Q_INVOKABLE BondsComputePropertyModifierDelegate(ObjectInitializationFlags flags) : ComputePropertyModifierDelegate(flags) {}
 
     /// Creates a computation engine that will compute the property values.
     virtual std::shared_ptr<ComputePropertyModifierDelegate::PropertyComputeEngine> createEngine(
-                const ModifierEvaluationRequest& request, 
+                const ModifierEvaluationRequest& request,
                 const PipelineFlowState& input,
                 const ConstDataObjectPath& containerPath,
                 PropertyPtr outputProperty,
@@ -83,7 +83,7 @@ private:
 
         /// Constructor.
         Engine(
-                const ModifierEvaluationRequest& request, 
+                const ModifierEvaluationRequest& request,
                 const TimeInterval& validityInterval,
                 PropertyPtr outputProperty,
                 const ConstDataObjectPath& containerPath,

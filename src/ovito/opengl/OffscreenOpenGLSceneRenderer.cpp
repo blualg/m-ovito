@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -40,7 +40,7 @@ static QThreadStorage<std::unique_ptr<QOpenGLContext>> globalOffscreenContext;
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-OffscreenOpenGLSceneRenderer::OffscreenOpenGLSceneRenderer(ObjectCreationParams params) : OpenGLSceneRenderer(params)
+OffscreenOpenGLSceneRenderer::OffscreenOpenGLSceneRenderer(ObjectInitializationFlags flags) : OpenGLSceneRenderer(flags)
 {
     // Create the offscreen surface.
     // This must happen in the main thread.

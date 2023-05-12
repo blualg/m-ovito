@@ -66,7 +66,7 @@ public:
 public:
 
     /// \brief Constructs a modifier application.
-    Q_INVOKABLE ModifierApplication(ObjectCreationParams params) : CachingPipelineObject(params) {}
+    Q_INVOKABLE ModifierApplication(ObjectInitializationFlags flags) : CachingPipelineObject(flags) {}
 
     /// \brief Determines the time interval over which a computed pipeline state will remain valid.
     virtual TimeInterval validityInterval(const PipelineEvaluationRequest& request) const override;
@@ -118,7 +118,7 @@ public:
     }
 
     /// Returns whether the modifier AND the modifier group (if this modapp is part of one) are enabled.
-    bool modifierAndGroupEnabled() const { 
+    bool modifierAndGroupEnabled() const {
         return modifier() && modifier()->isEnabled() && (!modifierGroup() || modifierGroup()->isEnabled());
     }
 
@@ -133,7 +133,7 @@ Q_SIGNALS:
     /// The signal is used in the QML GUI to update the results displayed in the modifier's panel.
     void modifierResultsComplete();
 
-    /// This signal is emitted whenever the upstream pipeline has been modified and the input of the 
+    /// This signal is emitted whenever the upstream pipeline has been modified and the input of the
     /// modifier application changes. The signal is used in the QML GUI to update the inputs displayed in the modifier's panel.
     void modifierInputChanged();
 #endif

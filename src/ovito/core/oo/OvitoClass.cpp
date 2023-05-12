@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -31,8 +31,8 @@
 
 namespace Ovito {
 
-// Head of linked list of native meta-classes.
-OvitoClass* OvitoClass::_firstMetaClass{};
+// Head of linked list of native C++ classes.
+OvitoClass* OvitoClass::_firstNativeMetaClass{};
 
 /******************************************************************************
 * Constructor used for non-templated classes.
@@ -47,24 +47,27 @@ OvitoClass::OvitoClass(const QString& name, OvitoClassPtr superClass, const char
     OVITO_ASSERT(superClass != nullptr || name == QStringLiteral("OvitoObject"));
     OVITO_ASSERT(pluginId != nullptr);
 
-    // Insert into linked list of all object types.
-    _nextMetaclass = _firstMetaClass;
-    _firstMetaClass = this;
+    // If it is a native C++ class, insert it into the linked list.
+    _nextNativeMetaclass = _firstNativeMetaClass;
+    _firstNativeMetaClass = this;
 }
 
 /******************************************************************************
-* Is called by the system after construction of the meta-class instance.
+* Is called by the system on program startup.
 ******************************************************************************/
 void OvitoClass::initialize()
 {
     // Class must have been initialized with a plugin id.
     OVITO_ASSERT(_pluginId != nullptr);
 
-    // Remove namespace qualifier from Qt's class name.
+    // Initialize native C++ classes.
     if(qtMetaObject()) {
-        // Mark classes as abstract that don't have an invokable constructor.
-        setAbstract(qtMetaObject()->constructorCount() == 0);
 
+        // Mark class as instantiable if it has an invokable constructor.
+        if(qtMetaObject()->constructorCount())
+            setIsInstantiable();
+
+        // Remove namespace qualifier from Qt's class name.
         _pureClassName = qtMetaObject()->className();
         for(const char* p = _pureClassName; *p != '\0'; p++) {
             if(p[0] == ':' && p[1] == ':') {
@@ -75,15 +78,11 @@ void OvitoClass::initialize()
 
         // Fetch display name assigned to the Qt object class.
         if(int idx = qtMetaObject()->indexOfClassInfo("DisplayName"); idx >= 0)
-            setDisplayName(QString::fromLocal8Bit(qtMetaObject()->classInfo(idx).value()));
-        
+            setDisplayName(QString::fromUtf8(qtMetaObject()->classInfo(idx).value()));
+
         // Load name alias assigned to the Qt object class.
         if(int idx = qtMetaObject()->indexOfClassInfo("ClassNameAlias"); idx >= 0)
-            setNameAlias(QString::fromLocal8Bit(qtMetaObject()->classInfo(idx).value()));
-    }
-    else {
-        // Templated classes are always abstract.
-        setAbstract(true);
+            setNameAlias(QString::fromUtf8(qtMetaObject()->classInfo(idx).value()));
     }
 }
 
@@ -92,10 +91,11 @@ void OvitoClass::initialize()
 ******************************************************************************/
 QString OvitoClass::descriptionString() const
 {
-    OVITO_ASSERT(qtMetaObject());
-    int index = qtMetaObject()->indexOfClassInfo("Description");
-    if(index >= 0)
-        return QString::fromUtf8(qtMetaObject()->classInfo(index).value());
+    if(qtMetaObject()) {
+        int index = qtMetaObject()->indexOfClassInfo("Description");
+        if(index >= 0)
+            return QString::fromUtf8(qtMetaObject()->classInfo(index).value());
+    }
     return QString();
 }
 
@@ -104,8 +104,7 @@ QString OvitoClass::descriptionString() const
 ******************************************************************************/
 bool OvitoClass::isMember(const OvitoObject* obj) const
 {
-    if(!obj) return false;
-    return obj->getOOClass().isDerivedFrom(*this);
+    return obj ? obj->getOOClass().isDerivedFrom(*this) : false;
 }
 
 /******************************************************************************
@@ -128,34 +127,22 @@ OORef<OvitoObject> OvitoClass::createInstance() const
             }
         }
     }
-    if(isAbstract())
+    if(!isInstantiable())
         throw Exception(OvitoObject::tr("Cannot instantiate abstract class '%1'.").arg(name()));
 
-    // Special handling of RefTarget-derived classes.
-    if(isDerivedFrom(RefTarget::OOClass())) {
-        return createInstance(ObjectCreationParams(
-            ExecutionContext::isInteractive() 
-                ? ObjectCreationParams::LoadUserDefaults 
-                : ObjectCreationParams::NoFlags));
-    }
-
     // Instantiate the class.
-    return createInstanceImpl({});
-}
-
-/******************************************************************************
-* Creates an instance of this object class.
-******************************************************************************/
-OORef<RefTarget> OvitoClass::createInstance(ObjectCreationParams::InitializationFlags initFlags) const
-{
-    return createInstance(ObjectCreationParams(initFlags));
+    // Special handling of RefTarget-derived classes.
+    if(isDerivedFrom(RefTarget::OOClass()))
+        return createInstance(ObjectInitializationFlag::NoFlags);
+    else
+        return createInstanceImpl({});
 }
 
 /******************************************************************************
 * Creates an instance of this object class.
 * Throws an exception if the containing plugin failed to load.
 ******************************************************************************/
-OORef<RefTarget> OvitoClass::createInstance(ObjectCreationParams params) const
+OORef<RefTarget> OvitoClass::createInstance(ObjectInitializationFlags flags) const
 {
     if(plugin()) {
         OVITO_CHECK_POINTER(plugin());
@@ -171,7 +158,7 @@ OORef<RefTarget> OvitoClass::createInstance(ObjectCreationParams params) const
             }
         }
     }
-    if(isAbstract())
+    if(!isInstantiable())
         throw Exception(OvitoObject::tr("Cannot instantiate abstract class '%1'.").arg(name()));
 
     OVITO_ASSERT_MSG(isDerivedFrom(RefTarget::OOClass()), "OvitoClass::createInstance()", "This method overload must only be used to instantiate RefTarget-derived classes.");
@@ -180,10 +167,10 @@ OORef<RefTarget> OvitoClass::createInstance(ObjectCreationParams params) const
     UndoSuspender noUndo;
 
     // Instantiate the class.
-    OORef<RefTarget> obj = static_object_cast<RefTarget>(createInstanceImpl(params));
+    OORef<RefTarget> obj = static_object_cast<RefTarget>(createInstanceImpl(flags));
 
     // Initialize the parameters of the new object to default values.
-    if(params.loadUserDefaults())
+    if(ExecutionContext::isInteractive())
         obj->initializeParametersToUserDefaults();
 
     return obj;
@@ -192,7 +179,7 @@ OORef<RefTarget> OvitoClass::createInstance(ObjectCreationParams params) const
 /******************************************************************************
 * Creates an instance of this object class.
 ******************************************************************************/
-OvitoObject* OvitoClass::createInstanceImpl(ObjectCreationParams params) const
+OvitoObject* OvitoClass::createInstanceImpl(ObjectInitializationFlags flags) const
 {
 #ifdef OVITO_DEBUG
     // Check if class hierarchy is consistent.
@@ -209,7 +196,7 @@ OvitoObject* OvitoClass::createInstanceImpl(ObjectCreationParams params) const
     OvitoObject* obj;
 
     if(isDerivedFrom(RefTarget::OOClass())) {
-        obj = qobject_cast<OvitoObject*>(qtMetaObject()->newInstance(Q_ARG(ObjectCreationParams, params)));
+        obj = qobject_cast<OvitoObject*>(qtMetaObject()->newInstance(Q_ARG(ObjectInitializationFlags, flags)));
     }
     else {
         obj = qobject_cast<OvitoObject*>(qtMetaObject()->newInstance());

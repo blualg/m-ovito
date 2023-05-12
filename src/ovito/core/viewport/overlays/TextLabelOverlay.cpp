@@ -61,9 +61,9 @@ SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(TextLabelOverlay, fontSize, FloatParameterU
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-TextLabelOverlay::TextLabelOverlay(ObjectCreationParams params) : ViewportOverlay(params),
+TextLabelOverlay::TextLabelOverlay(ObjectInitializationFlags flags) : ViewportOverlay(flags),
         _alignment(Qt::AlignLeft | Qt::AlignTop),
-        _offsetX(0), 
+        _offsetX(0),
         _offsetY(0),
         _fontSize(0.02),
         _labelText(tr("Text label")),
@@ -75,7 +75,7 @@ TextLabelOverlay::TextLabelOverlay(ObjectCreationParams params) : ViewportOverla
 }
 
 /******************************************************************************
-* Is called when the overlay is being newly attached to a viewport. 
+* Is called when the overlay is being newly attached to a viewport.
 ******************************************************************************/
 void TextLabelOverlay::initializeOverlay(Viewport* viewport)
 {
@@ -103,7 +103,7 @@ void TextLabelOverlay::propertyChanged(const PropertyFieldDescriptor* field)
 }
 
 /******************************************************************************
-* Returns a short piece information (typically a string or color) to be 
+* Returns a short piece information (typically a string or color) to be
 * displayed next to the modifier's title in the pipeline editor list.
 ******************************************************************************/
 QVariant TextLabelOverlay::getPipelineEditorShortInfo(Scene* scene) const
@@ -115,7 +115,7 @@ QVariant TextLabelOverlay::getPipelineEditorShortInfo(Scene* scene) const
 * Lets the overlay paint its contents into the framebuffer.
 ******************************************************************************/
 void TextLabelOverlay::render(SceneRenderer* renderer, const QRect& logicalViewportRect, const QRect& physicalViewportRect, MainThreadOperation& operation)
-{   
+{
     if(renderer->isInteractive()) {
         const PipelineFlowState& flowState = sourceNode() ? sourceNode()->evaluatePipelineSynchronous(renderer->time(), true) : PipelineFlowState();
         renderImplementation(renderer, physicalViewportRect, flowState);
@@ -190,11 +190,11 @@ void TextLabelOverlay::renderImplementation(SceneRenderer* renderer, const QRect
     // Determine alignment of the text box in the framebuffer rect.
     Point2 pos;
 
-    if(alignment() & Qt::AlignRight) pos.x() = marginRect.left() + marginRect.width();  
+    if(alignment() & Qt::AlignRight) pos.x() = marginRect.left() + marginRect.width();
     else if(alignment() & Qt::AlignHCenter) pos.x() = marginRect.left() + marginRect.width() / 2.0;
     else pos.x() = marginRect.left();
 
-    if(alignment() & Qt::AlignBottom) pos.y() = marginRect.top() + marginRect.height(); 
+    if(alignment() & Qt::AlignBottom) pos.y() = marginRect.top() + marginRect.height();
     else if(alignment() & Qt::AlignVCenter) pos.y() = marginRect.top() + marginRect.height() / 2.0;
     else pos.y() = marginRect.top();
 

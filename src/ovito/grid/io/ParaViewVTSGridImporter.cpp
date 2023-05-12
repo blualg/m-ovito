@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -52,7 +52,7 @@ bool ParaViewVTSGridImporter::OOMetaClass::checkFileFormat(const FileHandle& fil
     if(xml.attributes().value("type").compare(QStringLiteral("StructuredGrid")) != 0)
         return false;
 
-    // Continue reading until the expected <StructuredGrid> element is reached. 
+    // Continue reading until the expected <StructuredGrid> element is reached.
     while(xml.readNextStartElement()) {
         if(xml.name().compare(QStringLiteral("StructuredGrid")) == 0) {
             return !xml.hasError();
@@ -188,7 +188,7 @@ void ParaViewVTSGridImporter::FrameLoader::loadFile()
 
                     // Create voxel grid property that receives the values.
                     PropertyObject* property = gridObj->createProperty(name.toString(), dataType, numComponents);
-                    
+
                     // Parse values from XML file.
                     if(!ParaViewVTPMeshImporter::parseVTKDataArray(property, xml))
                         break;

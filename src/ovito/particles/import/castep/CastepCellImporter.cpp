@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -190,7 +190,7 @@ void CastepCellImporter::FrameLoader::loadFile()
                 // Ignore parsing error, skip optional units.
                 line = readNonCommentLine();
             }
-            
+
             PropertyAccess<Vector3> velocityProperty = particles()->createProperty(ParticlesObject::VelocityProperty);
             if(velocities.size() != velocityProperty.size())
                 throw Exception(tr("Invalid number of velocity vectors in CASTEP file."));

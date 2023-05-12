@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -221,7 +221,7 @@ void GaussianCubeImporter::FrameLoader::loadFile()
     voxelGrid->setContent(gridSize[0] * gridSize[1] * gridSize[2], {});
 
     // Create the voxel grid property.
-    PropertyObject* property = voxelGrid->createProperty(QStringLiteral("Property"), PropertyObject::Float, nfields, DataBuffer::NoFlags, std::move(componentNames));
+    PropertyObject* property = voxelGrid->createProperty(QStringLiteral("Property"), PropertyObject::Float, nfields, std::move(componentNames));
     PropertyAccess<FloatType, true> fieldQuantity(property);
 
     // Parse voxel data.

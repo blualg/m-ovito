@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -92,7 +92,7 @@ PipelineStatus ParticlesCombineDatasetsModifierDelegate::apply(const ModifierEva
             }
             else if(prop->type() != ParticlesObject::UserProperty) {
                 ConstDataObjectPath containerPath = { secondaryParticles };
-                PropertyPtr temporaryProp = ParticlesObject::OOClass().createStandardProperty(secondaryParticles->elementCount(), prop->type(), DataBuffer::InitializeMemory, containerPath);
+                PropertyPtr temporaryProp = ParticlesObject::OOClass().createStandardProperty(DataBuffer::Initialized, secondaryParticles->elementCount(), prop->type(), containerPath);
                 prop->copyRangeFrom(*temporaryProp, 0, primaryParticleCount, secondaryParticleCount);
             }
 
@@ -168,7 +168,7 @@ PipelineStatus ParticlesCombineDatasetsModifierDelegate::apply(const ModifierEva
                 }
                 else if(prop->type() != PropertyObject::GenericUserProperty) {
                     ConstDataObjectPath containerPath = { secondaryParticles, secondaryElements };
-                    PropertyPtr temporaryProp = secondaryElements->getOOMetaClass().createStandardProperty(secondaryElementCount, prop->type(), DataBuffer::InitializeMemory, containerPath);
+                    PropertyPtr temporaryProp = secondaryElements->getOOMetaClass().createStandardProperty(DataBuffer::Initialized, secondaryElementCount, prop->type(), containerPath);
                     prop->copyRangeFrom(*temporaryProp, 0, primaryElementCount, secondaryElementCount);
                 }
 

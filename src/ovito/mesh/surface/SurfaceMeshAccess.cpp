@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -34,7 +34,7 @@ constexpr SurfaceMeshAccess::size_type SurfaceMeshAccess::InvalidIndex;
 /******************************************************************************
 * Constructor that takes an existing SurfaceMesh object.
 ******************************************************************************/
-SurfaceMeshAccess::SurfaceMeshAccess(const SurfaceMesh* mesh) : 
+SurfaceMeshAccess::SurfaceMeshAccess(const SurfaceMesh* mesh) :
     _mesh(mesh),
     _topology(mesh ? mesh->topology() : nullptr),
     _vertices(mesh ? mesh->vertices() : nullptr),
@@ -53,20 +53,20 @@ OORef<const SurfaceMesh> SurfaceMeshAccess::reset(const SurfaceMesh* newMesh) no
 
         // Release the topology sub-object and write it back to the parent SurfaceMesh.
         auto topology = _topology.take();
-        if(topology != mesh()->topology()) 
+        if(topology != mesh()->topology())
             mutableMesh()->setTopology(std::move(topology));
 
         // Release the sub-object property containers and write them back to the parent SurfaceMesh.
         auto vertices = static_object_cast<const SurfaceMeshVertices>(_vertices.take());
-        if(vertices != _mesh->vertices()) 
+        if(vertices != _mesh->vertices())
             mutableMesh()->setVertices(std::move(vertices));
 
         auto faces = static_object_cast<const SurfaceMeshFaces>(_faces.take());
-        if(faces != _mesh->faces()) 
+        if(faces != _mesh->faces())
             mutableMesh()->setFaces(std::move(faces));
 
         auto regions = static_object_cast<const SurfaceMeshRegions>(_regions.take());
-        if(regions != _mesh->regions()) 
+        if(regions != _mesh->regions())
             mutableMesh()->setRegions(std::move(regions));
     }
     OORef<const SurfaceMesh> oldMesh = _mesh.take();
@@ -161,7 +161,7 @@ std::optional<std::pair<SurfaceMeshAccess::region_index, FloatType>> SurfaceMesh
         if(distSq < closestDistanceSq) {
             // Compute pseudo-normal at the vertex.
             // Note that a vertex may have multiple pseudo-normals if it is part of multiple manifolds.
-            // If the manifold is two-sided, we need to compute the normal belonging to each manifold and use the one that is facing 
+            // If the manifold is two-sided, we need to compute the normal belonging to each manifold and use the one that is facing
             // away from the query point (if any).
             Vector3 pseudoNormal = Vector3::Zero();
             edge_index firstEdge = firstVertexEdge(vindex);
@@ -198,7 +198,7 @@ std::optional<std::pair<SurfaceMeshAccess::region_index, FloatType>> SurfaceMesh
                     closestRegion = hasFaceRegions() ? faceRegion(adjacentFace(firstEdge)) : 0;
 
                     // We can stop if the manifold is two-sided and the pseudo-normal is facing away from query point.
-                    if(pseudoNormal.dot(r) > -epsilon || !hasOppositeFace(adjacentFace(edge))) 
+                    if(pseudoNormal.dot(r) > -epsilon || !hasOppositeFace(adjacentFace(edge)))
                         break;
                     pseudoNormal.setZero();
                 }
@@ -395,7 +395,7 @@ void SurfaceMeshAccess::constructConvexHull(std::vector<Point3> vecs, FloatType 
     for(size_t i = 0; i < 4; i++) {
         tetverts[i] = createVertex(vecs[tetrahedraCorners[i]]);
     }
-    if(flipTet) 
+    if(flipTet)
         std::swap(tetverts[0], tetverts[1]);
     createFace({tetverts[0], tetverts[1], tetverts[3]}, region);
     createFace({tetverts[2], tetverts[0], tetverts[3]}, region);
@@ -540,7 +540,7 @@ void SurfaceMeshAccess::convertToTriMesh(TriMeshObject& outputMesh, bool smoothS
     for(face_index face = 0; face < faceCount; face++) {
         if(!faceSubset.empty() && !faceSubset[face]) continue;
 
-        // Determine whether opposite triangles should be created for the current source face. 
+        // Determine whether opposite triangles should be created for the current source face.
         bool createOppositeFace = autoGenerateOppositeFaces && (!hasOppositeFace(face) || (!faceSubset.empty() && !faceSubset[oppositeFace(face)]));
 
         // Go around the edges of the face to triangulate the general polygon (assuming it is convex).
@@ -803,7 +803,7 @@ void SurfaceMeshAccess::makeQuadrilateralFaces()
 {
     // Visit each triangular face and its adjacent faces.
     for(face_index face = 0; face < faceCount(); ) {
-        
+
         // Determine the longest edge of the current face and check if it is a triangle.
         // Find the longest edge of the three edges.
         edge_index faceEdge = firstFaceEdge(face);

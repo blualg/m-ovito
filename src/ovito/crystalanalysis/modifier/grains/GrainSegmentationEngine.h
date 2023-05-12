@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //  Copyright 2020 Peter Mahler Larsen
 //
 //  This file is part of OVITO (Open Visualization Tool).
@@ -339,8 +339,8 @@ public:
 
     /// Constructor.
     GrainSegmentationEngine1(
-            const ModifierEvaluationRequest& request, 
-            ParticleOrderingFingerprint fingerprint, 
+            const ModifierEvaluationRequest& request,
+            ParticleOrderingFingerprint fingerprint,
             ConstPropertyPtr positions,
             ConstPropertyPtr structureProperty,
             ConstPropertyPtr orientationProperty,
@@ -357,13 +357,13 @@ public:
     virtual void applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
 
     /// This method is called by the system whenever a parameter of the modifier changes.
-    /// The method can be overridden by subclasses to indicate to the caller whether the engine object should be 
-    /// discarded (false) or may be kept in the cache, because the computation results are not affected by the changing parameter (true). 
+    /// The method can be overridden by subclasses to indicate to the caller whether the engine object should be
+    /// discarded (false) or may be kept in the cache, because the computation results are not affected by the changing parameter (true).
     virtual bool modifierChanged(const PropertyFieldEvent& event) override {
 
         // Avoid a recomputation if a parameters changes that does not affect this algorithm stage.
         if(event.field() == PROPERTY_FIELD(GrainSegmentationModifier::colorParticlesByGrain)
-                || event.field() == PROPERTY_FIELD(GrainSegmentationModifier::mergingThreshold) 
+                || event.field() == PROPERTY_FIELD(GrainSegmentationModifier::mergingThreshold)
                 || event.field() == PROPERTY_FIELD(GrainSegmentationModifier::minGrainAtomCount)
                 || event.field() == PROPERTY_FIELD(GrainSegmentationModifier::orphanAdoption))
             return true;
@@ -371,7 +371,7 @@ public:
         return AsynchronousModifier::Engine::modifierChanged(event);
     }
 
-    /// Creates another engine that performs the next stage of the computation. 
+    /// Creates another engine that performs the next stage of the computation.
     virtual std::shared_ptr<Engine> createContinuationEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input) override;
 
     /// Returns the property storage that contains the input particle positions.
@@ -421,8 +421,8 @@ private:
     /// Builds grains by iterative region merging.
     bool determineMergeSequence();
 
-    /// Computes the disorientation angle between two crystal clusters of the given lattice type. 
-    /// Furthermore, the function computes the weighted average of the two cluster orientations. 
+    /// Computes the disorientation angle between two crystal clusters of the given lattice type.
+    /// Furthermore, the function computes the weighted average of the two cluster orientations.
     /// The norm of the two input quaternions and the output quaternion represents the size of the clusters.
     static FloatType calculate_disorientation(int structureType, Quaternion& qa, const Quaternion& qb);
 
@@ -547,10 +547,10 @@ public:
 
     /// Constructor.
     GrainSegmentationEngine2(
-            const ModifierEvaluationRequest& request, 
+            const ModifierEvaluationRequest& request,
             std::shared_ptr<GrainSegmentationEngine1> engine1,
-            FloatType mergingThreshold, 
-            bool adoptOrphanAtoms, 
+            FloatType mergingThreshold,
+            bool adoptOrphanAtoms,
             size_t minGrainAtomCount) :
         Engine(request),
         _engine1(std::move(engine1)),
@@ -558,8 +558,8 @@ public:
         _mergingThreshold(mergingThreshold),
         _adoptOrphanAtoms(adoptOrphanAtoms),
         _minGrainAtomCount(minGrainAtomCount),
-        _atomClusters(ParticlesObject::OOClass().createUserProperty(_numParticles, PropertyObject::Int64, 1, QStringLiteral("Grain"), DataBuffer::InitializeMemory)) {}
-    
+        _atomClusters(ParticlesObject::OOClass().createUserProperty(DataBuffer::Initialized, _numParticles, PropertyObject::Int64, 1, QStringLiteral("Grain"))) {}
+
     /// Performs the computation.
     virtual void perform() override;
 
@@ -567,8 +567,8 @@ public:
     virtual void applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
 
     /// This method is called by the system whenever a parameter of the modifier changes.
-    /// The method can be overridden by subclasses to indicate to the caller whether the engine object should be 
-    /// discarded (false) or may be kept in the cache, because the computation results are not affected by the changing parameter (true). 
+    /// The method can be overridden by subclasses to indicate to the caller whether the engine object should be
+    /// discarded (false) or may be kept in the cache, because the computation results are not affected by the changing parameter (true).
     virtual bool modifierChanged(const PropertyFieldEvent& event) override {
 
         // Avoid a recomputation if a parameters changes that does not affect the algorithm's results.

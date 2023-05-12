@@ -35,15 +35,15 @@ IMPLEMENT_OVITO_CLASS(AcklandJonesModifier);
 /******************************************************************************
 * Constructs the modifier object.
 ******************************************************************************/
-AcklandJonesModifier::AcklandJonesModifier(ObjectCreationParams params) : StructureIdentificationModifier(params)
+AcklandJonesModifier::AcklandJonesModifier(ObjectInitializationFlags flags) : StructureIdentificationModifier(flags)
 {
-    if(params.createSubObjects()) {
+    if(!flags.testFlag(ObjectInitializationFlag::DontInitializeObject)) {
         // Create the structure types.
-        createStructureType(OTHER, ParticleType::PredefinedStructureType::OTHER, params);
-        createStructureType(FCC, ParticleType::PredefinedStructureType::FCC, params);
-        createStructureType(HCP, ParticleType::PredefinedStructureType::HCP, params);
-        createStructureType(BCC, ParticleType::PredefinedStructureType::BCC, params);
-        createStructureType(ICO, ParticleType::PredefinedStructureType::ICO, params);
+        createStructureType(OTHER, ParticleType::PredefinedStructureType::OTHER);
+        createStructureType(FCC, ParticleType::PredefinedStructureType::FCC);
+        createStructureType(HCP, ParticleType::PredefinedStructureType::HCP);
+        createStructureType(BCC, ParticleType::PredefinedStructureType::BCC);
+        createStructureType(ICO, ParticleType::PredefinedStructureType::ICO);
     }
 }
 

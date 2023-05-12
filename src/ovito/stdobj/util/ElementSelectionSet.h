@@ -55,7 +55,7 @@ public:
 public:
 
     /// Constructor.
-    Q_INVOKABLE ElementSelectionSet(ObjectCreationParams params) : RefTarget(params), _useIdentifiers(true) {}
+    Q_INVOKABLE ElementSelectionSet(ObjectInitializationFlags flags) : RefTarget(flags), _useIdentifiers(true) {}
 
     /// Returns the stored selection set as a bit array.
     const boost::dynamic_bitset<>& selection() const { return _selection; }

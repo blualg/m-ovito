@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -49,7 +49,7 @@ SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(BondsVis, bondWidth, WorldParameterUnit, 0)
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-BondsVis::BondsVis(ObjectCreationParams params) : DataVis(params),
+BondsVis::BondsVis(ObjectInitializationFlags flags) : DataVis(flags),
     _bondWidth(0.4),
     _bondColor(0.6, 0.6, 0.6),
     _shadingMode(NormalShading),
@@ -262,7 +262,7 @@ PipelineStatus BondsVis::render(AnimationTime time, const ConstDataObjectPath& p
             if(particleVis)
                 particleRadii = particleVis->particleRadii(particles, false);
             // Make sure the particle radius array has the correct length.
-            if(particleRadii && particleRadii.size() != particleCount) 
+            if(particleRadii && particleRadii.size() != particleCount)
                 particleRadii.reset();
 
             // Determine half-bond colors.
@@ -593,7 +593,7 @@ ConstPropertyPtr BondsVis::bondWidths(const BondsObject* bonds) const
     }
     else {
         // Allocate output array.
-        output.reset(BondsObject::OOClass().createStandardProperty(bonds->elementCount(), BondsObject::WidthProperty));
+        output.reset(BondsObject::OOClass().createStandardProperty(DataBuffer::Uninitialized, bonds->elementCount(), BondsObject::WidthProperty));
 
         // Assign the uniform default width to all bonds.
         output.makeMutable()->fill(bondWidth());

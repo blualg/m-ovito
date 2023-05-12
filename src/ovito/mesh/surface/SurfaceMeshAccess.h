@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -64,7 +64,7 @@ public:
     /// Destructor. Makes sure we don't leave the modified surface mesh in an inconsistent state.
     ~SurfaceMeshAccess() { reset(); }
 
-    /// Indicates whether this accessor contains a valid surface mesh object. 
+    /// Indicates whether this accessor contains a valid surface mesh object.
     explicit operator bool() const noexcept { return (bool)_mesh; }
 
     /// Releases the current mesh from this accessor and loads a new one.
@@ -86,15 +86,15 @@ public:
     const SurfaceMeshTopology* topology() const { return _topology; }
 
     /// Returns the number of vertices in the mesh.
-    size_type vertexCount() const { 
+    size_type vertexCount() const {
         OVITO_ASSERT(topology()->vertexCount() == vertices().elementCount());
         return static_cast<size_type>(vertices().elementCount());
     }
 
     /// Returns the number of faces in the mesh.
-    size_type faceCount() const { 
-        OVITO_ASSERT(topology()->faceCount() == faces().elementCount()); 
-        return static_cast<size_type>(faces().elementCount()); 
+    size_type faceCount() const {
+        OVITO_ASSERT(topology()->faceCount() == faces().elementCount());
+        return static_cast<size_type>(faces().elementCount());
     }
 
     /// Returns the number of half-edges in the mesh.
@@ -119,8 +119,8 @@ public:
     }
 
     /// Sets the cluster a dislocation/slip face is embedded in.
-    void setFaceRegion(face_index face, region_index region) { 
-        OVITO_ASSERT(face >= 0 && face < faceCount()); 
+    void setFaceRegion(face_index face, region_index region) {
+        OVITO_ASSERT(face >= 0 && face < faceCount());
         mutableFaces().setPropertyValue<SurfaceMeshFaces::RegionProperty, region_index>(face, region);
     }
 
@@ -223,10 +223,10 @@ public:
     }
 
     /// Returns a read-only range over the 'Position' property values of the mesh vertices.
-    auto vertexPositions() const { return vertices().propertyRange<SurfaceMeshVertices::PositionProperty, Point3>(); }    
+    auto vertexPositions() const { return vertices().propertyRange<SurfaceMeshVertices::PositionProperty, Point3>(); }
 
     /// Returns a mutable range over the 'Position' property values of the mesh vertices.
-    auto mutableVertexPositions() { return mutableVertices().mutablePropertyRange<SurfaceMeshVertices::PositionProperty, Point3>(); }    
+    auto mutableVertexPositions() { return mutableVertices().mutablePropertyRange<SurfaceMeshVertices::PositionProperty, Point3>(); }
 
     /// Creates a specified number of new vertices in the mesh without initializing their positions.
     /// Returns the index of first newly created vertex.
@@ -374,7 +374,7 @@ public:
 
         // Update the region property of faces.
         if(hasFaceRegions()) {
-            // Build a mapping from old region indices to new indices. 
+            // Build a mapping from old region indices to new indices.
             std::vector<region_index> remapping(regionCount());
             size_type newRegionCount = 0;
             for(region_index region = 0; region < regionCount(); region++) {
@@ -438,7 +438,7 @@ public:
         mutableTopology()->linkOppositeFaces(face1, face2);
     }
 
-    /// Tests if two faces connect the same sequence of vertices in reverse order. 
+    /// Tests if two faces connect the same sequence of vertices in reverse order.
     bool areOppositeFaces(face_index face1, face_index face2) const {
         return topology()->areOppositeFaces(face1, face2);
     }
@@ -459,7 +459,7 @@ public:
     const SimulationCellObject* domain() const { return _mesh->domain(); }
 
     /// Replaces the simulation box.
-    void setDomain(const SimulationCellObject* domain) { mutableMesh()->setDomain(domain); } 
+    void setDomain(const SimulationCellObject* domain) { mutableMesh()->setDomain(domain); }
 
     /// Returns whether the mesh's domain has periodic boundary conditions applied in the given direction.
     bool hasPbc(size_t dim) const { return domain() ? domain()->hasPbc(dim) : false; }
@@ -551,13 +551,13 @@ public:
     }
 
     /// Adds a new standard vertex property to the mesh.
-    PropertyObject* createVertexProperty(SurfaceMeshVertices::Type ptype, DataBuffer::InitializationFlags flags = DataBuffer::NoFlags) {
-        return mutableVertices().createProperty(ptype, flags);
+    PropertyObject* createVertexProperty(DataBuffer::BufferInitialization init, SurfaceMeshVertices::Type ptype) {
+        return mutableVertices().createProperty(init, ptype);
     }
 
     /// Add a new user-defined vertex property to the mesh.
-    PropertyObject* createVertexProperty(const QString& name, int dataType, size_t componentCount = 1, DataBuffer::InitializationFlags flags = DataBuffer::NoFlags, QStringList componentNames = QStringList()) {
-        return mutableVertices().createProperty(name, dataType, componentCount, flags, std::move(componentNames));
+    PropertyObject* createVertexProperty(DataBuffer::BufferInitialization init, const QString& name, int dataType, size_t componentCount = 1, QStringList componentNames = QStringList()) {
+        return mutableVertices().createProperty(init, name, dataType, componentCount, std::move(componentNames));
     }
 
     /// Attaches an existing property object to the vertices of the mesh.
@@ -565,19 +565,19 @@ public:
         mutableVertices().addProperty(property);
     }
 
-    /// Deletes one of properties associated with the mesh vertices. 
+    /// Deletes one of properties associated with the mesh vertices.
     void removeVertexProperty(const PropertyObject* property) {
         mutableVertices().removeProperty(property);
     }
 
     /// Adds a new standard face property to the mesh.
-    PropertyObject* createFaceProperty(SurfaceMeshFaces::Type ptype, DataBuffer::InitializationFlags flags = DataBuffer::NoFlags) {
-        return mutableFaces().createProperty(ptype, flags);
+    PropertyObject* createFaceProperty(DataBuffer::BufferInitialization init, SurfaceMeshFaces::Type ptype) {
+        return mutableFaces().createProperty(init, ptype);
     }
 
     /// Add a new user-defined face property to the mesh.
-    PropertyObject* createFaceProperty(const QString& name, int dataType, size_t componentCount = 1, DataBuffer::InitializationFlags flags = DataBuffer::NoFlags, QStringList componentNames = QStringList()) {
-        return mutableFaces().createProperty(name, dataType, componentCount, flags, std::move(componentNames));
+    PropertyObject* createFaceProperty(DataBuffer::BufferInitialization init, const QString& name, int dataType, size_t componentCount = 1, QStringList componentNames = QStringList()) {
+        return mutableFaces().createProperty(init, name, dataType, componentCount, std::move(componentNames));
     }
 
     /// Attaches an existing property object to the faces of the mesh.
@@ -585,19 +585,19 @@ public:
         mutableFaces().addProperty(property);
     }
 
-    /// Deletes one of properties associated with the mesh faces. 
+    /// Deletes one of properties associated with the mesh faces.
     void removeFaceProperty(const PropertyObject* property) {
         mutableFaces().removeProperty(property);
     }
 
     /// Adds a new standard region property to the mesh.
-    PropertyObject* createRegionProperty(SurfaceMeshRegions::Type ptype, DataBuffer::InitializationFlags flags = DataBuffer::NoFlags) {
-        return mutableRegions().createProperty(ptype, flags);
+    PropertyObject* createRegionProperty(DataBuffer::BufferInitialization init, SurfaceMeshRegions::Type ptype) {
+        return mutableRegions().createProperty(init, ptype);
     }
 
     /// Add a new user-defined region property to the mesh.
-    PropertyObject* createRegionProperty(const QString& name, int dataType, size_t componentCount = 1, DataBuffer::InitializationFlags flags = DataBuffer::NoFlags, QStringList componentNames = QStringList()) {
-        return mutableRegions().createProperty(name, dataType, componentCount, flags, std::move(componentNames));
+    PropertyObject* createRegionProperty(DataBuffer::BufferInitialization init, const QString& name, int dataType, size_t componentCount = 1, QStringList componentNames = QStringList()) {
+        return mutableRegions().createProperty(init, name, dataType, componentCount, std::move(componentNames));
     }
 
     /// Attaches an existing property object to the regions of the mesh.
@@ -605,13 +605,13 @@ public:
         mutableRegions().addProperty(property);
     }
 
-    /// Deletes one of the standard properties associated with the mesh regions. 
+    /// Deletes one of the standard properties associated with the mesh regions.
     void removeRegionProperty(SurfaceMeshRegions::Type ptype) {
         if(const PropertyObject* property = regions().getProperty(ptype))
             mutableRegions().removeProperty(property);
     }
 
-    /// Deletes one of properties associated with the mesh regions. 
+    /// Deletes one of properties associated with the mesh regions.
     void removeRegionProperty(const PropertyObject* property) {
         mutableRegions().removeProperty(property);
     }

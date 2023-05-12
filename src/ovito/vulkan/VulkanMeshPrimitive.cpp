@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -110,9 +110,9 @@ VulkanPipeline& VulkanSceneRenderer::createMeshPrimitivePipeline(VulkanPipeline&
             sizeof(Matrix_4<float>) + sizeof(Matrix_4<float>), // vertexPushConstantSize
             0, // fragmentPushConstantSize
             1, // vertexBindingDescriptionCount
-            vertexBindingDesc, 
+            vertexBindingDesc,
             3, // vertexAttributeDescriptionCount
-            vertexAttrDesc, 
+            vertexAttrDesc,
             VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, // topology
             extraDynamicStateCount,
             extraDynamicState.data(),
@@ -130,9 +130,9 @@ VulkanPipeline& VulkanSceneRenderer::createMeshPrimitivePipeline(VulkanPipeline&
             sizeof(Matrix_4<float>) + sizeof(Matrix_4<float>), // vertexPushConstantSize
             0, // fragmentPushConstantSize
             1, // vertexBindingDescriptionCount
-            vertexBindingDesc, 
+            vertexBindingDesc,
             3, // vertexAttributeDescriptionCount
-            vertexAttrDesc, 
+            vertexAttrDesc,
             VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, // topology
             extraDynamicStateCount,
             extraDynamicState.data(),
@@ -150,9 +150,9 @@ VulkanPipeline& VulkanSceneRenderer::createMeshPrimitivePipeline(VulkanPipeline&
             sizeof(Matrix_4<float>) + sizeof(uint32_t), // vertexPushConstantSize
             0, // fragmentPushConstantSize
             1, // vertexBindingDescriptionCount
-            vertexBindingDesc, 
+            vertexBindingDesc,
             1, // vertexAttributeDescriptionCount
-            vertexAttrDesc, 
+            vertexAttrDesc,
             VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, // topology
             extraDynamicStateCount,
             extraDynamicState.data(),
@@ -169,9 +169,9 @@ VulkanPipeline& VulkanSceneRenderer::createMeshPrimitivePipeline(VulkanPipeline&
             sizeof(Matrix_4<float>) + sizeof(Matrix_4<float>), // vertexPushConstantSize
             0, // fragmentPushConstantSize
             2, // vertexBindingDescriptionCount
-            vertexBindingDesc, 
+            vertexBindingDesc,
             6, // vertexAttributeDescriptionCount
-            vertexAttrDesc, 
+            vertexAttrDesc,
             VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, // topology
             extraDynamicStateCount,
             extraDynamicState.data(),
@@ -214,9 +214,9 @@ VulkanPipeline& VulkanSceneRenderer::createMeshPrimitivePipeline(VulkanPipeline&
             sizeof(Matrix_4<float>) + sizeof(uint32_t), // vertexPushConstantSize
             0, // fragmentPushConstantSize
             2, // vertexBindingDescriptionCount
-            vertexBindingDesc, 
+            vertexBindingDesc,
             4, // vertexAttributeDescriptionCount
-            vertexAttrDesc, 
+            vertexAttrDesc,
             VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, // topology
             extraDynamicStateCount,
             extraDynamicState.data(),
@@ -234,9 +234,9 @@ VulkanPipeline& VulkanSceneRenderer::createMeshPrimitivePipeline(VulkanPipeline&
             sizeof(Matrix_4<float>) + sizeof(Matrix_4<float>), // vertexPushConstantSize
             0, // fragmentPushConstantSize
             3, // vertexBindingDescriptionCount
-            vertexBindingDesc, 
+            vertexBindingDesc,
             7, // vertexAttributeDescriptionCount
-            vertexAttrDesc, 
+            vertexAttrDesc,
             VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, // topology
             extraDynamicStateCount,
             extraDynamicState.data(),
@@ -263,9 +263,9 @@ VulkanPipeline& VulkanSceneRenderer::createMeshPrimitivePipeline(VulkanPipeline&
             sizeof(Matrix_4<float>), // vertexPushConstantSize
             sizeof(ColorAT<float>),  // fragmentPushConstantSize
             1, // vertexBindingDescriptionCount
-            vertexBindingDesc, 
+            vertexBindingDesc,
             1, // vertexAttributeDescriptionCount
-            &vertexAttrDesc, 
+            &vertexAttrDesc,
             VK_PRIMITIVE_TOPOLOGY_LINE_LIST, // topology
             0, // extraDynamicStateCount
             nullptr, // pExtraDynamicStates
@@ -313,9 +313,9 @@ VulkanPipeline& VulkanSceneRenderer::createMeshPrimitivePipeline(VulkanPipeline&
             sizeof(Matrix_4<float>), // vertexPushConstantSize
             sizeof(ColorAT<float>),  // fragmentPushConstantSize
             2, // vertexBindingDescriptionCount
-            vertexBindingDesc, 
+            vertexBindingDesc,
             4, // vertexAttributeDescriptionCount
-            vertexAttrDesc, 
+            vertexAttrDesc,
             VK_PRIMITIVE_TOPOLOGY_LINE_LIST, // topology
             0, // extraDynamicStateCount
             nullptr, // pExtraDynamicStates
@@ -324,7 +324,7 @@ VulkanPipeline& VulkanSceneRenderer::createMeshPrimitivePipeline(VulkanPipeline&
     }
 
     OVITO_ASSERT(pipeline.isCreated());
-    return pipeline; 
+    return pipeline;
 }
 
 /******************************************************************************
@@ -434,7 +434,7 @@ void VulkanSceneRenderer::renderMeshImplementation(const MeshPrimitive& primitiv
             normal_matrix.column(2).normalize();
         }
         else normal_matrix.setIdentity();
-        // It's almost impossible to pass a mat3 to the shader with the correct memory layout. 
+        // It's almost impossible to pass a mat3 to the shader with the correct memory layout.
         // Better use a mat4 to be safe:
         Matrix_4<float> normal_matrix4(normal_matrix.toDataType<float>().transposed());
         deviceFunctions()->vkCmdPushConstants(currentCommandBuffer(), pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, sizeof(Matrix_4<float>), sizeof(normal_matrix4), normal_matrix4.data());
@@ -470,7 +470,7 @@ void VulkanSceneRenderer::renderMeshImplementation(const MeshPrimitive& primitiv
     // Are we rendering with pseudo-colors and a color mapping function.
     if(renderWithPseudoColorMapping) {
         // We pass the min/max range of the color map to the vertex shader in the push constants buffer.
-        // But since the push constants buffer is already occupied with two mat4 matrices (128 bytes), we 
+        // But since the push constants buffer is already occupied with two mat4 matrices (128 bytes), we
         // have to squeeze the values into unused elements of the normal transformation matrix.
         Vector_2<float> color_range(primitive.pseudoColorMapping().minValue(), primitive.pseudoColorMapping().maxValue());
         // Avoid division by zero due to degenerate value interval.
@@ -512,7 +512,7 @@ void VulkanSceneRenderer::renderMeshImplementation(const MeshPrimitive& primitiv
         deviceFunctions()->vkCmdDraw(currentCommandBuffer(), mesh.faceCount() * 3, renderInstanceCount, 0, 0);
     }
     else if(primitive.depthSortingMode() == MeshPrimitive::ConvexShapeMode) {
-        // Assuming that the input mesh is convex, render semi-transparent triangles in two passes: 
+        // Assuming that the input mesh is convex, render semi-transparent triangles in two passes:
         // First, render triangles facing away from the viewer, then render triangles facing toward the viewer.
         // Each time we pass the entire triangle list to Vulkan and use Vulkan's backface/frontfrace culling
         // option to render the right subset of triangles.
@@ -527,7 +527,7 @@ void VulkanSceneRenderer::renderMeshImplementation(const MeshPrimitive& primitiv
         deviceFunctions()->vkCmdDraw(currentCommandBuffer(), mesh.faceCount() * 3, renderInstanceCount, 0, 0);
     }
     else if(!primitive.useInstancedRendering()) {
-        // Create a buffer for an indexed drawing command to render the triangles in back-to-front order. 
+        // Create a buffer for an indexed drawing command to render the triangles in back-to-front order.
 
         // Viewing direction in object space:
         const Vector3 direction = modelViewTM().inverse().column(2);
@@ -585,7 +585,7 @@ void VulkanSceneRenderer::renderMeshImplementation(const MeshPrimitive& primitiv
         deviceFunctions()->vkCmdDrawIndexed(currentCommandBuffer(), mesh.faceCount() * 3, renderInstanceCount, 0, 0, 0);
     }
     else {
-        // Create a buffer for an indirect drawing command to render the particles in back-to-front order. 
+        // Create a buffer for an indirect drawing command to render the particles in back-to-front order.
 
         // Viewing direction in object space:
         const Vector3 direction = modelViewTM().inverse().column(2);

@@ -59,10 +59,10 @@ public:
         ByTypeColoring,
         ParticleBasedColoring
     };
-    Q_ENUM(ColoringMode);   
+    Q_ENUM(ColoringMode);
 
     /// Constructor.
-    Q_INVOKABLE BondsVis(ObjectCreationParams params);
+    Q_INVOKABLE BondsVis(ObjectInitializationFlags flags);
 
     /// Renders the visual element.
     virtual PipelineStatus render(AnimationTime time, const ConstDataObjectPath& path, const PipelineFlowState& flowState, SceneRenderer* renderer, const PipelineSceneNode* contextNode) override;

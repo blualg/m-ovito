@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -218,9 +218,9 @@ void ParcasFileImporter::FrameLoader::loadFile()
 
         PropertyObject* property;
         if(propertyType != ParticlesObject::UserProperty)
-            property = particles()->createProperty(propertyType, DataBuffer::InitializeMemory);
+            property = particles()->createProperty(DataBuffer::Initialized, propertyType);
         else
-            property = particles()->createProperty(propertyName, PropertyObject::Float, 1, DataBuffer::InitializeMemory);
+            property = particles()->createProperty(DataBuffer::Initialized, propertyName, PropertyObject::Float);
         extraProperties.emplace_back(property);
     }
 

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -32,8 +32,8 @@ IMPLEMENT_OVITO_CLASS(DataBuffer);
 /******************************************************************************
 * Constructor allocating a buffer array with given size and data layout.
 ******************************************************************************/
-DataBuffer::DataBuffer(ObjectCreationParams params, size_t elementCount, int dataType, size_t componentCount, InitializationFlags flags, QStringList componentNames) :
-    DataObject(params),
+DataBuffer::DataBuffer(ObjectInitializationFlags flags, BufferInitialization init, size_t elementCount, int dataType, size_t componentCount, QStringList componentNames) :
+    DataObject(flags),
     _dataType(dataType),
     _dataTypeSize(getQtTypeSizeFromId(dataType)),
     _componentCount(componentCount),
@@ -50,7 +50,7 @@ DataBuffer::DataBuffer(ObjectCreationParams params, size_t elementCount, int dat
         for(size_t i = _componentNames.size(); i < componentCount; i++)
             _componentNames << QString::number(i + 1);
     }
-    resize(elementCount, flags.testFlag(InitializeMemory));
+    resize(elementCount, init == Initialized);
 }
 
 /******************************************************************************

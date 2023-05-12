@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -42,7 +42,7 @@ class OVITO_CRYSTALANALYSIS_EXPORT DislocationNetworkObject : public PeriodicDom
 public:
 
     /// \brief Constructor.
-    Q_INVOKABLE DislocationNetworkObject(ObjectCreationParams params);
+    Q_INVOKABLE DislocationNetworkObject(ObjectInitializationFlags flags);
 
     /// Returns the data encapsulated by this object after making sure it is not shared with other owners.
     const std::shared_ptr<DislocationNetwork>& modifiableStorage();

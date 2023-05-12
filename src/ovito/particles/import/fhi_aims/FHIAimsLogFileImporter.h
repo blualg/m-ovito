@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -56,7 +56,7 @@ class OVITO_PARTICLES_EXPORT FHIAimsLogFileImporter : public ParticleImporter
 public:
 
     /// \brief Constructs a new instance of this class.
-    Q_INVOKABLE FHIAimsLogFileImporter(ObjectCreationParams params) : ParticleImporter(params) {
+    Q_INVOKABLE FHIAimsLogFileImporter(ObjectInitializationFlags flags) : ParticleImporter(flags) {
         setMultiTimestepFile(true);
     }
 

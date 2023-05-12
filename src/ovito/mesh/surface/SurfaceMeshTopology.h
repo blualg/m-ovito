@@ -69,7 +69,7 @@ public:
 public:
 
     /// Constructor creating an empty SurfaceMeshTopology object.
-    Q_INVOKABLE SurfaceMeshTopology(ObjectCreationParams params) : DataObject(params) {}
+    Q_INVOKABLE SurfaceMeshTopology(ObjectInitializationFlags flags) : DataObject(flags) {}
 
     /// Removes all faces, edges and vertices from this mesh.
     void clear();
@@ -267,8 +267,8 @@ public:
     edge_index nextManifoldEdge(edge_index edge) const { OVITO_ASSERT(edge >= 0 && edge < edgeCount()); return _nextManifoldEdges[edge]; };
 
     /// Sets what is the next incident manifold when going around the given half-edge.
-    void setNextManifoldEdge(edge_index edge, edge_index nextManifoldEdge) { 
-        OVITO_ASSERT(edge >= 0 && edge < edgeCount()); 
+    void setNextManifoldEdge(edge_index edge, edge_index nextManifoldEdge) {
+        OVITO_ASSERT(edge >= 0 && edge < edgeCount());
         OVITO_ASSERT(nextManifoldEdge == InvalidIndex || vertex1(edge) == vertex1(nextManifoldEdge));
         OVITO_ASSERT(nextManifoldEdge == InvalidIndex || vertex2(edge) == vertex2(nextManifoldEdge));
         _nextManifoldEdges[edge] = nextManifoldEdge;
@@ -292,7 +292,7 @@ public:
         _oppositeFaces[face2] = face1;
     }
 
-    /// Tests if two faces connect the same sequence of vertices in reverse order. 
+    /// Tests if two faces connect the same sequence of vertices in reverse order.
     bool areOppositeFaces(face_index face1, face_index face2) const {
         edge_index ffe = firstFaceEdge(face1);
         edge_index opposite_edge = findEdge(face2, vertex2(ffe), vertex1(ffe));

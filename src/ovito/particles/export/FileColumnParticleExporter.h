@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -41,7 +41,7 @@ class OVITO_PARTICLES_EXPORT FileColumnParticleExporter : public ParticleExporte
 protected:
 
     /// \brief Constructor.
-    FileColumnParticleExporter(ObjectCreationParams params);
+    FileColumnParticleExporter(ObjectInitializationFlags flags);
 
 public:
 

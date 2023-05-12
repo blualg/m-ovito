@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -39,12 +39,14 @@ class OVITO_CORE_EXPORT AttributeDataObject : public DataObject
 public:
 
     /// Constructor.
-    Q_INVOKABLE AttributeDataObject(ObjectCreationParams params, QVariant value = {})
-        : DataObject(params), _value(std::move(value)) {}
+    Q_INVOKABLE AttributeDataObject(ObjectInitializationFlags flags) : DataObject(flags) {}
+
+    /// Constructor.
+    AttributeDataObject(ObjectInitializationFlags flags, QVariant value) : DataObject(flags), _value(std::move(value)) {}
 
     /// Returns the display title of this object.
     virtual QString objectTitle() const override {
-        if(!identifier().isEmpty()) 
+        if(!identifier().isEmpty())
             return identifier();
         return DataObject::objectTitle();
     }

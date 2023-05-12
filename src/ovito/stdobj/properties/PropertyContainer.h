@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -43,7 +43,7 @@ class OVITO_STDOBJ_EXPORT PropertyContainer : public DataObject
 public:
 
     /// Constructor.
-    PropertyContainer(ObjectCreationParams params, const QString& title = {});
+    explicit PropertyContainer(ObjectInitializationFlags flags, const QString& title = {});
 
     /// Returns the display title of this object.
     virtual QString objectTitle() const override;
@@ -95,7 +95,7 @@ public:
         OVITO_ASSERT(!name.isEmpty());
         for(const PropertyObject* property : properties()) {
             // Note: Prior to OVITO 3.7, we required the type id of candidate properties to be 0 here,
-            // which prevented the method from finding the X and Y properties of a DataTable, 
+            // which prevented the method from finding the X and Y properties of a DataTable,
             // which have a user-defined name but a non-zero type id.
             if(property->name() == name)
                 return property;
@@ -149,13 +149,25 @@ public:
 
     /// Creates a standard property and adds it to the container.
     /// In case the property already exists, it is made sure that it's safe to modify it.
-    PropertyObject* createProperty(int typeId, DataBuffer::InitializationFlags flags = DataBuffer::NoFlags, const ConstDataObjectPath& containerPath = ConstDataObjectPath{});
+    PropertyObject* createProperty(DataBuffer::BufferInitialization init, int typeId, const ConstDataObjectPath& containerPath = {});
+
+    /// Creates a standard property and adds it to the container.
+    /// In case the property already exists, it is made sure that it's safe to modify it.
+    PropertyObject* createProperty(int typeId, const ConstDataObjectPath& containerPath = {}) {
+        return createProperty(DataBuffer::BufferInitialization::Uninitialized, typeId, containerPath);
+    }
 
     /// Creates a user-defined property and adds it to the container.
     /// In case the property already exists, it is made sure that it's safe to modify it.
-    PropertyObject* createProperty(const QString& name, int dataType, size_t componentCount = 1, DataBuffer::InitializationFlags flags = DataBuffer::NoFlags, QStringList componentNames = QStringList());
+    PropertyObject* createProperty(DataBuffer::BufferInitialization init, const QString& name, int dataType, size_t componentCount = 1, QStringList componentNames = {});
 
-    /// Adds a property object to the container, replacing any preexisting property in the container with the same type. 
+    /// Creates a user-defined property and adds it to the container.
+    /// In case the property already exists, it is made sure that it's safe to modify it.
+    PropertyObject* createProperty(const QString& name, int dataType, size_t componentCount = 1, QStringList componentNames = {}) {
+        return createProperty(DataBuffer::BufferInitialization::Uninitialized, name, dataType, componentCount, std::move(componentNames));
+    }
+
+    /// Adds a property object to the container, replacing any preexisting property in the container with the same type.
     const PropertyObject* createProperty(const PropertyObject* property);
 
     /// Sets the current number of data elements stored in the container.
@@ -167,7 +179,7 @@ public:
     virtual size_t deleteElements(const boost::dynamic_bitset<>& mask);
 
     /// Replaces the property arrays in this property container with a new set of properties.
-    /// Existing element types of typed properties will be preserved by the method. 
+    /// Existing element types of typed properties will be preserved by the method.
     void setContent(size_t newElementCount, const DataRefVector<PropertyObject>& newProperties);
 
     /// Duplicates all data elements by extending the property arrays and replicating the existing data N times.

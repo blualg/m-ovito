@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -411,7 +411,7 @@ QString POSCARImporter::FrameLoader::readDensityGrid(CompressedTextReader& strea
     }
 
     if(magnetizationDensityX && magnetizationDensityY && magnetizationDensityZ) {
-        PropertyAccess<FloatType,true> vectorMagnetization = voxelGrid->createProperty(tr("Magnetization density"), PropertyObject::Float, 3, DataBuffer::NoFlags, QStringList() << "X" << "Y" << "Z");
+        PropertyAccess<FloatType,true> vectorMagnetization = voxelGrid->createProperty(tr("Magnetization density"), PropertyObject::Float, 3, QStringList() << "X" << "Y" << "Z");
         boost::copy(ConstPropertyAccess<FloatType>(magnetizationDensityX), vectorMagnetization.componentRange(0).begin());
         boost::copy(ConstPropertyAccess<FloatType>(magnetizationDensityY), vectorMagnetization.componentRange(1).begin());
         boost::copy(ConstPropertyAccess<FloatType>(magnetizationDensityZ), vectorMagnetization.componentRange(2).begin());

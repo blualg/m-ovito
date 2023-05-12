@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -31,7 +31,7 @@
 namespace Ovito::StdObj {
 
 /**
- * Utility class that provides efficient read-write access to the data of a 
+ * Utility class that provides efficient read-write access to the data of a
  * particular set of properties stored in a PropertyContainer.
  */
 template<int... CachedPropertyTypes>
@@ -40,10 +40,10 @@ class PropertyContainerAccess
 public:
 
     /// Constructor.
-    PropertyContainerAccess(const PropertyContainer* container) : 
+    PropertyContainerAccess(const PropertyContainer* container) :
         _container(container),
         _elementCount(container ? container->elementCount() : 0),
-        _cachedPointers{{ getPropertyMemory(CachedPropertyTypes)... }} 
+        _cachedPointers{{ getPropertyMemory(CachedPropertyTypes)... }}
     {
         _mutableCachedPointers.fill(nullptr);
     }
@@ -116,26 +116,26 @@ public:
     }
 
     /// Creates a new standard property in the container.
-    PropertyObject* createProperty(int ptype, DataBuffer::InitializationFlags flags = DataBuffer::NoFlags) {
+    PropertyObject* createProperty(DataBuffer::BufferInitialization init, int ptype) {
         // Write current element count back to container before allocating a new property array.
         updateElementCount();
-        
+
         // Create the property object in the wrapped container.
-        PropertyObject* property = mutableContainer()->createProperty(ptype, flags);
-        
+        PropertyObject* property = mutableContainer()->createProperty(init, ptype);
+
         // Update our array memory pointers corresponding to this property.
         updateMutablePropertyPointer(property);
-        
+
         return property;
     }
 
     /// Creates a user-defined property in the container.
-    PropertyObject* createProperty(const QString& name, int dataType, size_t componentCount = 1, DataBuffer::InitializationFlags flags = DataBuffer::NoFlags, QStringList componentNames = QStringList()) {
+    PropertyObject* createProperty(DataBuffer::BufferInitialization init, const QString& name, int dataType, size_t componentCount = 1, QStringList componentNames = QStringList()) {
         // Write current element count back to container before allocating a new property array.
         updateElementCount();
-        
+
         // Create the property object in the wrapped container.
-        return mutableContainer()->createProperty(name, dataType, componentCount, flags, std::move(componentNames));
+        return mutableContainer()->createProperty(init, name, dataType, componentCount, std::move(componentNames));
     }
 
     /// Inserts an existing property object into the contaienr.
@@ -144,7 +144,7 @@ public:
 
         // Write current element count back to container before inserting the property array.
         updateElementCount();
-        
+
         // Insert the property object into the wrapped container.
         const PropertyObject* insertedProperty = mutableContainer()->createProperty(property);
 
@@ -266,12 +266,12 @@ public:
         return boost::make_iterator_range_n(data, _elementCount);
     }
 
-    /// Moves the property values of one data element in the property arrays from one index to another. 
+    /// Moves the property values of one data element in the property arrays from one index to another.
     void moveElement(size_t fromIndex, size_t toIndex) {
         copyElement(fromIndex, toIndex);
     }
 
-    /// Copies the property values of one data element in the property arrays from one index to another. 
+    /// Copies the property values of one data element in the property arrays from one index to another.
     void copyElement(size_t fromIndex, size_t toIndex) {
         OVITO_ASSERT(fromIndex < elementCount());
         OVITO_ASSERT(toIndex < elementCount());
@@ -333,7 +333,7 @@ private:
             mutableContainer()->makePropertiesMutable();
 
             // Update pointers to mutable property memory.
-            _mutableCachedPointers = { getMutablePropertyMemory(CachedPropertyTypes)... }; 
+            _mutableCachedPointers = { getMutablePropertyMemory(CachedPropertyTypes)... };
             // Also update pointers to immutable property memory.
             std::copy(std::begin(_mutableCachedPointers), std::end(_mutableCachedPointers), std::begin(_cachedPointers));
 
@@ -384,11 +384,11 @@ private:
             mutableContainer()->setElementCount(_elementCount);
 
             // Update internal pointers to mutable property memory.
-            _mutableCachedPointers = { getMutablePropertyMemory(CachedPropertyTypes)... }; 
+            _mutableCachedPointers = { getMutablePropertyMemory(CachedPropertyTypes)... };
             // Also update pointers to immutable property memory.
             std::copy(std::begin(_mutableCachedPointers), std::end(_mutableCachedPointers), std::begin(_cachedPointers));
 
-            // PropertyContainer::setElementCount() makes all properties mutable if the container's element count is being updated. 
+            // PropertyContainer::setElementCount() makes all properties mutable if the container's element count is being updated.
             _allPropertiesMutable = true;
         }
     }

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -52,7 +52,7 @@ class OVITO_PARTICLES_EXPORT ParaViewVTPBondsImporter : public ParticleImporter
 public:
 
     /// \brief Constructor.
-    Q_INVOKABLE ParaViewVTPBondsImporter(ObjectCreationParams params) : ParticleImporter(params) {}
+    Q_INVOKABLE ParaViewVTPBondsImporter(ObjectInitializationFlags flags) : ParticleImporter(flags) {}
 
     /// Creates an asynchronous loader object that loads the data for the given frame from the external file.
     virtual FileSourceImporter::FrameLoaderPtr createFrameLoader(const LoadOperationRequest& request) override {

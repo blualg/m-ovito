@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -45,17 +45,17 @@ SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(CommonNeighborAnalysisModifier, cutoff, Wor
 /******************************************************************************
 * Constructs the modifier object.
 ******************************************************************************/
-CommonNeighborAnalysisModifier::CommonNeighborAnalysisModifier(ObjectCreationParams params) : StructureIdentificationModifier(params),
-    _cutoff(3.2), 
+CommonNeighborAnalysisModifier::CommonNeighborAnalysisModifier(ObjectInitializationFlags flags) : StructureIdentificationModifier(flags),
+    _cutoff(3.2),
     _mode(AdaptiveCutoffMode)
 {
-    if(params.createSubObjects()) {
+    if(!flags.testFlag(ObjectInitializationFlag::DontInitializeObject)) {
         // Create the structure types.
-        createStructureType(OTHER, ParticleType::PredefinedStructureType::OTHER, params);
-        createStructureType(FCC, ParticleType::PredefinedStructureType::FCC, params);
-        createStructureType(HCP, ParticleType::PredefinedStructureType::HCP, params);
-        createStructureType(BCC, ParticleType::PredefinedStructureType::BCC, params);
-        createStructureType(ICO, ParticleType::PredefinedStructureType::ICO, params);
+        createStructureType(OTHER, ParticleType::PredefinedStructureType::OTHER);
+        createStructureType(FCC, ParticleType::PredefinedStructureType::FCC);
+        createStructureType(HCP, ParticleType::PredefinedStructureType::HCP);
+        createStructureType(BCC, ParticleType::PredefinedStructureType::BCC);
+        createStructureType(ICO, ParticleType::PredefinedStructureType::ICO);
     }
 }
 
@@ -278,7 +278,7 @@ void CommonNeighborAnalysisModifier::BondCNAEngine::perform()
     // Create output storage.
     PropertyAccess<int> output(structures());
     ConstPropertyAccess<int> selectionData(selection());
-    
+
     // Classify particles.
     parallelForWithProgress(positions()->size(), [&](size_t particleIndex) {
 

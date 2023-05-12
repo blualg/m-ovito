@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -31,7 +31,7 @@ IMPLEMENT_OVITO_CLASS(SurfaceMeshVertices);
 /******************************************************************************
 * Creates a storage object for standard vertex properties.
 ******************************************************************************/
-PropertyPtr SurfaceMeshVertices::OOMetaClass::createStandardPropertyInternal(size_t elementCount, int type, DataBuffer::InitializationFlags flags, const ConstDataObjectPath& containerPath) const
+PropertyPtr SurfaceMeshVertices::OOMetaClass::createStandardPropertyInternal(DataBuffer::BufferInitialization init, size_t elementCount, int type, const ConstDataObjectPath& containerPath) const
 {
     int dataType;
     size_t componentCount;
@@ -60,22 +60,22 @@ PropertyPtr SurfaceMeshVertices::OOMetaClass::createStandardPropertyInternal(siz
 
     OVITO_ASSERT(componentCount == standardPropertyComponentCount(type));
 
-    PropertyPtr property = PropertyPtr::create(elementCount, dataType, componentCount, propertyName, flags & ~DataBuffer::InitializeMemory, type, componentNames);
+    PropertyPtr property = PropertyPtr::create(DataBuffer::Uninitialized, elementCount, dataType, componentCount, propertyName, type, componentNames);
 
     // Initialize memory if requested.
-    if(flags.testFlag(DataBuffer::InitializeMemory) && containerPath.size() >= 2) {
+    if(init == DataBuffer::Initialized && containerPath.size() >= 2) {
         // Certain standard properties need to be initialized with default values determined by the attached visual elements.
         if(type == ColorProperty) {
             if(const SurfaceMesh* surfaceMesh = dynamic_object_cast<SurfaceMesh>(containerPath[containerPath.size()-2])) {
                 if(SurfaceMeshVis* vis = surfaceMesh->visElement<SurfaceMeshVis>()) {
                     property->fill(vis->surfaceColor());
-                    flags.setFlag(DataBuffer::InitializeMemory, false);
+                    init = DataBuffer::Uninitialized;
                 }
             }
         }
     }
 
-    if(flags.testFlag(DataBuffer::InitializeMemory)) {
+    if(init == DataBuffer::Initialized) {
         // Default-initialize property values with zeros.
         property->fillZero();
     }
@@ -120,19 +120,19 @@ QString SurfaceMeshVertices::OOMetaClass::formatDataObjectPath(const ConstDataOb
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-SurfaceMeshVertices::SurfaceMeshVertices(ObjectCreationParams params) : PropertyContainer(params)
+SurfaceMeshVertices::SurfaceMeshVertices(ObjectInitializationFlags flags) : PropertyContainer(flags)
 {
     // Assign the default data object identifier.
     setIdentifier(OOClass().pythonName());
 
-    if(params.createSubObjects()) {
+    if(!flags.testFlag(ObjectInitializationFlag::DontInitializeObject)) {
         // Create the standard 'Position' property.
         createProperty(SurfaceMeshVertices::PositionProperty);
     }
 }
 
 /******************************************************************************
-* Returns the base point and vector information for visualizing a vector 
+* Returns the base point and vector information for visualizing a vector
 * property from this container using a VectorVis element.
 ******************************************************************************/
 std::tuple<ConstDataBufferPtr, ConstDataBufferPtr> SurfaceMeshVertices::getVectorVisData(const ConstDataObjectPath& path, const PipelineFlowState& state, MixedKeyCache& visCache) const

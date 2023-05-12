@@ -61,8 +61,8 @@ class OVITO_PARTICLES_EXPORT GenerateTrajectoryLinesModifier : public Modifier
 public:
 
     /// \brief Constructor.
-    Q_INVOKABLE GenerateTrajectoryLinesModifier(ObjectCreationParams params);
-    
+    Q_INVOKABLE GenerateTrajectoryLinesModifier(ObjectInitializationFlags flags);
+
     /// This method is called by the system after the modifier has been inserted into a data pipeline.
     virtual void initializeModifier(const ModifierInitializationRequest& request) override;
 
@@ -117,7 +117,7 @@ class OVITO_PARTICLES_EXPORT GenerateTrajectoryLinesModifierApplication : public
 public:
 
     /// Constructor.
-    Q_INVOKABLE GenerateTrajectoryLinesModifierApplication(ObjectCreationParams params) : ModifierApplication(params) {}
+    Q_INVOKABLE GenerateTrajectoryLinesModifierApplication(ObjectInitializationFlags flags) : ModifierApplication(flags) {}
 
 private:
 

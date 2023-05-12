@@ -41,7 +41,7 @@ class OVITO_CORE_EXPORT StandardSceneRenderer : public SceneRenderer
 public:
 
     /// Constructor.
-    Q_INVOKABLE StandardSceneRenderer(ObjectCreationParams params);
+    Q_INVOKABLE StandardSceneRenderer(ObjectInitializationFlags flags);
 
     /// Prepares the renderer for rendering one or more frames.
     virtual bool startRender(const RenderSettings* settings, const QSize& frameBufferSize, MixedKeyCache& visCache) override;

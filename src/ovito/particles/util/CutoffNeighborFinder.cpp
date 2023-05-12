@@ -63,7 +63,7 @@ bool CutoffNeighborFinder::prepare(FloatType cutoffRadius, ConstPropertyAccess<P
         if(boundingBox.sizeY() <= FLOATTYPE_EPSILON) boundingBox.maxc.y() = boundingBox.minc.y() + 1.0;
         if(boundingBox.sizeZ() <= FLOATTYPE_EPSILON) boundingBox.maxc.z() = boundingBox.minc.z() + 1.0;
         simCell = DataOORef<SimulationCellObject>::create(
-                ObjectCreationParams::WithoutVisElement, AffineTransformation(
+                ObjectInitializationFlag::DontCreateVisElement, AffineTransformation(
                     Vector3(boundingBox.sizeX(), 0, 0),
                     Vector3(0, boundingBox.sizeY(), 0),
                     Vector3(0, 0, boundingBox.sizeZ()),

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -38,7 +38,7 @@ class OVITO_CRYSTALANALYSIS_EXPORT BurgersVectorFamily : public ElementType
 public:
 
     /// \brief Constructs a new BurgersVectorFamily.
-    Q_INVOKABLE BurgersVectorFamily(ObjectCreationParams params, int id = 0, const QString& name = tr("Other"), const Vector3& burgersVector = Vector3::Zero(), const Color& color = Color(0.9, 0.2, 0.2));
+    Q_INVOKABLE BurgersVectorFamily(ObjectInitializationFlags flags, int id = 0, const QString& name = tr("Other"), const Vector3& burgersVector = Vector3::Zero(), const Color& color = Color(0.9, 0.2, 0.2));
 
     /// Checks if the given Burgers vector is a member of this family.
     bool isMember(const Vector3& v, const MicrostructurePhase* latticeStructure) const;

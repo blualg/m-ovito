@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -42,7 +42,7 @@ SET_PROPERTY_FIELD_LABEL(SelectTypeModifier, selectedTypeNames, "Selected type n
 /******************************************************************************
 * Constructs the modifier object.
 ******************************************************************************/
-SelectTypeModifier::SelectTypeModifier(ObjectCreationParams params) : GenericPropertyModifier(params)
+SelectTypeModifier::SelectTypeModifier(ObjectInitializationFlags flags) : GenericPropertyModifier(flags)
 {
     // Operate on particles by default.
     setDefaultSubject(QStringLiteral("Particles"), QStringLiteral("ParticlesObject"));
@@ -168,8 +168,8 @@ void SelectTypeModifier::evaluateSynchronous(const ModifierEvaluationRequest& re
 
 #ifdef OVITO_QML_GUI
 /******************************************************************************
-* This helper method is called by the QML GUI (SelectTypeModifier.qml) to extract 
-* the list of element types from the input pipeline output state. 
+* This helper method is called by the QML GUI (SelectTypeModifier.qml) to extract
+* the list of element types from the input pipeline output state.
 ******************************************************************************/
 QVariantList SelectTypeModifier::getElementTypesFromInputState(ModifierApplication* modApp) const
 {
@@ -182,9 +182,9 @@ QVariantList SelectTypeModifier::getElementTypesFromInputState(ModifierApplicati
                 for(const ElementType* type : inputProperty->elementTypes()) {
                     if(!type) continue;
                     list.push_back(QVariantMap({
-                        {"checked", selectedTypeIDs().contains(type->numericId()) || selectedTypeNames().contains(type->name())}, 
-                        {"id", type->numericId()}, 
-                        {"name", type->nameOrNumericId()}, 
+                        {"checked", selectedTypeIDs().contains(type->numericId()) || selectedTypeNames().contains(type->name())},
+                        {"id", type->numericId()},
+                        {"name", type->nameOrNumericId()},
                         {"color", (QColor)type->color()}}));
                 }
             }
@@ -219,14 +219,14 @@ void SelectTypeModifier::setElementTypeSelectionState(int elementTypeId, const Q
 #endif
 
 /******************************************************************************
-* Returns a short piece information (typically a string or color) to be 
+* Returns a short piece information (typically a string or color) to be
 * displayed next to the object's title in the pipeline editor.
 ******************************************************************************/
-QVariant SelectTypeModifier::getPipelineEditorShortInfo(Scene* scene, ModifierApplication* modApp) const 
+QVariant SelectTypeModifier::getPipelineEditorShortInfo(Scene* scene, ModifierApplication* modApp) const
 {
     OVITO_ASSERT(ExecutionContext::current().isValid());
     OVITO_ASSERT(scene);
-    
+
     QString shortInfo;
     if(modApp && subject() && !sourceProperty().isNull() && sourceProperty().containerClass() == subject().dataClass()) {
         const PipelineFlowState& state = modApp->evaluateInputSynchronous(PipelineEvaluationRequest(scene->animationSettings()));

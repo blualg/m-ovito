@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -54,7 +54,7 @@ public:
 public:
 
     /// Constructor.
-    explicit VulkanSceneRenderer(ObjectCreationParams params, std::shared_ptr<VulkanContext> vulkanContext, int concurrentFrameCount = 2);
+    explicit VulkanSceneRenderer(ObjectInitializationFlags flags, std::shared_ptr<VulkanContext> vulkanContext, int concurrentFrameCount = 2);
 
     /// Destructor.
     virtual ~VulkanSceneRenderer();
@@ -65,7 +65,7 @@ public:
     /// Returns the Vulkan logical device handle.
     VkDevice logicalDevice() const { return context()->logicalDevice(); }
 
-    /// Returns the device-specific Vulkan function table. 
+    /// Returns the device-specific Vulkan function table.
     QVulkanDeviceFunctions* deviceFunctions() const { return context()->deviceFunctions(); }
 
     /// This may be called on a renderer before startRender() to control its supersampling level.
@@ -144,7 +144,7 @@ public:
     virtual void renderMesh(const MeshPrimitive& primitive) override;
 
     /// Returns a 4x4 matrix that can be used to correct for coordinate system differences between OpenGL and Vulkan.
-    const Matrix4& clipCorrection() const { return _clipCorrection; } 
+    const Matrix4& clipCorrection() const { return _clipCorrection; }
 
     /// Returns the descriptor set layout for the global uniforms buffer.
     VkDescriptorSetLayout globalUniformsDescriptorSetLayout();
@@ -152,7 +152,7 @@ public:
     /// Returns the descriptor set layout for color gradient maps.
     VkDescriptorSetLayout colorMapDescriptorSetLayout();
 
-    /// Returns the Vulkan descriptor set for the global uniforms structure, which can be bound to a pipeline. 
+    /// Returns the Vulkan descriptor set for the global uniforms structure, which can be bound to a pipeline.
     VkDescriptorSet getGlobalUniformsDescriptorSet();
 
     /// Uploads a color coding map to the Vulkan device as a uniforms buffer.
@@ -161,7 +161,7 @@ public:
 protected:
 
     /// This method is called after the reference counter of this object has reached zero
-    /// and before the object is being finally deleted. 
+    /// and before the object is being finally deleted.
     virtual void aboutToBeDeleted() override;
 
     /// Returns the supersampling level.
@@ -204,7 +204,7 @@ private:
     /// Generates the wireframe line elements for the visible edges of a mesh.
     ConstDataBufferPtr generateMeshWireframeLines(const MeshPrimitive& primitive);
 
-    /// Prepares the OpenGL buffer with the per-instance transformation matrices for 
+    /// Prepares the OpenGL buffer with the per-instance transformation matrices for
     /// rendering a set of meshes.
     VkBuffer getMeshInstanceTMBuffer(const MeshPrimitive& primitive);
 
@@ -363,7 +363,7 @@ private:
         float znear, zfar;
 
         bool operator==(const GlobalUniforms& other) const {
-            return projectionMatrix == other.projectionMatrix && viewportOrigin == other.viewportOrigin 
+            return projectionMatrix == other.projectionMatrix && viewportOrigin == other.viewportOrigin
                 && inverseViewportSize == other.inverseViewportSize && znear == other.znear && zfar == other.zfar;
         }
     };

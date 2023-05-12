@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -30,12 +30,12 @@ namespace Ovito {
 * Indicates whether the mesh is fully opaque (no semi-transparent colors).
 ******************************************************************************/
 bool MeshPrimitive::isFullyOpaque() const
-{ 
+{
     if(_isMeshFullyOpaque.has_value() == false) {
         if(!_mesh)
             _isMeshFullyOpaque = true;
         else if(_perInstanceColors)
-            _isMeshFullyOpaque = boost::algorithm::none_of(ConstDataBufferAccess<ColorA>(_perInstanceColors), [](const ColorA& c) { return c.a() != FloatType(1); });       
+            _isMeshFullyOpaque = boost::algorithm::none_of(ConstDataBufferAccess<ColorA>(_perInstanceColors), [](const ColorA& c) { return c.a() != FloatType(1); });
         else if(mesh()->hasVertexColors())
             _isMeshFullyOpaque = (uniformColor().a() >= FloatType(1)) && boost::algorithm::none_of(mesh()->vertexColors(), [](const ColorA& c) { return c.a() != FloatType(1); });
         else if(mesh()->hasVertexPseudoColors())
@@ -49,7 +49,7 @@ bool MeshPrimitive::isFullyOpaque() const
         else
             _isMeshFullyOpaque = (uniformColor().a() >= FloatType(1));
     }
-    return *_isMeshFullyOpaque; 
+    return *_isMeshFullyOpaque;
 }
 
 /******************************************************************************
@@ -132,7 +132,7 @@ void MeshPrimitive::generateRenderableVertices(RenderVertex* renderableVertices,
                 }
             }
             ++faceNormal;
-            if(faceColors) 
+            if(faceColors)
                 ++faceColors;
             if(facePseudoColors)
                 ++facePseudoColors;
@@ -216,12 +216,12 @@ void MeshPrimitive::generateRenderableVertices(RenderVertex* renderableVertices,
                         rv->color.g() = 1.0f; // Non-zero green-component marks selected faces in pseudo-color mode.
                 }
             }
-            if(faceColors) 
+            if(faceColors)
                 ++faceColors;
             if(facePseudoColors)
                 ++facePseudoColors;
         }
-    }   
+    }
     OVITO_ASSERT(rv == renderableVertices + 3*faceCount());
 }
 
@@ -255,7 +255,7 @@ ConstDataBufferPtr MeshPrimitive::generateWireframeLines() const
     }
     OVITO_ASSERT(outVert == lines.end());
 
-    return lines.take();    
+    return lines.take();
 }
 
 }   // End of namespace

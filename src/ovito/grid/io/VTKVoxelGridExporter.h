@@ -54,7 +54,7 @@ class OVITO_GRID_EXPORT VTKVoxelGridExporter : public FileExporter
 public:
 
     /// \brief Constructs a new instance of this class.
-    Q_INVOKABLE VTKVoxelGridExporter(ObjectCreationParams params) : FileExporter(params) {}
+    Q_INVOKABLE VTKVoxelGridExporter(ObjectInitializationFlags flags) : FileExporter(flags) {}
 
     /// \brief Returns the type(s) of data objects that this exporter service can export.
     virtual std::vector<DataObjectClassPtr> exportableDataObjectClass() const override {

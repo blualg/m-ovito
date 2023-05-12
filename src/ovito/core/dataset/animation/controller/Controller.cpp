@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -99,7 +99,7 @@ bool ControllerManager::isAutoGenerateAnimationKeysEnabled()
     if(context.isValid()) {
         return context.ui().isAutoGenerateAnimationKeysEnabled();
     }
-    return false;   
+    return false;
 }
 
 }   // End of namespace
