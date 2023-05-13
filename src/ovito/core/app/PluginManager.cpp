@@ -46,6 +46,9 @@ PluginManager::PluginManager()
 ******************************************************************************/
 PluginManager::~PluginManager()
 {
+    // Unload extension classes.
+    _extensionClasses.clear();
+
     // Unload plugins in reverse order.
     for(int i = plugins().size() - 1; i >= 0; --i) {
         delete plugins()[i];
@@ -185,6 +188,40 @@ void PluginManager::registerLoadedPluginClasses()
         classPlugin->registerClass(clazz);
     }
     _lastRegisteredClass = OvitoClass::_firstNativeMetaClass;
+}
+
+/******************************************************************************
+* Registers an extension class at runtime.
+* The PluginMananger becomes the owner of the class object and will delete
+* it on application shutdown.
+******************************************************************************/
+void PluginManager::addExtensionClass(std::unique_ptr<OvitoClass> clazz)
+{
+    OVITO_ASSERT(clazz->pluginId() != nullptr);
+    OVITO_ASSERT(clazz->plugin() == nullptr);
+
+#if 1
+    registerLoadedPluginClasses();
+    OVITO_ASSERT(clazz->plugin() != nullptr);
+#else
+    clazz->initialize();
+
+    Plugin* classPlugin = nullptr;
+    for(Plugin* plugin : plugins()) {
+        if(plugin->pluginId() == clazz->pluginId()) {
+            classPlugin = plugin;
+            break;
+        }
+    }
+    if(!classPlugin) {
+        classPlugin = new Plugin(clazz->pluginId());
+        registerPlugin(classPlugin);
+    }
+    clazz->_plugin = classPlugin;
+    classPlugin->registerClass(clazz.get());
+#endif
+
+    _extensionClasses.push_back(std::move(clazz));
 }
 
 /******************************************************************************

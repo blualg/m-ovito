@@ -53,14 +53,14 @@ protected:
     class OVITO_CORE_EXPORT PropertyFieldOperation : public UndoableOperation
     {
     public:
-    
+
         /// Constructor.
         PropertyFieldOperation(RefMaker* owner, const PropertyFieldDescriptor* descriptor);
         /// Access to the object whose property was changed.
         RefMaker* owner() const;
         /// Access to the descriptor of the reference field whose value has changed.
         const PropertyFieldDescriptor* descriptor() const { return _descriptor; }
-    
+
     private:
 
         /// The object whose property has been changed.
@@ -119,7 +119,7 @@ public:
                 set(owner, descriptor, static_cast<property_type>(newValue.value<qvariant_type>()));
             }
             else {
-                OVITO_ASSERT_MSG(false, "PropertyField::setQVariant()", qPrintable(QStringLiteral("The assigned QVariant value of type %1 cannot be converted to the data type %2 of the property field.").arg(newValue.typeName()).arg(getQtTypeName<qvariant_type>())));
+                OVITO_ASSERT_MSG(false, "PropertyField::setQVariant()", qPrintable(QStringLiteral("The assigned QVariant value of type %1 cannot be converted to the data type %2 of the property field.").arg(newValue.typeName()).arg(QMetaType::fromType<qvariant_type>().name())));
             }
         }
         else {
@@ -136,7 +136,7 @@ public:
             OVITO_ASSERT_MSG(false, "RuntimePropertyField::getQVariant()", "The data type of the property field does not support conversion to/from QVariant.");
             return {};
         }
-    }   
+    }
 
     /// Returns the internal value stored in this property field.
     inline const property_type& get() const { return _value; }
@@ -253,10 +253,10 @@ public:
             base_class::loadFromStream(stream);
     }
 
-    /// Returns whether this shadow field currently stores a valid value. 
+    /// Returns whether this shadow field currently stores a valid value.
     bool hasSnapshot() const { return _hasSnapshot; }
 
-    /// Changes the value of the property. 
+    /// Changes the value of the property.
     void takeSnapshot(const property_data_type& newValue) {
         this->mutableValue() = newValue;
         _hasSnapshot = true;
@@ -267,7 +267,7 @@ private:
     bool _hasSnapshot = false;
 };
 
-/// This utility class template maps a specific fancy pointer type to the right general fancy pointer type. 
+/// This utility class template maps a specific fancy pointer type to the right general fancy pointer type.
 ///    T*                 ->  RefTarget*
 ///    OORef<T>           ->  OORef<RefTarget>
 ///    DataOORef<const T> ->  DataOORef<const DataObject>
@@ -351,8 +351,8 @@ public:
     }
 
     /// Returns the target object currently being referenced by the reference field.
-    inline raw_pointer get() const noexcept { 
-        return static_object_cast<target_object_type>(base_class::to_address(base_class::get())); 
+    inline raw_pointer get() const noexcept {
+        return static_object_cast<target_object_type>(base_class::to_address(base_class::get()));
     }
 };
 
@@ -396,7 +396,7 @@ public:
 
     /// Returns the index position of the first occurrence of value in the vector,
     /// searching forward from index position from. Returns -1 if no item matched.
-    size_type indexOf(const RefTarget* value, size_type from = 0) const noexcept { 
+    size_type indexOf(const RefTarget* value, size_type from = 0) const noexcept {
         for(size_type i = from; i < _targets.size(); i++)
             if(_targets[i] == value) return i;
         return -1;
@@ -465,18 +465,18 @@ public:
     }
 
     /// Inserts a reference at the end of the vector.
-    void push_back(RefMaker* owner, const PropertyFieldDescriptor* descriptor, fancy_pointer newPointer) { 
-        base_class::insert(owner, descriptor, -1, std::move(newPointer)); 
+    void push_back(RefMaker* owner, const PropertyFieldDescriptor* descriptor, fancy_pointer newPointer) {
+        base_class::insert(owner, descriptor, -1, std::move(newPointer));
     }
 
     /// Inserts or add a reference target to the vector reference field.
     size_type insert(RefMaker* owner, const PropertyFieldDescriptor* descriptor, size_type i, fancy_pointer newPointer) {
-        return base_class::insert(owner, descriptor, i, std::move(newPointer)); 
+        return base_class::insert(owner, descriptor, i, std::move(newPointer));
     }
 
     /// Returns the i-th target object currently being referenced by the vector reference field.
-    inline raw_pointer get(size_type i) const noexcept { 
-        return static_object_cast<target_object_type>(base_class::get(i)); 
+    inline raw_pointer get(size_type i) const noexcept {
+        return static_object_cast<target_object_type>(base_class::get(i));
     }
 
     /// Returns the stored list of object references.
@@ -486,7 +486,7 @@ public:
     template<typename U>
     void setTargets(RefMaker* owner, const PropertyFieldDescriptor* descriptor, U&& newTargets) {
         size_type i = 0;
-        // Insert targets from the new vector. Replace existing targets up to the length 
+        // Insert targets from the new vector. Replace existing targets up to the length
         // of the existing vector. Append additional targets if the new vector is longer than the old one.
         for(auto&& t : newTargets) {
             if(i < this->size()) set(owner, descriptor, i, t);

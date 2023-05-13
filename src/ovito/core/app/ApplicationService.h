@@ -48,6 +48,9 @@ public:
     /// \brief Registers additional command line options when running in standalone application mode.
     virtual void registerCommandLineOptions(QCommandLineParser& cmdLineParser) {}
 
+    /// \brief Is called by the system during standalone application startup before the main window is created.
+    virtual bool applicationInitializing() { return true; }
+
     /// \brief Is called by the system during standalone application startup after the main window has been created.
     virtual bool applicationStarting() { return true; }
 

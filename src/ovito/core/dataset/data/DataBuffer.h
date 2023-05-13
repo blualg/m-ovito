@@ -98,6 +98,9 @@ public:
     ///         this property storage according to the Qt meta type system.
     int dataType() const { return _dataType; }
 
+    /// \brief Returns the data type as a human-readable string.
+    const char* dataTypeName() const { return QMetaType(dataType()).name(); }
+
     /// \brief Returns the number of bytes per value.
     /// \return Number of bytes used to store a single value of the data type
     ///         specified by type().

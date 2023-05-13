@@ -89,30 +89,6 @@ ModifierAction* ModifierAction::createForTemplate(const QString& templateName)
 }
 
 /******************************************************************************
-* Constructs an action for a Python modifier script.
-******************************************************************************/
-ModifierAction* ModifierAction::createForScript(const QString& fileName, const QDir& directory)
-{
-    ModifierAction* action = new ModifierAction();
-    action->_scriptPath = directory.filePath(fileName);
-
-    // Generate a unique identifier for the action:
-    action->setObjectName(QStringLiteral("InsertModifierScript.%1").arg(action->_scriptPath));
-
-    // Set the action's UI display name. Chop off ".py" extension of filename.
-    action->setText(fileName.chopped(3));
-
-    // Give the modifier a status bar text.
-    action->setStatusTip(tr("Insert this Python modifier into the data pipeline."));
-
-    // Give the action an icon.
-    static QIcon icon = QIcon::fromTheme("modify_modifier_action_icon");
-    action->setIcon(icon);
-
-    return action;
-}
-
-/******************************************************************************
 * Updates the actions enabled/disabled state depending on the current data pipeline.
 ******************************************************************************/
 bool ModifierAction::updateState(const PipelineFlowState& input)
@@ -209,55 +185,6 @@ QT_WARNING_POP
     connect(ModifierTemplates::get(), &QAbstractItemModel::rowsRemoved, this, &ModifierListModel::refreshModifierTemplates);
     connect(ModifierTemplates::get(), &QAbstractItemModel::modelReset, this, &ModifierListModel::refreshModifierTemplates);
     connect(ModifierTemplates::get(), &QAbstractItemModel::dataChanged, this, &ModifierListModel::refreshModifierTemplates);
-
-    // Add the built-in extension script directory.
-    _modifierScriptDirectories.push_back(PluginManager::instance().pythonDir() + QStringLiteral("/ovito/_extensions/scripts/modifiers"));
-
-    // Add the script directories in the user's home directory.
-    for(const QString& configLocation : QStandardPaths::standardLocations(QStandardPaths::GenericConfigLocation))
-        _modifierScriptDirectories.push_back(configLocation + QStringLiteral("/Ovito/scripts/modifiers"));
-#ifdef Q_OS_MACOS
-    // For backward compatibility with OVITO 3.7.0:
-    _modifierScriptDirectories.push_back(QDir::homePath() + QStringLiteral("/.config/Ovito/scripts/modifiers"));
-#endif
-
-    // Make sure our list doesn't contain the same directory twice.
-    std::sort(_modifierScriptDirectories.begin(), _modifierScriptDirectories.end());
-    _modifierScriptDirectories.erase(std::unique(_modifierScriptDirectories.begin(), _modifierScriptDirectories.end()), _modifierScriptDirectories.end());
-
-    // Create category for script modifiers.
-#ifndef OVITO_BUILD_BASIC
-    _categoryNames.push_back(tr("Python modifiers"));
-#else
-    _categoryNames.push_back(tr("Python modifiers (Pro)"));
-#endif
-    _actionsPerCategory.emplace_back();
-
-    // Discover user-defined Python script modifiers.
-    const QStringList nameFilters(QStringLiteral("*.py"));
-    for(const QDir& scriptsDirectory : _modifierScriptDirectories) {
-        QStringList scriptFiles = scriptsDirectory.entryList(nameFilters, QDir::Files, QDir::Name);
-        for(const QString& fileName : scriptFiles) {
-            // Filter out __init__.py.
-            if(fileName == QStringLiteral("__init__.py"))
-                continue;
-
-            // Create an action for the modifier script.
-            ModifierAction* action = ModifierAction::createForScript(fileName, scriptsDirectory);
-            _actionsPerCategory.back().push_back(action);
-
-            // Register it with the global ActionManager.
-            userInterface.actionManager()->addAction(action);
-            OVITO_ASSERT(action->parent() == userInterface.actionManager());
-
-            // Handle the action when triggered.
-            connect(action, &QAction::triggered, this, &ModifierListModel::insertModifier);
-
-            // Insert action into full list, which is alphabetically sorted by name.
-            auto insertionIter = std::lower_bound(_allActions.begin(), _allActions.end(), action, [](const ModifierAction* a, const ModifierAction* b) { return a->text().compare(b->text(), Qt::CaseInsensitive) < 0; });
-            _allActions.insert(insertionIter, action);
-        }
-    }
 
     // Define font, colors, etc.
     _categoryFont = QGuiApplication::font();
@@ -469,29 +396,6 @@ void ModifierListModel::insertModifier()
             }
             // Insert modifier(s) into the data pipeline.
             _pipelineListModel->applyModifiers(modifierSet, modifierGroup);
-        }
-        else if(!action->scriptPath().isEmpty()) {
-            // Get runtime access to the PythonScriptModifier modifier class, which is located in another C++ module.
-            if(OvitoClassPtr clazz = PluginManager::instance().findClass({}, QStringLiteral("PythonScriptModifier"))) {
-                OVITO_ASSERT(clazz->isDerivedFrom(Modifier::OOClass()));
-                OVITO_ASSERT(clazz->isInstantiable());
-                const Modifier::OOMetaClass* modifierClass = static_cast<const Modifier::OOMetaClass*>(clazz);
-
-                // Instantiate the PythonScriptModifier class.
-                OORef<Modifier> modifier = static_object_cast<Modifier>(modifierClass->createInstance());
-                OVITO_CHECK_OBJECT_POINTER(modifier);
-                {
-                    UndoSuspender noUndo;
-                    modifier->setTitle(action->text());
-
-                    // Load the script code from the template file.
-                    bool callSuccessful = QMetaObject::invokeMethod(modifier, "loadCodeTemplate", Qt::DirectConnection, Q_ARG(const QString&, action->scriptPath()));
-                    OVITO_ASSERT(callSuccessful);
-                }
-
-                // Insert modifier(s) into the data pipeline.
-                _pipelineListModel->applyModifiers({modifier});
-            }
         }
     });
 }

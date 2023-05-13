@@ -167,24 +167,26 @@ public:
     /// \brief Returns the path where OVITO Pro's Python files reside.
     QString pythonDir();
 
+    /// \brief Registers an extension class at runtime.
+    /// The PluginMananger becomes the owner of the class object and will delete it on application shutdown.
+    void addExtensionClass(std::unique_ptr<OvitoClass> clazz);
+
     /// \brief Destructor that unloads all plugins.
     ~PluginManager();
 
 private:
 
-    /////////////////////////////////// Plugins ////////////////////////////////////
+    /// Private constructor, because this is a singleton class.
+    PluginManager();
 
     /// The list of installed plugins.
     QVector<Plugin*> _plugins;
 
-    /////////////////////////// Maintenance ////////////////////////////////
-
-    /// Private constructor.
-    /// This is a singleton class; no public instances are allowed.
-    PluginManager();
-
     /// The position in the global linked list of native object types up to which classes have already been registered.
     OvitoClass* _lastRegisteredClass = nullptr;
+
+    /// Registered extension classes.
+    std::vector<std::unique_ptr<OvitoClass>> _extensionClasses;
 
     /// The singleton instance of this class.
     static PluginManager* _instance;

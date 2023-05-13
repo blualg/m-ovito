@@ -479,7 +479,7 @@ QString PropertyContainer::elementInfoString(size_t elementIndex, const ConstDat
             }
         }
         else {
-            str += QStringLiteral("<%1>").arg(getQtTypeNameFromId(property->dataType()) ? getQtTypeNameFromId(property->dataType()) : "unknown");
+            str += QStringLiteral("<%1>").arg(property->dataTypeName());
         }
         str += QStringLiteral("</val>");
     }

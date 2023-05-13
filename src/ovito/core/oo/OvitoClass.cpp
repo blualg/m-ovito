@@ -108,70 +108,42 @@ bool OvitoClass::isMember(const OvitoObject* obj) const
 }
 
 /******************************************************************************
-* Creates an instance of a class that is NOT derived from RefTarget.
-* Throws an exception if the containing plugin failed to load.
-******************************************************************************/
-OORef<OvitoObject> OvitoClass::createInstance() const
-{
-    if(plugin()) {
-        OVITO_CHECK_POINTER(plugin());
-        if(!plugin()->isLoaded()) {
-            OVITO_ASSERT(!QCoreApplication::instance() || QThread::currentThread() == QCoreApplication::instance()->thread());
-            // Load plugin first.
-            try {
-                plugin()->loadPlugin();
-            }
-            catch(Exception& ex) {
-                ex.prependGeneralMessage(OvitoObject::tr("Could not create instance of class %1. Failed to load plugin '%2'").arg(name()).arg(plugin()->pluginId()));
-                throw ex;
-            }
-        }
-    }
-    if(!isInstantiable())
-        throw Exception(OvitoObject::tr("Cannot instantiate abstract class '%1'.").arg(name()));
-
-    // Instantiate the class.
-    // Special handling of RefTarget-derived classes.
-    if(isDerivedFrom(RefTarget::OOClass()))
-        return createInstance(ObjectInitializationFlag::NoFlags);
-    else
-        return createInstanceImpl({});
-}
-
-/******************************************************************************
 * Creates an instance of this object class.
 * Throws an exception if the containing plugin failed to load.
 ******************************************************************************/
-OORef<RefTarget> OvitoClass::createInstance(ObjectInitializationFlags flags) const
+OORef<OvitoObject> OvitoClass::createInstance(ObjectInitializationFlags flags) const
 {
-    if(plugin()) {
-        OVITO_CHECK_POINTER(plugin());
-        if(!plugin()->isLoaded()) {
-            OVITO_ASSERT(!QCoreApplication::instance() || QThread::currentThread() == QCoreApplication::instance()->thread());
-            // Load plugin first.
-            try {
-                plugin()->loadPlugin();
-            }
-            catch(Exception& ex) {
-                ex.prependGeneralMessage(OvitoObject::tr("Could not create instance of class %1. Failed to load plugin '%2'").arg(name()).arg(plugin()->pluginId()));
-                throw ex;
-            }
+#if 0 // Dynamic loading of plugins is currently not used.
+    if(plugin() && !plugin()->isLoaded()) {
+        OVITO_ASSERT(!QCoreApplication::instance() || QThread::currentThread() == QCoreApplication::instance()->thread());
+        // Load plugin first.
+        try {
+            plugin()->loadPlugin();
+        }
+        catch(Exception& ex) {
+            ex.prependGeneralMessage(OvitoObject::tr("Could not create instance of class %1. Failed to load plugin '%2'").arg(name()).arg(plugin()->pluginId()));
+            throw ex;
         }
     }
+#endif
+
     if(!isInstantiable())
         throw Exception(OvitoObject::tr("Cannot instantiate abstract class '%1'.").arg(name()));
-
-    OVITO_ASSERT_MSG(isDerivedFrom(RefTarget::OOClass()), "OvitoClass::createInstance()", "This method overload must only be used to instantiate RefTarget-derived classes.");
 
     // Don't record object initialization on the undo stack.
     UndoSuspender noUndo;
 
     // Instantiate the class.
-    OORef<RefTarget> obj = static_object_cast<RefTarget>(createInstanceImpl(flags));
+    OORef<OvitoObject> obj = createInstanceImpl(flags);
+
+#ifdef OVITO_DEBUG
+    // Mark the object as having been allocated on the heap.
+    obj->_isAllocatedOnTheHeap = true;
+#endif
 
     // Initialize the parameters of the new object to default values.
-    if(ExecutionContext::isInteractive())
-        obj->initializeParametersToUserDefaults();
+    if(isDerivedFrom(RefTarget::OOClass()) && ExecutionContext::isInteractive())
+        static_object_cast<RefTarget>(obj.get())->initializeParametersToUserDefaults();
 
     return obj;
 }
@@ -179,7 +151,7 @@ OORef<RefTarget> OvitoClass::createInstance(ObjectInitializationFlags flags) con
 /******************************************************************************
 * Creates an instance of this object class.
 ******************************************************************************/
-OvitoObject* OvitoClass::createInstanceImpl(ObjectInitializationFlags flags) const
+OORef<OvitoObject> OvitoClass::createInstanceImpl(ObjectInitializationFlags flags) const
 {
 #ifdef OVITO_DEBUG
     // Check if class hierarchy is consistent.

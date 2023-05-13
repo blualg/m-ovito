@@ -131,6 +131,17 @@ bool StandaloneApplication::initialize(int& argc, char** argv)
             return true;
         }
 
+        // Establish an execution context in which application initialization takes place.
+        ExecutionContext::Scope initExecScope(ExecutionContext::Type::Scripting, shared_from_this());
+
+        // Notify registered application services that application is initializing.
+        for(const auto& service : applicationServices()) {
+            // If any of the service callbacks returns false, stop application initialization and quit.
+            if(!service->applicationInitializing()) {
+                return false;
+            }
+        }
+
         // Prepares the application to start running. Creates the global Qt application object.
         MainThreadOperation startupOperation = startupApplication();
         if(!startupOperation.isValid()) {

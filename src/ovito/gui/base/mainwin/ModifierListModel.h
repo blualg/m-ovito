@@ -41,9 +41,6 @@ public:
     /// Constructs an action for a modifier template.
     static ModifierAction* createForTemplate(const QString& templateName);
 
-    /// Constructs an action for a Python modifier script.
-    static ModifierAction* createForScript(const QString& fileName, const QDir& directory);
-
     /// Returns the modifier's category.
     const QString& category() const { return _category; }
 
@@ -52,9 +49,6 @@ public:
 
     /// The name of the modifier template if this action represents a saved modifier template.
     const QString& templateName() const { return _templateName; }
-
-    /// The absolute path of the modifier script if this action represents a Python-based modifier function.
-    const QString& scriptPath() const { return _scriptPath; }
 
     /// Updates the actions enabled/disabled state depending on the current data pipeline.
     bool updateState(const PipelineFlowState& input);
@@ -69,9 +63,6 @@ private:
 
     /// The name of the modifier template.
     QString _templateName;
-
-    /// The path to the modifier script on disk.
-    QString _scriptPath;
 };
 
 /**
@@ -166,9 +157,6 @@ private:
 
     /// The model representing the current data pipeline.
     PipelineListModel* _pipelineListModel;
-
-    /// The list of directories searched for user-defined modifier scripts.
-    QStringList _modifierScriptDirectories;
 
     /// The font used for category header items.
     QFont _categoryFont;

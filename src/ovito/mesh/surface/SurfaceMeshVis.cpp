@@ -361,7 +361,7 @@ QString SurfaceMeshPickInfo::infoString(PipelineSceneNode* objectNode, quint32 s
                 }
             }
             else {
-                str += QStringLiteral("<%1>").arg(getQtTypeNameFromId(property->dataType()) ? getQtTypeNameFromId(property->dataType()) : QStringLiteral("unknown"));
+                str += QStringLiteral("<%1>").arg(property->dataTypeName());
             }
         }
 
@@ -406,7 +406,7 @@ QString SurfaceMeshPickInfo::infoString(PipelineSceneNode* objectNode, quint32 s
                         }
                     }
                     else {
-                        str += QStringLiteral("<%1>").arg(getQtTypeNameFromId(property->dataType()) ? getQtTypeNameFromId(property->dataType()) : QStringLiteral("unknown"));
+                        str += QStringLiteral("<%1>").arg(property->dataTypeName());
                     }
                 }
             }

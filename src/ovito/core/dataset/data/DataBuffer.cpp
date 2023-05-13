@@ -35,7 +35,7 @@ IMPLEMENT_OVITO_CLASS(DataBuffer);
 DataBuffer::DataBuffer(ObjectInitializationFlags flags, BufferInitialization init, size_t elementCount, int dataType, size_t componentCount, QStringList componentNames) :
     DataObject(flags),
     _dataType(dataType),
-    _dataTypeSize(getQtTypeSizeFromId(dataType)),
+    _dataTypeSize(QMetaType(dataType).sizeOf()),
     _componentCount(componentCount),
     _componentNames(std::move(componentNames))
 {
@@ -152,7 +152,7 @@ void DataBuffer::saveToStream(ObjectSaveStream& stream, bool excludeRecomputable
     prepareReadAccess();
     try {
         stream.beginChunk(0x03);
-        stream << QByteArray(getQtTypeNameFromId(_dataType));
+        stream << QByteArray(QMetaType(_dataType).name());
         stream.writeSizeT(_dataTypeSize);
         stream.writeSizeT(_stride);
         stream.writeSizeT(_componentCount);
@@ -186,9 +186,9 @@ void DataBuffer::loadFromStream(ObjectLoadStream& stream)
 
     QByteArray dataTypeName;
     stream >> dataTypeName;
-    _dataType = getQtTypeIdFromName(dataTypeName);
+    _dataType = QMetaType::fromName(dataTypeName).id();
     OVITO_ASSERT_MSG(_dataType != 0, "DataBuffer::loadFromStream()", qPrintable(QString("The metadata type '%1' seems to be no longer defined.").arg(QString::fromLatin1(dataTypeName))));
-    OVITO_ASSERT(dataTypeName == getQtTypeNameFromId(_dataType));
+    OVITO_ASSERT(dataTypeName == this->dataTypeName());
     stream.readSizeT(_dataTypeSize);
     stream.readSizeT(_stride);
     stream.readSizeT(_componentCount);
@@ -686,7 +686,7 @@ void DataBuffer::convertDataType(int newDataType)
     if(dataType() == newDataType)
         return;
 
-    size_t newDataTypeSize = getQtTypeSizeFromId(newDataType);
+    size_t newDataTypeSize = QMetaType(newDataType).sizeOf();
     size_t newStride = _componentCount * newDataTypeSize;
     std::unique_ptr<uint8_t[]> newData(new uint8_t[_numElements * newStride]); // TODO: Replace with std::make_unique_for_overwrite() in C++20.
 
