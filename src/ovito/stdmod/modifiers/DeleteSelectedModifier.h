@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -66,10 +66,10 @@ class OVITO_STDMOD_EXPORT DeleteSelectedModifier : public MultiDelegatingModifie
 public:
 
     /// \brief Constructs a new instance of this class.
-    Q_INVOKABLE DeleteSelectedModifier(ObjectCreationParams params) : MultiDelegatingModifier(params) {
-        if(params.createSubObjects()) {
+    Q_INVOKABLE DeleteSelectedModifier(ObjectInitializationFlags flags) : MultiDelegatingModifier(flags) {
+        if(!flags.testFlag(ObjectInitializationFlag::DontInitializeObject)) {
             // Generate the list of delegate objects.
-            createModifierDelegates(DeleteSelectedModifierDelegate::OOClass(), params);
+            createModifierDelegates(DeleteSelectedModifierDelegate::OOClass());
         }
     }
 };

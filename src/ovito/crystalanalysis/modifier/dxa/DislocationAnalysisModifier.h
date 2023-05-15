@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -49,7 +49,7 @@ class OVITO_CRYSTALANALYSIS_EXPORT DislocationAnalysisModifier : public Structur
 public:
 
     /// Constructor.
-    Q_INVOKABLE DislocationAnalysisModifier(ObjectCreationParams params);
+    Q_INVOKABLE DislocationAnalysisModifier(ObjectInitializationFlags flags);
 
     /// Returns the crystal structure with the given ID, or null if no such structure exists.
     MicrostructurePhase* structureTypeById(int id) const {

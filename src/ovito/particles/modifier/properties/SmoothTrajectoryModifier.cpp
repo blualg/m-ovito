@@ -45,7 +45,7 @@ IMPLEMENT_OVITO_CLASS(InterpolateTrajectoryModifierApplication);
 /******************************************************************************
 * Constructs the modifier object.
 ******************************************************************************/
-SmoothTrajectoryModifier::SmoothTrajectoryModifier(ObjectCreationParams params) : Modifier(params),
+SmoothTrajectoryModifier::SmoothTrajectoryModifier(ObjectInitializationFlags flags) : Modifier(flags),
     _useMinimumImageConvention(true),
     _smoothingWindowSize(1)
 {
@@ -250,11 +250,11 @@ void SmoothTrajectoryModifier::interpolateState(PipelineFlowState& state1, const
     particles1->verifyIntegrity();
     particles2->verifyIntegrity();
     ConstPropertyAccess<Point3> posProperty2 = particles2->expectProperty(ParticlesObject::PositionProperty);
-    ConstPropertyAccess<int64_t> idProperty1 = particles1->getProperty(ParticlesObject::IdentifierProperty);
-    ConstPropertyAccess<int64_t> idProperty2 = particles2->getProperty(ParticlesObject::IdentifierProperty);
+    ConstPropertyAccess<IdentifierIntType> idProperty1 = particles1->getProperty(ParticlesObject::IdentifierProperty);
+    ConstPropertyAccess<IdentifierIntType> idProperty2 = particles2->getProperty(ParticlesObject::IdentifierProperty);
     ParticlesObject* outputParticles = state1.makeMutable(particles1);
-    PropertyAccess<Point3> outputPositions = outputParticles->createProperty(ParticlesObject::PositionProperty, DataBuffer::InitializeMemory);
-    std::unordered_map<int64_t, size_t> idmap;
+    PropertyAccess<Point3> outputPositions = outputParticles->createProperty(DataBuffer::Initialized, ParticlesObject::PositionProperty);
+    std::unordered_map<IdentifierIntType, size_t> idmap;
     if(idProperty1 && idProperty2 && !boost::equal(idProperty1, idProperty2)) {
 
         // Build ID-to-index map.
@@ -304,7 +304,7 @@ void SmoothTrajectoryModifier::interpolateState(PipelineFlowState& state1, const
 
     // Interpolate particle orientations.
     if(ConstPropertyAccess<QuaternionG> orientationProperty2 = particles2->getProperty(ParticlesObject::OrientationProperty)) {
-        PropertyAccess<QuaternionG> outputOrientations = outputParticles->createProperty(ParticlesObject::OrientationProperty, DataBuffer::InitializeMemory);
+        PropertyAccess<QuaternionG> outputOrientations = outputParticles->createProperty(DataBuffer::Initialized, ParticlesObject::OrientationProperty);
         if(idProperty1 && idProperty2 && !boost::equal(idProperty1, idProperty2)) {
             auto id = idProperty1.cbegin();
             for(QuaternionG& q1 : outputOrientations) {
@@ -395,7 +395,7 @@ void SmoothTrajectoryModifier::averageState(PipelineFlowState& state1, const std
     const ParticlesObject* particles1 = state1.expectObject<ParticlesObject>();
     particles1->verifyIntegrity();
     ConstPropertyAccessAndRef<Point3> posProperty1 = particles1->expectProperty(ParticlesObject::PositionProperty);
-    ConstPropertyAccess<int64_t> idProperty1 = particles1->getProperty(ParticlesObject::IdentifierProperty);
+    ConstPropertyAccess<IdentifierIntType> idProperty1 = particles1->getProperty(ParticlesObject::IdentifierProperty);
 
     // Create a modifiable copy of the particle coordinates array.
     ParticlesObject* outputParticles = state1.makeMutable(particles1);
@@ -404,7 +404,7 @@ void SmoothTrajectoryModifier::averageState(PipelineFlowState& state1, const std
 
     // Create output orientations array if smoothing particle orientations.
     PropertyAccess<QuaternionG> outputOrientations = particles1->getProperty(ParticlesObject::OrientationProperty)
-        ? outputParticles->createProperty(ParticlesObject::OrientationProperty, DataBuffer::InitializeMemory)
+        ? outputParticles->createProperty(DataBuffer::Initialized, ParticlesObject::OrientationProperty)
         : nullptr;
 
     // Create copies of all scalar continuous particle properties.
@@ -442,7 +442,7 @@ void SmoothTrajectoryModifier::averageState(PipelineFlowState& state1, const std
             continue;
         particles2->verifyIntegrity();
         ConstPropertyAccess<Point3> posProperty2 = particles2->expectProperty(ParticlesObject::PositionProperty);
-        ConstPropertyAccess<int64_t> idProperty2 = particles2->getProperty(ParticlesObject::IdentifierProperty);
+        ConstPropertyAccess<IdentifierIntType> idProperty2 = particles2->getProperty(ParticlesObject::IdentifierProperty);
 
         // Sum up cell vectors.
         const SimulationCellObject* cell2 = cell1 ? state2.expectObject<SimulationCellObject>() : nullptr;
@@ -454,8 +454,8 @@ void SmoothTrajectoryModifier::averageState(PipelineFlowState& state1, const std
         auto psc = particleStateCounts.begin();
 
         if(idProperty1 && idProperty2 && !boost::equal(idProperty1, idProperty2)) {
-            // Build ID-to-index map.
-            std::unordered_map<int64_t,size_t> idmap;
+            // Build id-to-index map.
+            std::unordered_map<IdentifierIntType,size_t> idmap;
             size_t index = 0;
             for(auto id : idProperty2) {
                 if(!idmap.insert(std::make_pair(id,index)).second)

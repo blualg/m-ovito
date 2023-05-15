@@ -49,7 +49,7 @@ SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(BondsVis, bondWidth, WorldParameterUnit, 0)
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-BondsVis::BondsVis(ObjectCreationParams params) : DataVis(params),
+BondsVis::BondsVis(ObjectInitializationFlags flags) : DataVis(flags),
     _bondWidth(0.4),
     _bondColor(0.6, 0.6, 0.6),
     _shadingMode(NormalShading),
@@ -406,7 +406,7 @@ std::vector<ColorG> BondsVis::halfBondColors(const ParticlesObject* particles, b
     ConstPropertyAccess<ParticleIndexPair> topologyProperty = bonds->getProperty(BondsObject::TopologyProperty);
     ConstPropertyAccess<ColorG> bondColorProperty = !ignoreBondColorProperty ? bonds->getProperty(BondsObject::ColorProperty) : nullptr;
     const PropertyObject* bondTypeProperty = (coloringMode == ByTypeColoring) ? bonds->getProperty(BondsObject::TypeProperty) : nullptr;
-    ConstPropertyAccess<DataBuffer::SelectionDataType> bondSelectionProperty = highlightSelection ? bonds->getProperty(BondsObject::SelectionProperty) : nullptr;
+    ConstPropertyAccess<SelectionIntType> bondSelectionProperty = highlightSelection ? bonds->getProperty(BondsObject::SelectionProperty) : nullptr;
 
     // Get particle-related properties and the vis element.
     const ParticlesVis* particleVis = particles->visElement<ParticlesVis>();
@@ -496,7 +496,7 @@ std::vector<ColorG> BondsVis::halfBondColors(const ParticlesObject* particles, b
     // Highlight selected bonds.
     if(bondSelectionProperty && bondSelectionProperty.size() * 2 == output.size()) {
         const ColorG selColor = selectionBondColor();
-        const DataBuffer::SelectionDataType* t = bondSelectionProperty.cbegin();
+        const SelectionIntType* t = bondSelectionProperty.cbegin();
         for(auto c = output.begin(); c != output.end(); ++t) {
             if(*t) {
                 *c++ = selColor;
@@ -545,7 +545,7 @@ QString BondPickInfo::infoString(PipelineSceneNode* objectNode, quint32 subobjec
             // Pair type info.
             const PropertyObject* typeProperty = particles()->getProperty(ParticlesObject::TypeProperty);
             if(typeProperty && typeProperty->size() > index1 && typeProperty->size() > index2) {
-                ConstPropertyAccess<int> typeData(typeProperty);
+                ConstPropertyAccess<int32_t> typeData(typeProperty);
                 const ElementType* type1 = typeProperty->elementType(typeData[index1]);
                 const ElementType* type2 = typeProperty->elementType(typeData[index2]);
                 if(type1 && type2) {
@@ -594,7 +594,7 @@ ConstPropertyPtr BondsVis::bondWidths(const BondsObject* bonds) const
     }
     else {
         // Allocate output array.
-        output.reset(BondsObject::OOClass().createStandardProperty(bonds->elementCount(), BondsObject::WidthProperty));
+        output.reset(BondsObject::OOClass().createStandardProperty(DataBuffer::Uninitialized, bonds->elementCount(), BondsObject::WidthProperty));
 
         // Assign the uniform default width to all bonds.
         output.makeMutable()->fill<GraphicsFloatType>(bondWidth());

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -51,7 +51,7 @@ public:
     /// \return \c false when the operation has been canceled by the user;
     ///         \c true on success.
     /// \throw Exception on error.
-    bool prepare(ConstPropertyAccess<Point3> positions, const SimulationCellObject* cell, ConstPropertyAccess<int> selection,
+    bool prepare(ConstPropertyAccess<Point3> positions, const SimulationCellObject* cell, ConstPropertyAccess<SelectionIntType> selection,
                  ConstPropertyPtr structuresArray,
                  ConstPropertyPtr orientationsArray,
                  ConstPropertyPtr correspondencesArray);

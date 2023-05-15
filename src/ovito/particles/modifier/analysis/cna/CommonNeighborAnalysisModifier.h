@@ -113,7 +113,7 @@ public:
 public:
 
     /// Constructor.
-    Q_INVOKABLE CommonNeighborAnalysisModifier(ObjectCreationParams params);
+    Q_INVOKABLE CommonNeighborAnalysisModifier(ObjectInitializationFlags flags);
 
     /// Find all atoms that are nearest neighbors of the given pair of atoms.
     static int findCommonNeighbors(const NeighborBondArray& neighborArray, int neighborIndex, unsigned int& commonNeighbors, int numNeighbors);
@@ -214,7 +214,7 @@ private:
             CNAEngine(request, std::move(fingerprint), std::move(positions), simCell, structureTypes, std::move(selection)),
             _bondTopology(std::move(bondTopology)),
             _bondPeriodicImages(std::move(bondPeriodicImages)),
-            _cnaIndices(BondsObject::OOClass().createUserProperty(_bondTopology->size(), PropertyObject::Int32, 3, tr("CNA Indices"))) {}
+            _cnaIndices(BondsObject::OOClass().createUserProperty(DataBuffer::Uninitialized, _bondTopology->size(), PropertyObject::Int32, 3, tr("CNA Indices"))) {}
 
         /// Computes the modifier's results.
         virtual void perform() override;

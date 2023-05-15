@@ -40,7 +40,7 @@ SET_PROPERTY_FIELD_LABEL(WignerSeitzAnalysisModifier, outputCurrentConfig, "Outp
 /******************************************************************************
 * Constructs the modifier object.
 ******************************************************************************/
-WignerSeitzAnalysisModifier::WignerSeitzAnalysisModifier(ObjectCreationParams params) : ReferenceConfigurationModifier(params),
+WignerSeitzAnalysisModifier::WignerSeitzAnalysisModifier(ObjectInitializationFlags flags) : ReferenceConfigurationModifier(flags),
     _perTypeOccupancy(false),
     _outputCurrentConfig(false)
 {
@@ -107,9 +107,9 @@ Future<AsynchronousModifier::EnginePtr> WignerSeitzAnalysisModifier::createEngin
     // Create output properties:
     if(outputCurrentConfig()) {
         if(referenceIdentifierProperty)
-            engine->setSiteIdentifiers(ParticlesObject::OOClass().createUserProperty(posProperty->size(), PropertyObject::Int64, 1, tr("Site Identifier")));
-        engine->setSiteTypes(ParticlesObject::OOClass().createUserProperty(posProperty->size(), PropertyObject::Int32, 1, tr("Site Type")));
-        engine->setSiteIndices(ParticlesObject::OOClass().createUserProperty(posProperty->size(), PropertyObject::Int64, 1, tr("Site Index")));
+            engine->setSiteIdentifiers(ParticlesObject::OOClass().createUserProperty(DataBuffer::Uninitialized, posProperty->size(), PropertyObject::IntIdentifier, 1, tr("Site Identifier")));
+        engine->setSiteTypes(ParticlesObject::OOClass().createUserProperty(DataBuffer::Uninitialized, posProperty->size(), PropertyObject::Int32, 1, tr("Site Type")));
+        engine->setSiteIndices(ParticlesObject::OOClass().createUserProperty(DataBuffer::Uninitialized, posProperty->size(), PropertyObject::Int64, 1, tr("Site Index")));
     }
 
     return engine;
@@ -138,7 +138,7 @@ void WignerSeitzAnalysisModifier::WignerSeitzAnalysisEngine::perform()
     int ncomponents = 1;
     int typemin, typemax;
     if(particleTypes()) {
-        ConstPropertyAccess<int> particleTypesArray(particleTypes());
+        ConstPropertyAccess<int32_t> particleTypesArray(particleTypes());
         auto minmax = std::minmax_element(particleTypesArray.cbegin(), particleTypesArray.cend());
         typemin = std::min(_ptypeMinId, *minmax.first);
         typemax = std::max(_ptypeMaxId, *minmax.second);
@@ -181,7 +181,7 @@ void WignerSeitzAnalysisModifier::WignerSeitzAnalysisEngine::perform()
     }
     else {
         // With per-type occupancies:
-        ConstPropertyAccess<int> particleTypesArray(particleTypes());
+        ConstPropertyAccess<int32_t> particleTypesArray(particleTypes());
         parallelForWithProgress(positions()->size(), [&](size_t index) {
             const Point3& p = positionsArray[index];
             FloatType closestDistanceSq;
@@ -196,7 +196,7 @@ void WignerSeitzAnalysisModifier::WignerSeitzAnalysisEngine::perform()
     if(isCanceled()) return;
 
     // Create output storage.
-    setOccupancyNumbers(ParticlesObject::OOClass().createUserProperty(
+    setOccupancyNumbers(ParticlesObject::OOClass().createUserProperty(DataBuffer::Uninitialized,
         siteTypes() ? positions()->size() : refPositions()->size(),
         PropertyObject::Int32, ncomponents, tr("Occupancy")));
     if(ncomponents > 1 && typemin != 1) {
@@ -215,9 +215,9 @@ void WignerSeitzAnalysisModifier::WignerSeitzAnalysisEngine::perform()
         // Map occupancy numbers from sites to atoms.
         PropertyAccess<int32_t> siteTypesArray(siteTypes());
         PropertyAccess<int64_t> siteIndicesArray(siteIndices());
-        PropertyAccess<int64_t> siteIdentifiersArray(siteIdentifiers());
+        PropertyAccess<IdentifierIntType> siteIdentifiersArray(siteIdentifiers());
         ConstPropertyAccess<int32_t> referenceTypeArray(_referenceTypeProperty);
-        ConstPropertyAccess<int64_t> referenceIdentifierArray(_referenceIdentifierProperty);
+        ConstPropertyAccess<IdentifierIntType> referenceIdentifierArray(_referenceIdentifierProperty);
         int32_t* occ = occupancyNumbersArray.begin();
         int32_t* st = siteTypesArray.begin();
         auto sidx = siteIndicesArray.begin();

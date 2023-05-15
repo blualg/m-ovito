@@ -111,7 +111,7 @@ public:
 public:
 
     /// Constructor.
-    Q_INVOKABLE AmbientOcclusionModifier(ObjectCreationParams params);
+    Q_INVOKABLE AmbientOcclusionModifier(ObjectInitializationFlags flags);
 
 protected:
 

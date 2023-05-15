@@ -58,7 +58,7 @@ IMPLEMENT_OVITO_CLASS(DislocationPickInfo);
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-DislocationVis::DislocationVis(ObjectCreationParams params) : TransformingDataVis(params),
+DislocationVis::DislocationVis(ObjectInitializationFlags flags) : TransformingDataVis(flags),
     _lineWidth(1.0),
     _shadingMode(CylinderPrimitive::NormalShading),
     _burgersVectorWidth(0.6),
@@ -164,7 +164,7 @@ Future<PipelineFlowState> DislocationVis::transformDataImpl(const PipelineEvalua
     }
 
     // Create output RenderableDislocationLines object.
-    DataOORef<RenderableDislocationLines> renderableLines = DataOORef<RenderableDislocationLines>::create(ObjectCreationParams::WithoutVisElement, this, dataObject);
+    DataOORef<RenderableDislocationLines> renderableLines = DataOORef<RenderableDislocationLines>::create(ObjectInitializationFlag::DontCreateVisElement, this, dataObject);
     renderableLines->setVisElement(this);
     renderableLines->setLineSegments(std::move(outputSegments));
     renderableLines->setClusterGraph(std::move(clusterGraph));
@@ -303,7 +303,7 @@ PipelineStatus DislocationVis::render(AnimationTime time, const ConstDataObjectP
     // Check if we already have valid rendering primitives that are up to date.
     if(!primitives.segments.basePositions()) {
 
-        ConstPropertyAccess<int> phaseArray(phaseProperty);
+        ConstPropertyAccess<int32_t> phaseArray(phaseProperty);
         ConstPropertyAccess<Matrix3> correspondenceArray(correspondenceProperty);
 
         // First determine number of corner vertices/segments that are going to be rendered.
@@ -775,9 +775,9 @@ QString DislocationPickInfo::infoString(PipelineSceneNode* objectNode, quint32 s
     }
     else if(microstructureObj()) {
         ConstPropertyAccess<Vector3> burgersVectorProperty = microstructureObj()->faces()->getProperty(SurfaceMeshFaces::BurgersVectorProperty);
-        ConstPropertyAccess<int> faceRegionProperty = microstructureObj()->faces()->getProperty(SurfaceMeshFaces::RegionProperty);
+        ConstPropertyAccess<int32_t> faceRegionProperty = microstructureObj()->faces()->getProperty(SurfaceMeshFaces::RegionProperty);
         const PropertyObject* phaseProperty = microstructureObj()->regions()->getProperty(SurfaceMeshRegions::PhaseProperty);
-        ConstPropertyAccess<int> phaseArray(phaseProperty);
+        ConstPropertyAccess<int32_t> phaseArray(phaseProperty);
         if(burgersVectorProperty && faceRegionProperty && phaseProperty && segmentIndex >= 0 && segmentIndex < burgersVectorProperty.size()) {
             const MicrostructurePhase* phase = nullptr;
             int region = faceRegionProperty[segmentIndex];

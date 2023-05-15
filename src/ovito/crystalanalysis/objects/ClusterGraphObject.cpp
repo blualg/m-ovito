@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2013 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -31,7 +31,7 @@ DEFINE_RUNTIME_PROPERTY_FIELD(ClusterGraphObject, storage);
 /******************************************************************************
 * Constructs a cluster graph object.
 ******************************************************************************/
-ClusterGraphObject::ClusterGraphObject(ObjectCreationParams params) : DataObject(params)
+ClusterGraphObject::ClusterGraphObject(ObjectInitializationFlags flags) : DataObject(flags)
 {
 }
 

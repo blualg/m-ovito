@@ -218,9 +218,9 @@ void ParcasFileImporter::FrameLoader::loadFile()
 
         PropertyObject* property;
         if(propertyType != ParticlesObject::UserProperty)
-            property = particles()->createProperty(propertyType, DataBuffer::InitializeMemory);
+            property = particles()->createProperty(DataBuffer::Initialized, propertyType);
         else
-            property = particles()->createProperty(propertyName, PropertyObject::FloatDefault, 1, DataBuffer::InitializeMemory);
+            property = particles()->createProperty(DataBuffer::Initialized, propertyName, PropertyObject::FloatDefault);
         extraProperties.emplace_back(property);
     }
 

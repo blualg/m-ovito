@@ -46,8 +46,8 @@ class OVITO_STDOBJ_EXPORT StandardCameraSource : public PipelineObject
 public:
 
     /// Constructor.
-    Q_INVOKABLE StandardCameraSource(ObjectCreationParams params);
-    
+    Q_INVOKABLE StandardCameraSource(ObjectInitializationFlags flags);
+
     /// Determines the time interval over which a computed pipeline state will remain valid.
     virtual TimeInterval validityInterval(const PipelineEvaluationRequest& request) const override;
 
@@ -58,7 +58,7 @@ public:
 
     /// Asks the pipeline stage to compute the preliminary results in a synchronous fashion.
     virtual PipelineFlowState evaluateSynchronous(const PipelineEvaluationRequest& request) override;
-    
+
     /// Returns whether this camera is a target camera directed at a target object.
     bool isTargetCamera() const;
 

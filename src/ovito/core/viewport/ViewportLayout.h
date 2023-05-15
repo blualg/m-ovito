@@ -45,7 +45,7 @@ public:
 	Q_ENUM(SplitDirection);
 
 	/// Constructor.
-	Q_INVOKABLE ViewportLayoutCell(ObjectCreationParams params);
+	Q_INVOKABLE ViewportLayoutCell(ObjectInitializationFlags flags);
 
 	/// Inserts a sub-cell into this cell's list of children.
 	void addChild(OORef<ViewportLayoutCell> child, FloatType weight = 1.0);
@@ -54,7 +54,7 @@ public:
 	void insertChild(int index, OORef<ViewportLayoutCell> child, FloatType weight);
 
 	/// Inserts a sub-cell into this cell's list of children.
-	/// This is an overload of the method above, which is used in the Python binding layer. 
+	/// This is an overload of the method above, which is used in the Python binding layer.
 	void insertChild(int index, OORef<ViewportLayoutCell> child) {
 		insertChild(index, std::move(child), 1.0);
 	}
@@ -71,7 +71,7 @@ public:
 	/// Removes non-leaf nodes from the layout tree which have only a single child node.
 	void pruneViewportLayoutTree();
 
-	/// Returns the parent layout cell. 
+	/// Returns the parent layout cell.
 	ViewportLayoutCell* parentCell() const;
 
 	/// Determines the effective rectangles for all the viewports in the layout hierarchy.

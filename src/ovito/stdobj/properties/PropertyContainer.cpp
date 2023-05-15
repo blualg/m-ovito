@@ -42,7 +42,7 @@ SET_PROPERTY_FIELD_CHANGE_EVENT(PropertyContainer, title, ReferenceEvent::TitleC
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-PropertyContainer::PropertyContainer(ObjectCreationParams params, const QString& title) : DataObject(params),
+PropertyContainer::PropertyContainer(ObjectInitializationFlags flags, const QString& title) : DataObject(flags),
     _elementCount(0),
     _title(title)
 {
@@ -158,7 +158,7 @@ size_t PropertyContainer::deleteElements(const boost::dynamic_bitset<>& mask)
 * Creates a property and adds it to the container.
 * In case the property already exists, it is made sure that it's safe to modify it.
 ******************************************************************************/
-PropertyObject* PropertyContainer::createProperty(int typeId, DataBuffer::InitializationFlags flags, const ConstDataObjectPath& containerPath)
+PropertyObject* PropertyContainer::createProperty(DataBuffer::BufferInitialization init, int typeId, const ConstDataObjectPath& containerPath)
 {
     OVITO_ASSERT(isSafeToModify());
 
@@ -176,19 +176,19 @@ PropertyObject* PropertyContainer::createProperty(int typeId, DataBuffer::Initia
         OVITO_ASSERT(existingProperty->size() == elementCount());
         if(existingProperty->isSafeToModify())
             return const_cast<PropertyObject*>(existingProperty);
-        if(flags.testFlag(DataBuffer::InitializeMemory))
+        if(init == DataBuffer::Initialized)
             return makeMutable(existingProperty);
 
         // If no memory initialization is requested, create a new PropertyObject from scratch and just adopt
         // the existing ElementType list to save time.
-        PropertyPtr newProperty = getOOMetaClass().createStandardProperty(elementCount(), typeId, flags, containerPath);
+        PropertyPtr newProperty = getOOMetaClass().createStandardProperty(DataBuffer::Uninitialized, elementCount(), typeId, containerPath);
         newProperty->setElementTypes(existingProperty->elementTypes());
         replaceReferencesTo(existingProperty, newProperty);
         return newProperty;
     }
     else {
         // Create a new property object.
-        PropertyPtr newProperty = getOOMetaClass().createStandardProperty(elementCount(), typeId, flags, containerPath);
+        PropertyPtr newProperty = getOOMetaClass().createStandardProperty(init, elementCount(), typeId, containerPath);
         addProperty(newProperty);
         return newProperty;
     }
@@ -198,7 +198,7 @@ PropertyObject* PropertyContainer::createProperty(int typeId, DataBuffer::Initia
 * Creates a user-defined property and adds it to the container.
 * In case the property already exists, it is made sure that it's safe to modify it.
 ******************************************************************************/
-PropertyObject* PropertyContainer::createProperty(const QString& name, int dataType, size_t componentCount, DataBuffer::InitializationFlags flags, QStringList componentNames)
+PropertyObject* PropertyContainer::createProperty(DataBuffer::BufferInitialization init, const QString& name, int dataType, size_t componentCount, QStringList componentNames)
 {
     OVITO_ASSERT(isSafeToModify());
 
@@ -219,7 +219,7 @@ PropertyObject* PropertyContainer::createProperty(const QString& name, int dataT
     }
     else {
         // Create a new property object.
-        PropertyPtr newProperty = getOOMetaClass().createUserProperty(elementCount(), dataType, componentCount, name, flags, 0, std::move(componentNames));
+        PropertyPtr newProperty = getOOMetaClass().createUserProperty(init, elementCount(), dataType, componentCount, name, 0, std::move(componentNames));
         addProperty(newProperty);
         return newProperty;
     }
@@ -486,7 +486,7 @@ QString PropertyContainer::elementInfoString(size_t elementIndex, const ConstDat
             }
         }
         else {
-            str += QStringLiteral("<%1>").arg(getQtTypeNameFromId(property->dataType()) ? getQtTypeNameFromId(property->dataType()) : "unknown");
+            str += QStringLiteral("<%1>").arg(property->dataTypeName());
         }
         str += QStringLiteral("</val>");
     }

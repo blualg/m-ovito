@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -222,11 +222,11 @@ private:
     /// It is automatically called when the object's reference counter reaches zero.
     Q_INVOKABLE void deleteObjectInternal() noexcept;
 
-    /// Returns the name of the plugin class this object is an instance of. 
+    /// Returns the name of the plugin class this object is an instance of.
     /// This method is an implementation detail required by the Q_PROPERTY macro above.
     const QString& className() const { return getOOClass().name(); }
 
-    /// Returns the idenitifier of the plugin module this object belongs to. 
+    /// Returns the idenitifier of the plugin module this object belongs to.
     /// This method is an implementation detail required by the Q_PROPERTY macro above.
     QString pluginId() const { return QString::fromLatin1(getOOClass().pluginId()); }
 

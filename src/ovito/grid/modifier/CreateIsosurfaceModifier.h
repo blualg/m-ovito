@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -62,7 +62,7 @@ class OVITO_GRID_EXPORT CreateIsosurfaceModifier : public AsynchronousModifier
 public:
 
     /// Constructor.
-    Q_INVOKABLE CreateIsosurfaceModifier(ObjectCreationParams params);
+    Q_INVOKABLE CreateIsosurfaceModifier(ObjectInitializationFlags flags);
 
     /// This method is called by the system after the modifier has been inserted into a data pipeline.
     virtual void initializeModifier(const ModifierInitializationRequest& request) override;

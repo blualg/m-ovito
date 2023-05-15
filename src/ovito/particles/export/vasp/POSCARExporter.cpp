@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -59,7 +59,7 @@ bool POSCARExporter::exportData(const PipelineFlowState& state, int frameNumber,
     // Count number of particles per particle type.
     QMap<int,int> particleCounts;
     const PropertyObject* particleTypeProperty = particles->getProperty(ParticlesObject::TypeProperty);
-    ConstPropertyAccess<int> particleTypeArray(particleTypeProperty);
+    ConstPropertyAccess<int32_t> particleTypeArray(particleTypeProperty);
     if(particleTypeProperty) {
         for(int ptype : particleTypeArray)
             particleCounts[ptype]++;

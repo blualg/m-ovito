@@ -212,18 +212,17 @@ PropertyObject* ParaViewVTPBondsImporter::FrameLoader::createBondPropertyForData
 {
     int numComponents = std::max(1, xml.attributes().value("NumberOfComponents").toInt());
     auto name = xml.attributes().value("Name");
-    DataBuffer::InitializationFlags initFlags = preserveExistingData ? DataBuffer::InitializeMemory : DataBuffer::NoFlags;
 
     if(name.compare(QLatin1String("id1"), Qt::CaseInsensitive) == 0 && numComponents == 1) {
         vectorComponent = 0;
-        return bonds()->createProperty(BondsObject::ParticleIdentifiersProperty, initFlags);
+        return bonds()->createProperty(preserveExistingData ? DataBuffer::Initialized : DataBuffer::Uninitialized, BondsObject::ParticleIdentifiersProperty);
     }
     else if(name.compare(QLatin1String("id2"), Qt::CaseInsensitive) == 0 && numComponents == 1) {
         vectorComponent = 1;
-        return bonds()->createProperty(BondsObject::ParticleIdentifiersProperty, initFlags);
+        return bonds()->createProperty(preserveExistingData ? DataBuffer::Initialized : DataBuffer::Uninitialized, BondsObject::ParticleIdentifiersProperty);
     }
     else {
-        return bonds()->createProperty(name.toString(), PropertyObject::FloatDefault, numComponents, initFlags);
+        return bonds()->createProperty(preserveExistingData ? DataBuffer::Initialized : DataBuffer::Uninitialized, name.toString(), PropertyObject::FloatDefault, numComponents);
     }
     return nullptr;
 }

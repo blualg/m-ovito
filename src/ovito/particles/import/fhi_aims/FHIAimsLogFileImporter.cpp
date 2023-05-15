@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -119,7 +119,7 @@ void FHIAimsLogFileImporter::FrameLoader::loadFile()
     // Create the particle properties.
     setParticleCount(totalAtomCount);
     PropertyAccess<Point3> posProperty = particles()->createProperty(ParticlesObject::PositionProperty);
-    PropertyAccess<int> typeProperty = particles()->createProperty(ParticlesObject::TypeProperty);
+    PropertyAccess<int32_t> typeProperty = particles()->createProperty(ParticlesObject::TypeProperty);
 
     // Return to beginning of frame.
     stream.seek(frame().byteOffset, frame().lineNumber);

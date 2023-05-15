@@ -155,7 +155,7 @@ void XSFImporter::FrameLoader::loadFile()
             PropertyAccess<Point3> posProperty = particles()->createProperty(ParticlesObject::PositionProperty);
             boost::copy(coords, posProperty.begin());
 
-            PropertyAccess<int> typeProperty = particles()->createProperty(ParticlesObject::TypeProperty);
+            PropertyAccess<int32_t> typeProperty = particles()->createProperty(ParticlesObject::TypeProperty);
             boost::transform(types, typeProperty.begin(), [&](const QString& typeName) {
                 return addNamedType(ParticlesObject::OOClass(), typeProperty.buffer(), typeName)->numericId();
             });

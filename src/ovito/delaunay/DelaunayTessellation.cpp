@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -32,7 +32,7 @@ namespace Ovito::Delaunay {
 /******************************************************************************
 * Generates the tessellation.
 ******************************************************************************/
-bool DelaunayTessellation::generateTessellation(const SimulationCellObject* simCell, const Point3* positions, size_t numPoints, FloatType ghostLayerSize, bool coverDomainWithFiniteTets, const int* selectedPoints, ProgressingTask& operation)
+bool DelaunayTessellation::generateTessellation(const SimulationCellObject* simCell, const Point3* positions, size_t numPoints, FloatType ghostLayerSize, bool coverDomainWithFiniteTets, const SelectionIntType* selectedPoints, ProgressingTask& operation)
 {
     operation.setProgressMaximum(0);
 
@@ -87,7 +87,7 @@ bool DelaunayTessellation::generateTessellation(const SimulationCellObject* simC
 
     if(simCell) {
         // Determine how many periodic copies of the input particles are needed in each cell direction
-        // to ensure a consistent periodic topology in the border region. 
+        // to ensure a consistent periodic topology in the border region.
         Vector3I stencilCount;
         FloatType cuts[3][2];
         Vector3 cellNormals[3];
@@ -262,7 +262,7 @@ std::optional<bool> DelaunayTessellation::alphaTest(CellHandle cell, FloatType a
     FloatType denom = (4 * den * den);
 
 #if 0
-    // Code is only used for debugging purposes: 
+    // Code is only used for debugging purposes:
     std::array<int,4> searchVertexIds1 = {180620, 458358, 474869, 1603607};
     std::array<int,4> vertexIds;
     for(int v = 0; v < 4; v++)
@@ -272,7 +272,7 @@ std::optional<bool> DelaunayTessellation::alphaTest(CellHandle cell, FloatType a
         qInfo() << "Found element 1 " << "nomin=" << nomin << "denom=" << denom << "(nomin / denom)=" << (nomin / denom) << "alpha=" << alpha;
 #endif
 
-    // Detect degnerate sliver elements, for which we cannot compute a reliable alpha value. 
+    // Detect degnerate sliver elements, for which we cannot compute a reliable alpha value.
     if(std::abs(denom) < 1e-9 && std::abs(nomin) < 1e-9) {
         return {}; // Indeterminate result
     }

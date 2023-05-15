@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -42,7 +42,7 @@ SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(AnimationSettings, playbackEveryNthFrame, I
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-AnimationSettings::AnimationSettings(ObjectCreationParams params) : RefTarget(params),
+AnimationSettings::AnimationSettings(ObjectInitializationFlags flags) : RefTarget(flags),
         _framesPerSecond(10),
         _playbackSpeed(1),
         _firstFrame(0),
@@ -161,8 +161,8 @@ void AnimationSettings::jumpToNextFrame()
 }
 
 /******************************************************************************
-* Provides a custom function that takes are of the deserialization of a 
-* serialized property field that has been removed from the class. 
+* Provides a custom function that takes are of the deserialization of a
+* serialized property field that has been removed from the class.
 * This is needed for file backward compatibility with OVITO 3.7.
 ******************************************************************************/
 RefMakerClass::SerializedClassInfo::PropertyFieldInfo::CustomDeserializationFunctionPtr AnimationSettings::OOMetaClass::overrideFieldDeserialization(const SerializedClassInfo::PropertyFieldInfo& field) const
@@ -215,7 +215,7 @@ RefMakerClass::SerializedClassInfo::PropertyFieldInfo::CustomDeserializationFunc
 void AnimationSettings::adjustAnimationInterval()
 {
     OVITO_ASSERT(ExecutionContext::current().isValid());
-    
+
     int firstFrame = std::numeric_limits<int>::max();
     int lastFrame = std::numeric_limits<int>::lowest();
     _namedFrames.clear();

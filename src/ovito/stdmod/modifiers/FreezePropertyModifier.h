@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -48,7 +48,7 @@ class OVITO_STDMOD_EXPORT FreezePropertyModifier : public GenericPropertyModifie
 public:
 
     /// Constructor.
-    Q_INVOKABLE FreezePropertyModifier(ObjectCreationParams params);
+    Q_INVOKABLE FreezePropertyModifier(ObjectInitializationFlags flags);
 
     /// This method is called by the system after the modifier has been inserted into a data pipeline.
     virtual void initializeModifier(const ModifierInitializationRequest& request) override;
@@ -92,7 +92,7 @@ class OVITO_STDMOD_EXPORT FreezePropertyModifierApplication : public ModifierApp
 public:
 
     /// Constructor.
-    Q_INVOKABLE FreezePropertyModifierApplication(ObjectCreationParams params) : ModifierApplication(params) {}
+    Q_INVOKABLE FreezePropertyModifierApplication(ObjectInitializationFlags flags) : ModifierApplication(flags) {}
 
     /// Makes a copy of the given source property and, optionally, of the provided
     /// element identifier list, which will allow to restore the saved property

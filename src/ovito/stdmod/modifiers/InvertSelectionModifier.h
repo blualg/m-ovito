@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2013 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -41,7 +41,7 @@ class OVITO_STDMOD_EXPORT InvertSelectionModifier : public GenericPropertyModifi
 public:
 
     /// \brief Constructs a new instance of this class.
-    Q_INVOKABLE InvertSelectionModifier(ObjectCreationParams params);
+    Q_INVOKABLE InvertSelectionModifier(ObjectInitializationFlags flags);
 
     /// Modifies the input data synchronously.
     virtual void evaluateSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;

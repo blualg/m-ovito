@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -37,15 +37,15 @@ SET_PROPERTY_FIELD_CHANGE_EVENT(PropertyObject, title, ReferenceEvent::TitleChan
 /******************************************************************************
 * Constructor creating an empty property array.
 ******************************************************************************/
-PropertyObject::PropertyObject(ObjectCreationParams params) : DataBuffer(params)
+PropertyObject::PropertyObject(ObjectInitializationFlags flags) : DataBuffer(flags)
 {
 }
 
 /******************************************************************************
 * Constructor allocating a property array with given size and data layout.
 ******************************************************************************/
-PropertyObject::PropertyObject(ObjectCreationParams params, size_t elementCount, int dataType, size_t componentCount, const QString& name, DataBuffer::InitializationFlags flags, int type, QStringList componentNames) :
-    DataBuffer(params, elementCount, dataType, componentCount, flags, std::move(componentNames)),
+PropertyObject::PropertyObject(ObjectInitializationFlags flags, BufferInitialization init, size_t elementCount, int dataType, size_t componentCount, const QString& name, int type, QStringList componentNames) :
+    DataBuffer(flags, init, elementCount, dataType, componentCount, std::move(componentNames)),
     _name(name),
     _type(type)
 {
@@ -352,7 +352,7 @@ void PropertyObject::updateEditableProxies(PipelineFlowState& state, ConstDataOb
     else if(!self->elementTypes().empty()) {
         // Create and initialize a new proxy property object.
         // Note: We avoid copying the property data here by constructing the proxy PropertyObject from scratch instead of cloning the original data object.
-        OORef<PropertyObject> newProxy = OORef<PropertyObject>::create(ObjectCreationParams::WithoutVisElement, 0, self->dataType(), self->componentCount(), self->name(), DataBuffer::NoFlags, self->type(), self->componentNames());
+        OORef<PropertyObject> newProxy = OORef<PropertyObject>::create(ObjectInitializationFlag::DontCreateVisElement, DataBuffer::Uninitialized, 0, self->dataType(), self->componentCount(), self->name(), self->type(), self->componentNames());
         newProxy->setTitle(self->title());
 
         // Adopt the proxy objects corresponding to the element types, which have already been created by

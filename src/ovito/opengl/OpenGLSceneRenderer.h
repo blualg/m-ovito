@@ -64,7 +64,7 @@ public:
 public:
 
     /// Constructor.
-    OpenGLSceneRenderer(ObjectCreationParams params);
+    OpenGLSceneRenderer(ObjectInitializationFlags flags);
 
     /// This may be called on a renderer before startRender() to control its supersampling level.
     virtual void setAntialiasingHint(int antialiasingLevel) override { _antialiasingLevel = antialiasingLevel; }

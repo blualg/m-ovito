@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -33,7 +33,7 @@ IMPLEMENT_OVITO_CLASS(InvertSelectionModifier);
 /******************************************************************************
 * Constructs the modifier object.
 ******************************************************************************/
-InvertSelectionModifier::InvertSelectionModifier(ObjectCreationParams params) : GenericPropertyModifier(params)
+InvertSelectionModifier::InvertSelectionModifier(ObjectInitializationFlags flags) : GenericPropertyModifier(flags)
 {
     // Operate on particles by default.
     setDefaultSubject(QStringLiteral("Particles"), QStringLiteral("ParticlesObject"));
@@ -48,8 +48,8 @@ void InvertSelectionModifier::evaluateSynchronous(const ModifierEvaluationReques
         throw Exception(tr("No data element type set."));
 
     PropertyContainer* container = state.expectMutableLeafObject(subject());
-    PropertyAccess<int> selProperty = container->createProperty(PropertyObject::GenericSelectionProperty, DataBuffer::InitializeMemory);
-    for(int& s : selProperty)
+    PropertyAccess<SelectionIntType> selProperty = container->createProperty(DataBuffer::Initialized, PropertyObject::GenericSelectionProperty);
+    for(auto& s : selProperty)
         s = !s;
 }
 

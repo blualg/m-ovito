@@ -36,7 +36,7 @@ DEFINE_PROPERTY_FIELD(ViewportLayoutCell, childWeights);
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-ViewportLayoutCell::ViewportLayoutCell(ObjectCreationParams params) : RefTarget(params),
+ViewportLayoutCell::ViewportLayoutCell(ObjectInitializationFlags flags) : RefTarget(flags),
     _splitDirection(SplitDirection::None)
 {
 }
@@ -45,7 +45,7 @@ ViewportLayoutCell::ViewportLayoutCell(ObjectCreationParams params) : RefTarget(
 * Inserts a sub-cell into this cell's list of children.
 ******************************************************************************/
 void ViewportLayoutCell::addChild(OORef<ViewportLayoutCell> child, FloatType weight)
-{ 
+{
     _children.push_back(this, PROPERTY_FIELD(children), std::move(child));
     auto weights = childWeights();
     OVITO_ASSERT(weights.size() == children().size());
@@ -58,7 +58,7 @@ void ViewportLayoutCell::addChild(OORef<ViewportLayoutCell> child, FloatType wei
 * Inserts a sub-cell into this cell's list of children.
 ******************************************************************************/
 void ViewportLayoutCell::insertChild(int index, OORef<ViewportLayoutCell> child, FloatType weight)
-{ 
+{
     OVITO_ASSERT(index >= 0 && index <= children().size());
     _children.insert(this, PROPERTY_FIELD(children), index, std::move(child));
     auto weights = childWeights();
@@ -71,10 +71,10 @@ void ViewportLayoutCell::insertChild(int index, OORef<ViewportLayoutCell> child,
 /******************************************************************************
 * Removes a sub-cell from this cell's list of children.
 ******************************************************************************/
-void ViewportLayoutCell::removeChild(int index) 
-{ 
+void ViewportLayoutCell::removeChild(int index)
+{
     OVITO_ASSERT(index >= 0 && index < children().size());
-    _children.remove(this, PROPERTY_FIELD(children), index); 
+    _children.remove(this, PROPERTY_FIELD(children), index);
     OVITO_ASSERT(childWeights().size() == children().size());
 }
 
@@ -138,7 +138,7 @@ void ViewportLayoutCell::pruneViewportLayoutTree()
 {
     for(ViewportLayoutCell* child : children())
         child->pruneViewportLayoutTree();
-        
+
     if(children().size() == 1) {
         OORef<ViewportLayoutCell> singleChild = children().front();
         OVITO_ASSERT(singleChild->children().size() != 1);
@@ -154,7 +154,7 @@ void ViewportLayoutCell::pruneViewportLayoutTree()
 }
 
 /******************************************************************************
-* Returns the parent layout cell. 
+* Returns the parent layout cell.
 ******************************************************************************/
 ViewportLayoutCell* ViewportLayoutCell::parentCell() const
 {

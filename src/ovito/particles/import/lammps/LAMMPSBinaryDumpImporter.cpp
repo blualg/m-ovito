@@ -490,9 +490,9 @@ void LAMMPSBinaryDumpImporter::FrameLoader::loadFile()
         // we need to divide values by two.
         for(int i = 0; i < (int)_columnMapping.size() && i < fileColumnNames.size(); i++) {
             if(_columnMapping[i].property.type() == ParticlesObject::RadiusProperty && fileColumnNames[i] == "diameter") {
-                if(PropertyAccess<FloatType> radiusProperty = particles()->getMutableProperty(ParticlesObject::RadiusProperty)) {
-                    for(FloatType& r : radiusProperty)
-                        r *= 0.5;
+                if(PropertyAccess<GraphicsFloatType> radiusProperty = particles()->getMutableProperty(ParticlesObject::RadiusProperty)) {
+                    for(auto& r : radiusProperty)
+                        r *= 0.5f;
                 }
                 break;
             }
@@ -501,11 +501,11 @@ void LAMMPSBinaryDumpImporter::FrameLoader::loadFile()
         // Same for the "c_diameter[1..3]" columns being mapped to the "Aspherical Shape" property.
         for(int i = 0; i < (int)_columnMapping.size() && i < fileColumnNames.size(); i++) {
             if(_columnMapping[i].property.type() == ParticlesObject::AsphericalShapeProperty && (fileColumnNames[i] == "c_diameter[1]" || fileColumnNames[i] == "c_diameter[2]" || fileColumnNames[i] == "c_diameter[3]")) {
-                if(PropertyAccess<Vector3> shapeProperty = particles()->getMutableProperty(ParticlesObject::AsphericalShapeProperty)) {
-                    for(Vector3& s : shapeProperty) {
-                        s.x() *= 0.5;
-                        s.y() *= 0.5;
-                        s.z() *= 0.5;
+                if(PropertyAccess<Vector3G> shapeProperty = particles()->getMutableProperty(ParticlesObject::AsphericalShapeProperty)) {
+                    for(auto& s : shapeProperty) {
+                        s.x() *= 0.5f;
+                        s.y() *= 0.5f;
+                        s.z() *= 0.5f;
                     }
                 }
                 break;

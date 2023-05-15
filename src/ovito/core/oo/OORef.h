@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -29,33 +29,14 @@
 
 namespace Ovito {
 
-/**
- * \brief Data structure passed to constructors of RefTarget derived classes.
- */
-class OVITO_CORE_EXPORT ObjectCreationParams final
+/// Flags passed to constructors of RefTarget-derived classes.
+enum ObjectInitializationFlag
 {
-public:
-    enum InitializationFlag {
-        NoFlags = 0,
-        DontCreateSubObjects = (1 << 0),//< Used when an object is being cloned or deserialized from a file stream.
-        LoadUserDefaults = (1 << 1),    //< Load user-defined standard values from the application settings store.
-        WithoutVisElement = (1 << 2),   //< Do not attach a standard visual element when creating a new data object.
-    };
-    Q_DECLARE_FLAGS(InitializationFlags, InitializationFlag);
-
-    constexpr ObjectCreationParams() noexcept = default;
-    constexpr explicit ObjectCreationParams(InitializationFlags flags) noexcept : _flags(flags) {}
-
-    //constexpr DataSet* dataset() const { return _dataset; }
-    constexpr InitializationFlags flags() const { return _flags; }
-    constexpr bool dontCreateSubObjects() const { return _flags.testFlag(DontCreateSubObjects); }
-    constexpr bool createSubObjects() const { return !dontCreateSubObjects(); }
-    constexpr bool loadUserDefaults() const { return _flags.testFlag(LoadUserDefaults); }
-    constexpr bool createVisElement() const { return !_flags.testAnyFlags(InitializationFlags(DontCreateSubObjects | WithoutVisElement)); }
-
-private:
-    InitializationFlags _flags{NoFlags};
+    NoFlags               = 0,        //< Selects standard object initialization behavior.
+    DontInitializeObject  = (1 << 0), //< Indicates that an object is being cloned or deserialized from a file stream. Means do not initialize parameter values and don't create child objects.
+    DontCreateVisElement  = (1 << 1), //< Do not automatically attach a visual element when creating a new data object.
 };
+Q_DECLARE_FLAGS(ObjectInitializationFlags, ObjectInitializationFlag);
 
 /**
  * \brief A smart-pointer to an OvitoObject.
@@ -180,36 +161,28 @@ public:
 
     /// Factory method that instantiates and initializes a new object (any RefTarget derived class).
     template<typename... Args>
-    static this_type create(ObjectCreationParams params, Args&&... args) {
+    static this_type create(ObjectInitializationFlags flags, Args&&... args) {
         using OType = std::remove_const_t<T>;
         static_assert(std::is_base_of_v<Ovito::RefTarget, OType>, "Object class must be a RefTarget derived class");
         // Don't record object initialization on the undo stack.
         UndoSuspender noUndo;
 #ifndef OVITO_DEBUG
-        OORef<OType> obj(new OType(params, std::forward<Args>(args)...));
+        OORef<OType> obj(new OType(flags, std::forward<Args>(args)...));
 #else
-        OType* obj_ = new OType(params, std::forward<Args>(args)...);
+        OType* obj_ = new OType(flags, std::forward<Args>(args)...);
         // Mark the object as having been allocated on the heap before moving it into the OORef<>.
         obj_->_isAllocatedOnTheHeap = true;
         OORef<OType> obj(obj_);
 #endif
-        if(params.loadUserDefaults())
+        if(ExecutionContext::isInteractive())
             obj->initializeParametersToUserDefaults();
         return obj;
     }
 
     /// Factory method that instantiates a new object.
     template<typename... Args>
-    static this_type create(ObjectCreationParams::InitializationFlag extraFlag, Args&&... args) {
-        return create(ObjectCreationParams::InitializationFlags(extraFlag), std::forward<Args>(args)...);
-    }
-
-    /// Factory method that instantiates a new object.
-    template<typename... Args>
-    static this_type create(ObjectCreationParams::InitializationFlags extraFlags, Args&&... args) {
-        return create(ObjectCreationParams(
-            extraFlags | (ExecutionContext::isInteractive() ? ObjectCreationParams::LoadUserDefaults : ObjectCreationParams::NoFlags)), 
-            std::forward<Args>(args)...);
+    static this_type create(ObjectInitializationFlag extraFlag, Args&&... args) {
+        return create(ObjectInitializationFlags(extraFlag), std::forward<Args>(args)...);
     }
 
     /// Factory method that instantiates a new object.
@@ -217,14 +190,11 @@ public:
     static this_type create(Args&&... args) {
         using OType = std::remove_const_t<T>;
         if constexpr(std::is_base_of_v<Ovito::RefTarget, OType>) {
-            // All RefTarget derived classes expect a ObjectCreationParams structure.
-            return create(ObjectCreationParams(
-                ExecutionContext::isInteractive() 
-                    ? ObjectCreationParams::LoadUserDefaults 
-                    : ObjectCreationParams::NoFlags), std::forward<Args>(args)...);
+            // All RefTarget derived classes expect initialization flags.
+            return create(ObjectInitializationFlag::NoFlags, std::forward<Args>(args)...);
         }
         else {
-            // Objects not derived from RefTarget do not expect a ObjectCreationParams.
+            // Objects not derived from RefTarget do not expect initialization flags.
 #ifndef OVITO_DEBUG
             return new OType(std::forward<Args>(args)...);
 #else
@@ -348,3 +318,6 @@ template<class T> QDebug operator<<(QDebug debug, const OORef<T>& p)
 }
 
 }   // End of namespace
+
+Q_DECLARE_METATYPE(Ovito::ObjectInitializationFlags)
+Q_DECLARE_OPERATORS_FOR_FLAGS(Ovito::ObjectInitializationFlags);

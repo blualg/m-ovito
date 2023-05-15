@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -41,27 +41,21 @@ public:
     /// Constructs an action for a modifier template.
     static ModifierAction* createForTemplate(const QString& templateName);
 
-    /// Constructs an action for a Python modifier script.
-    static ModifierAction* createForScript(const QString& fileName, const QDir& directory);
-
     /// Returns the modifier's category.
     const QString& category() const { return _category; }
 
-    /// Returns the modifier class descriptor if this action represents a built-in modifier. 
+    /// Returns the modifier class descriptor if this action represents a built-in modifier.
     ModifierClassPtr modifierClass() const { return _modifierClass; }
 
     /// The name of the modifier template if this action represents a saved modifier template.
     const QString& templateName() const { return _templateName; }
-
-    /// The absolute path of the modifier script if this action represents a Python-based modifier function.
-    const QString& scriptPath() const { return _scriptPath; }
 
     /// Updates the actions enabled/disabled state depending on the current data pipeline.
     bool updateState(const PipelineFlowState& input);
 
 private:
 
-    /// The Ovito class descriptor of the modifier subclass. 
+    /// The Ovito class descriptor of the modifier subclass.
     ModifierClassPtr _modifierClass = nullptr;
 
     /// The modifier's category.
@@ -69,9 +63,6 @@ private:
 
     /// The name of the modifier template.
     QString _templateName;
-
-    /// The path to the modifier script on disk.
-    QString _scriptPath;
 };
 
 /**
@@ -100,7 +91,7 @@ public:
 
     /// Returns the model's role names.
     virtual QHash<int, QByteArray> roleNames() const override;
-    
+
     /// Returns the action that belongs to the given model index.
     ModifierAction* actionFromIndex(int index) const;
 
@@ -166,9 +157,6 @@ private:
 
     /// The model representing the current data pipeline.
     PipelineListModel* _pipelineListModel;
-
-    /// The list of directories searched for user-defined modifier scripts.
-    QStringList _modifierScriptDirectories;
 
     /// The font used for category header items.
     QFont _categoryFont;

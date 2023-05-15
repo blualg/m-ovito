@@ -43,7 +43,7 @@ class OVITO_STDMOD_EXPORT SelectTypeModifier : public GenericPropertyModifier
 public:
 
     /// Constructor.
-    Q_INVOKABLE SelectTypeModifier(ObjectCreationParams params);
+    Q_INVOKABLE SelectTypeModifier(ObjectInitializationFlags flags);
 
     /// This method is called by the system after the modifier has been inserted into a data pipeline.
     virtual void initializeModifier(const ModifierInitializationRequest& request) override;

@@ -60,7 +60,7 @@ class OVITO_PARTICLES_EXPORT CoordinationAnalysisModifier : public AsynchronousM
 public:
 
     /// Constructor.
-    Q_INVOKABLE CoordinationAnalysisModifier(ObjectCreationParams params);
+    Q_INVOKABLE CoordinationAnalysisModifier(ObjectInitializationFlags flags);
 
 protected:
 
@@ -85,7 +85,7 @@ private:
             _computePartialRdfs(particleTypes),
             _particleTypes(std::move(particleTypes)),
             _uniqueTypeIds(std::move(uniqueTypeIds)),
-            _coordinationNumbers(ParticlesObject::OOClass().createStandardProperty(fingerprint.particleCount(), ParticlesObject::CoordinationProperty, DataBuffer::InitializeMemory)),
+            _coordinationNumbers(ParticlesObject::OOClass().createStandardProperty(DataBuffer::Initialized, fingerprint.particleCount(), ParticlesObject::CoordinationProperty)),
             _inputFingerprint(std::move(fingerprint))
         {
             size_t componentCount = _computePartialRdfs ? (this->uniqueTypeIds().size() * (this->uniqueTypeIds().size()+1) / 2) : 1;
@@ -98,7 +98,7 @@ private:
                     }
                 }
             }
-            _rdfY = DataTable::OOClass().createUserProperty(rdfSampleCount, PropertyObject::FloatDefault, componentCount, tr("g(r)"), DataBuffer::InitializeMemory, 0, std::move(componentNames));
+            _rdfY = DataTable::OOClass().createUserProperty(DataBuffer::Initialized, rdfSampleCount, PropertyObject::FloatDefault, componentCount, QStringLiteral("g(r)"), 0, std::move(componentNames));
         }
 
         /// Computes the modifier's results.

@@ -30,7 +30,7 @@ IMPLEMENT_OVITO_CLASS(AnglesObject);
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-AnglesObject::AnglesObject(ObjectCreationParams params) : PropertyContainer(params)
+AnglesObject::AnglesObject(ObjectInitializationFlags flags) : PropertyContainer(flags)
 {
     // Assign the default data object identifier.
     setIdentifier(OOClass().pythonName());
@@ -39,7 +39,7 @@ AnglesObject::AnglesObject(ObjectCreationParams params) : PropertyContainer(para
 /******************************************************************************
 * Creates a storage object for standard properties.
 ******************************************************************************/
-PropertyPtr AnglesObject::OOMetaClass::createStandardPropertyInternal(size_t elementCount, int type, DataBuffer::InitializationFlags flags, const ConstDataObjectPath& containerPath) const
+PropertyPtr AnglesObject::OOMetaClass::createStandardPropertyInternal(DataBuffer::BufferInitialization init, size_t elementCount, int type, const ConstDataObjectPath& containerPath) const
 {
     int dataType;
     size_t componentCount;
@@ -62,9 +62,9 @@ PropertyPtr AnglesObject::OOMetaClass::createStandardPropertyInternal(size_t ele
 
     OVITO_ASSERT(componentCount == standardPropertyComponentCount(type));
 
-    PropertyPtr property = PropertyPtr::create(elementCount, dataType, componentCount, propertyName, flags & ~DataBuffer::InitializeMemory, type, componentNames);
+    PropertyPtr property = PropertyPtr::create(DataBuffer::Uninitialized, elementCount, dataType, componentCount, propertyName, type, componentNames);
 
-    if(flags.testFlag(DataBuffer::InitializeMemory)) {
+    if(init == DataBuffer::Initialized) {
         // Default-initialize property values with zeros.
         property->fillZero();
     }

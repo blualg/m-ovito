@@ -38,12 +38,6 @@ class OVITO_CORE_EXPORT DataBuffer : public DataObject
 
 public:
 
-    /// C++ data type used for storing element selections.
-    using SelectionDataType = int8_t;
-
-    /// C++ data type used for storing unique identifiers.
-    using IdentifierDataType = int64_t;
-
     /// \brief The most commonly used data types. Note that, at least in principle,
     ///        the class supports any data type registered with the Qt meta type system.
     enum StandardDataType {
@@ -67,18 +61,16 @@ public:
         FloatGraphics = std::is_same_v<GraphicsFloatType, double> ? Float64 : Float32,
 
         // Alias for data type used for storing selection flags:
-        IntSelection = std::is_same_v<SelectionDataType, int8_t> ? Int8 : Int32,
+        IntSelection = Int8,
 
         // Alias for data type used for storing unique identifiers:
         IntIdentifier = Int64
     };
 
-    enum InitializationFlag {
-        NoFlags = 0,
-        InitializeMemory = (1<<0)
+    enum BufferInitialization {
+        Uninitialized = 0,
+        Initialized = 1
     };
-    Q_DECLARE_FLAGS(InitializationFlags, InitializationFlag);
-    Q_FLAG(InitializationFlags);
 
     /// RAII utility class that guards read access to a DataBuffer.
     class ReadAccess
@@ -103,10 +95,14 @@ public:
 public:
 
     /// \brief Creates an empty buffer.
-    Q_INVOKABLE DataBuffer(ObjectCreationParams params) : DataObject(params) {}
+    Q_INVOKABLE explicit DataBuffer(ObjectInitializationFlags flags) : DataObject(flags) {}
 
     /// \brief Constructor that creates and initializes a new buffer array.
-    DataBuffer(ObjectCreationParams params, size_t elementCount, int dataType, size_t componentCount = 1, InitializationFlags flags = NoFlags, QStringList componentNames = QStringList());
+    DataBuffer(ObjectInitializationFlags flags, BufferInitialization init, size_t elementCount, int dataType, size_t componentCount = 1, QStringList componentNames = QStringList());
+
+    /// \brief Constructor that creates a new buffer array.
+    DataBuffer(ObjectInitializationFlags flags, size_t elementCount, int dataType, size_t componentCount = 1, QStringList componentNames = QStringList()) :
+        DataBuffer(flags, BufferInitialization::Uninitialized, elementCount, dataType, componentCount, std::move(componentNames)) {}
 
     /// \brief Returns the number of elements stored in the buffer array.
     size_t size() const { return _numElements; }
@@ -132,6 +128,9 @@ public:
     /// \return The identifier of the data type used for the elements stored in
     ///         this property storage according to the Qt meta type system.
     int dataType() const { return _dataType; }
+
+    /// \brief Returns the data type as a human-readable string.
+    const char* dataTypeName() const { return QMetaType(dataType()).name(); }
 
     /// \brief Returns the number of bytes per value.
     /// \return Number of bytes used to store a single value of the data type
@@ -189,7 +188,7 @@ public:
         OVITO_ASSERT(selectionProperty.size() == this->size());
         OVITO_ASSERT(selectionProperty.dataType() == IntSelection);
         OVITO_ASSERT(selectionProperty.componentCount() == 1);
-        const SelectionDataType* __restrict selectionIter = reinterpret_cast<const SelectionDataType*>(selectionProperty.cbuffer());
+        const SelectionIntType* __restrict selectionIter = reinterpret_cast<const SelectionIntType*>(selectionProperty.cbuffer());
         for(T* __restrict v = reinterpret_cast<T*>(buffer()), *end = v + this->size(); v != end; ++v) {
             if(*selectionIter++)
                 *v = value;
@@ -426,5 +425,9 @@ template<typename T> struct DataBufferPrimitiveType<ColorT<T>> : public DataBuff
 template<typename T> struct DataBufferPrimitiveType<ColorAT<T>> : public DataBufferPrimitiveType<T> {};
 template<typename T> struct DataBufferPrimitiveType<SymmetricTensor2T<T>> : public DataBufferPrimitiveType<T> {};
 template<typename T> struct DataBufferPrimitiveType<T, typename std::enable_if<std::is_enum<T>::value>::type> : public DataBufferPrimitiveType<std::make_signed_t<std::underlying_type_t<T>>> {};
+
+OVITO_STATIC_ASSERT(DataBufferPrimitiveType<IdentifierIntType>::value == DataBuffer::IntIdentifier);
+OVITO_STATIC_ASSERT(DataBufferPrimitiveType<SelectionIntType>::value  == DataBuffer::IntSelection);
+OVITO_STATIC_ASSERT(DataBufferPrimitiveType<GraphicsFloatType>::value == DataBuffer::FloatGraphics);
 
 }   // End of namespace

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -89,7 +89,7 @@ public:
 public:
 
     /// \brief Constructs a new instance of this class.
-    Q_INVOKABLE LAMMPSDataImporter(ObjectCreationParams params) : ParticleImporter(params), _atomStyle(AtomStyle_Unknown) {}
+    Q_INVOKABLE LAMMPSDataImporter(ObjectInitializationFlags flags) : ParticleImporter(flags), _atomStyle(AtomStyle_Unknown) {}
 
     /// Returns the title of this object.
     virtual QString objectTitle() const override { return tr("LAMMPS Data"); }
@@ -101,7 +101,7 @@ public:
     }
 
     struct LAMMPSAtomStyleHints {
-        LAMMPSAtomStyle atomStyle = AtomStyle_Unknown; 
+        LAMMPSAtomStyle atomStyle = AtomStyle_Unknown;
         std::vector<LAMMPSAtomStyle> atomSubStyles;
         int atomDataColumnCount = 0;
     };
@@ -109,7 +109,7 @@ public:
     /// Inspects the header of the given file and returns the detected LAMMPS atom style.
     Future<LAMMPSAtomStyleHints> inspectFileHeader(const Frame& frame);
 
-    /// Returns the name string of the given LAMMPS atom style.  
+    /// Returns the name string of the given LAMMPS atom style.
     static QString atomStyleName(LAMMPSAtomStyle atomStyle);
 
     /// Parses a hint string for the LAMMPS atom style.

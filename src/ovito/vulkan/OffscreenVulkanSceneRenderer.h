@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -38,7 +38,7 @@ class OVITO_VULKANRENDERER_EXPORT OffscreenVulkanSceneRenderer : public VulkanSc
 public:
 
     /// Constructor.
-    Q_INVOKABLE OffscreenVulkanSceneRenderer(ObjectCreationParams params, std::shared_ptr<VulkanContext> vulkanDevice = {}, bool grabDepthBuffer = false);
+    Q_INVOKABLE OffscreenVulkanSceneRenderer(ObjectInitializationFlags flags, std::shared_ptr<VulkanContext> vulkanDevice = {}, bool grabDepthBuffer = false);
 
     /// Prepares the renderer for rendering one or more frames.
     virtual bool startRender(const RenderSettings* settings, const QSize& frameBufferSize, MixedKeyCache& visCache) override;
@@ -70,11 +70,11 @@ private:
     void releaseVulkanFramebuffers();
 
 private:
-    
+
     /// The resolution of the rendered output image.
     QSize _outputSize;
 
-    /// Flag indicating whether we are interested in reading back the depth buffer contents. 
+    /// Flag indicating whether we are interested in reading back the depth buffer contents.
     /// This is used by the PickingVulkanSceneRenderer subclass.
     bool _grabDepthBuffer = false;
 

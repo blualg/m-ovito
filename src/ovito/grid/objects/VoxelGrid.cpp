@@ -59,7 +59,7 @@ void VoxelGrid::OOMetaClass::initialize()
 /******************************************************************************
 * Creates a storage object for standard voxel properties.
 ******************************************************************************/
-PropertyPtr VoxelGrid::OOMetaClass::createStandardPropertyInternal(size_t elementCount, int type, DataBuffer::InitializationFlags flags, const ConstDataObjectPath& containerPath) const
+PropertyPtr VoxelGrid::OOMetaClass::createStandardPropertyInternal(DataBuffer::BufferInitialization init, size_t elementCount, int type, const ConstDataObjectPath& containerPath) const
 {
     int dataType;
     size_t componentCount;
@@ -79,9 +79,9 @@ PropertyPtr VoxelGrid::OOMetaClass::createStandardPropertyInternal(size_t elemen
 
     OVITO_ASSERT(componentCount == standardPropertyComponentCount(type));
 
-    PropertyPtr property = PropertyPtr::create(elementCount, dataType, componentCount, propertyName, flags & ~DataBuffer::InitializeMemory, type, componentNames);
+    PropertyPtr property = PropertyPtr::create(DataBuffer::Uninitialized, elementCount, dataType, componentCount, propertyName, type, componentNames);
 
-    if(flags.testFlag(DataBuffer::InitializeMemory)) {
+    if(init == DataBuffer::Initialized) {
         // Default-initialize property values with zeros.
         property->fillZero();
     }
@@ -92,12 +92,13 @@ PropertyPtr VoxelGrid::OOMetaClass::createStandardPropertyInternal(size_t elemen
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-VoxelGrid::VoxelGrid(ObjectCreationParams params, const QString& title) : PropertyContainer(params, title),
+VoxelGrid::VoxelGrid(ObjectInitializationFlags flags, const QString& title) : PropertyContainer(flags, title),
     _gridType(CellData)
 {
     // Create and attach a default visualization element for rendering the grid.
-    if(params.createVisElement())
-        setVisElement(OORef<VoxelGridVis>::create(params));
+    if(!flags.testAnyFlags(ObjectInitializationFlags(DontInitializeObject) | ObjectInitializationFlags(DontCreateVisElement))) {
+        setVisElement(OORef<VoxelGridVis>::create(flags));
+    }
 }
 
 /******************************************************************************

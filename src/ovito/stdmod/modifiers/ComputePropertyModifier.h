@@ -77,7 +77,7 @@ protected:
         }
 
         /// Returns the data accessor to the selection flag array.
-        const ConstPropertyAccessAndRef<DataBuffer::SelectionDataType>& selectionArray() const { return _selectionArray; }
+        const ConstPropertyAccessAndRef<SelectionIntType>& selectionArray() const { return _selectionArray; }
 
         /// Returns the list of available input variables.
         virtual QStringList inputVariableNames() const;
@@ -120,7 +120,7 @@ protected:
 
         const int _frameNumber;
         QStringList _expressions;
-        ConstPropertyAccessAndRef<DataBuffer::SelectionDataType> _selectionArray;
+        ConstPropertyAccessAndRef<SelectionIntType> _selectionArray;
         std::unique_ptr<PropertyExpressionEvaluator> _evaluator;
         const PropertyPtr _outputProperty;
         PropertyAccess<void, true> _outputArray;
@@ -184,7 +184,7 @@ class OVITO_STDMOD_EXPORT ComputePropertyModifier : public AsynchronousDelegatin
 public:
 
     /// \brief Constructs a new instance of this class.
-    Q_INVOKABLE ComputePropertyModifier(ObjectCreationParams params);
+    Q_INVOKABLE ComputePropertyModifier(ObjectInitializationFlags flags);
 
     /// \brief Returns the current delegate of this ComputePropertyModifier.
     ComputePropertyModifierDelegate* delegate() const { return static_object_cast<ComputePropertyModifierDelegate>(AsynchronousDelegatingModifier::delegate()); }
@@ -270,7 +270,7 @@ class OVITO_STDMOD_EXPORT ComputePropertyModifierApplication : public Asynchrono
 public:
 
     /// Constructor.
-    Q_INVOKABLE ComputePropertyModifierApplication(ObjectCreationParams params) : AsynchronousModifierApplication(params) {}
+    Q_INVOKABLE ComputePropertyModifierApplication(ObjectInitializationFlags flags) : AsynchronousModifierApplication(flags) {}
 
 private:
 

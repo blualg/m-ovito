@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -30,9 +30,9 @@ IMPLEMENT_OVITO_CLASS(Microstructure);
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-Microstructure::Microstructure(ObjectCreationParams params) : SurfaceMesh(params)
+Microstructure::Microstructure(ObjectInitializationFlags flags) : SurfaceMesh(flags)
 {
-    if(params.createSubObjects()) {
+    if(!flags.testFlag(ObjectInitializationFlag::DontInitializeObject)) {
         makeFacesMutable()->createProperty(SurfaceMeshFaces::RegionProperty);
         makeFacesMutable()->createProperty(SurfaceMeshFaces::BurgersVectorProperty);
         makeFacesMutable()->createProperty(SurfaceMeshFaces::FaceTypeProperty);

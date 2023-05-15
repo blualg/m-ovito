@@ -49,7 +49,7 @@ class OVITO_CORE_EXPORT FileSource : public BasePipelineSource
 public:
 
 	/// Constructor.
-	Q_INVOKABLE FileSource(ObjectCreationParams params);
+	Q_INVOKABLE FileSource(ObjectInitializationFlags flags);
 
 	/// \brief Determines the time interval over which a computed pipeline state will remain valid.
 	virtual TimeInterval validityInterval(const PipelineEvaluationRequest& request) const override;

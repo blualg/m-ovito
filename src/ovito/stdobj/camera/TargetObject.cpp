@@ -35,10 +35,10 @@ IMPLEMENT_OVITO_CLASS(TargetVis);
 /******************************************************************************
 * Constructs a target object.
 ******************************************************************************/
-TargetObject::TargetObject(ObjectCreationParams params) : DataObject(params)
+TargetObject::TargetObject(ObjectInitializationFlags flags) : DataObject(flags)
 {
-    if(params.createVisElement()) {
-        setVisElement(OORef<TargetVis>::create(params));
+    if(!flags.testAnyFlags(ObjectInitializationFlags(DontInitializeObject) | ObjectInitializationFlags(DontCreateVisElement))) {
+        setVisElement(OORef<TargetVis>::create(flags));
     }
 }
 

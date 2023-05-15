@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -46,7 +46,7 @@ SET_PROPERTY_FIELD_UNITS_AND_RANGE(CentroSymmetryModifier, numNeighbors, Integer
 /******************************************************************************
 * Constructs the modifier object.
 ******************************************************************************/
-CentroSymmetryModifier::CentroSymmetryModifier(ObjectCreationParams params) : AsynchronousModifier(params),
+CentroSymmetryModifier::CentroSymmetryModifier(ObjectInitializationFlags flags) : AsynchronousModifier(flags),
     _numNeighbors(12),
     _mode(ConventionalMode),
     _onlySelectedParticles(false)
@@ -110,7 +110,7 @@ void CentroSymmetryModifier::CentroSymmetryEngine::perform()
     PropertyAccess<FloatType> cspArray(csp());
 
     // Perform analysis on each particle.
-    ConstPropertyAccess<int> selectionData(selection());
+    ConstPropertyAccess<SelectionIntType> selectionData(selection());
     parallelForWithProgress(positions()->size(), [&](size_t index) {
         if(!selectionData || selectionData[index])
             cspArray[index] = computeCSP(neighFinder, index, _mode);
@@ -124,10 +124,10 @@ void CentroSymmetryModifier::CentroSymmetryEngine::perform()
     const size_t numHistogramBins = 100;
     FloatType cspHistogramBinSize = (cspArray.size() != 0) ? (FloatType(1.01) * *boost::max_element(cspArray) / numHistogramBins) : 0;
     if(cspHistogramBinSize <= 0) cspHistogramBinSize = 1;
-    
+
     // Perform binning of CSP values.
-    PropertyAccessAndRef<qlonglong> histogramCounts = DataTable::OOClass().createUserProperty(numHistogramBins, PropertyObject::Int64, 1, tr("Count"), DataBuffer::InitializeMemory);
-    const int* sel = selectionData ? selectionData.begin() : nullptr;
+    PropertyAccessAndRef<int64_t> histogramCounts = DataTable::OOClass().createUserProperty(DataBuffer::Initialized, numHistogramBins, PropertyObject::Int64, 1, tr("Count"));
+    const auto* sel = selectionData ? selectionData.begin() : nullptr;
     for(FloatType cspValue : cspArray) {
         OVITO_ASSERT(cspValue >= 0);
         if(!sel || *sel++) {

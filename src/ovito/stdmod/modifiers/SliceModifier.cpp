@@ -65,14 +65,14 @@ SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(SliceModifier, widthController, WorldParame
 /******************************************************************************
 * Constructs the modifier object.
 ******************************************************************************/
-SliceModifier::SliceModifier(ObjectCreationParams params) : MultiDelegatingModifier(params),
+SliceModifier::SliceModifier(ObjectInitializationFlags flags) : MultiDelegatingModifier(flags),
     _createSelection(false),
     _inverse(false),
     _applyToSelection(false),
     _enablePlaneVisualization(false),
     _reducedCoordinates(false)
 {
-    if(params.createSubObjects()) {
+    if(!flags.testFlag(ObjectInitializationFlag::DontInitializeObject)) {
         setNormalController(ControllerManager::createVector3Controller());
         setDistanceController(ControllerManager::createFloatController());
         setWidthController(ControllerManager::createFloatController());
@@ -80,10 +80,10 @@ SliceModifier::SliceModifier(ObjectCreationParams params) : MultiDelegatingModif
             normalController()->setVector3Value(AnimationTime(0), Vector3(1,0,0));
 
         // Generate the list of delegate objects.
-        createModifierDelegates(SliceModifierDelegate::OOClass(), params);
+        createModifierDelegates(SliceModifierDelegate::OOClass());
 
         // Create the vis element for the plane.
-        setPlaneVis(OORef<TriMeshVis>::create(params));
+        setPlaneVis(OORef<TriMeshVis>::create(flags));
         planeVis()->setTitle(tr("Plane"));
         planeVis()->setHighlightEdges(true);
         planeVis()->setTransparency(0.5);

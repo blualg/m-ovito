@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -49,7 +49,7 @@ SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(ExpandSelectionModifier, numberOfIterations
 /******************************************************************************
 * Constructs the modifier object.
 ******************************************************************************/
-ExpandSelectionModifier::ExpandSelectionModifier(ObjectCreationParams params) : AsynchronousModifier(params),
+ExpandSelectionModifier::ExpandSelectionModifier(ObjectInitializationFlags flags) : AsynchronousModifier(flags),
     _mode(CutoffRange),
     _cutoffRange(3.2),
     _numNearestNeighbors(1),
@@ -107,7 +107,7 @@ void ExpandSelectionModifier::ExpandSelectionEngine::perform()
 {
     setProgressText(tr("Expanding particle selection"));
 
-    setNumSelectedParticlesInput(_inputSelection->size() - boost::count(ConstPropertyAccess<int>(_inputSelection), 0));
+    setNumSelectedParticlesInput(_inputSelection->size() - boost::count(ConstPropertyAccess<SelectionIntType>(_inputSelection), 0));
 
     beginProgressSubSteps(_numIterations);
     for(int i = 0; i < _numIterations; i++) {
@@ -121,7 +121,7 @@ void ExpandSelectionModifier::ExpandSelectionEngine::perform()
     }
     endProgressSubSteps();
 
-    setNumSelectedParticlesOutput(outputSelection()->size() - boost::count(ConstPropertyAccess<int>(outputSelection()), 0));
+    setNumSelectedParticlesOutput(outputSelection()->size() - boost::count(ConstPropertyAccess<SelectionIntType>(outputSelection()), 0));
 
     // Release data that is no longer needed.
     _positions.reset();
@@ -143,8 +143,8 @@ void ExpandSelectionModifier::ExpandSelectionNearestEngine::expandSelection()
         return;
 
     OVITO_ASSERT(inputSelection() != outputSelection());
-    ConstPropertyAccess<int> inputSelectionArray(inputSelection());
-    PropertyAccess<int> outputSelectionArray(outputSelection());
+    ConstPropertyAccess<SelectionIntType> inputSelectionArray(inputSelection());
+    PropertyAccess<SelectionIntType> outputSelectionArray(outputSelection());
     parallelForWithProgress(positions()->size(), [&](size_t index) {
         if(!inputSelectionArray[index]) return;
 
@@ -163,8 +163,8 @@ void ExpandSelectionModifier::ExpandSelectionNearestEngine::expandSelection()
 ******************************************************************************/
 void ExpandSelectionModifier::ExpandSelectionBondedEngine::expandSelection()
 {
-    PropertyAccess<int> outputSelectionArray(outputSelection());
-    ConstPropertyAccess<int> inputSelectionArray(inputSelection());
+    PropertyAccess<SelectionIntType> outputSelectionArray(outputSelection());
+    ConstPropertyAccess<SelectionIntType> inputSelectionArray(inputSelection());
     ConstPropertyAccess<ParticleIndexPair> bondTopologyArray(_bondTopology);
 
     size_t particleCount = inputSelection()->size();
@@ -190,8 +190,8 @@ void ExpandSelectionModifier::ExpandSelectionCutoffEngine::expandSelection()
     if(!neighborListBuilder.prepare(_cutoffRange, positions(), simCell(), {}))
         return;
 
-    PropertyAccess<int> outputSelectionArray(outputSelection());
-    ConstPropertyAccess<int> inputSelectionArray(inputSelection());
+    PropertyAccess<SelectionIntType> outputSelectionArray(outputSelection());
+    ConstPropertyAccess<SelectionIntType> inputSelectionArray(inputSelection());
 
     parallelForWithProgress(positions()->size(), [&](size_t index) {
         if(!inputSelectionArray[index]) return;

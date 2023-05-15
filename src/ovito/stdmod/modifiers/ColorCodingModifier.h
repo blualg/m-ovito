@@ -100,7 +100,7 @@ public:
 public:
 
     /// Constructor.
-    Q_INVOKABLE ColorCodingModifier(ObjectCreationParams params);
+    Q_INVOKABLE ColorCodingModifier(ObjectInitializationFlags flags);
 
     /// Determines the time interval over which a computed pipeline state will remain valid.
     virtual TimeInterval validityInterval(const ModifierEvaluationRequest& request) const override;

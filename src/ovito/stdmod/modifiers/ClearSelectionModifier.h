@@ -41,7 +41,7 @@ class OVITO_STDMOD_EXPORT ClearSelectionModifier : public GenericPropertyModifie
 public:
 
     /// \brief Constructs a new instance of this class.
-    Q_INVOKABLE ClearSelectionModifier(ObjectCreationParams params);
+    Q_INVOKABLE ClearSelectionModifier(ObjectInitializationFlags flags);
 
     /// Modifies the input data synchronously.
     virtual void evaluateSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;

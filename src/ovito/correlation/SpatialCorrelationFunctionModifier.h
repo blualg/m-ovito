@@ -80,7 +80,7 @@ public:
     Q_ENUM(NormalizationType);
 
     /// Constructor.
-    Q_INVOKABLE SpatialCorrelationFunctionModifier(ObjectCreationParams params);
+    Q_INVOKABLE SpatialCorrelationFunctionModifier(ObjectInitializationFlags flags);
 
     /// This method is called by the system after the modifier has been inserted into a data pipeline.
     virtual void initializeModifier(const ModifierInitializationRequest& request) override;
@@ -118,7 +118,7 @@ private:
             _simCell(simCell), _fftGridSpacing(fftGridSpacing),
             _applyWindow(applyWindow), _neighCutoff(neighCutoff),
             _averagingDirection(averagingDirection),
-            _neighCorrelation(doComputeNeighCorrelation ? DataTable::OOClass().createUserProperty(numberOfNeighBins, DataBuffer::FloatDefault, 1, tr("Neighbor C(r)"), DataBuffer::InitializeMemory) : nullptr) {}
+            _neighCorrelation(doComputeNeighCorrelation ? DataTable::OOClass().createUserProperty(DataBuffer::Initialized, numberOfNeighBins, DataBuffer::FloatDefault, 1, tr("Neighbor C(r)")) : nullptr) {}
 
         /// Computes the modifier's results and stores them in this object for later retrieval.
         virtual void perform() override;

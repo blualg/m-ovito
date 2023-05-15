@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -57,27 +57,25 @@ SET_PROPERTY_FIELD_LABEL(ColorCodingModifier, sourceProperty, "Source property")
 /******************************************************************************
 * Constructs the modifier object.
 ******************************************************************************/
-ColorCodingModifier::ColorCodingModifier(ObjectCreationParams params) : DelegatingModifier(params),
+ColorCodingModifier::ColorCodingModifier(ObjectInitializationFlags flags) : DelegatingModifier(flags),
     _colorOnlySelected(false),
     _keepSelection(true),
     _autoAdjustRange(false)
 {
-    if(params.createSubObjects()) {
+    if(!flags.testFlag(ObjectInitializationFlag::DontInitializeObject)) {
         setColorGradient(OORef<ColorCodingHSVGradient>::create());
         setStartValueController(ControllerManager::createFloatController());
         setEndValueController(ControllerManager::createFloatController());
 
         // Let this modifier act on particles by default.
-        createDefaultModifierDelegate(ColorCodingModifierDelegate::OOClass(), QStringLiteral("ParticlesColorCodingModifierDelegate"), params);
-    }
+        createDefaultModifierDelegate(ColorCodingModifierDelegate::OOClass(), QStringLiteral("ParticlesColorCodingModifierDelegate"));
 
-    // When the modifier is created by a Python script, enable automatic range adjustment.
-    if(params.loadUserDefaults() == false) {
-        setAutoAdjustRange(true);
-    }
-    else {
+        // When the modifier is created by a Python script, enable automatic range adjustment.
+        if(ExecutionContext::isScripting()) {
+            setAutoAdjustRange(true);
+        }
+        else {
 #ifndef OVITO_DISABLE_QSETTINGS
-        if(params.createSubObjects()) {
             // Load the default gradient type set by the user.
             QSettings settings;
             settings.beginGroup(ColorCodingModifier::OOClass().plugin()->pluginId());
@@ -87,18 +85,18 @@ ColorCodingModifier::ColorCodingModifier(ObjectCreationParams params) : Delegati
                 try {
                     OvitoClassPtr gradientType = OvitoClass::decodeFromString(typeString);
                     if(!colorGradient() || colorGradient()->getOOClass() != *gradientType) {
-                        OORef<ColorCodingGradient> gradient = dynamic_object_cast<ColorCodingGradient>(gradientType->createInstance(params));
+                        OORef<ColorCodingGradient> gradient = dynamic_object_cast<ColorCodingGradient>(gradientType->createInstance(flags));
                         if(gradient) setColorGradient(gradient);
                     }
                 }
                 catch(...) {}
             }
-        }
-    #endif
+#endif
 
-        // In the GUI environment, we let the modifier clear the selection by default
-        // in order to make the newly assigned colors visible.
-        setKeepSelection(false);
+            // In the GUI environment, we let the modifier clear the selection by default
+            // in order to make the newly assigned colors visible.
+            setKeepSelection(false);
+        }
     }
 }
 
@@ -173,7 +171,7 @@ bool ColorCodingModifier::determinePropertyValueRange(const PipelineFlowState& s
     if(!delegate())
         return false;
 
-    // Look up the selected property container. 
+    // Look up the selected property container.
     ConstDataObjectPath objectPath = state.getObject(delegate()->inputContainerRef());
     if(objectPath.empty())
         return false;
@@ -298,7 +296,7 @@ void ColorCodingModifier::reverseRange()
 /******************************************************************************
 * Returns the class name of the selected color gradient.
 ******************************************************************************/
-QString ColorCodingModifier::colorGradientType() const 
+QString ColorCodingModifier::colorGradientType() const
 {
     return colorGradient() ? colorGradient()->getOOClass().name() : QString();
 }
@@ -306,7 +304,7 @@ QString ColorCodingModifier::colorGradientType() const
 /******************************************************************************
 * Assigns a new color gradient based on its class name.
 ******************************************************************************/
-void ColorCodingModifier::setColorGradientType(const QString& typeName) 
+void ColorCodingModifier::setColorGradientType(const QString& typeName)
 {
     OvitoClassPtr descriptor = PluginManager::instance().findClass(QString(), typeName);
     if(!descriptor) {
@@ -398,26 +396,26 @@ PipelineStatus ColorCodingModifierDelegate::apply(const ModifierEvaluationReques
     if(!std::isfinite(endValue)) endValue = std::numeric_limits<FloatType>::max();
 
     // Create the color output property.
-    PropertyAccess<Color> colorProperty = container->createProperty(outputColorPropertyId(), (bool)selectionProperty ? DataBuffer::InitializeMemory : DataBuffer::NoFlags, objectPath);
+    PropertyAccess<ColorG> colorProperty = container->createProperty(selectionProperty ? DataBuffer::Initialized : DataBuffer::Uninitialized, outputColorPropertyId(), objectPath);
 
-    ConstPropertyAccessAndRef<int> selection(std::move(selectionProperty));
+    ConstPropertyAccessAndRef<SelectionIntType> selection(std::move(selectionProperty));
     bool result = property->forEach(vecComponent, [&](size_t i, auto v) {
         if(selection && !selection[i])
             return;
 
         // Compute linear interpolation.
-        FloatType t;
+        GraphicsFloatType t;
         if(startValue == endValue) {
-            if(v == startValue) t = FloatType(0.5);
-            else if(v > startValue) t = 1;
-            else t = 0;
+            if(v == startValue) t = GraphicsFloatType(0.5);
+            else if(v > startValue) t = GraphicsFloatType(1.0);
+            else t = GraphicsFloatType(0.0);
         }
-        else t = (v - startValue) / (endValue - startValue);
+        else t = static_cast<GraphicsFloatType>((v - startValue) / (endValue - startValue));
 
         // Clamp values.
         if(std::isnan(t)) t = 0;
-        else if(t == std::numeric_limits<FloatType>::infinity()) t = 1;
-        else if(t == -std::numeric_limits<FloatType>::infinity()) t = 0;
+        else if(t == std::numeric_limits<GraphicsFloatType>::infinity()) t = 1;
+        else if(t == -std::numeric_limits<GraphicsFloatType>::infinity()) t = 0;
         else if(t < 0) t = 0;
         else if(t > 1) t = 1;
 

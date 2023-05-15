@@ -151,7 +151,7 @@ bool XYZExporter::exportData(const PipelineFlowState& state, int frameNumber, co
             else if(dataType == qMetaTypeId<bool>())
                 dataTypeStr = QStringLiteral("L");
             else
-                throw Exception(tr("Unexpected data type '%1' for property '%2'.").arg(getQtTypeNameFromId(dataType) ? getQtTypeNameFromId(dataType) : "unknown").arg(pref.name()));
+                throw Exception(tr("Unexpected data type '%1' for property '%2'.").arg(property ? property->dataTypeName() : "unknown").arg(pref.name()));
 
             if(!propertiesStr.isEmpty())
                 propertiesStr += QStringLiteral(":");

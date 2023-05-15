@@ -199,12 +199,12 @@ void GroImporter::FrameLoader::loadFile()
     setParticleCount(numParticles);
 
     // Create particle properties.
-    PropertyAccess<Point3> posProperty = particles()->createProperty(ParticlesObject::PositionProperty, DataBuffer::InitializeMemory);
+    PropertyAccess<Point3> posProperty = particles()->createProperty(DataBuffer::Initialized, ParticlesObject::PositionProperty);
     PropertyAccess<int32_t> typeProperty = particles()->createProperty(ParticlesObject::TypeProperty);
     PropertyAccess<int32_t> atomNameProperty = particles()->createProperty(QStringLiteral("Atom Name"), PropertyObject::Int32);
     PropertyAccess<int32_t> residueTypeProperty = particles()->createProperty(QStringLiteral("Residue Type"), PropertyObject::Int32);
     PropertyAccess<int64_t> residueNumberProperty = particles()->createProperty(QStringLiteral("Residue Identifier"), PropertyObject::Int64);
-    PropertyAccess<int64_t> identifierProperty = particles()->createProperty(ParticlesObject::IdentifierProperty, DataBuffer::InitializeMemory);
+    PropertyAccess<int64_t> identifierProperty = particles()->createProperty(DataBuffer::Initialized, ParticlesObject::IdentifierProperty);
     PropertyAccess<Vector3> velocityProperty;
 
     // Give these particle properties new titles, which are displayed in the GUI under the file source.

@@ -47,7 +47,7 @@ SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(SimulationCellVis, cellLineWidth, WorldPara
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-SimulationCellVis::SimulationCellVis(ObjectCreationParams params) : DataVis(params),
+SimulationCellVis::SimulationCellVis(ObjectInitializationFlags flags) : DataVis(flags),
     _renderCellEnabled(true),
     _cellLineWidth(0.0),
     _cellColor(0, 0, 0)

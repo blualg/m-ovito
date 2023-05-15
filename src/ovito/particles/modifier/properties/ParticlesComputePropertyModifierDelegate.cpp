@@ -53,7 +53,7 @@ QVector<DataObjectReference> ParticlesComputePropertyModifierDelegate::OOMetaCla
 /******************************************************************************
 * Constructs a new instance of this class.
 ******************************************************************************/
-ParticlesComputePropertyModifierDelegate::ParticlesComputePropertyModifierDelegate(ObjectCreationParams params) : ComputePropertyModifierDelegate(params),
+ParticlesComputePropertyModifierDelegate::ParticlesComputePropertyModifierDelegate(ObjectInitializationFlags flags) : ComputePropertyModifierDelegate(flags),
     _cutoff(3),
     _useMultilineFields(false)
 {
@@ -96,7 +96,7 @@ std::shared_ptr<ComputePropertyModifierDelegate::PropertyComputeEngine> Particle
 
     // Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
     return std::make_shared<Engine>(
-            request, 
+            request,
             input.stateValidity(),
             std::move(outputProperty),
             containerPath,
@@ -113,7 +113,7 @@ std::shared_ptr<ComputePropertyModifierDelegate::PropertyComputeEngine> Particle
 * Constructor.
 ******************************************************************************/
 ParticlesComputePropertyModifierDelegate::Engine::Engine(
-        const ModifierEvaluationRequest& request, 
+        const ModifierEvaluationRequest& request,
         const TimeInterval& validityInterval,
         PropertyPtr outputProperty,
         const ConstDataObjectPath& containerPath,

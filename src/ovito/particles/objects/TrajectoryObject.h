@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -42,7 +42,7 @@ class OVITO_PARTICLES_EXPORT TrajectoryObject : public PropertyContainer
         using PropertyContainerClass::PropertyContainerClass;
 
         /// Creates a storage object for standard properties.
-        virtual PropertyPtr createStandardPropertyInternal(size_t elementCount, int type, DataBuffer::InitializationFlags flags, const ConstDataObjectPath& containerPath) const override;
+        virtual PropertyPtr createStandardPropertyInternal(DataBuffer::BufferInitialization init, size_t elementCount, int type, const ConstDataObjectPath& containerPath) const override;
 
     protected:
 
@@ -64,7 +64,7 @@ public:
     };
 
     /// \brief Constructor.
-    Q_INVOKABLE TrajectoryObject(ObjectCreationParams params);
+    Q_INVOKABLE TrajectoryObject(ObjectInitializationFlags flags);
 
 private:
 

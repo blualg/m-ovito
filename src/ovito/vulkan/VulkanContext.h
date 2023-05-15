@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -66,7 +66,7 @@ private:
         }
         /// Destructor.
         ~VulkanDataBuffer() {
-            if(buffer != VK_NULL_HANDLE) 
+            if(buffer != VK_NULL_HANDLE)
                 vmaDestroyBuffer(allocator, buffer, allocation);
         }
     };
@@ -89,7 +89,7 @@ private:
         }
         /// Destructor.
         ~VulkanDescriptorSet() {
-            if(descriptorSet != VK_NULL_HANDLE) 
+            if(descriptorSet != VK_NULL_HANDLE)
                 context->deviceFunctions()->vkFreeDescriptorSets(context->logicalDevice(), context->_descriptorPool, 1, &descriptorSet);
         }
     };
@@ -113,7 +113,7 @@ private:
             allocation = other.allocation;
             imageView = std::exchange(other.imageView, VkImageView{VK_NULL_HANDLE});
             return *this;
-        }       
+        }
         /// Destructor.
         ~VulkanImage() {
             if(imageView != VK_NULL_HANDLE)
@@ -163,8 +163,8 @@ public:
         return nullptr;
     }
 
-    /// Sets the list of device \a extensions to be enabled. Unsupported extensions 
-    /// are ignored. The swapchain extension will always be added automatically, 
+    /// Sets the list of device \a extensions to be enabled. Unsupported extensions
+    /// are ignored. The swapchain extension will always be added automatically,
     /// no need to include it in this list.
     void setDeviceExtensions(const QByteArrayList& extensions);
 
@@ -183,7 +183,7 @@ public:
     /// Returns the table of Vulkan device-independent functions.
     QVulkanFunctions* vulkanFunctions() const { return _vulkanFunctions; }
 
-    /// Returns the device-specific Vulkan function table. 
+    /// Returns the device-specific Vulkan function table.
     QVulkanDeviceFunctions* deviceFunctions() const { return _deviceFunctions; }
 
     /// Returns the index of the queue family used for graphics rendering.
@@ -212,8 +212,8 @@ public:
     uint32_t hostVisibleMemoryIndex() const { return _hostVisibleMemIndex; }
 
     /// Returns a device local memory type index suitable for general use.
-    /// Note: It is not guaranteed that this memory type is always suitable. 
-    /// The correct, cross-implementation solution - especially for device local images - is to manually 
+    /// Note: It is not guaranteed that this memory type is always suitable.
+    /// The correct, cross-implementation solution - especially for device local images - is to manually
     /// pick a memory type after checking the mask returned from vkGetImageMemoryRequirements.
     uint32_t deviceLocalMemoryIndex() const { return _deviceLocalMemIndex; }
 
@@ -283,8 +283,8 @@ public:
     /// Uploads an image to the Vulkan device as a texture image.
     VkImageView uploadImage(const QImage& image, ResourceFrameHandle resourceFrame);
 
-    /// Indicates whether the current Vulkan device uses a unified memory architecture, i.e., 
-    /// the device-local memory heap is also the CPU-local memory heap. 
+    /// Indicates whether the current Vulkan device uses a unified memory architecture, i.e.,
+    /// the device-local memory heap is also the CPU-local memory heap.
     /// On UMA devices, no staging buffers are required.
     bool isUMA() const { return _isUMA; }
 
@@ -330,10 +330,10 @@ private:
     /// The internal Vulkan logical device handle.
     VkDevice _device = VK_NULL_HANDLE;
 
-    /// The device-specific Vulkan function table. 
+    /// The device-specific Vulkan function table.
     QVulkanDeviceFunctions* _deviceFunctions = nullptr;
 
-    /// The selected physical device index from which the logical device is created. 
+    /// The selected physical device index from which the logical device is created.
     int _physDevIndex = 0;
 
     /// The list of physical Vulkan devices.
@@ -384,8 +384,8 @@ private:
     /// A device local memory type index suitable for general use.
     uint32_t _deviceLocalMemIndex;
 
-    /// Indicates that this device uses a unified memory architecture, i.e., 
-    /// the device-local memory heap is also the CPU-local memory heap. 
+    /// Indicates that this device uses a unified memory architecture, i.e.,
+    /// the device-local memory heap is also the CPU-local memory heap.
     /// On UMA devices, no staging buffers are needed.
     bool _isUMA = false;
 
@@ -412,10 +412,10 @@ private:
 
 public:
 
-    /// Pointer to optional Vulkan extension function. 
+    /// Pointer to optional Vulkan extension function.
     PFN_vkCmdSetDepthTestEnableEXT vkCmdSetDepthTestEnableEXT = nullptr;
 
-    /// Pointer to optional Vulkan extension function. 
+    /// Pointer to optional Vulkan extension function.
     PFN_vkCmdSetCullModeEXT vkCmdSetCullModeEXT = nullptr;
 };
 

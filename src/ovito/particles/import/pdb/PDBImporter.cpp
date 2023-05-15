@@ -243,9 +243,9 @@ void PDBImporter::FrameLoader::loadFile()
         // Allocate property arrays for atoms.
         setParticleCount(natoms);
         PropertyAccess<Point3> posProperty = particles()->createProperty(ParticlesObject::PositionProperty);
-        PropertyAccess<int> typeProperty = particles()->createProperty(ParticlesObject::TypeProperty);
-        PropertyAccess<int> atomNameProperty = particles()->createProperty(QStringLiteral("Atom Name"), DataBuffer::Int32);
-        PropertyAccess<int> residueTypeProperty = particles()->createProperty(QStringLiteral("Residue Type"), DataBuffer::Int32);
+        PropertyAccess<int32_t> typeProperty = particles()->createProperty(ParticlesObject::TypeProperty);
+        PropertyAccess<int32_t> atomNameProperty = particles()->createProperty(QStringLiteral("Atom Name"), DataBuffer::Int32);
+        PropertyAccess<int32_t> residueTypeProperty = particles()->createProperty(QStringLiteral("Residue Type"), DataBuffer::Int32);
 
         // Give these particle properties new titles, which are displayed in the GUI under the file source.
         atomNameProperty.buffer()->setTitle(tr("Atom names"));
@@ -307,8 +307,14 @@ void PDBImporter::FrameLoader::loadFile()
         atomNameProperty.reset();
         residueTypeProperty.reset();
 
-        // Parse unit cell.
-        if(structure.cell.is_crystal()) {
+        // Parse unit cell if available.
+        //
+        // Gemmi provides the UnitCell::is_crystal() method to determin whether (periodic) cell information
+        // is available. But it turned out to be too strict. Atomsk writes PDB files containing unity
+        // SCALEn records, which make Gemmi intrept these files as non-periodic. We replace the check
+        // with a simpler criterion.
+        // See https://www.ovito.org/forum/topic/polyhedral-visualazation/#postid-4244.
+        if(structure.cell.a != 1.0 || structure.cell.b != 1.0 || structure.cell.c != 1.0 || structure.cell.alpha != 90.0 || structure.cell.beta != 90.0 || structure.cell.gamma != 90.0) {
 
             // Some PDB files use wrong column widths in the CRYST1 record line. These leads to invalid cell values when parsed by gemmi.
             if(std::isnan(structure.cell.alpha) || std::isnan(structure.cell.beta) || std::isnan(structure.cell.gamma) ||

@@ -199,7 +199,7 @@ void DislocImporter::FrameLoader::loadFile()
         NCERR(nc_get_vara_int(root_ncid, cell_pbc_var, startp, countp, cellPbc));
         simulationCell()->setPbcFlags(cellPbc[0] != 0, cellPbc[1] != 0, cellPbc[2] != 0);
         simulationCell()->setCellMatrix(cellMatrix);
-        microstructure.setDomain(DataOORef<SimulationCellObject>::create(ObjectCreationParams::WithoutVisElement, cellMatrix, cellPbc[0] != 0, cellPbc[1] != 0, cellPbc[2] != 0));
+        microstructure.setDomain(DataOORef<SimulationCellObject>::create(ObjectInitializationFlag::DontCreateVisElement, cellMatrix, cellPbc[0] != 0, cellPbc[1] != 0, cellPbc[2] != 0));
 
         // Read lattice orientation matrix.
         int lattice_orientation_var;

@@ -62,7 +62,7 @@ SET_PROPERTY_FIELD_UNITS_AND_RANGE(HistogramModifier, numberOfBins, IntegerParam
 /******************************************************************************
 * Constructs the modifier object.
 ******************************************************************************/
-HistogramModifier::HistogramModifier(ObjectCreationParams params) : GenericPropertyModifier(params),
+HistogramModifier::HistogramModifier(ObjectInitializationFlags flags) : GenericPropertyModifier(flags),
     _numberOfBins(200),
     _selectInRange(false),
     _selectionRangeStart(0),
@@ -149,13 +149,13 @@ void HistogramModifier::evaluateSynchronous(const ModifierEvaluationRequest& req
     size_t vecComponentCount = property->componentCount();
 
     // Get the input selection if filtering was enabled by the user.
-    ConstPropertyAccess<DataBuffer::SelectionDataType> inputSelection;
+    ConstPropertyAccess<SelectionIntType> inputSelection;
     if(onlySelectedElements() && container->getOOMetaClass().isValidStandardPropertyId(PropertyObject::GenericSelectionProperty)) {
         inputSelection = container->expectProperty(PropertyObject::GenericSelectionProperty);
     }
 
     // Create storage for output selection.
-    PropertyAccess<DataBuffer::SelectionDataType> outputSelection;
+    PropertyAccess<SelectionIntType> outputSelection;
     if(selectInRange() && container->getOOMetaClass().isValidStandardPropertyId(PropertyObject::GenericSelectionProperty)) {
         // First make sure we can safely modify the property container.
         PropertyContainer* mutableContainer = state.expectMutableLeafObject(subject());
@@ -174,7 +174,7 @@ void HistogramModifier::evaluateSynchronous(const ModifierEvaluationRequest& req
     FloatType intervalEnd = xAxisRangeEnd();
 
     // Allocate output data array.
-    PropertyAccessAndRef<int64_t> histogram = DataTable::OOClass().createUserProperty(std::max(1, numberOfBins()), PropertyObject::Int64, 1, tr("Count"), DataBuffer::InitializeMemory);
+    PropertyAccessAndRef<int64_t> histogram = DataTable::OOClass().createUserProperty(DataBuffer::Initialized, std::max(1, numberOfBins()), PropertyObject::Int64, 1, tr("Count"));
     qlonglong* histogramData = histogram.begin();
     int histogramSizeMin1 = histogram.size() - 1;
 
@@ -185,7 +185,7 @@ void HistogramModifier::evaluateSynchronous(const ModifierEvaluationRequest& req
             if(!fixXAxisRange()) {
                 intervalStart = std::numeric_limits<FloatType>::max();
                 intervalEnd = std::numeric_limits<FloatType>::lowest();
-                const DataBuffer::SelectionDataType* sel = inputSelection ? inputSelection.cbegin() : nullptr;
+                const SelectionIntType* sel = inputSelection ? inputSelection.cbegin() : nullptr;
                 for(float v : array.componentRange(vecComponent)) {
                     if(sel && !*sel++) continue;
                     if(v < intervalStart) intervalStart = v;
@@ -195,7 +195,7 @@ void HistogramModifier::evaluateSynchronous(const ModifierEvaluationRequest& req
             // Perform binning.
             if(intervalEnd > intervalStart) {
                 FloatType binSize = (intervalEnd - intervalStart) / histogram.size();
-                const DataBuffer::SelectionDataType* sel = inputSelection ? inputSelection.cbegin() : nullptr;
+                const SelectionIntType* sel = inputSelection ? inputSelection.cbegin() : nullptr;
                 for(float v : array.componentRange(vecComponent)) {
                     if(sel && !*sel++) continue;
                     if(v < intervalStart || v > intervalEnd) continue;
@@ -211,8 +211,8 @@ void HistogramModifier::evaluateSynchronous(const ModifierEvaluationRequest& req
             }
             if(outputSelection) {
                 OVITO_ASSERT(outputSelection.size() == property->size());
-                DataBuffer::SelectionDataType* s = outputSelection.begin();
-                const DataBuffer::SelectionDataType* sel = inputSelection ? inputSelection.cbegin() : nullptr;
+                SelectionIntType* s = outputSelection.begin();
+                const SelectionIntType* sel = inputSelection ? inputSelection.cbegin() : nullptr;
                 for(float v : array.componentRange(vecComponent)) {
                     if((!sel || *sel++) && v >= selectionRangeStart && v <= selectionRangeEnd) {
                         *s++ = 1;
@@ -228,7 +228,7 @@ void HistogramModifier::evaluateSynchronous(const ModifierEvaluationRequest& req
             if(!fixXAxisRange()) {
                 intervalStart = std::numeric_limits<FloatType>::max();
                 intervalEnd = std::numeric_limits<FloatType>::lowest();
-                const DataBuffer::SelectionDataType* sel = inputSelection ? inputSelection.cbegin() : nullptr;
+                const SelectionIntType* sel = inputSelection ? inputSelection.cbegin() : nullptr;
                 for(double v : array.componentRange(vecComponent)) {
                     if(sel && !*sel++) continue;
                     if(v < intervalStart) intervalStart = v;
@@ -238,7 +238,7 @@ void HistogramModifier::evaluateSynchronous(const ModifierEvaluationRequest& req
             // Perform binning.
             if(intervalEnd > intervalStart) {
                 FloatType binSize = (intervalEnd - intervalStart) / histogram.size();
-                const DataBuffer::SelectionDataType* sel = inputSelection ? inputSelection.cbegin() : nullptr;
+                const SelectionIntType* sel = inputSelection ? inputSelection.cbegin() : nullptr;
                 for(double v : array.componentRange(vecComponent)) {
                     if(sel && !*sel++) continue;
                     if(v < intervalStart || v > intervalEnd) continue;
@@ -254,8 +254,8 @@ void HistogramModifier::evaluateSynchronous(const ModifierEvaluationRequest& req
             }
             if(outputSelection) {
                 OVITO_ASSERT(outputSelection.size() == property->size());
-                DataBuffer::SelectionDataType* s = outputSelection.begin();
-                const DataBuffer::SelectionDataType* sel = inputSelection ? inputSelection.cbegin() : nullptr;
+                SelectionIntType* s = outputSelection.begin();
+                const SelectionIntType* sel = inputSelection ? inputSelection.cbegin() : nullptr;
                 for(double v : array.componentRange(vecComponent)) {
                     if((!sel || *sel++) && v >= selectionRangeStart && v <= selectionRangeEnd) {
                         *s++ = 1;
@@ -271,7 +271,7 @@ void HistogramModifier::evaluateSynchronous(const ModifierEvaluationRequest& req
             if(!fixXAxisRange()) {
                 intervalStart = std::numeric_limits<FloatType>::max();
                 intervalEnd = std::numeric_limits<FloatType>::lowest();
-                const DataBuffer::SelectionDataType* sel = inputSelection ? inputSelection.cbegin() : nullptr;
+                const SelectionIntType* sel = inputSelection ? inputSelection.cbegin() : nullptr;
                 for(int32_t v : array.componentRange(vecComponent)) {
                     if(sel && !*sel++) continue;
                     if(v < intervalStart) intervalStart = v;
@@ -281,7 +281,7 @@ void HistogramModifier::evaluateSynchronous(const ModifierEvaluationRequest& req
             // Perform binning.
             if(intervalEnd > intervalStart) {
                 FloatType binSize = (intervalEnd - intervalStart) / histogram.size();
-                const DataBuffer::SelectionDataType* sel = inputSelection ? inputSelection.cbegin() : nullptr;
+                const SelectionIntType* sel = inputSelection ? inputSelection.cbegin() : nullptr;
                 for(int32_t v : array.componentRange(vecComponent)) {
                     if(sel && !*sel++) continue;
                     if(v < intervalStart || v > intervalEnd) continue;
@@ -297,8 +297,8 @@ void HistogramModifier::evaluateSynchronous(const ModifierEvaluationRequest& req
             }
             if(outputSelection) {
                 OVITO_ASSERT(outputSelection.size() == property->size());
-                DataBuffer::SelectionDataType* s = outputSelection.begin();
-                const DataBuffer::SelectionDataType* sel = inputSelection ? inputSelection.cbegin() : nullptr;
+                SelectionIntType* s = outputSelection.begin();
+                const SelectionIntType* sel = inputSelection ? inputSelection.cbegin() : nullptr;
                 for(int32_t v : array.componentRange(vecComponent)) {
                     if((!sel || *sel++) && v >= selectionRangeStart && v <= selectionRangeEnd) {
                         *s++ = 1;
@@ -314,7 +314,7 @@ void HistogramModifier::evaluateSynchronous(const ModifierEvaluationRequest& req
             if(!fixXAxisRange()) {
                 intervalStart = std::numeric_limits<FloatType>::max();
                 intervalEnd = std::numeric_limits<FloatType>::lowest();
-                const DataBuffer::SelectionDataType* sel = inputSelection ? inputSelection.cbegin() : nullptr;
+                const SelectionIntType* sel = inputSelection ? inputSelection.cbegin() : nullptr;
                 for(int64_t v : array.componentRange(vecComponent)) {
                     if(sel && !*sel++) continue;
                     if(v < intervalStart) intervalStart = v;
@@ -324,7 +324,7 @@ void HistogramModifier::evaluateSynchronous(const ModifierEvaluationRequest& req
             // Perform binning.
             if(intervalEnd > intervalStart) {
                 FloatType binSize = (intervalEnd - intervalStart) / histogram.size();
-                const DataBuffer::SelectionDataType* sel = inputSelection ? inputSelection.cbegin() : nullptr;
+                const SelectionIntType* sel = inputSelection ? inputSelection.cbegin() : nullptr;
                 for(int64_t v : array.componentRange(vecComponent)) {
                     if(sel && !*sel++) continue;
                     if(v < intervalStart || v > intervalEnd) continue;
@@ -340,8 +340,8 @@ void HistogramModifier::evaluateSynchronous(const ModifierEvaluationRequest& req
             }
             if(outputSelection) {
                 OVITO_ASSERT(outputSelection.size() == property->size());
-                DataBuffer::SelectionDataType* s = outputSelection.begin();
-                const DataBuffer::SelectionDataType* sel = inputSelection ? inputSelection.cbegin() : nullptr;
+                SelectionIntType* s = outputSelection.begin();
+                const SelectionIntType* sel = inputSelection ? inputSelection.cbegin() : nullptr;
                 for(int64_t v : array.componentRange(vecComponent)) {
                     if((!sel || *sel++) && v >= selectionRangeStart && v <= selectionRangeEnd) {
                         *s++ = 1;
@@ -357,7 +357,7 @@ void HistogramModifier::evaluateSynchronous(const ModifierEvaluationRequest& req
             if(!fixXAxisRange()) {
                 intervalStart = std::numeric_limits<FloatType>::max();
                 intervalEnd = std::numeric_limits<FloatType>::lowest();
-                const DataBuffer::SelectionDataType* sel = inputSelection ? inputSelection.cbegin() : nullptr;
+                const SelectionIntType* sel = inputSelection ? inputSelection.cbegin() : nullptr;
                 for(int8_t v : array.componentRange(vecComponent)) {
                     if(sel && !*sel++) continue;
                     if(v < intervalStart) intervalStart = v;
@@ -367,7 +367,7 @@ void HistogramModifier::evaluateSynchronous(const ModifierEvaluationRequest& req
             // Perform binning.
             if(intervalEnd > intervalStart) {
                 FloatType binSize = (intervalEnd - intervalStart) / histogram.size();
-                const DataBuffer::SelectionDataType* sel = inputSelection ? inputSelection.cbegin() : nullptr;
+                const SelectionIntType* sel = inputSelection ? inputSelection.cbegin() : nullptr;
                 for(int8_t v : array.componentRange(vecComponent)) {
                     if(sel && !*sel++) continue;
                     if(v < intervalStart || v > intervalEnd) continue;
@@ -383,8 +383,8 @@ void HistogramModifier::evaluateSynchronous(const ModifierEvaluationRequest& req
             }
             if(outputSelection) {
                 OVITO_ASSERT(outputSelection.size() == property->size());
-                DataBuffer::SelectionDataType* s = outputSelection.begin();
-                const DataBuffer::SelectionDataType* sel = inputSelection ? inputSelection.cbegin() : nullptr;
+                SelectionIntType* s = outputSelection.begin();
+                const SelectionIntType* sel = inputSelection ? inputSelection.cbegin() : nullptr;
                 for(int8_t v : array.componentRange(vecComponent)) {
                     if((!sel || *sel++) && v >= selectionRangeStart && v <= selectionRangeEnd) {
                         *s++ = 1;

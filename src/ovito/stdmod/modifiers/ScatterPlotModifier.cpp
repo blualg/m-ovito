@@ -63,7 +63,7 @@ SET_PROPERTY_FIELD_LABEL(ScatterPlotModifier, yAxisProperty, "Y-axis property");
 /******************************************************************************
 * Constructs the modifier object.
 ******************************************************************************/
-ScatterPlotModifier::ScatterPlotModifier(ObjectCreationParams params) : GenericPropertyModifier(params),
+ScatterPlotModifier::ScatterPlotModifier(ObjectInitializationFlags flags) : GenericPropertyModifier(flags),
     _selectXAxisInRange(false),
     _selectionXAxisRangeStart(0),
     _selectionXAxisRangeEnd(1),
@@ -179,7 +179,7 @@ void ScatterPlotModifier::evaluateSynchronous(const ModifierEvaluationRequest& r
         std::swap(selectionYAxisRangeStart, selectionYAxisRangeEnd);
 
     // Create output selection.
-    PropertyAccess<DataBuffer::SelectionDataType> outputSelection;
+    PropertyAccess<SelectionIntType> outputSelection;
     size_t numSelected = 0;
     if((selectXAxisInRange() || selectYAxisInRange()) && container->getOOMetaClass().isValidStandardPropertyId(PropertyObject::GenericSelectionProperty)) {
         // First make sure we can safely modify the property container.
@@ -191,8 +191,8 @@ void ScatterPlotModifier::evaluateSynchronous(const ModifierEvaluationRequest& r
     }
 
     // Create output arrays.
-    PropertyAccessAndRef<FloatType> out_x = DataTable::OOClass().createUserProperty(container->elementCount(), PropertyObject::FloatDefault, 1, xAxisProperty().nameWithComponent());
-    PropertyAccessAndRef<FloatType> out_y = DataTable::OOClass().createUserProperty(container->elementCount(), PropertyObject::FloatDefault, 1, yAxisProperty().nameWithComponent());
+    PropertyAccessAndRef<FloatType> out_x = DataTable::OOClass().createUserProperty(DataBuffer::Uninitialized, container->elementCount(), PropertyObject::FloatDefault, 1, xAxisProperty().nameWithComponent());
+    PropertyAccessAndRef<FloatType> out_y = DataTable::OOClass().createUserProperty(DataBuffer::Uninitialized, container->elementCount(), PropertyObject::FloatDefault, 1, yAxisProperty().nameWithComponent());
 
     // Collect X coordinates.
     if(!xProperty->copyTo(out_x.begin(), xVecComponent))
@@ -203,7 +203,7 @@ void ScatterPlotModifier::evaluateSynchronous(const ModifierEvaluationRequest& r
         throw Exception(tr("Failed to extract coordinate values from input property for y-axis."));
 
     if(outputSelection && selectXAxisInRange()) {
-        DataBuffer::SelectionDataType* s = outputSelection.begin();
+        SelectionIntType* s = outputSelection.begin();
         for(FloatType x : out_x) {
             if(x < selectionXAxisRangeStart || x > selectionXAxisRangeEnd) {
                 *s = 0;
@@ -214,7 +214,7 @@ void ScatterPlotModifier::evaluateSynchronous(const ModifierEvaluationRequest& r
     }
 
     if(outputSelection && selectYAxisInRange()) {
-        DataBuffer::SelectionDataType* s = outputSelection.begin();
+        SelectionIntType* s = outputSelection.begin();
         for(FloatType y : out_y) {
             if(y < selectionYAxisRangeStart || y > selectionYAxisRangeEnd) {
                 if(*s) {

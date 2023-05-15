@@ -42,7 +42,7 @@ SET_PROPERTY_FIELD_LABEL(StructureIdentificationModifier, colorByType, "Color pa
 /******************************************************************************
 * Constructs the modifier object.
 ******************************************************************************/
-StructureIdentificationModifier::StructureIdentificationModifier(ObjectCreationParams params) : AsynchronousModifier(params),
+StructureIdentificationModifier::StructureIdentificationModifier(ObjectInitializationFlags flags) : AsynchronousModifier(flags),
     _onlySelectedParticles(false),
     _colorByType(true)
 {
@@ -59,12 +59,12 @@ bool StructureIdentificationModifier::OOMetaClass::isApplicableTo(const DataColl
 /******************************************************************************
 * Create an instance of the ParticleType class to represent a structure type.
 ******************************************************************************/
-ElementType* StructureIdentificationModifier::createStructureType(int id, ParticleType::PredefinedStructureType predefType, ObjectCreationParams params)
+ElementType* StructureIdentificationModifier::createStructureType(int id, ParticleType::PredefinedStructureType predefType)
 {
     DataOORef<ElementType> stype = DataOORef<ElementType>::create();
     stype->setNumericId(id);
     stype->setName(ParticleType::getPredefinedStructureTypeName(predefType));
-    stype->initializeType(ParticlePropertyReference(ParticlesObject::StructureTypeProperty), params.loadUserDefaults());
+    stype->initializeType(ParticlePropertyReference(ParticlesObject::StructureTypeProperty));
     addStructureType(stype);
     return stype;
 }
@@ -99,7 +99,7 @@ StructureIdentificationModifier::StructureIdentificationEngine::StructureIdentif
     _positions(std::move(positions)),
     _simCell(simCell),
     _selection(std::move(selection)),
-    _structures(ParticlesObject::OOClass().createStandardProperty(fingerprint.particleCount(), ParticlesObject::StructureTypeProperty)),
+    _structures(ParticlesObject::OOClass().createStandardProperty(DataBuffer::Uninitialized, fingerprint.particleCount(), ParticlesObject::StructureTypeProperty)),
     _inputFingerprint(std::move(fingerprint))
 {
     // Create deep copies of the structure elements types, because data objects owned by the modifier should
@@ -169,9 +169,9 @@ void StructureIdentificationModifier::StructureIdentificationEngine::applyResult
     }
 
     // Create the property arrays for the bar chart.
-    PropertyPtr typeCounts = DataTable::OOClass().createUserProperty(maxTypeId + 1, PropertyObject::Int64, 1, tr("Count"));
+    PropertyPtr typeCounts = DataTable::OOClass().createUserProperty(DataBuffer::Uninitialized, maxTypeId + 1, PropertyObject::Int64, 1, tr("Count"));
     boost::copy(_typeCounts, PropertyAccess<int64_t>(typeCounts).begin());
-    PropertyPtr typeIds = DataTable::OOClass().createUserProperty(maxTypeId + 1, PropertyObject::Int32, 1, tr("Structure type"));
+    PropertyPtr typeIds = DataTable::OOClass().createUserProperty(DataBuffer::Uninitialized, maxTypeId + 1, PropertyObject::Int32, 1, tr("Structure type"));
     boost::algorithm::iota_n(PropertyAccess<int32_t>(typeIds).begin(), 0, typeIds->size());
 
     // Use the structure types as labels for the output bar chart.

@@ -48,7 +48,7 @@ SET_PROPERTY_FIELD_UNITS_AND_RANGE(AmbientOcclusionModifier, bufferResolution, I
 /******************************************************************************
 * Constructs the modifier object.
 ******************************************************************************/
-AmbientOcclusionModifier::AmbientOcclusionModifier(ObjectCreationParams params) : AsynchronousModifier(params),
+AmbientOcclusionModifier::AmbientOcclusionModifier(ObjectInitializationFlags flags) : AsynchronousModifier(flags),
     _intensity(0.7),
     _samplingCount(40),
     _bufferResolution(3)
@@ -122,7 +122,7 @@ AmbientOcclusionModifier::AmbientOcclusionEngine::AmbientOcclusionEngine(const M
     _particleRadii(std::move(particleRadii)),
     _boundingBox(boundingBox),
     _renderer(std::move(renderer)),
-    _brightness(DataBufferPtr::create(fingerprint.particleCount(), PropertyObject::FloatDefault, 1, DataBuffer::InitializeMemory)),
+    _brightness(DataBufferPtr::create(DataBuffer::Initialized, fingerprint.particleCount(), PropertyObject::FloatDefault, 1)),
     _inputFingerprint(std::move(fingerprint))
 {
     OVITO_ASSERT(_particleRadii->size() == _positions->size());
@@ -294,7 +294,7 @@ void AmbientOcclusionModifier::AmbientOcclusionEngine::applyResults(const Modifi
 
     // Get output property object.
     ConstDataBufferAccess<FloatType> brightnessValues(brightness());
-    PropertyAccess<ColorG> colorProperty = particles->createProperty(ParticlesObject::ColorProperty, DataBuffer::InitializeMemory, {particles});
+    PropertyAccess<ColorG> colorProperty = particles->createProperty(DataBuffer::Initialized, ParticlesObject::ColorProperty, {particles});
     const FloatType* b = brightnessValues.cbegin();
     for(ColorG& c : colorProperty) {
         GraphicsFloatType factor = FloatType(1) - intensity + static_cast<GraphicsFloatType>(*b);

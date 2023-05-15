@@ -58,7 +58,7 @@ public:
 public:
 
     /// Constructor.
-    Q_INVOKABLE ParticlesVis(ObjectCreationParams params);
+    Q_INVOKABLE ParticlesVis(ObjectInitializationFlags flags);
 
     /// Renders the visual element.
     virtual PipelineStatus render(AnimationTime time, const ConstDataObjectPath& path, const PipelineFlowState& flowState, SceneRenderer* renderer, const PipelineSceneNode* contextNode) override;
@@ -88,7 +88,7 @@ public:
     GraphicsFloatType particleRadius(size_t particleIndex, ConstPropertyAccess<GraphicsFloatType> radiusProperty, const PropertyObject* typeProperty) const;
 
     /// Returns the display color of a single particle.
-    ColorG particleColor(size_t particleIndex, ConstPropertyAccess<ColorG> colorProperty, const PropertyObject* typeProperty, ConstPropertyAccess<DataBuffer::SelectionDataType> selectionProperty) const;
+    ColorG particleColor(size_t particleIndex, ConstPropertyAccess<ColorG> colorProperty, const PropertyObject* typeProperty, ConstPropertyAccess<SelectionIntType> selectionProperty) const;
 
     /// Computes the bounding box of the particles.
     Box3 particleBoundingBox(ConstPropertyAccess<Point3> positionProperty, const PropertyObject* typeProperty, ConstPropertyAccess<GraphicsFloatType> radiusProperty, ConstPropertyAccess<Vector3G> shapeProperty, bool includeParticleRadius) const;

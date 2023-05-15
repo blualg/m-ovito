@@ -71,7 +71,7 @@ public:
 public:
 
     /// \brief Constructs a new instance of this class.
-    Q_INVOKABLE ExpandSelectionModifier(ObjectCreationParams params);
+    Q_INVOKABLE ExpandSelectionModifier(ObjectInitializationFlags flags);
 
 protected:
 
@@ -105,13 +105,13 @@ private:
         virtual void applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
 
         const PropertyPtr& outputSelection() { return _outputSelection; }
-        
+
         void setOutputSelection(PropertyPtr ptr) { _outputSelection = std::move(ptr); }
-        
+
         size_t numSelectedParticlesInput() const { return _numSelectedParticlesInput; }
-        
+
         size_t numSelectedParticlesOutput() const { return _numSelectedParticlesOutput; }
-        
+
         void setNumSelectedParticlesInput(size_t count) { _numSelectedParticlesInput = count; }
 
         void setNumSelectedParticlesOutput(size_t count) { _numSelectedParticlesOutput = count; }

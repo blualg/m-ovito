@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -110,7 +110,7 @@ OORef<OvitoObject> ObjectLoadStream::loadObjectInternal()
         else {
             // Create an instance of the object class.
             if(record.classInfo->clazz->isDerivedFrom(RefTarget::OOClass()))
-                record.object = record.classInfo->clazz->createInstance(ObjectCreationParams(ObjectCreationParams::DontCreateSubObjects));
+                record.object = record.classInfo->clazz->createInstance(ObjectInitializationFlag::DontInitializeObject);
             else
                 record.object = record.classInfo->clazz->createInstance();
 
@@ -121,7 +121,7 @@ OORef<OvitoObject> ObjectLoadStream::loadObjectInternal()
                     setDatasetToBePopulated(static_object_cast<DataSet>(record.object.get()));
                 }
                 else {
-                    // If an existing DataSet has been provided, load the objects from the stream into 
+                    // If an existing DataSet has been provided, load the objects from the stream into
                     // that existing Dataset instead of creating a new one. This feature is used in DataSet::loadFromFile();
                     record.object = _dataset;
                 }

@@ -61,7 +61,7 @@ SET_MODIFIER_APPLICATION_TYPE(GenerateTrajectoryLinesModifier, GenerateTrajector
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-GenerateTrajectoryLinesModifier::GenerateTrajectoryLinesModifier(ObjectCreationParams params) : Modifier(params),
+GenerateTrajectoryLinesModifier::GenerateTrajectoryLinesModifier(ObjectInitializationFlags flags) : Modifier(flags),
     _onlySelectedParticles(true),
     _useCustomInterval(false),
     _customIntervalStart(0),
@@ -70,9 +70,9 @@ GenerateTrajectoryLinesModifier::GenerateTrajectoryLinesModifier(ObjectCreationP
     _unwrapTrajectories(true),
     _transferParticleProperties(false)
 {
-    if(params.createSubObjects()) {
+    if(!flags.testFlag(ObjectInitializationFlag::DontInitializeObject)) {
         // Create the vis element for rendering the trajectories created by the modifier.
-        setTrajectoryVis(OORef<TrajectoryVis>::create(params));
+        setTrajectoryVis(OORef<TrajectoryVis>::create(flags));
     }
 }
 
@@ -135,7 +135,7 @@ bool GenerateTrajectoryLinesModifier::generateTrajectories(AnimationTime current
         std::vector<size_t> selectedIndices;
         std::set<int64_t> selectedIdentifiers;
         if(onlySelectedParticles()) {
-            if(ConstPropertyAccess<DataBuffer::SelectionDataType> selectionProperty = particles->getProperty(ParticlesObject::SelectionProperty)) {
+            if(ConstPropertyAccess<SelectionIntType> selectionProperty = particles->getProperty(ParticlesObject::SelectionProperty)) {
                 ConstPropertyAccess<int64_t> identifierProperty = particles->getProperty(ParticlesObject::IdentifierProperty);
                 if(identifierProperty && identifierProperty.size() == selectionProperty.size()) {
                     const auto* s = selectionProperty.cbegin();
@@ -336,11 +336,11 @@ bool GenerateTrajectoryLinesModifier::generateTrajectories(AnimationTime current
                         // Input property name is that of a standard property for trajectory lines.
                         // Must rename the property to avoid naming conflict, because user properties may not have a standard property name.
                         QString newPropertyName = inputProperty->name() + tr("_particles");
-                        samplingProperty = trajObj->createProperty(newPropertyName, inputProperty->dataType(), inputProperty->componentCount(), DataBuffer::NoFlags, inputProperty->componentNames());
+                        samplingProperty = trajObj->createProperty(newPropertyName, inputProperty->dataType(), inputProperty->componentCount(), inputProperty->componentNames());
                     }
                     else {
                         // Input property is a user property for trajectory lines.
-                        samplingProperty = trajObj->createProperty(inputProperty->name(), inputProperty->dataType(), inputProperty->componentCount(), DataBuffer::NoFlags, inputProperty->componentNames());
+                        samplingProperty = trajObj->createProperty(inputProperty->name(), inputProperty->dataType(), inputProperty->componentCount(), inputProperty->componentNames());
                     }
 
                     // Copy property values from temporary sampling buffer to destination trajectory line property.

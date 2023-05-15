@@ -81,12 +81,12 @@ bool GuiApplication::processCommandLineParameters()
     // Check if program was started in console mode.
     if(!_cmdLineParser.isSet("nogui")) {
         // Enable GUI mode by default.
-        _consoleMode = false;
+        setGuiMode(true);
         _headlessMode = false;
     }
     else {
         // Activate console mode.
-        _consoleMode = true;
+        setGuiMode(false);
 #if defined(Q_OS_LINUX)
         // On Linux, run in headless mode by default - unless explicitly requested otherwise (in which case an X server is required).
         if(qEnvironmentVariableIsSet("OVITO_GUI_MODE") && qgetenv("OVITO_GUI_MODE") != "0") {

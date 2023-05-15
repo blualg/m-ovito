@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -50,10 +50,10 @@ SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(StandardCameraSource, zoomController, World
 /******************************************************************************
 * Constructs a camera object.
 ******************************************************************************/
-StandardCameraSource::StandardCameraSource(ObjectCreationParams params) : PipelineObject(params), 
+StandardCameraSource::StandardCameraSource(ObjectInitializationFlags flags) : PipelineObject(flags),
     _isPerspective(true)
 {
-    if(params.createSubObjects()) {
+    if(!flags.testFlag(ObjectInitializationFlag::DontInitializeObject)) {
         setFovController(ControllerManager::createFloatController());
         fovController()->setFloatValue(AnimationTime(0), FLOATTYPE_PI/4);
 
@@ -79,9 +79,9 @@ StandardCameraSource::StandardCameraSource(ObjectCreationParams params) : Pipeli
 TimeInterval StandardCameraSource::validityInterval(const PipelineEvaluationRequest& request) const
 {
     TimeInterval interval = PipelineObject::validityInterval(request);
-    if(isPerspective() && fovController()) 
+    if(isPerspective() && fovController())
         interval.intersect(fovController()->validityInterval(request.time()));
-    if(!isPerspective() && zoomController()) 
+    if(!isPerspective() && zoomController())
         interval.intersect(zoomController()->validityInterval(request.time()));
     return interval;
 }
@@ -112,7 +112,7 @@ PipelineFlowState StandardCameraSource::evaluateSynchronous(const PipelineEvalua
 ******************************************************************************/
 FloatType StandardCameraSource::zoom() const
 {
-    if(zoomController()) 
+    if(zoomController())
         return zoomController()->getFloatValue(AnimationTime(0));
     return 200;
 }
@@ -122,7 +122,7 @@ FloatType StandardCameraSource::zoom() const
 ******************************************************************************/
 void StandardCameraSource::setZoom(FloatType newFOV)
 {
-    if(zoomController()) 
+    if(zoomController())
         zoomController()->setFloatValue(AnimationTime(0), newFOV);
 }
 
@@ -131,7 +131,7 @@ void StandardCameraSource::setZoom(FloatType newFOV)
 ******************************************************************************/
 FloatType StandardCameraSource::fov() const
 {
-    if(fovController()) 
+    if(fovController())
         return fovController()->getFloatValue(AnimationTime(0));
     return FLOATTYPE_PI / 4;
 }
@@ -141,7 +141,7 @@ FloatType StandardCameraSource::fov() const
 ******************************************************************************/
 void StandardCameraSource::setFov(FloatType newFOV)
 {
-    if(fovController()) 
+    if(fovController())
         fovController()->setFloatValue(AnimationTime(0), newFOV);
 }
 

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -46,16 +46,16 @@ IMPLEMENT_OVITO_CLASS(VoxelGridPickInfo);
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-VoxelGridVis::VoxelGridVis(ObjectCreationParams params) : DataVis(params),
+VoxelGridVis::VoxelGridVis(ObjectInitializationFlags flags) : DataVis(flags),
     _highlightGridLines(true),
     _interpolateColors(false)
 {
-    if(params.createSubObjects()) {
+    if(!flags.testFlag(ObjectInitializationFlag::DontInitializeObject)) {
         // Create animation controller for the transparency parameter.
         setTransparencyController(ControllerManager::createFloatController());
 
         // Create a color mapping object for pseudo-color visualization of a grid property.
-        setColorMapping(OORef<PropertyColorMapping>::create(params));
+        setColorMapping(OORef<PropertyColorMapping>::create(flags));
     }
 }
 
@@ -164,12 +164,12 @@ PipelineStatus VoxelGridVis::render(AnimationTime time, const ConstDataObjectPat
 
     // Look up the rendering primitive in the vis cache.
     auto& primitives = renderer->visCache().get<CacheValue>(CacheKey(
-        gridObj, 
-        colorProperty, 
-        pseudoColorProperty, 
-        pseudoColorPropertyComponent, 
-        transp, 
-        highlightGridLines(), 
+        gridObj,
+        colorProperty,
+        pseudoColorProperty,
+        pseudoColorPropertyComponent,
+        transp,
+        highlightGridLines(),
         interpolateColors()));
 
     // Check if we already have valid rendering primitives that are up to date.
@@ -182,7 +182,7 @@ PipelineStatus VoxelGridVis::render(AnimationTime time, const ConstDataObjectPat
                     trianglesPerCell = 8;
             }
 
-            DataOORef<TriMeshObject> mesh = DataOORef<TriMeshObject>::create(ObjectCreationParams::WithoutVisElement);
+            DataOORef<TriMeshObject> mesh = DataOORef<TriMeshObject>::create(ObjectInitializationFlag::DontCreateVisElement);
             if(colorArray) {
                 if(interpolateColors()) mesh->setHasVertexColors(true);
                 else mesh->setHasFaceColors(true);
@@ -194,12 +194,12 @@ PipelineStatus VoxelGridVis::render(AnimationTime time, const ConstDataObjectPat
             VoxelGrid::GridDimensions gridDims = gridObj->shape();
             std::array<bool, 3> pbcFlags = gridObj->domain()->pbcFlags();
 
-            // Number of visible grid lines in each grid direction. 
+            // Number of visible grid lines in each grid direction.
             std::array<int, 3> numLines;
             for(size_t dim = 0; dim < 3; dim++)
                 numLines[dim] = std::max(2, (int)gridDims[dim] + (gridObj->gridType() == VoxelGrid::GridType::CellData || pbcFlags[dim] ? 1 : 0));
 
-            // Number of visible cells in each grid direction. 
+            // Number of visible cells in each grid direction.
             std::array<int, 3> numCells;
             for(size_t dim = 0; dim < 3; dim++)
                 numCells[dim] = numLines[dim] - 1;
@@ -222,7 +222,7 @@ PipelineStatus VoxelGridVis::render(AnimationTime time, const ConstDataObjectPat
                 Vector3 dx = gridObj->domain()->cellMatrix().column(dim1) / nvx;
                 Vector3 dy = gridObj->domain()->cellMatrix().column(dim2) / nvy;
 
-                // Will store the xyz voxel grid coordinates. 
+                // Will store the xyz voxel grid coordinates.
                 // The coordinate in the 3rd direction is a constant, which is precomputed here.
                 size_t coords[3];
                 coords[dim3] = oppositeSide ? (gridDims[dim3] - 1) : 0;
@@ -243,7 +243,7 @@ PipelineStatus VoxelGridVis::render(AnimationTime time, const ConstDataObjectPat
                 if(!interpolateColors() || gridObj->gridType() == VoxelGrid::GridType::PointData || (!colorArray && !pseudoColorArray)) {
                     OVITO_ASSERT(trianglesPerCell == 2);
 
-                    // Create two triangles per voxel face. 
+                    // Create two triangles per voxel face.
                     mesh->setVertexCount(baseVertexCount + nlx * nly);
                     mesh->setFaceCount(baseFaceCount + 2 * nvx * nvy);
 
@@ -459,7 +459,7 @@ PipelineStatus VoxelGridVis::render(AnimationTime time, const ConstDataObjectPat
                             ++face;
                         }
                     }
-                    OVITO_ASSERT(face == mesh->faces().end());              
+                    OVITO_ASSERT(face == mesh->faces().end());
                 }
                 else {
                     OVITO_ASSERT(trianglesPerCell == 8);

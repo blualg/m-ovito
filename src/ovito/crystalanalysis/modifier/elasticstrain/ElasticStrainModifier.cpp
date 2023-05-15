@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -49,7 +49,7 @@ SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(ElasticStrainModifier, axialRatio, FloatPar
 /******************************************************************************
 * Constructs the modifier object.
 ******************************************************************************/
-ElasticStrainModifier::ElasticStrainModifier(ObjectCreationParams params) : StructureIdentificationModifier(params),
+ElasticStrainModifier::ElasticStrainModifier(ObjectInitializationFlags flags) : StructureIdentificationModifier(flags),
     _inputCrystalStructure(StructureAnalysis::LATTICE_FCC),
     _calculateDeformationGradients(false),
     _calculateStrainTensors(true),
@@ -57,7 +57,7 @@ ElasticStrainModifier::ElasticStrainModifier(ObjectCreationParams params) : Stru
     _axialRatio(sqrt(8.0/3.0)),
     _pushStrainTensorsForward(true)
 {
-    if(params.createSubObjects()) {
+    if(!flags.testFlag(ObjectInitializationFlag::DontInitializeObject)) {
         // Create the structure types.
         ParticleType::PredefinedStructureType predefTypes[] = {
                 ParticleType::PredefinedStructureType::OTHER,
@@ -69,11 +69,11 @@ ElasticStrainModifier::ElasticStrainModifier(ObjectCreationParams params) : Stru
         };
         OVITO_STATIC_ASSERT(sizeof(predefTypes)/sizeof(predefTypes[0]) == StructureAnalysis::NUM_LATTICE_TYPES);
         for(int id = 0; id < StructureAnalysis::NUM_LATTICE_TYPES; id++) {
-            DataOORef<MicrostructurePhase> stype = DataOORef<MicrostructurePhase>::create(params);
+            DataOORef<MicrostructurePhase> stype = DataOORef<MicrostructurePhase>::create(flags);
             stype->setNumericId(id);
             stype->setDimensionality(MicrostructurePhase::Dimensionality::Volumetric);
             stype->setName(ParticleType::getPredefinedStructureTypeName(predefTypes[id]));
-            stype->setColor(ElementType::getDefaultColor(ParticlePropertyReference(ParticlesObject::StructureTypeProperty), stype->name(), id, params.loadUserDefaults()));
+            stype->setColor(ElementType::getDefaultColor(ParticlePropertyReference(ParticlesObject::StructureTypeProperty), stype->name(), id));
             addStructureType(std::move(stype));
         }
     }

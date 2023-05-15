@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -57,7 +57,7 @@ public:
     Q_ENUM(ColorMappingMode);
 
     /// \brief Constructor.
-    Q_INVOKABLE SurfaceMeshVis(ObjectCreationParams params);
+    Q_INVOKABLE SurfaceMeshVis(ObjectInitializationFlags flags);
 
     /// Lets the visualization element render the data object.
     virtual PipelineStatus render(AnimationTime time, const ConstDataObjectPath& path, const PipelineFlowState& flowState, SceneRenderer* renderer, const PipelineSceneNode* contextNode) override;
@@ -182,7 +182,7 @@ public:
         boost::dynamic_bitset<> _faceSubset;        ///< Bit array indicating which surface mesh faces are part of the render set.
         std::vector<ColorA> _materialColors;        ///< The list of material colors for the output TriMesh.
         std::vector<size_t> _originalFaceMap;       ///< Maps output mesh triangles to input mesh facets.
-        bool _renderFacesTwoSided = true;           ///< Indicates that output triangle faces should be rendered two-sided. 
+        bool _renderFacesTwoSided = true;           ///< Indicates that output triangle faces should be rendered two-sided.
         PipelineStatus _status;                     ///< The outcome of the process.
     };
 

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -43,7 +43,7 @@ class OVITO_CORE_EXPORT AnimationSettings : public RefTarget
         /// Inherit constructor from base class.
         using RefTarget::OOMetaClass::OOMetaClass;
 
-        /// Provides a custom function that takes are of the deserialization of a serialized property field that has been removed from the class. 
+        /// Provides a custom function that takes are of the deserialization of a serialized property field that has been removed from the class.
         /// This is needed for backward compatibility with OVITO 3.7.
         virtual SerializedClassInfo::PropertyFieldInfo::CustomDeserializationFunctionPtr overrideFieldDeserialization(const SerializedClassInfo::PropertyFieldInfo& field) const override;
     };
@@ -53,10 +53,9 @@ class OVITO_CORE_EXPORT AnimationSettings : public RefTarget
 public:
 
     /// \brief Constructor that initializes the object with default values.
-    /// \param dataset The context dataset.
-    Q_INVOKABLE AnimationSettings(ObjectCreationParams params);
+    Q_INVOKABLE AnimationSettings(ObjectInitializationFlags flags);
 
-    /// \brief Returns the time that corresponds to the current frame at which the time slider is positioned. 
+    /// \brief Returns the time that corresponds to the current frame at which the time slider is positioned.
     AnimationTime currentTime() const { return AnimationTime::fromFrame(currentFrame()); }
 
     /// \brief Returns the list of names assigned to animation frames.

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -58,7 +58,7 @@ class OVITO_PARTICLES_EXPORT ParaViewVTPParticleImporter : public ParticleImport
 public:
 
     /// \brief Constructor.
-    Q_INVOKABLE ParaViewVTPParticleImporter(ObjectCreationParams params) : ParticleImporter(params) {}
+    Q_INVOKABLE ParaViewVTPParticleImporter(ObjectInitializationFlags flags) : ParticleImporter(flags) {}
 
     /// Returns the title of this object.
     virtual QString objectTitle() const override { return tr("VTP"); }
@@ -81,7 +81,7 @@ private:
     public:
 
         /// Constructor.
-        FrameLoader(const LoadOperationRequest& request, std::vector<ParaViewVTMBlockInfo> particleShapeFiles) 
+        FrameLoader(const LoadOperationRequest& request, std::vector<ParaViewVTMBlockInfo> particleShapeFiles)
             : ParticleImporter::FrameLoader(request), _particleShapeFiles(std::move(particleShapeFiles)) {}
 
     protected:
@@ -126,7 +126,7 @@ public:
 
 private:
 
-    /// The list of shape files for particle types. 
+    /// The list of shape files for particle types.
     std::vector<ParaViewVTMBlockInfo> _particleShapeFiles;
 };
 

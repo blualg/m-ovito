@@ -124,7 +124,7 @@ void DislocationAnalysisEngine::perform()
             _structureAnalysis->atomCount(),
             ghostLayerSize,
             false, // flag coverDomainWithFiniteTets
-            selection() ? ConstPropertyAccess<int>(selection()).cbegin() : nullptr,
+            selection() ? ConstPropertyAccess<SelectionIntType>(selection()).cbegin() : nullptr,
             *this))
         return;
 
@@ -384,10 +384,10 @@ FloatType  DislocationAnalysisEngine::generateDislocationStatistics(const Pipeli
     int maxId = 0;
     for(const auto& entry : dislocationLengths)
         maxId = std::max(maxId, entry.first->numericId());
-    PropertyAccessAndRef<FloatType> dislocationLengthsProperty = DataTable::OOClass().createUserProperty(maxId+1, DataBuffer::FloatDefault, 1, DislocationAnalysisModifier::tr("Total line length"), DataBuffer::InitializeMemory);
+    PropertyAccessAndRef<FloatType> dislocationLengthsProperty = DataTable::OOClass().createUserProperty(DataBuffer::Initialized, maxId+1, DataBuffer::FloatDefault, 1, DislocationAnalysisModifier::tr("Total line length"));
     for(const auto& entry : dislocationLengths)
         dislocationLengthsProperty[entry.first->numericId()] = entry.second;
-    PropertyAccessAndRef<int32_t> dislocationTypeIds = DataTable::OOClass().createUserProperty(maxId+1, DataBuffer::Int32, 1, DislocationAnalysisModifier::tr("Dislocation type"));
+    PropertyAccessAndRef<int32_t> dislocationTypeIds = DataTable::OOClass().createUserProperty(DataBuffer::Uninitialized, maxId+1, DataBuffer::Int32, 1, DislocationAnalysisModifier::tr("Dislocation type"));
     boost::algorithm::iota_n(dislocationTypeIds.begin(), 0, dislocationTypeIds.size());
 
     for(const auto& entry : dislocationLengths)
@@ -407,7 +407,7 @@ FloatType  DislocationAnalysisEngine::generateDislocationStatistics(const Pipeli
     }
 
     // Output a data table with the dislocation segment counts.
-    PropertyAccessAndRef<int32_t> dislocationCountsProperty = DataTable::OOClass().createUserProperty(maxId+1, DataBuffer::Int32, 1, DislocationAnalysisModifier::tr("Dislocation count"), DataBuffer::InitializeMemory);
+    PropertyAccessAndRef<int32_t> dislocationCountsProperty = DataTable::OOClass().createUserProperty(DataBuffer::Initialized, maxId+1, DataBuffer::Int32, 1, DislocationAnalysisModifier::tr("Dislocation count"));
     for(const auto& entry : segmentCounts)
         dislocationCountsProperty[entry.first->numericId()] = entry.second;
 

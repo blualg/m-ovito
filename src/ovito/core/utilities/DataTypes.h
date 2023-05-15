@@ -22,7 +22,7 @@
 
 /**
  * \file
- * \brief This header file defines the default data types and numeric constants used throughout the program.
+ * \brief This header file defines the default floating-point type and numeric constants used throughout the program.
  */
 
 #pragma once
@@ -65,14 +65,5 @@ namespace Ovito {
 
 /// Low-precisiion floating-point type used for graphics data.
 using GraphicsFloatType = float;
-
-/// The format specifier to be passed to the sscanf() function to parse low-precision floating-point numbers of type Ovito::GraphicsFloatType.
-#define GRAPHICS_FLOATTYPE_SCANF_STRING "%g"
-
-/// Data type used for storing unique identifiers.
-using IdentifierIntType = int64_t;
-
-/// Data type used for storing element selections.
-using SelectionIntType = int8_t;
 
 }   // End of namespace

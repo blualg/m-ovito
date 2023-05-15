@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -197,7 +197,7 @@ void ParaViewVTPMeshImporter::FrameLoader::loadFile()
 
             // Go through the connectivity and the offsets arrays and create corresponding faces in the output mesh.
             int previousOffset = 0;
-            for(int offset : ConstPropertyAccess<int>(offsetsArray)) {
+            for(int offset : ConstPropertyAccess<int32_t>(offsetsArray)) {
                 if(offset < previousOffset + 3 || offset > vertexIndices.size()) {
                     xml.raiseError(tr("Invalid or inconsistent connectivity information in <Polys> element."));
                     break;
@@ -369,7 +369,7 @@ PropertyPtr ParaViewVTPMeshImporter::FrameLoader::parseDataArray(QXmlStreamReade
     }
 
     // Create destination property. Initially with zero elements, will be resized later when the size of the VTK data array is known.
-    PropertyPtr property = DataOORef<PropertyObject>::create(0, convertToDataType, numComponents, name);
+    PropertyPtr property = DataOORef<PropertyObject>::create(DataBuffer::Uninitialized, 0, convertToDataType, numComponents, name);
 
     // Delegate parsing of payload to sub-routine.
     if(!parseVTKDataArray(property.get(), xml))

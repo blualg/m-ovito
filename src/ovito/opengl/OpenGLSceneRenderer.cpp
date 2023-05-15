@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -117,7 +117,7 @@ void OpenGLSceneRenderer::OOMetaClass::querySystemInformation(QTextStream& strea
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-OpenGLSceneRenderer::OpenGLSceneRenderer(ObjectCreationParams params) : SceneRenderer(params)
+OpenGLSceneRenderer::OpenGLSceneRenderer(ObjectInitializationFlags flags) : SceneRenderer(flags)
 {
     registerQtResources();
 

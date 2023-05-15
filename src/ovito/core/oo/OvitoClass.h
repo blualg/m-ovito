@@ -28,12 +28,6 @@
 
 namespace Ovito {
 
-// Some helper functions for querying information from Qt's Meta-Type system.
-template<typename T> const char* getQtTypeName() { return QMetaType::fromType<T>().name(); }
-inline const char* getQtTypeNameFromId(int typeId) { return QMetaType(typeId).name(); }
-inline qsizetype getQtTypeSizeFromId(int typeId) { return QMetaType(typeId).sizeOf(); }
-inline int getQtTypeIdFromName(QByteArrayView typeName) { return QMetaType::fromName(std::move(typeName)).id(); }
-
 /**
  * \brief Meta-class for classes derived from OvitoObject.
  */
@@ -57,6 +51,9 @@ public:
 
     /// \brief Constructor.
     OvitoClass(const QString& name, OvitoClassPtr superClass, const char* pluginId, const QMetaObject* qtClassInfo);
+
+    /// \brief Destructor.
+    virtual ~OvitoClass() = default;
 
     /// \brief Returns the name of the C++ class described by this meta-class instance.
     /// \return The name of the class (without namespace qualifier).
@@ -92,15 +89,16 @@ public:
     /// This may be NULL if this is not a native class type.
     const QMetaObject* qtMetaObject() const { return _qtClassInfo; }
 
-    /// \brief Indicates whether the class is abstract (meaning that no instances can be created using createInstance()).
-    bool isAbstract() const { return _isAbstract; }
+    /// Indicates whether this class can be instantiated at runtime.
+    bool isInstantiable() const { return _isInstantiable; }
 
     /// \brief Determines whether the class is directly or indirectly derived from some other class.
     /// \note This method also returns \c true if the class \a other is the class itself.
     bool isDerivedFrom(const OvitoClass& other) const {
         OvitoClassPtr c = this;
         do {
-            if(c == &other) return true;
+            if(c == &other)
+                return true;
             c = c->superClass();
         }
         while(c);
@@ -110,25 +108,15 @@ public:
     /// \brief Determines if an object is an instance of the class or one of its subclasses.
     bool isMember(const OvitoObject* obj) const;
 
-    /// \brief Creates an instance of a class that is NOT derived from RefTarget.
+    /// \brief Creates an instance of a class.
     /// \return The new instance of the class. The pointer can be safely cast to the corresponding C++ class type.
     /// \throw Exception if a required plugin failed to load, or if the instantiation failed for some other reason.
-    OORef<OvitoObject> createInstance() const;
+    OORef<OvitoObject> createInstance(ObjectInitializationFlags flags = ObjectInitializationFlag::NoFlags) const;
 
-    /// Creates an instance of this object class, which must be derived from RefTarget.
-    /// \param dataset The dataset the newly created object will belong to.
-    /// \param initFlags Controls how the parameters of the new object get initialized. 
-    OORef<RefTarget> createInstance(ObjectCreationParams::InitializationFlags initFlags) const;
-
-    /// \brief Creates an instance of a RefTarget-derived class.
-    /// \return The new instance of the class. The pointer can be safely cast to the corresponding C++ class type.
-    /// \throw Exception if a required plugin failed to load, or if the instantiation failed for some other reason.
-    OORef<RefTarget> createInstance(ObjectCreationParams params) const;
-
-    /// Compares two types.
+    /// Compares two classes based on memory address.
     bool operator==(const OvitoClass& other) const { return (this == &other); }
 
-    /// Compares two types.
+    /// Compares two classes based on memory address.
     bool operator!=(const OvitoClass& other) const { return (this != &other); }
 
     /// \brief Writes a type descriptor to the stream.
@@ -165,62 +153,63 @@ public:
     /// \brief Is called by OVITO to query the class for any information that should be included in the application's system report.
     virtual void querySystemInformation(QTextStream& stream, UserInterface& userInterface) const {}
 
-protected:
-
-    /// \brief Is called by the system after construction of the meta-class instance.
-    virtual void initialize();
-
-    /// \brief Creates an instance of the class described by this meta-class.
-    /// \return The new instance of the class. The pointer can be safely cast to the corresponding C++ class type.
-    /// \throw Exception if the instance could not be created.
-    OvitoObject* createInstanceImpl(ObjectCreationParams params) const;
-
-    /// \brief Marks this class as an abstract class that cannot be instantiated.
-    void setAbstract(bool abstract) { _isAbstract = abstract; }
-
-    /// \brief Changes the human-readable display name of this plugin class.
+    /// \brief Changes the human-readable name of this plugin class.
     void setDisplayName(const QString& name) { _displayName = name; }
 
-    /// Sets a name alias for the class.
+    /// \brief Sets a name alias for the class.
+    //
     /// It will be used as an alternative name when looking up the class for a serialized object in a state file.
     /// This allows to maintain backward compatibility when renaming classes in the C++ source code.
     void setNameAlias(const QString& alias) { _nameAlias = alias; }
 
 protected:
 
+    /// \brief Is called by the system on program startup.
+    virtual void initialize();
+
+    /// \brief Creates an instance of the class described by this meta-class.
+    /// \return The new instance of the class. The pointer can be safely cast to the corresponding C++ class type.
+    /// \throw Exception if the instance could not be created for some reason.
+    virtual OORef<OvitoObject> createInstanceImpl(ObjectInitializationFlags flags) const;
+
+    /// \brief Marks this class as instantiatiable.
+    void setIsInstantiable(bool isInstantiable = true) { _isInstantiable = isInstantiable; }
+
+protected:
+
     /// The class name.
     QString _name;
 
-    /// The human-readable display name of this plugin class.
+    /// The human-readable name of this plugin class.
     QString _displayName;
 
-    /// The identifier of the plugin that defined the class.
+    /// The identifier of the plugin that hosts the class.
     const char* _pluginId = nullptr;
 
-    /// The plugin that defined the class.
+    /// The plugin that hosts the class.
     Plugin* _plugin = nullptr;
 
     /// An alias for the class name, which is used when looking up a class for a serialized object.
     /// This can help to maintain backward file compatibility when renaming classes.
     QString _nameAlias;
 
-    /// The base class descriptor (or NULL if this is the descriptor for the root OvitoObject class).
+    /// The base class descriptor (or nullptr if this is the descriptor for the root OvitoObject class).
     OvitoClassPtr _superClass;
 
-    /// Indicates whether the class is abstract.
-    bool _isAbstract = false;
+    /// Indicates whether this class can be instantiated at runtime.
+    bool _isInstantiable = false;
 
-    /// The runtime-type information provided by Qt.
+    /// The runtime-type information provided by Qt if this is a native C++ class.
     const QMetaObject* _qtClassInfo = nullptr;
 
-    /// The name of the C++ class.
+    /// The name of the C++ class if it's a native class.
     const char* _pureClassName = nullptr;
 
-    /// All meta-classes form a linked list.
-    OvitoClass* _nextMetaclass;
+    /// All native C++ meta-classes are collected in one linked list.
+    OvitoClass* _nextNativeMetaclass;
 
-    /// The head of the linked list with all meta-classes.
-    static OvitoClass* _firstMetaClass;
+    /// The head of the linked list with all native C++ meta-classes.
+    static OvitoClass* _firstNativeMetaClass;
 
     friend class PluginManager;
     friend class RefTarget;     // Give RefTarget::clone() access to low-level method createInstanceImpl().

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -44,26 +44,26 @@ constexpr SurfaceMesh::size_type SurfaceMesh::InvalidIndex;
 /******************************************************************************
 * Constructs an empty surface mesh object.
 ******************************************************************************/
-SurfaceMesh::SurfaceMesh(ObjectCreationParams params, const QString& title) : PeriodicDomainDataObject(params, title),
+SurfaceMesh::SurfaceMesh(ObjectInitializationFlags flags, const QString& title) : PeriodicDomainDataObject(flags, title),
     _spaceFillingRegion(SurfaceMesh::InvalidIndex)
 {
-    if(params.createVisElement()) {
-        // Attach a visualization element for rendering the surface mesh.
-        setVisElement(OORef<SurfaceMeshVis>::create(params));
-    }
+    if(!flags.testFlag(ObjectInitializationFlag::DontInitializeObject)) {
+        if(!flags.testFlag(ObjectInitializationFlag::DontCreateVisElement)) {
+            // Attach a visualization element for rendering the surface mesh.
+            setVisElement(OORef<SurfaceMeshVis>::create(flags));
+        }
 
-    if(params.createSubObjects()) {
         // Create the sub-object for storing the mesh topology.
-        setTopology(DataOORef<SurfaceMeshTopology>::create(params));
+        setTopology(DataOORef<SurfaceMeshTopology>::create(flags));
 
         // Create the sub-object for storing the vertex properties.
-        setVertices(DataOORef<SurfaceMeshVertices>::create(params));
+        setVertices(DataOORef<SurfaceMeshVertices>::create(flags));
 
         // Create the sub-object for storing the face properties.
-        setFaces(DataOORef<SurfaceMeshFaces>::create(params));
+        setFaces(DataOORef<SurfaceMeshFaces>::create(flags));
 
         // Create the sub-object for storing the region properties.
-        setRegions(DataOORef<SurfaceMeshRegions>::create(params));
+        setRegions(DataOORef<SurfaceMeshRegions>::create(flags));
     }
 }
 

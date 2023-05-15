@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -39,7 +39,7 @@ class OVITO_CORE_EXPORT AnimationKey : public RefTarget
 public:
 
     /// Constructor.
-    AnimationKey(ObjectCreationParams params, AnimationTime time = AnimationTime(0)) : RefTarget(params), _time(time) {}
+    explicit AnimationKey(ObjectInitializationFlags flags, AnimationTime time = AnimationTime(0)) : RefTarget(flags), _time(time) {}
 
     /// Returns the value of this animation key as a QVariant.
     virtual QVariant valueQVariant() const = 0;
@@ -77,7 +77,7 @@ public:
     using tangent_type = FloatType;
 
     /// Constructor.
-    Q_INVOKABLE FloatAnimationKey(ObjectCreationParams params, AnimationTime time = AnimationTime(0), FloatType value = 0) : AnimationKey(params, time), _value(value) {}
+    Q_INVOKABLE FloatAnimationKey(ObjectInitializationFlags flags, AnimationTime time = AnimationTime(0), FloatType value = 0) : AnimationKey(flags, time), _value(value) {}
 
     /// Returns the value of this animation key as a QVariant.
     virtual QVariant valueQVariant() const override {
@@ -116,7 +116,7 @@ public:
     using tangent_type = int;
 
     /// Constructor.
-    Q_INVOKABLE IntegerAnimationKey(ObjectCreationParams params, AnimationTime time = AnimationTime(0), int value = 0) : AnimationKey(params, time), _value(value) {}
+    Q_INVOKABLE IntegerAnimationKey(ObjectInitializationFlags flags, AnimationTime time = AnimationTime(0), int value = 0) : AnimationKey(flags, time), _value(value) {}
 
     /// Returns the value of this animation key as a QVariant.
     virtual QVariant valueQVariant() const override {
@@ -155,7 +155,7 @@ public:
     using tangent_type = Vector3;
 
     /// Constructor.
-    Q_INVOKABLE Vector3AnimationKey(ObjectCreationParams params, AnimationTime time = AnimationTime(0), const Vector3& value = Vector3::Zero()) : AnimationKey(params, time), _value(value) {}
+    Q_INVOKABLE Vector3AnimationKey(ObjectInitializationFlags flags, AnimationTime time = AnimationTime(0), const Vector3& value = Vector3::Zero()) : AnimationKey(flags, time), _value(value) {}
 
     /// Returns the value of this animation key as a QVariant.
     virtual QVariant valueQVariant() const override {
@@ -194,7 +194,7 @@ public:
     using tangent_type = Vector3;
 
     /// Constructor.
-    Q_INVOKABLE PositionAnimationKey(ObjectCreationParams params, AnimationTime time = AnimationTime(0), const Vector3& value = Vector3::Zero()) : AnimationKey(params, time), _value(value) {}
+    Q_INVOKABLE PositionAnimationKey(ObjectInitializationFlags flags, AnimationTime time = AnimationTime(0), const Vector3& value = Vector3::Zero()) : AnimationKey(flags, time), _value(value) {}
 
     /// Returns the value of this animation key as a QVariant.
     virtual QVariant valueQVariant() const override {
@@ -233,7 +233,7 @@ public:
     using tangent_type = Rotation;
 
     /// Constructor.
-    Q_INVOKABLE RotationAnimationKey(ObjectCreationParams params, AnimationTime time = AnimationTime(0), const Rotation& value = Rotation::Identity()) : AnimationKey(params, time), _value(value) {}
+    Q_INVOKABLE RotationAnimationKey(ObjectInitializationFlags flags, AnimationTime time = AnimationTime(0), const Rotation& value = Rotation::Identity()) : AnimationKey(flags, time), _value(value) {}
 
     /// Returns the value of this animation key as a QVariant.
     virtual QVariant valueQVariant() const override {
@@ -272,7 +272,7 @@ public:
     using tangent_type = Scaling;
 
     /// Constructor.
-    Q_INVOKABLE ScalingAnimationKey(ObjectCreationParams params, AnimationTime time = AnimationTime(0), const Scaling& value = Scaling::Identity()) : AnimationKey(params, time), _value(value) {}
+    Q_INVOKABLE ScalingAnimationKey(ObjectInitializationFlags flags, AnimationTime time = AnimationTime(0), const Scaling& value = Scaling::Identity()) : AnimationKey(flags, time), _value(value) {}
 
     /// Returns the value of this animation key as a QVariant.
     virtual QVariant valueQVariant() const override {

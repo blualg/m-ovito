@@ -55,7 +55,7 @@ class OVITO_PARTICLES_EXPORT GSDExporter : public ParticleExporter
 public:
 
     /// \brief Constructs a new instance of this class.
-    Q_INVOKABLE GSDExporter(ObjectCreationParams params);
+    Q_INVOKABLE GSDExporter(ObjectInitializationFlags flags);
 
     /// Destructor.
     ~GSDExporter();

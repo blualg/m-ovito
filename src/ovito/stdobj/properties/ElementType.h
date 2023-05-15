@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -47,7 +47,7 @@ class OVITO_STDOBJ_EXPORT ElementType : public DataObject
 public:
 
     /// \brief Constructs a new type.
-    Q_INVOKABLE ElementType(ObjectCreationParams params);
+    Q_INVOKABLE ElementType(ObjectInitializationFlags flags);
 
     /// Initializes the element type to default parameter values.
     virtual void initializeType(const PropertyReference& property, bool loadUserDefaults = ExecutionContext::isInteractive());
@@ -73,12 +73,12 @@ public:
     virtual QString objectTitle() const override { return nameOrNumericId(); }
 
     /// Returns the default color for a named element type.
-    static Color getDefaultColor(const PropertyReference& property, const QString& typeName, int numericTypeId, bool loadUserDefaults);
+    static Color getDefaultColor(const PropertyReference& property, const QString& typeName, int numericTypeId, bool loadUserDefaults = ExecutionContext::isInteractive());
 
     /// Changes the default color for a named element type.
     static void setDefaultColor(const PropertyReference& property, const QString& typeName, const Color& color);
 
-    /// Returns the QSettings path for storing or accessing the user-defined 
+    /// Returns the QSettings path for storing or accessing the user-defined
     /// default values of some ElementType parameter.
     static QString getElementSettingsKey(const PropertyReference& property, const QString& parameterName, const QString& elementTypeName);
 

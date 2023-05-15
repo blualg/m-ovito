@@ -54,7 +54,7 @@ class OVITO_CRYSTALANALYSIS_EXPORT SimplifyMicrostructureModifier : public Async
 public:
 
     /// Constructor.
-    Q_INVOKABLE SimplifyMicrostructureModifier(ObjectCreationParams params);
+    Q_INVOKABLE SimplifyMicrostructureModifier(ObjectInitializationFlags flags);
 
     /// Decides whether a preliminary viewport update is performed after the modifier has been
     /// evaluated but before the entire pipeline evaluation is complete.

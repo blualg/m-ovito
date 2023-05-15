@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -68,7 +68,7 @@ public:
 
     /// \brief Returns all classes defined by the plugin.
     /// \sa findClass()
-    const QVector<OvitoClass*>& classes() const { return _classes; }
+    const QVector<OvitoClassPtr>& classes() const { return _classes; }
 
 protected:
 
@@ -84,7 +84,7 @@ private:
     QString _pluginId;
 
     /// The classes provided by the plugin.
-    QVector<OvitoClass*> _classes;
+    QVector<OvitoClassPtr> _classes;
 
     friend class PluginManager;
 };
@@ -128,21 +128,21 @@ public:
 
     /// \brief Returns all installed plugin classes derived from the given type.
     /// \param superClass Specifies the base class from which all returned classes should be derived.
-    /// \param skipAbstract If \c true only non-abstract classes are returned.
+    /// \param onlyInstantiable If \c true, only non-abstract classes are returned.
     /// \return A list that contains all requested classes.
-    QVector<OvitoClassPtr> listClasses(const OvitoClass& superClass, bool skipAbstract = true);
+    QVector<OvitoClassPtr> listClasses(const OvitoClass& superClass, bool onlyInstantiable = true);
 
     /// \brief Returns the metaclass with the given name defined by the given plugin.
     OvitoClassPtr findClass(const QString& pluginId, const QString& className);
 
     /// Returns a list with all classes that belong to a metaclass.
     template<class C>
-    QVector<const typename C::OOMetaClass*> metaclassMembers(const OvitoClass& parentClass = C::OOClass(), bool skipAbstract = true) {
+    QVector<const typename C::OOMetaClass*> metaclassMembers(const OvitoClass& parentClass = C::OOClass(), bool onlyInstantiable = true) {
         OVITO_ASSERT(parentClass.isDerivedFrom(C::OOClass()));
         QVector<const typename C::OOMetaClass*> result;
         for(Plugin* plugin : plugins()) {
             for(OvitoClassPtr clazz : plugin->classes()) {
-                if(!skipAbstract || !clazz->isAbstract()) {
+                if(!onlyInstantiable || clazz->isInstantiable()) {
                     if(clazz->isDerivedFrom(parentClass))
                         result.push_back(static_cast<const typename C::OOMetaClass*>(clazz));
                 }
@@ -167,24 +167,26 @@ public:
     /// \brief Returns the path where OVITO Pro's Python files reside.
     QString pythonDir();
 
+    /// \brief Registers an extension class at runtime.
+    /// The PluginMananger becomes the owner of the class object and will delete it on application shutdown.
+    void addExtensionClass(std::unique_ptr<OvitoClass> clazz);
+
     /// \brief Destructor that unloads all plugins.
     ~PluginManager();
 
 private:
 
-    /////////////////////////////////// Plugins ////////////////////////////////////
+    /// Private constructor, because this is a singleton class.
+    PluginManager();
 
     /// The list of installed plugins.
     QVector<Plugin*> _plugins;
 
-    /////////////////////////// Maintenance ////////////////////////////////
-
-    /// Private constructor.
-    /// This is a singleton class; no public instances are allowed.
-    PluginManager();
-
     /// The position in the global linked list of native object types up to which classes have already been registered.
     OvitoClass* _lastRegisteredClass = nullptr;
+
+    /// Registered extension classes.
+    std::vector<std::unique_ptr<OvitoClass>> _extensionClasses;
 
     /// The singleton instance of this class.
     static PluginManager* _instance;

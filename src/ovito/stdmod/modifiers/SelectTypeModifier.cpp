@@ -42,7 +42,7 @@ SET_PROPERTY_FIELD_LABEL(SelectTypeModifier, selectedTypeNames, "Selected type n
 /******************************************************************************
 * Constructs the modifier object.
 ******************************************************************************/
-SelectTypeModifier::SelectTypeModifier(ObjectCreationParams params) : GenericPropertyModifier(params)
+SelectTypeModifier::SelectTypeModifier(ObjectInitializationFlags flags) : GenericPropertyModifier(flags)
 {
     // Operate on particles by default.
     setDefaultSubject(QStringLiteral("Particles"), QStringLiteral("ParticlesObject"));
@@ -122,7 +122,7 @@ void SelectTypeModifier::evaluateSynchronous(const ModifierEvaluationRequest& re
     ConstPropertyAccess<int32_t> typeProperty = typePropertyObject;
 
     // Create the selection property.
-    PropertyAccess<DataBuffer::SelectionDataType> selProperty = container->createProperty(PropertyObject::GenericSelectionProperty);
+    PropertyAccess<SelectionIntType> selProperty = container->createProperty(PropertyObject::GenericSelectionProperty);
 
     // Counts the number of selected elements.
     size_t nSelected = 0;

@@ -325,9 +325,9 @@ void LAMMPSTextDumpImporter::FrameLoader::loadFile()
                     // we need to divide values by two.
                     for(int i = 0; i < (int)columnMapping.size() && i < fileColumnNames.size(); i++) {
                         if(columnMapping[i].property.type() == ParticlesObject::RadiusProperty && fileColumnNames[i] == "diameter") {
-                            if(PropertyAccess<FloatType> radiusProperty = particles()->getMutableProperty(ParticlesObject::RadiusProperty)) {
-                                for(FloatType& r : radiusProperty)
-                                    r *= 0.5;
+                            if(PropertyAccess<GraphicsFloatType> radiusProperty = particles()->getMutableProperty(ParticlesObject::RadiusProperty)) {
+                                for(auto& r : radiusProperty)
+                                    r *= GraphicsFloatType(0.5);
                             }
                             break;
                         }
@@ -338,11 +338,11 @@ void LAMMPSTextDumpImporter::FrameLoader::loadFile()
                         if(columnMapping[i].property.type() == ParticlesObject::AsphericalShapeProperty &&
                             (fileColumnNames[i] == "c_diameter[1]" || fileColumnNames[i] == "c_diameter[2]" || fileColumnNames[i] == "c_diameter[3]" ||
                              fileColumnNames[i] == "shapex" || fileColumnNames[i] == "shapey" || fileColumnNames[i] == "shapez")) {
-                            if(PropertyAccess<Vector3> shapeProperty = particles()->getMutableProperty(ParticlesObject::AsphericalShapeProperty)) {
-                                for(Vector3& s : shapeProperty) {
-                                    s.x() *= 0.5;
-                                    s.y() *= 0.5;
-                                    s.z() *= 0.5;
+                            if(PropertyAccess<Vector3G> shapeProperty = particles()->getMutableProperty(ParticlesObject::AsphericalShapeProperty)) {
+                                for(auto& s : shapeProperty) {
+                                    s.x() *= GraphicsFloatType(0.5);
+                                    s.y() *= GraphicsFloatType(0.5);
+                                    s.z() *= GraphicsFloatType(0.5);
                                 }
                             }
                             break;

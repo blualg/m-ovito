@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -38,7 +38,7 @@ SET_PROPERTY_FIELD_CHANGE_EVENT(PeriodicDomainDataObject, title, ReferenceEvent:
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-PeriodicDomainDataObject::PeriodicDomainDataObject(ObjectCreationParams params, const QString& title) : DataObject(params),
+PeriodicDomainDataObject::PeriodicDomainDataObject(ObjectInitializationFlags flags, const QString& title) : DataObject(flags),
     _title(title)
 {
 }

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -51,7 +51,7 @@ SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(AtomicStrainModifier, cutoff, WorldParamete
 /******************************************************************************
 * Constructs the modifier object.
 ******************************************************************************/
-AtomicStrainModifier::AtomicStrainModifier(ObjectCreationParams params) : ReferenceConfigurationModifier(params),
+AtomicStrainModifier::AtomicStrainModifier(ObjectInitializationFlags flags) : ReferenceConfigurationModifier(flags),
     _cutoff(3),
     _calculateDeformationGradients(false),
     _calculateStrainTensors(false),
@@ -151,7 +151,7 @@ void AtomicStrainModifier::AtomicStrainEngine::perform()
         return;
 
     // Prepare the output data arrays.
-    PropertyAccess<int> invalidParticlesArray(invalidParticles());
+    PropertyAccess<SelectionIntType> invalidParticlesArray(invalidParticles());
     PropertyAccess<Matrix3> deformationGradientsArray(deformationGradients());
     PropertyAccess<SymmetricTensor2> strainTensorsArray(strainTensors());
     PropertyAccess<FloatType> shearStrainsArray(shearStrains());
@@ -254,7 +254,7 @@ void AtomicStrainModifier::AtomicStrainEngine::perform()
                         for(size_t j = 0; j < 3; j++)
                             R(i,j) = -R(i,j);
                 }
-                rotationsArray[particleIndex] = (Quaternion)QuaternionT<double>(R);
+                rotationsArray[particleIndex] = QuaternionT<double>(R).toDataType<FloatType>();
             }
             if(stretchTensorsArray) {
                 stretchTensorsArray[particleIndex] = SymmetricTensor2(U(0,0), U(1,1), U(2,2), U(0,1), U(0,2), U(1,2));

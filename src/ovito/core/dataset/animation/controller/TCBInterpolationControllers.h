@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -41,8 +41,8 @@ public:
     using typename BaseKeyClass::value_type;
 
     /// Constructor.
-    TCBAnimationKey(ObjectCreationParams params, AnimationTime time, const value_type& value)
-        : BaseKeyClass(params, time, value), _easeTo(0), _easeFrom(0), _tension(0), _continuity(0), _bias(0) {}
+    TCBAnimationKey(ObjectInitializationFlags flags, AnimationTime time, const value_type& value)
+        : BaseKeyClass(flags, time, value), _easeTo(0), _easeFrom(0), _tension(0), _continuity(0), _bias(0) {}
 
 public:
 
@@ -72,8 +72,8 @@ class OVITO_CORE_EXPORT FloatTCBAnimationKey : public TCBAnimationKey<FloatAnima
 public:
 
     /// Constructor.
-    Q_INVOKABLE FloatTCBAnimationKey(ObjectCreationParams params, AnimationTime time = AnimationTime(0), FloatType value = 0) 
-        : TCBAnimationKey<FloatAnimationKey>(params, time, value) {}
+    Q_INVOKABLE FloatTCBAnimationKey(ObjectInitializationFlags flags, AnimationTime time = AnimationTime(0), FloatType value = 0)
+        : TCBAnimationKey<FloatAnimationKey>(flags, time, value) {}
 };
 
 /**
@@ -86,8 +86,8 @@ class OVITO_CORE_EXPORT PositionTCBAnimationKey : public TCBAnimationKey<Positio
 public:
 
     /// Constructor.
-    Q_INVOKABLE PositionTCBAnimationKey(ObjectCreationParams params, AnimationTime time = AnimationTime(0), const Vector3& value = Vector3::Zero()) 
-        : TCBAnimationKey<PositionAnimationKey>(params, time, value) {}
+    Q_INVOKABLE PositionTCBAnimationKey(ObjectInitializationFlags flags, AnimationTime time = AnimationTime(0), const Vector3& value = Vector3::Zero())
+        : TCBAnimationKey<PositionAnimationKey>(flags, time, value) {}
 };
 
 /**
@@ -121,8 +121,8 @@ class TCBControllerBase : public KeyframeControllerTemplate<KeyType, TCBKeyInter
 public:
 
     /// Constructor.
-    TCBControllerBase(ObjectCreationParams params)
-        : KeyframeControllerTemplate<KeyType, TCBKeyInterpolator<KeyType>, ctrlType>(params) {}
+    TCBControllerBase(ObjectInitializationFlags flags)
+        : KeyframeControllerTemplate<KeyType, TCBKeyInterpolator<KeyType>, ctrlType>(flags) {}
 };
 
 /**
@@ -136,8 +136,8 @@ class OVITO_CORE_EXPORT TCBPositionController
 public:
 
     /// Constructor.
-    Q_INVOKABLE TCBPositionController(ObjectCreationParams params)
-        : TCBControllerBase<PositionTCBAnimationKey, Controller::ControllerTypePosition>(params) {}
+    Q_INVOKABLE TCBPositionController(ObjectInitializationFlags flags)
+        : TCBControllerBase<PositionTCBAnimationKey, Controller::ControllerTypePosition>(flags) {}
 
     /// \brief Gets the controller's value at a certain animation time.
     virtual void getPositionValue(AnimationTime time, Vector3& value, TimeInterval& validityInterval) override {

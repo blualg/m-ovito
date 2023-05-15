@@ -41,7 +41,7 @@ class OVITO_STDOBJ_EXPORT TargetObject : public DataObject
 public:
 
     /// Constructor.
-    Q_INVOKABLE TargetObject(ObjectCreationParams params);
+    Q_INVOKABLE TargetObject(ObjectInitializationFlags flags);
 };
 
 /**
@@ -55,7 +55,7 @@ class OVITO_STDOBJ_EXPORT TargetVis : public DataVis
 public:
 
     /// \brief Constructor.
-    Q_INVOKABLE TargetVis(ObjectCreationParams params) : DataVis(params) {}
+    Q_INVOKABLE TargetVis(ObjectInitializationFlags flags) : DataVis(flags) {}
 
     /// \brief Lets the vis element render a data object.
     virtual PipelineStatus render(AnimationTime time, const ConstDataObjectPath& path, const PipelineFlowState& flowState, SceneRenderer* renderer, const PipelineSceneNode* contextNode) override;

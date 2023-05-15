@@ -40,7 +40,7 @@ class OVITO_CORE_EXPORT ModifierGroup : public ActiveObject
 public:
 
     /// \brief Constructs a modifier group object.
-    Q_INVOKABLE ModifierGroup(ObjectCreationParams params) : ActiveObject(params), _isCollapsed(false) {}
+    Q_INVOKABLE ModifierGroup(ObjectInitializationFlags flags) : ActiveObject(flags), _isCollapsed(false) {}
 
     /// \brief Returns the list of modifier applications that are part of this group.
     QVector<ModifierApplication*> modifierApplications() const;
@@ -70,7 +70,7 @@ private:
     /// This is called from a ModifierApplication whenever it is removed from this group.
     void unregisterModApp(ModifierApplication* modApp);
 
-    /// This is called whenever one of the group's member modapps changes. 
+    /// This is called whenever one of the group's member modapps changes.
     /// It computes the combined status of the entire group.
     void updateCombinedStatus();
 

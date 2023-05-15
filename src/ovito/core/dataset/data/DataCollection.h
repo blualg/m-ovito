@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -43,7 +43,7 @@ class OVITO_CORE_EXPORT DataCollection : public DataObject
 public:
 
     /// \brief Constructor.
-    Q_INVOKABLE DataCollection(ObjectCreationParams params) : DataObject(params) {}
+    Q_INVOKABLE DataCollection(ObjectInitializationFlags flags) : DataObject(flags) {}
 
     /// \brief Discards all contents of this data collection.
     void clear() {
@@ -340,7 +340,7 @@ public:
     /// finally inserts the data object into this pipeline flow state.
     template<class DataObjectType, typename... Args>
     DataObjectType* createObjectWithVis(const QString& baseName, const PipelineObject* dataSource, DataVis* visElement, Args&&... args) {
-        DataObjectType* obj = createObject<DataObjectType>(baseName, dataSource, ObjectCreationParams::WithoutVisElement, std::forward<Args>(args)...);
+        DataObjectType* obj = createObject<DataObjectType>(baseName, dataSource, ObjectInitializationFlag::DontCreateVisElement, std::forward<Args>(args)...);
         obj->setVisElement(visElement);
         return obj;
     }
@@ -350,7 +350,7 @@ public:
     /// finally inserts the data object into this pipeline flow state.
     template<class DataObjectType, typename... Args>
     DataObjectType* createObjectWithVis(const PipelineObject* dataSource, DataVis* visElement, Args&&... args) {
-        DataObjectType* obj = createObject<DataObjectType>(dataSource, ObjectCreationParams::WithoutVisElement, std::forward<Args>(args)...);
+        DataObjectType* obj = createObject<DataObjectType>(dataSource, ObjectInitializationFlag::DontCreateVisElement, std::forward<Args>(args)...);
         obj->setVisElement(visElement);
         return obj;
     }

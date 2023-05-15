@@ -47,7 +47,7 @@ SET_PROPERTY_FIELD_UNITS_AND_RANGE(CoordinationAnalysisModifier, numberOfBins, I
 /******************************************************************************
 * Constructs the modifier object.
 ******************************************************************************/
-CoordinationAnalysisModifier::CoordinationAnalysisModifier(ObjectCreationParams params) : AsynchronousModifier(params),
+CoordinationAnalysisModifier::CoordinationAnalysisModifier(ObjectInitializationFlags flags) : AsynchronousModifier(flags),
     _cutoff(3.2),
     _numberOfBins(200),
     _computePartialRDF(false),
@@ -130,7 +130,7 @@ void CoordinationAnalysisModifier::CoordinationAnalysisEngine::perform()
     size_t particleCount = positions()->size();
     PropertyAccess<int32_t> coordinationData(coordinationNumbers());
     ConstPropertyAccess<int32_t> particleTypeData(particleTypes());
-    ConstPropertyAccess<DataBuffer::SelectionDataType> selectionData(selection());
+    ConstPropertyAccess<SelectionIntType> selectionData(selection());
     setProgressMaximum(particleCount);
 
     // Parallel calculation loop:
@@ -219,7 +219,7 @@ void CoordinationAnalysisModifier::CoordinationAnalysisEngine::perform()
     else {
         // Count particle type occurrences.
         std::vector<size_t> particleCounts(uniqueTypeIds().size(), 0);
-        const DataBuffer::SelectionDataType* sel = selectionData ? selectionData.begin() : nullptr;
+        const SelectionIntType* sel = selectionData ? selectionData.begin() : nullptr;
         for(int32_t t : particleTypeData) {
             if(sel && !(*sel++))
                 continue;

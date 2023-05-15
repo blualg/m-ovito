@@ -69,7 +69,7 @@ class OVITO_STDMOD_EXPORT SliceModifier : public MultiDelegatingModifier
 public:
 
     /// Constructor.
-    Q_INVOKABLE SliceModifier(ObjectCreationParams params);
+    Q_INVOKABLE SliceModifier(ObjectInitializationFlags flags);
 
     /// Determines the time interval over which a computed pipeline state will remain valid.
     virtual TimeInterval validityInterval(const ModifierEvaluationRequest& request) const override;

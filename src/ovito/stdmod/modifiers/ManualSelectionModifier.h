@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -48,7 +48,7 @@ class OVITO_STDMOD_EXPORT ManualSelectionModifier : public GenericPropertyModifi
 public:
 
     /// Constructor.
-    Q_INVOKABLE ManualSelectionModifier(ObjectCreationParams params);
+    Q_INVOKABLE ManualSelectionModifier(ObjectInitializationFlags flags);
 
     /// This method is called by the system after the modifier has been inserted into a data pipeline.
     virtual void initializeModifier(const ModifierInitializationRequest& request) override;
@@ -94,7 +94,7 @@ class OVITO_STDMOD_EXPORT ManualSelectionModifierApplication : public ModifierAp
 public:
 
     /// \brief Constructs a modifier application.
-    Q_INVOKABLE ManualSelectionModifierApplication(ObjectCreationParams params) : ModifierApplication(params) {}
+    Q_INVOKABLE ManualSelectionModifierApplication(ObjectInitializationFlags flags) : ModifierApplication(flags) {}
 
 private:
 

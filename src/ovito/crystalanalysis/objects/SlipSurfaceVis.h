@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -43,7 +43,7 @@ class OVITO_CRYSTALANALYSIS_EXPORT SlipSurfaceVis : public SurfaceMeshVis
 public:
 
     /// Constructor.
-    Q_INVOKABLE SlipSurfaceVis(ObjectCreationParams params);
+    Q_INVOKABLE SlipSurfaceVis(ObjectInitializationFlags flags);
 
 protected:
 

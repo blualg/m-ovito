@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -107,7 +107,7 @@ public:
 public:
 
     /// \brief Constructor.
-    Q_INVOKABLE DislocationVis(ObjectCreationParams params);
+    Q_INVOKABLE DislocationVis(ObjectInitializationFlags flags);
 
     /// \brief Lets the vis element render a data object.
     virtual PipelineStatus render(AnimationTime time, const ConstDataObjectPath& path, const PipelineFlowState& flowState, SceneRenderer* renderer, const PipelineSceneNode* contextNode) override;

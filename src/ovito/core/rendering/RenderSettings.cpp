@@ -85,7 +85,7 @@ SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(RenderSettings, layoutSeperatorWidth, Integ
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-RenderSettings::RenderSettings(ObjectCreationParams params) : RefTarget(params),
+RenderSettings::RenderSettings(ObjectInitializationFlags flags) : RefTarget(flags),
     _outputImageWidth(640),
     _outputImageHeight(480),
     _generateAlphaChannel(false),
@@ -103,13 +103,13 @@ RenderSettings::RenderSettings(ObjectCreationParams params) : RefTarget(params),
     _layoutSeperatorWidth(2),
     _layoutSeperatorColor(0.5, 0.5, 0.5)
 {
-    if(params.createSubObjects()) {
+    if(!flags.testFlag(ObjectInitializationFlag::DontInitializeObject)) {
         // Setup default background color.
         setBackgroundColorController(ControllerManager::createColorController());
         setBackgroundColor(Color(1,1,1));
 
         // Create an instance of the default renderer class.
-        setRenderer(OORef<StandardSceneRenderer>::create(params));
+        setRenderer(OORef<StandardSceneRenderer>::create(flags));
     }
 }
 

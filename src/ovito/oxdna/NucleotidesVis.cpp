@@ -39,7 +39,7 @@ SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(NucleotidesVis, cylinderRadius, WorldParame
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-NucleotidesVis::NucleotidesVis(ObjectCreationParams params) : ParticlesVis(params),
+NucleotidesVis::NucleotidesVis(ObjectInitializationFlags flags) : ParticlesVis(flags),
     _cylinderRadius(0.05)
 {
     setDefaultParticleRadius(0.1);
@@ -127,7 +127,7 @@ ConstPropertyPtr NucleotidesVis::nucleobaseColors(const ParticlesObject* particl
     particles->verifyIntegrity();
 
     // Allocate output color array.
-    PropertyPtr output = ParticlesObject::OOClass().createStandardProperty(particles->elementCount(), ParticlesObject::ColorProperty);
+    PropertyPtr output = ParticlesObject::OOClass().createStandardProperty(DataBuffer::Uninitialized, particles->elementCount(), ParticlesObject::ColorProperty);
 
     ColorG defaultColor = defaultParticleColor().toDataType<GraphicsFloatType>();
     if(const PropertyObject* baseProperty = particles->getProperty(ParticlesObject::NucleobaseTypeProperty)) {
@@ -289,7 +289,7 @@ PipelineStatus NucleotidesVis::render(AnimationTime time, const ConstDataObjectP
 
             // Fill in base orientations.
             if(ConstPropertyAccess<Vector3> nucleotideNormalArray = nucleotideNormalProperty) {
-                PropertyAccessAndRef<QuaternionG> orientations = ParticlesObject::OOClass().createStandardProperty(particles->elementCount(), ParticlesObject::OrientationProperty);
+                PropertyAccessAndRef<QuaternionG> orientations = ParticlesObject::OOClass().createStandardProperty(DataBuffer::Uninitialized, particles->elementCount(), ParticlesObject::OrientationProperty);
                 for(size_t i = 0; i < orientations.size(); i++) {
                     if(nucleotideNormalArray[i] != Vector3::Zero() && nucleotideAxisArray[i] != Vector3::Zero()) {
                         // Build an orthonomal basis from the two direction vectors of a nucleotide.

@@ -53,7 +53,7 @@ class OVITO_MESH_EXPORT ParaViewVTRSimulationCellImporter : public FileSourceImp
 public:
 
     /// \brief Constructor.
-    Q_INVOKABLE ParaViewVTRSimulationCellImporter(ObjectCreationParams params) : FileSourceImporter(params) {}
+    Q_INVOKABLE ParaViewVTRSimulationCellImporter(ObjectInitializationFlags flags) : FileSourceImporter(flags) {}
 
     /// Returns the title of this object.
     virtual QString objectTitle() const override { return tr("VTR"); }

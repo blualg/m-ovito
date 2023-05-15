@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -31,8 +31,8 @@ IMPLEMENT_OVITO_CLASS(ViewportVulkanSceneRenderer);
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-ViewportVulkanSceneRenderer::ViewportVulkanSceneRenderer(ObjectCreationParams params, std::shared_ptr<VulkanContext> vulkanDevice) 
-    : VulkanSceneRenderer(params, std::move(vulkanDevice)) 
+ViewportVulkanSceneRenderer::ViewportVulkanSceneRenderer(ObjectInitializationFlags flags, std::shared_ptr<VulkanContext> vulkanDevice)
+    : VulkanSceneRenderer(flags, std::move(vulkanDevice))
 {
     // This kind of renderer is used for interactive viewport windows.
     setInteractive(true);

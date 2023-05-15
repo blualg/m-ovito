@@ -152,9 +152,9 @@ QVariant DislocationInspectionApplet::DislocationTableModel::data(const QModelIn
         }
         else if(_microstructure) {
             ConstPropertyAccess<Vector3> burgersVectorProperty = _microstructure->faces()->getProperty(SurfaceMeshFaces::BurgersVectorProperty);
-            ConstPropertyAccess<int> faceRegionProperty = _microstructure->faces()->getProperty(SurfaceMeshFaces::RegionProperty);
+            ConstPropertyAccess<int32_t> faceRegionProperty = _microstructure->faces()->getProperty(SurfaceMeshFaces::RegionProperty);
             const PropertyObject* phaseProperty = _microstructure->regions()->getProperty(SurfaceMeshRegions::PhaseProperty);
-            ConstPropertyAccess<int> phaseArray(faceRegionProperty);
+            ConstPropertyAccess<int32_t> phaseArray(faceRegionProperty);
             if(burgersVectorProperty && faceRegionProperty && phaseProperty && index.row() < burgersVectorProperty.size()) {
                 const MicrostructurePhase* phase = nullptr;
                 int region = faceRegionProperty[index.row()];

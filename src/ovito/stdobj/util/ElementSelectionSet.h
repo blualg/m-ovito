@@ -55,7 +55,7 @@ public:
 public:
 
     /// Constructor.
-    Q_INVOKABLE ElementSelectionSet(ObjectCreationParams params) : RefTarget(params), _useIdentifiers(true) {}
+    Q_INVOKABLE ElementSelectionSet(ObjectInitializationFlags flags) : RefTarget(flags), _useIdentifiers(true) {}
 
     /// Returns the stored selection set as a bit array.
     const boost::dynamic_bitset<>& selection() const { return _selection; }
@@ -76,7 +76,7 @@ public:
     void toggleElement(const PropertyContainer* container, size_t elementIndex);
 
     /// Toggles the selection state of a single element.
-    void toggleElementById(DataBuffer::IdentifierDataType elementId);
+    void toggleElementById(IdentifierIntType elementId);
 
     /// Toggles the selection state of a single element.
     void toggleElementByIndex(size_t elementIndex);
@@ -85,7 +85,7 @@ public:
     void setSelection(const PropertyContainer* container, const boost::dynamic_bitset<>& selection, SelectionMode mode = SelectionReplace);
 
     /// Copies the stored selection set into the given output selection property.
-    PipelineStatus applySelection(DataBufferAccess<DataBuffer::SelectionDataType> outputSelectionProperty, ConstDataBufferAccess<DataBuffer::IdentifierDataType> identifierProperty);
+    PipelineStatus applySelection(DataBufferAccess<SelectionIntType> outputSelectionProperty, ConstDataBufferAccess<IdentifierIntType> identifierProperty);
 
 protected:
 
@@ -104,7 +104,7 @@ private:
     boost::dynamic_bitset<> _selection;
 
     /// Stores the selection as a list of element identifiers.
-    QSet<DataBuffer::IdentifierDataType> _selectedIdentifiers;
+    QSet<IdentifierIntType> _selectedIdentifiers;
 
     /// Controls whether the object should store the identifiers of selected elements (when available).
     DECLARE_PROPERTY_FIELD(bool, useIdentifiers);

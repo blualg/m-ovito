@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -108,14 +108,14 @@ void SimulationCellObject::updateEditableProxies(PipelineFlowState& state, Const
         if(pbcFlags() != proxy->pbcFlags() || is2D() != proxy->is2D()) {
             // Make this data object mutable first.
             SimulationCellObject* self = static_object_cast<SimulationCellObject>(state.makeMutableInplace(dataPath));
-            
+
             self->setPbcFlags(proxy->pbcFlags());
             self->setIs2D(proxy->is2D());
         }
     }
     else {
         // Create and initialize a new proxy.
-        OORef<SimulationCellObject> newProxy = OORef<SimulationCellObject>::create(ObjectCreationParams::WithoutVisElement);
+        OORef<SimulationCellObject> newProxy = OORef<SimulationCellObject>::create(ObjectInitializationFlag::DontCreateVisElement);
         newProxy->setPbcFlags(pbcFlags());
         newProxy->setIs2D(is2D());
         newProxy->setCellMatrix(cellMatrix());

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -166,7 +166,7 @@ void CastepMDImporter::FrameLoader::loadFile()
     PropertyAccess<Point3> posProperty = particles()->createProperty(ParticlesObject::PositionProperty);
     boost::copy(coords, posProperty.begin());
 
-    PropertyAccess<int> typeProperty = particles()->createProperty(ParticlesObject::TypeProperty);
+    PropertyAccess<int32_t> typeProperty = particles()->createProperty(ParticlesObject::TypeProperty);
     boost::transform(types, typeProperty.begin(), [&](const QString& typeName) {
         return addNamedType(ParticlesObject::OOClass(), typeProperty.buffer(), typeName)->numericId();
     });

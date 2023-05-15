@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -47,7 +47,7 @@ SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(InteractiveMolecularDynamicsModifier, trans
 /******************************************************************************
 * Constructs the modifier instance.
 ******************************************************************************/
-InteractiveMolecularDynamicsModifier::InteractiveMolecularDynamicsModifier(ObjectCreationParams params) : Modifier(params),
+InteractiveMolecularDynamicsModifier::InteractiveMolecularDynamicsModifier(ObjectInitializationFlags flags) : Modifier(flags),
     _hostName(QStringLiteral("localhost")),
     _port(8888),
     _transmissionInterval(1),
@@ -59,7 +59,7 @@ InteractiveMolecularDynamicsModifier::InteractiveMolecularDynamicsModifier(Objec
     // Update modifier status whenever the a connection error occurs.
     connect(&_socket, &QAbstractSocket::errorOccurred, this, &InteractiveMolecularDynamicsModifier::connectionError);
 
-    // Process incoming data. 
+    // Process incoming data.
     connect(&_socket, &QAbstractSocket::readyRead, this, &InteractiveMolecularDynamicsModifier::dataReceived);
 }
 
@@ -115,7 +115,7 @@ void InteractiveMolecularDynamicsModifier::disconnectFromServer()
 ******************************************************************************/
 void InteractiveMolecularDynamicsModifier::connectionStateChanged()
 {
-    if(isAboutToBeDeleted()) 
+    if(isAboutToBeDeleted())
         return;
 
     switch(_socket.state()) {
@@ -237,7 +237,7 @@ void InteractiveMolecularDynamicsModifier::dataReceived()
             }
         }
         else {
-            if(_socket.bytesAvailable() < _messageBytesToReceive) 
+            if(_socket.bytesAvailable() < _messageBytesToReceive)
                 break;  // Wait until more data arrives.
 
             if(_header.type == IMD_FCOORDS) {
@@ -252,16 +252,16 @@ void InteractiveMolecularDynamicsModifier::dataReceived()
                 _messageBytesToReceive = 0;
 
                 // Convert data array into particle coordinates property.
-                _coordinates = ParticlesObject::OOClass().createStandardProperty(numCoords, ParticlesObject::PositionProperty);
+                _coordinates = ParticlesObject::OOClass().createStandardProperty(DataBuffer::Uninitialized, numCoords, ParticlesObject::PositionProperty);
                 std::transform(coords.cbegin(), coords.cend(), PropertyAccess<Point3>(_coordinates).begin(), [](const Point_3<float>& p) { return p.toDataType<FloatType>(); });
 
-                // Notify pipeline system that this modifier has new results. 
+                // Notify pipeline system that this modifier has new results.
                 _numFramesReceived++;
                 _modifierStatus = PipelineStatus(PipelineStatus::Success, tr("Connected to IMD server.\n%n frames received.", nullptr, _numFramesReceived));
                 if(!_preliminaryUpdateSuspender && _userInterface) {
                     // Suppress viewport updates that normally occur when preliminary pipeline updates are available.
-                    // That's because the user propably likes to see only the final pipeline output when playing 
-                    // an IMD trajectory pseudo-animation. 
+                    // That's because the user propably likes to see only the final pipeline output when playing
+                    // an IMD trajectory pseudo-animation.
                     _preliminaryUpdateSuspender.emplace(*_userInterface);
                 }
                 if(!_pipelineUpdatePending && _userInterface) {
@@ -321,13 +321,13 @@ void InteractiveMolecularDynamicsModifier::evaluateSynchronous(const ModifierEva
     outputParticles->createProperty(_coordinates);
 
     // Check if there are any bonds and a simulation cell with periodic boundary conditions.
-    // If so, their PBC flags need to be updated. 
+    // If so, their PBC flags need to be updated.
     if(outputParticles->bonds()) {
         if(const SimulationCellObject* cell = state.getObject<SimulationCellObject>()) {
             if(cell->hasPbcCorrected()) {
                 if(ConstPropertyAccess<ParticleIndexPair> topologyProperty = outputParticles->bonds()->getProperty(BondsObject::TopologyProperty)) {
                     ConstPropertyAccess<Point3> positions(_coordinates);
-                    PropertyAccess<Vector3I> periodicImageProperty = outputParticles->makeBondsMutable()->createProperty(BondsObject::PeriodicImageProperty, DataBuffer::InitializeMemory);
+                    PropertyAccess<Vector3I> periodicImageProperty = outputParticles->makeBondsMutable()->createProperty(DataBuffer::Initialized, BondsObject::PeriodicImageProperty);
                     // Recompute PBC vectors of bonds as particle may have moved over arbitrary distances.
                     parallelForChunks(topologyProperty.size(), [&](size_t startIndex, size_t count) {
                         for(size_t bondIndex = startIndex, endIndex = startIndex+count; bondIndex < endIndex; bondIndex++) {

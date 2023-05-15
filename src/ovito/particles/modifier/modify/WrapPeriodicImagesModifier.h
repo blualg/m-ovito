@@ -55,7 +55,7 @@ class OVITO_PARTICLES_EXPORT WrapPeriodicImagesModifier : public Modifier
 public:
 
     /// \brief Constructs a new instance of this class.
-    Q_INVOKABLE WrapPeriodicImagesModifier(ObjectCreationParams params) : Modifier(params) {}
+    Q_INVOKABLE WrapPeriodicImagesModifier(ObjectInitializationFlags flags) : Modifier(flags) {}
 
     /// Modifies the input data synchronously.
     virtual void evaluateSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;

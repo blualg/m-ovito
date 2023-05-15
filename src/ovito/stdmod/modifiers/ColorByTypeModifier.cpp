@@ -42,7 +42,7 @@ SET_PROPERTY_FIELD_LABEL(ColorByTypeModifier, clearSelection, "Clear selection")
 /******************************************************************************
 * Constructs the modifier object.
 ******************************************************************************/
-ColorByTypeModifier::ColorByTypeModifier(ObjectCreationParams params) : GenericPropertyModifier(params),
+ColorByTypeModifier::ColorByTypeModifier(ObjectInitializationFlags flags) : GenericPropertyModifier(flags),
     _colorOnlySelected(false),
     _clearSelection(true)
 {
@@ -135,10 +135,10 @@ void ColorByTypeModifier::evaluateSynchronous(const ModifierEvaluationRequest& r
     }
 
     // Create the color output property.
-    PropertyAccess<ColorG> colorProperty = container->createProperty(PropertyObject::GenericColorProperty, (bool)selectionProperty ? DataBuffer::InitializeMemory : DataBuffer::NoFlags, objectPath);
+    PropertyAccess<ColorG> colorProperty = container->createProperty(selectionProperty ? DataBuffer::Initialized : DataBuffer::Uninitialized, PropertyObject::GenericColorProperty, objectPath);
 
     // Access selection array.
-    ConstPropertyAccessAndRef<DataBuffer::SelectionDataType> selection(std::move(selectionProperty));
+    ConstPropertyAccessAndRef<SelectionIntType> selection(std::move(selectionProperty));
 
     // Create color lookup table.
     const std::map<int,Color> colorMap = typePropertyObject->typeColorMap();

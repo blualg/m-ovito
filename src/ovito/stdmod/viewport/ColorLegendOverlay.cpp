@@ -94,8 +94,8 @@ SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(ColorLegendOverlay, tickSpacing, FloatParam
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-ColorLegendOverlay::ColorLegendOverlay(ObjectCreationParams params)
-    : ViewportOverlay(params),
+ColorLegendOverlay::ColorLegendOverlay(ObjectInitializationFlags flags)
+    : ViewportOverlay(flags),
       _alignment(Qt::AlignHCenter | Qt::AlignBottom),
       _orientation(Qt::Horizontal),
       _legendSize(0.3),

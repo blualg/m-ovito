@@ -65,15 +65,15 @@ public:
         virtual void applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
 
         /// This method is called by the system whenever a parameter of the modifier changes.
-        /// The method can be overridden by subclasses to indicate to the caller whether the engine object should be 
-        /// discarded (false) or may be kept in the cache, because the computation results are not affected by the changing parameter (true). 
+        /// The method can be overridden by subclasses to indicate to the caller whether the engine object should be
+        /// discarded (false) or may be kept in the cache, because the computation results are not affected by the changing parameter (true).
         virtual bool modifierChanged(const PropertyFieldEvent& event) override {
             // Avoid a recomputation if the user toggles just the color-by-type option.
             if(event.field() == PROPERTY_FIELD(colorByType))
                 return true;
             return Engine::modifierChanged(event);
         }
-        
+
         /// Returns the property storage that contains the computed per-particle structure types.
         const PropertyPtr& structures() const { return _structures; }
 
@@ -128,7 +128,7 @@ public:
 public:
 
     /// Constructor.
-    StructureIdentificationModifier(ObjectCreationParams params);
+    StructureIdentificationModifier(ObjectInitializationFlags flags);
 
     /// Returns an existing structure type managed by the modifier.
     ElementType* structureTypeById(int id) const {
@@ -138,8 +138,8 @@ public:
     }
 
 #ifdef OVITO_QML_GUI
-    /// This helper method is called by the QML GUI (StructureListParameter.qml) to extract the identification counts 
-    /// from the cached pipeline output state after the modifier has been evaluated. 
+    /// This helper method is called by the QML GUI (StructureListParameter.qml) to extract the identification counts
+    /// from the cached pipeline output state after the modifier has been evaluated.
     Q_INVOKABLE QVector<qlonglong> getStructureCountsFromModifierResults(ModifierApplication* modApp) const;
 #endif
 
@@ -152,14 +152,14 @@ protected:
     virtual void loadFromStream(ObjectLoadStream& stream) override;
 
     /// Inserts a structure type into the list.
-    void addStructureType(ElementType* type) { 
+    void addStructureType(ElementType* type) {
         // Make sure the numeric type ID is unique.
         OVITO_ASSERT(std::none_of(structureTypes().begin(), structureTypes().end(), [&](const ElementType* t) { return t->numericId() == type->numericId(); }));
-        _structureTypes.push_back(this, PROPERTY_FIELD(structureTypes), type); 
+        _structureTypes.push_back(this, PROPERTY_FIELD(structureTypes), type);
     }
 
     /// Create an instance of the ParticleType class to represent a structure type.
-    ElementType* createStructureType(int id, ParticleType::PredefinedStructureType predefType, ObjectCreationParams params);
+    ElementType* createStructureType(int id, ParticleType::PredefinedStructureType predefType);
 
 private:
 

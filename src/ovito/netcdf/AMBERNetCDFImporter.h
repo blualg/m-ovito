@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -57,7 +57,7 @@ class OVITO_NETCDFPLUGIN_EXPORT AMBERNetCDFImporter : public ParticleImporter
 public:
 
     /// \brief Constructs a new instance of this class.
-    Q_INVOKABLE AMBERNetCDFImporter(ObjectCreationParams params) : ParticleImporter(params), _useCustomColumnMapping(false) {
+    Q_INVOKABLE AMBERNetCDFImporter(ObjectInitializationFlags flags) : ParticleImporter(flags), _useCustomColumnMapping(false) {
         setMultiTimestepFile(true);
     }
 
@@ -79,13 +79,13 @@ public:
 
 private:
 
-    class NetCDFFile 
+    class NetCDFFile
     {
     public:
 
         /// Destructor.
         ~NetCDFFile() { close(); }
-        
+
         /// Open NetCDF file for reading.
         QString open(const QString& filename);
 
@@ -103,7 +103,7 @@ private:
         int _root_ncid = -1;
         int _frame_dim, _atom_dim, _spatial_dim, _sph_dim, _dem_dim;
         int _cell_origin_var, _cell_lengths_var, _cell_angles_var;
-        int _shear_dx_var;  
+        int _shear_dx_var;
         int _coordinatesVar = -1;
     };
 
@@ -116,9 +116,9 @@ private:
         FrameLoader(const LoadOperationRequest& request,
                 bool sortParticles,
                 bool useCustomColumnMapping, const ParticleInputColumnMapping& customColumnMapping)
-            : ParticleImporter::FrameLoader(request), 
-            _sortParticles(sortParticles), 
-            _useCustomColumnMapping(useCustomColumnMapping), 
+            : ParticleImporter::FrameLoader(request),
+            _sortParticles(sortParticles),
+            _useCustomColumnMapping(useCustomColumnMapping),
             _customColumnMapping(customColumnMapping) {}
 
         /// Returns the file column mapping used to load the file.

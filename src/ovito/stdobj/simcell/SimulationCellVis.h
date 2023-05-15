@@ -39,7 +39,7 @@ class OVITO_STDOBJ_EXPORT SimulationCellVis : public DataVis
 public:
 
     /// \brief Constructor.
-    Q_INVOKABLE SimulationCellVis(ObjectCreationParams params);
+    Q_INVOKABLE SimulationCellVis(ObjectInitializationFlags flags);
 
     /// \brief Lets the visualization element render the data object.
     virtual PipelineStatus render(AnimationTime time, const ConstDataObjectPath& path, const PipelineFlowState& flowState, SceneRenderer* renderer, const PipelineSceneNode* contextNode) override;

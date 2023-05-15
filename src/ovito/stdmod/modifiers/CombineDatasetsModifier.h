@@ -75,7 +75,7 @@ class OVITO_STDMOD_EXPORT CombineDatasetsModifier : public MultiDelegatingModifi
 public:
 
     /// Constructor.
-    Q_INVOKABLE CombineDatasetsModifier(ObjectCreationParams params);
+    Q_INVOKABLE CombineDatasetsModifier(ObjectInitializationFlags flags);
 
     /// Modifies the input data synchronously.
     virtual void evaluateSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;

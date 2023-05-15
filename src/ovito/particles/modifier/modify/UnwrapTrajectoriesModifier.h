@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -57,7 +57,7 @@ class OVITO_PARTICLES_EXPORT UnwrapTrajectoriesModifier : public Modifier
 public:
 
     /// Constructs a new instance of this class.
-    Q_INVOKABLE UnwrapTrajectoriesModifier(ObjectCreationParams params) : Modifier(params) {}
+    Q_INVOKABLE UnwrapTrajectoriesModifier(ObjectInitializationFlags flags) : Modifier(flags) {}
 
     /// Modifies the input data.
     virtual Future<PipelineFlowState> evaluate(const ModifierEvaluationRequest& request, const PipelineFlowState& input) override;
@@ -84,7 +84,7 @@ public:
     using UnflipData = std::vector<std::pair<AnimationTime, std::array<int,3>>>;
 
     /// Constructor.
-    Q_INVOKABLE UnwrapTrajectoriesModifierApplication(ObjectCreationParams params) : ModifierApplication(params) {}
+    Q_INVOKABLE UnwrapTrajectoriesModifierApplication(ObjectInitializationFlags flags) : ModifierApplication(flags) {}
 
     /// Indicates the animation time up to which trajectories have already been unwrapped.
     AnimationTime unwrappedUpToTime() const { return _unwrappedUpToTime; }

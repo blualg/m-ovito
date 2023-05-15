@@ -53,7 +53,7 @@ SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(PolyhedralTemplateMatchingModifier, rmsdCut
 /******************************************************************************
 * Constructs the modifier object.
 ******************************************************************************/
-PolyhedralTemplateMatchingModifier::PolyhedralTemplateMatchingModifier(ObjectCreationParams params) : StructureIdentificationModifier(params),
+PolyhedralTemplateMatchingModifier::PolyhedralTemplateMatchingModifier(ObjectInitializationFlags flags) : StructureIdentificationModifier(flags),
         _rmsdCutoff(0.1),
         _outputRmsd(false),
         _outputInteratomicDistance(false),
@@ -61,23 +61,23 @@ PolyhedralTemplateMatchingModifier::PolyhedralTemplateMatchingModifier(ObjectCre
         _outputDeformationGradient(false),
         _outputOrderingTypes(false)
 {
-    if(params.createSubObjects()) {
+    if(!flags.testFlag(ObjectInitializationFlag::DontInitializeObject)) {
         // Define the structure types.
-        createStructureType(PTMAlgorithm::OTHER, ParticleType::PredefinedStructureType::OTHER, params);
-        createStructureType(PTMAlgorithm::FCC, ParticleType::PredefinedStructureType::FCC, params);
-        createStructureType(PTMAlgorithm::HCP, ParticleType::PredefinedStructureType::HCP, params);
-        createStructureType(PTMAlgorithm::BCC, ParticleType::PredefinedStructureType::BCC, params);
-        createStructureType(PTMAlgorithm::ICO, ParticleType::PredefinedStructureType::ICO, params)->setEnabled(false);
-        createStructureType(PTMAlgorithm::SC, ParticleType::PredefinedStructureType::SC, params)->setEnabled(false);
-        createStructureType(PTMAlgorithm::CUBIC_DIAMOND, ParticleType::PredefinedStructureType::CUBIC_DIAMOND, params)->setEnabled(false);
-        createStructureType(PTMAlgorithm::HEX_DIAMOND, ParticleType::PredefinedStructureType::HEX_DIAMOND, params)->setEnabled(false);
-        createStructureType(PTMAlgorithm::GRAPHENE, ParticleType::PredefinedStructureType::GRAPHENE, params)->setEnabled(false);
+        createStructureType(PTMAlgorithm::OTHER, ParticleType::PredefinedStructureType::OTHER);
+        createStructureType(PTMAlgorithm::FCC, ParticleType::PredefinedStructureType::FCC);
+        createStructureType(PTMAlgorithm::HCP, ParticleType::PredefinedStructureType::HCP);
+        createStructureType(PTMAlgorithm::BCC, ParticleType::PredefinedStructureType::BCC);
+        createStructureType(PTMAlgorithm::ICO, ParticleType::PredefinedStructureType::ICO)->setEnabled(false);
+        createStructureType(PTMAlgorithm::SC, ParticleType::PredefinedStructureType::SC)->setEnabled(false);
+        createStructureType(PTMAlgorithm::CUBIC_DIAMOND, ParticleType::PredefinedStructureType::CUBIC_DIAMOND)->setEnabled(false);
+        createStructureType(PTMAlgorithm::HEX_DIAMOND, ParticleType::PredefinedStructureType::HEX_DIAMOND)->setEnabled(false);
+        createStructureType(PTMAlgorithm::GRAPHENE, ParticleType::PredefinedStructureType::GRAPHENE)->setEnabled(false);
 
         // Define the ordering types.
         for(int id = 0; id < PTMAlgorithm::NUM_ORDERING_TYPES; id++) {
-            OORef<ParticleType> otype = OORef<ParticleType>::create(params);
+            OORef<ParticleType> otype = OORef<ParticleType>::create(flags);
             otype->setNumericId(id);
-            otype->initializeType(ParticlePropertyReference(QStringLiteral("Ordering Type")), params.loadUserDefaults());
+            otype->initializeType(ParticlePropertyReference(QStringLiteral("Ordering Type")));
             otype->setColor({0.75f, 0.75f, 0.75f});
             _orderingTypes.push_back(this, PROPERTY_FIELD(orderingTypes), std::move(otype));
         }
@@ -136,13 +136,13 @@ PolyhedralTemplateMatchingModifier::PTMEngine::PTMEngine(const ModifierEvaluatio
         const OORefVector<ElementType>& structureTypes, const OORefVector<ElementType>& orderingTypes, ConstPropertyPtr selection,
         bool outputInteratomicDistance, bool outputOrientation, bool outputDeformationGradient) :
     StructureIdentificationEngine(request, std::move(fingerprint), positions, simCell, structureTypes, std::move(selection)),
-    _rmsd(ParticlesObject::OOClass().createUserProperty(positions->size(), PropertyObject::FloatDefault, 1, QStringLiteral("RMSD"))),
-    _interatomicDistances(outputInteratomicDistance ? ParticlesObject::OOClass().createUserProperty(positions->size(), PropertyObject::FloatDefault, 1, QStringLiteral("Interatomic Distance"), DataBuffer::InitializeMemory) : nullptr),
-    _orientations(outputOrientation ? ParticlesObject::OOClass().createStandardProperty(positions->size(), ParticlesObject::OrientationProperty, DataBuffer::InitializeMemory) : nullptr),
-    _deformationGradients(outputDeformationGradient ? ParticlesObject::OOClass().createStandardProperty(positions->size(), ParticlesObject::ElasticDeformationGradientProperty, DataBuffer::InitializeMemory) : nullptr),
-    _orderingTypes(particleTypes ? ParticlesObject::OOClass().createUserProperty(positions->size(), PropertyObject::Int32, 1, QStringLiteral("Ordering Type"), DataBuffer::InitializeMemory) : nullptr),
-    _correspondences(outputOrientation ? ParticlesObject::OOClass().createUserProperty(positions->size(), PropertyObject::Int64, 1, QStringLiteral("Correspondences"), DataBuffer::InitializeMemory) : nullptr),    // only output correspondences if orientations are selected
-    _rmsdHistogram(DataTable::OOClass().createUserProperty(100, PropertyObject::Int64, 1, tr("Count"), DataBuffer::InitializeMemory))
+    _rmsd(ParticlesObject::OOClass().createUserProperty(DataBuffer::Uninitialized, positions->size(), PropertyObject::FloatDefault, 1, QStringLiteral("RMSD"))),
+    _interatomicDistances(outputInteratomicDistance ? ParticlesObject::OOClass().createUserProperty(DataBuffer::Initialized, positions->size(), PropertyObject::FloatDefault, 1, QStringLiteral("Interatomic Distance")) : nullptr),
+    _orientations(outputOrientation ? ParticlesObject::OOClass().createStandardProperty(DataBuffer::Initialized, positions->size(), ParticlesObject::OrientationProperty) : nullptr),
+    _deformationGradients(outputDeformationGradient ? ParticlesObject::OOClass().createStandardProperty(DataBuffer::Initialized, positions->size(), ParticlesObject::ElasticDeformationGradientProperty) : nullptr),
+    _orderingTypes(particleTypes ? ParticlesObject::OOClass().createUserProperty(DataBuffer::Initialized, positions->size(), PropertyObject::Int32, 1, QStringLiteral("Ordering Type")) : nullptr),
+    _correspondences(outputOrientation ? ParticlesObject::OOClass().createUserProperty(DataBuffer::Initialized, positions->size(), PropertyObject::Int64, 1, QStringLiteral("Correspondences")) : nullptr),    // only output correspondences if orientations are selected
+    _rmsdHistogram(DataTable::OOClass().createUserProperty(DataBuffer::Initialized, 100, PropertyObject::Int64, 1, tr("Count")))
 {
     _algorithm.emplace();
     _algorithm->setCalculateDefGradient(outputDeformationGradient);
@@ -181,7 +181,7 @@ void PolyhedralTemplateMatchingModifier::PTMEngine::perform()
         return;
 
     // Get access to the particle selection flags.
-    ConstPropertyAccess<DataBuffer::SelectionDataType> selectionData(selection());
+    ConstPropertyAccess<SelectionIntType> selectionData(selection());
 
     setProgressMaximum(positions()->size());
     setProgressText(tr("Pre-calculating neighbor ordering"));

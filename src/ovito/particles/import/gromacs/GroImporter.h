@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -32,7 +32,7 @@ namespace Ovito::Particles {
 
 /**
  * File parser GROMACS coordinates file in GROMOS-87 format.
- * 
+ *
  * http://manual.gromacs.org/documentation/current/reference-manual/topologies/topology-file-formats.html#coordinate-file
  */
 class OVITO_PARTICLES_EXPORT GroImporter : public ParticleImporter
@@ -59,7 +59,7 @@ class OVITO_PARTICLES_EXPORT GroImporter : public ParticleImporter
 public:
 
     /// \brief Constructs a new instance of this class.
-    Q_INVOKABLE GroImporter(ObjectCreationParams params) : ParticleImporter(params) {
+    Q_INVOKABLE GroImporter(ObjectInitializationFlags flags) : ParticleImporter(flags) {
         setRecenterCell(true);
     }
 
@@ -111,7 +111,7 @@ private:
 
         /// Scans the data file and builds a list of source frames.
         virtual void discoverFramesInFile(QVector<FileSourceImporter::Frame>& frames) override;
-    };  
+    };
 };
 
 }   // End of namespace

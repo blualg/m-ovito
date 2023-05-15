@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -156,7 +156,7 @@ ImpropersObject* ParticleImporter::FrameLoader::impropers()
 }
 
 /******************************************************************************
-* Creates a particle object (if the particle count is non-zero) and adjusts the 
+* Creates a particle object (if the particle count is non-zero) and adjusts the
 * number of elements of the property container.
 ******************************************************************************/
 void ParticleImporter::FrameLoader::setParticleCount(size_t count)
@@ -172,7 +172,7 @@ void ParticleImporter::FrameLoader::setParticleCount(size_t count)
 }
 
 /******************************************************************************
-* Creates a bonds container object (if the bond count is non-zero) and adjusts the 
+* Creates a bonds container object (if the bond count is non-zero) and adjusts the
 * number of elements of the property container.
 ******************************************************************************/
 void ParticleImporter::FrameLoader::setBondCount(size_t count)
@@ -189,7 +189,7 @@ void ParticleImporter::FrameLoader::setBondCount(size_t count)
 }
 
 /******************************************************************************
-* Creates an angles container object (if the bond count is non-zero) and adjusts the 
+* Creates an angles container object (if the bond count is non-zero) and adjusts the
 * number of elements of the property container.
 ******************************************************************************/
 void ParticleImporter::FrameLoader::setAngleCount(size_t count)
@@ -206,7 +206,7 @@ void ParticleImporter::FrameLoader::setAngleCount(size_t count)
 }
 
 /******************************************************************************
-* Creates a dihedrals container object (if the bond count is non-zero) and adjusts the 
+* Creates a dihedrals container object (if the bond count is non-zero) and adjusts the
 * number of elements of the property container.
 ******************************************************************************/
 void ParticleImporter::FrameLoader::setDihedralCount(size_t count)
@@ -223,7 +223,7 @@ void ParticleImporter::FrameLoader::setDihedralCount(size_t count)
 }
 
 /******************************************************************************
-* Creates an impropers containerobject (if the bond count is non-zero) and adjusts the 
+* Creates an impropers containerobject (if the bond count is non-zero) and adjusts the
 * number of elements of the property container.
 ******************************************************************************/
 void ParticleImporter::FrameLoader::setImproperCount(size_t count)
@@ -284,7 +284,7 @@ void ParticleImporter::FrameLoader::generateBonds()
     const PropertyObject* positionProperty = _particles->getProperty(ParticlesObject::PositionProperty);
     if(!typeProperty || !positionProperty) return;
 
-    // Do not delete the generated bonds again in FrameLoader::loadFile(). 
+    // Do not delete the generated bonds again in FrameLoader::loadFile().
     setKeepExistingTopology(true);
 
     // Get the list of van der Waals radii.
@@ -313,13 +313,13 @@ void ParticleImporter::FrameLoader::generateBonds()
         return;
     FloatType minCutoffSquared = 1e-10 * maxCutoff * maxCutoff;
     setProgressText(tr("Generating bonds"));
-    
+
     // Prepare the neighbor list.
     CutoffNeighborFinder neighborFinder;
     if(!neighborFinder.prepare(maxCutoff, positionProperty, state().getObject<SimulationCellObject>(), {}))
-        return; 
+        return;
 
-    ConstPropertyAccess<int> particleTypesArray(typeProperty);
+    ConstPropertyAccess<int32_t> particleTypesArray(typeProperty);
 
     // Multi-threaded loop over all particles, each thread producing a partial bonds list.
     size_t particleCount = positionProperty->size();
@@ -347,7 +347,7 @@ void ParticleImporter::FrameLoader::generateBonds()
     // Create BondsObject.
     setBondCount(boost::accumulate(partialBondsLists, (size_t)0, [](size_t n, const std::vector<Bond>& bonds) { return n + bonds.size(); }));
     PropertyAccess<ParticleIndexPair> bondTopologyProperty = this->bonds()->createProperty(BondsObject::TopologyProperty);
-    PropertyAccess<int> bondTypeProperty = this->bonds()->createProperty(BondsObject::TypeProperty);
+    PropertyAccess<int32_t> bondTypeProperty = this->bonds()->createProperty(BondsObject::TypeProperty);
     PropertyAccess<Vector3I> bondPeriodicImageProperty = this->bonds()->createProperty(BondsObject::PeriodicImageProperty);
 
     // Create bond type.
@@ -367,12 +367,12 @@ void ParticleImporter::FrameLoader::generateBonds()
 }
 
 /******************************************************************************
-* If the 'Velocity' vector particle property is present, then this method 
+* If the 'Velocity' vector particle property is present, then this method
 * computes the 'Velocity Magnitude' scalar property.
 ******************************************************************************/
 void ParticleImporter::FrameLoader::computeVelocityMagnitude()
 {
-    if(!_particles || isCanceled()) 
+    if(!_particles || isCanceled())
         return;
 
     if(ConstPropertyAccess<Vector3> velocityVectors = _particles->getProperty(ParticlesObject::VelocityProperty)) {
@@ -386,17 +386,17 @@ void ParticleImporter::FrameLoader::computeVelocityMagnitude()
 }
 
 /******************************************************************************
-* If the particles are centered on the coordinate origin but the current simulation cell corner is positioned at (0,0,0), 
+* If the particles are centered on the coordinate origin but the current simulation cell corner is positioned at (0,0,0),
 * the this method centers the cell at (0,0,0), leaving the particle coordinates unchanged.
 ******************************************************************************/
 void ParticleImporter::FrameLoader::correctOffcenterCell()
 {
-    if(isCanceled()) 
+    if(isCanceled())
         return;
 
     // Check if a simulation cell has been defined. It must be periodic in all directions.
     const SimulationCellObject* simulationCell = state().getObject<SimulationCellObject>();
-    if(!simulationCell || !simulationCell->hasPbc(0) || !simulationCell->hasPbc(1) || (!simulationCell->hasPbc(2) && !simulationCell->is2D())) 
+    if(!simulationCell || !simulationCell->hasPbc(0) || !simulationCell->hasPbc(1) || (!simulationCell->hasPbc(2) && !simulationCell->is2D()))
         return;
 
     // The cell corner must be located at (0,0,0).
@@ -435,12 +435,12 @@ void ParticleImporter::FrameLoader::correctOffcenterCell()
 }
 
 /******************************************************************************
-* Translates the simulation cell (and the particles) such that it is centered 
+* Translates the simulation cell (and the particles) such that it is centered
 * at the coordinate origin.
 ******************************************************************************/
 void ParticleImporter::FrameLoader::recenterSimulationCell()
 {
-    if(isCanceled()) 
+    if(isCanceled())
         return;
 
     SimulationCellObject* simulationCell = state().getMutableObject<SimulationCellObject>();
@@ -478,8 +478,8 @@ void ParticleImporter::FrameLoader::loadFile()
     if(_recenterCell)
         recenterSimulationCell();
 
-    // If the file reader did not import any bonds, then discard 
-    // any existing bonds from a previous load operation. 
+    // If the file reader did not import any bonds, then discard
+    // any existing bonds from a previous load operation.
     if(!_keepExistingTopology) {
         if(!_bonds) setBondCount(0);
         if(!_angles) setAngleCount(0);
@@ -517,7 +517,7 @@ bool ParticleImporter::importFurtherFiles(Scene* scene, std::vector<std::pair<QU
             for(; iter != sourceUrlsAndImporters.end(); ++iter) {
                 if(iter->second->getOOClass() != nextImporter->getOOClass())
                     break;
-                sourceUrls.push_back(std::move(iter->first));       
+                sourceUrls.push_back(std::move(iter->first));
             }
         }
         sourceUrlsAndImporters.erase(sourceUrlsAndImporters.begin(), iter);

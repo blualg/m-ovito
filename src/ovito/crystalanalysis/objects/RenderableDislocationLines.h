@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -59,7 +59,7 @@ public:
     };
 
     /// Constructor.
-    Q_INVOKABLE RenderableDislocationLines(ObjectCreationParams params, TransformingDataVis* creator = nullptr, const DataObject* sourceData = nullptr) : TransformedDataObject(params, creator, sourceData) {}
+    Q_INVOKABLE RenderableDislocationLines(ObjectInitializationFlags flags, TransformingDataVis* creator = nullptr, const DataObject* sourceData = nullptr) : TransformedDataObject(flags, creator, sourceData) {}
 
 private:
 

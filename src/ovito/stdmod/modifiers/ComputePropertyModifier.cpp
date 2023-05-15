@@ -55,14 +55,14 @@ SET_MODIFIER_APPLICATION_TYPE(ComputePropertyModifier, ComputePropertyModifierAp
 /******************************************************************************
 * Constructs a new instance of this class.
 ******************************************************************************/
-ComputePropertyModifier::ComputePropertyModifier(ObjectCreationParams params) : AsynchronousDelegatingModifier(params),
+ComputePropertyModifier::ComputePropertyModifier(ObjectInitializationFlags flags) : AsynchronousDelegatingModifier(flags),
     _expressions(QStringList("0")),
     _onlySelectedElements(false),
     _useMultilineFields(false)
 {
-    if(params.createSubObjects()) {
+    if(!flags.testFlag(ObjectInitializationFlag::DontInitializeObject)) {
         // Let this modifier act on particles by default.
-        createDefaultModifierDelegate(ComputePropertyModifierDelegate::OOClass(), QStringLiteral("ParticlesComputePropertyModifierDelegate"), params);
+        createDefaultModifierDelegate(ComputePropertyModifierDelegate::OOClass(), QStringLiteral("ParticlesComputePropertyModifierDelegate"));
         // Set default output property.
         if(delegate())
             setOutputProperty(PropertyReference(delegate()->inputContainerClass(), QStringLiteral("My property")));
@@ -178,10 +178,10 @@ Future<AsynchronousModifier::EnginePtr> ComputePropertyModifier::createEngine(co
     else {
         // Allocate new data array.
         if(outputProperty().type() != PropertyObject::GenericUserProperty) {
-            outp = container->getOOMetaClass().createStandardProperty(nelements, outputProperty().type(), onlySelectedElements() ? DataBuffer::InitializeMemory : DataBuffer::NoFlags, objectPath);
+            outp = container->getOOMetaClass().createStandardProperty(onlySelectedElements() ? DataBuffer::Initialized : DataBuffer::Uninitialized, nelements, outputProperty().type(), objectPath);
         }
         else if(!outputProperty().name().isEmpty() && propertyComponentCount() > 0) {
-            outp = container->getOOMetaClass().createUserProperty(nelements, PropertyObject::FloatDefault, propertyComponentCount(), outputProperty().name(), onlySelectedElements() ? DataBuffer::InitializeMemory : DataBuffer::NoFlags);
+            outp = container->getOOMetaClass().createUserProperty(onlySelectedElements() ? DataBuffer::Initialized : DataBuffer::Uninitialized, nelements, PropertyObject::FloatDefault, propertyComponentCount(), outputProperty().name());
         }
         else {
             throw Exception(tr("Output property of compute property modifier has not been specified."));

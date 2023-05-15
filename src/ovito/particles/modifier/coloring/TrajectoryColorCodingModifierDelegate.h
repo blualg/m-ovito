@@ -61,7 +61,7 @@ class TrajectoryColorCodingModifierDelegate : public ColorCodingModifierDelegate
 public:
 
     /// Constructor.
-    Q_INVOKABLE TrajectoryColorCodingModifierDelegate(ObjectCreationParams params) : ColorCodingModifierDelegate(params) {}
+    Q_INVOKABLE TrajectoryColorCodingModifierDelegate(ObjectInitializationFlags flags) : ColorCodingModifierDelegate(flags) {}
 };
 
 }   // End of namespace

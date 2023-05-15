@@ -76,7 +76,7 @@ IMPLEMENT_OVITO_CLASS(SurfaceMeshPickInfo);
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-SurfaceMeshVis::SurfaceMeshVis(ObjectCreationParams params) : TransformingDataVis(params),
+SurfaceMeshVis::SurfaceMeshVis(ObjectInitializationFlags flags) : TransformingDataVis(flags),
     _surfaceColor(1, 1, 1),
     _capColor(0.8, 0.8, 1.0),
     _showCap(true),
@@ -87,13 +87,13 @@ SurfaceMeshVis::SurfaceMeshVis(ObjectCreationParams params) : TransformingDataVi
     _colorMappingMode(NoPseudoColoring),
     _clipAtDomainBoundaries(false)
 {
-    if(params.createSubObjects()) {
+    if(!flags.testFlag(ObjectInitializationFlag::DontInitializeObject)) {
         // Create animation controllers for the transparency parameters.
         setSurfaceTransparencyController(ControllerManager::createFloatController());
         setCapTransparencyController(ControllerManager::createFloatController());
 
         // Create a color mapping object for pseudo-color visualization of a surface property.
-        setSurfaceColorMapping(OORef<PropertyColorMapping>::create(params));
+        setSurfaceColorMapping(OORef<PropertyColorMapping>::create(flags));
     }
 }
 
@@ -181,7 +181,7 @@ Future<PipelineFlowState> SurfaceMeshVis::transformDataImpl(const PipelineEvalua
         .then(*this, [this, flowState = std::move(flowState), dataObject = OORef<DataObject>(dataObject)](DataOORef<const TriMeshObject>&& surfaceMesh, DataOORef<const TriMeshObject>&& capPolygonsMesh, std::vector<ColorA>&& materialColors, std::vector<size_t>&& originalFaceMap, bool renderFacesTwoSided, PipelineStatus&& status) mutable {
             // Output the computed mesh as a RenderableSurfaceMesh.
             DataOORef<RenderableSurfaceMesh> renderableMesh = DataOORef<RenderableSurfaceMesh>::create(
-                ObjectCreationParams::WithoutVisElement, this, dataObject, std::move(surfaceMesh), std::move(capPolygonsMesh), !renderFacesTwoSided);
+                ObjectInitializationFlag::DontCreateVisElement, this, dataObject, std::move(surfaceMesh), std::move(capPolygonsMesh), !renderFacesTwoSided);
             renderableMesh->setVisElement(this);
             renderableMesh->setMaterialColors(std::move(materialColors));
             renderableMesh->setOriginalFaceMap(std::move(originalFaceMap));
@@ -375,12 +375,12 @@ QString SurfaceMeshPickInfo::infoString(PipelineSceneNode* objectNode, quint32 s
                 }
             }
             else {
-                str += QStringLiteral("<%1>").arg(getQtTypeNameFromId(property->dataType()) ? getQtTypeNameFromId(property->dataType()) : QStringLiteral("unknown"));
+                str += QStringLiteral("<%1>").arg(property->dataTypeName());
             }
         }
 
         // Additionally, list all properties of the region to which the face belongs.
-        if(ConstPropertyAccess<int> regionProperty = surfaceMesh()->faces()->getProperty(SurfaceMeshFaces::RegionProperty)) {
+        if(ConstPropertyAccess<int32_t> regionProperty = surfaceMesh()->faces()->getProperty(SurfaceMeshFaces::RegionProperty)) {
             if(facetIndex < regionProperty.size() && surfaceMesh()->regions()) {
                 int regionIndex = regionProperty[facetIndex];
                 if(!str.isEmpty()) str += QStringLiteral("<sep>");
@@ -434,7 +434,7 @@ QString SurfaceMeshPickInfo::infoString(PipelineSceneNode* objectNode, quint32 s
                         }
                     }
                     else {
-                        str += QStringLiteral("<%1>").arg(getQtTypeNameFromId(property->dataType()) ? getQtTypeNameFromId(property->dataType()) : QStringLiteral("unknown"));
+                        str += QStringLiteral("<%1>").arg(property->dataTypeName());
                     }
                 }
             }
@@ -539,7 +539,7 @@ void SurfaceMeshVis::PrepareSurfaceEngine::determineFaceColors()
     else if(ConstPropertyAccess<Color> colorProperty = inputMesh()->regions()->getProperty(SurfaceMeshRegions::ColorProperty)) {
         // If the "Color" property of mesh regions is present, use it information to color the
         // mesh faces according to the region they belong to.
-        if(ConstPropertyAccess<int> regionProperty = inputMesh()->faces()->getProperty(SurfaceMeshFaces::RegionProperty)) {
+        if(ConstPropertyAccess<int32_t> regionProperty = inputMesh()->faces()->getProperty(SurfaceMeshFaces::RegionProperty)) {
             outputMesh()->setHasFaceColors(true);
             size_t regionCount = colorProperty.size();
             auto meshFaceColor = outputMesh()->faceColors().begin();
@@ -574,7 +574,7 @@ void SurfaceMeshVis::PrepareSurfaceEngine::determineFaceColors()
     else if(_colorMappingMode == RegionPseudoColoring && _pseudoColorPropertyRef && inputMesh()->regions()) {
         if(const PropertyObject* pseudoColorProperty = _pseudoColorPropertyRef.findInContainer(inputMesh()->regions())) {
             if(_pseudoColorPropertyRef.vectorComponent() < (int)pseudoColorProperty->componentCount()) {
-                if(ConstPropertyAccess<int> regionProperty = inputMesh()->faces()->getProperty(SurfaceMeshFaces::RegionProperty)) {
+                if(ConstPropertyAccess<int32_t> regionProperty = inputMesh()->faces()->getProperty(SurfaceMeshFaces::RegionProperty)) {
                     outputMesh()->setHasFacePseudoColors(true);
                     ConstPropertyAccess<void,true> pseudoColorArray(pseudoColorProperty);
                     size_t vecComponent = std::max(0, _pseudoColorPropertyRef.vectorComponent());
@@ -598,7 +598,7 @@ void SurfaceMeshVis::PrepareSurfaceEngine::determineFaceColors()
         }
     }
 
-    if(ConstPropertyAccess<int> selectionProperty = inputMesh()->faces()->getProperty(SurfaceMeshFaces::SelectionProperty)) {
+    if(ConstPropertyAccess<SelectionIntType> selectionProperty = inputMesh()->faces()->getProperty(SurfaceMeshFaces::SelectionProperty)) {
         auto meshFace = outputMesh()->faces().begin();
         for(size_t originalFace : _originalFaceMap) {
             if(selectionProperty[originalFace])
@@ -606,10 +606,10 @@ void SurfaceMeshVis::PrepareSurfaceEngine::determineFaceColors()
             ++meshFace;
         }
     }
-    else if(ConstPropertyAccess<int> selectionProperty = inputMesh()->regions()->getProperty(SurfaceMeshRegions::SelectionProperty)) {
+    else if(ConstPropertyAccess<SelectionIntType> selectionProperty = inputMesh()->regions()->getProperty(SurfaceMeshRegions::SelectionProperty)) {
         // If the "Selection" property of mesh regions is present, use it information to highlight the
         // mesh faces that belong to selected regions.
-        if(ConstPropertyAccess<int> regionProperty = inputMesh()->faces()->getProperty(SurfaceMeshFaces::RegionProperty)) {
+        if(ConstPropertyAccess<int32_t> regionProperty = inputMesh()->faces()->getProperty(SurfaceMeshFaces::RegionProperty)) {
             size_t regionCount = selectionProperty.size();
             auto meshFace = outputMesh()->faces().begin();
             for(size_t originalFace : _originalFaceMap) {
@@ -665,7 +665,7 @@ bool SurfaceMeshVis::PrepareSurfaceEngine::buildSurfaceTriangleMesh()
     const SurfaceMeshAccess inputMeshData(inputMesh());
 
     // Transfer vertices and faces from half-edge mesh structure to triangle mesh structure.
-    _outputMesh = DataOORef<TriMeshObject>::create(ObjectCreationParams::WithoutVisElement);
+    _outputMesh = DataOORef<TriMeshObject>::create(ObjectInitializationFlag::DontCreateVisElement);
     inputMeshData.convertToTriMesh(*outputMesh(), _smoothShading, _faceSubset, &_originalFaceMap, !_renderFacesTwoSided);
 
     // Check for early abortion.
@@ -943,13 +943,13 @@ void SurfaceMeshVis::PrepareSurfaceEngine::buildCapTriangleMesh()
     OVITO_ASSERT(cell());
 
     // Create the output mesh object.
-    _capPolygonsMesh = DataOORef<TriMeshObject>::create(ObjectCreationParams::WithoutVisElement);
+    _capPolygonsMesh = DataOORef<TriMeshObject>::create(ObjectInitializationFlag::DontCreateVisElement);
 
     // Create accessor for the input mesh data.
     const SurfaceMeshAccess inputMeshData(inputMesh());
 
     // Access the 'Filled' property of volumetric regions if it is defined for the input surface mesh.
-    ConstPropertyAccess<int> isFilledProperty(inputMeshData.regionProperty(SurfaceMeshRegions::IsFilledProperty));
+    ConstPropertyAccess<SelectionIntType> isFilledProperty(inputMeshData.regionProperty(SurfaceMeshRegions::IsFilledProperty));
     bool hasRegions = isFilledProperty && inputMeshData.hasFaceRegions();
     bool flipCapNormal = (cell()->matrix().determinant() < 0);
 

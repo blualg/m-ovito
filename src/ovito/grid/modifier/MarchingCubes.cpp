@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -74,7 +74,7 @@ bool MarchingCubes::generateIsosurface(FloatType isolevel, ProgressingTask& oper
     if(_identifyRegions) {
         _vertRegions.assign(_size_x * _size_y * _size_z, -1);
         _maxRegionIndex = 0;
-        _outputMesh.createFaceProperty(SurfaceMeshFaces::RegionProperty);
+        _outputMesh.createFaceProperty(DataBuffer::Uninitialized, SurfaceMeshFaces::RegionProperty);
     }
 
     for(int k = 0; k < size_z; k++, operation.incrementProgressValue()) {
@@ -356,11 +356,11 @@ void MarchingCubes::handleSpaceFillingRegion()
     _outputMesh.createRegions(1);
 
     PropertyAccess<FloatType> volumeProperty =
-        _outputMesh.createRegionProperty(SurfaceMeshRegions::VolumeProperty, DataBuffer::InitializeMemory);
-    PropertyAccess<int> isExteriorProperty =
-        _outputMesh.createRegionProperty(SurfaceMeshRegions::IsExteriorProperty, DataBuffer::InitializeMemory);
-    PropertyAccess<int> isFilledProperty =
-        _outputMesh.createRegionProperty(SurfaceMeshRegions::IsFilledProperty, DataBuffer::InitializeMemory);
+        _outputMesh.createRegionProperty(DataBuffer::Initialized, SurfaceMeshRegions::VolumeProperty);
+    PropertyAccess<SelectionIntType> isExteriorProperty =
+        _outputMesh.createRegionProperty(DataBuffer::Initialized, SurfaceMeshRegions::IsExteriorProperty);
+    PropertyAccess<SelectionIntType> isFilledProperty =
+        _outputMesh.createRegionProperty(DataBuffer::Initialized, SurfaceMeshRegions::IsFilledProperty);
 
     volumeProperty[0] = _size_x * _size_y * _size_z;
     isFilledProperty[0] = 1;
@@ -381,7 +381,7 @@ void MarchingCubes::mergeIdentifiedRegions()
         uf.merge(r1, r2);
     }
 
-    PropertyAccess<int> regionPropertyAccess{_outputMesh.faceProperty(SurfaceMeshFaces::RegionProperty)};
+    PropertyAccess<int32_t> regionPropertyAccess{_outputMesh.faceProperty(SurfaceMeshFaces::RegionProperty)};
     // map newly defined regions from discontinous range(0,_regionVolumes.size()) to range(0,regionCount)
     std::map<int, int> regionMap{};
     int regionCount{0};
@@ -398,18 +398,18 @@ void MarchingCubes::mergeIdentifiedRegions()
     _outputMesh.createRegions(_maxRegionIndex);
 
     PropertyAccess<FloatType> volumeProperty{
-        _outputMesh.createRegionProperty(SurfaceMeshRegions::VolumeProperty, DataBuffer::InitializeMemory)};
-    PropertyAccess<int> isExteriorProperty{
-        _outputMesh.createRegionProperty(SurfaceMeshRegions::IsExteriorProperty, DataBuffer::InitializeMemory)};
-    PropertyAccess<int> isFilledProperty{
-        _outputMesh.createRegionProperty(SurfaceMeshRegions::IsFilledProperty, DataBuffer::InitializeMemory)};
+        _outputMesh.createRegionProperty(DataBuffer::Initialized, SurfaceMeshRegions::VolumeProperty)};
+    PropertyAccess<SelectionIntType> isExteriorProperty{
+        _outputMesh.createRegionProperty(DataBuffer::Initialized, SurfaceMeshRegions::IsExteriorProperty)};
+    PropertyAccess<SelectionIntType> isFilledProperty{
+        _outputMesh.createRegionProperty(DataBuffer::Initialized, SurfaceMeshRegions::IsFilledProperty)};
 
     for(int i{0}; i < _regionVolumes.size(); i++) {
         int newIndex{static_cast<int>(uf.find(i))};
         OVITO_ASSERT(regionMap.find(newIndex) != regionMap.end());
         volumeProperty[regionMap[newIndex]] += _regionVolumes[i];
-        isFilledProperty[regionMap[newIndex]] = static_cast<int>(_regionFilled[i]);
-        isExteriorProperty[regionMap[newIndex]] |= static_cast<int>(_regionExterior[i]);
+        isFilledProperty[regionMap[newIndex]] = static_cast<SelectionIntType>(_regionFilled[i]);
+        isExteriorProperty[regionMap[newIndex]] |= static_cast<SelectionIntType>(_regionExterior[i]);
     }
     OVITO_ASSERT(std::abs(std::accumulate(volumeProperty.begin(), volumeProperty.end(), 0.0) - (_size_x * _size_y * _size_z)) <
                  1e-6);

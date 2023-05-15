@@ -42,33 +42,35 @@ SET_PROPERTY_FIELD_LABEL(PropertyColorMapping, sourceProperty, "Source property"
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-PropertyColorMapping::PropertyColorMapping(ObjectCreationParams params) : RefTarget(params),
+PropertyColorMapping::PropertyColorMapping(ObjectInitializationFlags flags) : RefTarget(flags),
     _startValue(0.0),
     _endValue(0.0)
 {
-    if(params.loadUserDefaults()) {
+    if(!flags.testFlag(ObjectInitializationFlag::DontInitializeObject)) {
+        if(ExecutionContext::isInteractive()) {
 #ifndef OVITO_DISABLE_QSETTINGS
-        // Load the default gradient type set by the user.
-        QSettings settings;
-        settings.beginGroup(PropertyColorMapping::OOClass().plugin()->pluginId());
-        settings.beginGroup(PropertyColorMapping::OOClass().name());
-        QString typeString = settings.value(PROPERTY_FIELD(colorGradient)->identifier()).toString();
-        if(!typeString.isEmpty()) {
-            try {
-                OvitoClassPtr gradientType = OvitoClass::decodeFromString(typeString);
-                if(!colorGradient() || colorGradient()->getOOClass() != *gradientType) {
-                    OORef<ColorCodingGradient> gradient = dynamic_object_cast<ColorCodingGradient>(gradientType->createInstance(params));
-                    if(gradient) setColorGradient(std::move(gradient));
+            // Load the default gradient type set by the user.
+            QSettings settings;
+            settings.beginGroup(PropertyColorMapping::OOClass().plugin()->pluginId());
+            settings.beginGroup(PropertyColorMapping::OOClass().name());
+            QString typeString = settings.value(PROPERTY_FIELD(colorGradient)->identifier()).toString();
+            if(!typeString.isEmpty()) {
+                try {
+                    OvitoClassPtr gradientType = OvitoClass::decodeFromString(typeString);
+                    if(!colorGradient() || colorGradient()->getOOClass() != *gradientType) {
+                        OORef<ColorCodingGradient> gradient = dynamic_object_cast<ColorCodingGradient>(gradientType->createInstance(flags));
+                        if(gradient) setColorGradient(std::move(gradient));
+                    }
                 }
+                catch(...) {}
             }
-            catch(...) {}
+#endif
         }
-    #endif
-    }
 
-    // Select the rainbow color gradient by default.
-    if(params.createSubObjects())
-        setColorGradient(OORef<ColorCodingHSVGradient>::create(params));
+        // Select the rainbow color gradient by default.
+        if(!colorGradient())
+            setColorGradient(OORef<ColorCodingHSVGradient>::create(flags));
+    }
 }
 
 /******************************************************************************

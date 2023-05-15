@@ -45,7 +45,7 @@ class OVITO_GRID_EXPORT VoxelGrid : public PropertyContainer
         using PropertyContainerClass::PropertyContainerClass;
 
         /// \brief Create a storage object for standard voxel properties.
-        virtual PropertyPtr createStandardPropertyInternal(size_t elementCount, int type, DataBuffer::InitializationFlags flags, const ConstDataObjectPath& containerPath) const override;
+        virtual PropertyPtr createStandardPropertyInternal(DataBuffer::BufferInitialization init, size_t elementCount, int type, const ConstDataObjectPath& containerPath) const override;
 
     protected:
 
@@ -77,7 +77,7 @@ public:
     };
 
     /// \brief Constructor.
-    Q_INVOKABLE VoxelGrid(ObjectCreationParams params, const QString& title = QString());
+    Q_INVOKABLE VoxelGrid(ObjectInitializationFlags flags, const QString& title = QString());
 
     /// Returns the spatial domain this voxel grid is embedded in after making sure it
     /// can safely be modified.

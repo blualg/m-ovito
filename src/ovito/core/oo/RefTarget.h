@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -44,7 +44,7 @@ class OVITO_CORE_EXPORT RefTarget : public RefMaker
 protected:
 
     /// \brief Constructor.
-    RefTarget(ObjectCreationParams params);
+    RefTarget(ObjectInitializationFlags flags);
 
 #ifdef OVITO_DEBUG
     /// \brief Destructor.
@@ -191,7 +191,7 @@ public:
 
     /// \brief Checks whether this object is directly or indirectly referenced by some other object.
     /// \param obj The object that might hold a reference to \c this object.
-    /// \param onlyStrongReferences If true, ignores reference fields that have been marked as weak and don't propagate messages. 
+    /// \param onlyStrongReferences If true, ignores reference fields that have been marked as weak and don't propagate messages.
     /// \return \c true if \a obj has a direct or indirect reference to this object;
     ///         \c false if \a obj does not depend on this object.
     virtual bool isReferencedBy(const RefMaker* obj, bool onlyStrongReferences = true) const override;
@@ -204,7 +204,7 @@ public:
     template<class Callable>
     void visitDependents(Callable&& fn) const {
         VisitDependentsEvent event(const_cast<RefTarget*>(this), std::move(fn));
-        const_cast<RefTarget*>(this)->notifyDependentsImpl(event);      
+        const_cast<RefTarget*>(this)->notifyDependentsImpl(event);
     }
 
     /// \brief Asks this object to delete itself.
@@ -249,5 +249,3 @@ private:
 
 }   // End of namespace
 
-Q_DECLARE_METATYPE(Ovito::ObjectCreationParams)
-Q_DECLARE_OPERATORS_FOR_FLAGS(Ovito::ObjectCreationParams::InitializationFlags);

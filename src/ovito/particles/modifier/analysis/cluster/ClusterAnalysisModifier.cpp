@@ -59,7 +59,7 @@ SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(ClusterAnalysisModifier, cutoff, WorldParam
 /******************************************************************************
 * Constructs the modifier object.
 ******************************************************************************/
-ClusterAnalysisModifier::ClusterAnalysisModifier(ObjectCreationParams params) : AsynchronousModifier(params),
+ClusterAnalysisModifier::ClusterAnalysisModifier(ObjectInitializationFlags flags) : AsynchronousModifier(flags),
     _cutoff(3.2),
     _onlySelectedParticles(false),
     _sortBySize(false),
@@ -102,7 +102,7 @@ Future<AsynchronousModifier::EnginePtr> ClusterAnalysisModifier::createEngine(co
         periodicImageBondProperty = ConstPropertyPtr(particles->bonds()->getProperty(BondsObject::PeriodicImageProperty)).makeCopy();
         // If no PBC vectors are present, create ad-hoc vectors initialized to zero.
         if(!periodicImageBondProperty)
-            periodicImageBondProperty = BondsObject::OOClass().createStandardProperty(particles->bonds()->elementCount(), BondsObject::PeriodicImageProperty, DataBuffer::InitializeMemory);
+            periodicImageBondProperty = BondsObject::OOClass().createStandardProperty(DataBuffer::Initialized, particles->bonds()->elementCount(), BondsObject::PeriodicImageProperty);
     }
 
     // Get particle masses, needed for center-of-mass calculation.
@@ -117,7 +117,7 @@ Future<AsynchronousModifier::EnginePtr> ClusterAnalysisModifier::createEngine(co
             std::map<int,FloatType> massMap = ParticleType::typeMassMap(typeProperty);
             // Use the per-type masses only if there is at least one type having a positive mass.
             if(!massMap.empty() && boost::algorithm::any_of(massMap, [](const auto& i) { return i.second > 0; })) {
-                PropertyAccessAndRef<FloatType> massArray(ParticlesObject::OOClass().createStandardProperty(particles->elementCount(), ParticlesObject::MassProperty));
+                PropertyAccessAndRef<FloatType> massArray(ParticlesObject::OOClass().createStandardProperty(DataBuffer::Uninitialized, particles->elementCount(), ParticlesObject::MassProperty));
                 boost::transform(ConstPropertyAccess<int32_t>(typeProperty), massArray.begin(), [&](int32_t t) {
                     auto iter = massMap.find(t);
                     if(iter != massMap.end()) return iter->second;
@@ -134,7 +134,7 @@ Future<AsynchronousModifier::EnginePtr> ClusterAnalysisModifier::createEngine(co
                     throw Exception(tr("Cannot compute center of mass or radius of gyration if all particle masses are zero. Please check correctness of per-particle and per-type mass values in input dataset."));
             }
             else {
-                if(!boost::algorithm::any_of(boost::combine(ConstPropertyAccess<FloatType>(masses), ConstPropertyAccess<DataBuffer::SelectionDataType>(selectionProperty)), [](const boost::tuple<FloatType, DataBuffer::SelectionDataType>& item) { return item.get<1>() && item.get<0>() != 0; }))
+                if(!boost::algorithm::any_of(boost::combine(ConstPropertyAccess<FloatType>(masses), ConstPropertyAccess<SelectionIntType>(selectionProperty)), [](const boost::tuple<FloatType, SelectionIntType>& item) { return item.get<1>() && item.get<0>() != 0; }))
                     throw Exception(tr("Cannot compute center of mass or radius of gyration if all particle masses are zero. Please check correctness of per-particle and per-type mass values in input dataset."));
             }
         }
@@ -364,7 +364,7 @@ void ClusterAnalysisModifier::CutoffClusterAnalysisEngine::doClustering(std::vec
     size_t progress = 0;
 
     PropertyAccess<int64_t> particleClusters(this->particleClusters());
-    ConstPropertyAccess<DataBuffer::SelectionDataType> selectionData(selection());
+    ConstPropertyAccess<SelectionIntType> selectionData(selection());
     PropertyAccess<Point3> unwrappedCoordinates(_unwrappedPositions);
     ConstPropertyAccess<FloatType> particleMassesData(_masses);
 
@@ -443,7 +443,7 @@ void ClusterAnalysisModifier::BondClusterAnalysisEngine::doClustering(std::vecto
     ParticleBondMap bondMap(bondTopology());
 
     PropertyAccess<int64_t> particleClusters(this->particleClusters());
-    ConstPropertyAccess<DataBuffer::SelectionDataType> selectionData(this->selection());
+    ConstPropertyAccess<SelectionIntType> selectionData(this->selection());
     ConstPropertyAccess<ParticleIndexPair> bondTopology(this->bondTopology());
     PropertyAccess<Point3> unwrappedCoordinates(_unwrappedPositions);
     ConstPropertyAccess<FloatType> particleMassesData(_masses);

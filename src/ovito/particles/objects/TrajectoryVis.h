@@ -56,7 +56,7 @@ public:
     Q_ENUM(ColoringMode);
 
     /// \brief Constructor.
-    Q_INVOKABLE TrajectoryVis(ObjectCreationParams params);
+    Q_INVOKABLE TrajectoryVis(ObjectInitializationFlags flags);
 
     /// \brief Renders the associated data object.
     virtual PipelineStatus render(AnimationTime time, const ConstDataObjectPath& path, const PipelineFlowState& flowState, SceneRenderer* renderer, const PipelineSceneNode* contextNode) override;

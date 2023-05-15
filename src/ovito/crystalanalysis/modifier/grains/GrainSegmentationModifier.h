@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //  Copyright 2020 Peter Mahler Larsen
 //
 //  This file is part of OVITO (Open Visualization Tool).
@@ -68,8 +68,8 @@ public:
     Q_ENUM(MergeAlgorithm);
 
     /// Constructor.
-    Q_INVOKABLE GrainSegmentationModifier(ObjectCreationParams params);
-    
+    Q_INVOKABLE GrainSegmentationModifier(ObjectInitializationFlags flags);
+
 protected:
 
     /// Is called when the value of a property of this object has changed.

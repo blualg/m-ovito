@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -37,7 +37,7 @@ public:
 
     /// Creates the Vulkan pipeline.
     void create(VulkanContext& context,
-        const QString& shaderName, 
+        const QString& shaderName,
         VkRenderPass renderpass,
         uint32_t vertexPushConstantSize,
         uint32_t fragmentPushConstantSize,

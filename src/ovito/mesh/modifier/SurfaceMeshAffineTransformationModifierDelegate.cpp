@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -41,8 +41,8 @@ PipelineStatus SurfaceMeshAffineTransformationModifierDelegate::apply(const Modi
         // Process SurfaceMesh objects.
         if(const SurfaceMesh* existingSurface = dynamic_object_cast<SurfaceMesh>(obj)) {
             const AffineTransformation tm = mod->effectiveAffineTransformation(inputState);
-            
-            // Make sure the input mesh data structure is valid. 
+
+            // Make sure the input mesh data structure is valid.
             existingSurface->verifyMeshIntegrity();
             // Create a copy of the SurfaceMesh.
             SurfaceMesh* newSurface = state.makeMutable(existingSurface);
@@ -57,9 +57,9 @@ PipelineStatus SurfaceMeshAffineTransformationModifierDelegate::apply(const Modi
                     p = tm * p;
             }
             else {
-                if(ConstPropertyAccess<int> selectionProperty = newVertices->getProperty(SurfaceMeshVertices::SelectionProperty)) {
+                if(ConstPropertyAccess<SelectionIntType> selectionProperty = newVertices->getProperty(SurfaceMeshVertices::SelectionProperty)) {
                     // Apply transformation only to the selected vertices.
-                    const int* s = selectionProperty.cbegin();
+                    const auto* s = selectionProperty.cbegin();
                     for(Point3& p : positionProperty) {
                         if(*s++)
                             p = tm * p;

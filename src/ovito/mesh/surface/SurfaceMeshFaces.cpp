@@ -31,7 +31,7 @@ IMPLEMENT_OVITO_CLASS(SurfaceMeshFaces);
 /******************************************************************************
 * Creates a storage object for standard face properties.
 ******************************************************************************/
-PropertyPtr SurfaceMeshFaces::OOMetaClass::createStandardPropertyInternal(size_t elementCount, int type, DataBuffer::InitializationFlags flags, const ConstDataObjectPath& containerPath) const
+PropertyPtr SurfaceMeshFaces::OOMetaClass::createStandardPropertyInternal(DataBuffer::BufferInitialization init, size_t elementCount, int type, const ConstDataObjectPath& containerPath) const
 {
     int dataType;
     size_t componentCount;
@@ -65,10 +65,10 @@ PropertyPtr SurfaceMeshFaces::OOMetaClass::createStandardPropertyInternal(size_t
 
     OVITO_ASSERT(componentCount == standardPropertyComponentCount(type));
 
-    PropertyPtr property = PropertyPtr::create(elementCount, dataType, componentCount, propertyName, flags & ~DataBuffer::InitializeMemory, type, componentNames);
+    PropertyPtr property = PropertyPtr::create(DataBuffer::Uninitialized, elementCount, dataType, componentCount, propertyName, type, componentNames);
 
     // Initialize memory if requested.
-    if(flags.testFlag(DataBuffer::InitializeMemory) && containerPath.size() >= 2) {
+    if(init == DataBuffer::Initialized && containerPath.size() >= 2) {
         // Certain standard properties need to be initialized with default values determined by the attached visual elements.
         if(type == ColorProperty) {
             if(const SurfaceMesh* surfaceMesh = dynamic_object_cast<SurfaceMesh>(containerPath[containerPath.size()-2])) {
@@ -78,18 +78,18 @@ PropertyPtr SurfaceMeshFaces::OOMetaClass::createStandardPropertyInternal(size_t
                     // Inherit face colors from regions.
                     boost::transform(faceRegionProperty, PropertyAccess<ColorG>(property).begin(),
                         [&](int region) { return (region >= 0 && region < regionColorProperty.size()) ? regionColorProperty[region] : ColorG(1,1,1); });
-                    flags.setFlag(DataBuffer::InitializeMemory, false);
+                    init = DataBuffer::Uninitialized;
                 }
                 else if(SurfaceMeshVis* vis = surfaceMesh->visElement<SurfaceMeshVis>()) {
                     // Initialize face colors from uniform color set in SurfaceMeshVis.
                     property->fill<ColorG>(vis->surfaceColor().toDataType<GraphicsFloatType>());
-                    flags.setFlag(DataBuffer::InitializeMemory, false);
+                    init = DataBuffer::Uninitialized;
                 }
             }
         }
     }
 
-    if(flags.testFlag(DataBuffer::InitializeMemory)) {
+    if(init == DataBuffer::Initialized) {
         // Default-initialize property values with zeros.
         property->fillZero();
     }

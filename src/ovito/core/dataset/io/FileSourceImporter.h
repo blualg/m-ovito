@@ -200,7 +200,7 @@ public:
 public:
 
     /// \brief Constructs a new instance of this class.
-    FileSourceImporter(ObjectCreationParams params) : FileImporter(params), _isMultiTimestepFile(false) {}
+    FileSourceImporter(ObjectInitializationFlags flags) : FileImporter(flags), _isMultiTimestepFile(false) {}
 
     ///////////////////////////// from FileImporter /////////////////////////////
 

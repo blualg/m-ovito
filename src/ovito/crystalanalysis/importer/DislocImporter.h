@@ -56,7 +56,7 @@ class OVITO_CRYSTALANALYSIS_EXPORT DislocImporter : public ParticleImporter
 public:
 
     /// \brief Constructs a new instance of this class.
-    Q_INVOKABLE DislocImporter(ObjectCreationParams params) : ParticleImporter(params) {}
+    Q_INVOKABLE DislocImporter(ObjectInitializationFlags flags) : ParticleImporter(flags) {}
 
     /// Returns the title of this object.
     virtual QString objectTitle() const override { return tr("Disloc"); }

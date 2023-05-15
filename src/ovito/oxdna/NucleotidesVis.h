@@ -39,7 +39,7 @@ class OVITO_OXDNA_EXPORT NucleotidesVis : public ParticlesVis
 public:
 
     /// Constructor.
-    Q_INVOKABLE NucleotidesVis(ObjectCreationParams params);
+    Q_INVOKABLE NucleotidesVis(ObjectInitializationFlags flags);
 
     /// Renders the visual element.
     virtual PipelineStatus render(AnimationTime time, const ConstDataObjectPath& path, const PipelineFlowState& flowState, SceneRenderer* renderer, const PipelineSceneNode* contextNode) override;

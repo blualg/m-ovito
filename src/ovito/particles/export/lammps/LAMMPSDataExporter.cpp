@@ -114,9 +114,9 @@ bool LAMMPSDataExporter::exportData(const PipelineFlowState& state, int frameNum
                 else {
                     PropertyObject* newProperty = nullptr;
                     if(col.property.type() != ParticlesObject::UserProperty)
-                        newProperty = particles->createProperty(col.property.type(), DataBuffer::InitializeMemory);
+                        newProperty = particles->createProperty(DataBuffer::Initialized, col.property.type());
                     else
-                        newProperty = particles->createProperty(col.property.name(), PropertyObject::FloatDefault, 1, DataBuffer::InitializeMemory);
+                        newProperty = particles->createProperty(DataBuffer::Initialized, col.property.name(), PropertyObject::FloatDefault);
                     OVITO_ASSERT(col.property.findInContainer(particles) == newProperty);
                     if(newProperty->type() == ParticlesObject::TypeProperty) {
                         // Assume particle type 1 by default.
@@ -444,9 +444,9 @@ bool LAMMPSDataExporter::exportData(const PipelineFlowState& state, int frameNum
                 if(col.property.type() != ParticlesObject::IdentifierProperty) {
                     PropertyObject* newProperty = nullptr;
                     if(col.property.type() != ParticlesObject::UserProperty)
-                        newProperty = particles->createProperty(col.property.type(), DataBuffer::InitializeMemory);
+                        newProperty = particles->createProperty(DataBuffer::Initialized, col.property.type());
                     else
-                        newProperty = particles->createProperty(col.property.name(), PropertyObject::FloatDefault, 1, DataBuffer::InitializeMemory);
+                        newProperty = particles->createProperty(DataBuffer::Initialized, col.property.name(), PropertyObject::FloatDefault);
                     OVITO_ASSERT(col.property.findInContainer(particles) == newProperty);
                 }
             }

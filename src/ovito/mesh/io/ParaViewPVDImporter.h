@@ -32,7 +32,7 @@ namespace Ovito::Mesh {
 
 /**
  * \brief File parser for ParaView data files (PVD).
- * 
+ *
  * See https://www.paraview.org/Wiki/ParaView/Data_formats
  */
 class OVITO_MESH_EXPORT ParaViewPVDImporter : public FileSourceImporter
@@ -41,7 +41,7 @@ class OVITO_MESH_EXPORT ParaViewPVDImporter : public FileSourceImporter
     class OOMetaClass : public FileSourceImporter::OOMetaClass
     {
     public:
-    
+
         /// Inherit standard constructor from base meta class.
         using FileSourceImporter::OOMetaClass::OOMetaClass;
 
@@ -60,7 +60,7 @@ class OVITO_MESH_EXPORT ParaViewPVDImporter : public FileSourceImporter
 public:
 
     /// \brief Constructor.
-    Q_INVOKABLE ParaViewPVDImporter(ObjectCreationParams params) : FileSourceImporter(params) {
+    Q_INVOKABLE ParaViewPVDImporter(ObjectInitializationFlags flags) : FileSourceImporter(flags) {
         setMultiTimestepFile(true);
     }
 

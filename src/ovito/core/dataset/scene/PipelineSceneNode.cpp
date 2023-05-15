@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -52,8 +52,8 @@ SET_PROPERTY_FIELD_CHANGE_EVENT(PipelineSceneNode, dataProvider, ReferenceEvent:
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-PipelineSceneNode::PipelineSceneNode(ObjectCreationParams params) : SceneNode(params), 
-    _pipelineCache(this, false), 
+PipelineSceneNode::PipelineSceneNode(ObjectInitializationFlags flags) : SceneNode(flags),
+    _pipelineCache(this, false),
     _pipelineRenderingCache(this, true),
     _pipelineTrajectoryCachingEnabled(false)
 {
@@ -70,10 +70,10 @@ PipelineSceneNode::~PipelineSceneNode() // NOLINT
 * Performs a synchronous evaluation of the pipeline yielding only preliminary results.
 ******************************************************************************/
 const PipelineFlowState& PipelineSceneNode::evaluatePipelineSynchronous(const PipelineEvaluationRequest& request, bool includeVisElements)
-{   
+{
     OVITO_ASSERT(ExecutionContext::current().isValid());
-    return includeVisElements ? 
-        _pipelineRenderingCache.evaluatePipelineSynchronous(request) : 
+    return includeVisElements ?
+        _pipelineRenderingCache.evaluatePipelineSynchronous(request) :
         _pipelineCache.evaluatePipelineSynchronous(request);
 }
 
@@ -102,8 +102,8 @@ void PipelineSceneNode::invalidatePipelineCache(TimeInterval keepInterval, bool 
 {
     // Invalidate data caches.
     _pipelineCache.invalidate(keepInterval, resetSynchronousCache);
-    _pipelineRenderingCache.invalidate(keepInterval, resetSynchronousCache);    
-    
+    _pipelineRenderingCache.invalidate(keepInterval, resetSynchronousCache);
+
     // Also mark the cached bounding box of this scene node as invalid.
     invalidateBoundingBox();
 }
@@ -268,7 +268,7 @@ void PipelineSceneNode::referenceReplaced(const PropertyFieldDescriptor* field, 
     else if(field == PROPERTY_FIELD(pipelineSource)) {
         // When the source of the pipeline is being replaced, the pipeline's title changes.
         if(nodeName().isEmpty())
-            notifyDependents(ReferenceEvent::TitleChanged);     
+            notifyDependents(ReferenceEvent::TitleChanged);
     }
     SceneNode::referenceReplaced(field, oldTarget, newTarget, listIndex);
 }
@@ -331,7 +331,7 @@ QString PipelineSceneNode::objectTitle() const
 ******************************************************************************/
 ModifierApplication* PipelineSceneNode::applyModifier(AnimationTime time, Modifier* modifier)
 {
-    OVITO_ASSERT(modifier); 
+    OVITO_ASSERT(modifier);
     OVITO_ASSERT(ExecutionContext::current().isValid());
 
     OORef<ModifierApplication> modApp = modifier->createModifierApplication();
@@ -444,7 +444,7 @@ void PipelineSceneNode::getDataObjectBoundingBox(AnimationTime time, const DataO
 void PipelineSceneNode::deleteNode()
 {
     OVITO_ASSERT(ExecutionContext::current().isValid());
-    
+
     // Temporary reference to the pipeline's stages.
     OORef<PipelineObject> oldDataProvider = dataProvider();
 
@@ -453,7 +453,7 @@ void PipelineSceneNode::deleteNode()
     setDataProvider(nullptr);
 
     // Walk along the pipeline and delete the individual modifiers/source objects (unless they are shared with another pipeline).
-    // This is necessary to update any other references the scene may have to the pipeline's modifiers, 
+    // This is necessary to update any other references the scene may have to the pipeline's modifiers,
     // e.g. the ColorLegendOverlay.
     while(oldDataProvider) {
         OORef<PipelineObject> next;
@@ -509,7 +509,7 @@ void PipelineSceneNode::propertyChanged(const PropertyFieldDescriptor* field)
     if(field == PROPERTY_FIELD(pipelineTrajectoryCachingEnabled)) {
         _pipelineRenderingCache.setPrecomputeAllFrames(pipelineTrajectoryCachingEnabled());
 
-        // Send target changed event to trigger a new pipeline evaluation, which is 
+        // Send target changed event to trigger a new pipeline evaluation, which is
         // needed to start the precomputation process.
         if(pipelineTrajectoryCachingEnabled())
             notifyTargetChanged(PROPERTY_FIELD(pipelineTrajectoryCachingEnabled));
@@ -540,7 +540,7 @@ void PipelineSceneNode::loadFromStreamComplete(ObjectLoadStream& stream)
 * Returns the internal replacement for the given data vis element.
 * If there is no replacement, the original vis element is returned.
 ******************************************************************************/
-DataVis* PipelineSceneNode::getReplacementVisElement(DataVis* vis) const 
+DataVis* PipelineSceneNode::getReplacementVisElement(DataVis* vis) const
 {
     OVITO_ASSERT(replacementVisElements().size() == replacedVisElements().size());
     OVITO_ASSERT(std::find(replacedVisElements().begin(), replacedVisElements().end(), nullptr) == replacedVisElements().end());
@@ -591,7 +591,7 @@ DataVis* PipelineSceneNode::makeVisElementIndependent(DataVis* visElement)
 }
 
 /******************************************************************************
-* Helper function that recursively finds all data objects which the given 
+* Helper function that recursively finds all data objects which the given
 * vis element is associated with.
 ******************************************************************************/
 void PipelineSceneNode::collectDataObjectsForVisElement(ConstDataObjectPath& path, DataVis* vis, std::vector<ConstDataObjectPath>& dataObjectPaths) const
@@ -615,9 +615,9 @@ void PipelineSceneNode::collectDataObjectsForVisElement(ConstDataObjectPath& pat
 }
 
 /******************************************************************************
-* Gathers a list of data objects from the given pipeline flow state (which 
-* should have been produced by this pipeline) that are associated with the 
-* given vis element. This method takes into account replacement vis elements 
+* Gathers a list of data objects from the given pipeline flow state (which
+* should have been produced by this pipeline) that are associated with the
+* given vis element. This method takes into account replacement vis elements
 * of this pipeline node.
 ******************************************************************************/
 std::vector<ConstDataObjectPath> PipelineSceneNode::getDataObjectsForVisElement(const PipelineFlowState& state, DataVis* vis) const

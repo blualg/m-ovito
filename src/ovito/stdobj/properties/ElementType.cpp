@@ -48,7 +48,7 @@ SET_PROPERTY_FIELD_LABEL(ElementType, ownerProperty, "Property");
 /******************************************************************************
 * Constructs a new ElementType.
 ******************************************************************************/
-ElementType::ElementType(ObjectCreationParams params) : DataObject(params),
+ElementType::ElementType(ObjectInitializationFlags flags) : DataObject(flags),
     _numericId(0),
     _color(1,1,1),
     _enabled(true)
@@ -74,7 +74,7 @@ void ElementType::initializeType(const PropertyReference& property, bool loadUse
 }
 
 /******************************************************************************
-* Returns the QSettings path for storing or accessing the user-defined 
+* Returns the QSettings path for storing or accessing the user-defined
 * default values of some ElementType parameter.
 ******************************************************************************/
 QString ElementType::getElementSettingsKey(const PropertyReference& property, const QString& parameterName, const QString& elementTypeName)
@@ -105,13 +105,13 @@ Color ElementType::getDefaultColor(const PropertyReference& property, const QStr
     if(loadUserDefaults) {
 
 #ifndef OVITO_DISABLE_QSETTINGS
-        // Use the type's name, property type and container class to look up the 
+        // Use the type's name, property type and container class to look up the
         // default color saved by the user.
         QVariant v = QSettings().value(getElementSettingsKey(property, QStringLiteral("color"), typeName));
         if(v.isValid() && v.typeId() == QMetaType::QColor)
             return v.value<Color>();
 
-        // The following is for backward compatibility with OVITO 3.3.5, which used to store the 
+        // The following is for backward compatibility with OVITO 3.3.5, which used to store the
         // default colors in a different branch of the settings registry.
         if(property.containerClass()->name() == QStringLiteral("ParticlesObject")) {
             // Load particle type colors.
@@ -172,7 +172,7 @@ void ElementType::updateEditableProxies(PipelineFlowState& state, ConstDataObjec
         if(proxy->name() != self->name() || proxy->color() != self->color() || proxy->enabled() != self->enabled()) {
             // Make this data object mutable first.
             ElementType* mutableSelf = static_object_cast<ElementType>(state.makeMutableInplace(dataPath));
-        
+
             mutableSelf->setName(proxy->name());
             mutableSelf->setColor(proxy->color());
             mutableSelf->setEnabled(proxy->enabled());

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -30,7 +30,7 @@ namespace Ovito::Particles {
 /******************************************************************************
 * Initialization function.
 ******************************************************************************/
-bool CutoffNeighborFinder::prepare(FloatType cutoffRadius, ConstPropertyAccess<Point3> positions, const SimulationCellObject* cell, ConstPropertyAccess<int> selectionProperty)
+bool CutoffNeighborFinder::prepare(FloatType cutoffRadius, ConstPropertyAccess<Point3> positions, const SimulationCellObject* cell, ConstPropertyAccess<SelectionIntType> selectionProperty)
 {
     OVITO_ASSERT(positions);
     Task* currentTask = Task::current();
@@ -63,7 +63,7 @@ bool CutoffNeighborFinder::prepare(FloatType cutoffRadius, ConstPropertyAccess<P
         if(boundingBox.sizeY() <= FLOATTYPE_EPSILON) boundingBox.maxc.y() = boundingBox.minc.y() + 1.0;
         if(boundingBox.sizeZ() <= FLOATTYPE_EPSILON) boundingBox.maxc.z() = boundingBox.minc.z() + 1.0;
         simCell = DataOORef<SimulationCellObject>::create(
-                ObjectCreationParams::WithoutVisElement, AffineTransformation(
+                ObjectInitializationFlag::DontCreateVisElement, AffineTransformation(
                     Vector3(boundingBox.sizeX(), 0, 0),
                     Vector3(0, boundingBox.sizeY(), 0),
                     Vector3(0, 0, boundingBox.sizeZ()),

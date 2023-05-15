@@ -61,7 +61,7 @@ class OVITO_PARTICLES_EXPORT SmoothTrajectoryModifier : public Modifier
 public:
 
     /// Constructor.
-    Q_INVOKABLE SmoothTrajectoryModifier(ObjectCreationParams params);
+    Q_INVOKABLE SmoothTrajectoryModifier(ObjectInitializationFlags flags);
 
     /// Determines the time interval over which a computed pipeline state will remain valid.
     virtual TimeInterval validityInterval(const ModifierEvaluationRequest& request) const override;
@@ -69,7 +69,7 @@ public:
     /// Asks the modifier for the set of animation time intervals that should be cached by the upstream pipeline.
     virtual void inputCachingHints(TimeIntervalUnion& cachingIntervals, ModifierApplication* modApp) override;
 
-    /// Is called by the ModifierApplication to let the modifier adjust the time interval of a TargetChanged event 
+    /// Is called by the ModifierApplication to let the modifier adjust the time interval of a TargetChanged event
     /// received from the upstream pipeline before it is propagated to the downstream pipeline.
     virtual void restrictInputValidityInterval(TimeInterval& iv) const override;
 
@@ -105,7 +105,7 @@ class OVITO_PARTICLES_EXPORT InterpolateTrajectoryModifierApplication : public M
 public:
 
     /// Constructor.
-    Q_INVOKABLE InterpolateTrajectoryModifierApplication(ObjectCreationParams params) : ModifierApplication(params) {}
+    Q_INVOKABLE InterpolateTrajectoryModifierApplication(ObjectInitializationFlags flags) : ModifierApplication(flags) {}
 };
 
 }   // End of namespace

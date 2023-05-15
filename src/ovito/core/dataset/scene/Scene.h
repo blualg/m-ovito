@@ -51,7 +51,7 @@ public:
 public:
 
     /// \brief Creates an empty scene.
-    Q_INVOKABLE Scene(ObjectCreationParams params, AnimationSettings* animationSettings = nullptr);
+    Q_INVOKABLE Scene(ObjectInitializationFlags flags, AnimationSettings* animationSettings = nullptr);
 
     /// \brief Searches the scene for a node with the given name.
     /// \param nodeName The name to look for.

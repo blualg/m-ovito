@@ -62,7 +62,7 @@ class OVITO_PARTICLES_EXPORT CoordinationPolyhedraModifier : public Asynchronous
 public:
 
     /// Constructor.
-    Q_INVOKABLE CoordinationPolyhedraModifier(ObjectCreationParams params);
+    Q_INVOKABLE CoordinationPolyhedraModifier(ObjectInitializationFlags flags);
 
 protected:
 
@@ -77,12 +77,12 @@ private:
     public:
 
         /// Constructor.
-        ComputePolyhedraEngine(const ModifierEvaluationRequest& request, 
+        ComputePolyhedraEngine(const ModifierEvaluationRequest& request,
                 ConstPropertyPtr positions,
-                ConstPropertyPtr selection, 
-                ConstPropertyPtr bondTopology, 
-                ConstPropertyPtr bondPeriodicImages, 
-                DataOORef<SurfaceMesh> mesh, 
+                ConstPropertyPtr selection,
+                ConstPropertyPtr bondTopology,
+                ConstPropertyPtr bondPeriodicImages,
+                DataOORef<SurfaceMesh> mesh,
                 std::vector<ConstPropertyPtr> particleProperties) :
             Engine(request),
             _positions(std::move(positions)),

@@ -63,7 +63,7 @@ public:
     Q_ENUM(StructureType);
 
     /// Constructor.
-    Q_INVOKABLE ChillPlusModifier(ObjectCreationParams params);
+    Q_INVOKABLE ChillPlusModifier(ObjectInitializationFlags flags);
 
 protected:
 

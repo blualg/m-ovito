@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -117,7 +117,7 @@ public:
     };
 
     /// Generates the Delaunay tessellation.
-    bool generateTessellation(const SimulationCellObject* simCell, const Point3* positions, size_t numPoints, FloatType ghostLayerSize, bool coverDomainWithFiniteTets, const int* selectedPoints, ProgressingTask& operation);
+    bool generateTessellation(const SimulationCellObject* simCell, const Point3* positions, size_t numPoints, FloatType ghostLayerSize, bool coverDomainWithFiniteTets, const SelectionIntType* selectedPoints, ProgressingTask& operation);
 
     /// Returns the total number of tetrahedra in the tessellation.
     size_type numberOfTetrahedra() const { return _dt->nb_cells(); }

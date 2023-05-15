@@ -56,7 +56,7 @@ class OVITO_CRYSTALANALYSIS_EXPORT CAExporter : public FileExporter
 public:
 
     /// \brief Constructs a new instance of this class.
-    Q_INVOKABLE CAExporter(ObjectCreationParams params) : FileExporter(params) {}
+    Q_INVOKABLE CAExporter(ObjectInitializationFlags flags) : FileExporter(flags) {}
 
     /// Returns whether the DXA defect mesh is exported (in addition to the dislocation lines).
     bool meshExportEnabled() const { return _meshExportEnabled; }

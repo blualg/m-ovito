@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -112,14 +112,14 @@ VulkanPipeline& VulkanSceneRenderer::createParticlePrimitivePipeline(VulkanPipel
 
     if(&pipeline == &_particlePrimitivePipelines.cube)
         pipeline.create(*context(),
-            QStringLiteral("particles/cube/cube"), 
+            QStringLiteral("particles/cube/cube"),
             defaultRenderPass(),
             sizeof(Matrix_4<float>) + sizeof(Matrix_4<float>), // vertexPushConstantSize
             0, // fragmentPushConstantSize
             2, // vertexBindingDescriptionCount
-            vertexBindingDesc.data(), 
+            vertexBindingDesc.data(),
             3, // vertexAttributeDescriptionCount
-            vertexAttrDesc, 
+            vertexAttrDesc,
             VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP, // topology
             0, // extraDynamicStateCount
             nullptr, // pExtraDynamicStates
@@ -130,14 +130,14 @@ VulkanPipeline& VulkanSceneRenderer::createParticlePrimitivePipeline(VulkanPipel
 
     if(&pipeline == &_particlePrimitivePipelines.cube_picking)
         pipeline.create(*context(),
-            QStringLiteral("particles/cube/cube_picking"), 
+            QStringLiteral("particles/cube/cube_picking"),
             defaultRenderPass(),
             sizeof(Matrix_4<float>) + sizeof(uint32_t), // vertexPushConstantSize
             0, // fragmentPushConstantSize
             1, // vertexBindingDescriptionCount
-            vertexBindingDesc.data(), 
+            vertexBindingDesc.data(),
             2, // vertexAttributeDescriptionCount
-            vertexAttrDesc, 
+            vertexAttrDesc,
             VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP, // topology
             0, // extraDynamicStateCount
             nullptr, // pExtraDynamicStates
@@ -148,14 +148,14 @@ VulkanPipeline& VulkanSceneRenderer::createParticlePrimitivePipeline(VulkanPipel
 
     if(&pipeline == &_particlePrimitivePipelines.sphere)
         pipeline.create(*context(),
-            QStringLiteral("particles/sphere/sphere"), 
+            QStringLiteral("particles/sphere/sphere"),
             defaultRenderPass(),
             sizeof(Matrix_4<float>) + sizeof(AffineTransformationT<float>), // vertexPushConstantSize
             0, // fragmentPushConstantSize
             2, // vertexBindingDescriptionCount
-            vertexBindingDesc.data(), 
+            vertexBindingDesc.data(),
             3, // vertexAttributeDescriptionCount
-            vertexAttrDesc, 
+            vertexAttrDesc,
             VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP, // topology
             0, // extraDynamicStateCount
             nullptr, // pExtraDynamicStates
@@ -166,14 +166,14 @@ VulkanPipeline& VulkanSceneRenderer::createParticlePrimitivePipeline(VulkanPipel
 
     if(&pipeline == &_particlePrimitivePipelines.sphere_picking)
         pipeline.create(*context(),
-            QStringLiteral("particles/sphere/sphere_picking"), 
+            QStringLiteral("particles/sphere/sphere_picking"),
             defaultRenderPass(),
             sizeof(Matrix_4<float>) + sizeof(AffineTransformationT<float>) + sizeof(uint32_t), // vertexPushConstantSize
             0, // fragmentPushConstantSize
             1, // vertexBindingDescriptionCount
-            vertexBindingDesc.data(), 
+            vertexBindingDesc.data(),
             2, // vertexAttributeDescriptionCount
-            vertexAttrDesc, 
+            vertexAttrDesc,
             VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP, // topology
             0, // extraDynamicStateCount
             nullptr, // pExtraDynamicStates
@@ -184,14 +184,14 @@ VulkanPipeline& VulkanSceneRenderer::createParticlePrimitivePipeline(VulkanPipel
 
     if(&pipeline == &_particlePrimitivePipelines.square)
         pipeline.create(*context(),
-            QStringLiteral("particles/square/square"), 
+            QStringLiteral("particles/square/square"),
             defaultRenderPass(),
             sizeof(Matrix_4<float>) + sizeof(AffineTransformationT<float>), // vertexPushConstantSize
             0, // fragmentPushConstantSize
             2, // vertexBindingDescriptionCount
-            vertexBindingDesc.data(), 
+            vertexBindingDesc.data(),
             3, // vertexAttributeDescriptionCount
-            vertexAttrDesc, 
+            vertexAttrDesc,
             VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP, // topology
             0, // extraDynamicStateCount
             nullptr, // pExtraDynamicStates
@@ -202,14 +202,14 @@ VulkanPipeline& VulkanSceneRenderer::createParticlePrimitivePipeline(VulkanPipel
 
     if(&pipeline == &_particlePrimitivePipelines.square_picking)
         pipeline.create(*context(),
-            QStringLiteral("particles/square/square_picking"), 
+            QStringLiteral("particles/square/square_picking"),
             defaultRenderPass(),
             sizeof(Matrix_4<float>) + sizeof(AffineTransformationT<float>) + sizeof(uint32_t), // vertexPushConstantSize
             0, // fragmentPushConstantSize
             1, // vertexBindingDescriptionCount
-            vertexBindingDesc.data(), 
+            vertexBindingDesc.data(),
             2, // vertexAttributeDescriptionCount
-            vertexAttrDesc, 
+            vertexAttrDesc,
             VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP, // topology
             0, // extraDynamicStateCount
             nullptr, // pExtraDynamicStates
@@ -220,14 +220,14 @@ VulkanPipeline& VulkanSceneRenderer::createParticlePrimitivePipeline(VulkanPipel
 
     if(&pipeline == &_particlePrimitivePipelines.circle)
         pipeline.create(*context(),
-            QStringLiteral("particles/circle/circle"), 
+            QStringLiteral("particles/circle/circle"),
             defaultRenderPass(),
             sizeof(Matrix_4<float>) + sizeof(AffineTransformationT<float>), // vertexPushConstantSize
             0, // fragmentPushConstantSize
             2, // vertexBindingDescriptionCount
-            vertexBindingDesc.data(), 
+            vertexBindingDesc.data(),
             3, // vertexAttributeDescriptionCount
-            vertexAttrDesc, 
+            vertexAttrDesc,
             VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP, // topology
             0, // extraDynamicStateCount
             nullptr, // pExtraDynamicStates
@@ -238,32 +238,32 @@ VulkanPipeline& VulkanSceneRenderer::createParticlePrimitivePipeline(VulkanPipel
 
     if(&pipeline == &_particlePrimitivePipelines.circle_picking)
         pipeline.create(*context(),
-            QStringLiteral("particles/circle/circle_picking"), 
+            QStringLiteral("particles/circle/circle_picking"),
             defaultRenderPass(),
             sizeof(Matrix_4<float>) + sizeof(AffineTransformationT<float>) + sizeof(uint32_t), // vertexPushConstantSize
             0, // fragmentPushConstantSize
             1, // vertexBindingDescriptionCount
-            vertexBindingDesc.data(), 
+            vertexBindingDesc.data(),
             2, // vertexAttributeDescriptionCount
-            vertexAttrDesc, 
+            vertexAttrDesc,
             VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP, // topology
             0, // extraDynamicStateCount
             nullptr, // pExtraDynamicStates
             false, // supportAlphaBlending
             descriptorSetLayouts.size(), // setLayoutCount
             descriptorSetLayouts.data()
-        );    
+        );
 
     if(&pipeline == &_particlePrimitivePipelines.imposter)
         pipeline.create(*context(),
-            QStringLiteral("particles/imposter/imposter"), 
+            QStringLiteral("particles/imposter/imposter"),
             defaultRenderPass(),
             sizeof(Matrix_4<float>) + sizeof(AffineTransformationT<float>), // vertexPushConstantSize
             0, // fragmentPushConstantSize
             2, // vertexBindingDescriptionCount
-            vertexBindingDesc.data(), 
+            vertexBindingDesc.data(),
             3, // vertexAttributeDescriptionCount
-            vertexAttrDesc, 
+            vertexAttrDesc,
             VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP, // topology
             0, // extraDynamicStateCount
             nullptr, // pExtraDynamicStates
@@ -274,32 +274,32 @@ VulkanPipeline& VulkanSceneRenderer::createParticlePrimitivePipeline(VulkanPipel
 
     if(&pipeline == &_particlePrimitivePipelines.imposter_picking)
         pipeline.create(*context(),
-            QStringLiteral("particles/imposter/imposter_picking"), 
+            QStringLiteral("particles/imposter/imposter_picking"),
             defaultRenderPass(),
             sizeof(Matrix_4<float>) + sizeof(AffineTransformationT<float>) + sizeof(uint32_t), // vertexPushConstantSize
             0, // fragmentPushConstantSize
             1, // vertexBindingDescriptionCount
-            vertexBindingDesc.data(), 
+            vertexBindingDesc.data(),
             2, // vertexAttributeDescriptionCount
-            vertexAttrDesc, 
+            vertexAttrDesc,
             VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP, // topology
             0, // extraDynamicStateCount
             nullptr, // pExtraDynamicStates
             false, // supportAlphaBlending
             descriptorSetLayouts.size(), // setLayoutCount
             descriptorSetLayouts.data()
-        );              
+        );
 
     if(&pipeline == &_particlePrimitivePipelines.box)
         pipeline.create(*context(),
-            QStringLiteral("particles/box/box"), 
+            QStringLiteral("particles/box/box"),
             defaultRenderPass(),
             sizeof(Matrix_4<float>) + sizeof(Matrix_4<float>), // vertexPushConstantSize
             0, // fragmentPushConstantSize
             3, // vertexBindingDescriptionCount
-            vertexBindingDesc.data(), 
+            vertexBindingDesc.data(),
             7, // vertexAttributeDescriptionCount
-            vertexAttrDesc, 
+            vertexAttrDesc,
             VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP, // topology
             0, // extraDynamicStateCount
             nullptr, // pExtraDynamicStates
@@ -321,14 +321,14 @@ VulkanPipeline& VulkanSceneRenderer::createParticlePrimitivePipeline(VulkanPipel
 
     if(&pipeline == &_particlePrimitivePipelines.box_picking)
         pipeline.create(*context(),
-            QStringLiteral("particles/box/box_picking"), 
+            QStringLiteral("particles/box/box_picking"),
             defaultRenderPass(),
             sizeof(Matrix_4<float>) + sizeof(uint32_t), // vertexPushConstantSize
             0, // fragmentPushConstantSize
             2, // vertexBindingDescriptionCount
-            vertexBindingDescBoxPicking, 
+            vertexBindingDescBoxPicking,
             6, // vertexAttributeDescriptionCount
-            vertexAttrDescBoxPicking, 
+            vertexAttrDescBoxPicking,
             VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP, // topology
             0, // extraDynamicStateCount
             nullptr, // pExtraDynamicStates
@@ -339,14 +339,14 @@ VulkanPipeline& VulkanSceneRenderer::createParticlePrimitivePipeline(VulkanPipel
 
     if(&pipeline == &_particlePrimitivePipelines.ellipsoid)
         pipeline.create(*context(),
-            QStringLiteral("particles/ellipsoid/ellipsoid"), 
+            QStringLiteral("particles/ellipsoid/ellipsoid"),
             defaultRenderPass(),
             sizeof(Matrix_4<float>) + sizeof(AffineTransformationT<float>), // vertexPushConstantSize
             0, // fragmentPushConstantSize
             3, // vertexBindingDescriptionCount
-            vertexBindingDesc.data(), 
+            vertexBindingDesc.data(),
             7, // vertexAttributeDescriptionCount
-            vertexAttrDesc, 
+            vertexAttrDesc,
             VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP, // topology
             0, // extraDynamicStateCount
             nullptr, // pExtraDynamicStates
@@ -357,14 +357,14 @@ VulkanPipeline& VulkanSceneRenderer::createParticlePrimitivePipeline(VulkanPipel
 
     if(&pipeline == &_particlePrimitivePipelines.ellipsoid_picking)
         pipeline.create(*context(),
-            QStringLiteral("particles/ellipsoid/ellipsoid_picking"), 
+            QStringLiteral("particles/ellipsoid/ellipsoid_picking"),
             defaultRenderPass(),
             sizeof(Matrix_4<float>) + sizeof(AffineTransformationT<float>) + sizeof(uint32_t), // vertexPushConstantSize
             0, // fragmentPushConstantSize
             2, // vertexBindingDescriptionCount
-            vertexBindingDescBoxPicking, 
+            vertexBindingDescBoxPicking,
             6, // vertexAttributeDescriptionCount
-            vertexAttrDescBoxPicking, 
+            vertexAttrDescBoxPicking,
             VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP, // topology
             0, // extraDynamicStateCount
             nullptr, // pExtraDynamicStates
@@ -375,14 +375,14 @@ VulkanPipeline& VulkanSceneRenderer::createParticlePrimitivePipeline(VulkanPipel
 
     if(&pipeline == &_particlePrimitivePipelines.superquadric)
         pipeline.create(*context(),
-            QStringLiteral("particles/superquadric/superquadric"), 
+            QStringLiteral("particles/superquadric/superquadric"),
             defaultRenderPass(),
             sizeof(Matrix_4<float>) + sizeof(AffineTransformationT<float>), // vertexPushConstantSize
             0, // fragmentPushConstantSize
             4, // vertexBindingDescriptionCount
-            vertexBindingDesc.data(), 
+            vertexBindingDesc.data(),
             8, // vertexAttributeDescriptionCount
-            vertexAttrDesc, 
+            vertexAttrDesc,
             VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP, // topology
             0, // extraDynamicStateCount
             nullptr, // pExtraDynamicStates
@@ -405,14 +405,14 @@ VulkanPipeline& VulkanSceneRenderer::createParticlePrimitivePipeline(VulkanPipel
 
     if(&pipeline == &_particlePrimitivePipelines.superquadric_picking)
         pipeline.create(*context(),
-            QStringLiteral("particles/superquadric/superquadric_picking"), 
+            QStringLiteral("particles/superquadric/superquadric_picking"),
             defaultRenderPass(),
             sizeof(Matrix_4<float>) + sizeof(AffineTransformationT<float>) + sizeof(uint32_t), // vertexPushConstantSize
             0, // fragmentPushConstantSize
             3, // vertexBindingDescriptionCount
-            vertexBindingDescBoxPicking, 
+            vertexBindingDescBoxPicking,
             7, // vertexAttributeDescriptionCount
-            vertexAttrDescBoxPicking, 
+            vertexAttrDescBoxPicking,
             VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP, // topology
             0, // extraDynamicStateCount
             nullptr, // pExtraDynamicStates
@@ -574,7 +574,7 @@ void VulkanSceneRenderer::renderParticlesImplementation(const ParticlePrimitive&
     }
 
     // Check size limits.
-    int bytesPerVertex = (primitive.particleShape() == ParticlePrimitive::BoxShape || primitive.particleShape() == ParticlePrimitive::EllipsoidShape || primitive.particleShape() == ParticlePrimitive::SuperquadricShape) 
+    int bytesPerVertex = (primitive.particleShape() == ParticlePrimitive::BoxShape || primitive.particleShape() == ParticlePrimitive::EllipsoidShape || primitive.particleShape() == ParticlePrimitive::SuperquadricShape)
         ? sizeof(Matrix_4<float>) : sizeof(Vector_4<float>);
     if(particleCount > std::numeric_limits<int32_t>::max() / verticesPerParticle / bytesPerVertex) {
         qWarning() << "WARNING: Vulkan renderer - Trying to render too many particles at once, exceeding device limits.";
@@ -598,7 +598,7 @@ void VulkanSceneRenderer::renderParticlesImplementation(const ParticlePrimitive&
                         normal_matrix.column(2).normalize();
                     }
                     else normal_matrix.setIdentity();
-                    // It's almost impossible to pass a mat3 to the shader with the correct memory layout. 
+                    // It's almost impossible to pass a mat3 to the shader with the correct memory layout.
                     // Better use a mat4 to be safe:
                     Matrix_4<float> normal_matrix4(normal_matrix.toDataType<float>().transposed());
                     deviceFunctions()->vkCmdPushConstants(currentCommandBuffer(), pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, sizeof(Matrix_4<float>), sizeof(normal_matrix4), normal_matrix4.data());
@@ -648,7 +648,7 @@ void VulkanSceneRenderer::renderParticlesImplementation(const ParticlePrimitive&
                     normal_matrix.column(2).normalize();
                 }
                 else normal_matrix.setIdentity();
-                // It's almost impossible to pass a mat3 to the shader with the correct memory layout. 
+                // It's almost impossible to pass a mat3 to the shader with the correct memory layout.
                 // Better use a mat4 to be safe:
                 Matrix_4<float> normal_matrix4(normal_matrix.toDataType<float>().transposed());
                 deviceFunctions()->vkCmdPushConstants(currentCommandBuffer(), pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, sizeof(Matrix_4<float>), sizeof(normal_matrix4), normal_matrix4.data());
@@ -763,7 +763,7 @@ void VulkanSceneRenderer::renderParticlesImplementation(const ParticlePrimitive&
     if(!isPicking()) {
 
         // Put colors, transparencies and selection state into one combined Vulkan buffer with 4 floats per particle.
-        RendererResourceKey<struct VulkanParticlePrimitiveColorCache, ConstDataBufferPtr, ConstDataBufferPtr, ConstDataBufferPtr, ConstDataBufferPtr, Color, uint32_t> colorSelectionCacheKey{ 
+        RendererResourceKey<struct VulkanParticlePrimitiveColorCache, ConstDataBufferPtr, ConstDataBufferPtr, ConstDataBufferPtr, ConstDataBufferPtr, Color, uint32_t> colorSelectionCacheKey{
             primitive.indices(),
             primitive.colors(),
             primitive.transparencies(),
@@ -849,7 +849,7 @@ void VulkanSceneRenderer::renderParticlesImplementation(const ParticlePrimitive&
     if(primitive.particleShape() == ParticlePrimitive::BoxShape || primitive.particleShape() == ParticlePrimitive::EllipsoidShape || primitive.particleShape() == ParticlePrimitive::SuperquadricShape) {
 
         // Combine aspherical shape property and orientation property into one combined Vulkan buffer containing a 4x4 transformation matrix per particle.
-        RendererResourceKey<struct VulkanParticlePrimitiveShapeCache, ConstDataBufferPtr, ConstDataBufferPtr, ConstDataBufferPtr, ConstDataBufferPtr, FloatType> shapeOrientationCacheKey{ 
+        RendererResourceKey<struct VulkanParticlePrimitiveShapeCache, ConstDataBufferPtr, ConstDataBufferPtr, ConstDataBufferPtr, ConstDataBufferPtr, FloatType> shapeOrientationCacheKey{
             primitive.indices(),
             primitive.asphericalShapes(),
             primitive.orientations(),
@@ -950,7 +950,7 @@ void VulkanSceneRenderer::renderParticlesImplementation(const ParticlePrimitive&
     // For superquadric particles, we need to prepare the roundness vertex attribute.
     if(primitive.particleShape() == ParticlePrimitive::SuperquadricShape) {
 
-        RendererResourceKey<struct VulkanParticlePrimitiveSQCache, ConstDataBufferPtr, ConstDataBufferPtr> roundnessCacheKey{ 
+        RendererResourceKey<struct VulkanParticlePrimitiveSQCache, ConstDataBufferPtr, ConstDataBufferPtr> roundnessCacheKey{
             primitive.indices(),
             primitive.roundness()
         };
@@ -994,7 +994,7 @@ void VulkanSceneRenderer::renderParticlesImplementation(const ParticlePrimitive&
         deviceFunctions()->vkCmdDraw(currentCommandBuffer(), verticesPerParticle, particleCount, 0, 0);
     }
     else {
-        // Create a buffer for an indirect drawing command to render the particles in back-to-front order. 
+        // Create a buffer for an indirect drawing command to render the particles in back-to-front order.
 
         // Viewing direction in object space:
         const Vector3 direction = modelViewTM().inverse().column(2);

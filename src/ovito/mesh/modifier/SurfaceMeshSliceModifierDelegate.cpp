@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -66,10 +66,10 @@ PipelineStatus SurfaceMeshSliceModifierDelegate::apply(const ModifierEvaluationR
                     // Create a mesh vertex selection.
                     if(SurfaceMeshVertices* outputVertices = outputMesh->makeVerticesMutable()) {
                         ConstPropertyAccess<Point3> vertexPositionProperty = outputVertices->expectProperty(SurfaceMeshVertices::PositionProperty);
-                        PropertyAccess<int> vertexSelectionProperty = outputVertices->createProperty(SurfaceMeshVertices::SelectionProperty);
+                        PropertyAccess<SelectionIntType> vertexSelectionProperty = outputVertices->createProperty(SurfaceMeshVertices::SelectionProperty);
                         size_t numSelectedVertices = 0;
                         boost::transform(vertexPositionProperty, vertexSelectionProperty.begin(), [&](const Point3& pos) {
-                            bool selectionState = 
+                            bool selectionState =
                                 (sliceWidth <= 0) ?
                                     (plane.pointDistance(pos) > 0) :
                                     (invert == (plane.classifyPoint(pos, sliceWidth) == 0));
@@ -82,12 +82,12 @@ PipelineStatus SurfaceMeshSliceModifierDelegate::apply(const ModifierEvaluationR
 
                         // Create a mesh face selection.
                         if(SurfaceMeshFaces* outputFaces = outputMesh->makeFacesMutable()) {
-                            PropertyAccess<int> faceSelectionProperty = outputFaces->createProperty(SurfaceMeshFaces::SelectionProperty);
+                            PropertyAccess<SelectionIntType> faceSelectionProperty = outputFaces->createProperty(SurfaceMeshFaces::SelectionProperty);
                             size_t numSelectedFaces = 0;
                             const SurfaceMeshTopology* topology = outputMesh->topology();
                             auto firstFaceEdge = topology->firstFaceEdges().cbegin();
                             OVITO_ASSERT(topology->firstFaceEdges().size() == faceSelectionProperty.size());
-                            for(int& selected : faceSelectionProperty) {
+                            for(auto& selected : faceSelectionProperty) {
                                 SurfaceMesh::edge_index ffe = *firstFaceEdge++;
                                 SurfaceMesh::edge_index e = ffe;
                                 selected = 1;

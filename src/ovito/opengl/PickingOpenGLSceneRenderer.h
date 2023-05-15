@@ -38,7 +38,7 @@ class OVITO_OPENGLRENDERER_EXPORT PickingOpenGLSceneRenderer : public OffscreenI
 public:
 
     /// Constructor.
-    PickingOpenGLSceneRenderer(ObjectCreationParams params);
+    PickingOpenGLSceneRenderer(ObjectInitializationFlags flags);
 
     /// Renders the current animation frame.
     virtual bool renderFrame(const QRect& viewportRect, MainThreadOperation& operation) override;

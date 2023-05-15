@@ -49,13 +49,13 @@ IMPLEMENT_OVITO_CLASS(CameraVis);
 /******************************************************************************
 * Constructs a camera object.
 ******************************************************************************/
-StandardCameraObject::StandardCameraObject(ObjectCreationParams params) : AbstractCameraObject(params),
+StandardCameraObject::StandardCameraObject(ObjectInitializationFlags flags) : AbstractCameraObject(flags),
     _isPerspective(true),
     _fov(FLOATTYPE_PI/4),
     _zoom(200.0)
 {
-    if(params.createVisElement()) {
-        setVisElement(OORef<CameraVis>::create(params));
+    if(!flags.testAnyFlags(ObjectInitializationFlags(DontInitializeObject) | ObjectInitializationFlags(DontCreateVisElement))) {
+        setVisElement(OORef<CameraVis>::create(flags));
     }
 }
 

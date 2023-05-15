@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -117,7 +117,7 @@ public:
     /// \return \c false when the operation has been canceled by the user;
     ///         \c true on success.
     /// \throw Exception on error.
-    bool prepare(ConstPropertyAccess<Point3> posProperty, const SimulationCellObject* cellData, ConstPropertyAccess<int> selectionProperty);
+    bool prepare(ConstPropertyAccess<Point3> posProperty, const SimulationCellObject* cellData, ConstPropertyAccess<SelectionIntType> selectionProperty);
 
     /// Returns the maximum number of neighbors this class will find.
     int maxNeighbors() const { return numNeighbors; }

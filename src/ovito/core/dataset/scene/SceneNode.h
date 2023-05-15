@@ -43,8 +43,8 @@ class OVITO_CORE_EXPORT SceneNode : public RefTarget
 
 protected:
 
-    /// \brief constructor.
-    SceneNode(ObjectCreationParams params);
+    /// \brief Constructor.
+    SceneNode(ObjectInitializationFlags flags);
 
 public:
 

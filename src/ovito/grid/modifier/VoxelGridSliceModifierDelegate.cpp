@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -40,16 +40,16 @@ DEFINE_REFERENCE_FIELD(VoxelGridSliceModifierDelegate, surfaceMeshVis);
 /******************************************************************************
 * Constructs the object.
 ******************************************************************************/
-VoxelGridSliceModifierDelegate::VoxelGridSliceModifierDelegate(ObjectCreationParams params) : SliceModifierDelegate(params)
+VoxelGridSliceModifierDelegate::VoxelGridSliceModifierDelegate(ObjectInitializationFlags flags) : SliceModifierDelegate(flags)
 {
-    if(params.createSubObjects()) {
+    if(!flags.testFlag(ObjectInitializationFlag::DontInitializeObject)) {
         // Create the vis element for rendering the mesh.
-        setSurfaceMeshVis(OORef<SurfaceMeshVis>::create(params));
+        setSurfaceMeshVis(OORef<SurfaceMeshVis>::create(flags));
         surfaceMeshVis()->setShowCap(false);
         surfaceMeshVis()->setHighlightEdges(false);
         surfaceMeshVis()->setSmoothShading(false);
         surfaceMeshVis()->setSurfaceIsClosed(false);
-        if(params.loadUserDefaults())
+        if(ExecutionContext::isInteractive())
             surfaceMeshVis()->setColorMappingMode(SurfaceMeshVis::VertexPseudoColoring);
         surfaceMeshVis()->setObjectTitle(tr("Volume slice"));
     }
@@ -187,7 +187,7 @@ PipelineStatus VoxelGridSliceModifierDelegate::apply(const ModifierEvaluationReq
                     PropertyObject* faceProperty;
                     if(SurfaceMeshFaces::OOClass().isValidStandardPropertyId(fieldProperty->type())) {
                         // Input voxel property is also a standard property for mesh faces.
-                        faceProperty = mesh.createFaceProperty(static_cast<SurfaceMeshFaces::Type>(fieldProperty->type()));
+                        faceProperty = mesh.createFaceProperty(DataBuffer::Uninitialized, static_cast<SurfaceMeshFaces::Type>(fieldProperty->type()));
                         OVITO_ASSERT(faceProperty->dataType() == fieldProperty->dataType());
                         OVITO_ASSERT(faceProperty->stride() == fieldProperty->stride());
                     }
@@ -195,11 +195,11 @@ PipelineStatus VoxelGridSliceModifierDelegate::apply(const ModifierEvaluationReq
                         // Input property name is that of a standard property for mesh faces.
                         // Must rename the property to avoid conflict, because user properties may not have a standard property name.
                         QString newPropertyName = fieldProperty->name() + tr("_field");
-                        faceProperty = mesh.createFaceProperty(newPropertyName, fieldProperty->dataType(), fieldProperty->componentCount(), DataBuffer::NoFlags, fieldProperty->componentNames());
+                        faceProperty = mesh.createFaceProperty(DataBuffer::Uninitialized, newPropertyName, fieldProperty->dataType(), fieldProperty->componentCount(), fieldProperty->componentNames());
                     }
                     else {
                         // Input property is a user property for mesh faces.
-                        faceProperty = mesh.createFaceProperty(fieldProperty->name(), fieldProperty->dataType(), fieldProperty->componentCount(), DataBuffer::NoFlags, fieldProperty->componentNames());
+                        faceProperty = mesh.createFaceProperty(DataBuffer::Uninitialized, fieldProperty->name(), fieldProperty->dataType(), fieldProperty->componentCount(), fieldProperty->componentNames());
                     }
                     // Copy property values from voxel cells over to mesh faces.
                     fieldProperty->mappedCopyTo(*faceProperty, voxelFaceMapping);

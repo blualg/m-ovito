@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -55,7 +55,7 @@ class OVITO_PARTICLES_EXPORT CastepMDImporter : public ParticleImporter
 public:
 
     /// \brief Constructs a new instance of this class.
-    Q_INVOKABLE CastepMDImporter(ObjectCreationParams params) : ParticleImporter(params) {
+    Q_INVOKABLE CastepMDImporter(ObjectInitializationFlags flags) : ParticleImporter(flags) {
         setMultiTimestepFile(true);
     }
 
@@ -63,7 +63,7 @@ public:
     virtual QString objectTitle() const override { return tr("CASTEP"); }
 
     /// Indicates whether this file importer type loads particle trajectories.
-    virtual bool isTrajectoryFormat() const override { return true; } 
+    virtual bool isTrajectoryFormat() const override { return true; }
 
     /// Creates an asynchronous loader object that loads the data for the given frame from the external file.
     virtual FileSourceImporter::FrameLoaderPtr createFrameLoader(const LoadOperationRequest& request) override {

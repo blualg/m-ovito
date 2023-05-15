@@ -45,9 +45,9 @@ class OVITO_CORE_EXPORT TextLabelOverlay : public ViewportOverlay
 public:
 
     /// Constructor.
-    Q_INVOKABLE TextLabelOverlay(ObjectCreationParams params);
+    Q_INVOKABLE TextLabelOverlay(ObjectInitializationFlags flags);
 
-    /// Is called when the overlay is being newly attached to a viewport. 
+    /// Is called when the overlay is being newly attached to a viewport.
     virtual void initializeOverlay(Viewport* viewport) override;
 
     /// Lets the overlay paint its contents into the framebuffer.

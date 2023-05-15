@@ -49,7 +49,7 @@ class OVITO_PARTICLES_EXPORT WignerSeitzAnalysisModifier : public ReferenceConfi
 public:
 
     /// Constructor.
-    Q_INVOKABLE WignerSeitzAnalysisModifier(ObjectCreationParams params);
+    Q_INVOKABLE WignerSeitzAnalysisModifier(ObjectInitializationFlags flags);
 
 protected:
 

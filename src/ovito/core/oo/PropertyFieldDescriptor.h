@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -97,7 +97,7 @@ public:
 
     /// Constructor for a property field that stores a single reference to a RefTarget.
     PropertyFieldDescriptor(RefMakerClass* definingClass, OvitoClassPtr targetClass, const char* identifier, PropertyFieldFlags flags,
-        RefTarget* (*singleReferenceReadFunc)(const RefMaker*), 
+        RefTarget* (*singleReferenceReadFunc)(const RefMaker*),
         void (*singleReferenceWriteFunc)(RefMaker*, const RefTarget*),
         void (*singleReferenceWriteFuncRef)(RefMaker*, OORef<RefTarget>));
 
