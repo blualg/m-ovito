@@ -51,16 +51,16 @@ public:
     /// \return \c false when the operation has been canceled by the user;
     ///         \c true on success.
     /// \throw Exception on error.
-    bool prepare(ConstPropertyAccess<Point3> positions, const SimulationCellObject* cell, ConstPropertyAccess<SelectionIntType> selection,
-                 ConstPropertyPtr structuresArray,
-                 ConstPropertyPtr orientationsArray,
-                 ConstPropertyPtr correspondencesArray);
+    bool prepare(ConstDataBufferAccess<Point3> positions, const SimulationCellObject* cell, ConstDataBufferAccess<SelectionIntType> selection,
+                 ConstDataBufferPtr structuresArray,
+                 ConstDataBufferPtr orientationsArray,
+                 ConstDataBufferPtr correspondencesArray);
 
     /// Returns the number of input particles in the system for which the NearestNeighborFinder was created.
     using NearestNeighborFinder::particleCount;
 
     /// Returns the "Structure Type" particle property.
-    const ConstPropertyPtr& structureTypes() const { return _structuresArray; }
+    const ConstDataBufferPtr& structureTypes() const { return _structuresArray; }
 
     /// Stores information about a single neighbor of the central particle.
     struct Neighbor : public NearestNeighborFinder::Neighbor
@@ -128,9 +128,9 @@ public:
 
 private:
     bool _all_properties;
-    ConstPropertyPtr _structuresArray;
-    ConstPropertyPtr _orientationsArray;
-    ConstPropertyPtr _correspondencesArray;
+    ConstDataBufferPtr _structuresArray;
+    ConstDataBufferPtr _orientationsArray;
+    ConstDataBufferPtr _correspondencesArray;
 };
 
 }   // End of namespace

@@ -317,7 +317,7 @@ void DLPOLYImporter::FrameLoader::loadFile()
     typeProperty.buffer()->sortElementTypesByName();
 
     if(identifiers.size() == positions.size()) {
-        PropertyAccess<qlonglong> identifierProperty = particles()->createProperty(ParticlesObject::IdentifierProperty);
+        PropertyAccess<IdentifierIntType> identifierProperty = particles()->createProperty(ParticlesObject::IdentifierProperty);
         boost::copy(identifiers, identifierProperty.begin());
     }
     if(levcfg > 0) {

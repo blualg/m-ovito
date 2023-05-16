@@ -625,6 +625,11 @@ public:
     /// Constructs a read-only accessor for the data in a DataBuffer.
     ConstDataBufferAccess(const DataOORef<DataBufferClass>& buffer)
         : ParentType(buffer.get()) {}
+
+    /// Constructs a read-only accessor for the data in a DataBuffer.
+    template<typename DerivedDataBufferClass>
+    ConstDataBufferAccess(DataOORef<DerivedDataBufferClass> buffer)
+        : ParentType(static_object_cast<const DataBufferClass>(buffer.get())) {}
 };
 
 /**
@@ -652,6 +657,11 @@ public:
     /// Constructs a read-only accessor for the data in a DataBuffer.
     ConstDataBufferAccessAndRef(const DataBufferClass* buffer)
         : ParentType(DataOORef<const DataBufferClass>(buffer)) {}
+
+    /// Constructs a read-only accessor for the data in a DataBuffer.
+    template<typename DerivedDataBufferClass>
+    ConstDataBufferAccessAndRef(DataOORef<DerivedDataBufferClass> buffer)
+        : ParentType(static_object_cast<const DataBufferClass>(std::move(buffer))) {}
 };
 
 /**

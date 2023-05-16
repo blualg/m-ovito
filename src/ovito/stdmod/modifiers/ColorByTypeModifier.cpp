@@ -138,7 +138,7 @@ void ColorByTypeModifier::evaluateSynchronous(const ModifierEvaluationRequest& r
     PropertyAccess<ColorG> colorProperty = container->createProperty(selectionProperty ? DataBuffer::Initialized : DataBuffer::Uninitialized, PropertyObject::GenericColorProperty, objectPath);
 
     // Access selection array.
-    ConstPropertyAccessAndRef<SelectionIntType> selection(std::move(selectionProperty));
+    ConstDataBufferAccess<SelectionIntType> selection(selectionProperty.get());
 
     // Create color lookup table.
     const std::map<int,Color> colorMap = typePropertyObject->typeColorMap();

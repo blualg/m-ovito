@@ -41,10 +41,10 @@ PTMNeighborFinder::PTMNeighborFinder(bool all_properties) : NearestNeighborFinde
 /******************************************************************************
 * Prepares the neighbor finder.
 ******************************************************************************/
-bool PTMNeighborFinder::prepare(ConstPropertyAccess<Point3> positions, const SimulationCellObject* cell, ConstPropertyAccess<SelectionIntType> selection,
-                                ConstPropertyPtr structuresArray,
-                                ConstPropertyPtr orientationsArray,
-                                ConstPropertyPtr correspondencesArray)
+bool PTMNeighborFinder::prepare(ConstDataBufferAccess<Point3> positions, const SimulationCellObject* cell, ConstDataBufferAccess<SelectionIntType> selection,
+                                ConstDataBufferPtr structuresArray,
+                                ConstDataBufferPtr orientationsArray,
+                                ConstDataBufferPtr correspondencesArray)
 {
     // Initialize the internal NearestNeighborFinder.
     if(!NearestNeighborFinder::prepare(std::move(positions), cell, std::move(selection)))
@@ -66,8 +66,8 @@ bool PTMNeighborFinder::prepare(ConstPropertyAccess<Point3> positions, const Sim
 ******************************************************************************/
 void PTMNeighborFinder::Query::findNeighbors(size_t particleIndex, std::optional<Quaternion> targetOrientation)
 {
-    ConstPropertyAccess<PTMAlgorithm::StructureType> structuresArray(_finder._structuresArray);
-    ConstPropertyAccess<QuaternionG> orientationsArray(_finder._orientationsArray);
+    ConstDataBufferAccess<PTMAlgorithm::StructureType> structuresArray(_finder._structuresArray);
+    ConstDataBufferAccess<QuaternionG> orientationsArray(_finder._orientationsArray);
 
     _structureType = structuresArray[particleIndex];
     _orientation = orientationsArray[particleIndex].toDataType<FloatType>();
@@ -149,7 +149,7 @@ void PTMNeighborFinder::Query::findNeighbors(size_t particleIndex, std::optional
 
 void PTMNeighborFinder::Query::getNeighbors(size_t particleIndex, int ptm_type)
 {
-    ConstPropertyAccess<qlonglong> correspondencesArray(_finder._correspondencesArray);
+    ConstDataBufferAccess<int64_t> correspondencesArray(_finder._correspondencesArray);
 
     // Let the internal NearestNeighborFinder determine the list of nearest particles.
     NeighborQuery neighborQuery(_finder);

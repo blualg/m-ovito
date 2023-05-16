@@ -238,7 +238,7 @@ void GrainSegmentationEngine2::applyResults(const ModifierEvaluationRequest& req
 
     size_t numGrains = 0;
     if(atomClusters()->size() != 0)
-        numGrains = *boost::max_element(ConstPropertyAccess<qlonglong>(atomClusters()));
+        numGrains = *boost::max_element(ConstPropertyAccess<int64_t>(atomClusters()));
 
     state.addAttribute(QStringLiteral("GrainSegmentation.grain_count"), QVariant::fromValue(numGrains), request.modApp());
 

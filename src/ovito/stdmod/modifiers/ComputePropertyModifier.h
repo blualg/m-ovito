@@ -61,7 +61,7 @@ protected:
                 const PipelineFlowState& input,
                 const ConstDataObjectPath& containerPath,
                 PropertyPtr outputProperty,
-                ConstPropertyPtr selectionProperty,
+                const PropertyObject* selectionProperty,
                 QStringList expressions,
                 int frameNumber,
                 std::unique_ptr<PropertyExpressionEvaluator> evaluator);
@@ -77,7 +77,7 @@ protected:
         }
 
         /// Returns the data accessor to the selection flag array.
-        const ConstPropertyAccessAndRef<SelectionIntType>& selectionArray() const { return _selectionArray; }
+        const ConstDataBufferAccessAndRef<SelectionIntType>& selectionArray() const { return _selectionArray; }
 
         /// Returns the list of available input variables.
         virtual QStringList inputVariableNames() const;
@@ -120,7 +120,7 @@ protected:
 
         const int _frameNumber;
         QStringList _expressions;
-        ConstPropertyAccessAndRef<SelectionIntType> _selectionArray;
+        ConstDataBufferAccessAndRef<SelectionIntType> _selectionArray;
         std::unique_ptr<PropertyExpressionEvaluator> _evaluator;
         const PropertyPtr _outputProperty;
         PropertyAccess<void, true> _outputArray;

@@ -561,7 +561,7 @@ void OpenGLSceneRenderer::renderParticles(const ParticlePrimitive& primitive)
             if(!cache.initialized) {
                 cache.initialized = true;
                 // Are there any particles having a non-positive transparency value?
-                std::vector<int> fullyOpaqueIndices;
+                std::vector<int32_t> fullyOpaqueIndices;
                 if(!primitive.indices()) {
                     int index = 0;
                     for(FloatType t : ConstDataBufferAccess<FloatType>(primitive.transparencies())) {
@@ -571,7 +571,7 @@ void OpenGLSceneRenderer::renderParticles(const ParticlePrimitive& primitive)
                 }
                 else {
                     ConstDataBufferAccess<FloatType> transparencies(primitive.transparencies());
-                    for(int index : ConstDataBufferAccess<int>(primitive.indices())) {
+                    for(auto index : ConstDataBufferAccess<int32_t>(primitive.indices())) {
                         if(transparencies[index] <= 0) fullyOpaqueIndices.push_back(index);
                     }
                 }

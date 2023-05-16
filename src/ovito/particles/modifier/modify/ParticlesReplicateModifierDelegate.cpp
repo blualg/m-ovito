@@ -99,7 +99,7 @@ PipelineStatus ParticlesReplicateModifierDelegate::apply(const ModifierEvaluatio
 
         // Assign unique IDs to duplicated particles.
         if(mod->uniqueIdentifiers() && (property->type() == ParticlesObject::IdentifierProperty || property->type() == ParticlesObject::MoleculeProperty)) {
-            PropertyAccess<qlonglong> propertyData(property);
+            PropertyAccess<IdentifierIntType> propertyData(property);
             auto minmax = std::minmax_element(propertyData.cbegin(), propertyData.cbegin() + oldParticleCount);
             auto minID = *minmax.first;
             auto maxID = *minmax.second;
@@ -116,7 +116,7 @@ PipelineStatus ParticlesReplicateModifierDelegate::apply(const ModifierEvaluatio
         size_t oldBondCount = outputParticles->bonds()->elementCount();
         size_t newBondCount = oldBondCount * numCopies;
 
-        ConstPropertyAccessAndRef<Vector3I> oldPeriodicImages = outputParticles->bonds()->getProperty(BondsObject::PeriodicImageProperty);
+        ConstDataBufferAccessAndRef<Vector3I> oldPeriodicImages = outputParticles->bonds()->getProperty(BondsObject::PeriodicImageProperty);
 
         // Replicate bond property values.
         BondsObject* mutableBonds = outputParticles->makeBondsMutable();

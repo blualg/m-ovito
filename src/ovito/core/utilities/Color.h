@@ -205,9 +205,9 @@ public:
         else {
             T f, p, q, t;
             int i;
-            if(hue >= 1.0 || hue < T(0)) hue = T(0);
+            if(hue >= T(1) || hue < T(0)) hue = T(0);
             hue *= T(6);
-            i = (int)floor(hue);
+            i = (int)std::floor(hue);
             f = hue - (T)i;
             p = value * (T(1) - saturation);
             q = value * (T(1) - (saturation * f));

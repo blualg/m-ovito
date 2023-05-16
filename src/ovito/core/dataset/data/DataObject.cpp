@@ -102,7 +102,7 @@ bool DataObject::isSafeToModify() const
 {
     OVITO_CHECK_OBJECT_POINTER(this);
 
-    if(_dataReferenceCount.loadAcquire() <= 1) {
+    if(_dataReferenceCount.load() <= 1) {
         bool isExclusivelyOwned = true;
         visitDependents([&](RefMaker* dependent) {
             // Recursively determine if the container of this data object is safe to modify as well.
@@ -141,12 +141,12 @@ DataObject* DataObject::makeMutable(const DataObject* subObject)
 #ifdef OVITO_DEBUG
     if(!subObject->isSafeToModify()) {
         qDebug() << "ERROR: Data sub-object" << subObject << "owned by" << this << "is not mutable after a call to DataObject::makeMutable().";
-        qDebug() << "Data reference count of sub-object is" << subObject->_dataReferenceCount.loadAcquire();
+        qDebug() << "Data reference count of sub-object is" << subObject->_dataReferenceCount.load();
         qDebug() << "Listing dependents of sub-object:";
         subObject->visitDependents([](RefMaker* dependent) {
             qDebug() << "  -" << dependent;
         });
-        qDebug() << "Data reference count of parent object is" << _dataReferenceCount.loadAcquire();
+        qDebug() << "Data reference count of parent object is" << _dataReferenceCount.load();
         qDebug() << "Listing dependents of parent object:";
         visitDependents([](RefMaker* dependent) {
             qDebug() << "  -" << dependent;
@@ -188,12 +188,12 @@ DataObject* DataObject::makeMutable(const DataObject* subObject, CloneHelper& cl
 #ifdef OVITO_DEBUG
     if(!subObject->isSafeToModify()) {
         qDebug() << "ERROR: Data sub-object" << subObject << "owned by" << this << "is not mutable after a call to DataObject::makeMutable().";
-        qDebug() << "Data reference count of sub-object is" << subObject->_dataReferenceCount.loadAcquire();
+        qDebug() << "Data reference count of sub-object is" << subObject->_dataReferenceCount.load();
         qDebug() << "Listing dependents of sub-object:";
         subObject->visitDependents([](RefMaker* dependent) {
             qDebug() << "  -" << dependent;
         });
-        qDebug() << "Data reference count of parent object is" << _dataReferenceCount.loadAcquire();
+        qDebug() << "Data reference count of parent object is" << _dataReferenceCount.load();
         qDebug() << "Listing dependents of parent object:";
         visitDependents([](RefMaker* dependent) {
             qDebug() << "  -" << dependent;

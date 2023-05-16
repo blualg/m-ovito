@@ -189,7 +189,7 @@ void StructureIdentificationModifier::StructureIdentificationEngine::applyResult
 * This helper method is called by the QML GUI (StructureListParameter.qml) to extract the identification counts
 * from the cached pipeline output state after the modifier has been evaluated.
 ******************************************************************************/
-QVector<qlonglong> StructureIdentificationModifier::getStructureCountsFromModifierResults(ModifierApplication* modApp) const
+QVector<int64_t> StructureIdentificationModifier::getStructureCountsFromModifierResults(ModifierApplication* modApp) const
 {
     if(!modApp || !modApp->isEnabled())
         return {};
@@ -203,8 +203,8 @@ QVector<qlonglong> StructureIdentificationModifier::getStructureCountsFromModifi
             if(structureCounts->size() != 0 && structureCounts->dataType() == PropertyObject::Int64) {
 
                 // Convert the table data to a format that can be passed back to QML.
-                ConstPropertyAccess<qlonglong> array(structureCounts);
-                return QVector<qlonglong>{ array.cbegin(), array.cend() };
+                ConstPropertyAccess<int64_t> array(structureCounts);
+                return QVector<int64_t>{ array.cbegin(), array.cend() };
             }
         }
     }

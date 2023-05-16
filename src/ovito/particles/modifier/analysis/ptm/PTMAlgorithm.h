@@ -220,7 +220,7 @@ public:
     bool calculateDefGradient() const { return _calculateDefGradient; }
 
     /// Activates the identification of chemical ordering types and specifies the chemical types of the input particles.
-    void setIdentifyOrdering(ConstPropertyPtr particleTypes) {
+    void setIdentifyOrdering(ConstDataBufferPtr particleTypes) {
         _particleTypes = std::move(particleTypes);
         _identifyOrdering = (_particleTypes != nullptr);
     }
@@ -232,7 +232,7 @@ public:
     /// \return \c false when the operation has been canceled by the user;
     ///         \c true on success.
     /// \throw Exception on error.
-    bool prepare(ConstPropertyAccess<Point3> positions, const SimulationCellObject* cell, ConstPropertyAccess<SelectionIntType> selection = {}) {
+    bool prepare(ConstDataBufferAccess<Point3> positions, const SimulationCellObject* cell, ConstDataBufferAccess<SelectionIntType> selection = {}) {
         return NearestNeighborFinder::prepare(std::move(positions), cell, std::move(selection));
     }
 
@@ -374,7 +374,7 @@ private:
     bool _identifyOrdering = false;
 
     /// The chemical types of the input particles, needed for ordering analysis.
-    ConstPropertyPtr _particleTypes;
+    ConstDataBufferPtr _particleTypes;
 
     /// Activates the calculation of the elastic deformation gradient by PTM.
     bool _calculateDefGradient = false;

@@ -306,7 +306,7 @@ void PropertyObject::sortElementTypesByName()
     }
 
     // Remap type IDs.
-    for(int& t : DataBufferAccess<int>(this)) {
+    for(int& t : DataBufferAccess<int32_t>(this)) {
         OVITO_ASSERT(t >= 1 && t < mapping.size());
         t = mapping[t];
     }

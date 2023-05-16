@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -54,7 +54,7 @@ public:
         size_t particleIndex;
 
         /// The identifier of the picked particle.
-        qlonglong particleId;
+        IdentifierIntType particleId;
 
         /// The scene node that contains the picked particle.
         OORef<PipelineSceneNode> objNode;

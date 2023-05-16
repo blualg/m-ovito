@@ -191,16 +191,16 @@ protected:
 private:
 
     /// Increments the shared-ownership count of this DataObject by one. This method is called by the DataOORef smart-pointer class.
-    void incrementDataReferenceCount() const noexcept {
+    inline void incrementDataReferenceCount() const noexcept {
         OVITO_CHECK_OBJECT_POINTER(this);
-        _dataReferenceCount.ref();
+        _dataReferenceCount.fetch_add(1);
     }
 
     /// Decrements the shared-ownership count of this DataObject by one. This method is called by the DataOORef smart-pointer class.
-    void decrementDataReferenceCount() const noexcept {
+    inline void decrementDataReferenceCount() const noexcept {
         OVITO_CHECK_OBJECT_POINTER(this);
-        OVITO_ASSERT(_dataReferenceCount.loadAcquire() > 0);
-        _dataReferenceCount.deref();
+        OVITO_ASSERT(_dataReferenceCount.load() > 0);
+        _dataReferenceCount.fetch_sub(1);
     }
 
 private:
@@ -218,7 +218,7 @@ private:
     DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<RefTarget>, editableProxy, setEditableProxy, PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_NO_SUB_ANIM);
 
     /// The current number of strong references to this DataObject that exist.
-    mutable QAtomicInt _dataReferenceCount{0};
+    mutable std::atomic<int> _dataReferenceCount{0};
 
     // Give DataOORef smart-pointer class direct access to the DataObject's shared owenership counter.
     template<typename DataObjectClass> friend class DataOORef;

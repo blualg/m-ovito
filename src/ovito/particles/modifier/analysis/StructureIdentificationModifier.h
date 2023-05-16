@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -95,9 +95,11 @@ public:
         }
 
         /// Returns the number of identified particles of the given structure type.
-        qlonglong getTypeCount(int typeIndex) const {
-            if(_typeCounts.size() > typeIndex) return _typeCounts[typeIndex];
-            return 0;
+        int64_t getTypeCount(int typeIndex) const {
+            if(_typeCounts.size() > typeIndex)
+                return _typeCounts[typeIndex];
+            else
+                return 0;
         }
 
     protected:
@@ -122,7 +124,7 @@ public:
         DataOORef<const SimulationCellObject> _simCell;
         const PropertyPtr _structures;
         ParticleOrderingFingerprint _inputFingerprint;
-        std::vector<qlonglong> _typeCounts;
+        std::vector<int64_t> _typeCounts;
     };
 
 public:
@@ -140,7 +142,7 @@ public:
 #ifdef OVITO_QML_GUI
     /// This helper method is called by the QML GUI (StructureListParameter.qml) to extract the identification counts
     /// from the cached pipeline output state after the modifier has been evaluated.
-    Q_INVOKABLE QVector<qlonglong> getStructureCountsFromModifierResults(ModifierApplication* modApp) const;
+    Q_INVOKABLE QVector<int64_t> getStructureCountsFromModifierResults(ModifierApplication* modApp) const;
 #endif
 
 protected:

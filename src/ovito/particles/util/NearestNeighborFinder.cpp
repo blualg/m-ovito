@@ -31,7 +31,7 @@ namespace Ovito::Particles {
 /******************************************************************************
 * Prepares the neighbor list builder.
 ******************************************************************************/
-bool NearestNeighborFinder::prepare(ConstPropertyAccess<Point3> posProperty, const SimulationCellObject* cellData, ConstPropertyAccess<SelectionIntType> selectionProperty)
+bool NearestNeighborFinder::prepare(ConstDataBufferAccess<Point3> posProperty, const SimulationCellObject* cellData, ConstDataBufferAccess<SelectionIntType> selectionProperty)
 {
     OVITO_ASSERT(posProperty);
     OVITO_ASSERT(cellData);

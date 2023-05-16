@@ -394,7 +394,7 @@ void SmoothTrajectoryModifier::averageState(PipelineFlowState& state1, const std
     const SimulationCellObject* cell1 = state1.getObject<SimulationCellObject>();
     const ParticlesObject* particles1 = state1.expectObject<ParticlesObject>();
     particles1->verifyIntegrity();
-    ConstPropertyAccessAndRef<Point3> posProperty1 = particles1->expectProperty(ParticlesObject::PositionProperty);
+    ConstDataBufferAccessAndRef<Point3> posProperty1 = particles1->expectProperty(ParticlesObject::PositionProperty);
     ConstPropertyAccess<IdentifierIntType> idProperty1 = particles1->getProperty(ParticlesObject::IdentifierProperty);
 
     // Create a modifiable copy of the particle coordinates array.

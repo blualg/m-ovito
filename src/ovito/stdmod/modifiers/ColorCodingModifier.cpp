@@ -398,7 +398,7 @@ PipelineStatus ColorCodingModifierDelegate::apply(const ModifierEvaluationReques
     // Create the color output property.
     PropertyAccess<ColorG> colorProperty = container->createProperty(selectionProperty ? DataBuffer::Initialized : DataBuffer::Uninitialized, outputColorPropertyId(), objectPath);
 
-    ConstPropertyAccessAndRef<SelectionIntType> selection(std::move(selectionProperty));
+    ConstDataBufferAccess<SelectionIntType> selection(selectionProperty.get());
     bool result = property->forEach(vecComponent, [&](size_t i, auto v) {
         if(selection && !selection[i])
             return;

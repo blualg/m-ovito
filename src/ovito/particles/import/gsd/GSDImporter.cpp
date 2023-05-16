@@ -192,7 +192,7 @@ void GSDImporter::FrameLoader::loadFile()
 
     {
         // Read particle positions.
-        PropertyAccess<Point3> posProperty = particles()->createProperty(ParticlesObject::PositionProperty);
+        PropertyAccess<FloatType, true> posProperty = particles()->createProperty(ParticlesObject::PositionProperty);
         if(gsd.hasChunk("particles/position", frameNumber))
             gsd.readFloatArray("particles/position", frameNumber, posProperty.begin(), numParticles, posProperty.componentCount());
         else
@@ -228,19 +228,20 @@ void GSDImporter::FrameLoader::loadFile()
     const FloatType defaultCharge = 0.0;
     const Vector3 defaultVelocity = Vector3::Zero();
     const Vector3I defaultImage = Vector3I::Zero();
-    const GraphicsFloatType defaultDiameter = 1;
-    const QuaternionG identityQuaternion = QuaternionG(1,0,0,0);
-    const Quaternion nullQuaternion = Quaternion(0,0,0,0);
 
     readOptionalProperty(gsd, "particles/mass", frameNumber, ParticlesObject::MassProperty, particles(), &defaultMass, sizeof(defaultMass));
     readOptionalProperty(gsd, "particles/charge", frameNumber, ParticlesObject::ChargeProperty, particles(), &defaultCharge, sizeof(defaultCharge));
     readOptionalProperty(gsd, "particles/velocity", frameNumber, ParticlesObject::VelocityProperty, particles(), &defaultVelocity, sizeof(defaultVelocity));
     readOptionalProperty(gsd, "particles/image", frameNumber, ParticlesObject::PeriodicImageProperty, particles(), &defaultImage, sizeof(defaultImage));
+
+    const GraphicsFloatType defaultDiameter = 1;
     if(PropertyAccess<GraphicsFloatType> radiusProperty = readOptionalProperty(gsd, "particles/diameter", frameNumber, ParticlesObject::RadiusProperty, particles(), &defaultDiameter, sizeof(defaultDiameter))) {
         // Convert particle diameters to radii.
         for(auto& r : radiusProperty)
             r /= 2;
     }
+
+    const QuaternionG identityQuaternion = QuaternionG(1,0,0,0);
     if(PropertyAccess<QuaternionG> orientationProperty = readOptionalProperty(gsd, "particles/orientation", frameNumber, ParticlesObject::OrientationProperty, particles(), &identityQuaternion, sizeof(identityQuaternion))) {
         // Convert quaternion representation from GSD format to OVITO's internal format.
         // Left-shift all quaternion components by one: (W,X,Y,Z) -> (X,Y,Z,W).
@@ -250,6 +251,7 @@ void GSDImporter::FrameLoader::loadFile()
 
     // Read in "particles/angmom" chunk as user-defined property named "angmom". It's not clear how to map the HOOMD quaternion to OVITO's "Angular Momentum" vector property.
     // But it should be possible, see https://hoomd-blue.readthedocs.io/en/v2.9.5/aniso.html#quaternions-for-angular-momentum
+    const Quaternion nullQuaternion = Quaternion(0,0,0,0);
     readOptionalProperty(gsd, "particles/angmom", frameNumber, ParticlesObject::UserProperty, particles(), &nullQuaternion, sizeof(nullQuaternion));
 
     // Read "particles/body" chunk.

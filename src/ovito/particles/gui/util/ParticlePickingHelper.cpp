@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -57,7 +57,7 @@ bool ParticlePickingHelper::pickParticle(ViewportWindowInterface* vpwin, const Q
                 result.worldPos = result.objNode->getWorldTransform(time, iv) * result.localPos;
 
                 // Determine particle ID.
-                ConstPropertyAccess<qlonglong> identifierProperty = particles->getProperty(ParticlesObject::IdentifierProperty);
+                ConstPropertyAccess<IdentifierIntType> identifierProperty = particles->getProperty(ParticlesObject::IdentifierProperty);
                 if(identifierProperty && result.particleIndex < identifierProperty.size()) {
                     result.particleId = identifierProperty[result.particleIndex];
                 }
@@ -90,7 +90,7 @@ void ParticlePickingHelper::renderSelectionMarker(Viewport* vp, SceneRenderer* r
     // If particle selection is based on ID, find particle with the given ID.
     size_t particleIndex = pickRecord.particleIndex;
     if(pickRecord.particleId >= 0) {
-        if(ConstPropertyAccess<qlonglong> identifierProperty = particles->getProperty(ParticlesObject::IdentifierProperty)) {
+        if(ConstPropertyAccess<IdentifierIntType> identifierProperty = particles->getProperty(ParticlesObject::IdentifierProperty)) {
             if(particleIndex >= identifierProperty.size() || identifierProperty[particleIndex] != pickRecord.particleId) {
                 auto iter = boost::find(identifierProperty, pickRecord.particleId);
                 if(iter == identifierProperty.cend()) return;

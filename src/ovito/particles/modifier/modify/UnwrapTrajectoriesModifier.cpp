@@ -257,7 +257,7 @@ void UnwrapTrajectoriesModifierApplication::unwrapParticleCoordinates(const Modi
     PropertyAccess<Point3> posProperty = outputParticles->expectMutableProperty(ParticlesObject::PositionProperty);
 
     // Get particle identifiers.
-    ConstPropertyAccess<qlonglong> identifierProperty = outputParticles->getProperty(ParticlesObject::IdentifierProperty);
+    ConstPropertyAccess<IdentifierIntType> identifierProperty = outputParticles->getProperty(ParticlesObject::IdentifierProperty);
     if(identifierProperty && identifierProperty.size() != posProperty.size())
         identifierProperty.reset();
 
@@ -326,7 +326,7 @@ void UnwrapTrajectoriesModifierApplication::WorkingData::operator()(int frame, c
     if(!particles)
         throw Exception(tr("Input data contains no particles at frame %1.").arg(frame));
     ConstPropertyAccess<Point3> posProperty = particles->expectProperty(ParticlesObject::PositionProperty);
-    ConstPropertyAccess<qlonglong> identifierProperty = particles->getProperty(ParticlesObject::IdentifierProperty);
+    ConstPropertyAccess<IdentifierIntType> identifierProperty = particles->getProperty(ParticlesObject::IdentifierProperty);
     if(identifierProperty && identifierProperty.size() != posProperty.size())
         identifierProperty.reset();
 

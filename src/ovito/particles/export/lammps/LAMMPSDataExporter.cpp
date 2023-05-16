@@ -129,8 +129,8 @@ bool LAMMPSDataExporter::exportData(const PipelineFlowState& state, int frameNum
                     else if(newProperty->type() == ParticlesObject::UserProperty && newProperty->name() == QStringLiteral("Density")) {
                         OVITO_ASSERT(col.columnName == "density");
                         // When exporting the "Density" property, compute its values from the particles masses and radii.
-                        ConstPropertyAccessAndRef<GraphicsFloatType> radii = particles->inputParticleRadii();
-                        ConstPropertyAccessAndRef<FloatType> masses = particles->inputParticleMasses();
+                        ConstDataBufferAccessAndRef<GraphicsFloatType> radii = particles->inputParticleRadii();
+                        ConstDataBufferAccessAndRef<FloatType> masses = particles->inputParticleMasses();
                         auto radius = radii.cbegin();
                         auto mass = masses.cbegin();
                         for(FloatType& density : PropertyAccess<FloatType>(newProperty)) {

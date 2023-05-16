@@ -266,7 +266,7 @@ void CoordinationPolyhedraModifier::ComputePolyhedraEngine::perform()
 
     // Create the "Particle index" region property, which contains the index of the particle that is at the center of each coordination polyhedron.
     PropertyPtr particleIndexProperty = mesh.createRegionProperty(DataBuffer::Uninitialized, QStringLiteral("Particle Index"), PropertyObject::Int64);
-    std::copy(regionToParticleMap.cbegin(), regionToParticleMap.cend(), PropertyAccess<qlonglong>(particleIndexProperty).begin());
+    std::copy(regionToParticleMap.cbegin(), regionToParticleMap.cend(), PropertyAccess<int64_t>(particleIndexProperty).begin());
 
     // Release data that is no longer needed.
     _positions.reset();

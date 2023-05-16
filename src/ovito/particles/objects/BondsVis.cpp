@@ -258,7 +258,7 @@ PipelineStatus BondsVis::render(AnimationTime time, const ConstDataObjectPath& p
             const AffineTransformation cell = simulationCell ? simulationCell->cellMatrix() : AffineTransformation::Zero();
 
             // Obtain the radii of the particles.
-            ConstPropertyAccessAndRef<GraphicsFloatType> particleRadii;
+            ConstDataBufferAccessAndRef<GraphicsFloatType> particleRadii;
             if(particleVis)
                 particleRadii = particleVis->particleRadii(particles, false);
             // Make sure the particle radius array has the correct length.
@@ -430,7 +430,7 @@ std::vector<ColorG> BondsVis::halfBondColors(const ParticlesObject* particles, b
     else if(coloringMode == ParticleBasedColoring && particleVis) {
         // Derive bond colors from particle colors.
         size_t particleCount = particles->elementCount();
-        ConstPropertyAccessAndRef<ColorG> particleColors = particleVis->particleColors(particles, false);
+        ConstDataBufferAccessAndRef<ColorG> particleColors = particleVis->particleColors(particles, false);
         OVITO_ASSERT(particleColors.size() == particleCount);
         auto bc = output.begin();
         for(const auto& bond : topologyProperty) {

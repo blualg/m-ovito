@@ -132,7 +132,7 @@ void PropertyExpressionEvaluator::registerPropertyVariables(const std::vector<Co
         else
             continue;
         v.variableClass = variableClass;
-        v.propertyArray = property;
+        v.propertyArray = property.get();
 
         // Derive a valid variable name from the property name by removing all invalid characters.
         QString propertyName = property->name();

@@ -117,7 +117,7 @@ public:
     /// \return \c false when the operation has been canceled by the user;
     ///         \c true on success.
     /// \throw Exception on error.
-    bool prepare(ConstPropertyAccess<Point3> posProperty, const SimulationCellObject* cellData, ConstPropertyAccess<SelectionIntType> selectionProperty);
+    bool prepare(ConstDataBufferAccess<Point3> posProperty, const SimulationCellObject* cellData, ConstDataBufferAccess<SelectionIntType> selectionProperty);
 
     /// Returns the maximum number of neighbors this class will find.
     int maxNeighbors() const { return numNeighbors; }

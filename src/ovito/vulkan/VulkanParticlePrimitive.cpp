@@ -744,7 +744,7 @@ void VulkanSceneRenderer::renderParticlesImplementation(const ParticlePrimitive&
             }
         }
         else {
-            for(int index : ConstDataBufferAccess<int>(primitive.indices())) {
+            for(int index : ConstDataBufferAccess<int32_t>(primitive.indices())) {
                 const Point3& pos = positionArray[index];
                 *dst++ = static_cast<float>(pos.x());
                 *dst++ = static_cast<float>(pos.y());

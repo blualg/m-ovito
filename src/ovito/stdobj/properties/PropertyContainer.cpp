@@ -329,7 +329,7 @@ std::vector<size_t> PropertyContainer::sortById()
 #endif
     if(!getOOMetaClass().isValidStandardPropertyId(PropertyObject::GenericIdentifierProperty))
         return {};
-    ConstDataBufferAccess<qlonglong> ids = getProperty(PropertyObject::GenericIdentifierProperty);
+    ConstDataBufferAccess<IdentifierIntType> ids = getProperty(PropertyObject::GenericIdentifierProperty);
     if(!ids)
         return {};
 
@@ -351,7 +351,7 @@ std::vector<size_t> PropertyContainer::sortById()
         prop->reorderElements(permutation);
     }
 
-    OVITO_ASSERT(boost::range::is_sorted(ConstDataBufferAccess<qlonglong>(getProperty(PropertyObject::GenericIdentifierProperty)).crange()));
+    OVITO_ASSERT(boost::range::is_sorted(ConstDataBufferAccess<IdentifierIntType>(getProperty(PropertyObject::GenericIdentifierProperty)).crange()));
 
     return invertedPermutation;
 }
@@ -465,7 +465,7 @@ QString PropertyContainer::elementInfoString(size_t elementIndex, const ConstDat
             }
         }
         else if(property->dataType() == PropertyObject::Int64) {
-            ConstPropertyAccess<qlonglong, true> data(property);
+            ConstPropertyAccess<int64_t, true> data(property);
             for(size_t component = 0; component < property->componentCount(); component++) {
                 if(component != 0) str += QStringLiteral(", ");
                 str += QString::number(data.get(elementIndex, component));

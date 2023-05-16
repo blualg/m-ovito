@@ -216,7 +216,7 @@ void ParaViewVTPParticleImporter::FrameLoader::loadFile()
             PropertyAccess<QuaternionG> orientations = particles()->createProperty(preserveExistingData ? DataBuffer::Initialized : DataBuffer::Uninitialized, ParticlesObject::OrientationProperty);
             auto* q = orientations.begin() + baseParticleIndex;
             for(const Matrix_3<GraphicsFloatType>& tensor : ConstPropertyAccess<Matrix_3<GraphicsFloatType>>(tensorProperty).csubrange(baseParticleIndex, tensorProperty->size())) {
-                *q++ = QuaternionG(transposeOrientations ? tensor.transposed() : tensor, GraphicsFloatType(1e-9));
+                *q++ = QuaternionG(transposeOrientations ? tensor.transposed() : tensor, GraphicsFloatType(1e-6));
             }
             if(isCanceled())
                 return;

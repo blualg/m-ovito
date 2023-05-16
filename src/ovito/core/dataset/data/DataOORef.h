@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -175,7 +175,7 @@ public:
         return CloneHelper().cloneObject(_ref, false);
     }
 
-    /// Turns a const data object reference into a mutable data object reference. 
+    /// Turns a const data object reference into a mutable data object reference.
     /// Makes a copy of the data object if necessary.
     DataOORef<std::remove_const_t<T>> makeMutable() && {
         if(!this->_ref) {

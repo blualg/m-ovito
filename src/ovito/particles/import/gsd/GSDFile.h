@@ -355,7 +355,7 @@ public:
             throw Exception(GSDImporter::tr("GSD file I/O error: Number of elements in chunk '%1' does not match expected value.").arg(chunkName));
         if(chunk->M != componentCount)
             throw Exception(GSDImporter::tr("GSD file I/O error: Size of second dimension in chunk '%1' is %2 and does not match expected value %3.").arg(chunkName).arg(chunk->M).arg(componentCount));
-        int errCode;
+        int errCode = -1;
         if constexpr(std::is_same_v<T, float>) {
             if(chunk->type == GSD_TYPE_DOUBLE) {
                 // Convert GSD data from double to float.
@@ -364,6 +364,7 @@ public:
                 std::copy(doubleBuffer.begin(), doubleBuffer.end(), buffer);
             }
             else {
+                OVITO_ASSERT(chunk->type == GSD_TYPE_FLOAT);
                 // No data type conversion needed.
                 errCode = ::gsd_read_chunk(&_handle, buffer, chunk);
             }
@@ -376,9 +377,13 @@ public:
                 std::copy(floatBuffer.begin(), floatBuffer.end(), buffer);
             }
             else {
+                OVITO_ASSERT(chunk->type == GSD_TYPE_DOUBLE);
                 // No data type conversion needed.
                 errCode = ::gsd_read_chunk(&_handle, buffer, chunk);
             }
+        }
+        else {
+            OVITO_ASSERT(false); // Unsupported floating-point data type;
         }
         switch(errCode) {
             case gsd_error::GSD_SUCCESS: break;
@@ -453,7 +458,11 @@ public:
                 errCode = ::gsd_read_chunk(&_handle, tempBuffer.data(), chunk);
                 std::copy(tempBuffer.begin(), tempBuffer.end(), buffer);
             }
-            else errCode = -1;
+            else {
+                qDebug() << "Unexpected chunk data type:" << chunk->type;
+                OVITO_ASSERT(false);
+                errCode = -1;
+            }
         }
         switch(errCode) {
             case gsd_error::GSD_SUCCESS: break;

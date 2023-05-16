@@ -40,7 +40,7 @@ void ParticleExpressionEvaluator::createInputVariables(const std::vector<ConstPr
             return property->type() == ParticlesObject::PositionProperty;
         });
         if(iter != inputProperties.end()) {
-            ConstPropertyAccessAndRef<Point3> posProperty = *iter;
+            ConstDataBufferAccessAndRef<Point3> posProperty = *iter;
             registerComputedVariable("ReducedPosition.X", [posProperty,simCell=DataOORef<const SimulationCellObject>(simCell)](size_t particleIndex) -> double {
                 return simCell->inverseMatrix().prodrow(posProperty[particleIndex], 0);
             });
@@ -57,12 +57,12 @@ void ParticleExpressionEvaluator::createInputVariables(const std::vector<ConstPr
 /******************************************************************************
 * Specifies the expressions to be evaluated for each bond and creates the input variables.
 ******************************************************************************/
-void BondExpressionEvaluator::initialize(const QStringList& expressions, const PipelineFlowState& state, const ConstDataObjectPath& containerPath, int animationFrame) 
+void BondExpressionEvaluator::initialize(const QStringList& expressions, const PipelineFlowState& state, const ConstDataObjectPath& containerPath, int animationFrame)
 {
     PropertyExpressionEvaluator::initialize(expressions, state, containerPath, animationFrame);
 
     // Look for the particles object, which is the parent of the bonds object.
-    if(containerPath.size() >= 2) { 
+    if(containerPath.size() >= 2) {
         if(const ParticlesObject* particles = dynamic_object_cast<ParticlesObject>(containerPath[containerPath.size() - 2])) {
             const BondsObject* bonds = static_object_cast<BondsObject>(containerPath.back());
             _topologyArray = bonds->getProperty(BondsObject::TopologyProperty);

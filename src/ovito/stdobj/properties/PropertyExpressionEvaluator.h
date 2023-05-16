@@ -167,7 +167,7 @@ protected:
         /// A function that computes the variable's value for each data element.
         std::function<double(size_t)> function;
         /// Array with the property values.
-        ConstPropertyAccessAndRef<void,true> propertyArray;
+        ConstDataBufferAccessAndRef<void,true> propertyArray;
         /// Indicates whether this variable is a caller-defined element variable.
         int variableClass = 0;
 

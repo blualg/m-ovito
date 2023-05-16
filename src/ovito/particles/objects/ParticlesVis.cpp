@@ -607,8 +607,8 @@ void ParticlesVis::renderMeshBasedParticles(const ParticlesObject* particles, Sc
         }
 
         // Compile the per-instance particle data (positions, orientations, colors, etc) for each mesh-based particle type.
-        ConstPropertyAccessAndRef<ColorG> colors = particleColors(particles, renderer->isInteractive());
-        ConstPropertyAccessAndRef<GraphicsFloatType> radii = particleRadii(particles, true);
+        ConstDataBufferAccessAndRef<ColorG> colors = particleColors(particles, renderer->isInteractive());
+        ConstDataBufferAccessAndRef<GraphicsFloatType> radii = particleRadii(particles, true);
         ConstPropertyAccess<int32_t> types(typeProperty);
         ConstPropertyAccess<Point3> positions(positionProperty);
         ConstPropertyAccess<QuaternionG> orientations(orientationProperty);
@@ -947,7 +947,7 @@ void ParticlesVis::renderCylindricParticles(const ParticlesObject* particles, Sc
             visCache.isCreated = true;
 
             // Determine the set of particles to be rendered using the current shape.
-            DataBufferAccessAndRef<int> activeParticleIndices;
+            DataBufferAccessAndRef<int32_t> activeParticleIndices;
             if(uniformShape != shape) {
                 OVITO_ASSERT(typeProperty);
 
@@ -1308,7 +1308,7 @@ void ParticlesVis::highlightParticle(size_t particleIndex, const ParticlesObject
 size_t ParticlePickInfo::particleIndexFromSubObjectID(quint32 subobjID) const
 {
     if(_subobjectToParticleMapping && subobjID < _subobjectToParticleMapping->size())
-        return ConstDataBufferAccess<int>(_subobjectToParticleMapping)[subobjID];
+        return ConstDataBufferAccess<int32_t>(_subobjectToParticleMapping)[subobjID];
     return subobjID;
 }
 

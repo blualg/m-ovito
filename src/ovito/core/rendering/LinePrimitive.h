@@ -50,6 +50,7 @@ public:
     void makePositions(InputIterator begin, InputIterator end) {
         using PointType = typename std::iterator_traits<InputIterator>::value_type;
         using ValueType = typename PointType::value_type;
+        OVITO_STATIC_ASSERT((std::is_same_v<PointType, Point_3<ValueType>>));
 
         size_t count = std::distance(begin, end);
         DataBufferAccessAndRef<PointType> buffer = DataBufferPtr::create(count, DataBufferPrimitiveType<ValueType>::value, 3);
@@ -77,6 +78,7 @@ public:
     void makeColors(InputIterator begin, InputIterator end) {
         using ColorType = typename std::iterator_traits<InputIterator>::value_type;
         using ValueType = typename ColorType::value_type;
+        OVITO_STATIC_ASSERT((std::is_same_v<ColorType, ColorAT<ValueType>>));
 
         size_t count = std::distance(begin, end);
         DataBufferAccessAndRef<ColorType> buffer = DataBufferPtr::create(count, DataBufferPrimitiveType<ValueType>::value, 4);

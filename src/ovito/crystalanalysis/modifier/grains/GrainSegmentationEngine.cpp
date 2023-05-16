@@ -595,8 +595,8 @@ void GrainSegmentationEngine2::perform()
     // Fill it with random color values (using constant random seed to keep it reproducible).
     _grainColors = DataTable::OOClass().createUserProperty(DataBuffer::Uninitialized, _numClusters - 1, DataBuffer::FloatGraphics, 3, QStringLiteral("Color"), 0, QStringList() << QStringLiteral("R") << QStringLiteral("G") << QStringLiteral("B"));
     std::default_random_engine rng(1);
-    std::uniform_real_distribution<GraphicsFloatType> uniform_dist(0, 1);
-    boost::generate(PropertyAccess<ColorG>(_grainColors), [&]() { return ColorG::fromHSV(uniform_dist(rng), 1.0f - uniform_dist(rng) * 0.8f, 1.0f - uniform_dist(rng) * 0.5f); });
+    std::uniform_real_distribution<FloatType> uniform_dist(0, 1);
+    boost::generate(PropertyAccess<ColorG>(_grainColors), [&]() { return ColorG::fromHSV(static_cast<GraphicsFloatType>(uniform_dist(rng)), 1.0f - static_cast<GraphicsFloatType>(uniform_dist(rng)) * 0.8f, 1.0f - static_cast<GraphicsFloatType>(uniform_dist(rng)) * 0.5f); });
     if(isCanceled())
         return;
 
@@ -613,8 +613,8 @@ void GrainSegmentationEngine2::perform()
     // Relabel atoms after cluster IDs have changed.
     // Also count the number of atoms in each cluster.
     {
-        PropertyAccess<qlonglong> atomClustersArray(atomClusters());
-        PropertyAccess<qlonglong> grainSizeArray(_grainSizes);
+        PropertyAccess<int64_t> atomClustersArray(atomClusters());
+        PropertyAccess<int64_t> grainSizeArray(_grainSizes);
         for(size_t particleIndex = 0; particleIndex < _numParticles; particleIndex++) {
             size_t gid = clusterRemapping[particleIndex];
             atomClustersArray[particleIndex] = gid;
@@ -630,7 +630,7 @@ void GrainSegmentationEngine2::perform()
         // Determine the index remapping for reordering the grain list by size.
         std::vector<size_t> mapping(_numClusters - 1);
         std::iota(mapping.begin(), mapping.end(), size_t(0));
-        std::sort(mapping.begin(), mapping.end(), [grainSizeArray = ConstPropertyAccess<qlonglong>(_grainSizes)](size_t a, size_t b) {
+        std::sort(mapping.begin(), mapping.end(), [grainSizeArray = ConstPropertyAccess<int64_t>(_grainSizes)](size_t a, size_t b) {
             return grainSizeArray[a] > grainSizeArray[b];
         });
         if(isCanceled())
@@ -652,7 +652,7 @@ void GrainSegmentationEngine2::perform()
 
         // Remap per-particle grain IDs.
 
-        for(auto& id : PropertyAccess<qlonglong>(atomClusters()))
+        for(auto& id : PropertyAccess<int64_t>(atomClusters()))
             id = inverseMapping[id];
         if(isCanceled())
             return;
@@ -671,12 +671,12 @@ bool GrainSegmentationEngine2::mergeOrphanAtoms()
     setProgressText(GrainSegmentationModifier::tr("Grain segmentation - merging orphan atoms"));
     setProgressValue(0);
 
-    PropertyAccess<qlonglong> atomClustersArray(atomClusters());
-    PropertyAccess<qlonglong> grainSizeArray(_grainSizes);
+    PropertyAccess<int64_t> atomClustersArray(atomClusters());
+    PropertyAccess<int64_t> grainSizeArray(_grainSizes);
 
     /// The bonds connecting neighboring non-crystalline atoms.
     std::vector<GrainSegmentationEngine1::NeighborBond> noncrystallineBonds;
-    for (auto nb: _engine1->neighborBonds()) {
+    for(auto nb : _engine1->neighborBonds()) {
         if (atomClustersArray[nb.a] == 0 || atomClustersArray[nb.b] == 0) {
             // Add bonds for both atoms
             noncrystallineBonds.push_back(nb);
@@ -695,19 +695,19 @@ bool GrainSegmentationEngine2::mergeOrphanAtoms()
     boost::heap::priority_queue<PQNode, boost::heap::compare<PQCompareLength>> pq;
 
     // Populate priority queue with bonds at a crystalline-noncrystalline interface
-    for (auto bond: _engine1->neighborBonds()) {
+    for(auto bond : _engine1->neighborBonds()) {
         auto clusterA = atomClustersArray[bond.a];
         auto clusterB = atomClustersArray[bond.b];
 
-        if (clusterA != 0 && clusterB == 0) {
+        if(clusterA != 0 && clusterB == 0) {
             pq.push({clusterA, bond.b, bond.length});
         }
-        else if (clusterA == 0 && clusterB != 0) {
+        else if(clusterA == 0 && clusterB != 0) {
             pq.push({clusterB, bond.a, bond.length});
         }
     }
 
-    while (pq.size()) {
+    while(pq.size()) {
         auto node = *pq.begin();
         pq.pop();
 
