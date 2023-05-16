@@ -121,7 +121,11 @@ void TaskManager::addTaskInternal(const TaskPtr& task)
 ******************************************************************************/
 QList<TaskWatcher*> TaskManager::registeredTasks() const
 {
+#if QT_VERSION >= QT_VERSION_CHECK(6, 3, 0)
     return findChildren<TaskWatcher*>(Qt::FindDirectChildrenOnly);
+#else
+    return findChildren<TaskWatcher*>(QString{}, Qt::FindDirectChildrenOnly);
+#endif
 }
 
 /******************************************************************************
