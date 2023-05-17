@@ -107,7 +107,7 @@ void ExpandSelectionModifier::ExpandSelectionEngine::perform()
 {
     setProgressText(tr("Expanding particle selection"));
 
-    setNumSelectedParticlesInput(_inputSelection->size() - boost::count(ConstPropertyAccess<SelectionIntType>(_inputSelection), 0));
+    setNumSelectedParticlesInput(_inputSelection->size() - boost::count(ConstDataBufferAccess<SelectionIntType>(_inputSelection), 0));
 
     beginProgressSubSteps(_numIterations);
     for(int i = 0; i < _numIterations; i++) {
@@ -121,7 +121,7 @@ void ExpandSelectionModifier::ExpandSelectionEngine::perform()
     }
     endProgressSubSteps();
 
-    setNumSelectedParticlesOutput(outputSelection()->size() - boost::count(ConstPropertyAccess<SelectionIntType>(outputSelection()), 0));
+    setNumSelectedParticlesOutput(outputSelection()->size() - boost::count(ConstDataBufferAccess<SelectionIntType>(outputSelection()), 0));
 
     // Release data that is no longer needed.
     _positions.reset();
@@ -143,8 +143,8 @@ void ExpandSelectionModifier::ExpandSelectionNearestEngine::expandSelection()
         return;
 
     OVITO_ASSERT(inputSelection() != outputSelection());
-    ConstPropertyAccess<SelectionIntType> inputSelectionArray(inputSelection());
-    PropertyAccess<SelectionIntType> outputSelectionArray(outputSelection());
+    ConstDataBufferAccess<SelectionIntType> inputSelectionArray(inputSelection());
+    DataBufferAccess<SelectionIntType> outputSelectionArray(outputSelection());
     parallelForWithProgress(positions()->size(), [&](size_t index) {
         if(!inputSelectionArray[index]) return;
 
@@ -163,9 +163,9 @@ void ExpandSelectionModifier::ExpandSelectionNearestEngine::expandSelection()
 ******************************************************************************/
 void ExpandSelectionModifier::ExpandSelectionBondedEngine::expandSelection()
 {
-    PropertyAccess<SelectionIntType> outputSelectionArray(outputSelection());
-    ConstPropertyAccess<SelectionIntType> inputSelectionArray(inputSelection());
-    ConstPropertyAccess<ParticleIndexPair> bondTopologyArray(_bondTopology);
+    DataBufferAccess<SelectionIntType> outputSelectionArray(outputSelection());
+    ConstDataBufferAccess<SelectionIntType> inputSelectionArray(inputSelection());
+    ConstDataBufferAccess<ParticleIndexPair> bondTopologyArray(_bondTopology);
 
     size_t particleCount = inputSelection()->size();
     parallelForWithProgress(_bondTopology->size(), [&](size_t index) {
@@ -190,8 +190,8 @@ void ExpandSelectionModifier::ExpandSelectionCutoffEngine::expandSelection()
     if(!neighborListBuilder.prepare(_cutoffRange, positions(), simCell(), {}))
         return;
 
-    PropertyAccess<SelectionIntType> outputSelectionArray(outputSelection());
-    ConstPropertyAccess<SelectionIntType> inputSelectionArray(inputSelection());
+    DataBufferAccess<SelectionIntType> outputSelectionArray(outputSelection());
+    ConstDataBufferAccess<SelectionIntType> inputSelectionArray(inputSelection());
 
     parallelForWithProgress(positions()->size(), [&](size_t index) {
         if(!inputSelectionArray[index]) return;

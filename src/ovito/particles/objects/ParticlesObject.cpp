@@ -164,7 +164,7 @@ size_t ParticlesObject::deleteElements(const boost::dynamic_bitset<>& mask)
 
         // Remap particle indices of stored bonds and remove dangling bonds.
         if(const PropertyObject* topologyProperty = mutableBonds->getTopology()) {
-            PropertyAccess<ParticleIndexPair> mutableTopology = mutableBonds->makeMutable(topologyProperty);
+            DataBufferAccess<ParticleIndexPair> mutableTopology = mutableBonds->makeMutable(topologyProperty);
             for(size_t bondIndex = 0; bondIndex < oldBondCount; bondIndex++) {
                 size_t index1 = mutableTopology[bondIndex][0];
                 size_t index2 = mutableTopology[bondIndex][1];
@@ -209,7 +209,7 @@ size_t ParticlesObject::deleteElements(const boost::dynamic_bitset<>& mask)
 
         // Remap particle indices of angles and remove dangling angles.
         if(const PropertyObject* topologyProperty = mutableAngles->getTopology()) {
-            PropertyAccess<ParticleIndexTriplet> mutableTopology = mutableAngles->makeMutable(topologyProperty);
+            DataBufferAccess<ParticleIndexTriplet> mutableTopology = mutableAngles->makeMutable(topologyProperty);
             for(size_t angleIndex = 0; angleIndex < oldAngleCount; angleIndex++) {
                 size_t index1 = mutableTopology[angleIndex][0];
                 size_t index2 = mutableTopology[angleIndex][1];
@@ -256,7 +256,7 @@ size_t ParticlesObject::deleteElements(const boost::dynamic_bitset<>& mask)
 
         // Remap particle indices of angles and remove dangling dihedrals.
         if(const PropertyObject* topologyProperty = mutableDihedrals->getTopology()) {
-            PropertyAccess<ParticleIndexQuadruplet> mutableTopology = mutableDihedrals->makeMutable(topologyProperty);
+            DataBufferAccess<ParticleIndexQuadruplet> mutableTopology = mutableDihedrals->makeMutable(topologyProperty);
             for(size_t dihedralIndex = 0; dihedralIndex < oldDihedralCount; dihedralIndex++) {
                 size_t index1 = mutableTopology[dihedralIndex][0];
                 size_t index2 = mutableTopology[dihedralIndex][1];
@@ -305,7 +305,7 @@ size_t ParticlesObject::deleteElements(const boost::dynamic_bitset<>& mask)
 
         // Remap particle indices of angles and remove dangling impropers.
         if(const PropertyObject* topologyProperty = mutableImpropers->getTopology()) {
-            PropertyAccess<ParticleIndexQuadruplet> mutableTopology = mutableImpropers->makeMutable(topologyProperty);
+            DataBufferAccess<ParticleIndexQuadruplet> mutableTopology = mutableImpropers->makeMutable(topologyProperty);
             for(size_t improperIndex = 0; improperIndex < oldImproperCount; improperIndex++) {
                 size_t index1 = mutableTopology[improperIndex][0];
                 size_t index2 = mutableTopology[improperIndex][1];
@@ -354,7 +354,7 @@ std::vector<size_t> ParticlesObject::sortById()
 
         // Update bond topology data to match new particle ordering.
         if(bonds()) {
-            if(PropertyAccess<ParticleIndexPair> bondTopology = makeBondsMutable()->getMutableProperty(BondsObject::TopologyProperty)) {
+            if(DataBufferAccess<ParticleIndexPair> bondTopology = makeBondsMutable()->getMutableProperty(BondsObject::TopologyProperty)) {
                 for(ParticleIndexPair& bond : bondTopology) {
                     for(int64_t& idx : bond) {
                         if(idx >= 0 && idx < (int64_t)invertedPermutation.size())
@@ -366,7 +366,7 @@ std::vector<size_t> ParticlesObject::sortById()
 
         // Update angle topology data to match new particle ordering.
         if(angles()) {
-            if(PropertyAccess<ParticleIndexTriplet> angleTopology = makeAnglesMutable()->getMutableProperty(AnglesObject::TopologyProperty)) {
+            if(DataBufferAccess<ParticleIndexTriplet> angleTopology = makeAnglesMutable()->getMutableProperty(AnglesObject::TopologyProperty)) {
                 for(ParticleIndexTriplet& angle : angleTopology) {
                     for(int64_t& idx : angle) {
                         if(idx >= 0 && idx < (int64_t)invertedPermutation.size())
@@ -378,7 +378,7 @@ std::vector<size_t> ParticlesObject::sortById()
 
         // Update dihedral topology data to match new particle ordering.
         if(dihedrals()) {
-            if(PropertyAccess<ParticleIndexQuadruplet> dihedralTopology = makeDihedralsMutable()->getMutableProperty(DihedralsObject::TopologyProperty)) {
+            if(DataBufferAccess<ParticleIndexQuadruplet> dihedralTopology = makeDihedralsMutable()->getMutableProperty(DihedralsObject::TopologyProperty)) {
                 for(ParticleIndexQuadruplet& dihedral : dihedralTopology) {
                     for(int64_t& idx : dihedral) {
                         if(idx >= 0 && idx < (int64_t)invertedPermutation.size())
@@ -390,7 +390,7 @@ std::vector<size_t> ParticlesObject::sortById()
 
         // Update improper topology data to match new particle ordering.
         if(impropers()) {
-            if(PropertyAccess<ParticleIndexQuadruplet> improperTopology = makeImpropersMutable()->getMutableProperty(ImpropersObject::TopologyProperty)) {
+            if(DataBufferAccess<ParticleIndexQuadruplet> improperTopology = makeImpropersMutable()->getMutableProperty(ImpropersObject::TopologyProperty)) {
                 for(ParticleIndexQuadruplet& improper : improperTopology) {
                     for(int64_t& idx : improper) {
                         if(idx >= 0 && idx < (int64_t)invertedPermutation.size())
@@ -457,13 +457,13 @@ ConstPropertyPtr ParticlesObject::inputBondColors(bool ignoreExistingColorProper
             OVITO_ASSERT(bonds()->elementCount() * 2 == halfBondColors.size());
 
             // Map half-bond colors to full bond colors.
-            PropertyAccessAndRef<ColorG> colors = BondsObject::OOClass().createStandardProperty(DataBuffer::Uninitialized, bonds()->elementCount(), BondsObject::ColorProperty);
+            PropertyPtr colors = BondsObject::OOClass().createStandardProperty(DataBuffer::Uninitialized, bonds()->elementCount(), BondsObject::ColorProperty);
             auto ci = halfBondColors.cbegin();
-            for(ColorG& co : colors) {
+            for(ColorG& co : DataBufferAccess<ColorG>(colors)) {
                 co = *ci;
                 ci += 2;
             }
-            return colors.take();
+            return colors;
         }
 
         // If no vis element is available, create an array filled with the default bond color.
@@ -509,11 +509,11 @@ ConstPropertyPtr ParticlesObject::inputParticleMasses() const
         if(boost::algorithm::any_of(massMap, [](const std::pair<int,FloatType>& it) { return it.second != 0; })) {
 
             // Allocate output array.
-            PropertyAccessAndRef<FloatType> massProperty = ParticlesObject::OOClass().createStandardProperty(DataBuffer::Uninitialized, elementCount(), ParticlesObject::MassProperty);
+            PropertyPtr massProperty = ParticlesObject::OOClass().createStandardProperty(DataBuffer::Uninitialized, elementCount(), ParticlesObject::MassProperty);
 
             // Fill output array using lookup table.
-            ConstPropertyAccess<int32_t> typeData(typeProperty);
-            boost::transform(typeData, massProperty.begin(), [&](int t) {
+            ConstDataBufferAccess<int32_t> typeData(typeProperty);
+            boost::transform(typeData, DataBufferAccess<FloatType>(massProperty).begin(), [&](int t) {
                 auto it = massMap.find(t);
                 if(it != massMap.end())
                     return it->second;
@@ -521,7 +521,7 @@ ConstPropertyPtr ParticlesObject::inputParticleMasses() const
                     return 0.0;
             });
 
-            return massProperty.take();
+            return massProperty;
         }
     }
 
@@ -673,7 +673,7 @@ PropertyPtr ParticlesObject::OOMetaClass::createStandardPropertyInternal(DataBuf
                     // Use per-type mass information and initialize the per-particle mass array from it.
                     std::map<int,FloatType> massMap = ParticleType::typeMassMap(typeProperty);
                     if(!massMap.empty()) {
-                        boost::transform(ConstPropertyAccess<int32_t>(typeProperty), PropertyAccess<FloatType>(property).begin(), [&](int t) {
+                        boost::transform(ConstDataBufferAccess<int32_t>(typeProperty), DataBufferAccess<FloatType>(property).begin(), [&](int t) {
                             auto iter = massMap.find(t);
                             return iter != massMap.end() ? iter->second : FloatType(0);
                         });
@@ -868,8 +868,8 @@ size_t ParticlesObject::OOMetaClass::remapElementIndex(const ConstDataObjectPath
     const ParticlesObject* destParticles = static_object_cast<ParticlesObject>(dest.back());
 
     // If unique IDs are available try to use them to look up the particle in the other data collection.
-    if(ConstPropertyAccess<int64_t> sourceIdentifiers = sourceParticles->getProperty(ParticlesObject::IdentifierProperty)) {
-        if(ConstPropertyAccess<int64_t> destIdentifiers = destParticles->getProperty(ParticlesObject::IdentifierProperty)) {
+    if(ConstDataBufferAccess<int64_t> sourceIdentifiers = sourceParticles->getProperty(ParticlesObject::IdentifierProperty)) {
+        if(ConstDataBufferAccess<int64_t> destIdentifiers = destParticles->getProperty(ParticlesObject::IdentifierProperty)) {
             int64_t id = sourceIdentifiers[elementIndex];
             size_t mappedId = boost::find(destIdentifiers, id) - destIdentifiers.cbegin();
             if(mappedId != destIdentifiers.size())
@@ -878,8 +878,8 @@ size_t ParticlesObject::OOMetaClass::remapElementIndex(const ConstDataObjectPath
     }
 
     // Next, try to use the position to find the right particle in the other data collection.
-    if(ConstPropertyAccess<Point3> sourcePositions = sourceParticles->getProperty(ParticlesObject::PositionProperty)) {
-        if(ConstPropertyAccess<Point3> destPositions = destParticles->getProperty(ParticlesObject::PositionProperty)) {
+    if(ConstDataBufferAccess<Point3> sourcePositions = sourceParticles->getProperty(ParticlesObject::PositionProperty)) {
+        if(ConstDataBufferAccess<Point3> destPositions = destParticles->getProperty(ParticlesObject::PositionProperty)) {
             const Point3& pos = sourcePositions[elementIndex];
             size_t mappedId = boost::find(destPositions, pos) - destPositions.cbegin();
             if(mappedId != destPositions.size())
@@ -898,7 +898,7 @@ size_t ParticlesObject::OOMetaClass::remapElementIndex(const ConstDataObjectPath
 boost::dynamic_bitset<> ParticlesObject::OOMetaClass::viewportFenceSelection(const QVector<Point2>& fence, const ConstDataObjectPath& objectPath, PipelineSceneNode* node, const Matrix4& projectionTM) const
 {
     const ParticlesObject* particles = static_object_cast<ParticlesObject>(objectPath.back());
-    if(ConstPropertyAccess<Point3> posProperty = particles->getProperty(ParticlesObject::PositionProperty)) {
+    if(ConstDataBufferAccess<Point3> posProperty = particles->getProperty(ParticlesObject::PositionProperty)) {
 
         if(!particles->visElement() || particles->visElement()->isEnabled() == false)
             throw Exception(tr("Cannot select particles while the corresponding visual element is disabled. Please enable the display of particles first."));

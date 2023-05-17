@@ -57,7 +57,7 @@ PipelineStatus SurfaceMeshRegionsDeleteSelectedModifierDelegate::apply(const Mod
             existingSurface->verifyMeshIntegrity();
 
             // Check if there is a region selection set.
-            ConstPropertyAccess<SelectionIntType> selectionProperty = existingSurface->regions()->getProperty(SurfaceMeshRegions::SelectionProperty);
+            ConstDataBufferAccess<SelectionIntType> selectionProperty = existingSurface->regions()->getProperty(SurfaceMeshRegions::SelectionProperty);
             if(!selectionProperty) continue; // Nothing to do if there is no selection.
 
             // Check if at least one mesh region is currently selected.
@@ -65,7 +65,7 @@ PipelineStatus SurfaceMeshRegionsDeleteSelectedModifierDelegate::apply(const Mod
                 continue;
 
             // Mesh faces must have the "Region" property.
-            ConstPropertyAccess<int32_t> regionProperty = existingSurface->faces()->getProperty(SurfaceMeshFaces::RegionProperty);
+            ConstDataBufferAccess<int32_t> regionProperty = existingSurface->faces()->getProperty(SurfaceMeshFaces::RegionProperty);
             if(!regionProperty) continue; // Nothing to do if there is no face region information.
 
             // Create a work data structure for modifying the mesh.

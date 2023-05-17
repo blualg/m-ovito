@@ -303,7 +303,7 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
                 columnParser.reset();
 
                 // Range-check atom types.
-                for(auto t : ConstPropertyAccess<int32_t>(particles()->expectProperty(ParticlesObject::TypeProperty))) {
+                for(auto t : ConstDataBufferAccess<int32_t>(particles()->expectProperty(ParticlesObject::TypeProperty))) {
                     if(t < 1 || t > natomtypes)
                         throw Exception(tr("Atom type %1 is out of range in Atoms section of LAMMPS data file. Number of types is %2.").arg(t).arg(natomtypes));
                 }
@@ -311,13 +311,13 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
                 // Build lookup map of atom identifiers.
                 atomIdMap.reserve(natoms);
                 size_t index = 0;
-                for(auto id : ConstPropertyAccess<IdentifierIntType>(particles()->expectProperty(ParticlesObject::IdentifierProperty))) {
+                for(auto id : ConstDataBufferAccess<IdentifierIntType>(particles()->expectProperty(ParticlesObject::IdentifierProperty))) {
                     atomIdMap.emplace(id, index++);
                 }
 
                 // Some LAMMPS data files contain per-particle diameter information.
                 // OVITO only knows the "Radius" particle property, which is means we have to divide by 2.
-                if(PropertyAccess<GraphicsFloatType> radiusProperty = particles()->getMutableProperty(ParticlesObject::RadiusProperty)) {
+                if(DataBufferAccess<GraphicsFloatType> radiusProperty = particles()->getMutableProperty(ParticlesObject::RadiusProperty)) {
                     for(auto& r : radiusProperty)
                         r *= GraphicsFloatType(0.5);
                 }
@@ -335,7 +335,7 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
             columnMapping[0].unmap();
 
             // Access the atomic IDs.
-            ConstPropertyAccess<IdentifierIntType> identifierProperty = particles()->getProperty(ParticlesObject::IdentifierProperty);
+            ConstDataBufferAccess<IdentifierIntType> identifierProperty = particles()->getProperty(ParticlesObject::IdentifierProperty);
             if(!identifierProperty)
                 throw Exception(tr("Atoms section must precede Velocities section in data file (error in line %1).").arg(stream.lineNumber()));
 
@@ -456,22 +456,23 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
         else if(keyword.startsWith("Bonds")) {
 
             // Get the atomic IDs, which have already been read.
-            ConstPropertyAccess<IdentifierIntType> identifierProperty = particles()->getProperty(ParticlesObject::IdentifierProperty);
+            ConstDataBufferAccess<IdentifierIntType> identifierProperty = particles()->getProperty(ParticlesObject::IdentifierProperty);
             if(!identifierProperty)
                 throw Exception(tr("Atoms section must precede Bonds section in data file (error in line %1).").arg(stream.lineNumber()));
 
             // Create bonds storage.
-            PropertyAccess<ParticleIndexPair> bondTopologyProperty = bonds()->createProperty(BondsObject::TopologyProperty);
+            DataBufferAccess<ParticleIndexPair> bondTopologyProperty = bonds()->createProperty(BondsObject::TopologyProperty);
 
             // Create bond type property.
-            PropertyAccess<int32_t> typeProperty = bonds()->createProperty(BondsObject::TypeProperty);
+            PropertyObject* typeProperty = bonds()->createProperty(BondsObject::TypeProperty);
 
             // Create bond types.
             for(int i = 1; i <= nbondtypes; i++)
-                addNumericType(BondsObject::OOClass(), typeProperty.buffer(), i, {});
+                addNumericType(BondsObject::OOClass(), typeProperty, i, {});
 
             setProgressMaximum(nbonds);
-            auto* bondType = typeProperty.begin();
+            DataBufferAccess<int32_t> typePropertyAccess(typeProperty);
+            auto* bondType = typePropertyAccess.begin();
             ParticleIndexPair* bond = bondTopologyProperty.begin();
             for(size_t i = 0; i < (size_t)nbonds; i++, ++bond, ++bondType) {
                 if(!setProgressValueIntermittent(i)) return;
@@ -491,7 +492,7 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
                 bool ok = parseInt(token, *bondType);
                 if(!ok) {
                     // Try lookup by type name.
-                    if(const ElementType* etype = typeProperty.buffer()->elementType(token))
+                    if(const ElementType* etype = typeProperty->elementType(token))
                         *bondType = etype->numericId();
                     else
                         throw Exception(tr("Unknown bond type referenced in line %1 of LAMMPS data file: %2").arg(stream.lineNumber()).arg(token));
@@ -521,7 +522,7 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
                 if(*bondType < 1 || *bondType > nbondtypes)
                     throw Exception(tr("Bond type out of range in Bonds section of LAMMPS data file at line %1.").arg(stream.lineNumber()));
             }
-            typeProperty.reset();
+            typePropertyAccess.reset();
             bondTopologyProperty.reset();
             identifierProperty.reset();
 
@@ -530,22 +531,23 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
         else if(keyword.startsWith("Angles")) {
 
             // Get the atomic IDs, which have already been read.
-            ConstPropertyAccess<IdentifierIntType> identifierProperty = particles()->getProperty(ParticlesObject::IdentifierProperty);
+            ConstDataBufferAccess<IdentifierIntType> identifierProperty = particles()->getProperty(ParticlesObject::IdentifierProperty);
             if(!identifierProperty)
                 throw Exception(tr("Atoms section must precede Angles section in data file (error in line %1).").arg(stream.lineNumber()));
 
             // Create angles topology storage.
-            PropertyAccess<ParticleIndexTriplet> angleTopologyProperty = angles()->createProperty(AnglesObject::TopologyProperty);
+            DataBufferAccess<ParticleIndexTriplet> angleTopologyProperty = angles()->createProperty(AnglesObject::TopologyProperty);
 
             // Create angle type property.
-            PropertyAccess<int32_t> typeProperty = angles()->createProperty(AnglesObject::TypeProperty);
+            PropertyObject* typeProperty = angles()->createProperty(AnglesObject::TypeProperty);
 
             // Create angle types.
             for(int i = 1; i <= nangletypes; i++)
-                addNumericType(AnglesObject::OOClass(), typeProperty.buffer(), i, {});
+                addNumericType(AnglesObject::OOClass(), typeProperty, i, {});
 
             setProgressMaximum(nangles);
-            auto* angleType = typeProperty.begin();
+            DataBufferAccess<int32_t> typePropertyAccess(typeProperty);
+            auto* angleType = typePropertyAccess.begin();
             ParticleIndexTriplet* angle = angleTopologyProperty.begin();
             for(size_t i = 0; i < (size_t)nangles; i++, ++angle, ++angleType) {
                 if(!setProgressValueIntermittent(i)) return;
@@ -565,7 +567,7 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
                 bool ok = parseInt(token, *angleType);
                 if(!ok) {
                     // Try lookup by type name.
-                    if(const ElementType* etype = typeProperty.buffer()->elementType(token))
+                    if(const ElementType* etype = typeProperty->elementType(token))
                         *angleType = etype->numericId();
                     else
                         throw Exception(tr("Unknown angle type referenced in line %1 of LAMMPS data file: %2").arg(stream.lineNumber()).arg(token));
@@ -591,22 +593,23 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
         else if(keyword.startsWith("Dihedrals")) {
 
             // Get the atomic IDs, which have already been read.
-            ConstPropertyAccess<IdentifierIntType> identifierProperty = particles()->getProperty(ParticlesObject::IdentifierProperty);
+            ConstDataBufferAccess<IdentifierIntType> identifierProperty = particles()->getProperty(ParticlesObject::IdentifierProperty);
             if(!identifierProperty)
                 throw Exception(tr("Atoms section must precede Dihedrals section in data file (error in line %1).").arg(stream.lineNumber()));
 
             // Create dihedrals topology storage.
-            PropertyAccess<ParticleIndexQuadruplet> dihedralTopologyProperty = dihedrals()->createProperty(DihedralsObject::TopologyProperty);
+            DataBufferAccess<ParticleIndexQuadruplet> dihedralTopologyProperty = dihedrals()->createProperty(DihedralsObject::TopologyProperty);
 
             // Create dihedral type property.
-            PropertyAccess<int32_t> typeProperty = dihedrals()->createProperty(DihedralsObject::TypeProperty);
+            PropertyObject* typeProperty = dihedrals()->createProperty(DihedralsObject::TypeProperty);
 
             // Create dihedral types.
             for(int i = 1; i <= ndihedraltypes; i++)
-                addNumericType(DihedralsObject::OOClass(), typeProperty.buffer(), i, {});
+                addNumericType(DihedralsObject::OOClass(), typeProperty, i, {});
 
             setProgressMaximum(ndihedrals);
-            auto* dihedralType = typeProperty.begin();
+            DataBufferAccess<int32_t> typePropertyAccess(typeProperty);
+            auto* dihedralType = typePropertyAccess.begin();
             ParticleIndexQuadruplet* dihedral = dihedralTopologyProperty.begin();
             for(size_t i = 0; i < (size_t)ndihedrals; i++, ++dihedral, ++dihedralType) {
                 if(!setProgressValueIntermittent(i)) return;
@@ -626,7 +629,7 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
                 bool ok = parseInt(token, *dihedralType);
                 if(!ok) {
                     // Try lookup by type name.
-                    if(const ElementType* etype = typeProperty.buffer()->elementType(token))
+                    if(const ElementType* etype = typeProperty->elementType(token))
                         *dihedralType = etype->numericId();
                     else
                         throw Exception(tr("Unknown dihedral type referenced in line %1 of LAMMPS data file: %2").arg(stream.lineNumber()).arg(token));
@@ -652,22 +655,23 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
         else if(keyword.startsWith("Impropers")) {
 
             // Get the atomic IDs, which have already been read.
-            ConstPropertyAccess<IdentifierIntType> identifierProperty = particles()->getProperty(ParticlesObject::IdentifierProperty);
+            ConstDataBufferAccess<IdentifierIntType> identifierProperty = particles()->getProperty(ParticlesObject::IdentifierProperty);
             if(!identifierProperty)
                 throw Exception(tr("Atoms section must precede Impropers section in data file (error in line %1).").arg(stream.lineNumber()));
 
             // Create improper topology storage.
-            PropertyAccess<ParticleIndexQuadruplet> improperTopologyProperty = impropers()->createProperty(ImpropersObject::TopologyProperty);
+            DataBufferAccess<ParticleIndexQuadruplet> improperTopologyProperty = impropers()->createProperty(ImpropersObject::TopologyProperty);
 
             // Create improper type property.
-            PropertyAccess<int32_t> typeProperty = impropers()->createProperty(ImpropersObject::TypeProperty);
+            PropertyObject* typeProperty = impropers()->createProperty(ImpropersObject::TypeProperty);
 
             // Create improper types.
             for(int i = 1; i <= nimpropertypes; i++)
-                addNumericType(ImpropersObject::OOClass(), typeProperty.buffer(), i, {});
+                addNumericType(ImpropersObject::OOClass(), typeProperty, i, {});
 
             setProgressMaximum(nimpropers);
-            auto* improperType = typeProperty.begin();
+            DataBufferAccess<int32_t> typePropertyAccess(typeProperty);
+            auto* improperType = typePropertyAccess.begin();
             ParticleIndexQuadruplet* improper = improperTopologyProperty.begin();
             for(size_t i = 0; i < (size_t)nimpropers; i++, ++improper, ++improperType) {
                 if(!setProgressValueIntermittent(i)) return;
@@ -687,7 +691,7 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
                 bool ok = parseInt(token, *improperType);
                 if(!ok) {
                     // Try lookup by type name.
-                    if(const ElementType* etype = typeProperty.buffer()->elementType(token))
+                    if(const ElementType* etype = typeProperty->elementType(token))
                         *improperType = etype->numericId();
                     else
                         throw Exception(tr("Unknown improper type referenced in line %1 of LAMMPS data file: %2").arg(stream.lineNumber()).arg(token));
@@ -713,13 +717,13 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
         else if(keyword.startsWith("Ellipsoids")) {
 
             // Get the atomic IDs, which have already been read.
-            ConstPropertyAccess<IdentifierIntType> identifierProperty = particles()->getProperty(ParticlesObject::IdentifierProperty);
+            ConstDataBufferAccess<IdentifierIntType> identifierProperty = particles()->getProperty(ParticlesObject::IdentifierProperty);
             if(!identifierProperty)
                 throw Exception(tr("Atoms section must precede Ellipsoids section in data file (error in line %1).").arg(stream.lineNumber()));
 
             // Create properties for ellipsoidal particles.
-            PropertyAccess<Vector3G> asphericalShapeProperty = particles()->createProperty(DataBuffer::Initialized, ParticlesObject::AsphericalShapeProperty);
-            PropertyAccess<QuaternionG> orientationProperty = particles()->createProperty(DataBuffer::Initialized, ParticlesObject::OrientationProperty);
+            DataBufferAccess<Vector3G> asphericalShapeProperty = particles()->createProperty(DataBuffer::Initialized, ParticlesObject::AsphericalShapeProperty);
+            DataBufferAccess<QuaternionG> orientationProperty = particles()->createProperty(DataBuffer::Initialized, ParticlesObject::OrientationProperty);
 
             setProgressMaximum(nellipsoids);
             for(size_t i = 0; i < (size_t)nellipsoids; i++) {
@@ -776,8 +780,8 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
 
     // Assign masses to particles based on their type.
     if(hasTypeMasses && !particles()->getProperty(ParticlesObject::MassProperty)) {
-        PropertyAccess<FloatType> massProperty = particles()->createProperty(ParticlesObject::MassProperty);
-        boost::transform(ConstPropertyAccess<int32_t>(typeProperty), massProperty.begin(), [&](auto atomType) {
+        DataBufferAccess<FloatType> massProperty = particles()->createProperty(ParticlesObject::MassProperty);
+        boost::transform(ConstDataBufferAccess<int32_t>(typeProperty), massProperty.begin(), [&](auto atomType) {
             return massTable[atomType - 1];
         });
     }

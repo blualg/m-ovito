@@ -153,7 +153,7 @@ void ParaViewVTPParticleImporter::FrameLoader::loadFile()
                         OvitoClassPtr elementTypeClass = ParticlesObject::OOClass().typedPropertyElementClass(property->type());
                         if(!elementTypeClass && property->name() == QStringLiteral("Material Type")) elementTypeClass = &ElementType::OOClass();
                         if(elementTypeClass) {
-                            for(int t : ConstPropertyAccess<int32_t>(property).csubrange(baseParticleIndex, property->size())) {
+                            for(int t : ConstDataBufferAccess<int32_t>(property).csubrange(baseParticleIndex, property->size())) {
                                 if(!property->elementType(t)) {
                                     DataOORef<ElementType> elementType = static_object_cast<ElementType>(elementTypeClass->createInstance());
                                     elementType->setNumericId(t);
@@ -195,7 +195,7 @@ void ParaViewVTPParticleImporter::FrameLoader::loadFile()
     // Convert superquadric 'Blockiness' values from the Aspherix simulation to 'Roundness' values used by OVITO particle visualization.
     bool transposeOrientations = false;
     if(PropertyObject* roundnessProperty = particles()->getMutableProperty(ParticlesObject::SuperquadricRoundnessProperty)) {
-        for(auto& v : PropertyAccess<Vector_2<GraphicsFloatType>>(roundnessProperty).subrange(baseParticleIndex, roundnessProperty->size())) {
+        for(auto& v : DataBufferAccess<Vector_2<GraphicsFloatType>>(roundnessProperty).subrange(baseParticleIndex, roundnessProperty->size())) {
             // Blockiness1: "north-south" blockiness
             // Blockiness2: "east-west" blockiness
             // Roundness.x: "east-west" roundness
@@ -213,9 +213,9 @@ void ParaViewVTPParticleImporter::FrameLoader::loadFile()
     // Convert 3x3 'Tensor' property into particle orientation.
     if(const PropertyObject* tensorProperty = particles()->getProperty(QStringLiteral("Tensor"))) {
         if(tensorProperty->dataType() == PropertyObject::FloatGraphics && tensorProperty->componentCount() == 9) {
-            PropertyAccess<QuaternionG> orientations = particles()->createProperty(preserveExistingData ? DataBuffer::Initialized : DataBuffer::Uninitialized, ParticlesObject::OrientationProperty);
+            DataBufferAccess<QuaternionG> orientations = particles()->createProperty(preserveExistingData ? DataBuffer::Initialized : DataBuffer::Uninitialized, ParticlesObject::OrientationProperty);
             auto* q = orientations.begin() + baseParticleIndex;
-            for(const Matrix_3<GraphicsFloatType>& tensor : ConstPropertyAccess<Matrix_3<GraphicsFloatType>>(tensorProperty).csubrange(baseParticleIndex, tensorProperty->size())) {
+            for(const Matrix_3<GraphicsFloatType>& tensor : ConstDataBufferAccess<Matrix_3<GraphicsFloatType>>(tensorProperty).csubrange(baseParticleIndex, tensorProperty->size())) {
                 *q++ = QuaternionG(transposeOrientations ? tensor.transposed() : tensor, GraphicsFloatType(1e-6));
             }
             if(isCanceled())
@@ -237,9 +237,9 @@ void ParaViewVTPParticleImporter::FrameLoader::loadFile()
                 particles()->removeProperty(radiusProperty);
         }
         else if(!typesWithMeshShape.empty()) {
-            if(PropertyAccess<GraphicsFloatType> radiusArray = particles()->getMutableProperty(ParticlesObject::RadiusProperty)) {
+            if(DataBufferAccess<GraphicsFloatType> radiusArray = particles()->getMutableProperty(ParticlesObject::RadiusProperty)) {
                 auto* radius = radiusArray.begin() + baseParticleIndex;
-                for(auto t : ConstPropertyAccess<int32_t>(typeProperty).csubrange(baseParticleIndex, typeProperty->size())) {
+                for(auto t : ConstDataBufferAccess<int32_t>(typeProperty).csubrange(baseParticleIndex, typeProperty->size())) {
                     if(std::find(typesWithMeshShape.cbegin(), typesWithMeshShape.cend(), t) != typesWithMeshShape.cend())
                         *radius = 0;
                     ++radius;

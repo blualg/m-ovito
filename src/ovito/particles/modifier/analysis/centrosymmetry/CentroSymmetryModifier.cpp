@@ -107,10 +107,10 @@ void CentroSymmetryModifier::CentroSymmetryEngine::perform()
         return;
 
     // Access output array.
-    PropertyAccess<FloatType> cspArray(csp());
+    DataBufferAccess<FloatType> cspArray(csp());
 
     // Perform analysis on each particle.
-    ConstPropertyAccess<SelectionIntType> selectionData(selection());
+    ConstDataBufferAccess<SelectionIntType> selectionData(selection());
     parallelForWithProgress(positions()->size(), [&](size_t index) {
         if(!selectionData || selectionData[index])
             cspArray[index] = computeCSP(neighFinder, index, _mode);
@@ -126,17 +126,19 @@ void CentroSymmetryModifier::CentroSymmetryEngine::perform()
     if(cspHistogramBinSize <= 0) cspHistogramBinSize = 1;
 
     // Perform binning of CSP values.
-    PropertyAccessAndRef<int64_t> histogramCounts = DataTable::OOClass().createUserProperty(DataBuffer::Initialized, numHistogramBins, PropertyObject::Int64, 1, tr("Count"));
+    PropertyPtr histogramCounts = DataTable::OOClass().createUserProperty(DataBuffer::Initialized, numHistogramBins, PropertyObject::Int64, 1, tr("Count"));
+    DataBufferAccess<int64_t> histogramAccess(histogramCounts);
     const auto* sel = selectionData ? selectionData.begin() : nullptr;
-    for(FloatType cspValue : cspArray) {
+    for(const FloatType cspValue : cspArray) {
         OVITO_ASSERT(cspValue >= 0);
         if(!sel || *sel++) {
             int binIndex = cspValue / cspHistogramBinSize;
             if(binIndex < numHistogramBins)
-                histogramCounts[binIndex]++;
+                histogramAccess[binIndex]++;
         }
     }
-    _histogram->setY(histogramCounts.take());
+    histogramAccess.reset();
+    _histogram->setY(std::move(histogramCounts));
     _histogram->setIntervalStart(0);
     _histogram->setIntervalEnd(cspHistogramBinSize * numHistogramBins);
 

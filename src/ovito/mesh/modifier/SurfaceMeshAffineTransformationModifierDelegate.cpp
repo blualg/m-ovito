@@ -49,7 +49,7 @@ PipelineStatus SurfaceMeshAffineTransformationModifierDelegate::apply(const Modi
             // Create a copy of the vertices sub-object (no need to copy the topology when only moving vertices).
             SurfaceMeshVertices* newVertices = newSurface->makeVerticesMutable();
             // Create a copy of the vertex coordinates array.
-            PropertyAccess<Point3> positionProperty = newVertices->expectMutableProperty(SurfaceMeshVertices::PositionProperty);
+            DataBufferAccess<Point3> positionProperty = newVertices->expectMutableProperty(SurfaceMeshVertices::PositionProperty);
 
             if(!mod->selectionOnly()) {
                 // Apply transformation to the vertex coordinates.
@@ -57,7 +57,7 @@ PipelineStatus SurfaceMeshAffineTransformationModifierDelegate::apply(const Modi
                     p = tm * p;
             }
             else {
-                if(ConstPropertyAccess<SelectionIntType> selectionProperty = newVertices->getProperty(SurfaceMeshVertices::SelectionProperty)) {
+                if(ConstDataBufferAccess<SelectionIntType> selectionProperty = newVertices->getProperty(SurfaceMeshVertices::SelectionProperty)) {
                     // Apply transformation only to the selected vertices.
                     const auto* s = selectionProperty.cbegin();
                     for(Point3& p : positionProperty) {

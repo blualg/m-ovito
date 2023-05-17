@@ -40,8 +40,8 @@ bool POSCARExporter::exportData(const PipelineFlowState& state, int frameNumber,
     // Get particle positions and velocities.
     const ParticlesObject* particles = state.expectObject<ParticlesObject>();
     particles->verifyIntegrity();
-    ConstPropertyAccess<Point3> posProperty = particles->expectProperty(ParticlesObject::PositionProperty);
-    ConstPropertyAccess<Vector3> velocityProperty = particles->getProperty(ParticlesObject::VelocityProperty);
+    ConstDataBufferAccess<Point3> posProperty = particles->expectProperty(ParticlesObject::PositionProperty);
+    ConstDataBufferAccess<Vector3> velocityProperty = particles->getProperty(ParticlesObject::VelocityProperty);
     size_t particleCount = particles->elementCount();
 
     // Get simulation cell info.
@@ -59,7 +59,7 @@ bool POSCARExporter::exportData(const PipelineFlowState& state, int frameNumber,
     // Count number of particles per particle type.
     QMap<int,int> particleCounts;
     const PropertyObject* particleTypeProperty = particles->getProperty(ParticlesObject::TypeProperty);
-    ConstPropertyAccess<int32_t> particleTypeArray(particleTypeProperty);
+    ConstDataBufferAccess<int32_t> particleTypeArray(particleTypeProperty);
     if(particleTypeProperty) {
         for(int ptype : particleTypeArray)
             particleCounts[ptype]++;

@@ -139,9 +139,9 @@ Future<AsynchronousModifier::EnginePtr> ConstructSurfaceModifier::createEngine(c
     // provide a mapping from the generated mesh vertices back the original particles they were created from.
     if(method() == AlphaShape) {
         // Generate adhoc particle property array 'Particle Index' and fill it with numbers 0 through N-1.
-        PropertyAccessAndRef<int64_t> particleIndexProp = ParticlesObject::OOClass().createUserProperty(DataBuffer::Uninitialized, particles->elementCount(), PropertyObject::Int64, 1, QStringLiteral("Particle Index"));
-        std::iota(particleIndexProp.begin(), particleIndexProp.end(), (int64_t)0);
-        particleProperties.push_back(particleIndexProp.take());
+        PropertyPtr particleIndexProp = ParticlesObject::OOClass().createUserProperty(DataBuffer::Uninitialized, particles->elementCount(), PropertyObject::Int64, 1, QStringLiteral("Particle Index"));
+        boost::algorithm::iota_n(DataBufferAccess<int64_t>(particleIndexProp).begin(), (int64_t)0, particleIndexProp->size());
+        particleProperties.push_back(std::move(particleIndexProp));
     }
 
     // Collect explicit particle properties to be transferred.
@@ -228,11 +228,11 @@ void ConstructSurfaceModifier::AlphaShapeEngine::perform()
 
     if(!tessellation.generateTessellation(
             mesh()->domain(),
-            ConstPropertyAccess<Point3>(positions()).cbegin(),
+            ConstDataBufferAccess<Point3>(positions()).cbegin(),
             positions()->size(),
             ghostLayerSize,
             coverDomainWithFiniteTets,
-            selection() ? ConstPropertyAccess<SelectionIntType>(selection()).cbegin() : nullptr,
+            selection() ? ConstDataBufferAccess<SelectionIntType>(selection()).cbegin() : nullptr,
             *this))
         return;
     OVITO_ASSERT(tessellation.simCell());
@@ -248,7 +248,7 @@ void ConstructSurfaceModifier::AlphaShapeEngine::perform()
         int64_t maxGrainId = 0;
         if(particleGrains()->size() != 0) {
             maxGrainId = qBound(int64_t{0},
-                *boost::max_element(ConstPropertyAccess<int64_t>(particleGrains())),
+                *boost::max_element(ConstDataBufferAccess<int64_t>(particleGrains())),
                 static_cast<int64_t>(std::numeric_limits<SurfaceMeshAccess::region_index>::max() - 1));
         }
 
@@ -260,7 +260,7 @@ void ConstructSurfaceModifier::AlphaShapeEngine::perform()
     // This is only used if the input particles have previously been divided into grains by a GrainSegmentationModifier.
     // Otherwise, all tetrahedra are attributed to the null grain initially. Subsequently, they will be
     // grouped into disconnected sets, which form the regions of the output SurfaceMesh.
-    auto tetrahedronRegion = [&,grains = ConstPropertyAccess<int64_t>(_identifyRegions ? particleGrains() : nullptr)](DelaunayTessellation::CellHandle cell) -> SurfaceMeshAccess::region_index {
+    auto tetrahedronRegion = [&,grains = ConstDataBufferAccess<int64_t>(_identifyRegions ? particleGrains() : nullptr)](DelaunayTessellation::CellHandle cell) -> SurfaceMeshAccess::region_index {
         if(grains) {
             // Decide which particle cluster the Delaunay cell belongs to.
             // We need a tie-breaker in case the four vertex atoms belong to different grains.
@@ -278,7 +278,7 @@ void ConstructSurfaceModifier::AlphaShapeEngine::perform()
 
     // This callback function is called for every surface facet created by the manifold construction helper.
     // It marks the particles corresponding to the mesh vertices as belonging to the surface.
-    PropertyAccess<SelectionIntType> surfaceParticleSelectionArray(surfaceParticleSelection());
+    DataBufferAccess<SelectionIntType> surfaceParticleSelectionArray(surfaceParticleSelection());
     auto prepareMeshFace = [&](SurfaceMeshAccess::face_index face, const std::array<size_t,3>& vertexIndices, const std::array<DelaunayTessellation::VertexHandle,3>& vertexHandles, DelaunayTessellation::CellHandle cell) {
         // Mark the face's corner particles as belonging to the surface.
         if(surfaceParticleSelectionArray) {
@@ -329,7 +329,7 @@ void ConstructSurfaceModifier::AlphaShapeEngine::perform()
         _emptyRegionCount = manifoldConstructor.emptyRegionCount();
 
         // Transfer the region ID information to the output particles.
-        if(PropertyAccess<int32_t> regionIds = particleRegionIds()) {
+        if(DataBufferAccess<int32_t> regionIds = particleRegionIds()) {
             nextProgressSubStep();
             setProgressMaximum(regionIds.size());
             size_t numProcessedParticles = 0;
@@ -363,7 +363,7 @@ void ConstructSurfaceModifier::AlphaShapeEngine::perform()
             // are not attributed to any region yet. We do the attribution next by performing point queries on the Delaunay tessellation.
             // For each unassigned particle we determine the Delaunay cell it is located in and then use its region.
             auto particleRegionId = regionIds.begin();
-            for(const Point3& pos : ConstPropertyAccess<Point3>(positions())) {
+            for(const Point3& pos : ConstDataBufferAccess<Point3>(positions())) {
                 if(*particleRegionId == -1) {
                     if(!setProgressValueIntermittent(++numProcessedParticles))
                         return;
@@ -382,7 +382,7 @@ void ConstructSurfaceModifier::AlphaShapeEngine::perform()
         }
 
         // Output "Filled" region property.
-        PropertyAccess<SelectionIntType> filledProperty(mesh.createRegionProperty(DataBuffer::Uninitialized, SurfaceMeshRegions::IsFilledProperty));
+        DataBufferAccess<SelectionIntType> filledProperty(mesh.createRegionProperty(DataBuffer::Uninitialized, SurfaceMeshRegions::IsFilledProperty));
         std::fill(filledProperty.begin(), filledProperty.begin() + _filledRegionCount, 1);
         std::fill(filledProperty.begin() + _filledRegionCount, filledProperty.end(), 0);
 
@@ -461,13 +461,13 @@ void ConstructSurfaceModifier::GaussianDensityEngine::perform()
         if(_identifyRegions) {
             SurfaceMeshAccess mesh(this->mesh());
             mesh.createRegions(1);
-            PropertyAccess<FloatType> volumeProperty{
+            DataBufferAccess<FloatType> volumeProperty{
                 mesh.createRegionProperty(DataBuffer::Initialized, SurfaceMeshRegions::VolumeProperty)};
-            PropertyAccess<SelectionIntType> isExteriorProperty{
+            DataBufferAccess<SelectionIntType> isExteriorProperty{
                 mesh.createRegionProperty(DataBuffer::Initialized, SurfaceMeshRegions::IsExteriorProperty)};
-            PropertyAccess<SelectionIntType> isFilledProperty{
+            DataBufferAccess<SelectionIntType> isFilledProperty{
                 mesh.createRegionProperty(DataBuffer::Initialized, SurfaceMeshRegions::IsFilledProperty)};
-            PropertyAccess<FloatType> surfaceArea{
+            DataBufferAccess<FloatType> surfaceArea{
                 mesh.createRegionProperty(DataBuffer::Initialized, SurfaceMeshRegions::SurfaceAreaProperty)};
             volumeProperty[0] = mesh.domain()->volume3D();
             isFilledProperty[0] = 0;
@@ -486,14 +486,14 @@ void ConstructSurfaceModifier::GaussianDensityEngine::perform()
     beginProgressSubStepsWithWeights({ 1, 30, 1600, 1500, 30, 500, 100, 300, surfaceDistances() ? 10000 : 1 });
 
     // Access the atomic radii.
-    ConstPropertyAccess<GraphicsFloatType> particleRadii(_particleRadii);
+    ConstDataBufferAccess<GraphicsFloatType> particleRadii(_particleRadii);
 
     // Determine the cutoff range of atomic Gaussians.
     FloatType cutoffSize = FloatType(3) * *boost::max_element(particleRadii) * _radiusFactor;
 
     // Determine the extents of the density grid.
     AffineTransformation gridBoundaries = mesh()->domain()->matrix();
-    ConstPropertyAccess<Point3> positionsArray(positions());
+    ConstDataBufferAccess<Point3> positionsArray(positions());
     for(size_t dim = 0; dim < 3; dim++) {
         // Use bounding box of particles in directions that are non-periodic.
         if(!mesh()->domain()->hasPbc(dim)) {
@@ -633,8 +633,8 @@ void ConstructSurfaceModifier::GaussianDensityEngine::perform()
     nextProgressSubStep();
 
     // Create mesh vertex properties for transferring particle property values to the surface.
-    std::vector<std::pair<ConstPropertyAccess<float,true>, PropertyAccess<float,true>>> propertyMapping32;
-    std::vector<std::pair<ConstPropertyAccess<double,true>, PropertyAccess<double,true>>> propertyMapping64;
+    std::vector<std::pair<ConstDataBufferAccess<float,true>, DataBufferAccess<float,true>>> propertyMapping32;
+    std::vector<std::pair<ConstDataBufferAccess<double,true>, DataBufferAccess<double,true>>> propertyMapping64;
     for(const ConstPropertyPtr& particleProperty : particleProperties()) {
         // Can only transfer floating-point properties, because we'll need to blend values of several particles.
         if(particleProperty->dataType() == PropertyObject::Float32 || particleProperty->dataType() == PropertyObject::Float64) {
@@ -745,9 +745,9 @@ void ConstructSurfaceModifier::GaussianDensityEngine::perform()
  ******************************************************************************/
 bool ConstructSurfaceModifier::ConstructSurfaceEngineBase::computeSurfaceAreaWithRegions(SurfaceMeshAccess& mesh)
 {
-    PropertyAccess<FloatType> surfaceAreaProperty{
+    DataBufferAccess<FloatType> surfaceAreaProperty{
         mesh.createRegionProperty(DataBuffer::Initialized, SurfaceMeshRegions::SurfaceAreaProperty)};
-    ConstPropertyAccess<SelectionIntType> isFilled{mesh.regionProperty(SurfaceMeshRegions::IsFilledProperty)};
+    ConstDataBufferAccess<SelectionIntType> isFilled{mesh.regionProperty(SurfaceMeshRegions::IsFilledProperty)};
 
     setProgressMaximum(mesh.faceCount());
     _totalSurfaceArea = 0;
@@ -796,8 +796,8 @@ void ConstructSurfaceModifier::ConstructSurfaceEngineBase::computeAggregateVolum
     _voidRegionCount = 0;
     _emptyRegionCount = 0;
 
-    ConstPropertyAccess<SelectionIntType> isFilled{mesh.regionProperty(SurfaceMeshRegions::IsFilledProperty)};
-    ConstPropertyAccess<SelectionIntType> isExterior{mesh.regionProperty(SurfaceMeshRegions::IsExteriorProperty)};
+    ConstDataBufferAccess<SelectionIntType> isFilled{mesh.regionProperty(SurfaceMeshRegions::IsFilledProperty)};
+    ConstDataBufferAccess<SelectionIntType> isExterior{mesh.regionProperty(SurfaceMeshRegions::IsExteriorProperty)};
     for(SurfaceMeshAccess::region_index region{0}; region < mesh.regionCount(); region++) {
         FloatType volume{mesh.regionVolume(region)};
         if(isFilled[region]) {
@@ -826,9 +826,9 @@ void ConstructSurfaceModifier::ConstructSurfaceEngineBase::computeSurfaceDistanc
     setProgressText(tr("Computing surface distances"));
 
     // Access output array.
-    PropertyAccess<FloatType> distanceArray(surfaceDistances());
+    DataBufferAccess<FloatType> distanceArray(surfaceDistances());
     // Access input positions.
-    ConstPropertyAccess<Point3> positionArray(positions());
+    ConstDataBufferAccess<Point3> positionArray(positions());
 
     // Perform computation for each particle.
     size_t progressChunkSize = 64;

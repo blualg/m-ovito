@@ -115,9 +115,9 @@ void AtomicStrainModifier::AtomicStrainEngine::perform()
         return;
 
     // Compute displacement vectors of particles in the reference configuration.
-    PropertyAccess<Vector3> displacementsArray(displacements());
-    ConstPropertyAccess<Point3> positionsArray(positions());
-    ConstPropertyAccess<Point3> refPositionsArray(refPositions());
+    DataBufferAccess<Vector3> displacementsArray(displacements());
+    ConstDataBufferAccess<Point3> positionsArray(positions());
+    ConstDataBufferAccess<Point3> refPositionsArray(refPositions());
     parallelForChunksWithProgress(displacements()->size(), [&](size_t startIndex, size_t count, ProgressingTask& task) {
         Vector3* u = displacementsArray.begin() + startIndex;
         const Point3* p0 = refPositionsArray.cbegin() + startIndex;
@@ -151,14 +151,14 @@ void AtomicStrainModifier::AtomicStrainEngine::perform()
         return;
 
     // Prepare the output data arrays.
-    PropertyAccess<SelectionIntType> invalidParticlesArray(invalidParticles());
-    PropertyAccess<Matrix3> deformationGradientsArray(deformationGradients());
-    PropertyAccess<SymmetricTensor2> strainTensorsArray(strainTensors());
-    PropertyAccess<FloatType> shearStrainsArray(shearStrains());
-    PropertyAccess<FloatType> volumetricStrainsArray(volumetricStrains());
-    PropertyAccess<FloatType> nonaffineSquaredDisplacementsArray(nonaffineSquaredDisplacements());
-    PropertyAccess<Quaternion> rotationsArray(rotations());
-    PropertyAccess<SymmetricTensor2> stretchTensorsArray(stretchTensors());
+    DataBufferAccess<SelectionIntType> invalidParticlesArray(invalidParticles());
+    DataBufferAccess<Matrix3> deformationGradientsArray(deformationGradients());
+    DataBufferAccess<SymmetricTensor2> strainTensorsArray(strainTensors());
+    DataBufferAccess<FloatType> shearStrainsArray(shearStrains());
+    DataBufferAccess<FloatType> volumetricStrainsArray(volumetricStrains());
+    DataBufferAccess<FloatType> nonaffineSquaredDisplacementsArray(nonaffineSquaredDisplacements());
+    DataBufferAccess<Quaternion> rotationsArray(rotations());
+    DataBufferAccess<SymmetricTensor2> stretchTensorsArray(stretchTensors());
 
     // Perform individual strain calculation for each particle.
     parallelForWithProgress(positions()->size(), [&](size_t particleIndex) {

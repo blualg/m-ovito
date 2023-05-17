@@ -209,9 +209,9 @@ private:
     bool _identifyPlanarDefects;
     const ConstPropertyPtr _positions;
     const PropertyPtr _structureTypes;
-    PropertyAccess<int32_t> _structureTypesArray;
+    DataBufferAccess<int32_t> _structureTypesArray;
     const PropertyPtr _atomClusters;
-    PropertyAccess<int64_t> _atomClustersArray;
+    DataBufferAccess<int64_t> _atomClustersArray;
     std::vector<int> _neighborLists;
     std::vector<int> _atomSymmetryPermutations;
     size_t _neighborListsSize = 0;

@@ -249,10 +249,10 @@ std::tuple<std::map<int,int>, ConstPropertyPtr> PropertyObject::generateContiguo
     ConstPropertyPtr remappedArray;
     if(remappingRequired) {
         // Make a copy of this property, which can be modified.
-        PropertyAccessAndRef<int32_t> array(CloneHelper().cloneObject(this, false));
-        for(int32_t& id : array)
+        PropertyPtr copy = CloneHelper().cloneObject(this, false);
+        for(auto& id : DataBufferAccess<int32_t>(copy))
             id = oldToNewMap[id];
-        remappedArray = array.take();
+        remappedArray = std::move(copy);
     }
     else {
         // No data copied needed if ordering hasn't changed.

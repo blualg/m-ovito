@@ -85,13 +85,13 @@ public:
     ConstPropertyPtr particleRadii(const ParticlesObject* particles, bool includeGlobalScaleFactor) const;
 
     /// Determines the display radius of a single particle.
-    GraphicsFloatType particleRadius(size_t particleIndex, ConstPropertyAccess<GraphicsFloatType> radiusProperty, const PropertyObject* typeProperty) const;
+    GraphicsFloatType particleRadius(size_t particleIndex, ConstDataBufferAccess<GraphicsFloatType> radiusProperty, const PropertyObject* typeProperty) const;
 
     /// Returns the display color of a single particle.
-    ColorG particleColor(size_t particleIndex, ConstPropertyAccess<ColorG> colorProperty, const PropertyObject* typeProperty, ConstPropertyAccess<SelectionIntType> selectionProperty) const;
+    ColorG particleColor(size_t particleIndex, ConstDataBufferAccess<ColorG> colorProperty, const PropertyObject* typeProperty, ConstDataBufferAccess<SelectionIntType> selectionProperty) const;
 
     /// Computes the bounding box of the particles.
-    Box3 particleBoundingBox(ConstPropertyAccess<Point3> positionProperty, const PropertyObject* typeProperty, ConstPropertyAccess<GraphicsFloatType> radiusProperty, ConstPropertyAccess<Vector3G> shapeProperty, bool includeParticleRadius) const;
+    Box3 particleBoundingBox(ConstDataBufferAccess<Point3> positionProperty, const PropertyObject* typeProperty, ConstDataBufferAccess<GraphicsFloatType> radiusProperty, ConstDataBufferAccess<Vector3G> shapeProperty, bool includeParticleRadius) const;
 
     /// Render a marker around a particle to highlight it in the viewports.
     void highlightParticle(size_t particleIndex, const ParticlesObject* particles, SceneRenderer* renderer) const;

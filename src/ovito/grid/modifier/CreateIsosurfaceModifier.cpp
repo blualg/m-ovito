@@ -211,7 +211,7 @@ void CreateIsosurfaceModifier::ComputeIsosurfaceEngine::perform()
     setProgressText(tr("Constructing isosurface"));
 
     // Set up callback function returning the field value, which will be passed to the marching cubes algorithm.
-    ConstPropertyAccess<FloatType, true> data(property());
+    ConstDataBufferAccess<FloatType, true> data(property());
     auto getFieldValue = [
             _data = data.cbegin() + _vectorComponent,
             _pbcFlags = _mesh->domain() ? _mesh->domain()->pbcFlags() : std::array<bool,3>{{false,false,false}},
@@ -297,14 +297,15 @@ void CreateIsosurfaceModifier::ComputeIsosurfaceEngine::perform()
 
     // Compute a histogram of the input field values.
     _histogram->setElementCount(64);
-    PropertyAccessAndRef<qlonglong> histogramData = DataTable::OOClass().createUserProperty(DataBuffer::Initialized, _histogram->elementCount(), PropertyObject::Int64, 1, tr("Count"));
-    FloatType binSize = (maxValue - minValue) / histogramData.size();
-    int histogramSizeMin1 = histogramData.size() - 1;
-    for(FloatType v : data.componentRange(_vectorComponent)) {
+    PropertyPtr histogramValues = DataTable::OOClass().createUserProperty(DataBuffer::Initialized, _histogram->elementCount(), PropertyObject::Int64, 1, tr("Count"));
+    FloatType binSize = (maxValue - minValue) / histogramValues->size();
+    int histogramSizeMin1 = histogramValues->size() - 1;
+    DataBufferAccess<int64_t> histogramAccess(histogramValues);
+    for(const FloatType v : data.componentRange(_vectorComponent)) {
         int binIndex = (v - minValue) / binSize;
-        histogramData[std::max(0, std::min(binIndex, histogramSizeMin1))]++;
+        histogramAccess[std::max(0, std::min(binIndex, histogramSizeMin1))]++;
     }
-    _histogram->setY(histogramData.take());
+    _histogram->setY(std::move(histogramValues));
     _histogram->setIntervalStart(minValue);
     _histogram->setIntervalEnd(maxValue);
 
@@ -333,7 +334,7 @@ bool CreateIsosurfaceModifier::transferPropertiesFromGridToMesh(SurfaceMeshAcces
     OVITO_ASSERT(Task::current() && Task::current()->isProgressingTask());
 
     // Create destination properties for transferring voxel values to the surface vertices.
-    std::vector<std::pair<ConstPropertyAccess<void,true>, PropertyAccess<void,true>>> propertyMapping;
+    std::vector<std::pair<ConstDataBufferAccess<void,true>, DataBufferAccess<void,true>>> propertyMapping;
     for(const ConstPropertyPtr& fieldProperty : fieldProperties) {
         PropertyPtr vertexProperty;
         if(fieldProperty->type() < PropertyObject::FirstSpecificProperty && SurfaceMeshVertices::OOClass().isValidStandardPropertyId(fieldProperty->type())) {

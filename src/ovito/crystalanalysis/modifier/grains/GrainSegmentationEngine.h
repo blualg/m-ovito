@@ -267,7 +267,7 @@ public:
     class InterfaceHandler
     {
     public:
-        InterfaceHandler(ConstPropertyAccess<PTMAlgorithm::StructureType> structuresArray) {
+        InterfaceHandler(ConstDataBufferAccess<PTMAlgorithm::StructureType> structuresArray) {
 
             // Count structure types
             int structureCounts[PTMAlgorithm::NUM_STRUCTURE_TYPES] = {0};

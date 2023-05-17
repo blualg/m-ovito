@@ -151,10 +151,10 @@ QVariant DislocationInspectionApplet::DislocationTableModel::data(const QModelIn
             }
         }
         else if(_microstructure) {
-            ConstPropertyAccess<Vector3> burgersVectorProperty = _microstructure->faces()->getProperty(SurfaceMeshFaces::BurgersVectorProperty);
-            ConstPropertyAccess<int32_t> faceRegionProperty = _microstructure->faces()->getProperty(SurfaceMeshFaces::RegionProperty);
+            ConstDataBufferAccess<Vector3> burgersVectorProperty = _microstructure->faces()->getProperty(SurfaceMeshFaces::BurgersVectorProperty);
+            ConstDataBufferAccess<int32_t> faceRegionProperty = _microstructure->faces()->getProperty(SurfaceMeshFaces::RegionProperty);
             const PropertyObject* phaseProperty = _microstructure->regions()->getProperty(SurfaceMeshRegions::PhaseProperty);
-            ConstPropertyAccess<int32_t> phaseArray(faceRegionProperty);
+            ConstDataBufferAccess<int32_t> phaseArray(faceRegionProperty);
             if(burgersVectorProperty && faceRegionProperty && phaseProperty && index.row() < burgersVectorProperty.size()) {
                 const MicrostructurePhase* phase = nullptr;
                 int region = faceRegionProperty[index.row()];
@@ -165,7 +165,7 @@ QVariant DislocationInspectionApplet::DislocationTableModel::data(const QModelIn
                         case 0: return index.row();
                         case 1: return DislocationVis::formatBurgersVector(burgersVectorProperty[index.row()], phase);
                         case 2:
-                            if(ConstPropertyAccess<Matrix3> correspondenceProperty = _microstructure->regions()->getProperty(SurfaceMeshRegions::LatticeCorrespondenceProperty)) {
+                            if(ConstDataBufferAccess<Matrix3> correspondenceProperty = _microstructure->regions()->getProperty(SurfaceMeshRegions::LatticeCorrespondenceProperty)) {
                                 Vector3 transformedVector = correspondenceProperty[region] * burgersVectorProperty[index.row()];
                                 return QStringLiteral("%1 %2 %3")
                                         .arg(QLocale::c().toString(transformedVector.x(), 'f', 4), 7)

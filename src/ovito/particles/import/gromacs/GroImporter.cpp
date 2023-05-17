@@ -199,17 +199,22 @@ void GroImporter::FrameLoader::loadFile()
     setParticleCount(numParticles);
 
     // Create particle properties.
-    PropertyAccess<Point3> posProperty = particles()->createProperty(DataBuffer::Initialized, ParticlesObject::PositionProperty);
-    PropertyAccess<int32_t> typeProperty = particles()->createProperty(ParticlesObject::TypeProperty);
-    PropertyAccess<int32_t> atomNameProperty = particles()->createProperty(QStringLiteral("Atom Name"), PropertyObject::Int32);
-    PropertyAccess<int32_t> residueTypeProperty = particles()->createProperty(QStringLiteral("Residue Type"), PropertyObject::Int32);
-    PropertyAccess<int64_t> residueNumberProperty = particles()->createProperty(QStringLiteral("Residue Identifier"), PropertyObject::Int64);
-    PropertyAccess<int64_t> identifierProperty = particles()->createProperty(DataBuffer::Initialized, ParticlesObject::IdentifierProperty);
-    PropertyAccess<Vector3> velocityProperty;
+    DataBufferAccess<Point3> posProperty = particles()->createProperty(DataBuffer::Initialized, ParticlesObject::PositionProperty);
+    PropertyObject* typeProperty = particles()->createProperty(ParticlesObject::TypeProperty);
+    PropertyObject* atomNameProperty = particles()->createProperty(QStringLiteral("Atom Name"), PropertyObject::Int32);
+    PropertyObject* residueTypeProperty = particles()->createProperty(QStringLiteral("Residue Type"), PropertyObject::Int32);
+    PropertyObject* residueNumberProperty = particles()->createProperty(QStringLiteral("Residue Identifier"), PropertyObject::Int64);
+    DataBufferAccess<int64_t> identifierProperty = particles()->createProperty(DataBuffer::Initialized, ParticlesObject::IdentifierProperty);
+    DataBufferAccess<Vector3> velocityProperty;
 
     // Give these particle properties new titles, which are displayed in the GUI under the file source.
-    atomNameProperty.buffer()->setTitle(tr("Atom names"));
-    residueTypeProperty.buffer()->setTitle(tr("Residue types"));
+    atomNameProperty->setTitle(tr("Atom names"));
+    residueTypeProperty->setTitle(tr("Residue types"));
+
+    DataBufferAccess<int32_t> typeAccess(typeProperty);
+    DataBufferAccess<int32_t> atomNameAccess(atomNameProperty);
+    DataBufferAccess<int32_t> residueTypeAccess(residueTypeProperty);
+    DataBufferAccess<int64_t> residueNumberAccess(residueNumberProperty);
 
     // Parse list of atoms.
     int atomBaseNumber = 0;
@@ -327,20 +332,20 @@ void GroImporter::FrameLoader::loadFile()
             const char singleLetterName[2] = { atomNameStart[0], '\0' };
             element = gemmi::Element(singleLetterName);
         }
-        addNumericType(ParticlesObject::OOClass(), typeProperty.buffer(), element.ordinal(), QLatin1String(element.name()));
+        addNumericType(ParticlesObject::OOClass(), typeProperty, element.ordinal(), QLatin1String(element.name()));
 
         // Store parsed value in property arrays.
-        identifierProperty.set(atomIndex, atomNumber);
-        typeProperty.set(atomIndex, element.ordinal());
-        atomNameProperty.set(atomIndex,
+        identifierProperty[atomIndex] = atomNumber;
+        typeAccess[atomIndex] = element.ordinal();
+        atomNameAccess[atomIndex] =
             (residueNameStart != residueNameEnd) ?
-            addNamedType(ParticlesObject::OOClass(), atomNameProperty.buffer(), QLatin1String(atomNameStart, atomNameEnd))->numericId()
-            : 0);
-        residueTypeProperty.set(atomIndex,
+            addNamedType(ParticlesObject::OOClass(), atomNameProperty, QLatin1String(atomNameStart, atomNameEnd))->numericId()
+            : 0;
+        residueTypeAccess[atomIndex] =
             (residueNameStart != residueNameEnd) ?
-            addNamedType(ParticlesObject::OOClass(), residueTypeProperty.buffer(), QLatin1String(residueNameStart, residueNameEnd))->numericId()
-            : 0);
-        residueNumberProperty.set(atomIndex, residueNumber);
+            addNamedType(ParticlesObject::OOClass(), residueTypeProperty, QLatin1String(residueNameStart, residueNameEnd))->numericId()
+            : 0;
+        residueNumberAccess[atomIndex] = residueNumber;
 
         // Parse atomic xyz coordinates.
         // First, determine column width by counting distance between decimal points.
@@ -399,16 +404,16 @@ void GroImporter::FrameLoader::loadFile()
     // Since we created particle types on the go while reading the particles, the type ordering
     // depends on the storage order of particles in the file. We rather want a well-defined particle type ordering, that's
     // why we sort them now.
-    typeProperty.buffer()->sortElementTypesById();
-    atomNameProperty.buffer()->sortElementTypesByName();
-    residueTypeProperty.buffer()->sortElementTypesByName();
+    typeProperty->sortElementTypesById();
+    atomNameProperty->sortElementTypesByName();
+    residueTypeProperty->sortElementTypesByName();
 
     // Release property accessors.
     posProperty.reset();
-    residueTypeProperty.reset();
-    residueNumberProperty.reset();
-    typeProperty.reset();
-    atomNameProperty.reset();
+    residueTypeAccess.reset();
+    residueNumberAccess.reset();
+    typeAccess.reset();
+    atomNameAccess.reset();
     identifierProperty.reset();
     velocityProperty.reset();
 

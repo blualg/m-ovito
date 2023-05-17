@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -126,11 +126,11 @@ LAMMPSAtomStyleDialog::LAMMPSAtomStyleDialog(MainWindow& mainWindow, LAMMPSDataI
     layout1->addStrut(400);
 
     QLabel* label = new QLabel(
-                (_atomStyleHints.atomStyle == LAMMPSDataImporter::AtomStyle_Unknown) ? 
+                (_atomStyleHints.atomStyle == LAMMPSDataImporter::AtomStyle_Unknown) ?
                 tr("<html><p>Please select the right <b>atom style</b> for this LAMMPS data file. "
                 "OVITO could not detect it automatically, because the file does not "
                 "contain a <a href=\"https://docs.lammps.org/read_data.html#format-of-the-body-of-a-data-file\">style hint</a> in its <i>Atoms</i> section.</p>"
-                "<p>If you don't know what the correct atom style is, see the <a href=\"https://docs.lammps.org/atom_style.html\">LAMMPS documentation</a> or " 
+                "<p>If you don't know what the correct atom style is, see the <a href=\"https://docs.lammps.org/atom_style.html\">LAMMPS documentation</a> or "
                 "check the value of the <i>atom_style</i> command in your LAMMPS input script.</p>"
                 "<p>LAMMPS atom style:</p></html>") :
                 tr("LAMMPS atom style:"), this);

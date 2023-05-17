@@ -290,22 +290,6 @@ using ConstPropertyPtr = DataOORef<const PropertyObject>;
 /// Encapsulates a complete data object reference to a PropertyObject in a data collection.
 using PropertyDataObjectReference = TypedDataObjectReference<PropertyObject>;
 
-/// A specialization of the ConstDataBufferAccess class template for property objects.
-template<typename T, bool TableMode = false>
-using ConstPropertyAccess = ConstDataBufferAccess<T, TableMode, PropertyObject>;
-
-/// A specialization of the ConstDataBufferAccessAndRef class template for property objects.
-template<typename T, bool TableMode = false>
-using ConstPropertyAccessAndRef = ConstDataBufferAccessAndRef<T, TableMode, PropertyObject>;
-
-/// A specialization of the DataBufferAccess class template for property objects.
-template<typename T, bool TableMode = false>
-using PropertyAccess = DataBufferAccess<T, TableMode, PropertyObject>;
-
-/// A specialization of the DataBufferAccessAndRef class template for property objects.
-template<typename T, bool TableMode = false>
-using PropertyAccessAndRef = DataBufferAccessAndRef<T, TableMode, PropertyObject>;
-
 }   // End of namespace
 
 Q_DECLARE_METATYPE(Ovito::StdObj::PropertyDataObjectReference);

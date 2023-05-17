@@ -166,16 +166,19 @@ void OXDNAImporter::FrameLoader::loadFile()
         particles()->setVisElement(OORef<NucleotidesVis>::create());
 
     // Define nucleobase types.
-    PropertyAccess<int32_t> baseProperty = particles()->createProperty(ParticlesObject::NucleobaseTypeProperty);
-    addNumericType(ParticlesObject::OOClass(), baseProperty.buffer(), 1, QStringLiteral("T"));
-    addNumericType(ParticlesObject::OOClass(), baseProperty.buffer(), 2, QStringLiteral("C"));
-    addNumericType(ParticlesObject::OOClass(), baseProperty.buffer(), 3, QStringLiteral("G"));
-    addNumericType(ParticlesObject::OOClass(), baseProperty.buffer(), 4, QStringLiteral("A"));
+    PropertyObject* baseProperty = particles()->createProperty(ParticlesObject::NucleobaseTypeProperty);
+    addNumericType(ParticlesObject::OOClass(), baseProperty, 1, QStringLiteral("T"));
+    addNumericType(ParticlesObject::OOClass(), baseProperty, 2, QStringLiteral("C"));
+    addNumericType(ParticlesObject::OOClass(), baseProperty, 3, QStringLiteral("G"));
+    addNumericType(ParticlesObject::OOClass(), baseProperty, 4, QStringLiteral("A"));
 
     // Define strands list.
-    PropertyAccess<int32_t> strandsProperty = particles()->createProperty(ParticlesObject::DNAStrandProperty);
+    PropertyObject* strandsProperty = particles()->createProperty(ParticlesObject::DNAStrandProperty);
     for(int i = 1; i <= numStrands; i++)
-        addNumericType(ParticlesObject::OOClass(), strandsProperty.buffer(), i, {});
+        addNumericType(ParticlesObject::OOClass(), strandsProperty, i, {});
+
+    DataBufferAccess<int32_t> baseAccess(baseProperty);
+    DataBufferAccess<int32_t> strandsAccess(strandsProperty);
 
     // The list of bonds between nucleotides.
     std::vector<ParticleIndexPair> bonds;
@@ -183,8 +186,8 @@ void OXDNAImporter::FrameLoader::loadFile()
 
     // Parse the nucleotides list in the topology file.
     setProgressMaximum(numNucleotidesLong);
-    int* baseTypeIter = baseProperty.begin();
-    int* strandId = strandsProperty.begin();
+    auto* baseTypeIter = baseAccess.begin();
+    auto* strandId = strandsAccess.begin();
     for(size_t i = 0; i < numNucleotidesLong; i++, ++strandId) {
         if(!setProgressValueIntermittent(i)) return;
 
@@ -205,13 +208,15 @@ void OXDNAImporter::FrameLoader::loadFile()
         if(neighbor2 != -1)
             bonds.push_back({(qlonglong)i, neighbor2});
 
-        *baseTypeIter++ = addNamedType(ParticlesObject::OOClass(), baseProperty.buffer(), QLatin1String(baseName))->numericId();
+        *baseTypeIter++ = addNamedType(ParticlesObject::OOClass(), baseProperty, QLatin1String(baseName))->numericId();
     }
+    baseAccess.reset();
+    strandsAccess.reset();
 
     // Create and fill bonds topology storage.
     setBondCount(bonds.size());
-    PropertyAccess<ParticleIndexPair> bondTopologyProperty = this->bonds()->createProperty(BondsObject::TopologyProperty);
-    boost::copy(bonds, bondTopologyProperty.begin());
+    DataBufferAccess<ParticleIndexPair> bondTopologyAccess = this->bonds()->createProperty(BondsObject::TopologyProperty);
+    boost::copy(bonds, bondTopologyAccess.begin());
 
     nextProgressSubStep();
     setProgressText(tr("Reading oxDNA file %1").arg(fileHandle().toString()));
@@ -276,10 +281,10 @@ void OXDNAImporter::FrameLoader::loadFile()
         signalAdditionalFrames();
 
     // Displace particle positions. oxDNA stores center of mass coordinates, but OVITO expects particle coordinates to be backbone sphere centers.
-    PropertyAccess<Point3> centerOfMassPositionsArray = particles()->createProperty(QStringLiteral("Center Of Mass"), DataBuffer::FloatDefault, 3, QStringList() << QStringLiteral("X") << QStringLiteral("Y") << QStringLiteral("Z"));
-    PropertyAccess<Point3> basePositionsArray = particles()->createProperty(QStringLiteral("Base Position"), DataBuffer::FloatDefault, 3, QStringList() << QStringLiteral("X") << QStringLiteral("Y") << QStringLiteral("Z"));
-    PropertyAccess<Point3> positionsArray = particles()->getMutableProperty(ParticlesObject::PositionProperty);
-    ConstPropertyAccess<Vector3> axisVectorArray = particles()->expectProperty(ParticlesObject::NucleotideAxisProperty);
+    DataBufferAccess<Point3> centerOfMassPositionsArray = particles()->createProperty(QStringLiteral("Center Of Mass"), DataBuffer::FloatDefault, 3, QStringList() << QStringLiteral("X") << QStringLiteral("Y") << QStringLiteral("Z"));
+    DataBufferAccess<Point3> basePositionsArray = particles()->createProperty(QStringLiteral("Base Position"), DataBuffer::FloatDefault, 3, QStringList() << QStringLiteral("X") << QStringLiteral("Y") << QStringLiteral("Z"));
+    DataBufferAccess<Point3> positionsArray = particles()->getMutableProperty(ParticlesObject::PositionProperty);
+    ConstDataBufferAccess<Vector3> axisVectorArray = particles()->expectProperty(ParticlesObject::NucleotideAxisProperty);
     for(size_t i = 0; i < numNucleotidesLong; i++) {
         centerOfMassPositionsArray[i] = positionsArray[i];
         positionsArray[i] -= 0.4 * axisVectorArray[i];

@@ -122,7 +122,7 @@ bool VTKVoxelGridExporter::exportFrame(int frameNumber, const QString& filePath,
             size_t cmpnts = prop->componentCount();
             OVITO_ASSERT(prop->stride() == prop->dataTypeSize() * cmpnts);
             if(prop->dataType() == PropertyObject::Float32) {
-                ConstPropertyAccess<float, true> data(prop);
+                ConstDataBufferAccess<float, true> data(prop);
                 for(size_t row = 0, index = 0; row < dims[1]*dims[2]; row++) {
                     if(operation.isCanceled())
                         return false;
@@ -134,7 +134,7 @@ bool VTKVoxelGridExporter::exportFrame(int frameNumber, const QString& filePath,
                 }
             }
             else if(prop->dataType() == PropertyObject::Float64) {
-                ConstPropertyAccess<double, true> data(prop);
+                ConstDataBufferAccess<double, true> data(prop);
                 for(size_t row = 0, index = 0; row < dims[1]*dims[2]; row++) {
                     if(operation.isCanceled())
                         return false;
@@ -146,7 +146,7 @@ bool VTKVoxelGridExporter::exportFrame(int frameNumber, const QString& filePath,
                 }
             }
             else if(prop->dataType() == PropertyObject::Int8) {
-                ConstPropertyAccess<int8_t, true> data(prop);
+                ConstDataBufferAccess<int8_t, true> data(prop);
                 for(size_t row = 0, index = 0; row < dims[1]*dims[2]; row++) {
                     if(operation.isCanceled())
                         return false;
@@ -158,7 +158,7 @@ bool VTKVoxelGridExporter::exportFrame(int frameNumber, const QString& filePath,
                 }
             }
             else if(prop->dataType() == PropertyObject::Int32) {
-                ConstPropertyAccess<int32_t, true> data(prop);
+                ConstDataBufferAccess<int32_t, true> data(prop);
                 for(size_t row = 0, index = 0; row < dims[1]*dims[2]; row++) {
                     if(operation.isCanceled())
                         return false;
@@ -170,7 +170,7 @@ bool VTKVoxelGridExporter::exportFrame(int frameNumber, const QString& filePath,
                 }
             }
             else if(prop->dataType() == PropertyObject::Int64) {
-                ConstPropertyAccess<int64_t, true> data(prop);
+                ConstDataBufferAccess<int64_t, true> data(prop);
                 for(size_t row = 0, index = 0; row < dims[1]*dims[2]; row++) {
                     if(operation.isCanceled())
                         return false;

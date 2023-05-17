@@ -120,11 +120,11 @@ void DislocationAnalysisEngine::perform()
     nextProgressSubStep();
     FloatType ghostLayerSize = FloatType(3.5) * _structureAnalysis->maximumNeighborDistance();
     if(!_tessellation->generateTessellation(_structureAnalysis->cell(),
-            ConstPropertyAccess<Point3>(positions()).cbegin(),
+            ConstDataBufferAccess<Point3>(positions()).cbegin(),
             _structureAnalysis->atomCount(),
             ghostLayerSize,
             false, // flag coverDomainWithFiniteTets
-            selection() ? ConstPropertyAccess<SelectionIntType>(selection()).cbegin() : nullptr,
+            selection() ? ConstDataBufferAccess<SelectionIntType>(selection()).cbegin() : nullptr,
             *this))
         return;
 
@@ -384,40 +384,44 @@ FloatType  DislocationAnalysisEngine::generateDislocationStatistics(const Pipeli
     int maxId = 0;
     for(const auto& entry : dislocationLengths)
         maxId = std::max(maxId, entry.first->numericId());
-    PropertyAccessAndRef<FloatType> dislocationLengthsProperty = DataTable::OOClass().createUserProperty(DataBuffer::Initialized, maxId+1, DataBuffer::FloatDefault, 1, DislocationAnalysisModifier::tr("Total line length"));
+    PropertyPtr dislocationLengthsProperty = DataTable::OOClass().createUserProperty(DataBuffer::Initialized, maxId+1, DataBuffer::FloatDefault, 1, DislocationAnalysisModifier::tr("Total line length"));
+    DataBufferAccess<FloatType> dislocationLengthsAccess(dislocationLengthsProperty);
     for(const auto& entry : dislocationLengths)
-        dislocationLengthsProperty[entry.first->numericId()] = entry.second;
-    PropertyAccessAndRef<int32_t> dislocationTypeIds = DataTable::OOClass().createUserProperty(DataBuffer::Uninitialized, maxId+1, DataBuffer::Int32, 1, DislocationAnalysisModifier::tr("Dislocation type"));
-    boost::algorithm::iota_n(dislocationTypeIds.begin(), 0, dislocationTypeIds.size());
+        dislocationLengthsAccess[entry.first->numericId()] = entry.second;
+    dislocationLengthsAccess.reset();
+    PropertyPtr dislocationTypeIds = DataTable::OOClass().createUserProperty(DataBuffer::Uninitialized, maxId+1, DataBuffer::Int32, 1, DislocationAnalysisModifier::tr("Dislocation type"));
+    boost::algorithm::iota_n(DataBufferAccess<int32_t>(dislocationTypeIds).begin(), 0, dislocationTypeIds->size());
 
     for(const auto& entry : dislocationLengths)
-        dislocationTypeIds.buffer()->addElementType(entry.first);
+        dislocationTypeIds->addElementType(entry.first);
 
     DataTable* lengthTableObj = replaceDataObjects ? state.getMutableLeafObject<DataTable>(DataTable::OOClass(), QStringLiteral("disloc-lengths")) : nullptr;
     if(!lengthTableObj) {
-        lengthTableObj = state.createObject<DataTable>(QStringLiteral("disloc-lengths"), dataSource, DataTable::BarChart, DislocationAnalysisModifier::tr("Dislocation lengths"), dislocationLengthsProperty.take(), dislocationTypeIds.take());
+        lengthTableObj = state.createObject<DataTable>(QStringLiteral("disloc-lengths"), dataSource, DataTable::BarChart, DislocationAnalysisModifier::tr("Dislocation lengths"), std::move(dislocationLengthsProperty), std::move(dislocationTypeIds));
         lengthTableObj->freezeInitialParameterValues({SHADOW_PROPERTY_FIELD(DataTable::plotMode)});
     }
     else {
-        DataOORef<const PropertyObject> x = dislocationTypeIds.take();
-        DataOORef<const PropertyObject> y = dislocationLengthsProperty.take();
+        ConstPropertyPtr x = std::move(dislocationTypeIds);
+        ConstPropertyPtr y = std::move(dislocationLengthsProperty);
         lengthTableObj->setContent(maxId + 1, DataRefVector<PropertyObject>{{ y, x }});
         lengthTableObj->setX(std::move(x));
         lengthTableObj->setY(std::move(y));
     }
 
     // Output a data table with the dislocation segment counts.
-    PropertyAccessAndRef<int32_t> dislocationCountsProperty = DataTable::OOClass().createUserProperty(DataBuffer::Initialized, maxId+1, DataBuffer::Int32, 1, DislocationAnalysisModifier::tr("Dislocation count"));
+    PropertyPtr dislocationCountsProperty = DataTable::OOClass().createUserProperty(DataBuffer::Initialized, maxId+1, DataBuffer::Int32, 1, DislocationAnalysisModifier::tr("Dislocation count"));
+    DataBufferAccessAndRef<int32_t> dislocationCountsAccess(dislocationCountsProperty);
     for(const auto& entry : segmentCounts)
-        dislocationCountsProperty[entry.first->numericId()] = entry.second;
+        dislocationCountsAccess[entry.first->numericId()] = entry.second;
+    dislocationCountsAccess.reset();
 
     DataTable* countTableObj = replaceDataObjects ? state.getMutableLeafObject<DataTable>(DataTable::OOClass(), QStringLiteral("disloc-counts")) : nullptr;
     if(!countTableObj) {
-        countTableObj = state.createObject<DataTable>(QStringLiteral("disloc-counts"), dataSource, DataTable::BarChart, DislocationAnalysisModifier::tr("Dislocation counts"), dislocationCountsProperty.take());
+        countTableObj = state.createObject<DataTable>(QStringLiteral("disloc-counts"), dataSource, DataTable::BarChart, DislocationAnalysisModifier::tr("Dislocation counts"), std::move(dislocationCountsProperty));
         countTableObj->freezeInitialParameterValues({SHADOW_PROPERTY_FIELD(DataTable::plotMode)});
     }
     else
-        countTableObj->setContent(maxId+1, DataRefVector<PropertyObject>{{ dislocationCountsProperty.take() }});
+        countTableObj->setContent(maxId+1, DataRefVector<PropertyObject>{{ std::move(dislocationCountsProperty) }});
     countTableObj->insertProperty(0, lengthTableObj->x());
     countTableObj->setX(lengthTableObj->x());
 

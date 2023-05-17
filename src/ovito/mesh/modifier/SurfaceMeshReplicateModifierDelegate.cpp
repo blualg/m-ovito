@@ -52,7 +52,7 @@ PipelineStatus SurfaceMeshReplicateModifierDelegate::apply(const ModifierEvaluat
     for(const DataObject* obj : state.data()->objects()) {
         if(const SurfaceMesh* existingSurface = dynamic_object_cast<SurfaceMesh>(obj)) {
             // For replication, a domain is always required.
-            if(!existingSurface->domain()) 
+            if(!existingSurface->domain())
                 continue;
 
             // The simulation cell must not be degenerate.
@@ -80,7 +80,7 @@ PipelineStatus SurfaceMeshReplicateModifierDelegate::apply(const ModifierEvaluat
             newVertices->replicate(numCopies);
 
             // Shift vertex positions by the periodicity vector.
-            PropertyAccess<Point3> positionProperty = newVertices->expectMutableProperty(SurfaceMeshVertices::PositionProperty);
+            DataBufferAccess<Point3> positionProperty = newVertices->expectMutableProperty(SurfaceMeshVertices::PositionProperty);
             Point3* p = positionProperty.begin();
             for(int imageX = newImages.minc.x(); imageX <= newImages.maxc.x(); imageX++) {
                 for(int imageY = newImages.minc.y(); imageY <= newImages.maxc.y(); imageY++) {
@@ -168,7 +168,7 @@ PipelineStatus SurfaceMeshReplicateModifierDelegate::apply(const ModifierEvaluat
             OVITO_ASSERT(topology->faceCount() == newFaceCount);
 
             if(pbcFlags[0] || pbcFlags[1] || pbcFlags[2]) {
-                ConstPropertyAccess<Point3> vertexCoords = newVertices->getProperty(SurfaceMeshVertices::PositionProperty);
+                ConstDataBufferAccess<Point3> vertexCoords = newVertices->getProperty(SurfaceMeshVertices::PositionProperty);
                 // Unwrap faces that crossed a periodic boundary in the original cell.
                 for(SurfaceMesh::face_index face = 0; face < newFaceCount; face++) {
                     SurfaceMesh::edge_index edge = topology->firstFaceEdge(face);

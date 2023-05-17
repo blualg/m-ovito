@@ -191,10 +191,10 @@ bool GrainSegmentationEngine1::interface_cubic_hex(NeighborBond& bond, Interface
 bool GrainSegmentationEngine1::rotateInterfaceAtoms()
 {
     // Make a copy of structure types and orientations.
-    ConstPropertyAccess<PTMAlgorithm::StructureType> structuresArray(structureTypes());
+    ConstDataBufferAccess<PTMAlgorithm::StructureType> structuresArray(structureTypes());
     _adjustedStructureTypes = std::vector<PTMAlgorithm::StructureType>(structuresArray.cbegin(), structuresArray.cend());
     _adjustedOrientations = std::vector<Quaternion>(orientations()->size());
-    boost::transform(ConstPropertyAccess<QuaternionG>(orientations()), _adjustedOrientations.begin(), [](const QuaternionG& q) { return q.toDataType<FloatType>(); });
+    boost::transform(ConstDataBufferAccess<QuaternionG>(orientations()), _adjustedOrientations.begin(), [](const QuaternionG& q) { return q.toDataType<FloatType>(); });
 
     // Only rotate hexagonal atoms if handling of coherent interfaces is enabled
     if (!_handleBoundaries)
@@ -437,8 +437,8 @@ fclose(fout);
     if(_algorithmType == GrainSegmentationModifier::GraphClusteringAutomatic || _algorithmType == GrainSegmentationModifier::GraphClusteringManual) {
 
         // Create PropertyStorage objects for the output plot.
-        PropertyAccess<FloatType> mergeDistanceArray = _mergeDistance = DataTable::OOClass().createUserProperty(DataBuffer::Uninitialized, numPlot, DataBuffer::FloatDefault, 1, GrainSegmentationModifier::tr("Log merge distance"));
-        PropertyAccess<FloatType> mergeSizeArray = _mergeSize = DataTable::OOClass().createUserProperty(DataBuffer::Uninitialized, numPlot, DataBuffer::FloatDefault, 1, GrainSegmentationModifier::tr("Delta merge size"));
+        DataBufferAccess<FloatType> mergeDistanceArray = _mergeDistance = DataTable::OOClass().createUserProperty(DataBuffer::Uninitialized, numPlot, DataBuffer::FloatDefault, 1, GrainSegmentationModifier::tr("Log merge distance"));
+        DataBufferAccess<FloatType> mergeSizeArray = _mergeSize = DataTable::OOClass().createUserProperty(DataBuffer::Uninitialized, numPlot, DataBuffer::FloatDefault, 1, GrainSegmentationModifier::tr("Delta merge size"));
 
         // Generate output data plot points from dendrogram data.
         FloatType* mergeDistanceIter = mergeDistanceArray.begin();
@@ -459,8 +459,8 @@ fclose(fout);
             numPlot += (y > 0) ? 1 : 0; // plot positive distances only, for clarity
         }
 
-        PropertyAccess<FloatType> logMergeSizeArray = _logMergeSize = DataTable::OOClass().createUserProperty(DataBuffer::Uninitialized, numPlot, DataBuffer::FloatDefault, 1, GrainSegmentationModifier::tr("Log geometric merge size"));
-        PropertyAccess<FloatType> logMergeDistanceArray = _logMergeDistance = DataTable::OOClass().createUserProperty(DataBuffer::Uninitialized, numPlot, DataBuffer::FloatDefault, 1, GrainSegmentationModifier::tr("Log merge distance"));
+        DataBufferAccess<FloatType> logMergeSizeArray = _logMergeSize = DataTable::OOClass().createUserProperty(DataBuffer::Uninitialized, numPlot, DataBuffer::FloatDefault, 1, GrainSegmentationModifier::tr("Log geometric merge size"));
+        DataBufferAccess<FloatType> logMergeDistanceArray = _logMergeDistance = DataTable::OOClass().createUserProperty(DataBuffer::Uninitialized, numPlot, DataBuffer::FloatDefault, 1, GrainSegmentationModifier::tr("Log merge distance"));
 
         // Generate output data plot points from dendrogram data.
         FloatType* logMergeDistanceIter = logMergeDistanceArray.begin();
@@ -475,8 +475,8 @@ fclose(fout);
     }
     else {
         // Create PropertyStorage objects for the output plot.
-        PropertyAccess<FloatType> mergeDistanceArray = _mergeDistance = DataTable::OOClass().createUserProperty(DataBuffer::Uninitialized, numPlot, DataBuffer::FloatDefault, 1, GrainSegmentationModifier::tr("Misorientation (degrees)"));
-        PropertyAccess<FloatType> mergeSizeArray = _mergeSize = DataTable::OOClass().createUserProperty(DataBuffer::Uninitialized, numPlot, DataBuffer::FloatDefault, 1, GrainSegmentationModifier::tr("Merge size"));
+        DataBufferAccess<FloatType> mergeDistanceArray = _mergeDistance = DataTable::OOClass().createUserProperty(DataBuffer::Uninitialized, numPlot, DataBuffer::FloatDefault, 1, GrainSegmentationModifier::tr("Misorientation (degrees)"));
+        DataBufferAccess<FloatType> mergeSizeArray = _mergeSize = DataTable::OOClass().createUserProperty(DataBuffer::Uninitialized, numPlot, DataBuffer::FloatDefault, 1, GrainSegmentationModifier::tr("Merge size"));
 
         // Generate output data plot points from dendrogram data.
         FloatType* mergeDistanceIter = mergeDistanceArray.begin();
@@ -529,7 +529,7 @@ void GrainSegmentationEngine2::perform()
     const std::vector<GrainSegmentationEngine1::DendrogramNode>& dendrogram = _engine1->_dendrogram;
 
     std::vector<Quaternion> meanOrientation(_engine1->orientations()->size());
-    boost::transform(ConstPropertyAccess<QuaternionG>(_engine1->orientations()), meanOrientation.begin(), [](const QuaternionG& q) { return q.toDataType<FloatType>(); });
+    boost::transform(ConstDataBufferAccess<QuaternionG>(_engine1->orientations()), meanOrientation.begin(), [](const QuaternionG& q) { return q.toDataType<FloatType>(); });
 
     // Iterate through merge list until distance cutoff is met.
     DisjointSet uf(_numParticles);
@@ -551,7 +551,7 @@ void GrainSegmentationEngine2::perform()
 
     // Assign new consecutive IDs to root clusters.
     _numClusters = 1;
-    ConstPropertyAccess<int32_t> structuresArray(_engine1->structureTypes());
+    ConstDataBufferAccess<int32_t> structuresArray(_engine1->structureTypes());
     std::vector<int> clusterStructureTypes;
     std::vector<Quaternion> clusterOrientations;
     for(size_t i = 0; i < _numParticles; i++) {
@@ -573,7 +573,7 @@ void GrainSegmentationEngine2::perform()
 
     // Allocate and fill output array storing the grain IDs (1-based identifiers).
     _grainIds =  DataTable::OOClass().createUserProperty(DataBuffer::Uninitialized, _numClusters - 1, PropertyObject::IntIdentifier, 1, QStringLiteral("Grain Identifier"));
-    boost::algorithm::iota_n(PropertyAccess<IdentifierIntType>(_grainIds).begin(), IdentifierIntType{1}, _grainIds->size());
+    boost::algorithm::iota_n(DataBufferAccess<IdentifierIntType>(_grainIds).begin(), IdentifierIntType{1}, _grainIds->size());
     if(isCanceled())
         return;
 
@@ -582,7 +582,7 @@ void GrainSegmentationEngine2::perform()
 
     // Allocate output array storing the structure type of grains.
     _grainStructureTypes = DataTable::OOClass().createUserProperty(DataBuffer::Uninitialized, _numClusters - 1, PropertyObject::Int32, 1, QStringLiteral("Structure Type"));
-    boost::copy(clusterStructureTypes, PropertyAccess<int32_t>(_grainStructureTypes).begin());
+    boost::copy(clusterStructureTypes, DataBufferAccess<int32_t>(_grainStructureTypes).begin());
     // Transfer the set of PTM crystal structure types to the structure column of the grain table.
     for(const ElementType* type : _engine1->structureTypes()->elementTypes()) {
         if(type->enabled())
@@ -596,13 +596,13 @@ void GrainSegmentationEngine2::perform()
     _grainColors = DataTable::OOClass().createUserProperty(DataBuffer::Uninitialized, _numClusters - 1, DataBuffer::FloatGraphics, 3, QStringLiteral("Color"), 0, QStringList() << QStringLiteral("R") << QStringLiteral("G") << QStringLiteral("B"));
     std::default_random_engine rng(1);
     std::uniform_real_distribution<FloatType> uniform_dist(0, 1);
-    boost::generate(PropertyAccess<ColorG>(_grainColors), [&]() { return ColorG::fromHSV(static_cast<GraphicsFloatType>(uniform_dist(rng)), 1.0f - static_cast<GraphicsFloatType>(uniform_dist(rng)) * 0.8f, 1.0f - static_cast<GraphicsFloatType>(uniform_dist(rng)) * 0.5f); });
+    boost::generate(DataBufferAccess<ColorG>(_grainColors), [&]() { return ColorG::fromHSV(static_cast<GraphicsFloatType>(uniform_dist(rng)), 1.0f - static_cast<GraphicsFloatType>(uniform_dist(rng)) * 0.8f, 1.0f - static_cast<GraphicsFloatType>(uniform_dist(rng)) * 0.5f); });
     if(isCanceled())
         return;
 
     // Allocate output array storing the mean lattice orientation of grains (represented by a quaternion).
     _grainOrientations = DataTable::OOClass().createUserProperty(DataBuffer::Initialized, _numClusters - 1, DataBuffer::FloatDefault, 4, QStringLiteral("Orientation"), 0, QStringList() << QStringLiteral("X") << QStringLiteral("Y") << QStringLiteral("Z") << QStringLiteral("W"));
-    boost::copy(clusterOrientations, PropertyAccess<Quaternion>(_grainOrientations).begin());
+    boost::copy(clusterOrientations, DataBufferAccess<Quaternion>(_grainOrientations).begin());
 
     // Determine new IDs for non-root clusters.
     for(size_t particleIndex = 0; particleIndex < _numParticles; particleIndex++)
@@ -613,8 +613,8 @@ void GrainSegmentationEngine2::perform()
     // Relabel atoms after cluster IDs have changed.
     // Also count the number of atoms in each cluster.
     {
-        PropertyAccess<int64_t> atomClustersArray(atomClusters());
-        PropertyAccess<int64_t> grainSizeArray(_grainSizes);
+        DataBufferAccess<int64_t> atomClustersArray(atomClusters());
+        DataBufferAccess<int64_t> grainSizeArray(_grainSizes);
         for(size_t particleIndex = 0; particleIndex < _numParticles; particleIndex++) {
             size_t gid = clusterRemapping[particleIndex];
             atomClustersArray[particleIndex] = gid;
@@ -630,7 +630,7 @@ void GrainSegmentationEngine2::perform()
         // Determine the index remapping for reordering the grain list by size.
         std::vector<size_t> mapping(_numClusters - 1);
         std::iota(mapping.begin(), mapping.end(), size_t(0));
-        std::sort(mapping.begin(), mapping.end(), [grainSizeArray = ConstPropertyAccess<int64_t>(_grainSizes)](size_t a, size_t b) {
+        std::sort(mapping.begin(), mapping.end(), [grainSizeArray = ConstDataBufferAccess<int64_t>(_grainSizes)](size_t a, size_t b) {
             return grainSizeArray[a] > grainSizeArray[b];
         });
         if(isCanceled())
@@ -652,7 +652,7 @@ void GrainSegmentationEngine2::perform()
 
         // Remap per-particle grain IDs.
 
-        for(auto& id : PropertyAccess<int64_t>(atomClusters()))
+        for(auto& id : DataBufferAccess<int64_t>(atomClusters()))
             id = inverseMapping[id];
         if(isCanceled())
             return;
@@ -671,8 +671,8 @@ bool GrainSegmentationEngine2::mergeOrphanAtoms()
     setProgressText(GrainSegmentationModifier::tr("Grain segmentation - merging orphan atoms"));
     setProgressValue(0);
 
-    PropertyAccess<int64_t> atomClustersArray(atomClusters());
-    PropertyAccess<int64_t> grainSizeArray(_grainSizes);
+    DataBufferAccess<int64_t> atomClustersArray(atomClusters());
+    DataBufferAccess<int64_t> grainSizeArray(_grainSizes);
 
     /// The bonds connecting neighboring non-crystalline atoms.
     std::vector<GrainSegmentationEngine1::NeighborBond> noncrystallineBonds;

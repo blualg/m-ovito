@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -122,8 +122,11 @@ void LAMMPSTextDumpImporterEditor::createUI(const RolloutInsertionParameters& ro
     useCustomMappingUI->buttonTrue()->setText(tr("User-defined mapping to particle properties"));
     sublayout->addWidget(useCustomMappingUI->buttonTrue());
     connect(useCustomMappingUI->buttonFalse(), &QRadioButton::clicked, this, [this]() {
-        if(LAMMPSTextDumpImporter* importer = static_object_cast<LAMMPSTextDumpImporter>(editObject()))
-            importer->requestReload();
+        if(LAMMPSTextDumpImporter* importer = static_object_cast<LAMMPSTextDumpImporter>(editObject())) {
+            handleExceptions([&]() {
+                importer->requestReload();
+            });
+        }
     }, Qt::QueuedConnection);
 
     QPushButton* editMappingButton = new QPushButton(tr("Edit column mapping..."));
@@ -141,7 +144,7 @@ void LAMMPSTextDumpImporterEditor::onEditColumnMapping()
 
             // Determine the currently loaded data file of the FileSource.
             FileSource* fileSource = importer->fileSource();
-            if(!fileSource || fileSource->frames().empty()) 
+            if(!fileSource || fileSource->frames().empty())
                 return;
             int frameIndex = qBound(0, fileSource->dataCollectionFrame(), fileSource->frames().size() - 1);
 

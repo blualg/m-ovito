@@ -135,8 +135,8 @@ bool GenerateTrajectoryLinesModifier::generateTrajectories(AnimationTime current
         std::vector<size_t> selectedIndices;
         std::set<int64_t> selectedIdentifiers;
         if(onlySelectedParticles()) {
-            if(ConstPropertyAccess<SelectionIntType> selectionProperty = particles->getProperty(ParticlesObject::SelectionProperty)) {
-                ConstPropertyAccess<int64_t> identifierProperty = particles->getProperty(ParticlesObject::IdentifierProperty);
+            if(ConstDataBufferAccess<SelectionIntType> selectionProperty = particles->getProperty(ParticlesObject::SelectionProperty)) {
+                ConstDataBufferAccess<int64_t> identifierProperty = particles->getProperty(ParticlesObject::IdentifierProperty);
                 if(identifierProperty && identifierProperty.size() == selectionProperty.size()) {
                     const auto* s = selectionProperty.cbegin();
                     for(auto id : identifierProperty)
@@ -191,10 +191,10 @@ bool GenerateTrajectoryLinesModifier::generateTrajectories(AnimationTime current
             if(!particles)
                 throw Exception(tr("Input data contains no particles at frame %1.").arg(frame));
             particles->verifyIntegrity();
-            ConstPropertyAccess<Point3> posProperty = particles->expectProperty(ParticlesObject::PositionProperty);
+            ConstDataBufferAccess<Point3> posProperty = particles->expectProperty(ParticlesObject::PositionProperty);
 
             // Get the particle property to be sampled.
-            ConstPropertyAccess<void,true> particleSamplingProperty;
+            ConstDataBufferAccess<void,true> particleSamplingProperty;
             if(transferParticleProperties()) {
                 if(particleProperty().isNull())
                     throw Exception(tr("Please select a particle property to be sampled."));
@@ -206,7 +206,7 @@ bool GenerateTrajectoryLinesModifier::generateTrajectories(AnimationTime current
 
             if(onlySelectedParticles()) {
                 if(!selectedIdentifiers.empty()) {
-                    ConstPropertyAccess<int64_t> identifierProperty = particles->getProperty(ParticlesObject::IdentifierProperty);
+                    ConstDataBufferAccess<int64_t> identifierProperty = particles->getProperty(ParticlesObject::IdentifierProperty);
                     if(!identifierProperty || identifierProperty.size() != posProperty.size())
                         throw Exception(tr("Input particles do not possess identifiers at frame %1.").arg(frame));
 
@@ -246,7 +246,7 @@ bool GenerateTrajectoryLinesModifier::generateTrajectories(AnimationTime current
             else {
                 // Add coordinates of all particles.
                 pointData.insert(pointData.end(), posProperty.cbegin(), posProperty.cend());
-                ConstPropertyAccess<int64_t> identifierProperty = particles->getProperty(ParticlesObject::IdentifierProperty);
+                ConstDataBufferAccess<int64_t> identifierProperty = particles->getProperty(ParticlesObject::IdentifierProperty);
                 if(identifierProperty && identifierProperty.size() == posProperty.size()) {
                     // Particles with IDs.
                     idData.insert(idData.end(), identifierProperty.cbegin(), identifierProperty.cend());
@@ -297,21 +297,21 @@ bool GenerateTrajectoryLinesModifier::generateTrajectories(AnimationTime current
 
             // Copy re-ordered trajectory points.
             trajObj->setElementCount(pointData.size());
-            PropertyAccess<Point3> trajPosProperty = trajObj->createProperty(TrajectoryObject::PositionProperty);
+            DataBufferAccess<Point3> trajPosProperty = trajObj->createProperty(TrajectoryObject::PositionProperty);
             auto piter = permutation.cbegin();
             for(Point3& p : trajPosProperty) {
                 p = pointData[*piter++];
             }
 
             // Copy re-ordered trajectory time stamps.
-            PropertyAccess<int32_t> trajTimeProperty = trajObj->createProperty(TrajectoryObject::SampleTimeProperty);
+            DataBufferAccess<int32_t> trajTimeProperty = trajObj->createProperty(TrajectoryObject::SampleTimeProperty);
             piter = permutation.cbegin();
             for(int& t : trajTimeProperty) {
                 t = sampleFrames[timeData[*piter++]];
             }
 
             // Copy re-ordered trajectory ids.
-            PropertyAccess<int64_t> trajIdProperty = trajObj->createProperty(TrajectoryObject::ParticleIdentifierProperty);
+            DataBufferAccess<int64_t> trajIdProperty = trajObj->createProperty(TrajectoryObject::ParticleIdentifierProperty);
             piter = permutation.cbegin();
             for(int64_t& id : trajIdProperty) {
                 id = idData[*piter++];
@@ -325,7 +325,7 @@ bool GenerateTrajectoryLinesModifier::generateTrajectories(AnimationTime current
                         throw Exception(tr("Sampling buffer size mismatch. Sampled particle property '%1' seems to have a varying component count.").arg(inputProperty->name()));
 
                     // Create a corresponding output property of the trajectory lines.
-                    PropertyAccess<void,true> samplingProperty;
+                    DataBufferAccess<void,true> samplingProperty;
                     if(inputProperty->type() < PropertyObject::FirstSpecificProperty && TrajectoryObject::OOClass().isValidStandardPropertyId(inputProperty->type())) {
                         // Input particle property is also a standard property for trajectory lines.
                         samplingProperty = trajObj->createProperty(inputProperty->type());

@@ -452,7 +452,7 @@ QString PropertyContainer::elementInfoString(size_t elementIndex, const ConstDat
         str += property->name().toHtmlEscaped();
         str += QStringLiteral(":</key> <val>");
         if(property->dataType() == PropertyObject::Int32) {
-            ConstPropertyAccess<int, true> data(property);
+            ConstDataBufferAccess<int, true> data(property);
             for(size_t component = 0; component < data.componentCount(); component++) {
                 if(component != 0) str += QStringLiteral(", ");
                 str += QString::number(data.get(elementIndex, component));
@@ -465,21 +465,21 @@ QString PropertyContainer::elementInfoString(size_t elementIndex, const ConstDat
             }
         }
         else if(property->dataType() == PropertyObject::Int64) {
-            ConstPropertyAccess<int64_t, true> data(property);
+            ConstDataBufferAccess<int64_t, true> data(property);
             for(size_t component = 0; component < property->componentCount(); component++) {
                 if(component != 0) str += QStringLiteral(", ");
                 str += QString::number(data.get(elementIndex, component));
             }
         }
         else if(property->dataType() == PropertyObject::Float32) {
-            ConstPropertyAccess<float, true> data(property);
+            ConstDataBufferAccess<float, true> data(property);
             for(size_t component = 0; component < property->componentCount(); component++) {
                 if(component != 0) str += QStringLiteral(", ");
                 str += QString::number(data.get(elementIndex, component));
             }
         }
         else if(property->dataType() == PropertyObject::Float64) {
-            ConstPropertyAccess<double, true> data(property);
+            ConstDataBufferAccess<double, true> data(property);
             for(size_t component = 0; component < property->componentCount(); component++) {
                 if(component != 0) str += QStringLiteral(", ");
                 str += QString::number(data.get(elementIndex, component));

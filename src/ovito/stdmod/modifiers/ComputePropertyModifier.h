@@ -98,7 +98,7 @@ protected:
         const PropertyPtr& outputProperty() const { return _outputProperty; }
 
         /// Returns the data accessor to the output property array that will receive the computed values.
-        PropertyAccess<void, true>& outputArray() { return _outputArray; }
+        DataBufferAccess<void, true>& outputArray() { return _outputArray; }
 
         /// Determines whether any of the math expressions is explicitly time-dependent.
         virtual bool isTimeDependent() { return _evaluator->isTimeDependent(); }
@@ -123,7 +123,7 @@ protected:
         ConstDataBufferAccessAndRef<SelectionIntType> _selectionArray;
         std::unique_ptr<PropertyExpressionEvaluator> _evaluator;
         const PropertyPtr _outputProperty;
-        PropertyAccess<void, true> _outputArray;
+        DataBufferAccess<void, true> _outputArray;
     };
 
 public:

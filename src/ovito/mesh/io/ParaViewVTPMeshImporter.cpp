@@ -161,7 +161,7 @@ void ParaViewVTPMeshImporter::FrameLoader::loadFile()
             }
             // Copy point coordinates from temporary array to surface mesh data structure.
             OVITO_ASSERT(property->size() + vertexBaseIndex == mesh.vertexCount());
-            boost::copy(ConstPropertyAccess<Point3>(property), std::next(std::begin(mesh.mutableVertexPositions()), vertexBaseIndex));
+            boost::copy(ConstDataBufferAccess<Point3>(property), std::next(std::begin(mesh.mutableVertexPositions()), vertexBaseIndex));
             xml.skipCurrentElement();
         }
         else if(xml.name().compare(QStringLiteral("Polys")) == 0) {
@@ -191,13 +191,13 @@ void ParaViewVTPMeshImporter::FrameLoader::loadFile()
             }
 
             // Shift vertex indices in the array by base vertex offset.
-            PropertyAccess<SurfaceMeshAccess::vertex_index> vertexIndices(connectivityArray);
+            DataBufferAccess<SurfaceMeshAccess::vertex_index> vertexIndices(connectivityArray);
             if(vertexBaseIndex != 0)
                 for(SurfaceMeshAccess::vertex_index& idx : vertexIndices) idx += vertexBaseIndex;
 
             // Go through the connectivity and the offsets arrays and create corresponding faces in the output mesh.
             int previousOffset = 0;
-            for(int offset : ConstPropertyAccess<int32_t>(offsetsArray)) {
+            for(int offset : ConstDataBufferAccess<int32_t>(offsetsArray)) {
                 if(offset < previousOffset + 3 || offset > vertexIndices.size()) {
                     xml.raiseError(tr("Invalid or inconsistent connectivity information in <Polys> element."));
                     break;

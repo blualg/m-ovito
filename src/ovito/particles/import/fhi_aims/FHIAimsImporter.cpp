@@ -103,13 +103,14 @@ void FHIAimsImporter::FrameLoader::loadFile()
 
     // Create the particle properties.
     setParticleCount(totalAtomCount);
-    PropertyAccess<Point3> posProperty = particles()->createProperty(ParticlesObject::PositionProperty);
-    PropertyAccess<int32_t> typeProperty = particles()->createProperty(ParticlesObject::TypeProperty);
+    DataBufferAccess<Point3> posProperty = particles()->createProperty(ParticlesObject::PositionProperty);
+    PropertyObject* typeProperty = particles()->createProperty(ParticlesObject::TypeProperty);
 
     // Return to file beginning.
     stream.seek(0);
 
     // Second pass: read atom coordinates and types.
+    DataBufferAccess<int32_t> typeAccess(typeProperty);
     for(int i = 0; i < totalAtomCount; i++) {
         while(true) {
             const char* line = stream.readLineTrimLeft();
@@ -125,16 +126,17 @@ void FHIAimsImporter::FrameLoader::loadFile()
                         throw Exception(tr("Invalid fractional atom coordinates (in line %1). Cell vectors have not been specified: %2").arg(stream.lineNumber()).arg(stream.lineString()));
                     pos = cell * pos;
                 }
-                typeProperty[i] = addNamedType(ParticlesObject::OOClass(), typeProperty.buffer(), QLatin1String(atomTypeName))->numericId();
+                typeAccess[i] = addNamedType(ParticlesObject::OOClass(), typeProperty, QLatin1String(atomTypeName))->numericId();
                 break;
             }
         }
     }
+    typeAccess.reset();
 
     // Since we created particle types on the go while reading the particles, the ordering of the type list
     // depends on the storage order of particles in the file. We rather want a well-defined particle type ordering, that's
     // why we sort them now.
-    typeProperty.buffer()->sortElementTypesByName();
+    typeProperty->sortElementTypesByName();
 
     // Set simulation cell.
     if(lattVecCount == 3) {

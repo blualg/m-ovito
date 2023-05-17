@@ -377,7 +377,7 @@ public:
             if(findRegion(i) == i) {
                 regionMapping[i] = _emptyRegionCount + _filledRegionCount;
                 _mesh.createRegion(0, regionVolumes[i]);
-                PropertyAccess<SelectionIntType>{regionPropertyIsExterior}[regionMapping[i]] = regionIsExterior[i];
+                DataBufferAccess<SelectionIntType>{regionPropertyIsExterior}[regionMapping[i]] = regionIsExterior[i];
                 _emptyRegionCount++;
             }
         }
@@ -393,7 +393,7 @@ public:
         // Create a single space-filling empty region if there is no filled region at all.
         if(_emptyRegionCount == 0 && _filledRegionCount == 0) {
             _mesh.createRegion(0, simCell->volume3D());
-            PropertyAccess<SelectionIntType>{regionPropertyIsExterior}[_filledRegionCount] = (!simCell->pbcX() || !simCell->pbcY() || !simCell->pbcZ());
+            DataBufferAccess<SelectionIntType>{regionPropertyIsExterior}[_filledRegionCount] = (!simCell->pbcX() || !simCell->pbcY() || !simCell->pbcZ());
             _emptyRegionCount = 1;
         }
 
@@ -1132,7 +1132,7 @@ private:
     SurfaceMeshAccess::size_type _emptyRegionCount = 0;
 
     /// The input particle positions.
-    ConstPropertyAccess<Point3> _positions;
+    ConstDataBufferAccess<Point3> _positions;
 
     /// The output surface mesh.
     SurfaceMeshAccess& _mesh;

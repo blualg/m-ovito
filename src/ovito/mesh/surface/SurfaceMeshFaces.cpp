@@ -72,11 +72,11 @@ PropertyPtr SurfaceMeshFaces::OOMetaClass::createStandardPropertyInternal(DataBu
         // Certain standard properties need to be initialized with default values determined by the attached visual elements.
         if(type == ColorProperty) {
             if(const SurfaceMesh* surfaceMesh = dynamic_object_cast<SurfaceMesh>(containerPath[containerPath.size()-2])) {
-                ConstPropertyAccess<ColorG> regionColorProperty = surfaceMesh->regions()->getProperty(SurfaceMeshRegions::ColorProperty);
-                ConstPropertyAccess<int32_t> faceRegionProperty = surfaceMesh->faces()->getProperty(SurfaceMeshFaces::RegionProperty);
+                ConstDataBufferAccess<ColorG> regionColorProperty = surfaceMesh->regions()->getProperty(SurfaceMeshRegions::ColorProperty);
+                ConstDataBufferAccess<int32_t> faceRegionProperty = surfaceMesh->faces()->getProperty(SurfaceMeshFaces::RegionProperty);
                 if(regionColorProperty && faceRegionProperty && faceRegionProperty.size() == elementCount) {
                     // Inherit face colors from regions.
-                    boost::transform(faceRegionProperty, PropertyAccess<ColorG>(property).begin(),
+                    boost::transform(faceRegionProperty, DataBufferAccess<ColorG>(property).begin(),
                         [&](int region) { return (region >= 0 && region < regionColorProperty.size()) ? regionColorProperty[region] : ColorG(1,1,1); });
                     init = DataBuffer::Uninitialized;
                 }

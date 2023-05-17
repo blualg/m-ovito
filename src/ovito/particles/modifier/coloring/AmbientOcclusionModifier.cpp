@@ -247,7 +247,7 @@ void AmbientOcclusionModifier::AmbientOcclusionEngine::perform()
         setProgressValue(_samplingCount);
 
         // Normalize brightness values by particle area.
-        ConstPropertyAccess<GraphicsFloatType> radiusArray(particleRadii());
+        ConstDataBufferAccess<GraphicsFloatType> radiusArray(particleRadii());
         DataBufferAccess<FloatType> brightnessValues(brightness());
         auto r = radiusArray.cbegin();
         for(FloatType& b : brightnessValues) {
@@ -294,7 +294,7 @@ void AmbientOcclusionModifier::AmbientOcclusionEngine::applyResults(const Modifi
 
     // Get output property object.
     ConstDataBufferAccess<FloatType> brightnessValues(brightness());
-    PropertyAccess<ColorG> colorProperty = particles->createProperty(DataBuffer::Initialized, ParticlesObject::ColorProperty, {particles});
+    DataBufferAccess<ColorG> colorProperty = particles->createProperty(DataBuffer::Initialized, ParticlesObject::ColorProperty, {particles});
     const FloatType* b = brightnessValues.cbegin();
     for(ColorG& c : colorProperty) {
         GraphicsFloatType factor = FloatType(1) - intensity + static_cast<GraphicsFloatType>(*b);

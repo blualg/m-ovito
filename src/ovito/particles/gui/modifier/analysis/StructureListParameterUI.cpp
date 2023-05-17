@@ -123,12 +123,12 @@ QVariant StructureListParameterUI::getItemData(RefTarget* target, const QModelIn
             }
             else if(index.column() == 2) {
                 if(_structureCounts && stype->numericId() >= 0 && stype->numericId() < _structureCounts->size())
-                    return ConstPropertyAccess<int64_t>(_structureCounts)[stype->numericId()];
+                    return ConstDataBufferAccess<int64_t>(_structureCounts)[stype->numericId()];
             }
             else if(index.column() == 3) {
                 if(_structureCounts && stype->numericId() >= 0 && stype->numericId() < _structureCounts->size()) {
                     size_t totalCount = 0;
-                    ConstPropertyAccess<int64_t> structureArray(_structureCounts);
+                    ConstDataBufferAccess<int64_t> structureArray(_structureCounts);
                     for(auto c : structureArray)
                         totalCount += c;
                     return QString("%1%").arg((double)structureArray[stype->numericId()] * 100.0 / std::max((size_t)1, totalCount), 0, 'f', 1);

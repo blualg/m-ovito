@@ -119,10 +119,10 @@ void SelectTypeModifier::evaluateSynchronous(const ModifierEvaluationRequest& re
         throw Exception(tr("The input property '%1' has the wrong number of components. Must be a scalar property.").arg(typePropertyObject->name()));
     if(typePropertyObject->dataType() != PropertyObject::Int32)
         throw Exception(tr("The input property '%1' has the wrong data type. Must be a 32-bit integer property.").arg(typePropertyObject->name()));
-    ConstPropertyAccess<int32_t> typeProperty = typePropertyObject;
+    ConstDataBufferAccess<int32_t> typeProperty = typePropertyObject;
 
     // Create the selection property.
-    PropertyAccess<SelectionIntType> selProperty = container->createProperty(PropertyObject::GenericSelectionProperty);
+    DataBufferAccess<SelectionIntType> selProperty = container->createProperty(PropertyObject::GenericSelectionProperty);
 
     // Counts the number of selected elements.
     size_t nSelected = 0;

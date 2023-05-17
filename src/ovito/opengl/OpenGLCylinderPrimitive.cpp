@@ -200,10 +200,10 @@ void OpenGLSceneRenderer::renderCylindersImplementation(const CylinderPrimitive&
         }
         else {
             shader.unbindBuffer("transparency1");
-            shader.setAttributeValue("transparency1", 1.0);
+            shader.setAttributeValue("transparency1", 0.0);
             if(primitive.shape() == CylinderPrimitive::CylinderShape) {
                 shader.unbindBuffer("transparency2");
-                shader.setAttributeValue("transparency2", 1.0);
+                shader.setAttributeValue("transparency2", 0.0);
             }
         }
 

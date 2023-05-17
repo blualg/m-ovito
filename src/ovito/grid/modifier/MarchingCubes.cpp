@@ -355,11 +355,11 @@ void MarchingCubes::handleSpaceFillingRegion()
 {
     _outputMesh.createRegions(1);
 
-    PropertyAccess<FloatType> volumeProperty =
+    DataBufferAccess<FloatType> volumeProperty =
         _outputMesh.createRegionProperty(DataBuffer::Initialized, SurfaceMeshRegions::VolumeProperty);
-    PropertyAccess<SelectionIntType> isExteriorProperty =
+    DataBufferAccess<SelectionIntType> isExteriorProperty =
         _outputMesh.createRegionProperty(DataBuffer::Initialized, SurfaceMeshRegions::IsExteriorProperty);
-    PropertyAccess<SelectionIntType> isFilledProperty =
+    DataBufferAccess<SelectionIntType> isFilledProperty =
         _outputMesh.createRegionProperty(DataBuffer::Initialized, SurfaceMeshRegions::IsFilledProperty);
 
     volumeProperty[0] = _size_x * _size_y * _size_z;
@@ -381,7 +381,7 @@ void MarchingCubes::mergeIdentifiedRegions()
         uf.merge(r1, r2);
     }
 
-    PropertyAccess<int32_t> regionPropertyAccess{_outputMesh.faceProperty(SurfaceMeshFaces::RegionProperty)};
+    DataBufferAccess<int32_t> regionPropertyAccess{_outputMesh.mutableFaceProperty(SurfaceMeshFaces::RegionProperty)};
     // map newly defined regions from discontinous range(0,_regionVolumes.size()) to range(0,regionCount)
     std::map<int, int> regionMap{};
     int regionCount{0};
@@ -397,11 +397,11 @@ void MarchingCubes::mergeIdentifiedRegions()
     _maxRegionIndex = regionCount;
     _outputMesh.createRegions(_maxRegionIndex);
 
-    PropertyAccess<FloatType> volumeProperty{
+    DataBufferAccess<FloatType> volumeProperty{
         _outputMesh.createRegionProperty(DataBuffer::Initialized, SurfaceMeshRegions::VolumeProperty)};
-    PropertyAccess<SelectionIntType> isExteriorProperty{
+    DataBufferAccess<SelectionIntType> isExteriorProperty{
         _outputMesh.createRegionProperty(DataBuffer::Initialized, SurfaceMeshRegions::IsExteriorProperty)};
-    PropertyAccess<SelectionIntType> isFilledProperty{
+    DataBufferAccess<SelectionIntType> isFilledProperty{
         _outputMesh.createRegionProperty(DataBuffer::Initialized, SurfaceMeshRegions::IsFilledProperty)};
 
     for(int i{0}; i < _regionVolumes.size(); i++) {

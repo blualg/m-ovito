@@ -457,7 +457,7 @@ void XYZImporter::FrameLoader::loadFile()
         hasSimulationCell = true;
     }
 
-    PropertyAccess<Point3> posProperty = particles()->getMutableProperty(ParticlesObject::PositionProperty);
+    DataBufferAccess<Point3> posProperty = particles()->getMutableProperty(ParticlesObject::PositionProperty);
     if(posProperty && numParticlesLong != 0) {
         Box3 boundingBox;
         boundingBox.addPoints(posProperty);

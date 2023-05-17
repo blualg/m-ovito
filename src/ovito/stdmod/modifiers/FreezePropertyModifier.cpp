@@ -189,10 +189,10 @@ void FreezePropertyModifier::evaluateSynchronous(const ModifierEvaluationRequest
 
     // Check if particle IDs are present and if the order of particles has changed
     // since we took the snapshot of the property values.
-    ConstPropertyAccess<IdentifierIntType> idProperty = container->getOOMetaClass().isValidStandardPropertyId(PropertyObject::GenericIdentifierProperty)
+    ConstDataBufferAccess<IdentifierIntType> idProperty = container->getOOMetaClass().isValidStandardPropertyId(PropertyObject::GenericIdentifierProperty)
         ? container->getProperty(PropertyObject::GenericIdentifierProperty)
         : nullptr;
-    ConstPropertyAccess<IdentifierIntType> storedIds = myModApp->identifiers();
+    ConstDataBufferAccess<IdentifierIntType> storedIds = myModApp->identifiers();
     if(storedIds && idProperty && (idProperty.size() != storedIds.size() || !boost::equal(idProperty, storedIds))) {
 
         // Build ID-to-index map.

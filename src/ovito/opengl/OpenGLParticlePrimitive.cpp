@@ -255,7 +255,7 @@ void OpenGLSceneRenderer::renderParticlesImplementation(const ParticlePrimitive&
         }
         else {
             shader.unbindBuffer("transparency");
-            shader.setAttributeValue("transparency", 1.0);
+            shader.setAttributeValue("transparency", 0.0);
         }
 
         // Upload particle selection.

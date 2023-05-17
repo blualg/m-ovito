@@ -98,9 +98,9 @@ Box3 BondsVis::boundingBox(AnimationTime time, const ConstDataObjectPath& path, 
         // If not, recompute bounding box from bond data.
         if(bondTopologyProperty && positionProperty) {
 
-            ConstPropertyAccess<ParticleIndexPair> bondTopology(bondTopologyProperty);
-            ConstPropertyAccess<Vector3I> bondPeriodicImages(bondPeriodicImageProperty);
-            ConstPropertyAccess<Point3> positions(positionProperty);
+            ConstDataBufferAccess<ParticleIndexPair> bondTopology(bondTopologyProperty);
+            ConstDataBufferAccess<Vector3I> bondPeriodicImages(bondPeriodicImageProperty);
+            ConstDataBufferAccess<Point3> positions(positionProperty);
 
             size_t particleCount = positions.size();
             const AffineTransformation cell = simulationCell ? simulationCell->cellMatrix() : AffineTransformation::Zero();
@@ -127,7 +127,7 @@ Box3 BondsVis::boundingBox(AnimationTime time, const ConstDataObjectPath& path, 
             // Extend box to account for width of bonds.
             GraphicsFloatType maxBondWidth = std::max(static_cast<GraphicsFloatType>(bondWidth()), GraphicsFloatType(0));
             if(bondWidthProperty && bondWidthProperty->size() != 0) {
-                ConstPropertyAccess<GraphicsFloatType> widthArray(bondWidthProperty);
+                ConstDataBufferAccess<GraphicsFloatType> widthArray(bondWidthProperty);
                 auto minmax = std::minmax_element(widthArray.cbegin(), widthArray.cend());
                 if(*minmax.first <= 0)
                     maxBondWidth = std::max(maxBondWidth, *minmax.second);
@@ -253,7 +253,7 @@ PipelineStatus BondsVis::render(AnimationTime time, const ConstDataObjectPath& p
             OVITO_ASSERT(nodalColors || !nodalTransparencies);
 
             // Cache some values.
-            ConstPropertyAccess<Point3> positions(positionProperty);
+            ConstDataBufferAccess<Point3> positions(positionProperty);
             size_t particleCount = positions.size();
             const AffineTransformation cell = simulationCell ? simulationCell->cellMatrix() : AffineTransformation::Zero();
 
@@ -271,10 +271,10 @@ PipelineStatus BondsVis::render(AnimationTime time, const ConstDataObjectPath& p
 
             size_t cylinderIndex = 0;
             auto color = colors.cbegin();
-            ConstPropertyAccess<ParticleIndexPair> bonds(bondTopologyProperty);
-            ConstPropertyAccess<Vector3I> bondPeriodicImages(bondPeriodicImageProperty);
-            ConstPropertyAccess<GraphicsFloatType> bondInputTransparency(transparencyProperty);
-            ConstPropertyAccess<GraphicsFloatType> bondInputWidths(bondWidthProperty);
+            ConstDataBufferAccess<ParticleIndexPair> bonds(bondTopologyProperty);
+            ConstDataBufferAccess<Vector3I> bondPeriodicImages(bondPeriodicImageProperty);
+            ConstDataBufferAccess<GraphicsFloatType> bondInputTransparency(transparencyProperty);
+            ConstDataBufferAccess<GraphicsFloatType> bondInputWidths(bondWidthProperty);
             for(size_t bondIndex = 0; bondIndex < bonds.size(); bondIndex++) {
                 size_t particleIndex1 = bonds[bondIndex][0];
                 size_t particleIndex2 = bonds[bondIndex][1];
@@ -403,14 +403,14 @@ std::vector<ColorG> BondsVis::halfBondColors(const ParticlesObject* particles, b
     bonds->verifyIntegrity();
 
     // Get bond-related properties which determine the bond coloring.
-    ConstPropertyAccess<ParticleIndexPair> topologyProperty = bonds->getProperty(BondsObject::TopologyProperty);
-    ConstPropertyAccess<ColorG> bondColorProperty = !ignoreBondColorProperty ? bonds->getProperty(BondsObject::ColorProperty) : nullptr;
+    ConstDataBufferAccess<ParticleIndexPair> topologyProperty = bonds->getProperty(BondsObject::TopologyProperty);
+    ConstDataBufferAccess<ColorG> bondColorProperty = !ignoreBondColorProperty ? bonds->getProperty(BondsObject::ColorProperty) : nullptr;
     const PropertyObject* bondTypeProperty = (coloringMode == ByTypeColoring) ? bonds->getProperty(BondsObject::TypeProperty) : nullptr;
-    ConstPropertyAccess<SelectionIntType> bondSelectionProperty = highlightSelection ? bonds->getProperty(BondsObject::SelectionProperty) : nullptr;
+    ConstDataBufferAccess<SelectionIntType> bondSelectionProperty = highlightSelection ? bonds->getProperty(BondsObject::SelectionProperty) : nullptr;
 
     // Get particle-related properties and the vis element.
     const ParticlesVis* particleVis = particles->visElement<ParticlesVis>();
-    ConstPropertyAccess<ColorG> particleColorProperty;
+    ConstDataBufferAccess<ColorG> particleColorProperty;
     const PropertyObject* particleTypeProperty = nullptr;
     if(coloringMode == ParticleBasedColoring && particleVis) {
         particleColorProperty = particles->getProperty(ParticlesObject::ColorProperty);
@@ -458,7 +458,7 @@ std::vector<ColorG> BondsVis::halfBondColors(const ParticlesObject* particles, b
                 for(const auto& entry : colorMap)
                     colorArray[entry.first] = entry.second.toDataType<GraphicsFloatType>();
                 // Fill color array.
-                ConstPropertyAccess<int32_t> bondTypeData(bondTypeProperty);
+                ConstDataBufferAccess<int32_t> bondTypeData(bondTypeProperty);
                 const int32_t* t = bondTypeData.cbegin();
                 for(auto c = output.begin(); c != output.end(); ++t) {
                     if(*t >= 0 && *t < (int)colorArray.size()) {
@@ -473,7 +473,7 @@ std::vector<ColorG> BondsVis::halfBondColors(const ParticlesObject* particles, b
             }
             else {
                 // Fill color array.
-                ConstPropertyAccess<int32_t> bondTypeData(bondTypeProperty);
+                ConstDataBufferAccess<int32_t> bondTypeData(bondTypeProperty);
                 const int32_t* t = bondTypeData.cbegin();
                 for(auto c = output.begin(); c != output.end(); ++t) {
                     if(auto it = colorMap.find(*t); it != colorMap.end()) {
@@ -518,19 +518,19 @@ QString BondPickInfo::infoString(PipelineSceneNode* objectNode, quint32 subobjec
     QString str;
     size_t bondIndex = subobjectId / 2;
     if(particles()->bonds()) {
-        ConstPropertyAccess<ParticleIndexPair> topologyProperty = particles()->bonds()->getTopology();
+        ConstDataBufferAccess<ParticleIndexPair> topologyProperty = particles()->bonds()->getTopology();
         if(topologyProperty && topologyProperty.size() > bondIndex) {
             size_t index1 = topologyProperty[bondIndex][0];
             size_t index2 = topologyProperty[bondIndex][1];
             str = tr("Bond: ");
 
             // Bond length
-            ConstPropertyAccess<Point3> posProperty = particles()->getProperty(ParticlesObject::PositionProperty);
+            ConstDataBufferAccess<Point3> posProperty = particles()->getProperty(ParticlesObject::PositionProperty);
             if(posProperty && posProperty.size() > index1 && posProperty.size() > index2) {
                 const Point3& p1 = posProperty[index1];
                 const Point3& p2 = posProperty[index2];
                 Vector3 delta = p2 - p1;
-                if(ConstPropertyAccess<Vector3I> periodicImageProperty = particles()->bonds()->getProperty(BondsObject::PeriodicImageProperty)) {
+                if(ConstDataBufferAccess<Vector3I> periodicImageProperty = particles()->bonds()->getProperty(BondsObject::PeriodicImageProperty)) {
                     if(simulationCell()) {
                         delta += simulationCell()->cellMatrix() * periodicImageProperty[bondIndex].toDataType<FloatType>();
                     }
@@ -545,7 +545,7 @@ QString BondPickInfo::infoString(PipelineSceneNode* objectNode, quint32 subobjec
             // Pair type info.
             const PropertyObject* typeProperty = particles()->getProperty(ParticlesObject::TypeProperty);
             if(typeProperty && typeProperty->size() > index1 && typeProperty->size() > index2) {
-                ConstPropertyAccess<int32_t> typeData(typeProperty);
+                ConstDataBufferAccess<int32_t> typeData(typeProperty);
                 const ElementType* type1 = typeProperty->elementType(typeData[index1]);
                 const ElementType* type2 = typeProperty->elementType(typeData[index2]);
                 if(type1 && type2) {
@@ -584,12 +584,12 @@ ConstPropertyPtr BondsVis::bondWidths(const BondsObject* bonds) const
     DataObjectAccess<DataOORef, PropertyObject> output = bonds->getProperty(BondsObject::WidthProperty);
     if(output) {
         // Check if the width array contains any zero entries.
-        ConstPropertyAccess<GraphicsFloatType> widthArray(output);
+        ConstDataBufferAccess<GraphicsFloatType> widthArray(output);
         if(boost::find(widthArray, GraphicsFloatType(0)) != widthArray.end()) {
             widthArray.reset();
 
             // Replace zero entries in the "Width" array with the uniform default width.
-            boost::replace(PropertyAccess<GraphicsFloatType>(output.makeMutable()), GraphicsFloatType(0), static_cast<GraphicsFloatType>(bondWidth()));
+            boost::replace(DataBufferAccess<GraphicsFloatType>(output.makeMutable()), GraphicsFloatType(0), static_cast<GraphicsFloatType>(bondWidth()));
         }
     }
     else {

@@ -74,9 +74,9 @@ Box3 NucleotidesVis::boundingBox(AnimationTime time, const ConstDataObjectPath& 
 
         // If not, recompute bounding box from particle data.
         Box3 innerBox;
-        if(ConstPropertyAccess<Point3> positionArray = positionProperty) {
+        if(ConstDataBufferAccess<Point3> positionArray = positionProperty) {
             innerBox.addPoints(positionArray);
-            if(ConstPropertyAccess<Vector3> axisArray = nucleotideAxisProperty) {
+            if(ConstDataBufferAccess<Vector3> axisArray = nucleotideAxisProperty) {
                 const Vector3* axis = axisArray.cbegin();
                 for(const Point3& p : positionArray) {
                     innerBox.addPoint(p + (*axis++));
@@ -142,9 +142,9 @@ ConstPropertyPtr NucleotidesVis::nucleobaseColors(const ParticlesObject* particl
             for(const auto& entry : colorMap)
                 colorArray[entry.first] = entry.second.toDataType<GraphicsFloatType>();
             // Fill color array.
-            ConstPropertyAccess<int32_t> typeArray(baseProperty);
+            ConstDataBufferAccess<int32_t> typeArray(baseProperty);
             const auto* t = typeArray.cbegin();
-            for(auto& c : PropertyAccess<ColorG>(output)) {
+            for(auto& c : DataBufferAccess<ColorG>(output)) {
                 if(*t >= 0 && *t < (int)colorArray.size())
                     c = colorArray[*t];
                 else
@@ -154,9 +154,9 @@ ConstPropertyPtr NucleotidesVis::nucleobaseColors(const ParticlesObject* particl
         }
         else {
             // Fill color array.
-            ConstPropertyAccess<int32_t> typeArray(baseProperty);
+            ConstDataBufferAccess<int32_t> typeArray(baseProperty);
             const auto* t = typeArray.cbegin();
-            for(auto& c : PropertyAccess<ColorG>(output)) {
+            for(auto& c : DataBufferAccess<ColorG>(output)) {
                 auto it = colorMap.find(*t);
                 if(it != colorMap.end())
                     c = it->second.toDataType<GraphicsFloatType>();
@@ -273,8 +273,8 @@ PipelineStatus NucleotidesVis::render(AnimationTime time, const ConstDataObjectP
 
             // Fill in the position data for the base sites.
             DataBufferAccessAndRef<Point3G> baseSites = DataBufferPtr::create(particles->elementCount(), DataBuffer::FloatGraphics, 3);
-            ConstPropertyAccess<Point3> positionsArray(positionProperty);
-            ConstPropertyAccess<Vector3> nucleotideAxisArray(nucleotideAxisProperty);
+            ConstDataBufferAccess<Point3> positionsArray(positionProperty);
+            ConstDataBufferAccess<Vector3> nucleotideAxisArray(nucleotideAxisProperty);
             for(size_t i = 0; i < baseSites.size(); i++)
                 baseSites[i] = (positionsArray[i] + (0.8 * nucleotideAxisArray[i])).toDataType<GraphicsFloatType>();
             visCache.basePrimitive.setPositions(baseSites.take());
@@ -288,9 +288,10 @@ PipelineStatus NucleotidesVis::render(AnimationTime time, const ConstDataObjectP
             visCache.basePrimitive.setAsphericalShapes(std::move(asphericalShapes));
 
             // Fill in base orientations.
-            if(ConstPropertyAccess<Vector3> nucleotideNormalArray = nucleotideNormalProperty) {
-                PropertyAccessAndRef<QuaternionG> orientations = ParticlesObject::OOClass().createStandardProperty(DataBuffer::Uninitialized, particles->elementCount(), ParticlesObject::OrientationProperty);
-                for(size_t i = 0; i < orientations.size(); i++) {
+            if(ConstDataBufferAccess<Vector3> nucleotideNormalArray = nucleotideNormalProperty) {
+                PropertyPtr orientations = ParticlesObject::OOClass().createStandardProperty(DataBuffer::Uninitialized, particles->elementCount(), ParticlesObject::OrientationProperty);
+                DataBufferAccess<QuaternionG> orientationsAccess(orientations);
+                for(size_t i = 0; i < orientations->size(); i++) {
                     if(nucleotideNormalArray[i] != Vector3::Zero() && nucleotideAxisArray[i] != Vector3::Zero()) {
                         // Build an orthonomal basis from the two direction vectors of a nucleotide.
                         Matrix3 tm;
@@ -299,15 +300,15 @@ PipelineStatus NucleotidesVis::render(AnimationTime time, const ConstDataObjectP
                         tm.column(0) = tm.column(1).cross(tm.column(2));
                         if(!tm.column(0).isZero()) {
                             tm.orthonormalize();
-                            orientations[i] = Quaternion(tm).toDataType<GraphicsFloatType>();
+                            orientationsAccess[i] = Quaternion(tm).toDataType<GraphicsFloatType>();
                         }
-                        else orientations[i] = QuaternionG::Identity();
+                        else orientationsAccess[i] = QuaternionG::Identity();
                     }
                     else {
-                        orientations[i] = QuaternionG::Identity();
+                        orientationsAccess[i] = QuaternionG::Identity();
                     }
                 }
-                visCache.basePrimitive.setOrientations(orientations.take());
+                visCache.basePrimitive.setOrientations(std::move(orientations));
             }
 
             // Create the rendering primitive for the connections between backbone and base sites.

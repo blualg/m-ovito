@@ -294,7 +294,7 @@ bool ReferenceConfigurationModifier::RefConfigEngineBase::buildParticleMapping(b
         // Build map of particle identifiers in reference configuration.
         std::map<IdentifierIntType, size_t> refMap;
         size_t index = 0;
-        ConstPropertyAccess<IdentifierIntType> refIdentifiersArray(refIdentifiers());
+        ConstDataBufferAccess<IdentifierIntType> refIdentifiersArray(refIdentifiers());
         for(auto id : refIdentifiersArray) {
             if(refMap.insert(std::make_pair(id, index)).second == false)
                 throw Exception(tr("Particles with duplicate identifiers detected in reference configuration."));
@@ -307,7 +307,7 @@ bool ReferenceConfigurationModifier::RefConfigEngineBase::buildParticleMapping(b
         // Check for duplicate identifiers in current configuration
         std::map<IdentifierIntType, size_t> currentMap;
         index = 0;
-        ConstPropertyAccess<IdentifierIntType> identifiersArray(identifiers());
+        ConstDataBufferAccess<IdentifierIntType> identifiersArray(identifiers());
         for(auto id : identifiersArray) {
             if(currentMap.insert(std::make_pair(id, index)).second == false)
                 throw Exception(tr("Particles with duplicate identifiers detected in current configuration."));

@@ -321,8 +321,8 @@ PipelineStatus VectorVis::render(AnimationTime time, const ConstDataObjectPath& 
             if(reverseArrowDirection())
                 scalingFac = -scalingFac;
             ConstDataBufferAccess<Point3> basePositionData(basePositions);
-            ConstPropertyAccess<ColorG> vectorColorData(vectorColorProperty);
-            ConstPropertyAccess<void,true> vectorPseudoColorData(pseudoColorProperty);
+            ConstDataBufferAccess<ColorG> vectorColorData(vectorColorProperty);
+            ConstDataBufferAccess<void,true> vectorPseudoColorData(pseudoColorProperty);
             size_t inIndex = 0;
             size_t outIndex = 0;
             const auto arrowPosition = this->arrowPosition();
@@ -384,7 +384,7 @@ size_t VectorPickInfo::elementIndexFromSubObjectID(quint32 subobjID) const
     if(const PropertyObject* vectorProperty = dataPath().lastAs<PropertyObject>()) {
         size_t elementIndex = 0;
         if(vectorProperty->dataType() == DataBuffer::Float32) {
-            ConstPropertyAccess<Vector_3<float>> vectorData(vectorProperty);
+            ConstDataBufferAccess<Vector_3<float>> vectorData(vectorProperty);
             for(const Vector_3<float>& v : vectorData) {
                 if(v != Vector_3<float>::Zero()) {
                     if(subobjID == 0) return elementIndex;
@@ -394,7 +394,7 @@ size_t VectorPickInfo::elementIndexFromSubObjectID(quint32 subobjID) const
             }
         }
         else if(vectorProperty->dataType() == DataBuffer::Float64) {
-            ConstPropertyAccess<Vector_3<double>> vectorData(vectorProperty);
+            ConstDataBufferAccess<Vector_3<double>> vectorData(vectorProperty);
             for(const Vector_3<double>& v : vectorData) {
                 if(v != Vector_3<double>::Zero()) {
                     if(subobjID == 0) return elementIndex;

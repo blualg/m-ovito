@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -196,7 +196,7 @@ void LAMMPSBinaryDumpImporterEditor::onEditColumnMapping()
 
             // Determine the currently loaded data file of the FileSource.
             FileSource* fileSource = importer->fileSource();
-            if(!fileSource || fileSource->frames().empty()) 
+            if(!fileSource || fileSource->frames().empty())
                 return;
             int frameIndex = qBound(0, fileSource->dataCollectionFrame(), fileSource->frames().size()-1);
 

@@ -102,7 +102,7 @@ Box3 TrajectoryVis::boundingBox(AnimationTime time, const ConstDataObjectPath& p
         // If not, recompute bounding box from trajectory data.
         if(trajObj) {
             if(!simulationCell) {
-                if(ConstPropertyAccess<Point3> posProperty = trajObj->getProperty(TrajectoryObject::PositionProperty)) {
+                if(ConstDataBufferAccess<Point3> posProperty = trajObj->getProperty(TrajectoryObject::PositionProperty)) {
                     bbox.addPoints(posProperty);
                 }
             }
@@ -199,11 +199,11 @@ PipelineStatus TrajectoryVis::render(AnimationTime time, const ConstDataObjectPa
             trajObj->verifyIntegrity();
 
             // Retrieve the line data stored in the TrajectoryObject.
-            ConstPropertyAccess<Point3> posProperty = trajObj->getProperty(TrajectoryObject::PositionProperty);
-            ConstPropertyAccess<int32_t> timeProperty = trajObj->getProperty(TrajectoryObject::SampleTimeProperty);
-            ConstPropertyAccess<int64_t> idProperty = trajObj->getProperty(TrajectoryObject::ParticleIdentifierProperty);
-            ConstPropertyAccess<ColorG> colorProperty = trajObj->getProperty(TrajectoryObject::ColorProperty);
-            ConstPropertyAccess<void,true> pseudoColorArray = pseudoColorProperty;
+            ConstDataBufferAccess<Point3> posProperty = trajObj->getProperty(TrajectoryObject::PositionProperty);
+            ConstDataBufferAccess<int32_t> timeProperty = trajObj->getProperty(TrajectoryObject::SampleTimeProperty);
+            ConstDataBufferAccess<int64_t> idProperty = trajObj->getProperty(TrajectoryObject::ParticleIdentifierProperty);
+            ConstDataBufferAccess<ColorG> colorProperty = trajObj->getProperty(TrajectoryObject::ColorProperty);
+            ConstDataBufferAccess<void,true> pseudoColorArray = pseudoColorProperty;
             if(posProperty && timeProperty && idProperty && posProperty.size() >= 2) {
 
                 // Determine the number of line segments and corner points to render.

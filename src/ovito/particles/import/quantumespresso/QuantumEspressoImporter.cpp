@@ -98,7 +98,7 @@ void QuantumEspressoImporter::FrameLoader::loadFile()
     std::vector<FloatType> type_masses;
     bool hasCellVectors = false;
     bool convertToAbsoluteCoordinates = false;
-    PropertyAccess<Point3> posProperty;
+    DataBufferAccess<Point3> posAccess;
 
     while(!stream.eof() && !isCanceled()) {
         const char* line = stream.readLineTrimLeft();
@@ -204,15 +204,19 @@ void QuantumEspressoImporter::FrameLoader::loadFile()
 
             // Create particle properties.
             setParticleCount(natoms);
-            posProperty = particles()->createProperty(ParticlesObject::PositionProperty);
-            PropertyAccess<int32_t> typeProperty = particles()->createProperty(ParticlesObject::TypeProperty);
-            PropertyAccess<FloatType> massProperty = particles()->createProperty(DataBuffer::Initialized, ParticlesObject::MassProperty);
+            posAccess = particles()->createProperty(ParticlesObject::PositionProperty);
+            PropertyObject* typeProperty = particles()->createProperty(ParticlesObject::TypeProperty);
+            PropertyObject* massProperty = particles()->createProperty(DataBuffer::Initialized, ParticlesObject::MassProperty);
 
             // Add the registered atom types.
             for(int i = 0; i < ntypes; i++) {
-                const ElementType* type = addNamedType(ParticlesObject::OOClass(), typeProperty.buffer(), type_names[i]);
-                static_object_cast<ParticleType>(typeProperty.buffer()->makeMutable(type))->setMass(type_masses[i]);
+                const ElementType* type = addNamedType(ParticlesObject::OOClass(), typeProperty, type_names[i]);
+                static_object_cast<ParticleType>(typeProperty->makeMutable(type))->setMass(type_masses[i]);
             }
+
+
+            DataBufferAccess<int32_t> typeAccess(typeProperty);
+            DataBufferAccess<FloatType> massAccess(massProperty);
 
             // Parse atom definitions.
             for(int i = 0; i < natoms; i++) {
@@ -221,16 +225,16 @@ void QuantumEspressoImporter::FrameLoader::loadFile()
                 // Parse atom type name.
                 const char* token_end = line;
                 while(*token_end > ' ') ++token_end;
-                int typeId = addNamedType(ParticlesObject::OOClass(), typeProperty.buffer(), QLatin1String(line, token_end))->numericId();
-                typeProperty[i] = typeId;
+                int typeId = addNamedType(ParticlesObject::OOClass(), typeProperty, QLatin1String(line, token_end))->numericId();
+                typeAccess[i] = typeId;
                 if(typeId >= 1 && typeId <= type_masses.size())
-                    massProperty[i] = type_masses[typeId-1];
+                    massAccess[i] = type_masses[typeId-1];
 
                 // Parse atomic coordinates.
                 Point3 pos;
                 if(sscanf(token_end, FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING, &pos.x(), &pos.y(), &pos.z()) != 3)
                     throw Exception(tr("Invalid atomic coordinates in line %1 of QE file: %2").arg(stream.lineNumber()).arg(stream.lineString()));
-                posProperty[i] = pos * scaling;
+                posAccess[i] = pos * scaling;
             }
         }
         else if(stream.lineStartsWithToken("CELL_PARAMETERS")) {
@@ -301,7 +305,7 @@ void QuantumEspressoImporter::FrameLoader::loadFile()
     if(convertToAbsoluteCoordinates) {
         // Convert all atom coordinates from reduced to absolute (Cartesian) format.
         const AffineTransformation simCell = simulationCell()->cellMatrix();
-        for(Point3& p : posProperty)
+        for(Point3& p : posAccess)
             p = simCell * p;
     }
 

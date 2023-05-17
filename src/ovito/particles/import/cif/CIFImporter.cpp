@@ -125,10 +125,11 @@ void CIFImporter::FrameLoader::loadFile()
         // Parse list of atomic sites.
         std::vector<gemmi::SmallStructure::Site> sites = structure.get_all_unit_cell_sites();
         setParticleCount(sites.size());
-        PropertyAccess<Point3> posProperty = particles()->createProperty(ParticlesObject::PositionProperty);
-        PropertyAccess<int32_t> typeProperty = particles()->createProperty(ParticlesObject::TypeProperty);
-        Point3* posIter = posProperty.begin();
-        int* typeIter = typeProperty.begin();
+        DataBufferAccess<Point3> posProperty = particles()->createProperty(ParticlesObject::PositionProperty);
+        PropertyObject* typeProperty = particles()->createProperty(ParticlesObject::TypeProperty);
+        DataBufferAccess<int32_t> typePropertyAccess(typeProperty);
+        auto* posIter = posProperty.begin();
+        auto* typeIter = typePropertyAccess.begin();
         bool hasOccupancy = false;
         for(const gemmi::SmallStructure::Site& site : sites) {
             gemmi::Position pos = structure.cell.orthogonalize(site.fract.wrap_to_unit());
@@ -136,14 +137,17 @@ void CIFImporter::FrameLoader::loadFile()
             posIter->y() = pos.y;
             posIter->z() = pos.z;
             ++posIter;
-            *typeIter++ = addNamedType(ParticlesObject::OOClass(), typeProperty.buffer(), site.type_symbol.empty() ? site.label.c_str() : site.type_symbol.c_str())->numericId();
-            if(site.occ != 1) hasOccupancy = true;
+            *typeIter++ = addNamedType(ParticlesObject::OOClass(), typeProperty, site.type_symbol.empty() ? site.label.c_str() : site.type_symbol.c_str())->numericId();
+            if(site.occ != 1)
+                hasOccupancy = true;
         }
-        if(isCanceled()) return;
+        if(isCanceled())
+            return;
+        typePropertyAccess.reset();
 
         // Parse the optional site occupancy information.
         if(hasOccupancy) {
-            PropertyAccess<FloatType> occupancyProperty = particles()->createProperty(QStringLiteral("Occupancy"), PropertyObject::FloatDefault);
+            DataBufferAccess<FloatType> occupancyProperty = particles()->createProperty(QStringLiteral("Occupancy"), PropertyObject::FloatDefault);
             FloatType* occupancyIter = occupancyProperty.begin();
             for(const gemmi::SmallStructure::Site& site : sites) {
                 *occupancyIter++ = site.occ;
@@ -153,7 +157,7 @@ void CIFImporter::FrameLoader::loadFile()
         // Since we created particle types on the go while reading the particles, the type ordering
         // depends on the storage order of particles in the file We rather want a well-defined particle type ordering, that's
         // why we sort them now.
-        typeProperty.buffer()->sortElementTypesByName();
+        typeProperty->sortElementTypesByName();
 
         // Parse unit cell.
         if(structure.cell.is_crystal()) {

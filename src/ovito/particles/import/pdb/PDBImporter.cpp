@@ -242,36 +242,39 @@ void PDBImporter::FrameLoader::loadFile()
 
         // Allocate property arrays for atoms.
         setParticleCount(natoms);
-        PropertyAccess<Point3> posProperty = particles()->createProperty(ParticlesObject::PositionProperty);
-        PropertyAccess<int32_t> typeProperty = particles()->createProperty(ParticlesObject::TypeProperty);
-        PropertyAccess<int32_t> atomNameProperty = particles()->createProperty(QStringLiteral("Atom Name"), DataBuffer::Int32);
-        PropertyAccess<int32_t> residueTypeProperty = particles()->createProperty(QStringLiteral("Residue Type"), DataBuffer::Int32);
+        DataBufferAccess<Point3> posAccess = particles()->createProperty(ParticlesObject::PositionProperty);
+        PropertyObject* typeProperty = particles()->createProperty(ParticlesObject::TypeProperty);
+        PropertyObject* atomNameProperty = particles()->createProperty(QStringLiteral("Atom Name"), DataBuffer::Int32);
+        PropertyObject* residueTypeProperty = particles()->createProperty(QStringLiteral("Residue Type"), DataBuffer::Int32);
 
         // Give these particle properties new titles, which are displayed in the GUI under the file source.
-        atomNameProperty.buffer()->setTitle(tr("Atom names"));
-        residueTypeProperty.buffer()->setTitle(tr("Residue types"));
+        atomNameProperty->setTitle(tr("Atom names"));
+        residueTypeProperty->setTitle(tr("Residue types"));
 
-        Point3* posIter = posProperty.begin();
-        int* typeIter = typeProperty.begin();
-        int* atomNameIter = atomNameProperty.begin();
-        int* residueTypeIter = residueTypeProperty.begin();
+        DataBufferAccess<int32_t> typeAccess(typeProperty);;
+        DataBufferAccess<int32_t> atomNameAccess(atomNameProperty);
+        DataBufferAccess<int32_t> residueTypeAccess(residueTypeProperty);
+        auto* posIter = posAccess.begin();
+        auto* typeIter = typeAccess.begin();
+        auto* atomNameIter = atomNameAccess.begin();
+        auto* residueTypeIter = residueTypeAccess.begin();
 
         // Transfer atomic data from Gemmi to OVITO data structures.
         bool hasOccupancy = false;
         for(const gemmi::Chain& chain : model.chains) {
             for(const gemmi::Residue& residue : chain.residues) {
                 if(isCanceled()) return;
-                int residueTypeId = (residue.name.empty() == false) ? addNamedType(ParticlesObject::OOClass(), residueTypeProperty.buffer(), QLatin1String(residue.name.c_str(), residue.name.size()))->numericId() : 0;
+                int residueTypeId = (residue.name.empty() == false) ? addNamedType(ParticlesObject::OOClass(), residueTypeProperty, QLatin1String(residue.name.c_str(), residue.name.size()))->numericId() : 0;
                 for(const gemmi::Atom& atom : residue.atoms) {
                     // Atomic position.
                     *posIter++ = Point3(atom.pos.x, atom.pos.y, atom.pos.z);
 
                     // Chemical type.
                     *typeIter++ = atom.element.ordinal();
-                    addNumericType(ParticlesObject::OOClass(), typeProperty.buffer(), atom.element.ordinal(), QString::fromStdString(atom.element.name()));
+                    addNumericType(ParticlesObject::OOClass(), typeProperty, atom.element.ordinal(), QString::fromStdString(atom.element.name()));
 
                     // Atom name.
-                    *atomNameIter++ = addNamedType(ParticlesObject::OOClass(), atomNameProperty.buffer(), QLatin1String(atom.name.c_str(), atom.name.size()))->numericId();
+                    *atomNameIter++ = addNamedType(ParticlesObject::OOClass(), atomNameProperty, QLatin1String(atom.name.c_str(), atom.name.size()))->numericId();
 
                     // Residue type.
                     *residueTypeIter++ = residueTypeId;
@@ -281,11 +284,15 @@ void PDBImporter::FrameLoader::loadFile()
                 }
             }
         }
-        if(isCanceled()) return;
+        if(isCanceled())
+            return;
+        typeAccess.reset();
+        atomNameAccess.reset();
+        residueTypeAccess.reset();
 
         // Parse the optional site occupancy information.
         if(hasOccupancy) {
-            PropertyAccess<FloatType> occupancyProperty = particles()->createProperty(QStringLiteral("Occupancy"), DataBuffer::FloatDefault);
+            DataBufferAccess<FloatType> occupancyProperty = particles()->createProperty(QStringLiteral("Occupancy"), DataBuffer::FloatDefault);
             FloatType* occupancyIter = occupancyProperty.begin();
             for(const gemmi::Chain& chain : model.chains) {
                 for(const gemmi::Residue& residue : chain.residues) {
@@ -300,12 +307,9 @@ void PDBImporter::FrameLoader::loadFile()
         // Since we created particle types on the go while reading the particles, the assigned particle type IDs
         // depend on the storage order of particles in the file. We rather want a well-defined particle type ordering, that's
         // why we sort them now.
-        typeProperty.buffer()->sortElementTypesById();
-        atomNameProperty.buffer()->sortElementTypesByName();
-        residueTypeProperty.buffer()->sortElementTypesByName();
-        typeProperty.reset();
-        atomNameProperty.reset();
-        residueTypeProperty.reset();
+        typeProperty->sortElementTypesById();
+        atomNameProperty->sortElementTypesByName();
+        residueTypeProperty->sortElementTypesByName();
 
         // Parse unit cell if available.
         //
@@ -350,10 +354,10 @@ void PDBImporter::FrameLoader::loadFile()
             }
             simulationCell()->setCellMatrix(cell);
         }
-        else if(posProperty.size() != 0) {
+        else if(posAccess.size() != 0) {
             // Use bounding box of atomic coordinates as non-periodic simulation cell.
             Box3 boundingBox;
-            boundingBox.addPoints(posProperty);
+            boundingBox.addPoints(posAccess);
             simulationCell()->setPbcFlags(false, false, false);
             simulationCell()->setCellMatrix(AffineTransformation(
                     Vector3(boundingBox.sizeX(), 0, 0),

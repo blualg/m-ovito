@@ -86,10 +86,10 @@ void ElasticStrainEngine::perform()
 
     nextProgressSubStep();
 
-    ConstPropertyAccess<Point3> positionsArray(positions());
-    PropertyAccess<Matrix3> deformationGradientsArray(deformationGradients());
-    PropertyAccess<SymmetricTensor2> strainTensorsArray(strainTensors());
-    PropertyAccess<FloatType> volumetricStrainsArray(volumetricStrains());
+    ConstDataBufferAccess<Point3> positionsArray(positions());
+    DataBufferAccess<Matrix3> deformationGradientsArray(deformationGradients());
+    DataBufferAccess<SymmetricTensor2> strainTensorsArray(strainTensors());
+    DataBufferAccess<FloatType> volumetricStrainsArray(volumetricStrains());
 
     parallelForWithProgress(positions()->size(), [&](size_t particleIndex) {
 

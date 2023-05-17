@@ -548,7 +548,7 @@ void AMBERNetCDFImporter::FrameLoader::loadFile()
 
         auto readPropertyData = [&](auto _, auto nc_get_vara) {
             using T = decltype(_);
-            PropertyAccess<T,true> propertyArray(property);
+            DataBufferAccess<T,true> propertyArray(property);
 
             // Special handling for tensor arrays that need to be converted to Voigt notation.
             if(doVoigtConversion) {
@@ -587,7 +587,7 @@ void AMBERNetCDFImporter::FrameLoader::loadFile()
             if(OvitoClassPtr elementTypeClass = ParticlesObject::OOClass().typedPropertyElementClass(property->type())) {
 
                 // Create particle types.
-                for(int ptype : ConstPropertyAccess<int32_t>(property)) {
+                for(int ptype : ConstDataBufferAccess<int32_t>(property)) {
                     addNumericType(ParticlesObject::OOClass(), property, ptype, {}, elementTypeClass);
                 }
 
@@ -626,7 +626,7 @@ void AMBERNetCDFImporter::FrameLoader::loadFile()
     // If the input file does not contain simulation cell size, use bounding box of particles as simulation cell.
     if(!pbc[0] || !pbc[1] || !pbc[2]) {
 
-        ConstPropertyAccess<Point3> posProperty = particles()->getProperty(ParticlesObject::PositionProperty);
+        ConstDataBufferAccess<Point3> posProperty = particles()->getProperty(ParticlesObject::PositionProperty);
         if(posProperty && posProperty.size() != 0) {
             Box3 boundingBox;
             boundingBox.addPoints(posProperty);

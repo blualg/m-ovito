@@ -303,8 +303,8 @@ PipelineStatus DislocationVis::render(AnimationTime time, const ConstDataObjectP
     // Check if we already have valid rendering primitives that are up to date.
     if(!primitives.segments.basePositions()) {
 
-        ConstPropertyAccess<int32_t> phaseArray(phaseProperty);
-        ConstPropertyAccess<Matrix3> correspondenceArray(correspondenceProperty);
+        ConstDataBufferAccess<int32_t> phaseArray(phaseProperty);
+        ConstDataBufferAccess<Matrix3> correspondenceArray(correspondenceProperty);
 
         // First determine number of corner vertices/segments that are going to be rendered.
         int lineSegmentCount = renderableLines->lineSegments().size();
@@ -774,10 +774,10 @@ QString DislocationPickInfo::infoString(PipelineSceneNode* objectNode, quint32 s
         }
     }
     else if(microstructureObj()) {
-        ConstPropertyAccess<Vector3> burgersVectorProperty = microstructureObj()->faces()->getProperty(SurfaceMeshFaces::BurgersVectorProperty);
-        ConstPropertyAccess<int32_t> faceRegionProperty = microstructureObj()->faces()->getProperty(SurfaceMeshFaces::RegionProperty);
+        ConstDataBufferAccess<Vector3> burgersVectorProperty = microstructureObj()->faces()->getProperty(SurfaceMeshFaces::BurgersVectorProperty);
+        ConstDataBufferAccess<int32_t> faceRegionProperty = microstructureObj()->faces()->getProperty(SurfaceMeshFaces::RegionProperty);
         const PropertyObject* phaseProperty = microstructureObj()->regions()->getProperty(SurfaceMeshRegions::PhaseProperty);
-        ConstPropertyAccess<int32_t> phaseArray(phaseProperty);
+        ConstDataBufferAccess<int32_t> phaseArray(phaseProperty);
         if(burgersVectorProperty && faceRegionProperty && phaseProperty && segmentIndex >= 0 && segmentIndex < burgersVectorProperty.size()) {
             const MicrostructurePhase* phase = nullptr;
             int region = faceRegionProperty[segmentIndex];
@@ -787,7 +787,7 @@ QString DislocationPickInfo::infoString(PipelineSceneNode* objectNode, quint32 s
                     const Vector3& burgersVector = burgersVectorProperty[segmentIndex];
                     QString formattedBurgersVector = DislocationVis::formatBurgersVector(burgersVector, phase);
                     str = tr("<key>True Burgers vector:</key> <val>%1</val>").arg(formattedBurgersVector);
-                    ConstPropertyAccess<Matrix3> correspondenceProperty = microstructureObj()->regions()->getProperty(SurfaceMeshRegions::LatticeCorrespondenceProperty);
+                    ConstDataBufferAccess<Matrix3> correspondenceProperty = microstructureObj()->regions()->getProperty(SurfaceMeshRegions::LatticeCorrespondenceProperty);
                     if(correspondenceProperty) {
                         Vector3 transformedVector = correspondenceProperty[region] * burgersVector;
                         str += tr("<sep><key>Spatial Burgers vector:</key> <val>[%1 %2 %3]</val>")

@@ -619,17 +619,9 @@ public:
         : ParentType(buffer) {}
 
     /// Constructs a read-only accessor for the data in a DataBuffer.
-    ConstDataBufferAccess(const DataOORef<const DataBufferClass>& buffer)
-        : ParentType(buffer.get()) {}
-
-    /// Constructs a read-only accessor for the data in a DataBuffer.
-    ConstDataBufferAccess(const DataOORef<DataBufferClass>& buffer)
-        : ParentType(buffer.get()) {}
-
-    /// Constructs a read-only accessor for the data in a DataBuffer.
     template<typename DerivedDataBufferClass>
     ConstDataBufferAccess(DataOORef<DerivedDataBufferClass> buffer)
-        : ParentType(static_object_cast<const DataBufferClass>(buffer.get())) {}
+        : ConstDataBufferAccess(buffer.get()) {}
 };
 
 /**
@@ -691,8 +683,9 @@ public:
         : ParentType(buffer) {}
 
     /// Constructs a read/write accessor for the data in a DataBuffer.
-    DataBufferAccess(const DataOORef<DataBufferClass>& buffer)
-        : ParentType(buffer.get()) {}
+    template<typename DerivedDataBufferClass>
+    DataBufferAccess(const DataOORef<DerivedDataBufferClass>& buffer)
+        : DataBufferAccess(buffer.get()) {}
 
     /// Forbid copy construction.
     DataBufferAccess(const DataBufferAccess& other) = delete;

@@ -62,7 +62,7 @@ ForwardIterator most_common(ForwardIterator first, ForwardIterator last)
 /******************************************************************************
 * Creates the mesh facets separating good and bad tetrahedra.
 ******************************************************************************/
-bool InterfaceMesh::createMesh(FloatType maximumNeighborDistance, ConstPropertyAccess<int64_t> crystalClusters, ProgressingTask& operation)
+bool InterfaceMesh::createMesh(FloatType maximumNeighborDistance, ConstDataBufferAccess<int64_t> crystalClusters, ProgressingTask& operation)
 {
     operation.beginProgressSubSteps(2);
 

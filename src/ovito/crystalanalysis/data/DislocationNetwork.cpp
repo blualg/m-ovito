@@ -75,8 +75,8 @@ DislocationNetwork::DislocationNetwork(const Microstructure* microstructureObj) 
 
     // Create clusters from microstructure regions.
     const auto regionCount = microstructure.regionCount();
-    ConstPropertyAccess<int32_t> phaseProperty = microstructure.regionProperty(SurfaceMeshRegions::PhaseProperty);
-    ConstPropertyAccess<Matrix3> latticeCorrespondonceProperty = microstructure.regionProperty(SurfaceMeshRegions::LatticeCorrespondenceProperty);
+    ConstDataBufferAccess<int32_t> phaseProperty = microstructure.regionProperty(SurfaceMeshRegions::PhaseProperty);
+    ConstDataBufferAccess<Matrix3> latticeCorrespondonceProperty = microstructure.regionProperty(SurfaceMeshRegions::LatticeCorrespondenceProperty);
     for(MicrostructureAccess::region_index inputRegion = 1; inputRegion < regionCount; inputRegion++) {
         Cluster* cluster = _clusterGraph->createCluster(inputRegion);
         if(phaseProperty)

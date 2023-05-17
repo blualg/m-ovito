@@ -192,7 +192,7 @@ void GSDImporter::FrameLoader::loadFile()
 
     {
         // Read particle positions.
-        PropertyAccess<FloatType, true> posProperty = particles()->createProperty(ParticlesObject::PositionProperty);
+        DataBufferAccess<FloatType, true> posProperty = particles()->createProperty(ParticlesObject::PositionProperty);
         if(gsd.hasChunk("particles/position", frameNumber))
             gsd.readFloatArray("particles/position", frameNumber, posProperty.begin(), numParticles, posProperty.componentCount());
         else
@@ -202,15 +202,15 @@ void GSDImporter::FrameLoader::loadFile()
 
     {
         // Create particle types.
-        PropertyAccess<int32_t> typeProperty = particles()->createProperty(ParticlesObject::TypeProperty);
+        PropertyObject* typeProperty = particles()->createProperty(ParticlesObject::TypeProperty);
         for(int i = 0; i < particleTypeNames.size(); i++)
-            addNumericType(ParticlesObject::OOClass(), typeProperty.buffer(), i, QString::fromUtf8(particleTypeNames[i]));
+            addNumericType(ParticlesObject::OOClass(), typeProperty, i, QString::fromUtf8(particleTypeNames[i]));
 
         // Read particle types.
         if(gsd.hasChunk("particles/typeid", frameNumber))
-            gsd.readIntArray("particles/typeid", frameNumber, typeProperty.begin(), numParticles);
+            gsd.readIntArray("particles/typeid", frameNumber, DataBufferAccess<int32_t>(typeProperty).begin(), numParticles);
         else
-            typeProperty.take()->fill<int32_t>(0);
+            typeProperty->fill<int32_t>(0);
         if(isCanceled()) return;
     }
 
@@ -235,14 +235,14 @@ void GSDImporter::FrameLoader::loadFile()
     readOptionalProperty(gsd, "particles/image", frameNumber, ParticlesObject::PeriodicImageProperty, particles(), &defaultImage, sizeof(defaultImage));
 
     const GraphicsFloatType defaultDiameter = 1;
-    if(PropertyAccess<GraphicsFloatType> radiusProperty = readOptionalProperty(gsd, "particles/diameter", frameNumber, ParticlesObject::RadiusProperty, particles(), &defaultDiameter, sizeof(defaultDiameter))) {
+    if(DataBufferAccess<GraphicsFloatType> radiusProperty = readOptionalProperty(gsd, "particles/diameter", frameNumber, ParticlesObject::RadiusProperty, particles(), &defaultDiameter, sizeof(defaultDiameter))) {
         // Convert particle diameters to radii.
         for(auto& r : radiusProperty)
             r /= 2;
     }
 
     const QuaternionG identityQuaternion = QuaternionG(1,0,0,0);
-    if(PropertyAccess<QuaternionG> orientationProperty = readOptionalProperty(gsd, "particles/orientation", frameNumber, ParticlesObject::OrientationProperty, particles(), &identityQuaternion, sizeof(identityQuaternion))) {
+    if(DataBufferAccess<QuaternionG> orientationProperty = readOptionalProperty(gsd, "particles/orientation", frameNumber, ParticlesObject::OrientationProperty, particles(), &identityQuaternion, sizeof(identityQuaternion))) {
         // Convert quaternion representation from GSD format to OVITO's internal format.
         // Left-shift all quaternion components by one: (W,X,Y,Z) -> (X,Y,Z,W).
         for(auto& q : orientationProperty)
@@ -293,7 +293,7 @@ void GSDImporter::FrameLoader::loadFile()
         if(isCanceled()) return;
 
         // Convert to OVITO format.
-        PropertyAccess<ParticleIndexPair> bondTopologyProperty = bonds()->createProperty(BondsObject::TopologyProperty);
+        DataBufferAccess<ParticleIndexPair> bondTopologyProperty = bonds()->createProperty(BondsObject::TopologyProperty);
         auto bondTopoPtr = bondList.cbegin();
         for(ParticleIndexPair& bond : bondTopologyProperty) {
             if(*bondTopoPtr >= (uint32_t)numParticles)
@@ -316,16 +316,16 @@ void GSDImporter::FrameLoader::loadFile()
                 bondTypeNames.push_back(QByteArrayLiteral("A"));
 
             // Create bond types.
-            PropertyAccess<int32_t> bondTypeProperty = bonds()->createProperty(BondsObject::TypeProperty);
+            PropertyObject* bondTypeProperty = bonds()->createProperty(BondsObject::TypeProperty);
             for(int i = 0; i < bondTypeNames.size(); i++)
-                addNumericType(BondsObject::OOClass(), bondTypeProperty.buffer(), i, QString::fromUtf8(bondTypeNames[i]));
+                addNumericType(BondsObject::OOClass(), bondTypeProperty, i, QString::fromUtf8(bondTypeNames[i]));
 
             // Read bond types.
             if(gsd.hasChunk("bonds/typeid", frameNumber)) {
-                gsd.readIntArray("bonds/typeid", frameNumber, bondTypeProperty.begin(), numBonds);
+                gsd.readIntArray("bonds/typeid", frameNumber, DataBufferAccess<int32_t>(bondTypeProperty).begin(), numBonds);
             }
             else {
-                bondTypeProperty.take()->fill<int>(0);
+                bondTypeProperty->fill<int32_t>(0);
             }
             if(isCanceled()) return;
         }
@@ -349,7 +349,7 @@ void GSDImporter::FrameLoader::loadFile()
         if(isCanceled()) return;
 
         // Convert to OVITO format.
-        PropertyAccess<ParticleIndexTriplet> topologyProperty = angles()->createProperty(AnglesObject::TopologyProperty);
+        DataBufferAccess<ParticleIndexTriplet> topologyProperty = angles()->createProperty(AnglesObject::TopologyProperty);
         auto topoPtr = groupList.cbegin();
         for(ParticleIndexTriplet& angle : topologyProperty) {
             for(auto& idx : angle) {
@@ -370,16 +370,16 @@ void GSDImporter::FrameLoader::loadFile()
                 typeNames.push_back(QByteArrayLiteral("A"));
 
             // Create element types.
-            PropertyAccess<int32_t> typeProperty = angles()->createProperty(AnglesObject::TypeProperty);
+            PropertyObject* typeProperty = angles()->createProperty(AnglesObject::TypeProperty);
             for(int i = 0; i < typeNames.size(); i++)
-                addNumericType(AnglesObject::OOClass(), typeProperty.buffer(), i, QString::fromUtf8(typeNames[i]));
+                addNumericType(AnglesObject::OOClass(), typeProperty, i, QString::fromUtf8(typeNames[i]));
 
             // Read element types.
             if(gsd.hasChunk("angles/typeid", frameNumber)) {
-                gsd.readIntArray("angles/typeid", frameNumber, typeProperty.begin(), numAngles);
+                gsd.readIntArray("angles/typeid", frameNumber, DataBufferAccess<int32_t>(typeProperty).begin(), numAngles);
             }
             else {
-                typeProperty.take()->fill<int>(0);
+                typeProperty->fill<int32_t>(0);
             }
             if(isCanceled()) return;
         }
@@ -403,7 +403,7 @@ void GSDImporter::FrameLoader::loadFile()
         if(isCanceled()) return;
 
         // Convert to OVITO format.
-        PropertyAccess<ParticleIndexQuadruplet> topologyProperty = dihedrals()->createProperty(DihedralsObject::TopologyProperty);
+        DataBufferAccess<ParticleIndexQuadruplet> topologyProperty = dihedrals()->createProperty(DihedralsObject::TopologyProperty);
         auto topoPtr = groupList.cbegin();
         for(ParticleIndexQuadruplet& dihedral : topologyProperty) {
             for(int64_t& idx : dihedral) {
@@ -424,16 +424,16 @@ void GSDImporter::FrameLoader::loadFile()
                 typeNames.push_back(QByteArrayLiteral("A"));
 
             // Create element types.
-            PropertyAccess<int32_t> typeProperty = dihedrals()->createProperty(DihedralsObject::TypeProperty);
+            PropertyObject* typeProperty = dihedrals()->createProperty(DihedralsObject::TypeProperty);
             for(int i = 0; i < typeNames.size(); i++)
-                addNumericType(DihedralsObject::OOClass(), typeProperty.buffer(), i, QString::fromUtf8(typeNames[i]));
+                addNumericType(DihedralsObject::OOClass(), typeProperty, i, QString::fromUtf8(typeNames[i]));
 
             // Read element types.
             if(gsd.hasChunk("dihedrals/typeid", frameNumber)) {
-                gsd.readIntArray("dihedrals/typeid", frameNumber, typeProperty.begin(), numDihedrals);
+                gsd.readIntArray("dihedrals/typeid", frameNumber, DataBufferAccess<int32_t>(typeProperty).begin(), numDihedrals);
             }
             else {
-                typeProperty.take()->fill<int>(0);
+                typeProperty->fill<int32_t>(0);
             }
             if(isCanceled()) return;
         }
@@ -457,7 +457,7 @@ void GSDImporter::FrameLoader::loadFile()
         if(isCanceled()) return;
 
         // Convert to OVITO format.
-        PropertyAccess<ParticleIndexQuadruplet> topologyProperty = impropers()->createProperty(ImpropersObject::TopologyProperty);
+        DataBufferAccess<ParticleIndexQuadruplet> topologyProperty = impropers()->createProperty(ImpropersObject::TopologyProperty);
         auto topoPtr = groupList.cbegin();
         for(ParticleIndexQuadruplet& improper : topologyProperty) {
             for(int64_t& idx : improper) {
@@ -478,16 +478,16 @@ void GSDImporter::FrameLoader::loadFile()
                 typeNames.push_back(QByteArrayLiteral("A"));
 
             // Create element types.
-            PropertyAccess<int32_t> typeProperty = impropers()->createProperty(ImpropersObject::TypeProperty);
+            PropertyObject* typeProperty = impropers()->createProperty(ImpropersObject::TypeProperty);
             for(int i = 0; i < typeNames.size(); i++)
-                addNumericType(ImpropersObject::OOClass(), typeProperty.buffer(), i, QString::fromUtf8(typeNames[i]));
+                addNumericType(ImpropersObject::OOClass(), typeProperty, i, QString::fromUtf8(typeNames[i]));
 
             // Read element types.
             if(gsd.hasChunk("impropers/typeid", frameNumber)) {
-                gsd.readIntArray("impropers/typeid", frameNumber, typeProperty.begin(), numImpropers);
+                gsd.readIntArray("impropers/typeid", frameNumber, DataBufferAccess<int32_t>(typeProperty).begin(), numImpropers);
             }
             else {
-                typeProperty.take()->fill<int>(0);
+                typeProperty->fill<int32_t>(0);
             }
             if(isCanceled()) return;
         }
@@ -534,15 +534,15 @@ PropertyObject* GSDImporter::FrameLoader::readOptionalProperty(GSDFile& gsd, con
             prop = container->createProperty(propertyName, dataTypeAndComponents.first, dataTypeAndComponents.second);
         }
         if(prop->dataType() == PropertyObject::Float32)
-            gsd.readFloatArray(chunkName, frameNumber, PropertyAccess<float,true>(prop).begin(), container->elementCount(), prop->componentCount());
+            gsd.readFloatArray(chunkName, frameNumber, DataBufferAccess<float,true>(prop).begin(), container->elementCount(), prop->componentCount());
         else if(prop->dataType() == PropertyObject::Float64)
-            gsd.readFloatArray(chunkName, frameNumber, PropertyAccess<double,true>(prop).begin(), container->elementCount(), prop->componentCount());
+            gsd.readFloatArray(chunkName, frameNumber, DataBufferAccess<double,true>(prop).begin(), container->elementCount(), prop->componentCount());
         else if(prop->dataType() == PropertyObject::Int8)
-            gsd.readIntArray(chunkName, frameNumber, PropertyAccess<int8_t,true>(prop).begin(), container->elementCount(), prop->componentCount());
+            gsd.readIntArray(chunkName, frameNumber, DataBufferAccess<int8_t,true>(prop).begin(), container->elementCount(), prop->componentCount());
         else if(prop->dataType() == PropertyObject::Int32)
-            gsd.readIntArray(chunkName, frameNumber, PropertyAccess<int32_t,true>(prop).begin(), container->elementCount(), prop->componentCount());
+            gsd.readIntArray(chunkName, frameNumber, DataBufferAccess<int32_t,true>(prop).begin(), container->elementCount(), prop->componentCount());
         else if(prop->dataType() == PropertyObject::Int64)
-            gsd.readIntArray(chunkName, frameNumber, PropertyAccess<int64_t,true>(prop).begin(), container->elementCount(), prop->componentCount());
+            gsd.readIntArray(chunkName, frameNumber, DataBufferAccess<int64_t,true>(prop).begin(), container->elementCount(), prop->componentCount());
         else
             throw Exception(tr("Property '%1' cannot be read from GSD file, because its data type is not supported by OVITO.").arg(prop->name()));
     }
@@ -688,10 +688,10 @@ void GSDImporter::FrameLoader::parseEllipsoidShape(int typeId, QJsonObject defin
         throw Exception(tr("Invalid 'c' field in 'Ellipsoid' particle shape definition in GSD file. Value must not be negative."));
 
     // Create the 'Aspherical Shape' particle property if it doesn't exist yet.
-    PropertyAccess<Vector3G> ashapeProperty = particles()->createProperty(DataBuffer::Initialized, ParticlesObject::AsphericalShapeProperty);
+    DataBufferAccess<Vector3G> ashapeProperty = particles()->createProperty(DataBuffer::Initialized, ParticlesObject::AsphericalShapeProperty);
 
     // Assign the [a,b,c] values to those particles which are of the given type.
-    ConstPropertyAccess<int32_t> typeProperty = particles()->expectProperty(ParticlesObject::TypeProperty);
+    ConstDataBufferAccess<int32_t> typeProperty = particles()->expectProperty(ParticlesObject::TypeProperty);
     for(size_t i = 0; i < typeProperty.size(); i++) {
         if(typeProperty[i] == typeId)
             ashapeProperty[i] = abc;

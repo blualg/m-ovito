@@ -249,18 +249,21 @@ void POSCARImporter::FrameLoader::loadFile()
         isCartesian = true;
 
     // Create the particle properties.
-    PropertyAccess<Point3> posProperty = particles()->createProperty(ParticlesObject::PositionProperty);
-    PropertyAccess<int32_t> typeProperty = particles()->createProperty(ParticlesObject::TypeProperty);
+    PropertyObject* posProperty = particles()->createProperty(ParticlesObject::PositionProperty);
+    PropertyObject* typeProperty = particles()->createProperty(ParticlesObject::TypeProperty);
+
+    DataBufferAccess<Point3> posAccess(posProperty);
+    DataBufferAccess<int32_t> typeAccess(typeProperty);
 
     // Read atom coordinates.
-    Point3* p = posProperty.begin();
-    int* a = typeProperty.begin();
+    auto* p = posAccess.begin();
+    auto* a = typeAccess.begin();
     for(int atype = 1; atype <= atomCounts.size(); atype++) {
         int typeId = atype;
         if(atomTypeNames.size() == atomCounts.size() && atomTypeNames[atype-1].isEmpty() == false)
-            typeId = addNamedType(ParticlesObject::OOClass(), typeProperty.buffer(), atomTypeNames[atype-1])->numericId();
+            typeId = addNamedType(ParticlesObject::OOClass(), typeProperty, atomTypeNames[atype-1])->numericId();
         else
-            addNumericType(ParticlesObject::OOClass(), typeProperty.buffer(), atype, {});
+            addNumericType(ParticlesObject::OOClass(), typeProperty, atype, {});
         for(int i = 0; i < atomCounts[atype-1]; i++, ++p, ++a) {
             *a = typeId;
             if(sscanf(stream.readLine(), FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING,
@@ -286,8 +289,8 @@ void POSCARImporter::FrameLoader::loadFile()
                 isCartesian = true;
 
             // Read atomic velocities.
-            PropertyAccess<Vector3> velocityProperty = particles()->createProperty(ParticlesObject::VelocityProperty);
-            Vector3* v = velocityProperty.begin();
+            DataBufferAccess<Vector3> velocityAccess = particles()->createProperty(ParticlesObject::VelocityProperty);
+            auto* v = velocityAccess.begin();
             for(int atype = 1; atype <= atomCounts.size(); atype++) {
                 for(int i = 0; i < atomCounts[atype-1]; i++, ++v) {
                     if(sscanf(stream.readLine(), FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING,
@@ -303,8 +306,8 @@ void POSCARImporter::FrameLoader::loadFile()
             statusString += readDensityGrid(stream);
         }
     }
-    posProperty.reset();
-    typeProperty.reset();
+    posAccess.reset();
+    typeAccess.reset();
 
     state().setStatus(statusString);
 
@@ -411,10 +414,10 @@ QString POSCARImporter::FrameLoader::readDensityGrid(CompressedTextReader& strea
     }
 
     if(magnetizationDensityX && magnetizationDensityY && magnetizationDensityZ) {
-        PropertyAccess<FloatType,true> vectorMagnetization = voxelGrid->createProperty(tr("Magnetization density"), DataBuffer::FloatDefault, 3, QStringList() << "X" << "Y" << "Z");
-        boost::copy(ConstPropertyAccess<FloatType>(magnetizationDensityX), vectorMagnetization.componentRange(0).begin());
-        boost::copy(ConstPropertyAccess<FloatType>(magnetizationDensityY), vectorMagnetization.componentRange(1).begin());
-        boost::copy(ConstPropertyAccess<FloatType>(magnetizationDensityZ), vectorMagnetization.componentRange(2).begin());
+        DataBufferAccess<FloatType,true> vectorMagnetization = voxelGrid->createProperty(tr("Magnetization density"), DataBuffer::FloatDefault, 3, QStringList() << "X" << "Y" << "Z");
+        boost::copy(ConstDataBufferAccess<FloatType>(magnetizationDensityX), vectorMagnetization.componentRange(0).begin());
+        boost::copy(ConstDataBufferAccess<FloatType>(magnetizationDensityY), vectorMagnetization.componentRange(1).begin());
+        boost::copy(ConstDataBufferAccess<FloatType>(magnetizationDensityZ), vectorMagnetization.componentRange(2).begin());
     }
 
     voxelGrid->verifyIntegrity();
@@ -426,12 +429,13 @@ QString POSCARImporter::FrameLoader::readDensityGrid(CompressedTextReader& strea
 ******************************************************************************/
 PropertyObject* POSCARImporter::FrameLoader::readFieldQuantity(CompressedTextReader& stream, VoxelGrid* grid, const QString& name)
 {
-    PropertyAccess<FloatType,true> fieldArray = grid->createProperty(name, DataBuffer::FloatDefault);
+    PropertyObject* fieldProperty = grid->createProperty(name, DataBuffer::FloatDefault);
+    DataBufferAccess<FloatType,true> fieldAccess(fieldProperty);
     const char* s = stream.readLine();
-    FloatType* data = fieldArray.begin();
-    setProgressMaximum(fieldArray.size());
+    auto* data = fieldAccess.begin();
+    setProgressMaximum(fieldProperty->size());
     FloatType cellVolume = std::abs(simulationCell()->cellMatrix().determinant());
-    for(size_t i = 0; i < fieldArray.size(); i++, ++data) {
+    for(size_t i = 0; i < fieldProperty->size(); i++, ++data) {
         const char* token;
         for(;;) {
             while(*s == ' ' || *s == '\t') ++s;
@@ -448,7 +452,7 @@ PropertyObject* POSCARImporter::FrameLoader::readFieldQuantity(CompressedTextRea
 
         if(!setProgressValueIntermittent(i)) return nullptr;
     }
-    return fieldArray.buffer();
+    return fieldProperty;
 }
 
 }   // End of namespace

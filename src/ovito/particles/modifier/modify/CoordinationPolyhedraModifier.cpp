@@ -131,13 +131,13 @@ void CoordinationPolyhedraModifier::ComputePolyhedraEngine::perform()
     mesh.createFaceProperty(DataBuffer::Uninitialized, SurfaceMeshFaces::RegionProperty);
 
     // Determine number of selected particles.
-    ConstPropertyAccess<SelectionIntType> selectionArray(_selection);
+    ConstDataBufferAccess<SelectionIntType> selectionArray(_selection);
     size_t npoly = boost::count_if(selectionArray, [](int s) { return s != 0; });
     setProgressMaximum(npoly);
 
     ParticleBondMap bondMap(_bondTopology, _bondPeriodicImages);
 
-    ConstPropertyAccess<Point3> positionsArray(_positions);
+    ConstDataBufferAccess<Point3> positionsArray(_positions);
 
     // Working variables.
     std::vector<Point3> neighborPositions;
@@ -266,7 +266,7 @@ void CoordinationPolyhedraModifier::ComputePolyhedraEngine::perform()
 
     // Create the "Particle index" region property, which contains the index of the particle that is at the center of each coordination polyhedron.
     PropertyPtr particleIndexProperty = mesh.createRegionProperty(DataBuffer::Uninitialized, QStringLiteral("Particle Index"), PropertyObject::Int64);
-    std::copy(regionToParticleMap.cbegin(), regionToParticleMap.cend(), PropertyAccess<int64_t>(particleIndexProperty).begin());
+    std::copy(regionToParticleMap.cbegin(), regionToParticleMap.cend(), DataBufferAccess<int64_t>(particleIndexProperty).begin());
 
     // Release data that is no longer needed.
     _positions.reset();
