@@ -272,18 +272,17 @@ void SliceModifier::planeQuadIntersection(const Point3 corners[8], const std::ar
 }
 
 /******************************************************************************
-* This method is called by the system when the modifier has been inserted
-* into a PipelineObject.
+* This method is called by the system at the time the modifier is being inserted
+* into a pipeline for the first time.
 ******************************************************************************/
 void SliceModifier::initializeModifier(const ModifierInitializationRequest& request)
 {
     MultiDelegatingModifier::initializeModifier(request);
 
-    // Get the input simulation cell to initially place the cutting plane in
-    // the center of the cell.
-    const PipelineFlowState& input = request.modApp()->evaluateInputSynchronous(request);
-    if(const SimulationCellObject* cell = input.getObject<SimulationCellObject>()) {
-        if(distanceController() && distanceController()->getFloatValue(AnimationTime(0)) == 0) {
+    // Initially place the cutting plane in the center of the simulation cell.
+    if(ExecutionContext::isInteractive() && distanceController() && distanceController()->getFloatValue(AnimationTime(0)) == 0) {
+        const PipelineFlowState& input = request.modApp()->evaluateInputSynchronous(request);
+        if(const SimulationCellObject* cell = input.getObject<SimulationCellObject>()) {
             Point3 centerPoint = cell->cellMatrix() * Point3(0.5, 0.5, 0.5);
             FloatType centerDistance = normal().dot(centerPoint - Point3::Origin());
             if(std::abs(centerDistance) > FLOATTYPE_EPSILON && distanceController())
