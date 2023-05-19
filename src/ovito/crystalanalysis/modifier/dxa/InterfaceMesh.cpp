@@ -228,7 +228,7 @@ bool InterfaceMesh::generateDefectMesh(const DislocationTracer& tracer, SurfaceM
         while(edge_o != firstFaceEdge(face_o_idx));
 
         // Create a copy of the face in the output mesh.
-        *faceMapIter++ = faceGrower.createFace(faceVertices.begin(), faceVertices.end(), 0);
+        *faceMapIter++ = faceGrower.createFace(faceVertices.begin(), faceVertices.end());
         face_o_idx++;
     }
 
@@ -268,7 +268,7 @@ bool InterfaceMesh::generateDefectMesh(const DislocationTracer& tracer, SurfaceM
         for(Edge* meshEdge : circuit->segmentMeshCap) {
             vertex_index v1 = vertexIndex(meshEdge->vertex2());
             vertex_index v2 = vertexIndex(meshEdge->vertex1());
-            faceGrower.createFace({v1, v2, capVertex}, 0);
+            faceGrower.createFace({v1, v2, capVertex});
         }
     }
 

@@ -96,7 +96,7 @@ const PropertyObject* PropertyContainer::expectProperty(const QString& propertyN
 }
 
 /******************************************************************************
-* Duplicates any property objects that are shared with other containers.
+* Duplicates any property objects that are shared with other containers or being accessed from Python.
 * After this method returns, all property objects are exclusively owned by the container and
 * can be safely modified without unwanted side effects.
 ******************************************************************************/
@@ -104,7 +104,14 @@ QVector<PropertyObject*> PropertyContainer::makePropertiesMutable()
 {
     QVector<PropertyObject*> result;
     for(const PropertyObject* property : properties()) {
-        result.push_back(makeMutable(property));
+        if(property->isBeingAccessedFromPython()) {
+            OORef<PropertyObject> clone = CloneHelper().cloneObject(property, false);
+            replaceReferencesTo(property, clone);
+            result.push_back(clone);
+        }
+        else {
+            result.push_back(makeMutable(property));
+        }
     }
     return result;
 }
@@ -118,7 +125,7 @@ void PropertyContainer::setElementCount(size_t count)
     if(count == elementCount())
         return;
 
-    // Make sure the property arrays can be safely modified and resize each array.
+    // Make sure the property arrays can be safely modified, then resize each array.
     for(PropertyObject* prop : makePropertiesMutable())
         prop->resize(count, true);
 

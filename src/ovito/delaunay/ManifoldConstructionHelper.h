@@ -536,7 +536,7 @@ private:
                     continue;
 
                 // Start a new region.
-                int currentRegionId = _mesh.regionCount() + 1;
+                int currentRegionId = regionVolumes.size() + 1;
                 OVITO_ASSERT(currentRegionId >= 1);
                 _tessellation.setUserField(cell, currentRegionId);
                 // Compute total region volume as we go while visiting all tetrahedra.

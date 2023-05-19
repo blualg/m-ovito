@@ -251,6 +251,30 @@ public:
     /// Returns the display title of this property object in the user interface.
     virtual QString objectTitle() const override;
 
+public:
+
+    /// Helper class that is created when direct access to a property's memory is requested
+    /// from the Python side. The PythonAccessGuard instance exists as long as at least one
+    /// NumPy view references the property object. During this time, the PropertyContainer
+    /// protects the PropertyObject from operations that might trigger a reallocation of the memory
+    /// buffer.
+    struct PythonAccessGuard {
+        explicit PythonAccessGuard(PropertyObject& p) : propertyReference(&p), memoryAccessor(&p) {}
+        OORef<PropertyObject> propertyReference;
+        ConstBufferAccess<void,true> memoryAccessor;
+    };
+
+    /// Creates an access guard object for this property.
+    std::shared_ptr<PythonAccessGuard> aquirePythonAccessGuard() {
+        auto guard = _pythonAccessGuard.lock();
+        if(!guard)
+            _pythonAccessGuard = guard = std::make_shared<PythonAccessGuard>(*this);
+        return guard;
+    }
+
+    /// Indicates that there current exists a Numpy view referencing this property's memory buffer.
+    bool isBeingAccessedFromPython() const { return !_pythonAccessGuard.expired(); }
+
 protected:
 
     /// Saves the class' contents to the given stream.
@@ -275,6 +299,9 @@ private:
 
     /// The name of the property (must be unique within the PropertyContainer).
     QString _name;
+
+    /// Pointer to the access guard object while the Python side accesses this property's memory buffer.
+    std::weak_ptr<PythonAccessGuard> _pythonAccessGuard;
 
     /// This is a special flag used by the Python bindings to indicate that
     /// this property object has been temporarily put into a writable state.
