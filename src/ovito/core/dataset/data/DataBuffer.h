@@ -28,6 +28,17 @@
 
 namespace Ovito {
 
+namespace detail {
+    // Forward declarations
+    template<class PointerType, bool Writable> class DataBufferAccessBase;
+    template<typename T, class PointerType, bool Writable = false> class ReadOnlyDataBufferSubrangeAccessBase;
+    template<typename T, class PointerType, bool Writable = false> class ReadOnlyDataBufferAccessBase;
+    template<typename T, class PointerType, bool Writable = false> class ReadOnlyDataBufferAccessBaseTable;
+    template<typename T, class PointerType> class ReadWriteDataBufferSubrangeAccessBase;
+    template<typename T, class PointerType> class ReadWriteDataBufferAccessBase;
+    template<typename T, class PointerType> class ReadWriteDataBufferAccessBaseTable;
+}
+
 /**
  * \brief A one- or two-dimensional array of data elements.
  */
@@ -76,20 +87,28 @@ public:
     class ReadAccess
     {
     public:
-        ReadAccess(const DataBuffer& buffer) : _buffer(buffer) { buffer.prepareReadAccess(); }
+#ifdef OVITO_DEBUG
+        ReadAccess(const DataBuffer& buffer) noexcept : _buffer(buffer) { buffer.prepareReadAccess(); }
         ~ReadAccess() { _buffer.finishReadAccess(); }
     private:
         const DataBuffer& _buffer;
+#else
+        ReadAccess(const DataBuffer& buffer) noexcept = default;
+#endif
     };
 
     /// RAII utility class that guards write access to a DataBuffer.
     class WriteAccess
     {
     public:
-        WriteAccess(DataBuffer& buffer) : _buffer(buffer) { buffer.prepareWriteAccess(); }
+#ifdef OVITO_DEBUG
+        WriteAccess(DataBuffer& buffer) noexcept : _buffer(buffer) { buffer.prepareWriteAccess(); }
         ~WriteAccess() { _buffer.finishWriteAccess(); }
     private:
         DataBuffer& _buffer;
+#else
+        WriteAccess(DataBuffer& buffer) noexcept = default;
+#endif
     };
 
 public:
@@ -122,7 +141,7 @@ public:
     /// \brief Reduces the number of data elements while preserving the exiting data.
     /// Note: This method never reallocates the memory buffer. Thus, the capacity of the array remains unchanged and the
     /// memory of the truncated elements is not released by the method.
-    void truncate(size_t numElementsToRemove);
+    void truncate(size_t numElementsToRemove, bool callerAlreadyHasWriteAccess = false);
 
     /// \brief Returns the data type of the property.
     /// \return The identifier of the data type used for the elements stored in
@@ -155,18 +174,8 @@ public:
         _componentNames = std::move(names);
     }
 
-    /// Changes the data type of the buffer in place and converts the stored values.
-    void convertDataType(int newDataType);
-
-    /// \brief Returns a read-only pointer to the raw element data stored in this buffer.
-    const std::byte* cbuffer() const {
-        return _data.get();
-    }
-
-    /// \brief Returns a read-write pointer to the raw element data stored in this buffer.
-    std::byte* buffer() {
-        return _data.get();
-    }
+    /// Changes the data type of the buffer in place (only if necessary) and converts the stored values.
+    void convertToDataType(int dataType);
 
     /// \brief Sets all array elements to the given uniform value.
     template<typename T>
@@ -214,9 +223,14 @@ public:
     /// Extends the data array and replicates the existing data N times.
     void replicate(size_t n, bool replicateValues = true);
 
-    /// Reduces the size of the storage array, removing elements for which
-    /// the corresponding bits in the bit array are set.
+    /// Reduces the size of the storage array, deleting elements for which
+    /// the corresponding bits in the bitmask array are set.
     void filterResize(const boost::dynamic_bitset<>& mask);
+
+    /// Removes data elements for which the bits are set in the given bitmask array by moving elements from the back of
+    /// the array into the free slots. This method is potentially faster than filterResize() if only few elements are to be deleted.
+    /// However, the ordering of the remaining elements is NOT preserved.
+    void filterResizeReordering(const boost::dynamic_bitset<>& mask);
 
     /// Creates a copy of the array, not containing those elements for which
     /// the corresponding bits in the given bit array were set.
@@ -321,6 +335,17 @@ public:
         return false;
     }
 
+    /// Moves the values from one index of property container to another in all property arrays.
+    void moveElement(size_t fromIndex, size_t toIndex, bool callerAlreadyHasWriteAccess = false) {
+        OVITO_ASSERT(fromIndex < size() && toIndex < size());
+#ifdef OVITO_DEBUG
+        std::optional<WriteAccess> writeAccess;
+        if(!callerAlreadyHasWriteAccess)
+            writeAccess.emplace(*this);
+#endif
+        std::memmove(buffer() + toIndex * stride(), cbuffer() + fromIndex * stride(), stride());
+    }
+
     /// Checks if this buffer|s metadata and the contents exactly match those of another buffer.
     bool equals(const DataBuffer& other) const;
 
@@ -373,6 +398,18 @@ protected:
 
 private:
 
+    /// \brief Returns a read-only pointer to the raw element data stored in this buffer.
+    const std::byte* cbuffer() const {
+        return _data.get();
+    }
+
+    /// \brief Returns a read-write pointer to the raw element data stored in this buffer.
+    std::byte* buffer() {
+        return _data.get();
+    }
+
+private:
+
     /// The data type of the array (a Qt metadata type identifier).
     int _dataType = QMetaType::Void;
 
@@ -398,10 +435,19 @@ private:
     std::unique_ptr<std::byte[]> _data;
 
 #ifdef OVITO_DEBUG
-    /// In debug builds this counter keeps track of how many read or write accessors
-    /// are currently referencing this buffer object.
+    /// In debug builds, this counter is used to detect race conditions due to concurrent access to a buffer's
+    /// memory and data fields. The counter keeps track of how many read or write accessors are currently
+    /// operating on this buffer object. Write access must be exclusive and as is indicated by the special value -1.
     mutable QAtomicInteger<int> _activeAccessors = 0;
 #endif
+
+    template<class PointerType, bool Writable> friend class detail::DataBufferAccessBase;
+    template<typename T, class PointerType, bool Writable> friend class detail::ReadOnlyDataBufferSubrangeAccessBase;
+    template<typename T, class PointerType, bool Writable> friend class detail::ReadOnlyDataBufferAccessBase;
+    template<typename T, class PointerType, bool Writable> friend class detail::ReadOnlyDataBufferAccessBaseTable;
+    template<typename T, class PointerType> friend class detail::ReadWriteDataBufferSubrangeAccessBase;
+    template<typename T, class PointerType> friend class detail::ReadWriteDataBufferAccessBase;
+    template<typename T, class PointerType> friend class detail::ReadWriteDataBufferAccessBaseTable;
 };
 
 /// Class template returning the Qt data type identifier for the components in the given C++ array structure.

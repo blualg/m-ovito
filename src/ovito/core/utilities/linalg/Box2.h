@@ -176,7 +176,7 @@ public:
     /// \param p The input point.
     /// \param epsilon This threshold is used to test whether the point is on the boundary of the box.
     /// \return -1 if \a p is outside the box; 0 if \a p is on the boundary of the box within the specified tolerance; +1 if inside the box.
-    Q_DECL_CONSTEXPR int classifyPoint(const Point_2<T>& p, T epsilon = T(FLOATTYPE_EPSILON)) const {
+    Q_DECL_CONSTEXPR int classifyPoint(const Point_2<T>& p, T epsilon = FloatTypeEpsilon<T>()) const {
         return
                 (p.x() > maxc.x() + epsilon || p.y() > maxc.y() + epsilon) ||
                 (p.x() < minc.x() - epsilon || p.y() < minc.y() - epsilon)

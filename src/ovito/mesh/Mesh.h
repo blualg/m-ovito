@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -33,13 +33,13 @@
 namespace Ovito::Mesh {
     using namespace Ovito::StdObj;
     class SurfaceMesh;
-    class SurfaceMeshAccess;
+    class SurfaceMeshReadAccess;
+    class SurfaceMeshBuilder;
     class SurfaceMeshVis;
     class SurfaceMeshVertices;
     class SurfaceMeshFaces;
     class SurfaceMeshRegions;
     class RenderableSurfaceMesh;
-    class HalfEdgeMesh;
 }
 
 #endif

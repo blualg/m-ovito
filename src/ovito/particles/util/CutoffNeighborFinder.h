@@ -79,7 +79,7 @@ public:
     /// \return \c false when the operation has been canceled by the user;
     ///         \c true on success.
     /// \throw Exception on error.
-    bool prepare(FloatType cutoffRadius, ConstDataBufferAccess<Point3> positions, const SimulationCellObject* simCell, ConstDataBufferAccess<SelectionIntType> selectionProperty);
+    bool prepare(FloatType cutoffRadius, ConstBufferAccess<Point3> positions, const SimulationCellObject* simCell, ConstBufferAccess<SelectionIntType> selectionProperty);
 
     /// Returns the cutoff radius set via prepare().
     FloatType cutoffRadius() const { return _cutoffRadius; }

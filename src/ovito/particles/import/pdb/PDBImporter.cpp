@@ -242,7 +242,7 @@ void PDBImporter::FrameLoader::loadFile()
 
         // Allocate property arrays for atoms.
         setParticleCount(natoms);
-        DataBufferAccess<Point3> posAccess = particles()->createProperty(ParticlesObject::PositionProperty);
+        BufferAccess<Point3> posAccess = particles()->createProperty(ParticlesObject::PositionProperty);
         PropertyObject* typeProperty = particles()->createProperty(ParticlesObject::TypeProperty);
         PropertyObject* atomNameProperty = particles()->createProperty(QStringLiteral("Atom Name"), DataBuffer::Int32);
         PropertyObject* residueTypeProperty = particles()->createProperty(QStringLiteral("Residue Type"), DataBuffer::Int32);
@@ -251,9 +251,9 @@ void PDBImporter::FrameLoader::loadFile()
         atomNameProperty->setTitle(tr("Atom names"));
         residueTypeProperty->setTitle(tr("Residue types"));
 
-        DataBufferAccess<int32_t> typeAccess(typeProperty);;
-        DataBufferAccess<int32_t> atomNameAccess(atomNameProperty);
-        DataBufferAccess<int32_t> residueTypeAccess(residueTypeProperty);
+        BufferAccess<int32_t> typeAccess(typeProperty);;
+        BufferAccess<int32_t> atomNameAccess(atomNameProperty);
+        BufferAccess<int32_t> residueTypeAccess(residueTypeProperty);
         auto* posIter = posAccess.begin();
         auto* typeIter = typeAccess.begin();
         auto* atomNameIter = atomNameAccess.begin();
@@ -292,7 +292,7 @@ void PDBImporter::FrameLoader::loadFile()
 
         // Parse the optional site occupancy information.
         if(hasOccupancy) {
-            DataBufferAccess<FloatType> occupancyProperty = particles()->createProperty(QStringLiteral("Occupancy"), DataBuffer::FloatDefault);
+            BufferAccess<FloatType> occupancyProperty = particles()->createProperty(QStringLiteral("Occupancy"), DataBuffer::FloatDefault);
             FloatType* occupancyIter = occupancyProperty.begin();
             for(const gemmi::Chain& chain : model.chains) {
                 for(const gemmi::Residue& residue : chain.residues) {

@@ -91,7 +91,7 @@ void IdentifyDiamondModifier::DiamondIdentificationEngine::perform()
     std::vector<std::array<NeighborInfo,4>> neighLists(positions()->size());
 
     // Determine four nearest neighbors of each atom and store vectors in the working array.
-    ConstDataBufferAccess<SelectionIntType> selectionData(selection());
+    ConstBufferAccess<SelectionIntType> selectionData(selection());
     parallelForWithProgress(positions()->size(), [&](size_t index) {
         // Skip particles that are not included in the analysis.
         if(selectionData && selectionData[index] == 0)
@@ -111,7 +111,7 @@ void IdentifyDiamondModifier::DiamondIdentificationEngine::perform()
     if(isCanceled()) return;
 
     // Create output storage.
-    DataBufferAccess<int32_t> output(structures());
+    BufferAccess<int32_t> output(structures());
 
     // Perform structure identification.
     setProgressText(tr("Identifying diamond structures"));

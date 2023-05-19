@@ -118,14 +118,14 @@ void FHIAimsLogFileImporter::FrameLoader::loadFile()
 
     // Create the particle properties.
     setParticleCount(totalAtomCount);
-    DataBufferAccess<Point3> posProperty = particles()->createProperty(ParticlesObject::PositionProperty);
+    BufferAccess<Point3> posProperty = particles()->createProperty(ParticlesObject::PositionProperty);
     PropertyObject* typeProperty = particles()->createProperty(ParticlesObject::TypeProperty);
 
     // Return to beginning of frame.
     stream.seek(frame().byteOffset, frame().lineNumber);
 
     // Second pass: read atom coordinates and types.
-    DataBufferAccess<int32_t> typeAccess(typeProperty);
+    BufferAccess<int32_t> typeAccess(typeProperty);
     for(int i = 0; i < totalAtomCount; i++) {
         while(true) {
             const char* line = stream.readLineTrimLeft();

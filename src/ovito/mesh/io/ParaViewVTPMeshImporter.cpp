@@ -23,7 +23,7 @@
 #include <ovito/mesh/Mesh.h>
 #include <ovito/mesh/surface/SurfaceMesh.h>
 #include <ovito/mesh/surface/SurfaceMeshVis.h>
-#include <ovito/mesh/surface/SurfaceMeshAccess.h>
+#include <ovito/mesh/surface/SurfaceMeshBuilder.h>
 #include "ParaViewVTPMeshImporter.h"
 
 namespace Ovito::Mesh {
@@ -75,11 +75,11 @@ void ParaViewVTPMeshImporter::FrameLoader::loadFile()
     // Create the destination mesh object.
     QString meshIdentifier = loadRequest().dataBlockPrefix;
     if(meshIdentifier.isEmpty()) meshIdentifier = "mesh";
-    SurfaceMesh* meshObj = state().getMutableLeafObject<SurfaceMesh>(SurfaceMesh::OOClass(), meshIdentifier);
-    if(!meshObj) {
-        meshObj = state().createObject<SurfaceMesh>(dataSource());
-        meshObj->setIdentifier(meshIdentifier);
-        SurfaceMeshVis* vis = meshObj->visElement<SurfaceMeshVis>();
+    SurfaceMesh* mesh = state().getMutableLeafObject<SurfaceMesh>(SurfaceMesh::OOClass(), meshIdentifier);
+    if(!mesh) {
+        mesh = state().createObject<SurfaceMesh>(dataSource());
+        mesh->setIdentifier(meshIdentifier);
+        SurfaceMeshVis* vis = mesh->visElement<SurfaceMeshVis>();
         if(vis) {
             vis->setShowCap(false);
             vis->setSmoothShading(true);
@@ -87,19 +87,19 @@ void ParaViewVTPMeshImporter::FrameLoader::loadFile()
             vis->freezeInitialParameterValues({SHADOW_PROPERTY_FIELD(SurfaceMeshVis::showCap), SHADOW_PROPERTY_FIELD(SurfaceMeshVis::smoothShading)});
         }
         if(!loadRequest().dataBlockPrefix.isEmpty()) {
-            meshObj->setTitle(tr("Mesh: %1").arg(loadRequest().dataBlockPrefix));
+            mesh->setTitle(tr("Mesh: %1").arg(loadRequest().dataBlockPrefix));
             if(vis) vis->setTitle(tr("Mesh: %1").arg(loadRequest().dataBlockPrefix));
         }
         else {
-            meshObj->setTitle(tr("Mesh"));
+            mesh->setTitle(tr("Mesh"));
             if(vis) vis->setTitle(tr("Mesh"));
         }
     }
-    SurfaceMeshAccess mesh(meshObj);
+    SurfaceMeshBuilder meshBuilder(mesh);
 
     // Reset mesh or append data to existing mesh.
     if(!loadRequest().appendData)
-        mesh.clearMesh();
+        meshBuilder.clearMesh();
 
     // Initialize XML reader and open input file.
     std::unique_ptr<QIODevice> device = fileHandle().createIODevice();
@@ -113,8 +113,8 @@ void ParaViewVTPMeshImporter::FrameLoader::loadFile()
     size_t numberOfStrips = 0;
     size_t numberOfPolys = 0;
     size_t numberOfCells = 0;
-    SurfaceMeshAccess::vertex_index vertexBaseIndex = SurfaceMeshAccess::InvalidIndex;
-    SurfaceMeshAccess::face_index faceBaseIndex = SurfaceMeshAccess::InvalidIndex;
+    SurfaceMesh::vertex_index vertexBaseIndex = SurfaceMesh::InvalidIndex;
+    SurfaceMesh::face_index faceBaseIndex = SurfaceMesh::InvalidIndex;
     std::vector<PropertyPtr> cellDataArrays;
     std::vector<PropertyPtr> pointDataArrays;
 
@@ -143,7 +143,7 @@ void ParaViewVTPMeshImporter::FrameLoader::loadFile()
             numberOfPolys = xml.attributes().value("NumberOfPolys").toULongLong();
             numberOfCells = numberOfVerts + numberOfLines + numberOfStrips + numberOfPolys;
             // Create geometry elements.
-            vertexBaseIndex = mesh.createVertices(numberOfPoints);
+            vertexBaseIndex = meshBuilder.createVertices(numberOfPoints);
             // Continue by parsing child elements.
         }
         else if(xml.name().compare(QStringLiteral("Points")) == 0) {
@@ -160,15 +160,16 @@ void ParaViewVTPMeshImporter::FrameLoader::loadFile()
                 break;
             }
             // Copy point coordinates from temporary array to surface mesh data structure.
-            OVITO_ASSERT(property->size() + vertexBaseIndex == mesh.vertexCount());
-            boost::copy(ConstDataBufferAccess<Point3>(property), std::next(std::begin(mesh.mutableVertexPositions()), vertexBaseIndex));
+            OVITO_ASSERT(property->size() + vertexBaseIndex == meshBuilder.vertexCount());
+            BufferAccess<Point3> vertexPositions(meshBuilder.mutableVertices()->expectMutableProperty(SurfaceMeshVertices::PositionProperty));
+            boost::copy(ConstBufferAccess<Point3>(property), std::next(vertexPositions.begin(), vertexBaseIndex));
             xml.skipCurrentElement();
         }
         else if(xml.name().compare(QStringLiteral("Polys")) == 0) {
             // Parse child <DataArray> element containing the connectivity information.
             if(!xml.readNextStartElement())
                 break;
-            PropertyPtr connectivityArray = parseDataArray(xml, qMetaTypeId<SurfaceMeshAccess::vertex_index>());
+            PropertyPtr connectivityArray = parseDataArray(xml, qMetaTypeId<SurfaceMesh::vertex_index>());
             if(!connectivityArray)
                 break;
             // Make sure the data array has the expected data layout.
@@ -176,7 +177,7 @@ void ParaViewVTPMeshImporter::FrameLoader::loadFile()
                 xml.raiseError(tr("Connectivity data array has wrong data layout, size or name."));
                 break;
             }
-            faceBaseIndex = mesh.faceCount();
+            faceBaseIndex = meshBuilder.faceCount();
 
             // Parse child <DataArray> element containing the offset information.
             if(!xml.readNextStartElement())
@@ -191,20 +192,21 @@ void ParaViewVTPMeshImporter::FrameLoader::loadFile()
             }
 
             // Shift vertex indices in the array by base vertex offset.
-            DataBufferAccess<SurfaceMeshAccess::vertex_index> vertexIndices(connectivityArray);
+            BufferAccess<SurfaceMesh::vertex_index> vertexIndices(connectivityArray);
             if(vertexBaseIndex != 0)
-                for(SurfaceMeshAccess::vertex_index& idx : vertexIndices) idx += vertexBaseIndex;
+                for(SurfaceMesh::vertex_index& idx : vertexIndices) idx += vertexBaseIndex;
 
             // Go through the connectivity and the offsets arrays and create corresponding faces in the output mesh.
             int previousOffset = 0;
-            for(int offset : ConstDataBufferAccess<int32_t>(offsetsArray)) {
+            for(int offset : ConstBufferAccess<int32_t>(offsetsArray)) {
                 if(offset < previousOffset + 3 || offset > vertexIndices.size()) {
                     xml.raiseError(tr("Invalid or inconsistent connectivity information in <Polys> element."));
                     break;
                 }
-                mesh.createFace(vertexIndices.begin() + previousOffset, vertexIndices.begin() + offset);
+                meshBuilder.mutableTopology()->createFaceAndEdges(vertexIndices.begin() + previousOffset, vertexIndices.begin() + offset);
                 previousOffset = offset;
             }
+            meshBuilder.mutableFaces()->setElementCount(meshBuilder.faceCount());
             if(xml.hasError())
                 break;
 
@@ -265,14 +267,14 @@ void ParaViewVTPMeshImporter::FrameLoader::loadFile()
             // then the loaded property values must be copied into the correct subrange of the existing
             // face properties.
             if(!loadRequest().appendData) {
-                OVITO_ASSERT(property->size() == mesh.faceCount());
+                OVITO_ASSERT(property->size() == meshBuilder.faceCount());
                 OVITO_ASSERT(faceBaseIndex == 0);
-                mesh.addFaceProperty(std::move(property));
+                meshBuilder.addFaceProperty(std::move(property));
             }
             else {
                 PropertyObject* existingProperty = property->type() != SurfaceMeshFaces::UserProperty
-                    ? mesh.mutableFaceProperty(static_cast<SurfaceMeshFaces::Type>(property->type()))
-                    : mesh.mutableFaceProperty(property->name());
+                    ? meshBuilder.mutableFaceProperty(static_cast<SurfaceMeshFaces::Type>(property->type()))
+                    : meshBuilder.mutableFaceProperty(property->name());
                 if(existingProperty && existingProperty->dataType() == property->dataType() && existingProperty->componentCount() == property->componentCount()) {
                     existingProperty->copyRangeFrom(*property, 0, faceBaseIndex, property->size());
                 }
@@ -289,14 +291,14 @@ void ParaViewVTPMeshImporter::FrameLoader::loadFile()
         // then the loaded property values must be copied into the correct subrange of the existing
         // vertex properties.
         if(!loadRequest().appendData) {
-            OVITO_ASSERT(property->size() == mesh.vertexCount());
+            OVITO_ASSERT(property->size() == meshBuilder.vertexCount());
             OVITO_ASSERT(vertexBaseIndex == 0);
-            mesh.addVertexProperty(std::move(property));
+            meshBuilder.addVertexProperty(std::move(property));
         }
         else {
             PropertyObject* existingProperty = property->type() != SurfaceMeshVertices::UserProperty
-                ? mesh.mutableVertexProperty(static_cast<SurfaceMeshVertices::Type>(property->type()))
-                : mesh.mutableVertexProperty(property->name());
+                ? meshBuilder.mutableVertexProperty(static_cast<SurfaceMeshVertices::Type>(property->type()))
+                : meshBuilder.mutableVertexProperty(property->name());
             if(existingProperty && existingProperty->dataType() == property->dataType() && existingProperty->componentCount() == property->componentCount()) {
                 existingProperty->copyRangeFrom(*property, 0, vertexBaseIndex, property->size());
             }
@@ -307,15 +309,15 @@ void ParaViewVTPMeshImporter::FrameLoader::loadFile()
     if(meshIdentifier.isEmpty()) {
         state().setStatus(
             tr("Number of mesh vertices: %1\nNumber of mesh faces: %2")
-            .arg(mesh.vertexCount())
-            .arg(mesh.faceCount()));
+            .arg(meshBuilder.vertexCount())
+            .arg(meshBuilder.faceCount()));
     }
     else {
         state().setStatus(
             tr("Mesh %1: %2 vertices / %3 faces")
             .arg(meshIdentifier)
-            .arg(mesh.vertexCount())
-            .arg(mesh.faceCount()));
+            .arg(meshBuilder.vertexCount())
+            .arg(meshBuilder.faceCount()));
     }
 
     // Call base implementation.
@@ -583,33 +585,33 @@ bool ParaViewVTPMeshImporter::parseVTKDataArray(DataBuffer* buffer, QXmlStreamRe
         const auto end = begin + elementCount * numComponents;
         if(buffer->dataType() == PropertyObject::Float32) {
             if(vectorComponent == -1)
-                std::copy(begin, end, std::next(DataBufferAccess<float, true>(buffer).begin(), destBaseIndex * buffer->componentCount()));
+                std::copy(begin, end, std::next(BufferAccess<float, true>(buffer).begin(), destBaseIndex * buffer->componentCount()));
             else
-                std::copy(begin, end, std::next(std::begin(DataBufferAccess<float, true>(buffer).componentRange(vectorComponent)), destBaseIndex));
+                std::copy(begin, end, std::next(std::begin(BufferAccess<float, true>(buffer).componentRange(vectorComponent)), destBaseIndex));
         }
         else if(buffer->dataType() == PropertyObject::Float64) {
             if(vectorComponent == -1)
-                std::copy(begin, end, std::next(DataBufferAccess<double, true>(buffer).begin(), destBaseIndex * buffer->componentCount()));
+                std::copy(begin, end, std::next(BufferAccess<double, true>(buffer).begin(), destBaseIndex * buffer->componentCount()));
             else
-                std::copy(begin, end, std::next(std::begin(DataBufferAccess<double, true>(buffer).componentRange(vectorComponent)), destBaseIndex));
+                std::copy(begin, end, std::next(std::begin(BufferAccess<double, true>(buffer).componentRange(vectorComponent)), destBaseIndex));
         }
         else if(buffer->dataType() == PropertyObject::Int8) {
             if(vectorComponent == -1)
-                std::copy(begin, end, std::next(DataBufferAccess<int8_t, true>(buffer).begin(), destBaseIndex * buffer->componentCount()));
+                std::copy(begin, end, std::next(BufferAccess<int8_t, true>(buffer).begin(), destBaseIndex * buffer->componentCount()));
             else
-                std::copy(begin, end, std::next(std::begin(DataBufferAccess<int8_t, true>(buffer).componentRange(vectorComponent)), destBaseIndex));
+                std::copy(begin, end, std::next(std::begin(BufferAccess<int8_t, true>(buffer).componentRange(vectorComponent)), destBaseIndex));
         }
         else if(buffer->dataType() == PropertyObject::Int32) {
             if(vectorComponent == -1)
-                std::copy(begin, end, std::next(DataBufferAccess<int32_t, true>(buffer).begin(), destBaseIndex * buffer->componentCount()));
+                std::copy(begin, end, std::next(BufferAccess<int32_t, true>(buffer).begin(), destBaseIndex * buffer->componentCount()));
             else
-                std::copy(begin, end, std::next(std::begin(DataBufferAccess<int32_t, true>(buffer).componentRange(vectorComponent)), destBaseIndex));
+                std::copy(begin, end, std::next(std::begin(BufferAccess<int32_t, true>(buffer).componentRange(vectorComponent)), destBaseIndex));
         }
         else if(buffer->dataType() == PropertyObject::Int64) {
             if(vectorComponent == -1)
-                std::copy(begin, end, std::next(DataBufferAccess<int64_t, true>(buffer).begin(), destBaseIndex * buffer->componentCount()));
+                std::copy(begin, end, std::next(BufferAccess<int64_t, true>(buffer).begin(), destBaseIndex * buffer->componentCount()));
             else
-                std::copy(begin, end, std::next(std::begin(DataBufferAccess<int64_t, true>(buffer).componentRange(vectorComponent)), destBaseIndex));
+                std::copy(begin, end, std::next(std::begin(BufferAccess<int64_t, true>(buffer).componentRange(vectorComponent)), destBaseIndex));
         }
         else OVITO_ASSERT(false);
     };

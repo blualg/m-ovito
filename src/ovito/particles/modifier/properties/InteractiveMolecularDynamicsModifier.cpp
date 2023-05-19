@@ -253,7 +253,7 @@ void InteractiveMolecularDynamicsModifier::dataReceived()
 
                 // Convert data array into particle coordinates property.
                 _coordinates = ParticlesObject::OOClass().createStandardProperty(DataBuffer::Uninitialized, numCoords, ParticlesObject::PositionProperty);
-                std::transform(coords.cbegin(), coords.cend(), DataBufferAccess<Point3>(_coordinates).begin(), [](const Point_3<float>& p) { return p.toDataType<FloatType>(); });
+                std::transform(coords.cbegin(), coords.cend(), BufferAccess<Point3>(_coordinates).begin(), [](const Point_3<float>& p) { return p.toDataType<FloatType>(); });
 
                 // Notify pipeline system that this modifier has new results.
                 _numFramesReceived++;
@@ -325,9 +325,9 @@ void InteractiveMolecularDynamicsModifier::evaluateSynchronous(const ModifierEva
     if(outputParticles->bonds()) {
         if(const SimulationCellObject* cell = state.getObject<SimulationCellObject>()) {
             if(cell->hasPbcCorrected()) {
-                if(ConstDataBufferAccess<ParticleIndexPair> topologyProperty = outputParticles->bonds()->getProperty(BondsObject::TopologyProperty)) {
-                    ConstDataBufferAccess<Point3> positions(_coordinates);
-                    DataBufferAccess<Vector3I> periodicImageProperty = outputParticles->makeBondsMutable()->createProperty(DataBuffer::Initialized, BondsObject::PeriodicImageProperty);
+                if(ConstBufferAccess<ParticleIndexPair> topologyProperty = outputParticles->bonds()->getProperty(BondsObject::TopologyProperty)) {
+                    ConstBufferAccess<Point3> positions(_coordinates);
+                    BufferAccess<Vector3I> periodicImageProperty = outputParticles->makeBondsMutable()->createProperty(DataBuffer::Initialized, BondsObject::PeriodicImageProperty);
                     // Recompute PBC vectors of bonds as particle may have moved over arbitrary distances.
                     parallelForChunks(topologyProperty.size(), [&](size_t startIndex, size_t count) {
                         for(size_t bondIndex = startIndex, endIndex = startIndex+count; bondIndex < endIndex; bondIndex++) {

@@ -385,10 +385,10 @@ void VoroTopModifier::VoroTopAnalysisEngine::perform()
 
     setProgressText(tr("Performing VoroTop analysis"));
 
-    ConstDataBufferAccess<Point3> positionsArray(positions());
-    ConstDataBufferAccess<SelectionIntType> selectionArray(selection());
-    ConstDataBufferAccess<FloatType> radiiArray(_radii);
-    DataBufferAccess<int32_t> structuresArray(structures());
+    ConstBufferAccess<Point3> positionsArray(positions());
+    ConstBufferAccess<SelectionIntType> selectionArray(selection());
+    ConstBufferAccess<GraphicsFloatType> radiiArray(_radii);
+    BufferAccess<int32_t> structuresArray(structures());
 
     // Decide whether to use Voro++ container class or our own implementation.
     if(cell()->isAxisAligned()) {

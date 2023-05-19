@@ -138,7 +138,7 @@ void mmCIFImporter::FrameLoader::loadFile()
 
         // Allocate property arrays for atoms.
         setParticleCount(natoms);
-        DataBufferAccess<Point3> posProperty = particles()->createProperty(ParticlesObject::PositionProperty);
+        BufferAccess<Point3> posProperty = particles()->createProperty(ParticlesObject::PositionProperty);
         PropertyObject* typeProperty = particles()->createProperty(ParticlesObject::TypeProperty);
         PropertyObject* atomNameProperty = particles()->createProperty(QStringLiteral("Atom Name"), PropertyObject::Int32);
         PropertyObject* residueTypeProperty = particles()->createProperty(QStringLiteral("Residue Type"), PropertyObject::Int32);
@@ -148,9 +148,9 @@ void mmCIFImporter::FrameLoader::loadFile()
         residueTypeProperty->setTitle(tr("Residue types"));
 
         auto* posIter = posProperty.begin();
-        DataBufferAccess<int32_t> typeAccess(typeProperty);
-        DataBufferAccess<int32_t> atomNameAccess(atomNameProperty);
-        DataBufferAccess<int32_t> residueTypeAccess(residueTypeProperty);
+        BufferAccess<int32_t> typeAccess(typeProperty);
+        BufferAccess<int32_t> atomNameAccess(atomNameProperty);
+        BufferAccess<int32_t> residueTypeAccess(residueTypeProperty);
         auto* typeIter = typeAccess.begin();
         auto* atomNameIter = atomNameAccess.begin();
         auto* residueTypeIter = residueTypeAccess.begin();
@@ -188,7 +188,7 @@ void mmCIFImporter::FrameLoader::loadFile()
 
         // Parse the optional site occupancy information.
         if(hasOccupancy) {
-            DataBufferAccess<FloatType> occupancyProperty = particles()->createProperty(QStringLiteral("Occupancy"), PropertyObject::FloatDefault);
+            BufferAccess<FloatType> occupancyProperty = particles()->createProperty(QStringLiteral("Occupancy"), PropertyObject::FloatDefault);
             FloatType* occupancyIter = occupancyProperty.begin();
             for(const gemmi::Chain& chain : model.chains) {
                 for(const gemmi::Residue& residue : chain.residues) {

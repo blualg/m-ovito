@@ -102,7 +102,7 @@ Box3 TrajectoryVis::boundingBox(AnimationTime time, const ConstDataObjectPath& p
         // If not, recompute bounding box from trajectory data.
         if(trajObj) {
             if(!simulationCell) {
-                if(ConstDataBufferAccess<Point3> posProperty = trajObj->getProperty(TrajectoryObject::PositionProperty)) {
+                if(ConstBufferAccess<Point3> posProperty = trajObj->getProperty(TrajectoryObject::PositionProperty)) {
                     bbox.addPoints(posProperty);
                 }
             }
@@ -199,21 +199,21 @@ PipelineStatus TrajectoryVis::render(AnimationTime time, const ConstDataObjectPa
             trajObj->verifyIntegrity();
 
             // Retrieve the line data stored in the TrajectoryObject.
-            ConstDataBufferAccess<Point3> posProperty = trajObj->getProperty(TrajectoryObject::PositionProperty);
-            ConstDataBufferAccess<int32_t> timeProperty = trajObj->getProperty(TrajectoryObject::SampleTimeProperty);
-            ConstDataBufferAccess<int64_t> idProperty = trajObj->getProperty(TrajectoryObject::ParticleIdentifierProperty);
-            ConstDataBufferAccess<ColorG> colorProperty = trajObj->getProperty(TrajectoryObject::ColorProperty);
-            ConstDataBufferAccess<void,true> pseudoColorArray = pseudoColorProperty;
+            ConstBufferAccess<Point3> posProperty = trajObj->getProperty(TrajectoryObject::PositionProperty);
+            ConstBufferAccess<int32_t> timeProperty = trajObj->getProperty(TrajectoryObject::SampleTimeProperty);
+            ConstBufferAccess<int64_t> idProperty = trajObj->getProperty(TrajectoryObject::ParticleIdentifierProperty);
+            ConstBufferAccess<ColorG> colorProperty = trajObj->getProperty(TrajectoryObject::ColorProperty);
+            ConstBufferAccess<void,true> pseudoColorArray = pseudoColorProperty;
             if(posProperty && timeProperty && idProperty && posProperty.size() >= 2) {
 
                 // Determine the number of line segments and corner points to render.
-                DataBufferAccessAndRef<Point3G> cornerPoints = DataBufferPtr::create(0, DataBuffer::FloatGraphics, 3);
-                DataBufferAccessAndRef<Point3G> baseSegmentPoints = DataBufferPtr::create(0, DataBuffer::FloatGraphics, 3);
-                DataBufferAccessAndRef<Point3G> headSegmentPoints = DataBufferPtr::create(0, DataBuffer::FloatGraphics, 3);
-                DataBufferAccessAndRef<ColorG> cornerColors = colorProperty ? DataBufferPtr::create(0, DataBuffer::FloatGraphics, 3) : nullptr;
-                DataBufferAccessAndRef<ColorG> segmentColors = colorProperty ? DataBufferPtr::create(0, DataBuffer::FloatGraphics, 3) : nullptr;
-                DataBufferAccessAndRef<GraphicsFloatType> cornerPseudoColors = pseudoColorArray ? DataBufferPtr::create(0, DataBuffer::FloatGraphics) : nullptr;
-                DataBufferAccessAndRef<GraphicsFloatType> segmentPseudoColors = pseudoColorArray ? DataBufferPtr::create(0, DataBuffer::FloatGraphics) : nullptr;
+                BufferAccessAndRef<Point3G> cornerPoints = DataBufferPtr::create(0, DataBuffer::FloatGraphics, 3);
+                BufferAccessAndRef<Point3G> baseSegmentPoints = DataBufferPtr::create(0, DataBuffer::FloatGraphics, 3);
+                BufferAccessAndRef<Point3G> headSegmentPoints = DataBufferPtr::create(0, DataBuffer::FloatGraphics, 3);
+                BufferAccessAndRef<ColorG> cornerColors = colorProperty ? DataBufferPtr::create(0, DataBuffer::FloatGraphics, 3) : nullptr;
+                BufferAccessAndRef<ColorG> segmentColors = colorProperty ? DataBufferPtr::create(0, DataBuffer::FloatGraphics, 3) : nullptr;
+                BufferAccessAndRef<GraphicsFloatType> cornerPseudoColors = pseudoColorArray ? DataBufferPtr::create(0, DataBuffer::FloatGraphics) : nullptr;
+                BufferAccessAndRef<GraphicsFloatType> segmentPseudoColors = pseudoColorArray ? DataBufferPtr::create(0, DataBuffer::FloatGraphics) : nullptr;
                 const Point3* pos = posProperty.cbegin();
                 const int32_t* sampleTime = timeProperty.cbegin();
                 const int64_t* id = idProperty.cbegin();
@@ -302,8 +302,8 @@ PipelineStatus TrajectoryVis::render(AnimationTime time, const ConstDataObjectPa
         auto& cornerColorsUpToDate = renderer->visCache().get<bool>(std::make_pair(visCache.cornerPseudoColors, visCache.segments.pseudoColorMapping()));
         if(!cornerColorsUpToDate) {
             // Create an RGB color array, which will be filled and then assigned to the ParticlesPrimitive.
-            DataBufferAccessAndRef<ColorG> cornerColorsArray = DataBufferPtr::create(visCache.cornerPseudoColors->size(), DataBuffer::FloatGraphics, 3);
-            boost::transform(ConstDataBufferAccess<GraphicsFloatType>(visCache.cornerPseudoColors), cornerColorsArray.begin(), [&](GraphicsFloatType v) { return visCache.segments.pseudoColorMapping().valueToColor(v); });
+            BufferAccessAndRef<ColorG> cornerColorsArray = DataBufferPtr::create(visCache.cornerPseudoColors->size(), DataBuffer::FloatGraphics, 3);
+            boost::transform(ConstBufferAccess<GraphicsFloatType>(visCache.cornerPseudoColors), cornerColorsArray.begin(), [&](GraphicsFloatType v) { return visCache.segments.pseudoColorMapping().valueToColor(v); });
             visCache.corners.setColors(cornerColorsArray.take());
             cornerColorsUpToDate = true;
         }

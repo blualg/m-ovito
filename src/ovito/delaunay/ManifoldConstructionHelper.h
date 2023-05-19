@@ -26,7 +26,7 @@
 #include <ovito/stdobj/StdObj.h>
 #include <ovito/stdobj/simcell/SimulationCellObject.h>
 #include <ovito/stdobj/properties/PropertyObject.h>
-#include <ovito/mesh/surface/SurfaceMeshAccess.h>
+#include <ovito/mesh/surface/SurfaceMeshBuilder.h>
 #include <ovito/core/utilities/concurrent/ProgressingTask.h>
 #include <ovito/delaunay/DelaunayTessellation.h>
 
@@ -44,7 +44,7 @@ public:
 
     // A no-op face-preparation functor.
     struct DefaultPrepareMeshFaceFunc {
-        void operator()(SurfaceMeshAccess::face_index face,
+        void operator()(SurfaceMesh::face_index face,
                 const std::array<size_t,3>& vertexIndices,
                 const std::array<DelaunayTessellation::VertexHandle,3>& vertexHandles,
                 DelaunayTessellation::CellHandle cell) {}
@@ -52,20 +52,20 @@ public:
 
     // A no-op vertex-preparation functor.
     struct DefaultPrepareMeshVertexFunc {
-        void operator()(SurfaceMeshAccess::vertex_index vertex, size_t particleIndex) {}
+        void operator()(SurfaceMesh::vertex_index vertex, size_t particleIndex) {}
     };
 
 public:
 
     /// Constructor.
-    ManifoldConstructionHelper(DelaunayTessellation& tessellation, SurfaceMeshAccess& outputMesh, FloatType alpha, bool createRegions,
+    ManifoldConstructionHelper(DelaunayTessellation& tessellation, SurfaceMeshBuilder& outputMesh, FloatType alpha, bool createRegions,
             const PropertyObject* positions) : _tessellation(tessellation), _mesh(outputMesh), _alpha(alpha), _createRegions(createRegions), _positions(positions) { OVITO_ASSERT(_tessellation.simCell()); }
 
     /// Returns the number of filled regions that have been identified.
-    SurfaceMeshAccess::size_type filledRegionCount() const { return _filledRegionCount; }
+    SurfaceMesh::size_type filledRegionCount() const { return _filledRegionCount; }
 
     /// Returns the number of empty regions that have been identified.
-    SurfaceMeshAccess::size_type emptyRegionCount() const { return _emptyRegionCount; }
+    SurfaceMesh::size_type emptyRegionCount() const { return _emptyRegionCount; }
 
     /// This is the main function, which constructs the manifold triangle mesh.
     template<typename CellRegionFunc, typename PrepareMeshFaceFunc = DefaultPrepareMeshFaceFunc, typename PrepareMeshVertexFunc = DefaultPrepareMeshVertexFunc>
@@ -86,10 +86,6 @@ public:
 
         // Group connected tetrahedra into volumetric regions.
         if(_createRegions) {
-
-            // Create the "Region" face property in the output mesh.
-            _mesh.createFaceProperty(DataBuffer::Uninitialized, SurfaceMeshFaces::RegionProperty);
-
             if(!formFilledRegions(operation))
                 return false;
             operation.nextProgressSubStep();
@@ -108,7 +104,7 @@ public:
 #ifdef OVITO_DEBUG
         // Verify that generated manifold connectivity is correct when a two-sided mesh was created.
         if(_createRegions) {
-            for(SurfaceMeshAccess::edge_index edge = 0; edge < _mesh.edgeCount(); edge++) {
+            for(SurfaceMesh::edge_index edge = 0; edge < _mesh.edgeCount(); edge++) {
                 // Each edge must be part of at least two opposite manifolds.
                 OVITO_ASSERT(_mesh.countManifolds(edge) >= 2);
                 // Manifold count of the edge must be consistent with its opposite edge.
@@ -135,38 +131,44 @@ public:
         bool detectBoundaryCrossings = simCell->hasPbc();
 
         // Stack of faces to visit. Used for implementing recursive algorithm.
-        std::deque<SurfaceMeshAccess::face_index> facesToProcess;
+        std::deque<SurfaceMesh::face_index> facesToProcess;
+
+        // Access the per-face region indices.
+        BufferAccess<SurfaceMesh::region_index> faceRegions(_mesh.mutableFaceProperty(SurfaceMeshFaces::RegionProperty));
+
+        // Access the vertex coordinates.
+        ConstBufferAccess<Point3> vertexPositions(_mesh.expectVertexProperty(SurfaceMeshVertices::PositionProperty));
 
         // Identify disconnected components of the surface mesh bordering to an empty region.
         operation.setProgressMaximum(_mesh.faceCount() / 2); // Note: Dividing by two, because only every other face is oriented towards the empty region.
-        for(SurfaceMeshAccess::face_index face = 0; face < _mesh.faceCount(); face++) {
+        for(SurfaceMesh::face_index face = 0; face < _mesh.faceCount(); face++) {
             // Look for mesh faces that are not adjacent to a filled region and which have not been visited yet.
-            SurfaceMeshAccess::region_index faceRegion = _mesh.faceRegion(face);
-            if(faceRegion != SurfaceMeshAccess::InvalidIndex)
+            SurfaceMesh::region_index faceRegion = faceRegions[face];
+            if(faceRegion != SurfaceMesh::InvalidIndex)
                 continue;
 
             // Found a first seed face. Start a new mesh component.
             faceRegion = _filledRegionCount + (_emptyRegionCount++);
-            _mesh.setFaceRegion(face, faceRegion);
+            faceRegions[face] = faceRegion;
             size_t faceCount = 1;
 
             facesToProcess.push_back(face);
             do {
                 // Take next face from the stack.
-                SurfaceMeshAccess::face_index currentFace = facesToProcess.front();
+                SurfaceMesh::face_index currentFace = facesToProcess.front();
                 facesToProcess.pop_front();
                 if(!operation.incrementProgressValue())
                     return false;
 
                 // Visit neighbors of current face.
-                SurfaceMeshAccess::edge_index firstEdge = _mesh.firstFaceEdge(currentFace);
-                SurfaceMeshAccess::edge_index edge = firstEdge;
-                OVITO_ASSERT(firstEdge != SurfaceMeshAccess::InvalidIndex);
+                SurfaceMesh::edge_index firstEdge = _mesh.firstFaceEdge(currentFace);
+                SurfaceMesh::edge_index edge = firstEdge;
+                OVITO_ASSERT(firstEdge != SurfaceMesh::InvalidIndex);
                 do {
                     // Determine whether this edge crosses a periodic simulation cell boundary.
                     if(detectBoundaryCrossings) {
-                        const Point3& p1 = _mesh.vertexPosition(_mesh.vertex1(edge));
-                        const Point3& p2 = _mesh.vertexPosition(_mesh.vertex2(edge));
+                        const Point3& p1 = vertexPositions[_mesh.vertex1(edge)];
+                        const Point3& p2 = vertexPositions[_mesh.vertex2(edge)];
                         Vector3 delta = p2 - p1;
                         for(size_t dim = 0; dim < 3; dim++) {
                             if(!surfaceCrossesBoundaries[dim] && simCell->hasPbc(dim)) {
@@ -180,14 +182,14 @@ public:
                     }
 
                     // Get mesh face adjacent to the opposite half-edge of the current half-edge.
-                    SurfaceMeshAccess::edge_index oppositeEdge = _mesh.oppositeEdge(edge);
-                    OVITO_ASSERT(oppositeEdge != SurfaceMeshAccess::InvalidIndex);
-                    SurfaceMeshAccess::face_index neighborFace = _mesh.adjacentFace(oppositeEdge);
-                    OVITO_ASSERT(neighborFace != SurfaceMeshAccess::InvalidIndex);
+                    SurfaceMesh::edge_index oppositeEdge = _mesh.oppositeEdge(edge);
+                    OVITO_ASSERT(oppositeEdge != SurfaceMesh::InvalidIndex);
+                    SurfaceMesh::face_index neighborFace = _mesh.adjacentFace(oppositeEdge);
+                    OVITO_ASSERT(neighborFace != SurfaceMesh::InvalidIndex);
 
-                    if(_mesh.faceRegion(neighborFace) == SurfaceMeshAccess::InvalidIndex) {
+                    if(faceRegions[neighborFace] == SurfaceMesh::InvalidIndex) {
                         // Assign neighbor face to the current empty region.
-                        _mesh.setFaceRegion(neighborFace, faceRegion);
+                        faceRegions[neighborFace] = faceRegion;
                         // Put on recursive stack.
                         facesToProcess.push_back(neighborFace);
                         faceCount++;
@@ -245,7 +247,7 @@ public:
         };
 
         // The ID of the empty region that is split by a periodic simulation box boundary.
-        SurfaceMeshAccess::region_index splitPeriodicRegion = SurfaceMeshAccess::InvalidIndex;
+        SurfaceMesh::region_index splitPeriodicRegion = SurfaceMesh::InvalidIndex;
 
         // Loop over all cells to cluster them.
         operation.setProgressMaximum(_tessellation.numberOfTetrahedra() - _numFilledCells);
@@ -257,26 +259,26 @@ public:
                 continue;
 
             // Skip filled cells, or cells that have been visited before.
-            if(_tessellation.getUserField(cell) != SurfaceMeshAccess::InvalidIndex)
+            if(_tessellation.getUserField(cell) != SurfaceMesh::InvalidIndex)
                 continue;
 
             // Determine whether the cell is adjacent to a face of the generated surface mesh.
-            SurfaceMeshAccess::region_index emptyRegion = SurfaceMeshAccess::InvalidIndex;
+            SurfaceMesh::region_index emptyRegion = SurfaceMesh::InvalidIndex;
             for(int f = 0; f < 4; f++) {
 
-                SurfaceMeshAccess::face_index adjacentMeshFace = findCellFace(_tessellation.mirrorFacet(cell, f));
-                if(adjacentMeshFace == SurfaceMeshAccess::InvalidIndex)
+                SurfaceMesh::face_index adjacentMeshFace = findCellFace(_tessellation.mirrorFacet(cell, f));
+                if(adjacentMeshFace == SurfaceMesh::InvalidIndex)
                     continue;
-                SurfaceMeshAccess::face_index oppositeFace = _mesh.oppositeFace(adjacentMeshFace);
+                SurfaceMesh::face_index oppositeFace = _mesh.oppositeFace(adjacentMeshFace);
 
-                OVITO_ASSERT(oppositeFace != SurfaceMeshAccess::InvalidIndex);
+                OVITO_ASSERT(oppositeFace != SurfaceMesh::InvalidIndex);
                 // The surface mesh face should be bordering an empty and not a filled region.
-                if(_mesh.faceRegion(oppositeFace) >= _filledRegionCount)
-                    emptyRegion = _mesh.faceRegion(oppositeFace);
+                if(faceRegions[oppositeFace] >= _filledRegionCount)
+                    emptyRegion = faceRegions[oppositeFace];
             }
 
             // Skip the cell if it is not adjacent to a face of the surface mesh.
-            if(emptyRegion == SurfaceMeshAccess::InvalidIndex)
+            if(emptyRegion == SurfaceMesh::InvalidIndex)
                 continue;
 
             // Start recursive algorithm to gather all connected empty tetrahedra.
@@ -313,7 +315,7 @@ public:
                 // regions that were created separately on either side of the simulation box boundary.
                 for(size_t dim = 0; dim < 3; dim++) {
                     if(cellCrossesBoundaries[dim] && !surfaceCrossesBoundaries[dim] && simCell->hasPbc(dim)) {
-                        if(splitPeriodicRegion == SurfaceMeshAccess::InvalidIndex)
+                        if(splitPeriodicRegion == SurfaceMesh::InvalidIndex)
                             splitPeriodicRegion = emptyRegion;
                         else
                             mergeRegions(emptyRegion, splitPeriodicRegion);
@@ -325,11 +327,11 @@ public:
 
                     // Check if this is a region border or not.
                     DelaunayTessellation::Facet mirrorFacet = _tessellation.mirrorFacet(currentCell, f);
-                    SurfaceMeshAccess::face_index adjacentMeshFace = findCellFace(mirrorFacet);
-                    if(adjacentMeshFace != SurfaceMeshAccess::InvalidIndex) {
+                    SurfaceMesh::face_index adjacentMeshFace = findCellFace(mirrorFacet);
+                    if(adjacentMeshFace != SurfaceMesh::InvalidIndex) {
                         // We have hit a region border. Merge the two empty region IDs.
-                        SurfaceMeshAccess::face_index oppositeFace = _mesh.oppositeFace(adjacentMeshFace);
-                        SurfaceMeshAccess::region_index secondEmptyRegion = _mesh.faceRegion(oppositeFace);
+                        SurfaceMesh::face_index oppositeFace = _mesh.oppositeFace(adjacentMeshFace);
+                        SurfaceMesh::region_index secondEmptyRegion = faceRegions[oppositeFace];
                         if(secondEmptyRegion >= _filledRegionCount) {
                             mergeRegions(emptyRegion, secondEmptyRegion);
                         }
@@ -342,8 +344,8 @@ public:
                             continue;
 
                         // Skip filled cells, or cells that have been visited before.
-                        SurfaceMeshAccess::region_index neighborRegion = _tessellation.getUserField(neighborCell);
-                        if(neighborRegion != SurfaceMeshAccess::InvalidIndex) {
+                        SurfaceMesh::region_index neighborRegion = _tessellation.getUserField(neighborCell);
+                        if(neighborRegion != SurfaceMesh::InvalidIndex) {
                             if(neighborRegion >= _filledRegionCount)
                                 mergeRegions(emptyRegion, neighborRegion);
                             continue;
@@ -370,30 +372,38 @@ public:
         // Create the "Exterior" region property in the output mesh.
         PropertyObject* regionPropertyIsExterior = _mesh.createRegionProperty(DataBuffer::Initialized, SurfaceMeshRegions::IsExteriorProperty);
 
+        // Get access to the region volume property.
+        PropertyObject* regionPropertyVolume = _mesh.mutableRegionProperty(SurfaceMeshRegions::VolumeProperty);
+
+        OVITO_ASSERT(_mesh.regionCount() == _filledRegionCount);
+
         // Remap merged regions to contiguous range.
-        std::vector<SurfaceMeshAccess::region_index> regionMapping(_emptyRegionCount);
+        std::vector<SurfaceMesh::region_index> regionMapping(_emptyRegionCount);
+        PropertyContainer::Grower regionGrower(_mesh.mutableRegions());
         _emptyRegionCount = 0;
         for(size_t i = 0; i < regionParents.size(); i++) {
             if(findRegion(i) == i) {
-                regionMapping[i] = _emptyRegionCount + _filledRegionCount;
-                _mesh.createRegion(0, regionVolumes[i]);
-                DataBufferAccess<SelectionIntType>{regionPropertyIsExterior}[regionMapping[i]] = regionIsExterior[i];
+                SurfaceMesh::region_index ridx = regionGrower.grow(1);
+                OVITO_ASSERT(ridx == _emptyRegionCount + _filledRegionCount);
+                regionMapping[i] = ridx;
+                BufferAccess<SelectionIntType>{regionPropertyIsExterior}[ridx] = regionIsExterior[i];
+                BufferAccess<FloatType>{regionPropertyVolume}[ridx] = regionVolumes[i];
                 _emptyRegionCount++;
             }
         }
 
         // Map each mesh face's preliminary region ID to the final ID.
-        for(SurfaceMeshAccess::region_index& region : _mesh.mutableFaceRegions()) {
+        for(SurfaceMesh::region_index& region : faceRegions) {
             if(region >= _filledRegionCount) {
                 region = regionMapping[findRegion(region - _filledRegionCount)];
-                OVITO_ASSERT(region < _mesh.regionCount());
             }
         }
 
         // Create a single space-filling empty region if there is no filled region at all.
         if(_emptyRegionCount == 0 && _filledRegionCount == 0) {
-            _mesh.createRegion(0, simCell->volume3D());
-            DataBufferAccess<SelectionIntType>{regionPropertyIsExterior}[_filledRegionCount] = (!simCell->pbcX() || !simCell->pbcY() || !simCell->pbcZ());
+            regionGrower.grow(1);
+            BufferAccess<FloatType>{regionPropertyVolume}[0] = simCell->volume3D();
+            BufferAccess<SelectionIntType>{regionPropertyIsExterior}[0] = (!simCell->pbcX() || !simCell->pbcY() || !simCell->pbcZ());
             _emptyRegionCount = 1;
         }
 
@@ -411,7 +421,7 @@ private:
 
         _numFilledCells = 0;
         size_t progressCounter = 0;
-        _mesh.setSpaceFillingRegion(SurfaceMeshAccess::InvalidIndex);
+        _mesh.setSpaceFillingRegion(SurfaceMesh::InvalidIndex);
         bool spaceFillingRegionUndetermined = true;
         bool isSpaceFilling = true;
         for(DelaunayTessellation::CellIterator cellIter = _tessellation.begin_cells(); cellIter != _tessellation.end_cells(); ++cellIter) {
@@ -445,16 +455,16 @@ private:
                 }
             }
 
-            SurfaceMeshAccess::region_index region = SurfaceMeshAccess::InvalidIndex;
+            SurfaceMesh::region_index region = SurfaceMesh::InvalidIndex;
             if(isFilledTetrehedron) {
                 region = determineCellRegion(cell);
-                OVITO_ASSERT(region >= 0 || region == SurfaceMeshAccess::InvalidIndex);
+                OVITO_ASSERT(region >= 0 || region == SurfaceMesh::InvalidIndex);
                 if(_createRegions) {
-                    OVITO_ASSERT(_mesh.regionCount() != 0 || (region == 0 || region == SurfaceMeshAccess::InvalidIndex));
+                    OVITO_ASSERT(_mesh.regionCount() != 0 || (region == 0 || region == SurfaceMesh::InvalidIndex));
                     OVITO_ASSERT(_mesh.regionCount() == 0 || region < _mesh.regionCount());
                 }
                 else {
-                    OVITO_ASSERT(region < _mesh.regionCount() || region == SurfaceMeshAccess::InvalidIndex);
+                    OVITO_ASSERT(region < _mesh.regionCount() || region == SurfaceMesh::InvalidIndex);
                 }
             }
             _tessellation.setUserField(cell, region);
@@ -466,13 +476,13 @@ private:
                 }
                 else {
                     if(isSpaceFilling && _mesh.spaceFillingRegion() != region) {
-                        _mesh.setSpaceFillingRegion(SurfaceMeshAccess::InvalidIndex);
+                        _mesh.setSpaceFillingRegion(SurfaceMesh::InvalidIndex);
                         isSpaceFilling = false;
                     }
                 }
             }
 
-            if(region != SurfaceMeshAccess::InvalidIndex && !_tessellation.isGhostCell(cell)) {
+            if(region != SurfaceMesh::InvalidIndex && !_tessellation.isGhostCell(cell)) {
                 _tessellation.setCellIndex(cell, _numFilledCells++);
             }
             else {
@@ -502,14 +512,14 @@ private:
         if(!createCellMap(operation))
             return false;
 
-        // Create the 'Volume' property for the identified regions.
-        _mesh.createRegionProperty(DataBuffer::Initialized, SurfaceMeshRegions::VolumeProperty);
-
         operation.nextProgressSubStep();
         operation.setProgressMaximum(_tessellation.numberOfTetrahedra());
 
         // Identify connected tetrahedra to create regions if no regions were previously defined.
         if(_mesh.regionCount() == 0) {
+            // Create the 'Volume' property for the identified regions.
+            PropertyPtr regionVolumeProperty = SurfaceMeshRegions::OOClass().createStandardProperty(DataBuffer::Uninitialized, 0, SurfaceMeshRegions::VolumeProperty);
+            BufferAccess<FloatType> regionVolumes(regionVolumeProperty);
 
             // Loop over all Delaunay cells to cluster them into connected components.
             // All filled cells have initially a user field value of 0.
@@ -568,9 +578,14 @@ private:
                 while(!toProcess.empty());
 
                 // Create a spatial region in the output mesh.
-                SurfaceMeshAccess::region_index regionId = _mesh.createRegion(0, regionVolume);
+                SurfaceMesh::region_index regionId = regionVolumes.size();
+                regionVolumes.push_back(regionVolume);
                 OVITO_ASSERT(regionId + 1 == currentRegionId);
             }
+            regionVolumes.reset();
+
+            // Put region property into container.
+            _mesh.mutableRegions()->setContent(regionVolumeProperty->size(), { regionVolumeProperty });
 
             if(_mesh.regionCount() > 0) {
                 // Shift filled region IDs to start at index 0.
@@ -582,21 +597,24 @@ private:
             }
         }
         else {
+            // Create the 'Volume' property for the identified regions.
+            BufferAccess<FloatType> regionVolumes = _mesh.createRegionProperty(DataBuffer::Initialized, SurfaceMeshRegions::VolumeProperty);
+
             // Filled mesh regions have already been predefined by the caller.
             // We just need to compute the volume of each spatial region.
             for(DelaunayTessellation::CellIterator cellIter = _tessellation.begin_cells(); cellIter != _tessellation.end_cells() && !operation.isCanceled(); ++cellIter) {
                 DelaunayTessellation::CellHandle cell = *cellIter;
 
                 // Skip empty cells.
-                SurfaceMeshAccess::region_index region = _tessellation.getUserField(cell);
-                if(region == SurfaceMeshAccess::InvalidIndex)
+                SurfaceMesh::region_index region = _tessellation.getUserField(cell);
+                if(region == SurfaceMesh::InvalidIndex)
                     continue;
 
                 // Skip ghost cells.
                 if(_tessellation.isGhostCell(cell))
                     continue;
 
-                _mesh.setRegionVolume(region, _mesh.regionVolume(region) + cellVolume(cell));
+                regionVolumes[region] += cellVolume(cell);
             }
         }
 
@@ -608,7 +626,7 @@ private:
             operation.setProgressMaximum(_tessellation.numberOfTetrahedra());
             for(DelaunayTessellation::CellIterator cellIter = _tessellation.begin_cells(); cellIter != _tessellation.end_cells(); ++cellIter) {
                 DelaunayTessellation::CellHandle cell = *cellIter;
-                if(_tessellation.isGhostCell(cell) && _tessellation.getUserField(cell) != SurfaceMeshAccess::InvalidIndex) {
+                if(_tessellation.isGhostCell(cell) && _tessellation.getUserField(cell) != SurfaceMesh::InvalidIndex) {
                     if(!operation.setProgressValueIntermittent(cell))
                         return false;
 
@@ -641,7 +659,7 @@ private:
             DelaunayTessellation::CellHandle cell = *cellIter;
 
             // Skip cells that belong to the exterior region.
-            if(_tessellation.getUserField(cell) == SurfaceMeshAccess::InvalidIndex)
+            if(_tessellation.getUserField(cell) == SurfaceMesh::InvalidIndex)
                 continue;
 
             // Skip ghost cells.
@@ -677,19 +695,29 @@ private:
     bool createInterfaceFacets(PrepareMeshFaceFunc&& prepareMeshFaceFunc, PrepareMeshVertexFunc&& prepareMeshVertexFunc, ProgressingTask& operation)
     {
         // Stores the triangle mesh vertices created for the vertices of the tetrahedral mesh.
-        std::vector<SurfaceMeshAccess::vertex_index> vertexMap(_positions.size(), SurfaceMeshAccess::InvalidIndex);
+        std::vector<SurfaceMesh::vertex_index> vertexMap(_positions.size(), SurfaceMesh::InvalidIndex);
         _tetrahedraFaceList.clear();
         _faceLookupMap.clear();
 
+        // Create the vertex coordinates array, which will dynamically grow.
+        PropertyPtr vertexPositionProperty = SurfaceMeshVertices::OOClass().createStandardProperty(DataBuffer::Uninitialized, 0, SurfaceMeshVertices::PositionProperty);
+        BufferAccess<Point3> vertexPositions = BufferAccess<Point3>(vertexPositionProperty);
+
+        // Create the per-face region array, which will dynamically grow.
+        PropertyPtr faceRegionsProperty = SurfaceMeshFaces::OOClass().createStandardProperty(DataBuffer::Uninitialized, 0, SurfaceMeshFaces::RegionProperty);
+        BufferAccess<SurfaceMesh::region_index> faceRegions = BufferAccess<SurfaceMesh::region_index>(faceRegionsProperty);
+
         operation.setProgressMaximum(_numFilledCells);
+        SurfaceMeshTopology* topo = _mesh.mutableTopology();
 
         for(DelaunayTessellation::CellIterator cellIter = _tessellation.begin_cells(); cellIter != _tessellation.end_cells(); ++cellIter) {
             DelaunayTessellation::CellHandle cell = *cellIter;
 
             // Consider only filled local tetrahedra.
-            if(_tessellation.getCellIndex(cell) == -1) continue;
-            SurfaceMeshAccess::region_index filledRegion = _tessellation.getUserField(cell);
-            OVITO_ASSERT(filledRegion != SurfaceMeshAccess::InvalidIndex);
+            if(_tessellation.getCellIndex(cell) == -1)
+                continue;
+            SurfaceMesh::region_index filledRegion = _tessellation.getUserField(cell);
+            OVITO_ASSERT(filledRegion != SurfaceMesh::InvalidIndex);
 
             // Update progress indicator.
             if(!operation.setProgressValueIntermittent(_tessellation.getCellIndex(cell)))
@@ -718,28 +746,30 @@ private:
                     continue;
 
                 // Create the three vertices of the face or use existing output vertices.
-                std::array<SurfaceMeshAccess::vertex_index,3> facetVertices;
+                std::array<SurfaceMesh::vertex_index,3> facetVertices;
                 std::array<DelaunayTessellation::VertexHandle,3> vertexHandles;
                 std::array<size_t,3> vertexIndices;
                 for(int v = 0; v < 3; v++) {
                     vertexHandles[v] = _tessellation.cellVertex(cell, DelaunayTessellation::cellFacetVertexIndex(f, _flipOrientation ? v : (2-v)));
                     size_t vertexIndex = vertexIndices[v] = _tessellation.vertexIndex(vertexHandles[v]);
                     OVITO_ASSERT(vertexIndex < vertexMap.size());
-                    if(vertexMap[vertexIndex] == SurfaceMeshAccess::InvalidIndex) {
-                        vertexMap[vertexIndex] = _mesh.createVertex(_positions[vertexIndex]);
+                    if(vertexMap[vertexIndex] == SurfaceMesh::InvalidIndex) {
+                        vertexMap[vertexIndex] = topo->createVertex();
+                        vertexPositions.push_back(_positions[vertexIndex]);
                         prepareMeshVertexFunc(vertexMap[vertexIndex], vertexIndex);
                     }
                     facetVertices[v] = vertexMap[vertexIndex];
                 }
 
                 // Create a new triangle facet.
-                SurfaceMeshAccess::face_index face = _mesh.createFace(facetVertices.begin(), facetVertices.end(), filledRegion);
+                SurfaceMesh::face_index face = topo->createFaceAndEdges(facetVertices.begin(), facetVertices.end());
+                faceRegions.push_back(filledRegion);
 
                 // Tell client code about the new facet.
                 prepareMeshFaceFunc(face, vertexIndices, vertexHandles, cell);
 
                 // Create additional face for exterior region if requested.
-                if(_createRegions && _tessellation.getUserField(adjacentCell) == SurfaceMeshAccess::InvalidIndex) {
+                if(_createRegions && _tessellation.getUserField(adjacentCell) == SurfaceMesh::InvalidIndex) {
 
                     // Build face vertex list.
                     std::array<size_t,3> reverseVertexIndices;
@@ -747,12 +777,13 @@ private:
                         vertexHandles[v] = _tessellation.cellVertex(adjacentCell, DelaunayTessellation::cellFacetVertexIndex(mirrorFacet.second, _flipOrientation ? v : (2-v)));
                         size_t vertexIndex = reverseVertexIndices[v] = _tessellation.vertexIndex(vertexHandles[v]);
                         OVITO_ASSERT(vertexIndex < vertexMap.size());
-                        OVITO_ASSERT(vertexMap[vertexIndex] != SurfaceMeshAccess::InvalidIndex);
+                        OVITO_ASSERT(vertexMap[vertexIndex] != SurfaceMesh::InvalidIndex);
                         facetVertices[v] = vertexMap[vertexIndex];
                     }
 
                     // Create a new triangle facet.
-                    SurfaceMeshAccess::face_index oppositeFace = _mesh.createFace(facetVertices.begin(), facetVertices.end(), SurfaceMeshAccess::InvalidIndex);
+                    SurfaceMesh::face_index oppositeFace = topo->createFaceAndEdges(facetVertices);
+                    faceRegions.push_back(SurfaceMesh::InvalidIndex);
 
                     // Tell client code about the new facet.
                     prepareMeshFaceFunc(oppositeFace, reverseVertexIndices, vertexHandles, adjacentCell);
@@ -769,16 +800,24 @@ private:
                 // Insert into contiguous list of tetrahedron faces.
                 if(_tessellation.getCellIndex(cell) == -1) {
                     _tessellation.setCellIndex(cell, _tetrahedraFaceList.size());
-                    _tetrahedraFaceList.push_back(std::array<SurfaceMeshAccess::face_index, 4>{{ SurfaceMeshAccess::InvalidIndex, SurfaceMeshAccess::InvalidIndex, SurfaceMeshAccess::InvalidIndex, SurfaceMeshAccess::InvalidIndex }});
+                    _tetrahedraFaceList.push_back(std::array<SurfaceMesh::face_index, 4>{{ SurfaceMesh::InvalidIndex, SurfaceMesh::InvalidIndex, SurfaceMesh::InvalidIndex, SurfaceMesh::InvalidIndex }});
                 }
                 _tetrahedraFaceList[_tessellation.getCellIndex(cell)][f] = face;
             }
         }
 
+        // Store the vertex coordinates in the mesh.
+        vertexPositions.reset();
+        _mesh.mutableVertices()->setContent(topo->vertexCount(), { std::move(vertexPositionProperty) });
+
+        // Store the per-face region information in the mesh.
+        faceRegions.reset();
+        _mesh.mutableFaces()->setContent(topo->faceCount(), { std::move(faceRegionsProperty) });
+
         return !operation.isCanceled();
     }
 
-    SurfaceMeshAccess::face_index findAdjacentFace(DelaunayTessellation::CellHandle cell, int f, int e, bool reverse = false)
+    SurfaceMesh::face_index findAdjacentFace(DelaunayTessellation::CellHandle cell, int f, int e, bool reverse = false)
     {
         int vertexIndex1, vertexIndex2;
         if(!_flipOrientation) {
@@ -822,9 +861,9 @@ private:
         std::pair<DelaunayTessellation::CellHandle,int> mirrorFacet = _tessellation.mirrorFacet(*circulator);
         OVITO_ASSERT(_tessellation.getUserField(mirrorFacet.first) == region);
 
-        SurfaceMeshAccess::face_index adjacentFace = findCellFace(mirrorFacet);
-        OVITO_ASSERT(adjacentFace != SurfaceMeshAccess::InvalidIndex);
-        if(adjacentFace == SurfaceMeshAccess::InvalidIndex)
+        SurfaceMesh::face_index adjacentFace = findCellFace(mirrorFacet);
+        OVITO_ASSERT(adjacentFace != SurfaceMesh::InvalidIndex);
+        if(adjacentFace == SurfaceMesh::InvalidIndex)
             throw Exception("Cannot construct mesh for this input dataset. Adjacent cell face not found.");
         return adjacentFace;
     }
@@ -832,6 +871,10 @@ private:
     bool linkHalfedges(ProgressingTask& operation)
     {
         operation.setProgressMaximum(_tetrahedraFaceList.size());
+
+#ifdef OVITO_DEBUG
+        ConstBufferAccess<SurfaceMesh::region_index> faceRegions(_mesh.expectFaceProperty(SurfaceMeshFaces::RegionProperty));
+#endif
 
         auto tet = _tetrahedraFaceList.cbegin();
         for(DelaunayTessellation::CellIterator cellIter = _tessellation.begin_cells(); cellIter != _tessellation.end_cells(); ++cellIter) {
@@ -847,16 +890,16 @@ private:
 
             // Visit the mesh faces adjacent to the current cell.
             for(int f = 0; f < 4; f++) {
-                SurfaceMeshAccess::face_index facet = (*tet)[f];
-                if(facet == SurfaceMeshAccess::InvalidIndex) continue;
+                SurfaceMesh::face_index facet = (*tet)[f];
+                if(facet == SurfaceMesh::InvalidIndex) continue;
 
                 // Link within manifold.
-                SurfaceMeshAccess::edge_index edge = _mesh.firstFaceEdge(facet);
+                SurfaceMesh::edge_index edge = _mesh.firstFaceEdge(facet);
                 for(int e = 0; e < 3; e++, edge = _mesh.nextFaceEdge(edge)) {
                     if(_mesh.hasOppositeEdge(edge)) continue;
-                    SurfaceMeshAccess::face_index adjacentFace = findAdjacentFace(cell, f, e);
-                    SurfaceMeshAccess::edge_index oppositeEdge = _mesh.findEdge(adjacentFace, _mesh.vertex2(edge), _mesh.vertex1(edge));
-                    if(oppositeEdge == SurfaceMeshAccess::InvalidIndex)
+                    SurfaceMesh::face_index adjacentFace = findAdjacentFace(cell, f, e);
+                    SurfaceMesh::edge_index oppositeEdge = _mesh.findEdge(adjacentFace, _mesh.vertex2(edge), _mesh.vertex1(edge));
+                    if(oppositeEdge == SurfaceMesh::InvalidIndex)
                         throw Exception("Cannot construct mesh for this input dataset. Opposite half-edge not found.");
                     _mesh.linkOppositeEdges(edge, oppositeEdge);
                 }
@@ -864,22 +907,22 @@ private:
                 if(_createRegions) {
                     std::pair<DelaunayTessellation::CellHandle,int> oppositeFacet = _tessellation.mirrorFacet(cell, f);
                     OVITO_ASSERT(_tessellation.getUserField(oppositeFacet.first) != _tessellation.getUserField(cell));
-                    SurfaceMeshAccess::face_index outerFacet = findCellFace(oppositeFacet);
-                    OVITO_ASSERT(outerFacet != SurfaceMeshAccess::InvalidIndex);
+                    SurfaceMesh::face_index outerFacet = findCellFace(oppositeFacet);
+                    OVITO_ASSERT(outerFacet != SurfaceMesh::InvalidIndex);
 
                     // Link opposite mesh faces (Note: they may have already been linked).
                     _mesh.linkOppositeFaces(facet, outerFacet);
 
                     // Link adjacent facets in opposite manifold if it is bounding an empty region.
-                    if(_tessellation.getUserField(oppositeFacet.first) == SurfaceMeshAccess::InvalidIndex) {
-                        OVITO_ASSERT(_mesh.faceRegion(outerFacet) == SurfaceMeshAccess::InvalidIndex);
-                        SurfaceMeshAccess::edge_index edge = _mesh.firstFaceEdge(outerFacet);
+                    if(_tessellation.getUserField(oppositeFacet.first) == SurfaceMesh::InvalidIndex) {
+                        OVITO_ASSERT(faceRegions[outerFacet] == SurfaceMesh::InvalidIndex);
+                        SurfaceMesh::edge_index edge = _mesh.firstFaceEdge(outerFacet);
                         for(int e = 0; e < 3; e++, edge = _mesh.nextFaceEdge(edge)) {
                             if(_mesh.hasOppositeEdge(edge)) continue;
-                            SurfaceMeshAccess::face_index adjacentFace = findAdjacentFace(oppositeFacet.first, oppositeFacet.second, e, true);
-                            OVITO_ASSERT(_mesh.faceRegion(adjacentFace) == SurfaceMeshAccess::InvalidIndex);
-                            SurfaceMeshAccess::edge_index oppositeEdge = _mesh.findEdge(adjacentFace, _mesh.vertex2(edge), _mesh.vertex1(edge));
-                            if(oppositeEdge == SurfaceMeshAccess::InvalidIndex)
+                            SurfaceMesh::face_index adjacentFace = findAdjacentFace(oppositeFacet.first, oppositeFacet.second, e, true);
+                            OVITO_ASSERT(faceRegions[adjacentFace] == SurfaceMesh::InvalidIndex);
+                            SurfaceMesh::edge_index oppositeEdge = _mesh.findEdge(adjacentFace, _mesh.vertex2(edge), _mesh.vertex1(edge));
+                            if(oppositeEdge == SurfaceMesh::InvalidIndex)
                                 throw Exception("Cannot construct mesh for this input dataset. Opposite half-edge (2) not found.");
                             _mesh.linkOppositeEdges(edge, oppositeEdge);
                         }
@@ -893,12 +936,12 @@ private:
 
         // Set up manifold pointers at edges of the mesh.
         if(_createRegions) {
-            for(SurfaceMeshAccess::edge_index edge1 = 0; edge1 < _mesh.edgeCount() && !operation.isCanceled(); edge1++) {
+            for(SurfaceMesh::edge_index edge1 = 0; edge1 < _mesh.edgeCount() && !operation.isCanceled(); edge1++) {
                 // Link surface manifolds.
-                SurfaceMeshAccess::edge_index oppositeEdge = _mesh.oppositeEdge(edge1);
-                SurfaceMeshAccess::face_index adjacentFace = _mesh.adjacentFace(oppositeEdge);
-                SurfaceMeshAccess::face_index oppositeFace = _mesh.oppositeFace(adjacentFace);
-                for(SurfaceMeshAccess::edge_index edge2 = _mesh.firstFaceEdge(oppositeFace); ; edge2 = _mesh.nextFaceEdge(edge2)) {
+                SurfaceMesh::edge_index oppositeEdge = _mesh.oppositeEdge(edge1);
+                SurfaceMesh::face_index adjacentFace = _mesh.adjacentFace(oppositeEdge);
+                SurfaceMesh::face_index oppositeFace = _mesh.oppositeFace(adjacentFace);
+                for(SurfaceMesh::edge_index edge2 = _mesh.firstFaceEdge(oppositeFace); ; edge2 = _mesh.nextFaceEdge(edge2)) {
                     if(_mesh.vertex2(edge2) == _mesh.vertex2(edge1)) {
                         _mesh.setNextManifoldEdge(edge1, edge2);
                         break;
@@ -910,7 +953,7 @@ private:
         return !operation.isCanceled();
     }
 
-    SurfaceMeshAccess::face_index findCellFace(const std::pair<DelaunayTessellation::CellHandle,int>& facet)
+    SurfaceMesh::face_index findCellFace(const std::pair<DelaunayTessellation::CellHandle,int>& facet)
     {
         // If the cell is a ghost cell, find the corresponding real cell first.
         auto cell = facet.first;
@@ -928,7 +971,7 @@ private:
             if(auto item = _faceLookupMap.find(faceVerts); item != _faceLookupMap.end())
                 return item->second;
             else
-                return SurfaceMeshAccess::InvalidIndex;
+                return SurfaceMesh::InvalidIndex;
         }
     }
 
@@ -1078,32 +1121,35 @@ private:
         if(numPoints < 4)
             return 0;   // Overlap is degenerate.
 
-        // Construct convex hull of remaining line segments.
+        // Create and re-use SurfaceMesh to avoid too many object reallocations.
         if(!_convexHullMesh)
             _convexHullMesh.reset(DataOORef<SurfaceMesh>::create(ObjectInitializationFlag::DontCreateVisElement));
-        else
-            _convexHullMesh.clearMesh();
-        _convexHullMesh.constructConvexHull(std::vector<Point3>(lineSegments, lineSegments + numPoints));
+
+        // Construct convex hull of remaining line segments.
+        SurfaceMeshBuilder meshBuilder(_convexHullMesh);
+        meshBuilder.clearMesh();
+        meshBuilder.constructConvexHull(std::vector<Point3>(lineSegments, lineSegments + numPoints), SurfaceMesh::InvalidIndex);
 
         // The convex hull may be empty if the input point set is degenerate.
-        if(_convexHullMesh.faceCount() == 0)
+        if(meshBuilder.faceCount() == 0)
             return 0;
 
         // Compute volume enclosed by the convex hull polyhedron.
-        const Point3 apex = _convexHullMesh.vertexPosition(0);
+        ConstBufferAccess<Point3> vertexCoordinates(meshBuilder.expectVertexProperty(SurfaceMeshVertices::PositionProperty));
+        const Point3 apex = vertexCoordinates[0];
         FloatType convexVolume = 0;
-        for(SurfaceMeshAccess::edge_index firstEdge : _convexHullMesh.firstFaceEdges()) {
-            SurfaceMeshAccess::edge_index edge1 = _convexHullMesh.nextFaceEdge(firstEdge);
-            SurfaceMeshAccess::edge_index edge2 = _convexHullMesh.nextFaceEdge(edge1);
+        for(SurfaceMesh::edge_index firstEdge : meshBuilder.firstFaceEdges()) {
+            SurfaceMesh::edge_index edge1 = meshBuilder.nextFaceEdge(firstEdge);
+            SurfaceMesh::edge_index edge2 = meshBuilder.nextFaceEdge(edge1);
             Matrix3 tripod;
-            tripod.column(0) = _convexHullMesh.vertexPosition(_convexHullMesh.vertex1(firstEdge)) - apex;
-            tripod.column(2) = _convexHullMesh.vertexPosition(_convexHullMesh.vertex2(firstEdge)) - apex;
+            tripod.column(0) = vertexCoordinates[meshBuilder.vertex1(firstEdge)] - apex;
+            tripod.column(2) = vertexCoordinates[meshBuilder.vertex2(firstEdge)] - apex;
             while(edge2 != firstEdge) {
                 tripod.column(1) = tripod.column(2);
-                tripod.column(2) = _convexHullMesh.vertexPosition(_convexHullMesh.vertex2(edge1)) - apex;
+                tripod.column(2) = vertexCoordinates[meshBuilder.vertex2(edge1)] - apex;
                 convexVolume += tripod.determinant();
                 edge1 = edge2;
-                edge2 = _convexHullMesh.nextFaceEdge(edge2);
+                edge2 = meshBuilder.nextFaceEdge(edge2);
             }
         }
 
@@ -1126,31 +1172,31 @@ private:
     size_t _numFilledCells = 0;
 
     /// Number of filled regions that have been identified.
-    SurfaceMeshAccess::size_type _filledRegionCount = 0;
+    SurfaceMesh::size_type _filledRegionCount = 0;
 
     /// Number of empty regions that have been identified.
-    SurfaceMeshAccess::size_type _emptyRegionCount = 0;
+    SurfaceMesh::size_type _emptyRegionCount = 0;
 
     /// The input particle positions.
-    ConstDataBufferAccess<Point3> _positions;
+    ConstBufferAccess<Point3> _positions;
 
     /// The output surface mesh.
-    SurfaceMeshAccess& _mesh;
+    SurfaceMeshBuilder& _mesh;
 
     /// Controls the reversal of the normal orientation of the generated surface facets.
     bool _flipOrientation = false;
 
     /// Stores the faces of the local tetrahedra that have a least one facet for which a triangle has been created.
-    std::vector<std::array<SurfaceMeshAccess::face_index, 4>> _tetrahedraFaceList;
+    std::vector<std::array<SurfaceMesh::face_index, 4>> _tetrahedraFaceList;
 
     /// This map allows looking up surface mesh faces based on their three vertices.
-    std::map<std::array<size_t,3>, SurfaceMeshAccess::face_index> _faceLookupMap;
+    std::map<std::array<size_t,3>, SurfaceMesh::face_index> _faceLookupMap;
 
     /// This map allows looking up the tetrahedron that is adjacent to a given triangular face.
     std::map<std::array<size_t,3>, DelaunayTessellation::CellHandle> _cellLookupMap;
 
     /// Working data structure used in calculateVolumeOverlap() for computing the volume of a truncated tetrahedral cell.
-    SurfaceMeshAccess _convexHullMesh;
+    DataOORef<SurfaceMesh> _convexHullMesh;
 };
 
 }   // End of namespace

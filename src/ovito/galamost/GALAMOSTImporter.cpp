@@ -168,7 +168,7 @@ void GALAMOSTImporter::FrameLoader::loadFile()
                 else if(xml.name().compare(QStringLiteral("diameter")) == 0) {
                     PropertyObject* property = parsePropertyData(xml, particles()->createProperty(ParticlesObject::RadiusProperty));
                     // Convert diamater values into radii.
-                    for(auto& radius : DataBufferAccess<GraphicsFloatType>(property))
+                    for(auto& radius : BufferAccess<GraphicsFloatType>(property))
                         radius /= 2;
                 }
                 else if(xml.name().compare(QStringLiteral("charge")) == 0) {
@@ -178,15 +178,15 @@ void GALAMOSTImporter::FrameLoader::loadFile()
                     PropertyObject* property = parsePropertyData(xml, particles()->createProperty(ParticlesObject::OrientationProperty));
                     // Convert quaternion representation to OVITO's internal format.
                     // Left-shift all quaternion components by one: (W,X,Y,Z) -> (X,Y,Z,W).
-                    for(auto& q : DataBufferAccess<QuaternionG>(property))
+                    for(auto& q : BufferAccess<QuaternionG>(property))
                         std::rotate(q.begin(), q.begin() + 1, q.end());
                 }
                 else if(xml.name().compare(QStringLiteral("orientation")) == 0) {
                     DataOORef<PropertyObject> directions = ParticlesObject::OOClass().createUserProperty(DataBuffer::Uninitialized, natoms, DataBuffer::FloatGraphics, 3, QStringLiteral("Direction"));
                     parsePropertyData(xml, directions);
-                    ConstDataBufferAccess<Vector3G> directionsAccess(directions);
+                    ConstBufferAccess<Vector3G> directionsAccess(directions);
                     const auto* dir = directionsAccess.cbegin();
-                    for(auto& q : DataBufferAccess<QuaternionG>(particles()->createProperty(ParticlesObject::OrientationProperty))) {
+                    for(auto& q : BufferAccess<QuaternionG>(particles()->createProperty(ParticlesObject::OrientationProperty))) {
                         if(!dir->isZero()) {
                             RotationT<GraphicsFloatType> r(Vector3G(0,0,1), *dir);
                             q = QuaternionG(r);
@@ -203,7 +203,7 @@ void GALAMOSTImporter::FrameLoader::loadFile()
                     QTextStream stream(&text, QIODevice::ReadOnly | QIODevice::Text);
                     PropertyObject* property = particles()->createProperty(ParticlesObject::TypeProperty);
                     QString typeName;
-                    for(auto& type : DataBufferAccess<int32_t>(property)) {
+                    for(auto& type : BufferAccess<int32_t>(property)) {
                         stream >> typeName;
                         type = addNamedType(ParticlesObject::OOClass(), property, typeName)->numericId();
                     }
@@ -221,7 +221,7 @@ void GALAMOSTImporter::FrameLoader::loadFile()
                     const PropertyObject* typeProperty = particles()->getProperty(ParticlesObject::TypeProperty);
                     if(!typeProperty)
                         throw Exception(tr("GALAMOST file parsing error. <%1> element must appear after <type> element.").arg(xml.name()));
-                    ConstDataBufferAccess<int32_t> typeAccess(typeProperty);
+                    ConstBufferAccess<int32_t> typeAccess(typeProperty);
                     std::vector<Vector3G> typesAsphericalShape;
                     while(!stream.atEnd()) {
                         QString typeName;
@@ -237,7 +237,7 @@ void GALAMOSTImporter::FrameLoader::loadFile()
                             }
                         }
                         const auto* typeIndex = typeAccess.cbegin();
-                        for(auto& shape : DataBufferAccess<Vector3G>(particles()->createProperty(ParticlesObject::AsphericalShapeProperty))) {
+                        for(auto& shape : BufferAccess<Vector3G>(particles()->createProperty(ParticlesObject::AsphericalShapeProperty))) {
                             if(*typeIndex < typesAsphericalShape.size())
                                 shape = typesAsphericalShape[*typeIndex];
                             ++typeIndex;
@@ -265,9 +265,9 @@ void GALAMOSTImporter::FrameLoader::loadFile()
                     }
                     QString text = xml.readElementText();
                     QTextStream stream(&text, QIODevice::ReadOnly | QIODevice::Text);
-                    DataBufferAccess<ParticleIndexPair> topologyAccess(bonds()->createProperty(BondsObject::TopologyProperty));
+                    BufferAccess<ParticleIndexPair> topologyAccess(bonds()->createProperty(BondsObject::TopologyProperty));
                     PropertyObject* typeProperty = bonds()->createProperty(BondsObject::TypeProperty);
-                    DataBufferAccess<int32_t> typeAccess(typeProperty);
+                    BufferAccess<int32_t> typeAccess(typeProperty);
                     QString typeName;
                     for(size_t i = 0; i < nbonds; i++) {
                         stream >> typeName >> topologyAccess[i][0] >> topologyAccess[i][1];
@@ -319,17 +319,17 @@ PropertyObject* GALAMOSTImporter::FrameLoader::parsePropertyData(QXmlStreamReade
     QTextStream stream(&text, QIODevice::ReadOnly | QIODevice::Text);
 
     if(property->dataType() == DataBuffer::Float32) {
-        DataBufferAccess<float, true> array(property);
+        BufferAccess<float, true> array(property);
         for(float& v : array.range())
             stream >> v;
     }
     else if(property->dataType() == DataBuffer::Float64) {
-        DataBufferAccess<double, true> array(property);
+        BufferAccess<double, true> array(property);
         for(double& v : array.range())
             stream >> v;
     }
     else if(property->dataType() == DataBuffer::Int8) {
-        DataBufferAccess<int8_t, true> array(property);
+        BufferAccess<int8_t, true> array(property);
         for(int8_t& v : array.range()) {
             int vi;
             stream >> vi;
@@ -337,12 +337,12 @@ PropertyObject* GALAMOSTImporter::FrameLoader::parsePropertyData(QXmlStreamReade
         }
     }
     else if(property->dataType() == DataBuffer::Int32) {
-        DataBufferAccess<int32_t, true> array(property);
+        BufferAccess<int32_t, true> array(property);
         for(int32_t& v : array.range())
             stream >> v;
     }
     else if(property->dataType() == DataBuffer::Int64) {
-        DataBufferAccess<int64_t, true> array(property);
+        BufferAccess<int64_t, true> array(property);
         for(int64_t& v : array.range())
             stream >> v;
     }

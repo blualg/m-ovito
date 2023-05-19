@@ -222,11 +222,11 @@ std::vector<FloatType> SpatialCorrelationFunctionModifier::CorrelationAnalysisEn
     const std::array<bool, 3> pbc = cell()->pbcFlagsCorrected();
 
     if(!property || property->size() > 0) {
-        ConstDataBufferAccess<Point3> positionsArray(positions());
+        ConstBufferAccess<Point3> positionsArray(positions());
 
         auto helperFunc = [&](auto _) {
             using T = decltype(_);
-            ConstDataBufferAccess<T,true> propertyArray(property);
+            ConstBufferAccess<T,true> propertyArray(property);
             const Point3* pos = positionsArray.cbegin();
             for(T v : propertyArray.componentRange(vecComponent)) {
                 if(std::numeric_limits<T>::is_integer || !std::isnan(v)) {
@@ -448,7 +448,7 @@ void SpatialCorrelationFunctionModifier::CorrelationAnalysisEngine::computeFftCo
     _reciprocalSpaceCorrelationRange = 2 * FLOATTYPE_PI * minReciprocalSpaceVector * numberOfWavevectorBins;
 
     std::vector<int> numberOfValues(numberOfWavevectorBins, 0);
-    DataBufferAccess<FloatType> reciprocalSpaceCorrelationData(_reciprocalSpaceCorrelation);
+    BufferAccess<FloatType> reciprocalSpaceCorrelationData(_reciprocalSpaceCorrelation);
 
     // Compute Fourier-transformed correlation function and put it on a radial grid.
     int binIndex = 0;
@@ -531,8 +531,8 @@ void SpatialCorrelationFunctionModifier::CorrelationAnalysisEngine::computeFftCo
     _realSpaceRDF = DataTable::OOClass().createUserProperty(DataBuffer::Initialized, numberOfDistanceBins, DataBuffer::FloatDefault, 1, tr("g(r)"));
 
     numberOfValues = std::vector<int>(numberOfDistanceBins, 0);
-    DataBufferAccess<FloatType> realSpaceCorrelationData(_realSpaceCorrelation);
-    DataBufferAccess<FloatType> realSpaceRDFData(_realSpaceRDF);
+    BufferAccess<FloatType> realSpaceCorrelationData(_realSpaceCorrelation);
+    BufferAccess<FloatType> realSpaceRDFData(_realSpaceRDF);
 
     // Put real-space correlation function on a radial grid.
     binIndex = 0;
@@ -594,8 +594,8 @@ void SpatialCorrelationFunctionModifier::CorrelationAnalysisEngine::computeNeigh
         return;
 
     // Get pointers to data.
-    ConstDataBufferAccess<void,true> dataAccess1 = sourceProperty1();
-    ConstDataBufferAccess<void,true> dataAccess2 = sourceProperty2();
+    ConstBufferAccess<void,true> dataAccess1 = sourceProperty1();
+    ConstBufferAccess<void,true> dataAccess2 = sourceProperty2();
 
     // Perform analysis on each particle in parallel.
     size_t vecComponent1 = _vecComponent1;
@@ -624,11 +624,11 @@ void SpatialCorrelationFunctionModifier::CorrelationAnalysisEngine::computeNeigh
                 return;
         }
         std::lock_guard<std::mutex> lock(mutex);
-        DataBufferAccess<FloatType> neighCorrelationArray(neighCorrelation());
+        BufferAccess<FloatType> neighCorrelationArray(neighCorrelation());
         auto iter_corr_out = neighCorrelationArray.begin();
         for(auto iter_corr = threadLocalCorrelation.cbegin(); iter_corr != threadLocalCorrelation.cend(); ++iter_corr, ++iter_corr_out)
             *iter_corr_out += *iter_corr;
-        DataBufferAccess<FloatType> neighRDFArray(neighRDF());
+        BufferAccess<FloatType> neighRDFArray(neighRDF());
         auto iter_rdf_out = neighRDFArray.begin();
         for(auto iter_rdf = threadLocalRDF.cbegin(); iter_rdf != threadLocalRDF.cend(); ++iter_rdf, ++iter_rdf_out)
             *iter_rdf_out += *iter_rdf;
@@ -639,8 +639,8 @@ void SpatialCorrelationFunctionModifier::CorrelationAnalysisEngine::computeNeigh
 
     // Normalize short-ranged real-space correlation function.
     FloatType gridSpacing = (neighCutoff() + FLOATTYPE_EPSILON) / neighCorrelation()->size();
-    DataBufferAccess<FloatType> neighCorrelationArray(neighCorrelation());
-    DataBufferAccess<FloatType> neighRDFArray(neighRDF());
+    BufferAccess<FloatType> neighCorrelationArray(neighCorrelation());
+    BufferAccess<FloatType> neighRDFArray(neighRDF());
     if(!cell()->is2D()) {
         FloatType normalizationFactor = 3 * cell()->volume3D() / (4 * FLOATTYPE_PI * sourceProperty1()->size() * sourceProperty2()->size());
         for(size_t distanceBinIndex = 0; distanceBinIndex < neighCorrelation()->size(); distanceBinIndex++) {
@@ -669,8 +669,8 @@ void SpatialCorrelationFunctionModifier::CorrelationAnalysisEngine::computeNeigh
 void SpatialCorrelationFunctionModifier::CorrelationAnalysisEngine::computeLimits()
 {
     // Get pointers to data.
-    ConstDataBufferAccess<void,true> dataAccess1 = sourceProperty1();
-    ConstDataBufferAccess<void,true> dataAccess2 = sourceProperty2();
+    ConstBufferAccess<void,true> dataAccess1 = sourceProperty1();
+    ConstBufferAccess<void,true> dataAccess2 = sourceProperty2();
 
     // Compute mean and covariance values.
     FloatType mean1 = 0;

@@ -25,9 +25,8 @@
 #include <ovito/particles/objects/ParticleType.h>
 #include <ovito/stdobj/simcell/SimulationCellObject.h>
 #include <ovito/mesh/surface/SurfaceMesh.h>
-#include <ovito/mesh/surface/SurfaceMeshAccess.h>
+#include <ovito/mesh/surface/SurfaceMeshReadAccess.h>
 #include <ovito/mesh/io/ParaViewVTPMeshImporter.h>
-#include <ovito/core/dataset/data/DataObjectAccess.h>
 #include <ovito/core/dataset/io/FileSource.h>
 #include "ParaViewVTPParticleImporter.h"
 
@@ -153,7 +152,7 @@ void ParaViewVTPParticleImporter::FrameLoader::loadFile()
                         OvitoClassPtr elementTypeClass = ParticlesObject::OOClass().typedPropertyElementClass(property->type());
                         if(!elementTypeClass && property->name() == QStringLiteral("Material Type")) elementTypeClass = &ElementType::OOClass();
                         if(elementTypeClass) {
-                            for(int t : ConstDataBufferAccess<int32_t>(property).csubrange(baseParticleIndex, property->size())) {
+                            for(int t : ConstBufferAccess<int32_t>(property).csubrange(baseParticleIndex, property->size())) {
                                 if(!property->elementType(t)) {
                                     DataOORef<ElementType> elementType = static_object_cast<ElementType>(elementTypeClass->createInstance());
                                     elementType->setNumericId(t);
@@ -195,7 +194,7 @@ void ParaViewVTPParticleImporter::FrameLoader::loadFile()
     // Convert superquadric 'Blockiness' values from the Aspherix simulation to 'Roundness' values used by OVITO particle visualization.
     bool transposeOrientations = false;
     if(PropertyObject* roundnessProperty = particles()->getMutableProperty(ParticlesObject::SuperquadricRoundnessProperty)) {
-        for(auto& v : DataBufferAccess<Vector_2<GraphicsFloatType>>(roundnessProperty).subrange(baseParticleIndex, roundnessProperty->size())) {
+        for(auto& v : BufferAccess<Vector_2<GraphicsFloatType>>(roundnessProperty).subrange(baseParticleIndex, roundnessProperty->size())) {
             // Blockiness1: "north-south" blockiness
             // Blockiness2: "east-west" blockiness
             // Roundness.x: "east-west" roundness
@@ -212,11 +211,14 @@ void ParaViewVTPParticleImporter::FrameLoader::loadFile()
 
     // Convert 3x3 'Tensor' property into particle orientation.
     if(const PropertyObject* tensorProperty = particles()->getProperty(QStringLiteral("Tensor"))) {
-        if(tensorProperty->dataType() == PropertyObject::FloatGraphics && tensorProperty->componentCount() == 9) {
-            DataBufferAccess<QuaternionG> orientations = particles()->createProperty(preserveExistingData ? DataBuffer::Initialized : DataBuffer::Uninitialized, ParticlesObject::OrientationProperty);
+        if(tensorProperty->dataType() == PropertyObject::FloatDefault && tensorProperty->componentCount() == 9) {
+            BufferAccess<QuaternionG> orientations = particles()->createProperty(preserveExistingData ? DataBuffer::Initialized : DataBuffer::Uninitialized, ParticlesObject::OrientationProperty);
             auto* q = orientations.begin() + baseParticleIndex;
-            for(const Matrix_3<GraphicsFloatType>& tensor : ConstDataBufferAccess<Matrix_3<GraphicsFloatType>>(tensorProperty).csubrange(baseParticleIndex, tensorProperty->size())) {
-                *q++ = QuaternionG(transposeOrientations ? tensor.transposed() : tensor, GraphicsFloatType(1e-6));
+            for(const Matrix3& tensor : ConstBufferAccess<Matrix3>(tensorProperty).csubrange(baseParticleIndex, tensorProperty->size())) {
+                if(!tensor.isZero())
+                    *q++ = Quaternion(transposeOrientations ? tensor.transposed() : tensor, FloatType(1e-6)).toDataType<GraphicsFloatType>();
+                else
+                    *q++ = QuaternionG::Identity();
             }
             if(isCanceled())
                 return;
@@ -237,9 +239,9 @@ void ParaViewVTPParticleImporter::FrameLoader::loadFile()
                 particles()->removeProperty(radiusProperty);
         }
         else if(!typesWithMeshShape.empty()) {
-            if(DataBufferAccess<GraphicsFloatType> radiusArray = particles()->getMutableProperty(ParticlesObject::RadiusProperty)) {
+            if(BufferAccess<GraphicsFloatType> radiusArray = particles()->getMutableProperty(ParticlesObject::RadiusProperty)) {
                 auto* radius = radiusArray.begin() + baseParticleIndex;
-                for(auto t : ConstDataBufferAccess<int32_t>(typeProperty).csubrange(baseParticleIndex, typeProperty->size())) {
+                for(auto t : ConstBufferAccess<int32_t>(typeProperty).csubrange(baseParticleIndex, typeProperty->size())) {
                     if(std::find(typesWithMeshShape.cbegin(), typesWithMeshShape.cend(), t) != typesWithMeshShape.cend())
                         *radius = 0;
                     ++radius;
@@ -304,7 +306,7 @@ PropertyObject* ParaViewVTPParticleImporter::FrameLoader::createParticleProperty
         return particles()->createProperty(preserveExistingData ? DataBuffer::Initialized : DataBuffer::Uninitialized, QStringLiteral("Density"), PropertyObject::FloatDefault);
     }
     else if(name.compare(QLatin1String("tensor"), Qt::CaseInsensitive) == 0 && numComponents == 9) {
-        return particles()->createProperty(preserveExistingData ? DataBuffer::Initialized : DataBuffer::Uninitialized, QStringLiteral("Tensor"), PropertyObject::FloatGraphics, 9);
+        return particles()->createProperty(preserveExistingData ? DataBuffer::Initialized : DataBuffer::Uninitialized, QStringLiteral("Tensor"), PropertyObject::FloatDefault, 9);
     }
     else if(name.compare(QLatin1String("shapex"), Qt::CaseInsensitive) == 0 && numComponents == 1) {
         vectorComponent = 0;
@@ -384,22 +386,24 @@ void ParaViewVTPParticleImporter::FrameLoader::loadParticleShape(ParticleType* p
         return;
 
     // Look for a triangle mesh or a surface mesh.
-    DataObjectAccess<DataOORef, TriMeshObject> meshObj = state.getObject<TriMeshObject>();
+    DataOORef<const TriMeshObject> meshObj = state.getObject<TriMeshObject>();
     if(!meshObj) {
         if(const SurfaceMesh* surfaceMesh = state.getObject<SurfaceMesh>()) {
             // Convert surface mesh to triangle mesh.
             DataOORef<TriMeshObject> triMesh = DataOORef<TriMeshObject>::create(ObjectInitializationFlag::DontCreateVisElement);
-            SurfaceMeshAccess(surfaceMesh).convertToTriMesh(*triMesh, false);
-            meshObj.reset(std::move(triMesh));
+            SurfaceMeshReadAccess(surfaceMesh).convertToTriMesh(*triMesh, false);
+            meshObj = std::move(triMesh);
         }
         else return;
     }
+    // Release pipeline state.
     state.reset();
 
     // Show sharp edges of the mesh.
-    meshObj.makeMutable()->determineEdgeVisibility();
+    DataOORef<TriMeshObject> mutableMeshObj = std::move(meshObj).makeMutable();
+    mutableMeshObj->determineEdgeVisibility();
 
-    particleType->setShapeMesh(meshObj.take());
+    particleType->setShapeMesh(std::move(mutableMeshObj));
     particleType->setShape(ParticlesVis::Mesh);
 
     // Aspherix particle geometries seem not to have a consistent face winding order.

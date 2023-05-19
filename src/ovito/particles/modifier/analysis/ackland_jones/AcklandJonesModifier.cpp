@@ -80,7 +80,7 @@ void AcklandJonesModifier::AcklandJonesAnalysisEngine::perform()
     if(!neighborFinder.prepare(positions(), cell(), selection()))
         return;
 
-    DataBufferAccess<int32_t> output(structures());
+    BufferAccess<int32_t> output(structures());
 
     // Perform analysis on each particle.
     if(!selection()) {
@@ -89,7 +89,7 @@ void AcklandJonesModifier::AcklandJonesAnalysisEngine::perform()
         });
     }
     else {
-        ConstDataBufferAccess<SelectionIntType> selectionData(selection());
+        ConstBufferAccess<SelectionIntType> selectionData(selection());
         parallelForWithProgress(positions()->size(), [&](size_t index) {
             // Skip particles that are not included in the analysis.
             if(selectionData[index])

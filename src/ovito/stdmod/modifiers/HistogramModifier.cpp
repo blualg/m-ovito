@@ -149,13 +149,13 @@ void HistogramModifier::evaluateSynchronous(const ModifierEvaluationRequest& req
     size_t vecComponentCount = property->componentCount();
 
     // Get the input selection if filtering was enabled by the user.
-    ConstDataBufferAccess<SelectionIntType> inputSelection;
+    ConstBufferAccess<SelectionIntType> inputSelection;
     if(onlySelectedElements() && container->getOOMetaClass().isValidStandardPropertyId(PropertyObject::GenericSelectionProperty)) {
         inputSelection = container->expectProperty(PropertyObject::GenericSelectionProperty);
     }
 
     // Create storage for output selection.
-    DataBufferAccess<SelectionIntType> outputSelection;
+    BufferAccess<SelectionIntType> outputSelection;
     if(selectInRange() && container->getOOMetaClass().isValidStandardPropertyId(PropertyObject::GenericSelectionProperty)) {
         // First make sure we can safely modify the property container.
         PropertyContainer* mutableContainer = state.expectMutableLeafObject(subject());
@@ -175,12 +175,12 @@ void HistogramModifier::evaluateSynchronous(const ModifierEvaluationRequest& req
 
     // Allocate output data array.
     PropertyPtr histogram = DataTable::OOClass().createUserProperty(DataBuffer::Initialized, std::max(1, numberOfBins()), PropertyObject::Int64, 1, tr("Count"));
-    DataBufferAccess<int64_t> histogramAccess(histogram);
+    BufferAccess<int64_t> histogramAccess(histogram);
     int histogramSizeMin1 = histogram->size() - 1;
 
     if(property->size() > 0) {
         if(property->dataType() == PropertyObject::Float32) {
-            ConstDataBufferAccess<float,true> array(property);
+            ConstBufferAccess<float,true> array(property);
             // Determine value range.
             if(!fixXAxisRange()) {
                 intervalStart = std::numeric_limits<FloatType>::max();
@@ -223,7 +223,7 @@ void HistogramModifier::evaluateSynchronous(const ModifierEvaluationRequest& req
             }
         }
         else if(property->dataType() == PropertyObject::Float64) {
-            ConstDataBufferAccess<double,true> array(property);
+            ConstBufferAccess<double,true> array(property);
             // Determine value range.
             if(!fixXAxisRange()) {
                 intervalStart = std::numeric_limits<FloatType>::max();
@@ -266,7 +266,7 @@ void HistogramModifier::evaluateSynchronous(const ModifierEvaluationRequest& req
             }
         }
         else if(property->dataType() == PropertyObject::Int32) {
-            ConstDataBufferAccess<int32_t,true> array(property);
+            ConstBufferAccess<int32_t,true> array(property);
             // Determine value range.
             if(!fixXAxisRange()) {
                 intervalStart = std::numeric_limits<FloatType>::max();
@@ -309,7 +309,7 @@ void HistogramModifier::evaluateSynchronous(const ModifierEvaluationRequest& req
             }
         }
         else if(property->dataType() == PropertyObject::Int64) {
-            ConstDataBufferAccess<int64_t,true> array(property);
+            ConstBufferAccess<int64_t,true> array(property);
             // Determine value range.
             if(!fixXAxisRange()) {
                 intervalStart = std::numeric_limits<FloatType>::max();
@@ -352,7 +352,7 @@ void HistogramModifier::evaluateSynchronous(const ModifierEvaluationRequest& req
             }
         }
         else if(property->dataType() == PropertyObject::Int8) {
-            ConstDataBufferAccess<int8_t,true> array(property);
+            ConstBufferAccess<int8_t,true> array(property);
             // Determine value range.
             if(!fixXAxisRange()) {
                 intervalStart = std::numeric_limits<FloatType>::max();

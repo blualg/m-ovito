@@ -405,7 +405,10 @@ void VulkanSceneRenderer::renderCylindersImplementation(const CylinderPrimitive&
                         // We pass the min/max range of the color map to the fragment shader in the push constants buffer.
                         color_range = Vector_2<float>(primitive.pseudoColorMapping().minValue(), primitive.pseudoColorMapping().maxValue());
                         // Avoid division by zero due to degenerate value interval.
-                        if(color_range.y() == color_range.x()) color_range.y() = std::nextafter(color_range.y(), std::numeric_limits<float>::max());
+                        if(color_range.y() == color_range.x()) {
+                            color_range.x() = std::min(color_range.x() - FloatTypeEpsilon<float>(), std::nextafter(color_range.x(), std::numeric_limits<float>::lowest()));
+                            color_range.y() = std::max(color_range.y() + FloatTypeEpsilon<float>(), std::nextafter(color_range.y(), std::numeric_limits<float>::max()));
+                        }
 
                         // Create the descriptor set with the color map and bind it to the pipeline.
                         VkDescriptorSet colorMapSet = uploadColorMap(primitive.pseudoColorMapping().gradient());
@@ -467,9 +470,9 @@ void VulkanSceneRenderer::renderCylindersImplementation(const CylinderPrimitive&
     // Upload vertex buffer with the base and head positions and radii.
     VkBuffer positionRadiusBuffer = context()->createCachedBuffer(positionRadiusCacheKey, primitiveCount * (sizeof(Vector_3<float>) + sizeof(Vector_3<float>) + sizeof(float)), currentResourceFrame(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, [&](void* buffer) {
         OVITO_ASSERT(!primitive.widths() || primitive.widths()->size() == primitive.basePositions()->size());
-        ConstDataBufferAccess<Point3> basePositionArray(primitive.basePositions());
-        ConstDataBufferAccess<Point3> headPositionArray(primitive.headPositions());
-        ConstDataBufferAccess<FloatType> diameterArray(primitive.widths());
+        ConstBufferAccess<Point3> basePositionArray(primitive.basePositions());
+        ConstBufferAccess<Point3> headPositionArray(primitive.headPositions());
+        ConstBufferAccess<FloatType> diameterArray(primitive.widths());
         float* dst = reinterpret_cast<float*>(buffer);
         const FloatType* diameter = diameterArray ? diameterArray.cbegin() : nullptr;
         const float uniformRadius = 0.5f * primitive.uniformWidth();
@@ -508,8 +511,8 @@ void VulkanSceneRenderer::renderCylindersImplementation(const CylinderPrimitive&
             OVITO_ASSERT(!primitive.colors() || (primitive.colors()->componentCount() == 1 && renderWithPseudoColorMapping) || (primitive.colors()->componentCount() == 3 && !renderWithPseudoColorMapping));
             OVITO_ASSERT(!primitive.transparencies() || primitive.transparencies()->size() == primitive.basePositions()->size() || primitive.transparencies()->size() == 2 * primitive.basePositions()->size());
             const ColorT<float> uniformColor = primitive.uniformColor().toDataType<float>();
-            ConstDataBufferAccess<FloatType,true> colorArray(primitive.colors());
-            ConstDataBufferAccess<FloatType> transparencyArray(primitive.transparencies());
+            ConstBufferAccess<FloatType,true> colorArray(primitive.colors());
+            ConstBufferAccess<FloatType> transparencyArray(primitive.transparencies());
             const FloatType* color = colorArray ? colorArray.cbegin() : nullptr;
             const FloatType* transparency = transparencyArray ? transparencyArray.cbegin() : nullptr;
             bool twoColorsPerPrimitive = (primitive.colors() && primitive.colors()->size() == 2 * primitive.basePositions()->size());

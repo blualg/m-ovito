@@ -138,7 +138,7 @@ void WignerSeitzAnalysisModifier::WignerSeitzAnalysisEngine::perform()
     int ncomponents = 1;
     int typemin, typemax;
     if(particleTypes()) {
-        ConstDataBufferAccess<int32_t> particleTypesArray(particleTypes());
+        ConstBufferAccess<int32_t> particleTypesArray(particleTypes());
         auto minmax = std::minmax_element(particleTypesArray.cbegin(), particleTypesArray.cend());
         typemin = std::min(_ptypeMinId, *minmax.first);
         typemax = std::max(_ptypeMaxId, *minmax.second);
@@ -166,7 +166,7 @@ void WignerSeitzAnalysisModifier::WignerSeitzAnalysisEngine::perform()
     }
 
     // Assign particles to reference sites.
-    ConstDataBufferAccess<Point3> positionsArray(positions());
+    ConstBufferAccess<Point3> positionsArray(positions());
     if(ncomponents == 1) {
         // Without per-type occupancies:
         parallelForWithProgress(positions()->size(), [&](size_t index) {
@@ -181,7 +181,7 @@ void WignerSeitzAnalysisModifier::WignerSeitzAnalysisEngine::perform()
     }
     else {
         // With per-type occupancies:
-        ConstDataBufferAccess<int32_t> particleTypesArray(particleTypes());
+        ConstBufferAccess<int32_t> particleTypesArray(particleTypes());
         parallelForWithProgress(positions()->size(), [&](size_t index) {
             const Point3& p = positionsArray[index];
             FloatType closestDistanceSq;
@@ -207,17 +207,17 @@ void WignerSeitzAnalysisModifier::WignerSeitzAnalysisEngine::perform()
     }
 
     // Copy data from atomic array to output buffer.
-    DataBufferAccess<int32_t,true> occupancyNumbersArray(occupancyNumbers());
+    BufferAccess<int32_t,true> occupancyNumbersArray(occupancyNumbers());
     if(!siteTypes()) {
         boost::copy(occupancyArray, occupancyNumbersArray.begin());
     }
     else {
         // Map occupancy numbers from sites to atoms.
-        DataBufferAccess<int32_t> siteTypesArray(siteTypes());
-        DataBufferAccess<int64_t> siteIndicesArray(siteIndices());
-        DataBufferAccess<IdentifierIntType> siteIdentifiersArray(siteIdentifiers());
-        ConstDataBufferAccess<int32_t> referenceTypeArray(_referenceTypeProperty);
-        ConstDataBufferAccess<IdentifierIntType> referenceIdentifierArray(_referenceIdentifierProperty);
+        BufferAccess<int32_t> siteTypesArray(siteTypes());
+        BufferAccess<int64_t> siteIndicesArray(siteIndices());
+        BufferAccess<IdentifierIntType> siteIdentifiersArray(siteIdentifiers());
+        ConstBufferAccess<int32_t> referenceTypeArray(_referenceTypeProperty);
+        ConstBufferAccess<IdentifierIntType> referenceIdentifierArray(_referenceIdentifierProperty);
         int32_t* occ = occupancyNumbersArray.begin();
         int32_t* st = siteTypesArray.begin();
         auto sidx = siteIndicesArray.begin();

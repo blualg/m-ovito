@@ -128,9 +128,9 @@ void CoordinationAnalysisModifier::CoordinationAnalysisEngine::perform()
         return;
 
     size_t particleCount = positions()->size();
-    DataBufferAccess<int32_t> coordinationData(coordinationNumbers());
-    ConstDataBufferAccess<int32_t> particleTypeData(particleTypes());
-    ConstDataBufferAccess<SelectionIntType> selectionData(selection());
+    BufferAccess<int32_t> coordinationData(coordinationNumbers());
+    ConstBufferAccess<int32_t> particleTypeData(particleTypes());
+    ConstBufferAccess<SelectionIntType> selectionData(selection());
     setProgressMaximum(particleCount);
 
     // Parallel calculation loop:
@@ -179,7 +179,7 @@ void CoordinationAnalysisModifier::CoordinationAnalysisEngine::perform()
         }
         // Combine per-thread RDFs into a set of master histograms.
         std::lock_guard<std::mutex> lock(mutex);
-        DataBufferAccess<FloatType,true> rdfData(rdfY());
+        BufferAccess<FloatType,true> rdfData(rdfY());
         auto bin = rdfData.begin();
         for(auto iter = threadLocalRDF.cbegin(); iter != threadLocalRDF.cend(); ++iter)
             *bin++ += *iter;
@@ -202,7 +202,7 @@ void CoordinationAnalysisModifier::CoordinationAnalysisEngine::perform()
         FloatType r1 = 0;
         size_t cmpntCount = rdfY()->componentCount();
         OVITO_ASSERT(component < cmpntCount);
-        DataBufferAccess<FloatType,true> rdfData(rdfY());
+        BufferAccess<FloatType,true> rdfData(rdfY());
         for(FloatType& y : rdfData.componentRange(component)) {
             double r2 = r1 + stepSize;
             FloatType vol = cell()->is2D() ? (r2*r2 - r1*r1) : (r2*r2*r2 - r1*r1*r1);

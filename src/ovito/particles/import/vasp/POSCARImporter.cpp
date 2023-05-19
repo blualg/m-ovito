@@ -252,8 +252,8 @@ void POSCARImporter::FrameLoader::loadFile()
     PropertyObject* posProperty = particles()->createProperty(ParticlesObject::PositionProperty);
     PropertyObject* typeProperty = particles()->createProperty(ParticlesObject::TypeProperty);
 
-    DataBufferAccess<Point3> posAccess(posProperty);
-    DataBufferAccess<int32_t> typeAccess(typeProperty);
+    BufferAccess<Point3> posAccess(posProperty);
+    BufferAccess<int32_t> typeAccess(typeProperty);
 
     // Read atom coordinates.
     auto* p = posAccess.begin();
@@ -289,7 +289,7 @@ void POSCARImporter::FrameLoader::loadFile()
                 isCartesian = true;
 
             // Read atomic velocities.
-            DataBufferAccess<Vector3> velocityAccess = particles()->createProperty(ParticlesObject::VelocityProperty);
+            BufferAccess<Vector3> velocityAccess = particles()->createProperty(ParticlesObject::VelocityProperty);
             auto* v = velocityAccess.begin();
             for(int atype = 1; atype <= atomCounts.size(); atype++) {
                 for(int i = 0; i < atomCounts[atype-1]; i++, ++v) {
@@ -414,10 +414,10 @@ QString POSCARImporter::FrameLoader::readDensityGrid(CompressedTextReader& strea
     }
 
     if(magnetizationDensityX && magnetizationDensityY && magnetizationDensityZ) {
-        DataBufferAccess<FloatType,true> vectorMagnetization = voxelGrid->createProperty(tr("Magnetization density"), DataBuffer::FloatDefault, 3, QStringList() << "X" << "Y" << "Z");
-        boost::copy(ConstDataBufferAccess<FloatType>(magnetizationDensityX), vectorMagnetization.componentRange(0).begin());
-        boost::copy(ConstDataBufferAccess<FloatType>(magnetizationDensityY), vectorMagnetization.componentRange(1).begin());
-        boost::copy(ConstDataBufferAccess<FloatType>(magnetizationDensityZ), vectorMagnetization.componentRange(2).begin());
+        BufferAccess<FloatType,true> vectorMagnetization = voxelGrid->createProperty(tr("Magnetization density"), DataBuffer::FloatDefault, 3, QStringList() << "X" << "Y" << "Z");
+        boost::copy(ConstBufferAccess<FloatType>(magnetizationDensityX), vectorMagnetization.componentRange(0).begin());
+        boost::copy(ConstBufferAccess<FloatType>(magnetizationDensityY), vectorMagnetization.componentRange(1).begin());
+        boost::copy(ConstBufferAccess<FloatType>(magnetizationDensityZ), vectorMagnetization.componentRange(2).begin());
     }
 
     voxelGrid->verifyIntegrity();
@@ -430,7 +430,7 @@ QString POSCARImporter::FrameLoader::readDensityGrid(CompressedTextReader& strea
 PropertyObject* POSCARImporter::FrameLoader::readFieldQuantity(CompressedTextReader& stream, VoxelGrid* grid, const QString& name)
 {
     PropertyObject* fieldProperty = grid->createProperty(name, DataBuffer::FloatDefault);
-    DataBufferAccess<FloatType,true> fieldAccess(fieldProperty);
+    BufferAccess<FloatType,true> fieldAccess(fieldProperty);
     const char* s = stream.readLine();
     auto* data = fieldAccess.begin();
     setProgressMaximum(fieldProperty->size());

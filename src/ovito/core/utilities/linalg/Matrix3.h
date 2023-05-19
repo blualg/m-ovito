@@ -258,7 +258,7 @@ public:
     /// \param tolerance A non-negative threshold for the equality test. The two matrices are considered equal if
     ///        the element-wise differences are all less than this tolerance value.
     /// \return \c true if this matrix is equal to \a m within the given tolerance; \c false otherwise.
-    inline bool equals(const Matrix_3& m, T tolerance = T(FLOATTYPE_EPSILON)) const {
+    inline bool equals(const Matrix_3& m, T tolerance = FloatTypeEpsilon<T>()) const {
         for(size_type i = 0; i < col_count(); i++)
             if(!column(i).equals(m.column(i), tolerance)) return false;
         return true;
@@ -267,7 +267,7 @@ public:
     /// \brief Test if the matrix is zero within a given tolerance.
     /// \param tolerance A non-negative threshold.
     /// \return \c true if the absolute value of each matrix element is all smaller than \a tolerance.
-    inline bool isZero(T tolerance = T(FLOATTYPE_EPSILON)) const {
+    inline bool isZero(T tolerance = FloatTypeEpsilon<T>()) const {
         for(size_type i = 0; i < col_count(); i++)
             if(!column(i).isZero(tolerance)) return false;
         return true;
@@ -299,7 +299,7 @@ public:
     /// \return \c false if the matrix is not invertible because it is singular; \c true if the inverse has been calculated
     ///         and was stored in \a result.
     /// \sa determinant()
-    bool inverse(Matrix_3& result, T epsilon = T(FLOATTYPE_EPSILON)) const {
+    bool inverse(Matrix_3& result, T epsilon = FloatTypeEpsilon<T>()) const {
         T det = determinant();
         if(std::abs(det) <= epsilon) return false;
         result = Matrix_3(((*this)[1][1]*(*this)[2][2] - (*this)[1][2]*(*this)[2][1])/det,
@@ -348,7 +348,7 @@ public:
     /// \return \c true if the matrix is orthogonal; \c false otherwise.
     ///
     /// The matrix A is orthogonal matrix if A * A^T = I.
-    Q_DECL_CONSTEXPR bool isOrthogonalMatrix(T epsilon = T(FLOATTYPE_EPSILON)) const {
+    Q_DECL_CONSTEXPR bool isOrthogonalMatrix(T epsilon = FloatTypeEpsilon<T>()) const {
         return
             (std::abs((*this)[0][0]*(*this)[1][0] + (*this)[0][1]*(*this)[1][1] + (*this)[0][2]*(*this)[1][2]) <= epsilon) &&
             (std::abs((*this)[0][0]*(*this)[2][0] + (*this)[0][1]*(*this)[2][1] + (*this)[0][2]*(*this)[2][2]) <= epsilon) &&
@@ -364,7 +364,7 @@ public:
     /// The matrix A is a pure rotation matrix if:
     ///   1. det(A) = 1  and
     ///   2. A * A^T = I
-    Q_DECL_CONSTEXPR bool isRotationMatrix(T epsilon = T(FLOATTYPE_EPSILON)) const {
+    Q_DECL_CONSTEXPR bool isRotationMatrix(T epsilon = FloatTypeEpsilon<T>()) const {
         return isOrthogonalMatrix(epsilon) && (std::abs(determinant() - T(1)) <= epsilon);
     }
 
@@ -481,7 +481,7 @@ inline Matrix_3<T> Matrix_3<T>::rotation(const RotationT<T>& rot)
     T s = sin(rot.angle());
     T t = T(1) - c;
     const auto& a = rot.axis();
-    OVITO_ASSERT_MSG(std::abs(a.squaredLength() - T(1)) <= T(FLOATTYPE_EPSILON), "Matrix3::rotation", "Rotation axis vector must be normalized.");
+    OVITO_ASSERT_MSG(std::abs(a.squaredLength() - T(1)) <= FloatTypeEpsilon<T>(), "Matrix3::rotation", "Rotation axis vector must be normalized.");
     return Matrix_3<T>( t * a.x() * a.x() + c,       t * a.x() * a.y() - s * a.z(), t * a.x() * a.z() + s * a.y(),
                     t * a.x() * a.y() + s * a.z(), t * a.y() * a.y() + c,       t * a.y() * a.z() - s * a.x(),
                     t * a.x() * a.z() - s * a.y(), t * a.y() * a.z() + s * a.x(), t * a.z() * a.z() + c       );
@@ -492,7 +492,7 @@ template<typename T>
 inline Matrix_3<T> Matrix_3<T>::rotation(const QuaternionT<T>& q)
 {
 #ifdef OVITO_DEBUG
-    if(std::abs(q.dot(q) - T(1)) > T(FLOATTYPE_EPSILON)) {
+    if(std::abs(q.dot(q) - T(1)) > FloatTypeEpsilon<T>()) {
         OVITO_ASSERT_MSG(false, "Matrix3::rotation", "Quaternion must be normalized.");
     }
 #endif
@@ -574,7 +574,7 @@ inline Vector_3<T> Matrix_3<T>::toEuler(EulerAxisSequence axisSequence) const
     const Matrix_3<T>& M = *this;
     if(repetition) {
         T sy = std::sqrt(M(i, j)*M(i, j) + M(i, k)*M(i, k));
-        if(sy > T(FLOATTYPE_EPSILON)) {
+        if(sy > FloatTypeEpsilon<T>()) {
             ax = std::atan2( M(i, j),  M(i, k));
             ay = std::atan2( sy,       M(i, i));
             az = std::atan2( M(j, i), -M(k, i));
@@ -587,7 +587,7 @@ inline Vector_3<T> Matrix_3<T>::toEuler(EulerAxisSequence axisSequence) const
     }
     else {
         T cy = std::sqrt(M(i, i)*M(i, i) + M(j, i)*M(j, i));
-        if(cy > T(FLOATTYPE_EPSILON)) {
+        if(cy > FloatTypeEpsilon<T>()) {
             ax = std::atan2( M(k, j),  M(k, k));
             ay = std::atan2(-M(k, i),  cy);
             az = std::atan2( M(j, i),  M(i, i));

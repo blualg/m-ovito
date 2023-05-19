@@ -23,7 +23,7 @@
 #include <ovito/stdobj/StdObj.h>
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/dataset/scene/PipelineSceneNode.h>
-#include <ovito/core/dataset/data/DataBufferAccess.h>
+#include <ovito/core/dataset/data/BufferAccess.h>
 #include <ovito/core/rendering/SceneRenderer.h>
 #include "TargetObject.h"
 
@@ -78,7 +78,7 @@ PipelineStatus TargetVis::render(AnimationTime time, const ConstDataObjectPath& 
                 { 1, -1,  1}, { 1, 1, 1},
                 {-1, -1,  1}, {-1, 1, 1}
             };
-            DataBufferAccessAndRef<Point3G> vertices = DataBufferPtr::create(sizeof(linePoints) / sizeof(Point3G), DataBuffer::FloatGraphics, 3);
+            BufferAccessAndRef<Point3G> vertices = DataBufferPtr::create(sizeof(linePoints) / sizeof(Point3G), DataBuffer::FloatGraphics, 3);
             boost::copy(linePoints, vertices.begin());
             vertexPositions = vertices.take();
         }

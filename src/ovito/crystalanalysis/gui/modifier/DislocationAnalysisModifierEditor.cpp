@@ -193,13 +193,13 @@ QVariant DislocationTypeListParameterUI::getItemData(RefTarget* target, const QM
             else if(index.column() == 2 && _dislocationCounts) {
                 if(const PropertyObject* yprop = _dislocationCounts->y()) {
                     if(yprop->size() > family->numericId() && yprop->dataType() == DataBuffer::Int32)
-                        return ConstDataBufferAccess<int32_t>(yprop)[family->numericId()];
+                        return ConstBufferAccess<int32_t>(yprop)[family->numericId()];
                 }
             }
             else if(index.column() == 3 && _dislocationLengths) {
                 if(const PropertyObject* yprop = _dislocationLengths->y()) {
                     if(yprop->size() > family->numericId() && yprop->dataType() == PropertyObject::FloatDefault)
-                        return QString::number(ConstDataBufferAccess<FloatType>(yprop)[family->numericId()]);
+                        return QString::number(ConstBufferAccess<FloatType>(yprop)[family->numericId()]);
                 }
             }
         }

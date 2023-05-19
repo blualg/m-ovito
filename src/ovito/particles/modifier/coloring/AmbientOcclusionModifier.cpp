@@ -215,7 +215,7 @@ void AmbientOcclusionModifier::AmbientOcclusionEngine::perform()
                 // Extract brightness values from rendered image.
                 const QImage& image = frameBuffer.image();
                 OVITO_ASSERT(!image.isNull());
-                DataBufferAccess<FloatType> brightnessValues(brightness());
+                BufferAccess<FloatType> brightnessValues(brightness());
                 for(int y = 0; y < _resolution; y++) {
                     const QRgb* pixel = reinterpret_cast<const QRgb*>(image.scanLine(y));
                     for(int x = 0; x < _resolution; x++, ++pixel) {
@@ -247,8 +247,8 @@ void AmbientOcclusionModifier::AmbientOcclusionEngine::perform()
         setProgressValue(_samplingCount);
 
         // Normalize brightness values by particle area.
-        ConstDataBufferAccess<GraphicsFloatType> radiusArray(particleRadii());
-        DataBufferAccess<FloatType> brightnessValues(brightness());
+        ConstBufferAccess<GraphicsFloatType> radiusArray(particleRadii());
+        BufferAccess<FloatType> brightnessValues(brightness());
         auto r = radiusArray.cbegin();
         for(FloatType& b : brightnessValues) {
             if(*r != 0)
@@ -293,8 +293,8 @@ void AmbientOcclusionModifier::AmbientOcclusionEngine::applyResults(const Modifi
         return;
 
     // Get output property object.
-    ConstDataBufferAccess<FloatType> brightnessValues(brightness());
-    DataBufferAccess<ColorG> colorProperty = particles->createProperty(DataBuffer::Initialized, ParticlesObject::ColorProperty, {particles});
+    ConstBufferAccess<FloatType> brightnessValues(brightness());
+    BufferAccess<ColorG> colorProperty = particles->createProperty(DataBuffer::Initialized, ParticlesObject::ColorProperty, {particles});
     const FloatType* b = brightnessValues.cbegin();
     for(ColorG& c : colorProperty) {
         GraphicsFloatType factor = FloatType(1) - intensity + static_cast<GraphicsFloatType>(*b);

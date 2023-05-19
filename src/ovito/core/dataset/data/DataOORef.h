@@ -194,6 +194,16 @@ public:
         }
     }
 
+    /// Makes the referenced data object mutable by copying it if necessary.
+    /// If copying takes place, the internal reference is updated to point to the copy.
+    std::remove_const_t<T>* makeMutableInplace() {
+        if(this->_ref && !this->_ref->isSafeToModify()) {
+            reset(CloneHelper().cloneObject(this->_ref.get(), false));
+            OVITO_ASSERT(this->_ref->isSafeToModify());
+        }
+        return const_pointer_cast<std::remove_const_t<T>>(this->_ref.get());
+    }
+
     /// Makes a shallow copy of a data object.
     static DataOORef<std::remove_const_t<T>> makeCopy(const T* obj) {
         return CloneHelper().cloneObject(obj, false);

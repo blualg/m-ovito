@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -80,13 +80,10 @@ bool CAExporter::exportFrame(int frameNumber, const QString& filePath, MainThrea
     // Get dislocation lines.
     const DislocationNetworkObject* dislocationObj = state.getObject<DislocationNetworkObject>();
 
-    // Get microstructure object.
-    const Microstructure* microstructureObj = state.getObject<Microstructure>();
-
     // Get defect surface mesh.
     const SurfaceMesh* defectMesh = meshExportEnabled() ? state.getObject<SurfaceMesh>() : nullptr;
 
-    if(!dislocationObj && !defectMesh && !microstructureObj)
+    if(!dislocationObj && !defectMesh)
         throw Exception(tr("Dataset to be exported contains no dislocation lines nor a surface mesh. Cannot write CA file."));
 
     // Write file header.
@@ -98,14 +95,6 @@ bool CAExporter::exportFrame(int frameNumber, const QString& filePath, MainThrea
         for(const MicrostructurePhase* phase : dislocationObj->crystalStructures()) {
             if(phase->numericId() != 0)
                 crystalStructures.push_back(phase);
-        }
-    }
-    else if(microstructureObj) {
-        const PropertyObject* phaseProperty = microstructureObj->regions()->expectProperty(SurfaceMeshRegions::PhaseProperty);
-        for(const ElementType* t : phaseProperty->elementTypes()) {
-            if(const MicrostructurePhase* phase = dynamic_object_cast<MicrostructurePhase>(t))
-                if(phase->numericId() != 0)
-                    crystalStructures.push_back(phase);
         }
     }
 
@@ -147,9 +136,6 @@ bool CAExporter::exportFrame(int frameNumber, const QString& filePath, MainThrea
     std::shared_ptr<DislocationNetwork> dislocations;
     if(dislocationObj) {
         dislocations = dislocationObj->storage();
-    }
-    else if(microstructureObj) {
-        dislocations = std::make_shared<DislocationNetwork>(microstructureObj);
     }
     // Get cluster graph.
     const auto clusterGraph = dislocations->clusterGraph();
@@ -239,7 +225,7 @@ bool CAExporter::exportFrame(int frameNumber, const QString& filePath, MainThrea
 
         // Serialize list of vertices.
         textStream() << "DEFECT_MESH_VERTICES " << vertexCoords->size() << "\n";
-        for(const Point3& vertex : ConstDataBufferAccess<Point3>(vertexCoords)) {
+        for(const Point3& vertex : ConstBufferAccess<Point3>(vertexCoords)) {
             textStream() << vertex.x() << " " << vertex.y() << " " << vertex.z() << "\n";
         }
 

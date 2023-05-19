@@ -179,7 +179,7 @@ void ScatterPlotModifier::evaluateSynchronous(const ModifierEvaluationRequest& r
         std::swap(selectionYAxisRangeStart, selectionYAxisRangeEnd);
 
     // Create output selection.
-    DataBufferAccess<SelectionIntType> outputSelection;
+    BufferAccess<SelectionIntType> outputSelection;
     size_t numSelected = 0;
     if((selectXAxisInRange() || selectYAxisInRange()) && container->getOOMetaClass().isValidStandardPropertyId(PropertyObject::GenericSelectionProperty)) {
         // First make sure we can safely modify the property container.
@@ -193,8 +193,8 @@ void ScatterPlotModifier::evaluateSynchronous(const ModifierEvaluationRequest& r
     // Create output arrays.
     PropertyPtr out_x = DataTable::OOClass().createUserProperty(DataBuffer::Uninitialized, container->elementCount(), PropertyObject::FloatDefault, 1, xAxisProperty().nameWithComponent());
     PropertyPtr out_y = DataTable::OOClass().createUserProperty(DataBuffer::Uninitialized, container->elementCount(), PropertyObject::FloatDefault, 1, yAxisProperty().nameWithComponent());
-    DataBufferAccess<FloatType> out_x_access(out_x);
-    DataBufferAccess<FloatType> out_y_access(out_y);
+    BufferAccess<FloatType> out_x_access(out_x);
+    BufferAccess<FloatType> out_y_access(out_y);
 
     // Collect X coordinates.
     if(!xProperty->copyTo(out_x_access.begin(), xVecComponent))

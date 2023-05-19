@@ -215,8 +215,8 @@ void CFGImporter::FrameLoader::loadFile()
         typeProperty = particles()->createProperty(ParticlesObject::TypeProperty);
         massProperty = particles()->createProperty(ParticlesObject::MassProperty);
     }
-    DataBufferAccess<int32_t> typePropertyAccess(typeProperty);
-    DataBufferAccess<FloatType> massPropertyAccess(massProperty);
+    BufferAccess<int32_t> typePropertyAccess(typeProperty);
+    BufferAccess<FloatType> massPropertyAccess(massProperty);
 
     // Read per-particle data.
     bool isFirstLine = true;
@@ -287,7 +287,7 @@ void CFGImporter::FrameLoader::loadFile()
     // The CFG file stores particle positions in reduced coordinates.
     // Rescale them now to absolute (Cartesian) coordinates.
     // However, do this only if no absolute coordinates have been read from the extra data columns in the CFG file.
-    if(DataBufferAccess<Point3> posProperty = particles()->getMutableProperty(ParticlesObject::PositionProperty)) {
+    if(BufferAccess<Point3> posProperty = particles()->getMutableProperty(ParticlesObject::PositionProperty)) {
         for(Point3& p : posProperty)
             p = H * p;
     }

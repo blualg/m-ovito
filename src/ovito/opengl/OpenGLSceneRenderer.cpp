@@ -564,19 +564,19 @@ void OpenGLSceneRenderer::renderParticles(const ParticlePrimitive& primitive)
                 std::vector<int32_t> fullyOpaqueIndices;
                 if(!primitive.indices()) {
                     int index = 0;
-                    for(FloatType t : ConstDataBufferAccess<FloatType>(primitive.transparencies())) {
+                    for(FloatType t : ConstBufferAccess<FloatType>(primitive.transparencies())) {
                         if(t <= 0) fullyOpaqueIndices.push_back(index);
                         index++;
                     }
                 }
                 else {
-                    ConstDataBufferAccess<FloatType> transparencies(primitive.transparencies());
-                    for(auto index : ConstDataBufferAccess<int32_t>(primitive.indices())) {
+                    ConstBufferAccess<FloatType> transparencies(primitive.transparencies());
+                    for(auto index : ConstBufferAccess<int32_t>(primitive.indices())) {
                         if(transparencies[index] <= 0) fullyOpaqueIndices.push_back(index);
                     }
                 }
                 if(!fullyOpaqueIndices.empty()) {
-                    DataBufferAccessAndRef<int32_t> indexArray = DataBufferPtr::create(fullyOpaqueIndices.size(), DataBuffer::Int32);
+                    BufferAccessAndRef<int32_t> indexArray = DataBufferPtr::create(fullyOpaqueIndices.size(), DataBuffer::Int32);
                     std::copy(fullyOpaqueIndices.begin(), fullyOpaqueIndices.end(), indexArray.begin());
                     cache.opaqueIndices = indexArray.take();
                 }

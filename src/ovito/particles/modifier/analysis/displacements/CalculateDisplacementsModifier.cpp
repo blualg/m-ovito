@@ -102,10 +102,10 @@ void CalculateDisplacementsModifier::DisplacementEngine::perform()
     if(!buildParticleMapping(true, false))
         return;
 
-    DataBufferAccess<Vector3> displacementsArray(displacements());
-    DataBufferAccess<FloatType> displacementMagnitudesArray(displacementMagnitudes());
-    ConstDataBufferAccess<Point3> positionsArray(positions());
-    ConstDataBufferAccess<Point3> refPositionsArray(refPositions());
+    BufferAccess<Vector3> displacementsArray(displacements());
+    BufferAccess<FloatType> displacementMagnitudesArray(displacementMagnitudes());
+    ConstBufferAccess<Point3> positionsArray(positions());
+    ConstBufferAccess<Point3> refPositionsArray(refPositions());
 
     // Compute displacement vectors.
     if(affineMapping() != NO_MAPPING) {

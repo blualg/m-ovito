@@ -161,7 +161,7 @@ public:
     /// \param tolerance A non-negative threshold for the equality test. The two color are considered equal if
     ///        the differences in the three color components are all less than this tolerance value.
     /// \return \c true if this color  is equal to \a c within the given tolerance; \c false otherwise.
-    Q_DECL_CONSTEXPR bool equals(const ColorT& c, T tolerance = T(FLOATTYPE_EPSILON)) const {
+    Q_DECL_CONSTEXPR bool equals(const ColorT& c, T tolerance = FloatTypeEpsilon<T>()) const {
         return std::abs(c.r() - r()) <= tolerance && std::abs(c.g() - g()) <= tolerance && std::abs(c.b() - b()) <= tolerance;
     }
 
@@ -469,7 +469,7 @@ public:
     /// \param tolerance A non-negative threshold for the equality test. The two color are considered equal if
     ///        the differences in the four color components are all less than this tolerance value.
     /// \return \c true if this color  is equal to \a c within the given tolerance; \c false otherwise.
-    Q_DECL_CONSTEXPR bool equals(const ColorAT& c, T tolerance = T(FLOATTYPE_EPSILON)) const {
+    Q_DECL_CONSTEXPR bool equals(const ColorAT& c, T tolerance = FloatTypeEpsilon<T>()) const {
         return std::abs(c.r() - r()) <= tolerance && std::abs(c.g() - g()) <= tolerance && std::abs(c.b() - b()) <= tolerance && std::abs(c.a() - a()) <= tolerance;
     }
 

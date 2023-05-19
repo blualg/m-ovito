@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -22,7 +22,6 @@
 
 #include <ovito/crystalanalysis/CrystalAnalysis.h>
 #include <ovito/crystalanalysis/objects/DislocationNetworkObject.h>
-#include <ovito/crystalanalysis/objects/Microstructure.h>
 #include <ovito/core/dataset/pipeline/PipelineFlowState.h>
 #include <ovito/core/viewport/ViewportWindowInterface.h>
 #include <ovito/gui/base/actions/ViewportModeAction.h>
@@ -39,7 +38,7 @@ IMPLEMENT_OVITO_CLASS(DislocationInspectionApplet);
 ******************************************************************************/
 bool DislocationInspectionApplet::appliesTo(const DataCollection& data)
 {
-    return data.containsObject<DislocationNetworkObject>() || data.containsObject<Microstructure>();
+    return data.containsObject<DislocationNetworkObject>();
 }
 
 /******************************************************************************
@@ -148,36 +147,6 @@ QVariant DislocationInspectionApplet::DislocationTableModel::data(const QModelIn
                             .arg(QLocale::c().toString(tailLocation.x(), 'f', 4), 7)
                             .arg(QLocale::c().toString(tailLocation.y(), 'f', 4), 7)
                             .arg(QLocale::c().toString(tailLocation.z(), 'f', 4), 7); }
-            }
-        }
-        else if(_microstructure) {
-            ConstDataBufferAccess<Vector3> burgersVectorProperty = _microstructure->faces()->getProperty(SurfaceMeshFaces::BurgersVectorProperty);
-            ConstDataBufferAccess<int32_t> faceRegionProperty = _microstructure->faces()->getProperty(SurfaceMeshFaces::RegionProperty);
-            const PropertyObject* phaseProperty = _microstructure->regions()->getProperty(SurfaceMeshRegions::PhaseProperty);
-            ConstDataBufferAccess<int32_t> phaseArray(faceRegionProperty);
-            if(burgersVectorProperty && faceRegionProperty && phaseProperty && index.row() < burgersVectorProperty.size()) {
-                const MicrostructurePhase* phase = nullptr;
-                int region = faceRegionProperty[index.row()];
-                if(region >= 0 && region < phaseArray.size()) {
-                    int phaseId = phaseArray[region];
-                    if(const MicrostructurePhase* phase = dynamic_object_cast<MicrostructurePhase>(phaseProperty->elementType(phaseId))) {
-                        switch(index.column()) {
-                        case 0: return index.row();
-                        case 1: return DislocationVis::formatBurgersVector(burgersVectorProperty[index.row()], phase);
-                        case 2:
-                            if(ConstDataBufferAccess<Matrix3> correspondenceProperty = _microstructure->regions()->getProperty(SurfaceMeshRegions::LatticeCorrespondenceProperty)) {
-                                Vector3 transformedVector = correspondenceProperty[region] * burgersVectorProperty[index.row()];
-                                return QStringLiteral("%1 %2 %3")
-                                        .arg(QLocale::c().toString(transformedVector.x(), 'f', 4), 7)
-                                        .arg(QLocale::c().toString(transformedVector.y(), 'f', 4), 7)
-                                        .arg(QLocale::c().toString(transformedVector.z(), 'f', 4), 7);
-                            }
-                            break;
-                        case 4: return region;
-                        case 5: return phase->name();
-                        }
-                    }
-                }
             }
         }
     }

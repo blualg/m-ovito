@@ -22,7 +22,7 @@
 
 #include <ovito/mesh/Mesh.h>
 #include <ovito/mesh/surface/SurfaceMesh.h>
-#include <ovito/mesh/surface/SurfaceMeshAccess.h>
+#include <ovito/mesh/surface/SurfaceMeshBuilder.h>
 #include "SurfaceMeshDeleteSelectedModifierDelegate.h"
 
 namespace Ovito::Mesh {
@@ -57,7 +57,7 @@ PipelineStatus SurfaceMeshRegionsDeleteSelectedModifierDelegate::apply(const Mod
             existingSurface->verifyMeshIntegrity();
 
             // Check if there is a region selection set.
-            ConstDataBufferAccess<SelectionIntType> selectionProperty = existingSurface->regions()->getProperty(SurfaceMeshRegions::SelectionProperty);
+            ConstBufferAccessAndRef<SelectionIntType> selectionProperty = existingSurface->regions()->getProperty(SurfaceMeshRegions::SelectionProperty);
             if(!selectionProperty) continue; // Nothing to do if there is no selection.
 
             // Check if at least one mesh region is currently selected.
@@ -65,39 +65,43 @@ PipelineStatus SurfaceMeshRegionsDeleteSelectedModifierDelegate::apply(const Mod
                 continue;
 
             // Mesh faces must have the "Region" property.
-            ConstDataBufferAccess<int32_t> regionProperty = existingSurface->faces()->getProperty(SurfaceMeshFaces::RegionProperty);
-            if(!regionProperty) continue; // Nothing to do if there is no face region information.
+            if(!existingSurface->faces()->getProperty(SurfaceMeshFaces::RegionProperty))
+                continue; // Nothing to do if there is no face region information.
 
-            // Create a work data structure for modifying the mesh.
-            SurfaceMeshAccess mesh(existingSurface);
-            OVITO_ASSERT(mesh.hasFaceRegions());
+            // Create a mutable copy of the SurfaceMesh.
+            SurfaceMesh* mutableSurface = state.makeMutable(existingSurface);
+
+            // Create a working data structure for modifying the mesh.
+            SurfaceMeshBuilder mesh(mutableSurface);
             numRegions += mesh.regionCount();
 
             // Remove selection property from the regions.
             mesh.removeRegionProperty(SurfaceMeshRegions::SelectionProperty);
 
+            // Get access to the per-face region information.
+            ConstBufferAccess<int32_t> regionProperty = mesh.expectFaceProperty(SurfaceMeshFaces::RegionProperty);
+
             // Delete all faces that belong to one of the selected mesh regions.
             boost::dynamic_bitset<> faceMask(mesh.faceCount());
-            for(SurfaceMeshAccess::face_index face = 0; face < mesh.faceCount(); face++) {
-                SurfaceMeshAccess::region_index region = mesh.faceRegion(face);
+            for(SurfaceMesh::face_index face : mesh.facesRange()) {
+                SurfaceMesh::region_index region = regionProperty[face];
                 if(region >= 0 && region < selectionProperty.size() && selectionProperty[region]) {
                     faceMask.set(face);
                 }
             }
+            regionProperty.reset();
             mesh.deleteFaces(faceMask);
 
             // Delete the selected regions.
             boost::dynamic_bitset<> regionMask(mesh.regionCount());
-            for(SurfaceMeshAccess::region_index region = mesh.regionCount() - 1; region >= 0; region--) {
+            for(SurfaceMesh::region_index region : mesh.regionsRange()) {
                 if(selectionProperty[region]) {
                     regionMask.set(region);
                     numSelected++;
                 }
             }
+            selectionProperty.reset();
             mesh.deleteRegions(regionMask);
-
-            // Write SurfaceMesh back to the output pipeline state.
-            state.replaceObject(existingSurface, mesh.take());
         }
     }
 

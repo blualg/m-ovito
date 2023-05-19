@@ -22,7 +22,7 @@
 
 /**
  * \file
- * \brief This header file defines the default floating-point type and numeric constants used throughout the program.
+ * \brief This header file defines the default data types and numeric constants used throughout the program.
  */
 
 #pragma once
@@ -54,6 +54,12 @@ namespace Ovito {
 
 #endif
 
+/// A small epsilon, which is used in OVITO to test if a number is (almost) zero.
+/// This function template returns a type dependent epsilon value (for single and double precision types).
+template<typename T> constexpr T FloatTypeEpsilon() { return T{}; }
+template<> constexpr float FloatTypeEpsilon<float>() { return 1e-6f; }
+template<> constexpr double FloatTypeEpsilon<double>() { return 1e-12f; }
+
 /// The maximum value for floating-point variables of type Ovito::FloatType.
 #define FLOATTYPE_MAX   (std::numeric_limits<Ovito::FloatType>::max())
 
@@ -65,5 +71,14 @@ namespace Ovito {
 
 /// Low-precisiion floating-point type used for graphics data.
 using GraphicsFloatType = float;
+
+/// The format specifier to be passed to the sscanf() function to parse low-precision floating-point numbers of type Ovito::GraphicsFloatType.
+#define GRAPHICS_FLOATTYPE_SCANF_STRING "%g"
+
+/// Data type used for storing unique identifiers.
+using IdentifierIntType = int64_t;
+
+/// Data type used for storing element selections.
+using SelectionIntType = int8_t;
 
 }   // End of namespace

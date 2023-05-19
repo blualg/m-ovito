@@ -125,9 +125,9 @@ void CIFImporter::FrameLoader::loadFile()
         // Parse list of atomic sites.
         std::vector<gemmi::SmallStructure::Site> sites = structure.get_all_unit_cell_sites();
         setParticleCount(sites.size());
-        DataBufferAccess<Point3> posProperty = particles()->createProperty(ParticlesObject::PositionProperty);
+        BufferAccess<Point3> posProperty = particles()->createProperty(ParticlesObject::PositionProperty);
         PropertyObject* typeProperty = particles()->createProperty(ParticlesObject::TypeProperty);
-        DataBufferAccess<int32_t> typePropertyAccess(typeProperty);
+        BufferAccess<int32_t> typePropertyAccess(typeProperty);
         auto* posIter = posProperty.begin();
         auto* typeIter = typePropertyAccess.begin();
         bool hasOccupancy = false;
@@ -147,7 +147,7 @@ void CIFImporter::FrameLoader::loadFile()
 
         // Parse the optional site occupancy information.
         if(hasOccupancy) {
-            DataBufferAccess<FloatType> occupancyProperty = particles()->createProperty(QStringLiteral("Occupancy"), PropertyObject::FloatDefault);
+            BufferAccess<FloatType> occupancyProperty = particles()->createProperty(QStringLiteral("Occupancy"), PropertyObject::FloatDefault);
             FloatType* occupancyIter = occupancyProperty.begin();
             for(const gemmi::SmallStructure::Site& site : sites) {
                 *occupancyIter++ = site.occ;

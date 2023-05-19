@@ -212,8 +212,10 @@ void OpenGLSceneRenderer::renderCylindersImplementation(const CylinderPrimitive&
             float minValue = primitive.pseudoColorMapping().minValue();
             float maxValue = primitive.pseudoColorMapping().maxValue();
             // Avoid division by zero due to degenerate value interval.
-            if(minValue == maxValue)
-                maxValue = std::nextafter(maxValue, std::numeric_limits<float>::max());
+            if(minValue == maxValue) {
+                minValue = std::min(minValue - FloatTypeEpsilon<float>(), std::nextafter(minValue, std::numeric_limits<float>::lowest()));
+                maxValue = std::max(maxValue + FloatTypeEpsilon<float>(), std::nextafter(maxValue, std::numeric_limits<float>::max()));
+            }
             shader.setUniformValue("color_range_min", minValue);
             shader.setUniformValue("color_range_max", maxValue);
 

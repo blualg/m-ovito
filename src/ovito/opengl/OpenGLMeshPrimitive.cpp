@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -21,7 +21,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/core/Core.h>
-#include <ovito/core/dataset/data/DataBufferAccess.h>
+#include <ovito/core/dataset/data/BufferAccess.h>
 #include <ovito/core/dataset/DataSet.h>
 #include "OpenGLSceneRenderer.h"
 #include "OpenGLShaderHelper.h"
@@ -152,7 +152,10 @@ void OpenGLSceneRenderer::renderMeshImplementation(const MeshPrimitive& primitiv
         float minValue = primitive.pseudoColorMapping().minValue();
         float maxValue = primitive.pseudoColorMapping().maxValue();
         // Avoid division by zero due to degenerate value interval.
-        if(minValue == maxValue) maxValue = std::nextafter(maxValue, std::numeric_limits<float>::max());
+        if(minValue == maxValue) {
+            minValue = std::min(minValue - FloatTypeEpsilon<float>(), std::nextafter(minValue, std::numeric_limits<float>::lowest()));
+            maxValue = std::max(maxValue + FloatTypeEpsilon<float>(), std::nextafter(maxValue, std::numeric_limits<float>::max()));
+        }
         shader.setUniformValue("color_range_min", minValue);
         shader.setUniformValue("color_range_max", maxValue);
 
@@ -276,7 +279,7 @@ void OpenGLSceneRenderer::renderMeshImplementation(const MeshPrimitive& primitiv
 
             // First, compute distance of each instance from the camera along the viewing direction (=camera z-axis).
             std::vector<FloatType> distances(shader.instanceCount());
-            boost::transform(boost::irange<size_t>(0, shader.instanceCount()), distances.begin(), [direction, tmArray = ConstDataBufferAccess<AffineTransformation>(primitive.perInstanceTMs())](size_t i) {
+            boost::transform(boost::irange<size_t>(0, shader.instanceCount()), distances.begin(), [direction, tmArray = ConstBufferAccess<AffineTransformation>(primitive.perInstanceTMs())](size_t i) {
                 return direction.dot(tmArray[i].translation());
             });
 
@@ -319,10 +322,19 @@ QOpenGLBuffer OpenGLSceneRenderer::getMeshInstanceTMBuffer(const MeshPrimitive& 
     // Upload the per-instance TMs to GPU memory.
     return shader.createCachedBuffer(std::move(cacheKey), 3 * sizeof(Vector_4<float>), QOpenGLBuffer::VertexBuffer, OpenGLShaderHelper::PerInstance, [&](void* buffer) {
         Vector_4<float>* row = reinterpret_cast<Vector_4<float>*>(buffer);
-        for(const AffineTransformation& tm : ConstDataBufferAccess<AffineTransformation>(primitive.perInstanceTMs())) {
-            *row++ = tm.row(0).toDataType<float>();
-            *row++ = tm.row(1).toDataType<float>();
-            *row++ = tm.row(2).toDataType<float>();
+        if(primitive.perInstanceTMs()->dataType() == DataBuffer::Float32) {
+            for(const AffineTransformationT<float>& tm : ConstBufferAccess<AffineTransformationT<float>>(primitive.perInstanceTMs())) {
+                *row++ = tm.row(0);
+                *row++ = tm.row(1);
+                *row++ = tm.row(2);
+            }
+        }
+        else {
+            for(const AffineTransformationT<double>& tm : ConstBufferAccess<AffineTransformationT<double>>(primitive.perInstanceTMs())) {
+                *row++ = tm.row(0).toDataType<float>();
+                *row++ = tm.row(1).toDataType<float>();
+                *row++ = tm.row(2).toDataType<float>();
+            }
         }
     });
 }

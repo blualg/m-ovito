@@ -131,7 +131,7 @@ public:
     /// The rotation angle calculated from the quaternion will be in the range [0, 2*pi].
     explicit RotationT(const QuaternionT<T>& q) {
         T scaleSquared = q.x()*q.x() + q.y()*q.y() + q.z()*q.z();
-        if(scaleSquared <= T(FLOATTYPE_EPSILON)) {
+        if(scaleSquared <= FloatTypeEpsilon<T>()) {
             _angle = T(0);
             _axis = Vector_3<T>(0, 0, 1);
         }
@@ -143,7 +143,7 @@ public:
             else
                 _angle = std::acos(q.w()) * T(2);
             _axis = Vector_3<T>(q.x(), q.y(), q.z()) / std::sqrt(scaleSquared);
-            OVITO_ASSERT(std::abs(_axis.squaredLength() - T(1)) <= T(FLOATTYPE_EPSILON));
+            OVITO_ASSERT(std::abs(_axis.squaredLength() - T(1)) <= FloatTypeEpsilon<T>());
         }
     }
 
@@ -154,11 +154,11 @@ public:
         Vector_3<T> an = a.normalized();
         Vector_3<T> bn = b.normalized();
         T cos = an.dot(bn);
-        if(cos > T(1) - T(FLOATTYPE_EPSILON)) {
+        if(cos > T(1) - FloatTypeEpsilon<T>()) {
             _angle = 0;
             _axis = Vector_3<T>(0,0,1);
         }
-        else if(cos < T(-1) + T(FLOATTYPE_EPSILON)) {
+        else if(cos < T(-1) + FloatTypeEpsilon<T>()) {
             _angle = T(FLOATTYPE_PI);
             _axis = Vector_3<T>(0,0,1);
         }
@@ -253,7 +253,7 @@ public:
     ///        the absolute differences in the X, Y, and Z components of the rotation vector and the angle are all smaller than this tolerance value.
     ///        Note that rotations with equal but opposite axis and angle are also considered equal.
     /// \return \c true if this rotation is equal to the rotation \a r within the given tolerance.
-    Q_DECL_CONSTEXPR bool equals(const RotationT& r, T tolerance = T(FLOATTYPE_EPSILON)) const {
+    Q_DECL_CONSTEXPR bool equals(const RotationT& r, T tolerance = FloatTypeEpsilon<T>()) const {
         return (std::abs(angle() - r.angle()) <= tolerance && axis().equals( r.axis(), tolerance)) ||
                (std::abs(angle() + r.angle()) <= tolerance && axis().equals(-r.axis(), tolerance));
     }
@@ -357,7 +357,7 @@ public:
                 for(int zr = -maxRevolutionsZ; zr <= maxRevolutionsZ; zr++) {
                     euler2.z() = euler.z() + T(FLOATTYPE_PI*2) * zr;
                     if(equals(fromEuler(euler2, axisSequence))) {
-                        int ranking = int(std::abs(euler2.x()) <= T(FLOATTYPE_EPSILON)) + int(std::abs(euler2.y()) <= T(FLOATTYPE_EPSILON)) + int(std::abs(euler2.z()) <= T(FLOATTYPE_EPSILON));
+                        int ranking = int(std::abs(euler2.x()) <= FloatTypeEpsilon<T>()) + int(std::abs(euler2.y()) <= FloatTypeEpsilon<T>()) + int(std::abs(euler2.z()) <= FloatTypeEpsilon<T>());
                         if(ranking > bestDecompositionRanking) {
                             bestDecomposition = euler2;
                             bestDecompositionRanking = ranking;

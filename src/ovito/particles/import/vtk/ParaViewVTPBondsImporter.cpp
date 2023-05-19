@@ -23,7 +23,6 @@
 #include <ovito/particles/Particles.h>
 #include <ovito/particles/objects/ParticlesObject.h>
 #include <ovito/mesh/io/ParaViewVTPMeshImporter.h>
-#include <ovito/core/dataset/data/DataObjectAccess.h>
 #include <ovito/core/dataset/io/FileSource.h>
 #include "ParaViewVTPBondsImporter.h"
 
@@ -240,7 +239,7 @@ void BondsParaViewVTMFileFilter::postprocessDatasets(FileSourceImporter::LoadOpe
 
         // Build map from particle identifiers to particle indices.
         std::map<int64_t, size_t> idToIndexMap;
-        if(ConstDataBufferAccess<int64_t> particleIdentifierProperty = particles->getProperty(ParticlesObject::IdentifierProperty)) {
+        if(ConstBufferAccess<int64_t> particleIdentifierProperty = particles->getProperty(ParticlesObject::IdentifierProperty)) {
             size_t index = 0;
             for(int64_t id : particleIdentifierProperty) {
                 if(idToIndexMap.insert(std::make_pair(id, index++)).second == false)
@@ -254,9 +253,9 @@ void BondsParaViewVTMFileFilter::postprocessDatasets(FileSourceImporter::LoadOpe
         }
 
         // Perform lookup of particle IDs.
-        DataBufferAccess<ParticleIndexPair> bondTopologyArray = particles->makeBondsMutable()->createProperty(BondsObject::TopologyProperty);
+        BufferAccess<ParticleIndexPair> bondTopologyArray = particles->makeBondsMutable()->createProperty(BondsObject::TopologyProperty);
         auto t = bondTopologyArray.begin();
-        for(const ParticleIndexPair& bond : ConstDataBufferAccess<ParticleIndexPair>(bondParticleIdentifiers)) {
+        for(const ParticleIndexPair& bond : ConstBufferAccess<ParticleIndexPair>(bondParticleIdentifiers)) {
             auto iter1 = idToIndexMap.find(bond[0]);
             auto iter2 = idToIndexMap.find(bond[1]);
             if(iter1 == idToIndexMap.end())

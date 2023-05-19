@@ -40,7 +40,7 @@ void ParticleExpressionEvaluator::createInputVariables(const std::vector<ConstPr
             return property->type() == ParticlesObject::PositionProperty;
         });
         if(iter != inputProperties.end()) {
-            ConstDataBufferAccessAndRef<Point3> posProperty = *iter;
+            ConstBufferAccessAndRef<Point3> posProperty = *iter;
             registerComputedVariable("ReducedPosition.X", [posProperty,simCell=DataOORef<const SimulationCellObject>(simCell)](size_t particleIndex) -> double {
                 return simCell->inverseMatrix().prodrow(posProperty[particleIndex], 0);
             });
@@ -68,9 +68,9 @@ void BondExpressionEvaluator::initialize(const QStringList& expressions, const P
             _topologyArray = bonds->getProperty(BondsObject::TopologyProperty);
 
             // Define computed variable 'BondLength', which yields the length of the bonds.
-            if(ConstDataBufferAccessAndRef<Point3> positions = particles->getProperty(ParticlesObject::PositionProperty)) {
-                if(ConstDataBufferAccessAndRef<ParticleIndexPair> topology = bonds->getProperty(BondsObject::TopologyProperty)) {
-                    ConstDataBufferAccessAndRef<Vector3I> periodicImages = bonds->getProperty(BondsObject::PeriodicImageProperty);
+            if(ConstBufferAccessAndRef<Point3> positions = particles->getProperty(ParticlesObject::PositionProperty)) {
+                if(ConstBufferAccessAndRef<ParticleIndexPair> topology = bonds->getProperty(BondsObject::TopologyProperty)) {
+                    ConstBufferAccessAndRef<Vector3I> periodicImages = bonds->getProperty(BondsObject::PeriodicImageProperty);
                     DataOORef<const SimulationCellObject> simCell = state.getObject<SimulationCellObject>();
 
                     registerComputedVariable("BondLength", [positions=std::move(positions),topology=std::move(topology),periodicImages=std::move(periodicImages),simCell=std::move(simCell)](size_t bondIndex) -> double {

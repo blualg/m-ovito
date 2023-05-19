@@ -24,7 +24,7 @@
 #include <ovito/particles/objects/BondType.h>
 #include <ovito/particles/objects/ParticlesObject.h>
 #include <ovito/particles/objects/ParticleType.h>
-#include <ovito/mesh/surface/SurfaceMeshAccess.h>
+#include <ovito/mesh/surface/SurfaceMeshBuilder.h>
 #include <ovito/mesh/util/CapPolygonTessellator.h>
 #include <ovito/stdobj/simcell/SimulationCellObject.h>
 #include <ovito/core/dataset/data/mesh/TriMeshObject.h>
@@ -192,7 +192,7 @@ void GSDImporter::FrameLoader::loadFile()
 
     {
         // Read particle positions.
-        DataBufferAccess<FloatType, true> posProperty = particles()->createProperty(ParticlesObject::PositionProperty);
+        BufferAccess<FloatType, true> posProperty = particles()->createProperty(ParticlesObject::PositionProperty);
         if(gsd.hasChunk("particles/position", frameNumber))
             gsd.readFloatArray("particles/position", frameNumber, posProperty.begin(), numParticles, posProperty.componentCount());
         else
@@ -208,7 +208,7 @@ void GSDImporter::FrameLoader::loadFile()
 
         // Read particle types.
         if(gsd.hasChunk("particles/typeid", frameNumber))
-            gsd.readIntArray("particles/typeid", frameNumber, DataBufferAccess<int32_t>(typeProperty).begin(), numParticles);
+            gsd.readIntArray("particles/typeid", frameNumber, BufferAccess<int32_t>(typeProperty).begin(), numParticles);
         else
             typeProperty->fill<int32_t>(0);
         if(isCanceled()) return;
@@ -235,14 +235,14 @@ void GSDImporter::FrameLoader::loadFile()
     readOptionalProperty(gsd, "particles/image", frameNumber, ParticlesObject::PeriodicImageProperty, particles(), &defaultImage, sizeof(defaultImage));
 
     const GraphicsFloatType defaultDiameter = 1;
-    if(DataBufferAccess<GraphicsFloatType> radiusProperty = readOptionalProperty(gsd, "particles/diameter", frameNumber, ParticlesObject::RadiusProperty, particles(), &defaultDiameter, sizeof(defaultDiameter))) {
+    if(BufferAccess<GraphicsFloatType> radiusProperty = readOptionalProperty(gsd, "particles/diameter", frameNumber, ParticlesObject::RadiusProperty, particles(), &defaultDiameter, sizeof(defaultDiameter))) {
         // Convert particle diameters to radii.
         for(auto& r : radiusProperty)
             r /= 2;
     }
 
     const QuaternionG identityQuaternion = QuaternionG(1,0,0,0);
-    if(DataBufferAccess<QuaternionG> orientationProperty = readOptionalProperty(gsd, "particles/orientation", frameNumber, ParticlesObject::OrientationProperty, particles(), &identityQuaternion, sizeof(identityQuaternion))) {
+    if(BufferAccess<QuaternionG> orientationProperty = readOptionalProperty(gsd, "particles/orientation", frameNumber, ParticlesObject::OrientationProperty, particles(), &identityQuaternion, sizeof(identityQuaternion))) {
         // Convert quaternion representation from GSD format to OVITO's internal format.
         // Left-shift all quaternion components by one: (W,X,Y,Z) -> (X,Y,Z,W).
         for(auto& q : orientationProperty)
@@ -293,7 +293,7 @@ void GSDImporter::FrameLoader::loadFile()
         if(isCanceled()) return;
 
         // Convert to OVITO format.
-        DataBufferAccess<ParticleIndexPair> bondTopologyProperty = bonds()->createProperty(BondsObject::TopologyProperty);
+        BufferAccess<ParticleIndexPair> bondTopologyProperty = bonds()->createProperty(BondsObject::TopologyProperty);
         auto bondTopoPtr = bondList.cbegin();
         for(ParticleIndexPair& bond : bondTopologyProperty) {
             if(*bondTopoPtr >= (uint32_t)numParticles)
@@ -322,7 +322,7 @@ void GSDImporter::FrameLoader::loadFile()
 
             // Read bond types.
             if(gsd.hasChunk("bonds/typeid", frameNumber)) {
-                gsd.readIntArray("bonds/typeid", frameNumber, DataBufferAccess<int32_t>(bondTypeProperty).begin(), numBonds);
+                gsd.readIntArray("bonds/typeid", frameNumber, BufferAccess<int32_t>(bondTypeProperty).begin(), numBonds);
             }
             else {
                 bondTypeProperty->fill<int32_t>(0);
@@ -349,7 +349,7 @@ void GSDImporter::FrameLoader::loadFile()
         if(isCanceled()) return;
 
         // Convert to OVITO format.
-        DataBufferAccess<ParticleIndexTriplet> topologyProperty = angles()->createProperty(AnglesObject::TopologyProperty);
+        BufferAccess<ParticleIndexTriplet> topologyProperty = angles()->createProperty(AnglesObject::TopologyProperty);
         auto topoPtr = groupList.cbegin();
         for(ParticleIndexTriplet& angle : topologyProperty) {
             for(auto& idx : angle) {
@@ -376,7 +376,7 @@ void GSDImporter::FrameLoader::loadFile()
 
             // Read element types.
             if(gsd.hasChunk("angles/typeid", frameNumber)) {
-                gsd.readIntArray("angles/typeid", frameNumber, DataBufferAccess<int32_t>(typeProperty).begin(), numAngles);
+                gsd.readIntArray("angles/typeid", frameNumber, BufferAccess<int32_t>(typeProperty).begin(), numAngles);
             }
             else {
                 typeProperty->fill<int32_t>(0);
@@ -403,7 +403,7 @@ void GSDImporter::FrameLoader::loadFile()
         if(isCanceled()) return;
 
         // Convert to OVITO format.
-        DataBufferAccess<ParticleIndexQuadruplet> topologyProperty = dihedrals()->createProperty(DihedralsObject::TopologyProperty);
+        BufferAccess<ParticleIndexQuadruplet> topologyProperty = dihedrals()->createProperty(DihedralsObject::TopologyProperty);
         auto topoPtr = groupList.cbegin();
         for(ParticleIndexQuadruplet& dihedral : topologyProperty) {
             for(int64_t& idx : dihedral) {
@@ -430,7 +430,7 @@ void GSDImporter::FrameLoader::loadFile()
 
             // Read element types.
             if(gsd.hasChunk("dihedrals/typeid", frameNumber)) {
-                gsd.readIntArray("dihedrals/typeid", frameNumber, DataBufferAccess<int32_t>(typeProperty).begin(), numDihedrals);
+                gsd.readIntArray("dihedrals/typeid", frameNumber, BufferAccess<int32_t>(typeProperty).begin(), numDihedrals);
             }
             else {
                 typeProperty->fill<int32_t>(0);
@@ -457,7 +457,7 @@ void GSDImporter::FrameLoader::loadFile()
         if(isCanceled()) return;
 
         // Convert to OVITO format.
-        DataBufferAccess<ParticleIndexQuadruplet> topologyProperty = impropers()->createProperty(ImpropersObject::TopologyProperty);
+        BufferAccess<ParticleIndexQuadruplet> topologyProperty = impropers()->createProperty(ImpropersObject::TopologyProperty);
         auto topoPtr = groupList.cbegin();
         for(ParticleIndexQuadruplet& improper : topologyProperty) {
             for(int64_t& idx : improper) {
@@ -484,7 +484,7 @@ void GSDImporter::FrameLoader::loadFile()
 
             // Read element types.
             if(gsd.hasChunk("impropers/typeid", frameNumber)) {
-                gsd.readIntArray("impropers/typeid", frameNumber, DataBufferAccess<int32_t>(typeProperty).begin(), numImpropers);
+                gsd.readIntArray("impropers/typeid", frameNumber, BufferAccess<int32_t>(typeProperty).begin(), numImpropers);
             }
             else {
                 typeProperty->fill<int32_t>(0);
@@ -534,15 +534,15 @@ PropertyObject* GSDImporter::FrameLoader::readOptionalProperty(GSDFile& gsd, con
             prop = container->createProperty(propertyName, dataTypeAndComponents.first, dataTypeAndComponents.second);
         }
         if(prop->dataType() == PropertyObject::Float32)
-            gsd.readFloatArray(chunkName, frameNumber, DataBufferAccess<float,true>(prop).begin(), container->elementCount(), prop->componentCount());
+            gsd.readFloatArray(chunkName, frameNumber, BufferAccess<float,true>(prop).begin(), container->elementCount(), prop->componentCount());
         else if(prop->dataType() == PropertyObject::Float64)
-            gsd.readFloatArray(chunkName, frameNumber, DataBufferAccess<double,true>(prop).begin(), container->elementCount(), prop->componentCount());
+            gsd.readFloatArray(chunkName, frameNumber, BufferAccess<double,true>(prop).begin(), container->elementCount(), prop->componentCount());
         else if(prop->dataType() == PropertyObject::Int8)
-            gsd.readIntArray(chunkName, frameNumber, DataBufferAccess<int8_t,true>(prop).begin(), container->elementCount(), prop->componentCount());
+            gsd.readIntArray(chunkName, frameNumber, BufferAccess<int8_t,true>(prop).begin(), container->elementCount(), prop->componentCount());
         else if(prop->dataType() == PropertyObject::Int32)
-            gsd.readIntArray(chunkName, frameNumber, DataBufferAccess<int32_t,true>(prop).begin(), container->elementCount(), prop->componentCount());
+            gsd.readIntArray(chunkName, frameNumber, BufferAccess<int32_t,true>(prop).begin(), container->elementCount(), prop->componentCount());
         else if(prop->dataType() == PropertyObject::Int64)
-            gsd.readIntArray(chunkName, frameNumber, DataBufferAccess<int64_t,true>(prop).begin(), container->elementCount(), prop->componentCount());
+            gsd.readIntArray(chunkName, frameNumber, BufferAccess<int64_t,true>(prop).begin(), container->elementCount(), prop->componentCount());
         else
             throw Exception(tr("Property '%1' cannot be read from GSD file, because its data type is not supported by OVITO.").arg(prop->name()));
     }
@@ -561,8 +561,8 @@ PropertyObject* GSDImporter::FrameLoader::readOptionalProperty(GSDFile& gsd, con
         }
         OVITO_ASSERT(prop->stride() == defaultValueSize);
         if(prop->stride() == defaultValueSize) {
-            DataBuffer::WriteAccess writeAccess(*prop);
-            std::byte* dest = prop->buffer();
+            BufferAccess<void,true> access(prop);
+            std::byte* dest = access.data();
             for(size_t i = 0; i < prop->size(); i++, dest += defaultValueSize) {
                 std::memcpy(dest, defaultValue, defaultValueSize);
             }
@@ -688,10 +688,10 @@ void GSDImporter::FrameLoader::parseEllipsoidShape(int typeId, QJsonObject defin
         throw Exception(tr("Invalid 'c' field in 'Ellipsoid' particle shape definition in GSD file. Value must not be negative."));
 
     // Create the 'Aspherical Shape' particle property if it doesn't exist yet.
-    DataBufferAccess<Vector3G> ashapeProperty = particles()->createProperty(DataBuffer::Initialized, ParticlesObject::AsphericalShapeProperty);
+    BufferAccess<Vector3G> ashapeProperty = particles()->createProperty(DataBuffer::Initialized, ParticlesObject::AsphericalShapeProperty);
 
     // Assign the [a,b,c] values to those particles which are of the given type.
-    ConstDataBufferAccess<int32_t> typeProperty = particles()->expectProperty(ParticlesObject::TypeProperty);
+    ConstBufferAccess<int32_t> typeProperty = particles()->expectProperty(ParticlesObject::TypeProperty);
     for(size_t i = 0; i < typeProperty.size(); i++) {
         if(typeProperty[i] == typeId)
             ashapeProperty[i] = abc;
@@ -777,19 +777,20 @@ void GSDImporter::FrameLoader::parsePolygonShape(int typeId, QJsonObject definit
 /******************************************************************************
 * Recursive helper function that tessellates a corner face.
 ******************************************************************************/
-static void tessellateCornerFacet(SurfaceMeshAccess::face_index seedFace, int recursiveDepth, FloatType roundingRadius, SurfaceMeshAccess& mesh, std::vector<Vector3>& vertexNormals, const Point3& center)
+static void tessellateCornerFacet(SurfaceMesh::face_index seedFace, int recursiveDepth, FloatType roundingRadius, SurfaceMeshBuilder& mesh, SurfaceMeshBuilder::VertexGrower& vertexGrower, SurfaceMeshBuilder::FaceGrower& faceGrower, std::vector<Vector3>& vertexNormals, const Point3& center)
 {
-    if(recursiveDepth <= 1) return;
+    if(recursiveDepth <= 1)
+        return;
 
     // List of edges that should be split during the next iteration.
-    std::set<SurfaceMeshAccess::edge_index> edgeList;
+    std::set<SurfaceMesh::edge_index> edgeList;
 
     // List of faces that should be subdivided during the next iteration.
-    std::vector<SurfaceMeshAccess::face_index> faceList, faceList2;
+    std::vector<SurfaceMesh::face_index> faceList, faceList2;
 
     // Initialize lists.
     faceList.push_back(seedFace);
-    SurfaceMeshAccess::edge_index e = mesh.firstFaceEdge(seedFace);
+    SurfaceMesh::edge_index e = mesh.firstFaceEdge(seedFace);
     do {
         edgeList.insert(e);
         e = mesh.nextFaceEdge(e);
@@ -800,26 +801,26 @@ static void tessellateCornerFacet(SurfaceMeshAccess::face_index seedFace, int re
     for(int iteration = 1; iteration < recursiveDepth; iteration++) {
 
         // Create new vertices at the midpoints of the existing edges.
-        for(SurfaceMeshAccess::edge_index edge : edgeList) {
-            Point3 midpoint = mesh.vertexPosition(mesh.vertex1(edge));
-            midpoint += mesh.vertexPosition(mesh.vertex2(edge)) - Point3::Origin();
+        for(SurfaceMesh::edge_index edge : edgeList) {
+            Point3 midpoint = vertexGrower.vertexPosition(mesh.vertex1(edge));
+            midpoint += vertexGrower.vertexPosition(mesh.vertex2(edge)) - Point3::Origin();
             Vector3 normal = (midpoint * FloatType(0.5)) - center;
             normal.normalizeSafely();
-            SurfaceMeshAccess::vertex_index new_v = mesh.splitEdge(edge, center + normal * roundingRadius);
+            SurfaceMesh::vertex_index new_v = mesh.splitEdge(edge, center + normal * roundingRadius, vertexGrower);
             vertexNormals.push_back(normal);
         }
         edgeList.clear();
 
         // Subdivide the faces.
-        for(SurfaceMeshAccess::face_index face : faceList) {
+        for(SurfaceMesh::face_index face : faceList) {
             int order = mesh.topology()->countFaceEdges(face) / 2;
-            SurfaceMeshAccess::edge_index e = mesh.firstFaceEdge(face);
+            SurfaceMesh::edge_index e = mesh.firstFaceEdge(face);
             for(int i = 0; i < order; i++) {
-                SurfaceMeshAccess::edge_index edge2 = mesh.nextFaceEdge(mesh.nextFaceEdge(e));
-                e = mesh.splitFace(e, edge2);
+                SurfaceMesh::edge_index edge2 = mesh.nextFaceEdge(mesh.nextFaceEdge(e));
+                e = mesh.splitFace(e, edge2, faceGrower);
                 // Put edges and the sub-face itself into the list so that
                 // they get refined during the next iteration of the algorithm.
-                SurfaceMeshAccess::edge_index oe = mesh.oppositeEdge(e);
+                SurfaceMesh::edge_index oe = mesh.oppositeEdge(e);
                 for(int j = 0; j < 3; j++) {
                     edgeList.insert((oe < mesh.oppositeEdge(oe)) ? oe : mesh.oppositeEdge(oe));
                     oe = mesh.nextFaceEdge(oe);
@@ -857,122 +858,134 @@ void GSDImporter::FrameLoader::parseConvexPolyhedronShape(int typeId, QJsonObjec
 
     // Construct the convex hull of the vertices.
     // This yields a half-edge surface mesh data structure.
-    SurfaceMeshAccess mesh(DataOORef<SurfaceMesh>::create(ObjectInitializationFlag::DontCreateVisElement));
-    mesh.constructConvexHull(std::move(vertices));
-    mesh.joinCoplanarFaces();
+    DataOORef<SurfaceMesh> meshObj = DataOORef<SurfaceMesh>::create(ObjectInitializationFlag::DontCreateVisElement);
+    {
+        SurfaceMeshBuilder meshBuilder(meshObj);
+        meshBuilder.constructConvexHull(std::move(vertices));
+        meshBuilder.joinCoplanarFaces();
+    }
 
     // Parse rounding radius.
     FloatType roundingRadius = definition.value("rounding_radius").toDouble();
     std::vector<Vector3> vertexNormals;
     if(roundingRadius > 0) {
-        SurfaceMeshAccess roundedMesh(DataOORef<SurfaceMesh>::create(ObjectInitializationFlag::DontCreateVisElement));
+        DataOORef<SurfaceMesh> roundedMeshObj = DataOORef<SurfaceMesh>::create(ObjectInitializationFlag::DontCreateVisElement);
+        {
+            SurfaceMeshReadAccess mesh(meshObj);
+            SurfaceMeshBuilder roundedMesh(roundedMeshObj);
+            SurfaceMeshBuilder::VertexGrower roundedMeshVertexGrower(roundedMesh);
+            SurfaceMeshBuilder::FaceGrower roundedMeshFaceGrower(roundedMesh);
+            ConstBufferAccess<Point3> vertexPositions(mesh.expectVertexProperty(SurfaceMeshVertices::PositionProperty));
 
-        // Maps edges of the old mesh to edges of the new mesh.
-        std::vector<SurfaceMeshAccess::edge_index> edgeMapping(mesh.edgeCount());
+            // Maps edges of the old mesh to edges of the new mesh.
+            std::vector<SurfaceMesh::edge_index> edgeMapping(mesh.edgeCount());
 
-        // Copy the faces of the existing mesh over to the new mesh data structure.
-        SurfaceMeshAccess::size_type originalFaceCount = mesh.faceCount();
-        for(SurfaceMeshAccess::face_index face = 0; face <originalFaceCount; face++) {
+            // Copy the faces of the existing mesh over to the new mesh data structure.
+            SurfaceMesh::size_type originalFaceCount = mesh.faceCount();
+            for(SurfaceMesh::face_index face = 0; face <originalFaceCount; face++) {
 
-            // Compute the offset by which the face needs to be extruded outward.
-            Vector3 faceNormal = mesh.computeFaceNormal(face);
-            Vector3 offset = faceNormal * roundingRadius;
+                // Compute the offset by which the face needs to be extruded outward.
+                Vector3 faceNormal = mesh.computeFaceNormal(face, vertexPositions);
+                Vector3 offset = faceNormal * roundingRadius;
 
-            // Duplicate the vertices and shift them along the extrusion vector.
-            SurfaceMeshAccess::size_type faceVertexCount = 0;
-            SurfaceMeshAccess::edge_index e = mesh.firstFaceEdge(face);
-            do {
-                roundedMesh.createVertex(mesh.vertexPosition(mesh.vertex1(e)) + offset);
-                vertexNormals.push_back(faceNormal);
-                faceVertexCount++;
-                e = mesh.nextFaceEdge(e);
-            }
-            while(e != mesh.firstFaceEdge(face));
-
-            // Connect the duplicated vertices by a new face.
-            SurfaceMeshAccess::face_index new_f = roundedMesh.createFace(roundedMesh.topology()->end_vertices() - faceVertexCount, roundedMesh.topology()->end_vertices());
-
-            // Register the newly created edges.
-            SurfaceMeshAccess::edge_index new_e = roundedMesh.firstFaceEdge(new_f);
-            do {
-                edgeMapping[e] = new_e;
-                e = mesh.nextFaceEdge(e);
-                new_e = roundedMesh.nextFaceEdge(new_e);
-            }
-            while(e != mesh.firstFaceEdge(face));
-        }
-
-        // Insert new faces in between two faces that share an edge.
-        for(SurfaceMeshAccess::edge_index e = 0; e < mesh.edgeCount(); e++) {
-            // Skip every other half-edge.
-            if(e > mesh.oppositeEdge(e)) continue;
-
-            SurfaceMeshAccess::edge_index edge = edgeMapping[e];
-            SurfaceMeshAccess::edge_index opposite_edge = edgeMapping[mesh.oppositeEdge(e)];
-
-            SurfaceMeshAccess::face_index new_f = roundedMesh.createFace({
-                roundedMesh.vertex2(edge),
-                roundedMesh.vertex1(edge),
-                roundedMesh.vertex2(opposite_edge),
-                roundedMesh.vertex1(opposite_edge) });
-
-            roundedMesh.linkOppositeEdges(edge, roundedMesh.firstFaceEdge(new_f));
-            roundedMesh.linkOppositeEdges(opposite_edge, roundedMesh.nextFaceEdge(roundedMesh.nextFaceEdge(roundedMesh.firstFaceEdge(new_f))));
-        }
-
-        // Fill in the holes at the vertices of the old mesh.
-        for(SurfaceMeshAccess::edge_index original_edge = 0; original_edge < edgeMapping.size(); original_edge++) {
-            SurfaceMeshAccess::edge_index new_edge = roundedMesh.oppositeEdge(edgeMapping[original_edge]);
-            SurfaceMeshAccess::edge_index border_edges[2] = {
-                roundedMesh.nextFaceEdge(new_edge),
-                roundedMesh.prevFaceEdge(new_edge)
-            };
-            SurfaceMeshAccess::vertex_index corner_vertices[2] = {
-                mesh.vertex1(original_edge),
-                mesh.vertex2(original_edge)
-            };
-            for(int i = 0; i < 2; i++) {
-                SurfaceMeshAccess::edge_index e = border_edges[i];
-                if(roundedMesh.hasOppositeEdge(e)) continue;
-                SurfaceMeshAccess::face_index new_f = roundedMesh.createFace({});
-                SurfaceMeshAccess::edge_index edge = e;
+                // Duplicate the vertices and shift them along the extrusion vector.
+                SurfaceMesh::size_type faceVertexCount = 0;
+                SurfaceMesh::edge_index e = mesh.firstFaceEdge(face);
                 do {
-                    SurfaceMeshAccess::edge_index new_e = roundedMesh.createOppositeEdge(edge, new_f);
-                    edge = roundedMesh.prevFaceEdge(roundedMesh.oppositeEdge(roundedMesh.prevFaceEdge(roundedMesh.oppositeEdge(roundedMesh.prevFaceEdge(edge)))));
+                    roundedMeshVertexGrower.createVertex(vertexPositions[mesh.vertex1(e)] + offset);
+                    vertexNormals.push_back(faceNormal);
+                    faceVertexCount++;
+                    e = mesh.nextFaceEdge(e);
                 }
-                while(edge != e);
+                while(e != mesh.firstFaceEdge(face));
 
-                // Tessellate the inserted corner element.
-                tessellateCornerFacet(new_f, _roundingResolution, roundingRadius, roundedMesh, vertexNormals, mesh.vertexPosition(corner_vertices[i]));
+                // Connect the duplicated vertices by a new face.
+                SurfaceMesh::face_index new_f = roundedMeshFaceGrower.createFace(
+                    roundedMesh.topology()->end_vertices() - faceVertexCount,
+                    roundedMesh.topology()->end_vertices());
+
+                // Register the newly created edges.
+                SurfaceMesh::edge_index new_e = roundedMesh.firstFaceEdge(new_f);
+                do {
+                    edgeMapping[e] = new_e;
+                    e = mesh.nextFaceEdge(e);
+                    new_e = roundedMesh.nextFaceEdge(new_e);
+                }
+                while(e != mesh.firstFaceEdge(face));
             }
-        }
 
-        // Tessellate the inserted edge elements.
-        for(SurfaceMeshAccess::edge_index e = 0; e < mesh.edgeCount(); e++) {
-            // Skip every other half-edge.
-            if(e > mesh.oppositeEdge(e)) continue;
+            // Insert new faces in between two faces that share an edge.
+            for(SurfaceMesh::edge_index e = 0; e < mesh.edgeCount(); e++) {
+                // Skip every other half-edge.
+                if(e > mesh.oppositeEdge(e)) continue;
 
-            SurfaceMeshAccess::edge_index startEdge = roundedMesh.oppositeEdge(edgeMapping[e]);
-            SurfaceMeshAccess::edge_index edge1 = roundedMesh.prevFaceEdge(roundedMesh.prevFaceEdge(startEdge));
-            SurfaceMeshAccess::edge_index edge2 = roundedMesh.nextFaceEdge(startEdge);
+                SurfaceMesh::edge_index edge = edgeMapping[e];
+                SurfaceMesh::edge_index opposite_edge = edgeMapping[mesh.oppositeEdge(e)];
 
-            for(int i = 1; i < (1<<(_roundingResolution-1)); i++) {
-                edge2 = roundedMesh.splitFace(edge1, edge2);
-                edge1 = roundedMesh.prevFaceEdge(edge1);
-                edge2 = roundedMesh.nextFaceEdge(edge2);
+                SurfaceMesh::face_index new_f = roundedMeshFaceGrower.createFace({
+                    roundedMesh.vertex2(edge),
+                    roundedMesh.vertex1(edge),
+                    roundedMesh.vertex2(opposite_edge),
+                    roundedMesh.vertex1(opposite_edge) });
+
+                roundedMesh.linkOppositeEdges(edge, roundedMesh.firstFaceEdge(new_f));
+                roundedMesh.linkOppositeEdges(opposite_edge, roundedMesh.nextFaceEdge(roundedMesh.nextFaceEdge(roundedMesh.firstFaceEdge(new_f))));
             }
-        }
 
-        OVITO_ASSERT(roundedMesh.topology()->isClosed());
+            // Fill in the holes at the vertices of the old mesh.
+            for(SurfaceMesh::edge_index original_edge = 0; original_edge < edgeMapping.size(); original_edge++) {
+                SurfaceMesh::edge_index new_edge = roundedMesh.oppositeEdge(edgeMapping[original_edge]);
+                SurfaceMesh::edge_index border_edges[2] = {
+                    roundedMesh.nextFaceEdge(new_edge),
+                    roundedMesh.prevFaceEdge(new_edge)
+                };
+                SurfaceMesh::vertex_index corner_vertices[2] = {
+                    mesh.vertex1(original_edge),
+                    mesh.vertex2(original_edge)
+                };
+                for(int i = 0; i < 2; i++) {
+                    SurfaceMesh::edge_index e = border_edges[i];
+                    if(roundedMesh.hasOppositeEdge(e))
+                        continue;
+                    SurfaceMesh::face_index new_f = roundedMeshFaceGrower.createFace();
+                    SurfaceMesh::edge_index edge = e;
+                    do {
+                        SurfaceMesh::edge_index new_e = roundedMesh.createOppositeEdge(edge, new_f);
+                        edge = roundedMesh.prevFaceEdge(roundedMesh.oppositeEdge(roundedMesh.prevFaceEdge(roundedMesh.oppositeEdge(roundedMesh.prevFaceEdge(edge)))));
+                    }
+                    while(edge != e);
+
+                    // Tessellate the inserted corner element.
+                    tessellateCornerFacet(new_f, _roundingResolution, roundingRadius, roundedMesh, roundedMeshVertexGrower, roundedMeshFaceGrower, vertexNormals, vertexPositions[corner_vertices[i]]);
+                }
+            }
+
+            // Tessellate the inserted edge elements.
+            for(SurfaceMesh::edge_index e = 0; e < mesh.edgeCount(); e++) {
+                // Skip every other half-edge.
+                if(e > mesh.oppositeEdge(e)) continue;
+
+                SurfaceMesh::edge_index startEdge = roundedMesh.oppositeEdge(edgeMapping[e]);
+                SurfaceMesh::edge_index edge1 = roundedMesh.prevFaceEdge(roundedMesh.prevFaceEdge(startEdge));
+                SurfaceMesh::edge_index edge2 = roundedMesh.nextFaceEdge(startEdge);
+
+                for(int i = 1; i < (1<<(_roundingResolution-1)); i++) {
+                    edge2 = roundedMesh.splitFace(edge1, edge2, roundedMeshFaceGrower);
+                    edge1 = roundedMesh.prevFaceEdge(edge1);
+                    edge2 = roundedMesh.nextFaceEdge(edge2);
+                }
+            }
+            OVITO_ASSERT(roundedMesh.topology()->isClosed());
+        }
 
         // Adopt the newly constructed mesh as particle shape.
-        mesh.swap(roundedMesh);
+        meshObj.swap(roundedMeshObj);
     }
 
     // Convert half-edge mesh into a conventional triangle mesh for visualization.
     DataOORef<TriMeshObject> triMesh = DataOORef<TriMeshObject>::create(ObjectInitializationFlag::DontCreateVisElement);
     triMesh->setIdentifier(QStringLiteral("generated"));    // Indicate to the ParticleType by assigning this ID that the shape mesh has been generated by the file importer (and was not assigned by the user).
-    mesh.convertToTriMesh(*triMesh, false);
+    SurfaceMeshReadAccess(meshObj).convertToTriMesh(*triMesh, false);
     if(triMesh->faceCount() == 0) {
         qWarning() << "GSD file reader: Convex hull construction did not produce a valid triangle mesh for particle type" << typeId;
         return;
@@ -985,7 +998,7 @@ void GSDImporter::FrameLoader::parseConvexPolyhedronShape(int typeId, QJsonObjec
         auto normal = triMesh->normals().begin();
         for(const TriMeshFace& face : triMesh->faces()) {
             for(int v = 0; v < 3; v++)
-                *normal++ = vertexNormals[face.vertex(v)];
+                *normal++ = vertexNormals[face.vertex(v)].toDataType<GraphicsFloatType>();
         }
     }
 
@@ -1115,7 +1128,7 @@ void GSDImporter::FrameLoader::parseSphereUnionShape(int typeId, QJsonObject def
             for(int v = 0; v < 3; v++) {
                 face->setVertex(v, inFace.vertex(v) + baseVertex);
                 const Point3& vpos = sphereTemplate->vertex(inFace.vertex(v));
-                *normal++ = Vector3(vpos.x(), vpos.y(), vpos.z());
+                *normal++ = Vector3G(vpos.x(), vpos.y(), vpos.z());
             }
             ++face;
         }

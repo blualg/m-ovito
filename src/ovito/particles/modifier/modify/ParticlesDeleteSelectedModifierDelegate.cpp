@@ -64,7 +64,7 @@ PipelineStatus ParticlesDeleteSelectedModifierDelegate::apply(const ModifierEval
             // Generate filter mask.
             boost::dynamic_bitset<> mask(selProperty->size());
             boost::dynamic_bitset<>::size_type i = 0;
-            for(auto s : ConstDataBufferAccess<SelectionIntType>(selProperty)) {
+            for(auto s : ConstBufferAccess<SelectionIntType>(selProperty)) {
                 if(s != 0) {
                     mask.set(i++);
                     numSelected++;
@@ -145,7 +145,7 @@ PipelineStatus BondsDeleteSelectedModifierDelegate::apply(const ModifierEvaluati
                 // Generate filter mask.
                 boost::dynamic_bitset<> mask(selProperty->size());
                 boost::dynamic_bitset<>::size_type i = 0;
-                for(auto s : ConstDataBufferAccess<SelectionIntType>(selProperty)) {
+                for(auto s : ConstBufferAccess<SelectionIntType>(selProperty)) {
                     if(s != 0) {
                         mask.set(i++);
                         numSelected++;

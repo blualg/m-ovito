@@ -220,7 +220,7 @@ void CombineDatasetsModifierDelegate::mergeElementTypes(PropertyObject* property
     }
     // Remap particle property values.
     if(typeMap.empty() == false) {
-        DataBufferAccess<int32_t> selectionArray1 = property1;
+        BufferAccess<int32_t> selectionArray1 = property1;
         auto p = selectionArray1.begin() + (property1->size() - property2->size());
         auto p_end = selectionArray1.end();
         for(; p != p_end; ++p) {

@@ -25,7 +25,7 @@
 
 #include <ovito/stdobj/StdObj.h>
 #include <ovito/core/dataset/data/DataBuffer.h>
-#include <ovito/core/dataset/data/DataBufferAccess.h>
+#include <ovito/core/dataset/data/BufferAccess.h>
 #include <ovito/core/dataset/data/DataObjectReference.h>
 #include <ovito/stdobj/properties/ElementType.h>
 
@@ -270,10 +270,10 @@ private:
     /// The user-interface title of this property.
     DECLARE_MODIFIABLE_PROPERTY_FIELD(QString, title, setTitle);
 
-    /// The type of this property.
+    /// The kind of this property (non-zero = predefined standard property; zero = a user-defined property).
     int _type = 0;
 
-    /// The name of the property.
+    /// The name of the property (must be unique within the PropertyContainer).
     QString _name;
 
     /// This is a special flag used by the Python bindings to indicate that

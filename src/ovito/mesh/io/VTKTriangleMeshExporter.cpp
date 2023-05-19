@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -144,7 +144,7 @@ bool VTKTriangleMeshExporter::exportFrame(int frameNumber, const QString& filePa
         textStream() << "\nCOLOR_SCALARS color 3\n";
         if(surfaceMesh) {
             for(size_t i = 0; i < surfaceMesh->faceCount(); i++) {
-                const ColorA& c = meshObj->materialColors()[surfaceMesh->face(i).materialIndex() % meshObj->materialColors().size()];
+                const auto& c = meshObj->materialColors()[surfaceMesh->face(i).materialIndex() % meshObj->materialColors().size()];
                 textStream() << c.r() << " " << c.g() << " " << c.b() << "\n";
             }
         }
@@ -165,7 +165,7 @@ bool VTKTriangleMeshExporter::exportFrame(int frameNumber, const QString& filePa
     }
     if(surfaceMesh && surfaceMesh->hasVertexColors()) {
         textStream() << "COLOR_SCALARS color 4\n";
-        for(const ColorA& c : surfaceMesh->vertexColors())
+        for(const auto& c : surfaceMesh->vertexColors())
             textStream() << c.r() << " " << c.g() << " " << c.b() << " " << c.a() << "\n";
         if(capPolygonsMesh) {
             for(size_t i = 0; i < capPolygonsMesh->vertexCount(); i++)

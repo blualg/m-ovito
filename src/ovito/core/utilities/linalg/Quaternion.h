@@ -115,7 +115,7 @@ public:
     /// \param tm A rotation matrix.
     ///
     /// It is assumed that \a tm is a pure rotation matrix.
-    explicit QuaternionT(const Matrix_3<T>& tm, T epsilon = T(FLOATTYPE_EPSILON));
+    explicit QuaternionT(const Matrix_3<T>& tm, T epsilon = FloatTypeEpsilon<T>());
 
     /// Casts the quaternion to another component type \a U.
     template<typename U>
@@ -223,7 +223,7 @@ public:
     }
 
     /// \brief Normalizes this quaternion to unit length unless it's the null quaternion.
-    inline void normalizeSafely(T epsilon = T(FLOATTYPE_EPSILON)) {
+    inline void normalizeSafely(T epsilon = FloatTypeEpsilon<T>()) {
         T c = this->norm();
         if(c > epsilon) {
             x() /= c; y() /= c; z() /= c; w() /= c;
@@ -238,7 +238,7 @@ public:
     }
 
     /// \brief Returns a normalized version of this quaternion - unless its the null quaternion, then it returns the identity quaternion.
-    inline QuaternionT safelyNormalized(T epsilon = T(FLOATTYPE_EPSILON)) const {
+    inline QuaternionT safelyNormalized(T epsilon = FloatTypeEpsilon<T>()) const {
         T c = this->norm();
         if(c > epsilon)
             return { x() / c, y() / c, z() / c, w() / c };
@@ -254,8 +254,8 @@ public:
     /// \param alpha The parameter for the linear interpolation in the range [0,1].
     /// \return A linear interpolation between \a q1 and \a q2.
     static QuaternionT interpolate(const QuaternionT& q1, const QuaternionT& q2, T alpha) {
-        OVITO_ASSERT_MSG(std::abs(q1.dot(q1) - T(1)) <= T(FLOATTYPE_EPSILON), "Quaternion::interpolate", "Quaternions must be normalized.");
-        OVITO_ASSERT_MSG(std::abs(q2.dot(q2) - T(1)) <= T(FLOATTYPE_EPSILON), "Quaternion::interpolate", "Quaternions must be normalized.");
+        OVITO_ASSERT_MSG(std::abs(q1.dot(q1) - T(1)) <= FloatTypeEpsilon<T>(), "Quaternion::interpolate", "Quaternions must be normalized.");
+        OVITO_ASSERT_MSG(std::abs(q2.dot(q2) - T(1)) <= FloatTypeEpsilon<T>(), "Quaternion::interpolate", "Quaternions must be normalized.");
 
         T cos_t = q1.dot(q2);
 

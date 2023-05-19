@@ -181,7 +181,7 @@ void UnwrapTrajectoriesModifierApplication::unwrapParticleCoordinates(const Modi
     inputParticles->verifyIntegrity();
 
     // If the periodic image flags particle property is present, use it to unwrap particle positions.
-    if(ConstDataBufferAccess<Vector3I> particlePeriodicImageProperty = inputParticles->getProperty(ParticlesObject::PeriodicImageProperty)) {
+    if(ConstBufferAccess<Vector3I> particlePeriodicImageProperty = inputParticles->getProperty(ParticlesObject::PeriodicImageProperty)) {
         // Get current simulation cell.
         const SimulationCellObject* cell = state.expectObject<SimulationCellObject>();
 
@@ -189,7 +189,7 @@ void UnwrapTrajectoriesModifierApplication::unwrapParticleCoordinates(const Modi
         ParticlesObject* outputParticles = state.expectMutableObject<ParticlesObject>();
 
         // Make a modifiable copy of the particle position property.
-        DataBufferAccess<Point3> posProperty = outputParticles->expectMutableProperty(ParticlesObject::PositionProperty);
+        BufferAccess<Point3> posProperty = outputParticles->expectMutableProperty(ParticlesObject::PositionProperty);
         const Vector3I* pbcShift = particlePeriodicImageProperty.cbegin();
         for(Point3& p : posProperty) {
             p += cell->cellMatrix() * (*pbcShift++).toDataType<FloatType>();
@@ -197,8 +197,8 @@ void UnwrapTrajectoriesModifierApplication::unwrapParticleCoordinates(const Modi
 
         // Unwrap bonds by adjusting their PBC shift vectors.
         if(outputParticles->bonds()) {
-            if(ConstDataBufferAccess<ParticleIndexPair> topologyProperty = outputParticles->bonds()->getProperty(BondsObject::TopologyProperty)) {
-                DataBufferAccess<Vector3I> periodicImageProperty = outputParticles->makeBondsMutable()->createProperty(DataBuffer::Initialized, BondsObject::PeriodicImageProperty);
+            if(ConstBufferAccess<ParticleIndexPair> topologyProperty = outputParticles->bonds()->getProperty(BondsObject::TopologyProperty)) {
+                BufferAccess<Vector3I> periodicImageProperty = outputParticles->makeBondsMutable()->createProperty(DataBuffer::Initialized, BondsObject::PeriodicImageProperty);
                 for(size_t bondIndex = 0; bondIndex < topologyProperty.size(); bondIndex++) {
                     size_t particleIndex1 = topologyProperty[bondIndex][0];
                     size_t particleIndex2 = topologyProperty[bondIndex][1];
@@ -254,10 +254,10 @@ void UnwrapTrajectoriesModifierApplication::unwrapParticleCoordinates(const Modi
     ParticlesObject* outputParticles = state.expectMutableObject<ParticlesObject>();
 
     // Make a modifiable copy of the particle position property.
-    DataBufferAccess<Point3> posProperty = outputParticles->expectMutableProperty(ParticlesObject::PositionProperty);
+    BufferAccess<Point3> posProperty = outputParticles->expectMutableProperty(ParticlesObject::PositionProperty);
 
     // Get particle identifiers.
-    ConstDataBufferAccess<IdentifierIntType> identifierProperty = outputParticles->getProperty(ParticlesObject::IdentifierProperty);
+    ConstBufferAccess<IdentifierIntType> identifierProperty = outputParticles->getProperty(ParticlesObject::IdentifierProperty);
     if(identifierProperty && identifierProperty.size() != posProperty.size())
         identifierProperty.reset();
 
@@ -281,8 +281,8 @@ void UnwrapTrajectoriesModifierApplication::unwrapParticleCoordinates(const Modi
 
     // Unwrap bonds by adjusting their PBC shift vectors.
     if(outputParticles->bonds()) {
-        if(ConstDataBufferAccess<ParticleIndexPair> topologyProperty = outputParticles->bonds()->getProperty(BondsObject::TopologyProperty)) {
-            DataBufferAccess<Vector3I> periodicImageProperty = outputParticles->makeBondsMutable()->createProperty(DataBuffer::Initialized, BondsObject::PeriodicImageProperty);
+        if(ConstBufferAccess<ParticleIndexPair> topologyProperty = outputParticles->bonds()->getProperty(BondsObject::TopologyProperty)) {
+            BufferAccess<Vector3I> periodicImageProperty = outputParticles->makeBondsMutable()->createProperty(DataBuffer::Initialized, BondsObject::PeriodicImageProperty);
             for(size_t bondIndex = 0; bondIndex < topologyProperty.size(); bondIndex++) {
                 size_t particleIndex1 = topologyProperty[bondIndex][0];
                 size_t particleIndex2 = topologyProperty[bondIndex][1];
@@ -325,8 +325,8 @@ void UnwrapTrajectoriesModifierApplication::WorkingData::operator()(int frame, c
     const ParticlesObject* particles = state.getObject<ParticlesObject>();
     if(!particles)
         throw Exception(tr("Input data contains no particles at frame %1.").arg(frame));
-    ConstDataBufferAccess<Point3> posProperty = particles->expectProperty(ParticlesObject::PositionProperty);
-    ConstDataBufferAccess<IdentifierIntType> identifierProperty = particles->getProperty(ParticlesObject::IdentifierProperty);
+    ConstBufferAccess<Point3> posProperty = particles->expectProperty(ParticlesObject::PositionProperty);
+    ConstBufferAccess<IdentifierIntType> identifierProperty = particles->getProperty(ParticlesObject::IdentifierProperty);
     if(identifierProperty && identifierProperty.size() != posProperty.size())
         identifierProperty.reset();
 

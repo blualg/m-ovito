@@ -30,7 +30,7 @@ namespace Ovito::Particles {
 /******************************************************************************
 * Initialization function.
 ******************************************************************************/
-bool CutoffNeighborFinder::prepare(FloatType cutoffRadius, ConstDataBufferAccess<Point3> positions, const SimulationCellObject* cell, ConstDataBufferAccess<SelectionIntType> selectionProperty)
+bool CutoffNeighborFinder::prepare(FloatType cutoffRadius, ConstBufferAccess<Point3> positions, const SimulationCellObject* cell, ConstBufferAccess<SelectionIntType> selectionProperty)
 {
     OVITO_ASSERT(positions);
     Task* currentTask = Task::current();

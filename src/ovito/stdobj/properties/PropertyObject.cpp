@@ -232,7 +232,7 @@ std::tuple<std::map<int,int>, ConstPropertyPtr> PropertyObject::generateContiguo
         typeIds.insert(t->numericId());
 
     // Add ID values that occur in the property array but which have not been defined as a type.
-    for(int32_t t : ConstDataBufferAccess<int32_t>(this))
+    for(int32_t t : ConstBufferAccess<int32_t>(this))
         typeIds.insert(t);
 
     // Build the mappings between old and new IDs.
@@ -250,7 +250,7 @@ std::tuple<std::map<int,int>, ConstPropertyPtr> PropertyObject::generateContiguo
     if(remappingRequired) {
         // Make a copy of this property, which can be modified.
         PropertyPtr copy = CloneHelper().cloneObject(this, false);
-        for(auto& id : DataBufferAccess<int32_t>(copy))
+        for(auto& id : BufferAccess<int32_t>(copy))
             id = oldToNewMap[id];
         remappedArray = std::move(copy);
     }
@@ -306,7 +306,7 @@ void PropertyObject::sortElementTypesByName()
     }
 
     // Remap type IDs.
-    for(int& t : DataBufferAccess<int32_t>(this)) {
+    for(int& t : BufferAccess<int32_t>(this)) {
         OVITO_ASSERT(t >= 1 && t < mapping.size());
         t = mapping[t];
     }

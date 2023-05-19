@@ -21,6 +21,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/mesh/Mesh.h>
+#include "SurfaceMeshReadAccess.h"
 #include "SurfaceMeshFaces.h"
 #include "SurfaceMeshVis.h"
 
@@ -72,11 +73,11 @@ PropertyPtr SurfaceMeshFaces::OOMetaClass::createStandardPropertyInternal(DataBu
         // Certain standard properties need to be initialized with default values determined by the attached visual elements.
         if(type == ColorProperty) {
             if(const SurfaceMesh* surfaceMesh = dynamic_object_cast<SurfaceMesh>(containerPath[containerPath.size()-2])) {
-                ConstDataBufferAccess<ColorG> regionColorProperty = surfaceMesh->regions()->getProperty(SurfaceMeshRegions::ColorProperty);
-                ConstDataBufferAccess<int32_t> faceRegionProperty = surfaceMesh->faces()->getProperty(SurfaceMeshFaces::RegionProperty);
+                ConstBufferAccess<ColorG> regionColorProperty = surfaceMesh->regions()->getProperty(SurfaceMeshRegions::ColorProperty);
+                ConstBufferAccess<int32_t> faceRegionProperty = surfaceMesh->faces()->getProperty(SurfaceMeshFaces::RegionProperty);
                 if(regionColorProperty && faceRegionProperty && faceRegionProperty.size() == elementCount) {
                     // Inherit face colors from regions.
-                    boost::transform(faceRegionProperty, DataBufferAccess<ColorG>(property).begin(),
+                    boost::transform(faceRegionProperty, BufferAccess<ColorG>(property).begin(),
                         [&](int region) { return (region >= 0 && region < regionColorProperty.size()) ? regionColorProperty[region] : ColorG(1,1,1); });
                     init = DataBuffer::Uninitialized;
                 }
@@ -147,7 +148,7 @@ std::tuple<ConstDataBufferPtr, ConstDataBufferPtr> SurfaceMeshFaces::getVectorVi
         using CacheKey = RendererResourceKey<struct SurfaceMeshFacesCentroidsCache, ConstDataObjectRef, ConstDataObjectRef>;
         auto& [basePositions, vectorProperty] = visCache.get<std::tuple<ConstDataBufferPtr,ConstDataBufferPtr>>(CacheKey(mesh, path.lastAs<DataBuffer>()));
         if(!basePositions) {
-            DataBufferAccessAndRef<Vector3> filteredVectors;
+            BufferAccessAndRef<Vector3> filteredVectors;
             vectorProperty = path.lastAs<DataBuffer>();
             if(vectorProperty && vectorProperty->componentCount() == 3) {
                 OVITO_ASSERT(vectorProperty->dataType() == PropertyObject::FloatDefault);
@@ -162,23 +163,24 @@ std::tuple<ConstDataBufferPtr, ConstDataBufferPtr> SurfaceMeshFaces::getVectorVi
             }
 
             // Compute face centroids.
-            DataBufferAccessAndRef<Point3> centroids = DataBufferPtr::create(mesh->faces()->elementCount(), DataBuffer::FloatDefault, 3);
-            const SurfaceMeshAccess meshAccess(mesh);
-            for(SurfaceMeshAccess::face_index face = 0; face < meshAccess.faceCount(); face++) {
+            const SurfaceMeshReadAccess meshAccess(mesh);
+            ConstBufferAccess<Point3> vertexPositions(meshAccess.expectVertexProperty(SurfaceMeshVertices::PositionProperty));
+            BufferAccessAndRef<Point3> centroids = DataBufferPtr::create(mesh->faces()->elementCount(), DataBuffer::FloatDefault, 3);
+            for(SurfaceMesh::face_index face : mesh->topology()->facesRange()) {
                 Vector3 c = Vector3::Zero();
                 Vector3 com = Vector3::Zero();
                 int n = 0;
-                SurfaceMeshAccess::edge_index firstFaceEdge = meshAccess.firstFaceEdge(face);
-                if(firstFaceEdge != SurfaceMeshAccess::InvalidIndex) {
-                    SurfaceMeshAccess::edge_index edge = firstFaceEdge;
+                SurfaceMesh::edge_index firstFaceEdge = meshAccess.firstFaceEdge(face);
+                if(firstFaceEdge != SurfaceMesh::InvalidIndex) {
+                    SurfaceMesh::edge_index edge = firstFaceEdge;
                     do {
-                        c += meshAccess.edgeVector(edge);
+                        c += meshAccess.edgeVector(edge, vertexPositions);
                         com += c;
                         n++;
                         edge = meshAccess.nextFaceEdge(edge);
                     }
                     while(edge != firstFaceEdge);
-                    centroids[face] = meshAccess.wrapPoint(meshAccess.vertexPosition(meshAccess.vertex1(firstFaceEdge)) + (com / n));
+                    centroids[face] = meshAccess.wrapPoint(vertexPositions[meshAccess.vertex1(firstFaceEdge)] + (com / n));
                     if(filteredVectors && mesh->isPointCulled(centroids[face]))
                         filteredVectors[face].setZero();
                 }

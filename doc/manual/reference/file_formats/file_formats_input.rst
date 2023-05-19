@@ -209,11 +209,6 @@ OVITO can read the following file formats:
     - :ref:`particles <scene_objects.particles>`
     -
 
-  * - ParaDiS
-    - File format of the `ParaDiS <http://paradis.stanford.edu>`__ discrete dislocation dynamics code.
-    - :ref:`dislocation lines <scene_objects.dislocations>`
-    -
-
   * - oxDNA
     - Configuration/topology file format used by the `oxDNA <https://dna.physics.ox.ac.uk/>`__ simulation code for coarse-grained DNA models.
     - :ref:`particles <scene_objects.particles>`, :ref:`bonds <scene_objects.bonds>`

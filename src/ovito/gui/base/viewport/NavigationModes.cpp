@@ -27,7 +27,7 @@
 #include <ovito/core/viewport/ViewportConfiguration.h>
 #include <ovito/core/dataset/animation/AnimationSettings.h>
 #include <ovito/core/dataset/data/camera/AbstractCameraObject.h>
-#include <ovito/core/dataset/data/DataBufferAccess.h>
+#include <ovito/core/dataset/data/BufferAccess.h>
 #include <ovito/core/dataset/scene/Scene.h>
 #include <ovito/core/app/undo/UndoableOperation.h>
 #include <ovito/core/dataset/DataSet.h>
@@ -478,9 +478,9 @@ void PickOrbitCenterMode::renderOverlay3D(Viewport* vp, SceneRenderer* renderer)
 
     if(!renderer->isBoundingBoxPass()) {
         // Create rendering primitive.
-        DataBufferAccessAndRef<Point3G> basePositions = DataBufferPtr::create(3, DataBuffer::FloatGraphics, 3);
-        DataBufferAccessAndRef<Point3G> headPositions = DataBufferPtr::create(3, DataBuffer::FloatGraphics, 3);
-        DataBufferAccessAndRef<ColorG> colors = DataBufferPtr::create(3, DataBuffer::FloatGraphics, 3);
+        BufferAccessAndRef<Point3G> basePositions = DataBufferPtr::create(3, DataBuffer::FloatGraphics, 3);
+        BufferAccessAndRef<Point3G> headPositions = DataBufferPtr::create(3, DataBuffer::FloatGraphics, 3);
+        BufferAccessAndRef<ColorG> colors = DataBufferPtr::create(3, DataBuffer::FloatGraphics, 3);
         basePositions[0] = Point3G(-1,0,0); headPositions[0] = Point3G(1,0,0); colors[0] = ColorG(1,0,0);
         basePositions[1] = Point3G(0,-1,0); headPositions[1] = Point3G(0,1,0); colors[1] = ColorG(0,1,0);
         basePositions[2] = Point3G(0,0,-1); headPositions[2] = Point3G(0,0,1); colors[2] = ColorG(0.4,0.4,1);

@@ -21,7 +21,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/crystalanalysis/CrystalAnalysis.h>
-#include <ovito/crystalanalysis/objects/Microstructure.h>
 #include <ovito/crystalanalysis/objects/ClusterGraphObject.h>
 #include <ovito/stdobj/simcell/SimulationCellObject.h>
 #include <ovito/core/rendering/ParticlePrimitive.h>
@@ -116,52 +115,6 @@ Future<PipelineFlowState> DislocationVis::transformDataImpl(const PipelineEvalua
             segmentIndex++;
         }
     }
-    else if(const Microstructure* microstructureObj = dynamic_object_cast<Microstructure>(periodicDomainObj)) {
-        // Extract the dislocation segments from the microstructure object.
-        std::deque<Point3> line(2);
-        microstructureObj->verifyMeshIntegrity();
-        const PropertyObject* phaseProperty = microstructureObj->regions()->getProperty(SurfaceMeshRegions::PhaseProperty);
-        const MicrostructureAccess mdata(microstructureObj);
-        // Since every dislocation line is represented by a pair two directed lines in the data structure,
-        // make sure we render only every other dislocation line (the "even" ones).
-        for(MicrostructureAccess::face_index face = 0; face < mdata.faceCount(); face += 2) {
-            if(mdata.isDislocationFace(face)) {
-                const Vector3& b = mdata.burgersVector(face);
-                MicrostructureAccess::region_index region = mdata.faceRegion(face);
-
-                // Determine if the display of dislocations of this type is enabled.
-                int phaseId = mdata.regionPhase(region);
-                if(const MicrostructurePhase* phase = dynamic_object_cast<MicrostructurePhase>(phaseProperty->elementType(phaseId))) {
-                    const BurgersVectorFamily* family = phase->defaultBurgersVectorFamily();
-                    for(const BurgersVectorFamily* f : phase->burgersVectorFamilies()) {
-                        if(f->isMember(b, phase)) {
-                            family = f;
-                            break;
-                        }
-                    }
-                    if(family && !family->enabled()) {
-                        continue;
-                    }
-                }
-
-                // Walk along the sequence of segments that make up the continous dislocation line.
-                MicrostructureAccess::edge_index edge = mdata.firstFaceEdge(face);
-                Point3 p = mdata.vertexPosition(mdata.vertex1(edge));
-                do {
-                    line[0] = p;
-                    p += mdata.edgeVector(edge);
-                    line[1] = p;
-                    clipDislocationLine(line, *cellObject, periodicDomainObj->cuttingPlanes(), [face, &outputSegments, &b, region](const Point3& p1, const Point3& p2, bool isInitialSegment) {
-                        outputSegments.push_back({ { p1, p2 }, b, region, face });
-                    });
-                    MicrostructureAccess::vertex_index v1 = mdata.vertex1(edge);
-                    edge = mdata.nextFaceEdge(edge);
-                    if(mdata.vertex2(edge) == v1) break;    // Reached end of continuous dislocation line.
-                }
-                while(edge != mdata.firstFaceEdge(face));
-            }
-        }
-    }
 
     // Create output RenderableDislocationLines object.
     DataOORef<RenderableDislocationLines> renderableLines = DataOORef<RenderableDislocationLines>::create(ObjectInitializationFlag::DontCreateVisElement, this, dataObject);
@@ -234,7 +187,6 @@ PipelineStatus DislocationVis::render(AnimationTime time, const ConstDataObjectP
     // Ignore render calls for the original DislocationNetworkObject or MicrostrucureObject.
     // We are only interested in the RenderableDIslocationLines.
     if(path.lastAs<DislocationNetworkObject>()) return {};
-    if(path.lastAs<Microstructure>()) return {};
 
     // Just compute the bounding box of the rendered objects if requested.
     if(renderer->isBoundingBoxPass()) {
@@ -277,10 +229,7 @@ PipelineStatus DislocationVis::render(AnimationTime time, const ConstDataObjectP
     // Get the original dislocation lines.
     const PeriodicDomainDataObject* domainObj = dynamic_object_cast<PeriodicDomainDataObject>(renderableLines->sourceDataObject().get());
     const DislocationNetworkObject* dislocationsObj = dynamic_object_cast<DislocationNetworkObject>(domainObj);
-    const Microstructure* microstructureObj = dynamic_object_cast<Microstructure>(domainObj);
-    const PropertyObject* phaseProperty = microstructureObj ? microstructureObj->regions()->getProperty(SurfaceMeshRegions::PhaseProperty) : nullptr;
-    const PropertyObject* correspondenceProperty = microstructureObj ? microstructureObj->regions()->getProperty(SurfaceMeshRegions::LatticeCorrespondenceProperty) : nullptr;
-    if(!dislocationsObj && !microstructureObj) return {};
+    if(!dislocationsObj) return {};
 
     // Get the simulation cell.
     const SimulationCellObject* cellObject = domainObj->domain();
@@ -303,9 +252,6 @@ PipelineStatus DislocationVis::render(AnimationTime time, const ConstDataObjectP
     // Check if we already have valid rendering primitives that are up to date.
     if(!primitives.segments.basePositions()) {
 
-        ConstDataBufferAccess<int32_t> phaseArray(phaseProperty);
-        ConstDataBufferAccess<Matrix3> correspondenceArray(correspondenceProperty);
-
         // First determine number of corner vertices/segments that are going to be rendered.
         int lineSegmentCount = renderableLines->lineSegments().size();
         int cornerCount = 0;
@@ -317,11 +263,11 @@ PipelineStatus DislocationVis::render(AnimationTime time, const ConstDataObjectP
         // Allocate rendering data buffers.
         std::vector<int> subobjToSegmentMap(lineSegmentCount + cornerCount);
         FloatType lineDiameter = std::max(lineWidth(), FloatType(0));
-        DataBufferAccessAndRef<Point3G> cornerPoints = DataBufferPtr::create(cornerCount, DataBuffer::FloatGraphics, 3);
-        DataBufferAccessAndRef<ColorG> cornerColors = DataBufferPtr::create(cornerCount, DataBuffer::FloatGraphics, 3);
-        DataBufferAccessAndRef<Point3G> baseSegmentPoints = DataBufferPtr::create(lineSegmentCount, DataBuffer::FloatGraphics, 3);
-        DataBufferAccessAndRef<Point3G> headSegmentPoints = DataBufferPtr::create(lineSegmentCount, DataBuffer::FloatGraphics, 3);
-        DataBufferAccessAndRef<ColorG> segmentColors = DataBufferPtr::create(lineSegmentCount, DataBuffer::FloatGraphics, 3);
+        BufferAccessAndRef<Point3G> cornerPoints = DataBufferPtr::create(cornerCount, DataBuffer::FloatGraphics, 3);
+        BufferAccessAndRef<ColorG> cornerColors = DataBufferPtr::create(cornerCount, DataBuffer::FloatGraphics, 3);
+        BufferAccessAndRef<Point3G> baseSegmentPoints = DataBufferPtr::create(lineSegmentCount, DataBuffer::FloatGraphics, 3);
+        BufferAccessAndRef<Point3G> headSegmentPoints = DataBufferPtr::create(lineSegmentCount, DataBuffer::FloatGraphics, 3);
+        BufferAccessAndRef<ColorG> segmentColors = DataBufferPtr::create(lineSegmentCount, DataBuffer::FloatGraphics, 3);
 
         // Build list of line segments.
         auto cornerPointsIter = cornerPoints.begin();
@@ -345,17 +291,6 @@ PipelineStatus DislocationVis::render(AnimationTime time, const ConstDataObjectP
                     phase = dislocationsObj->structureById(cluster->structure);
                     normalizedBurgersVector = ClusterVector(lineSegment.burgersVector, cluster).toSpatialVector();
                     normalizedBurgersVector.normalizeSafely();
-                }
-                else if(phaseArray && lineSegment.region >= 0 && lineSegment.region < phaseProperty->size()) {
-                    int phaseId = phaseArray[lineSegment.region];
-                    phase = dynamic_object_cast<MicrostructurePhase>(phaseProperty->elementType(phaseId));
-                    if(correspondenceArray) {
-                        normalizedBurgersVector = correspondenceArray[lineSegment.region] * lineSegment.burgersVector;
-                        normalizedBurgersVector.normalizeSafely();
-                    }
-                    else {
-                        normalizedBurgersVector = lineSegment.burgersVector.safelyNormalized();
-                    }
                 }
                 if(phase) {
                     if(lineColoringMode() == ColorByDislocationType) {
@@ -428,8 +363,8 @@ PipelineStatus DislocationVis::render(AnimationTime time, const ConstDataObjectP
 
         if(dislocationsObj) {
             if(showBurgersVectors()) {
-                DataBufferAccessAndRef<Point3G> baseArrowPoints = DataBufferPtr::create(dislocationsObj->segments().size(), DataBuffer::FloatGraphics, 3);
-                DataBufferAccessAndRef<Point3G> headArrowPoints = DataBufferPtr::create(dislocationsObj->segments().size(), DataBuffer::FloatGraphics, 3);
+                BufferAccessAndRef<Point3G> baseArrowPoints = DataBufferPtr::create(dislocationsObj->segments().size(), DataBuffer::FloatGraphics, 3);
+                BufferAccessAndRef<Point3G> headArrowPoints = DataBufferPtr::create(dislocationsObj->segments().size(), DataBuffer::FloatGraphics, 3);
                 subobjToSegmentMap.reserve(subobjToSegmentMap.size() + dislocationsObj->segments().size());
                 int arrowIndex = 0;
                 for(const DislocationSegment* segment : dislocationsObj->segments()) {
@@ -451,9 +386,6 @@ PipelineStatus DislocationVis::render(AnimationTime time, const ConstDataObjectP
                 primitives.burgersArrows.setPositions(baseArrowPoints.take(), headArrowPoints.take());
             }
             primitives.pickInfo = OORef<DislocationPickInfo>::create(this, dislocationsObj, std::move(subobjToSegmentMap));
-        }
-        else if(microstructureObj) {
-            primitives.pickInfo = OORef<DislocationPickInfo>::create(this, microstructureObj, std::move(subobjToSegmentMap));
         }
     }
 
@@ -498,9 +430,9 @@ void DislocationVis::renderOverlayMarker(AnimationTime time, const DataObject* d
     const DislocationSegment* segment = dislocationsObj->segments()[segmentIndex];
 
     // Generate the polyline segments to render.
-    DataBufferAccessAndRef<Point3G> baseSegmentPoints = DataBufferPtr::create(0, DataBuffer::FloatGraphics, 3);
-    DataBufferAccessAndRef<Point3G> headSegmentPoints = DataBufferPtr::create(0, DataBuffer::FloatGraphics, 3);
-    DataBufferAccessAndRef<Point3G> cornerVertices = DataBufferPtr::create(0, DataBuffer::FloatGraphics, 3);
+    BufferAccessAndRef<Point3G> baseSegmentPoints = DataBufferPtr::create(0, DataBuffer::FloatGraphics, 3);
+    BufferAccessAndRef<Point3G> headSegmentPoints = DataBufferPtr::create(0, DataBuffer::FloatGraphics, 3);
+    BufferAccessAndRef<Point3G> cornerVertices = DataBufferPtr::create(0, DataBuffer::FloatGraphics, 3);
     clipDislocationLine(segment->line, *cellObject, dislocationsObj->cuttingPlanes(), [&](const Point3& v1, const Point3& v2, bool isInitialSegment) {
         baseSegmentPoints.push_back(v1.toDataType<GraphicsFloatType>());
         headSegmentPoints.push_back(v2.toDataType<GraphicsFloatType>());
@@ -545,7 +477,7 @@ void DislocationVis::renderOverlayMarker(AnimationTime time, const DataObject* d
     renderer->renderParticles(cornerBuffer);
 
     if(!segment->line.empty()) {
-        DataBufferAccessAndRef<Point3G> wrappedHeadPos = DataBufferPtr::create(1, DataBuffer::FloatGraphics, 3);
+        BufferAccessAndRef<Point3G> wrappedHeadPos = DataBufferPtr::create(1, DataBuffer::FloatGraphics, 3);
         wrappedHeadPos[0] = cellObject->wrapPoint(segment->line.front()).toDataType<GraphicsFloatType>();
         ParticlePrimitive headBuffer;
         headBuffer.setShadingMode(ParticlePrimitive::FlatShading);
@@ -770,35 +702,6 @@ QString DislocationPickInfo::infoString(PipelineSceneNode* objectNode, quint32 s
             str += tr("<sep><key>Dislocation Id:</key> <val>%1</val>").arg(segment->id);
             if(structure) {
                 str += tr("<sep><key>Crystal structure:</key> <val>%1</val>").arg(structure->name());
-            }
-        }
-    }
-    else if(microstructureObj()) {
-        ConstDataBufferAccess<Vector3> burgersVectorProperty = microstructureObj()->faces()->getProperty(SurfaceMeshFaces::BurgersVectorProperty);
-        ConstDataBufferAccess<int32_t> faceRegionProperty = microstructureObj()->faces()->getProperty(SurfaceMeshFaces::RegionProperty);
-        const PropertyObject* phaseProperty = microstructureObj()->regions()->getProperty(SurfaceMeshRegions::PhaseProperty);
-        ConstDataBufferAccess<int32_t> phaseArray(phaseProperty);
-        if(burgersVectorProperty && faceRegionProperty && phaseProperty && segmentIndex >= 0 && segmentIndex < burgersVectorProperty.size()) {
-            const MicrostructurePhase* phase = nullptr;
-            int region = faceRegionProperty[segmentIndex];
-            if(region >= 0 && region < phaseArray.size()) {
-                int phaseId = phaseArray[region];
-                if(const MicrostructurePhase* phase = dynamic_object_cast<MicrostructurePhase>(phaseProperty->elementType(phaseId))) {
-                    const Vector3& burgersVector = burgersVectorProperty[segmentIndex];
-                    QString formattedBurgersVector = DislocationVis::formatBurgersVector(burgersVector, phase);
-                    str = tr("<key>True Burgers vector:</key> <val>%1</val>").arg(formattedBurgersVector);
-                    ConstDataBufferAccess<Matrix3> correspondenceProperty = microstructureObj()->regions()->getProperty(SurfaceMeshRegions::LatticeCorrespondenceProperty);
-                    if(correspondenceProperty) {
-                        Vector3 transformedVector = correspondenceProperty[region] * burgersVector;
-                        str += tr("<sep><key>Spatial Burgers vector:</key> <val>[%1 %2 %3]</val>")
-                                .arg(QLocale::c().toString(transformedVector.x(), 'f', 4), 7)
-                                .arg(QLocale::c().toString(transformedVector.y(), 'f', 4), 7)
-                                .arg(QLocale::c().toString(transformedVector.z(), 'f', 4), 7);
-                    }
-                    str += tr("<sep><key>Crystal region:</key> <val>%1</val>").arg(region);
-                    str += tr("<sep><key>Dislocation segment:</key> <val>%1</val>").arg(segmentIndex);
-                    str += tr("<sep><key>Crystal structure:</key> <val>%1</val>").arg(phase->name());
-                }
             }
         }
     }

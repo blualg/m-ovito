@@ -209,13 +209,13 @@ private:
     bool _identifyPlanarDefects;
     const ConstPropertyPtr _positions;
     const PropertyPtr _structureTypes;
-    DataBufferAccess<int32_t> _structureTypesArray;
+    BufferAccess<int32_t> _structureTypesArray;
     const PropertyPtr _atomClusters;
-    DataBufferAccess<int64_t> _atomClustersArray;
+    BufferAccess<int64_t> _atomClustersArray;
     std::vector<int> _neighborLists;
     std::vector<int> _atomSymmetryPermutations;
     size_t _neighborListsSize = 0;
-    ConstDataBufferAccessAndRef<SelectionIntType> _particleSelection;
+    ConstBufferAccessAndRef<SelectionIntType> _particleSelection;
     const std::shared_ptr<ClusterGraph> _clusterGraph;
     std::atomic<FloatType> _maximumNeighborDistance;
     DataOORef<const SimulationCellObject> _simCell;

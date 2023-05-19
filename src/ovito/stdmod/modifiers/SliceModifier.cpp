@@ -26,7 +26,7 @@
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/dataset/scene/PipelineSceneNode.h>
 #include <ovito/core/dataset/scene/SelectionSet.h>
-#include <ovito/core/dataset/data/DataBufferAccess.h>
+#include <ovito/core/dataset/data/BufferAccess.h>
 #include <ovito/core/dataset/animation/controller/Controller.h>
 #include <ovito/core/dataset/animation/AnimationSettings.h>
 #include <ovito/core/dataset/pipeline/ModifierApplication.h>
@@ -236,7 +236,7 @@ void SliceModifier::renderPlane(SceneRenderer* renderer, const Plane3& plane, co
         renderer->addToLocalBoundingBox(vertexBoundingBox);
     }
     else {
-        DataBufferAccessAndRef<Point3> positions = DataBufferPtr::create(vertices.size(), DataBuffer::FloatDefault, 3);
+        BufferAccessAndRef<Point3> positions = DataBufferPtr::create(vertices.size(), DataBuffer::FloatDefault, 3);
         boost::range::copy(vertices, positions.begin());
         LinePrimitive buffer;
         buffer.setPositions(positions.take());

@@ -23,7 +23,7 @@
 #include <ovito/core/Core.h>
 #include <ovito/core/dataset/DataSet.h>
 #include "DataBuffer.h"
-#include "DataBufferAccess.h"
+#include "BufferAccess.h"
 
 namespace Ovito {
 
@@ -131,11 +131,13 @@ bool DataBuffer::grow(size_t numAdditionalElements, bool callerAlreadyHasWriteAc
 * Note: This method never reallocates the memory buffer. Thus, the capacity of the array remains unchanged and the
 * memory of the truncated elements is not released by the method.
 ******************************************************************************/
-void DataBuffer::truncate(size_t numElementsToRemove)
+void DataBuffer::truncate(size_t numElementsToRemove, bool callerAlreadyHasWriteAccess)
 {
     OVITO_ASSERT(numElementsToRemove <= _numElements);
 
-    WriteAccess writeAccess(*this);
+    std::optional<WriteAccess> writeAccess;
+    if(!callerAlreadyHasWriteAccess)
+        writeAccess.emplace(*this);
     _numElements -= numElementsToRemove;
 }
 
@@ -298,6 +300,97 @@ void DataBuffer::filterResize(const boost::dynamic_bitset<>& mask)
             }
         }
         newSize = (dst - _data.get()) / stride;
+    }
+    resize(newSize, true); // Note: This is a cheap operation - does not mem copy.
+}
+
+/******************************************************************************
+* Removes those data elements for which the bits are set in the given bitmask
+* array by moving data from the back of the array into the free slots.
+* This method is potentially faster than filterResize() if only few elements are to be deleted.
+* However, the ordering of the remaining elements is NOT preserved.
+******************************************************************************/
+void DataBuffer::filterResizeReordering(const boost::dynamic_bitset<>& mask)
+{
+    OVITO_ASSERT(size() == mask.size());
+    auto s = size();
+    if(s == 0)
+        return;
+
+    auto specializedFilter = [&](auto _) {
+        using T = decltype(_);
+        size_t newSize;
+        {
+            WriteAccess writeAccess(*this);
+            auto begin = reinterpret_cast<const T*>(cbuffer());
+            auto end = begin + s;
+            auto dst = reinterpret_cast<T*>(buffer()) + s;
+            for(size_t i = s - 1; dst != begin; --i) {
+                --dst;
+                if(mask.test(i))
+                    *dst = *(--end);
+            }
+            newSize = end - begin;
+        }
+        resize(newSize, true); // Note: This is a cheap operation - does no mem copy.
+    };
+
+    // Optimize filter operation for the most common data types.
+    if(dataType() == DataBuffer::Float32) {
+        if(componentCount() == 1 && stride() == sizeof(float)) {
+            specializedFilter(float{});
+            return;
+        }
+        else if(componentCount() == 3 && stride() == sizeof(Point_3<float>)) {
+            specializedFilter(Point_3<float>{});
+            return;
+        }
+    }
+    else if(dataType() == DataBuffer::Float64) {
+        if(componentCount() == 1 && stride() == sizeof(double)) {
+            specializedFilter(double{});
+            return;
+        }
+        else if(componentCount() == 3 && stride() == sizeof(Point_3<double>)) {
+            specializedFilter(Point_3<double>{});
+            return;
+        }
+    }
+    else if(dataType() == DataBuffer::Int32) {
+        if(componentCount() == 1 && stride() == sizeof(int32_t)) {
+            specializedFilter(int32_t{});
+            return;
+        }
+        else if(componentCount() == 3 && stride() == sizeof(Vector_3<int32_t>)) {
+            specializedFilter(Vector_3<int32_t>{});
+            return;
+        }
+    }
+    else if(dataType() == DataBuffer::Int64 && stride() == sizeof(int64_t)) {
+        specializedFilter(int64_t{});
+        return;
+    }
+    else if(dataType() == DataBuffer::Int8 && stride() == sizeof(int8_t)) {
+        specializedFilter(int8_t{});
+        return;
+    }
+
+    // Generic case:
+    size_t newSize;
+    {
+        WriteAccess writeAccess(*this);
+        const auto stride = this->stride();
+        const std::byte* begin = _data.get();
+        const std::byte* end = begin + (s * stride);
+        std::byte* dst = _data.get() + (s * stride);
+        for(size_t i = s - 1; dst != begin; --i) {
+            dst -= stride;
+            if(mask.test(i)) {
+                end -= stride;
+                std::memcpy(dst, end, stride);
+            }
+        }
+        newSize = (end - begin) / stride;
     }
     resize(newSize, true); // Note: This is a cheap operation - does not mem copy.
 }
@@ -606,7 +699,7 @@ bool DataBuffer::equals(const DataBuffer& other) const
 /******************************************************************************
 * Changes the data type of the buffer in place and converts the stored values.
 ******************************************************************************/
-void DataBuffer::convertDataType(int newDataType)
+void DataBuffer::convertToDataType(int newDataType)
 {
     OVITO_ASSERT(newDataType == Int8 || newDataType == Int32 || newDataType == Int64 || newDataType == Float32 || newDataType == Float64);
 
@@ -618,7 +711,7 @@ void DataBuffer::convertDataType(int newDataType)
     std::unique_ptr<std::byte[]> newData(new std::byte[_numElements * newStride]); // TODO: Replace with std::make_unique_for_overwrite() in C++20.
 
     // Copy values from old buffer to new buffer and perform data type convertion.
-    ConstDataBufferAccess<void, true> oldData(this);
+    ConstBufferAccess<void, true> oldData(this);
     switch(newDataType) {
     case Int8:
         {

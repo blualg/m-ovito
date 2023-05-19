@@ -32,6 +32,7 @@
 #include <ovito/core/app/Application.h>
 #include "SurfaceMeshVis.h"
 #include "SurfaceMesh.h"
+#include "SurfaceMeshReadAccess.h"
 #include "RenderableSurfaceMesh.h"
 
 namespace Ovito::Mesh {
@@ -334,7 +335,7 @@ QString SurfaceMeshPickInfo::infoString(PipelineSceneNode* objectNode, quint32 s
             str += property->name();
             str += QStringLiteral(":</key> ");
             if(property->dataType() == PropertyObject::Int32) {
-                ConstDataBufferAccess<int32_t, true> data(property);
+                ConstBufferAccess<int32_t, true> data(property);
                 for(size_t component = 0; component < data.componentCount(); component++) {
                     if(component != 0) str += QStringLiteral(", ");
                     str += QString::number(data.get(facetIndex, component));
@@ -347,28 +348,28 @@ QString SurfaceMeshPickInfo::infoString(PipelineSceneNode* objectNode, quint32 s
                 }
             }
             else if(property->dataType() == PropertyObject::Int64) {
-                ConstDataBufferAccess<int64_t, true> data(property);
+                ConstBufferAccess<int64_t, true> data(property);
                 for(size_t component = 0; component < property->componentCount(); component++) {
                     if(component != 0) str += QStringLiteral(", ");
                     str += QString::number(data.get(facetIndex, component));
                 }
             }
             else if(property->dataType() == PropertyObject::Int8) {
-                ConstDataBufferAccess<int8_t, true> data(property);
+                ConstBufferAccess<int8_t, true> data(property);
                 for(size_t component = 0; component < property->componentCount(); component++) {
                     if(component != 0) str += QStringLiteral(", ");
                     str += QString::number(data.get(facetIndex, component));
                 }
             }
             else if(property->dataType() == PropertyObject::Float32) {
-                ConstDataBufferAccess<float, true> data(property);
+                ConstBufferAccess<float, true> data(property);
                 for(size_t component = 0; component < property->componentCount(); component++) {
                     if(component != 0) str += QStringLiteral(", ");
                     str += QString::number(data.get(facetIndex, component));
                 }
             }
             else if(property->dataType() == PropertyObject::Float64) {
-                ConstDataBufferAccess<double, true> data(property);
+                ConstBufferAccess<double, true> data(property);
                 for(size_t component = 0; component < property->componentCount(); component++) {
                     if(component != 0) str += QStringLiteral(", ");
                     str += QString::number(data.get(facetIndex, component));
@@ -380,7 +381,7 @@ QString SurfaceMeshPickInfo::infoString(PipelineSceneNode* objectNode, quint32 s
         }
 
         // Additionally, list all properties of the region to which the face belongs.
-        if(ConstDataBufferAccess<int32_t> regionProperty = surfaceMesh()->faces()->getProperty(SurfaceMeshFaces::RegionProperty)) {
+        if(ConstBufferAccess<int32_t> regionProperty = surfaceMesh()->faces()->getProperty(SurfaceMeshFaces::RegionProperty)) {
             if(facetIndex < regionProperty.size() && surfaceMesh()->regions()) {
                 int regionIndex = regionProperty[facetIndex];
                 if(!str.isEmpty()) str += QStringLiteral("<sep>");
@@ -393,7 +394,7 @@ QString SurfaceMeshPickInfo::infoString(PipelineSceneNode* objectNode, quint32 s
                     str += property->name();
                     str += QStringLiteral(":</key> ");
                     if(property->dataType() == PropertyObject::Int32) {
-                        ConstDataBufferAccess<int32_t, true> data(property);
+                        ConstBufferAccess<int32_t, true> data(property);
                         for(size_t component = 0; component < property->componentCount(); component++) {
                             if(component != 0) str += QStringLiteral(", ");
                             str += QString::number(data.get(regionIndex, component));
@@ -406,28 +407,28 @@ QString SurfaceMeshPickInfo::infoString(PipelineSceneNode* objectNode, quint32 s
                         }
                     }
                     else if(property->dataType() == PropertyObject::Int64) {
-                        ConstDataBufferAccess<int64_t, true> data(property);
+                        ConstBufferAccess<int64_t, true> data(property);
                         for(size_t component = 0; component < property->componentCount(); component++) {
                             if(component != 0) str += QStringLiteral(", ");
                             str += QString::number(data.get(regionIndex, component));
                         }
                     }
                     else if(property->dataType() == PropertyObject::Int8) {
-                        ConstDataBufferAccess<int8_t, true> data(property);
+                        ConstBufferAccess<int8_t, true> data(property);
                         for(size_t component = 0; component < property->componentCount(); component++) {
                             if(component != 0) str += QStringLiteral(", ");
                             str += QString::number(data.get(regionIndex, component));
                         }
                     }
                     else if(property->dataType() == PropertyObject::Float32) {
-                        ConstDataBufferAccess<float, true> data(property);
+                        ConstBufferAccess<float, true> data(property);
                         for(size_t component = 0; component < property->componentCount(); component++) {
                             if(component != 0) str += QStringLiteral(", ");
                             str += QString::number(data.get(regionIndex, component));
                         }
                     }
                     else if(property->dataType() == PropertyObject::Float64) {
-                        ConstDataBufferAccess<double, true> data(property);
+                        ConstBufferAccess<double, true> data(property);
                         for(size_t component = 0; component < property->componentCount(); component++) {
                             if(component != 0) str += QStringLiteral(", ");
                             str += QString::number(data.get(regionIndex, component));
@@ -477,19 +478,16 @@ void SurfaceMeshVis::PrepareSurfaceEngine::perform()
     if(isCanceled()) return;
     nextProgressSubStep();
 
-    // Create accessor for the input mesh data.
-    const SurfaceMeshAccess inputMeshData(inputMesh());
-
     // Determine whether we can simply use two-sided rendering to display faces.
     // Thisis the case if there is no visible mesh face that has a
     // corresponding opposite face.
     if(_faceSubset.empty()) {
-        _renderFacesTwoSided = std::none_of(inputMeshData.topology()->begin_faces(), inputMeshData.topology()->end_faces(),
-            std::bind(&SurfaceMeshTopology::hasOppositeFace, inputMeshData.topology(), std::placeholders::_1));
+        _renderFacesTwoSided = boost::algorithm::none_of(inputMesh()->topology()->facesRange(),
+            std::bind(&SurfaceMeshTopology::hasOppositeFace, inputMesh()->topology(), std::placeholders::_1));
     }
     else {
-        _renderFacesTwoSided = std::none_of(inputMeshData.topology()->begin_faces(), inputMeshData.topology()->end_faces(),
-            [&](SurfaceMeshAccess::face_index face) { return _faceSubset[face] && inputMeshData.hasOppositeFace(face) && _faceSubset[inputMeshData.oppositeFace(face)]; });
+        _renderFacesTwoSided = boost::algorithm::none_of(inputMesh()->topology()->facesRange(),
+            [&, topology=inputMesh()->topology()](SurfaceMesh::face_index face) { return _faceSubset[face] && topology->hasOppositeFace(face) && _faceSubset[topology->oppositeFace(face)]; });
     }
 
     if(isCanceled()) return;
@@ -525,9 +523,9 @@ void SurfaceMeshVis::PrepareSurfaceEngine::perform()
 ******************************************************************************/
 void SurfaceMeshVis::PrepareSurfaceEngine::determineFaceColors()
 {
-    ColorA defaultFaceColor(_surfaceColor);
+    ColorAG defaultFaceColor = _surfaceColor.toDataType<GraphicsFloatType>();
 
-    if(ConstDataBufferAccess<Color> colorProperty = inputMesh()->faces()->getProperty(SurfaceMeshFaces::ColorProperty)) {
+    if(ConstBufferAccess<ColorG> colorProperty = inputMesh()->faces()->getProperty(SurfaceMeshFaces::ColorProperty)) {
         // The "Color" property of mesh faces has the highest priority.
         // If it is present, use its information to color the triangle faces.
         outputMesh()->setHasFaceColors(true);
@@ -536,15 +534,15 @@ void SurfaceMeshVis::PrepareSurfaceEngine::determineFaceColors()
             *meshFaceColor++ = colorProperty[originalFace];
         }
     }
-    else if(ConstDataBufferAccess<Color> colorProperty = inputMesh()->regions()->getProperty(SurfaceMeshRegions::ColorProperty)) {
+    else if(ConstBufferAccess<ColorG> colorProperty = inputMesh()->regions()->getProperty(SurfaceMeshRegions::ColorProperty)) {
         // If the "Color" property of mesh regions is present, use it information to color the
         // mesh faces according to the region they belong to.
-        if(ConstDataBufferAccess<int32_t> regionProperty = inputMesh()->faces()->getProperty(SurfaceMeshFaces::RegionProperty)) {
+        if(ConstBufferAccess<int32_t> regionProperty = inputMesh()->faces()->getProperty(SurfaceMeshFaces::RegionProperty)) {
             outputMesh()->setHasFaceColors(true);
             size_t regionCount = colorProperty.size();
             auto meshFaceColor = outputMesh()->faceColors().begin();
             for(size_t originalFace : _originalFaceMap) {
-                SurfaceMeshAccess::region_index regionIndex = regionProperty[originalFace];
+                SurfaceMesh::region_index regionIndex = regionProperty[originalFace];
                 if(regionIndex >= 0 && regionIndex < regionCount)
                     *meshFaceColor++ = colorProperty[regionIndex];
                 else
@@ -556,7 +554,7 @@ void SurfaceMeshVis::PrepareSurfaceEngine::determineFaceColors()
         if(const PropertyObject* pseudoColorProperty = _pseudoColorPropertyRef.findInContainer(inputMesh()->faces())) {
             if(_pseudoColorPropertyRef.vectorComponent() < (int)pseudoColorProperty->componentCount()) {
                 outputMesh()->setHasFacePseudoColors(true);
-                ConstDataBufferAccess<void,true> pseudoColorArray(pseudoColorProperty);
+                ConstBufferAccess<void,true> pseudoColorArray(pseudoColorProperty);
                 size_t vecComponent = std::max(0, _pseudoColorPropertyRef.vectorComponent());
                 auto meshFacePseudoColor = outputMesh()->facePseudoColors().begin();
                 for(size_t originalFace : _originalFaceMap) {
@@ -574,14 +572,14 @@ void SurfaceMeshVis::PrepareSurfaceEngine::determineFaceColors()
     else if(_colorMappingMode == RegionPseudoColoring && _pseudoColorPropertyRef && inputMesh()->regions()) {
         if(const PropertyObject* pseudoColorProperty = _pseudoColorPropertyRef.findInContainer(inputMesh()->regions())) {
             if(_pseudoColorPropertyRef.vectorComponent() < (int)pseudoColorProperty->componentCount()) {
-                if(ConstDataBufferAccess<int32_t> regionProperty = inputMesh()->faces()->getProperty(SurfaceMeshFaces::RegionProperty)) {
+                if(ConstBufferAccess<int32_t> regionProperty = inputMesh()->faces()->getProperty(SurfaceMeshFaces::RegionProperty)) {
                     outputMesh()->setHasFacePseudoColors(true);
-                    ConstDataBufferAccess<void,true> pseudoColorArray(pseudoColorProperty);
+                    ConstBufferAccess<void,true> pseudoColorArray(pseudoColorProperty);
                     size_t vecComponent = std::max(0, _pseudoColorPropertyRef.vectorComponent());
                     size_t regionCount = pseudoColorProperty->size();
                     auto meshFacePseudoColor = outputMesh()->facePseudoColors().begin();
                     for(size_t originalFace : _originalFaceMap) {
-                        SurfaceMeshAccess::region_index regionIndex = regionProperty[originalFace];
+                        SurfaceMesh::region_index regionIndex = regionProperty[originalFace];
                         if(regionIndex >= 0 && regionIndex < regionCount)
                             *meshFacePseudoColor++ = pseudoColorArray.get<FloatType>(regionIndex, vecComponent);
                         else
@@ -598,7 +596,7 @@ void SurfaceMeshVis::PrepareSurfaceEngine::determineFaceColors()
         }
     }
 
-    if(ConstDataBufferAccess<SelectionIntType> selectionProperty = inputMesh()->faces()->getProperty(SurfaceMeshFaces::SelectionProperty)) {
+    if(ConstBufferAccess<SelectionIntType> selectionProperty = inputMesh()->faces()->getProperty(SurfaceMeshFaces::SelectionProperty)) {
         auto meshFace = outputMesh()->faces().begin();
         for(size_t originalFace : _originalFaceMap) {
             if(selectionProperty[originalFace])
@@ -606,14 +604,14 @@ void SurfaceMeshVis::PrepareSurfaceEngine::determineFaceColors()
             ++meshFace;
         }
     }
-    else if(ConstDataBufferAccess<SelectionIntType> selectionProperty = inputMesh()->regions()->getProperty(SurfaceMeshRegions::SelectionProperty)) {
+    else if(ConstBufferAccess<SelectionIntType> selectionProperty = inputMesh()->regions()->getProperty(SurfaceMeshRegions::SelectionProperty)) {
         // If the "Selection" property of mesh regions is present, use it information to highlight the
         // mesh faces that belong to selected regions.
-        if(ConstDataBufferAccess<int32_t> regionProperty = inputMesh()->faces()->getProperty(SurfaceMeshFaces::RegionProperty)) {
+        if(ConstBufferAccess<int32_t> regionProperty = inputMesh()->faces()->getProperty(SurfaceMeshFaces::RegionProperty)) {
             size_t regionCount = selectionProperty.size();
             auto meshFace = outputMesh()->faces().begin();
             for(size_t originalFace : _originalFaceMap) {
-                SurfaceMeshAccess::region_index regionIndex = regionProperty[originalFace];
+                SurfaceMesh::region_index regionIndex = regionProperty[originalFace];
                 if(regionIndex >= 0 && regionIndex < regionCount && selectionProperty[regionIndex])
                     meshFace->setSelected();
                 ++meshFace;
@@ -627,7 +625,7 @@ void SurfaceMeshVis::PrepareSurfaceEngine::determineFaceColors()
 ******************************************************************************/
 void SurfaceMeshVis::PrepareSurfaceEngine::determineVertexColors()
 {
-    if(ConstDataBufferAccess<Color> colorProperty = inputMesh()->vertices()->getProperty(SurfaceMeshVertices::ColorProperty)) {
+    if(ConstBufferAccess<ColorG> colorProperty = inputMesh()->vertices()->getProperty(SurfaceMeshVertices::ColorProperty)) {
         OVITO_ASSERT(colorProperty.size() == outputMesh()->vertexCount());
         if(colorProperty.size() == outputMesh()->vertexCount()) {
             outputMesh()->setHasVertexColors(true);
@@ -662,7 +660,7 @@ bool SurfaceMeshVis::PrepareSurfaceEngine::buildSurfaceTriangleMesh()
     beginProgressSubStepsWithWeights({1,1,1,1,1,1});
 
     // Create accessor for the input mesh data.
-    const SurfaceMeshAccess inputMeshData(inputMesh());
+    const SurfaceMeshReadAccess inputMeshData(inputMesh());
 
     // Transfer vertices and faces from half-edge mesh structure to triangle mesh structure.
     _outputMesh = DataOORef<TriMeshObject>::create(ObjectInitializationFlag::DontCreateVisElement);
@@ -688,9 +686,10 @@ bool SurfaceMeshVis::PrepareSurfaceEngine::buildSurfaceTriangleMesh()
     // Convert vertex positions to reduced coordinates and transfer them to the output mesh.
     OVITO_ASSERT(outputMesh()->vertices().size() == inputMeshData.vertexCount());
     if(cell()) {
-        SurfaceMeshAccess::vertex_index vidx = 0;
+        ConstBufferAccess<Point3> vertexPositions(inputMeshData.expectVertexProperty(SurfaceMeshVertices::PositionProperty));
+        SurfaceMesh::vertex_index vidx = 0;
         for(Point3& p : outputMesh()->vertices()) {
-            p = cell()->absoluteToReduced(inputMeshData.vertexPosition(vidx++));
+            p = cell()->absoluteToReduced(vertexPositions[vidx++]);
             OVITO_ASSERT(std::isfinite(p.x()) && std::isfinite(p.y()) && std::isfinite(p.z()));
         }
     }
@@ -715,7 +714,7 @@ bool SurfaceMeshVis::PrepareSurfaceEngine::buildSurfaceTriangleMesh()
         int oldFaceCount = outputMesh()->faceCount();
         int oldVertexCount = outputMesh()->vertexCount();
         std::vector<Point3> newVertices;
-        std::vector<ColorA> newVertexColors;
+        std::vector<ColorAG> newVertexColors;
         std::vector<FloatType> newVertexPseudoColors;
         std::map<std::pair<int,int>,std::tuple<int,int,FloatType>> newVertexLookupMap;
         for(int findex = 0; findex < oldFaceCount; findex++) {
@@ -800,7 +799,7 @@ bool SurfaceMeshVis::PrepareSurfaceEngine::buildSurfaceTriangleMesh()
 /******************************************************************************
 * Splits a triangle face at a periodic boundary.
 ******************************************************************************/
-bool SurfaceMeshVis::PrepareSurfaceEngine::splitFace(int faceIndex, int oldVertexCount, std::vector<Point3>& newVertices, std::vector<ColorA>& newVertexColors,
+bool SurfaceMeshVis::PrepareSurfaceEngine::splitFace(int faceIndex, int oldVertexCount, std::vector<Point3>& newVertices, std::vector<ColorAG>& newVertexColors,
         std::vector<FloatType>& newVertexPseudoColors, std::map<std::pair<int,int>,std::tuple<int,int,FloatType>>& newVertexLookupMap, size_t dim)
 {
     TriMeshFace& face = outputMesh()->face(faceIndex);
@@ -823,7 +822,7 @@ bool SurfaceMeshVis::PrepareSurfaceEngine::splitFace(int faceIndex, int oldVerte
     // Create four new vertices (or use existing ones created during splitting of adjacent faces).
     int properEdge = -1;
     int newVertexIndices[3][2];
-    Vector3 interpolatedNormals[3];
+    Vector3G interpolatedNormals[3];
     for(int i = 0; i < 3; i++) {
         if(std::abs(zd[i]) < FloatType(0.5)) {
             if(properEdge != -1)
@@ -870,12 +869,12 @@ bool SurfaceMeshVis::PrepareSurfaceEngine::splitFace(int faceIndex, int oldVerte
             newVertices.push_back(p);
             // Compute the color at the intersection point by interpolating the colors of the two existing vertices.
             if(outputMesh()->hasVertexColors()) {
-                const ColorA& color1 = outputMesh()->vertexColor(vi1);
-                const ColorA& color2 = outputMesh()->vertexColor(vi2);
-                ColorA interp_color(color1.r() + (color2.r() - color1.r()) * t,
-                                    color1.g() + (color2.g() - color1.g()) * t,
-                                    color1.b() + (color2.b() - color1.b()) * t,
-                                    color1.a() + (color2.a() - color1.a()) * t);
+                const ColorAG& color1 = outputMesh()->vertexColor(vi1);
+                const ColorAG& color2 = outputMesh()->vertexColor(vi2);
+                ColorAG interp_color(color1.r() + (color2.r() - color1.r()) * static_cast<GraphicsFloatType>(t),
+                                    color1.g() + (color2.g() - color1.g()) * static_cast<GraphicsFloatType>(t),
+                                    color1.b() + (color2.b() - color1.b()) * static_cast<GraphicsFloatType>(t),
+                                    color1.a() + (color2.a() - color1.a()) * static_cast<GraphicsFloatType>(t));
                 newVertexColors.push_back(interp_color);
                 newVertexColors.push_back(interp_color);
             }
@@ -889,10 +888,10 @@ bool SurfaceMeshVis::PrepareSurfaceEngine::splitFace(int faceIndex, int oldVerte
         }
         // Compute interpolated normal vector at intersection point.
         if(_smoothShading) {
-            const Vector3& n1 = outputMesh()->faceVertexNormal(faceIndex, (i+oi1)%3);
-            const Vector3& n2 = outputMesh()->faceVertexNormal(faceIndex, (i+oi2)%3);
-            FloatType t = std::get<2>(entry->second);
-            interpolatedNormals[i] = n1*t + n2*(FloatType(1)-t);
+            const Vector3G& n1 = outputMesh()->faceVertexNormal(faceIndex, (i+oi1)%3);
+            const Vector3G& n2 = outputMesh()->faceVertexNormal(faceIndex, (i+oi2)%3);
+            GraphicsFloatType t = std::get<2>(entry->second);
+            interpolatedNormals[i] = n1 * t + n2 * (GraphicsFloatType(1) - t);
             interpolatedNormals[i].normalizeSafely();
         }
     }
@@ -946,11 +945,13 @@ void SurfaceMeshVis::PrepareSurfaceEngine::buildCapTriangleMesh()
     _capPolygonsMesh = DataOORef<TriMeshObject>::create(ObjectInitializationFlag::DontCreateVisElement);
 
     // Create accessor for the input mesh data.
-    const SurfaceMeshAccess inputMeshData(inputMesh());
+    const SurfaceMeshReadAccess inputMeshData(inputMesh());
+    ConstBufferAccess<Point3> vertexPositions(inputMeshData.expectVertexProperty(SurfaceMeshVertices::PositionProperty));
+    ConstBufferAccess<int32_t> faceRegions(inputMeshData.faceProperty(SurfaceMeshFaces::RegionProperty));
 
     // Access the 'Filled' property of volumetric regions if it is defined for the input surface mesh.
-    ConstDataBufferAccess<SelectionIntType> isFilledProperty(inputMeshData.regionProperty(SurfaceMeshRegions::IsFilledProperty));
-    bool hasRegions = isFilledProperty && inputMeshData.hasFaceRegions();
+    ConstBufferAccess<SelectionIntType> isFilledProperty(inputMeshData.regionProperty(SurfaceMeshRegions::IsFilledProperty));
+    bool hasRegions = isFilledProperty && faceRegions;
     bool flipCapNormal = (cell()->matrix().determinant() < 0);
 
     // Convert vertex positions to reduced coordinates.
@@ -959,9 +960,9 @@ void SurfaceMeshVis::PrepareSurfaceEngine::buildCapTriangleMesh()
         invCellMatrix.column(0) = -invCellMatrix.column(0);
 
     std::vector<Point3> reducedPos(inputMeshData.vertexCount());
-    SurfaceMeshAccess::vertex_index vidx = 0;
+    SurfaceMesh::vertex_index vidx = 0;
     for(Point3& p : reducedPos)
-        p = invCellMatrix * inputMeshData.vertexPosition(vidx++);
+        p = invCellMatrix * vertexPositions[vidx++];
 
     // Indicates for 4 corners of the simulation cell whether they are located inside (1) or outside (0) of the filled mesh region.
     // Initial value -1 indicates that the inside/outside test has not been performed yet.
@@ -1009,7 +1010,7 @@ void SurfaceMeshVis::PrepareSurfaceEngine::buildCapTriangleMesh()
             std::vector<std::vector<Point2>> closedContours;
 
             // Find a first edge that crosses a cell boundary.
-            for(SurfaceMeshAccess::face_index face : _originalFaceMap) {
+            for(SurfaceMesh::face_index face : _originalFaceMap) {
                 // Skip faces that have already been visited.
                 if(visitedFaces[face]) continue;
                 if(isCanceled()) return;
@@ -1017,7 +1018,7 @@ void SurfaceMeshVis::PrepareSurfaceEngine::buildCapTriangleMesh()
 
                 // Determine whether the mesh face is bordering a filled or an empty region.
                 if(hasRegions) {
-                    SurfaceMeshAccess::region_index region = inputMeshData.faceRegion(face);
+                    SurfaceMesh::region_index region = faceRegions[face];
                     if(region >= 0 && region < isFilledProperty.size()) {
                         if((bool)isFilledProperty[region] == _reverseOrientation) {
                             // Skip faces that are adjacent to an empty volumetric region.
@@ -1025,9 +1026,9 @@ void SurfaceMeshVis::PrepareSurfaceEngine::buildCapTriangleMesh()
                         }
 
                         // Also skip any two-sided faces that are part of an interior interface.
-                        SurfaceMeshAccess::face_index oppositeFace = inputMeshData.oppositeFace(face);
-                        if(oppositeFace != SurfaceMeshAccess::InvalidIndex) {
-                            SurfaceMeshAccess::region_index oppositeRegion = inputMeshData.faceRegion(oppositeFace);
+                        SurfaceMesh::face_index oppositeFace = inputMeshData.oppositeFace(face);
+                        if(oppositeFace != SurfaceMesh::InvalidIndex) {
+                            SurfaceMesh::region_index oppositeRegion = faceRegions[oppositeFace];
                             if(oppositeRegion >= 0 && oppositeRegion < isFilledProperty.size()) {
                                 if((bool)isFilledProperty[oppositeRegion] != _reverseOrientation) {
                                     continue;
@@ -1038,8 +1039,8 @@ void SurfaceMeshVis::PrepareSurfaceEngine::buildCapTriangleMesh()
                 }
 
                 // Visit the halfedges of the current mesh face.
-                SurfaceMeshAccess::edge_index startEdge = inputMeshData.firstFaceEdge(face);
-                SurfaceMeshAccess::edge_index edge = startEdge;
+                SurfaceMesh::edge_index startEdge = inputMeshData.firstFaceEdge(face);
+                SurfaceMesh::edge_index edge = startEdge;
                 do {
                     const Point3& v1 = reducedPos[inputMeshData.vertex1(edge)];
                     const Point3& v2 = reducedPos[inputMeshData.vertex2(edge)];
@@ -1049,7 +1050,7 @@ void SurfaceMeshVis::PrepareSurfaceEngine::buildCapTriangleMesh()
                             ? (v2[dim] < 0 && v1[dim] >= 0)
                             : (v2[dim] <= 1 && v1[dim] > 1));
                     if(crossesBoundary) {
-                        std::vector<Point2> contour = traceContour(inputMeshData, edge, reducedPos, visitedFaces, dim, faceMode);
+                        std::vector<Point2> contour = traceContour(*inputMesh()->topology(), edge, reducedPos, visitedFaces, dim, faceMode);
                         if(contour.empty())
                             throw Exception(tr("Surface mesh does not represent a proper closed manifold."));
                         if(!_clipAtDomainBoundaries) {
@@ -1154,7 +1155,7 @@ void SurfaceMeshVis::PrepareSurfaceEngine::buildCapTriangleMesh()
                         Point3 corner = cell()->cellOrigin();
                         if(faceMode == CapPolygonTessellator::BackFace)
                             corner += cell()->cellMatrix().column(dim);
-                        if(std::optional<std::pair<SurfaceMeshAccess::region_index, FloatType>> region = inputMeshData.locatePoint(corner, 0, _faceSubset)) {
+                        if(std::optional<std::pair<SurfaceMesh::region_index, FloatType>> region = inputMeshData.locatePoint(corner, 0, _faceSubset)) {
                             if(hasRegions) {
                                 if(region->first >= 0 && region->first < isFilledProperty.size()) {
                                     isInside = (bool)isFilledProperty[region->first];
@@ -1163,7 +1164,7 @@ void SurfaceMeshVis::PrepareSurfaceEngine::buildCapTriangleMesh()
                                     isInside = false;
                             }
                             else {
-                                isInside = region->first != SurfaceMeshAccess::InvalidIndex;
+                                isInside = region->first != SurfaceMesh::InvalidIndex;
                             }
                         }
                         else {
@@ -1212,22 +1213,22 @@ void SurfaceMeshVis::PrepareSurfaceEngine::buildCapTriangleMesh()
 /******************************************************************************
 * Traces the closed contour of the surface-boundary intersection.
 ******************************************************************************/
-std::vector<Point2> SurfaceMeshVis::PrepareSurfaceEngine::traceContour(const SurfaceMeshAccess& inputMeshData, SurfaceMesh::edge_index firstEdge, const std::vector<Point3>& reducedPos, std::vector<bool>& visitedFaces, size_t dim, CapPolygonTessellator::FaceMode faceMode) const
+std::vector<Point2> SurfaceMeshVis::PrepareSurfaceEngine::traceContour(const SurfaceMeshTopology& inputMeshTopology, SurfaceMesh::edge_index firstEdge, const std::vector<Point3>& reducedPos, std::vector<bool>& visitedFaces, size_t dim, CapPolygonTessellator::FaceMode faceMode) const
 {
     OVITO_ASSERT(cell());
     size_t dim1 = (dim + 1) % 3;
     size_t dim2 = (dim + 2) % 3;
     std::vector<Point2> contour;
-    SurfaceMeshAccess::edge_index edge = firstEdge;
+    SurfaceMesh::edge_index edge = firstEdge;
     do {
-        OVITO_ASSERT(inputMeshData.adjacentFace(edge) != SurfaceMeshAccess::InvalidIndex);
+        OVITO_ASSERT(inputMeshTopology.adjacentFace(edge) != SurfaceMesh::InvalidIndex);
 
         // Mark face as visited.
-        visitedFaces[inputMeshData.adjacentFace(edge)] = true;
+        visitedFaces[inputMeshTopology.adjacentFace(edge)] = true;
 
         // Compute intersection point.
-        Point3 v1 = reducedPos[inputMeshData.vertex1(edge)];
-        Point3 v2 = reducedPos[inputMeshData.vertex2(edge)];
+        Point3 v1 = reducedPos[inputMeshTopology.vertex1(edge)];
+        Point3 v2 = reducedPos[inputMeshTopology.vertex2(edge)];
         Vector3 delta = v2 - v1;
 
         if(faceMode == CapPolygonTessellator::PeriodicFace) {
@@ -1269,8 +1270,8 @@ std::vector<Point2> SurfaceMeshVis::PrepareSurfaceEngine::traceContour(const Sur
         // Find the face edge that crosses the boundary in the reverse direction.
         FloatType v1d = v2[dim];
         for(;;) {
-            edge = inputMeshData.nextFaceEdge(edge);
-            FloatType v2d = reducedPos[inputMeshData.vertex2(edge)][dim];
+            edge = inputMeshTopology.nextFaceEdge(edge);
+            FloatType v2d = reducedPos[inputMeshTopology.vertex2(edge)][dim];
             if(faceMode == CapPolygonTessellator::PeriodicFace) {
                 if(v2d - v1d <= FloatType(-0.5))
                     break;
@@ -1286,8 +1287,8 @@ std::vector<Point2> SurfaceMeshVis::PrepareSurfaceEngine::traceContour(const Sur
             v1d = v2d;
         }
 
-        edge = inputMeshData.oppositeEdge(edge);
-        if(edge == SurfaceMeshAccess::InvalidIndex) {
+        edge = inputMeshTopology.oppositeEdge(edge);
+        if(edge == SurfaceMesh::InvalidIndex) {
             // Mesh is not closed (not a proper manifold).
             contour.clear();
             break;

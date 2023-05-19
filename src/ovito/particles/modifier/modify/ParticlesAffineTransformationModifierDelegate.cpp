@@ -56,14 +56,14 @@ PipelineStatus ParticlesAffineTransformationModifierDelegate::apply(const Modifi
         ParticlesObject* outputParticles = state.makeMutable(inputParticles);
 
         // Create a modifiable copy of the particle position.
-        DataBufferAccess<Point3> posProperty = outputParticles->expectMutableProperty(ParticlesObject::PositionProperty);
+        BufferAccess<Point3> posProperty = outputParticles->expectMutableProperty(ParticlesObject::PositionProperty);
 
         // Determine transformation matrix.
         AffineTransformationModifier* mod = static_object_cast<AffineTransformationModifier>(request.modifier());
         const AffineTransformation tm = mod->effectiveAffineTransformation(inputState);
 
         if(mod->selectionOnly()) {
-            if(ConstDataBufferAccess<SelectionIntType> selProperty = inputParticles->getProperty(ParticlesObject::SelectionProperty)) {
+            if(ConstBufferAccess<SelectionIntType> selProperty = inputParticles->getProperty(ParticlesObject::SelectionProperty)) {
                 const auto* s = selProperty.cbegin();
                 for(Point3& p : posProperty) {
                     if(*s++)
@@ -134,13 +134,13 @@ PipelineStatus VectorParticlePropertiesAffineTransformationModifierDelegate::app
             PropertyObject* property = mutableObjectPath.lastAs<PropertyObject>();
             if(property->dataType() == DataBuffer::Float32) {
                 const auto tm = mod->effectiveAffineTransformation(inputState).toDataType<float>();
-                DataBufferAccess<Vector_3<float>> propertyAccess(property);
+                BufferAccess<Vector_3<float>> propertyAccess(property);
                 if(!mod->selectionOnly() || !container || !container->getOOMetaClass().isValidStandardPropertyId(PropertyObject::GenericSelectionProperty)) {
                     for(auto& v : propertyAccess)
                         v = tm * v;
                 }
                 else {
-                    if(ConstDataBufferAccess<SelectionIntType> selProperty = container->getProperty(PropertyObject::GenericSelectionProperty)) {
+                    if(ConstBufferAccess<SelectionIntType> selProperty = container->getProperty(PropertyObject::GenericSelectionProperty)) {
                         const auto* s = selProperty.cbegin();
                         for(auto& v : propertyAccess) {
                             if(*s++)
@@ -151,13 +151,13 @@ PipelineStatus VectorParticlePropertiesAffineTransformationModifierDelegate::app
             }
             else {
                 const auto tm = mod->effectiveAffineTransformation(inputState).toDataType<double>();
-                DataBufferAccess<Vector_3<double>> propertyAccess(property);
+                BufferAccess<Vector_3<double>> propertyAccess(property);
                 if(!mod->selectionOnly() || !container || !container->getOOMetaClass().isValidStandardPropertyId(PropertyObject::GenericSelectionProperty)) {
                     for(auto& v : propertyAccess)
                         v = tm * v;
                 }
                 else {
-                    if(ConstDataBufferAccess<SelectionIntType> selProperty = container->getProperty(PropertyObject::GenericSelectionProperty)) {
+                    if(ConstBufferAccess<SelectionIntType> selProperty = container->getProperty(PropertyObject::GenericSelectionProperty)) {
                         const auto* s = selProperty.cbegin();
                         for(auto& v : propertyAccess) {
                             if(*s++)

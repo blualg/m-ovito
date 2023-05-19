@@ -115,7 +115,7 @@ PipelineStatus VoxelGridVis::render(AnimationTime time, const ConstDataObjectPat
 
     // Look for 'Color' voxel property.
     const PropertyObject* colorProperty = gridObj->getProperty(VoxelGrid::ColorProperty);
-    ConstDataBufferAccess<Color> colorArray(colorProperty);
+    ConstBufferAccess<ColorG> colorArray(colorProperty);
 
     // Look for selected pseudo-coloring property.
     const PropertyObject* pseudoColorProperty = nullptr;
@@ -133,7 +133,7 @@ PipelineStatus VoxelGridVis::render(AnimationTime time, const ConstDataObjectPat
             pseudoColorPropertyComponent = std::max(0, colorMapping()->sourceProperty().vectorComponent());
         }
     }
-    ConstDataBufferAccess<void,true> pseudoColorArray(pseudoColorProperty);
+    ConstBufferAccess<void,true> pseudoColorArray(pseudoColorProperty);
     OVITO_ASSERT(!(colorArray && pseudoColorArray));
 
     // The key type used for caching the geometry primitive:
@@ -160,7 +160,7 @@ PipelineStatus VoxelGridVis::render(AnimationTime time, const ConstDataObjectPat
         transp = transparencyController()->getFloatValue(time, iv);
         if(transp >= 1.0) return status;
     }
-    FloatType alpha = FloatType(1) - transp;
+    GraphicsFloatType alpha = GraphicsFloatType(1) - transp;
 
     // Look up the rendering primitive in the vis cache.
     auto& primitives = renderer->visCache().get<CacheValue>(CacheKey(
@@ -249,7 +249,7 @@ PipelineStatus VoxelGridVis::render(AnimationTime time, const ConstDataObjectPat
 
                     // Create vertices.
                     auto vertex = mesh->vertices().begin() + baseVertexCount;
-                    ColorA* vertexColor = mesh->hasVertexColors() ? mesh->vertexColors().data() + baseVertexCount : nullptr;
+                    ColorAG* vertexColor = mesh->hasVertexColors() ? mesh->vertexColors().data() + baseVertexCount : nullptr;
                     FloatType* vertexPseudoColor = mesh->hasVertexPseudoColors() ? mesh->vertexPseudoColors().data() + baseVertexCount : nullptr;
                     for(int iy = 0; iy < nly; iy++) {
                         for(int ix = 0; ix < nlx; ix++) {
@@ -266,8 +266,8 @@ PipelineStatus VoxelGridVis::render(AnimationTime time, const ConstDataObjectPat
                                     else coords[dim2] = gridDims[dim2]-1;
                                 }
                                 if(vertexColor) {
-                                    const Color& c = colorArray[gridObj->voxelIndex(coords[0], coords[1], coords[2])];
-                                    *vertexColor++ = ColorA(c, alpha);
+                                    const ColorG& c = colorArray[gridObj->voxelIndex(coords[0], coords[1], coords[2])];
+                                    *vertexColor++ = ColorAG(c, alpha);
                                 }
                                 else {
                                     *vertexPseudoColor++ = pseudoColorArray.get<FloatType>(gridObj->voxelIndex(coords[0], coords[1], coords[2]), pseudoColorPropertyComponent);
@@ -279,7 +279,7 @@ PipelineStatus VoxelGridVis::render(AnimationTime time, const ConstDataObjectPat
 
                     // Create triangles.
                     auto face = mesh->faces().begin() + baseFaceCount;
-                    ColorA* faceColor = mesh->hasFaceColors() ? mesh->faceColors().data() + baseFaceCount : nullptr;
+                    ColorAG* faceColor = mesh->hasFaceColors() ? mesh->faceColors().data() + baseFaceCount : nullptr;
                     FloatType* facePseudoColor = mesh->hasFacePseudoColors() ? mesh->facePseudoColors().data() + baseFaceCount : nullptr;
                     for(int iy = 0; iy < nvy; iy++) {
                         for(int ix = 0; ix < nvx; ix++) {
@@ -292,9 +292,9 @@ PipelineStatus VoxelGridVis::render(AnimationTime time, const ConstDataObjectPat
                             if(faceColor) {
                                 coords[dim1] = ix;
                                 coords[dim2] = iy;
-                                const Color& c = colorArray[gridObj->voxelIndex(coords[0], coords[1], coords[2])];
-                                *faceColor++ = ColorA(c, alpha);
-                                *faceColor++ = ColorA(c, alpha);
+                                const ColorG& c = colorArray[gridObj->voxelIndex(coords[0], coords[1], coords[2])];
+                                *faceColor++ = ColorAG(c, alpha);
+                                *faceColor++ = ColorAG(c, alpha);
                             }
                             if(facePseudoColor) {
                                 coords[dim1] = ix;
@@ -488,21 +488,21 @@ PipelineStatus VoxelGridVis::render(AnimationTime time, const ConstDataObjectPat
                     OVITO_ASSERT(vertex == mesh->vertices().end());
 
                     // Compute color of vertices located in the center of voxel faces.
-                    ColorA* vertexColor = mesh->vertexColors().data() + baseVertexCount;
+                    auto* vertexColor = mesh->vertexColors().data() + baseVertexCount;
                     for(int iy = 0; iy < nvy; iy++, vertexColor += 2) {
                         for(int ix = 0; ix < nvx; ix++, vertexColor += 4) {
                             coords[dim1] = ix;
                             coords[dim2] = iy;
-                            const Color& c1 = colorArray[gridObj->voxelIndex(coords[0], coords[1], coords[2])];
+                            const ColorG& c1 = colorArray[gridObj->voxelIndex(coords[0], coords[1], coords[2])];
                             if(pbcFlags[dim3]) {
                                 // Blend two colors if the grid is periodic.
                                 coords_wrap[dim1] = ix;
                                 coords_wrap[dim2] = iy;
-                                const Color& c2 = colorArray[gridObj->voxelIndex(coords_wrap[0], coords_wrap[1], coords_wrap[2])];
-                                vertexColor[3] = ColorA(FloatType(0.5) * (c1 + c2), alpha);
+                                const auto& c2 = colorArray[gridObj->voxelIndex(coords_wrap[0], coords_wrap[1], coords_wrap[2])];
+                                vertexColor[3] = ColorAG(GraphicsFloatType(0.5) * (c1 + c2), alpha);
                             }
                             else {
-                                vertexColor[3] = ColorA(c1, alpha);
+                                vertexColor[3] = ColorAG(c1, alpha);
                             }
                         }
                     }
@@ -515,11 +515,11 @@ PipelineStatus VoxelGridVis::render(AnimationTime time, const ConstDataObjectPat
                     }
                     else {
                         for(int ix = 0; ix < nvx; ix++)
-                            vertexColor[ix * verts_per_voxel + 1] = FloatType(0.5) * (vertexColor[ix * verts_per_voxel + 3] + vertexColor[(nvy - 1) * verts_per_row + ix * verts_per_voxel + 3]);
+                            vertexColor[ix * verts_per_voxel + 1] = GraphicsFloatType(0.5) * (vertexColor[ix * verts_per_voxel + 3] + vertexColor[(nvy - 1) * verts_per_row + ix * verts_per_voxel + 3]);
                     }
                     for(int iy = 1; iy < nvy; iy++) {
                         for(int ix = 0; ix < nvx; ix++) {
-                            vertexColor[iy * verts_per_row + ix * verts_per_voxel + 1] = FloatType(0.5) * (vertexColor[iy * verts_per_row + ix * verts_per_voxel + 3] + vertexColor[(iy-1) * verts_per_row + ix * verts_per_voxel + 3]);
+                            vertexColor[iy * verts_per_row + ix * verts_per_voxel + 1] = GraphicsFloatType(0.5) * (vertexColor[iy * verts_per_row + ix * verts_per_voxel + 3] + vertexColor[(iy-1) * verts_per_row + ix * verts_per_voxel + 3]);
                         }
                     }
                     if(!pbcFlags[dim2]) {
@@ -538,11 +538,11 @@ PipelineStatus VoxelGridVis::render(AnimationTime time, const ConstDataObjectPat
                     }
                     else {
                         for(int iy = 0; iy < nvy; iy++)
-                            vertexColor[iy * verts_per_row + 2] = FloatType(0.5) * (vertexColor[iy * verts_per_row + 3] + vertexColor[(nvx - 1) * verts_per_voxel + iy * verts_per_row + 3]);
+                            vertexColor[iy * verts_per_row + 2] = GraphicsFloatType(0.5) * (vertexColor[iy * verts_per_row + 3] + vertexColor[(nvx - 1) * verts_per_voxel + iy * verts_per_row + 3]);
                     }
                     for(int iy = 0; iy < nvy; iy++) {
                         for(int ix = 1; ix < nvx; ix++) {
-                            vertexColor[iy * verts_per_row + ix * verts_per_voxel + 2] = FloatType(0.5) * (vertexColor[iy * verts_per_row + ix * verts_per_voxel + 3] + vertexColor[iy * verts_per_row + (ix-1) * verts_per_voxel + 3]);
+                            vertexColor[iy * verts_per_row + ix * verts_per_voxel + 2] = GraphicsFloatType(0.5) * (vertexColor[iy * verts_per_row + ix * verts_per_voxel + 3] + vertexColor[iy * verts_per_row + (ix-1) * verts_per_voxel + 3]);
                         }
                     }
                     if(!pbcFlags[dim1]) {
@@ -559,7 +559,7 @@ PipelineStatus VoxelGridVis::render(AnimationTime time, const ConstDataObjectPat
                         if(!pbcFlags[dim1])
                             vertexColor[iy * verts_per_row] = vertexColor[iy * verts_per_row + 1];
                         else
-                            vertexColor[iy * verts_per_row] = FloatType(0.5) * (vertexColor[iy * verts_per_row + 1] + vertexColor[iy * verts_per_row + (nvx - 1) * verts_per_voxel + 1]);
+                            vertexColor[iy * verts_per_row] = GraphicsFloatType(0.5) * (vertexColor[iy * verts_per_row + 1] + vertexColor[iy * verts_per_row + (nvx - 1) * verts_per_voxel + 1]);
                         for(int ix = 1; ix < nvx; ix++) {
                             vertexColor[iy * verts_per_row + ix * verts_per_voxel] = FloatType(0.5) * (vertexColor[iy * verts_per_row + ix * verts_per_voxel + 1] + vertexColor[iy * verts_per_row + (ix-1) * verts_per_voxel + 1]);
                         }
@@ -571,9 +571,9 @@ PipelineStatus VoxelGridVis::render(AnimationTime time, const ConstDataObjectPat
                     if(!pbcFlags[dim1])
                         vertexColor[nvy * verts_per_row] = vertexColor[nvy * verts_per_row + 1];
                     else
-                        vertexColor[nvy * verts_per_row] = FloatType(0.5) * (vertexColor[nvy * verts_per_row + 1] + vertexColor[nvy * verts_per_row + (nvx - 1) * 2 + 1]);
+                        vertexColor[nvy * verts_per_row] = GraphicsFloatType(0.5) * (vertexColor[nvy * verts_per_row + 1] + vertexColor[nvy * verts_per_row + (nvx - 1) * 2 + 1]);
                     for(int ix = 1; ix < nvx; ix++) {
-                        vertexColor[nvy * verts_per_row + ix * 2] = FloatType(0.5) * (vertexColor[nvy * verts_per_row + ix * 2 + 1] + vertexColor[nvy * verts_per_row + (ix - 1) * 2 + 1]);
+                        vertexColor[nvy * verts_per_row + ix * 2] = GraphicsFloatType(0.5) * (vertexColor[nvy * verts_per_row + ix * 2 + 1] + vertexColor[nvy * verts_per_row + (ix - 1) * 2 + 1]);
                     }
                     if(!pbcFlags[dim1])
                         vertexColor[nvy * verts_per_row + nvx * 2] = vertexColor[nvy * verts_per_row + (nvx - 1) * 2 + 1];

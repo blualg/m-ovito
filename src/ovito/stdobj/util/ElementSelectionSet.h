@@ -25,7 +25,7 @@
 
 #include <ovito/stdobj/StdObj.h>
 #include <ovito/core/dataset/pipeline/PipelineFlowState.h>
-#include <ovito/core/dataset/data/DataBufferAccess.h>
+#include <ovito/core/dataset/data/BufferAccess.h>
 #include <ovito/core/oo/RefTarget.h>
 
 namespace Ovito::StdObj {
@@ -85,7 +85,7 @@ public:
     void setSelection(const PropertyContainer* container, const boost::dynamic_bitset<>& selection, SelectionMode mode = SelectionReplace);
 
     /// Copies the stored selection set into the given output selection property.
-    PipelineStatus applySelection(DataBufferAccess<SelectionIntType> outputSelectionProperty, ConstDataBufferAccess<IdentifierIntType> identifierProperty);
+    PipelineStatus applySelection(BufferAccess<SelectionIntType> outputSelectionProperty, ConstBufferAccess<IdentifierIntType> identifierProperty);
 
 protected:
 

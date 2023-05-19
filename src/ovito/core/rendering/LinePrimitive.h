@@ -25,7 +25,7 @@
 
 #include <ovito/core/Core.h>
 #include <ovito/core/dataset/data/DataBuffer.h>
-#include <ovito/core/dataset/data/DataBufferAccess.h>
+#include <ovito/core/dataset/data/BufferAccess.h>
 
 namespace Ovito {
 
@@ -53,7 +53,7 @@ public:
         OVITO_STATIC_ASSERT((std::is_same_v<PointType, Point_3<ValueType>>));
 
         size_t count = std::distance(begin, end);
-        DataBufferAccessAndRef<PointType> buffer = DataBufferPtr::create(count, DataBufferPrimitiveType<ValueType>::value, 3);
+        BufferAccessAndRef<PointType> buffer = DataBufferPtr::create(count, DataBufferPrimitiveType<ValueType>::value, 3);
         std::copy(std::move(begin), std::move(end), buffer.begin());
         setPositions(buffer.take());
     }
@@ -81,7 +81,7 @@ public:
         OVITO_STATIC_ASSERT((std::is_same_v<ColorType, ColorAT<ValueType>>));
 
         size_t count = std::distance(begin, end);
-        DataBufferAccessAndRef<ColorType> buffer = DataBufferPtr::create(count, DataBufferPrimitiveType<ValueType>::value, 4);
+        BufferAccessAndRef<ColorType> buffer = DataBufferPtr::create(count, DataBufferPrimitiveType<ValueType>::value, 4);
         std::copy(std::move(begin), std::move(end), buffer.begin());
         setColors(buffer.take());
     }

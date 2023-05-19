@@ -49,7 +49,7 @@ PipelineStatus SurfaceMeshAffineTransformationModifierDelegate::apply(const Modi
             // Create a copy of the vertices sub-object (no need to copy the topology when only moving vertices).
             SurfaceMeshVertices* newVertices = newSurface->makeVerticesMutable();
             // Create a copy of the vertex coordinates array.
-            DataBufferAccess<Point3> positionProperty = newVertices->expectMutableProperty(SurfaceMeshVertices::PositionProperty);
+            BufferAccess<Point3> positionProperty = newVertices->expectMutableProperty(SurfaceMeshVertices::PositionProperty);
 
             if(!mod->selectionOnly()) {
                 // Apply transformation to the vertex coordinates.
@@ -57,7 +57,7 @@ PipelineStatus SurfaceMeshAffineTransformationModifierDelegate::apply(const Modi
                     p = tm * p;
             }
             else {
-                if(ConstDataBufferAccess<SelectionIntType> selectionProperty = newVertices->getProperty(SurfaceMeshVertices::SelectionProperty)) {
+                if(ConstBufferAccess<SelectionIntType> selectionProperty = newVertices->getProperty(SurfaceMeshVertices::SelectionProperty)) {
                     // Apply transformation only to the selected vertices.
                     const auto* s = selectionProperty.cbegin();
                     for(Point3& p : positionProperty) {
@@ -84,10 +84,12 @@ PipelineStatus SurfaceMeshAffineTransformationModifierDelegate::apply(const Modi
             for(Point3& p : newMeshObj->vertices())
                 p = tm * p;
             newMeshObj->invalidateVertices();
+
             // Apply transformation to the normal vectors.
             if(newMeshObj->hasNormals()) {
-                for(Vector3& n : newMeshObj->normals())
-                    n = tm * n;
+                const auto& tm_g = tm.toDataType<GraphicsFloatType>();
+                for(auto& n : newMeshObj->normals())
+                    n = tm_g * n;
             }
         }
     }

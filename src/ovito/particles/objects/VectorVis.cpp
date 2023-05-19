@@ -157,11 +157,11 @@ Box3 VectorVis::arrowBoundingBox(const DataBuffer* vectorProperty, const DataBuf
     // Compute bounding box of base positions (only those with non-zero vector).
     Box3 bbox;
     FloatType maxMagnitude = 0;
-    ConstDataBufferAccess<Point3> positions(basePositions);
+    ConstBufferAccess<Point3> positions(basePositions);
     const Point3* p = positions.cbegin();
 
     if(vectorProperty->dataType() == PropertyObject::Float64) {
-        ConstDataBufferAccess<Vector_3<double>> vectorData(vectorProperty);
+        ConstBufferAccess<Vector_3<double>> vectorData(vectorProperty);
         for(const Vector_3<double>& v : vectorData) {
             if(v != Vector_3<double>::Zero())
                 bbox.addPoint(*p);
@@ -175,7 +175,7 @@ Box3 VectorVis::arrowBoundingBox(const DataBuffer* vectorProperty, const DataBuf
         }
     }
     else if(vectorProperty->dataType() == PropertyObject::Float32) {
-        ConstDataBufferAccess<Vector_3<float>> vectorData(vectorProperty);
+        ConstBufferAccess<Vector_3<float>> vectorData(vectorProperty);
         for(const Vector_3<float>& v : vectorData) {
             if(v != Vector_3<float>::Zero())
                 bbox.addPoint(*p);
@@ -293,8 +293,8 @@ PipelineStatus VectorVis::render(AnimationTime time, const ConstDataObjectPath& 
 
         // Determine number of non-zero vectors.
         int vectorCount = 0;
-        ConstDataBufferAccess<Vector_3<float>> vectorData32(vectorProperty->dataType() == DataBuffer::Float32 ? vectorProperty : nullptr);
-        ConstDataBufferAccess<Vector_3<double>> vectorData64(vectorProperty->dataType() == DataBuffer::Float64 ? vectorProperty : nullptr);
+        ConstBufferAccess<Vector_3<float>> vectorData32(vectorProperty->dataType() == DataBuffer::Float32 ? vectorProperty : nullptr);
+        ConstBufferAccess<Vector_3<double>> vectorData64(vectorProperty->dataType() == DataBuffer::Float64 ? vectorProperty : nullptr);
         if(basePositions) {
             if(vectorData32) {
                 for(const auto& v : vectorData32) {
@@ -311,18 +311,18 @@ PipelineStatus VectorVis::render(AnimationTime time, const ConstDataObjectPath& 
         }
 
         // Allocate data buffers.
-        DataBufferAccessAndRef<Point3G> arrowBasePositions = DataBufferPtr::create(vectorCount, DataBuffer::FloatGraphics, 3);
-        DataBufferAccessAndRef<Point3G> arrowHeadPositions = DataBufferPtr::create(vectorCount, DataBuffer::FloatGraphics, 3);
-        DataBufferAccessAndRef<ColorG> arrowColors = (vectorColorProperty || pseudoColorProperty) ? DataBufferPtr::create(vectorCount, DataBuffer::FloatGraphics, 3) : nullptr;
+        BufferAccessAndRef<Point3G> arrowBasePositions = DataBufferPtr::create(vectorCount, DataBuffer::FloatGraphics, 3);
+        BufferAccessAndRef<Point3G> arrowHeadPositions = DataBufferPtr::create(vectorCount, DataBuffer::FloatGraphics, 3);
+        BufferAccessAndRef<ColorG> arrowColors = (vectorColorProperty || pseudoColorProperty) ? DataBufferPtr::create(vectorCount, DataBuffer::FloatGraphics, 3) : nullptr;
 
         // Fill data buffers.
         if(vectorCount) {
             FloatType scalingFac = scalingFactor();
             if(reverseArrowDirection())
                 scalingFac = -scalingFac;
-            ConstDataBufferAccess<Point3> basePositionData(basePositions);
-            ConstDataBufferAccess<ColorG> vectorColorData(vectorColorProperty);
-            ConstDataBufferAccess<void,true> vectorPseudoColorData(pseudoColorProperty);
+            ConstBufferAccess<Point3> basePositionData(basePositions);
+            ConstBufferAccess<ColorG> vectorColorData(vectorColorProperty);
+            ConstBufferAccess<void,true> vectorPseudoColorData(pseudoColorProperty);
             size_t inIndex = 0;
             size_t outIndex = 0;
             const auto arrowPosition = this->arrowPosition();
@@ -384,7 +384,7 @@ size_t VectorPickInfo::elementIndexFromSubObjectID(quint32 subobjID) const
     if(const PropertyObject* vectorProperty = dataPath().lastAs<PropertyObject>()) {
         size_t elementIndex = 0;
         if(vectorProperty->dataType() == DataBuffer::Float32) {
-            ConstDataBufferAccess<Vector_3<float>> vectorData(vectorProperty);
+            ConstBufferAccess<Vector_3<float>> vectorData(vectorProperty);
             for(const Vector_3<float>& v : vectorData) {
                 if(v != Vector_3<float>::Zero()) {
                     if(subobjID == 0) return elementIndex;
@@ -394,7 +394,7 @@ size_t VectorPickInfo::elementIndexFromSubObjectID(quint32 subobjID) const
             }
         }
         else if(vectorProperty->dataType() == DataBuffer::Float64) {
-            ConstDataBufferAccess<Vector_3<double>> vectorData(vectorProperty);
+            ConstBufferAccess<Vector_3<double>> vectorData(vectorProperty);
             for(const Vector_3<double>& v : vectorData) {
                 if(v != Vector_3<double>::Zero()) {
                     if(subobjID == 0) return elementIndex;

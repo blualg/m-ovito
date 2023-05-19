@@ -152,11 +152,11 @@ void XSFImporter::FrameLoader::loadFile()
             line = stream.line();
 
             setParticleCount(coords.size());
-            DataBufferAccess<Point3> posAccess = particles()->createProperty(ParticlesObject::PositionProperty);
+            BufferAccess<Point3> posAccess = particles()->createProperty(ParticlesObject::PositionProperty);
             boost::copy(coords, posAccess.begin());
 
             PropertyObject* typeProperty = particles()->createProperty(ParticlesObject::TypeProperty);
-            boost::transform(types, DataBufferAccess<int32_t>(typeProperty).begin(), [&](const QString& typeName) {
+            boost::transform(types, BufferAccess<int32_t>(typeProperty).begin(), [&](const QString& typeName) {
                 return addNamedType(ParticlesObject::OOClass(), typeProperty, typeName)->numericId();
             });
             // Since we created particle types on the go while reading the particles, the type ordering
@@ -165,7 +165,7 @@ void XSFImporter::FrameLoader::loadFile()
             typeProperty->sortElementTypesByName();
 
             if(forces.size() == coords.size()) {
-                DataBufferAccess<Vector3> forceProperty = particles()->createProperty(ParticlesObject::ForceProperty);
+                BufferAccess<Vector3> forceProperty = particles()->createProperty(ParticlesObject::ForceProperty);
                 boost::copy(forces, forceProperty.begin());
             }
 
@@ -328,7 +328,7 @@ void XSFImporter::FrameLoader::loadFile()
                 voxelGrid->setDomain(std::move(simCell));
             }
 
-            DataBufferAccess<FloatType> fieldQuantity = voxelGrid->createProperty(name, DataBuffer::FloatDefault);
+            BufferAccess<FloatType> fieldQuantity = voxelGrid->createProperty(name, DataBuffer::FloatDefault);
             FloatType* data = fieldQuantity.begin();
             setProgressMaximum(fieldQuantity.size());
             const char* s = "";

@@ -41,11 +41,21 @@ protected:
     /// (Smart-)pointer to the DataBuffer whose data is being accessed.
     PointerType _buffer{};
 
+    /// Raw pointer to the buffer data.
+    std::conditional_t<Writable, std::byte*, const std::byte*> _data = nullptr;
+
+    auto getBufferAddress() const {
+        if constexpr(Writable)
+            return _buffer->buffer();
+        else
+            return _buffer->cbuffer();
+    }
+
     /// Constructor that creates an invalid access object not associated with any buffer object.
     DataBufferAccessBase() noexcept = default;
 
     /// Constructor that associates the access object with a buffer object (may be null).
-    DataBufferAccessBase(PointerType buffer) noexcept : _buffer(std::move(buffer)) {
+    DataBufferAccessBase(PointerType buffer) noexcept : _buffer(std::move(buffer)), _data(_buffer ? getBufferAddress() : nullptr) {
 #ifdef OVITO_DEBUG
         if(this->_buffer) {
             if(Writable) this->_buffer->prepareWriteAccess();
@@ -55,7 +65,7 @@ protected:
     }
 
     /// Copy construction (only available for read-only accessors).
-    DataBufferAccessBase(const DataBufferAccessBase& other) : _buffer(other._buffer) {
+    DataBufferAccessBase(const DataBufferAccessBase& other) : _buffer(other._buffer), _data(other._data) {
 #ifdef OVITO_DEBUG
         if(this->_buffer) {
             if(Writable) this->_buffer->prepareWriteAccess();
@@ -67,6 +77,7 @@ protected:
     /// Copy assignment.
     DataBufferAccessBase& operator=(const DataBufferAccessBase& other) {
         this->_buffer = other._buffer;
+        this->_data = other._data;
 #ifdef OVITO_DEBUG
         if(this->_buffer) {
             if(Writable) this->_buffer->prepareWriteAccess();
@@ -77,11 +88,12 @@ protected:
     }
 
     /// Move construction.
-    DataBufferAccessBase(DataBufferAccessBase&& other) noexcept : _buffer(std::exchange(other._buffer, nullptr)) {}
+    DataBufferAccessBase(DataBufferAccessBase&& other) noexcept : _buffer(std::exchange(other._buffer, nullptr)), _data(std::exchange(other._data, nullptr)) {}
 
     /// Move assignment.
     DataBufferAccessBase& operator=(DataBufferAccessBase&& other) noexcept {
         this->_buffer = std::exchange(other._buffer, nullptr);
+        this->_data = std::exchange(other._data, nullptr);
         return *this;
     }
 
@@ -145,12 +157,19 @@ public:
             else this->_buffer->finishReadAccess();
         }
 #endif
+        _data = nullptr;
         return std::exchange(this->_buffer, nullptr);
+    }
+
+    /// Updates the internal data pointer (e.g. after the data buffer's memory has been reallocated).
+    void updatePointer() {
+        OVITO_ASSERT(_buffer);
+        _data = _buffer->buffer();
     }
 };
 
 // Base class that allows read access to the data elements of the underlying DataBuffer.
-template<typename T, class PointerType, bool Writable = false>
+template<typename T, class PointerType, bool Writable/* = false*/>
 class ReadOnlyDataBufferSubrangeAccessBase : public DataBufferAccessBase<PointerType, Writable>
 {
 public:
@@ -193,9 +212,10 @@ public:
     /// Returns a pointer to the first element of the data array.
     const T* cbegin() const {
         OVITO_ASSERT(this->_buffer);
+        OVITO_ASSERT(this->getBufferAddress() == this->_data);
         OVITO_ASSERT(this->_buffer->dataType() == DataBufferPrimitiveType<T>::value);
         OVITO_ASSERT(this->stride() == sizeof(T));
-        return reinterpret_cast<const T*>(this->_buffer->cbuffer()) + this->_beginIndex;
+        return reinterpret_cast<const T*>(this->_data) + this->_beginIndex;
     }
 
     /// Returns a pointer pointing to the end of the data array.
@@ -220,7 +240,7 @@ protected:
 };
 
 // Base class that allows read access to the data elements of the underlying DataBuffer.
-template<typename T, class PointerType, bool Writable = false>
+template<typename T, class PointerType, bool Writable/* = false*/>
 class ReadOnlyDataBufferAccessBase : public DataBufferAccessBase<PointerType, Writable>
 {
 public:
@@ -262,9 +282,10 @@ public:
     /// Returns a pointer to the first element of the data array.
     const T* cbegin() const {
         OVITO_ASSERT(this->_buffer);
+        OVITO_ASSERT(this->getBufferAddress() == this->_data);
         OVITO_ASSERT(this->_buffer->dataType() == DataBufferPrimitiveType<T>::value);
         OVITO_ASSERT(this->stride() == sizeof(T));
-        return reinterpret_cast<const T*>(this->_buffer->cbuffer());
+        return reinterpret_cast<const T*>(this->_data);
     }
 
     /// Returns a pointer pointing to the end of the data array.
@@ -285,7 +306,7 @@ protected:
 };
 
 // Base class that allows read access to the individual components of vector elements of the underlying DataBuffer.
-template<typename T, class PointerType, bool Writable = false>
+template<typename T, class PointerType, bool Writable/* = false*/>
 class ReadOnlyDataBufferAccessBaseTable : public DataBufferAccessBase<PointerType, Writable>
 {
 public:
@@ -302,7 +323,8 @@ public:
 
     /// Returns a pointer to the beginning of the data array.
     const T* cbegin() const {
-        return reinterpret_cast<const T*>(this->_buffer->cbuffer());
+        OVITO_ASSERT(this->getBufferAddress() == this->_data);
+        return reinterpret_cast<const T*>(this->_data);
     }
 
     /// Returns a pointer to the end of the data array.
@@ -359,15 +381,16 @@ public:
     /// Returns a pointer to the raw data of the data array.
     const std::byte* cdata(size_t component = 0) const {
         OVITO_ASSERT(this->_buffer);
-        return this->_buffer->cbuffer() + (component * this->dataTypeSize());
+        return this->_data + (component * this->dataTypeSize());
     }
 
     /// Returns a pointer to the raw data of the data array.
     const std::byte* cdata(size_t index, size_t component) const {
         OVITO_ASSERT(this->_buffer);
+        OVITO_ASSERT(this->getBufferAddress() == this->_data);
         OVITO_ASSERT(index < this->size());
         OVITO_ASSERT(component < this->componentCount());
-        return this->_buffer->cbuffer() + (index * this->stride()) + (component * this->dataTypeSize());
+        return this->_data + (index * this->stride()) + (component * this->dataTypeSize());
     }
 
 protected:
@@ -406,7 +429,8 @@ public:
     /// Returns a pointer to the first element of the data array.
     T* begin() const {
         OVITO_ASSERT(this->_buffer);
-        return reinterpret_cast<T*>(this->_buffer->buffer()) + this->_beginIndex;
+        OVITO_ASSERT(this->getBufferAddress() == this->_data);
+        return reinterpret_cast<T*>(this->_data) + this->_beginIndex;
     }
 
     /// Returns a pointer pointing to the end of the data array.
@@ -455,7 +479,8 @@ public:
     /// Returns a pointer to the first element of the data array.
     T* begin() const {
         OVITO_ASSERT(this->_buffer);
-        return reinterpret_cast<T*>(this->_buffer->buffer());
+        OVITO_ASSERT(this->getBufferAddress() == this->_data);
+        return reinterpret_cast<T*>(this->_data);
     }
 
     /// Returns a pointer pointing to the end of the data array.
@@ -476,7 +501,8 @@ public:
     /// Appends a new element to the end of the data array.
     void push_back(const T& v) {
         size_t oldCount = this->size();
-        this->buffer()->grow(1, true);
+        if(this->buffer()->grow(1, true))
+            this->updatePointer();
         set(oldCount, v);
     }
 
@@ -498,7 +524,8 @@ public:
     /// Returns a pointer to the first element of the data array.
     T* begin() const {
         OVITO_ASSERT(this->_buffer);
-        return reinterpret_cast<T*>(this->_buffer->buffer());
+        OVITO_ASSERT(this->getBufferAddress() == this->_data);
+        return reinterpret_cast<T*>(this->_data);
     }
 
     /// Returns a pointer pointing to the end of the data array.
@@ -531,6 +558,7 @@ public:
     /// Returns a modifiable reference to the j-th component of the i-th element of the array.
     T& value(size_t i, size_t j) {
         OVITO_ASSERT(this->_buffer);
+        OVITO_ASSERT(this->getBufferAddress() == this->_data);
         OVITO_ASSERT(i < this->size());
         OVITO_ASSERT(j < this->componentCount());
         return *(begin() + i * this->componentCount() + j);
@@ -577,15 +605,16 @@ public:
     /// Returns a pointer to the raw data of the data array.
     std::byte* data(size_t component = 0) {
         OVITO_ASSERT(this->_buffer);
-        return this->_buffer->buffer() + (component * this->dataTypeSize());
+        return this->_data + (component * this->dataTypeSize());
     }
 
     /// Returns a pointer to the raw data of the data array.
     std::byte* data(size_t index, size_t component) {
         OVITO_ASSERT(this->_buffer);
+        OVITO_ASSERT(this->getBufferAddress() == this->_data);
         OVITO_ASSERT(index < this->size());
         OVITO_ASSERT(component < this->componentCount());
-        return this->_buffer->buffer() + (index * this->stride()) + (component * this->dataTypeSize());
+        return this->_data + (index * this->stride()) + (component * this->dataTypeSize());
     }
 
 protected:
@@ -605,23 +634,23 @@ protected:
  * be a compile-time constant.
  */
 template<typename T, bool TableMode = false, typename DataBufferClass = DataBuffer>
-class ConstDataBufferAccess : public std::conditional_t<TableMode, Ovito::detail::ReadOnlyDataBufferAccessBaseTable<T, const DataBufferClass*>, Ovito::detail::ReadOnlyDataBufferAccessBase<T, const DataBufferClass*>>
+class ConstBufferAccess : public std::conditional_t<TableMode, Ovito::detail::ReadOnlyDataBufferAccessBaseTable<T, const DataBufferClass*>, Ovito::detail::ReadOnlyDataBufferAccessBase<T, const DataBufferClass*>>
 {
     using ParentType = std::conditional_t<TableMode, Ovito::detail::ReadOnlyDataBufferAccessBaseTable<T, const DataBufferClass*>, Ovito::detail::ReadOnlyDataBufferAccessBase<T, const DataBufferClass*>>;
 
 public:
 
     /// Constructs an accessor object not associated yet with any DataBuffer.
-    ConstDataBufferAccess() = default;
+    ConstBufferAccess() = default;
 
     /// Constructs a read-only accessor for the data in a DataBuffer.
-    ConstDataBufferAccess(const DataBufferClass* buffer)
+    ConstBufferAccess(const DataBufferClass* buffer)
         : ParentType(buffer) {}
 
     /// Constructs a read-only accessor for the data in a DataBuffer.
     template<typename DerivedDataBufferClass>
-    ConstDataBufferAccess(DataOORef<DerivedDataBufferClass> buffer)
-        : ConstDataBufferAccess(buffer.get()) {}
+    ConstBufferAccess(DataOORef<DerivedDataBufferClass> buffer)
+        : ConstBufferAccess(buffer.get()) {}
 };
 
 /**
@@ -629,30 +658,30 @@ public:
  *        and which keeps a strong reference to the DataBuffer.
  */
 template<typename T, bool TableMode = false, typename DataBufferClass = DataBuffer>
-class ConstDataBufferAccessAndRef : public std::conditional_t<TableMode, Ovito::detail::ReadOnlyDataBufferAccessBaseTable<T, DataOORef<const DataBufferClass>>, Ovito::detail::ReadOnlyDataBufferAccessBase<T, DataOORef<const DataBufferClass>>>
+class ConstBufferAccessAndRef : public std::conditional_t<TableMode, Ovito::detail::ReadOnlyDataBufferAccessBaseTable<T, DataOORef<const DataBufferClass>>, Ovito::detail::ReadOnlyDataBufferAccessBase<T, DataOORef<const DataBufferClass>>>
 {
     using ParentType = std::conditional_t<TableMode, Ovito::detail::ReadOnlyDataBufferAccessBaseTable<T, DataOORef<const DataBufferClass>>, Ovito::detail::ReadOnlyDataBufferAccessBase<T, DataOORef<const DataBufferClass>>>;
 
 public:
 
     /// Constructs an accessor object not associated yet with any DataBuffer.
-    ConstDataBufferAccessAndRef() = default;
+    ConstBufferAccessAndRef() = default;
 
     /// Constructs a read-only accessor for the data in a DataBuffer.
-    ConstDataBufferAccessAndRef(DataOORef<const DataBufferClass> buffer)
+    ConstBufferAccessAndRef(DataOORef<const DataBufferClass> buffer)
         : ParentType(std::move(buffer)) {}
 
     /// Constructs a read-only accessor for the data in a DataBuffer.
-    ConstDataBufferAccessAndRef(DataOORef<DataBufferClass> buffer)
+    ConstBufferAccessAndRef(DataOORef<DataBufferClass> buffer)
         : ParentType(std::move(buffer)) {}
 
     /// Constructs a read-only accessor for the data in a DataBuffer.
-    ConstDataBufferAccessAndRef(const DataBufferClass* buffer)
+    ConstBufferAccessAndRef(const DataBufferClass* buffer)
         : ParentType(DataOORef<const DataBufferClass>(buffer)) {}
 
     /// Constructs a read-only accessor for the data in a DataBuffer.
     template<typename DerivedDataBufferClass>
-    ConstDataBufferAccessAndRef(DataOORef<DerivedDataBufferClass> buffer)
+    ConstBufferAccessAndRef(DataOORef<DerivedDataBufferClass> buffer)
         : ParentType(static_object_cast<const DataBufferClass>(std::move(buffer))) {}
 };
 
@@ -664,40 +693,40 @@ public:
  * If TableMode is set to false, the data elements can only be access as a whole and the number of components must
  * be a compile-time constant.
  *
- * If the DataBufferAccess object is initialized from a DataBuffer pointer, the buffer object's notifyTargetChanged()
- * method will be automatically called when the DataBufferAccess object goes out of scope to inform the system about
+ * If the BufferAccess object is initialized from a DataBuffer pointer, the buffer object's notifyTargetChanged()
+ * method will be automatically called when the BufferAccess object goes out of scope to inform the system about
  * a modification of the stored property values.
  */
 template<typename T, bool TableMode = false, typename DataBufferClass = DataBuffer>
-class DataBufferAccess : public std::conditional_t<TableMode, Ovito::detail::ReadWriteDataBufferAccessBaseTable<T, DataBufferClass*>, Ovito::detail::ReadWriteDataBufferAccessBase<T, DataBufferClass*>>
+class BufferAccess : public std::conditional_t<TableMode, Ovito::detail::ReadWriteDataBufferAccessBaseTable<T, DataBufferClass*>, Ovito::detail::ReadWriteDataBufferAccessBase<T, DataBufferClass*>>
 {
     using ParentType = std::conditional_t<TableMode, Ovito::detail::ReadWriteDataBufferAccessBaseTable<T, DataBufferClass*>, Ovito::detail::ReadWriteDataBufferAccessBase<T, DataBufferClass*>>;
 
 public:
 
     /// Constructs an accessor object not associated yet with any DataBuffer.
-    DataBufferAccess() = default;
+    BufferAccess() = default;
 
     /// Constructs a read/write accessor for the data in a DataBuffer.
-    DataBufferAccess(DataBufferClass* buffer)
+    BufferAccess(DataBufferClass* buffer)
         : ParentType(buffer) {}
 
     /// Constructs a read/write accessor for the data in a DataBuffer.
     template<typename DerivedDataBufferClass>
-    DataBufferAccess(const DataOORef<DerivedDataBufferClass>& buffer)
-        : DataBufferAccess(buffer.get()) {}
+    BufferAccess(const DataOORef<DerivedDataBufferClass>& buffer)
+        : BufferAccess(buffer.get()) {}
 
     /// Forbid copy construction.
-    DataBufferAccess(const DataBufferAccess& other) = delete;
+    BufferAccess(const BufferAccess& other) = delete;
 
     /// Allow move construction.
-    DataBufferAccess(DataBufferAccess&& other) = default;
+    BufferAccess(BufferAccess&& other) = default;
 
     /// Forbid copy assignment.
-    DataBufferAccess& operator=(const DataBufferAccess& other) = delete;
+    BufferAccess& operator=(const BufferAccess& other) = delete;
 
     /// Allow move assignment.
-    DataBufferAccess& operator=(DataBufferAccess&& other) = default;
+    BufferAccess& operator=(BufferAccess&& other) = default;
 };
 
 /**
@@ -705,30 +734,30 @@ public:
  *        and which keeps a strong reference to the DataBuffer.
  */
 template<typename T, bool TableMode = false, typename DataBufferClass = DataBuffer>
-class DataBufferAccessAndRef : public std::conditional_t<TableMode, Ovito::detail::ReadWriteDataBufferAccessBaseTable<T, DataOORef<DataBufferClass>>, Ovito::detail::ReadWriteDataBufferAccessBase<T, DataOORef<DataBufferClass>>>
+class BufferAccessAndRef : public std::conditional_t<TableMode, Ovito::detail::ReadWriteDataBufferAccessBaseTable<T, DataOORef<DataBufferClass>>, Ovito::detail::ReadWriteDataBufferAccessBase<T, DataOORef<DataBufferClass>>>
 {
     using ParentType = std::conditional_t<TableMode, Ovito::detail::ReadWriteDataBufferAccessBaseTable<T, DataOORef<DataBufferClass>>, Ovito::detail::ReadWriteDataBufferAccessBase<T, DataOORef<DataBufferClass>>>;
 
 public:
 
     /// Constructs an accessor object not associated yet with any DataBuffer.
-    DataBufferAccessAndRef() = default;
+    BufferAccessAndRef() = default;
 
     /// Constructs a read/write accessor for the data in a DataBuffer.
-    DataBufferAccessAndRef(DataOORef<DataBufferClass> buffer)
+    BufferAccessAndRef(DataOORef<DataBufferClass> buffer)
         : ParentType(std::move(buffer)) {}
 
     /// Forbid copy construction.
-    DataBufferAccessAndRef(const DataBufferAccessAndRef& other) = delete;
+    BufferAccessAndRef(const BufferAccessAndRef& other) = delete;
 
     /// Allow move construction.
-    DataBufferAccessAndRef(DataBufferAccessAndRef&& other) = default;
+    BufferAccessAndRef(BufferAccessAndRef&& other) = default;
 
     /// Forbid copy assignment.
-    DataBufferAccessAndRef& operator=(const DataBufferAccessAndRef& other) = delete;
+    BufferAccessAndRef& operator=(const BufferAccessAndRef& other) = delete;
 
     /// Allow move assignment.
-    DataBufferAccessAndRef& operator=(DataBufferAccessAndRef&& other) = default;
+    BufferAccessAndRef& operator=(BufferAccessAndRef&& other) = default;
 };
 
 }   // End of namespace

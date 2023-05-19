@@ -244,13 +244,13 @@ void ParticleImporter::FrameLoader::setImproperCount(size_t count)
 ******************************************************************************/
 void ParticleImporter::FrameLoader::generateBondPeriodicImageProperty()
 {
-    ConstDataBufferAccess<Point3> posProperty = particles()->getProperty(ParticlesObject::PositionProperty);
+    ConstBufferAccess<Point3> posProperty = particles()->getProperty(ParticlesObject::PositionProperty);
     if(!posProperty) return;
 
-    ConstDataBufferAccess<ParticleIndexPair> bondTopologyProperty = bonds()->getProperty(BondsObject::TopologyProperty);
+    ConstBufferAccess<ParticleIndexPair> bondTopologyProperty = bonds()->getProperty(BondsObject::TopologyProperty);
     if(!bondTopologyProperty) return;
 
-    DataBufferAccess<Vector3I> bondPeriodicImageProperty = bonds()->createProperty(BondsObject::PeriodicImageProperty);
+    BufferAccess<Vector3I> bondPeriodicImageProperty = bonds()->createProperty(BondsObject::PeriodicImageProperty);
 
     if(!hasSimulationCell() || !simulationCell()->hasPbcCorrected()) {
         bondPeriodicImageProperty.take()->fill<Vector3I>(Vector3I::Zero());
@@ -319,7 +319,7 @@ void ParticleImporter::FrameLoader::generateBonds()
     if(!neighborFinder.prepare(maxCutoff, positionProperty, state().getObject<SimulationCellObject>(), {}))
         return;
 
-    ConstDataBufferAccess<int32_t> particleTypesArray(typeProperty);
+    ConstBufferAccess<int32_t> particleTypesArray(typeProperty);
 
     // Multi-threaded loop over all particles, each thread producing a partial bonds list.
     size_t particleCount = positionProperty->size();
@@ -346,9 +346,9 @@ void ParticleImporter::FrameLoader::generateBonds()
 
     // Create BondsObject.
     setBondCount(boost::accumulate(partialBondsLists, (size_t)0, [](size_t n, const std::vector<Bond>& bonds) { return n + bonds.size(); }));
-    DataBufferAccess<ParticleIndexPair> bondTopologyProperty = this->bonds()->createProperty(BondsObject::TopologyProperty);
+    BufferAccess<ParticleIndexPair> bondTopologyProperty = this->bonds()->createProperty(BondsObject::TopologyProperty);
     PropertyObject* bondTypeProperty = this->bonds()->createProperty(BondsObject::TypeProperty);
-    DataBufferAccess<Vector3I> bondPeriodicImageProperty = this->bonds()->createProperty(BondsObject::PeriodicImageProperty);
+    BufferAccess<Vector3I> bondPeriodicImageProperty = this->bonds()->createProperty(BondsObject::PeriodicImageProperty);
 
     // Create bond type.
     addNumericType(BondsObject::OOClass(), bondTypeProperty, 1, {});
@@ -375,10 +375,10 @@ void ParticleImporter::FrameLoader::computeVelocityMagnitude()
     if(!_particles || isCanceled())
         return;
 
-    if(ConstDataBufferAccess<Vector3> velocityVectors = _particles->getProperty(ParticlesObject::VelocityProperty)) {
+    if(ConstBufferAccess<Vector3> velocityVectors = _particles->getProperty(ParticlesObject::VelocityProperty)) {
         auto v = velocityVectors.cbegin();
         PropertyObject* magnitudeProperty = particles()->createProperty(ParticlesObject::VelocityMagnitudeProperty);
-        for(FloatType& mag : DataBufferAccess<FloatType>(magnitudeProperty)) {
+        for(FloatType& mag : BufferAccess<FloatType>(magnitudeProperty)) {
             mag = v->length();
             ++v;
         }
@@ -408,7 +408,7 @@ void ParticleImporter::FrameLoader::correctOffcenterCell()
         return;
 
     // Get the particle coordinates.
-    ConstDataBufferAccess<Point3> positions = _particles ? _particles->getProperty(ParticlesObject::PositionProperty) : nullptr;
+    ConstBufferAccess<Point3> positions = _particles ? _particles->getProperty(ParticlesObject::PositionProperty) : nullptr;
     if(!positions || positions.size() == 0)
         return;
 
@@ -454,7 +454,7 @@ void ParticleImporter::FrameLoader::recenterSimulationCell()
     simulationCell->setCellMatrix(cellMatrix);
 
     if(_particles) {
-        if(DataBufferAccess<Point3> positions = _particles->getMutableProperty(ParticlesObject::PositionProperty)) {
+        if(BufferAccess<Point3> positions = _particles->getMutableProperty(ParticlesObject::PositionProperty)) {
             for(Point3& p : positions)
                 p -= offset;
         }

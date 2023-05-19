@@ -25,7 +25,6 @@
 
 #include <ovito/grid/Grid.h>
 #include <ovito/grid/objects/VoxelGrid.h>
-#include <ovito/mesh/surface/SurfaceMeshAccess.h>
 #include <ovito/mesh/surface/SurfaceMeshVis.h>
 #include <ovito/stdobj/table/DataTable.h>
 #include <ovito/core/dataset/pipeline/AsynchronousModifier.h>
@@ -86,7 +85,7 @@ public:
     virtual QVariant getPipelineEditorShortInfo(Scene* scene, ModifierApplication* modApp) const override { return tr("%1=%2").arg(sourceProperty().nameWithComponent()).arg(isolevel()); }
 
     /// Transfers voxel grid properties to the vertices of a surfaces mesh.
-    static bool transferPropertiesFromGridToMesh(SurfaceMeshAccess& mesh, const std::vector<ConstPropertyPtr>& fieldProperties, const SimulationCellObject& gridDomain, VoxelGrid::GridDimensions gridShape, VoxelGrid::GridType gridType);
+    static bool transferPropertiesFromGridToMesh(SurfaceMeshBuilder& mesh, const std::vector<ConstPropertyPtr>& fieldProperties, const SimulationCellObject& gridDomain, VoxelGrid::GridDimensions gridShape, VoxelGrid::GridType gridType);
 
 protected:
 
@@ -146,7 +145,7 @@ private:
         ConstPropertyPtr _property;
 
         /// The surface mesh produced by the modifier.
-        DataOORef<const SurfaceMesh> _mesh;
+        DataOORef<SurfaceMesh> _mesh;
 
         /// The computed histogram of the input field values.
         DataOORef<DataTable> _histogram;

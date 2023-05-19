@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -25,7 +25,9 @@
 
 #include <ovito/mesh/Mesh.h>
 #include <ovito/core/dataset/data/DataObject.h>
+
 #include <boost/iterator/counting_iterator.hpp>
+#include <boost/range/counting_range.hpp>
 
 namespace Ovito::Mesh {
 
@@ -101,6 +103,15 @@ public:
     /// Returns an iterator that points beyond last edge of the mesh topology.
     auto end_edges() const { return boost::make_counting_iterator<size_type>(edgeCount()); }
 
+    /// Returns an iterator range over all vertices of the mesh topology.
+    auto verticesRange() const { return boost::counting_range<size_type>(0, vertexCount()); }
+
+    /// Returns an iterator range over all faces of the mesh topology.
+    auto facesRange() const { return boost::counting_range<size_type>(0, faceCount()); }
+
+    /// Returns an iterator range over all half-edges of the mesh topology.
+    auto edgesRange() const { return boost::counting_range<size_type>(0, edgeCount()); }
+
     /// Adds several new vertices to the mesh.
     /// Returns the index of the first newly-created vertex.
     vertex_index createVertices(size_type n);
@@ -113,19 +124,12 @@ public:
     /// Returns the index of the new face.
     face_index createFace();
 
-    /// Creates a new face defined by the given list of vertices.
-    /// Half-edges connecting the vertices will be created by this method too.
-    /// Returns the index of the newly-created face.
-    face_index createFaceAndEdges(std::initializer_list<vertex_index> vertices) {
-        return createFaceAndEdges(vertices.begin(), vertices.end());
-    }
-
     /// Creates a new face defined by the given range of vertices.
     /// Half-edges connecting the vertices will be created by this method too.
     /// Returns the index of the newly-created face.
     template<typename VertexIterator>
     face_index createFaceAndEdges(VertexIterator begin, VertexIterator end) {
-        // A face must have at least two vertices.
+        // Faces - even degenerate ones - must have at least two vertices.
         OVITO_ASSERT(std::distance(begin, end) >= 2);
 
         face_index faceIndex = createFace();
@@ -141,6 +145,17 @@ public:
         OVITO_ASSERT(firstFaceVertex(faceIndex) == *begin);
 
         return faceIndex;
+    }
+
+    /// Creates a new face defined by the given range of vertices.
+    template<typename VertexRange>
+    face_index createFaceAndEdges(VertexRange range) {
+        return createFaceAndEdges(std::begin(range), std::end(range));
+    }
+
+    /// Creates a new face defined by the given range of vertices.
+    face_index createFaceAndEdges(std::initializer_list<vertex_index> range) {
+        return createFaceAndEdges(std::begin(range), std::end(range));
     }
 
     /// Creates a new half-edge between two vertices and adjacent to the given face.
@@ -165,11 +180,6 @@ public:
     /// Links each half-edge leaving from the given vertex to an opposite (reverse) half-edge leading back to the vertex.
     void connectOppositeHalfedgesAtVertex(vertex_index vert);
 
-    /// Duplicates those vertices which are shared by more than one manifold.
-    /// The method may only be called on a closed mesh.
-    /// Returns the number of vertices that were duplicated by the method.
-    size_type makeManifold(const std::function<void(vertex_index)>& vertexDuplicationFunc);
-
     /// Determines whether the mesh represents a closed two-dimensional manifold,
     /// i.e., every half-edge is linked to an opposite half-edge.
     bool isClosed() const;
@@ -178,7 +188,7 @@ public:
     void flipFaces();
 
     /// Converts the half-edge mesh to a triangle mesh.
-    /// Note that the HalfEdgeMesh structure holds only the mesh topology and no
+    /// Note that this class holds only the mesh topology and no
     /// vertex coordinates. Thus, it is the responsibility of the caller to set the
     /// vertex coordinates for the generated TriMesh.
     void convertToTriMesh(TriMeshObject& output) const;
@@ -454,6 +464,8 @@ private:
 
     /// Stores the half-edge leading to the next manifold at each half-edge.
     std::vector<edge_index> _nextManifoldEdges;
+
+    friend class SurfaceMeshBuilder;
 };
 
 }   // End of namespace

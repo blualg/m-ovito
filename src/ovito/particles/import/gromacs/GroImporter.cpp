@@ -199,22 +199,22 @@ void GroImporter::FrameLoader::loadFile()
     setParticleCount(numParticles);
 
     // Create particle properties.
-    DataBufferAccess<Point3> posProperty = particles()->createProperty(DataBuffer::Initialized, ParticlesObject::PositionProperty);
+    BufferAccess<Point3> posProperty = particles()->createProperty(DataBuffer::Initialized, ParticlesObject::PositionProperty);
     PropertyObject* typeProperty = particles()->createProperty(ParticlesObject::TypeProperty);
     PropertyObject* atomNameProperty = particles()->createProperty(QStringLiteral("Atom Name"), PropertyObject::Int32);
     PropertyObject* residueTypeProperty = particles()->createProperty(QStringLiteral("Residue Type"), PropertyObject::Int32);
     PropertyObject* residueNumberProperty = particles()->createProperty(QStringLiteral("Residue Identifier"), PropertyObject::Int64);
-    DataBufferAccess<int64_t> identifierProperty = particles()->createProperty(DataBuffer::Initialized, ParticlesObject::IdentifierProperty);
-    DataBufferAccess<Vector3> velocityProperty;
+    BufferAccess<int64_t> identifierProperty = particles()->createProperty(DataBuffer::Initialized, ParticlesObject::IdentifierProperty);
+    BufferAccess<Vector3> velocityProperty;
 
     // Give these particle properties new titles, which are displayed in the GUI under the file source.
     atomNameProperty->setTitle(tr("Atom names"));
     residueTypeProperty->setTitle(tr("Residue types"));
 
-    DataBufferAccess<int32_t> typeAccess(typeProperty);
-    DataBufferAccess<int32_t> atomNameAccess(atomNameProperty);
-    DataBufferAccess<int32_t> residueTypeAccess(residueTypeProperty);
-    DataBufferAccess<int64_t> residueNumberAccess(residueNumberProperty);
+    BufferAccess<int32_t> typeAccess(typeProperty);
+    BufferAccess<int32_t> atomNameAccess(atomNameProperty);
+    BufferAccess<int32_t> residueTypeAccess(residueTypeProperty);
+    BufferAccess<int64_t> residueNumberAccess(residueNumberProperty);
 
     // Parse list of atoms.
     int atomBaseNumber = 0;
