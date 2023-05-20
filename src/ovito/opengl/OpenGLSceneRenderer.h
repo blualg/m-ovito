@@ -33,7 +33,7 @@
 #include <QOpenGLShaderProgram>
 #include <QOpenGLVertexArrayObject>
 #include <QOpenGLBuffer>
-#include <QOpenGLFramebufferObject> 
+#include <QOpenGLFramebufferObject>
 #include <QOpenGLFramebufferObjectFormat>
 
 namespace Ovito {
@@ -80,7 +80,7 @@ public:
 
     /// Renders the overlays/underlays of the viewport into the framebuffer.
     virtual bool renderOverlays(bool underlays, const QRect& logicalViewportRect, const QRect& physicalViewportRect, MainThreadOperation& operation) override;
-    
+
     /// This method is called after renderFrame() has been called.
     virtual void endFrame(bool renderingSuccessful, const QRect& viewportRect) override;
 
@@ -217,7 +217,7 @@ private:
     /// Generates the wireframe line elements for the visible edges of a mesh.
     ConstDataBufferPtr generateMeshWireframeLines(const MeshPrimitive& primitive);
 
-    /// Prepares the OpenGL buffer with the per-instance transformation matrices for 
+    /// Prepares the OpenGL buffer with the per-instance transformation matrices for
     /// rendering a set of meshes.
     QOpenGLBuffer getMeshInstanceTMBuffer(const MeshPrimitive& primitive, OpenGLShaderHelper& shader);
 
