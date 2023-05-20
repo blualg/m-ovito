@@ -45,8 +45,7 @@ public:
     /// Enum specifying the rate at which vertex attributes are pulled from buffers.
     enum VertexInputRate {
         PerVertex,      ///< Specifies that vertex attribute addressing is a function of the vertex index.
-        PerInstance,    ///< Specifies that vertex attribute addressing is a function of the instance index.
-        PerIndex        ///< Specifies that vertex attribute addressing is a function of the index table.
+        PerInstance     ///< Specifies that vertex attribute addressing is a function of the instance index.
     };
 
     /// Constructor.
@@ -166,6 +165,12 @@ public:
     /// Indicates whether an OpenGL geometry is being used.
     bool usingGeometryShader() const { return _usingGeometryShader; }
 
+    /// Indicates that we have OpenGL support for instanced arrays (requires OpenGL 3.3+).
+    bool usingInstancedArrays() const { return _renderer->useInstancedArrays(); }
+
+    /// Indicates that we have OpenGL support for glMultiDrawArraysIndirect (requires OpenGL 4.3+).
+    bool usingMultiDrawArraysIndirect() const { return _renderer->useMultiDrawArraysIndirect(); }
+
     /// Returns the number of vertices per rendered instance.
     GLsizei verticesPerInstance() const { return _verticesPerInstance; }
 
@@ -176,10 +181,16 @@ public:
     }
 
     /// Returns the number of primitive instances stored in the vertex buffers.
-    GLsizei instanceCount() const { return _instanceCount; }
+    GLsizei vboInstanceCount() const { return _vboInstanceCount; }
 
-    /// Specifies the number of primitive instances stored in the vertex buffers.
-    void setInstanceCount(GLsizei instanceCount) { _instanceCount = instanceCount; }
+    /// Sets the number of primitive instances stored in the vertex buffers.
+    void setVboInstanceCount(GLsizei vboInstanceCount) { _vboInstanceCount = vboInstanceCount; }
+
+    /// Returns the number of primitive instances to be rendered.
+    GLsizei renderInstanceCount() const { return _renderInstanceCount; }
+
+    /// Sets the number of primitive instances to be rendered.
+    void setRenderInstanceCount(GLsizei renderInstanceCount) { _renderInstanceCount = renderInstanceCount; }
 
     /// Uploads some data to the Vulkan device as a buffer object and caches it.
     template<typename KeyType>
@@ -189,14 +200,16 @@ public:
 
         // Check if this OVITO data buffer has already been created and uploaded to the GPU.
         // Depending on whether the OpenGL implementation supports instanced arrays, we
-        // have to take into account the instancing parameters in the cache look up.
+        // have to take into account the instancing parameters in the cache lookup.
 
         // Does the OpenGL implementation support instanced arrays (requires OpenGL 3.3+) or are we using a geometry shader?
-        if(_renderer->glversion() >= QT_VERSION_CHECK(3, 3, 0) || usingGeometryShader()) {
+        if(usingInstancedArrays() || usingGeometryShader()) {
             bufferObject = &OpenGLResourceManager::instance()->lookup<QOpenGLBuffer>(std::forward<KeyType>(cacheKey), _renderer->currentResourceFrame());
         }
         else {
-            std::tuple<std::decay_t<KeyType>, GLsizei, GLsizei> combinedKey{ std::forward<KeyType>(cacheKey), (inputRate != PerIndex) ? instanceCount() : indexCount(), verticesPerInstance() };
+            // When not using instanced rendering, the no. of vertices per primitive must be included in the cache key,
+            // because the data will be repeated in the VBO to emulate instanced rendering.
+            std::tuple<std::decay_t<KeyType>, GLsizei, GLsizei> combinedKey{ std::forward<KeyType>(cacheKey), (usage == QOpenGLBuffer::VertexBuffer) ? vboInstanceCount() : renderInstanceCount(), verticesPerInstance() };
             bufferObject = &OpenGLResourceManager::instance()->lookup<QOpenGLBuffer>(std::move(combinedKey), _renderer->currentResourceFrame());
         }
 
@@ -222,7 +235,7 @@ public:
     void drawArraysOrdered(GLenum mode, KeyType&& cacheKey, std::function<std::vector<uint32_t>()>&& computeOrderingFunc) {
 
         // Ordered drawing is not support by picking shaders, which access the gl_InstanceID special variable.
-        // That's because the 'baseinstance' parameter does not affect the shader-visible value of gl_InstanceID according to the OpenGL specification.
+        // That's because the 'baseInstance' parameter does not affect the shader-visible value of gl_InstanceID according to the OpenGL specification.
         OVITO_ASSERT(!_renderer->isPicking());
 
         // Are we using a geometry shader? If yes, render point primitives only.
@@ -232,11 +245,16 @@ public:
             drawArraysOrderedGeometryShader(OpenGLResourceManager::instance()->lookup<QOpenGLBuffer>(std::move(indexBufferKey), _renderer->currentResourceFrame()), std::move(computeOrderingFunc));
         }
 #ifndef Q_OS_WASM
-        else if(_renderer->glversion() >= QT_VERSION_CHECK(4, 3, 0) && _renderer->glMultiDrawArraysIndirect != nullptr) {
+        else if(usingInstancedArrays()) {
             // On OpenGL 4.3+ contexts, use glMultiDrawArraysIndirect() to render the instances in a prescribed order.
-
-            // Look up the indirect drawing buffer from the cache and call implementation.
-            drawArraysOrderedOpenGL4(mode, OpenGLResourceManager::instance()->lookup<QOpenGLBuffer>(std::forward<KeyType>(cacheKey), _renderer->currentResourceFrame()), std::move(computeOrderingFunc));
+            if(usingMultiDrawArraysIndirect()) {
+                // Look up the indirect drawing buffer from the cache and call implementation.
+                drawArraysOrderedOpenGL4(mode, OpenGLResourceManager::instance()->lookup<QOpenGLBuffer>(std::forward<KeyType>(cacheKey), _renderer->currentResourceFrame()), std::move(computeOrderingFunc));
+            }
+            else {
+                // Fall back to unsorted drawing.
+                drawArrays(mode);
+            }
         }
 #endif
         else {
@@ -248,9 +266,6 @@ public:
     }
 
 private:
-
-    /// Returns the number of indexed primitives to be rendered.
-    GLsizei indexCount() const { return _indexCount; }
 
     /// Uploads some data to a new OpenGL buffer object.
     QOpenGLBuffer createCachedBufferImpl(GLsizei elementSize, QOpenGLBuffer::Type usage, VertexInputRate inputRate, std::function<void(void*)>&& fillMemoryFunc);
@@ -287,11 +302,11 @@ private:
     /// Number of vertices per primitive instance.
     GLsizei _verticesPerInstance = 0;
 
-    /// Number of primitive instances stored in the vertex buffers.
-    GLsizei _instanceCount = 0;
+    /// Number of primitives stored in the vertex buffers.
+    GLsizei _vboInstanceCount = 0;
 
-    /// Number of indexed primitives to be rendered.
-    GLsizei _indexCount = 0;
+    /// Number of primitives to be rendered.
+    GLsizei _renderInstanceCount = 0;
 
     /// Indicates that a OpenGL geometry shader is active.
     bool _usingGeometryShader = false;

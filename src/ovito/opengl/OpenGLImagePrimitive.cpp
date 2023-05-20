@@ -47,7 +47,8 @@ void OpenGLSceneRenderer::renderImageImplementation(const ImagePrimitive& primit
     shader.load("image", "image/image.vert", "image/image.frag");
 
     shader.setVerticesPerInstance(4);
-    shader.setInstanceCount(1);
+    shader.setVboInstanceCount(1);
+    shader.setRenderInstanceCount(1);
 
     // Turn the image into an OpenGL texture.
     QOpenGLTexture* texture = OpenGLResourceManager::instance()->uploadImage(primitive.image(), currentResourceFrame());
@@ -64,11 +65,11 @@ void OpenGLSceneRenderer::renderImageImplementation(const ImagePrimitive& primit
     }
     const QRect& vpRect = viewportRect();
     Vector4 image_rect(
-        b.minc.x() / vpRect.width() * 2.0 - 1.0, 
+        b.minc.x() / vpRect.width() * 2.0 - 1.0,
         1.0 - b.maxc.y() / vpRect.height() * 2.0,
-        b.maxc.x() / vpRect.width() * 2.0 - 1.0, 
+        b.maxc.x() / vpRect.width() * 2.0 - 1.0,
         1.0 - b.minc.y() / vpRect.height() * 2.0);
-        
+
     // Pass the image rectangle to the shader as a uniform.
     shader.setUniformValue("image_rect", image_rect);
 
@@ -82,7 +83,7 @@ void OpenGLSceneRenderer::renderImageImplementation(const ImagePrimitive& primit
     texture->release();
 
     // Restore old context state.
-    if(wasDepthTestEnabled) 
+    if(wasDepthTestEnabled)
         glEnable(GL_DEPTH_TEST);
 
     OVITO_REPORT_OPENGL_ERRORS(this);

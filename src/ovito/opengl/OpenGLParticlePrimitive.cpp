@@ -202,10 +202,12 @@ void OpenGLSceneRenderer::renderParticlesImplementation(const ParticlePrimitive&
     }
 
     // The number of particles in the input arrays:
-    shader.setInstanceCount(primitive.positions()->size());
+    shader.setVboInstanceCount(primitive.positions()->size());
+    // The number of particles to be rendered.
+    shader.setRenderInstanceCount(primitive.indices() ? primitive.indices()->size() : primitive.positions()->size());
 
     // Check VBO size limits.
-    if(shader.instanceCount() > std::numeric_limits<int32_t>::max() / shader.verticesPerInstance() / sizeof(Vector_4<float>)) {
+    if(shader.vboInstanceCount() > std::numeric_limits<int32_t>::max() / shader.verticesPerInstance() / sizeof(Vector_4<float>)) {
         qWarning() << "WARNING: OpenGL renderer - Trying to render too many particles at once, exceeding device limits.";
         return;
     }
@@ -217,7 +219,7 @@ void OpenGLSceneRenderer::renderParticlesImplementation(const ParticlePrimitive&
 
     // Pass picking base ID to shader.
     if(isPicking()) {
-        shader.setPickingBaseId(registerSubObjectIDs(primitive.positions()->size(), primitive.indices()));
+        shader.setPickingBaseId(registerSubObjectIDs(primitive.positions()->size()/*, primitive.indices()*/));
     }
     OVITO_REPORT_OPENGL_ERRORS(this);
 
@@ -333,15 +335,15 @@ void OpenGLSceneRenderer::renderParticlesImplementation(const ParticlePrimitive&
         shader.drawArraysOrdered(GL_TRIANGLE_STRIP, std::move(orderingCacheKey), [&]() {
 
             // First, compute distance of each particle from the camera along the viewing direction (=camera z-axis).
-            std::vector<GraphicsFloatType> distances(shader.instanceCount());
+            std::vector<GraphicsFloatType> distances(shader.renderInstanceCount());
             if(!primitive.indices()) {
                 if(primitive.positions()->dataType() == DataBuffer::Float64) {
-                    boost::transform(boost::irange<size_t>(0, shader.instanceCount()), distances.begin(), [direction = direction.toDataType<double>(), positionsArray = BufferAccess<const Vector_3<double>>(primitive.positions())](size_t i) {
+                    boost::transform(boost::irange<size_t>(0, shader.renderInstanceCount()), distances.begin(), [direction = direction.toDataType<double>(), positionsArray = BufferAccess<const Vector_3<double>>(primitive.positions())](size_t i) {
                         return static_cast<GraphicsFloatType>(direction.dot(positionsArray[i]));
                     });
                 }
                 else if(primitive.positions()->dataType() == DataBuffer::Float32) {
-                    boost::transform(boost::irange<size_t>(0, shader.instanceCount()), distances.begin(), [direction = direction.toDataType<float>(), positionsArray = BufferAccess<const Vector_3<float>>(primitive.positions())](size_t i) {
+                    boost::transform(boost::irange<size_t>(0, shader.renderInstanceCount()), distances.begin(), [direction = direction.toDataType<float>(), positionsArray = BufferAccess<const Vector_3<float>>(primitive.positions())](size_t i) {
                         return static_cast<GraphicsFloatType>(direction.dot(positionsArray[i]));
                     });
                 }
@@ -360,7 +362,7 @@ void OpenGLSceneRenderer::renderParticlesImplementation(const ParticlePrimitive&
             }
 
             // Create index array with all particle indices.
-            std::vector<uint32_t> sortedIndices(shader.instanceCount());
+            std::vector<uint32_t> sortedIndices(shader.renderInstanceCount());
             std::iota(sortedIndices.begin(), sortedIndices.end(), (uint32_t)0);
 
             // Sort particle indices with respect to distance (back-to-front order).

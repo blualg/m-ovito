@@ -477,7 +477,8 @@ void OpenGLSceneRenderer::renderTransparentGeometry()
         OpenGLShaderHelper shader(this);
         shader.load("oit_compose", "image/oit_compose.vert", "image/oit_compose.frag");
         shader.setVerticesPerInstance(4);
-        shader.setInstanceCount(1);
+        shader.setVboInstanceCount(1);
+        shader.setRenderInstanceCount(1);
 
         // Bind the OIT framebuffer as textures.
         QVector<GLuint> textureIds = _oitFramebuffer->textures();
@@ -564,13 +565,13 @@ void OpenGLSceneRenderer::renderParticles(const ParticlePrimitive& primitive)
                 std::vector<int32_t> fullyOpaqueIndices;
                 if(!primitive.indices()) {
                     int index = 0;
-                    for(FloatType t : BufferAccess<const FloatType>(primitive.transparencies())) {
+                    for(FloatType t : BufferAccess<const GraphicsFloatType>(primitive.transparencies())) {
                         if(t <= 0) fullyOpaqueIndices.push_back(index);
                         index++;
                     }
                 }
                 else {
-                    BufferAccess<const FloatType> transparencies(primitive.transparencies());
+                    BufferAccess<const GraphicsFloatType> transparencies(primitive.transparencies());
                     for(auto index : BufferAccess<const int32_t>(primitive.indices())) {
                         if(transparencies[index] <= 0) fullyOpaqueIndices.push_back(index);
                     }
@@ -775,7 +776,7 @@ void OpenGLSceneRenderer::loadShader(QOpenGLShaderProgram* program, QOpenGLShade
             shaderSource.append("uniform int vertices_per_instance;\n");
         }
     }
-    else if(_glversion < QT_VERSION_CHECK(3, 3, 0)) {
+    else if(!useInstancedArrays()) {
         // This is needed to compute the special shader variable 'gl_VertexID' when instanced arrays are not supported:
         if(shaderType == QOpenGLShader::Vertex) {
             shaderSource.append("uniform int vertices_per_instance;\n");
@@ -879,7 +880,7 @@ void OpenGLSceneRenderer::loadShader(QOpenGLShaderProgram* program, QOpenGLShade
         // The per-instance vertex ID.
         if(_glversion < QT_VERSION_CHECK(3, 0, 0))
             line.replace("<VertexID>", "int(mod(vertexID + 0.5, float(vertices_per_instance)))"); // gl_VertexID is not available, requires a VBO with explicit vertex IDs
-        else if(_glversion < QT_VERSION_CHECK(3, 3, 0))
+        else if(!useInstancedArrays())
             line.replace("<VertexID>", "(gl_VertexID % vertices_per_instance)"); // gl_VertexID is available but no instanced arrays.
         else
             line.replace("<VertexID>", "gl_VertexID"); // gl_VertexID is fully supported.
@@ -887,7 +888,7 @@ void OpenGLSceneRenderer::loadShader(QOpenGLShaderProgram* program, QOpenGLShade
         // The instance ID.
         if(_glversion < QT_VERSION_CHECK(3, 0, 0))
             line.replace("<InstanceID>", "(int(vertexID) / vertices_per_instance)"); // Compute the instance ID from the running vertex index, which is read from a VBO array.
-        else if(_glversion < QT_VERSION_CHECK(3, 3, 0))
+        else if(!useInstancedArrays())
             line.replace("<InstanceID>", "(gl_VertexID / vertices_per_instance)"); // Compute the instance ID from the running vertex index.
         else
             line.replace("<InstanceID>", "gl_InstanceID"); // gl_InstanceID is fully supported.

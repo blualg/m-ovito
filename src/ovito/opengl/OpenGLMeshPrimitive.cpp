@@ -78,7 +78,7 @@ void OpenGLSceneRenderer::renderMeshImplementation(const MeshPrimitive& primitiv
             shader.load("mesh_color_mapping", "mesh/mesh_color_mapping.vert", "mesh/mesh_color_mapping.frag");
         else
             shader.load("mesh", "mesh/mesh.vert", "mesh/mesh.frag");
-        shader.setInstanceCount(1);
+        shader.setVboInstanceCount(1);
     }
     else {
         OVITO_ASSERT(!renderWithPseudoColorMapping); // Note: Color mapping has not been implemented yet for instanced mesh primtives.
@@ -91,8 +91,9 @@ void OpenGLSceneRenderer::renderMeshImplementation(const MeshPrimitive& primitiv
         else {
             shader.load("mesh_instanced_picking", "mesh/mesh_instanced_picking.vert", "mesh/mesh_instanced_picking.frag");
         }
-        shader.setInstanceCount(primitive.perInstanceTMs()->size());
+        shader.setVboInstanceCount(primitive.perInstanceTMs()->size());
     }
+    shader.setRenderInstanceCount(shader.vboInstanceCount());
     shader.setVerticesPerInstance(mesh.faceCount() * 3);
 
     // Are we rendering a semi-transparent mesh?
@@ -276,13 +277,23 @@ void OpenGLSceneRenderer::renderMeshImplementation(const MeshPrimitive& primitiv
         shader.drawArraysOrdered(GL_TRIANGLES, std::move(orderingCacheKey), [&]() {
 
             // First, compute distance of each instance from the camera along the viewing direction (=camera z-axis).
-            std::vector<FloatType> distances(shader.instanceCount());
-            boost::transform(boost::irange<size_t>(0, shader.instanceCount()), distances.begin(), [direction, tmArray = BufferAccess<const AffineTransformation>(primitive.perInstanceTMs())](size_t i) {
-                return direction.dot(tmArray[i].translation());
-            });
+            std::vector<GraphicsFloatType> distances(shader.renderInstanceCount());
+            if(primitive.perInstanceTMs()->dataType() == DataBuffer::Float32) {
+                const Vector_3<float> directionFloat = direction.toDataType<float>();
+                boost::transform(boost::irange<size_t>(0, shader.renderInstanceCount()), distances.begin(), [directionFloat, tmArray = BufferAccess<const AffineTransformationT<float>>(primitive.perInstanceTMs())](size_t i) {
+                    return directionFloat.dot(tmArray[i].translation());
+                });
+            }
+            else {
+                // Viewing direction in object space:
+                const Vector_3<double> directionDouble = direction.toDataType<double>();
+                boost::transform(boost::irange<size_t>(0, shader.renderInstanceCount()), distances.begin(), [directionDouble, tmArray = BufferAccess<const AffineTransformationT<double>>(primitive.perInstanceTMs())](size_t i) {
+                    return directionDouble.dot(tmArray[i].translation());
+                });
+            }
 
             // Create index array with all indices.
-            std::vector<uint32_t> sortedIndices(shader.instanceCount());
+            std::vector<uint32_t> sortedIndices(shader.renderInstanceCount());
             std::iota(sortedIndices.begin(), sortedIndices.end(), (uint32_t)0);
 
             // Sort indices with respect to distance (back-to-front order).
@@ -379,10 +390,11 @@ void OpenGLSceneRenderer::renderMeshWireframeImplementation(const MeshPrimitive&
     // Get the wireframe lines geometry.
     ConstDataBufferPtr wireframeLinesBuffer = generateMeshWireframeLines(primitive);
     shader.setVerticesPerInstance(wireframeLinesBuffer->size());
-    shader.setInstanceCount(primitive.useInstancedRendering() ? primitive.perInstanceTMs()->size() : 1);
+    shader.setVboInstanceCount(primitive.useInstancedRendering() ? primitive.perInstanceTMs()->size() : 1);
+    shader.setRenderInstanceCount(shader.vboInstanceCount());
 
-    if(shader.verticesPerInstance() > std::numeric_limits<int32_t>::max() / shader.instanceCount() / wireframeLinesBuffer->stride()) {
-        qWarning() << "WARNING: OpenGL renderer - Wireframe mesh consists of too many lines, exceeding device limits (verts per instance:" << shader.verticesPerInstance() << ", instance count:" << shader.instanceCount() << ", stride:" << wireframeLinesBuffer->stride() << ").";
+    if(shader.verticesPerInstance() > std::numeric_limits<int32_t>::max() / shader.vboInstanceCount() / wireframeLinesBuffer->stride()) {
+        qWarning() << "WARNING: OpenGL renderer - Wireframe mesh consists of too many lines, exceeding device limits (verts per instance:" << shader.verticesPerInstance() << ", instance count:" << shader.vboInstanceCount() << ", stride:" << wireframeLinesBuffer->stride() << ").";
         return;
     }
 

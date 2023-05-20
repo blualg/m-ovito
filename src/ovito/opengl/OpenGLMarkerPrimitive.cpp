@@ -41,7 +41,7 @@ void OpenGLSceneRenderer::renderMarkersImplementation(const MarkerPrimitive& pri
 
     OpenGLShaderHelper shader(this);
     switch(primitive.shape()) {
-    
+
     case MarkerPrimitive::BoxShape:
 
         if(isPicking())
@@ -54,7 +54,8 @@ void OpenGLSceneRenderer::renderMarkersImplementation(const MarkerPrimitive& pri
     default:
         return;
     }
-    shader.setInstanceCount(primitive.positions()->size());
+    shader.setVboInstanceCount(primitive.positions()->size());
+    shader.setRenderInstanceCount(primitive.positions()->size());
 
     // Are we rendering semi-transparent markers?
     bool useBlending = !isPicking() && primitive.color().a() < 1.0;

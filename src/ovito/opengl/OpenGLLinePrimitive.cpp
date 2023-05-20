@@ -62,7 +62,8 @@ void OpenGLSceneRenderer::renderThinLinesImplementation(const LinePrimitive& pri
         shader.load("line_thin_uniform_color", "lines/line_uniform_color.vert", "lines/line_uniform_color.frag");
 
     shader.setVerticesPerInstance(primitive.positions()->size());
-    shader.setInstanceCount(1);
+    shader.setVboInstanceCount(1);
+    shader.setRenderInstanceCount(1);
 
     // Check size limits.
     if(primitive.positions()->size() > std::numeric_limits<int32_t>::max() / sizeof(Point_3<float>)) {
@@ -113,10 +114,11 @@ void OpenGLSceneRenderer::renderThickLinesImplementation(const LinePrimitive& pr
         shader.load("line_thick_uniform_color", "lines/thick_line_uniform_color.vert", "lines/line_uniform_color.frag");
 
     shader.setVerticesPerInstance(4);
-    shader.setInstanceCount(primitive.positions()->size() / 2);
+    shader.setVboInstanceCount(primitive.positions()->size() / 2);
+    shader.setRenderInstanceCount(primitive.positions()->size() / 2);
 
     // Check size limits.
-    if(shader.instanceCount() > std::numeric_limits<int32_t>::max() / shader.verticesPerInstance() / (2 * sizeof(Point_3<float>))) {
+    if(shader.vboInstanceCount() > std::numeric_limits<int32_t>::max() / shader.verticesPerInstance() / (2 * sizeof(Point_3<float>))) {
         qWarning() << "WARNING: OpenGL renderer - Trying to render too many lines at once, exceeding device limits.";
         return;
     }

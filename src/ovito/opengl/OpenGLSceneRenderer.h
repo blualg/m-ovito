@@ -151,6 +151,12 @@ public:
     /// Indicates whether OpenGL geometry shaders are supported.
     bool useGeometryShaders() const { return !_disableGeometryShaders && QOpenGLShader::hasOpenGLShaders(QOpenGLShader::Geometry, glcontext()); }
 
+    /// Indicates that we have OpenGL support for instanced arrays (requires OpenGL 3.3+).
+    bool useInstancedArrays() const { return !_disableInstancedArrays && glversion() >= QT_VERSION_CHECK(3, 3, 0); }
+
+    /// Indicates that we have OpenGL support for glMultiDrawArraysIndirect (requires OpenGL 4.3+).
+    bool useMultiDrawArraysIndirect() const { return !_disableMultiDrawArraysIndirect && glversion() >= QT_VERSION_CHECK(4, 3, 0); }
+
     /// Sets the primary framebuffer to be used by the renderer.
     void setPrimaryFramebuffer(GLuint primaryFramebuffer) { _primaryFramebuffer = primaryFramebuffer; }
 
@@ -277,8 +283,14 @@ private:
     /// Indicates that we are currently rendering the semi-transparent geometry of the scene.
     bool _isTransparencyPass = false;
 
-    /// Indicates whether the use of geometry shaders has been disabled.
+    /// Indicates that the use of geometry shaders has explicitly been disabled.
     bool _disableGeometryShaders = (qEnvironmentVariableIntValue("OVITO_DISABLE_GEOMETRY_SHADERS") != 0);
+
+    /// Indicates that the use of OpenGL instanced arrays has explicitly been disabled.
+    bool _disableInstancedArrays = (qEnvironmentVariableIntValue("OVITO_DISABLE_INSTANCED_ARRAYS") != 0);
+
+    /// Indicates that the use of glMultiDrawArraysIndirect() has explicitly been disabled.
+    bool _disableMultiDrawArraysIndirect = (qEnvironmentVariableIntValue("OVITO_DISABLE_MULTI_DRAW_ARRAYS_INDIRECT") != 0);
 
     /// The primary framebuffer used by the renderer. The FBO's lifetime is managed by the subclass.
     /// It may be null when rendering to the system framebuffer provided by QOpenGLWidget.
