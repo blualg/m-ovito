@@ -106,7 +106,7 @@ private:
                 requestViewportUpdate();
             }
         }
-        
+
     protected:
 
         /// This is called by the system after the input handler has become the active handler.
@@ -117,9 +117,10 @@ private:
 
         /// This is called by the system after the input handler is no longer the active handler.
         virtual void deactivated(bool temporary) override {
-            if(!temporary)
+            if(!temporary) {
                 inputManager()->removeViewportGizmo(this);
-            _pickedElements.clear();
+                _pickedElements.clear();
+            }
             ViewportInputMode::deactivated(temporary);
         }
 

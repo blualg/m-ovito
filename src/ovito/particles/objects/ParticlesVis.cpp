@@ -1133,6 +1133,8 @@ void ParticlesVis::highlightParticle(size_t particleIndex, const ParticlesObject
         // Determine radius of selected particle.
         FloatType radius = particleRadius(particleIndex, radiusProperty, typeProperty);
 
+        FloatType padding = renderer->viewport()->nonScalingSize(renderer->worldTransform() * pos) * FloatType(1e-1);
+
         // Determine the display color of selected particle.
         Color color = particleColor(particleIndex, colorProperty, typeProperty, selectionProperty);
         Color highlightColor = selectionParticleColor();
@@ -1161,7 +1163,7 @@ void ParticlesVis::highlightParticle(size_t particleIndex, const ParticlesObject
                 asphericalShapeBuffer = DataBufferPtr::create(1, DataBuffer::Float, 3);
                 asphericalShapeBufferHighlight = DataBufferPtr::create(1, DataBuffer::Float, 3);
                 asphericalShapeBufferHighlight[0] = asphericalShapeBuffer[0] = ConstPropertyAccess<Vector3>(shapeProperty)[particleIndex];
-                asphericalShapeBufferHighlight[0] += Vector3(renderer->viewport()->nonScalingSize(renderer->worldTransform() * pos) * FloatType(1e-1));
+                asphericalShapeBufferHighlight[0] += Vector3(padding);
             }
             DataBufferAccessAndRef<Quaternion> orientationBuffer;
             if(orientationProperty) {
@@ -1190,7 +1192,7 @@ void ParticlesVis::highlightParticle(size_t particleIndex, const ParticlesObject
             highlightParticleBuffer.setRenderingQuality(renderQuality);
             highlightParticleBuffer.setUniformColor(highlightColor);
             highlightParticleBuffer.setPositions(particleBuffer.positions());
-            highlightParticleBuffer.setUniformRadius(radius + renderer->viewport()->nonScalingSize(renderer->worldTransform() * pos) * FloatType(1e-1));
+            highlightParticleBuffer.setUniformRadius(radius + padding);
             highlightParticleBuffer.setAsphericalShapes(asphericalShapeBufferHighlight.take());
             highlightParticleBuffer.setOrientations(particleBuffer.orientations());
             highlightParticleBuffer.setRoundness(particleBuffer.roundness());
@@ -1223,7 +1225,6 @@ void ParticlesVis::highlightParticle(size_t particleIndex, const ParticlesObject
             cylinderBuffer.setUniformColor(color);
             cylinderBuffer.setUniformWidth(2 * radius);
             cylinderBuffer.setPositions(positionBuffer1.take(), positionBuffer2.take());
-            FloatType padding = renderer->viewport()->nonScalingSize(renderer->worldTransform() * pos) * FloatType(1e-1);
             highlightCylinderBuffer.setUniformColor(highlightColor);
             highlightCylinderBuffer.setUniformWidth(2 * (radius + padding));
             highlightCylinderBuffer.setPositions(cylinderBuffer.basePositions(), cylinderBuffer.headPositions());
@@ -1287,11 +1288,12 @@ void ParticlesVis::highlightParticle(size_t particleIndex, const ParticlesObject
             radius *= 2;
         }
 
+        FloatType padding = renderer->viewport()->nonScalingSize(renderer->worldTransform() * pos) * FloatType(1e-1);
+
         if(radius <= 0 || !renderer->viewport())
             return;
 
-        const AffineTransformation& tm = renderer->worldTransform();
-        renderer->addToLocalBoundingBox(Box3(pos, radius + renderer->viewport()->nonScalingSize(tm * pos) * FloatType(1e-1)));
+        renderer->addToLocalBoundingBox(Box3(pos, radius + padding));
     }
 }
 

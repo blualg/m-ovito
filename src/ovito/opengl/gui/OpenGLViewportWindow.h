@@ -78,7 +78,7 @@ public:
         BaseViewportWindow::destroyViewportWindow();
     }
 
-    /// Sets the mouse cursor shape for the window. 
+    /// Sets the mouse cursor shape for the window.
     virtual void setCursor(const QCursor& cursor) override { widget()->setCursor(cursor); }
 
     /// Returns the current position of the mouse cursor relative to the viewport window.
@@ -137,14 +137,14 @@ protected:
     virtual void focusOutEvent(QFocusEvent* event) override { BaseViewportWindow::focusOutEvent(event); }
 
     /// Handles key-press events.
-    virtual void keyPressEvent(QKeyEvent* event) override { 
-        BaseViewportWindow::keyPressEvent(event); 
+    virtual void keyPressEvent(QKeyEvent* event) override {
+        BaseViewportWindow::keyPressEvent(event);
         QOpenGLWidget::keyPressEvent(event);
     }
 
 private:
 
-    /// Releases the renderer resources held by the viewport's surface and picking renderers. 
+    /// Releases the renderer resources held by the viewport's surface and picking renderers.
     void releaseResources();
 
 private:
