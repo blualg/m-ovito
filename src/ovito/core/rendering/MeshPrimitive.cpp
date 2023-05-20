@@ -37,8 +37,8 @@ bool MeshPrimitive::isFullyOpaque() const
         else if(_perInstanceColors)
             _isMeshFullyOpaque =
                 (_perInstanceColors->dataType() == DataBuffer::Float32)
-                ? boost::algorithm::none_of(ConstBufferAccess<ColorAT<float>>(_perInstanceColors), [](const auto& c) { return c.a() != 1.0f; })
-                : boost::algorithm::none_of(ConstBufferAccess<ColorAT<double>>(_perInstanceColors), [](const auto& c) { return c.a() != 1.0; });
+                ? boost::algorithm::none_of(BufferAccess<const ColorAT<float>>(_perInstanceColors), [](const auto& c) { return c.a() != 1.0f; })
+                : boost::algorithm::none_of(BufferAccess<const ColorAT<double>>(_perInstanceColors), [](const auto& c) { return c.a() != 1.0; });
         else if(mesh()->hasVertexColors())
             _isMeshFullyOpaque = (uniformColor().a() >= FloatType(1)) && boost::algorithm::none_of(mesh()->vertexColors(), [](const ColorAG& c) { return c.a() != GraphicsFloatType(1); });
         else if(mesh()->hasVertexPseudoColors())

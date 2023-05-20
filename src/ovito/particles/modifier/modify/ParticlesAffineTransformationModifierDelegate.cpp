@@ -63,7 +63,7 @@ PipelineStatus ParticlesAffineTransformationModifierDelegate::apply(const Modifi
         const AffineTransformation tm = mod->effectiveAffineTransformation(inputState);
 
         if(mod->selectionOnly()) {
-            if(ConstBufferAccess<SelectionIntType> selProperty = inputParticles->getProperty(ParticlesObject::SelectionProperty)) {
+            if(BufferAccess<const SelectionIntType> selProperty = inputParticles->getProperty(ParticlesObject::SelectionProperty)) {
                 const auto* s = selProperty.cbegin();
                 for(Point3& p : posProperty) {
                     if(*s++)
@@ -140,7 +140,7 @@ PipelineStatus VectorParticlePropertiesAffineTransformationModifierDelegate::app
                         v = tm * v;
                 }
                 else {
-                    if(ConstBufferAccess<SelectionIntType> selProperty = container->getProperty(PropertyObject::GenericSelectionProperty)) {
+                    if(BufferAccess<const SelectionIntType> selProperty = container->getProperty(PropertyObject::GenericSelectionProperty)) {
                         const auto* s = selProperty.cbegin();
                         for(auto& v : propertyAccess) {
                             if(*s++)
@@ -157,7 +157,7 @@ PipelineStatus VectorParticlePropertiesAffineTransformationModifierDelegate::app
                         v = tm * v;
                 }
                 else {
-                    if(ConstBufferAccess<SelectionIntType> selProperty = container->getProperty(PropertyObject::GenericSelectionProperty)) {
+                    if(BufferAccess<const SelectionIntType> selProperty = container->getProperty(PropertyObject::GenericSelectionProperty)) {
                         const auto* s = selProperty.cbegin();
                         for(auto& v : propertyAccess) {
                             if(*s++)

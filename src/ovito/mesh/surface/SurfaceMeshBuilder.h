@@ -63,7 +63,7 @@ public:
             OVITO_ASSERT(_topo);
             vertex_index vertex = _topo->createVertex();
             grow(1, SurfaceMeshVertices::PositionProperty);
-            _vertexPositions.updatePointer();
+            _vertexPositions.updateDataStorageAddress();
             _vertexPositions[vertex] = p;
             return vertex;
         }
@@ -73,7 +73,7 @@ public:
             OVITO_ASSERT(_topo);
             vertex_index vertex = _topo->createVertex();
             grow(1, SurfaceMeshVertices::PositionProperty);
-            _vertexPositions.updatePointer();
+            _vertexPositions.updateDataStorageAddress();
             moveElement(existingVertex, vertex, SurfaceMeshVertices::PositionProperty);
             return vertex;
         }
@@ -120,7 +120,7 @@ public:
             face_index face = _topo->createFaceAndEdges(std::forward<VertexIterator>(begin), std::forward<VertexIterator>(end));
             grow(1, SurfaceMeshFaces::RegionProperty);
             if(_faceRegions) {
-                _faceRegions.updatePointer();
+                _faceRegions.updateDataStorageAddress();
                 _faceRegions[face] = region;
             }
             else OVITO_ASSERT(region == InvalidIndex);
@@ -133,7 +133,7 @@ public:
             face_index face = _topo->createFace();
             grow(1, SurfaceMeshFaces::RegionProperty);
             if(_faceRegions) {
-                _faceRegions.updatePointer();
+                _faceRegions.updateDataStorageAddress();
                 _faceRegions[face] = region;
             }
             else OVITO_ASSERT(region == InvalidIndex);
@@ -151,7 +151,7 @@ public:
             face_index face = _topo->createFace();
             grow(1, SurfaceMeshFaces::RegionProperty);
             if(_faceRegions)
-                _faceRegions.updatePointer();
+                _faceRegions.updateDataStorageAddress();
             moveElement(existingFace, face, SurfaceMeshFaces::RegionProperty);
             return face;
         }

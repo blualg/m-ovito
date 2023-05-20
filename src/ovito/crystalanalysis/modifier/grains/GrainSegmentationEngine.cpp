@@ -191,10 +191,10 @@ bool GrainSegmentationEngine1::interface_cubic_hex(NeighborBond& bond, Interface
 bool GrainSegmentationEngine1::rotateInterfaceAtoms()
 {
     // Make a copy of structure types and orientations.
-    ConstBufferAccess<PTMAlgorithm::StructureType> structuresArray(structureTypes());
+    BufferAccess<const PTMAlgorithm::StructureType> structuresArray(structureTypes());
     _adjustedStructureTypes = std::vector<PTMAlgorithm::StructureType>(structuresArray.cbegin(), structuresArray.cend());
     _adjustedOrientations = std::vector<Quaternion>(orientations()->size());
-    boost::transform(ConstBufferAccess<QuaternionG>(orientations()), _adjustedOrientations.begin(), [](const QuaternionG& q) { return q.toDataType<FloatType>(); });
+    boost::transform(BufferAccess<const QuaternionG>(orientations()), _adjustedOrientations.begin(), [](const QuaternionG& q) { return q.toDataType<FloatType>(); });
 
     // Only rotate hexagonal atoms if handling of coherent interfaces is enabled
     if (!_handleBoundaries)
@@ -529,7 +529,7 @@ void GrainSegmentationEngine2::perform()
     const std::vector<GrainSegmentationEngine1::DendrogramNode>& dendrogram = _engine1->_dendrogram;
 
     std::vector<Quaternion> meanOrientation(_engine1->orientations()->size());
-    boost::transform(ConstBufferAccess<QuaternionG>(_engine1->orientations()), meanOrientation.begin(), [](const QuaternionG& q) { return q.toDataType<FloatType>(); });
+    boost::transform(BufferAccess<const QuaternionG>(_engine1->orientations()), meanOrientation.begin(), [](const QuaternionG& q) { return q.toDataType<FloatType>(); });
 
     // Iterate through merge list until distance cutoff is met.
     DisjointSet uf(_numParticles);
@@ -551,7 +551,7 @@ void GrainSegmentationEngine2::perform()
 
     // Assign new consecutive IDs to root clusters.
     _numClusters = 1;
-    ConstBufferAccess<int32_t> structuresArray(_engine1->structureTypes());
+    BufferAccess<const int32_t> structuresArray(_engine1->structureTypes());
     std::vector<int> clusterStructureTypes;
     std::vector<Quaternion> clusterOrientations;
     for(size_t i = 0; i < _numParticles; i++) {
@@ -630,7 +630,7 @@ void GrainSegmentationEngine2::perform()
         // Determine the index remapping for reordering the grain list by size.
         std::vector<size_t> mapping(_numClusters - 1);
         std::iota(mapping.begin(), mapping.end(), size_t(0));
-        std::sort(mapping.begin(), mapping.end(), [grainSizeArray = ConstBufferAccess<int64_t>(_grainSizes)](size_t a, size_t b) {
+        std::sort(mapping.begin(), mapping.end(), [grainSizeArray = BufferAccess<const int64_t>(_grainSizes)](size_t a, size_t b) {
             return grainSizeArray[a] > grainSizeArray[b];
         });
         if(isCanceled())

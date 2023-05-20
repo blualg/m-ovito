@@ -335,7 +335,7 @@ QString SurfaceMeshPickInfo::infoString(PipelineSceneNode* objectNode, quint32 s
             str += property->name();
             str += QStringLiteral(":</key> ");
             if(property->dataType() == PropertyObject::Int32) {
-                ConstBufferAccess<int32_t, true> data(property);
+                BufferAccess<const int32_t*> data(property);
                 for(size_t component = 0; component < data.componentCount(); component++) {
                     if(component != 0) str += QStringLiteral(", ");
                     str += QString::number(data.get(facetIndex, component));
@@ -348,28 +348,28 @@ QString SurfaceMeshPickInfo::infoString(PipelineSceneNode* objectNode, quint32 s
                 }
             }
             else if(property->dataType() == PropertyObject::Int64) {
-                ConstBufferAccess<int64_t, true> data(property);
+                BufferAccess<const int64_t*> data(property);
                 for(size_t component = 0; component < property->componentCount(); component++) {
                     if(component != 0) str += QStringLiteral(", ");
                     str += QString::number(data.get(facetIndex, component));
                 }
             }
             else if(property->dataType() == PropertyObject::Int8) {
-                ConstBufferAccess<int8_t, true> data(property);
+                BufferAccess<const int8_t*> data(property);
                 for(size_t component = 0; component < property->componentCount(); component++) {
                     if(component != 0) str += QStringLiteral(", ");
                     str += QString::number(data.get(facetIndex, component));
                 }
             }
             else if(property->dataType() == PropertyObject::Float32) {
-                ConstBufferAccess<float, true> data(property);
+                BufferAccess<const float*> data(property);
                 for(size_t component = 0; component < property->componentCount(); component++) {
                     if(component != 0) str += QStringLiteral(", ");
                     str += QString::number(data.get(facetIndex, component));
                 }
             }
             else if(property->dataType() == PropertyObject::Float64) {
-                ConstBufferAccess<double, true> data(property);
+                BufferAccess<const double*> data(property);
                 for(size_t component = 0; component < property->componentCount(); component++) {
                     if(component != 0) str += QStringLiteral(", ");
                     str += QString::number(data.get(facetIndex, component));
@@ -381,7 +381,7 @@ QString SurfaceMeshPickInfo::infoString(PipelineSceneNode* objectNode, quint32 s
         }
 
         // Additionally, list all properties of the region to which the face belongs.
-        if(ConstBufferAccess<int32_t> regionProperty = surfaceMesh()->faces()->getProperty(SurfaceMeshFaces::RegionProperty)) {
+        if(BufferAccess<const int32_t> regionProperty = surfaceMesh()->faces()->getProperty(SurfaceMeshFaces::RegionProperty)) {
             if(facetIndex < regionProperty.size() && surfaceMesh()->regions()) {
                 int regionIndex = regionProperty[facetIndex];
                 if(!str.isEmpty()) str += QStringLiteral("<sep>");
@@ -394,7 +394,7 @@ QString SurfaceMeshPickInfo::infoString(PipelineSceneNode* objectNode, quint32 s
                     str += property->name();
                     str += QStringLiteral(":</key> ");
                     if(property->dataType() == PropertyObject::Int32) {
-                        ConstBufferAccess<int32_t, true> data(property);
+                        BufferAccess<const int32_t*> data(property);
                         for(size_t component = 0; component < property->componentCount(); component++) {
                             if(component != 0) str += QStringLiteral(", ");
                             str += QString::number(data.get(regionIndex, component));
@@ -407,28 +407,28 @@ QString SurfaceMeshPickInfo::infoString(PipelineSceneNode* objectNode, quint32 s
                         }
                     }
                     else if(property->dataType() == PropertyObject::Int64) {
-                        ConstBufferAccess<int64_t, true> data(property);
+                        BufferAccess<const int64_t*> data(property);
                         for(size_t component = 0; component < property->componentCount(); component++) {
                             if(component != 0) str += QStringLiteral(", ");
                             str += QString::number(data.get(regionIndex, component));
                         }
                     }
                     else if(property->dataType() == PropertyObject::Int8) {
-                        ConstBufferAccess<int8_t, true> data(property);
+                        BufferAccess<const int8_t*> data(property);
                         for(size_t component = 0; component < property->componentCount(); component++) {
                             if(component != 0) str += QStringLiteral(", ");
                             str += QString::number(data.get(regionIndex, component));
                         }
                     }
                     else if(property->dataType() == PropertyObject::Float32) {
-                        ConstBufferAccess<float, true> data(property);
+                        BufferAccess<const float*> data(property);
                         for(size_t component = 0; component < property->componentCount(); component++) {
                             if(component != 0) str += QStringLiteral(", ");
                             str += QString::number(data.get(regionIndex, component));
                         }
                     }
                     else if(property->dataType() == PropertyObject::Float64) {
-                        ConstBufferAccess<double, true> data(property);
+                        BufferAccess<const double*> data(property);
                         for(size_t component = 0; component < property->componentCount(); component++) {
                             if(component != 0) str += QStringLiteral(", ");
                             str += QString::number(data.get(regionIndex, component));
@@ -525,7 +525,7 @@ void SurfaceMeshVis::PrepareSurfaceEngine::determineFaceColors()
 {
     ColorAG defaultFaceColor = _surfaceColor.toDataType<GraphicsFloatType>();
 
-    if(ConstBufferAccess<ColorG> colorProperty = inputMesh()->faces()->getProperty(SurfaceMeshFaces::ColorProperty)) {
+    if(BufferAccess<const ColorG> colorProperty = inputMesh()->faces()->getProperty(SurfaceMeshFaces::ColorProperty)) {
         // The "Color" property of mesh faces has the highest priority.
         // If it is present, use its information to color the triangle faces.
         outputMesh()->setHasFaceColors(true);
@@ -534,10 +534,10 @@ void SurfaceMeshVis::PrepareSurfaceEngine::determineFaceColors()
             *meshFaceColor++ = colorProperty[originalFace];
         }
     }
-    else if(ConstBufferAccess<ColorG> colorProperty = inputMesh()->regions()->getProperty(SurfaceMeshRegions::ColorProperty)) {
+    else if(BufferAccess<const ColorG> colorProperty = inputMesh()->regions()->getProperty(SurfaceMeshRegions::ColorProperty)) {
         // If the "Color" property of mesh regions is present, use it information to color the
         // mesh faces according to the region they belong to.
-        if(ConstBufferAccess<int32_t> regionProperty = inputMesh()->faces()->getProperty(SurfaceMeshFaces::RegionProperty)) {
+        if(BufferAccess<const int32_t> regionProperty = inputMesh()->faces()->getProperty(SurfaceMeshFaces::RegionProperty)) {
             outputMesh()->setHasFaceColors(true);
             size_t regionCount = colorProperty.size();
             auto meshFaceColor = outputMesh()->faceColors().begin();
@@ -554,7 +554,7 @@ void SurfaceMeshVis::PrepareSurfaceEngine::determineFaceColors()
         if(const PropertyObject* pseudoColorProperty = _pseudoColorPropertyRef.findInContainer(inputMesh()->faces())) {
             if(_pseudoColorPropertyRef.vectorComponent() < (int)pseudoColorProperty->componentCount()) {
                 outputMesh()->setHasFacePseudoColors(true);
-                ConstBufferAccess<void,true> pseudoColorArray(pseudoColorProperty);
+                BufferReadAccess pseudoColorArray(pseudoColorProperty);
                 size_t vecComponent = std::max(0, _pseudoColorPropertyRef.vectorComponent());
                 auto meshFacePseudoColor = outputMesh()->facePseudoColors().begin();
                 for(size_t originalFace : _originalFaceMap) {
@@ -572,9 +572,9 @@ void SurfaceMeshVis::PrepareSurfaceEngine::determineFaceColors()
     else if(_colorMappingMode == RegionPseudoColoring && _pseudoColorPropertyRef && inputMesh()->regions()) {
         if(const PropertyObject* pseudoColorProperty = _pseudoColorPropertyRef.findInContainer(inputMesh()->regions())) {
             if(_pseudoColorPropertyRef.vectorComponent() < (int)pseudoColorProperty->componentCount()) {
-                if(ConstBufferAccess<int32_t> regionProperty = inputMesh()->faces()->getProperty(SurfaceMeshFaces::RegionProperty)) {
+                if(BufferAccess<const int32_t> regionProperty = inputMesh()->faces()->getProperty(SurfaceMeshFaces::RegionProperty)) {
                     outputMesh()->setHasFacePseudoColors(true);
-                    ConstBufferAccess<void,true> pseudoColorArray(pseudoColorProperty);
+                    BufferReadAccess pseudoColorArray(pseudoColorProperty);
                     size_t vecComponent = std::max(0, _pseudoColorPropertyRef.vectorComponent());
                     size_t regionCount = pseudoColorProperty->size();
                     auto meshFacePseudoColor = outputMesh()->facePseudoColors().begin();
@@ -596,7 +596,7 @@ void SurfaceMeshVis::PrepareSurfaceEngine::determineFaceColors()
         }
     }
 
-    if(ConstBufferAccess<SelectionIntType> selectionProperty = inputMesh()->faces()->getProperty(SurfaceMeshFaces::SelectionProperty)) {
+    if(BufferAccess<const SelectionIntType> selectionProperty = inputMesh()->faces()->getProperty(SurfaceMeshFaces::SelectionProperty)) {
         auto meshFace = outputMesh()->faces().begin();
         for(size_t originalFace : _originalFaceMap) {
             if(selectionProperty[originalFace])
@@ -604,10 +604,10 @@ void SurfaceMeshVis::PrepareSurfaceEngine::determineFaceColors()
             ++meshFace;
         }
     }
-    else if(ConstBufferAccess<SelectionIntType> selectionProperty = inputMesh()->regions()->getProperty(SurfaceMeshRegions::SelectionProperty)) {
+    else if(BufferAccess<const SelectionIntType> selectionProperty = inputMesh()->regions()->getProperty(SurfaceMeshRegions::SelectionProperty)) {
         // If the "Selection" property of mesh regions is present, use it information to highlight the
         // mesh faces that belong to selected regions.
-        if(ConstBufferAccess<int32_t> regionProperty = inputMesh()->faces()->getProperty(SurfaceMeshFaces::RegionProperty)) {
+        if(BufferAccess<const int32_t> regionProperty = inputMesh()->faces()->getProperty(SurfaceMeshFaces::RegionProperty)) {
             size_t regionCount = selectionProperty.size();
             auto meshFace = outputMesh()->faces().begin();
             for(size_t originalFace : _originalFaceMap) {
@@ -625,7 +625,7 @@ void SurfaceMeshVis::PrepareSurfaceEngine::determineFaceColors()
 ******************************************************************************/
 void SurfaceMeshVis::PrepareSurfaceEngine::determineVertexColors()
 {
-    if(ConstBufferAccess<ColorG> colorProperty = inputMesh()->vertices()->getProperty(SurfaceMeshVertices::ColorProperty)) {
+    if(BufferAccess<const ColorG> colorProperty = inputMesh()->vertices()->getProperty(SurfaceMeshVertices::ColorProperty)) {
         OVITO_ASSERT(colorProperty.size() == outputMesh()->vertexCount());
         if(colorProperty.size() == outputMesh()->vertexCount()) {
             outputMesh()->setHasVertexColors(true);
@@ -686,7 +686,7 @@ bool SurfaceMeshVis::PrepareSurfaceEngine::buildSurfaceTriangleMesh()
     // Convert vertex positions to reduced coordinates and transfer them to the output mesh.
     OVITO_ASSERT(outputMesh()->vertices().size() == inputMeshData.vertexCount());
     if(cell()) {
-        ConstBufferAccess<Point3> vertexPositions(inputMeshData.expectVertexProperty(SurfaceMeshVertices::PositionProperty));
+        BufferAccess<const Point3> vertexPositions(inputMeshData.expectVertexProperty(SurfaceMeshVertices::PositionProperty));
         SurfaceMesh::vertex_index vidx = 0;
         for(Point3& p : outputMesh()->vertices()) {
             p = cell()->absoluteToReduced(vertexPositions[vidx++]);
@@ -946,11 +946,11 @@ void SurfaceMeshVis::PrepareSurfaceEngine::buildCapTriangleMesh()
 
     // Create accessor for the input mesh data.
     const SurfaceMeshReadAccess inputMeshData(inputMesh());
-    ConstBufferAccess<Point3> vertexPositions(inputMeshData.expectVertexProperty(SurfaceMeshVertices::PositionProperty));
-    ConstBufferAccess<int32_t> faceRegions(inputMeshData.faceProperty(SurfaceMeshFaces::RegionProperty));
+    BufferAccess<const Point3> vertexPositions(inputMeshData.expectVertexProperty(SurfaceMeshVertices::PositionProperty));
+    BufferAccess<const int32_t> faceRegions(inputMeshData.faceProperty(SurfaceMeshFaces::RegionProperty));
 
     // Access the 'Filled' property of volumetric regions if it is defined for the input surface mesh.
-    ConstBufferAccess<SelectionIntType> isFilledProperty(inputMeshData.regionProperty(SurfaceMeshRegions::IsFilledProperty));
+    BufferAccess<const SelectionIntType> isFilledProperty(inputMeshData.regionProperty(SurfaceMeshRegions::IsFilledProperty));
     bool hasRegions = isFilledProperty && faceRegions;
     bool flipCapNormal = (cell()->matrix().determinant() < 0);
 

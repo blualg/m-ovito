@@ -102,7 +102,7 @@ Box3 TrajectoryVis::boundingBox(AnimationTime time, const ConstDataObjectPath& p
         // If not, recompute bounding box from trajectory data.
         if(trajObj) {
             if(!simulationCell) {
-                if(ConstBufferAccess<Point3> posProperty = trajObj->getProperty(TrajectoryObject::PositionProperty)) {
+                if(BufferAccess<const Point3> posProperty = trajObj->getProperty(TrajectoryObject::PositionProperty)) {
                     bbox.addPoints(posProperty);
                 }
             }
@@ -199,11 +199,11 @@ PipelineStatus TrajectoryVis::render(AnimationTime time, const ConstDataObjectPa
             trajObj->verifyIntegrity();
 
             // Retrieve the line data stored in the TrajectoryObject.
-            ConstBufferAccess<Point3> posProperty = trajObj->getProperty(TrajectoryObject::PositionProperty);
-            ConstBufferAccess<int32_t> timeProperty = trajObj->getProperty(TrajectoryObject::SampleTimeProperty);
-            ConstBufferAccess<int64_t> idProperty = trajObj->getProperty(TrajectoryObject::ParticleIdentifierProperty);
-            ConstBufferAccess<ColorG> colorProperty = trajObj->getProperty(TrajectoryObject::ColorProperty);
-            ConstBufferAccess<void,true> pseudoColorArray = pseudoColorProperty;
+            BufferAccess<const Point3> posProperty = trajObj->getProperty(TrajectoryObject::PositionProperty);
+            BufferAccess<const int32_t> timeProperty = trajObj->getProperty(TrajectoryObject::SampleTimeProperty);
+            BufferAccess<const int64_t> idProperty = trajObj->getProperty(TrajectoryObject::ParticleIdentifierProperty);
+            BufferAccess<const ColorG> colorProperty = trajObj->getProperty(TrajectoryObject::ColorProperty);
+            BufferReadAccess pseudoColorArray = pseudoColorProperty;
             if(posProperty && timeProperty && idProperty && posProperty.size() >= 2) {
 
                 // Determine the number of line segments and corner points to render.
@@ -303,7 +303,7 @@ PipelineStatus TrajectoryVis::render(AnimationTime time, const ConstDataObjectPa
         if(!cornerColorsUpToDate) {
             // Create an RGB color array, which will be filled and then assigned to the ParticlesPrimitive.
             BufferAccessAndRef<ColorG> cornerColorsArray = DataBufferPtr::create(visCache.cornerPseudoColors->size(), DataBuffer::FloatGraphics, 3);
-            boost::transform(ConstBufferAccess<GraphicsFloatType>(visCache.cornerPseudoColors), cornerColorsArray.begin(), [&](GraphicsFloatType v) { return visCache.segments.pseudoColorMapping().valueToColor(v); });
+            boost::transform(BufferAccess<const GraphicsFloatType>(visCache.cornerPseudoColors), cornerColorsArray.begin(), [&](GraphicsFloatType v) { return visCache.segments.pseudoColorMapping().valueToColor(v); });
             visCache.corners.setColors(cornerColorsArray.take());
             cornerColorsUpToDate = true;
         }

@@ -141,7 +141,7 @@ void ParticleInspectionApplet::updateDistanceTable()
     int n = std::min(4, visibleElementCount());
 
     const ParticlesObject* particles = currentState().getObject<ParticlesObject>();
-    ConstBufferAccess<Point3> posProperty = particles ? particles->getProperty(ParticlesObject::PositionProperty) : nullptr;
+    BufferAccess<const Point3> posProperty = particles ? particles->getProperty(ParticlesObject::PositionProperty) : nullptr;
     _distanceTable->setRowCount(std::max(1, n * (n-1) / 2));
     int row = 0;
     for(int i = 0; i < n; i++) {
@@ -176,7 +176,7 @@ void ParticleInspectionApplet::updateAngleTable()
     int n = std::min(3, visibleElementCount());
 
     const ParticlesObject* particles = currentState().getObject<ParticlesObject>();
-    ConstBufferAccess<Point3> posProperty = particles ? particles->getProperty(ParticlesObject::PositionProperty) : nullptr;
+    BufferAccess<const Point3> posProperty = particles ? particles->getProperty(ParticlesObject::PositionProperty) : nullptr;
     _angleTable->setRowCount(n == 3 ? 3 : 1);
     int row = 0;
     for(int i = 0; i < n; i++) {
@@ -295,7 +295,7 @@ void ParticleInspectionApplet::PickingMode::renderOverlay3D(Viewport* vp, SceneR
                 // If particle selection is based on ID, find particle with the given ID.
                 size_t particleIndex = element.particleIndex;
                 if(element.particleId >= 0) {
-                    if(ConstBufferAccess<int64_t> identifierProperty = particles->getProperty(ParticlesObject::IdentifierProperty)) {
+                    if(BufferAccess<const int64_t> identifierProperty = particles->getProperty(ParticlesObject::IdentifierProperty)) {
                         if(particleIndex >= identifierProperty.size() || identifierProperty[particleIndex] != element.particleId) {
                             auto iter = boost::find(identifierProperty, element.particleId);
                             if(iter == identifierProperty.cend()) continue;
@@ -303,7 +303,7 @@ void ParticleInspectionApplet::PickingMode::renderOverlay3D(Viewport* vp, SceneR
                         }
                     }
                 }
-                if(ConstBufferAccess<Point3> posProperty = particles->getProperty(ParticlesObject::PositionProperty)) {
+                if(BufferAccess<const Point3> posProperty = particles->getProperty(ParticlesObject::PositionProperty)) {
                     if(particleIndex < posProperty.size()) {
                         TimeInterval iv;
                         const AffineTransformation& nodeTM = element.objNode->getWorldTransform(renderer->time(), iv);

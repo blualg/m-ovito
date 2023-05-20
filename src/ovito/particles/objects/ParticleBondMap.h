@@ -164,10 +164,10 @@ private:
 private:
 
     /// The bond property containing the bond definitions.
-    const ConstBufferAccessAndRef<ParticleIndexPair> _bondTopology;
+    const BufferAccessAndRef<const ParticleIndexPair> _bondTopology;
 
     /// The bond property containing PBC shift vectors.
-    const ConstBufferAccessAndRef<Vector3I> _bondPeriodicImages;
+    const BufferAccessAndRef<const Vector3I> _bondPeriodicImages;
 
     /// Contains the first bond index for each particle (the head of a linked list).
     std::vector<size_t> _startIndices;

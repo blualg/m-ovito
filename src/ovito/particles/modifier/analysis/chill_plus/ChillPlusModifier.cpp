@@ -87,7 +87,7 @@ void ChillPlusModifier::ChillPlusEngine::perform()
         return;
 
     BufferAccess<int32_t> output(structures());
-    ConstBufferAccess<SelectionIntType> selectionData(selection());
+    BufferAccess<const SelectionIntType> selectionData(selection());
 
     // Find all relevant q_lm
     // create matrix of q_lm

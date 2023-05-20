@@ -284,7 +284,7 @@ void OXDNAImporter::FrameLoader::loadFile()
     BufferAccess<Point3> centerOfMassPositionsArray = particles()->createProperty(QStringLiteral("Center Of Mass"), DataBuffer::FloatDefault, 3, QStringList() << QStringLiteral("X") << QStringLiteral("Y") << QStringLiteral("Z"));
     BufferAccess<Point3> basePositionsArray = particles()->createProperty(QStringLiteral("Base Position"), DataBuffer::FloatDefault, 3, QStringList() << QStringLiteral("X") << QStringLiteral("Y") << QStringLiteral("Z"));
     BufferAccess<Point3> positionsArray = particles()->getMutableProperty(ParticlesObject::PositionProperty);
-    ConstBufferAccess<Vector3> axisVectorArray = particles()->expectProperty(ParticlesObject::NucleotideAxisProperty);
+    BufferAccess<const Vector3> axisVectorArray = particles()->expectProperty(ParticlesObject::NucleotideAxisProperty);
     for(size_t i = 0; i < numNucleotidesLong; i++) {
         centerOfMassPositionsArray[i] = positionsArray[i];
         positionsArray[i] -= 0.4 * axisVectorArray[i];

@@ -120,11 +120,11 @@ void DislocationAnalysisEngine::perform()
     nextProgressSubStep();
     FloatType ghostLayerSize = FloatType(3.5) * _structureAnalysis->maximumNeighborDistance();
     if(!_tessellation->generateTessellation(_structureAnalysis->cell(),
-            ConstBufferAccess<Point3>(positions()).cbegin(),
+            BufferAccess<const Point3>(positions()).cbegin(),
             _structureAnalysis->atomCount(),
             ghostLayerSize,
             false, // flag coverDomainWithFiniteTets
-            selection() ? ConstBufferAccess<SelectionIntType>(selection()).cbegin() : nullptr,
+            selection() ? BufferAccess<const SelectionIntType>(selection()).cbegin() : nullptr,
             *this))
         return;
 

@@ -26,8 +26,6 @@
 #include "OpenGLSceneRenderer.h"
 #include "OpenGLShaderHelper.h"
 
-#include <boost/range/irange.hpp>
-
 namespace Ovito {
 
 /******************************************************************************
@@ -279,7 +277,7 @@ void OpenGLSceneRenderer::renderMeshImplementation(const MeshPrimitive& primitiv
 
             // First, compute distance of each instance from the camera along the viewing direction (=camera z-axis).
             std::vector<FloatType> distances(shader.instanceCount());
-            boost::transform(boost::irange<size_t>(0, shader.instanceCount()), distances.begin(), [direction, tmArray = ConstBufferAccess<AffineTransformation>(primitive.perInstanceTMs())](size_t i) {
+            boost::transform(boost::irange<size_t>(0, shader.instanceCount()), distances.begin(), [direction, tmArray = BufferAccess<const AffineTransformation>(primitive.perInstanceTMs())](size_t i) {
                 return direction.dot(tmArray[i].translation());
             });
 
@@ -323,14 +321,14 @@ QOpenGLBuffer OpenGLSceneRenderer::getMeshInstanceTMBuffer(const MeshPrimitive& 
     return shader.createCachedBuffer(std::move(cacheKey), 3 * sizeof(Vector_4<float>), QOpenGLBuffer::VertexBuffer, OpenGLShaderHelper::PerInstance, [&](void* buffer) {
         Vector_4<float>* row = reinterpret_cast<Vector_4<float>*>(buffer);
         if(primitive.perInstanceTMs()->dataType() == DataBuffer::Float32) {
-            for(const AffineTransformationT<float>& tm : ConstBufferAccess<AffineTransformationT<float>>(primitive.perInstanceTMs())) {
+            for(const AffineTransformationT<float>& tm : BufferAccess<const AffineTransformationT<float>>(primitive.perInstanceTMs())) {
                 *row++ = tm.row(0);
                 *row++ = tm.row(1);
                 *row++ = tm.row(2);
             }
         }
         else {
-            for(const AffineTransformationT<double>& tm : ConstBufferAccess<AffineTransformationT<double>>(primitive.perInstanceTMs())) {
+            for(const AffineTransformationT<double>& tm : BufferAccess<const AffineTransformationT<double>>(primitive.perInstanceTMs())) {
                 *row++ = tm.row(0).toDataType<float>();
                 *row++ = tm.row(1).toDataType<float>();
                 *row++ = tm.row(2).toDataType<float>();

@@ -104,15 +104,8 @@ public:
             return QStringLiteral("%1.%2").arg(name()).arg(vectorComponent + 1);
     }
 
-    /// Creates a copy of the array, not containing those elements for which
-    /// the corresponding bits in the given bit array were set.
-    OORef<PropertyObject> filterCopy(const boost::dynamic_bitset<>& mask) const {
-        return static_object_cast<PropertyObject>(DataBuffer::filterCopy(mask));
-    }
-
     /// Checks if this property storage and its contents exactly match those of another property storage.
     bool equals(const PropertyObject& other) const;
-
 
     //////////////////////////////// Element types //////////////////////////////
 
@@ -261,7 +254,7 @@ public:
     struct PythonAccessGuard {
         explicit PythonAccessGuard(PropertyObject& p) : propertyReference(&p), memoryAccessor(&p) {}
         OORef<PropertyObject> propertyReference;
-        ConstBufferAccess<void,true> memoryAccessor;
+        BufferReadAccess memoryAccessor;
     };
 
     /// Creates an access guard object for this property.

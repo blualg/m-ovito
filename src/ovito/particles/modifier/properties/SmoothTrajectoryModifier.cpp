@@ -249,9 +249,9 @@ void SmoothTrajectoryModifier::interpolateState(PipelineFlowState& state1, const
         throw Exception(tr("Cannot interpolate between consecutive simulation frames, because they contain different numbers of particles."));
     particles1->verifyIntegrity();
     particles2->verifyIntegrity();
-    ConstBufferAccess<Point3> posProperty2 = particles2->expectProperty(ParticlesObject::PositionProperty);
-    ConstBufferAccess<IdentifierIntType> idProperty1 = particles1->getProperty(ParticlesObject::IdentifierProperty);
-    ConstBufferAccess<IdentifierIntType> idProperty2 = particles2->getProperty(ParticlesObject::IdentifierProperty);
+    BufferAccess<const Point3> posProperty2 = particles2->expectProperty(ParticlesObject::PositionProperty);
+    BufferAccess<const IdentifierIntType> idProperty1 = particles1->getProperty(ParticlesObject::IdentifierProperty);
+    BufferAccess<const IdentifierIntType> idProperty2 = particles2->getProperty(ParticlesObject::IdentifierProperty);
     ParticlesObject* outputParticles = state1.makeMutable(particles1);
     BufferAccess<Point3> outputPositions = outputParticles->createProperty(DataBuffer::Initialized, ParticlesObject::PositionProperty);
     std::unordered_map<IdentifierIntType, size_t> idmap;
@@ -303,7 +303,7 @@ void SmoothTrajectoryModifier::interpolateState(PipelineFlowState& state1, const
     }
 
     // Interpolate particle orientations.
-    if(ConstBufferAccess<QuaternionG> orientationProperty2 = particles2->getProperty(ParticlesObject::OrientationProperty)) {
+    if(BufferAccess<const QuaternionG> orientationProperty2 = particles2->getProperty(ParticlesObject::OrientationProperty)) {
         BufferAccess<QuaternionG> outputOrientations = outputParticles->createProperty(DataBuffer::Initialized, ParticlesObject::OrientationProperty);
         if(idProperty1 && idProperty2 && !boost::equal(idProperty1, idProperty2)) {
             auto id = idProperty1.cbegin();
@@ -328,7 +328,7 @@ void SmoothTrajectoryModifier::interpolateState(PipelineFlowState& state1, const
             const PropertyObject* property2 = (property1->type() != 0) ? particles2->getProperty(property1->type()) : particles2->getProperty(property1->name());
             if(property2 && property2->dataType() == property1->dataType() && property2->componentCount() == property1->componentCount()) {
                 BufferAccess<float> data1 = outputParticles->makeMutable(property1);
-                ConstBufferAccess<float> data2(property2);
+                BufferAccess<const float> data2(property2);
                 if(idProperty1 && idProperty2 && !boost::equal(idProperty1, idProperty2)) {
                     auto id = idProperty1.cbegin();
                     for(auto& v1 : data1) {
@@ -351,7 +351,7 @@ void SmoothTrajectoryModifier::interpolateState(PipelineFlowState& state1, const
             const PropertyObject* property2 = (property1->type() != 0) ? particles2->getProperty(property1->type()) : particles2->getProperty(property1->name());
             if(property2 && property2->dataType() == property1->dataType() && property2->componentCount() == property1->componentCount()) {
                 BufferAccess<double> data1 = outputParticles->makeMutable(property1);
-                ConstBufferAccess<double> data2(property2);
+                BufferAccess<const double> data2(property2);
                 if(idProperty1 && idProperty2 && !boost::equal(idProperty1, idProperty2)) {
                     auto id = idProperty1.cbegin();
                     for(auto& v1 : data1) {
@@ -394,8 +394,8 @@ void SmoothTrajectoryModifier::averageState(PipelineFlowState& state1, const std
     const SimulationCellObject* cell1 = state1.getObject<SimulationCellObject>();
     const ParticlesObject* particles1 = state1.expectObject<ParticlesObject>();
     particles1->verifyIntegrity();
-    ConstBufferAccessAndRef<Point3> posProperty1 = particles1->expectProperty(ParticlesObject::PositionProperty);
-    ConstBufferAccess<IdentifierIntType> idProperty1 = particles1->getProperty(ParticlesObject::IdentifierProperty);
+    BufferAccessAndRef<const Point3> posProperty1 = particles1->expectProperty(ParticlesObject::PositionProperty);
+    BufferAccess<const IdentifierIntType> idProperty1 = particles1->getProperty(ParticlesObject::IdentifierProperty);
 
     // Create a modifiable copy of the particle coordinates array.
     ParticlesObject* outputParticles = state1.makeMutable(particles1);
@@ -443,8 +443,8 @@ void SmoothTrajectoryModifier::averageState(PipelineFlowState& state1, const std
         if(!particles2)
             continue;
         particles2->verifyIntegrity();
-        ConstBufferAccess<Point3> posProperty2 = particles2->expectProperty(ParticlesObject::PositionProperty);
-        ConstBufferAccess<IdentifierIntType> idProperty2 = particles2->getProperty(ParticlesObject::IdentifierProperty);
+        BufferAccess<const Point3> posProperty2 = particles2->expectProperty(ParticlesObject::PositionProperty);
+        BufferAccess<const IdentifierIntType> idProperty2 = particles2->getProperty(ParticlesObject::IdentifierProperty);
 
         // Sum up cell vectors.
         const SimulationCellObject* cell2 = cell1 ? state2.expectObject<SimulationCellObject>() : nullptr;
@@ -481,7 +481,7 @@ void SmoothTrajectoryModifier::averageState(PipelineFlowState& state1, const std
 
             // Average particle orientations over time.
             if(outputOrientations) {
-                if(ConstBufferAccess<QuaternionG> orientationProperty2 = particles2->getProperty(ParticlesObject::OrientationProperty)) {
+                if(BufferAccess<const QuaternionG> orientationProperty2 = particles2->getProperty(ParticlesObject::OrientationProperty)) {
                     auto id = idProperty1.cbegin();
                     for(QuaternionG& qout : outputOrientations) {
                         if(auto mapEntry = idmap.find(*id); mapEntry != idmap.end()) {
@@ -501,7 +501,7 @@ void SmoothTrajectoryModifier::averageState(PipelineFlowState& state1, const std
                 PropertyObject* property1 = static_object_cast<PropertyObject>(accessor1.buffer());
                 const PropertyObject* property2 = (property1->type() != 0) ? particles2->getProperty(property1->type()) : particles2->getProperty(property1->name());
                 if(property2 && property2->dataType() == accessor1.dataType() && property2->componentCount() == accessor1.componentCount()) {
-                    ConstBufferAccess<float> accessor2(property2);
+                    BufferAccess<const float> accessor2(property2);
                     auto id = idProperty1.cbegin();
                     for(auto& v : accessor1) {
                         if(auto mapEntry = idmap.find(*id); mapEntry != idmap.end()) {
@@ -515,7 +515,7 @@ void SmoothTrajectoryModifier::averageState(PipelineFlowState& state1, const std
                 PropertyObject* property1 = static_object_cast<PropertyObject>(accessor1.buffer());
                 const PropertyObject* property2 = (property1->type() != 0) ? particles2->getProperty(property1->type()) : particles2->getProperty(property1->name());
                 if(property2 && property2->dataType() == accessor1.dataType() && property2->componentCount() == accessor1.componentCount()) {
-                    ConstBufferAccess<double> accessor2(property2);
+                    BufferAccess<const double> accessor2(property2);
                     auto id = idProperty1.cbegin();
                     for(auto& v : accessor1) {
                         if(auto mapEntry = idmap.find(*id); mapEntry != idmap.end()) {
@@ -540,7 +540,7 @@ void SmoothTrajectoryModifier::averageState(PipelineFlowState& state1, const std
 
             // Average particle orientations over time.
             if(outputOrientations) {
-                if(ConstBufferAccess<QuaternionG> orientationProperty2 = particles2->getProperty(ParticlesObject::OrientationProperty)) {
+                if(BufferAccess<const QuaternionG> orientationProperty2 = particles2->getProperty(ParticlesObject::OrientationProperty)) {
                     const auto* q2 = orientationProperty2.cbegin();
                     for(auto* qout = outputOrientations.begin(), *qend = qout + std::min(outputOrientations.size(), orientationProperty2.size()); qout != qend; ++qout, ++q2) {
                         qout->x() += q2->x();
@@ -556,7 +556,7 @@ void SmoothTrajectoryModifier::averageState(PipelineFlowState& state1, const std
                 PropertyObject* property1 = static_object_cast<PropertyObject>(accessor1.buffer());
                 const PropertyObject* property2 = (property1->type() != 0) ? particles2->getProperty(property1->type()) : particles2->getProperty(property1->name());
                 if(property2 && property2->dataType() == accessor1.dataType() && property2->componentCount() == accessor1.componentCount()) {
-                    ConstBufferAccess<float> accessor2(property2);
+                    BufferAccess<const float> accessor2(property2);
                     const auto* v2 = accessor2.cbegin();
                     for(auto* vout = accessor1.begin(), *vend = vout + std::min(accessor1.size(), accessor2.size()); vout != vend; ++vout, ++v2) {
                         *vout += *v2;
@@ -567,7 +567,7 @@ void SmoothTrajectoryModifier::averageState(PipelineFlowState& state1, const std
                 PropertyObject* property1 = static_object_cast<PropertyObject>(accessor1.buffer());
                 const PropertyObject* property2 = (property1->type() != 0) ? particles2->getProperty(property1->type()) : particles2->getProperty(property1->name());
                 if(property2 && property2->dataType() == accessor1.dataType() && property2->componentCount() == accessor1.componentCount()) {
-                    ConstBufferAccess<double> accessor2(property2);
+                    BufferAccess<const double> accessor2(property2);
                     const auto* v2 = accessor2.cbegin();
                     for(auto* vout = accessor1.begin(), *vend = vout + std::min(accessor1.size(), accessor2.size()); vout != vend; ++vout, ++v2) {
                         *vout += *v2;

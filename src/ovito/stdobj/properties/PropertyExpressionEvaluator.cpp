@@ -132,7 +132,8 @@ void PropertyExpressionEvaluator::registerPropertyVariables(const std::vector<Co
         else
             continue;
         v.variableClass = variableClass;
-        v.propertyArray = property.get();
+        v.propertyRef = property;
+        v.propertyAccess = property.get();
 
         // Derive a valid variable name from the property name by removing all invalid characters.
         QString propertyName = property->name();
@@ -154,8 +155,8 @@ void PropertyExpressionEvaluator::registerPropertyVariables(const std::vector<Co
                 v.name = namePrefix + convertQString(fullPropertyName);
 
             // Initialize data pointer into property storage.
-            v.dataPointer = v.propertyArray.cdata(k);
-            v.stride = v.propertyArray.stride();
+            v.dataPointer = v.propertyAccess.cdata(k);
+            v.stride = v.propertyAccess.stride();
 
             // Register variable.
             addVariable(v);
@@ -380,23 +381,23 @@ void PropertyExpressionEvaluator::ExpressionVariable::updateValue(size_t element
 
     switch(type) {
     case FLOAT32_PROPERTY:
-        if(elementIndex < propertyArray.size())
+        if(elementIndex < propertyAccess.size())
             value = *reinterpret_cast<const float*>(dataPointer + stride * elementIndex);
         break;
     case FLOAT64_PROPERTY:
-        if(elementIndex < propertyArray.size())
+        if(elementIndex < propertyAccess.size())
             value = *reinterpret_cast<const double*>(dataPointer + stride * elementIndex);
         break;
     case INT8_PROPERTY:
-        if(elementIndex < propertyArray.size())
+        if(elementIndex < propertyAccess.size())
             value = *reinterpret_cast<const int8_t*>(dataPointer + stride * elementIndex);
         break;
     case INT32_PROPERTY:
-        if(elementIndex < propertyArray.size())
+        if(elementIndex < propertyAccess.size())
             value = *reinterpret_cast<const int32_t*>(dataPointer + stride * elementIndex);
         break;
     case INT64_PROPERTY:
-        if(elementIndex < propertyArray.size())
+        if(elementIndex < propertyAccess.size())
             value = *reinterpret_cast<const int64_t*>(dataPointer + stride * elementIndex);
         break;
     case ELEMENT_INDEX:

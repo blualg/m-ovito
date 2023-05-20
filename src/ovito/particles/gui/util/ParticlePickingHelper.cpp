@@ -45,7 +45,7 @@ bool ParticlePickingHelper::pickParticle(ViewportWindowInterface* vpwin, const Q
         ParticlePickInfo* pickInfo = dynamic_object_cast<ParticlePickInfo>(vpPickResult.pickInfo());
         if(pickInfo) {
             const ParticlesObject* particles = pickInfo->particles();
-            ConstBufferAccess<Point3> posProperty = particles->expectProperty(ParticlesObject::PositionProperty);
+            BufferAccess<const Point3> posProperty = particles->expectProperty(ParticlesObject::PositionProperty);
             size_t particleIndex = pickInfo->particleIndexFromSubObjectID(vpPickResult.subobjectId());
             if(posProperty && particleIndex < posProperty.size()) {
                 // Save reference to the selected particle.
@@ -57,7 +57,7 @@ bool ParticlePickingHelper::pickParticle(ViewportWindowInterface* vpwin, const Q
                 result.worldPos = result.objNode->getWorldTransform(time, iv) * result.localPos;
 
                 // Determine particle ID.
-                ConstBufferAccess<IdentifierIntType> identifierProperty = particles->getProperty(ParticlesObject::IdentifierProperty);
+                BufferAccess<const IdentifierIntType> identifierProperty = particles->getProperty(ParticlesObject::IdentifierProperty);
                 if(identifierProperty && result.particleIndex < identifierProperty.size()) {
                     result.particleId = identifierProperty[result.particleIndex];
                 }
@@ -90,7 +90,7 @@ void ParticlePickingHelper::renderSelectionMarker(Viewport* vp, SceneRenderer* r
     // If particle selection is based on ID, find particle with the given ID.
     size_t particleIndex = pickRecord.particleIndex;
     if(pickRecord.particleId >= 0) {
-        if(ConstBufferAccess<IdentifierIntType> identifierProperty = particles->getProperty(ParticlesObject::IdentifierProperty)) {
+        if(BufferAccess<const IdentifierIntType> identifierProperty = particles->getProperty(ParticlesObject::IdentifierProperty)) {
             if(particleIndex >= identifierProperty.size() || identifierProperty[particleIndex] != pickRecord.particleId) {
                 auto iter = boost::find(identifierProperty, pickRecord.particleId);
                 if(iter == identifierProperty.cend()) return;

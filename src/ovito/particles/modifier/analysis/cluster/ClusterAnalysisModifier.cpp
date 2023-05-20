@@ -118,7 +118,7 @@ Future<AsynchronousModifier::EnginePtr> ClusterAnalysisModifier::createEngine(co
             // Use the per-type masses only if there is at least one type having a positive mass.
             if(!massMap.empty() && boost::algorithm::any_of(massMap, [](const auto& i) { return i.second > 0; })) {
                 PropertyPtr massProperty = ParticlesObject::OOClass().createStandardProperty(DataBuffer::Uninitialized, particles->elementCount(), ParticlesObject::MassProperty);
-                boost::transform(ConstBufferAccess<int32_t>(typeProperty), BufferAccess<FloatType>(massProperty).begin(), [&](int32_t t) {
+                boost::transform(BufferAccess<const int32_t>(typeProperty), BufferAccess<FloatType>(massProperty).begin(), [&](int32_t t) {
                     auto iter = massMap.find(t);
                     if(iter != massMap.end()) return iter->second;
                     return FloatType(0);
@@ -130,11 +130,11 @@ Future<AsynchronousModifier::EnginePtr> ClusterAnalysisModifier::createEngine(co
         // Extra check: When per-particle weights are being used, make sure they are not all zero.
         if(masses && masses->size() != 0) {
             if(!selectionProperty) {
-                if(!boost::algorithm::any_of(ConstBufferAccess<FloatType>(masses), [](FloatType mass) { return mass != 0; }))
+                if(!boost::algorithm::any_of(BufferAccess<const FloatType>(masses), [](FloatType mass) { return mass != 0; }))
                     throw Exception(tr("Cannot compute center of mass or radius of gyration if all particle masses are zero. Please check correctness of per-particle and per-type mass values in input dataset."));
             }
             else {
-                if(!boost::algorithm::any_of(boost::combine(ConstBufferAccess<FloatType>(masses), ConstBufferAccess<SelectionIntType>(selectionProperty)), [](const boost::tuple<FloatType, SelectionIntType>& item) { return item.get<1>() && item.get<0>() != 0; }))
+                if(!boost::algorithm::any_of(boost::combine(BufferAccess<const FloatType>(masses), BufferAccess<const SelectionIntType>(selectionProperty)), [](const boost::tuple<FloatType, SelectionIntType>& item) { return item.get<1>() && item.get<0>() != 0; }))
                     throw Exception(tr("Cannot compute center of mass or radius of gyration if all particle masses are zero. Please check correctness of per-particle and per-type mass values in input dataset."));
             }
         }
@@ -206,11 +206,11 @@ void ClusterAnalysisModifier::ClusterAnalysisEngine::perform()
         _radiiOfGyration->resize(centersOfMass.size(), true);
         _gyrationTensors->resize(centersOfMass.size(), true);
         BufferAccess<FloatType> radiiOfGyration(_radiiOfGyration);
-        BufferAccess<FloatType,true> gyrationTensors(_gyrationTensors);
+        BufferAccess<FloatType*> gyrationTensors(_gyrationTensors);
         std::vector<FloatType> clusterMass(centersOfMass.size(), 0.0);
-        ConstBufferAccess<FloatType> particleMassesData(_masses);
-        ConstBufferAccess<int64_t> particleClusters(this->particleClusters());
-        ConstBufferAccess<Point3> unwrappedCoordinates(_unwrappedPositions);
+        BufferAccess<const FloatType> particleMassesData(_masses);
+        BufferAccess<const int64_t> particleClusters(this->particleClusters());
+        BufferAccess<const Point3> unwrappedCoordinates(_unwrappedPositions);
         OVITO_ASSERT(unwrappedCoordinates);
 
         // Visit all input particles again.
@@ -269,12 +269,12 @@ void ClusterAnalysisModifier::ClusterAnalysisEngine::perform()
 
             // If any particles have been unwrapped by the modifier, update the PBC vectors
             // of the incident bonds accordingly.
-            ConstBufferAccess<Point3> positionsArray(positions());
-            ConstBufferAccess<Point3> unwrappedPositionsArray(_unwrappedPositions);
+            BufferAccess<const Point3> positionsArray(positions());
+            BufferAccess<const Point3> unwrappedPositionsArray(_unwrappedPositions);
             const AffineTransformation inverseSimCell = cell()->inverseMatrix();
             BufferAccess<Vector3I> pbcArray(_periodicImageBondProperty);
             Vector3I* pbcVec = pbcArray.begin();
-            for(const ParticleIndexPair& bond : ConstBufferAccess<ParticleIndexPair>(bondTopology())) {
+            for(const ParticleIndexPair& bond : BufferAccess<const ParticleIndexPair>(bondTopology())) {
                 if((size_t)bond[0] < positionsArray.size() && (size_t)bond[1] < positionsArray.size()) {
                     Vector3 s1 = unwrappedPositionsArray[bond[0]] - positionsArray[bond[0]];
                     Vector3 s2 = unwrappedPositionsArray[bond[1]] - positionsArray[bond[1]];
@@ -295,7 +295,7 @@ void ClusterAnalysisModifier::ClusterAnalysisEngine::perform()
     // Determine cluster sizes.
     _clusterSizes->resize(numClusters(), true);
     BufferAccess<int64_t> clusterSizeArray(_clusterSizes);
-    for(auto id : ConstBufferAccess<int64_t>(particleClusters())) {
+    for(auto id : BufferAccess<const int64_t>(particleClusters())) {
         if(id != 0)
             clusterSizeArray[id-1]++;
     }
@@ -364,9 +364,9 @@ void ClusterAnalysisModifier::CutoffClusterAnalysisEngine::doClustering(std::vec
     size_t progress = 0;
 
     BufferAccess<int64_t> particleClusters(this->particleClusters());
-    ConstBufferAccess<SelectionIntType> selectionData(selection());
+    BufferAccess<const SelectionIntType> selectionData(selection());
     BufferAccess<Point3> unwrappedCoordinates(_unwrappedPositions);
-    ConstBufferAccess<FloatType> particleMassesData(_masses);
+    BufferAccess<const FloatType> particleMassesData(_masses);
 
     std::deque<size_t> toProcess;
     for(size_t seedParticleIndex = 0; seedParticleIndex < particleCount; seedParticleIndex++) {
@@ -443,10 +443,10 @@ void ClusterAnalysisModifier::BondClusterAnalysisEngine::doClustering(std::vecto
     ParticleBondMap bondMap(bondTopology());
 
     BufferAccess<int64_t> particleClusters(this->particleClusters());
-    ConstBufferAccess<SelectionIntType> selectionData(this->selection());
-    ConstBufferAccess<ParticleIndexPair> bondTopology(this->bondTopology());
+    BufferAccess<const SelectionIntType> selectionData(this->selection());
+    BufferAccess<const ParticleIndexPair> bondTopology(this->bondTopology());
     BufferAccess<Point3> unwrappedCoordinates(_unwrappedPositions);
-    ConstBufferAccess<FloatType> particleMassesData(_masses);
+    BufferAccess<const FloatType> particleMassesData(_masses);
 
     std::deque<size_t> toProcess;
     for(size_t seedParticleIndex = 0; seedParticleIndex < particleCount; seedParticleIndex++) {
@@ -549,7 +549,7 @@ void ClusterAnalysisModifier::ClusterAnalysisEngine::applyResults(const Modifier
 
         // Assign colors to particles according to the clusters they belong to.
         BufferAccess<ColorG> colorsArray = particles->createProperty(ParticlesObject::ColorProperty);
-        boost::transform(ConstBufferAccess<int64_t>(particleClusters()), colorsArray.begin(), [&](int64_t cluster) {
+        boost::transform(BufferAccess<const int64_t>(particleClusters()), colorsArray.begin(), [&](int64_t cluster) {
             OVITO_ASSERT(cluster >= 0 && (size_t)cluster < clusterColors.size());
             return clusterColors[cluster];
         });

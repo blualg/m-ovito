@@ -325,8 +325,8 @@ void InteractiveMolecularDynamicsModifier::evaluateSynchronous(const ModifierEva
     if(outputParticles->bonds()) {
         if(const SimulationCellObject* cell = state.getObject<SimulationCellObject>()) {
             if(cell->hasPbcCorrected()) {
-                if(ConstBufferAccess<ParticleIndexPair> topologyProperty = outputParticles->bonds()->getProperty(BondsObject::TopologyProperty)) {
-                    ConstBufferAccess<Point3> positions(_coordinates);
+                if(BufferAccess<const ParticleIndexPair> topologyProperty = outputParticles->bonds()->getProperty(BondsObject::TopologyProperty)) {
+                    BufferAccess<const Point3> positions(_coordinates);
                     BufferAccess<Vector3I> periodicImageProperty = outputParticles->makeBondsMutable()->createProperty(DataBuffer::Initialized, BondsObject::PeriodicImageProperty);
                     // Recompute PBC vectors of bonds as particle may have moved over arbitrary distances.
                     parallelForChunks(topologyProperty.size(), [&](size_t startIndex, size_t count) {

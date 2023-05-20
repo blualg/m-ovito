@@ -34,7 +34,6 @@
 #include "GrainSegmentationModifier.h"
 
 #include <boost/intrusive/rbtree_algorithms.hpp>
-#include <boost/range/algorithm.hpp>
 #include <unordered_set>
 
 namespace Ovito::CrystalAnalysis {
@@ -267,7 +266,7 @@ public:
     class InterfaceHandler
     {
     public:
-        InterfaceHandler(ConstBufferAccess<PTMAlgorithm::StructureType> structuresArray) {
+        InterfaceHandler(BufferAccess<const PTMAlgorithm::StructureType> structuresArray) {
 
             // Count structure types
             int structureCounts[PTMAlgorithm::NUM_STRUCTURE_TYPES] = {0};

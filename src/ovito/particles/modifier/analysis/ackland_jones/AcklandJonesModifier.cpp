@@ -89,7 +89,7 @@ void AcklandJonesModifier::AcklandJonesAnalysisEngine::perform()
         });
     }
     else {
-        ConstBufferAccess<SelectionIntType> selectionData(selection());
+        BufferAccess<const SelectionIntType> selectionData(selection());
         parallelForWithProgress(positions()->size(), [&](size_t index) {
             // Skip particles that are not included in the analysis.
             if(selectionData[index])

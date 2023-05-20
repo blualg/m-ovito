@@ -303,7 +303,7 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
                 columnParser.reset();
 
                 // Range-check atom types.
-                for(auto t : ConstBufferAccess<int32_t>(particles()->expectProperty(ParticlesObject::TypeProperty))) {
+                for(auto t : BufferAccess<const int32_t>(particles()->expectProperty(ParticlesObject::TypeProperty))) {
                     if(t < 1 || t > natomtypes)
                         throw Exception(tr("Atom type %1 is out of range in Atoms section of LAMMPS data file. Number of types is %2.").arg(t).arg(natomtypes));
                 }
@@ -311,7 +311,7 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
                 // Build lookup map of atom identifiers.
                 atomIdMap.reserve(natoms);
                 size_t index = 0;
-                for(auto id : ConstBufferAccess<IdentifierIntType>(particles()->expectProperty(ParticlesObject::IdentifierProperty))) {
+                for(auto id : BufferAccess<const IdentifierIntType>(particles()->expectProperty(ParticlesObject::IdentifierProperty))) {
                     atomIdMap.emplace(id, index++);
                 }
 
@@ -335,7 +335,7 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
             columnMapping[0].unmap();
 
             // Access the atomic IDs.
-            ConstBufferAccess<IdentifierIntType> identifierProperty = particles()->getProperty(ParticlesObject::IdentifierProperty);
+            BufferAccess<const IdentifierIntType> identifierProperty = particles()->getProperty(ParticlesObject::IdentifierProperty);
             if(!identifierProperty)
                 throw Exception(tr("Atoms section must precede Velocities section in data file (error in line %1).").arg(stream.lineNumber()));
 
@@ -456,7 +456,7 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
         else if(keyword.startsWith("Bonds")) {
 
             // Get the atomic IDs, which have already been read.
-            ConstBufferAccess<IdentifierIntType> identifierProperty = particles()->getProperty(ParticlesObject::IdentifierProperty);
+            BufferAccess<const IdentifierIntType> identifierProperty = particles()->getProperty(ParticlesObject::IdentifierProperty);
             if(!identifierProperty)
                 throw Exception(tr("Atoms section must precede Bonds section in data file (error in line %1).").arg(stream.lineNumber()));
 
@@ -531,7 +531,7 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
         else if(keyword.startsWith("Angles")) {
 
             // Get the atomic IDs, which have already been read.
-            ConstBufferAccess<IdentifierIntType> identifierProperty = particles()->getProperty(ParticlesObject::IdentifierProperty);
+            BufferAccess<const IdentifierIntType> identifierProperty = particles()->getProperty(ParticlesObject::IdentifierProperty);
             if(!identifierProperty)
                 throw Exception(tr("Atoms section must precede Angles section in data file (error in line %1).").arg(stream.lineNumber()));
 
@@ -593,7 +593,7 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
         else if(keyword.startsWith("Dihedrals")) {
 
             // Get the atomic IDs, which have already been read.
-            ConstBufferAccess<IdentifierIntType> identifierProperty = particles()->getProperty(ParticlesObject::IdentifierProperty);
+            BufferAccess<const IdentifierIntType> identifierProperty = particles()->getProperty(ParticlesObject::IdentifierProperty);
             if(!identifierProperty)
                 throw Exception(tr("Atoms section must precede Dihedrals section in data file (error in line %1).").arg(stream.lineNumber()));
 
@@ -655,7 +655,7 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
         else if(keyword.startsWith("Impropers")) {
 
             // Get the atomic IDs, which have already been read.
-            ConstBufferAccess<IdentifierIntType> identifierProperty = particles()->getProperty(ParticlesObject::IdentifierProperty);
+            BufferAccess<const IdentifierIntType> identifierProperty = particles()->getProperty(ParticlesObject::IdentifierProperty);
             if(!identifierProperty)
                 throw Exception(tr("Atoms section must precede Impropers section in data file (error in line %1).").arg(stream.lineNumber()));
 
@@ -717,7 +717,7 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
         else if(keyword.startsWith("Ellipsoids")) {
 
             // Get the atomic IDs, which have already been read.
-            ConstBufferAccess<IdentifierIntType> identifierProperty = particles()->getProperty(ParticlesObject::IdentifierProperty);
+            BufferAccess<const IdentifierIntType> identifierProperty = particles()->getProperty(ParticlesObject::IdentifierProperty);
             if(!identifierProperty)
                 throw Exception(tr("Atoms section must precede Ellipsoids section in data file (error in line %1).").arg(stream.lineNumber()));
 
@@ -781,7 +781,7 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
     // Assign masses to particles based on their type.
     if(hasTypeMasses && !particles()->getProperty(ParticlesObject::MassProperty)) {
         BufferAccess<FloatType> massProperty = particles()->createProperty(ParticlesObject::MassProperty);
-        boost::transform(ConstBufferAccess<int32_t>(typeProperty), massProperty.begin(), [&](auto atomType) {
+        boost::transform(BufferAccess<const int32_t>(typeProperty), massProperty.begin(), [&](auto atomType) {
             return massTable[atomType - 1];
         });
     }

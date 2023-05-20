@@ -233,7 +233,7 @@ void VoronoiAnalysisModifier::VoronoiAnalysisEngine::perform()
         BufferAccess<IdentifierIntType> centerParticleProperty = polyhedraMesh.createRegionProperty(DataBuffer::Initialized, QStringLiteral("Particle Identifier"), DataBuffer::IntIdentifier);
         if(_particleIdentifiers) {
             OVITO_ASSERT(centerParticleProperty.size() == _particleIdentifiers->size());
-            boost::copy(ConstBufferAccess<IdentifierIntType>(_particleIdentifiers), centerParticleProperty.begin());
+            boost::copy(BufferAccess<const IdentifierIntType>(_particleIdentifiers), centerParticleProperty.begin());
         }
         else {
             boost::algorithm::iota_n(centerParticleProperty.begin(), IdentifierIntType{1}, centerParticleProperty.size());
@@ -276,8 +276,8 @@ void VoronoiAnalysisModifier::VoronoiAnalysisEngine::perform()
     BufferAccess<int32_t> maxFaceOrdersArray(maxFaceOrders());
 
     // Prepare input data array.
-    ConstBufferAccess<SelectionIntType> selectionArray(_selection);
-    ConstBufferAccess<Point3> positionsArray(_positions);
+    BufferAccess<const SelectionIntType> selectionArray(_selection);
+    BufferAccess<const Point3> positionsArray(_positions);
 
     auto processCell = [&](voro::voronoicell_neighbor& v, size_t index,
         std::vector<int>& voronoiBuffer, std::vector<size_t>& voronoiBufferIndex, QMutex* bondMutex)
@@ -497,7 +497,7 @@ void VoronoiAnalysisModifier::VoronoiAnalysisEngine::perform()
                     (int)std::ceil(voro::optimal_particles));
 
             // Insert particles into Voro++ container.
-            ConstBufferAccess<GraphicsFloatType> radiusArray(_radii);
+            BufferAccess<const GraphicsFloatType> radiusArray(_radii);
             for(size_t index = 0; index < positionsArray.size(); index++) {
                 // Skip unselected particles (if requested).
                 if(selectionArray && selectionArray[index] == 0)
@@ -555,7 +555,7 @@ void VoronoiAnalysisModifier::VoronoiAnalysisEngine::perform()
 
         QMutex bondMutex;
         QMutex indexMutex;
-        ConstBufferAccess<GraphicsFloatType> radiusArray(_radii);
+        BufferAccess<const GraphicsFloatType> radiusArray(_radii);
 
         // Perform analysis, particle-wise parallel.
         setProgressMaximum(_positions->size());
@@ -626,7 +626,7 @@ void VoronoiAnalysisModifier::VoronoiAnalysisEngine::perform()
     if(maxFaceOrders()) {
         size_t componentCount = qBound(1, _maxFaceOrder.load(), FaceOrderStorageLimit);
         _voronoiIndices = ParticlesObject::OOClass().createUserProperty(DataBuffer::Initialized, _positions->size(), PropertyObject::Int32, componentCount, QStringLiteral("Voronoi Index"));
-        BufferAccess<int32_t,true> voronoiIndicesArray(_voronoiIndices);
+        BufferAccess<int32_t*> voronoiIndicesArray(_voronoiIndices);
         auto indexData = voronoiBuffer.cbegin();
         for(size_t particleIndex : voronoiBufferIndex) {
             size_t c = std::min(maxFaceOrdersArray[particleIndex], FaceOrderStorageLimit);
@@ -666,7 +666,7 @@ void VoronoiAnalysisModifier::VoronoiAnalysisEngine::perform()
         std::iota(parents.begin(), parents.end(), (SurfaceMesh::vertex_index)0);
 
         // Iterate over all Voronoi faces.
-        ConstBufferAccess<int32_t> adjacentCellArray(adjacentCellProperty);
+        BufferAccess<const int32_t> adjacentCellArray(adjacentCellProperty);
         for(SurfaceMesh::face_index face = 0; face < polyhedraMesh.faceCount(); face++) {
             if(!setProgressValueIntermittent(face)) return;
             SurfaceMesh::region_index region = faceGrower->faceRegion(face);

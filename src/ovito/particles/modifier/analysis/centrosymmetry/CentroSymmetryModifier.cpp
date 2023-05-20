@@ -110,7 +110,7 @@ void CentroSymmetryModifier::CentroSymmetryEngine::perform()
     BufferAccess<FloatType> cspArray(csp());
 
     // Perform analysis on each particle.
-    ConstBufferAccess<SelectionIntType> selectionData(selection());
+    BufferAccess<const SelectionIntType> selectionData(selection());
     parallelForWithProgress(positions()->size(), [&](size_t index) {
         if(!selectionData || selectionData[index])
             cspArray[index] = computeCSP(neighFinder, index, _mode);

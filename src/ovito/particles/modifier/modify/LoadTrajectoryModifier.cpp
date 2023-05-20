@@ -146,8 +146,8 @@ void LoadTrajectoryModifier::applyTrajectoryState(PipelineFlowState& state, cons
 
         // Build particle-to-particle index map.
         std::vector<size_t> indexToIndexMap(particles->elementCount());
-        ConstBufferAccess<IdentifierIntType> identifierProperty = particles->getProperty(ParticlesObject::IdentifierProperty);
-        ConstBufferAccess<IdentifierIntType> trajIdentifierProperty = trajectoryParticles->getProperty(ParticlesObject::IdentifierProperty);
+        BufferAccess<const IdentifierIntType> identifierProperty = particles->getProperty(ParticlesObject::IdentifierProperty);
+        BufferAccess<const IdentifierIntType> trajIdentifierProperty = trajectoryParticles->getProperty(ParticlesObject::IdentifierProperty);
         if(identifierProperty && trajIdentifierProperty) {
 
             // Build map of particle identifiers in trajectory dataset.
@@ -283,11 +283,11 @@ void LoadTrajectoryModifier::applyTrajectoryState(PipelineFlowState& state, cons
             // stored in wrapped coordinates, then it becomes necessary to fix bonds using the minimum image convention.
             std::array<bool, 3> pbc = topologyCell->pbcFlags();
             if((pbc[0] || pbc[1] || pbc[2]) && particles->bonds() && std::abs(simCell.determinant()) > FLOATTYPE_EPSILON) {
-                ConstBufferAccess<Point3> outputPosProperty = particles->expectProperty(ParticlesObject::PositionProperty);
+                BufferAccess<const Point3> outputPosProperty = particles->expectProperty(ParticlesObject::PositionProperty);
                 AffineTransformation inverseCellMatrix = simCell.inverse();
 
                 BondsObject* bonds = particles->makeBondsMutable();
-                if(ConstBufferAccess<ParticleIndexPair> topologyProperty = bonds->getProperty(BondsObject::TopologyProperty)) {
+                if(BufferAccess<const ParticleIndexPair> topologyProperty = bonds->getProperty(BondsObject::TopologyProperty)) {
                     BufferAccess<Vector3I> periodicImageProperty = bonds->createProperty(DataBuffer::Initialized, BondsObject::PeriodicImageProperty);
 
                     // Wrap bonds crossing a periodic boundary by resetting their PBC shift vectors.
@@ -340,7 +340,7 @@ void LoadTrajectoryModifier::applyTrajectoryState(PipelineFlowState& state, cons
             if(bondParticleIdentifiers) {
                 // Build map from particle identifiers to particle indices.
                 std::map<IdentifierIntType, size_t> idToIndexMap;
-                if(ConstBufferAccess<IdentifierIntType> particleIdentifierProperty = particles->getProperty(ParticlesObject::IdentifierProperty)) {
+                if(BufferAccess<const IdentifierIntType> particleIdentifierProperty = particles->getProperty(ParticlesObject::IdentifierProperty)) {
                     size_t index = 0;
                     for(auto id : particleIdentifierProperty) {
                         if(idToIndexMap.insert(std::make_pair(id, index++)).second == false)
@@ -356,7 +356,7 @@ void LoadTrajectoryModifier::applyTrajectoryState(PipelineFlowState& state, cons
                 // Perform lookup of particle IDs.
                 BufferAccess<ParticleIndexPair> bondTopologyArray = particles->makeBondsMutable()->createProperty(BondsObject::TopologyProperty);
                 auto t = bondTopologyArray.begin();
-                for(const ParticleIndexPair& bond : ConstBufferAccess<ParticleIndexPair>(bondParticleIdentifiers)) {
+                for(const ParticleIndexPair& bond : BufferAccess<const ParticleIndexPair>(bondParticleIdentifiers)) {
                     auto iter1 = idToIndexMap.find(bond[0]);
                     auto iter2 = idToIndexMap.find(bond[1]);
                     if(iter1 == idToIndexMap.end())

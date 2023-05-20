@@ -227,7 +227,7 @@ QVariant PropertyInspectionApplet::PropertyTableModel::data(const QModelIndex& i
             for(size_t component = 0; component < property->componentCount(); component++) {
                 if(component != 0) str += QStringLiteral(" ");
                 if(property->dataType() == PropertyObject::Int32) {
-                    ConstBufferAccess<int32_t, true> data(property);
+                    BufferAccess<const int32_t*> data(property);
                     str += QString::number(data.get(elementIndex, component));
                     if(property->elementTypes().empty() == false) {
                         if(const ElementType* ptype = property->elementType(data.get(elementIndex, component))) {
@@ -237,19 +237,19 @@ QVariant PropertyInspectionApplet::PropertyTableModel::data(const QModelIndex& i
                     }
                 }
                 else if(property->dataType() == PropertyObject::Int64) {
-                    ConstBufferAccess<int64_t, true> data(property);
+                    BufferAccess<const int64_t*> data(property);
                     str += QString::number(data.get(elementIndex, component));
                 }
                 else if(property->dataType() == PropertyObject::Int8) {
-                    ConstBufferAccess<int8_t, true> data(property);
+                    BufferAccess<const int8_t*> data(property);
                     str += QString::number(data.get(elementIndex, component));
                 }
                 else if(property->dataType() == PropertyObject::Float32) {
-                    ConstBufferAccess<float, true> data(property);
+                    BufferAccess<const float*> data(property);
                     str += QString::number(data.get(elementIndex, component));
                 }
                 else if(property->dataType() == PropertyObject::Float64) {
-                    ConstBufferAccess<double, true> data(property);
+                    BufferAccess<const double*> data(property);
                     str += QString::number(data.get(elementIndex, component));
                 }
             }
@@ -263,12 +263,12 @@ QVariant PropertyInspectionApplet::PropertyTableModel::data(const QModelIndex& i
         if(elementIndex < property->size()) {
             if(_applet->isColorProperty(property)) {
                 if(property->dataType() == DataBuffer::Float32)
-                    return static_cast<QColor>(ConstBufferAccess<ColorT<float>>(property)[elementIndex]);
+                    return static_cast<QColor>(BufferAccess<const ColorT<float>>(property)[elementIndex]);
                 else if(property->dataType() == DataBuffer::Float64)
-                    return static_cast<QColor>(ConstBufferAccess<ColorT<double>>(property)[elementIndex]);
+                    return static_cast<QColor>(BufferAccess<const ColorT<double>>(property)[elementIndex]);
             }
             else if(property->dataType() == PropertyObject::Int32 && property->componentCount() == 1 && property->elementTypes().empty() == false) {
-                ConstBufferAccess<int32_t> data(property);
+                BufferAccess<const int32_t> data(property);
                 if(const ElementType* ptype = property->elementType(data[elementIndex]))
                     return static_cast<QColor>(ptype->color());
             }

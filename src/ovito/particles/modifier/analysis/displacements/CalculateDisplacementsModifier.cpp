@@ -104,8 +104,8 @@ void CalculateDisplacementsModifier::DisplacementEngine::perform()
 
     BufferAccess<Vector3> displacementsArray(displacements());
     BufferAccess<FloatType> displacementMagnitudesArray(displacementMagnitudes());
-    ConstBufferAccess<Point3> positionsArray(positions());
-    ConstBufferAccess<Point3> refPositionsArray(refPositions());
+    BufferAccess<const Point3> positionsArray(positions());
+    BufferAccess<const Point3> refPositionsArray(refPositions());
 
     // Compute displacement vectors.
     if(affineMapping() != NO_MAPPING) {

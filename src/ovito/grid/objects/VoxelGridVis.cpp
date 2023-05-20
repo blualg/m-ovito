@@ -115,7 +115,7 @@ PipelineStatus VoxelGridVis::render(AnimationTime time, const ConstDataObjectPat
 
     // Look for 'Color' voxel property.
     const PropertyObject* colorProperty = gridObj->getProperty(VoxelGrid::ColorProperty);
-    ConstBufferAccess<ColorG> colorArray(colorProperty);
+    BufferAccess<const ColorG> colorArray(colorProperty);
 
     // Look for selected pseudo-coloring property.
     const PropertyObject* pseudoColorProperty = nullptr;
@@ -133,7 +133,7 @@ PipelineStatus VoxelGridVis::render(AnimationTime time, const ConstDataObjectPat
             pseudoColorPropertyComponent = std::max(0, colorMapping()->sourceProperty().vectorComponent());
         }
     }
-    ConstBufferAccess<void,true> pseudoColorArray(pseudoColorProperty);
+    BufferReadAccess pseudoColorArray(pseudoColorProperty);
     OVITO_ASSERT(!(colorArray && pseudoColorArray));
 
     // The key type used for caching the geometry primitive:

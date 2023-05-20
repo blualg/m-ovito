@@ -184,7 +184,7 @@ void GALAMOSTImporter::FrameLoader::loadFile()
                 else if(xml.name().compare(QStringLiteral("orientation")) == 0) {
                     DataOORef<PropertyObject> directions = ParticlesObject::OOClass().createUserProperty(DataBuffer::Uninitialized, natoms, DataBuffer::FloatGraphics, 3, QStringLiteral("Direction"));
                     parsePropertyData(xml, directions);
-                    ConstBufferAccess<Vector3G> directionsAccess(directions);
+                    BufferAccess<const Vector3G> directionsAccess(directions);
                     const auto* dir = directionsAccess.cbegin();
                     for(auto& q : BufferAccess<QuaternionG>(particles()->createProperty(ParticlesObject::OrientationProperty))) {
                         if(!dir->isZero()) {
@@ -221,7 +221,7 @@ void GALAMOSTImporter::FrameLoader::loadFile()
                     const PropertyObject* typeProperty = particles()->getProperty(ParticlesObject::TypeProperty);
                     if(!typeProperty)
                         throw Exception(tr("GALAMOST file parsing error. <%1> element must appear after <type> element.").arg(xml.name()));
-                    ConstBufferAccess<int32_t> typeAccess(typeProperty);
+                    BufferAccess<const int32_t> typeAccess(typeProperty);
                     std::vector<Vector3G> typesAsphericalShape;
                     while(!stream.atEnd()) {
                         QString typeName;
@@ -319,17 +319,17 @@ PropertyObject* GALAMOSTImporter::FrameLoader::parsePropertyData(QXmlStreamReade
     QTextStream stream(&text, QIODevice::ReadOnly | QIODevice::Text);
 
     if(property->dataType() == DataBuffer::Float32) {
-        BufferAccess<float, true> array(property);
+        BufferAccess<float*> array(property);
         for(float& v : array.range())
             stream >> v;
     }
     else if(property->dataType() == DataBuffer::Float64) {
-        BufferAccess<double, true> array(property);
+        BufferAccess<double*> array(property);
         for(double& v : array.range())
             stream >> v;
     }
     else if(property->dataType() == DataBuffer::Int8) {
-        BufferAccess<int8_t, true> array(property);
+        BufferAccess<int8_t*> array(property);
         for(int8_t& v : array.range()) {
             int vi;
             stream >> vi;
@@ -337,12 +337,12 @@ PropertyObject* GALAMOSTImporter::FrameLoader::parsePropertyData(QXmlStreamReade
         }
     }
     else if(property->dataType() == DataBuffer::Int32) {
-        BufferAccess<int32_t, true> array(property);
+        BufferAccess<int32_t*> array(property);
         for(int32_t& v : array.range())
             stream >> v;
     }
     else if(property->dataType() == DataBuffer::Int64) {
-        BufferAccess<int64_t, true> array(property);
+        BufferAccess<int64_t*> array(property);
         for(int64_t& v : array.range())
             stream >> v;
     }

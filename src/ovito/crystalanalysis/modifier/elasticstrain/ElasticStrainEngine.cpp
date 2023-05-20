@@ -86,7 +86,7 @@ void ElasticStrainEngine::perform()
 
     nextProgressSubStep();
 
-    ConstBufferAccess<Point3> positionsArray(positions());
+    BufferAccess<const Point3> positionsArray(positions());
     BufferAccess<Matrix3> deformationGradientsArray(deformationGradients());
     BufferAccess<SymmetricTensor2> strainTensorsArray(strainTensors());
     BufferAccess<FloatType> volumetricStrainsArray(volumetricStrains());

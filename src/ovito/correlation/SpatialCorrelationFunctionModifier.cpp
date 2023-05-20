@@ -222,11 +222,11 @@ std::vector<FloatType> SpatialCorrelationFunctionModifier::CorrelationAnalysisEn
     const std::array<bool, 3> pbc = cell()->pbcFlagsCorrected();
 
     if(!property || property->size() > 0) {
-        ConstBufferAccess<Point3> positionsArray(positions());
+        BufferAccess<const Point3> positionsArray(positions());
 
         auto helperFunc = [&](auto _) {
             using T = decltype(_);
-            ConstBufferAccess<T,true> propertyArray(property);
+            BufferAccess<const T*> propertyArray(property);
             const Point3* pos = positionsArray.cbegin();
             for(T v : propertyArray.componentRange(vecComponent)) {
                 if(std::numeric_limits<T>::is_integer || !std::isnan(v)) {
@@ -594,8 +594,8 @@ void SpatialCorrelationFunctionModifier::CorrelationAnalysisEngine::computeNeigh
         return;
 
     // Get pointers to data.
-    ConstBufferAccess<void,true> dataAccess1 = sourceProperty1();
-    ConstBufferAccess<void,true> dataAccess2 = sourceProperty2();
+    BufferReadAccess dataAccess1 = sourceProperty1();
+    BufferReadAccess dataAccess2 = sourceProperty2();
 
     // Perform analysis on each particle in parallel.
     size_t vecComponent1 = _vecComponent1;
@@ -669,8 +669,8 @@ void SpatialCorrelationFunctionModifier::CorrelationAnalysisEngine::computeNeigh
 void SpatialCorrelationFunctionModifier::CorrelationAnalysisEngine::computeLimits()
 {
     // Get pointers to data.
-    ConstBufferAccess<void,true> dataAccess1 = sourceProperty1();
-    ConstBufferAccess<void,true> dataAccess2 = sourceProperty2();
+    BufferReadAccess dataAccess1 = sourceProperty1();
+    BufferReadAccess dataAccess2 = sourceProperty2();
 
     // Compute mean and covariance values.
     FloatType mean1 = 0;

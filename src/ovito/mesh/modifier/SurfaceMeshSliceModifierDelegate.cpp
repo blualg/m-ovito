@@ -65,7 +65,7 @@ PipelineStatus SurfaceMeshSliceModifierDelegate::apply(const ModifierEvaluationR
                 else {
                     // Create a mesh vertex selection.
                     if(SurfaceMeshVertices* outputVertices = outputMesh->makeVerticesMutable()) {
-                        ConstBufferAccess<Point3> vertexPositionProperty = outputVertices->expectProperty(SurfaceMeshVertices::PositionProperty);
+                        BufferAccess<const Point3> vertexPositionProperty = outputVertices->expectProperty(SurfaceMeshVertices::PositionProperty);
                         BufferAccess<SelectionIntType> vertexSelectionProperty = outputVertices->createProperty(SurfaceMeshVertices::SelectionProperty);
                         size_t numSelectedVertices = 0;
                         boost::transform(vertexPositionProperty, vertexSelectionProperty.begin(), [&](const Point3& pos) {

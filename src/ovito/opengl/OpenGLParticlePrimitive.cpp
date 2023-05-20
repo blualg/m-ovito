@@ -24,8 +24,6 @@
 #include "OpenGLSceneRenderer.h"
 #include "OpenGLShaderHelper.h"
 
-#include <boost/range/irange.hpp>
-
 namespace Ovito {
 
 /******************************************************************************
@@ -338,24 +336,24 @@ void OpenGLSceneRenderer::renderParticlesImplementation(const ParticlePrimitive&
             std::vector<GraphicsFloatType> distances(shader.instanceCount());
             if(!primitive.indices()) {
                 if(primitive.positions()->dataType() == DataBuffer::Float64) {
-                    boost::transform(boost::irange<size_t>(0, shader.instanceCount()), distances.begin(), [direction = direction.toDataType<double>(), positionsArray = ConstBufferAccess<Vector_3<double>>(primitive.positions())](size_t i) {
+                    boost::transform(boost::irange<size_t>(0, shader.instanceCount()), distances.begin(), [direction = direction.toDataType<double>(), positionsArray = BufferAccess<const Vector_3<double>>(primitive.positions())](size_t i) {
                         return static_cast<GraphicsFloatType>(direction.dot(positionsArray[i]));
                     });
                 }
                 else if(primitive.positions()->dataType() == DataBuffer::Float32) {
-                    boost::transform(boost::irange<size_t>(0, shader.instanceCount()), distances.begin(), [direction = direction.toDataType<float>(), positionsArray = ConstBufferAccess<Vector_3<float>>(primitive.positions())](size_t i) {
+                    boost::transform(boost::irange<size_t>(0, shader.instanceCount()), distances.begin(), [direction = direction.toDataType<float>(), positionsArray = BufferAccess<const Vector_3<float>>(primitive.positions())](size_t i) {
                         return static_cast<GraphicsFloatType>(direction.dot(positionsArray[i]));
                     });
                 }
             }
             else {
                 if(primitive.positions()->dataType() == DataBuffer::Float64) {
-                    boost::transform(ConstBufferAccess<int32_t>(primitive.indices()), distances.begin(), [direction = direction.toDataType<double>(), positionsArray = ConstBufferAccess<Vector_3<double>>(primitive.positions())](size_t i) {
+                    boost::transform(BufferAccess<const int32_t>(primitive.indices()), distances.begin(), [direction = direction.toDataType<double>(), positionsArray = BufferAccess<const Vector_3<double>>(primitive.positions())](size_t i) {
                         return static_cast<GraphicsFloatType>(direction.dot(positionsArray[i]));
                     });
                 }
                 else if(primitive.positions()->dataType() == DataBuffer::Float32) {
-                    boost::transform(ConstBufferAccess<int32_t>(primitive.indices()), distances.begin(), [direction = direction.toDataType<float>(), positionsArray = ConstBufferAccess<Vector_3<float>>(primitive.positions())](size_t i) {
+                    boost::transform(BufferAccess<const int32_t>(primitive.indices()), distances.begin(), [direction = direction.toDataType<float>(), positionsArray = BufferAccess<const Vector_3<float>>(primitive.positions())](size_t i) {
                         return static_cast<GraphicsFloatType>(direction.dot(positionsArray[i]));
                     });
                 }

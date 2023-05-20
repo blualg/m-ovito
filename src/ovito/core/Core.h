@@ -120,6 +120,11 @@
 #include <boost/dynamic_bitset.hpp>
 #include <boost/container/flat_map.hpp>
 #include <boost/range/algorithm.hpp>
+#include <boost/range/algorithm_ext/is_sorted.hpp>
+#include <boost/range/irange.hpp>
+#include <boost/range/counting_range.hpp>
+#include <boost/iterator/transform_iterator.hpp>
+#include <boost/iterator/counting_iterator.hpp>
 #include <boost/algorithm/algorithm.hpp>
 #include <boost/algorithm/cxx11/all_of.hpp>
 #include <boost/algorithm/cxx11/any_of.hpp>

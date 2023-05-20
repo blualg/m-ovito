@@ -57,7 +57,7 @@ PipelineStatus SurfaceMeshAffineTransformationModifierDelegate::apply(const Modi
                     p = tm * p;
             }
             else {
-                if(ConstBufferAccess<SelectionIntType> selectionProperty = newVertices->getProperty(SurfaceMeshVertices::SelectionProperty)) {
+                if(BufferAccess<const SelectionIntType> selectionProperty = newVertices->getProperty(SurfaceMeshVertices::SelectionProperty)) {
                     // Apply transformation only to the selected vertices.
                     const auto* s = selectionProperty.cbegin();
                     for(Point3& p : positionProperty) {

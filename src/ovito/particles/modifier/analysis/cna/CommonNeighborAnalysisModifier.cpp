@@ -116,7 +116,7 @@ void CommonNeighborAnalysisModifier::AdaptiveCNAEngine::perform()
         });
     }
     else {
-        ConstBufferAccess<SelectionIntType> selectionData(selection());
+        BufferAccess<const SelectionIntType> selectionData(selection());
         parallelForWithProgress(positions()->size(), [&](size_t index) {
             // Skip particles that are not included in the analysis.
             if(selectionData[index])
@@ -152,7 +152,7 @@ void CommonNeighborAnalysisModifier::IntervalCNAEngine::perform()
         });
     }
     else {
-        ConstBufferAccess<SelectionIntType> selectionData(selection());
+        BufferAccess<const SelectionIntType> selectionData(selection());
         parallelForWithProgress(positions()->size(), [&](size_t index) {
             // Skip particles that are not included in the analysis.
             if(selectionData[index])
@@ -185,7 +185,7 @@ void CommonNeighborAnalysisModifier::FixedCNAEngine::perform()
         });
     }
     else {
-        ConstBufferAccess<SelectionIntType> selectionData(selection());
+        BufferAccess<const SelectionIntType> selectionData(selection());
         parallelForWithProgress(positions()->size(), [&](size_t index) {
             // Skip particles that are not included in the analysis.
             if(selectionData[index])
@@ -212,8 +212,8 @@ void CommonNeighborAnalysisModifier::BondCNAEngine::perform()
     // Compute per-bond CNA indices.
     bool maxNeighborLimitExceeded = false;
     bool maxCommonNeighborBondLimitExceeded = false;
-    ConstBufferAccess<ParticleIndexPair> bonds(bondTopology());
-    ConstBufferAccess<Vector3I> bondPeriodicImagesData(bondPeriodicImages());
+    BufferAccess<const ParticleIndexPair> bonds(bondTopology());
+    BufferAccess<const Vector3I> bondPeriodicImagesData(bondPeriodicImages());
     BufferAccess<Vector3I> cnaIndicesData(cnaIndices());
     parallelForWithProgress(bonds.size(), [&](size_t bondIndex) {
         size_t currentBondParticle1 = bonds[bondIndex][0];
@@ -277,7 +277,7 @@ void CommonNeighborAnalysisModifier::BondCNAEngine::perform()
 
     // Create output storage.
     BufferAccess<int32_t> output(structures());
-    ConstBufferAccess<SelectionIntType> selectionData(selection());
+    BufferAccess<const SelectionIntType> selectionData(selection());
 
     // Classify particles.
     parallelForWithProgress(positions()->size(), [&](size_t particleIndex) {

@@ -212,7 +212,7 @@ void CreateIsosurfaceModifier::ComputeIsosurfaceEngine::perform()
     setProgressText(tr("Constructing isosurface"));
 
     // Set up callback function returning the field value, which will be passed to the marching cubes algorithm.
-    ConstBufferAccess<FloatType, true> data(property());
+    BufferAccess<const FloatType*> data(property());
     auto getFieldValue = [
             _data = data.cbegin() + _vectorComponent,
             _pbcFlags = _mesh->domain() ? _mesh->domain()->pbcFlags() : std::array<bool,3>{{false,false,false}},
@@ -335,7 +335,7 @@ bool CreateIsosurfaceModifier::transferPropertiesFromGridToMesh(SurfaceMeshBuild
     OVITO_ASSERT(Task::current() && Task::current()->isProgressingTask());
 
     // Create destination properties for transferring voxel values to the surface vertices.
-    std::vector<std::pair<ConstBufferAccess<void,true>, BufferAccess<void,true>>> propertyMapping;
+    std::vector<std::pair<BufferReadAccess, BufferWriteAccess>> propertyMapping;
     for(const ConstPropertyPtr& fieldProperty : fieldProperties) {
         PropertyPtr vertexProperty;
         if(fieldProperty->type() < PropertyObject::FirstSpecificProperty && SurfaceMeshVertices::OOClass().isValidStandardPropertyId(fieldProperty->type())) {
@@ -362,7 +362,7 @@ bool CreateIsosurfaceModifier::transferPropertiesFromGridToMesh(SurfaceMeshBuild
     // Transfer values of field properties to the created mesh vertices.
     if(!propertyMapping.empty()) {
         std::array<bool,3> pbcFlags = gridDomain.pbcFlagsCorrected();
-        ConstBufferAccess<Point3> vertexPositions = mesh.expectVertexProperty(SurfaceMeshVertices::PositionProperty);
+        BufferAccess<const Point3> vertexPositions = mesh.expectVertexProperty(SurfaceMeshVertices::PositionProperty);
 
         parallelForWithProgress(mesh.vertexCount(), [&](size_t vertexIndex) {
             // Trilinear interpolation scheme.

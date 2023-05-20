@@ -767,7 +767,7 @@ bool StructureAnalysis::buildClusters()
     ProgressingTask& operation = static_cast<ProgressingTask&>(*Task::current());
     operation.setProgressMaximum(positions()->size());
     int progressCounter = 0;
-    ConstBufferAccess<Point3> positionsArray(positions());
+    BufferAccess<const Point3> positionsArray(positions());
 
     // Iterate over atoms, looking for those that have not been visited yet.
     for(size_t seedAtomIndex = 0; seedAtomIndex < positions()->size(); seedAtomIndex++) {

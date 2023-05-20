@@ -66,7 +66,7 @@ void WrapPeriodicImagesModifier::evaluateSynchronous(const ModifierEvaluationReq
 
     // Wrap bonds by adjusting their PBC shift vectors.
     if(outputParticles->bonds()) {
-        if(ConstBufferAccess<ParticleIndexPair> topologyProperty = outputParticles->bonds()->getProperty(BondsObject::TopologyProperty)) {
+        if(BufferAccess<const ParticleIndexPair> topologyProperty = outputParticles->bonds()->getProperty(BondsObject::TopologyProperty)) {
             BufferAccess<Vector3I> periodicImageProperty = outputParticles->makeBondsMutable()->createProperty(DataBuffer::Initialized, BondsObject::PeriodicImageProperty);
             for(size_t bondIndex = 0; bondIndex < topologyProperty.size(); bondIndex++) {
                 size_t particleIndex1 = topologyProperty[bondIndex][0];

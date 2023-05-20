@@ -225,7 +225,7 @@ bool CAExporter::exportFrame(int frameNumber, const QString& filePath, MainThrea
 
         // Serialize list of vertices.
         textStream() << "DEFECT_MESH_VERTICES " << vertexCoords->size() << "\n";
-        for(const Point3& vertex : ConstBufferAccess<Point3>(vertexCoords)) {
+        for(const Point3& vertex : BufferAccess<const Point3>(vertexCoords)) {
             textStream() << vertex.x() << " " << vertex.y() << " " << vertex.z() << "\n";
         }
 

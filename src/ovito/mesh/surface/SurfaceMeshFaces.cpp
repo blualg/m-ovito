@@ -73,8 +73,8 @@ PropertyPtr SurfaceMeshFaces::OOMetaClass::createStandardPropertyInternal(DataBu
         // Certain standard properties need to be initialized with default values determined by the attached visual elements.
         if(type == ColorProperty) {
             if(const SurfaceMesh* surfaceMesh = dynamic_object_cast<SurfaceMesh>(containerPath[containerPath.size()-2])) {
-                ConstBufferAccess<ColorG> regionColorProperty = surfaceMesh->regions()->getProperty(SurfaceMeshRegions::ColorProperty);
-                ConstBufferAccess<int32_t> faceRegionProperty = surfaceMesh->faces()->getProperty(SurfaceMeshFaces::RegionProperty);
+                BufferAccess<const ColorG> regionColorProperty = surfaceMesh->regions()->getProperty(SurfaceMeshRegions::ColorProperty);
+                BufferAccess<const int32_t> faceRegionProperty = surfaceMesh->faces()->getProperty(SurfaceMeshFaces::RegionProperty);
                 if(regionColorProperty && faceRegionProperty && faceRegionProperty.size() == elementCount) {
                     // Inherit face colors from regions.
                     boost::transform(faceRegionProperty, BufferAccess<ColorG>(property).begin(),
@@ -164,7 +164,7 @@ std::tuple<ConstDataBufferPtr, ConstDataBufferPtr> SurfaceMeshFaces::getVectorVi
 
             // Compute face centroids.
             const SurfaceMeshReadAccess meshAccess(mesh);
-            ConstBufferAccess<Point3> vertexPositions(meshAccess.expectVertexProperty(SurfaceMeshVertices::PositionProperty));
+            BufferAccess<const Point3> vertexPositions(meshAccess.expectVertexProperty(SurfaceMeshVertices::PositionProperty));
             BufferAccessAndRef<Point3> centroids = DataBufferPtr::create(mesh->faces()->elementCount(), DataBuffer::FloatDefault, 3);
             for(SurfaceMesh::face_index face : mesh->topology()->facesRange()) {
                 Vector3 c = Vector3::Zero();

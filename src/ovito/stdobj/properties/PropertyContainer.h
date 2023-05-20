@@ -145,7 +145,15 @@ public:
     /// Duplicates any property objects that are shared with other containers.
     /// After this method returns, all property objects are exclusively owned by the container and
     /// can be safely modified without unwanted side effects.
-    QVector<PropertyObject*> makePropertiesMutable();
+    auto makePropertiesMutable() {
+        makePropertiesMutableInternal();
+        auto const_cast_op = [](const DataOORef<const PropertyObject>& p) noexcept { return const_cast<PropertyObject*>(p.get()); };
+        using const_cast_iter_type = boost::transform_iterator<decltype(const_cast_op), typename std::decay_t<decltype(std::declval<PropertyContainer>().properties())>::const_iterator>;
+        return boost::make_iterator_range(
+            const_cast_iter_type(properties().begin(), const_cast_op),
+            const_cast_iter_type(properties().end(), const_cast_op)
+        );
+    }
 
     /// Creates a standard property and adds it to the container.
     /// In case the property already exists, it is made sure that it's safe to modify it.
@@ -212,8 +220,7 @@ public:
 
         Grower(PropertyContainer* container) : _container(container), _elementCount(container->elementCount()) {
             // Make all property arrays mutable to begin with.
-            for(const PropertyObject* property : container->properties())
-                container->makeMutable(property);
+            container->makePropertiesMutableInternal();
         }
 
         ~Grower() { commit(); }
@@ -282,6 +289,11 @@ protected:
 
     /// Is called once for this object after it has been completely loaded from a stream.
     virtual void loadFromStreamComplete(ObjectLoadStream& stream) override;
+
+    /// Duplicates any property objects that are shared with other containers or being accessed from Python.
+    /// After this method returns, all property objects are exclusively owned by the container and
+    /// can be safely modified without unwanted side effects.
+    void makePropertiesMutableInternal();
 
 private:
 

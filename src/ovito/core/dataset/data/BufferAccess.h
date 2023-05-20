@@ -32,569 +32,405 @@ namespace Ovito {
 
 namespace detail {
 
-// Base class that stores a pointer to an underlying DataBuffer.
-template<class PointerType, bool Writable>
-class DataBufferAccessBase
+/// General base class storing a reference to the underlying DataBuffer
+/// and to the raw memory address where the buffer's data is currently stored.
+template<class BufferReference>
+class BufferAccessBase
 {
 protected:
 
+    /// Indicates whether write access to the buffer is enabled. This depends on whether the type BufferReference is a const or non-const reference to a DataBuffer.
+    constexpr static bool IsWritable = !std::is_const_v<typename std::pointer_traits<BufferReference>::element_type>;
+
+    using size_type = size_t;
+
     /// (Smart-)pointer to the DataBuffer whose data is being accessed.
-    PointerType _buffer{};
+    BufferReference _buffer{};
 
-    /// Raw pointer to the buffer data.
-    std::conditional_t<Writable, std::byte*, const std::byte*> _data = nullptr;
+    /// Raw pointer to the buffer's underlying memory. Needs to be updated whenever a reallocation occurs.
+    std::conditional_t<IsWritable, std::byte*, const std::byte*> _data = nullptr;
 
-    auto getBufferAddress() const {
-        if constexpr(Writable)
-            return _buffer->buffer();
+    /// Helper function that obtains the buffer's internal storage address for data elements.
+    auto dataStorageAddress() const {
+        if constexpr(IsWritable)
+            return _buffer->data();
         else
-            return _buffer->cbuffer();
+            return _buffer->cdata();
     }
 
-    /// Constructor that creates an invalid access object not associated with any buffer object.
-    DataBufferAccessBase() noexcept = default;
+public:
 
-    /// Constructor that associates the access object with a buffer object (may be null).
-    DataBufferAccessBase(PointerType buffer) noexcept : _buffer(std::move(buffer)), _data(_buffer ? getBufferAddress() : nullptr) {
+    /// Constructor that initializes the accessor in a null state, i.e. not associated with any underlying buffer.
+    BufferAccessBase() noexcept = default;
+
+    /// Constructor that associates the access object with a buffer object (reference may be null).
+    BufferAccessBase(BufferReference buffer) : _buffer(std::move(buffer)), _data(_buffer ? dataStorageAddress() : nullptr) {
 #ifdef OVITO_DEBUG
         if(this->_buffer) {
-            if(Writable) this->_buffer->prepareWriteAccess();
-            else this->_buffer->prepareReadAccess();
+            if constexpr(IsWritable)
+                this->_buffer->prepareWriteAccess();
+            else
+                this->_buffer->prepareReadAccess();
         }
 #endif
     }
 
-    /// Copy construction (only available for read-only accessors).
-    DataBufferAccessBase(const DataBufferAccessBase& other) : _buffer(other._buffer), _data(other._data) {
+    /// Constructor that associates the access object with a buffer object (reference may be null).
+    template<typename DataBufferOrDerived>
+    BufferAccessBase(DataBufferOrDerived* buffer) : BufferAccessBase(BufferReference(std::move(buffer))) {}
+
+    /// Constructor that associates the access object with a buffer object (reference may be null).
+    template<typename DataBufferOrDerived>
+    BufferAccessBase(DataOORef<DataBufferOrDerived> buffer) : BufferAccessBase(BufferReference(std::move(buffer))) {}
+
+    /// Copy construction (only enabled for read-only accessors).
+    BufferAccessBase(const BufferAccessBase& other) noexcept : _buffer(other._buffer), _data(other._data) {
 #ifdef OVITO_DEBUG
-        if(this->_buffer) {
-            if(Writable) this->_buffer->prepareWriteAccess();
-            else this->_buffer->prepareReadAccess();
-        }
+        OVITO_ASSERT(!IsWritable);
+        if(this->_buffer)
+            this->_buffer->prepareReadAccess();
 #endif
     }
 
-    /// Copy assignment.
-    DataBufferAccessBase& operator=(const DataBufferAccessBase& other) {
+    /// Copy assignment (only enabled for read-only accessors).
+    BufferAccessBase& operator=(const BufferAccessBase& other) noexcept {
         this->_buffer = other._buffer;
         this->_data = other._data;
 #ifdef OVITO_DEBUG
-        if(this->_buffer) {
-            if(Writable) this->_buffer->prepareWriteAccess();
-            else this->_buffer->prepareReadAccess();
-        }
+        OVITO_ASSERT(!IsWritable);
+        if(this->_buffer)
+            this->_buffer->prepareReadAccess();
 #endif
         return *this;
     }
 
     /// Move construction.
-    DataBufferAccessBase(DataBufferAccessBase&& other) noexcept : _buffer(std::exchange(other._buffer, nullptr)), _data(std::exchange(other._data, nullptr)) {}
+    BufferAccessBase(BufferAccessBase&& other) noexcept :
+        _buffer(std::exchange(other._buffer, nullptr)),
+        _data(std::exchange(other._data, nullptr)) {}
 
     /// Move assignment.
-    DataBufferAccessBase& operator=(DataBufferAccessBase&& other) noexcept {
+    BufferAccessBase& operator=(BufferAccessBase&& other) noexcept {
         this->_buffer = std::exchange(other._buffer, nullptr);
         this->_data = std::exchange(other._data, nullptr);
         return *this;
     }
 
 #ifdef OVITO_DEBUG
-    /// Destructor sets the internal storage pointer to null to easier detect invalid memory access.
-    ~DataBufferAccessBase() { reset(); }
+    /// Destructor resets the internal references (to make debugging easier).
+    ~BufferAccessBase() { reset(); }
 #endif
 
-public:
-
     /// Returns the number of elements in the data array.
-    size_t size() const {
-        OVITO_ASSERT(this->_buffer);
-        return this->_buffer->size();
+    inline auto size() const noexcept {
+        OVITO_ASSERT(_buffer);
+        return _buffer->size();
     }
 
     /// Returns the number of vector components per element.
-    size_t componentCount() const {
-        OVITO_ASSERT(this->_buffer);
-        return this->_buffer->componentCount();
+    inline auto componentCount() const noexcept {
+        OVITO_ASSERT(_buffer);
+        return _buffer->componentCount();
     }
 
     /// Returns the number of bytes per element.
-    size_t stride() const {
-        OVITO_ASSERT(this->_buffer);
-        return this->_buffer->stride();
+    inline auto stride() const noexcept {
+        OVITO_ASSERT(_buffer);
+        return _buffer->stride();
     }
 
     /// Returns the number of bytes per vector component.
-    size_t dataTypeSize() const {
-        OVITO_ASSERT(this->_buffer);
-        return this->_buffer->dataTypeSize();
+    inline auto dataTypeSize() const noexcept {
+        OVITO_ASSERT(_buffer);
+        return _buffer->dataTypeSize();
     }
 
     /// Returns the data type of the property.
-    int dataType() const {
-        OVITO_ASSERT(this->_buffer);
-        return this->_buffer->dataType();
+    inline auto dataType() const noexcept {
+        OVITO_ASSERT(_buffer);
+        return _buffer->dataType();
     }
 
-    /// Returns whether this accessor object points to a valid DataBuffer.
+    /// Returns whether this accessor points to a valid DataBuffer.
     explicit operator bool() const noexcept {
-        return (bool)this->_buffer;
+        return (bool)_buffer;
     }
 
-    /// Returns the buffer object which is being accessed by this class.
-    const PointerType& buffer() const {
-        return this->_buffer;
+    /// Returns the buffer object which is being accessed.
+    inline const BufferReference& buffer() const noexcept {
+        return _buffer;
     }
 
     /// Moves the internal buffer reference out of this accessor object.
-    PointerType take() {
+    BufferReference take() noexcept {
         return reset();
     }
 
     /// Detaches the accessor object from the underlying buffer object.
-    PointerType reset() {
+    BufferReference reset() noexcept {
 #ifdef OVITO_DEBUG
-        if(this->_buffer) {
-            if(Writable) this->_buffer->finishWriteAccess();
-            else this->_buffer->finishReadAccess();
+        if(_buffer) {
+            if constexpr(IsWritable)
+                _buffer->finishWriteAccess();
+            else
+                _buffer->finishReadAccess();
         }
 #endif
         _data = nullptr;
-        return std::exchange(this->_buffer, nullptr);
+        return std::exchange(_buffer, nullptr);
     }
 
     /// Updates the internal data pointer (e.g. after the data buffer's memory has been reallocated).
-    void updatePointer() {
+    template<bool IsWritable2 = IsWritable>
+    inline std::enable_if_t<IsWritable2, void> updateDataStorageAddress() noexcept {
         OVITO_ASSERT(_buffer);
-        _data = _buffer->buffer();
+        _data = _buffer->data();
     }
 };
 
-// Base class that allows read access to the data elements of the underlying DataBuffer.
-template<typename T, class PointerType, bool Writable/* = false*/>
-class ReadOnlyDataBufferSubrangeAccessBase : public DataBufferAccessBase<PointerType, Writable>
+/// Base class that provides access to the individual data elements stored in a DataBuffer.
+template<typename T, class BufferReference>
+class BufferAccessTyped : public BufferAccessBase<BufferReference>
 {
 public:
 
-    using iterator = const T*;
-    using const_iterator = const T*;
+    constexpr static bool ComponentWise = std::is_pointer_v<T>;
+    using BufferAccessBase<BufferReference>::IsWritable;
 
-    /// Returns the number of elements in the data array.
-    size_t size() const {
-        OVITO_ASSERT(this->_buffer);
-        return this->_endIndex - this->_beginIndex;
+    using element_type = std::remove_pointer_t<T>;
+    using iterator = element_type*;
+    using const_iterator = element_type*;
+    using typename BufferAccessBase<BufferReference>::size_type;
+
+    /// Constructor that initializes the accessor in a null state, i.e. not associated with any underlying buffer.
+    BufferAccessTyped() noexcept = default;
+
+    /// Copy constructor.
+    BufferAccessTyped(const BufferAccessTyped& other) noexcept = default;
+
+    /// Move constructor.
+    BufferAccessTyped(BufferAccessTyped&& other) noexcept = default;
+
+    /// Constructor that associates the access object with a buffer object (reference may be null).
+    /// Constructor that associates the access object with a buffer object (reference may be null).
+    template<typename DataBufferOrDerived>
+    BufferAccessTyped(DataBufferOrDerived&& buffer) : BufferAccessBase<BufferReference>(std::forward<DataBufferOrDerived>(buffer)) {
+        OVITO_ASSERT(!this->_buffer || this->stride() == sizeof(element_type) * (ComponentWise ? this->componentCount() : 1));
+        OVITO_ASSERT(!this->_buffer || this->dataType() == DataBufferPrimitiveType<std::remove_cv_t<element_type>>::value);
+        OVITO_ASSERT(!this->_buffer || this->dataTypeSize() == sizeof(element_type) / (ComponentWise ? 1 : this->componentCount()));
     }
 
-    /// Returns the value of the i-th element from the array.
-    const T& get(size_t i) const {
-        OVITO_ASSERT(i < this->size());
-        return *(this->cbegin() + i);
-    }
+    /// Copy assignement.
+    BufferAccessTyped& operator=(const BufferAccessTyped& other) noexcept = default;
 
-    /// Indexed access to the elements of the array.
-    const T& operator[](size_t i) const {
-        return this->get(i);
-    }
-
-    /// Returns a range of const iterators over the elements stored in this array.
-    boost::iterator_range<const T*> crange() const {
-        return boost::make_iterator_range(cbegin(), cend());
-    }
+    /// Move assignment.
+    BufferAccessTyped& operator=(BufferAccessTyped&& other) noexcept = default;
 
     /// Returns a pointer to the first element of the data array.
-    const T* begin() const {
-        return cbegin();
-    }
-
-    /// Returns a pointer pointing to the end of the data array.
-    const T* end() const {
-        return cend();
-    }
-
-    /// Returns a pointer to the first element of the data array.
-    const T* cbegin() const {
+    inline element_type* begin() const noexcept {
         OVITO_ASSERT(this->_buffer);
-        OVITO_ASSERT(this->getBufferAddress() == this->_data);
-        OVITO_ASSERT(this->_buffer->dataType() == DataBufferPrimitiveType<T>::value);
-        OVITO_ASSERT(this->stride() == sizeof(T));
-        return reinterpret_cast<const T*>(this->_data) + this->_beginIndex;
-    }
-
-    /// Returns a pointer pointing to the end of the data array.
-    const T* cend() const {
-        return cbegin() + this->size();
-    }
-
-    /// Constructor that inherits the DataBuffer from another access object and takes an index sub-range.
-    ReadOnlyDataBufferSubrangeAccessBase(DataBufferAccessBase<PointerType, Writable>&& other, size_t beginIndex, size_t endIndex) : DataBufferAccessBase<PointerType, Writable>(std::move(other)),
-        _beginIndex(beginIndex), _endIndex(endIndex) {
-        OVITO_ASSERT(this->_buffer);
-        OVITO_ASSERT(this->_buffer->stride() == sizeof(T));
-        OVITO_ASSERT(this->_buffer->dataType() == DataBufferPrimitiveType<T>::value);
-        OVITO_ASSERT(beginIndex <= endIndex);
-        OVITO_ASSERT(endIndex <= this->_buffer->size());
-    }
-
-protected:
-
-    size_t _beginIndex;
-    size_t _endIndex;
-};
-
-// Base class that allows read access to the data elements of the underlying DataBuffer.
-template<typename T, class PointerType, bool Writable/* = false*/>
-class ReadOnlyDataBufferAccessBase : public DataBufferAccessBase<PointerType, Writable>
-{
-public:
-
-    using iterator = const T*;
-    using const_iterator = const T*;
-
-    /// Returns the value of the i-th element from the array.
-    const T& get(size_t i) const {
-        OVITO_ASSERT(i < this->size());
-        return *(this->cbegin() + i);
-    }
-
-    /// Indexed access to the elements of the array.
-    const T& operator[](size_t i) const {
-        return this->get(i);
-    }
-
-    /// Returns a range of const iterators over the elements stored in this array.
-    boost::iterator_range<const T*> crange() const {
-        return boost::make_iterator_range(cbegin(), cend());
-    }
-
-    /// Turns this array accessor into an accessor for a subrange of elements.
-    ReadOnlyDataBufferSubrangeAccessBase<T, PointerType, Writable> csubrange(size_t beginIndex, size_t endIndex) && {
-        return ReadOnlyDataBufferSubrangeAccessBase<T, PointerType, Writable>(std::move(*this), beginIndex, endIndex);
-    }
-
-    /// Returns a pointer to the first element of the data array.
-    const T* begin() const {
-        return cbegin();
-    }
-
-    /// Returns a pointer pointing to the end of the data array.
-    const T* end() const {
-        return cend();
-    }
-
-    /// Returns a pointer to the first element of the data array.
-    const T* cbegin() const {
-        OVITO_ASSERT(this->_buffer);
-        OVITO_ASSERT(this->getBufferAddress() == this->_data);
-        OVITO_ASSERT(this->_buffer->dataType() == DataBufferPrimitiveType<T>::value);
-        OVITO_ASSERT(this->stride() == sizeof(T));
-        return reinterpret_cast<const T*>(this->_data);
-    }
-
-    /// Returns a pointer pointing to the end of the data array.
-    const T* cend() const {
-        return cbegin() + this->size();
-    }
-
-protected:
-
-    /// Constructor that creates an invalid access object not associated with any DataBuffer.
-    ReadOnlyDataBufferAccessBase() {}
-
-    /// Constructor that associates the access object with a DataBuffer (may be null).
-    ReadOnlyDataBufferAccessBase(PointerType buffer) : DataBufferAccessBase<PointerType, Writable>(std::move(buffer)) {
-        OVITO_ASSERT(!this->_buffer || this->_buffer->stride() == sizeof(T));
-        OVITO_ASSERT(!this->_buffer || this->_buffer->dataType() == DataBufferPrimitiveType<T>::value);
-    }
-};
-
-// Base class that allows read access to the individual components of vector elements of the underlying DataBuffer.
-template<typename T, class PointerType, bool Writable/* = false*/>
-class ReadOnlyDataBufferAccessBaseTable : public DataBufferAccessBase<PointerType, Writable>
-{
-public:
-
-    using iterator = const T*;
-    using const_iterator = const T*;
-
-    /// Returns the value of the i-th element from the array.
-    const T& get(size_t i, size_t j) const {
-        OVITO_ASSERT(i < this->size());
-        OVITO_ASSERT(j < this->componentCount());
-        return *(this->cbegin() + (i * this->componentCount()) + j);
-    }
-
-    /// Returns a pointer to the beginning of the data array.
-    const T* cbegin() const {
-        OVITO_ASSERT(this->getBufferAddress() == this->_data);
-        return reinterpret_cast<const T*>(this->_data);
+        OVITO_ASSERT(this->dataStorageAddress() == this->_data);
+        OVITO_ASSERT(this->dataType() == DataBufferPrimitiveType<std::remove_cv_t<element_type>>::value);
+        OVITO_ASSERT(this->stride() == sizeof(element_type) * (ComponentWise ? this->componentCount() : 1));
+        OVITO_ASSERT(IsWritable == !std::is_const_v<element_type>);
+        return reinterpret_cast<element_type*>(this->_data);
     }
 
     /// Returns a pointer to the end of the data array.
-    const T* cend() const {
-        return this->cbegin() + (this->size() * this->componentCount());
+    inline element_type* end() const noexcept {
+        if constexpr(!ComponentWise)
+            return begin() + this->size();
+        else
+            return begin() + (this->size() * this->componentCount());
     }
 
-    /// Returns a range of iterators over the i-th vector component of all elements stored in this array.
-    auto componentRange(size_t componentIndex) const {
-        OVITO_ASSERT(this->componentCount() > componentIndex);
-        const T* begin = cbegin() + componentIndex;
-        return boost::adaptors::stride(boost::make_iterator_range(begin, begin + (this->size() * this->componentCount())), this->componentCount());
-    }
+    /// Returns a const pointer to the first element of the data array.
+    inline const element_type* cbegin() const noexcept { return begin(); }
 
-protected:
+    /// Returns a pointer to the end of the data array.
+    inline const element_type* cend() const noexcept { return end(); }
 
-    /// Constructor that creates an invalid access object not associated with any DataBuffer.
-    ReadOnlyDataBufferAccessBaseTable() {}
-
-    /// Constructor that associates the access object with a DataBuffer (may be null).
-    ReadOnlyDataBufferAccessBaseTable(PointerType buffer) : DataBufferAccessBase<PointerType, Writable>(std::move(buffer)) {
-        OVITO_ASSERT(!this->_buffer || this->_buffer->stride() == sizeof(T) * this->_buffer->componentCount());
-        OVITO_ASSERT(!this->_buffer || this->_buffer->dataType() == qMetaTypeId<T>());
-        OVITO_ASSERT(!this->_buffer || this->_buffer->dataTypeSize() == sizeof(T));
-    }
-};
-
-// Base class that allows read access to the raw data of the underlying DataBuffer.
-template<class PointerType, bool Writable>
-class ReadOnlyDataBufferAccessBaseTable<void, PointerType, Writable> : public DataBufferAccessBase<PointerType, Writable>
-{
-public:
-
-    /// Returns the j-th component of the i-th element in the array.
-    template<typename U>
-    U get(size_t i, size_t j) const {
-        switch(this->dataType()) {
-        case DataBuffer::Float32:
-            return static_cast<U>(*reinterpret_cast<const float*>(this->cdata(j) + i * this->stride()));
-        case DataBuffer::Float64:
-            return static_cast<U>(*reinterpret_cast<const double*>(this->cdata(j) + i * this->stride()));
-        case DataBuffer::Int8:
-            return static_cast<U>(*reinterpret_cast<const int8_t*>(this->cdata(j) + i * this->stride()));
-        case DataBuffer::Int32:
-            return static_cast<U>(*reinterpret_cast<const int32_t*>(this->cdata(j) + i * this->stride()));
-        case DataBuffer::Int64:
-            return static_cast<U>(*reinterpret_cast<const int64_t*>(this->cdata(j) + i * this->stride()));
-        default:
-            OVITO_ASSERT(false);
-            throw Exception(QStringLiteral("Data access failed. Data buffer has a non-standard data type."));
-        }
-    }
-
-    /// Returns a pointer to the raw data of the data array.
-    const std::byte* cdata(size_t component = 0) const {
-        OVITO_ASSERT(this->_buffer);
-        return this->_data + (component * this->dataTypeSize());
-    }
-
-    /// Returns a pointer to the raw data of the data array.
-    const std::byte* cdata(size_t index, size_t component) const {
-        OVITO_ASSERT(this->_buffer);
-        OVITO_ASSERT(this->getBufferAddress() == this->_data);
-        OVITO_ASSERT(index < this->size());
-        OVITO_ASSERT(component < this->componentCount());
-        return this->_data + (index * this->stride()) + (component * this->dataTypeSize());
-    }
-
-protected:
-
-    // Inherit constructors from base class.
-    using DataBufferAccessBase<PointerType, Writable>::DataBufferAccessBase;
-};
-
-// Base class that allows read/write access to the data elements of the underlying DataBuffer.
-template<typename T, class PointerType>
-class ReadWriteDataBufferSubrangeAccessBase : public ReadOnlyDataBufferSubrangeAccessBase<T, PointerType, true>
-{
-public:
-
-    using iterator = T*;
-    using const_iterator = T*;
-
-    /// Sets the value of the i-th element in the array.
-    void set(size_t i, const T& v) {
-        OVITO_ASSERT(i < this->size());
-        *(this->begin() + i) = v;
-    }
-
-    /// Indexed access to the elements of the array.
-    T& operator[](size_t i) {
-        OVITO_ASSERT(i < this->size());
-        return *(this->begin() + i);
-    }
-
-    /// Indexed access to the elements of the array.
-    const T& operator[](size_t i) const {
+    /// Returns the value of the i-th element from the array.
+    template<bool ComponentWise2 = ComponentWise>
+    inline std::enable_if_t<!ComponentWise2, const element_type&> get(size_type i) const noexcept {
         OVITO_ASSERT(i < this->size());
         return *(this->cbegin() + i);
     }
 
-    /// Returns a pointer to the first element of the data array.
-    T* begin() const {
-        OVITO_ASSERT(this->_buffer);
-        OVITO_ASSERT(this->getBufferAddress() == this->_data);
-        return reinterpret_cast<T*>(this->_data) + this->_beginIndex;
-    }
-
-    /// Returns a pointer pointing to the end of the data array.
-    T* end() const {
-        return this->begin() + this->size();
-    }
-
-    /// Returns a range of iterators over the elements stored in this array.
-    boost::iterator_range<T*> range() {
-        return boost::make_iterator_range(begin(), end());
-    }
-
-protected:
-
-    // Inherit constructors from base class.
-    using ReadOnlyDataBufferSubrangeAccessBase<T, PointerType, true>::ReadOnlyDataBufferSubrangeAccessBase;
-};
-
-// Base class that allows read/write access to the data elements of the underlying DataBuffer.
-template<typename T, class PointerType>
-class ReadWriteDataBufferAccessBase : public ReadOnlyDataBufferAccessBase<T, PointerType, true>
-{
-public:
-
-    using iterator = T*;
-    using const_iterator = T*;
-
-    /// Sets the value of the i-th element in the array.
-    void set(size_t i, const T& v) {
-        OVITO_ASSERT(i < this->size());
-        *(this->begin() + i) = v;
-    }
-
-    /// Indexed access to the elements of the array.
-    T& operator[](size_t i) {
-        OVITO_ASSERT(i < this->size());
-        return *(this->begin() + i);
-    }
-
-    /// Indexed access to the elements of the array.
-    const T& operator[](size_t i) const {
-        OVITO_ASSERT(i < this->size());
-        return *(this->cbegin() + i);
-    }
-
-    /// Returns a pointer to the first element of the data array.
-    T* begin() const {
-        OVITO_ASSERT(this->_buffer);
-        OVITO_ASSERT(this->getBufferAddress() == this->_data);
-        return reinterpret_cast<T*>(this->_data);
-    }
-
-    /// Returns a pointer pointing to the end of the data array.
-    T* end() const {
-        return this->begin() + this->size();
-    }
-
-    /// Returns a range of iterators over the elements stored in this array.
-    boost::iterator_range<T*> range() {
-        return boost::make_iterator_range(begin(), end());
-    }
-
-    /// Returns a subrange of elements.
-    ReadWriteDataBufferSubrangeAccessBase<T, PointerType> subrange(size_t beginIndex, size_t endIndex) && {
-        return ReadWriteDataBufferSubrangeAccessBase<T, PointerType>(std::move(*this), beginIndex, endIndex);
-    }
-
-    /// Appends a new element to the end of the data array.
-    void push_back(const T& v) {
-        size_t oldCount = this->size();
-        if(this->buffer()->grow(1, true))
-            this->updatePointer();
-        set(oldCount, v);
-    }
-
-protected:
-
-    // Inherit constructors from base class.
-    using ReadOnlyDataBufferAccessBase<T, PointerType, true>::ReadOnlyDataBufferAccessBase;
-};
-
-// Base class that allows read/write access to the individual components of the vector elements of the underlying DataBuffer.
-template<typename T, class PointerType>
-class ReadWriteDataBufferAccessBaseTable : public ReadOnlyDataBufferAccessBaseTable<T, PointerType, true>
-{
-public:
-
-    using iterator = T*;
-    using const_iterator = T*;
-
-    /// Returns a pointer to the first element of the data array.
-    T* begin() const {
-        OVITO_ASSERT(this->_buffer);
-        OVITO_ASSERT(this->getBufferAddress() == this->_data);
-        return reinterpret_cast<T*>(this->_data);
-    }
-
-    /// Returns a pointer pointing to the end of the data array.
-    T* end() const {
-        OVITO_ASSERT(this->stride() == sizeof(T) * this->componentCount());
-        return this->begin() + (this->size() * this->componentCount());
-    }
-
-    /// Returns a range of iterators over the i-th vector component of all elements stored in this array.
-    auto componentRange(size_t componentIndex) {
-        OVITO_ASSERT(this->_buffer);
-        OVITO_ASSERT(this->_buffer->componentCount() > componentIndex);
-        T* begin = this->begin() + componentIndex;
-        return boost::adaptors::stride(boost::make_iterator_range(begin, begin + (this->size() * this->componentCount())), this->componentCount());
-    }
-
-    /// Returns a range of iterators over the elements stored in this array.
-    boost::iterator_range<T*> range() {
-        return boost::make_iterator_range(begin(), end());
-    }
-
-    /// Sets the j-th component of the i-th element of the array to a new value.
-    void set(size_t i, size_t j, const T& value) {
-        OVITO_ASSERT(this->_buffer);
+    /// Returns the value of the i-th element's j-th component from the array.
+    template<bool ComponentWise2 = ComponentWise>
+    inline std::enable_if_t<ComponentWise2, const element_type&> get(size_type i, size_type j) const noexcept {
         OVITO_ASSERT(i < this->size());
         OVITO_ASSERT(j < this->componentCount());
-        *(begin() + i * this->componentCount() + j) = value;
+        return *(cbegin() + (i * this->componentCount()) + j);
+    }
+
+    /// Sets the value of the i-th element in the array.
+    template<bool ComponentWise2 = ComponentWise, bool IsWritable2 = IsWritable>
+    inline void set(size_type i, std::enable_if_t<!ComponentWise2 && IsWritable2, const element_type&> v) const noexcept {
+        OVITO_ASSERT(i < this->size());
+        *(this->begin() + i) = v;
+    }
+
+    /// Sets the value of the i-th element's j-th component in the array.
+    template<bool ComponentWise2 = ComponentWise, bool IsWritable2 = IsWritable>
+    inline void set(size_type i, size_type j, std::enable_if_t<ComponentWise2 && IsWritable2, const element_type&> v) const noexcept {
+        OVITO_ASSERT(i < this->size());
+        OVITO_ASSERT(j < this->componentCount());
+        *(begin() + (i * this->componentCount()) + j) = v;
     }
 
     /// Returns a modifiable reference to the j-th component of the i-th element of the array.
-    T& value(size_t i, size_t j) {
-        OVITO_ASSERT(this->_buffer);
-        OVITO_ASSERT(this->getBufferAddress() == this->_data);
+    template<bool ComponentWise2 = ComponentWise, bool IsWritable2 = IsWritable>
+    inline std::enable_if_t<ComponentWise2 && IsWritable2, element_type&> value(size_type i, size_type j) const noexcept {
         OVITO_ASSERT(i < this->size());
         OVITO_ASSERT(j < this->componentCount());
         return *(begin() + i * this->componentCount() + j);
     }
 
-protected:
+    /// Indexed access to the elements of the array.
+    template<bool ComponentWise2 = ComponentWise>
+    inline std::enable_if_t<!ComponentWise2, element_type&> operator[](size_type i) const noexcept {
+        return *(begin() + i);
+    }
 
-    // Inherit constructors from base class.
-    using ReadOnlyDataBufferAccessBaseTable<T, PointerType, true>::ReadOnlyDataBufferAccessBaseTable;
+    /// Returns a range of iterators over the elements stored in this array.
+    inline boost::iterator_range<element_type*> range() const noexcept {
+        return boost::make_iterator_range(begin(), end());
+    }
+
+    /// Returns a range of iterators over the elements stored in this array.
+    inline boost::iterator_range<const element_type*> crange() const noexcept {
+        return boost::make_iterator_range(cbegin(), cend());
+    }
+
+    /// Returns a range of iterators over the i-th vector component of all elements stored in this array.
+    template<bool ComponentWise2 = ComponentWise>
+    inline auto componentRange(std::enable_if_t<ComponentWise2, size_type> componentIndex) const noexcept {
+        OVITO_ASSERT(componentIndex >= 0 && componentIndex < this->componentCount());
+        auto begin = this->begin() + componentIndex;
+        return boost::adaptors::stride(boost::make_iterator_range(begin, begin + (this->size() * this->componentCount())), this->componentCount());
+    }
+
+    /// Turns this array accessor into an accessor for a subrange of elements.
+    auto subrange(size_type beginIndex, size_type endIndex) && noexcept {
+        class SubRange
+        {
+        public:
+            using element_type = typename BufferAccessTyped<T, BufferReference>::element_type;
+            using size_type = typename BufferAccessTyped<T, BufferReference>::size_type;
+            using iterator = typename BufferAccessTyped<T, BufferReference>::iterator;
+            using const_iterator = typename BufferAccessTyped<T, BufferReference>::const_iterator;
+            SubRange(BufferAccessTyped<T, BufferReference>&& accessor, size_type beginIndex, size_type endIndex) noexcept : _accessor(std::move(accessor)), _beginIndex(beginIndex), _endIndex(endIndex) {}
+            auto begin() const noexcept { return _accessor.begin() + _beginIndex; }
+            auto end() const noexcept { return _accessor.begin() + _endIndex; }
+        private:
+            const BufferAccessTyped<T, BufferReference> _accessor;
+            const size_type _beginIndex;
+            const size_type _endIndex;
+        };
+        OVITO_ASSERT(beginIndex <= endIndex);
+        OVITO_ASSERT(endIndex <= this->size());
+        return SubRange(std::move(*this), beginIndex, endIndex);
+    }
+
+    /// Turns this array accessor into an accessor for a subrange of elements.
+    auto subrange(size_type beginIndex) && noexcept {
+        return std::move(*this).subrange(beginIndex, this->size());
+    }
+
+    /// Appends a new element to the end of the data array.
+    template<bool ComponentWise2 = ComponentWise, bool IsWritable2 = IsWritable>
+    inline void push_back(std::enable_if_t<!ComponentWise2 && IsWritable2, const element_type&> v) {
+        size_t oldCount = this->size();
+        if(this->buffer()->grow(1, true))
+            this->updateDataStorageAddress();
+        set(oldCount, v);
+    }
 };
 
-// Base class that allows read/write access to the raw data of the underlying DataBuffer.
-template<class PointerType>
-class ReadWriteDataBufferAccessBaseTable<void, PointerType> : public ReadOnlyDataBufferAccessBaseTable<void, PointerType, true>
+/// Base class that provides generic read/write access data elements stored in a DataBuffer.
+template<class BufferReference>
+class BufferAccessReadUntyped : public BufferAccessBase<BufferReference>
 {
 public:
 
+    using typename BufferAccessBase<BufferReference>::size_type;
+
+    // Inherit constructors from base class.
+    using BufferAccessBase<BufferReference>::BufferAccessBase;
+
+    /// Reads the j-th component of the i-th element from the array.
+    template<typename U>
+    inline U get(size_type i, size_type j) const {
+        OVITO_ASSERT(i < this->size());
+        auto addr = this->cdata(j) + i * this->stride();
+        switch(this->dataType()) {
+        case DataBuffer::Float32:
+            return static_cast<U>(*reinterpret_cast<const float*>(addr));
+        case DataBuffer::Float64:
+            return static_cast<U>(*reinterpret_cast<const double*>(addr));
+        case DataBuffer::Int8:
+            return static_cast<U>(*reinterpret_cast<const int8_t*>(addr));
+        case DataBuffer::Int32:
+            return static_cast<U>(*reinterpret_cast<const int32_t*>(addr));
+        case DataBuffer::Int64:
+            return static_cast<U>(*reinterpret_cast<const int64_t*>(addr));
+        default:
+            OVITO_ASSERT(false);
+            throw Exception(QStringLiteral("Data access failed. Data buffer has a non-standard data type."));
+        }
+    }
+
+    /// Returns a pointer to the raw data of the data array.
+    inline const std::byte* cdata(size_type component = 0) const {
+        OVITO_ASSERT(this->_buffer);
+        OVITO_ASSERT(this->dataStorageAddress() == this->_data);
+        OVITO_ASSERT(component < this->componentCount());
+        return this->_data + (component * this->dataTypeSize());
+    }
+
+    /// Returns a pointer to the raw data of the data array.
+    inline const std::byte* cdata(size_type index, size_type component) const {
+        OVITO_ASSERT(this->_buffer);
+        OVITO_ASSERT(this->dataStorageAddress() == this->_data);
+        OVITO_ASSERT(index < this->size());
+        OVITO_ASSERT(component < this->componentCount());
+        return this->_data + (index * this->stride()) + (component * this->dataTypeSize());
+    }
+};
+
+/// Base class that provides generic read/write access data elements stored in a DataBuffer.
+template<class BufferReference>
+class BufferAccessWriteUntyped : public BufferAccessReadUntyped<BufferReference>
+{
+public:
+
+    using typename BufferAccessReadUntyped<BufferReference>::size_type;
+
+    // Inherit constructors from base class.
+    using BufferAccessReadUntyped<BufferReference>::BufferAccessReadUntyped;
+
     /// Sets the j-th component of the i-th element of the array to a new value.
     template<typename U>
-    void set(size_t i, size_t j, const U& value) {
-        OVITO_ASSERT(this->_buffer);
-        switch(this->_buffer->dataType()) {
+    inline void set(size_type i, size_type j, const U& value) {
+        OVITO_ASSERT(i < this->size());
+        auto addr = this->data(j) + i * this->stride();
+        switch(this->dataType()) {
         case DataBuffer::Float32:
-            *reinterpret_cast<float*>(this->data(j) + i * this->stride()) = value;
+            *reinterpret_cast<float*>(addr) = value;
             break;
         case DataBuffer::Float64:
-            *reinterpret_cast<double*>(this->data(j) + i * this->stride()) = value;
+            *reinterpret_cast<double*>(addr) = value;
             break;
         case DataBuffer::Int8:
-            *reinterpret_cast<int8_t*>(this->data(j) + i * this->stride()) = value;
+            *reinterpret_cast<int8_t*>(addr) = value;
             break;
         case DataBuffer::Int32:
-            *reinterpret_cast<int32_t*>(this->data(j) + i * this->stride()) = value;
+            *reinterpret_cast<int32_t*>(addr) = value;
             break;
         case DataBuffer::Int64:
-            *reinterpret_cast<int64_t*>(this->data(j) + i * this->stride()) = value;
+            *reinterpret_cast<int64_t*>(addr) = value;
             break;
         default:
             OVITO_ASSERT(false);
@@ -603,161 +439,40 @@ public:
     }
 
     /// Returns a pointer to the raw data of the data array.
-    std::byte* data(size_t component = 0) {
+    inline std::byte* data(size_type component = 0) const {
         OVITO_ASSERT(this->_buffer);
+        OVITO_ASSERT(this->dataStorageAddress() == this->_data);
+        OVITO_ASSERT(component < this->componentCount());
         return this->_data + (component * this->dataTypeSize());
     }
 
     /// Returns a pointer to the raw data of the data array.
-    std::byte* data(size_t index, size_t component) {
+    inline std::byte* data(size_type index, size_type component) const {
         OVITO_ASSERT(this->_buffer);
-        OVITO_ASSERT(this->getBufferAddress() == this->_data);
+        OVITO_ASSERT(this->dataStorageAddress() == this->_data);
         OVITO_ASSERT(index < this->size());
         OVITO_ASSERT(component < this->componentCount());
         return this->_data + (index * this->stride()) + (component * this->dataTypeSize());
     }
-
-protected:
-
-    // Inherit constructors from base class.
-    using ReadOnlyDataBufferAccessBaseTable<void, PointerType, true>::ReadOnlyDataBufferAccessBaseTable;
 };
+
+template<typename DataType, bool StronglyReferenced>
+using PickBufferAccessClass = BufferAccessTyped<
+        DataType,
+        std::conditional_t<StronglyReferenced,
+            DataOORef<std::conditional_t<!std::is_const_v<std::remove_pointer_t<DataType>>, DataBuffer, const DataBuffer>>,
+            std::conditional_t<!std::is_const_v<std::remove_pointer_t<DataType>>, DataBuffer*, const DataBuffer*>
+        >
+    >;
 
 } // End of namespace detail.
 
-/**
- * Helper class that provides read access to the data elements of a DataBuffer.
- *
- * The TableMode template parameter should be set to true if access to the individual components
- * of a vector data array is desired or if the number of vector components is unknown at compile time.
- * If TableMode is set to false, the data elements can only be access as a whole and the number of components must
- * be a compile-time constant.
- */
-template<typename T, bool TableMode = false, typename DataBufferClass = DataBuffer>
-class ConstBufferAccess : public std::conditional_t<TableMode, Ovito::detail::ReadOnlyDataBufferAccessBaseTable<T, const DataBufferClass*>, Ovito::detail::ReadOnlyDataBufferAccessBase<T, const DataBufferClass*>>
-{
-    using ParentType = std::conditional_t<TableMode, Ovito::detail::ReadOnlyDataBufferAccessBaseTable<T, const DataBufferClass*>, Ovito::detail::ReadOnlyDataBufferAccessBase<T, const DataBufferClass*>>;
+using BufferReadAccess = detail::BufferAccessReadUntyped<const DataBuffer*>;
+using BufferWriteAccess = detail::BufferAccessWriteUntyped<DataBuffer*>;
 
-public:
-
-    /// Constructs an accessor object not associated yet with any DataBuffer.
-    ConstBufferAccess() = default;
-
-    /// Constructs a read-only accessor for the data in a DataBuffer.
-    ConstBufferAccess(const DataBufferClass* buffer)
-        : ParentType(buffer) {}
-
-    /// Constructs a read-only accessor for the data in a DataBuffer.
-    template<typename DerivedDataBufferClass>
-    ConstBufferAccess(DataOORef<DerivedDataBufferClass> buffer)
-        : ConstBufferAccess(buffer.get()) {}
-};
-
-/**
- * Helper class that provides read access to the data elements in a DataBuffer
- *        and which keeps a strong reference to the DataBuffer.
- */
-template<typename T, bool TableMode = false, typename DataBufferClass = DataBuffer>
-class ConstBufferAccessAndRef : public std::conditional_t<TableMode, Ovito::detail::ReadOnlyDataBufferAccessBaseTable<T, DataOORef<const DataBufferClass>>, Ovito::detail::ReadOnlyDataBufferAccessBase<T, DataOORef<const DataBufferClass>>>
-{
-    using ParentType = std::conditional_t<TableMode, Ovito::detail::ReadOnlyDataBufferAccessBaseTable<T, DataOORef<const DataBufferClass>>, Ovito::detail::ReadOnlyDataBufferAccessBase<T, DataOORef<const DataBufferClass>>>;
-
-public:
-
-    /// Constructs an accessor object not associated yet with any DataBuffer.
-    ConstBufferAccessAndRef() = default;
-
-    /// Constructs a read-only accessor for the data in a DataBuffer.
-    ConstBufferAccessAndRef(DataOORef<const DataBufferClass> buffer)
-        : ParentType(std::move(buffer)) {}
-
-    /// Constructs a read-only accessor for the data in a DataBuffer.
-    ConstBufferAccessAndRef(DataOORef<DataBufferClass> buffer)
-        : ParentType(std::move(buffer)) {}
-
-    /// Constructs a read-only accessor for the data in a DataBuffer.
-    ConstBufferAccessAndRef(const DataBufferClass* buffer)
-        : ParentType(DataOORef<const DataBufferClass>(buffer)) {}
-
-    /// Constructs a read-only accessor for the data in a DataBuffer.
-    template<typename DerivedDataBufferClass>
-    ConstBufferAccessAndRef(DataOORef<DerivedDataBufferClass> buffer)
-        : ParentType(static_object_cast<const DataBufferClass>(std::move(buffer))) {}
-};
-
-/**
- * Helper class that provides read/write access to the data elements in a DataBuffer.
- *
- * The TableMode template parameter should be set to true if access to the individual components
- * of a vector data array is desired or if the number of vector components of the property is unknown at compile time.
- * If TableMode is set to false, the data elements can only be access as a whole and the number of components must
- * be a compile-time constant.
- *
- * If the BufferAccess object is initialized from a DataBuffer pointer, the buffer object's notifyTargetChanged()
- * method will be automatically called when the BufferAccess object goes out of scope to inform the system about
- * a modification of the stored property values.
- */
-template<typename T, bool TableMode = false, typename DataBufferClass = DataBuffer>
-class BufferAccess : public std::conditional_t<TableMode, Ovito::detail::ReadWriteDataBufferAccessBaseTable<T, DataBufferClass*>, Ovito::detail::ReadWriteDataBufferAccessBase<T, DataBufferClass*>>
-{
-    using ParentType = std::conditional_t<TableMode, Ovito::detail::ReadWriteDataBufferAccessBaseTable<T, DataBufferClass*>, Ovito::detail::ReadWriteDataBufferAccessBase<T, DataBufferClass*>>;
-
-public:
-
-    /// Constructs an accessor object not associated yet with any DataBuffer.
-    BufferAccess() = default;
-
-    /// Constructs a read/write accessor for the data in a DataBuffer.
-    BufferAccess(DataBufferClass* buffer)
-        : ParentType(buffer) {}
-
-    /// Constructs a read/write accessor for the data in a DataBuffer.
-    template<typename DerivedDataBufferClass>
-    BufferAccess(const DataOORef<DerivedDataBufferClass>& buffer)
-        : BufferAccess(buffer.get()) {}
-
-    /// Forbid copy construction.
-    BufferAccess(const BufferAccess& other) = delete;
-
-    /// Allow move construction.
-    BufferAccess(BufferAccess&& other) = default;
-
-    /// Forbid copy assignment.
-    BufferAccess& operator=(const BufferAccess& other) = delete;
-
-    /// Allow move assignment.
-    BufferAccess& operator=(BufferAccess&& other) = default;
-};
-
-/**
- * Helper class that provides read/write access to the data elements in a DataBuffer object
- *        and which keeps a strong reference to the DataBuffer.
- */
-template<typename T, bool TableMode = false, typename DataBufferClass = DataBuffer>
-class BufferAccessAndRef : public std::conditional_t<TableMode, Ovito::detail::ReadWriteDataBufferAccessBaseTable<T, DataOORef<DataBufferClass>>, Ovito::detail::ReadWriteDataBufferAccessBase<T, DataOORef<DataBufferClass>>>
-{
-    using ParentType = std::conditional_t<TableMode, Ovito::detail::ReadWriteDataBufferAccessBaseTable<T, DataOORef<DataBufferClass>>, Ovito::detail::ReadWriteDataBufferAccessBase<T, DataOORef<DataBufferClass>>>;
-
-public:
-
-    /// Constructs an accessor object not associated yet with any DataBuffer.
-    BufferAccessAndRef() = default;
-
-    /// Constructs a read/write accessor for the data in a DataBuffer.
-    BufferAccessAndRef(DataOORef<DataBufferClass> buffer)
-        : ParentType(std::move(buffer)) {}
-
-    /// Forbid copy construction.
-    BufferAccessAndRef(const BufferAccessAndRef& other) = delete;
-
-    /// Allow move construction.
-    BufferAccessAndRef(BufferAccessAndRef&& other) = default;
-
-    /// Forbid copy assignment.
-    BufferAccessAndRef& operator=(const BufferAccessAndRef& other) = delete;
-
-    /// Allow move assignment.
-    BufferAccessAndRef& operator=(BufferAccessAndRef&& other) = default;
-};
+template<typename T>
+using BufferAccess = detail::BufferAccessTyped<T, std::conditional_t<!std::is_const_v<std::remove_pointer_t<T>>, DataBuffer*, const DataBuffer*>>;
+template<typename T>
+using BufferAccessAndRef = detail::BufferAccessTyped<T, std::conditional_t<!std::is_const_v<std::remove_pointer_t<T>>, DataOORef<DataBuffer>, DataOORef<const DataBuffer>>>;
 
 }   // End of namespace

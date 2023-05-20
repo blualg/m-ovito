@@ -283,7 +283,7 @@ std::pair<FloatType,FloatType> SpatialCorrelationFunctionModifierEditor::plotDat
                                                 DataTablePlotWidget* plotWidget,
                                                 FloatType offset,
                                                 FloatType fac,
-                                                ConstBufferAccess<FloatType> normalization)
+                                                BufferAccess<const FloatType> normalization)
 {
     // Duplicate the data table, then modify the stored values.
     UndoSuspender noUndo;
@@ -311,7 +311,7 @@ std::pair<FloatType,FloatType> SpatialCorrelationFunctionModifierEditor::plotDat
     }
 
     // Determine value range.
-    ConstBufferAccess<FloatType> yarray = clonedTable->y();
+    BufferAccess<const FloatType> yarray = clonedTable->y();
     auto minmax = std::minmax_element(yarray.cbegin(), yarray.cend());
 
     // Hand data table over to plot widget.
@@ -392,11 +392,11 @@ void SpatialCorrelationFunctionModifierEditor::plotAllData()
     const DataTable* neighRDF = state.getObjectBy<DataTable>(modifierApplication(), QStringLiteral("correlation-neighbor-rdf"));
     if(modifier && modifierApplication() && modifier->doComputeNeighCorrelation() && neighCorrelation && neighRDF) {
         const auto& xStorage = neighCorrelation->getXValues();
-        ConstBufferAccess<FloatType> xData(xStorage);
+        BufferAccess<const FloatType> xData(xStorage);
         const auto& yStorage = neighCorrelation->y();
-        ConstBufferAccess<FloatType> yData(yStorage);
+        BufferAccess<const FloatType> yData(yStorage);
         const auto& rdfStorage = neighRDF->y();
-        ConstBufferAccess<FloatType> rdfData(rdfStorage);
+        BufferAccess<const FloatType> rdfData(rdfStorage);
         size_t numberOfDataPoints = yData.size();
         QVector<QPointF> plotData(numberOfDataPoints);
         bool normByRDF = modifier->normalizeRealSpaceByRDF();

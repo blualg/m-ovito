@@ -223,7 +223,7 @@ void GaussianCubeImporter::FrameLoader::loadFile()
 
     // Create the voxel grid property.
     PropertyObject* property = voxelGrid->createProperty(QStringLiteral("Property"), DataBuffer::FloatDefault, nfields, std::move(componentNames));
-    BufferAccess<FloatType, true> fieldQuantity(property);
+    BufferAccess<FloatType*> fieldQuantity(property);
 
     // Parse voxel data.
     for(size_t x = 0; x < gridSize[0]; x++) {

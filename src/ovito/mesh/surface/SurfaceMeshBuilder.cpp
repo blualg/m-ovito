@@ -250,7 +250,7 @@ SurfaceMesh::size_type SurfaceMeshBuilder::makeManifold()
 void SurfaceMeshBuilder::makeQuadrilateralFaces()
 {
     // Get access to the vertex coordinates.
-    ConstBufferAccess<Point3> vertexPositions(expectVertexProperty(SurfaceMeshVertices::PositionProperty));
+    BufferAccess<const Point3> vertexPositions(expectVertexProperty(SurfaceMeshVertices::PositionProperty));
 
     FaceGrower faceGrower(*this);
 
@@ -343,7 +343,7 @@ bool SurfaceMeshBuilder::smoothMesh(int numIterations, ProgressingTask& task, Fl
     // Performs one iteration of the smoothing algorithm.
     auto smoothMeshIteration = [this](FloatType prefactor) {
 
-        ConstBufferAccess<Point3> vertexPositions(expectVertexProperty(SurfaceMeshVertices::PositionProperty));
+        BufferAccess<const Point3> vertexPositions(expectVertexProperty(SurfaceMeshVertices::PositionProperty));
 
         // Compute displacement for each vertex.
         std::vector<Vector3> displacements(vertexCount());
@@ -661,7 +661,7 @@ void SurfaceMeshBuilder::joinCoplanarFaces(FloatType thresholdAngle)
 
     // Compute mesh face normals.
     std::vector<Vector3> faceNormals(faceCount());
-    ConstBufferAccess<Point3> vertexPositions(expectVertexProperty(SurfaceMeshVertices::PositionProperty));
+    BufferAccess<const Point3> vertexPositions(expectVertexProperty(SurfaceMeshVertices::PositionProperty));
     for(face_index face : facesRange()) {
         faceNormals[face] = computeFaceNormal(face, vertexPositions);
     }

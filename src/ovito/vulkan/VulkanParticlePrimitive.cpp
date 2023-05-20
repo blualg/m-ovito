@@ -23,8 +23,6 @@
 #include <ovito/core/Core.h>
 #include "VulkanSceneRenderer.h"
 
-#include <boost/range/irange.hpp>
-
 namespace Ovito {
 
 /******************************************************************************
@@ -731,8 +729,8 @@ void VulkanSceneRenderer::renderParticlesImplementation(const ParticlePrimitive&
     // Upload vertex buffer with the particle positions and radii.
     VkBuffer positionRadiusBuffer = context()->createCachedBuffer(positionRadiusCacheKey, particleCount * 4 * sizeof(float), currentResourceFrame(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, [&](void* buffer) {
         OVITO_ASSERT(!primitive.radii() || primitive.radii()->size() == primitive.positions()->size());
-        ConstBufferAccess<Point3> positionArray(primitive.positions());
-        ConstBufferAccess<FloatType> radiusArray(primitive.radii());
+        BufferAccess<const Point3> positionArray(primitive.positions());
+        BufferAccess<const FloatType> radiusArray(primitive.radii());
         float* dst = reinterpret_cast<float*>(buffer);
         if(!primitive.indices()) {
             const FloatType* radius = radiusArray ? radiusArray.cbegin() : nullptr;
@@ -744,7 +742,7 @@ void VulkanSceneRenderer::renderParticlesImplementation(const ParticlePrimitive&
             }
         }
         else {
-            for(int index : ConstBufferAccess<int32_t>(primitive.indices())) {
+            for(int index : BufferAccess<const int32_t>(primitive.indices())) {
                 const Point3& pos = positionArray[index];
                 *dst++ = static_cast<float>(pos.x());
                 *dst++ = static_cast<float>(pos.y());
@@ -776,12 +774,12 @@ void VulkanSceneRenderer::renderParticlesImplementation(const ParticlePrimitive&
         VkBuffer colorSelectionBuffer = context()->createCachedBuffer(colorSelectionCacheKey, particleCount * 4 * sizeof(float), currentResourceFrame(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, [&](void* buffer) {
             OVITO_ASSERT(!primitive.transparencies() || primitive.transparencies()->size() == primitive.positions()->size());
             OVITO_ASSERT(!primitive.selection() || primitive.selection()->size() == primitive.positions()->size());
-            ConstBufferAccess<FloatType> transparencyArray(primitive.transparencies());
-            ConstBufferAccess<int> selectionArray(primitive.selection());
+            BufferAccess<const FloatType> transparencyArray(primitive.transparencies());
+            BufferAccess<const int> selectionArray(primitive.selection());
             const ColorT<float> uniformColor = primitive.uniformColor().toDataType<float>();
             const ColorAT<float> selectionColor = primitive.selectionColor().toDataType<float>();
             if(!primitive.indices()) {
-                ConstBufferAccess<FloatType,true> colorArray(primitive.colors());
+                BufferAccess<const FloatType*> colorArray(primitive.colors());
                 const FloatType* color = colorArray ? colorArray.cbegin() : nullptr;
                 const FloatType* transparency = transparencyArray ? transparencyArray.cbegin() : nullptr;
                 const int* selection = selectionArray ? selectionArray.cbegin() : nullptr;
@@ -812,9 +810,9 @@ void VulkanSceneRenderer::renderParticlesImplementation(const ParticlePrimitive&
                 }
             }
             else {
-                ConstBufferAccess<Color> colorArray(primitive.colors());
+                BufferAccess<const Color> colorArray(primitive.colors());
                 float* dst = reinterpret_cast<float*>(buffer);
-                for(int index : ConstBufferAccess<int>(primitive.indices())) {
+                for(int index : BufferAccess<const int>(primitive.indices())) {
                     if(selectionArray && selectionArray[index]) {
                         *dst++ = selectionColor.r();
                         *dst++ = selectionColor.g();
@@ -859,9 +857,9 @@ void VulkanSceneRenderer::renderParticlesImplementation(const ParticlePrimitive&
 
         // Upload vertex buffer with the particle transformation matrices.
         VkBuffer shapeOrientationBuffer = context()->createCachedBuffer(shapeOrientationCacheKey, particleCount * sizeof(Matrix_4<float>), currentResourceFrame(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, [&](void* buffer) {
-            ConstBufferAccess<Vector3> asphericalShapeArray(primitive.asphericalShapes());
-            ConstBufferAccess<Quaternion> orientationArray(primitive.orientations());
-            ConstBufferAccess<FloatType> radiusArray(primitive.radii());
+            BufferAccess<const Vector3> asphericalShapeArray(primitive.asphericalShapes());
+            BufferAccess<const Quaternion> orientationArray(primitive.orientations());
+            BufferAccess<const FloatType> radiusArray(primitive.radii());
             OVITO_ASSERT(!primitive.asphericalShapes() || primitive.asphericalShapes()->size() == primitive.positions()->size());
             OVITO_ASSERT(!primitive.orientations() || primitive.orientations()->size() == primitive.positions()->size());
             if(!primitive.indices()) {
@@ -909,7 +907,7 @@ void VulkanSceneRenderer::renderParticlesImplementation(const ParticlePrimitive&
             }
             else {
                 Matrix_4<float>* dst = reinterpret_cast<Matrix_4<float>*>(buffer);
-                for(int index : ConstBufferAccess<int>(primitive.indices())) {
+                for(int index : BufferAccess<const int>(primitive.indices())) {
                     Vector_3<float> axes;
                     if(asphericalShapeArray && asphericalShapeArray[index] != Vector3::Zero()) {
                         axes = asphericalShapeArray[index].toDataType<float>();
@@ -961,13 +959,13 @@ void VulkanSceneRenderer::renderParticlesImplementation(const ParticlePrimitive&
             if(primitive.roundness()) {
                 OVITO_ASSERT(primitive.roundness()->size() == primitive.positions()->size());
                 if(!primitive.indices()) {
-                    for(const Vector2& r : ConstBufferAccess<Vector2>(primitive.roundness())) {
+                    for(const Vector2& r : BufferAccess<const Vector2>(primitive.roundness())) {
                         *dst++ = r.toDataType<float>();
                     }
                 }
                 else {
-                    ConstBufferAccess<Vector2> roundnessArray(primitive.roundness());
-                    for(int index : ConstBufferAccess<int>(primitive.indices())) {
+                    BufferAccess<const Vector2> roundnessArray(primitive.roundness());
+                    for(int index : BufferAccess<const int>(primitive.indices())) {
                         *dst++ = roundnessArray[index].toDataType<float>();
                     }
                 }
@@ -1013,12 +1011,12 @@ void VulkanSceneRenderer::renderParticlesImplementation(const ParticlePrimitive&
             // First, compute distance of each particle from the camera along the viewing direction (=camera z-axis).
             std::vector<FloatType> distances(particleCount);
             if(!primitive.indices()) {
-                boost::transform(boost::irange<size_t>(0, particleCount), distances.begin(), [direction, positionsArray = ConstBufferAccess<Vector3>(primitive.positions())](size_t i) {
+                boost::transform(boost::irange<size_t>(0, particleCount), distances.begin(), [direction, positionsArray = BufferAccess<const Vector3>(primitive.positions())](size_t i) {
                     return direction.dot(positionsArray[i]);
                 });
             }
             else {
-                boost::transform(ConstBufferAccess<int>(primitive.indices()), distances.begin(), [direction, positionsArray = ConstBufferAccess<Vector3>(primitive.positions())](size_t i) {
+                boost::transform(BufferAccess<const int>(primitive.indices()), distances.begin(), [direction, positionsArray = BufferAccess<const Vector3>(primitive.positions())](size_t i) {
                     return direction.dot(positionsArray[i]);
                 });
             }

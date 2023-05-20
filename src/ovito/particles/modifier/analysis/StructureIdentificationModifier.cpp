@@ -128,7 +128,7 @@ void StructureIdentificationModifier::StructureIdentificationEngine::applyResult
 
     // Finalize output property.
     PropertyPtr structureProperty = postProcessStructureTypes(request, structures());
-    ConstBufferAccess<int32_t> structureData(structureProperty);
+    BufferAccess<const int32_t> structureData(structureProperty);
 
     // Add output property to the particles.
     particles->createProperty(structureProperty);
@@ -203,7 +203,7 @@ QVector<int64_t> StructureIdentificationModifier::getStructureCountsFromModifier
             if(structureCounts->size() != 0 && structureCounts->dataType() == PropertyObject::Int64) {
 
                 // Convert the table data to a format that can be passed back to QML.
-                ConstBufferAccess<int64_t> array(structureCounts);
+                BufferAccess<const int64_t> array(structureCounts);
                 return QVector<int64_t>{ array.cbegin(), array.cend() };
             }
         }

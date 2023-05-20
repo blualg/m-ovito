@@ -30,13 +30,7 @@ namespace Ovito {
 
 namespace detail {
     // Forward declarations
-    template<class PointerType, bool Writable> class DataBufferAccessBase;
-    template<typename T, class PointerType, bool Writable = false> class ReadOnlyDataBufferSubrangeAccessBase;
-    template<typename T, class PointerType, bool Writable = false> class ReadOnlyDataBufferAccessBase;
-    template<typename T, class PointerType, bool Writable = false> class ReadOnlyDataBufferAccessBaseTable;
-    template<typename T, class PointerType> class ReadWriteDataBufferSubrangeAccessBase;
-    template<typename T, class PointerType> class ReadWriteDataBufferAccessBase;
-    template<typename T, class PointerType> class ReadWriteDataBufferAccessBaseTable;
+    template<class BufferReference> class BufferAccessBase;
 }
 
 /**
@@ -182,7 +176,7 @@ public:
     void fill(const T value) {
         WriteAccess writeAccess(*this);
         OVITO_ASSERT(stride() == sizeof(T));
-        T* begin = reinterpret_cast<T*>(buffer());
+        T* begin = reinterpret_cast<T*>(data());
         T* end = begin + this->size();
         std::fill(begin, end, value);
     }
@@ -197,8 +191,8 @@ public:
         OVITO_ASSERT(selectionProperty.size() == this->size());
         OVITO_ASSERT(selectionProperty.dataType() == IntSelection);
         OVITO_ASSERT(selectionProperty.componentCount() == 1);
-        const SelectionIntType* __restrict selectionIter = reinterpret_cast<const SelectionIntType*>(selectionProperty.cbuffer());
-        for(T* __restrict v = reinterpret_cast<T*>(buffer()), *end = v + this->size(); v != end; ++v) {
+        const SelectionIntType* __restrict selectionIter = reinterpret_cast<const SelectionIntType*>(selectionProperty.cdata());
+        for(T* __restrict v = reinterpret_cast<T*>(data()), *end = v + this->size(); v != end; ++v) {
             if(*selectionIter++)
                 *v = value;
         }
@@ -265,27 +259,27 @@ public:
             return true;
         ReadAccess readAccess(*this);
         if(dataType() == DataBuffer::Int8) {
-            for(const int8_t* __restrict v = reinterpret_cast<const int8_t*>(cbuffer()) + component, *v_end = v + size()*cmpntCount; v != v_end; v += cmpntCount)
+            for(const int8_t* __restrict v = reinterpret_cast<const int8_t*>(cdata()) + component, *v_end = v + size()*cmpntCount; v != v_end; v += cmpntCount)
                 *iter++ = *v;
             return true;
         }
         else if(dataType() == DataBuffer::Int32) {
-            for(const int32_t* __restrict v = reinterpret_cast<const int32_t*>(cbuffer()) + component, *v_end = v + size()*cmpntCount; v != v_end; v += cmpntCount)
+            for(const int32_t* __restrict v = reinterpret_cast<const int32_t*>(cdata()) + component, *v_end = v + size()*cmpntCount; v != v_end; v += cmpntCount)
                 *iter++ = *v;
             return true;
         }
         else if(dataType() == DataBuffer::Int64) {
-            for(const int64_t* __restrict v = reinterpret_cast<const int64_t*>(cbuffer()) + component, *v_end = v + size()*cmpntCount; v != v_end; v += cmpntCount)
+            for(const int64_t* __restrict v = reinterpret_cast<const int64_t*>(cdata()) + component, *v_end = v + size()*cmpntCount; v != v_end; v += cmpntCount)
                 *iter++ = *v;
             return true;
         }
         else if(dataType() == DataBuffer::Float32) {
-            for(const float* __restrict v = reinterpret_cast<const float*>(cbuffer()) + component, *v_end = v + size()*cmpntCount; v != v_end; v += cmpntCount)
+            for(const float* __restrict v = reinterpret_cast<const float*>(cdata()) + component, *v_end = v + size()*cmpntCount; v != v_end; v += cmpntCount)
                 *iter++ = *v;
             return true;
         }
         else if(dataType() == DataBuffer::Float64) {
-            for(const double* __restrict v = reinterpret_cast<const double*>(cbuffer()) + component, *v_end = v + size()*cmpntCount; v != v_end; v += cmpntCount)
+            for(const double* __restrict v = reinterpret_cast<const double*>(cdata()) + component, *v_end = v + size()*cmpntCount; v != v_end; v += cmpntCount)
                 *iter++ = *v;
             return true;
         }
@@ -303,31 +297,31 @@ public:
             return true;
         ReadAccess readAccess(*this);
         if(dataType() == DataBuffer::Int8) {
-            auto v = reinterpret_cast<const int8_t*>(cbuffer()) + component;
+            auto v = reinterpret_cast<const int8_t*>(cdata()) + component;
             for(size_t i = 0; i < s; i++, v += cmpntCount)
                 std::invoke(std::forward<F>(func), i, *v);
             return true;
         }
         else if(dataType() == DataBuffer::Int32) {
-            auto v = reinterpret_cast<const int32_t*>(cbuffer()) + component;
+            auto v = reinterpret_cast<const int32_t*>(cdata()) + component;
             for(size_t i = 0; i < s; i++, v += cmpntCount)
                 std::invoke(std::forward<F>(func), i, *v);
             return true;
         }
         else if(dataType() == DataBuffer::Int64) {
-            auto v = reinterpret_cast<const int64_t*>(cbuffer()) + component;
+            auto v = reinterpret_cast<const int64_t*>(cdata()) + component;
             for(size_t i = 0; i < s; i++, v += cmpntCount)
                 std::invoke(std::forward<F>(func), i, *v);
             return true;
         }
         else if(dataType() == DataBuffer::Float32) {
-            auto v = reinterpret_cast<const float*>(cbuffer()) + component;
+            auto v = reinterpret_cast<const float*>(cdata()) + component;
             for(size_t i = 0; i < s; i++, v += cmpntCount)
                 std::invoke(std::forward<F>(func), i, *v);
             return true;
         }
         else if(dataType() == DataBuffer::Float64) {
-            auto v = reinterpret_cast<const double*>(cbuffer()) + component;
+            auto v = reinterpret_cast<const double*>(cdata()) + component;
             for(size_t i = 0; i < s; i++, v += cmpntCount)
                 std::invoke(std::forward<F>(func), i, *v);
             return true;
@@ -343,7 +337,7 @@ public:
         if(!callerAlreadyHasWriteAccess)
             writeAccess.emplace(*this);
 #endif
-        std::memmove(buffer() + toIndex * stride(), cbuffer() + fromIndex * stride(), stride());
+        std::memmove(data() + toIndex * stride(), cdata() + fromIndex * stride(), stride());
     }
 
     /// Checks if this buffer|s metadata and the contents exactly match those of another buffer.
@@ -399,12 +393,12 @@ protected:
 private:
 
     /// \brief Returns a read-only pointer to the raw element data stored in this buffer.
-    const std::byte* cbuffer() const {
+    const std::byte* cdata() const {
         return _data.get();
     }
 
     /// \brief Returns a read-write pointer to the raw element data stored in this buffer.
-    std::byte* buffer() {
+    std::byte* data() {
         return _data.get();
     }
 
@@ -441,13 +435,7 @@ private:
     mutable QAtomicInteger<int> _activeAccessors = 0;
 #endif
 
-    template<class PointerType, bool Writable> friend class detail::DataBufferAccessBase;
-    template<typename T, class PointerType, bool Writable> friend class detail::ReadOnlyDataBufferSubrangeAccessBase;
-    template<typename T, class PointerType, bool Writable> friend class detail::ReadOnlyDataBufferAccessBase;
-    template<typename T, class PointerType, bool Writable> friend class detail::ReadOnlyDataBufferAccessBaseTable;
-    template<typename T, class PointerType> friend class detail::ReadWriteDataBufferSubrangeAccessBase;
-    template<typename T, class PointerType> friend class detail::ReadWriteDataBufferAccessBase;
-    template<typename T, class PointerType> friend class detail::ReadWriteDataBufferAccessBaseTable;
+    template<class BufferReference> friend class detail::BufferAccessBase;
 };
 
 /// Class template returning the Qt data type identifier for the components in the given C++ array structure.

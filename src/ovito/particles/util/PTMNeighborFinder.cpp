@@ -41,7 +41,7 @@ PTMNeighborFinder::PTMNeighborFinder(bool all_properties) : NearestNeighborFinde
 /******************************************************************************
 * Prepares the neighbor finder.
 ******************************************************************************/
-bool PTMNeighborFinder::prepare(ConstBufferAccess<Point3> positions, const SimulationCellObject* cell, ConstBufferAccess<SelectionIntType> selection,
+bool PTMNeighborFinder::prepare(BufferAccess<const Point3> positions, const SimulationCellObject* cell, BufferAccess<const SelectionIntType> selection,
                                 ConstDataBufferPtr structuresArray,
                                 ConstDataBufferPtr orientationsArray,
                                 ConstDataBufferPtr correspondencesArray)
@@ -66,8 +66,8 @@ bool PTMNeighborFinder::prepare(ConstBufferAccess<Point3> positions, const Simul
 ******************************************************************************/
 void PTMNeighborFinder::Query::findNeighbors(size_t particleIndex, std::optional<Quaternion> targetOrientation)
 {
-    ConstBufferAccess<PTMAlgorithm::StructureType> structuresArray(_finder._structuresArray);
-    ConstBufferAccess<QuaternionG> orientationsArray(_finder._orientationsArray);
+    BufferAccess<const PTMAlgorithm::StructureType> structuresArray(_finder._structuresArray);
+    BufferAccess<const QuaternionG> orientationsArray(_finder._orientationsArray);
 
     _structureType = structuresArray[particleIndex];
     _orientation = orientationsArray[particleIndex].toDataType<FloatType>();
@@ -149,7 +149,7 @@ void PTMNeighborFinder::Query::findNeighbors(size_t particleIndex, std::optional
 
 void PTMNeighborFinder::Query::getNeighbors(size_t particleIndex, int ptm_type)
 {
-    ConstBufferAccess<int64_t> correspondencesArray(_finder._correspondencesArray);
+    BufferAccess<const int64_t> correspondencesArray(_finder._correspondencesArray);
 
     // Let the internal NearestNeighborFinder determine the list of nearest particles.
     NeighborQuery neighborQuery(_finder);

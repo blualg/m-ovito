@@ -135,8 +135,8 @@ bool GenerateTrajectoryLinesModifier::generateTrajectories(AnimationTime current
         std::vector<size_t> selectedIndices;
         std::set<int64_t> selectedIdentifiers;
         if(onlySelectedParticles()) {
-            if(ConstBufferAccess<SelectionIntType> selectionProperty = particles->getProperty(ParticlesObject::SelectionProperty)) {
-                ConstBufferAccess<int64_t> identifierProperty = particles->getProperty(ParticlesObject::IdentifierProperty);
+            if(BufferAccess<const SelectionIntType> selectionProperty = particles->getProperty(ParticlesObject::SelectionProperty)) {
+                BufferAccess<const int64_t> identifierProperty = particles->getProperty(ParticlesObject::IdentifierProperty);
                 if(identifierProperty && identifierProperty.size() == selectionProperty.size()) {
                     const auto* s = selectionProperty.cbegin();
                     for(auto id : identifierProperty)
@@ -191,10 +191,10 @@ bool GenerateTrajectoryLinesModifier::generateTrajectories(AnimationTime current
             if(!particles)
                 throw Exception(tr("Input data contains no particles at frame %1.").arg(frame));
             particles->verifyIntegrity();
-            ConstBufferAccess<Point3> posProperty = particles->expectProperty(ParticlesObject::PositionProperty);
+            BufferAccess<const Point3> posProperty = particles->expectProperty(ParticlesObject::PositionProperty);
 
             // Get the particle property to be sampled.
-            ConstBufferAccess<void,true> particleSamplingProperty;
+            BufferReadAccess particleSamplingProperty;
             if(transferParticleProperties()) {
                 if(particleProperty().isNull())
                     throw Exception(tr("Please select a particle property to be sampled."));
@@ -206,7 +206,7 @@ bool GenerateTrajectoryLinesModifier::generateTrajectories(AnimationTime current
 
             if(onlySelectedParticles()) {
                 if(!selectedIdentifiers.empty()) {
-                    ConstBufferAccess<int64_t> identifierProperty = particles->getProperty(ParticlesObject::IdentifierProperty);
+                    BufferAccess<const int64_t> identifierProperty = particles->getProperty(ParticlesObject::IdentifierProperty);
                     if(!identifierProperty || identifierProperty.size() != posProperty.size())
                         throw Exception(tr("Input particles do not possess identifiers at frame %1.").arg(frame));
 
@@ -246,7 +246,7 @@ bool GenerateTrajectoryLinesModifier::generateTrajectories(AnimationTime current
             else {
                 // Add coordinates of all particles.
                 pointData.insert(pointData.end(), posProperty.cbegin(), posProperty.cend());
-                ConstBufferAccess<int64_t> identifierProperty = particles->getProperty(ParticlesObject::IdentifierProperty);
+                BufferAccess<const int64_t> identifierProperty = particles->getProperty(ParticlesObject::IdentifierProperty);
                 if(identifierProperty && identifierProperty.size() == posProperty.size()) {
                     // Particles with IDs.
                     idData.insert(idData.end(), identifierProperty.cbegin(), identifierProperty.cend());
@@ -325,7 +325,7 @@ bool GenerateTrajectoryLinesModifier::generateTrajectories(AnimationTime current
                         throw Exception(tr("Sampling buffer size mismatch. Sampled particle property '%1' seems to have a varying component count.").arg(inputProperty->name()));
 
                     // Create a corresponding output property of the trajectory lines.
-                    BufferAccess<void,true> samplingProperty;
+                    BufferWriteAccess samplingProperty;
                     if(inputProperty->type() < PropertyObject::FirstSpecificProperty && TrajectoryObject::OOClass().isValidStandardPropertyId(inputProperty->type())) {
                         // Input particle property is also a standard property for trajectory lines.
                         samplingProperty = trajObj->createProperty(inputProperty->type());

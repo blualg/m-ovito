@@ -414,10 +414,10 @@ QString POSCARImporter::FrameLoader::readDensityGrid(CompressedTextReader& strea
     }
 
     if(magnetizationDensityX && magnetizationDensityY && magnetizationDensityZ) {
-        BufferAccess<FloatType,true> vectorMagnetization = voxelGrid->createProperty(tr("Magnetization density"), DataBuffer::FloatDefault, 3, QStringList() << "X" << "Y" << "Z");
-        boost::copy(ConstBufferAccess<FloatType>(magnetizationDensityX), vectorMagnetization.componentRange(0).begin());
-        boost::copy(ConstBufferAccess<FloatType>(magnetizationDensityY), vectorMagnetization.componentRange(1).begin());
-        boost::copy(ConstBufferAccess<FloatType>(magnetizationDensityZ), vectorMagnetization.componentRange(2).begin());
+        BufferAccess<FloatType*> vectorMagnetization = voxelGrid->createProperty(tr("Magnetization density"), DataBuffer::FloatDefault, 3, QStringList() << "X" << "Y" << "Z");
+        boost::copy(BufferAccess<const FloatType>(magnetizationDensityX), vectorMagnetization.componentRange(0).begin());
+        boost::copy(BufferAccess<const FloatType>(magnetizationDensityY), vectorMagnetization.componentRange(1).begin());
+        boost::copy(BufferAccess<const FloatType>(magnetizationDensityZ), vectorMagnetization.componentRange(2).begin());
     }
 
     voxelGrid->verifyIntegrity();
@@ -430,7 +430,7 @@ QString POSCARImporter::FrameLoader::readDensityGrid(CompressedTextReader& strea
 PropertyObject* POSCARImporter::FrameLoader::readFieldQuantity(CompressedTextReader& stream, VoxelGrid* grid, const QString& name)
 {
     PropertyObject* fieldProperty = grid->createProperty(name, DataBuffer::FloatDefault);
-    BufferAccess<FloatType,true> fieldAccess(fieldProperty);
+    BufferAccess<FloatType*> fieldAccess(fieldProperty);
     const char* s = stream.readLine();
     auto* data = fieldAccess.begin();
     setProgressMaximum(fieldProperty->size());

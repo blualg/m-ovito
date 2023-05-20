@@ -466,7 +466,7 @@ void LAMMPSBinaryDumpImporter::FrameLoader::loadFile()
         // Assume reduced coordinates if all particle coordinates are within the [-0.02,1.02] interval.
         // We allow coordinates to be slightly outside the [0,1] interval, because LAMMPS
         // wraps around particles at the periodic boundaries only occasionally.
-        if(ConstBufferAccess<Point3> posProperty = particles()->getProperty(ParticlesObject::PositionProperty)) {
+        if(BufferAccess<const Point3> posProperty = particles()->getProperty(ParticlesObject::PositionProperty)) {
             // Compute bound box of particle positions.
             Box3 boundingBox;
             boundingBox.addPoints(posProperty);

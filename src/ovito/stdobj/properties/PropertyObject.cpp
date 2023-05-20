@@ -232,7 +232,7 @@ std::tuple<std::map<int,int>, ConstPropertyPtr> PropertyObject::generateContiguo
         typeIds.insert(t->numericId());
 
     // Add ID values that occur in the property array but which have not been defined as a type.
-    for(int32_t t : ConstBufferAccess<int32_t>(this))
+    for(int32_t t : BufferAccess<const int32_t>(this))
         typeIds.insert(t);
 
     // Build the mappings between old and new IDs.

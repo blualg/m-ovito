@@ -102,7 +102,7 @@ PropertyOutputWriter::PropertyOutputWriter(const OutputColumnMapping& mapping, c
                 for(int component = 0; component < property->componentCount(); component++) {
                     _properties.push_back(property);
                     _vectorComponents.push_back(component);
-                    _propertyArrays.push_back(ConstBufferAccess<void,true>(property));
+                    _propertyArrays.push_back(BufferReadAccess(property));
                 }
                 continue;
             }
@@ -111,7 +111,7 @@ PropertyOutputWriter::PropertyOutputWriter(const OutputColumnMapping& mapping, c
         // Build internal list of property objects for fast look up during writing.
         _properties.push_back(property);
         _vectorComponents.push_back(std::max(0, pref.vectorComponent()));
-        _propertyArrays.push_back(ConstBufferAccess<void,true>(property));
+        _propertyArrays.push_back(BufferReadAccess(property));
     }
 }
 
@@ -122,7 +122,7 @@ void PropertyOutputWriter::writeElement(size_t index, CompressedTextWriter& stre
 {
     QVector<const PropertyObject*>::const_iterator property = _properties.constBegin();
     QVector<int>::const_iterator vcomp = _vectorComponents.constBegin();
-    QVector<ConstBufferAccess<void,true>>::const_iterator array = _propertyArrays.constBegin();
+    QVector<BufferReadAccess>::const_iterator array = _propertyArrays.constBegin();
     for(; property != _properties.constEnd(); ++property, ++vcomp, ++array) {
         if(property != _properties.constBegin()) stream << ' ';
         if(*property) {

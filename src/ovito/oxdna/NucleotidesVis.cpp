@@ -74,9 +74,9 @@ Box3 NucleotidesVis::boundingBox(AnimationTime time, const ConstDataObjectPath& 
 
         // If not, recompute bounding box from particle data.
         Box3 innerBox;
-        if(ConstBufferAccess<Point3> positionArray = positionProperty) {
+        if(BufferAccess<const Point3> positionArray = positionProperty) {
             innerBox.addPoints(positionArray);
-            if(ConstBufferAccess<Vector3> axisArray = nucleotideAxisProperty) {
+            if(BufferAccess<const Vector3> axisArray = nucleotideAxisProperty) {
                 const Vector3* axis = axisArray.cbegin();
                 for(const Point3& p : positionArray) {
                     innerBox.addPoint(p + (*axis++));
@@ -142,7 +142,7 @@ ConstPropertyPtr NucleotidesVis::nucleobaseColors(const ParticlesObject* particl
             for(const auto& entry : colorMap)
                 colorArray[entry.first] = entry.second.toDataType<GraphicsFloatType>();
             // Fill color array.
-            ConstBufferAccess<int32_t> typeArray(baseProperty);
+            BufferAccess<const int32_t> typeArray(baseProperty);
             const auto* t = typeArray.cbegin();
             for(auto& c : BufferAccess<ColorG>(output)) {
                 if(*t >= 0 && *t < (int)colorArray.size())
@@ -154,7 +154,7 @@ ConstPropertyPtr NucleotidesVis::nucleobaseColors(const ParticlesObject* particl
         }
         else {
             // Fill color array.
-            ConstBufferAccess<int32_t> typeArray(baseProperty);
+            BufferAccess<const int32_t> typeArray(baseProperty);
             const auto* t = typeArray.cbegin();
             for(auto& c : BufferAccess<ColorG>(output)) {
                 auto it = colorMap.find(*t);
@@ -273,8 +273,8 @@ PipelineStatus NucleotidesVis::render(AnimationTime time, const ConstDataObjectP
 
             // Fill in the position data for the base sites.
             BufferAccessAndRef<Point3G> baseSites = DataBufferPtr::create(particles->elementCount(), DataBuffer::FloatGraphics, 3);
-            ConstBufferAccess<Point3> positionsArray(positionProperty);
-            ConstBufferAccess<Vector3> nucleotideAxisArray(nucleotideAxisProperty);
+            BufferAccess<const Point3> positionsArray(positionProperty);
+            BufferAccess<const Vector3> nucleotideAxisArray(nucleotideAxisProperty);
             for(size_t i = 0; i < baseSites.size(); i++)
                 baseSites[i] = (positionsArray[i] + (0.8 * nucleotideAxisArray[i])).toDataType<GraphicsFloatType>();
             visCache.basePrimitive.setPositions(baseSites.take());
@@ -288,7 +288,7 @@ PipelineStatus NucleotidesVis::render(AnimationTime time, const ConstDataObjectP
             visCache.basePrimitive.setAsphericalShapes(std::move(asphericalShapes));
 
             // Fill in base orientations.
-            if(ConstBufferAccess<Vector3> nucleotideNormalArray = nucleotideNormalProperty) {
+            if(BufferAccess<const Vector3> nucleotideNormalArray = nucleotideNormalProperty) {
                 PropertyPtr orientations = ParticlesObject::OOClass().createStandardProperty(DataBuffer::Uninitialized, particles->elementCount(), ParticlesObject::OrientationProperty);
                 BufferAccess<QuaternionG> orientationsAccess(orientations);
                 for(size_t i = 0; i < orientations->size(); i++) {

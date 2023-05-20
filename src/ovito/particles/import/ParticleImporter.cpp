@@ -244,10 +244,10 @@ void ParticleImporter::FrameLoader::setImproperCount(size_t count)
 ******************************************************************************/
 void ParticleImporter::FrameLoader::generateBondPeriodicImageProperty()
 {
-    ConstBufferAccess<Point3> posProperty = particles()->getProperty(ParticlesObject::PositionProperty);
+    BufferAccess<const Point3> posProperty = particles()->getProperty(ParticlesObject::PositionProperty);
     if(!posProperty) return;
 
-    ConstBufferAccess<ParticleIndexPair> bondTopologyProperty = bonds()->getProperty(BondsObject::TopologyProperty);
+    BufferAccess<const ParticleIndexPair> bondTopologyProperty = bonds()->getProperty(BondsObject::TopologyProperty);
     if(!bondTopologyProperty) return;
 
     BufferAccess<Vector3I> bondPeriodicImageProperty = bonds()->createProperty(BondsObject::PeriodicImageProperty);
@@ -319,7 +319,7 @@ void ParticleImporter::FrameLoader::generateBonds()
     if(!neighborFinder.prepare(maxCutoff, positionProperty, state().getObject<SimulationCellObject>(), {}))
         return;
 
-    ConstBufferAccess<int32_t> particleTypesArray(typeProperty);
+    BufferAccess<const int32_t> particleTypesArray(typeProperty);
 
     // Multi-threaded loop over all particles, each thread producing a partial bonds list.
     size_t particleCount = positionProperty->size();
@@ -375,7 +375,7 @@ void ParticleImporter::FrameLoader::computeVelocityMagnitude()
     if(!_particles || isCanceled())
         return;
 
-    if(ConstBufferAccess<Vector3> velocityVectors = _particles->getProperty(ParticlesObject::VelocityProperty)) {
+    if(BufferAccess<const Vector3> velocityVectors = _particles->getProperty(ParticlesObject::VelocityProperty)) {
         auto v = velocityVectors.cbegin();
         PropertyObject* magnitudeProperty = particles()->createProperty(ParticlesObject::VelocityMagnitudeProperty);
         for(FloatType& mag : BufferAccess<FloatType>(magnitudeProperty)) {
@@ -408,7 +408,7 @@ void ParticleImporter::FrameLoader::correctOffcenterCell()
         return;
 
     // Get the particle coordinates.
-    ConstBufferAccess<Point3> positions = _particles ? _particles->getProperty(ParticlesObject::PositionProperty) : nullptr;
+    BufferAccess<const Point3> positions = _particles ? _particles->getProperty(ParticlesObject::PositionProperty) : nullptr;
     if(!positions || positions.size() == 0)
         return;
 

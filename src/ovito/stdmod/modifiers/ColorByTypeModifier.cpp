@@ -120,7 +120,7 @@ void ColorByTypeModifier::evaluateSynchronous(const ModifierEvaluationRequest& r
         throw Exception(tr("The input property '%1' has the wrong number of components. Must be a scalar property.").arg(typePropertyObject->name()));
     if(typePropertyObject->dataType() != PropertyObject::Int32)
         throw Exception(tr("The input property '%1' has the wrong data type. Must be a 32-bit integer property.").arg(typePropertyObject->name()));
-    ConstBufferAccess<int32_t> typeProperty = typePropertyObject;
+    BufferAccess<const int32_t> typeProperty = typePropertyObject;
 
     // Get the selection property if enabled by the user.
     ConstPropertyPtr selectionProperty;
@@ -138,7 +138,7 @@ void ColorByTypeModifier::evaluateSynchronous(const ModifierEvaluationRequest& r
     BufferAccess<ColorG> colorProperty = container->createProperty(selectionProperty ? DataBuffer::Initialized : DataBuffer::Uninitialized, PropertyObject::GenericColorProperty, objectPath);
 
     // Access selection array.
-    ConstBufferAccess<SelectionIntType> selection(selectionProperty.get());
+    BufferAccess<const SelectionIntType> selection(selectionProperty.get());
 
     // Create color lookup table.
     const std::map<int,Color> colorMap = typePropertyObject->typeColorMap();

@@ -192,7 +192,7 @@ void GSDImporter::FrameLoader::loadFile()
 
     {
         // Read particle positions.
-        BufferAccess<FloatType, true> posProperty = particles()->createProperty(ParticlesObject::PositionProperty);
+        BufferAccess<FloatType*> posProperty = particles()->createProperty(ParticlesObject::PositionProperty);
         if(gsd.hasChunk("particles/position", frameNumber))
             gsd.readFloatArray("particles/position", frameNumber, posProperty.begin(), numParticles, posProperty.componentCount());
         else
@@ -534,15 +534,15 @@ PropertyObject* GSDImporter::FrameLoader::readOptionalProperty(GSDFile& gsd, con
             prop = container->createProperty(propertyName, dataTypeAndComponents.first, dataTypeAndComponents.second);
         }
         if(prop->dataType() == PropertyObject::Float32)
-            gsd.readFloatArray(chunkName, frameNumber, BufferAccess<float,true>(prop).begin(), container->elementCount(), prop->componentCount());
+            gsd.readFloatArray(chunkName, frameNumber, BufferAccess<float*>(prop).begin(), container->elementCount(), prop->componentCount());
         else if(prop->dataType() == PropertyObject::Float64)
-            gsd.readFloatArray(chunkName, frameNumber, BufferAccess<double,true>(prop).begin(), container->elementCount(), prop->componentCount());
+            gsd.readFloatArray(chunkName, frameNumber, BufferAccess<double*>(prop).begin(), container->elementCount(), prop->componentCount());
         else if(prop->dataType() == PropertyObject::Int8)
-            gsd.readIntArray(chunkName, frameNumber, BufferAccess<int8_t,true>(prop).begin(), container->elementCount(), prop->componentCount());
+            gsd.readIntArray(chunkName, frameNumber, BufferAccess<int8_t*>(prop).begin(), container->elementCount(), prop->componentCount());
         else if(prop->dataType() == PropertyObject::Int32)
-            gsd.readIntArray(chunkName, frameNumber, BufferAccess<int32_t,true>(prop).begin(), container->elementCount(), prop->componentCount());
+            gsd.readIntArray(chunkName, frameNumber, BufferAccess<int32_t*>(prop).begin(), container->elementCount(), prop->componentCount());
         else if(prop->dataType() == PropertyObject::Int64)
-            gsd.readIntArray(chunkName, frameNumber, BufferAccess<int64_t,true>(prop).begin(), container->elementCount(), prop->componentCount());
+            gsd.readIntArray(chunkName, frameNumber, BufferAccess<int64_t*>(prop).begin(), container->elementCount(), prop->componentCount());
         else
             throw Exception(tr("Property '%1' cannot be read from GSD file, because its data type is not supported by OVITO.").arg(prop->name()));
     }
@@ -561,7 +561,7 @@ PropertyObject* GSDImporter::FrameLoader::readOptionalProperty(GSDFile& gsd, con
         }
         OVITO_ASSERT(prop->stride() == defaultValueSize);
         if(prop->stride() == defaultValueSize) {
-            BufferAccess<void,true> access(prop);
+            BufferWriteAccess access(prop);
             std::byte* dest = access.data();
             for(size_t i = 0; i < prop->size(); i++, dest += defaultValueSize) {
                 std::memcpy(dest, defaultValue, defaultValueSize);
@@ -691,7 +691,7 @@ void GSDImporter::FrameLoader::parseEllipsoidShape(int typeId, QJsonObject defin
     BufferAccess<Vector3G> ashapeProperty = particles()->createProperty(DataBuffer::Initialized, ParticlesObject::AsphericalShapeProperty);
 
     // Assign the [a,b,c] values to those particles which are of the given type.
-    ConstBufferAccess<int32_t> typeProperty = particles()->expectProperty(ParticlesObject::TypeProperty);
+    BufferAccess<const int32_t> typeProperty = particles()->expectProperty(ParticlesObject::TypeProperty);
     for(size_t i = 0; i < typeProperty.size(); i++) {
         if(typeProperty[i] == typeId)
             ashapeProperty[i] = abc;
@@ -875,7 +875,7 @@ void GSDImporter::FrameLoader::parseConvexPolyhedronShape(int typeId, QJsonObjec
             SurfaceMeshBuilder roundedMesh(roundedMeshObj);
             SurfaceMeshBuilder::VertexGrower roundedMeshVertexGrower(roundedMesh);
             SurfaceMeshBuilder::FaceGrower roundedMeshFaceGrower(roundedMesh);
-            ConstBufferAccess<Point3> vertexPositions(mesh.expectVertexProperty(SurfaceMeshVertices::PositionProperty));
+            BufferAccess<const Point3> vertexPositions(mesh.expectVertexProperty(SurfaceMeshVertices::PositionProperty));
 
             // Maps edges of the old mesh to edges of the new mesh.
             std::vector<SurfaceMesh::edge_index> edgeMapping(mesh.edgeCount());

@@ -150,7 +150,7 @@ std::tuple<ConstDataBufferPtr, ConstDataBufferPtr> SurfaceMeshVertices::getVecto
                     // Create a copy of the vector property in which the values of culled points
                     // will be nulled out to hide the arrow glyphs for these points.
                     BufferAccessAndRef<Vector3> filteredVectors = vectorProperty.makeCopy();
-                    if(ConstBufferAccess<Point3> positions = getProperty(PositionProperty)) {
+                    if(BufferAccess<const Point3> positions = getProperty(PositionProperty)) {
                         Vector3* v = filteredVectors.begin();
                         for(const Point3& p : positions) {
                             if(mesh->isPointCulled(p))

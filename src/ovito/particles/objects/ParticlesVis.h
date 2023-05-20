@@ -85,13 +85,13 @@ public:
     ConstPropertyPtr particleRadii(const ParticlesObject* particles, bool includeGlobalScaleFactor) const;
 
     /// Determines the display radius of a single particle.
-    GraphicsFloatType particleRadius(size_t particleIndex, ConstBufferAccess<GraphicsFloatType> radiusProperty, const PropertyObject* typeProperty) const;
+    GraphicsFloatType particleRadius(size_t particleIndex, BufferAccess<const GraphicsFloatType> radiusProperty, const PropertyObject* typeProperty) const;
 
     /// Returns the display color of a single particle.
-    ColorG particleColor(size_t particleIndex, ConstBufferAccess<ColorG> colorProperty, const PropertyObject* typeProperty, ConstBufferAccess<SelectionIntType> selectionProperty) const;
+    ColorG particleColor(size_t particleIndex, BufferAccess<const ColorG> colorProperty, const PropertyObject* typeProperty, BufferAccess<const SelectionIntType> selectionProperty) const;
 
     /// Computes the bounding box of the particles.
-    Box3 particleBoundingBox(ConstBufferAccess<Point3> positionProperty, const PropertyObject* typeProperty, ConstBufferAccess<GraphicsFloatType> radiusProperty, ConstBufferAccess<Vector3G> shapeProperty, bool includeParticleRadius) const;
+    Box3 particleBoundingBox(BufferAccess<const Point3> positionProperty, const PropertyObject* typeProperty, BufferAccess<const GraphicsFloatType> radiusProperty, BufferAccess<const Vector3G> shapeProperty, bool includeParticleRadius) const;
 
     /// Render a marker around a particle to highlight it in the viewports.
     void highlightParticle(size_t particleIndex, const ParticlesObject* particles, SceneRenderer* renderer) const;

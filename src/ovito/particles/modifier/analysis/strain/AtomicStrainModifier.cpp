@@ -116,8 +116,8 @@ void AtomicStrainModifier::AtomicStrainEngine::perform()
 
     // Compute displacement vectors of particles in the reference configuration.
     BufferAccess<Vector3> displacementsArray(displacements());
-    ConstBufferAccess<Point3> positionsArray(positions());
-    ConstBufferAccess<Point3> refPositionsArray(refPositions());
+    BufferAccess<const Point3> positionsArray(positions());
+    BufferAccess<const Point3> refPositionsArray(refPositions());
     parallelForChunksWithProgress(displacements()->size(), [&](size_t startIndex, size_t count, ProgressingTask& task) {
         Vector3* u = displacementsArray.begin() + startIndex;
         const Point3* p0 = refPositionsArray.cbegin() + startIndex;

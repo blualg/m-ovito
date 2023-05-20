@@ -166,8 +166,10 @@ protected:
         QString description;
         /// A function that computes the variable's value for each data element.
         std::function<double(size_t)> function;
-        /// Array with the property values.
-        ConstBufferAccessAndRef<void,true> propertyArray;
+        /// Strong reference to the property storage.
+        ConstPropertyPtr propertyRef;
+        /// Data access to the property values.
+        BufferReadAccess propertyAccess;
         /// Indicates whether this variable is a caller-defined element variable.
         int variableClass = 0;
 

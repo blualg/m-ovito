@@ -215,7 +215,7 @@ private:
     std::vector<int> _neighborLists;
     std::vector<int> _atomSymmetryPermutations;
     size_t _neighborListsSize = 0;
-    ConstBufferAccessAndRef<SelectionIntType> _particleSelection;
+    BufferAccessAndRef<const SelectionIntType> _particleSelection;
     const std::shared_ptr<ClusterGraph> _clusterGraph;
     std::atomic<FloatType> _maximumNeighborDistance;
     DataOORef<const SimulationCellObject> _simCell;

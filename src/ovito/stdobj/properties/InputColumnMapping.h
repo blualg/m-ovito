@@ -266,7 +266,7 @@ private:
 
     struct TargetPropertyRecord {
         PropertyObject* property = nullptr;
-        BufferAccess<void,true> propertyArray;
+        BufferWriteAccess propertyArray;
         uint8_t* data;
         size_t stride;
         size_t count;

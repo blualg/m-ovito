@@ -512,7 +512,7 @@ ConstPropertyPtr ParticlesObject::inputParticleMasses() const
             PropertyPtr massProperty = ParticlesObject::OOClass().createStandardProperty(DataBuffer::Uninitialized, elementCount(), ParticlesObject::MassProperty);
 
             // Fill output array using lookup table.
-            ConstBufferAccess<int32_t> typeData(typeProperty);
+            BufferAccess<const int32_t> typeData(typeProperty);
             boost::transform(typeData, BufferAccess<FloatType>(massProperty).begin(), [&](int t) {
                 auto it = massMap.find(t);
                 if(it != massMap.end())
@@ -673,7 +673,7 @@ PropertyPtr ParticlesObject::OOMetaClass::createStandardPropertyInternal(DataBuf
                     // Use per-type mass information and initialize the per-particle mass array from it.
                     std::map<int,FloatType> massMap = ParticleType::typeMassMap(typeProperty);
                     if(!massMap.empty()) {
-                        boost::transform(ConstBufferAccess<int32_t>(typeProperty), BufferAccess<FloatType>(property).begin(), [&](int t) {
+                        boost::transform(BufferAccess<const int32_t>(typeProperty), BufferAccess<FloatType>(property).begin(), [&](int t) {
                             auto iter = massMap.find(t);
                             return iter != massMap.end() ? iter->second : FloatType(0);
                         });
@@ -868,8 +868,8 @@ size_t ParticlesObject::OOMetaClass::remapElementIndex(const ConstDataObjectPath
     const ParticlesObject* destParticles = static_object_cast<ParticlesObject>(dest.back());
 
     // If unique IDs are available try to use them to look up the particle in the other data collection.
-    if(ConstBufferAccess<int64_t> sourceIdentifiers = sourceParticles->getProperty(ParticlesObject::IdentifierProperty)) {
-        if(ConstBufferAccess<int64_t> destIdentifiers = destParticles->getProperty(ParticlesObject::IdentifierProperty)) {
+    if(BufferAccess<const int64_t> sourceIdentifiers = sourceParticles->getProperty(ParticlesObject::IdentifierProperty)) {
+        if(BufferAccess<const int64_t> destIdentifiers = destParticles->getProperty(ParticlesObject::IdentifierProperty)) {
             int64_t id = sourceIdentifiers[elementIndex];
             size_t mappedId = boost::find(destIdentifiers, id) - destIdentifiers.cbegin();
             if(mappedId != destIdentifiers.size())
@@ -878,8 +878,8 @@ size_t ParticlesObject::OOMetaClass::remapElementIndex(const ConstDataObjectPath
     }
 
     // Next, try to use the position to find the right particle in the other data collection.
-    if(ConstBufferAccess<Point3> sourcePositions = sourceParticles->getProperty(ParticlesObject::PositionProperty)) {
-        if(ConstBufferAccess<Point3> destPositions = destParticles->getProperty(ParticlesObject::PositionProperty)) {
+    if(BufferAccess<const Point3> sourcePositions = sourceParticles->getProperty(ParticlesObject::PositionProperty)) {
+        if(BufferAccess<const Point3> destPositions = destParticles->getProperty(ParticlesObject::PositionProperty)) {
             const Point3& pos = sourcePositions[elementIndex];
             size_t mappedId = boost::find(destPositions, pos) - destPositions.cbegin();
             if(mappedId != destPositions.size())
@@ -898,14 +898,14 @@ size_t ParticlesObject::OOMetaClass::remapElementIndex(const ConstDataObjectPath
 boost::dynamic_bitset<> ParticlesObject::OOMetaClass::viewportFenceSelection(const QVector<Point2>& fence, const ConstDataObjectPath& objectPath, PipelineSceneNode* node, const Matrix4& projectionTM) const
 {
     const ParticlesObject* particles = static_object_cast<ParticlesObject>(objectPath.back());
-    if(ConstBufferAccess<Point3> posProperty = particles->getProperty(ParticlesObject::PositionProperty)) {
+    if(BufferAccess<const Point3> posProperty = particles->getProperty(ParticlesObject::PositionProperty)) {
 
         if(!particles->visElement() || particles->visElement()->isEnabled() == false)
             throw Exception(tr("Cannot select particles while the corresponding visual element is disabled. Please enable the display of particles first."));
 
         boost::dynamic_bitset<> fullSelection(posProperty.size());
         QMutex mutex;
-        parallelForChunks(posProperty.size(), [posProperty, &projectionTM, &fence, &mutex, &fullSelection](size_t startIndex, size_t chunkSize) {
+        parallelForChunks(posProperty.size(), [&](size_t startIndex, size_t chunkSize) {
             boost::dynamic_bitset<> selection(fullSelection.size());
             for(size_t index = startIndex; chunkSize != 0; chunkSize--, index++) {
 

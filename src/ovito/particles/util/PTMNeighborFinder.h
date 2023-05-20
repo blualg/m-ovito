@@ -51,7 +51,7 @@ public:
     /// \return \c false when the operation has been canceled by the user;
     ///         \c true on success.
     /// \throw Exception on error.
-    bool prepare(ConstBufferAccess<Point3> positions, const SimulationCellObject* cell, ConstBufferAccess<SelectionIntType> selection,
+    bool prepare(BufferAccess<const Point3> positions, const SimulationCellObject* cell, BufferAccess<const SelectionIntType> selection,
                  ConstDataBufferPtr structuresArray,
                  ConstDataBufferPtr orientationsArray,
                  ConstDataBufferPtr correspondencesArray);

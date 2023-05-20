@@ -318,7 +318,7 @@ QOpenGLBuffer OpenGLShaderHelper::uploadDataBuffer(const ConstDataBufferPtr& dat
         const auto dstStride = dataBuffer->componentCount();
         if(dataBuffer->dataType() == DataBuffer::Float32) {
             float* dst = static_cast<float*>(p);
-            ConstBufferAccess<float, true> arrayAccess(dataBuffer);
+            BufferAccess<const float*> arrayAccess(dataBuffer);
             if(dstStride == srcStride && dataBuffer->stride() == sizeof(float) * srcStride) {
                 // Strides are the same for source and destination. Can do a simple memcpy.
                 std::memcpy(dst, arrayAccess.cbegin(), arrayAccess.size() * dstStride * sizeof(float));
@@ -334,7 +334,7 @@ QOpenGLBuffer OpenGLShaderHelper::uploadDataBuffer(const ConstDataBufferPtr& dat
         else if(dataBuffer->dataType() == DataBuffer::Float64) {
             float* dst = static_cast<float*>(p);
             // Convert from double to float data type.
-            ConstBufferAccess<double, true> arrayAccess(dataBuffer);
+            BufferAccess<const double*> arrayAccess(dataBuffer);
             if(dstStride == srcStride && dataBuffer->stride() == sizeof(double) * srcStride) {
                 // Strides are the same for source and destination. Need only a single loop for copying.
                 for(const double* src = arrayAccess.cbegin(); src != arrayAccess.cend(); ++src, ++dst)
@@ -350,7 +350,7 @@ QOpenGLBuffer OpenGLShaderHelper::uploadDataBuffer(const ConstDataBufferPtr& dat
         }
         else if(dataBuffer->dataType() == DataBuffer::Int8) {
             int8_t* dst = static_cast<int8_t*>(p);
-            ConstBufferAccess<int8_t, true> arrayAccess(dataBuffer);
+            BufferAccess<const int8_t*> arrayAccess(dataBuffer);
             if(dstStride == srcStride && dataBuffer->stride() == sizeof(int8_t) * srcStride) {
                 // Strides are the same for source and destination. Can do a simple memcpy.
                 std::memcpy(dst, arrayAccess.cbegin(), arrayAccess.size() * dstStride * sizeof(int8_t));
@@ -365,7 +365,7 @@ QOpenGLBuffer OpenGLShaderHelper::uploadDataBuffer(const ConstDataBufferPtr& dat
         }
         else if(dataBuffer->dataType() == DataBuffer::Int32) {
             int32_t* dst = static_cast<int32_t*>(p);
-            ConstBufferAccess<int32_t, true> arrayAccess(dataBuffer);
+            BufferAccess<const int32_t*> arrayAccess(dataBuffer);
             if(dstStride == srcStride && dataBuffer->stride() == sizeof(int32_t) * srcStride) {
                 // Strides are the same for source and destination. Can do a simple memcpy.
                 std::memcpy(dst, arrayAccess.cbegin(), arrayAccess.size() * dstStride * sizeof(int32_t));

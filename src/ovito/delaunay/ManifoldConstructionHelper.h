@@ -137,7 +137,7 @@ public:
         BufferAccess<SurfaceMesh::region_index> faceRegions(_mesh.mutableFaceProperty(SurfaceMeshFaces::RegionProperty));
 
         // Access the vertex coordinates.
-        ConstBufferAccess<Point3> vertexPositions(_mesh.expectVertexProperty(SurfaceMeshVertices::PositionProperty));
+        BufferAccess<const Point3> vertexPositions(_mesh.expectVertexProperty(SurfaceMeshVertices::PositionProperty));
 
         // Identify disconnected components of the surface mesh bordering to an empty region.
         operation.setProgressMaximum(_mesh.faceCount() / 2); // Note: Dividing by two, because only every other face is oriented towards the empty region.
@@ -873,7 +873,7 @@ private:
         operation.setProgressMaximum(_tetrahedraFaceList.size());
 
 #ifdef OVITO_DEBUG
-        ConstBufferAccess<SurfaceMesh::region_index> faceRegions(_mesh.expectFaceProperty(SurfaceMeshFaces::RegionProperty));
+        BufferAccess<const SurfaceMesh::region_index> faceRegions(_mesh.expectFaceProperty(SurfaceMeshFaces::RegionProperty));
 #endif
 
         auto tet = _tetrahedraFaceList.cbegin();
@@ -1135,7 +1135,7 @@ private:
             return 0;
 
         // Compute volume enclosed by the convex hull polyhedron.
-        ConstBufferAccess<Point3> vertexCoordinates(meshBuilder.expectVertexProperty(SurfaceMeshVertices::PositionProperty));
+        BufferAccess<const Point3> vertexCoordinates(meshBuilder.expectVertexProperty(SurfaceMeshVertices::PositionProperty));
         const Point3 apex = vertexCoordinates[0];
         FloatType convexVolume = 0;
         for(SurfaceMesh::edge_index firstEdge : meshBuilder.firstFaceEdges()) {
@@ -1178,7 +1178,7 @@ private:
     SurfaceMesh::size_type _emptyRegionCount = 0;
 
     /// The input particle positions.
-    ConstBufferAccess<Point3> _positions;
+    BufferAccess<const Point3> _positions;
 
     /// The output surface mesh.
     SurfaceMeshBuilder& _mesh;

@@ -89,11 +89,11 @@ bool DataTableExporter::exportFrame(int frameNumber, const QString& filePath, Ma
     int xDataType = xstorage ? xstorage->dataType() : 0;
     int yDataType = ystorage->dataType();
 
-    ConstBufferAccess<int8_t, true> xaccessInt8(xDataType == PropertyObject::Int8 ? xstorage : nullptr);
-    ConstBufferAccess<int32_t, true> xaccessInt32(xDataType == PropertyObject::Int32 ? xstorage : nullptr);
-    ConstBufferAccess<int64_t, true> xaccessInt64(xDataType == PropertyObject::Int64 ? xstorage : nullptr);
-    ConstBufferAccess<float, true> xaccessFloat32(xDataType == PropertyObject::Float32 ? xstorage : nullptr);
-    ConstBufferAccess<double, true> xaccessFloat64(xDataType == PropertyObject::Float64 ? xstorage : nullptr);
+    BufferAccess<const int8_t*> xaccessInt8(xDataType == PropertyObject::Int8 ? xstorage : nullptr);
+    BufferAccess<const int32_t*> xaccessInt32(xDataType == PropertyObject::Int32 ? xstorage : nullptr);
+    BufferAccess<const int64_t*> xaccessInt64(xDataType == PropertyObject::Int64 ? xstorage : nullptr);
+    BufferAccess<const float*> xaccessFloat32(xDataType == PropertyObject::Float32 ? xstorage : nullptr);
+    BufferAccess<const double*> xaccessFloat64(xDataType == PropertyObject::Float64 ? xstorage : nullptr);
 
     if(!table->title().isEmpty())
         textStream() << "# " << table->title() << " (" << (quint64)row_count << " data points):\n";
@@ -113,7 +113,7 @@ bool DataTableExporter::exportFrame(int frameNumber, const QString& filePath, Ma
     }
 
     // Collect the extra properties that should be written to the file.
-    std::vector<ConstBufferAccess<void,true>> outputProperties;
+    std::vector<BufferReadAccess> outputProperties;
     outputProperties.emplace_back(ystorage);
     for(const PropertyObject* propObj : table->properties()) {
         if(propObj == table->x()) continue;
@@ -156,7 +156,7 @@ bool DataTableExporter::exportFrame(int frameNumber, const QString& filePath, Ma
                 textStream() << "<?> ";
         }
         // Write the Y column(s).
-        for(const ConstBufferAccess<void,true>& array : outputProperties) {
+        for(const BufferReadAccess& array : outputProperties) {
             for(size_t col = 0; col < array.componentCount(); col++) {
                 if(array.dataType() == PropertyObject::Int8)
                     textStream() << *reinterpret_cast<const int8_t*>(array.cdata(row, col)) << " ";

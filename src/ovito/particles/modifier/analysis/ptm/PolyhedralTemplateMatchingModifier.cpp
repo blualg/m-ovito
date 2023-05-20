@@ -181,7 +181,7 @@ void PolyhedralTemplateMatchingModifier::PTMEngine::perform()
         return;
 
     // Get access to the particle selection flags.
-    ConstBufferAccess<SelectionIntType> selectionData(selection());
+    BufferAccess<const SelectionIntType> selectionData(selection());
 
     setProgressMaximum(positions()->size());
     setProgressText(tr("Pre-calculating neighbor ordering"));
@@ -311,7 +311,7 @@ PropertyPtr PolyhedralTemplateMatchingModifier::PTMEngine::postProcessStructureT
         PropertyPtr finalStructureTypes = structures.makeCopy();
 
         // Mark those particles whose RMSD exceeds the cutoff as 'OTHER'.
-        ConstBufferAccess<FloatType> rmdsArray(rmsd());
+        BufferAccess<const FloatType> rmdsArray(rmsd());
         BufferAccess<int32_t> structureTypesArray(finalStructureTypes);
         const FloatType* rmsdValue = rmdsArray.cbegin();
         for(int32_t& type : structureTypesArray) {

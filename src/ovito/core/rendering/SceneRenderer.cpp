@@ -343,7 +343,7 @@ void SceneRenderer::renderNodeTrajectory(const SceneNode* node)
             // Render lines connecting the trajectory points.
             if(trajectory->size() >= 2) {
                 BufferAccessAndRef<Point3G> lineVertices = DataBufferPtr::create((trajectory->size() - 1) * 2, DataBuffer::FloatGraphics, 3);
-                ConstBufferAccess<Point3G> trajectoryPoints(trajectory);
+                BufferAccess<const Point3G> trajectoryPoints(trajectory);
                 for(size_t index = 0; index < trajectory->size(); index++) {
                     if(index != 0)
                         lineVertices[index * 2 - 1] = trajectoryPoints[index];
@@ -364,7 +364,7 @@ void SceneRenderer::renderNodeTrajectory(const SceneNode* node)
         }
         else {
             Box3G bb;
-            bb.addPoints(ConstBufferAccess<Point3G>(trajectory));
+            bb.addPoints(BufferAccess<const Point3G>(trajectory));
             addToLocalBoundingBox(bb.toDataType<FloatType>());
         }
     }

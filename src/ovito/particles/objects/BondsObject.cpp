@@ -57,10 +57,10 @@ BondsObject::BondsObject(ObjectInitializationFlags flags) : PropertyContainer(fl
 ******************************************************************************/
 void BondsObject::generatePeriodicImageProperty(const ParticlesObject* particles, const SimulationCellObject* simulationCellObject)
 {
-    ConstBufferAccess<Point3> posProperty = particles->getProperty(ParticlesObject::PositionProperty);
+    BufferAccess<const Point3> posProperty = particles->getProperty(ParticlesObject::PositionProperty);
     if(!posProperty) return;
 
-    ConstBufferAccess<ParticleIndexPair> bondTopologyProperty = getProperty(BondsObject::TopologyProperty);
+    BufferAccess<const ParticleIndexPair> bondTopologyProperty = getProperty(BondsObject::TopologyProperty);
     if(!bondTopologyProperty) return;
 
     if(!simulationCellObject)
@@ -419,12 +419,12 @@ size_t BondsObject::OOMetaClass::remapElementIndex(const ConstDataObjectPath& so
     if(sourceParticles && destParticles) {
 
         // Make sure the topology information is present.
-        if(ConstBufferAccess<ParticleIndexPair> sourceTopology = sourceBonds->getProperty(TopologyProperty)) {
-            if(ConstBufferAccess<ParticleIndexPair> destTopology = destBonds->getProperty(TopologyProperty)) {
+        if(BufferAccess<const ParticleIndexPair> sourceTopology = sourceBonds->getProperty(TopologyProperty)) {
+            if(BufferAccess<const ParticleIndexPair> destTopology = destBonds->getProperty(TopologyProperty)) {
 
                 // If unique IDs are available try to use them to look up the bond in the other data collection.
-                if(ConstBufferAccess<int64_t> sourceIdentifiers = sourceParticles->getProperty(ParticlesObject::IdentifierProperty)) {
-                    if(ConstBufferAccess<int64_t> destIdentifiers = destParticles->getProperty(ParticlesObject::IdentifierProperty)) {
+                if(BufferAccess<const int64_t> sourceIdentifiers = sourceParticles->getProperty(ParticlesObject::IdentifierProperty)) {
+                    if(BufferAccess<const int64_t> destIdentifiers = destParticles->getProperty(ParticlesObject::IdentifierProperty)) {
                         size_t index_a = sourceTopology[elementIndex][0];
                         size_t index_b = sourceTopology[elementIndex][1];
                         if(index_a < sourceIdentifiers.size() && index_b < sourceIdentifiers.size()) {
@@ -462,8 +462,8 @@ size_t BondsObject::OOMetaClass::remapElementIndex(const ConstDataObjectPath& so
                 }
 
                 // Try to find matching bond based on particle indices alone.
-                if(ConstBufferAccess<Point3> sourcePos = sourceParticles->getProperty(ParticlesObject::PositionProperty)) {
-                    if(ConstBufferAccess<Point3> destPos = destParticles->getProperty(ParticlesObject::PositionProperty)) {
+                if(BufferAccess<const Point3> sourcePos = sourceParticles->getProperty(ParticlesObject::PositionProperty)) {
+                    if(BufferAccess<const Point3> destPos = destParticles->getProperty(ParticlesObject::PositionProperty)) {
                         size_t index_a = sourceTopology[elementIndex][0];
                         size_t index_b = sourceTopology[elementIndex][1];
                         if(index_a < sourcePos.size() && index_b < sourcePos.size()) {
@@ -512,15 +512,15 @@ boost::dynamic_bitset<> BondsObject::OOMetaClass::viewportFenceSelection(const Q
     const ParticlesObject* particles = dynamic_object_cast<ParticlesObject>(objectPath.size() >= 2 ? objectPath[objectPath.size()-2] : nullptr);
 
     if(particles) {
-        if(ConstBufferAccess<ParticleIndexPair> topologyProperty = bonds->getProperty(BondsObject::TopologyProperty)) {
-            if(ConstBufferAccess<Point3> posProperty = particles->getProperty(ParticlesObject::PositionProperty)) {
+        if(BufferAccess<const ParticleIndexPair> topologyProperty = bonds->getProperty(BondsObject::TopologyProperty)) {
+            if(BufferAccess<const Point3> posProperty = particles->getProperty(ParticlesObject::PositionProperty)) {
 
                 if(!bonds->visElement() || bonds->visElement()->isEnabled() == false)
                     throw Exception(tr("Cannot select bonds while the corresponding visual element is disabled. Please enable the display of bonds first."));
 
                 boost::dynamic_bitset<> fullSelection(topologyProperty.size());
                 QMutex mutex;
-                parallelForChunks(topologyProperty.size(), [topologyProperty, posProperty, &projectionTM, &fence, &mutex, &fullSelection](size_t startIndex, size_t chunkSize) {
+                parallelForChunks(topologyProperty.size(), [&topologyProperty, &posProperty, &projectionTM, &fence, &mutex, &fullSelection](size_t startIndex, size_t chunkSize) {
                     boost::dynamic_bitset<> selection(fullSelection.size());
                     for(size_t index = startIndex; chunkSize != 0; chunkSize--, index++) {
                         const ParticleIndexPair& t = topologyProperty[index];
@@ -591,9 +591,9 @@ std::tuple<ConstDataBufferPtr, ConstDataBufferPtr> BondsObject::getVectorVisData
             if(!basePositions) {
                 // Compute bond centers.
                 BufferAccessAndRef<Point3> centers = DataBufferPtr::create(elementCount(), DataBuffer::FloatDefault, 3);
-                ConstBufferAccess<ParticleIndexPair> bondTopology(bondTopologyProperty);
-                ConstBufferAccess<Vector3I> bondPeriodicImages(bondPeriodicImageProperty);
-                ConstBufferAccess<Point3> positions(positionProperty);
+                BufferAccess<const ParticleIndexPair> bondTopology(bondTopologyProperty);
+                BufferAccess<const Vector3I> bondPeriodicImages(bondPeriodicImageProperty);
+                BufferAccess<const Point3> positions(positionProperty);
 
                 size_t particleCount = positions.size();
                 const AffineTransformation cell = simulationCell ? simulationCell->cellMatrix() : AffineTransformation::Zero();

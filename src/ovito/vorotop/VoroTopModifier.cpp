@@ -385,9 +385,9 @@ void VoroTopModifier::VoroTopAnalysisEngine::perform()
 
     setProgressText(tr("Performing VoroTop analysis"));
 
-    ConstBufferAccess<Point3> positionsArray(positions());
-    ConstBufferAccess<SelectionIntType> selectionArray(selection());
-    ConstBufferAccess<GraphicsFloatType> radiiArray(_radii);
+    BufferAccess<const Point3> positionsArray(positions());
+    BufferAccess<const SelectionIntType> selectionArray(selection());
+    BufferAccess<const GraphicsFloatType> radiiArray(_radii);
     BufferAccess<int32_t> structuresArray(structures());
 
     // Decide whether to use Voro++ container class or our own implementation.

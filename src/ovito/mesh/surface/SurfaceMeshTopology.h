@@ -26,9 +26,6 @@
 #include <ovito/mesh/Mesh.h>
 #include <ovito/core/dataset/data/DataObject.h>
 
-#include <boost/iterator/counting_iterator.hpp>
-#include <boost/range/counting_range.hpp>
-
 namespace Ovito::Mesh {
 
 /**

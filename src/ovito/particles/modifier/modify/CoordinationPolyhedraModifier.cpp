@@ -133,13 +133,13 @@ void CoordinationPolyhedraModifier::ComputePolyhedraEngine::perform()
     PropertyContainer::Grower regionGrower(meshBuilder.mutableRegions());
 
     // Determine number of selected particles.
-    ConstBufferAccess<SelectionIntType> selectionArray(_selection);
+    BufferAccess<const SelectionIntType> selectionArray(_selection);
     size_t npoly = boost::count_if(selectionArray, [](auto s) { return s != 0; });
     setProgressMaximum(npoly);
 
     ParticleBondMap bondMap(_bondTopology, _bondPeriodicImages);
 
-    ConstBufferAccess<Point3> positionsArray(_positions);
+    BufferAccess<const Point3> positionsArray(_positions);
 
     // Working variables.
     std::vector<Point3> neighborPositions;
@@ -188,8 +188,8 @@ void CoordinationPolyhedraModifier::ComputePolyhedraEngine::perform()
 
             // Find each input point among the newly added vertices of the mesh.
             // This will help us later to transfer the particle properties to the corresponding mesh vertices.
-            ConstBufferAccess<Point3> vertexPositions = meshBuilder.expectVertexProperty(SurfaceMeshVertices::PositionProperty);
-            for(const Point3& vpos : std::move(vertexPositions).csubrange(oldVertexCount, meshBuilder.vertexCount())) {
+            BufferAccess<const Point3> vertexPositions = meshBuilder.expectVertexProperty(SurfaceMeshVertices::PositionProperty);
+            for(const Point3& vpos : std::move(vertexPositions).subrange(oldVertexCount)) {
                 auto idx = neighborIndices.cbegin();
                 for(const Point3& p : neighborPositions) {
                     OVITO_ASSERT(idx != neighborIndices.cend());

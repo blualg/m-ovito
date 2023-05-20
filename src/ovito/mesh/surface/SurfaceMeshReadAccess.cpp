@@ -56,9 +56,9 @@ SurfaceMeshReadAccess::SurfaceMeshReadAccess(const SurfaceMesh* mesh) :
 std::optional<std::pair<SurfaceMeshReadAccess::region_index, FloatType>> SurfaceMeshReadAccess::locatePoint(const Point3& location, FloatType epsilon, const boost::dynamic_bitset<>& faceSubset) const
 {
     // Get access to the vertex coordinates.
-    ConstBufferAccess<Point3> vertexPositions(expectVertexProperty(SurfaceMeshVertices::PositionProperty));
+    BufferAccess<const Point3> vertexPositions(expectVertexProperty(SurfaceMeshVertices::PositionProperty));
     // Get access to the face regions.
-    ConstBufferAccess<int32_t> faceRegions(faceProperty(SurfaceMeshFaces::RegionProperty));
+    BufferAccess<const int32_t> faceRegions(faceProperty(SurfaceMeshFaces::RegionProperty));
 
     // Determine which vertex is closest to the query point.
     FloatType closestDistanceSq = FLOATTYPE_MAX;
@@ -237,7 +237,7 @@ void SurfaceMeshReadAccess::convertToTriMesh(TriMeshObject& outputMesh, bool smo
     OVITO_ASSERT(faceSubset.empty() || faceSubset.size() == faceCount);
 
     // Get access to the vertex coordinates.
-    ConstBufferAccess<Point3> vertexPositions(expectVertexProperty(SurfaceMeshVertices::PositionProperty));
+    BufferAccess<const Point3> vertexPositions(expectVertexProperty(SurfaceMeshVertices::PositionProperty));
 
     // Create output vertices.
     auto baseVertexCount = outputMesh.vertexCount();
@@ -373,7 +373,7 @@ void SurfaceMeshReadAccess::convertToTriMesh(TriMeshObject& outputMesh, bool smo
 /******************************************************************************
 * Computes the unit normal vector of a mesh face.
 ******************************************************************************/
-Vector3 SurfaceMeshReadAccess::computeFaceNormal(face_index face, const ConstBufferAccess<Point3>& vertexPositions) const
+Vector3 SurfaceMeshReadAccess::computeFaceNormal(face_index face, const BufferAccess<const Point3>& vertexPositions) const
 {
     Vector3 faceNormal = Vector3::Zero();
 

@@ -24,8 +24,6 @@
 #include <ovito/core/dataset/DataSet.h>
 #include "VulkanSceneRenderer.h"
 
-#include <boost/range/irange.hpp>
-
 namespace Ovito {
 
 /******************************************************************************
@@ -604,7 +602,7 @@ void VulkanSceneRenderer::renderMeshImplementation(const MeshPrimitive& primitiv
 
             // First, compute distance of each instance from the camera along the viewing direction (=camera z-axis).
             std::vector<FloatType> distances(renderInstanceCount);
-            boost::transform(boost::irange<size_t>(0, renderInstanceCount), distances.begin(), [direction, tmArray = ConstBufferAccess<AffineTransformation>(primitive.perInstanceTMs())](size_t i) {
+            boost::transform(boost::irange<size_t>(0, renderInstanceCount), distances.begin(), [direction, tmArray = BufferAccess<const AffineTransformation>(primitive.perInstanceTMs())](size_t i) {
                 return direction.dot(tmArray[i].translation());
             });
 
@@ -652,7 +650,7 @@ VkBuffer VulkanSceneRenderer::getMeshInstanceTMBuffer(const MeshPrimitive& primi
     // Upload the per-instance TMs to GPU memory.
     VkBuffer instanceTMBuffer = context()->createCachedBuffer(instanceTMsKey, primitive.perInstanceTMs()->size() * 3 * sizeof(Vector_4<float>), currentResourceFrame(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, [&](void* buffer) {
         Vector_4<float>* row = reinterpret_cast<Vector_4<float>*>(buffer);
-        for(const AffineTransformation& tm : ConstBufferAccess<AffineTransformation>(primitive.perInstanceTMs())) {
+        for(const AffineTransformation& tm : BufferAccess<const AffineTransformation>(primitive.perInstanceTMs())) {
             *row++ = tm.row(0).toDataType<float>();
             *row++ = tm.row(1).toDataType<float>();
             *row++ = tm.row(2).toDataType<float>();

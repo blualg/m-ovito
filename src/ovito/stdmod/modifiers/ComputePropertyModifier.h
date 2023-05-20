@@ -77,7 +77,7 @@ protected:
         }
 
         /// Returns the data accessor to the selection flag array.
-        const ConstBufferAccessAndRef<SelectionIntType>& selectionArray() const { return _selectionArray; }
+        const BufferAccessAndRef<const SelectionIntType>& selectionArray() const { return _selectionArray; }
 
         /// Returns the list of available input variables.
         virtual QStringList inputVariableNames() const;
@@ -98,7 +98,7 @@ protected:
         const PropertyPtr& outputProperty() const { return _outputProperty; }
 
         /// Returns the data accessor to the output property array that will receive the computed values.
-        BufferAccess<void, true>& outputArray() { return _outputArray; }
+        BufferWriteAccess& outputArray() { return _outputArray; }
 
         /// Determines whether any of the math expressions is explicitly time-dependent.
         virtual bool isTimeDependent() { return _evaluator->isTimeDependent(); }
@@ -120,10 +120,10 @@ protected:
 
         const int _frameNumber;
         QStringList _expressions;
-        ConstBufferAccessAndRef<SelectionIntType> _selectionArray;
+        BufferAccessAndRef<const SelectionIntType> _selectionArray;
         std::unique_ptr<PropertyExpressionEvaluator> _evaluator;
         const PropertyPtr _outputProperty;
-        BufferAccess<void, true> _outputArray;
+        BufferWriteAccess _outputArray;
     };
 
 public:

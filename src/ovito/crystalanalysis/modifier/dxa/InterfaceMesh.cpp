@@ -62,7 +62,7 @@ ForwardIterator most_common(ForwardIterator first, ForwardIterator last)
 /******************************************************************************
 * Creates the mesh facets separating good and bad tetrahedra.
 ******************************************************************************/
-bool InterfaceMesh::createMesh(FloatType maximumNeighborDistance, ConstBufferAccess<int64_t> crystalClusters, ProgressingTask& operation)
+bool InterfaceMesh::createMesh(FloatType maximumNeighborDistance, BufferAccess<const int64_t> crystalClusters, ProgressingTask& operation)
 {
     operation.beginProgressSubSteps(2);
 
@@ -129,7 +129,7 @@ bool InterfaceMesh::createMesh(FloatType maximumNeighborDistance, ConstBufferAcc
     _faces.resize(faceCount());
     _vertices.resize(vertexCount());
     OVITO_ASSERT(edgeCount() == _edges.size());
-    ConstBufferAccess<Point3> vertexPositions(expectVertexProperty(SurfaceMeshVertices::PositionProperty));
+    BufferAccess<const Point3> vertexPositions(expectVertexProperty(SurfaceMeshVertices::PositionProperty));
     // Copy the topology from the SurfaceMeshTopology fields to the internal data structures of the InterfaceMesh.
     for(vertex_index v = 0; v < vertexCount(); v++) {
         _vertices[v]._pos = vertexPositions[v];
@@ -192,7 +192,7 @@ bool InterfaceMesh::createMesh(FloatType maximumNeighborDistance, ConstBufferAcc
 bool InterfaceMesh::generateDefectMesh(const DislocationTracer& tracer, SurfaceMeshBuilder& defectMesh, ProgressingTask& operation)
 {
     // Adopt all vertices from the interface mesh.
-    ConstBufferAccess<Point3> vertexPositions(expectVertexProperty(SurfaceMeshVertices::PositionProperty));
+    BufferAccess<const Point3> vertexPositions(expectVertexProperty(SurfaceMeshVertices::PositionProperty));
     defectMesh.createVerticesRange(vertexPositions);
     defectMesh.setSpaceFillingRegion(spaceFillingRegion());
     defectMesh.setDomain(domain());
