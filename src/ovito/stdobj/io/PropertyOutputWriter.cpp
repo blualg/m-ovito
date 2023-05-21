@@ -157,10 +157,10 @@ void PropertyOutputWriter::writeElement(size_t index, CompressedTextWriter& stre
                 }
             }
             else if((*property)->dataType() == PropertyObject::Int64) {
-                stream << *reinterpret_cast<const int64_t*>(array->cdata(index, *vcomp));
+                stream << static_cast<qint64>(*reinterpret_cast<const int64_t*>(array->cdata(index, *vcomp)));
             }
             else if((*property)->dataType() == PropertyObject::Int8) {
-                stream << *reinterpret_cast<const int8_t*>(array->cdata(index, *vcomp));
+                stream << static_cast<qint32>(*reinterpret_cast<const int8_t*>(array->cdata(index, *vcomp)));
             }
             else if((*property)->dataType() == PropertyObject::Float32) {
                 stream << *reinterpret_cast<const float*>(array->cdata(index, *vcomp));

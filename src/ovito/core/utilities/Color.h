@@ -103,10 +103,10 @@ public:
     }
 
     /// Sets all components of the color to zero.
-    void setBlack() { r() = g() = b() = T(0); }
+    Q_DECL_CONSTEXPR void setBlack() { r() = g() = b() = T(0); }
 
     /// Sets all components of the color to one.
-    void setWhite() { r() = g() = b() = T(1); }
+    Q_DECL_CONSTEXPR void setWhite() { r() = g() = b() = T(1); }
 
     /// Conversion operator to a Qt color.
     /// All components of the returned Qt color are clamped to the [0,1] range.
@@ -137,13 +137,13 @@ public:
     Q_DECL_CONSTEXPR T b() const { return (*this)[2]; }
 
     /// Returns a reference to the red component of this color.
-    T& r() { return (*this)[0]; }
+    Q_DECL_CONSTEXPR T& r() { return (*this)[0]; }
 
     /// Returns a reference to the green component of this color.
-    T& g() { return (*this)[1]; }
+    Q_DECL_CONSTEXPR T& g() { return (*this)[1]; }
 
     /// Returns a reference to the blue component of this color.
-    T& b() { return (*this)[2]; }
+    Q_DECL_CONSTEXPR T& b() { return (*this)[2]; }
 
     ////////////////////////////////// Comparison ////////////////////////////////
 
@@ -167,27 +167,27 @@ public:
     }
 
     /// Adds another color to this color in a component-wise manner.
-    ColorT& operator+=(const ColorT& c) { r() += c.r(); g() += c.g(); b() += c.b(); return *this; }
+    Q_DECL_CONSTEXPR ColorT& operator+=(const ColorT& c) { r() += c.r(); g() += c.g(); b() += c.b(); return *this; }
 
     /// Multiplies the components of another color with the components of this color.
-    ColorT& operator*=(const ColorT& c) { r() *= c.r(); g() *= c.g(); b() *= c.b(); return *this; }
+    Q_DECL_CONSTEXPR ColorT& operator*=(const ColorT& c) { r() *= c.r(); g() *= c.g(); b() *= c.b(); return *this; }
 
     /// Assigns the XYZ components of the given vector to a RGB components of this color.
-    ColorT& operator=(const Vector_3<T>& v) { r() = v.x(); g() = v.y(); b() = v.z(); return *this; }
+    Q_DECL_CONSTEXPR ColorT& operator=(const Vector_3<T>& v) { r() = v.x(); g() = v.y(); b() = v.z(); return *this; }
 
     /// Ensures that none of the color components is greater than 1.
     /// Any component greater than 1 is changed to 1.
     /// \sa clampMin(), clampMinMax()
-    void clampMax() { if(r() > T(1)) r() = T(1); if(g() > T(1)) g() = T(1); if(b() > T(1)) b() = T(1); }
+    Q_DECL_CONSTEXPR void clampMax() { if(r() > T(1)) r() = T(1); if(g() > T(1)) g() = T(1); if(b() > T(1)) b() = T(1); }
 
     /// Ensures that none of the color components is less than 0.
     /// Any color component less than 0 is set to 0.
     /// \sa clampMax(), clampMinMax()
-    void clampMin() { if(r() < T(0)) r() = T(0); if(g() < T(0)) g() = T(0); if(b() < T(0)) b() = T(0); }
+    Q_DECL_CONSTEXPR void clampMin() { if(r() < T(0)) r() = T(0); if(g() < T(0)) g() = T(0); if(b() < T(0)) b() = T(0); }
 
     /// Ensures that all color components between 0 and 1.
     /// \sa clampMin(), clampMax()
-    void clampMinMax() {
+    Q_DECL_CONSTEXPR void clampMinMax() {
         for(typename std::array<T, 3>::size_type i = 0; i < std::array<T, 3>::size(); i++) {
             if((*this)[i] > T(1)) (*this)[i] = T(1);
             else if((*this)[i] < T(0)) (*this)[i] = T(0);
@@ -199,20 +199,18 @@ public:
     /// \param saturation The saturation value between 0 and 1.
     /// \param value The value of the color between 0 and 1.
     /// \return The RGB representation of the color.
-    static ColorT fromHSV(T hue, T saturation, T value) {
+    Q_DECL_CONSTEXPR static ColorT fromHSV(T hue, T saturation, T value) {
         if(saturation == 0) {
             return ColorT(value, value, value);
         }
         else {
-            T f, p, q, t;
-            int i;
             if(hue >= T(1) || hue < T(0)) hue = T(0);
             hue *= T(6);
-            i = (int)std::floor(hue);
-            f = hue - (T)i;
-            p = value * (T(1) - saturation);
-            q = value * (T(1) - (saturation * f));
-            t = value * (T(1) - (saturation * (T(1) - f)));
+            int i = (int)std::floor(hue);
+            T f = hue - (T)i;
+            T p = value * (T(1) - saturation);
+            T q = value * (T(1) - (saturation * f));
+            T t = value * (T(1) - (saturation * (T(1) - f)));
             switch(i) {
                 case 0: return ColorT(value, t, p);
                 case 1: return ColorT(q, value, p);
@@ -357,7 +355,7 @@ public:
     Q_DECL_CONSTEXPR ColorAT(T red, T green, T blue, T alpha = T(1))
         : std::array<T, 4>{{red, green, blue, alpha}} {}
 #else
-    ColorAT(T red, T green, T blue, T alpha = T(1))
+    Q_DECL_CONSTEXPR ColorAT(T red, T green, T blue, T alpha = T(1))
         { this->r() = red; this->g() = green; this->b() = blue; this->a() = alpha; }
 #endif
 
@@ -369,7 +367,7 @@ public:
     Q_DECL_CONSTEXPR ColorAT(const QColor& c)
         : std::array<T, 4>{{T(c.redF()), T(c.greenF()), T(c.blueF()), T(c.alphaF())}} {}
 #else
-    ColorAT(const QColor& c)
+    Q_DECL_CONSTEXPR ColorAT(const QColor& c)
         { this->r() = T(c.redF()); this->g() = T(c.greenF()); this->b() = T(c.blueF()); this->a() = T(c.alphaF()); }
 #endif
 
@@ -378,7 +376,7 @@ public:
     Q_DECL_CONSTEXPR ColorAT(const ColorT<T>& c)
         : std::array<T, 4>{{c.r(), c.g(), c.b(), T(1)}} {}
 #else
-    ColorAT(const ColorT<T>& c)
+    Q_DECL_CONSTEXPR ColorAT(const ColorT<T>& c)
         { this->r() = c.r(); this->g() = c.g(); this->b() = c.b(); this->a() = T(1); }
 #endif
 
@@ -387,7 +385,7 @@ public:
     Q_DECL_CONSTEXPR ColorAT(const ColorT<T>& c, T alpha)
         : std::array<T, 4>{{c.r(), c.g(), c.b(), alpha}} {}
 #else
-    ColorAT(const ColorT<T>& c, T alpha)
+    Q_DECL_CONSTEXPR ColorAT(const ColorT<T>& c, T alpha)
         { this->r() = c.r(); this->g() = c.g(); this->b() = c.b(); this->a() = alpha; }
 #endif
 
@@ -404,10 +402,10 @@ public:
     }
 
     /// Sets the red, green, and blue components to zero and alpha to one.
-    void setBlack() { r() = g() = b() = T(0); a() = T(1); }
+    Q_DECL_CONSTEXPR void setBlack() { r() = g() = b() = T(0); a() = T(1); }
 
     /// Sets all color components to one.
-    void setWhite() { r() = g() = b() = a() = T(1); }
+    Q_DECL_CONSTEXPR void setWhite() { r() = g() = b() = a() = T(1); }
 
     /// Converts this RGBA color to a XYZW vector.
     explicit Q_DECL_CONSTEXPR operator const Vector_4<T>&() const { return reinterpret_cast<const Vector_4<T>&>(*this); }
@@ -437,22 +435,22 @@ public:
     Q_DECL_CONSTEXPR T a() const { return (*this)[3]; }
 
     /// Returns a reference to the red component of this color.
-    T& r() { return (*this)[0]; }
+    Q_DECL_CONSTEXPR T& r() { return (*this)[0]; }
 
     /// Returns a reference to the green component of this color.
-    T& g() { return (*this)[1]; }
+    Q_DECL_CONSTEXPR T& g() { return (*this)[1]; }
 
     /// Returns a reference to the blue component of this color.
-    T& b() { return (*this)[2]; }
+    Q_DECL_CONSTEXPR T& b() { return (*this)[2]; }
 
     /// Returns a reference to the alpha component of this color.
-    T& a() { return (*this)[3]; }
+    Q_DECL_CONSTEXPR T& a() { return (*this)[3]; }
 
     /// Returns the value of the red, green and blue components of this color.
-    const ColorT<T>& rgb() const { return reinterpret_cast<const ColorT<T>&>(*this); }
+    Q_DECL_CONSTEXPR const ColorT<T>& rgb() const { return reinterpret_cast<const ColorT<T>&>(*this); }
 
     /// Returns a reference to the red, green and blue components of this color.
-    ColorT<T>& rgb() { return reinterpret_cast<ColorT<T>&>(*this); }
+    Q_DECL_CONSTEXPR ColorT<T>& rgb() { return reinterpret_cast<ColorT<T>&>(*this); }
 
     ////////////////////////////////// Comparison ////////////////////////////////
 
@@ -476,27 +474,27 @@ public:
     }
 
     /// Adds the components of another color to this color.
-    ColorAT& operator+=(const ColorAT& c) { r() += c.r(); g() += c.g(); b() += c.b(); a() += c.a(); return *this; }
+    Q_DECL_CONSTEXPR ColorAT& operator+=(const ColorAT& c) { r() += c.r(); g() += c.g(); b() += c.b(); a() += c.a(); return *this; }
 
     /// Multiplies the components of another color with the components of this color.
-    ColorAT& operator*=(const ColorAT& c) { r() *= c.r(); g() *= c.g(); b() *= c.b(); a() *= c.a(); return *this; }
+    Q_DECL_CONSTEXPR ColorAT& operator*=(const ColorAT& c) { r() *= c.r(); g() *= c.g(); b() *= c.b(); a() *= c.a(); return *this; }
 
     /// Converts a vector to a color assigns it to this object.
-    ColorAT& operator=(const Vector_4<T>& v) { r() = v.x(); g() = v.y(); b() = v.z(); a() = v.w(); return *this; }
+    Q_DECL_CONSTEXPR ColorAT& operator=(const Vector_4<T>& v) { r() = v.x(); g() = v.y(); b() = v.z(); a() = v.w(); return *this; }
 
     /// Ensures that none of the color components is greater than 1.
     /// Any component greater than 1 is changed to 1.
     /// \sa clampMin(), clampMinMax()
-    void clampMax() { if(r() > T(1)) r() = T(1); if(g() > T(1)) g() = T(1); if(b() > T(1)) b() = T(1); if(a() > T(1)) a() = T(1); }
+    Q_DECL_CONSTEXPR void clampMax() { if(r() > T(1)) r() = T(1); if(g() > T(1)) g() = T(1); if(b() > T(1)) b() = T(1); if(a() > T(1)) a() = T(1); }
 
     /// Ensures that none of the color components is less than 0.
     /// Any color component less than 0 is set to 0.
     /// \sa clampMax(), clampMinMax()
-    void clampMin() { if(r() < T(0)) r() = T(0); if(g() < T(0)) g() = T(0); if(b() < T(0)) b() = T(0); if(a() < T(0)) a() = T(0); }
+    Q_DECL_CONSTEXPR void clampMin() { if(r() < T(0)) r() = T(0); if(g() < T(0)) g() = T(0); if(b() < T(0)) b() = T(0); if(a() < T(0)) a() = T(0); }
 
     /// Ensures that all color components between 0 and 1.
     /// \sa clampMin(), clampMax()
-    void clampMinMax() {
+    Q_DECL_CONSTEXPR void clampMinMax() {
         for(typename std::array<T, 4>::size_type i = 0; i < std::array<T, 4>::size(); i++) {
             if((*this)[i] > T(1)) (*this)[i] = T(1);
             else if((*this)[i] < T(0)) (*this)[i] = T(0);

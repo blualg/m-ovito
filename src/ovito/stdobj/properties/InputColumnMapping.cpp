@@ -395,7 +395,7 @@ void InputColumnReader::parseField(size_t elementIndex, int columnIndex, const c
     }
     else if(prec.dataType == PropertyObject::Int32) {
         int32_t& d = *reinterpret_cast<int32_t*>(prec.data + elementIndex * prec.stride);
-        bool ok = parseInt(token, token_end, d);
+        bool ok = parseInt32(token, token_end, d);
         if(prec.elementTypeClass == nullptr) {
             if(!ok) {
                 ok = parseBool(token, token_end, d);
@@ -421,6 +421,13 @@ void InputColumnReader::parseField(size_t elementIndex, int columnIndex, const c
         int64_t& d = *reinterpret_cast<int64_t*>(prec.data + elementIndex * prec.stride);
         if(!parseInt64(token, token_end, d))
             throw Exception(tr("Invalid 64-bit integer value in column %1 (%2): \"%3\"").arg(columnIndex+1).arg(prec.property->name()).arg(QString::fromLocal8Bit(token, token_end - token)));
+    }
+    else if(prec.dataType == PropertyObject::Int8) {
+        int8_t& d = *reinterpret_cast<int8_t*>(prec.data + elementIndex * prec.stride);
+        int32_t d32;
+        if(!parseInt32(token, token_end, d32))
+            throw Exception(tr("Invalid 64-bit integer value in column %1 (%2): \"%3\"").arg(columnIndex+1).arg(prec.property->name()).arg(QString::fromLocal8Bit(token, token_end - token)));
+        d = static_cast<int8_t>(d32);
     }
 }
 
@@ -460,6 +467,9 @@ void InputColumnReader::readElement(size_t elementIndex, const double* values, i
             }
             else if(prec->dataType == PropertyObject::Int64) {
                 *reinterpret_cast<int64_t*>(prec->data + elementIndex * prec->stride) = static_cast<int64_t>(*token);
+            }
+            else if(prec->dataType == PropertyObject::Int8) {
+                *reinterpret_cast<int8_t*>(prec->data + elementIndex * prec->stride) = static_cast<int8_t>(*token);
             }
         }
     }

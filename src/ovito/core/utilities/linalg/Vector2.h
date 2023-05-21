@@ -87,21 +87,21 @@ public:
 #if !defined(Q_CC_MSVC) && !defined(ONLY_FOR_DOXYGEN) // The MSVC compiler and the Doxygen parser do not like C++11 array aggregate initializers.
     Q_DECL_CONSTEXPR explicit Vector_2(T val) : std::array<T, 2>{{val,val}} {}
 #else
-    explicit Vector_2(T val) { this->fill(val); }
+    Q_DECL_CONSTEXPR explicit Vector_2(T val) { this->fill(val); }
 #endif
 
         /// Initializes the components of the vector with the given values.
 #if !defined(Q_CC_MSVC) && !defined(ONLY_FOR_DOXYGEN) // The MSVC compiler and the Doxygen parser do not like C++11 array aggregate initializers.
     Q_DECL_CONSTEXPR Vector_2(T x, T y) : std::array<T, 2>{{x, y}} {}
 #else
-    Vector_2(T x, T y) { this->x() = x; this->y() = y; }
+    Q_DECL_CONSTEXPR Vector_2(T x, T y) { this->x() = x; this->y() = y; }
 #endif
 
     /// Initializes the vector to the null vector. All components are set to zero.
 #if !defined(Q_CC_MSVC) && !defined(ONLY_FOR_DOXYGEN) // The MSVC compiler and the Doxygen parser do not like C++11 array aggregate initializers.
     Q_DECL_CONSTEXPR Vector_2(Zero) : std::array<T, 2>{{T(0), T(0)}} {}
 #else
-    Vector_2(Zero) { this->fill(T(0)); }
+    Q_DECL_CONSTEXPR Vector_2(Zero) { this->fill(T(0)); }
 #endif
 
     /// Initializes the vector from an array.
@@ -135,22 +135,22 @@ public:
     ///////////////////////////// Assignment operators ///////////////////////////
 
     /// Increments the components of this vector by the components of another vector.
-    Vector_2& operator+=(const Vector_2& v) { x() += v.x(); y() += v.y(); return *this; }
+    Q_DECL_CONSTEXPR Vector_2& operator+=(const Vector_2& v) { x() += v.x(); y() += v.y(); return *this; }
 
     /// Decrements the components of this vector by the components of another vector.
-    Vector_2& operator-=(const Vector_2& v) { x() -= v.x(); y() -= v.y(); return *this; }
+    Q_DECL_CONSTEXPR Vector_2& operator-=(const Vector_2& v) { x() -= v.x(); y() -= v.y(); return *this; }
 
     /// Multiplies each component of the vector with a scalar.
-    Vector_2& operator*=(T s) { x() *= s; y() *= s; return *this; }
+    Q_DECL_CONSTEXPR Vector_2& operator*=(T s) { x() *= s; y() *= s; return *this; }
 
     /// Divides each component of the vector by a scalar.
-    Vector_2& operator/=(T s) { x() /= s; y() /= s; return *this; }
+    Q_DECL_CONSTEXPR Vector_2& operator/=(T s) { x() /= s; y() /= s; return *this; }
 
     /// Divides each component of the vector by a scalar.
-    Vector_2& operator=(Zero) { setZero(); return *this; }
+    Q_DECL_CONSTEXPR Vector_2& operator=(Zero) { setZero(); return *this; }
 
     /// Sets all components of the vector to zero.
-    void setZero() { this->fill(T(0)); }
+    Q_DECL_CONSTEXPR void setZero() { this->fill(T(0)); }
 
     //////////////////////////// Component access //////////////////////////
 
@@ -161,10 +161,10 @@ public:
     Q_DECL_CONSTEXPR T y() const { return (*this)[1]; }
 
     /// Returns a reference to the X component of this vector.
-    T& x() { return (*this)[0]; }
+    Q_DECL_CONSTEXPR T& x() { return (*this)[0]; }
 
     /// Returns a reference to the Y component of this vector.
-    T& y() { return (*this)[1]; }
+    Q_DECL_CONSTEXPR T& y() { return (*this)[1]; }
 
     ////////////////////////////////// Comparison ////////////////////////////////
 
@@ -215,7 +215,7 @@ public:
     /// \warning Do not call this function if the vector has length zero to avoid division by zero.
     /// In debug builds, a zero vector will be detected and reported. In release builds, the behavior is undefined.
     /// \sa normalized(), normalizeSafely(), resize()
-    inline void normalize() {
+    Q_DECL_CONSTEXPR inline void normalize() {
         OVITO_ASSERT_MSG(*this != Zero(), "Vector2::normalize", "Cannot normalize a vector with zero length.");
         *this /= length();
     }
@@ -225,7 +225,7 @@ public:
     /// \warning Do not call this function if the vector has length zero to avoid division by zero.
     /// In debug builds, a zero vector will be detected and reported. In release builds, the behavior is undefined.
     /// \sa resized(), normalize(), normalized()
-    inline void resize(T len) {
+    Q_DECL_CONSTEXPR inline void resize(T len) {
         OVITO_ASSERT_MSG(*this != Zero(), "Vector2::resize", "Cannot resize a vector with zero length.");
         *this *= (len / length());
     }
@@ -235,7 +235,7 @@ public:
     /// \warning Do not call this function if the vector has length zero to avoid division by zero.
     /// In debug builds, a zero vector will be detected and reported. In release builds, the behavior is undefined.
     /// \sa normalize(), normalizeSafely()
-    inline Vector_2 normalized() const {
+    Q_DECL_CONSTEXPR inline Vector_2 normalized() const {
         OVITO_ASSERT_MSG(*this != Zero(), "Vector2::normalize", "Cannot normalize a vector with zero length.");
         return *this / length();
     }
@@ -245,7 +245,7 @@ public:
     /// This method rescales this vector to unit length if its original length is greater than \a epsilon.
     /// Otherwise it does nothing.
     /// \sa normalize(), normalized()
-    inline void normalizeSafely(T epsilon = FloatTypeEpsilon<T>()) {
+    Q_DECL_CONSTEXPR inline void normalizeSafely(T epsilon = FloatTypeEpsilon<T>()) {
         T l = length();
         if(l > epsilon)
             *this /= l;
@@ -257,7 +257,7 @@ public:
     /// \warning Do not call this function if the vector has length zero to avoid division by zero.
     /// In debug builds, a zero vector will be detected and reported. In release builds, the behavior is undefined.
     /// \sa resize(), normalized()
-    inline Vector_2 resized(T len) const {
+    Q_DECL_CONSTEXPR inline Vector_2 resized(T len) const {
         OVITO_ASSERT_MSG(*this != Zero(), "Vector2::resized", "Cannot resize a vector with zero length.");
         return *this * (len / length());
     }

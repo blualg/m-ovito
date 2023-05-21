@@ -84,7 +84,7 @@ public:
     /// \param p3 The third point in the plane.
     /// \note The three points must be linearly independent of each other.
     /// \note The normal vector computed from the three points is NOT normalized by this constructor. It can be normalized later by calling normalizePlane().
-    Plane_3(const Point_3<T>& p1, const Point_3<T>& p2, const Point_3<T>& p3) {
+    Q_DECL_CONSTEXPR Plane_3(const Point_3<T>& p1, const Point_3<T>& p2, const Point_3<T>& p3) {
         normal = (p2-p1).cross(p3-p1);
         T lsq = normal.squaredLength();
         if(lsq) dist = normal.dot(p1 - typename Point_3<T>::Origin()) / lsq;
@@ -98,7 +98,7 @@ public:
     /// \param normalize Controls the normalization of the computed normal vector.
     ///        If \c false, then the normal vector can be normalized later by calling normalizePlane().
     /// \note The three points must linearly independent of each other.
-    Plane_3(const Point_3<T>& p1, const Point_3<T>& p2, const Point_3<T>& p3, bool normalize) {
+    Q_DECL_CONSTEXPR Plane_3(const Point_3<T>& p1, const Point_3<T>& p2, const Point_3<T>& p3, bool normalize) {
         if(normalize) {
             normal = (p2-p1).cross(p3-p1).safelyNormalized();
             dist = normal.dot(p1 - typename Point_3<T>::Origin());
@@ -118,7 +118,7 @@ public:
     /// \param normalize Controls the normalization of the computed normal vector.
     ///        If \c false, then the normal vector can be normalized later by calling normalizePlane().
     /// \note The two vectors must be linearly independent of each other.
-    Plane_3(const Point_3<T>& p, const Vector_3<T>& v1, const Vector_3<T>& v2, bool normalize = true) {
+    Q_DECL_CONSTEXPR Plane_3(const Point_3<T>& p, const Vector_3<T>& v1, const Vector_3<T>& v2, bool normalize = true) {
         if(normalize)
             normal = v1.cross(v2).normalized();
         else
@@ -127,7 +127,7 @@ public:
     }
 
     /// \brief Rescales the normal vector of the plane to make it a unit vector.
-    void normalizePlane() {
+    Q_DECL_CONSTEXPR void normalizePlane() {
         T len = normal.length();
         OVITO_ASSERT_MSG(len != T(0), "Plane_3::normalizePlane()", "The normal vector of the plane must not be the null vector.");
         dist /= len;
@@ -153,7 +153,7 @@ public:
     /// \return 1 if \a p is on the POSITIVE side of the plane,
     ///         -1 if \a p is on the NEGATIVE side, or 0 if \a p is ON the plane within the given tolerance.
     /// \sa pointDistance()
-    int classifyPoint(const Point_3<T>& p, const T tolerance = FloatTypeEpsilon<T>()) const {
+    Q_DECL_CONSTEXPR int classifyPoint(const Point_3<T>& p, const T tolerance = FloatTypeEpsilon<T>()) const {
         OVITO_ASSERT_MSG(tolerance >= 0, "Plane_3::classifyPoint()", "Tolerance value must be non-negative.");
         T d = pointDistance(p);
         if(d < -tolerance) return -1;
@@ -183,7 +183,8 @@ public:
     /// \sa intersectionT()
     Point_3<T> intersection(const Ray3& ray, T epsilon = T(0)) const {
         T t = intersectionT(ray, epsilon);
-        if(t == std::numeric_limits<T>::max()) throw Exception("Error in Plane_3::intersection(): There is no intersection point. Ray is parallel to plane.");
+        if(t == std::numeric_limits<T>::max())
+            throw Exception("Error in Plane_3::intersection(): There is no intersection point. Ray is parallel to plane.");
         return ray.point(t);
     }
 
@@ -194,7 +195,7 @@ public:
     ///         If there is no intersection, then FLOATTYPE_MAX is returned.
     /// \note This method requires the plane's normal to be a unit vector.
     /// \sa intersection()
-    T intersectionT(const Ray3& ray, T epsilon = T(0)) const {
+    Q_DECL_CONSTEXPR T intersectionT(const Ray3& ray, T epsilon = T(0)) const {
         // The plane's normal vector should be normalized.
         OVITO_ASSERT(std::abs(normal.squaredLength() - T(1)) <= FloatTypeEpsilon<T>());
         T dot = normal.dot(ray.dir);
@@ -226,7 +227,7 @@ public:
 ///         The normal vector is automatically normalized after the transformation.
 /// \relates Plane_3
 template<typename T>
-inline Plane_3<T> operator*(const AffineTransformationT<T>& tm, const Plane_3<T>& plane) {
+Q_DECL_CONSTEXPR inline Plane_3<T> operator*(const AffineTransformationT<T>& tm, const Plane_3<T>& plane) {
     Plane_3<T> p2;
     Matrix_3<T> inv_tm;
     if(tm.linear().inverse(inv_tm)) {

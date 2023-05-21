@@ -231,7 +231,7 @@ void GroImporter::FrameLoader::loadFile()
             ++token;
         }
         int residueNumber;
-        bool ok = parseInt(token, token_end, residueNumber);
+        bool ok = parseInt32(token, token_end, residueNumber);
         if(!ok)
             throw Exception(tr("Parsing error in line %1 of Gromacs file. Invalid residue number.").arg(stream.lineNumber()));
         if(residueNumber == 0)
@@ -289,7 +289,7 @@ void GroImporter::FrameLoader::loadFile()
             ++token;
         }
         int atomNumber = 0;
-        ok = parseInt(token, token_end, atomNumber);
+        ok = parseInt32(token, token_end, atomNumber);
         if(ok && atomNumber == 0 && numParticles >= 100000)
             atomBaseNumber += 100000;
         atomNumber += atomBaseNumber;

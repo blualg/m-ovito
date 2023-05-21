@@ -108,7 +108,7 @@ public:
 ///         The direction vector is automatically normalized after the transformation.
 /// \relates Ray_3
 template<typename T>
-inline Ray_3<T> operator*(const AffineTransformationT<T>& tm, const Ray_3<T>& ray) {
+Q_DECL_CONSTEXPR inline Ray_3<T> operator*(const AffineTransformationT<T>& tm, const Ray_3<T>& ray) {
     return { tm * ray.base, (tm * ray.dir).normalized() };
 }
 

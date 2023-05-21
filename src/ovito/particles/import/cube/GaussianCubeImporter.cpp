@@ -184,8 +184,8 @@ void GaussianCubeImporter::FrameLoader::loadFile()
                 if(s != token) break;
                 s = stream.readLine();
             }
-            int value;
-            if(!parseInt(token, s, value))
+            int32_t value;
+            if(!parseInt32(token, s, value))
                 throw Exception(tr("Invalid integer value in line %1 of Cube file: \"%2\"").arg(stream.lineNumber()).arg(QString::fromLocal8Bit(token, s - token)));
             if(*s != '\0')
                 s++;

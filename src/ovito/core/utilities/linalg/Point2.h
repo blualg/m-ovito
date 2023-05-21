@@ -98,21 +98,21 @@ public:
 #if !defined(Q_CC_MSVC) && !defined(ONLY_FOR_DOXYGEN) // The MSVC compiler and the Doxygen parser do not like C++11 array aggregate initializers.
     Q_DECL_CONSTEXPR explicit Point_2(T val) : std::array<T, 2>{{val,val}} {}
 #else
-    explicit Point_2(T val) { this->fill(val); }
+    Q_DECL_CONSTEXPR explicit Point_2(T val) { this->fill(val); }
 #endif
 
     /// Initializes the coordinates of the point with the given values.
 #if !defined(Q_CC_MSVC) && !defined(ONLY_FOR_DOXYGEN) // The MSVC compiler and the Doxygen parser do not like C++11 array aggregate initializers.
     Q_DECL_CONSTEXPR Point_2(T x, T y) : std::array<T, 2>{{x, y}} {}
 #else
-    Point_2(T x, T y) { this->x() = x; this->y() = y; }
+    Q_DECL_CONSTEXPR Point_2(T x, T y) { this->x() = x; this->y() = y; }
 #endif
 
     /// Initializes the point to the origin. All coordinates are set to zero.
 #if !defined(Q_CC_MSVC) && !defined(ONLY_FOR_DOXYGEN) // The MSVC compiler and the Doxygen parser do not like C++11 array aggregate initializers.
     Q_DECL_CONSTEXPR Point_2(Origin) : std::array<T, 2>{{T(0), T(0)}} {}
 #else
-    Point_2(Origin) { this->fill(T(0)); }
+    Q_DECL_CONSTEXPR Point_2(Origin) { this->fill(T(0)); }
 #endif
 
     /// Initializes the point from an array coordinates.
@@ -130,22 +130,22 @@ public:
     ///////////////////////////// Assignment operators ///////////////////////////
 
     /// Adds a vector to this point.
-    Point_2& operator+=(const Vector_2<T>& v) { x() += v.x(); y() += v.y(); return *this; }
+    Q_DECL_CONSTEXPR Point_2& operator+=(const Vector_2<T>& v) { x() += v.x(); y() += v.y(); return *this; }
 
     /// Subtracts a vector from this point.
-    Point_2& operator-=(const Vector_2<T>& v) { x() -= v.x(); y() -= v.y(); return *this; }
+    Q_DECL_CONSTEXPR Point_2& operator-=(const Vector_2<T>& v) { x() -= v.x(); y() -= v.y(); return *this; }
 
     /// Multiplies all coordinates of the point with a scalar value.
-    Point_2& operator*=(T s) { x() *= s; y() *= s; return *this; }
+    Q_DECL_CONSTEXPR Point_2& operator*=(T s) { x() *= s; y() *= s; return *this; }
 
     /// Divides all coordinates of the point by a scalar value.
-    Point_2& operator/=(T s) { x() /= s; y() /= s; return *this; }
+    Q_DECL_CONSTEXPR Point_2& operator/=(T s) { x() /= s; y() /= s; return *this; }
 
     /// Sets all coordinates of the point to zero.
-    Point_2& operator=(Origin) { this->fill(T(0)); return *this; }
+    Q_DECL_CONSTEXPR Point_2& operator=(Origin) { this->fill(T(0)); return *this; }
 
     /// Converts a point to a vector.
-    Vector_2<T> operator-(Origin) const {
+    Q_DECL_CONSTEXPR Vector_2<T> operator-(Origin) const {
         return Vector_2<T>(*this);
     }
 
@@ -158,10 +158,10 @@ public:
     Q_DECL_CONSTEXPR T y() const { return (*this)[1]; }
 
     /// \brief Returns a reference to the X coordinate of this point.
-    T& x() { return (*this)[0]; }
+    Q_DECL_CONSTEXPR T& x() { return (*this)[0]; }
 
     /// \brief Returns a reference to the Y coordinate of this point.
-    T& y() { return (*this)[1]; }
+    Q_DECL_CONSTEXPR T& y() { return (*this)[1]; }
 
     ////////////////////////////////// Comparison ////////////////////////////////
 

@@ -100,7 +100,7 @@ public:
             Vector_3<T>(m13,m23,m33),
             typename Vector_3<T>::Zero()}} {}
 #else
-    AffineTransformationT(
+    Q_DECL_CONSTEXPR AffineTransformationT(
         T m11, T m12, T m13,
         T m21, T m22, T m23,
         T m31, T m32, T m33)
@@ -123,7 +123,7 @@ public:
             Vector_3<T>(m13,m23,m33),
             Vector_3<T>(m14,m24,m34)}} {}
 #else
-    AffineTransformationT(
+    Q_DECL_CONSTEXPR AffineTransformationT(
                     T m11, T m12, T m13, T m14,
                     T m21, T m22, T m23, T m24,
                     T m31, T m32, T m33, T m34)
@@ -138,7 +138,7 @@ public:
     Q_DECL_CONSTEXPR AffineTransformationT(const column_type& c1, const column_type& c2, const column_type& c3, const column_type& c4)
         : std::array<Vector_3<T>,4>{{c1, c2, c3, c4}} {}
 #else
-    AffineTransformationT(const column_type& c1, const column_type& c2, const column_type& c3, const column_type& c4)
+    Q_DECL_CONSTEXPR AffineTransformationT(const column_type& c1, const column_type& c2, const column_type& c3, const column_type& c4)
         { (*this)[0] = c1; (*this)[1] = c2; (*this)[2] = c3; (*this)[3] = c4; }
 #endif
 
@@ -152,7 +152,7 @@ public:
             typename Vector_3<T>::Zero(),
             typename Vector_3<T>::Zero()}} {}
 #else
-    AffineTransformationT(Zero)
+    Q_DECL_CONSTEXPR AffineTransformationT(Zero)
         { this->fill(typename Vector_3<T>::Zero()); }
 #endif
 
@@ -166,7 +166,7 @@ public:
             Vector_3<T>(T(0),T(0),T(1)),
             Vector_3<T>(T(0),T(0),T(0))}} {}
 #else
-    AffineTransformationT(Identity)
+    Q_DECL_CONSTEXPR AffineTransformationT(Identity)
         { (*this)[0] = Vector_3<T>(T(1),T(0),T(0));
           (*this)[1] = Vector_3<T>(T(0),T(1),T(0));
           (*this)[2] = Vector_3<T>(T(0),T(0),T(1));
@@ -179,7 +179,7 @@ public:
     explicit Q_DECL_CONSTEXPR AffineTransformationT(const Matrix_3<T>& tm)
         : std::array<Vector_3<T>,4>{{tm.column(0), tm.column(1), tm.column(2), typename Vector_3<T>::Zero()}} {}
 #else
-    explicit AffineTransformationT(const Matrix_3<T>& tm)
+    explicit Q_DECL_CONSTEXPR AffineTransformationT(const Matrix_3<T>& tm)
         { (*this)[0] = tm.column(0); (*this)[1] = tm.column(1); (*this)[2] = tm.column(2); (*this)[3] = typename Vector_3<T>::Zero(); }
 #endif
 
@@ -192,7 +192,7 @@ public:
             Vector_3<T>(m(0,2),m(1,2),m(2,2)),
             Vector_3<T>(m(0,3),m(1,3),m(2,3))}} {}
 #else
-    AffineTransformationT(const QMatrix4x4& m)
+    Q_DECL_CONSTEXPR AffineTransformationT(const QMatrix4x4& m)
         { (*this)[0] = Vector_3<T>(m(0,0),m(1,0),m(2,0));
           (*this)[1] = Vector_3<T>(m(0,1),m(1,1),m(2,1));
           (*this)[2] = Vector_3<T>(m(0,2),m(1,2),m(2,2));
@@ -228,7 +228,7 @@ public:
     /// \brief Returns a modifiable reference to a matrix element.
     /// \param row The row of the element.
     /// \param col The column of the element.
-    inline T& operator()(size_type row, size_type col) {
+    inline Q_DECL_CONSTEXPR T& operator()(size_type row, size_type col) {
         return (*this)[col][row];
     }
 
@@ -242,7 +242,7 @@ public:
     /// \brief Returns a modifiable reference to a column vector of the matrix.
     /// \param col The column to return.
     /// \return A reference to a vector of three elements.
-    inline column_type& column(size_type col) {
+    inline Q_DECL_CONSTEXPR column_type& column(size_type col) {
         return (*this)[col];
     }
 
@@ -257,22 +257,22 @@ public:
     Q_DECL_CONSTEXPR const column_type& translation() const { return column(3); }
 
     /// \brief Returns a modifiable reference to the translational part of the transformation, which is stored in the fourth column.
-    column_type& translation() { return column(3); }
+    Q_DECL_CONSTEXPR column_type& translation() { return column(3); }
 
     /// \brief Sets all elements of the matrix to zero.
-    void setZero() {
+    Q_DECL_CONSTEXPR void setZero() {
         for(size_type i = 0; i < col_count(); i++)
             (*this)[i].setZero();
     }
 
     /// \brief Sets all elements of the matrix to zero.
-    AffineTransformationT& operator=(Zero) {
+    Q_DECL_CONSTEXPR AffineTransformationT& operator=(Zero) {
         setZero();
         return *this;
     }
 
     /// \brief Sets the matrix to the identity matrix.
-    void setIdentity() {
+    Q_DECL_CONSTEXPR void setIdentity() {
         (*this)[0] = Vector_3<T>(T(1),T(0),T(0));
         (*this)[1] = Vector_3<T>(T(0),T(1),T(0));
         (*this)[2] = Vector_3<T>(T(0),T(0),T(1));
@@ -280,19 +280,19 @@ public:
     }
 
     /// \brief Sets the matrix to the identity matrix.
-    AffineTransformationT& operator=(Identity) {
+    Q_DECL_CONSTEXPR AffineTransformationT& operator=(Identity) {
         setIdentity();
         return *this;
     }
 
     /// Returns a pointer to the 12 elements of the matrix (stored in column-major order).
-    const element_type* elements() const {
+    Q_DECL_CONSTEXPR const element_type* elements() const {
         OVITO_STATIC_ASSERT(sizeof(*this) == sizeof(element_type)*12);
         return column(0).data();
     }
 
     /// Returns a pointer to the 12 elements of the matrix (stored in column-major order).
-    element_type* elements() {
+    Q_DECL_CONSTEXPR element_type* elements() {
         OVITO_STATIC_ASSERT(sizeof(*this) == sizeof(element_type)*12);
         return column(0).data();
     }
@@ -316,7 +316,7 @@ public:
     /// \param tolerance A non-negative threshold for the equality test. The two matrices are considered equal if
     ///        the element-wise differences are all less than this tolerance value.
     /// \return \c true if this matrix is equal to \a m within the given tolerance; \c false otherwise.
-    inline bool equals(const AffineTransformationT& m, T tolerance = FloatTypeEpsilon<T>()) const {
+    Q_DECL_CONSTEXPR inline bool equals(const AffineTransformationT& m, T tolerance = FloatTypeEpsilon<T>()) const {
         for(size_type i = 0; i < col_count(); i++)
             if(!column(i).equals(m.column(i), tolerance)) return false;
         return true;
@@ -325,7 +325,7 @@ public:
     /// \brief Test if the matrix is zero within a given tolerance.
     /// \param tolerance A non-negative threshold.
     /// \return \c true if the absolute value of each matrix element is all smaller than \a tolerance.
-    inline bool isZero(T tolerance = FloatTypeEpsilon<T>()) const {
+    Q_DECL_CONSTEXPR inline bool isZero(T tolerance = FloatTypeEpsilon<T>()) const {
         for(size_type i = 0; i < col_count(); i++)
             if(!column(i).isZero(tolerance)) return false;
         return true;
@@ -342,7 +342,7 @@ public:
 
     /// \brief Computes the inverse of the matrix.
     /// \throw Exception if the matrix is not invertible because it is singular.
-    AffineTransformationT inverse() const {
+    Q_DECL_CONSTEXPR AffineTransformationT inverse() const {
         // Compute inverse of 3x3 sub-matrix.
         // Then multiply with inverse translation.
         T det = determinant();
@@ -372,7 +372,7 @@ public:
     /// \return \c false if the matrix is not invertible because it is singular; \c true if the inverse has been calculated
     ///         and was stored in \a result.
     /// \sa determinant()
-    bool inverse(AffineTransformationT& result, T epsilon = T(1e-16)) const {
+    Q_DECL_CONSTEXPR bool inverse(AffineTransformationT& result, T epsilon = T(1e-16)) const {
         T det = determinant();
         if(std::abs(det) <= epsilon) return false;
         result = AffineTransformationT(
@@ -403,7 +403,7 @@ public:
     ///
     /// where |V| denotes length of vector V and A*B denotes dot
     /// product of vectors A and B.
-    void orthonormalize() {
+    Q_DECL_CONSTEXPR void orthonormalize() {
 
         // Compute q0.
         (*this)[0].normalize();
@@ -450,7 +450,7 @@ public:
 
     /// \brief Generates a matrix describing a rotation around the X axis.
     /// \param angle The rotation angle in radians.
-    static inline AffineTransformationT rotationX(T angle) {
+    static Q_DECL_CONSTEXPR inline AffineTransformationT rotationX(T angle) {
         const T c = cos(angle);
         const T s = sin(angle);
         return AffineTransformationT{T(1), T(0), T(0), T(0),
@@ -460,7 +460,7 @@ public:
 
     /// \brief Generates a matrix describing a rotation around the Y axis.
     /// \param angle The rotation angle in radians.
-    static inline AffineTransformationT rotationY(T angle) {
+    static Q_DECL_CONSTEXPR inline AffineTransformationT rotationY(T angle) {
         const T c = cos(angle);
         const T s = sin(angle);
         return AffineTransformationT{   c, T(0),    s, T(0),
@@ -470,7 +470,7 @@ public:
 
     /// \brief Generates a matrix describing a rotation around the Z axis.
     /// \param angle The rotation angle in radians.
-    static inline AffineTransformationT rotationZ(T angle) {
+    static Q_DECL_CONSTEXPR inline AffineTransformationT rotationZ(T angle) {
         const T c = cos(angle);
         const T s = sin(angle);
         return AffineTransformationT{   c,   -s, T(0), T(0),
@@ -479,10 +479,10 @@ public:
     }
 
     /// Generates a pure rotation matrix from an axis-angle representation.
-    static AffineTransformationT rotation(const RotationT<T>& rot);
+    static Q_DECL_CONSTEXPR AffineTransformationT rotation(const RotationT<T>& rot);
 
     /// Generates a pure rotation matrix from a quaternion.
-    static AffineTransformationT rotation(const QuaternionT<T>& q);
+    static Q_DECL_CONSTEXPR AffineTransformationT rotation(const QuaternionT<T>& q);
 
     /// Generates a pure translation matrix.
     static Q_DECL_CONSTEXPR AffineTransformationT translation(const Vector_3<T>& t) {
@@ -501,7 +501,7 @@ public:
     }
 
     /// Generates a pure scaling matrix.
-    static AffineTransformationT scaling(const ScalingT<T>& scaling);
+    static Q_DECL_CONSTEXPR AffineTransformationT scaling(const ScalingT<T>& scaling);
 
     /// Generates pure shear matrix (shear in the x-y plane).
     static Q_DECL_CONSTEXPR AffineTransformationT shear(T gammaX, T gammaY) {
@@ -512,7 +512,7 @@ public:
     }
 
     /// Generates a matrix from an OpenGL matrix.
-    static AffineTransformationT fromOpenGL(const T tm[16]) {
+    static Q_DECL_CONSTEXPR AffineTransformationT fromOpenGL(const T tm[16]) {
         OVITO_ASSERT(tm[3] == 0 && tm[7] == 0 && tm[11] == 0 && tm[15] == 1);
         return AffineTransformationT{tm[0], tm[4], tm[8], tm[12],
                                      tm[1], tm[5], tm[9], tm[13],
@@ -525,7 +525,7 @@ public:
     /// \param upVector A vector specifying the up direction that determines the rotation of the camera
     ///                 around the view axis.
     /// \return A transformation from world space to view space.
-    static AffineTransformationT lookAt(const Point_3<T>& camera, const Point_3<T>& target, const Vector_3<T>& upVector) {
+    static Q_DECL_CONSTEXPR AffineTransformationT lookAt(const Point_3<T>& camera, const Point_3<T>& target, const Vector_3<T>& upVector) {
         return lookAlong(camera, target - camera, upVector);
     }
 
@@ -535,7 +535,7 @@ public:
     /// \param upVector A vector specifying the up direction that determines the rotation of the camera
     ///                 around the view axis.
     /// \return A transformation from world space to view space.
-    static AffineTransformationT lookAlong(const Point_3<T>& camera, const Vector_3<T>& direction, const Vector_3<T>& upVector) {
+    static Q_DECL_CONSTEXPR AffineTransformationT lookAlong(const Point_3<T>& camera, const Vector_3<T>& direction, const Vector_3<T>& upVector) {
         auto zaxis = -direction.normalized();
         auto xaxis = upVector.cross(zaxis);
         if(xaxis == typename Vector_3<T>::Zero()) {
@@ -773,7 +773,7 @@ inline Q_DECL_CONSTEXPR AffineTransformationT<T> operator*(const AffineTransform
 
 // Generates a pure rotation matrix around the given axis.
 template<typename T>
-inline AffineTransformationT<T> AffineTransformationT<T>::rotation(const RotationT<T>& rot)
+inline Q_DECL_CONSTEXPR AffineTransformationT<T> AffineTransformationT<T>::rotation(const RotationT<T>& rot)
 {
     T c = cos(rot.angle());
     T s = sin(rot.angle());
@@ -796,7 +796,7 @@ inline AffineTransformationT<T> AffineTransformationT<T>::rotation(const Rotatio
 
 // Generates a pure rotation matrix from a quaternion.
 template<typename T>
-inline AffineTransformationT<T> AffineTransformationT<T>::rotation(const QuaternionT<T>& q)
+inline Q_DECL_CONSTEXPR AffineTransformationT<T> AffineTransformationT<T>::rotation(const QuaternionT<T>& q)
 {
 #ifdef OVITO_DEBUG
     if(std::abs(q.dot(q) - T(1)) > FloatTypeEpsilon<T>())
@@ -815,7 +815,7 @@ inline AffineTransformationT<T> AffineTransformationT<T>::rotation(const Quatern
 
 // Generates a pure scaling matrix.
 template<typename T>
-inline AffineTransformationT<T> AffineTransformationT<T>::scaling(const ScalingT<T>& scaling)
+inline Q_DECL_CONSTEXPR AffineTransformationT<T> AffineTransformationT<T>::scaling(const ScalingT<T>& scaling)
 {
     Matrix_3<T> U = Matrix_3<T>::rotation(scaling.Q);
     Matrix_3<T> K = Matrix_3<T>(scaling.S.x(), T(0), T(0),

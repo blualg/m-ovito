@@ -489,7 +489,7 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
                 line = token.cend();
 
                 // Try parsing numeric type id.
-                bool ok = parseInt(token, *bondType);
+                bool ok = parseInt32(token, *bondType);
                 if(!ok) {
                     // Try lookup by type name.
                     if(const ElementType* etype = typeProperty->elementType(token))
@@ -564,7 +564,7 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
                 line = token.cend();
 
                 // Try parsing numeric type id.
-                bool ok = parseInt(token, *angleType);
+                bool ok = parseInt32(token, *angleType);
                 if(!ok) {
                     // Try lookup by type name.
                     if(const ElementType* etype = typeProperty->elementType(token))
@@ -626,7 +626,7 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
                 line = token.cend();
 
                 // Try parsing numeric type id.
-                bool ok = parseInt(token, *dihedralType);
+                bool ok = parseInt32(token, *dihedralType);
                 if(!ok) {
                     // Try lookup by type name.
                     if(const ElementType* etype = typeProperty->elementType(token))
@@ -688,7 +688,7 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
                 line = token.cend();
 
                 // Try parsing numeric type id.
-                bool ok = parseInt(token, *improperType);
+                bool ok = parseInt32(token, *improperType);
                 if(!ok) {
                     // Try lookup by type name.
                     if(const ElementType* etype = typeProperty->elementType(token))

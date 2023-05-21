@@ -753,6 +753,7 @@ QString LibsshConnection::unknownHostMessage()
 
     default:
         OVITO_ASSERT(false);
+        return {};
     }
 }
 

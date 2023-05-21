@@ -143,11 +143,11 @@ bool DataTableExporter::exportFrame(int frameNumber, const QString& filePath, Ma
         }
         else {
             if(xaccessInt8)
-                textStream() << xaccessInt8.get(row, 0) << " ";
+                textStream() << static_cast<qint32>(xaccessInt8.get(row, 0)) << " ";
             else if(xaccessInt32)
                 textStream() << xaccessInt32.get(row, 0) << " ";
             else if(xaccessInt64)
-                textStream() << xaccessInt64.get(row, 0) << " ";
+                textStream() << static_cast<qint64>(xaccessInt64.get(row, 0)) << " ";
             else if(xaccessFloat32)
                 textStream() << xaccessFloat32.get(row, 0) << " ";
             else if(xaccessFloat64)
@@ -159,11 +159,11 @@ bool DataTableExporter::exportFrame(int frameNumber, const QString& filePath, Ma
         for(const BufferReadAccess& array : outputProperties) {
             for(size_t col = 0; col < array.componentCount(); col++) {
                 if(array.dataType() == PropertyObject::Int8)
-                    textStream() << *reinterpret_cast<const int8_t*>(array.cdata(row, col)) << " ";
+                    textStream() << static_cast<qint32>(*reinterpret_cast<const int8_t*>(array.cdata(row, col))) << " ";
                 else if(array.dataType() == PropertyObject::Int32)
                     textStream() << *reinterpret_cast<const int32_t*>(array.cdata(row, col)) << " ";
                 else if(array.dataType() == PropertyObject::Int64)
-                    textStream() << *reinterpret_cast<const int64_t*>(array.cdata(row, col)) << " ";
+                    textStream() << static_cast<qint64>(*reinterpret_cast<const int64_t*>(array.cdata(row, col))) << " ";
                 else if(array.dataType() == PropertyObject::Float32)
                     textStream() << *reinterpret_cast<const float*>(array.cdata(row, col)) << " ";
                 else if(array.dataType() == PropertyObject::Float64)
