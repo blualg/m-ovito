@@ -78,7 +78,7 @@ public:
     /// Data structure holding the precomputed information that is needed to unwrap the particle trajectories.
     /// For each crossing of a particle through a periodic cell boundary, the map contains one entry specifying
     /// the particle's unique ID, the time of the crossing, the spatial dimension and the direction (positive or negative).
-    using UnwrapData = std::unordered_multimap<qlonglong, std::tuple<AnimationTime, qint8, qint16>>;
+    using UnwrapData = std::unordered_multimap<qlonglong, std::tuple<AnimationTime, qint8, qint16>>; // Note: using qlonglong instead of IdentifierIntType here fore backward file compatibility with OVITO 3.8
 
     /// Data structure holding the precomputed information that is needed to undo flipping of sheared simulation cells in LAMMPS.
     using UnflipData = std::vector<std::pair<AnimationTime, std::array<int,3>>>;

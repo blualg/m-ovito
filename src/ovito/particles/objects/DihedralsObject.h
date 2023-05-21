@@ -75,6 +75,6 @@ public:
 /**
  * The data type used for the 'Topology' dihedral/improper property: four indices into the particles list.
  */
-using ParticleIndexQuadruplet = std::array<qlonglong, 4>;
+using ParticleIndexQuadruplet = std::array<int64_t, 4>;
 
 }   // End of namespace

@@ -64,9 +64,9 @@ struct LAMMPSBinaryDumpHeader
             memset(tiltFactors, 0, sizeof(tiltFactors));
         }
 
-    qlonglong ntimestep;
+    int64_t ntimestep;
     int formatRevision = 0;
-    qlonglong natoms;
+    int64_t natoms;
     int boundaryFlags[3][2];
     double bbox[3][2];
     double tiltFactors[3];
@@ -107,18 +107,18 @@ struct LAMMPSBinaryDumpHeader
 
     // Parses a "big" LAMMPS integer (may be 32 or 64 bit, depending on currently selected data type).
     // A return value of -1 indicates a number overflow.
-    qlonglong readBigInt(QIODevice& input) {
+    int64_t readBigInt(QIODevice& input) {
         if(dataType == LAMMPS_SMALLSMALL) {
             return parseInt(input);
         }
         else {
-            qint64 val;
+            int64_t val;
             input.read(reinterpret_cast<char*>(&val), sizeof(val));
             if(endianess == LAMMPS_LITTLE_ENDIAN)
                 val = qFromLittleEndian(val);
             else
                 val = qFromBigEndian(val);
-            if(val > (qint64)std::numeric_limits<qlonglong>::max())
+            if(val > std::numeric_limits<int64_t>::max())
                 return -1;
             else
                 return val;
