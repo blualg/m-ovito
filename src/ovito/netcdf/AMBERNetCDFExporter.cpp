@@ -344,13 +344,16 @@ bool AMBERNetCDFExporter::exportData(const PipelineFlowState& state, int frameNu
         // Write property data to file.
         count[2] = outColumn.componentCount;
         if(outColumn.dataType == DataBuffer::Int8) {
+            OVITO_STATIC_ASSERT(sizeof(int8_t) == sizeof(signed char));
             NCERR(nc_put_vara_schar(_ncid, outColumn.ncvar, start, count, BufferAccess<const int8_t*>(prop).cbegin()));
         }
         else if(outColumn.dataType == DataBuffer::Int32) {
+            OVITO_STATIC_ASSERT(sizeof(int32_t) == sizeof(int));
             NCERR(nc_put_vara_int(_ncid, outColumn.ncvar, start, count, BufferAccess<const int32_t*>(prop).cbegin()));
         }
         else if(outColumn.dataType == DataBuffer::Int64) {
-            NCERR(nc_put_vara_longlong(_ncid, outColumn.ncvar, start, count, BufferAccess<const int64_t*>(prop).cbegin()));
+            OVITO_STATIC_ASSERT(sizeof(long long int) == sizeof(int64_t));
+            NCERR(nc_put_vara_longlong(_ncid, outColumn.ncvar, start, count, reinterpret_cast<const qlonglong*>(BufferAccess<const int64_t*>(prop).cbegin())));
         }
         else if(outColumn.dataType == DataBuffer::Float32) {
             NCERR(nc_put_vara_float(_ncid, outColumn.ncvar, start, count, BufferAccess<const float*>(prop).cbegin()));

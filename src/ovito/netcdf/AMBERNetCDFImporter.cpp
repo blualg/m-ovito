@@ -63,15 +63,15 @@ SET_PROPERTY_FIELD_LABEL(AMBERNetCDFImporter, useCustomColumnMapping, "Custom fi
 SET_PROPERTY_FIELD_LABEL(AMBERNetCDFImporter, customColumnMapping, "File column mapping");
 
 // Convert full tensor to Voigt tensor
-template<typename T>
-void fullToVoigt(size_t particleCount, T* full, T* voigt) {
+template<typename T, typename U>
+void fullToVoigt(size_t particleCount, T* full, U* voigt) {
     for(size_t i = 0; i < particleCount; i++) {
-        voigt[6*i] = full[9*i];
-        voigt[6*i+1] = full[9*i+4];
-        voigt[6*i+2] = full[9*i+8];
-        voigt[6*i+3] = (full[9*i+5]+full[9*i+7])/2;
-        voigt[6*i+4] = (full[9*i+2]+full[9*i+6])/2;
-        voigt[6*i+5] = (full[9*i+1]+full[9*i+3])/2;
+        voigt[6*i] = static_cast<T>(full[9*i]);
+        voigt[6*i+1] = static_cast<T>(full[9*i+4]);
+        voigt[6*i+2] = static_cast<T>(full[9*i+8]);
+        voigt[6*i+3] = static_cast<T>((full[9*i+5]+full[9*i+7])/2);
+        voigt[6*i+4] = static_cast<T>((full[9*i+2]+full[9*i+6])/2);
+        voigt[6*i+5] = static_cast<T>((full[9*i+1]+full[9*i+3])/2);
     }
 }
 
@@ -546,13 +546,14 @@ void AMBERNetCDFImporter::FrameLoader::loadFile()
             }
         }
 
-        auto readPropertyData = [&](auto _, auto nc_get_vara) {
-            using T = decltype(_);
+        auto readPropertyData = [&](auto _t, auto _u, auto nc_get_vara) {
+            using T = decltype(_t);
+            using U = decltype(_u);
             BufferAccess<T*> propertyArray(property);
 
             // Special handling for tensor arrays that need to be converted to Voigt notation.
             if(doVoigtConversion) {
-                auto data = std::make_unique<T[]>(9 * particleCount);
+                auto data = std::make_unique<U[]>(9 * particleCount);
                 NCERRI( nc_get_vara(ncFile._ncid, varId, startp, countp, data.get()), tr("(While reading variable '%1'.)").arg(columnName) );
                 fullToVoigt(particleCount, data.get(), propertyArray.begin());
             }
@@ -566,7 +567,8 @@ void AMBERNetCDFImporter::FrameLoader::loadFile()
                     countp[particleCountDim] = std::min(countp[particleCountDim], remaining);
                     remaining -= countp[particleCountDim];
                     OVITO_ASSERT(countp[particleCountDim] >= 1);
-                    NCERRI( nc_get_vara(ncFile._ncid, varId, startp, countp, propertyArray.begin() + chunk * property->componentCount()), tr("(While reading variable '%1'.)").arg(columnName) );
+                    OVITO_STATIC_ASSERT(sizeof(T) == sizeof(U));
+                    NCERRI( nc_get_vara(ncFile._ncid, varId, startp, countp, reinterpret_cast<U*>(propertyArray.begin() + chunk * property->componentCount())), tr("(While reading variable '%1'.)").arg(columnName) );
                     if(!incrementProgressValue())
                         return false;
                 }
@@ -576,11 +578,12 @@ void AMBERNetCDFImporter::FrameLoader::loadFile()
         };
 
         if(property->dataType() == DataBuffer::Int8) {
-            if(!readPropertyData(int8_t{0}, nc_get_vara_schar))
+            using schar = signed char;
+            if(!readPropertyData(int8_t{}, schar{}, nc_get_vara_schar))
                 return;
         }
         else if(property->dataType() == DataBuffer::Int32) {
-            if(!readPropertyData(int32_t{0}, nc_get_vara_int))
+            if(!readPropertyData(int32_t{}, int{}, nc_get_vara_int))
                 return;
 
             // Create particles types if this is the typed property.
@@ -598,15 +601,15 @@ void AMBERNetCDFImporter::FrameLoader::loadFile()
             }
         }
         else if(property->dataType() == DataBuffer::Int64) {
-            if(!readPropertyData(int64_t{0}, nc_get_vara_longlong))
+            if(!readPropertyData(int64_t{}, qlonglong{}, nc_get_vara_longlong))
                 return;
         }
         else if(property->dataType() == DataBuffer::Float32) {
-            if(!readPropertyData(float{0}, nc_get_vara_float))
+            if(!readPropertyData(float{}, float{}, nc_get_vara_float))
                 return;
         }
         else if(property->dataType() == DataBuffer::Float64) {
-            if(!readPropertyData(double{0}, nc_get_vara_double))
+            if(!readPropertyData(double{}, double{}, nc_get_vara_double))
                 return;
         }
         else {
