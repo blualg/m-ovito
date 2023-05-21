@@ -53,14 +53,14 @@ private:
 
     OORef<ElementSelectionSet> _owner;
     boost::dynamic_bitset<> _selection;
-    QSet<IdentifierIntType> _selectedIdentifiers;
+    QSet<qlonglong> _selectedIdentifiers; // Note: using qlonglong instead of IdentifierIntType for compatibility with corresponding field of ElementSelectionSet class
 };
 
 /* Undo record that can restore selection state of a single element. */
 class ToggleSelectionOperation : public UndoableOperation
 {
 public:
-    ToggleSelectionOperation(ElementSelectionSet* owner, qlonglong id, size_t elementIndex = std::numeric_limits<size_t>::max()) :
+    ToggleSelectionOperation(ElementSelectionSet* owner, IdentifierIntType id, size_t elementIndex = std::numeric_limits<size_t>::max()) :
         _owner(owner), _index(elementIndex), _id(id) {}
 
     virtual void undo() override {
@@ -77,7 +77,7 @@ public:
 private:
 
     OORef<ElementSelectionSet> _owner;
-    qlonglong _id;
+    IdentifierIntType _id;
     size_t _index;
 };
 
