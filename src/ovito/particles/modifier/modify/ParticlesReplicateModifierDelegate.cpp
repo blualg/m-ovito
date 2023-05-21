@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -203,8 +203,8 @@ PipelineStatus ParticlesReplicateModifierDelegate::apply(const ModifierEvaluatio
                     for(image[1] = newImages.minc.y(); image[1] <= newImages.maxc.y(); image[1]++) {
                         for(image[2] = newImages.minc.z(); image[2] <= newImages.maxc.z(); image[2]++) {
                             for(size_t index = 0; index < oldAngleCount; index++, destinationIndex++) {
-                                qlonglong referenceParticle = topologyArray[destinationIndex][1];
-                                for(qlonglong& pindex : topologyArray[destinationIndex]) {
+                                auto referenceParticle = topologyArray[destinationIndex][1];
+                                for(auto& pindex : topologyArray[destinationIndex]) {
                                     Point3I newImage = image;
                                     if(pindex >= 0 && (size_t)pindex < positionArray.size() && referenceParticle >= 0 && (size_t)referenceParticle < positionArray.size()) {
                                         Vector3 delta = positionArray[pindex] - positionArray[referenceParticle];
@@ -249,8 +249,8 @@ PipelineStatus ParticlesReplicateModifierDelegate::apply(const ModifierEvaluatio
                     for(image[1] = newImages.minc.y(); image[1] <= newImages.maxc.y(); image[1]++) {
                         for(image[2] = newImages.minc.z(); image[2] <= newImages.maxc.z(); image[2]++) {
                             for(size_t index = 0; index < oldDihedralCount; index++, destinationIndex++) {
-                                qlonglong referenceParticle = topologyArray[destinationIndex][1];
-                                for(qlonglong& pindex : topologyArray[destinationIndex]) {
+                                auto referenceParticle = topologyArray[destinationIndex][1];
+                                for(auto& pindex : topologyArray[destinationIndex]) {
                                     Point3I newImage = image;
                                     if(pindex >= 0 && (size_t)pindex < positionArray.size() && referenceParticle >= 0 && (size_t)referenceParticle < positionArray.size()) {
                                         Vector3 delta = positionArray[pindex] - positionArray[referenceParticle];
@@ -295,8 +295,8 @@ PipelineStatus ParticlesReplicateModifierDelegate::apply(const ModifierEvaluatio
                     for(image[1] = newImages.minc.y(); image[1] <= newImages.maxc.y(); image[1]++) {
                         for(image[2] = newImages.minc.z(); image[2] <= newImages.maxc.z(); image[2]++) {
                             for(size_t index = 0; index < oldImproperCount; index++, destinationIndex++) {
-                                qlonglong referenceParticle = topologyArray[destinationIndex][1];
-                                for(qlonglong& pindex : topologyArray[destinationIndex]) {
+                                auto referenceParticle = topologyArray[destinationIndex][1];
+                                for(auto& pindex : topologyArray[destinationIndex]) {
                                     Point3I newImage = image;
                                     if(pindex >= 0 && (size_t)pindex < positionArray.size() && referenceParticle >= 0 && (size_t)referenceParticle < positionArray.size()) {
                                         Vector3 delta = positionArray[pindex] - positionArray[referenceParticle];

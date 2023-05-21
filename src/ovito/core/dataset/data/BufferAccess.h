@@ -475,4 +475,44 @@ using BufferAccess = detail::BufferAccessTyped<T, std::conditional_t<!std::is_co
 template<typename T>
 using BufferAccessAndRef = detail::BufferAccessTyped<T, std::conditional_t<!std::is_const_v<std::remove_pointer_t<T>>, DataOORef<DataBuffer>, DataOORef<const DataBuffer>>>;
 
+/**
+ * Utility class that behaves like a BufferAccessAndRef but performs
+ * a conversion operation if necessary (creating a temporary data copy) to
+ * guarantee a specific data type for the (read-only) data access.
+ *
+ * Use this class to for input data buffers that use a particular data type most of the time
+ * but occasionally use a different data type (then incurring a costly conversion operation).
+*/
+template<typename T>
+class BufferAccessConvertedTo : public BufferAccessAndRef<const T>
+{
+public:
+
+    using typename BufferAccessAndRef<const T>::element_type;
+    using typename BufferAccessAndRef<const T>::iterator;
+    using typename BufferAccessAndRef<const T>::const_iterator;
+    using typename BufferAccessAndRef<const T>::size_type;
+
+    /// Default constructor.
+    BufferAccessConvertedTo() = default;
+
+    /// Constructor that associates the access object with a buffer object (reference may be null).
+    template<typename DataBufferOrDerived>
+    BufferAccessConvertedTo(DataOORef<DataBufferOrDerived> buffer) : BufferAccessAndRef<const T>(performDataTypeConversion(std::move(buffer))) {}
+
+    /// Constructor that takes a raw pointer to a DataBuffer.
+    BufferAccessConvertedTo(const DataBuffer* buffer) : BufferAccessConvertedTo(ConstDataBufferPtr(buffer)) {}
+
+private:
+
+    /// Helper function that checks the data type of the incoming data buffer and performs a copy-and-conversion
+    /// operation only if necessary.
+    static ConstDataBufferPtr performDataTypeConversion(ConstDataBufferPtr buffer) {
+        if(buffer && buffer->dataType() != DataBufferPrimitiveType<std::remove_cv_t<element_type>>::value) {
+            buffer.makeMutableInplace()->convertToDataType(DataBufferPrimitiveType<std::remove_cv_t<element_type>>::value);
+        }
+        return buffer;
+    }
+};
+
 }   // End of namespace
