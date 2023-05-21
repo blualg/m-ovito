@@ -54,8 +54,7 @@ void OpenGLSceneRenderer::renderMarkersImplementation(const MarkerPrimitive& pri
     default:
         return;
     }
-    shader.setVboInstanceCount(primitive.positions()->size());
-    shader.setRenderInstanceCount(primitive.positions()->size());
+    shader.setInstanceCount(primitive.positions()->size());
 
     // Are we rendering semi-transparent markers?
     bool useBlending = !isPicking() && primitive.color().a() < 1.0;
@@ -78,7 +77,7 @@ void OpenGLSceneRenderer::renderMarkersImplementation(const MarkerPrimitive& pri
     shader.bindBuffer(positionsBuffer, "position", GL_FLOAT, 3, sizeof(Point_3<float>), 0, OpenGLShaderHelper::PerInstance);
 
     // Issue instance drawing command.
-    shader.drawArrays(GL_LINES);
+    shader.draw(GL_LINES);
 
     OVITO_REPORT_OPENGL_ERRORS(this);
 }

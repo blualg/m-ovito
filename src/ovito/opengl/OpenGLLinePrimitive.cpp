@@ -62,8 +62,7 @@ void OpenGLSceneRenderer::renderThinLinesImplementation(const LinePrimitive& pri
         shader.load("line_thin_uniform_color", "lines/line_uniform_color.vert", "lines/line_uniform_color.frag");
 
     shader.setVerticesPerInstance(primitive.positions()->size());
-    shader.setVboInstanceCount(1);
-    shader.setRenderInstanceCount(1);
+    shader.setInstanceCount(1);
 
     // Check size limits.
     if(primitive.positions()->size() > std::numeric_limits<int32_t>::max() / sizeof(Point_3<float>)) {
@@ -93,7 +92,7 @@ void OpenGLSceneRenderer::renderThinLinesImplementation(const LinePrimitive& pri
     }
 
     // Issue line drawing command.
-    shader.drawArrays(GL_LINES);
+    shader.draw(GL_LINES);
 }
 
 /******************************************************************************
@@ -114,11 +113,10 @@ void OpenGLSceneRenderer::renderThickLinesImplementation(const LinePrimitive& pr
         shader.load("line_thick_uniform_color", "lines/thick_line_uniform_color.vert", "lines/line_uniform_color.frag");
 
     shader.setVerticesPerInstance(4);
-    shader.setVboInstanceCount(primitive.positions()->size() / 2);
-    shader.setRenderInstanceCount(primitive.positions()->size() / 2);
+    shader.setInstanceCount(primitive.positions()->size() / 2);
 
     // Check size limits.
-    if(shader.vboInstanceCount() > std::numeric_limits<int32_t>::max() / shader.verticesPerInstance() / (2 * sizeof(Point_3<float>))) {
+    if(shader.instanceCount() > std::numeric_limits<int32_t>::max() / shader.verticesPerInstance() / (2 * sizeof(Point_3<float>))) {
         qWarning() << "WARNING: OpenGL renderer - Trying to render too many lines at once, exceeding device limits.";
         return;
     }
@@ -150,7 +148,7 @@ void OpenGLSceneRenderer::renderThickLinesImplementation(const LinePrimitive& pr
     shader.setUniformValue("line_thickness", effectiveLineWidth / viewportRect().height());
 
     // Issue instanced drawing command.
-    shader.drawArrays(GL_TRIANGLE_STRIP);
+    shader.draw(GL_TRIANGLE_STRIP);
 }
 
 }   // End of namespace

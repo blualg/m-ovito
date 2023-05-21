@@ -21,6 +21,8 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/core/Core.h>
+#include <ovito/core/utilities/SortZipped.h>
+#include <ovito/core/utilities/concurrent/ParallelFor.h>
 #include "OpenGLSceneRenderer.h"
 #include "OpenGLShaderHelper.h"
 
@@ -202,12 +204,14 @@ void OpenGLSceneRenderer::renderParticlesImplementation(const ParticlePrimitive&
     }
 
     // The number of particles in the input arrays:
-    shader.setVboInstanceCount(primitive.positions()->size());
-    // The number of particles to be rendered.
-    shader.setRenderInstanceCount(primitive.indices() ? primitive.indices()->size() : primitive.positions()->size());
+    shader.setInstanceCount(primitive.positions()->size());
+
+    // Specify the subset of particles to be rendered.
+    if(primitive.indices())
+        shader.enableSubsetRendering(primitive.indices());
 
     // Check VBO size limits.
-    if(shader.vboInstanceCount() > std::numeric_limits<int32_t>::max() / shader.verticesPerInstance() / sizeof(Vector_4<float>)) {
+    if(shader.instanceCount() > std::numeric_limits<int32_t>::max() / shader.verticesPerInstance() / sizeof(Vector_4<float>)) {
         qWarning() << "WARNING: OpenGL renderer - Trying to render too many particles at once, exceeding device limits.";
         return;
     }
@@ -224,12 +228,12 @@ void OpenGLSceneRenderer::renderParticlesImplementation(const ParticlePrimitive&
     OVITO_REPORT_OPENGL_ERRORS(this);
 
     // Upload particle coordinates.
-    QOpenGLBuffer positionsBuffer = shader.uploadDataBuffer(primitive.positions(), OpenGLShaderHelper::PerInstance, QOpenGLBuffer::VertexBuffer);
+    QOpenGLBuffer positionsBuffer = shader.uploadDataBuffer(primitive.positions(), OpenGLShaderHelper::PerInstance);
     shader.bindBuffer(positionsBuffer, "position", GL_FLOAT, 3, sizeof(Point_3<float>), 0, OpenGLShaderHelper::PerInstance);
 
     // Upload particle radii.
     if(primitive.radii()) {
-        QOpenGLBuffer radiiBuffer = shader.uploadDataBuffer(primitive.radii(), OpenGLShaderHelper::PerInstance, QOpenGLBuffer::VertexBuffer);
+        QOpenGLBuffer radiiBuffer = shader.uploadDataBuffer(primitive.radii(), OpenGLShaderHelper::PerInstance);
         shader.bindBuffer(radiiBuffer, "radius", GL_FLOAT, 1, sizeof(float), 0, OpenGLShaderHelper::PerInstance);
     }
     else {
@@ -240,7 +244,7 @@ void OpenGLSceneRenderer::renderParticlesImplementation(const ParticlePrimitive&
     if(!isPicking()) {
         // Upload particle colors.
         if(primitive.colors()) {
-            QOpenGLBuffer colorsBuffer = shader.uploadDataBuffer(primitive.colors(), OpenGLShaderHelper::PerInstance, QOpenGLBuffer::VertexBuffer);
+            QOpenGLBuffer colorsBuffer = shader.uploadDataBuffer(primitive.colors(), OpenGLShaderHelper::PerInstance);
             shader.bindBuffer(colorsBuffer, "color", GL_FLOAT, 3, sizeof(Point_3<float>), 0, OpenGLShaderHelper::PerInstance);
         }
         else {
@@ -250,7 +254,7 @@ void OpenGLSceneRenderer::renderParticlesImplementation(const ParticlePrimitive&
 
         // Upload particle transparencies.
         if(primitive.transparencies()) {
-            QOpenGLBuffer transparenciesBuffer = shader.uploadDataBuffer(primitive.transparencies(), OpenGLShaderHelper::PerInstance, QOpenGLBuffer::VertexBuffer);
+            QOpenGLBuffer transparenciesBuffer = shader.uploadDataBuffer(primitive.transparencies(), OpenGLShaderHelper::PerInstance);
             shader.bindBuffer(transparenciesBuffer, "transparency", GL_FLOAT, 1, sizeof(float), 0, OpenGLShaderHelper::PerInstance);
         }
         else {
@@ -260,7 +264,7 @@ void OpenGLSceneRenderer::renderParticlesImplementation(const ParticlePrimitive&
 
         // Upload particle selection.
         if(primitive.selection()) {
-            QOpenGLBuffer selectionBuffer = shader.uploadDataBuffer(primitive.selection(), OpenGLShaderHelper::PerInstance, QOpenGLBuffer::VertexBuffer);
+            QOpenGLBuffer selectionBuffer = shader.uploadDataBuffer(primitive.selection(), OpenGLShaderHelper::PerInstance);
             shader.bindBuffer(selectionBuffer, "selection", GL_UNSIGNED_BYTE, 1, sizeof(int8_t), 0, OpenGLShaderHelper::PerInstance);
         }
         else {
@@ -274,7 +278,7 @@ void OpenGLSceneRenderer::renderParticlesImplementation(const ParticlePrimitive&
     if(primitive.particleShape() == ParticlePrimitive::BoxShape || primitive.particleShape() == ParticlePrimitive::EllipsoidShape || primitive.particleShape() == ParticlePrimitive::SuperquadricShape) {
         // Upload aspherical shapes.
         if(primitive.asphericalShapes()) {
-            QOpenGLBuffer asphericalShapesBuffer = shader.uploadDataBuffer(primitive.asphericalShapes(), OpenGLShaderHelper::PerInstance, QOpenGLBuffer::VertexBuffer);
+            QOpenGLBuffer asphericalShapesBuffer = shader.uploadDataBuffer(primitive.asphericalShapes(), OpenGLShaderHelper::PerInstance);
             shader.bindBuffer(asphericalShapesBuffer, "aspherical_shape", GL_FLOAT, 3, sizeof(Vector_3<float>), 0, OpenGLShaderHelper::PerInstance);
         }
         else {
@@ -284,7 +288,7 @@ void OpenGLSceneRenderer::renderParticlesImplementation(const ParticlePrimitive&
 
         // Upload orientations.
         if(primitive.orientations()) {
-            QOpenGLBuffer orientationsBuffer = shader.uploadDataBuffer(primitive.orientations(), OpenGLShaderHelper::PerInstance, QOpenGLBuffer::VertexBuffer);
+            QOpenGLBuffer orientationsBuffer = shader.uploadDataBuffer(primitive.orientations(), OpenGLShaderHelper::PerInstance);
             shader.bindBuffer(orientationsBuffer, "orientation", GL_FLOAT, 4, sizeof(QuaternionT<float>), 0, OpenGLShaderHelper::PerInstance);
         }
         else {
@@ -297,7 +301,7 @@ void OpenGLSceneRenderer::renderParticlesImplementation(const ParticlePrimitive&
     if(primitive.particleShape() == ParticlePrimitive::SuperquadricShape) {
         // Upload roundness values.
         if(primitive.roundness()) {
-            QOpenGLBuffer roundnessBuffer = shader.uploadDataBuffer(primitive.roundness(), OpenGLShaderHelper::PerInstance, QOpenGLBuffer::VertexBuffer);
+            QOpenGLBuffer roundnessBuffer = shader.uploadDataBuffer(primitive.roundness(), OpenGLShaderHelper::PerInstance);
             shader.bindBuffer(roundnessBuffer, "roundness", GL_FLOAT, 2, sizeof(Vector_2<float>), 0, OpenGLShaderHelper::PerInstance);
         }
         else {
@@ -307,14 +311,8 @@ void OpenGLSceneRenderer::renderParticlesImplementation(const ParticlePrimitive&
     }
 
     if(!useBlending) {
-        if(!primitive.indices()) {
-            // Draw triangle strip instances in regular storage order (unsorted).
-            shader.drawArrays(GL_TRIANGLE_STRIP);
-        }
-        else {
-            // Draw triangle strip instances in indexed order.
-            shader.drawArraysIndexed(GL_TRIANGLE_STRIP, primitive.indices());
-        }
+        // Draw triangle strip instances.
+        shader.draw(GL_TRIANGLE_STRIP);
     }
     else {
         // Render the particles in back-to-front order.
@@ -323,54 +321,50 @@ void OpenGLSceneRenderer::renderParticlesImplementation(const ParticlePrimitive&
         // Viewing direction in object space:
         const Vector3 direction = modelViewTM().inverse().column(2);
 
+        // Coarsen the direction vector's precision to reduce the frequency at
+        // which the particles must be reordered when moving the camera.
+        Vector3 coarseDirection = direction;
+        if(isInteractive()) {
+            for(size_t dim = 0; dim < 3; dim++)
+                coarseDirection[dim] = std::round(2 * direction[dim]);
+        }
+
         // The caching key for the particle ordering.
-        RendererResourceKey<struct OrderingCache, ConstDataBufferPtr, ConstDataBufferPtr, Vector3, int> orderingCacheKey{
+        RendererResourceKey<struct OrderingCache, ConstDataBufferPtr, ConstDataBufferPtr, Vector3> orderingCacheKey{
             primitive.indices(),
             primitive.positions(),
-            direction,
-            shader.verticesPerInstance()
+            coarseDirection
         };
 
         // Render primitives.
-        shader.drawArraysOrdered(GL_TRIANGLE_STRIP, std::move(orderingCacheKey), [&]() {
+        shader.drawReordered(GL_TRIANGLE_STRIP, std::move(orderingCacheKey), [&](span<GLuint> sortedIndices) {
 
             // First, compute distance of each particle from the camera along the viewing direction (=camera z-axis).
-            std::vector<GraphicsFloatType> distances(shader.renderInstanceCount());
-            if(!primitive.indices()) {
-                if(primitive.positions()->dataType() == DataBuffer::Float64) {
-                    boost::transform(boost::irange<size_t>(0, shader.renderInstanceCount()), distances.begin(), [direction = direction.toDataType<double>(), positionsArray = BufferAccess<const Vector_3<double>>(primitive.positions())](size_t i) {
+            std::vector<GraphicsFloatType> distances(sortedIndices.size());
+            if(primitive.positions()->dataType() == DataBuffer::Float64) {
+                if(sortedIndices.size() < 10000) {
+                    // Serial code version (used for small datasets).
+                    boost::transform(sortedIndices, distances.begin(), [direction = direction.toDataType<double>(), positionsArray = BufferAccess<const Vector_3<double>>(primitive.positions())](size_t i) {
                         return static_cast<GraphicsFloatType>(direction.dot(positionsArray[i]));
                     });
                 }
-                else if(primitive.positions()->dataType() == DataBuffer::Float32) {
-                    boost::transform(boost::irange<size_t>(0, shader.renderInstanceCount()), distances.begin(), [direction = direction.toDataType<float>(), positionsArray = BufferAccess<const Vector_3<float>>(primitive.positions())](size_t i) {
-                        return static_cast<GraphicsFloatType>(direction.dot(positionsArray[i]));
-                    });
-                }
-            }
-            else {
-                if(primitive.positions()->dataType() == DataBuffer::Float64) {
-                    boost::transform(BufferAccess<const int32_t>(primitive.indices()), distances.begin(), [direction = direction.toDataType<double>(), positionsArray = BufferAccess<const Vector_3<double>>(primitive.positions())](size_t i) {
-                        return static_cast<GraphicsFloatType>(direction.dot(positionsArray[i]));
-                    });
-                }
-                else if(primitive.positions()->dataType() == DataBuffer::Float32) {
-                    boost::transform(BufferAccess<const int32_t>(primitive.indices()), distances.begin(), [direction = direction.toDataType<float>(), positionsArray = BufferAccess<const Vector_3<float>>(primitive.positions())](size_t i) {
-                        return static_cast<GraphicsFloatType>(direction.dot(positionsArray[i]));
+                else {
+                    // Parallelized code version.
+                    BufferAccess<const Vector_3<double>> positionsArray(primitive.positions());
+                    parallelFor(sortedIndices.size(), [&, direction = direction.toDataType<double>()](size_t i) {
+                        distances[i] = static_cast<GraphicsFloatType>(direction.dot(positionsArray[sortedIndices[i]]));
                     });
                 }
             }
-
-            // Create index array with all particle indices.
-            std::vector<uint32_t> sortedIndices(shader.renderInstanceCount());
-            std::iota(sortedIndices.begin(), sortedIndices.end(), (uint32_t)0);
+            else if(primitive.positions()->dataType() == DataBuffer::Float32) {
+                boost::transform(sortedIndices, distances.begin(), [direction = direction.toDataType<float>(), positionsArray = BufferAccess<const Vector_3<float>>(primitive.positions())](size_t i) {
+                    return static_cast<GraphicsFloatType>(direction.dot(positionsArray[i]));
+                });
+            }
+            else return;
 
             // Sort particle indices with respect to distance (back-to-front order).
-            std::sort(sortedIndices.begin(), sortedIndices.end(), [&](uint32_t a, uint32_t b) {
-                return distances[a] < distances[b];
-            });
-
-            return sortedIndices;
+            Ovito::sort_zipped(distances, sortedIndices);
         });
     }
 

@@ -100,11 +100,10 @@ void OpenGLSceneRenderer::renderCylindersImplementation(const CylinderPrimitive&
             return;
     }
 
-    shader.setVboInstanceCount(primitive.basePositions()->size());
-    shader.setRenderInstanceCount(primitive.basePositions()->size());
+    shader.setInstanceCount(primitive.basePositions()->size());
 
     // Check size limits.
-    if(shader.vboInstanceCount() > std::numeric_limits<int32_t>::max() / shader.verticesPerInstance() / (2 * sizeof(ColorT<float>))) {
+    if(shader.instanceCount() > std::numeric_limits<int32_t>::max() / shader.verticesPerInstance() / (2 * sizeof(ColorT<float>))) {
         qWarning() << "WARNING: OpenGL renderer - Trying to render too many cylinders at once, exceeding device limits.";
         return;
     }
@@ -136,16 +135,16 @@ void OpenGLSceneRenderer::renderCylindersImplementation(const CylinderPrimitive&
     }
 
     // Upload and bind base vertex positions.
-    QOpenGLBuffer basePositionBuffer = shader.uploadDataBuffer(primitive.basePositions(), OpenGLShaderHelper::PerInstance, QOpenGLBuffer::VertexBuffer);
+    QOpenGLBuffer basePositionBuffer = shader.uploadDataBuffer(primitive.basePositions(), OpenGLShaderHelper::PerInstance);
     shader.bindBuffer(basePositionBuffer, "base", GL_FLOAT, 3, sizeof(Point_3<float>), 0, OpenGLShaderHelper::PerInstance);
 
     // Upload and bind head vertex positions.
-    QOpenGLBuffer headPositionBuffer = shader.uploadDataBuffer(primitive.headPositions(), OpenGLShaderHelper::PerInstance, QOpenGLBuffer::VertexBuffer);
+    QOpenGLBuffer headPositionBuffer = shader.uploadDataBuffer(primitive.headPositions(), OpenGLShaderHelper::PerInstance);
     shader.bindBuffer(headPositionBuffer, "head", GL_FLOAT, 3, sizeof(Point_3<float>), 0, OpenGLShaderHelper::PerInstance);
 
     // Upload and bind cylinder diameters.
     if(primitive.widths()) {
-        QOpenGLBuffer diametersBuffer = shader.uploadDataBuffer(primitive.widths(), OpenGLShaderHelper::PerInstance, QOpenGLBuffer::VertexBuffer);
+        QOpenGLBuffer diametersBuffer = shader.uploadDataBuffer(primitive.widths(), OpenGLShaderHelper::PerInstance);
         shader.bindBuffer(diametersBuffer, "diameter", GL_FLOAT, 1, sizeof(float), 0, OpenGLShaderHelper::PerInstance);
     }
     else {
@@ -160,7 +159,7 @@ void OpenGLSceneRenderer::renderCylindersImplementation(const CylinderPrimitive&
 
         // Upload RGB or pseudo-colors.
         if(primitive.colors() && !renderWithPseudoColorMapping && primitive.colors()->componentCount() == 3) {
-            QOpenGLBuffer rgbBuffer = shader.uploadDataBuffer(primitive.colors(), OpenGLShaderHelper::PerInstance, QOpenGLBuffer::VertexBuffer);
+            QOpenGLBuffer rgbBuffer = shader.uploadDataBuffer(primitive.colors(), OpenGLShaderHelper::PerInstance);
             shader.bindBuffer(rgbBuffer, "color1", GL_FLOAT, 3, sizeof(ColorT<float>) * (primitive.colors()->size() / primitive.basePositions()->size()), 0, OpenGLShaderHelper::PerInstance);
             if(primitive.shape() == CylinderPrimitive::CylinderShape) {
                 if(primitive.colors()->size() == 2 * primitive.basePositions()->size())
@@ -170,7 +169,7 @@ void OpenGLSceneRenderer::renderCylindersImplementation(const CylinderPrimitive&
             }
         }
         else if(primitive.colors() && renderWithPseudoColorMapping && primitive.colors()->componentCount() == 1) {
-            QOpenGLBuffer pseudoColorBuffer = shader.uploadDataBuffer(primitive.colors(), OpenGLShaderHelper::PerInstance, QOpenGLBuffer::VertexBuffer);
+            QOpenGLBuffer pseudoColorBuffer = shader.uploadDataBuffer(primitive.colors(), OpenGLShaderHelper::PerInstance);
             shader.bindBuffer(pseudoColorBuffer, "color1", GL_FLOAT, 1, sizeof(float) * (primitive.colors()->size() / primitive.basePositions()->size()), 0, OpenGLShaderHelper::PerInstance);
             if(primitive.shape() == CylinderPrimitive::CylinderShape) {
                 if(primitive.colors()->size() == 2 * primitive.basePositions()->size())
@@ -190,7 +189,7 @@ void OpenGLSceneRenderer::renderCylindersImplementation(const CylinderPrimitive&
 
         // Upload transparency values.
         if(primitive.transparencies()) {
-            QOpenGLBuffer transparencyBuffer = shader.uploadDataBuffer(primitive.transparencies(), OpenGLShaderHelper::PerInstance, QOpenGLBuffer::VertexBuffer);
+            QOpenGLBuffer transparencyBuffer = shader.uploadDataBuffer(primitive.transparencies(), OpenGLShaderHelper::PerInstance);
             shader.bindBuffer(transparencyBuffer, "transparency1", GL_FLOAT, 1, sizeof(float) * (primitive.transparencies()->size() / primitive.basePositions()->size()), 0, OpenGLShaderHelper::PerInstance);
             if(primitive.shape() == CylinderPrimitive::CylinderShape) {
                 if(primitive.transparencies()->size() == 2 * primitive.basePositions()->size())
@@ -241,7 +240,7 @@ void OpenGLSceneRenderer::renderCylindersImplementation(const CylinderPrimitive&
     }
 
     // Draw triangle strip or fan instances in regular storage order (not sorted).
-    shader.drawArrays(primitiveDrawMode);
+    shader.draw(primitiveDrawMode);
 
     // Draw cylindric part of the arrows.
     if(primitive.shape() == CylinderPrimitive::ArrowShape && primitive.shadingMode() == CylinderPrimitive::NormalShading) {
@@ -252,7 +251,7 @@ void OpenGLSceneRenderer::renderCylindersImplementation(const CylinderPrimitive&
             shader.setPickingBaseId(pickingBaseId);
         }
 
-        shader.drawArrays(GL_TRIANGLE_STRIP);
+        shader.draw(GL_TRIANGLE_STRIP);
     }
 
     // Unbind color mapping texture.

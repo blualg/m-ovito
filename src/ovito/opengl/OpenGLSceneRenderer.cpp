@@ -477,8 +477,7 @@ void OpenGLSceneRenderer::renderTransparentGeometry()
         OpenGLShaderHelper shader(this);
         shader.load("oit_compose", "image/oit_compose.vert", "image/oit_compose.frag");
         shader.setVerticesPerInstance(4);
-        shader.setVboInstanceCount(1);
-        shader.setRenderInstanceCount(1);
+        shader.setInstanceCount(1);
 
         // Bind the OIT framebuffer as textures.
         QVector<GLuint> textureIds = _oitFramebuffer->textures();
@@ -492,7 +491,7 @@ void OpenGLSceneRenderer::renderTransparentGeometry()
         OVITO_CHECK_OPENGL(this, this->glActiveTexture(GL_TEXTURE0));
 
         // Draw a quad with 4 vertices.
-        shader.drawArrays(GL_TRIANGLE_STRIP);
+        shader.draw(GL_TRIANGLE_STRIP);
 
         this->glBindTexture(GL_TEXTURE_2D, 0);
         this->glDepthMask(GL_TRUE);

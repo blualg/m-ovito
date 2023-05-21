@@ -47,8 +47,7 @@ void OpenGLSceneRenderer::renderImageImplementation(const ImagePrimitive& primit
     shader.load("image", "image/image.vert", "image/image.frag");
 
     shader.setVerticesPerInstance(4);
-    shader.setVboInstanceCount(1);
-    shader.setRenderInstanceCount(1);
+    shader.setInstanceCount(1);
 
     // Turn the image into an OpenGL texture.
     QOpenGLTexture* texture = OpenGLResourceManager::instance()->uploadImage(primitive.image(), currentResourceFrame());
@@ -77,7 +76,7 @@ void OpenGLSceneRenderer::renderImageImplementation(const ImagePrimitive& primit
     shader.enableBlending();
 
     // Draw a quad with 4 vertices.
-    shader.drawArrays(GL_TRIANGLE_STRIP);
+    shader.draw(GL_TRIANGLE_STRIP);
 
     // Release the texture.
     texture->release();
