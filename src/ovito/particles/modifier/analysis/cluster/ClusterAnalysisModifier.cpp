@@ -545,7 +545,7 @@ void ClusterAnalysisModifier::ClusterAnalysisEngine::applyResults(const Modifier
         std::uniform_real_distribution<FloatType> uniform_dist(0, 1);
         boost::generate(clusterColors, [&]() { return ColorG::fromHSV(static_cast<GraphicsFloatType>(uniform_dist(rng)), 1.0f - static_cast<GraphicsFloatType>(uniform_dist(rng)) * 0.4f, 1.0f - static_cast<GraphicsFloatType>(uniform_dist(rng)) * 0.3f); });
         // Special color for particles not part of any cluster:
-        clusterColors[0] = ColorG(0.8, 0.8, 0.8);
+        clusterColors[0] = ColorG(0.8f, 0.8f, 0.8f);
 
         // Assign colors to particles according to the clusters they belong to.
         BufferAccess<ColorG> colorsArray = particles->createProperty(ParticlesObject::ColorProperty);

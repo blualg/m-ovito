@@ -104,7 +104,7 @@ private:
     boost::dynamic_bitset<> _selection;
 
     /// Stores the selection as a list of element identifiers.
-    QSet<IdentifierIntType> _selectedIdentifiers;
+    QSet<qlonglong> _selectedIdentifiers; // Note: using qlonglong instead of IdentifierIntType for file format backward compatibility with OVITO 3.8
 
     /// Controls whether the object should store the identifiers of selected elements (when available).
     DECLARE_PROPERTY_FIELD(bool, useIdentifiers);

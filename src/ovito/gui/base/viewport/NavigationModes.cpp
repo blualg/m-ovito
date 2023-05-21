@@ -483,7 +483,7 @@ void PickOrbitCenterMode::renderOverlay3D(Viewport* vp, SceneRenderer* renderer)
         BufferAccessAndRef<ColorG> colors = DataBufferPtr::create(3, DataBuffer::FloatGraphics, 3);
         basePositions[0] = Point3G(-1,0,0); headPositions[0] = Point3G(1,0,0); colors[0] = ColorG(1,0,0);
         basePositions[1] = Point3G(0,-1,0); headPositions[1] = Point3G(0,1,0); colors[1] = ColorG(0,1,0);
-        basePositions[2] = Point3G(0,0,-1); headPositions[2] = Point3G(0,0,1); colors[2] = ColorG(0.4,0.4,1);
+        basePositions[2] = Point3G(0,0,-1); headPositions[2] = Point3G(0,0,1); colors[2] = ColorG(0.4f,0.4f,1);
         CylinderPrimitive orbitCenterMarker;
         orbitCenterMarker.setShape(CylinderPrimitive::CylinderShape);
         orbitCenterMarker.setShadingMode(CylinderPrimitive::NormalShading);
