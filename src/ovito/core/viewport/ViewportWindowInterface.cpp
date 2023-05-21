@@ -83,8 +83,8 @@ void ViewportWindowInterface::destroyViewportWindow()
 ******************************************************************************/
 void ViewportWindowInterface::renderOrientationIndicator(SceneRenderer* renderer)
 {
-    constexpr GraphicsFloatType tripodSize = 80.0;          // device-independent pixels
-    constexpr GraphicsFloatType tripodArrowSize = 0.17;     // percentage of the above value.
+    constexpr GraphicsFloatType tripodSize = 80.0f;          // device-independent pixels
+    constexpr GraphicsFloatType tripodArrowSize = 0.17f;     // percentage of the above value.
 
     // Set up projection matrix.
     QSize imageSize = renderer->viewportRect().size();
@@ -106,7 +106,7 @@ void ViewportWindowInterface::renderOrientationIndicator(SceneRenderer* renderer
     // Turn off depth-testing.
     renderer->setDepthTestEnabled(false);
 
-    static constexpr ColorA axisColors[3] = { ColorA(1.0, 0.0, 0.0), ColorA(0.0, 1.0, 0.0), ColorA(0.4, 0.4, 1.0) };
+    static const ColorA axisColors[3] = { ColorA(1.0, 0.0, 0.0), ColorA(0.0, 1.0, 0.0), ColorA(0.4, 0.4, 1.0) };
     static const QString labels[3] = { QStringLiteral("x"), QStringLiteral("y"), QStringLiteral("z") };
 
     // Create line primitive for the coordinate axis arrows.
