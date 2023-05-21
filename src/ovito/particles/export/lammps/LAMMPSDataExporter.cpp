@@ -475,9 +475,9 @@ bool LAMMPSDataExporter::exportData(const PipelineFlowState& state, int frameNum
             textStream() << ' ';
             textStream() << (bondTypeArray ? (generateConsecutiveTypeIds() ? bondTypeMapping[bondTypeArray[i]] : bondTypeArray[i]) : 1);
             textStream() << ' ';
-            textStream() << (identifierProperty ? identifierProperty[atomIndex1] : (atomIndex1+1));
+            textStream() << static_cast<qlonglong>(identifierProperty ? identifierProperty[atomIndex1] : (atomIndex1+1));
             textStream() << ' ';
-            textStream() << (identifierProperty ? identifierProperty[atomIndex2] : (atomIndex2+1));
+            textStream() << static_cast<qlonglong>(identifierProperty ? identifierProperty[atomIndex2] : (atomIndex2+1));
             textStream() << '\n';
 
             if(!operation.setProgressValueIntermittent(currentProgress++))
@@ -502,11 +502,11 @@ bool LAMMPSDataExporter::exportData(const PipelineFlowState& state, int frameNum
             textStream() << ' ';
             textStream() << (angleTypeArray ? (generateConsecutiveTypeIds() ? angleTypeMapping[angleTypeArray[i]] : angleTypeArray[i]) : 1);
             textStream() << ' ';
-            textStream() << (identifierProperty ? identifierProperty[atomIndex1] : (atomIndex1+1));
+            textStream() << static_cast<qlonglong>(identifierProperty ? identifierProperty[atomIndex1] : (atomIndex1+1));
             textStream() << ' ';
-            textStream() << (identifierProperty ? identifierProperty[atomIndex2] : (atomIndex2+1));
+            textStream() << static_cast<qlonglong>(identifierProperty ? identifierProperty[atomIndex2] : (atomIndex2+1));
             textStream() << ' ';
-            textStream() << (identifierProperty ? identifierProperty[atomIndex3] : (atomIndex3+1));
+            textStream() << static_cast<qlonglong>(identifierProperty ? identifierProperty[atomIndex3] : (atomIndex3+1));
             textStream() << '\n';
 
             if(!operation.setProgressValueIntermittent(currentProgress++))
@@ -532,13 +532,13 @@ bool LAMMPSDataExporter::exportData(const PipelineFlowState& state, int frameNum
             textStream() << ' ';
             textStream() << (dihedralTypeArray ? (generateConsecutiveTypeIds() ? dihedralTypeMapping[dihedralTypeArray[i]] : dihedralTypeArray[i]) : 1);
             textStream() << ' ';
-            textStream() << (identifierProperty ? identifierProperty[atomIndex1] : (atomIndex1+1));
+            textStream() << static_cast<qlonglong>(identifierProperty ? identifierProperty[atomIndex1] : (atomIndex1+1));
             textStream() << ' ';
-            textStream() << (identifierProperty ? identifierProperty[atomIndex2] : (atomIndex2+1));
+            textStream() << static_cast<qlonglong>(identifierProperty ? identifierProperty[atomIndex2] : (atomIndex2+1));
             textStream() << ' ';
-            textStream() << (identifierProperty ? identifierProperty[atomIndex3] : (atomIndex3+1));
+            textStream() << static_cast<qlonglong>(identifierProperty ? identifierProperty[atomIndex3] : (atomIndex3+1));
             textStream() << ' ';
-            textStream() << (identifierProperty ? identifierProperty[atomIndex4] : (atomIndex4+1));
+            textStream() << static_cast<qlonglong>(identifierProperty ? identifierProperty[atomIndex4] : (atomIndex4+1));
             textStream() << '\n';
 
             if(!operation.setProgressValueIntermittent(currentProgress++))
@@ -564,13 +564,13 @@ bool LAMMPSDataExporter::exportData(const PipelineFlowState& state, int frameNum
             textStream() << ' ';
             textStream() << (improperTypeArray ? (generateConsecutiveTypeIds() ? improperTypeMapping[improperTypeArray[i]] : improperTypeArray[i]) : 1);
             textStream() << ' ';
-            textStream() << (identifierProperty ? identifierProperty[atomIndex1] : (atomIndex1+1));
+            textStream() << static_cast<qlonglong>(identifierProperty ? identifierProperty[atomIndex1] : (atomIndex1+1));
             textStream() << ' ';
-            textStream() << (identifierProperty ? identifierProperty[atomIndex2] : (atomIndex2+1));
+            textStream() << static_cast<qlonglong>(identifierProperty ? identifierProperty[atomIndex2] : (atomIndex2+1));
             textStream() << ' ';
-            textStream() << (identifierProperty ? identifierProperty[atomIndex3] : (atomIndex3+1));
+            textStream() << static_cast<qlonglong>(identifierProperty ? identifierProperty[atomIndex3] : (atomIndex3+1));
             textStream() << ' ';
-            textStream() << (identifierProperty ? identifierProperty[atomIndex4] : (atomIndex4+1));
+            textStream() << static_cast<qlonglong>(identifierProperty ? identifierProperty[atomIndex4] : (atomIndex4+1));
             textStream() << '\n';
 
             if(!operation.setProgressValueIntermittent(currentProgress++))

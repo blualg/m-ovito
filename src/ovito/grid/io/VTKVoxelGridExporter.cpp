@@ -152,7 +152,7 @@ bool VTKVoxelGridExporter::exportFrame(int frameNumber, const QString& filePath,
                         return false;
                     for(size_t col = 0; col < dims[0]; col++, index++) {
                         for(size_t c = 0; c < cmpnts; c++)
-                            textStream() << data.get(index, c) << " ";
+                            textStream() << static_cast<qint32>(data.get(index, c)) << " ";
                     }
                     textStream() << "\n";
                 }
@@ -164,7 +164,7 @@ bool VTKVoxelGridExporter::exportFrame(int frameNumber, const QString& filePath,
                         return false;
                     for(size_t col = 0; col < dims[0]; col++, index++) {
                         for(size_t c = 0; c < cmpnts; c++)
-                            textStream() << data.get(index, c) << " ";
+                            textStream() << static_cast<qint32>(data.get(index, c)) << " ";
                     }
                     textStream() << "\n";
                 }
@@ -176,7 +176,7 @@ bool VTKVoxelGridExporter::exportFrame(int frameNumber, const QString& filePath,
                         return false;
                     for(size_t col = 0; col < dims[0]; col++, index++) {
                         for(size_t c = 0; c < cmpnts; c++)
-                            textStream() << data.get(index, c) << " ";
+                            textStream() << static_cast<qlonglong>(data.get(index, c)) << " ";
                     }
                     textStream() << "\n";
                 }
