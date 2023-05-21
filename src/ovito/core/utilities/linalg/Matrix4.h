@@ -233,12 +233,15 @@ public:
 
     /// \brief Casts the matrix to a matrix with another data type.
     template<typename U>
-    Q_DECL_CONSTEXPR Matrix_4<U> toDataType() const {
-        return Matrix_4<U>(
+    Q_DECL_CONSTEXPR auto toDataType() const -> std::conditional_t<!std::is_same_v<T,U>, Matrix_4<U>, const Matrix_4<T>&> {
+        if constexpr(!std::is_same_v<T,U>)
+            return Matrix_4<U>(
                 static_cast<U>((*this)(0,0)), static_cast<U>((*this)(0,1)), static_cast<U>((*this)(0,2)), static_cast<U>((*this)(0,3)),
                 static_cast<U>((*this)(1,0)), static_cast<U>((*this)(1,1)), static_cast<U>((*this)(1,2)), static_cast<U>((*this)(1,3)),
                 static_cast<U>((*this)(2,0)), static_cast<U>((*this)(2,1)), static_cast<U>((*this)(2,2)), static_cast<U>((*this)(2,3)),
                 static_cast<U>((*this)(3,0)), static_cast<U>((*this)(3,1)), static_cast<U>((*this)(3,2)), static_cast<U>((*this)(3,3)));
+        else
+            return *this;  // When casting to the same type \a T, this method becomes a no-op.
     }
 
     /// \brief Returns the number of rows of this matrix.

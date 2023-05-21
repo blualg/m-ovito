@@ -81,28 +81,20 @@ public:
     class ReadAccess
     {
     public:
-#ifdef OVITO_DEBUG
         ReadAccess(const DataBuffer& buffer) noexcept : _buffer(buffer) { buffer.prepareReadAccess(); }
         ~ReadAccess() { _buffer.finishReadAccess(); }
     private:
         const DataBuffer& _buffer;
-#else
-        ReadAccess(const DataBuffer& buffer) noexcept = default;
-#endif
     };
 
     /// RAII utility class that guards write access to a DataBuffer.
     class WriteAccess
     {
     public:
-#ifdef OVITO_DEBUG
         WriteAccess(DataBuffer& buffer) noexcept : _buffer(buffer) { buffer.prepareWriteAccess(); }
         ~WriteAccess() { _buffer.finishWriteAccess(); }
     private:
         DataBuffer& _buffer;
-#else
-        WriteAccess(DataBuffer& buffer) noexcept = default;
-#endif
     };
 
 public:

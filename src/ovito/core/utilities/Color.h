@@ -95,7 +95,12 @@ public:
 
     /// Casts the color to another component type \a U.
     template<typename U>
-    Q_DECL_CONSTEXPR decltype(auto) toDataType() const { return ColorT<U>(static_cast<U>(r()), static_cast<U>(g()), static_cast<U>(b())); }
+    Q_DECL_CONSTEXPR auto toDataType() const -> std::conditional_t<!std::is_same_v<T,U>, ColorT<U>, const ColorT<T>&> {
+        if constexpr(!std::is_same_v<T,U>)
+            return ColorT<U>(static_cast<U>(r()), static_cast<U>(g()), static_cast<U>(b()));
+        else
+            return *this;  // When casting to the same type \a T, this method becomes a no-op.
+    }
 
     // When casting to the same type \a T, this method becomes a no-op.
     template<>
@@ -395,11 +400,12 @@ public:
 
     /// Casts the color to another component type \a U.
     template<typename U>
-    Q_DECL_CONSTEXPR decltype(auto) toDataType() const { return ColorAT<U>(static_cast<U>(r()), static_cast<U>(g()), static_cast<U>(b()), static_cast<U>(a())); }
-
-    // When casting to the same type \a T, this method becomes a no-op.
-    template<>
-    Q_DECL_CONSTEXPR decltype(auto) toDataType<T>() const { return *this; }
+    Q_DECL_CONSTEXPR auto toDataType() const -> std::conditional_t<!std::is_same_v<T,U>, ColorAT<U>, const ColorAT<T>&> {
+        if constexpr(!std::is_same_v<T,U>)
+            return ColorAT<U>(static_cast<U>(r()), static_cast<U>(g()), static_cast<U>(b()), static_cast<U>(a()));
+        else
+            return *this;  // When casting to the same type \a T, this method becomes a no-op.
+    }
 
     /// Sets the red, green, and blue components to zero and alpha to one.
     void setBlack() { r() = g() = b() = T(0); a() = T(1); }

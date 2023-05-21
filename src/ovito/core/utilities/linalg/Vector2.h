@@ -117,11 +117,12 @@ public:
 
     /// Casts the vector to another component type \a U.
     template<typename U>
-    Q_DECL_CONSTEXPR decltype(auto) toDataType() const { return Vector_2<U>(static_cast<U>(x()), static_cast<U>(y())); }
-
-    // When casting to the same type \a T, this method becomes a no-op.
-    template<>
-    Q_DECL_CONSTEXPR decltype(auto) toDataType<T>() const { return *this; }
+    Q_DECL_CONSTEXPR auto toDataType() const -> std::conditional_t<!std::is_same_v<T,U>, Vector_2<U>, const Vector_2<T>&> {
+        if constexpr(!std::is_same_v<T,U>)
+            return Vector_2<U>(static_cast<U>(x()), static_cast<U>(y()));
+        else
+            return *this;  // When casting to the same type \a T, this method becomes a no-op.
+    }
 
     /////////////////////////////// Unary operators //////////////////////////////
 

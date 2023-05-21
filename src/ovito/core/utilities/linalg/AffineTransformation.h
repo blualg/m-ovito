@@ -201,16 +201,15 @@ public:
 
     /// \brief Casts the matrix to a matrix with another data type.
     template<typename U>
-    Q_DECL_CONSTEXPR decltype(auto) toDataType() const {
-        return AffineTransformationT<U>(
+    Q_DECL_CONSTEXPR auto toDataType() const -> std::conditional_t<!std::is_same_v<T,U>, AffineTransformationT<U>, const AffineTransformationT<T>&> {
+        if constexpr(!std::is_same_v<T,U>)
+            return AffineTransformationT<U>(
                 static_cast<U>((*this)(0,0)), static_cast<U>((*this)(0,1)), static_cast<U>((*this)(0,2)), static_cast<U>((*this)(0,3)),
                 static_cast<U>((*this)(1,0)), static_cast<U>((*this)(1,1)), static_cast<U>((*this)(1,2)), static_cast<U>((*this)(1,3)),
                 static_cast<U>((*this)(2,0)), static_cast<U>((*this)(2,1)), static_cast<U>((*this)(2,2)), static_cast<U>((*this)(2,3)));
+        else
+            return *this;  // When casting to the same type \a T, this method becomes a no-op.
     }
-
-    // When casting to the same type \a T, this method becomes a no-op.
-    template<>
-    Q_DECL_CONSTEXPR decltype(auto) toDataType<T>() const { return *this; }
 
     /// \brief Returns the number of rows of this matrix.
     static Q_DECL_CONSTEXPR size_type row_count() { return 3; }

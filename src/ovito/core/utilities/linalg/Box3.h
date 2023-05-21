@@ -96,13 +96,12 @@ public:
 
     /// \brief Casts the box to a box with another data type.
     template<typename U>
-    Q_DECL_CONSTEXPR decltype(auto) toDataType() const {
-        return Box_3<U>(minc.template toDataType<U>(), maxc.template toDataType<U>());
+    Q_DECL_CONSTEXPR auto toDataType() const -> std::conditional_t<!std::is_same_v<T,U>, Box_3<U>, const Box_3<T>&> {
+        if constexpr(!std::is_same_v<T,U>)
+            return Box_3<U>(minc.template toDataType<U>(), maxc.template toDataType<U>());
+        else
+            return *this;  // When casting to the same type \a T, this method becomes a no-op.
     }
-
-    // When casting to the same type \a T, this method becomes a no-op.
-    template<>
-    Q_DECL_CONSTEXPR decltype(auto) toDataType<T>() const { return *this; }
 
     ///////////////////////////////// Attributes /////////////////////////////////
 
@@ -230,8 +229,8 @@ public:
     /// \brief Extends the box to include the given set of points.
     /// \param range An iterable range of points.
     /// \sa addPoint()
-    template<class Range>
-    void addPoints(const Range& points) {
+    template<typename PointsRange>
+    void addPoints(const PointsRange& points) {
         for(const Point_3<T>& p : points)
             addPoint(p);
     }
