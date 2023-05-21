@@ -102,10 +102,6 @@ public:
             return *this;  // When casting to the same type \a T, this method becomes a no-op.
     }
 
-    // When casting to the same type \a T, this method becomes a no-op.
-    template<>
-    Q_DECL_CONSTEXPR decltype(auto) toDataType<T>() const { return *this; }
-
     /// Sets all components of the color to zero.
     void setBlack() { r() = g() = b() = T(0); }
 
