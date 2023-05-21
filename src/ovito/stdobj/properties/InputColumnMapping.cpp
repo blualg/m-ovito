@@ -204,7 +204,7 @@ InputColumnReader::InputColumnReader(StandardFrameLoader& frameLoader, const Inp
 
         if(dataType != QMetaType::Void) {
 
-            if(dataType != PropertyObject::Int32 && dataType != PropertyObject::Int64 && dataType != PropertyObject::Float32 && dataType != PropertyObject::Float64)
+            if(dataType != PropertyObject::Int8 && dataType != PropertyObject::Int32 && dataType != PropertyObject::Int64 && dataType != PropertyObject::Float32 && dataType != PropertyObject::Float64)
                 throw Exception(tr("Invalid user-defined target property (data type %1) for input file column %2").arg(dataType).arg(i+1));
 
             PropertyObject* property;
@@ -423,10 +423,10 @@ void InputColumnReader::parseField(size_t elementIndex, int columnIndex, const c
             throw Exception(tr("Invalid 64-bit integer value in column %1 (%2): \"%3\"").arg(columnIndex+1).arg(prec.property->name()).arg(QString::fromLocal8Bit(token, token_end - token)));
     }
     else if(prec.dataType == PropertyObject::Int8) {
-        int8_t& d = *reinterpret_cast<int8_t*>(prec.data + elementIndex * prec.stride);
         int32_t d32;
-        if(!parseInt32(token, token_end, d32))
-            throw Exception(tr("Invalid 64-bit integer value in column %1 (%2): \"%3\"").arg(columnIndex+1).arg(prec.property->name()).arg(QString::fromLocal8Bit(token, token_end - token)));
+        if(!parseInt32(token, token_end, d32) || d32 < (int32_t)std::numeric_limits<int8_t>::lowest() || d32 > (int32_t)std::numeric_limits<int8_t>::max())
+            throw Exception(tr("Invalid or out-of-range 8-bit integer value in column %1 (%2): \"%3\"").arg(columnIndex+1).arg(prec.property->name()).arg(QString::fromLocal8Bit(token, token_end - token)));
+        int8_t& d = *reinterpret_cast<int8_t*>(prec.data + elementIndex * prec.stride);
         d = static_cast<int8_t>(d32);
     }
 }
