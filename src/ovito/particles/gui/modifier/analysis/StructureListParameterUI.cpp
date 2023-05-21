@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -123,7 +123,7 @@ QVariant StructureListParameterUI::getItemData(RefTarget* target, const QModelIn
             }
             else if(index.column() == 2) {
                 if(_structureCounts && stype->numericId() >= 0 && stype->numericId() < _structureCounts->size())
-                    return BufferAccess<const int64_t>(_structureCounts)[stype->numericId()];
+                    return static_cast<qlonglong>(BufferAccess<const int64_t>(_structureCounts)[stype->numericId()]);
             }
             else if(index.column() == 3) {
                 if(_structureCounts && stype->numericId() >= 0 && stype->numericId() < _structureCounts->size()) {
