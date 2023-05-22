@@ -24,8 +24,6 @@
 #include <ovito/core/dataset/DataSet.h>
 #include "VulkanSceneRenderer.h"
 
-#include <boost/range/irange.hpp>
-
 namespace Ovito {
 
 /******************************************************************************
@@ -474,7 +472,10 @@ void VulkanSceneRenderer::renderMeshImplementation(const MeshPrimitive& primitiv
         // have to squeeze the values into unused elements of the normal transformation matrix.
         Vector_2<float> color_range(primitive.pseudoColorMapping().minValue(), primitive.pseudoColorMapping().maxValue());
         // Avoid division by zero due to degenerate value interval.
-        if(color_range.y() == color_range.x()) color_range.y() = std::nextafter(color_range.y(), std::numeric_limits<float>::max());
+        if(color_range.y() == color_range.x()) {
+            color_range.x() = std::min(color_range.x() - FloatTypeEpsilon<float>(), std::nextafter(color_range.x(), std::numeric_limits<float>::lowest()));
+            color_range.y() = std::max(color_range.y() + FloatTypeEpsilon<float>(), std::nextafter(color_range.y(), std::numeric_limits<float>::max()));
+        }
         deviceFunctions()->vkCmdPushConstants(currentCommandBuffer(), pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, sizeof(Matrix_4<float>) + sizeof(float) * 4 * 3, sizeof(color_range), color_range.data());
 
         // Create the descriptor set with the color map and bind it to the pipeline.
@@ -601,7 +602,7 @@ void VulkanSceneRenderer::renderMeshImplementation(const MeshPrimitive& primitiv
 
             // First, compute distance of each instance from the camera along the viewing direction (=camera z-axis).
             std::vector<FloatType> distances(renderInstanceCount);
-            boost::transform(boost::irange<size_t>(0, renderInstanceCount), distances.begin(), [direction, tmArray = ConstDataBufferAccess<AffineTransformation>(primitive.perInstanceTMs())](size_t i) {
+            boost::transform(boost::irange<size_t>(0, renderInstanceCount), distances.begin(), [direction, tmArray = BufferAccess<const AffineTransformation>(primitive.perInstanceTMs())](size_t i) {
                 return direction.dot(tmArray[i].translation());
             });
 
@@ -649,7 +650,7 @@ VkBuffer VulkanSceneRenderer::getMeshInstanceTMBuffer(const MeshPrimitive& primi
     // Upload the per-instance TMs to GPU memory.
     VkBuffer instanceTMBuffer = context()->createCachedBuffer(instanceTMsKey, primitive.perInstanceTMs()->size() * 3 * sizeof(Vector_4<float>), currentResourceFrame(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, [&](void* buffer) {
         Vector_4<float>* row = reinterpret_cast<Vector_4<float>*>(buffer);
-        for(const AffineTransformation& tm : ConstDataBufferAccess<AffineTransformation>(primitive.perInstanceTMs())) {
+        for(const AffineTransformation& tm : BufferAccess<const AffineTransformation>(primitive.perInstanceTMs())) {
             *row++ = tm.row(0).toDataType<float>();
             *row++ = tm.row(1).toDataType<float>();
             *row++ = tm.row(2).toDataType<float>();

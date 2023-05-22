@@ -25,6 +25,7 @@
 #include <ovito/grid/modifier/CreateIsosurfaceModifier.h>
 #include <ovito/mesh/surface/SurfaceMesh.h>
 #include <ovito/mesh/surface/SurfaceMeshVis.h>
+#include <ovito/mesh/surface/SurfaceMeshBuilder.h>
 #include <ovito/stdobj/simcell/SimulationCellObject.h>
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/dataset/pipeline/ModifierApplication.h>
@@ -106,7 +107,7 @@ PipelineStatus VoxelGridSliceModifierDelegate::apply(const ModifierEvaluationReq
             meshObj->setDomain(cell);
 
             // Construct cross section mesh using a special version of the marching cubes algorithm.
-            SurfaceMeshAccess mesh(meshObj);
+            SurfaceMeshBuilder mesh(meshObj);
 
             // The level of subdivision.
             static constexpr int resolution = 2;

@@ -145,13 +145,21 @@ public:
     /// Duplicates any property objects that are shared with other containers.
     /// After this method returns, all property objects are exclusively owned by the container and
     /// can be safely modified without unwanted side effects.
-    QVector<PropertyObject*> makePropertiesMutable();
+    auto makePropertiesMutable() {
+        makePropertiesMutableInternal();
+        auto const_cast_op = [](const DataOORef<const PropertyObject>& p) noexcept { return const_cast<PropertyObject*>(p.get()); };
+        using const_cast_iter_type = boost::transform_iterator<decltype(const_cast_op), typename std::decay_t<decltype(std::declval<PropertyContainer>().properties())>::const_iterator>;
+        return boost::make_iterator_range(
+            const_cast_iter_type(properties().begin(), const_cast_op),
+            const_cast_iter_type(properties().end(), const_cast_op)
+        );
+    }
 
     /// Creates a standard property and adds it to the container.
     /// In case the property already exists, it is made sure that it's safe to modify it.
     PropertyObject* createProperty(DataBuffer::BufferInitialization init, int typeId, const ConstDataObjectPath& containerPath = {});
 
-    /// Creates a standard property and adds it to the container.
+    /// Creates a standard property and adds it to the contaPropertyContaineriner.
     /// In case the property already exists, it is made sure that it's safe to modify it.
     PropertyObject* createProperty(int typeId, const ConstDataObjectPath& containerPath = {}) {
         return createProperty(DataBuffer::BufferInitialization::Uninitialized, typeId, containerPath);
@@ -174,9 +182,14 @@ public:
     /// The lengths of the property arrays will be adjusted accordingly.
     void setElementCount(size_t count);
 
-    /// Deletes those data elements for which the bit is set in the given bitmask array.
-    /// Returns the number of deleted elements.
+    /// Deletes those data elements for which the bits are set in the given bitmask array.
+    /// Returns the number of deleted elements. The ordering of the remaining elements is preserved.
     virtual size_t deleteElements(const boost::dynamic_bitset<>& mask);
+
+    /// Removes those data elements for which the bits are set in the given bitmask array by moving data from the back of the array into the free slots.
+    /// This method is potentially faster than deleteElements() if only few elements are to be deleted.
+    /// However, the ordering of the remaining elements is NOT preserved.
+    void deleteElementsReordering(const boost::dynamic_bitset<>& mask);
 
     /// Replaces the property arrays in this property container with a new set of properties.
     /// Existing element types of typed properties will be preserved by the method.
@@ -199,6 +212,73 @@ public:
     /// Generates the info string to be displayed in the OVITO status bar for an element from this container.
     virtual QString elementInfoString(size_t elementIndex, const ConstDataObjectRefPath& path = {}) const;
 
+public:
+
+    class OVITO_STDOBJ_EXPORT Grower
+    {
+    public:
+
+        Grower(PropertyContainer* container) : _container(container), _elementCount(container->elementCount()) {
+            // Make all property arrays mutable to begin with.
+            container->makePropertiesMutableInternal();
+        }
+
+        ~Grower() { commit(); }
+
+        void commit() {
+            // Write new element count back to container.
+            _container->_elementCount.set(_container, PROPERTY_FIELD(PropertyContainer::elementCount), _elementCount);
+        }
+
+        size_t grow(size_t numAdditionalElements, int alreadyLockedPropertyType = -1) {
+            // Grow property arrays.
+            for(const PropertyObject* prop : _container->properties()) {
+                OVITO_ASSERT(prop->size() == _elementCount);
+                const_cast<PropertyObject*>(prop)->grow(numAdditionalElements, prop->type() == alreadyLockedPropertyType);
+            }
+            // Update only our internal element count. Container will be updated by destructor.
+            size_t oldCount = _elementCount;
+            _elementCount += numAdditionalElements;
+            return oldCount;
+        }
+
+        /// Deletes a number of elements from the end of each property array (without reallocation).
+        void truncate(size_t numElementsToTruncate, int alreadyLockedPropertyType = -1) {
+            OVITO_ASSERT(numElementsToTruncate <= _elementCount);
+
+            // Truncate each property array.
+            for(const PropertyObject* prop : _container->properties()) {
+                OVITO_ASSERT(prop->size() == _elementCount);
+                const_cast<PropertyObject*>(prop)->truncate(numElementsToTruncate, prop->type() == alreadyLockedPropertyType);
+            }
+
+            // Update only our internal element count. Container will be updated by destructor.
+            _elementCount -= numElementsToTruncate;
+        }
+
+        /// Moves the values from one index of property container to another in all property arrays.
+        void moveElement(size_t fromIndex, size_t toIndex, int alreadyLockedPropertyType = -1) {
+            OVITO_ASSERT(fromIndex < _elementCount);
+            OVITO_ASSERT(toIndex < _elementCount);
+            for(const PropertyObject* prop : _container->properties()) {
+                OVITO_ASSERT(prop->size() == _elementCount);
+                const_cast<PropertyObject*>(prop)->moveElement(fromIndex, toIndex, prop->type() == alreadyLockedPropertyType);
+            }
+        }
+
+        PropertyObject* mutableProperty(int type) const {
+            for(const PropertyObject* prop : _container->properties()) {
+                if(prop->type() == type)
+                    return const_cast<PropertyObject*>(prop);
+            }
+            return nullptr;
+        }
+
+    private:
+        PropertyContainer* _container;
+        size_t _elementCount;
+    };
+
 protected:
 
     /// Saves the class' contents to the given stream.
@@ -209,6 +289,11 @@ protected:
 
     /// Is called once for this object after it has been completely loaded from a stream.
     virtual void loadFromStreamComplete(ObjectLoadStream& stream) override;
+
+    /// Duplicates any property objects that are shared with other containers or being accessed from Python.
+    /// After this method returns, all property objects are exclusively owned by the container and
+    /// can be safely modified without unwanted side effects.
+    void makePropertiesMutableInternal();
 
 private:
 

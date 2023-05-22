@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -22,10 +22,13 @@
 
 #include "../../global_uniforms.glsl"
 #include "../../picking.glsl"
+#include "../../shape_orientation.glsl"
 
 // Inputs:
 in vec3 position;
-in mat4 shape_orientation;
+in float radius;
+in vec3 aspherical_shape;
+in vec4 orientation;
 in vec2 roundness;
 
 // Outputs:
@@ -33,6 +36,7 @@ out vec3 position_gs;
 out vec4 color_gs;
 out mat4 shape_orientation_gs;
 out vec2 roundness_gs;
+
 void main()
 {
     // Forward particle position to geometry shader.
@@ -42,7 +46,7 @@ void main()
     color_gs = pickingModeColor(<VertexID>);
 
     // Forward particle shape and orientation to geometry shader.
-    shape_orientation_gs = shape_orientation;
+    shape_orientation_gs = mat4(calc_shape_orientation(orientation, aspherical_shape, radius));
 
     // Forward roundness parameters to geometry shader.
     roundness_gs = roundness;

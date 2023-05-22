@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -79,7 +79,7 @@ bool XYZImporterEditor::inspectNewFile(FileImporter* importer, const QUrl& sourc
         // and if the newly imported XYZ file has no column name information but the same number
         // of columns, adopt the existing column mapping from previously imported file.
         if(boost::algorithm::none_of(mapping, [](const auto& column) { return column.isMapped(); })) {
-            boost::range::copy(xyzImporter->columnMapping(), mapping.begin()); 
+            boost::range::copy(xyzImporter->columnMapping(), mapping.begin());
         }
     }
 

@@ -120,12 +120,24 @@
 #include <boost/dynamic_bitset.hpp>
 #include <boost/container/flat_map.hpp>
 #include <boost/range/algorithm.hpp>
+#include <boost/range/algorithm_ext/is_sorted.hpp>
+#include <boost/range/irange.hpp>
+#include <boost/range/counting_range.hpp>
+#include <boost/iterator/transform_iterator.hpp>
+#include <boost/iterator/counting_iterator.hpp>
 #include <boost/algorithm/algorithm.hpp>
 #include <boost/algorithm/cxx11/all_of.hpp>
 #include <boost/algorithm/cxx11/any_of.hpp>
 #include <boost/algorithm/cxx11/none_of.hpp>
 #include <boost/algorithm/cxx11/one_of.hpp>
 #include <boost/algorithm/cxx11/iota.hpp>
+
+/******************************************************************************
+* Kokkos library
+******************************************************************************/
+#ifdef OVITO_USE_KOKKOS
+    #include <Kokkos_Core.hpp>
+#endif
 
 /******************************************************************************
 * Forward declaration of classes.
@@ -139,7 +151,7 @@
 #include <ovito/core/utilities/Invoke.h>
 #define TCB_SPAN_NAMESPACE_NAME Ovito
 #include <ovito/core/utilities/Span.h>
-#include <ovito/core/utilities/FloatType.h>
+#include <ovito/core/utilities/DataTypes.h>
 #include <ovito/core/utilities/Exception.h>
 #include <ovito/core/utilities/linalg/LinAlg.h>
 #include <ovito/core/utilities/Color.h>

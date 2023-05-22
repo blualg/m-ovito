@@ -25,7 +25,7 @@
 
 #include <ovito/stdobj/StdObj.h>
 #include <ovito/core/dataset/data/DataBuffer.h>
-#include <ovito/core/dataset/data/DataBufferAccess.h>
+#include <ovito/core/dataset/data/BufferAccess.h>
 #include <ovito/core/dataset/data/DataObjectReference.h>
 #include <ovito/stdobj/properties/ElementType.h>
 
@@ -104,19 +104,13 @@ public:
             return QStringLiteral("%1.%2").arg(name()).arg(vectorComponent + 1);
     }
 
-    /// Creates a copy of the array, not containing those elements for which
-    /// the corresponding bits in the given bit array were set.
-    OORef<PropertyObject> filterCopy(const boost::dynamic_bitset<>& mask) const {
-        return static_object_cast<PropertyObject>(DataBuffer::filterCopy(mask));
-    }
-
     /// Checks if this property storage and its contents exactly match those of another property storage.
     bool equals(const PropertyObject& other) const;
 
     //////////////////////////////// Element types //////////////////////////////
 
     /// Returns true if this property has some element types attached and the data type is 'int'.
-    bool isTypedProperty() const { return !elementTypes().empty() && dataType() == DataBuffer::Int && componentCount() == 1; }
+    bool isTypedProperty() const { return !elementTypes().empty() && dataType() == DataBuffer::Int32 && componentCount() == 1; }
 
     /// Appends an element type to the list of types.
     const ElementType* addElementType(const ElementType* type) {
@@ -250,6 +244,30 @@ public:
     /// Returns the display title of this property object in the user interface.
     virtual QString objectTitle() const override;
 
+public:
+
+    /// Helper class that is created when direct access to a property's memory is requested
+    /// from the Python side. The PythonAccessGuard instance exists as long as at least one
+    /// NumPy view references the property object. During this time, the PropertyContainer
+    /// protects the PropertyObject from operations that might trigger a reallocation of the memory
+    /// buffer.
+    struct PythonAccessGuard {
+        explicit PythonAccessGuard(PropertyObject& p) : propertyReference(&p), memoryAccessor(&p) {}
+        OORef<PropertyObject> propertyReference;
+        BufferReadAccess memoryAccessor;
+    };
+
+    /// Creates an access guard object for this property.
+    std::shared_ptr<PythonAccessGuard> aquirePythonAccessGuard() {
+        auto guard = _pythonAccessGuard.lock();
+        if(!guard)
+            _pythonAccessGuard = guard = std::make_shared<PythonAccessGuard>(*this);
+        return guard;
+    }
+
+    /// Indicates that there current exists a Numpy view referencing this property's memory buffer.
+    bool isBeingAccessedFromPython() const { return !_pythonAccessGuard.expired(); }
+
 protected:
 
     /// Saves the class' contents to the given stream.
@@ -269,11 +287,14 @@ private:
     /// The user-interface title of this property.
     DECLARE_MODIFIABLE_PROPERTY_FIELD(QString, title, setTitle);
 
-    /// The type of this property.
+    /// The kind of this property (non-zero = predefined standard property; zero = a user-defined property).
     int _type = 0;
 
-    /// The name of the property.
+    /// The name of the property (must be unique within the PropertyContainer).
     QString _name;
+
+    /// Pointer to the access guard object while the Python side accesses this property's memory buffer.
+    std::weak_ptr<PythonAccessGuard> _pythonAccessGuard;
 
     /// This is a special flag used by the Python bindings to indicate that
     /// this property object has been temporarily put into a writable state.
@@ -288,22 +309,6 @@ using ConstPropertyPtr = DataOORef<const PropertyObject>;
 
 /// Encapsulates a complete data object reference to a PropertyObject in a data collection.
 using PropertyDataObjectReference = TypedDataObjectReference<PropertyObject>;
-
-/// A specialization of the ConstDataBufferAccess class template for property objects.
-template<typename T, bool TableMode = false>
-using ConstPropertyAccess = ConstDataBufferAccess<T, TableMode, PropertyObject>;
-
-/// A specialization of the ConstDataBufferAccessAndRef class template for property objects.
-template<typename T, bool TableMode = false>
-using ConstPropertyAccessAndRef = ConstDataBufferAccessAndRef<T, TableMode, PropertyObject>;
-
-/// A specialization of the DataBufferAccess class template for property objects.
-template<typename T, bool TableMode = false>
-using PropertyAccess = DataBufferAccess<T, TableMode, PropertyObject>;
-
-/// A specialization of the DataBufferAccessAndRef class template for property objects.
-template<typename T, bool TableMode = false>
-using PropertyAccessAndRef = DataBufferAccessAndRef<T, TableMode, PropertyObject>;
 
 }   // End of namespace
 

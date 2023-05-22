@@ -110,8 +110,9 @@ Box3 VectorVis::boundingBox(AnimationTime time, const ConstDataObjectPath& path,
     if(!container) return {};
     auto [basePositions, vectorProperty] = container->getVectorVisData(path, flowState, visCache);
     OVITO_ASSERT(!basePositions || basePositions->size() == container->elementCount());
-    OVITO_ASSERT(!basePositions || (basePositions->componentCount() == 3 && basePositions->dataType() == DataBuffer::Float));
-    if(vectorProperty && (vectorProperty->dataType() != PropertyObject::Float || vectorProperty->componentCount() != 3))
+    OVITO_ASSERT(!basePositions || basePositions->dataType() == PropertyObject::FloatDefault);
+    OVITO_ASSERT(!basePositions || (basePositions->componentCount() == 3 && basePositions->dataType() == DataBuffer::FloatDefault));
+    if(vectorProperty && ((vectorProperty->dataType() != PropertyObject::Float32 && vectorProperty->dataType() != PropertyObject::Float64) || vectorProperty->componentCount() != 3))
         vectorProperty = nullptr;
 
     // The key type used for caching the computed bounding box:
@@ -147,28 +148,45 @@ Box3 VectorVis::arrowBoundingBox(const DataBuffer* vectorProperty, const DataBuf
     if(!basePositions || !vectorProperty)
         return Box3();
 
-    OVITO_ASSERT(basePositions->dataType() == PropertyObject::Float);
+    OVITO_ASSERT(basePositions->dataType() == PropertyObject::FloatDefault);
     OVITO_ASSERT(basePositions->componentCount() == 3);
-    OVITO_ASSERT(vectorProperty->dataType() == PropertyObject::Float);
+    OVITO_ASSERT(vectorProperty->dataType() == PropertyObject::Float32 || vectorProperty->dataType() == PropertyObject::Float64);
     OVITO_ASSERT(vectorProperty->componentCount() == 3);
     OVITO_ASSERT(basePositions->size() == vectorProperty->size());
 
     // Compute bounding box of base positions (only those with non-zero vector).
     Box3 bbox;
-    ConstDataBufferAccess<Point3> positions(basePositions);
-    ConstDataBufferAccess<Vector3> vectorData(vectorProperty);
-    const Point3* p = positions.cbegin();
-    for(const Vector3& v : vectorData) {
-        if(v != Vector3::Zero())
-            bbox.addPoint(*p);
-        ++p;
-    }
-
-    // Find largest vector magnitude.
     FloatType maxMagnitude = 0;
-    for(const Vector3& v : vectorData) {
-        FloatType m = v.squaredLength();
-        if(m > maxMagnitude) maxMagnitude = m;
+    BufferAccess<const Point3> positions(basePositions);
+    const Point3* p = positions.cbegin();
+
+    if(vectorProperty->dataType() == PropertyObject::Float64) {
+        BufferAccess<const Vector_3<double>> vectorData(vectorProperty);
+        for(const Vector_3<double>& v : vectorData) {
+            if(v != Vector_3<double>::Zero())
+                bbox.addPoint(*p);
+            ++p;
+        }
+
+        // Find largest vector magnitude.
+        for(const Vector_3<double>& v : vectorData) {
+            auto m = v.squaredLength();
+            if(m > maxMagnitude) maxMagnitude = m;
+        }
+    }
+    else if(vectorProperty->dataType() == PropertyObject::Float32) {
+        BufferAccess<const Vector_3<float>> vectorData(vectorProperty);
+        for(const Vector_3<float>& v : vectorData) {
+            if(v != Vector_3<float>::Zero())
+                bbox.addPoint(*p);
+            ++p;
+        }
+
+        // Find largest vector magnitude.
+        for(const Vector_3<float>& v : vectorData) {
+            auto m = v.squaredLength();
+            if(m > maxMagnitude) maxMagnitude = m;
+        }
     }
 
     // Apply displacement offset.
@@ -176,7 +194,7 @@ Box3 VectorVis::arrowBoundingBox(const DataBuffer* vectorProperty, const DataBuf
     bbox.maxc += offset();
 
     // Enlarge the bounding box by the largest vector magnitude + padding.
-    return bbox.padBox((sqrt(maxMagnitude) * std::abs(scalingFactor())) + arrowWidth());
+    return bbox.padBox((std::sqrt(maxMagnitude) * std::abs(scalingFactor())) + arrowWidth());
 }
 
 /******************************************************************************
@@ -198,8 +216,9 @@ PipelineStatus VectorVis::render(AnimationTime time, const ConstDataObjectPath& 
     container->verifyIntegrity();
     auto [basePositions, vectorProperty] = container->getVectorVisData(path, flowState, renderer->visCache());
     OVITO_ASSERT(!basePositions || basePositions->size() == container->elementCount());
-    OVITO_ASSERT(!basePositions || (basePositions->componentCount() == 3 && basePositions->dataType() == DataBuffer::Float));
-    if(vectorProperty && (vectorProperty->dataType() != PropertyObject::Float || vectorProperty->componentCount() != 3))
+    OVITO_ASSERT(!basePositions || basePositions->dataType() == DataBuffer::FloatDefault);
+    OVITO_ASSERT(!basePositions || (basePositions->componentCount() == 3 && basePositions->dataType() == DataBuffer::FloatDefault));
+    if(vectorProperty && ((vectorProperty->dataType() != PropertyObject::Float32 && vectorProperty->dataType() != PropertyObject::Float64) || vectorProperty->componentCount() != 3))
         vectorProperty.reset();
 
     const PropertyObject* vectorColorProperty = nullptr;
@@ -238,7 +257,7 @@ PipelineStatus VectorVis::render(AnimationTime time, const ConstDataObjectPath& 
         FloatType,              // Scaling factor
         FloatType,              // Arrow width
         Color,                  // Arrow color
-        FloatType,              // Arrow transparency
+        GraphicsFloatType,      // Arrow transparency
         bool,                   // Reverse arrow direction
         ArrowPosition,          // Arrow position
         ConstDataObjectRef,     // Vector color property
@@ -248,7 +267,7 @@ PipelineStatus VectorVis::render(AnimationTime time, const ConstDataObjectPath& 
     >;
 
     // Determine effective color including alpha value.
-    FloatType transparency = 0;
+    GraphicsFloatType transparency = 0;
     TimeInterval iv;
     if(transparencyController())
         transparency = transparencyController()->getFloatValue(time, iv);
@@ -274,44 +293,54 @@ PipelineStatus VectorVis::render(AnimationTime time, const ConstDataObjectPath& 
 
         // Determine number of non-zero vectors.
         int vectorCount = 0;
-        ConstDataBufferAccess<Vector3> vectorData(vectorProperty);
-        if(vectorProperty && basePositions) {
-            for(const Vector3& v : vectorData) {
-                if(v != Vector3::Zero())
-                    vectorCount++;
+        BufferAccess<const Vector_3<float>> vectorData32(vectorProperty->dataType() == DataBuffer::Float32 ? vectorProperty : nullptr);
+        BufferAccess<const Vector_3<double>> vectorData64(vectorProperty->dataType() == DataBuffer::Float64 ? vectorProperty : nullptr);
+        if(basePositions) {
+            if(vectorData32) {
+                for(const auto& v : vectorData32) {
+                    if(v != Vector_3<float>::Zero())
+                        vectorCount++;
+                }
+            }
+            else if(vectorData64) {
+                for(const auto& v : vectorData64) {
+                    if(v != Vector_3<double>::Zero())
+                        vectorCount++;
+                }
             }
         }
 
         // Allocate data buffers.
-        DataBufferAccessAndRef<Point3> arrowBasePositions = DataBufferPtr::create(vectorCount, DataBuffer::Float, 3);
-        DataBufferAccessAndRef<Point3> arrowHeadPositions = DataBufferPtr::create(vectorCount, DataBuffer::Float, 3);
-        DataBufferAccessAndRef<Color> arrowColors = (vectorColorProperty || pseudoColorProperty) ? DataBufferPtr::create(vectorCount, DataBuffer::Float, 3) : nullptr;
+        BufferAccessAndRef<Point3G> arrowBasePositions = DataBufferPtr::create(vectorCount, DataBuffer::FloatGraphics, 3);
+        BufferAccessAndRef<Point3G> arrowHeadPositions = DataBufferPtr::create(vectorCount, DataBuffer::FloatGraphics, 3);
+        BufferAccessAndRef<ColorG> arrowColors = (vectorColorProperty || pseudoColorProperty) ? DataBufferPtr::create(vectorCount, DataBuffer::FloatGraphics, 3) : nullptr;
 
         // Fill data buffers.
         if(vectorCount) {
             FloatType scalingFac = scalingFactor();
             if(reverseArrowDirection())
                 scalingFac = -scalingFac;
-            ConstDataBufferAccess<Point3> basePositionData(basePositions);
-            ConstPropertyAccess<Color> vectorColorData(vectorColorProperty);
-            ConstPropertyAccess<void,true> vectorPseudoColorData(pseudoColorProperty);
+            BufferAccess<const Point3> basePositionData(basePositions);
+            BufferAccess<const ColorG> vectorColorData(vectorColorProperty);
+            BufferReadAccess vectorPseudoColorData(pseudoColorProperty);
             size_t inIndex = 0;
             size_t outIndex = 0;
+            const auto arrowPosition = this->arrowPosition();
             for(size_t inIndex = 0; inIndex < basePositionData.size(); inIndex++) {
-                const Vector3& vec = vectorData[inIndex];
-                if(vec != Vector3::Zero()) {
-                    Vector3 v = vec * scalingFac;
-                    Point3 base = basePositionData[inIndex];
-                    if(arrowPosition() == Head)
+                const Vector3G vec = vectorData32 ? vectorData32[inIndex].toDataType<GraphicsFloatType>() : vectorData64[inIndex].toDataType<GraphicsFloatType>();
+                if(vec != Vector3G::Zero()) {
+                    Vector3G v = vec * scalingFac;
+                    Point3G base = basePositionData[inIndex].toDataType<GraphicsFloatType>();
+                    if(arrowPosition == Head)
                         base -= v;
-                    else if(arrowPosition() == Center)
-                        base -= v * FloatType(0.5);
+                    else if(arrowPosition == Center)
+                        base -= v * GraphicsFloatType(0.5);
                     arrowBasePositions[outIndex] = base;
                     arrowHeadPositions[outIndex] = base + v;
                     if(vectorColorProperty)
                         arrowColors[outIndex] = vectorColorData[inIndex];
                     else if(pseudoColorProperty)
-                        arrowColors[outIndex] = pseudoColorMapping.valueToColor(vectorPseudoColorData.get<FloatType>(inIndex, pseudoColorPropertyComponent));
+                        arrowColors[outIndex] = pseudoColorMapping.valueToColor(vectorPseudoColorData.get<GraphicsFloatType>(inIndex, pseudoColorPropertyComponent));
                     outIndex++;
                 }
             }
@@ -325,9 +354,9 @@ PipelineStatus VectorVis::render(AnimationTime time, const ConstDataObjectPath& 
         arrows.setUniformColor(arrowColor());
         arrows.setPositions(arrowBasePositions.take(), arrowHeadPositions.take());
         arrows.setColors(arrowColors.take());
-        if(transparency > 0.0) {
-            DataBufferPtr transparencyBuffer = DataBufferPtr::create(vectorCount, DataBuffer::Float);
-            transparencyBuffer->fill(transparency);
+        if(transparency > 0) {
+            DataBufferPtr transparencyBuffer = DataBufferPtr::create(vectorCount, DataBuffer::FloatGraphics);
+            transparencyBuffer->fill<GraphicsFloatType>(transparency);
             arrows.setTransparencies(std::move(transparencyBuffer));
         }
     }
@@ -354,13 +383,25 @@ size_t VectorPickInfo::elementIndexFromSubObjectID(quint32 subobjID) const
 {
     if(const PropertyObject* vectorProperty = dataPath().lastAs<PropertyObject>()) {
         size_t elementIndex = 0;
-        ConstPropertyAccess<Vector3> vectorData(vectorProperty);
-        for(const Vector3& v : vectorData) {
-            if(v != Vector3::Zero()) {
-                if(subobjID == 0) return elementIndex;
-                subobjID--;
+        if(vectorProperty->dataType() == DataBuffer::Float32) {
+            BufferAccess<const Vector_3<float>> vectorData(vectorProperty);
+            for(const Vector_3<float>& v : vectorData) {
+                if(v != Vector_3<float>::Zero()) {
+                    if(subobjID == 0) return elementIndex;
+                    subobjID--;
+                }
+                elementIndex++;
             }
-            elementIndex++;
+        }
+        else if(vectorProperty->dataType() == DataBuffer::Float64) {
+            BufferAccess<const Vector_3<double>> vectorData(vectorProperty);
+            for(const Vector_3<double>& v : vectorData) {
+                if(v != Vector_3<double>::Zero()) {
+                    if(subobjID == 0) return elementIndex;
+                    subobjID--;
+                }
+                elementIndex++;
+            }
         }
     }
     return std::numeric_limits<size_t>::max();

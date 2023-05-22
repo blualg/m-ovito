@@ -56,8 +56,8 @@ PipelineStatus ParticlesSliceModifierDelegate::apply(const ModifierEvaluationReq
     boost::dynamic_bitset<> mask(inputParticles->elementCount());
 
     // Get the required input properties.
-    ConstPropertyAccess<Point3> posProperty = inputParticles->expectProperty(ParticlesObject::PositionProperty);
-    ConstPropertyAccess<int> selProperty = mod->applyToSelection() ? inputParticles->expectProperty(ParticlesObject::SelectionProperty) : nullptr;
+    BufferAccess<const Point3> posProperty = inputParticles->expectProperty(ParticlesObject::PositionProperty);
+    BufferAccess<const SelectionIntType> selProperty = mod->applyToSelection() ? inputParticles->expectProperty(ParticlesObject::SelectionProperty) : nullptr;
     OVITO_ASSERT(posProperty.size() == mask.size());
     OVITO_ASSERT(!selProperty || selProperty.size() == mask.size());
 
@@ -69,7 +69,7 @@ PipelineStatus ParticlesSliceModifierDelegate::apply(const ModifierEvaluationReq
 
     if(sliceWidth <= 0) {
         if(selProperty) {
-            const int* s = selProperty.cbegin();
+            const auto* s = selProperty.cbegin();
             boost::dynamic_bitset<>::size_type i = 0;
             for(const Point3& p : posProperty) {
                 if(*s++ && plane.pointDistance(p) > 0)
@@ -89,7 +89,7 @@ PipelineStatus ParticlesSliceModifierDelegate::apply(const ModifierEvaluationReq
     else {
         bool invert = mod->inverse();
         if(selProperty) {
-            const int* s = selProperty.cbegin();
+            const auto* s = selProperty.cbegin();
             boost::dynamic_bitset<>::size_type i = 0;
             for(const Point3& p : posProperty) {
                 if(*s++ && invert == (plane.classifyPoint(p, sliceWidth) == 0))
@@ -120,10 +120,10 @@ PipelineStatus ParticlesSliceModifierDelegate::apply(const ModifierEvaluationReq
     }
     else {
         size_t numSelected = 0;
-        PropertyAccess<int> newSelProperty = outputParticles->createProperty(ParticlesObject::SelectionProperty);
+        BufferAccess<SelectionIntType> newSelProperty = outputParticles->createProperty(ParticlesObject::SelectionProperty);
         OVITO_ASSERT(mask.size() == newSelProperty.size());
         boost::dynamic_bitset<>::size_type i = 0;
-        for(int& s : newSelProperty) {
+        for(auto& s : newSelProperty) {
             if(mask.test(i++)) {
                 s = 1;
                 numSelected++;

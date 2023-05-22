@@ -107,8 +107,8 @@ Future<AsynchronousModifier::EnginePtr> WignerSeitzAnalysisModifier::createEngin
     // Create output properties:
     if(outputCurrentConfig()) {
         if(referenceIdentifierProperty)
-            engine->setSiteIdentifiers(ParticlesObject::OOClass().createUserProperty(DataBuffer::Uninitialized, posProperty->size(), PropertyObject::Int64, 1, tr("Site Identifier")));
-        engine->setSiteTypes(ParticlesObject::OOClass().createUserProperty(DataBuffer::Uninitialized, posProperty->size(), PropertyObject::Int, 1, tr("Site Type")));
+            engine->setSiteIdentifiers(ParticlesObject::OOClass().createUserProperty(DataBuffer::Uninitialized, posProperty->size(), PropertyObject::IntIdentifier, 1, tr("Site Identifier")));
+        engine->setSiteTypes(ParticlesObject::OOClass().createUserProperty(DataBuffer::Uninitialized, posProperty->size(), PropertyObject::Int32, 1, tr("Site Type")));
         engine->setSiteIndices(ParticlesObject::OOClass().createUserProperty(DataBuffer::Uninitialized, posProperty->size(), PropertyObject::Int64, 1, tr("Site Index")));
     }
 
@@ -138,7 +138,7 @@ void WignerSeitzAnalysisModifier::WignerSeitzAnalysisEngine::perform()
     int ncomponents = 1;
     int typemin, typemax;
     if(particleTypes()) {
-        ConstPropertyAccess<int> particleTypesArray(particleTypes());
+        BufferAccess<const int32_t> particleTypesArray(particleTypes());
         auto minmax = std::minmax_element(particleTypesArray.cbegin(), particleTypesArray.cend());
         typemin = std::min(_ptypeMinId, *minmax.first);
         typemax = std::max(_ptypeMaxId, *minmax.second);
@@ -166,7 +166,7 @@ void WignerSeitzAnalysisModifier::WignerSeitzAnalysisEngine::perform()
     }
 
     // Assign particles to reference sites.
-    ConstPropertyAccess<Point3> positionsArray(positions());
+    BufferAccess<const Point3> positionsArray(positions());
     if(ncomponents == 1) {
         // Without per-type occupancies:
         parallelForWithProgress(positions()->size(), [&](size_t index) {
@@ -181,7 +181,7 @@ void WignerSeitzAnalysisModifier::WignerSeitzAnalysisEngine::perform()
     }
     else {
         // With per-type occupancies:
-        ConstPropertyAccess<int> particleTypesArray(particleTypes());
+        BufferAccess<const int32_t> particleTypesArray(particleTypes());
         parallelForWithProgress(positions()->size(), [&](size_t index) {
             const Point3& p = positionsArray[index];
             FloatType closestDistanceSq;
@@ -198,7 +198,7 @@ void WignerSeitzAnalysisModifier::WignerSeitzAnalysisEngine::perform()
     // Create output storage.
     setOccupancyNumbers(ParticlesObject::OOClass().createUserProperty(DataBuffer::Uninitialized,
         siteTypes() ? positions()->size() : refPositions()->size(),
-        PropertyObject::Int, ncomponents, tr("Occupancy")));
+        PropertyObject::Int32, ncomponents, tr("Occupancy")));
     if(ncomponents > 1 && typemin != 1) {
         QStringList componentNames;
         for(int i = typemin; i <= typemax; i++)
@@ -207,19 +207,19 @@ void WignerSeitzAnalysisModifier::WignerSeitzAnalysisEngine::perform()
     }
 
     // Copy data from atomic array to output buffer.
-    PropertyAccess<int,true> occupancyNumbersArray(occupancyNumbers());
+    BufferAccess<int32_t*> occupancyNumbersArray(occupancyNumbers());
     if(!siteTypes()) {
         boost::copy(occupancyArray, occupancyNumbersArray.begin());
     }
     else {
         // Map occupancy numbers from sites to atoms.
-        PropertyAccess<int> siteTypesArray(siteTypes());
-        PropertyAccess<qlonglong> siteIndicesArray(siteIndices());
-        PropertyAccess<qlonglong> siteIdentifiersArray(siteIdentifiers());
-        ConstPropertyAccess<int> referenceTypeArray(_referenceTypeProperty);
-        ConstPropertyAccess<qlonglong> referenceIdentifierArray(_referenceIdentifierProperty);
-        int* occ = occupancyNumbersArray.begin();
-        int* st = siteTypesArray.begin();
+        BufferAccess<int32_t> siteTypesArray(siteTypes());
+        BufferAccess<int64_t> siteIndicesArray(siteIndices());
+        BufferAccess<IdentifierIntType> siteIdentifiersArray(siteIdentifiers());
+        BufferAccess<const int32_t> referenceTypeArray(_referenceTypeProperty);
+        BufferAccess<const IdentifierIntType> referenceIdentifierArray(_referenceIdentifierProperty);
+        int32_t* occ = occupancyNumbersArray.begin();
+        int32_t* st = siteTypesArray.begin();
         auto sidx = siteIndicesArray.begin();
         auto sid = siteIdentifiersArray ? siteIdentifiersArray.begin() : nullptr;
         for(size_t siteIndex : atomsToSites) {
@@ -234,7 +234,7 @@ void WignerSeitzAnalysisModifier::WignerSeitzAnalysisEngine::perform()
 
     // Count defects.
     if(ncomponents == 1) {
-        for(int oc : occupancyArray) {
+        for(int32_t oc : occupancyArray) {
             if(oc == 0) incrementVacancyCount();
             else if(oc > 1) incrementInterstitialCount(oc - 1);
         }
@@ -242,7 +242,7 @@ void WignerSeitzAnalysisModifier::WignerSeitzAnalysisEngine::perform()
     else {
         auto o = occupancyArray.cbegin();
         for(size_t i = 0; i < refPositions()->size(); i++) {
-            int oc = 0;
+            int32_t oc = 0;
             for(int j = 0; j < ncomponents; j++) {
                 oc += *o++;
             }

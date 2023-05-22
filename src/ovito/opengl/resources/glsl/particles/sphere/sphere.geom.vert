@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -25,7 +25,10 @@
 // Inputs:
 in vec3 position;
 in float radius;
-in vec4 color;
+in vec3 color;
+in float transparency;
+in float selection;
+uniform vec4 selection_color;
 
 // Outputs:
 out vec3 position_gs;
@@ -41,5 +44,5 @@ void main()
     radius_gs = radius;
 
     // Forward particle color to geometry shader.
-    color_gs = color;
+    color_gs = (selection != 0.0) ? selection_color : vec4(color, clamp(1.0 - transparency, 0.0, 1.0));
 }

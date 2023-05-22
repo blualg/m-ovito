@@ -163,25 +163,25 @@ void CastepMDImporter::FrameLoader::loadFile()
 
     // Create the particle properties.
     setParticleCount(coords.size());
-    PropertyAccess<Point3> posProperty = particles()->createProperty(ParticlesObject::PositionProperty);
+    BufferAccess<Point3> posProperty = particles()->createProperty(ParticlesObject::PositionProperty);
     boost::copy(coords, posProperty.begin());
 
-    PropertyAccess<int> typeProperty = particles()->createProperty(ParticlesObject::TypeProperty);
-    boost::transform(types, typeProperty.begin(), [&](const QString& typeName) {
-        return addNamedType(ParticlesObject::OOClass(), typeProperty.buffer(), typeName)->numericId();
+    PropertyObject* typeProperty = particles()->createProperty(ParticlesObject::TypeProperty);
+    boost::transform(types, BufferAccess<int32_t>(typeProperty).begin(), [&](const QString& typeName) {
+        return addNamedType(ParticlesObject::OOClass(), typeProperty, typeName)->numericId();
     });
 
     // Since we created particle types on the go while reading the particles, the particle type ordering
     // depends on the storage order of particles in the file. We rather want a well-defined particle type ordering, that's
     // why we sort them now.
-    typeProperty.buffer()->sortElementTypesByName();
+    typeProperty->sortElementTypesByName();
 
     if(velocities.size() == coords.size()) {
-        PropertyAccess<Vector3> velocityProperty = particles()->createProperty(ParticlesObject::VelocityProperty);
+        BufferAccess<Vector3> velocityProperty = particles()->createProperty(ParticlesObject::VelocityProperty);
         boost::copy(velocities, velocityProperty.begin());
     }
     if(forces.size() == coords.size()) {
-        PropertyAccess<Vector3> forceProperty = particles()->createProperty(ParticlesObject::ForceProperty);
+        BufferAccess<Vector3> forceProperty = particles()->createProperty(ParticlesObject::ForceProperty);
         boost::copy(forces, forceProperty.begin());
     }
 

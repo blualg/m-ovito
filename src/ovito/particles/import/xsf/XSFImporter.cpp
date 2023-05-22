@@ -152,20 +152,20 @@ void XSFImporter::FrameLoader::loadFile()
             line = stream.line();
 
             setParticleCount(coords.size());
-            PropertyAccess<Point3> posProperty = particles()->createProperty(ParticlesObject::PositionProperty);
-            boost::copy(coords, posProperty.begin());
+            BufferAccess<Point3> posAccess = particles()->createProperty(ParticlesObject::PositionProperty);
+            boost::copy(coords, posAccess.begin());
 
-            PropertyAccess<int> typeProperty = particles()->createProperty(ParticlesObject::TypeProperty);
-            boost::transform(types, typeProperty.begin(), [&](const QString& typeName) {
-                return addNamedType(ParticlesObject::OOClass(), typeProperty.buffer(), typeName)->numericId();
+            PropertyObject* typeProperty = particles()->createProperty(ParticlesObject::TypeProperty);
+            boost::transform(types, BufferAccess<int32_t>(typeProperty).begin(), [&](const QString& typeName) {
+                return addNamedType(ParticlesObject::OOClass(), typeProperty, typeName)->numericId();
             });
             // Since we created particle types on the go while reading the particles, the type ordering
             // depends on the storage order of particles in the file. We rather want a well-defined particle type ordering, that's
             // why we sort them now.
-            typeProperty.buffer()->sortElementTypesByName();
+            typeProperty->sortElementTypesByName();
 
             if(forces.size() == coords.size()) {
-                PropertyAccess<Vector3> forceProperty = particles()->createProperty(ParticlesObject::ForceProperty);
+                BufferAccess<Vector3> forceProperty = particles()->createProperty(ParticlesObject::ForceProperty);
                 boost::copy(forces, forceProperty.begin());
             }
 
@@ -174,7 +174,7 @@ void XSFImporter::FrameLoader::loadFile()
             // If the input file does not contain simulation cell info,
             // Use bounding box of particles as simulation cell.
             Box3 boundingBox;
-            boundingBox.addPoints(posProperty);
+            boundingBox.addPoints(posAccess);
             simulationCell()->setCellMatrix(AffineTransformation(
                     Vector3(boundingBox.sizeX(), 0, 0),
                     Vector3(0, boundingBox.sizeY(), 0),
@@ -328,7 +328,7 @@ void XSFImporter::FrameLoader::loadFile()
                 voxelGrid->setDomain(std::move(simCell));
             }
 
-            PropertyAccess<FloatType> fieldQuantity = voxelGrid->createProperty(name, PropertyObject::Float);
+            BufferAccess<FloatType> fieldQuantity = voxelGrid->createProperty(name, DataBuffer::FloatDefault);
             FloatType* data = fieldQuantity.begin();
             setProgressMaximum(fieldQuantity.size());
             const char* s = "";

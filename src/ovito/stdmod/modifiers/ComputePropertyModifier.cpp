@@ -181,7 +181,7 @@ Future<AsynchronousModifier::EnginePtr> ComputePropertyModifier::createEngine(co
             outp = container->getOOMetaClass().createStandardProperty(onlySelectedElements() ? DataBuffer::Initialized : DataBuffer::Uninitialized, nelements, outputProperty().type(), objectPath);
         }
         else if(!outputProperty().name().isEmpty() && propertyComponentCount() > 0) {
-            outp = container->getOOMetaClass().createUserProperty(onlySelectedElements() ? DataBuffer::Initialized : DataBuffer::Uninitialized, nelements, PropertyObject::Float, propertyComponentCount(), outputProperty().name());
+            outp = container->getOOMetaClass().createUserProperty(onlySelectedElements() ? DataBuffer::Initialized : DataBuffer::Uninitialized, nelements, PropertyObject::FloatDefault, propertyComponentCount(), outputProperty().name());
         }
         else {
             throw Exception(tr("Output property of compute property modifier has not been specified."));
@@ -269,12 +269,12 @@ ComputePropertyModifierDelegate::PropertyComputeEngine::PropertyComputeEngine(
         const PipelineFlowState& input,
         const ConstDataObjectPath& containerPath,
         PropertyPtr outputProperty,
-        ConstPropertyPtr selectionProperty,
+        const PropertyObject* selectionProperty,
         QStringList expressions,
         int frameNumber,
         std::unique_ptr<PropertyExpressionEvaluator> evaluator) :
     AsynchronousModifier::Engine(request, validityInterval),
-    _selectionArray(std::move(selectionProperty)),
+    _selectionArray(selectionProperty),
     _expressions(std::move(expressions)),
     _frameNumber(frameNumber),
     _outputProperty(std::move(outputProperty)),

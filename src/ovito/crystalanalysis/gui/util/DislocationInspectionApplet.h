@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -75,7 +75,6 @@ private:
         virtual int rowCount(const QModelIndex& parent = QModelIndex()) const override {
             if(parent.isValid()) return 0;
             if(_dislocationObj) return _dislocationObj->segments().size();
-            if(_microstructure && _microstructure->topology()) return _microstructure->topology()->faceCount();
             return 0;
         }
 
@@ -109,11 +108,9 @@ private:
             beginResetModel();
             if(state) {
                 _dislocationObj = state.getObject<DislocationNetworkObject>();
-                _microstructure = state.getObject<Microstructure>();
             }
             else {
                 _dislocationObj.reset();
-                _microstructure.reset();
             }
             endResetModel();
         }
@@ -121,7 +118,6 @@ private:
     private:
 
         OORef<DislocationNetworkObject> _dislocationObj;
-        OORef<Microstructure> _microstructure;
     };
 
 

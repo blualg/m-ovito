@@ -41,7 +41,7 @@ void OpenGLSceneRenderer::renderMarkersImplementation(const MarkerPrimitive& pri
 
     OpenGLShaderHelper shader(this);
     switch(primitive.shape()) {
-    
+
     case MarkerPrimitive::BoxShape:
 
         if(isPicking())
@@ -77,7 +77,7 @@ void OpenGLSceneRenderer::renderMarkersImplementation(const MarkerPrimitive& pri
     shader.bindBuffer(positionsBuffer, "position", GL_FLOAT, 3, sizeof(Point_3<float>), 0, OpenGLShaderHelper::PerInstance);
 
     // Issue instance drawing command.
-    shader.drawArrays(GL_LINES);
+    shader.draw(GL_LINES);
 
     OVITO_REPORT_OPENGL_ERRORS(this);
 }

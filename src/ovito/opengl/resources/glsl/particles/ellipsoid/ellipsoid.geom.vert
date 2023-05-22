@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -21,29 +21,31 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include "../../global_uniforms.glsl"
+#include "../../shape_orientation.glsl"
 
 // Inputs:
 in vec3 position;
 in float radius;
-in vec4 color;
-in mat4 shape_orientation;
+in vec3 color;
+in float transparency;
+in float selection;
+uniform vec4 selection_color;
+in vec3 aspherical_shape;
+in vec4 orientation;
 
 // Outputs:
 out vec3 position_gs;
-out float radius_gs;
 out vec4 color_gs;
 out mat4 shape_orientation_gs;
+
 void main()
 {
     // Forward particle position to geometry shader.
     position_gs = position;
 
-    // Forward particle radius to geometry shader.
-    radius_gs = radius;
-
     // Forward particle color to geometry shader.
-    color_gs = color;
+    color_gs = (selection != 0.0) ? selection_color : vec4(color, clamp(1.0 - transparency, 0.0, 1.0));
 
     // Forward particle shape and orientation to geometry shader.
-    shape_orientation_gs = shape_orientation;
+    shape_orientation_gs = mat4(calc_shape_orientation(orientation, aspherical_shape, radius));
 }

@@ -118,7 +118,7 @@ private:
             _simCell(simCell), _fftGridSpacing(fftGridSpacing),
             _applyWindow(applyWindow), _neighCutoff(neighCutoff),
             _averagingDirection(averagingDirection),
-            _neighCorrelation(doComputeNeighCorrelation ? DataTable::OOClass().createUserProperty(DataBuffer::Initialized, numberOfNeighBins, PropertyObject::Float, 1, tr("Neighbor C(r)")) : nullptr) {}
+            _neighCorrelation(doComputeNeighCorrelation ? DataTable::OOClass().createUserProperty(DataBuffer::Initialized, numberOfNeighBins, DataBuffer::FloatDefault, 1, tr("Neighbor C(r)")) : nullptr) {}
 
         /// Computes the modifier's results and stores them in this object for later retrieval.
         virtual void perform() override;

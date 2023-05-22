@@ -23,7 +23,6 @@
 #include <ovito/particles/Particles.h>
 #include <ovito/particles/objects/ParticlesObject.h>
 #include <ovito/mesh/io/ParaViewVTPMeshImporter.h>
-#include <ovito/core/dataset/data/DataObjectAccess.h>
 #include <ovito/core/dataset/io/FileSource.h>
 #include "ParaViewVTPBondsImporter.h"
 
@@ -222,7 +221,7 @@ PropertyObject* ParaViewVTPBondsImporter::FrameLoader::createBondPropertyForData
         return bonds()->createProperty(preserveExistingData ? DataBuffer::Initialized : DataBuffer::Uninitialized, BondsObject::ParticleIdentifiersProperty);
     }
     else {
-        return bonds()->createProperty(preserveExistingData ? DataBuffer::Initialized : DataBuffer::Uninitialized, name.toString(), PropertyObject::Float, numComponents);
+        return bonds()->createProperty(preserveExistingData ? DataBuffer::Initialized : DataBuffer::Uninitialized, name.toString(), PropertyObject::FloatDefault, numComponents);
     }
     return nullptr;
 }
@@ -239,10 +238,10 @@ void BondsParaViewVTMFileFilter::postprocessDatasets(FileSourceImporter::LoadOpe
     if(const PropertyObject* bondParticleIdentifiers = particles->bonds()->getProperty(BondsObject::ParticleIdentifiersProperty)) {
 
         // Build map from particle identifiers to particle indices.
-        std::map<qlonglong, size_t> idToIndexMap;
-        if(ConstPropertyAccess<qlonglong> particleIdentifierProperty = particles->getProperty(ParticlesObject::IdentifierProperty)) {
+        std::map<int64_t, size_t> idToIndexMap;
+        if(BufferAccess<const int64_t> particleIdentifierProperty = particles->getProperty(ParticlesObject::IdentifierProperty)) {
             size_t index = 0;
-            for(qlonglong id : particleIdentifierProperty) {
+            for(int64_t id : particleIdentifierProperty) {
                 if(idToIndexMap.insert(std::make_pair(id, index++)).second == false)
                     throw Exception(tr("Duplicate particle identifier %1 detected. Please make sure particle identifiers are unique.").arg(id));
             }
@@ -254,9 +253,9 @@ void BondsParaViewVTMFileFilter::postprocessDatasets(FileSourceImporter::LoadOpe
         }
 
         // Perform lookup of particle IDs.
-        PropertyAccess<ParticleIndexPair> bondTopologyArray = particles->makeBondsMutable()->createProperty(BondsObject::TopologyProperty);
+        BufferAccess<ParticleIndexPair> bondTopologyArray = particles->makeBondsMutable()->createProperty(BondsObject::TopologyProperty);
         auto t = bondTopologyArray.begin();
-        for(const ParticleIndexPair& bond : ConstPropertyAccess<ParticleIndexPair>(bondParticleIdentifiers)) {
+        for(const ParticleIndexPair& bond : BufferAccess<const ParticleIndexPair>(bondParticleIdentifiers)) {
             auto iter1 = idToIndexMap.find(bond[0]);
             auto iter2 = idToIndexMap.find(bond[1]);
             if(iter1 == idToIndexMap.end())

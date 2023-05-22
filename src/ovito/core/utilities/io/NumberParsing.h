@@ -26,8 +26,8 @@
 #include <ovito/core/Core.h>
 
 #include <boost/spirit/include/qi.hpp>
-#include <boost/spirit/include/phoenix_core.hpp>
-#include <boost/spirit/include/phoenix_operator.hpp>
+#include <boost/phoenix/core.hpp>
+#include <boost/phoenix/operator.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/version.hpp>
 
@@ -86,7 +86,7 @@ inline bool parseFloatType(QLatin1StringView s, double& f)
 /******************************************************************************
  * Helper function that converts a string to an integer number.
  *****************************************************************************/
-inline bool parseInt(const char* s, const char* s_end, int& i)
+inline bool parseInt32(const char* s, const char* s_end, int32_t& i)
 {
     return boost::spirit::qi::parse(s, s_end, boost::spirit::qi::int_, i);
 }
@@ -94,15 +94,15 @@ inline bool parseInt(const char* s, const char* s_end, int& i)
 /******************************************************************************
  * Helper function that converts a string to an integer number.
  *****************************************************************************/
-inline bool parseInt(QLatin1StringView s, int& i)
+inline bool parseInt32(QLatin1StringView s, int32_t& i)
 {
-    return parseInt(s.cbegin(), s.cend(), i);
+    return parseInt32(s.cbegin(), s.cend(), i);
 }
 
 /******************************************************************************
  * Helper function that converts a string to a 64-bit integer number.
  *****************************************************************************/
-inline bool parseInt64(const char* s, const char* s_end, qlonglong& i)
+inline bool parseInt64(const char* s, const char* s_end, int64_t& i)
 {
     return boost::spirit::qi::parse(s, s_end, boost::spirit::qi::long_long, i);
 }
@@ -110,7 +110,7 @@ inline bool parseInt64(const char* s, const char* s_end, qlonglong& i)
 /******************************************************************************
  * Helper function that converts a string to a 64-bit integer number.
  *****************************************************************************/
-inline bool parseInt64(QLatin1StringView s, qlonglong& i)
+inline bool parseInt64(QLatin1StringView s, int64_t& i)
 {
     return parseInt64(s.cbegin(), s.cend(), i);
 }

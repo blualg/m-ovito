@@ -34,7 +34,7 @@ namespace Ovito::Particles {
 /**
  * The data type used for the 'Topology' bond property: two indices into the particles list.
  */
-using ParticleIndexPair = std::array<qlonglong, 2>;
+using ParticleIndexPair = std::array<int64_t, 2>;
 
 /**
  * A helper data structure describing a single bond between two particles.

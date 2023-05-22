@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -30,13 +30,13 @@ uniform vec2 inverse_viewport_size;	    // One over the width/height of the view
 
 bool is_perspective()
 {
-    return projection_matrix[0][3] != 0.0 
-        || projection_matrix[1][3] != 0.0 
-        || projection_matrix[2][3] != 0.0 
+    return projection_matrix[0][3] != 0.0
+        || projection_matrix[1][3] != 0.0
+        || projection_matrix[2][3] != 0.0
         || projection_matrix[3][3] != 1.0;
 }
 
-// Replacement for inverse(mat3) function, which is only available in GLSL version 1.40. 
+// Replacement for inverse(mat3) function, which is only available in GLSL version 1.40.
 float determinant_mat2(in mat2 matrix) {
     return matrix[0].x * matrix[1].y - matrix[0].y * matrix[1].x;
 }

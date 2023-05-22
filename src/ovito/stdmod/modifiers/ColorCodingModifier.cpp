@@ -396,26 +396,26 @@ PipelineStatus ColorCodingModifierDelegate::apply(const ModifierEvaluationReques
     if(!std::isfinite(endValue)) endValue = std::numeric_limits<FloatType>::max();
 
     // Create the color output property.
-    PropertyAccess<Color> colorProperty = container->createProperty(selectionProperty ? DataBuffer::Initialized : DataBuffer::Uninitialized, outputColorPropertyId(), objectPath);
+    BufferAccess<ColorG> colorProperty = container->createProperty(selectionProperty ? DataBuffer::Initialized : DataBuffer::Uninitialized, outputColorPropertyId(), objectPath);
 
-    ConstPropertyAccessAndRef<int> selection(std::move(selectionProperty));
+    BufferAccess<const SelectionIntType> selection(selectionProperty.get());
     bool result = property->forEach(vecComponent, [&](size_t i, auto v) {
         if(selection && !selection[i])
             return;
 
         // Compute linear interpolation.
-        FloatType t;
+        GraphicsFloatType t;
         if(startValue == endValue) {
-            if(v == startValue) t = FloatType(0.5);
-            else if(v > startValue) t = 1;
-            else t = 0;
+            if(v == startValue) t = GraphicsFloatType(0.5);
+            else if(v > startValue) t = GraphicsFloatType(1.0);
+            else t = GraphicsFloatType(0.0);
         }
-        else t = (v - startValue) / (endValue - startValue);
+        else t = static_cast<GraphicsFloatType>((v - startValue) / (endValue - startValue));
 
         // Clamp values.
         if(std::isnan(t)) t = 0;
-        else if(t == std::numeric_limits<FloatType>::infinity()) t = 1;
-        else if(t == -std::numeric_limits<FloatType>::infinity()) t = 0;
+        else if(t == std::numeric_limits<GraphicsFloatType>::infinity()) t = 1;
+        else if(t == -std::numeric_limits<GraphicsFloatType>::infinity()) t = 0;
         else if(t < 0) t = 0;
         else if(t > 1) t = 1;
 

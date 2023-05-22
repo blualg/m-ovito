@@ -189,14 +189,14 @@ void FreezePropertyModifier::evaluateSynchronous(const ModifierEvaluationRequest
 
     // Check if particle IDs are present and if the order of particles has changed
     // since we took the snapshot of the property values.
-    ConstPropertyAccess<qlonglong> idProperty = container->getOOMetaClass().isValidStandardPropertyId(PropertyObject::GenericIdentifierProperty)
+    BufferAccess<const IdentifierIntType> idProperty = container->getOOMetaClass().isValidStandardPropertyId(PropertyObject::GenericIdentifierProperty)
         ? container->getProperty(PropertyObject::GenericIdentifierProperty)
         : nullptr;
-    ConstPropertyAccess<qlonglong> storedIds = myModApp->identifiers();
+    BufferAccess<const IdentifierIntType> storedIds = myModApp->identifiers();
     if(storedIds && idProperty && (idProperty.size() != storedIds.size() || !boost::equal(idProperty, storedIds))) {
 
         // Build ID-to-index map.
-        std::unordered_map<qlonglong,size_t> idmap;
+        std::unordered_map<IdentifierIntType,size_t> idmap;
         size_t index = 0;
         for(auto id : storedIds) {
             if(!idmap.insert(std::make_pair(id, index)).second)

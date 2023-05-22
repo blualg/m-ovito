@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -46,10 +46,10 @@ OvitoObject::~OvitoObject()
 * Internal method that calls this object's aboutToBeDeleted() routine.
 * It is automatically called when the object's reference counter reaches zero.
 ******************************************************************************/
-void OvitoObject::deleteObjectInternal() noexcept 
+void OvitoObject::deleteObjectInternal() noexcept
 {
     OVITO_CHECK_OBJECT_POINTER(this);
-    OVITO_ASSERT_MSG(_referenceCount.loadAcquire() == 0, "OvitoObject::deleteObjectInternal()", "Object is still referenced while being deleted.");
+    OVITO_ASSERT_MSG(_referenceCount.load() == 0, "OvitoObject::deleteObjectInternal()", "Object is still referenced while being deleted.");
 
     // Delete the object in the main thread only.
     if(QThread::currentThread() != this->thread()) {
@@ -59,13 +59,13 @@ void OvitoObject::deleteObjectInternal() noexcept
 
     // Set the reference counter to a positive value to prevent the object
     // from being deleted a second time during the call to aboutToBeDeleted().
-    _referenceCount.storeRelease(INVALID_REFERENCE_COUNT);
+    _referenceCount.store(INVALID_REFERENCE_COUNT);
     aboutToBeDeleted();
 
     // After returning from aboutToBeDeleted(), the reference count should be back at the
     // original value (no new references).
-    OVITO_ASSERT(_referenceCount.loadAcquire() == INVALID_REFERENCE_COUNT);
-    _referenceCount.storeRelease(0);
+    OVITO_ASSERT(_referenceCount.load() == INVALID_REFERENCE_COUNT);
+    _referenceCount.store(0);
 
     // Delete the object itself.
     delete this;

@@ -161,7 +161,7 @@ void XTCImporter::FrameLoader::loadFile()
     // Transfer atomic coordinates to property storage. Also convert from nanometer units to angstroms.
     size_t numParticles = xtcFrame.xyz.size();
     setParticleCount(numParticles);
-    PropertyAccess<Point3> posProperty = particles()->createProperty(ParticlesObject::PositionProperty);
+    BufferAccess<Point3> posProperty = particles()->createProperty(ParticlesObject::PositionProperty);
     std::transform(xtcFrame.xyz.cbegin(), xtcFrame.xyz.cend(), posProperty.begin(), [](const Point_3<float>& p) {
         return (p * 10.0f).toDataType<FloatType>();
     });

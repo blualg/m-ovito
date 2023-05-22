@@ -25,7 +25,7 @@
 
 #include <ovito/core/Core.h>
 #include <ovito/core/dataset/data/DataBuffer.h>
-#include <ovito/core/dataset/data/DataBufferAccess.h>
+#include <ovito/core/dataset/data/BufferAccess.h>
 
 namespace Ovito {
 
@@ -41,15 +41,19 @@ public:
     /// \brief Sets the coordinates of the line vertices.
     void setPositions(ConstDataBufferPtr coordinates) {
         OVITO_ASSERT(coordinates);
-        OVITO_ASSERT(coordinates->dataType() == DataBuffer::Float && coordinates->componentCount() == 3);
+        OVITO_ASSERT(coordinates->componentCount() == 3);
         _positions = std::move(coordinates);
     }
 
     /// \brief Sets the coordinates of the line vertices.
     template<typename InputIterator>
     void makePositions(InputIterator begin, InputIterator end) {
+        using PointType = typename std::iterator_traits<InputIterator>::value_type;
+        using ValueType = typename PointType::value_type;
+        OVITO_STATIC_ASSERT((std::is_same_v<PointType, Point_3<ValueType>>));
+
         size_t count = std::distance(begin, end);
-        DataBufferAccessAndRef<Point3> buffer = DataBufferPtr::create(count, DataBuffer::Float, 3);
+        BufferAccessAndRef<PointType> buffer = DataBufferPtr::create(count, DataBufferPrimitiveType<ValueType>::value, 3);
         std::copy(std::move(begin), std::move(end), buffer.begin());
         setPositions(buffer.take());
     }
@@ -65,15 +69,19 @@ public:
 
     /// \brief Sets the colors of the vertices.
     void setColors(ConstDataBufferPtr colors) {
-        OVITO_ASSERT(!colors || colors->dataType() == DataBuffer::Float && colors->componentCount() == 4);
+        OVITO_ASSERT(!colors || colors->componentCount() == 4);
         _colors = std::move(colors);
     }
 
     /// \brief Sets the colors of the vertices.
     template<typename InputIterator>
     void makeColors(InputIterator begin, InputIterator end) {
+        using ColorType = typename std::iterator_traits<InputIterator>::value_type;
+        using ValueType = typename ColorType::value_type;
+        OVITO_STATIC_ASSERT((std::is_same_v<ColorType, ColorAT<ValueType>>));
+
         size_t count = std::distance(begin, end);
-        DataBufferAccessAndRef<ColorA> buffer = DataBufferPtr::create(count, DataBuffer::Float, 4);
+        BufferAccessAndRef<ColorType> buffer = DataBufferPtr::create(count, DataBufferPrimitiveType<ValueType>::value, 4);
         std::copy(std::move(begin), std::move(end), buffer.begin());
         setColors(buffer.take());
     }

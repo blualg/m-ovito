@@ -102,7 +102,7 @@ Box3 TrajectoryVis::boundingBox(AnimationTime time, const ConstDataObjectPath& p
         // If not, recompute bounding box from trajectory data.
         if(trajObj) {
             if(!simulationCell) {
-                if(ConstPropertyAccess<Point3> posProperty = trajObj->getProperty(TrajectoryObject::PositionProperty)) {
+                if(BufferAccess<const Point3> posProperty = trajObj->getProperty(TrajectoryObject::PositionProperty)) {
                     bbox.addPoints(posProperty);
                 }
             }
@@ -199,42 +199,42 @@ PipelineStatus TrajectoryVis::render(AnimationTime time, const ConstDataObjectPa
             trajObj->verifyIntegrity();
 
             // Retrieve the line data stored in the TrajectoryObject.
-            ConstPropertyAccess<Point3> posProperty = trajObj->getProperty(TrajectoryObject::PositionProperty);
-            ConstPropertyAccess<int> timeProperty = trajObj->getProperty(TrajectoryObject::SampleTimeProperty);
-            ConstPropertyAccess<qlonglong> idProperty = trajObj->getProperty(TrajectoryObject::ParticleIdentifierProperty);
-            ConstPropertyAccess<Color> colorProperty = trajObj->getProperty(TrajectoryObject::ColorProperty);
-            ConstPropertyAccess<void,true> pseudoColorArray = pseudoColorProperty;
+            BufferAccess<const Point3> posProperty = trajObj->getProperty(TrajectoryObject::PositionProperty);
+            BufferAccess<const int32_t> timeProperty = trajObj->getProperty(TrajectoryObject::SampleTimeProperty);
+            BufferAccess<const int64_t> idProperty = trajObj->getProperty(TrajectoryObject::ParticleIdentifierProperty);
+            BufferAccess<const ColorG> colorProperty = trajObj->getProperty(TrajectoryObject::ColorProperty);
+            BufferReadAccess pseudoColorArray = pseudoColorProperty;
             if(posProperty && timeProperty && idProperty && posProperty.size() >= 2) {
 
                 // Determine the number of line segments and corner points to render.
-                DataBufferAccessAndRef<Point3> cornerPoints = DataBufferPtr::create(0, DataBuffer::Float, 3);
-                DataBufferAccessAndRef<Point3> baseSegmentPoints = DataBufferPtr::create(0, DataBuffer::Float, 3);
-                DataBufferAccessAndRef<Point3> headSegmentPoints = DataBufferPtr::create(0, DataBuffer::Float, 3);
-                DataBufferAccessAndRef<Color> cornerColors = colorProperty ? DataBufferPtr::create(0, DataBuffer::Float, 3) : nullptr;
-                DataBufferAccessAndRef<Color> segmentColors = colorProperty ? DataBufferPtr::create(0, DataBuffer::Float, 3) : nullptr;
-                DataBufferAccessAndRef<FloatType> cornerPseudoColors = pseudoColorArray ? DataBufferPtr::create(0, DataBuffer::Float) : nullptr;
-                DataBufferAccessAndRef<FloatType> segmentPseudoColors = pseudoColorArray ? DataBufferPtr::create(0, DataBuffer::Float) : nullptr;
+                BufferAccessAndRef<Point3G> cornerPoints = DataBufferPtr::create(0, DataBuffer::FloatGraphics, 3);
+                BufferAccessAndRef<Point3G> baseSegmentPoints = DataBufferPtr::create(0, DataBuffer::FloatGraphics, 3);
+                BufferAccessAndRef<Point3G> headSegmentPoints = DataBufferPtr::create(0, DataBuffer::FloatGraphics, 3);
+                BufferAccessAndRef<ColorG> cornerColors = colorProperty ? DataBufferPtr::create(0, DataBuffer::FloatGraphics, 3) : nullptr;
+                BufferAccessAndRef<ColorG> segmentColors = colorProperty ? DataBufferPtr::create(0, DataBuffer::FloatGraphics, 3) : nullptr;
+                BufferAccessAndRef<GraphicsFloatType> cornerPseudoColors = pseudoColorArray ? DataBufferPtr::create(0, DataBuffer::FloatGraphics) : nullptr;
+                BufferAccessAndRef<GraphicsFloatType> segmentPseudoColors = pseudoColorArray ? DataBufferPtr::create(0, DataBuffer::FloatGraphics) : nullptr;
                 const Point3* pos = posProperty.cbegin();
-                const int* sampleTime = timeProperty.cbegin();
-                const qlonglong* id = idProperty.cbegin();
-                const Color* color = colorProperty ? colorProperty.cbegin() : nullptr;
+                const int32_t* sampleTime = timeProperty.cbegin();
+                const int64_t* id = idProperty.cbegin();
+                const ColorG* color = colorProperty ? colorProperty.cbegin() : nullptr;
                 if(!simulationCell) {
                     for(auto pos_end = pos + posProperty.size() - 1; pos != pos_end; ++pos, ++sampleTime, ++id) {
                         if(id[0] == id[1] && sampleTime[1] <= endFrame) {
-                            baseSegmentPoints.push_back(pos[0]);
-                            headSegmentPoints.push_back(pos[1]);
+                            baseSegmentPoints.push_back(pos[0].toDataType<GraphicsFloatType>());
+                            headSegmentPoints.push_back(pos[1].toDataType<GraphicsFloatType>());
                             if(color) {
                                 segmentColors.push_back(color[0]);
                                 segmentColors.push_back(color[1]);
                             }
                             else if(pseudoColorArray) {
-                                segmentPseudoColors.push_back(pseudoColorArray.get<FloatType>(pos - posProperty.cbegin() + 0, pseudoColorPropertyComponent));
-                                segmentPseudoColors.push_back(pseudoColorArray.get<FloatType>(pos - posProperty.cbegin() + 1, pseudoColorPropertyComponent));
+                                segmentPseudoColors.push_back(pseudoColorArray.get<GraphicsFloatType>(pos - posProperty.cbegin() + 0, pseudoColorPropertyComponent));
+                                segmentPseudoColors.push_back(pseudoColorArray.get<GraphicsFloatType>(pos - posProperty.cbegin() + 1, pseudoColorPropertyComponent));
                             }
                             if(pos + 1 != pos_end && id[1] == id[2] && sampleTime[2] <= endFrame) {
-                                cornerPoints.push_back(pos[1]);
+                                cornerPoints.push_back(pos[1].toDataType<GraphicsFloatType>());
                                 if(color) cornerColors.push_back(color[1]);
-                                else if(pseudoColorArray) cornerPseudoColors.push_back(pseudoColorArray.get<FloatType>(pos - posProperty.cbegin() + 1, pseudoColorPropertyComponent));
+                                else if(pseudoColorArray) cornerPseudoColors.push_back(pseudoColorArray.get<GraphicsFloatType>(pos - posProperty.cbegin() + 1, pseudoColorPropertyComponent));
                             }
                         }
                         if(color) ++color;
@@ -243,24 +243,24 @@ PipelineStatus TrajectoryVis::render(AnimationTime time, const ConstDataObjectPa
                 else {
                     for(auto pos_end = pos + posProperty.size() - 1; pos != pos_end; ++pos, ++sampleTime, ++id) {
                         if(id[0] == id[1] && sampleTime[1] <= endFrame) {
-                            clipTrajectoryLine(pos[0], pos[1], simulationCell, [&](const Point3& p1, const Point3& p2, FloatType t1, FloatType t2) {
-                                baseSegmentPoints.push_back(p1);
-                                headSegmentPoints.push_back(p2);
+                            clipTrajectoryLine(pos[0], pos[1], simulationCell, [&](const Point3& p1, const Point3& p2, GraphicsFloatType t1, GraphicsFloatType t2) {
+                                baseSegmentPoints.push_back(p1.toDataType<GraphicsFloatType>());
+                                headSegmentPoints.push_back(p2.toDataType<GraphicsFloatType>());
                                 if(color) {
-                                    segmentColors.push_back((FloatType(1) - t1) * color[0] + t1 * color[1]);
-                                    segmentColors.push_back((FloatType(1) - t2) * color[0] + t2 * color[1]);
+                                    segmentColors.push_back((GraphicsFloatType(1) - t1) * color[0] + t1 * color[1]);
+                                    segmentColors.push_back((GraphicsFloatType(1) - t2) * color[0] + t2 * color[1]);
                                 }
                                 else if(pseudoColorArray) {
-                                    FloatType ps1 = pseudoColorArray.get<FloatType>(pos - posProperty.cbegin() + 0, pseudoColorPropertyComponent);
-                                    FloatType ps2 = pseudoColorArray.get<FloatType>(pos - posProperty.cbegin() + 1, pseudoColorPropertyComponent);
-                                    segmentPseudoColors.push_back((FloatType(1) - t1) * ps1 + t1 * ps2);
-                                    segmentPseudoColors.push_back((FloatType(1) - t2) * ps1 + t2 * ps2);
+                                    GraphicsFloatType ps1 = pseudoColorArray.get<GraphicsFloatType>(pos - posProperty.cbegin() + 0, pseudoColorPropertyComponent);
+                                    GraphicsFloatType ps2 = pseudoColorArray.get<GraphicsFloatType>(pos - posProperty.cbegin() + 1, pseudoColorPropertyComponent);
+                                    segmentPseudoColors.push_back((GraphicsFloatType(1) - t1) * ps1 + t1 * ps2);
+                                    segmentPseudoColors.push_back((GraphicsFloatType(1) - t2) * ps1 + t2 * ps2);
                                 }
                             });
                             if(pos + 1 != pos_end && id[1] == id[2] && sampleTime[2] <= endFrame) {
-                                cornerPoints.push_back(simulationCell->wrapPoint(pos[1]));
+                                cornerPoints.push_back(simulationCell->wrapPoint(pos[1]).toDataType<GraphicsFloatType>());
                                 if(color) cornerColors.push_back(color[1]);
-                                else if(pseudoColorArray) cornerPseudoColors.push_back(pseudoColorArray.get<FloatType>(pos - posProperty.cbegin() + 1, pseudoColorPropertyComponent));
+                                else if(pseudoColorArray) cornerPseudoColors.push_back(pseudoColorArray.get<GraphicsFloatType>(pos - posProperty.cbegin() + 1, pseudoColorPropertyComponent));
                             }
                         }
                         if(color) ++color;
@@ -302,8 +302,8 @@ PipelineStatus TrajectoryVis::render(AnimationTime time, const ConstDataObjectPa
         auto& cornerColorsUpToDate = renderer->visCache().get<bool>(std::make_pair(visCache.cornerPseudoColors, visCache.segments.pseudoColorMapping()));
         if(!cornerColorsUpToDate) {
             // Create an RGB color array, which will be filled and then assigned to the ParticlesPrimitive.
-            DataBufferAccessAndRef<Color> cornerColorsArray = DataBufferPtr::create(visCache.cornerPseudoColors->size(), DataBuffer::Float, 3);
-            boost::transform(ConstDataBufferAccess<FloatType>(visCache.cornerPseudoColors), cornerColorsArray.begin(), [&](FloatType v) { return visCache.segments.pseudoColorMapping().valueToColor(v); });
+            BufferAccessAndRef<ColorG> cornerColorsArray = DataBufferPtr::create(visCache.cornerPseudoColors->size(), DataBuffer::FloatGraphics, 3);
+            boost::transform(BufferAccess<const GraphicsFloatType>(visCache.cornerPseudoColors), cornerColorsArray.begin(), [&](GraphicsFloatType v) { return visCache.segments.pseudoColorMapping().valueToColor(v); });
             visCache.corners.setColors(cornerColorsArray.take());
             cornerColorsUpToDate = true;
         }
@@ -320,7 +320,7 @@ PipelineStatus TrajectoryVis::render(AnimationTime time, const ConstDataObjectPa
 /******************************************************************************
 * Clips a trajectory line at the periodic box boundaries.
 ******************************************************************************/
-void TrajectoryVis::clipTrajectoryLine(const Point3& v1, const Point3& v2, const SimulationCellObject* simulationCell, const std::function<void(const Point3&, const Point3&, FloatType, FloatType)>& segmentCallback)
+void TrajectoryVis::clipTrajectoryLine(const Point3& v1, const Point3& v2, const SimulationCellObject* simulationCell, const std::function<void(const Point3&, const Point3&, GraphicsFloatType, GraphicsFloatType)>& segmentCallback)
 {
     OVITO_ASSERT(simulationCell);
 

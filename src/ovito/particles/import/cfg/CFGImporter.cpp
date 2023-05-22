@@ -34,7 +34,7 @@ IMPLEMENT_OVITO_CLASS(CFGImporter);
 
 struct CFGHeader {
 
-    qlonglong numParticles;
+    int64_t numParticles;
     FloatType unitMultiplier;
     Matrix3 H0;
     Matrix3 transform;
@@ -209,16 +209,18 @@ void CFGImporter::FrameLoader::loadFile()
     // Create particle mass and type properties.
     int currentAtomType = 0;
     FloatType currentMass = 0;
-    PropertyAccess<int> typeProperty;
-    PropertyAccess<FloatType> massProperty;
+    PropertyObject* typeProperty = nullptr;
+    PropertyObject* massProperty = nullptr;
     if(header.isExtendedFormat) {
         typeProperty = particles()->createProperty(ParticlesObject::TypeProperty);
         massProperty = particles()->createProperty(ParticlesObject::MassProperty);
     }
+    BufferAccess<int32_t> typePropertyAccess(typeProperty);
+    BufferAccess<FloatType> massPropertyAccess(massProperty);
 
     // Read per-particle data.
     bool isFirstLine = true;
-    for(qlonglong particleIndex = 0; particleIndex < header.numParticles; ) {
+    for(int64_t particleIndex = 0; particleIndex < header.numParticles; ) {
 
         // Update progress indicator.
         if(!setProgressValueIntermittent(particleIndex))
@@ -250,12 +252,12 @@ void CFGImporter::FrameLoader::loadFile()
                 const char* line = stream.readLineTrimLeft();
                 const char* line_end = line;
                 while(*line_end != '\0' && *line_end > ' ') ++line_end;
-                currentAtomType = addNamedType(ParticlesObject::OOClass(), typeProperty.buffer(), QLatin1String(line, line_end))->numericId();
+                currentAtomType = addNamedType(ParticlesObject::OOClass(), typeProperty, QLatin1String(line, line_end))->numericId();
                 continue;
             }
 
-            typeProperty[particleIndex] = currentAtomType;
-            massProperty[particleIndex] = currentMass;
+            typePropertyAccess[particleIndex] = currentAtomType;
+            massPropertyAccess[particleIndex] = currentMass;
         }
 
         try {
@@ -266,6 +268,8 @@ void CFGImporter::FrameLoader::loadFile()
             throw ex.prependGeneralMessage(tr("Parsing error in line %1 of CFG file.").arg(stream.lineNumber()));
         }
     }
+    typePropertyAccess.reset();
+    massPropertyAccess.reset();
 
     // Since we created particle types on the go while reading the particles, the ordering of the type list
     // depends on the storage order of particles in the file. We rather want a well-defined particle type ordering, that's
@@ -274,7 +278,7 @@ void CFGImporter::FrameLoader::loadFile()
     columnParser.reset();
 
     if(header.isExtendedFormat)
-        typeProperty.buffer()->sortElementTypesByName();
+        typeProperty->sortElementTypesByName();
 
     AffineTransformation H((header.transform * header.H0).transposed());
     H.translation() = H * Vector3(-0.5, -0.5, -0.5);
@@ -283,7 +287,7 @@ void CFGImporter::FrameLoader::loadFile()
     // The CFG file stores particle positions in reduced coordinates.
     // Rescale them now to absolute (Cartesian) coordinates.
     // However, do this only if no absolute coordinates have been read from the extra data columns in the CFG file.
-    if(PropertyAccess<Point3> posProperty = particles()->getMutableProperty(ParticlesObject::PositionProperty)) {
+    if(BufferAccess<Point3> posProperty = particles()->getMutableProperty(ParticlesObject::PositionProperty)) {
         for(Point3& p : posProperty)
             p = H * p;
     }
@@ -336,7 +340,7 @@ void CFGImporter::generateAutomaticColumnMapping(ParticleInputColumnMapping& col
         else if(name == "tqz") columnMapping.mapStandardColumn(i, ParticlesObject::TorqueProperty, 2);
         else if(name == "spin") columnMapping.mapStandardColumn(i, ParticlesObject::SpinProperty);
         else {
-            columnMapping.mapCustomColumn(i, columnNames[j], PropertyObject::Float);
+            columnMapping.mapCustomColumn(i, columnNames[j], PropertyObject::FloatDefault);
         }
     }
 }

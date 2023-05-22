@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -92,7 +92,7 @@ void OpenGLSceneRenderer::renderThinLinesImplementation(const LinePrimitive& pri
     }
 
     // Issue line drawing command.
-    shader.drawArrays(GL_LINES);
+    shader.draw(GL_LINES);
 }
 
 /******************************************************************************
@@ -143,12 +143,12 @@ void OpenGLSceneRenderer::renderThickLinesImplementation(const LinePrimitive& pr
         // Pass picking base ID to shader.
         shader.setPickingBaseId(registerSubObjectIDs(primitive.positions()->size() / 2));
     }
-    
+
     // Compute line width in viewport space.
     shader.setUniformValue("line_thickness", effectiveLineWidth / viewportRect().height());
 
     // Issue instanced drawing command.
-    shader.drawArrays(GL_TRIANGLE_STRIP);
+    shader.draw(GL_TRIANGLE_STRIP);
 }
 
 }   // End of namespace

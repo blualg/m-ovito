@@ -136,11 +136,11 @@ PolyhedralTemplateMatchingModifier::PTMEngine::PTMEngine(const ModifierEvaluatio
         const OORefVector<ElementType>& structureTypes, const OORefVector<ElementType>& orderingTypes, ConstPropertyPtr selection,
         bool outputInteratomicDistance, bool outputOrientation, bool outputDeformationGradient) :
     StructureIdentificationEngine(request, std::move(fingerprint), positions, simCell, structureTypes, std::move(selection)),
-    _rmsd(ParticlesObject::OOClass().createUserProperty(DataBuffer::Uninitialized, positions->size(), PropertyObject::Float, 1, QStringLiteral("RMSD"))),
-    _interatomicDistances(outputInteratomicDistance ? ParticlesObject::OOClass().createUserProperty(DataBuffer::Initialized, positions->size(), PropertyObject::Float, 1, QStringLiteral("Interatomic Distance")) : nullptr),
+    _rmsd(ParticlesObject::OOClass().createUserProperty(DataBuffer::Uninitialized, positions->size(), PropertyObject::FloatDefault, 1, QStringLiteral("RMSD"))),
+    _interatomicDistances(outputInteratomicDistance ? ParticlesObject::OOClass().createUserProperty(DataBuffer::Initialized, positions->size(), PropertyObject::FloatDefault, 1, QStringLiteral("Interatomic Distance")) : nullptr),
     _orientations(outputOrientation ? ParticlesObject::OOClass().createStandardProperty(DataBuffer::Initialized, positions->size(), ParticlesObject::OrientationProperty) : nullptr),
     _deformationGradients(outputDeformationGradient ? ParticlesObject::OOClass().createStandardProperty(DataBuffer::Initialized, positions->size(), ParticlesObject::ElasticDeformationGradientProperty) : nullptr),
-    _orderingTypes(particleTypes ? ParticlesObject::OOClass().createUserProperty(DataBuffer::Initialized, positions->size(), PropertyObject::Int, 1, QStringLiteral("Ordering Type")) : nullptr),
+    _orderingTypes(particleTypes ? ParticlesObject::OOClass().createUserProperty(DataBuffer::Initialized, positions->size(), PropertyObject::Int32, 1, QStringLiteral("Ordering Type")) : nullptr),
     _correspondences(outputOrientation ? ParticlesObject::OOClass().createUserProperty(DataBuffer::Initialized, positions->size(), PropertyObject::Int64, 1, QStringLiteral("Correspondences")) : nullptr),    // only output correspondences if orientations are selected
     _rmsdHistogram(DataTable::OOClass().createUserProperty(DataBuffer::Initialized, 100, PropertyObject::Int64, 1, tr("Count")))
 {
@@ -181,7 +181,7 @@ void PolyhedralTemplateMatchingModifier::PTMEngine::perform()
         return;
 
     // Get access to the particle selection flags.
-    ConstPropertyAccess<int> selectionData(selection());
+    BufferAccess<const SelectionIntType> selectionData(selection());
 
     setProgressMaximum(positions()->size());
     setProgressText(tr("Pre-calculating neighbor ordering"));
@@ -219,13 +219,13 @@ void PolyhedralTemplateMatchingModifier::PTMEngine::perform()
     setProgressText(tr("Performing polyhedral template matching"));
 
     // Get access to the output buffers that will receive the identified particle types and other data.
-    PropertyAccess<int> outputStructureArray(structures());
-    PropertyAccess<FloatType> rmsdArray(rmsd());
-    PropertyAccess<FloatType> interatomicDistancesArray(interatomicDistances());
-    PropertyAccess<Quaternion> orientationsArray(orientations());
-    PropertyAccess<Matrix3> deformationGradientsArray(deformationGradients());
-    PropertyAccess<int> orderingTypesArray(orderingTypes());
-    PropertyAccess<qlonglong> correspondencesArray(correspondences());
+    BufferAccess<int32_t> outputStructureArray(structures());
+    BufferAccess<FloatType> rmsdArray(rmsd());
+    BufferAccess<FloatType> interatomicDistancesArray(interatomicDistances());
+    BufferAccess<QuaternionG> orientationsArray(orientations());
+    BufferAccess<Matrix3> deformationGradientsArray(deformationGradients());
+    BufferAccess<int32_t> orderingTypesArray(orderingTypes());
+    BufferAccess<int64_t> correspondencesArray(correspondences());
 
     // Perform analysis on each particle.
     parallelForChunksWithProgress(positions()->size(), [&](size_t startIndex, size_t count, ProgressingTask& operation) {
@@ -261,7 +261,7 @@ void PolyhedralTemplateMatchingModifier::PTMEngine::perform()
             if(type != PTMAlgorithm::OTHER) {
                 if(interatomicDistancesArray) interatomicDistancesArray[index] = kernel.interatomicDistance();
                 if(deformationGradientsArray) deformationGradientsArray[index] = kernel.deformationGradient();
-                if(orientationsArray) orientationsArray[index] = kernel.orientation();
+                if(orientationsArray) orientationsArray[index] = kernel.orientation().toDataType<GraphicsFloatType>();
                 if(orderingTypesArray) orderingTypesArray[index] = kernel.orderingType();
                 if(correspondencesArray) correspondencesArray[index] = kernel.correspondence();
             }
@@ -278,8 +278,8 @@ void PolyhedralTemplateMatchingModifier::PTMEngine::perform()
 
     // Perform binning of RMSD values.
     if(outputStructureArray.size() != 0) {
-        PropertyAccess<qlonglong> histogramCounts(_rmsdHistogram);
-        const int* structureType = outputStructureArray.cbegin();
+        BufferAccess<int64_t> histogramCounts(_rmsdHistogram);
+        const int32_t* structureType = outputStructureArray.cbegin();
         for(FloatType rmsdValue : rmsdArray) {
             if(*structureType++ != PTMAlgorithm::OTHER) {
                 OVITO_ASSERT(rmsdValue >= 0);
@@ -311,10 +311,10 @@ PropertyPtr PolyhedralTemplateMatchingModifier::PTMEngine::postProcessStructureT
         PropertyPtr finalStructureTypes = structures.makeCopy();
 
         // Mark those particles whose RMSD exceeds the cutoff as 'OTHER'.
-        ConstPropertyAccess<FloatType> rmdsArray(rmsd());
-        PropertyAccess<int> structureTypesArray(finalStructureTypes);
+        BufferAccess<const FloatType> rmdsArray(rmsd());
+        BufferAccess<int32_t> structureTypesArray(finalStructureTypes);
         const FloatType* rmsdValue = rmdsArray.cbegin();
-        for(int& type : structureTypesArray) {
+        for(int32_t& type : structureTypesArray) {
             if(*rmsdValue++ > rmsdCutoff)
                 type = PTMAlgorithm::OTHER;
         }

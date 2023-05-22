@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2019 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -20,30 +20,31 @@
 //
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#pragma once
-
-
-#include <ovito/crystalanalysis/CrystalAnalysis.h>
-#include <ovito/gui/desktop/properties/PropertiesEditor.h>
-
-namespace Ovito::CrystalAnalysis {
-
-/**
- * \brief A properties editor for the SlipSurface class.
- */
-class SlipSurfaceVisEditor : public PropertiesEditor
+vec3 rotate_vector(in vec4 quat, in vec3 vec)
 {
-    OVITO_CLASS(SlipSurfaceVisEditor)
+    return vec + 2.0 * cross(cross(vec, quat.xyz) + quat.w * vec, quat.xyz);
+}
 
-public:
+mat3 calc_shape_orientation(in vec4 orientation, in vec3 aspherical_shape, in float radius)
+{
+    vec3 axes;
+    if(aspherical_shape != vec3(0.0, 0.0, 0.0)) {
+        axes = aspherical_shape;
+    }
+    else {
+        axes = vec3(radius);
+    }
 
-    /// Constructor.
-    Q_INVOKABLE SlipSurfaceVisEditor() {}
+    vec4 quat;
+    float norm = length(orientation);
+    if(norm <= 1e-9)
+        quat = vec4(0.0, 0.0, 0.0, 1.0);
+    else
+        quat = orientation / norm;
 
-protected:
-
-    /// Creates the user interface controls for the editor.
-    virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
-};
-
-}   // End of namespace
+    return mat3(
+        rotate_vector(quat, vec3(axes.x, 0.0, 0.0)),
+        rotate_vector(quat, vec3(0.0, axes.y, 0.0)),
+        rotate_vector(quat, vec3(0.0, 0.0, axes.z))
+    );
+}

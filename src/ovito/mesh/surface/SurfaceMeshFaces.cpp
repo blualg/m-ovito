@@ -21,6 +21,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/mesh/Mesh.h>
+#include "SurfaceMeshReadAccess.h"
 #include "SurfaceMeshFaces.h"
 #include "SurfaceMeshVis.h"
 
@@ -38,19 +39,21 @@ PropertyPtr SurfaceMeshFaces::OOMetaClass::createStandardPropertyInternal(DataBu
 
     switch(type) {
     case SelectionProperty:
+        dataType = PropertyObject::IntSelection;
+        componentCount = 1;
+        break;
     case RegionProperty:
     case FaceTypeProperty:
-        dataType = PropertyObject::Int;
+        dataType = PropertyObject::Int32;
         componentCount = 1;
         break;
     case ColorProperty:
-        dataType = PropertyObject::Float;
+        dataType = PropertyObject::FloatGraphics;
         componentCount = 3;
-        OVITO_ASSERT(componentCount * sizeof(FloatType) == sizeof(Color));
         break;
     case BurgersVectorProperty:
     case CrystallographicNormalProperty:
-        dataType = PropertyObject::Float;
+        dataType = PropertyObject::FloatDefault;
         componentCount = 3;
         OVITO_ASSERT(componentCount * sizeof(FloatType) == sizeof(Vector3));
         break;
@@ -70,17 +73,17 @@ PropertyPtr SurfaceMeshFaces::OOMetaClass::createStandardPropertyInternal(DataBu
         // Certain standard properties need to be initialized with default values determined by the attached visual elements.
         if(type == ColorProperty) {
             if(const SurfaceMesh* surfaceMesh = dynamic_object_cast<SurfaceMesh>(containerPath[containerPath.size()-2])) {
-                ConstPropertyAccess<Color> regionColorProperty = surfaceMesh->regions()->getProperty(SurfaceMeshRegions::ColorProperty);
-                ConstPropertyAccess<int> faceRegionProperty = surfaceMesh->faces()->getProperty(SurfaceMeshFaces::RegionProperty);
+                BufferAccess<const ColorG> regionColorProperty = surfaceMesh->regions()->getProperty(SurfaceMeshRegions::ColorProperty);
+                BufferAccess<const int32_t> faceRegionProperty = surfaceMesh->faces()->getProperty(SurfaceMeshFaces::RegionProperty);
                 if(regionColorProperty && faceRegionProperty && faceRegionProperty.size() == elementCount) {
                     // Inherit face colors from regions.
-                    boost::transform(faceRegionProperty, PropertyAccess<Color>(property).begin(),
-                        [&](int region) { return (region >= 0 && region < regionColorProperty.size()) ? regionColorProperty[region] : Color(1,1,1); });
+                    boost::transform(faceRegionProperty, BufferAccess<ColorG>(property).begin(),
+                        [&](int region) { return (region >= 0 && region < regionColorProperty.size()) ? regionColorProperty[region] : ColorG(1,1,1); });
                     init = DataBuffer::Uninitialized;
                 }
                 else if(SurfaceMeshVis* vis = surfaceMesh->visElement<SurfaceMeshVis>()) {
                     // Initialize face colors from uniform color set in SurfaceMeshVis.
-                    property->fill(vis->surfaceColor());
+                    property->fill<ColorG>(vis->surfaceColor().toDataType<GraphicsFloatType>());
                     init = DataBuffer::Uninitialized;
                 }
             }
@@ -110,12 +113,12 @@ void SurfaceMeshFaces::OOMetaClass::initialize()
     const QStringList xyzList = QStringList() << "X" << "Y" << "Z";
     const QStringList rgbList = QStringList() << "R" << "G" << "B";
 
-    registerStandardProperty(SelectionProperty, tr("Selection"), PropertyObject::Int, emptyList);
-    registerStandardProperty(ColorProperty, tr("Color"), PropertyObject::Float, rgbList, nullptr, tr("Face colors"));
-    registerStandardProperty(FaceTypeProperty, tr("Type"), PropertyObject::Int, emptyList);
-    registerStandardProperty(RegionProperty, tr("Region"), PropertyObject::Int, emptyList);
-    registerStandardProperty(BurgersVectorProperty, tr("Burgers Vector"), PropertyObject::Float, xyzList, nullptr, tr("Burgers vectors"));
-    registerStandardProperty(CrystallographicNormalProperty, tr("Crystallographic Normal"), PropertyObject::Float, xyzList);
+    registerStandardProperty(SelectionProperty, tr("Selection"), PropertyObject::IntSelection, emptyList);
+    registerStandardProperty(ColorProperty, tr("Color"), PropertyObject::FloatGraphics, rgbList, nullptr, tr("Face colors"));
+    registerStandardProperty(FaceTypeProperty, tr("Type"), PropertyObject::Int32, emptyList);
+    registerStandardProperty(RegionProperty, tr("Region"), PropertyObject::Int32, emptyList);
+    registerStandardProperty(BurgersVectorProperty, tr("Burgers Vector"), PropertyObject::FloatDefault, xyzList, nullptr, tr("Burgers vectors"));
+    registerStandardProperty(CrystallographicNormalProperty, tr("Crystallographic Normal"), PropertyObject::FloatDefault, xyzList);
 }
 
 /******************************************************************************
@@ -145,35 +148,39 @@ std::tuple<ConstDataBufferPtr, ConstDataBufferPtr> SurfaceMeshFaces::getVectorVi
         using CacheKey = RendererResourceKey<struct SurfaceMeshFacesCentroidsCache, ConstDataObjectRef, ConstDataObjectRef>;
         auto& [basePositions, vectorProperty] = visCache.get<std::tuple<ConstDataBufferPtr,ConstDataBufferPtr>>(CacheKey(mesh, path.lastAs<DataBuffer>()));
         if(!basePositions) {
-            DataBufferAccessAndRef<Vector3> filteredVectors;
+            BufferAccessAndRef<Vector3> filteredVectors;
             vectorProperty = path.lastAs<DataBuffer>();
-            if(vectorProperty && vectorProperty->dataType() == PropertyObject::Float && vectorProperty->componentCount() == 3) {
-                // Does the mesh have cutting planes and do we need to perform point culling?
-                if(!mesh->cuttingPlanes().empty()) {
-                    // Create a copy of the vector property in which the values of culled points
-                    // will be nulled out to hide the arrow glyphs for these points.
-                    filteredVectors = vectorProperty.makeCopy();
+            if(vectorProperty && vectorProperty->componentCount() == 3) {
+                OVITO_ASSERT(vectorProperty->dataType() == PropertyObject::FloatDefault);
+                if(vectorProperty->dataType() == PropertyObject::FloatDefault) {
+                    // Does the mesh have cutting planes and do we need to perform point culling?
+                    if(!mesh->cuttingPlanes().empty()) {
+                        // Create a copy of the vector property in which the values of culled points
+                        // will be nulled out to hide the arrow glyphs for these points.
+                        filteredVectors = vectorProperty.makeCopy();
+                    }
                 }
             }
 
             // Compute face centroids.
-            DataBufferAccessAndRef<Point3> centroids = DataBufferPtr::create(mesh->faces()->elementCount(), DataBuffer::Float, 3);
-            const SurfaceMeshAccess meshAccess(mesh);
-            for(SurfaceMeshAccess::face_index face = 0; face < meshAccess.faceCount(); face++) {
+            const SurfaceMeshReadAccess meshAccess(mesh);
+            BufferAccess<const Point3> vertexPositions(meshAccess.expectVertexProperty(SurfaceMeshVertices::PositionProperty));
+            BufferAccessAndRef<Point3> centroids = DataBufferPtr::create(mesh->faces()->elementCount(), DataBuffer::FloatDefault, 3);
+            for(SurfaceMesh::face_index face : mesh->topology()->facesRange()) {
                 Vector3 c = Vector3::Zero();
                 Vector3 com = Vector3::Zero();
                 int n = 0;
-                SurfaceMeshAccess::edge_index firstFaceEdge = meshAccess.firstFaceEdge(face);
-                if(firstFaceEdge != SurfaceMeshAccess::InvalidIndex) {
-                    SurfaceMeshAccess::edge_index edge = firstFaceEdge;
+                SurfaceMesh::edge_index firstFaceEdge = meshAccess.firstFaceEdge(face);
+                if(firstFaceEdge != SurfaceMesh::InvalidIndex) {
+                    SurfaceMesh::edge_index edge = firstFaceEdge;
                     do {
-                        c += meshAccess.edgeVector(edge);
+                        c += meshAccess.edgeVector(edge, vertexPositions);
                         com += c;
                         n++;
                         edge = meshAccess.nextFaceEdge(edge);
                     }
                     while(edge != firstFaceEdge);
-                    centroids[face] = meshAccess.wrapPoint(meshAccess.vertexPosition(meshAccess.vertex1(firstFaceEdge)) + (com / n));
+                    centroids[face] = meshAccess.wrapPoint(vertexPositions[meshAccess.vertex1(firstFaceEdge)] + (com / n));
                     if(filteredVectors && mesh->isPointCulled(centroids[face]))
                         filteredVectors[face].setZero();
                 }

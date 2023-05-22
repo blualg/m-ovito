@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -100,7 +100,7 @@ public:
                                      Vector_3<T>(m12,m22,m32),
                                      Vector_3<T>(m13,m23,m33)}} {}
 #else
-    Matrix_3(T m11, T m12, T m13,
+    Q_DECL_CONSTEXPR Matrix_3(T m11, T m12, T m13,
            T m21, T m22, T m23,
            T m31, T m32, T m33)
         { (*this)[0] = Vector_3<T>(m11,m21,m31);
@@ -113,7 +113,7 @@ public:
     Q_DECL_CONSTEXPR Matrix_3(const column_type& c1, const column_type& c2, const column_type& c3)
         : std::array<Vector_3<T>,3>{{c1, c2, c3}} {}
 #else
-    Matrix_3(const column_type& c1, const column_type& c2, const column_type& c3)
+    Q_DECL_CONSTEXPR Matrix_3(const column_type& c1, const column_type& c2, const column_type& c3)
         { (*this)[0] = c1; (*this)[1] = c2; (*this)[2] = c3; }
 #endif
 
@@ -123,7 +123,7 @@ public:
     Q_DECL_CONSTEXPR Matrix_3(Zero)
         : std::array<Vector_3<T>,3>{{typename Vector_3<T>::Zero(), typename Vector_3<T>::Zero(), typename Vector_3<T>::Zero()}} {}
 #else
-    Matrix_3(Zero)
+    Q_DECL_CONSTEXPR Matrix_3(Zero)
         { this->fill(typename Vector_3<T>::Zero()); }
 #endif
 
@@ -135,7 +135,7 @@ public:
                                      Vector_3<T>(T(0),T(1),T(0)),
                                      Vector_3<T>(T(0),T(0),T(1))}} {}
 #else
-    Matrix_3(Identity)
+    Q_DECL_CONSTEXPR Matrix_3(Identity)
         { (*this)[0] = Vector_3<T>(T(1),T(0),T(0));
           (*this)[1] = Vector_3<T>(T(0),T(1),T(0));
           (*this)[2] = Vector_3<T>(T(0),T(0),T(1)); }
@@ -143,11 +143,14 @@ public:
 
     /// \brief Casts the matrix to a matrix with another data type.
     template<typename U>
-    Q_DECL_CONSTEXPR Matrix_3<U> toDataType() const {
-        return Matrix_3<U>(
+    Q_DECL_CONSTEXPR auto toDataType() const -> std::conditional_t<!std::is_same_v<T,U>, Matrix_3<U>, const Matrix_3<T>&> {
+        if constexpr(!std::is_same_v<T,U>)
+            return Matrix_3<U>(
                 static_cast<U>((*this)(0,0)), static_cast<U>((*this)(0,1)), static_cast<U>((*this)(0,2)),
                 static_cast<U>((*this)(1,0)), static_cast<U>((*this)(1,1)), static_cast<U>((*this)(1,2)),
                 static_cast<U>((*this)(2,0)), static_cast<U>((*this)(2,1)), static_cast<U>((*this)(2,2)));
+        else
+            return *this;  // When casting to the same type \a T, this method becomes a no-op.
     }
 
     /// \brief Returns the number of rows of this matrix.
@@ -168,7 +171,7 @@ public:
     /// \param row The row of the element.
     /// \param col The column of the element.
     /// \return A non-const reference to the matrix element, which may be written to.
-    inline T& operator()(size_type row, size_type col) {
+    inline Q_DECL_CONSTEXPR T& operator()(size_type row, size_type col) {
         return (*this)[col][row];
     }
 
@@ -184,7 +187,7 @@ public:
     /// \return A reference to the vector containing the matrix elements of the column \a col.
     /// \note Modifying the elements of the returned vector will modify the matrix elements.
     /// \sa row()
-    column_type& column(size_type col) {
+    Q_DECL_CONSTEXPR column_type& column(size_type col) {
         return (*this)[col];
     }
 
@@ -198,39 +201,39 @@ public:
     }
 
     /// Returns a pointer to the 9 elements of the matrix (stored in column-major order).
-    const element_type* elements() const {
+    Q_DECL_CONSTEXPR const element_type* elements() const {
         OVITO_STATIC_ASSERT(sizeof(*this) == sizeof(element_type)*9);
         return column(0).data();
     }
 
     /// Returns a pointer to the 9 elements of the matrix (stored in column-major order).
-    element_type* elements() {
+    Q_DECL_CONSTEXPR element_type* elements() {
         OVITO_STATIC_ASSERT(sizeof(*this) == sizeof(element_type)*9);
         return column(0).data();
     }
 
     /// Sets all elements of the matrix to zero.
-    void setZero() {
+    Q_DECL_CONSTEXPR void setZero() {
         (*this)[0].setZero();
         (*this)[1].setZero();
         (*this)[2].setZero();
     }
 
     /// Sets all elements of the matrix to zero.
-    Matrix_3& operator=(Zero) {
+    Q_DECL_CONSTEXPR Matrix_3& operator=(Zero) {
         setZero();
         return *this;
     }
 
     /// Sets the matrix to the identity matrix.
-    void setIdentity() {
+    Q_DECL_CONSTEXPR void setIdentity() {
         (*this)[0] = Vector_3<T>(1,0,0);
         (*this)[1] = Vector_3<T>(0,1,0);
         (*this)[2] = Vector_3<T>(0,0,1);
     }
 
     /// Sets the matrix to the identity matrix.
-    Matrix_3& operator=(Identity) {
+    Q_DECL_CONSTEXPR Matrix_3& operator=(Identity) {
         setIdentity();
         return *this;
     }
@@ -254,7 +257,7 @@ public:
     /// \param tolerance A non-negative threshold for the equality test. The two matrices are considered equal if
     ///        the element-wise differences are all less than this tolerance value.
     /// \return \c true if this matrix is equal to \a m within the given tolerance; \c false otherwise.
-    inline bool equals(const Matrix_3& m, T tolerance = T(FLOATTYPE_EPSILON)) const {
+    inline Q_DECL_CONSTEXPR bool equals(const Matrix_3& m, T tolerance = FloatTypeEpsilon<T>()) const {
         for(size_type i = 0; i < col_count(); i++)
             if(!column(i).equals(m.column(i), tolerance)) return false;
         return true;
@@ -263,7 +266,7 @@ public:
     /// \brief Test if the matrix is zero within a given tolerance.
     /// \param tolerance A non-negative threshold.
     /// \return \c true if the absolute value of each matrix element is all smaller than \a tolerance.
-    inline bool isZero(T tolerance = T(FLOATTYPE_EPSILON)) const {
+    inline Q_DECL_CONSTEXPR bool isZero(T tolerance = FloatTypeEpsilon<T>()) const {
         for(size_type i = 0; i < col_count(); i++)
             if(!column(i).isZero(tolerance)) return false;
         return true;
@@ -274,7 +277,7 @@ public:
     /// Computes the inverse of the matrix.
     /// \throw Exception if matrix is not invertible because it is singular.
     /// \sa determinant()
-    Matrix_3 inverse() const {
+    Q_DECL_CONSTEXPR Matrix_3 inverse() const {
         T det = determinant();
         OVITO_ASSERT_MSG(det != T(0), "Matrix3::inverse()", "Singular matrix cannot be inverted: Determinant is zero.");
         if(det == 0) throw Exception("Matrix3 cannot be inverted: determinant is zero.");
@@ -295,7 +298,7 @@ public:
     /// \return \c false if the matrix is not invertible because it is singular; \c true if the inverse has been calculated
     ///         and was stored in \a result.
     /// \sa determinant()
-    bool inverse(Matrix_3& result, T epsilon = T(FLOATTYPE_EPSILON)) const {
+    Q_DECL_CONSTEXPR bool inverse(Matrix_3& result, T epsilon = FloatTypeEpsilon<T>()) const {
         T det = determinant();
         if(std::abs(det) <= epsilon) return false;
         result = Matrix_3(((*this)[1][1]*(*this)[2][2] - (*this)[1][2]*(*this)[2][1])/det,
@@ -344,7 +347,7 @@ public:
     /// \return \c true if the matrix is orthogonal; \c false otherwise.
     ///
     /// The matrix A is orthogonal matrix if A * A^T = I.
-    Q_DECL_CONSTEXPR bool isOrthogonalMatrix(T epsilon = T(FLOATTYPE_EPSILON)) const {
+    Q_DECL_CONSTEXPR bool isOrthogonalMatrix(T epsilon = FloatTypeEpsilon<T>()) const {
         return
             (std::abs((*this)[0][0]*(*this)[1][0] + (*this)[0][1]*(*this)[1][1] + (*this)[0][2]*(*this)[1][2]) <= epsilon) &&
             (std::abs((*this)[0][0]*(*this)[2][0] + (*this)[0][1]*(*this)[2][1] + (*this)[0][2]*(*this)[2][2]) <= epsilon) &&
@@ -360,7 +363,7 @@ public:
     /// The matrix A is a pure rotation matrix if:
     ///   1. det(A) = 1  and
     ///   2. A * A^T = I
-    Q_DECL_CONSTEXPR bool isRotationMatrix(T epsilon = T(FLOATTYPE_EPSILON)) const {
+    Q_DECL_CONSTEXPR bool isRotationMatrix(T epsilon = FloatTypeEpsilon<T>()) const {
         return isOrthogonalMatrix(epsilon) && (std::abs(determinant() - T(1)) <= epsilon);
     }
 
@@ -384,7 +387,7 @@ public:
     ///
     /// where |V| denotes length of vector V and A*B denotes dot
     /// product of vectors A and B.
-    void orthonormalize() {
+    Q_DECL_CONSTEXPR void orthonormalize() {
 
         // Compute q0.
         (*this)[0].normalize();
@@ -414,7 +417,7 @@ public:
 
     /// \brief Generates a matrix describing a rotation around the X axis.
     /// \param angle The rotation angle in radians.
-    static inline Matrix_3 rotationX(T angle) {
+    static Q_DECL_CONSTEXPR inline Matrix_3 rotationX(T angle) {
         const T c = cos(angle);
         const T s = sin(angle);
         return {T(1), T(0), T(0),
@@ -424,7 +427,7 @@ public:
 
     /// \brief Generates a matrix describing a rotation around the Y axis.
     /// \param angle The rotation angle in radians.
-    static inline Matrix_3 rotationY(T angle) {
+    static Q_DECL_CONSTEXPR inline Matrix_3 rotationY(T angle) {
         const T c = cos(angle);
         const T s = sin(angle);
         return { c,    T(0), s,
@@ -434,7 +437,7 @@ public:
 
     /// \brief Generates a matrix describing a rotation around the Z axis.
     /// \param angle The rotation angle in radians.
-    static inline Matrix_3 rotationZ(T angle) {
+    static Q_DECL_CONSTEXPR inline Matrix_3 rotationZ(T angle) {
         const T c = cos(angle);
         const T s = sin(angle);
         return {c,    -s,    T(0),
@@ -443,20 +446,20 @@ public:
     }
 
     /// \brief Generates a rotation matrix from an axis-angle representation.
-    static Matrix_3 rotation(const RotationT<T>& rot);
+    static Q_DECL_CONSTEXPR Matrix_3 rotation(const RotationT<T>& rot);
 
     /// \brief Generates a rotation matrix from a quaternion.
-    static Matrix_3 rotation(const QuaternionT<T>& q);
+    static Q_DECL_CONSTEXPR Matrix_3 rotation(const QuaternionT<T>& q);
 
     /// \brief Generates a rotation matrix from Euler angles.
     /// \param ai The first Euler angle.
     /// \param aj The second Euler angle.
     /// \param ak The third Euler angle.
     /// \param axisSequence Determines the order in which the rotations about the three axes are performed.
-    static Matrix_3 rotation(T ai, T aj, T ak, EulerAxisSequence axisSequence);
+    static Q_DECL_CONSTEXPR Matrix_3 rotation(T ai, T aj, T ak, EulerAxisSequence axisSequence);
 
     /// \brief Generates a scaling matrix.
-    static Matrix_3 scaling(const ScalingT<T>& scaling);
+    static Q_DECL_CONSTEXPR Matrix_3 scaling(const ScalingT<T>& scaling);
 };
 
 }   // End of namespace
@@ -469,7 +472,7 @@ namespace Ovito {
 
 // Generates a rotation matrix from an axis and an angle.
 template<typename T>
-inline Matrix_3<T> Matrix_3<T>::rotation(const RotationT<T>& rot)
+Q_DECL_CONSTEXPR inline Matrix_3<T> Matrix_3<T>::rotation(const RotationT<T>& rot)
 {
     if(rot.angle() == T(0))
         return Matrix_3<T>::Identity();
@@ -477,7 +480,7 @@ inline Matrix_3<T> Matrix_3<T>::rotation(const RotationT<T>& rot)
     T s = sin(rot.angle());
     T t = T(1) - c;
     const auto& a = rot.axis();
-    OVITO_ASSERT_MSG(std::abs(a.squaredLength() - T(1)) <= T(FLOATTYPE_EPSILON), "Matrix3::rotation", "Rotation axis vector must be normalized.");
+    OVITO_ASSERT_MSG(std::abs(a.squaredLength() - T(1)) <= FloatTypeEpsilon<T>(), "Matrix3::rotation", "Rotation axis vector must be normalized.");
     return Matrix_3<T>( t * a.x() * a.x() + c,       t * a.x() * a.y() - s * a.z(), t * a.x() * a.z() + s * a.y(),
                     t * a.x() * a.y() + s * a.z(), t * a.y() * a.y() + c,       t * a.y() * a.z() - s * a.x(),
                     t * a.x() * a.z() - s * a.y(), t * a.y() * a.z() + s * a.x(), t * a.z() * a.z() + c       );
@@ -485,10 +488,10 @@ inline Matrix_3<T> Matrix_3<T>::rotation(const RotationT<T>& rot)
 
 // Generates a rotation matrix from a quaternion.
 template<typename T>
-inline Matrix_3<T> Matrix_3<T>::rotation(const QuaternionT<T>& q)
+Q_DECL_CONSTEXPR inline Matrix_3<T> Matrix_3<T>::rotation(const QuaternionT<T>& q)
 {
 #ifdef OVITO_DEBUG
-    if(std::abs(q.dot(q) - T(1)) > T(FLOATTYPE_EPSILON)) {
+    if(std::abs(q.dot(q) - T(1)) > FloatTypeEpsilon<T>()) {
         OVITO_ASSERT_MSG(false, "Matrix3::rotation", "Quaternion must be normalized.");
     }
 #endif
@@ -501,7 +504,7 @@ inline Matrix_3<T> Matrix_3<T>::rotation(const QuaternionT<T>& q)
 
 // Generates a rotation matrix from Euler angles and an axis sequence.
 template<typename T>
-inline Matrix_3<T> Matrix_3<T>::rotation(T ai, T aj, T ak, EulerAxisSequence axisSequence)
+Q_DECL_CONSTEXPR inline Matrix_3<T> Matrix_3<T>::rotation(T ai, T aj, T ak, EulerAxisSequence axisSequence)
 {
     OVITO_ASSERT(axisSequence == Matrix_3<T>::szyx);
     int firstaxis = 2;
@@ -570,7 +573,7 @@ inline Vector_3<T> Matrix_3<T>::toEuler(EulerAxisSequence axisSequence) const
     const Matrix_3<T>& M = *this;
     if(repetition) {
         T sy = std::sqrt(M(i, j)*M(i, j) + M(i, k)*M(i, k));
-        if(sy > T(FLOATTYPE_EPSILON)) {
+        if(sy > FloatTypeEpsilon<T>()) {
             ax = std::atan2( M(i, j),  M(i, k));
             ay = std::atan2( sy,       M(i, i));
             az = std::atan2( M(j, i), -M(k, i));
@@ -583,7 +586,7 @@ inline Vector_3<T> Matrix_3<T>::toEuler(EulerAxisSequence axisSequence) const
     }
     else {
         T cy = std::sqrt(M(i, i)*M(i, i) + M(j, i)*M(j, i));
-        if(cy > T(FLOATTYPE_EPSILON)) {
+        if(cy > FloatTypeEpsilon<T>()) {
             ax = std::atan2( M(k, j),  M(k, k));
             ay = std::atan2(-M(k, i),  cy);
             az = std::atan2( M(j, i),  M(i, i));
@@ -607,7 +610,7 @@ inline Vector_3<T> Matrix_3<T>::toEuler(EulerAxisSequence axisSequence) const
 
 // Creates a transformation matrix that describes a scaling of coordinates.
 template<typename T>
-inline Matrix_3<T> Matrix_3<T>::scaling(const ScalingT<T>& scaling)
+Q_DECL_CONSTEXPR inline Matrix_3<T> Matrix_3<T>::scaling(const ScalingT<T>& scaling)
 {
     Matrix_3<T> K(scaling.S.x(), T(0), T(0),
                   T(0), scaling.S.y(), T(0),
@@ -753,12 +756,20 @@ inline QDataStream& operator>>(QDataStream& stream, Matrix_3<T>& m) {
 }
 
 /**
- * \brief Instantiation of the Matrix_3 class template with the default floating-point type.
+ * \brief Instantiation of the Matrix_3 class template with the default floating-point type (double precision).
  * \relates Matrix_3
  */
 using Matrix3 = Matrix_3<FloatType>;
 
+/**
+ * \brief Instantiation of the Matrix_3 class template with the single-precision floating-point type.
+ * \relates Matrix_3
+ */
+using Matrix3F = Matrix_3<float>;
+
 }   // End of namespace
 
 Q_DECLARE_METATYPE(Ovito::Matrix3);
+Q_DECLARE_METATYPE(Ovito::Matrix3F);
 Q_DECLARE_TYPEINFO(Ovito::Matrix3, Q_PRIMITIVE_TYPE);
+Q_DECLARE_TYPEINFO(Ovito::Matrix3F, Q_PRIMITIVE_TYPE);

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -25,12 +25,16 @@
 // Inputs:
 in vec4 position;
 in float radius;
-in vec4 color;
+in vec3 color;
+in float transparency;
+in float selection;
+uniform vec4 selection_color;
 uniform vec2 unit_quad_triangle_strip[4];
 
 // Outputs:
 flat out vec4 color_fs;
 out vec2 uv_fs;
+
 void main()
 {
     // The index of the quad corner.
@@ -39,14 +43,14 @@ void main()
     // Transform particle center to view space.
 	vec4 eye_position = modelview_matrix * position;
 
-    // Apply additional scaling due to model-view transformation to particle radius. 
+    // Apply additional scaling due to model-view transformation to particle radius.
     float scaled_radius = radius * length(modelview_matrix[0]);
 
 	// Project corner vertex.
     gl_Position = projection_matrix * (eye_position + vec4(unit_quad_triangle_strip[corner] * scaled_radius, 0.0, 0.0));
 
     // Forward particle color to fragment shader.
-    color_fs = color;
+    color_fs = (selection != 0.0) ? selection_color : vec4(color, clamp(1.0 - transparency, 0.0, 1.0));
 
     // Pass UV quad coordinates to fragment shader.
     uv_fs = unit_quad_triangle_strip[corner];

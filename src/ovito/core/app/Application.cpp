@@ -121,6 +121,13 @@ Application::Application(FileManager& fileManager) :
 Application::~Application()
 {
     OVITO_ASSERT(isShuttingDown()); // Make sure this UserInterface was properly shutdown before being deleted.
+
+#ifdef OVITO_USE_KOKKOS
+    // Shutdown Kokkos.
+    if(Kokkos::is_initialized())
+        Kokkos::finalize();
+#endif
+
     _instance = nullptr;
 #ifdef OVITO_DEBUG
     UserInterface::_isBeingDestructed = true;
@@ -175,7 +182,7 @@ QString Application::applicationName()
 /******************************************************************************
 * This is called on program startup.
 ******************************************************************************/
-bool Application::initialize()
+bool Application::initialize(int& argc, char** argv)
 {
     // Install custom Qt error message handler to catch fatal errors in debug mode
     // or redirect log output to file instead of the console if requested by the user.
@@ -265,6 +272,11 @@ bool Application::initialize()
     // Register Qt resources.
     ::registerQtResources();
 
+#ifdef OVITO_USE_KOKKOS
+    // Initialize Kokkos.
+    Kokkos::initialize(argc, argv);
+#endif
+
     return true;
 }
 
@@ -309,6 +321,14 @@ void Application::createQtApplication(int& argc, char** argv)
     else {
         new QGuiApplication(argc, argv);
     }
+}
+
+/******************************************************************************
+* Is called by UserInterface::shutdown() when application is shutting down.
+******************************************************************************/
+void Application::signalAboutToQuit()
+{
+    Q_EMIT aboutToQuit();
 }
 
 /******************************************************************************

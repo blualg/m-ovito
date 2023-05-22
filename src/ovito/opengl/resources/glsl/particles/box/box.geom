@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -28,7 +28,6 @@ layout(triangle_strip, max_vertices=14) out;
 
 // Inputs:
 in vec3 position_gs[1];
-in float radius_gs[1];
 in vec4 color_gs[1];
 in mat4 shape_orientation_gs[1];
 uniform vec3 unit_cube_triangle_strip[14];
@@ -36,12 +35,15 @@ uniform vec3 unit_cube_strip_normals[14];
 
 // Outputs:
 flat out vec4 color_fs;
+
 void main()
 {
-    for(int corner = 0; corner < 14; corner++) 
+    mat3 shape_orientation = mat3(shape_orientation_gs[0]);
+
+    for(int corner = 0; corner < 14; corner++)
     {
         // Compute rotated and scaled unit cube corner coordinates.
-        vec4 scaled_corner = vec4(position_gs[0], 1.0) + (shape_orientation_gs[0] * vec4(unit_cube_triangle_strip[corner], 0.0));
+        vec4 scaled_corner = vec4(position_gs[0] + shape_orientation * unit_cube_triangle_strip[corner], 1.0);
 
         // Apply model-view-projection matrix to particle position displaced by the cube vertex position.
         gl_Position = modelview_projection_matrix * scaled_corner;
@@ -50,7 +52,7 @@ void main()
         color_fs = color_gs[0];
 
         // Transform local vertex normal.
-        <flat_normal.output> = normalize(vec3(normal_tm * shape_orientation_gs[0] * vec4(unit_cube_strip_normals[corner], 0.0)));
+        <flat_normal.output> = normalize(vec3(normal_tm * vec4(shape_orientation * unit_cube_strip_normals[corner], 0.0)));
 
         EmitVertex();
     }

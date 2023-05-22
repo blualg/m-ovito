@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -41,15 +41,15 @@ PipelineStatus SurfaceMeshAffineTransformationModifierDelegate::apply(const Modi
         // Process SurfaceMesh objects.
         if(const SurfaceMesh* existingSurface = dynamic_object_cast<SurfaceMesh>(obj)) {
             const AffineTransformation tm = mod->effectiveAffineTransformation(inputState);
-            
-            // Make sure the input mesh data structure is valid. 
+
+            // Make sure the input mesh data structure is valid.
             existingSurface->verifyMeshIntegrity();
             // Create a copy of the SurfaceMesh.
             SurfaceMesh* newSurface = state.makeMutable(existingSurface);
             // Create a copy of the vertices sub-object (no need to copy the topology when only moving vertices).
             SurfaceMeshVertices* newVertices = newSurface->makeVerticesMutable();
             // Create a copy of the vertex coordinates array.
-            PropertyAccess<Point3> positionProperty = newVertices->expectMutableProperty(SurfaceMeshVertices::PositionProperty);
+            BufferAccess<Point3> positionProperty = newVertices->expectMutableProperty(SurfaceMeshVertices::PositionProperty);
 
             if(!mod->selectionOnly()) {
                 // Apply transformation to the vertex coordinates.
@@ -57,9 +57,9 @@ PipelineStatus SurfaceMeshAffineTransformationModifierDelegate::apply(const Modi
                     p = tm * p;
             }
             else {
-                if(ConstPropertyAccess<int> selectionProperty = newVertices->getProperty(SurfaceMeshVertices::SelectionProperty)) {
+                if(BufferAccess<const SelectionIntType> selectionProperty = newVertices->getProperty(SurfaceMeshVertices::SelectionProperty)) {
                     // Apply transformation only to the selected vertices.
-                    const int* s = selectionProperty.cbegin();
+                    const auto* s = selectionProperty.cbegin();
                     for(Point3& p : positionProperty) {
                         if(*s++)
                             p = tm * p;
@@ -84,10 +84,12 @@ PipelineStatus SurfaceMeshAffineTransformationModifierDelegate::apply(const Modi
             for(Point3& p : newMeshObj->vertices())
                 p = tm * p;
             newMeshObj->invalidateVertices();
+
             // Apply transformation to the normal vectors.
             if(newMeshObj->hasNormals()) {
-                for(Vector3& n : newMeshObj->normals())
-                    n = tm * n;
+                const auto& tm_g = tm.toDataType<GraphicsFloatType>();
+                for(auto& n : newMeshObj->normals())
+                    n = tm_g * n;
             }
         }
     }

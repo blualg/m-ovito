@@ -304,40 +304,40 @@ void DLPOLYImporter::FrameLoader::loadFile()
 
     // Create particle properties.
     setParticleCount(positions.size());
-    PropertyAccess<Point3> posProperty = particles()->createProperty(ParticlesObject::PositionProperty);
+    BufferAccess<Point3> posProperty = particles()->createProperty(ParticlesObject::PositionProperty);
     boost::copy(positions, posProperty.begin());
 
-    PropertyAccess<int> typeProperty = particles()->createProperty(ParticlesObject::TypeProperty);
-    boost::transform(atom_types, typeProperty.begin(), [&](const QString& typeName) {
-        return addNamedType(ParticlesObject::OOClass(), typeProperty.buffer(), typeName)->numericId();
+    PropertyObject* typeProperty = particles()->createProperty(ParticlesObject::TypeProperty);
+    boost::transform(atom_types, BufferAccess<int32_t>(typeProperty).begin(), [&](const QString& typeName) {
+        return addNamedType(ParticlesObject::OOClass(), typeProperty, typeName)->numericId();
     });
     // Since we created particle types on the go while reading the particles, the type ordering
     // depends on the storage order of particles in the file. We rather want a well-defined particle type ordering, that's
     // why we sort them now.
-    typeProperty.buffer()->sortElementTypesByName();
+    typeProperty->sortElementTypesByName();
 
     if(identifiers.size() == positions.size()) {
-        PropertyAccess<qlonglong> identifierProperty = particles()->createProperty(ParticlesObject::IdentifierProperty);
+        BufferAccess<IdentifierIntType> identifierProperty = particles()->createProperty(ParticlesObject::IdentifierProperty);
         boost::copy(identifiers, identifierProperty.begin());
     }
     if(levcfg > 0) {
-        PropertyAccess<Vector3> velocityProperty = particles()->createProperty(ParticlesObject::VelocityProperty);
+        BufferAccess<Vector3> velocityProperty = particles()->createProperty(ParticlesObject::VelocityProperty);
         boost::copy(velocities, velocityProperty.begin());
     }
     if(levcfg > 1) {
-        PropertyAccess<Vector3> forceProperty = particles()->createProperty(ParticlesObject::ForceProperty);
+        BufferAccess<Vector3> forceProperty = particles()->createProperty(ParticlesObject::ForceProperty);
         boost::copy(forces, forceProperty.begin());
     }
     if(masses.size() == positions.size()) {
-        PropertyAccess<FloatType> massProperty = particles()->createProperty(ParticlesObject::MassProperty);
+        BufferAccess<FloatType> massProperty = particles()->createProperty(ParticlesObject::MassProperty);
         boost::copy(masses, massProperty.begin());
     }
     if(charges.size() == positions.size()) {
-        PropertyAccess<FloatType> chargeProperty = particles()->createProperty(ParticlesObject::ChargeProperty);
+        BufferAccess<FloatType> chargeProperty = particles()->createProperty(ParticlesObject::ChargeProperty);
         boost::copy(charges, chargeProperty.begin());
     }
     if(displacementMagnitudes.size() == positions.size()) {
-        PropertyAccess<FloatType> displProperty = particles()->createProperty(ParticlesObject::DisplacementMagnitudeProperty);
+        BufferAccess<FloatType> displProperty = particles()->createProperty(ParticlesObject::DisplacementMagnitudeProperty);
         boost::copy(displacementMagnitudes, displProperty.begin());
     }
 

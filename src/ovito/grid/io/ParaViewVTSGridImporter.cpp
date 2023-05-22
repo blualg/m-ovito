@@ -169,12 +169,15 @@ void ParaViewVTSGridImporter::FrameLoader::loadFile()
 
                     // Use the 'type' attribute to decide which data type to use for the OVITO property array.
                     QString dataTypeName = xml.attributes().value("type").toString();
-                    int dataType = DataBuffer::Float;
-                    if(dataTypeName == "Float32" || dataTypeName == "Float64") {
-                        dataType = DataBuffer::Float;
+                    int dataType = DataBuffer::FloatDefault;
+                    if(dataTypeName == "Float32") {
+                        dataType = DataBuffer::Float32;
+                    }
+                    else if(dataTypeName == "Float64") {
+                        dataType = DataBuffer::Float64;
                     }
                     else if(dataTypeName == "Int32" || dataTypeName == "UInt32") {
-                        dataType = DataBuffer::Int;
+                        dataType = DataBuffer::Int32;
                     }
                     else if(dataTypeName == "Int64" || dataTypeName == "UInt64") {
                         dataType = DataBuffer::Int64;
@@ -208,12 +211,12 @@ void ParaViewVTSGridImporter::FrameLoader::loadFile()
 
             // Load the VTK point coordinates into a Nx3 buffer of floats.
             size_t numberOfPoints = (pieceExtent.size(0) + 1) * (pieceExtent.size(1) + 1) * (pieceExtent.size(2) + 1);
-            DataBufferPtr buffer = DataBufferPtr::create(numberOfPoints, DataBuffer::Float, 3);
+            DataBufferPtr buffer = DataBufferPtr::create(numberOfPoints, DataBuffer::FloatDefault, 3);
             if(!ParaViewVTPMeshImporter::parseVTKDataArray(buffer, xml))
                 break;
 
             // Derive domain geometry from spacing between grid points.
-            ConstDataBufferAccess<Point3> points(buffer);
+            BufferAccess<const Point3> points(buffer);
             AffineTransformation cellMatrix = AffineTransformation::Zero();
             cellMatrix.column(0) = (points[1] - points[0]) * (FloatType)wholeExtent.size(0);
             cellMatrix.column(1) = (points[pieceExtent.size(0) + 1] - points[0]) * (FloatType)wholeExtent.size(1);

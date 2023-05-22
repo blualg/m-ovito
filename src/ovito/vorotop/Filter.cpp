@@ -91,8 +91,8 @@ bool Filter::load(CompressedTextReader& stream, bool readHeaderOnly, Progressing
             const char* s = line;
             while(*s != '\0' && *s != ')' && *s != ',')
                 ++s;
-            int label;
-            if(*s == '\0' || !parseInt(line, s, label))
+            int32_t label;
+            if(*s == '\0' || !parseInt32(line, s, label))
                 throw Exception(QString("Invalid Weinberg vector in line %1 of VoroTop filter definition file").arg(stream.lineNumber()));
             wvector.push_back(label);
             if(label > maximumVertices) maximumVertices = label;

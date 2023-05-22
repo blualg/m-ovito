@@ -33,8 +33,6 @@
 #include <ovito/core/app/UserInterface.h>
 #include "PipelineListModel.h"
 
-#include <boost/range/algorithm_ext/is_sorted.hpp>
-
 namespace Ovito {
 
 /******************************************************************************

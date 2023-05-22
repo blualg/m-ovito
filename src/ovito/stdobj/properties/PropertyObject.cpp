@@ -224,22 +224,22 @@ void PropertyObject::makeReadOnlyFromPython()
 ******************************************************************************/
 std::tuple<std::map<int,int>, ConstPropertyPtr> PropertyObject::generateContiguousTypeIdMapping(int baseId) const
 {
-    OVITO_ASSERT(dataType() == PropertyObject::Int && componentCount() == 1);
+    OVITO_ASSERT(dataType() == PropertyObject::Int32 && componentCount() == 1);
 
     // Generate sorted list of existing type IDs.
-    std::set<int> typeIds;
+    std::set<int32_t> typeIds;
     for(const ElementType* t : elementTypes())
         typeIds.insert(t->numericId());
 
     // Add ID values that occur in the property array but which have not been defined as a type.
-    for(int t : ConstDataBufferAccess<int>(this))
+    for(int32_t t : BufferAccess<const int32_t>(this))
         typeIds.insert(t);
 
     // Build the mappings between old and new IDs.
-    std::map<int,int> oldToNewMap;
-    std::map<int,int> newToOldMap;
+    std::map<int32_t,int32_t> oldToNewMap;
+    std::map<int32_t,int32_t> newToOldMap;
     bool remappingRequired = false;
-    for(int id : typeIds) {
+    for(int32_t id : typeIds) {
         if(id != baseId) remappingRequired = true;
         oldToNewMap.emplace(id, baseId);
         newToOldMap.emplace(baseId++, id);
@@ -249,10 +249,10 @@ std::tuple<std::map<int,int>, ConstPropertyPtr> PropertyObject::generateContiguo
     ConstPropertyPtr remappedArray;
     if(remappingRequired) {
         // Make a copy of this property, which can be modified.
-        PropertyAccessAndRef<int> array(CloneHelper().cloneObject(this, false));
-        for(int& id : array)
+        PropertyPtr copy = CloneHelper().cloneObject(this, false);
+        for(auto& id : BufferAccess<int32_t>(copy))
             id = oldToNewMap[id];
-        remappedArray = array.take();
+        remappedArray = std::move(copy);
     }
     else {
         // No data copied needed if ordering hasn't changed.
@@ -270,7 +270,7 @@ std::tuple<std::map<int,int>, ConstPropertyPtr> PropertyObject::generateContiguo
 ******************************************************************************/
 void PropertyObject::sortElementTypesByName()
 {
-    OVITO_ASSERT(dataType() == StandardDataType::Int);
+    OVITO_ASSERT(dataType() == DataBuffer::Int32 && componentCount() == 1);
 
     // Check if type IDs form a consecutive sequence starting at 1.
     // If not, we leave the type order as it is.
@@ -306,7 +306,7 @@ void PropertyObject::sortElementTypesByName()
     }
 
     // Remap type IDs.
-    for(int& t : DataBufferAccess<int>(this)) {
+    for(int& t : BufferAccess<int32_t>(this)) {
         OVITO_ASSERT(t >= 1 && t < mapping.size());
         t = mapping[t];
     }

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -80,7 +80,7 @@ void AcklandJonesModifier::AcklandJonesAnalysisEngine::perform()
     if(!neighborFinder.prepare(positions(), cell(), selection()))
         return;
 
-    PropertyAccess<int> output(structures());
+    BufferAccess<int32_t> output(structures());
 
     // Perform analysis on each particle.
     if(!selection()) {
@@ -89,7 +89,7 @@ void AcklandJonesModifier::AcklandJonesAnalysisEngine::perform()
         });
     }
     else {
-        ConstPropertyAccess<int> selectionData(selection());
+        BufferAccess<const SelectionIntType> selectionData(selection());
         parallelForWithProgress(positions()->size(), [&](size_t index) {
             // Skip particles that are not included in the analysis.
             if(selectionData[index])

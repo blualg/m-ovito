@@ -128,7 +128,7 @@ void StructureIdentificationModifier::StructureIdentificationEngine::applyResult
 
     // Finalize output property.
     PropertyPtr structureProperty = postProcessStructureTypes(request, structures());
-    ConstPropertyAccess<int> structureData(structureProperty);
+    BufferAccess<const int32_t> structureData(structureProperty);
 
     // Add output property to the particles.
     particles->createProperty(structureProperty);
@@ -136,22 +136,22 @@ void StructureIdentificationModifier::StructureIdentificationEngine::applyResult
     if(modifier->colorByType()) {
 
         // Build structure type-to-color map.
-        std::vector<Color> structureTypeColors(modifier->structureTypes().size());
+        std::vector<ColorG> structureTypeColors(modifier->structureTypes().size());
         for(ElementType* stype : modifier->structureTypes()) {
             OVITO_ASSERT(stype->numericId() >= 0);
             if(stype->numericId() >= (int)structureTypeColors.size()) {
                 structureTypeColors.resize(stype->numericId() + 1);
             }
-            structureTypeColors[stype->numericId()] = stype->color();
+            structureTypeColors[stype->numericId()] = stype->color().toDataType<GraphicsFloatType>();
         }
 
         // Assign colors to particles based on their structure type.
-        PropertyAccess<Color> colorProperty = particles->createProperty(ParticlesObject::ColorProperty);
+        BufferAccess<ColorG> colorProperty = particles->createProperty(ParticlesObject::ColorProperty);
         boost::transform(structureData, colorProperty.begin(), [&](int s) {
             if(s >= 0 && s < structureTypeColors.size())
                 return structureTypeColors[s];
             else
-                return Color(1,1,1);
+                return ColorG(1,1,1);
         });
     }
 
@@ -170,9 +170,9 @@ void StructureIdentificationModifier::StructureIdentificationEngine::applyResult
 
     // Create the property arrays for the bar chart.
     PropertyPtr typeCounts = DataTable::OOClass().createUserProperty(DataBuffer::Uninitialized, maxTypeId + 1, PropertyObject::Int64, 1, tr("Count"));
-    boost::copy(_typeCounts, PropertyAccess<qlonglong>(typeCounts).begin());
-    PropertyPtr typeIds = DataTable::OOClass().createUserProperty(DataBuffer::Uninitialized, maxTypeId + 1, PropertyObject::Int, 1, tr("Structure type"));
-    boost::algorithm::iota_n(PropertyAccess<int>(typeIds).begin(), 0, typeIds->size());
+    boost::copy(_typeCounts, BufferAccess<int64_t>(typeCounts).begin());
+    PropertyPtr typeIds = DataTable::OOClass().createUserProperty(DataBuffer::Uninitialized, maxTypeId + 1, PropertyObject::Int32, 1, tr("Structure type"));
+    boost::algorithm::iota_n(BufferAccess<int32_t>(typeIds).begin(), 0, typeIds->size());
 
     // Use the structure types as labels for the output bar chart.
     for(const ElementType* type : structureProperty->elementTypes()) {
@@ -189,7 +189,7 @@ void StructureIdentificationModifier::StructureIdentificationEngine::applyResult
 * This helper method is called by the QML GUI (StructureListParameter.qml) to extract the identification counts
 * from the cached pipeline output state after the modifier has been evaluated.
 ******************************************************************************/
-QVector<qlonglong> StructureIdentificationModifier::getStructureCountsFromModifierResults(ModifierApplication* modApp) const
+QVector<int64_t> StructureIdentificationModifier::getStructureCountsFromModifierResults(ModifierApplication* modApp) const
 {
     if(!modApp || !modApp->isEnabled())
         return {};
@@ -203,8 +203,8 @@ QVector<qlonglong> StructureIdentificationModifier::getStructureCountsFromModifi
             if(structureCounts->size() != 0 && structureCounts->dataType() == PropertyObject::Int64) {
 
                 // Convert the table data to a format that can be passed back to QML.
-                ConstPropertyAccess<qlonglong> array(structureCounts);
-                return QVector<qlonglong>{ array.cbegin(), array.cend() };
+                BufferAccess<const int64_t> array(structureCounts);
+                return QVector<int64_t>{ array.cbegin(), array.cend() };
             }
         }
     }

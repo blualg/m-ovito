@@ -98,7 +98,7 @@ private:
                     }
                 }
             }
-            _rdfY = DataTable::OOClass().createUserProperty(DataBuffer::Initialized, rdfSampleCount, PropertyObject::Float, componentCount, QStringLiteral("g(r)"), 0, std::move(componentNames));
+            _rdfY = DataTable::OOClass().createUserProperty(DataBuffer::Initialized, rdfSampleCount, PropertyObject::FloatDefault, componentCount, QStringLiteral("g(r)"), 0, std::move(componentNames));
         }
 
         /// Computes the modifier's results.

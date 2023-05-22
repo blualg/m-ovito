@@ -21,7 +21,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/core/Core.h>
-#include <ovito/core/dataset/data/DataBufferAccess.h>
+#include <ovito/core/dataset/data/BufferAccess.h>
 #include "MeshPrimitive.h"
 
 namespace Ovito {
@@ -35,13 +35,16 @@ bool MeshPrimitive::isFullyOpaque() const
         if(!_mesh)
             _isMeshFullyOpaque = true;
         else if(_perInstanceColors)
-            _isMeshFullyOpaque = boost::algorithm::none_of(ConstDataBufferAccess<ColorA>(_perInstanceColors), [](const ColorA& c) { return c.a() != FloatType(1); });
+            _isMeshFullyOpaque =
+                (_perInstanceColors->dataType() == DataBuffer::Float32)
+                ? boost::algorithm::none_of(BufferAccess<const ColorAT<float>>(_perInstanceColors), [](const auto& c) { return c.a() != 1.0f; })
+                : boost::algorithm::none_of(BufferAccess<const ColorAT<double>>(_perInstanceColors), [](const auto& c) { return c.a() != 1.0; });
         else if(mesh()->hasVertexColors())
-            _isMeshFullyOpaque = (uniformColor().a() >= FloatType(1)) && boost::algorithm::none_of(mesh()->vertexColors(), [](const ColorA& c) { return c.a() != FloatType(1); });
+            _isMeshFullyOpaque = (uniformColor().a() >= FloatType(1)) && boost::algorithm::none_of(mesh()->vertexColors(), [](const ColorAG& c) { return c.a() != GraphicsFloatType(1); });
         else if(mesh()->hasVertexPseudoColors())
             _isMeshFullyOpaque = (uniformColor().a() >= FloatType(1));
         else if(mesh()->hasFaceColors())
-            _isMeshFullyOpaque = (uniformColor().a() >= FloatType(1)) && boost::algorithm::none_of(mesh()->faceColors(), [](const ColorA& c) { return c.a() != FloatType(1); });
+            _isMeshFullyOpaque = (uniformColor().a() >= FloatType(1)) && boost::algorithm::none_of(mesh()->faceColors(), [](const ColorAG& c) { return c.a() != GraphicsFloatType(1); });
         else if(mesh()->hasFacePseudoColors())
             _isMeshFullyOpaque = (uniformColor().a() >= FloatType(1));
         else if(!materialColors().empty())
@@ -61,8 +64,8 @@ void MeshPrimitive::generateRenderableVertices(RenderVertex* renderableVertices,
         return;
 
     const QVector<Point3>& vertices = mesh()->vertices();
-    const ColorA* vertexColors = mesh()->hasVertexColors() ? mesh()->vertexColors().constData() : nullptr;
-    const ColorA* faceColors = mesh()->hasFaceColors() ? mesh()->faceColors().constData() : nullptr;
+    const ColorAG* vertexColors = mesh()->hasVertexColors() ? mesh()->vertexColors().constData() : nullptr;
+    const ColorAG* faceColors = mesh()->hasFaceColors() ? mesh()->faceColors().constData() : nullptr;
     const FloatType* vertexPseudoColors = (enablePseudoColorMapping && mesh()->hasVertexPseudoColors()) ? mesh()->vertexPseudoColors().constData() : nullptr;
     const FloatType* facePseudoColors = (enablePseudoColorMapping && mesh()->hasFacePseudoColors()) ? mesh()->facePseudoColors().constData() : nullptr;
     ColorAT<float> defaultVertexColor = uniformColor().toDataType<float>();
@@ -126,7 +129,7 @@ void MeshPrimitive::generateRenderableVertices(RenderVertex* renderableVertices,
                 // Override color of faces that are selected.
                 if(highlightSelectedFaces && face.isSelected()) {
                     if(!enablePseudoColorMapping)
-                        rv->color = ColorAT<float>(faceSelectionColor());
+                        rv->color = faceSelectionColor().toDataType<float>();
                     else
                         rv->color.g() = 1.0f; // Non-zero green-component marks selected faces in pseudo-color mode.
                 }
@@ -175,7 +178,7 @@ void MeshPrimitive::generateRenderableVertices(RenderVertex* renderableVertices,
     }
     else {
         // Use normals stored in the mesh.
-        const Vector3* faceNormal = mesh()->normals().constData();
+        const Vector3G* faceNormal = mesh()->normals().constData();
         for(const auto& face : mesh()->faces()) {
             // Initialize render vertices for this face.
             for(size_t v = 0; v < 3; v++, rv++) {
@@ -211,7 +214,7 @@ void MeshPrimitive::generateRenderableVertices(RenderVertex* renderableVertices,
                 // Override color of faces that are selected.
                 if(highlightSelectedFaces && face.isSelected()) {
                     if(!enablePseudoColorMapping)
-                        rv->color = ColorAT<float>(faceSelectionColor());
+                        rv->color = faceSelectionColor().toDataType<float>();
                     else
                         rv->color.g() = 1.0f; // Non-zero green-component marks selected faces in pseudo-color mode.
                 }
@@ -240,16 +243,16 @@ ConstDataBufferPtr MeshPrimitive::generateWireframeLines() const
     }
 
     // Allocate storage buffer for line elements.
-    DataBufferAccessAndRef<Point3> lines = DataBufferPtr::create(numVisibleEdges * 2, DataBuffer::Float, 3);
+    BufferAccessAndRef<Point3G> lines = DataBufferPtr::create(numVisibleEdges * 2, DataBuffer::FloatGraphics, 3);
 
     // Generate line elements.
-    const QVector<Point3>& vertices = mesh()->vertices();
-    Point3* outVert = lines.begin();
+    const auto& vertices = mesh()->vertices();
+    auto* outVert = lines.begin();
     for(const TriMeshFace& face : mesh()->faces()) {
         for(size_t e = 0; e < 3; e++) {
             if(face.edgeVisible(e)) {
-                *outVert++ = vertices[face.vertex(e)];
-                *outVert++ = vertices[face.vertex((e+1)%3)];
+                *outVert++ = vertices[face.vertex(e)].toDataType<GraphicsFloatType>();
+                *outVert++ = vertices[face.vertex((e+1)%3)].toDataType<GraphicsFloatType>();
             }
         }
     }

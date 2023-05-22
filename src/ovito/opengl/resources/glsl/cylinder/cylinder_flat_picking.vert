@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -29,13 +29,17 @@ uniform vec3 view_dir_eye_pos; // Either camera viewing direction (parallel) or 
 // Inputs:
 in vec3 base;
 in vec3 head;
-in float radius;
+in float diameter;
 uniform vec2 unit_quad_triangle_strip[4];
 
 // Outputs:
 flat out vec4 color_fs;
+
 void main()
 {
+    // The radius of the current cylinder (in object coordinates).
+    float radius = 0.5 * diameter;
+
     // The index of the quad corner.
     int corner = <VertexID>;
 

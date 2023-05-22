@@ -22,7 +22,7 @@
 
 #include <ovito/core/Core.h>
 #include <ovito/core/app/Application.h>
-#include <ovito/core/dataset/data/DataBufferAccess.h>
+#include <ovito/core/dataset/data/BufferAccess.h>
 #include <ovito/core/rendering/SceneRenderer.h>
 #include "VulkanContext.h"
 
@@ -992,7 +992,7 @@ VkBuffer VulkanContext::uploadDataBuffer(const ConstDataBufferPtr& dataBuffer, R
     return createCachedBuffer(dataBuffer, bufferSize, resourceFrame, usage, [&](void* p) {
         if(dataBuffer->dataType() == DataBuffer::Float) {
             // Convert from FloatType to float data type.
-            ConstDataBufferAccess<FloatType, true> arrayAccess(dataBuffer);
+            BufferAccess<const FloatType*> arrayAccess(dataBuffer);
             size_t srcStride = dataBuffer->componentCount();
             float* dst = static_cast<float*>(p);
             size_t dstStride = dataBuffer->componentCount();

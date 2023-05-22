@@ -126,7 +126,7 @@ private:
     QVector<int> _vectorComponents;
 
     /// Stores the memory buffer object for each output property.
-    QVector<ConstPropertyAccess<void,true>> _propertyArrays;
+    QVector<BufferReadAccess> _propertyArrays;
 
     /// Controls how type names are output.
     TypedPropertyMode _typedPropertyMode;

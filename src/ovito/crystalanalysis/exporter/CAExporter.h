@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -25,7 +25,6 @@
 
 #include <ovito/crystalanalysis/CrystalAnalysis.h>
 #include <ovito/crystalanalysis/objects/DislocationNetworkObject.h>
-#include <ovito/crystalanalysis/objects/Microstructure.h>
 #include <ovito/core/dataset/io/FileExporter.h>
 #include <ovito/core/utilities/io/CompressedTextWriter.h>
 
@@ -66,7 +65,7 @@ public:
 
     /// \brief Returns the type(s) of data objects that this exporter service can export.
     virtual std::vector<DataObjectClassPtr> exportableDataObjectClass() const override {
-        return { &DislocationNetworkObject::OOClass(), &Microstructure::OOClass() };
+        return { &DislocationNetworkObject::OOClass() };
     }
 
 protected:

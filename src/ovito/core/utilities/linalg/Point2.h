@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -98,21 +98,21 @@ public:
 #if !defined(Q_CC_MSVC) && !defined(ONLY_FOR_DOXYGEN) // The MSVC compiler and the Doxygen parser do not like C++11 array aggregate initializers.
     Q_DECL_CONSTEXPR explicit Point_2(T val) : std::array<T, 2>{{val,val}} {}
 #else
-    explicit Point_2(T val) { this->fill(val); }
+    Q_DECL_CONSTEXPR explicit Point_2(T val) { this->fill(val); }
 #endif
 
     /// Initializes the coordinates of the point with the given values.
 #if !defined(Q_CC_MSVC) && !defined(ONLY_FOR_DOXYGEN) // The MSVC compiler and the Doxygen parser do not like C++11 array aggregate initializers.
     Q_DECL_CONSTEXPR Point_2(T x, T y) : std::array<T, 2>{{x, y}} {}
 #else
-    Point_2(T x, T y) { this->x() = x; this->y() = y; }
+    Q_DECL_CONSTEXPR Point_2(T x, T y) { this->x() = x; this->y() = y; }
 #endif
 
     /// Initializes the point to the origin. All coordinates are set to zero.
 #if !defined(Q_CC_MSVC) && !defined(ONLY_FOR_DOXYGEN) // The MSVC compiler and the Doxygen parser do not like C++11 array aggregate initializers.
     Q_DECL_CONSTEXPR Point_2(Origin) : std::array<T, 2>{{T(0), T(0)}} {}
 #else
-    Point_2(Origin) { this->fill(T(0)); }
+    Q_DECL_CONSTEXPR Point_2(Origin) { this->fill(T(0)); }
 #endif
 
     /// Initializes the point from an array coordinates.
@@ -120,27 +120,32 @@ public:
 
     /// Casts the point to another coordinate type \a U.
     template<typename U>
-    Q_DECL_CONSTEXPR Point_2<U> toDataType() const { return Point_2<U>(static_cast<U>(x()), static_cast<U>(y())); }
+    Q_DECL_CONSTEXPR auto toDataType() const -> std::conditional_t<!std::is_same_v<T,U>, Point_2<U>, const Point_2<T>&> {
+        if constexpr(!std::is_same_v<T,U>)
+            return Point_2<U>(static_cast<U>(x()), static_cast<U>(y()));
+        else
+            return *this;  // When casting to the same type \a T, this method becomes a no-op.
+    }
 
     ///////////////////////////// Assignment operators ///////////////////////////
 
     /// Adds a vector to this point.
-    Point_2& operator+=(const Vector_2<T>& v) { x() += v.x(); y() += v.y(); return *this; }
+    Q_DECL_CONSTEXPR Point_2& operator+=(const Vector_2<T>& v) { x() += v.x(); y() += v.y(); return *this; }
 
     /// Subtracts a vector from this point.
-    Point_2& operator-=(const Vector_2<T>& v) { x() -= v.x(); y() -= v.y(); return *this; }
+    Q_DECL_CONSTEXPR Point_2& operator-=(const Vector_2<T>& v) { x() -= v.x(); y() -= v.y(); return *this; }
 
     /// Multiplies all coordinates of the point with a scalar value.
-    Point_2& operator*=(T s) { x() *= s; y() *= s; return *this; }
+    Q_DECL_CONSTEXPR Point_2& operator*=(T s) { x() *= s; y() *= s; return *this; }
 
     /// Divides all coordinates of the point by a scalar value.
-    Point_2& operator/=(T s) { x() /= s; y() /= s; return *this; }
+    Q_DECL_CONSTEXPR Point_2& operator/=(T s) { x() /= s; y() /= s; return *this; }
 
     /// Sets all coordinates of the point to zero.
-    Point_2& operator=(Origin) { this->fill(T(0)); return *this; }
+    Q_DECL_CONSTEXPR Point_2& operator=(Origin) { this->fill(T(0)); return *this; }
 
     /// Converts a point to a vector.
-    Vector_2<T> operator-(Origin) const {
+    Q_DECL_CONSTEXPR Vector_2<T> operator-(Origin) const {
         return Vector_2<T>(*this);
     }
 
@@ -153,10 +158,10 @@ public:
     Q_DECL_CONSTEXPR T y() const { return (*this)[1]; }
 
     /// \brief Returns a reference to the X coordinate of this point.
-    T& x() { return (*this)[0]; }
+    Q_DECL_CONSTEXPR T& x() { return (*this)[0]; }
 
     /// \brief Returns a reference to the Y coordinate of this point.
-    T& y() { return (*this)[1]; }
+    Q_DECL_CONSTEXPR T& y() { return (*this)[1]; }
 
     ////////////////////////////////// Comparison ////////////////////////////////
 
@@ -181,14 +186,14 @@ public:
     /// \param tolerance A non-negative threshold for the equality test. The two points are considered equal if
     ///        the absolute differences in their X and Y coordinates are all smaller than this tolerance.
     /// \return \c true if this point is equal to the second point within the specified tolerance; \c false otherwise.
-    Q_DECL_CONSTEXPR bool equals(const Point_2& p, T tolerance = T(FLOATTYPE_EPSILON)) const {
+    Q_DECL_CONSTEXPR bool equals(const Point_2& p, T tolerance = FloatTypeEpsilon<T>()) const {
         return std::abs(p.x() - x()) <= tolerance && std::abs(p.y() - y()) <= tolerance;
     }
 
     /// \brief Tests whether this point is at the origin within a specified tolerance.
     /// \param tolerance A non-negative threshold.
     /// \return \c true if the absolute values of the point's coordinates are all below \a tolerance.
-    Q_DECL_CONSTEXPR bool isOrigin(T tolerance = T(FLOATTYPE_EPSILON)) const {
+    Q_DECL_CONSTEXPR bool isOrigin(T tolerance = FloatTypeEpsilon<T>()) const {
         return std::abs(x()) <= tolerance && std::abs(y()) <= tolerance;
     }
 
@@ -308,12 +313,23 @@ inline QDataStream& operator>>(QDataStream& stream, Point_2<T>& v) {
     return stream >> v.x() >> v.y();
 }
 
-
 /**
- * \brief Instantiation of the Point_2 class template with the default floating-point type.
+ * \brief Instantiation of the Point_2 class template with the default floating-point type (double precision).
  * \relates Point_2
  */
 using Point2 = Point_2<FloatType>;
+
+/**
+ * \brief Instantiation of the Point_2 class template with the single-precision floating-point type.
+ * \relates Point_2
+ */
+using Point2F = Point_2<float>;
+
+/**
+ * \brief Instantiation of the Point_2 class template with the low-precision floating-point type.
+ * \relates Point_2
+ */
+using Point2G = Point_2<GraphicsFloatType>;
 
 /**
  * \brief Instantiation of the Point_2 class template with the default integer type.
@@ -328,6 +344,8 @@ template<typename T> struct std::tuple_size<Ovito::Point_2<T>> : std::integral_c
 template<std::size_t I, typename T> struct std::tuple_element<I, Ovito::Point_2<T>> { using type = T; };
 
 Q_DECLARE_METATYPE(Ovito::Point2);
+Q_DECLARE_METATYPE(Ovito::Point2F);
 Q_DECLARE_METATYPE(Ovito::Point2I);
 Q_DECLARE_TYPEINFO(Ovito::Point2, Q_PRIMITIVE_TYPE);
+Q_DECLARE_TYPEINFO(Ovito::Point2F, Q_PRIMITIVE_TYPE);
 Q_DECLARE_TYPEINFO(Ovito::Point2I, Q_PRIMITIVE_TYPE);

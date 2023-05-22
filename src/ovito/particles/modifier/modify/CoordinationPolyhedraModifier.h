@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -25,7 +25,7 @@
 
 #include <ovito/particles/Particles.h>
 #include <ovito/particles/objects/BondsObject.h>
-#include <ovito/mesh/surface/SurfaceMeshAccess.h>
+#include <ovito/mesh/surface/SurfaceMeshBuilder.h>
 #include <ovito/mesh/surface/SurfaceMeshVis.h>
 #include <ovito/core/dataset/pipeline/AsynchronousModifier.h>
 #include <ovito/stdobj/simcell/SimulationCellObject.h>

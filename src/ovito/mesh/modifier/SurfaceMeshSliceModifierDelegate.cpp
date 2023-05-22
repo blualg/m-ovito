@@ -65,8 +65,8 @@ PipelineStatus SurfaceMeshSliceModifierDelegate::apply(const ModifierEvaluationR
                 else {
                     // Create a mesh vertex selection.
                     if(SurfaceMeshVertices* outputVertices = outputMesh->makeVerticesMutable()) {
-                        ConstPropertyAccess<Point3> vertexPositionProperty = outputVertices->expectProperty(SurfaceMeshVertices::PositionProperty);
-                        PropertyAccess<int> vertexSelectionProperty = outputVertices->createProperty(SurfaceMeshVertices::SelectionProperty);
+                        BufferAccess<const Point3> vertexPositionProperty = outputVertices->expectProperty(SurfaceMeshVertices::PositionProperty);
+                        BufferAccess<SelectionIntType> vertexSelectionProperty = outputVertices->createProperty(SurfaceMeshVertices::SelectionProperty);
                         size_t numSelectedVertices = 0;
                         boost::transform(vertexPositionProperty, vertexSelectionProperty.begin(), [&](const Point3& pos) {
                             bool selectionState =
@@ -82,12 +82,12 @@ PipelineStatus SurfaceMeshSliceModifierDelegate::apply(const ModifierEvaluationR
 
                         // Create a mesh face selection.
                         if(SurfaceMeshFaces* outputFaces = outputMesh->makeFacesMutable()) {
-                            PropertyAccess<int> faceSelectionProperty = outputFaces->createProperty(SurfaceMeshFaces::SelectionProperty);
+                            BufferAccess<SelectionIntType> faceSelectionProperty = outputFaces->createProperty(SurfaceMeshFaces::SelectionProperty);
                             size_t numSelectedFaces = 0;
                             const SurfaceMeshTopology* topology = outputMesh->topology();
                             auto firstFaceEdge = topology->firstFaceEdges().cbegin();
                             OVITO_ASSERT(topology->firstFaceEdges().size() == faceSelectionProperty.size());
-                            for(int& selected : faceSelectionProperty) {
+                            for(auto& selected : faceSelectionProperty) {
                                 SurfaceMesh::edge_index ffe = *firstFaceEdge++;
                                 SurfaceMesh::edge_index e = ffe;
                                 selected = 1;

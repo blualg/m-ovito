@@ -23,7 +23,7 @@
 #pragma once
 
 #include <ovito/grid/Grid.h>
-#include <ovito/mesh/surface/SurfaceMeshAccess.h>
+#include <ovito/mesh/surface/SurfaceMeshBuilder.h>
 #include <ovito/core/utilities/concurrent/ProgressingTask.h>
 
 namespace Ovito::Grid {
@@ -34,20 +34,20 @@ namespace Ovito::Grid {
 class OVITO_GRID_EXPORT MarchingCubes
 {
 public:
+
     // Constructor
-    MarchingCubes(SurfaceMeshAccess& outputMesh, int size_x, int size_y, int size_z, bool lowerIsSolid,
+    MarchingCubes(SurfaceMeshBuilder& outputMesh, int size_x, int size_y, int size_z, bool lowerIsSolid,
                   std::function<FloatType(int i, int j, int k)> field, bool infiniteDomain = false,
-                  bool outputCellCoordinates = false, bool identifyRegions = false);
+                  bool outputCellCoordinates = false);
 
     /// The main algorithm routine.
     bool generateIsosurface(FloatType iso, ProgressingTask& operation);
 
     /// Returns the generated surface mesh.
-    const SurfaceMeshAccess& mesh() const { return _outputMesh; }
+    const SurfaceMeshBuilder& mesh() const { return _outputMesh; }
 
     /// Returns the array indicating for each generated mesh face which voxel grid cell it is located in.
-    const std::vector<std::tuple<int, int, int>>& meshFaceVoxelCoordinates() const
-    {
+    const std::vector<std::tuple<int, int, int>>& meshFaceVoxelCoordinates() const {
         return std::move(_meshFaceVoxelCoordinates);
     }
 
@@ -55,13 +55,17 @@ public:
     std::vector<std::tuple<int, int, int>>&& takeMeshFaceVoxelCoordinates() { return std::move(_meshFaceVoxelCoordinates); }
 
 private:
+
+    // Is the identification of regions in the volumetric mesh enabled?
+    bool identifyRegions() const { return (bool)_faceGrower.faceRegions(); };
+
     /// Tessellates one cube.
     void processCube(int i, int j, int k);
 
     // Processes a single case from teh marching cubes table
     void processCase(int i, int j, int k, const signed char* triangles, const signed char* triangleRegions,
                      const signed char* vertexRegions, const signed char** volumeRegionsTriangulation, int numTriangles,
-                     int numVolumeRegions, SurfaceMeshAccess::vertex_index v12 = SurfaceMeshAccess::InvalidIndex);
+                     int numVolumeRegions, SurfaceMesh::vertex_index v12 = SurfaceMesh::InvalidIndex);
 
     /// Tests if the components of the tessellation of the cube should be
     /// connected by the interior of an ambiguous face.
@@ -76,14 +80,14 @@ private:
 
     /// Adds triangles to the mesh.
     void addTriangle(int i, int j, int k, const signed char* triangles, signed char numTriangles,
-                     SurfaceMeshAccess::vertex_index v12 = SurfaceMeshAccess::InvalidIndex);
+                     SurfaceMesh::vertex_index v12 = SurfaceMesh::InvalidIndex);
     // Adds triangles to the mesh and assigns them a local region index
     void addTriangle(int i, int j, int k, const signed char* triangles, const signed char* triangleRegions,
-                     const std::array<int, 5>& localRegionMap, signed char numTriangles, SurfaceMeshAccess::vertex_index v12);
+                     const std::array<int, 5>& localRegionMap, signed char numTriangles, SurfaceMesh::vertex_index v12);
 
     // Calculates the volume per region inside a single voxel
     void addVolume(int i, int j, int k, const signed char** volumeRegions, const std::array<int, 5>& localRegionMap,
-                   const int numVolumeRegions, SurfaceMeshAccess::vertex_index v12);
+                   const int numVolumeRegions, SurfaceMesh::vertex_index v12);
 
     // Merge connected regions of the generated iso surface
     void mergeIdentifiedRegions();
@@ -96,25 +100,25 @@ private:
     void processRegionsVoxelVertex(int i, int j, int k, signed char vertexRegion, std::array<int, 5>& localRegionMap);
 
     //   Converts the local (per voxel) edge indices to global vertices used in the mesh
-    SurfaceMeshAccess::vertex_index localToGlobalEdgeVertex(int i, int j, int k, int edgeIndex,
-                                                            SurfaceMeshAccess::vertex_index v12) const;
+    SurfaceMesh::vertex_index localToGlobalEdgeVertex(int i, int j, int k, int edgeIndex,
+                                                            SurfaceMesh::vertex_index v12) const;
     //   Converts the local (per voxel) edge indices to global vertices used in the mesh and returns the axis
-    Vector3 getTriangleEdgeVector(int i, int j, int k, int edgeIndex, SurfaceMeshAccess::vertex_index v12) const;
+    Vector3 getTriangleEdgeVector(int i, int j, int k, int edgeIndex, SurfaceMesh::vertex_index v12) const;
 
     // Adds a vertex on the current horizontal edge.
-    SurfaceMeshAccess::vertex_index createEdgeVertexX(int i, int j, int k, FloatType u);
+    SurfaceMesh::vertex_index createEdgeVertexX(int i, int j, int k, FloatType u);
 
     // Adds a vertex on the current longitudinal edge.
-    SurfaceMeshAccess::vertex_index createEdgeVertexY(int i, int j, int k, FloatType u);
+    SurfaceMesh::vertex_index createEdgeVertexY(int i, int j, int k, FloatType u);
 
     /// Adds a vertex on the current vertical edge.
-    SurfaceMeshAccess::vertex_index createEdgeVertexZ(int i, int j, int k, FloatType u);
+    SurfaceMesh::vertex_index createEdgeVertexZ(int i, int j, int k, FloatType u);
 
     /// Adds a vertex inside the current cube.
-    SurfaceMeshAccess::vertex_index createCenterVertex(int i, int j, int k);
+    SurfaceMesh::vertex_index createCenterVertex(int i, int j, int k);
 
     /// Accesses the pre-computed vertex on a lower edge of a specific cube.
-    SurfaceMeshAccess::vertex_index getEdgeVertex(int i, int j, int k, int axis) const;
+    SurfaceMesh::vertex_index getEdgeVertex(int i, int j, int k, int axis) const;
 
     // Calculates the position of a specific voxel corner in the volume.
     Vector3 getCornerVertex(int i, int j, int k, int edgeIndex) const;
@@ -126,15 +130,13 @@ private:
     void setVertexRegion(int i, int j, int k, int value);
 
 private:
+
     const std::array<bool, 3> _pbcFlags;  ///< PBC flags
     int _size_x;                          ///< width  of the grid
     int _size_y;                          ///< depth  of the grid
     int _size_z;                          ///< height of the grid
     FloatType _isolevel;
     std::function<FloatType(int i, int j, int k)> getFieldValue;
-
-    // Controls the identification of regions in the volumetric mesh.
-    bool _identifyRegions;
 
     bool _lowerIsSolid;           ///< Controls the inward/outward orientation of the created triangle surface.
     bool _infiniteDomain;         ///< Controls whether the volumetric domain is infinite extended.
@@ -144,15 +146,15 @@ private:
                                   ///< voxel grid it is located.
 
     /// Vertices created along cube edges.
-    std::vector<SurfaceMeshAccess::vertex_index> _cubeVerts;
+    std::vector<SurfaceMesh::vertex_index> _cubeVerts;
 
-    // Stores the region for each voxel corner
+    // Stores the region for each voxel corner.
     std::vector<int> _vertRegions;
 
-    // Stores the volumes for each region before merger
+    // Stores the volumes for each region before merger.
     std::vector<FloatType> _regionVolumes;
 
-    // Stores the filled state for each region before merger
+    // Stores the filled state for each region before merger.
     std::vector<bool> _regionFilled;
     std::vector<bool> _regionExterior;
 
@@ -172,7 +174,10 @@ private:
     signed char _subconfig;    ///< subconfiguration of the active cube
 
     /// The generated surface mesh.
-    SurfaceMeshAccess& _outputMesh;
+    SurfaceMeshBuilder& _outputMesh;
+
+    SurfaceMeshBuilder::VertexGrower _vertexGrower;
+    SurfaceMeshBuilder::FaceGrower _faceGrower;
 
 #ifdef FLOATTYPE_FLOAT
     static constexpr FloatType _epsilon = FloatType(1e-12);

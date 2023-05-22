@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -140,7 +140,7 @@ void CAImporter::FrameLoader::loadFile()
     int numClusters = 0;
     int numClusterTransitions = 0;
     int numDislocationSegments = 0;
-    SurfaceMeshAccess defectSurface;
+    SurfaceMesh* defectSurface = nullptr;
     ClusterGraphPtr clusterGraph = std::make_shared<ClusterGraph>();
     std::shared_ptr<DislocationNetwork> dislocations;
     QVector<PatternInfo> patterns;
@@ -422,11 +422,11 @@ void CAImporter::FrameLoader::loadFile()
         else if(stream.lineStartsWith("DEFECT_MESH_VERTICES ")) {
 
             // Create surface mesh.
-            SurfaceMesh* defectSurfaceObj = state().getMutableLeafObject<SurfaceMesh>(SurfaceMesh::OOClass(), QStringLiteral("dxa-defect-mesh"));
-            if(!defectSurfaceObj) {
-                defectSurfaceObj = state().createObject<SurfaceMesh>(dataSource(), tr("Defect mesh"));
-                defectSurfaceObj->setIdentifier(QStringLiteral("dxa-defect-mesh"));
-                SurfaceMeshVis* vis = defectSurfaceObj->visElement<SurfaceMeshVis>();
+            defectSurface = state().getMutableLeafObject<SurfaceMesh>(SurfaceMesh::OOClass(), QStringLiteral("dxa-defect-mesh"));
+            if(!defectSurface) {
+                defectSurface = state().createObject<SurfaceMesh>(dataSource(), tr("Defect mesh"));
+                defectSurface->setIdentifier(QStringLiteral("dxa-defect-mesh"));
+                SurfaceMeshVis* vis = defectSurface->visElement<SurfaceMeshVis>();
                 vis->setShowCap(true);
                 vis->setSmoothShading(true);
                 vis->setReverseOrientation(true);
@@ -434,38 +434,42 @@ void CAImporter::FrameLoader::loadFile()
                 vis->setObjectTitle(tr("Defect mesh"));
                 vis->freezeInitialParameterValues({SHADOW_PROPERTY_FIELD(SurfaceMeshVis::showCap), SHADOW_PROPERTY_FIELD(SurfaceMeshVis::smoothShading), SHADOW_PROPERTY_FIELD(SurfaceMeshVis::reverseOrientation)});
             }
-            defectSurface.reset(defectSurfaceObj);
-            defectSurface.clearMesh();
+            SurfaceMeshBuilder meshBuilder(defectSurface);
+            meshBuilder.clearMesh();
             // Read defect mesh vertices.
             int numDefectMeshVertices;
             if(sscanf(stream.line(), "DEFECT_MESH_VERTICES %i", &numDefectMeshVertices) != 1 || numDefectMeshVertices < 0)
                 throw Exception(tr("Failed to parse file. Invalid number of defect mesh vertices in line %1.").arg(stream.lineNumber()));
             setProgressText(tr("Reading defect surface"));
             setProgressMaximum(numDefectMeshVertices);
+            meshBuilder.createVertices(numDefectMeshVertices);
+            BufferAccess<Point3> vertexPositions(meshBuilder.mutableVertexProperty(SurfaceMeshVertices::PositionProperty));
             for(int index = 0; index < numDefectMeshVertices; index++) {
                 if(!setProgressValueIntermittent(index)) return;
                 Point3 p;
                 if(sscanf(stream.readLine(), FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING, &p.x(), &p.y(), &p.z()) != 3)
                     throw Exception(tr("Failed to parse file. Invalid point in line %1.").arg(stream.lineNumber()));
-                defectSurface.createVertex(p);
+                vertexPositions[index] = p;
             }
         }
         else if(stream.lineStartsWith("DEFECT_MESH_FACETS ") && defectSurface) {
+            SurfaceMeshBuilder meshBuilder(defectSurface);
             // Read defect mesh facets.
             int numDefectMeshFacets;
             if(sscanf(stream.line(), "DEFECT_MESH_FACETS %i", &numDefectMeshFacets) != 1 || numDefectMeshFacets < 0)
                 throw Exception(tr("Failed to parse file. Invalid number of defect mesh facets in line %1.").arg(stream.lineNumber()));
             setProgressMaximum(numDefectMeshFacets * 2);
+            SurfaceMeshBuilder::FaceGrower faceGrower(meshBuilder);
             for(int index = 0; index < numDefectMeshFacets; index++) {
                 if(!setProgressValueIntermittent(index))
                     return;
                 int v[3];
                 if(sscanf(stream.readLine(), "%i %i %i", &v[0], &v[1], &v[2]) != 3
-                        || v[0] < 0 || v[0] >= defectSurface.vertexCount()
-                        || v[1] < 0 || v[1] >= defectSurface.vertexCount()
-                        || v[2] < 0 || v[2] >= defectSurface.vertexCount())
+                        || v[0] < 0 || v[0] >= meshBuilder.vertexCount()
+                        || v[1] < 0 || v[1] >= meshBuilder.vertexCount()
+                        || v[2] < 0 || v[2] >= meshBuilder.vertexCount())
                     throw Exception(tr("Failed to parse file. Invalid triangle facet in line %1.").arg(stream.lineNumber()));
-                defectSurface.createFace({v[0], v[1], v[2]});
+                faceGrower.createFace({v[0], v[1], v[2]});
             }
 
             // Read facet adjacency information.
@@ -475,13 +479,13 @@ void CAImporter::FrameLoader::loadFile()
                 int v[3];
                 if(sscanf(stream.readLine(), "%i %i %i", &v[0], &v[1], &v[2]) != 3)
                     throw Exception(tr("Failed to parse file. Invalid triangle adjacency info in line %1.").arg(stream.lineNumber()));
-                SurfaceMesh::edge_index edge = defectSurface.firstFaceEdge(index);
-                for(int i = 0; i < 3; i++, edge = defectSurface.nextFaceEdge(edge)) {
-                    if(defectSurface.hasOppositeEdge(edge)) continue;
-                    SurfaceMesh::edge_index oppositeEdge = defectSurface.findEdge(v[i], defectSurface.vertex2(edge), defectSurface.vertex1(edge));
-                    if(oppositeEdge == SurfaceMeshAccess::InvalidIndex)
+                SurfaceMesh::edge_index edge = meshBuilder.firstFaceEdge(index);
+                for(int i = 0; i < 3; i++, edge = meshBuilder.nextFaceEdge(edge)) {
+                    if(meshBuilder.hasOppositeEdge(edge)) continue;
+                    SurfaceMesh::edge_index oppositeEdge = meshBuilder.findEdge(v[i], meshBuilder.vertex2(edge), meshBuilder.vertex1(edge));
+                    if(oppositeEdge == SurfaceMesh::InvalidIndex)
                         throw Exception(tr("Failed to parse file. Invalid triangle adjacency info in line %1.").arg(stream.lineNumber()));
-                    defectSurface.linkOppositeEdges(edge, oppositeEdge);
+                    meshBuilder.linkOppositeEdges(edge, oppositeEdge);
                 }
             }
         }
@@ -507,7 +511,7 @@ void CAImporter::FrameLoader::loadFile()
     simulationCell()->setCellMatrix(cell);
     simulationCell()->setPbcFlags(pbcFlags[0], pbcFlags[1], pbcFlags[2]);
     if(defectSurface)
-        defectSurface.setDomain(simulationCell());
+        defectSurface->setDomain(simulationCell());
 
     std::vector<size_t> structureCounts;
     if(clusterGraph) {

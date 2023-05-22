@@ -154,7 +154,7 @@ void GrainSegmentationEngine1::applyResults(const ModifierEvaluationRequest& req
 
         std::vector<Bond> bonds;
         std::vector<FloatType> disorientations;
-        ConstPropertyAccess<Point3> positionsArray(particles->expectProperty(ParticlesObject::PositionProperty));
+        BufferAccess<const Point3> positionsArray(particles->expectProperty(ParticlesObject::PositionProperty));
 
         for (auto edge: neighborBonds()) {
             if (isCrystallineBond(edge)) {
@@ -177,12 +177,14 @@ void GrainSegmentationEngine1::applyResults(const ModifierEvaluationRequest& req
         }
 
         // Output disorientation angles as a bond property.
-        PropertyAccessAndRef<FloatType> neighborDisorientationAngles = BondsObject::OOClass().createUserProperty(DataBuffer::Uninitialized, bonds.size(), PropertyObject::Float, 1, QStringLiteral("Disorientation"));
-        for (size_t i = 0; i < disorientations.size(); i++) {
-            neighborDisorientationAngles[i] = disorientations[i];
+        PropertyPtr neighborDisorientationAngles = BondsObject::OOClass().createUserProperty(DataBuffer::Uninitialized, bonds.size(), DataBuffer::FloatDefault, 1, QStringLiteral("Disorientation"));
+        BufferAccess<FloatType> disorientationAnglesAccess(neighborDisorientationAngles);
+        for(size_t i = 0; i < disorientations.size(); i++) {
+            disorientationAnglesAccess[i] = disorientations[i];
         }
+        disorientationAnglesAccess.reset();
 
-        particles->addBonds(bonds, modifier->bondsVis(), { neighborDisorientationAngles.take() });
+        particles->addBonds(bonds, modifier->bondsVis(), { std::move(neighborDisorientationAngles) });
     }
 
     // Output a data plot with the dendrogram points.
@@ -217,13 +219,13 @@ void GrainSegmentationEngine2::applyResults(const ModifierEvaluationRequest& req
         if(modifier->colorParticlesByGrain()) {
 
             // Assign colors to particles according to the grains they belong to.
-            ConstPropertyAccess<Color> grainColorsArray(_grainColors);
-            PropertyAccess<Color> particleColorsArray = particles->createProperty(ParticlesObject::ColorProperty);
-            boost::transform(ConstPropertyAccess<qlonglong>(atomClusters()), particleColorsArray.begin(), [&](qlonglong cluster) {
+            BufferAccess<const ColorG> grainColorsArray(_grainColors);
+            BufferAccess<ColorG> particleColorsArray = particles->createProperty(ParticlesObject::ColorProperty);
+            boost::transform(BufferAccess<const int64_t>(atomClusters()), particleColorsArray.begin(), [&](int64_t cluster) {
                 if(cluster != 0)
                     return grainColorsArray[cluster - 1];
                 else
-                    return Color(0.8, 0.8, 0.8); // Special color for non-crystalline particles not part of any grain.
+                    return ColorG(0.8f, 0.8f, 0.8f); // Special color for non-crystalline particles not part of any grain.
             });
         }
     }
@@ -238,7 +240,7 @@ void GrainSegmentationEngine2::applyResults(const ModifierEvaluationRequest& req
 
     size_t numGrains = 0;
     if(atomClusters()->size() != 0)
-        numGrains = *boost::max_element(ConstPropertyAccess<qlonglong>(atomClusters()));
+        numGrains = *boost::max_element(BufferAccess<const int64_t>(atomClusters()));
 
     state.addAttribute(QStringLiteral("GrainSegmentation.grain_count"), QVariant::fromValue(numGrains), request.modApp());
 

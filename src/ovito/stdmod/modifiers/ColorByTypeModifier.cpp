@@ -118,9 +118,9 @@ void ColorByTypeModifier::evaluateSynchronous(const ModifierEvaluationRequest& r
         throw Exception(tr("The selected input property '%1' is not present.").arg(sourceProperty().name()));
     if(typePropertyObject->componentCount() != 1)
         throw Exception(tr("The input property '%1' has the wrong number of components. Must be a scalar property.").arg(typePropertyObject->name()));
-    if(typePropertyObject->dataType() != PropertyObject::Int)
-        throw Exception(tr("The input property '%1' has the wrong data type. Must be an integer property.").arg(typePropertyObject->name()));
-    ConstPropertyAccess<int> typeProperty = typePropertyObject;
+    if(typePropertyObject->dataType() != PropertyObject::Int32)
+        throw Exception(tr("The input property '%1' has the wrong data type. Must be a 32-bit integer property.").arg(typePropertyObject->name()));
+    BufferAccess<const int32_t> typeProperty = typePropertyObject;
 
     // Get the selection property if enabled by the user.
     ConstPropertyPtr selectionProperty;
@@ -135,10 +135,10 @@ void ColorByTypeModifier::evaluateSynchronous(const ModifierEvaluationRequest& r
     }
 
     // Create the color output property.
-    PropertyAccess<Color> colorProperty = container->createProperty(selectionProperty ? DataBuffer::Initialized : DataBuffer::Uninitialized, PropertyObject::GenericColorProperty, objectPath);
+    BufferAccess<ColorG> colorProperty = container->createProperty(selectionProperty ? DataBuffer::Initialized : DataBuffer::Uninitialized, PropertyObject::GenericColorProperty, objectPath);
 
     // Access selection array.
-    ConstPropertyAccessAndRef<int> selection(std::move(selectionProperty));
+    BufferAccess<const SelectionIntType> selection(selectionProperty.get());
 
     // Create color lookup table.
     const std::map<int,Color> colorMap = typePropertyObject->typeColorMap();
@@ -151,9 +151,9 @@ void ColorByTypeModifier::evaluateSynchronous(const ModifierEvaluationRequest& r
 
         auto c = colorMap.find(typeProperty[i]);
         if(c == colorMap.end())
-            colorProperty[i] = Color(1,1,1);
+            colorProperty[i] = ColorG(1,1,1);
         else
-            colorProperty[i] = c->second;
+            colorProperty[i] = c->second.toDataType<GraphicsFloatType>();
     }
 #endif
 }

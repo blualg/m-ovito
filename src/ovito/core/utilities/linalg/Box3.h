@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2014 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -94,6 +94,15 @@ public:
         maxc.z() = center.z() + halfEdgeLength;
     }
 
+    /// \brief Casts the box to a box with another data type.
+    template<typename U>
+    Q_DECL_CONSTEXPR auto toDataType() const -> std::conditional_t<!std::is_same_v<T,U>, Box_3<U>, const Box_3<T>&> {
+        if constexpr(!std::is_same_v<T,U>)
+            return Box_3<U>(minc.template toDataType<U>(), maxc.template toDataType<U>());
+        else
+            return *this;  // When casting to the same type \a T, this method becomes a no-op.
+    }
+
     ///////////////////////////////// Attributes /////////////////////////////////
 
     /// \brief Checks whether this is box is empty.
@@ -163,7 +172,7 @@ public:
     /// \param p The input point.
     /// \param epsilon This threshold is used to test whether the point is on the boundary of the box.
     /// \return -1 if \a p is outside the box; 0 if \a p is on the boundary of the box within the specified tolerance; +1 if inside the box.
-    int classifyPoint(const Point_3<T>& p, T epsilon = T(FLOATTYPE_EPSILON)) const {
+    int classifyPoint(const Point_3<T>& p, T epsilon = FloatTypeEpsilon<T>()) const {
         if(p.x() > maxc.x() + epsilon || p.y() > maxc.y() + epsilon || p.z() > maxc.z() + epsilon) return -1;
         if(p.x() < minc.x() - epsilon || p.y() < minc.y() - epsilon || p.z() < minc.z() - epsilon) return -1;
         if(p.x() < maxc.x() - epsilon && p.x() > minc.x() + epsilon &&
@@ -220,8 +229,8 @@ public:
     /// \brief Extends the box to include the given set of points.
     /// \param range An iterable range of points.
     /// \sa addPoint()
-    template<class Range>
-    void addPoints(const Range& points) {
+    template<typename PointsRange>
+    void addPoints(const PointsRange& points) {
         for(const Point_3<T>& p : points)
             addPoint(p);
     }
@@ -339,12 +348,23 @@ inline QDataStream& operator>>(QDataStream& stream, Box_3<T>& b) {
     return stream >> b.minc >> b.maxc;
 }
 
-
 /**
  * \brief Instance of the Box_3 class template used for floating-point calculations based on Point3.
  * \relates Box_3
  */
 using Box3 = Box_3<FloatType>;
+
+/**
+ * \brief Instance of the Box_3 class template used for floating-point calculations based on Point3F.
+ * \relates Box_3
+ */
+using Box3F = Box_3<float>;
+
+/**
+ * \brief Instance of the Box_3 class template used for floating-point calculations based on Point3G.
+ * \relates Box_3
+ */
+using Box3G = Box_3<GraphicsFloatType>;
 
 /**
  * \brief Instance of the Box_3 class template used for integer calculations based on Point3I.
@@ -355,6 +375,8 @@ using Box3I = Box_3<int>;
 }   // End of namespace
 
 Q_DECLARE_METATYPE(Ovito::Box3);
+Q_DECLARE_METATYPE(Ovito::Box3F);
 Q_DECLARE_METATYPE(Ovito::Box3I);
 Q_DECLARE_TYPEINFO(Ovito::Box3, Q_MOVABLE_TYPE);
+Q_DECLARE_TYPEINFO(Ovito::Box3F, Q_MOVABLE_TYPE);
 Q_DECLARE_TYPEINFO(Ovito::Box3I, Q_MOVABLE_TYPE);

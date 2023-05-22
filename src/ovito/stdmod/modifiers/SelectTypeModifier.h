@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -58,7 +58,7 @@ public:
 
     /// Toggles the selection state for the given element types.
     /// This helper method is called by the QML GUI (SelectTypeModifier.qml) to make changes to the modifier.
-    Q_INVOKABLE void setElementTypeSelectionState(int elementTypeId, const QString& elementTypeName, bool selectionState);
+    Q_INVOKABLE void setElementTypeSelectionState(int32_t elementTypeId, const QString& elementTypeName, bool selectionState);
 #endif
 
     /// Returns a short piece information (typically a string or color) to be displayed next to the modifier's title in the pipeline editor list.
@@ -75,7 +75,7 @@ private:
     DECLARE_MODIFIABLE_PROPERTY_FIELD(PropertyReference, sourceProperty, setSourceProperty);
 
     /// The numeric IDs of the types to select.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(QSet<int>, selectedTypeIDs, setSelectedTypeIDs);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(QSet<int32_t>, selectedTypeIDs, setSelectedTypeIDs);
 
     /// The names of the types to select.
     DECLARE_MODIFIABLE_PROPERTY_FIELD(QSet<QString>, selectedTypeNames, setSelectedTypeNames);

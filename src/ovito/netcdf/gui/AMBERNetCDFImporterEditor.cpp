@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -123,8 +123,11 @@ void AMBERNetCDFImporterEditor::createUI(const RolloutInsertionParameters& rollo
     useCustomMappingUI->buttonTrue()->setText(tr("User-defined mapping to particle properties"));
     sublayout->addWidget(useCustomMappingUI->buttonTrue());
     connect(useCustomMappingUI->buttonFalse(), &QRadioButton::clicked, this, [this]() {
-        if(AMBERNetCDFImporter* importer = static_object_cast<AMBERNetCDFImporter>(editObject()))
-            importer->requestReload();
+        if(AMBERNetCDFImporter* importer = static_object_cast<AMBERNetCDFImporter>(editObject())) {
+            handleExceptions([&]() {
+                importer->requestReload();
+            });
+        }
     }, Qt::QueuedConnection);
 
     QPushButton* editMappingButton = new QPushButton(tr("Edit column mapping..."));
@@ -142,7 +145,7 @@ void AMBERNetCDFImporterEditor::onEditColumnMapping()
 
             // Determine the currently loaded data file of the FileSource.
             FileSource* fileSource = importer->fileSource();
-            if(!fileSource || fileSource->frames().empty()) 
+            if(!fileSource || fileSource->frames().empty())
                 return;
             int frameIndex = qBound(0, fileSource->dataCollectionFrame(), fileSource->frames().size()-1);
 

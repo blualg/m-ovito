@@ -491,7 +491,7 @@ void OpenGLSceneRenderer::renderTransparentGeometry()
         OVITO_CHECK_OPENGL(this, this->glActiveTexture(GL_TEXTURE0));
 
         // Draw a quad with 4 vertices.
-        shader.drawArrays(GL_TRIANGLE_STRIP);
+        shader.draw(GL_TRIANGLE_STRIP);
 
         this->glBindTexture(GL_TEXTURE_2D, 0);
         this->glDepthMask(GL_TRUE);
@@ -561,22 +561,22 @@ void OpenGLSceneRenderer::renderParticles(const ParticlePrimitive& primitive)
             if(!cache.initialized) {
                 cache.initialized = true;
                 // Are there any particles having a non-positive transparency value?
-                std::vector<int> fullyOpaqueIndices;
+                std::vector<int32_t> fullyOpaqueIndices;
                 if(!primitive.indices()) {
                     int index = 0;
-                    for(FloatType t : ConstDataBufferAccess<FloatType>(primitive.transparencies())) {
+                    for(FloatType t : BufferAccess<const GraphicsFloatType>(primitive.transparencies())) {
                         if(t <= 0) fullyOpaqueIndices.push_back(index);
                         index++;
                     }
                 }
                 else {
-                    ConstDataBufferAccess<FloatType> transparencies(primitive.transparencies());
-                    for(int index : ConstDataBufferAccess<int>(primitive.indices())) {
+                    BufferAccess<const GraphicsFloatType> transparencies(primitive.transparencies());
+                    for(auto index : BufferAccess<const int32_t>(primitive.indices())) {
                         if(transparencies[index] <= 0) fullyOpaqueIndices.push_back(index);
                     }
                 }
                 if(!fullyOpaqueIndices.empty()) {
-                    DataBufferAccessAndRef<int> indexArray = DataBufferPtr::create(fullyOpaqueIndices.size(), DataBuffer::Int);
+                    BufferAccessAndRef<int32_t> indexArray = DataBufferPtr::create(fullyOpaqueIndices.size(), DataBuffer::Int32);
                     std::copy(fullyOpaqueIndices.begin(), fullyOpaqueIndices.end(), indexArray.begin());
                     cache.opaqueIndices = indexArray.take();
                 }
@@ -775,7 +775,7 @@ void OpenGLSceneRenderer::loadShader(QOpenGLShaderProgram* program, QOpenGLShade
             shaderSource.append("uniform int vertices_per_instance;\n");
         }
     }
-    else if(_glversion < QT_VERSION_CHECK(3, 3, 0)) {
+    else if(!useInstancedArrays()) {
         // This is needed to compute the special shader variable 'gl_VertexID' when instanced arrays are not supported:
         if(shaderType == QOpenGLShader::Vertex) {
             shaderSource.append("uniform int vertices_per_instance;\n");
@@ -879,7 +879,7 @@ void OpenGLSceneRenderer::loadShader(QOpenGLShaderProgram* program, QOpenGLShade
         // The per-instance vertex ID.
         if(_glversion < QT_VERSION_CHECK(3, 0, 0))
             line.replace("<VertexID>", "int(mod(vertexID + 0.5, float(vertices_per_instance)))"); // gl_VertexID is not available, requires a VBO with explicit vertex IDs
-        else if(_glversion < QT_VERSION_CHECK(3, 3, 0))
+        else if(!useInstancedArrays())
             line.replace("<VertexID>", "(gl_VertexID % vertices_per_instance)"); // gl_VertexID is available but no instanced arrays.
         else
             line.replace("<VertexID>", "gl_VertexID"); // gl_VertexID is fully supported.
@@ -887,7 +887,7 @@ void OpenGLSceneRenderer::loadShader(QOpenGLShaderProgram* program, QOpenGLShade
         // The instance ID.
         if(_glversion < QT_VERSION_CHECK(3, 0, 0))
             line.replace("<InstanceID>", "(int(vertexID) / vertices_per_instance)"); // Compute the instance ID from the running vertex index, which is read from a VBO array.
-        else if(_glversion < QT_VERSION_CHECK(3, 3, 0))
+        else if(!useInstancedArrays())
             line.replace("<InstanceID>", "(gl_VertexID / vertices_per_instance)"); // Compute the instance ID from the running vertex index.
         else
             line.replace("<InstanceID>", "gl_InstanceID"); // gl_InstanceID is fully supported.

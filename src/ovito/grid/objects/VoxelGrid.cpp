@@ -53,7 +53,7 @@ void VoxelGrid::OOMetaClass::initialize()
     const QStringList emptyList;
     const QStringList rgbList = QStringList() << "R" << "G" << "B";
 
-    registerStandardProperty(ColorProperty, tr("Color"), PropertyObject::Float, rgbList, nullptr, tr("Voxel colors"));
+    registerStandardProperty(ColorProperty, tr("Color"), PropertyObject::FloatGraphics, rgbList, nullptr, tr("Voxel colors"));
 }
 
 /******************************************************************************
@@ -66,9 +66,9 @@ PropertyPtr VoxelGrid::OOMetaClass::createStandardPropertyInternal(DataBuffer::B
 
     switch(type) {
     case ColorProperty:
-        dataType = PropertyObject::Float;
+        dataType = PropertyObject::FloatGraphics;
         componentCount = 3;
-        OVITO_ASSERT(componentCount * sizeof(FloatType) == sizeof(Color));
+        OVITO_ASSERT(componentCount * sizeof(GraphicsFloatType) == sizeof(ColorG));
         break;
     default:
         OVITO_ASSERT_MSG(false, "VoxelGrid::createStandardPropertyInternal", "Invalid standard property type");
@@ -182,7 +182,7 @@ std::tuple<ConstDataBufferPtr, ConstDataBufferPtr> VoxelGrid::getVectorVisData(c
     auto& basePositions = visCache.get<ConstDataBufferPtr>(CacheKey(this));
 
     if(!basePositions) {
-        DataBufferAccessAndRef<Point3> points = DataBufferPtr::create(elementCount(), DataBuffer::Float, 3);
+        BufferAccessAndRef<Point3> points = DataBufferPtr::create(elementCount(), DataBuffer::FloatDefault, 3);
         if(points.size() != 0) {
             if(gridType() == GridType::CellData) {
                 // Compute grid cell centers.

@@ -106,8 +106,8 @@ public:
     void setInstancedRendering(ConstDataBufferPtr perInstanceTMs, ConstDataBufferPtr perInstanceColors) {
         OVITO_ASSERT(perInstanceTMs);
         OVITO_ASSERT(!perInstanceColors || perInstanceTMs->size() == perInstanceColors->size());
-        OVITO_ASSERT(!perInstanceColors || perInstanceColors->stride() == sizeof(ColorA));
-        OVITO_ASSERT(perInstanceTMs->stride() == sizeof(AffineTransformation));
+        OVITO_ASSERT(!perInstanceColors || (perInstanceColors->stride() == sizeof(ColorAT<double>) || perInstanceColors->stride() == sizeof(ColorAT<float>)));
+        OVITO_ASSERT(perInstanceTMs->stride() == sizeof(AffineTransformationT<double>) || perInstanceTMs->stride() == sizeof(AffineTransformationT<float>));
 
         // Store the data arrays.
         _perInstanceTMs = std::move(perInstanceTMs);

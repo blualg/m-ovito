@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -187,7 +187,7 @@ bool XYZImporter::mapVariableToProperty(ParticleInputColumnMapping& columnMappin
     else if(loweredName == "molecule_type") columnMapping.mapStandardColumn(column, ParticlesObject::MoleculeTypeProperty);
     else {
         // Only int or float custom properties are supported
-        if(dataType == PropertyObject::Float || dataType == PropertyObject::Int || dataType == PropertyObject::Int64)
+        if(dataType == PropertyObject::Float32 || dataType == PropertyObject::Float64 || dataType == PropertyObject::Int8 || dataType == PropertyObject::Int32 || dataType == PropertyObject::Int64)
             columnMapping.mapCustomColumn(column, name, dataType, vec);
         else
             return false;
@@ -457,7 +457,7 @@ void XYZImporter::FrameLoader::loadFile()
         hasSimulationCell = true;
     }
 
-    PropertyAccess<Point3> posProperty = particles()->getMutableProperty(ParticlesObject::PositionProperty);
+    BufferAccess<Point3> posProperty = particles()->getMutableProperty(ParticlesObject::PositionProperty);
     if(posProperty && numParticlesLong != 0) {
         Box3 boundingBox;
         boundingBox.addPoints(posProperty);
@@ -537,25 +537,25 @@ ParticleInputColumnMapping XYZImporter::parseExtendedXYZColumnSpecification(cons
             switch(propType) {
             case 'I':
                 for(int k = 0; k < nCols; k++) {
-                    mapVariableToProperty(mapping, col, propName, PropertyObject::Int, k);
+                    mapVariableToProperty(mapping, col, propName, PropertyObject::Int32, k);
                     col++;
                 }
                 break;
             case 'R':
                 for(int k = 0; k < nCols; k++) {
-                    mapVariableToProperty(mapping, col, propName, PropertyObject::Float, k);
+                    mapVariableToProperty(mapping, col, propName, PropertyObject::FloatDefault, k);
                     col++;
                 }
                 break;
             case 'L':
                 for(int k = 0; k < nCols; k++) {
-                    mapVariableToProperty(mapping, col, propName, PropertyObject::Int, k);
+                    mapVariableToProperty(mapping, col, propName, PropertyObject::Int32, k);
                     col++;
                 }
                 break;
             case 'S':
                 for(int k = 0; k < nCols; k++) {
-                    if(!mapVariableToProperty(mapping, col, propName, qMetaTypeId<char>(), k) && k == 0)
+                    if(!mapVariableToProperty(mapping, col, propName, 0, k) && k == 0)
                         qDebug() << "Warning: Skipping field" << propName << "of XYZ file because it has an unsupported data type (string).";
                     col++;
                 }

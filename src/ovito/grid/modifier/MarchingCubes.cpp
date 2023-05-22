@@ -32,10 +32,11 @@ namespace Ovito::Grid {
 /******************************************************************************
  * Constructor.
  ******************************************************************************/
-MarchingCubes::MarchingCubes(SurfaceMeshAccess& outputMesh, int size_x, int size_y, int size_z, bool lowerIsSolid,
-                             std::function<FloatType(int i, int j, int k)> field, bool infiniteDomain, bool outputCellCoordinates,
-                             bool identifyRegions)
+MarchingCubes::MarchingCubes(SurfaceMeshBuilder& outputMesh, int size_x, int size_y, int size_z, bool lowerIsSolid,
+                             std::function<FloatType(int i, int j, int k)> field, bool infiniteDomain, bool outputCellCoordinates)
     : _outputMesh(outputMesh),
+      _vertexGrower(outputMesh),
+      _faceGrower(outputMesh),
       _pbcFlags(outputMesh.domain()->pbcFlags()),
       _infiniteDomain(infiniteDomain),
       _outputCellCoordinates(outputCellCoordinates),
@@ -43,13 +44,14 @@ MarchingCubes::MarchingCubes(SurfaceMeshAccess& outputMesh, int size_x, int size
       _size_y(size_y + (_pbcFlags[1] ? 0 : 1)),
       _size_z(size_z + (_pbcFlags[2] ? 0 : 1)),
       getFieldValue(std::move(field)),
-      _cubeVerts(_size_x * _size_y * _size_z * 3, SurfaceMeshAccess::InvalidIndex),
-      _lowerIsSolid(lowerIsSolid),
-      _identifyRegions{identifyRegions}
+      _cubeVerts(_size_x * _size_y * _size_z * 3, SurfaceMesh::InvalidIndex),
+      _lowerIsSolid(lowerIsSolid)
 {
     OVITO_ASSERT(outputMesh.domain());
+    OVITO_ASSERT(outputMesh.vertexCount() == 0);
+    OVITO_ASSERT(outputMesh.faceCount() == 0);
     OVITO_ASSERT(outputMesh.regionCount() == 0);
-    OVITO_ASSERT(outputMesh.spaceFillingRegion() == SurfaceMeshAccess::InvalidIndex);
+    OVITO_ASSERT(outputMesh.spaceFillingRegion() == SurfaceMesh::InvalidIndex);
 }
 
 /******************************************************************************
@@ -64,17 +66,21 @@ bool MarchingCubes::generateIsosurface(FloatType isolevel, ProgressingTask& oper
 
     operation.setProgressMaximum(size_z * 2);
     computeIntersectionPoints(operation);
-    if(_outputMesh.spaceFillingRegion() != SurfaceMeshAccess::InvalidIndex) {
+
+    if(operation.isCanceled())
+        return false;
+
+    if(_outputMesh.spaceFillingRegion() != SurfaceMesh::InvalidIndex) {
         handleSpaceFillingRegion();
+        _vertexGrower.reset();
+        _faceGrower.reset();
         return !operation.isCanceled();
     }
-    if(operation.isCanceled()) return false;
 
     // Setup region calculation
-    if(_identifyRegions) {
+    if(identifyRegions()) {
         _vertRegions.assign(_size_x * _size_y * _size_z, -1);
         _maxRegionIndex = 0;
-        _outputMesh.createFaceProperty(DataBuffer::Uninitialized, SurfaceMeshFaces::RegionProperty);
     }
 
     for(int k = 0; k < size_z; k++, operation.incrementProgressValue()) {
@@ -83,20 +89,32 @@ bool MarchingCubes::generateIsosurface(FloatType isolevel, ProgressingTask& oper
                 _lut_entry = 0;
                 for(int p = 0; p < 8; ++p) {
                     _cube[p] = getFieldValue(i + ((p ^ (p >> 1)) & 1), j + ((p >> 1) & 1), k + ((p >> 2) & 1)) - _isolevel;
-                    if(std::abs(_cube[p]) < _epsilon) _cube[p] = _epsilon;
-                    if(_cube[p] > 0) _lut_entry |= (1 << p);
+                    if(std::abs(_cube[p]) < _epsilon)
+                        _cube[p] = _epsilon;
+                    if(_cube[p] > 0)
+                        _lut_entry |= (1 << p);
                 }
                 processCube(i, j, k);
             }
         }
-        if(operation.isCanceled()) return false;
+        if(operation.isCanceled())
+            return false;
     }
 
-    if(_identifyRegions) {
-        bool isClosed{_outputMesh.connectOppositeHalfedges()};
-        OVITO_ASSERT(isClosed);
-        mergeIdentifiedRegions();
+    if(identifyRegions()) {
+        if(_outputMesh.faceCount() != 0) {
+            bool isClosed = _outputMesh.connectOppositeHalfedges();
+            OVITO_ASSERT(isClosed);
+            mergeIdentifiedRegions();
+        }
+        else {
+            // Case: No surface, because box is completely empty -> output one empty mesh region.
+            handleSpaceFillingRegion();
+        }
     }
+
+    _vertexGrower.reset();
+    _faceGrower.reset();
 
     return !operation.isCanceled();
 }
@@ -106,7 +124,9 @@ bool MarchingCubes::generateIsosurface(FloatType isolevel, ProgressingTask& oper
  ******************************************************************************/
 void MarchingCubes::computeIntersectionPoints(ProgressingTask& operation)
 {
-    if(_pbcFlags[0] && _pbcFlags[1] && _pbcFlags[2]) _outputMesh.setSpaceFillingRegion(0);
+    if(_pbcFlags[0] && _pbcFlags[1] && _pbcFlags[2])
+        _outputMesh.setSpaceFillingRegion(0);
+
     for(int k = 0; k < _size_z && !operation.isCanceled(); k++, operation.incrementProgressValue()) {
         for(int j = 0; j < _size_y; j++) {
             for(int i = 0; i < _size_x; i++) {
@@ -122,10 +142,10 @@ void MarchingCubes::computeIntersectionPoints(ProgressingTask& operation)
                 if(std::abs(cube[4]) < _epsilon) cube[4] = _epsilon;
 
                 if(_lowerIsSolid) {
-                    if(cube[0] > 0) _outputMesh.setSpaceFillingRegion(SurfaceMeshAccess::InvalidIndex);
+                    if(cube[0] > 0) _outputMesh.setSpaceFillingRegion(SurfaceMesh::InvalidIndex);
                 }
                 else {
-                    if(cube[0] < 0) _outputMesh.setSpaceFillingRegion(SurfaceMeshAccess::InvalidIndex);
+                    if(cube[0] < 0) _outputMesh.setSpaceFillingRegion(SurfaceMesh::InvalidIndex);
                 }
                 if(cube[1] * cube[0] < 0) createEdgeVertexX(i, j, k, cube[0] / (cube[0] - cube[1]));
                 if(cube[3] * cube[0] < 0) createEdgeVertexY(i, j, k, cube[0] / (cube[0] - cube[3]));
@@ -353,18 +373,25 @@ bool MarchingCubes::testInterior(signed char s)
 
 void MarchingCubes::handleSpaceFillingRegion()
 {
-    _outputMesh.createRegions(1);
+    OVITO_ASSERT(_outputMesh.regionCount() == 0);
+    _outputMesh.mutableRegions()->setElementCount(1);
 
-    PropertyAccess<FloatType> volumeProperty =
-        _outputMesh.createRegionProperty(DataBuffer::Initialized, SurfaceMeshRegions::VolumeProperty);
-    PropertyAccess<int> isExteriorProperty =
-        _outputMesh.createRegionProperty(DataBuffer::Initialized, SurfaceMeshRegions::IsExteriorProperty);
-    PropertyAccess<int> isFilledProperty =
-        _outputMesh.createRegionProperty(DataBuffer::Initialized, SurfaceMeshRegions::IsFilledProperty);
+    BufferAccess<FloatType> volumeProperty =
+        _outputMesh.createRegionProperty(DataBuffer::Uninitialized, SurfaceMeshRegions::VolumeProperty);
+    BufferAccess<SelectionIntType> isExteriorProperty =
+        _outputMesh.createRegionProperty(DataBuffer::Uninitialized, SurfaceMeshRegions::IsExteriorProperty);
+    BufferAccess<SelectionIntType> isFilledProperty =
+        _outputMesh.createRegionProperty(DataBuffer::Uninitialized, SurfaceMeshRegions::IsFilledProperty);
 
     volumeProperty[0] = _size_x * _size_y * _size_z;
-    isFilledProperty[0] = 1;
-    isExteriorProperty[0] = 0;
+    if(_outputMesh.spaceFillingRegion() != SurfaceMesh::InvalidIndex) {
+        isExteriorProperty[0] = 0;
+        isFilledProperty[0] = 1;
+    }
+    else {
+        isExteriorProperty[0] = !(_outputMesh.domain()->pbcFlags()[0] && _outputMesh.domain()->pbcFlags()[1] && _outputMesh.domain()->pbcFlags()[2]);
+        isFilledProperty[0] = 0;
+    }
     _outputMesh.setSpaceFillingRegion(0);
 }
 
@@ -381,38 +408,33 @@ void MarchingCubes::mergeIdentifiedRegions()
         uf.merge(r1, r2);
     }
 
-    PropertyAccess<int> regionPropertyAccess{_outputMesh.faceProperty(SurfaceMeshFaces::RegionProperty)};
     // map newly defined regions from discontinous range(0,_regionVolumes.size()) to range(0,regionCount)
-    std::map<int, int> regionMap{};
-    int regionCount{0};
+    std::map<SurfaceMesh::region_index, SurfaceMesh::region_index> regionMap;
 
-    // assigned newly merged regions to each facet
-    for(int i{0}; i < _outputMesh.faceCount(); i++) {
-        int newIndex{static_cast<int>(uf.find(regionPropertyAccess[i]))};
-        if(regionMap.find(newIndex) == regionMap.end()) {
-            regionMap[newIndex] = regionCount++;
-        }
-        regionPropertyAccess[i] = regionMap[newIndex];
+    // Assign newly merged regions to each facet.
+    for(SurfaceMesh::region_index& ridx : _faceGrower.faceRegions()) {
+        SurfaceMesh::region_index newIndex = static_cast<SurfaceMesh::region_index>(uf.find(ridx));
+        ridx = regionMap.emplace(newIndex, regionMap.size()).first->second;
     }
-    _maxRegionIndex = regionCount;
-    _outputMesh.createRegions(_maxRegionIndex);
+    _maxRegionIndex = regionMap.size();
+    _outputMesh.mutableRegions()->setElementCount(_maxRegionIndex);
 
-    PropertyAccess<FloatType> volumeProperty{
+    BufferAccess<FloatType> volumeProperty{
         _outputMesh.createRegionProperty(DataBuffer::Initialized, SurfaceMeshRegions::VolumeProperty)};
-    PropertyAccess<int> isExteriorProperty{
+    BufferAccess<SelectionIntType> isExteriorProperty{
         _outputMesh.createRegionProperty(DataBuffer::Initialized, SurfaceMeshRegions::IsExteriorProperty)};
-    PropertyAccess<int> isFilledProperty{
+    BufferAccess<SelectionIntType> isFilledProperty{
         _outputMesh.createRegionProperty(DataBuffer::Initialized, SurfaceMeshRegions::IsFilledProperty)};
 
-    for(int i{0}; i < _regionVolumes.size(); i++) {
-        int newIndex{static_cast<int>(uf.find(i))};
+    for(int i = 0; i < _regionVolumes.size(); i++) {
+        int newIndex = static_cast<int>(uf.find(i));
         OVITO_ASSERT(regionMap.find(newIndex) != regionMap.end());
-        volumeProperty[regionMap[newIndex]] += _regionVolumes[i];
-        isFilledProperty[regionMap[newIndex]] = static_cast<int>(_regionFilled[i]);
-        isExteriorProperty[regionMap[newIndex]] |= static_cast<int>(_regionExterior[i]);
+        auto ridx = regionMap[newIndex];
+        volumeProperty[ridx] += _regionVolumes[i];
+        isFilledProperty[ridx] = static_cast<SelectionIntType>(_regionFilled[i]);
+        isExteriorProperty[ridx] |= static_cast<SelectionIntType>(_regionExterior[i]);
     }
-    OVITO_ASSERT(std::abs(std::accumulate(volumeProperty.begin(), volumeProperty.end(), 0.0) - (_size_x * _size_y * _size_z)) <
-                 1e-6);
+    OVITO_ASSERT(std::abs(std::accumulate(volumeProperty.begin(), volumeProperty.end(), 0.0) - (_size_x * _size_y * _size_z)) < 1e-6);
 }
 
 /******************************************************************************
@@ -420,7 +442,7 @@ void MarchingCubes::mergeIdentifiedRegions()
  ******************************************************************************/
 void MarchingCubes::processCube(int i, int j, int k)
 {
-    SurfaceMeshAccess::vertex_index v12 = SurfaceMeshAccess::InvalidIndex;
+    SurfaceMesh::vertex_index v12 = SurfaceMesh::InvalidIndex;
     _case = cases[_lut_entry][0];
     _config = cases[_lut_entry][1];
     _subconfig = 0;
@@ -859,9 +881,9 @@ void MarchingCubes::processCube(int i, int j, int k)
  ******************************************************************************/
 void MarchingCubes::processCase(int i, int j, int k, const signed char* triangles, const signed char* triangleRegions,
                                 const signed char* vertexRegions, const signed char** volumeRegionsTriangulation,
-                                int numTriangles, int numVolumeRegions, SurfaceMeshAccess::vertex_index v12)
+                                int numTriangles, int numVolumeRegions, SurfaceMesh::vertex_index v12)
 {
-    if(_identifyRegions) {
+    if(identifyRegions()) {
         // case 0 where all vertices belong to the same side of the iso surface
         // 0 triangles, 1 region, 1.0 volume
         const std::array<int, 5> localRegionMap{processRegionsVoxelVertices(i, j, k, vertexRegions)};
@@ -935,8 +957,8 @@ std::array<int, 5> MarchingCubes::processRegionsVoxelVertices(int i, int j, int 
 /******************************************************************************
  * Converts the local (per voxel) edge indices to global vertices used in the mesh
  ******************************************************************************/
-SurfaceMeshAccess::vertex_index MarchingCubes::localToGlobalEdgeVertex(int i, int j, int k, int edgeIndex,
-                                                                       SurfaceMeshAccess::vertex_index v12) const
+SurfaceMesh::vertex_index MarchingCubes::localToGlobalEdgeVertex(int i, int j, int k, int edgeIndex,
+                                                                       SurfaceMesh::vertex_index v12) const
 {
     switch(edgeIndex) {
         case 0: return getEdgeVertex(i, j, k, 0);
@@ -952,7 +974,7 @@ SurfaceMeshAccess::vertex_index MarchingCubes::localToGlobalEdgeVertex(int i, in
         case 10: return getEdgeVertex(i + 1, j + 1, k, 2);
         case 11: return getEdgeVertex(i, j + 1, k, 2);
         case 12: return v12;
-        default: OVITO_ASSERT_MSG(false, "Marching cubes", "invalid triangle"); return SurfaceMeshAccess::InvalidIndex;
+        default: OVITO_ASSERT_MSG(false, "Marching cubes", "invalid triangle"); return SurfaceMesh::InvalidIndex;
     }
 }
 
@@ -961,25 +983,27 @@ SurfaceMeshAccess::vertex_index MarchingCubes::localToGlobalEdgeVertex(int i, in
  ******************************************************************************/
 void MarchingCubes::addTriangle(int i, int j, int k, const signed char* triangles, const signed char* triangleRegions,
                                 const std::array<int, 5>& localRegionMap, signed char numTriangles,
-                                SurfaceMeshAccess::vertex_index v12)
+                                SurfaceMesh::vertex_index v12)
 {
-    SurfaceMeshAccess::vertex_index tv[3];
+    SurfaceMesh::vertex_index tv[3];
+    OVITO_ASSERT(identifyRegions());
 
     for(int t = 0; t < 3 * numTriangles; t++) {
         tv[t % 3] = localToGlobalEdgeVertex(i, j, k, triangles[t], v12);
 
-        SurfaceMeshAccess::face_index face1, face2;
+        SurfaceMesh::face_index face1, face2;
         if(t % 3 == 2) {
             if(_lowerIsSolid) {
-                face1 = _outputMesh.createFace({tv[0], tv[1], tv[2]}, localRegionMap[triangleRegions[t / 3 * 2]]);
-                face2 = _outputMesh.createFace({tv[2], tv[1], tv[0]}, localRegionMap[triangleRegions[t / 3 * 2 + 1]]);
+                face1 = _faceGrower.createFace({tv[0], tv[1], tv[2]}, localRegionMap[triangleRegions[t / 3 * 2]]);
+                face2 = _faceGrower.createFace({tv[2], tv[1], tv[0]}, localRegionMap[triangleRegions[t / 3 * 2 + 1]]);
             }
             else {
-                face2 = _outputMesh.createFace({tv[2], tv[1], tv[0]}, localRegionMap[triangleRegions[t / 3 * 2]]);
-                face1 = _outputMesh.createFace({tv[0], tv[1], tv[2]}, localRegionMap[triangleRegions[t / 3 * 2 + 1]]);
+                face2 = _faceGrower.createFace({tv[2], tv[1], tv[0]}, localRegionMap[triangleRegions[t / 3 * 2]]);
+                face1 = _faceGrower.createFace({tv[0], tv[1], tv[2]}, localRegionMap[triangleRegions[t / 3 * 2 + 1]]);
             }
             _outputMesh.linkOppositeFaces(face1, face2);
-            if(_outputCellCoordinates) _meshFaceVoxelCoordinates.emplace_back(i, j, k);
+            if(_outputCellCoordinates)
+                _meshFaceVoxelCoordinates.emplace_back(i, j, k);
         }
     }
 }
@@ -988,19 +1012,21 @@ void MarchingCubes::addTriangle(int i, int j, int k, const signed char* triangle
  * Adds triangles to the mesh.
  ******************************************************************************/
 void MarchingCubes::addTriangle(int i, int j, int k, const signed char* triangles, signed char numTriangles,
-                                SurfaceMeshAccess::vertex_index v12)
+                                SurfaceMesh::vertex_index v12)
 {
-    SurfaceMeshAccess::vertex_index tv[3];
+    SurfaceMesh::vertex_index tv[3];
+    OVITO_ASSERT(!identifyRegions());
 
     for(int t = 0; t < 3 * numTriangles; t++) {
         tv[t % 3] = localToGlobalEdgeVertex(i, j, k, triangles[t], v12);
 
         if(t % 3 == 2) {
             if(_lowerIsSolid)
-                _outputMesh.createFace({tv[0], tv[1], tv[2]}, 0);
+                _faceGrower.createFace({tv[0], tv[1], tv[2]});
             else
-                _outputMesh.createFace({tv[2], tv[1], tv[0]}, 0);
-            if(_outputCellCoordinates) _meshFaceVoxelCoordinates.emplace_back(i, j, k);
+                _faceGrower.createFace({tv[2], tv[1], tv[0]});
+            if(_outputCellCoordinates)
+                _meshFaceVoxelCoordinates.emplace_back(i, j, k);
         }
     }
 }
@@ -1008,11 +1034,12 @@ void MarchingCubes::addTriangle(int i, int j, int k, const signed char* triangle
 /******************************************************************************
  * Converts the local (per voxel) edge indices to global vertices used in the mesh
  ******************************************************************************/
-Vector3 MarchingCubes::getTriangleEdgeVector(int i, int j, int k, int edgeIndex, SurfaceMeshAccess::vertex_index v12) const
+Vector3 MarchingCubes::getTriangleEdgeVector(int i, int j, int k, int edgeIndex, SurfaceMesh::vertex_index v12) const
 {
     OVITO_ASSERT(edgeIndex >= 0);
     // One of the cube corners:
-    if(edgeIndex < 8) return getCornerVertex(i, j, k, edgeIndex);
+    if(edgeIndex < 8)
+        return getCornerVertex(i, j, k, edgeIndex);
 
     // Vertex along the cube edges:
     int axis{-1};
@@ -1066,7 +1093,7 @@ Vector3 MarchingCubes::getTriangleEdgeVector(int i, int j, int k, int edgeIndex,
     // case==20 -> central vertex
     if(axis == -1) {
         OVITO_ASSERT(v12 != SurfaceMesh::InvalidIndex);
-        return _outputMesh.vertexPosition(v12) - Point3::Origin();
+        return _vertexGrower.vertexPosition(v12) - Point3::Origin();
     }
     int index{getEdgeVertex(iPBC, jPBC, kPBC, axis)};
     Vector3 result;
@@ -1078,7 +1105,7 @@ Vector3 MarchingCubes::getTriangleEdgeVector(int i, int j, int k, int edgeIndex,
         result[axis] += 0.5;
     }
     else {  // Otherwise the vertex position has been calculated and it can be grabbed from the mesh
-        result = _outputMesh.vertexPosition(index) - Point3::Origin();
+        result = _vertexGrower.vertexPosition(index) - Point3::Origin();
         if(iPBC == _size_x) result[0] = _size_x;
         if(jPBC == _size_y) result[1] = _size_y;
         if(kPBC == _size_z) result[2] = _size_z;
@@ -1090,7 +1117,7 @@ Vector3 MarchingCubes::getTriangleEdgeVector(int i, int j, int k, int edgeIndex,
  * Adds triangles to the mesh and labels their regions.
  ******************************************************************************/
 void MarchingCubes::addVolume(int i, int j, int k, const signed char** volumeRegions, const std::array<int, 5>& localRegionMap,
-                              const int numVolumeRegions, SurfaceMeshAccess::vertex_index v12)
+                              const int numVolumeRegions, SurfaceMesh::vertex_index v12)
 {
     FloatType total_volume{0};
     Vector3 tv[3];
@@ -1155,7 +1182,7 @@ void MarchingCubes::setVertexRegion(int i, int j, int k, int value)
 /******************************************************************************
  * Accesses the pre-computed vertex on a lower edge of a specific cube.
  ******************************************************************************/
-SurfaceMeshAccess::vertex_index MarchingCubes::getEdgeVertex(int i, int j, int k, int axis) const
+SurfaceMesh::vertex_index MarchingCubes::getEdgeVertex(int i, int j, int k, int axis) const
 {
     OVITO_ASSERT(i >= 0 && i <= _size_x);
     OVITO_ASSERT(j >= 0 && j <= _size_y);
@@ -1178,9 +1205,9 @@ Vector3 MarchingCubes::getCornerVertex(int i, int j, int k, int edgeIndex) const
     OVITO_ASSERT(edgeIndex >= 0 && edgeIndex < 8);
     // Shift by -1 if the boundary conditions are non periodic.
     // Offset can also be found in createEdgeVertex...()
-    FloatType ift{static_cast<FloatType>(i) - (_pbcFlags[0] ? 0 : 1)};
-    FloatType jft{static_cast<FloatType>(j) - (_pbcFlags[1] ? 0 : 1)};
-    FloatType kft{static_cast<FloatType>(k) - (_pbcFlags[2] ? 0 : 1)};
+    FloatType ift = static_cast<FloatType>(i - (_pbcFlags[0] ? 0 : 1));
+    FloatType jft = static_cast<FloatType>(j - (_pbcFlags[1] ? 0 : 1));
+    FloatType kft = static_cast<FloatType>(k - (_pbcFlags[2] ? 0 : 1));
     switch(edgeIndex) {
         case 0: return Vector3{ift, jft, kft};
         case 1: return Vector3{ift + 1, jft, kft};
@@ -1190,20 +1217,21 @@ Vector3 MarchingCubes::getCornerVertex(int i, int j, int k, int edgeIndex) const
         case 5: return Vector3{ift + 1, jft, kft + 1};
         case 6: return Vector3{ift + 1, jft + 1, kft + 1};
         case 7: return Vector3{ift, jft + 1, kft + 1};
-        default: OVITO_ASSERT_MSG(false, "Corner Vertex", "invalid corner"); return Vector3{SurfaceMesh::InvalidIndex};
+        default:
+            OVITO_ASSERT_MSG(false, "MarchingCubes::getCornerVertex()", "invalid corner");
+            return Vector3::Zero();
     }
 }
 
 /******************************************************************************
  * Adds a vertex on the current horizontal edge.
  ******************************************************************************/
-SurfaceMeshAccess::vertex_index MarchingCubes::createEdgeVertexX(int i, int j, int k, FloatType u)
+SurfaceMesh::vertex_index MarchingCubes::createEdgeVertexX(int i, int j, int k, FloatType u)
 {
     OVITO_ASSERT(i >= 0 && i < _size_x);
     OVITO_ASSERT(j >= 0 && j < _size_y);
     OVITO_ASSERT(k >= 0 && k < _size_z);
-    auto v =
-        _outputMesh.createVertex(Point3(i + u - (_pbcFlags[0] ? 0 : 1), j - (_pbcFlags[1] ? 0 : 1), k - (_pbcFlags[2] ? 0 : 1)));
+    auto v = _vertexGrower.createVertex(Point3(i + u - (_pbcFlags[0] ? 0 : 1), j - (_pbcFlags[1] ? 0 : 1), k - (_pbcFlags[2] ? 0 : 1)));
     _cubeVerts[(i + j * _size_x + k * _size_x * _size_y) * 3 + 0] = v;
     return v;
 }
@@ -1211,13 +1239,12 @@ SurfaceMeshAccess::vertex_index MarchingCubes::createEdgeVertexX(int i, int j, i
 /******************************************************************************
  * Adds a vertex on the current longitudinal edge.
  ******************************************************************************/
-SurfaceMeshAccess::vertex_index MarchingCubes::createEdgeVertexY(int i, int j, int k, FloatType u)
+SurfaceMesh::vertex_index MarchingCubes::createEdgeVertexY(int i, int j, int k, FloatType u)
 {
     OVITO_ASSERT(i >= 0 && i < _size_x);
     OVITO_ASSERT(j >= 0 && j < _size_y);
     OVITO_ASSERT(k >= 0 && k < _size_z);
-    auto v =
-        _outputMesh.createVertex(Point3(i - (_pbcFlags[0] ? 0 : 1), j + u - (_pbcFlags[1] ? 0 : 1), k - (_pbcFlags[2] ? 0 : 1)));
+    auto v = _vertexGrower.createVertex(Point3(i - (_pbcFlags[0] ? 0 : 1), j + u - (_pbcFlags[1] ? 0 : 1), k - (_pbcFlags[2] ? 0 : 1)));
     _cubeVerts[(i + j * _size_x + k * _size_x * _size_y) * 3 + 1] = v;
     return v;
 }
@@ -1225,13 +1252,12 @@ SurfaceMeshAccess::vertex_index MarchingCubes::createEdgeVertexY(int i, int j, i
 /******************************************************************************
  *  Adds a vertex on the current vertical edge.
  ******************************************************************************/
-SurfaceMeshAccess::vertex_index MarchingCubes::createEdgeVertexZ(int i, int j, int k, FloatType u)
+SurfaceMesh::vertex_index MarchingCubes::createEdgeVertexZ(int i, int j, int k, FloatType u)
 {
     OVITO_ASSERT(i >= 0 && i < _size_x);
     OVITO_ASSERT(j >= 0 && j < _size_y);
     OVITO_ASSERT(k >= 0 && k < _size_z);
-    auto v =
-        _outputMesh.createVertex(Point3(i - (_pbcFlags[0] ? 0 : 1), j - (_pbcFlags[1] ? 0 : 1), k + u - (_pbcFlags[2] ? 0 : 1)));
+    auto v = _vertexGrower.createVertex(Point3(i - (_pbcFlags[0] ? 0 : 1), j - (_pbcFlags[1] ? 0 : 1), k + u - (_pbcFlags[2] ? 0 : 1)));
     _cubeVerts[(i + j * _size_x + k * _size_x * _size_y) * 3 + 2] = v;
     return v;
 }
@@ -1239,16 +1265,16 @@ SurfaceMeshAccess::vertex_index MarchingCubes::createEdgeVertexZ(int i, int j, i
 /******************************************************************************
  * Adds a vertex inside the current cube.
  ******************************************************************************/
-SurfaceMeshAccess::vertex_index MarchingCubes::createCenterVertex(int i, int j, int k)
+SurfaceMesh::vertex_index MarchingCubes::createCenterVertex(int i, int j, int k)
 {
     int u = 0;
     Point3 p = Point3::Origin();
 
     // Computes the average of the intersection points of the cube
     auto addPosition = [this, &p, &u](int i, int j, int k, int axis) {
-        SurfaceMeshAccess::vertex_index v = getEdgeVertex(i, j, k, axis);
-        if(v != SurfaceMeshAccess::InvalidIndex) {
-            const Point3& vp = mesh().vertexPosition(v);
+        SurfaceMesh::vertex_index v = getEdgeVertex(i, j, k, axis);
+        if(v != SurfaceMesh::InvalidIndex) {
+            const Point3& vp = _vertexGrower.vertexPosition(v);
             p.x() += vp.x();
             p.y() += vp.y();
             p.z() += vp.z();
@@ -1316,7 +1342,7 @@ SurfaceMeshAccess::vertex_index MarchingCubes::createCenterVertex(int i, int j, 
     }
 #endif
 
-    return _outputMesh.createVertex(p);
+    return _vertexGrower.createVertex(p);
 }
 
 }  // namespace Ovito::Grid

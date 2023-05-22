@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -29,14 +29,13 @@ flat in mat3 view_particle_matrix_fs;
 flat in vec3 particle_view_pos_fs;
 flat in vec2 particle_exponents_fs;
 
-
 const int PLANECOUNT = 9;
 const vec4 planes[PLANECOUNT] = vec4[](
-	vec4(1.0, 1.0, 0.0, 0.0), 
+	vec4(1.0, 1.0, 0.0, 0.0),
 	vec4(1.0,-1.0, 0.0, 0.0),
-	vec4(1.0, 0.0, 1.0, 0.0), 
+	vec4(1.0, 0.0, 1.0, 0.0),
 	vec4(1.0, 0.0,-1.0, 0.0),
-	vec4(0.0, 1.0, 1.0, 0.0), 
+	vec4(0.0, 1.0, 1.0, 0.0),
 	vec4(0.0, 1.0,-1.0, 0.0),
 	vec4(1.0, 0.0, 0.0, 0.0),
 	vec4(0.0, 1.0, 0.0, 0.0),
@@ -174,7 +173,7 @@ float evaluate_superellipsoid(in vec3 P)
     return evaluate_g(evaluate_g(abs(P.x), abs(P.y), particle_exponents_fs.x), abs(P.z), particle_exponents_fs.y) - 1.0;
 }
 
-// Home in on the root of a superquadric using a combination of secant and bisection methods.  
+// Home in on the root of a superquadric using a combination of secant and bisection methods.
 // This routine requires that the sign of the function be different at P0 and P1, it will fail drastically if this isn't the case.
 void solve_hit1(in float v0, in vec3 tP0, in float v1, in vec3 tP1, out vec3 P)
 {
@@ -422,7 +421,7 @@ void main()
 					// Opposite signs: there must be a root between.
 					vec3 P2;
 					solve_hit1(v0, P0, v1, P1, P2);
-	
+
 					vec3 P3 = P2 - P;
 					float t = length(P3);
 

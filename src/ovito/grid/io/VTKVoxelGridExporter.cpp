@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -99,16 +99,16 @@ bool VTKVoxelGridExporter::exportFrame(int frameNumber, const QString& filePath,
     textStream() << "POINT_DATA " << voxelGrid->elementCount() << "\n";
 
     for(const PropertyObject* prop : voxelGrid->properties()) {
-        if(prop->dataType() == PropertyObject::Int || prop->dataType() == PropertyObject::Int64 || prop->dataType() == PropertyObject::Float) {
+        if(prop->dataType() == PropertyObject::Int8 || prop->dataType() == PropertyObject::Int32 || prop->dataType() == PropertyObject::Int64 || prop->dataType() == PropertyObject::Float32 || prop->dataType() == PropertyObject::Float64) {
 
             // Write header of data field.
             QString dataName = prop->name();
             dataName.remove(QChar(' '));
-            if(prop->dataType() == PropertyObject::Float && prop->componentCount() == 3) {
+            if((prop->dataType() == PropertyObject::Float32 || prop->dataType() == PropertyObject::Float64) && prop->componentCount() == 3) {
                 textStream() << "\nVECTORS " << dataName << " double\n";
             }
             else if(prop->componentCount() <= 4) {
-                if(prop->dataType() == PropertyObject::Int)
+                if(prop->dataType() == PropertyObject::Int32 || prop->dataType() == PropertyObject::Int8)
                     textStream() << "\nSCALARS " << dataName << " int " << prop->componentCount() << "\n";
                 else if(prop->dataType() == PropertyObject::Int64)
                     textStream() << "\nSCALARS " << dataName << " long " << prop->componentCount() << "\n";
@@ -121,8 +121,8 @@ bool VTKVoxelGridExporter::exportFrame(int frameNumber, const QString& filePath,
             // Write payload data.
             size_t cmpnts = prop->componentCount();
             OVITO_ASSERT(prop->stride() == prop->dataTypeSize() * cmpnts);
-            if(prop->dataType() == PropertyObject::Float) {
-                ConstPropertyAccess<FloatType, true> data(prop);
+            if(prop->dataType() == PropertyObject::Float32) {
+                BufferAccess<const float*> data(prop);
                 for(size_t row = 0, index = 0; row < dims[1]*dims[2]; row++) {
                     if(operation.isCanceled())
                         return false;
@@ -133,8 +133,8 @@ bool VTKVoxelGridExporter::exportFrame(int frameNumber, const QString& filePath,
                     textStream() << "\n";
                 }
             }
-            else if(prop->dataType() == PropertyObject::Int) {
-                ConstPropertyAccess<int, true> data(prop);
+            else if(prop->dataType() == PropertyObject::Float64) {
+                BufferAccess<const double*> data(prop);
                 for(size_t row = 0, index = 0; row < dims[1]*dims[2]; row++) {
                     if(operation.isCanceled())
                         return false;
@@ -144,15 +144,39 @@ bool VTKVoxelGridExporter::exportFrame(int frameNumber, const QString& filePath,
                     }
                     textStream() << "\n";
                 }
-            }               
-            else if(prop->dataType() == PropertyObject::Int64) {
-                ConstPropertyAccess<qlonglong, true> data(prop);
+            }
+            else if(prop->dataType() == PropertyObject::Int8) {
+                BufferAccess<const int8_t*> data(prop);
                 for(size_t row = 0, index = 0; row < dims[1]*dims[2]; row++) {
                     if(operation.isCanceled())
                         return false;
                     for(size_t col = 0; col < dims[0]; col++, index++) {
                         for(size_t c = 0; c < cmpnts; c++)
-                            textStream() << data.get(index, c) << " ";
+                            textStream() << static_cast<qint32>(data.get(index, c)) << " ";
+                    }
+                    textStream() << "\n";
+                }
+            }
+            else if(prop->dataType() == PropertyObject::Int32) {
+                BufferAccess<const int32_t*> data(prop);
+                for(size_t row = 0, index = 0; row < dims[1]*dims[2]; row++) {
+                    if(operation.isCanceled())
+                        return false;
+                    for(size_t col = 0; col < dims[0]; col++, index++) {
+                        for(size_t c = 0; c < cmpnts; c++)
+                            textStream() << static_cast<qint32>(data.get(index, c)) << " ";
+                    }
+                    textStream() << "\n";
+                }
+            }
+            else if(prop->dataType() == PropertyObject::Int64) {
+                BufferAccess<const int64_t*> data(prop);
+                for(size_t row = 0, index = 0; row < dims[1]*dims[2]; row++) {
+                    if(operation.isCanceled())
+                        return false;
+                    for(size_t col = 0; col < dims[0]; col++, index++) {
+                        for(size_t c = 0; c < cmpnts; c++)
+                            textStream() << static_cast<qlonglong>(data.get(index, c)) << " ";
                     }
                     textStream() << "\n";
                 }

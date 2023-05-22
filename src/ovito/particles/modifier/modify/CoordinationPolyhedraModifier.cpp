@@ -126,23 +126,25 @@ void CoordinationPolyhedraModifier::ComputePolyhedraEngine::perform()
 {
     setProgressText(tr("Generating coordination polyhedra"));
 
+    SurfaceMeshBuilder meshBuilder(_mesh);
+
     // Create the "Region" face property.
-    SurfaceMeshAccess mesh(_mesh);
-    mesh.createFaceProperty(DataBuffer::Uninitialized, SurfaceMeshFaces::RegionProperty);
+    meshBuilder.createFaceProperty(DataBuffer::Uninitialized, SurfaceMeshFaces::RegionProperty);
+    PropertyContainer::Grower regionGrower(meshBuilder.mutableRegions());
 
     // Determine number of selected particles.
-    ConstPropertyAccess<int> selectionArray(_selection);
-    size_t npoly = boost::count_if(selectionArray, [](int s) { return s != 0; });
+    BufferAccess<const SelectionIntType> selectionArray(_selection);
+    size_t npoly = boost::count_if(selectionArray, [](auto s) { return s != 0; });
     setProgressMaximum(npoly);
 
     ParticleBondMap bondMap(_bondTopology, _bondPeriodicImages);
 
-    ConstPropertyAccess<Point3> positionsArray(_positions);
+    BufferAccess<const Point3> positionsArray(_positions);
 
     // Working variables.
     std::vector<Point3> neighborPositions;
     std::vector<size_t> neighborIndices;
-    SurfaceMeshAccess::size_type oldVertexCount = 0;
+    SurfaceMesh::size_type oldVertexCount = 0;
 
     // After construction of the mesh, this array will contain for each
     // mesh vertex the index of the particle it was created from.
@@ -178,16 +180,16 @@ void CoordinationPolyhedraModifier::ComputePolyhedraEngine::perform()
         // Construct the polyhedron (i.e. convex hull) from the point list.
         if(particleProperties().empty()) {
             // Note: We are moving the point list into the convex hull method to avoid an extra copy.
-            mesh.constructConvexHull(std::move(neighborPositions));
+            meshBuilder.constructConvexHull(std::move(neighborPositions), regionGrower.grow(1));
         }
         else {
             // Note: We keep our own copy of the point list so that we can determine the insertion order afterwards.
-            mesh.constructConvexHull(neighborPositions);
+            meshBuilder.constructConvexHull(neighborPositions, regionGrower.grow(1));
 
             // Find each input point among the newly added vertices of the mesh.
             // This will help us later to transfer the particle properties to the corresponding mesh vertices.
-            auto vertexRange = mesh.vertexPositions();
-            for(const Point3& vpos : vertexRange.advance_begin(oldVertexCount)) {
+            BufferAccess<const Point3> vertexPositions = meshBuilder.expectVertexProperty(SurfaceMeshVertices::PositionProperty);
+            for(const Point3& vpos : std::move(vertexPositions).subrange(oldVertexCount)) {
                 auto idx = neighborIndices.cbegin();
                 for(const Point3& p : neighborPositions) {
                     OVITO_ASSERT(idx != neighborIndices.cend());
@@ -198,8 +200,8 @@ void CoordinationPolyhedraModifier::ComputePolyhedraEngine::perform()
                     ++idx;
                 }
             }
-            OVITO_ASSERT(vertexToParticleMap.size() == mesh.vertexCount());
-            oldVertexCount = mesh.vertexCount();
+            OVITO_ASSERT(vertexToParticleMap.size() == meshBuilder.vertexCount());
+            oldVertexCount = meshBuilder.vertexCount();
         }
 
         // Clear point list for next loop iteration.
@@ -209,18 +211,19 @@ void CoordinationPolyhedraModifier::ComputePolyhedraEngine::perform()
         if(!incrementProgressValue())
             return;
     }
-    OVITO_ASSERT(regionToParticleMap.size() == mesh.regionCount());
+    regionGrower.commit();
+    OVITO_ASSERT(regionToParticleMap.size() == meshBuilder.regionCount());
 
     // Transfer particle properties to the mesh vertices and mesh regions if requested.
     if(!particleProperties().empty()) {
-        OVITO_ASSERT(vertexToParticleMap.size() == mesh.vertexCount());
+        OVITO_ASSERT(vertexToParticleMap.size() == meshBuilder.vertexCount());
         for(const ConstPropertyPtr& particleProperty : particleProperties()) {
 
             // Create the corresponding output mesh vertex property.
             PropertyPtr vertexProperty;
             if(particleProperty->type() < PropertyObject::FirstSpecificProperty && SurfaceMeshVertices::OOClass().isValidStandardPropertyId(particleProperty->type())) {
                 // Input property is also a standard property for mesh vertices.
-                vertexProperty = mesh.createVertexProperty(DataBuffer::Uninitialized, static_cast<SurfaceMeshVertices::Type>(particleProperty->type()));
+                vertexProperty = meshBuilder.createVertexProperty(DataBuffer::Uninitialized, static_cast<SurfaceMeshVertices::Type>(particleProperty->type()));
                 OVITO_ASSERT(vertexProperty->dataType() == particleProperty->dataType());
                 OVITO_ASSERT(vertexProperty->stride() == particleProperty->stride());
             }
@@ -228,11 +231,11 @@ void CoordinationPolyhedraModifier::ComputePolyhedraEngine::perform()
                 // Input property name is that of a standard property for mesh vertices.
                 // Must rename the property to avoid conflict, because user properties may not have a standard property name.
                 QString newPropertyName = particleProperty->name() + tr("_particles");
-                vertexProperty = mesh.createVertexProperty(DataBuffer::Uninitialized, newPropertyName, particleProperty->dataType(), particleProperty->componentCount(), particleProperty->componentNames());
+                vertexProperty = meshBuilder.createVertexProperty(DataBuffer::Uninitialized, newPropertyName, particleProperty->dataType(), particleProperty->componentCount(), particleProperty->componentNames());
             }
             else {
                 // Input property is a user property for mesh vertices.
-                vertexProperty = mesh.createVertexProperty(DataBuffer::Uninitialized, particleProperty->name(), particleProperty->dataType(), particleProperty->componentCount(), particleProperty->componentNames());
+                vertexProperty = meshBuilder.createVertexProperty(DataBuffer::Uninitialized, particleProperty->name(), particleProperty->dataType(), particleProperty->componentCount(), particleProperty->componentNames());
             }
             // Copy particle property values to mesh vertices using precomputed index mapping.
             particleProperty->mappedCopyTo(*vertexProperty, vertexToParticleMap);
@@ -243,7 +246,7 @@ void CoordinationPolyhedraModifier::ComputePolyhedraEngine::perform()
             PropertyPtr regionProperty;
             if(particleProperty->type() < PropertyObject::FirstSpecificProperty && SurfaceMeshRegions::OOClass().isValidStandardPropertyId(particleProperty->type())) {
                 // Input property is also a standard property for mesh regions.
-                regionProperty = mesh.createRegionProperty(DataBuffer::Uninitialized, static_cast<SurfaceMeshRegions::Type>(particleProperty->type()));
+                regionProperty = meshBuilder.createRegionProperty(DataBuffer::Uninitialized, static_cast<SurfaceMeshRegions::Type>(particleProperty->type()));
                 OVITO_ASSERT(regionProperty->dataType() == particleProperty->dataType());
                 OVITO_ASSERT(regionProperty->stride() == particleProperty->stride());
             }
@@ -251,11 +254,11 @@ void CoordinationPolyhedraModifier::ComputePolyhedraEngine::perform()
                 // Input property name is that of a standard property for mesh regions.
                 // Must rename the property to avoid conflict, because user properties may not have a standard property name.
                 QString newPropertyName = particleProperty->name() + tr("_particles");
-                regionProperty = mesh.createRegionProperty(DataBuffer::Uninitialized, newPropertyName, particleProperty->dataType(), particleProperty->componentCount(), particleProperty->componentNames());
+                regionProperty = meshBuilder.createRegionProperty(DataBuffer::Uninitialized, newPropertyName, particleProperty->dataType(), particleProperty->componentCount(), particleProperty->componentNames());
             }
             else {
                 // Input property is a user property for mesh regions.
-                regionProperty = mesh.createRegionProperty(DataBuffer::Uninitialized, particleProperty->name(), particleProperty->dataType(), particleProperty->componentCount(), particleProperty->componentNames());
+                regionProperty = meshBuilder.createRegionProperty(DataBuffer::Uninitialized, particleProperty->name(), particleProperty->dataType(), particleProperty->componentCount(), particleProperty->componentNames());
             }
             // Copy particle property values to mesh regions using precomputed index mapping.
             particleProperty->mappedCopyTo(*regionProperty, regionToParticleMap);
@@ -265,8 +268,8 @@ void CoordinationPolyhedraModifier::ComputePolyhedraEngine::perform()
     }
 
     // Create the "Particle index" region property, which contains the index of the particle that is at the center of each coordination polyhedron.
-    PropertyPtr particleIndexProperty = mesh.createRegionProperty(DataBuffer::Uninitialized, QStringLiteral("Particle Index"), PropertyObject::Int64);
-    std::copy(regionToParticleMap.cbegin(), regionToParticleMap.cend(), PropertyAccess<qlonglong>(particleIndexProperty).begin());
+    PropertyPtr particleIndexProperty = meshBuilder.createRegionProperty(DataBuffer::Uninitialized, QStringLiteral("Particle Index"), PropertyObject::Int64);
+    std::copy(regionToParticleMap.cbegin(), regionToParticleMap.cend(), BufferAccess<int64_t>(particleIndexProperty).begin());
 
     // Release data that is no longer needed.
     _positions.reset();

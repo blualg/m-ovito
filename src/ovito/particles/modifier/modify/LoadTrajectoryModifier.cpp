@@ -146,21 +146,21 @@ void LoadTrajectoryModifier::applyTrajectoryState(PipelineFlowState& state, cons
 
         // Build particle-to-particle index map.
         std::vector<size_t> indexToIndexMap(particles->elementCount());
-        ConstPropertyAccess<qlonglong> identifierProperty = particles->getProperty(ParticlesObject::IdentifierProperty);
-        ConstPropertyAccess<qlonglong> trajIdentifierProperty = trajectoryParticles->getProperty(ParticlesObject::IdentifierProperty);
+        BufferAccess<const IdentifierIntType> identifierProperty = particles->getProperty(ParticlesObject::IdentifierProperty);
+        BufferAccess<const IdentifierIntType> trajIdentifierProperty = trajectoryParticles->getProperty(ParticlesObject::IdentifierProperty);
         if(identifierProperty && trajIdentifierProperty) {
 
             // Build map of particle identifiers in trajectory dataset.
-            std::map<qlonglong, size_t> refMap;
+            std::map<IdentifierIntType, size_t> refMap;
             size_t index = 0;
-            for(qlonglong id : trajIdentifierProperty) {
+            for(auto id : trajIdentifierProperty) {
                 if(refMap.insert(std::make_pair(id, index++)).second == false)
                     throw Exception(tr("Particles with duplicate identifiers detected in trajectory dataset."));
             }
             trajIdentifierProperty.reset();
 
             // Check for duplicate identifiers in topology dataset.
-            std::vector<size_t> idSet(identifierProperty.cbegin(), identifierProperty.cend());
+            std::vector<IdentifierIntType> idSet(identifierProperty.cbegin(), identifierProperty.cend());
             boost::sort(idSet);
             if(boost::adjacent_find(idSet) != idSet.cend())
                 throw Exception(tr("Particles with duplicate identifiers detected in topology dataset."));
@@ -206,7 +206,7 @@ void LoadTrajectoryModifier::applyTrajectoryState(PipelineFlowState& state, cons
                 indexToIndexMap.reserve(indexToIndexMap.size() + refMap.size());
 
                 // Extend index mapping and particle identifier property.
-                PropertyAccess<qlonglong> identifierProperty = particles->expectMutableProperty(ParticlesObject::IdentifierProperty);
+                BufferAccess<IdentifierIntType> identifierProperty = particles->expectMutableProperty(ParticlesObject::IdentifierProperty);
                 auto id = identifierProperty.begin() + indexToIndexMap.size();
                 for(const auto& entry : refMap) {
                     *id++ = entry.first;
@@ -226,8 +226,8 @@ void LoadTrajectoryModifier::applyTrajectoryState(PipelineFlowState& state, cons
                 // We make an exception if topology identifiers are in sorted order forming a consecutive sequence.
                 // Gromacs GRO files, for example, contain atom numbers (IDs) and Gromacs XTC files do not.
                 // This exception has been introduced to support this particular combination of topology & trajectory files.
-                qlonglong idx = 1;
-                for(const qlonglong& id : identifierProperty) {
+                IdentifierIntType idx = 1;
+                for(const auto& id : identifierProperty) {
                     if(id != idx++)
                         throw Exception(tr("Particles in the topology dataset have identifiers, but trajectory particles do not. This likely is a mistake. Please ensure the trajectory file contains identifiers too."));
                 }
@@ -283,12 +283,12 @@ void LoadTrajectoryModifier::applyTrajectoryState(PipelineFlowState& state, cons
             // stored in wrapped coordinates, then it becomes necessary to fix bonds using the minimum image convention.
             std::array<bool, 3> pbc = topologyCell->pbcFlags();
             if((pbc[0] || pbc[1] || pbc[2]) && particles->bonds() && std::abs(simCell.determinant()) > FLOATTYPE_EPSILON) {
-                ConstPropertyAccess<Point3> outputPosProperty = particles->expectProperty(ParticlesObject::PositionProperty);
+                BufferAccess<const Point3> outputPosProperty = particles->expectProperty(ParticlesObject::PositionProperty);
                 AffineTransformation inverseCellMatrix = simCell.inverse();
 
                 BondsObject* bonds = particles->makeBondsMutable();
-                if(ConstPropertyAccess<ParticleIndexPair> topologyProperty = bonds->getProperty(BondsObject::TopologyProperty)) {
-                    PropertyAccess<Vector3I> periodicImageProperty = bonds->createProperty(DataBuffer::Initialized, BondsObject::PeriodicImageProperty);
+                if(BufferAccess<const ParticleIndexPair> topologyProperty = bonds->getProperty(BondsObject::TopologyProperty)) {
+                    BufferAccess<Vector3I> periodicImageProperty = bonds->createProperty(DataBuffer::Initialized, BondsObject::PeriodicImageProperty);
 
                     // Wrap bonds crossing a periodic boundary by resetting their PBC shift vectors.
                     for(size_t bondIndex = 0; bondIndex < topologyProperty.size(); bondIndex++) {
@@ -339,10 +339,10 @@ void LoadTrajectoryModifier::applyTrajectoryState(PipelineFlowState& state, cons
             // to corresponding particle indices and store them in the "Topology" bond property.
             if(bondParticleIdentifiers) {
                 // Build map from particle identifiers to particle indices.
-                std::map<qlonglong, size_t> idToIndexMap;
-                if(ConstPropertyAccess<qlonglong> particleIdentifierProperty = particles->getProperty(ParticlesObject::IdentifierProperty)) {
+                std::map<IdentifierIntType, size_t> idToIndexMap;
+                if(BufferAccess<const IdentifierIntType> particleIdentifierProperty = particles->getProperty(ParticlesObject::IdentifierProperty)) {
                     size_t index = 0;
-                    for(qlonglong id : particleIdentifierProperty) {
+                    for(auto id : particleIdentifierProperty) {
                         if(idToIndexMap.insert(std::make_pair(id, index++)).second == false)
                             throw Exception(tr("Duplicate particle identifier %1 detected. Please make sure particle identifiers are unique.").arg(id));
                     }
@@ -354,9 +354,9 @@ void LoadTrajectoryModifier::applyTrajectoryState(PipelineFlowState& state, cons
                 }
 
                 // Perform lookup of particle IDs.
-                PropertyAccess<ParticleIndexPair> bondTopologyArray = particles->makeBondsMutable()->createProperty(BondsObject::TopologyProperty);
+                BufferAccess<ParticleIndexPair> bondTopologyArray = particles->makeBondsMutable()->createProperty(BondsObject::TopologyProperty);
                 auto t = bondTopologyArray.begin();
-                for(const ParticleIndexPair& bond : ConstPropertyAccess<ParticleIndexPair>(bondParticleIdentifiers)) {
+                for(const ParticleIndexPair& bond : BufferAccess<const ParticleIndexPair>(bondParticleIdentifiers)) {
                     auto iter1 = idToIndexMap.find(bond[0]);
                     auto iter2 = idToIndexMap.find(bond[1]);
                     if(iter1 == idToIndexMap.end())

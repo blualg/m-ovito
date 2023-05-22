@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -102,14 +102,8 @@ void OpenGLSceneRenderer::renderCylindersImplementation(const CylinderPrimitive&
 
     shader.setInstanceCount(primitive.basePositions()->size());
 
-    struct BaseHeadRadius {
-        Vector_3<float> base;
-        Vector_3<float> head;
-        float radius;
-    };
-
     // Check size limits.
-    if(shader.instanceCount() > std::numeric_limits<int32_t>::max() / shader.verticesPerInstance() / std::max(sizeof(BaseHeadRadius), 2 * sizeof(ColorAT<float>))) {
+    if(shader.instanceCount() > std::numeric_limits<int32_t>::max() / shader.verticesPerInstance() / (2 * sizeof(ColorT<float>))) {
         qWarning() << "WARNING: OpenGL renderer - Trying to render too many cylinders at once, exceeding device limits.";
         return;
     }
@@ -126,7 +120,7 @@ void OpenGLSceneRenderer::renderCylindersImplementation(const CylinderPrimitive&
     }
     OVITO_REPORT_OPENGL_ERRORS(this);
 
-    // Pass camera viewing direction (parallel) or camera position (perspective) in object space to vertex shader.  
+    // Pass camera viewing direction (parallel) or camera position (perspective) in object space to vertex shader.
     if(primitive.shadingMode() == CylinderPrimitive::FlatShading) {
         Vector3 view_dir_eye_pos;
         if(projParams().isPerspective)
@@ -140,123 +134,88 @@ void OpenGLSceneRenderer::renderCylindersImplementation(const CylinderPrimitive&
         shader.setUniformValue("single_cylinder_cap", (int)primitive.renderSingleCylinderCap());
     }
 
-    // Put base/head positions and radii into one combined GL buffer.
-    // Radii are optional and may be substituted with a uniform radius value.
-    RendererResourceKey<struct PositionRadiusCache, ConstDataBufferPtr, ConstDataBufferPtr, ConstDataBufferPtr, FloatType> positionRadiusCacheKey{
-        primitive.basePositions(),
-        primitive.headPositions(),
-        primitive.widths(),
-        primitive.widths() ? FloatType(0) : primitive.uniformWidth()
-    };
+    // Upload and bind base vertex positions.
+    QOpenGLBuffer basePositionBuffer = shader.uploadDataBuffer(primitive.basePositions(), OpenGLShaderHelper::PerInstance);
+    shader.bindBuffer(basePositionBuffer, "base", GL_FLOAT, 3, sizeof(Point_3<float>), 0, OpenGLShaderHelper::PerInstance);
 
-    // Upload vertex buffer with the base and head positions and radii.
-    QOpenGLBuffer positionRadiusBuffer = shader.createCachedBuffer(positionRadiusCacheKey, sizeof(BaseHeadRadius), QOpenGLBuffer::VertexBuffer, OpenGLShaderHelper::PerInstance, [&](void* buffer) {
-        OVITO_ASSERT(!primitive.widths() || primitive.widths()->size() == primitive.basePositions()->size());
-        ConstDataBufferAccess<Point3> basePositionArray(primitive.basePositions());
-        ConstDataBufferAccess<Point3> headPositionArray(primitive.headPositions());
-        ConstDataBufferAccess<FloatType> diameterArray(primitive.widths());
-        float* dst = reinterpret_cast<float*>(buffer);
-        const FloatType* diameter = diameterArray ? diameterArray.cbegin() : nullptr;
-        const float uniformRadius = 0.5f * primitive.uniformWidth();
-        const Point3* basePos = basePositionArray.cbegin();
-        const Point3* headPos = headPositionArray.cbegin();
-        for(; basePos != basePositionArray.cend(); ++basePos, ++headPos) {
-            *dst++ = static_cast<float>(basePos->x());
-            *dst++ = static_cast<float>(basePos->y());
-            *dst++ = static_cast<float>(basePos->z());
-            *dst++ = static_cast<float>(headPos->x());
-            *dst++ = static_cast<float>(headPos->y());
-            *dst++ = static_cast<float>(headPos->z());
-            *dst++ = diameter ? (0.5f * static_cast<float>(*diameter++)) : uniformRadius;
-        }
-    });
+    // Upload and bind head vertex positions.
+    QOpenGLBuffer headPositionBuffer = shader.uploadDataBuffer(primitive.headPositions(), OpenGLShaderHelper::PerInstance);
+    shader.bindBuffer(headPositionBuffer, "head", GL_FLOAT, 3, sizeof(Point_3<float>), 0, OpenGLShaderHelper::PerInstance);
 
-    // Bind vertex buffer to vertex attributes.
-    shader.bindBuffer(positionRadiusBuffer, "base", GL_FLOAT, 3, sizeof(BaseHeadRadius), offsetof(BaseHeadRadius, base), OpenGLShaderHelper::PerInstance);
-    shader.bindBuffer(positionRadiusBuffer, "head", GL_FLOAT, 3, sizeof(BaseHeadRadius), offsetof(BaseHeadRadius, head), OpenGLShaderHelper::PerInstance);
-    shader.bindBuffer(positionRadiusBuffer, "radius", GL_FLOAT, 1, sizeof(BaseHeadRadius), offsetof(BaseHeadRadius, radius), OpenGLShaderHelper::PerInstance);
+    // Upload and bind cylinder diameters.
+    if(primitive.widths()) {
+        QOpenGLBuffer diametersBuffer = shader.uploadDataBuffer(primitive.widths(), OpenGLShaderHelper::PerInstance);
+        shader.bindBuffer(diametersBuffer, "diameter", GL_FLOAT, 1, sizeof(float), 0, OpenGLShaderHelper::PerInstance);
+    }
+    else {
+        shader.unbindBuffer("diameter");
+        shader.setAttributeValue("diameter", primitive.uniformWidth());
+    }
 
     if(!isPicking()) {
+        // The color and transparency arrays may contain either 1 or 2 values per cylinder primitive.
+        // In case two are given, linear interpolation along the primitive will be performed by the
+        // renderer (for cylinders but not arrows).
 
-        // Put colors and transparencies into one combined GL buffer with 2*4 floats per primitive (two RGBA values).
-        RendererResourceKey<struct ColorCache, ConstDataBufferPtr, ConstDataBufferPtr, Color, GLsizei> colorCacheKey{ 
-            primitive.colors(),
-            primitive.transparencies(),
-            primitive.colors() ? Color(0,0,0) : primitive.uniformColor(),
-            shader.instanceCount() // This is needed to NOT use the same cached buffer for rendering different number of cylinders which happen to use the same uniform color.
-        };
-
-        // Upload vertex buffer with the RGB color data.
-        QOpenGLBuffer colorBuffer = shader.createCachedBuffer(colorCacheKey, 2 * sizeof(ColorAT<float>), QOpenGLBuffer::VertexBuffer, OpenGLShaderHelper::PerInstance, [&](void* buffer) {
-            // The color and the transparency arrays may contain either 1 or 2 values per primitive.
-            // In case two colors/transparencies have been specified, linear interpolation 
-            // along the primitive is performed by the renderer.
-            OVITO_ASSERT(!primitive.colors() || primitive.colors()->size() == primitive.basePositions()->size() || primitive.colors()->size() == 2 * primitive.basePositions()->size());
-            OVITO_ASSERT(!primitive.colors() || primitive.colors()->componentCount() == 1 || primitive.colors()->componentCount() == 3);
-            OVITO_ASSERT(!primitive.transparencies() || primitive.transparencies()->size() == primitive.basePositions()->size() || primitive.transparencies()->size() == 2 * primitive.basePositions()->size());
-            const ColorT<float> uniformColor = primitive.uniformColor().toDataType<float>();
-            ConstDataBufferAccess<FloatType,true> colorArray(primitive.colors());
-            ConstDataBufferAccess<FloatType> transparencyArray(primitive.transparencies());
-            const FloatType* color = colorArray ? colorArray.cbegin() : nullptr;
-            const FloatType* transparency = transparencyArray ? transparencyArray.cbegin() : nullptr;
-            bool twoColorsPerPrimitive = (primitive.colors() && primitive.colors()->size() == 2 * primitive.basePositions()->size());
-            bool twoTransparenciesPerPrimitive = (primitive.transparencies() && primitive.transparencies()->size() == 2 * primitive.basePositions()->size());
-            for(float* dst = reinterpret_cast<float*>(buffer), *dst_end = dst + 8 * shader.instanceCount(); dst != dst_end; dst += 8) {
-                // RGB/pseudocolor:
-                if(renderWithPseudoColorMapping) {
-                    OVITO_ASSERT(color);
-                    dst[0] = static_cast<float>(*color++);
-                    dst[1] = 0;
-                    dst[2] = 0;
-                }
-                else if(color) {
-                    dst[0] = static_cast<float>(*color++);
-                    dst[1] = static_cast<float>(*color++);
-                    dst[2] = static_cast<float>(*color++);
-                }
-                else {
-                    dst[0] = uniformColor.r();
-                    dst[1] = uniformColor.g();
-                    dst[2] = uniformColor.b();
-                }
-                // Alpha:
-                dst[3] = transparency ? qBound(0.0f, 1.0f - static_cast<float>(*transparency++), 1.0f) : 1.0f;
-                // Second color and transparency.
-                if(twoColorsPerPrimitive) {
-                    if(renderWithPseudoColorMapping) {
-                        dst[4] = static_cast<float>(*color++);
-                        dst[5] = 0;
-                        dst[6] = 0;
-                    }
-                    else {
-                        dst[4] = static_cast<float>(*color++);
-                        dst[5] = static_cast<float>(*color++);
-                        dst[6] = static_cast<float>(*color++);
-                    }
-                }
-                else {
-                    dst[4] = dst[0];
-                    dst[5] = dst[1];
-                    dst[6] = dst[2];
-                }
-                if(twoTransparenciesPerPrimitive)
-                    dst[7] = qBound(0.0f, 1.0f - static_cast<float>(*transparency++), 1.0f);
+        // Upload RGB or pseudo-colors.
+        if(primitive.colors() && !renderWithPseudoColorMapping && primitive.colors()->componentCount() == 3) {
+            QOpenGLBuffer rgbBuffer = shader.uploadDataBuffer(primitive.colors(), OpenGLShaderHelper::PerInstance);
+            shader.bindBuffer(rgbBuffer, "color1", GL_FLOAT, 3, sizeof(ColorT<float>) * (primitive.colors()->size() / primitive.basePositions()->size()), 0, OpenGLShaderHelper::PerInstance);
+            if(primitive.shape() == CylinderPrimitive::CylinderShape) {
+                if(primitive.colors()->size() == 2 * primitive.basePositions()->size())
+                    shader.bindBuffer(rgbBuffer, "color2", GL_FLOAT, 3, 2 * sizeof(ColorT<float>), sizeof(ColorT<float>), OpenGLShaderHelper::PerInstance);
                 else
-                    dst[7] = dst[3];
+                    shader.bindBuffer(rgbBuffer, "color2", GL_FLOAT, 3, sizeof(ColorT<float>), 0, OpenGLShaderHelper::PerInstance);
             }
-        });
+        }
+        else if(primitive.colors() && renderWithPseudoColorMapping && primitive.colors()->componentCount() == 1) {
+            QOpenGLBuffer pseudoColorBuffer = shader.uploadDataBuffer(primitive.colors(), OpenGLShaderHelper::PerInstance);
+            shader.bindBuffer(pseudoColorBuffer, "color1", GL_FLOAT, 1, sizeof(float) * (primitive.colors()->size() / primitive.basePositions()->size()), 0, OpenGLShaderHelper::PerInstance);
+            if(primitive.shape() == CylinderPrimitive::CylinderShape) {
+                if(primitive.colors()->size() == 2 * primitive.basePositions()->size())
+                    shader.bindBuffer(pseudoColorBuffer, "color2", GL_FLOAT, 1, 2 * sizeof(float), sizeof(float), OpenGLShaderHelper::PerInstance);
+                else
+                    shader.bindBuffer(pseudoColorBuffer, "color2", GL_FLOAT, 1, sizeof(float), 0, OpenGLShaderHelper::PerInstance);
+            }
+        }
+        else {
+            shader.unbindBuffer("color1");
+            shader.setAttributeValue("color1", primitive.uniformColor());
+            if(primitive.shape() == CylinderPrimitive::CylinderShape) {
+                shader.unbindBuffer("color2");
+                shader.setAttributeValue("color2", primitive.uniformColor());
+            }
+        }
 
-        // Bind color vertex buffer.
-        shader.bindBuffer(colorBuffer, "color1", GL_FLOAT, 4, 2 * sizeof(ColorAT<float>), 0, OpenGLShaderHelper::PerInstance);
-        if(primitive.shape() == CylinderPrimitive::CylinderShape)
-            shader.bindBuffer(colorBuffer, "color2", GL_FLOAT, 4, 2 * sizeof(ColorAT<float>), sizeof(ColorAT<float>), OpenGLShaderHelper::PerInstance);
+        // Upload transparency values.
+        if(primitive.transparencies()) {
+            QOpenGLBuffer transparencyBuffer = shader.uploadDataBuffer(primitive.transparencies(), OpenGLShaderHelper::PerInstance);
+            shader.bindBuffer(transparencyBuffer, "transparency1", GL_FLOAT, 1, sizeof(float) * (primitive.transparencies()->size() / primitive.basePositions()->size()), 0, OpenGLShaderHelper::PerInstance);
+            if(primitive.shape() == CylinderPrimitive::CylinderShape) {
+                if(primitive.transparencies()->size() == 2 * primitive.basePositions()->size())
+                    shader.bindBuffer(transparencyBuffer, "transparency2", GL_FLOAT, 1, 2 * sizeof(float), sizeof(float), OpenGLShaderHelper::PerInstance);
+                else
+                    shader.bindBuffer(transparencyBuffer, "transparency2", GL_FLOAT, 1, sizeof(float), 0, OpenGLShaderHelper::PerInstance);
+            }
+        }
+        else {
+            shader.unbindBuffer("transparency1");
+            shader.setAttributeValue("transparency1", 0.0);
+            if(primitive.shape() == CylinderPrimitive::CylinderShape) {
+                shader.unbindBuffer("transparency2");
+                shader.setAttributeValue("transparency2", 0.0);
+            }
+        }
 
         if(renderWithPseudoColorMapping) {
             // Rendering with pseudo-colors and a color mapping function.
             float minValue = primitive.pseudoColorMapping().minValue();
             float maxValue = primitive.pseudoColorMapping().maxValue();
             // Avoid division by zero due to degenerate value interval.
-            if(minValue == maxValue) maxValue = std::nextafter(maxValue, std::numeric_limits<float>::max());
+            if(minValue == maxValue) {
+                minValue = std::min(minValue - FloatTypeEpsilon<float>(), std::nextafter(minValue, std::numeric_limits<float>::lowest()));
+                maxValue = std::max(maxValue + FloatTypeEpsilon<float>(), std::nextafter(maxValue, std::numeric_limits<float>::max()));
+            }
             shader.setUniformValue("color_range_min", minValue);
             shader.setUniformValue("color_range_max", maxValue);
 
@@ -270,7 +229,7 @@ void OpenGLSceneRenderer::renderCylindersImplementation(const CylinderPrimitive&
             shader.setUniformValue("color_range_max", 0.0f);
 
 #ifdef Q_OS_MACOS
-            // Upload a null color map to satisfy the picky OpenGL driver on macOS, which complains about 
+            // Upload a null color map to satisfy the picky OpenGL driver on macOS, which complains about
             // no texture being bound when a sampler1D is defined in the fragment shader.
             if(!isPicking() && primitive.shape() == CylinderPrimitive::CylinderShape) {
                 colorMapTexture = OpenGLResourceManager::instance()->uploadColorMap(nullptr, currentResourceFrame());
@@ -281,7 +240,7 @@ void OpenGLSceneRenderer::renderCylindersImplementation(const CylinderPrimitive&
     }
 
     // Draw triangle strip or fan instances in regular storage order (not sorted).
-    shader.drawArrays(primitiveDrawMode);
+    shader.draw(primitiveDrawMode);
 
     // Draw cylindric part of the arrows.
     if(primitive.shape() == CylinderPrimitive::ArrowShape && primitive.shadingMode() == CylinderPrimitive::NormalShading) {
@@ -292,7 +251,7 @@ void OpenGLSceneRenderer::renderCylindersImplementation(const CylinderPrimitive&
             shader.setPickingBaseId(pickingBaseId);
         }
 
-        shader.drawArrays(GL_TRIANGLE_STRIP);
+        shader.draw(GL_TRIANGLE_STRIP);
     }
 
     // Unbind color mapping texture.

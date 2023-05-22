@@ -46,7 +46,7 @@ PropertyPtr ImpropersObject::OOMetaClass::createStandardPropertyInternal(DataBuf
 
     switch(type) {
     case TypeProperty:
-        dataType = PropertyObject::Int;
+        dataType = PropertyObject::Int32;
         componentCount = 1;
         break;
     case TopologyProperty:
@@ -86,7 +86,7 @@ void ImpropersObject::OOMetaClass::initialize()
     const QStringList emptyList;
     const QStringList abcdList = QStringList() << "A" << "B" << "C" << "D";
 
-    registerStandardProperty(TypeProperty, tr("Improper Type"), PropertyObject::Int, emptyList, &ElementType::OOClass(), tr("Improper types"));
+    registerStandardProperty(TypeProperty, tr("Improper Type"), PropertyObject::Int32, emptyList, &ElementType::OOClass(), tr("Improper types"));
     registerStandardProperty(TopologyProperty, tr("Topology"), PropertyObject::Int64, abcdList);
 }
 

@@ -1,6 +1,6 @@
 #######################################################################################
 #
-#  Copyright 2020 OVITO GmbH, Germany
+#  Copyright 2023 OVITO GmbH, Germany
 #
 #  This file is part of OVITO (Open Visualization Tool).
 #
@@ -28,10 +28,8 @@ OVITO_STANDARD_PLUGIN(CrystalAnalysisGui
         objects/MicrostructurePhaseEditor.cpp
         objects/DislocationNetworkObjectEditor.cpp
         objects/DislocationVisEditor.cpp
-        objects/SlipSurfaceVisEditor.cpp
         modifier/DislocationAnalysisModifierEditor.cpp
         modifier/ElasticStrainModifierEditor.cpp
-        modifier/SimplifyMicrostructureModifierEditor.cpp
         modifier/GrainSegmentationModifierEditor.cpp
         util/DislocationInspectionApplet.cpp
     PLUGIN_DEPENDENCIES CrystalAnalysis Particles ParticlesGui

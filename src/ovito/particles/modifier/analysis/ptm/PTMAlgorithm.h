@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -166,15 +166,16 @@ public:
     }
 #endif
 
+    template<typename QuaternionType1, typename QuaternionType2>
     static FloatType calculate_disorientation(StructureType structureTypeA,
                                               StructureType structureTypeB,
-                                              const Quaternion& qa,
-                                              const Quaternion& qb)
+                                              const QuaternionType1& qa,
+                                              const QuaternionType2& qb)
     {
         FloatType disorientation = std::numeric_limits<FloatType>::max();
-        if (structureTypeA != structureTypeB)
+        if(structureTypeA != structureTypeB)
             return disorientation;
-    
+
         double orientA[4] = { qa.w(), qa.x(), qa.y(), qa.z() };
         double orientB[4] = { qb.w(), qb.x(), qb.y(), qb.z() };
 
@@ -183,6 +184,8 @@ public:
             disorientation = (FloatType)ptm::quat_disorientation_cubic(orientA, orientB);
         else if(structureType == PTMAlgorithm::HCP || structureType == PTMAlgorithm::HEX_DIAMOND || structureType == PTMAlgorithm::GRAPHENE)
             disorientation = (FloatType)ptm::quat_disorientation_hcp_conventional(orientA, orientB);
+        else
+            return disorientation;
 
         return qRadiansToDegrees(disorientation);
     }
@@ -217,7 +220,7 @@ public:
     bool calculateDefGradient() const { return _calculateDefGradient; }
 
     /// Activates the identification of chemical ordering types and specifies the chemical types of the input particles.
-    void setIdentifyOrdering(ConstPropertyPtr particleTypes) {
+    void setIdentifyOrdering(ConstDataBufferPtr particleTypes) {
         _particleTypes = std::move(particleTypes);
         _identifyOrdering = (_particleTypes != nullptr);
     }
@@ -229,7 +232,7 @@ public:
     /// \return \c false when the operation has been canceled by the user;
     ///         \c true on success.
     /// \throw Exception on error.
-    bool prepare(ConstPropertyAccess<Point3> positions, const SimulationCellObject* cell, ConstPropertyAccess<int> selection = {}) {
+    bool prepare(BufferAccess<const Point3> positions, const SimulationCellObject* cell, BufferAccess<const SelectionIntType> selection = {}) {
         return NearestNeighborFinder::prepare(std::move(positions), cell, std::move(selection));
     }
 
@@ -335,7 +338,7 @@ public:
         StructureType _structureType = OTHER;
         int32_t _orderingType = ORDERING_NONE;
         int _templateIndex;
-        ptm_atomicenv_t _env;       
+        ptm_atomicenv_t _env;
     };
 
     static FloatType calculate_interfacial_disorientation(StructureType structureTypeA,
@@ -371,7 +374,7 @@ private:
     bool _identifyOrdering = false;
 
     /// The chemical types of the input particles, needed for ordering analysis.
-    ConstPropertyPtr _particleTypes;
+    ConstDataBufferPtr _particleTypes;
 
     /// Activates the calculation of the elastic deformation gradient by PTM.
     bool _calculateDefGradient = false;

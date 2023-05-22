@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -61,9 +61,6 @@ protected Q_SLOTS:
     void onLoadPreset();
 
 protected:
-
-    /// \brief Returns the string representation of a property's data type.
-    static QString dataTypeToString(int dataType);
 
     MainWindow& _mainWindow;
 

@@ -94,8 +94,8 @@ ImportRemoteFileDialog::ImportRemoteFileDialog(MainWindow& mainWindow, const QVe
     }
     // Sort file formats alphabetically (but leave leading <Auto-detect> item in place).
     Ovito::sort_zipped(
-        Ovito::make_span(fileFilterStrings).subspan(1),
-        Ovito::make_span( _importerFormats).subspan(1),
+        make_span(fileFilterStrings).subspan(1),
+        make_span( _importerFormats).subspan(1),
         [](const QString& a, const QString& b) { return a.compare(b, Qt::CaseInsensitive) < 0; });
 
     _formatSelector = new QComboBox(this);

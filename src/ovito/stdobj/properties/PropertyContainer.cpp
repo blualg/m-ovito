@@ -25,8 +25,6 @@
 #include <ovito/core/dataset/DataSet.h>
 #include "PropertyContainer.h"
 
-#include <boost/range/algorithm_ext/is_sorted.hpp>
-
 namespace Ovito::StdObj {
 
 IMPLEMENT_OVITO_CLASS(PropertyContainer);
@@ -96,17 +94,21 @@ const PropertyObject* PropertyContainer::expectProperty(const QString& propertyN
 }
 
 /******************************************************************************
-* Duplicates any property objects that are shared with other containers.
+* Duplicates any property objects that are shared with other containers or being accessed from Python.
 * After this method returns, all property objects are exclusively owned by the container and
 * can be safely modified without unwanted side effects.
 ******************************************************************************/
-QVector<PropertyObject*> PropertyContainer::makePropertiesMutable()
+void PropertyContainer::makePropertiesMutableInternal()
 {
-    QVector<PropertyObject*> result;
     for(const PropertyObject* property : properties()) {
-        result.push_back(makeMutable(property));
+        if(property->isBeingAccessedFromPython()) {
+            OORef<PropertyObject> clone = CloneHelper().cloneObject(property, false);
+            replaceReferencesTo(property, std::move(clone));
+        }
+        else {
+            makeMutable(property);
+        }
     }
-    return result;
 }
 
 /******************************************************************************
@@ -118,9 +120,10 @@ void PropertyContainer::setElementCount(size_t count)
     if(count == elementCount())
         return;
 
-    // Make sure the property arrays can be safely modified and resize each array.
-    for(PropertyObject* prop : makePropertiesMutable())
-        prop->resize(count, true);
+    // Make sure the property arrays can be safely modified, then resize each array.
+    makePropertiesMutableInternal();
+    for(const PropertyObject* prop : properties())
+        const_cast<PropertyObject*>(prop)->resize(count, true);
 
     // Update internal element counter.
     _elementCount.set(this, PROPERTY_FIELD(elementCount), count);
@@ -142,9 +145,9 @@ size_t PropertyContainer::deleteElements(const boost::dynamic_bitset<>& mask)
 
     // Make sure the property arrays can be safely modified.
     // Filter the property arrays and reduce their lengths.
-    for(PropertyObject* property : makePropertiesMutable()) {
-        OVITO_ASSERT(property->size() == oldElementCount);
-        property->filterResize(mask);
+    makePropertiesMutableInternal();
+    for(const PropertyObject* property : properties()) {
+        const_cast<PropertyObject*>(property)->filterResize(mask);
         OVITO_ASSERT(property->size() == newElementCount);
     }
 
@@ -152,6 +155,34 @@ size_t PropertyContainer::deleteElements(const boost::dynamic_bitset<>& mask)
     _elementCount.set(this, PROPERTY_FIELD(elementCount), newElementCount);
 
     return deleteCount;
+}
+
+/******************************************************************************
+* Removes those data elements for which the bits are set in the given bitmask
+* array by moving data from the back of the array into the free slots.
+* This method is potentially faster than deleteElements() if only few elements are to be deleted.
+* However, the ordering of the remaining elements is NOT preserved.
+******************************************************************************/
+void PropertyContainer::deleteElementsReordering(const boost::dynamic_bitset<>& mask)
+{
+    OVITO_ASSERT(mask.size() == elementCount());
+
+    // Make sure the property arrays can be safely modified.
+    // Filter the property arrays and reduce their lengths.
+    makePropertiesMutableInternal();
+    for(const PropertyObject* property : properties()) {
+        const_cast<PropertyObject*>(property)->filterResizeReordering(mask);
+        OVITO_ASSERT(property->size() == elementCount() - mask.count());
+    }
+
+    size_t newElementCount;
+    if(properties().empty())
+        newElementCount = elementCount() - mask.count();
+    else
+        newElementCount = properties().front()->size();
+
+    // Update internal element counter.
+    _elementCount.set(this, PROPERTY_FIELD(elementCount), newElementCount);
 }
 
 /******************************************************************************
@@ -312,8 +343,9 @@ void PropertyContainer::replicate(size_t n, bool replicatePropertyValues)
         throw Exception(tr("Replicate operation failed: Maximum number of elements exceeded."));
 
     // Make sure the property arrays can be safely modified and replicate the values in each of them.
-    for(PropertyObject* property : makePropertiesMutable())
-        property->replicate(n, replicatePropertyValues);
+    makePropertiesMutableInternal();
+    for(const PropertyObject* property : properties())
+        const_cast<PropertyObject*>(property)->replicate(n, replicatePropertyValues);
 
     setElementCount(newCount);
 }
@@ -329,7 +361,7 @@ std::vector<size_t> PropertyContainer::sortById()
 #endif
     if(!getOOMetaClass().isValidStandardPropertyId(PropertyObject::GenericIdentifierProperty))
         return {};
-    ConstDataBufferAccess<qlonglong> ids = getProperty(PropertyObject::GenericIdentifierProperty);
+    BufferAccess<const IdentifierIntType> ids = getProperty(PropertyObject::GenericIdentifierProperty);
     if(!ids)
         return {};
 
@@ -347,11 +379,12 @@ std::vector<size_t> PropertyContainer::sortById()
     if(isAlreadySorted) return {};
 
     // Re-order all values in the property arrays.
-    for(PropertyObject* prop : makePropertiesMutable()) {
-        prop->reorderElements(permutation);
+    makePropertiesMutableInternal();
+    for(const PropertyObject* prop : properties()) {
+        const_cast<PropertyObject*>(prop)->reorderElements(permutation);
     }
 
-    OVITO_ASSERT(boost::range::is_sorted(ConstDataBufferAccess<qlonglong>(getProperty(PropertyObject::GenericIdentifierProperty)).crange()));
+    OVITO_ASSERT(boost::range::is_sorted(BufferAccess<const IdentifierIntType>(getProperty(PropertyObject::GenericIdentifierProperty)).range()));
 
     return invertedPermutation;
 }
@@ -435,6 +468,18 @@ void PropertyContainer::loadFromStreamComplete(ObjectLoadStream& stream)
             }
         }
     }
+
+    // For backward compatibility with older OVITO versions that only knew FloatType.
+    // Perform data type conversion if necessary.
+    if(stream.formatVersion() < 30010) {
+        for(const PropertyObject* property : properties()) {
+            if(property->type() != 0) {
+                int expectedDataType = getOOMetaClass().standardPropertyDataType(property->type());
+                if(property->dataType() != expectedDataType)
+                    makeMutable(property)->convertToDataType(expectedDataType);
+            }
+        }
+    }
 }
 
 /******************************************************************************
@@ -451,8 +496,8 @@ QString PropertyContainer::elementInfoString(size_t elementIndex, const ConstDat
         str += QStringLiteral("<key>");
         str += property->name().toHtmlEscaped();
         str += QStringLiteral(":</key> <val>");
-        if(property->dataType() == PropertyObject::Int) {
-            ConstPropertyAccess<int, true> data(property);
+        if(property->dataType() == PropertyObject::Int32) {
+            BufferAccess<const int*> data(property);
             for(size_t component = 0; component < data.componentCount(); component++) {
                 if(component != 0) str += QStringLiteral(", ");
                 str += QString::number(data.get(elementIndex, component));
@@ -465,14 +510,21 @@ QString PropertyContainer::elementInfoString(size_t elementIndex, const ConstDat
             }
         }
         else if(property->dataType() == PropertyObject::Int64) {
-            ConstPropertyAccess<qlonglong, true> data(property);
+            BufferAccess<const int64_t*> data(property);
             for(size_t component = 0; component < property->componentCount(); component++) {
                 if(component != 0) str += QStringLiteral(", ");
                 str += QString::number(data.get(elementIndex, component));
             }
         }
-        else if(property->dataType() == PropertyObject::Float) {
-            ConstPropertyAccess<FloatType, true> data(property);
+        else if(property->dataType() == PropertyObject::Float32) {
+            BufferAccess<const float*> data(property);
+            for(size_t component = 0; component < property->componentCount(); component++) {
+                if(component != 0) str += QStringLiteral(", ");
+                str += QString::number(data.get(elementIndex, component));
+            }
+        }
+        else if(property->dataType() == PropertyObject::Float64) {
+            BufferAccess<const double*> data(property);
             for(size_t component = 0; component < property->componentCount(); component++) {
                 if(component != 0) str += QStringLiteral(", ");
                 str += QString::number(data.get(elementIndex, component));

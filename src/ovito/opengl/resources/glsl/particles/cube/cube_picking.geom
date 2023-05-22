@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -33,9 +33,10 @@ uniform vec3 unit_cube_triangle_strip[14];
 
 // Outputs:
 flat out vec4 color_fs;
+
 void main()
 {
-    for(int corner = 0; corner < 14; corner++) 
+    for(int corner = 0; corner < 14; corner++)
     {
     	// Apply model-view-projection matrix to particle position displaced by the cube vertex position.
         gl_Position = modelview_projection_matrix * vec4(position_gs[0] + unit_cube_triangle_strip[corner] * radius_gs[0], 1.0);

@@ -75,6 +75,6 @@ public:
 /**
  * The data type used for the 'Topology' angle property: three indices into the particles list.
  */
-using ParticleIndexTriplet = std::array<qlonglong, 3>;
+using ParticleIndexTriplet = std::array<int64_t, 3>;
 
 }   // End of namespace

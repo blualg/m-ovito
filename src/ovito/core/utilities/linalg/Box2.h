@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2014 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -95,6 +95,15 @@ public:
         maxc.y() = center.y() + halfEdgeLength;
     }
 
+    /// \brief Casts the box to a box with another data type.
+    template<typename U>
+    Q_DECL_CONSTEXPR auto toDataType() const -> std::conditional_t<!std::is_same_v<T,U>, Box_2<U>, const Box_2<T>&> {
+        if constexpr(!std::is_same_v<T,U>)
+            return Box_2<U>(minc.template toDataType<U>(), maxc.template toDataType<U>());
+        else
+            return *this;  // When casting to the same type \a T, this method becomes a no-op.
+    }
+
     ///////////////////////////////// Attributes /////////////////////////////////
 
     /// \brief Checks whether this is box is empty.
@@ -166,7 +175,7 @@ public:
     /// \param p The input point.
     /// \param epsilon This threshold is used to test whether the point is on the boundary of the box.
     /// \return -1 if \a p is outside the box; 0 if \a p is on the boundary of the box within the specified tolerance; +1 if inside the box.
-    Q_DECL_CONSTEXPR int classifyPoint(const Point_2<T>& p, T epsilon = T(FLOATTYPE_EPSILON)) const {
+    Q_DECL_CONSTEXPR int classifyPoint(const Point_2<T>& p, T epsilon = FloatTypeEpsilon<T>()) const {
         return
                 (p.x() > maxc.x() + epsilon || p.y() > maxc.y() + epsilon) ||
                 (p.x() < minc.x() - epsilon || p.y() < minc.y() - epsilon)
@@ -299,6 +308,18 @@ inline QDataStream& operator>>(QDataStream& stream, Box_2<T>& b) {
 using Box2 = Box_2<FloatType>;
 
 /**
+ * \brief Instance of the Box_2 class template used for floating-point calculations based on Point2F.
+ * \relates Box_2
+ */
+using Box2F = Box_2<float>;
+
+/**
+ * \brief Instance of the Box_2 class template used for floating-point calculations based on Point2G.
+ * \relates Box_2
+ */
+using Box2G = Box_2<GraphicsFloatType>;
+
+/**
  * \brief Instance of the Box_2 class template used for integer calculations based on Point2I.
  * \relates Box_2
  */
@@ -307,6 +328,8 @@ using Box2I = Box_2<int>;
 }   // End of namespace
 
 Q_DECLARE_METATYPE(Ovito::Box2);
+Q_DECLARE_METATYPE(Ovito::Box2F);
 Q_DECLARE_METATYPE(Ovito::Box2I);
 Q_DECLARE_TYPEINFO(Ovito::Box2, Q_MOVABLE_TYPE);
+Q_DECLARE_TYPEINFO(Ovito::Box2F, Q_MOVABLE_TYPE);
 Q_DECLARE_TYPEINFO(Ovito::Box2I, Q_MOVABLE_TYPE);

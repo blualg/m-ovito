@@ -107,19 +107,21 @@ ConstPropertyPtr DataTable::getXValues() const
     }
     else if(const PropertyObject* yProperty = y()) {
         if(elementCount() != 0 && (intervalStart() != 0 || intervalEnd() != 0)) {
-            PropertyAccessAndRef<FloatType> xdata = OOClass().createUserProperty(DataBuffer::Uninitialized, elementCount(), PropertyObject::Float, 1, axisLabelX());
-            FloatType binSize = (intervalEnd() - intervalStart()) / xdata.size();
+            PropertyPtr xdata = OOClass().createUserProperty(DataBuffer::Uninitialized, elementCount(), PropertyObject::FloatDefault, 1, axisLabelX());
+            BufferAccess<FloatType> xdataAccess(xdata);
+            FloatType binSize = (intervalEnd() - intervalStart()) / xdata->size();
             FloatType x = intervalStart() + binSize * FloatType(0.5);
-            for(FloatType& v : xdata) {
+            for(auto& v : xdataAccess) {
                 v = x;
                 x += binSize;
             }
-            return xdata.take();
+            return xdata;
         }
         else {
-            PropertyAccessAndRef<qlonglong> xdata = OOClass().createUserProperty(DataBuffer::Uninitialized, elementCount(), PropertyObject::Int64, 1, axisLabelX());
-            std::iota(xdata.begin(), xdata.end(), (size_t)0);
-            return xdata.take();
+            PropertyPtr xdata = OOClass().createUserProperty(DataBuffer::Uninitialized, elementCount(), PropertyObject::Int64, 1, axisLabelX());
+            BufferAccess<int64_t> xdataAccess(xdata);
+            std::iota(xdataAccess.begin(), xdataAccess.end(), (int64_t)0);
+            return xdata;
         }
     }
     return {};

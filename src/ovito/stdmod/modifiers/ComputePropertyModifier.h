@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -61,7 +61,7 @@ protected:
                 const PipelineFlowState& input,
                 const ConstDataObjectPath& containerPath,
                 PropertyPtr outputProperty,
-                ConstPropertyPtr selectionProperty,
+                const PropertyObject* selectionProperty,
                 QStringList expressions,
                 int frameNumber,
                 std::unique_ptr<PropertyExpressionEvaluator> evaluator);
@@ -77,7 +77,7 @@ protected:
         }
 
         /// Returns the data accessor to the selection flag array.
-        const ConstPropertyAccessAndRef<int>& selectionArray() const { return _selectionArray; }
+        const BufferAccessAndRef<const SelectionIntType>& selectionArray() const { return _selectionArray; }
 
         /// Returns the list of available input variables.
         virtual QStringList inputVariableNames() const;
@@ -98,7 +98,7 @@ protected:
         const PropertyPtr& outputProperty() const { return _outputProperty; }
 
         /// Returns the data accessor to the output property array that will receive the computed values.
-        PropertyAccess<void, true>& outputArray() { return _outputArray; }
+        BufferWriteAccess& outputArray() { return _outputArray; }
 
         /// Determines whether any of the math expressions is explicitly time-dependent.
         virtual bool isTimeDependent() { return _evaluator->isTimeDependent(); }
@@ -120,10 +120,10 @@ protected:
 
         const int _frameNumber;
         QStringList _expressions;
-        ConstPropertyAccessAndRef<int> _selectionArray;
+        BufferAccessAndRef<const SelectionIntType> _selectionArray;
         std::unique_ptr<PropertyExpressionEvaluator> _evaluator;
         const PropertyPtr _outputProperty;
-        PropertyAccess<void, true> _outputArray;
+        BufferWriteAccess _outputArray;
     };
 
 public:
