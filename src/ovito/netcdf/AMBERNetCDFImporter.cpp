@@ -504,7 +504,8 @@ void AMBERNetCDFImporter::FrameLoader::loadFile()
         QString columnName = column.columnName;
         QString propertyName = column.property.name();
         int dataType = column.dataType;
-        if(dataType == QMetaType::Void) continue;
+        if(dataType == QMetaType::Void)
+            continue;
 
         if(dataType != DataBuffer::Int8 && dataType != DataBuffer::Int32 && dataType != DataBuffer::Int64 && dataType != DataBuffer::Float32 && dataType != DataBuffer::Float64)
             throw Exception(tr("Invalid custom particle property (data type %1) for input file column '%2' of NetCDF file.").arg(dataType).arg(columnName));

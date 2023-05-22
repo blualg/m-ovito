@@ -169,7 +169,7 @@ void ParaViewVTPMeshImporter::FrameLoader::loadFile()
             // Parse child <DataArray> element containing the connectivity information.
             if(!xml.readNextStartElement())
                 break;
-            PropertyPtr connectivityArray = parseDataArray(xml, qMetaTypeId<SurfaceMesh::vertex_index>());
+            PropertyPtr connectivityArray = parseDataArray(xml, DataBufferPrimitiveType<SurfaceMesh::vertex_index>::value);
             if(!connectivityArray)
                 break;
             // Make sure the data array has the expected data layout.

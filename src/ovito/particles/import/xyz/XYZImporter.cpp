@@ -555,7 +555,7 @@ ParticleInputColumnMapping XYZImporter::parseExtendedXYZColumnSpecification(cons
                 break;
             case 'S':
                 for(int k = 0; k < nCols; k++) {
-                    if(!mapVariableToProperty(mapping, col, propName, qMetaTypeId<char>(), k) && k == 0)
+                    if(!mapVariableToProperty(mapping, col, propName, 0, k) && k == 0)
                         qDebug() << "Warning: Skipping field" << propName << "of XYZ file because it has an unsupported data type (string).";
                     col++;
                 }

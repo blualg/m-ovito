@@ -44,21 +44,21 @@ class OVITO_CORE_EXPORT DataBuffer : public DataObject
 public:
 
     // Make sure our type IDs are all platform-independent.
-    static_assert(qMetaTypeId<int8_t>() == 40); // = QMetaType::SChar
-    static_assert(qMetaTypeId<int32_t>() == 2); // = QMetaType::Int
-    static_assert(qMetaTypeId<int64_t>() == 4); // = QMetaType::LongLong
-    static_assert(qMetaTypeId<float>() == 38);  // = QMetaType::Float
-    static_assert(qMetaTypeId<double>() == 6);  // = QMetaType::Double
+    static_assert(sizeof(int8_t) == sizeof(signed char)); // QMetaType::SChar
+    static_assert(sizeof(int32_t) == sizeof(int)); // QMetaType::Int
+    static_assert(sizeof(int64_t) == sizeof(qlonglong)); // QMetaType::LongLong
+    static_assert(sizeof(float) == 4);  // QMetaType::Float
+    static_assert(sizeof(double) == 8);  // QMetaType::Double
 
     /// \brief The most commonly used data types. Note that, at least in principle,
     ///        the class supports any data type registered with the Qt meta type system.
-    enum StandardDataType {
+    enum DataTypes {
 
-        Int8 = qMetaTypeId<int8_t>(),
-        Int32 = qMetaTypeId<int32_t>(),
-        Int64 = qMetaTypeId<int64_t>(),
-        Float32 = qMetaTypeId<float>(),
-        Float64 = qMetaTypeId<double>(),
+        Int8 = QMetaType::SChar,
+        Int32 = QMetaType::Int,
+        Int64 = QMetaType::LongLong,
+        Float32 = QMetaType::Float,
+        Float64 = QMetaType::Double,
 
         // Alias for high-precision floating-point type:
         FloatDefault = std::is_same_v<FloatType, double> ? Float64 : Float32,
@@ -432,7 +432,12 @@ private:
 };
 
 /// Class template returning the Qt data type identifier for the components in the given C++ array structure.
-template<typename T, typename = void> struct DataBufferPrimitiveType { static constexpr int value = qMetaTypeId<T>(); };
+template<typename T, typename = void> struct DataBufferPrimitiveType {};
+template<> struct DataBufferPrimitiveType<int8_t> { static constexpr DataBuffer::DataTypes value = DataBuffer::DataTypes::Int8; };
+template<> struct DataBufferPrimitiveType<int32_t> { static constexpr DataBuffer::DataTypes value = DataBuffer::DataTypes::Int32; };
+template<> struct DataBufferPrimitiveType<int64_t> { static constexpr DataBuffer::DataTypes value = DataBuffer::DataTypes::Int64; };
+template<> struct DataBufferPrimitiveType<float> { static constexpr DataBuffer::DataTypes value = DataBuffer::DataTypes::Float32; };
+template<> struct DataBufferPrimitiveType<double> { static constexpr DataBuffer::DataTypes value = DataBuffer::DataTypes::Float64; };
 template<typename T, std::size_t N> struct DataBufferPrimitiveType<std::array<T,N>> : public DataBufferPrimitiveType<T> {};
 template<typename T> struct DataBufferPrimitiveType<Point_2<T>> : public DataBufferPrimitiveType<T> {};
 template<typename T> struct DataBufferPrimitiveType<Point_3<T>> : public DataBufferPrimitiveType<T> {};
