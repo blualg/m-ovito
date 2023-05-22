@@ -270,7 +270,7 @@ std::tuple<std::map<int,int>, ConstPropertyPtr> PropertyObject::generateContiguo
 ******************************************************************************/
 void PropertyObject::sortElementTypesByName()
 {
-    OVITO_ASSERT(dataType() == StandardDataType::Int32);
+    OVITO_ASSERT(dataType() == DataBuffer::Int32 && componentCount() == 1);
 
     // Check if type IDs form a consecutive sequence starting at 1.
     // If not, we leave the type order as it is.
