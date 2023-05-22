@@ -266,9 +266,47 @@ bool FileSourceImporter::importFurtherFiles(Scene* scene, std::vector<std::pair<
 /******************************************************************************
 * Determines whether the URL contains a wildcard pattern.
 ******************************************************************************/
-bool FileSourceImporter::isWildcardPattern(const QUrl& sourceUrl)
+bool FileSourceImporter::isWildcardPattern(const QString& filename)
 {
-    return QFileInfo(sourceUrl.path()).fileName().contains('*');
+    return filename.contains('*');
+}
+
+/******************************************************************************
+* Tries to derive a sensible wildcard pattern from a filename by replacing a
+* numeric character sequence with a '*'.
+******************************************************************************/
+QString FileSourceImporter::deriveWildcardPatternFromFilename(const QString& filename)
+{
+    int startIndex, endIndex;
+
+    // Locate the first digit from the back of the filename.
+    // If the filename has a regular format suffix (dot followed by three or less chars),
+    // do not look for digits in the suffix. This exception is specifically needed for
+    // compatiblity with file suffixes like *.h5 used by pyiron.
+
+    // First, skip to last '.' in filename.
+    for(endIndex = filename.length() - 2; endIndex >= 1; endIndex--)
+        if(filename.at(endIndex) == QChar('.'))
+            break;
+    // If no dot was found, jump back to end of filename.
+    if(endIndex <= 1 || endIndex + 4 < filename.length())
+        endIndex = filename.length() - 1;
+
+    // Then skip to last digit.
+    for(; endIndex >= 0; endIndex--)
+        if(filename.at(endIndex).isNumber())
+            break;
+
+    // If we have found a first digit, identify the contiguous range of digits
+    // and replace this number with the placeholder (*).
+    if(endIndex >= 0) {
+        for(startIndex = endIndex-1; startIndex >= 0; startIndex--)
+            if(!filename.at(startIndex).isNumber()) break;
+
+        return filename.left(startIndex + 1) + QChar('*') + filename.mid(endIndex + 1);
+    }
+
+    return {};
 }
 
 /******************************************************************************

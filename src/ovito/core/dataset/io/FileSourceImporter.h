@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -266,7 +266,16 @@ public:
     FileSource* fileSource() const;
 
     /// Determines whether the URL contains a wildcard pattern.
-    static bool isWildcardPattern(const QUrl& sourceUrl);
+    static bool isWildcardPattern(const QUrl& sourceUrl) {
+        return isWildcardPattern(sourceUrl.fileName());
+    }
+
+    /// Determines whether a filename contains a wildcard pattern.
+    static bool isWildcardPattern(const QString& filename);
+
+	/// Tries to derive a sensible wildcard pattern from a filename by replacing a
+	/// numeric character sequence with a '*'.
+	static QString deriveWildcardPatternFromFilename(const QString& filename);
 
 Q_SIGNALS:
 

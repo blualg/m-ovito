@@ -119,22 +119,17 @@ bool FileSource::setSource(std::vector<QUrl> sourceUrls, FileSourceImporter* imp
 
         // If single URL is not already a wildcard pattern, generate a default pattern by
         // replacing the last sequence of numbers in the filename with a wildcard character.
-        if(autoGenerateFilePattern() && sourceUrls.size() == 1 && importer->autoGenerateWildcardPattern() && !_originallySelectedFilename.contains('*')) {
+        if(autoGenerateFilePattern() && sourceUrls.size() == 1 && importer->autoGenerateWildcardPattern() && !FileSourceImporter::isWildcardPattern(_originallySelectedFilename)) {
             if(autodetectFileSequences) {
-                int startIndex, endIndex;
-                for(endIndex = _originallySelectedFilename.length() - 1; endIndex >= 0; endIndex--)
-                    if(_originallySelectedFilename.at(endIndex).isNumber()) break;
-                if(endIndex >= 0) {
-                    for(startIndex = endIndex-1; startIndex >= 0; startIndex--)
-                        if(!_originallySelectedFilename.at(startIndex).isNumber()) break;
-                    QString wildcardPattern = _originallySelectedFilename.left(startIndex+1) + '*' + _originallySelectedFilename.mid(endIndex+1);
+                QString wildcardPattern = FileSourceImporter::deriveWildcardPatternFromFilename(_originallySelectedFilename);
+                if(!wildcardPattern.isEmpty()) {
                     QFileInfo fileInfo(sourceUrls.front().path());
                     fileInfo.setFile(fileInfo.dir(), wildcardPattern);
                     sourceUrls.front().setPath(fileInfo.filePath());
                     OVITO_ASSERT(sourceUrls.front().isValid());
                 }
             }
-            else if(!_originallySelectedFilename.contains('*')) {
+            else {
                 turnOffPatternGeneration = true;
             }
         }
@@ -675,23 +670,13 @@ void FileSource::generateWildcardFilePattern()
     if(sourceUrls().size() == 1) {
         const QUrl& url = sourceUrls().front();
         if(!FileSourceImporter::isWildcardPattern(url)) {
-
-            QString filename = url.fileName();
-            int startIndex, endIndex;
-            for(endIndex = filename.length() - 1; endIndex >= 0; endIndex--)
-                if(filename.at(endIndex).isNumber()) break;
-
-            if(endIndex >= 0) {
-                for(startIndex = endIndex-1; startIndex >= 0; startIndex--)
-                    if(!filename.at(startIndex).isNumber()) break;
-
-                QString wildcardPattern = filename.left(startIndex + 1) + '*' + filename.mid(endIndex + 1);
+            QString wildcardPattern = FileSourceImporter::deriveWildcardPatternFromFilename(url.fileName());
+            if(!wildcardPattern.isEmpty()) {
                 QFileInfo fileInfo(url.path());
                 fileInfo.setFile(fileInfo.dir(), wildcardPattern);
                 QUrl newUrl = url;
                 newUrl.setPath(fileInfo.filePath());
                 OVITO_ASSERT(newUrl.isValid());
-
                 setSource({newUrl}, importer(), true);
             }
         }
