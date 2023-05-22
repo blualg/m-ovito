@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -237,6 +237,11 @@ void FileSource::setListOfFrames(QVector<FileSourceImporter::Frame> frames)
             remainingCacheValidity.intersect(TimeInterval(AnimationTime::negativeInfinity(), sourceFrameToAnimationTime(frameIndex)-1));
         }
     }
+
+    // Make sure the frame data can be serialized to a state file.
+    OVITO_ASSERT(boost::algorithm::all_of(frames, [](const auto& frame) {
+        return !frame.parserData.metaType().isValid() || frame.parserData.metaType().hasRegisteredDataStreamOperators();
+    }));
 
     // Count the number of source files the trajectory frames are coming from.
     _numberOfFiles = countNumberOfFiles(frames);
@@ -652,7 +657,7 @@ void FileSource::removeWildcardFilePattern()
     for(const QUrl& url : sourceUrls()) {
         if(FileSourceImporter::isWildcardPattern(url)) {
             if(dataCollectionFrame() >= 0 && dataCollectionFrame() < frames().size()) {
-                QUrl currentUrl = frames()[dataCollectionFrame()].sourceFile;
+                const QUrl& currentUrl = frames()[dataCollectionFrame()].sourceFile;
                 if(currentUrl != url) {
                     setSource({currentUrl}, importer(), false);
                     return;

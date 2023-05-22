@@ -108,7 +108,7 @@ void POSCARImporter::FrameFinder::discoverFramesInFile(QVector<FileSourceImporte
     while(!stream.eof() && !isCanceled()) {
         frame.byteOffset = stream.byteOffset();
         frame.lineNumber = stream.lineNumber();
-        frame.parserData = 1;
+        frame.parserData = QVariant::fromValue(true);
         frame.label = QString("%1 (Frame %2)").arg(filename).arg(frameNumber++);
         stream.recordSeekPoint();
 
@@ -277,7 +277,7 @@ void POSCARImporter::FrameLoader::loadFile()
 
     // Parse optional atomic velocity vectors or CHGCAR electron density data.
     // Do this only for the first frame and if it is not a XDATCAR file.
-    if(frame().byteOffset == 0 && frame().parserData == 0) {
+    if(frame().byteOffset == 0 && frame().parserData.value<bool>() != true) {
         if(!stream.eof())
             stream.readLineTrimLeft();
         if(!stream.eof() && stream.line()[0] > ' ') {

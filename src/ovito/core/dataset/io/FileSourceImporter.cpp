@@ -582,7 +582,19 @@ SaveStream& operator<<(SaveStream& stream, const FileSourceImporter::Frame& fram
 LoadStream& operator>>(LoadStream& stream, FileSourceImporter::Frame& frame)
 {
     stream.expectChunk(0x03);
-    stream >> frame.sourceFile >> frame.byteOffset >> frame.lineNumber >> frame.lastModificationTime >> frame.label >> frame.parserData;
+
+    stream >> frame.sourceFile >> frame.byteOffset >> frame.lineNumber >> frame.lastModificationTime >> frame.label;
+    if(stream.formatVersion() >= 30010) {
+        stream >> frame.parserData;
+    }
+    else {
+        // For backward compatibility with OVITO 3.8.
+        qint64 oldParserData;
+        stream >> oldParserData;
+        if(oldParserData != 0)
+            frame.parserData.setValue(oldParserData);
+    }
+
     stream.closeChunk();
     return stream;
 }
