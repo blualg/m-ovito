@@ -111,6 +111,7 @@ QWidget* ParticleInspectionApplet::createWidget()
     connect(_measuringModeAction, &QAction::toggled, _angleTable, &QWidget::setVisible);
     connect(_measuringModeAction, &QAction::toggled, this, &ParticleInspectionApplet::updateDistanceTable);
     connect(_measuringModeAction, &QAction::toggled, this, &ParticleInspectionApplet::updateAngleTable);
+    connect(_measuringModeAction, &QAction::toggled, this, [&]() { _pickingMode->requestViewportUpdate(); });
     connect(this, &PropertyInspectionApplet::filterChanged, this, &ParticleInspectionApplet::updateDistanceTable);
     connect(this, &PropertyInspectionApplet::filterChanged, this, &ParticleInspectionApplet::updateAngleTable);
 

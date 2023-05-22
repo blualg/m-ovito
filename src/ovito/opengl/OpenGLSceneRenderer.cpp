@@ -1068,6 +1068,12 @@ void OpenGLSceneRenderer::setHighlightMode(int pass)
         this->glStencilFunc(GL_ALWAYS, 0x1, 0x1);
         this->glStencilMask(0x1);
         this->glStencilOp(GL_REPLACE, GL_REPLACE, GL_REPLACE);
+#if defined(Q_OS_MACOS) && defined(Q_PROCESSOR_ARM)
+        // Partial workaround for a bug in the MacOS/arm64 OpenGL implementation.
+        // Fragment shaders discarding fragments (via conditional "discard") still modify the stencil buffer, which is unexpected.
+        // See also: https://developer.apple.com/forums/thread/721988
+        this->glStencilOp(GL_REPLACE, GL_KEEP, GL_REPLACE);
+#endif
         this->glDepthFunc(GL_LEQUAL);
     }
     else if(pass == 2) {

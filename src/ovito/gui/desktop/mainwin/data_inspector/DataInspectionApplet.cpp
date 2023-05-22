@@ -35,10 +35,10 @@ IMPLEMENT_OVITO_CLASS(DataInspectionApplet);
 /******************************************************************************
 * Returns the panel hosting this applet.
 ******************************************************************************/
-DataInspectorPanel* DataInspectionApplet::inspectorPanel() const 
-{ 
+DataInspectorPanel* DataInspectionApplet::inspectorPanel() const
+{
     OVITO_ASSERT(qobject_cast<DataInspectorPanel*>(parent()));
-    return static_cast<DataInspectorPanel*>(parent()); 
+    return static_cast<DataInspectorPanel*>(parent());
 }
 
 /******************************************************************************
@@ -52,17 +52,17 @@ MainWindow& DataInspectionApplet::mainWindow() const
 /******************************************************************************
 * Returns the currently selected data pipeline in the scene.
 ******************************************************************************/
-PipelineSceneNode* DataInspectionApplet::currentPipeline() const 
+PipelineSceneNode* DataInspectionApplet::currentPipeline() const
 {
-    return inspectorPanel()->selectedPipeline(); 
+    return inspectorPanel()->selectedPipeline();
 }
 
 /******************************************************************************
 * Returns the current output of the data pipeline displayed in the applet.
 ******************************************************************************/
-const PipelineFlowState& DataInspectionApplet::currentState() const 
+const PipelineFlowState& DataInspectionApplet::currentState() const
 {
-    return inspectorPanel()->pipelineOutput(); 
+    return inspectorPanel()->pipelineOutput();
 }
 
 /******************************************************************************
@@ -82,7 +82,7 @@ QListWidget* DataInspectionApplet::objectSelectionWidget()
     if(!_objectSelectionWidget) {
         _objectSelectionWidget = new QListWidget();
 
-        class ItemDelegate : public QStyledItemDelegate 
+        class ItemDelegate : public QStyledItemDelegate
         {
         public:
             ItemDelegate() {
@@ -144,6 +144,8 @@ QListWidget* DataInspectionApplet::objectSelectionWidget()
         updateDataObjectList();
         connect(_objectSelectionWidget, &QListWidget::currentRowChanged, this, [this]() {
             QListWidgetItem* item = _objectSelectionWidget->currentItem();
+            const DataObject* prevSelectedDataObject = selectedDataObject();
+            const QString prevSelectedDataObjectPathString = _selectedDataObjectPathString;
             if(item) {
                 _selectedDataObjectPath = item->data(Qt::UserRole).value<ConstDataObjectPath>();
                 _selectedDataObjectPathString = _selectedDataObjectPath.toString();
@@ -154,7 +156,12 @@ QListWidget* DataInspectionApplet::objectSelectionWidget()
                 _selectedDataObjectPathString.clear();
                 _selectedDataObject = nullptr;
             }
-            Q_EMIT currentObjectChanged(_selectedDataObject);
+            if(prevSelectedDataObject != selectedDataObject()) {
+                Q_EMIT currentObjectChanged(selectedDataObject());
+            }
+            if(prevSelectedDataObjectPathString != _selectedDataObjectPathString) {
+                Q_EMIT currentObjectPathChanged(_selectedDataObjectPathString);
+            }
         });
     }
     return _objectSelectionWidget;
@@ -220,6 +227,8 @@ void DataInspectionApplet::updateDataObjectList()
     }
 
     // Inform others about the currently selected object.
+    const DataObject* prevSelectedDataObject = selectedDataObject();
+    const QString prevSelectedDataObjectPathString = _selectedDataObjectPathString;
     if(currentRow >= 0 && currentRow < objectPaths.size()) {
         _selectedDataObjectPath = std::move(objectPaths[currentRow]);
         _selectedDataObjectPathString = _selectedDataObjectPath.toString();
@@ -230,7 +239,12 @@ void DataInspectionApplet::updateDataObjectList()
         _selectedDataObjectPathString.clear();
         _selectedDataObject = nullptr;
     }
-    Q_EMIT currentObjectChanged(_selectedDataObject);
+    if(prevSelectedDataObject != selectedDataObject()) {
+        Q_EMIT currentObjectChanged(selectedDataObject());
+    }
+    if(prevSelectedDataObjectPathString != _selectedDataObjectPathString) {
+        Q_EMIT currentObjectPathChanged(_selectedDataObjectPathString);
+    }
 }
 
 /******************************************************************************
