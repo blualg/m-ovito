@@ -124,8 +124,15 @@ LoadStream& operator>>(LoadStream& stream, InputColumnMapping& m)
             stream >> col.property;
             stream >> col.columnName;
             stream >> col.dataType;
+
+            // For backward compatibility with OVITO 3.8:
+            if(stream.formatVersion() < 30010) {
+                if(col.dataType == QMetaType::Type::LongLong)
+                    col.dataType = DataBuffer::Int64;
+            }
         }
     }
+
     stream.closeChunk();
     return stream;
 }

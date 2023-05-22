@@ -181,6 +181,8 @@ void DataBuffer::loadFromStream(ObjectLoadStream& stream)
     _dataType = QMetaType::fromName(dataTypeName).id();
     OVITO_ASSERT_MSG(_dataType != 0, "DataBuffer::loadFromStream()", qPrintable(QString("The metadata type '%1' seems to be no longer defined.").arg(QString::fromLatin1(dataTypeName))));
     OVITO_ASSERT(dataTypeName == this->dataTypeName());
+    if(_dataType == QMetaType::LongLong) // For backward compatibility with OVITO 3.8
+        _dataType = DataBuffer::Int64;
     stream.readSizeT(_dataTypeSize);
     stream.readSizeT(_stride);
     stream.readSizeT(_componentCount);
