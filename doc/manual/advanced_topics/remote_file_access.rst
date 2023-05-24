@@ -30,6 +30,24 @@ until you hit the :guilabel:`Reload` button in the :ref:`External File <scene_ob
   OVITO's built-in SSH client parses the :file:`~/.ssh/config` `configuration file <https://www.ssh.com/ssh/config>`_ in your home directory if it exists to
   configure the SSH connection.
 
+.. _usage.import.remote.openssh_connection_method:
+
+OpenSSH client integration |ovito-pro|
+--------------------------------------
+
+.. image:: /images/io/remote_file_import_dialog.png
+  :width: 50%
+  :align: right
+
+The internal SSH client of OVITO is based on Libssh, which is an implementation of the SSH protocol that is distinct
+from the standalone command line tools (:program:`ssh` & :program:`scp`, both part of the OpenSSH system package) you are probably used to.
+Unfortunantely, Libssh does not support all authentication methods that commonly work with these OpenSSH utilities. In particular,
+smartcard-based and other two-factor authentication methods, requiring PKCS#11 extensions, may not work with OVITO's integrated SSH client.
+
+For these systems, OVITO Pro provides an alternative SSH connection method that is based on the external :program:`sftp` tool,
+which is available on most systems. When this connection method is selected, all authentication methods and other features configured in
+:file:`~/.ssh/config` will work as usual.
+
 .. _usage.import.remote.troubleshooting:
 
 Troubleshooting connection problems
@@ -39,11 +57,6 @@ Establishing a connection between OVITO and the SSH server may fail if the clien
 OVITO's built-in SSH client is based on the :program:`libssh` library, which supports a specific set of SSH key exchange methods,
 public key algorithms, ciphers, and authentication methods (`see here <https://www.libssh.org/features/>`__). During the handshaking process,
 both parties need to agree on at least one common choice from each of these categories to successfully establish an SSH connection.
-
-.. note::
-
-  The :program:`libssh` library is not identical to the `OpenSSH <https://www.openssh.com>`__ command line programs (:program:`ssh` & :program:`scp`),
-  which are installed on most Unix/Linux systems and which support a wider range of SSH connection methods.
 
 Which SSH connection methods the server side supports depends on the specific configuration of your SSH server. Please consult
 the documentation for your remote system or contact the administrator of your remote host if you are not sure.

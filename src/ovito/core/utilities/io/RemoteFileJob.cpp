@@ -112,8 +112,8 @@ void RemoteFileJob::start()
 
         // Open connection.
         _connection = Application::instance()->fileManager().acquireSshConnection(connectionParams);
-        OVITO_CHECK_POINTER(_connection);
         if(!_connection) {
+            _promise.setException(std::make_exception_ptr(Exception(tr("This particular build of OVITO has no SSH connection support. Please use a different distribution of OVITO to access remote files via SSH."))));
             shutdown(false);
             return;
         }

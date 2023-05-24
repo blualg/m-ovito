@@ -48,6 +48,7 @@ class OVITO_CORE_EXPORT SshConnection : public QObject
 public:
 
     enum SshImplementation {
+        None,
         Libssh,
         Openssh
     };
